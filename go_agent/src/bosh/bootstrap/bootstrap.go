@@ -95,7 +95,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 	}
 
 	for _, devicePath := range settings.Disks.Persistent {
-		err = boot.platform.MountPersistentDisk(devicePath, boot.dirProvider.StoreDir())
+		err = boot.infrastructure.MountPersistentDisk(devicePath, boot.dirProvider.StoreDir())
 		if err != nil {
 			err = bosherr.WrapError(err, "Mounting persistent disk")
 			return

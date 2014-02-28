@@ -419,39 +419,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 		})
 
-		Describe("MountPersistentDisk", func() {
-			It("mounts persistent disk", func() {
-				fakeFormatter := diskManager.FakeFormatter
-				fakePartitioner := diskManager.FakePartitioner
-				fakeMounter := diskManager.FakeMounter
-
-				fs.WriteFile("/dev/vdf", []byte{})
-
-				err := platform.MountPersistentDisk("/dev/sdf", "/mnt/point")
-				Expect(err).NotTo(HaveOccurred())
-
-				mountPoint := fs.GetFileTestStat("/mnt/point")
-				Expect(mountPoint.FileType).To(Equal(fakesys.FakeFileTypeDir))
-				Expect(mountPoint.FileMode).To(Equal(os.FileMode(0700)))
-
-				partition := fakePartitioner.PartitionPartitions[0]
-				Expect(fakePartitioner.PartitionDevicePath).To(Equal("/dev/vdf"))
-				Expect(len(fakePartitioner.PartitionPartitions)).To(Equal(1))
-				Expect(partition.Type).To(Equal(boshdisk.PartitionTypeLinux))
-
-				Expect(len(fakeFormatter.FormatPartitionPaths)).To(Equal(1))
-				Expect(fakeFormatter.FormatPartitionPaths[0]).To(Equal("/dev/vdf1"))
-
-				Expect(len(fakeFormatter.FormatFsTypes)).To(Equal(1))
-				Expect(fakeFormatter.FormatFsTypes[0]).To(Equal(boshdisk.FileSystemExt4))
-
-				Expect(len(fakeMounter.MountMountPoints)).To(Equal(1))
-				Expect(fakeMounter.MountMountPoints[0]).To(Equal("/mnt/point"))
-				Expect(len(fakeMounter.MountPartitionPaths)).To(Equal(1))
-				Expect(fakeMounter.MountPartitionPaths[0]).To(Equal("/dev/vdf1"))
-			})
-		})
-
 		Describe("UnmountPersistentDisk", func() {
 			Context("when not mounted", func() {
 				It("does not unmount persistent disk", func() {

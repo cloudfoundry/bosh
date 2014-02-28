@@ -414,40 +414,6 @@ func (p linux) SetupTmpDir() (err error) {
 	return
 }
 
-func (p linux) MountPersistentDisk(devicePath, mountPoint string) (err error) {
-	p.fs.MkdirAll(mountPoint, os.FileMode(0700))
-
-	realPath, err := p.getRealDevicePath(devicePath)
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting real device path")
-		return
-	}
-
-	partitions := []boshdisk.Partition{
-		{Type: boshdisk.PartitionTypeLinux},
-	}
-
-	err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
-	if err != nil {
-		err = bosherr.WrapError(err, "Partitioning disk")
-		return
-	}
-
-	partitionPath := realPath + "1"
-	err = p.diskManager.GetFormatter().Format(partitionPath, boshdisk.FileSystemExt4)
-	if err != nil {
-		err = bosherr.WrapError(err, "Formatting partition with ext4")
-		return
-	}
-
-	err = p.diskManager.GetMounter().Mount(partitionPath, mountPoint)
-	if err != nil {
-		err = bosherr.WrapError(err, "Mounting partition")
-		return
-	}
-	return
-}
-
 func (p linux) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {
 	realPath, err := p.getRealDevicePath(devicePath)
 	if err != nil {

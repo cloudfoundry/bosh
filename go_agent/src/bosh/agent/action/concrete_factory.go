@@ -8,6 +8,7 @@ import (
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
+	boshinfrastructure "bosh/infrastructure"
 	boshjobsuper "bosh/jobsupervisor"
 	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
@@ -22,6 +23,7 @@ type concreteFactory struct {
 func NewFactory(
 	settings boshsettings.Service,
 	platform boshplatform.Platform,
+	infrastructure boshinfrastructure.Infrastructure,
 	blobstore boshblob.Blobstore,
 	taskService boshtask.Service,
 	notifier boshnotif.Notifier,
@@ -46,7 +48,7 @@ func NewFactory(
 			"get_state":    NewGetState(settings, specService, jobSupervisor, vitalsService, ntpService),
 			"list_disk":    NewListDisk(settings, platform),
 			"migrate_disk": NewMigrateDisk(platform, dirProvider),
-			"mount_disk":   NewMountDisk(settings, platform, platform, dirProvider),
+			"mount_disk":   NewMountDisk(settings, infrastructure, platform, dirProvider),
 			"ping":         NewPing(),
 			"prepare_network_change": NewPrepareNetworkChange(platform),
 			"ssh":                NewSsh(settings, platform, dirProvider),

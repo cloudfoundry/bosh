@@ -16,14 +16,14 @@ type mountPoints interface {
 
 type MountDiskAction struct {
 	settings    boshsettings.Service
-	platform    diskMounter
+	diskMounter diskMounter
 	mountPoints mountPoints
 	dirProvider boshdirs.DirectoriesProvider
 }
 
-func NewMountDisk(settings boshsettings.Service, platform diskMounter, mountPoints mountPoints, dirProvider boshdirs.DirectoriesProvider) (mountDisk MountDiskAction) {
+func NewMountDisk(settings boshsettings.Service, diskMounter diskMounter, mountPoints mountPoints, dirProvider boshdirs.DirectoriesProvider) (mountDisk MountDiskAction) {
 	mountDisk.settings = settings
-	mountDisk.platform = platform
+	mountDisk.diskMounter = diskMounter
 	mountDisk.mountPoints = mountPoints
 	mountDisk.dirProvider = dirProvider
 	return
@@ -58,7 +58,7 @@ func (a MountDiskAction) Run(disk_cid string) (value interface{}, err error) {
 		mountPoint = a.dirProvider.StoreMigrationDir()
 	}
 
-	err = a.platform.MountPersistentDisk(devicePath, mountPoint)
+	err = a.diskMounter.MountPersistentDisk(devicePath, mountPoint)
 	if err != nil {
 		err = bosherr.WrapError(err, "Mounting persistent disk")
 		return

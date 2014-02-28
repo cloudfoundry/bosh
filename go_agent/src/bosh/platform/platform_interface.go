@@ -37,7 +37,6 @@ type Platform interface {
 	SetupTmpDir() (err error)
 	SetupMonitUser() (err error)
 
-	MountPersistentDisk(devicePath, mountPoint string) (err error)
 	UnmountPersistentDisk(devicePath string) (didUnmount bool, err error)
 	MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error)
 	NormalizeDiskPath(devicePath string) (realPath string, found bool)

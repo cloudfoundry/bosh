@@ -136,6 +136,7 @@ func (app app) Run(args []string) (err error) {
 	actionFactory := boshaction.NewFactory(
 		settingsService,
 		platform,
+		infrastructure,
 		blobstore,
 		taskService,
 		notifier,

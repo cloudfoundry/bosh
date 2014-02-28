@@ -8,6 +8,7 @@ import (
 	boshdrain "bosh/agent/drain"
 	faketask "bosh/agent/task/fakes"
 	fakeblobstore "bosh/blobstore/fakes"
+	fakeinfrastructure "bosh/infrastructure/fakes"
 	fakejobsuper "bosh/jobsupervisor/fakes"
 	fakenotif "bosh/notification/fakes"
 	fakeplatform "bosh/platform/fakes"
@@ -22,6 +23,7 @@ func init() {
 		var (
 			settings            *fakesettings.FakeSettingsService
 			platform            *fakeplatform.FakePlatform
+			infrastructure      *fakeinfrastructure.FakeInfrastructure
 			blobstore           *fakeblobstore.FakeBlobstore
 			taskService         *faketask.FakeService
 			notifier            *fakenotif.FakeNotifier
@@ -36,6 +38,7 @@ func init() {
 		BeforeEach(func() {
 			settings = &fakesettings.FakeSettingsService{}
 			platform = fakeplatform.NewFakePlatform()
+			infrastructure = fakeinfrastructure.NewFakeInfrastructure()
 			blobstore = &fakeblobstore.FakeBlobstore{}
 			taskService = &faketask.FakeService{}
 			notifier = fakenotif.NewFakeNotifier()
@@ -51,6 +54,7 @@ func init() {
 			factory = NewFactory(
 				settings,
 				platform,
+				infrastructure,
 				blobstore,
 				taskService,
 				notifier,
@@ -147,7 +151,7 @@ func init() {
 			action, err := factory.Create("mount_disk")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(action).ToNot(BeNil())
-			Expect(NewMountDisk(settings, platform, platform, platform.GetDirProvider())).To(Equal(action))
+			Expect(NewMountDisk(settings, infrastructure, platform, platform.GetDirProvider())).To(Equal(action))
 		})
 
 		It("new factory ssh", func() {

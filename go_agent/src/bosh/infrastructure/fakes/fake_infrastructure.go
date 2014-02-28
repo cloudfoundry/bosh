@@ -18,6 +18,12 @@ type FakeInfrastructure struct {
 	MountPersistentDiskError      error
 }
 
+func NewFakeInfrastructure() (infrastructure *FakeInfrastructure) {
+	infrastructure = &FakeInfrastructure{}
+	infrastructure.Settings = boshsettings.Settings{}
+	return
+}
+
 func (i *FakeInfrastructure) SetupSsh(username string) (err error) {
 	i.SetupSshUsername = username
 	return

@@ -153,8 +153,8 @@ func init() {
 			_, err := boot.Run()
 
 			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), fakePlatform.MountPersistentDiskDevicePath, "/dev/sdb")
-			assert.Equal(GinkgoT(), fakePlatform.MountPersistentDiskMountPoint, dirProvider.StoreDir())
+			assert.Equal(GinkgoT(), fakeInfrastructure.MountPersistentDiskVolumeId, "/dev/sdb")
+			assert.Equal(GinkgoT(), fakeInfrastructure.MountPersistentDiskMountPoint, dirProvider.StoreDir())
 		})
 		It("run errors if there is more than one persistent disk", func() {
 
