@@ -2,7 +2,7 @@ package infrastructure
 
 import (
 	bosherr "bosh/errors"
-	"bosh/infrastructure/aws_device_path_resolver"
+	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	boshplatform "bosh/platform"
 	boshdisk "bosh/platform/disk"
 	boshsettings "bosh/settings"
@@ -217,8 +217,8 @@ func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (settings bosh
 func (inf awsInfrastructure) MountPersistentDisk(volumeId string, mountPoint string) (err error) {
 	inf.platform.GetFs().MkdirAll(mountPoint, os.FileMode(0700))
 
-	awsDevicePathResolver := aws_device_path_resolver.New(inf.diskWaitTimeout, inf.platform.GetFs())
-	realPath, err := awsDevicePathResolver.GetRealDevicePath(volumeId)
+	devicePathResolver := boshdevicepathresolver.NewDevicePathResolver(inf.diskWaitTimeout, inf.platform.GetFs())
+	realPath, err := devicePathResolver.GetRealDevicePath(volumeId)
 
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")

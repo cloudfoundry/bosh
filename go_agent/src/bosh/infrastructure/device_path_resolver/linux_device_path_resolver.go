@@ -1,4 +1,4 @@
-package aws_device_path_resolver
+package device_path_resolver
 
 import (
 	bosherr "bosh/errors"
@@ -7,18 +7,18 @@ import (
 	"time"
 )
 
-type awsDevicePathResolver struct {
+type devicePathResolver struct {
 	diskWaitTimeout time.Duration
 	fs              boshsys.FileSystem
 }
 
-func New(diskWaitTimeout time.Duration, fs boshsys.FileSystem) (awsDevicePathResolver awsDevicePathResolver) {
+func NewDevicePathResolver(diskWaitTimeout time.Duration, fs boshsys.FileSystem) (awsDevicePathResolver devicePathResolver) {
 	awsDevicePathResolver.fs = fs
 	awsDevicePathResolver.diskWaitTimeout = diskWaitTimeout
 	return
 }
 
-func (p awsDevicePathResolver) GetRealDevicePath(devicePath string) (realPath string, err error) {
+func (p devicePathResolver) GetRealDevicePath(devicePath string) (realPath string, err error) {
 	stopAfter := time.Now().Add(p.diskWaitTimeout)
 
 	realPath, found := p.findPossibleDevice(devicePath)
@@ -33,7 +33,7 @@ func (p awsDevicePathResolver) GetRealDevicePath(devicePath string) (realPath st
 	return
 }
 
-func (p awsDevicePathResolver) findPossibleDevice(devicePath string) (realPath string, found bool) {
+func (p devicePathResolver) findPossibleDevice(devicePath string) (realPath string, found bool) {
 	pathSuffix := strings.Split(devicePath, "/dev/sd")[1]
 
 	possiblePrefixes := []string{"/dev/xvd", "/dev/vd", "/dev/sd"}

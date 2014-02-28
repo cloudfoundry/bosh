@@ -2,7 +2,7 @@ package platform
 
 import (
 	bosherr "bosh/errors"
-	"bosh/infrastructure/aws_device_path_resolver"
+	boshpathresolver "bosh/infrastructure/device_path_resolver"
 	boshcd "bosh/platform/cdutil"
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
@@ -25,18 +25,18 @@ import (
 )
 
 type linux struct {
-	fs               boshsys.FileSystem
-	cmdRunner        boshsys.CmdRunner
-	collector        boshstats.StatsCollector
-	compressor       boshcmd.Compressor
-	copier           boshcmd.Copier
-	dirProvider      boshdirs.DirectoriesProvider
-	vitalsService    boshvitals.Service
-	cdutil           boshcd.CdUtil
-	diskManager      boshdisk.Manager
-	diskWaitTimeout  time.Duration
-	netManager       boshnet.NetManager
-	diskScanDuration time.Duration
+	fs                 boshsys.FileSystem
+	cmdRunner          boshsys.CmdRunner
+	collector          boshstats.StatsCollector
+	compressor         boshcmd.Compressor
+	copier             boshcmd.Copier
+	dirProvider        boshdirs.DirectoriesProvider
+	vitalsService      boshvitals.Service
+	cdutil             boshcd.CdUtil
+	diskManager        boshdisk.Manager
+	netManager         boshnet.NetManager
+	diskScanDuration   time.Duration
+	devicePathResolver boshpathresolver.DevicePathResolver
 }
 
 func NewLinuxPlatform(
@@ -49,23 +49,23 @@ func NewLinuxPlatform(
 	vitalsService boshvitals.Service,
 	cdutil boshcd.CdUtil,
 	diskManager boshdisk.Manager,
-	diskWaitTimeout time.Duration,
 	netManager boshnet.NetManager,
 	diskScanDuration time.Duration,
+	devicePathResolver boshpathresolver.DevicePathResolver,
 ) (platform linux) {
 	platform = linux{
-		fs:               fs,
-		cmdRunner:        cmdRunner,
-		collector:        collector,
-		compressor:       compressor,
-		copier:           copier,
-		dirProvider:      dirProvider,
-		vitalsService:    vitalsService,
-		cdutil:           cdutil,
-		diskManager:      diskManager,
-		diskWaitTimeout:  diskWaitTimeout,
-		netManager:       netManager,
-		diskScanDuration: diskScanDuration,
+		fs:                 fs,
+		cmdRunner:          cmdRunner,
+		collector:          collector,
+		compressor:         compressor,
+		copier:             copier,
+		dirProvider:        dirProvider,
+		vitalsService:      vitalsService,
+		cdutil:             cdutil,
+		diskManager:        diskManager,
+		netManager:         netManager,
+		diskScanDuration:   diskScanDuration,
+		devicePathResolver: devicePathResolver,
 	}
 	return
 }
@@ -415,7 +415,7 @@ func (p linux) SetupTmpDir() (err error) {
 }
 
 func (p linux) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {
-	realPath, err := p.getRealDevicePath(devicePath)
+	realPath, err := p.devicePathResolver.GetRealDevicePath(devicePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")
 		return
@@ -425,7 +425,7 @@ func (p linux) UnmountPersistentDisk(devicePath string) (didUnmount bool, err er
 }
 
 func (p linux) NormalizeDiskPath(devicePath string) (realPath string, found bool) {
-	realPath, err := p.getRealDevicePath(devicePath)
+	realPath, err := p.devicePathResolver.GetRealDevicePath(devicePath)
 	if err == nil {
 		found = true
 	}
@@ -517,7 +517,7 @@ func (p linux) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err e
 }
 
 func (p linux) IsDevicePathMounted(path string) (result bool, err error) {
-	realPath, err := p.getRealDevicePath(path)
+	realPath, err := p.devicePathResolver.GetRealDevicePath(path)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")
 		return
@@ -566,11 +566,6 @@ func (p linux) GetMonitCredentials() (username, password string, err error) {
 
 func (p linux) GetDiskManager() (diskManager boshdisk.Manager) {
 	return p.diskManager
-}
-
-func (p linux) getRealDevicePath(devicePath string) (realPath string, err error) {
-	oracle := aws_device_path_resolver.New(p.diskWaitTimeout, p.fs)
-	return oracle.GetRealDevicePath(devicePath)
 }
 
 func (p linux) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSize, linuxSize uint64, err error) {

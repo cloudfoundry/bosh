@@ -1,6 +1,7 @@
 package platform_test
 
 import (
+	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	. "bosh/platform"
 	fakecd "bosh/platform/cdutil/fakes"
 	boshcmd "bosh/platform/commands"
@@ -69,9 +70,9 @@ var _ = Describe("LinuxPlatform", func() {
 				vitalsService,
 				cdutil,
 				diskManager,
-				diskWaitTimeout,
 				netManager,
 				sleepInterval,
+				boshdevicepathresolver.NewDevicePathResolver(diskWaitTimeout, fs),
 			)
 		})
 

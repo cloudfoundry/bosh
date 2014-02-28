@@ -1,9 +1,8 @@
-package aws_device_path_resolver_test
+package device_path_resolver
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"testing"
 )
 

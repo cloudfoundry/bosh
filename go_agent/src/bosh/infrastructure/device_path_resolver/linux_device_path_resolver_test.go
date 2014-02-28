@@ -1,7 +1,6 @@
-package aws_device_path_resolver_test
+package device_path_resolver
 
 import (
-	"bosh/infrastructure/aws_device_path_resolver"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
 	. "github.com/onsi/ginkgo"
@@ -9,19 +8,15 @@ import (
 	"time"
 )
 
-type oracle interface {
-	GetRealDevicePath(devicePath string) (realPath string, err error)
-}
-
-var _ = Describe("AWS Path Resolver", func() {
+var _ = Describe("Path Resolver", func() {
 	var (
 		fs       boshsys.FileSystem
-		resolver oracle
+		resolver DevicePathResolver
 	)
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
-		resolver = aws_device_path_resolver.New(time.Second, fs)
+		resolver = NewDevicePathResolver(time.Second, fs)
 	})
 
 	Context("When a matching /dev/xvdX device is found", func() {
