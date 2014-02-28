@@ -1,7 +1,6 @@
 package platform_test
 
 import (
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	. "bosh/platform"
 	fakecd "bosh/platform/cdutil/fakes"
 	boshcmd "bosh/platform/commands"
@@ -89,7 +88,6 @@ ONBOOT=yes`
 				diskManager,
 				netManager,
 				1*time.Millisecond,
-				boshdevicepathresolver.NewDevicePathResolver(diskWaitTimeout, fs),
 			)
 		})
 

@@ -7,39 +7,39 @@ import (
 	"time"
 )
 
-type devicePathResolver struct {
+type awsDevicePathResolver struct {
 	diskWaitTimeout time.Duration
 	fs              boshsys.FileSystem
 }
 
-func NewDevicePathResolver(diskWaitTimeout time.Duration, fs boshsys.FileSystem) (awsDevicePathResolver devicePathResolver) {
+func NewAwsDevicePathResolver(diskWaitTimeout time.Duration, fs boshsys.FileSystem) (awsDevicePathResolver awsDevicePathResolver) {
 	awsDevicePathResolver.fs = fs
 	awsDevicePathResolver.diskWaitTimeout = diskWaitTimeout
 	return
 }
 
-func (p devicePathResolver) GetRealDevicePath(devicePath string) (realPath string, err error) {
-	stopAfter := time.Now().Add(p.diskWaitTimeout)
+func (devicePathResolver awsDevicePathResolver) GetRealDevicePath(devicePath string) (realPath string, err error) {
+	stopAfter := time.Now().Add(devicePathResolver.diskWaitTimeout)
 
-	realPath, found := p.findPossibleDevice(devicePath)
+	realPath, found := devicePathResolver.findPossibleDevice(devicePath)
 	for !found {
 		if time.Now().After(stopAfter) {
 			err = bosherr.New("Timed out getting real device path for %s", devicePath)
 			return
 		}
 		time.Sleep(100 * time.Millisecond)
-		realPath, found = p.findPossibleDevice(devicePath)
+		realPath, found = devicePathResolver.findPossibleDevice(devicePath)
 	}
 	return
 }
 
-func (p devicePathResolver) findPossibleDevice(devicePath string) (realPath string, found bool) {
+func (devicePathResolver awsDevicePathResolver) findPossibleDevice(devicePath string) (realPath string, found bool) {
 	pathSuffix := strings.Split(devicePath, "/dev/sd")[1]
 
 	possiblePrefixes := []string{"/dev/xvd", "/dev/vd", "/dev/sd"}
 	for _, prefix := range possiblePrefixes {
 		path := prefix + pathSuffix
-		if p.fs.FileExists(path) {
+		if devicePathResolver.fs.FileExists(path) {
 			realPath = path
 			found = true
 			return

@@ -2,7 +2,6 @@ package platform
 
 import (
 	bosherror "bosh/errors"
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	boshlog "bosh/logger"
 	boshcdrom "bosh/platform/cdrom"
 	boshudev "bosh/platform/cdrom/udevdevice"
@@ -40,8 +39,6 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	centosNetManager := boshnet.NewCentosNetManager(fs, runner, 10*time.Second)
 	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, 10*time.Second)
 
-	diskWaitTimeout := 3 * time.Minute
-
 	centos := NewLinuxPlatform(
 		fs,
 		runner,
@@ -54,7 +51,6 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 		linuxDiskManager,
 		centosNetManager,
 		500*time.Millisecond,
-		boshdevicepathresolver.NewDevicePathResolver(diskWaitTimeout, fs),
 	)
 
 	ubuntu := NewLinuxPlatform(
@@ -69,7 +65,6 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 		linuxDiskManager,
 		ubuntuNetManager,
 		500*time.Millisecond,
-		boshdevicepathresolver.NewDevicePathResolver(diskWaitTimeout, fs),
 	)
 
 	p.platforms = map[string]Platform{

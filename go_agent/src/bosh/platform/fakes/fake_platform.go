@@ -90,7 +90,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.FakeVitalsService = fakevitals.NewFakeService()
 	platform.FakeDiskManager = fakedisk.NewFakeDiskManager()
 
-	platform.DevicePathResolver = boshdevicepathresolver.NewDevicePathResolver(1*time.Millisecond, platform.Fs)
+	platform.DevicePathResolver = boshdevicepathresolver.NewFakeDevicePathResolver(1*time.Millisecond, platform.Fs)
 
 	platform.AddUserToGroupsGroups = make(map[string][]string)
 	platform.SetupSshPublicKeys = make(map[string]string)
@@ -129,6 +129,11 @@ func (p *FakePlatform) GetVitalsService() (service boshvitals.Service) {
 
 func (p *FakePlatform) GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver) {
 	return p.DevicePathResolver
+}
+
+func (p *FakePlatform) SetDevicePathResolver(devicePathResolver boshdevicepathresolver.DevicePathResolver) (err error) {
+	p.DevicePathResolver = devicePathResolver
+	return
 }
 
 func (p *FakePlatform) SetupRuntimeConfiguration() (err error) {

@@ -16,7 +16,7 @@ var _ = Describe("Path Resolver", func() {
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
-		resolver = NewDevicePathResolver(time.Second, fs)
+		resolver = NewAwsDevicePathResolver(time.Second, fs)
 	})
 
 	Context("When a matching /dev/xvdX device is found", func() {

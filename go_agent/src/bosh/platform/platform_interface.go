@@ -23,7 +23,8 @@ type Platform interface {
 	GetDiskManager() (diskManager boshdisk.Manager)
 	GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver)
 
-	SetupRuntimeConfiguration() (err error)
+	SetDevicePathResolver(devicePathResolver boshdevicepathresolver.DevicePathResolver) (err error)
+
 	CreateUser(username, password, basePath string) (err error)
 	AddUserToGroups(username string, groups []string) (err error)
 	DeleteEphemeralUsersMatching(regex string) (err error)
@@ -38,6 +39,7 @@ type Platform interface {
 	SetupEphemeralDiskWithPath(devicePath string) (err error)
 	SetupTmpDir() (err error)
 	SetupMonitUser() (err error)
+	SetupRuntimeConfiguration() (err error)
 
 	UnmountPersistentDisk(devicePath string) (didUnmount bool, err error)
 	MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error)

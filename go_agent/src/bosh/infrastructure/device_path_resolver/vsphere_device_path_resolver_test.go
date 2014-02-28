@@ -10,14 +10,14 @@ import (
 var _ = Describe("VSphere Path Resolver", func() {
 	var (
 		fs       *fakesys.FakeFileSystem
-		resolver vsphereDevicePathResolver
+		resolver DevicePathResolver
 	)
 
-	const sleepInterval = time.Millisecond * 5
+	const sleepInterval = time.Millisecond * 1
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
-		resolver = NewVsphereDevicePathResolver(time.Second, fs)
+		resolver = NewVsphereDevicePathResolver(sleepInterval, fs)
 		fs.SetGlob("/sys/bus/scsi/devices/*:0:0:0/block/*", []string{
 			"/sys/bus/scsi/devices/0:0:0:0/block/sr0",
 			"/sys/bus/scsi/devices/6:0:0:0/block/sdd",
@@ -58,7 +58,7 @@ var _ = Describe("VSphere Path Resolver", func() {
 				devicePath, err := resolver.GetRealDevicePath("fake-disk-id")
 				runningTime := time.Since(startTime)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(runningTime >= sleepInterval*5).To(BeTrue())
+				Expect(runningTime >= sleepInterval).To(BeTrue())
 				Expect(devicePath).To(Equal("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf"))
 			})
 		})

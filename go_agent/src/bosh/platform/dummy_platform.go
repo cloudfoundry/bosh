@@ -10,7 +10,6 @@ import (
 	boshdir "bosh/settings/directories"
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
-	"time"
 )
 
 type dummyPlatform struct {
@@ -36,7 +35,6 @@ func NewDummyPlatform(
 	platform.fs = fs
 	platform.cmdRunner = cmdRunner
 	platform.dirProvider = dirProvider
-	platform.devicePathResolver = boshdevicepathresolver.NewDevicePathResolver(1*time.Millisecond, platform.fs)
 
 	platform.compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 	platform.copier = boshcmd.NewCpCopier(cmdRunner, fs)
@@ -75,6 +73,11 @@ func (p dummyPlatform) GetVitalsService() (service boshvitals.Service) {
 
 func (p dummyPlatform) GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver) {
 	return p.devicePathResolver
+}
+
+func (p dummyPlatform) SetDevicePathResolver(devicePathResolver boshdevicepathresolver.DevicePathResolver) (err error) {
+	p.devicePathResolver = devicePathResolver
+	return
 }
 
 func (p dummyPlatform) SetupRuntimeConfiguration() (err error) {

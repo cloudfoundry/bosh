@@ -72,8 +72,9 @@ var _ = Describe("LinuxPlatform", func() {
 				diskManager,
 				netManager,
 				sleepInterval,
-				boshdevicepathresolver.NewDevicePathResolver(diskWaitTimeout, fs),
 			)
+			devicePathResolver := boshdevicepathresolver.NewAwsDevicePathResolver(diskWaitTimeout, fs)
+			platform.SetDevicePathResolver(devicePathResolver)
 		})
 
 		Describe("SetupRuntimeConfiguration", func() {

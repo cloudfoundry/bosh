@@ -51,21 +51,19 @@ func NewLinuxPlatform(
 	diskManager boshdisk.Manager,
 	netManager boshnet.NetManager,
 	diskScanDuration time.Duration,
-	devicePathResolver boshdevicepathresolver.DevicePathResolver,
-) (platform linux) {
-	platform = linux{
-		fs:                 fs,
-		cmdRunner:          cmdRunner,
-		collector:          collector,
-		compressor:         compressor,
-		copier:             copier,
-		dirProvider:        dirProvider,
-		vitalsService:      vitalsService,
-		cdutil:             cdutil,
-		diskManager:        diskManager,
-		netManager:         netManager,
-		diskScanDuration:   diskScanDuration,
-		devicePathResolver: devicePathResolver,
+) (platform *linux) {
+	platform = &linux{
+		fs:               fs,
+		cmdRunner:        cmdRunner,
+		collector:        collector,
+		compressor:       compressor,
+		copier:           copier,
+		dirProvider:      dirProvider,
+		vitalsService:    vitalsService,
+		cdutil:           cdutil,
+		diskManager:      diskManager,
+		netManager:       netManager,
+		diskScanDuration: diskScanDuration,
 	}
 	return
 }
@@ -106,6 +104,11 @@ func (p linux) GetFileContentsFromCDROM(fileName string) (contents []byte, err e
 
 func (p linux) GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver) {
 	return p.devicePathResolver
+}
+
+func (p *linux) SetDevicePathResolver(devicePathResolver boshdevicepathresolver.DevicePathResolver) (err error) {
+	p.devicePathResolver = devicePathResolver
+	return
 }
 
 func (p linux) SetupManualNetworking(networks boshsettings.Networks) (err error) {

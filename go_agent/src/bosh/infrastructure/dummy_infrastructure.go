@@ -2,24 +2,33 @@ package infrastructure
 
 import (
 	bosherr "bosh/errors"
+	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
 	"encoding/json"
 	"path/filepath"
+	"time"
 )
 
 type dummyInfrastructure struct {
-	fs          boshsys.FileSystem
-	dirProvider boshdir.DirectoriesProvider
-	platform    boshplatform.Platform
+	fs                 boshsys.FileSystem
+	dirProvider        boshdir.DirectoriesProvider
+	platform           boshplatform.Platform
+	devicePathResolver boshdevicepathresolver.DevicePathResolver
+	diskWaitTimeout    time.Duration
 }
 
 func NewDummyInfrastructure(fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider, platform boshplatform.Platform) (inf dummyInfrastructure) {
 	inf.fs = fs
 	inf.dirProvider = dirProvider
 	inf.platform = platform
+
+	inf.diskWaitTimeout = 1 * time.Millisecond
+	inf.devicePathResolver = boshdevicepathresolver.NewDummyDevicePathResolver(inf.diskWaitTimeout, inf.platform.GetFs())
+	inf.platform.SetDevicePathResolver(inf.devicePathResolver)
+
 	return
 }
 

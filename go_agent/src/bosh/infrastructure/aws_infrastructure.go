@@ -17,17 +17,22 @@ import (
 )
 
 type awsInfrastructure struct {
-	metadataHost    string
-	resolver        dnsResolver
-	platform        boshplatform.Platform
-	diskWaitTimeout time.Duration
+	metadataHost       string
+	resolver           dnsResolver
+	platform           boshplatform.Platform
+	diskWaitTimeout    time.Duration
+	devicePathResolver boshdevicepathresolver.DevicePathResolver
 }
 
-func NewAwsInfrastructure(metadataHost string, resolver dnsResolver, platform boshplatform.Platform) (infrastructure awsInfrastructure) {
-	infrastructure.metadataHost = metadataHost
-	infrastructure.resolver = resolver
-	infrastructure.platform = platform
-	infrastructure.diskWaitTimeout = 500 * time.Millisecond
+func NewAwsInfrastructure(metadataHost string, resolver dnsResolver, platform boshplatform.Platform) (inf awsInfrastructure) {
+	inf.metadataHost = metadataHost
+	inf.resolver = resolver
+	inf.platform = platform
+
+	inf.diskWaitTimeout = 500 * time.Millisecond
+	inf.devicePathResolver = boshdevicepathresolver.NewAwsDevicePathResolver(inf.diskWaitTimeout, inf.platform.GetFs())
+	inf.platform.SetDevicePathResolver(inf.devicePathResolver)
+
 	return
 }
 
@@ -217,8 +222,7 @@ func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (settings bosh
 func (inf awsInfrastructure) MountPersistentDisk(volumeId string, mountPoint string) (err error) {
 	inf.platform.GetFs().MkdirAll(mountPoint, os.FileMode(0700))
 
-	devicePathResolver := boshdevicepathresolver.NewDevicePathResolver(inf.diskWaitTimeout, inf.platform.GetFs())
-	realPath, err := devicePathResolver.GetRealDevicePath(volumeId)
+	realPath, err := inf.devicePathResolver.GetRealDevicePath(volumeId)
 
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")
