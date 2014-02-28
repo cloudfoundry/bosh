@@ -14,14 +14,10 @@ module Bosh::Stemcell
   class BuilderCommand
     extend Forwardable
 
-    STEMCELL_BUILDER_SOURCE_DIR = File.join(File.expand_path('../../../../..', __FILE__), 'stemcell_builder')
-    STEMCELL_SPECS_DIR = File.expand_path('../../..', File.dirname(__FILE__))
-
     def initialize(env, definition, version, release_tarball_path)
       @environment = env
       @definition = definition
-      @helper = BuilderCommandHelper.new(env, definition, version, release_tarball_path,
-                                         STEMCELL_BUILDER_SOURCE_DIR, STEMCELL_SPECS_DIR)
+      @helper = BuilderCommandHelper.new(env, definition, version, release_tarball_path)
       @shell = Bosh::Core::Shell.new
     end
 

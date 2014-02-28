@@ -9,7 +9,7 @@ module Bosh::Stemcell
   describe BuilderCommandHelper do
     include FakeFS::SpecHelpers
 
-    subject { described_class.new(nil, definition, nil, nil, stemcell_builder_source_dir, stemcell_specs_dir) }
+    subject { described_class.new(nil, definition, nil, nil) }
 
     let(:definition) do
       instance_double(
@@ -59,7 +59,6 @@ module Bosh::Stemcell
       }
     end
 
-
     let(:operating_system) do
       instance_double('Bosh::Stemcell::OperatingSystem::Base',
                       name: 'fake-operating-system-name')
@@ -71,6 +70,8 @@ module Bosh::Stemcell
     before do
       allow(Bosh::Core::Shell).to receive(:new).and_return(shell)
       allow(BuilderOptions).to receive(:new).and_return(stemcell_builder_options)
+      stub_const('Bosh::Stemcell::BuilderCommandHelper::STEMCELL_BUILDER_SOURCE_DIR', stemcell_builder_source_dir)
+      stub_const('Bosh::Stemcell::BuilderCommandHelper::STEMCELL_SPECS_DIR', stemcell_specs_dir)
     end
 
     describe '#sanitize' do
@@ -106,17 +107,17 @@ module Bosh::Stemcell
 
     describe '#prepare_build_root' do
       it 'creates the build root' do
-        expect { subject.prepare_build_root}.to change {
-          Dir.exists?(File.join(root_dir, 'build'))
-        }.from(false).to(true)
+        expect {
+          subject.prepare_build_root
+        }.to change { Dir.exists?(File.join(root_dir, 'build')) }.from(false).to(true)
       end
     end
 
     describe '#prepare_build_path' do
       it 'creates the build path' do
-        expect { subject.prepare_build_path}.to change {
-          Dir.exists?(File.join(root_dir, 'build', 'build'))
-        }.from(false).to(true)
+        expect {
+          subject.prepare_build_path
+        }.to change { Dir.exists?(File.join(root_dir, 'build', 'build')) }.from(false).to(true)
       end
     end
 
@@ -135,17 +136,17 @@ module Bosh::Stemcell
         FileUtils.mkdir_p(stemcell_builder_source_dir)
         FileUtils.touch(File.join(stemcell_builder_source_dir, 'dummy-file'))
 
-        expect { subject.copy_stemcell_builder_to_build_path }.to change {
-          Dir.entries(File.join(root_dir, 'build', 'build')).size
-        }.from(2).to(3)
+        expect {
+          subject.copy_stemcell_builder_to_build_path
+        }.to change { Dir.entries(File.join(root_dir, 'build', 'build')).size }.from(2).to(3)
       end
     end
 
     describe '#prepare_work_root' do
       it 'creates the work root' do
-        expect { subject.prepare_work_root}.to change {
-          Dir.exists?(File.join(root_dir, 'work'))
-        }.from(false).to(true)
+        expect {
+          subject.prepare_work_root
+        }.to change { Dir.exists?(File.join(root_dir, 'work')) }.from(false).to(true)
       end
     end
 
@@ -164,7 +165,7 @@ module Bosh::Stemcell
         expected_rspec_command = [
           "cd #{stemcell_specs_dir};",
           "STEMCELL_IMAGE=#{File.join(root_dir, 'work', 'work', 'fake-root-disk-image.raw')}",
-          "bundle exec rspec -fd",
+          'bundle exec rspec -fd',
           "spec/stemcells/#{operating_system.name}_spec.rb",
           "spec/stemcells/#{agent.name}_agent_spec.rb",
           "spec/stemcells/#{infrastructure.name}_spec.rb",

@@ -6,8 +6,10 @@ module Bosh::Stemcell
   class BuilderCommandHelper
     extend Forwardable
 
-    def initialize(env, definition, version, release_tarball_path,
-      stemcell_builder_source_dir, stemcell_specs_dir)
+    STEMCELL_BUILDER_SOURCE_DIR = File.join(File.expand_path('../../../../..', __FILE__), 'stemcell_builder')
+    STEMCELL_SPECS_DIR = File.expand_path('../../..', File.dirname(__FILE__))
+
+    def initialize(env, definition, version, release_tarball_path)
       @environment = env
       @definition = definition
       @stemcell_builder_options = BuilderOptions.new(
@@ -17,8 +19,6 @@ module Bosh::Stemcell
         release_tarball_path,
       )
       @shell = Bosh::Core::Shell.new
-      @stemcell_builder_source_dir = stemcell_builder_source_dir
-      @stemcell_specs_dir = stemcell_specs_dir
     end
 
     def chroot_dir
@@ -29,11 +29,11 @@ module Bosh::Stemcell
       FileUtils.rm(Dir.glob('*.tgz'))
 
       shell.run("sudo umount #{File.join(work_path, 'mnt/tmp/grub', settings['stemcell_image_name'])} 2> /dev/null",
-                {:ignore_failures => true})
+                { ignore_failures: true })
 
-      shell.run("sudo umount #{image_mount_point} 2> /dev/null", {:ignore_failures => true})
+      shell.run("sudo umount #{image_mount_point} 2> /dev/null", { ignore_failures: true })
 
-      shell.run("sudo rm -rf #{base_directory}", {:ignore_failures => true})
+      shell.run("sudo rm -rf #{base_directory}", { ignore_failures: true })
     end
 
     def prepare_build_root
@@ -47,7 +47,7 @@ module Bosh::Stemcell
     end
 
     def copy_stemcell_builder_to_build_path
-      FileUtils.cp_r(Dir.glob("#{stemcell_builder_source_dir}/*"), build_path, preserve: true, verbose: true)
+      FileUtils.cp_r(Dir.glob("#{STEMCELL_BUILDER_SOURCE_DIR}/*"), build_path, preserve: true, verbose: true)
     end
 
     def prepare_work_root
@@ -68,7 +68,7 @@ module Bosh::Stemcell
 
     def rspec_command
         [
-          "cd #{stemcell_specs_dir};",
+          "cd #{STEMCELL_SPECS_DIR};",
           "STEMCELL_IMAGE=#{image_file_path}",
           "bundle exec rspec -fd#{exclude_exclusions}",
           "spec/stemcells/#{operating_system.name}_spec.rb",
@@ -95,10 +95,7 @@ module Bosh::Stemcell
       :environment,
       :definition,
       :stemcell_builder_options,
-      :stemcell_builder_source_dir,
-      :stemcell_specs_dir,
     )
-
 
     def exclude_exclusions
       case infrastructure.name
