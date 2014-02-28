@@ -230,7 +230,7 @@ module Bosh::Stemcell
 
             it 'has the correct stages' do
               expect(stage_collection.all_stages)
-              .to eq(centos_stages + agent_stages + vsphere_centos_infrastructure_stages)
+                .to eq(centos_stages + agent_stages + vsphere_centos_infrastructure_stages)
             end
           end
         end
@@ -243,7 +243,7 @@ module Bosh::Stemcell
 
             it 'has the correct stages' do
               expect(stage_collection.all_stages)
-              .to eq(ubuntu_stages + agent_stages + vcloud_ubuntu_infrastructure_stages)
+                .to eq(ubuntu_stages + agent_stages + vcloud_ubuntu_infrastructure_stages)
             end
           end
 
@@ -252,7 +252,7 @@ module Bosh::Stemcell
 
             it 'has the correct stages' do
               expect(stage_collection.all_stages)
-              .to eq(centos_stages + agent_stages + vcloud_centos_infrastructure_stages)
+                .to eq(centos_stages + agent_stages + vcloud_centos_infrastructure_stages)
             end
           end
         end
@@ -321,7 +321,7 @@ module Bosh::Stemcell
 
             it 'has the correct stages' do
               expect(stage_collection.all_stages)
-              .to eq(ubuntu_stages + agent_stages + vsphere_ubuntu_infrastructure_stages)
+                .to eq(ubuntu_stages + agent_stages + vsphere_ubuntu_infrastructure_stages)
             end
           end
 
@@ -330,7 +330,7 @@ module Bosh::Stemcell
 
             it 'has the correct stages' do
               expect(stage_collection.all_stages)
-              .to eq(centos_stages + agent_stages + vsphere_centos_infrastructure_stages)
+                .to eq(centos_stages + agent_stages + vsphere_centos_infrastructure_stages)
             end
           end
         end
@@ -343,7 +343,7 @@ module Bosh::Stemcell
 
             it 'has the correct stages' do
               expect(stage_collection.all_stages)
-              .to eq(ubuntu_stages + agent_stages + vcloud_ubuntu_infrastructure_stages)
+                .to eq(ubuntu_stages + agent_stages + vcloud_ubuntu_infrastructure_stages)
             end
           end
 
@@ -352,7 +352,7 @@ module Bosh::Stemcell
 
             it 'has the correct stages' do
               expect(stage_collection.all_stages)
-              .to eq(centos_stages + agent_stages + vcloud_centos_infrastructure_stages)
+                .to eq(centos_stages + agent_stages + vcloud_centos_infrastructure_stages)
             end
           end
         end
