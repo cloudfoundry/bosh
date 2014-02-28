@@ -53,5 +53,5 @@ func (inf dummyInfrastructure) GetEphemeralDiskPath(devicePath string) (realPath
 }
 
 func (inf dummyInfrastructure) MountPersistentDisk(volumeId string, mountPoint string) (err error) {
-	return nil
+	return
 }
