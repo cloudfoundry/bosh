@@ -22,7 +22,7 @@ module Bosh::Dev
       { 'aws'       => Bosh::Dev::Aws::RunnerBuilder.new,
         'openstack' => Bosh::Dev::Openstack::RunnerBuilder.new,
         'vsphere'   => Bosh::Dev::VSphere::RunnerBuilder.new,
-        'vcloud'   => Bosh::Dev::VCloud::RunnerBuilder.new,
+        'vcloud'    => Bosh::Dev::VCloud::RunnerBuilder.new,
       }[name]
     end
 

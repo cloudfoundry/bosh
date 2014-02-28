@@ -19,9 +19,9 @@ module Bosh::Dev::VCloud
       let(:client) { instance_double('VCloudSdk::Client', catalog_exists?: false) }
 
       before { client.stub(:find_vdc_by_name).with('fake-vdc').and_return(vdc) }
-      let(:vdc) { double('vdc', find_vapp_by_name: vapp) }
-      let(:vapp) { double('vapp', power_off: nil, delete: nil) }
-      let(:catalog) { double('catalog') }
+      let(:vdc) { instance_double('VCloudSdk::VDC', find_vapp_by_name: vapp) }
+      let(:vapp) { instance_double('VCloudSdk::VApp', power_off: nil, delete: nil) }
+      let(:catalog) { instance_double('VCloudSdk::Catalog') }
 
       before { manifest.stub(:to_h).and_return(config) }
       let(:config) do
@@ -57,7 +57,7 @@ module Bosh::Dev::VCloud
       context 'when vapp does not exist' do
         it 'does not delete anything' do
           vdc.should_receive(:find_vapp_by_name).with('vapp-name').and_raise(VCloudSdk::ObjectNotFoundError)
-          logger.should_receive(:info).with('No vapp was deleted during clean up. Details: VCloudSdk::ObjectNotFoundError')
+          logger.should_receive(:info).with('No vapp was deleted during clean up. Details: #<VCloudSdk::ObjectNotFoundError: VCloudSdk::ObjectNotFoundError>')
 
           subject.clean
         end

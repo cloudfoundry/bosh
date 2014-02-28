@@ -12,11 +12,10 @@ module Bosh::Dev::VCloud
       @env = env
       @manifest = manifest
       @logger = Logger.new($stderr)
-
-      initialize_client_and_vdc
     end
 
     def clean
+      initialize_client_and_vdc
       delete_vapp
       clear_catalogs
     end
@@ -25,25 +24,25 @@ module Bosh::Dev::VCloud
 
     def initialize_client_and_vdc
       vcds = @manifest.to_h['cloud']['properties']['vcds']
-      raise ArgumentError, 'Invalid number of arguments' unless vcds && vcds.size == 1
+      raise ArgumentError, 'Must have exactly one vCD' unless vcds && vcds.size == 1
 
       vcd = vcds[0]
-      @client = VCloudSdk::Client.new vcd['url'],
+      @client = VCloudSdk::Client.new(vcd['url'],
                                      "#{vcd['user']}@#{vcd['entities']['organization']}",
                                      vcd['password'],
                                      {},
-                                     @logger
+                                     @logger)
 
-      @vdc = @client.find_vdc_by_name vcd['entities']['virtual_datacenter']
+      @vdc = @client.find_vdc_by_name(vcd['entities']['virtual_datacenter'])
     end
 
     def delete_vapp
-      vapp = @vdc.find_vapp_by_name @env['BOSH_VCLOUD_VAPP_NAME']
+      vapp = @vdc.find_vapp_by_name(@env['BOSH_VCLOUD_VAPP_NAME'])
       vapp.power_off
       vapp.delete
-      @logger.info("Vapp '#{@env['BOSH_VCLOUD_VAPP_NAME']}' was deleted during clean up. ")
+      @logger.info("Vapp '#{@env['BOSH_VCLOUD_VAPP_NAME']}' was deleted during clean up.")
     rescue VCloudSdk::ObjectNotFoundError => e
-      @logger.info("No vapp was deleted during clean up. Details: #{e}")
+      @logger.info("No vapp was deleted during clean up. Details: #{e.inspect}")
     end
 
     def clear_catalogs
@@ -56,7 +55,7 @@ module Bosh::Dev::VCloud
 
       catalog = @client.find_catalog_by_name(catalog_name)
       catalog.delete_all_items
-      @logger.info("Deleted all itemd from '#{catalog_name}' catalog during clean up. ")
+      @logger.info("Deleted all items from '#{catalog_name}' catalog during clean up.")
     end
   end
 end

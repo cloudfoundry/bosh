@@ -29,7 +29,7 @@ properties:
     name: bosh-infra-hyper-os
     version: 13
   instances: 1
-  mbus: nats://nats:0b450ada9f830085e2cdeff6@ip:4222
+  mbus: nats://nats:nats@ip:4222
   network:
     cidr: net_cidr
     reserved:
