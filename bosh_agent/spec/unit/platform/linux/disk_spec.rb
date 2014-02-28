@@ -22,7 +22,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
   before { Bosh::Agent::Mounter.stub(:new).and_return(mounter) }
 
   ['vsphere', 'vcloud'].each do |infra|
-    context 'vSphere' do
+    context infra do
       let(:settings) { { 'disks' => { 'persistent' => { 2 => '333' } } } }
       let(:infrastructure_name) { infra }
 
