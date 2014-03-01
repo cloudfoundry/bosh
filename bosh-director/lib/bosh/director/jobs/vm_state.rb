@@ -41,7 +41,7 @@ module Bosh::Director
         job_state = nil
         resource_pool = nil
         job_vitals = nil
-        index = nil
+        job_index = nil
 
         begin
           agent = AgentClient.with_defaults(vm.agent_id, :timeout => TIMEOUT)
@@ -50,7 +50,7 @@ module Bosh::Director
             ips << network["ip"]
           end
 
-          index = get_index(agent_state)
+          job_index = get_index(agent_state)
 
           job_name = agent_state["job"]["name"] if agent_state["job"]
           job_state = agent_state["job_state"]
@@ -63,8 +63,6 @@ module Bosh::Director
         rescue Bosh::Director::RpcTimeout
           job_state = "unresponsive agent"
         end
-
-        instance = Models::Instance.find(deployment_id: @deployment_id, job: job_name, index: index)
 
         if @domain
           ips.each do |ip|
@@ -79,11 +77,11 @@ module Bosh::Director
           :dns => dns_records.flatten,
           :agent_id => vm.agent_id,
           :job_name => job_name,
-          :index => index,
+          :index => job_index,
           :job_state => job_state,
           :resource_pool => resource_pool,
           :vitals => job_vitals,
-          :resurrection_paused => instance ? instance.resurrection_paused  : nil,
+          :resurrection_paused => vm.instance ? vm.instance.resurrection_paused  : nil,
         }
       end
 
@@ -91,6 +89,7 @@ module Bosh::Director
 
       def get_index(agent_state)
         index = agent_state["index"]
+
         # Postgres cannot coerce an empty string to integer, and fails on Models::Instance.find
         index = nil if index.is_a?(String) && index.empty?
 
