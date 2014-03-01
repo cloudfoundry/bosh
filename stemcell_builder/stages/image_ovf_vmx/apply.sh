@@ -7,9 +7,9 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-vsphere=$work/vsphere
+ovf=$work/ovf
 
-mkdir -p $vsphere
+mkdir -p $ovf
 
 disk_size=$(($(stat --printf="%s" $work/${stemcell_image_name}) / (1024*1024)))
 
@@ -20,7 +20,7 @@ disk_sectors=$(($disk_size * 2048))
 disk_cylinders=$(($disk_sectors / 16065))
 
 # Output disk description
-cat > $vsphere/root.vmdk <<EOS
+cat > $ovf/root.vmdk <<EOS
 version=1
 CID=ffffffff
 parentCID=ffffffff
@@ -45,7 +45,7 @@ vm_hostname=ubuntu
 vm_arch=amd64
 vm_guestos=ubuntu-64
 
-cat > $vsphere/$vm_hostname.vmx <<EOS
+cat > $ovf/$vm_hostname.vmx <<EOS
 config.version = "8"
 virtualHW.version = 7
 floppy0.present = "true"

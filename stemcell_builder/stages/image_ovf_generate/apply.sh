@@ -9,8 +9,8 @@ source $base_dir/lib/prelude_apply.bash
 
 mkdir -p $work/stemcell
 
-pushd $work/vsphere
-$image_vsphere_ovf_ovftool_path *.vmx image.ovf
+pushd $work/ovf
+$image_ovftool_path *.vmx image.ovf
 
 # ovftool 3 introduces a bug, which we need to correct, or it won't load in vSphere
 OLD_OVF_SHA=$(sha1sum image.ovf | cut -d ' ' -f 1)

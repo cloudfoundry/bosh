@@ -9,6 +9,6 @@ source $base_dir/lib/prelude_apply.bash
 
 mkdir -p $work/stemcell
 
-pushd $work/vsphere
+pushd $work/ovf
 tar zcf ../stemcell/image image*
 popd

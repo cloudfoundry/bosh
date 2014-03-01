@@ -141,8 +141,8 @@ module Bosh::Stemcell
 
           it_sets_correct_environment_variables
 
-          it 'has no "image_vsphere_ovf_ovftool_path" key' do
-            expect(stemcell_builder_options.default).not_to have_key('image_vsphere_ovf_ovftool_path')
+          it 'has no "image_ovftool_path" key' do
+            expect(stemcell_builder_options.default).not_to have_key('image_ovftool_path')
           end
         end
 
@@ -152,19 +152,19 @@ module Bosh::Stemcell
 
           it_sets_correct_environment_variables
 
-          it 'has an "image_vsphere_ovf_ovftool_path" key' do
+          it 'has an "image_ovftool_path" key' do
             result = stemcell_builder_options.default
 
-            expect(result['image_vsphere_ovf_ovftool_path']).to be_nil
+            expect(result['image_ovftool_path']).to be_nil
           end
 
           context 'if you have OVFTOOL set in the environment' do
             let(:env) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
 
-            it 'sets image_vsphere_ovf_ovftool_path' do
+            it 'sets image_ovftool_path' do
               result = stemcell_builder_options.default
 
-              expect(result['image_vsphere_ovf_ovftool_path']).to eq('fake_ovf_tool_path')
+              expect(result['image_ovftool_path']).to eq('fake_ovf_tool_path')
             end
           end
         end
@@ -175,19 +175,19 @@ module Bosh::Stemcell
 
           it_sets_correct_environment_variables
 
-          it 'has an "image_vcloud_ovf_ovftool_path" key' do
+          it 'has an "image_ovftool_path" key' do
             result = stemcell_builder_options.default
 
-            expect(result['image_vcloud_ovf_ovftool_path']).to be_nil
+            expect(result['image_ovftool_path']).to be_nil
           end
 
           context 'if you have OVFTOOL set in the environment' do
             let(:env) { { 'OVFTOOL' => 'fake_ovf_tool_path' } }
 
-            it 'sets image_vcloud_ovf_ovftool_path' do
+            it 'sets image_ovftool_path' do
               result = stemcell_builder_options.default
 
-              expect(result['image_vcloud_ovf_ovftool_path']).to eq('fake_ovf_tool_path')
+              expect(result['image_ovftool_path']).to eq('fake_ovf_tool_path')
             end
           end
         end
@@ -198,8 +198,8 @@ module Bosh::Stemcell
 
           it_sets_correct_environment_variables
 
-          it 'has no "image_vsphere_ovf_ovftool_path" key' do
-            expect(stemcell_builder_options.default).not_to have_key('image_vsphere_ovf_ovftool_path')
+          it 'has no "image_ovftool_path" key' do
+            expect(stemcell_builder_options.default).not_to have_key('image_ovftool_path')
           end
         end
       end

@@ -103,9 +103,9 @@ module Bosh::Stemcell
         :bosh_harden,
         :image_create,
         :image_install_grub,
-        :image_vsphere_vmx,
-        :image_vsphere_ovf,
-        :image_vsphere_prepare_stemcell,
+        :image_ovf_vmx,
+        :image_ovf_generate,
+        :image_ovf_prepare_stemcell,
         :stemcell
       ]
     }
@@ -119,9 +119,9 @@ module Bosh::Stemcell
         :bosh_harden,
         :image_create,
         :image_install_grub,
-        :image_vsphere_vmx,
-        :image_vsphere_ovf,
-        :image_vsphere_prepare_stemcell,
+        :image_ovf_vmx,
+        :image_ovf_generate,
+        :image_ovf_prepare_stemcell,
         :stemcell
       ]
     }
@@ -135,9 +135,9 @@ module Bosh::Stemcell
           :bosh_harden,
           :image_create,
           :image_install_grub,
-          :image_vcloud_vmx,
-          :image_vcloud_ovf,
-          :image_vcloud_prepare_stemcell,
+          :image_ovf_vmx,
+          :image_ovf_generate,
+          :image_ovf_prepare_stemcell,
           :stemcell
       ]
     }
@@ -151,9 +151,9 @@ module Bosh::Stemcell
           :bosh_harden,
           :image_create,
           :image_install_grub,
-          :image_vcloud_vmx,
-          :image_vcloud_ovf,
-          :image_vcloud_prepare_stemcell,
+          :image_ovf_vmx,
+          :image_ovf_generate,
+          :image_ovf_prepare_stemcell,
           :stemcell
       ]
     }

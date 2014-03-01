@@ -23,8 +23,8 @@ bosh_users_password=c1oudc0w
 # parameters for `image_create`
 # image_create_disk_size=2048
 
-# parameters for `image_vsphere_ovf`
-# image_vsphere_ovf_ovftool_path=/path/to/ovftool
+# parameters for `image_ovf_generate`
+# image_ovftool_path=/path/to/ovftool
 
 # parameters for `stemcell`
 # stemcell_name=untitled
