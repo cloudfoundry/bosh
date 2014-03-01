@@ -149,12 +149,6 @@ module SpecHelper
       Bosh::Director::Config.logger = @logger
     end
   end
-
-  RSpec::Matchers.define :json_match do |matcher|
-    match do |actual|
-      matcher.matches? JSON.parse(actual)
-    end
-  end
 end
 
 SpecHelper.init
