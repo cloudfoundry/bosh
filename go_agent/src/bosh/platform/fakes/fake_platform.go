@@ -82,7 +82,7 @@ type FakePlatform struct {
 
 func NewFakePlatform() (platform *FakePlatform) {
 	platform = new(FakePlatform)
-	platform.Fs = &fakesys.FakeFileSystem{}
+	platform.Fs = fakesys.NewFakeFileSystem()
 	platform.Runner = &fakesys.FakeCmdRunner{}
 	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{}
 	platform.FakeCompressor = fakecmd.NewFakeCompressor()

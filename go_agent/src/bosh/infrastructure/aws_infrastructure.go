@@ -13,24 +13,21 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"time"
 )
 
 type awsInfrastructure struct {
 	metadataHost       string
 	resolver           dnsResolver
 	platform           boshplatform.Platform
-	diskWaitTimeout    time.Duration
 	devicePathResolver boshdevicepathresolver.DevicePathResolver
 }
 
-func NewAwsInfrastructure(metadataHost string, resolver dnsResolver, platform boshplatform.Platform) (inf awsInfrastructure) {
+func NewAwsInfrastructure(metadataHost string, resolver dnsResolver, platform boshplatform.Platform,
+	devicePathResolver boshdevicepathresolver.DevicePathResolver) (inf awsInfrastructure) {
 	inf.metadataHost = metadataHost
 	inf.resolver = resolver
 	inf.platform = platform
-
-	inf.diskWaitTimeout = 500 * time.Millisecond
-	inf.devicePathResolver = boshdevicepathresolver.NewAwsDevicePathResolver(inf.diskWaitTimeout, inf.platform.GetFs())
+	inf.devicePathResolver = devicePathResolver
 	inf.platform.SetDevicePathResolver(inf.devicePathResolver)
 
 	return

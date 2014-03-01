@@ -9,7 +9,6 @@ import (
 	boshsys "bosh/system"
 	"encoding/json"
 	"path/filepath"
-	"time"
 )
 
 type dummyInfrastructure struct {
@@ -17,16 +16,15 @@ type dummyInfrastructure struct {
 	dirProvider        boshdir.DirectoriesProvider
 	platform           boshplatform.Platform
 	devicePathResolver boshdevicepathresolver.DevicePathResolver
-	diskWaitTimeout    time.Duration
 }
 
-func NewDummyInfrastructure(fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider, platform boshplatform.Platform) (inf dummyInfrastructure) {
+func NewDummyInfrastructure(fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider,
+	platform boshplatform.Platform,
+	devicePathResolver boshdevicepathresolver.DevicePathResolver) (inf dummyInfrastructure) {
 	inf.fs = fs
 	inf.dirProvider = dirProvider
 	inf.platform = platform
-
-	inf.diskWaitTimeout = 1 * time.Millisecond
-	inf.devicePathResolver = boshdevicepathresolver.NewDummyDevicePathResolver(inf.diskWaitTimeout, inf.platform.GetFs())
+	inf.devicePathResolver = devicePathResolver
 	inf.platform.SetDevicePathResolver(inf.devicePathResolver)
 
 	return

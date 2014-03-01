@@ -2,25 +2,29 @@ package infrastructure_test
 
 import (
 	. "bosh/infrastructure"
+	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"time"
 )
 
 func init() {
 	Describe("vSphere Infrastructure", func() {
 		var (
-			vsphere  Infrastructure
-			platform *fakeplatform.FakePlatform
+			vsphere                Infrastructure
+			platform               *fakeplatform.FakePlatform
+			fakeDevicePathResolver *boshdevicepathresolver.FakeDevicePathResolver
 		)
 
 		BeforeEach(func() {
 			platform = fakeplatform.NewFakePlatform()
+			fakeDevicePathResolver = boshdevicepathresolver.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
 		})
 
 		JustBeforeEach(func() {
-			vsphere = NewVsphereInfrastructure(platform)
+			vsphere = NewVsphereInfrastructure(platform, fakeDevicePathResolver)
 		})
 
 		Describe("GetSettings", func() {

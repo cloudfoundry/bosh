@@ -5,17 +5,20 @@ import (
 	"time"
 )
 
-type fakeDevicePathResolver struct {
+type FakeDevicePathResolver struct {
 	diskWaitTimeout time.Duration
 	fs              boshsys.FileSystem
+	RealDevicePath  string
 }
 
-func NewFakeDevicePathResolver(diskWaitTimeout time.Duration, fs boshsys.FileSystem) (fakeDevicePathResolver fakeDevicePathResolver) {
+func NewFakeDevicePathResolver(diskWaitTimeout time.Duration, fs boshsys.FileSystem) (fakeDevicePathResolver *FakeDevicePathResolver) {
+	fakeDevicePathResolver = &FakeDevicePathResolver{}
 	fakeDevicePathResolver.fs = fs
 	fakeDevicePathResolver.diskWaitTimeout = diskWaitTimeout
 	return
 }
 
-func (devicePathResolver fakeDevicePathResolver) GetRealDevicePath(devicePath string) (realPath string, err error) {
-	return devicePath, nil
+func (devicePathResolver *FakeDevicePathResolver) GetRealDevicePath(devicePath string) (realPath string, err error) {
+	realPath = devicePathResolver.RealDevicePath
+	return
 }

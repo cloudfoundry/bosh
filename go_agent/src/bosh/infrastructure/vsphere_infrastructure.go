@@ -2,17 +2,25 @@ package infrastructure
 
 import (
 	bosherr "bosh/errors"
+	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	"encoding/json"
+	"time"
 )
 
 type vsphereInfrastructure struct {
-	platform boshplatform.Platform
+	platform           boshplatform.Platform
+	diskWaitTimeout    time.Duration
+	devicePathResolver boshdevicepathresolver.DevicePathResolver
 }
 
-func NewVsphereInfrastructure(platform boshplatform.Platform) (inf vsphereInfrastructure) {
+func NewVsphereInfrastructure(platform boshplatform.Platform, devicePathResolver boshdevicepathresolver.DevicePathResolver) (inf vsphereInfrastructure) {
 	inf.platform = platform
+
+	inf.devicePathResolver = devicePathResolver
+	inf.platform.SetDevicePathResolver(inf.devicePathResolver)
+
 	return
 }
 

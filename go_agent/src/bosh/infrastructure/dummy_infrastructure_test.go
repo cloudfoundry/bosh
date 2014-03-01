@@ -2,6 +2,7 @@ package infrastructure_test
 
 import (
 	. "bosh/infrastructure"
+	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
@@ -10,6 +11,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
 	"path/filepath"
+	"time"
 )
 
 func init() {
@@ -19,6 +21,7 @@ func init() {
 			fs := fakefs.NewFakeFileSystem()
 			dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
 			platform := fakeplatform.NewFakePlatform()
+			fakeDevicePathResolver := boshdevicepathresolver.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
 
 			settingsPath := filepath.Join(dirProvider.BaseDir(), "bosh", "settings.json")
 
@@ -26,7 +29,7 @@ func init() {
 			existingSettingsBytes, _ := json.Marshal(expectedSettings)
 			fs.WriteFile(settingsPath, existingSettingsBytes)
 
-			dummy := NewDummyInfrastructure(fs, dirProvider, platform)
+			dummy := NewDummyInfrastructure(fs, dirProvider, platform, fakeDevicePathResolver)
 
 			settings, err := dummy.GetSettings()
 			assert.NoError(GinkgoT(), err)
@@ -42,8 +45,9 @@ func init() {
 			fs := fakefs.NewFakeFileSystem()
 			dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
 			platform := fakeplatform.NewFakePlatform()
+			fakeDevicePathResolver := boshdevicepathresolver.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
 
-			dummy := NewDummyInfrastructure(fs, dirProvider, platform)
+			dummy := NewDummyInfrastructure(fs, dirProvider, platform, fakeDevicePathResolver)
 
 			_, err := dummy.GetSettings()
 			assert.Error(GinkgoT(), err)

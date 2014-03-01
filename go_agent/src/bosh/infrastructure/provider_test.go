@@ -2,10 +2,12 @@ package infrastructure_test
 
 import (
 	. "bosh/infrastructure"
+	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	boshlog "bosh/logger"
 	fakeplatform "bosh/platform/fakes"
 	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
+	"time"
 )
 
 func getNewProvider() (logger boshlog.Logger, platform *fakeplatform.FakePlatform, provider Provider) {
@@ -20,16 +22,20 @@ func init() {
 			logger, platform, provider := getNewProvider()
 			inf, err := provider.Get("aws")
 
+			devicePathResolver := boshdevicepathresolver.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
+
 			assert.NoError(GinkgoT(), err)
-			assert.IsType(GinkgoT(), NewAwsInfrastructure("http://169.254.169.254", NewDigDnsResolver(logger), platform), inf)
+			assert.IsType(GinkgoT(), NewAwsInfrastructure("http://169.254.169.254", NewDigDnsResolver(logger), platform, devicePathResolver), inf)
 		})
 		It("get returns vsphere infrastructure", func() {
 
 			_, platform, provider := getNewProvider()
 			inf, err := provider.Get("vsphere")
 
+			devicePathResolver := boshdevicepathresolver.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
+
 			assert.NoError(GinkgoT(), err)
-			assert.IsType(GinkgoT(), NewVsphereInfrastructure(platform), inf)
+			assert.IsType(GinkgoT(), NewVsphereInfrastructure(platform, devicePathResolver), inf)
 		})
 		It("get returns an error on unknown infrastructure", func() {
 
