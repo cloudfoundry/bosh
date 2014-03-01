@@ -185,12 +185,6 @@ RSpec.configure do |rspec|
   end
 end
 
-RSpec::Matchers.define :have_a_path_of do |expected|
-  match do |actual|
-    actual.path == expected
-  end
-end
-
 def gzip(string)
   result = StringIO.new
   zio = Zlib::GzipWriter.new(result, nil, nil)

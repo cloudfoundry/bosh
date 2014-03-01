@@ -301,8 +301,9 @@ module Bosh::Director
           f.write(create_package({'test' => 'test contents'}))
         end
 
-        blobstore.should_receive(:create).with(
-          have_a_path_of(package_path)).and_return('blob_id')
+        blobstore.should_receive(:create).
+          with(satisfy { |obj| obj.path == package_path }).
+          and_return('blob_id')
 
         @job.create_package(
           {
