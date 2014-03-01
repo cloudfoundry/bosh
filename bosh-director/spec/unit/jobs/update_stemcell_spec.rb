@@ -92,4 +92,23 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       update_stemcell_job.perform
     }.to raise_exception(Bosh::Director::StemcellInvalidArchive)
   end
+
+  def create_stemcell(name, version, cloud_properties, image, sha1)
+    io = StringIO.new
+
+    manifest = {
+      "name" => name,
+      "version" => version,
+      "cloud_properties" => cloud_properties,
+      "sha1" => sha1
+    }
+
+    Archive::Tar::Minitar::Writer.open(io) do |tar|
+      tar.add_file("stemcell.MF", {:mode => "0644", :mtime => 0}) { |os, _| os.write(manifest.to_yaml) }
+      tar.add_file("image", {:mode => "0644", :mtime => 0}) { |os, _| os.write(image) }
+    end
+
+    io.close
+    gzip(io.string)
+  end
 end

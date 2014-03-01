@@ -15,8 +15,8 @@ require 'rspec'
 require 'rspec/its'
 require 'machinist/sequel'
 require 'sham'
-require 'support/job_example_group'
-require 'support/task_helpers'
+
+Dir[File.expand_path('../support/**/*.rb', __FILE__)].each { |f| require(f) }
 
 RSpec.configure do |config|
   config.include Bosh::Director::Test::TaskHelpers
@@ -85,9 +85,9 @@ module SpecHelper
     end
 
     def connect_database(path)
-      # Sequel with in-memory sqlite database is not thread-safe, using file seems to fix that
-      db = "sqlite://#{File.join(path, "director.db")}"
-      dns_db = "sqlite://#{File.join(path, "dns.db")}"
+      db     = ENV['DB_CONNECTION']     || "sqlite://#{File.join(path, "director.db")}"
+      dns_db = ENV['DNS_DB_CONNECTION'] || "sqlite://#{File.join(path, "dns.db")}"
+
       db_opts = {:max_connections => 32, :pool_timeout => 10}
 
       @db = Sequel.connect(db, db_opts)
@@ -197,14 +197,6 @@ RSpec::Matchers.define :have_a_path_of do |expected|
   end
 end
 
-def asset(filename)
-  File.expand_path("../assets/#{filename}", __FILE__)
-end
-
-def spec_asset(filename)
-  File.read(asset(filename))
-end
-
 def gzip(string)
   result = StringIO.new
   zio = Zlib::GzipWriter.new(result, nil, nil)
@@ -212,99 +204,6 @@ def gzip(string)
   zio.write(string)
   zio.close
   result.string
-end
-
-def create_stemcell(name, version, cloud_properties, image, sha1)
-  io = StringIO.new
-
-  manifest = {
-    "name" => name,
-    "version" => version,
-    "cloud_properties" => cloud_properties,
-    "sha1" => sha1
-  }
-
-  Archive::Tar::Minitar::Writer.open(io) do |tar|
-    tar.add_file("stemcell.MF", {:mode => "0644", :mtime => 0}) { |os, _| os.write(manifest.to_yaml) }
-    tar.add_file("image", {:mode => "0644", :mtime => 0}) { |os, _| os.write(image) }
-  end
-
-  io.close
-  gzip(io.string)
-end
-
-def create_job(name, monit, configuration_files, options = { })
-  io = StringIO.new
-
-  manifest = {
-    "name" => name,
-    "templates" => {},
-    "packages" => []
-  }
-
-  configuration_files.each do |path, configuration_file|
-    manifest["templates"][path] = configuration_file["destination"]
-  end
-
-  Archive::Tar::Minitar::Writer.open(io) do |tar|
-    unless options[:skip_manifest]
-      tar.add_file("job.MF", {:mode => "0644", :mtime => 0}) { |os, _| os.write(manifest.to_yaml) }
-    end
-    unless options[:skip_monit]
-      monit_file = options[:monit_file] ? options[:monit_file] : "monit"
-      tar.add_file(monit_file, {:mode => "0644", :mtime => 0}) { |os, _| os.write(monit) }
-    end
-
-    tar.mkdir("templates", {:mode => "0755", :mtime => 0})
-    configuration_files.each do |path, configuration_file|
-      unless options[:skip_templates] && options[:skip_templates].include?(path)
-        tar.add_file("templates/#{path}", {:mode => "0644", :mtime => 0}) do |os, _|
-          os.write(configuration_file["contents"])
-        end
-      end
-    end
-  end
-
-  io.close
-
-  gzip(io.string)
-end
-
-def create_release(name, version, jobs, packages)
-  io = StringIO.new
-
-  manifest = {
-    "name" => name,
-    "version" => version
-  }
-
-  Archive::Tar::Minitar::Writer.open(io) do |tar|
-    tar.add_file("release.MF", {:mode => "0644", :mtime => 0}) { |os, _| os.write(manifest.to_yaml) }
-    tar.mkdir("packages", {:mode => "0755"})
-    packages.each do |package|
-      tar.add_file("packages/#{package[:name]}.tgz", {:mode => "0644", :mtime => 0}) { |os, _| os.write("package") }
-    end
-    tar.mkdir("jobs", {:mode => "0755"})
-    jobs.each do |job|
-      tar.add_file("jobs/#{job[:name]}.tgz", {:mode => "0644", :mtime => 0}) { |os, _| os.write("job") }
-    end
-  end
-
-  io.close
-  gzip(io.string)
-end
-
-def create_package(files)
-  io = StringIO.new
-
-  Archive::Tar::Minitar::Writer.open(io) do |tar|
-    files.each do |key, value|
-      tar.add_file(key, {:mode => "0644", :mtime => 0}) { |os, _| os.write(value) }
-    end
-  end
-
-  io.close
-  gzip(io.string)
 end
 
 def check_event_log
