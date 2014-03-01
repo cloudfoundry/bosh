@@ -1,6 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
+require 'support/release_helper'
 
 module Bosh::Director
   describe Jobs::UpdateRelease do
@@ -57,7 +56,7 @@ module Bosh::Director
 
       context 'commit_hash and uncommitted changes flag' do
         it 'sets commit_hash and uncommitted changes flag on release_version' do
-          release_dir = ReleaseHelper.create_release_tarball(manifest)
+          release_dir = Test::ReleaseHelper.new.create_release_tarball(manifest)
           job = Jobs::UpdateRelease.new(release_dir)
           job.extract_release
           job.verify_manifest
@@ -73,7 +72,7 @@ module Bosh::Director
         it 'sets default commit_hash and uncommitted_changes flag if missing' do
           manifest.delete('commit_hash')
           manifest.delete('uncommitted_changes')
-          release_dir = ReleaseHelper.create_release_tarball(manifest)
+          release_dir = Test::ReleaseHelper.new.create_release_tarball(manifest)
           job = Jobs::UpdateRelease.new(release_dir)
           job.extract_release
           job.verify_manifest
@@ -92,7 +91,7 @@ module Bosh::Director
           result = Bosh::Exec::Result.new('cmd', 'output', 1)
           Bosh::Exec.should_receive(:sh).and_return(result)
 
-          release_dir = ReleaseHelper.create_release_tarball(manifest)
+          release_dir = Test::ReleaseHelper.new.create_release_tarball(manifest)
           job = Jobs::UpdateRelease.new(release_dir)
 
           expect {
@@ -155,7 +154,7 @@ module Bosh::Director
           ]
         }
 
-        @release_dir = ReleaseHelper.create_release_tarball(@manifest)
+        @release_dir = Test::ReleaseHelper.new.create_release_tarball(@manifest)
 
         @job = Jobs::UpdateRelease.new(@release_dir, 'rebase' => true)
 
