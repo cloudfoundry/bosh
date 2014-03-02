@@ -105,6 +105,12 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
+      put '/deployments/:deployment/untaint' do
+        untaints = UntaintsDeployments.new(@deployment_manager, @user)
+        task = untaints.untaint_deployment!(params[:deployment])
+        redirect "/tasks/#{task.id}"
+      end
+
       put '/deployments/:deployment/jobs/:job/:index/resurrection', consumes: :json do
         payload = json_decode(request.body)
 
