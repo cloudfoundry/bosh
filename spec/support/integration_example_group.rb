@@ -99,10 +99,15 @@ module IntegrationExampleGroup
     output
   end
 
-  def wait_for_vm(name)
-    5.times do
+  def wait_for_vm(name, timeout_seconds = 300)
+    start_time = Time.now
+    loop do
       vm = get_vms.detect { |v| v[:job_index] == name }
       return vm if vm
+
+      break if Time.now - start_time >= timeout_seconds
+
+      sleep(1)
     end
     nil
   end
