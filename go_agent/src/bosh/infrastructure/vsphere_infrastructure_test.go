@@ -3,10 +3,13 @@ package infrastructure_test
 import (
 	. "bosh/infrastructure"
 	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdisk "bosh/platform/disk"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
+	fakesys "bosh/system/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"os"
 	"time"
 )
 
@@ -61,7 +64,44 @@ func init() {
 				Expect(platform.NormalizeDiskPathPath).To(Equal("/dev/sdb"))
 			})
 		})
-		PDescribe("MountPersistentDisk", func() {
+
+		Describe("MountPersistentDisk", func() {
+			BeforeEach(func() {
+				fakeDevicePathResolver.RealDevicePath = "fake-real-device-path"
+			})
+
+			It("creates the mount directory with the correct permissions", func() {
+				vsphere.MountPersistentDisk("fake-volume-id", "/mnt/point")
+
+				mountPoint := platform.Fs.GetFileTestStat("/mnt/point")
+				Expect(mountPoint.FileType).To(Equal(fakesys.FakeFileTypeDir))
+				Expect(mountPoint.FileMode).To(Equal(os.FileMode(0700)))
+			})
+
+			It("partitions the disk", func() {
+				vsphere.MountPersistentDisk("fake-volume-id", "/mnt/point")
+
+				Expect(platform.FakeDiskManager.FakePartitioner.PartitionDevicePath).To(Equal("fake-real-device-path"))
+				partitions := []boshdisk.Partition{
+					{Type: boshdisk.PartitionTypeLinux},
+				}
+				Expect(platform.FakeDiskManager.FakePartitioner.PartitionPartitions).To(Equal(partitions))
+			})
+
+			It("formats the disk", func() {
+				vsphere.MountPersistentDisk("fake-volume-id", "/mnt/point")
+
+				Expect(platform.FakeDiskManager.FakeFormatter.FormatPartitionPaths).To(Equal([]string{"fake-real-device-path1"}))
+				Expect(platform.FakeDiskManager.FakeFormatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
+			})
+
+			It("mounts the disk", func() {
+				vsphere.MountPersistentDisk("fake-volume-id", "/mnt/point")
+
+				Expect(platform.FakeDiskManager.FakeMounter.MountPartitionPaths).To(Equal([]string{"fake-real-device-path1"}))
+				Expect(platform.FakeDiskManager.FakeMounter.MountMountPoints).To(Equal([]string{"/mnt/point"}))
+
+			})
 		})
 	})
 }

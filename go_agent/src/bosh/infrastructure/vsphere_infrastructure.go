@@ -4,8 +4,10 @@ import (
 	bosherr "bosh/errors"
 	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	boshplatform "bosh/platform"
+	boshdisk "bosh/platform/disk"
 	boshsettings "bosh/settings"
 	"encoding/json"
+	"os"
 	"time"
 )
 
@@ -52,5 +54,37 @@ func (inf vsphereInfrastructure) GetEphemeralDiskPath(devicePath string) (realPa
 }
 
 func (inf vsphereInfrastructure) MountPersistentDisk(volumeId string, mountPoint string) (err error) {
+	inf.platform.GetFs().MkdirAll(mountPoint, os.FileMode(0700))
+
+	realPath, err := inf.devicePathResolver.GetRealDevicePath(volumeId)
+
+	if err != nil {
+		err = bosherr.WrapError(err, "Getting real device path")
+		return
+	}
+
+	partitions := []boshdisk.Partition{
+		{Type: boshdisk.PartitionTypeLinux},
+	}
+
+	err = inf.platform.GetDiskManager().GetPartitioner().Partition(realPath, partitions)
+
+	if err != nil {
+		err = bosherr.WrapError(err, "Partitioning disk")
+		return
+	}
+
+	partitionPath := realPath + "1"
+	err = inf.platform.GetDiskManager().GetFormatter().Format(partitionPath, boshdisk.FileSystemExt4)
+	if err != nil {
+		err = bosherr.WrapError(err, "Formatting partition with ext4")
+		return
+	}
+
+	err = inf.platform.GetDiskManager().GetMounter().Mount(partitionPath, mountPoint)
+	if err != nil {
+		err = bosherr.WrapError(err, "Mounting partition")
+		return
+	}
 	return
 }
