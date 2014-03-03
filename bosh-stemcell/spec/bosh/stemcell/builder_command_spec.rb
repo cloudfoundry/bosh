@@ -1,14 +1,16 @@
 require 'spec_helper'
 require 'bosh/stemcell/builder_command'
+require 'bosh/stemcell/build_environment'
+require 'bosh/stemcell/stage_collection'
+require 'bosh/stemcell/stage_runner'
 
 module Bosh::Stemcell
   describe BuilderCommand do
     subject(:stemcell_builder_command) do
       described_class.new(
-        env,
-        definition,
-        version,
-        release_tarball_path,
+        helper,
+        collection,
+        runner
       )
     end
 
@@ -17,64 +19,52 @@ module Bosh::Stemcell
     let(:agent) { Bosh::Stemcell::Agent.for('ruby') }
     let(:expected_agent_name) { 'ruby' }
 
-    let(:infrastructure) do
-      Bosh::Stemcell::Infrastructure.for('vsphere')
-    end
-
-    let(:operating_system) { Bosh::Stemcell::OperatingSystem.for('ubuntu') }
     let(:release_tarball_path) { "/fake/path/to/bosh-#{version}.tgz" }
     let(:version) { '007' }
 
     let(:definition) do
       instance_double(
         'Bosh::Stemcell::Definition',
-        infrastructure: infrastructure,
-        operating_system: operating_system,
         agent: agent,
       )
     end
 
     let(:shell) { instance_double(Bosh::Core::Shell) }
 
-    before do
-      StageCollection.stub(:new).with(definition).and_return(stage_collection)
+    let(:helper) { instance_double('Bosh::Stemcell::BuildEnvironment',
+                                   prepare_build: nil, chroot_dir: File.join(root_dir, 'work', 'work', 'chroot'),
+                                   rspec_command: nil, stemcell_file: nil,
+    ) }
 
-      StageRunner.stub(:new).with(
-        build_path: File.join(root_dir, 'build', 'build'),
-        command_env: 'env ',
-        settings_file: settings_file,
-        work_path: File.join(root_dir, 'work')
-      ).and_return(stage_runner)
-
-      BuilderOptions.stub(:new).with(
-        env,
-        definition,
-        version,
-        release_tarball_path,
-      ).and_return(stemcell_builder_options)
-
-      allow(shell).to receive(:run)
-      allow(Bosh::Core::Shell).to receive(:new).and_return(shell)
-    end
-
-    let(:root_dir) do
-      File.join('/mnt/stemcells', infrastructure.name, infrastructure.hypervisor, operating_system.name)
-    end
-
-    let(:stemcell_builder_options) do
-      instance_double('Bosh::Stemcell::BuilderOptions', default: options)
-    end
-
-    let(:stage_collection) do
+    let(:collection) do
       instance_double(
         'Bosh::Stemcell::StageCollection',
-        operating_system_stages: %w(FAKE_OS_STAGES),
+        operating_system_stages: os_stages,
         agent_stages: %w(FAKE_AGENT_STAGES),
         infrastructure_stages: %w(FAKE_INFRASTRUCTURE_STAGES)
       )
     end
 
-    let(:stage_runner) { instance_double('Bosh::Stemcell::StageRunner', configure_and_apply: nil) }
+    let(:runner) { instance_double('Bosh::Stemcell::StageRunner', configure_and_apply: nil) }
+
+    let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
+    let(:work_root) { File.join(root_dir, 'work') }
+
+    before do
+      allow(shell).to receive(:run)
+      allow(Bosh::Core::Shell).to receive(:new).and_return(shell)
+      #allow(Bosh::Dev::DownloadAdapter).to receive(:new).and_return(download_adapter)
+    end
+
+    let(:root_dir) { '/mnt/stemcells/dummy/dummy/dummy' }
+
+    let(:stemcell_builder_options) do
+      instance_double('Bosh::Stemcell::BuilderOptions', default: options)
+    end
+
+    let(:os_stages) do
+      %w(FAKE_OS_STAGES)
+    end
 
     let(:etc_dir) { File.join(root_dir, 'build', 'build', 'etc') }
     let(:settings_file) { File.join(etc_dir, 'settings.bash') }
@@ -106,46 +96,30 @@ module Bosh::Stemcell
 
       describe 'running stages' do
         it 'calls #configure_and_apply' do
-          stage_runner.should_receive(:configure_and_apply).
-            with(%w(FAKE_OS_STAGES FAKE_AGENT_STAGES FAKE_INFRASTRUCTURE_STAGES)).ordered
-          stemcell_builder_command.build
-        end
-      end
-
-      context 'when ENV contains variables besides HTTP_PROXY and NO_PROXY' do
-        let(:env) do
-          {
-            'NOT_HTTP_PROXY' => 'nice_proxy',
-            'no_proxy_just_kidding' => 'naughty_proxy'
-          }
-        end
-
-        it 'nothing is passed to sudo via "env"' do
-          StageRunner.stub(:new).with(build_path: File.join(root_dir, 'build', 'build'),
-                                      command_env: 'env ',
-                                      settings_file: settings_file,
-                                      work_path: File.join(root_dir, 'work')).and_return(stage_runner)
+          runner.should_receive(:configure_and_apply).
+            with(%w(FAKE_AGENT_STAGES FAKE_INFRASTRUCTURE_STAGES)).ordered
 
           stemcell_builder_command.build
         end
       end
+    end
 
-      context 'ENV variables for HTTP_PROXY and NO_PROXY are passed to "env"' do
-        let(:env) do
-          {
-            'HTTP_PROXY' => 'nice_proxy',
-            'no_proxy' => 'naughty_proxy'
-          }
-        end
+    describe '#build_base_image_for_stemcell' do
+      it 'builds correct stages' do
+        expect(runner).to receive(:configure_and_apply).with(os_stages)
 
-        it 'they are passed to sudo via "env"' do
-          StageRunner.stub(:new).with(build_path: File.join(root_dir, 'build', 'build'),
-                                      command_env: "env HTTP_PROXY='nice_proxy' no_proxy='naughty_proxy'",
-                                      settings_file: settings_file,
-                                      work_path: File.join(root_dir, 'work')).and_return(stage_runner)
+        stemcell_builder_command.build_base_image_for_stemcell
+      end
+    end
 
-          stemcell_builder_command.build
-        end
+    describe '#download_and_extract_base_os_image' do
+      #before { allow(File).to receive(:open) }
+
+      xit 'utilizes download adapter to download and extracts the file to the work dir' do
+        expect(download_adapter).to receive(:download).with('fake://uri', '/tmp/base_os_image.tgz')
+        expect(shell).to receive(:run).with("tar -xzf -C #{File.join(work_root, 'work')} /tmp/base_os_image.tgz")
+
+        stemcell_builder_command.download_and_extract_base_os_image('fake://uri')
       end
     end
   end

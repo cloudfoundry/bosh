@@ -12,7 +12,7 @@ module Bosh::Stemcell
     let(:build_path) { '/fake/path/to/build_dir' }
     let(:command_env) { 'env FOO=bar' }
     let(:settings_file) { '/fake/path/to/settings.bash' }
-    let(:work_path) { '/fake/path/to/work_dir' }
+    let(:work_path) { '/fake/path/to/work_dir/work' }
 
     subject(:stage_runner) do
       described_class.new(build_path: build_path,
@@ -127,7 +127,7 @@ module Bosh::Stemcell
       end
 
       it 'runs the apply script for each stage in order' do
-        FileUtils.should_receive(:mkdir_p).with(File.join(work_path, 'work')).exactly(2).times
+        FileUtils.should_receive(:mkdir_p).with(work_path).exactly(2).times
 
         shell.should_receive(:run).
           with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_0/apply.sh /fake/path/to/work_dir/work 2>&1')

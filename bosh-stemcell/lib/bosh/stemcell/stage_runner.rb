@@ -26,17 +26,15 @@ module Bosh::Stemcell
     end
 
     def apply(stages)
-      work_directory = File.join(work_path, 'work')
-
       stages.each do |stage|
-        FileUtils.mkdir_p(work_directory)
+        FileUtils.mkdir_p(work_path)
 
         puts "=== Applying '#{stage}' stage ==="
         puts "== Started #{Time.now.strftime('%a %b %e %H:%M:%S %Z %Y')} =="
 
         stage_apply_script = File.join(build_path, 'stages', stage.to_s, 'apply.sh')
 
-        run_sudo_with_command_env("#{stage_apply_script} #{work_directory}")
+        run_sudo_with_command_env("#{stage_apply_script} #{work_path}")
       end
     end
 

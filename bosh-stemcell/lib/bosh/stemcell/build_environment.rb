@@ -3,7 +3,7 @@ require 'bosh/stemcell/builder_options'
 require 'forwardable'
 
 module Bosh::Stemcell
-  class BuilderCommandHelper
+  class BuildEnvironment
     extend Forwardable
 
     STEMCELL_BUILDER_SOURCE_DIR = File.join(File.expand_path('../../../../..', __FILE__), 'stemcell_builder')
@@ -21,64 +21,47 @@ module Bosh::Stemcell
       @shell = Bosh::Core::Shell.new
     end
 
-    def chroot_dir
-      File.join(work_path, 'chroot')
-    end
-
-    def sanitize
-      FileUtils.rm(Dir.glob('*.tgz'))
-
-      shell.run("sudo umount #{File.join(work_path, 'mnt/tmp/grub', settings['stemcell_image_name'])} 2> /dev/null",
-                { ignore_failures: true })
-
-      shell.run("sudo umount #{image_mount_point} 2> /dev/null", { ignore_failures: true })
-
-      shell.run("sudo rm -rf #{base_directory}", { ignore_failures: true })
-    end
-
-    def prepare_build_root
-      FileUtils.mkdir_p(build_root, verbose: true)
-    end
-
-    def prepare_build_path
-      FileUtils.rm_rf(build_path, verbose: true) if File.exist?(build_path)
-      FileUtils.mkdir_p(build_path, verbose: true)
-      build_path
-    end
-
-    def copy_stemcell_builder_to_build_path
-      FileUtils.cp_r(Dir.glob("#{STEMCELL_BUILDER_SOURCE_DIR}/*"), build_path, preserve: true, verbose: true)
-    end
-
-    def prepare_work_root
-      FileUtils.mkdir_p(work_root, verbose: true)
-      work_root
-    end
-
-    def persist_settings_for_bash
-      File.open(settings_path, 'a') do |f|
-        f.printf("\n# %s\n\n", '=' * 20)
-        settings.each do |k, v|
-          f.print "#{k}=#{v}\n"
-        end
-      end
-
-      settings_path
+    def prepare_build
+      sanitize
+      prepare_build_path
+      copy_stemcell_builder_to_build_path
+      prepare_work_root
+      persist_settings_for_bash
     end
 
     def rspec_command
-        [
-          "cd #{STEMCELL_SPECS_DIR};",
-          "STEMCELL_IMAGE=#{image_file_path}",
-          "bundle exec rspec -fd#{exclude_exclusions}",
-          "spec/stemcells/#{operating_system.name}_spec.rb",
-          "spec/stemcells/#{agent.name}_agent_spec.rb",
-          "spec/stemcells/#{infrastructure.name}_spec.rb",
-        ].join(' ')
+      [
+        "cd #{STEMCELL_SPECS_DIR};",
+        "STEMCELL_IMAGE=#{image_file_path}",
+        "bundle exec rspec -fd#{exclude_exclusions}",
+        "spec/stemcells/#{operating_system.name}_spec.rb",
+        "spec/stemcells/#{agent.name}_agent_spec.rb",
+        "spec/stemcells/#{infrastructure.name}_spec.rb",
+      ].join(' ')
+    end
+
+    def build_path
+      File.join(build_root, 'build')
     end
 
     def stemcell_file
       File.join(work_path, settings['stemcell_tgz'])
+    end
+
+    def chroot_dir
+      File.join(work_path, 'chroot')
+    end
+
+    def settings_path
+      File.join(build_path, 'etc', 'settings.bash')
+    end
+
+    def work_path
+      File.join(work_root, 'work')
+    end
+
+    def command_env
+      "env #{hash_as_bash_env(proxy_settings_from_environment)}"
     end
 
     private
@@ -96,6 +79,39 @@ module Bosh::Stemcell
       :definition,
       :stemcell_builder_options,
     )
+
+    def sanitize
+      FileUtils.rm(Dir.glob('*.tgz'))
+
+      shell.run("sudo umount #{File.join(work_path, 'mnt/tmp/grub', settings['stemcell_image_name'])} 2> /dev/null",
+                { ignore_failures: true })
+
+      shell.run("sudo umount #{image_mount_point} 2> /dev/null", { ignore_failures: true })
+
+      shell.run("sudo rm -rf #{base_directory}", { ignore_failures: true })
+    end
+
+    def prepare_build_path
+      FileUtils.rm_rf(build_path, verbose: true) if File.exist?(build_path)
+      FileUtils.mkdir_p(build_path, verbose: true)
+    end
+
+    def copy_stemcell_builder_to_build_path
+      FileUtils.cp_r(Dir.glob("#{STEMCELL_BUILDER_SOURCE_DIR}/*"), build_path, preserve: true, verbose: true)
+    end
+
+    def prepare_work_root
+      FileUtils.mkdir_p(work_root, verbose: true)
+    end
+
+    def persist_settings_for_bash
+      File.open(settings_path, 'a') do |f|
+        f.printf("\n# %s\n\n", '=' * 20)
+        settings.each do |k, v|
+          f.print "#{k}=#{v}\n"
+        end
+      end
+    end
 
     def exclude_exclusions
       case infrastructure.name
@@ -132,16 +148,14 @@ module Bosh::Stemcell
       File.join(base_directory, 'work')
     end
 
-    def build_path
-      File.join(build_root, 'build')
+    def proxy_settings_from_environment
+      keep = %w(HTTP_PROXY NO_PROXY)
+
+      environment.select { |k| keep.include?(k.upcase) }
     end
 
-    def work_path
-      File.join(work_root, 'work')
-    end
-
-    def settings_path
-      File.join(build_path, 'etc', 'settings.bash')
+    def hash_as_bash_env(env)
+      env.map { |k, v| "#{k}='#{v}'" }.join(' ')
     end
   end
 end

@@ -18,4 +18,45 @@ namespace :stemcell do
     mkdir_p('tmp')
     cp(stemcell_path, File.join('tmp', File.basename(stemcell_path)))
   end
+
+
+
+
+  task :build_os_image, [:operating_system_name, :os_image_path] do |_, args|
+    require 'bosh/dev/build'
+    require 'bosh/stemcell/archive_handler'
+    require 'bosh/stemcell/build_environment'
+    require 'bosh/stemcell/definition'
+    require 'bosh/stemcell/os_image_builder'
+    require 'bosh/stemcell/stage_collection'
+    require 'bosh/stemcell/stage_runner'
+
+    definition = Bosh::Stemcell::Definition.for('null', args.operating_system_name, 'null')
+    # pass in /dev/null for the micro release path as the micro is not built at this stage
+    environment = Bosh::Stemcell::BuildEnvironment.new(ENV.to_hash, definition, Bosh::Dev::Build.candidate.number, '/dev/null')
+    collection = Bosh::Stemcell::StageCollection.new(definition)
+    runner = Bosh::Stemcell::StageRunner.new(
+      build_path: environment.build_path,
+      command_env: environment.command_env,
+      settings_file: environment.settings_path,
+      work_path: environment.work_path,
+    )
+    archive_handler = Bosh::Stemcell::ArchiveHandler.new
+
+    builder = Bosh::Stemcell::OsImageBuilder.new(
+      environment: environment,
+      collection: collection,
+      runner: runner,
+      archive_handler: archive_handler,
+    )
+    builder.build(args.os_image_path)
+  end
+
+  task :upload_os_image, [:os_image_path, :s3_bucket_name] do |_, args|
+    # use Build.candidate.number as revision
+  end
+
+  task :build, [:infrastructure_name, :operating_system_name, :agent_name, :os_image_s3_bucket_name] do |_, args|
+    # use Build.candidate.number as revision
+  end
 end

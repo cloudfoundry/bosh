@@ -116,6 +116,7 @@ module Bosh::Stemcell
         :rsyslog,
         # Install GRUB/kernel/etc
         :system_grub,
+        :tar_base_os_image,
       ]
     end
 
