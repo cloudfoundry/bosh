@@ -44,7 +44,6 @@ type Platform interface {
 	UnmountPersistentDisk(devicePath string) (didUnmount bool, err error)
 	MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error)
 	NormalizeDiskPath(devicePath string) (realPath string, found bool)
-	LookupScsiDisk(scsiId string) (devicePath string, found bool)
 	GetFileContentsFromCDROM(filePath string) (contents []byte, err error)
 
 	IsMountPoint(path string) (result bool, err error)

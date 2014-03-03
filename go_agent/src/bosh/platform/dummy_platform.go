@@ -144,10 +144,6 @@ func (p dummyPlatform) NormalizeDiskPath(attachment string) (devicePath string, 
 	return "/dev/sdb", true
 }
 
-func (p dummyPlatform) LookupScsiDisk(scsiId string) (devicePath string, found bool) {
-	return "/dev/sdb", true
-}
-
 func (p dummyPlatform) GetFileContentsFromCDROM(filePath string) (contents []byte, err error) {
 	return
 }

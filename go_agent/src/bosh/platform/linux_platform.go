@@ -16,7 +16,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -436,57 +435,6 @@ func (p linux) NormalizeDiskPath(devicePath string) (realPath string, found bool
 	if err == nil {
 		found = true
 	}
-	return
-}
-
-func (p linux) LookupScsiDisk(scsiId string) (devicePath string, found bool) {
-	devicePaths, err := p.fs.Glob("/sys/bus/scsi/devices/*:0:0:0/block/*")
-	if err != nil {
-		return
-	}
-
-	var hostId string
-
-	for _, rootDevicePath := range devicePaths {
-		if path.Base(rootDevicePath) == "sda" {
-			rootDevicePathSplits := strings.Split(rootDevicePath, "/")
-			if len(rootDevicePathSplits) > 5 {
-				scsiPath := rootDevicePathSplits[5]
-				scsiPathSplits := strings.Split(scsiPath, ":")
-				if len(scsiPathSplits) > 0 {
-					hostId = scsiPathSplits[0]
-				}
-			}
-		}
-	}
-
-	if len(hostId) == 0 {
-		return
-	}
-
-	scanPath := fmt.Sprintf("/sys/class/scsi_host/host%s/scan", hostId)
-	err = p.fs.WriteFileString(scanPath, "- - -")
-	if err != nil {
-		return
-	}
-
-	deviceGlobPath := fmt.Sprintf("/sys/bus/scsi/devices/%s:0:%s:0/block/*", hostId, scsiId)
-
-	for i := 0; i < MAX_SCAN_RETRIES; i++ {
-		devicePaths, err = p.fs.Glob(deviceGlobPath)
-		if err != nil || len(devicePaths) == 0 {
-			time.Sleep(p.diskScanDuration)
-			continue
-		}
-	}
-
-	if err != nil || len(devicePaths) == 0 {
-		return
-	}
-
-	devicePath = devicePaths[0]
-	found = true
-
 	return
 }
 

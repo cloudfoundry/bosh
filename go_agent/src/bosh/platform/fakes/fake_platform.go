@@ -223,11 +223,6 @@ func (p *FakePlatform) NormalizeDiskPath(devicePath string) (realPath string, fo
 	return
 }
 
-func (p *FakePlatform) LookupScsiDisk(scsiId string) (devicePath string, found bool) {
-	devicePath, found = p.ScsiDiskMap[scsiId]
-	return
-}
-
 func (p *FakePlatform) GetFileContentsFromCDROM(path string) (contents []byte, err error) {
 	p.GetFileContentsFromCDROMPath = path
 	contents = p.GetFileContentsFromCDROMContents
