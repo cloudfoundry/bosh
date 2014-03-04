@@ -48,6 +48,7 @@ module Bosh::Deployer
       allow(@openstack).to receive(:servers).and_return(servers)
       allow(servers).to receive(:get).with(id).and_return(server)
       allow(server).to receive(:floating_ip_address).and_return(ip)
+      allow(server).to receive(:private_ip_address).and_return(ip)
     end
 
     it 'should not populate disk model' do

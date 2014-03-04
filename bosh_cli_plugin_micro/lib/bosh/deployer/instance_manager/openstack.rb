@@ -59,11 +59,13 @@ module Bosh::Deployer
       end
 
       def client_services_ip
+        logger.info('discovering client services ip')
         discover_client_services_ip
       end
 
       def agent_services_ip
-        discover_client_services_ip
+        logger.info('discovering agent services ip')
+        discover_agent_services_ip
       end
 
       def internal_services_ip
@@ -114,7 +116,24 @@ module Bosh::Deployer
           logger.info("discovered bosh ip=#{ip}")
           ip
         else
-          config.client_services_ip
+          default_ip = config.client_services_ip
+          logger.info("ip address not discovered - using default of #{default_ip}")
+          default_ip
+        end
+      end
+
+      def discover_agent_services_ip
+        if instance_manager.state.vm_cid
+          server = instance_manager.cloud.openstack.servers.get(instance_manager.state.vm_cid)
+
+          ip = server.private_ip_address
+
+          logger.info("discovered bosh ip=#{ip}")
+          ip
+        else
+          default_ip = config.agent_services_ip
+          logger.info("ip address not discovered - using default of #{default_ip}")
+          default_ip
         end
       end
     end
