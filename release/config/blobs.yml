@@ -129,3 +129,8 @@ ruby/bundler-1.5.2.gem:
   sha: !binary |-
     NzhhOWZlMTE2MTQwNzc3OGY0MzdmYWUzOWNiNWFjNTExMjdmNDYzNQ==
   size: 286208
+ruby/yaml-0.1.5.tar.gz:
+  object_id: db07c821-62f8-4fd1-a99a-ff1c88b2474b
+  sha: !binary |-
+    OGI3OGNiOWY3NTljN2Q4MGRiOGE3MzI4YzBlYmVjZmUzNGZkZTczNw==
+  size: 504897

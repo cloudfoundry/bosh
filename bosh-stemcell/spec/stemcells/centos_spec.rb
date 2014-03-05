@@ -53,8 +53,6 @@ describe 'CentOs Stemcell' do
       psmisc
       unzip
       bison
-      libyaml
-      libyaml-devel
       bzip2-devel
       libcap-devel
       cmake
@@ -69,6 +67,16 @@ describe 'CentOs Stemcell' do
       describe package(pkg) do
         it { should be_installed }
       end
+    end
+  end
+
+  context 'not included in stemcell' do
+    describe package('libyaml-devel') do
+      it { should_not be_installed }
+    end
+
+    describe package('libyaml') do
+      it { should_not be_installed }
     end
   end
 

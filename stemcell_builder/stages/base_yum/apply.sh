@@ -19,7 +19,7 @@ zip unzip \
 nfs-common flex psmisc apparmor-utils iptables sysstat \
 rsync openssh-server traceroute libncurses5-dev quota \
 libaio1 gdb libcap2-bin libcap-devel bzip2-devel \
-libyaml-devel cmake sudo nc libuuid-devel"
+cmake sudo nc libuuid-devel"
 pkg_mgr install $packages
 
 # Lifted from bosh_debs
