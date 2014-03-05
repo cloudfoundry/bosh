@@ -66,7 +66,8 @@ func (devicePathResolver vsphereDevicePathResolver) GetRealDevicePath(devicePath
 		return
 	}
 
-	realPath = devicePaths[0]
+	basename := path.Base(devicePaths[0])
+	realPath = path.Join("/dev/", basename)
 
 	return
 }

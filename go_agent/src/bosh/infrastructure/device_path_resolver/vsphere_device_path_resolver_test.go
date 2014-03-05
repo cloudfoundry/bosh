@@ -40,7 +40,7 @@ var _ = Describe("VSphere Path Resolver", func() {
 		It("detects device", func() {
 			devicePath, err := resolver.GetRealDevicePath("fake-disk-id")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(devicePath).To(Equal("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf"))
+			Expect(devicePath).To(Equal("/dev/sdf"))
 		})
 
 		Context("when device does not immediately appear", func() {
@@ -59,7 +59,7 @@ var _ = Describe("VSphere Path Resolver", func() {
 				runningTime := time.Since(startTime)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(runningTime >= sleepInterval).To(BeTrue())
-				Expect(devicePath).To(Equal("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf"))
+				Expect(devicePath).To(Equal("/dev/sdf"))
 			})
 		})
 
