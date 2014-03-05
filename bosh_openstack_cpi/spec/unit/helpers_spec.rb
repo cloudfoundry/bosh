@@ -10,6 +10,7 @@ describe Bosh::OpenStackCloud::Helpers do
   end
 
   describe "wait_resource" do
+
     it "should time out" do
       resource = double("resource")
       resource.stub(:id).and_return("foobar")
@@ -98,6 +99,12 @@ describe Bosh::OpenStackCloud::Helpers do
 
       @cloud.wait_resource(resource, :deleted, :status, true)
     end
+
+    it "should receive a value for sleep" do
+      @cloud.instance_variable_defined?("@wait_resource_poll_interval").should eq(true)
+      @cloud.instance_variable_get("@wait_resource_poll_interval").should eq(3)
+    end 
+
   end
 
   describe "with_openstack" do

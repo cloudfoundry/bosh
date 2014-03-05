@@ -178,11 +178,11 @@ cloud:
 <% end %>
 <% if_p('openstack.auth_url', 'openstack.username', 'openstack.api_key',
         'openstack.tenant', 'openstack.default_key_name',
-        'openstack.default_security_groups', 'registry.address',
+        'openstack.default_security_groups','openstack.wait_resource_poll_interval', 'registry.address',
         'registry.http.port', 'registry.http.user',
         'registry.http.password') do |auth_url, username, api_key,
                                                 tenant, default_key_name,
-                                                default_security_groups, reg_address,
+                                                default_security_groups, wait_resource_poll_interval, reg_address,
                                                 reg_port, reg_user,
                                                 reg_password| %>
   plugin: openstack <% plugin = "openstack" %>
@@ -204,14 +204,12 @@ cloud:
       <% if_p("openstack.stemcell_public_visibility") do |stemcell_public_visibility| %>
       stemcell_public_visibility: <%= stemcell_public_visibility %>
       <% end %>
-      <% if_p("openstack.wait_resource_poll_interval") do |wait_resource_poll_interval| %>
-      wait_resource_poll_interval: <%= wait_resource_poll_interval %>
-      <% end %>
       <% if_p('openstack.connection_options') do |connection_options| %>
       connection_options: <%= JSON.generate(connection_options) %>
       <% end %>
       default_key_name: <%= default_key_name %>
       default_security_groups: <%= default_security_groups %>
+      wait_resource_poll_interval: <%= wait_resource_poll_interval %>
     registry:
       endpoint: http://<%= reg_address %>:<%= reg_port %>
       user: <%= reg_user %>
