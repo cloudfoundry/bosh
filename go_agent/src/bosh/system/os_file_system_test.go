@@ -92,42 +92,60 @@ func init() {
 			assert.NoError(GinkgoT(), err)
 			assert.Equal(GinkgoT(), fileStat.Mode(), os.FileMode(0644))
 		})
-		It("write to file", func() {
 
-			osFs, _ := createOsFs()
-			testPath := filepath.Join(os.TempDir(), "subDir", "ConvergeFileContentsTestFile")
+		Context("the file already exists and is not write only", func() {
+			It("writes to file", func() {
 
-			_, err := os.Stat(testPath)
-			assert.Error(GinkgoT(), err)
+				osFs, _ := createOsFs()
+				testPath := filepath.Join(os.TempDir(), "subDir", "ConvergeFileContentsTestFile")
 
-			written, err := osFs.ConvergeFileContents(testPath, []byte("initial write"))
-			assert.NoError(GinkgoT(), err)
-			assert.True(GinkgoT(), written)
-			defer os.Remove(testPath)
+				_, err := os.Stat(testPath)
+				assert.Error(GinkgoT(), err)
 
-			file, err := os.Open(testPath)
-			assert.NoError(GinkgoT(), err)
-			defer file.Close()
+				written, err := osFs.ConvergeFileContents(testPath, []byte("initial write"))
+				assert.NoError(GinkgoT(), err)
+				assert.True(GinkgoT(), written)
+				defer os.Remove(testPath)
 
-			assert.Equal(GinkgoT(), readFile(file), "initial write")
+				file, err := os.Open(testPath)
+				assert.NoError(GinkgoT(), err)
+				defer file.Close()
 
-			written, err = osFs.ConvergeFileContents(testPath, []byte("second write"))
-			assert.NoError(GinkgoT(), err)
-			assert.True(GinkgoT(), written)
+				assert.Equal(GinkgoT(), readFile(file), "initial write")
 
-			file.Close()
-			file, err = os.Open(testPath)
-			assert.NoError(GinkgoT(), err)
+				written, err = osFs.ConvergeFileContents(testPath, []byte("second write"))
+				assert.NoError(GinkgoT(), err)
+				assert.True(GinkgoT(), written)
 
-			assert.Equal(GinkgoT(), readFile(file), "second write")
+				file.Close()
+				file, err = os.Open(testPath)
+				assert.NoError(GinkgoT(), err)
 
-			file.Close()
-			file, err = os.Open(testPath)
+				assert.Equal(GinkgoT(), readFile(file), "second write")
 
-			written, err = osFs.ConvergeFileContents(testPath, []byte("second write"))
-			assert.NoError(GinkgoT(), err)
-			assert.False(GinkgoT(), written)
-			assert.Equal(GinkgoT(), readFile(file), "second write")
+				file.Close()
+				file, err = os.Open(testPath)
+
+				written, err = osFs.ConvergeFileContents(testPath, []byte("second write"))
+				assert.NoError(GinkgoT(), err)
+				assert.False(GinkgoT(), written)
+				assert.Equal(GinkgoT(), readFile(file), "second write")
+			})
+		})
+
+		Context("the file already exists and is write only", func() {
+			It("writes to file", func() {
+
+				osFs, _ := createOsFs()
+				testPath := filepath.Join(os.TempDir(), "subDir", "ConvergeFileContentsTestFile")
+
+				_, err := os.OpenFile(testPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.FileMode(0200))
+				assert.NoError(GinkgoT(), err)
+				defer os.Remove(testPath)
+
+				err = osFs.WriteFile(testPath, []byte("test"))
+				assert.NoError(GinkgoT(), err)
+			})
 		})
 		It("read file", func() {
 

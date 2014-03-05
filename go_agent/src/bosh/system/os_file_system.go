@@ -84,7 +84,7 @@ func (fs osFileSystem) WriteFileString(path, content string) (err error) {
 }
 
 func (fs osFileSystem) WriteFile(path string, content []byte) (err error) {
-	file, err := os.Create(path)
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		err = bosherr.WrapError(err, "Creating file %s", path)
 		return
