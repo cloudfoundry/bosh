@@ -199,7 +199,8 @@ describe 'director.yml.erb.erb' do
         'api_key' => 'api_key',
         'tenant' => 'tenant',
         'default_key_name' => 'default_key_name',
-        'default_security_groups' => 'default_security_groups'
+        'default_security_groups' => 'default_security_groups',
+        'wait_resource_poll_interval' => 'wait_resource_poll_interval'
       }
       deployment_manifest_fragment['properties']['registry'] = {
         'address' => 'address',
