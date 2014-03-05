@@ -103,9 +103,9 @@ module Bosh::Stemcell
         :bosh_harden,
         :image_create,
         :image_install_grub,
-        :image_vsphere_vmx,
-        :image_vsphere_ovf,
-        :image_vsphere_prepare_stemcell,
+        :image_ovf_vmx,
+        :image_ovf_generate,
+        :image_ovf_prepare_stemcell,
         :stemcell
       ]
     }
@@ -119,10 +119,42 @@ module Bosh::Stemcell
         :bosh_harden,
         :image_create,
         :image_install_grub,
-        :image_vsphere_vmx,
-        :image_vsphere_ovf,
-        :image_vsphere_prepare_stemcell,
+        :image_ovf_vmx,
+        :image_ovf_generate,
+        :image_ovf_prepare_stemcell,
         :stemcell
+      ]
+    }
+
+    let(:vcloud_ubuntu_infrastructure_stages) {
+      [
+          :system_open_vm_tools,
+          :system_vsphere_cdrom,
+          :system_parameters,
+          :bosh_clean,
+          :bosh_harden,
+          :image_create,
+          :image_install_grub,
+          :image_ovf_vmx,
+          :image_ovf_generate,
+          :image_ovf_prepare_stemcell,
+          :stemcell
+      ]
+    }
+
+    let(:vcloud_centos_infrastructure_stages) {
+      [
+          #:system_open_vm_tools,
+          :system_vsphere_cdrom,
+          :system_parameters,
+          :bosh_clean,
+          :bosh_harden,
+          :image_create,
+          :image_install_grub,
+          :image_ovf_vmx,
+          :image_ovf_generate,
+          :image_ovf_prepare_stemcell,
+          :stemcell
       ]
     }
 
@@ -198,7 +230,29 @@ module Bosh::Stemcell
 
             it 'has the correct stages' do
               expect(stage_collection.all_stages)
-              .to eq(centos_stages + agent_stages + vsphere_centos_infrastructure_stages)
+                .to eq(centos_stages + agent_stages + vsphere_centos_infrastructure_stages)
+            end
+          end
+        end
+
+        context 'when infrastructure is vCloud' do
+          let(:infrastructure) { Infrastructure.for('vcloud') }
+
+          context 'when operating system is Ubuntu' do
+            let(:operating_system) { OperatingSystem.for('ubuntu') }
+
+            it 'has the correct stages' do
+              expect(stage_collection.all_stages)
+                .to eq(ubuntu_stages + agent_stages + vcloud_ubuntu_infrastructure_stages)
+            end
+          end
+
+          context 'when operating system is CentOS' do
+            let(:operating_system) { OperatingSystem.for('centos') }
+
+            it 'has the correct stages' do
+              expect(stage_collection.all_stages)
+                .to eq(centos_stages + agent_stages + vcloud_centos_infrastructure_stages)
             end
           end
         end
@@ -277,6 +331,28 @@ module Bosh::Stemcell
             it 'has the correct stages' do
               expect(stage_collection.all_stages)
                 .to eq(centos_stages + agent_stages + vsphere_centos_infrastructure_stages)
+            end
+          end
+        end
+
+        context 'when infrastructure is vCloud' do
+          let(:infrastructure) { Infrastructure.for('vcloud') }
+
+          context 'when operating system is Ubuntu' do
+            let(:operating_system) { OperatingSystem.for('ubuntu') }
+
+            it 'has the correct stages' do
+              expect(stage_collection.all_stages)
+                .to eq(ubuntu_stages + agent_stages + vcloud_ubuntu_infrastructure_stages)
+            end
+          end
+
+          context 'when operating system is CentOS' do
+            let(:operating_system) { OperatingSystem.for('centos') }
+
+            it 'has the correct stages' do
+              expect(stage_collection.all_stages)
+                .to eq(centos_stages + agent_stages + vcloud_centos_infrastructure_stages)
             end
           end
         end

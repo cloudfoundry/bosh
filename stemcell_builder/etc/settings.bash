@@ -18,18 +18,18 @@ bosh_users_password=c1oudc0w
 # bosh_micro_release_tgz_path=/path/to/release.tgz
 
 # parameters for `system_parameters`
-# stemcell_infrastructure=vsphere|aws|openstack
+# stemcell_infrastructure=vcloud|vsphere|aws|openstack
 
 # parameters for `image_create`
 # image_create_disk_size=2048
 
-# parameters for `image_vsphere_ovf`
-# image_vsphere_ovf_ovftool_path=/path/to/ovftool
+# parameters for `image_ovf_generate`
+# image_ovftool_path=/path/to/ovftool
 
 # parameters for `stemcell`
 # stemcell_name=untitled
 # stemcell_tgz=untitled.tgz
 # stemcell_version=unknown
-# stemcell_infrastructure=vsphere|aws|openstack
+# stemcell_infrastructure=vcloud|vsphere|aws|openstack
 # stemcell_hypervisor=esxi|xen|kvm
 # bosh_protocol_version=unknown

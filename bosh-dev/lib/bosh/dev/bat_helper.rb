@@ -3,6 +3,7 @@ require 'bosh/stemcell/definition'
 require 'bosh/dev/aws/runner_builder'
 require 'bosh/dev/openstack/runner_builder'
 require 'bosh/dev/vsphere/runner_builder'
+require 'bosh/dev/vcloud/runner_builder'
 require 'bosh/dev/bat/artifacts'
 
 module Bosh::Dev
@@ -21,6 +22,7 @@ module Bosh::Dev
       { 'aws'       => Bosh::Dev::Aws::RunnerBuilder.new,
         'openstack' => Bosh::Dev::Openstack::RunnerBuilder.new,
         'vsphere'   => Bosh::Dev::VSphere::RunnerBuilder.new,
+        'vcloud'    => Bosh::Dev::VCloud::RunnerBuilder.new,
       }[name]
     end
 

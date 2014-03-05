@@ -201,7 +201,7 @@ describe 'Ubuntu Stemcell' do
     end
   end
 
-  context 'installed by system-aws-network', exclude_on_vsphere: true do
+  context 'installed by system-aws-network', exclude_on_vsphere: true, exclude_on_vcloud: true do
     describe file('/etc/network/interfaces') do
       it { should be_file }
       it { should contain 'auto eth0' }

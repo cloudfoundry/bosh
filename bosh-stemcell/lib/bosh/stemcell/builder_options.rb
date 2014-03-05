@@ -35,7 +35,7 @@ module Bosh::Stemcell
         'bosh_agent_src_dir' => File.join(source_root, 'bosh_agent'),
         'go_agent_src_dir' => File.join(source_root, 'go_agent'),
         'image_create_disk_size' => image_create_disk_size
-      }.merge(bosh_micro_options).merge(environment_variables).merge(vsphere_options)
+      }.merge(bosh_micro_options).merge(environment_variables).merge(ovf_options)
     end
 
     private
@@ -55,9 +55,9 @@ module Bosh::Stemcell
       :bosh_micro_release_tgz_path
     )
 
-    def vsphere_options
-      if infrastructure.name == 'vsphere'
-        { 'image_vsphere_ovf_ovftool_path' => environment['OVFTOOL'] }
+    def ovf_options
+      if infrastructure.name == 'vsphere' || infrastructure.name == 'vcloud'
+        { 'image_ovftool_path' => environment['OVFTOOL'] }
       else
         {}
       end

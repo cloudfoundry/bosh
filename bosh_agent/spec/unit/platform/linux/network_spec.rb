@@ -157,36 +157,39 @@ describe Bosh::Agent::Platform::Linux::Network do
     end
   end
 
-  context "vSphere" do
-    before do
-      network_wrapper.stub(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
-    end
-
-    it "should fail when the mac address in the spec does not match the instance" do
-      complete_network["mac"] = "foobar"
-      expect {
-        network_wrapper.setup_networking
-      }.to raise_error(Bosh::Agent::FatalError, /foobar from settings not present in instance/)
-    end
-
-    it "should raise an exception when cidr can not be generated from ip and netmask" do
-      complete_network["netmask"] = ""
-      expect {
-        network_wrapper.setup_networking
-      }.to raise_error(Bosh::Agent::FatalError, "172.30.40.115  is invalid (contains invalid characters).")
-    end
-
-    it "should delegate updating the network interface files to the platform implementation" do
-      network_wrapper.setup_networking
-      network_wrapper.wrote_network_interfaces.should be(true)
-    end
-
-    it "should update the resolv.conf file" do
-      Bosh::Agent::Util.should_receive(:update_file) do |result, file_path|
-        result.should == "nameserver 172.30.22.153\nnameserver 172.30.22.154\n"
-        file_path.should == '/etc/resolv.conf'
+  ["vsphere", "vcloud"].each do |infra|
+    context infra do
+      before do
+        Bosh::Agent::Config.infrastructure_name = infra
+        network_wrapper.stub(:detect_mac_addresses).and_return({"00:50:56:89:17:70" => "eth0"})
       end
-      network_wrapper.setup_networking
+
+      it "should fail when the mac address in the spec does not match the instance" do
+        complete_network["mac"] = "foobar"
+        expect {
+          network_wrapper.setup_networking
+        }.to raise_error(Bosh::Agent::FatalError, /foobar from settings not present in instance/)
+      end
+
+      it "should raise an exception when cidr can not be generated from ip and netmask" do
+        complete_network["netmask"] = ""
+        expect {
+          network_wrapper.setup_networking
+        }.to raise_error(Bosh::Agent::FatalError, "172.30.40.115  is invalid (contains invalid characters).")
+      end
+
+      it "should delegate updating the network interface files to the platform implementation" do
+        network_wrapper.setup_networking
+        network_wrapper.wrote_network_interfaces.should be(true)
+      end
+
+      it "should update the resolv.conf file" do
+        Bosh::Agent::Util.should_receive(:update_file) do |result, file_path|
+          result.should == "nameserver 172.30.22.153\nnameserver 172.30.22.154\n"
+          file_path.should == '/etc/resolv.conf'
+        end
+        network_wrapper.setup_networking
+      end
     end
   end
 
