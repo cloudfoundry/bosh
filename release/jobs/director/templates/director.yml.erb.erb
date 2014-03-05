@@ -87,6 +87,12 @@ blobstore:
 <% if_p('blobstore.host') do |host| %>
     host: <%= host %>
 <% end %>
+<% if_p('blobstore.ssl_verify_peer') do |ssl_verify_peer| %>
+    ssl_verify_peer: <%= ssl_verify_peer %>
+<% end %>
+<% if_p('blobstore.s3_multipart_threshold') do |s3_multipart_threshold| %>
+    s3_multipart_threshold: <%= s3_multipart_threshold %>
+<% end %>
 <% else %>
     endpoint: http://<%= p('blobstore.address') %>:<%= p('blobstore.port') %>
     user: <%= p('blobstore.director.user') %>
@@ -102,6 +108,21 @@ compiled_package_cache:
     bucket_name: <%= bucket_name %>
     access_key_id: <%= access_key_id %>
     secret_access_key: <%= secret_access_key %>
+<% if_p('compiled_package_cache.options.port') do |port| %>
+    port: <%= port %>
+<% end %>
+<% if_p('compiled_package_cache.options.host') do |host| %>
+    host: <%= host %>
+<% end %>
+<% if_p('compiled_package_cache.options.use_ssl') do |use_ssl| %>
+    use_ssl: <%= use_ssl %>
+<% end %>
+<% if_p('compiled_package_cache.options.ssl_verify_peer') do |ssl_verify_peer| %>
+    ssl_verify_peer: <%= ssl_verify_peer %>
+<% end %>
+<% if_p('compiled_package_cache.options.s3_multipart_threshold') do |s3_multipart_threshold| %>
+    s3_multipart_threshold: <%= s3_multipart_threshold %>
+<% end %>
 <% end %>
 <% if_p('compiled_package_cache.options.swift_provider',
         'compiled_package_cache.options.container_name') do |swift_provider, container_name| %>
@@ -287,6 +308,12 @@ cloud:
       <% end %>
       <% if_p('blobstore.host') do |port| %>
           host: <%= p('blobstore.host') %>
+      <% end %>
+      <% if_p('blobstore.ssl_verify_peer') do |ssl_verify_peer| %>
+          ssl_verify_peer: <%= ssl_verify_peer %>
+      <% end %>
+      <% if_p('blobstore.s3_multipart_threshold') do |s3_multipart_threshold| %>
+          s3_multipart_threshold: <%= s3_multipart_threshold %>
       <% end %>
       <% else %>
           endpoint: 'http://<%= p(['agent.blobstore.address', 'blobstore.address']) %>:<%= p('blobstore.port') %>'
