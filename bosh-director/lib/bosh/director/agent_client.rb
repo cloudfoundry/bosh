@@ -40,6 +40,10 @@ module Bosh::Director
       send_message(method_name, *args)
     end
 
+    def get_state(*args)
+      send_message(:get_state, *args)
+    end
+
     def prepare(*args)
       send_long_running_message(:prepare, *args)
     end

@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require File.expand_path('../../../spec_helper', __FILE__)
 
 module Bosh::Director
@@ -16,185 +14,184 @@ module Bosh::Director
       it_behaves_like 'a Resque job'
     end
 
-    it 'parses agent info into vm_state' do
-      Models::Vm.make(deployment: @deployment, agent_id: 'agent-1', cid: 'vm-1')
-      agent = double('agent')
-      AgentClient.stub(:with_defaults).with('agent-1', timeout: 5).and_return(agent)
-      agent_state = { 'vm_cid' => 'vm-1',
-                      'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
-                      'agent_id' => 'agent-1',
-                      'job_state' => 'running',
-                      'resource_pool' => { 'name' => 'test_resource_pool' } }
-      agent.should_receive(:get_state).and_return(agent_state)
+    describe '#perform' do
+      before { allow(AgentClient).to receive(:with_defaults).with('fake-agent-id', timeout: 5).and_return(agent) }
+      let(:agent) { instance_double('Bosh::Director::AgentClient') }
 
-      @result_file.should_receive(:write) do |agent_status|
-        status = JSON.parse(agent_status)
-        status['ips'].should == ['1.1.1.1']
-        status['dns'].should be_empty
-        status['vm_cid'].should == 'vm-1'
-        status['agent_id'].should == 'agent-1'
-        status['job_state'].should == 'running'
-        status['resource_pool'].should == 'test_resource_pool'
-        status['vitals'].should be_nil
+      it 'parses agent info into vm_state' do
+        Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
+
+        expect(agent).to receive(:get_state).with('full').and_return(
+          'vm_cid' => 'fake-vm-cid',
+          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+          'agent_id' => 'fake-agent-id',
+          'job_state' => 'running',
+          'resource_pool' => { 'name' => 'test_resource_pool' },
+        )
+
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          status['ips'].should == ['1.1.1.1']
+          status['dns'].should be_empty
+          status['vm_cid'].should == 'fake-vm-cid'
+          status['agent_id'].should == 'fake-agent-id'
+          status['job_state'].should == 'running'
+          status['resource_pool'].should == 'test_resource_pool'
+          status['vitals'].should be_nil
+        end
+
+        job = Jobs::VmState.new(@deployment.id, 'full')
+        job.perform
       end
 
-      job = Jobs::VmState.new(@deployment.id, nil)
-      job.perform
-    end
+      it 'parses agent info into vm_state with vitals' do
+        Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
 
-    it 'parses agent info into vm_state with vitals' do
-      Models::Vm.make(deployment: @deployment, agent_id: 'agent-1', cid: 'vm-1')
-      agent = double('agent')
-      AgentClient.stub(:with_defaults).with('agent-1', timeout: 5).and_return(agent)
+        expect(agent).to receive(:get_state).with('full').and_return(
+          'vm_cid' => 'fake-vm-cid',
+          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+          'agent_id' => 'fake-agent-id',
+          'job_state' => 'running',
+          'resource_pool' => { 'name' => 'test_resource_pool' },
+          'vitals' => {
+            'load' => ['1', '5', '15'],
+            'cpu' => { 'user' => 'u', 'sys' => 's', 'wait' => 'w' },
+            'mem' => { 'percent' => 'p', 'kb' => 'k' },
+            'swap' => { 'percent' => 'p', 'kb' => 'k' },
+            'disk' => { 'system' => { 'percent' => 'p' }, 'ephemeral' => { 'percent' => 'p' } },
+          },
+        )
 
-      agent_state = { 'vm_cid' => 'vm-1',
-                      'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
-                      'agent_id' => 'agent-1',
-                      'job_state' => 'running',
-                      'resource_pool' => { 'name' => 'test_resource_pool' },
-                      'vitals' => {
-                        'load' => ['1', '5', '15'],
-                        'cpu' => { 'user' => 'u', 'sys' => 's', 'wait' => 'w' },
-                        'mem' => { 'percent' => 'p', 'kb' => 'k' },
-                        'swap' => { 'percent' => 'p', 'kb' => 'k' },
-                        'disk' => { 'system' => { 'percent' => 'p' },
-                                    'ephemeral' => { 'percent' => 'p' }
-                        }
-                      }
-      }
-      agent.should_receive(:get_state).and_return(agent_state)
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          status['ips'].should == ['1.1.1.1']
+          status['dns'].should be_empty
+          status['vm_cid'].should == 'fake-vm-cid'
+          status['agent_id'].should == 'fake-agent-id'
+          status['job_state'].should == 'running'
+          status['resource_pool'].should == 'test_resource_pool'
+          status['vitals']['load'].should == ['1', '5', '15']
+          status['vitals']['cpu'].should == { 'user' => 'u', 'sys' => 's', 'wait' => 'w' }
+          status['vitals']['mem'].should == { 'percent' => 'p', 'kb' => 'k' }
+          status['vitals']['swap'].should == { 'percent' => 'p', 'kb' => 'k' }
+          status['vitals']['disk'].should == { 'system' => { 'percent' => 'p' }, 'ephemeral' => { 'percent' => 'p' } }
+        end
 
-      @result_file.should_receive(:write) do |agent_status|
-        status = JSON.parse(agent_status)
-        status['ips'].should == ['1.1.1.1']
-        status['dns'].should be_empty
-        status['vm_cid'].should == 'vm-1'
-        status['agent_id'].should == 'agent-1'
-        status['job_state'].should == 'running'
-        status['resource_pool'].should == 'test_resource_pool'
-        status['vitals']['load'].should == ['1', '5', '15']
-        status['vitals']['cpu'].should == { 'user' => 'u', 'sys' => 's', 'wait' => 'w' }
-        status['vitals']['mem'].should == { 'percent' => 'p', 'kb' => 'k' }
-        status['vitals']['swap'].should == { 'percent' => 'p', 'kb' => 'k' }
-        status['vitals']['disk'].should == { 'system' => { 'percent' => 'p' },
-                                             'ephemeral' => { 'percent' => 'p' } }
+        job = Jobs::VmState.new(@deployment.id, 'full')
+        job.perform
       end
 
-      job = Jobs::VmState.new(@deployment.id, 'full')
-      job.perform
-    end
+      it 'should return DNS A records if they exist' do
+        Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
 
-    it 'should return DNS A records if they exist' do
-      Models::Vm.make(deployment: @deployment, agent_id: 'agent-1', cid: 'vm-1')
-      domain = Models::Dns::Domain.make(name: 'microbosh', type: 'NATIVE')
-      Models::Dns::Record.make(domain: domain,
-                               name: 'index.job.network.deployment.microbosh',
-                               type: 'A',
-                               content: '1.1.1.1',
-                               ttl: 14400)
-      agent = double('agent')
-      AgentClient.stub(:with_defaults).with('agent-1', timeout: 5).and_return(agent)
-      agent_state = { 'vm_cid' => 'vm-1',
-                      'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
-                      'agent_id' => 'agent-1',
-                      'job_state' => 'running',
-                      'resource_pool' => { 'name' => 'test_resource_pool' } }
-      agent.should_receive(:get_state).and_return(agent_state)
+        domain = Models::Dns::Domain.make(name: 'microbosh', type: 'NATIVE')
 
-      @result_file.should_receive(:write) do |agent_status|
-        status = JSON.parse(agent_status)
-        status['ips'].should == ['1.1.1.1']
-        status['dns'].should == ['index.job.network.deployment.microbosh']
-        status['vm_cid'].should == 'vm-1'
-        status['agent_id'].should == 'agent-1'
-        status['job_state'].should == 'running'
-        status['resource_pool'].should == 'test_resource_pool'
-        status['vitals'].should be_nil
+        Models::Dns::Record.make(
+          domain: domain,
+          name: 'index.job.network.deployment.microbosh',
+          type: 'A',
+          content: '1.1.1.1',
+          ttl: 14400,
+        )
+
+        expect(agent).to receive(:get_state).with('full').and_return(
+          'vm_cid' => 'fake-vm-cid',
+          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+          'agent_id' => 'fake-agent-id',
+          'job_state' => 'running',
+          'resource_pool' => { 'name' => 'test_resource_pool' },
+        )
+
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          status['ips'].should == ['1.1.1.1']
+          status['dns'].should == ['index.job.network.deployment.microbosh']
+          status['vm_cid'].should == 'fake-vm-cid'
+          status['agent_id'].should == 'fake-agent-id'
+          status['job_state'].should == 'running'
+          status['resource_pool'].should == 'test_resource_pool'
+          status['vitals'].should be_nil
+        end
+
+        job = Jobs::VmState.new(@deployment.id, 'full')
+        job.perform
       end
 
-      job = Jobs::VmState.new(@deployment.id, nil)
-      job.perform
-    end
+      it 'should handle unresponsive agents' do
+        Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
 
-    it 'should handle unresponsive agents' do
-      Models::Vm.make(deployment: @deployment, agent_id: 'agent-1', cid: 'vm-1')
-      agent = double('agent')
-      AgentClient.stub(:with_defaults).with('agent-1', timeout: 5).and_return(agent)
-      agent.should_receive(:get_state).and_raise(RpcTimeout)
+        expect(agent).to receive(:get_state).with('full').and_raise(RpcTimeout)
 
-      @result_file.should_receive(:write) do |agent_status|
-        status = JSON.parse(agent_status)
-        status['vm_cid'].should == 'vm-1'
-        status['agent_id'].should == 'agent-1'
-        status['job_state'].should == 'unresponsive agent'
-        status['resurrection_paused'].should be_nil
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          status['vm_cid'].should == 'fake-vm-cid'
+          status['agent_id'].should == 'fake-agent-id'
+          status['job_state'].should == 'unresponsive agent'
+          status['resurrection_paused'].should be_nil
+        end
+
+        job = Jobs::VmState.new(@deployment.id, 'full')
+        job.perform
       end
 
-      job = Jobs::VmState.new(@deployment.id, nil)
-      job.perform
-    end
+      it 'should get the resurrection paused status' do
+        vm = Models::Vm.make(deployment: @deployment, agent_id: 'fake-agent-id', cid: 'fake-vm-cid')
 
-    it 'should get the resurrection paused status' do
-      Models::Instance.create(deployment: @deployment,
-                              job: 'dea',
-                              index: '0',
-                              state: 'started',
-                              resurrection_paused: true)
-      Models::Vm.make(deployment: @deployment, agent_id: 'agent-1', cid: 'vm-1')
-      agent = double('agent')
-      AgentClient.stub(:with_defaults).with('agent-1', timeout: 5).and_return(agent)
+        Models::Instance.create(
+          deployment: @deployment,
+          job: 'dea',
+          index: '0',
+          state: 'started',
+          resurrection_paused: true,
+          vm: vm,
+        )
 
-      agent_state = { 'vm_cid' => 'vm-1',
-                      'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
-                      'agent_id' => 'agent-1',
-                      'index' => 0,
-                      'job' => { 'name' => 'dea' },
-                      'job_state' => 'running',
-                      'resource_pool' => { 'name' => 'test_resource_pool' },
-                      'vitals' => {
-                        'load' => ['1', '5', '15'],
-                        'cpu' => { 'user' => 'u', 'sys' => 's', 'wait' => 'w' },
-                        'mem' => { 'percent' => 'p', 'kb' => 'k' },
-                        'swap' => { 'percent' => 'p', 'kb' => 'k' },
-                        'disk' => { 'system' => { 'percent' => 'p' },
-                                    'ephemeral' => { 'percent' => 'p' }
-                        }
-                      }
-      }
-      agent.should_receive(:get_state).and_return(agent_state)
+        expect(agent).to receive(:get_state).with('full').and_return(
+          'vm_cid' => 'fake-vm-cid',
+          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+          'agent_id' => 'fake-agent-id',
+          'index' => 0,
+          'job' => { 'name' => 'dea' },
+          'job_state' => 'running',
+          'resource_pool' => { 'name' => 'test_resource_pool' },
+          'vitals' => {
+            'load' => ['1', '5', '15'],
+            'cpu' => { 'user' => 'u', 'sys' => 's', 'wait' => 'w' },
+            'mem' => { 'percent' => 'p', 'kb' => 'k' },
+            'swap' => { 'percent' => 'p', 'kb' => 'k' },
+            'disk' => { 'system' => { 'percent' => 'p' }, 'ephemeral' => { 'percent' => 'p' } },
+          },
+        )
 
-      job = Jobs::VmState.new(@deployment.id, 'full')
+        job = Jobs::VmState.new(@deployment.id, 'full')
 
-      @result_file.should_receive(:write) do |agent_status|
-        status = JSON.parse(agent_status)
-        expect(status['resurrection_paused']).to be(true)
+        expect(@result_file).to receive(:write) do |agent_status|
+          status = JSON.parse(agent_status)
+          expect(status['resurrection_paused']).to be(true)
+        end
+
+        job.perform
       end
-
-      job.perform
     end
 
     describe '#process_vm' do
-      context 'when job index is an empty string' do
-        let(:filter_attributes) { { deployment_id: 1, job: 'fake job', index: '' } }
+      before { allow(AgentClient).to receive(:with_defaults).with('fake-agent-id', timeout: 5).and_return(agent) }
+      let(:agent) { instance_double('Bosh::Director::AgentClient') }
 
-        let(:vm) { instance_double('Bosh::Director::Models::Vm', agent_id: 'fake agent', cid: nil) }
-        let(:instance) { instance_double('Bosh::Director::Models::Instance', deployment: @deployment, resurrection_paused: true) }
+      context 'when job index returned as part of get_state agent response is an empty string' do
+        let(:vm) { Models::Vm.make(agent_id: 'fake-agent-id', cid: 'fake-vm-cid', deployment: @deployment) }
 
-        it 'does not raise' do
-          Models::Instance.stub(:find).and_return(instance)
-          Models::Instance.stub(:find).with(filter_attributes).and_raise(PG::Error, 'ERROR: invalid input syntax for integer: ""')
-
-          agent = double('agent')
-          AgentClient.stub(:with_defaults).with('fake agent', timeout: 5).and_return(agent)
-
-          agent_state = { 'vm_cid' => 'fake vm',
-                          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
-                          'agent_id' => 'fake agent',
-                          'index' => '',
-                          'job' => { 'name' => 'fake job' },
-          }
-
-          agent.should_receive(:get_state).and_return(agent_state)
+        # This test only makes sense for Postgres DB because it used to raise following error:
+        #   #<Sequel::DatabaseError: PG::Error: ERROR:  invalid input syntax for integer: ""
+        #   LINE 1: ..._id" = 8) AND ("job" = 'fake job') AND ("index" = '')) LIMIT...
+        it 'does not raise Sequel::DatabaseError' do
+          expect(agent).to receive(:get_state).with('full').and_return(
+            'vm_cid' => 'fake vm',
+            'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+            'agent_id' => 'fake-agent-id',
+            'index' => '',
+            'job' => { 'name' => 'fake job' },
+          )
 
           job = Jobs::VmState.new(@deployment.id, 'full')
 

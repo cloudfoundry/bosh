@@ -1,6 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
+require 'support/release_helper'
 
 module Bosh::Director
   describe Jobs::UpdateRelease do
@@ -57,7 +56,7 @@ module Bosh::Director
 
       context 'commit_hash and uncommitted changes flag' do
         it 'sets commit_hash and uncommitted changes flag on release_version' do
-          release_dir = ReleaseHelper.create_release_tarball(manifest)
+          release_dir = Test::ReleaseHelper.new.create_release_tarball(manifest)
           job = Jobs::UpdateRelease.new(release_dir)
           job.extract_release
           job.verify_manifest
@@ -73,7 +72,7 @@ module Bosh::Director
         it 'sets default commit_hash and uncommitted_changes flag if missing' do
           manifest.delete('commit_hash')
           manifest.delete('uncommitted_changes')
-          release_dir = ReleaseHelper.create_release_tarball(manifest)
+          release_dir = Test::ReleaseHelper.new.create_release_tarball(manifest)
           job = Jobs::UpdateRelease.new(release_dir)
           job.extract_release
           job.verify_manifest
@@ -92,7 +91,7 @@ module Bosh::Director
           result = Bosh::Exec::Result.new('cmd', 'output', 1)
           Bosh::Exec.should_receive(:sh).and_return(result)
 
-          release_dir = ReleaseHelper.create_release_tarball(manifest)
+          release_dir = Test::ReleaseHelper.new.create_release_tarball(manifest)
           job = Jobs::UpdateRelease.new(release_dir)
 
           expect {
@@ -155,7 +154,7 @@ module Bosh::Director
           ]
         }
 
-        @release_dir = ReleaseHelper.create_release_tarball(@manifest)
+        @release_dir = Test::ReleaseHelper.new.create_release_tarball(@manifest)
 
         @job = Jobs::UpdateRelease.new(@release_dir, 'rebase' => true)
 
@@ -302,8 +301,9 @@ module Bosh::Director
           f.write(create_package({'test' => 'test contents'}))
         end
 
-        blobstore.should_receive(:create).with(
-          have_a_path_of(package_path)).and_return('blob_id')
+        blobstore.should_receive(:create).
+          with(satisfy { |obj| obj.path == package_path }).
+          and_return('blob_id')
 
         @job.create_package(
           {
@@ -361,10 +361,21 @@ module Bosh::Director
         }.to raise_exception(Bosh::Director::PackageInvalidArchive)
       end
 
+      def create_package(files)
+        io = StringIO.new
+
+        Archive::Tar::Minitar::Writer.open(io) do |tar|
+          files.each do |key, value|
+            tar.add_file(key, {:mode => "0644", :mtime => 0}) { |os, _| os.write(value) }
+          end
+        end
+
+        io.close
+        gzip(io.string)
+      end
     end
 
     describe 'resolve_package_dependencies' do
-
       before(:each) do
         @job = Jobs::UpdateRelease.new(@release_dir)
       end
@@ -481,6 +492,43 @@ module Bosh::Director
 
         lambda { @job.create_job(@job_attrs) }.should raise_error(JobMissingTemplateFile)
       end
+    end
+
+    def create_job(name, monit, configuration_files, options = { })
+      io = StringIO.new
+
+      manifest = {
+        "name" => name,
+        "templates" => {},
+        "packages" => []
+      }
+
+      configuration_files.each do |path, configuration_file|
+        manifest["templates"][path] = configuration_file["destination"]
+      end
+
+      Archive::Tar::Minitar::Writer.open(io) do |tar|
+        unless options[:skip_manifest]
+          tar.add_file("job.MF", {:mode => "0644", :mtime => 0}) { |os, _| os.write(manifest.to_yaml) }
+        end
+        unless options[:skip_monit]
+          monit_file = options[:monit_file] ? options[:monit_file] : "monit"
+          tar.add_file(monit_file, {:mode => "0644", :mtime => 0}) { |os, _| os.write(monit) }
+        end
+
+        tar.mkdir("templates", {:mode => "0755", :mtime => 0})
+        configuration_files.each do |path, configuration_file|
+          unless options[:skip_templates] && options[:skip_templates].include?(path)
+            tar.add_file("templates/#{path}", {:mode => "0644", :mtime => 0}) do |os, _|
+              os.write(configuration_file["contents"])
+            end
+          end
+        end
+      end
+
+      io.close
+
+      gzip(io.string)
     end
   end
 end

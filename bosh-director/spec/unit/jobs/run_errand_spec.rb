@@ -8,7 +8,7 @@ module Bosh::Director
 
     let(:instance) do
       Models::Instance.make(
-        job: 'fake-job-name',
+        job: 'fake-errand-name',
         index: 0,
         vm: vm,
         deployment: deployment,
@@ -33,7 +33,7 @@ module Bosh::Director
           }
 
           before { allow(Config).to receive(:result).and_return(result_file) }
-          let(:result_file) { instance_double('File') }
+          let(:result_file) { instance_double('File', write: nil) }
 
           it 'writes run_errand agent response with exit_code, stdout and stderr to task result file' do
             allow(agent_client).to receive(:run_errand).and_return(errand_result)
@@ -65,6 +65,22 @@ module Bosh::Director
 
             job.perform
           end
+
+          context 'when errand exit_code is 0' do
+            before { allow(agent_client).to receive(:run_errand).and_return(errand_result.merge('exit_code' => 0)) }
+
+            it 'returns successful errand completion message as task short result (not result file)' do
+              expect(job.perform).to eq('Errand `fake-errand-name\' completed successfully (exit code 0)')
+            end
+          end
+
+          context 'when errand exit_code is non-0' do
+            before { allow(agent_client).to receive(:run_errand).and_return(errand_result.merge('exit_code' => 123)) }
+
+            it 'returns error errand completion message as task short result (not result file)' do
+              expect(job.perform).to eq('Errand `fake-errand-name\' completed with error (exit code 123)')
+            end
+          end
         end
 
         context 'when agent does not support run_errand command' do
@@ -91,7 +107,7 @@ module Bosh::Director
           it 'raises an error' do
             expect {
               job.perform
-            }.to raise_error(InstanceVmMissing, %r{fake-job-name/0.*doesn't reference a VM})
+            }.to raise_error(InstanceVmMissing, %r{fake-errand-name/0.*doesn't reference a VM})
           end
         end
       end

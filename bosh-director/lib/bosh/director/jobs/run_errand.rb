@@ -5,6 +5,41 @@ module Bosh::Director
     class RunErrand < BaseJob
       @queue = :normal
 
+      class ErrandResult
+        attr_reader :exit_code
+
+        AGENT_TASK_RESULT_SCHEMA = ::Membrane::SchemaParser.parse do
+          {
+            'exit_code' => Integer,
+            'stdout' => String,
+            'stderr' => String,
+          }
+        end
+
+        # Explicitly write out schema of the director task result
+        # to avoid accidently leaking agent task result extra fields.
+        def self.from_agent_task_result(agent_task_result)
+          AGENT_TASK_RESULT_SCHEMA.validate(agent_task_result)
+          new(*agent_task_result.values_at('exit_code', 'stdout', 'stderr'))
+        rescue Membrane::SchemaValidationError => e
+          raise AgentInvalidTaskResult, e.message
+        end
+
+        def initialize(exit_code, stdout, stderr)
+          @exit_code = exit_code
+          @stdout = stdout
+          @stderr = stderr
+        end
+
+        def to_hash
+          {
+            'exit_code' => @exit_code,
+            'stdout' => @stdout,
+            'stderr' => @stderr,
+          }
+        end
+      end
+
       def self.job_type
         :run_errand
       end
@@ -21,30 +56,17 @@ module Bosh::Director
         agent = @instance_manager.agent_client_for(instance)
         agent_task_result = agent.run_errand
 
-        director_task_result = extract_director_task_result(agent_task_result)
-        result_file.write(JSON.dump(director_task_result) + "\n")
-      end
+        errand_result = ErrandResult.from_agent_task_result(agent_task_result)
+        result_file.write(JSON.dump(errand_result.to_hash) + "\n")
 
-      private
+        title_prefix = "Errand `#{@errand_name}' completed"
+        exit_code_suffix = "(exit code #{errand_result.exit_code})"
 
-      AGENT_TASK_RESULT_SCHEMA = ::Membrane::SchemaParser.parse do
-        { 'exit_code' => Integer,
-          'stdout' => String,
-          'stderr' => String,
-        }
-      end
-
-      # Explicitly write out schema of the director task result
-      # to avoid accidently leaking agent task result extra fields.
-      def extract_director_task_result(agent_task_result)
-        AGENT_TASK_RESULT_SCHEMA.validate(agent_task_result)
-        {
-          'exit_code' => agent_task_result['exit_code'],
-          'stdout' => agent_task_result['stdout'],
-          'stderr' => agent_task_result['stderr'],
-        }
-      rescue Membrane::SchemaValidationError => e
-        raise AgentInvalidTaskResult, e.message
+        if errand_result.exit_code == 0
+          "#{title_prefix} successfully #{exit_code_suffix}"
+        else
+          "#{title_prefix} with error #{exit_code_suffix}"
+        end
       end
     end
   end

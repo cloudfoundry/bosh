@@ -26,7 +26,7 @@ module Bosh::Dev::Sandbox
       end
 
       it 'always stops the standbox' do
-        allow(sandbox).to receive(:loop).and_raise('Something unexpected and bad happenned')
+        allow(sandbox).to receive(:loop).and_raise('Something unexpected and bad happened')
         expect { sandbox.run }.to raise_error(/unexpected/)
         expect(sandbox).to have_received(:stop)
       end
