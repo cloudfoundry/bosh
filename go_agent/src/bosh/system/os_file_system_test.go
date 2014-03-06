@@ -147,6 +147,28 @@ func init() {
 				assert.NoError(GinkgoT(), err)
 			})
 		})
+
+		Context("the file parent fir does not exist", func() {
+			BeforeEach(func() {
+				err := os.RemoveAll(filepath.Join(os.TempDir(), "subDirNew"))
+				assert.NoError(GinkgoT(), err)
+			})
+
+			AfterEach(func() {
+				err := os.RemoveAll(filepath.Join(os.TempDir(), "subDirNew"))
+				assert.NoError(GinkgoT(), err)
+			})
+
+			It("writes to file", func() {
+				osFs, _ := createOsFs()
+
+				testPath := filepath.Join(os.TempDir(), "subDirNew", "ConvergeFileContentsTestFile")
+
+				err := osFs.WriteFile(testPath, []byte("test"))
+				assert.NoError(GinkgoT(), err)
+			})
+		})
+
 		It("read file", func() {
 
 			osFs, _ := createOsFs()
