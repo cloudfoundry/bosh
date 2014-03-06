@@ -141,7 +141,7 @@ module Bosh::Director
       ##
       # Take any existing valid network reservations
       #
-      # @param [Hash<String, NetworkReservation] reservations
+      # @param [Hash<String, NetworkReservation>] reservations
       # @return [void]
       def take_network_reservations(reservations)
         reservations.each do |name, provided_reservation|
