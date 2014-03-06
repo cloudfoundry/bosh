@@ -1,3 +1,5 @@
+require 'bosh/director/deployment_plan/deployment_spec_parser'
+
 module Bosh::Director
   # Encapsulates essential director data structures retrieved
   # from the deployment manifest and the running environment.
@@ -8,66 +10,89 @@ module Bosh::Director
 
       # @return [String] Deployment name
       attr_reader :name
+
       # @return [String] Deployment canonical name (for DNS)
       attr_reader :canonical_name
+
       # @return [Models::Deployment] Deployment DB model
       attr_reader :model
 
       attr_accessor :properties
+
+      # @return [Bosh::Director::DeploymentPlan::CompilationConfig]
+      #   Resource pool and other configuration for compilation workers
       attr_accessor :compilation
+
+      # @return [Bosh::Director::DeploymentPlan::UpdateConfig]
+      #   Default job update configuration
       attr_accessor :update
+
+      # @return [Array<Bosh::Director::DeploymentPlan::Job>]
+      #   All jobs in the deployment
+      attr_reader :jobs
+
       attr_accessor :unneeded_instances
       attr_accessor :unneeded_vms
       attr_accessor :dns_domain
 
-      attr_reader :jobs
       attr_reader :job_rename
+
+      # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
 
-      def initialize(manifest, options = {})
-        @manifest = manifest
-        @recreate = !!options['recreate']
-        @job_states = safe_property(options, 'job_states',
-                                    :class => Hash, :default => {})
+      # @param [Hash] manifest Raw deployment manifest
+      # @param [Bosh::Director::EventLog::Log]
+      #   event_log Event log for recording deprecations
+      # @param [Hash] options Additional options for deployment
+      #   (e.g. job_states, job_rename)
+      # @return [Bosh::Director::DeploymentPlan::Planner]
+      def self.parse(manifest, event_log, options)
+        parser = DeploymentSpecParser.new(event_log)
+        parser.parse(manifest, options)
+      end
 
-        @job_rename = safe_property(options, 'job_rename',
-                                    :class => Hash, :default => {})
+      def initialize(name, options = {})
+        raise ArgumentError, 'name must not be nil' unless name
+        @name = name
+        @model = nil
+
+        @properties = {}
+        @releases = {}
+        @networks = {}
+        @networks_canonical_name_index = Set.new
+
+        @resource_pools = {}
+
+        @jobs = []
+        @jobs_name_index = {}
+        @jobs_canonical_name_index = Set.new
+
         @unneeded_vms = []
         @unneeded_instances = []
         @dns_domain = nil
 
-        @name = nil
-        @canonical_name = nil
-        @model = nil
+        @job_rename = safe_property(options, 'job_rename',
+          :class => Hash, :default => {})
+
+        @recreate = !!options['recreate']
       end
 
-      def parse(event_log)
-        parse_name
-        parse_properties
-        parse_releases
-        parse_networks
-        parse_compilation
-        parse_update
-        parse_resource_pools
-        parse_jobs(event_log)
+      def canonical_name
+        canonical(@name)
       end
 
       # Looks up deployment model in DB or creates one if needed
       # @return [void]
       def bind_model
-        if @name.nil? || @canonical_name.nil?
-          raise DirectorError,
-                'Unable to bind model, name and/or canonical name unknown'
-        end
-
         attrs = {:name => @name}
 
         Models::Deployment.db.transaction do
           deployment = Models::Deployment.find(attrs)
+
           # Canonical uniqueness is not enforced in the DB
           if deployment.nil?
             Models::Deployment.each do |other|
-              if canonical(other.name) == @canonical_name
+              if canonical(other.name) == canonical_name
                 raise DeploymentCanonicalNameTaken,
                       "Invalid deployment name `#{@name}', " +
                         'canonical name already taken'
@@ -75,6 +100,7 @@ module Bosh::Director
             end
             deployment = Models::Deployment.create(attrs)
           end
+
           @model = deployment
         end
       end
@@ -88,11 +114,17 @@ module Bosh::Director
         @model.vms
       end
 
-      # Returns a named job
-      # @param [String] name Job name
-      # @return [Bosh::Director::DeploymentPlan::Job] Job
-      def job(name)
-        @jobs_name_index[name]
+      # Adds a network by name
+      # @param [Bosh::Director::DeploymentPlan::Network] network
+      def add_network(network)
+        if @networks_canonical_name_index.include?(network.canonical_name)
+          raise DeploymentCanonicalNetworkNameTaken,
+            "Invalid network name `#{network.name}', " +
+              'canonical name already taken'
+        end
+
+        @networks[network.name] = network
+        @networks_canonical_name_index << network.canonical_name
       end
 
       # Returns all networks in a deployment plan
@@ -108,6 +140,16 @@ module Bosh::Director
         @networks[name]
       end
 
+      # Adds a resource pool by name
+      # @param [Bosh::Director::DeploymentPlan::ResourcePool] resource_pool
+      def add_resource_pool(resource_pool)
+        if @resource_pools[resource_pool.name]
+          raise DeploymentDuplicateResourcePoolName,
+            "Duplicate resource pool name `#{resource_pool.name}'"
+        end
+        @resource_pools[resource_pool.name] = resource_pool
+      end
+
       # Returns all resource pools in a deployment plan
       # @return [Array<Bosh::Director::DeploymentPlan::ResourcePool>]
       def resource_pools
@@ -119,6 +161,16 @@ module Bosh::Director
       # @return [Bosh::Director::DeploymentPlan::ResourcePool]
       def resource_pool(name)
         @resource_pools[name]
+      end
+
+      # Adds a release by name
+      # @param [Bosh::Director::DeploymentPlan::ReleaseVersion] release
+      def add_release(release)
+        if @releases.has_key?(release.name)
+          raise DeploymentDuplicateReleaseName,
+            "Duplicate release name `#{release.name}'"
+        end
+        @releases[release.name] = release
       end
 
       # Returns all releases in a deployment plan
@@ -135,7 +187,6 @@ module Bosh::Director
 
       # Adds a VM to deletion queue
       # @param [Bosh::Director::Models::Vm] vm VM DB model
-      #
       def delete_vm(vm)
         @unneeded_vms << vm
       end
@@ -150,138 +201,34 @@ module Bosh::Director
         end
       end
 
+      # Adds a job by name
+      # @param [Bosh::Director::DeploymentPlan::Job] job
+      def add_job(job)
+        if rename_in_progress? && @job_rename['old_name'] == job.name
+          raise DeploymentRenamedJobNameStillUsed,
+            "Renamed job `#{job.name}' is still referenced in " +
+              'deployment manifest'
+        end
+
+        if @jobs_canonical_name_index.include?(job.canonical_name)
+          raise DeploymentCanonicalJobNameTaken,
+            "Invalid job name `#{job.name}', canonical name already taken"
+        end
+
+        @jobs << job
+        @jobs_name_index[job.name] = job
+        @jobs_canonical_name_index << job.canonical_name
+      end
+
+      # Returns a named job
+      # @param [String] name Job name
+      # @return [Bosh::Director::DeploymentPlan::Job] Job
+      def job(name)
+        @jobs_name_index[name]
+      end
+
       def rename_in_progress?
         @job_rename['old_name'] && @job_rename['new_name']
-      end
-
-      def parse_name
-        @name = safe_property(@manifest, 'name', :class => String)
-        @canonical_name = canonical(@name)
-      end
-
-      def parse_properties
-        @properties = safe_property(@manifest, 'properties',
-                                    :class => Hash, :default => {})
-      end
-
-      def parse_releases
-        release_specs = []
-
-        if @manifest.has_key?('release')
-          if @manifest.has_key?('releases')
-            raise DeploymentAmbiguousReleaseSpec,
-                  "Deployment manifest contains both 'release' and 'releases' " +
-                    'sections, please use one of the two.'
-          end
-          release_specs << @manifest['release']
-        else
-          safe_property(@manifest, 'releases', :class => Array).each do |release|
-            release_specs << release
-          end
-        end
-
-        @releases = {}
-        release_specs.each do |release_spec|
-          release = ReleaseVersion.new(self, release_spec)
-          if @releases.has_key?(release.name)
-            raise DeploymentDuplicateReleaseName,
-                  "Duplicate release name `#{release.name}'"
-          end
-          @releases[release.name] = release
-        end
-      end
-
-      def parse_resource_pools
-        @resource_pools = {}
-        resource_pools = safe_property(@manifest, 'resource_pools',
-                                       :class => Array)
-        resource_pools.each do |spec|
-          resource_pool = ResourcePool.new(self, spec)
-          if @resource_pools[resource_pool.name]
-            raise DeploymentDuplicateResourcePoolName,
-                  "Duplicate resource pool name `#{resource_pool.name}'"
-          end
-          @resource_pools[resource_pool.name] = resource_pool
-        end
-
-        # Uncomment when integration test fixed
-        # raise "No resource pools specified." if @resource_pools.empty?
-      end
-
-      def parse_jobs(event_log)
-        @jobs = []
-        @jobs_name_index = {}
-        @jobs_canonical_name_index = Set.new
-
-        jobs = safe_property(@manifest, 'jobs', :class => Array, :default => [])
-
-        jobs.each do |job|
-          state_overrides = @job_states[job['name']]
-
-          if state_overrides
-            job.recursive_merge!(state_overrides)
-          end
-
-          if rename_in_progress? && @job_rename['old_name'] == job['name']
-            raise DeploymentRenamedJobNameStillUsed,
-                  "Renamed job `#{job['name']}' is still referenced in " +
-                    'deployment manifest'
-          end
-
-          job = Job.parse(self, job, event_log)
-
-          if @jobs_canonical_name_index.include?(job.canonical_name)
-            raise DeploymentCanonicalJobNameTaken,
-                  "Invalid job name `#{job.name}', canonical name already taken"
-          end
-
-          @jobs << job
-          @jobs_name_index[job.name] = job
-          @jobs_canonical_name_index << job.canonical_name
-        end
-      end
-
-      def parse_networks
-        @networks = {}
-        @networks_canonical_name_index = Set.new
-        networks = safe_property(@manifest, 'networks', :class => Array)
-        networks.each do |network_spec|
-          type = safe_property(network_spec, 'type', :class => String,
-                               :default => 'manual')
-          case type
-            when 'manual'
-              network = ManualNetwork.new(self, network_spec)
-            when 'dynamic'
-              network = DynamicNetwork.new(self, network_spec)
-            when 'vip'
-              network = VipNetwork.new(self, network_spec)
-            else
-              raise DeploymentInvalidNetworkType,
-                    "Invalid network type `#{type}'"
-          end
-
-          if @networks_canonical_name_index.include?(network.canonical_name)
-            raise DeploymentCanonicalNetworkNameTaken,
-                  "Invalid network name `#{network.name}', " +
-                    'canonical name already taken'
-          end
-          @networks[network.name] = network
-          @networks_canonical_name_index << network.canonical_name
-        end
-
-        if @networks.empty?
-          raise DeploymentNoNetworks, 'No networks specified'
-        end
-      end
-
-      def parse_update
-        @update = UpdateConfig.new(
-          safe_property(@manifest, 'update', :class => Hash))
-      end
-
-      def parse_compilation
-        @compilation = CompilationConfig.new(self, safe_property(
-          @manifest, 'compilation', :class => Hash))
       end
     end
   end

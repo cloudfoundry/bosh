@@ -31,7 +31,7 @@ module Bosh::Director
       #   be run in
       attr_accessor :resource_pool
 
-      # @return [DeploymentPlan::Network Job default network
+      # @return [DeploymentPlan::Network] Job default network
       attr_accessor :default_network
 
       # @return [Array<DeploymentPlan::Template] Templates included into the job
@@ -66,12 +66,13 @@ module Bosh::Director
 
       attr_accessor :all_properties
 
-      # @param [Bosh::Director::DeploymentPlan] deployment Deployment plan
+      # @param [Bosh::Director::DeploymentPlan::Planner]
+      #   deployment Deployment plan
       # @param [Hash] job_spec Raw job spec from the deployment manifest
       # @return [Bosh::Director::DeploymentPlan::Job]
       def self.parse(deployment, job_spec, event_log)
-        job_parser = JobSpecParser.new(deployment, event_log)
-        job_parser.parse(job_spec)
+        parser = JobSpecParser.new(deployment, event_log)
+        parser.parse(job_spec)
       end
 
       # @param [Bosh::Director::DeploymentPlan] deployment Deployment plan

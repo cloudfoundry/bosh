@@ -67,7 +67,7 @@ module Bosh::Director
         if template_names
           if template_names.is_a?(Array)
             @event_log.warn_deprecated(
-              "Please use `templates' when specifying multiple templates for a job. "\
+              "Please use `templates' when specifying multiple templates for a job. " +
               "`template' for multiple templates will soon be unsupported."
             )
           end

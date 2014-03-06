@@ -201,7 +201,12 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         }
         expect(deployment_plan).to receive(:releases).and_return(fake_releases)
 
-        expect { parser.parse(job_spec) }.to raise_error(Bosh::Director::JobMissingRelease, "Cannot tell what release job `fake-job-name' is supposed to use, please explicitly specify one")
+        expect {
+          parser.parse(job_spec)
+        }.to raise_error(
+          Bosh::Director::JobMissingRelease,
+          "Cannot tell what release job `fake-job-name' is supposed to use, please explicitly specify one",
+        )
       end
     end
 

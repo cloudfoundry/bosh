@@ -10,14 +10,12 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     before do
       @manifest = double('manifest')
       @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
-
       @deployment_plan.stub(:name).and_return('test_deployment')
-      @deployment_plan.stub(:parse)
 
       pool1 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
       pool2 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
-      updater1 =  instance_double('Bosh::Director::ResourcePoolUpdater')
-      updater2 =  instance_double('Bosh::Director::ResourcePoolUpdater')
+      updater1 = instance_double('Bosh::Director::ResourcePoolUpdater')
+      updater2 = instance_double('Bosh::Director::ResourcePoolUpdater')
 
       Bosh::Director::ResourcePoolUpdater.stub(:new).with(pool1).and_return(updater1)
       Bosh::Director::ResourcePoolUpdater.stub(:new).with(pool2).and_return(updater2)
@@ -33,8 +31,9 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
       Psych.stub(:load).with('manifest').and_return(@manifest)
 
-      Bosh::Director::DeploymentPlan::Planner.stub(:new).with(@manifest, 'recreate' => false, 'job_states' => { },
-                                                      'job_rename' => { }).and_return(@deployment_plan)
+      Bosh::Director::DeploymentPlan::Planner.stub(:parse).
+        and_return(@deployment_plan)
+
       Bosh::Director::Config.stub(:base_dir).and_return(@tmpdir)
     end
 
@@ -44,7 +43,14 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
     describe '#initialize' do
       it 'parses the deployment manifest using the deployment plan, passing it the event log' do
-        expect(@deployment_plan).to receive(:parse).once.with(Bosh::Director::Config.event_log)
+        expect(Bosh::Director::DeploymentPlan::Planner).to receive(:parse).
+          with(
+            @manifest,
+            Bosh::Director::Config.event_log,
+            { 'recreate' => false, 'job_states' => { }, 'job_rename' => { } }
+          ).
+          and_return(@deployment_plan)
+
         described_class.new(@manifest_file.path)
       end
     end
