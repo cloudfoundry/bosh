@@ -256,6 +256,10 @@ module Bosh::Director
         end
       end
 
+      def starts_on_deploy?
+        @lifecycle == 'service'
+      end
+
       private
 
       # @param [Hash] collection All properties collection

@@ -36,7 +36,11 @@ module Bosh::Director
         @assembler.delete_unneeded_instances
 
         @logger.info('Updating jobs')
-        @multi_job_updater.run(@base_job, @deployment_plan, @deployment_plan.jobs)
+        @multi_job_updater.run(
+          @base_job,
+          @deployment_plan,
+          @deployment_plan.jobs_starting_on_deploy,
+        )
 
         @logger.info('Refilling resource pools')
         @resource_pools.refill

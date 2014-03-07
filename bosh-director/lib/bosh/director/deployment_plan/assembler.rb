@@ -265,11 +265,11 @@ module Bosh::Director
     # resource pool if necessary)
     # @return [void]
     def bind_unallocated_vms
-      @deployment_plan.jobs.each(&:bind_unallocated_vms)
+      @deployment_plan.jobs_starting_on_deploy.each(&:bind_unallocated_vms)
     end
 
     def bind_instance_networks
-      @deployment_plan.jobs.each(&:bind_instance_networks)
+      @deployment_plan.jobs_starting_on_deploy.each(&:bind_instance_networks)
     end
 
     # Binds template models for each release spec in the deployment plan
@@ -311,7 +311,7 @@ module Bosh::Director
     # Calculates configuration checksums for all jobs in this deployment plan
     # @return [void]
     def bind_configuration
-      @deployment_plan.jobs.each do |job|
+      @deployment_plan.jobs_starting_on_deploy.each do |job|
         JobRenderer.new(job).render_job_instances(@blobstore)
       end
     end
@@ -322,7 +322,7 @@ module Bosh::Director
     end
 
     def bind_instance_vms
-      jobs = @deployment_plan.jobs
+      jobs = @deployment_plan.jobs_starting_on_deploy
       instances = jobs.map(&:instances).flatten
 
       binder = DeploymentPlan::InstanceVmBinder.new(@event_log)

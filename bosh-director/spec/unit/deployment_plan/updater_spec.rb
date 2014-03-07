@@ -8,7 +8,7 @@ describe Bosh::Director::DeploymentPlan::Updater do
   let(:event_log)       { instance_double('Bosh::Director::EventLog::Log', begin_stage: nil) }
   let(:resource_pools)  { instance_double('Bosh::Director::DeploymentPlan::ResourcePools') }
   let(:assembler)       { instance_double('Bosh::Director::DeploymentPlan::Assembler') }
-  let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', jobs: jobs) }
+  let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', jobs_starting_on_deploy: jobs) }
   let(:jobs)            { instance_double('Array') }
   let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater') }
 

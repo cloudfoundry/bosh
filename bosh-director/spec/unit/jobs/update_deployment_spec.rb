@@ -107,7 +107,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         job.stub(:name).and_return('job_name')
 
         @deployment_plan.stub(:resource_pools).and_return([resource_pool])
-        @deployment_plan.stub(:jobs).and_return([job])
+        @deployment_plan.stub(:jobs_starting_on_deploy).and_return([job])
 
         assembler.should_receive(:bind_dns).ordered
 

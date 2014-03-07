@@ -12,11 +12,6 @@ module Bosh::Director
       before { allow(Config).to receive(:cloud).and_return(cloud) }
       let(:cloud) { instance_double('Bosh::Cloud') }
 
-      before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
-      let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
-
-      before { allow(event_log).to receive(:track).and_yield }
-
       it 'should bind deployment' do
         deployment_plan.should_receive(:bind_model)
         assembler.bind_deployment
@@ -121,7 +116,7 @@ module Bosh::Director
         it 'binds unallocated VMs for each job' do
           j1 = instance_double('Bosh::Director::DeploymentPlan::Job')
           j2 = instance_double('Bosh::Director::DeploymentPlan::Job')
-          deployment_plan.should_receive(:jobs).and_return([j1, j2])
+          deployment_plan.should_receive(:jobs_starting_on_deploy).and_return([j1, j2])
 
           [j1, j2].each do |job|
             expect(job).to receive(:bind_unallocated_vms).with(no_args).ordered
@@ -556,7 +551,7 @@ module Bosh::Director
         it 'binds unallocated VMs for each job' do
           j1 = instance_double('Bosh::Director::DeploymentPlan::Job')
           j2 = instance_double('Bosh::Director::DeploymentPlan::Job')
-          deployment_plan.should_receive(:jobs).and_return([j1, j2])
+          deployment_plan.should_receive(:jobs_starting_on_deploy).and_return([j1, j2])
 
           [j1, j2].each do |job|
             expect(job).to receive(:bind_instance_networks).with(no_args).ordered
@@ -567,7 +562,7 @@ module Bosh::Director
       end
 
       describe '#bind_configuration' do
-        before { allow(deployment_plan).to receive(:jobs).and_return([job]) }
+        before { allow(deployment_plan).to receive(:jobs_starting_on_deploy).and_return([job]) }
         let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job') }
 
         it 'renders job templates for all instances' do
@@ -588,7 +583,7 @@ module Bosh::Director
       end
 
       describe '#bind_instance_vms' do
-        before { allow(deployment_plan).to receive(:jobs).with(no_args).and_return([job1, job2]) }
+        before { allow(deployment_plan).to receive(:jobs_starting_on_deploy).with(no_args).and_return([job1, job2]) }
         let(:job1) { instance_double('Bosh::Director::DeploymentPlan::Job') }
         let(:job2) { instance_double('Bosh::Director::DeploymentPlan::Job') }
 
@@ -598,6 +593,11 @@ module Bosh::Director
 
         before { allow(job2).to receive(:instances).with(no_args).and_return([instance3]) }
         let(:instance3) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+
+        before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
+        let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
+
+        before { allow(event_log).to receive(:track).and_yield }
 
         it 'uses InstanceVmBinder to bind instances from all jobs' do
           binder = instance_double('Bosh::Director::DeploymentPlan::InstanceVmBinder')

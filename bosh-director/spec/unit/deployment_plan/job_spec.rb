@@ -432,4 +432,18 @@ describe Bosh::Director::DeploymentPlan::Job do
       end
     end
   end
+
+  describe '#starts_on_deploy?' do
+    subject { described_class.new(plan) }
+
+    context "when lifecycle profile is 'service'" do
+      before { subject.lifecycle = 'service' }
+      its(:starts_on_deploy?) { should be(true) }
+    end
+
+    context "when lifecycle profile is not service" do
+      before { subject.lifecycle = 'other' }
+      its(:starts_on_deploy?) { should be(false) }
+    end
+  end
 end
