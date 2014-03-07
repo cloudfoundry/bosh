@@ -2,7 +2,6 @@ module Bosh::Director
   # DeploymentPlan::Assembler is used to populate deployment plan with information
   # about existing deployment and information from director DB
   class DeploymentPlan::Assembler
-    include DnsHelper
     include LockHelper
     include IpUtil
 
@@ -318,27 +317,8 @@ module Bosh::Director
     end
 
     def bind_dns
-      domain = Models::Dns::Domain.find_or_create(:name => dns_domain_name,
-                                                  :type => 'NATIVE')
-      @deployment_plan.dns_domain = domain
-
-      soa_record = Models::Dns::Record.find_or_create(:domain_id => domain.id,
-                                                      :name => dns_domain_name,
-                                                      :type => 'SOA')
-      soa_record.content = SOA
-      soa_record.ttl = 300
-      soa_record.save
-
-      # add NS record
-      Models::Dns::Record.find_or_create(:domain_id => domain.id,
-                                         :name => dns_domain_name,
-                                         :type =>'NS', :ttl => TTL_4H,
-                                         :content => dns_ns_record)
-      # add A record for name server
-      Models::Dns::Record.find_or_create(:domain_id => domain.id,
-                                         :name => dns_ns_record,
-                                         :type =>'A', :ttl => TTL_4H,
-                                         :content => Config.dns['address'])
+      binder = DeploymentPlan::DnsBinder.new(@deployment_plan)
+      binder.bind_deployment
     end
 
     def bind_instance_vms

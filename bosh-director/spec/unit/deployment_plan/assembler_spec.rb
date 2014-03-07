@@ -579,61 +579,11 @@ module Bosh::Director
       end
 
       describe '#bind_dns' do
-        before do
-          Config.stub(:dns).and_return({ 'address' => '1.2.3.4' })
-          Config.stub(:dns_domain_name).and_return('bosh')
-        end
-
-        it "should create the domain if it doesn't exist" do
-          domain = nil
-          deployment_plan.should_receive(:dns_domain=).
-            and_return { |*args| domain = args.first }
+        it 'uses DnsBinder to create dns records for deployment' do
+          binder = instance_double('Bosh::Director::DeploymentPlan::DnsBinder')
+          allow(DnsBinder).to receive(:new).with(deployment_plan).and_return(binder)
+          expect(binder).to receive(:bind_deployment).with(no_args)
           assembler.bind_dns
-
-          Models::Dns::Domain.count.should == 1
-          Models::Dns::Domain.first.should == domain
-          domain.name.should == 'bosh'
-          domain.type.should == 'NATIVE'
-        end
-
-        it 'should reuse the domain if it exists' do
-          domain = Models::Dns::Domain.make(:name => 'bosh', :type => 'NATIVE')
-          deployment_plan.should_receive(:dns_domain=).with(domain)
-          assembler.bind_dns
-
-          Models::Dns::Domain.count.should == 1
-        end
-
-        it "should create the SOA, NS & A record if they doesn't exist" do
-          domain = Models::Dns::Domain.make(:name => 'bosh', :type => 'NATIVE')
-          deployment_plan.should_receive(:dns_domain=)
-          assembler.bind_dns
-
-          Models::Dns::Record.count.should == 3
-          records = Models::Dns::Record
-          types = records.map { |r| r.type }
-          types.should == %w[SOA NS A]
-        end
-
-        it 'should reuse the SOA record if it exists' do
-          domain = Models::Dns::Domain.make(:name => 'bosh', :type => 'NATIVE')
-          soa = Models::Dns::Record.make(:domain => domain, :name => 'bosh',
-                                             :type => 'SOA')
-          ns = Models::Dns::Record.make(:domain => domain, :name => 'bosh',
-                                            :type => 'NS', :content => 'ns.bosh',
-                                            :ttl => 14400) # 4h
-          a = Models::Dns::Record.make(:domain => domain, :name => 'ns.bosh',
-                                           :type => 'A', :content => '1.2.3.4',
-                                           :ttl => 14400) # 4h
-          deployment_plan.should_receive(:dns_domain=)
-          assembler.bind_dns
-
-          soa.refresh
-          ns.refresh
-          a.refresh
-
-          Models::Dns::Record.count.should == 3
-          Models::Dns::Record.all.should == [soa, ns, a]
         end
       end
 

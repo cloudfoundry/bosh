@@ -24,3 +24,5 @@ require 'bosh/director/deployment_plan/dynamic_network'
 require 'bosh/director/deployment_plan/manual_network'
 require 'bosh/director/deployment_plan/vip_network'
 require 'bosh/director/deployment_plan/planner'
+require 'bosh/director/deployment_plan/dns_binder'
+

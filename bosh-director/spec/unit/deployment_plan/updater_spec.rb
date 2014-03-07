@@ -18,7 +18,7 @@ describe Bosh::Director::DeploymentPlan::Updater do
 
   describe '#update' do
     it 'runs deployment plan update stages in a specific order' do
-      expect(assembler).to receive(:bind_dns).with(no_args).ordered # TODO: !Config.dns_enabled?
+      expect(assembler).to receive(:bind_dns).with(no_args).ordered
       expect(resource_pools).to receive(:update).with(no_args).ordered
       expect(base_job).to receive(:task_checkpoint).with(no_args).ordered
       expect(assembler).to receive(:bind_instance_vms).with(no_args).ordered
