@@ -1,9 +1,9 @@
 module Bosh::Director
   module DeploymentPlan
     class Preparer
-      def initialize(job, compiler)
+      def initialize(job, assembler)
         @job = job
-        @assembler = compiler
+        @assembler = assembler
       end
 
       def prepare
