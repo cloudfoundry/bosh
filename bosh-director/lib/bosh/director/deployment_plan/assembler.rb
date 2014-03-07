@@ -270,16 +270,7 @@ module Bosh::Director
     end
 
     def bind_instance_networks
-      @deployment_plan.jobs.each do |job|
-        job.instances.each do |instance|
-          instance.network_reservations.each do |name, reservation|
-            unless reservation.reserved?
-              network = @deployment_plan.network(name)
-              network.reserve!(reservation, "`#{job.name}/#{instance.index}'")
-            end
-          end
-        end
-      end
+      @deployment_plan.jobs.each(&:bind_instance_networks)
     end
 
     # Binds template models for each release spec in the deployment plan

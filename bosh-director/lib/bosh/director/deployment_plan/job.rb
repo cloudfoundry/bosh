@@ -239,6 +239,17 @@ module Bosh::Director
         end
       end
 
+      def bind_instance_networks
+        instances.each do |instance|
+          instance.network_reservations.each do |net_name, reservation|
+            unless reservation.reserved?
+              network = @deployment.network(net_name)
+              network.reserve!(reservation, "`#{name}/#{instance.index}'")
+            end
+          end
+        end
+      end
+
       private
 
       # @param [Hash] collection All properties collection

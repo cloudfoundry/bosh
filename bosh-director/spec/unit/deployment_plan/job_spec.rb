@@ -393,4 +393,43 @@ describe Bosh::Director::DeploymentPlan::Job do
       job.bind_unallocated_vms
     end
   end
+
+  describe '#bind_instance_networks' do
+    subject(:job) { described_class.new(plan) }
+
+    before { job.name = 'job-name' }
+
+    before { job.instances[0] = instance }
+    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 3) }
+
+    before { allow(plan).to receive(:network).with('network-name').and_return(network) }
+    let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'network-name') }
+
+    before do
+      instance.stub(:network_reservations).
+        with(no_args).
+        and_return('network-name' => network_reservation)
+    end
+    let(:network_reservation) { Bosh::Director::NetworkReservation.new_dynamic }
+
+    context 'when network reservation is already reserved' do
+      before { network_reservation.reserved = true }
+
+      it 'does not reserve network reservation again' do
+        expect(network).to_not receive(:reserve!)
+        job.bind_instance_networks
+      end
+    end
+
+    context 'when network reservation is not reserved' do
+      before { network_reservation.reserved = false }
+
+      it 'reserves network reservation with the network' do
+        expect(network).to receive(:reserve!).
+          with(network_reservation, "`job-name/3'")
+
+        job.bind_instance_networks
+      end
+    end
+  end
 end

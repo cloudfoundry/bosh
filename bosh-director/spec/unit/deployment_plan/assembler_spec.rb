@@ -113,7 +113,7 @@ module Bosh::Director
       end
 
       describe '#bind_unallocated_vms' do
-        it 'should bind unallocated VMs' do
+        it 'binds unallocated VMs for each job' do
           j1 = instance_double('Bosh::Director::DeploymentPlan::Job')
           j2 = instance_double('Bosh::Director::DeploymentPlan::Job')
           deployment_plan.should_receive(:jobs).and_return([j1, j2])
@@ -548,35 +548,14 @@ module Bosh::Director
       describe '#bind_resource_pools'
 
       describe '#bind_instance_networks' do
-        before do
-          @job_spec = instance_double('Bosh::Director::DeploymentPlan::Job')
-          @instance_spec = instance_double('Bosh::Director::DeploymentPlan::Instance')
-          @network_spec = instance_double('Bosh::Director::DeploymentPlan::Network')
+        it 'binds unallocated VMs for each job' do
+          j1 = instance_double('Bosh::Director::DeploymentPlan::Job')
+          j2 = instance_double('Bosh::Director::DeploymentPlan::Job')
+          deployment_plan.should_receive(:jobs).and_return([j1, j2])
 
-          deployment_plan.stub(:jobs).and_return([@job_spec])
-          deployment_plan.stub(:network).with('network-a').
-            and_return(@network_spec)
-
-          @job_spec.stub(:name).and_return('job-a')
-          @job_spec.stub(:instances).and_return([@instance_spec])
-
-          @network_reservation = NetworkReservation.new(
-            :type => NetworkReservation::DYNAMIC)
-          @network_reservation.reserved = false
-
-          @instance_spec.stub(:network_reservations).
-            and_return({ 'network-a' => @network_reservation })
-          @instance_spec.stub(:index).and_return(3)
-        end
-
-        it 'should do nothing if the ip is already reserved' do
-          @network_reservation.reserved = true
-          assembler.bind_instance_networks
-        end
-
-        it 'should make a network reservation' do
-          @network_spec.should_receive(:reserve!).
-            with(@network_reservation, "`job-a/3'")
+          [j1, j2].each do |job|
+            expect(job).to receive(:bind_instance_networks).with(no_args).ordered
+          end
 
           assembler.bind_instance_networks
         end
