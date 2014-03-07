@@ -1,5 +1,9 @@
 module Bosh::Director
   class Errand::DeploymentPreparer
+    # @param [Bosh::Director::DeploymentPlan::Planner] deployment
+    # @param [Bosh::Director::DeploymentPlan::Job] job
+    # @param [Bosh::Director::EventLog::Log] event_log
+    # @param [Bosh::Blobstore::Jobs::BaseJob] base_job
     def initialize(deployment, job, event_log, base_job)
       @deployment = deployment
       @job = job

@@ -1,6 +1,6 @@
 module Bosh::Director
-  module Errand
-  end
+  module Errand; end
 end
 
 require 'bosh/director/errand/deployment_preparer'
+require 'bosh/director/errand/job_manager'
