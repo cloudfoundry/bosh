@@ -21,6 +21,8 @@ module Bosh::Director
         @job = Job.new(@deployment)
 
         parse_name
+        parse_lifecycle
+
         parse_release
         parse_template
         parse_templates
@@ -43,6 +45,22 @@ module Bosh::Director
       def parse_name
         @job.name = safe_property(@job_spec, "name", :class => String)
         @job.canonical_name = canonical(@job.name)
+      end
+
+      def parse_lifecycle
+        lifecycle = safe_property(@job_spec, "lifecycle",
+          :class => String,
+          :optional => true,
+          :default => Job::DEFAULT_LIFECYCLE_PROFILE,
+        )
+
+        unless Job::VALID_LIFECYCLE_PROFILES.include?(lifecycle)
+          raise JobInvalidLifecycle,
+            "Invalid lifecycle `#{lifecycle}' for `#{@job.name}', " +
+            "valid lifecycle profiles are: #{Job::VALID_LIFECYCLE_PROFILES.join(', ')}"
+        end
+
+        @job.lifecycle = lifecycle
       end
 
       def parse_release

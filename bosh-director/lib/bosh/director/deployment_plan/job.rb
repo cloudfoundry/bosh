@@ -5,6 +5,9 @@ module Bosh::Director
     class Job
       include Bosh::Common::PropertyHelper
 
+      VALID_LIFECYCLE_PROFILES = %w(service errand)
+      DEFAULT_LIFECYCLE_PROFILE = 'service'
+
       # started, stopped and detached are real states
       # (persisting in DB and reflecting target instance state)
       # recreate and restart are two virtual states
@@ -14,6 +17,9 @@ module Bosh::Director
 
       # @return [String] Job name
       attr_accessor :name
+
+      # @return [String] Lifecycle profile
+      attr_accessor :lifecycle
 
       # @return [String] Job canonical name (mostly for DNS)
       attr_accessor :canonical_name

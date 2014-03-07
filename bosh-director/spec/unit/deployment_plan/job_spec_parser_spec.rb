@@ -54,6 +54,33 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       end
     end
 
+    describe 'lifecycle key' do
+      Bosh::Director::DeploymentPlan::Job::VALID_LIFECYCLE_PROFILES.each do |profile|
+        it "is able to parse '#{profile}' as lifecycle profile" do
+          job_spec.merge!('lifecycle' => profile)
+          job = parser.parse(job_spec)
+          expect(job.lifecycle).to eq(profile)
+        end
+      end
+
+      it "defaults lifecycle profile to 'service'" do
+        job_spec.delete('lifecycle')
+        job = parser.parse(job_spec)
+        expect(job.lifecycle).to eq('service')
+      end
+
+      it 'raises an error if lifecycle profile value is not known' do
+        job_spec['lifecycle'] = 'unknown'
+
+        expect {
+          parser.parse(job_spec)
+        }.to raise_error(
+          Bosh::Director::JobInvalidLifecycle,
+          "Invalid lifecycle `unknown' for `fake-job-name', valid lifecycle profiles are: service, errand",
+        )
+      end
+    end
+
     describe 'release key' do
       it 'parses release' do
         job = parser.parse(job_spec)
@@ -547,6 +574,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
     end
 
     describe 'update key'
+
     describe 'instances key'
 
     describe 'networks key' do
