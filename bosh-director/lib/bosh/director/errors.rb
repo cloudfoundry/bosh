@@ -93,6 +93,7 @@ module Bosh::Director
   VmInstanceOutOfSync = err(70006)
   InstanceTargetStateUndefined = err(70007)
   SnapshotNotFound = err(70008)
+  JobNotFound = err(70009, NOT_FOUND)
 
   JobInvalidArchive = err(80000)
   JobMissingManifest = err(80001)
