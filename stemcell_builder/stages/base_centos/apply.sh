@@ -32,9 +32,6 @@ custom_yum
 pkg_mgr groupinstall Base
 pkg_mgr groupinstall 'Development Tools'
 
-pkg_mgr install libyaml
-pkg_mgr install libyaml-devel
-
 touch ${chroot}/etc/sysconfig/network # must be present for network to be configured
 
 # readahead-collector was pegging CPU on startup
