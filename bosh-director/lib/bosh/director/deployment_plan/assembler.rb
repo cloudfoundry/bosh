@@ -266,14 +266,7 @@ module Bosh::Director
     # resource pool if necessary)
     # @return [void]
     def bind_unallocated_vms
-      @deployment_plan.jobs.each do |job|
-        job.instances.each do |instance|
-          instance.bind_unallocated_vm
-          # Now that we know every VM has been allocated and instance models are
-          # bound, we can sync the state.
-          instance.sync_state_with_db
-        end
-      end
+      @deployment_plan.jobs.each(&:bind_unallocated_vms)
     end
 
     def bind_instance_networks

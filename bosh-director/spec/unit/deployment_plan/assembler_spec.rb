@@ -112,21 +112,18 @@ module Bosh::Director
         end
       end
 
+      describe '#bind_unallocated_vms' do
+        it 'should bind unallocated VMs' do
+          j1 = instance_double('Bosh::Director::DeploymentPlan::Job')
+          j2 = instance_double('Bosh::Director::DeploymentPlan::Job')
+          deployment_plan.should_receive(:jobs).and_return([j1, j2])
 
-      it 'should bind unallocated VMs' do
-        instances = (1..4).map { |i| instance_double('Bosh::Director::DeploymentPlan::Instance') }
+          [j1, j2].each do |job|
+            expect(job).to receive(:bind_unallocated_vms).with(no_args).ordered
+          end
 
-        j1 = instance_double('Bosh::Director::DeploymentPlan::Job', :instances => instances[0..1])
-        j2 = instance_double('Bosh::Director::DeploymentPlan::Job', :instances => instances[2..3])
-
-        deployment_plan.should_receive(:jobs).and_return([j1, j2])
-
-        instances.each do |instance|
-          instance.should_receive(:bind_unallocated_vm).ordered
-          instance.should_receive(:sync_state_with_db).ordered
+          assembler.bind_unallocated_vms
         end
-
-        assembler.bind_unallocated_vms
       end
 
       describe '#bind_existing_vm' do

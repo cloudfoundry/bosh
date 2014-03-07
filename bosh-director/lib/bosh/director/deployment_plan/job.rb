@@ -229,6 +229,16 @@ module Bosh::Director
         end
       end
 
+      def bind_unallocated_vms
+        instances.each do |instance|
+          instance.bind_unallocated_vm
+
+          # Now that we know every VM has been allocated and
+          # instance models are bound, we can sync the state.
+          instance.sync_state_with_db
+        end
+      end
+
       private
 
       # @param [Hash] collection All properties collection
