@@ -4,6 +4,13 @@ module Bosh::Director
   describe Jobs::RunErrand do
     subject { described_class.new('fake-dep-name', 'fake-errand-name') }
 
+    before do
+      App.stub_chain(:instance, :blobstores, :blobstore).
+        with(no_args).
+        and_return(blobstore)
+    end
+    let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+
     describe 'Resque job class expectations' do
       let(:job_type) { :run_errand }
       it_behaves_like 'a Resque job'
@@ -39,7 +46,37 @@ module Bosh::Director
             before { allow(Config).to receive(:result).with(no_args).and_return(result_file) }
             let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
 
+            before { allow(job).to receive(:resource_pool).with(no_args).and_return(resource_pool) }
+            let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
+
             it 'runs an errand and returns short result description' do
+              deployment_preparer = instance_double('Bosh::Director::Errand::DeploymentPreparer')
+              expect(Errand::DeploymentPreparer).to receive(:new).
+                with(deployment, job, event_log, subject).
+                and_return(deployment_preparer)
+
+              expect(deployment_preparer).to receive(:prepare_deployment).with(no_args).ordered
+              expect(deployment_preparer).to receive(:prepare_job).with(no_args).ordered
+
+              rp_updater = instance_double('Bosh::Director::ResourcePoolUpdater')
+              expect(ResourcePoolUpdater).to receive(:new).
+                with(resource_pool).
+                and_return(rp_updater)
+
+              rp_manager = instance_double('Bosh::Director::DeploymentPlan::ResourcePools')
+              expect(DeploymentPlan::ResourcePools).to receive(:new).
+                with(event_log, [rp_updater]).
+                and_return(rp_manager)
+
+              expect(rp_manager).to receive(:update).with(no_args).ordered
+
+              job_manager = instance_double('Bosh::Director::Errand::JobManager')
+              expect(Errand::JobManager).to receive(:new).
+                with(deployment, job, blobstore, event_log).
+                and_return(job_manager)
+
+              expect(job_manager).to receive(:update_instances).with(no_args).ordered
+
               runner = instance_double('Bosh::Director::Errand::Runner')
               expect(Errand::Runner).to receive(:new).
                 with(job, result_file, be_a(Api::InstanceManager), event_log).
@@ -47,7 +84,11 @@ module Bosh::Director
 
               expect(runner).to receive(:run).
                 with(no_args).
+                ordered.
                 and_return('fake-result-short-description')
+
+              expect(job_manager).to receive(:delete_instances).with(no_args).ordered
+              expect(rp_manager).to receive(:refill).with(no_args).ordered
 
               expect(subject.perform).to eq('fake-result-short-description')
             end
