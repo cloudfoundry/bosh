@@ -14,8 +14,8 @@ module Bosh::Director::DeploymentPlan
     subject(:instance) { Instance.new(job, index) }
     let(:plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', canonical_name: 'mycloud', model: deployment) }
 
-    describe :network_settings do
-      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', deployment: plan, canonical_name: 'job') }
+    describe '#network_settings' do
+      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', deployment: plan, canonical_name: 'job', starts_on_deploy?: true) }
       let(:network_name) { 'net_a' }
       let(:cloud_properties) { { 'foo' => 'bar' } }
       let(:dns) { ['1.2.3.4'] }
@@ -44,6 +44,8 @@ module Bosh::Director::DeploymentPlan
         job.stub(:instance_state).with(0).and_return('started')
         job.stub(:default_network).and_return({})
       end
+
+      before { allow(job).to receive(:starts_on_deploy?).with(no_args).and_return(true) }
 
       context 'dynamic network' do
         let(:network_type) { 'dynamic' }
@@ -102,6 +104,46 @@ module Bosh::Director::DeploymentPlan
 
           instance.current_state = current_state
           expect(instance.network_settings).to eql(manual_network_settings)
+        end
+      end
+
+      describe 'temporary errand hack' do
+        let(:reservation) { Bosh::Director::NetworkReservation.new_static(ipaddress) }
+
+        let(:manual_network) do
+          ManualNetwork.new(plan, {
+            'name' => network_name,
+            'dns' => dns,
+            'subnets' => [{
+              'range' => subnet_range,
+              'gateway' => gateway,
+              'dns' => dns,
+              'cloud_properties' => cloud_properties
+            }]
+          })
+        end
+
+        before do
+          plan.stub(:network).with(network_name).and_return(manual_network)
+          manual_network.reserve(reservation)
+        end
+
+        context 'when job is started on deploy' do
+          before { allow(job).to receive(:starts_on_deploy?).with(no_args).and_return(true) }
+
+          it 'includes dns_record_name' do
+            instance.add_network_reservation(network_name, reservation)
+            expect(instance.network_settings['net_a']).to have_key('dns_record_name')
+          end
+        end
+
+        context 'when job is not started on deploy' do
+          before { allow(job).to receive(:starts_on_deploy?).with(no_args).and_return(false) }
+
+          it 'does not include dns_record_name' do
+            instance.add_network_reservation(network_name, reservation)
+            expect(instance.network_settings['net_a']).to_not have_key('dns_record_name')
+          end
         end
       end
     end
@@ -280,6 +322,7 @@ module Bosh::Director::DeploymentPlan
                        resource_pool: resource_pool,
                        package_spec: packages,
                        persistent_disk: 0,
+                       starts_on_deploy?: true,
                        properties: properties)
         }
 
