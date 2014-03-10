@@ -260,6 +260,10 @@ module Bosh::Director
         @lifecycle == 'service'
       end
 
+      def can_run_as_errand?
+        @lifecycle == 'errand'
+      end
+
       private
 
       # @param [Hash] collection All properties collection

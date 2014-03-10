@@ -37,70 +37,84 @@ module Bosh::Director
 
         context 'when job representing an errand exists' do
           before { allow(deployment).to receive(:job).with('fake-errand-name').and_return(job) }
-          let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job') }
+          let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-errand-name') }
 
-          context 'when job has at least 1 instance' do
-            before { allow(job).to receive(:instances).with(no_args).and_return([instance]) }
-            let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+          context "when job can run as an errand (usually means lifecycle: errand)" do
+            before { allow(job).to receive(:can_run_as_errand?).and_return(true) }
 
-            before { allow(Config).to receive(:result).with(no_args).and_return(result_file) }
-            let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
+            context 'when job has at least 1 instance' do
+              before { allow(job).to receive(:instances).with(no_args).and_return([instance]) }
+              let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
 
-            before { allow(job).to receive(:resource_pool).with(no_args).and_return(resource_pool) }
-            let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
+              before { allow(Config).to receive(:result).with(no_args).and_return(result_file) }
+              let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
 
-            it 'runs an errand and returns short result description' do
-              deployment_preparer = instance_double('Bosh::Director::Errand::DeploymentPreparer')
-              expect(Errand::DeploymentPreparer).to receive(:new).
-                with(deployment, job, event_log, subject).
-                and_return(deployment_preparer)
+              before { allow(job).to receive(:resource_pool).with(no_args).and_return(resource_pool) }
+              let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
 
-              expect(deployment_preparer).to receive(:prepare_deployment).with(no_args).ordered
-              expect(deployment_preparer).to receive(:prepare_job).with(no_args).ordered
+              it 'runs an errand and returns short result description' do
+                deployment_preparer = instance_double('Bosh::Director::Errand::DeploymentPreparer')
+                expect(Errand::DeploymentPreparer).to receive(:new).
+                  with(deployment, job, event_log, subject).
+                  and_return(deployment_preparer)
 
-              rp_updater = instance_double('Bosh::Director::ResourcePoolUpdater')
-              expect(ResourcePoolUpdater).to receive(:new).
-                with(resource_pool).
-                and_return(rp_updater)
+                expect(deployment_preparer).to receive(:prepare_deployment).with(no_args).ordered
+                expect(deployment_preparer).to receive(:prepare_job).with(no_args).ordered
 
-              rp_manager = instance_double('Bosh::Director::DeploymentPlan::ResourcePools')
-              expect(DeploymentPlan::ResourcePools).to receive(:new).
-                with(event_log, [rp_updater]).
-                and_return(rp_manager)
+                rp_updater = instance_double('Bosh::Director::ResourcePoolUpdater')
+                expect(ResourcePoolUpdater).to receive(:new).
+                  with(resource_pool).
+                  and_return(rp_updater)
 
-              expect(rp_manager).to receive(:update).with(no_args).ordered
+                rp_manager = instance_double('Bosh::Director::DeploymentPlan::ResourcePools')
+                expect(DeploymentPlan::ResourcePools).to receive(:new).
+                  with(event_log, [rp_updater]).
+                  and_return(rp_manager)
 
-              job_manager = instance_double('Bosh::Director::Errand::JobManager')
-              expect(Errand::JobManager).to receive(:new).
-                with(deployment, job, blobstore, event_log).
-                and_return(job_manager)
+                expect(rp_manager).to receive(:update).with(no_args).ordered
 
-              expect(job_manager).to receive(:update_instances).with(no_args).ordered
+                job_manager = instance_double('Bosh::Director::Errand::JobManager')
+                expect(Errand::JobManager).to receive(:new).
+                  with(deployment, job, blobstore, event_log).
+                  and_return(job_manager)
 
-              runner = instance_double('Bosh::Director::Errand::Runner')
-              expect(Errand::Runner).to receive(:new).
-                with(job, result_file, be_a(Api::InstanceManager), event_log).
-                and_return(runner)
+                expect(job_manager).to receive(:update_instances).with(no_args).ordered
 
-              expect(runner).to receive(:run).
-                with(no_args).
-                ordered.
-                and_return('fake-result-short-description')
+                runner = instance_double('Bosh::Director::Errand::Runner')
+                expect(Errand::Runner).to receive(:new).
+                  with(job, result_file, be_a(Api::InstanceManager), event_log).
+                  and_return(runner)
 
-              expect(job_manager).to receive(:delete_instances).with(no_args).ordered
-              expect(rp_manager).to receive(:refill).with(no_args).ordered
+                expect(runner).to receive(:run).
+                  with(no_args).
+                  ordered.
+                  and_return('fake-result-short-description')
 
-              expect(subject.perform).to eq('fake-result-short-description')
+                expect(job_manager).to receive(:delete_instances).with(no_args).ordered
+                expect(rp_manager).to receive(:refill).with(no_args).ordered
+
+                expect(subject.perform).to eq('fake-result-short-description')
+              end
+            end
+
+            context 'when job representing an errand has 0 instances' do
+              before { allow(job).to receive(:instances).with(no_args).and_return([]) }
+
+              it 'raises an error because errand cannot be run on a job without 0 instances' do
+                expect {
+                  subject.perform
+                }.to raise_error(InstanceNotFound, %r{fake-errand-name/0.*doesn't exist})
+              end
             end
           end
 
-          context 'when job representing an errand has 0 instances' do
-            before { allow(job).to receive(:instances).with(no_args).and_return([]) }
+          context "when job cannot run as an errand (e.g. marked as 'lifecycle: service')" do
+            before { allow(job).to receive(:can_run_as_errand?).and_return(false) }
 
-            it 'raises an error because errand cannot be run on a job without 0 instances' do
+            it 'raises an error because non-errand jobs cannot be used with run errand cmd' do
               expect {
                 subject.perform
-              }.to raise_error(InstanceNotFound, %r{fake-errand-name/0.*doesn't exist})
+              }.to raise_error(RunErrandError, /Job `fake-errand-name' is not an errand/)
             end
           end
         end

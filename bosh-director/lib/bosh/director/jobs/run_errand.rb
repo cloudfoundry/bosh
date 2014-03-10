@@ -27,12 +27,17 @@ module Bosh::Director
         raise JobNotFound, "Errand `#{@errand_name}' doesn't exist"
       end
 
+      unless job.can_run_as_errand?
+        raise RunErrandError,
+              "Job `#{job.name}' is not an errand. To mark a job as an errand " +
+              "set its lifecycle to 'errand' in the deployment manifest."
+      end
+
       if job.instances.empty?
         raise InstanceNotFound, "Instance `#{@deployment_name}/#{@errand_name}/0' doesn't exist"
       end
 
-      runner = Errand::Runner.new(
-        job, result_file, @instance_manager, event_log)
+      runner = Errand::Runner.new(job, result_file, @instance_manager, event_log)
 
       with_updated_instances(deployment, job) do
         logger.info('Starting to run errand')

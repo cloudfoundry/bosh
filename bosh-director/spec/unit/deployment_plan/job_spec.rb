@@ -446,4 +446,18 @@ describe Bosh::Director::DeploymentPlan::Job do
       its(:starts_on_deploy?) { should be(false) }
     end
   end
+
+  describe '#can_run_as_errand?' do
+    subject { described_class.new(plan) }
+
+    context "when lifecycle profile is 'errand'" do
+      before { subject.lifecycle = 'errand' }
+      its(:can_run_as_errand?) { should be(true) }
+    end
+
+    context "when lifecycle profile is not errand" do
+      before { subject.lifecycle = 'other' }
+      its(:can_run_as_errand?) { should be(false) }
+    end
+  end
 end
