@@ -6,6 +6,9 @@ module Bosh::Cli::TaskTracking
       'Binding instance VMs',
       'Updating job',
       'Deleting unneeded instances',
+      'Running errand',
+      'Deleting instances',
+      'Refilling resource pools',
     ]
 
     def self.create_for_log_type(log_type)

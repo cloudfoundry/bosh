@@ -11,6 +11,9 @@ describe Bosh::Cli::TaskTracking::TaskLogRenderer do
           'Binding instance VMs',
           'Updating job',
           'Deleting unneeded instances',
+          'Running errand',
+          'Deleting instances',
+          'Refilling resource pools',
         ]
 
         expect(Bosh::Cli::TaskTracking::EventLogRenderer)
