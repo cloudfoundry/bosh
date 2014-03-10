@@ -129,7 +129,6 @@ describe 'Ubuntu Stemcell' do
     describe package('libyaml-dev') do
       it { should_not be_installed }
     end
-
   end
 
   context 'installed by system_grub' do

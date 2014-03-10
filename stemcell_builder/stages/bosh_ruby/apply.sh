@@ -26,7 +26,11 @@ make -j4 && make install
 # Make symlinks for CentOS
 "
 
-rsync -a $chroot/usr/lib/libyaml* $chroot/usr/lib64/
+for file in $(cd $chroot/usr/lib; ls libyaml*); do
+  if [ ! -e $chroot/usr/lib64/$file ]; then
+    cp -a $chroot/usr/lib/$file $chroot/usr/lib64/
+  fi
+done
 
 # Ruby
 ruby_basename=ruby-1.9.3-p484
