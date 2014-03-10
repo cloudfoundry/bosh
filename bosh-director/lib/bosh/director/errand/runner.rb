@@ -55,8 +55,13 @@ module Bosh::Director
         raise DirectorError, 'Must have at least one job instance to run an errand'
       end
 
-      agent = @instance_manager.agent_client_for(instance.model)
-      agent_task_result = agent.run_errand
+      agent_task_result = nil
+
+      event_log_stage = @event_log.begin_stage('Running errand', 1)
+      event_log_stage.advance_and_track("#{@job.name}/#{instance.index}") do
+        agent = @instance_manager.agent_client_for(instance.model)
+        agent_task_result = agent.run_errand
+      end
 
       errand_result = ErrandResult.from_agent_task_result(agent_task_result)
       @result_file.write(JSON.dump(errand_result.to_hash) + "\n")

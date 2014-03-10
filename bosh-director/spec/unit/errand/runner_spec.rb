@@ -11,10 +11,10 @@ module Bosh::Director
     describe '#run' do
       context 'when there is at least 1 instance' do
         before { allow(job).to receive(:instances).with(no_args).and_return([instance1, instance2]) }
-        let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+        let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 0) }
 
         # This instance will not currently run an errand
-        let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+        let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 1) }
 
         before { allow(instance1).to receive(:model).with(no_args).and_return(instance1_model) }
         let(:instance1_model) do
@@ -32,6 +32,11 @@ module Bosh::Director
         before { allow(AgentClient).to receive(:with_defaults).with(vm.agent_id).and_return(agent_client) }
         let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
+        before { allow(event_log).to receive(:begin_stage).and_return(event_log_stage) }
+        let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
+
+        before { allow(event_log_stage).to receive(:advance_and_track).and_yield }
+
         context 'when agent is able to run errands' do
           errand_result = {
             'exit_code' => 123,
@@ -43,11 +48,26 @@ module Bosh::Director
           let(:result_file) { instance_double('File', write: nil) }
 
           it 'writes run_errand agent response with exit_code, stdout and stderr to task result file' do
-            allow(agent_client).to receive(:run_errand).and_return(errand_result)
+            allow(agent_client).to receive(:run_errand).with(no_args).and_return(errand_result)
 
             result_file.should_receive(:write) do |text|
               expect(JSON.parse(text)).to eq(errand_result)
             end
+
+            subject.run
+          end
+
+          it 'records errand running in the event log' do
+            allow(agent_client).to receive(:run_errand).with(no_args).and_return(errand_result)
+
+            event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
+            expect(event_log).to receive(:begin_stage).
+              with('Running errand', 1).
+              and_return(event_log_stage)
+
+            expect(event_log_stage).to receive(:advance_and_track).
+              with('fake-job-name/0').
+              and_yield
 
             subject.run
           end

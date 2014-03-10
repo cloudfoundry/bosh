@@ -125,7 +125,7 @@ describe 'cli: errand', type: :integration do
     end
 
     it 'returns 1 as exit code and mentions not found errand' do
-      expect(@output).to include('Error 70001: `simple/unknown-errand-name/0\' doesn\'t exist')
+      expect(@output).to include('Errand `unknown-errand-name\' doesn\'t exist')
       expect(@output).to include('Errand `unknown-errand-name\' did not complete')
       expect(@exit_code).to eq(1)
     end

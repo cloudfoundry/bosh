@@ -7,6 +7,8 @@ module Bosh::Director
       end
 
       def prepare
+        job.begin_stage('Preparing deployment', 9)
+
         job.track_and_log('Binding deployment') do
           @assembler.bind_deployment
         end
