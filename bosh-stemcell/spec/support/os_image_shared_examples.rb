@@ -1,4 +1,4 @@
-shared_examples_for 'a stemcell' do
+shared_examples_for 'an OS image' do
   context 'installed by base_<os>' do
     describe command('dig -v') do # required by go_agent
       it { should return_exit_status(0) }

@@ -147,7 +147,20 @@ module Bosh::Stemcell
       end
     end
 
-    describe '#rspec_command' do
+    describe '#os_image_rspec_command' do
+      it 'returns the correct command' do
+        expected_rspec_command = [
+          "cd #{stemcell_specs_dir};",
+          'OS_IMAGE=/some/os_image.tgz',
+          'bundle exec rspec -fd',
+          "spec/os_image/#{operating_system.name}_spec.rb",
+        ].join(' ')
+
+        expect(subject.os_image_rspec_command).to eq(expected_rspec_command)
+      end
+    end
+
+    describe '#stemcell_rspec_command' do
       it 'returns the correct command' do
         expected_rspec_command = [
           "cd #{stemcell_specs_dir};",
@@ -158,7 +171,7 @@ module Bosh::Stemcell
           "spec/stemcells/#{infrastructure.name}_spec.rb",
         ].join(' ')
 
-        expect(subject.rspec_command).to eq(expected_rspec_command)
+        expect(subject.stemcell_rspec_command).to eq(expected_rspec_command)
       end
     end
 

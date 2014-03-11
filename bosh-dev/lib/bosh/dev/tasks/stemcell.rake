@@ -23,7 +23,7 @@ namespace :stemcell do
       definition,
       Bosh::Dev::Build.candidate.number,
       '/dev/null',
-      '/dev/null',
+      args.os_image_path,
     )
     collection = Bosh::Stemcell::StageCollection.new(definition)
     runner = Bosh::Stemcell::StageRunner.new(
@@ -41,6 +41,8 @@ namespace :stemcell do
       archive_handler: archive_handler,
     )
     builder.build(args.os_image_path)
+
+    sh(environment.os_image_rspec_command)
   end
 
   task :upload_os_image, [:os_image_path, :s3_bucket_name] do |_, args|
@@ -103,6 +105,8 @@ namespace :stemcell do
       runner: runner,
     )
     builder.build
+
+    sh(environment.stemcell_rspec_command)
 
     mkdir_p('tmp')
     cp(environment.stemcell_file, 'tmp')

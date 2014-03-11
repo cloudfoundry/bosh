@@ -1,6 +1,6 @@
 require 'bosh/stemcell/disk_image'
 
-def wrap_server_spec_example(example)
+def wrap_stemcell_server_spec_example(example)
   if ENV['STEMCELL_IMAGE']
     Bosh::Stemcell::DiskImage.new(image_file_path: ENV['STEMCELL_IMAGE']).while_mounted do |disk_image|
       SpecInfra::Backend::Exec.instance.chroot_dir = disk_image.image_mount_point
@@ -17,10 +17,10 @@ RSpec.configure do |config|
   end
 
   config.around(example_group: { file_path: /spec\/stemcells/ }) do |example|
-    wrap_server_spec_example(example)
+    wrap_stemcell_server_spec_example(example)
   end
 
   config.around(example_group: { file_path: /support\/stemcell_shared_example/ }) do |example|
-    wrap_server_spec_example(example)
+    wrap_stemcell_server_spec_example(example)
   end
 end

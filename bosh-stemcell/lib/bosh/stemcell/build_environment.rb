@@ -12,6 +12,7 @@ module Bosh::Stemcell
     def initialize(env, definition, version, release_tarball_path, os_image_tarball_path)
       @environment = env
       @definition = definition
+      @os_image_tarball_path = os_image_tarball_path
       @stemcell_builder_options = BuilderOptions.new(
         env: env,
         definition: definition,
@@ -30,7 +31,16 @@ module Bosh::Stemcell
       persist_settings_for_bash
     end
 
-    def rspec_command
+    def os_image_rspec_command
+      [
+        "cd #{STEMCELL_SPECS_DIR};",
+        "OS_IMAGE=#{os_image_tarball_path}",
+        'bundle exec rspec -fd',
+        "spec/os_image/#{operating_system.name}_spec.rb",
+      ].join(' ')
+    end
+
+    def stemcell_rspec_command
       [
         "cd #{STEMCELL_SPECS_DIR};",
         "STEMCELL_IMAGE=#{image_file_path}",
@@ -79,6 +89,7 @@ module Bosh::Stemcell
       :environment,
       :definition,
       :stemcell_builder_options,
+      :os_image_tarball_path,
     )
 
     def sanitize
