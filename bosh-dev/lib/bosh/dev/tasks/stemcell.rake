@@ -53,10 +53,18 @@ namespace :stemcell do
   end
 
   task :upload_os_image, [:os_image_path, :s3_bucket_name] do |_, args|
-    # use Build.candidate.number as revision
+    require 'digest'
+    require 'bosh/dev/upload_adapter'
+    require 'bosh/stemcell/os_image_uploader'
+
+    uploader = Bosh::Stemcell::OsImageUploader.new(adapter: Bosh::Dev::UploadAdapter.new, digester: Digest::SHA256)
+    key = uploader.upload(args.s3_bucket_name, File.open(args.os_image_path))
+    puts "OS image #{args.os_image_path} uploaded to S3 in bucket #{args.s3_bucket_name} with key #{key}."
   end
 
-  task :build, [:infrastructure_name, :operating_system_name, :agent_name, :os_image_s3_bucket_name] do |_, args|
-    # use Build.candidate.number as revision
+  task :build, [:infrastructure_name, :operating_system_name, :agent_name, :os_image_s3_bucket_name, :revision] do |_, args|
+  end
+
+  task :build_with_local_os_image, [:infrastructure_name, :operating_system_name, :agent_name, :os_image_path] do |_, args|
   end
 end
