@@ -2,95 +2,117 @@ require 'spec_helper'
 
 module Bosh::Blobstore
   describe S3BlobstoreClient do
+    subject(:client) { described_class.new(options) }
+    let(:options) { {} }
+
+    before { allow(AWS::S3).to receive(:new).and_return(s3) }
+    let(:s3) { instance_double('AWS::S3') }
+    let(:blob) { instance_double('AWS::S3::S3Object') }
+
     describe 'interface' do
-      subject do
-        s3_blobstore(
+      before do
+        options.merge!(
           encryption_key: 'bla',
           bucket_name: 'test',
           access_key_id: 'KEY',
-          secret_access_key: 'SECRET'
+          secret_access_key: 'SECRET',
         )
       end
 
       it_implements_base_client_interface
     end
 
-    let(:s3) { double(AWS::S3) }
-
-    def s3_blobstore(options)
-      allow(AWS::S3).to receive(:new).and_return(s3)
-      S3BlobstoreClient.new(options)
-    end
-
     describe 'options' do
-      it 'should support symbols as option keys' do
-        options = { bucket_name: 'test',
-                    access_key_id: 'KEY',
-                    secret_access_key: 'SECRET' }
-
-        expect(s3_blobstore(options).bucket_name).to eq 'test'
-      end
-
-      it 'should support strings as option keys' do
-        options = { 'bucket_name' => 'test',
-                    'access_key_id' => 'KEY',
-                    'secret_access_key' => 'SECRET' }
-
-        expect(s3_blobstore(options).bucket_name).to eq 'test'
-      end
-
-      it 'should raise an error if using simple and encryption' do
-        options = { 'bucket_name' => 'test',
-                    'encryption_key' => 'KEY' }
-        expect { s3_blobstore(options) }.to raise_error(
-          BlobstoreError, "can't use read-only with an encryption key")
-      end
-
-      context 'should be processed and passed to the AWS::S3 class' do
-        it 'should use user defined values' do
-          options = { 'bucket_name' => 'test',
-                      'access_key_id' => 'KEY',
-                      'secret_access_key' => 'SECRET',
-                      'use_ssl' => false,
-                      'port' => 8080,
-                      'host' => 'our.userdefined.com'
-          }
-
-          expect(AWS::S3).to receive(:new).
-                                 with(access_key_id: 'KEY',
-                                      secret_access_key: 'SECRET',
-                                      use_ssl: false,
-                                      s3_port: 8080,
-                                      s3_endpoint: 'our.userdefined.com',
-                                      s3_force_path_style: true).
-                                 and_return(s3)
-
-          S3BlobstoreClient.new(options)
-
+      context 'when option keys are symbols' do
+        before do
+          options.merge!(
+            bucket_name: 'test',
+            access_key_id: 'KEY',
+            secret_access_key: 'SECRET',
+          )
         end
 
-        it 'should use the default values for undefined use_ssl, port, and s3_endpoint' do
-          options = { 'bucket_name' => 'test',
-                      'access_key_id' => 'KEY',
-                      'secret_access_key' => 'SECRET',
-          }
+        it 'sets given values' do
+          expect(client.bucket_name).to eq('test')
+        end
+      end
 
-          expect(AWS::S3).to receive(:new).
-                                 with(access_key_id: 'KEY',
-                                      secret_access_key: 'SECRET',
-                                      use_ssl: true,
-                                      s3_port: 443,
-                                      s3_endpoint: 's3.amazonaws.com',
-                                      s3_force_path_style: true).
-                                 and_return(s3)
+      context 'when option keys are string' do
+        before do
+          options.merge!(
+            'bucket_name' => 'test',
+            'access_key_id' => 'KEY',
+            'secret_access_key' => 'SECRET',
+          )
+        end
 
-          S3BlobstoreClient.new(options)
+        it 'sets given values' do
+          expect(client.bucket_name).to eq('test')
+        end
+      end
+
+      context 'when client type is simple and encryption key is provided' do
+        before { options.merge!('bucket_name' => 'test', 'encryption_key' => 'KEY') }
+
+        it 'raises an error' do
+          expect {
+            client
+          }.to raise_error(BlobstoreError, "can't use read-only with an encryption key")
+        end
+      end
+
+      context 'when advanced options are provided for customization' do
+        before do
+          options.merge!(
+            'bucket_name' => 'test',
+            'access_key_id' => 'KEY',
+            'secret_access_key' => 'SECRET',
+            'use_ssl' => false,
+            'port' => 8080,
+            'host' => 'our.userdefined.com',
+          )
+        end
+
+        it 'uses those options when building AWS::S3 client' do
+          expect(AWS::S3).to receive(:new).with(
+            access_key_id: 'KEY',
+            secret_access_key: 'SECRET',
+            use_ssl: false,
+            s3_port: 8080,
+            s3_endpoint: 'our.userdefined.com',
+            s3_force_path_style: true,
+          )
+
+          client
+        end
+      end
+
+      context 'when advanced options are not provided for customization' do
+        before do
+          options.merge!(
+            'bucket_name' => 'test',
+            'access_key_id' => 'KEY',
+            'secret_access_key' => 'SECRET',
+          )
+        end
+
+        it 'uses default options when building AWS::S3 client' do
+          expect(AWS::S3).to receive(:new).with(
+            access_key_id: 'KEY',
+            secret_access_key: 'SECRET',
+            use_ssl: true,
+            s3_port: 443,
+            s3_endpoint: 's3.amazonaws.com',
+            s3_force_path_style: true,
+          )
+
+          client
         end
       end
     end
 
     describe '#create' do
-      subject(:client) { s3_blobstore(options) }
+      subject(:client) { described_class.new(options) }
 
       context 'encrypted' do
         let(:options) do
@@ -145,9 +167,14 @@ module Bosh::Blobstore
         end
 
         it 'should raise an error if the same object id is used' do
-          expect(client).to receive(:get_object_from_s3).and_return(double('s3_object', exist?: true))
+          blob = instance_double('AWS::S3::S3Object', exists?: true)
 
-          expect { client.create(File.open(asset('file')), 'foobar') }.to raise_error BlobstoreError
+          expect(client).to receive(:get_object_from_s3).
+            and_return(blob)
+
+          expect {
+            client.create(File.open(asset('file')), 'foobar')
+          }.to raise_error(BlobstoreError, /foobar is already in use/)
         end
       end
 
@@ -189,20 +216,32 @@ module Bosh::Blobstore
           secret_access_key: 'SECRET'
         }
       end
-      let(:client) { s3_blobstore(options) }
+      let(:client) { described_class.new(options) }
+      let(:blob) { instance_double('AWS::S3::S3Object') }
 
       it 'should raise an error if the object is missing' do
-        allow(client).to receive(:get_from_s3).and_raise AWS::S3::Errors::NoSuchKey.new(nil, nil)
+        bucket = instance_double('AWS::S3::Bucket')
+        allow(s3).to receive(:buckets).
+          with(no_args).
+          and_return('test' => bucket)
 
-        expect { client.get('missing-oid') }.to raise_error BlobstoreError
+        allow(bucket).to receive(:objects).
+          with(no_args).
+          and_return('missing-oid' => blob)
+
+        allow(blob).to receive(:read).
+          and_raise(AWS::S3::Errors::NoSuchKey.new(nil, nil))
+
+        expect {
+          client.get('missing-oid')
+        }.to raise_error(NotFound, /S3 object 'missing-oid' not found/)
       end
 
       context 'unencrypted' do
         it 'should get an object' do
-          blob = double('blob')
           expect(blob).to receive(:read).and_yield('foooo')
           expect(client).to receive(:get_object_from_s3).and_return(blob)
-          expect(client.get('foooo')).to eq 'foooo'
+          expect(client.get('foooo')).to eq('foooo')
         end
       end
 
@@ -215,10 +254,10 @@ module Bosh::Blobstore
             secret_access_key: 'SECRET',
           }
         end
-        let(:client) { s3_blobstore(options) }
+        let(:client) { described_class.new(options) }
+        let(:blob) { instance_double('AWS::S3::S3Object') }
 
         it 'should get from folder' do
-          blob = double('blob')
           expect(blob).to receive(:read).and_yield('foooo')
           expect(client).to receive(:get_object_from_s3).with('folder/foooo').and_return(blob)
           expect(client.get('foooo')).to eq('foooo')
@@ -235,8 +274,6 @@ module Bosh::Blobstore
           secret_access_key: 'SECRET'
         }
       end
-      let(:client) { s3_blobstore(options) }
-      let(:blob) { double(AWS::S3::S3Object) }
 
       it 'should return true if the object already exists' do
         expect(client).to receive(:get_object_from_s3).with('fake-oid').and_return(blob)
@@ -270,7 +307,7 @@ module Bosh::Blobstore
     end
 
     describe '#delete' do
-      subject(:client) { s3_blobstore(options) }
+      subject(:client) { described_class.new(options) }
 
       context 'without folder option' do
         let(:options) do
@@ -282,22 +319,30 @@ module Bosh::Blobstore
           }
         end
 
-        let(:blob) { double(AWS::S3::S3Object) }
+        let(:blob) { instance_double('AWS::S3::S3Object') }
 
         it 'should delete an object' do
           allow(blob).to receive_messages(exists?: true)
 
-          expect(client).to receive(:get_object_from_s3).with('fake-oid').and_return(blob)
+          expect(client).to receive(:get_object_from_s3).
+            with('fake-oid').
+            and_return(blob)
+
           expect(blob).to receive(:delete)
+
           client.delete('fake-oid')
         end
 
         it 'should raise an error when the object is missing' do
           allow(blob).to receive_messages(exists?: false)
 
-          expect(client).to receive(:get_object_from_s3).with('fake-oid').and_return(blob)
+          expect(client).to receive(:get_object_from_s3).
+            with('fake-oid').
+            and_return(blob)
 
-          expect { client.delete('fake-oid') }.to raise_error BlobstoreError, 'no such object: fake-oid'
+          expect {
+            client.delete('fake-oid')
+          }.to raise_error(BlobstoreError, 'no such object: fake-oid')
         end
       end
 
@@ -316,8 +361,12 @@ module Bosh::Blobstore
         it 'should delete an object' do
           allow(blob).to receive_messages(exists?: true)
 
-          expect(client).to receive(:get_object_from_s3).with('folder/fake-oid').and_return(blob)
+          expect(client).to receive(:get_object_from_s3).
+            with('folder/fake-oid').
+            and_return(blob)
+
           expect(blob).to receive(:delete)
+
           client.delete('fake-oid')
         end
       end

@@ -6,7 +6,6 @@ require 'securerandom'
 
 module Bosh
   module Blobstore
-
     class S3BlobstoreClient < BaseClient
 
       ENDPOINT = 'https://s3.amazonaws.com'
@@ -82,7 +81,6 @@ module Bosh
       # @param [String] object_id object id to retrieve
       # @param [File] file file to store the retrived object in
       def get_file(object_id, file)
-
         object_id = full_oid_path(object_id)
         return @simple.get_file(object_id, file) if @simple
 
@@ -100,6 +98,7 @@ module Bosh
             file.write(chunk)
           end
         end
+
         file.write(cipher.final) if @encryption_key
 
       rescue AWS::S3::Errors::NoSuchKey => e
