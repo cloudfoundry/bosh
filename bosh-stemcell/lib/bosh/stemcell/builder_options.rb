@@ -8,13 +8,14 @@ module Bosh::Stemcell
   class BuilderOptions
     extend Forwardable
 
-    def initialize(env, definition, version, tarball, disk_size = nil)
-      @environment = env
-      @definition = definition
+    def initialize(dependencies = {})
+      @environment = dependencies.fetch(:env)
+      @definition = dependencies.fetch(:definition)
 
-      @stemcell_version = version
-      @image_create_disk_size = disk_size || infrastructure.default_disk_size
-      @bosh_micro_release_tgz_path = tarball
+      @stemcell_version = dependencies.fetch(:version)
+      @image_create_disk_size = dependencies.fetch(:disk_size, infrastructure.default_disk_size)
+      @bosh_micro_release_tgz_path = dependencies.fetch(:release_tarball)
+      @os_image_tgz_path = dependencies.fetch(:os_image_tarball)
     end
 
     def default
@@ -34,7 +35,8 @@ module Bosh::Stemcell
         'bosh_release_src_dir' => File.join(source_root, 'release/src/bosh'),
         'bosh_agent_src_dir' => File.join(source_root, 'bosh_agent'),
         'go_agent_src_dir' => File.join(source_root, 'go_agent'),
-        'image_create_disk_size' => image_create_disk_size
+        'image_create_disk_size' => image_create_disk_size,
+        'os_image_tgz' => os_image_tgz_path,
       }.merge(bosh_micro_options).merge(environment_variables).merge(ovf_options)
     end
 
@@ -52,7 +54,8 @@ module Bosh::Stemcell
       :stemcell_version,
       :definition,
       :image_create_disk_size,
-      :bosh_micro_release_tgz_path
+      :bosh_micro_release_tgz_path,
+      :os_image_tgz_path,
     )
 
     def ovf_options

@@ -9,7 +9,7 @@ module Bosh::Stemcell
   describe BuildEnvironment do
     include FakeFS::SpecHelpers
 
-    subject { described_class.new(env, definition, nil, nil) }
+    subject { described_class.new(env, definition, version, release_tarball_path, os_image_tarball_path) }
 
     let(:env) { {} }
 
@@ -21,6 +21,10 @@ module Bosh::Stemcell
         agent: agent,
       )
     end
+
+    let(:version) { '1234' }
+    let(:release_tarball_path) { '1234.tgz' }
+    let(:os_image_tarball_path) { '/some/os_image.tgz' }
 
     let(:stemcell_builder_source_dir) { '/fake/path/to/stemcell_builder' }
     let(:stemcell_specs_dir) { '/fake/path/to/stemcell/specs/dir' }
@@ -76,6 +80,18 @@ module Bosh::Stemcell
       allow(BuilderOptions).to receive(:new).and_return(stemcell_builder_options)
       stub_const('Bosh::Stemcell::BuildEnvironment::STEMCELL_BUILDER_SOURCE_DIR', stemcell_builder_source_dir)
       stub_const('Bosh::Stemcell::BuildEnvironment::STEMCELL_SPECS_DIR', stemcell_specs_dir)
+    end
+
+    it 'constructs stemcell builder options' do
+      expect(BuilderOptions).to receive(:new).with(
+        env: env,
+        definition: definition,
+        version: version,
+        release_tarball: release_tarball_path,
+        os_image_tarball: os_image_tarball_path,
+      )
+
+      subject
     end
 
     describe '#prepare_build' do

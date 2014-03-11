@@ -15,26 +15,25 @@ describe Bosh::Stemcell::OsImageBuilder do
     )
   end
 
-  let(:environment) { instance_double('Bosh::Stemcell::BuildEnvironment', prepare_build: nil) }
+  let(:environment) { instance_double('Bosh::Stemcell::BuildEnvironment', prepare_build: nil, chroot_dir: '/chroot') }
   let(:collection) { instance_double('Bosh::Stemcell::StageCollection', operating_system_stages: nil) }
   let(:runner) { instance_double('Bosh::Stemcell::StageRunner', configure_and_apply: nil) }
-  let(:archive_handler) { instance_double('Bosh::Stemcell::ArchiveHandler') }
+  let(:archive_handler) { instance_double('Bosh::Stemcell::ArchiveHandler', compress: nil) }
 
   describe '#build' do
     it 'prepares the build environment' do
       expect(environment).to receive(:prepare_build)
-      builder.build
+      builder.build('/some/os_image_path.tgz')
     end
 
     it 'runs the operating system stages' do
       allow(collection).to receive(:operating_system_stages).and_return([:some_stage])
       expect(runner).to receive(:configure_and_apply).with([:some_stage])
 
-      builder.build
+      builder.build('/some/os_image_path.tgz')
     end
 
     it 'tars up the chroot dir' do
-      allow(environment).to receive(:chroot_dir).and_return('/chroot')
       expect(archive_handler).to receive(:compress).with('/chroot', '/some/os_image_path.tgz')
 
       builder.build('/some/os_image_path.tgz')

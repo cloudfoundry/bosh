@@ -4,11 +4,18 @@ require 'bosh/stemcell/definition'
 
 module Bosh::Stemcell
   describe BuilderOptions do
-    subject(:stemcell_builder_options) {
-      described_class.new(env, definition, '007', 'fake/release.tgz', disk_size)
-    }
+    subject(:stemcell_builder_options) { described_class.new(dependencies) }
+    let(:dependencies) do
+      {
+        env: env,
+        definition: definition,
+        version: '007',
+        release_tarball: 'fake/release.tgz',
+        os_image_tarball: 'fake/os_image.tgz',
+      }
+    end
+
     let(:env) { {} }
-    let(:disk_size) { nil }
 
     let(:definition) {
       instance_double(
@@ -86,6 +93,7 @@ module Bosh::Stemcell
               File.join(expected_source_root, 'bosh-release'))
             expect(result['bosh_micro_manifest_yml_path']).to eq(expected_release_micro_manifest_path)
             expect(result['bosh_micro_release_tgz_path']).to eq('fake/release.tgz')
+            expect(result['os_image_tgz']).to eq('fake/os_image.tgz')
           end
 
           context 'when RUBY_BIN is not set' do
@@ -112,7 +120,7 @@ module Bosh::Stemcell
           end
 
           context 'when disk_size is passed' do
-            let(:disk_size) { 1234 }
+            before { dependencies[:disk_size] = 1234 }
 
             it 'allows user to override default disk_size' do
               result = stemcell_builder_options.default

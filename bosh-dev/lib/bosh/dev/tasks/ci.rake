@@ -38,22 +38,23 @@ namespace :ci do
   end
 
   desc 'Build a stemcell for the given :infrastructure, :operating_system, and :agent_name and publish to S3'
-  task :publish_stemcell, [:infrastructure_name, :operating_system_name, :agent_name] do |_, args|
-    require 'bosh/dev/build'
-    require 'bosh/dev/stemcell_builder'
+  task :publish_stemcell, [:stemcell_path] do |_, args|
     require 'bosh/dev/stemcell_publisher'
 
-    stemcell_builder = Bosh::Dev::StemcellBuilder.for_candidate_build(
-      args.infrastructure_name, args.operating_system_name, args.agent_name)
-    stemcell_path = stemcell_builder.build_stemcell
-
     stemcell_publisher = Bosh::Dev::StemcellPublisher.for_candidate_build
-    stemcell_publisher.publish(stemcell_path)
+    stemcell_publisher.publish(args.stemcell_path)
   end
 
-  task :publish_stemcell_in_vm, [:infrastructure_name, :operating_system_name, :vm_name, :agent_name] do |_, args|
+  task :publish_stemcell_in_vm, [:infrastructure_name, :operating_system_name, :vm_name, :agent_name, :os_image_s3_bucket_name, :os_image_s3_key] do |_, args|
+    require 'bosh/dev/build'
     require 'bosh/dev/stemcell_vm'
-    stemcell_vm = Bosh::Dev::StemcellVm.new(args.to_hash, ENV)
+    require 'bosh/stemcell/definition'
+    require 'bosh/stemcell/build_environment'
+
+    definition = Bosh::Stemcell::Definition.for(infrastructure_name, operating_system_name, agent_name)
+    environment = Bosh::Stemcell::BuildEnvironment.new(ENV.to_hash, definition, Bosh::Dev::Build.candidate.number, nil, nil)
+
+    stemcell_vm = Bosh::Dev::StemcellVm.new(args.to_hash, ENV, environment)
     stemcell_vm.publish
   end
 

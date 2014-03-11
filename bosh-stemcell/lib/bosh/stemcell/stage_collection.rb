@@ -18,6 +18,12 @@ module Bosh::Stemcell
       end
     end
 
+    def extract_operating_system_stages
+      [
+        :untar_base_os_image,
+      ]
+    end
+
     def agent_stages
       case agent
       when Agent::Go
@@ -116,7 +122,6 @@ module Bosh::Stemcell
         :rsyslog,
         # Install GRUB/kernel/etc
         :system_grub,
-        :tar_base_os_image,
       ]
     end
 
