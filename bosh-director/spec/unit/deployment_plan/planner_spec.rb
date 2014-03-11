@@ -3,6 +3,8 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Planner do
+      subject { described_class.new('fake-dep-name') }
+
       describe '#initialize' do
         it 'raises an error if name is not given' do
           expect {
@@ -90,6 +92,42 @@ module Bosh::Director
 
         def make_deployment(name)
           Models::Deployment.make(name: name)
+        end
+      end
+
+      describe '#jobs_starting_on_deploy' do
+        before { subject.add_job(job1) }
+        let(:job1) do
+          instance_double('Bosh::Director::DeploymentPlan::Job', {
+            name: 'fake-job1-name',
+            canonical_name: 'fake-job1-cname',
+          })
+        end
+
+        before { subject.add_job(job2) }
+        let(:job2) do
+          instance_double('Bosh::Director::DeploymentPlan::Job', {
+            name: 'fake-job2-name',
+            canonical_name: 'fake-job2-cname',
+          })
+        end
+
+        context 'when there is at least one job that runs when deploy starts' do
+          before { allow(job1).to receive(:starts_on_deploy?).with(no_args).and_return(false) }
+          before { allow(job2).to receive(:starts_on_deploy?).with(no_args).and_return(true) }
+
+          it 'only returns jobs that start on deploy' do
+            expect(subject.jobs_starting_on_deploy).to eq([job2])
+          end
+        end
+
+        context 'when there are no jobs that run when deploy starts' do
+          before { allow(job1).to receive(:starts_on_deploy?).with(no_args).and_return(false) }
+          before { allow(job2).to receive(:starts_on_deploy?).with(no_args).and_return(false) }
+
+          it 'only returns jobs that start on deploy' do
+            expect(subject.jobs_starting_on_deploy).to eq([])
+          end
         end
       end
     end

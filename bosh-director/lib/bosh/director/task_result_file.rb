@@ -1,10 +1,7 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
-
   class TaskResultFile
     def initialize(file_name)
-      @file = File.open(file_name, "w")
+      @file = File.open(file_name, 'w')
       @lock = Mutex.new
     end
 
@@ -16,4 +13,3 @@ module Bosh::Director
     end
   end
 end
-

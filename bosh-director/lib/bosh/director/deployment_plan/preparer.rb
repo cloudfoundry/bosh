@@ -1,12 +1,14 @@
 module Bosh::Director
   module DeploymentPlan
     class Preparer
-      def initialize(job, compiler)
+      def initialize(job, assembler)
         @job = job
-        @assembler = compiler
+        @assembler = assembler
       end
 
       def prepare
+        job.begin_stage('Preparing deployment', 9)
+
         job.track_and_log('Binding deployment') do
           @assembler.bind_deployment
         end

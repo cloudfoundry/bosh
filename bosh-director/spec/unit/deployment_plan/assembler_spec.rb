@@ -112,21 +112,18 @@ module Bosh::Director
         end
       end
 
+      describe '#bind_unallocated_vms' do
+        it 'binds unallocated VMs for each job' do
+          j1 = instance_double('Bosh::Director::DeploymentPlan::Job')
+          j2 = instance_double('Bosh::Director::DeploymentPlan::Job')
+          deployment_plan.should_receive(:jobs_starting_on_deploy).and_return([j1, j2])
 
-      it 'should bind unallocated VMs' do
-        instances = (1..4).map { |i| instance_double('Bosh::Director::DeploymentPlan::Instance') }
+          [j1, j2].each do |job|
+            expect(job).to receive(:bind_unallocated_vms).with(no_args).ordered
+          end
 
-        j1 = instance_double('Bosh::Director::DeploymentPlan::Job', :instances => instances[0..1])
-        j2 = instance_double('Bosh::Director::DeploymentPlan::Job', :instances => instances[2..3])
-
-        deployment_plan.should_receive(:jobs).and_return([j1, j2])
-
-        instances.each do |instance|
-          instance.should_receive(:bind_unallocated_vm).ordered
-          instance.should_receive(:sync_state_with_db).ordered
+          assembler.bind_unallocated_vms
         end
-
-        assembler.bind_unallocated_vms
       end
 
       describe '#bind_existing_vm' do
@@ -551,42 +548,21 @@ module Bosh::Director
       describe '#bind_resource_pools'
 
       describe '#bind_instance_networks' do
-        before do
-          @job_spec = instance_double('Bosh::Director::DeploymentPlan::Job')
-          @instance_spec = instance_double('Bosh::Director::DeploymentPlan::Instance')
-          @network_spec = instance_double('Bosh::Director::DeploymentPlan::Network')
+        it 'binds unallocated VMs for each job' do
+          j1 = instance_double('Bosh::Director::DeploymentPlan::Job')
+          j2 = instance_double('Bosh::Director::DeploymentPlan::Job')
+          deployment_plan.should_receive(:jobs_starting_on_deploy).and_return([j1, j2])
 
-          deployment_plan.stub(:jobs).and_return([@job_spec])
-          deployment_plan.stub(:network).with('network-a').
-            and_return(@network_spec)
-
-          @job_spec.stub(:name).and_return('job-a')
-          @job_spec.stub(:instances).and_return([@instance_spec])
-
-          @network_reservation = NetworkReservation.new(
-            :type => NetworkReservation::DYNAMIC)
-          @network_reservation.reserved = false
-
-          @instance_spec.stub(:network_reservations).
-            and_return({ 'network-a' => @network_reservation })
-          @instance_spec.stub(:index).and_return(3)
-        end
-
-        it 'should do nothing if the ip is already reserved' do
-          @network_reservation.reserved = true
-          assembler.bind_instance_networks
-        end
-
-        it 'should make a network reservation' do
-          @network_spec.should_receive(:reserve!).
-            with(@network_reservation, "`job-a/3'")
+          [j1, j2].each do |job|
+            expect(job).to receive(:bind_instance_networks).with(no_args).ordered
+          end
 
           assembler.bind_instance_networks
         end
       end
 
       describe '#bind_configuration' do
-        before { allow(deployment_plan).to receive(:jobs).and_return([job]) }
+        before { allow(deployment_plan).to receive(:jobs_starting_on_deploy).and_return([job]) }
         let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job') }
 
         it 'renders job templates for all instances' do
@@ -598,187 +574,36 @@ module Bosh::Director
       end
 
       describe '#bind_dns' do
-        before do
-          Config.stub(:dns).and_return({ 'address' => '1.2.3.4' })
-          Config.stub(:dns_domain_name).and_return('bosh')
-        end
-
-        it "should create the domain if it doesn't exist" do
-          domain = nil
-          deployment_plan.should_receive(:dns_domain=).
-            and_return { |*args| domain = args.first }
+        it 'uses DnsBinder to create dns records for deployment' do
+          binder = instance_double('Bosh::Director::DeploymentPlan::DnsBinder')
+          allow(DnsBinder).to receive(:new).with(deployment_plan).and_return(binder)
+          expect(binder).to receive(:bind_deployment).with(no_args)
           assembler.bind_dns
-
-          Models::Dns::Domain.count.should == 1
-          Models::Dns::Domain.first.should == domain
-          domain.name.should == 'bosh'
-          domain.type.should == 'NATIVE'
-        end
-
-        it 'should reuse the domain if it exists' do
-          domain = Models::Dns::Domain.make(:name => 'bosh', :type => 'NATIVE')
-          deployment_plan.should_receive(:dns_domain=).with(domain)
-          assembler.bind_dns
-
-          Models::Dns::Domain.count.should == 1
-        end
-
-        it "should create the SOA, NS & A record if they doesn't exist" do
-          domain = Models::Dns::Domain.make(:name => 'bosh', :type => 'NATIVE')
-          deployment_plan.should_receive(:dns_domain=)
-          assembler.bind_dns
-
-          Models::Dns::Record.count.should == 3
-          records = Models::Dns::Record
-          types = records.map { |r| r.type }
-          types.should == %w[SOA NS A]
-        end
-
-        it 'should reuse the SOA record if it exists' do
-          domain = Models::Dns::Domain.make(:name => 'bosh', :type => 'NATIVE')
-          soa = Models::Dns::Record.make(:domain => domain, :name => 'bosh',
-                                             :type => 'SOA')
-          ns = Models::Dns::Record.make(:domain => domain, :name => 'bosh',
-                                            :type => 'NS', :content => 'ns.bosh',
-                                            :ttl => 14400) # 4h
-          a = Models::Dns::Record.make(:domain => domain, :name => 'ns.bosh',
-                                           :type => 'A', :content => '1.2.3.4',
-                                           :ttl => 14400) # 4h
-          deployment_plan.should_receive(:dns_domain=)
-          assembler.bind_dns
-
-          soa.refresh
-          ns.refresh
-          a.refresh
-
-          Models::Dns::Record.count.should == 3
-          Models::Dns::Record.all.should == [soa, ns, a]
         end
       end
 
-      describe '#bind_instance_vms'
+      describe '#bind_instance_vms' do
+        before { allow(deployment_plan).to receive(:jobs_starting_on_deploy).with(no_args).and_return([job1, job2]) }
+        let(:job1) { instance_double('Bosh::Director::DeploymentPlan::Job') }
+        let(:job2) { instance_double('Bosh::Director::DeploymentPlan::Job') }
 
-      describe '#bind_instance_vm' do
-        let(:instance) do
-          instance_double(
-            'Bosh::Director::DeploymentPlan::Instance',
-            job: job,
-            idle_vm: idle_vm,
-            index: 'fake-index',
-            :current_state= => nil,
-            model: instance_model,
-          )
-        end
+        before { allow(job1).to receive(:instances).with(no_args).and_return([instance1, instance2]) }
+        let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+        let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
 
-        let(:job) do
-          instance_double(
-            'Bosh::Director::DeploymentPlan::Job',
-            name: 'fake-job-name',
-            spec: 'fake-job-spec',
-            release: release,
-          )
-        end
+        before { allow(job2).to receive(:instances).with(no_args).and_return([instance3]) }
+        let(:instance3) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
 
-        let(:release)  { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',  spec: 'fake-release-spec') }
+        before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
+        let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
-        let(:instance_model) { Models::Instance.make(vm: nil) }
+        before { allow(event_log).to receive(:track).and_yield }
 
-        let(:idle_vm) do
-          instance_double(
-            'Bosh::Director::DeploymentPlan::IdleVm',
-            current_state: { 'fake-vm-existing-state' => true },
-            vm: idle_vm_model,
-          )
-        end
-
-        let(:idle_vm_model) { Models::Vm.make(agent_id: 'fake-agent-id') }
-
-        before { AgentClient.stub(with_defaults: agent) }
-        let(:agent) { instance_double('Bosh::Director::AgentClient') }
-
-        it 'sends apply message to an agent' do
-          AgentClient.should_receive(:with_defaults).with('fake-agent-id').and_return(agent)
-          expect(agent).to receive(:apply).with(be_an_instance_of(Hash))
-          assembler.bind_instance_vm(instance)
-        end
-
-        it 'sends apply message that includes existing vm state' do
-          expect(agent).to receive(:apply).with(hash_including('fake-vm-existing-state' => true))
-          assembler.bind_instance_vm(instance)
-        end
-
-        it 'sends apply message to an agent that includes new job spec, instance index, and release spec' do
-          expect(agent).to receive(:apply).with(hash_including(
-            'job' => 'fake-job-spec',
-            'index' => 'fake-index',
-          ))
-          assembler.bind_instance_vm(instance)
-        end
-
-        def self.it_rolls_back_instance_and_vm_state(error)
-          it 'does not point instance to the vm so that during the next deploy instance can be re-associated with new vm' do
-            expect {
-              expect { assembler.bind_instance_vm(instance) }.to raise_error(error)
-            }.to_not change { instance_model.refresh.vm }.from(nil)
-          end
-
-          it 'does not change apply spec on vm model' do
-            expect {
-              expect { assembler.bind_instance_vm(instance) }.to raise_error(error)
-            }.to_not change { idle_vm_model.refresh.apply_spec }.from(nil)
-          end
-
-          it 'does not change current state on the instance' do
-            instance.should_not_receive(:current_state=)
-            expect { assembler.bind_instance_vm(instance) }.to raise_error(error)
-          end
-        end
-
-        context 'when agent apply succeeds' do
-          before { agent.stub(apply: nil) }
-
-          context 'when saving state changes to the database succeeds' do
-            it 'the instance points to the vm' do
-              expect {
-                assembler.bind_instance_vm(instance)
-              }.to change { instance_model.refresh.vm }.from(nil).to(idle_vm_model)
-            end
-
-            it 'the vm apply spec is set to new state' do
-              expect {
-                assembler.bind_instance_vm(instance)
-              }.to change { idle_vm_model.refresh.apply_spec }.from(nil).to(hash_including(
-                'fake-vm-existing-state' => true,
-                'job' => 'fake-job-spec',
-              ))
-            end
-
-            it 'the instance current state is set to new state' do
-              instance.should_receive(:current_state=).with(hash_including(
-                'fake-vm-existing-state' => true,
-                'job' => 'fake-job-spec',
-              ))
-              assembler.bind_instance_vm(instance)
-            end
-          end
-
-          context 'when update vm instance in the database fails' do
-            error = Exception.new('error')
-            before { instance_model.stub(:_update_without_checking).and_raise(error) }
-            it_rolls_back_instance_and_vm_state(error)
-          end
-
-          context 'when update vm apply spec in the database fails' do
-            error = Exception.new('error')
-            before { idle_vm_model.stub(:_update_without_checking).and_raise(error) }
-            it_rolls_back_instance_and_vm_state(error)
-          end
-        end
-
-        context 'when agent apply fails' do
-          error = Bosh::Director::RpcTimeout.new('error')
-          before { agent.stub(:apply).and_raise(error) }
-          it_rolls_back_instance_and_vm_state(error)
+        it 'uses InstanceVmBinder to bind instances from all jobs' do
+          binder = instance_double('Bosh::Director::DeploymentPlan::InstanceVmBinder')
+          allow(InstanceVmBinder).to receive(:new).with(event_log).and_return(binder)
+          expect(binder).to receive(:bind_instance_vms).with([instance1, instance2, instance3])
+          assembler.bind_instance_vms
         end
       end
 

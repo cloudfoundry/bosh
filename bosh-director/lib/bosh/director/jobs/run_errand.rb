@@ -1,73 +1,95 @@
-require 'membrane'
+require 'psych'
 
 module Bosh::Director
-  module Jobs
-    class RunErrand < BaseJob
-      @queue = :normal
+  class Jobs::RunErrand < Jobs::BaseJob
+    @queue = :normal
 
-      class ErrandResult
-        attr_reader :exit_code
+    def self.job_type
+      :run_errand
+    end
 
-        AGENT_TASK_RESULT_SCHEMA = ::Membrane::SchemaParser.parse do
-          {
-            'exit_code' => Integer,
-            'stdout' => String,
-            'stderr' => String,
-          }
-        end
+    def initialize(deployment_name, errand_name)
+      @deployment_name = deployment_name
+      @errand_name = errand_name
+      @deployment_manager = Api::DeploymentManager.new
+      @instance_manager = Api::InstanceManager.new
+      @blobstore = App.instance.blobstores.blobstore
+    end
 
-        # Explicitly write out schema of the director task result
-        # to avoid accidently leaking agent task result extra fields.
-        def self.from_agent_task_result(agent_task_result)
-          AGENT_TASK_RESULT_SCHEMA.validate(agent_task_result)
-          new(*agent_task_result.values_at('exit_code', 'stdout', 'stderr'))
-        rescue Membrane::SchemaValidationError => e
-          raise AgentInvalidTaskResult, e.message
-        end
+    def perform
+      deployment_model = @deployment_manager.find_by_name(@deployment_name)
 
-        def initialize(exit_code, stdout, stderr)
-          @exit_code = exit_code
-          @stdout = stdout
-          @stderr = stderr
-        end
+      manifest = Psych.load(deployment_model.manifest)
+      deployment = DeploymentPlan::Planner.parse(manifest, event_log, {})
 
-        def to_hash
-          {
-            'exit_code' => @exit_code,
-            'stdout' => @stdout,
-            'stderr' => @stderr,
-          }
-        end
+      job = deployment.job(@errand_name)
+      if job.nil?
+        raise JobNotFound, "Errand `#{@errand_name}' doesn't exist"
       end
 
-      def self.job_type
-        :run_errand
+      unless job.can_run_as_errand?
+        raise RunErrandError,
+              "Job `#{job.name}' is not an errand. To mark a job as an errand " +
+              "set its lifecycle to 'errand' in the deployment manifest."
       end
 
-      def initialize(deployment_name, errand_name)
-        @deployment_name = deployment_name
-        @errand_name = errand_name
-        @instance_manager = Api::InstanceManager.new
+      if job.instances.empty?
+        raise InstanceNotFound, "Instance `#{@deployment_name}/#{@errand_name}/0' doesn't exist"
       end
 
-      def perform
-        instance = @instance_manager.find_by_name(@deployment_name, @errand_name, 0)
+      runner = Errand::Runner.new(job, result_file, @instance_manager, event_log)
 
-        agent = @instance_manager.agent_client_for(instance)
-        agent_task_result = agent.run_errand
-
-        errand_result = ErrandResult.from_agent_task_result(agent_task_result)
-        result_file.write(JSON.dump(errand_result.to_hash) + "\n")
-
-        title_prefix = "Errand `#{@errand_name}' completed"
-        exit_code_suffix = "(exit code #{errand_result.exit_code})"
-
-        if errand_result.exit_code == 0
-          "#{title_prefix} successfully #{exit_code_suffix}"
-        else
-          "#{title_prefix} with error #{exit_code_suffix}"
-        end
+      with_updated_instances(deployment, job) do
+        logger.info('Starting to run errand')
+        runner.run
       end
+    end
+
+    private
+
+    def with_updated_instances(deployment, job, &blk)
+      logger.info('Starting to prepare for deployment')
+      prepare_deployment(deployment, job)
+
+      logger.info('Starting to update resource pool')
+      rp_manager = update_resource_pool(job)
+
+      logger.info('Starting to update job instances')
+      job_manager = update_instances(deployment, job)
+
+      result = blk.call
+
+      logger.info('Starting to delete job instances')
+      job_manager.delete_instances
+
+      logger.info('Starting to refill resource pool')
+      rp_manager.refill
+
+      result
+    end
+
+    def prepare_deployment(deployment, job)
+      deployment_preparer = Errand::DeploymentPreparer.new(
+        deployment, job, event_log, self)
+
+      deployment_preparer.prepare_deployment
+      deployment_preparer.prepare_job
+    end
+
+    def update_resource_pool(job)
+      rp_updaters = [ResourcePoolUpdater.new(job.resource_pool)]
+      rp_manager = DeploymentPlan::ResourcePools.new(event_log, rp_updaters)
+
+      rp_manager.update
+      rp_manager
+    end
+
+    def update_instances(deployment, job)
+      job_manager = Errand::JobManager.new(
+        deployment, job, @blobstore, event_log)
+
+      job_manager.update_instances
+      job_manager
     end
   end
 end

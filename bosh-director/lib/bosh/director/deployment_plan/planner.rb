@@ -227,6 +227,10 @@ module Bosh::Director
         @jobs_name_index[name]
       end
 
+      def jobs_starting_on_deploy
+        @jobs.select(&:starts_on_deploy?)
+      end
+
       def rename_in_progress?
         @job_rename['old_name'] && @job_rename['new_name']
       end

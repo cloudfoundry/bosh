@@ -54,6 +54,7 @@ module Bosh::Director
   TaskNotFound = err(10000, NOT_FOUND)
   TaskCancelled = err(10001, OK)
 
+  # User management
   UserNotFound = err(20000, NOT_FOUND)
   UserImmutableUsername = err(20001)
   UserInvalid = err(20002)
@@ -83,6 +84,7 @@ module Bosh::Director
 
   PackageInvalidArchive = err(60000)
 
+  # Models
   DeploymentNotFound = err(70000, NOT_FOUND)
   InstanceNotFound = err(70001, NOT_FOUND)
   InstanceInvalidIndex = err(70002)
@@ -93,7 +95,9 @@ module Bosh::Director
   VmInstanceOutOfSync = err(70006)
   InstanceTargetStateUndefined = err(70007)
   SnapshotNotFound = err(70008)
+  JobNotFound = err(70009, NOT_FOUND)
 
+  # Extracting job from a release
   JobInvalidArchive = err(80000)
   JobMissingManifest = err(80001)
   JobMissingTemplateFile = err(80002)
@@ -110,12 +114,14 @@ module Bosh::Director
   ResourceError = err(100001)
   ResourceNotFound = err(100002, NOT_FOUND)
 
+  # Director property management
   PropertyAlreadyExists = err(110001)
   PropertyInvalid = err(110002)
   PropertyNotFound = err(110003, NOT_FOUND)
 
   CompilationConfigUnknownNetwork = err(120001)
 
+  # Manifest parsing: network section
   NetworkReservationInvalidIp = err(130001)
   NetworkReservationMissing = err(130002)
   NetworkReservationAlreadyExists = err(130003)
@@ -128,6 +134,7 @@ module Bosh::Director
   NetworkReservationError = err(130010)
   NetworkReservationNotEnoughCapacity = err(130010)
 
+  # Manifest parsing: job section
   JobMissingRelease = err(140001)
   JobUnknownRelease = err(140002)
   JobUnknownResourcePool = err(140003)
@@ -136,7 +143,9 @@ module Bosh::Director
   JobInvalidJobState = err(140006)
   JobMissingNetwork = err(140007)
   JobInvalidTemplates = err(140008)
+  JobInvalidLifecycle = err(140009)
 
+  # Manifest parsing: job networks section
   JobUnknownNetwork = err(150001)
   JobNetworkInstanceIpMismatch = err(150002)
   JobNetworkInvalidDefault = err(150003)
@@ -170,6 +179,7 @@ module Bosh::Director
   CloudDiskMissing = err(390002)
   CloudNotEnoughDiskSpace = err(390003)
 
+  # Agent errors
   AgentTaskNoBlobstoreId = err(400001)
   AgentInvalidStateFormat = err(400002)
   AgentWrongDeployment = err(400003)
@@ -182,6 +192,7 @@ module Bosh::Director
   AgentDiskOutOfSync = err(400010)
   AgentInvalidTaskResult = err(400011)
 
+  # Cloud check task errors
   CloudcheckTooManySimilarProblems = err(410001)
   CloudcheckResolutionNotProvided = err(410002)
   CloudcheckInvalidResolutionFormat = err(410003)
@@ -198,4 +209,7 @@ module Bosh::Director
 
   SystemError = err(500000, INTERNAL_SERVER_ERROR)
   NotEnoughDiskSpace = err(500001, INTERNAL_SERVER_ERROR)
+
+  # Run errand errors
+  RunErrandError = err(510000)
 end

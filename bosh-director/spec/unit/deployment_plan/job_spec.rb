@@ -374,4 +374,90 @@ describe Bosh::Director::DeploymentPlan::Job do
       end
     end
   end
+
+  describe '#bind_unallocated_vms' do
+    subject(:job) { described_class.new(deployment) }
+
+    it 'allocates a VM to all instances if they are not already bound to a VM' do
+      instance0 = instance_double('Bosh::Director::DeploymentPlan::Instance')
+      job.instances[0] = instance0
+
+      instance1 = instance_double('Bosh::Director::DeploymentPlan::Instance')
+      job.instances[1] = instance1
+
+      [instance0, instance1].each do |instance|
+        expect(instance).to receive(:bind_unallocated_vm).with(no_args).ordered
+        expect(instance).to receive(:sync_state_with_db).with(no_args).ordered
+      end
+
+      job.bind_unallocated_vms
+    end
+  end
+
+  describe '#bind_instance_networks' do
+    subject(:job) { described_class.new(plan) }
+
+    before { job.name = 'job-name' }
+
+    before { job.instances[0] = instance }
+    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 3) }
+
+    before { allow(plan).to receive(:network).with('network-name').and_return(network) }
+    let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'network-name') }
+
+    before do
+      instance.stub(:network_reservations).
+        with(no_args).
+        and_return('network-name' => network_reservation)
+    end
+    let(:network_reservation) { Bosh::Director::NetworkReservation.new_dynamic }
+
+    context 'when network reservation is already reserved' do
+      before { network_reservation.reserved = true }
+
+      it 'does not reserve network reservation again' do
+        expect(network).to_not receive(:reserve!)
+        job.bind_instance_networks
+      end
+    end
+
+    context 'when network reservation is not reserved' do
+      before { network_reservation.reserved = false }
+
+      it 'reserves network reservation with the network' do
+        expect(network).to receive(:reserve!).
+          with(network_reservation, "`job-name/3'")
+
+        job.bind_instance_networks
+      end
+    end
+  end
+
+  describe '#starts_on_deploy?' do
+    subject { described_class.new(plan) }
+
+    context "when lifecycle profile is 'service'" do
+      before { subject.lifecycle = 'service' }
+      its(:starts_on_deploy?) { should be(true) }
+    end
+
+    context "when lifecycle profile is not service" do
+      before { subject.lifecycle = 'other' }
+      its(:starts_on_deploy?) { should be(false) }
+    end
+  end
+
+  describe '#can_run_as_errand?' do
+    subject { described_class.new(plan) }
+
+    context "when lifecycle profile is 'errand'" do
+      before { subject.lifecycle = 'errand' }
+      its(:can_run_as_errand?) { should be(true) }
+    end
+
+    context "when lifecycle profile is not errand" do
+      before { subject.lifecycle = 'other' }
+      its(:can_run_as_errand?) { should be(false) }
+    end
+  end
 end

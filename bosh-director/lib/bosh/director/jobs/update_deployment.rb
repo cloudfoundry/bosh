@@ -39,8 +39,6 @@ module Bosh::Director
       def prepare
         @assembler = DeploymentPlan::Assembler.new(@deployment_plan)
         preparer = DeploymentPlan::Preparer.new(self, @assembler)
-
-        begin_stage('Preparing deployment', 9)
         preparer.prepare
 
         logger.info('Compiling and binding packages')

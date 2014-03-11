@@ -2,7 +2,6 @@ module Bosh::Director
   # DeploymentPlan::Assembler is used to populate deployment plan with information
   # about existing deployment and information from director DB
   class DeploymentPlan::Assembler
-    include DnsHelper
     include LockHelper
     include IpUtil
 
@@ -266,27 +265,11 @@ module Bosh::Director
     # resource pool if necessary)
     # @return [void]
     def bind_unallocated_vms
-      @deployment_plan.jobs.each do |job|
-        job.instances.each do |instance|
-          instance.bind_unallocated_vm
-          # Now that we know every VM has been allocated and instance models are
-          # bound, we can sync the state.
-          instance.sync_state_with_db
-        end
-      end
+      @deployment_plan.jobs_starting_on_deploy.each(&:bind_unallocated_vms)
     end
 
     def bind_instance_networks
-      @deployment_plan.jobs.each do |job|
-        job.instances.each do |instance|
-          instance.network_reservations.each do |name, reservation|
-            unless reservation.reserved?
-              network = @deployment_plan.network(name)
-              network.reserve!(reservation, "`#{job.name}/#{instance.index}'")
-            end
-          end
-        end
-      end
+      @deployment_plan.jobs_starting_on_deploy.each(&:bind_instance_networks)
     end
 
     # Binds template models for each release spec in the deployment plan
@@ -328,84 +311,22 @@ module Bosh::Director
     # Calculates configuration checksums for all jobs in this deployment plan
     # @return [void]
     def bind_configuration
-      @deployment_plan.jobs.each do |job|
+      @deployment_plan.jobs_starting_on_deploy.each do |job|
         JobRenderer.new(job).render_job_instances(@blobstore)
       end
     end
 
     def bind_dns
-      domain = Models::Dns::Domain.find_or_create(:name => dns_domain_name,
-                                                  :type => 'NATIVE')
-      @deployment_plan.dns_domain = domain
-
-      soa_record = Models::Dns::Record.find_or_create(:domain_id => domain.id,
-                                                      :name => dns_domain_name,
-                                                      :type => 'SOA')
-      soa_record.content = SOA
-      soa_record.ttl = 300
-      soa_record.save
-
-      # add NS record
-      Models::Dns::Record.find_or_create(:domain_id => domain.id,
-                                         :name => dns_domain_name,
-                                         :type =>'NS', :ttl => TTL_4H,
-                                         :content => dns_ns_record)
-      # add A record for name server
-      Models::Dns::Record.find_or_create(:domain_id => domain.id,
-                                         :name => dns_ns_record,
-                                         :type =>'A', :ttl => TTL_4H,
-                                         :content => Config.dns['address'])
+      binder = DeploymentPlan::DnsBinder.new(@deployment_plan)
+      binder.bind_deployment
     end
 
     def bind_instance_vms
-      unbound_instances = []
+      jobs = @deployment_plan.jobs_starting_on_deploy
+      instances = jobs.map(&:instances).flatten
 
-      @deployment_plan.jobs.each do |job|
-        job.instances.each do |instance|
-          # Don't allocate resource pool VMs to instances in detached state
-          next if instance.state == 'detached'
-          # Skip bound instances
-          next if instance.model.vm
-          unbound_instances << instance
-        end
-      end
-
-      return if unbound_instances.empty?
-
-      @event_log.begin_stage('Binding instance VMs', unbound_instances.size)
-
-      ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
-        unbound_instances.each do |instance|
-          pool.process do
-            bind_instance_vm(instance)
-          end
-        end
-      end
-    end
-
-    # @param [DeploymentPlan::Instance]
-    def bind_instance_vm(instance)
-      @event_log.track("#{instance.job.name}/#{instance.index}") do
-        idle_vm = instance.idle_vm
-
-        # Apply the assignment to the VM
-        agent = AgentClient.with_defaults(idle_vm.vm.agent_id)
-        state = idle_vm.current_state
-        state['job'] = instance.job.spec
-        state['index'] = instance.index
-        agent.apply(state)
-
-        # Our assumption here is that director database access
-        # is much less likely to fail than VM agent communication
-        # so we only update database after we see a successful agent apply.
-        # If database update fails subsequent deploy will try to
-        # assign a new VM to this instance which is ok.
-        idle_vm.vm.db.transaction do
-          idle_vm.vm.update(:apply_spec => state)
-          instance.model.update(:vm => idle_vm.vm)
-        end
-        instance.current_state = state
-      end
+      binder = DeploymentPlan::InstanceVmBinder.new(@event_log)
+      binder.bind_instance_vms(instances)
     end
 
     def delete_unneeded_vms
