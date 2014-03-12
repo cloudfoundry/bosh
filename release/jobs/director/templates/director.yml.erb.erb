@@ -90,7 +90,7 @@ blobstore:
 <% if_p('blobstore.use_ssl') do |use_ssl| %>
     use_ssl: <%= use_ssl %>
 <% end %>
-<% if_p('blobstore.port') do |port| %>
+<% if_p('blobstore.s3_port') do |port| %>
     port: <%= port %>
 <% end %>
 <% if_p('blobstore.host') do |host| %>
@@ -302,11 +302,11 @@ cloud:
       <% if_p('blobstore.use_ssl') do |use_ssl| %>
           use_ssl: <%= use_ssl %>
       <% end %>
-      <% if_p('blobstore.port') do |port| %>
-          port: <%= p('blobstore.port') %>
+      <% if_p('blobstore.s3_port') do |port| %>
+          port: <%= port %>
       <% end %>
-      <% if_p('blobstore.host') do |port| %>
-          host: <%= p('blobstore.host') %>
+      <% if_p('blobstore.host') do |host| %>
+          host: <%= host %>
       <% end %>
       <% if_p('blobstore.s3_force_path_style') do |s3_force_path_style| %>
           s3_force_path_style: <%= s3_force_path_style %>

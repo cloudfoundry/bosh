@@ -181,7 +181,7 @@ describe 'director.yml.erb.erb' do
       }
     end
 
-    context 'when the user specifies use_ssl, port, host and s3_force_path_style' do
+    context 'when the user specifies use_ssl, s3_port, host and s3_force_path_style' do
       before do
         deployment_manifest_fragment['properties']['blobstore'] = {
           'provider' => 's3',
@@ -189,7 +189,7 @@ describe 'director.yml.erb.erb' do
           'access_key_id' => 'key',
           'secret_access_key' => 'secret',
           'use_ssl' => false,
-          'port' => 5155,
+          's3_port' => 5155,
           'host' => 'myhost.hostland.edu',
           's3_force_path_style' => true,
         }
