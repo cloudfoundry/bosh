@@ -59,6 +59,8 @@ func (devicePathResolver vsphereDevicePathResolver) GetRealDevicePath(devicePath
 		if err != nil || len(devicePaths) == 0 {
 			time.Sleep(devicePathResolver.diskWaitTimeout)
 			continue
+		} else {
+			break
 		}
 	}
 
