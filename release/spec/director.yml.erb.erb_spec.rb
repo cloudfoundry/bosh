@@ -6,51 +6,51 @@ require 'json'
 describe 'director.yml.erb.erb' do
   let(:deployment_manifest_fragment) do
     {
-        'properties' => {
-            'ntp' => [
-                '0.north-america.pool.ntp.org',
-                '1.north-america.pool.ntp.org',
-            ],
-            'blobstore' => {
-                'address' => '10.10.0.7',
-                'port' => 25251,
-                'agent' => {'user' => 'agent', 'password' => '75d1605f59b60'},
-                'director' => {
-                    'user' => 'user',
-                    'password' => 'password'
-                },
-                'provider' => 'dav',
-            },
-            'nats' => {
-                'user' => 'nats',
-                'password' => '1a0312a24c0a0',
-                'address' => '10.10.0.7',
-                'port' => 4222
-            },
-            'redis' => {
-                'address' => '127.0.0.1', 'port' => 25255, 'password' => 'R3d!S',
-                'loglevel' => 'info',
-            },
-            'director' => {
-                'name' => 'vpc-bosh-idora',
-                'backend_port' => 25556,
-                'encryption' => false,
-                'max_tasks' => 500,
-                'max_threads' => 32,
-                'enable_snapshots' => true,
-                'db' => {
-                    'adapter' => 'mysql2',
-                    'user' => 'ub45391e00',
-                    'password' => 'p4cd567d84d0e012e9258d2da30',
-                    'host' => 'bosh.hamazonhws.com',
-                    'port' => 3306,
-                    'database' => 'bosh',
-                    'connection_options' => {},
-                },
-                'auto_fix_stateful_nodes' => true,
-                'max_vm_create_tries' => 5,
-            }
+      'properties' => {
+        'ntp' => [
+          '0.north-america.pool.ntp.org',
+          '1.north-america.pool.ntp.org',
+        ],
+        'blobstore' => {
+          'address' => '10.10.0.7',
+          'port' => 25251,
+          'agent' => {'user' => 'agent', 'password' => '75d1605f59b60'},
+          'director' => {
+            'user' => 'user',
+            'password' => 'password'
+          },
+          'provider' => 'dav',
+        },
+        'nats' => {
+          'user' => 'nats',
+          'password' => '1a0312a24c0a0',
+          'address' => '10.10.0.7',
+          'port' => 4222
+        },
+        'redis' => {
+          'address' => '127.0.0.1', 'port' => 25255, 'password' => 'R3d!S',
+          'loglevel' => 'info',
+        },
+        'director' => {
+          'name' => 'vpc-bosh-idora',
+          'backend_port' => 25556,
+          'encryption' => false,
+          'max_tasks' => 500,
+          'max_threads' => 32,
+          'enable_snapshots' => true,
+          'db' => {
+            'adapter' => 'mysql2',
+            'user' => 'ub45391e00',
+            'password' => 'p4cd567d84d0e012e9258d2da30',
+            'host' => 'bosh.hamazonhws.com',
+            'port' => 3306,
+            'database' => 'bosh',
+            'connection_options' => {},
+          },
+          'auto_fix_stateful_nodes' => true,
+          'max_vm_create_tries' => 5,
         }
+      }
     }
   end
 
@@ -71,7 +71,7 @@ describe 'director.yml.erb.erb' do
             'name' => 'vcenter.datacenters.first.name',
             'clusters' => ['cluster1']
           },
-        ] }
+        ]}
     end
 
     context 'when vcenter.address begins with a bang and contains quotes' do
@@ -146,7 +146,7 @@ describe 'director.yml.erb.erb' do
     context 'when openstack connection options exist' do
       before do
         deployment_manifest_fragment['properties']['openstack']['connection_options'] = {
-          'option1' => 'true', 'option2' => 'false' }
+          'option1' => 'true', 'option2' => 'false'}
       end
 
       it 'renders openstack connection options correctly' do
@@ -156,7 +156,7 @@ describe 'director.yml.erb.erb' do
 
         parsed = YAML.load(rendered_yaml)
         expect(parsed['cloud']['properties']['openstack']['connection_options']).to eq(
-          { 'option1' => 'true', 'option2' => 'false' })
+          {'option1' => 'true', 'option2' => 'false'})
       end
     end
   end
@@ -164,33 +164,33 @@ describe 'director.yml.erb.erb' do
   context 's3' do
     before do
       deployment_manifest_fragment['properties']['aws'] = {
-          'access_key_id' => 'key',
-          'secret_access_key' => 'secret',
-          'default_key_name' => 'default_key_name',
-          'default_security_groups' => 'default_security_groups',
-          'region' => 'region'
+        'access_key_id' => 'key',
+        'secret_access_key' => 'secret',
+        'default_key_name' => 'default_key_name',
+        'default_security_groups' => 'default_security_groups',
+        'region' => 'region'
       }
 
       deployment_manifest_fragment['properties']['registry'] = {
-          'address' => 'aws-registry.example.com',
-          'http' => {
-              'port' => '1234',
-              'user' => 'aws.user',
-              'password' => 'aws.password'
-          }
+        'address' => 'aws-registry.example.com',
+        'http' => {
+          'port' => '1234',
+          'user' => 'aws.user',
+          'password' => 'aws.password'
+        }
       }
     end
 
-    context 'when the user specifies use_ssl, port, and host' do
+    context 'when the user specifies use_ssl, port, host and s3_force_path_style' do
       before do
         deployment_manifest_fragment['properties']['blobstore'] = {
-            'provider' => 's3',
-            'bucket_name' => 'mybucket',
-            'access_key_id' => 'key',
-            'secret_access_key' => 'secret',
-            'use_ssl' => false,
-            'port' => 5155,
-            'host' => 'myhost.hostland.edu'
+          'provider' => 's3',
+          'bucket_name' => 'mybucket',
+          'access_key_id' => 'key',
+          'secret_access_key' => 'secret',
+          'use_ssl' => false,
+          'port' => 5155,
+          'host' => 'myhost.hostland.edu',
         }
       end
 
@@ -200,13 +200,13 @@ describe 'director.yml.erb.erb' do
         parsed = YAML.load(rendered_yaml)
 
         expect(parsed['blobstore']['options']).to eq({
-                                                         'bucket_name' => 'mybucket',
-                                                         'access_key_id' => 'key',
-                                                         'secret_access_key' => 'secret',
-                                                         'use_ssl' => false,
-                                                         'port' => 5155,
-                                                         'host' => 'myhost.hostland.edu'
-                                                     })
+          'bucket_name' => 'mybucket',
+          'access_key_id' => 'key',
+          'secret_access_key' => 'secret',
+          'use_ssl' => false,
+          'port' => 5155,
+          'host' => 'myhost.hostland.edu'
+        })
       end
 
       it 'sets endpoint protocol appropriately when use_ssl is true' do
@@ -216,13 +216,13 @@ describe 'director.yml.erb.erb' do
         parsed = YAML.load(rendered_yaml)
 
         expect(parsed['blobstore']['options']).to eq({
-                                                         'bucket_name' => 'mybucket',
-                                                         'access_key_id' => 'key',
-                                                         'secret_access_key' => 'secret',
-                                                         'use_ssl' => true,
-                                                         'port' => 5155,
-                                                         'host' => 'myhost.hostland.edu'
-                                                     })
+          'bucket_name' => 'mybucket',
+          'access_key_id' => 'key',
+          'secret_access_key' => 'secret',
+          'use_ssl' => true,
+          'port' => 5155,
+          'host' => 'myhost.hostland.edu'
+        })
       end
 
       describe 'the agent blobstore' do
@@ -232,22 +232,22 @@ describe 'director.yml.erb.erb' do
           parsed = YAML.load(rendered_yaml)
 
           expect(parsed['cloud']['properties']['agent']['blobstore']['options']).to eq({
-               'bucket_name' => 'mybucket',
-               'access_key_id' => 'key',
-               'secret_access_key' => 'secret',
-               'use_ssl' => false,
-               'port' => 5155,
-               'host' => 'myhost.hostland.edu'
-           })
+            'bucket_name' => 'mybucket',
+            'access_key_id' => 'key',
+            'secret_access_key' => 'secret',
+            'use_ssl' => false,
+            'port' => 5155,
+            'host' => 'myhost.hostland.edu'
+          })
         end
 
         context 'when there are override values for the agent' do
           before do
             deployment_manifest_fragment['properties']['agent'] = {
-                'blobstore' => {
-                    'access_key_id' => 'agent-key',
-                    'secret_access_key' => 'agent-secret'
-                }
+              'blobstore' => {
+                'access_key_id' => 'agent-key',
+                'secret_access_key' => 'agent-secret'
+              }
             }
           end
 
@@ -257,13 +257,13 @@ describe 'director.yml.erb.erb' do
             parsed = YAML.load(rendered_yaml)
 
             expect(parsed['cloud']['properties']['agent']['blobstore']['options']).to eq({
-                 'bucket_name' => 'mybucket',
-                 'access_key_id' => 'agent-key',
-                 'secret_access_key' => 'agent-secret',
-                 'use_ssl' => false,
-                 'port' => 5155,
-                 'host' => 'myhost.hostland.edu'
-             })
+              'bucket_name' => 'mybucket',
+              'access_key_id' => 'agent-key',
+              'secret_access_key' => 'agent-secret',
+              'use_ssl' => false,
+              'port' => 5155,
+              'host' => 'myhost.hostland.edu'
+            })
           end
         end
       end
@@ -272,10 +272,10 @@ describe 'director.yml.erb.erb' do
     context 'when the user only specifies bucket, access, and secret' do
       before do
         deployment_manifest_fragment['properties']['blobstore'] = {
-            'provider' => 's3',
-            'bucket_name' => 'mybucket',
-            'access_key_id' => 'key',
-            'secret_access_key' => 'secret'
+          'provider' => 's3',
+          'bucket_name' => 'mybucket',
+          'access_key_id' => 'key',
+          'secret_access_key' => 'secret'
         }
       end
 
@@ -285,10 +285,10 @@ describe 'director.yml.erb.erb' do
         parsed = YAML.load(rendered_yaml)
 
         expect(parsed['blobstore']['options']).to eq({
-                                                         'bucket_name' => 'mybucket',
-                                                         'access_key_id' => 'key',
-                                                         'secret_access_key' => 'secret',
-                                                     })
+          'bucket_name' => 'mybucket',
+          'access_key_id' => 'key',
+          'secret_access_key' => 'secret',
+        })
       end
 
       describe 'the agent blobstore' do
@@ -298,19 +298,19 @@ describe 'director.yml.erb.erb' do
           parsed = YAML.load(rendered_yaml)
 
           expect(parsed['cloud']['properties']['agent']['blobstore']['options']).to eq({
-                 'bucket_name' => 'mybucket',
-                 'access_key_id' => 'key',
-                 'secret_access_key' => 'secret',
-             })
+            'bucket_name' => 'mybucket',
+            'access_key_id' => 'key',
+            'secret_access_key' => 'secret',
+          })
         end
 
         context 'when there are override values for the agent' do
           before do
             deployment_manifest_fragment['properties']['agent'] = {
-                'blobstore' => {
-                    'access_key_id' => 'agent-key',
-                    'secret_access_key' => 'agent-secret'
-                }
+              'blobstore' => {
+                'access_key_id' => 'agent-key',
+                'secret_access_key' => 'agent-secret'
+              }
             }
           end
 
@@ -320,10 +320,10 @@ describe 'director.yml.erb.erb' do
             parsed = YAML.load(rendered_yaml)
 
             expect(parsed['cloud']['properties']['agent']['blobstore']['options']).to eq({
-                   'bucket_name' => 'mybucket',
-                   'access_key_id' => 'agent-key',
-                   'secret_access_key' => 'agent-secret',
-               })
+              'bucket_name' => 'mybucket',
+              'access_key_id' => 'agent-key',
+              'secret_access_key' => 'agent-secret',
+            })
           end
         end
       end
