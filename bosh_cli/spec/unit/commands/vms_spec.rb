@@ -48,7 +48,6 @@ describe Bosh::Cli::Command::Vms do
   end
 
   describe 'show_deployment' do
-<<<<<<< HEAD
     def perform
       command.show_deployment(deployment, options)
     end

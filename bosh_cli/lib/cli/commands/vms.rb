@@ -57,7 +57,7 @@ module Bosh::Cli::Command
 
         sorted.each do |vm|
           job = "#{vm['job_name'] || 'unknown'}/#{vm['index'] || 'unknown'}"
-          ips = Array(vm['ips']).join('\n')
+          ips = Array(vm['ips']).join("\n")
           dns_records = Array(vm['dns']).join("\n")
           vitals = vm['vitals']
 
