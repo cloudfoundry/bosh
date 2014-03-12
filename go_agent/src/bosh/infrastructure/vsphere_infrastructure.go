@@ -3,6 +3,7 @@ package infrastructure
 import (
 	bosherr "bosh/errors"
 	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshlog "bosh/logger"
 	boshplatform "bosh/platform"
 	boshdisk "bosh/platform/disk"
 	boshsettings "bosh/settings"
@@ -12,14 +13,15 @@ import (
 )
 
 type vsphereInfrastructure struct {
+	logger             boshlog.Logger
 	platform           boshplatform.Platform
 	diskWaitTimeout    time.Duration
 	devicePathResolver boshdevicepathresolver.DevicePathResolver
 }
 
-func NewVsphereInfrastructure(platform boshplatform.Platform, devicePathResolver boshdevicepathresolver.DevicePathResolver) (inf vsphereInfrastructure) {
+func NewVsphereInfrastructure(platform boshplatform.Platform, devicePathResolver boshdevicepathresolver.DevicePathResolver, logger boshlog.Logger) (inf vsphereInfrastructure) {
 	inf.platform = platform
-
+	inf.logger = logger
 	inf.devicePathResolver = devicePathResolver
 	inf.platform.SetDevicePathResolver(inf.devicePathResolver)
 
@@ -37,10 +39,14 @@ func (inf vsphereInfrastructure) GetSettings() (settings boshsettings.Settings, 
 		return
 	}
 
+	inf.logger.Debug("disks", "Got CDrom data %v", string(contents))
+
 	err = json.Unmarshal(contents, &settings)
 	if err != nil {
 		err = bosherr.WrapError(err, "Unmarshalling settings from CDROM")
 	}
+
+	inf.logger.Debug("disks", "Number of persistent disks %v", len(settings.Disks.Persistent))
 
 	return
 }
@@ -54,6 +60,8 @@ func (inf vsphereInfrastructure) GetEphemeralDiskPath(devicePath string) (realPa
 }
 
 func (inf vsphereInfrastructure) MountPersistentDisk(volumeId string, mountPoint string) (err error) {
+	inf.logger.Debug("disks", "Mounting persistent disks")
+
 	inf.platform.GetFs().MkdirAll(mountPoint, os.FileMode(0700))
 
 	realPath, err := inf.devicePathResolver.GetRealDevicePath(volumeId)

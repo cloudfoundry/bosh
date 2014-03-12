@@ -10,6 +10,7 @@ import (
 	fakeblobstore "bosh/blobstore/fakes"
 	fakeinfrastructure "bosh/infrastructure/fakes"
 	fakejobsuper "bosh/jobsupervisor/fakes"
+	boshlog "bosh/logger"
 	fakenotif "bosh/notification/fakes"
 	fakeplatform "bosh/platform/fakes"
 	boshntp "bosh/platform/ntp"
@@ -33,6 +34,7 @@ func init() {
 			specService         *fakeas.FakeV1Service
 			drainScriptProvider boshdrain.DrainScriptProvider
 			factory             Factory
+			logger              boshlog.Logger
 		)
 
 		BeforeEach(func() {
@@ -47,7 +49,7 @@ func init() {
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 			specService = fakeas.NewFakeV1Service()
 			drainScriptProvider = boshdrain.NewConcreteDrainScriptProvider(nil, nil, platform.GetDirProvider())
-
+			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
 		})
 
 		JustBeforeEach(func() {
@@ -63,6 +65,7 @@ func init() {
 				jobSupervisor,
 				specService,
 				drainScriptProvider,
+				logger,
 			)
 		})
 
@@ -137,7 +140,7 @@ func init() {
 			action, err := factory.Create("list_disk")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(action).ToNot(BeNil())
-			Expect(NewListDisk(settings, platform)).To(Equal(action))
+			Expect(NewListDisk(settings, platform, logger)).To(Equal(action))
 		})
 
 		It("new factory migrate disk", func() {

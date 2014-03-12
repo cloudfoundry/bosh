@@ -1,6 +1,7 @@
 package platform_test
 
 import (
+	boshlog "bosh/logger"
 	. "bosh/platform"
 	fakecd "bosh/platform/cdutil/fakes"
 	boshcmd "bosh/platform/commands"
@@ -61,6 +62,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 			compressor      boshcmd.Compressor
 			copier          boshcmd.Copier
 			vitalsService   boshvitals.Service
+			logger          boshlog.Logger
 		)
 
 		BeforeEach(func() {
@@ -74,6 +76,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 			compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 			copier = boshcmd.NewCpCopier(cmdRunner, fs)
 			vitalsService = boshvitals.NewService(collector, dirProvider)
+			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
 		})
 
 		JustBeforeEach(func() {
@@ -91,6 +94,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 				diskManager,
 				netManager,
 				1*time.Millisecond,
+				logger,
 			)
 		})
 

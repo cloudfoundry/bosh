@@ -10,6 +10,7 @@ import (
 	bosherr "bosh/errors"
 	boshinfrastructure "bosh/infrastructure"
 	boshjobsuper "bosh/jobsupervisor"
+	boshlog "bosh/logger"
 	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
 	boshntp "bosh/platform/ntp"
@@ -32,6 +33,7 @@ func NewFactory(
 	jobSupervisor boshjobsuper.JobSupervisor,
 	specService boshas.V1Service,
 	drainScriptProvider boshdrain.DrainScriptProvider,
+	logger boshlog.Logger,
 ) (factory Factory) {
 	compressor := platform.GetCompressor()
 	copier := platform.GetCopier()
@@ -46,7 +48,7 @@ func NewFactory(
 			"fetch_logs":   NewLogs(compressor, copier, blobstore, dirProvider),
 			"get_task":     NewGetTask(taskService),
 			"get_state":    NewGetState(settings, specService, jobSupervisor, vitalsService, ntpService),
-			"list_disk":    NewListDisk(settings, platform),
+			"list_disk":    NewListDisk(settings, platform, logger),
 			"migrate_disk": NewMigrateDisk(platform, dirProvider),
 			"mount_disk":   NewMountDisk(settings, infrastructure, platform, dirProvider),
 			"ping":         NewPing(),

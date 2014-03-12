@@ -3,6 +3,7 @@ package platform
 import (
 	bosherr "bosh/errors"
 	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshlog "bosh/logger"
 	boshcd "bosh/platform/cdutil"
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
@@ -36,6 +37,7 @@ type linux struct {
 	netManager         boshnet.NetManager
 	diskScanDuration   time.Duration
 	devicePathResolver boshdevicepathresolver.DevicePathResolver
+	logger             boshlog.Logger
 }
 
 func NewLinuxPlatform(
@@ -50,6 +52,7 @@ func NewLinuxPlatform(
 	diskManager boshdisk.Manager,
 	netManager boshnet.NetManager,
 	diskScanDuration time.Duration,
+	logger boshlog.Logger,
 ) (platform *linux) {
 	platform = &linux{
 		fs:               fs,
@@ -63,6 +66,7 @@ func NewLinuxPlatform(
 		diskManager:      diskManager,
 		netManager:       netManager,
 		diskScanDuration: diskScanDuration,
+		logger:           logger,
 	}
 	return
 }
@@ -421,6 +425,8 @@ func (p linux) SetupTmpDir() (err error) {
 }
 
 func (p linux) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {
+	p.logger.Debug("platform", "Unmounting persistent disk %v", devicePath)
+
 	realPath, err := p.devicePathResolver.GetRealDevicePath(devicePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")
@@ -443,6 +449,8 @@ func (p linux) IsMountPoint(path string) (result bool, err error) {
 }
 
 func (p linux) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error) {
+	p.logger.Debug("platform", "Migrating persistent disk %v to %v", fromMountPoint, toMountPoint)
+
 	err = p.diskManager.GetMounter().RemountAsReadonly(fromMountPoint)
 	if err != nil {
 		err = bosherr.WrapError(err, "Remounting persistent disk as readonly")

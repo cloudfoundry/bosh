@@ -37,6 +37,8 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshhandler.Request) (re
 		dispatcher.logger.Error("Action Dispatcher", "Unknown action %s", req.Method)
 
 	case action.IsAsynchronous():
+		dispatcher.logger.Error("Action Dispatcher", "Running async action %s", req.Method)
+
 		task := dispatcher.taskService.StartTask(func() (value interface{}, err error) {
 			value, err = dispatcher.actionRunner.Run(action, req.GetPayload())
 			return
@@ -48,6 +50,8 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshhandler.Request) (re
 		})
 
 	default:
+		dispatcher.logger.Debug("Action Dispatcher", "Running sync action %s", req.Method)
+
 		value, err := dispatcher.actionRunner.Run(action, req.GetPayload())
 
 		if err != nil {

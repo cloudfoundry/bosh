@@ -19,8 +19,8 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 
 	p.infrastructures = map[string]Infrastructure{
 		"aws":     p.createAwsInfrastructure("http://169.254.169.254", digDnsResolver, platform),
-		"vsphere": p.createVsphereInfrastructure(platform),
 		"dummy":   p.createDummyInfrastructure(platform.GetFs(), platform.GetDirProvider(), platform),
+		"vsphere": p.createVsphereInfrastructure(platform, logger),
 	}
 	return
 }
@@ -34,10 +34,9 @@ func (p Provider) Get(name string) (inf Infrastructure, err error) {
 	return
 }
 
-func (p Provider) createVsphereInfrastructure(platform boshplatform.Platform) (inf Infrastructure) {
-
+func (p Provider) createVsphereInfrastructure(platform boshplatform.Platform, logger boshlog.Logger) (inf Infrastructure) {
 	devicePathResolver := boshdevicepathresolver.NewVsphereDevicePathResolver(500*time.Millisecond, platform.GetFs())
-	inf = NewVsphereInfrastructure(platform, devicePathResolver)
+	inf = NewVsphereInfrastructure(platform, devicePathResolver, logger)
 	return
 }
 

@@ -9,6 +9,7 @@ import (
 func main() {
 	logger := boshlog.NewLogger(boshlog.LEVEL_DEBUG)
 	defer logger.HandlePanic("Main")
+	logger.Debug("main", "Starting agent")
 
 	app := boshapp.New(logger)
 	err := app.Run(os.Args)

@@ -3,6 +3,7 @@ package action_test
 import (
 	. "bosh/agent/action"
 	boshassert "bosh/assert"
+	boshlog "bosh/logger"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	fakesettings "bosh/settings/fakes"
@@ -12,15 +13,24 @@ import (
 
 func init() {
 	Describe("Testing with Ginkgo", func() {
-		It("list disk should be synchronous", func() {
+		var (
+			logger   boshlog.Logger
+			platform *fakeplatform.FakePlatform
+		)
 
+		BeforeEach(func() {
+			platform = fakeplatform.NewFakePlatform()
+			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+		})
+
+		It("list disk should be synchronous", func() {
 			settings := &fakesettings.FakeSettingsService{}
-			platform := fakeplatform.NewFakePlatform()
-			action := NewListDisk(settings, platform)
+
+			action := NewListDisk(settings, platform, logger)
 			assert.False(GinkgoT(), action.IsAsynchronous())
 		})
-		It("list disk run", func() {
 
+		It("list disk run", func() {
 			settings := &fakesettings.FakeSettingsService{
 				Disks: boshsettings.Disks{
 					Persistent: map[string]string{
@@ -30,10 +40,9 @@ func init() {
 					},
 				},
 			}
-			platform := fakeplatform.NewFakePlatform()
 			platform.MountedDevicePaths = []string{"/dev/sdb", "/dev/sdc"}
 
-			action := NewListDisk(settings, platform)
+			action := NewListDisk(settings, platform, logger)
 			value, err := action.Run()
 			assert.NoError(GinkgoT(), err)
 			boshassert.MatchesJsonString(GinkgoT(), value, `["volume-2","volume-3"]`)

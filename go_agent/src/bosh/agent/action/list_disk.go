@@ -2,6 +2,7 @@ package action
 
 import (
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 )
@@ -9,11 +10,13 @@ import (
 type ListDiskAction struct {
 	settings boshsettings.Service
 	platform boshplatform.Platform
+	logger   boshlog.Logger
 }
 
-func NewListDisk(settings boshsettings.Service, platform boshplatform.Platform) (action ListDiskAction) {
+func NewListDisk(settings boshsettings.Service, platform boshplatform.Platform, logger boshlog.Logger) (action ListDiskAction) {
 	action.settings = settings
 	action.platform = platform
+	action.logger = logger
 	return
 }
 
@@ -35,6 +38,8 @@ func (a ListDiskAction) Run() (value interface{}, err error) {
 
 		if isMounted {
 			volumeIds = append(volumeIds, volumeId)
+		} else {
+			a.logger.Debug("list-disk-action", "Not mounted", volumeId)
 		}
 	}
 

@@ -2,6 +2,7 @@ package platform
 
 import (
 	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
@@ -22,6 +23,7 @@ type dummyPlatform struct {
 	vitalsService      boshvitals.Service
 	diskManager        boshdisk.Manager
 	devicePathResolver boshdevicepathresolver.DevicePathResolver
+	logger             boshlog.Logger
 }
 
 func NewDummyPlatform(

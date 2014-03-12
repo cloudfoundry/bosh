@@ -2,6 +2,7 @@ package platform_test
 
 import (
 	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshlog "bosh/logger"
 	. "bosh/platform"
 	fakecd "bosh/platform/cdutil/fakes"
 	boshcmd "bosh/platform/commands"
@@ -32,6 +33,7 @@ var _ = Describe("LinuxPlatform", func() {
 		compressor      boshcmd.Compressor
 		copier          boshcmd.Copier
 		vitalsService   boshvitals.Service
+		logger          boshlog.Logger
 	)
 
 	const sleepInterval = time.Millisecond * 5
@@ -54,6 +56,7 @@ var _ = Describe("LinuxPlatform", func() {
 		})
 		fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*",
 			[]string{"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf"})
+		logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
 	})
 
 	JustBeforeEach(func() {
@@ -71,6 +74,7 @@ var _ = Describe("LinuxPlatform", func() {
 			diskManager,
 			netManager,
 			sleepInterval,
+			logger,
 		)
 		devicePathResolver := boshdevicepathresolver.NewAwsDevicePathResolver(diskWaitTimeout, fs)
 		platform.SetDevicePathResolver(devicePathResolver)

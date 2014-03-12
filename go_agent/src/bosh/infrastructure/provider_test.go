@@ -29,13 +29,13 @@ func init() {
 		})
 		It("get returns vsphere infrastructure", func() {
 
-			_, platform, provider := getNewProvider()
+			logger, platform, provider := getNewProvider()
 			inf, err := provider.Get("vsphere")
 
 			devicePathResolver := boshdevicepathresolver.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
 
 			assert.NoError(GinkgoT(), err)
-			assert.IsType(GinkgoT(), NewVsphereInfrastructure(platform, devicePathResolver), inf)
+			assert.IsType(GinkgoT(), NewVsphereInfrastructure(platform, devicePathResolver, logger), inf)
 		})
 		It("get returns an error on unknown infrastructure", func() {
 

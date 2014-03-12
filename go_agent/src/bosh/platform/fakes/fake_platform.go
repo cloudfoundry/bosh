@@ -2,6 +2,7 @@ package fakes
 
 import (
 	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
 	fakecmd "bosh/platform/commands/fakes"
 	boshdisk "bosh/platform/disk"
@@ -25,6 +26,7 @@ type FakePlatform struct {
 	FakeCopier         *fakecmd.FakeCopier
 	FakeVitalsService  *fakevitals.FakeService
 	FakeDiskManager    *fakedisk.FakeDiskManager
+	logger             boshlog.Logger
 
 	DevicePathResolver boshdevicepathresolver.DevicePathResolver
 

@@ -145,6 +145,7 @@ func (app app) Run(args []string) (err error) {
 		jobSupervisor,
 		specService,
 		drainScriptProvider,
+		app.logger,
 	)
 	actionRunner := boshaction.NewRunner()
 	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, actionFactory, actionRunner)

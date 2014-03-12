@@ -3,6 +3,7 @@ package infrastructure_test
 import (
 	. "bosh/infrastructure"
 	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshlog "bosh/logger"
 	boshdisk "bosh/platform/disk"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
@@ -16,6 +17,7 @@ import (
 func init() {
 	Describe("vSphere Infrastructure", func() {
 		var (
+			logger                 boshlog.Logger
 			vsphere                Infrastructure
 			platform               *fakeplatform.FakePlatform
 			fakeDevicePathResolver *boshdevicepathresolver.FakeDevicePathResolver
@@ -24,10 +26,11 @@ func init() {
 		BeforeEach(func() {
 			platform = fakeplatform.NewFakePlatform()
 			fakeDevicePathResolver = boshdevicepathresolver.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
+			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
 		})
 
 		JustBeforeEach(func() {
-			vsphere = NewVsphereInfrastructure(platform, fakeDevicePathResolver)
+			vsphere = NewVsphereInfrastructure(platform, fakeDevicePathResolver, logger)
 		})
 
 		Describe("GetSettings", func() {
