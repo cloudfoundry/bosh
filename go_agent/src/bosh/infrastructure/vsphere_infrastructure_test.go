@@ -57,14 +57,10 @@ func init() {
 
 		Describe("GetEphemeralDiskPath", func() {
 			It("vsphere get ephemeral disk path", func() {
-				platform.NormalizeDiskPathRealPath = "/dev/sdb"
-				platform.NormalizeDiskPathFound = true
-
 				realPath, found := vsphere.GetEphemeralDiskPath("does not matter")
 				Expect(found).To(Equal(true))
 
 				Expect(realPath).To(Equal("/dev/sdb"))
-				Expect(platform.NormalizeDiskPathPath).To(Equal("/dev/sdb"))
 			})
 		})
 
