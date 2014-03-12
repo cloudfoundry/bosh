@@ -142,21 +142,16 @@ module Bosh::Director
           network.reserve(reservation)
 
           unless reservation.reserved?
-            case reservation.error
-              when NetworkReservation::CAPACITY
-                raise NetworkReservationNotEnoughCapacity,
-                      "`#{name}/#{index}' asked for a dynamic IP " +
-                      "but there were no more available"
-              else
-                raise NetworkReservationError,
-                      "`#{name}/#{index}' failed to reserve " +
-                      "dynamic IP: #{reservation.error}"
-            end
+            reservation.handle_error(network_reservation_origin)
           end
 
           idle_vm.network_reservation = reservation
         end
       end
+    end
+
+    def network_reservation_origin
+      "resource-pool-updater"
     end
 
     def generate_agent_id
