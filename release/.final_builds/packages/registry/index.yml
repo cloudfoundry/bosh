@@ -155,3 +155,8 @@ builds:
     version: 31
     sha1: !binary |-
       YWM0YjE3MzJiNTBjM2RmNzcyZjRlMzEwZjY4YTJkOTAwNGNkNmNkMw==
+  !binary "ZTE3ZjcwNjQ3OGUzMzBkZDFhMTZmNmI2N2JlZjA4YTNlNjk5OTMyNw==":
+    blobstore_id: 94843c00-81dd-4048-bee4-8310c0288b08
+    version: 32
+    sha1: !binary |-
+      ZDI1YmI2N2E5YmEyOTFhZWYwZThiZWQyMGM0OTgyNTVhNWRmMDk2Yw==
