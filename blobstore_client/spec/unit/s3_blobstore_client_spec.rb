@@ -70,6 +70,7 @@ module Bosh::Blobstore
             'use_ssl' => false,
             'port' => 8080,
             'host' => 'our.userdefined.com',
+            's3_force_path_style' => true,
           )
         end
 
@@ -103,8 +104,16 @@ module Bosh::Blobstore
             use_ssl: true,
             s3_port: 443,
             s3_endpoint: 's3.amazonaws.com',
-            s3_force_path_style: true,
+            s3_force_path_style: false,
           )
+
+          client
+        end
+
+        it 'uses s3_force_path_style=false by default because s3 ' +
+           'does not properly work this setting turned on' do
+          expect(AWS::S3).to receive(:new).
+            with(hash_including(s3_force_path_style: false))
 
           client
         end
