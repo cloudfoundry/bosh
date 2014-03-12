@@ -29,12 +29,14 @@ module Bosh
         @bucket_name    = @options[:bucket_name]
         @encryption_key = @options[:encryption_key]
 
+        @endpoint = URI.parse(@options[:endpoint] || S3BlobstoreClient::ENDPOINT)
+
         aws_options = {
           access_key_id: @options[:access_key_id],
           secret_access_key: @options[:secret_access_key],
-          use_ssl: @options.fetch(:use_ssl, true),
-          s3_port: @options.fetch(:port, 443),
-          s3_endpoint: @options.fetch(:host, URI.parse(S3BlobstoreClient::ENDPOINT).host),
+          use_ssl: @options.fetch(:use_ssl, @endpoint.scheme == 'https'),
+          s3_port: @options.fetch(:port, @endpoint.port),
+          s3_endpoint: @options.fetch(:host, @endpoint.host),
           s3_force_path_style: true,
         }
 

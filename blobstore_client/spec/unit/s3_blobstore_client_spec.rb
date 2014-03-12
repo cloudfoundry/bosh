@@ -46,45 +46,56 @@ module Bosh::Blobstore
           BlobstoreError, "can't use read-only with an encryption key")
       end
 
-      context 'should be processed and passed to the AWS::S3 class' do
-        it 'should use user defined values' do
-          options = { 'bucket_name' => 'test',
-                      'access_key_id' => 'KEY',
-                      'secret_access_key' => 'SECRET',
-                      'use_ssl' => false,
-                      'port' => 8080,
-                      'host' => 'our.userdefined.com'
-          }
+      context 'processing' do
 
+        let (:options) {{ 'bucket_name' => 'test',
+                          'access_key_id' => 'KEY',
+                          'secret_access_key' => 'SECRET' }
+        }
+
+        let (:processed_options) {{ access_key_id: 'KEY',
+                                    secret_access_key: 'SECRET',
+                                    use_ssl: true,
+                                    s3_port: 443,
+                                    s3_endpoint: 's3.example.com',
+                                    s3_force_path_style: true }
+        }
+
+        after :each do
           expect(AWS::S3).to receive(:new).
-                                 with(access_key_id: 'KEY',
-                                      secret_access_key: 'SECRET',
-                                      use_ssl: false,
-                                      s3_port: 8080,
-                                      s3_endpoint: 'our.userdefined.com',
-                                      s3_force_path_style: true).
-                                 and_return(s3)
+          with(processed_options).
+          and_return(s3)
 
           S3BlobstoreClient.new(options)
+        end
 
+        it 'should be processed and passed to the AWS::S3 class' do
+          options['endpoint'] = 'https://s3.example.com'
+        end
+
+        it 'should allow use_ssl: false based on the endpoint' do
+          options['endpoint'] = 'http://s3.example.com'
+          processed_options[:use_ssl] = false
+          processed_options[:s3_port] = 80
+        end
+
+        it 'should allow a custom port based on the endpoint' do
+          options['endpoint'] = 'http://s3.example.com:4242'
+          processed_options[:use_ssl] = false
+          processed_options[:s3_port] = 4242
         end
 
         it 'should use the default values for undefined use_ssl, port, and s3_endpoint' do
-          options = { 'bucket_name' => 'test',
-                      'access_key_id' => 'KEY',
-                      'secret_access_key' => 'SECRET',
-          }
+          processed_options[:s3_endpoint] = 's3.amazonaws.com'
+        end
 
-          expect(AWS::S3).to receive(:new).
-                                 with(access_key_id: 'KEY',
-                                      secret_access_key: 'SECRET',
-                                      use_ssl: true,
-                                      s3_port: 443,
-                                      s3_endpoint: 's3.amazonaws.com',
-                                      s3_force_path_style: true).
-                                 and_return(s3)
-
-          S3BlobstoreClient.new(options)
+        it 'should allow custom values for use_ssl, port, and host' do
+          options[:use_ssl] = false
+          options[:port] = 689
+          options[:host] = 'happy.com'
+          processed_options[:use_ssl] = false
+          processed_options[:s3_port] = 689
+          processed_options[:s3_endpoint] = 'happy.com'
         end
       end
     end
