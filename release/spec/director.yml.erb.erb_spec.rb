@@ -191,6 +191,7 @@ describe 'director.yml.erb.erb' do
           'use_ssl' => false,
           'port' => 5155,
           'host' => 'myhost.hostland.edu',
+          's3_force_path_style' => true,
         }
       end
 
@@ -205,7 +206,8 @@ describe 'director.yml.erb.erb' do
           'secret_access_key' => 'secret',
           'use_ssl' => false,
           'port' => 5155,
-          'host' => 'myhost.hostland.edu'
+          'host' => 'myhost.hostland.edu',
+          's3_force_path_style' => true,
         })
       end
 
@@ -221,7 +223,8 @@ describe 'director.yml.erb.erb' do
           'secret_access_key' => 'secret',
           'use_ssl' => true,
           'port' => 5155,
-          'host' => 'myhost.hostland.edu'
+          'host' => 'myhost.hostland.edu',
+          's3_force_path_style' => true,
         })
       end
 
@@ -237,7 +240,8 @@ describe 'director.yml.erb.erb' do
             'secret_access_key' => 'secret',
             'use_ssl' => false,
             'port' => 5155,
-            'host' => 'myhost.hostland.edu'
+            'host' => 'myhost.hostland.edu',
+            's3_force_path_style' => true,
           })
         end
 
@@ -246,7 +250,7 @@ describe 'director.yml.erb.erb' do
             deployment_manifest_fragment['properties']['agent'] = {
               'blobstore' => {
                 'access_key_id' => 'agent-key',
-                'secret_access_key' => 'agent-secret'
+                'secret_access_key' => 'agent-secret',
               }
             }
           end
@@ -262,7 +266,8 @@ describe 'director.yml.erb.erb' do
               'secret_access_key' => 'agent-secret',
               'use_ssl' => false,
               'port' => 5155,
-              'host' => 'myhost.hostland.edu'
+              'host' => 'myhost.hostland.edu',
+              's3_force_path_style' => true,
             })
           end
         end

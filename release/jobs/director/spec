@@ -168,6 +168,9 @@ properties:
     description: Host of blobstore server used by simple blobstore plugin
   blobstore.use_ssl:
     description: Whether the simple blobstore plugin should use SSL to connect to the blobstore server
+  blobstore.s3_force_path_style:
+    description: Whether s3 blobstore plugin will always use path style for bucket access
+    default: false
   blobstore.director.user:
     description: Username director uses to connect to blobstore used by simple blobstore plugin
   blobstore.director.password:

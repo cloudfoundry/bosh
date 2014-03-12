@@ -96,6 +96,9 @@ blobstore:
 <% if_p('blobstore.host') do |host| %>
     host: <%= host %>
 <% end %>
+<% if_p('blobstore.s3_force_path_style') do |s3_force_path_style| %>
+    s3_force_path_style: <%= s3_force_path_style %>
+<% end %>
 <% else %>
     endpoint: http://<%= p('blobstore.address') %>:<%= p('blobstore.port') %>
     user: <%= p('blobstore.director.user') %>
@@ -304,6 +307,9 @@ cloud:
       <% end %>
       <% if_p('blobstore.host') do |port| %>
           host: <%= p('blobstore.host') %>
+      <% end %>
+      <% if_p('blobstore.s3_force_path_style') do |s3_force_path_style| %>
+          s3_force_path_style: <%= s3_force_path_style %>
       <% end %>
       <% else %>
           endpoint: 'http://<%= p(['agent.blobstore.address', 'blobstore.address']) %>:<%= p('blobstore.port') %>'
