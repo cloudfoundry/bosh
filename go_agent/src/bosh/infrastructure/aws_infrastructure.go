@@ -28,9 +28,12 @@ func NewAwsInfrastructure(metadataHost string, resolver dnsResolver, platform bo
 	inf.resolver = resolver
 	inf.platform = platform
 	inf.devicePathResolver = devicePathResolver
-	inf.platform.SetDevicePathResolver(inf.devicePathResolver)
 
 	return
+}
+
+func (inf awsInfrastructure) GetDevicePathResolver() boshdevicepathresolver.DevicePathResolver {
+	return inf.devicePathResolver
 }
 
 func (inf awsInfrastructure) SetupSsh(username string) (err error) {

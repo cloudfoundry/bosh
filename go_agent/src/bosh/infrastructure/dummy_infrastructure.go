@@ -25,9 +25,12 @@ func NewDummyInfrastructure(fs boshsys.FileSystem, dirProvider boshdir.Directori
 	inf.dirProvider = dirProvider
 	inf.platform = platform
 	inf.devicePathResolver = devicePathResolver
-	inf.platform.SetDevicePathResolver(inf.devicePathResolver)
 
 	return
+}
+
+func (inf dummyInfrastructure) GetDevicePathResolver() boshdevicepathresolver.DevicePathResolver {
+	return inf.devicePathResolver
 }
 
 func (inf dummyInfrastructure) SetupSsh(username string) (err error) {

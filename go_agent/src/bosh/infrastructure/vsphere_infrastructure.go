@@ -23,9 +23,12 @@ func NewVsphereInfrastructure(platform boshplatform.Platform, devicePathResolver
 	inf.platform = platform
 	inf.logger = logger
 	inf.devicePathResolver = devicePathResolver
-	inf.platform.SetDevicePathResolver(inf.devicePathResolver)
 
 	return
+}
+
+func (inf vsphereInfrastructure) GetDevicePathResolver() boshdevicepathresolver.DevicePathResolver {
+	return inf.devicePathResolver
 }
 
 func (inf vsphereInfrastructure) SetupSsh(username string) (err error) {

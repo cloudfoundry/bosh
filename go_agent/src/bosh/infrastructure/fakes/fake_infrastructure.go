@@ -1,6 +1,7 @@
 package fakes
 
 import (
+	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	boshsettings "bosh/settings"
 )
 
@@ -16,12 +17,17 @@ type FakeInfrastructure struct {
 	MountPersistentDiskVolumeId   string
 	MountPersistentDiskMountPoint string
 	MountPersistentDiskError      error
+	DevicePathResolver            boshdevicepathresolver.DevicePathResolver
 }
 
 func NewFakeInfrastructure() (infrastructure *FakeInfrastructure) {
 	infrastructure = &FakeInfrastructure{}
 	infrastructure.Settings = boshsettings.Settings{}
 	return
+}
+
+func (i *FakeInfrastructure) GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver) {
+	return i.DevicePathResolver
 }
 
 func (i *FakeInfrastructure) SetupSsh(username string) (err error) {

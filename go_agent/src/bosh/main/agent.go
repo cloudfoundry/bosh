@@ -12,7 +12,8 @@ func main() {
 	logger.Debug("main", "Starting agent")
 
 	app := boshapp.New(logger)
-	err := app.Run(os.Args)
+	app.Setup(os.Args)
+	err := app.Run()
 
 	if err != nil {
 		logger.Error("Main", err.Error())
