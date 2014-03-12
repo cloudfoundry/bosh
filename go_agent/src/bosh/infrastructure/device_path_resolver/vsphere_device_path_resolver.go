@@ -21,7 +21,7 @@ func NewVsphereDevicePathResolver(diskWaitTimeout time.Duration, fs boshsys.File
 	return
 }
 
-func (devicePathResolver vsphereDevicePathResolver) GetRealDevicePath(devicePath string) (realPath string, err error) {
+func (devicePathResolver vsphereDevicePathResolver) GetRealDevicePath(volumeId string) (realPath string, err error) {
 	devicePaths, err := devicePathResolver.fs.Glob("/sys/bus/scsi/devices/*:0:0:0/block/*")
 	if err != nil {
 		return
@@ -52,7 +52,7 @@ func (devicePathResolver vsphereDevicePathResolver) GetRealDevicePath(devicePath
 		return
 	}
 
-	deviceGlobPath := fmt.Sprintf("/sys/bus/scsi/devices/%s:0:%s:0/block/*", hostId, devicePath)
+	deviceGlobPath := fmt.Sprintf("/sys/bus/scsi/devices/%s:0:%s:0/block/*", hostId, volumeId)
 
 	for i := 0; i < MAX_SCAN_RETRIES; i++ {
 		devicePaths, err = devicePathResolver.fs.Glob(deviceGlobPath)
