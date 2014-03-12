@@ -3,22 +3,9 @@ require 'spec_helper'
 describe Bosh::Cli::TaskTracking::TaskLogRenderer do
   describe '.create_for_log_type' do
     context "when log type is 'event'" do
-      it 'returns EventLogRenderer with configured stages ' +
-         'that should be run without a progress bar' do
-        expected_stages = [
-          'Preparing DNS',
-          'Creating bound missing VMs',
-          'Binding instance VMs',
-          'Updating job',
-          'Deleting unneeded instances',
-          'Running errand',
-          'Deleting instances',
-          'Refilling resource pools',
-        ]
-
-        expect(Bosh::Cli::TaskTracking::EventLogRenderer)
-          .to receive(:new)
-          .with(stages_without_progress_bar:  expected_stages)
+      it 'returns EventLogRenderer' do
+        expect(Bosh::Cli::TaskTracking::EventLogRenderer).to receive(:new)
+          .with(no_args)
           .and_return(renderer = double)
 
         expect(described_class.create_for_log_type('event')).to eq(renderer)
