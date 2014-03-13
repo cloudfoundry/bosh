@@ -3,6 +3,7 @@ package monit_test
 import (
 	. "bosh/jobsupervisor/monit"
 	"bosh/jobsupervisor/monit/http_fakes"
+	boshlog "bosh/logger"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -19,6 +20,9 @@ import (
 
 func init() {
 	Describe("Testing with Ginkgo", func() {
+		var (
+			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+		)
 		It("services in group returns services when found", func() {
 		})
 		It("services in group errors when not found", func() {
@@ -40,7 +44,7 @@ func init() {
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
 
-			client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond)
+			client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 			err := client.StartService("test-service")
 			assert.NoError(GinkgoT(), err)
@@ -52,7 +56,7 @@ func init() {
 			fakeHttpClient.StatusCode = 500
 			fakeHttpClient.SetMessage("fake error message")
 
-			client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond)
+			client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
 
 			err := client.StartService("test-service")
 			assert.Equal(GinkgoT(), fakeHttpClient.CallCount, 20)
@@ -64,7 +68,7 @@ func init() {
 			fakeHttpClient.SetNilResponse()
 			fakeHttpClient.Error = errors.New("some error")
 
-			client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond)
+			client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
 
 			err := client.StartService("test-service")
 			assert.Equal(GinkgoT(), fakeHttpClient.CallCount, 20)
@@ -87,7 +91,7 @@ func init() {
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
 
-			client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond)
+			client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 			err := client.StopService("test-service")
 			assert.NoError(GinkgoT(), err)
@@ -99,7 +103,7 @@ func init() {
 			fakeHttpClient.StatusCode = 500
 			fakeHttpClient.SetMessage("fake error message")
 
-			client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond)
+			client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
 
 			err := client.StopService("test-service")
 			assert.Equal(GinkgoT(), fakeHttpClient.CallCount, 20)
@@ -112,7 +116,7 @@ func init() {
 			fakeHttpClient.SetNilResponse()
 			fakeHttpClient.Error = errors.New("some error")
 
-			client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond)
+			client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
 
 			err := client.StopService("test-service")
 			assert.Equal(GinkgoT(), fakeHttpClient.CallCount, 20)
@@ -137,7 +141,7 @@ func init() {
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
 
-			client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond)
+			client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 			services, err := client.ServicesInGroup("vcap")
 			assert.NoError(GinkgoT(), err)
@@ -161,38 +165,42 @@ func init() {
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
 
-			client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond)
+			client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 			status, err := client.Status()
 			assert.NoError(GinkgoT(), err)
 			dummyServices := status.ServicesInGroup("vcap")
 			assert.Equal(GinkgoT(), 1, len(dummyServices))
 		})
-		It("status retries when non200 response", func() {
 
+		It("status retries when non200 response", func() {
 			fakeHttpClient := http_fakes.NewFakeHttpClient()
 			fakeHttpClient.StatusCode = 500
 			fakeHttpClient.SetMessage("fake error message")
 
-			client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond)
+			client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
 
 			_, err := client.Status()
 			assert.Equal(GinkgoT(), fakeHttpClient.CallCount, 20)
 			assert.Error(GinkgoT(), err)
 			assert.Contains(GinkgoT(), err.Error(), "fake error message")
 		})
-		It("status retries when connection refused", func() {
 
+		It("status retries when connection refused", func() {
 			fakeHttpClient := http_fakes.NewFakeHttpClient()
 			fakeHttpClient.SetNilResponse()
 			fakeHttpClient.Error = errors.New("some error")
 
-			client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond)
+			client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
 
-			_, err := client.Status()
+			err := client.StartService("hello")
 			assert.Equal(GinkgoT(), fakeHttpClient.CallCount, 20)
 			assert.Error(GinkgoT(), err)
 			assert.Contains(GinkgoT(), err.Error(), "some error")
+
+			for _, req := range fakeHttpClient.RequestBodies {
+				assert.Equal(GinkgoT(), req, "action=start")
+			}
 		})
 	})
 }

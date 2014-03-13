@@ -86,7 +86,7 @@ func (app *app) Setup(args []string) (err error) {
 		return
 	}
 
-	monitClientProvider := boshmonit.NewProvider(app.platform)
+	monitClientProvider := boshmonit.NewProvider(app.platform, app.logger)
 	monitClient, err := monitClientProvider.Get()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting monit client")

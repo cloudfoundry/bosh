@@ -2,6 +2,7 @@ package monit
 
 import (
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	"code.google.com/p/go-charset/charset"
 	_ "code.google.com/p/go-charset/data"
 	"encoding/xml"
@@ -20,9 +21,10 @@ type httpClient struct {
 	retryAttempts       int
 	delayBetweenRetries time.Duration
 	client              HttpClient
+	logger              boshlog.Logger
 }
 
-func NewHttpClient(host, username, password string, client HttpClient, delayBetweenRetries time.Duration) httpClient {
+func NewHttpClient(host, username, password string, client HttpClient, delayBetweenRetries time.Duration, logger boshlog.Logger) httpClient {
 	return httpClient{
 		host:                host,
 		username:            username,
@@ -30,6 +32,7 @@ func NewHttpClient(host, username, password string, client HttpClient, delayBetw
 		client:              client,
 		retryAttempts:       20,
 		delayBetweenRetries: delayBetweenRetries,
+		logger:              logger,
 	}
 }
 
@@ -136,19 +139,31 @@ func (c httpClient) validateResponse(response *http.Response) (err error) {
 }
 
 func (c httpClient) makeRequest(url url.URL, method, requestBody string) (response *http.Response, err error) {
-	request, err := http.NewRequest(method, url.String(), strings.NewReader(requestBody))
-	request.SetBasicAuth(c.username, c.password)
-	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	response, err = c.client.Do(request)
-
-	attempts := 1
-	for (err != nil || response.StatusCode != 200) && attempts < c.retryAttempts {
+	c.logger.Debug("http-client", "makeRequest with url %s", url.String())
+	for attempt := 0; attempt < c.retryAttempts; attempt++ {
+		c.logger.Debug("http-client", "Retrying %d", attempt)
 		if response != nil {
 			response.Body.Close()
 		}
-		time.Sleep(c.delayBetweenRetries)
+
+		var request *http.Request
+		request, err = http.NewRequest(method, url.String(), strings.NewReader(requestBody))
+		if err != nil {
+			return
+		}
+
+		request.SetBasicAuth(c.username, c.password)
+		request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		response, err = c.client.Do(request)
-		attempts++
+		if response != nil {
+			c.logger.Debug("http-client", "Got response with status %d", response.StatusCode)
+		}
+
+		if err == nil && response.StatusCode == 200 {
+			return
+		}
+
+		time.Sleep(c.delayBetweenRetries)
 	}
 
 	return

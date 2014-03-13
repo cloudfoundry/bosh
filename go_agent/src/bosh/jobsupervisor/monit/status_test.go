@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	boshlog "bosh/logger"
 	. "github.com/onsi/ginkgo"
 	"time"
 )
@@ -51,7 +52,8 @@ func init() {
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
 
-			client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond)
+			logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+			client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 			status, err := client.Status()
 			assert.NoError(GinkgoT(), err)
