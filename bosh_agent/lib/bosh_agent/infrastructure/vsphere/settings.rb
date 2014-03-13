@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'nokogiri'
 
 module Bosh::Agent
   class Infrastructure::Vsphere::Settings
@@ -14,20 +15,26 @@ module Bosh::Agent
       @cdrom_device = nil
     end
 
-    def cdrom_device
-      unless @cdrom_device
-        # only do this when not already done
-        cd_drive = File.read("/proc/sys/dev/cdrom/info").slice(/drive name:\s*\S*/).slice(/\S*\z/)
-        @cdrom_device = "/dev/#{cd_drive.strip}"
-      end
-      @cdrom_device
+    def load_settings
+      load_vm_property || load_cdrom_settings
     end
 
-    def load_settings
-      load_cdrom_settings
+    private
+
+    def load_vm_property
+      @logger.info('Loading settings from VM property')
+      settings_json = vm_settings_property
+      return if settings_json.nil?
+
+      begin
+        Yajl::Parser.new.parse(settings_json)
+      rescue
+        raise Bosh::Agent::LoadSettingsError, "Failed to parse settings_json #{settings_json}"
+      end
     end
 
     def load_cdrom_settings
+      @logger.info('Loading settings from cdrom')
       check_cdrom
       create_cdrom_settings_mount_point
       mount_cdrom
@@ -44,6 +51,15 @@ module Bosh::Agent
         eject_cdrom
       end
       @settings
+    end
+
+    def cdrom_device
+      unless @cdrom_device
+        # only do this when not already done
+        cd_drive = File.read("/proc/sys/dev/cdrom/info").slice(/drive name:\s*\S*/).slice(/\S*\z/)
+        @cdrom_device = "/dev/#{cd_drive.strip}"
+      end
+      @cdrom_device
     end
 
     def check_cdrom
@@ -135,5 +151,28 @@ module Bosh::Agent
       Bosh::Exec.sh "eject #{cdrom_device}"
     end
 
+    def vm_settings_property
+      result = Bosh::Exec.sh("vmtoolsd --cmd 'info-get guestinfo.ovfEnv' 2>&1", on_error: :return)
+      ovf_info = result.output
+      @logger.info("ovfEnv: #{ovf_info}")
+      if result.failed?
+        @logger.info('Failed to run vmtoolsd')
+        return
+      end
+
+      settings_node = Nokogiri.XML(ovf_info)
+                        .css('Environment PropertySection Property')
+                        .find { |n| n.attribute('key').content == 'agent_env_settings' }
+      if settings_node.nil?
+        @logger.info('No settings_node with key agent_env_settings is found')
+        return
+      end
+
+      settings_json = settings_node.attribute('value').content.strip
+      fail Bosh::Agent::LoadSettingsError,
+           'agent_env_settings xml node value is empty!' if settings_json.empty?
+      @logger.info("JSON SETTINGS: #{settings_json}")
+      settings_json
+    end
   end
 end

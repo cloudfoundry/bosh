@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'httpclient',      '=2.2.4'
   s.add_dependency 'syslog_protocol', '~>0.9.2'
   s.add_dependency 'crack',           '~>0.3.2'
+  s.add_dependency 'nokogiri',        '~>1.5.6'
 
   # Bosh Dependencies
   s.add_dependency 'bosh-core',        "~>#{version}"
