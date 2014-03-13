@@ -14,6 +14,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
 	"net/smtp"
+	"time"
 )
 
 func doJobFailureEmail(email string, port int) (err error) {
@@ -57,7 +58,15 @@ func buildMonitJobSupervisor() (deps monitJobSupDeps, monit JobSupervisor) {
 		jobFailuresServerPort: getJobFailureServerPort(),
 	}
 
-	monit = NewMonitJobSupervisor(deps.fs, deps.runner, deps.client, deps.logger, deps.dirProvider, deps.jobFailuresServerPort)
+	monit = NewMonitJobSupervisor(
+		deps.fs,
+		deps.runner,
+		deps.client,
+		deps.logger,
+		deps.dirProvider,
+		deps.jobFailuresServerPort,
+		0*time.Millisecond,
+	)
 	return
 }
 
@@ -69,16 +78,50 @@ func getJobFailureServerPort() int {
 }
 func init() {
 	Describe("Testing with Ginkgo", func() {
-		It("reload", func() {
+		It("waits until the job is reloaded", func() {
 			deps, monit := buildMonitJobSupervisor()
+
+			deps.client.Incarnations = []int{1, 1, 1, 2, 3}
+			deps.client.StatusStatus = fakemonit.FakeMonitStatus{
+				Services: []boshmonit.Service{
+					boshmonit.Service{Monitored: true, Status: "failing"},
+					boshmonit.Service{Monitored: true, Status: "running"},
+				},
+				Incarnation: 1,
+			}
+
 			err := monit.Reload()
 
 			assert.NoError(GinkgoT(), err)
 			assert.Equal(GinkgoT(), 1, len(deps.runner.RunCommands))
 			assert.Equal(GinkgoT(), []string{"monit", "reload"}, deps.runner.RunCommands[0])
+			assert.Equal(GinkgoT(), deps.client.StatusCalledTimes, 4)
 		})
-		It("start starts each monit service in group vcap", func() {
 
+		It("stops trying to reload after 60 attempts", func() {
+			deps, monit := buildMonitJobSupervisor()
+
+			for i := 0; i < 61; i++ {
+				deps.client.Incarnations = append(deps.client.Incarnations, 1)
+			}
+
+			deps.client.StatusStatus = fakemonit.FakeMonitStatus{
+				Services: []boshmonit.Service{
+					boshmonit.Service{Monitored: true, Status: "failing"},
+					boshmonit.Service{Monitored: true, Status: "running"},
+				},
+				Incarnation: 1,
+			}
+
+			err := monit.Reload()
+
+			assert.Error(GinkgoT(), err)
+			assert.Equal(GinkgoT(), 1, len(deps.runner.RunCommands))
+			assert.Equal(GinkgoT(), []string{"monit", "reload"}, deps.runner.RunCommands[0])
+			assert.Equal(GinkgoT(), deps.client.StatusCalledTimes, 60)
+		})
+
+		It("start starts each monit service in group vcap", func() {
 			deps, monit := buildMonitJobSupervisor()
 
 			deps.client.ServicesInGroupServices = []string{"fake-service"}
@@ -90,8 +133,8 @@ func init() {
 			assert.Equal(GinkgoT(), 1, len(deps.client.StartServiceNames))
 			assert.Equal(GinkgoT(), "fake-service", deps.client.StartServiceNames[0])
 		})
-		It("stop stops each monit service in group vcap", func() {
 
+		It("stop stops each monit service in group vcap", func() {
 			deps, monit := buildMonitJobSupervisor()
 
 			deps.client.ServicesInGroupServices = []string{"fake-service"}
@@ -103,8 +146,8 @@ func init() {
 			assert.Equal(GinkgoT(), 1, len(deps.client.StopServiceNames))
 			assert.Equal(GinkgoT(), "fake-service", deps.client.StopServiceNames[0])
 		})
-		It("add job", func() {
 
+		It("add job", func() {
 			deps, monit := buildMonitJobSupervisor()
 			deps.fs.WriteFileString("/some/config/path", "some config content")
 			monit.AddJob("router", 0, "/some/config/path")
@@ -113,11 +156,11 @@ func init() {
 			assert.NoError(GinkgoT(), err)
 			assert.Equal(GinkgoT(), writtenConfig, "some config content")
 		})
-		It("status returns running when all services are monitored and running", func() {
 
+		It("status returns running when all services are monitored and running", func() {
 			deps, monit := buildMonitJobSupervisor()
 
-			deps.client.StatusStatus = &fakemonit.FakeMonitStatus{
+			deps.client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{
 					boshmonit.Service{Monitored: true, Status: "running"},
 					boshmonit.Service{Monitored: true, Status: "running"},
@@ -127,11 +170,11 @@ func init() {
 			status := monit.Status()
 			assert.Equal(GinkgoT(), "running", status)
 		})
-		It("status returns failing when all services are monitored and at least one service is failing", func() {
 
+		It("status returns failing when all services are monitored and at least one service is failing", func() {
 			deps, monit := buildMonitJobSupervisor()
 
-			deps.client.StatusStatus = &fakemonit.FakeMonitStatus{
+			deps.client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{
 					boshmonit.Service{Monitored: true, Status: "failing"},
 					boshmonit.Service{Monitored: true, Status: "running"},
@@ -141,11 +184,11 @@ func init() {
 			status := monit.Status()
 			assert.Equal(GinkgoT(), "failing", status)
 		})
-		It("status returns failing when at least one service is not monitored", func() {
 
+		It("status returns failing when at least one service is not monitored", func() {
 			deps, monit := buildMonitJobSupervisor()
 
-			deps.client.StatusStatus = &fakemonit.FakeMonitStatus{
+			deps.client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{
 					boshmonit.Service{Monitored: false, Status: "running"},
 					boshmonit.Service{Monitored: true, Status: "running"},
@@ -155,11 +198,11 @@ func init() {
 			status := monit.Status()
 			assert.Equal(GinkgoT(), "failing", status)
 		})
-		It("status returns start when at least one service is starting", func() {
 
+		It("status returns start when at least one service is starting", func() {
 			deps, monit := buildMonitJobSupervisor()
 
-			deps.client.StatusStatus = &fakemonit.FakeMonitStatus{
+			deps.client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{
 					boshmonit.Service{Monitored: true, Status: "failing"},
 					boshmonit.Service{Monitored: true, Status: "starting"},
@@ -170,8 +213,8 @@ func init() {
 			status := monit.Status()
 			assert.Equal(GinkgoT(), "starting", status)
 		})
-		It("status returns unknown when error", func() {
 
+		It("status returns unknown when error", func() {
 			deps, monit := buildMonitJobSupervisor()
 
 			deps.client.StatusErr = errors.New("fake-monit-client-error")
@@ -179,8 +222,8 @@ func init() {
 			status := monit.Status()
 			assert.Equal(GinkgoT(), "unknown", status)
 		})
-		It("monitor job failures", func() {
 
+		It("monitor job failures", func() {
 			var handledAlert boshalert.MonitAlert
 
 			failureHandler := func(alert boshalert.MonitAlert) (err error) {
@@ -211,8 +254,8 @@ func init() {
 				Description: "process is not running",
 			})
 		})
-		It("monitor job failures ignores other emails", func() {
 
+		It("monitor job failures ignores other emails", func() {
 			var didHandleAlert bool
 
 			failureHandler := func(alert boshalert.MonitAlert) (err error) {

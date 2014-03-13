@@ -1,6 +1,7 @@
 package monit
 
 type Status interface {
+	GetIncarnation() (int, error)
 	ServicesInGroup(name string) (services []Service)
 }
 

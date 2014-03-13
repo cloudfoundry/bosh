@@ -2,6 +2,7 @@ package monit
 
 import (
 	"encoding/xml"
+	"strconv"
 )
 
 type status struct {
@@ -92,4 +93,8 @@ func (status status) ServicesInGroup(name string) (services []Service) {
 	}
 
 	return
+}
+
+func (status status) GetIncarnation() (int, error) {
+	return strconv.Atoi(status.Incarnation)
 }

@@ -6,6 +6,7 @@ import (
 	boshlog "bosh/logger"
 	boshplatform "bosh/platform"
 	boshdir "bosh/settings/directories"
+	"time"
 )
 
 type provider struct {
@@ -20,7 +21,7 @@ func NewProvider(
 ) (p provider) {
 
 	p.supervisors = map[string]JobSupervisor{
-		"monit": NewMonitJobSupervisor(platform.GetFs(), platform.GetRunner(), client, logger, dirProvider, 2825),
+		"monit": NewMonitJobSupervisor(platform.GetFs(), platform.GetRunner(), client, logger, dirProvider, 2825, 5*time.Second),
 		"dummy": newDummyJobSupervisor(),
 	}
 

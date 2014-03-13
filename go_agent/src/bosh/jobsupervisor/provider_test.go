@@ -7,6 +7,7 @@ import (
 	boshdir "bosh/settings/directories"
 	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
+	"time"
 )
 
 type providerDependencies struct {
@@ -43,11 +44,19 @@ func init() {
 			actualSupervisor, err := provider.Get("monit")
 			assert.NoError(GinkgoT(), err)
 
-			expectedSupervisor := NewMonitJobSupervisor(deps.platform.Fs, deps.platform.Runner, deps.client, deps.logger, deps.dirProvider, deps.jobFailuresServerPort)
+			expectedSupervisor := NewMonitJobSupervisor(
+				deps.platform.Fs,
+				deps.platform.Runner,
+				deps.client,
+				deps.logger,
+				deps.dirProvider,
+				deps.jobFailuresServerPort,
+				5*time.Second,
+			)
 			assert.Equal(GinkgoT(), expectedSupervisor, actualSupervisor)
 		})
-		It("get dummy job supervisor", func() {
 
+		It("get dummy job supervisor", func() {
 			_, provider := buildProvider()
 
 			actualSupervisor, err := provider.Get("dummy")
@@ -56,8 +65,8 @@ func init() {
 			expectedSupervisor := newDummyJobSupervisor()
 			assert.Equal(GinkgoT(), expectedSupervisor, actualSupervisor)
 		})
-		It("get errs when not found", func() {
 
+		It("get errs when not found", func() {
 			_, provider := buildProvider()
 
 			_, err := provider.Get("does-not-exist")

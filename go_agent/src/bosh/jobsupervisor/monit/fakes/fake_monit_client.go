@@ -15,8 +15,11 @@ type FakeMonitClient struct {
 	StopServiceNames []string
 	StopServiceErr   error
 
-	StatusStatus boshmonit.Status
+	StatusStatus FakeMonitStatus
 	StatusErr    error
+
+	Incarnations      []int
+	StatusCalledTimes int
 }
 
 func NewFakeMonitClient() (client *FakeMonitClient) {
@@ -44,7 +47,14 @@ func (c *FakeMonitClient) StopService(name string) (err error) {
 }
 
 func (c *FakeMonitClient) Status() (status boshmonit.Status, err error) {
-	status = c.StatusStatus
+	s := c.StatusStatus
+	if len(c.Incarnations) > 0 {
+		s.Incarnation = c.Incarnations[c.StatusCalledTimes]
+	}
+
+	status = s
 	err = c.StatusErr
+
+	c.StatusCalledTimes++
 	return
 }
