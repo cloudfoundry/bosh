@@ -1,5 +1,4 @@
 require 'forwardable'
-require 'stringio'
 require 'json'
 
 module Bosh::Cli::TaskTracking
@@ -11,22 +10,42 @@ module Bosh::Cli::TaskTracking
 
     def initialize
       super
+
+      @printer = SmartWhitespacePrinter.new
       @total_duration = TotalDuration.new
+
+      presenter = StageCollectionPresenter.new(@printer)
+
+      @stage_collection = StageCollection.new(
+        stage_started:  presenter.method(:start_stage),
+        stage_finished: presenter.method(:finish_stage),
+        stage_failed:   presenter.method(:fail_stage),
+
+        task_started:   presenter.method(:start_task),
+        task_finished:  presenter.method(:finish_task),
+        task_failed:    presenter.method(:fail_task),
+      )
     end
 
-    def add_output(output)
-      @buffer = StringIO.new
+    alias_method :add_raw_output, :add_output
 
+    def add_output(output)
       output.to_s.split("\n").each do |line|
         begin
           event = parse_event(line)
           add_event(event) if event
         rescue InvalidEvent => e
-          @buffer.puts("Received invalid event: #{e.message}\n\n")
+          @printer.print(:line_around, "Received invalid event: #{e.message}".make_red)
         end
       end
 
-      super(@buffer.string)
+      add_raw_output(@printer.output)
+    end
+
+    def finish(state)
+      @printer.finish
+      add_raw_output(@printer.output)
+      super
     end
 
     private
@@ -59,7 +78,7 @@ module Bosh::Cli::TaskTracking
 
     def show_deprecation(event)
       msg = "Deprecation: #{event['message']}"
-      @buffer.print("#{msg.make_red}\n\n")
+      @printer.print(:line_around, msg.make_red)
     end
 
     def show_error(event)
@@ -71,64 +90,19 @@ module Bosh::Cli::TaskTracking
       msg += " #{code}" if code
       msg += ": #{message}" if message
 
-      @buffer.print("#{msg.make_red}\n\n")
-    end
-
-    def show_stage_or_task(event)
-      validate_stage_event(event)
-      stage_collection.update_with_event(event)
+      @printer.print(:line_around, msg.make_red)
     end
 
     REQUIRED_STAGE_EVENT_KEYS = %w(time stage task index total state).freeze
 
-    def validate_stage_event(event)
+    def show_stage_or_task(event)
       REQUIRED_STAGE_EVENT_KEYS.each do |key|
         unless event.has_key?(key)
           raise InvalidEvent, "Missing event key: #{key}"
         end
       end
-    end
 
-    def stage_collection
-      @stage_collection ||= StageCollection.new(
-        stage_started: ->(stage){
-          @buffer.print("  Started #{header_for_stage(stage)}\n")
-        },
-        stage_finished: ->(stage){
-          duration = stage.duration ? " (#{format_time(stage.duration)})" : ''
-          @buffer.print("     Done #{header_for_stage(stage)}#{duration}\n\n")
-        },
-        stage_failed: ->(stage){
-          duration = stage.duration ? " (#{format_time(stage.duration)})" : ''
-          @buffer.print("   Failed #{header_for_stage(stage)}#{duration}\n")
-        },
-
-        task_started: ->(task){
-          @buffer.print("  Started #{header_for_task(task)}\n")
-        },
-        task_finished: ->(task){
-          duration = task.duration ? " (#{format_time(task.duration)})" : ''
-          @buffer.print("     Done #{header_for_task(task)}#{duration}\n")
-        },
-        task_failed: ->(task){
-          error_msg = task.error
-          error_msg = ": #{error_msg.make_red}" if error_msg
-          duration = task.duration ? " (#{format_time(task.duration)})" : ''
-          @buffer.print("   Failed #{header_for_task(task)}#{duration}#{error_msg}\n")
-        },
-      )
-    end
-
-    def header_for_stage(stage)
-      tags = stage.tags
-      tags_str = tags.size > 0 ? ' ' + tags.sort.join(', ').make_green : ''
-      "#{stage.name.downcase}#{tags_str}"
-    end
-
-    def header_for_task(task)
-      tags = task.stage.tags
-      tags_str = tags.size > 0 ? ' ' + tags.sort.join(', ').make_green : ''
-      "#{task.stage.name.downcase}#{tags_str}: #{task.name}"
+      @stage_collection.update_with_event(event)
     end
   end
 end

@@ -9,7 +9,7 @@ module Bosh::Cli::TaskTracking
 
     def update_with_event(event)
       new_stage = Stage.new(event['stage'], event['tags'], event['total'], @callbacks)
-      unless found_stage = @stages.find { |s| s.name == new_stage.name && s.tags == new_stage.tags }
+      unless found_stage = @stages.find { |s| s == new_stage }
         found_stage = new_stage
         @stages << new_stage
       end
@@ -31,7 +31,7 @@ module Bosh::Cli::TaskTracking
 
     def update_with_event(event)
       new_task = Task.new(self, event['task'], event['progress'], @callbacks)
-      unless found_task = @tasks.find { |t| t.name == new_task.name }
+      unless found_task = @tasks.find { |s| s == new_task }
         found_task = new_task
         @tasks << new_task
       end
@@ -53,6 +53,16 @@ module Bosh::Cli::TaskTracking
       total_duration.finished_at = task_end_times.max unless task_end_times.include?(nil)
 
       total_duration.duration
+    end
+
+    def similar?(other)
+      return false unless other.is_a?(Stage)
+      name == other.name
+    end
+
+    def ==(other)
+      return false unless other.is_a?(Stage)
+      [name, tags, total] == [other.name, other.tags, other.total]
     end
 
     private
@@ -103,6 +113,11 @@ module Bosh::Cli::TaskTracking
       @total_duration.finished_at = event['time'] if @state == 'finished' || @state == 'failed'
 
       call_state_callback
+    end
+
+    def ==(other)
+      return false unless other.is_a?(Task)
+      [stage, name] == [other.stage, other.name]
     end
 
     private

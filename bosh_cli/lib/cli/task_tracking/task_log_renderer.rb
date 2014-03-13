@@ -16,8 +16,6 @@ module Bosh::Cli::TaskTracking
     def initialize
       @out = Bosh::Cli::Config.output || $stdout
       @out.sync = true
-
-      @lock = Mutex.new
       @output = ''
 
       @time_adjustment = 0
