@@ -7,6 +7,7 @@ namespace :stemcell do
     light_stemcell.write_archive
   end
 
+  desc 'Build a base OS image for use in stemcells'
   task :build_os_image, [:operating_system_name, :os_image_path] do |_, args|
     require 'bosh/dev/build'
     require 'bosh/stemcell/archive_handler'
@@ -70,6 +71,7 @@ namespace :stemcell do
     end
   end
 
+  desc 'Build a stemcell using a pre-built base OS image'
   task :build_with_local_os_image, [:infrastructure_name, :operating_system_name, :agent_name, :os_image_path] do |_, args|
     require 'bosh/dev/build'
     require 'bosh/dev/gem_components'

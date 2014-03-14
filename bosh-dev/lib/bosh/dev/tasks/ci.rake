@@ -45,7 +45,7 @@ namespace :ci do
     stemcell_publisher.publish(args.stemcell_path)
   end
 
-  desc 'Build a stemcell for the given :infrastructure, :operating_system, :agent_name, :s3 bucket_anem, and :s3 os image key on a stemcell building vm and publish to S3'
+  desc 'Build a stemcell for the given :infrastructure, :operating_system, :agent_name, :s3 bucket_name, and :s3 os image key on a stemcell building vm and publish to S3'
   task :publish_stemcell_in_vm, [:infrastructure_name, :operating_system_name, :vm_name, :agent_name, :os_image_s3_bucket_name, :os_image_s3_key] do |_, args|
     require 'bosh/dev/build'
     require 'bosh/dev/stemcell_vm'
