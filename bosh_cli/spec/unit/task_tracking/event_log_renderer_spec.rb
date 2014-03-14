@@ -21,8 +21,8 @@ describe Bosh::Cli::TaskTracking::EventLogRenderer do
 
       add_output(make_event('fake-s3-stage', 'fake-t1-task', 1, 2, 'started', [], 0, nil, 100))
       add_output(make_event('fake-s4-stage', 'fake-t1-task', 1, 2, 'started', [], 0, nil, 100))
-      add_output(make_event('fake-s4-stage', 'fake-t1-task', 1, 2, 'finished', [], 0, nil, 100))
       add_output(make_event('fake-s4-stage', 'fake-t2-task', 2, 2, 'started', [], 0, nil, 100))
+      add_output(make_event('fake-s4-stage', 'fake-t1-task', 1, 2, 'failed', [], 0, {}, 100))
       add_output(make_event('fake-s3-stage', 'fake-t2-task', 2, 2, 'started', [], 0, nil, 100))
       add_output(make_event('fake-s3-stage', 'fake-t2-task', 2, 2, 'finished', [], 0, nil, 100))
       add_output(make_event('fake-s3-stage', 'fake-t1-task', 1, 2, 'finished', [], 0, nil, 100))
@@ -43,15 +43,16 @@ describe Bosh::Cli::TaskTracking::EventLogRenderer do
   Started fake-s3-stage > fake-t1-task
 
   Started fake-s4-stage
-  Started fake-s4-stage > fake-t1-task. Done (00:00:00)
+  Started fake-s4-stage > fake-t1-task
   Started fake-s4-stage > fake-t2-task
+   Failed fake-s4-stage > fake-t1-task (00:00:00)
 
   Started fake-s3-stage > fake-t2-task. Done (00:00:00)
-     Done fake-s3-stage
      Done fake-s3-stage > fake-t1-task (00:00:00)
+     Done fake-s3-stage (00:00:00)
 
      Done fake-s4-stage > fake-t2-task (00:00:00)
-     Done fake-s4-stage (00:00:00)
+   Failed fake-s4-stage (00:00:00)
       OUTPUT
     end
 

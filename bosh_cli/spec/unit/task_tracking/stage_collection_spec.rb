@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Cli::TaskTracking
   describe StageCollection do
     subject(:stage_collection) { described_class.new(callbacks) }
-    let(:callbacks) { double('callbacks') }
+    let(:callbacks) { {} }
 
     describe '#update_with_event' do
       context 'when the stage and tags do not match any existing stages' do
@@ -67,7 +67,7 @@ module Bosh::Cli::TaskTracking
 
   describe Stage do
     subject(:stage) { described_class.new('fake-stage', ['fake-tag'], 0, callbacks) }
-    let(:callbacks) { { } }
+    let(:callbacks) { {} }
 
     describe '#initialize' do
       it 'sets tags to given tags' do
@@ -115,40 +115,213 @@ module Bosh::Cli::TaskTracking
         end
       end
 
-      context 'when the started event for the first task is received' do
+      describe 'when the started event for the first task is received' do
         it 'calls stage_started callbacks' do
           callbacks[:stage_started] = -> {}
-          expect(callbacks[:stage_started]).to receive(:call).with(stage)
+          expect(callbacks[:stage_started]).to receive(:call).with(stage).once
           stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task', 'index' => 1, 'state' => 'started')
+          stage.update_with_event('stage' => 'fake-stage', 'task' => 'fake-task', 'index' => 2, 'state' => 'started')
         end
       end
 
-      context 'when the finished event for the last task is received' do
-        before { callbacks[:stage_finished] = -> {} }
-
-        context 'when total is not null' do
-          it 'calls stage_finished callbacks' do
-            expect(callbacks[:stage_finished]).to receive(:call).with(stage)
-            stage.update_with_event(
-              'stage' => 'fake-stage', 'index' => 1, 'total' => 1, 'state' => 'finished')
-          end
+      shared_examples 'an incomplete stage' do
+        it 'does not call the finished callback' do
+          expect(callbacks[:stage_finished]).not_to receive(:call).with(stage)
+          stage.update_with_event(event)
         end
 
-        context 'when total is null' do
-          it 'calls stage_finished callbacks' do
-            expect(callbacks[:stage_finished]).to receive(:call).with(stage)
-            stage.update_with_event(
-              'stage' => 'fake-stage', 'index' => 1, 'total' => nil, 'state' => 'finished')
-          end
+        it 'does not call the failed callback' do
+          expect(callbacks[:stage_failed]).not_to receive(:call).with(stage)
+          stage.update_with_event(event)
         end
       end
 
-      context 'when a failed event is received' do
-        it 'calls stage_failed callbacks' do
-          callbacks[:stage_failed] = -> {}
+      shared_examples 'a successful stage' do
+        it 'calls the finished callback' do
+          expect(callbacks[:stage_finished]).to receive(:call).with(stage)
+          stage.update_with_event(event)
+        end
+
+        it 'does not call the failed callback' do
+          expect(callbacks[:stage_failed]).not_to receive(:call).with(stage)
+          stage.update_with_event(event)
+        end
+      end
+
+      shared_examples 'a failed stage' do
+        it 'calls the failed callback' do
           expect(callbacks[:stage_failed]).to receive(:call).with(stage)
-          stage.update_with_event(
-            'stage' => 'fake-stage', 'task' => 'fake-task', 'state' => 'failed')
+          stage.update_with_event(event)
+        end
+
+        it 'does not call the finished callback' do
+          expect(callbacks[:stage_finished]).not_to receive(:call).with(stage)
+          stage.update_with_event(event)
+        end
+      end
+
+      describe 'when a finished event is received' do
+        before do
+          callbacks[:stage_failed] = instance_double('Proc', call: nil)
+          callbacks[:stage_finished] = instance_double('Proc', call: nil)
+        end
+
+        let(:index) { 1 }
+        let(:total) { index }
+        let(:event) do
+          {
+            'stage' => 'fake-stage',
+            'task' => 'fake-task',
+            'index' => index,
+            'total' => total,
+            'state' => 'finished'
+          }
+        end
+
+        context 'when no other tasks have been seen' do
+          context 'when we have seen all the tasks we expect' do
+            let(:total) { index }
+
+            it_behaves_like 'a successful stage'
+          end
+
+          context 'when we have not seen all the tasks we expect' do
+            let(:total) { index + 1 }
+
+            it_behaves_like 'an incomplete stage'
+          end
+
+          context 'when we do not know how many tasks to expect' do
+            let(:total) { nil }
+
+            it_behaves_like 'a successful stage'
+          end
+        end
+
+        context 'when all other tasks are finished' do
+          let(:index) { 2 }
+
+          before do
+            stage.update_with_event(
+              'stage' => 'fake-stage',
+              'task' => 'fake-task-1',
+              'index' => 1,
+              'total' => total,
+              'state' => 'finished'
+            )
+          end
+
+          it_behaves_like 'a successful stage'
+        end
+
+        context 'when another task is running' do
+          let(:index) { 2 }
+
+          before do
+            stage.update_with_event(
+              'stage' => 'fake-stage',
+              'task' => 'fake-task-1',
+              'index' => 1,
+              'total' => total,
+              'state' => 'started'
+            )
+          end
+
+          it_behaves_like 'an incomplete stage'
+        end
+
+        context 'when another task is failed' do
+          let(:index) { 2 }
+
+          before do
+            stage.update_with_event(
+              'stage' => 'fake-stage',
+              'task' => 'fake-task-1',
+              'index' => 1,
+              'total' => total,
+              'state' => 'failed'
+            )
+          end
+
+          it_behaves_like 'a failed stage'
+        end
+      end
+
+      describe 'when a failed event is received' do
+        before do
+          callbacks[:stage_failed] = instance_double('Proc', call: nil)
+          callbacks[:stage_finished] = instance_double('Proc', call: nil)
+        end
+
+        let(:index) { 1 }
+        let(:total) { index }
+        let(:event) do
+          {
+            'stage' => 'fake-stage',
+            'task' => 'fake-task',
+            'index' => index,
+            'total' => total,
+            'state' => 'failed'
+          }
+        end
+
+        context 'when no other tasks have been seen' do
+          context 'when we have seen all the tasks we expect' do
+            let(:total) { index }
+
+            it_behaves_like 'a failed stage'
+          end
+
+          context 'when we have not seen all the tasks we expect' do
+            let(:total) { index + 1 }
+
+            it_behaves_like 'an incomplete stage'
+          end
+
+          context 'when we do not know how many tasks to expect' do
+            let(:total) { nil }
+
+            it_behaves_like 'a failed stage'
+          end
+        end
+
+        context 'when all other tasks are done' do
+          let(:index) { 3 }
+
+          before do
+            stage.update_with_event(
+              'stage' => 'fake-stage',
+              'task' => 'fake-task-1',
+              'index' => 1,
+              'total' => total,
+              'state' => 'finished'
+            )
+            stage.update_with_event(
+              'stage' => 'fake-stage',
+              'task' => 'fake-task-2',
+              'index' => 2,
+              'total' => total,
+              'state' => 'failed'
+            )
+          end
+
+          it_behaves_like 'a failed stage'
+        end
+
+        context 'when another task is running' do
+          let(:index) { 2 }
+
+          before do
+            stage.update_with_event(
+              'stage' => 'fake-stage',
+              'task' => 'fake-task-1',
+              'index' => 1,
+              'total' => total,
+              'state' => 'started'
+            )
+          end
+
+          it_behaves_like 'an incomplete stage'
         end
       end
     end
@@ -188,9 +361,9 @@ module Bosh::Cli::TaskTracking
   end
 
   describe Task do
-    subject(:task)  { described_class.new(stage, 'fake-task', 0, callbacks) }
-    let(:stage)     { Stage.new('fake-stage', ['fake-tag'], 0, {}) }
-    let(:callbacks) { { } }
+    subject(:task) { described_class.new(stage, 'fake-task', 0, callbacks) }
+    let(:stage) { Stage.new('fake-stage', ['fake-tag'], 0, {}) }
+    let(:callbacks) { {} }
 
     describe '#update_with_event' do
       it 'updates state to given state' do
@@ -241,7 +414,7 @@ module Bosh::Cli::TaskTracking
 
       context 'when the task is started' do
         it 'calls task_start callback' do
-          callbacks[:task_started] = ->{}
+          callbacks[:task_started] = -> {}
           expect(callbacks[:task_started]).to receive(:call).with(task)
           task.update_with_event('state' => 'started')
         end
@@ -249,7 +422,7 @@ module Bosh::Cli::TaskTracking
 
       context 'when the task is finished' do
         it 'calls task_finish callback' do
-          callbacks[:task_finished] = ->{}
+          callbacks[:task_finished] = -> {}
           expect(callbacks[:task_finished]).to receive(:call).with(task)
           task.update_with_event('state' => 'finished')
         end
@@ -257,7 +430,7 @@ module Bosh::Cli::TaskTracking
 
       context 'when the task is failed' do
         it 'calls task_failed callback' do
-          callbacks[:task_failed] = ->{}
+          callbacks[:task_failed] = -> {}
           expect(callbacks[:task_failed]).to receive(:call).with(task)
           task.update_with_event('state' => 'failed')
         end
@@ -275,8 +448,70 @@ module Bosh::Cli::TaskTracking
         end
 
         context 'when there is error inside data' do
-          before { task.update_with_event('data' => {'error' => 'fake-error'}) }
+          before { task.update_with_event('data' => { 'error' => 'fake-error' }) }
           its(:error) { should eq('fake-error') }
+        end
+      end
+    end
+
+    describe '#done?' do
+      context 'when state is finished' do
+        before { task.update_with_event('state' => 'finished') }
+
+        it 'is true' do
+          expect(task).to be_done
+        end
+      end
+
+      context 'when state is failed' do
+        before { task.update_with_event('state' => 'failed') }
+
+        it 'is true' do
+          expect(task).to be_done
+        end
+      end
+
+      context 'when state is not finished' do
+        before { task.update_with_event('state' => 'literally-anything-else') }
+
+        it 'is true' do
+          expect(task).not_to be_done
+        end
+      end
+    end
+
+    describe '#failed?' do
+      context 'when state is failed' do
+        before { task.update_with_event('state' => 'failed') }
+
+        it 'is true' do
+          expect(task).to be_failed
+        end
+      end
+
+      context 'when state is not failed' do
+        before { task.update_with_event('state' => 'literally-anything-else') }
+
+        it 'is true' do
+          expect(task).not_to be_failed
+        end
+      end
+    end
+
+    describe '#finished?' do
+      context 'when state is finished' do
+        before { task.update_with_event('state' => 'finished') }
+
+        it 'is true' do
+          expect(task).to be_finished
+        end
+      end
+
+      context 'when state is not finished' do
+        before { task.update_with_event('state' => 'literally-anything-else') }
+
+        it 'is true' do
+          expect(task).not_to be_finished
         end
       end
     end
