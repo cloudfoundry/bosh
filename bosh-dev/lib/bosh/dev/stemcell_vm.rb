@@ -20,14 +20,16 @@ module Bosh::Dev
         vagrant up #{vm_name} --provider #{provider}
 
         vagrant ssh -c "
-          set -eu
-          cd /bosh
-          bundle install --local
+          bash -l -c '
+            set -eu
+            cd /bosh
+            bundle install --local
 
-          #{exports.join("\n          ")}
+            #{exports.join("\n          ")}
 
-          bundle exec rake stemcell:build[#{build_task_args}]
-          bundle exec rake ci:publish_stemcell[#{stemcell_path}]
+            bundle exec rake stemcell:build[#{build_task_args}]
+            bundle exec rake ci:publish_stemcell[#{stemcell_path}]
+          '
         " #{vm_name}
       BASH
     ensure
