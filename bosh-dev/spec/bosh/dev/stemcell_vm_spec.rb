@@ -55,16 +55,18 @@ module Bosh::Dev
         def expected_cmd(rake_task_args, stemcell_path)
           strip_heredoc(<<-BASH)
             vagrant ssh -c "
-              set -eu
-              cd /bosh
-              bundle install --local
+              bash -l -c '
+                set -eu
+                cd /bosh
+                bundle install --local
 
-              export CANDIDATE_BUILD_NUMBER='fake-CANDIDATE_BUILD_NUMBER'
-              export BOSH_AWS_ACCESS_KEY_ID='fake-BOSH_AWS_ACCESS_KEY_ID'
-              export BOSH_AWS_SECRET_ACCESS_KEY='fake-BOSH_AWS_SECRET_ACCESS_KEY'
+                export CANDIDATE_BUILD_NUMBER='fake-CANDIDATE_BUILD_NUMBER'
+                export BOSH_AWS_ACCESS_KEY_ID='fake-BOSH_AWS_ACCESS_KEY_ID'
+                export BOSH_AWS_SECRET_ACCESS_KEY='fake-BOSH_AWS_SECRET_ACCESS_KEY'
 
-              bundle exec rake stemcell:build[#{rake_task_args}]
-              bundle exec rake ci:publish_stemcell[#{stemcell_path}]
+                bundle exec rake stemcell:build[#{rake_task_args}]
+                bundle exec rake ci:publish_stemcell[#{stemcell_path}]
+              '
             " remote
           BASH
         end

@@ -25,7 +25,7 @@ module Bosh::Dev
             cd /bosh
             bundle install --local
 
-            #{exports.join("\n          ")}
+            #{exports.join("\n            ")}
 
             bundle exec rake stemcell:build[#{build_task_args}]
             bundle exec rake ci:publish_stemcell[#{stemcell_path}]
