@@ -1,32 +1,54 @@
 package settings
 
 import (
+	"encoding/json"
+
 	bosherr "bosh/errors"
+	boshsys "bosh/system"
 )
 
 type SettingsFetcher func() (settings Settings, err error)
 
 type concreteService struct {
+	fs              boshsys.FileSystem
+	settingsPath    string
 	settings        Settings
 	settingsFetcher SettingsFetcher
 }
 
-func NewService(initialSettings Settings, settingsFetcher SettingsFetcher) (service Service) {
+func NewService(
+	fs boshsys.FileSystem,
+	settingsPath string,
+	initialSettings Settings,
+	settingsFetcher SettingsFetcher,
+) (service Service) {
 	return &concreteService{
+		fs:              fs,
+		settingsPath:    settingsPath,
 		settings:        initialSettings,
 		settingsFetcher: settingsFetcher,
 	}
 }
 
-func (service *concreteService) Refresh() (err error) {
+func (service *concreteService) Refresh() error {
 	newSettings, err := service.settingsFetcher()
 	if err != nil {
-		err = bosherr.WrapError(err, "Invoking settings fetcher")
-		return
+		return bosherr.WrapError(err, "Invoking settings fetcher")
 	}
 
 	service.settings = newSettings
-	return
+
+	newSettingsJson, _ := json.Marshal(newSettings)
+	if err != nil {
+		return bosherr.WrapError(err, "Marshalling settings json")
+	}
+
+	err = service.fs.WriteFile(service.settingsPath, newSettingsJson)
+	if err != nil {
+		return bosherr.WrapError(err, "Writing setting json")
+	}
+
+	return nil
 }
 
 func (service *concreteService) GetBlobstore() Blobstore {

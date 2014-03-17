@@ -45,7 +45,14 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		err = bosherr.WrapError(err, "Fetching settings")
 		return
 	}
-	settingsService = boshsettings.NewService(settings, boot.infrastructure.GetSettings)
+
+	settingsPath := filepath.Join(boot.dirProvider.BaseDir(), "bosh", "settings.json")
+	settingsService = boshsettings.NewService(
+		boot.fs,
+		settingsPath,
+		settings,
+		boot.infrastructure.GetSettings,
+	)
 
 	err = boot.setUserPasswords(settings)
 	if err != nil {
