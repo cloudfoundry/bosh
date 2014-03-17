@@ -18,24 +18,24 @@ describe VSphereCloud::Cloud do
         "ntp" => ["10.80.0.44"],
       },
       "vcenters" => [{
-                       "host" => @host,
-                       "user" => @user,
-                       "password" => @password,
-                       "datacenters" => [{
-                                           "name" => "BOSH_DC",
-                                           "vm_folder" => "ACCEPTANCE_BOSH_VMs",
-                                           "template_folder" => "ACCEPTANCE_BOSH_Templates",
-                                           "disk_path" => "ACCEPTANCE_BOSH_Disks",
-                                           "datastore_pattern" => "jalapeno",
-                                           "persistent_datastore_pattern" => "jalapeno",
-                                           "allow_mixed_datastores" => true,
-                                           "clusters" => [{
-                                                            "BOSH_CL" => { "resource_pool" => "ACCEPTANCE_RP" },
-                                                          },
-                                                          { "BOSH_CL2" => { "resource_pool" => "ACCEPTANCE_RP" }
-                                                          }],
-                                         }]
-                     }]
+        "host" => @host,
+        "user" => @user,
+        "password" => @password,
+        "datacenters" => [{
+          "name" => "BOSH_DC",
+          "vm_folder" => "ACCEPTANCE_BOSH_VMs",
+          "template_folder" => "ACCEPTANCE_BOSH_Templates",
+          "disk_path" => "ACCEPTANCE_BOSH_Disks",
+          "datastore_pattern" => "jalapeno",
+          "persistent_datastore_pattern" => "jalapeno",
+          "allow_mixed_datastores" => true,
+          "clusters" => [{
+            "BOSH_CL" => { "resource_pool" => "ACCEPTANCE_RP" },
+          },
+            { "BOSH_CL2" => { "resource_pool" => "ACCEPTANCE_RP" }
+            }],
+        }]
+      }]
     )
   end
 

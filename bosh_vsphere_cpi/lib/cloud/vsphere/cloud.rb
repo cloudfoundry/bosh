@@ -1048,6 +1048,10 @@ module VSphereCloud
       vms
     end
 
+    def ping
+      "pong"
+    end
+
     private
 
     def choose_placer(cloud_properties)

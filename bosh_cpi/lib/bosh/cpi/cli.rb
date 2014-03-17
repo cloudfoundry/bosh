@@ -18,6 +18,7 @@ class Bosh::Cpi::Cli
     snapshot_disk
     delete_snapshot
     get_disks
+    ping
   ).freeze
 
   RPC_METHOD_TO_RUBY_METHOD = {
