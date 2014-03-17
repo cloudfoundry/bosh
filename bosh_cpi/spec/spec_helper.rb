@@ -1,7 +1,8 @@
 require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
 
-require "cloud"
-require "logger"
+require 'cloud'
+require 'logger'
+require 'bosh/cpi'
 
 # add the spec/lib to load path so we can find the dummy provider
 $:.unshift(File.expand_path('../lib', __FILE__))

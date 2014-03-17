@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+
+require 'yaml'
+require 'sequel'
+require 'sequel/adapters/sqlite'
+require 'logger'
+require 'cloud'
+require 'cloud/vsphere'
+require 'ostruct'
+require 'tmpdir'
+require 'bosh/cpi'
+require 'bosh/cpi/cli'
+
+Sequel.extension(:migration)
+
+db = Sequel.sqlite
+db_migrations_path = File.expand_path('../../db/migrations', __FILE__)
+Sequel::TimestampMigrator.new(db, db_migrations_path, {}).run
+
+Bosh::Clouds::Config.configure(OpenStruct.new(
+  logger: Logger.new(STDERR),
+  uuid: 'uuid',
+  task_checkpoint: nil,
+  db: db,
+))
+
+director_config = YAML.load_file(ARGV[0])
+cpi = Bosh::Clouds::VSphere.new(director_config['cloud']['properties'])
+
+cli = Bosh::Cpi::Cli.new(cpi, STDOUT)
+cli.run(ARGV[1])

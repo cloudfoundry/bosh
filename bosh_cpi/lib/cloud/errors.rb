@@ -1,5 +1,4 @@
 module Bosh::Clouds
-
   class CpiError < StandardError; end
   class NotImplemented < CpiError; end
   class NotSupported < CpiError; end
@@ -19,5 +18,4 @@ module Bosh::Clouds
   class DiskNotAttached < RetriableCloudError; end
   class DiskNotFound < RetriableCloudError; end
   class VMCreationFailed < RetriableCloudError; end
-
 end

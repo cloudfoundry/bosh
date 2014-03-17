@@ -170,9 +170,7 @@ module Bosh
       not_implemented(:delete_disk)
     end
 
-    ##
     # Attaches a disk
-    #
     # @param [String] vm vm id that was once returned by {#create_vm}
     # @param [String] disk disk id that was once returned by {#create_disk}
     # @return [void]
@@ -182,6 +180,7 @@ module Bosh
 
     # Take snapshot of disk
     # @param [String] disk_id disk id of the disk to take the snapshot of
+    # @param [Hash] metadata metadata key/value pairs
     # @return [String] snapshot id
     def snapshot_disk(disk_id, metadata={})
       not_implemented(:snapshot_disk)
@@ -189,13 +188,12 @@ module Bosh
 
     # Delete a disk snapshot
     # @param [String] snapshot_id snapshot id to delete
+    # @return [void]
     def delete_snapshot(snapshot_id)
       not_implemented(:delete_snapshot)
     end
 
-    ##
     # Detaches a disk
-    #
     # @param [String] vm vm id that was once returned by {#create_vm}
     # @param [String] disk disk id that was once returned by {#create_disk}
     # @return [void]
@@ -203,18 +201,14 @@ module Bosh
       not_implemented(:detach_disk)
     end
 
-    ##
     # List the attached disks of the VM.
-    #
     # @param [String] vm_id is the CPI-standard vm_id (eg, returned from current_vm_id)
-    #
     # @return [array[String]] list of opaque disk_ids that can be used with the
     # other disk-related methods on the CPI
     def get_disks(vm_id)
       not_implemented(:get_disks)
     end
 
-    ##
     # Validates the deployment
     # @api not_yet_used
     def validate_deployment(old_manifest, new_manifest)
