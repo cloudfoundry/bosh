@@ -19,15 +19,23 @@ type concreteService struct {
 func NewService(
 	fs boshsys.FileSystem,
 	settingsPath string,
-	initialSettings Settings,
 	settingsFetcher SettingsFetcher,
 ) (service Service) {
 	return &concreteService{
 		fs:              fs,
 		settingsPath:    settingsPath,
-		settings:        initialSettings,
+		settings:        Settings{},
 		settingsFetcher: settingsFetcher,
 	}
+}
+
+func (service *concreteService) FetchInitial() error {
+	existingSettingsJson, readError := service.fs.ReadFile(service.settingsPath)
+	if readError != nil {
+		return service.Refresh()
+	}
+
+	return json.Unmarshal(existingSettingsJson, &service.settings)
 }
 
 func (service *concreteService) Refresh() error {
@@ -51,30 +59,34 @@ func (service *concreteService) Refresh() error {
 	return nil
 }
 
-func (service *concreteService) GetBlobstore() Blobstore {
+func (service concreteService) GetSettings() Settings {
+	return service.settings
+}
+
+func (service concreteService) GetBlobstore() Blobstore {
 	return service.settings.Blobstore
 }
 
-func (service *concreteService) GetAgentId() string {
+func (service concreteService) GetAgentId() string {
 	return service.settings.AgentId
 }
 
-func (service *concreteService) GetVm() Vm {
+func (service concreteService) GetVm() Vm {
 	return service.settings.Vm
 }
 
-func (service *concreteService) GetMbusUrl() string {
+func (service concreteService) GetMbusUrl() string {
 	return service.settings.Mbus
 }
 
-func (service *concreteService) GetDisks() Disks {
+func (service concreteService) GetDisks() Disks {
 	return service.settings.Disks
 }
 
-func (service *concreteService) GetDefaultIp() (ip string, found bool) {
+func (service concreteService) GetDefaultIp() (ip string, found bool) {
 	return service.settings.Networks.DefaultIp()
 }
 
-func (service *concreteService) GetIps() (ips []string) {
+func (service concreteService) GetIps() (ips []string) {
 	return service.settings.Networks.Ips()
 }

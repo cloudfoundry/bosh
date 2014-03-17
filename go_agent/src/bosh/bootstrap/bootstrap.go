@@ -1,15 +1,15 @@
 package bootstrap
 
 import (
+	"errors"
+	"path/filepath"
+
 	bosherr "bosh/errors"
 	boshinf "bosh/infrastructure"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
-	"encoding/json"
-	"errors"
-	"path/filepath"
 )
 
 type bootstrap struct {
@@ -19,7 +19,11 @@ type bootstrap struct {
 	dirProvider    boshdir.DirectoriesProvider
 }
 
-func New(inf boshinf.Infrastructure, platform boshplatform.Platform, dirProvider boshdir.DirectoriesProvider) (b bootstrap) {
+func New(
+	inf boshinf.Infrastructure,
+	platform boshplatform.Platform,
+	dirProvider boshdir.DirectoriesProvider,
+) (b bootstrap) {
 	b.infrastructure = inf
 	b.platform = platform
 	b.dirProvider = dirProvider
@@ -40,19 +44,20 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	settings, err := boot.fetchInitialSettings()
+	settingsPath := filepath.Join(boot.dirProvider.BaseDir(), "bosh", "settings.json")
+	settingsService = boshsettings.NewService(
+		boot.fs,
+		settingsPath,
+		boot.infrastructure.GetSettings,
+	)
+
+	err = settingsService.FetchInitial()
 	if err != nil {
 		err = bosherr.WrapError(err, "Fetching settings")
 		return
 	}
 
-	settingsPath := filepath.Join(boot.dirProvider.BaseDir(), "bosh", "settings.json")
-	settingsService = boshsettings.NewService(
-		boot.fs,
-		settingsPath,
-		settings,
-		boot.infrastructure.GetSettings,
-	)
+	settings := settingsService.GetSettings()
 
 	err = boot.setUserPasswords(settings)
 	if err != nil {
@@ -120,31 +125,6 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		err = bosherr.WrapError(err, "Starting monit")
 		return
 	}
-	return
-}
-
-func (boot bootstrap) fetchInitialSettings() (settings boshsettings.Settings, err error) {
-	settingsPath := filepath.Join(boot.dirProvider.BaseDir(), "bosh", "settings.json")
-
-	existingSettingsJson, readError := boot.platform.GetFs().ReadFile(settingsPath)
-	if readError == nil {
-		err = json.Unmarshal(existingSettingsJson, &settings)
-		return
-	}
-
-	settings, err = boot.infrastructure.GetSettings()
-	if err != nil {
-		err = bosherr.WrapError(err, "Fetching settings from infrastructure")
-		return
-	}
-
-	settingsJson, err := json.Marshal(settings)
-	if err != nil {
-		err = bosherr.WrapError(err, "Marshalling settings json")
-		return
-	}
-
-	boot.fs.WriteFile(settingsPath, settingsJson)
 	return
 }
 

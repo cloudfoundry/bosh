@@ -11,10 +11,16 @@ import (
 	fakesys "bosh/system/fakes"
 )
 
-func buildService(initialSettings Settings, fetcher SettingsFetcher) (Service, *fakesys.FakeFileSystem) {
+func buildService(fetcher SettingsFetcher) (Service, *fakesys.FakeFileSystem) {
 	fs := fakesys.NewFakeFileSystem()
-	service := NewService(fs, "/setting/path", initialSettings, fetcher)
+	service := NewService(fs, "/setting/path", fetcher)
 	return service, fs
+}
+
+func buildServiceWithInitialSettings(initialSettings Settings) Service {
+	service, _ := buildService(func() (Settings, error) { return initialSettings, nil })
+	service.Refresh()
+	return service
 }
 
 func init() {
@@ -24,7 +30,7 @@ func init() {
 			fetcher := func() (Settings, error) { return fetchedSettings, nil }
 
 			It("updates the service with settings from the fetcher", func() {
-				service, _ := buildService(Settings{AgentId: "some-agent-id"}, fetcher)
+				service, _ := buildService(fetcher)
 
 				err := service.Refresh()
 				Expect(err).NotTo(HaveOccurred())
@@ -33,9 +39,8 @@ func init() {
 
 			It("returns any error from the fetcher", func() {
 				service, _ := buildService(
-					Settings{AgentId: "some-old-agent-id"},
 					func() (Settings, error) {
-						return Settings{}, errors.New("Error fetching settings!")
+						return Settings{AgentId: "some-agent-id"}, errors.New("Error fetching settings!")
 					},
 				)
 
@@ -43,11 +48,11 @@ func init() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Error fetching settings!"))
 
-				Expect(service.GetAgentId()).To(Equal("some-old-agent-id"))
+				Expect(service.GetSettings()).To(Equal(Settings{}))
 			})
 
 			It("persists settings to the settings file", func() {
-				service, fs := buildService(Settings{AgentId: "some-agent-id"}, fetcher)
+				service, fs := buildService(fetcher)
 
 				err := service.Refresh()
 				Expect(err).NotTo(HaveOccurred())
@@ -61,7 +66,7 @@ func init() {
 			})
 
 			It("returns any error from writing to the setting file", func() {
-				service, fs := buildService(Settings{AgentId: "some-agent-id"}, fetcher)
+				service, fs := buildService(fetcher)
 
 				fs.WriteToFileError = errors.New("fs-write-file-error")
 
@@ -71,9 +76,17 @@ func init() {
 			})
 		})
 
+		Describe("GetSettings", func() {
+			It("returns settings", func() {
+				settings := Settings{AgentId: "some-agent-id"}
+				service := buildServiceWithInitialSettings(settings)
+				Expect(service.GetSettings()).To(Equal(settings))
+			})
+		})
+
 		Describe("GetAgentId", func() {
 			It("returns agent id", func() {
-				service, _ := buildService(Settings{AgentId: "some-agent-id"}, nil)
+				service := buildServiceWithInitialSettings(Settings{AgentId: "some-agent-id"})
 				Expect(service.GetAgentId()).To(Equal("some-agent-id"))
 			})
 		})
@@ -81,14 +94,14 @@ func init() {
 		Describe("GetVm", func() {
 			It("returns vm", func() {
 				vm := Vm{Name: "some-vm-id"}
-				service, _ := buildService(Settings{Vm: vm}, nil)
+				service := buildServiceWithInitialSettings(Settings{Vm: vm})
 				Expect(service.GetVm()).To(Equal(vm))
 			})
 		})
 
 		Describe("GetMbusUrl", func() {
 			It("returns mbus url", func() {
-				service, _ := buildService(Settings{Mbus: "nats://user:pwd@some-ip:some-port"}, nil)
+				service := buildServiceWithInitialSettings(Settings{Mbus: "nats://user:pwd@some-ip:some-port"})
 				Expect(service.GetMbusUrl()).To(Equal("nats://user:pwd@some-ip:some-port"))
 			})
 		})
@@ -96,7 +109,7 @@ func init() {
 		Describe("GetDisks", func() {
 			It("returns disks", func() {
 				disks := Disks{System: "foo", Ephemeral: "bar"}
-				service, _ := buildService(Settings{Disks: disks}, nil)
+				service := buildServiceWithInitialSettings(Settings{Disks: disks})
 				Expect(service.GetDisks()).To(Equal(disks))
 			})
 		})
@@ -106,7 +119,7 @@ func init() {
 				networks := Networks{
 					"bosh": Network{Ip: "xx.xx.xx.xx"},
 				}
-				service, _ := buildService(Settings{Networks: networks}, nil)
+				service := buildServiceWithInitialSettings(Settings{Networks: networks})
 
 				ip, found := service.GetDefaultIp()
 				Expect(found).To(BeTrue())
@@ -121,7 +134,7 @@ func init() {
 					"vip":   Network{Ip: "zz.zz.zz.zz"},
 					"other": Network{},
 				}
-				service, _ := buildService(Settings{Networks: networks}, nil)
+				service := buildServiceWithInitialSettings(Settings{Networks: networks})
 				Expect(service.GetIps()).To(Equal([]string{"xx.xx.xx.xx", "zz.zz.zz.zz"}))
 			})
 		})
