@@ -25,14 +25,14 @@ func buildServiceWithInitialSettings(initialSettings Settings) Service {
 
 func init() {
 	Describe("concreteService", func() {
-		Describe("Refresh", func() {
+		itUpdatesSettingsViaFetcher := func(caller func(Service) error) {
 			fetchedSettings := Settings{AgentId: "some-new-agent-id"}
 			fetcher := func() (Settings, error) { return fetchedSettings, nil }
 
 			It("updates the service with settings from the fetcher", func() {
 				service, _ := buildService(fetcher)
 
-				err := service.Refresh()
+				err := caller(service)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(service.GetAgentId()).To(Equal("some-new-agent-id"))
 			})
@@ -44,7 +44,7 @@ func init() {
 					},
 				)
 
-				err := service.Refresh()
+				err := caller(service)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Error fetching settings!"))
 
@@ -54,7 +54,7 @@ func init() {
 			It("persists settings to the settings file", func() {
 				service, fs := buildService(fetcher)
 
-				err := service.Refresh()
+				err := caller(service)
 				Expect(err).NotTo(HaveOccurred())
 
 				json, err := json.Marshal(fetchedSettings)
@@ -70,9 +70,32 @@ func init() {
 
 				fs.WriteToFileError = errors.New("fs-write-file-error")
 
-				err := service.Refresh()
+				err := caller(service)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fs-write-file-error"))
+			})
+		}
+
+		Describe("Refresh", func() {
+			itUpdatesSettingsViaFetcher(func(service Service) error { return service.Refresh() })
+		})
+
+		Describe("FetchInitial", func() {
+			Context("when a settings file exists", func() {
+				It("returns settings from the settings file", func() {
+					service, fs := buildService(nil)
+
+					expectedSettings := Settings{AgentId: "some-agent-id"}
+					fs.WriteFile("/setting/path", []byte(`{"agent_id":"some-agent-id"}`))
+
+					err := service.FetchInitial()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(service.GetSettings()).To(Equal(expectedSettings))
+				})
+			})
+
+			Context("when no settings file exists", func() {
+				itUpdatesSettingsViaFetcher(func(service Service) error { return service.FetchInitial() })
 			})
 		})
 

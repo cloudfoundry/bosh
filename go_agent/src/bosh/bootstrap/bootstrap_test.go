@@ -1,8 +1,6 @@
 package bootstrap_test
 
 import (
-	"encoding/json"
-
 	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
 
@@ -11,7 +9,6 @@ import (
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
-	fakesys "bosh/system/fakes"
 )
 
 func getBootstrapDependencies() (
@@ -42,50 +39,6 @@ func init() {
 				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
 				boot.Run()
 				assert.Equal(GinkgoT(), fakeInfrastructure.SetupSshUsername, "vcap")
-			})
-
-			It("gets settings from the infrastructure", func() {
-				expectedSettings := boshsettings.Settings{
-					AgentId: "123-456-789",
-				}
-
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				fakeInfrastructure.Settings = expectedSettings
-
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				settingsService, err := boot.Run()
-				assert.NoError(GinkgoT(), err)
-
-				settingsFileStat := fakePlatform.Fs.GetFileTestStat(dirProvider.BaseDir() + "/bosh/settings.json")
-				settingsJson, err := json.Marshal(expectedSettings)
-				assert.NoError(GinkgoT(), err)
-
-				assert.NotNil(GinkgoT(), settingsFileStat)
-				assert.Equal(GinkgoT(), settingsFileStat.FileType, fakesys.FakeFileTypeFile)
-				assert.Equal(GinkgoT(), settingsFileStat.Content, settingsJson)
-				assert.Equal(GinkgoT(), settingsService.GetAgentId(), "123-456-789")
-			})
-
-			It("does not fetch settings if they are on the disk", func() {
-				infSettings := boshsettings.Settings{AgentId: "xxx-xxx-xxx"}
-				expectedSettings := boshsettings.Settings{AgentId: "123-456-789"}
-
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				fakeInfrastructure.Settings = infSettings
-
-				existingSettingsBytes, _ := json.Marshal(expectedSettings)
-				fakePlatform.GetFs().WriteFile("/var/vcap/bosh/settings.json", existingSettingsBytes)
-
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				settingsService, err := boot.Run()
-				assert.NoError(GinkgoT(), err)
-
-				settingsFileStat := fakePlatform.Fs.GetFileTestStat(dirProvider.BaseDir() + "/bosh/settings.json")
-
-				assert.NotNil(GinkgoT(), settingsFileStat)
-				assert.Equal(GinkgoT(), settingsFileStat.FileType, fakesys.FakeFileTypeFile)
-				assert.Equal(GinkgoT(), settingsFileStat.Content, existingSettingsBytes)
-				assert.Equal(GinkgoT(), settingsService.GetAgentId(), "123-456-789")
 			})
 
 			It("sets up hostname", func() {

@@ -5,7 +5,10 @@ import (
 )
 
 type FakeSettingsService struct {
-	SettingsWereRefreshed        bool
+	RefreshError          error
+	SettingsWereRefreshed bool
+
+	FetchInitialError            error
 	SettingsWereFetchedInitially bool
 
 	Settings boshsettings.Settings
@@ -19,14 +22,14 @@ type FakeSettingsService struct {
 	Ips       []string
 }
 
-func (service *FakeSettingsService) FetchInitial() (err error) {
+func (service *FakeSettingsService) FetchInitial() error {
 	service.SettingsWereFetchedInitially = true
-	return
+	return service.FetchInitialError
 }
 
-func (service *FakeSettingsService) Refresh() (err error) {
+func (service *FakeSettingsService) Refresh() error {
 	service.SettingsWereRefreshed = true
-	return
+	return service.RefreshError
 }
 
 func (service FakeSettingsService) GetSettings() boshsettings.Settings {
@@ -53,7 +56,7 @@ func (service FakeSettingsService) GetDisks() boshsettings.Disks {
 	return service.Disks
 }
 
-func (service FakeSettingsService) GetDefaultIp() (ip string, found bool) {
+func (service FakeSettingsService) GetDefaultIp() (string, bool) {
 	return service.DefaultIp, service.DefaultIp != ""
 }
 
