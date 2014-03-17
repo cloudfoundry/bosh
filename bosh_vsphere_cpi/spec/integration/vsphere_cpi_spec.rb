@@ -5,8 +5,13 @@ require 'yaml'
 
 describe VSphereCloud::Cloud do
   let(:bin_path) { File.expand_path('../../../bin/vsphere_cpi', __FILE__) }
+  let(:db_path) { Tempfile.new('vsphere_cpi.db').path }
+
   let(:config) do
     {
+      'db' => {
+        'database' => db_path
+      },
       'cloud' => {
         'properties' => {
           'agent' => {
@@ -34,26 +39,35 @@ describe VSphereCloud::Cloud do
     }
   end
 
-  let(:json) { { 'method' => 'ping', 'arguments' => []} }
+  let(:json) { { 'method' => 'ping', 'arguments' => [] } }
 
   before do
     @config_path = Tempfile.new('vsphere_cpi_config').path
     File.open(@config_path, 'w') { |f| f.write(YAML.dump(config)) }
   end
 
-  after do
-    FileUtils.rm_rf(@config_path)
-  end
-
   def run_vsphere_cpi
-    Open3.popen3(bin_path, @config_path, JSON.dump(json))
+    _, stdout, _, wait_thr = Open3.popen3(bin_path, @config_path, JSON.dump(json))
+    return stdout.read, wait_thr.value
   end
 
   describe 'running commands' do
     it 'ping-pongs' do
-      _, stdout, _, exit_status = run_vsphere_cpi
-      expect(exit_status.value).to be_success
-      expect(stdout.read).to eq('{"result":"pong","error":null}')
+      output, exit_status = run_vsphere_cpi
+      expect(exit_status).to be_success
+      expect(output).to eq('{"result":"pong","error":null}')
+    end
+  end
+
+  describe 'migrations' do
+    it 'runs migrations on database from config' do
+      _, exit_status = run_vsphere_cpi
+      expect(exit_status).to be_success
+
+      db = Sequel.sqlite(database: db_path)
+      result = db["SELECT * FROM schema_migrations"]
+      expect(result.count).to be > 0
+      expect(result.first[:filename]).to match(/initial/)
     end
   end
 end
