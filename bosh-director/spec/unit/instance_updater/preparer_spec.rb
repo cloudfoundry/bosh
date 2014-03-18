@@ -1,8 +1,8 @@
 require 'spec_helper'
-require 'bosh/director/instance_preparer'
+require 'bosh/director/instance_updater/preparer'
 
 module Bosh::Director
-  describe InstancePreparer do
+  describe InstanceUpdater::Preparer do
     subject(:preparer) { described_class.new(instance, agent_client) }
     let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }

@@ -1,7 +1,5 @@
-require 'bosh/director'
-
 module Bosh::Director
-  class InstancePreparer
+  class InstanceUpdater::Preparer
     def initialize(instance, agent_client)
       @instance = instance
       @agent_client = agent_client

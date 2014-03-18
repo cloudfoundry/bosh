@@ -122,8 +122,8 @@ module Bosh::Director
         end
       end
 
-      before { allow(InstancePreparer).to receive(:new).with(instance, agent_client).and_return(preparer) }
-      let(:preparer) { instance_double('Bosh::Director::InstancePreparer', prepare: nil) }
+      before { allow(InstanceUpdater::Preparer).to receive(:new).with(instance, agent_client).and_return(preparer) }
+      let(:preparer) { instance_double('Bosh::Director::InstanceUpdater::Preparer', prepare: nil) }
 
       before { allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance_model, blobstore).and_return(templates_cleaner) }
       let(:templates_cleaner) { instance_double('Bosh::Director::RenderedJobTemplatesCleaner', clean: nil) }
@@ -154,7 +154,7 @@ module Bosh::Director
         end
 
         it 'does not prepare instance' do
-          Bosh::Director::InstancePreparer.should_not_receive(:new)
+          InstanceUpdater::Preparer.should_not_receive(:new)
           subject.update
         end
 

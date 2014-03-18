@@ -1,4 +1,3 @@
-require 'bosh/director/instance_preparer'
 require 'bosh/director/rendered_job_templates_cleaner'
 
 module Bosh::Director
@@ -60,7 +59,7 @@ module Bosh::Director
         return
       end
 
-      step { InstancePreparer.new(@instance, agent).prepare }
+      step { Preparer.new(@instance, agent).prepare }
       step { stop }
       step { take_snapshot }
 
