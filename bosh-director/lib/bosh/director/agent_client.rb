@@ -40,8 +40,11 @@ module Bosh::Director
       send_message(method_name, *args)
     end
 
-    def get_state(*args)
-      send_message(:get_state, *args)
+    # Define methods on this class to make instance_double more useful
+    [:start, :get_state, :list_disk, :prepare_network_change].each do |message|
+      define_method(message) do |*args|
+        send_message(message, *args)
+      end
     end
 
     def prepare(*args)

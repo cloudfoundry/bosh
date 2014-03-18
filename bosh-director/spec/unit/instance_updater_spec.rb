@@ -78,11 +78,11 @@ module Bosh::Director
     end
     let(:cloud) { instance_double('Bosh::Cloud') }
 
-    let(:agent_client) { double('Bosh::Director::AgentClient') }
+    let(:agent_client) { instance_double('Bosh::Director::AgentClient', id: vm_model.agent_id) }
 
     before do
+      AgentClient.stub(:with_defaults).and_return(agent_client)
       Bosh::Director::Config.stub(:cloud).and_return(cloud)
-      subject.stub(:agent) { agent_client }
     end
 
     describe '#report_progress' do
@@ -214,7 +214,7 @@ module Bosh::Director
           cloud.stub(:configure_networks)
           agent_client.stub(:prepare_network_change)
           agent_client.stub(:wait_until_ready)
-          subject.stub(:sleep)
+          InstanceUpdater::NetworkUpdater.any_instance.stub(:sleep)
           subject.stub(:stop)
           subject.stub(:update_resource_pool)
           subject.stub(:start!)
@@ -533,7 +533,7 @@ module Bosh::Director
     describe '#detach_disk' do
       context 'with no disk attached' do
         it 'should do nothing' do
-          agent_client.should_not_receive(:umount_disk)
+          agent_client.should_not_receive(:unmount_disk)
           cloud.should_not_receive(:detach_disk)
         end
       end
@@ -843,13 +843,19 @@ module Bosh::Director
     end
 
     describe '#update_networks' do
+      it 'updates networks' do
+        network_updater = instance_double('Bosh::Director::InstanceUpdater::NetworkUpdater')
+        expect(InstanceUpdater::NetworkUpdater).to receive(:new).
+          with(instance, vm_model, agent_client, be_a(described_class), cloud, Config.logger).
+          and_return(network_updater)
+
+        expect(network_updater).to receive(:update).with(no_args)
+
+        subject.update_networks
+      end
     end
 
     describe '#update_persistent_disk' do
-
-    end
-
-    describe '#update_networks' do
 
     end
 
