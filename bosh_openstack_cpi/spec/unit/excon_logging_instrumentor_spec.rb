@@ -16,7 +16,7 @@ describe Bosh::OpenStackCloud::ExconLoggingInstrumentor do
     end
 
     it "redacts params" do
-      expect(Bosh::OpenStackCloud::ExconLoggingInstrumentor::RedactedParams).
+      expect(Bosh::OpenStackCloud::RedactedParams).
         to receive(:new).with(params)
       subject
     end
@@ -24,29 +24,6 @@ describe Bosh::OpenStackCloud::ExconLoggingInstrumentor do
     it "yields" do
       expect{ |b| Bosh::OpenStackCloud::ExconLoggingInstrumentor.
         instrument(name, params, &b) }.to yield_control
-    end
-  end
-
-  describe Bosh::OpenStackCloud::ExconLoggingInstrumentor::RedactedParams do
-    describe "#redact_params" do
-      let(:secret) { "secret_string" }
-      subject(:redacted_params) {
-        Bosh::OpenStackCloud::ExconLoggingInstrumentor::RedactedParams.new(params)
-      }
-
-      context "when containing a password" do
-        let(:params) { {password: secret } }
-        it "redacts password" do
-          expect(redacted_params.to_s).to_not include secret
-        end
-      end
-
-      context "when containing a authorization header" do
-        let(:params) { {headers: { 'Authorization' => secret } } }
-        it "redacts authorization" do
-          expect(redacted_params.to_s).to_not include secret
-        end
-      end
     end
   end
 end
