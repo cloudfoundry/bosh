@@ -19,7 +19,7 @@ func buildService(fetcher SettingsFetcher) (Service, *fakesys.FakeFileSystem) {
 
 func buildServiceWithInitialSettings(initialSettings Settings) Service {
 	service, _ := buildService(func() (Settings, error) { return initialSettings, nil })
-	service.Refresh()
+	service.FetchSettings()
 	return service
 }
 
@@ -88,7 +88,7 @@ func init() {
 		}
 
 		Describe("Refresh", func() {
-			itUpdatesSettingsViaFetcher(func(service Service) error { return service.Refresh() })
+			itUpdatesSettingsViaFetcher(func(service Service) error { return service.FetchSettings() })
 		})
 
 		Describe("FetchInitial", func() {
@@ -99,14 +99,14 @@ func init() {
 					expectedSettings := Settings{AgentId: "some-agent-id"}
 					fs.WriteFile("/setting/path", []byte(`{"agent_id":"some-agent-id"}`))
 
-					err := service.FetchInitial()
+					err := service.LoadSettings()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(service.GetSettings()).To(Equal(expectedSettings))
 				})
 			})
 
 			Context("when no settings file exists", func() {
-				itUpdatesSettingsViaFetcher(func(service Service) error { return service.FetchInitial() })
+				itUpdatesSettingsViaFetcher(func(service Service) error { return service.LoadSettings() })
 			})
 		})
 
@@ -116,7 +116,7 @@ func init() {
 
 				fs.WriteFile("/setting/path", []byte(`{}`))
 
-				err := service.ForceNextFetchInitialToRefresh()
+				err := service.ForceNextLoadToFetchSettings()
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fs.FileExists("/setting/path")).To(BeFalse())
@@ -127,7 +127,7 @@ func init() {
 
 				fs.RemoveAllError = errors.New("fs-remove-all-error")
 
-				err := service.ForceNextFetchInitialToRefresh()
+				err := service.ForceNextLoadToFetchSettings()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fs-remove-all-error"))
 			})

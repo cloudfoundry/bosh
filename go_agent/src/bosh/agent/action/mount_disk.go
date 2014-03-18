@@ -34,7 +34,7 @@ func (a MountDiskAction) IsAsynchronous() bool {
 }
 
 func (a MountDiskAction) Run(disk_cid string) (value interface{}, err error) {
-	err = a.settings.Refresh()
+	err = a.settings.FetchSettings()
 	if err != nil {
 		err = bosherr.WrapError(err, "Refreshing the settings")
 		return

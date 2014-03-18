@@ -32,7 +32,7 @@ func init() {
 			Expect(err).NotTo(HaveOccurred())
 			boshassert.MatchesJsonString(GinkgoT(), result, "{}")
 
-			Expect(settings.SettingsWereRefreshed).To(BeTrue())
+			Expect(settings.SettingsWereFetched).To(BeTrue())
 
 			Expect(platform.MountPersistentDiskDevicePath).To(Equal("/dev/sdf"))
 			Expect(platform.MountPersistentDiskMountPoint).To(Equal("/foo/store"))

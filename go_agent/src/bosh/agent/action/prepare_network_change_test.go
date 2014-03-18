@@ -34,7 +34,7 @@ func init() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp).To(Equal("ok"))
 
-			Expect(settingsService.SettingsWereForcedToInitiallyRefresh).To(BeTrue())
+			Expect(settingsService.SettingsWereForcedToFetchOnNextLoad).To(BeTrue())
 		})
 
 		Context("when settings are forced to initially refresh successfully", func() {
@@ -67,13 +67,13 @@ func init() {
 
 		Context("when settings failed to be forced to initially refresh", func() {
 			BeforeEach(func() {
-				settingsService.ForceNextFetchInitialToRefreshError = errors.New("fake-force-refresh-error")
+				settingsService.ForceNextLoadToFetchSettingsError = errors.New("fake-force-fetch-error")
 			})
 
 			It("returns error early if settings err refreshing", func() {
 				resp, err := action.Run()
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-force-refresh-error"))
+				Expect(err.Error()).To(ContainSubstring("fake-force-fetch-error"))
 
 				Expect(resp).To(BeNil())
 			})

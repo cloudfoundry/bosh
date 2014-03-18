@@ -78,15 +78,15 @@ func init() {
 			It("fetches initial settings", func() {
 				_, err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(settingsService.SettingsWereFetchedInitially).To(BeTrue())
+				Expect(settingsService.SettingsWereLoaded).To(BeTrue())
 			})
 
 			It("returns error from fetching initial settings", func() {
-				settingsService.FetchInitialError = errors.New("fake-fetch-initial-error")
+				settingsService.LoadSettingsError = errors.New("fake-load-error")
 
 				_, err := bootstrap()
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-fetch-initial-error"))
+				Expect(err.Error()).To(ContainSubstring("fake-load-error"))
 			})
 
 			It("sets up networking", func() {

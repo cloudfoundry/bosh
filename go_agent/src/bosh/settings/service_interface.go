@@ -9,12 +9,11 @@ type ServiceProvider interface {
 }
 
 type Service interface {
-	FetchInitial() error
-	ForceNextFetchInitialToRefresh() error
-
-	Refresh() error
-
+	LoadSettings() error
+	FetchSettings() error
 	GetSettings() Settings
+
+	ForceNextLoadToFetchSettings() error
 
 	GetBlobstore() Blobstore
 	GetAgentId() string

@@ -30,7 +30,7 @@ func (a PrepareNetworkChangeAction) IsAsynchronous() bool {
 }
 
 func (a PrepareNetworkChangeAction) Run() (interface{}, error) {
-	err := a.settingsService.ForceNextFetchInitialToRefresh()
+	err := a.settingsService.ForceNextLoadToFetchSettings()
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Force initial settings refresh")
 	}

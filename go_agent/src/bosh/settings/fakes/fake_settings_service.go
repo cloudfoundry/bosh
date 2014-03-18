@@ -30,14 +30,14 @@ func (provider *FakeSettingsServiceProvider) NewService(
 }
 
 type FakeSettingsService struct {
-	RefreshError          error
-	SettingsWereRefreshed bool
+	FetchSettingsError  error
+	SettingsWereFetched bool
 
-	FetchInitialError            error
-	SettingsWereFetchedInitially bool
+	LoadSettingsError  error
+	SettingsWereLoaded bool
 
-	ForceNextFetchInitialToRefreshError  error
-	SettingsWereForcedToInitiallyRefresh bool
+	ForceNextLoadToFetchSettingsError   error
+	SettingsWereForcedToFetchOnNextLoad bool
 
 	Settings boshsettings.Settings
 
@@ -50,19 +50,19 @@ type FakeSettingsService struct {
 	Ips       []string
 }
 
-func (service *FakeSettingsService) FetchInitial() error {
-	service.SettingsWereFetchedInitially = true
-	return service.FetchInitialError
+func (service *FakeSettingsService) LoadSettings() error {
+	service.SettingsWereLoaded = true
+	return service.LoadSettingsError
 }
 
-func (service *FakeSettingsService) ForceNextFetchInitialToRefresh() error {
-	service.SettingsWereForcedToInitiallyRefresh = true
-	return service.ForceNextFetchInitialToRefreshError
+func (service *FakeSettingsService) ForceNextLoadToFetchSettings() error {
+	service.SettingsWereForcedToFetchOnNextLoad = true
+	return service.ForceNextLoadToFetchSettingsError
 }
 
-func (service *FakeSettingsService) Refresh() error {
-	service.SettingsWereRefreshed = true
-	return service.RefreshError
+func (service *FakeSettingsService) FetchSettings() error {
+	service.SettingsWereFetched = true
+	return service.FetchSettingsError
 }
 
 func (service FakeSettingsService) GetSettings() boshsettings.Settings {
