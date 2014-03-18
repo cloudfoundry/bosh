@@ -612,6 +612,14 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       end
     end
 
+    describe 'parsing instances' do
+      it 'reserves capacity in the resource pool' do
+        job_spec['instances'] = 7
+        expect(resource_pool).to receive(:reserve_capacity).with(1).exactly(7).times
+        parser.parse(job_spec)
+      end
+    end
+
     def make_template(name, rel_ver)
       instance_double(
         'Bosh::Director::DeploymentPlan::Template',
