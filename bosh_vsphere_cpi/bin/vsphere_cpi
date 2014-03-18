@@ -21,7 +21,6 @@ Sequel::TimestampMigrator.new(db, db_migrations_path, {}).run
 
 Bosh::Clouds::Config.configure(OpenStruct.new(
   logger: Logger.new(STDERR),
-  uuid: 'uuid',
   task_checkpoint: nil,
   db: db,
 ))

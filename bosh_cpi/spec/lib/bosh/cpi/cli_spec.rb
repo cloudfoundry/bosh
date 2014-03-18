@@ -15,7 +15,8 @@ describe Bosh::Cpi::Cli do
         subject.run <<-JSON
           {
             "method": "current_vm_id",
-            "arguments": []
+            "arguments": [],
+            "context" : { "director_uuid" : "abc" }
           }
         JSON
 
@@ -35,7 +36,8 @@ describe Bosh::Cpi::Cli do
             "arguments": [
               "fake-stemcell-image-path",
               {"cloud": "props"}
-            ]
+            ],
+            "context" : { "director_uuid" : "abc" }
           }
         JSON
 
@@ -52,7 +54,8 @@ describe Bosh::Cpi::Cli do
         subject.run <<-JSON
           {
             "method": "delete_stemcell",
-            "arguments": ["fake-stemcell-cid"]
+            "arguments": ["fake-stemcell-cid"],
+            "context" : { "director_uuid" : "abc" }
           }
         JSON
 
@@ -83,7 +86,8 @@ describe Bosh::Cpi::Cli do
               {"net": "props"},
               ["fake-disk-cid"],
               {"env": "props"}
-            ]
+            ],
+            "context" : { "director_uuid" : "abc" }
           }
         JSON
 
@@ -100,7 +104,8 @@ describe Bosh::Cpi::Cli do
         subject.run <<-JSON
           {
             "method": "delete_vm",
-            "arguments": ["fake-vm-cid"]
+            "arguments": ["fake-vm-cid"],
+            "context" : { "director_uuid" : "abc" }
           }
         JSON
 
@@ -118,7 +123,8 @@ describe Bosh::Cpi::Cli do
           subject.run <<-JSON
             {
               "method": "has_vm",
-              "arguments": ["fake-vm-cid"]
+              "arguments": ["fake-vm-cid"],
+              "context" : { "director_uuid" : "abc" }
             }
           JSON
 
@@ -136,7 +142,8 @@ describe Bosh::Cpi::Cli do
         subject.run <<-JSON
           {
             "method": "reboot_vm",
-            "arguments": ["fake-vm-cid"]
+            "arguments": ["fake-vm-cid"],
+            "context" : { "director_uuid" : "abc" }
           }
         JSON
 
@@ -156,7 +163,8 @@ describe Bosh::Cpi::Cli do
             "arguments": [
               "fake-vm-cid",
               {"metadata": "hash"}
-            ]
+            ],
+            "context" : { "director_uuid" : "abc" }
           }
         JSON
 
@@ -176,7 +184,8 @@ describe Bosh::Cpi::Cli do
             "arguments": [
               "fake-vm-cid",
               {"net": "props"}
-            ]
+            ],
+            "context" : { "director_uuid" : "abc" }
           }
         JSON
 
@@ -196,7 +205,8 @@ describe Bosh::Cpi::Cli do
             "arguments": [
               100000,
               "fake-vm-cid"
-            ]
+            ],
+            "context" : { "director_uuid" : "abc" }
           }
         JSON
 
@@ -213,7 +223,8 @@ describe Bosh::Cpi::Cli do
         subject.run <<-JSON
           {
             "method": "delete_disk",
-            "arguments": ["fake-disk-cid"]
+            "arguments": ["fake-disk-cid"],
+            "context" : { "director_uuid" : "abc" }
           }
         JSON
 
@@ -230,7 +241,8 @@ describe Bosh::Cpi::Cli do
         subject.run <<-JSON
           {
             "method": "attach_disk",
-            "arguments": ["fake-vm-cid", "fake-disk-cid"]
+            "arguments": ["fake-vm-cid", "fake-disk-cid"],
+            "context" : { "director_uuid" : "abc" }
           }
         JSON
 
@@ -247,7 +259,8 @@ describe Bosh::Cpi::Cli do
         subject.run <<-JSON
           {
             "method": "detach_disk",
-            "arguments": ["fake-vm-cid", "fake-disk-cid"]
+            "arguments": ["fake-vm-cid", "fake-disk-cid"],
+            "context" : { "director_uuid" : "abc" }
           }
         JSON
 
@@ -264,7 +277,8 @@ describe Bosh::Cpi::Cli do
         subject.run <<-JSON
           {
             "method": "snapshot_disk",
-            "arguments": ["fake-disk-cid"]
+            "arguments": ["fake-disk-cid"],
+            "context" : { "director_uuid" : "abc" }
           }
         JSON
 
@@ -281,7 +295,8 @@ describe Bosh::Cpi::Cli do
         subject.run <<-JSON
           {
             "method": "delete_snapshot",
-            "arguments": ["fake-snapshot-cid"]
+            "arguments": ["fake-snapshot-cid"],
+            "context" : { "director_uuid" : "abc" }
           }
         JSON
 
@@ -298,11 +313,21 @@ describe Bosh::Cpi::Cli do
         subject.run <<-JSON
           {
             "method": "get_disks",
-            "arguments": ["fake-vm-cid"]
+            "arguments": ["fake-vm-cid"],
+            "context" : { "director_uuid" : "abc" }
           }
         JSON
 
         expect(result_io.string).to eq('{"result":["fake-disk-cid"],"error":null}')
+      end
+    end
+
+    describe 'configure cloud' do
+      it 'configures cloud with the director uuid' do
+        allow(cpi).to receive(:get_disks)
+        subject.run '{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid" :"abc"}}'
+
+        expect(Bosh::Clouds::Config.uuid).to eq('abc')
       end
     end
 
@@ -346,11 +371,19 @@ describe Bosh::Cpi::Cli do
       end
     end
 
+    context 'when request json context does not include director uuid' do
+      it 'returns invalid_call error' do
+        subject.run('{"method":"create_vm","arguments":[]}')
+        expect(result_io.string).to eq(
+          '{"result":null,"error":{"type":"InvalidCall","message":"Request should include context with director uuid","ok_to_retry":false}}')
+      end
+    end
+
     context 'when request json arguments are not correct arguments for the method' do
       let(:cpi) { Bosh::Cloud.new({}) }
 
       it 'returns invalid_call error' do
-        subject.run('{"method":"create_vm","arguments":["only-one-arg"]}')
+        subject.run('{"method":"create_vm","arguments":["only-one-arg"],"context":{"director_uuid":"abc"}}')
         expect(result_io.string).to eq(
           '{"result":null,"error":{"type":"InvalidCall","message":"Arguments are not correct","ok_to_retry":false}}')
       end
@@ -365,7 +398,7 @@ describe Bosh::Cpi::Cli do
 
       it 'returns error with camelized name of the class to indicate that cpi failed' do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ErrorClass1, 'fake-error-message')
-        subject.run('{"method":"get_disks","arguments":["fake-vm-cid"]}')
+        subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
         expect(result_io.string).to eq(
           '{"result":null,"error":{"type":"ErrorClass1","message":"fake-error-message","ok_to_retry":false}}')
       end
@@ -376,7 +409,7 @@ describe Bosh::Cpi::Cli do
 
       it 'returns error with camelized name of the class to indicate that call to cloud/infrastructure failed' do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ErrorClass2, 'fake-error-message')
-        subject.run('{"method":"get_disks","arguments":["fake-vm-cid"]}')
+        subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
         expect(result_io.string).to eq(
           '{"result":null,"error":{"type":"ErrorClass2","message":"fake-error-message","ok_to_retry":false}}')
       end
@@ -391,7 +424,7 @@ describe Bosh::Cpi::Cli do
         it 'returns error with camelized name of the class to indicate ' +
            'that call to cloud/infrastructure failed and suggesting it should be retried' do
           expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(exception)
-          subject.run('{"method":"get_disks","arguments":["fake-vm-cid"]}')
+          subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
           expect(result_io.string).to eq(
             '{"result":null,"error":{"type":"ErrorClass3","message":"ErrorClass3","ok_to_retry":true}}')
         end
@@ -403,7 +436,7 @@ describe Bosh::Cpi::Cli do
         it 'returns error with camelized name of the class to indicate ' +
            'that call to cloud/infrastructure failed and suggesting it should not be retried' do
           expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(exception)
-          subject.run('{"method":"get_disks","arguments":["fake-vm-cid"]}')
+          subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
           expect(result_io.string).to eq(
             '{"result":null,"error":{"type":"ErrorClass3","message":"ErrorClass3","ok_to_retry":false}}')
         end
@@ -415,7 +448,7 @@ describe Bosh::Cpi::Cli do
 
       it 'returns unknown error' do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ErrorClass4, 'fake-error-message')
-        subject.run('{"method":"get_disks","arguments":["fake-vm-cid"]}')
+        subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
         expect(result_io.string).to eq(
           '{"result":null,"error":{"type":"Unknown","message":"fake-error-message","ok_to_retry":false}}')
       end
@@ -426,7 +459,7 @@ describe Bosh::Cpi::Cli do
 
       it 'returns error with correctly camelized name' do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ERRClass5, 'fake-error-message')
-        subject.run('{"method":"get_disks","arguments":["fake-vm-cid"]}')
+        subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
         expect(result_io.string).to eq(
           '{"result":null,"error":{"type":"ERRClass5","message":"fake-error-message","ok_to_retry":false}}')
       end

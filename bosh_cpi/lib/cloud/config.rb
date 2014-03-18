@@ -5,7 +5,7 @@ module Bosh::Clouds
 
     class << self
       extend Forwardable
-      def_delegators :@delegate, :db, :logger, :uuid, :task_checkpoint
+      def_delegators :@delegate, :db, :logger, :uuid, :uuid=, :task_checkpoint
     end
 
     # @param [Bosh::Director::Config] config director config file

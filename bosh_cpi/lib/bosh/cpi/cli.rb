@@ -54,6 +54,13 @@ class Bosh::Cpi::Cli
       return error_response(INVALID_CALL_ERROR_TYPE, 'Arguments must be an Array', false)
     end
 
+    context = request['context']
+    unless context.is_a?(Hash) && context['director_uuid'].is_a?(String)
+      return error_response(INVALID_CALL_ERROR_TYPE, 'Request should include context with director uuid', false)
+    end
+
+    configure_director(context['director_uuid'])
+
     ruby_method = RPC_METHOD_TO_RUBY_METHOD[method] || method
 
     begin
@@ -72,6 +79,10 @@ class Bosh::Cpi::Cli
   end
 
   private
+
+  def configure_director(director_uuid)
+    Bosh::Clouds::Config.uuid = director_uuid
+  end
 
   def error_response(type, message, ok_to_retry)
     hash = {
