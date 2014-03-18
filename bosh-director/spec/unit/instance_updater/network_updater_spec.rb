@@ -56,16 +56,10 @@ module Bosh::Director
           before { allow(cloud).to receive(:configure_networks).and_return(nil) }
 
           it 'sends prepare_network_change message to the agent and waits until agent is ready' do
-            expect(agent_client).to receive(:prepare_network_change).with(network_settings).ordered
-
-            # Since current implementation of prepare_network_change is to kill the agent
-            # we need to spend some time waiting before asking if agent is back and ready
-            # to make sure that old agent does not respond with i'm ready message.
-            # (Ideally we would not kill the agent)
-            expect(updater).to receive(:sleep).with(5).ordered
-
             expect(agent_client).to receive(:wait_until_ready).with(no_args).ordered
-
+            expect(agent_client).to receive(:prepare_network_change).with(network_settings).ordered
+            expect(updater).to receive(:sleep).with(5).ordered
+            expect(agent_client).to receive(:wait_until_ready).with(no_args).ordered
             updater.update
           end
         end
@@ -75,9 +69,7 @@ module Bosh::Director
 
           it 'asks instance updater to recreate instance vm' do
             expect(instance).to receive(:recreate=).with(true).ordered
-
             expect(resource_pool_updater).to receive(:update_resource_pool).with(no_args).ordered
-
             updater.update
           end
 
