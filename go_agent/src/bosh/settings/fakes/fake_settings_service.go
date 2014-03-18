@@ -36,6 +36,9 @@ type FakeSettingsService struct {
 	FetchInitialError            error
 	SettingsWereFetchedInitially bool
 
+	ForceNextFetchInitialToRefreshError  error
+	SettingsWereForcedToInitiallyRefresh bool
+
 	Settings boshsettings.Settings
 
 	Blobstore boshsettings.Blobstore
@@ -50,6 +53,11 @@ type FakeSettingsService struct {
 func (service *FakeSettingsService) FetchInitial() error {
 	service.SettingsWereFetchedInitially = true
 	return service.FetchInitialError
+}
+
+func (service *FakeSettingsService) ForceNextFetchInitialToRefresh() error {
+	service.SettingsWereForcedToInitiallyRefresh = true
+	return service.ForceNextFetchInitialToRefreshError
 }
 
 func (service *FakeSettingsService) Refresh() error {

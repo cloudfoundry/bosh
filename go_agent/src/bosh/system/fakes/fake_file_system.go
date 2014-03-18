@@ -39,6 +39,8 @@ type FakeFileSystem struct {
 	RenameOldPaths []string
 	RenameNewPaths []string
 
+	RemoveAllError error
+
 	TempFileError  error
 	ReturnTempFile *os.File
 
@@ -281,6 +283,10 @@ func (fs *FakeFileSystem) TempDir(prefix string) (string, error) {
 }
 
 func (fs *FakeFileSystem) RemoveAll(path string) (err error) {
+	if fs.RemoveAllError != nil {
+		return fs.RemoveAllError
+	}
+
 	filesToRemove := []string{}
 
 	for name, _ := range fs.Files {

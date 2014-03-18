@@ -53,6 +53,15 @@ func (service *concreteService) FetchInitial() error {
 	return json.Unmarshal(existingSettingsJson, &service.settings)
 }
 
+func (service *concreteService) ForceNextFetchInitialToRefresh() error {
+	err := service.fs.RemoveAll(service.settingsPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Removing settings file")
+	}
+
+	return nil
+}
+
 func (service *concreteService) Refresh() error {
 	newSettings, err := service.settingsFetcher()
 	if err != nil {

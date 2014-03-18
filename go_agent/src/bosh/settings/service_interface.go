@@ -10,6 +10,8 @@ type ServiceProvider interface {
 
 type Service interface {
 	FetchInitial() error
+	ForceNextFetchInitialToRefresh() error
+
 	Refresh() error
 
 	GetSettings() Settings

@@ -157,6 +157,13 @@ func init() {
 			Expect(NewMountDisk(settings, infrastructure, platform, platform.GetDirProvider())).To(Equal(action))
 		})
 
+		It("new factory prepare network change", func() {
+			action, err := factory.Create("prepare_network_change")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).ToNot(BeNil())
+			Expect(NewPrepareNetworkChange(platform.GetFs(), settings)).To(Equal(action))
+		})
+
 		It("new factory ssh", func() {
 			action, err := factory.Create("ssh")
 			Expect(err).NotTo(HaveOccurred())

@@ -52,7 +52,7 @@ func NewFactory(
 			"migrate_disk": NewMigrateDisk(platform, dirProvider),
 			"mount_disk":   NewMountDisk(settings, infrastructure, platform, dirProvider),
 			"ping":         NewPing(),
-			"prepare_network_change": NewPrepareNetworkChange(platform),
+			"prepare_network_change": NewPrepareNetworkChange(platform.GetFs(), settings),
 			"ssh":                NewSsh(settings, platform, dirProvider),
 			"start":              NewStart(jobSupervisor),
 			"stop":               NewStop(jobSupervisor),

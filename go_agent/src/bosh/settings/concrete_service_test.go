@@ -110,6 +110,29 @@ func init() {
 			})
 		})
 
+		Describe("ForceNextFetchInitialToRefresh", func() {
+			It("removes the settings file", func() {
+				service, fs := buildService(nil)
+
+				fs.WriteFile("/setting/path", []byte(`{}`))
+
+				err := service.ForceNextFetchInitialToRefresh()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(fs.FileExists("/setting/path")).To(BeFalse())
+			})
+
+			It("returns err if removing settings file errored", func() {
+				service, fs := buildService(nil)
+
+				fs.RemoveAllError = errors.New("fs-remove-all-error")
+
+				err := service.ForceNextFetchInitialToRefresh()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fs-remove-all-error"))
+			})
+		})
+
 		Describe("GetSettings", func() {
 			It("returns settings", func() {
 				settings := Settings{AgentId: "some-agent-id"}
