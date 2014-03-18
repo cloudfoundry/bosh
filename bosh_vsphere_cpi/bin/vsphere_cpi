@@ -13,7 +13,7 @@ require 'bosh/cpi/cli'
 
 Sequel.extension(:migration)
 
-director_config = YAML.load_file(ARGV[0])
+director_config = YAML.load_file(ARGV.shift)
 
 db = Sequel.sqlite(director_config['db'])
 db_migrations_path = File.expand_path('../../db/migrations', __FILE__)
@@ -28,4 +28,4 @@ Bosh::Clouds::Config.configure(OpenStruct.new(
 cpi = Bosh::Clouds::VSphere.new(director_config['cloud']['properties'])
 
 cli = Bosh::Cpi::Cli.new(cpi, STDOUT)
-cli.run(ARGV[1])
+cli.run(ARGF.read)

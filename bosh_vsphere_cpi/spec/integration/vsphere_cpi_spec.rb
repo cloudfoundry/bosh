@@ -47,9 +47,11 @@ describe VSphereCloud::Cloud do
   end
 
   def run_vsphere_cpi
-    _, stdout, stderr, exit_status = Open3.popen3(bin_path, @config_path, JSON.dump(json))
-    expect(exit_status.value).to be_success, "Failure running vsphere cpi #{stderr.read}"
+    stdin, stdout, stderr, exit_status = Open3.popen3(bin_path, @config_path)
+    stdin.puts(JSON.dump(json))
+    stdin.close
 
+    expect(exit_status.value).to be_success, "Failure running vsphere cpi #{stderr.read}"
     stdout.read
   end
 
@@ -70,6 +72,4 @@ describe VSphereCloud::Cloud do
       expect(result.first[:filename]).to match(/initial/)
     end
   end
-
-
 end

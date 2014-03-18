@@ -30,9 +30,10 @@ describe VSphereCloud::Cloud do
           "persistent_datastore_pattern" => "jalapeno",
           "allow_mixed_datastores" => true,
           "clusters" => [{
-            "BOSH_CL" => { "resource_pool" => "ACCEPTANCE_RP" },
-          },
-            { "BOSH_CL2" => { "resource_pool" => "ACCEPTANCE_RP" }
+              "BOSH_CL" => { "resource_pool" => "ACCEPTANCE_RP" },
+            },
+            {
+              "BOSH_CL2" => { "resource_pool" => "ACCEPTANCE_RP" }
             }],
         }]
       }]
