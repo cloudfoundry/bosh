@@ -1,9 +1,10 @@
 package drain
 
 import (
+	"path/filepath"
+
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
-	"path/filepath"
 )
 
 type ConcreteDrainScriptProvider struct {

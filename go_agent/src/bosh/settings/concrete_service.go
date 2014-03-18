@@ -2,12 +2,27 @@ package settings
 
 import (
 	"encoding/json"
+	"path/filepath"
 
 	bosherr "bosh/errors"
 	boshsys "bosh/system"
 )
 
-type SettingsFetcher func() (settings Settings, err error)
+type SettingsFetcher func() (Settings, error)
+
+type concreteServiceProvider struct{}
+
+func NewServiceProvider() concreteServiceProvider {
+	return concreteServiceProvider{}
+}
+
+func (provider concreteServiceProvider) NewService(
+	fs boshsys.FileSystem,
+	dir string,
+	fetcher SettingsFetcher,
+) Service {
+	return NewService(fs, filepath.Join(dir, "settings.json"), fetcher)
+}
 
 type concreteService struct {
 	fs              boshsys.FileSystem

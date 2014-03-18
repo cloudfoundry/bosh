@@ -22,6 +22,7 @@ import (
 	boshmbus "bosh/mbus"
 	boshnotif "bosh/notification"
 	boshplatform "bosh/platform"
+	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
 	"path/filepath"
 	"time"
@@ -65,7 +66,9 @@ func (app *app) Setup(args []string) (err error) {
 		return
 	}
 
-	boot := boshboot.New(app.infrastructure, app.platform, dirProvider)
+	settingsServiceProvider := boshsettings.NewServiceProvider()
+
+	boot := boshboot.New(app.infrastructure, app.platform, dirProvider, settingsServiceProvider)
 	settingsService, err := boot.Run()
 	if err != nil {
 		err = bosherr.WrapError(err, "Running bootstrap")

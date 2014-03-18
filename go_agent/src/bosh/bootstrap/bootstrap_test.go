@@ -1,195 +1,198 @@
 package bootstrap_test
 
 import (
+	"errors"
+
 	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/gomega"
 
 	. "bosh/bootstrap"
 	fakeinf "bosh/infrastructure/fakes"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
+	fakesettings "bosh/settings/fakes"
 )
-
-func getBootstrapDependencies() (
-	inf *fakeinf.FakeInfrastructure,
-	platform *fakeplatform.FakePlatform,
-	dirProvider boshdir.DirectoriesProvider,
-) {
-	inf = &fakeinf.FakeInfrastructure{}
-	inf.GetEphemeralDiskPathFound = true
-	inf.GetEphemeralDiskPathRealPath = "/dev/sdz"
-	platform = fakeplatform.NewFakePlatform()
-	dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
-	return
-}
 
 func init() {
 	Describe("bootstrap", func() {
 		Describe("Run", func() {
+			var (
+				inf         *fakeinf.FakeInfrastructure
+				platform    *fakeplatform.FakePlatform
+				dirProvider boshdir.DirectoriesProvider
+
+				settingsServiceProvider *fakesettings.FakeSettingsServiceProvider
+				settingsService         *fakesettings.FakeSettingsService
+			)
+
+			BeforeEach(func() {
+				inf = &fakeinf.FakeInfrastructure{
+					GetEphemeralDiskPathFound:    true,
+					GetEphemeralDiskPathRealPath: "/dev/sdz",
+				}
+				platform = fakeplatform.NewFakePlatform()
+				dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
+
+				settingsServiceProvider = fakesettings.NewServiceProvider()
+				settingsService = settingsServiceProvider.NewServiceSettingsService
+			})
+
+			bootstrap := func() (boshsettings.Service, error) {
+				return New(inf, platform, dirProvider, settingsServiceProvider).Run()
+			}
+
 			It("sets up runtime configuration", func() {
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				boot.Run()
-				assert.True(GinkgoT(), fakePlatform.SetupRuntimeConfigurationWasInvoked)
+				_, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform.SetupRuntimeConfigurationWasInvoked).To(BeTrue())
 			})
 
 			It("sets up ssh", func() {
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				boot.Run()
-				assert.Equal(GinkgoT(), fakeInfrastructure.SetupSshUsername, "vcap")
+				_, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(inf.SetupSshUsername).To(Equal("vcap"))
 			})
 
 			It("sets up hostname", func() {
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				fakeInfrastructure.Settings = boshsettings.Settings{
-					AgentId: "foo-bar-baz-123",
-				}
+				settingsService.Settings.AgentId = "foo-bar-baz-123"
 
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				boot.Run()
-				assert.Equal(GinkgoT(), fakePlatform.SetupHostnameHostname, "foo-bar-baz-123")
+				_, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform.SetupHostnameHostname).To(Equal("foo-bar-baz-123"))
+			})
+
+			It("returns the settings service", func() {
+				settingsService, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(settingsService).To(Equal(settingsService))
+
+				Expect(settingsServiceProvider.NewServiceFs).To(Equal(platform.GetFs()))
+				Expect(settingsServiceProvider.NewServiceDir).To(Equal(dirProvider.BoshDir()))
+
+				fetchedSettings, err := settingsServiceProvider.NewServiceFetcher()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fetchedSettings).To(Equal(inf.Settings))
+			})
+
+			It("fetches initial settings", func() {
+				_, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(settingsService.SettingsWereFetchedInitially).To(BeTrue())
+			})
+
+			It("returns error from fetching initial settings", func() {
+				settingsService.FetchInitialError = errors.New("fake-fetch-initial-error")
+
+				_, err := bootstrap()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-fetch-initial-error"))
 			})
 
 			It("sets up networking", func() {
-				settings := boshsettings.Settings{
-					Networks: boshsettings.Networks{
-						"bosh": boshsettings.Network{},
-					},
+				networks := boshsettings.Networks{
+					"bosh": boshsettings.Network{},
 				}
+				settingsService.Settings.Networks = networks
 
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				fakeInfrastructure.Settings = settings
-
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				boot.Run()
-				assert.Equal(GinkgoT(), fakeInfrastructure.SetupNetworkingNetworks, settings.Networks)
+				_, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(inf.SetupNetworkingNetworks).To(Equal(networks))
 			})
 
 			It("sets up ephemeral disk", func() {
-				settings := boshsettings.Settings{
-					Disks: boshsettings.Disks{
-						Ephemeral: "fake-ephemeral-disk-setting",
-					},
+				settingsService.Disks = boshsettings.Disks{
+					Ephemeral: "fake-ephemeral-disk-setting",
 				}
 
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				fakeInfrastructure.Settings = settings
+				inf.GetEphemeralDiskPathRealPath = "/dev/sda"
+				inf.GetEphemeralDiskPathFound = true
 
-				fakeInfrastructure.GetEphemeralDiskPathRealPath = "/dev/sda"
-				fakeInfrastructure.GetEphemeralDiskPathFound = true
-
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				boot.Run()
-				assert.Equal(GinkgoT(), fakePlatform.SetupEphemeralDiskWithPathDevicePath, "/dev/sda")
-				assert.Equal(GinkgoT(), fakeInfrastructure.GetEphemeralDiskPathDevicePath, "fake-ephemeral-disk-setting")
+				_, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform.SetupEphemeralDiskWithPathDevicePath).To(Equal("/dev/sda"))
+				Expect(inf.GetEphemeralDiskPathDevicePath).To(Equal("fake-ephemeral-disk-setting"))
 			})
 
 			It("sets up tmp dir", func() {
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				boot.Run()
-				assert.True(GinkgoT(), fakePlatform.SetupTmpDirCalled)
+				_, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform.SetupTmpDirCalled).To(BeTrue())
 			})
 
 			It("mounts persistent disk", func() {
-				settings := boshsettings.Settings{
-					Disks: boshsettings.Disks{
-						Persistent: map[string]string{"vol-123": "/dev/sdb"},
-					},
+				settingsService.Disks = boshsettings.Disks{
+					Persistent: map[string]string{"vol-123": "/dev/sdb"},
 				}
 
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				fakeInfrastructure.Settings = settings
-
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				_, err := boot.Run()
-				assert.NoError(GinkgoT(), err)
-				assert.Equal(GinkgoT(), fakeInfrastructure.MountPersistentDiskVolumeId, "/dev/sdb")
-				assert.Equal(GinkgoT(), fakeInfrastructure.MountPersistentDiskMountPoint, dirProvider.StoreDir())
+				_, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(inf.MountPersistentDiskVolumeId).To(Equal("/dev/sdb"))
+				Expect(inf.MountPersistentDiskMountPoint).To(Equal(dirProvider.StoreDir()))
 			})
 
 			It("errors if there is more than one persistent disk", func() {
-				settings := boshsettings.Settings{
-					Disks: boshsettings.Disks{
-						Persistent: map[string]string{
-							"vol-123": "/dev/sdb",
-							"vol-456": "/dev/sdc",
-						},
+				settingsService.Disks = boshsettings.Disks{
+					Persistent: map[string]string{
+						"vol-123": "/dev/sdb",
+						"vol-456": "/dev/sdc",
 					},
 				}
 
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				fakeInfrastructure.Settings = settings
-
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				_, err := boot.Run()
-				assert.Error(GinkgoT(), err)
+				_, err := bootstrap()
+				Expect(err).To(HaveOccurred())
 			})
 
 			It("does not try to mount when no persistent disk", func() {
-				settings := boshsettings.Settings{
-					Disks: boshsettings.Disks{
-						Persistent: map[string]string{},
-					},
+				settingsService.Disks = boshsettings.Disks{
+					Persistent: map[string]string{},
 				}
 
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				fakeInfrastructure.Settings = settings
-
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				_, err := boot.Run()
-				assert.NoError(GinkgoT(), err)
-				assert.Equal(GinkgoT(), fakePlatform.MountPersistentDiskDevicePath, "")
-				assert.Equal(GinkgoT(), fakePlatform.MountPersistentDiskMountPoint, "")
+				_, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform.MountPersistentDiskDevicePath).To(Equal(""))
+				Expect(platform.MountPersistentDiskMountPoint).To(Equal(""))
 			})
 
 			It("sets root and vcap passwords", func() {
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				fakeInfrastructure.Settings.Env.Bosh.Password = "some-encrypted-password"
+				settingsService.Settings.Env.Bosh.Password = "some-encrypted-password"
 
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				boot.Run()
-				assert.Equal(GinkgoT(), 2, len(fakePlatform.UserPasswords))
-				assert.Equal(GinkgoT(), "some-encrypted-password", fakePlatform.UserPasswords["root"])
-				assert.Equal(GinkgoT(), "some-encrypted-password", fakePlatform.UserPasswords["vcap"])
+				_, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(2).To(Equal(len(platform.UserPasswords)))
+				Expect("some-encrypted-password").To(Equal(platform.UserPasswords["root"]))
+				Expect("some-encrypted-password").To(Equal(platform.UserPasswords["vcap"]))
 			})
 
 			It("does not set password if not provided", func() {
-				settings := boshsettings.Settings{}
-
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				fakeInfrastructure.Settings = settings
-
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				boot.Run()
-				assert.Equal(GinkgoT(), 0, len(fakePlatform.UserPasswords))
+				_, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(0).To(Equal(len(platform.UserPasswords)))
 			})
 
-			It("sets time", func() {
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				fakeInfrastructure.Settings.Ntp = []string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"}
+			It("sets ntp", func() {
+				settingsService.Settings.Ntp = []string{
+					"0.north-america.pool.ntp.org",
+					"1.north-america.pool.ntp.org",
+				}
 
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				boot.Run()
-				assert.Equal(GinkgoT(), 2, len(fakePlatform.SetTimeWithNtpServersServers))
-				assert.Equal(GinkgoT(), "0.north-america.pool.ntp.org", fakePlatform.SetTimeWithNtpServersServers[0])
-				assert.Equal(GinkgoT(), "1.north-america.pool.ntp.org", fakePlatform.SetTimeWithNtpServersServers[1])
+				_, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(2).To(Equal(len(platform.SetTimeWithNtpServersServers)))
+				Expect("0.north-america.pool.ntp.org").To(Equal(platform.SetTimeWithNtpServersServers[0]))
+				Expect("1.north-america.pool.ntp.org").To(Equal(platform.SetTimeWithNtpServersServers[1]))
 			})
 
 			It("setups up monit user", func() {
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				boot.Run()
-				assert.True(GinkgoT(), fakePlatform.SetupMonitUserSetup)
+				_, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform.SetupMonitUserSetup).To(BeTrue())
 			})
 
 			It("starts monit", func() {
-				fakeInfrastructure, fakePlatform, dirProvider := getBootstrapDependencies()
-				boot := New(fakeInfrastructure, fakePlatform, dirProvider)
-				boot.Run()
-				assert.True(GinkgoT(), fakePlatform.StartMonitStarted)
+				_, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform.StartMonitStarted).To(BeTrue())
 			})
 		})
 	})

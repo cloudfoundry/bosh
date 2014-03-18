@@ -24,6 +24,17 @@ func buildServiceWithInitialSettings(initialSettings Settings) Service {
 }
 
 func init() {
+	Describe("concreteServiceProvider", func() {
+		Describe("NewService", func() {
+			It("returns service with settings.json as its settings path", func() {
+				// Cannot compare fetcher functions since function comparison is problematic
+				fs := fakesys.NewFakeFileSystem()
+				service := NewServiceProvider().NewService(fs, "/setting/path", nil)
+				Expect(service).To(Equal(NewService(fs, "/setting/path/settings.json", nil)))
+			})
+		})
+	})
+
 	Describe("concreteService", func() {
 		itUpdatesSettingsViaFetcher := func(caller func(Service) error) {
 			fetchedSettings := Settings{AgentId: "some-new-agent-id"}
