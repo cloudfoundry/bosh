@@ -1,17 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-function codename() {
-  if [ -r /etc/lsb-release ]; then
-    source /etc/lsb-release
-    if [ -n "${DISTRIB_CODENAME}" ]; then
-      echo ${DISTRIB_CODENAME}
-      return 0
-    fi
-  else
-    lsb_release -cs
-  fi
-}
-
 function disable {
   if [ -e $1 ]
   then
