@@ -139,4 +139,67 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
       rp.idle_vms.select { |vm| vm.has_network_reservation? }.size.should == 3
     end
   end
+
+  describe '#reserve_errand_capacity' do
+    let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network') }
+    let(:plan) { instance_double('Bosh::Director::DeploymentPlan::Planner') }
+    let(:resource_pool) { make(plan, valid_spec) }
+
+    before { plan.stub(:network).with('test').and_return(network) }
+
+    def assert_capacity_left(n)
+      expect {
+        resource_pool.reserve_capacity(n)
+      }.to_not raise_error
+
+      expect {
+        resource_pool.reserve_capacity(1)
+      }.to raise_error(BD::ResourcePoolNotEnoughCapacity)
+    end
+
+    context 'when the errand capacity has already been reserved' do
+      context 'when the new capacity is greater than the reserved errand capacity' do
+        it 'reserves more capacity' do
+          valid_spec['size'] = 4
+
+          resource_pool.reserve_errand_capacity(1)
+          resource_pool.reserve_errand_capacity(2)
+
+          assert_capacity_left(2)
+        end
+      end
+
+      context 'when the new capacity is less than the reserved errand capacity' do
+        it 'does not reserve more errand capacity' do
+          valid_spec['size'] = 2
+
+          resource_pool.reserve_errand_capacity(2)
+          resource_pool.reserve_errand_capacity(1)
+
+          assert_capacity_left(0)
+        end
+      end
+
+      context 'when the new capacity is equal to the reserved errand capacity' do
+        it 'does not reserve more errand capacity' do
+          valid_spec['size'] = 2
+
+          resource_pool.reserve_errand_capacity(2)
+          resource_pool.reserve_errand_capacity(2)
+
+          assert_capacity_left(0)
+        end
+      end
+    end
+
+    context 'when the errand capacity has not already been reserved' do
+      it 'reserves the errand capacity' do
+        valid_spec['size'] = 4
+
+        resource_pool.reserve_errand_capacity(3)
+
+        assert_capacity_left(1)
+      end
+    end
+  end
 end

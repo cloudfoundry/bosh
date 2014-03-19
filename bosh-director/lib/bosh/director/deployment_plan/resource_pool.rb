@@ -64,6 +64,7 @@ module Bosh::Director
         @allocated_vms = []
         @active_vm_count = 0
         @required_capacity = 0
+        @errand_capacity = 0
       end
 
       # Returns resource pools spec as Hash (usually for agent to serialize)
@@ -136,6 +137,15 @@ module Bosh::Director
           raise ResourcePoolNotEnoughCapacity,
                 "Resource pool `#{@name}' is not big enough: " +
                 "#{@required_capacity} VMs needed, capacity is #{@size}"
+        end
+      end
+
+      def reserve_errand_capacity(n)
+        needed = n - @errand_capacity
+
+        if needed > 0
+          reserve_capacity(needed)
+          @errand_capacity = n
         end
       end
     end
