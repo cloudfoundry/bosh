@@ -108,10 +108,10 @@ module Bosh::Dev::Sandbox
       setup_sandbox_root
 
       @redis_process.start
-      @logger.info('Waiting for redis-server to come up')
+      @logger.info("Waiting for redis-server to come up on port #{redis_port}")
       @redis_socket_connector.try_to_connect
       @nats_process.start
-      @logger.info('Waiting for nats-server to come up')
+      @logger.info("Waiting for nats-server to come up on port #{nats_port}")
       @nats_socket_connector.try_to_connect
 
       @database.create_db
@@ -230,6 +230,7 @@ module Bosh::Dev::Sandbox
 
       # CI does not have enough time to start bosh-director
       # for some parallel tests; increasing to 60 secs (= 300 tries).
+      @logger.info("Waiting for director to come up on port #{director_port}")
       @director_socket_connector.try_to_connect(300)
     end
 

@@ -34,7 +34,7 @@ module Bosh::Dev::Sandbox
         it 'logs name, error and other misc information if error raised' do
           socket_connector.stub(:sleep)
 
-          expect(logger).to receive(:info).at_least(1).with(
+          expect(logger).to receive(:error).at_least(1).with(
             /Failed to connect to fake-name: .*Timeout::Error.*fake-host.*fake-port/)
 
           expect {

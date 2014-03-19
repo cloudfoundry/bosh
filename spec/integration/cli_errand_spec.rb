@@ -8,7 +8,7 @@ describe 'cli: errand', type: :integration do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
 
       # Include other jobs in the deployment
-      manifest_hash['resource_pools'].first['size'] = 4
+      manifest_hash['resource_pools'].first['size'] = 3
       manifest_hash['jobs'].first['instances'] = 1
 
       # First errand
@@ -55,7 +55,6 @@ describe 'cli: errand', type: :integration do
         foobar/0
         unknown/unknown
         unknown/unknown
-        unknown/unknown
       ))
 
       # One 'unknown/unknown' will not show up because
@@ -63,12 +62,12 @@ describe 'cli: errand', type: :integration do
       output, exit_code = run_bosh('run errand errand1-name', return_exit_code: true)
       expect(output).to include('some-errand1-stdout')
       expect(exit_code).to eq(0)
-      expect_to_have_running_job_indices(%w(foobar/0 unknown/unknown unknown/unknown))
+      expect_to_have_running_job_indices(%w(foobar/0 unknown/unknown))
 
       output, exit_code = run_bosh('run errand errand2-name', return_exit_code: true)
       expect(output).to include('some-errand2-stdout')
       expect(exit_code).to eq(0)
-      expect_to_have_running_job_indices(%w(foobar/0 unknown/unknown))
+      expect_to_have_running_job_indices(%w(foobar/0))
     end
   end
 
@@ -206,6 +205,47 @@ describe 'cli: errand', type: :integration do
       expect(@output).to include('Errand `unknown-errand-name\' doesn\'t exist')
       expect(@output).to include('Errand `unknown-errand-name\' did not complete')
       expect(@exit_code).to eq(1)
+    end
+  end
+
+  context 'when deploying with insufficient resources for all errands' do
+    with_reset_sandbox_before_each
+
+    it 'returns 1 as exit code and mentions insufficient resources' do
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+
+      manifest_hash['resource_pools'].first['size'] += 1
+
+      # Errand with sufficient resources
+      manifest_hash['jobs'] << {
+        'name'          => 'errand1-name',
+        'template'      => 'errand1',
+        'lifecycle'     => 'errand',
+        'resource_pool' => 'a',
+        'instances'     => 1,
+        'networks'      => [{ 'name' => 'a' }],
+        'properties' => {},
+      }
+
+      # Errand with insufficient resources
+      manifest_hash['jobs'] << {
+        'name'          => 'errand2-name',
+        'template'      => 'errand1',
+        'lifecycle'     => 'errand',
+        'resource_pool' => 'a',
+        'instances'     => 2,
+        'networks'      => [{ 'name' => 'a' }],
+        'properties' => {},
+      }
+
+      target_and_login
+      upload_release
+      upload_stemcell
+      set_deployment(manifest_hash: manifest_hash)
+
+      output = deploy(failure_expected: true)
+      expect($?).not_to be_success
+      expect(output).to include("Resource pool `a' is not big enough: 5 VMs needed, capacity is 4")
     end
   end
 
