@@ -82,7 +82,7 @@ module Bosh::Dev::Bat
         @bosh_cli_session.run_bosh("micro deployment #{artifacts.micro_bosh_deployment_name}")
 
         @logger.info('Running micro deploy')
-        @bosh_cli_session.run_bosh("micro deploy #{artifacts.bosh_stemcell_path}")
+        @bosh_cli_session.run_bosh("micro deploy #{artifacts.stemcell_path}")
         @bosh_cli_session.run_bosh('login admin admin')
       end
     end
@@ -97,7 +97,7 @@ module Bosh::Dev::Bat
       @env['BAT_DEPLOYMENT_SPEC']  = File.join(artifacts.path, 'bat.yml')
       @env['BAT_DIRECTOR']         = @director_address.hostname
       @env['BAT_DNS_HOST']         = @director_address.ip
-      @env['BAT_STEMCELL']         = artifacts.bat_stemcell_path
+      @env['BAT_STEMCELL']         = artifacts.stemcell_path
       @env['BAT_VCAP_PRIVATE_KEY'] = @env['BOSH_OPENSTACK_PRIVATE_KEY'] || @env['BOSH_KEY_PATH']
       @env['BAT_VCAP_PASSWORD']    = 'c1oudc0w'
       @env['BAT_INFRASTRUCTURE']   = @stemcell_archive.infrastructure

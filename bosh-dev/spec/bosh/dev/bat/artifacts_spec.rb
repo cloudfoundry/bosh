@@ -3,33 +3,21 @@ require 'bosh/dev/bat/artifacts'
 
 module Bosh::Dev::Bat
   describe Artifacts do
-    subject { Artifacts.new(path, build, microbosh_definition, bat_definition) }
+    subject { Artifacts.new(path, build, definition) }
     let(:path) { '/fake/artifacts/path' }
     let(:build) { instance_double('Bosh::Dev::Build') }
-    let(:microbosh_definition) { instance_double('Bosh::Stemcell::Definition') }
-    let(:bat_definition) { instance_double('Bosh::Stemcell::Definition') }
+    let(:definition) { instance_double('Bosh::Stemcell::Definition') }
 
     its(:micro_bosh_deployment_name) { should == 'microbosh' }
     its(:micro_bosh_deployment_dir)  { should eq("#{path}/microbosh") }
 
-    describe '#bosh_stemcell_path' do
+    describe '#stemcell_path' do
       it 'delegates to the build' do
         build
           .should_receive(:bosh_stemcell_path)
-          .with(microbosh_definition, path)
+          .with(definition, path)
           .and_return('bosh-stemcell-path')
-        expect(subject.bosh_stemcell_path).to eq('bosh-stemcell-path')
-      end
-    end
-
-    describe '#bat_stemcell_path' do
-      it 'delegates to the build' do
-        build
-          .should_receive(:bosh_stemcell_path)
-          .with(bat_definition, path)
-          .and_return('bat-stemcell-path')
-
-        expect(subject.bat_stemcell_path).to eq('bat-stemcell-path')
+        expect(subject.stemcell_path).to eq('bosh-stemcell-path')
       end
     end
 
