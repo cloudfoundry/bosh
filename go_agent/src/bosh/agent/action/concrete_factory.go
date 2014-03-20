@@ -43,22 +43,29 @@ func NewFactory(
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
-			"apply":        NewApply(applier, specService),
-			"drain":        NewDrain(notifier, specService, drainScriptProvider),
-			"fetch_logs":   NewLogs(compressor, copier, blobstore, dirProvider),
-			"get_task":     NewGetTask(taskService),
-			"get_state":    NewGetState(settings, specService, jobSupervisor, vitalsService, ntpService),
+			"ping":      NewPing(),
+			"get_task":  NewGetTask(taskService),
+			"get_state": NewGetState(settings, specService, jobSupervisor, vitalsService, ntpService),
+
+			"ssh":        NewSsh(settings, platform, dirProvider),
+			"drain":      NewDrain(notifier, specService, drainScriptProvider),
+			"fetch_logs": NewLogs(compressor, copier, blobstore, dirProvider),
+
+			"apply": NewApply(applier, specService),
+			"start": NewStart(jobSupervisor),
+			"stop":  NewStop(jobSupervisor),
+
+			"compile_package":    NewCompilePackage(compiler),
+			"release_apply_spec": NewReleaseApplySpec(platform),
+
 			"list_disk":    NewListDisk(settings, platform, logger),
 			"migrate_disk": NewMigrateDisk(platform, dirProvider),
 			"mount_disk":   NewMountDisk(settings, infrastructure, platform, dirProvider),
-			"ping":         NewPing(),
-			"prepare_network_change": NewPrepareNetworkChange(platform.GetFs(), settings),
-			"ssh":                NewSsh(settings, platform, dirProvider),
-			"start":              NewStart(jobSupervisor),
-			"stop":               NewStop(jobSupervisor),
-			"unmount_disk":       NewUnmountDisk(settings, platform),
-			"compile_package":    NewCompilePackage(compiler),
-			"release_apply_spec": NewReleaseApplySpec(platform),
+			"unmount_disk": NewUnmountDisk(settings, platform),
+
+			"prepare_network_change":     NewPrepareNetworkChange(platform.GetFs(), settings),
+			"prepare_configure_networks": NewPrepareConfigureNetworks(platform.GetFs(), settings),
+			"configure_networks":         NewConfigureNetworks(),
 		},
 	}
 	return
