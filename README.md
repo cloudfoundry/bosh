@@ -2,11 +2,8 @@
 
 Cloud Foundry BOSH is an open source tool chain for release engineering,
 deployment and lifecycle management of large scale distributed services.
-In this manual we describe the architecture, topology, configuration, and
-use of BOSH, as well as the structure and conventions used in packaging
-and deployment.
 
-* BOSH Documentation: [http://docs.cloudfoundry.com/docs/running/deploying-cf/](http://docs.cloudfoundry.com/docs/running/deploying-cf/)
+Our documentation is available at [docs.cloudfoundry.org/bosh](http://docs.cloudfoundry.org/bosh).
 
 ## Installing BOSH gems
 
@@ -30,23 +27,16 @@ export PATH=$(pwd)/bin:$PATH
 which bosh
 ```
 
-The `bosh` CLI is now in your `$PATH`, including the `bosh micro` plugin, from the git source; rather than any rubygems you have installed.
+The `bosh` CLI is now in your `$PATH`, including the `bosh micro` plugin from the git source, rather than any rubygems you have installed.
 
-# Cloud Foundry Resources
 
-_Cloud Foundry Open Source Platform as a Service_
-
-## Learn
-
-Our documentation, currently a work in progress, is available here:
-[http://docs.cloudfoundry.com/](http://docs.cloudfoundry.com/)
 
 ## Ask Questions
 
 Questions about the Cloud Foundry Open Source Project can be directed to our Google Groups.
 
 * BOSH Developers: [https://groups.google.com/a/cloudfoundry.org/group/bosh-dev/topics](https://groups.google.com/a/cloudfoundry.org/group/bosh-dev/topics)
-* BOSH Users:[https://groups.google.com/a/cloudfoundry.org/group/bosh-users/topics](https://groups.google.com/a/cloudfoundry.org/group/bosh-users/topics)
+* BOSH Users: [https://groups.google.com/a/cloudfoundry.org/group/bosh-users/topics](https://groups.google.com/a/cloudfoundry.org/group/bosh-users/topics)
 * VCAP (Cloud Foundry) Developers: [https://groups.google.com/a/cloudfoundry.org/group/vcap-dev/topics](https://groups.google.com/a/cloudfoundry.org/group/vcap-dev/topics)
 
 ## File a bug
