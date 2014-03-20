@@ -52,7 +52,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		boot.infrastructure.GetSettings,
 	)
 
-	err = settingsService.LoadSettings()
+	err = settingsService.FetchSettings()
 	if err != nil {
 		err = bosherr.WrapError(err, "Fetching settings")
 		return

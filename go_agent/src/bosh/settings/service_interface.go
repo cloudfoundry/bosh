@@ -9,7 +9,6 @@ type ServiceProvider interface {
 }
 
 type Service interface {
-	LoadSettings() error
 	FetchSettings() error
 	GetSettings() Settings
 

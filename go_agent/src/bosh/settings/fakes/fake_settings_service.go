@@ -33,9 +33,6 @@ type FakeSettingsService struct {
 	FetchSettingsError  error
 	SettingsWereFetched bool
 
-	LoadSettingsError  error
-	SettingsWereLoaded bool
-
 	ForceNextLoadToFetchSettingsError   error
 	SettingsWereForcedToFetchOnNextLoad bool
 
@@ -48,11 +45,6 @@ type FakeSettingsService struct {
 	Disks     boshsettings.Disks
 	DefaultIp string
 	Ips       []string
-}
-
-func (service *FakeSettingsService) LoadSettings() error {
-	service.SettingsWereLoaded = true
-	return service.LoadSettingsError
 }
 
 func (service *FakeSettingsService) ForceNextLoadToFetchSettings() error {

@@ -44,15 +44,6 @@ func NewService(
 	}
 }
 
-func (service *concreteService) LoadSettings() error {
-	existingSettingsJson, readError := service.fs.ReadFile(service.settingsPath)
-	if readError != nil {
-		return service.FetchSettings()
-	}
-
-	return json.Unmarshal(existingSettingsJson, &service.settings)
-}
-
 func (service *concreteService) ForceNextLoadToFetchSettings() error {
 	err := service.fs.RemoveAll(service.settingsPath)
 	if err != nil {
@@ -63,14 +54,19 @@ func (service *concreteService) ForceNextLoadToFetchSettings() error {
 }
 
 func (service *concreteService) FetchSettings() error {
-	newSettings, err := service.settingsFetcher()
-	if err != nil {
-		return bosherr.WrapError(err, "Invoking settings fetcher")
+	newSettings, fetchErr := service.settingsFetcher()
+	if fetchErr != nil {
+		existingSettingsJson, readError := service.fs.ReadFile(service.settingsPath)
+		if readError != nil {
+			return bosherr.WrapError(fetchErr, "Invoking settings fetcher")
+		}
+
+		return json.Unmarshal(existingSettingsJson, &service.settings)
 	}
 
 	service.settings = newSettings
 
-	newSettingsJson, _ := json.Marshal(newSettings)
+	newSettingsJson, err := json.Marshal(newSettings)
 	if err != nil {
 		return bosherr.WrapError(err, "Marshalling settings json")
 	}

@@ -36,81 +36,75 @@ func init() {
 	})
 
 	Describe("concreteService", func() {
-		itUpdatesSettingsViaFetcher := func(caller func(Service) error) {
-			fetchedSettings := Settings{AgentId: "some-new-agent-id"}
-			fetcher := func() (Settings, error) { return fetchedSettings, nil }
+		Describe("FetchSettings", func() {
+			Context("when settings fetcher succeeds fetching settings", func() {
+				fetchedSettings := Settings{AgentId: "some-new-agent-id"}
+				fetcher := func() (Settings, error) { return fetchedSettings, nil }
 
-			It("updates the service with settings from the fetcher", func() {
-				service, _ := buildService(fetcher)
+				It("updates the service with settings from the fetcher", func() {
+					service, _ := buildService(fetcher)
 
-				err := caller(service)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(service.GetAgentId()).To(Equal("some-new-agent-id"))
-			})
+					err := service.FetchSettings()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(service.GetAgentId()).To(Equal("some-new-agent-id"))
+				})
 
-			It("returns any error from the fetcher", func() {
-				service, _ := buildService(
-					func() (Settings, error) {
-						return Settings{AgentId: "some-agent-id"}, errors.New("Error fetching settings!")
-					},
-				)
+				It("persists settings to the settings file", func() {
+					service, fs := buildService(fetcher)
 
-				err := caller(service)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Error fetching settings!"))
+					err := service.FetchSettings()
+					Expect(err).NotTo(HaveOccurred())
 
-				Expect(service.GetSettings()).To(Equal(Settings{}))
-			})
+					json, err := json.Marshal(fetchedSettings)
+					Expect(err).NotTo(HaveOccurred())
 
-			It("persists settings to the settings file", func() {
-				service, fs := buildService(fetcher)
+					fileContent, err := fs.ReadFile("/setting/path")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fileContent).To(Equal(json))
+				})
 
-				err := caller(service)
-				Expect(err).NotTo(HaveOccurred())
+				It("returns any error from writing to the setting file", func() {
+					service, fs := buildService(fetcher)
 
-				json, err := json.Marshal(fetchedSettings)
-				Expect(err).NotTo(HaveOccurred())
+					fs.WriteToFileError = errors.New("fs-write-file-error")
 
-				fileContent, err := fs.ReadFile("/setting/path")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(fileContent).To(Equal(json))
-			})
-
-			It("returns any error from writing to the setting file", func() {
-				service, fs := buildService(fetcher)
-
-				fs.WriteToFileError = errors.New("fs-write-file-error")
-
-				err := caller(service)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fs-write-file-error"))
-			})
-		}
-
-		Describe("Refresh", func() {
-			itUpdatesSettingsViaFetcher(func(service Service) error { return service.FetchSettings() })
-		})
-
-		Describe("FetchInitial", func() {
-			Context("when a settings file exists", func() {
-				It("returns settings from the settings file", func() {
-					service, fs := buildService(nil)
-
-					expectedSettings := Settings{AgentId: "some-agent-id"}
-					fs.WriteFile("/setting/path", []byte(`{"agent_id":"some-agent-id"}`))
-
-					err := service.LoadSettings()
-					Expect(err).ToNot(HaveOccurred())
-					Expect(service.GetSettings()).To(Equal(expectedSettings))
+					err := service.FetchSettings()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fs-write-file-error"))
 				})
 			})
 
-			Context("when no settings file exists", func() {
-				itUpdatesSettingsViaFetcher(func(service Service) error { return service.LoadSettings() })
+			Context("when settings fetcher fails fetching settings", func() {
+				fetcher := func() (Settings, error) { return Settings{}, errors.New("fake-fetch-error") }
+
+				Context("when a settings file exists", func() {
+					It("returns settings from the settings file", func() {
+						service, fs := buildService(fetcher)
+
+						expectedSettings := Settings{AgentId: "some-agent-id"}
+						fs.WriteFile("/setting/path", []byte(`{"agent_id":"some-agent-id"}`))
+
+						err := service.FetchSettings()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(service.GetSettings()).To(Equal(expectedSettings))
+					})
+				})
+
+				Context("when no settings file exists", func() {
+					It("returns any error from the fetcher", func() {
+						service, _ := buildService(fetcher)
+
+						err := service.FetchSettings()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-fetch-error"))
+
+						Expect(service.GetSettings()).To(Equal(Settings{}))
+					})
+				})
 			})
 		})
 
-		Describe("ForceNextFetchInitialToRefresh", func() {
+		Describe("ForceNextLoadToFetchSettings", func() {
 			It("removes the settings file", func() {
 				service, fs := buildService(nil)
 
