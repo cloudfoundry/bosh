@@ -212,9 +212,9 @@ module Bosh::Director
 
         before do
           cloud.stub(:configure_networks)
-          agent_client.stub(:prepare_network_change)
+          agent_client.stub(:prepare_configure_networks)
+          agent_client.stub(:configure_networks)
           agent_client.stub(:wait_until_ready)
-          InstanceUpdater::NetworkUpdater.any_instance.stub(:sleep)
           subject.stub(:stop)
           subject.stub(:update_resource_pool)
           subject.stub(:start!)
@@ -226,7 +226,7 @@ module Bosh::Director
         context 'when a vm does not need to be recreated' do
           it 'should prepare network change' do
             cloud.should_receive(:configure_networks)
-            agent_client.should_receive(:prepare_network_change)
+            agent_client.should_receive(:configure_networks)
             agent_client.should_receive(:wait_until_ready)
 
             subject.update
@@ -238,7 +238,7 @@ module Bosh::Director
             let(:persistent_disk_changed) { false }
 
             it 'should recreate vm' do
-              agent_client.should_not_receive(:prepare_network_change)
+              agent_client.should_not_receive(:configure_networks)
               cloud.should_receive(:configure_networks).and_raise(Bosh::Clouds::NotSupported)
               instance.should_receive(:recreate=)
 
@@ -257,7 +257,7 @@ module Bosh::Director
             end
 
             it 'should recreate vm and attach disk' do
-              agent_client.should_not_receive(:prepare_network_change)
+              agent_client.should_not_receive(:configure_networks)
               cloud.should_receive(:configure_networks).and_raise(Bosh::Clouds::NotSupported)
               instance.should_receive(:recreate=)
               job.should_receive(:persistent_disk).exactly(3).times.and_return(1024)

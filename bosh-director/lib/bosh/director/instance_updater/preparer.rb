@@ -8,7 +8,7 @@ module Bosh::Director
     def prepare
       @agent_client.prepare(@instance.spec) unless detached?
     rescue RpcRemoteException => e
-      raise unless e.message =~/unknown message/
+      raise unless e.message =~ /unknown message/
     end
 
     private

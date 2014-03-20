@@ -36,7 +36,7 @@ module Bosh::Director
 
           context 'and agent responds with an error' do
             before { agent_client.stub(:prepare).and_raise(error) }
-            let(:error) { RpcRemoteException.new('something else went wrong') }
+            let(:error) { RpcRemoteException.new('fake-agent-error') }
 
             it 'propagates the error' do
               expect { preparer.prepare }.to raise_error(error)

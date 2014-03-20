@@ -41,7 +41,14 @@ module Bosh::Director
     end
 
     # Define methods on this class to make instance_double more useful
-    [:start, :get_state, :list_disk, :prepare_network_change].each do |message|
+    [
+      :start,
+      :get_state,
+      :list_disk,
+      :prepare_network_change,
+      :prepare_configure_networks,
+      :configure_networks,
+    ].each do |message|
       define_method(message) do |*args|
         send_message(message, *args)
       end
