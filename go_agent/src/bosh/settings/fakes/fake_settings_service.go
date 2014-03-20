@@ -30,11 +30,11 @@ func (provider *FakeSettingsServiceProvider) NewService(
 }
 
 type FakeSettingsService struct {
-	FetchSettingsError  error
-	SettingsWereFetched bool
+	LoadSettingsError  error
+	SettingsWereLoaded bool
 
-	ForceNextLoadToFetchSettingsError   error
-	SettingsWereForcedToFetchOnNextLoad bool
+	InvalidateSettingsError error
+	SettingsWereInvalidated bool
 
 	Settings boshsettings.Settings
 
@@ -47,14 +47,14 @@ type FakeSettingsService struct {
 	Ips       []string
 }
 
-func (service *FakeSettingsService) ForceNextLoadToFetchSettings() error {
-	service.SettingsWereForcedToFetchOnNextLoad = true
-	return service.ForceNextLoadToFetchSettingsError
+func (service *FakeSettingsService) InvalidateSettings() error {
+	service.SettingsWereInvalidated = true
+	return service.InvalidateSettingsError
 }
 
-func (service *FakeSettingsService) FetchSettings() error {
-	service.SettingsWereFetched = true
-	return service.FetchSettingsError
+func (service *FakeSettingsService) LoadSettings() error {
+	service.SettingsWereLoaded = true
+	return service.LoadSettingsError
 }
 
 func (service FakeSettingsService) GetSettings() boshsettings.Settings {

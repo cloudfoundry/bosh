@@ -13,7 +13,6 @@ type LinuxCdrom struct {
 }
 
 func NewLinuxCdrom(devicePath string, udev boshudev.UdevDevice, runner boshsys.CmdRunner) (cdrom LinuxCdrom) {
-
 	cdrom = LinuxCdrom{
 		udev:       udev,
 		devicePath: devicePath,

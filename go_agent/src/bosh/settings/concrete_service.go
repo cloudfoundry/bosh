@@ -44,7 +44,7 @@ func NewService(
 	}
 }
 
-func (service *concreteService) ForceNextLoadToFetchSettings() error {
+func (service *concreteService) InvalidateSettings() error {
 	err := service.fs.RemoveAll(service.settingsPath)
 	if err != nil {
 		return bosherr.WrapError(err, "Removing settings file")
@@ -53,7 +53,7 @@ func (service *concreteService) ForceNextLoadToFetchSettings() error {
 	return nil
 }
 
-func (service *concreteService) FetchSettings() error {
+func (service *concreteService) LoadSettings() error {
 	newSettings, fetchErr := service.settingsFetcher()
 	if fetchErr != nil {
 		existingSettingsJson, readError := service.fs.ReadFile(service.settingsPath)

@@ -19,7 +19,7 @@ func buildService(fetcher SettingsFetcher) (Service, *fakesys.FakeFileSystem) {
 
 func buildServiceWithInitialSettings(initialSettings Settings) Service {
 	service, _ := buildService(func() (Settings, error) { return initialSettings, nil })
-	service.FetchSettings()
+	service.LoadSettings()
 	return service
 }
 
@@ -36,7 +36,7 @@ func init() {
 	})
 
 	Describe("concreteService", func() {
-		Describe("FetchSettings", func() {
+		Describe("LoadSettings", func() {
 			Context("when settings fetcher succeeds fetching settings", func() {
 				fetchedSettings := Settings{AgentId: "some-new-agent-id"}
 				fetcher := func() (Settings, error) { return fetchedSettings, nil }
@@ -44,7 +44,7 @@ func init() {
 				It("updates the service with settings from the fetcher", func() {
 					service, _ := buildService(fetcher)
 
-					err := service.FetchSettings()
+					err := service.LoadSettings()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(service.GetAgentId()).To(Equal("some-new-agent-id"))
 				})
@@ -52,7 +52,7 @@ func init() {
 				It("persists settings to the settings file", func() {
 					service, fs := buildService(fetcher)
 
-					err := service.FetchSettings()
+					err := service.LoadSettings()
 					Expect(err).NotTo(HaveOccurred())
 
 					json, err := json.Marshal(fetchedSettings)
@@ -68,7 +68,7 @@ func init() {
 
 					fs.WriteToFileError = errors.New("fs-write-file-error")
 
-					err := service.FetchSettings()
+					err := service.LoadSettings()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fs-write-file-error"))
 				})
@@ -84,7 +84,7 @@ func init() {
 						expectedSettings := Settings{AgentId: "some-agent-id"}
 						fs.WriteFile("/setting/path", []byte(`{"agent_id":"some-agent-id"}`))
 
-						err := service.FetchSettings()
+						err := service.LoadSettings()
 						Expect(err).ToNot(HaveOccurred())
 						Expect(service.GetSettings()).To(Equal(expectedSettings))
 					})
@@ -94,7 +94,7 @@ func init() {
 					It("returns any error from the fetcher", func() {
 						service, _ := buildService(fetcher)
 
-						err := service.FetchSettings()
+						err := service.LoadSettings()
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(ContainSubstring("fake-fetch-error"))
 
@@ -104,13 +104,13 @@ func init() {
 			})
 		})
 
-		Describe("ForceNextLoadToFetchSettings", func() {
+		Describe("InvalidateSettings", func() {
 			It("removes the settings file", func() {
 				service, fs := buildService(nil)
 
 				fs.WriteFile("/setting/path", []byte(`{}`))
 
-				err := service.ForceNextLoadToFetchSettings()
+				err := service.InvalidateSettings()
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fs.FileExists("/setting/path")).To(BeFalse())
@@ -121,7 +121,7 @@ func init() {
 
 				fs.RemoveAllError = errors.New("fs-remove-all-error")
 
-				err := service.ForceNextLoadToFetchSettings()
+				err := service.InvalidateSettings()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fs-remove-all-error"))
 			})

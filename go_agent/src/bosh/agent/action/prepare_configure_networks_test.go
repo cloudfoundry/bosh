@@ -29,15 +29,15 @@ func init() {
 			Expect(action.IsAsynchronous()).To(BeFalse())
 		})
 
-		It("forces settings to initially refresh", func() {
+		It("invalidates settings so that load settings cannot fall back on old settings", func() {
 			resp, err := action.Run()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp).To(Equal("ok"))
 
-			Expect(settingsService.SettingsWereForcedToFetchOnNextLoad).To(BeTrue())
+			Expect(settingsService.SettingsWereInvalidated).To(BeTrue())
 		})
 
-		Context("when settings are forced to initially refresh successfully", func() {
+		Context("when settings invalidation succeeds", func() {
 			Context("when the network rules file can be removed", func() {
 				It("removes the network rules file", func() {
 					fs.WriteFile("/etc/udev/rules.d/70-persistent-net.rules", []byte{})
@@ -65,15 +65,15 @@ func init() {
 			})
 		})
 
-		Context("when settings failed to be forced to initially refresh", func() {
+		Context("when settings invalidation fails", func() {
 			BeforeEach(func() {
-				settingsService.ForceNextLoadToFetchSettingsError = errors.New("fake-force-fetch-error")
+				settingsService.InvalidateSettingsError = errors.New("fake-invalidate-error")
 			})
 
-			It("returns error early if settings err refreshing", func() {
+			It("returns error early if settings err invalidating", func() {
 				resp, err := action.Run()
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-force-fetch-error"))
+				Expect(err.Error()).To(ContainSubstring("fake-invalidate-error"))
 
 				Expect(resp).To(BeNil())
 			})
