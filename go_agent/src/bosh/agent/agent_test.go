@@ -1,6 +1,12 @@
 package agent_test
 
 import (
+	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+
 	. "bosh/agent"
 	boshalert "bosh/agent/alert"
 	fakealert "bosh/agent/alert/fakes"
@@ -11,21 +17,22 @@ import (
 	fakembus "bosh/mbus/fakes"
 	fakeplatform "bosh/platform/fakes"
 	boshvitals "bosh/platform/vitals"
-	"github.com/stretchr/testify/assert"
-
-	. "github.com/onsi/ginkgo"
-	"time"
 )
 
 type FakeActionDispatcher struct {
+	ResumedPreviouslyDispatchedTasks bool
+
 	DispatchReq  boshhandler.Request
 	DispatchResp boshhandler.Response
 }
 
-func (dispatcher *FakeActionDispatcher) Dispatch(req boshhandler.Request) (resp boshhandler.Response) {
+func (dispatcher *FakeActionDispatcher) ResumePreviouslyDispatchedTasks() {
+	dispatcher.ResumedPreviouslyDispatchedTasks = true
+}
+
+func (dispatcher *FakeActionDispatcher) Dispatch(req boshhandler.Request) boshhandler.Response {
 	dispatcher.DispatchReq = req
-	resp = dispatcher.DispatchResp
-	return
+	return dispatcher.DispatchResp
 }
 
 type agentDeps struct {
@@ -51,13 +58,12 @@ func buildAgent() (deps agentDeps, agent Agent) {
 	return
 }
 func init() {
-	Describe("Testing with Ginkgo", func() {
+	Describe("Agent", func() {
 		It("run sets the dispatcher as message handler", func() {
 			deps, agent := buildAgent()
 			deps.actionDispatcher.DispatchResp = boshhandler.NewValueResponse("pong")
 
 			err := agent.Run()
-
 			assert.NoError(GinkgoT(), err)
 			assert.True(GinkgoT(), deps.handler.ReceivedRun)
 
@@ -67,8 +73,21 @@ func init() {
 			assert.Equal(GinkgoT(), deps.actionDispatcher.DispatchReq, req)
 			assert.Equal(GinkgoT(), resp, deps.actionDispatcher.DispatchResp)
 		})
-		It("run sets up heartbeats", func() {
 
+		It("resumes persistent actions *before* dispatching new requests", func() {
+			deps, agent := buildAgent()
+			resumedBefore := false
+			deps.handler.RunFunc = func() {
+				resumedBefore = deps.actionDispatcher.ResumedPreviouslyDispatchedTasks
+			}
+
+			err := agent.Run()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(resumedBefore).To(BeTrue())
+		})
+
+		It("run sets up heartbeats", func() {
 			deps, agent := buildAgent()
 			deps.platform.FakeVitalsService.GetVitals = boshvitals.Vitals{
 				Load: []string{"a", "b", "c"},
@@ -86,8 +105,8 @@ func init() {
 			hb := deps.handler.SendToHealthManagerPayload.(boshmbus.Heartbeat)
 			assert.Equal(GinkgoT(), deps.platform.FakeVitalsService.GetVitals, hb.Vitals)
 		})
-		It("run sets the callback for job failures monitoring", func() {
 
+		It("run sets the callback for job failures monitoring", func() {
 			deps, agent := buildAgent()
 
 			builtAlert := boshalert.Alert{Id: "some built alert id"}

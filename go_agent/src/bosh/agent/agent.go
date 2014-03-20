@@ -1,6 +1,8 @@
 package agent
 
 import (
+	"time"
+
 	boshalert "bosh/agent/alert"
 	bosherr "bosh/errors"
 	boshhandler "bosh/handler"
@@ -8,7 +10,6 @@ import (
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
-	"time"
 )
 
 type Agent struct {
@@ -21,7 +22,8 @@ type Agent struct {
 	jobSupervisor     boshjobsup.JobSupervisor
 }
 
-func New(logger boshlog.Logger,
+func New(
+	logger boshlog.Logger,
 	mbusHandler boshhandler.Handler,
 	platform boshplatform.Platform,
 	actionDispatcher ActionDispatcher,
@@ -29,7 +31,6 @@ func New(logger boshlog.Logger,
 	jobSupervisor boshjobsup.JobSupervisor,
 	heartbeatInterval time.Duration,
 ) (a Agent) {
-
 	a.logger = logger
 	a.mbusHandler = mbusHandler
 	a.platform = platform
@@ -48,6 +49,8 @@ func (a Agent) Run() (err error) {
 	}
 
 	errChan := make(chan error, 1)
+
+	a.actionDispatcher.ResumePreviouslyDispatchedTasks()
 
 	go a.subscribeActionDispatcher(errChan)
 	go a.generateHeartbeats(errChan)

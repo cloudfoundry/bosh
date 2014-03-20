@@ -1,6 +1,9 @@
 package app
 
 import (
+	"path/filepath"
+	"time"
+
 	boshagent "bosh/agent"
 	boshaction "bosh/agent/action"
 	boshalert "bosh/agent/alert"
@@ -24,8 +27,7 @@ import (
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
-	"path/filepath"
-	"time"
+	boshuuid "bosh/uuid"
 )
 
 type app struct {
@@ -136,9 +138,17 @@ func (app *app) Setup(args []string) (err error) {
 		packagesBc,
 	)
 
-	taskService := boshtask.NewAsyncTaskService(app.logger)
+	uuidGen := boshuuid.NewGenerator()
 
-	specFilePath := filepath.Join(dirProvider.BaseDir(), "bosh", "spec.json")
+	taskService := boshtask.NewAsyncTaskService(uuidGen, app.logger)
+
+	taskManager := boshtask.NewManagerProvider().NewManager(
+		app.logger,
+		app.platform.GetFs(),
+		dirProvider.BoshDir(),
+	)
+
+	specFilePath := filepath.Join(dirProvider.BoshDir(), "spec.json")
 	specService := boshas.NewConcreteV1Service(app.platform.GetFs(), specFilePath)
 	drainScriptProvider := boshdrain.NewConcreteDrainScriptProvider(app.platform.GetRunner(), app.platform.GetFs(), dirProvider)
 
@@ -157,7 +167,7 @@ func (app *app) Setup(args []string) (err error) {
 		app.logger,
 	)
 	actionRunner := boshaction.NewRunner()
-	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, actionFactory, actionRunner)
+	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, taskManager, actionFactory, actionRunner)
 	alertBuilder := boshalert.NewBuilder(settingsService, app.logger)
 
 	app.agent = boshagent.New(app.logger, mbusHandler, app.platform, actionDispatcher, alertBuilder, jobSupervisor, time.Minute)

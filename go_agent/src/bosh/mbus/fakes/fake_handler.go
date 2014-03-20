@@ -9,6 +9,8 @@ type FakeHandler struct {
 	AgentSubscribed bool
 	Func            boshhandler.HandlerFunc
 
+	RunFunc func()
+
 	SendToHealthManagerErr     error
 	SendToHealthManagerTopic   string
 	SendToHealthManagerPayload interface{}
@@ -24,6 +26,10 @@ func NewFakeHandler() *FakeHandler {
 func (h *FakeHandler) Run(handlerFunc boshhandler.HandlerFunc) (err error) {
 	h.ReceivedRun = true
 	h.Func = handlerFunc
+
+	if h.RunFunc != nil {
+		h.RunFunc()
+	}
 	return
 }
 

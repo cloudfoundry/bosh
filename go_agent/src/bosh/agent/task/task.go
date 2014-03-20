@@ -2,6 +2,8 @@ package task
 
 type TaskFunc func() (value interface{}, err error)
 
+type TaskEndFunc func(task Task)
+
 type TaskState string
 
 const (
@@ -11,11 +13,13 @@ const (
 )
 
 type Task struct {
-	taskFunc TaskFunc
-	Id       string
-	State    TaskState
-	Value    interface{}
-	Error    error
+	Id    string
+	State TaskState
+	Value interface{}
+	Error error
+
+	TaskFunc    TaskFunc
+	TaskEndFunc TaskEndFunc
 }
 
 type TaskStateValue struct {
