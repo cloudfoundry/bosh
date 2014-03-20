@@ -44,6 +44,7 @@ Vagrant.configure('2') do |config|
       git --git-dir=/bosh/.git --work-tree=/bosh checkout /bosh
       (cd /bosh && git submodule update --init --recursive)
       chown -R ubuntu:ubuntu /bosh
+      (cd /bosh && bundle install --local)
     BASH
   end
 
