@@ -8,9 +8,16 @@ module Bosh::Director
 
     def self.with_defaults(id, options = {})
       defaults = {
-        retry_methods: { # in case of timeout errors
-                         get_state: 2,
-                         get_task: 2,
+        retry_methods: {
+          # in case of timeout errors
+          get_state: 2,
+
+          # get_task should retry at least once because some long running tasks
+          # (e.g. configure_networks) will restart the agent (current implementation)
+          # which most likely will result in first get_task message being lost
+          # because agent was not listening on NATS and second retry message
+          # will probably be received because agent came back up.
+          get_task: 2,
         }
       }
 
@@ -47,7 +54,6 @@ module Bosh::Director
       :list_disk,
       :prepare_network_change,
       :prepare_configure_networks,
-      :configure_networks,
     ].each do |message|
       define_method(message) do |*args|
         send_message(message, *args)
@@ -92,6 +98,10 @@ module Bosh::Director
 
     def run_errand(*args)
       send_long_running_message(:run_errand, *args)
+    end
+
+    def configure_networks(*args)
+      send_long_running_message(:configure_networks, *args)
     end
 
     def wait_until_ready(deadline = 600)

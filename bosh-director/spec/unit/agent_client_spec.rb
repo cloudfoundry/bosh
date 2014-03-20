@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe AgentClient do
-    shared_examples_for 'a long running message' do |message_name|
+    def self.it_acts_as_a_long_running_message(message_name)
       describe "##{message_name}" do
         let(:task) do
           {
@@ -28,20 +28,17 @@ module Bosh::Director
 
         it 'decorates the original send_message implementation' do
           client.public_send(message_name, 'fake', 'args')
-
           expect(client).to have_received(:send_message).with(message_name, 'fake', 'args')
         end
 
         it 'periodically polls the task while it is running' do
           client.public_send(message_name, 'fake', 'args')
-
           expect(client).to have_received(:get_task).with('fake-agent_task_id')
         end
 
         it 'stops polling once the task is no longer running' do
           task['state'] = 'something other than running'
           client.public_send(message_name, 'fake', 'args')
-
           expect(client).not_to have_received(:get_task)
         end
 
@@ -52,30 +49,27 @@ module Bosh::Director
     end
 
     describe 'long running messages' do
-      let(:vm) do
-        instance_double('Bosh::Director::Models::Vm', credentials: nil)
-      end
+      subject(:client) { AgentClient.with_defaults('fake-agent_id') }
 
-      subject(:client) do
-        AgentClient.with_defaults('fake-agent_id')
-      end
+      before { Models::Vm.stub(:find).with(agent_id: 'fake-agent_id').and_return(vm) }
+      let(:vm) { instance_double('Bosh::Director::Models::Vm', credentials: nil) }
 
       before do
-        Models::Vm.stub(:find).with(agent_id: 'fake-agent_id').and_return(vm)
         Config.stub(:nats_rpc)
         Api::ResourceManager.stub(:new)
       end
 
-      include_examples 'a long running message', :prepare
-      include_examples 'a long running message', :apply
-      include_examples 'a long running message', :compile_package
-      include_examples 'a long running message', :drain
-      include_examples 'a long running message', :fetch_logs
-      include_examples 'a long running message', :migrate_disk
-      include_examples 'a long running message', :mount_disk
-      include_examples 'a long running message', :unmount_disk
-      include_examples 'a long running message', :stop
-      include_examples 'a long running message', :run_errand
+      it_acts_as_a_long_running_message :prepare
+      it_acts_as_a_long_running_message :apply
+      it_acts_as_a_long_running_message :compile_package
+      it_acts_as_a_long_running_message :drain
+      it_acts_as_a_long_running_message :fetch_logs
+      it_acts_as_a_long_running_message :migrate_disk
+      it_acts_as_a_long_running_message :mount_disk
+      it_acts_as_a_long_running_message :unmount_disk
+      it_acts_as_a_long_running_message :stop
+      it_acts_as_a_long_running_message :run_errand
+      it_acts_as_a_long_running_message :configure_networks
     end
 
     describe 'ping <=> pong' do
@@ -271,7 +265,6 @@ module Bosh::Director
         end
       end
     end
-
 
     describe 'encryption' do
       it 'should encrypt message' do
