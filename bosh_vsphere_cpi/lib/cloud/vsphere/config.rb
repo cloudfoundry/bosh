@@ -15,6 +15,7 @@ module VSphereCloud
       @vcenter_password = nil
       @rest_client = nil
       @default_overcommit_ratio = 1.0
+      @default_vm_agent_start_wait_time_sec = 120
 
       @is_validated = false
     end
@@ -122,6 +123,14 @@ module VSphereCloud
       !!vcenter_datacenter['allow_mixed_datastores']
     end
 
+    def datacenter_srm
+      !!vcenter_datacenter['srm']
+    end
+
+    def vm_agent_start_wait_time
+      vcenter_datacenter.fetch('vm_agent_start_wait_time_sec', @default_vm_agent_start_wait_time_sec)
+    end
+
     def datacenter_use_sub_folder
       datacenter_clusters.any? { |_, cluster| cluster.resource_pool } ||
         !!vcenter_datacenter['use_sub_folder']
@@ -165,6 +174,8 @@ module VSphereCloud
                                                'datastore_pattern' => String,
                                                'persistent_datastore_pattern' => String,
                                                optional('allow_mixed_datastores') => bool,
+                                               optional('srm') => bool,
+                                               optional('vm_agent_start_wait_time_sec') => Numeric,
                                                'clusters' => [enum(String,
                                                                    dict(String, { 'resource_pool' => String }))]
                                              }]

@@ -248,6 +248,8 @@ cloud:
             datastore_pattern: <%= dc['datastore_pattern'] %>
             persistent_datastore_pattern: <%= dc['persistent_datastore_pattern'] %>
             allow_mixed_datastores: <%= dc.fetch('allow_mixed_datastores', true) %>
+            srm: <%= dc.fetch('srm', false) %>
+            vm_agent_start_wait_time_sec: <%= dc.fetch('vm_agent_start_wait_time_sec', 120) %>
             clusters:
               <% dc['clusters'].each do |cluster| %>
                 <% case cluster

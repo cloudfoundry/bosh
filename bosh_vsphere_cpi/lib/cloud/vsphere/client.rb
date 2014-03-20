@@ -171,11 +171,6 @@ module VSphereCloud
       wait_for_task(task)
     end
 
-    def delete_path(datacenter, path)
-      task = @service_content.file_manager.delete_file(path, datacenter)
-      wait_for_task(task)
-    end
-
     def delete_disk(datacenter, path)
       tasks = []
       [".vmdk", "-flat.vmdk"].each do |extension|

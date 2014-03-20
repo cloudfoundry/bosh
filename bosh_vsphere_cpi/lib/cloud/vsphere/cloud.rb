@@ -242,7 +242,7 @@ module VSphereCloud
           datastore = get_primary_datastore(devices)
           datastore_name = client.get_property(datastore, Vim::Datastore, 'name')
           vm_name = properties['name']
-          client.delete_path(datacenter, "[#{datastore_name}] #{vm_name}")
+          delete_path(datacenter, datastore_name, vm_name)
         end
       end
     end
@@ -412,6 +412,12 @@ module VSphereCloud
         raise "Disk not found: #{disk_cid}" if disk.nil?
 
         vm = get_vm_by_cid(vm_cid)
+        power_state = client.get_property(vm, Vim::VirtualMachine, 'runtime.powerState')
+        # Power off/on VM to refresh VM property
+        if @config.datacenter_srm && power_state != Vim::VirtualMachine::PowerState::POWERED_OFF
+          @logger.info("Powering off vm: #{vm_cid}")
+          client.power_off_vm(vm)
+        end
 
         datacenter = client.find_parent(vm, Vim::Datacenter)
         datacenter_name = client.get_property(datacenter, Vim::Datacenter, 'name')
@@ -495,6 +501,13 @@ module VSphereCloud
         set_agent_env(vm, location, env)
         @logger.info('Attaching disk')
         client.reconfig_vm(vm, config)
+
+        if @config.datacenter_srm && power_state == Vim::VirtualMachine::PowerState::POWERED_ON
+          @logger.info("Powering on vm: #{vm_cid}")
+          client.power_on_vm(datacenter, vm)
+          sleep(@config.vm_agent_start_wait_time) # wait for agent to start
+        end
+
         @logger.info('Finished attaching disk')
       end
     end
@@ -506,6 +519,12 @@ module VSphereCloud
         raise "Disk not found: #{disk_cid}" if disk.nil?
 
         vm = get_vm_by_cid(vm_cid)
+        power_state = client.get_property(vm, Vim::VirtualMachine, 'runtime.powerState')
+        # Power off/on VM to refresh VM property
+        if @config.datacenter_srm && power_state != Vim::VirtualMachine::PowerState::POWERED_OFF
+          @logger.info("Powering off vm: #{vm_cid}")
+          client.power_off_vm(vm)
+        end
 
         devices = client.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
 
@@ -545,6 +564,12 @@ module VSphereCloud
         end
         raise "Failed to detach disk: #{disk_cid} from vm: #{vm_cid}" unless virtual_disk.nil?
 
+        if @config.datacenter_srm && power_state == Vim::VirtualMachine::PowerState::POWERED_ON
+          @logger.info("Powering on vm: #{vm_cid}")
+          datacenter = client.find_parent(vm, Vim::Datacenter)
+          client.power_on_vm(datacenter, vm)
+          sleep(@config.vm_agent_start_wait_time) # wait for agent to start
+        end
         @logger.info('Finished detaching disk')
       end
     end
@@ -746,11 +771,25 @@ module VSphereCloud
 
     def set_agent_env(vm, location, env)
       env_json = JSON.dump(env)
-
-      connect_cdrom(vm, false)
+      if config.datacenter_srm
+        set_vm_settings_property(vm, env_json)
+      else
+        set_cdrom_content(vm, location, env_json)
+      end
       upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.json", env_json)
-      upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.iso", generate_env_iso(env_json))
-      connect_cdrom(vm, true)
+    end
+
+    def configure_vm_cdrom(cluster, datastore, name, vm, devices)
+      return if config.datacenter_srm
+
+      # Configure the ENV CDROM
+      upload_file(cluster.datacenter.name, datastore.name, "#{name}/env.iso", '')
+      config = Vim::Vm::ConfigSpec.new
+      config.device_change = []
+      file_name = "[#{datastore.name}] #{name}/env.iso"
+      cdrom_change = configure_env_cdrom(datastore.mob, devices, file_name)
+      config.device_change << cdrom_change
+      client.reconfig_vm(vm, config)
     end
 
     def connect_cdrom(vm, connected = true)
@@ -1063,6 +1102,70 @@ module VSphereCloud
       datacenter.clusters[cluster_spec.keys.first]
     end
 
+    def delete_path(datacenter, datastore_name, path)
+      datacenter_name = client.get_property(datacenter, Vim::Datacenter, 'name')
+      file_path = "[#{datastore_name}] #{path}"
+      if fetch_file(datacenter_name, datastore_name, "#{path}").nil?
+        @logger.info("Path #{file_path} does not exist. Skip deletion.")
+        return
+      end
+
+      @logger.info("Deleting #{file_path}")
+      task = client.service_content.file_manager.delete_file(file_path, datacenter)
+      client.wait_for_task(task)
+    end
+
+    def set_cdrom_content(vm, location, env_json)
+      @logger.info('Setting env from cdrom')
+      connect_cdrom(vm, false)
+      upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.iso", generate_env_iso(env_json))
+      connect_cdrom(vm, true)
+    end
+
+    def set_vm_settings_property(vm, env_json)
+      @logger.info("Setting VM property with key #{VM_SETTINGS_ID} and value #{env_json}")
+      fail 'env_json string exceeds 64 KB' if env_json.bytesize > 64 * 1024
+
+      vm_property = vm.config.v_app_config.property
+      settings_property = vm_property.find { |p| p.id == VM_SETTINGS_ID }
+      settings_property_key, operation = settings_key_and_operation(settings_property, vm_property)
+
+      settings_property_spec = Vim::VApp::PropertySpec.new.tap do |spec|
+        spec.operation = operation
+        spec.info = Vim::VApp::PropertyInfo.new.tap do |p|
+          p.id = VM_SETTINGS_ID
+          p.key = settings_property_key
+          p.label = 'AGENT ENV SETTINGS'
+          p.value = env_json
+        end
+      end
+      property_specs = [settings_property_spec]
+
+      vm_config_spec = Vim::VApp::VmConfigSpec.new
+      vm_config_spec.property = property_specs
+      vm_config_spec.ovf_environment_transport = ['com.vmware.guestInfo']
+
+      config = Vim::Vm::ConfigSpec.new
+      config.v_app_config = vm_config_spec
+
+      client.reconfig_vm(vm, config)
+    end
+
+    def settings_key_and_operation(settings_property, vm_property)
+      if settings_property.nil?
+        keys = vm_property.map { |p| p.key }
+        settings_property_key = keys.empty? ? 0 : keys.max + 1
+        operation = 'add'
+      else
+        settings_property_key = settings_property.key
+        operation = 'edit'
+      end
+
+      [settings_property_key, operation]
+    end
+
     attr_reader :config
+
+    VM_SETTINGS_ID = 'agent_env_settings'
   end
 end

@@ -312,6 +312,46 @@ module VSphereCloud
       end
     end
 
+    describe '#datacenter_srm' do
+      context 'when srm is not set' do
+        it 'returns false' do
+          expect(config.datacenter_srm).to be(false)
+        end
+      end
+
+      context 'when srm is falsey' do
+        before { datacenters.first['srm'] = false }
+
+        it 'returns false' do
+          expect(config.datacenter_srm).to be(false)
+        end
+      end
+
+      context 'when srm is truthy' do
+        before { datacenters.first['srm'] = true }
+
+        it 'returns true' do
+          expect(config.datacenter_srm).to be(true)
+        end
+      end
+    end
+
+    describe '#vm_agent_start_wait_time' do
+      context 'when vm_agent_start_wait_time_sec is not set' do
+        it 'returns 120' do
+          expect(config.vm_agent_start_wait_time).to be(120)
+        end
+      end
+
+      context 'when vm_agent_start_wait_time_sec is set' do
+        before { datacenters.first['vm_agent_start_wait_time_sec'] = 60 }
+
+        it 'returns value being set' do
+          expect(config.vm_agent_start_wait_time).to be(60)
+        end
+      end
+    end
+
     describe '#datacenter_clusters' do
 
       context 'when there is more than one cluster' do
