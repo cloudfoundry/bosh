@@ -21,10 +21,12 @@ module Bosh::Core
       stdout.puts command if options[:output_command]
       lines = []
 
-      IO.popen(command).each do |line|
+      io = IO.popen(command)
+      io.each do |line|
         stdout.puts line.chomp
         lines << line.chomp
-      end.close
+      end
+      io.close
 
       lines
     end
