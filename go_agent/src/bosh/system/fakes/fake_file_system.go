@@ -25,6 +25,7 @@ type FakeFileSystem struct {
 
 	FilesToOpen map[string]*os.File
 
+	ReadFileError    error
 	WriteToFileError error
 	MkdirAllError    error
 	SymlinkError     error
@@ -144,14 +145,17 @@ func (fs *FakeFileSystem) ReadFileString(path string) (content string, err error
 	return
 }
 
-func (fs *FakeFileSystem) ReadFile(path string) (content []byte, err error) {
+func (fs *FakeFileSystem) ReadFile(path string) ([]byte, error) {
 	stats := fs.GetFileTestStat(path)
 	if stats != nil {
-		content = stats.Content
+		if fs.ReadFileError != nil {
+			return nil, fs.ReadFileError
+		} else {
+			return stats.Content, nil
+		}
 	} else {
-		err = errors.New("File not found")
+		return nil, errors.New("File not found")
 	}
-	return
 }
 
 func (fs *FakeFileSystem) FileExists(path string) bool {
