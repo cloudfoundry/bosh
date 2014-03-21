@@ -21,7 +21,8 @@ func MatchesJsonBytes(t assert.TestingT, object interface{}, expectedJson []byte
 	objectBytes, err := json.Marshal(object)
 	assert.NoError(t, err)
 
-	assert.Equal(t, expectedJson, objectBytes)
+	// Use strings instead of []byte for reasonable error message
+	assert.Equal(t, string(expectedJson), string(objectBytes))
 }
 
 func LacksJsonKey(t assert.TestingT, object interface{}, key string) {
