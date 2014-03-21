@@ -58,7 +58,6 @@ module Bosh::Dev
               bash -l -c '
                 set -eu
                 cd /bosh
-                bundle install --local
 
                 export CANDIDATE_BUILD_NUMBER='fake-CANDIDATE_BUILD_NUMBER'
                 export BOSH_AWS_ACCESS_KEY_ID='fake-BOSH_AWS_ACCESS_KEY_ID'

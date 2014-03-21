@@ -24,7 +24,6 @@ module Bosh::Dev
           bash -l -c '
             set -eu
             cd /bosh
-            bundle install --local
 
             #{exports.join("\n            ")}
 
