@@ -6,6 +6,9 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
 
+# Networking is failing after debootstrap stage due to invalid nameserver
+run_in_chroot $chroot "echo nameserver 8.8.8.8 > /etc/resolv.conf"
+
 mkdir -p $chroot/$bosh_dir/src
 
 # Libyaml

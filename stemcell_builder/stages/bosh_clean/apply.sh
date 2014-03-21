@@ -10,3 +10,6 @@ source $base_dir/lib/prelude_bosh.bash
 rm -vrf $chroot/$bosh_dir/src
 
 rm -vrf $chroot/tmp/*
+
+rm $chroot/etc/resolv.conf
+touch $chroot/etc/resolv.conf
