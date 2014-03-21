@@ -19,6 +19,7 @@ module Bosh::Stemcell
         stage_config_script = File.join(build_path, 'stages', stage.to_s, 'config.sh')
 
         puts "=== Configuring '#{stage}' stage ==="
+        puts "== Started #{Time.now.strftime('%a %b %e %H:%M:%S %Z %Y')} =="
         if File.exists?(stage_config_script) && File.executable?(stage_config_script)
           run_sudo_with_command_env("#{stage_config_script} #{settings_file}")
         end
@@ -45,7 +46,7 @@ module Bosh::Stemcell
     def run_sudo_with_command_env(command)
       shell = Bosh::Core::Shell.new
 
-      shell.run("sudo #{command_env} #{command} 2>&1")
+      shell.run("sudo #{command_env} #{command} 2>&1", output_command: true)
     end
   end
 end

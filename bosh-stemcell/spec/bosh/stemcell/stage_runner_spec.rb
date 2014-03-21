@@ -69,16 +69,20 @@ module Bosh::Stemcell
 
       it 'prints the expected messages' do
         stage_runner.should_receive(:puts).with("=== Configuring 'stage_0' stage ===")
+        stage_runner.should_receive(:puts).with("== Started #{Time.now.strftime('%a %b %e %H:%M:%S %Z %Y')} ==")
         stage_runner.should_receive(:puts).with("=== Configuring 'stage_1' stage ===")
+        stage_runner.should_receive(:puts).with("== Started #{Time.now.strftime('%a %b %e %H:%M:%S %Z %Y')} ==")
 
         stage_runner.configure(stages)
       end
 
       it 'runs the configure script for each stage in order' do
         shell.should_receive(:run).
-          with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_0/config.sh /fake/path/to/settings.bash 2>&1')
+          with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_0/config.sh /fake/path/to/settings.bash 2>&1',
+               { output_command: true })
         shell.should_receive(:run).
-          with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/config.sh /fake/path/to/settings.bash 2>&1')
+          with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/config.sh /fake/path/to/settings.bash 2>&1',
+               { output_command: true })
 
         stage_runner.configure(stages)
       end
@@ -90,9 +94,11 @@ module Bosh::Stemcell
 
         it 'does not attempt to run the configure step which is missing a config.sh' do
           shell.should_not_receive(:run).
-            with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_0/config.sh /fake/path/to/settings.bash 2>&1')
+            with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_0/config.sh /fake/path/to/settings.bash 2>&1',
+                 { output_command: true })
           shell.should_receive(:run).
-            with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/config.sh /fake/path/to/settings.bash 2>&1')
+            with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/config.sh /fake/path/to/settings.bash 2>&1',
+                 { output_command: true })
 
           stage_runner.configure(stages)
         end
@@ -105,9 +111,11 @@ module Bosh::Stemcell
 
         it 'does not attempt to run the configure step which has a non-executable config.sh' do
           shell.should_receive(:run).
-            with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_0/config.sh /fake/path/to/settings.bash 2>&1')
+            with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_0/config.sh /fake/path/to/settings.bash 2>&1',
+                 { output_command: true })
           shell.should_not_receive(:run).
-            with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/config.sh /fake/path/to/settings.bash 2>&1')
+            with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/config.sh /fake/path/to/settings.bash 2>&1',
+                 { output_command: true })
 
           stage_runner.configure(stages)
         end
@@ -130,9 +138,11 @@ module Bosh::Stemcell
         FileUtils.should_receive(:mkdir_p).with(work_path).exactly(2).times
 
         shell.should_receive(:run).
-          with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_0/apply.sh /fake/path/to/work_dir/work 2>&1')
+          with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_0/apply.sh /fake/path/to/work_dir/work 2>&1',
+               { output_command: true })
         shell.should_receive(:run).
-          with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/apply.sh /fake/path/to/work_dir/work 2>&1')
+          with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/apply.sh /fake/path/to/work_dir/work 2>&1',
+               { output_command: true })
 
         stage_runner.apply(stages)
       end
