@@ -1,10 +1,12 @@
 package action_test
 
 import (
-	. "bosh/agent/action"
 	"errors"
+
 	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
+
+	. "bosh/agent/action"
 )
 
 type valueType struct {
@@ -32,6 +34,10 @@ func (a *actionWithGoodRunMethod) IsAsynchronous() bool {
 	return false
 }
 
+func (a *actionWithGoodRunMethod) IsPersistent() bool {
+	return false
+}
+
 func (a *actionWithGoodRunMethod) Run(subAction string, someId int, extraArgs argsType, sliceArgs []string) (value valueType, err error) {
 	a.SubAction = subAction
 	a.SomeId = someId
@@ -55,6 +61,10 @@ func (a *actionWithOptionalRunArgument) IsAsynchronous() bool {
 	return false
 }
 
+func (a *actionWithOptionalRunArgument) IsPersistent() bool {
+	return false
+}
+
 func (a *actionWithOptionalRunArgument) Run(subAction string, optionalArgs ...argsType) (value valueType, err error) {
 	a.SubAction = subAction
 	a.OptionalArgs = optionalArgs
@@ -71,10 +81,18 @@ func (a *actionWithoutRunMethod) IsAsynchronous() bool {
 	return false
 }
 
+func (a *actionWithoutRunMethod) IsPersistent() bool {
+	return false
+}
+
 type actionWithOneRunReturnValue struct {
 }
 
 func (a *actionWithOneRunReturnValue) IsAsynchronous() bool {
+	return false
+}
+
+func (a *actionWithOneRunReturnValue) IsPersistent() bool {
 	return false
 }
 
@@ -86,6 +104,10 @@ type actionWithSecondReturnValueNotError struct {
 }
 
 func (a *actionWithSecondReturnValueNotError) IsAsynchronous() bool {
+	return false
+}
+
+func (a *actionWithSecondReturnValueNotError) IsPersistent() bool {
 	return false
 }
 

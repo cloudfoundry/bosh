@@ -1,38 +1,43 @@
 package action_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	. "bosh/agent/action"
 	fakejobsuper "bosh/jobsupervisor/fakes"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
-func buildStopAction() (jobSupervisor *fakejobsuper.FakeJobSupervisor, action StopAction) {
-	jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
-	action = NewStop(jobSupervisor)
-	return
-}
 func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("stop should be asynchronous", func() {
-			_, action := buildStopAction()
-			assert.True(GinkgoT(), action.IsAsynchronous())
-		})
-		It("stop run returns stopped", func() {
+	Describe("Stop", func() {
+		var (
+			jobSupervisor *fakejobsuper.FakeJobSupervisor
+			action        StopAction
+		)
 
-			_, action := buildStopAction()
+		BeforeEach(func() {
+			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
+			action = NewStop(jobSupervisor)
+		})
+
+		It("is asynchronous", func() {
+			Expect(action.IsAsynchronous()).To(BeTrue())
+		})
+
+		It("is not persistent", func() {
+			Expect(action.IsPersistent()).To(BeFalse())
+		})
+
+		It("returns stopped", func() {
 			stopped, err := action.Run()
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), "stopped", stopped)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(stopped).To(Equal("stopped"))
 		})
-		It("stop run stops job supervisor services", func() {
 
-			jobSupervisor, action := buildStopAction()
-
+		It("stops job supervisor services", func() {
 			_, err := action.Run()
-			assert.NoError(GinkgoT(), err)
-
-			assert.True(GinkgoT(), jobSupervisor.Stopped)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(jobSupervisor.Stopped).To(BeTrue())
 		})
 	})
 }

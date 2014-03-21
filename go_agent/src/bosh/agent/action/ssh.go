@@ -26,6 +26,10 @@ func (a SshAction) IsAsynchronous() bool {
 	return false
 }
 
+func (a SshAction) IsPersistent() bool {
+	return false
+}
+
 type SshParams struct {
 	UserRegex string `json:"user_regex"`
 	User      string

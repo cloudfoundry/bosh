@@ -19,6 +19,10 @@ func (a ReleaseApplySpecAction) IsAsynchronous() bool {
 	return false
 }
 
+func (a ReleaseApplySpecAction) IsPersistent() bool {
+	return false
+}
+
 func (a ReleaseApplySpecAction) Run() (value interface{}, err error) {
 	fs := a.platform.GetFs()
 	specBytes, err := fs.ReadFile("/var/vcap/micro/apply_spec.json")

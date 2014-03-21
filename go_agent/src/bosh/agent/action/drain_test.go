@@ -1,14 +1,16 @@
 package action_test
 
 import (
+	"errors"
+
+	. "github.com/onsi/ginkgo"
+	"github.com/stretchr/testify/assert"
+
 	. "bosh/agent/action"
 	boshas "bosh/agent/applier/applyspec"
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	fakedrain "bosh/agent/drain/fakes"
 	fakenotif "bosh/notification/fakes"
-	"errors"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func buildDrain() (
@@ -36,6 +38,12 @@ func init() {
 			_, _, action := buildDrain()
 			assert.True(GinkgoT(), action.IsAsynchronous())
 		})
+
+		It("is not persistent", func() {
+			_, _, action := buildDrain()
+			assert.False(GinkgoT(), action.IsPersistent())
+		})
+
 		It("drain run update skips drain script when without drain script", func() {
 
 			_, fakeDrainProvider, action := buildDrain()

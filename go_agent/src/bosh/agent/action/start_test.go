@@ -1,38 +1,43 @@
 package action_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	. "bosh/agent/action"
 	fakejobsuper "bosh/jobsupervisor/fakes"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
-func buildStartAction() (jobSupervisor *fakejobsuper.FakeJobSupervisor, action StartAction) {
-	jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
-	action = NewStart(jobSupervisor)
-	return
-}
 func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("start should be synchronous", func() {
-			_, action := buildStartAction()
-			assert.False(GinkgoT(), action.IsAsynchronous())
+	Describe("Start", func() {
+		var (
+			jobSupervisor *fakejobsuper.FakeJobSupervisor
+			action        StartAction
+		)
+
+		BeforeEach(func() {
+			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
+			action = NewStart(jobSupervisor)
 		})
-		It("start run returns started", func() {
 
-			_, action := buildStartAction()
+		It("is synchronous", func() {
+			Expect(action.IsAsynchronous()).To(BeFalse())
+		})
 
+		It("is not persistent", func() {
+			Expect(action.IsPersistent()).To(BeFalse())
+		})
+
+		It("returns started", func() {
 			started, err := action.Run()
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), "started", started)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(started).To(Equal("started"))
 		})
-		It("start run starts monitor services", func() {
 
-			jobSupervisor, action := buildStartAction()
-
+		It("starts monitor services", func() {
 			_, err := action.Run()
-			assert.NoError(GinkgoT(), err)
-			assert.True(GinkgoT(), jobSupervisor.Started)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(jobSupervisor.Started).To(BeTrue())
 		})
 	})
 }

@@ -19,6 +19,10 @@ func (a CompilePackageAction) IsAsynchronous() bool {
 	return true
 }
 
+func (a CompilePackageAction) IsPersistent() bool {
+	return false
+}
+
 func (a CompilePackageAction) Run(blobId, sha1, name, version string, deps boshcomp.Dependencies) (val map[string]interface{}, err error) {
 	pkg := boshcomp.Package{
 		BlobstoreId: blobId,

@@ -21,6 +21,10 @@ func init() {
 			Expect(action.IsAsynchronous()).To(BeTrue())
 		})
 
-		// Current implementation kills agent
+		It("is persistent because director expects configure_networks task to become done after agent is restarted", func() {
+			Expect(action.IsPersistent()).To(BeTrue())
+		})
+
+		// Current implementation restarts agent process
 	})
 }

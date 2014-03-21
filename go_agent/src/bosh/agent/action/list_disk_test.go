@@ -1,14 +1,15 @@
 package action_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	"github.com/stretchr/testify/assert"
+
 	. "bosh/agent/action"
 	boshassert "bosh/assert"
 	boshlog "bosh/logger"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	fakesettings "bosh/settings/fakes"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -25,9 +26,14 @@ func init() {
 
 		It("list disk should be synchronous", func() {
 			settings := &fakesettings.FakeSettingsService{}
-
 			action := NewListDisk(settings, platform, logger)
 			assert.False(GinkgoT(), action.IsAsynchronous())
+		})
+
+		It("is not persistent", func() {
+			settings := &fakesettings.FakeSettingsService{}
+			action := NewListDisk(settings, platform, logger)
+			assert.False(GinkgoT(), action.IsPersistent())
 		})
 
 		It("list disk run", func() {

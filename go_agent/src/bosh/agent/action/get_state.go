@@ -17,7 +17,8 @@ type GetStateAction struct {
 	ntpService    boshntp.Service
 }
 
-func NewGetState(settings boshsettings.Service,
+func NewGetState(
+	settings boshsettings.Service,
 	specService boshas.V1Service,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	vitalsService boshvitals.Service,
@@ -32,6 +33,10 @@ func NewGetState(settings boshsettings.Service,
 }
 
 func (a GetStateAction) IsAsynchronous() bool {
+	return false
+}
+
+func (a GetStateAction) IsPersistent() bool {
 	return false
 }
 

@@ -11,7 +11,10 @@ type MigrateDiskAction struct {
 	dirProvider boshdirs.DirectoriesProvider
 }
 
-func NewMigrateDisk(platform boshplatform.Platform, dirProvider boshdirs.DirectoriesProvider) (action MigrateDiskAction) {
+func NewMigrateDisk(
+	platform boshplatform.Platform,
+	dirProvider boshdirs.DirectoriesProvider,
+) (action MigrateDiskAction) {
 	action.platform = platform
 	action.dirProvider = dirProvider
 	return
@@ -19,6 +22,10 @@ func NewMigrateDisk(platform boshplatform.Platform, dirProvider boshdirs.Directo
 
 func (a MigrateDiskAction) IsAsynchronous() bool {
 	return true
+}
+
+func (a MigrateDiskAction) IsPersistent() bool {
+	return false
 }
 
 func (a MigrateDiskAction) Run() (value interface{}, err error) {

@@ -1,14 +1,16 @@
 package action_test
 
 import (
+	"errors"
+
+	. "github.com/onsi/ginkgo"
+	"github.com/stretchr/testify/assert"
+
 	. "bosh/agent/action"
 	boshmodels "bosh/agent/applier/models"
 	boshcomp "bosh/agent/compiler"
 	fakecomp "bosh/agent/compiler/fakes"
 	boshassert "bosh/assert"
-	"errors"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func getCompileActionArguments() (blobId, sha1, name, version string, deps boshcomp.Dependencies) {
@@ -44,6 +46,12 @@ func init() {
 			_, action := buildCompilePackageAction()
 			assert.True(GinkgoT(), action.IsAsynchronous())
 		})
+
+		It("is not persistent", func() {
+			_, action := buildCompilePackageAction()
+			assert.False(GinkgoT(), action.IsPersistent())
+		})
+
 		It("compile package compiles the package abd returns blob id", func() {
 
 			compiler, action := buildCompilePackageAction()

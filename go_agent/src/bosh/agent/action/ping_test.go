@@ -1,24 +1,29 @@
 package action_test
 
 import (
-	. "bosh/agent/action"
 	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/gomega"
+
+	. "bosh/agent/action"
 )
 
 func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("ping should be synchronous", func() {
-
+	Describe("Ping", func() {
+		It("is synchronous", func() {
 			action := NewPing()
-			assert.False(GinkgoT(), action.IsAsynchronous())
+			Expect(action.IsAsynchronous()).To(BeFalse())
 		})
-		It("ping run returns pong", func() {
 
+		It("is not persistent", func() {
+			action := NewPing()
+			Expect(action.IsPersistent()).To(BeFalse())
+		})
+
+		It("ping run returns pong", func() {
 			action := NewPing()
 			pong, err := action.Run()
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), "pong", pong)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pong).To(Equal("pong"))
 		})
 	})
 }

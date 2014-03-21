@@ -1,29 +1,39 @@
 package action_test
 
 import (
+	"errors"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+
 	. "bosh/agent/action"
 	boshtask "bosh/agent/task"
 	faketask "bosh/agent/task/fakes"
 	boshassert "bosh/assert"
-	"errors"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
-func buildGetTaskAction() (*faketask.FakeService, GetTaskAction) {
-	taskService := &faketask.FakeService{}
-	return taskService, NewGetTask(taskService)
-}
 func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("get task should be synchronous", func() {
-			_, action := buildGetTaskAction()
-			assert.False(GinkgoT(), action.IsAsynchronous())
+	Describe("GetTask", func() {
+		var (
+			taskService *faketask.FakeService
+			action      GetTaskAction
+		)
+
+		BeforeEach(func() {
+			taskService = &faketask.FakeService{}
+			action = NewGetTask(taskService)
 		})
-		It("get task run returns a running task", func() {
 
-			taskService, action := buildGetTaskAction()
+		It("is synchronous", func() {
+			Expect(action.IsAsynchronous()).To(BeFalse())
+		})
 
+		It("is not persistent", func() {
+			Expect(action.IsPersistent()).To(BeFalse())
+		})
+
+		It("returns a running task", func() {
 			taskService.Tasks = map[string]boshtask.Task{
 				"57": boshtask.Task{
 					Id:    "found-57-id",
@@ -35,10 +45,8 @@ func init() {
 			assert.NoError(GinkgoT(), err)
 			boshassert.MatchesJsonString(GinkgoT(), taskValue, `{"agent_task_id":"found-57-id","state":"running"}`)
 		})
-		It("get task run returns a failed task", func() {
 
-			taskService, action := buildGetTaskAction()
-
+		It("returns a failed task", func() {
 			taskService.Tasks = map[string]boshtask.Task{
 				"57": boshtask.Task{
 					Id:    "found-57-id",
@@ -52,10 +60,8 @@ func init() {
 			assert.Equal(GinkgoT(), "Oops we failed...", err.Error())
 			boshassert.MatchesJsonString(GinkgoT(), taskValue, `null`)
 		})
-		It("get task run returns a successful task", func() {
 
-			taskService, action := buildGetTaskAction()
-
+		It("returns a successful task", func() {
 			taskService.Tasks = map[string]boshtask.Task{
 				"57": boshtask.Task{
 					Id:    "found-57-id",
@@ -68,10 +74,8 @@ func init() {
 			assert.NoError(GinkgoT(), err)
 			boshassert.MatchesJsonString(GinkgoT(), taskValue, `"some-task-value"`)
 		})
-		It("get task run when task is not found", func() {
 
-			taskService, action := buildGetTaskAction()
-
+		It("returns error when task is not found", func() {
 			taskService.Tasks = map[string]boshtask.Task{}
 
 			_, err := action.Run("57")

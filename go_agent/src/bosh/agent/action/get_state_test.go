@@ -1,6 +1,11 @@
 package action_test
 
 import (
+	"errors"
+
+	. "github.com/onsi/ginkgo"
+	"github.com/stretchr/testify/assert"
+
 	. "bosh/agent/action"
 	boshas "bosh/agent/applier/applyspec"
 	fakeas "bosh/agent/applier/applyspec/fakes"
@@ -12,9 +17,6 @@ import (
 	fakevitals "bosh/platform/vitals/fakes"
 	boshsettings "bosh/settings"
 	fakesettings "bosh/settings/fakes"
-	"errors"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func buildGetStateAction(settings boshsettings.Service) (
@@ -42,6 +44,13 @@ func init() {
 			_, _, _, action := buildGetStateAction(settings)
 			assert.False(GinkgoT(), action.IsAsynchronous())
 		})
+
+		It("is not persistent", func() {
+			settings := &fakesettings.FakeSettingsService{}
+			_, _, _, action := buildGetStateAction(settings)
+			assert.False(GinkgoT(), action.IsPersistent())
+		})
+
 		It("get state run", func() {
 
 			settings := &fakesettings.FakeSettingsService{}

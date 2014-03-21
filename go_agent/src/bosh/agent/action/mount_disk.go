@@ -21,7 +21,12 @@ type MountDiskAction struct {
 	dirProvider boshdirs.DirectoriesProvider
 }
 
-func NewMountDisk(settings boshsettings.Service, diskMounter diskMounter, mountPoints mountPoints, dirProvider boshdirs.DirectoriesProvider) (mountDisk MountDiskAction) {
+func NewMountDisk(
+	settings boshsettings.Service,
+	diskMounter diskMounter,
+	mountPoints mountPoints,
+	dirProvider boshdirs.DirectoriesProvider,
+) (mountDisk MountDiskAction) {
 	mountDisk.settings = settings
 	mountDisk.diskMounter = diskMounter
 	mountDisk.mountPoints = mountPoints
@@ -31,6 +36,10 @@ func NewMountDisk(settings boshsettings.Service, diskMounter diskMounter, mountP
 
 func (a MountDiskAction) IsAsynchronous() bool {
 	return true
+}
+
+func (a MountDiskAction) IsPersistent() bool {
+	return false
 }
 
 func (a MountDiskAction) Run(disk_cid string) (value interface{}, err error) {

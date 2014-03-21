@@ -1,12 +1,13 @@
 package action_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	"github.com/stretchr/testify/assert"
+
 	. "bosh/agent/action"
 	boshassert "bosh/assert"
 	fakeplatform "bosh/platform/fakes"
 	boshdirs "bosh/settings/directories"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func buildMigrateDiskAction() (platform *fakeplatform.FakePlatform, action MigrateDiskAction) {
@@ -21,6 +22,12 @@ func init() {
 			_, action := buildMigrateDiskAction()
 			assert.True(GinkgoT(), action.IsAsynchronous())
 		})
+
+		It("is not persistent", func() {
+			_, action := buildMigrateDiskAction()
+			assert.False(GinkgoT(), action.IsPersistent())
+		})
+
 		It("migrate disk action run", func() {
 
 			platform, action := buildMigrateDiskAction()

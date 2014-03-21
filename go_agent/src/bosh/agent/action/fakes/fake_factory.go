@@ -23,12 +23,17 @@ func (f *FakeFactory) Create(method string) (action boshaction.Action, err error
 
 type TestAction struct {
 	Asynchronous bool
+	Persistent   bool
 }
 
 func (a *TestAction) IsAsynchronous() bool {
 	return a.Asynchronous
 }
 
-func (a *TestAction) Run(payload []byte) (value interface{}, err error) {
-	return
+func (a *TestAction) IsPersistent() bool {
+	return a.Persistent
+}
+
+func (a *TestAction) Run(payload []byte) (interface{}, error) {
+	return nil, nil
 }

@@ -1,14 +1,16 @@
 package action_test
 
 import (
+	"path/filepath"
+
+	. "github.com/onsi/ginkgo"
+	"github.com/stretchr/testify/assert"
+
 	. "bosh/agent/action"
 	boshassert "bosh/assert"
 	fakeblobstore "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
 	boshdirs "bosh/settings/directories"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
-	"path/filepath"
 )
 
 func testLogs(t assert.TestingT, logType string, filters []string, expectedFilters []string) {
@@ -69,6 +71,12 @@ func init() {
 			_, action := buildLogsAction()
 			assert.True(GinkgoT(), action.IsAsynchronous())
 		})
+
+		It("is not persistent", func() {
+			_, action := buildLogsAction()
+			assert.False(GinkgoT(), action.IsPersistent())
+		})
+
 		It("logs errs if given invalid log type", func() {
 
 			_, action := buildLogsAction()

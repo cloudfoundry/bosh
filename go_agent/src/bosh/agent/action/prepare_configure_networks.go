@@ -24,6 +24,10 @@ func (a PrepareConfigureNetworksAction) IsAsynchronous() bool {
 	return false
 }
 
+func (a PrepareConfigureNetworksAction) IsPersistent() bool {
+	return false
+}
+
 func (a PrepareConfigureNetworksAction) Run() (interface{}, error) {
 	err := a.settingsService.InvalidateSettings()
 	if err != nil {

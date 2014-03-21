@@ -2,6 +2,7 @@ package action
 
 type Action interface {
 	IsAsynchronous() bool
+	IsPersistent() bool
 
 	// Action should implement Run
 	// Arguments should be the list of arguments the payload will include

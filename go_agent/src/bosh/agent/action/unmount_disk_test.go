@@ -1,13 +1,14 @@
 package action_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	"github.com/stretchr/testify/assert"
+
 	. "bosh/agent/action"
 	boshassert "bosh/assert"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	fakesettings "bosh/settings/fakes"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func buildUnmountDiskAction(platform *fakeplatform.FakePlatform) (unmountDisk UnmountDiskAction) {
@@ -18,6 +19,7 @@ func buildUnmountDiskAction(platform *fakeplatform.FakePlatform) (unmountDisk Un
 	}
 	return NewUnmountDisk(settings, platform)
 }
+
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("unmount disk should be asynchronous", func() {
@@ -25,6 +27,13 @@ func init() {
 			action := buildUnmountDiskAction(platform)
 			assert.True(GinkgoT(), action.IsAsynchronous())
 		})
+
+		It("is not persistent", func() {
+			platform := fakeplatform.NewFakePlatform()
+			action := buildUnmountDiskAction(platform)
+			assert.False(GinkgoT(), action.IsPersistent())
+		})
+
 		It("unmount disk when the disk is mounted", func() {
 
 			platform := fakeplatform.NewFakePlatform()

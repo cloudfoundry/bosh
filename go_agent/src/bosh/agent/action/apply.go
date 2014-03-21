@@ -21,6 +21,10 @@ func (a ApplyAction) IsAsynchronous() bool {
 	return true
 }
 
+func (a ApplyAction) IsPersistent() bool {
+	return false
+}
+
 func (a ApplyAction) Run(applySpec boshas.V1ApplySpec) (value interface{}, err error) {
 	if applySpec.ConfigurationHash != "" {
 		err = a.applier.Apply(applySpec)

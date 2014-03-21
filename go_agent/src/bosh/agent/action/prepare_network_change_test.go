@@ -29,6 +29,10 @@ func init() {
 			Expect(action.IsAsynchronous()).To(BeFalse())
 		})
 
+		It("is not persistent", func() {
+			Expect(action.IsPersistent()).To(BeFalse())
+		})
+
 		It("invalidates settings so that load settings cannot fall back on old settings", func() {
 			resp, err := action.Run()
 			Expect(err).NotTo(HaveOccurred())

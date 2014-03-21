@@ -1,14 +1,15 @@
 package action_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	"github.com/stretchr/testify/assert"
+
 	. "bosh/agent/action"
 	boshassert "bosh/assert"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
 	fakesettings "bosh/settings/fakes"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func testSshSetupWithGivenPassword(t assert.TestingT, expectedPwd string) {
@@ -56,6 +57,13 @@ func init() {
 			_, action := buildSshAction(settings)
 			assert.False(GinkgoT(), action.IsAsynchronous())
 		})
+
+		It("is not persistent", func() {
+			settings := &fakesettings.FakeSettingsService{}
+			_, action := buildSshAction(settings)
+			assert.False(GinkgoT(), action.IsPersistent())
+		})
+
 		It("ssh setup without default ip", func() {
 
 			settings := &fakesettings.FakeSettingsService{}

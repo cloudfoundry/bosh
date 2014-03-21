@@ -1,14 +1,16 @@
 package action_test
 
 import (
+	"errors"
+
+	. "github.com/onsi/ginkgo"
+	"github.com/stretchr/testify/assert"
+
 	. "bosh/agent/action"
 	boshas "bosh/agent/applier/applyspec"
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	fakeappl "bosh/agent/applier/fakes"
 	boshassert "bosh/assert"
-	"errors"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func buildApplyAction() (*fakeappl.FakeApplier, *fakeas.FakeV1Service, ApplyAction) {
@@ -23,6 +25,12 @@ func init() {
 			_, _, action := buildApplyAction()
 			assert.True(GinkgoT(), action.IsAsynchronous())
 		})
+
+		It("is not persistent", func() {
+			_, _, action := buildApplyAction()
+			assert.False(GinkgoT(), action.IsPersistent())
+		})
+
 		It("apply returns applied", func() {
 
 			_, _, action := buildApplyAction()

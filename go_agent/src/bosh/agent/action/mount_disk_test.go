@@ -1,13 +1,14 @@
 package action_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	. "bosh/agent/action"
 	boshassert "bosh/assert"
 	fakeplatform "bosh/platform/fakes"
 	boshdirs "bosh/settings/directories"
 	fakesettings "bosh/settings/fakes"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 func buildMountDiskAction(settings *fakesettings.FakeSettingsService) (*fakeplatform.FakePlatform, MountDiskAction) {
@@ -21,6 +22,12 @@ func init() {
 			settings := &fakesettings.FakeSettingsService{}
 			_, action := buildMountDiskAction(settings)
 			Expect(action.IsAsynchronous()).To(BeTrue())
+		})
+
+		It("is not persistent", func() {
+			settings := &fakesettings.FakeSettingsService{}
+			_, action := buildMountDiskAction(settings)
+			Expect(action.IsPersistent()).To(BeFalse())
 		})
 
 		It("mount disk", func() {

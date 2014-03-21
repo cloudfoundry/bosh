@@ -20,6 +20,10 @@ func (a StopAction) IsAsynchronous() bool {
 	return true
 }
 
+func (a StopAction) IsPersistent() bool {
+	return false
+}
+
 func (s StopAction) Run() (value interface{}, err error) {
 	err = s.jobSupervisor.Stop()
 	if err != nil {

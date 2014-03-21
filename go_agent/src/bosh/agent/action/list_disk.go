@@ -24,6 +24,10 @@ func (a ListDiskAction) IsAsynchronous() bool {
 	return false
 }
 
+func (a ListDiskAction) IsPersistent() bool {
+	return false
+}
+
 func (a ListDiskAction) Run() (value interface{}, err error) {
 	disks := a.settings.GetDisks()
 	volumeIds := []string{}

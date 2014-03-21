@@ -20,6 +20,10 @@ func (a StartAction) IsAsynchronous() bool {
 	return false
 }
 
+func (a StartAction) IsPersistent() bool {
+	return false
+}
+
 func (s StartAction) Run() (value interface{}, err error) {
 	err = s.jobSupervisor.Start()
 	if err != nil {

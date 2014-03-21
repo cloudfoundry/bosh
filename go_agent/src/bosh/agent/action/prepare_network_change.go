@@ -29,6 +29,10 @@ func (a PrepareNetworkChangeAction) IsAsynchronous() bool {
 	return false
 }
 
+func (a PrepareNetworkChangeAction) IsPersistent() bool {
+	return false
+}
+
 func (a PrepareNetworkChangeAction) Run() (interface{}, error) {
 	err := a.settingsService.InvalidateSettings()
 	if err != nil {

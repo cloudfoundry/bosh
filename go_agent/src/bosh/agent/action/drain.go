@@ -24,6 +24,10 @@ func (a DrainAction) IsAsynchronous() bool {
 	return true
 }
 
+func (a DrainAction) IsPersistent() bool {
+	return false
+}
+
 type DrainType string
 
 const (

@@ -22,6 +22,10 @@ func (a UnmountDiskAction) IsAsynchronous() bool {
 	return true
 }
 
+func (a UnmountDiskAction) IsPersistent() bool {
+	return false
+}
+
 func (a UnmountDiskAction) Run(volumeId string) (value interface{}, err error) {
 	disksSettings := a.settings.GetDisks()
 	devicePath, found := disksSettings.Persistent[volumeId]
