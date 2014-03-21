@@ -24,6 +24,10 @@ func (f *FakeFactory) Create(method string) (action boshaction.Action, err error
 type TestAction struct {
 	Asynchronous bool
 	Persistent   bool
+
+	ResumeValue interface{}
+	ResumeErr   error
+	Resumed     bool
 }
 
 func (a *TestAction) IsAsynchronous() bool {
@@ -36,4 +40,9 @@ func (a *TestAction) IsPersistent() bool {
 
 func (a *TestAction) Run(payload []byte) (interface{}, error) {
 	return nil, nil
+}
+
+func (a *TestAction) Resume() (interface{}, error) {
+	a.Resumed = true
+	return a.ResumeValue, a.ResumeErr
 }

@@ -25,6 +25,16 @@ func init() {
 			Expect(action.IsPersistent()).To(BeTrue())
 		})
 
-		// Current implementation restarts agent process
+		Describe("Run", func() {
+			// restarts agent process
+		})
+
+		Describe("Resume", func() {
+			It("returns ok because agent was restarted and connections were re-initialized", func() {
+				value, err := action.Resume()
+				Expect(value).To(Equal("ok"))
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
 	})
 }

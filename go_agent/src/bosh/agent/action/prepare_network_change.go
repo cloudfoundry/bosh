@@ -1,6 +1,7 @@
 package action
 
 import (
+	"errors"
 	"os"
 	"time"
 
@@ -46,6 +47,8 @@ func (a PrepareNetworkChangeAction) Run() (interface{}, error) {
 
 	go a.killAgent()
 
+	// Since this is a synchronous action API consumer
+	// expects to receive response before agent restarts itself.
 	return "ok", nil
 }
 
@@ -55,4 +58,8 @@ func (a PrepareNetworkChangeAction) killAgent() {
 	os.Exit(0)
 
 	return
+}
+
+func (a PrepareNetworkChangeAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
 }

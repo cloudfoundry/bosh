@@ -1,6 +1,8 @@
 package action
 
 import (
+	"errors"
+
 	bosherr "bosh/errors"
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
@@ -75,4 +77,8 @@ func (a MountDiskAction) Run(disk_cid string) (value interface{}, err error) {
 
 	value = make(map[string]string)
 	return
+}
+
+func (a MountDiskAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
 }

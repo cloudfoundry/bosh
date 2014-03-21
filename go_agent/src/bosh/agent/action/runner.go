@@ -1,21 +1,22 @@
 package action
 
 import (
-	bosherr "bosh/errors"
 	"encoding/json"
 	"reflect"
+
+	bosherr "bosh/errors"
 )
 
 type Runner interface {
 	Run(action Action, payload []byte) (value interface{}, err error)
+	Resume(action Action, payload []byte) (value interface{}, err error)
 }
 
 func NewRunner() Runner {
 	return concreteRunner{}
 }
 
-type concreteRunner struct {
-}
+type concreteRunner struct{}
 
 func (r concreteRunner) Run(action Action, payloadBytes []byte) (value interface{}, err error) {
 	payloadArgs, err := r.extractJsonArguments(payloadBytes)
@@ -45,6 +46,10 @@ func (r concreteRunner) Run(action Action, payloadBytes []byte) (value interface
 
 	values := runMethodValue.Call(methodArgs)
 	return r.extractReturns(values)
+}
+
+func (r concreteRunner) Resume(action Action, payloadBytes []byte) (value interface{}, err error) {
+	return action.Resume()
 }
 
 func (r concreteRunner) extractJsonArguments(payloadBytes []byte) (args []interface{}, err error) {

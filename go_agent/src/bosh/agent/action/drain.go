@@ -1,6 +1,8 @@
 package action
 
 import (
+	"errors"
+
 	boshas "bosh/agent/applier/applyspec"
 	boshdrain "bosh/agent/drain"
 	bosherr "bosh/errors"
@@ -82,4 +84,8 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (v
 		return
 	}
 	return
+}
+
+func (a DrainAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
 }

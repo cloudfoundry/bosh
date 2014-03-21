@@ -1,6 +1,8 @@
 package action
 
 import (
+	"errors"
+
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshdirs "bosh/settings/directories"
@@ -37,4 +39,8 @@ func (a MigrateDiskAction) Run() (value interface{}, err error) {
 
 	value = map[string]string{}
 	return
+}
+
+func (a MigrateDiskAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
 }

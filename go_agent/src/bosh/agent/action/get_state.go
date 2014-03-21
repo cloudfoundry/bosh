@@ -1,6 +1,8 @@
 package action
 
 import (
+	"errors"
+
 	boshas "bosh/agent/applier/applyspec"
 	bosherr "bosh/errors"
 	boshjobsuper "bosh/jobsupervisor"
@@ -80,4 +82,8 @@ func (a GetStateAction) Run(filters ...string) (value GetStateV1ApplySpec, err e
 	}
 
 	return
+}
+
+func (a GetStateAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
 }

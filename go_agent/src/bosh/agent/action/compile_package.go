@@ -1,6 +1,8 @@
 package action
 
 import (
+	"errors"
+
 	boshmodels "bosh/agent/applier/models"
 	boshcomp "bosh/agent/compiler"
 	bosherr "bosh/errors"
@@ -59,4 +61,8 @@ func (a CompilePackageAction) Run(blobId, sha1, name, version string, deps boshc
 		"result": result,
 	}
 	return
+}
+
+func (a CompilePackageAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
 }

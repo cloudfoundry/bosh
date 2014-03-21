@@ -1,6 +1,8 @@
 package action
 
 import (
+	"errors"
+
 	bosherr "bosh/errors"
 	boshjobsuper "bosh/jobsupervisor"
 )
@@ -33,4 +35,8 @@ func (s StartAction) Run() (value interface{}, err error) {
 
 	value = "started"
 	return
+}
+
+func (a StartAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
 }

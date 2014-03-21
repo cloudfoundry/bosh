@@ -1,6 +1,8 @@
 package action
 
 import (
+	"errors"
+
 	boshappl "bosh/agent/applier"
 	boshas "bosh/agent/applier/applyspec"
 	bosherr "bosh/errors"
@@ -41,4 +43,8 @@ func (a ApplyAction) Run(applySpec boshas.V1ApplySpec) (value interface{}, err e
 	}
 	value = "applied"
 	return
+}
+
+func (a ApplyAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
 }

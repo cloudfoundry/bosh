@@ -12,7 +12,9 @@ type Action interface {
 	//	* a value, used as the response value. It will be converted to JSON
 	//	* an error, used to return an error response instead
 	//
-	// Run(...) (value interface{}, err error)
+	// Run(...) (interface{}, error)
 	//
 	// See Runner for more details
+
+	Resume() (interface{}, error)
 }

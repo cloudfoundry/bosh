@@ -1,6 +1,8 @@
 package action
 
 import (
+	"errors"
+
 	bosherr "bosh/errors"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
@@ -40,4 +42,8 @@ func (a PrepareConfigureNetworksAction) Run() (interface{}, error) {
 	}
 
 	return "ok", nil
+}
+
+func (a PrepareConfigureNetworksAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
 }

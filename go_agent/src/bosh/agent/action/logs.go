@@ -1,6 +1,7 @@
 package action
 
 import (
+	"errors"
 	"path/filepath"
 
 	boshblob "bosh/blobstore"
@@ -78,4 +79,8 @@ func (a LogsAction) Run(logType string, filters []string) (value interface{}, er
 
 	value = map[string]string{"blobstore_id": blobId}
 	return
+}
+
+func (a LogsAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
 }

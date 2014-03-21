@@ -1,6 +1,8 @@
 package action
 
 import (
+	"errors"
+
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
 	boshplatform "bosh/platform"
@@ -49,4 +51,8 @@ func (a ListDiskAction) Run() (value interface{}, err error) {
 
 	value = volumeIds
 	return
+}
+
+func (a ListDiskAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
 }

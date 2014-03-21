@@ -1,5 +1,9 @@
 package action
 
+import (
+	"errors"
+)
+
 type PingAction struct{}
 
 func NewPing() PingAction {
@@ -16,4 +20,8 @@ func (a PingAction) IsPersistent() bool {
 
 func (a PingAction) Run() (interface{}, error) {
 	return "pong", nil
+}
+
+func (a PingAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
 }

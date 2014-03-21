@@ -1,6 +1,8 @@
 package action
 
 import (
+	"errors"
+
 	boshtask "bosh/agent/task"
 	bosherr "bosh/errors"
 )
@@ -40,4 +42,8 @@ func (a GetTaskAction) Run(taskId string) (value interface{}, err error) {
 	value = task.Value
 	err = task.Error
 	return
+}
+
+func (a GetTaskAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
 }

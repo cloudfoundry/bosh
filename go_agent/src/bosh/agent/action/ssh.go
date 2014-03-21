@@ -1,12 +1,13 @@
 package action
 
 import (
+	"errors"
+	"path/filepath"
+
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
-	"errors"
-	"path/filepath"
 )
 
 type SshAction struct {
@@ -15,7 +16,11 @@ type SshAction struct {
 	dirProvider boshdirs.DirectoriesProvider
 }
 
-func NewSsh(settings boshsettings.Service, platform boshplatform.Platform, dirProvider boshdirs.DirectoriesProvider) (action SshAction) {
+func NewSsh(
+	settings boshsettings.Service,
+	platform boshplatform.Platform,
+	dirProvider boshdirs.DirectoriesProvider,
+) (action SshAction) {
 	action.settings = settings
 	action.platform = platform
 	action.dirProvider = dirProvider
@@ -96,4 +101,8 @@ func (a SshAction) cleanupSsh(params SshParams) (value interface{}, err error) {
 		"status":  "success",
 	}
 	return
+}
+
+func (a SshAction) Resume() (interface{}, error) {
+	return nil, errors.New("not supported")
 }
