@@ -89,7 +89,12 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshhandler.Request) bos
 		// if agent is restarted midway through the task.
 		if action.IsPersistent() {
 			dispatcher.logger.Error("Action Dispatcher", "Running persistent action %s", req.Method)
-			task = dispatcher.taskService.CreateTask(runTask, dispatcher.removeTaskInfo)
+			task, err = dispatcher.taskService.CreateTask(runTask, dispatcher.removeTaskInfo)
+			if err != nil {
+				err = bosherr.WrapError(err, "Create Task Failed %s", req.Method)
+				dispatcher.logger.Error("Action Dispatcher", err.Error())
+				return boshhandler.NewExceptionResponse(err.Error())
+			}
 
 			taskInfo := boshtask.TaskInfo{
 				TaskId:  task.Id,
@@ -104,7 +109,12 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshhandler.Request) bos
 				return boshhandler.NewExceptionResponse(err.Error())
 			}
 		} else {
-			task = dispatcher.taskService.CreateTask(runTask, nil)
+			task, err = dispatcher.taskService.CreateTask(runTask, nil)
+			if err != nil {
+				err = bosherr.WrapError(err, "Create Task Failed %s", req.Method)
+				dispatcher.logger.Error("Action Dispatcher", err.Error())
+				return boshhandler.NewExceptionResponse(err.Error())
+			}
 		}
 
 		dispatcher.taskService.StartTask(task)

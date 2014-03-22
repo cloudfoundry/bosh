@@ -5,7 +5,9 @@ import (
 )
 
 type FakeService struct {
-	StartedTasks map[string]boshtask.Task
+	StartedTasks        map[string]boshtask.Task
+	CreateTaskErr       error
+	CreateTaskWithIdErr error
 }
 
 func NewFakeService() *FakeService {
@@ -17,8 +19,11 @@ func NewFakeService() *FakeService {
 func (s *FakeService) CreateTask(
 	taskFunc boshtask.TaskFunc,
 	taskEndFunc boshtask.TaskEndFunc,
-) boshtask.Task {
-	return s.CreateTaskWithId("fake-generated-task-id", taskFunc, taskEndFunc)
+) (boshtask.Task, error) {
+	if s.CreateTaskErr != nil {
+		return boshtask.Task{}, s.CreateTaskErr
+	}
+	return s.CreateTaskWithId("fake-generated-task-id", taskFunc, taskEndFunc), nil
 }
 
 func (s *FakeService) CreateTaskWithId(

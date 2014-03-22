@@ -36,9 +36,10 @@ func init() {
 			}
 
 			It("sets return value on a successful task", func() {
-				task := service.CreateTask(func() (interface{}, error) {
-					return 123, nil
-				}, nil)
+				runFunc := func() (interface{}, error) { return 123, nil }
+
+				task, err := service.CreateTask(runFunc, nil)
+				Expect(err).ToNot(HaveOccurred())
 
 				task = startAndWaitForTaskCompletion(task)
 				Expect(task.State).To(BeEquivalentTo(TaskStateDone))
@@ -48,10 +49,10 @@ func init() {
 
 			It("sets task error on a failing task", func() {
 				err := errors.New("fake-error")
+				runFunc := func() (interface{}, error) { return nil, err }
 
-				task := service.CreateTask(func() (interface{}, error) {
-					return nil, err
-				}, nil)
+				task, createErr := service.CreateTask(runFunc, nil)
+				Expect(createErr).ToNot(HaveOccurred())
 
 				task = startAndWaitForTaskCompletion(task)
 				Expect(task.State).To(BeEquivalentTo(TaskStateFailed))
@@ -64,7 +65,8 @@ func init() {
 					ranFunc := false
 					runFunc := func() (interface{}, error) { ranFunc = true; return nil, nil }
 
-					task := service.CreateTask(runFunc, nil)
+					task, err := service.CreateTask(runFunc, nil)
+					Expect(err).ToNot(HaveOccurred())
 
 					startAndWaitForTaskCompletion(task)
 					Expect(ranFunc).To(BeTrue())
@@ -77,11 +79,19 @@ func init() {
 					ranEndFunc := false
 					endFunc := func(Task) { ranEndFunc = true }
 
-					task := service.CreateTask(runFunc, endFunc)
+					task, err := service.CreateTask(runFunc, endFunc)
+					Expect(err).ToNot(HaveOccurred())
 
 					startAndWaitForTaskCompletion(task)
 					Expect(ranFunc).To(BeTrue())
 					Expect(ranEndFunc).To(BeTrue())
+				})
+
+				It("returns an error if generate uuid fails", func() {
+					uuidGen.GenerateError = errors.New("fake-generate-uuid-error")
+					_, err := service.CreateTask(nil, nil)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-generate-uuid-error"))
 				})
 			})
 
@@ -123,7 +133,8 @@ func init() {
 					uuidGen.GeneratedUuid = idStr
 					ids = append(ids, idStr)
 
-					task := service.CreateTask(taskFunc, nil)
+					task, err := service.CreateTask(taskFunc, nil)
+					Expect(err).ToNot(HaveOccurred())
 					go service.StartTask(task)
 				}
 
@@ -152,7 +163,8 @@ func init() {
 				runFunc := func() (interface{}, error) { return nil, nil }
 				endFunc := func(Task) {}
 
-				task := service.CreateTask(runFunc, endFunc)
+				task, err := service.CreateTask(runFunc, endFunc)
+				Expect(err).ToNot(HaveOccurred())
 				Expect(task.Id).To(Equal("fake-uuid"))
 				Expect(task.State).To(Equal(TaskStateRunning))
 			})

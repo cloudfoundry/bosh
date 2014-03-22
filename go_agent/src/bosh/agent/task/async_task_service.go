@@ -32,10 +32,13 @@ func NewAsyncTaskService(uuidGen boshuuid.Generator, logger boshlog.Logger) (ser
 	return s
 }
 
-func (service asyncTaskService) CreateTask(taskFunc TaskFunc, taskEndFunc TaskEndFunc) Task {
-	uuid, _ := service.uuidGen.Generate()
+func (service asyncTaskService) CreateTask(taskFunc TaskFunc, taskEndFunc TaskEndFunc) (Task, error) {
+	uuid, err := service.uuidGen.Generate()
+	if err != nil {
+		return Task{}, err
+	}
 
-	return service.CreateTaskWithId(uuid, taskFunc, taskEndFunc)
+	return service.CreateTaskWithId(uuid, taskFunc, taskEndFunc), nil
 }
 
 func (service asyncTaskService) CreateTaskWithId(id string, taskFunc TaskFunc, taskEndFunc TaskEndFunc) Task {

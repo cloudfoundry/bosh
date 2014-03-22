@@ -1,6 +1,7 @@
 package agent_test
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -101,6 +102,14 @@ func init() {
 					Expect(taskService.StartedTasks["fake-generated-task-id"]).ToNot(BeNil())
 				})
 
+				It("returns create task error", func() {
+					taskService.CreateTaskErr = errors.New("fake-create-task-error")
+					resp := dispatcher.Dispatch(req)
+					respJson, err := json.Marshal(resp)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(string(respJson)).To(ContainSubstring("fake-create-task-error"))
+				})
+
 				It("return run value to the task", func() {
 					actionRunner.RunValue = "fake-value"
 					dispatcher.Dispatch(req)
@@ -153,6 +162,14 @@ func init() {
 					dispatcher.Dispatch(req)
 					Expect(len(taskService.StartedTasks)).To(Equal(1))
 					Expect(taskService.StartedTasks["fake-generated-task-id"]).ToNot(BeNil())
+				})
+
+				It("returns create task error", func() {
+					taskService.CreateTaskErr = errors.New("fake-create-task-error")
+					resp := dispatcher.Dispatch(req)
+					respJson, err := json.Marshal(resp)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(string(respJson)).To(ContainSubstring("fake-create-task-error"))
 				})
 
 				It("return run value to the task", func() {
