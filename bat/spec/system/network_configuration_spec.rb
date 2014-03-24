@@ -38,6 +38,12 @@ describe 'network configuration' do
   end
 
   describe 'changing instance DNS (exercises configure_networks CPI method)' do
+    before do
+      unless @requirements.stemcell.supports_network_reconfiguration?
+        pending "network reconfiguration does not work for #{@requirements.stemcell}"
+      end
+    end
+
     let(:manifest_with_different_dns) do
       # Need to include a valid DNS host so that other tests
       # can still use dns resolution on the deployed VM

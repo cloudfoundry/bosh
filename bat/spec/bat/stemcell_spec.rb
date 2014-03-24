@@ -1,10 +1,8 @@
 require 'spec_helper'
-
 require 'bat/stemcell'
 require 'fileutils'
 
 describe Bat::Stemcell do
-
   subject(:stemcell) { Bat::Stemcell.new('STEMCELL_NAME', 'STEMCELL_NAME') }
 
   describe '.from_path' do
@@ -16,23 +14,21 @@ describe Bat::Stemcell do
     before do
       FileUtils.mkdir_p(fake_tmpdir)
       Dir.stub(:mktmpdir).and_yield(fake_tmpdir)
-
       FileUtils.mkdir_p(File.dirname(stemcell_file_path))
     end
 
     it 'expands the stemcell file with tar, read its manifest, and return a new stemcell' do
       Bat::Stemcell.should_receive(:sh).with("tar xzf #{stemcell_file_path} --directory=#{fake_tmpdir} stemcell.MF") do
         File.open(File.join(fake_tmpdir, 'stemcell.MF'), 'w') do |f|
-          f.write(
-            YAML.dump('name' => 'cloudy-centos',
-                      'version' => '007',
-                      'cloud_properties' => { 'infrastructure' => 'CloudyPony' })
-          )
+          f.write(YAML.dump(
+            'name' => 'cloudy-centos',
+            'version' => '007',
+            'cloud_properties' => { 'infrastructure' => 'CloudyPony' }
+          ))
         end
       end
 
       stemcell_from_path = Bat::Stemcell.from_path(stemcell_file_path)
-
       expect(stemcell_from_path.name).to eq('cloudy-centos')
       expect(stemcell_from_path.version).to eq('007')
       expect(stemcell_from_path.cpi).to eq('CloudyPony')
@@ -70,6 +66,34 @@ describe Bat::Stemcell do
     context 'with four arguments' do
       it 'sets path' do
         expect(Bat::Stemcell.new(nil, nil, nil, '/fake/path/stemcell.tgz').path).to eq('/fake/path/stemcell.tgz')
+      end
+    end
+  end
+
+  describe '#supports_network_reconfiguration?' do
+    {
+      # Ruby agent (default)
+      'bosh-custom-xen-ubuntu' => true,
+      'bosh-custom-xen-centos' => true,
+
+      # Ruby agent does not support prepare_configure_networks/configure_networks
+      'bosh-vsphere-esxi-ubuntu' => false,
+
+      # Centos currently does not include open-vm-tools
+      'bosh-vsphere-esxi-centos' => false,
+
+      # Go agent
+      'bosh-custom-xen-ubuntu-go_agent' => true,
+      'bosh-custom-xen-centos-go_agent' => true,
+      'bosh-vsphere-esxi-ubuntu-go_agent' => true,
+
+      # Centos currently does not include open-vm-tools
+      'bosh-vsphere-esxi-centos-go_agent' => false,
+
+    }.each do |stemcell_name, expected|
+      it "returns #{expected} for #{stemcell_name}" do
+        stemcell = Bat::Stemcell.new(stemcell_name, nil)
+        expect(stemcell.supports_network_reconfiguration?).to be(expected)
       end
     end
   end

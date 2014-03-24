@@ -34,6 +34,10 @@ module Bat
       path
     end
 
+    def supports_network_reconfiguration?
+      !(name =~ /vsphere/ && (name =~ /centos/ || name !~ /go_agent/))
+    end
+
     def ==(other)
       to_s == other.to_s
     end
