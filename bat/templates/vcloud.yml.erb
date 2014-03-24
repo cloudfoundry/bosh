@@ -35,13 +35,7 @@ networks:
       - <%= range %>
       <% end %>
     gateway: <%= properties.network.gateway %>
-    dns:
-      <% if_p('dns_nameserver') do |dns_nameserver| %>
-      - <%= dns_nameserver %>
-      <% end %>
-      <% if_p('network.dns') do |dns| %>
-      - <%= dns %>
-      <% end %>
+    dns: <%= p('dns').inspect %>
     cloud_properties:
       name: <%= properties.network.vlan %>
 
@@ -81,7 +75,6 @@ jobs:
         static_ips:
           - <%= properties.static_ip %>
       <% end %>
-
 
 properties:
   mbus: <%= properties.mbus %>

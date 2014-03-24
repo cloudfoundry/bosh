@@ -25,10 +25,6 @@ module Bat
       }
     end
 
-    def bosh_dns_host
-      ENV['BAT_DNS_HOST']
-    end
-
     def aws?
       @bosh_api.info['cpi'] == 'aws'
     end

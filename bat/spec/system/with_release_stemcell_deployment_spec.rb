@@ -53,30 +53,6 @@ describe 'with release, stemcell and deployment' do
     end
   end
 
-  describe 'dns' do
-    before(:all) { @dns = Resolv::DNS.new(nameserver: @env.director) }
-    before { pending 'director not configured with dns' unless dns? }
-
-    context 'external' do
-      it 'should do forward lookups' do
-        address = @dns.getaddress("0.batlight.static.bat.#{bosh_tld}").to_s
-        address.should eq(static_ip)
-      end
-
-      it 'should do reverse lookups' do
-        name = @dns.getname(static_ip).to_s
-        name.should eq("0.batlight.static.bat.#{bosh_tld}")
-      end
-    end
-
-    context 'internal' do
-      it 'should be able to look up its own name', ssh: true do
-        cmd = 'dig +short 0.batlight.static.bat.bosh a 0.batlight.static.bat.microbosh a'
-        ssh(static_ip, 'vcap', cmd, ssh_options).should include(static_ip)
-      end
-    end
-  end
-
   describe 'job' do
     it 'should recreate a job' do
       bosh_safe('recreate batlight 0').should succeed_with /batlight\/0 has been recreated/

@@ -124,11 +124,4 @@ OUTPUT
       end
     end
   end
-
-  describe '#bosh_dns_host' do
-    it 'should be the value of BAT_DNS_HOST env var' do
-      ENV['BAT_DNS_HOST'] = 'dns.hamazon.com'
-      expect(bosh_helper.bosh_dns_host).to eq('dns.hamazon.com')
-    end
-  end
 end

@@ -23,7 +23,6 @@ update:
   max_in_flight: <%= properties.max_in_flight || 1 %>
 
 networks:
-
 - name: static
   type: vip
   cloud_properties: {}
@@ -42,22 +41,13 @@ networks:
       - <%= range %>
       <% end %>
     gateway: <%= properties.network.gateway %>
-    dns:
-      <% if_p('dns_nameserver') do |dns_nameserver| %>
-      - <%= dns_nameserver %>
-      <% end %>
-      <% if_p('network.dns') do |dns| %>
-      - <%= dns %>
-      <% end %>
+    dns: <%= p('dns').inspect %>
     cloud_properties:
       security_groups: <%= p('network.security_groups') %>
       subnet: <%= p('network.subnet') %>
 <% else %>
   type: dynamic
-  <% if_p('dns_nameserver') do |dns_nameserver| %>
-  dns:
-    - <%= dns_nameserver %>
-  <% end %>
+  dns: <%= p('dns').inspect %>
   <% if properties.security_groups %>
   cloud_properties:
     security_groups:
