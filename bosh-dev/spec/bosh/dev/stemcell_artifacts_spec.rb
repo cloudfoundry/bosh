@@ -9,16 +9,20 @@ module Bosh::Dev
 
         described_class.should_receive(:new) do |version, definitions|
           expect(version).to eq('version')
-          expect(definitions.size).to eq(6)
+          expect(definitions.size).to eq(10)
 
           matrix = definitions.map { |d| [d.infrastructure, d.operating_system, d.agent] }
 
           expect(matrix[0].map(&:name)).to eq(%w(vsphere   ubuntu ruby))
-          expect(matrix[1].map(&:name)).to eq(%w(vsphere   centos ruby))
-          expect(matrix[2].map(&:name)).to eq(%w(aws       ubuntu ruby))
-          expect(matrix[3].map(&:name)).to eq(%w(aws       centos ruby))
-          expect(matrix[4].map(&:name)).to eq(%w(openstack ubuntu ruby))
-          expect(matrix[5].map(&:name)).to eq(%w(openstack centos ruby))
+          expect(matrix[1].map(&:name)).to eq(%w(vsphere   ubuntu go))
+          expect(matrix[2].map(&:name)).to eq(%w(vsphere   centos ruby))
+          expect(matrix[3].map(&:name)).to eq(%w(vsphere   centos go))
+          expect(matrix[4].map(&:name)).to eq(%w(aws       ubuntu ruby))
+          expect(matrix[5].map(&:name)).to eq(%w(aws       ubuntu go))
+          expect(matrix[6].map(&:name)).to eq(%w(aws       centos ruby))
+          expect(matrix[7].map(&:name)).to eq(%w(aws       centos go))
+          expect(matrix[8].map(&:name)).to eq(%w(openstack ubuntu ruby))
+          expect(matrix[9].map(&:name)).to eq(%w(openstack centos ruby))
 
           artifacts
         end
