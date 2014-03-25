@@ -5,8 +5,9 @@ require File.dirname(__FILE__) + '/../spec_helper'
 describe Bosh::Agent::State do
 
   before :each do
-    @state_file = Tempfile.new("state").path
-    FileUtils.rm(@state_file) # Only need path
+    temp_state_file = Tempfile.new('state')
+    @state_file = temp_state_file.path
+    temp_state_file.close!
   end
 
   def make_state(file)
