@@ -134,3 +134,8 @@ ruby/yaml-0.1.5.tar.gz:
   sha: !binary |-
     OGI3OGNiOWY3NTljN2Q4MGRiOGE3MzI4YzBlYmVjZmUzNGZkZTczNw==
   size: 504897
+ruby/ruby-1.9.3-p545.tar.gz:
+  object_id: c685bafb-6eb0-451c-bc3e-bf21ca6565b0
+  sha: !binary |-
+    MDM0NTUzNjQ3NDA5MTRlOGQyZGZkNjQyMWY2ODFiM2ZiNjhhNDMxMw==
+  size: 12582277

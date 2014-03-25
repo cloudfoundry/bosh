@@ -9,10 +9,10 @@ tar xzf ruby/yaml-0.1.5.tar.gz
   make install
 )
 
-tar xzf ruby/ruby-1.9.3-p484.tar.gz
+tar xzf ruby/ruby-1.9.3-p545.tar.gz
 (
   set -e
-  cd ruby-1.9.3-p484
+  cd ruby-1.9.3-p545
   LDFLAGS="-Wl,-rpath -Wl,${BOSH_INSTALL_TARGET}" CFLAGS='-fPIC' ./configure --prefix=${BOSH_INSTALL_TARGET} --disable-install-doc --with-opt-dir=${BOSH_INSTALL_TARGET}
   make
   make install
