@@ -10,7 +10,7 @@ module Bosh::Stemcell
       new(
         Bosh::Stemcell::Infrastructure.for(infrastructure_name),
         Bosh::Stemcell::OperatingSystem.for(operating_system_name),
-        Bosh::Stemcell::Agent.for(agent_name)
+        Bosh::Stemcell::Agent.for(agent_name),
       )
     end
 

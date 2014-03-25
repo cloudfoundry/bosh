@@ -16,7 +16,7 @@ module Bosh::Dev
         build_target = instance_double('Bosh::Dev::BuildTarget')
         Bosh::Dev::BuildTarget
           .should_receive(:from_names)
-          .with('fake-build-number', 'fake-infrastructure-name', 'fake-operating-system-name')
+          .with('fake-build-number', 'fake-infrastructure-name', 'fake-operating-system-name', 'fake-agent-name')
           .and_return(build_target)
 
         deployer = instance_double('Bosh::Dev::AutomatedDeploy')
@@ -31,6 +31,7 @@ module Bosh::Dev
           :build_number,
           :infrastructure_name,
           :operating_system_name,
+          :agent_name,
           :micro_target,
           :bosh_target,
           :environment_name,
@@ -39,6 +40,7 @@ module Bosh::Dev
           'fake-build-number',
           'fake-infrastructure-name',
           'fake-operating-system-name',
+          'fake-agent-name',
           'fake-micro-target',
           'fake-bosh-target',
           'fake-environment-name',
