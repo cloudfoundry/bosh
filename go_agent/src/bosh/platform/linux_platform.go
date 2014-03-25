@@ -401,6 +401,7 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) (err error) {
 		err = bosherr.WrapError(err, "Making %s dir", dir)
 		return
 	}
+
 	_, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", dir)
 	if err != nil {
 		err = bosherr.WrapError(err, "chown %s", dir)
@@ -415,6 +416,7 @@ func (p linux) SetupTmpDir() (err error) {
 		err = bosherr.WrapError(err, "chown /tmp")
 		return
 	}
+
 	_, _, err = p.cmdRunner.RunCommand("chmod", "0770", "/tmp")
 	if err != nil {
 		err = bosherr.WrapError(err, "chmod /tmp")

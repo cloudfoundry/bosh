@@ -1,6 +1,9 @@
 package compiler
 
 import (
+	"os"
+	"path/filepath"
+
 	boshbc "bosh/agent/applier/bundlecollection"
 	boshmodels "bosh/agent/applier/models"
 	boshpa "bosh/agent/applier/packageapplier"
@@ -9,8 +12,6 @@ import (
 	boshcmd "bosh/platform/commands"
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
-	"os"
-	"path/filepath"
 )
 
 type concreteCompiler struct {
@@ -32,7 +33,6 @@ func NewConcreteCompiler(
 	packageApplier boshpa.PackageApplier,
 	packagesBc boshbc.BundleCollection,
 ) (c concreteCompiler) {
-
 	c.compressor = compressor
 	c.blobstore = blobstore
 	c.fs = fs

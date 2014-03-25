@@ -1,13 +1,14 @@
 package system
 
 import (
-	bosherr "bosh/errors"
-	boshlog "bosh/logger"
 	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+
+	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 )
 
 type execCmdRunner struct {
