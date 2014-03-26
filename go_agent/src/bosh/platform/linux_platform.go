@@ -331,7 +331,7 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 }
 
 func (p linux) SetupEphemeralDiskWithPath(realPath string) (err error) {
-	mountPoint := filepath.Join(p.dirProvider.BaseDir(), "data")
+	mountPoint := p.dirProvider.DataDir()
 	p.fs.MkdirAll(mountPoint, os.FileMode(0750))
 
 	swapSize, linuxSize, err := p.calculateEphemeralDiskPartitionSizes(realPath)
@@ -410,20 +410,28 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) (err error) {
 	return
 }
 
-func (p linux) SetupTmpDir() (err error) {
+func (p linux) SetupTmpDir() error {
+	err := p.fs.MkdirAll(p.dirProvider.TmpDir(), os.FileMode(0770))
+	if err != nil {
+		return bosherr.WrapError(err, "Creating temp dir")
+	}
+
+	err = os.Setenv("TMPDIR", p.dirProvider.TmpDir())
+	if err != nil {
+		return bosherr.WrapError(err, "Setting TMPDIR")
+	}
+
 	_, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", "/tmp")
 	if err != nil {
-		err = bosherr.WrapError(err, "chown /tmp")
-		return
+		return bosherr.WrapError(err, "chown /tmp")
 	}
 
 	_, _, err = p.cmdRunner.RunCommand("chmod", "0770", "/tmp")
 	if err != nil {
-		err = bosherr.WrapError(err, "chmod /tmp")
-		return
+		return bosherr.WrapError(err, "chmod /tmp")
 	}
 
-	return
+	return nil
 }
 
 func (p linux) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {

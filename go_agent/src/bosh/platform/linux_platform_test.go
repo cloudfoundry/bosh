@@ -1,6 +1,14 @@
 package platform_test
 
 import (
+	"errors"
+	"os"
+	"path/filepath"
+	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	boshlog "bosh/logger"
 	. "bosh/platform"
@@ -13,11 +21,6 @@ import (
 	boshvitals "bosh/platform/vitals"
 	boshdirs "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"os"
-	"path/filepath"
-	"time"
 )
 
 var _ = Describe("LinuxPlatform", func() {
@@ -367,17 +370,45 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		})
 
 	})
+
 	Describe("SetupTmpDir", func() {
-		It("sets up tmp dir", func() {
+		It("changes permissions on /tmp", func() {
 			err := platform.SetupTmpDir()
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(len(cmdRunner.RunCommands)).To(Equal(2))
-
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:vcap", "/tmp"}))
 			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chmod", "0770", "/tmp"}))
 		})
 
+		It("creates new temp dir", func() {
+			err := platform.SetupTmpDir()
+			Expect(err).NotTo(HaveOccurred())
+
+			fileStats := fs.GetFileTestStat("/fake-dir/data/tmp")
+			Expect(fileStats).NotTo(BeNil())
+			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
+			Expect(fileStats.FileMode).To(Equal(os.FileMode(0770)))
+		})
+
+		It("returns error if creating new temp dir errs", func() {
+			fs.MkdirAllError = errors.New("fake-mkdir-error")
+
+			err := platform.SetupTmpDir()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
+		})
+
+		It("sets TMPDIR environment variable so that children of this process will use new temp dir", func() {
+			err := platform.SetupTmpDir()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(os.Getenv("TMPDIR")).To(Equal("/fake-dir/data/tmp"))
+		})
+
+		It("returns error if setting TMPDIR errs", func() {
+			// uses real os
+		})
 	})
 
 	Describe("UnmountPersistentDisk", func() {

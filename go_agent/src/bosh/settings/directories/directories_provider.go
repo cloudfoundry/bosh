@@ -59,3 +59,7 @@ func (p DirectoriesProvider) MicroStore() string {
 func (p DirectoriesProvider) SettingsDir() string {
 	return filepath.Join(p.BaseDir(), "bosh", "settings")
 }
+
+func (p DirectoriesProvider) TmpDir() string {
+	return filepath.Join(p.DataDir(), "tmp")
+}
