@@ -107,7 +107,7 @@ func (app *app) Setup(args []string) (err error) {
 
 	notifier := boshnotif.NewNotifier(mbusHandler)
 
-	installPath := filepath.Join(dirProvider.BaseDir(), "data")
+	installPath := dirProvider.DataDir()
 
 	jobsBc := bc.NewFileBundleCollection(installPath, dirProvider.BaseDir(), "jobs", app.platform.GetFs())
 

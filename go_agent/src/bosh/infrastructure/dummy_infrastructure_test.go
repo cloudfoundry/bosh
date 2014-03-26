@@ -23,7 +23,7 @@ func init() {
 			platform := fakeplatform.NewFakePlatform()
 			fakeDevicePathResolver := boshdevicepathresolver.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
 
-			settingsPath := filepath.Join(dirProvider.BaseDir(), "bosh", "settings.json")
+			settingsPath := filepath.Join(dirProvider.BoshDir(), "settings.json")
 
 			expectedSettings := boshsettings.Settings{AgentId: "123-456-789", Blobstore: boshsettings.Blobstore{Type: boshsettings.BlobstoreTypeDummy}, Mbus: "nats://127.0.0.1:4222"}
 			existingSettingsBytes, _ := json.Marshal(expectedSettings)

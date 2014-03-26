@@ -38,7 +38,7 @@ func (inf dummyInfrastructure) SetupSsh(username string) (err error) {
 }
 
 func (inf dummyInfrastructure) GetSettings() (settings boshsettings.Settings, err error) {
-	settingsPath := filepath.Join(inf.dirProvider.BaseDir(), "bosh", "settings.json")
+	settingsPath := filepath.Join(inf.dirProvider.BoshDir(), "settings.json")
 	contents, err := inf.fs.ReadFile(settingsPath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Read settings file")
