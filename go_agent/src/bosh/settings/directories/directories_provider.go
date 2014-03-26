@@ -21,7 +21,7 @@ func (p DirectoriesProvider) BoshDir() string {
 }
 
 func (p DirectoriesProvider) EtcDir() string {
-	return filepath.Join(p.BaseDir(), "bosh", "etc")
+	return filepath.Join(p.BoshDir(), "etc")
 }
 
 func (p DirectoriesProvider) StoreDir() string {
@@ -37,11 +37,11 @@ func (p DirectoriesProvider) StoreMigrationDir() string {
 }
 
 func (p DirectoriesProvider) PkgDir() string {
-	return filepath.Join(p.BaseDir(), "data", "packages")
+	return filepath.Join(p.DataDir(), "packages")
 }
 
 func (p DirectoriesProvider) CompileDir() string {
-	return filepath.Join(p.BaseDir(), "data", "compile")
+	return filepath.Join(p.DataDir(), "compile")
 }
 
 func (p DirectoriesProvider) MonitJobsDir() string {
@@ -57,7 +57,7 @@ func (p DirectoriesProvider) MicroStore() string {
 }
 
 func (p DirectoriesProvider) SettingsDir() string {
-	return filepath.Join(p.BaseDir(), "bosh", "settings")
+	return filepath.Join(p.BoshDir(), "settings")
 }
 
 func (p DirectoriesProvider) TmpDir() string {
