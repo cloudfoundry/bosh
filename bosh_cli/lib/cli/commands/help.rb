@@ -14,13 +14,7 @@ module Bosh::Cli::Command
         err("Cannot show help message, command runner is not instantiated")
       end
 
-      keywords = "all" if keywords.empty? && options[:all]
-
-      if keywords.empty?
-        generic_help
-      else
-        keyword_help(keywords)
-      end
+      keyword_help(keywords)
     end
 
     private
@@ -31,26 +25,6 @@ module Bosh::Cli::Command
         |
         |#{runner.usage}
         |
-        |The most commonly used BOSH commands are:
-        |  target                        Point CLI to BOSH Director
-        |  deployment                    Set deployment
-        |  status                        Current status
-        |  create release                Create new release
-        |  upload release                Upload release
-        |  upload stemcell               Upload stemcell image
-        |  deploy                        Perform deployment
-        |  task <task_id>                Track task / show task log
-        |  tasks                         List running tasks
-        |  tasks recent                  List recent tasks
-        |  cloudcheck                    Find and resolve deployment problems
-        |  deployments                   List deployments
-        |  releases                      List releases
-        |  start,restart,recreate,stop   Job management
-        |  add blob                      Add large binary file to release
-        |
-        |You can run 'bosh help <keywords...>' to see different commands,
-        |i.e. 'bosh help release', 'bosh help cloudcheck'.
-        |Or run 'bosh help --all' to see all available BOSH commands
       HELP
 
       say message
@@ -60,7 +34,9 @@ module Bosh::Cli::Command
     def keyword_help(keywords)
       matches = Bosh::Cli::Config.commands.values
 
-      if keywords == "all"
+      if keywords.empty?
+        generic_help
+
         good_matches = matches.sort { |a, b| a.usage <=> b.usage }
       else
         good_matches = []

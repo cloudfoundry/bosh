@@ -145,6 +145,9 @@ module Bosh::Cli
       opts.on("-d", "--deployment FILE", "Override deployment") do |file|
         @options[:deployment] = file
       end
+      opts.on("-h", "--help", "here you go") do
+        @args << 'help'
+      end
 
       @args = @option_parser.order!(@args)
     end
