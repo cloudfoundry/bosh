@@ -8,7 +8,7 @@ module Bosh::Dev
     def initialize(env, options = {})
       @env = env
       @shell = Bosh::Core::Shell.new
-      @path_root = options.fetch(:path_root) { env.fetch('FAKE_MNT', '/mnt') }
+      @path_root = options.fetch(:path_root) { env.fetch('WORKSPACE', '/tmp') }
     end
 
     def path

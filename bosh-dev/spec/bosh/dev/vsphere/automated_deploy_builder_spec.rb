@@ -11,7 +11,7 @@ module Bosh::Dev::VSphere
         deployments_repository = instance_double('Bosh::Dev::DeploymentsRepository')
         Bosh::Dev::DeploymentsRepository
           .should_receive(:new)
-          .with(ENV, path_root: '/tmp')
+          .with(ENV)
           .and_return(deployments_repository)
 
         deployment_account = instance_double('Bosh::Dev::VSphere::DeploymentAccount')

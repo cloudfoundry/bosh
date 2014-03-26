@@ -9,7 +9,7 @@ module Bosh::Dev::VCloud
     def build(build_target, bosh_target, environment_name, deployment_name)
       logger = Logger.new(STDERR)
 
-      deployments_repository = Bosh::Dev::DeploymentsRepository.new(ENV, path_root: '/tmp')
+      deployments_repository = Bosh::Dev::DeploymentsRepository.new(ENV)
       deployment_account = DeploymentAccount.new(environment_name, deployment_name, deployments_repository)
 
       download_adapter = Bosh::Dev::DownloadAdapter.new(logger)
