@@ -1,25 +1,4 @@
 namespace :ci do
-  namespace :run do
-    desc 'Meta task to run spec:unit and rubocop'
-    task unit: %w(spec:unit)
-
-    desc 'Meta task to run spec:integration'
-    task integration: %w(spec:integration)
-
-    desc 'Task that installs a go binary locally and runs go agent tests'
-    task :go_agent_tests do
-      FileUtils.mkdir_p('tmp')
-      sh 'curl https://go.googlecode.com/files/go1.2.linux-amd64.tar.gz > tmp/go.tgz'
-      sh 'tar xzf tmp/go.tgz -C tmp'
-
-      path = [File.absolute_path('tmp/go/bin'), ENV['PATH']].join(':')
-      env = { 'PATH' => path }
-      sh(env, 'which', 'go')
-      sh(env, 'go_agent/bin/go', 'version')
-      sh(env, 'go_agent/bin/test')
-    end
-  end
-
   desc 'Publish CI pipeline gems to S3'
   task :publish_pipeline_gems do
     require 'bosh/dev/build'
