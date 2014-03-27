@@ -16,5 +16,6 @@ env:
   - DB=mysql    TASKS="spec:integration:ruby_agent"
   - DB=postgres TASKS="spec:integration:ruby_agent"
 
-#  - DB=mysql    TASKS="travis:install_go spec:integration:go_agent"
-#  - DB=postgres TASKS="travis:install_go spec:integration:go_agent"
+  # Go agent integration tests do not need to test every DB flavor
+  # since integration tests above already tested them
+  - TASKS="travis:install_go spec:integration:go_agent"
