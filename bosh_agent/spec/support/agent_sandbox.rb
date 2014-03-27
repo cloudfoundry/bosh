@@ -54,7 +54,7 @@ module Bosh::Agent
           },
           mbus: mbus,
         }
-        File.write(File.join(base_dir, 'bosh', 'settings.json'), JSON.generate(settings))
+        File.write(File.join(base_dir, 'bosh', 'agent-env.json'), JSON.generate(settings))
       end
     end
   end
