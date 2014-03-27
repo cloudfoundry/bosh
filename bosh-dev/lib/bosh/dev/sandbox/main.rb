@@ -6,6 +6,7 @@ require 'bosh/dev/sandbox/socket_connector'
 require 'bosh/dev/sandbox/database_migrator'
 require 'bosh/dev/sandbox/postgresql'
 require 'bosh/dev/sandbox/mysql'
+require 'cloud/dummy'
 
 module Bosh::Dev::Sandbox
   class Main
@@ -34,7 +35,10 @@ module Bosh::Dev::Sandbox
     alias_method :db_name, :name
     attr_reader :blobstore_storage_dir
     attr_reader :agent_type
+
     attr_accessor :director_fix_stateful_nodes
+
+    attr_reader :cpi
 
     def self.from_env
       db_opts = {
@@ -113,6 +117,13 @@ module Bosh::Dev::Sandbox
         @database = Postgresql.new(@name, @logger)
       end
 
+      # Note that this is not the same object
+      # as dummy cpi used inside bosh-director process
+      @cpi = Bosh::Clouds::Dummy.new(
+        'dir' => cloud_storage_dir,
+        'agent' => { 'type' => agent_type },
+      )
+
       @database_migrator = DatabaseMigrator.new(DIRECTOR_PATH, director_config, @logger)
     end
 
@@ -171,7 +182,7 @@ module Bosh::Dev::Sandbox
     end
 
     def stop
-      kill_agents
+      @cpi.kill_agents
       @scheduler_process.stop
       @worker_process.stop
       @director_process.stop
@@ -222,7 +233,7 @@ module Bosh::Dev::Sandbox
     private
 
     def do_reset(name)
-      kill_agents
+      @cpi.kill_agents
       @worker_process.stop
       @director_process.stop
       @health_monitor_process.stop
@@ -252,17 +263,6 @@ module Bosh::Dev::Sandbox
       # for some parallel tests; increasing to 60 secs (= 300 tries).
       @logger.info("Waiting for director to come up on port #{director_port}")
       @director_socket_connector.try_to_connect(300)
-    end
-
-    def kill_agents
-      vm_ids = Dir.glob(File.join(agent_tmp_path, 'running_vms', '*')).map { |vm| File.basename(vm).to_i }
-      vm_ids.each do |agent_pid|
-        begin
-          Process.kill('INT', agent_pid)
-        rescue Errno::ESRCH
-          @logger.info("Running VM found but no agent with #{agent_pid} is running")
-        end
-      end
     end
 
     def setup_sandbox_root

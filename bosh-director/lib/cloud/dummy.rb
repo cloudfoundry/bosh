@@ -20,6 +20,8 @@ module Bosh
           raise ArgumentError, 'Unknown agent type provided'
         end
 
+        @running_vms_dir = File.join(@base_dir, 'running_vms')
+
         FileUtils.mkdir_p(@base_dir)
       rescue Errno::EACCES
         raise ArgumentError, "cannot create dummy cloud base directory #{@base_dir}"
@@ -55,7 +57,7 @@ module Bosh
         agent_pid = Process.spawn(*agent_cmd, chdir: agent_base_dir(agent_id), out: agent_log, err: agent_log)
         Process.detach(agent_pid)
 
-        FileUtils.mkdir_p(File.join(@base_dir, 'running_vms'))
+        FileUtils.mkdir_p(@running_vms_dir)
         File.write(vm_file(agent_pid), agent_id)
 
         agent_pid.to_s
@@ -131,6 +133,23 @@ module Bosh
         raise NotImplemented, 'Dummy CPI does not implement validate_deployment'
       end
 
+      # Additional Dummy test helpers
+
+      def vm_cids
+        Dir.glob(File.join(@running_vms_dir, '*')).map { |vm| File.basename(vm) }
+      end
+
+      def kill_agents
+        vm_cids.each do |agent_pid|
+          begin
+            Process.kill('INT', agent_pid.to_i)
+          # rubocop:disable HandleExceptions
+          rescue Errno::ESRCH
+          # rubocop:enable HandleExceptions
+          end
+        end
+      end
+
       private
 
       def agent_id_for_vm_id(vm_id)
@@ -167,7 +186,7 @@ module Bosh
       end
 
       def vm_file(vm_id)
-        File.join(@base_dir, 'running_vms', vm_id.to_s)
+        File.join(@running_vms_dir, vm_id.to_s)
       end
 
       def disk_file(disk_id)
