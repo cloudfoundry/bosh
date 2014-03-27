@@ -126,8 +126,9 @@ module Bat
     end
 
     def get_task_id(output, state = 'done')
-      match = output.match(/Task (\d+) #{state}/)
-      match.should_not be_nil
+      task_regex = /Task (\d+) #{state}/
+      expect(output).to match(task_regex)
+      match = output.match(task_regex)
       match[1]
     end
 
