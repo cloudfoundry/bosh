@@ -33,9 +33,30 @@ module Bosh::Dev::Sandbox
 
     alias_method :db_name, :name
     attr_reader :blobstore_storage_dir
+    attr_reader :agent_type
     attr_accessor :director_fix_stateful_nodes
 
-    def initialize(logger = Logger.new(STDOUT))
+    def self.from_env
+      db_opts = {
+        type: ENV['DB'] || 'postgresql',
+        user: ENV['TRAVIS'] ? 'travis' : 'root',
+        password: ENV['TRAVIS'] ? '' : 'password',
+      }
+      agent_type = ENV['BOSH_INTEGRATION_AGENT_TYPE'] || 'ruby'
+
+      new(
+        db_opts,
+        ENV['DEBUG'],
+        agent_type,
+        ENV['TEST_ENV_NUMBER'].to_i,
+        Logger.new(STDOUT),
+      )
+    end
+
+    def initialize(db_opts, debug, agent_type, test_env_number, logger)
+      @debug = debug
+      @agent_type = agent_type
+      @test_env_number = test_env_number
       @logger = logger
       @name = SecureRandom.hex(6)
 
@@ -86,9 +107,8 @@ module Bosh::Dev::Sandbox
         @logger,
       )
 
-      if ENV['DB'] == 'mysql'
-        mysql_user, mysql_password = ENV['TRAVIS'] ? ['travis', ''] : %w(root password)
-        @database = Mysql.new(@name, @logger, mysql_user, mysql_password)
+      if db_opts[:name] == 'mysql'
+        @database = Mysql.new(@name, @logger, db_opts[:user], db_opts[:password])
       else
         @database = Postgresql.new(@name, @logger)
       end
@@ -144,7 +164,7 @@ module Bosh::Dev::Sandbox
     end
 
     def save_task_logs(name)
-      if ENV['DEBUG'] && File.directory?(task_logs_dir)
+      if @debug && File.directory?(task_logs_dir)
         task_name = "task_#{name}_#{SecureRandom.hex(6)}"
         FileUtils.mv(task_logs_dir, File.join(logs_path, task_name))
       end
@@ -271,10 +291,7 @@ module Bosh::Dev::Sandbox
       # I don't want to optimize for look-up speed, we only have 5 named ports anyway
       @port_names ||= []
       @port_names << name unless @port_names.include?(name)
-
-      offset = @port_names.index(name)
-      test_number = ENV['TEST_ENV_NUMBER'].to_i
-      61000 + test_number * 100 + offset
+      61000 + @test_env_number * 100 + @port_names.index(name)
     end
 
     attr_reader :logs_path, :director_tmp_path, :dns_db_path, :task_logs_dir
