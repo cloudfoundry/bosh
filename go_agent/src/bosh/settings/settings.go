@@ -8,14 +8,14 @@ const (
 )
 
 type Settings struct {
-	AgentId   string `json:"agent_id"`
-	Blobstore Blobstore
-	Disks     Disks
-	Env       Env
-	Networks  Networks
-	Ntp       []string
-	Mbus      string
-	Vm        Vm
+	AgentId   string    `json:"agent_id"`
+	Blobstore Blobstore `json:"blobstore"`
+	Disks     Disks     `json:"disks"`
+	Env       Env       `json:"env"`
+	Networks  Networks  `json:"networks"`
+	Ntp       []string  `json:"ntp"`
+	Mbus      string    `json:"mbus"`
+	Vm        Vm        `json:"vm"`
 }
 
 const (
@@ -24,14 +24,14 @@ const (
 )
 
 type Blobstore struct {
-	Type    string `json:"provider"`
-	Options map[string]string
+	Type    string            `json:"provider"`
+	Options map[string]string `json:"options"`
 }
 
 type Disks struct {
-	System     string
-	Ephemeral  string
-	Persistent map[string]string
+	System     string            `json:"system"`
+	Ephemeral  string            `json:"ephemeral"`
+	Persistent map[string]string `json:"persistent"`
 }
 
 type Vm struct {
@@ -54,18 +54,18 @@ func (e Env) GetPassword() string {
 }
 
 type BoshEnv struct {
-	Password string
+	Password string `json:"password"`
 }
 
 type Networks map[string]Network
 
 type Network struct {
-	Default []string
-	Dns     []string
-	Ip      string
-	Netmask string
-	Gateway string
-	Mac     string
+	Default []string `json:"default"`
+	Dns     []string `json:"dns"`
+	Ip      string   `json:"ip"`
+	Netmask string   `json:"netmask"`
+	Gateway string   `json:"gateway"`
+	Mac     string   `json:"mac"`
 }
 
 func (n Networks) DefaultNetworkFor(category string) (network Network, found bool) {

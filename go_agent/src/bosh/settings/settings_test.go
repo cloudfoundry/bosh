@@ -1,6 +1,8 @@
 package settings_test
 
 import (
+	"encoding/json"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -105,6 +107,32 @@ func init() {
 				_, found := networks.DefaultIp()
 				Expect(found).To(BeFalse())
 			})
+		})
+	})
+
+	Describe("Settings", func() {
+		var expectSnakeCaseKeys func(map[string]interface{})
+
+		expectSnakeCaseKeys = func(value map[string]interface{}) {
+			for k, v := range value {
+				Expect(k).To(MatchRegexp("\\A[a-z0-9_]+\\z"))
+
+				tv, isMap := v.(map[string]interface{})
+				if isMap {
+					expectSnakeCaseKeys(tv)
+				}
+			}
+		}
+
+		It("marshals into JSON in snake case to stay consistent with CPI agent env formatting", func() {
+			settings := Settings{}
+			settingsJson, err := json.Marshal(settings)
+			Expect(err).NotTo(HaveOccurred())
+
+			var settingsMap map[string]interface{}
+			err = json.Unmarshal(settingsJson, &settingsMap)
+			Expect(err).NotTo(HaveOccurred())
+			expectSnakeCaseKeys(settingsMap)
 		})
 	})
 }
