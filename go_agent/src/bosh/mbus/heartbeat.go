@@ -1,10 +1,12 @@
 package mbus
 
-import boshvitals "bosh/platform/vitals"
+import (
+	boshvitals "bosh/platform/vitals"
+)
 
 type Heartbeat struct {
-	Job      string            `json:"job"`
-	Index    int               `json:"index"`
+	Job      *string           `json:"job"`
+	Index    *int              `json:"index"`
 	JobState string            `json:"job_state"`
 	Vitals   boshvitals.Vitals `json:"vitals"`
 }

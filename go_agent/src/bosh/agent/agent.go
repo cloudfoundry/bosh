@@ -121,10 +121,10 @@ func (a Agent) getHeartbeat() (boshmbus.Heartbeat, error) {
 	}
 
 	hb := boshmbus.Heartbeat{
-		Vitals:   vitals,
 		Job:      spec.JobSpec.Name,
 		Index:    spec.Index,
 		JobState: a.jobSupervisor.Status(),
+		Vitals:   vitals,
 	}
 	return hb, nil
 }

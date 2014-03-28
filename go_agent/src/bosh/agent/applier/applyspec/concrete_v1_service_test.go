@@ -57,9 +57,7 @@ func init() {
 		})
 
 		Describe("Set", func() {
-			newSpec := V1ApplySpec{
-				JobSpec: JobSpec{Name: "fake-job"},
-			}
+			newSpec := V1ApplySpec{Deployment: "fake-deployment-name"}
 
 			It("writes spec to filesystem", func() {
 				err := service.Set(newSpec)

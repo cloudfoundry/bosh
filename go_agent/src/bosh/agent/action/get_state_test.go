@@ -52,7 +52,6 @@ func init() {
 		})
 
 		It("get state run", func() {
-
 			settings := &fakesettings.FakeSettingsService{}
 			settings.AgentId = "my-agent-id"
 			settings.Vm.Name = "vm-abc-def"
@@ -86,8 +85,8 @@ func init() {
 
 			assert.Equal(GinkgoT(), state, expectedSpec)
 		})
-		It("get state run without current spec", func() {
 
+		It("get state run without current spec", func() {
 			settings := &fakesettings.FakeSettingsService{}
 			settings.AgentId = "my-agent-id"
 			settings.Vm.Name = "vm-abc-def"
@@ -119,8 +118,8 @@ func init() {
 			})
 			assert.Equal(GinkgoT(), state, expectedSpec)
 		})
-		It("get state run with full format option", func() {
 
+		It("get state run with full format option", func() {
 			settings := &fakesettings.FakeSettingsService{}
 			settings.AgentId = "my-agent-id"
 			settings.Vm.Name = "vm-abc-def"
@@ -147,8 +146,8 @@ func init() {
 			assert.Equal(GinkgoT(), *state.Vitals, expectedVitals)
 			boshassert.MatchesJsonMap(GinkgoT(), state.Vm, expectedVm)
 		})
-		It("get state run on vitals error", func() {
 
+		It("get state run on vitals error", func() {
 			settings := &fakesettings.FakeSettingsService{}
 
 			_, _, fakeVitals, action := buildGetStateAction(settings)
