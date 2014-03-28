@@ -285,6 +285,25 @@ cloud:
           media_catalog: <%= media_catalog %>
           vm_metadata_key: <%= vm_metadata_key %>
           description: <%= description %>
+          <% if_p('vcd.entities.control') do |control| %>
+          control:
+            <% if_p('vcd.entities.control.wait_max') do |wait_max| %>
+            wait_max: <%= wait_max %>
+            <% end %>
+            <% if_p('vcd.entities.control.wait_delay') do |wait_delay| %>
+            wait_delay: <%= wait_delay %>
+            <% end %>
+            <% if_p('vcd.entities.control.cookie_timeout') do |cookie_timeout| %>
+            cookie_timeout: <%= cookie_timeout %>
+            <% end %>
+            <% if_p('vcd.entities.control.retry_max') do |retry_max| %>
+            retry_max: <%= retry_max %>
+            <% end %>
+            <% if_p('vcd.entities.control.retry_delay') do |retry_delay| %>
+            retry_delay: <%= retry_delay %>
+            <% end %>
+          <% end %>
+
 <% end %>
 
 <% raise "Could not find cloud plugin" if plugin.nil? %>
