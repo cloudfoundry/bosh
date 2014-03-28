@@ -388,7 +388,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			fileStats := fs.GetFileTestStat("/fake-dir/data/tmp")
 			Expect(fileStats).NotTo(BeNil())
 			Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeDir)))
-			Expect(fileStats.FileMode).To(Equal(os.FileMode(0770)))
+			Expect(fileStats.FileMode).To(Equal(os.FileMode(0755)))
 		})
 
 		It("returns error if creating new temp dir errs", func() {

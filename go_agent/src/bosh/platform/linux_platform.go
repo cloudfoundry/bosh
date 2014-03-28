@@ -411,7 +411,8 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) (err error) {
 }
 
 func (p linux) SetupTmpDir() error {
-	err := p.fs.MkdirAll(p.dirProvider.TmpDir(), os.FileMode(0770))
+	// 0755 to make sure that vcap user can use new temp dir
+	err := p.fs.MkdirAll(p.dirProvider.TmpDir(), os.FileMode(0755))
 	if err != nil {
 		return bosherr.WrapError(err, "Creating temp dir")
 	}
