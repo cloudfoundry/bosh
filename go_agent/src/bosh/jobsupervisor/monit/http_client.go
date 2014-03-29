@@ -1,8 +1,6 @@
 package monit
 
 import (
-	bosherr "bosh/errors"
-	boshlog "bosh/logger"
 	"code.google.com/p/go-charset/charset"
 	_ "code.google.com/p/go-charset/data"
 	"encoding/xml"
@@ -12,6 +10,9 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 )
 
 type httpClient struct {
@@ -24,7 +25,12 @@ type httpClient struct {
 	logger              boshlog.Logger
 }
 
-func NewHttpClient(host, username, password string, client HttpClient, delayBetweenRetries time.Duration, logger boshlog.Logger) httpClient {
+func NewHttpClient(
+	host, username, password string,
+	client HttpClient,
+	delayBetweenRetries time.Duration,
+	logger boshlog.Logger,
+) httpClient {
 	return httpClient{
 		host:                host,
 		username:            username,
@@ -134,32 +140,40 @@ func (c httpClient) validateResponse(response *http.Response) (err error) {
 		err = bosherr.WrapError(err, "Reading body of failed Monit response")
 		return
 	}
+
 	err = bosherr.New("Request failed with %s: %s", response.Status, string(body))
 	return
 }
 
 func (c httpClient) makeRequest(url url.URL, method, requestBody string) (response *http.Response, err error) {
 	c.logger.Debug("http-client", "makeRequest with url %s", url.String())
+
 	for attempt := 0; attempt < c.retryAttempts; attempt++ {
 		c.logger.Debug("http-client", "Retrying %d", attempt)
+
 		if response != nil {
 			response.Body.Close()
 		}
 
 		var request *http.Request
+
 		request, err = http.NewRequest(method, url.String(), strings.NewReader(requestBody))
 		if err != nil {
 			return
 		}
 
 		request.SetBasicAuth(c.username, c.password)
+
 		request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
 		response, err = c.client.Do(request)
 		if response != nil {
 			c.logger.Debug("http-client", "Got response with status %d", response.StatusCode)
 		}
 
-		if err == nil && response.StatusCode == 200 {
+		if err != nil {
+			c.logger.Debug("http-client", "Got err %v", err)
+		} else if response.StatusCode == 200 {
 			return
 		}
 
