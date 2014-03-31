@@ -43,6 +43,12 @@ for try in $(seq 0 9); do
   break
 done
 
+for try in $(seq 0 9); do
+  sleep $try
+  [ -b ${loopback_dev} ] || continue
+  break
+done
+
 if [ -b ${loopback_dev} ]; then
   echo "Could not remove device mapping at ${loopback_dev}"
   exit 1
