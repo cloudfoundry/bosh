@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'timecop'
 
 describe Bosh::Director::EventLog::Log do
   subject(:event_log) { described_class.new(buf) }
@@ -80,13 +81,16 @@ describe Bosh::Director::EventLog::Log do
     expect(events.map { |e| e['state'] }).to eq(['started', 'finished'])
   end
 
-  it 'issues deprcation warnings' do
-    event_log.warn_deprecated('warning message')
+  it 'issues deprecation warnings' do
+    time = Time.now
+    Timecop.freeze(time) do
+      event_log.warn_deprecated('warning message')
+    end
 
     expect(sent_events).to eq(
       [
         {
-          'time' => anything,
+          'time' => time.to_i,
           'type' => 'deprecation',
           'message' => 'warning message',
         }

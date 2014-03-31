@@ -38,7 +38,7 @@ module Bosh::Director
 
       def warn_deprecated(message)
         log_entry(
-          'time' => 0,
+          'time' => Time.now.to_i,
           'type' => 'deprecation',
           'message' => message,
         )
