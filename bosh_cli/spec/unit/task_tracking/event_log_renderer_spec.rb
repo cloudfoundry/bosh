@@ -124,6 +124,13 @@ describe Bosh::Cli::TaskTracking::EventLogRenderer do
           add_output(make_event('fake-e1-stage', 'task1', 1, 1, 'started', [], 0, nil, 101))
         }.to change { renderer.started_at }.to(Time.at(101))
       end
+
+      it 'records first non-zero duration event as started_at time' do
+        add_output(make_event('fake-e1-stage', 'task1', 1, 1, 'started', [], 0, nil, 0))
+        add_output(make_event('fake-e1-stage', 'task2', 1, 1, 'started', [], 0, nil, 102))
+
+        expect(renderer.started_at).to eq(Time.at(102))
+      end
     end
   end
 
@@ -134,6 +141,13 @@ describe Bosh::Cli::TaskTracking::EventLogRenderer do
           add_output(make_event('fake-e1-stage', 'task1', 1, 1, 'started', [], 0, nil, 0))
           add_output(make_event('fake-e1-stage', 'task1', 1, 1, 'finished', [], 0, nil, 101))
         }.to change { renderer.finished_at }.to(Time.at(101))
+      end
+
+      it 'records last non-zero duration event as finished_at time' do
+        add_output(make_event('fake-e1-stage', 'task2', 1, 1, 'started', [], 0, nil, 102))
+        add_output(make_event('fake-e1-stage', 'task1', 1, 1, 'started', [], 0, nil, 0))
+
+        expect(renderer.finished_at).to eq(Time.at(102))
       end
     end
   end

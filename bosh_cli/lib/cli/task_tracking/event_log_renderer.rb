@@ -64,8 +64,10 @@ module Bosh::Cli::TaskTracking
     end
 
     def add_event(event)
-      @total_duration.started_at = event['time']
-      @total_duration.finished_at = event['time']
+      unless event['time'] == 0
+        @total_duration.started_at = event['time']
+        @total_duration.finished_at = event['time']
+      end
 
       if event['type'] == 'deprecation'
         show_deprecation(event)
