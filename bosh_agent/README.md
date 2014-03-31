@@ -24,8 +24,6 @@ For each different agent infrastructure:
 * `bosh_agent -c -I vsphere` => attempts to load the config settings via a mounted fake cdrom
 * `bosh_agent -c -I openstack`  => attempts to load the config settings from OpenStack registry (same as AWS registry - bosh-registry project folder); openstack user-data is provided by both user-data and a user-data.json file (the former isn't supported by Rackspace)
 
-If the settings cannot be found as above, then it looks for a file `/var/vcap/bosh/settings.json` and loads that.
-
 ### CLI option overrides
 
 Alternately, you can run `bosh_agent` without loading settings (without the `-c` flag).

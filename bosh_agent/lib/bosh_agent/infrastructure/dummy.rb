@@ -3,6 +3,8 @@ module Bosh::Agent
     def load_settings
       agent_env_from_cpi_path = File.join(Config.base_dir, 'bosh', 'agent-env.json')
       JSON.parse(File.read(agent_env_from_cpi_path))
+    rescue Errno::ENOENT
+      raise Bosh::Agent::LoadSettingsError, 'Failed to read/write env/agent-env.json'
     end
 
     def get_network_settings(network_name, properties)

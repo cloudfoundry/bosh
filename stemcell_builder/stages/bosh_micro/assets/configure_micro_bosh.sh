@@ -1,6 +1,4 @@
 #!/bin/bash
-#
-# Copyright (c) 2009-2012 VMware, Inc.
 
 set -e
 
@@ -36,8 +34,7 @@ mkdir -p ${bosh_app_dir}/bosh/blob
 
 echo "Starting micro bosh compilation"
 
-
-cat > ${bosh_app_dir}/bosh/settings.json << EOF
+cat > ${bosh_app_dir}/bosh/agent-env.json << EOF
 {
   "agent_id": "not_configured",
   "mbus": "$agent_uri",
@@ -49,9 +46,11 @@ cat > ${bosh_app_dir}/bosh/settings.json << EOF
   }
 }
 EOF
+
 # Start agent
 /var/vcap/bosh/bin/bosh_agent -I dummy &
 agent_pid=$!
+
 echo "Starting BOSH Agent for compiling micro bosh package, agent pid is $agent_pid"
 
 # Wait for agent to start
@@ -90,4 +89,5 @@ kill_agent 0 || kill_agent 9
 # Clean out src
 cd /var/tmp
 rm -fr ${bosh_app_dir}/bosh/src
+rm ${bosh_app_dir}/bosh/agent-env.json
 rm ${bosh_app_dir}/bosh/settings.json
