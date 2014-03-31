@@ -35,7 +35,7 @@ Follow these steps to make a contribution to any of our open source repositories
         * If you find yourself changing specs after a refactor, consider
           refactoring the specs first
 
-1. Push to your fork (`git push origin better_bosh`) and submit a pull request
+1. Push to your fork (`git push origin better_bosh`) and submit a pull request selecting `develop` as the target branch
 
 We favor pull requests with very small, single commits with a single purpose.
 
