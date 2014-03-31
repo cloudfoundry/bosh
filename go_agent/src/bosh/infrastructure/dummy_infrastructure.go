@@ -1,14 +1,15 @@
 package infrastructure
 
 import (
+	"encoding/json"
+	"path/filepath"
+
 	bosherr "bosh/errors"
 	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
-	"encoding/json"
-	"path/filepath"
 )
 
 type dummyInfrastructure struct {
@@ -18,14 +19,16 @@ type dummyInfrastructure struct {
 	devicePathResolver boshdevicepathresolver.DevicePathResolver
 }
 
-func NewDummyInfrastructure(fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider,
+func NewDummyInfrastructure(
+	fs boshsys.FileSystem,
+	dirProvider boshdir.DirectoriesProvider,
 	platform boshplatform.Platform,
-	devicePathResolver boshdevicepathresolver.DevicePathResolver) (inf dummyInfrastructure) {
+	devicePathResolver boshdevicepathresolver.DevicePathResolver,
+) (inf dummyInfrastructure) {
 	inf.fs = fs
 	inf.dirProvider = dirProvider
 	inf.platform = platform
 	inf.devicePathResolver = devicePathResolver
-
 	return
 }
 
@@ -38,7 +41,8 @@ func (inf dummyInfrastructure) SetupSsh(username string) (err error) {
 }
 
 func (inf dummyInfrastructure) GetSettings() (settings boshsettings.Settings, err error) {
-	settingsPath := filepath.Join(inf.dirProvider.BoshDir(), "settings.json")
+	// agent-env.json is written out by dummy CPI.
+	settingsPath := filepath.Join(inf.dirProvider.BoshDir(), "agent-env.json")
 	contents, err := inf.fs.ReadFile(settingsPath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Read settings file")

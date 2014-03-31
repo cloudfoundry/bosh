@@ -8,12 +8,19 @@ module Bosh
       class NotImplemented < StandardError; end
 
       def initialize(options)
-        if options['dir'].nil?
-          raise ArgumentError, 'please provide base directory for dummy cloud'
+        @options = options
+
+        @base_dir = options['dir']
+        if @base_dir.nil?
+          raise ArgumentError, 'Must specify dir'
         end
 
-        @options = options
-        @base_dir = options['dir']
+        @agent_type = options['agent']['type']
+        unless %w(ruby go).include?(@agent_type)
+          raise ArgumentError, 'Unknown agent type provided'
+        end
+
+        @running_vms_dir = File.join(@base_dir, 'running_vms')
 
         FileUtils.mkdir_p(@base_dir)
       rescue Errno::EACCES
@@ -45,12 +52,12 @@ module Bosh
           mbus: @options['nats'],
         })
 
-        agent_cmd = agent_cmd(agent_id, root_dir, :ruby)
-        agent_log = "#{@options['dir']}/agent.#{agent_id}.log"
+        agent_cmd = agent_cmd(agent_id, root_dir)
+        agent_log = "#{@base_dir}/agent.#{agent_id}.log"
         agent_pid = Process.spawn(*agent_cmd, chdir: agent_base_dir(agent_id), out: agent_log, err: agent_log)
         Process.detach(agent_pid)
 
-        FileUtils.mkdir_p(File.join(@base_dir, 'running_vms'))
+        FileUtils.mkdir_p(@running_vms_dir)
         File.write(vm_file(agent_pid), agent_id)
 
         agent_pid.to_s
@@ -126,6 +133,23 @@ module Bosh
         raise NotImplemented, 'Dummy CPI does not implement validate_deployment'
       end
 
+      # Additional Dummy test helpers
+
+      def vm_cids
+        Dir.glob(File.join(@running_vms_dir, '*')).map { |vm| File.basename(vm) }
+      end
+
+      def kill_agents
+        vm_cids.each do |agent_pid|
+          begin
+            Process.kill('INT', agent_pid.to_i)
+          # rubocop:disable HandleExceptions
+          rescue Errno::ESRCH
+          # rubocop:enable HandleExceptions
+          end
+        end
+      end
+
       private
 
       def agent_id_for_vm_id(vm_id)
@@ -133,11 +157,14 @@ module Bosh
       end
 
       def agent_settings_file(agent_id)
-        File.join(agent_base_dir(agent_id), 'bosh', 'settings.json')
+        # Even though dummy CPI has complete access to agent execution file system
+        # it should never write directly to settings.json because
+        # the agent is responsible for retrieving the settings from the CPI.
+        File.join(agent_base_dir(agent_id), 'bosh', 'agent-env.json')
       end
 
       def agent_base_dir(agent_id)
-        "#{@options['dir']}/agent-base-dir-#{agent_id}"
+        "#{@base_dir}/agent-base-dir-#{agent_id}"
       end
 
       def write_agent_settings(agent_id, settings)
@@ -145,12 +172,12 @@ module Bosh
         File.write(agent_settings_file(agent_id), JSON.generate(settings))
       end
 
-      def agent_cmd(agent_id, root_dir, agent_type)
+      def agent_cmd(agent_id, root_dir)
         go_agent_exe = File.absolute_path('bosh/go_agent/out/bosh-agent')
         {
-          ruby: %W[bosh_agent      -b #{agent_base_dir(agent_id)} -I dummy -r #{root_dir} --no-alerts],
-          go:   %W[#{go_agent_exe} -b #{agent_base_dir(agent_id)} -I dummy -P dummy -M dummy],
-        }[agent_type]
+          'ruby' => %W[bosh_agent      -b #{agent_base_dir(agent_id)} -I dummy -r #{root_dir} --no-alerts],
+          'go'   => %W[#{go_agent_exe} -b #{agent_base_dir(agent_id)} -I dummy -P dummy -M dummy],
+        }[@agent_type.to_s]
       end
 
       def read_agent_settings(agent_id)
@@ -162,7 +189,7 @@ module Bosh
       end
 
       def vm_file(vm_id)
-        File.join(@base_dir, 'running_vms', vm_id.to_s)
+        File.join(@running_vms_dir, vm_id.to_s)
       end
 
       def disk_file(disk_id)

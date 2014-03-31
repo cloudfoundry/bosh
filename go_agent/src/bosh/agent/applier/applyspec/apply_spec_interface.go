@@ -1,6 +1,8 @@
 package applyspec
 
-import models "bosh/agent/applier/models"
+import (
+	models "bosh/agent/applier/models"
+)
 
 type ApplySpec interface {
 	Jobs() []models.Job

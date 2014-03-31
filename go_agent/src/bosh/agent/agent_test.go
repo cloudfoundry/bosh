@@ -1,15 +1,17 @@
 package agent_test
 
 import (
+	"errors"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 
 	. "bosh/agent"
 	boshalert "bosh/agent/alert"
 	fakealert "bosh/agent/alert/fakes"
+	boshas "bosh/agent/applier/applyspec"
+	fakeas "bosh/agent/applier/applyspec/fakes"
 	boshhandler "bosh/handler"
 	fakejobsup "bosh/jobsupervisor/fakes"
 	boshlog "bosh/logger"
@@ -35,93 +37,149 @@ func (dispatcher *FakeActionDispatcher) Dispatch(req boshhandler.Request) boshha
 	return dispatcher.DispatchResp
 }
 
-type agentDeps struct {
-	logger           boshlog.Logger
-	handler          *fakembus.FakeHandler
-	platform         *fakeplatform.FakePlatform
-	actionDispatcher *FakeActionDispatcher
-	alertBuilder     *fakealert.FakeAlertBuilder
-	jobSupervisor    *fakejobsup.FakeJobSupervisor
-}
-
-func buildAgent() (deps agentDeps, agent Agent) {
-	deps = agentDeps{
-		logger:           boshlog.NewLogger(boshlog.LEVEL_NONE),
-		handler:          &fakembus.FakeHandler{},
-		platform:         fakeplatform.NewFakePlatform(),
-		actionDispatcher: &FakeActionDispatcher{},
-		alertBuilder:     fakealert.NewFakeAlertBuilder(),
-		jobSupervisor:    fakejobsup.NewFakeJobSupervisor(),
-	}
-
-	agent = New(deps.logger, deps.handler, deps.platform, deps.actionDispatcher, deps.alertBuilder, deps.jobSupervisor, 5*time.Millisecond)
-	return
-}
 func init() {
 	Describe("Agent", func() {
-		It("run sets the dispatcher as message handler", func() {
-			deps, agent := buildAgent()
-			deps.actionDispatcher.DispatchResp = boshhandler.NewValueResponse("pong")
+		var (
+			agent            Agent
+			logger           boshlog.Logger
+			handler          *fakembus.FakeHandler
+			platform         *fakeplatform.FakePlatform
+			actionDispatcher *FakeActionDispatcher
+			alertBuilder     *fakealert.FakeAlertBuilder
+			jobSupervisor    *fakejobsup.FakeJobSupervisor
+			specService      *fakeas.FakeV1Service
+		)
 
-			err := agent.Run()
-			assert.NoError(GinkgoT(), err)
-			assert.True(GinkgoT(), deps.handler.ReceivedRun)
-
-			req := boshhandler.NewRequest("reply to me!", "some action", []byte("some payload"))
-			resp := deps.handler.Func(req)
-
-			assert.Equal(GinkgoT(), deps.actionDispatcher.DispatchReq, req)
-			assert.Equal(GinkgoT(), resp, deps.actionDispatcher.DispatchResp)
+		BeforeEach(func() {
+			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+			handler = &fakembus.FakeHandler{}
+			platform = fakeplatform.NewFakePlatform()
+			actionDispatcher = &FakeActionDispatcher{}
+			alertBuilder = fakealert.NewFakeAlertBuilder()
+			jobSupervisor = fakejobsup.NewFakeJobSupervisor()
+			specService = fakeas.NewFakeV1Service()
+			agent = New(logger, handler, platform, actionDispatcher, alertBuilder, jobSupervisor, specService, 5*time.Millisecond)
 		})
 
-		It("resumes persistent actions *before* dispatching new requests", func() {
-			deps, agent := buildAgent()
-			resumedBefore := false
-			deps.handler.RunFunc = func() {
-				resumedBefore = deps.actionDispatcher.ResumedPreviouslyDispatchedTasks
-			}
+		Describe("Run", func() {
+			It("sets the dispatcher as message handler", func() {
+				actionDispatcher.DispatchResp = boshhandler.NewValueResponse("pong")
 
-			err := agent.Run()
-			Expect(err).ToNot(HaveOccurred())
+				err := agent.Run()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(handler.ReceivedRun).To(BeTrue())
 
-			Expect(resumedBefore).To(BeTrue())
-		})
+				req := boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"))
+				resp := handler.Func(req)
 
-		It("run sets up heartbeats", func() {
-			deps, agent := buildAgent()
-			deps.platform.FakeVitalsService.GetVitals = boshvitals.Vitals{
-				Load: []string{"a", "b", "c"},
-			}
+				Expect(req).To(Equal(actionDispatcher.DispatchReq))
+				Expect(actionDispatcher.DispatchResp).To(Equal(resp))
+			})
 
-			err := agent.Run()
-			assert.NoError(GinkgoT(), err)
-			assert.False(GinkgoT(), deps.handler.TickHeartbeatsSent)
+			It("resumes persistent actions *before* dispatching new requests", func() {
+				resumedBefore := false
+				handler.RunFunc = func() {
+					resumedBefore = actionDispatcher.ResumedPreviouslyDispatchedTasks
+				}
 
-			assert.True(GinkgoT(), deps.handler.InitialHeartbeatSent)
-			assert.Equal(GinkgoT(), "heartbeat", deps.handler.SendToHealthManagerTopic)
-			time.Sleep(5 * time.Millisecond)
-			assert.True(GinkgoT(), deps.handler.TickHeartbeatsSent)
+				err := agent.Run()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(resumedBefore).To(BeTrue())
+			})
 
-			hb := deps.handler.SendToHealthManagerPayload.(boshmbus.Heartbeat)
-			assert.Equal(GinkgoT(), deps.platform.FakeVitalsService.GetVitals, hb.Vitals)
-		})
+			Context("when heartbeats can be sent", func() {
+				BeforeEach(func() {
+					jobName := "fake-job"
+					jobIndex := 1
 
-		It("run sets the callback for job failures monitoring", func() {
-			deps, agent := buildAgent()
+					specService.Spec = boshas.V1ApplySpec{
+						JobSpec: boshas.JobSpec{Name: &jobName},
+						Index:   &jobIndex,
+					}
 
-			builtAlert := boshalert.Alert{Id: "some built alert id"}
-			deps.alertBuilder.BuildAlert = builtAlert
+					jobSupervisor.StatusStatus = "fake-state"
 
-			err := agent.Run()
-			assert.NoError(GinkgoT(), err)
-			assert.NotEqual(GinkgoT(), deps.handler.SendToHealthManagerTopic, "alert")
+					platform.FakeVitalsService.GetVitals = boshvitals.Vitals{
+						Load: []string{"a", "b", "c"},
+					}
+				})
 
-			failureAlert := boshalert.MonitAlert{Id: "some random id"}
-			deps.jobSupervisor.OnJobFailure(failureAlert)
+				expectedJobName := "fake-job"
+				expectedJobIndex := 1
+				expectedHb := boshmbus.Heartbeat{
+					Job:      &expectedJobName,
+					Index:    &expectedJobIndex,
+					JobState: "fake-state",
+					Vitals:   boshvitals.Vitals{Load: []string{"a", "b", "c"}},
+				}
 
-			assert.Equal(GinkgoT(), deps.alertBuilder.BuildInput, failureAlert)
-			assert.Equal(GinkgoT(), deps.handler.SendToHealthManagerTopic, "alert")
-			assert.Equal(GinkgoT(), deps.handler.SendToHealthManagerPayload, builtAlert)
+				It("sends initial heartbeat", func() {
+					err := agent.Run()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(handler.InitialHeartbeatSent).To(BeTrue())
+					Expect(handler.TickHeartbeatsSent).To(BeFalse())
+
+					Expect(handler.SendToHealthManagerTopic).To(Equal("heartbeat"))
+					Expect(handler.SendToHealthManagerPayload.(boshmbus.Heartbeat)).To(Equal(expectedHb))
+				})
+
+				It("sends periodic heartbeats", func() {
+					err := agent.Run()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(handler.TickHeartbeatsSent).To(BeFalse())
+					time.Sleep(5 * time.Millisecond)
+					Expect(handler.TickHeartbeatsSent).To(BeTrue())
+
+					Expect(handler.SendToHealthManagerTopic).To(Equal("heartbeat"))
+					Expect(handler.SendToHealthManagerPayload.(boshmbus.Heartbeat)).To(Equal(expectedHb))
+				})
+			})
+
+			Context("when the agent fails to get job spec for a heartbeat", func() {
+				BeforeEach(func() {
+					block := make(chan error)
+					handler.RunFunc = func() { <-block }
+					specService.GetErr = errors.New("fake-spec-service-error")
+				})
+
+				It("returns the error", func() {
+					err := agent.Run()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-spec-service-error"))
+				})
+			})
+
+			Context("when the agent fails to get vitals for a heartbeat", func() {
+				BeforeEach(func() {
+					block := make(chan error)
+					handler.RunFunc = func() { <-block }
+					platform.FakeVitalsService.GetErr = errors.New("fake-vitals-service-error")
+				})
+
+				It("returns the error", func() {
+					err := agent.Run()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-vitals-service-error"))
+				})
+			})
+
+			It("sets the callback for job failures monitoring", func() {
+				builtAlert := boshalert.Alert{Id: "some built alert id"}
+				alertBuilder.BuildAlert = builtAlert
+
+				err := agent.Run()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(handler.SendToHealthManagerTopic).ToNot(Equal("alert"))
+
+				failureAlert := boshalert.MonitAlert{Id: "some random id"}
+				jobSupervisor.OnJobFailure(failureAlert)
+
+				Expect(failureAlert).To(Equal(alertBuilder.BuildInput))
+				Expect(handler.SendToHealthManagerTopic).To(Equal("alert"))
+				Expect(builtAlert).To(Equal(handler.SendToHealthManagerPayload))
+			})
 		})
 	})
 }

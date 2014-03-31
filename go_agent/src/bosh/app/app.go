@@ -170,7 +170,16 @@ func (app *app) Setup(args []string) (err error) {
 	actionDispatcher := boshagent.NewActionDispatcher(app.logger, taskService, taskManager, actionFactory, actionRunner)
 	alertBuilder := boshalert.NewBuilder(settingsService, app.logger)
 
-	app.agent = boshagent.New(app.logger, mbusHandler, app.platform, actionDispatcher, alertBuilder, jobSupervisor, time.Minute)
+	app.agent = boshagent.New(
+		app.logger,
+		mbusHandler,
+		app.platform,
+		actionDispatcher,
+		alertBuilder,
+		jobSupervisor,
+		specService,
+		time.Minute,
+	)
 
 	return
 }

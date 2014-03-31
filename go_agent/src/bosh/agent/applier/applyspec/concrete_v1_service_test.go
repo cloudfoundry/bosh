@@ -1,47 +1,81 @@
 package applyspec_test
 
 import (
+	"errors"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	. "bosh/agent/applier/applyspec"
 	boshassert "bosh/assert"
 	fakesys "bosh/system/fakes"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
-func buildV1Service() (fs *fakesys.FakeFileSystem, specPath string, service V1Service) {
-	fs = fakesys.NewFakeFileSystem()
-	specPath = "/spec.json"
-	service = NewConcreteV1Service(fs, specPath)
-	return
-}
 func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("get", func() {
-			fs, specPath, service := buildV1Service()
-			fs.WriteFileString(specPath, `{"deployment":"fake-deployment-name"}`)
+	Describe("concreteV1Service", func() {
+		var (
+			fs       *fakesys.FakeFileSystem
+			specPath string
+			service  V1Service
+		)
 
-			spec, err := service.Get()
-			assert.NoError(GinkgoT(), err)
-			expectedSpec := V1ApplySpec{
-				Deployment: "fake-deployment-name",
-			}
-			assert.Equal(GinkgoT(), expectedSpec, spec)
+		BeforeEach(func() {
+			fs = fakesys.NewFakeFileSystem()
+			specPath = "/spec.json"
+			service = NewConcreteV1Service(fs, specPath)
 		})
-		It("set", func() {
 
-			fs, specPath, service := buildV1Service()
+		Describe("Get", func() {
+			Context("when filesystem has a spec file", func() {
+				BeforeEach(func() {
+					fs.WriteFileString(specPath, `{"deployment":"fake-deployment-name"}`)
+				})
 
-			spec := V1ApplySpec{
-				JobSpec: JobSpec{
-					Name: "fake-job",
-				},
-			}
+				It("reads spec from filesystem", func() {
+					spec, err := service.Get()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(spec).To(Equal(V1ApplySpec{Deployment: "fake-deployment-name"}))
+				})
 
-			err := service.Set(spec)
-			assert.NoError(GinkgoT(), err)
-			specPathStats := fs.GetFileTestStat(specPath)
-			assert.NotNil(GinkgoT(), specPathStats)
-			boshassert.MatchesJsonBytes(GinkgoT(), spec, specPathStats.Content)
+				It("returns error if reading spec from filesystem errs", func() {
+					fs.ReadFileError = errors.New("fake-read-error")
+
+					spec, err := service.Get()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-read-error"))
+					Expect(spec).To(Equal(V1ApplySpec{}))
+				})
+			})
+
+			Context("when filesystem does not have a spec file", func() {
+				It("reads spec from filesystem", func() {
+					spec, err := service.Get()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(spec).To(Equal(V1ApplySpec{}))
+				})
+			})
 		})
+
+		Describe("Set", func() {
+			newSpec := V1ApplySpec{Deployment: "fake-deployment-name"}
+
+			It("writes spec to filesystem", func() {
+				err := service.Set(newSpec)
+				Expect(err).ToNot(HaveOccurred())
+
+				specPathStats := fs.GetFileTestStat(specPath)
+				Expect(specPathStats).ToNot(BeNil())
+				boshassert.MatchesJsonBytes(GinkgoT(), newSpec, specPathStats.Content)
+			})
+
+			It("returns error if writing spec to filesystem errs", func() {
+				fs.WriteToFileError = errors.New("fake-write-error")
+
+				err := service.Set(newSpec)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-write-error"))
+			})
+		})
+
 	})
 }

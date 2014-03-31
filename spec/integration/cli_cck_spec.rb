@@ -1,10 +1,7 @@
 require 'spec_helper'
-require 'cloud/dummy'
 
 describe 'cli: cloudcheck', type: :integration do
   with_reset_sandbox_before_each
-
-  let!(:dummy_cloud) { Bosh::Clouds::Dummy.new('dir' => current_sandbox.cloud_storage_dir) }
 
   before do
     target_and_login
@@ -24,13 +21,7 @@ describe 'cli: cloudcheck', type: :integration do
   end
 
   it 'provides resolution options for unresponsive agents' do
-    get_cids.each do |cid|
-      begin
-        Process.kill('INT', cid.to_i)
-      rescue Errno::ESRCH
-        # noop
-      end
-    end
+    current_sandbox.cpi.kill_agents
 
     cloudcheck_response = run_bosh_cck_ignore_errors(3)
     expect(cloudcheck_response).to_not match(regexp('No problems found'))
@@ -42,7 +33,7 @@ describe 'cli: cloudcheck', type: :integration do
   end
 
   it 'provides resolution options for missing VMs' do
-    dummy_cloud.delete_vm(get_cids.first)
+    current_sandbox.cpi.delete_vm(current_sandbox.cpi.vm_cids.first)
 
    cloudcheck_response = run_bosh_cck_ignore_errors(1)
    expect(cloudcheck_response).to_not match(regexp('No problems found'))
@@ -59,9 +50,5 @@ describe 'cli: cloudcheck', type: :integration do
       puts output
     end
     output
-  end
-
-  def get_cids
-    Dir[File.join(current_sandbox.agent_tmp_path, 'running_vms', '*')].map { |f| File.basename(f) }
   end
 end

@@ -12,8 +12,13 @@ type V1ApplySpec struct {
 	NetworkSpecs      map[string]interface{} `json:"networks"`
 	ResourcePoolSpecs interface{}            `json:"resource_pool"`
 	Deployment        string                 `json:"deployment"`
-	Index             int                    `json:"index"`
-	PersistentDisk    int                    `json:"persistent_disk"`
+
+	// Since default value of int is 0 use pointer
+	// to indicate that state does not have an assigned index
+	// (json.Marshal will result in null instead of 0).
+	Index *int `json:"index"`
+
+	PersistentDisk int `json:"persistent_disk"`
 
 	RenderedTemplatesArchiveSpec RenderedTemplatesArchiveSpec `json:"rendered_templates_archive"`
 }

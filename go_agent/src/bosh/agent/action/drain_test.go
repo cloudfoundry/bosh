@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
 
 	. "bosh/agent/action"
@@ -13,105 +14,156 @@ import (
 	fakenotif "bosh/notification/fakes"
 )
 
-func buildDrain() (
-	notifier *fakenotif.FakeNotifier,
-	fakeDrainProvider *fakedrain.FakeDrainScriptProvider,
-	action DrainAction,
-) {
-	notifier = fakenotif.NewFakeNotifier()
-
-	specService := fakeas.NewFakeV1Service()
-	currentSpec := boshas.V1ApplySpec{}
-	currentSpec.JobSpec.Template = "foo"
-	specService.Spec = currentSpec
-
-	fakeDrainProvider = fakedrain.NewFakeDrainScriptProvider()
-	fakeDrainProvider.NewDrainScriptDrainScript.ExistsBool = true
-
-	action = NewDrain(notifier, specService, fakeDrainProvider)
-
-	return
-}
 func init() {
-	Describe("Testing with Ginkgo", func() {
+	Describe("DrainAction", func() {
+		var (
+			notifier            *fakenotif.FakeNotifier
+			specService         *fakeas.FakeV1Service
+			drainScriptProvider *fakedrain.FakeDrainScriptProvider
+			action              DrainAction
+		)
+
+		BeforeEach(func() {
+			notifier = fakenotif.NewFakeNotifier()
+
+			specService = fakeas.NewFakeV1Service()
+			currentSpec := boshas.V1ApplySpec{}
+			currentSpec.JobSpec.Template = "foo"
+			specService.Spec = currentSpec
+
+			drainScriptProvider = fakedrain.NewFakeDrainScriptProvider()
+			drainScriptProvider.NewDrainScriptDrainScript.ExistsBool = true
+
+			action = NewDrain(notifier, specService, drainScriptProvider)
+		})
+
 		It("drain should be asynchronous", func() {
-			_, _, action := buildDrain()
 			assert.True(GinkgoT(), action.IsAsynchronous())
 		})
 
 		It("is not persistent", func() {
-			_, _, action := buildDrain()
 			assert.False(GinkgoT(), action.IsPersistent())
 		})
 
-		It("drain run update skips drain script when without drain script", func() {
+		Context("when current agent spec does not have a template", func() {
+			BeforeEach(func() {
+				specService.Spec = boshas.V1ApplySpec{}
+			})
 
-			_, fakeDrainProvider, action := buildDrain()
+			Context("when drain update is requested", func() {
+				It("return 0 and does not run drain script", func() {
+					newSpec := boshas.V1ApplySpec{
+						PackageSpecs: map[string]boshas.PackageSpec{
+							"foo": boshas.PackageSpec{
+								Name: "foo",
+								Sha1: "foo-sha1-new",
+							},
+						},
+					}
 
-			newSpec := boshas.V1ApplySpec{
-				PackageSpecs: map[string]boshas.PackageSpec{
-					"foo": boshas.PackageSpec{
-						Name: "foo",
-						Sha1: "foo-sha1-new",
-					},
-				},
-			}
+					value, err := action.Run(DrainTypeUpdate, newSpec)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(value).To(Equal(0))
 
-			fakeDrainProvider.NewDrainScriptDrainScript.ExistsBool = false
+					assert.False(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.DidRun)
+				})
+			})
 
-			_, err := action.Run(DrainTypeUpdate, newSpec)
-			assert.NoError(GinkgoT(), err)
-			assert.False(GinkgoT(), fakeDrainProvider.NewDrainScriptDrainScript.DidRun)
+			Context("when drain shutdown is requested", func() {
+				It("returns 0 and does not run drain script", func() {
+					newSpec := boshas.V1ApplySpec{
+						PackageSpecs: map[string]boshas.PackageSpec{
+							"foo": boshas.PackageSpec{
+								Name: "foo",
+								Sha1: "foo-sha1-new",
+							},
+						},
+					}
+
+					value, err := action.Run(DrainTypeUpdate, newSpec)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(value).To(Equal(0))
+
+					assert.False(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.DidRun)
+				})
+			})
+
+			Context("when drain status is requested", func() {
+				It("returns error because drain status should only be called after starting draining", func() {
+					value, err := action.Run(DrainTypeStatus)
+					Expect(err).To(HaveOccurred())
+					Expect(value).To(Equal(0))
+				})
+			})
 		})
-		It("drain run shutdown skips drain script when without drain script", func() {
 
-			_, fakeDrainProvider, action := buildDrain()
+		Context("when job template does not include drain script", func() {
+			BeforeEach(func() {
+				drainScriptProvider.NewDrainScriptDrainScript.ExistsBool = false
+			})
 
-			newSpec := boshas.V1ApplySpec{
-				PackageSpecs: map[string]boshas.PackageSpec{
-					"foo": boshas.PackageSpec{
-						Name: "foo",
-						Sha1: "foo-sha1-new",
-					},
-				},
-			}
+			Context("when drain update is requested", func() {
+				It("returns 0 and does not run drain script", func() {
+					newSpec := boshas.V1ApplySpec{
+						PackageSpecs: map[string]boshas.PackageSpec{
+							"foo": boshas.PackageSpec{
+								Name: "foo",
+								Sha1: "foo-sha1-new",
+							},
+						},
+					}
 
-			fakeDrainProvider.NewDrainScriptDrainScript.ExistsBool = false
+					value, err := action.Run(DrainTypeUpdate, newSpec)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(value).To(Equal(0))
 
-			_, err := action.Run(DrainTypeShutdown, newSpec)
-			assert.NoError(GinkgoT(), err)
-			assert.False(GinkgoT(), fakeDrainProvider.NewDrainScriptDrainScript.DidRun)
+					assert.False(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.DidRun)
+				})
+			})
+
+			Context("when drain shutdown is requested", func() {
+				It("returns 0 and does not run drain script", func() {
+					newSpec := boshas.V1ApplySpec{
+						PackageSpecs: map[string]boshas.PackageSpec{
+							"foo": boshas.PackageSpec{
+								Name: "foo",
+								Sha1: "foo-sha1-new",
+							},
+						},
+					}
+
+					value, err := action.Run(DrainTypeShutdown, newSpec)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(value).To(Equal(0))
+
+					assert.False(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.DidRun)
+				})
+			})
+
+			Context("when drain status is requested", func() {
+				It("returns error because drain status should only be called after starting draining", func() {
+					value, err := action.Run(DrainTypeStatus)
+					Expect(err).To(HaveOccurred())
+					Expect(value).To(Equal(0))
+				})
+			})
 		})
-		It("drain run status errs when without drain script", func() {
 
-			_, fakeDrainProvider, action := buildDrain()
-
-			fakeDrainProvider.NewDrainScriptDrainScript.ExistsBool = false
-
-			_, err := action.Run(DrainTypeStatus)
-			assert.Error(GinkgoT(), err)
-		})
 		It("drain errs when drain script exits with error", func() {
-
-			_, fakeDrainScriptProvider, action := buildDrain()
-
-			fakeDrainScriptProvider.NewDrainScriptDrainScript.RunExitStatus = 0
-			fakeDrainScriptProvider.NewDrainScriptDrainScript.RunError = errors.New("Fake error")
+			drainScriptProvider.NewDrainScriptDrainScript.RunExitStatus = 0
+			drainScriptProvider.NewDrainScriptDrainScript.RunError = errors.New("Fake error")
 
 			value, err := action.Run(DrainTypeStatus)
 			assert.Equal(GinkgoT(), value, 0)
 			assert.Error(GinkgoT(), err)
 		})
-		It("run with update errs if not given new spec", func() {
 
-			_, _, action := buildDrain()
+		It("run with update errs if not given new spec", func() {
 			_, err := action.Run(DrainTypeUpdate)
 			assert.Error(GinkgoT(), err)
 		})
+
 		It("run with update runs drain with updated packages", func() {
-
-			_, fakeDrainScriptProvider, action := buildDrain()
-
 			newSpec := boshas.V1ApplySpec{
 				PackageSpecs: map[string]boshas.PackageSpec{
 					"foo": boshas.PackageSpec{
@@ -124,38 +176,34 @@ func init() {
 			drainStatus, err := action.Run(DrainTypeUpdate, newSpec)
 			assert.NoError(GinkgoT(), err)
 			assert.Equal(GinkgoT(), 1, drainStatus)
-			assert.Equal(GinkgoT(), fakeDrainScriptProvider.NewDrainScriptTemplateName, "foo")
-			assert.True(GinkgoT(), fakeDrainScriptProvider.NewDrainScriptDrainScript.DidRun)
-			assert.Equal(GinkgoT(), fakeDrainScriptProvider.NewDrainScriptDrainScript.RunParams.JobChange(), "job_new")
-			assert.Equal(GinkgoT(), fakeDrainScriptProvider.NewDrainScriptDrainScript.RunParams.HashChange(), "hash_new")
-			assert.Equal(GinkgoT(), fakeDrainScriptProvider.NewDrainScriptDrainScript.RunParams.UpdatedPackages(), []string{"foo"})
+			assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptTemplateName, "foo")
+			assert.True(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.DidRun)
+			assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.JobChange(), "job_new")
+			assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.HashChange(), "hash_new")
+			assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.UpdatedPackages(), []string{"foo"})
 		})
+
 		It("run with shutdown", func() {
-
-			fakeNotifier, fakeDrainScriptProvider, action := buildDrain()
-
 			drainStatus, err := action.Run(DrainTypeShutdown)
 			assert.NoError(GinkgoT(), err)
 			assert.Equal(GinkgoT(), 1, drainStatus)
-			assert.Equal(GinkgoT(), fakeDrainScriptProvider.NewDrainScriptTemplateName, "foo")
-			assert.True(GinkgoT(), fakeDrainScriptProvider.NewDrainScriptDrainScript.DidRun)
-			assert.Equal(GinkgoT(), fakeDrainScriptProvider.NewDrainScriptDrainScript.RunParams.JobChange(), "job_shutdown")
-			assert.Equal(GinkgoT(), fakeDrainScriptProvider.NewDrainScriptDrainScript.RunParams.HashChange(), "hash_unchanged")
-			assert.Equal(GinkgoT(), fakeDrainScriptProvider.NewDrainScriptDrainScript.RunParams.UpdatedPackages(), []string{})
-			assert.True(GinkgoT(), fakeNotifier.NotifiedShutdown)
+			assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptTemplateName, "foo")
+			assert.True(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.DidRun)
+			assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.JobChange(), "job_shutdown")
+			assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.HashChange(), "hash_unchanged")
+			assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.UpdatedPackages(), []string{})
+			assert.True(GinkgoT(), notifier.NotifiedShutdown)
 		})
+
 		It("run with status", func() {
-
-			_, fakeDrainScriptProvider, action := buildDrain()
-
 			drainStatus, err := action.Run(DrainTypeStatus)
 			assert.NoError(GinkgoT(), err)
 			assert.Equal(GinkgoT(), 1, drainStatus)
-			assert.Equal(GinkgoT(), fakeDrainScriptProvider.NewDrainScriptTemplateName, "foo")
-			assert.True(GinkgoT(), fakeDrainScriptProvider.NewDrainScriptDrainScript.DidRun)
-			assert.Equal(GinkgoT(), fakeDrainScriptProvider.NewDrainScriptDrainScript.RunParams.JobChange(), "job_check_status")
-			assert.Equal(GinkgoT(), fakeDrainScriptProvider.NewDrainScriptDrainScript.RunParams.HashChange(), "hash_unchanged")
-			assert.Equal(GinkgoT(), fakeDrainScriptProvider.NewDrainScriptDrainScript.RunParams.UpdatedPackages(), []string{})
+			assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptTemplateName, "foo")
+			assert.True(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.DidRun)
+			assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.JobChange(), "job_check_status")
+			assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.HashChange(), "hash_unchanged")
+			assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.UpdatedPackages(), []string{})
 		})
 	})
 }

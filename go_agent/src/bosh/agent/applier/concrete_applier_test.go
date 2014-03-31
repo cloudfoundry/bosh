@@ -57,6 +57,7 @@ func buildJob() models.Job {
 func buildPackage() models.Package {
 	return models.Package{Name: "fake-package-name", Version: "fake-package-name"}
 }
+
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("apply applies jobs", func() {

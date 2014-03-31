@@ -1,20 +1,21 @@
 script: 'bundle exec rake --trace $TASKS'
 
-# this is required by the go agent
+# Required by the go agent
 before_install: 'sudo apt-get update'
+
 install:
   - 'sudo apt-get install dnsutils'
   - 'bundle install --local --without development'
 
 rvm:
   - ruby-1.9.3
-  - ruby-2.0.0
+
 env:
-  - TASKS="ci:run:unit"
-  - DB=mysql TASKS="ci:run:integration"
-  - DB=postgres TASKS="ci:run:integration"
-  - TASKS="ci:run:go_agent_tests"
-matrix:
-  allow_failures:
-    - rvm: ruby-2.0.0
-    - env: TASKS="ci:run:go_agent_tests"
+  - TASKS="travis:install_go spec:unit"
+
+  - DB=mysql    TASKS="spec:integration:ruby_agent"
+  - DB=postgres TASKS="spec:integration:ruby_agent"
+
+  # Go agent integration tests do not need to test every DB flavor
+  # since integration tests above already tested them
+  - TASKS="travis:install_go spec:integration:go_agent"

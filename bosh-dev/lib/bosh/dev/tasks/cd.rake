@@ -4,6 +4,7 @@ namespace :cd do
     :build_number,
     :infrastructure_name,
     :operating_system_name,
+    :agent_name,
     :bosh_target,
     :environment_name,
     :deployment_name,

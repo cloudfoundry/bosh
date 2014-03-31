@@ -1,11 +1,13 @@
 package applyspec_test
 
 import (
-	. "bosh/agent/applier/applyspec"
-	models "bosh/agent/applier/models"
 	"encoding/json"
+
 	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
+
+	. "bosh/agent/applier/applyspec"
+	models "bosh/agent/applier/models"
 )
 
 func init() {
@@ -13,57 +15,57 @@ func init() {
 		It("v1 apply spec json conversion", func() {
 
 			specJson := `{
-		"properties": {
-			"logging": {"max_log_file_size": "10M"}
-		},
-		"job": {
-			"name": "router",
-			"template": "router template",
-			"version": "1.0",
-			"sha1": "router sha1",
-			"blobstore_id": "router-blob-id-1",
-			"templates": [
-				{"name": "template 1", "version": "0.1", "sha1": "template 1 sha1", "blobstore_id": "template-blob-id-1"},
-				{"name": "template 2", "version": "0.2", "sha1": "template 2 sha1", "blobstore_id": "template-blob-id-2"}
-			]
-		},
-		"packages": {
-			"package 1": {"name": "package 1", "version": "0.1", "sha1": "package 1 sha1", "blobstore_id": "package-blob-id-1"},
-			"package 2": {"name": "package 2", "version": "0.2", "sha1": "package 2 sha1", "blobstore_id": "package-blob-id-2"}
-		},
-		"networks": {
-			"manual-net": {
-				"cloud_properties": {
-					"subnet": "subnet-xxxxxx"
+				"properties": {
+					"logging": {"max_log_file_size": "10M"}
 				},
-				"default": [
-					"dns",
-					"gateway"
-				],
-				"dns": [
-					"xx.xx.xx.xx"
-				],
-				"dns_record_name": "job-index.job-name.manual-net.deployment-name.bosh",
-				"gateway": "xx.xx.xx.xx",
-				"ip": "xx.xx.xx.xx",
-				"netmask": "xx.xx.xx.xx"
-			},
-			"vip-net": {
-				"cloud_properties": {
-					"security_groups": [
-						"bosh"
+				"job": {
+					"name": "router",
+					"template": "router template",
+					"version": "1.0",
+					"sha1": "router sha1",
+					"blobstore_id": "router-blob-id-1",
+					"templates": [
+						{"name": "template 1", "version": "0.1", "sha1": "template 1 sha1", "blobstore_id": "template-blob-id-1"},
+						{"name": "template 2", "version": "0.2", "sha1": "template 2 sha1", "blobstore_id": "template-blob-id-2"}
 					]
 				},
-				"dns_record_name": "job-index.job-name.vip-net.deployment-name.bosh",
-				"ip": "xx.xx.xx.xx",
-				"type": "vip"
-			}
-		},
-		"rendered_templates_archive": {
-			"sha1": "archive sha 1",
-			"blobstore_id": "archive-blob-id-1"
-		}
-	}`
+				"packages": {
+					"package 1": {"name": "package 1", "version": "0.1", "sha1": "package 1 sha1", "blobstore_id": "package-blob-id-1"},
+					"package 2": {"name": "package 2", "version": "0.2", "sha1": "package 2 sha1", "blobstore_id": "package-blob-id-2"}
+				},
+				"networks": {
+					"manual-net": {
+						"cloud_properties": {
+							"subnet": "subnet-xxxxxx"
+						},
+						"default": [
+							"dns",
+							"gateway"
+						],
+						"dns": [
+							"xx.xx.xx.xx"
+						],
+						"dns_record_name": "job-index.job-name.manual-net.deployment-name.bosh",
+						"gateway": "xx.xx.xx.xx",
+						"ip": "xx.xx.xx.xx",
+						"netmask": "xx.xx.xx.xx"
+					},
+					"vip-net": {
+						"cloud_properties": {
+							"security_groups": [
+								"bosh"
+							]
+						},
+						"dns_record_name": "job-index.job-name.vip-net.deployment-name.bosh",
+						"ip": "xx.xx.xx.xx",
+						"type": "vip"
+					}
+				},
+				"rendered_templates_archive": {
+					"sha1": "archive sha 1",
+					"blobstore_id": "archive-blob-id-1"
+				}
+			}`
 
 			expectedNetworks := map[string]interface{}{
 				"manual-net": map[string]interface{}{
@@ -83,12 +85,14 @@ func init() {
 				},
 			}
 
+			jobName := "router"
+
 			expectedSpec := V1ApplySpec{
 				PropertiesSpec: PropertiesSpec{
 					LoggingSpec: LoggingSpec{MaxLogFileSize: "10M"},
 				},
 				JobSpec: JobSpec{
-					Name:        "router",
+					Name:        &jobName,
 					Template:    "router template",
 					Version:     "1.0",
 					Sha1:        "router sha1",
@@ -116,11 +120,13 @@ func init() {
 			assert.Equal(GinkgoT(), spec.NetworkSpecs, expectedNetworks)
 			assert.Equal(GinkgoT(), spec, expectedSpec)
 		})
+
 		It("jobs with specified job templates", func() {
+			jobName := "fake-job-legacy-name"
 
 			spec := V1ApplySpec{
 				JobSpec: JobSpec{
-					Name:        "fake-job-legacy-name",
+					Name:        &jobName,
 					Version:     "fake-job-legacy-version",
 					Sha1:        "fake-job-legacy-sha1",
 					BlobstoreId: "fake-job-legacy-blobstore-id",
@@ -165,13 +171,13 @@ func init() {
 				},
 			}, spec.Jobs())
 		})
-		It("jobs when no jobs specified", func() {
 
+		It("jobs when no jobs specified", func() {
 			spec := V1ApplySpec{}
 			assert.Equal(GinkgoT(), []models.Job{}, spec.Jobs())
 		})
-		It("packages", func() {
 
+		It("packages", func() {
 			spec := V1ApplySpec{
 				PackageSpecs: map[string]PackageSpec{
 					"fake-package1-name-key": PackageSpec{
@@ -194,13 +200,13 @@ func init() {
 				},
 			}, spec.Packages())
 		})
-		It("packages when no packages specified", func() {
 
+		It("packages when no packages specified", func() {
 			spec := V1ApplySpec{}
 			assert.Equal(GinkgoT(), []models.Package{}, spec.Packages())
 		})
-		It("max log file size", func() {
 
+		It("max log file size", func() {
 			spec := V1ApplySpec{}
 			assert.Equal(GinkgoT(), "50M", spec.MaxLogFileSize())
 

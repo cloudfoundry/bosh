@@ -153,7 +153,7 @@ module IntegrationSandboxHelpers
   end
 
   def current_sandbox
-    @current_sandbox = Thread.current[:sandbox] || Bosh::Dev::Sandbox::Main.new
+    @current_sandbox = Thread.current[:sandbox] || Bosh::Dev::Sandbox::Main.from_env
     Thread.current[:sandbox] = @current_sandbox
   end
 

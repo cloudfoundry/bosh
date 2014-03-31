@@ -32,13 +32,10 @@ func init() {
 		})
 
 		It("apply returns applied", func() {
-
 			_, _, action := buildApplyAction()
 
 			applySpec := boshas.V1ApplySpec{
-				JobSpec: boshas.JobSpec{
-					Name: "router",
-				},
+				ConfigurationHash: "fake-config-hash",
 			}
 
 			value, err := action.Run(applySpec)
@@ -46,22 +43,20 @@ func init() {
 
 			boshassert.MatchesJsonString(GinkgoT(), value, `"applied"`)
 		})
-		It("apply run saves the first argument to spec json", func() {
 
+		It("apply run saves the first argument to spec json", func() {
 			_, specService, action := buildApplyAction()
 
 			applySpec := boshas.V1ApplySpec{
-				JobSpec: boshas.JobSpec{
-					Name: "router",
-				},
+				ConfigurationHash: "fake-config-hash",
 			}
 
 			_, err := action.Run(applySpec)
 			assert.NoError(GinkgoT(), err)
 			assert.Equal(GinkgoT(), applySpec, specService.Spec)
 		})
-		It("apply run skips applier when apply spec does not have configuration hash", func() {
 
+		It("apply run skips applier when apply spec does not have configuration hash", func() {
 			applier, _, action := buildApplyAction()
 
 			applySpec := boshas.V1ApplySpec{
@@ -74,8 +69,8 @@ func init() {
 			assert.NoError(GinkgoT(), err)
 			assert.False(GinkgoT(), applier.Applied)
 		})
-		It("apply run runs applier with apply spec when apply spec has configuration hash", func() {
 
+		It("apply run runs applier with apply spec when apply spec has configuration hash", func() {
 			applier, _, action := buildApplyAction()
 
 			expectedApplySpec := boshas.V1ApplySpec{
@@ -90,8 +85,8 @@ func init() {
 			assert.True(GinkgoT(), applier.Applied)
 			assert.Equal(GinkgoT(), expectedApplySpec, applier.ApplyApplySpec)
 		})
-		It("apply run errs when applier fails", func() {
 
+		It("apply run errs when applier fails", func() {
 			applier, _, action := buildApplyAction()
 
 			applier.ApplyError = errors.New("fake-apply-error")

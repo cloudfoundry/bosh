@@ -1,9 +1,11 @@
 package applyspec
 
-import models "bosh/agent/applier/models"
+import (
+	models "bosh/agent/applier/models"
+)
 
 type JobSpec struct {
-	Name             string            `json:"name"`
+	Name             *string           `json:"name"`
 	Release          string            `json:"release"`
 	Template         string            `json:"template"`
 	Version          string            `json:"version"`

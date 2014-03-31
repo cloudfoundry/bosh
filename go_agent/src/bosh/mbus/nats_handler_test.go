@@ -63,8 +63,8 @@ func init() {
 
 			assert.Equal(GinkgoT(), []byte(`{"value":"expected value"}`), message.Payload)
 		})
-		It("nats send periodic heartbeat", func() {
 
+		It("nats send periodic heartbeat", func() {
 			settings := &fakesettings.FakeSettingsService{
 				AgentId: "my-agent-id",
 				MbusUrl: "nats://foo:bar@127.0.0.1:1234",
@@ -72,7 +72,10 @@ func init() {
 			client, handler := buildNatsClientAndHandler(settings)
 
 			errChan := make(chan error, 1)
-			expectedHeartbeat := Heartbeat{Job: "foo", Index: 0}
+
+			jobName := "foo"
+			jobIndex := 0
+			expectedHeartbeat := Heartbeat{Job: &jobName, Index: &jobIndex}
 
 			go func() {
 				errChan <- handler.SendToHealthManager("heartbeat", expectedHeartbeat)
@@ -93,8 +96,8 @@ func init() {
 			expectedJson, _ := json.Marshal(expectedHeartbeat)
 			assert.Equal(GinkgoT(), string(expectedJson), string(message.Payload))
 		})
-		It("nats handler connection info", func() {
 
+		It("nats handler connection info", func() {
 			settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://foo:bar@127.0.0.1:1234"}
 			client, handler := buildNatsClientAndHandler(settings)
 

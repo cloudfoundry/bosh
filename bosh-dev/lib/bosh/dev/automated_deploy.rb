@@ -12,6 +12,7 @@ module Bosh::Dev
         args.build_number,
         args.infrastructure_name,
         args.operating_system_name,
+        args.agent_name,
       )
 
       builder = builder_for_infrastructure_name(args.infrastructure_name)

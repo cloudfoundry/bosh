@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
 
 	. "bosh/agent/action"
@@ -38,7 +39,7 @@ func buildGetStateAction(settings boshsettings.Service) (
 	return
 }
 func init() {
-	Describe("Testing with Ginkgo", func() {
+	Describe("GetState", func() {
 		It("get state should be synchronous", func() {
 			settings := &fakesettings.FakeSettingsService{}
 			_, _, _, action := buildGetStateAction(settings)
@@ -51,111 +52,98 @@ func init() {
 			assert.False(GinkgoT(), action.IsPersistent())
 		})
 
-		It("get state run", func() {
+		Describe("Run", func() {
+			It("returns state", func() {
+				settings := &fakesettings.FakeSettingsService{}
+				settings.AgentId = "my-agent-id"
+				settings.Vm.Name = "vm-abc-def"
 
-			settings := &fakesettings.FakeSettingsService{}
-			settings.AgentId = "my-agent-id"
-			settings.Vm.Name = "vm-abc-def"
+				specService, jobSupervisor, _, action := buildGetStateAction(settings)
+				jobSupervisor.StatusStatus = "running"
 
-			specService, jobSupervisor, _, action := buildGetStateAction(settings)
-			jobSupervisor.StatusStatus = "running"
+				specService.Spec = boshas.V1ApplySpec{
+					Deployment: "fake-deployment",
+				}
 
-			specService.Spec = boshas.V1ApplySpec{
-				Deployment: "fake-deployment",
-			}
+				expectedSpec := GetStateV1ApplySpec{
+					AgentId:      "my-agent-id",
+					JobState:     "running",
+					BoshProtocol: "1",
+					Vm:           boshsettings.Vm{Name: "vm-abc-def"},
+					Ntp: boshntp.NTPInfo{
+						Offset:    "0.34958",
+						Timestamp: "12 Oct 17:37:58",
+					},
+				}
+				expectedSpec.Deployment = "fake-deployment"
 
-			expectedSpec := GetStateV1ApplySpec{
-				AgentId:      "my-agent-id",
-				JobState:     "running",
-				BoshProtocol: "1",
-				Vm:           boshsettings.Vm{Name: "vm-abc-def"},
-				Ntp: boshntp.NTPInfo{
-					Offset:    "0.34958",
-					Timestamp: "12 Oct 17:37:58",
-				},
-			}
-			expectedSpec.Deployment = "fake-deployment"
+				state, err := action.Run()
+				assert.NoError(GinkgoT(), err)
 
-			state, err := action.Run()
-			assert.NoError(GinkgoT(), err)
+				assert.Equal(GinkgoT(), state.AgentId, expectedSpec.AgentId)
+				assert.Equal(GinkgoT(), state.JobState, expectedSpec.JobState)
+				assert.Equal(GinkgoT(), state.Deployment, expectedSpec.Deployment)
+				boshassert.LacksJsonKey(GinkgoT(), state, "vitals")
 
-			assert.Equal(GinkgoT(), state.AgentId, expectedSpec.AgentId)
-			assert.Equal(GinkgoT(), state.JobState, expectedSpec.JobState)
-			assert.Equal(GinkgoT(), state.Deployment, expectedSpec.Deployment)
-			boshassert.LacksJsonKey(GinkgoT(), state, "vitals")
-
-			assert.Equal(GinkgoT(), state, expectedSpec)
-		})
-		It("get state run without current spec", func() {
-
-			settings := &fakesettings.FakeSettingsService{}
-			settings.AgentId = "my-agent-id"
-			settings.Vm.Name = "vm-abc-def"
-
-			specService, jobSupervisor, _, action := buildGetStateAction(settings)
-			jobSupervisor.StatusStatus = "running"
-
-			specService.GetErr = errors.New("some error")
-			specService.Spec = boshas.V1ApplySpec{
-				Deployment: "fake-deployment",
-			}
-
-			expectedSpec := GetStateV1ApplySpec{
-				AgentId:      "my-agent-id",
-				JobState:     "running",
-				BoshProtocol: "1",
-				Vm:           boshsettings.Vm{Name: "vm-abc-def"},
-				Ntp: boshntp.NTPInfo{
-					Offset:    "0.34958",
-					Timestamp: "12 Oct 17:37:58",
-				},
-			}
-
-			state, err := action.Run()
-			assert.NoError(GinkgoT(), err)
-			boshassert.MatchesJsonMap(GinkgoT(), expectedSpec.Ntp, map[string]interface{}{
-				"offset":    "0.34958",
-				"timestamp": "12 Oct 17:37:58",
+				assert.Equal(GinkgoT(), state, expectedSpec)
 			})
-			assert.Equal(GinkgoT(), state, expectedSpec)
+
+			It("returns state in full format", func() {
+				settings := &fakesettings.FakeSettingsService{}
+				settings.AgentId = "my-agent-id"
+				settings.Vm.Name = "vm-abc-def"
+
+				specService, jobSupervisor, fakeVitals, action := buildGetStateAction(settings)
+				jobSupervisor.StatusStatus = "running"
+
+				specService.Spec = boshas.V1ApplySpec{
+					Deployment: "fake-deployment",
+				}
+
+				expectedVitals := boshvitals.Vitals{
+					Load: []string{"foo", "bar", "baz"},
+				}
+				fakeVitals.GetVitals = expectedVitals
+				expectedVm := map[string]interface{}{"name": "vm-abc-def"}
+
+				state, err := action.Run("full")
+				assert.NoError(GinkgoT(), err)
+
+				boshassert.MatchesJsonString(GinkgoT(), state.AgentId, `"my-agent-id"`)
+				boshassert.MatchesJsonString(GinkgoT(), state.JobState, `"running"`)
+				boshassert.MatchesJsonString(GinkgoT(), state.Deployment, `"fake-deployment"`)
+				assert.Equal(GinkgoT(), *state.Vitals, expectedVitals)
+				boshassert.MatchesJsonMap(GinkgoT(), state.Vm, expectedVm)
+			})
+
+			Context("when current cannot be retrieved", func() {
+
+				It("without current spec", func() {
+					settings := &fakesettings.FakeSettingsService{}
+					specService, _, _, action := buildGetStateAction(settings)
+
+					specService.GetErr = errors.New("fake-spec-get-error")
+
+					_, err := action.Run()
+					assert.Error(GinkgoT(), err)
+					Expect(err.Error()).To(ContainSubstring("fake-spec-get-error"))
+				})
+			})
+
+			Context("when vitals cannot be retrieved", func() {
+				It("returns error", func() {
+					settings := &fakesettings.FakeSettingsService{}
+					_, _, fakeVitals, action := buildGetStateAction(settings)
+
+					fakeVitals.GetErr = errors.New("fake-vitals-get-error")
+
+					_, err := action.Run("full")
+					assert.Error(GinkgoT(), err)
+					Expect(err.Error()).To(ContainSubstring("fake-vitals-get-error"))
+				})
+			})
+
 		})
-		It("get state run with full format option", func() {
 
-			settings := &fakesettings.FakeSettingsService{}
-			settings.AgentId = "my-agent-id"
-			settings.Vm.Name = "vm-abc-def"
-
-			specService, jobSupervisor, fakeVitals, action := buildGetStateAction(settings)
-			jobSupervisor.StatusStatus = "running"
-
-			specService.Spec = boshas.V1ApplySpec{
-				Deployment: "fake-deployment",
-			}
-
-			expectedVitals := boshvitals.Vitals{
-				Load: []string{"foo", "bar", "baz"},
-			}
-			fakeVitals.GetVitals = expectedVitals
-			expectedVm := map[string]interface{}{"name": "vm-abc-def"}
-
-			state, err := action.Run("full")
-			assert.NoError(GinkgoT(), err)
-
-			boshassert.MatchesJsonString(GinkgoT(), state.AgentId, `"my-agent-id"`)
-			boshassert.MatchesJsonString(GinkgoT(), state.JobState, `"running"`)
-			boshassert.MatchesJsonString(GinkgoT(), state.Deployment, `"fake-deployment"`)
-			assert.Equal(GinkgoT(), *state.Vitals, expectedVitals)
-			boshassert.MatchesJsonMap(GinkgoT(), state.Vm, expectedVm)
-		})
-		It("get state run on vitals error", func() {
-
-			settings := &fakesettings.FakeSettingsService{}
-
-			_, _, fakeVitals, action := buildGetStateAction(settings)
-			fakeVitals.GetErr = errors.New("Oops, could not get vitals")
-
-			_, err := action.Run("full")
-			assert.Error(GinkgoT(), err)
-		})
 	})
 }

@@ -2,70 +2,78 @@ require 'rspec'
 require 'tempfile'
 require 'rspec/core/rake_task'
 require 'bosh/dev/bat_helper'
+require 'common/thread_pool'
+require 'parallel_tests/tasks'
 
 namespace :spec do
-  desc 'Run BOSH integration tests against a local sandbox'
-  task :integration do
-    require 'parallel_tests/tasks'
-    Rake::Task['parallel:spec'].invoke(ENV['TRAVIS'] ? 6 : nil, 'spec/integration/.*_spec.rb')
+  namespace :integration do
+    desc 'Run BOSH integration tests against a local sandbox with Ruby agent'
+    task :ruby_agent do
+      run_integration_specs('ruby')
+    end
+
+    desc 'Run BOSH integration tests against a local sandbox with Go agent'
+    task :go_agent do
+      sh('go_agent/bin/build')
+      run_integration_specs('go')
+    end
+
+    def run_integration_specs(agent_type)
+      ENV['BOSH_INTEGRATION_AGENT_TYPE'] = agent_type
+
+      specs = Dir['spec/integration/*']
+      specs -= ['spec/integration/cli_errand_spec.rb'] if agent_type == 'go'
+
+      num_processes = ENV['TRAVIS'] ? 6 : nil
+      regex = "(#{specs.map { |s| Regexp.escape(s) }.join("|")})"
+
+      Rake::Task['parallel:spec'].invoke(num_processes, regex)
+    end
   end
 
-  desc 'Run unit and functional tests for each BOSH component gem'
-  task :parallel_unit do
-    require 'common/thread_pool'
-    trap('INT') { exit }
+  task :integration => %w(spec:integration:ruby_agent)
 
-    builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }
-    builds -= ['bat']
+  namespace :unit do
+    desc 'Run unit tests for each BOSH component gem in parallel'
+    task ruby_gems: %w(rubocop) do
+      trap('INT') { exit }
 
-    cpi_builds = Dir['*'].select { |f| File.directory?(f) && f.end_with?("_cpi") }
+      builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }
+      builds -= ['bat']
 
-    spec_logs = Dir.mktmpdir
+      cpi_builds = Dir['*'].select { |f| File.directory?(f) && f.end_with?("_cpi") }
 
-    puts "Logging spec results in #{spec_logs}"
+      spec_logs = Dir.mktmpdir
 
-    Bosh::ThreadPool.new(max_threads: 10, logger: Logger.new('/dev/null')).wrap do |pool|
-      builds.each do |build|
-        puts "-----Building #{build}-----"
+      puts "Logging spec results in #{spec_logs}"
 
-        pool.process do
-          log_file    = "#{spec_logs}/#{build}.log"
-          rspec_files = cpi_builds.include?(build) ? "spec/unit/" : "spec/"
-          rspec_cmd   = "cd #{build} && rspec --tty -c -f p #{rspec_files} > #{log_file} 2>&1"
+      Bosh::ThreadPool.new(max_threads: 10, logger: Logger.new('/dev/null')).wrap do |pool|
+        builds.each do |build|
+          puts "-----Building #{build}-----"
 
-          if system(rspec_cmd)
-            print File.read(log_file)
-          else
-            raise("#{build} failed to build unit tests: #{File.read(log_file)}")
+          pool.process do
+            log_file    = "#{spec_logs}/#{build}.log"
+            rspec_files = cpi_builds.include?(build) ? "spec/unit/" : "spec/"
+            rspec_cmd   = "cd #{build} && rspec --tty -c -f p #{rspec_files} > #{log_file} 2>&1"
+
+            if system(rspec_cmd)
+              print File.read(log_file)
+            else
+              raise("#{build} failed to build unit tests: #{File.read(log_file)}")
+            end
           end
         end
+
+        pool.wait
       end
+    end
 
-      pool.wait
+    task :go_agent do
+      sh('go_agent/bin/test')
     end
   end
 
-  desc 'Run unit and functional tests linearly'
-  task unit: %w(rubocop) do
-    builds = Dir['*'].select { |f| File.directory?(f) && File.exists?("#{f}/spec") }
-    builds -= ['bat']
-
-    cpi_builds = Dir['*'].select { |f| File.directory?(f) && f.end_with?("_cpi") }
-
-    builds.each do |build|
-      puts "-----Building #{build}-----"
-      rspec_files = cpi_builds.include?(build) ? "spec/unit/" : "spec/"
-      rspec_cmd   = "cd #{build} && rspec #{rspec_files}"
-      raise("#{build} failed to build unit tests") unless system(rspec_cmd)
-    end
-  end
-
-  desc 'Run integration and unit tests in parallel'
-  task :parallel_all do
-    unit        = Thread.new { Rake::Task['spec:parallel_unit'].invoke }
-    integration = Thread.new { Rake::Task['spec:integration'].invoke }
-    [unit, integration].each(&:join)
-  end
+  task :unit => %w(spec:unit:ruby_gems spec:unit:go_agent)
 
   namespace :external do
     desc 'AWS bootstrap CLI can provision and destroy resources'
@@ -89,4 +97,7 @@ namespace :spec do
 end
 
 desc 'Run unit and integration specs'
-task :spec => ['spec:parallel_unit', 'spec:integration']
+task :spec => %w(spec:unit spec:integration)
+
+desc 'Run unit and integration specs for Go related code'
+task :gospec => %w(spec:unit spec:integration:go_agent)
