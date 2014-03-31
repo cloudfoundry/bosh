@@ -41,8 +41,8 @@ func (inf dummyInfrastructure) SetupSsh(username string) (err error) {
 }
 
 func (inf dummyInfrastructure) GetSettings() (settings boshsettings.Settings, err error) {
-	// agent-env.json is written out by dummy CPI.
-	settingsPath := filepath.Join(inf.dirProvider.BoshDir(), "agent-env.json")
+	// dummy-cpi-agent-env.json is written out by dummy CPI.
+	settingsPath := filepath.Join(inf.dirProvider.BoshDir(), "dummy-cpi-agent-env.json")
 	contents, err := inf.fs.ReadFile(settingsPath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Read settings file")

@@ -34,7 +34,7 @@ mkdir -p ${bosh_app_dir}/bosh/blob
 
 echo "Starting micro bosh compilation"
 
-cat > ${bosh_app_dir}/bosh/agent-env.json << EOF
+cat > ${bosh_app_dir}/bosh/dummy-cpi-agent-env.json << EOF
 {
   "agent_id": "not_configured",
   "mbus": "$agent_uri",
@@ -90,5 +90,5 @@ kill_agent 0 || kill_agent 9
 # Clean out src
 cd /var/tmp
 rm -fr ${bosh_app_dir}/bosh/src
-rm ${bosh_app_dir}/bosh/agent-env.json
+rm ${bosh_app_dir}/bosh/dummy-cpi-agent-env.json
 rm ${bosh_app_dir}/bosh/settings.json

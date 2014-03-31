@@ -160,7 +160,7 @@ module Bosh
         # Even though dummy CPI has complete access to agent execution file system
         # it should never write directly to settings.json because
         # the agent is responsible for retrieving the settings from the CPI.
-        File.join(agent_base_dir(agent_id), 'bosh', 'agent-env.json')
+        File.join(agent_base_dir(agent_id), 'bosh', 'dummy-cpi-agent-env.json')
       end
 
       def agent_base_dir(agent_id)

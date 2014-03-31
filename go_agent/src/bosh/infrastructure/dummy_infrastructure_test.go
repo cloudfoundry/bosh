@@ -24,7 +24,7 @@ func init() {
 			platform := fakeplatform.NewFakePlatform()
 			fakeDevicePathResolver := boshdevicepathresolver.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
 
-			settingsPath := filepath.Join(dirProvider.BoshDir(), "agent-env.json")
+			settingsPath := filepath.Join(dirProvider.BoshDir(), "dummy-cpi-agent-env.json")
 
 			expectedSettings := boshsettings.Settings{
 				AgentId: "123-456-789",
