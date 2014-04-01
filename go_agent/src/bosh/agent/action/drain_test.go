@@ -11,6 +11,7 @@ import (
 	boshas "bosh/agent/applier/applyspec"
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	fakedrain "bosh/agent/drain/fakes"
+	fakejobsuper "bosh/jobsupervisor/fakes"
 	fakenotif "bosh/notification/fakes"
 )
 
@@ -20,6 +21,7 @@ func init() {
 			notifier            *fakenotif.FakeNotifier
 			specService         *fakeas.FakeV1Service
 			drainScriptProvider *fakedrain.FakeDrainScriptProvider
+			jobSupervisor       *fakejobsuper.FakeJobSupervisor
 			action              DrainAction
 		)
 
@@ -34,15 +36,17 @@ func init() {
 			drainScriptProvider = fakedrain.NewFakeDrainScriptProvider()
 			drainScriptProvider.NewDrainScriptDrainScript.ExistsBool = true
 
-			action = NewDrain(notifier, specService, drainScriptProvider)
+			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
+
+			action = NewDrain(notifier, specService, drainScriptProvider, jobSupervisor)
 		})
 
-		It("drain should be asynchronous", func() {
-			assert.True(GinkgoT(), action.IsAsynchronous())
+		It("is asynchronous", func() {
+			Expect(action.IsAsynchronous()).To(BeTrue())
 		})
 
 		It("is not persistent", func() {
-			assert.False(GinkgoT(), action.IsPersistent())
+			Expect(action.IsPersistent()).To(BeFalse())
 		})
 
 		Context("when current agent spec does not have a template", func() {

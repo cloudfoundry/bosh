@@ -112,7 +112,7 @@ func init() {
 			action, err := factory.Create("drain")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(action).ToNot(BeNil())
-			Expect(NewDrain(notifier, specService, drainScriptProvider)).To(Equal(action))
+			Expect(NewDrain(notifier, specService, drainScriptProvider, jobSupervisor)).To(Equal(action))
 		})
 
 		It("fetch_logs", func() {

@@ -6,6 +6,7 @@ import (
 	boshas "bosh/agent/applier/applyspec"
 	boshdrain "bosh/agent/drain"
 	bosherr "bosh/errors"
+	boshjobsuper "bosh/jobsupervisor"
 	boshnotif "bosh/notification"
 )
 
@@ -13,16 +14,19 @@ type DrainAction struct {
 	drainScriptProvider boshdrain.DrainScriptProvider
 	notifier            boshnotif.Notifier
 	specService         boshas.V1Service
+	jobSupervisor       boshjobsuper.JobSupervisor
 }
 
 func NewDrain(
 	notifier boshnotif.Notifier,
 	specService boshas.V1Service,
 	drainScriptProvider boshdrain.DrainScriptProvider,
+	jobSupervisor boshjobsuper.JobSupervisor,
 ) (drain DrainAction) {
 	drain.notifier = notifier
 	drain.specService = specService
 	drain.drainScriptProvider = drainScriptProvider
+	drain.jobSupervisor = jobSupervisor
 	return
 }
 

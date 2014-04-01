@@ -48,7 +48,7 @@ func NewFactory(
 			"get_state": NewGetState(settings, specService, jobSupervisor, vitalsService, ntpService),
 
 			"ssh":        NewSsh(settings, platform, dirProvider),
-			"drain":      NewDrain(notifier, specService, drainScriptProvider),
+			"drain":      NewDrain(notifier, specService, drainScriptProvider, jobSupervisor),
 			"fetch_logs": NewLogs(compressor, copier, blobstore, dirProvider),
 
 			"apply": NewApply(applier, specService),
