@@ -98,24 +98,40 @@ module Bosh::Deployer
           end
 
           context 'when there is a bosh VM with a public ip' do
-            before do
-              allow(instance).to receive(:has_elastic_ip?).and_return(false)
-              allow(instance).to receive(:public_ip_address).and_return('fake-public-ip')
+            before { allow(instance).to receive(:has_elastic_ip?).and_return(false) }
+
+            context 'when public ip is set' do
+              it 'returns the public ip' do
+                allow(instance).to receive(:public_ip_address).and_return('fake-public-ip')
+                expect(aws.send(method)).to eq('fake-public-ip')
+              end
             end
 
-            it 'returns the public ip' do
-              expect(aws.send(method)).to eq('fake-public-ip')
+            context 'when public ip is not set' do
+              it 'raises RuntimeError error' do
+                allow(instance).to receive(:public_ip_address).and_return(nil)
+                expect { aws.send(method) }.to raise_error(
+                  RuntimeError, /Failed to discover public ip address/)
+              end
             end
           end
 
           context 'when there is a bosh VM with an elastic ip' do
-            before do
-              allow(instance).to receive(:has_elastic_ip?).and_return(true)
-              instance.stub_chain(:elastic_ip, :public_ip).and_return('fake-elastic-ip')
+            before { allow(instance).to receive(:has_elastic_ip?).and_return(true) }
+
+            context 'when elastic public ip is set' do
+              it 'returns the elastic public ip' do
+                instance.stub_chain(:elastic_ip, :public_ip).and_return('fake-elastic-ip')
+                expect(aws.send(method)).to eq('fake-elastic-ip')
+              end
             end
 
-            it 'returns the elastic ip' do
-              expect(aws.send(method)).to eq('fake-elastic-ip')
+            context 'when elastic public ip is not set' do
+              it 'raises RuntimeError error' do
+                instance.stub_chain(:elastic_ip, :public_ip).and_return(nil)
+                expect { aws.send(method) }.to raise_error(
+                  RuntimeError, /Failed to discover elastic public ip address/)
+              end
             end
           end
         end

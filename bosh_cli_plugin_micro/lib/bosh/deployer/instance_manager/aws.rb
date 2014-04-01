@@ -112,14 +112,16 @@ module Bosh::Deployer
 
       def discover_client_services_ip
         if instance_manager.state.vm_cid
-          # choose elastic IP over public, as any agent connecting to the
+          # Choose elastic IP over public, as any agent connecting to the
           # deployed micro bosh will be cut off from the public IP when
           # we re-deploy micro bosh
           instance = instance_manager.cloud.ec2.instances[instance_manager.state.vm_cid]
           if instance.has_elastic_ip?
             ip = instance.elastic_ip.public_ip
+            raise RuntimeError, 'Failed to discover elastic public ip address' unless ip
           else
             ip = instance.public_ip_address
+            raise RuntimeError, 'Failed to discover public ip address' unless ip
           end
 
           logger.info("discovered bosh ip=#{ip}")
