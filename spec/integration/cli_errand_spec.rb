@@ -57,17 +57,15 @@ describe 'cli: errand', type: :integration do
         unknown/unknown
       ))
 
-      # One 'unknown/unknown' will not show up because
-      # run errand does not refill resource pools properly
       output, exit_code = run_bosh('run errand errand1-name', return_exit_code: true)
       expect(output).to include('some-errand1-stdout')
       expect(exit_code).to eq(0)
-      expect_to_have_running_job_indices(%w(foobar/0 unknown/unknown))
+      expect_to_have_running_job_indices(%w(foobar/0 unknown/unknown unknown/unknown))
 
       output, exit_code = run_bosh('run errand errand2-name', return_exit_code: true)
       expect(output).to include('some-errand2-stdout')
       expect(exit_code).to eq(0)
-      expect_to_have_running_job_indices(%w(foobar/0))
+      expect_to_have_running_job_indices(%w(foobar/0 unknown/unknown unknown/unknown))
     end
   end
 

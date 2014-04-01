@@ -109,6 +109,11 @@ module Bosh::Director
       def changed?
         resource_pool_changed? || networks_changed?
       end
+
+      def clean_vm
+        self.vm = nil
+        self.current_state = nil
+      end
     end
   end
 end

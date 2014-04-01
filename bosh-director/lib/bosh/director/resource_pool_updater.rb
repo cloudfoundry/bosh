@@ -119,8 +119,7 @@ module Bosh::Director
               @logger.info("Deleting outdated VM: #{vm_cid}")
               @cloud.delete_vm(vm_cid)
               vm = idle_vm.vm
-              idle_vm.vm = nil
-              idle_vm.current_state = nil
+              idle_vm.clean_vm
               vm.destroy
             end
           end

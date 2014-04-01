@@ -1,12 +1,8 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require File.expand_path("../../../spec_helper", __FILE__)
 
 describe Bosh::Director::DeploymentPlan::ResourcePool do
 
-  def make(plan, spec)
-    BD::DeploymentPlan::ResourcePool.new(plan, spec)
-  end
+  subject(:resource_pool) { make(plan, valid_spec) }
 
   let(:valid_spec) do
     {
@@ -22,13 +18,19 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
     }
   end
 
+  let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network') }
+  let(:plan) do
+    plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
+    plan.stub(:network).with("test").and_return(network)
+    plan
+  end
+
+  def make(plan, spec)
+    BD::DeploymentPlan::ResourcePool.new(plan, spec)
+  end
+
   describe "creating" do
     it "parses name, size, stemcell spec, cloud properties, env" do
-      network = instance_double('Bosh::Director::DeploymentPlan::Network')
-
-      plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
-      plan.stub(:network).with("test").and_return(network)
-
       rp = make(plan, valid_spec)
       rp.name.should == "small"
       rp.size.should == 22
@@ -65,9 +67,6 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
     it "has default env" do
       spec = valid_spec.dup
       spec.delete("env")
-      network = instance_double('Bosh::Director::DeploymentPlan::Network')
-      plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
-      plan.stub(:network).with("test").and_return(network)
 
       rp = make(plan, spec)
       rp.env.should == {}
@@ -75,10 +74,6 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
   end
 
   it "returns resource pool spec as Hash" do
-    network = instance_double('Bosh::Director::DeploymentPlan::Network')
-    plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
-    plan.stub(:network).with("test").and_return(network)
-
     rp = make(plan, valid_spec)
     rp.spec.should == {
       "name" => "small",
@@ -88,10 +83,6 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
   end
 
   it "reserves capacity up to size" do
-    network = instance_double('Bosh::Director::DeploymentPlan::Network')
-    plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
-    plan.stub(:network).with("test").and_return(network)
-
     rp = make(plan, valid_spec)
     rp.reserve_capacity(1)
     rp.reserve_capacity(21)
@@ -103,11 +94,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
 
   describe "processing idle VMs" do
     it "creates idle vm objects for missing idle VMs" do
-      network = instance_double('Bosh::Director::DeploymentPlan::Network')
       network.stub(:reserve!)
-
-      plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
-      plan.stub(:network).with("test").and_return(network)
 
       rp = make(plan, valid_spec)
       rp.add_idle_vm
@@ -120,10 +107,6 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
     end
 
     it "reserves dynamic networks for idle VMs that don't have reservations" do
-      network = instance_double('Bosh::Director::DeploymentPlan::Network')
-      plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
-      plan.stub(:network).with("test").and_return(network)
-
       rp = make(plan, valid_spec.merge("size" => 3))
 
       idle_vm = rp.add_idle_vm
@@ -141,12 +124,6 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
   end
 
   describe '#reserve_errand_capacity' do
-    let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network') }
-    let(:plan) { instance_double('Bosh::Director::DeploymentPlan::Planner') }
-    let(:resource_pool) { make(plan, valid_spec) }
-
-    before { plan.stub(:network).with('test').and_return(network) }
-
     def assert_capacity_left(n)
       expect {
         resource_pool.reserve_capacity(n)
@@ -200,6 +177,22 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
 
         assert_capacity_left(1)
       end
+    end
+  end
+
+  describe '#deallocate_vm' do
+    it 'moves vm from allocated to idle vms' do
+      resource_pool.add_idle_vm
+      allocated_vm = resource_pool.allocate_vm
+      allocated_vm.vm = instance_double('Bosh::Director::Models::Vm', cid: 'abc')
+
+      resource_pool.deallocate_vm('abc')
+      expect(resource_pool.allocated_vms).to be_empty
+      expect(resource_pool.idle_vms).to eq([allocated_vm])
+    end
+
+    it 'returns nil when vm is not in allocated vms' do
+      expect(resource_pool.deallocate_vm('abc')).to be_nil
     end
   end
 end

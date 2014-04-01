@@ -36,6 +36,19 @@ module Bosh::Director
       instance_deleter = InstanceDeleter.new(@deployment)
       instance_deleter.delete_instances(
         @job.instances.map(&:model), event_log_stage)
+
+      deallocate_vms
+    end
+
+    private
+
+    def deallocate_vms
+      instance_cids = @job.instances.map { |i| i.model.vm.cid }
+
+      instance_cids.each do |cid|
+        idle_vm = @job.resource_pool.deallocate_vm(cid)
+        idle_vm.clean_vm
+      end
     end
   end
 end

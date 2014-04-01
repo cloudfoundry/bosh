@@ -4,46 +4,42 @@ require 'spec_helper'
 
 module Bosh::Director
   describe ResourcePoolUpdater do
-    before do
-      @cloud = double(:Cloud)
-      Config.stub(:cloud).and_return(@cloud)
+    subject(:resource_pool_updater) { ResourcePoolUpdater.new(resource_pool) }
+    let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'large') }
 
-      @resource_pool = double(:ResourcePool)
-      @resource_pool.stub(:name).and_return('large')
-      @resource_pool_updater = ResourcePoolUpdater.new(@resource_pool)
+    let(:cloud) { instance_double('Bosh::Cloud') }
+    let(:thread_pool) { instance_double('Bosh::ThreadPool') }
+
+    before do
+      Config.stub(:cloud).and_return(cloud)
+      allow(thread_pool).to receive(:process).and_yield
     end
 
     describe :create_missing_vms do
       it 'should do nothing when everything is created' do
-        pool = double(:ThreadPool)
+        resource_pool.stub(:allocated_vms).and_return([])
+        resource_pool.stub(:idle_vms).and_return([])
 
-        @resource_pool.stub(:allocated_vms).and_return([])
-        @resource_pool.stub(:idle_vms).and_return([])
-
-        @resource_pool_updater.should_not_receive(:create_missing_vm)
-        @resource_pool_updater.create_missing_vms(pool)
+        resource_pool_updater.should_not_receive(:create_missing_vm)
+        resource_pool_updater.create_missing_vms(thread_pool)
       end
 
       it 'should create missing VMs' do
-        pool = double(:ThreadPool)
-
         idle_vm = double(:IdleVm)
         idle_vm.stub(:vm).and_return(nil)
 
-        @resource_pool.stub(:allocated_vms).and_return([])
-        @resource_pool.stub(:idle_vms).and_return([idle_vm])
+        resource_pool.stub(:allocated_vms).and_return([])
+        resource_pool.stub(:idle_vms).and_return([idle_vm])
 
-        pool.should_receive(:process).and_yield
+        thread_pool.should_receive(:process).and_yield
 
-        @resource_pool_updater.should_receive(:create_missing_vm).with(idle_vm)
-        @resource_pool_updater.create_missing_vms(pool)
+        resource_pool_updater.should_receive(:create_missing_vm).with(idle_vm)
+        resource_pool_updater.create_missing_vms(thread_pool)
       end
     end
 
     describe :create_bound_missing_vms do
       it 'should call create_missing_vms with the right filter' do
-        pool = double(:ThreadPool)
-
         bound_vm = double(:IdleVm)
         bound_vm.stub(:bound_instance).
             and_return(double(DeploymentPlan::Instance))
@@ -51,12 +47,12 @@ module Bosh::Director
         unbound_vm.stub(:bound_instance).and_return(nil)
 
         called = false
-        @resource_pool_updater.should_receive(:create_missing_vms).and_return do |&block|
+        resource_pool_updater.should_receive(:create_missing_vms).and_return do |&block|
           called = true
           block.call(bound_vm).should == true
           block.call(unbound_vm).should == false
         end
-        @resource_pool_updater.create_bound_missing_vms(pool)
+        resource_pool_updater.create_bound_missing_vms(thread_pool)
         called.should == true
       end
     end
@@ -72,12 +68,12 @@ module Bosh::Director
         @stemcell = Models::Stemcell.make
         @stemcell_spec = double(:Stemcell)
         @stemcell_spec.stub(:model).and_return(@stemcell)
-        @resource_pool.stub(:deployment_plan).and_return(@deployment_plan)
-        @resource_pool.stub(:stemcell).and_return(@stemcell_spec)
+        resource_pool.stub(:deployment_plan).and_return(@deployment_plan)
+        resource_pool.stub(:stemcell).and_return(@stemcell_spec)
         @cloud_properties = {'size' => 'medium'}
-        @resource_pool.stub(:cloud_properties).and_return(@cloud_properties)
+        resource_pool.stub(:cloud_properties).and_return(@cloud_properties)
         @environment = {'password' => 'foo'}
-        @resource_pool.stub(:env).and_return(@environment)
+        resource_pool.stub(:env).and_return(@environment)
         @vm = Models::Vm.make(agent_id:  'agent-1', cid:  'vm-1')
         @vm_creator = double(:VmCreator)
         @vm_creator.stub(:create).
@@ -93,11 +89,11 @@ module Bosh::Director
         agent.should_receive(:get_state).and_return({'state' => 'foo'})
         AgentClient.stub(:with_defaults).with('agent-1').and_return(agent)
 
-        @resource_pool_updater.should_receive(:update_state).with(agent, @vm, @idle_vm)
+        resource_pool_updater.should_receive(:update_state).with(agent, @vm, @idle_vm)
         @idle_vm.should_receive(:vm=).with(@vm)
         @idle_vm.should_receive(:current_state=).with({'state' => 'foo'})
 
-        @resource_pool_updater.create_missing_vm(@idle_vm)
+        resource_pool_updater.create_missing_vm(@idle_vm)
       end
 
       it 'should clean up the partially created VM' do
@@ -105,10 +101,10 @@ module Bosh::Director
         agent.should_receive(:wait_until_ready).and_raise('timeout')
         AgentClient.stub(:with_defaults).with('agent-1').and_return(agent)
 
-        @cloud.should_receive(:delete_vm).with('vm-1')
+        cloud.should_receive(:delete_vm).with('vm-1')
 
         lambda {
-          @resource_pool_updater.create_missing_vm(@idle_vm)
+          resource_pool_updater.create_missing_vm(@idle_vm)
         }.should raise_error('timeout')
 
         Models::Vm.count.should == 0
@@ -132,25 +128,48 @@ module Bosh::Director
       end
 
       before do
-        @resource_pool.stub(deployment_plan: deployment_plan)
-        @resource_pool.stub(spec: resource_pool_spec)
+        resource_pool.stub(deployment_plan: deployment_plan)
+        resource_pool.stub(spec: resource_pool_spec)
         vm.stub(:update)
         agent.stub(:apply)
       end
 
       it 'sends the agent an updated state' do
         agent.should_receive(:apply).with(apply_spec)
-        @resource_pool_updater.update_state(agent, vm, idle_vm)
+        resource_pool_updater.update_state(agent, vm, idle_vm)
       end
 
       it 'updates the vm model with the updated state' do
         vm.should_receive(:update).with(apply_spec: apply_spec)
-        @resource_pool_updater.update_state(agent, vm, idle_vm)
+        resource_pool_updater.update_state(agent, vm, idle_vm)
       end
     end
 
     describe :delete_extra_vms
-    describe :delete_outdated_idle_vms
+
+    describe '#delete_outdated_idle_vms' do
+      let(:vm) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-cid') }
+      let(:idle_vm) { instance_double('Bosh::Director::DeploymentPlan::IdleVm', changed?: true, vm: vm) }
+      let(:unchanged_idle_vm) { instance_double('Bosh::Director::DeploymentPlan::IdleVm', changed?: false, vm: vm) }
+      let(:idle_vm_without_vm) { instance_double('Bosh::Director::DeploymentPlan::IdleVm', vm: nil, changed?: true) }
+
+      before do
+        allow(resource_pool).to receive(:idle_vms).and_return([idle_vm, unchanged_idle_vm, idle_vm_without_vm])
+      end
+
+      it 'deletes each idle vm in resource pool' do
+        expect(cloud).to receive(:delete_vm).with('fake-cid')
+
+        expect(idle_vm).to receive(:clean_vm).with(no_args)
+        expect(unchanged_idle_vm).to_not receive(:clean_vm).with(no_args)
+        expect(idle_vm_without_vm).to_not receive(:clean_vm).with(no_args)
+
+        expect(vm).to receive(:destroy).with(no_args)
+
+        resource_pool_updater.delete_outdated_idle_vms(thread_pool)
+      end
+    end
+
     describe :reserve_networks
   end
 end

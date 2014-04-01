@@ -104,6 +104,18 @@ describe Bosh::Director::DeploymentPlan::IdleVm do
     end
   end
 
+  describe :clean_vm do
+    it 'sets vm to nil' do
+      @vm.vm = 'fake-vm'
+      expect{ @vm.clean_vm }.to change(@vm, :vm).to(nil)
+    end
+
+    it 'sets current_state to nil' do
+      @vm.current_state = 'fake-state'
+      expect{ @vm.clean_vm }.to change(@vm, :current_state).to(nil)
+    end
+  end
+
   describe '#current_state' do
     context 'when current state is not set' do
       it 'should be nil' do

@@ -121,6 +121,13 @@ module Bosh::Director
         allocated_vm
       end
 
+      def deallocate_vm(idle_vm_cid)
+        deallocated_vm = @allocated_vms.find { |idle_vm| idle_vm.vm.cid == idle_vm_cid }
+        @allocated_vms.delete(deallocated_vm)
+        @idle_vms << deallocated_vm
+        deallocated_vm
+      end
+
       # "Active" VM is a VM that is currently running a job
       # @return [void]
       def mark_active_vm
