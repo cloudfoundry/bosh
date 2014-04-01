@@ -1,17 +1,18 @@
 package jobsupervisor
 
 import (
+	"fmt"
+	"path/filepath"
+	"time"
+
+	"github.com/pivotal/go-smtpd/smtpd"
+
 	boshalert "bosh/agent/alert"
 	bosherr "bosh/errors"
 	boshmonit "bosh/jobsupervisor/monit"
 	boshlog "bosh/logger"
 	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
-	"fmt"
-	"github.com/pivotal/go-smtpd/smtpd"
-	"path/filepath"
-	"time"
-	//	"strconv"
 )
 
 type monitJobSupervisor struct {

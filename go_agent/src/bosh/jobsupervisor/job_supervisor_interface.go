@@ -1,6 +1,8 @@
 package jobsupervisor
 
-import boshalert "bosh/agent/alert"
+import (
+	boshalert "bosh/agent/alert"
+)
 
 type JobFailureHandler func(boshalert.MonitAlert) error
 
