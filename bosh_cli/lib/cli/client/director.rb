@@ -598,22 +598,26 @@ module Bosh
           @director_name ||= get_status['name']
         end
 
-        def request(method, uri, content_type = nil, payload = nil,
-          headers = {}, options = {})
-          headers  = headers.dup
-          tmp_file = nil
-
+        def request(method, uri, content_type = nil, payload = nil, headers = {}, options = {})
+          headers = headers.dup
           headers['Content-Type'] = content_type if content_type
 
+          tmp_file = nil
+          response_reader = nil
           if options[:file]
             tmp_file = File.open(File.join(Dir.mktmpdir, 'streamed-response'), 'w')
-
             response_reader = lambda { |part| tmp_file.write(part) }
-          else
-            response_reader = nil
           end
 
-          response = try_to_perform_http_request(method, "#{@scheme}://#{@director_ip}:#{@port}#{uri}", payload, headers, num_retries, retry_wait_interval, &response_reader)
+          response = try_to_perform_http_request(
+            method,
+            "#{@scheme}://#{@director_ip}:#{@port}#{uri}",
+            payload,
+            headers,
+            num_retries,
+            retry_wait_interval,
+            &response_reader
+          )
 
           if options[:file]
             tmp_file.close
@@ -640,7 +644,6 @@ module Bosh
 
           [response.code, body, headers]
 
-
         rescue SystemCallError => e
           raise DirectorError, "System call error while talking to director: #{e}"
         end
@@ -656,6 +659,19 @@ module Bosh
               " The bosh deployment may need to be upgraded."
           else
             'HTTP %s: %s' % [status, body]
+          end
+        end
+
+        def try_to_perform_http_request(method, uri, payload, headers, num_retries, retry_wait_interval, &response_reader)
+          num_retries.downto(1) do |n|
+            begin
+              return perform_http_request(method, uri, payload, headers, &response_reader)
+
+            rescue DirectorInaccessible
+              warning("cannot access director, trying #{n-1} more times...") if n != 1
+              raise if n == 1
+              sleep(retry_wait_interval)
+            end
           end
         end
 
@@ -676,29 +692,21 @@ module Bosh
               Base64.encode64("#{@user}:#{@password}").strip
           end
 
-          http_client.request(method, uri, :body => payload,
-                              :header            => headers, &block)
+          http_client.request(method, uri, {
+            :body => payload,
+            :header => headers,
+          }, &block)
+
+        rescue URI::Error, SocketError, Errno::ECONNREFUSED, Timeout::Error, HTTPClient::TimeoutError => e
+          raise DirectorInaccessible, "cannot access director (#{e.message})"
 
         rescue HTTPClient::BadResponseError => e
           err("Received bad HTTP response from director: #{e}")
-        rescue URI::Error, SocketError, SystemCallError
-          raise # We handle these upstream
-        rescue => e
-          # httpclient (sadly) doesn't have a generic exception
+
+        # HTTPClient doesn't have a root exception but instead subclasses RuntimeError
+        rescue RuntimeError => e
           puts "Perform request #{method}, #{uri}, #{headers.inspect}, #{payload.inspect}"
           err("REST API call exception: #{e}")
-        end
-
-        def try_to_perform_http_request(method, uri, payload, headers, num_retries, retry_wait_interval, &response_reader)
-          num_retries.downto(1) do |n|
-            begin
-              return perform_http_request(method, uri, payload, headers, &response_reader)
-            rescue URI::Error, SocketError, Errno::ECONNREFUSED => e
-              warning("cannot access director, trying #{n-1} more times...") if n != 1
-              raise DirectorInaccessible, "cannot access director (#{e.message})" if n == 1
-              sleep retry_wait_interval
-            end
-          end
         end
 
         def get_json(url)

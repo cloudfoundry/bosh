@@ -679,31 +679,80 @@ describe Bosh::Cli::Client::Director do
       end
     end
 
-    it 'wraps director access exceptions' do
-      @director.stub(num_retries: 1)
-      [URI::Error, SocketError, Errno::ECONNREFUSED].each do |err|
-        @director.should_receive(:perform_http_request).
-          and_raise(err.new('err message'))
-        lambda {
-          @director.send(:request, :get, '/stuff', 'app/zb', 'payload', {})
-        }.should raise_error(Bosh::Cli::DirectorInaccessible)
-      end
-
-      @director.should_receive(:perform_http_request).
-        and_raise(SystemCallError.new('err message', 22))
+    it 'wraps file access exceptions' do
+      File.should_receive(:open).and_raise(SystemCallError.new('err message', 22))
 
       lambda {
-        @director.send(:request, :get, '/stuff', 'app/zb', 'payload', {})
-      }.should raise_error Bosh::Cli::DirectorError
+        @director.send(:request, :get, '/stuff', 'app/zb', 'payload', {}, file: true)
+      }.should raise_error(Bosh::Cli::DirectorError)
     end
 
-    it 'retries the HTTP request the given number of times with given wait intervals' do
-      @director.should_receive(:perform_http_request).exactly(3).times.and_raise(URI::Error)
-      @director.should_receive(:sleep).with(2).exactly(2).times
+    describe '#try_to_perform_http_request' do
+      context 'when performing request fails with DirectorInaccessible error' do
+        it 'retries the HTTP request the given number of times with given wait intervals' do
+          @director.
+            should_receive(:perform_http_request).
+            exactly(3).times.
+            and_raise(Bosh::Cli::DirectorInaccessible, 'fake-error')
 
-      expect {
-        @director.send(:try_to_perform_http_request, :get, '/stuff/app/zb', 'payload', {}, 3, 2)
-      }.to raise_error(Bosh::Cli::DirectorInaccessible)
+          @director.should_receive(:sleep).with(2).exactly(2).times
+
+          expect {
+            @director.send(:try_to_perform_http_request, :get, '/stuff/app/zb', 'payload', {}, 3, 2)
+          }.to raise_error(Bosh::Cli::DirectorInaccessible, /fake-error/)
+        end
+      end
+
+      context 'when performing request fails with unknown error' do
+        it 'does not retry the HTTP request' do
+          error = Exception.new('fake-error')
+          @director.should_receive(:perform_http_request).exactly(1).and_raise(error)
+
+          expect {
+            @director.send(:try_to_perform_http_request, :get, '/stuff/app/zb', 'payload', {}, 3, 2)
+          }.to raise_error(error)
+        end
+      end
+    end
+
+    describe '#perform_http_request' do
+      before { HTTPClient.stub(new: http_client) }
+      let(:http_client) { double('HTTPClient').as_null_object }
+
+      [
+        URI::Error.new('fake-error'),
+        SocketError.new('fake-error'),
+        Errno::ECONNREFUSED.new,
+        Timeout::Error.new('fake-error'),
+        HTTPClient::TimeoutError.new('fake-error'),
+      ].each do |error|
+        context "when performing request fails with #{error} error" do
+          it 'raises DirectorInaccessible error because director could not be reached' do
+            http_client.should_receive(:request).and_raise(error)
+            expect {
+              @director.send(:perform_http_request, :get, '/stuff/app/zb', 'payload', {})
+            }.to raise_error(Bosh::Cli::DirectorInaccessible)
+          end
+        end
+      end
+
+      context 'when director returns invalid http response' do
+        it 'raises CliError error because there is nothing it can do' do
+          http_client.should_receive(:request).and_raise(HTTPClient::BadResponseError, 'fake-error')
+          expect {
+            @director.send(:perform_http_request, :get, '/stuff/app/zb', 'payload', {})
+          }.to raise_error(Bosh::Cli::CliError, /fake-error/)
+        end
+      end
+
+      context 'when performing request fails with unknown error' do
+        it 'raises CliError error' do
+          http_client.should_receive(:request).and_raise(RuntimeError, 'fake-error')
+          expect {
+            @director.send(:perform_http_request, :get, '/stuff/app/zb', 'payload', {})
+          }.to raise_error(Bosh::Cli::CliError, /fake-error/)
+        end
+      end
     end
 
     it 'streams file' do
@@ -722,5 +771,4 @@ describe Bosh::Cli::Client::Director do
       headers.should == {}
     end
   end
-
 end
