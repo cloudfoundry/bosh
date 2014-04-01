@@ -45,8 +45,7 @@ done
 
 for try in $(seq 0 9); do
   sleep $try
-  [ -b ${loopback_dev} ] || continue
-  break
+  [ -b ${loopback_dev} ] || break
 done
 
 if [ -b ${loopback_dev} ]; then
