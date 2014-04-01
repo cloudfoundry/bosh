@@ -144,8 +144,9 @@ describe 'Ubuntu OS image' do
 
   context 'installed by system_kernel' do
     %w(
-      linux-image-virtual-lts-backport-oneiric
-      linux-headers-virtual-lts-backport-oneiric
+      linux-image-3.0.0-32-virtual
+      linux-headers-3.0.0-32
+      linux-headers-3.0.0-32-virtual
     ).each do |pkg|
       describe package(pkg) do
         it { should be_installed }
