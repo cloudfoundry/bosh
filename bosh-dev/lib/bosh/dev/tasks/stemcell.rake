@@ -92,6 +92,9 @@ namespace :stemcell do
       build.release_tarball_path,
       args.os_image_path,
     )
+
+    sh(environment.os_image_rspec_command)
+
     collection = Bosh::Stemcell::StageCollection.new(definition)
     runner = Bosh::Stemcell::StageRunner.new(
       build_path: environment.build_path,
