@@ -60,8 +60,8 @@ func (m *FakeJobSupervisor) Stop() error {
 }
 
 func (m *FakeJobSupervisor) Unmonitor() error {
-	m.Stopped = true
-	return m.StopErr
+	m.Unmonitored = true
+	return m.UnmonitorErr
 }
 
 func (m *FakeJobSupervisor) Status() string {

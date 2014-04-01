@@ -60,6 +60,11 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 		}
 	}
 
+	err = a.jobSupervisor.Unmonitor()
+	if err != nil {
+		return 0, bosherr.WrapError(err, "Unmonitoring services")
+	}
+
 	drainScript := a.drainScriptProvider.NewDrainScript(currentSpec.JobSpec.Template)
 
 	var params boshdrain.DrainScriptParams

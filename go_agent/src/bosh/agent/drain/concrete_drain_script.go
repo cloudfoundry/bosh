@@ -49,9 +49,11 @@ func (script ConcreteDrainScript) Run(params DrainScriptParams) (value int, err 
 		err = bosherr.WrapError(err, "Running drain script")
 		return
 	}
+
 	value, err = strconv.Atoi(strings.TrimSpace(stdout))
 	if err != nil {
 		err = bosherr.WrapError(err, "Script did not return a signed integer")
 	}
+
 	return
 }

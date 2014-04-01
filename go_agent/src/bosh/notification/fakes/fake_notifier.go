@@ -9,8 +9,7 @@ func NewFakeNotifier() *FakeNotifier {
 	return &FakeNotifier{}
 }
 
-func (n *FakeNotifier) NotifyShutdown() (err error) {
+func (n *FakeNotifier) NotifyShutdown() error {
 	n.NotifiedShutdown = true
-	err = n.NotifyShutdownErr
-	return
+	return n.NotifyShutdownErr
 }
