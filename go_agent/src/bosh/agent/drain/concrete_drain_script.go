@@ -13,7 +13,11 @@ type ConcreteDrainScript struct {
 	drainScriptPath string
 }
 
-func NewConcreteDrainScript(fs boshsys.FileSystem, runner boshsys.CmdRunner, drainScriptPath string) (script ConcreteDrainScript) {
+func NewConcreteDrainScript(
+	fs boshsys.FileSystem,
+	runner boshsys.CmdRunner,
+	drainScriptPath string,
+) (script ConcreteDrainScript) {
 	script = ConcreteDrainScript{
 		fs:              fs,
 		runner:          runner,
@@ -30,7 +34,7 @@ func (script ConcreteDrainScript) Path() string {
 	return script.drainScriptPath
 }
 
-func (script ConcreteDrainScript) Run(params DrainScriptParams) (value int, err error) {
+func (script ConcreteDrainScript) Run(params DrainScriptParams) (int, error) {
 	jobChange := params.JobChange()
 	hashChange := params.HashChange()
 	updatedPkgs := params.UpdatedPackages()
@@ -46,14 +50,13 @@ func (script ConcreteDrainScript) Run(params DrainScriptParams) (value int, err 
 
 	stdout, _, err := script.runner.RunComplexCommand(command)
 	if err != nil {
-		err = bosherr.WrapError(err, "Running drain script")
-		return
+		return 0, bosherr.WrapError(err, "Running drain script")
 	}
 
-	value, err = strconv.Atoi(strings.TrimSpace(stdout))
+	value, err := strconv.Atoi(strings.TrimSpace(stdout))
 	if err != nil {
-		err = bosherr.WrapError(err, "Script did not return a signed integer")
+		return 0, bosherr.WrapError(err, "Script did not return a signed integer")
 	}
 
-	return
+	return value, nil
 }
