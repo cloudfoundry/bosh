@@ -2,146 +2,153 @@ require 'spec_helper'
 
 describe Bosh::Director::JobUpdater do
   subject(:job_updater) { described_class.new(deployment_plan, job) }
+  let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan') }
+  let(:job) do
+    instance_double('Bosh::Director::DeploymentPlan::Job',
+      name: 'job_name',
+      update: update_config,
+      unneeded_instances: [])
+  end
+
+  let(:update_config) do
+    instance_double('Bosh::Director::DeploymentPlan::UpdateConfig', canaries: 1, max_in_flight: 1)
+  end
 
   describe 'update' do
-    let(:deployment_plan) { double(Bosh::Director::DeploymentPlan) }
-    let(:canaries) { 2 }
-    let(:max_in_flight) { 1 }
-    let(:update_config) { double(Bosh::Director::DeploymentPlan::UpdateConfig,
-      canaries: canaries, max_in_flight: max_in_flight) }
+    let(:instances) { [] }
+    before { allow(job).to receive(:instances).and_return(instances) }
 
-    let(:job) { double(Bosh::Director::DeploymentPlan::Job, name: 'job_name', update: update_config, unneeded_instances: []) }
-
-    let(:instance_1) { double(Bosh::Director::DeploymentPlan::Instance, index: 1, changed?: instance_1_changed) }
-    let(:instance_1_changed) { true }
-    let(:instance_2) { double(Bosh::Director::DeploymentPlan::Instance, index: 2, changed?: instance_2_changed) }
-    let(:instance_2_changed) { true }
-    let(:instance_3) { double(Bosh::Director::DeploymentPlan::Instance, index: 3, changed?: instance_3_changed) }
-    let(:instance_3_changed) { true }
-    let(:instance_4) { double(Bosh::Director::DeploymentPlan::Instance, index: 4, changed?: instance_4_changed) }
-    let(:instance_4_changed) { true }
-    let(:instance_5) { double(Bosh::Director::DeploymentPlan::Instance, index: 5, changed?: instance_5_changed) }
-    let(:instance_5_changed) { false }
-
-    let(:instances) { [instance_1, instance_2, instance_3, instance_4, instance_5] }
-    let(:instance_updater_1) { double(Bosh::Director::InstanceUpdater, update: nil) }
-    let(:instance_updater_2) { double(Bosh::Director::InstanceUpdater, update: nil) }
-    let(:instance_updater_3) { double(Bosh::Director::InstanceUpdater, update: nil) }
-    let(:instance_updater_4) { double(Bosh::Director::InstanceUpdater, update: nil) }
-    let(:instance_updater_5) { double(Bosh::Director::InstanceUpdater, update: nil) }
     let(:update_error) { RuntimeError.new('update failed') }
 
     let(:instance_deleter) { instance_double('Bosh::Director::InstanceDeleter') }
-    before { Bosh::Director::InstanceDeleter.stub(:new).and_return(instance_deleter) }
-
-    before do
-      job.should_receive(:instances).and_return(instances)
-      Bosh::Director::InstanceUpdater.stub(:new).with(instance_1, anything).and_return(instance_updater_1)
-      Bosh::Director::InstanceUpdater.stub(:new).with(instance_2, anything).and_return(instance_updater_2)
-      Bosh::Director::InstanceUpdater.stub(:new).with(instance_3, anything).and_return(instance_updater_3)
-      Bosh::Director::InstanceUpdater.stub(:new).with(instance_4, anything).and_return(instance_updater_4)
-      Bosh::Director::InstanceUpdater.stub(:new).with(instance_5, anything).and_return(instance_updater_5)
-    end
+    before { allow(Bosh::Director::InstanceDeleter).to receive(:new).and_return(instance_deleter) }
 
     context 'when job is up to date' do
-      let(:instance_1_changed) { false }
-      let(:instance_2_changed) { false }
-      let(:instance_3_changed) { false }
-      let(:instance_4_changed) { false }
+      let(:instances) do
+        [
+          instance_double('Bosh::Director::DeploymentPlan::Instance', changed?: false),
+        ]
+      end
 
       it 'should do nothing' do
         job_updater.update
+
+        check_event_log do |events|
+          expect(events).to be_empty
+        end
       end
     end
 
     context 'when job needs to be updated' do
+      let(:canary) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 1, changed?: true) }
+      let(:changed_instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 2, changed?: true) }
+      let(:unchanged_instance) do
+        instance_double('Bosh::Director::DeploymentPlan::Instance', index: 3, changed?: false)
+      end
+
+      let(:instances) { [canary, changed_instance, unchanged_instance] }
+
+      let(:canary_updater) { instance_double('Bosh::Director::InstanceUpdater') }
+      let(:changed_updater) { instance_double('Bosh::Director::InstanceUpdater') }
+      let(:unchanged_updater) { instance_double('Bosh::Director::InstanceUpdater') }
+
+      before do
+        allow(Bosh::Director::InstanceUpdater).to receive(:new).with(canary, anything).and_return(canary_updater)
+        allow(Bosh::Director::InstanceUpdater).to receive(:new).
+          with(changed_instance, anything).and_return(changed_updater)
+        allow(Bosh::Director::InstanceUpdater).to receive(:new).
+          with(unchanged_instance, anything).and_return(unchanged_updater)
+      end
+
       it 'should update changed job instances with canaries' do
-        instance_updater_1.should_receive(:update).with(:canary => true)
-        instance_updater_2.should_receive(:update).with(:canary => true)
-        instance_updater_3.should_receive(:update).with(no_args)
-        instance_updater_4.should_receive(:update).with(no_args)
-        instance_updater_5.should_not_receive(:update)
+        expect(canary_updater).to receive(:update).with(canary: true)
+        expect(changed_updater).to receive(:update).with(no_args)
+        expect(unchanged_updater).to_not receive(:update)
 
         job_updater.update
 
         check_event_log do |events|
-          expect(events.size).to eql(8)
-          expect(events.map { |e| e['stage'] }.uniq).to eql(['Updating job'])
-          expect(events.map { |e| e['tags'] }.uniq).to eql([['job_name']])
-          expect(events.map { |e| e['index'] }.uniq).to eql([1, 2, 3, 4])
-          expect(events.map { |e| e['total'] }.uniq).to eql([4])
-          expect(events.map { |e| e['task'] }.uniq).to eql(['job_name/1 (canary)', 'job_name/2 (canary)',
-            'job_name/3', 'job_name/4'])
-          expect(events.map { |e| e['state'] }.uniq).to eql(['started', 'finished'])
+          [
+            updating_stage_event(index: 1, total: 2, task: 'job_name/1 (canary)', state: 'started'),
+            updating_stage_event(index: 1, total: 2, task: 'job_name/1 (canary)', state: 'finished'),
+            updating_stage_event(index: 2, total: 2, task: 'job_name/2', state: 'started'),
+            updating_stage_event(index: 2, total: 2, task: 'job_name/2', state: 'finished'),
+          ].each_with_index do |expected_event, index|
+            expect(events[index]).to include(expected_event)
+          end
         end
       end
 
       it 'should not continue updating changed job instances if canaries failed' do
-        instance_updater_1.should_receive(:update).with(:canary => true).and_raise(update_error)
-        instance_updater_2.should_not_receive(:update)
-        instance_updater_3.should_not_receive(:update)
-        instance_updater_4.should_not_receive(:update)
-        instance_updater_5.should_not_receive(:update)
+        expect(canary_updater).to receive(:update).with(canary: true).and_raise(update_error)
+        expect(changed_updater).to_not receive(:update)
+        expect(unchanged_updater).to_not receive(:update)
 
-        expect do
-          job_updater.update
-        end.to raise_error(update_error)
+        expect { job_updater.update }.to raise_error(update_error)
 
         check_event_log do |events|
-          expect(events.size).to eql(2)
-          expect(events.map { |e| e['stage'] }.uniq).to eql(['Updating job'])
-          expect(events.map { |e| e['tags'] }.uniq).to eql([['job_name']])
-          expect(events.map { |e| e['index'] }.uniq).to eql([1])
-          expect(events.map { |e| e['total'] }.uniq).to eql([4])
-          expect(events.map { |e| e['task'] }.uniq).to eql(['job_name/1 (canary)'])
-          expect(events.map { |e| e['state'] }.uniq).to eql(['started', 'failed'])
+          [
+            updating_stage_event(index: 1, total: 2, task: 'job_name/1 (canary)', state: 'started'),
+            updating_stage_event(index: 1, total: 2, task: 'job_name/1 (canary)', state: 'failed'),
+          ].each_with_index do |expected_event, index|
+            expect(events[index]).to include(expected_event)
+          end
         end
       end
 
       it 'should raise an error if updating changed jobs instances failed' do
-        instance_updater_1.should_receive(:update).with(:canary => true)
-        instance_updater_2.should_receive(:update).with(:canary => true)
-        instance_updater_3.should_receive(:update).with(no_args).and_raise(update_error)
-        instance_updater_4.should_not_receive(:update)
-        instance_updater_5.should_not_receive(:update)
+        expect(canary_updater).to receive(:update).with(canary: true)
+        expect(changed_updater).to receive(:update).and_raise(update_error)
+        expect(unchanged_updater).to_not receive(:update)
 
-        expect do
-          job_updater.update
-        end.to raise_error(update_error)
+        expect { job_updater.update }.to raise_error(update_error)
 
         check_event_log do |events|
-          expect(events.size).to eql(6)
-          expect(events.map { |e| e['stage'] }.uniq).to eql(['Updating job'])
-          expect(events.map { |e| e['tags'] }.uniq).to eql([['job_name']])
-          expect(events.map { |e| e['index'] }.uniq).to eql([1, 2, 3])
-          expect(events.map { |e| e['total'] }.uniq).to eql([4])
-          expect(events.map { |e| e['task'] }.uniq).to eql(['job_name/1 (canary)', 'job_name/2 (canary)',
-            'job_name/3'])
-          expect(events.map { |e| e['state'] }.uniq).to eql(['started', 'finished', 'failed'])
+          [
+            updating_stage_event(index: 1, total: 2, task: 'job_name/1 (canary)', state: 'started'),
+            updating_stage_event(index: 1, total: 2, task: 'job_name/1 (canary)', state: 'finished'),
+            updating_stage_event(index: 2, total: 2, task: 'job_name/2', state: 'started'),
+            updating_stage_event(index: 2, total: 2, task: 'job_name/2', state: 'failed'),
+          ].each_with_index do |expected_event, index|
+            expect(events[index]).to include(expected_event)
+          end
         end
       end
     end
 
     context 'when the job has unneeded instances' do
-      before { job.stub(:unneeded_instances).and_return([instance_1]) }
+      let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+      before { allow(job).to receive(:unneeded_instances).and_return([instance]) }
 
       it 'should delete the unneeded instances' do
         allow(Bosh::Director::Config.event_log).to receive(:begin_stage).and_call_original
-        expect(Bosh::Director::Config.event_log).to receive(:begin_stage).with('Deleting unneeded instances', 1, ['job_name'])
-        instance_deleter.should_receive(:delete_instances).
-          with([instance_1], instance_of(Bosh::Director::EventLog::Stage), { max_threads: max_in_flight })
+        expect(Bosh::Director::Config.event_log).to receive(:begin_stage).
+          with('Deleting unneeded instances', 1, ['job_name'])
+        expect(instance_deleter).to receive(:delete_instances).
+          with([instance], instance_of(Bosh::Director::EventLog::Stage), { max_threads: 1 })
 
         job_updater.update
       end
     end
 
     context 'when the job has no unneeded instances' do
-      before { job.stub(:unneeded_instances).and_return([]) }
+      before { allow(job).to receive(:unneeded_instances).and_return([]) }
 
       it 'should not delete instances if there are not any unneeded instances' do
-        instance_deleter.should_not_receive(:delete_instances)
+        expect(instance_deleter).to_not receive(:delete_instances)
         job_updater.update
       end
+    end
+
+    def updating_stage_event(options)
+      {
+        'stage' => 'Updating job',
+        'tags' => ['job_name'],
+        'index' => options[:index],
+        'total' => options[:total],
+        'task' => options[:task],
+        'state' => options[:state]
+      }
     end
   end
 end
