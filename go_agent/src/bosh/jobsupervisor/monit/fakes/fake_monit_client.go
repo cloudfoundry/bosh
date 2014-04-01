@@ -7,13 +7,16 @@ import (
 type FakeMonitClient struct {
 	ServicesInGroupName     string
 	ServicesInGroupServices []string
-	ServicesInGroupError    error
+	ServicesInGroupErr      error
 
 	StartServiceNames []string
 	StartServiceErr   error
 
 	StopServiceNames []string
 	StopServiceErr   error
+
+	UnmonitorServiceNames []string
+	UnmonitorServiceErrs  []error
 
 	StatusStatus FakeMonitStatus
 	StatusErr    error
@@ -22,39 +25,37 @@ type FakeMonitClient struct {
 	StatusCalledTimes int
 }
 
-func NewFakeMonitClient() (client *FakeMonitClient) {
-	client = &FakeMonitClient{}
-	return
+func NewFakeMonitClient() *FakeMonitClient {
+	return &FakeMonitClient{}
 }
 
-func (c *FakeMonitClient) ServicesInGroup(name string) (services []string, err error) {
+func (c *FakeMonitClient) ServicesInGroup(name string) ([]string, error) {
 	c.ServicesInGroupName = name
-	services = c.ServicesInGroupServices
-	err = c.ServicesInGroupError
-	return
+	return c.ServicesInGroupServices, c.ServicesInGroupErr
 }
 
-func (c *FakeMonitClient) StartService(name string) (err error) {
+func (c *FakeMonitClient) StartService(name string) error {
 	c.StartServiceNames = append(c.StartServiceNames, name)
-	err = c.StartServiceErr
-	return
+	return c.StartServiceErr
 }
 
-func (c *FakeMonitClient) StopService(name string) (err error) {
+func (c *FakeMonitClient) StopService(name string) error {
 	c.StopServiceNames = append(c.StopServiceNames, name)
-	err = c.StopServiceErr
-	return
+	return c.StopServiceErr
 }
 
-func (c *FakeMonitClient) Status() (status boshmonit.Status, err error) {
+func (c *FakeMonitClient) UnmonitorService(name string) error {
+	c.UnmonitorServiceNames = append(c.UnmonitorServiceNames, name)
+	return c.UnmonitorServiceErrs[len(c.UnmonitorServiceNames)-1]
+}
+
+func (c *FakeMonitClient) Status() (boshmonit.Status, error) {
 	s := c.StatusStatus
 	if len(c.Incarnations) > 0 {
 		s.Incarnation = c.Incarnations[c.StatusCalledTimes]
 	}
 
-	status = s
-	err = c.StatusErr
-
 	c.StatusCalledTimes++
-	return
+
+	return s, c.StatusErr
 }

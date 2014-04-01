@@ -114,6 +114,23 @@ func (m monitJobSupervisor) Stop() (err error) {
 	return
 }
 
+func (m monitJobSupervisor) Unmonitor() error {
+	services, err := m.client.ServicesInGroup("vcap")
+	if err != nil {
+		return bosherr.WrapError(err, "Getting vcap services")
+	}
+
+	for _, service := range services {
+		err := m.client.UnmonitorService(service)
+		if err != nil {
+			return bosherr.WrapError(err, "Unmonitoring service %s", service)
+		}
+		m.logger.Debug(MonitTag, "Unmonitoring service %s", service)
+	}
+
+	return nil
+}
+
 func (m monitJobSupervisor) Status() (status string) {
 	status = "running"
 	monitStatus, err := m.client.Status()

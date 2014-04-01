@@ -252,5 +252,54 @@ func init() {
 			assert.NoError(GinkgoT(), err)
 			assert.False(GinkgoT(), didHandleAlert)
 		})
+
+		Describe("Unmonitor", func() {
+			BeforeEach(func() {
+				client.ServicesInGroupServices = []string{"fake-srv-1", "fake-srv-2", "fake-srv-3"}
+				client.UnmonitorServiceErrs = []error{nil, nil, nil}
+			})
+
+			Context("when all services succeed to be unmonitored", func() {
+				It("returns no error because all services got unmonitored", func() {
+					err := monit.Unmonitor()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(client.ServicesInGroupName).To(Equal("vcap"))
+					Expect(client.UnmonitorServiceNames).To(Equal(
+						[]string{"fake-srv-1", "fake-srv-2", "fake-srv-3"}))
+				})
+			})
+
+			Context("when at least one service fails to be unmonitored", func() {
+				BeforeEach(func() {
+					client.UnmonitorServiceErrs = []error{
+						nil, errors.New("fake-unmonitor-error"), nil,
+					}
+				})
+
+				It("returns first unmonitor error", func() {
+					err := monit.Unmonitor()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-unmonitor-error"))
+				})
+
+				It("only tries to unmonitor services before the first unmonitor error", func() {
+					err := monit.Unmonitor()
+					Expect(err).To(HaveOccurred())
+					Expect(client.ServicesInGroupName).To(Equal("vcap"))
+					Expect(client.UnmonitorServiceNames).To(Equal([]string{"fake-srv-1", "fake-srv-2"}))
+				})
+			})
+
+			Context("when failed retrieving list of services", func() {
+				It("returns error", func() {
+					client.ServicesInGroupErr = errors.New("fake-services-error")
+
+					err := monit.Unmonitor()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-services-error"))
+				})
+			})
+		})
 	})
 }

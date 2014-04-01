@@ -7,10 +7,16 @@ import (
 type JobFailureHandler func(boshalert.MonitAlert) error
 
 type JobSupervisor interface {
-	Reload() (err error)
-	Start() (err error)
-	Stop() (err error)
-	Status() (status string)
-	AddJob(jobName string, jobIndex int, configPath string) (err error)
-	MonitorJobFailures(handler JobFailureHandler) (err error)
+	Reload() error
+
+	// Actions taken on all services
+	Start() error
+	Stop() error
+	Unmonitor() error
+
+	Status() string
+
+	AddJob(jobName string, jobIndex int, configPath string) error
+
+	MonitorJobFailures(handler JobFailureHandler) error
 }

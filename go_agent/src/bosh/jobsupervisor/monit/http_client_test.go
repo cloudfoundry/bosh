@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +12,8 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
 
 	. "bosh/jobsupervisor/monit"
 	"bosh/jobsupervisor/monit/http_fakes"
@@ -126,6 +127,60 @@ func init() {
 				assert.Equal(GinkgoT(), fakeHttpClient.CallCount, 20)
 				assert.Error(GinkgoT(), err)
 				assert.Contains(GinkgoT(), err.Error(), "some error")
+			})
+		})
+
+		Describe("UnmonitorService", func() {
+			It("issues a call to unmontor service by name", func() {
+				var calledMonit bool
+
+				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					calledMonit = true
+					assert.Equal(GinkgoT(), r.Method, "POST")
+					assert.Equal(GinkgoT(), r.URL.Path, "/test-service")
+					assert.Equal(GinkgoT(), r.PostFormValue("action"), "unmonitor")
+					assert.Equal(GinkgoT(), r.Header.Get("Content-Type"), "application/x-www-form-urlencoded")
+
+					expectedAuthEncoded := base64.URLEncoding.EncodeToString([]byte("fake-user:fake-pass"))
+					assert.Equal(GinkgoT(), r.Header.Get("Authorization"), fmt.Sprintf("Basic %s", expectedAuthEncoded))
+				})
+
+				ts := httptest.NewServer(handler)
+				defer ts.Close()
+
+				client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
+
+				err := client.UnmonitorService("test-service")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(calledMonit).To(BeTrue())
+			})
+
+			It("retries when non200 response", func() {
+				fakeHttpClient := http_fakes.NewFakeHttpClient()
+				fakeHttpClient.StatusCode = 500
+				fakeHttpClient.SetMessage("fake-http-response-message")
+
+				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
+
+				err := client.UnmonitorService("test-service")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-http-response-message"))
+
+				Expect(fakeHttpClient.CallCount).To(Equal(20))
+			})
+
+			It("retries when connection refused", func() {
+				fakeHttpClient := http_fakes.NewFakeHttpClient()
+				fakeHttpClient.SetNilResponse()
+				fakeHttpClient.Error = errors.New("fake-http-error")
+
+				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
+
+				err := client.UnmonitorService("test-service")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-http-error"))
+
+				Expect(fakeHttpClient.CallCount).To(Equal(20))
 			})
 		})
 
