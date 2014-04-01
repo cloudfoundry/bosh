@@ -13,7 +13,7 @@ import (
 	boshas "bosh/agent/applier/applyspec"
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	boshhandler "bosh/handler"
-	fakejobsup "bosh/jobsupervisor/fakes"
+	fakejobsuper "bosh/jobsupervisor/fakes"
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
 	fakembus "bosh/mbus/fakes"
@@ -46,7 +46,7 @@ func init() {
 			platform         *fakeplatform.FakePlatform
 			actionDispatcher *FakeActionDispatcher
 			alertBuilder     *fakealert.FakeAlertBuilder
-			jobSupervisor    *fakejobsup.FakeJobSupervisor
+			jobSupervisor    *fakejobsuper.FakeJobSupervisor
 			specService      *fakeas.FakeV1Service
 		)
 
@@ -56,7 +56,7 @@ func init() {
 			platform = fakeplatform.NewFakePlatform()
 			actionDispatcher = &FakeActionDispatcher{}
 			alertBuilder = fakealert.NewFakeAlertBuilder()
-			jobSupervisor = fakejobsup.NewFakeJobSupervisor()
+			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 			specService = fakeas.NewFakeV1Service()
 			agent = New(logger, handler, platform, actionDispatcher, alertBuilder, jobSupervisor, specService, 5*time.Millisecond)
 		})

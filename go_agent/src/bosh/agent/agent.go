@@ -7,7 +7,7 @@ import (
 	boshas "bosh/agent/applier/applyspec"
 	bosherr "bosh/errors"
 	boshhandler "bosh/handler"
-	boshjobsup "bosh/jobsupervisor"
+	boshjobsuper "bosh/jobsupervisor"
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
@@ -20,7 +20,7 @@ type Agent struct {
 	actionDispatcher  ActionDispatcher
 	heartbeatInterval time.Duration
 	alertBuilder      boshalert.Builder
-	jobSupervisor     boshjobsup.JobSupervisor
+	jobSupervisor     boshjobsuper.JobSupervisor
 	specService       boshas.V1Service
 }
 
@@ -30,7 +30,7 @@ func New(
 	platform boshplatform.Platform,
 	actionDispatcher ActionDispatcher,
 	alertBuilder boshalert.Builder,
-	jobSupervisor boshjobsup.JobSupervisor,
+	jobSupervisor boshjobsuper.JobSupervisor,
 	specService boshas.V1Service,
 	heartbeatInterval time.Duration,
 ) (a Agent) {
