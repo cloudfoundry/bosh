@@ -100,84 +100,119 @@ prepend domain-name-servers xx.xx.xx.xx;
 			)
 		})
 
-		It("ubuntu setup dhcp", func() {
-			networks := boshsettings.Networks{
-				"bosh": boshsettings.Network{
-					Default: []string{"dns"},
-					Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
-				},
-				"vip": boshsettings.Network{
-					Default: []string{},
-					Dns:     []string{"aa.aa.aa.aa"},
-				},
-			}
+		Describe("SetupDhcp", func() {
+			Context("when dhcp was not previously configured", func() {
+				It("sets up dhcp and restarts dhclient", func() {
+					networks := boshsettings.Networks{
+						"bosh": boshsettings.Network{
+							Default: []string{"dns"},
+							Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
+						},
+						"vip": boshsettings.Network{
+							Default: []string{},
+							Dns:     []string{"aa.aa.aa.aa"},
+						},
+					}
 
-			platform.SetupDhcp(networks)
+					platform.SetupDhcp(networks)
 
-			dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
-			Expect(dhcpConfig).ToNot(BeNil())
-			Expect(dhcpConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_DHCP_CONFIG))
+					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
+					Expect(dhcpConfig).ToNot(BeNil())
+					Expect(dhcpConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_DHCP_CONFIG))
 
-			Expect(len(cmdRunner.RunCommands)).To(Equal(2))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient3"}))
-			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"/etc/init.d/networking", "restart"}))
+					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient3"}))
+					Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"/etc/init.d/networking", "restart"}))
+				})
+			})
+
+			Context("when dhcp was previously configured with different configuration", func() {
+				It("sets up dhcp and restarts dhclient", func() {
+					fs.WriteFileString("/etc/dhcp3/dhclient.conf", "fake-other-configuration")
+
+					networks := boshsettings.Networks{
+						"bosh": boshsettings.Network{
+							Default: []string{"dns"},
+							Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
+						},
+						"vip": boshsettings.Network{
+							Default: []string{},
+							Dns:     []string{"aa.aa.aa.aa"},
+						},
+					}
+
+					platform.SetupDhcp(networks)
+
+					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
+					Expect(dhcpConfig).ToNot(BeNil())
+					Expect(dhcpConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_DHCP_CONFIG))
+
+					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient3"}))
+					Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"/etc/init.d/networking", "restart"}))
+				})
+			})
+
+			Context("when dhcp was previously configured with the same configuration", func() {
+				It("does not restart dhclient", func() {
+					fs.WriteFileString("/etc/dhcp3/dhclient.conf", UBUNTU_EXPECTED_DHCP_CONFIG)
+
+					networks := boshsettings.Networks{
+						"bosh": boshsettings.Network{
+							Default: []string{"dns"},
+							Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
+						},
+						"vip": boshsettings.Network{
+							Default: []string{},
+							Dns:     []string{"aa.aa.aa.aa"},
+						},
+					}
+
+					platform.SetupDhcp(networks)
+
+					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
+					Expect(dhcpConfig).ToNot(BeNil())
+					Expect(dhcpConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_DHCP_CONFIG))
+
+					Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+				})
+			})
 		})
 
-		It("ubuntu setup dhcp with pre existing configuration", func() {
-			fs.WriteFileString("/etc/dhcp3/dhclient.conf", UBUNTU_EXPECTED_DHCP_CONFIG)
-			networks := boshsettings.Networks{
-				"bosh": boshsettings.Network{
-					Default: []string{"dns"},
-					Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
-				},
-				"vip": boshsettings.Network{
-					Default: []string{},
-					Dns:     []string{"aa.aa.aa.aa"},
-				},
-			}
+		Describe("SetupManualNetworking", func() {
+			It("sets up interface and restarts networking", func() {
+				networks := boshsettings.Networks{
+					"bosh": boshsettings.Network{
+						Default: []string{"dns", "gateway"},
+						Ip:      "192.168.195.6",
+						Netmask: "255.255.255.0",
+						Gateway: "192.168.195.1",
+						Mac:     "22:00:0a:1f:ac:2a",
+						Dns:     []string{"10.80.130.2", "10.80.130.1"},
+					},
+				}
+				fs.WriteFile("/sys/class/net/eth0", []byte{})
+				fs.WriteFileString("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a\n")
+				fs.SetGlob("/sys/class/net/*", []string{"/sys/class/net/eth0"})
 
-			platform.SetupDhcp(networks)
+				platform.SetupManualNetworking(networks)
 
-			dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
-			Expect(dhcpConfig).ToNot(BeNil())
-			Expect(dhcpConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_DHCP_CONFIG))
+				networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
+				Expect(networkConfig).ToNot(BeNil())
+				Expect(networkConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_NETWORK_INTERFACES))
 
-			Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+				resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
+				Expect(resolvConf).ToNot(BeNil())
+				Expect(resolvConf.StringContents()).To(Equal(UBUNTU_EXPECTED_RESOLV_CONF))
+
+				time.Sleep(100 * time.Millisecond)
+
+				Expect(len(cmdRunner.RunCommands)).To(Equal(8))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network-interface", "stop", "INTERFACE=eth0"}))
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"service", "network-interface", "start", "INTERFACE=eth0"}))
+				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+				Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+			})
 		})
-
-		It("ubuntu setup manual networking", func() {
-			networks := boshsettings.Networks{
-				"bosh": boshsettings.Network{
-					Default: []string{"dns", "gateway"},
-					Ip:      "192.168.195.6",
-					Netmask: "255.255.255.0",
-					Gateway: "192.168.195.1",
-					Mac:     "22:00:0a:1f:ac:2a",
-					Dns:     []string{"10.80.130.2", "10.80.130.1"},
-				},
-			}
-			fs.WriteFile("/sys/class/net/eth0", []byte{})
-			fs.WriteFileString("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a\n")
-			fs.SetGlob("/sys/class/net/*", []string{"/sys/class/net/eth0"})
-
-			platform.SetupManualNetworking(networks)
-
-			networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
-			Expect(networkConfig).ToNot(BeNil())
-			Expect(networkConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_NETWORK_INTERFACES))
-
-			resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
-			Expect(resolvConf).ToNot(BeNil())
-			Expect(resolvConf.StringContents()).To(Equal(UBUNTU_EXPECTED_RESOLV_CONF))
-
-			time.Sleep(100 * time.Millisecond)
-
-			Expect(len(cmdRunner.RunCommands)).To(Equal(8))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network-interface", "stop", "INTERFACE=eth0"}))
-			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"service", "network-interface", "start", "INTERFACE=eth0"}))
-			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
-			Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
-		})
-
 	})
 }
