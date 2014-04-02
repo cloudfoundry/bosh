@@ -34,6 +34,10 @@ func (s *dummyJobSupervisor) AddJob(jobName string, jobIndex int, configPath str
 	return nil
 }
 
+func (s *dummyJobSupervisor) RemoveAllJobs() error {
+	return nil
+}
+
 func (s *dummyJobSupervisor) MonitorJobFailures(handler JobFailureHandler) error {
 	return nil
 }

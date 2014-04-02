@@ -141,15 +141,6 @@ func init() {
 			assert.Equal(GinkgoT(), "fake-service", client.StopServiceNames[0])
 		})
 
-		It("add job", func() {
-			fs.WriteFileString("/some/config/path", "some config content")
-			monit.AddJob("router", 0, "/some/config/path")
-
-			writtenConfig, err := fs.ReadFileString(dirProvider.MonitJobsDir() + "/0000_router.monitrc")
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), writtenConfig, "some config content")
-		})
-
 		It("status returns running when all services are monitored and running", func() {
 			client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{
@@ -251,6 +242,72 @@ func init() {
 			err := doJobFailureEmail(msg, jobFailuresServerPort)
 			assert.NoError(GinkgoT(), err)
 			assert.False(GinkgoT(), didHandleAlert)
+		})
+
+		Describe("AddJob", func() {
+			BeforeEach(func() {
+				fs.WriteFileString("/some/config/path", "fake-config")
+			})
+
+			Context("when reading configuration from config path succeeds", func() {
+				Context("when writing job configuration succeeds", func() {
+					It("returns no error because monit can track added job in jobs directory", func() {
+						err := monit.AddJob("router", 0, "/some/config/path")
+						Expect(err).ToNot(HaveOccurred())
+
+						writtenConfig, err := fs.ReadFileString(
+							dirProvider.MonitJobsDir() + "/0000_router.monitrc")
+						Expect(err).ToNot(HaveOccurred())
+						Expect(writtenConfig).To(Equal("fake-config"))
+					})
+				})
+
+				Context("when writing job configuration fails", func() {
+					It("returns error", func() {
+						fs.WriteToFileError = errors.New("fake-write-error")
+
+						err := monit.AddJob("router", 0, "/some/config/path")
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-write-error"))
+					})
+				})
+			})
+
+			Context("when reading configuration from config path fails", func() {
+				It("returns error", func() {
+					fs.ReadFileError = errors.New("fake-read-error")
+
+					err := monit.AddJob("router", 0, "/some/config/path")
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-read-error"))
+				})
+			})
+		})
+
+		Describe("RemoveAllJobs", func() {
+			Context("when jobs directory removal succeeds", func() {
+				It("does not return error because all jobs are removed from monit", func() {
+					jobsDir := dirProvider.MonitJobsDir()
+					jobBasename := "/0000_router.monitrc"
+					fs.WriteFileString(jobsDir + jobBasename, "fake-added-job")
+
+					err := monit.RemoveAllJobs()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(fs.FileExists(jobsDir)).To(BeFalse())
+					Expect(fs.FileExists(jobsDir + jobBasename)).To(BeFalse())
+				})
+			})
+
+			Context("when jobs directory removal fails", func() {
+				It("returns error if removing jobs directory fails", func() {
+					fs.RemoveAllError = errors.New("fake-remove-all-error")
+
+					err := monit.RemoveAllJobs()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-remove-all-error"))
+				})
+			})
 		})
 
 		Describe("Unmonitor", func() {

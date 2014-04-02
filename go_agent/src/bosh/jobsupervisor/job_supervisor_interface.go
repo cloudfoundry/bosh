@@ -21,7 +21,9 @@ type JobSupervisor interface {
 
 	Status() string
 
+	// Job management
 	AddJob(jobName string, jobIndex int, configPath string) error
+	RemoveAllJobs() error
 
 	MonitorJobFailures(handler JobFailureHandler) error
 }

@@ -49,6 +49,10 @@ func (m *FakeJobSupervisor) AddJob(jobName string, jobIndex int, configPath stri
 	return nil
 }
 
+func (m *FakeJobSupervisor) RemoveAllJobs() error {
+	return nil
+}
+
 func (m *FakeJobSupervisor) Start() error {
 	m.Started = true
 	return m.StartErr

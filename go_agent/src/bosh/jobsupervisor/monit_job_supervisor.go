@@ -159,21 +159,25 @@ func (m monitJobSupervisor) getIncarnation() (int, error) {
 	return monitStatus.GetIncarnation()
 }
 
-func (m monitJobSupervisor) AddJob(jobName string, jobIndex int, configPath string) (err error) {
+func (m monitJobSupervisor) AddJob(jobName string, jobIndex int, configPath string) error {
 	targetFilename := fmt.Sprintf("%04d_%s.monitrc", jobIndex, jobName)
 	targetConfigPath := filepath.Join(m.dirProvider.MonitJobsDir(), targetFilename)
 
 	configContent, err := m.fs.ReadFile(configPath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Reading job config from file")
-		return
+		return bosherr.WrapError(err, "Reading job config from file")
 	}
 
 	err = m.fs.WriteFile(targetConfigPath, configContent)
 	if err != nil {
-		err = bosherr.WrapError(err, "Writing to job config file")
+		return bosherr.WrapError(err, "Writing to job config file")
 	}
-	return
+
+	return nil
+}
+
+func (m monitJobSupervisor) RemoveAllJobs() error {
+	return m.fs.RemoveAll(m.dirProvider.MonitJobsDir())
 }
 
 func (m monitJobSupervisor) MonitorJobFailures(handler JobFailureHandler) (err error) {
