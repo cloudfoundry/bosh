@@ -1,11 +1,12 @@
 package blobstore_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	. "bosh/blobstore"
 	boshdir "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func createBlobManager() (blobManager BlobManager, fs *fakesys.FakeFileSystem) {
@@ -22,8 +23,8 @@ func init() {
 			fs.WriteFileString("/var/vcap/micro_bosh/data/cache/105d33ae-655c-493d-bf9f-1df5cf3ca847", "some data")
 
 			blobBytes, err := blobManager.Fetch("105d33ae-655c-493d-bf9f-1df5cf3ca847")
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), string(blobBytes), "some data")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(string(blobBytes)).To(Equal("some data"))
 		})
 		It("write", func() {
 
@@ -31,11 +32,11 @@ func init() {
 			fs.WriteFileString("/var/vcap/micro_bosh/data/cache/105d33ae-655c-493d-bf9f-1df5cf3ca847", "some data")
 
 			err := blobManager.Write("105d33ae-655c-493d-bf9f-1df5cf3ca847", []byte("new data"))
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			contents, err := fs.ReadFileString("/var/vcap/micro_bosh/data/cache/105d33ae-655c-493d-bf9f-1df5cf3ca847")
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), contents, "new data")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(contents).To(Equal("new data"))
 		})
 	})
 }

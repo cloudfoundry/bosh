@@ -42,8 +42,8 @@ type DrainType string
 
 const (
 	DrainTypeUpdate   DrainType = "update"
-	DrainTypeStatus             = "status"
-	DrainTypeShutdown           = "shutdown"
+	DrainTypeStatus   DrainType = "status"
+	DrainTypeShutdown DrainType = "shutdown"
 )
 
 func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (int, error) {

@@ -1,11 +1,13 @@
 package cmd_test
 
 import (
+	"errors"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	. "bosh/davcli/cmd"
 	davconf "bosh/davcli/config"
-	"errors"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 type FakeFactory struct {
@@ -49,11 +51,11 @@ func init() {
 			cmdRunner := NewRunner(factory)
 
 			err := cmdRunner.Run([]string{"put", "foo", "bar"})
-			assert.Error(GinkgoT(), err)
-			assert.Equal(GinkgoT(), err.Error(), "Error running cmd")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Error running cmd"))
 
-			assert.Equal(GinkgoT(), factory.CreateName, "put")
-			assert.Equal(GinkgoT(), factory.CreateCmd.RunArgs, []string{"foo", "bar"})
+			Expect(factory.CreateName).To(Equal("put"))
+			Expect(factory.CreateCmd.RunArgs).To(Equal([]string{"foo", "bar"}))
 		})
 		It("run expects at least one argument", func() {
 
@@ -63,8 +65,8 @@ func init() {
 			cmdRunner := NewRunner(factory)
 
 			err := cmdRunner.Run([]string{})
-			assert.Error(GinkgoT(), err)
-			assert.Equal(GinkgoT(), err.Error(), "Missing command name")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Missing command name"))
 		})
 		It("accepts exactly one argument", func() {
 
@@ -74,10 +76,10 @@ func init() {
 			cmdRunner := NewRunner(factory)
 
 			err := cmdRunner.Run([]string{"put"})
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Equal(GinkgoT(), factory.CreateName, "put")
-			assert.Equal(GinkgoT(), factory.CreateCmd.RunArgs, []string{})
+			Expect(factory.CreateName).To(Equal("put"))
+			Expect(factory.CreateCmd.RunArgs).To(Equal([]string{}))
 		})
 		It("set config", func() {
 
@@ -87,7 +89,7 @@ func init() {
 
 			cmdRunner.SetConfig(conf)
 
-			assert.Equal(GinkgoT(), factory.Config, conf)
+			Expect(factory.Config).To(Equal(conf))
 		})
 	})
 }

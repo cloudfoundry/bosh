@@ -5,11 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	boshapp "bosh/app"
 	boshlog "bosh/logger"
-
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -87,9 +87,9 @@ func init() {
 				"-b", baseDir,
 			})
 
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Equal(GinkgoT(), app.GetPlatform().GetDevicePathResolver(), app.GetInfrastructure().GetDevicePathResolver())
+			Expect(app.GetPlatform().GetDevicePathResolver()).To(Equal(app.GetInfrastructure().GetDevicePathResolver()))
 		})
 	})
 }

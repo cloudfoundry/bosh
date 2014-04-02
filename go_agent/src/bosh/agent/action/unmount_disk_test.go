@@ -2,7 +2,7 @@ package action_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/gomega"
 
 	. "bosh/agent/action"
 	boshassert "bosh/assert"
@@ -25,13 +25,13 @@ func init() {
 		It("unmount disk should be asynchronous", func() {
 			platform := fakeplatform.NewFakePlatform()
 			action := buildUnmountDiskAction(platform)
-			assert.True(GinkgoT(), action.IsAsynchronous())
+			Expect(action.IsAsynchronous()).To(BeTrue())
 		})
 
 		It("is not persistent", func() {
 			platform := fakeplatform.NewFakePlatform()
 			action := buildUnmountDiskAction(platform)
-			assert.False(GinkgoT(), action.IsPersistent())
+			Expect(action.IsPersistent()).To(BeFalse())
 		})
 
 		It("unmount disk when the disk is mounted", func() {
@@ -42,10 +42,10 @@ func init() {
 			unmountDisk := buildUnmountDiskAction(platform)
 
 			result, err := unmountDisk.Run("vol-123")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			boshassert.MatchesJsonString(GinkgoT(), result, `{"message":"Unmounted partition of /dev/sdf"}`)
 
-			assert.Equal(GinkgoT(), platform.UnmountPersistentDiskDevicePath, "/dev/sdf")
+			Expect(platform.UnmountPersistentDiskDevicePath).To(Equal("/dev/sdf"))
 		})
 		It("unmount disk when the disk is not mounted", func() {
 
@@ -55,10 +55,10 @@ func init() {
 			mountDisk := buildUnmountDiskAction(platform)
 
 			result, err := mountDisk.Run("vol-123")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			boshassert.MatchesJsonString(GinkgoT(), result, `{"message":"Partition of /dev/sdf is not mounted"}`)
 
-			assert.Equal(GinkgoT(), platform.UnmountPersistentDiskDevicePath, "/dev/sdf")
+			Expect(platform.UnmountPersistentDiskDevicePath).To(Equal("/dev/sdf"))
 		})
 		It("unmount disk when device path not found", func() {
 
@@ -66,7 +66,7 @@ func init() {
 			mountDisk := buildUnmountDiskAction(platform)
 
 			_, err := mountDisk.Run("vol-456")
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 }

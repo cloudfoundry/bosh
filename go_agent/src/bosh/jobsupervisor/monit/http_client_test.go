@@ -13,7 +13,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 
 	. "bosh/jobsupervisor/monit"
 	"bosh/jobsupervisor/monit/http_fakes"
@@ -36,13 +35,13 @@ func init() {
 
 				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					calledMonit = true
-					assert.Equal(GinkgoT(), r.Method, "POST")
-					assert.Equal(GinkgoT(), r.URL.Path, "/test-service")
-					assert.Equal(GinkgoT(), r.PostFormValue("action"), "start")
-					assert.Equal(GinkgoT(), r.Header.Get("Content-Type"), "application/x-www-form-urlencoded")
+					Expect(r.Method).To(Equal("POST"))
+					Expect(r.URL.Path).To(Equal("/test-service"))
+					Expect(r.PostFormValue("action")).To(Equal("start"))
+					Expect(r.Header.Get("Content-Type")).To(Equal("application/x-www-form-urlencoded"))
 
 					expectedAuthEncoded := base64.URLEncoding.EncodeToString([]byte("fake-user:fake-pass"))
-					assert.Equal(GinkgoT(), r.Header.Get("Authorization"), fmt.Sprintf("Basic %s", expectedAuthEncoded))
+					Expect(r.Header.Get("Authorization")).To(Equal(fmt.Sprintf("Basic %s", expectedAuthEncoded)))
 				})
 				ts := httptest.NewServer(handler)
 				defer ts.Close()
@@ -50,8 +49,8 @@ func init() {
 				client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 				err := client.StartService("test-service")
-				assert.NoError(GinkgoT(), err)
-				assert.True(GinkgoT(), calledMonit)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(calledMonit).To(BeTrue())
 			})
 
 			It("start service retries when non200 response", func() {
@@ -62,8 +61,8 @@ func init() {
 				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
 
 				err := client.StartService("test-service")
-				assert.Equal(GinkgoT(), fakeHttpClient.CallCount, 20)
-				assert.Error(GinkgoT(), err)
+				Expect(fakeHttpClient.CallCount).To(Equal(20))
+				Expect(err).To(HaveOccurred())
 			})
 
 			It("start service retries when connection refused", func() {
@@ -74,8 +73,8 @@ func init() {
 				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
 
 				err := client.StartService("test-service")
-				assert.Equal(GinkgoT(), fakeHttpClient.CallCount, 20)
-				assert.Error(GinkgoT(), err)
+				Expect(fakeHttpClient.CallCount).To(Equal(20))
+				Expect(err).To(HaveOccurred())
 			})
 		})
 
@@ -85,13 +84,13 @@ func init() {
 
 				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					calledMonit = true
-					assert.Equal(GinkgoT(), r.Method, "POST")
-					assert.Equal(GinkgoT(), r.URL.Path, "/test-service")
-					assert.Equal(GinkgoT(), r.PostFormValue("action"), "stop")
-					assert.Equal(GinkgoT(), r.Header.Get("Content-Type"), "application/x-www-form-urlencoded")
+					Expect(r.Method).To(Equal("POST"))
+					Expect(r.URL.Path).To(Equal("/test-service"))
+					Expect(r.PostFormValue("action")).To(Equal("stop"))
+					Expect(r.Header.Get("Content-Type")).To(Equal("application/x-www-form-urlencoded"))
 
 					expectedAuthEncoded := base64.URLEncoding.EncodeToString([]byte("fake-user:fake-pass"))
-					assert.Equal(GinkgoT(), r.Header.Get("Authorization"), fmt.Sprintf("Basic %s", expectedAuthEncoded))
+					Expect(r.Header.Get("Authorization")).To(Equal(fmt.Sprintf("Basic %s", expectedAuthEncoded)))
 				})
 				ts := httptest.NewServer(handler)
 				defer ts.Close()
@@ -99,8 +98,8 @@ func init() {
 				client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 				err := client.StopService("test-service")
-				assert.NoError(GinkgoT(), err)
-				assert.True(GinkgoT(), calledMonit)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(calledMonit).To(BeTrue())
 			})
 
 			It("stop service retries when non200 response", func() {
@@ -111,9 +110,9 @@ func init() {
 				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
 
 				err := client.StopService("test-service")
-				assert.Equal(GinkgoT(), fakeHttpClient.CallCount, 20)
-				assert.Error(GinkgoT(), err)
-				assert.Contains(GinkgoT(), err.Error(), "fake error message")
+				Expect(fakeHttpClient.CallCount).To(Equal(20))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake error message"))
 			})
 
 			It("stop service retries when connection refused", func() {
@@ -124,9 +123,9 @@ func init() {
 				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
 
 				err := client.StopService("test-service")
-				assert.Equal(GinkgoT(), fakeHttpClient.CallCount, 20)
-				assert.Error(GinkgoT(), err)
-				assert.Contains(GinkgoT(), err.Error(), "some error")
+				Expect(fakeHttpClient.CallCount).To(Equal(20))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("some error"))
 			})
 		})
 
@@ -136,13 +135,13 @@ func init() {
 
 				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					calledMonit = true
-					assert.Equal(GinkgoT(), r.Method, "POST")
-					assert.Equal(GinkgoT(), r.URL.Path, "/test-service")
-					assert.Equal(GinkgoT(), r.PostFormValue("action"), "unmonitor")
-					assert.Equal(GinkgoT(), r.Header.Get("Content-Type"), "application/x-www-form-urlencoded")
+					Expect(r.Method).To(Equal("POST"))
+					Expect(r.URL.Path).To(Equal("/test-service"))
+					Expect(r.PostFormValue("action")).To(Equal("unmonitor"))
+					Expect(r.Header.Get("Content-Type")).To(Equal("application/x-www-form-urlencoded"))
 
 					expectedAuthEncoded := base64.URLEncoding.EncodeToString([]byte("fake-user:fake-pass"))
-					assert.Equal(GinkgoT(), r.Header.Get("Authorization"), fmt.Sprintf("Basic %s", expectedAuthEncoded))
+					Expect(r.Header.Get("Authorization")).To(Equal(fmt.Sprintf("Basic %s", expectedAuthEncoded)))
 				})
 
 				ts := httptest.NewServer(handler)
@@ -187,17 +186,17 @@ func init() {
 		Describe("ServicesInGroup", func() {
 			It("services in group", func() {
 				monitStatusFilePath, _ := filepath.Abs("../../../../fixtures/monit_status.xml")
-				assert.NotNil(GinkgoT(), monitStatusFilePath)
+				Expect(monitStatusFilePath).ToNot(BeNil())
 
 				file, err := os.Open(monitStatusFilePath)
-				assert.NoError(GinkgoT(), err)
+				Expect(err).ToNot(HaveOccurred())
 				defer file.Close()
 
 				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					io.Copy(w, file)
-					assert.Equal(GinkgoT(), r.Method, "GET")
-					assert.Equal(GinkgoT(), r.URL.Path, "/_status2")
-					assert.Equal(GinkgoT(), r.URL.Query().Get("format"), "xml")
+					Expect(r.Method).To(Equal("GET"))
+					Expect(r.URL.Path).To(Equal("/_status2"))
+					Expect(r.URL.Query().Get("format")).To(Equal("xml"))
 				})
 				ts := httptest.NewServer(handler)
 				defer ts.Close()
@@ -205,25 +204,25 @@ func init() {
 				client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 				services, err := client.ServicesInGroup("vcap")
-				assert.NoError(GinkgoT(), err)
-				assert.Equal(GinkgoT(), []string{"dummy"}, services)
+				Expect(err).ToNot(HaveOccurred())
+				Expect([]string{"dummy"}).To(Equal(services))
 			})
 		})
 
 		Describe("Status", func() {
 			It("decode status", func() {
 				monitStatusFilePath, _ := filepath.Abs("../../../../fixtures/monit_status.xml")
-				assert.NotNil(GinkgoT(), monitStatusFilePath)
+				Expect(monitStatusFilePath).ToNot(BeNil())
 
 				file, err := os.Open(monitStatusFilePath)
-				assert.NoError(GinkgoT(), err)
+				Expect(err).ToNot(HaveOccurred())
 				defer file.Close()
 
 				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					io.Copy(w, file)
-					assert.Equal(GinkgoT(), r.Method, "GET")
-					assert.Equal(GinkgoT(), r.URL.Path, "/_status2")
-					assert.Equal(GinkgoT(), r.URL.Query().Get("format"), "xml")
+					Expect(r.Method).To(Equal("GET"))
+					Expect(r.URL.Path).To(Equal("/_status2"))
+					Expect(r.URL.Query().Get("format")).To(Equal("xml"))
 				})
 				ts := httptest.NewServer(handler)
 				defer ts.Close()
@@ -231,9 +230,9 @@ func init() {
 				client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 				status, err := client.Status()
-				assert.NoError(GinkgoT(), err)
+				Expect(err).ToNot(HaveOccurred())
 				dummyServices := status.ServicesInGroup("vcap")
-				assert.Equal(GinkgoT(), 1, len(dummyServices))
+				Expect(1).To(Equal(len(dummyServices)))
 			})
 
 			It("status retries when non200 response", func() {
@@ -244,9 +243,9 @@ func init() {
 				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
 
 				_, err := client.Status()
-				assert.Equal(GinkgoT(), fakeHttpClient.CallCount, 20)
-				assert.Error(GinkgoT(), err)
-				assert.Contains(GinkgoT(), err.Error(), "fake error message")
+				Expect(fakeHttpClient.CallCount).To(Equal(20))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake error message"))
 			})
 
 			It("status retries when connection refused", func() {
@@ -257,12 +256,12 @@ func init() {
 				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
 
 				err := client.StartService("hello")
-				assert.Equal(GinkgoT(), fakeHttpClient.CallCount, 20)
-				assert.Error(GinkgoT(), err)
-				assert.Contains(GinkgoT(), err.Error(), "some error")
+				Expect(fakeHttpClient.CallCount).To(Equal(20))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("some error"))
 
 				for _, req := range fakeHttpClient.RequestBodies {
-					assert.Equal(GinkgoT(), req, "action=start")
+					Expect(req).To(Equal("action=start"))
 				}
 			})
 		})

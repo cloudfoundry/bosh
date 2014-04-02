@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
 
 	. "bosh/agent/applier/applyspec"
@@ -116,9 +117,9 @@ func init() {
 			spec := V1ApplySpec{}
 			err := json.Unmarshal([]byte(specJson), &spec)
 
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), spec.NetworkSpecs, expectedNetworks)
-			assert.Equal(GinkgoT(), spec, expectedSpec)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(spec.NetworkSpecs).To(Equal(expectedNetworks))
+			Expect(spec).To(Equal(expectedSpec))
 		})
 
 		It("jobs with specified job templates", func() {
@@ -174,7 +175,7 @@ func init() {
 
 		It("jobs when no jobs specified", func() {
 			spec := V1ApplySpec{}
-			assert.Equal(GinkgoT(), []models.Job{}, spec.Jobs())
+			Expect([]models.Job{}).To(Equal(spec.Jobs()))
 		})
 
 		It("packages", func() {
@@ -203,15 +204,15 @@ func init() {
 
 		It("packages when no packages specified", func() {
 			spec := V1ApplySpec{}
-			assert.Equal(GinkgoT(), []models.Package{}, spec.Packages())
+			Expect([]models.Package{}).To(Equal(spec.Packages()))
 		})
 
 		It("max log file size", func() {
 			spec := V1ApplySpec{}
-			assert.Equal(GinkgoT(), "50M", spec.MaxLogFileSize())
+			Expect("50M").To(Equal(spec.MaxLogFileSize()))
 
 			spec.PropertiesSpec.LoggingSpec.MaxLogFileSize = "fake-size"
-			assert.Equal(GinkgoT(), "fake-size", spec.MaxLogFileSize())
+			Expect("fake-size").To(Equal(spec.MaxLogFileSize()))
 		})
 	})
 }

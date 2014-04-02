@@ -8,8 +8,8 @@ type TaskState string
 
 const (
 	TaskStateRunning TaskState = "running"
-	TaskStateDone              = "done"
-	TaskStateFailed            = "failed"
+	TaskStateDone    TaskState = "done"
+	TaskStateFailed  TaskState = "failed"
 )
 
 type Task struct {

@@ -1,6 +1,11 @@
 package platform_test
 
 import (
+	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	boshlog "bosh/logger"
 	. "bosh/platform"
 	fakecd "bosh/platform/cdutil/fakes"
@@ -12,9 +17,6 @@ import (
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 const UBUNTU_EXPECTED_NETWORK_INTERFACES = `auto lo
@@ -113,12 +115,12 @@ prepend domain-name-servers xx.xx.xx.xx;
 			platform.SetupDhcp(networks)
 
 			dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
-			assert.NotNil(GinkgoT(), dhcpConfig)
-			assert.Equal(GinkgoT(), dhcpConfig.StringContents(), UBUNTU_EXPECTED_DHCP_CONFIG)
+			Expect(dhcpConfig).ToNot(BeNil())
+			Expect(dhcpConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_DHCP_CONFIG))
 
-			assert.Equal(GinkgoT(), len(cmdRunner.RunCommands), 2)
-			assert.Equal(GinkgoT(), cmdRunner.RunCommands[0], []string{"pkill", "dhclient3"})
-			assert.Equal(GinkgoT(), cmdRunner.RunCommands[1], []string{"/etc/init.d/networking", "restart"})
+			Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient3"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"/etc/init.d/networking", "restart"}))
 		})
 
 		It("ubuntu setup dhcp with pre existing configuration", func() {
@@ -137,10 +139,10 @@ prepend domain-name-servers xx.xx.xx.xx;
 			platform.SetupDhcp(networks)
 
 			dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
-			assert.NotNil(GinkgoT(), dhcpConfig)
-			assert.Equal(GinkgoT(), dhcpConfig.StringContents(), UBUNTU_EXPECTED_DHCP_CONFIG)
+			Expect(dhcpConfig).ToNot(BeNil())
+			Expect(dhcpConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_DHCP_CONFIG))
 
-			assert.Equal(GinkgoT(), len(cmdRunner.RunCommands), 0)
+			Expect(len(cmdRunner.RunCommands)).To(Equal(0))
 		})
 
 		It("ubuntu setup manual networking", func() {
@@ -161,20 +163,20 @@ prepend domain-name-servers xx.xx.xx.xx;
 			platform.SetupManualNetworking(networks)
 
 			networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
-			assert.NotNil(GinkgoT(), networkConfig)
-			assert.Equal(GinkgoT(), networkConfig.StringContents(), UBUNTU_EXPECTED_NETWORK_INTERFACES)
+			Expect(networkConfig).ToNot(BeNil())
+			Expect(networkConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_NETWORK_INTERFACES))
 
 			resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
-			assert.NotNil(GinkgoT(), resolvConf)
-			assert.Equal(GinkgoT(), resolvConf.StringContents(), UBUNTU_EXPECTED_RESOLV_CONF)
+			Expect(resolvConf).ToNot(BeNil())
+			Expect(resolvConf.StringContents()).To(Equal(UBUNTU_EXPECTED_RESOLV_CONF))
 
 			time.Sleep(100 * time.Millisecond)
 
-			assert.Equal(GinkgoT(), len(cmdRunner.RunCommands), 8)
-			assert.Equal(GinkgoT(), cmdRunner.RunCommands[0], []string{"service", "network-interface", "stop", "INTERFACE=eth0"})
-			assert.Equal(GinkgoT(), cmdRunner.RunCommands[1], []string{"service", "network-interface", "start", "INTERFACE=eth0"})
-			assert.Equal(GinkgoT(), cmdRunner.RunCommands[2], []string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"})
-			assert.Equal(GinkgoT(), cmdRunner.RunCommands[7], []string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"})
+			Expect(len(cmdRunner.RunCommands)).To(Equal(8))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network-interface", "stop", "INTERFACE=eth0"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"service", "network-interface", "start", "INTERFACE=eth0"}))
+			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+			Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
 		})
 
 	})

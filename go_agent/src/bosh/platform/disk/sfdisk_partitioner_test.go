@@ -1,12 +1,14 @@
 package disk_test
 
 import (
+	"fmt"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	boshlog "bosh/logger"
 	. "bosh/platform/disk"
 	fakesys "bosh/system/fakes"
-	"fmt"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 const DEVSDA_SFDISK_EMPTY_DUMP = `# partition table of /dev/sda
@@ -62,8 +64,8 @@ func init() {
 
 			partitioner.Partition("/dev/sda", partitions)
 
-			assert.Equal(GinkgoT(), 1, len(runner.RunCommandsWithInput))
-			assert.Equal(GinkgoT(), []string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uM", "/dev/sda"}, runner.RunCommandsWithInput[0])
+			Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
+			Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uM", "/dev/sda"}))
 		})
 		It("sfdisk partition with no partition table", func() {
 
@@ -79,8 +81,8 @@ func init() {
 
 			partitioner.Partition("/dev/sda", partitions)
 
-			assert.Equal(GinkgoT(), 1, len(runner.RunCommandsWithInput))
-			assert.Equal(GinkgoT(), []string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uM", "/dev/sda"}, runner.RunCommandsWithInput[0])
+			Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
+			Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",512,S\n,1024,L\n,,L\n", "sfdisk", "-uM", "/dev/sda"}))
 		})
 		It("sfdisk get device size in mb", func() {
 
@@ -89,9 +91,9 @@ func init() {
 			partitioner := createSfdiskPartitionerForTests(runner)
 
 			size, err := partitioner.GetDeviceSizeInMb("/dev/sda")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Equal(GinkgoT(), uint64(40000), size)
+			Expect(uint64(40000)).To(Equal(size))
 		})
 		It("sfdisk partition when partitions already match", func() {
 
@@ -111,7 +113,7 @@ func init() {
 
 			partitioner.Partition("/dev/sda", partitions)
 
-			assert.Equal(GinkgoT(), 0, len(runner.RunCommandsWithInput))
+			Expect(0).To(Equal(len(runner.RunCommandsWithInput)))
 		})
 		It("sfdisk partition with last partition not matching size", func() {
 
@@ -129,8 +131,8 @@ func init() {
 
 			partitioner.Partition("/dev/sda", partitions)
 
-			assert.Equal(GinkgoT(), 1, len(runner.RunCommandsWithInput))
-			assert.Equal(GinkgoT(), []string{",1024,L\n,,L\n", "sfdisk", "-uM", "/dev/sda"}, runner.RunCommandsWithInput[0])
+			Expect(1).To(Equal(len(runner.RunCommandsWithInput)))
+			Expect(runner.RunCommandsWithInput[0]).To(Equal([]string{",1024,L\n,,L\n", "sfdisk", "-uM", "/dev/sda"}))
 		})
 		It("sfdisk partition with last partition filling disk", func() {
 
@@ -149,7 +151,7 @@ func init() {
 
 			partitioner.Partition("/dev/sda", partitions)
 
-			assert.Equal(GinkgoT(), 0, len(runner.RunCommandsWithInput))
+			Expect(0).To(Equal(len(runner.RunCommandsWithInput)))
 		})
 	})
 }

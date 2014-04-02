@@ -1,11 +1,12 @@
 package drain_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	. "bosh/agent/drain"
 	boshdir "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -19,7 +20,7 @@ func init() {
 			scriptProvider := NewConcreteDrainScriptProvider(runner, fs, dirProvider)
 			drainScript := scriptProvider.NewDrainScript("foo")
 
-			assert.Equal(GinkgoT(), drainScript.Path(), "/var/vcap/jobs/foo/bin/drain")
+			Expect(drainScript.Path()).To(Equal("/var/vcap/jobs/foo/bin/drain"))
 		})
 	})
 }

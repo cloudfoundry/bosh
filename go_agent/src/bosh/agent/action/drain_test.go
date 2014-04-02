@@ -5,7 +5,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 
 	. "bosh/agent/action"
 	boshas "bosh/agent/applier/applyspec"
@@ -86,11 +85,11 @@ func init() {
 								Expect(err).ToNot(HaveOccurred())
 								Expect(value).To(Equal(1))
 
-								assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptTemplateName, "foo")
-								assert.True(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.DidRun)
-								assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.JobChange(), "job_new")
-								assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.HashChange(), "hash_new")
-								assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.UpdatedPackages(), []string{"foo"})
+								Expect(drainScriptProvider.NewDrainScriptTemplateName).To(Equal("foo"))
+								Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeTrue())
+								Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.JobChange()).To(Equal("job_new"))
+								Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.HashChange()).To(Equal("hash_new"))
+								Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.UpdatedPackages()).To(Equal([]string{"foo"}))
 							})
 
 							Context("when drain script runs and errs", func() {
@@ -181,11 +180,11 @@ func init() {
 								Expect(err).ToNot(HaveOccurred())
 								Expect(value).To(Equal(1))
 
-								assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptTemplateName, "foo")
-								assert.True(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.DidRun)
-								assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.JobChange(), "job_shutdown")
-								assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.HashChange(), "hash_unchanged")
-								assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.UpdatedPackages(), []string{})
+								Expect(drainScriptProvider.NewDrainScriptTemplateName).To(Equal("foo"))
+								Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeTrue())
+								Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.JobChange()).To(Equal("job_shutdown"))
+								Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.HashChange()).To(Equal("hash_unchanged"))
+								Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.UpdatedPackages()).To(Equal([]string{}))
 							})
 
 							Context("when drain script runs and errs", func() {
@@ -277,11 +276,11 @@ func init() {
 							Expect(err).ToNot(HaveOccurred())
 							Expect(value).To(Equal(1))
 
-							assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptTemplateName, "foo")
-							assert.True(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.DidRun)
-							assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.JobChange(), "job_check_status")
-							assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.HashChange(), "hash_unchanged")
-							assert.Equal(GinkgoT(), drainScriptProvider.NewDrainScriptDrainScript.RunParams.UpdatedPackages(), []string{})
+							Expect(drainScriptProvider.NewDrainScriptTemplateName).To(Equal("foo"))
+							Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeTrue())
+							Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.JobChange()).To(Equal("job_check_status"))
+							Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.HashChange()).To(Equal("hash_unchanged"))
+							Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.UpdatedPackages()).To(Equal([]string{}))
 						})
 
 						Context("when drain script runs and errs", func() {

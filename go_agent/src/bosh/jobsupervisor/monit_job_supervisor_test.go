@@ -92,10 +92,10 @@ func init() {
 
 			err := monit.Reload()
 
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), 1, len(runner.RunCommands))
-			assert.Equal(GinkgoT(), []string{"monit", "reload"}, runner.RunCommands[0])
-			assert.Equal(GinkgoT(), client.StatusCalledTimes, 4)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(1).To(Equal(len(runner.RunCommands)))
+			Expect(runner.RunCommands[0]).To(Equal([]string{"monit", "reload"}))
+			Expect(client.StatusCalledTimes).To(Equal(4))
 		})
 
 		It("stops trying to reload after 60 attempts", func() {
@@ -113,32 +113,32 @@ func init() {
 
 			err := monit.Reload()
 
-			assert.Error(GinkgoT(), err)
-			assert.Equal(GinkgoT(), 1, len(runner.RunCommands))
-			assert.Equal(GinkgoT(), []string{"monit", "reload"}, runner.RunCommands[0])
-			assert.Equal(GinkgoT(), client.StatusCalledTimes, 60)
+			Expect(err).To(HaveOccurred())
+			Expect(1).To(Equal(len(runner.RunCommands)))
+			Expect(runner.RunCommands[0]).To(Equal([]string{"monit", "reload"}))
+			Expect(client.StatusCalledTimes).To(Equal(60))
 		})
 
 		It("start starts each monit service in group vcap", func() {
 			client.ServicesInGroupServices = []string{"fake-service"}
 
 			err := monit.Start()
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Equal(GinkgoT(), "vcap", client.ServicesInGroupName)
-			assert.Equal(GinkgoT(), 1, len(client.StartServiceNames))
-			assert.Equal(GinkgoT(), "fake-service", client.StartServiceNames[0])
+			Expect("vcap").To(Equal(client.ServicesInGroupName))
+			Expect(1).To(Equal(len(client.StartServiceNames)))
+			Expect("fake-service").To(Equal(client.StartServiceNames[0]))
 		})
 
 		It("stop stops each monit service in group vcap", func() {
 			client.ServicesInGroupServices = []string{"fake-service"}
 
 			err := monit.Stop()
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Equal(GinkgoT(), "vcap", client.ServicesInGroupName)
-			assert.Equal(GinkgoT(), 1, len(client.StopServiceNames))
-			assert.Equal(GinkgoT(), "fake-service", client.StopServiceNames[0])
+			Expect("vcap").To(Equal(client.ServicesInGroupName))
+			Expect(1).To(Equal(len(client.StopServiceNames)))
+			Expect("fake-service").To(Equal(client.StopServiceNames[0]))
 		})
 
 		It("status returns running when all services are monitored and running", func() {
@@ -150,7 +150,7 @@ func init() {
 			}
 
 			status := monit.Status()
-			assert.Equal(GinkgoT(), "running", status)
+			Expect("running").To(Equal(status))
 		})
 
 		It("status returns failing when all services are monitored and at least one service is failing", func() {
@@ -162,7 +162,7 @@ func init() {
 			}
 
 			status := monit.Status()
-			assert.Equal(GinkgoT(), "failing", status)
+			Expect("failing").To(Equal(status))
 		})
 
 		It("status returns failing when at least one service is not monitored", func() {
@@ -174,7 +174,7 @@ func init() {
 			}
 
 			status := monit.Status()
-			assert.Equal(GinkgoT(), "failing", status)
+			Expect("failing").To(Equal(status))
 		})
 
 		It("status returns start when at least one service is starting", func() {
@@ -187,14 +187,14 @@ func init() {
 			}
 
 			status := monit.Status()
-			assert.Equal(GinkgoT(), "starting", status)
+			Expect("starting").To(Equal(status))
 		})
 
 		It("status returns unknown when error", func() {
 			client.StatusErr = errors.New("fake-monit-client-error")
 
 			status := monit.Status()
-			assert.Equal(GinkgoT(), "unknown", status)
+			Expect("unknown").To(Equal(status))
 		})
 
 		It("monitor job failures", func() {
@@ -215,7 +215,7 @@ func init() {
     Description: process is not running`
 
 			err := doJobFailureEmail(msg, jobFailuresServerPort)
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			assert.Equal(GinkgoT(), handledAlert, boshalert.MonitAlert{
 				Id:          "1304319946.0@localhost",
@@ -240,8 +240,8 @@ func init() {
 			msg := `Hi! How'sit goin`
 
 			err := doJobFailureEmail(msg, jobFailuresServerPort)
-			assert.NoError(GinkgoT(), err)
-			assert.False(GinkgoT(), didHandleAlert)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(didHandleAlert).To(BeFalse())
 		})
 
 		Describe("AddJob", func() {

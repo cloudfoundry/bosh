@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/gomega"
 
 	. "bosh/agent/action"
 	boshas "bosh/agent/applier/applyspec"
@@ -23,12 +23,12 @@ func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("apply should be asynchronous", func() {
 			_, _, action := buildApplyAction()
-			assert.True(GinkgoT(), action.IsAsynchronous())
+			Expect(action.IsAsynchronous()).To(BeTrue())
 		})
 
 		It("is not persistent", func() {
 			_, _, action := buildApplyAction()
-			assert.False(GinkgoT(), action.IsPersistent())
+			Expect(action.IsPersistent()).To(BeFalse())
 		})
 
 		It("apply returns applied", func() {
@@ -39,7 +39,7 @@ func init() {
 			}
 
 			value, err := action.Run(applySpec)
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			boshassert.MatchesJsonString(GinkgoT(), value, `"applied"`)
 		})
@@ -52,8 +52,8 @@ func init() {
 			}
 
 			_, err := action.Run(applySpec)
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), applySpec, specService.Spec)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(applySpec).To(Equal(specService.Spec))
 		})
 
 		It("apply run skips applier when apply spec does not have configuration hash", func() {
@@ -66,8 +66,8 @@ func init() {
 			}
 
 			_, err := action.Run(applySpec)
-			assert.NoError(GinkgoT(), err)
-			assert.False(GinkgoT(), applier.Applied)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(applier.Applied).To(BeFalse())
 		})
 
 		It("apply run runs applier with apply spec when apply spec has configuration hash", func() {
@@ -81,9 +81,9 @@ func init() {
 			}
 
 			_, err := action.Run(expectedApplySpec)
-			assert.NoError(GinkgoT(), err)
-			assert.True(GinkgoT(), applier.Applied)
-			assert.Equal(GinkgoT(), expectedApplySpec, applier.ApplyApplySpec)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(applier.Applied).To(BeTrue())
+			Expect(expectedApplySpec).To(Equal(applier.ApplyApplySpec))
 		})
 
 		It("apply run errs when applier fails", func() {
@@ -92,8 +92,8 @@ func init() {
 			applier.ApplyError = errors.New("fake-apply-error")
 
 			_, err := action.Run(boshas.V1ApplySpec{ConfigurationHash: "fake-config-hash"})
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-apply-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-apply-error"))
 		})
 	})
 }

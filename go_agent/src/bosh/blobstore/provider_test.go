@@ -1,13 +1,14 @@
 package blobstore_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	. "bosh/blobstore"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
 	boshuuid "bosh/uuid"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func buildProvider() (platform *fakeplatform.FakePlatform, provider Provider) {
@@ -23,8 +24,8 @@ func init() {
 			blobstore, err := provider.Get(boshsettings.Blobstore{
 				Type: boshsettings.BlobstoreTypeDummy,
 			})
-			assert.NoError(GinkgoT(), err)
-			assert.NotNil(GinkgoT(), blobstore)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(blobstore).ToNot(BeNil())
 		})
 		It("get external when external command in path", func() {
 
@@ -38,15 +39,15 @@ func init() {
 				Type:    "fake-external-type",
 				Options: options,
 			})
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			expectedExternalConfigPath := "/var/vcap/bosh/etc/blobstore-fake-external-type.json"
 			expectedBlobstore := NewExternalBlobstore("fake-external-type", options, platform.GetFs(), platform.GetRunner(), boshuuid.NewGenerator(), expectedExternalConfigPath)
 			expectedBlobstore = NewSha1Verifiable(expectedBlobstore)
 			err = expectedBlobstore.Validate()
 
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), blobstore, expectedBlobstore)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(blobstore).To(Equal(expectedBlobstore))
 		})
 		It("get external errs when external command not in path", func() {
 
@@ -60,7 +61,7 @@ func init() {
 				Type:    "fake-external-type",
 				Options: options,
 			})
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 }

@@ -1,12 +1,14 @@
 package blobstore_test
 
 import (
+	"errors"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	boshblob "bosh/blobstore"
 	fakeblob "bosh/blobstore/fakes"
 	bosherr "bosh/errors"
-	"errors"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func buildSha1Verifiable() (innerBlobstore *fakeblob.FakeBlobstore, sha1Verifiable boshblob.Blobstore) {
@@ -20,12 +22,12 @@ func init() {
 			innerBlobstore, sha1Verifiable := buildSha1Verifiable()
 
 			err := sha1Verifiable.Validate()
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			innerBlobstore.ValidateError = bosherr.New("fake-error")
 			err = sha1Verifiable.Validate()
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-error"))
 		})
 		It("sha1 verifiable get when sha1 is correct", func() {
 
@@ -35,8 +37,8 @@ func init() {
 			validSha1 := "da39a3ee5e6b4b0d3255bfef95601890afd80709"
 
 			fileName, err := sha1Verifiable.Get("some-blob-id", validSha1)
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), innerBlobstore.GetFileName, fileName)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(innerBlobstore.GetFileName).To(Equal(fileName))
 		})
 		It("sha1 verifiable get when sha1 is incorrect", func() {
 
@@ -46,7 +48,7 @@ func init() {
 			incorrectSha1 := "some-incorrect-sha1"
 
 			_, err := sha1Verifiable.Get("some-blob-id", incorrectSha1)
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 		It("sha1 verifiable errs when get errs", func() {
 
@@ -55,7 +57,7 @@ func init() {
 			validSha1 := "da39a3ee5e6b4b0d3255bfef95601890afd80709"
 
 			_, err := sha1Verifiable.Get("some-blob-id", validSha1)
-			assert.Contains(GinkgoT(), err.Error(), innerBlobstore.GetError.Error())
+			Expect(err.Error()).To(ContainSubstring(innerBlobstore.GetError.Error()))
 		})
 		It("sha1 verifiable skips testings if sha1 is empty", func() {
 
@@ -65,8 +67,8 @@ func init() {
 			emptySha1 := ""
 
 			fileName, err := sha1Verifiable.Get("some-blob-id", emptySha1)
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), innerBlobstore.GetFileName, fileName)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(innerBlobstore.GetFileName).To(Equal(fileName))
 		})
 		It("sha1 verifiable cleanup", func() {
 
@@ -75,8 +77,8 @@ func init() {
 
 			err := sha1Verifiable.CleanUp("/some/file")
 
-			assert.Equal(GinkgoT(), err, innerBlobstore.CleanUpErr)
-			assert.Equal(GinkgoT(), "/some/file", innerBlobstore.CleanUpFileName)
+			Expect(err).To(Equal(innerBlobstore.CleanUpErr))
+			Expect("/some/file").To(Equal(innerBlobstore.CleanUpFileName))
 		})
 		It("sha1 verifiable create", func() {
 
@@ -88,10 +90,10 @@ func init() {
 
 			blobId, sha1, err := sha1Verifiable.Create("../../../fixtures/some.config")
 
-			assert.Equal(GinkgoT(), "blob-id", blobId)
-			assert.Equal(GinkgoT(), err, innerBlobstore.CreateErr)
-			assert.Equal(GinkgoT(), "../../../fixtures/some.config", innerBlobstore.CreateFileName)
-			assert.Equal(GinkgoT(), expectedSha1, sha1)
+			Expect("blob-id").To(Equal(blobId))
+			Expect(err).To(Equal(innerBlobstore.CreateErr))
+			Expect("../../../fixtures/some.config").To(Equal(innerBlobstore.CreateFileName))
+			Expect(expectedSha1).To(Equal(sha1))
 		})
 	})
 }

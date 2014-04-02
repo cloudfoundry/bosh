@@ -1,6 +1,11 @@
 package platform_test
 
 import (
+	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	boshlog "bosh/logger"
 	. "bosh/platform"
 	fakecd "bosh/platform/cdutil/fakes"
@@ -12,9 +17,6 @@ import (
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 const CENTOS_EXPECTED_RESOLV_CONF = `nameserver 10.80.130.1
@@ -110,11 +112,11 @@ ONBOOT=yes`
 			platform.SetupDhcp(networks)
 
 			dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
-			assert.NotNil(GinkgoT(), dhcpConfig)
-			assert.Equal(GinkgoT(), dhcpConfig.StringContents(), CENTOS_EXPECTED_DHCP_CONFIG)
+			Expect(dhcpConfig).ToNot(BeNil())
+			Expect(dhcpConfig.StringContents()).To(Equal(CENTOS_EXPECTED_DHCP_CONFIG))
 
-			assert.Equal(GinkgoT(), len(cmdRunner.RunCommands), 1)
-			assert.Equal(GinkgoT(), cmdRunner.RunCommands[0], []string{"service", "network", "restart"})
+			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
 		})
 
 		It("centos setup dhcp with pre existing configuration", func() {
@@ -133,10 +135,10 @@ ONBOOT=yes`
 			platform.SetupDhcp(networks)
 
 			dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
-			assert.NotNil(GinkgoT(), dhcpConfig)
-			assert.Equal(GinkgoT(), dhcpConfig.StringContents(), CENTOS_EXPECTED_DHCP_CONFIG)
+			Expect(dhcpConfig).ToNot(BeNil())
+			Expect(dhcpConfig.StringContents()).To(Equal(CENTOS_EXPECTED_DHCP_CONFIG))
 
-			assert.Equal(GinkgoT(), len(cmdRunner.RunCommands), 0)
+			Expect(len(cmdRunner.RunCommands)).To(Equal(0))
 		})
 
 		It("centos setup manual networking", func() {
@@ -157,20 +159,19 @@ ONBOOT=yes`
 			platform.SetupManualNetworking(networks)
 
 			networkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
-			assert.NotNil(GinkgoT(), networkConfig)
-			assert.Equal(GinkgoT(), networkConfig.StringContents(), CENTOS_EXPECTED_IFCFG)
+			Expect(networkConfig).ToNot(BeNil())
+			Expect(networkConfig.StringContents()).To(Equal(CENTOS_EXPECTED_IFCFG))
 
 			resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
-			assert.NotNil(GinkgoT(), resolvConf)
-			assert.Equal(GinkgoT(), resolvConf.StringContents(), CENTOS_EXPECTED_RESOLV_CONF)
+			Expect(resolvConf).ToNot(BeNil())
+			Expect(resolvConf.StringContents()).To(Equal(CENTOS_EXPECTED_RESOLV_CONF))
 
 			time.Sleep(100 * time.Millisecond)
 
-			assert.Equal(GinkgoT(), len(cmdRunner.RunCommands), 7)
-			assert.Equal(GinkgoT(), cmdRunner.RunCommands[0], []string{"service", "network", "restart"})
-			assert.Equal(GinkgoT(), cmdRunner.RunCommands[1], []string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"})
-			assert.Equal(GinkgoT(), cmdRunner.RunCommands[6], []string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"})
+			Expect(len(cmdRunner.RunCommands)).To(Equal(7))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+			Expect(cmdRunner.RunCommands[6]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
 		})
-
 	})
 }

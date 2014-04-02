@@ -1,17 +1,18 @@
 package monit_test
 
 import (
-	. "bosh/jobsupervisor/monit"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-
-	boshlog "bosh/logger"
-	. "github.com/onsi/ginkgo"
 	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	. "bosh/jobsupervisor/monit"
+	boshlog "bosh/logger"
 )
 
 func init() {
@@ -37,17 +38,17 @@ func init() {
 				},
 			}
 			monitStatusFilePath, _ := filepath.Abs("../../../../fixtures/monit_status_with_multiple_services.xml")
-			assert.NotNil(GinkgoT(), monitStatusFilePath)
+			Expect(monitStatusFilePath).ToNot(BeNil())
 
 			file, err := os.Open(monitStatusFilePath)
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			defer file.Close()
 
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				io.Copy(w, file)
-				assert.Equal(GinkgoT(), r.Method, "GET")
-				assert.Equal(GinkgoT(), r.URL.Path, "/_status2")
-				assert.Equal(GinkgoT(), r.URL.Query().Get("format"), "xml")
+				Expect(r.Method).To(Equal("GET"))
+				Expect(r.URL.Path).To(Equal("/_status2"))
+				Expect(r.URL.Query().Get("format")).To(Equal("xml"))
 			})
 			ts := httptest.NewServer(handler)
 			defer ts.Close()
@@ -56,13 +57,13 @@ func init() {
 			client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 			status, err := client.Status()
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			services := status.ServicesInGroup("vcap")
-			assert.Equal(GinkgoT(), len(expectedServices), len(services))
+			Expect(len(expectedServices)).To(Equal(len(services)))
 
 			for i, expectedService := range expectedServices {
-				assert.Equal(GinkgoT(), expectedService, services[i])
+				Expect(expectedService).To(Equal(services[i]))
 			}
 		})
 	})

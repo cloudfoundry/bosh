@@ -1,9 +1,10 @@
 package stats_test
 
 import (
-	. "bosh/platform/stats"
 	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/gomega"
+
+	. "bosh/platform/stats"
 )
 
 func init() {
@@ -13,49 +14,49 @@ func init() {
 			collector := NewSigarStatsCollector()
 
 			load, err := collector.GetCpuLoad()
-			assert.NoError(GinkgoT(), err)
-			assert.True(GinkgoT(), load.One >= 0)
-			assert.True(GinkgoT(), load.Five >= 0)
-			assert.True(GinkgoT(), load.Fifteen >= 0)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(load.One >= 0).To(BeTrue())
+			Expect(load.Five >= 0).To(BeTrue())
+			Expect(load.Fifteen >= 0).To(BeTrue())
 		})
 		It("ubuntu get cpu stats", func() {
 
 			collector := NewSigarStatsCollector()
 
 			stats, err := collector.GetCpuStats()
-			assert.NoError(GinkgoT(), err)
-			assert.True(GinkgoT(), stats.User > 0)
-			assert.True(GinkgoT(), stats.Sys > 0)
-			assert.True(GinkgoT(), stats.Total > 0)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(stats.User > 0).To(BeTrue())
+			Expect(stats.Sys > 0).To(BeTrue())
+			Expect(stats.Total > 0).To(BeTrue())
 		})
 		It("ubuntu get mem stats", func() {
 
 			collector := NewSigarStatsCollector()
 
 			stats, err := collector.GetMemStats()
-			assert.NoError(GinkgoT(), err)
-			assert.True(GinkgoT(), stats.Total > 0)
-			assert.True(GinkgoT(), stats.Used > 0)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(stats.Total > 0).To(BeTrue())
+			Expect(stats.Used > 0).To(BeTrue())
 		})
 		It("ubuntu get swap stats", func() {
 
 			collector := NewSigarStatsCollector()
 
 			stats, err := collector.GetSwapStats()
-			assert.NoError(GinkgoT(), err)
-			assert.True(GinkgoT(), stats.Total > 0)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(stats.Total > 0).To(BeTrue())
 		})
 		It("ubuntu get disk stats", func() {
 
 			collector := NewSigarStatsCollector()
 
 			stats, err := collector.GetDiskStats("/")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.True(GinkgoT(), stats.DiskUsage.Total > 0)
-			assert.True(GinkgoT(), stats.DiskUsage.Used > 0)
-			assert.True(GinkgoT(), stats.InodeUsage.Total > 0)
-			assert.True(GinkgoT(), stats.InodeUsage.Used > 0)
+			Expect(stats.DiskUsage.Total > 0).To(BeTrue())
+			Expect(stats.DiskUsage.Used > 0).To(BeTrue())
+			Expect(stats.InodeUsage.Total > 0).To(BeTrue())
+			Expect(stats.InodeUsage.Used > 0).To(BeTrue())
 		})
 	})
 }

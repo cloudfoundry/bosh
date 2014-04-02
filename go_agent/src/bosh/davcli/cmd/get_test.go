@@ -1,16 +1,18 @@
 package cmd_test
 
 import (
-	. "bosh/davcli/cmd"
-	testcmd "bosh/davcli/cmd/testing"
-	davconf "bosh/davcli/config"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	. "bosh/davcli/cmd"
+	testcmd "bosh/davcli/cmd/testing"
+	davconf "bosh/davcli/config"
 )
 
 func runGet(config davconf.Config, args []string) (err error) {
@@ -38,11 +40,11 @@ func init() {
 
 				username, password, err := req.ExtractBasicAuth()
 
-				assert.NoError(GinkgoT(), err)
-				assert.Equal(GinkgoT(), req.URL.Path, "/0d/"+requestedBlob)
-				assert.Equal(GinkgoT(), req.Method, "GET")
-				assert.Equal(GinkgoT(), username, "some user")
-				assert.Equal(GinkgoT(), password, "some pwd")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(req.URL.Path).To(Equal("/0d/" + requestedBlob))
+				Expect(req.Method).To(Equal("GET"))
+				Expect(username).To(Equal("some user"))
+				Expect(password).To(Equal("some pwd"))
 
 				w.Write([]byte("this is your blob"))
 			}
@@ -57,16 +59,16 @@ func init() {
 			}
 
 			err := runGet(config, []string{requestedBlob, targetFilePath})
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), getFileContent(targetFilePath), "this is your blob")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(getFileContent(targetFilePath)).To(Equal("this is your blob"))
 		})
 		It("get run with incorrect arg count", func() {
 
 			config := davconf.Config{}
 			err := runGet(config, []string{})
 
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "Incorrect usage")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Incorrect usage"))
 		})
 	})
 }

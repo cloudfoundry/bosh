@@ -7,6 +7,7 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	. "bosh/infrastructure"
 	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
@@ -39,7 +40,7 @@ func init() {
 			dummy := NewDummyInfrastructure(fs, dirProvider, platform, fakeDevicePathResolver)
 
 			settings, err := dummy.GetSettings()
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			assert.Equal(GinkgoT(), settings, boshsettings.Settings{
 				AgentId:   "123-456-789",
 				Blobstore: boshsettings.Blobstore{Type: boshsettings.BlobstoreTypeDummy},
@@ -56,8 +57,8 @@ func init() {
 			dummy := NewDummyInfrastructure(fs, dirProvider, platform, fakeDevicePathResolver)
 
 			_, err := dummy.GetSettings()
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "Read settings file")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Read settings file"))
 		})
 	})
 }

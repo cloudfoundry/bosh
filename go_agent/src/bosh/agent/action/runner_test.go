@@ -148,16 +148,16 @@ func init() {
 			}`
 
 			value, err := runner.Run(action, []byte(payload))
-			assert.Error(GinkgoT(), err)
-			assert.Equal(GinkgoT(), err.Error(), "Oops")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Oops"))
 
-			assert.Equal(GinkgoT(), value, expectedValue)
-			assert.Equal(GinkgoT(), err, expectedErr)
+			Expect(value).To(Equal(expectedValue))
+			Expect(err).To(Equal(expectedErr))
 
-			assert.Equal(GinkgoT(), action.SubAction, "setup")
-			assert.Equal(GinkgoT(), action.SomeId, 123)
-			assert.Equal(GinkgoT(), action.ExtraArgs, argsType{User: "rob", Password: "rob123", Id: 12})
-			assert.Equal(GinkgoT(), action.SliceArgs, []string{"a", "b", "c"})
+			Expect(action.SubAction).To(Equal("setup"))
+			Expect(action.SomeId).To(Equal(123))
+			Expect(action.ExtraArgs).To(Equal(argsType{User: "rob", Password: "rob123", Id: 12}))
+			Expect(action.SliceArgs).To(Equal([]string{"a", "b", "c"}))
 		})
 		It("runner run errs when actions not enough arguments", func() {
 
@@ -169,7 +169,7 @@ func init() {
 			payload := `{"arguments":["setup"]}`
 
 			_, err := runner.Run(action, []byte(payload))
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 		It("runner run errs when action arguments types do not match", func() {
 
@@ -181,7 +181,7 @@ func init() {
 			payload := `{"arguments":[123, "setup", {"user":"rob","pwd":"rob123","id":12}]}`
 
 			_, err := runner.Run(action, []byte(payload))
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 		It("runner handles optional arguments being passed in", func() {
 
@@ -195,10 +195,10 @@ func init() {
 
 			value, err := runner.Run(action, []byte(payload))
 
-			assert.Equal(GinkgoT(), value, expectedValue)
-			assert.Equal(GinkgoT(), err, expectedErr)
+			Expect(value).To(Equal(expectedValue))
+			Expect(err).To(Equal(expectedErr))
 
-			assert.Equal(GinkgoT(), action.SubAction, "setup")
+			Expect(action.SubAction).To(Equal("setup"))
 			assert.Equal(GinkgoT(), action.OptionalArgs, []argsType{
 				{User: "rob", Password: "rob123", Id: 12},
 				{User: "bob", Password: "bob123", Id: 13},
@@ -212,26 +212,26 @@ func init() {
 
 			runner.Run(action, []byte(payload))
 
-			assert.Equal(GinkgoT(), action.SubAction, "setup")
-			assert.Equal(GinkgoT(), action.OptionalArgs, []argsType{})
+			Expect(action.SubAction).To(Equal("setup"))
+			Expect(action.OptionalArgs).To(Equal([]argsType{}))
 		})
 		It("runner run errs when action does not implement run", func() {
 
 			runner := NewRunner()
 			_, err := runner.Run(&actionWithoutRunMethod{}, []byte(`{"arguments":[]}`))
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 		It("runner run errs when actions run does not return two values", func() {
 
 			runner := NewRunner()
 			_, err := runner.Run(&actionWithOneRunReturnValue{}, []byte(`{"arguments":[]}`))
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 		It("runner run errs when actions run second return type is not error", func() {
 
 			runner := NewRunner()
 			_, err := runner.Run(&actionWithSecondReturnValueNotError{}, []byte(`{"arguments":[]}`))
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 
 		Describe("Resume", func() {

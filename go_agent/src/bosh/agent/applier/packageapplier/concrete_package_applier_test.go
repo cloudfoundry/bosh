@@ -1,14 +1,16 @@
 package packageapplier_test
 
 import (
+	"errors"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	fakebc "bosh/agent/applier/bundlecollection/fakes"
 	models "bosh/agent/applier/models"
 	. "bosh/agent/applier/packageapplier"
 	fakeblob "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
-	"errors"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func buildPackageApplier() (
@@ -36,9 +38,9 @@ func init() {
 			pkg, bundle := buildPackage(packagesBc)
 
 			err := applier.Apply(pkg)
-			assert.NoError(GinkgoT(), err)
-			assert.True(GinkgoT(), bundle.Installed)
-			assert.True(GinkgoT(), bundle.Enabled)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(bundle.Installed).To(BeTrue())
+			Expect(bundle.Enabled).To(BeTrue())
 		})
 		It("apply errs when package install fails", func() {
 
@@ -48,8 +50,8 @@ func init() {
 			bundle.InstallError = errors.New("fake-install-error")
 
 			err := applier.Apply(pkg)
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-install-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-install-error"))
 		})
 		It("apply errs when package enable fails", func() {
 
@@ -59,8 +61,8 @@ func init() {
 			bundle.EnableError = errors.New("fake-enable-error")
 
 			err := applier.Apply(pkg)
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-enable-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-enable-error"))
 		})
 		It("apply downloads and cleans up package", func() {
 
@@ -72,10 +74,10 @@ func init() {
 			blobstore.GetFileName = "/dev/null"
 
 			err := applier.Apply(pkg)
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), "fake-blobstore-id", blobstore.GetBlobIds[0])
-			assert.Equal(GinkgoT(), "blob-sha1", blobstore.GetFingerprints[0])
-			assert.Equal(GinkgoT(), blobstore.GetFileName, blobstore.CleanUpFileName)
+			Expect(err).ToNot(HaveOccurred())
+			Expect("fake-blobstore-id").To(Equal(blobstore.GetBlobIds[0]))
+			Expect("blob-sha1").To(Equal(blobstore.GetFingerprints[0]))
+			Expect(blobstore.GetFileName).To(Equal(blobstore.CleanUpFileName))
 		})
 		It("apply errs when package download errs", func() {
 
@@ -85,8 +87,8 @@ func init() {
 			blobstore.GetError = errors.New("fake-get-error")
 
 			err := applier.Apply(pkg)
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-get-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-get-error"))
 		})
 		It("apply decompresses package to install path", func() {
 
@@ -97,9 +99,9 @@ func init() {
 			blobstore.GetFileName = "/dev/null"
 
 			err := applier.Apply(pkg)
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), blobstore.GetFileName, compressor.DecompressFileToDirTarballPaths[0])
-			assert.Equal(GinkgoT(), "fake-install-path", compressor.DecompressFileToDirDirs[0])
+			Expect(err).ToNot(HaveOccurred())
+			Expect(blobstore.GetFileName).To(Equal(compressor.DecompressFileToDirTarballPaths[0]))
+			Expect("fake-install-path").To(Equal(compressor.DecompressFileToDirDirs[0]))
 		})
 		It("apply errs when package decompress errs", func() {
 
@@ -109,8 +111,8 @@ func init() {
 			compressor.DecompressFileToDirError = errors.New("fake-decompress-error")
 
 			err := applier.Apply(pkg)
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-decompress-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-decompress-error"))
 		})
 	})
 }

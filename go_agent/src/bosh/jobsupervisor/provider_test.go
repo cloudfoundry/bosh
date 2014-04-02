@@ -1,13 +1,15 @@
 package jobsupervisor
 
 import (
+	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	fakemonit "bosh/jobsupervisor/monit/fakes"
 	boshlog "bosh/logger"
 	fakeplatform "bosh/platform/fakes"
 	boshdir "bosh/settings/directories"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 type providerDependencies struct {
@@ -42,7 +44,7 @@ func init() {
 			deps, provider := buildProvider()
 
 			actualSupervisor, err := provider.Get("monit")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			expectedSupervisor := NewMonitJobSupervisor(
 				deps.platform.Fs,
@@ -53,25 +55,25 @@ func init() {
 				deps.jobFailuresServerPort,
 				5*time.Second,
 			)
-			assert.Equal(GinkgoT(), expectedSupervisor, actualSupervisor)
+			Expect(expectedSupervisor).To(Equal(actualSupervisor))
 		})
 
 		It("get dummy job supervisor", func() {
 			_, provider := buildProvider()
 
 			actualSupervisor, err := provider.Get("dummy")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			expectedSupervisor := newDummyJobSupervisor()
-			assert.Equal(GinkgoT(), expectedSupervisor, actualSupervisor)
+			Expect(expectedSupervisor).To(Equal(actualSupervisor))
 		})
 
 		It("get errs when not found", func() {
 			_, provider := buildProvider()
 
 			_, err := provider.Get("does-not-exist")
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "does-not-exist could not be found")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("does-not-exist could not be found"))
 		})
 	})
 }

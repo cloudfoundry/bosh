@@ -5,7 +5,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 
 	. "bosh/agent/action"
 	boshas "bosh/agent/applier/applyspec"
@@ -43,13 +42,13 @@ func init() {
 		It("get state should be synchronous", func() {
 			settings := &fakesettings.FakeSettingsService{}
 			_, _, _, action := buildGetStateAction(settings)
-			assert.False(GinkgoT(), action.IsAsynchronous())
+			Expect(action.IsAsynchronous()).To(BeFalse())
 		})
 
 		It("is not persistent", func() {
 			settings := &fakesettings.FakeSettingsService{}
 			_, _, _, action := buildGetStateAction(settings)
-			assert.False(GinkgoT(), action.IsPersistent())
+			Expect(action.IsPersistent()).To(BeFalse())
 		})
 
 		Describe("Run", func() {
@@ -78,14 +77,14 @@ func init() {
 				expectedSpec.Deployment = "fake-deployment"
 
 				state, err := action.Run()
-				assert.NoError(GinkgoT(), err)
+				Expect(err).ToNot(HaveOccurred())
 
-				assert.Equal(GinkgoT(), state.AgentId, expectedSpec.AgentId)
-				assert.Equal(GinkgoT(), state.JobState, expectedSpec.JobState)
-				assert.Equal(GinkgoT(), state.Deployment, expectedSpec.Deployment)
+				Expect(state.AgentId).To(Equal(expectedSpec.AgentId))
+				Expect(state.JobState).To(Equal(expectedSpec.JobState))
+				Expect(state.Deployment).To(Equal(expectedSpec.Deployment))
 				boshassert.LacksJsonKey(GinkgoT(), state, "vitals")
 
-				assert.Equal(GinkgoT(), state, expectedSpec)
+				Expect(state).To(Equal(expectedSpec))
 			})
 
 			It("returns state in full format", func() {
@@ -107,12 +106,12 @@ func init() {
 				expectedVm := map[string]interface{}{"name": "vm-abc-def"}
 
 				state, err := action.Run("full")
-				assert.NoError(GinkgoT(), err)
+				Expect(err).ToNot(HaveOccurred())
 
 				boshassert.MatchesJsonString(GinkgoT(), state.AgentId, `"my-agent-id"`)
 				boshassert.MatchesJsonString(GinkgoT(), state.JobState, `"running"`)
 				boshassert.MatchesJsonString(GinkgoT(), state.Deployment, `"fake-deployment"`)
-				assert.Equal(GinkgoT(), *state.Vitals, expectedVitals)
+				Expect(*state.Vitals).To(Equal(expectedVitals))
 				boshassert.MatchesJsonMap(GinkgoT(), state.Vm, expectedVm)
 			})
 
@@ -125,7 +124,7 @@ func init() {
 					specService.GetErr = errors.New("fake-spec-get-error")
 
 					_, err := action.Run()
-					assert.Error(GinkgoT(), err)
+					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-spec-get-error"))
 				})
 			})
@@ -138,7 +137,7 @@ func init() {
 					fakeVitals.GetErr = errors.New("fake-vitals-get-error")
 
 					_, err := action.Run("full")
-					assert.Error(GinkgoT(), err)
+					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-vitals-get-error"))
 				})
 			})

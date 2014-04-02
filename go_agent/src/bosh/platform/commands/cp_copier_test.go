@@ -1,13 +1,16 @@
 package commands_test
 
 import (
+	"os"
+	"path/filepath"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+
 	boshlog "bosh/logger"
 	. "bosh/platform/commands"
 	boshsys "bosh/system"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
-	"os"
-	"path/filepath"
 )
 
 func copierFixtureSrcDir(t assert.TestingT) string {
@@ -30,38 +33,38 @@ func init() {
 
 			srcDir := copierFixtureSrcDir(GinkgoT())
 			dstDir, err := dc.FilteredCopyToTemp(srcDir, []string{"**/*.stdout.log", "*.stderr.log", "../some.config", "some_directory/**/*"})
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			defer os.RemoveAll(dstDir)
 
 			tarDirStat, err := os.Stat(dstDir)
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), os.FileMode(0755), tarDirStat.Mode().Perm())
+			Expect(err).ToNot(HaveOccurred())
+			Expect(os.FileMode(0755)).To(Equal(tarDirStat.Mode().Perm()))
 
 			content, err := fs.ReadFileString(dstDir + "/app.stdout.log")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			assert.Contains(GinkgoT(), content, "this is app stdout")
 
 			content, err = fs.ReadFileString(dstDir + "/app.stderr.log")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			assert.Contains(GinkgoT(), content, "this is app stderr")
 
 			content, err = fs.ReadFileString(dstDir + "/other_logs/other_app.stdout.log")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			assert.Contains(GinkgoT(), content, "this is other app stdout")
 
 			content, err = fs.ReadFileString(dstDir + "/other_logs/more_logs/more.stdout.log")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			assert.Contains(GinkgoT(), content, "this is more stdout")
 
-			assert.True(GinkgoT(), fs.FileExists(dstDir+"/some_directory"))
-			assert.True(GinkgoT(), fs.FileExists(dstDir+"/some_directory/sub_dir"))
-			assert.True(GinkgoT(), fs.FileExists(dstDir+"/some_directory/sub_dir/other_sub_dir"))
+			Expect(fs.FileExists(dstDir + "/some_directory")).To(BeTrue())
+			Expect(fs.FileExists(dstDir + "/some_directory/sub_dir")).To(BeTrue())
+			Expect(fs.FileExists(dstDir + "/some_directory/sub_dir/other_sub_dir")).To(BeTrue())
 
 			_, err = fs.ReadFile(dstDir + "/other_logs/other_app.stderr.log")
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 
 			_, err = fs.ReadFile(dstDir + "/../some.config")
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 		It("clean up", func() {
 
@@ -73,7 +76,7 @@ func init() {
 			dc.CleanUp(tempDir)
 
 			_, err := os.Stat(tempDir)
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 }

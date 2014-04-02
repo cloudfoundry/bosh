@@ -2,7 +2,7 @@ package action_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/gomega"
 
 	. "bosh/agent/action"
 	boshassert "bosh/assert"
@@ -27,13 +27,13 @@ func init() {
 		It("list disk should be synchronous", func() {
 			settings := &fakesettings.FakeSettingsService{}
 			action := NewListDisk(settings, platform, logger)
-			assert.False(GinkgoT(), action.IsAsynchronous())
+			Expect(action.IsAsynchronous()).To(BeFalse())
 		})
 
 		It("is not persistent", func() {
 			settings := &fakesettings.FakeSettingsService{}
 			action := NewListDisk(settings, platform, logger)
-			assert.False(GinkgoT(), action.IsPersistent())
+			Expect(action.IsPersistent()).To(BeFalse())
 		})
 
 		It("list disk run", func() {
@@ -50,7 +50,7 @@ func init() {
 
 			action := NewListDisk(settings, platform, logger)
 			value, err := action.Run()
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			boshassert.MatchesJsonString(GinkgoT(), value, `["volume-2","volume-3"]`)
 		})
 	})

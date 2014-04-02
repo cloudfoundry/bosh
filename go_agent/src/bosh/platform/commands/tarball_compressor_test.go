@@ -1,14 +1,17 @@
 package commands_test
 
 import (
+	"os"
+	"path/filepath"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+
 	boshlog "bosh/logger"
 	. "bosh/platform/commands"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
-	"os"
-	"path/filepath"
 )
 
 func createdTmpDir(t assert.TestingT, fs boshsys.FileSystem) string {
@@ -44,7 +47,7 @@ func init() {
 
 			srcDir := fixtureSrcDir(GinkgoT())
 			tgzName, err := dc.CompressFilesInDir(srcDir)
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			defer os.Remove(tgzName)
 
@@ -52,18 +55,18 @@ func init() {
 			defer os.RemoveAll(dstDir)
 
 			_, _, err = cmdRunner.RunCommand("tar", "--no-same-owner", "-xzpf", tgzName, "-C", dstDir)
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			content, err := fs.ReadFileString(dstDir + "/app.stdout.log")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			assert.Contains(GinkgoT(), content, "this is app stdout")
 
 			content, err = fs.ReadFileString(dstDir + "/app.stderr.log")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			assert.Contains(GinkgoT(), content, "this is app stderr")
 
 			content, err = fs.ReadFileString(dstDir + "/other_logs/other_app.stdout.log")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			assert.Contains(GinkgoT(), content, "this is other app stdout")
 		})
 		It("decompress file to dir", func() {
@@ -75,27 +78,27 @@ func init() {
 			defer os.RemoveAll(dstDir)
 
 			err := dc.DecompressFileToDir(fixtureSrcTgz(GinkgoT()), dstDir)
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			content, err := fs.ReadFileString(dstDir + "/not-nested-file")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			assert.Contains(GinkgoT(), content, "not-nested-file")
 
 			content, err = fs.ReadFileString(dstDir + "/dir/nested-file")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			assert.Contains(GinkgoT(), content, "nested-file")
 
 			content, err = fs.ReadFileString(dstDir + "/dir/nested-dir/double-nested-file")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			assert.Contains(GinkgoT(), content, "double-nested-file")
 
 			content, err = fs.ReadFileString(dstDir + "/empty-dir")
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "is a directory")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("is a directory"))
 
 			content, err = fs.ReadFileString(dstDir + "/dir/empty-nested-dir")
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "is a directory")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("is a directory"))
 		})
 		It("decompress file to dir returns error", func() {
 
@@ -105,8 +108,8 @@ func init() {
 			dc := NewTarballCompressor(cmdRunner, fs)
 
 			err := dc.DecompressFileToDir(fixtureSrcTgz(GinkgoT()), nonExistentDstDir)
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), nonExistentDstDir)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(nonExistentDstDir))
 		})
 		It("decompress file to dir uses no same owner option", func() {
 
@@ -119,9 +122,9 @@ func init() {
 
 			tarballPath := fixtureSrcTgz(GinkgoT())
 			err := dc.DecompressFileToDir(tarballPath, dstDir)
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Equal(GinkgoT(), 1, len(cmdRunner.RunCommands))
+			Expect(1).To(Equal(len(cmdRunner.RunCommands)))
 			assert.Equal(GinkgoT(), []string{
 				"tar", "--no-same-owner",
 				"-xzvf", tarballPath,

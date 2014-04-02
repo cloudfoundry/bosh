@@ -1,10 +1,11 @@
 package disk_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	. "bosh/platform/disk"
 	fakesys "bosh/system/fakes"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -18,8 +19,8 @@ func init() {
 			formatter := NewLinuxFormatter(fakeRunner, fakeFs)
 			formatter.Format("/dev/xvda1", FileSystemSwap)
 
-			assert.Equal(GinkgoT(), 2, len(fakeRunner.RunCommands))
-			assert.Equal(GinkgoT(), []string{"mkswap", "/dev/xvda1"}, fakeRunner.RunCommands[1])
+			Expect(2).To(Equal(len(fakeRunner.RunCommands)))
+			Expect(fakeRunner.RunCommands[1]).To(Equal([]string{"mkswap", "/dev/xvda1"}))
 		})
 		It("linux format when using swap fs and partition is swap", func() {
 
@@ -30,8 +31,8 @@ func init() {
 			formatter := NewLinuxFormatter(fakeRunner, fakeFs)
 			formatter.Format("/dev/xvda1", FileSystemSwap)
 
-			assert.Equal(GinkgoT(), 1, len(fakeRunner.RunCommands))
-			assert.Equal(GinkgoT(), []string{"blkid", "-p", "/dev/xvda1"}, fakeRunner.RunCommands[0])
+			Expect(1).To(Equal(len(fakeRunner.RunCommands)))
+			Expect(fakeRunner.RunCommands[0]).To(Equal([]string{"blkid", "-p", "/dev/xvda1"}))
 		})
 		It("linux format when using ext4 fs with lazy itable support", func() {
 
@@ -43,8 +44,8 @@ func init() {
 			formatter := NewLinuxFormatter(fakeRunner, fakeFs)
 			formatter.Format("/dev/xvda2", FileSystemExt4)
 
-			assert.Equal(GinkgoT(), 2, len(fakeRunner.RunCommands))
-			assert.Equal(GinkgoT(), []string{"mke2fs", "-t", "ext4", "-j", "-E", "lazy_itable_init=1", "/dev/xvda2"}, fakeRunner.RunCommands[1])
+			Expect(2).To(Equal(len(fakeRunner.RunCommands)))
+			Expect(fakeRunner.RunCommands[1]).To(Equal([]string{"mke2fs", "-t", "ext4", "-j", "-E", "lazy_itable_init=1", "/dev/xvda2"}))
 		})
 		It("linux format when using ext4 fs without lazy itable support", func() {
 
@@ -55,8 +56,8 @@ func init() {
 			formatter := NewLinuxFormatter(fakeRunner, fakeFs)
 			formatter.Format("/dev/xvda2", FileSystemExt4)
 
-			assert.Equal(GinkgoT(), 2, len(fakeRunner.RunCommands))
-			assert.Equal(GinkgoT(), []string{"mke2fs", "-t", "ext4", "-j", "/dev/xvda2"}, fakeRunner.RunCommands[1])
+			Expect(2).To(Equal(len(fakeRunner.RunCommands)))
+			Expect(fakeRunner.RunCommands[1]).To(Equal([]string{"mke2fs", "-t", "ext4", "-j", "/dev/xvda2"}))
 		})
 		It("linux format when using ext4 fs and partition is ext4", func() {
 
@@ -67,8 +68,8 @@ func init() {
 			formatter := NewLinuxFormatter(fakeRunner, fakeFs)
 			formatter.Format("/dev/xvda1", FileSystemExt4)
 
-			assert.Equal(GinkgoT(), 1, len(fakeRunner.RunCommands))
-			assert.Equal(GinkgoT(), []string{"blkid", "-p", "/dev/xvda1"}, fakeRunner.RunCommands[0])
+			Expect(1).To(Equal(len(fakeRunner.RunCommands)))
+			Expect(fakeRunner.RunCommands[0]).To(Equal([]string{"blkid", "-p", "/dev/xvda1"}))
 		})
 	})
 }

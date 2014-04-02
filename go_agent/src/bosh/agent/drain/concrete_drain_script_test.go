@@ -1,12 +1,14 @@
 package drain_test
 
 import (
+	"errors"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	. "bosh/agent/drain"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
-	"errors"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 type fakeDrainParams struct {
@@ -44,7 +46,7 @@ func init() {
 			drainScript, params, runner, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "1"})
 
 			_, err := drainScript.Run(params)
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			expectedCmd := boshsys.Command{
 				Name: "/fake/script",
@@ -54,48 +56,48 @@ func init() {
 				},
 			}
 
-			assert.Equal(GinkgoT(), 1, len(runner.RunComplexCommands))
-			assert.Equal(GinkgoT(), expectedCmd, runner.RunComplexCommands[0])
+			Expect(1).To(Equal(len(runner.RunComplexCommands)))
+			Expect(expectedCmd).To(Equal(runner.RunComplexCommands[0]))
 		})
 		It("run returns parsed s t d o u t", func() {
 
 			drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "1"})
 
 			value, err := drainScript.Run(params)
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), value, 1)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(value).To(Equal(1))
 		})
 		It("run returns parsed s t d o u t after trimming", func() {
 
 			drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "-56\n"})
 
 			value, err := drainScript.Run(params)
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), value, -56)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(value).To(Equal(-56))
 		})
 		It("run errors with non integer s t d o u t", func() {
 
 			drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "hello!"})
 
 			_, err := drainScript.Run(params)
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 		It("run errors when running command errors", func() {
 
 			drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Error: errors.New("woops")})
 
 			_, err := drainScript.Run(params)
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 		It("exists", func() {
 
 			drainScript, _, _, fs := buildDrainScript(fakesys.FakeCmdResult{Stdout: "1"})
 
-			assert.False(GinkgoT(), drainScript.Exists())
+			Expect(drainScript.Exists()).To(BeFalse())
 
 			fs.WriteFile("/fake/script", []byte{})
 
-			assert.True(GinkgoT(), drainScript.Exists())
+			Expect(drainScript.Exists()).To(BeTrue())
 		})
 	})
 }

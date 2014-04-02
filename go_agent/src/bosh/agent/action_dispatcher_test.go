@@ -7,7 +7,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 
 	. "bosh/agent"
 	fakeaction "bosh/agent/action/fakes"
@@ -60,8 +59,8 @@ func init() {
 				actionRunner.RunValue = "fake-value"
 
 				resp := dispatcher.Dispatch(req)
-				assert.Equal(GinkgoT(), req.GetPayload(), actionRunner.RunPayload)
-				assert.Equal(GinkgoT(), boshhandler.NewValueResponse("fake-value"), resp)
+				Expect(req.GetPayload()).To(Equal(actionRunner.RunPayload))
+				Expect(boshhandler.NewValueResponse("fake-value")).To(Equal(resp))
 			})
 
 			It("handles synchronous action when err", func() {

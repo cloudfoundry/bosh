@@ -1,11 +1,14 @@
 package notification_test
 
 import (
+	"errors"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+
 	fakembus "bosh/mbus/fakes"
 	. "bosh/notification"
-	"errors"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func buildConcreteNotifier() (handler *fakembus.FakeHandler, notifier Notifier) {
@@ -21,8 +24,8 @@ func init() {
 			handler.SendToHealthManagerErr = errors.New("fake error")
 
 			err := notifier.NotifyShutdown()
-			assert.Equal(GinkgoT(), handler.SendToHealthManagerErr, err)
-			assert.Equal(GinkgoT(), "shutdown", handler.SendToHealthManagerTopic)
+			Expect(handler.SendToHealthManagerErr).To(Equal(err))
+			Expect("shutdown").To(Equal(handler.SendToHealthManagerTopic))
 			assert.Nil(GinkgoT(), handler.SendToHealthManagerPayload)
 		})
 	})

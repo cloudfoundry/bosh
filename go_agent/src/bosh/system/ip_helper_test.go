@@ -1,9 +1,10 @@
 package system_test
 
 import (
-	. "bosh/system"
 	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/gomega"
+
+	. "bosh/system"
 )
 
 func init() {
@@ -11,19 +12,19 @@ func init() {
 		It("calculate network and broadcast", func() {
 
 			network, broadcast, err := CalculateNetworkAndBroadcast("192.168.195.6", "255.255.255.0")
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), network, "192.168.195.0")
-			assert.Equal(GinkgoT(), broadcast, "192.168.195.255")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(network).To(Equal("192.168.195.0"))
+			Expect(broadcast).To(Equal("192.168.195.255"))
 		})
 		It("calculate network and broadcast errs with bad ip address", func() {
 
 			_, _, err := CalculateNetworkAndBroadcast("192.168.195", "255.255.255.0")
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 		It("calculate network and broadcast errs with bad netmask", func() {
 
 			_, _, err := CalculateNetworkAndBroadcast("192.168.195.0", "255.255.255")
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 }

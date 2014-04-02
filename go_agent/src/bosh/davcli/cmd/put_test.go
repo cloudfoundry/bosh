@@ -1,16 +1,18 @@
 package cmd_test
 
 import (
-	. "bosh/davcli/cmd"
-	testcmd "bosh/davcli/cmd/testing"
-	davconf "bosh/davcli/config"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	. "bosh/davcli/cmd"
+	testcmd "bosh/davcli/cmd/testing"
+	davconf "bosh/davcli/config"
 )
 
 func runPut(config davconf.Config, args []string) (err error) {
@@ -39,15 +41,15 @@ func init() {
 
 				username, password, err := req.ExtractBasicAuth()
 
-				assert.NoError(GinkgoT(), err)
-				assert.Equal(GinkgoT(), req.URL.Path, "/d1/"+targetBlob)
-				assert.Equal(GinkgoT(), req.Method, "PUT")
-				assert.Equal(GinkgoT(), username, "some user")
-				assert.Equal(GinkgoT(), password, "some pwd")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(req.URL.Path).To(Equal("/d1/" + targetBlob))
+				Expect(req.Method).To(Equal("PUT"))
+				Expect(username).To(Equal("some user"))
+				Expect(password).To(Equal("some pwd"))
 
 				expectedBytes := fileBytes(sourceFilePath)
 				actualBytes, _ := ioutil.ReadAll(r.Body)
-				assert.Equal(GinkgoT(), expectedBytes, actualBytes)
+				Expect(expectedBytes).To(Equal(actualBytes))
 
 				w.WriteHeader(200)
 			}
@@ -62,16 +64,16 @@ func init() {
 			}
 
 			err := runPut(config, []string{sourceFilePath, targetBlob})
-			assert.NoError(GinkgoT(), err)
-			assert.True(GinkgoT(), serverWasHit)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(serverWasHit).To(BeTrue())
 		})
 		It("put run with incorrect arg count", func() {
 
 			config := davconf.Config{}
 			err := runPut(config, []string{})
 
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "Incorrect usage")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Incorrect usage"))
 		})
 	})
 }

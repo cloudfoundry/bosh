@@ -1,11 +1,14 @@
 package blobstore
 
 import (
+	"errors"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+
 	fakesys "bosh/system/fakes"
 	fakeuuid "bosh/uuid/fakes"
-	"errors"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 const FAKE_BLOBSTORE_PATH = "/some/local/path"
@@ -26,7 +29,7 @@ func init() {
 			_, _, blobstore := buildLocalBlobstore()
 
 			err := blobstore.Validate()
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 		})
 		It("local validate errs when missing blobstore path", func() {
 
@@ -34,8 +37,8 @@ func init() {
 			blobstore.options = map[string]string{}
 
 			err := blobstore.Validate()
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "missing blobstore_path")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("missing blobstore_path"))
 		})
 		It("local get", func() {
 
@@ -44,17 +47,17 @@ func init() {
 			fs.WriteFileString(FAKE_BLOBSTORE_PATH+"/fake-blob-id", "fake contents")
 
 			tempFile, err := fs.TempFile("bosh-blobstore-local-TestLocalGet")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			fs.ReturnTempFile = tempFile
 			defer fs.RemoveAll(tempFile.Name())
 
 			_, err = blobstore.Get("fake-blob-id", "")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			fileStats := fs.GetFileTestStat(tempFile.Name())
-			assert.NotNil(GinkgoT(), fileStats)
-			assert.Equal(GinkgoT(), "fake contents", fileStats.StringContents())
+			Expect(fileStats).ToNot(BeNil())
+			Expect("fake contents").To(Equal(fileStats.StringContents()))
 		})
 		It("local get errs when temp file create errs", func() {
 
@@ -63,8 +66,8 @@ func init() {
 			fs.TempFileError = errors.New("fake-error")
 
 			fileName, err := blobstore.Get("fake-blob-id", "")
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-error"))
 
 			assert.Empty(GinkgoT(), fileName)
 		})
@@ -73,7 +76,7 @@ func init() {
 			fs, _, blobstore := buildLocalBlobstore()
 
 			tempFile, err := fs.TempFile("bosh-blobstore-local-TestLocalGetErrsWhenCopyFileErrs")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			fs.ReturnTempFile = tempFile
 			defer fs.RemoveAll(tempFile.Name())
@@ -81,25 +84,25 @@ func init() {
 			fs.CopyFileError = errors.New("fake-copy-file-error")
 
 			fileName, err := blobstore.Get("fake-blob-id", "")
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-copy-file-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-copy-file-error"))
 
 			assert.Empty(GinkgoT(), fileName)
-			assert.False(GinkgoT(), fs.FileExists(tempFile.Name()))
+			Expect(fs.FileExists(tempFile.Name())).To(BeFalse())
 		})
 		It("local clean up", func() {
 
 			fs, _, blobstore := buildLocalBlobstore()
 
 			file, err := fs.TempFile("bosh-blobstore-local-TestLocalCleanUp")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			fileName := file.Name()
 
 			defer fs.RemoveAll(fileName)
 
 			err = blobstore.CleanUp(fileName)
-			assert.NoError(GinkgoT(), err)
-			assert.False(GinkgoT(), fs.FileExists(fileName))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fs.FileExists(fileName)).To(BeFalse())
 		})
 		It("local create", func() {
 
@@ -109,13 +112,13 @@ func init() {
 			uuidGen.GeneratedUuid = "some-uuid"
 
 			blobId, fingerprint, err := blobstore.Create("/fake-file.txt")
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), blobId, "some-uuid")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(blobId).To(Equal("some-uuid"))
 			assert.Empty(GinkgoT(), fingerprint)
 
 			writtenFileStats := fs.GetFileTestStat(FAKE_BLOBSTORE_PATH + "/some-uuid")
-			assert.NotNil(GinkgoT(), writtenFileStats)
-			assert.Equal(GinkgoT(), "fake-file-contents", writtenFileStats.StringContents())
+			Expect(writtenFileStats).ToNot(BeNil())
+			Expect("fake-file-contents").To(Equal(writtenFileStats.StringContents()))
 		})
 		It("local create errs when generating blob id errs", func() {
 
@@ -124,8 +127,8 @@ func init() {
 			uuidGen.GenerateError = errors.New("some-unfortunate-error")
 
 			_, _, err := blobstore.Create("some/file")
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "some-unfortunate-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("some-unfortunate-error"))
 		})
 		It("local create errs when copy file errs", func() {
 
@@ -136,8 +139,8 @@ func init() {
 			fs.CopyFileError = errors.New("fake-copy-file-error")
 
 			_, _, err := blobstore.Create("/fake-file.txt")
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-copy-file-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-copy-file-error"))
 		})
 	})
 }

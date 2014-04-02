@@ -1,11 +1,13 @@
 package cmd_test
 
 import (
+	"reflect"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	. "bosh/davcli/cmd"
 	davconf "bosh/davcli/config"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
-	"reflect"
 )
 
 func buildFactory() (factory Factory) {
@@ -21,23 +23,23 @@ func init() {
 			factory := buildFactory()
 			cmd, err := factory.Create("put")
 
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), reflect.TypeOf(cmd), reflect.TypeOf(PutCmd{}))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reflect.TypeOf(cmd)).To(Equal(reflect.TypeOf(PutCmd{})))
 		})
 		It("factory create a get command", func() {
 
 			factory := buildFactory()
 			cmd, err := factory.Create("get")
 
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), reflect.TypeOf(cmd), reflect.TypeOf(GetCmd{}))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reflect.TypeOf(cmd)).To(Equal(reflect.TypeOf(GetCmd{})))
 		})
 		It("factory create when cmd is unknown", func() {
 
 			factory := buildFactory()
 			_, err := factory.Create("some unknown cmd")
 
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 }

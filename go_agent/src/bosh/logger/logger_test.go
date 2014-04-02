@@ -1,13 +1,16 @@
 package logger_test
 
 import (
-	. "bosh/logger"
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"regexp"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+
+	. "bosh/logger"
 )
 
 func expectedLogFormat(tag, msg string) string {
@@ -56,7 +59,7 @@ func init() {
 			})
 
 			matcher, _ := regexp.Compile(expectedLogFormat("TAG", "INFO - some awesome info to log"))
-			assert.True(GinkgoT(), matcher.Match(stdout))
+			Expect(matcher.Match(stdout)).To(BeTrue())
 		})
 		It("debug", func() {
 
@@ -66,7 +69,7 @@ func init() {
 			})
 
 			matcher, _ := regexp.Compile(expectedLogFormat("TAG", "DEBUG - some awesome info to log"))
-			assert.True(GinkgoT(), matcher.Match(stdout))
+			Expect(matcher.Match(stdout)).To(BeTrue())
 		})
 		It("debug with details", func() {
 
@@ -76,7 +79,7 @@ func init() {
 			})
 
 			matcher, _ := regexp.Compile(expectedLogFormat("TAG", "DEBUG - some info to log"))
-			assert.True(GinkgoT(), matcher.Match(stdout))
+			Expect(matcher.Match(stdout)).To(BeTrue())
 
 			assert.Contains(GinkgoT(), string(stdout), "\n********************\nawesome\n********************")
 		})
@@ -88,7 +91,7 @@ func init() {
 			})
 
 			matcher, _ := regexp.Compile(expectedLogFormat("TAG", "ERROR - some awesome info to log"))
-			assert.True(GinkgoT(), matcher.Match(stderr))
+			Expect(matcher.Match(stderr)).To(BeTrue())
 		})
 		It("error with details", func() {
 
@@ -98,7 +101,7 @@ func init() {
 			})
 
 			matcher, _ := regexp.Compile(expectedLogFormat("TAG", "ERROR - some error to log"))
-			assert.True(GinkgoT(), matcher.Match(stderr))
+			Expect(matcher.Match(stderr)).To(BeTrue())
 
 			assert.Contains(GinkgoT(), string(stderr), "\n********************\nawesome\n********************")
 		})

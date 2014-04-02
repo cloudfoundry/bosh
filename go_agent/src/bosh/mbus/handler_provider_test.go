@@ -1,15 +1,17 @@
 package mbus_test
 
 import (
+	"github.com/cloudfoundry/yagnats"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+
 	boshlog "bosh/logger"
 	. "bosh/mbus"
 	"bosh/micro"
 	fakeplatform "bosh/platform/fakes"
 	boshdir "bosh/settings/directories"
 	fakesettings "bosh/settings/fakes"
-	"github.com/cloudfoundry/yagnats"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 type providerDeps struct {
@@ -34,7 +36,7 @@ func init() {
 			deps, provider := buildProvider("nats://0.0.0.0")
 			handler, err := provider.Get(deps.platform, deps.dirProvider)
 
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			assert.IsType(GinkgoT(), NewNatsHandler(deps.settings, deps.logger, yagnats.NewClient()), handler)
 		})
 		It("handler provider get returns https handler", func() {
@@ -42,7 +44,7 @@ func init() {
 			deps, provider := buildProvider("https://0.0.0.0")
 			handler, err := provider.Get(deps.platform, deps.dirProvider)
 
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			assert.IsType(GinkgoT(), micro.HttpsHandler{}, handler)
 		})
 		It("handler provider get returns an error if not supported", func() {
@@ -50,7 +52,7 @@ func init() {
 			deps, provider := buildProvider("foo://0.0.0.0")
 			_, err := provider.Get(deps.platform, deps.dirProvider)
 
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 }

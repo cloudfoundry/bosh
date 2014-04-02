@@ -1,12 +1,14 @@
 package fakes
 
 import (
-	bosherr "bosh/errors"
 	"bytes"
 	"errors"
-	gouuid "github.com/nu7hatch/gouuid"
 	"os"
 	"strings"
+
+	gouuid "github.com/nu7hatch/gouuid"
+
+	bosherr "bosh/errors"
 )
 
 type FakeFileType string

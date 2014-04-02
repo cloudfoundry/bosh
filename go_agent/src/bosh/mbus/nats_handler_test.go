@@ -1,16 +1,19 @@
 package mbus_test
 
 import (
+	"encoding/json"
+
+	"github.com/cloudfoundry/yagnats"
+	"github.com/cloudfoundry/yagnats/fakeyagnats"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+
 	boshhandler "bosh/handler"
 	boshlog "bosh/logger"
 	. "bosh/mbus"
 	boshsettings "bosh/settings"
 	fakesettings "bosh/settings/fakes"
-	"encoding/json"
-	"github.com/cloudfoundry/yagnats"
-	"github.com/cloudfoundry/yagnats/fakeyagnats"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func buildNatsClientAndHandler(settings boshsettings.Service) (client *fakeyagnats.FakeYagnats, handler boshhandler.Handler) {
@@ -36,11 +39,11 @@ func init() {
 			})
 			defer handler.Stop()
 
-			assert.NotNil(GinkgoT(), client.ConnectedConnectionProvider)
+			Expect(client.ConnectedConnectionProvider).ToNot(BeNil())
 
-			assert.Equal(GinkgoT(), len(client.Subscriptions), 1)
+			Expect(len(client.Subscriptions)).To(Equal(1))
 			subscriptions := client.Subscriptions["agent.my-agent-id"]
-			assert.Equal(GinkgoT(), len(subscriptions), 1)
+			Expect(len(subscriptions)).To(Equal(1))
 
 			expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`)
 			subscription := client.Subscriptions["agent.my-agent-id"][0]
@@ -55,13 +58,13 @@ func init() {
 				Payload: expectedPayload,
 			})
 
-			assert.Equal(GinkgoT(), len(client.PublishedMessages), 1)
+			Expect(len(client.PublishedMessages)).To(Equal(1))
 			messages := client.PublishedMessages["reply to me!"]
 
-			assert.Equal(GinkgoT(), len(messages), 1)
+			Expect(len(messages)).To(Equal(1))
 			message := messages[0]
 
-			assert.Equal(GinkgoT(), []byte(`{"value":"expected value"}`), message.Payload)
+			Expect([]byte(`{"value":"expected value"}`)).To(Equal(message.Payload))
 		})
 
 		It("nats send periodic heartbeat", func() {
@@ -85,16 +88,16 @@ func init() {
 			select {
 			case err = <-errChan:
 			}
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Equal(GinkgoT(), len(client.PublishedMessages), 1)
+			Expect(len(client.PublishedMessages)).To(Equal(1))
 			messages := client.PublishedMessages["hm.agent.heartbeat.my-agent-id"]
 
-			assert.Equal(GinkgoT(), len(messages), 1)
+			Expect(len(messages)).To(Equal(1))
 			message := messages[0]
 
 			expectedJson, _ := json.Marshal(expectedHeartbeat)
-			assert.Equal(GinkgoT(), string(expectedJson), string(message.Payload))
+			Expect(string(expectedJson)).To(Equal(string(message.Payload)))
 		})
 
 		It("nats handler connection info", func() {
@@ -102,10 +105,10 @@ func init() {
 			client, handler := buildNatsClientAndHandler(settings)
 
 			err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			defer handler.Stop()
 
-			assert.NotNil(GinkgoT(), client.ConnectedConnectionProvider)
+			Expect(client.ConnectedConnectionProvider).ToNot(BeNil())
 
 			connInfo := client.ConnectedConnectionProvider
 
@@ -115,7 +118,7 @@ func init() {
 				Password: "bar",
 			}
 
-			assert.Equal(GinkgoT(), connInfo, expectedConnInfo)
+			Expect(connInfo).To(Equal(expectedConnInfo))
 		})
 		It("nats handler connection info does not err when no username and password", func() {
 
@@ -123,7 +126,7 @@ func init() {
 			_, handler := buildNatsClientAndHandler(settings)
 
 			err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			defer handler.Stop()
 		})
 		It("nats handler connection info errs when has username without password", func() {
@@ -132,7 +135,7 @@ func init() {
 			_, handler := buildNatsClientAndHandler(settings)
 
 			err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 			defer handler.Stop()
 		})
 	})

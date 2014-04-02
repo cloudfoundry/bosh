@@ -5,7 +5,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 
 	. "bosh/agent/action"
 	boshtask "bosh/agent/task"
@@ -40,7 +39,7 @@ func init() {
 			}
 
 			taskValue, err := action.Run("fake-task-id")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			boshassert.MatchesJsonString(GinkgoT(), taskValue, `{"agent_task_id":"fake-task-id","state":"running"}`)
 		})
 
@@ -52,8 +51,8 @@ func init() {
 			}
 
 			taskValue, err := action.Run("fake-task-id")
-			assert.Error(GinkgoT(), err)
-			assert.Equal(GinkgoT(), "fake-task-error", err.Error())
+			Expect(err).To(HaveOccurred())
+			Expect("fake-task-error").To(Equal(err.Error()))
 			boshassert.MatchesJsonString(GinkgoT(), taskValue, `null`)
 		})
 
@@ -65,7 +64,7 @@ func init() {
 			}
 
 			taskValue, err := action.Run("fake-task-id")
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			boshassert.MatchesJsonString(GinkgoT(), taskValue, `"some-task-value"`)
 		})
 
@@ -73,8 +72,8 @@ func init() {
 			taskService.StartedTasks = map[string]boshtask.Task{}
 
 			_, err := action.Run("fake-task-id")
-			assert.Error(GinkgoT(), err)
-			assert.Equal(GinkgoT(), "Task with id fake-task-id could not be found", err.Error())
+			Expect(err).To(HaveOccurred())
+			Expect("Task with id fake-task-id could not be found").To(Equal(err.Error()))
 		})
 	})
 }

@@ -1,13 +1,15 @@
 package alert_test
 
 import (
+	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+
 	. "bosh/agent/alert"
 	boshlog "bosh/logger"
 	fakesettings "bosh/settings/fakes"
-	"github.com/stretchr/testify/assert"
-
-	. "github.com/onsi/ginkgo"
-	"time"
 )
 
 func buildMonitAlert() MonitAlert {
@@ -24,16 +26,16 @@ func buildMonitAlert() MonitAlert {
 func buildAlertBuilder() (settingsService *fakesettings.FakeSettingsService, builder Builder) {
 	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
 	settingsService = &fakesettings.FakeSettingsService{}
-
 	builder = NewBuilder(settingsService, logger)
 	return
 }
+
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("build", func() {
 			_, builder := buildAlertBuilder()
 			builtAlert, err := builder.Build(buildMonitAlert())
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			expectedAlert := Alert{
 				Id:        "some random id",
@@ -43,7 +45,7 @@ func init() {
 				CreatedAt: 1306076861,
 			}
 
-			assert.Equal(GinkgoT(), builtAlert, expectedAlert)
+			Expect(builtAlert).To(Equal(expectedAlert))
 		})
 		It("build sets the severity", func() {
 
@@ -52,7 +54,7 @@ func init() {
 			inputAlert.Event = "action done"
 
 			builtAlert, _ := builder.Build(inputAlert)
-			assert.Equal(GinkgoT(), builtAlert.Severity, SEVERITY_IGNORED)
+			Expect(builtAlert.Severity).To(Equal(SEVERITY_IGNORED))
 		})
 		It("build sets default severity to critical", func() {
 
@@ -61,7 +63,7 @@ func init() {
 			inputAlert.Event = "some unknown event"
 
 			builtAlert, _ := builder.Build(inputAlert)
-			assert.Equal(GinkgoT(), builtAlert.Severity, SEVERITY_CRITICAL)
+			Expect(builtAlert.Severity).To(Equal(SEVERITY_CRITICAL))
 		})
 		It("build sets created at", func() {
 
@@ -70,7 +72,7 @@ func init() {
 			inputAlert.Date = "Thu, 02 May 2013 20:07:41 +0500"
 
 			builtAlert, _ := builder.Build(inputAlert)
-			assert.Equal(GinkgoT(), int(builtAlert.CreatedAt), int(1367507261))
+			Expect(int(builtAlert.CreatedAt)).To(Equal(int(1367507261)))
 		})
 		It("build defaults created at to now on parse error", func() {
 
@@ -93,7 +95,7 @@ func init() {
 
 			builtAlert, _ := builder.Build(inputAlert)
 
-			assert.Equal(GinkgoT(), builtAlert.Title, "nats (10.0.0.1, 192.168.0.1) - does not exist - restart")
+			Expect(builtAlert.Title).To(Equal("nats (10.0.0.1, 192.168.0.1) - does not exist - restart"))
 		})
 	})
 }

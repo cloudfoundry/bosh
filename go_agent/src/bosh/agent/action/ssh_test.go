@@ -2,6 +2,7 @@ package action_test
 
 import (
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
 
 	. "bosh/agent/action"
@@ -55,13 +56,13 @@ func init() {
 		It("ssh should be synchronous", func() {
 			settings := &fakesettings.FakeSettingsService{}
 			_, action := buildSshAction(settings)
-			assert.False(GinkgoT(), action.IsAsynchronous())
+			Expect(action.IsAsynchronous()).To(BeFalse())
 		})
 
 		It("is not persistent", func() {
 			settings := &fakesettings.FakeSettingsService{}
 			_, action := buildSshAction(settings)
-			assert.False(GinkgoT(), action.IsPersistent())
+			Expect(action.IsPersistent()).To(BeFalse())
 		})
 
 		It("ssh setup without default ip", func() {
@@ -75,8 +76,8 @@ func init() {
 				PublicKey: "some-key",
 			}
 			_, err := action.Run("setup", params)
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "No default ip")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("No default ip"))
 		})
 		It("ssh setup with username and password", func() {
 
@@ -93,8 +94,8 @@ func init() {
 
 			params := SshParams{UserRegex: "^foobar.*"}
 			response, err := action.Run("cleanup", params)
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), "^foobar.*", platform.DeleteEphemeralUsersMatchingRegex)
+			Expect(err).ToNot(HaveOccurred())
+			Expect("^foobar.*").To(Equal(platform.DeleteEphemeralUsersMatchingRegex))
 
 			boshassert.MatchesJsonMap(GinkgoT(), response, map[string]interface{}{
 				"command": "cleanup",

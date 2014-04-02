@@ -65,11 +65,11 @@ type SeverityLevel int
 
 const (
 	SEVERITY_ALERT    SeverityLevel = 1
-	SEVERITY_CRITICAL               = 2
-	SEVERITY_ERROR                  = 3
-	SEVERITY_WARNING                = 4
-	SEVERITY_IGNORED                = -1
-	SEVERITY_DEFAULT                = SEVERITY_CRITICAL
+	SEVERITY_CRITICAL SeverityLevel = 2
+	SEVERITY_ERROR    SeverityLevel = 3
+	SEVERITY_WARNING  SeverityLevel = 4
+	SEVERITY_IGNORED  SeverityLevel = -1
+	SEVERITY_DEFAULT  SeverityLevel = SEVERITY_CRITICAL
 )
 
 var eventToSeverity = map[string]SeverityLevel{

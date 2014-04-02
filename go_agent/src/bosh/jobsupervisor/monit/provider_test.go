@@ -1,14 +1,15 @@
 package monit_test
 
 import (
+	"net/http"
+	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	. "bosh/jobsupervisor/monit"
 	boshlog "bosh/logger"
 	fakeplatform "bosh/platform/fakes"
-	"github.com/stretchr/testify/assert"
-	"net/http"
-
-	. "github.com/onsi/ginkgo"
-	"time"
 )
 
 func init() {
@@ -22,10 +23,10 @@ func init() {
 
 			client, err := NewProvider(platform, logger).Get()
 
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			expectedClient := NewHttpClient("127.0.0.1:2822", "fake-user", "fake-pass", http.DefaultClient, 1*time.Second, logger)
-			assert.Equal(GinkgoT(), expectedClient, client)
+			Expect(expectedClient).To(Equal(client))
 		})
 	})
 }

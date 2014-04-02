@@ -2,7 +2,7 @@ package action_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/gomega"
 
 	. "bosh/agent/action"
 	boshassert "bosh/assert"
@@ -20,12 +20,12 @@ func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("migrate disk should be asynchronous", func() {
 			_, action := buildMigrateDiskAction()
-			assert.True(GinkgoT(), action.IsAsynchronous())
+			Expect(action.IsAsynchronous()).To(BeTrue())
 		})
 
 		It("is not persistent", func() {
 			_, action := buildMigrateDiskAction()
-			assert.False(GinkgoT(), action.IsPersistent())
+			Expect(action.IsPersistent()).To(BeFalse())
 		})
 
 		It("migrate disk action run", func() {
@@ -33,11 +33,11 @@ func init() {
 			platform, action := buildMigrateDiskAction()
 
 			value, err := action.Run()
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			boshassert.MatchesJsonString(GinkgoT(), value, "{}")
 
-			assert.Equal(GinkgoT(), platform.MigratePersistentDiskFromMountPoint, "/foo/store")
-			assert.Equal(GinkgoT(), platform.MigratePersistentDiskToMountPoint, "/foo/store_migration_target")
+			Expect(platform.MigratePersistentDiskFromMountPoint).To(Equal("/foo/store"))
+			Expect(platform.MigratePersistentDiskToMountPoint).To(Equal("/foo/store_migration_target"))
 		})
 	})
 }

@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
+	. "github.com/onsi/gomega"
 
 	. "bosh/agent/action"
 	boshmodels "bosh/agent/applier/models"
@@ -44,12 +44,12 @@ func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("compile package should be asynchronous", func() {
 			_, action := buildCompilePackageAction()
-			assert.True(GinkgoT(), action.IsAsynchronous())
+			Expect(action.IsAsynchronous()).To(BeTrue())
 		})
 
 		It("is not persistent", func() {
 			_, action := buildCompilePackageAction()
-			assert.False(GinkgoT(), action.IsPersistent())
+			Expect(action.IsPersistent()).To(BeFalse())
 		})
 
 		It("compile package compiles the package abd returns blob id", func() {
@@ -93,10 +93,10 @@ func init() {
 
 			val, err := action.Run(blobId, sha1, name, version, deps)
 
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), expectedPkg, compiler.CompilePkg)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(expectedPkg).To(Equal(compiler.CompilePkg))
 
-			assert.Equal(GinkgoT(), expectedDeps, compiler.CompileDeps)
+			Expect(expectedDeps).To(Equal(compiler.CompileDeps))
 
 			boshassert.MatchesJsonMap(GinkgoT(), val, expectedJson)
 		})
@@ -109,8 +109,8 @@ func init() {
 
 			_, err := action.Run(blobId, sha1, name, version, deps)
 
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), compiler.CompileErr.Error())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(compiler.CompileErr.Error()))
 		})
 	})
 }

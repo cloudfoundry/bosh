@@ -1,11 +1,12 @@
 package ntp_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	. "bosh/platform/ntp"
 	boshdir "bosh/settings/directories"
 	fakefs "bosh/system/fakes"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func buildService(NTPData string) (service Service) {
@@ -31,7 +32,7 @@ func init() {
 				Timestamp: "12 Oct 17:37:58",
 				Offset:    "-0.081236",
 			}
-			assert.Equal(GinkgoT(), service.GetInfo(), expectedNTPOffset)
+			Expect(service.GetInfo()).To(Equal(expectedNTPOffset))
 		})
 		It("get offset returns bad file message when file is bad", func() {
 
@@ -43,7 +44,7 @@ func init() {
 			expectedNTPOffset := NTPInfo{
 				Message: "bad file contents",
 			}
-			assert.Equal(GinkgoT(), service.GetInfo(), expectedNTPOffset)
+			Expect(service.GetInfo()).To(Equal(expectedNTPOffset))
 		})
 		It("get offset returns bad n t p server message when file has bad server", func() {
 
@@ -53,7 +54,7 @@ func init() {
 			expectedNTPOffset := NTPInfo{
 				Message: "bad ntp server",
 			}
-			assert.Equal(GinkgoT(), service.GetInfo(), expectedNTPOffset)
+			Expect(service.GetInfo()).To(Equal(expectedNTPOffset))
 		})
 		It("get offset returns nil when file does not exist", func() {
 
@@ -62,7 +63,7 @@ func init() {
 			expectedNTPOffset := NTPInfo{
 				Message: "file missing",
 			}
-			assert.Equal(GinkgoT(), service.GetInfo(), expectedNTPOffset)
+			Expect(service.GetInfo()).To(Equal(expectedNTPOffset))
 		})
 	})
 }

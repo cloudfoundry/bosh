@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
 
 	. "bosh/agent/action"
@@ -69,19 +70,19 @@ func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("logs should be asynchronous", func() {
 			_, action := buildLogsAction()
-			assert.True(GinkgoT(), action.IsAsynchronous())
+			Expect(action.IsAsynchronous()).To(BeTrue())
 		})
 
 		It("is not persistent", func() {
 			_, action := buildLogsAction()
-			assert.False(GinkgoT(), action.IsPersistent())
+			Expect(action.IsPersistent()).To(BeFalse())
 		})
 
 		It("logs errs if given invalid log type", func() {
 
 			_, action := buildLogsAction()
 			_, err := action.Run("other-logs", []string{})
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 		It("agent logs with filters", func() {
 

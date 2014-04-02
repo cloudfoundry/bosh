@@ -1,10 +1,12 @@
 package uuid_test
 
 import (
-	. "bosh/uuid"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 	"regexp"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	. "bosh/uuid"
 )
 
 func init() {
@@ -14,11 +16,11 @@ func init() {
 			generator := NewGenerator()
 
 			uuid, err := generator.Generate()
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			uuidFormat := "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 			uuidRegexp, _ := regexp.Compile(uuidFormat)
-			assert.True(GinkgoT(), uuidRegexp.MatchString(uuid))
+			Expect(uuidRegexp.MatchString(uuid)).To(BeTrue())
 		})
 	})
 }

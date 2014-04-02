@@ -98,8 +98,8 @@ func init() {
 			job := buildJob()
 
 			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), jobApplier.AppliedJobs, []models.Job{job})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(jobApplier.AppliedJobs).To(Equal([]models.Job{job}))
 		})
 
 		It("apply errs when applying jobs errs", func() {
@@ -108,8 +108,8 @@ func init() {
 			jobApplier.ApplyError = errors.New("fake-apply-job-error")
 
 			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-apply-job-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-apply-job-error"))
 		})
 
 		It("apply applies packages", func() {
@@ -117,8 +117,8 @@ func init() {
 			pkg2 := buildPackage()
 
 			err := applier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg1, pkg2}})
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), packageApplier.AppliedPackages, []models.Package{pkg1, pkg2})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(packageApplier.AppliedPackages).To(Equal([]models.Package{pkg1, pkg2}))
 		})
 
 		It("apply errs when applying packages errs", func() {
@@ -127,8 +127,8 @@ func init() {
 			packageApplier.ApplyError = errors.New("fake-apply-package-error")
 
 			err := applier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg}})
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-apply-package-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-apply-package-error"))
 		})
 
 		It("apply configures jobs", func() {
@@ -137,11 +137,11 @@ func init() {
 			jobs := []models.Job{job1, job2}
 
 			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: jobs})
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), jobApplier.ConfiguredJobs, []models.Job{job2, job1})
-			assert.Equal(GinkgoT(), jobApplier.ConfiguredJobIndices, []int{0, 1})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(jobApplier.ConfiguredJobs).To(Equal([]models.Job{job2, job1}))
+			Expect(jobApplier.ConfiguredJobIndices).To(Equal([]int{0, 1}))
 
-			assert.True(GinkgoT(), jobSupervisor.Reloaded)
+			Expect(jobSupervisor.Reloaded).To(BeTrue())
 		})
 
 		It("apply errs if monitor fails reload", func() {
@@ -149,8 +149,8 @@ func init() {
 			jobSupervisor.ReloadErr = errors.New("error reloading monit")
 
 			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: jobs})
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "error reloading monit")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("error reloading monit"))
 		})
 
 		It("apply errs if a job fails configuring", func() {
@@ -159,13 +159,13 @@ func init() {
 			job := models.Job{Name: "fake-job-name-1", Version: "fake-version-name-1"}
 
 			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "error configuring job")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("error configuring job"))
 		})
 
 		It("apply sets up logrotation", func() {
 			err := applier.Apply(&fakeas.FakeApplySpec{MaxLogFileSizeResult: "fake-size"})
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			assert.Equal(GinkgoT(), logRotateDelegate.SetupLogrotateArgs, SetupLogrotateArgs{
 				GroupName: boshsettings.VCAP_USERNAME,
 				BasePath:  "/fake-base-dir",
@@ -177,8 +177,8 @@ func init() {
 			logRotateDelegate.SetupLogrotateErr = errors.New("fake-msg")
 
 			err := applier.Apply(&fakeas.FakeApplySpec{})
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "Logrotate setup failed: fake-msg")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Logrotate setup failed: fake-msg"))
 		})
 	})
 }

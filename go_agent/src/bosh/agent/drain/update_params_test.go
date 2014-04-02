@@ -1,10 +1,11 @@
 package drain_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	boshas "bosh/agent/applier/applyspec"
 	. "bosh/agent/drain"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -45,8 +46,7 @@ func init() {
 
 			params := NewUpdateDrainParams(oldSpec, newSpec)
 
-			updatedPkgs := params.UpdatedPackages()
-			assert.Equal(GinkgoT(), []string{"foo", "baz"}, updatedPkgs)
+			Expect(params.UpdatedPackages()).To(Equal([]string{"foo", "baz"}))
 		})
 	})
 }

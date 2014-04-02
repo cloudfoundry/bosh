@@ -1,13 +1,14 @@
 package vitals_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	boshassert "bosh/assert"
 	boshstats "bosh/platform/stats"
 	fakestats "bosh/platform/stats/fakes"
 	. "bosh/platform/vitals"
 	boshdirs "bosh/settings/directories"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 func buildVitalsService() (statsCollector *fakestats.FakeStatsCollector, service Service) {
@@ -88,7 +89,7 @@ func init() {
 				},
 			}
 
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			boshassert.MatchesJsonMap(GinkgoT(), vitals, expectedVitals)
 		})
@@ -103,7 +104,7 @@ func init() {
 			}
 
 			vitals, err := service.Get()
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			boshassert.LacksJsonKey(GinkgoT(), vitals.Disk, "ephemeral")
 			boshassert.LacksJsonKey(GinkgoT(), vitals.Disk, "persistent")
@@ -114,7 +115,7 @@ func init() {
 			statsCollector.DiskStats = map[string]boshstats.DiskStats{}
 
 			_, err := service.Get()
-			assert.Error(GinkgoT(), err)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 }

@@ -1,6 +1,13 @@
 package jobapplier_test
 
 import (
+	"errors"
+	"os"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+
 	fakebc "bosh/agent/applier/bundlecollection/fakes"
 	. "bosh/agent/applier/jobapplier"
 	models "bosh/agent/applier/models"
@@ -8,10 +15,6 @@ import (
 	fakejobsuper "bosh/jobsupervisor/fakes"
 	fakecmd "bosh/platform/commands/fakes"
 	fakesys "bosh/system/fakes"
-	"errors"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
-	"os"
 )
 
 func buildJobApplier() (
@@ -47,9 +50,9 @@ func init() {
 			fs.MkdirAll("fake-install-dir", os.FileMode(0))
 
 			err := applier.Apply(job)
-			assert.NoError(GinkgoT(), err)
-			assert.True(GinkgoT(), bundle.Installed)
-			assert.True(GinkgoT(), bundle.Enabled)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(bundle.Installed).To(BeTrue())
+			Expect(bundle.Enabled).To(BeTrue())
 		})
 		It("apply errs when job install fails", func() {
 
@@ -59,8 +62,8 @@ func init() {
 			bundle.InstallError = errors.New("fake-install-error")
 
 			err := applier.Apply(job)
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-install-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-install-error"))
 		})
 		It("apply errs when job enable fails", func() {
 
@@ -75,8 +78,8 @@ func init() {
 			bundle.EnableError = errors.New("fake-enable-error")
 
 			err := applier.Apply(job)
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-enable-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-enable-error"))
 		})
 		It("apply downloads and cleans up job", func() {
 
@@ -93,10 +96,10 @@ func init() {
 			blobstore.GetFileName = "/dev/null"
 
 			err := applier.Apply(job)
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), "fake-blobstore-id", blobstore.GetBlobIds[0])
-			assert.Equal(GinkgoT(), "blob-sha1", blobstore.GetFingerprints[0])
-			assert.Equal(GinkgoT(), blobstore.GetFileName, blobstore.CleanUpFileName)
+			Expect(err).ToNot(HaveOccurred())
+			Expect("fake-blobstore-id").To(Equal(blobstore.GetBlobIds[0]))
+			Expect("blob-sha1").To(Equal(blobstore.GetFingerprints[0]))
+			Expect(blobstore.GetFileName).To(Equal(blobstore.CleanUpFileName))
 		})
 		It("apply errs when job download errs", func() {
 
@@ -106,8 +109,8 @@ func init() {
 			blobstore.GetError = errors.New("fake-get-error")
 
 			err := applier.Apply(job)
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-get-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-get-error"))
 		})
 		It("apply decompresses job to tmp path and cleans it up", func() {
 
@@ -125,9 +128,9 @@ func init() {
 			blobstore.GetFileName = "/dev/null"
 
 			err := applier.Apply(job)
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), blobstore.GetFileName, compressor.DecompressFileToDirTarballPaths[0])
-			assert.Equal(GinkgoT(), "fake-tmp-dir", compressor.DecompressFileToDirDirs[0])
+			Expect(err).ToNot(HaveOccurred())
+			Expect(blobstore.GetFileName).To(Equal(compressor.DecompressFileToDirTarballPaths[0]))
+			Expect("fake-tmp-dir").To(Equal(compressor.DecompressFileToDirDirs[0]))
 			assert.Nil(GinkgoT(), fs.GetFileTestStat(fs.TempDirDir))
 		})
 		It("apply errs when temp dir errs", func() {
@@ -142,8 +145,8 @@ func init() {
 			blobstore.GetFileName = "/dev/null"
 
 			err := applier.Apply(job)
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-filesystem-tempdir-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-filesystem-tempdir-error"))
 		})
 		It("apply errs when job decompress errs", func() {
 
@@ -156,8 +159,8 @@ func init() {
 			bundle.InstallFs = fs
 
 			err := applier.Apply(job)
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-decompress-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-decompress-error"))
 		})
 		It("apply copies from decompressed tmp path to install path", func() {
 
@@ -181,10 +184,10 @@ func init() {
 			}
 
 			err := applier.Apply(job)
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 			fileInArchiveStat := fs.GetFileTestStat("fake-install-dir/file")
-			assert.NotNil(GinkgoT(), fileInArchiveStat)
-			assert.Equal(GinkgoT(), []byte("file-contents"), fileInArchiveStat.Content)
+			Expect(fileInArchiveStat).ToNot(BeNil())
+			Expect([]byte("file-contents")).To(Equal(fileInArchiveStat.Content))
 		})
 		It("apply sets executable bit for files in bin", func() {
 
@@ -209,18 +212,18 @@ func init() {
 			fs.SetGlob("fake-install-dir/bin/*", []string{"fake-install-dir/bin/test1", "fake-install-dir/bin/test2"})
 
 			err := applier.Apply(job)
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
 			testBin1Stats := fs.GetFileTestStat("fake-install-dir/bin/test1")
-			assert.NotNil(GinkgoT(), testBin1Stats)
-			assert.Equal(GinkgoT(), 0755, int(testBin1Stats.FileMode))
+			Expect(testBin1Stats).ToNot(BeNil())
+			Expect(0755).To(Equal(int(testBin1Stats.FileMode)))
 
 			testBin2Stats := fs.GetFileTestStat("fake-install-dir/bin/test2")
-			assert.NotNil(GinkgoT(), testBin2Stats)
-			assert.Equal(GinkgoT(), 0755, int(testBin2Stats.FileMode))
+			Expect(testBin2Stats).ToNot(BeNil())
+			Expect(0755).To(Equal(int(testBin2Stats.FileMode)))
 
 			testConfigStats := fs.GetFileTestStat("fake-install-dir/config/test")
-			assert.NotNil(GinkgoT(), testConfigStats)
+			Expect(testConfigStats).ToNot(BeNil())
 			assert.NotEqual(GinkgoT(), 0755, int(testConfigStats.FileMode))
 		})
 		It("apply errs when copy all errs", func() {
@@ -237,8 +240,8 @@ func init() {
 			blobstore.GetFileName = "/dev/null"
 
 			err := applier.Apply(job)
-			assert.Error(GinkgoT(), err)
-			assert.Contains(GinkgoT(), err.Error(), "fake-copy-dir-entries-error")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-copy-dir-entries-error"))
 		})
 		It("configure", func() {
 
@@ -253,9 +256,9 @@ func init() {
 			bundle.GetDirFs = fs
 
 			err := applier.Configure(job, 0)
-			assert.NoError(GinkgoT(), err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Equal(GinkgoT(), 2, len(jobSupervisor.AddJobArgs))
+			Expect(2).To(Equal(len(jobSupervisor.AddJobArgs)))
 
 			firstArgs := fakejobsuper.AddJobArgs{
 				Name:       job.Name,
@@ -268,8 +271,8 @@ func init() {
 				Index:      0,
 				ConfigPath: "/path/to/job/subjob.monit",
 			}
-			assert.Equal(GinkgoT(), firstArgs, jobSupervisor.AddJobArgs[0])
-			assert.Equal(GinkgoT(), secondArgs, jobSupervisor.AddJobArgs[1])
+			Expect(firstArgs).To(Equal(jobSupervisor.AddJobArgs[0]))
+			Expect(secondArgs).To(Equal(jobSupervisor.AddJobArgs[1]))
 		})
 	})
 }
