@@ -48,7 +48,7 @@ BROADCAST=192.168.195.255
 GATEWAY=192.168.195.1
 ONBOOT=yes`
 
-	Describe("Testing with Ginkgo", func() {
+	Describe("centos", func() {
 		var (
 			collector       *fakestats.FakeStatsCollector
 			fs              *fakesys.FakeFileSystem
@@ -97,7 +97,7 @@ ONBOOT=yes`
 			)
 		})
 
-		It("centos setup dhcp", func() {
+		Describe("SetupDhcp", func() {
 			networks := boshsettings.Networks{
 				"bosh": boshsettings.Network{
 					Default: []string{"dns"},
@@ -109,39 +109,36 @@ ONBOOT=yes`
 				},
 			}
 
-			platform.SetupDhcp(networks)
+			It("centos setup dhcp", func() {
+				platform.SetupDhcp(networks)
 
-			dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
-			Expect(dhcpConfig).ToNot(BeNil())
-			Expect(dhcpConfig.StringContents()).To(Equal(CENTOS_EXPECTED_DHCP_CONFIG))
+				dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
+				Expect(dhcpConfig).ToNot(BeNil())
+				Expect(dhcpConfig.StringContents()).To(Equal(CENTOS_EXPECTED_DHCP_CONFIG))
+			})
 
-			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
+			It("restarts network", func() {
+				platform.SetupDhcp(networks)
+
+				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
+			})
+
+			It("centos setup dhcp", func() {
+				fs.WriteFileString("/etc/dhcp/dhclient.conf", CENTOS_EXPECTED_DHCP_CONFIG)
+
+				platform.SetupDhcp(networks)
+
+				dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
+				Expect(dhcpConfig).ToNot(BeNil())
+				Expect(dhcpConfig.StringContents()).To(Equal(CENTOS_EXPECTED_DHCP_CONFIG))
+
+				Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+			})
+
 		})
 
-		It("centos setup dhcp with pre existing configuration", func() {
-			fs.WriteFileString("/etc/dhcp/dhclient.conf", CENTOS_EXPECTED_DHCP_CONFIG)
-			networks := boshsettings.Networks{
-				"bosh": boshsettings.Network{
-					Default: []string{"dns"},
-					Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
-				},
-				"vip": boshsettings.Network{
-					Default: []string{},
-					Dns:     []string{"aa.aa.aa.aa"},
-				},
-			}
-
-			platform.SetupDhcp(networks)
-
-			dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
-			Expect(dhcpConfig).ToNot(BeNil())
-			Expect(dhcpConfig.StringContents()).To(Equal(CENTOS_EXPECTED_DHCP_CONFIG))
-
-			Expect(len(cmdRunner.RunCommands)).To(Equal(0))
-		})
-
-		It("centos setup manual networking", func() {
+		Describe("SetupManualNetworking", func() {
 			networks := boshsettings.Networks{
 				"bosh": boshsettings.Network{
 					Default: []string{"dns", "gateway"},
@@ -152,26 +149,50 @@ ONBOOT=yes`
 					Dns:     []string{"10.80.130.2", "10.80.130.1"},
 				},
 			}
-			fs.WriteFile("/sys/class/net/eth0", []byte{})
-			fs.WriteFileString("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a\n")
-			fs.SetGlob("/sys/class/net/*", []string{"/sys/class/net/eth0"})
 
-			platform.SetupManualNetworking(networks)
+			BeforeEach(func() {
+				fs.WriteFile("/sys/class/net/eth0", []byte{})
+				fs.WriteFileString("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a\n")
+				fs.SetGlob("/sys/class/net/*", []string{"/sys/class/net/eth0"})
+			})
 
-			networkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
-			Expect(networkConfig).ToNot(BeNil())
-			Expect(networkConfig.StringContents()).To(Equal(CENTOS_EXPECTED_IFCFG))
+			It("sets up centos expected ifconfig", func() {
+				platform.SetupManualNetworking(networks)
 
-			resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
-			Expect(resolvConf).ToNot(BeNil())
-			Expect(resolvConf.StringContents()).To(Equal(CENTOS_EXPECTED_RESOLV_CONF))
+				networkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
+				Expect(networkConfig).ToNot(BeNil())
+				Expect(networkConfig.StringContents()).To(Equal(CENTOS_EXPECTED_IFCFG))
+			})
 
-			time.Sleep(100 * time.Millisecond)
+			It("sets up centos /etc/resolv.conf", func() {
+				platform.SetupManualNetworking(networks)
 
-			Expect(len(cmdRunner.RunCommands)).To(Equal(7))
-			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
-			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
-			Expect(cmdRunner.RunCommands[6]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+				resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
+				Expect(resolvConf).ToNot(BeNil())
+				Expect(resolvConf.StringContents()).To(Equal(CENTOS_EXPECTED_RESOLV_CONF))
+			})
+
+			It("restarts networking", func() {
+				platform.SetupManualNetworking(networks)
+
+				fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
+				fs.GetFileTestStat("/etc/resolv.conf")
+				time.Sleep(100 * time.Millisecond)
+
+				Expect(len(cmdRunner.RunCommands)).To(Equal(7))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
+			})
+
+			It("runs arping commands", func() {
+				platform.SetupManualNetworking(networks)
+
+				fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
+				fs.GetFileTestStat("/etc/resolv.conf")
+				time.Sleep(100 * time.Millisecond)
+
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+				Expect(cmdRunner.RunCommands[6]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+			})
 		})
 	})
 }

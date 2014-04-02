@@ -51,7 +51,7 @@ prepend domain-name-servers yy.yy.yy.yy;
 prepend domain-name-servers xx.xx.xx.xx;
 `
 
-	Describe("Testing with Ginkgo", func() {
+	Describe("ubuntu", func() {
 		var (
 			collector       *fakestats.FakeStatsCollector
 			fs              *fakesys.FakeFileSystem
