@@ -1,6 +1,11 @@
 package applier_test
 
 import (
+	"errors"
+
+	. "github.com/onsi/ginkgo"
+	"github.com/stretchr/testify/assert"
+
 	. "bosh/agent/applier"
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	fakeja "bosh/agent/applier/jobapplier/fakes"
@@ -9,9 +14,6 @@ import (
 	fakejobsuper "bosh/jobsupervisor/fakes"
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
-	"errors"
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
 )
 
 type FakeLogRotateDelegate struct {
@@ -25,29 +27,12 @@ type SetupLogrotateArgs struct {
 	Size      string
 }
 
-func (d *FakeLogRotateDelegate) SetupLogrotate(groupName, basePath, size string) (err error) {
+func (d *FakeLogRotateDelegate) SetupLogrotate(groupName, basePath, size string) error {
 	d.SetupLogrotateArgs = SetupLogrotateArgs{groupName, basePath, size}
-
 	if d.SetupLogrotateErr != nil {
-		err = d.SetupLogrotateErr
+		return d.SetupLogrotateErr
 	}
-
-	return
-}
-
-func buildApplier() (
-	*fakeja.FakeJobApplier,
-	*fakepa.FakePackageApplier,
-	*FakeLogRotateDelegate,
-	*fakejobsuper.FakeJobSupervisor,
-	Applier,
-) {
-	jobApplier := fakeja.NewFakeJobApplier()
-	packageApplier := fakepa.NewFakePackageApplier()
-	platform := &FakeLogRotateDelegate{}
-	jobSupervisor := fakejobsuper.NewFakeJobSupervisor()
-	applier := NewConcreteApplier(jobApplier, packageApplier, platform, jobSupervisor, boshdirs.NewDirectoriesProvider("/fake-base-dir"))
-	return jobApplier, packageApplier, platform, jobSupervisor, applier
+	return nil
 }
 
 func buildJob() models.Job {
@@ -59,18 +44,38 @@ func buildPackage() models.Package {
 }
 
 func init() {
-	Describe("Testing with Ginkgo", func() {
+	Describe("concreteApplier", func() {
+		var (
+			jobApplier *fakeja.FakeJobApplier
+			packageApplier *fakepa.FakePackageApplier
+			logRotateDelegate *FakeLogRotateDelegate
+			jobSupervisor *fakejobsuper.FakeJobSupervisor
+			applier Applier
+		)
+
+		BeforeEach(func() {
+			jobApplier = fakeja.NewFakeJobApplier()
+			packageApplier = fakepa.NewFakePackageApplier()
+			logRotateDelegate = &FakeLogRotateDelegate{}
+			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
+			applier = NewConcreteApplier(
+				jobApplier, 
+				packageApplier,
+				logRotateDelegate,
+				jobSupervisor, 
+				boshdirs.NewDirectoriesProvider("/fake-base-dir"),
+			)
+		})
+
 		It("apply applies jobs", func() {
-			jobApplier, _, _, _, applier := buildApplier()
 			job := buildJob()
 
 			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
 			assert.NoError(GinkgoT(), err)
 			assert.Equal(GinkgoT(), jobApplier.AppliedJobs, []models.Job{job})
 		})
-		It("apply errs when applying jobs errs", func() {
 
-			jobApplier, _, _, _, applier := buildApplier()
+		It("apply errs when applying jobs errs", func() {
 			job := buildJob()
 
 			jobApplier.ApplyError = errors.New("fake-apply-job-error")
@@ -79,10 +84,8 @@ func init() {
 			assert.Error(GinkgoT(), err)
 			assert.Contains(GinkgoT(), err.Error(), "fake-apply-job-error")
 		})
+
 		It("apply applies packages", func() {
-
-			_, packageApplier, _, _, applier := buildApplier()
-
 			pkg1 := buildPackage()
 			pkg2 := buildPackage()
 
@@ -90,9 +93,8 @@ func init() {
 			assert.NoError(GinkgoT(), err)
 			assert.Equal(GinkgoT(), packageApplier.AppliedPackages, []models.Package{pkg1, pkg2})
 		})
-		It("apply errs when applying packages errs", func() {
 
-			_, packageApplier, _, _, applier := buildApplier()
+		It("apply errs when applying packages errs", func() {
 			pkg := buildPackage()
 
 			packageApplier.ApplyError = errors.New("fake-apply-package-error")
@@ -101,10 +103,8 @@ func init() {
 			assert.Error(GinkgoT(), err)
 			assert.Contains(GinkgoT(), err.Error(), "fake-apply-package-error")
 		})
+
 		It("apply configures jobs", func() {
-
-			jobApplier, _, _, jobSupervisor, applier := buildApplier()
-
 			job1 := models.Job{Name: "fake-job-name-1", Version: "fake-version-name-1"}
 			job2 := models.Job{Name: "fake-job-name-2", Version: "fake-version-name-2"}
 			jobs := []models.Job{job1, job2}
@@ -116,9 +116,8 @@ func init() {
 
 			assert.True(GinkgoT(), jobSupervisor.Reloaded)
 		})
-		It("apply errs if monitor fails reload", func() {
 
-			_, _, _, jobSupervisor, applier := buildApplier()
+		It("apply errs if monitor fails reload", func() {
 			jobs := []models.Job{}
 			jobSupervisor.ReloadErr = errors.New("error reloading monit")
 
@@ -126,9 +125,8 @@ func init() {
 			assert.Error(GinkgoT(), err)
 			assert.Contains(GinkgoT(), err.Error(), "error reloading monit")
 		})
-		It("apply errs if a job fails configuring", func() {
 
-			jobApplier, _, _, _, applier := buildApplier()
+		It("apply errs if a job fails configuring", func() {
 			jobApplier.ConfigureError = errors.New("error configuring job")
 
 			job := models.Job{Name: "fake-job-name-1", Version: "fake-version-name-1"}
@@ -137,23 +135,19 @@ func init() {
 			assert.Error(GinkgoT(), err)
 			assert.Contains(GinkgoT(), err.Error(), "error configuring job")
 		})
+
 		It("apply sets up logrotation", func() {
-
-			_, _, platform, _, applier := buildApplier()
-
 			err := applier.Apply(&fakeas.FakeApplySpec{MaxLogFileSizeResult: "fake-size"})
 			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), platform.SetupLogrotateArgs, SetupLogrotateArgs{
+			assert.Equal(GinkgoT(), logRotateDelegate.SetupLogrotateArgs, SetupLogrotateArgs{
 				GroupName: boshsettings.VCAP_USERNAME,
 				BasePath:  "/fake-base-dir",
 				Size:      "fake-size",
 			})
 		})
+
 		It("apply errs if setup logrotate fails", func() {
-
-			_, _, platform, _, applier := buildApplier()
-
-			platform.SetupLogrotateErr = errors.New("fake-msg")
+			logRotateDelegate.SetupLogrotateErr = errors.New("fake-msg")
 
 			err := applier.Apply(&fakeas.FakeApplySpec{})
 			assert.Error(GinkgoT(), err)
