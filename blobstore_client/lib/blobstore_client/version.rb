@@ -1,7 +1,7 @@
 module Bosh
   module Blobstore
     class Client
-      VERSION = '1.2311.0'
+      VERSION = '1.2334.0'
     end
   end
 end
