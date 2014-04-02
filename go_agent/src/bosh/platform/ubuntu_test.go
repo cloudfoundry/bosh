@@ -101,24 +101,28 @@ prepend domain-name-servers xx.xx.xx.xx;
 		})
 
 		Describe("SetupDhcp", func() {
-			Context("when dhcp was not previously configured", func() {
-				It("sets up dhcp and restarts dhclient", func() {
-					networks := boshsettings.Networks{
-						"bosh": boshsettings.Network{
-							Default: []string{"dns"},
-							Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
-						},
-						"vip": boshsettings.Network{
-							Default: []string{},
-							Dns:     []string{"aa.aa.aa.aa"},
-						},
-					}
+			networks := boshsettings.Networks{
+				"bosh": boshsettings.Network{
+					Default: []string{"dns"},
+					Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
+				},
+				"vip": boshsettings.Network{
+					Default: []string{},
+					Dns:     []string{"aa.aa.aa.aa"},
+				},
+			}
 
+			Context("when dhcp was not previously configured", func() {
+				It("updates dhclient.conf", func() {
 					platform.SetupDhcp(networks)
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
 					Expect(dhcpConfig).ToNot(BeNil())
 					Expect(dhcpConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_DHCP_CONFIG))
+				})
+
+				It("restarts dhclient", func() {
+					platform.SetupDhcp(networks)
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
 					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient3"}))
@@ -127,25 +131,20 @@ prepend domain-name-servers xx.xx.xx.xx;
 			})
 
 			Context("when dhcp was previously configured with different configuration", func() {
-				It("sets up dhcp and restarts dhclient", func() {
+				BeforeEach(func() {
 					fs.WriteFileString("/etc/dhcp3/dhclient.conf", "fake-other-configuration")
+				})
 
-					networks := boshsettings.Networks{
-						"bosh": boshsettings.Network{
-							Default: []string{"dns"},
-							Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
-						},
-						"vip": boshsettings.Network{
-							Default: []string{},
-							Dns:     []string{"aa.aa.aa.aa"},
-						},
-					}
-
+				It("sets up dhcp and restarts dhclient", func() {
 					platform.SetupDhcp(networks)
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
 					Expect(dhcpConfig).ToNot(BeNil())
 					Expect(dhcpConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_DHCP_CONFIG))
+				})
+
+				It("sets up dhcp and restarts dhclient", func() {
+					platform.SetupDhcp(networks)
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
 					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient3"}))
@@ -154,25 +153,20 @@ prepend domain-name-servers xx.xx.xx.xx;
 			})
 
 			Context("when dhcp was previously configured with the same configuration", func() {
-				It("does not restart dhclient", func() {
+				BeforeEach(func() {
 					fs.WriteFileString("/etc/dhcp3/dhclient.conf", UBUNTU_EXPECTED_DHCP_CONFIG)
+				})
 
-					networks := boshsettings.Networks{
-						"bosh": boshsettings.Network{
-							Default: []string{"dns"},
-							Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
-						},
-						"vip": boshsettings.Network{
-							Default: []string{},
-							Dns:     []string{"aa.aa.aa.aa"},
-						},
-					}
-
+				It("does not restart dhclient", func() {
 					platform.SetupDhcp(networks)
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
 					Expect(dhcpConfig).ToNot(BeNil())
 					Expect(dhcpConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_DHCP_CONFIG))
+				})
+
+				It("does not restart dhclient", func() {
+					platform.SetupDhcp(networks)
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(0))
 				})
@@ -180,38 +174,145 @@ prepend domain-name-servers xx.xx.xx.xx;
 		})
 
 		Describe("SetupManualNetworking", func() {
-			It("sets up interface and restarts networking", func() {
-				networks := boshsettings.Networks{
-					"bosh": boshsettings.Network{
-						Default: []string{"dns", "gateway"},
-						Ip:      "192.168.195.6",
-						Netmask: "255.255.255.0",
-						Gateway: "192.168.195.1",
-						Mac:     "22:00:0a:1f:ac:2a",
-						Dns:     []string{"10.80.130.2", "10.80.130.1"},
-					},
-				}
+			BeforeEach(func() {
+				// For mac addr to interface resolution
 				fs.WriteFile("/sys/class/net/eth0", []byte{})
 				fs.WriteFileString("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a\n")
 				fs.SetGlob("/sys/class/net/*", []string{"/sys/class/net/eth0"})
+			})
 
-				platform.SetupManualNetworking(networks)
+			networks := boshsettings.Networks{
+				"bosh": boshsettings.Network{
+					Default: []string{"dns", "gateway"},
+					Ip:      "192.168.195.6",
+					Netmask: "255.255.255.0",
+					Gateway: "192.168.195.1",
+					Mac:     "22:00:0a:1f:ac:2a",
+					Dns:     []string{"10.80.130.2", "10.80.130.1"},
+				},
+			}
 
-				networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
-				Expect(networkConfig).ToNot(BeNil())
-				Expect(networkConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_NETWORK_INTERFACES))
+			Context("when manual networking was not previously configured", func() {
+				It("writes /etc/network/interfaces", func() {
+					err := platform.SetupManualNetworking(networks)
+					Expect(err).ToNot(HaveOccurred())
 
-				resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
-				Expect(resolvConf).ToNot(BeNil())
-				Expect(resolvConf.StringContents()).To(Equal(UBUNTU_EXPECTED_RESOLV_CONF))
+					networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
+					Expect(networkConfig).ToNot(BeNil())
+					Expect(networkConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_NETWORK_INTERFACES))
+				})
 
-				time.Sleep(100 * time.Millisecond)
+				It("restarts networking", func() {
+					err := platform.SetupManualNetworking(networks)
+					Expect(err).ToNot(HaveOccurred())
 
-				Expect(len(cmdRunner.RunCommands)).To(Equal(8))
-				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network-interface", "stop", "INTERFACE=eth0"}))
-				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"service", "network-interface", "start", "INTERFACE=eth0"}))
-				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
-				Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+					Expect(len(cmdRunner.RunCommands) >= 2).To(BeTrue())
+					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network-interface", "stop", "INTERFACE=eth0"}))
+					Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"service", "network-interface", "start", "INTERFACE=eth0"}))
+				})
+
+				It("updates dns", func() {
+					err := platform.SetupManualNetworking(networks)
+					Expect(err).ToNot(HaveOccurred())
+
+					resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
+					Expect(resolvConf).ToNot(BeNil())
+					Expect(resolvConf.StringContents()).To(Equal(UBUNTU_EXPECTED_RESOLV_CONF))
+				})
+
+				It("starts sending arping", func() {
+					err := platform.SetupManualNetworking(networks)
+					Expect(err).ToNot(HaveOccurred())
+
+					time.Sleep(100 * time.Millisecond)
+					Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+					Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+				})
+			})
+
+			Context("when manual networking was previously configured with different configuration", func() {
+				BeforeEach(func() {
+					fs.WriteFileString("/etc/network/interfaces", "fake-manual-config")
+				})
+
+				It("updates /etc/network/interfaces", func() {
+					err := platform.SetupManualNetworking(networks)
+					Expect(err).ToNot(HaveOccurred())
+
+					networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
+					Expect(networkConfig).ToNot(BeNil())
+					Expect(networkConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_NETWORK_INTERFACES))
+				})
+
+				It("restarts networking", func() {
+					err := platform.SetupManualNetworking(networks)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(len(cmdRunner.RunCommands) >= 2).To(BeTrue())
+					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network-interface", "stop", "INTERFACE=eth0"}))
+					Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"service", "network-interface", "start", "INTERFACE=eth0"}))
+				})
+
+				It("updates dns", func() {
+					err := platform.SetupManualNetworking(networks)
+					Expect(err).ToNot(HaveOccurred())
+
+					resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
+					Expect(resolvConf).ToNot(BeNil())
+					Expect(resolvConf.StringContents()).To(Equal(UBUNTU_EXPECTED_RESOLV_CONF))
+				})
+
+				It("starts sending arping", func() {
+					err := platform.SetupManualNetworking(networks)
+					Expect(err).ToNot(HaveOccurred())
+
+					time.Sleep(100 * time.Millisecond)
+					Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+					Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+				})
+			})
+
+			Context("when manual networking was previously configured with same configuration", func() {
+				BeforeEach(func() {
+					fs.WriteFileString("/etc/network/interfaces", UBUNTU_EXPECTED_NETWORK_INTERFACES)
+				})
+
+				It("keeps same /etc/network/interfaces", func() {
+					err := platform.SetupManualNetworking(networks)
+					Expect(err).ToNot(HaveOccurred())
+
+					networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
+					Expect(networkConfig).ToNot(BeNil())
+					Expect(networkConfig.StringContents()).To(Equal(UBUNTU_EXPECTED_NETWORK_INTERFACES))
+				})
+
+				It("does not restart networking because configuration did not change", func() {
+					err := platform.SetupManualNetworking(networks)
+					Expect(err).ToNot(HaveOccurred())
+
+					for _, cmd := range cmdRunner.RunCommands {
+						Expect(cmd[0]).ToNot(Equal("service"))
+					}
+				})
+
+				It("updates /etc/resolv.conf for DNS", func() {
+					err := platform.SetupManualNetworking(networks)
+					Expect(err).ToNot(HaveOccurred())
+
+					resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
+					Expect(resolvConf).ToNot(BeNil())
+					Expect(resolvConf.StringContents()).To(Equal(UBUNTU_EXPECTED_RESOLV_CONF))
+				})
+
+				It("starts sending 6 arp ping", func() {
+					err := platform.SetupManualNetworking(networks)
+					Expect(err).ToNot(HaveOccurred())
+
+					time.Sleep(100 * time.Millisecond)
+					Expect(len(cmdRunner.RunCommands)).To(Equal(6))
+					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+					Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+				})
 			})
 		})
 	})

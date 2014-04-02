@@ -81,24 +81,24 @@ request subnet-mask, broadcast-address, time-offset, routers,
 {{ range .DnsServers }}prepend domain-name-servers {{ . }};
 {{ end }}`
 
-func (net ubuntu) SetupManualNetworking(networks boshsettings.Networks) (err error) {
-	modifiedNetworks, err := net.writeNetworkInterfaces(networks)
+func (net ubuntu) SetupManualNetworking(networks boshsettings.Networks) error {
+	modifiedNetworks, written, err := net.writeNetworkInterfaces(networks)
 	if err != nil {
-		err = bosherr.WrapError(err, "Writing network interfaces")
-		return
+		return bosherr.WrapError(err, "Writing network interfaces")
 	}
 
-	net.restartNetworkingInterfaces(modifiedNetworks)
+	if written {
+		net.restartNetworkingInterfaces(modifiedNetworks)
+	}
 
 	err = net.writeResolvConf(networks)
 	if err != nil {
-		err = bosherr.WrapError(err, "Writing resolv.conf")
-		return
+		return bosherr.WrapError(err, "Writing resolv.conf")
 	}
 
 	go net.gratuitiousArp(modifiedNetworks)
 
-	return
+	return nil
 }
 
 func (net ubuntu) gratuitiousArp(networks []CustomNetwork) {
@@ -115,19 +115,18 @@ func (net ubuntu) gratuitiousArp(networks []CustomNetwork) {
 	return
 }
 
-func (net ubuntu) writeNetworkInterfaces(networks boshsettings.Networks) (modifiedNetworks []CustomNetwork, err error) {
+func (net ubuntu) writeNetworkInterfaces(networks boshsettings.Networks) ([]CustomNetwork, bool, error) {
+	var modifiedNetworks []CustomNetwork
+
 	macAddresses, err := net.detectMacAddresses()
 	if err != nil {
-		err = bosherr.WrapError(err, "Detecting mac addresses")
-		return
+		return modifiedNetworks, false, bosherr.WrapError(err, "Detecting mac addresses")
 	}
 
 	for _, aNet := range networks {
-		var network, broadcast string
-		network, broadcast, err = boshsys.CalculateNetworkAndBroadcast(aNet.Ip, aNet.Netmask)
+		network, broadcast, err := boshsys.CalculateNetworkAndBroadcast(aNet.Ip, aNet.Netmask)
 		if err != nil {
-			err = bosherr.WrapError(err, "Calculating network and broadcast")
-			return
+			return modifiedNetworks, false, bosherr.WrapError(err, "Calculating network and broadcast")
 		}
 
 		newNet := CustomNetwork{
@@ -145,17 +144,15 @@ func (net ubuntu) writeNetworkInterfaces(networks boshsettings.Networks) (modifi
 
 	err = t.Execute(buffer, modifiedNetworks)
 	if err != nil {
-		err = bosherr.WrapError(err, "Generating config from template")
-		return
+		return modifiedNetworks, false, bosherr.WrapError(err, "Generating config from template")
 	}
 
-	err = net.fs.WriteFile("/etc/network/interfaces", buffer.Bytes())
+	written, err := net.fs.ConvergeFileContents("/etc/network/interfaces", buffer.Bytes())
 	if err != nil {
-		err = bosherr.WrapError(err, "Writing to /etc/network/interfaces")
-		return
+		return modifiedNetworks, false, bosherr.WrapError(err, "Writing to /etc/network/interfaces")
 	}
 
-	return
+	return modifiedNetworks, written, nil
 }
 
 const UBUNTU_NETWORK_INTERFACES_TEMPLATE = `auto lo
