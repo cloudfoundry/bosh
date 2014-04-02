@@ -289,7 +289,7 @@ func init() {
 				It("does not return error because all jobs are removed from monit", func() {
 					jobsDir := dirProvider.MonitJobsDir()
 					jobBasename := "/0000_router.monitrc"
-					fs.WriteFileString(jobsDir + jobBasename, "fake-added-job")
+					fs.WriteFileString(jobsDir+jobBasename, "fake-added-job")
 
 					err := monit.RemoveAllJobs()
 					Expect(err).ToNot(HaveOccurred())

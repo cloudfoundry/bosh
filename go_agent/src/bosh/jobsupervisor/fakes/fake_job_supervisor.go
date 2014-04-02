@@ -10,6 +10,9 @@ type FakeJobSupervisor struct {
 
 	AddJobArgs []AddJobArgs
 
+	RemovedAllJobs    bool
+	RemovedAllJobsErr error
+
 	Started  bool
 	StartErr error
 
@@ -50,7 +53,8 @@ func (m *FakeJobSupervisor) AddJob(jobName string, jobIndex int, configPath stri
 }
 
 func (m *FakeJobSupervisor) RemoveAllJobs() error {
-	return nil
+	m.RemovedAllJobs = true
+	return m.RemovedAllJobsErr
 }
 
 func (m *FakeJobSupervisor) Start() error {

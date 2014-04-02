@@ -1,6 +1,8 @@
 package fakes
 
-import as "bosh/agent/applier/applyspec"
+import (
+	as "bosh/agent/applier/applyspec"
+)
 
 type FakeApplier struct {
 	Applied        bool

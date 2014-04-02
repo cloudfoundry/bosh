@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
 
 	. "bosh/agent/applier"
@@ -46,11 +47,11 @@ func buildPackage() models.Package {
 func init() {
 	Describe("concreteApplier", func() {
 		var (
-			jobApplier *fakeja.FakeJobApplier
-			packageApplier *fakepa.FakePackageApplier
+			jobApplier        *fakeja.FakeJobApplier
+			packageApplier    *fakepa.FakePackageApplier
 			logRotateDelegate *FakeLogRotateDelegate
-			jobSupervisor *fakejobsuper.FakeJobSupervisor
-			applier Applier
+			jobSupervisor     *fakejobsuper.FakeJobSupervisor
+			applier           Applier
 		)
 
 		BeforeEach(func() {
@@ -59,12 +60,38 @@ func init() {
 			logRotateDelegate = &FakeLogRotateDelegate{}
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 			applier = NewConcreteApplier(
-				jobApplier, 
+				jobApplier,
 				packageApplier,
 				logRotateDelegate,
-				jobSupervisor, 
+				jobSupervisor,
 				boshdirs.NewDirectoriesProvider("/fake-base-dir"),
 			)
+		})
+
+		It("removes all jobs", func() {
+			err := applier.Apply(&fakeas.FakeApplySpec{})
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(jobSupervisor.RemovedAllJobs).To(BeTrue())
+		})
+
+		It("removes all previous jobs before starting to apply jobs", func() {
+			// force remove all error
+			jobSupervisor.RemovedAllJobsErr = errors.New("fake-remove-all-jobs-error")
+
+			job := buildJob()
+			applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+
+			// check that jobs were not applied before removing all other jobs
+			Expect(jobApplier.AppliedJobs).To(Equal([]models.Job{}))
+		})
+
+		It("returns error if removing all jobs fails", func() {
+			jobSupervisor.RemovedAllJobsErr = errors.New("fake-remove-all-jobs-error")
+
+			err := applier.Apply(&fakeas.FakeApplySpec{})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-remove-all-jobs-error"))
 		})
 
 		It("apply applies jobs", func() {
