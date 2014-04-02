@@ -73,18 +73,19 @@ bosh-release \
 
 function kill_agent {
   signal=$1
-  kill -$signal $agent_pid > /dev/null 2>&1
+  kill -$signal $agent_pid 2>&1
 }
 
-kill_agent 15
+kill_agent 15 || (echo "Agent failed while compiling bosh release" && exit 1)
 # Wait for agent
 for i in {1..5}
 do
-  kill_agent 0 && break
+  kill_agent 0 || break
   sleep 1
 done
+
 # Force kill if required
-kill_agent 0 || kill_agent 9
+(kill_agent 0 && kill_agent 9) || true
 
 # Clean out src
 cd /var/tmp
