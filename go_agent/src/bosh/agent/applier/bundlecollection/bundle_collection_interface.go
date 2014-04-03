@@ -1,6 +1,8 @@
 package bundlecollection
 
-import boshsys "bosh/system"
+import (
+	boshsys "bosh/system"
+)
 
 // e.g. Job, Package
 type BundleDefinition interface {

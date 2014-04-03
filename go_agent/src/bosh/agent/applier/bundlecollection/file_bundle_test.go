@@ -1,8 +1,8 @@
 package bundlecollection_test
 
 import (
-	"os"
 	"errors"
+	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
