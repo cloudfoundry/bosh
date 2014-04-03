@@ -52,6 +52,7 @@ cloud:
             datastore_pattern: vcenter_ubosh_datastore_pattern
             persistent_datastore_pattern: vcenter_ubosh_datastore_pattern
             allow_mixed_datastores: true
+            srm: false
             clusters:
               - vcenter_cluster:
                   resource_pool: vcenter_rp
@@ -69,6 +70,7 @@ apply_spec:
           datastore_pattern: vcenter_datastore_pattern
           persistent_datastore_pattern: vcenter_datastore_pattern
           allow_mixed_datastores: true
+          srm: false
           clusters:
             - vcenter_cluster:
                 resource_pool: vcenter_rp
