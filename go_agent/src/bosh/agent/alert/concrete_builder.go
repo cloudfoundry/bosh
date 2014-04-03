@@ -32,7 +32,7 @@ func (b concreteBuilder) Build(input MonitAlert) (alert Alert, err error) {
 }
 
 func (b concreteBuilder) getSeverity(input MonitAlert) (severity SeverityLevel) {
-	severity, severityFound := eventToSeverity[input.Event]
+	severity, severityFound := eventToSeverity[strings.ToLower(input.Event)]
 	if !severityFound {
 		b.logger.Error("Agent", "Unknown monit event name `%s', using default severity %d", input.Event, SEVERITY_DEFAULT)
 		severity = SEVERITY_DEFAULT

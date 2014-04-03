@@ -52,12 +52,19 @@ func init() {
 				Expect(builtAlert).To(Equal(expectedAlert))
 			})
 
-			It("sets the severity", func() {
-				inputAlert := buildMonitAlert()
-				inputAlert.Event = "action done"
+			It("sets the severity based on event", func() {
+				alerts := map[string]SeverityLevel{
+					"action done": SEVERITY_IGNORED,
+					"Action done": SEVERITY_IGNORED,
+					"action Done": SEVERITY_IGNORED,
+				}
 
-				builtAlert, _ := builder.Build(inputAlert)
-				Expect(builtAlert.Severity).To(Equal(SEVERITY_IGNORED))
+				for event, expectedSeverity := range alerts {
+					inputAlert := buildMonitAlert()
+					inputAlert.Event = event
+					builtAlert, _ := builder.Build(inputAlert)
+					Expect(builtAlert.Severity).To(Equal(expectedSeverity))
+				}
 			})
 
 			It("sets default severity to critical", func() {
