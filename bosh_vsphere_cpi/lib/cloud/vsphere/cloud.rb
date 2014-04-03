@@ -237,7 +237,7 @@ module VSphereCloud
         retry_block { client.delete_vm(vm) }
         @logger.info("Deleted vm: #{vm_cid}")
 
-        # Delete env.iso and VM specific files managed by the director
+        # Delete env.iso or env.vmdk and VM specific files managed by the director
         retry_block do
           datastore = get_primary_datastore(devices)
           datastore_name = client.get_property(datastore, Vim::Datastore, 'name')
@@ -744,7 +744,8 @@ module VSphereCloud
       contents ? JSON.load(contents) : nil
     end
 
-    def set_agent_env(vm, location, env)
+    def set_cdrom_content(vm, location, env)
+      @logger.info("Setting env from cdrom")
       env_json = JSON.dump(env)
 
       connect_cdrom(vm, false)
@@ -1052,6 +1053,30 @@ module VSphereCloud
       "pong"
     end
 
+    def set_agent_env(vm, location, env)
+      if config.datacenter_srm
+        set_vmdk_content(vm, location, env)
+      else
+        set_cdrom_content(vm, location, env)
+      end
+    end
+
+    def configure_vm_cdrom(cluster, datastore, name, vm, devices)
+      if @config.datacenter_srm
+        upload_file(cluster.datacenter.name, datastore.name, "#{name}/env.vmdk", '')
+        return
+      end
+
+      # Configure the ENV CDROM
+      upload_file(cluster.datacenter.name, datastore.name, "#{name}/env.iso", '')
+      config = Vim::Vm::ConfigSpec.new
+      config.device_change = []
+      file_name = "[#{datastore.name}] #{name}/env.iso"
+      cdrom_change = configure_env_cdrom(datastore.mob, devices, file_name)
+      config.device_change << cdrom_change
+      client.reconfig_vm(vm, config)
+    end
+
     private
 
     def choose_placer(cloud_properties)
@@ -1065,6 +1090,160 @@ module VSphereCloud
     def find_cluster(cluster_spec)
       datacenter = Resources::Datacenter.new(config)
       datacenter.clusters[cluster_spec.keys.first]
+    end
+
+    def attach_independent_disk(vm, vmdk_path, location, disk_size)
+      with_thread_name("attach_independent_disk(#{vm.name}, #{vmdk_path})") do
+        @logger.info("Attaching disk: #{vmdk_path} on vm: #{vm.name}")
+        host_info = get_vm_host_info(vm)
+        persistent_datastore = find_persistent_datastore(location[:datacenter], host_info, disk_size)
+        fail "Unable to find datastore #{location[:datastore]}!" if persistent_datastore.nil?
+        vm_properties = client.get_properties(vm,
+                                              Vim::VirtualMachine,
+                                              'config.hardware.device',
+                                              ensure_all: true)
+        devices = vm_properties['config.hardware.device']
+        system_disk = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) }
+        attached_disk_config = create_disk_config_spec(persistent_datastore.mob,
+                                                       vmdk_path,
+                                                       system_disk.controller_key,
+                                                       disk_size,
+                                                       create: false,
+                                                       independent: true)
+        config = Vim::Vm::ConfigSpec.new
+        config.device_change = []
+        config.device_change << attached_disk_config
+        fix_device_unit_numbers(devices, config.device_change)
+
+        @logger.info('Attaching independent disk')
+        client.reconfig_vm(vm, config)
+        @logger.info('Finished attaching independent disk')
+      end
+    end
+
+    def detach_independent_disk(vm, vmdk_path, location)
+      with_thread_name("detach_independent_disk(#{vm.name}, #{vmdk_path})") do
+        @logger.info("Detaching disk: #{vmdk_path} from vm: #{vm.name}")
+        independent_disk = get_independent_disk_in_vm(vm, vmdk_path)
+        if independent_disk.nil?
+          @logger.info("Disk (#{vmdk_path}) is not attached to VM (#{vm.name})")
+          return
+        end
+
+        config = Vim::Vm::ConfigSpec.new
+        config.device_change = []
+        config.device_change << create_delete_device_spec(independent_disk)
+
+        @logger.info('Detaching independent disk')
+        client.reconfig_vm(vm, config)
+
+        # detach-disk is async and task completion does not necessarily mean
+        # that changes have been applied to VC side. Query VC until we confirm
+        # that the change has been applied. This is a known issue for vsphere 4.
+        # Fixed in vsphere 5.
+        5.times do
+          independent_disk = get_independent_disk_in_vm(vm, vmdk_path)
+          break if independent_disk.nil?
+          sleep(1.0)
+        end
+        fail "Failed to detach disk: #{vmdk_path} from vm: #{vm.name}" unless independent_disk.nil?
+
+        @logger.info('Finished detaching independent disk')
+      end
+    end
+
+    def get_independent_disk_in_vm(vm, vmdk_path)
+      vm_properties = client.get_properties(vm,
+                                            Vim::VirtualMachine,
+                                            'config.hardware.device',
+                                            ensure_all: true)
+      devices = vm_properties['config.hardware.device']
+      devices.find do |device|
+        device.kind_of?(Vim::Vm::Device::VirtualDisk) &&
+          device.backing.file_name == vmdk_path
+      end
+    end
+
+    def genisoimage
+      @genisoimage ||= which(%w{genisoimage mkisofs})
+    end
+
+    def generate_vmdk(env)
+      vmdk_template_dir = File.expand_path('../../../../assets', __FILE__)
+      fail "vmdk_template_dir #{vmdk_template_dir} does not exist" unless File.exists?(vmdk_template_dir)
+
+      path = Dir.mktmpdir
+      # copy descriptor file
+      FileUtils.cp("#{vmdk_template_dir}/env.vmdk", "#{path}/env.vmdk")
+
+      # update content of flat vmdk file
+      content = File.open("#{vmdk_template_dir}/env-flat.vmdk", "rb") { |file| file.read }
+      update_settings_json(content, env)
+      File.open("#{path}/env-flat.vmdk", 'w') { |file| file.write(content) }
+      path
+    end
+
+    def update_settings_json(content, settings_json)
+      search_index, begin_index, end_index = 0, -1, -1
+      while search_index < content.size
+        if (content[search_index] == 'V' && content[search_index+1] == 'M' && content[search_index+2] == '_')
+          if content[search_index..search_index+28] == 'VM_ENVIRONMENT_SETTINGS_BEGIN'
+            begin_index = search_index + 29
+            search_index = begin_index + 1
+            next
+          end
+
+          if content[search_index..search_index+26] == 'VM_ENVIRONMENT_SETTINGS_END'
+            fail 'Unable to find string VM_ENVIRONMENT_SETTINGS_BEGIN in settings file' if begin_index < 0
+            end_index = search_index - 1
+            break
+          end
+        end
+
+        search_index += 1
+      end
+
+      fail 'Unable to find string VM_ENVIRONMENT_SETTINGS_END in settings file' if end_index < 0
+      space_size = 1024 * 1024 - settings_json.bytesize # Make total of 1MB stuffing spaces at the end
+      fail 'settings_json exceeds 1MB' if space_size < 0
+      content[begin_index..end_index] = "#{settings_json}#{' ' * space_size}"
+    end
+
+    def upload_vmdk_file(location, local_vmdk_file_dir)
+      upload_file(location[:datacenter],
+                  location[:datastore],
+                  "#{location[:vm]}/env.vmdk",
+                  File.open(File.join(local_vmdk_file_dir, 'env.vmdk'), 'r') { |f| f.read })
+
+      upload_file(location[:datacenter],
+                  location[:datastore],
+                  "#{location[:vm]}/env-flat.vmdk",
+                  File.open(File.join(local_vmdk_file_dir, 'env-flat.vmdk'), 'r') { |f| f.read })
+    end
+
+    def qemu_img
+      @qemu_img ||= which(['qemu-img'])
+    end
+
+    def set_vmdk_content(vm, location, env)
+      @logger.info("Setting env from vmdk")
+      env_json = JSON.dump(env)
+
+      vmdk_path = "[#{location[:datastore]}] #{location[:vm]}/env.vmdk"
+      detach_independent_disk(vm, vmdk_path, location)
+
+      upload_file(location[:datacenter],
+                  location[:datastore],
+                  "#{location[:vm]}/env.json", env_json)
+
+      local_vmdk_file_dir = generate_vmdk(env_json)
+      begin
+        upload_vmdk_file(location, local_vmdk_file_dir)
+      ensure
+        FileUtils.remove_entry_secure local_vmdk_file_dir
+      end
+
+      attach_independent_disk(vm, vmdk_path, location, 3)
     end
 
     attr_reader :config
