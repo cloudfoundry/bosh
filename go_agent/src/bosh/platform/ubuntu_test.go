@@ -114,7 +114,8 @@ prepend domain-name-servers xx.xx.xx.xx;
 
 			Context("when dhcp was not previously configured", func() {
 				It("updates dhclient.conf", func() {
-					platform.SetupDhcp(networks)
+					err := platform.SetupDhcp(networks)
+					Expect(err).ToNot(HaveOccurred())
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
 					Expect(dhcpConfig).ToNot(BeNil())
@@ -122,7 +123,8 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("restarts dhclient", func() {
-					platform.SetupDhcp(networks)
+					err := platform.SetupDhcp(networks)
+					Expect(err).ToNot(HaveOccurred())
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
 					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient3"}))
@@ -136,7 +138,8 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("sets up dhcp and restarts dhclient", func() {
-					platform.SetupDhcp(networks)
+					err := platform.SetupDhcp(networks)
+					Expect(err).ToNot(HaveOccurred())
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
 					Expect(dhcpConfig).ToNot(BeNil())
@@ -144,7 +147,8 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("sets up dhcp and restarts dhclient", func() {
-					platform.SetupDhcp(networks)
+					err := platform.SetupDhcp(networks)
+					Expect(err).ToNot(HaveOccurred())
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
 					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient3"}))
@@ -158,7 +162,8 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("does not restart dhclient", func() {
-					platform.SetupDhcp(networks)
+					err := platform.SetupDhcp(networks)
+					Expect(err).ToNot(HaveOccurred())
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
 					Expect(dhcpConfig).ToNot(BeNil())
@@ -166,7 +171,8 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("does not restart dhclient", func() {
-					platform.SetupDhcp(networks)
+					err := platform.SetupDhcp(networks)
+					Expect(err).ToNot(HaveOccurred())
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(0))
 				})

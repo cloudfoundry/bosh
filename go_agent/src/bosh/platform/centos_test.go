@@ -109,33 +109,69 @@ ONBOOT=yes`
 				},
 			}
 
-			It("centos setup dhcp", func() {
-				platform.SetupDhcp(networks)
+			Context("when dhcp was not previously configured", func() {
+				It("writes dhcp configuration", func() {
+					err := platform.SetupDhcp(networks)
+					Expect(err).ToNot(HaveOccurred())
 
-				dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
-				Expect(dhcpConfig).ToNot(BeNil())
-				Expect(dhcpConfig.StringContents()).To(Equal(CENTOS_EXPECTED_DHCP_CONFIG))
+					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
+					Expect(dhcpConfig).ToNot(BeNil())
+					Expect(dhcpConfig.StringContents()).To(Equal(CENTOS_EXPECTED_DHCP_CONFIG))
+				})
+
+				It("restarts network", func() {
+					err := platform.SetupDhcp(networks)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
+				})
 			})
 
-			It("restarts network", func() {
-				platform.SetupDhcp(networks)
+			Context("when dhcp was previously configured with different configuration", func() {
+				BeforeEach(func() {
+					fs.WriteFileString("/etc/dhcp/dhclient.conf", "fake-other-configuration")
+				})
 
-				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
-				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
+				It("updates dhcp configuration", func() {
+					err := platform.SetupDhcp(networks)
+					Expect(err).ToNot(HaveOccurred())
+
+					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
+					Expect(dhcpConfig).ToNot(BeNil())
+					Expect(dhcpConfig.StringContents()).To(Equal(CENTOS_EXPECTED_DHCP_CONFIG))
+				})
+
+				It("restarts network", func() {
+					err := platform.SetupDhcp(networks)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(len(cmdRunner.RunCommands)).To(Equal(1))
+					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
+				})
 			})
 
-			It("centos setup dhcp", func() {
-				fs.WriteFileString("/etc/dhcp/dhclient.conf", CENTOS_EXPECTED_DHCP_CONFIG)
+			Context("when dhcp was previously configured with same configuration", func() {
+				BeforeEach(func() {
+					fs.WriteFileString("/etc/dhcp/dhclient.conf", CENTOS_EXPECTED_DHCP_CONFIG)
+				})
 
-				platform.SetupDhcp(networks)
+				It("keeps dhcp configuration", func() {
+					err := platform.SetupDhcp(networks)
+					Expect(err).ToNot(HaveOccurred())
 
-				dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
-				Expect(dhcpConfig).ToNot(BeNil())
-				Expect(dhcpConfig.StringContents()).To(Equal(CENTOS_EXPECTED_DHCP_CONFIG))
+					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
+					Expect(dhcpConfig).ToNot(BeNil())
+					Expect(dhcpConfig.StringContents()).To(Equal(CENTOS_EXPECTED_DHCP_CONFIG))
+				})
 
-				Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+				It("does not restart network", func() {
+					err := platform.SetupDhcp(networks)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+				})
 			})
-
 		})
 
 		Describe("SetupManualNetworking", func() {
@@ -157,7 +193,8 @@ ONBOOT=yes`
 			})
 
 			It("sets up centos expected ifconfig", func() {
-				platform.SetupManualNetworking(networks)
+				err := platform.SetupManualNetworking(networks)
+				Expect(err).ToNot(HaveOccurred())
 
 				networkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
 				Expect(networkConfig).ToNot(BeNil())
@@ -165,7 +202,8 @@ ONBOOT=yes`
 			})
 
 			It("sets up centos /etc/resolv.conf", func() {
-				platform.SetupManualNetworking(networks)
+				err := platform.SetupManualNetworking(networks)
+				Expect(err).ToNot(HaveOccurred())
 
 				resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
 				Expect(resolvConf).ToNot(BeNil())
@@ -173,7 +211,8 @@ ONBOOT=yes`
 			})
 
 			It("restarts networking", func() {
-				platform.SetupManualNetworking(networks)
+				err := platform.SetupManualNetworking(networks)
+				Expect(err).ToNot(HaveOccurred())
 
 				fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
 				fs.GetFileTestStat("/etc/resolv.conf")
@@ -184,7 +223,8 @@ ONBOOT=yes`
 			})
 
 			It("runs arping commands", func() {
-				platform.SetupManualNetworking(networks)
+				err := platform.SetupManualNetworking(networks)
+				Expect(err).ToNot(HaveOccurred())
 
 				fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
 				fs.GetFileTestStat("/etc/resolv.conf")
