@@ -18,6 +18,7 @@ require 'cloud/vsphere/models/disk'
 require 'cloud/vsphere/path_finder'
 require 'cloud/vsphere/vm_creator_builder'
 require 'cloud/vsphere/fixed_cluster_placer'
+require 'tmpdir'
 
 module VSphereCloud
 
