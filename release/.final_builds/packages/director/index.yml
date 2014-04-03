@@ -224,3 +224,8 @@ builds:
     version: 47
     sha1: !binary |-
       NzdjY2EyZjU4NzY2ZWNiZWIxYThiMmUzMTIzZWFkODkxODlmM2U3Mg==
+  !binary "OTQ1ODAxODk5NmRjZWM0ZjE3YzIwMTA1Y2UzYTJhMjExYjI4ZmE2Ng==":
+    blobstore_id: ee2189b6-b38b-4b3d-ac85-177ec93c666f
+    version: 48
+    sha1: !binary |-
+      YTM5YjYwMzUyNmI0MTkwY2VkOTMxZjE0NWI5YzA1NjFmZTBhNTkxYQ==
