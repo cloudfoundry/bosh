@@ -1,12 +1,13 @@
 package alert
 
 import (
-	boshlog "bosh/logger"
-	boshsettings "bosh/settings"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
+
+	boshlog "bosh/logger"
+	boshsettings "bosh/settings"
 )
 
 type concreteBuilder struct {
