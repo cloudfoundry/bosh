@@ -4,7 +4,7 @@ module Bosh::Director
       attr_reader :destination_path
 
       def initialize
-        @destination_path = '/var/vcap/store/director/backup.tgz'
+        @destination_path = "#{Config.base_dir}/backup.tgz"
       end
 
       def create_backup(username)

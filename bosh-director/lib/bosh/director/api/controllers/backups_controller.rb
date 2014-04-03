@@ -8,7 +8,7 @@ module Bosh::Director
       end
 
       get '/backups' do
-        send_file @backup_manager.destination_path
+        send_file(@backup_manager.destination_path)
       end
     end
   end

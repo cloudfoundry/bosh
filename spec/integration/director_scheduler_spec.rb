@@ -1,11 +1,20 @@
 require 'spec_helper'
+require 'archive/tar/minitar'
+require 'zlib'
 
 describe 'director_scheduler', type: :integration do
   with_reset_sandbox_before_each
 
+  def self.pending_for_travis_mysql!
+    before do
+      if ENV['TRAVIS'] && ENV['DB'] == 'mysql'
+        pending 'Travis does not currently support mysqldump'
+      end
+    end
+  end
+
   before do
     target_and_login
-
     run_bosh('reset release', work_dir: TEST_RELEASE_DIR)
     run_bosh('create release --force', work_dir: TEST_RELEASE_DIR)
     run_bosh('upload release', work_dir: TEST_RELEASE_DIR)
@@ -18,42 +27,71 @@ describe 'director_scheduler', type: :integration do
     run_bosh('deploy')
   end
 
-  before { current_sandbox.scheduler_process.start }
-  after { current_sandbox.scheduler_process.stop }
+  describe 'scheduled disk snapshots' do
+    before { current_sandbox.scheduler_process.start }
+    after { current_sandbox.scheduler_process.stop }
 
-  def snapshots
-    Dir[File.join(current_sandbox.agent_tmp_path, 'snapshots', '*')]
+    it 'snapshots a disk on a defined schedule' do
+      30.times do
+        break unless snapshots.empty?
+        sleep 1
+      end
+
+      keys = %w[deployment job index director_name director_uuid agent_id instance_id]
+      snapshots.each do |snapshot|
+        json = JSON.parse(File.read(snapshot))
+        expect(json.keys - keys).to be_empty
+      end
+
+      expect(snapshots).to_not be_empty
+    end
+
+    def snapshots
+      Dir[File.join(current_sandbox.agent_tmp_path, 'snapshots', '*')]
+    end
   end
 
-  def backups
-    Dir[File.join(current_sandbox.sandbox_root, 'backup_destination', '*')]
+  describe 'scheduled backups' do
+    pending_for_travis_mysql!
+
+    before { current_sandbox.scheduler_process.start }
+    after { current_sandbox.scheduler_process.stop }
+
+    it 'backs up bosh on a defined schedule' do
+      30.times do
+        break unless backups.empty?
+        sleep 1
+      end
+
+      expect(backups).to_not be_empty
+    end
+
+    def backups
+      Dir[File.join(current_sandbox.sandbox_root, 'backup_destination', '*')]
+    end
   end
 
-  it 'snapshots a disk on a defined schedule' do
-    30.times do
-      break unless snapshots.empty?
-      sleep 1
+  describe 'manual backup' do
+    pending_for_travis_mysql!
+
+    after { FileUtils.rm_f(tmp_dir) }
+    let(:tmp_dir) { Dir.mktmpdir('manual-backup') }
+
+    it 'backs up director logs, task logs, and database dump' do
+      expect(run_bosh('backup backup.tgz', work_dir: tmp_dir)).to match(/Backup of BOSH director was put in/i)
+
+      files = tar_contents("#{tmp_dir}/backup.tgz")
+      files.each { |f| expect(f.size).to be > 0 }
+      expect(files.map(&:name)).to match_array(%w(logs.tgz task_logs.tgz director_db.sql blobs.tgz))
     end
 
-    keys = %w[deployment job index director_name director_uuid agent_id instance_id]
-    snapshots.each do |snapshot|
-      json = JSON.parse(File.read(snapshot))
-      expect(json.keys - keys).to be_empty
+    def tar_contents(tar_path)
+      tar_entries = []
+      tar_reader = Zlib::GzipReader.open(tar_path)
+      Archive::Tar::Minitar.open(tar_reader).each do |entry|
+        tar_entries << entry if entry.file?
+      end
+      tar_entries
     end
-
-    expect(snapshots).to_not be_empty
-  end
-
-  it 'backs up bosh on a defined schedule' do
-    if ENV['TRAVIS'] && ENV['DB'] == 'mysql'
-      pending 'Travis does not currently support mysqldump'
-    end
-
-    30.times do
-      break unless backups.empty?
-      sleep 1
-    end
-
-    expect(backups).to_not be_empty
   end
 end

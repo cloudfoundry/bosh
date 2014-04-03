@@ -2,22 +2,25 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Api::BackupManager do
-    let(:username) { 'username-1' }
-    let(:backup_manager) { described_class.new }
+    subject(:backup_manager) { described_class.new }
 
     describe '#create_bosh_backup' do
-      let(:task) { double('fake task') }
+      before { allow(JobQueue).to receive(:new).with(no_args).and_return(job_queue) }
       let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
 
-      before do
-        JobQueue.stub(:new).and_return(job_queue)
-      end
+      before { allow(Config).to receive(:base_dir).and_return('fake-base-dir') }
 
       it 'enqueues a task to create a backup of BOSH' do
-        job_queue.should_receive(:enqueue).with(
-          username, Jobs::Backup, 'bosh backup', ['/var/vcap/store/director/backup.tgz']).and_return(task)
+        task = instance_double('Bosh::Director::Models::Task')
 
-        expect(backup_manager.create_backup(username)).to eq(task)
+        expect(job_queue).to receive(:enqueue).with(
+          'username-1',
+          Jobs::Backup,
+          'bosh backup',
+          ['fake-base-dir/backup.tgz'],
+        ).and_return(task)
+
+        expect(backup_manager.create_backup('username-1')).to eq(task)
       end
     end
   end

@@ -4,6 +4,7 @@ port: <%= director_port %>
 mbus: nats://localhost:<%= nats_port %>
 logging:
   level: DEBUG
+  file: <%= logs_path %>/director.log
 redis:
   host: 127.0.0.1
   port: <%= redis_port %>
