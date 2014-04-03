@@ -32,6 +32,10 @@ describe 'network configuration' do
     end
 
     it 'resolves instance names from deployed VM' do
+      # Temporarily add to debug why dig is returning 'connection timed out'
+      resolv_conf = ssh(static_ip, 'vcap', 'cat /etc/resolv.conf', ssh_options)
+      @logger.info("Contents of resolv.conf '#{resolv_conf}'")
+
       cmd = 'dig +short 0.batlight.static.bat.bosh a 0.batlight.static.bat.microbosh a'
       ssh(static_ip, 'vcap', cmd, ssh_options).should include(static_ip)
     end

@@ -55,7 +55,7 @@ module Bat
     def ssh(host, user, command, options = {})
       options = options.dup
       output = nil
-      puts "--> ssh: #{user}@#{host} '#{command}'"
+      @logger.info("--> ssh: #{user}@#{host} '#{command}'")
 
       private_key = options.delete(:private_key)
       options[:user_known_hosts_file] = %w[/dev/null]
@@ -71,7 +71,7 @@ module Bat
         output = ssh.exec!(command)
       end
 
-      puts "--> ssh output: '#{output}'"
+      @logger.info("--> ssh output: '#{output}'")
       output
     end
 
