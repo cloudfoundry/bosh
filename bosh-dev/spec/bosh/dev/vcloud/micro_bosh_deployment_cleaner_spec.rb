@@ -20,7 +20,10 @@ module Bosh::Dev::VCloud
 
       before { client.stub(:find_vdc_by_name).with('fake-vdc').and_return(vdc) }
       let(:vdc) { instance_double('VCloudSdk::VDC', find_vapp_by_name: vapp) }
-      let(:vapp) { instance_double('VCloudSdk::VApp', power_off: nil, delete: nil) }
+      let(:vapp) { instance_double('VCloudSdk::VApp', power_off: nil, delete: nil, vms: []) }
+      let(:vm1) { instance_double('VCloudSdk::VM') }
+      let(:vm2) { instance_double('VCloudSdk::VM') }
+      let(:disk) { instance_double('VCloudSdk::Disk') }
       let(:catalog) { instance_double('VCloudSdk::Catalog') }
 
       before { manifest.stub(:to_h).and_return(config) }
@@ -44,10 +47,15 @@ module Bosh::Dev::VCloud
       let(:logger) { instance_double('Logger', info: nil) }
 
       context 'when vapp exists' do
-        it 'powers off and deletes the vapp' do
+        it 'powers off vapp, deletes independent disks and deletes the vapp' do
           vdc.should_receive(:find_vapp_by_name).with('vapp-name').and_return(vapp)
 
           vapp.should_receive(:power_off).once.ordered
+          vapp.should_receive(:vms).once.ordered.and_return([vm1, vm2])
+          vm1.should_receive(:independent_disks).once.ordered.and_return([disk])
+          vm1.should_receive(:detach_disk).with(disk).once.ordered
+          disk.should_receive(:delete).once.ordered
+          vm2.should_receive(:independent_disks).once.ordered.and_return([])
           vapp.should_receive(:delete).once.ordered
 
           subject.clean
