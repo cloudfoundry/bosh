@@ -43,6 +43,7 @@ module Bosh::Dev::VSphere
                           'persistent_datastore_pattern' =>
                             env['BOSH_VSPHERE_VCENTER_UBOSH_DATASTORE_PATTERN'],
                           'allow_mixed_datastores' => true,
+                          'srm' => env['BOSH_VSPHERE_VCENTER_SRM'].nil? ? false : env['BOSH_VSPHERE_VCENTER_SRM'] == "true",
                           'clusters' =>
                             [{ env['BOSH_VSPHERE_VCENTER_CLUSTER'] =>
                                  { 'resource_pool' =>
@@ -63,6 +64,7 @@ module Bosh::Dev::VSphere
                          'persistent_datastore_pattern' =>
                            env['BOSH_VSPHERE_VCENTER_DATASTORE_PATTERN'],
                          'allow_mixed_datastores' => true,
+                         'srm' => env['BOSH_VSPHERE_VCENTER_SRM'].nil? ? false : env['BOSH_VSPHERE_VCENTER_SRM'] == "true",
                          'clusters' =>
                            [{ env['BOSH_VSPHERE_VCENTER_CLUSTER'] =>
                                 { 'resource_pool' =>

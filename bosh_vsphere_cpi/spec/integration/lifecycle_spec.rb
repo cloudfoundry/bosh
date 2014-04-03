@@ -10,12 +10,30 @@ describe VSphereCloud::Cloud do
     @password      = ENV['BOSH_VSPHERE_CPI_PASSWORD'] || raise("Missing BOSH_VSPHERE_CPI_PASSWORD")
     @vlan          = ENV['BOSH_VSPHERE_VLAN']         || raise("Missing BOSH_VSPHERE_VLAN")
     @stemcell_path = ENV['BOSH_VSPHERE_STEMCELL']     || raise("Missing BOSH_VSPHERE_STEMCELL")
+    @ntp           = ENV['BOSH_VSPHERE_NTP_SERVER']   || "10.80.0.44"
+    @vcenter       = ENV['BOSH_VSPHERE_VCENTER_DC']   || "BOSH_DC"
+    @datastore_pattern = ENV['BOSH_VSPHERE_VCENTER_DATASTORE_PATTERN'] || "jalapeno"
+    @srm           = ENV['BOSH_VSPHERE_VCENTER_SRM'].nil? ? false : ENV['BOSH_VSPHERE_VCENTER_SRM'] == "true"
+    @ip            = ENV['BOSH_VSPHERE_MICROBOSH_IP'] || "169.254.1.1"
+    @netmask       = ENV['BOSH_VSPHERE_NETMASK'] || "255.255.254.0"
+    @gateway       = ENV['BOSH_VSPHERE_GATEWAY'] || "169.254.1.3"
+    @dns           = ENV['BOSH_VSPHERE_DNS'] || "169.254.1.2"
+    @clusters = [{
+                   "BOSH_CL" => { "resource_pool" => "ACCEPTANCE_RP" },
+                 },
+                 { "BOSH_CL2" => { "resource_pool" => "ACCEPTANCE_RP" }
+                 }]
+    if ENV['BOSH_VSPHERE_VCENTER_CLUSTER']
+      @clusters = [{ ENV['BOSH_VSPHERE_VCENTER_CLUSTER'] =>
+                       { 'resource_pool' =>
+                           ENV['BOSH_VSPHERE_VCENTER_RESOURCE_POOL'] } }]
+    end
   end
 
   before(:all) do
     @cpi = described_class.new(
       "agent" => {
-        "ntp" => ["10.80.0.44"],
+        "ntp" => [@ntp],
       },
       "vcenters" => [{
         "host" => @host,
@@ -29,12 +47,8 @@ describe VSphereCloud::Cloud do
           "datastore_pattern" => "jalapeno",
           "persistent_datastore_pattern" => "jalapeno",
           "allow_mixed_datastores" => true,
-          "clusters" => [{
-              "BOSH_CL" => { "resource_pool" => "ACCEPTANCE_RP" },
-            },
-            {
-              "BOSH_CL2" => { "resource_pool" => "ACCEPTANCE_RP" }
-            }],
+          "srm" => @srm,
+          "clusters" => @clusters,
         }]
       }]
     )
@@ -105,12 +119,12 @@ describe VSphereCloud::Cloud do
     let(:network_spec) do
       {
         "static" => {
-          "ip" => "169.254.1.1", #172.16.69.102",
-          "netmask" => "255.255.254.0",
+          "ip" => @ip, #172.16.69.102",
+          "netmask" => @netmask,
           "cloud_properties" => {"name" => @vlan},
           "default" => ["dns", "gateway"],
-          "dns" => ["169.254.1.2"],  #["172.16.69.100"],
-          "gateway" => "169.254.1.3" #"172.16.68.1"
+          "dns" => [@dns],  #["172.16.69.100"],
+          "gateway" => @gateway #"172.16.68.1"
         }
       }
     end
@@ -131,10 +145,13 @@ describe VSphereCloud::Cloud do
 
     context 'without existing disks and placer' do
       it 'should exercise the vm lifecycle and select the cluster in the resource pool datacenters' do
-        clusters = [{ "BOSH_CL" => {}, }, { "BOSH_CL2" => {} }]
+        clusters = @clusters.dup
+        clusters.each do |c|
+          c.each_key { |k| c[k] = {} }
+        end
 
         clusters.each do |cluster|
-          resource_pool['datacenters'] = [{ 'name' => 'BOSH_DC', 'clusters' => [cluster]}]
+          resource_pool['datacenters'] = [{ 'name' => @vcenter, 'clusters' => [cluster]}]
           vm_lifecycle(network_spec, [], resource_pool)
 
           vm = cpi.get_vm_by_cid(@vm_id)
