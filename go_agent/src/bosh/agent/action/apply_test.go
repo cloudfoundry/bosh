@@ -13,87 +13,82 @@ import (
 	boshassert "bosh/assert"
 )
 
-func buildApplyAction() (*fakeappl.FakeApplier, *fakeas.FakeV1Service, ApplyAction) {
-	applier := fakeappl.NewFakeApplier()
-	specService := fakeas.NewFakeV1Service()
-	action := NewApply(applier, specService)
-	return applier, specService, action
-}
 func init() {
-	Describe("Testing with Ginkgo", func() {
+	Describe("concreteApplier", func() {
+		var (
+			applier     *fakeappl.FakeApplier
+			specService *fakeas.FakeV1Service
+			action      ApplyAction
+		)
+
+		BeforeEach(func() {
+			applier = fakeappl.NewFakeApplier()
+			specService = fakeas.NewFakeV1Service()
+			action = NewApply(applier, specService)
+		})
+
 		It("apply should be asynchronous", func() {
-			_, _, action := buildApplyAction()
 			Expect(action.IsAsynchronous()).To(BeTrue())
 		})
 
 		It("is not persistent", func() {
-			_, _, action := buildApplyAction()
 			Expect(action.IsPersistent()).To(BeFalse())
 		})
 
-		It("apply returns applied", func() {
-			_, _, action := buildApplyAction()
+		Describe("Run", func() {
+			It("apply returns applied", func() {
+				applySpec := boshas.V1ApplySpec{
+					ConfigurationHash: "fake-config-hash",
+				}
 
-			applySpec := boshas.V1ApplySpec{
-				ConfigurationHash: "fake-config-hash",
-			}
+				value, err := action.Run(applySpec)
+				Expect(err).ToNot(HaveOccurred())
+				boshassert.MatchesJsonString(GinkgoT(), value, `"applied"`)
+			})
 
-			value, err := action.Run(applySpec)
-			Expect(err).ToNot(HaveOccurred())
+			It("saves the first argument to spec json", func() {
+				applySpec := boshas.V1ApplySpec{
+					ConfigurationHash: "fake-config-hash",
+				}
 
-			boshassert.MatchesJsonString(GinkgoT(), value, `"applied"`)
-		})
+				_, err := action.Run(applySpec)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(specService.Spec).To(Equal(applySpec))
+			})
 
-		It("apply run saves the first argument to spec json", func() {
-			_, specService, action := buildApplyAction()
+			It("skips applier when apply spec does not have configuration hash", func() {
+				applySpec := boshas.V1ApplySpec{
+					JobSpec: boshas.JobSpec{
+						Template: "fake-job-template",
+					},
+				}
 
-			applySpec := boshas.V1ApplySpec{
-				ConfigurationHash: "fake-config-hash",
-			}
+				_, err := action.Run(applySpec)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(applier.Applied).To(BeFalse())
+			})
 
-			_, err := action.Run(applySpec)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(applySpec).To(Equal(specService.Spec))
-		})
+			It("runs applier with apply spec when apply spec has configuration hash", func() {
+				expectedApplySpec := boshas.V1ApplySpec{
+					JobSpec: boshas.JobSpec{
+						Template: "fake-job-template",
+					},
+					ConfigurationHash: "fake-config-hash",
+				}
 
-		It("apply run skips applier when apply spec does not have configuration hash", func() {
-			applier, _, action := buildApplyAction()
+				_, err := action.Run(expectedApplySpec)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(applier.Applied).To(BeTrue())
+				Expect(applier.ApplyApplySpec).To(Equal(expectedApplySpec))
+			})
 
-			applySpec := boshas.V1ApplySpec{
-				JobSpec: boshas.JobSpec{
-					Template: "fake-job-template",
-				},
-			}
+			It("errs when applier fails", func() {
+				applier.ApplyError = errors.New("fake-apply-error")
 
-			_, err := action.Run(applySpec)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(applier.Applied).To(BeFalse())
-		})
-
-		It("apply run runs applier with apply spec when apply spec has configuration hash", func() {
-			applier, _, action := buildApplyAction()
-
-			expectedApplySpec := boshas.V1ApplySpec{
-				JobSpec: boshas.JobSpec{
-					Template: "fake-job-template",
-				},
-				ConfigurationHash: "fake-config-hash",
-			}
-
-			_, err := action.Run(expectedApplySpec)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(applier.Applied).To(BeTrue())
-			Expect(expectedApplySpec).To(Equal(applier.ApplyApplySpec))
-		})
-
-		It("apply run errs when applier fails", func() {
-			applier, _, action := buildApplyAction()
-
-			applier.ApplyError = errors.New("fake-apply-error")
-
-			_, err := action.Run(boshas.V1ApplySpec{ConfigurationHash: "fake-config-hash"})
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-apply-error"))
+				_, err := action.Run(boshas.V1ApplySpec{ConfigurationHash: "fake-config-hash"})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-apply-error"))
+			})
 		})
 	})
 }

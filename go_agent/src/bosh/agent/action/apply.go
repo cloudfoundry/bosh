@@ -27,22 +27,20 @@ func (a ApplyAction) IsPersistent() bool {
 	return false
 }
 
-func (a ApplyAction) Run(applySpec boshas.V1ApplySpec) (value interface{}, err error) {
+func (a ApplyAction) Run(applySpec boshas.V1ApplySpec) (interface{}, error) {
 	if applySpec.ConfigurationHash != "" {
-		err = a.applier.Apply(applySpec)
+		err := a.applier.Apply(applySpec)
 		if err != nil {
-			err = bosherr.WrapError(err, "Applying")
-			return
+			return "", bosherr.WrapError(err, "Applying")
 		}
 	}
 
-	err = a.specService.Set(applySpec)
+	err := a.specService.Set(applySpec)
 	if err != nil {
-		err = bosherr.WrapError(err, "Persisting apply spec")
-		return
+		return "", bosherr.WrapError(err, "Persisting apply spec")
 	}
-	value = "applied"
-	return
+
+	return "applied", nil
 }
 
 func (a ApplyAction) Resume() (interface{}, error) {
