@@ -27,6 +27,7 @@ func (self FileBundleCollection) Get(definition BundleDefinition) (bundle Bundle
 		err = bosherr.New("missing bundle name")
 		return
 	}
+
 	if len(definition.BundleVersion()) == 0 {
 		err = bosherr.New("missing bundle version")
 		return

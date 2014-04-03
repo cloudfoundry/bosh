@@ -1,10 +1,11 @@
 package bundlecollection_test
 
 import (
-	. "bosh/agent/applier/bundlecollection"
-	fakesys "bosh/system/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	. "bosh/agent/applier/bundlecollection"
+	fakesys "bosh/system/fakes"
 )
 
 type testBundle struct {
@@ -26,11 +27,15 @@ var _ = Describe("FileBundleCollection", func() {
 	})
 
 	JustBeforeEach(func() {
-		fileBundleCollection = NewFileBundleCollection("/fake-collection-path/data", "/fake-collection-path", "fake-collection-name", fs)
-
+		fileBundleCollection = NewFileBundleCollection(
+			"/fake-collection-path/data",
+			"/fake-collection-path",
+			"fake-collection-name",
+			fs,
+		)
 	})
 
-	Describe("#Get", func() {
+	Describe("Get", func() {
 		It("returns the file bundle", func() {
 			bundleDefinition := testBundle{
 				Name:    "bundle-name",
@@ -48,8 +53,9 @@ var _ = Describe("FileBundleCollection", func() {
 
 			Expect(fileBundle).To(Equal(expectedBundle))
 		})
+
 		Context("when definition is missing name", func() {
-			It("errors", func() {
+			It("returns error", func() {
 				bundleDefinition := testBundle{
 					Version: "bundle-version",
 				}
@@ -61,7 +67,7 @@ var _ = Describe("FileBundleCollection", func() {
 		})
 
 		Context("when definition is missing version", func() {
-			It("errors", func() {
+			It("returns error", func() {
 				bundleDefinition := testBundle{
 					Name: "bundle-name",
 				}

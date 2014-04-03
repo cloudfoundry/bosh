@@ -1,12 +1,14 @@
 package bundlecollection_test
 
 import (
-	. "bosh/agent/applier/bundlecollection"
-	fakesys "bosh/system/fakes"
+	"os"
 	"errors"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"os"
+
+	. "bosh/agent/applier/bundlecollection"
+	fakesys "bosh/system/fakes"
 )
 
 var _ = Describe("FileBundle", func() {
@@ -27,7 +29,7 @@ var _ = Describe("FileBundle", func() {
 		fileBundle = NewFileBundle(installPath, enablePath, fs)
 	})
 
-	Describe("#Install", func() {
+	Describe("Install", func() {
 		It("Installs the bundle at the given path with the correct permissions", func() {
 			actualFs, path, err := fileBundle.Install()
 
@@ -69,7 +71,7 @@ var _ = Describe("FileBundle", func() {
 		})
 	})
 
-	Describe("#Enable", func() {
+	Describe("Enable", func() {
 		Context("when bundle is install", func() {
 			It("returns the enable path", func() {
 				_, _, err := fileBundle.Install()
@@ -133,7 +135,7 @@ var _ = Describe("FileBundle", func() {
 		})
 	})
 
-	Describe("#Disable", func() {
+	Describe("Disable", func() {
 		It("removes the symlink", func() {
 			_, _, err := fileBundle.Install()
 			Expect(err).NotTo(HaveOccurred())
@@ -177,7 +179,7 @@ var _ = Describe("FileBundle", func() {
 		})
 	})
 
-	Describe("#Uninstall", func() {
+	Describe("Uninstall", func() {
 		It("removes the files from disk", func() {
 			_, _, err := fileBundle.Install()
 			Expect(err).NotTo(HaveOccurred())
