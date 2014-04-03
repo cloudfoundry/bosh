@@ -108,20 +108,21 @@ describe 'cli: 1', type: :integration do
     expect(run_bosh('properties', failure_expected: true)).to match(/please log in first/i)
   end
 
-  it 'creates a user when correct target accessed' do
+  it 'can log in as a user, create another user and delete created user' do
     run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh('login admin admin')
-    expect(run_bosh('create user john pass')).to match(/user `john' has been created/i)
-  end
+    expect(run_bosh('create user john john-pass')).to match(/User `john' has been created/i)
 
-  it 'can log in as a freshly created user and issue commands' do
-    run_bosh("target http://localhost:#{current_sandbox.director_port}")
-    run_bosh('login admin admin')
-    run_bosh('create user jane pass')
-    run_bosh('login jane pass')
+    expect(run_bosh('login john john-pass')).to match(/Logged in as `john'/i)
+    expect(run_bosh('create user jane jane-pass')).to match(/user `jane' has been created/i)
+    run_bosh('logout')
 
-    success = /User `tester' has been created/i
-    expect(run_bosh('create user tester testpass')).to match(success)
+    expect(run_bosh('login jane jane-pass')).to match(/Logged in as `jane'/i)
+    expect(run_bosh('delete user john')).to match(/User `john' has been deleted/i)
+    run_bosh('logout')
+
+    expect(run_bosh('login john john-pass', failure_expected: true)).to match(/Cannot log in as `john'/i)
+    expect(run_bosh('login jane jane-pass')).to match(/Logged in as `jane'/i)
   end
 
   it 'cannot log in if password is invalid' do
