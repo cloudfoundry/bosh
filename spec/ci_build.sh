@@ -21,4 +21,5 @@ bundle install --local --clean --path "/tmp/$JOB_NAME/"
 
 echo "--- Starting rspec @ `date` ---"
 
-bundle exec rake --trace ci:setup:rspec "$@"
+# ci_reporter appends to SPEC_OPTS env variable to reconfigure rspec format
+bundle exec rake --trace ci:setup:rspecdoc "$@"
