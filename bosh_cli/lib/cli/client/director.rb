@@ -245,6 +245,11 @@ module Bosh
           request_and_track(:post, add_query_string(url, extras), options)
         end
 
+        def untaint(deployment_name)
+          url = "/deployments/#{deployment_name}/untaint"
+          request_and_track(:put, url, {})
+        end
+
         def setup_ssh(deployment_name, job, index, user,
           public_key, password, options = {})
           options = options.dup
