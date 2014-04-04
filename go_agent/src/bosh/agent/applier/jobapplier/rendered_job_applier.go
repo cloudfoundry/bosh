@@ -1,16 +1,17 @@
 package jobapplier
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	bc "bosh/agent/applier/bundlecollection"
 	models "bosh/agent/applier/models"
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
 	boshjobsuper "bosh/jobsupervisor"
 	boshcmd "bosh/platform/commands"
-	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 type renderedJobApplier struct {
