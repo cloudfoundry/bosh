@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/assert"
 
+	boshbc "bosh/agent/applier/bundlecollection"
 	fakebc "bosh/agent/applier/bundlecollection/fakes"
 	. "bosh/agent/applier/jobapplier"
 	models "bosh/agent/applier/models"
@@ -15,7 +16,23 @@ import (
 	fakejobsuper "bosh/jobsupervisor/fakes"
 	fakecmd "bosh/platform/commands/fakes"
 	fakesys "bosh/system/fakes"
+	boshuuid "bosh/uuid"
 )
+
+func buildJob(bc *fakebc.FakeBundleCollection) (models.Job, *fakebc.FakeBundle) {
+	uuidGen := boshuuid.NewGenerator()
+	uuid, err := uuidGen.Generate()
+	Expect(err).ToNot(HaveOccurred())
+
+	job := models.Job{
+		Name:    "fake-job-name" + uuid,
+		Version: "fake-job-version",
+	}
+
+	bundle := bc.FakeGet(job)
+
+	return job, bundle
+}
 
 func init() {
 	Describe("renderedJobApplier", func() {
@@ -42,11 +59,7 @@ func init() {
 			)
 
 			BeforeEach(func() {
-				job = models.Job{
-					Name:    "fake-job-name",
-					Version: "fake-job-version",
-				}
-				bundle = jobsBc.FakeGet(job)
+				job, bundle = buildJob(jobsBc)
 			})
 
 			It("installs and enables job", func() {
@@ -225,20 +238,9 @@ func init() {
 		})
 
 		Describe("Configure", func() {
-			var (
-				job    models.Job
-				bundle *fakebc.FakeBundle
-			)
+			It("adds job to the job supervisor", func() {
+				job, bundle := buildJob(jobsBc)
 
-			BeforeEach(func() {
-				job = models.Job{
-					Name:    "fake-job-name",
-					Version: "fake-job-version",
-				}
-				bundle = jobsBc.FakeGet(job)
-			})
-
-			It("configure", func() {
 				fs := fakesys.NewFakeFileSystem()
 				fs.WriteFileString("/path/to/job/monit", "some conf")
 				fs.SetGlob("/path/to/job/*.monit", []string{"/path/to/job/subjob.monit"})
@@ -264,6 +266,66 @@ func init() {
 				}
 				Expect(firstArgs).To(Equal(jobSupervisor.AddJobArgs[0]))
 				Expect(secondArgs).To(Equal(jobSupervisor.AddJobArgs[1]))
+			})
+		})
+
+		Describe("KeepOnly", func() {
+			It("first disables and then uninstalls jobs that are not in keeponly list", func() {
+				_, bundle1 := buildJob(jobsBc)
+				job2, bundle2 := buildJob(jobsBc)
+				_, bundle3 := buildJob(jobsBc)
+				job4, bundle4 := buildJob(jobsBc)
+
+				jobsBc.ListBundles = []boshbc.Bundle{bundle1, bundle2, bundle3, bundle4}
+
+				err := applier.KeepOnly([]models.Job{job4, job2})
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(bundle1.ActionsCalled).To(Equal([]string{"Disable", "Uninstall"}))
+				Expect(bundle2.ActionsCalled).To(Equal([]string{}))
+				Expect(bundle3.ActionsCalled).To(Equal([]string{"Disable", "Uninstall"}))
+				Expect(bundle4.ActionsCalled).To(Equal([]string{}))
+			})
+
+			It("returns error when bundle collection fails to return list of installed bundles", func() {
+				jobsBc.ListErr = errors.New("fake-bc-list-error")
+
+				err := applier.KeepOnly([]models.Job{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-bc-list-error"))
+			})
+
+			It("returns error when bundle collection cannot retrieve bundle for keep-only job", func() {
+				job1, bundle1 := buildJob(jobsBc)
+
+				jobsBc.ListBundles = []boshbc.Bundle{bundle1}
+				jobsBc.GetErr = errors.New("fake-bc-get-error")
+
+				err := applier.KeepOnly([]models.Job{job1})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-bc-get-error"))
+			})
+
+			It("returns error when at least one bundle cannot be disabled", func() {
+				_, bundle1 := buildJob(jobsBc)
+
+				jobsBc.ListBundles = []boshbc.Bundle{bundle1}
+				bundle1.DisableErr = errors.New("fake-bc-disable-error")
+
+				err := applier.KeepOnly([]models.Job{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-bc-disable-error"))
+			})
+
+			It("returns error when at least one bundle cannot be uninstalled", func() {
+				_, bundle1 := buildJob(jobsBc)
+
+				jobsBc.ListBundles = []boshbc.Bundle{bundle1}
+				bundle1.UninstallErr = errors.New("fake-bc-uninstall-error")
+
+				err := applier.KeepOnly([]models.Job{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-bc-uninstall-error"))
 			})
 		})
 	})

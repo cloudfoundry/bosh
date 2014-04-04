@@ -139,5 +139,41 @@ func (s *renderedJobApplier) Configure(job models.Job, jobIndex int) (err error)
 }
 
 func (s *renderedJobApplier) KeepOnly(jobs []models.Job) error {
+	installedBundles, err := s.jobsBc.List()
+	if err != nil {
+		return bosherr.WrapError(err, "Retrieving installed bundles")
+	}
+
+	for _, installedBundle := range installedBundles {
+		var shouldKeep bool
+
+		for _, job := range jobs {
+			jobBundle, err := s.jobsBc.Get(job)
+			if err != nil {
+				return bosherr.WrapError(err, "Getting job bundle")
+			}
+
+			if jobBundle == installedBundle {
+				shouldKeep = true
+				break
+			}
+		}
+
+		if !shouldKeep {
+			err = installedBundle.Disable()
+			if err != nil {
+				return bosherr.WrapError(err, "Disabling job bundle")
+			}
+
+			// If we uninstall the bundle first, and the disable failed (leaving the symlink),
+			// then the next time bundle collection will not include bundle in its list
+			// which means that symlink will never be deleted.
+			err = installedBundle.Uninstall()
+			if err != nil {
+				return bosherr.WrapError(err, "Uninstalling job bundle")
+			}
+		}
+	}
+
 	return nil
 }

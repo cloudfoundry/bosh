@@ -14,11 +14,16 @@ type FakeBundle struct {
 	GetDirFs    boshsys.FileSystem
 	GetDirError error
 
-	EnablePath    string
-	EnableFs      boshsys.FileSystem
-	EnableError   error
-	Enabled       bool
 	ActionsCalled []string
+
+	EnablePath  string
+	EnableFs    boshsys.FileSystem
+	EnableError error
+	Enabled     bool
+
+	DisableErr error
+
+	UninstallErr error
 }
 
 func NewFakeBundle() (bundle *FakeBundle) {
@@ -61,14 +66,12 @@ func (s *FakeBundle) Enable() (fs boshsys.FileSystem, path string, err error) {
 	return
 }
 
-func (s *FakeBundle) Disable() (err error) {
+func (s *FakeBundle) Disable() error {
 	s.ActionsCalled = append(s.ActionsCalled, "Disable")
-
-	return
+	return s.DisableErr
 }
 
-func (s *FakeBundle) Uninstall() (err error) {
+func (s *FakeBundle) Uninstall() error {
 	s.ActionsCalled = append(s.ActionsCalled, "Uninstall")
-
-	return
+	return s.UninstallErr
 }

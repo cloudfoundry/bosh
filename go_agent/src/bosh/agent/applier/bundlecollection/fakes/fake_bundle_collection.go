@@ -1,12 +1,17 @@
 package fakes
 
 import (
-	bc "bosh/agent/applier/bundlecollection"
 	"errors"
+
+	bc "bosh/agent/applier/bundlecollection"
 )
 
 type FakeBundleCollection struct {
 	bundles map[BundleKey]*FakeBundle
+
+	ListBundles []bc.Bundle
+	ListErr     error
+	GetErr      error
 }
 
 type BundleKey struct {
@@ -14,12 +19,11 @@ type BundleKey struct {
 	Version string
 }
 
-func NewBundleKey(definition bc.BundleDefinition) (key BundleKey) {
-	key = BundleKey{
+func NewBundleKey(definition bc.BundleDefinition) BundleKey {
+	return BundleKey{
 		Name:    definition.BundleName(),
 		Version: definition.BundleVersion(),
 	}
-	return
 }
 
 func NewFakeBundleCollection() *FakeBundleCollection {
@@ -28,28 +32,30 @@ func NewFakeBundleCollection() *FakeBundleCollection {
 	}
 }
 
-func (s *FakeBundleCollection) Get(definition bc.BundleDefinition) (bundle bc.Bundle, err error) {
+func (s *FakeBundleCollection) Get(definition bc.BundleDefinition) (bc.Bundle, error) {
 	if len(definition.BundleName()) == 0 {
-		err = errors.New("missing bundle name")
-		return
+		return nil, errors.New("missing bundle name")
 	}
+
 	if len(definition.BundleVersion()) == 0 {
-		err = errors.New("missing bundle version")
-		return
+		return nil, errors.New("missing bundle version")
 	}
 
-	bundle = s.FakeGet(definition)
-
-	return
+	return s.FakeGet(definition), s.GetErr
 }
 
-func (s *FakeBundleCollection) FakeGet(definition bc.BundleDefinition) (bundle *FakeBundle) {
+func (s *FakeBundleCollection) FakeGet(definition bc.BundleDefinition) *FakeBundle {
 	key := NewBundleKey(definition)
+
 	bundle, found := s.bundles[key]
 	if !found {
 		bundle = NewFakeBundle()
 		s.bundles[key] = bundle
 	}
 
-	return
+	return bundle
+}
+
+func (s *FakeBundleCollection) List() ([]bc.Bundle, error) {
+	return s.ListBundles, s.ListErr
 }
