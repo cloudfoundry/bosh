@@ -11,14 +11,18 @@ import (
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
 	boshjobsuper "bosh/jobsupervisor"
+	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
 )
+
+const logTag = "renderedJobApplier"
 
 type renderedJobApplier struct {
 	jobsBc        bc.BundleCollection
 	blobstore     boshblob.Blobstore
 	compressor    boshcmd.Compressor
 	jobSupervisor boshjobsuper.JobSupervisor
+	logger        boshlog.Logger
 }
 
 func NewRenderedJobApplier(
@@ -26,16 +30,20 @@ func NewRenderedJobApplier(
 	blobstore boshblob.Blobstore,
 	compressor boshcmd.Compressor,
 	jobSupervisor boshjobsuper.JobSupervisor,
+	logger boshlog.Logger,
 ) *renderedJobApplier {
 	return &renderedJobApplier{
 		jobsBc:        jobsBc,
 		blobstore:     blobstore,
 		compressor:    compressor,
 		jobSupervisor: jobSupervisor,
+		logger:        logger,
 	}
 }
 
 func (s *renderedJobApplier) Apply(job models.Job) (err error) {
+	s.logger.Debug(logTag, "Applying job %v", job)
+
 	jobBundle, err := s.jobsBc.Get(job)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting job bundle")
@@ -97,6 +105,8 @@ func (s *renderedJobApplier) Apply(job models.Job) (err error) {
 }
 
 func (s *renderedJobApplier) Configure(job models.Job, jobIndex int) (err error) {
+	s.logger.Debug(logTag, "Configuring job %v with index %d", job, jobIndex)
+
 	jobBundle, err := s.jobsBc.Get(job)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting job bundle")
@@ -139,6 +149,8 @@ func (s *renderedJobApplier) Configure(job models.Job, jobIndex int) (err error)
 }
 
 func (s *renderedJobApplier) KeepOnly(jobs []models.Job) error {
+	s.logger.Debug(logTag, "Keeping only jobs %v", jobs)
+
 	installedBundles, err := s.jobsBc.List()
 	if err != nil {
 		return bosherr.WrapError(err, "Retrieving installed bundles")

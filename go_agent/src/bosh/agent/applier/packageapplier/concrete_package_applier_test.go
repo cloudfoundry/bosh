@@ -11,6 +11,7 @@ import (
 	models "bosh/agent/applier/models"
 	. "bosh/agent/applier/packageapplier"
 	fakeblob "bosh/blobstore/fakes"
+	boshlog "bosh/logger"
 	fakecmd "bosh/platform/commands/fakes"
 	boshuuid "bosh/uuid"
 )
@@ -43,7 +44,8 @@ func init() {
 			packagesBc = fakebc.NewFakeBundleCollection()
 			blobstore = fakeblob.NewFakeBlobstore()
 			compressor = fakecmd.NewFakeCompressor()
-			applier = NewConcretePackageApplier(packagesBc, blobstore, compressor)
+			logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+			applier = NewConcretePackageApplier(packagesBc, blobstore, compressor, logger)
 		})
 		Describe("Apply", func() {
 			var (

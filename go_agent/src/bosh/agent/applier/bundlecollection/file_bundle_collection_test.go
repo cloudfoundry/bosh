@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "bosh/agent/applier/bundlecollection"
+	boshlog "bosh/logger"
 	fakesys "bosh/system/fakes"
 )
 
@@ -21,19 +22,19 @@ func (s testBundle) BundleVersion() string { return s.Version }
 var _ = Describe("FileBundleCollection", func() {
 	var (
 		fs                   *fakesys.FakeFileSystem
+		logger               boshlog.Logger
 		fileBundleCollection FileBundleCollection
 	)
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
-	})
-
-	JustBeforeEach(func() {
+		logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
 		fileBundleCollection = NewFileBundleCollection(
 			"/fake-collection-path/data",
 			"/fake-collection-path",
 			"fake-collection-name",
 			fs,
+			logger,
 		)
 	})
 
@@ -51,6 +52,7 @@ var _ = Describe("FileBundleCollection", func() {
 				"/fake-collection-path/data/fake-collection-name/fake-bundle-name/fake-bundle-version",
 				"/fake-collection-path/fake-collection-name/fake-bundle-name",
 				fs,
+				logger,
 			)
 
 			Expect(fileBundle).To(Equal(expectedBundle))
@@ -92,16 +94,19 @@ var _ = Describe("FileBundleCollection", func() {
 					installPath+"/fake-bundle-1-name/fake-bundle-1-version-1",
 					enablePath+"/fake-bundle-1-name",
 					fs,
+					logger,
 				),
 				NewFileBundle(
 					installPath+"/fake-bundle-1-name/fake-bundle-1-version-2",
 					enablePath+"/fake-bundle-1-name",
 					fs,
+					logger,
 				),
 				NewFileBundle(
 					installPath+"/fake-bundle-2-name/fake-bundle-2-version-1",
 					enablePath+"/fake-bundle-2-name",
 					fs,
+					logger,
 				),
 			}
 

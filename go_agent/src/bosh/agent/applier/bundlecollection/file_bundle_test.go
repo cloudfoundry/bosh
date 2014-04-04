@@ -8,12 +8,14 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "bosh/agent/applier/bundlecollection"
+	boshlog "bosh/logger"
 	fakesys "bosh/system/fakes"
 )
 
 var _ = Describe("FileBundle", func() {
 	var (
 		fs          *fakesys.FakeFileSystem
+		logger      boshlog.Logger
 		installPath string
 		enablePath  string
 		fileBundle  FileBundle
@@ -23,7 +25,8 @@ var _ = Describe("FileBundle", func() {
 		fs = &fakesys.FakeFileSystem{}
 		installPath = "/install-path"
 		enablePath = "/enable-path"
-		fileBundle = NewFileBundle(installPath, enablePath, fs)
+		logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+		fileBundle = NewFileBundle(installPath, enablePath, fs, logger)
 	})
 
 	Describe("Install", func() {
@@ -177,7 +180,7 @@ var _ = Describe("FileBundle", func() {
 				_, _, err = fileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
 				newerInstallPath := "/newer-install-path"
-				newerFileBundle := NewFileBundle(newerInstallPath, enablePath, fs)
+				newerFileBundle := NewFileBundle(newerInstallPath, enablePath, fs, logger)
 
 				_, _, err = newerFileBundle.Install()
 				Expect(err).NotTo(HaveOccurred())
