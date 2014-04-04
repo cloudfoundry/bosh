@@ -60,3 +60,7 @@ func (s *concretePackageApplier) Apply(pkg models.Package) (err error) {
 
 	return
 }
+
+func (s *concretePackageApplier) KeepOnly(pkgs []models.Package) error {
+	return nil
+}

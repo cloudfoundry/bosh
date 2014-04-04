@@ -1,10 +1,15 @@
 package fakes
 
-import models "bosh/agent/applier/models"
+import (
+	models "bosh/agent/applier/models"
+)
 
 type FakePackageApplier struct {
 	AppliedPackages []models.Package
 	ApplyError      error
+
+	KeepOnlyPackages []models.Package
+	KeepOnlyErr      error
 }
 
 func NewFakePackageApplier() *FakePackageApplier {
@@ -14,10 +19,11 @@ func NewFakePackageApplier() *FakePackageApplier {
 }
 
 func (s *FakePackageApplier) Apply(pkg models.Package) error {
-	if s.ApplyError != nil {
-		return s.ApplyError
-	}
-
 	s.AppliedPackages = append(s.AppliedPackages, pkg)
-	return nil
+	return s.ApplyError
+}
+
+func (s *FakePackageApplier) KeepOnly(pkgs []models.Package) error {
+	s.KeepOnlyPackages = pkgs
+	return s.KeepOnlyErr
 }

@@ -136,3 +136,7 @@ func (s *renderedJobApplier) Configure(job models.Job, jobIndex int) (err error)
 
 	return nil
 }
+
+func (s *renderedJobApplier) KeepOnly(jobs []models.Job) error {
+	return nil
+}

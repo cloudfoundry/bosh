@@ -48,11 +48,21 @@ func (a *concreteApplier) Apply(currentApplySpec, desiredApplySpec as.ApplySpec)
 		}
 	}
 
+	err = a.jobApplier.KeepOnly(append(currentApplySpec.Jobs(), desiredApplySpec.Jobs()...))
+	if err != nil {
+		return bosherr.WrapError(err, "Keeping only needed jobs")
+	}
+
 	for _, pkg := range desiredApplySpec.Packages() {
 		err = a.packageApplier.Apply(pkg)
 		if err != nil {
 			return bosherr.WrapError(err, "Applying package %s", pkg.Name)
 		}
+	}
+
+	err = a.packageApplier.KeepOnly(append(currentApplySpec.Packages(), desiredApplySpec.Packages()...))
+	if err != nil {
+		return bosherr.WrapError(err, "Keeping only needed packages")
 	}
 
 	for i := 0; i < len(jobs); i++ {
