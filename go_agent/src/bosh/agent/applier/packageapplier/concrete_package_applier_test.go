@@ -11,108 +11,110 @@ import (
 	. "bosh/agent/applier/packageapplier"
 	fakeblob "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
+	boshuuid "bosh/uuid"
 )
 
-func buildPackageApplier() (
-	*fakebc.FakeBundleCollection,
-	*fakeblob.FakeBlobstore,
-	*fakecmd.FakeCompressor,
-	PackageApplier,
-) {
-	packagesBc := fakebc.NewFakeBundleCollection()
-	blobstore := fakeblob.NewFakeBlobstore()
-	compressor := fakecmd.NewFakeCompressor()
-	applier := NewConcretePackageApplier(packagesBc, blobstore, compressor)
-	return packagesBc, blobstore, compressor, applier
+func buildPackage(bc *fakebc.FakeBundleCollection) (models.Package, *fakebc.FakeBundle) {
+	uuidGen := boshuuid.NewGenerator()
+	uuid, err := uuidGen.Generate()
+	Expect(err).ToNot(HaveOccurred())
+
+	pkg := models.Package{
+		Name:    "fake-package-name" + uuid,
+		Version: "fake-package-name",
+	}
+
+	bundle := bc.FakeGet(pkg)
+
+	return pkg, bundle
 }
 
-func buildPackage(pkgBc *fakebc.FakeBundleCollection) (pkg models.Package, bundle *fakebc.FakeBundle) {
-	pkg = models.Package{Name: "fake-package-name", Version: "fake-package-name"}
-	bundle = pkgBc.FakeGet(pkg)
-	return
-}
 func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("apply installs and enables package", func() {
-			packagesBc, _, _, applier := buildPackageApplier()
-			pkg, bundle := buildPackage(packagesBc)
+	Describe("concretePackageApplier", func() {
+		var (
+			packagesBc *fakebc.FakeBundleCollection
+			blobstore  *fakeblob.FakeBlobstore
+			compressor *fakecmd.FakeCompressor
+			applier    PackageApplier
+		)
 
-			err := applier.Apply(pkg)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(bundle.Installed).To(BeTrue())
-			Expect(bundle.Enabled).To(BeTrue())
+		BeforeEach(func() {
+			packagesBc = fakebc.NewFakeBundleCollection()
+			blobstore = fakeblob.NewFakeBlobstore()
+			compressor = fakecmd.NewFakeCompressor()
+			applier = NewConcretePackageApplier(packagesBc, blobstore, compressor)
 		})
-		It("apply errs when package install fails", func() {
+		Describe("Apply", func() {
+			var (
+				pkg    models.Package
+				bundle *fakebc.FakeBundle
+			)
 
-			packagesBc, _, _, applier := buildPackageApplier()
-			pkg, bundle := buildPackage(packagesBc)
+			BeforeEach(func() {
+				pkg, bundle = buildPackage(packagesBc)
+			})
 
-			bundle.InstallError = errors.New("fake-install-error")
+			It("installs and enables package", func() {
+				err := applier.Apply(pkg)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(bundle.Installed).To(BeTrue())
+				Expect(bundle.Enabled).To(BeTrue())
+			})
 
-			err := applier.Apply(pkg)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-install-error"))
-		})
-		It("apply errs when package enable fails", func() {
+			It("returns error when package install fails", func() {
+				bundle.InstallError = errors.New("fake-install-error")
 
-			packagesBc, _, _, applier := buildPackageApplier()
-			pkg, bundle := buildPackage(packagesBc)
+				err := applier.Apply(pkg)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-install-error"))
+			})
 
-			bundle.EnableError = errors.New("fake-enable-error")
+			It("returns error when package enable fails", func() {
+				bundle.EnableError = errors.New("fake-enable-error")
 
-			err := applier.Apply(pkg)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-enable-error"))
-		})
-		It("apply downloads and cleans up package", func() {
+				err := applier.Apply(pkg)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-enable-error"))
+			})
 
-			packagesBc, blobstore, _, applier := buildPackageApplier()
-			pkg, _ := buildPackage(packagesBc)
-			pkg.Source.BlobstoreId = "fake-blobstore-id"
-			pkg.Source.Sha1 = "blob-sha1"
+			It("downloads and cleans up package", func() {
+				pkg.Source.BlobstoreId = "fake-blobstore-id"
+				pkg.Source.Sha1 = "blob-sha1"
 
-			blobstore.GetFileName = "/dev/null"
+				blobstore.GetFileName = "/dev/null"
 
-			err := applier.Apply(pkg)
-			Expect(err).ToNot(HaveOccurred())
-			Expect("fake-blobstore-id").To(Equal(blobstore.GetBlobIds[0]))
-			Expect("blob-sha1").To(Equal(blobstore.GetFingerprints[0]))
-			Expect(blobstore.GetFileName).To(Equal(blobstore.CleanUpFileName))
-		})
-		It("apply errs when package download errs", func() {
+				err := applier.Apply(pkg)
+				Expect(err).ToNot(HaveOccurred())
+				Expect("fake-blobstore-id").To(Equal(blobstore.GetBlobIds[0]))
+				Expect("blob-sha1").To(Equal(blobstore.GetFingerprints[0]))
+				Expect(blobstore.GetFileName).To(Equal(blobstore.CleanUpFileName))
+			})
 
-			packagesBc, blobstore, _, applier := buildPackageApplier()
-			pkg, _ := buildPackage(packagesBc)
+			It("returns error when package download errs", func() {
+				blobstore.GetError = errors.New("fake-get-error")
 
-			blobstore.GetError = errors.New("fake-get-error")
+				err := applier.Apply(pkg)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-get-error"))
+			})
 
-			err := applier.Apply(pkg)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-get-error"))
-		})
-		It("apply decompresses package to install path", func() {
+			It("decompresses package to install path", func() {
+				bundle.InstallPath = "fake-install-path"
+				blobstore.GetFileName = "/dev/null"
 
-			packagesBc, blobstore, compressor, applier := buildPackageApplier()
-			pkg, bundle := buildPackage(packagesBc)
+				err := applier.Apply(pkg)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(blobstore.GetFileName).To(Equal(compressor.DecompressFileToDirTarballPaths[0]))
+				Expect("fake-install-path").To(Equal(compressor.DecompressFileToDirDirs[0]))
+			})
 
-			bundle.InstallPath = "fake-install-path"
-			blobstore.GetFileName = "/dev/null"
+			It("return error when package decompress errs", func() {
+				compressor.DecompressFileToDirError = errors.New("fake-decompress-error")
 
-			err := applier.Apply(pkg)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(blobstore.GetFileName).To(Equal(compressor.DecompressFileToDirTarballPaths[0]))
-			Expect("fake-install-path").To(Equal(compressor.DecompressFileToDirDirs[0]))
-		})
-		It("apply errs when package decompress errs", func() {
-
-			packagesBc, _, compressor, applier := buildPackageApplier()
-			pkg, _ := buildPackage(packagesBc)
-
-			compressor.DecompressFileToDirError = errors.New("fake-decompress-error")
-
-			err := applier.Apply(pkg)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-decompress-error"))
+				err := applier.Apply(pkg)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-decompress-error"))
+			})
 		})
 	})
 }
