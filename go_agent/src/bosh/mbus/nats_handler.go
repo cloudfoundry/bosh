@@ -62,7 +62,9 @@ func (h natsHandler) Start(handlerFunc boshhandler.HandlerFunc) (err error) {
 			return
 		}
 
-		h.client.Publish(req.ReplyTo, respBytes)
+		if len(respBytes) > 0 {
+			h.client.Publish(req.ReplyTo, respBytes)
+		}
 	})
 
 	return

@@ -112,10 +112,10 @@ module IntegrationExampleGroup
     output
   end
 
-  def wait_for_vm(name, timeout_seconds = 300)
+  def wait_for_vm(instance_name, timeout_seconds = 300)
     start_time = Time.now
     loop do
-      vm = get_vms.detect { |v| v[:job_index] == name }
+      vm = get_job_vm(instance_name)
       return vm if vm
 
       break if Time.now - start_time >= timeout_seconds
@@ -125,10 +125,27 @@ module IntegrationExampleGroup
     nil
   end
 
-  def kill_job_agent(name)
-    vm = get_vms.detect { |v| v[:job_index] == name }
+  def kill_job_agent(instance_name)
+    vm = get_job_vm(instance_name)
     Process.kill('INT', vm[:cid].to_i)
     vm[:cid]
+  end
+
+  def get_job_vm(instance_name)
+    get_vms.detect { |v| v[:job_index] == instance_name }
+  end
+
+  def set_agent_job_state(agent_id, state)
+    NATS.start(uri: "nats://localhost:#{current_sandbox.nats_port}") do
+      NATS.publish("agent.#{agent_id}",
+        Yajl::Encoder.encode(
+          method: 'set_dummy_status',
+          status: state,
+          reply_to: 'integration.tests',
+        )) do
+        NATS.stop
+      end
+    end
   end
 end
 

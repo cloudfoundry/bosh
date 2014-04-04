@@ -3,11 +3,11 @@ package mbus_test
 import (
 	"encoding/json"
 
-	"github.com/cloudfoundry/yagnats"
-	"github.com/cloudfoundry/yagnats/fakeyagnats"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
+
+	"github.com/cloudfoundry/yagnats"
+	"github.com/cloudfoundry/yagnats/fakeyagnats"
 
 	boshhandler "bosh/handler"
 	boshlog "bosh/logger"
@@ -23,120 +23,147 @@ func buildNatsClientAndHandler(settings boshsettings.Service) (client *fakeyagna
 	return
 }
 func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("nats handler start", func() {
-			settings := &fakesettings.FakeSettingsService{
-				AgentId: "my-agent-id",
-				MbusUrl: "nats://foo:bar@127.0.0.1:1234",
-			}
-			client, handler := buildNatsClientAndHandler(settings)
+	Describe("natsHandler", func() {
+		Describe("Start", func() {
+			It("starts", func() {
+				settings := &fakesettings.FakeSettingsService{
+					AgentId: "my-agent-id",
+					MbusUrl: "nats://foo:bar@127.0.0.1:1234",
+				}
+				client, handler := buildNatsClientAndHandler(settings)
 
-			var receivedRequest boshhandler.Request
+				var receivedRequest boshhandler.Request
 
-			handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
-				receivedRequest = req
-				return boshhandler.NewValueResponse("expected value")
+				handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+					receivedRequest = req
+					return boshhandler.NewValueResponse("expected value")
+				})
+				defer handler.Stop()
+
+				Expect(client.ConnectedConnectionProvider).ToNot(BeNil())
+
+				Expect(len(client.Subscriptions)).To(Equal(1))
+				subscriptions := client.Subscriptions["agent.my-agent-id"]
+				Expect(len(subscriptions)).To(Equal(1))
+
+				expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`)
+				subscription := client.Subscriptions["agent.my-agent-id"][0]
+				subscription.Callback(&yagnats.Message{
+					Subject: "agent.my-agent-id",
+					Payload: expectedPayload,
+				})
+
+				Expect(receivedRequest).To(Equal(boshhandler.Request{
+					ReplyTo: "reply to me!",
+					Method:  "ping",
+					Payload: expectedPayload,
+				}))
+
+				Expect(len(client.PublishedMessages)).To(Equal(1))
+				messages := client.PublishedMessages["reply to me!"]
+
+				Expect(len(messages)).To(Equal(1))
+				message := messages[0]
+
+				Expect([]byte(`{"value":"expected value"}`)).To(Equal(message.Payload))
 			})
-			defer handler.Stop()
 
-			Expect(client.ConnectedConnectionProvider).ToNot(BeNil())
+			It("does not respond if the response is nil", func() {
+				settings := &fakesettings.FakeSettingsService{
+					AgentId: "my-agent-id",
+					MbusUrl: "nats://foo:bar@127.0.0.1:1234",
+				}
+				client, handler := buildNatsClientAndHandler(settings)
 
-			Expect(len(client.Subscriptions)).To(Equal(1))
-			subscriptions := client.Subscriptions["agent.my-agent-id"]
-			Expect(len(subscriptions)).To(Equal(1))
+				err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+					return nil
+				})
+				Expect(err).ToNot(HaveOccurred())
+				defer handler.Stop()
 
-			expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`)
-			subscription := client.Subscriptions["agent.my-agent-id"][0]
-			subscription.Callback(&yagnats.Message{
-				Subject: "agent.my-agent-id",
-				Payload: expectedPayload,
+				expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`)
+				subscription := client.Subscriptions["agent.my-agent-id"][0]
+				subscription.Callback(&yagnats.Message{
+					Subject: "agent.my-agent-id",
+					Payload: expectedPayload,
+				})
+
+				Expect(len(client.PublishedMessages)).To(Equal(0))
 			})
 
-			assert.Equal(GinkgoT(), receivedRequest, boshhandler.Request{
-				ReplyTo: "reply to me!",
-				Method:  "ping",
-				Payload: expectedPayload,
+			It("has the correct connection info", func() {
+				settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://foo:bar@127.0.0.1:1234"}
+				client, handler := buildNatsClientAndHandler(settings)
+
+				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+				Expect(err).ToNot(HaveOccurred())
+				defer handler.Stop()
+
+				Expect(client.ConnectedConnectionProvider).ToNot(BeNil())
+
+				connInfo := client.ConnectedConnectionProvider
+
+				expectedConnInfo := &yagnats.ConnectionInfo{
+					Addr:     "127.0.0.1:1234",
+					Username: "foo",
+					Password: "bar",
+				}
+
+				Expect(connInfo).To(Equal(expectedConnInfo))
 			})
 
-			Expect(len(client.PublishedMessages)).To(Equal(1))
-			messages := client.PublishedMessages["reply to me!"]
+			It("does not err when no username and password", func() {
+				settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://127.0.0.1:1234"}
+				_, handler := buildNatsClientAndHandler(settings)
 
-			Expect(len(messages)).To(Equal(1))
-			message := messages[0]
+				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+				Expect(err).ToNot(HaveOccurred())
+				defer handler.Stop()
+			})
 
-			Expect([]byte(`{"value":"expected value"}`)).To(Equal(message.Payload))
+			It("errs when has username without password", func() {
+				settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://foo@127.0.0.1:1234"}
+				_, handler := buildNatsClientAndHandler(settings)
+
+				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+				Expect(err).To(HaveOccurred())
+				defer handler.Stop()
+			})
 		})
 
-		It("nats send periodic heartbeat", func() {
-			settings := &fakesettings.FakeSettingsService{
-				AgentId: "my-agent-id",
-				MbusUrl: "nats://foo:bar@127.0.0.1:1234",
-			}
-			client, handler := buildNatsClientAndHandler(settings)
+		Describe("SendToHealthManager", func() {
+			It("sends periodic heartbeats", func() {
+				settings := &fakesettings.FakeSettingsService{
+					AgentId: "my-agent-id",
+					MbusUrl: "nats://foo:bar@127.0.0.1:1234",
+				}
+				client, handler := buildNatsClientAndHandler(settings)
 
-			errChan := make(chan error, 1)
+				errChan := make(chan error, 1)
 
-			jobName := "foo"
-			jobIndex := 0
-			expectedHeartbeat := Heartbeat{Job: &jobName, Index: &jobIndex}
+				jobName := "foo"
+				jobIndex := 0
+				expectedHeartbeat := Heartbeat{Job: &jobName, Index: &jobIndex}
 
-			go func() {
-				errChan <- handler.SendToHealthManager("heartbeat", expectedHeartbeat)
-			}()
+				go func() {
+					errChan <- handler.SendToHealthManager("heartbeat", expectedHeartbeat)
+				}()
 
-			var err error
-			select {
-			case err = <-errChan:
-			}
-			Expect(err).ToNot(HaveOccurred())
+				var err error
+				select {
+				case err = <-errChan:
+				}
+				Expect(err).ToNot(HaveOccurred())
 
-			Expect(len(client.PublishedMessages)).To(Equal(1))
-			messages := client.PublishedMessages["hm.agent.heartbeat.my-agent-id"]
+				Expect(len(client.PublishedMessages)).To(Equal(1))
+				messages := client.PublishedMessages["hm.agent.heartbeat.my-agent-id"]
 
-			Expect(len(messages)).To(Equal(1))
-			message := messages[0]
+				Expect(len(messages)).To(Equal(1))
+				message := messages[0]
 
-			expectedJson, _ := json.Marshal(expectedHeartbeat)
-			Expect(string(expectedJson)).To(Equal(string(message.Payload)))
-		})
-
-		It("nats handler connection info", func() {
-			settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://foo:bar@127.0.0.1:1234"}
-			client, handler := buildNatsClientAndHandler(settings)
-
-			err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
-			Expect(err).ToNot(HaveOccurred())
-			defer handler.Stop()
-
-			Expect(client.ConnectedConnectionProvider).ToNot(BeNil())
-
-			connInfo := client.ConnectedConnectionProvider
-
-			expectedConnInfo := &yagnats.ConnectionInfo{
-				Addr:     "127.0.0.1:1234",
-				Username: "foo",
-				Password: "bar",
-			}
-
-			Expect(connInfo).To(Equal(expectedConnInfo))
-		})
-		It("nats handler connection info does not err when no username and password", func() {
-
-			settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://127.0.0.1:1234"}
-			_, handler := buildNatsClientAndHandler(settings)
-
-			err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
-			Expect(err).ToNot(HaveOccurred())
-			defer handler.Stop()
-		})
-		It("nats handler connection info errs when has username without password", func() {
-
-			settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://foo@127.0.0.1:1234"}
-			_, handler := buildNatsClientAndHandler(settings)
-
-			err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
-			Expect(err).To(HaveOccurred())
-			defer handler.Stop()
+				expectedJson, _ := json.Marshal(expectedHeartbeat)
+				Expect(string(expectedJson)).To(Equal(string(message.Payload)))
+			})
 		})
 	})
 }

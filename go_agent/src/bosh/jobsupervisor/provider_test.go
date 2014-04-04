@@ -8,69 +8,74 @@ import (
 
 	fakemonit "bosh/jobsupervisor/monit/fakes"
 	boshlog "bosh/logger"
+	fakembus "bosh/mbus/fakes"
 	fakeplatform "bosh/platform/fakes"
 	boshdir "bosh/settings/directories"
 )
 
-type providerDependencies struct {
-	platform              *fakeplatform.FakePlatform
-	client                *fakemonit.FakeMonitClient
-	logger                boshlog.Logger
-	dirProvider           boshdir.DirectoriesProvider
-	jobFailuresServerPort int
-}
-
-func buildProvider() (
-	deps providerDependencies,
-	provider provider,
-) {
-	deps.platform = fakeplatform.NewFakePlatform()
-	deps.client = fakemonit.NewFakeMonitClient()
-	deps.logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
-	deps.dirProvider = boshdir.NewDirectoriesProvider("/fake-base-dir")
-	deps.jobFailuresServerPort = 2825
-
-	provider = NewProvider(
-		deps.platform,
-		deps.client,
-		deps.logger,
-		deps.dirProvider,
-	)
-	return
-}
 func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("get monit job supervisor", func() {
-			deps, provider := buildProvider()
+	Describe("provider", func() {
+		var (
+			platform              *fakeplatform.FakePlatform
+			client                *fakemonit.FakeMonitClient
+			logger                boshlog.Logger
+			dirProvider           boshdir.DirectoriesProvider
+			jobFailuresServerPort int
+			handler               *fakembus.FakeHandler
 
+			provider provider
+		)
+
+		BeforeEach(func() {
+			platform = fakeplatform.NewFakePlatform()
+			client = fakemonit.NewFakeMonitClient()
+			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+			dirProvider = boshdir.NewDirectoriesProvider("/fake-base-dir")
+			jobFailuresServerPort = 2825
+			handler = &fakembus.FakeHandler{}
+
+			provider = NewProvider(
+				platform,
+				client,
+				logger,
+				dirProvider,
+				handler,
+			)
+		})
+
+		It("provides a monit job supervisor", func() {
 			actualSupervisor, err := provider.Get("monit")
 			Expect(err).ToNot(HaveOccurred())
 
 			expectedSupervisor := NewMonitJobSupervisor(
-				deps.platform.Fs,
-				deps.platform.Runner,
-				deps.client,
-				deps.logger,
-				deps.dirProvider,
-				deps.jobFailuresServerPort,
+				platform.Fs,
+				platform.Runner,
+				client,
+				logger,
+				dirProvider,
+				jobFailuresServerPort,
 				5*time.Second,
 			)
-			Expect(expectedSupervisor).To(Equal(actualSupervisor))
+			Expect(actualSupervisor).To(Equal(expectedSupervisor))
 		})
 
-		It("get dummy job supervisor", func() {
-			_, provider := buildProvider()
-
+		It("provides a dummy job supervisor", func() {
 			actualSupervisor, err := provider.Get("dummy")
 			Expect(err).ToNot(HaveOccurred())
 
 			expectedSupervisor := newDummyJobSupervisor()
-			Expect(expectedSupervisor).To(Equal(actualSupervisor))
+			Expect(actualSupervisor).To(Equal(expectedSupervisor))
 		})
 
-		It("get errs when not found", func() {
-			_, provider := buildProvider()
+		It("provides a dummy nats job supervisor", func() {
+			actualSupervisor, err := provider.Get("dummy-nats")
+			Expect(err).NotTo(HaveOccurred())
 
+			expectedSupervisor := NewDummyNatsJobSupervisor(handler)
+			Expect(actualSupervisor).To(Equal(expectedSupervisor))
+		})
+
+		It("returns an error when the supervisor is not found", func() {
 			_, err := provider.Get("does-not-exist")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("does-not-exist could not be found"))

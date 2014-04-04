@@ -3,8 +3,8 @@ package handler
 type HandlerFunc func(req Request) (resp Response)
 
 type Handler interface {
-	Run(handlerFunc HandlerFunc) (err error)
-	Start(handlerFunc HandlerFunc) (err error)
+	Run(handlerFunc HandlerFunc) error
+	Start(handlerFunc HandlerFunc) error
 	Stop()
-	SendToHealthManager(topic string, payload interface{}) (err error)
+	SendToHealthManager(topic string, payload interface{}) error
 }

@@ -18,6 +18,12 @@ func PerformHandlerWithJSON(rawJSON []byte, handler HandlerFunc, logger boshlog.
 	logger.DebugWithDetails("MBus Handler", "Payload", request.Payload)
 
 	response := handler(request)
+
+	if response == nil {
+		moreJSON = []byte{}
+		return
+	}
+
 	moreJSON, err = json.Marshal(response)
 	if err != nil {
 		err = bosherr.WrapError(err, "Marshalling JSON response")

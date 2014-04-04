@@ -2,6 +2,7 @@ package jobsupervisor
 
 import (
 	bosherr "bosh/errors"
+	boshhandler "bosh/handler"
 	boshmonit "bosh/jobsupervisor/monit"
 	boshlog "bosh/logger"
 	boshplatform "bosh/platform"
@@ -18,11 +19,12 @@ func NewProvider(
 	client boshmonit.Client,
 	logger boshlog.Logger,
 	dirProvider boshdir.DirectoriesProvider,
+	handler boshhandler.Handler,
 ) (p provider) {
-
 	p.supervisors = map[string]JobSupervisor{
-		"monit": NewMonitJobSupervisor(platform.GetFs(), platform.GetRunner(), client, logger, dirProvider, 2825, 5*time.Second),
-		"dummy": newDummyJobSupervisor(),
+		"monit":      NewMonitJobSupervisor(platform.GetFs(), platform.GetRunner(), client, logger, dirProvider, 2825, 5*time.Second),
+		"dummy":      newDummyJobSupervisor(),
+		"dummy-nats": NewDummyNatsJobSupervisor(handler),
 	}
 
 	return

@@ -176,7 +176,7 @@ module Bosh
         go_agent_exe = File.expand_path('../../../../go_agent/out/bosh-agent', __FILE__)
         {
           'ruby' => %W[bosh_agent      -b #{agent_base_dir(agent_id)} -I dummy -r #{root_dir} --no-alerts],
-          'go'   => %W[#{go_agent_exe} -b #{agent_base_dir(agent_id)} -I dummy -P dummy -M dummy],
+          'go'   => %W[#{go_agent_exe} -b #{agent_base_dir(agent_id)} -I dummy -P dummy -M dummy-nats],
         }[@agent_type.to_s]
       end
 

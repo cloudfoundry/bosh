@@ -77,6 +77,39 @@ describe 'deployment integrations', type: :integration do
     end
   end
 
+  context 'when updating a job fails' do
+    it 'should not finish a deployment' do
+      pending if current_sandbox.agent_type == "ruby"
+      deploy_simple
+      failing_agent_id = get_job_vm('foobar/0')[:agent_id]
+
+      set_agent_job_state(failing_agent_id, "failing")
+
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash['update']['canary_watch_time'] = 0
+      manifest_hash['jobs'][0]['instances'] = 2
+      manifest_hash['resource_pools'][0]['size'] = 2
+
+      set_deployment(manifest_hash: manifest_hash)
+      deploy_result = deploy(failure_expected: true)
+      expect($?).to_not be_success
+
+      task_id = get_task_id(deploy_result, 'error')
+      task_events = events(task_id)
+
+      failing_job_event = task_events[-2]
+      expect(failing_job_event['stage']).to eq('Updating job')
+      expect(failing_job_event['state']).to eq('failed')
+      expect(failing_job_event['task']).to eq('foobar/0 (canary)')
+
+      started_job_events = task_events.select do |e|
+        e['stage'] == 'Updating job' && e['state'] == "started"
+      end
+
+      expect(started_job_events.size).to eq(1)
+    end
+  end
+
   def start_and_finish_times_for_job_updates(task_id)
     jobs = {}
     events(task_id).select do |e|
