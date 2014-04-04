@@ -432,10 +432,13 @@ module Bosh::Cli::Command
     end
 
     def save_dev_release_name
-      release.dev_name = DEFAULT_RELEASE_NAME
       if interactive?
-        release.dev_name = ask("Please enter development release name: ").to_s
+        release.dev_name = ask("Please enter development release name: ") do |q|
+          q.default = release.final_name if release.final_name
+        end.to_s
         err("Canceled release creation, no name given") if release.dev_name.blank?
+      else
+        release.dev_name = release.final_name ? release.final_name : DEFAULT_RELEASE_NAME
       end
       release.save_config
     end
