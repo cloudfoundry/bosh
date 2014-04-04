@@ -10,6 +10,7 @@ require 'bosh/director/api/controllers/tasks_controller'
 require 'bosh/director/api/controllers/users_controller'
 require 'bosh/director/api/controllers/compiled_packages_controller'
 require 'bosh/director/api/controllers/errands_controller'
+require 'bosh/director/api/controllers/locks_controller'
 
 module Bosh::Director
   module Api
@@ -26,6 +27,7 @@ module Bosh::Director
       use Controllers::UsersController
       use Controllers::CompiledPackagesController
       use Controllers::ErrandsController
+      use Controllers::LocksController
     end
   end
 end

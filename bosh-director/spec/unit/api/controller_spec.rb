@@ -19,6 +19,7 @@ module Bosh::Director::Api
         [Controllers::UsersController, empty_args, no_block],
         [Controllers::CompiledPackagesController, empty_args, no_block],
         [Controllers::ErrandsController, empty_args, no_block],
+        [Controllers::LocksController, empty_args, no_block],
       ])
     end
   end

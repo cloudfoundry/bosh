@@ -461,6 +461,13 @@ describe Bosh::Cli::Client::Director do
     end
   end
 
+  describe 'list_locks' do
+    it 'lists current locks' do
+      @director.should_receive(:get).with('/locks', 'application/json').and_return([200, JSON.generate([], {})])
+      @director.list_locks
+    end
+  end
+
   describe 'checking status' do
     it 'considers target valid if it responds with 401 (for compatibility)' do
       @director.stub(:get).

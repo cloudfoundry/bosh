@@ -543,6 +543,10 @@ module Bosh
           path
         end
 
+        def list_locks
+          get_json('/locks')
+        end
+
         [:post, :put, :get, :delete].each do |method_name|
           define_method method_name do |*args|
             request(method_name, *args)
