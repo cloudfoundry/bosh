@@ -1,10 +1,11 @@
 package bundlecollection
 
 import (
-	bosherr "bosh/errors"
-	boshsys "bosh/system"
 	"os"
 	"path/filepath"
+
+	bosherr "bosh/errors"
+	boshsys "bosh/system"
 )
 
 type FileBundle struct {
@@ -21,27 +22,24 @@ func NewFileBundle(installPath, enablePath string, fs boshsys.FileSystem) FileBu
 	}
 }
 
-func (self FileBundle) Install() (fs boshsys.FileSystem, path string, err error) {
-	path = self.installPath
-	err = self.fs.MkdirAll(path, os.FileMode(0755))
+func (self FileBundle) Install() (boshsys.FileSystem, string, error) {
+	path := self.installPath
+
+	err := self.fs.MkdirAll(path, os.FileMode(0755))
 	if err != nil {
-		err = bosherr.WrapError(err, "failed to create install dir")
-		return
+		return self.fs, path, bosherr.WrapError(err, "Creating install dir")
 	}
 
-	fs = self.fs
-	return
+	return self.fs, path, nil
 }
 
-func (self FileBundle) GetInstallPath() (fs boshsys.FileSystem, path string, err error) {
-	path = self.installPath
+func (self FileBundle) GetInstallPath() (boshsys.FileSystem, string, error) {
+	path := self.installPath
 	if !self.fs.FileExists(path) {
-		err = bosherr.New("install dir does not exist")
-		return
+		return self.fs, path, bosherr.New("install dir does not exist")
 	}
 
-	fs = self.fs
-	return
+	return self.fs, path, nil
 }
 
 func (self FileBundle) Enable() (fs boshsys.FileSystem, path string, err error) {

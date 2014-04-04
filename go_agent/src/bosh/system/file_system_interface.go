@@ -1,10 +1,14 @@
 package system
 
-import "os"
+import (
+	"os"
+)
 
 type FileSystem interface {
 	HomeDir(username string) (path string, err error)
 
+	// MkdirAll will not change existing dir permissions
+	// if dir exists and has different permissions
 	MkdirAll(path string, perm os.FileMode) (err error)
 	RemoveAll(fileOrDir string) (err error)
 
