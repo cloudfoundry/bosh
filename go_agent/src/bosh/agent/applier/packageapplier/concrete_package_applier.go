@@ -62,5 +62,41 @@ func (s *concretePackageApplier) Apply(pkg models.Package) (err error) {
 }
 
 func (s *concretePackageApplier) KeepOnly(pkgs []models.Package) error {
+	installedBundles, err := s.packagesBc.List()
+	if err != nil {
+		return bosherr.WrapError(err, "Retrieving installed bundles")
+	}
+
+	for _, installedBundle := range installedBundles {
+		var shouldKeep bool
+
+		for _, pkg := range pkgs {
+			pkgBundle, err := s.packagesBc.Get(pkg)
+			if err != nil {
+				return bosherr.WrapError(err, "Getting package bundle")
+			}
+
+			if pkgBundle == installedBundle {
+				shouldKeep = true
+				break
+			}
+		}
+
+		if !shouldKeep {
+			err = installedBundle.Disable()
+			if err != nil {
+				return bosherr.WrapError(err, "Disabling package bundle")
+			}
+
+			// If we uninstall the bundle first, and the disable failed (leaving the symlink),
+			// then the next time bundle collection will not include bundle in its list
+			// which means that symlink will never be deleted.
+			err = installedBundle.Uninstall()
+			if err != nil {
+				return bosherr.WrapError(err, "Uninstalling package bundle")
+			}
+		}
+	}
+
 	return nil
 }
