@@ -5,21 +5,19 @@ import (
 )
 
 type FakeApplier struct {
-	Applied        bool
-	ApplyApplySpec as.ApplySpec
-	ApplyError     error
+	Applied               bool
+	ApplyCurrentApplySpec as.ApplySpec
+	ApplyDesiredApplySpec as.ApplySpec
+	ApplyError            error
 }
 
 func NewFakeApplier() *FakeApplier {
 	return &FakeApplier{}
 }
 
-func (s *FakeApplier) Apply(applySpec as.ApplySpec) error {
-	if s.ApplyError != nil {
-		return s.ApplyError
-	}
-
-	s.ApplyApplySpec = applySpec
+func (s *FakeApplier) Apply(currentApplySpec, desiredApplySpec as.ApplySpec) error {
 	s.Applied = true
-	return nil
+	s.ApplyCurrentApplySpec = currentApplySpec
+	s.ApplyDesiredApplySpec = desiredApplySpec
+	return s.ApplyError
 }

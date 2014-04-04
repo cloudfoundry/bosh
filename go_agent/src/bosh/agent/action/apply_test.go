@@ -10,7 +10,6 @@ import (
 	boshas "bosh/agent/applier/applyspec"
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	fakeappl "bosh/agent/applier/fakes"
-	boshassert "bosh/assert"
 )
 
 func init() {
@@ -36,58 +35,130 @@ func init() {
 		})
 
 		Describe("Run", func() {
-			It("apply returns applied", func() {
-				applySpec := boshas.V1ApplySpec{
-					ConfigurationHash: "fake-config-hash",
-				}
+			Context("when desired spec has configuration hash", func() {
+				currentApplySpec := boshas.V1ApplySpec{ConfigurationHash: "fake-current-config-hash"}
+				desiredApplySpec := boshas.V1ApplySpec{ConfigurationHash: "fake-desired-config-hash"}
 
-				value, err := action.Run(applySpec)
-				Expect(err).ToNot(HaveOccurred())
-				boshassert.MatchesJsonString(GinkgoT(), value, `"applied"`)
+				Context("when current spec can be retrieved", func() {
+					BeforeEach(func() {
+						specService.Spec = currentApplySpec
+					})
+
+					It("runs applier with apply spec when apply spec has configuration hash", func() {
+						_, err := action.Run(desiredApplySpec)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(applier.Applied).To(BeTrue())
+						Expect(applier.ApplyCurrentApplySpec).To(Equal(currentApplySpec))
+						Expect(applier.ApplyDesiredApplySpec).To(Equal(desiredApplySpec))
+					})
+
+					Context("when applier succeeds", func() {
+						Context("when saving desires spec as current spec succeeds", func() {
+							It("returns 'applied' after setting desired spec as current spec", func() {
+								value, err := action.Run(desiredApplySpec)
+								Expect(err).ToNot(HaveOccurred())
+								Expect(value).To(Equal("applied"))
+
+								Expect(specService.Spec).To(Equal(desiredApplySpec))
+							})
+						})
+
+						Context("when saving desires spec as current spec fails", func() {
+							It("returns error because agent was not able to remember that is converged to desired spec", func() {
+								specService.SetErr = errors.New("fake-set-error")
+
+								_, err := action.Run(desiredApplySpec)
+								Expect(err).To(HaveOccurred())
+								Expect(err.Error()).To(ContainSubstring("fake-set-error"))
+							})
+						})
+					})
+
+					Context("when applier fails", func() {
+						BeforeEach(func() {
+							applier.ApplyError = errors.New("fake-apply-error")
+						})
+
+						It("returns error", func() {
+							_, err := action.Run(desiredApplySpec)
+							Expect(err).To(HaveOccurred())
+							Expect(err.Error()).To(ContainSubstring("fake-apply-error"))
+						})
+
+						It("does not save desired spec as current spec", func() {
+							_, err := action.Run(desiredApplySpec)
+							Expect(err).To(HaveOccurred())
+							Expect(specService.Spec).To(Equal(currentApplySpec))
+						})
+					})
+				})
+
+				Context("when current spec cannot be retrieved", func() {
+					BeforeEach(func() {
+						specService.Spec = currentApplySpec
+						specService.GetErr = errors.New("fake-get-error")
+					})
+
+					It("returns error and does not apply desired spec", func() {
+						_, err := action.Run(desiredApplySpec)
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-get-error"))
+					})
+
+					It("does not run applier with desired spec", func() {
+						_, err := action.Run(desiredApplySpec)
+						Expect(err).To(HaveOccurred())
+						Expect(applier.Applied).To(BeFalse())
+					})
+
+					It("does not save desired spec as current spec", func() {
+						_, err := action.Run(desiredApplySpec)
+						Expect(err).To(HaveOccurred())
+						Expect(specService.Spec).To(Equal(currentApplySpec))
+					})
+				})
 			})
 
-			It("saves the first argument to spec json", func() {
-				applySpec := boshas.V1ApplySpec{
-					ConfigurationHash: "fake-config-hash",
-				}
-
-				_, err := action.Run(applySpec)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(specService.Spec).To(Equal(applySpec))
-			})
-
-			It("skips applier when apply spec does not have configuration hash", func() {
-				applySpec := boshas.V1ApplySpec{
+			Context("when desired spec does not have a configuration hash", func() {
+				desiredApplySpec := boshas.V1ApplySpec{
 					JobSpec: boshas.JobSpec{
 						Template: "fake-job-template",
 					},
 				}
 
-				_, err := action.Run(applySpec)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(applier.Applied).To(BeFalse())
-			})
+				Context("when saving desires spec as current spec succeeds", func() {
+					It("returns 'applied' after setting desired spec as current spec", func() {
+						value, err := action.Run(desiredApplySpec)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(value).To(Equal("applied"))
 
-			It("runs applier with apply spec when apply spec has configuration hash", func() {
-				expectedApplySpec := boshas.V1ApplySpec{
-					JobSpec: boshas.JobSpec{
-						Template: "fake-job-template",
-					},
-					ConfigurationHash: "fake-config-hash",
-				}
+						Expect(specService.Spec).To(Equal(desiredApplySpec))
+					})
 
-				_, err := action.Run(expectedApplySpec)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(applier.Applied).To(BeTrue())
-				Expect(applier.ApplyApplySpec).To(Equal(expectedApplySpec))
-			})
+					It("does not try to apply desired spec since it does not have jobs and packages", func() {
+						_, err := action.Run(desiredApplySpec)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(applier.Applied).To(BeFalse())
+					})
+				})
 
-			It("errs when applier fails", func() {
-				applier.ApplyError = errors.New("fake-apply-error")
+				Context("when saving desires spec as current spec fails", func() {
+					BeforeEach(func() {
+						specService.SetErr = errors.New("fake-set-error")
+					})
 
-				_, err := action.Run(boshas.V1ApplySpec{ConfigurationHash: "fake-config-hash"})
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-apply-error"))
+					It("returns error because agent was not able to remember that is converged to desired spec", func() {
+						_, err := action.Run(desiredApplySpec)
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-set-error"))
+					})
+
+					It("does not try to apply desired spec since it does not have jobs and packages", func() {
+						_, err := action.Run(desiredApplySpec)
+						Expect(err).To(HaveOccurred())
+						Expect(applier.Applied).To(BeFalse())
+					})
+				})
 			})
 		})
 	})

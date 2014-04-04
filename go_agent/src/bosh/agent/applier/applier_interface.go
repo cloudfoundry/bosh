@@ -5,5 +5,5 @@ import (
 )
 
 type Applier interface {
-	Apply(applySpec as.ApplySpec) error
+	Apply(currentApplySpec, desiredApplySpec as.ApplySpec) error
 }

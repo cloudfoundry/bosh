@@ -34,13 +34,13 @@ func NewConcreteApplier(
 	}
 }
 
-func (a *concreteApplier) Apply(applySpec as.ApplySpec) error {
+func (a *concreteApplier) Apply(currentApplySpec, desiredApplySpec as.ApplySpec) error {
 	err := a.jobSupervisor.RemoveAllJobs()
 	if err != nil {
 		return bosherr.WrapError(err, "Removing all jobs")
 	}
 
-	jobs := applySpec.Jobs()
+	jobs := desiredApplySpec.Jobs()
 	for _, job := range jobs {
 		err = a.jobApplier.Apply(job)
 		if err != nil {
@@ -48,7 +48,7 @@ func (a *concreteApplier) Apply(applySpec as.ApplySpec) error {
 		}
 	}
 
-	for _, pkg := range applySpec.Packages() {
+	for _, pkg := range desiredApplySpec.Packages() {
 		err = a.packageApplier.Apply(pkg)
 		if err != nil {
 			return bosherr.WrapError(err, "Applying package %s", pkg.Name)
@@ -69,7 +69,7 @@ func (a *concreteApplier) Apply(applySpec as.ApplySpec) error {
 		return bosherr.WrapError(err, "Reloading jobSupervisor")
 	}
 
-	return a.setUpLogrotate(applySpec)
+	return a.setUpLogrotate(desiredApplySpec)
 }
 
 func (a *concreteApplier) setUpLogrotate(applySpec as.ApplySpec) error {

@@ -30,10 +30,7 @@ type SetupLogrotateArgs struct {
 
 func (d *FakeLogRotateDelegate) SetupLogrotate(groupName, basePath, size string) error {
 	d.SetupLogrotateArgs = SetupLogrotateArgs{groupName, basePath, size}
-	if d.SetupLogrotateErr != nil {
-		return d.SetupLogrotateErr
-	}
-	return nil
+	return d.SetupLogrotateErr
 }
 
 func buildJob() models.Job {
@@ -69,7 +66,7 @@ func init() {
 		})
 
 		It("removes all jobs", func() {
-			err := applier.Apply(&fakeas.FakeApplySpec{})
+			err := applier.Apply(nil, &fakeas.FakeApplySpec{})
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(jobSupervisor.RemovedAllJobs).To(BeTrue())
@@ -80,7 +77,7 @@ func init() {
 			jobSupervisor.RemovedAllJobsErr = errors.New("fake-remove-all-jobs-error")
 
 			job := buildJob()
-			applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+			applier.Apply(nil, &fakeas.FakeApplySpec{JobResults: []models.Job{job}})
 
 			// check that jobs were not applied before removing all other jobs
 			Expect(jobApplier.AppliedJobs).To(Equal([]models.Job{}))
@@ -89,7 +86,7 @@ func init() {
 		It("returns error if removing all jobs fails", func() {
 			jobSupervisor.RemovedAllJobsErr = errors.New("fake-remove-all-jobs-error")
 
-			err := applier.Apply(&fakeas.FakeApplySpec{})
+			err := applier.Apply(nil, &fakeas.FakeApplySpec{})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-remove-all-jobs-error"))
 		})
@@ -97,7 +94,7 @@ func init() {
 		It("apply applies jobs", func() {
 			job := buildJob()
 
-			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+			err := applier.Apply(nil, &fakeas.FakeApplySpec{JobResults: []models.Job{job}})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(jobApplier.AppliedJobs).To(Equal([]models.Job{job}))
 		})
@@ -107,7 +104,7 @@ func init() {
 
 			jobApplier.ApplyError = errors.New("fake-apply-job-error")
 
-			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+			err := applier.Apply(nil, &fakeas.FakeApplySpec{JobResults: []models.Job{job}})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-apply-job-error"))
 		})
@@ -116,7 +113,7 @@ func init() {
 			pkg1 := buildPackage()
 			pkg2 := buildPackage()
 
-			err := applier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg1, pkg2}})
+			err := applier.Apply(nil, &fakeas.FakeApplySpec{PackageResults: []models.Package{pkg1, pkg2}})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(packageApplier.AppliedPackages).To(Equal([]models.Package{pkg1, pkg2}))
 		})
@@ -126,7 +123,7 @@ func init() {
 
 			packageApplier.ApplyError = errors.New("fake-apply-package-error")
 
-			err := applier.Apply(&fakeas.FakeApplySpec{PackageResults: []models.Package{pkg}})
+			err := applier.Apply(nil, &fakeas.FakeApplySpec{PackageResults: []models.Package{pkg}})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-apply-package-error"))
 		})
@@ -136,7 +133,7 @@ func init() {
 			job2 := models.Job{Name: "fake-job-name-2", Version: "fake-version-name-2"}
 			jobs := []models.Job{job1, job2}
 
-			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: jobs})
+			err := applier.Apply(nil, &fakeas.FakeApplySpec{JobResults: jobs})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(jobApplier.ConfiguredJobs).To(Equal([]models.Job{job2, job1}))
 			Expect(jobApplier.ConfiguredJobIndices).To(Equal([]int{0, 1}))
@@ -148,7 +145,7 @@ func init() {
 			jobs := []models.Job{}
 			jobSupervisor.ReloadErr = errors.New("error reloading monit")
 
-			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: jobs})
+			err := applier.Apply(nil, &fakeas.FakeApplySpec{JobResults: jobs})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("error reloading monit"))
 		})
@@ -158,13 +155,13 @@ func init() {
 
 			job := models.Job{Name: "fake-job-name-1", Version: "fake-version-name-1"}
 
-			err := applier.Apply(&fakeas.FakeApplySpec{JobResults: []models.Job{job}})
+			err := applier.Apply(nil, &fakeas.FakeApplySpec{JobResults: []models.Job{job}})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("error configuring job"))
 		})
 
 		It("apply sets up logrotation", func() {
-			err := applier.Apply(&fakeas.FakeApplySpec{MaxLogFileSizeResult: "fake-size"})
+			err := applier.Apply(nil, &fakeas.FakeApplySpec{MaxLogFileSizeResult: "fake-size"})
 			Expect(err).ToNot(HaveOccurred())
 			assert.Equal(GinkgoT(), logRotateDelegate.SetupLogrotateArgs, SetupLogrotateArgs{
 				GroupName: boshsettings.VCAP_USERNAME,
@@ -176,7 +173,7 @@ func init() {
 		It("apply errs if setup logrotate fails", func() {
 			logRotateDelegate.SetupLogrotateErr = errors.New("fake-msg")
 
-			err := applier.Apply(&fakeas.FakeApplySpec{})
+			err := applier.Apply(nil, &fakeas.FakeApplySpec{})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Logrotate setup failed: fake-msg"))
 		})
