@@ -5,16 +5,16 @@ describe Bosh::Cli::Client::Director do
   DUMMY_TARGET = 'https://target.example.com:8080'
 
   before do
-    URI.should_receive(:parse).with(DUMMY_TARGET).and_call_original
-    Resolv.should_receive(:getaddresses).with('target.example.com').and_return(['127.0.0.1'])
+    expect(URI).to receive(:parse).with(DUMMY_TARGET).and_call_original
+    expect(Resolv).to receive(:getaddresses).with('target.example.com').and_return(['127.0.0.1'])
     @director = Bosh::Cli::Client::Director.new(DUMMY_TARGET, 'user', 'pass')
-    @director.stub(retry_wait_interval: 0)
+    allow(@director).to receive(:retry_wait_interval).and_return(0)
   end
 
   describe 'checking availability' do
     it 'waits until director is ready' do
-      @director.should_receive(:get_status).and_raise(Bosh::Cli::DirectorError)
-      @director.should_receive(:get_status).and_return(cpi: 'aws')
+      expect(@director).to receive(:get_status).and_raise(Bosh::Cli::DirectorError).ordered
+      expect(@director).to receive(:get_status).and_return(cpi: 'aws').ordered
 
       @director.wait_until_ready
     end
@@ -22,30 +22,30 @@ describe Bosh::Cli::Client::Director do
 
   describe 'fetching status' do
     it 'tells if user is authenticated' do
-      @director.should_receive(:get).with('/info', 'application/json').
+      expect(@director).to receive(:get).with('/info', 'application/json').
         and_return([200, JSON.generate('user' => 'adam')])
       @director.authenticated?.should == true
     end
 
     it 'tells if user not authenticated' do
-      @director.should_receive(:get).with('/info', 'application/json').
+      expect(@director).to receive(:get).with('/info', 'application/json').
         and_return([403, 'Forbidden'])
       @director.authenticated?.should == false
 
-      @director.should_receive(:get).with('/info', 'application/json').
+      expect(@director).to receive(:get).with('/info', 'application/json').
         and_return([500, 'Error'])
       @director.authenticated?.should == false
 
-      @director.should_receive(:get).with('/info', 'application/json').
+      expect(@director).to receive(:get).with('/info', 'application/json').
         and_return([404, 'Not Found'])
       @director.authenticated?.should == false
 
-      @director.should_receive(:get).with('/info', 'application/json').
+      expect(@director).to receive(:get).with('/info', 'application/json').
         and_return([200, JSON.generate('user' => nil, 'version' => 1)])
       @director.authenticated?.should == false
 
       # Backward compatibility
-      @director.should_receive(:get).with('/info', 'application/json').
+      expect(@director).to receive(:get).with('/info', 'application/json').
         and_return([200, JSON.generate('status' => 'ZB')])
       @director.authenticated?.should == true
     end
@@ -54,7 +54,7 @@ describe Bosh::Cli::Client::Director do
   describe 'interface REST API' do
     it 'has helper methods for HTTP verbs which delegate to generic request' do
       [:get, :put, :post, :delete].each do |verb|
-        @director.should_receive(:request).with(verb, :arg1, :arg2)
+        expect(@director).to receive(:request).with(verb, :arg1, :arg2)
         @director.send(verb, :arg1, :arg2)
       end
     end
@@ -69,8 +69,8 @@ describe Bosh::Cli::Client::Director do
       let(:request_headers) { { 'Content-Type' => 'application/json', 'Authorization' => 'Basic dXNlcjpwYXNz' } }
 
       before do
-        HTTPClient.stub(new: http_client)
-        http_client.stub(:request).with(:get, "https://127.0.0.1:8080/#{endpoint}", body: request_body, header: request_headers).and_return(response)
+        allow(HTTPClient).to receive(:new).and_return(http_client)
+        allow(http_client).to receive(:request).with(:get, "https://127.0.0.1:8080/#{endpoint}", body: request_body, header: request_headers).and_return(response)
       end
 
       let(:vms) do
@@ -106,7 +106,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'creates user' do
-      @director.should_receive(:post).
+      expect(@director).to receive(:post).
         with('/users', 'application/json',
              JSON.generate('username' => 'joe', 'password' => 'pass')).
         and_return(true)
@@ -114,21 +114,21 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'deletes users' do
-      @director.should_receive(:delete).
+      expect(@director).to receive(:delete).
         with('/users/joe').
         and_return([204, '', {}])
       @director.delete_user('joe').should == true
     end
 
     it 'fails to delete users' do
-      @director.should_receive(:delete).
+      expect(@director).to receive(:delete).
         with('/users/joe').
         and_return([500, '', {}])
       @director.delete_user('joe').should == false
     end
 
     it 'uploads local stemcell' do
-      @director.should_receive(:upload_and_track).
+      expect(@director).to receive(:upload_and_track).
         with(:post, '/stemcells', '/path',
              { :content_type => 'application/x-compressed' }).
         and_return(true)
@@ -136,7 +136,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'uploads remote stemcell' do
-      @director.should_receive(:request_and_track).
+      expect(@director).to receive(:request_and_track).
         with(:post, '/stemcells',
              { :content_type => 'application/json',
                :payload      => JSON.generate('location' => 'stemcell_uri') }).
@@ -145,37 +145,37 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'lists stemcells' do
-      @director.should_receive(:get).with('/stemcells', 'application/json').
+      expect(@director).to receive(:get).with('/stemcells', 'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.list_stemcells
     end
 
     it 'lists releases' do
-      @director.should_receive(:get).with('/releases', 'application/json').
+      expect(@director).to receive(:get).with('/releases', 'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.list_releases
     end
 
     it 'lists deployments' do
-      @director.should_receive(:get).with('/deployments', 'application/json').
+      expect(@director).to receive(:get).with('/deployments', 'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.list_deployments
     end
 
     it 'lists currently running tasks (director version < 0.3.5)' do
-      @director.should_receive(:get).with('/info', 'application/json').
+      expect(@director).to receive(:get).with('/info', 'application/json').
         and_return([200, JSON.generate({ :version => '0.3.2' })])
-      @director.should_receive(:get).
+      expect(@director).to receive(:get).
         with('/tasks?state=processing', 'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.list_running_tasks
     end
 
     it 'lists currently running tasks (director version >= 0.3.5)' do
-      @director.should_receive(:get).
+      expect(@director).to receive(:get).
         with('/info', 'application/json').
         and_return([200, JSON.generate({ :version => '0.3.5' })])
-      @director.should_receive(:get).
+      expect(@director).to receive(:get).
         with('/tasks?state=processing,cancelling,queued&verbose=1',
              'application/json').
         and_return([200, JSON.generate([]), {}])
@@ -183,24 +183,24 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'lists recent tasks' do
-      @director.should_receive(:get).
+      expect(@director).to receive(:get).
         with('/tasks?limit=30&verbose=1', 'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.list_recent_tasks
 
-      @director.should_receive(:get).
+      expect(@director).to receive(:get).
         with('/tasks?limit=100000&verbose=1', 'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.list_recent_tasks(100000)
 
-      @director.should_receive(:get).
+      expect(@director).to receive(:get).
         with('/tasks?limit=50&verbose=2', 'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.list_recent_tasks(50, 2)
     end
 
     it 'uploads local release' do
-      @director.should_receive(:upload_and_track).
+      expect(@director).to receive(:upload_and_track).
         with(:post, '/releases', '/path',
              { :content_type => 'application/x-compressed' }).
         and_return(true)
@@ -208,7 +208,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'uploads local release (with rebase)' do
-      @director.should_receive(:upload_and_track).
+      expect(@director).to receive(:upload_and_track).
         with(:post, '/releases?rebase=true', '/path',
              { :content_type => 'application/x-compressed' }).
         and_return(true)
@@ -216,7 +216,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'uploads remote release' do
-      @director.should_receive(:request_and_track).
+      expect(@director).to receive(:request_and_track).
         with(:post, '/releases',
              { :content_type => 'application/json',
                :payload      => JSON.generate('location' => 'release_uri') }).
@@ -225,7 +225,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'uploads remote release (with rebase)' do
-      @director.should_receive(:request_and_track).
+      expect(@director).to receive(:request_and_track).
         with(:post, '/releases?rebase=true',
              { :content_type => 'application/json',
                :payload      => JSON.generate('location' => 'release_uri') }).
@@ -234,51 +234,51 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'gets release info' do
-      @director.should_receive(:get).
+      expect(@director).to receive(:get).
         with('/releases/foo', 'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.get_release('foo')
     end
 
     it 'gets deployment info' do
-      @director.should_receive(:get).
+      expect(@director).to receive(:get).
         with('/deployments/foo', 'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.get_deployment('foo')
     end
 
     it 'deletes stemcell' do
-      @director.should_receive(:request_and_track).
+      expect(@director).to receive(:request_and_track).
         with(:delete, '/stemcells/ubuntu/123', {}).and_return(true)
       @director.delete_stemcell('ubuntu', '123')
     end
 
     it 'deletes stemcell with force' do
-      @director.should_receive(:request_and_track).
+      expect(@director).to receive(:request_and_track).
         with(:delete, '/stemcells/ubuntu/123?force=true', {}).and_return(true)
       @director.delete_stemcell('ubuntu', '123', :force => true)
     end
 
     it 'deletes deployment' do
-      @director.should_receive(:request_and_track).
+      expect(@director).to receive(:request_and_track).
         with(:delete, '/deployments/foo', {}).and_return(true)
       @director.delete_deployment('foo')
     end
 
     it 'deletes release (non-force)' do
-      @director.should_receive(:request_and_track).
+      expect(@director).to receive(:request_and_track).
         with(:delete, '/releases/za', {}).and_return(true)
       @director.delete_release('za')
     end
 
     it 'deletes release (force)' do
-      @director.should_receive(:request_and_track).
+      expect(@director).to receive(:request_and_track).
         with(:delete, '/releases/zb?force=true', {}).and_return(true)
       @director.delete_release('zb', :force => true)
     end
 
     it 'deploys' do
-      @director.should_receive(:request_and_track).
+      expect(@director).to receive(:request_and_track).
         with(:post, '/deployments',
              { :content_type => 'text/yaml', :payload => 'manifest' }).
         and_return(true)
@@ -286,7 +286,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'changes job state' do
-      @director.should_receive(:request_and_track).
+      expect(@director).to receive(:request_and_track).
         with(:put, '/deployments/foo/jobs/dea?state=stopped',
              { :content_type => 'text/yaml', :payload => 'manifest' }).
         and_return(true)
@@ -294,7 +294,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'changes job instance state' do
-      @director.should_receive(:request_and_track).
+      expect(@director).to receive(:request_and_track).
         with(:put, '/deployments/foo/jobs/dea/0?state=detached',
              { :content_type => 'text/yaml', :payload => 'manifest' }).
         and_return(true)
@@ -302,7 +302,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'changes job instance resurrection state' do
-      @director.should_receive(:request).with(:put,
+      expect(@director).to receive(:request).with(:put,
                                               '/deployments/foo/jobs/dea/0/resurrection',
                                               'application/json',
                                               '{"resurrection_paused":true}')
@@ -310,7 +310,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'change resurrection globally' do
-      @director.should_receive(:request).with(:put,
+      expect(@director).to receive(:request).with(:put,
                                               '/resurrection',
                                               'application/json',
                                               '{"resurrection_paused":false}')
@@ -318,14 +318,14 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'gets task state' do
-      @director.should_receive(:get).
+      expect(@director).to receive(:get).
         with("/tasks/#{task_number}").
         and_return([200, JSON.generate({ 'state' => 'done' })])
       @director.get_task_state(task_number).should == 'done'
     end
 
     it 'gets task output' do
-      @director.should_receive(:get).
+      expect(@director).to receive(:get).
         with("/tasks/#{task_number}/output", nil,
              nil, { 'Range' => 'bytes=42-' }).
         and_return([206, 'test', { :content_range => 'bytes 42-56/100' }])
@@ -333,7 +333,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     it "doesn't set task output body and new offset if there's a byte range unsatisfiable response" do
-      @director.should_receive(:get).
+      expect(@director).to receive(:get).
         with("/tasks/#{task_number}/output", nil,
              nil, { 'Range' => 'bytes=42-' }).
         and_return([416, 'Byte range unsatisfiable', { :content_range => 'bytes */100' }])
@@ -341,7 +341,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     it "doesn't set task output new offset if it wasn't a partial response" do
-      @director.should_receive(:get).
+      expect(@director).to receive(:get).
         with("/tasks/#{task_number}/output", nil, nil,
              { 'Range' => 'bytes=42-' }).
         and_return([200, 'test'])
@@ -351,48 +351,48 @@ describe Bosh::Cli::Client::Director do
     it 'know how to find time difference with director' do
       now         = Time.now
       server_time = now - 100
-      Time.stub(:now).and_return(now)
+      allow(Time).to receive(:now).and_return(now)
 
-      @director.should_receive(:get).with('/info').
+      expect(@director).to receive(:get).with('/info').
         and_return([200, JSON.generate('version' => 1),
                     { :date => server_time.rfc822 }])
       @director.get_time_difference.to_i.should == 100
     end
 
     it 'takes snapshot for a deployment' do
-      @director.should_receive(:request_and_track).
+      expect(@director).to receive(:request_and_track).
         with(:post, '/deployments/foo/snapshots', {}).
         and_return(true)
       @director.take_snapshot('foo')
     end
 
     it 'takes snapshot for a job and index' do
-      @director.should_receive(:request_and_track).
+      expect(@director).to receive(:request_and_track).
         with(:post, '/deployments/foo/jobs/bar/0/snapshots', {}).
         and_return(true)
       @director.take_snapshot('foo', 'bar', '0')
     end
 
     it 'lists snapshots for a deployment' do
-      @director.should_receive(:get).with('/deployments/foo/snapshots', 'application/json').
+      expect(@director).to receive(:get).with('/deployments/foo/snapshots', 'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.list_snapshots('foo')
     end
 
     it 'lists snapshots for a job and index' do
-      @director.should_receive(:get).with('/deployments/foo/jobs/bar/0/snapshots', 'application/json').
+      expect(@director).to receive(:get).with('/deployments/foo/jobs/bar/0/snapshots', 'application/json').
         and_return([200, JSON.generate([]), {}])
       @director.list_snapshots('foo', 'bar', '0')
     end
 
     it 'deletes all snapshots of a deployment' do
-      @director.should_receive(:request_and_track).
+      expect(@director).to receive(:request_and_track).
         with(:delete, '/deployments/foo/snapshots', {}).and_return(true)
       @director.delete_all_snapshots('foo')
     end
 
     it 'deletes snapshot' do
-      @director.should_receive(:request_and_track).
+      expect(@director).to receive(:request_and_track).
         with(:delete, '/deployments/foo/snapshots/snap0a', {}).and_return(true)
       @director.delete_snapshot('foo', 'snap0a')
     end
@@ -403,7 +403,7 @@ describe Bosh::Cli::Client::Director do
       let(:request_headers) { { 'Authorization' => 'Basic dXNlcjpwYXNz' } }
       let(:endpoint) { '/bad_endpoint' }
       before do
-        HTTPClient.stub(new: http_client)
+        allow(HTTPClient).to receive(:new).and_return(http_client)
         allow(http_client).to receive(:request).
           with(:get, "https://127.0.0.1:8080#{endpoint}", body: anything, header: request_headers).
           and_return(response)
@@ -412,8 +412,8 @@ describe Bosh::Cli::Client::Director do
       let(:target_name) { 'FAKE-DIRECTOR' }
       let(:info_response) { double('Response', body: 'info response body', code: 200, headers: {}) }
       before do
-        JSON.stub(:parse).with('info response body').and_return({'name' => target_name})
-        JSON.stub(:parse).with('Not Found').and_return({'name' => target_name})
+        allow(JSON).to receive(:parse).with('info response body').and_return({'name' => target_name})
+        allow(JSON).to receive(:parse).with('Not Found').and_return({'name' => target_name})
 
         allow(http_client).to receive(:request).
           with(:get, "https://127.0.0.1:8080/info", body: anything, header: anything).
@@ -446,7 +446,7 @@ describe Bosh::Cli::Client::Director do
 
   describe 'create_backup' do
     it 'tracks the backup task' do
-      @director.should_receive(:request_and_track)
+      expect(@director).to receive(:request_and_track)
       .with(:post, '/backups', {})
       .and_return(true)
       @director.create_backup
@@ -455,7 +455,7 @@ describe Bosh::Cli::Client::Director do
 
   describe 'fetch_backup' do
     it 'fetches the backup file' do
-      @director.should_receive(:get).with('/backups', nil, nil, {}, :file => true)
+      expect(@director).to receive(:get).with('/backups', nil, nil, {}, :file => true)
       .and_return([200, '/some/path', {}])
       expect(@director.fetch_backup).to eq('/some/path')
     end
@@ -463,21 +463,22 @@ describe Bosh::Cli::Client::Director do
 
   describe 'list_locks' do
     it 'lists current locks' do
-      @director.should_receive(:get).with('/locks', 'application/json').and_return([200, JSON.generate([], {})])
-      @director.list_locks
+      locks = %w(fake-lock-1 fake-lock-2)
+      expect(@director).to receive(:get).with('/locks', 'application/json').and_return([200, JSON.generate(locks)])
+      expect(@director.list_locks).to eq(locks)
     end
   end
 
   describe 'checking status' do
     it 'considers target valid if it responds with 401 (for compatibility)' do
-      @director.stub(:get).
+      allow(@director).to receive(:get).
         with('/info', 'application/json').
         and_return([401, 'Not authorized'])
       @director.exists?.should be(true)
     end
 
     it 'considers target valid if it responds with 200' do
-      @director.stub(:get).
+      allow(@director).to receive(:get).
         with('/info', 'application/json').
         and_return([200, JSON.generate('name' => 'Director is your friend')])
       @director.exists?.should be(true)
@@ -488,13 +489,13 @@ describe Bosh::Cli::Client::Director do
     it 'starts polling task if request responded with a redirect (302) to task URL' do
       options = { :arg1 => 1, :arg2 => 2 }
 
-      @director.should_receive(:request).
+      expect(@director).to receive(:request).
         with(:get, '/stuff', 'text/plain', 'abc').
         and_return([302, 'body', { :location => '/tasks/502' }])
 
       tracker = double('tracker', :track => 'polling result', :output => 'foo')
 
-      Bosh::Cli::TaskTracking::TaskTracker.should_receive(:new).
+      expect(Bosh::Cli::TaskTracking::TaskTracker).to receive(:new).
         with(@director, '502', options).
         and_return(tracker)
 
@@ -509,13 +510,13 @@ describe Bosh::Cli::Client::Director do
     it 'starts polling task if request responded with a redirect (303) to task URL' do
       options = { :arg1 => 1, :arg2 => 2 }
 
-      @director.should_receive(:request).
+      expect(@director).to receive(:request).
         with(:get, '/stuff', 'text/plain', 'abc').
         and_return([303, 'body', { :location => '/tasks/502' }])
 
       tracker = double('tracker', :track => 'polling result', :output => 'foo')
 
-      Bosh::Cli::TaskTracking::TaskTracker.should_receive(:new).
+      expect(Bosh::Cli::TaskTracking::TaskTracker).to receive(:new).
         with(@director, '502', options).
         and_return(tracker)
 
@@ -531,17 +532,17 @@ describe Bosh::Cli::Client::Director do
       it 'returns without tracking/polling task if request responded with a redirect to task URL' do
         options = { :arg1 => 1, :arg2 => 2 }
 
-        URI.should_receive(:parse).with(DUMMY_TARGET).and_call_original
-        Resolv.should_receive(:getaddresses).with('target.example.com').and_return(['127.0.0.1'])
+        expect(URI).to receive(:parse).with(DUMMY_TARGET).and_call_original
+        expect(Resolv).to receive(:getaddresses).with('target.example.com').and_return(['127.0.0.1'])
         @director = Bosh::Cli::Client::Director.new(DUMMY_TARGET, 'user', 'pass', :no_track => true)
 
-        @director.should_receive(:request).
+        expect(@director).to receive(:request).
           with(:get, '/stuff', 'text/plain', 'abc').
           and_return([302, 'body', { :location => '/tasks/502' }])
 
         tracker = double('tracker', :track => 'polling result', :output => 'foo')
 
-        Bosh::Cli::TaskTracking::TaskTracker.should_receive(:new).
+        expect(Bosh::Cli::TaskTracking::TaskTracker).to receive(:new).
           with(@director, '502', options).
           never
 
@@ -556,7 +557,7 @@ describe Bosh::Cli::Client::Director do
 
     it 'considers all responses but 302 and 303 a failure' do
       [200, 404, 403].each do |code|
-        @director.should_receive(:request).
+        expect(@director).to receive(:request).
           with(:get, '/stuff', 'text/plain', 'abc').
           and_return([code, 'body', {}])
         @director.request_and_track(:get, '/stuff',
@@ -569,7 +570,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'reports task as non-trackable if its URL is unfamiliar' do
-      @director.should_receive(:request).
+      expect(@director).to receive(:request).
         with(:get, '/stuff', 'text/plain', 'abc').
         and_return([302, 'body', { :location => '/track-task/502' }])
       @director.request_and_track(:get, '/stuff',
@@ -584,8 +585,8 @@ describe Bosh::Cli::Client::Director do
       file = spec_asset('valid_release.tgz')
       f    = Bosh::Cli::FileWithProgressBar.open(file, 'r')
 
-      Bosh::Cli::FileWithProgressBar.stub(:open).with(file, 'r').and_return(f)
-      @director.should_receive(:request_and_track).
+      allow(Bosh::Cli::FileWithProgressBar).to receive(:open).with(file, 'r').and_return(f)
+      expect(@director).to receive(:request_and_track).
         with(:put, '/stuff', { :content_type => 'application/x-compressed',
                                :payload      => f })
       @director.upload_and_track(:put, '/stuff', file,
@@ -602,21 +603,21 @@ describe Bosh::Cli::Client::Director do
       auth     = 'Basic ' + Base64.encode64("#{user}:#{password}").strip
 
       ssl_config = double('ssl_config')
-      ssl_config.should_receive(:verify_mode=).
+      expect(ssl_config).to receive(:verify_mode=).
         with(OpenSSL::SSL::VERIFY_NONE)
-      ssl_config.should_receive(:verify_callback=)
+      expect(ssl_config).to receive(:verify_callback=)
 
       client = double('httpclient', :ssl_config => ssl_config)
-      client.should_receive(:send_timeout=).
+      expect(client).to receive(:send_timeout=).
         with(Bosh::Cli::Client::Director::API_TIMEOUT)
-      client.should_receive(:receive_timeout=).
+      expect(client).to receive(:receive_timeout=).
         with(Bosh::Cli::Client::Director::API_TIMEOUT)
-      client.should_receive(:connect_timeout=).
+      expect(client).to receive(:connect_timeout=).
         with(Bosh::Cli::Client::Director::CONNECT_TIMEOUT)
 
-      HTTPClient.stub(:new).and_return(client)
+      allow(HTTPClient).to receive(:new).and_return(client)
 
-      client.should_receive(:request).
+      expect(client).to receive(:request).
         with(:get, 'http:///127.0.0.1:8080/stuff', :body => 'payload',
              :header                                     => headers.merge('Authorization' => auth))
       @director.send(:perform_http_request, :get,
@@ -629,7 +630,7 @@ describe Bosh::Cli::Client::Director do
       mock_response = double('response', :code => 200,
                              :body             => 'test', :headers => {})
 
-      @director.should_receive(:perform_http_request).
+      expect(@director).to receive(:perform_http_request).
         with(:get, 'https://127.0.0.1:8080/stuff', 'payload', 'h1' => 'a',
              'h2'                                                  => 'b', 'Content-Type' => 'app/zb').
         and_return(mock_response)
@@ -651,7 +652,7 @@ describe Bosh::Cli::Client::Director do
                                  :body    => body,
                                  :headers => {})
 
-          @director.should_receive(:perform_http_request).
+          expect(@director).to receive(:perform_http_request).
             and_return(mock_response)
           @director.send(:request, :get, '/stuff', 'application/octet-stream',
                          'payload', { :hdr1 => 'a', :hdr2 => 'b' })
@@ -663,7 +664,7 @@ describe Bosh::Cli::Client::Director do
           mock_response = double('response', :code => code,
                                  :body             => 'error message goes here',
                                  :headers          => {})
-          @director.should_receive(:perform_http_request).
+          expect(@director).to receive(:perform_http_request).
             and_return(mock_response)
           @director.send(:request, :get, '/stuff', 'application/octet-stream',
                          'payload', { :hdr1 => 'a', :hdr2 => 'b' })
@@ -676,7 +677,7 @@ describe Bosh::Cli::Client::Director do
           mock_response = double('response', :code => code,
                                  :body             => '{"c":"d","a":"b"}',
                                  :headers          => {})
-          @director.should_receive(:perform_http_request).
+          expect(@director).to receive(:perform_http_request).
             and_return(mock_response)
           @director.send(:request, :get, '/stuff', 'application/octet-stream',
                          'payload', { :hdr1 => 'a', :hdr2 => 'b' })
@@ -687,7 +688,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     it 'wraps file access exceptions' do
-      File.should_receive(:open).and_raise(SystemCallError.new('err message', 22))
+      expect(File).to receive(:open).and_raise(SystemCallError.new('err message', 22))
 
       lambda {
         @director.send(:request, :get, '/stuff', 'app/zb', 'payload', {}, file: true)
@@ -702,7 +703,7 @@ describe Bosh::Cli::Client::Director do
             exactly(3).times.
             and_raise(Bosh::Cli::DirectorInaccessible, 'fake-error')
 
-          @director.should_receive(:sleep).with(2).exactly(2).times
+          expect(@director).to receive(:sleep).with(2).exactly(2).times
 
           expect {
             @director.send(:try_to_perform_http_request, :get, '/stuff/app/zb', 'payload', {}, 3, 2)
@@ -713,7 +714,7 @@ describe Bosh::Cli::Client::Director do
       context 'when performing request fails with unknown error' do
         it 'does not retry the HTTP request' do
           error = Exception.new('fake-error')
-          @director.should_receive(:perform_http_request).exactly(1).and_raise(error)
+          expect(@director).to receive(:perform_http_request).exactly(1).and_raise(error)
 
           expect {
             @director.send(:try_to_perform_http_request, :get, '/stuff/app/zb', 'payload', {}, 3, 2)
@@ -723,7 +724,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     describe '#perform_http_request' do
-      before { HTTPClient.stub(new: http_client) }
+      before { allow(HTTPClient).to receive(:new).and_return(http_client) }
       let(:http_client) { double('HTTPClient').as_null_object }
 
       [
@@ -735,7 +736,7 @@ describe Bosh::Cli::Client::Director do
       ].each do |error|
         context "when performing request fails with #{error} error" do
           it 'raises DirectorInaccessible error because director could not be reached' do
-            http_client.should_receive(:request).and_raise(error)
+            expect(http_client).to receive(:request).and_raise(error)
             expect {
               @director.send(:perform_http_request, :get, '/stuff/app/zb', 'payload', {})
             }.to raise_error(Bosh::Cli::DirectorInaccessible)
@@ -745,7 +746,7 @@ describe Bosh::Cli::Client::Director do
 
       context 'when director returns invalid http response' do
         it 'raises CliError error because there is nothing it can do' do
-          http_client.should_receive(:request).and_raise(HTTPClient::BadResponseError, 'fake-error')
+          expect(http_client).to receive(:request).and_raise(HTTPClient::BadResponseError, 'fake-error')
           expect {
             @director.send(:perform_http_request, :get, '/stuff/app/zb', 'payload', {})
           }.to raise_error(Bosh::Cli::CliError, /fake-error/)
@@ -754,7 +755,7 @@ describe Bosh::Cli::Client::Director do
 
       context 'when performing request fails with unknown error' do
         it 'raises CliError error' do
-          http_client.should_receive(:request).and_raise(RuntimeError, 'fake-error')
+          expect(http_client).to receive(:request).and_raise(RuntimeError, 'fake-error')
           expect {
             @director.send(:perform_http_request, :get, '/stuff/app/zb', 'payload', {})
           }.to raise_error(Bosh::Cli::CliError, /fake-error/)
@@ -765,7 +766,7 @@ describe Bosh::Cli::Client::Director do
     it 'streams file' do
       mock_response = double('response', :code => 200,
                              :body             => 'test body', :headers => {})
-      @director.should_receive(:perform_http_request).
+      expect(@director).to receive(:perform_http_request).
         and_yield('test body').and_return(mock_response)
 
       code, filename, headers =
