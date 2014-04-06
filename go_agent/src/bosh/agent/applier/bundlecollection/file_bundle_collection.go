@@ -4,8 +4,11 @@ import (
 	"path/filepath"
 
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	boshsys "bosh/system"
 )
+
+const fileBundleCollectionLogTag = "FileBundleCollection"
 
 type fileBundleDefinition struct {
 	name    string
@@ -39,17 +42,20 @@ type FileBundleCollection struct {
 	installPath string
 	enablePath  string
 	fs          boshsys.FileSystem
+	logger      boshlog.Logger
 }
 
 func NewFileBundleCollection(
 	installPath, enablePath, name string,
 	fs boshsys.FileSystem,
+	logger boshlog.Logger,
 ) FileBundleCollection {
 	return FileBundleCollection{
 		name:        name,
 		installPath: installPath,
 		enablePath:  enablePath,
 		fs:          fs,
+		logger:      logger,
 	}
 }
 
@@ -64,7 +70,7 @@ func (self FileBundleCollection) Get(definition BundleDefinition) (Bundle, error
 
 	installPath := filepath.Join(self.installPath, self.name, definition.BundleName(), definition.BundleVersion())
 	enablePath := filepath.Join(self.enablePath, self.name, definition.BundleName())
-	return NewFileBundle(installPath, enablePath, self.fs), nil
+	return NewFileBundle(installPath, enablePath, self.fs, self.logger), nil
 }
 
 func (self FileBundleCollection) List() ([]Bundle, error) {
@@ -83,6 +89,8 @@ func (self FileBundleCollection) List() ([]Bundle, error) {
 
 		bundles = append(bundles, bundle)
 	}
+
+	self.logger.Debug(fileBundleCollectionLogTag, "Collection contains bundles %v", bundles)
 
 	return bundles, nil
 }

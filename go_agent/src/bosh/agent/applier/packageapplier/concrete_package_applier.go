@@ -5,28 +5,36 @@ import (
 	models "bosh/agent/applier/models"
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
 )
+
+const logTag = "concretePackageApplier"
 
 type concretePackageApplier struct {
 	packagesBc bc.BundleCollection
 	blobstore  boshblob.Blobstore
 	compressor boshcmd.Compressor
+	logger     boshlog.Logger
 }
 
 func NewConcretePackageApplier(
 	packagesBc bc.BundleCollection,
 	blobstore boshblob.Blobstore,
 	compressor boshcmd.Compressor,
+	logger boshlog.Logger,
 ) *concretePackageApplier {
 	return &concretePackageApplier{
 		packagesBc: packagesBc,
 		blobstore:  blobstore,
 		compressor: compressor,
+		logger:     logger,
 	}
 }
 
 func (s *concretePackageApplier) Apply(pkg models.Package) (err error) {
+	s.logger.Debug(logTag, "Applying package %v", pkg)
+
 	pkgBundle, err := s.packagesBc.Get(pkg)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting package bundle")
@@ -62,6 +70,8 @@ func (s *concretePackageApplier) Apply(pkg models.Package) (err error) {
 }
 
 func (s *concretePackageApplier) KeepOnly(pkgs []models.Package) error {
+	s.logger.Debug(logTag, "Keeping only packages %v", pkgs)
+
 	installedBundles, err := s.packagesBc.List()
 	if err != nil {
 		return bosherr.WrapError(err, "Retrieving installed bundles")

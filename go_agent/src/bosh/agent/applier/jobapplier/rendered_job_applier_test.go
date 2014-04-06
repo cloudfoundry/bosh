@@ -14,6 +14,7 @@ import (
 	models "bosh/agent/applier/models"
 	fakeblob "bosh/blobstore/fakes"
 	fakejobsuper "bosh/jobsupervisor/fakes"
+	boshlog "bosh/logger"
 	fakecmd "bosh/platform/commands/fakes"
 	fakesys "bosh/system/fakes"
 	boshuuid "bosh/uuid"
@@ -49,7 +50,8 @@ func init() {
 			blobstore = fakeblob.NewFakeBlobstore()
 			compressor = fakecmd.NewFakeCompressor()
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
-			applier = NewRenderedJobApplier(jobsBc, blobstore, compressor, jobSupervisor)
+			logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+			applier = NewRenderedJobApplier(jobsBc, blobstore, compressor, jobSupervisor, logger)
 		})
 
 		Describe("Apply", func() {
