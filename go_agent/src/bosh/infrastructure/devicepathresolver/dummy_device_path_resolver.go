@@ -1,4 +1,4 @@
-package device_path_resolver
+package devicepathresolver
 
 import (
 	boshsys "bosh/system"

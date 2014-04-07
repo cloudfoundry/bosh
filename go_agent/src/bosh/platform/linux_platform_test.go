@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	boshdpresolv "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshlog "bosh/logger"
 	. "bosh/platform"
 	fakecd "bosh/platform/cdutil/fakes"

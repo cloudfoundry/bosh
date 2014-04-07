@@ -1,8 +1,9 @@
-package device_path_resolver
+package fakes
 
 import (
-	boshsys "bosh/system"
 	"time"
+
+	boshsys "bosh/system"
 )
 
 type FakeDevicePathResolver struct {
@@ -11,7 +12,10 @@ type FakeDevicePathResolver struct {
 	RealDevicePath  string
 }
 
-func NewFakeDevicePathResolver(diskWaitTimeout time.Duration, fs boshsys.FileSystem) (fakeDevicePathResolver *FakeDevicePathResolver) {
+func NewFakeDevicePathResolver(
+	diskWaitTimeout time.Duration,
+	fs boshsys.FileSystem,
+) (fakeDevicePathResolver *FakeDevicePathResolver) {
 	fakeDevicePathResolver = &FakeDevicePathResolver{}
 	fakeDevicePathResolver.fs = fs
 	fakeDevicePathResolver.diskWaitTimeout = diskWaitTimeout

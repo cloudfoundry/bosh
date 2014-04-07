@@ -1,4 +1,4 @@
-package http_fakes
+package fakes
 
 import (
 	"bytes"

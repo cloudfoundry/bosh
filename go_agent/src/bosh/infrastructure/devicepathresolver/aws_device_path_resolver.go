@@ -1,10 +1,11 @@
-package device_path_resolver
+package devicepathresolver
 
 import (
-	bosherr "bosh/errors"
-	boshsys "bosh/system"
 	"strings"
 	"time"
+
+	bosherr "bosh/errors"
+	boshsys "bosh/system"
 )
 
 type awsDevicePathResolver struct {
@@ -12,7 +13,10 @@ type awsDevicePathResolver struct {
 	fs              boshsys.FileSystem
 }
 
-func NewAwsDevicePathResolver(diskWaitTimeout time.Duration, fs boshsys.FileSystem) (awsDevicePathResolver awsDevicePathResolver) {
+func NewAwsDevicePathResolver(
+	diskWaitTimeout time.Duration,
+	fs boshsys.FileSystem,
+) (awsDevicePathResolver awsDevicePathResolver) {
 	awsDevicePathResolver.fs = fs
 	awsDevicePathResolver.diskWaitTimeout = diskWaitTimeout
 	return

@@ -1,12 +1,13 @@
-package https_dispatcher
+package httpsdispatcher
 
 import (
-	bosherr "bosh/errors"
-	boshlog "bosh/logger"
 	"crypto/tls"
 	"net"
 	"net/http"
 	"net/url"
+
+	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 )
 
 type HTTPSDispatcher struct {

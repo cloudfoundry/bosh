@@ -2,7 +2,7 @@ package platform
 
 import (
 	bosherr "bosh/errors"
-	boshdpresolv "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshlog "bosh/logger"
 	boshcd "bosh/platform/cdutil"
 	boshcmd "bosh/platform/commands"

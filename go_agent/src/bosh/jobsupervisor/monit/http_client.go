@@ -47,7 +47,6 @@ func (c httpClient) ServicesInGroup(name string) (services []string, err error) 
 	status, err := c.status()
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Getting status from Monit")
-
 	}
 
 	serviceGroup, found := status.ServiceGroups.Get(name)

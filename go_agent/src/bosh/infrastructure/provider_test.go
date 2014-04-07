@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	. "bosh/infrastructure"
-	boshdpresolv "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshlog "bosh/logger"
 	fakeplatform "bosh/platform/fakes"
 )

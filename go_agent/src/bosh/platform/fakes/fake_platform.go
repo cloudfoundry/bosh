@@ -1,7 +1,10 @@
 package fakes
 
 import (
-	boshdpresolv "bosh/infrastructure/device_path_resolver"
+	"time"
+
+	boshdpresolv "bosh/infrastructure/devicepathresolver"
+	fakedpresolv "bosh/infrastructure/devicepathresolver/fakes"
 	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
 	fakecmd "bosh/platform/commands/fakes"
@@ -15,7 +18,6 @@ import (
 	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
-	"time"
 )
 
 type FakePlatform struct {
@@ -91,9 +93,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.FakeCopier = fakecmd.NewFakeCopier()
 	platform.FakeVitalsService = fakevitals.NewFakeService()
 	platform.FakeDiskManager = fakedisk.NewFakeDiskManager()
-
-	platform.DevicePathResolver = boshdpresolv.NewFakeDevicePathResolver(1*time.Millisecond, platform.Fs)
-
+	platform.DevicePathResolver = fakedpresolv.NewFakeDevicePathResolver(1*time.Millisecond, platform.Fs)
 	platform.AddUserToGroupsGroups = make(map[string][]string)
 	platform.SetupSshPublicKeys = make(map[string]string)
 	platform.UserPasswords = make(map[string]string)

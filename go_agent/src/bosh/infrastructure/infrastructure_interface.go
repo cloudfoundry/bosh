@@ -1,7 +1,7 @@
 package infrastructure
 
 import (
-	boshdpresolv "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshsettings "bosh/settings"
 )
 

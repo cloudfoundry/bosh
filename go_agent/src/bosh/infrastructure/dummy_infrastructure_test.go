@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "bosh/infrastructure"
-	boshdpresolv "bosh/infrastructure/device_path_resolver"
+	fakedpresolv "bosh/infrastructure/devicepathresolver/fakes"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
@@ -23,7 +23,7 @@ func init() {
 			fs := fakefs.NewFakeFileSystem()
 			dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
 			platform := fakeplatform.NewFakePlatform()
-			fakeDevicePathResolver := boshdpresolv.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
+			fakeDevicePathResolver := fakedpresolv.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
 
 			settingsPath := filepath.Join(dirProvider.BoshDir(), "dummy-cpi-agent-env.json")
 
@@ -52,7 +52,7 @@ func init() {
 			fs := fakefs.NewFakeFileSystem()
 			dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
 			platform := fakeplatform.NewFakePlatform()
-			fakeDevicePathResolver := boshdpresolv.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
+			fakeDevicePathResolver := fakedpresolv.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
 
 			dummy := NewDummyInfrastructure(fs, dirProvider, platform, fakeDevicePathResolver)
 

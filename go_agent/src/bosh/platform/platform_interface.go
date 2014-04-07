@@ -1,7 +1,7 @@
 package platform
 
 import (
-	boshdpresolv "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"

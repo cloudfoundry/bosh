@@ -1,4 +1,4 @@
-package https_dispatcher_test
+package httpsdispatcher_test
 
 import (
 	. "github.com/onsi/ginkgo"

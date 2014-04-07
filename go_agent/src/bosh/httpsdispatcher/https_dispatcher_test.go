@@ -1,7 +1,7 @@
-package https_dispatcher_test
+package httpsdispatcher_test
 
 import (
-	boshdispatcher "bosh/https_dispatcher"
+	boshdispatcher "bosh/httpsdispatcher"
 	boshlog "bosh/logger"
 	"crypto/tls"
 	. "github.com/onsi/ginkgo"

@@ -1,11 +1,13 @@
-package device_path_resolver
+package devicepathresolver
 
 import (
-	boshsys "bosh/system"
-	fakesys "bosh/system/fakes"
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"time"
+
+	boshsys "bosh/system"
+	fakesys "bosh/system/fakes"
 )
 
 var _ = Describe("Path Resolver", func() {

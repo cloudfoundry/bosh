@@ -2,7 +2,7 @@ package infrastructure
 
 import (
 	bosherr "bosh/errors"
-	boshdpresolv "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshplatform "bosh/platform"
 	boshdisk "bosh/platform/disk"
 	boshsettings "bosh/settings"

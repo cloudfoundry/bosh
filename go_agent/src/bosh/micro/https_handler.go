@@ -1,35 +1,40 @@
 package micro
 
 import (
-	"bosh/blobstore"
-	bosherr "bosh/errors"
-	boshhandler "bosh/handler"
-	boshhttps "bosh/https_dispatcher"
-	boshlog "bosh/logger"
-	boshdir "bosh/settings/directories"
-	boshsys "bosh/system"
 	"encoding/base64"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
+
+	"bosh/blobstore"
+	bosherr "bosh/errors"
+	boshhandler "bosh/handler"
+	boshdispatcher "bosh/httpsdispatcher"
+	boshlog "bosh/logger"
+	boshdir "bosh/settings/directories"
+	boshsys "bosh/system"
 )
 
 type HTTPSHandler struct {
 	parsedURL   *url.URL
 	logger      boshlog.Logger
-	dispatcher  boshhttps.HTTPSDispatcher
+	dispatcher  boshdispatcher.HTTPSDispatcher
 	fs          boshsys.FileSystem
 	dirProvider boshdir.DirectoriesProvider
 }
 
-func NewHTTPSHandler(parsedURL *url.URL, logger boshlog.Logger, fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider) (handler HTTPSHandler) {
+func NewHTTPSHandler(
+	parsedURL *url.URL,
+	logger boshlog.Logger,
+	fs boshsys.FileSystem,
+	dirProvider boshdir.DirectoriesProvider,
+) (handler HTTPSHandler) {
 	handler.parsedURL = parsedURL
 	handler.logger = logger
 	handler.fs = fs
 	handler.dirProvider = dirProvider
-	handler.dispatcher = boshhttps.NewHTTPSDispatcher(parsedURL, logger)
-
+	handler.dispatcher = boshdispatcher.NewHTTPSDispatcher(parsedURL, logger)
 	return
 }
 
