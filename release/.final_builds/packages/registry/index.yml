@@ -195,3 +195,8 @@ builds:
     version: 39
     sha1: !binary |-
       MDc5ODQyYWEwMWJhMzMxNWQ5ODc2MWI3ODU4YTk4MjA1MzU3ZDY3ZQ==
+  !binary "YTBjZDk3YzkwN2MyZTUyZjQ0ODAxZTU1NGVkODI4MDE0Yzc1ZTdkZg==":
+    blobstore_id: 97bc9925-1a2a-4aeb-ba4b-d5edc6d6ea60
+    version: 40
+    sha1: !binary |-
+      MWRjZWNiYzFjYTBmZGQ0NDBlNGFhYjc3ZjJlMmY4MmFjMTIzNjE5MQ==
