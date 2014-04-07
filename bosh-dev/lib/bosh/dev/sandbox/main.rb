@@ -139,14 +139,10 @@ module Bosh::Dev::Sandbox
       setup_sandbox_root
 
       @redis_process.start
-      @logger.info("Waiting for redis-server to come up on port #{redis_port}")
       @redis_socket_connector.try_to_connect
-      @nats_process.start
-      @logger.info("Waiting for nats-server to come up on port #{nats_port}")
-      @nats_socket_connector.try_to_connect
 
-      @database.create_db
-      @database_migrator.migrate
+      @nats_process.start
+      @nats_socket_connector.try_to_connect
 
       FileUtils.mkdir_p(cloud_storage_dir)
       FileUtils.rm_rf(logs_path)
@@ -240,7 +236,9 @@ module Bosh::Dev::Sandbox
 
       Redis.new(host: 'localhost', port: redis_port).flushdb
 
-      @database.drop_db
+      @database.drop_db if @database_created
+      @database_created = true
+
       @database.create_db
       @database_migrator.migrate
 
@@ -261,7 +259,6 @@ module Bosh::Dev::Sandbox
 
       # CI does not have enough time to start bosh-director
       # for some parallel tests; increasing to 60 secs (= 300 tries).
-      @logger.info("Waiting for director to come up on port #{director_port}")
       @director_socket_connector.try_to_connect(300)
     end
 
