@@ -2,7 +2,7 @@ package infrastructure
 
 import (
 	bosherr "bosh/errors"
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/device_path_resolver"
 	boshlog "bosh/logger"
 	boshplatform "bosh/platform"
 	boshdisk "bosh/platform/disk"
@@ -16,10 +16,10 @@ type vsphereInfrastructure struct {
 	logger             boshlog.Logger
 	platform           boshplatform.Platform
 	diskWaitTimeout    time.Duration
-	devicePathResolver boshdevicepathresolver.DevicePathResolver
+	devicePathResolver boshdpresolv.DevicePathResolver
 }
 
-func NewVsphereInfrastructure(platform boshplatform.Platform, devicePathResolver boshdevicepathresolver.DevicePathResolver, logger boshlog.Logger) (inf vsphereInfrastructure) {
+func NewVsphereInfrastructure(platform boshplatform.Platform, devicePathResolver boshdpresolv.DevicePathResolver, logger boshlog.Logger) (inf vsphereInfrastructure) {
 	inf.platform = platform
 	inf.logger = logger
 	inf.devicePathResolver = devicePathResolver
@@ -27,7 +27,7 @@ func NewVsphereInfrastructure(platform boshplatform.Platform, devicePathResolver
 	return
 }
 
-func (inf vsphereInfrastructure) GetDevicePathResolver() boshdevicepathresolver.DevicePathResolver {
+func (inf vsphereInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathResolver {
 	return inf.devicePathResolver
 }
 

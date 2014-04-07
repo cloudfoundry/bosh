@@ -2,7 +2,7 @@ package platform
 
 import (
 	bosherr "bosh/errors"
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/device_path_resolver"
 	boshlog "bosh/logger"
 	boshcd "bosh/platform/cdutil"
 	boshcmd "bosh/platform/commands"
@@ -36,7 +36,7 @@ type linux struct {
 	diskManager        boshdisk.Manager
 	netManager         boshnet.NetManager
 	diskScanDuration   time.Duration
-	devicePathResolver boshdevicepathresolver.DevicePathResolver
+	devicePathResolver boshdpresolv.DevicePathResolver
 	logger             boshlog.Logger
 }
 
@@ -103,11 +103,11 @@ func (p linux) GetFileContentsFromCDROM(fileName string) (contents []byte, err e
 	return p.cdutil.GetFileContents(fileName)
 }
 
-func (p linux) GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver) {
+func (p linux) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {
 	return p.devicePathResolver
 }
 
-func (p *linux) SetDevicePathResolver(devicePathResolver boshdevicepathresolver.DevicePathResolver) (err error) {
+func (p *linux) SetDevicePathResolver(devicePathResolver boshdpresolv.DevicePathResolver) (err error) {
 	p.devicePathResolver = devicePathResolver
 	return
 }

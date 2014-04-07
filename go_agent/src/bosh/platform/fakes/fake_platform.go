@@ -1,7 +1,7 @@
 package fakes
 
 import (
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/device_path_resolver"
 	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
 	fakecmd "bosh/platform/commands/fakes"
@@ -28,7 +28,7 @@ type FakePlatform struct {
 	FakeDiskManager    *fakedisk.FakeDiskManager
 	logger             boshlog.Logger
 
-	DevicePathResolver boshdevicepathresolver.DevicePathResolver
+	DevicePathResolver boshdpresolv.DevicePathResolver
 
 	SetupRuntimeConfigurationWasInvoked bool
 
@@ -92,7 +92,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.FakeVitalsService = fakevitals.NewFakeService()
 	platform.FakeDiskManager = fakedisk.NewFakeDiskManager()
 
-	platform.DevicePathResolver = boshdevicepathresolver.NewFakeDevicePathResolver(1*time.Millisecond, platform.Fs)
+	platform.DevicePathResolver = boshdpresolv.NewFakeDevicePathResolver(1*time.Millisecond, platform.Fs)
 
 	platform.AddUserToGroupsGroups = make(map[string][]string)
 	platform.SetupSshPublicKeys = make(map[string]string)
@@ -129,11 +129,11 @@ func (p *FakePlatform) GetVitalsService() (service boshvitals.Service) {
 	return p.FakeVitalsService
 }
 
-func (p *FakePlatform) GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver) {
+func (p *FakePlatform) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {
 	return p.DevicePathResolver
 }
 
-func (p *FakePlatform) SetDevicePathResolver(devicePathResolver boshdevicepathresolver.DevicePathResolver) (err error) {
+func (p *FakePlatform) SetDevicePathResolver(devicePathResolver boshdpresolv.DevicePathResolver) (err error) {
 	p.DevicePathResolver = devicePathResolver
 	return
 }

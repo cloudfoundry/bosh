@@ -1,7 +1,7 @@
 package platform
 
 import (
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/device_path_resolver"
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
@@ -22,8 +22,8 @@ type Platform interface {
 	GetMonitCredentials() (username, password string, err error)
 	GetDiskManager() (diskManager boshdisk.Manager)
 
-	GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver)
-	SetDevicePathResolver(devicePathResolver boshdevicepathresolver.DevicePathResolver) (err error)
+	GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver)
+	SetDevicePathResolver(devicePathResolver boshdpresolv.DevicePathResolver) (err error)
 
 	// User management
 	CreateUser(username, password, basePath string) (err error)

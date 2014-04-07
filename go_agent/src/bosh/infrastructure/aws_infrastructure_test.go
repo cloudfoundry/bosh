@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "bosh/infrastructure"
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/device_path_resolver"
 	boshdisk "bosh/platform/disk"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
@@ -36,12 +36,12 @@ func (res *FakeDNSResolver) LookupHost(dnsServers []string, host string) (ip str
 func init() {
 	var (
 		platform               *fakeplatform.FakePlatform
-		fakeDevicePathResolver *boshdevicepathresolver.FakeDevicePathResolver
+		fakeDevicePathResolver *boshdpresolv.FakeDevicePathResolver
 	)
 
 	BeforeEach(func() {
 		platform = fakeplatform.NewFakePlatform()
-		fakeDevicePathResolver = boshdevicepathresolver.NewFakeDevicePathResolver(
+		fakeDevicePathResolver = boshdpresolv.NewFakeDevicePathResolver(
 			1*time.Millisecond,
 			platform.GetFs(),
 		)

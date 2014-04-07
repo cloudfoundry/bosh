@@ -1,7 +1,7 @@
 package platform
 
 import (
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/device_path_resolver"
 	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
@@ -22,7 +22,7 @@ type dummyPlatform struct {
 	dirProvider        boshdirs.DirectoriesProvider
 	vitalsService      boshvitals.Service
 	diskManager        boshdisk.Manager
-	devicePathResolver boshdevicepathresolver.DevicePathResolver
+	devicePathResolver boshdpresolv.DevicePathResolver
 	logger             boshlog.Logger
 }
 
@@ -75,11 +75,11 @@ func (p dummyPlatform) GetVitalsService() (service boshvitals.Service) {
 	return p.vitalsService
 }
 
-func (p dummyPlatform) GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver) {
+func (p dummyPlatform) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {
 	return p.devicePathResolver
 }
 
-func (p *dummyPlatform) SetDevicePathResolver(devicePathResolver boshdevicepathresolver.DevicePathResolver) (err error) {
+func (p *dummyPlatform) SetDevicePathResolver(devicePathResolver boshdpresolv.DevicePathResolver) (err error) {
 	p.devicePathResolver = devicePathResolver
 	return
 }

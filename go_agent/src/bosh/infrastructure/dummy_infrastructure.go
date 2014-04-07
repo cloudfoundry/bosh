@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	bosherr "bosh/errors"
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/device_path_resolver"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
@@ -16,14 +16,14 @@ type dummyInfrastructure struct {
 	fs                 boshsys.FileSystem
 	dirProvider        boshdir.DirectoriesProvider
 	platform           boshplatform.Platform
-	devicePathResolver boshdevicepathresolver.DevicePathResolver
+	devicePathResolver boshdpresolv.DevicePathResolver
 }
 
 func NewDummyInfrastructure(
 	fs boshsys.FileSystem,
 	dirProvider boshdir.DirectoriesProvider,
 	platform boshplatform.Platform,
-	devicePathResolver boshdevicepathresolver.DevicePathResolver,
+	devicePathResolver boshdpresolv.DevicePathResolver,
 ) (inf dummyInfrastructure) {
 	inf.fs = fs
 	inf.dirProvider = dirProvider
@@ -32,7 +32,7 @@ func NewDummyInfrastructure(
 	return
 }
 
-func (inf dummyInfrastructure) GetDevicePathResolver() boshdevicepathresolver.DevicePathResolver {
+func (inf dummyInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathResolver {
 	return inf.devicePathResolver
 }
 

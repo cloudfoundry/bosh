@@ -2,7 +2,7 @@ package infrastructure
 
 import (
 	bosherr "bosh/errors"
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/device_path_resolver"
 	boshplatform "bosh/platform"
 	boshdisk "bosh/platform/disk"
 	boshsettings "bosh/settings"
@@ -19,11 +19,11 @@ type awsInfrastructure struct {
 	metadataHost       string
 	resolver           dnsResolver
 	platform           boshplatform.Platform
-	devicePathResolver boshdevicepathresolver.DevicePathResolver
+	devicePathResolver boshdpresolv.DevicePathResolver
 }
 
 func NewAwsInfrastructure(metadataHost string, resolver dnsResolver, platform boshplatform.Platform,
-	devicePathResolver boshdevicepathresolver.DevicePathResolver) (inf awsInfrastructure) {
+	devicePathResolver boshdpresolv.DevicePathResolver) (inf awsInfrastructure) {
 	inf.metadataHost = metadataHost
 	inf.resolver = resolver
 	inf.platform = platform
@@ -32,7 +32,7 @@ func NewAwsInfrastructure(metadataHost string, resolver dnsResolver, platform bo
 	return
 }
 
-func (inf awsInfrastructure) GetDevicePathResolver() boshdevicepathresolver.DevicePathResolver {
+func (inf awsInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathResolver {
 	return inf.devicePathResolver
 }
 

@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/device_path_resolver"
 	boshlog "bosh/logger"
 	. "bosh/platform"
 	fakecd "bosh/platform/cdutil/fakes"
@@ -79,7 +79,7 @@ var _ = Describe("LinuxPlatform", func() {
 			sleepInterval,
 			logger,
 		)
-		devicePathResolver := boshdevicepathresolver.NewAwsDevicePathResolver(diskWaitTimeout, fs)
+		devicePathResolver := boshdpresolv.NewAwsDevicePathResolver(diskWaitTimeout, fs)
 		platform.SetDevicePathResolver(devicePathResolver)
 	})
 

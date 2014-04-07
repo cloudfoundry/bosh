@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	. "bosh/infrastructure"
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/device_path_resolver"
 	boshlog "bosh/logger"
 	fakeplatform "bosh/platform/fakes"
 )
@@ -25,7 +25,7 @@ func init() {
 			logger, platform, provider := getNewProvider()
 			inf, err := provider.Get("aws")
 
-			devicePathResolver := boshdevicepathresolver.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
+			devicePathResolver := boshdpresolv.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
 
 			Expect(err).ToNot(HaveOccurred())
 			assert.IsType(GinkgoT(), NewAwsInfrastructure("http://169.254.169.254", NewDigDNSResolver(logger), platform, devicePathResolver), inf)
@@ -35,7 +35,7 @@ func init() {
 			logger, platform, provider := getNewProvider()
 			inf, err := provider.Get("vsphere")
 
-			devicePathResolver := boshdevicepathresolver.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
+			devicePathResolver := boshdpresolv.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
 
 			Expect(err).ToNot(HaveOccurred())
 			assert.IsType(GinkgoT(), NewVsphereInfrastructure(platform, devicePathResolver, logger), inf)

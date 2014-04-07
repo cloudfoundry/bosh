@@ -2,7 +2,7 @@ package infrastructure
 
 import (
 	bosherr "bosh/errors"
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/device_path_resolver"
 	boshlog "bosh/logger"
 	boshplatform "bosh/platform"
 	boshdir "bosh/settings/directories"
@@ -35,7 +35,7 @@ func (p Provider) Get(name string) (inf Infrastructure, err error) {
 }
 
 func (p Provider) createVsphereInfrastructure(platform boshplatform.Platform, logger boshlog.Logger) (inf Infrastructure) {
-	devicePathResolver := boshdevicepathresolver.NewVsphereDevicePathResolver(500*time.Millisecond, platform.GetFs())
+	devicePathResolver := boshdpresolv.NewVsphereDevicePathResolver(500*time.Millisecond, platform.GetFs())
 	inf = NewVsphereInfrastructure(platform, devicePathResolver, logger)
 	return
 }
@@ -43,14 +43,14 @@ func (p Provider) createVsphereInfrastructure(platform boshplatform.Platform, lo
 func (p Provider) createAwsInfrastructure(metadataHost string, resolver dnsResolver,
 	platform boshplatform.Platform) (inf Infrastructure) {
 
-	devicePathResolver := boshdevicepathresolver.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
+	devicePathResolver := boshdpresolv.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
 	inf = NewAwsInfrastructure(metadataHost, resolver, platform, devicePathResolver)
 	return
 }
 
 func (p Provider) createDummyInfrastructure(fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider,
 	platform boshplatform.Platform) (inf Infrastructure) {
-	devicePathResolver := boshdevicepathresolver.NewDummyDevicePathResolver(1*time.Millisecond, platform.GetFs())
+	devicePathResolver := boshdpresolv.NewDummyDevicePathResolver(1*time.Millisecond, platform.GetFs())
 	inf = NewDummyInfrastructure(fs, dirProvider, platform, devicePathResolver)
 	return
 }
