@@ -151,17 +151,6 @@ var _ = Describe("FileBundle", func() {
 	})
 
 	Describe("Disable", func() {
-		It("removes the symlink", func() {
-			_, _, err := fileBundle.Install()
-			Expect(err).NotTo(HaveOccurred())
-			_, _, err = fileBundle.Enable()
-			Expect(err).NotTo(HaveOccurred())
-
-			err = fileBundle.Disable()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(fs.FileExists(enablePath)).To(BeFalse())
-		})
-
 		It("is idempotent", func() {
 			err := fileBundle.Disable()
 			Expect(err).NotTo(HaveOccurred())
@@ -172,14 +161,40 @@ var _ = Describe("FileBundle", func() {
 			Expect(fs.FileExists(enablePath)).To(BeFalse())
 		})
 
-		Context("where the symlink is pointing at a different installed version", func() {
-			It("does not remove the symlink", func() {
+		Context("where the enabled path target is the same installed version", func() {
+			BeforeEach(func() {
 				_, _, err := fileBundle.Install()
 				Expect(err).NotTo(HaveOccurred())
 
 				_, _, err = fileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
-				newerInstallPath := "/newer-install-path"
+			})
+
+			It("does not return error and removes the symlink", func() {
+				err := fileBundle.Disable()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fs.FileExists(enablePath)).To(BeFalse())
+			})
+
+			It("returns error when bundle cannot be disabled", func() {
+				fs.RemoveAllError = errors.New("fake-removeall-error")
+
+				err := fileBundle.Disable()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-removeall-error"))
+			})
+		})
+
+		Context("where the enabled path target is a different installed version", func() {
+			newerInstallPath := "/newer-install-path"
+
+			BeforeEach(func() {
+				_, _, err := fileBundle.Install()
+				Expect(err).NotTo(HaveOccurred())
+
+				_, _, err = fileBundle.Enable()
+				Expect(err).NotTo(HaveOccurred())
+
 				newerFileBundle := NewFileBundle(newerInstallPath, enablePath, fs, logger)
 
 				_, _, err = newerFileBundle.Install()
@@ -187,14 +202,26 @@ var _ = Describe("FileBundle", func() {
 
 				_, _, err = newerFileBundle.Enable()
 				Expect(err).NotTo(HaveOccurred())
+			})
 
-				err = fileBundle.Disable()
+			It("does not return error and does not remove the symlink", func() {
+				err := fileBundle.Disable()
 				Expect(err).NotTo(HaveOccurred())
 
 				fileStats := fs.GetFileTestStat(enablePath)
 				Expect(fileStats).NotTo(BeNil())
 				Expect(fileStats.FileType).To(Equal(fakesys.FakeFileType(fakesys.FakeFileTypeSymlink)))
 				Expect(newerInstallPath).To(Equal(fileStats.SymlinkTarget))
+			})
+		})
+
+		Context("when the symlink cannot be read", func() {
+			It("returns error because we cannot determine if bundle is enabled or disabled", func() {
+				fs.ReadLinkError = errors.New("fake-read-link-error")
+
+				err := fileBundle.Disable()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-read-link-error"))
 			})
 		})
 	})

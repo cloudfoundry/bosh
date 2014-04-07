@@ -81,7 +81,7 @@ func (b FileBundle) Disable() error {
 	}
 
 	if target == b.installPath {
-		b.fs.RemoveAll(b.enablePath)
+		return b.fs.RemoveAll(b.enablePath)
 	}
 
 	return nil

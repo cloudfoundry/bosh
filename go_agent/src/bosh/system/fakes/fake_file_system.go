@@ -44,6 +44,8 @@ type FakeFileSystem struct {
 
 	RemoveAllError error
 
+	ReadLinkError error
+
 	TempFileError  error
 	ReturnTempFile *os.File
 
@@ -201,15 +203,17 @@ func (fs *FakeFileSystem) Symlink(oldPath, newPath string) (err error) {
 	return
 }
 
-func (fs *FakeFileSystem) ReadLink(symlinkPath string) (targetPath string, err error) {
-	stat := fs.GetFileTestStat(symlinkPath)
-	if stat != nil {
-		targetPath = stat.SymlinkTarget
-	} else {
-		err = os.ErrNotExist
+func (fs *FakeFileSystem) ReadLink(symlinkPath string) (string, error) {
+	if fs.ReadLinkError != nil {
+		return "", fs.ReadLinkError
 	}
 
-	return
+	stat := fs.GetFileTestStat(symlinkPath)
+	if stat != nil {
+		return stat.SymlinkTarget, nil
+	}
+
+	return "", os.ErrNotExist
 }
 
 func (fs *FakeFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
