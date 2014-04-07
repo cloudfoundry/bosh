@@ -10,12 +10,16 @@ echo -e "\n Installing package dependencies..."
 $(dirname $0)/go test -i bosh/...
 let "result+=$?"
 
-echo -e "\n Testing packages:"
+echo -e "\n Testing packages..."
 $(dirname $0)/go test bosh/... -parallel 4 $@
 let "result+=$?"
 
 echo -e "\n Vetting packages for potential issues..."
 $(dirname $0)/go vet bosh/...
+let "result+=$?"
+
+echo -e "\n Checking with golint..."
+$(dirname $0)/golint
 let "result+=$?"
 
 echo -e "\n Running build script to confirm everything compiles..."

@@ -5,7 +5,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 
 	. "bosh/agent/applier/applyspec"
 	models "bosh/agent/applier/models"
@@ -116,10 +115,9 @@ func init() {
 
 			spec := V1ApplySpec{}
 			err := json.Unmarshal([]byte(specJSON), &spec)
-
 			Expect(err).ToNot(HaveOccurred())
-			Expect(spec.NetworkSpecs).To(Equal(expectedNetworks))
 			Expect(spec).To(Equal(expectedSpec))
+			Expect(spec.NetworkSpecs).To(Equal(expectedNetworks))
 		})
 
 		It("jobs with specified job templates", func() {
@@ -151,7 +149,8 @@ func init() {
 					BlobstoreID: "fake-rendered-templates-archive-blobstore-id",
 				},
 			}
-			assert.Equal(GinkgoT(), []models.Job{
+
+			Expect(spec.Jobs()).To(Equal([]models.Job{
 				models.Job{
 					Name:    "fake-job1-name",
 					Version: "fake-job1-version",
@@ -170,12 +169,12 @@ func init() {
 						PathInArchive: "fake-job2-name",
 					},
 				},
-			}, spec.Jobs())
+			}))
 		})
 
 		It("jobs when no jobs specified", func() {
 			spec := V1ApplySpec{}
-			Expect([]models.Job{}).To(Equal(spec.Jobs()))
+			Expect(spec.Jobs()).To(Equal([]models.Job{}))
 		})
 
 		It("packages", func() {
@@ -190,7 +189,7 @@ func init() {
 				},
 			}
 
-			assert.Equal(GinkgoT(), []models.Package{
+			Expect(spec.Packages()).To(Equal([]models.Package{
 				models.Package{
 					Name:    "fake-package1-name",
 					Version: "fake-package1-version",
@@ -199,20 +198,20 @@ func init() {
 						BlobstoreID: "fake-package1-blobstore-id",
 					},
 				},
-			}, spec.Packages())
+			}))
 		})
 
 		It("packages when no packages specified", func() {
 			spec := V1ApplySpec{}
-			Expect([]models.Package{}).To(Equal(spec.Packages()))
+			Expect(spec.Packages()).To(Equal([]models.Package{}))
 		})
 
 		It("max log file size", func() {
 			spec := V1ApplySpec{}
-			Expect("50M").To(Equal(spec.MaxLogFileSize()))
+			Expect(spec.MaxLogFileSize()).To(Equal("50M"))
 
 			spec.PropertiesSpec.LoggingSpec.MaxLogFileSize = "fake-size"
-			Expect("fake-size").To(Equal(spec.MaxLogFileSize()))
+			Expect(spec.MaxLogFileSize()).To(Equal("fake-size"))
 		})
 	})
 }

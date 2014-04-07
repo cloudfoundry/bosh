@@ -25,3 +25,6 @@
 [submodule "go_agent/src/github.com/onsi/gomega"]
 	path = go_agent/src/github.com/onsi/gomega
 	url = https://github.com/onsi/gomega.git
+[submodule "go_agent/src/github.com/golang/lint"]
+	path = go_agent/src/github.com/golang/lint
+	url = https://github.com/golang/lint.git

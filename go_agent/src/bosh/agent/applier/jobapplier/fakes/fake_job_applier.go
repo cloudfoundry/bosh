@@ -18,7 +18,7 @@ type FakeJobApplier struct {
 
 func NewFakeJobApplier() *FakeJobApplier {
 	return &FakeJobApplier{
-		AppliedJobs: make([]models.Job, 0),
+		AppliedJobs: []models.Job{},
 	}
 }
 

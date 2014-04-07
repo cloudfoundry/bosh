@@ -15,7 +15,7 @@ type JobSpec struct {
 }
 
 func (s *JobSpec) JobTemplateSpecsAsJobs() []models.Job {
-	jobs := make([]models.Job, 0)
+	jobs := []models.Job{}
 	for _, value := range s.JobTemplateSpecs {
 		jobs = append(jobs, value.AsJob())
 	}

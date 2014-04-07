@@ -43,7 +43,7 @@ func (s V1ApplySpec) Jobs() []models.Job {
 }
 
 func (s V1ApplySpec) Packages() []models.Package {
-	packages := make([]models.Package, 0)
+	packages := []models.Package{}
 	for _, value := range s.PackageSpecs {
 		packages = append(packages, value.AsPackage())
 	}

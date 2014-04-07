@@ -14,7 +14,7 @@ type FakePackageApplier struct {
 
 func NewFakePackageApplier() *FakePackageApplier {
 	return &FakePackageApplier{
-		AppliedPackages: make([]models.Package, 0),
+		AppliedPackages: []models.Package{},
 	}
 }
 
