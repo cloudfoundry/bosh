@@ -1,12 +1,11 @@
 package disk
 
 import (
-	bosherr "bosh/errors"
-	boshsys "bosh/system"
-	"errors"
-	"fmt"
 	"strings"
 	"time"
+
+	bosherr "bosh/errors"
+	boshsys "bosh/system"
 )
 
 type linuxMounter struct {
@@ -144,12 +143,12 @@ func (m linuxMounter) shouldMount(partitionPath, mountPoint string) (shouldMount
 			found = true
 			return
 		case mountedPartitionPath == partitionPath && mountedMountPoint != mountPoint:
-			err = errors.New(fmt.Sprintf("Device %s is already mounted to %s, can't mount to %s",
-				mountedPartitionPath, mountedMountPoint, mountPoint))
+			err = bosherr.New("Device %s is already mounted to %s, can't mount to %s",
+				mountedPartitionPath, mountedMountPoint, mountPoint)
 			return
 		case mountedMountPoint == mountPoint:
-			err = errors.New(fmt.Sprintf("Device %s is already mounted to %s, can't mount %s",
-				mountedPartitionPath, mountedMountPoint, partitionPath))
+			err = bosherr.New("Device %s is already mounted to %s, can't mount %s",
+				mountedPartitionPath, mountedMountPoint, partitionPath)
 			return
 		}
 

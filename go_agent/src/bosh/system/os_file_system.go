@@ -196,12 +196,12 @@ func (fs osFileSystem) Symlink(oldPath, newPath string) (err error) {
 	if err == nil {
 		if existingTargetedPath == actualOldPath {
 			return
-		} else {
-			err = os.Remove(newPath)
-			if err != nil {
-				err = bosherr.WrapError(err, "Failed to delete symlimk at %s", newPath)
-				return
-			}
+		}
+
+		err = os.Remove(newPath)
+		if err != nil {
+			err = bosherr.WrapError(err, "Failed to delete symlimk at %s", newPath)
+			return
 		}
 	}
 

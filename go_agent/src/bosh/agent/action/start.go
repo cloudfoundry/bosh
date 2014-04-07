@@ -26,8 +26,8 @@ func (a StartAction) IsPersistent() bool {
 	return false
 }
 
-func (s StartAction) Run() (value interface{}, err error) {
-	err = s.jobSupervisor.Start()
+func (a StartAction) Run() (value interface{}, err error) {
+	err = a.jobSupervisor.Start()
 	if err != nil {
 		err = bosherr.WrapError(err, "Starting Monitored Services")
 		return

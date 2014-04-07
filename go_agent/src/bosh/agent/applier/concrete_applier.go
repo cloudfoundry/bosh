@@ -84,7 +84,7 @@ func (a *concreteApplier) Apply(currentApplySpec, desiredApplySpec as.ApplySpec)
 
 func (a *concreteApplier) setUpLogrotate(applySpec as.ApplySpec) error {
 	err := a.logrotateDelegate.SetupLogrotate(
-		boshsettings.VCAP_USERNAME,
+		boshsettings.VCAPUsername,
 		a.dirProvider.BaseDir(),
 		applySpec.MaxLogFileSize(),
 	)

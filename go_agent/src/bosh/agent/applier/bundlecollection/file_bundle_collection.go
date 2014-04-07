@@ -59,7 +59,7 @@ func NewFileBundleCollection(
 	}
 }
 
-func (self FileBundleCollection) Get(definition BundleDefinition) (Bundle, error) {
+func (bc FileBundleCollection) Get(definition BundleDefinition) (Bundle, error) {
 	if len(definition.BundleName()) == 0 {
 		return nil, bosherr.New("Missing bundle name")
 	}
@@ -68,21 +68,21 @@ func (self FileBundleCollection) Get(definition BundleDefinition) (Bundle, error
 		return nil, bosherr.New("Missing bundle version")
 	}
 
-	installPath := filepath.Join(self.installPath, self.name, definition.BundleName(), definition.BundleVersion())
-	enablePath := filepath.Join(self.enablePath, self.name, definition.BundleName())
-	return NewFileBundle(installPath, enablePath, self.fs, self.logger), nil
+	installPath := filepath.Join(bc.installPath, bc.name, definition.BundleName(), definition.BundleVersion())
+	enablePath := filepath.Join(bc.enablePath, bc.name, definition.BundleName())
+	return NewFileBundle(installPath, enablePath, bc.fs, bc.logger), nil
 }
 
-func (self FileBundleCollection) List() ([]Bundle, error) {
+func (bc FileBundleCollection) List() ([]Bundle, error) {
 	var bundles []Bundle
 
-	bundleInstallPaths, err := self.fs.Glob(filepath.Join(self.installPath, self.name, "*", "*"))
+	bundleInstallPaths, err := bc.fs.Glob(filepath.Join(bc.installPath, bc.name, "*", "*"))
 	if err != nil {
 		return bundles, bosherr.WrapError(err, "Globbing bundles")
 	}
 
 	for _, path := range bundleInstallPaths {
-		bundle, err := self.Get(newFileBundleDefinition(path))
+		bundle, err := bc.Get(newFileBundleDefinition(path))
 		if err != nil {
 			return bundles, bosherr.WrapError(err, "Getting bundle")
 		}
@@ -90,7 +90,7 @@ func (self FileBundleCollection) List() ([]Bundle, error) {
 		bundles = append(bundles, bundle)
 	}
 
-	self.logger.Debug(fileBundleCollectionLogTag, "Collection contains bundles %v", bundles)
+	bc.logger.Debug(fileBundleCollectionLogTag, "Collection contains bundles %v", bundles)
 
 	return bundles, nil
 }

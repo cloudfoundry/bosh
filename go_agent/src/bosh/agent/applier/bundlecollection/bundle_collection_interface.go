@@ -4,7 +4,7 @@ import (
 	boshsys "bosh/system"
 )
 
-// e.g. Job, Package
+// BundleDefinition uniquely identifies an asset within a BundleCollection (e.g. Job, Package)
 type BundleDefinition interface {
 	BundleName() string
 	BundleVersion() string

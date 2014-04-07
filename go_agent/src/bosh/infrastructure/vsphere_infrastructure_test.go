@@ -26,7 +26,7 @@ func init() {
 		BeforeEach(func() {
 			platform = fakeplatform.NewFakePlatform()
 			fakeDevicePathResolver = boshdevicepathresolver.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
-			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger = boshlog.NewLogger(boshlog.LevelNone)
 		})
 
 		JustBeforeEach(func() {

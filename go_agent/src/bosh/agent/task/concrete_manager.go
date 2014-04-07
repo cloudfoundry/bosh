@@ -64,13 +64,14 @@ func (m *concreteManager) GetTaskInfos() ([]TaskInfo, error) {
 
 	if err != nil {
 		return nil, err
-	} else {
-		var r []TaskInfo
-		for _, taskInfo := range taskInfos {
-			r = append(r, taskInfo)
-		}
-		return r, nil
 	}
+
+	var r []TaskInfo
+	for _, taskInfo := range taskInfos {
+		r = append(r, taskInfo)
+	}
+
+	return r, nil
 }
 
 func (m *concreteManager) AddTaskInfo(taskInfo TaskInfo) error {

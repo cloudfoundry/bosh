@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	logger := boshlog.NewLogger(boshlog.LEVEL_DEBUG)
+	logger := boshlog.NewLogger(boshlog.LevelDebug)
 	defer logger.HandlePanic("Main")
 	logger.Debug("main", "Starting agent")
 

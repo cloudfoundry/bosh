@@ -50,7 +50,7 @@ func init() {
 			blobstore = fakeblob.NewFakeBlobstore()
 			compressor = fakecmd.NewFakeCompressor()
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
-			logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger := boshlog.NewLogger(boshlog.LevelNone)
 			applier = NewRenderedJobApplier(jobsBc, blobstore, compressor, jobSupervisor, logger)
 		})
 

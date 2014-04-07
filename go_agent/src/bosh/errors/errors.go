@@ -1,15 +1,13 @@
 package errors
 
 import (
-	"errors"
 	"fmt"
 )
 
-func New(msg string, args ...interface{}) (err error) {
-	return errors.New(fmt.Sprintf(msg, args...))
+func New(msg string, args ...interface{}) error {
+	return fmt.Errorf(msg, args...)
 }
 
-func WrapError(err error, msg string, args ...interface{}) (newErr error) {
-	msg = fmt.Sprintf(msg, args...)
-	return errors.New(fmt.Sprintf("%s: %s", msg, err.Error()))
+func WrapError(err error, msg string, args ...interface{}) error {
+	return fmt.Errorf("%s: %s", fmt.Sprintf(msg, args...), err.Error())
 }

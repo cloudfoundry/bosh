@@ -22,7 +22,7 @@ func init() {
 
 		BeforeEach(func() {
 			uuidGen = &fakeuuid.FakeGenerator{}
-			service = NewAsyncTaskService(uuidGen, boshlog.NewLogger(boshlog.LEVEL_NONE))
+			service = NewAsyncTaskService(uuidGen, boshlog.NewLogger(boshlog.LevelNone))
 		})
 
 		Describe("StartTask", func() {

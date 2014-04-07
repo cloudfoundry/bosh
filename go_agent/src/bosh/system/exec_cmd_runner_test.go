@@ -10,7 +10,7 @@ import (
 )
 
 func createRunner() (r CmdRunner) {
-	r = NewExecCmdRunner(boshlog.NewLogger(boshlog.LEVEL_NONE))
+	r = NewExecCmdRunner(boshlog.NewLogger(boshlog.LevelNone))
 	return
 }
 func init() {

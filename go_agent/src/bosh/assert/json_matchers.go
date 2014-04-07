@@ -38,7 +38,7 @@ func LacksJSONKey(t assert.TestingT, object interface{}, key string) {
 
 	objectKeys := make([]string, len(objectAsMap))
 	i := 0
-	for k, _ := range objectAsMap {
+	for k := range objectAsMap {
 		objectKeys[i] = k
 		i++
 	}

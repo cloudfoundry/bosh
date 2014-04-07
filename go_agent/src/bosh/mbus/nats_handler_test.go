@@ -17,7 +17,7 @@ import (
 )
 
 func buildNatsClientAndHandler(settings boshsettings.Service) (client *fakeyagnats.FakeYagnats, handler boshhandler.Handler) {
-	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+	logger := boshlog.NewLogger(boshlog.LevelNone)
 	client = fakeyagnats.New()
 	handler = NewNatsHandler(settings, logger, client)
 	return

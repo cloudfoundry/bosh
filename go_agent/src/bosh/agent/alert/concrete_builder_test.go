@@ -31,7 +31,7 @@ func init() {
 		)
 
 		BeforeEach(func() {
-			logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger := boshlog.NewLogger(boshlog.LevelNone)
 			settingsService = &fakesettings.FakeSettingsService{}
 			builder = NewBuilder(settingsService, logger)
 		})
@@ -43,7 +43,7 @@ func init() {
 
 				expectedAlert := Alert{
 					ID:        "some random id",
-					Severity:  SEVERITY_ALERT,
+					Severity:  SeverityAlert,
 					Title:     "nats - does not exist - restart",
 					Summary:   "process is not running",
 					CreatedAt: 1306076861,
@@ -54,9 +54,9 @@ func init() {
 
 			It("sets the severity based on event", func() {
 				alerts := map[string]SeverityLevel{
-					"action done": SEVERITY_IGNORED,
-					"Action done": SEVERITY_IGNORED,
-					"action Done": SEVERITY_IGNORED,
+					"action done": SeverityIgnored,
+					"Action done": SeverityIgnored,
+					"action Done": SeverityIgnored,
 				}
 
 				for event, expectedSeverity := range alerts {
@@ -72,7 +72,7 @@ func init() {
 				inputAlert.Event = "some unknown event"
 
 				builtAlert, _ := builder.Build(inputAlert)
-				Expect(builtAlert.Severity).To(Equal(SEVERITY_CRITICAL))
+				Expect(builtAlert.Severity).To(Equal(SeverityCritical))
 			})
 
 			It("sets created at", func() {

@@ -23,7 +23,7 @@ type providerDeps struct {
 
 func buildProvider(mbusURL string) (deps providerDeps, provider MbusHandlerProvider) {
 	deps.settings = &fakesettings.FakeSettingsService{MbusURL: mbusURL}
-	deps.logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+	deps.logger = boshlog.NewLogger(boshlog.LevelNone)
 	provider = NewHandlerProvider(deps.settings, deps.logger)
 
 	deps.platform = fakeplatform.NewFakePlatform()

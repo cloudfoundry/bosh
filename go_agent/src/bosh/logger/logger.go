@@ -10,10 +10,10 @@ import (
 type LogLevel int
 
 const (
-	LEVEL_DEBUG LogLevel = 0
-	LEVEL_INFO  LogLevel = 1
-	LEVEL_ERROR LogLevel = 2
-	LEVEL_NONE  LogLevel = 99
+	LevelDebug LogLevel = 0
+	LevelInfo  LogLevel = 1
+	LevelError LogLevel = 2
+	LevelNone  LogLevel = 99
 )
 
 type Logger struct {
@@ -30,7 +30,7 @@ func NewLogger(level LogLevel) (l Logger) {
 }
 
 func (l Logger) Debug(tag, msg string, args ...interface{}) {
-	if l.level > LEVEL_DEBUG {
+	if l.level > LevelDebug {
 		return
 	}
 
@@ -38,14 +38,15 @@ func (l Logger) Debug(tag, msg string, args ...interface{}) {
 	l.getOutLogger(tag).Printf(msg, args...)
 }
 
-// This will automatically change the format of the message to insert a block of text after the log
+// DebugWithDetails will automatically change the format of the message
+// to insert a block of text after the log
 func (l Logger) DebugWithDetails(tag, msg string, args ...interface{}) {
 	msg = msg + "\n********************\n%s\n********************"
 	l.Debug(tag, msg, args...)
 }
 
 func (l Logger) Info(tag, msg string, args ...interface{}) {
-	if l.level > LEVEL_INFO {
+	if l.level > LevelInfo {
 		return
 	}
 
@@ -54,7 +55,7 @@ func (l Logger) Info(tag, msg string, args ...interface{}) {
 }
 
 func (l Logger) Error(tag, msg string, args ...interface{}) {
-	if l.level > LEVEL_ERROR {
+	if l.level > LevelError {
 		return
 	}
 
@@ -62,7 +63,8 @@ func (l Logger) Error(tag, msg string, args ...interface{}) {
 	l.getErrLogger(tag).Printf(msg, args...)
 }
 
-// This will automatically change the format of the message to insert a block of text after the log
+// ErrorWithDetails will automatically change the format of the message
+// to insert a block of text after the log
 func (l Logger) ErrorWithDetails(tag, msg string, args ...interface{}) {
 	msg = msg + "\n********************\n%s\n********************"
 	l.Error(tag, msg, args...)

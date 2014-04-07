@@ -15,7 +15,7 @@ import (
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("get", func() {
-			logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger := boshlog.NewLogger(boshlog.LevelNone)
 			platform := fakeplatform.NewFakePlatform()
 
 			platform.GetMonitCredentialsUsername = "fake-user"

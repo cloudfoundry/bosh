@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"code.google.com/p/go-charset/charset"
-	_ "code.google.com/p/go-charset/data"
+	_ "code.google.com/p/go-charset/data" // translations between char sets
 
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"

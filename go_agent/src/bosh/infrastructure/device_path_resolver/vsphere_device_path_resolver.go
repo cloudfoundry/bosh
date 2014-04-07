@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const MAX_SCAN_RETRIES = 30
+const maxScanRetries = 30
 
 type vsphereDevicePathResolver struct {
 	diskWaitTimeout time.Duration
@@ -54,7 +54,7 @@ func (devicePathResolver vsphereDevicePathResolver) GetRealDevicePath(volumeID s
 
 	deviceGlobPath := fmt.Sprintf("/sys/bus/scsi/devices/%s:0:%s:0/block/*", hostID, volumeID)
 
-	for i := 0; i < MAX_SCAN_RETRIES; i++ {
+	for i := 0; i < maxScanRetries; i++ {
 		devicePaths, err = devicePathResolver.fs.Glob(deviceGlobPath)
 		if err != nil || len(devicePaths) == 0 {
 			time.Sleep(devicePathResolver.diskWaitTimeout)

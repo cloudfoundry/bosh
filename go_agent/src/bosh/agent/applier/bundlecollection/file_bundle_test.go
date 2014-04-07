@@ -25,7 +25,7 @@ var _ = Describe("FileBundle", func() {
 		fs = &fakesys.FakeFileSystem{}
 		installPath = "/install-path"
 		enablePath = "/enable-path"
-		logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+		logger = boshlog.NewLogger(boshlog.LevelNone)
 		fileBundle = NewFileBundle(installPath, enablePath, fs, logger)
 	})
 

@@ -15,7 +15,7 @@ import (
 )
 
 func createOsFs() (fs FileSystem, runner CmdRunner) {
-	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+	logger := boshlog.NewLogger(boshlog.LevelNone)
 	runner = NewExecCmdRunner(logger)
 	fs = NewOsFileSystem(logger, runner)
 	return

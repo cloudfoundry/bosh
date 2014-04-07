@@ -11,7 +11,7 @@ import (
 )
 
 func createResolver() (r DigDNSResolver) {
-	r = NewDigDNSResolver(boshlog.NewLogger(boshlog.LEVEL_NONE))
+	r = NewDigDNSResolver(boshlog.NewLogger(boshlog.LevelNone))
 	return
 }
 func init() {

@@ -40,7 +40,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	err = boot.infrastructure.SetupSsh(boshsettings.VCAP_USERNAME)
+	err = boot.infrastructure.SetupSsh(boshsettings.VCAPUsername)
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting up ssh")
 		return
@@ -137,13 +137,13 @@ func (boot bootstrap) setUserPasswords(settings boshsettings.Settings) (err erro
 		return
 	}
 
-	err = boot.platform.SetUserPassword(boshsettings.ROOT_USERNAME, settings.Env.GetPassword())
+	err = boot.platform.SetUserPassword(boshsettings.RootUsername, settings.Env.GetPassword())
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting root password")
 		return
 	}
 
-	err = boot.platform.SetUserPassword(boshsettings.VCAP_USERNAME, settings.Env.GetPassword())
+	err = boot.platform.SetUserPassword(boshsettings.VCAPUsername, settings.Env.GetPassword())
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting vcap password")
 	}

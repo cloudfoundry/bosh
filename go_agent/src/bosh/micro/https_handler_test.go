@@ -29,7 +29,7 @@ var _ = Describe("HTTPSHandler", func() {
 	BeforeEach(func() {
 		serverURL = "https://user:pass@127.0.0.1:6900"
 		mbusURL, _ := url.Parse(serverURL)
-		logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+		logger := boshlog.NewLogger(boshlog.LevelNone)
 		fs = fakesys.NewFakeFileSystem()
 		dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
 		handler = NewHTTPSHandler(mbusURL, logger, fs, dirProvider)

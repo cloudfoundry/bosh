@@ -1,10 +1,10 @@
 package settings
 
 const (
-	ROOT_USERNAME         = "root"
-	VCAP_USERNAME         = "vcap"
-	ADMIN_GROUP           = "admin"
-	EPHEMERAL_USER_PREFIX = "bosh_"
+	RootUsername        = "root"
+	VCAPUsername        = "vcap"
+	AdminGroup          = "admin"
+	EphemeralUserPrefix = "bosh_"
 )
 
 type Settings struct {

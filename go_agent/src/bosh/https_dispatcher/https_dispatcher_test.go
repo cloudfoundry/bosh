@@ -18,7 +18,7 @@ var _ = Describe("HTTPSDispatcher", func() {
 
 	BeforeEach(func() {
 		serverURL, _ := url.Parse("https://127.0.0.1:7788")
-		logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+		logger := boshlog.NewLogger(boshlog.LevelNone)
 		dispatcher = boshdispatcher.NewHTTPSDispatcher(serverURL, logger)
 		go dispatcher.Start()
 		time.Sleep(1 * time.Second)

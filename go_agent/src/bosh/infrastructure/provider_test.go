@@ -15,7 +15,7 @@ import (
 
 func getNewProvider() (logger boshlog.Logger, platform *fakeplatform.FakePlatform, provider Provider) {
 	platform = fakeplatform.NewFakePlatform()
-	logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+	logger = boshlog.NewLogger(boshlog.LevelNone)
 	provider = NewProvider(logger, platform)
 	return
 }

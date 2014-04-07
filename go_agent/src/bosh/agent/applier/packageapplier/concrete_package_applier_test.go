@@ -44,7 +44,7 @@ func init() {
 			packagesBc = fakebc.NewFakeBundleCollection()
 			blobstore = fakeblob.NewFakeBlobstore()
 			compressor = fakecmd.NewFakeCompressor()
-			logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger := boshlog.NewLogger(boshlog.LevelNone)
 			applier = NewConcretePackageApplier(packagesBc, blobstore, compressor, logger)
 		})
 		Describe("Apply", func() {

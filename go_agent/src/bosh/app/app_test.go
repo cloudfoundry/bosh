@@ -77,7 +77,7 @@ func init() {
 		})
 
 		It("Sets up device path resolver on platform specific to infrastructure", func() {
-			logger := boshlog.NewLogger(boshlog.LEVEL_DEBUG)
+			logger := boshlog.NewLogger(boshlog.LevelDebug)
 			app := boshapp.New(logger)
 
 			err := app.Setup([]string{

@@ -24,11 +24,11 @@ func (fs *fsWithChangingFile) ReadFileString(path string) (content string, err e
 	return
 }
 
-const SWAPON_USAGE_OUTPUT = `Filename				Type		Size	Used	Priority
+const swaponUsageOutput = `Filename				Type		Size	Used	Priority
 /dev/swap                              partition	78180316	0	-1
 `
 
-const SWAPON_USAGE_OUTPUT_WITH_OTHER_DEVICE = `Filename				Type		Size	Used	Priority
+const swaponUsageOutputWithOtherDevice = `Filename				Type		Size	Used	Priority
 /dev/swap2                              partition	78180316	0	-1
 `
 
@@ -127,7 +127,7 @@ func init() {
 		It("linux swap on when already on", func() {
 
 			runner, fs := getLinuxMounterDependencies()
-			runner.AddCmdResult("swapon -s", fakesys.FakeCmdResult{Stdout: SWAPON_USAGE_OUTPUT})
+			runner.AddCmdResult("swapon -s", fakesys.FakeCmdResult{Stdout: swaponUsageOutput})
 
 			mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 			mounter.SwapOn("/dev/swap")
@@ -137,7 +137,7 @@ func init() {
 		It("linux swap on when already on other device", func() {
 
 			runner, fs := getLinuxMounterDependencies()
-			runner.AddCmdResult("swapon -s", fakesys.FakeCmdResult{Stdout: SWAPON_USAGE_OUTPUT_WITH_OTHER_DEVICE})
+			runner.AddCmdResult("swapon -s", fakesys.FakeCmdResult{Stdout: swaponUsageOutputWithOtherDevice})
 
 			mounter := NewLinuxMounter(runner, fs, 1*time.Millisecond)
 			mounter.SwapOn("/dev/swap")

@@ -11,18 +11,19 @@ import (
 	fakeuuid "bosh/uuid/fakes"
 )
 
-const FAKE_BLOBSTORE_PATH = "/some/local/path"
+const fakeBlobstorePath = "/some/local/path"
 
 func buildLocalBlobstore() (fs *fakesys.FakeFileSystem, uuidGen *fakeuuid.FakeGenerator, blobstore local) {
 	fs = &fakesys.FakeFileSystem{}
 	uuidGen = &fakeuuid.FakeGenerator{}
 	options := map[string]string{
-		"blobstore_path": FAKE_BLOBSTORE_PATH,
+		"blobstore_path": fakeBlobstorePath,
 	}
 
 	blobstore = newLocalBlobstore(options, fs, uuidGen)
 	return
 }
+
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("local validate", func() {
@@ -44,7 +45,7 @@ func init() {
 
 			fs, _, blobstore := buildLocalBlobstore()
 
-			fs.WriteFileString(FAKE_BLOBSTORE_PATH+"/fake-blob-id", "fake contents")
+			fs.WriteFileString(fakeBlobstorePath+"/fake-blob-id", "fake contents")
 
 			tempFile, err := fs.TempFile("bosh-blobstore-local-TestLocalGet")
 			Expect(err).ToNot(HaveOccurred())
@@ -116,7 +117,7 @@ func init() {
 			Expect(blobID).To(Equal("some-uuid"))
 			assert.Empty(GinkgoT(), fingerprint)
 
-			writtenFileStats := fs.GetFileTestStat(FAKE_BLOBSTORE_PATH + "/some-uuid")
+			writtenFileStats := fs.GetFileTestStat(fakeBlobstorePath + "/some-uuid")
 			Expect(writtenFileStats).ToNot(BeNil())
 			Expect("fake-file-contents").To(Equal(writtenFileStats.StringContents()))
 		})

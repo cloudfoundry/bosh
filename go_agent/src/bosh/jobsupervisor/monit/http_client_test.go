@@ -22,7 +22,7 @@ import (
 func init() {
 	Describe("httpClient", func() {
 		var (
-			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger = boshlog.NewLogger(boshlog.LevelNone)
 		)
 
 		It("services in group returns services when found", func() {})

@@ -34,7 +34,7 @@ func testSshSetupWithGivenPassword(t assert.TestingT, expectedPwd string) {
 	assert.Equal(t, expectedUser, platform.CreateUserUsername)
 	assert.Equal(t, expectedPwd, platform.CreateUserPassword)
 	assert.Equal(t, "/foo/bosh_ssh", platform.CreateUserBasePath)
-	assert.Equal(t, []string{boshsettings.VCAP_USERNAME, boshsettings.ADMIN_GROUP}, platform.AddUserToGroupsGroups[expectedUser])
+	assert.Equal(t, []string{boshsettings.VCAPUsername, boshsettings.AdminGroup}, platform.AddUserToGroupsGroups[expectedUser])
 	assert.Equal(t, expectedKey, platform.SetupSshPublicKeys[expectedUser])
 
 	expectedJSON := map[string]interface{}{

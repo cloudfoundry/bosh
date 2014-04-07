@@ -16,7 +16,7 @@ func init() {
 	Describe("concreteManagerProvider", func() {
 		Describe("NewManager", func() {
 			It("returns manager with tasks.json as its tasks path", func() {
-				logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+				logger := boshlog.NewLogger(boshlog.LevelNone)
 				fs := fakesys.NewFakeFileSystem()
 
 				taskInfo := boshtask.TaskInfo{
@@ -47,7 +47,7 @@ func init() {
 		)
 
 		BeforeEach(func() {
-			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger = boshlog.NewLogger(boshlog.LevelNone)
 			fs = fakesys.NewFakeFileSystem()
 			manager = boshtask.NewManager(logger, fs, "/dir/path")
 		})

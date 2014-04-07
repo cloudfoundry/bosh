@@ -247,7 +247,7 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 
 			assert.Equal(GinkgoT(), logRotateDelegate.SetupLogrotateArgs, SetupLogrotateArgs{
-				GroupName: boshsettings.VCAP_USERNAME,
+				GroupName: boshsettings.VCAPUsername,
 				BasePath:  "/fake-base-dir",
 				Size:      "fake-size",
 			})

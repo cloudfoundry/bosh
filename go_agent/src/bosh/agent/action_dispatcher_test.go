@@ -29,7 +29,7 @@ func init() {
 		)
 
 		BeforeEach(func() {
-			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger = boshlog.NewLogger(boshlog.LevelNone)
 			taskService = faketask.NewFakeService()
 			taskManager = faketask.NewFakeManager()
 			actionFactory = fakeaction.NewFakeFactory()

@@ -27,52 +27,52 @@ func NewFileBundle(installPath, enablePath string, fs boshsys.FileSystem, logger
 	}
 }
 
-func (self FileBundle) Install() (boshsys.FileSystem, string, error) {
-	self.logger.Debug(fileBundleLogTag, "Installing %v", self)
+func (b FileBundle) Install() (boshsys.FileSystem, string, error) {
+	b.logger.Debug(fileBundleLogTag, "Installing %v", b)
 
-	path := self.installPath
+	path := b.installPath
 
-	err := self.fs.MkdirAll(path, os.FileMode(0755))
+	err := b.fs.MkdirAll(path, os.FileMode(0755))
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "Creating install dir")
 	}
 
-	return self.fs, path, nil
+	return b.fs, path, nil
 }
 
-func (self FileBundle) GetInstallPath() (boshsys.FileSystem, string, error) {
-	path := self.installPath
-	if !self.fs.FileExists(path) {
+func (b FileBundle) GetInstallPath() (boshsys.FileSystem, string, error) {
+	path := b.installPath
+	if !b.fs.FileExists(path) {
 		return nil, "", bosherr.New("install dir does not exist")
 	}
 
-	return self.fs, path, nil
+	return b.fs, path, nil
 }
 
-func (self FileBundle) Enable() (boshsys.FileSystem, string, error) {
-	self.logger.Debug(fileBundleLogTag, "Enabling %v", self)
+func (b FileBundle) Enable() (boshsys.FileSystem, string, error) {
+	b.logger.Debug(fileBundleLogTag, "Enabling %v", b)
 
-	if !self.fs.FileExists(self.installPath) {
+	if !b.fs.FileExists(b.installPath) {
 		return nil, "", bosherr.New("bundle must be installed")
 	}
 
-	err := self.fs.MkdirAll(filepath.Dir(self.enablePath), os.FileMode(0755))
+	err := b.fs.MkdirAll(filepath.Dir(b.enablePath), os.FileMode(0755))
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "failed to create enable dir")
 	}
 
-	err = self.fs.Symlink(self.installPath, self.enablePath)
+	err = b.fs.Symlink(b.installPath, b.enablePath)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "failed to enable")
 	}
 
-	return self.fs, self.enablePath, nil
+	return b.fs, b.enablePath, nil
 }
 
-func (self FileBundle) Disable() error {
-	self.logger.Debug(fileBundleLogTag, "Disabling %v", self)
+func (b FileBundle) Disable() error {
+	b.logger.Debug(fileBundleLogTag, "Disabling %v", b)
 
-	target, err := self.fs.ReadLink(self.enablePath)
+	target, err := b.fs.ReadLink(b.enablePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
@@ -80,14 +80,14 @@ func (self FileBundle) Disable() error {
 		return bosherr.WrapError(err, "Reading symlink")
 	}
 
-	if target == self.installPath {
-		self.fs.RemoveAll(self.enablePath)
+	if target == b.installPath {
+		b.fs.RemoveAll(b.enablePath)
 	}
 
 	return nil
 }
 
-func (self FileBundle) Uninstall() error {
-	self.logger.Debug(fileBundleLogTag, "Uninstalling %v", self)
-	return self.fs.RemoveAll(self.installPath)
+func (b FileBundle) Uninstall() error {
+	b.logger.Debug(fileBundleLogTag, "Uninstalling %v", b)
+	return b.fs.RemoveAll(b.installPath)
 }

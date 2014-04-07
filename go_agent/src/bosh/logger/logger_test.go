@@ -54,7 +54,7 @@ func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("info", func() {
 			stdout, _ := captureOutputs(func() {
-				logger := NewLogger(LEVEL_INFO)
+				logger := NewLogger(LevelInfo)
 				logger.Info("TAG", "some %s info to log", "awesome")
 			})
 
@@ -64,7 +64,7 @@ func init() {
 		It("debug", func() {
 
 			stdout, _ := captureOutputs(func() {
-				logger := NewLogger(LEVEL_DEBUG)
+				logger := NewLogger(LevelDebug)
 				logger.Debug("TAG", "some %s info to log", "awesome")
 			})
 
@@ -74,7 +74,7 @@ func init() {
 		It("debug with details", func() {
 
 			stdout, _ := captureOutputs(func() {
-				logger := NewLogger(LEVEL_DEBUG)
+				logger := NewLogger(LevelDebug)
 				logger.DebugWithDetails("TAG", "some info to log", "awesome")
 			})
 
@@ -86,7 +86,7 @@ func init() {
 		It("error", func() {
 
 			_, stderr := captureOutputs(func() {
-				logger := NewLogger(LEVEL_ERROR)
+				logger := NewLogger(LevelError)
 				logger.Error("TAG", "some %s info to log", "awesome")
 			})
 
@@ -96,7 +96,7 @@ func init() {
 		It("error with details", func() {
 
 			_, stderr := captureOutputs(func() {
-				logger := NewLogger(LEVEL_ERROR)
+				logger := NewLogger(LevelError)
 				logger.ErrorWithDetails("TAG", "some error to log", "awesome")
 			})
 
@@ -108,7 +108,7 @@ func init() {
 		It("log level debug", func() {
 
 			stdout, stderr := captureOutputs(func() {
-				logger := NewLogger(LEVEL_DEBUG)
+				logger := NewLogger(LevelDebug)
 				logger.Debug("DEBUG", "some debug log")
 				logger.Info("INFO", "some info log")
 				logger.Error("ERROR", "some error log")
@@ -121,7 +121,7 @@ func init() {
 		It("log level info", func() {
 
 			stdout, stderr := captureOutputs(func() {
-				logger := NewLogger(LEVEL_INFO)
+				logger := NewLogger(LevelInfo)
 				logger.Debug("DEBUG", "some debug log")
 				logger.Info("INFO", "some info log")
 				logger.Error("ERROR", "some error log")
@@ -134,7 +134,7 @@ func init() {
 		It("log level error", func() {
 
 			stdout, stderr := captureOutputs(func() {
-				logger := NewLogger(LEVEL_ERROR)
+				logger := NewLogger(LevelError)
 				logger.Debug("DEBUG", "some debug log")
 				logger.Info("INFO", "some info log")
 				logger.Error("ERROR", "some error log")

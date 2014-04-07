@@ -1,10 +1,10 @@
 package cmd
 
 import (
+	"fmt"
+
 	davclient "bosh/davcli/client"
 	davconf "bosh/davcli/config"
-	"errors"
-	"fmt"
 )
 
 type Factory interface {
@@ -24,7 +24,7 @@ type factory struct {
 func (f *factory) Create(name string) (cmd Cmd, err error) {
 	cmd, found := f.cmds[name]
 	if !found {
-		err = errors.New(fmt.Sprintf("Could not find command with name %s", name))
+		err = fmt.Errorf("Could not find command with name %s", name)
 	}
 	return
 }

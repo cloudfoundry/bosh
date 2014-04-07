@@ -31,7 +31,8 @@ type LoggingSpec struct {
 	MaxLogFileSize string `json:"max_log_file_size"`
 }
 
-// BOSH Director provides a single tarball with all job templates pre-rendered
+// Jobs returns a list of pre-rendered job templates
+// extracted from a single tarball provided by BOSH director.
 func (s V1ApplySpec) Jobs() []models.Job {
 	jobsWithSource := []models.Job{}
 	for _, j := range s.JobSpec.JobTemplateSpecsAsJobs() {

@@ -154,12 +154,10 @@ func (fs *FakeFileSystem) ReadFile(path string) ([]byte, error) {
 	if stats != nil {
 		if fs.ReadFileError != nil {
 			return nil, fs.ReadFileError
-		} else {
-			return stats.Content, nil
 		}
-	} else {
-		return nil, errors.New("File not found")
+		return stats.Content, nil
 	}
+	return nil, errors.New("File not found")
 }
 
 func (fs *FakeFileSystem) FileExists(path string) bool {
@@ -221,7 +219,7 @@ func (fs *FakeFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
 
 	filesToCopy := []string{}
 
-	for filePath, _ := range fs.Files {
+	for filePath := range fs.Files {
 		if strings.HasPrefix(filePath, srcPath) {
 			filesToCopy = append(filesToCopy, filePath)
 		}
@@ -249,21 +247,21 @@ func (fs *FakeFileSystem) TempFile(prefix string) (file *os.File, err error) {
 	if fs.TempFileError != nil {
 		return nil, fs.TempFileError
 	}
+
 	if fs.ReturnTempFile != nil {
 		return fs.ReturnTempFile, nil
-	} else {
-		file, err = os.Open("/dev/null")
-		if err != nil {
-			err = bosherr.WrapError(err, "Opening /dev/null")
-			return
-		}
+	}
 
-		// Make sure to record a reference for FileExist, etc. to work
-		stats := fs.getOrCreateFile(file.Name())
-		stats.FileType = FakeFileTypeFile
-
+	file, err = os.Open("/dev/null")
+	if err != nil {
+		err = bosherr.WrapError(err, "Opening /dev/null")
 		return
 	}
+
+	// Make sure to record a reference for FileExist, etc. to work
+	stats := fs.getOrCreateFile(file.Name())
+	stats.FileType = FakeFileTypeFile
+	return
 }
 
 func (fs *FakeFileSystem) TempDir(prefix string) (string, error) {
@@ -297,7 +295,7 @@ func (fs *FakeFileSystem) RemoveAll(path string) (err error) {
 
 	filesToRemove := []string{}
 
-	for name, _ := range fs.Files {
+	for name := range fs.Files {
 		if strings.HasPrefix(name, path) {
 			filesToRemove = append(filesToRemove, name)
 		}

@@ -21,7 +21,7 @@ func init() {
 
 		BeforeEach(func() {
 			platform = fakeplatform.NewFakePlatform()
-			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger = boshlog.NewLogger(boshlog.LevelNone)
 		})
 
 		It("list disk should be synchronous", func() {
