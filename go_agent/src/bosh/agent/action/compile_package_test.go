@@ -103,14 +103,13 @@ func init() {
 		It("compile package errs when compile fails", func() {
 
 			compiler, action := buildCompilePackageAction()
-			compiler.CompileErr = errors.New("Oops")
+			compiler.CompileErr = errors.New("fake-compile-error")
 
 			blobID, sha1, name, version, deps := getCompileActionArguments()
 
 			_, err := action.Run(blobID, sha1, name, version, deps)
-
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring(compiler.CompileErr.Error()))
+			Expect(err.Error()).To(ContainSubstring("fake-compile-error"))
 		})
 	})
 }

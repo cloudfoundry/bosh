@@ -1,10 +1,12 @@
 package device_path_resolver
 
 import (
-	fakesys "bosh/system/fakes"
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"time"
+
+	fakesys "bosh/system/fakes"
 )
 
 var _ = Describe("VSphere Path Resolver", func() {
@@ -18,14 +20,16 @@ var _ = Describe("VSphere Path Resolver", func() {
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		resolver = NewVsphereDevicePathResolver(sleepInterval, fs)
+
 		fs.SetGlob("/sys/bus/scsi/devices/*:0:0:0/block/*", []string{
 			"/sys/bus/scsi/devices/0:0:0:0/block/sr0",
 			"/sys/bus/scsi/devices/6:0:0:0/block/sdd",
 			"/sys/bus/scsi/devices/fake-host-id:0:0:0/block/sda",
 		})
-		fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*",
-			[]string{"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf"})
 
+		fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*", []string{
+			"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf",
+		})
 	})
 
 	Describe("GetRealDevicePath", func() {

@@ -134,7 +134,7 @@ func init() {
 			runner := NewRunner()
 
 			expectedValue := valueType{ID: 13, Success: true}
-			expectedErr := errors.New("Oops")
+			expectedErr := errors.New("fake-run-error")
 
 			action := &actionWithGoodRunMethod{Value: expectedValue, Err: expectedErr}
 			payload := `{
@@ -149,7 +149,7 @@ func init() {
 
 			value, err := runner.Run(action, []byte(payload))
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Oops"))
+			Expect(err.Error()).To(Equal("fake-run-error"))
 
 			Expect(value).To(Equal(expectedValue))
 			Expect(err).To(Equal(expectedErr))
@@ -159,8 +159,8 @@ func init() {
 			Expect(action.ExtraArgs).To(Equal(argsType{User: "rob", Password: "rob123", ID: 12}))
 			Expect(action.SliceArgs).To(Equal([]string{"a", "b", "c"}))
 		})
-		It("runner run errs when actions not enough arguments", func() {
 
+		It("runner run errs when actions not enough arguments", func() {
 			runner := NewRunner()
 
 			expectedValue := valueType{ID: 13, Success: true}
@@ -171,8 +171,8 @@ func init() {
 			_, err := runner.Run(action, []byte(payload))
 			Expect(err).To(HaveOccurred())
 		})
-		It("runner run errs when action arguments types do not match", func() {
 
+		It("runner run errs when action arguments types do not match", func() {
 			runner := NewRunner()
 
 			expectedValue := valueType{ID: 13, Success: true}
@@ -183,12 +183,12 @@ func init() {
 			_, err := runner.Run(action, []byte(payload))
 			Expect(err).To(HaveOccurred())
 		})
-		It("runner handles optional arguments being passed in", func() {
 
+		It("runner handles optional arguments being passed in", func() {
 			runner := NewRunner()
 
 			expectedValue := valueType{ID: 13, Success: true}
-			expectedErr := errors.New("Oops")
+			expectedErr := errors.New("fake-run-error")
 
 			action := &actionWithOptionalRunArgument{Value: expectedValue, Err: expectedErr}
 			payload := `{"arguments":["setup", {"user":"rob","pwd":"rob123","id":12}, {"user":"bob","pwd":"bob123","id":13}]}`
@@ -204,8 +204,8 @@ func init() {
 				{User: "bob", Password: "bob123", ID: 13},
 			})
 		})
-		It("runner handles optional arguments when not passed in", func() {
 
+		It("runner handles optional arguments when not passed in", func() {
 			runner := NewRunner()
 			action := &actionWithOptionalRunArgument{}
 			payload := `{"arguments":["setup"]}`
@@ -215,20 +215,20 @@ func init() {
 			Expect(action.SubAction).To(Equal("setup"))
 			Expect(action.OptionalArgs).To(Equal([]argsType{}))
 		})
-		It("runner run errs when action does not implement run", func() {
 
+		It("runner run errs when action does not implement run", func() {
 			runner := NewRunner()
 			_, err := runner.Run(&actionWithoutRunMethod{}, []byte(`{"arguments":[]}`))
 			Expect(err).To(HaveOccurred())
 		})
-		It("runner run errs when actions run does not return two values", func() {
 
+		It("runner run errs when actions run does not return two values", func() {
 			runner := NewRunner()
 			_, err := runner.Run(&actionWithOneRunReturnValue{}, []byte(`{"arguments":[]}`))
 			Expect(err).To(HaveOccurred())
 		})
-		It("runner run errs when actions run second return type is not error", func() {
 
+		It("runner run errs when actions run second return type is not error", func() {
 			runner := NewRunner()
 			_, err := runner.Run(&actionWithSecondReturnValueNotError{}, []byte(`{"arguments":[]}`))
 			Expect(err).To(HaveOccurred())
