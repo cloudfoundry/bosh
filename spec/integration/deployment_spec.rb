@@ -64,9 +64,6 @@ describe 'deployment integrations', type: :integration do
       deploy_result = deploy_simple(no_track: true)
       task_id = get_task_id(deploy_result, 'running')
 
-      # If you don't have this sleep, events() will hang
-      # And, yes, you need it before "cancel task"
-      sleep(5) # Wait for deployment to start
       cancel_output = run_bosh("cancel task #{task_id}")
       expect($?).to be_success
       expect(cancel_output).to match /Task #{task_id} is getting canceled/
