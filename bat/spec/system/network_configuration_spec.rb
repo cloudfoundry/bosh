@@ -36,6 +36,8 @@ describe 'network configuration' do
       resolv_conf = ssh(static_ip, 'vcap', 'cat /etc/resolv.conf', ssh_options)
       @logger.info("Contents of resolv.conf '#{resolv_conf}'")
 
+      bosh('logs batlight 0 --agent --dir /tmp')
+
       cmd = 'dig +short 0.batlight.static.bat.bosh a 0.batlight.static.bat.microbosh a'
       ssh(static_ip, 'vcap', cmd, ssh_options).should include(static_ip)
     end
