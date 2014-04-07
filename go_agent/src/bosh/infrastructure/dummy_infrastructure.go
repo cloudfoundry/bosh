@@ -66,6 +66,6 @@ func (inf dummyInfrastructure) GetEphemeralDiskPath(devicePath string) (realPath
 	return inf.platform.NormalizeDiskPath(devicePath)
 }
 
-func (inf dummyInfrastructure) MountPersistentDisk(volumeId string, mountPoint string) (err error) {
+func (inf dummyInfrastructure) MountPersistentDisk(volumeID string, mountPoint string) (err error) {
 	return
 }

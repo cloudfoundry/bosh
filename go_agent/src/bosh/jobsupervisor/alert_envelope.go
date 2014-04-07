@@ -25,7 +25,7 @@ func (e *alertEnvelope) Write(lineBytes []byte) (err error) {
 
 	switch {
 	case len(idMatches) == 2:
-		e.alert.Id = idMatches[1]
+		e.alert.ID = idMatches[1]
 	case strings.HasPrefix(line, "Service: "):
 		e.alert.Service = strings.Replace(line, "Service: ", "", 1)
 	case strings.HasPrefix(line, "Event: "):

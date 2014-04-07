@@ -30,11 +30,11 @@ func init() {
 					},
 				}
 
-				expectedJson := `{"job":"foo","index":0,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{}}}`
+				expectedJSON := `{"job":"foo","index":0,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{}}}`
 
 				hbBytes, err := json.Marshal(hb)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(string(hbBytes)).To(Equal(expectedJson))
+				Expect(string(hbBytes)).To(Equal(expectedJSON))
 			})
 		})
 
@@ -51,11 +51,11 @@ func init() {
 					},
 				}
 
-				expectedJson := `{"job":null,"index":null,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{}}}`
+				expectedJSON := `{"job":null,"index":null,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{}}}`
 
 				hbBytes, err := json.Marshal(hb)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(string(hbBytes)).To(Equal(expectedJson))
+				Expect(string(hbBytes)).To(Equal(expectedJSON))
 			})
 		})
 	})

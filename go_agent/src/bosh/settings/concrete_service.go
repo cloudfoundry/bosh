@@ -56,22 +56,22 @@ func (service *concreteService) InvalidateSettings() error {
 func (service *concreteService) LoadSettings() error {
 	newSettings, fetchErr := service.settingsFetcher()
 	if fetchErr != nil {
-		existingSettingsJson, readError := service.fs.ReadFile(service.settingsPath)
+		existingSettingsJSON, readError := service.fs.ReadFile(service.settingsPath)
 		if readError != nil {
 			return bosherr.WrapError(fetchErr, "Invoking settings fetcher")
 		}
 
-		return json.Unmarshal(existingSettingsJson, &service.settings)
+		return json.Unmarshal(existingSettingsJSON, &service.settings)
 	}
 
 	service.settings = newSettings
 
-	newSettingsJson, err := json.Marshal(newSettings)
+	newSettingsJSON, err := json.Marshal(newSettings)
 	if err != nil {
 		return bosherr.WrapError(err, "Marshalling settings json")
 	}
 
-	err = service.fs.WriteFile(service.settingsPath, newSettingsJson)
+	err = service.fs.WriteFile(service.settingsPath, newSettingsJSON)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing setting json")
 	}
@@ -87,15 +87,15 @@ func (service concreteService) GetBlobstore() Blobstore {
 	return service.settings.Blobstore
 }
 
-func (service concreteService) GetAgentId() string {
-	return service.settings.AgentId
+func (service concreteService) GetAgentID() string {
+	return service.settings.AgentID
 }
 
-func (service concreteService) GetVm() Vm {
-	return service.settings.Vm
+func (service concreteService) GetVM() VM {
+	return service.settings.VM
 }
 
-func (service concreteService) GetMbusUrl() string {
+func (service concreteService) GetMbusURL() string {
 	return service.settings.Mbus
 }
 
@@ -103,10 +103,10 @@ func (service concreteService) GetDisks() Disks {
 	return service.settings.Disks
 }
 
-func (service concreteService) GetDefaultIp() (ip string, found bool) {
-	return service.settings.Networks.DefaultIp()
+func (service concreteService) GetDefaultIP() (ip string, found bool) {
+	return service.settings.Networks.DefaultIP()
 }
 
-func (service concreteService) GetIps() (ips []string) {
-	return service.settings.Networks.Ips()
+func (service concreteService) GetIPs() (ips []string) {
+	return service.settings.Networks.IPs()
 }

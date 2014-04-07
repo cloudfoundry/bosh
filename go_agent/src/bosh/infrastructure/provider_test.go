@@ -28,7 +28,7 @@ func init() {
 			devicePathResolver := boshdevicepathresolver.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
 
 			Expect(err).ToNot(HaveOccurred())
-			assert.IsType(GinkgoT(), NewAwsInfrastructure("http://169.254.169.254", NewDigDnsResolver(logger), platform, devicePathResolver), inf)
+			assert.IsType(GinkgoT(), NewAwsInfrastructure("http://169.254.169.254", NewDigDNSResolver(logger), platform, devicePathResolver), inf)
 		})
 		It("get returns vsphere infrastructure", func() {
 

@@ -218,7 +218,7 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 
 			assert.Equal(GinkgoT(), handledAlert, boshalert.MonitAlert{
-				Id:          "1304319946.0@localhost",
+				ID:          "1304319946.0@localhost",
 				Service:     "nats",
 				Event:       "does not exist",
 				Action:      "restart",

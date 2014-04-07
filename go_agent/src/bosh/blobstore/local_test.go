@@ -111,9 +111,9 @@ func init() {
 
 			uuidGen.GeneratedUuid = "some-uuid"
 
-			blobId, fingerprint, err := blobstore.Create("/fake-file.txt")
+			blobID, fingerprint, err := blobstore.Create("/fake-file.txt")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(blobId).To(Equal("some-uuid"))
+			Expect(blobID).To(Equal("some-uuid"))
 			assert.Empty(GinkgoT(), fingerprint)
 
 			writtenFileStats := fs.GetFileTestStat(FAKE_BLOBSTORE_PATH + "/some-uuid")

@@ -30,13 +30,13 @@ func NewExternalBlobstore(provider string, options map[string]string, fs boshsys
 }
 
 func (blobstore external) writeConfigFile() (err error) {
-	configJson, err := json.Marshal(blobstore.options)
+	configJSON, err := json.Marshal(blobstore.options)
 	if err != nil {
 		err = bosherr.WrapError(err, "Marshalling JSON")
 		return
 	}
 
-	err = blobstore.fs.WriteFile(blobstore.configFilePath, configJson)
+	err = blobstore.fs.WriteFile(blobstore.configFilePath, configJSON)
 	if err != nil {
 		err = bosherr.WrapError(err, "Writing config file")
 		return
@@ -44,7 +44,7 @@ func (blobstore external) writeConfigFile() (err error) {
 	return
 }
 
-func (blobstore external) Get(blobId, _ string) (fileName string, err error) {
+func (blobstore external) Get(blobID, _ string) (fileName string, err error) {
 	file, err := blobstore.fs.TempFile("bosh-blobstore-external-Get")
 	if err != nil {
 		err = bosherr.WrapError(err, "Creating temporary file")
@@ -53,7 +53,7 @@ func (blobstore external) Get(blobId, _ string) (fileName string, err error) {
 
 	fileName = file.Name()
 
-	err = blobstore.run("get", blobId, fileName)
+	err = blobstore.run("get", blobID, fileName)
 	if err != nil {
 		blobstore.fs.RemoveAll(fileName)
 		fileName = ""
@@ -67,20 +67,20 @@ func (blobstore external) CleanUp(fileName string) (err error) {
 	return
 }
 
-func (blobstore external) Create(fileName string) (blobId string, fingerprint string, err error) {
+func (blobstore external) Create(fileName string) (blobID string, fingerprint string, err error) {
 	filePath, err := filepath.Abs(fileName)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting absolute file path")
 		return
 	}
 
-	blobId, err = blobstore.uuidGen.Generate()
+	blobID, err = blobstore.uuidGen.Generate()
 	if err != nil {
 		err = bosherr.WrapError(err, "Generating UUID")
 		return
 	}
 
-	err = blobstore.run("put", filePath, blobId)
+	err = blobstore.run("put", filePath, blobID)
 	return
 }
 

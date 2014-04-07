@@ -30,19 +30,19 @@ func (p MbusHandlerProvider) Get(platform boshplatform.Platform, dirProvider bos
 		return
 	}
 
-	mbusUrl, err := url.Parse(p.settings.GetMbusUrl())
+	mbusURL, err := url.Parse(p.settings.GetMbusURL())
 	if err != nil {
 		err = bosherr.WrapError(err, "Parsing handler URL")
 		return
 	}
 
-	switch mbusUrl.Scheme {
+	switch mbusURL.Scheme {
 	case "nats":
 		handler = NewNatsHandler(p.settings, p.logger, yagnats.NewClient())
 	case "https":
-		handler = micro.NewHttpsHandler(mbusUrl, p.logger, platform.GetFs(), dirProvider)
+		handler = micro.NewHTTPSHandler(mbusURL, p.logger, platform.GetFs(), dirProvider)
 	default:
-		err = bosherr.New("Message Bus Handler with scheme %s could not be found", mbusUrl.Scheme)
+		err = bosherr.New("Message Bus Handler with scheme %s could not be found", mbusURL.Scheme)
 	}
 
 	p.handler = handler

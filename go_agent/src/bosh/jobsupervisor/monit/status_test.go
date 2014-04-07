@@ -54,7 +54,7 @@ func init() {
 			defer ts.Close()
 
 			logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
-			client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
+			client := NewHTTPClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 			status, err := client.Status()
 			Expect(err).ToNot(HaveOccurred())

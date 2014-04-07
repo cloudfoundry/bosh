@@ -37,7 +37,7 @@ func init() {
 
 			result, err := mountDisk.Run("vol-123")
 			Expect(err).NotTo(HaveOccurred())
-			boshassert.MatchesJsonString(GinkgoT(), result, "{}")
+			boshassert.MatchesJSONString(GinkgoT(), result, "{}")
 
 			Expect(settings.SettingsWereLoaded).To(BeTrue())
 
@@ -54,7 +54,7 @@ func init() {
 
 			result, err := mountDisk.Run("vol-123")
 			Expect(err).NotTo(HaveOccurred())
-			boshassert.MatchesJsonString(GinkgoT(), result, "{}")
+			boshassert.MatchesJSONString(GinkgoT(), result, "{}")
 
 			Expect(platform.IsMountPointPath).To(Equal("/foo/store"))
 

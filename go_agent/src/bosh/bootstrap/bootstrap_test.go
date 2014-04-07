@@ -55,7 +55,7 @@ func init() {
 			})
 
 			It("sets up hostname", func() {
-				settingsService.Settings.AgentId = "foo-bar-baz-123"
+				settingsService.Settings.AgentID = "foo-bar-baz-123"
 
 				_, err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
@@ -127,7 +127,7 @@ func init() {
 
 				_, err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(inf.MountPersistentDiskVolumeId).To(Equal("/dev/sdb"))
+				Expect(inf.MountPersistentDiskVolumeID).To(Equal("/dev/sdb"))
 				Expect(inf.MountPersistentDiskMountPoint).To(Equal(dirProvider.StoreDir()))
 			})
 

@@ -14,7 +14,7 @@ import (
 
 func buildMonitAlert() MonitAlert {
 	return MonitAlert{
-		Id:          "some random id",
+		ID:          "some random id",
 		Service:     "nats",
 		Event:       "does not exist",
 		Action:      "restart",
@@ -42,7 +42,7 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 
 				expectedAlert := Alert{
-					Id:        "some random id",
+					ID:        "some random id",
 					Severity:  SEVERITY_ALERT,
 					Title:     "nats - does not exist - restart",
 					Summary:   "process is not running",
@@ -97,7 +97,7 @@ func init() {
 
 			It("sets the title with ips", func() {
 				inputAlert := buildMonitAlert()
-				settingsService.Ips = []string{"192.168.0.1", "10.0.0.1"}
+				settingsService.IPs = []string{"192.168.0.1", "10.0.0.1"}
 
 				builtAlert, _ := builder.Build(inputAlert)
 

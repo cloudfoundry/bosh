@@ -28,11 +28,11 @@ func NewCentosNetManager(
 	return
 }
 
-func (net centos) getDnsServers(networks boshsettings.Networks) (dnsServers []string) {
+func (net centos) getDNSServers(networks boshsettings.Networks) (dnsServers []string) {
 	dnsNetwork, found := networks.DefaultNetworkFor("dns")
 	if found {
-		for i := len(dnsNetwork.Dns) - 1; i >= 0; i-- {
-			dnsServers = append(dnsServers, dnsNetwork.Dns[i])
+		for i := len(dnsNetwork.DNS) - 1; i >= 0; i-- {
+			dnsServers = append(dnsServers, dnsNetwork.DNS[i])
 		}
 	}
 
@@ -43,13 +43,13 @@ func (net centos) SetupDhcp(networks boshsettings.Networks) (err error) {
 	dnsServers := []string{}
 	dnsNetwork, found := networks.DefaultNetworkFor("dns")
 	if found {
-		for i := len(dnsNetwork.Dns) - 1; i >= 0; i-- {
-			dnsServers = append(dnsServers, dnsNetwork.Dns[i])
+		for i := len(dnsNetwork.DNS) - 1; i >= 0; i-- {
+			dnsServers = append(dnsServers, dnsNetwork.DNS[i])
 		}
 	}
 
 	type dhcpConfigArg struct {
-		DnsServers []string
+		DNSServers []string
 	}
 
 	buffer := bytes.NewBuffer([]byte{})
@@ -87,7 +87,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 	netbios-name-servers, netbios-scope, interface-mtu,
 	rfc3442-classless-static-routes, ntp-servers;
 
-{{ range .DnsServers }}prepend domain-name-servers {{ . }};
+{{ range .DNSServers }}prepend domain-name-servers {{ . }};
 {{ end }}`
 
 func (net centos) SetupManualNetworking(networks boshsettings.Networks) (err error) {
@@ -117,7 +117,7 @@ func (net centos) gratuitiousArp(networks []CustomNetwork) {
 				time.Sleep(100 * time.Millisecond)
 			}
 
-			net.cmdRunner.RunCommand("arping", "-c", "1", "-U", "-I", network.Interface, network.Ip)
+			net.cmdRunner.RunCommand("arping", "-c", "1", "-U", "-I", network.Interface, network.IP)
 			time.Sleep(net.arpWaitInterval)
 		}
 	}
@@ -133,7 +133,7 @@ func (net centos) writeIfcfgs(networks boshsettings.Networks) (modifiedNetworks 
 
 	for _, aNet := range networks {
 		var network, broadcast string
-		network, broadcast, err = boshsys.CalculateNetworkAndBroadcast(aNet.Ip, aNet.Netmask)
+		network, broadcast, err = boshsys.CalculateNetworkAndBroadcast(aNet.IP, aNet.Netmask)
 		if err != nil {
 			err = bosherr.WrapError(err, "Calculating network and broadcast")
 			return
@@ -169,7 +169,7 @@ func (net centos) writeIfcfgs(networks boshsettings.Networks) (modifiedNetworks 
 
 const CENTOS_IFCFG_TEMPLATE = `DEVICE={{ .Interface }}
 BOOTPROTO=static
-IPADDR={{ .Ip }}
+IPADDR={{ .IP }}
 NETMASK={{ .Netmask }}
 BROADCAST={{ .Broadcast }}
 {{ if .HasDefaultGateway }}GATEWAY={{ .Gateway }}{{ end }}
@@ -179,7 +179,7 @@ func (p centos) writeResolvConf(networks boshsettings.Networks) (err error) {
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("resolv-conf").Parse(CENTOS_RESOLV_CONF_TEMPLATE))
 
-	dnsServers := p.getDnsServers(networks)
+	dnsServers := p.getDNSServers(networks)
 	dnsServersArg := dnsConfigArg{dnsServers}
 	err = t.Execute(buffer, dnsServersArg)
 	if err != nil {
@@ -196,7 +196,7 @@ func (p centos) writeResolvConf(networks boshsettings.Networks) (err error) {
 	return
 }
 
-const CENTOS_RESOLV_CONF_TEMPLATE = `{{ range .DnsServers }}nameserver {{ . }}
+const CENTOS_RESOLV_CONF_TEMPLATE = `{{ range .DNSServers }}nameserver {{ . }}
 {{ end }}`
 
 func (net centos) detectMacAddresses() (addresses map[string]string, err error) {

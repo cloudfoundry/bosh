@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestHttp_fakes(t *testing.T) {
+func TestHTTP_fakes(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Http_fakes Suite")
+	RunSpecs(t, "HTTP_fakes Suite")
 }

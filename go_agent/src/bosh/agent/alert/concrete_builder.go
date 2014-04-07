@@ -23,7 +23,7 @@ func NewBuilder(settingsService boshsettings.Service, logger boshlog.Logger) Bui
 }
 
 func (b concreteBuilder) Build(input MonitAlert) (alert Alert, err error) {
-	alert.Id = input.Id
+	alert.ID = input.ID
 	alert.Severity = b.getSeverity(input)
 	alert.Title = b.getTitle(input)
 	alert.Summary = input.Description
@@ -42,7 +42,7 @@ func (b concreteBuilder) getSeverity(input MonitAlert) (severity SeverityLevel) 
 
 func (b concreteBuilder) getTitle(input MonitAlert) (title string) {
 	service := input.Service
-	ips := b.settingsService.GetIps()
+	ips := b.settingsService.GetIPs()
 	sort.Strings(ips)
 
 	if len(ips) > 0 {

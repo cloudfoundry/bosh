@@ -12,11 +12,11 @@ type NetManager interface {
 type CustomNetwork struct {
 	boshsettings.Network
 	Interface         string
-	NetworkIp         string
+	NetworkIP         string
 	Broadcast         string
 	HasDefaultGateway bool
 }
 
 type dnsConfigArg struct {
-	DnsServers []string
+	DNSServers []string
 }

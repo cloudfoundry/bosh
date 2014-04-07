@@ -18,7 +18,7 @@ import (
 
 func getCompileArgs() (pkg Package, pkgDeps []boshmodels.Package) {
 	pkg = Package{
-		BlobstoreId: "blobstore_id",
+		BlobstoreID: "blobstore_id",
 		Sha1:        "sha1",
 		Name:        "pkg_name",
 		Version:     "pkg_version",
@@ -29,7 +29,7 @@ func getCompileArgs() (pkg Package, pkgDeps []boshmodels.Package) {
 			Version: "first_dep_version",
 			Source: boshmodels.Source{
 				Sha1:        "first_dep_sha1",
-				BlobstoreId: "first_dep_blobstore_id",
+				BlobstoreID: "first_dep_blobstore_id",
 			},
 		},
 		{
@@ -37,7 +37,7 @@ func getCompileArgs() (pkg Package, pkgDeps []boshmodels.Package) {
 			Version: "sec_dep_version",
 			Source: boshmodels.Source{
 				Sha1:        "sec_dep_sha1",
-				BlobstoreId: "sec_dep_blobstore_id",
+				BlobstoreID: "sec_dep_blobstore_id",
 			},
 		},
 	}
@@ -89,14 +89,14 @@ func init() {
 		It("compile returns blob id and sha1", func() {
 			deps, compiler := buildCompiler()
 
-			deps.blobstore.CreateBlobId = "my-blob-id"
+			deps.blobstore.CreateBlobID = "my-blob-id"
 			deps.blobstore.CreateFingerprint = "blob-sha1"
 			pkg, pkgDeps := getCompileArgs()
 
-			blobId, sha1, err := compiler.Compile(pkg, pkgDeps)
+			blobID, sha1, err := compiler.Compile(pkg, pkgDeps)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect("my-blob-id").To(Equal(blobId))
+			Expect("my-blob-id").To(Equal(blobID))
 			Expect("blob-sha1").To(Equal(sha1))
 		})
 		It("compile fetches source package from blobstore", func() {
@@ -108,7 +108,7 @@ func init() {
 			_, _, err := compiler.Compile(pkg, pkgDeps)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect("blobstore_id").To(Equal(deps.blobstore.GetBlobIds[0]))
+			Expect("blobstore_id").To(Equal(deps.blobstore.GetBlobIDs[0]))
 			Expect("sha1").To(Equal(deps.blobstore.GetFingerprints[0]))
 		})
 		It("compile installs dependent packages", func() {

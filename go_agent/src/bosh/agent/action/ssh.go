@@ -74,7 +74,7 @@ func (a SshAction) setupSsh(params SshParams) (value interface{}, err error) {
 		return
 	}
 
-	defaultIp, found := a.settings.GetDefaultIp()
+	defaultIP, found := a.settings.GetDefaultIP()
 
 	if !found {
 		err = errors.New("No default ip could be found")
@@ -84,7 +84,7 @@ func (a SshAction) setupSsh(params SshParams) (value interface{}, err error) {
 	value = map[string]string{
 		"command": "setup",
 		"status":  "success",
-		"ip":      defaultIp,
+		"ip":      defaultIP,
 	}
 	return
 }

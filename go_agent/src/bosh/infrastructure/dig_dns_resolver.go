@@ -11,16 +11,16 @@ import (
 	"strings"
 )
 
-type DigDnsResolver struct {
+type DigDNSResolver struct {
 	logger boshlog.Logger
 }
 
-func NewDigDnsResolver(logger boshlog.Logger) (resolver DigDnsResolver) {
+func NewDigDNSResolver(logger boshlog.Logger) (resolver DigDNSResolver) {
 	resolver.logger = logger
 	return
 }
 
-func (res DigDnsResolver) LookupHost(dnsServers []string, host string) (ipString string, err error) {
+func (res DigDNSResolver) LookupHost(dnsServers []string, host string) (ipString string, err error) {
 	ip := net.ParseIP(host)
 	if ip != nil {
 		ipString = host
@@ -28,7 +28,7 @@ func (res DigDnsResolver) LookupHost(dnsServers []string, host string) (ipString
 	}
 
 	for _, dnsServer := range dnsServers {
-		ipString, err = res.lookupHostWithDnsServer(dnsServer, host)
+		ipString, err = res.lookupHostWithDNSServer(dnsServer, host)
 		if err == nil {
 			return
 		}
@@ -37,7 +37,7 @@ func (res DigDnsResolver) LookupHost(dnsServers []string, host string) (ipString
 	return
 }
 
-func (res DigDnsResolver) lookupHostWithDnsServer(dnsServer string, host string) (ipString string, err error) {
+func (res DigDNSResolver) lookupHostWithDNSServer(dnsServer string, host string) (ipString string, err error) {
 	stdout, _, err := res.runCommand(
 		"dig",
 		fmt.Sprintf("@%s", dnsServer),
@@ -59,8 +59,8 @@ func (res DigDnsResolver) lookupHostWithDnsServer(dnsServer string, host string)
 	return
 }
 
-func (res DigDnsResolver) runCommand(cmdName string, args ...string) (stdout, stderr string, err error) {
-	res.logger.Debug("Dig Dns Resolver", "Running command: %s %s", cmdName, strings.Join(args, " "))
+func (res DigDNSResolver) runCommand(cmdName string, args ...string) (stdout, stderr string, err error) {
+	res.logger.Debug("Dig DNS Resolver", "Running command: %s %s", cmdName, strings.Join(args, " "))
 	cmd := exec.Command(cmdName, args...)
 
 	stdoutWriter := bytes.NewBufferString("")

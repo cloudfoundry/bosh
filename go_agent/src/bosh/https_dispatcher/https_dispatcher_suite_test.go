@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestHttps_dispatcher(t *testing.T) {
+func TestHTTPS_dispatcher(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Https_dispatcher Suite")
+	RunSpecs(t, "HTTPS_dispatcher Suite")
 }

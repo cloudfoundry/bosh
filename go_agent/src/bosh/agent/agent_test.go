@@ -166,14 +166,14 @@ func init() {
 			})
 
 			It("sets the callback for job failures monitoring", func() {
-				builtAlert := boshalert.Alert{Id: "some built alert id"}
+				builtAlert := boshalert.Alert{ID: "some built alert id"}
 				alertBuilder.BuildAlert = builtAlert
 
 				err := agent.Run()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(handler.SendToHealthManagerTopic).ToNot(Equal("alert"))
 
-				failureAlert := boshalert.MonitAlert{Id: "some random id"}
+				failureAlert := boshalert.MonitAlert{ID: "some random id"}
 				jobSupervisor.OnJobFailure(failureAlert)
 
 				Expect(failureAlert).To(Equal(alertBuilder.BuildInput))

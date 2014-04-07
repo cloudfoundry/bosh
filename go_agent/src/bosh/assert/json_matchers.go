@@ -6,26 +6,26 @@ import (
 	"strings"
 )
 
-func MatchesJsonMap(t assert.TestingT, object interface{}, expectedJson map[string]interface{}) {
-	expectedBytes, err := json.Marshal(expectedJson)
+func MatchesJSONMap(t assert.TestingT, object interface{}, expectedJSON map[string]interface{}) {
+	expectedBytes, err := json.Marshal(expectedJSON)
 	assert.NoError(t, err)
 
-	MatchesJsonBytes(t, object, expectedBytes)
+	MatchesJSONBytes(t, object, expectedBytes)
 }
 
-func MatchesJsonString(t assert.TestingT, object interface{}, expectedJson string) {
-	MatchesJsonBytes(t, object, []byte(expectedJson))
+func MatchesJSONString(t assert.TestingT, object interface{}, expectedJSON string) {
+	MatchesJSONBytes(t, object, []byte(expectedJSON))
 }
 
-func MatchesJsonBytes(t assert.TestingT, object interface{}, expectedJson []byte) {
+func MatchesJSONBytes(t assert.TestingT, object interface{}, expectedJSON []byte) {
 	objectBytes, err := json.Marshal(object)
 	assert.NoError(t, err)
 
 	// Use strings instead of []byte for reasonable error message
-	assert.Equal(t, string(expectedJson), string(objectBytes))
+	assert.Equal(t, string(expectedJSON), string(objectBytes))
 }
 
-func LacksJsonKey(t assert.TestingT, object interface{}, key string) {
+func LacksJSONKey(t assert.TestingT, object interface{}, key string) {
 	objectBytes, err := json.Marshal(object)
 	assert.NoError(t, err)
 

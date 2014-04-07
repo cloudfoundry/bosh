@@ -66,7 +66,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	err = boot.platform.SetupHostname(settings.AgentId)
+	err = boot.platform.SetupHostname(settings.AgentID)
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting up hostname")
 		return

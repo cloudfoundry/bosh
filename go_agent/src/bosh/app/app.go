@@ -98,7 +98,14 @@ func (app *app) Setup(args []string) (err error) {
 		return
 	}
 
-	jobSupervisorProvider := boshjobsuper.NewProvider(app.platform, monitClient, app.logger, dirProvider, mbusHandler)
+	jobSupervisorProvider := boshjobsuper.NewProvider(
+		app.platform,
+		monitClient,
+		app.logger,
+		dirProvider,
+		mbusHandler,
+	)
+
 	jobSupervisor, err := jobSupervisorProvider.Get(opts.JobSupervisor)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting job supervisor")

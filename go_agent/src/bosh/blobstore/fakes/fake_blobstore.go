@@ -1,7 +1,7 @@
 package fakes
 
 type FakeBlobstore struct {
-	GetBlobIds      []string
+	GetBlobIDs      []string
 	GetFingerprints []string
 	GetFileName     string
 	GetError        error
@@ -10,7 +10,7 @@ type FakeBlobstore struct {
 	CleanUpErr      error
 
 	CreateFileName    string
-	CreateBlobId      string
+	CreateBlobID      string
 	CreateFingerprint string
 	CreateErr         error
 
@@ -21,8 +21,8 @@ func NewFakeBlobstore() *FakeBlobstore {
 	return &FakeBlobstore{}
 }
 
-func (bs *FakeBlobstore) Get(blobId, fingerprint string) (fileName string, err error) {
-	bs.GetBlobIds = append(bs.GetBlobIds, blobId)
+func (bs *FakeBlobstore) Get(blobID, fingerprint string) (fileName string, err error) {
+	bs.GetBlobIDs = append(bs.GetBlobIDs, blobID)
 	bs.GetFingerprints = append(bs.GetFingerprints, fingerprint)
 	fileName = bs.GetFileName
 	err = bs.GetError
@@ -35,10 +35,10 @@ func (bs *FakeBlobstore) CleanUp(fileName string) (err error) {
 	return
 }
 
-func (bs *FakeBlobstore) Create(fileName string) (blobId string, fingerprint string, err error) {
+func (bs *FakeBlobstore) Create(fileName string) (blobID string, fingerprint string, err error) {
 	bs.CreateFileName = fileName
 
-	blobId = bs.CreateBlobId
+	blobID = bs.CreateBlobID
 	fingerprint = bs.CreateFingerprint
 	err = bs.CreateErr
 	return

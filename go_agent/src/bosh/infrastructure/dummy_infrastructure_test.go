@@ -28,7 +28,7 @@ func init() {
 			settingsPath := filepath.Join(dirProvider.BoshDir(), "dummy-cpi-agent-env.json")
 
 			expectedSettings := boshsettings.Settings{
-				AgentId: "123-456-789",
+				AgentID: "123-456-789",
 				Blobstore: boshsettings.Blobstore{
 					Type: boshsettings.BlobstoreTypeDummy,
 				},
@@ -42,7 +42,7 @@ func init() {
 			settings, err := dummy.GetSettings()
 			Expect(err).ToNot(HaveOccurred())
 			assert.Equal(GinkgoT(), settings, boshsettings.Settings{
-				AgentId:   "123-456-789",
+				AgentID:   "123-456-789",
 				Blobstore: boshsettings.Blobstore{Type: boshsettings.BlobstoreTypeDummy},
 				Mbus:      "nats://127.0.0.1:4222",
 			})

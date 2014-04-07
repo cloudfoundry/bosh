@@ -84,13 +84,13 @@ func init() {
 
 			innerBlobstore, sha1Verifiable := buildSha1Verifiable()
 			innerBlobstore.CreateErr = errors.New("Cleanup err")
-			innerBlobstore.CreateBlobId = "blob-id"
+			innerBlobstore.CreateBlobID = "blob-id"
 
 			expectedSha1 := "da39a3ee5e6b4b0d3255bfef95601890afd80709"
 
-			blobId, sha1, err := sha1Verifiable.Create("../../../fixtures/some.config")
+			blobID, sha1, err := sha1Verifiable.Create("../../../fixtures/some.config")
 
-			Expect("blob-id").To(Equal(blobId))
+			Expect("blob-id").To(Equal(blobID))
 			Expect(err).To(Equal(innerBlobstore.CreateErr))
 			Expect("../../../fixtures/some.config").To(Equal(innerBlobstore.CreateFileName))
 			Expect(expectedSha1).To(Equal(sha1))

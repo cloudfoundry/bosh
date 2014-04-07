@@ -39,12 +39,12 @@ type FakeSettingsService struct {
 	Settings boshsettings.Settings
 
 	Blobstore boshsettings.Blobstore
-	AgentId   string
-	Vm        boshsettings.Vm
-	MbusUrl   string
+	AgentID   string
+	VM        boshsettings.VM
+	MbusURL   string
 	Disks     boshsettings.Disks
-	DefaultIp string
-	Ips       []string
+	DefaultIP string
+	IPs       []string
 }
 
 func (service *FakeSettingsService) InvalidateSettings() error {
@@ -65,26 +65,26 @@ func (service FakeSettingsService) GetBlobstore() boshsettings.Blobstore {
 	return service.Blobstore
 }
 
-func (service FakeSettingsService) GetAgentId() string {
-	return service.AgentId
+func (service FakeSettingsService) GetAgentID() string {
+	return service.AgentID
 }
 
-func (service FakeSettingsService) GetVm() boshsettings.Vm {
-	return service.Vm
+func (service FakeSettingsService) GetVM() boshsettings.VM {
+	return service.VM
 }
 
-func (service FakeSettingsService) GetMbusUrl() string {
-	return service.MbusUrl
+func (service FakeSettingsService) GetMbusURL() string {
+	return service.MbusURL
 }
 
 func (service FakeSettingsService) GetDisks() boshsettings.Disks {
 	return service.Disks
 }
 
-func (service FakeSettingsService) GetDefaultIp() (string, bool) {
-	return service.DefaultIp, service.DefaultIp != ""
+func (service FakeSettingsService) GetDefaultIP() (string, bool) {
+	return service.DefaultIP, service.DefaultIP != ""
 }
 
-func (service FakeSettingsService) GetIps() []string {
-	return service.Ips
+func (service FakeSettingsService) GetIPs() []string {
+	return service.IPs
 }

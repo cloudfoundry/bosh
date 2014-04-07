@@ -7,15 +7,15 @@ import (
 	"strings"
 )
 
-type HttpRequest struct {
+type HTTPRequest struct {
 	*http.Request
 }
 
-func NewHttpRequest(req *http.Request) (testReq HttpRequest) {
-	return HttpRequest{req}
+func NewHTTPRequest(req *http.Request) (testReq HTTPRequest) {
+	return HTTPRequest{req}
 }
 
-func (req HttpRequest) ExtractBasicAuth() (username, password string, err error) {
+func (req HTTPRequest) ExtractBasicAuth() (username, password string, err error) {
 	authHeader := req.Header["Authorization"]
 	if len(authHeader) != 1 {
 		err = errors.New("Missing basic auth header")

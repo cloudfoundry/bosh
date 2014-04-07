@@ -54,8 +54,8 @@ func init() {
 		Describe("Run", func() {
 			It("returns state", func() {
 				settings := &fakesettings.FakeSettingsService{}
-				settings.AgentId = "my-agent-id"
-				settings.Vm.Name = "vm-abc-def"
+				settings.AgentID = "my-agent-id"
+				settings.VM.Name = "vm-abc-def"
 
 				specService, jobSupervisor, _, action := buildGetStateAction(settings)
 				jobSupervisor.StatusStatus = "running"
@@ -65,10 +65,10 @@ func init() {
 				}
 
 				expectedSpec := GetStateV1ApplySpec{
-					AgentId:      "my-agent-id",
+					AgentID:      "my-agent-id",
 					JobState:     "running",
 					BoshProtocol: "1",
-					Vm:           boshsettings.Vm{Name: "vm-abc-def"},
+					VM:           boshsettings.VM{Name: "vm-abc-def"},
 					Ntp: boshntp.NTPInfo{
 						Offset:    "0.34958",
 						Timestamp: "12 Oct 17:37:58",
@@ -79,18 +79,18 @@ func init() {
 				state, err := action.Run()
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(state.AgentId).To(Equal(expectedSpec.AgentId))
+				Expect(state.AgentID).To(Equal(expectedSpec.AgentID))
 				Expect(state.JobState).To(Equal(expectedSpec.JobState))
 				Expect(state.Deployment).To(Equal(expectedSpec.Deployment))
-				boshassert.LacksJsonKey(GinkgoT(), state, "vitals")
+				boshassert.LacksJSONKey(GinkgoT(), state, "vitals")
 
 				Expect(state).To(Equal(expectedSpec))
 			})
 
 			It("returns state in full format", func() {
 				settings := &fakesettings.FakeSettingsService{}
-				settings.AgentId = "my-agent-id"
-				settings.Vm.Name = "vm-abc-def"
+				settings.AgentID = "my-agent-id"
+				settings.VM.Name = "vm-abc-def"
 
 				specService, jobSupervisor, fakeVitals, action := buildGetStateAction(settings)
 				jobSupervisor.StatusStatus = "running"
@@ -103,16 +103,16 @@ func init() {
 					Load: []string{"foo", "bar", "baz"},
 				}
 				fakeVitals.GetVitals = expectedVitals
-				expectedVm := map[string]interface{}{"name": "vm-abc-def"}
+				expectedVM := map[string]interface{}{"name": "vm-abc-def"}
 
 				state, err := action.Run("full")
 				Expect(err).ToNot(HaveOccurred())
 
-				boshassert.MatchesJsonString(GinkgoT(), state.AgentId, `"my-agent-id"`)
-				boshassert.MatchesJsonString(GinkgoT(), state.JobState, `"running"`)
-				boshassert.MatchesJsonString(GinkgoT(), state.Deployment, `"fake-deployment"`)
+				boshassert.MatchesJSONString(GinkgoT(), state.AgentID, `"my-agent-id"`)
+				boshassert.MatchesJSONString(GinkgoT(), state.JobState, `"running"`)
+				boshassert.MatchesJSONString(GinkgoT(), state.Deployment, `"fake-deployment"`)
 				Expect(*state.Vitals).To(Equal(expectedVitals))
-				boshassert.MatchesJsonMap(GinkgoT(), state.Vm, expectedVm)
+				boshassert.MatchesJSONMap(GinkgoT(), state.VM, expectedVM)
 			})
 
 			Context("when current cannot be retrieved", func() {

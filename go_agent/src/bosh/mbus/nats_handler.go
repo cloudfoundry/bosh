@@ -53,7 +53,7 @@ func (h natsHandler) Start(handlerFunc boshhandler.HandlerFunc) (err error) {
 		return
 	}
 
-	subject := fmt.Sprintf("agent.%s", h.settings.GetAgentId())
+	subject := fmt.Sprintf("agent.%s", h.settings.GetAgentID())
 
 	h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {
 		respBytes, req, err := boshhandler.PerformHandlerWithJSON(natsMsg.Payload, handlerFunc, h.logger)
@@ -84,7 +84,7 @@ func (h natsHandler) SendToHealthManager(topic string, payload interface{}) (err
 	h.logger.Info("NATS Handler", "Sending HM message '%s'", topic)
 	h.logger.DebugWithDetails("NATS Handler", "Payload", msgBytes)
 
-	subject := fmt.Sprintf("hm.agent.%s.%s", topic, h.settings.GetAgentId())
+	subject := fmt.Sprintf("hm.agent.%s.%s", topic, h.settings.GetAgentID())
 	return h.client.Publish(subject, msgBytes)
 }
 
@@ -109,16 +109,16 @@ func (h natsHandler) runUntilInterrupted() {
 }
 
 func (h natsHandler) getConnectionInfo() (connInfo *yagnats.ConnectionInfo, err error) {
-	natsUrl, err := url.Parse(h.settings.GetMbusUrl())
+	natsURL, err := url.Parse(h.settings.GetMbusURL())
 	if err != nil {
 		err = bosherr.WrapError(err, "Parsing Nats URL")
 		return
 	}
 
 	connInfo = new(yagnats.ConnectionInfo)
-	connInfo.Addr = natsUrl.Host
+	connInfo.Addr = natsURL.Host
 
-	user := natsUrl.User
+	user := natsURL.User
 	if user != nil {
 		password, passwordIsSet := user.Password()
 		if !passwordIsSet {

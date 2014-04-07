@@ -12,14 +12,14 @@ import (
 )
 
 type valueType struct {
-	Id      int
+	ID      int
 	Success bool
 }
 
 type argsType struct {
 	User     string `json:"user"`
 	Password string `json:"pwd"`
-	Id       int    `json:"id"`
+	ID       int    `json:"id"`
 }
 
 type actionWithGoodRunMethod struct {
@@ -27,7 +27,7 @@ type actionWithGoodRunMethod struct {
 	Err   error
 
 	SubAction string
-	SomeId    int
+	SomeID    int
 	ExtraArgs argsType
 	SliceArgs []string
 }
@@ -40,9 +40,9 @@ func (a *actionWithGoodRunMethod) IsPersistent() bool {
 	return false
 }
 
-func (a *actionWithGoodRunMethod) Run(subAction string, someId int, extraArgs argsType, sliceArgs []string) (valueType, error) {
+func (a *actionWithGoodRunMethod) Run(subAction string, someID int, extraArgs argsType, sliceArgs []string) (valueType, error) {
 	a.SubAction = subAction
-	a.SomeId = someId
+	a.SomeID = someID
 	a.ExtraArgs = extraArgs
 	a.SliceArgs = sliceArgs
 	return a.Value, a.Err
@@ -133,7 +133,7 @@ func init() {
 		It("runner run parses the payload", func() {
 			runner := NewRunner()
 
-			expectedValue := valueType{Id: 13, Success: true}
+			expectedValue := valueType{ID: 13, Success: true}
 			expectedErr := errors.New("Oops")
 
 			action := &actionWithGoodRunMethod{Value: expectedValue, Err: expectedErr}
@@ -155,15 +155,15 @@ func init() {
 			Expect(err).To(Equal(expectedErr))
 
 			Expect(action.SubAction).To(Equal("setup"))
-			Expect(action.SomeId).To(Equal(123))
-			Expect(action.ExtraArgs).To(Equal(argsType{User: "rob", Password: "rob123", Id: 12}))
+			Expect(action.SomeID).To(Equal(123))
+			Expect(action.ExtraArgs).To(Equal(argsType{User: "rob", Password: "rob123", ID: 12}))
 			Expect(action.SliceArgs).To(Equal([]string{"a", "b", "c"}))
 		})
 		It("runner run errs when actions not enough arguments", func() {
 
 			runner := NewRunner()
 
-			expectedValue := valueType{Id: 13, Success: true}
+			expectedValue := valueType{ID: 13, Success: true}
 
 			action := &actionWithGoodRunMethod{Value: expectedValue}
 			payload := `{"arguments":["setup"]}`
@@ -175,7 +175,7 @@ func init() {
 
 			runner := NewRunner()
 
-			expectedValue := valueType{Id: 13, Success: true}
+			expectedValue := valueType{ID: 13, Success: true}
 
 			action := &actionWithGoodRunMethod{Value: expectedValue}
 			payload := `{"arguments":[123, "setup", {"user":"rob","pwd":"rob123","id":12}]}`
@@ -187,7 +187,7 @@ func init() {
 
 			runner := NewRunner()
 
-			expectedValue := valueType{Id: 13, Success: true}
+			expectedValue := valueType{ID: 13, Success: true}
 			expectedErr := errors.New("Oops")
 
 			action := &actionWithOptionalRunArgument{Value: expectedValue, Err: expectedErr}
@@ -200,8 +200,8 @@ func init() {
 
 			Expect(action.SubAction).To(Equal("setup"))
 			assert.Equal(GinkgoT(), action.OptionalArgs, []argsType{
-				{User: "rob", Password: "rob123", Id: 12},
-				{User: "bob", Password: "bob123", Id: 13},
+				{User: "rob", Password: "rob123", ID: 12},
+				{User: "bob", Password: "bob123", ID: 13},
 			})
 		})
 		It("runner handles optional arguments when not passed in", func() {

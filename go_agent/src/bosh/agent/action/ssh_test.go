@@ -15,7 +15,7 @@ import (
 
 func testSshSetupWithGivenPassword(t assert.TestingT, expectedPwd string) {
 	settings := &fakesettings.FakeSettingsService{}
-	settings.DefaultIp = "ww.xx.yy.zz"
+	settings.DefaultIP = "ww.xx.yy.zz"
 
 	platform, action := buildSshAction(settings)
 
@@ -37,13 +37,13 @@ func testSshSetupWithGivenPassword(t assert.TestingT, expectedPwd string) {
 	assert.Equal(t, []string{boshsettings.VCAP_USERNAME, boshsettings.ADMIN_GROUP}, platform.AddUserToGroupsGroups[expectedUser])
 	assert.Equal(t, expectedKey, platform.SetupSshPublicKeys[expectedUser])
 
-	expectedJson := map[string]interface{}{
+	expectedJSON := map[string]interface{}{
 		"command": "setup",
 		"status":  "success",
 		"ip":      "ww.xx.yy.zz",
 	}
 
-	boshassert.MatchesJsonMap(t, response, expectedJson)
+	boshassert.MatchesJSONMap(t, response, expectedJSON)
 }
 
 func buildSshAction(settings boshsettings.Service) (*fakeplatform.FakePlatform, SshAction) {
@@ -97,7 +97,7 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect("^foobar.*").To(Equal(platform.DeleteEphemeralUsersMatchingRegex))
 
-			boshassert.MatchesJsonMap(GinkgoT(), response, map[string]interface{}{
+			boshassert.MatchesJSONMap(GinkgoT(), response, map[string]interface{}{
 				"command": "cleanup",
 				"status":  "success",
 			})

@@ -39,8 +39,8 @@ func init() {
 			s3CliConfig, err := fs.ReadFileString(configPath)
 			Expect(err).ToNot(HaveOccurred())
 
-			expectedJson := map[string]string{"fake-key": "fake-value"}
-			boshassert.MatchesJsonString(GinkgoT(), expectedJson, s3CliConfig)
+			expectedJSON := map[string]string{"fake-key": "fake-value"}
+			boshassert.MatchesJSONString(GinkgoT(), expectedJSON, s3CliConfig)
 		})
 		It("external validate errors when command not in path", func() {
 
@@ -139,9 +139,9 @@ func init() {
 
 			uuidGen.GeneratedUuid = "some-uuid"
 
-			blobId, fingerprint, err := blobstore.Create(fileName)
+			blobID, fingerprint, err := blobstore.Create(fileName)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(blobId).To(Equal("some-uuid"))
+			Expect(blobID).To(Equal("some-uuid"))
 			assert.Empty(GinkgoT(), fingerprint)
 
 			Expect(1).To(Equal(len(runner.RunCommands)))

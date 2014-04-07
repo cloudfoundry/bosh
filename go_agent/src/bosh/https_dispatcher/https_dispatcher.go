@@ -9,16 +9,16 @@ import (
 	"net/url"
 )
 
-type HttpsDispatcher struct {
+type HTTPSDispatcher struct {
 	logger     boshlog.Logger
 	httpServer *http.Server
 	mux        *http.ServeMux
 	listener   net.Listener
 }
 
-type HttpHandlerFunc func(writer http.ResponseWriter, request *http.Request)
+type HTTPHandlerFunc func(writer http.ResponseWriter, request *http.Request)
 
-func NewHttpsDispatcher(baseURL *url.URL, logger boshlog.Logger) (dispatcher HttpsDispatcher) {
+func NewHTTPSDispatcher(baseURL *url.URL, logger boshlog.Logger) (dispatcher HTTPSDispatcher) {
 	dispatcher.logger = logger
 
 	dispatcher.httpServer = &http.Server{}
@@ -35,7 +35,7 @@ func NewHttpsDispatcher(baseURL *url.URL, logger boshlog.Logger) (dispatcher Htt
 	return
 }
 
-func (h HttpsDispatcher) Start() (err error) {
+func (h HTTPSDispatcher) Start() (err error) {
 	config := &tls.Config{}
 
 	config.NextProtos = []string{"http/1.1"}
@@ -52,12 +52,12 @@ func (h HttpsDispatcher) Start() (err error) {
 	return
 }
 
-func (h *HttpsDispatcher) Stop() {
+func (h *HTTPSDispatcher) Stop() {
 	h.listener.Close()
 	return
 }
 
-func (h HttpsDispatcher) AddRoute(route string, handler HttpHandlerFunc) {
+func (h HTTPSDispatcher) AddRoute(route string, handler HTTPHandlerFunc) {
 	h.mux.HandleFunc(route, handler)
 	return
 }

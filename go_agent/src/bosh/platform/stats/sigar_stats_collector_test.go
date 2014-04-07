@@ -13,7 +13,7 @@ func init() {
 
 			collector := NewSigarStatsCollector()
 
-			load, err := collector.GetCpuLoad()
+			load, err := collector.GetCPULoad()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(load.One >= 0).To(BeTrue())
 			Expect(load.Five >= 0).To(BeTrue())
@@ -23,7 +23,7 @@ func init() {
 
 			collector := NewSigarStatsCollector()
 
-			stats, err := collector.GetCpuStats()
+			stats, err := collector.GetCPUStats()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(stats.User > 0).To(BeTrue())
 			Expect(stats.Sys > 0).To(BeTrue())

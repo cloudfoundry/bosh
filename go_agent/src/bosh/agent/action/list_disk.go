@@ -32,9 +32,9 @@ func (a ListDiskAction) IsPersistent() bool {
 
 func (a ListDiskAction) Run() (value interface{}, err error) {
 	disks := a.settings.GetDisks()
-	volumeIds := []string{}
+	volumeIDs := []string{}
 
-	for volumeId, devicePath := range disks.Persistent {
+	for volumeID, devicePath := range disks.Persistent {
 		var isMounted bool
 		isMounted, err = a.platform.IsDevicePathMounted(devicePath)
 		if err != nil {
@@ -43,13 +43,13 @@ func (a ListDiskAction) Run() (value interface{}, err error) {
 		}
 
 		if isMounted {
-			volumeIds = append(volumeIds, volumeId)
+			volumeIDs = append(volumeIDs, volumeID)
 		} else {
-			a.logger.Debug("list-disk-action", "Not mounted", volumeId)
+			a.logger.Debug("list-disk-action", "Not mounted", volumeID)
 		}
 	}
 
-	value = volumeIds
+	value = volumeIDs
 	return
 }
 

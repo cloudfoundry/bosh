@@ -28,11 +28,11 @@ func NewUbuntuNetManager(
 	return
 }
 
-func (net ubuntu) getDnsServers(networks boshsettings.Networks) (dnsServers []string) {
+func (net ubuntu) getDNSServers(networks boshsettings.Networks) (dnsServers []string) {
 	dnsNetwork, found := networks.DefaultNetworkFor("dns")
 	if found {
-		for i := len(dnsNetwork.Dns) - 1; i >= 0; i-- {
-			dnsServers = append(dnsServers, dnsNetwork.Dns[i])
+		for i := len(dnsNetwork.DNS) - 1; i >= 0; i-- {
+			dnsServers = append(dnsServers, dnsNetwork.DNS[i])
 		}
 	}
 
@@ -40,7 +40,7 @@ func (net ubuntu) getDnsServers(networks boshsettings.Networks) (dnsServers []st
 }
 
 func (net ubuntu) SetupDhcp(networks boshsettings.Networks) (err error) {
-	dnsServers := net.getDnsServers(networks)
+	dnsServers := net.getDNSServers(networks)
 
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("dhcp-config").Parse(UBUNTU_DHCP_CONFIG_TEMPLATE))
@@ -78,7 +78,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 	netbios-name-servers, netbios-scope, interface-mtu,
 	rfc3442-classless-static-routes, ntp-servers;
 
-{{ range .DnsServers }}prepend domain-name-servers {{ . }};
+{{ range .DNSServers }}prepend domain-name-servers {{ . }};
 {{ end }}`
 
 func (net ubuntu) SetupManualNetworking(networks boshsettings.Networks) error {
@@ -108,7 +108,7 @@ func (net ubuntu) gratuitiousArp(networks []CustomNetwork) {
 				time.Sleep(100 * time.Millisecond)
 			}
 
-			net.cmdRunner.RunCommand("arping", "-c", "1", "-U", "-I", network.Interface, network.Ip)
+			net.cmdRunner.RunCommand("arping", "-c", "1", "-U", "-I", network.Interface, network.IP)
 			time.Sleep(net.arpWaitInterval)
 		}
 	}
@@ -124,7 +124,7 @@ func (net ubuntu) writeNetworkInterfaces(networks boshsettings.Networks) ([]Cust
 	}
 
 	for _, aNet := range networks {
-		network, broadcast, err := boshsys.CalculateNetworkAndBroadcast(aNet.Ip, aNet.Netmask)
+		network, broadcast, err := boshsys.CalculateNetworkAndBroadcast(aNet.IP, aNet.Netmask)
 		if err != nil {
 			return modifiedNetworks, false, bosherr.WrapError(err, "Calculating network and broadcast")
 		}
@@ -160,8 +160,8 @@ iface lo inet loopback
 {{ range . }}
 auto {{ .Interface }}
 iface {{ .Interface }} inet static
-    address {{ .Ip }}
-    network {{ .NetworkIp }}
+    address {{ .IP }}
+    network {{ .NetworkIP }}
     netmask {{ .Netmask }}
     broadcast {{ .Broadcast }}
 {{ if .HasDefaultGateway }}    gateway {{ .Gateway }}{{ end }}{{ end }}`
@@ -170,7 +170,7 @@ func (net ubuntu) writeResolvConf(networks boshsettings.Networks) (err error) {
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("resolv-conf").Parse(UBUNTU_RESOLV_CONF_TEMPLATE))
 
-	dnsServers := net.getDnsServers(networks)
+	dnsServers := net.getDNSServers(networks)
 	dnsServersArg := dnsConfigArg{dnsServers}
 	err = t.Execute(buffer, dnsServersArg)
 	if err != nil {
@@ -187,7 +187,7 @@ func (net ubuntu) writeResolvConf(networks boshsettings.Networks) (err error) {
 	return
 }
 
-const UBUNTU_RESOLV_CONF_TEMPLATE = `{{ range .DnsServers }}nameserver {{ . }}
+const UBUNTU_RESOLV_CONF_TEMPLATE = `{{ range .DNSServers }}nameserver {{ . }}
 {{ end }}`
 
 func (net ubuntu) detectMacAddresses() (addresses map[string]string, err error) {

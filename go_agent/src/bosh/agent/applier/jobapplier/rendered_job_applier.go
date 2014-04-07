@@ -56,7 +56,7 @@ func (s *renderedJobApplier) Apply(job models.Job) (err error) {
 		return
 	}
 
-	file, err := s.blobstore.Get(job.Source.BlobstoreId, job.Source.Sha1)
+	file, err := s.blobstore.Get(job.Source.BlobstoreID, job.Source.Sha1)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting job source from blobstore")
 		return

@@ -14,7 +14,7 @@ type FakeInfrastructure struct {
 	GetEphemeralDiskPathFound      bool
 	GetEphemeralDiskPathRealPath   string
 
-	MountPersistentDiskVolumeId   string
+	MountPersistentDiskVolumeID   string
 	MountPersistentDiskMountPoint string
 	MountPersistentDiskError      error
 	DevicePathResolver            boshdevicepathresolver.DevicePathResolver
@@ -52,8 +52,8 @@ func (i *FakeInfrastructure) GetEphemeralDiskPath(devicePath string) (realPath s
 	return
 }
 
-func (i *FakeInfrastructure) MountPersistentDisk(volumeId string, mountPoint string) (err error) {
-	i.MountPersistentDiskVolumeId = volumeId
+func (i *FakeInfrastructure) MountPersistentDisk(volumeID string, mountPoint string) (err error) {
+	i.MountPersistentDiskVolumeID = volumeID
 	i.MountPersistentDiskMountPoint = mountPoint
 	err = i.MountPersistentDiskError
 	return

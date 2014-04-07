@@ -36,7 +36,7 @@ func init() {
 			defer os.RemoveAll(targetFilePath)
 
 			handler := func(w http.ResponseWriter, r *http.Request) {
-				req := testcmd.NewHttpRequest(r)
+				req := testcmd.NewHTTPRequest(r)
 
 				username, password, err := req.ExtractBasicAuth()
 

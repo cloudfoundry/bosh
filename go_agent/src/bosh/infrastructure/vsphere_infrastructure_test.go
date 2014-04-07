@@ -41,7 +41,7 @@ func init() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(platform.GetFileContentsFromCDROMPath).To(Equal("env"))
-				Expect(settings.AgentId).To(Equal("123"))
+				Expect(settings.AgentID).To(Equal("123"))
 			})
 		})
 

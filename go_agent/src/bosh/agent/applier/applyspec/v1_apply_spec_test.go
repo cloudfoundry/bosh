@@ -15,7 +15,7 @@ func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("v1 apply spec json conversion", func() {
 
-			specJson := `{
+			specJSON := `{
 				"properties": {
 					"logging": {"max_log_file_size": "10M"}
 				},
@@ -97,25 +97,25 @@ func init() {
 					Template:    "router template",
 					Version:     "1.0",
 					Sha1:        "router sha1",
-					BlobstoreId: "router-blob-id-1",
+					BlobstoreID: "router-blob-id-1",
 					JobTemplateSpecs: []JobTemplateSpec{
-						{Name: "template 1", Version: "0.1", Sha1: "template 1 sha1", BlobstoreId: "template-blob-id-1"},
-						{Name: "template 2", Version: "0.2", Sha1: "template 2 sha1", BlobstoreId: "template-blob-id-2"},
+						{Name: "template 1", Version: "0.1", Sha1: "template 1 sha1", BlobstoreID: "template-blob-id-1"},
+						{Name: "template 2", Version: "0.2", Sha1: "template 2 sha1", BlobstoreID: "template-blob-id-2"},
 					},
 				},
 				PackageSpecs: map[string]PackageSpec{
-					"package 1": PackageSpec{Name: "package 1", Version: "0.1", Sha1: "package 1 sha1", BlobstoreId: "package-blob-id-1"},
-					"package 2": PackageSpec{Name: "package 2", Version: "0.2", Sha1: "package 2 sha1", BlobstoreId: "package-blob-id-2"},
+					"package 1": PackageSpec{Name: "package 1", Version: "0.1", Sha1: "package 1 sha1", BlobstoreID: "package-blob-id-1"},
+					"package 2": PackageSpec{Name: "package 2", Version: "0.2", Sha1: "package 2 sha1", BlobstoreID: "package-blob-id-2"},
 				},
 				RenderedTemplatesArchiveSpec: RenderedTemplatesArchiveSpec{
 					Sha1:        "archive sha 1",
-					BlobstoreId: "archive-blob-id-1",
+					BlobstoreID: "archive-blob-id-1",
 				},
 				NetworkSpecs: expectedNetworks,
 			}
 
 			spec := V1ApplySpec{}
-			err := json.Unmarshal([]byte(specJson), &spec)
+			err := json.Unmarshal([]byte(specJSON), &spec)
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(spec.NetworkSpecs).To(Equal(expectedNetworks))
@@ -130,25 +130,25 @@ func init() {
 					Name:        &jobName,
 					Version:     "fake-job-legacy-version",
 					Sha1:        "fake-job-legacy-sha1",
-					BlobstoreId: "fake-job-legacy-blobstore-id",
+					BlobstoreID: "fake-job-legacy-blobstore-id",
 					JobTemplateSpecs: []JobTemplateSpec{
 						JobTemplateSpec{
 							Name:        "fake-job1-name",
 							Version:     "fake-job1-version",
 							Sha1:        "fake-job1-sha1",
-							BlobstoreId: "fake-job1-blobstore-id",
+							BlobstoreID: "fake-job1-blobstore-id",
 						},
 						JobTemplateSpec{
 							Name:        "fake-job2-name",
 							Version:     "fake-job2-version",
 							Sha1:        "fake-job2-sha1",
-							BlobstoreId: "fake-job2-blobstore-id",
+							BlobstoreID: "fake-job2-blobstore-id",
 						},
 					},
 				},
 				RenderedTemplatesArchiveSpec: RenderedTemplatesArchiveSpec{
 					Sha1:        "fake-rendered-templates-archive-sha1",
-					BlobstoreId: "fake-rendered-templates-archive-blobstore-id",
+					BlobstoreID: "fake-rendered-templates-archive-blobstore-id",
 				},
 			}
 			assert.Equal(GinkgoT(), []models.Job{
@@ -157,7 +157,7 @@ func init() {
 					Version: "fake-job1-version",
 					Source: models.Source{
 						Sha1:          "fake-rendered-templates-archive-sha1",
-						BlobstoreId:   "fake-rendered-templates-archive-blobstore-id",
+						BlobstoreID:   "fake-rendered-templates-archive-blobstore-id",
 						PathInArchive: "fake-job1-name",
 					},
 				},
@@ -166,7 +166,7 @@ func init() {
 					Version: "fake-job2-version",
 					Source: models.Source{
 						Sha1:          "fake-rendered-templates-archive-sha1",
-						BlobstoreId:   "fake-rendered-templates-archive-blobstore-id",
+						BlobstoreID:   "fake-rendered-templates-archive-blobstore-id",
 						PathInArchive: "fake-job2-name",
 					},
 				},
@@ -185,7 +185,7 @@ func init() {
 						Name:        "fake-package1-name",
 						Version:     "fake-package1-version",
 						Sha1:        "fake-package1-sha1",
-						BlobstoreId: "fake-package1-blobstore-id",
+						BlobstoreID: "fake-package1-blobstore-id",
 					},
 				},
 			}
@@ -196,7 +196,7 @@ func init() {
 					Version: "fake-package1-version",
 					Source: models.Source{
 						Sha1:        "fake-package1-sha1",
-						BlobstoreId: "fake-package1-blobstore-id",
+						BlobstoreID: "fake-package1-blobstore-id",
 					},
 				},
 			}, spec.Packages())

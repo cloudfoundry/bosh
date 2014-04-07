@@ -27,8 +27,8 @@ func init() {
 		Describe("Start", func() {
 			It("starts", func() {
 				settings := &fakesettings.FakeSettingsService{
-					AgentId: "my-agent-id",
-					MbusUrl: "nats://foo:bar@127.0.0.1:1234",
+					AgentID: "my-agent-id",
+					MbusURL: "nats://foo:bar@127.0.0.1:1234",
 				}
 				client, handler := buildNatsClientAndHandler(settings)
 
@@ -70,8 +70,8 @@ func init() {
 
 			It("does not respond if the response is nil", func() {
 				settings := &fakesettings.FakeSettingsService{
-					AgentId: "my-agent-id",
-					MbusUrl: "nats://foo:bar@127.0.0.1:1234",
+					AgentID: "my-agent-id",
+					MbusURL: "nats://foo:bar@127.0.0.1:1234",
 				}
 				client, handler := buildNatsClientAndHandler(settings)
 
@@ -92,7 +92,7 @@ func init() {
 			})
 
 			It("has the correct connection info", func() {
-				settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://foo:bar@127.0.0.1:1234"}
+				settings := &fakesettings.FakeSettingsService{MbusURL: "nats://foo:bar@127.0.0.1:1234"}
 				client, handler := buildNatsClientAndHandler(settings)
 
 				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
@@ -113,7 +113,7 @@ func init() {
 			})
 
 			It("does not err when no username and password", func() {
-				settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://127.0.0.1:1234"}
+				settings := &fakesettings.FakeSettingsService{MbusURL: "nats://127.0.0.1:1234"}
 				_, handler := buildNatsClientAndHandler(settings)
 
 				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
@@ -122,7 +122,7 @@ func init() {
 			})
 
 			It("errs when has username without password", func() {
-				settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://foo@127.0.0.1:1234"}
+				settings := &fakesettings.FakeSettingsService{MbusURL: "nats://foo@127.0.0.1:1234"}
 				_, handler := buildNatsClientAndHandler(settings)
 
 				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
@@ -134,8 +134,8 @@ func init() {
 		Describe("SendToHealthManager", func() {
 			It("sends periodic heartbeats", func() {
 				settings := &fakesettings.FakeSettingsService{
-					AgentId: "my-agent-id",
-					MbusUrl: "nats://foo:bar@127.0.0.1:1234",
+					AgentID: "my-agent-id",
+					MbusURL: "nats://foo:bar@127.0.0.1:1234",
 				}
 				client, handler := buildNatsClientAndHandler(settings)
 
@@ -161,8 +161,8 @@ func init() {
 				Expect(len(messages)).To(Equal(1))
 				message := messages[0]
 
-				expectedJson, _ := json.Marshal(expectedHeartbeat)
-				Expect(string(expectedJson)).To(Equal(string(message.Payload)))
+				expectedJSON, _ := json.Marshal(expectedHeartbeat)
+				Expect(string(expectedJSON)).To(Equal(string(message.Payload)))
 			})
 		})
 	})

@@ -24,16 +24,16 @@ func (a GetTaskAction) IsPersistent() bool {
 	return false
 }
 
-func (a GetTaskAction) Run(taskId string) (value interface{}, err error) {
-	task, found := a.taskService.FindTaskWithId(taskId)
+func (a GetTaskAction) Run(taskID string) (value interface{}, err error) {
+	task, found := a.taskService.FindTaskWithID(taskID)
 	if !found {
-		err = bosherr.New("Task with id %s could not be found", taskId)
+		err = bosherr.New("Task with id %s could not be found", taskID)
 		return
 	}
 
 	if task.State == boshtask.TaskStateRunning {
 		value = boshtask.TaskStateValue{
-			AgentTaskId: task.Id,
+			AgentTaskID: task.ID,
 			State:       task.State,
 		}
 		return

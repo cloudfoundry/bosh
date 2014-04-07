@@ -34,18 +34,18 @@ func init() {
 
 		It("returns a running task", func() {
 			taskService.StartedTasks["fake-task-id"] = boshtask.Task{
-				Id:    "fake-task-id",
+				ID:    "fake-task-id",
 				State: boshtask.TaskStateRunning,
 			}
 
 			taskValue, err := action.Run("fake-task-id")
 			Expect(err).ToNot(HaveOccurred())
-			boshassert.MatchesJsonString(GinkgoT(), taskValue, `{"agent_task_id":"fake-task-id","state":"running"}`)
+			boshassert.MatchesJSONString(GinkgoT(), taskValue, `{"agent_task_id":"fake-task-id","state":"running"}`)
 		})
 
 		It("returns a failed task", func() {
 			taskService.StartedTasks["fake-task-id"] = boshtask.Task{
-				Id:    "fake-task-id",
+				ID:    "fake-task-id",
 				State: boshtask.TaskStateFailed,
 				Error: errors.New("fake-task-error"),
 			}
@@ -53,19 +53,19 @@ func init() {
 			taskValue, err := action.Run("fake-task-id")
 			Expect(err).To(HaveOccurred())
 			Expect("fake-task-error").To(Equal(err.Error()))
-			boshassert.MatchesJsonString(GinkgoT(), taskValue, `null`)
+			boshassert.MatchesJSONString(GinkgoT(), taskValue, `null`)
 		})
 
 		It("returns a successful task", func() {
 			taskService.StartedTasks["fake-task-id"] = boshtask.Task{
-				Id:    "fake-task-id",
+				ID:    "fake-task-id",
 				State: boshtask.TaskStateDone,
 				Value: "some-task-value",
 			}
 
 			taskValue, err := action.Run("fake-task-id")
 			Expect(err).ToNot(HaveOccurred())
-			boshassert.MatchesJsonString(GinkgoT(), taskValue, `"some-task-value"`)
+			boshassert.MatchesJSONString(GinkgoT(), taskValue, `"some-task-value"`)
 		})
 
 		It("returns error when task is not found", func() {

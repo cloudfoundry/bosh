@@ -62,12 +62,12 @@ func (inf vsphereInfrastructure) GetEphemeralDiskPath(string) (realPath string, 
 	return "/dev/sdb", true
 }
 
-func (inf vsphereInfrastructure) MountPersistentDisk(volumeId string, mountPoint string) (err error) {
+func (inf vsphereInfrastructure) MountPersistentDisk(volumeID string, mountPoint string) (err error) {
 	inf.logger.Debug("disks", "Mounting persistent disks")
 
 	inf.platform.GetFs().MkdirAll(mountPoint, os.FileMode(0700))
 
-	realPath, err := inf.devicePathResolver.GetRealDevicePath(volumeId)
+	realPath, err := inf.devicePathResolver.GetRealDevicePath(volumeID)
 
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")

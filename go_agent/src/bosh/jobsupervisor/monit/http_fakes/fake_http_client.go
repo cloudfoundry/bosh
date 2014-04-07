@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-type FakeHttpClient struct {
+type FakeHTTPClient struct {
 	StatusCode        int
 	CallCount         int
 	Error             error
@@ -40,20 +40,20 @@ func (s *stringReadCloser) Read(p []byte) (n int, err error) {
 	return s.reader.Read(p)
 }
 
-func NewFakeHttpClient() (fakeHttpClient *FakeHttpClient) {
-	fakeHttpClient = &FakeHttpClient{}
+func NewFakeHTTPClient() (fakeHTTPClient *FakeHTTPClient) {
+	fakeHTTPClient = &FakeHTTPClient{}
 	return
 }
 
-func (c *FakeHttpClient) SetMessage(message string) {
+func (c *FakeHTTPClient) SetMessage(message string) {
 	c.responseMessage = message
 }
 
-func (c *FakeHttpClient) SetNilResponse() {
+func (c *FakeHTTPClient) SetNilResponse() {
 	c.returnNilResponse = true
 }
 
-func (c *FakeHttpClient) Do(req *http.Request) (resp *http.Response, err error) {
+func (c *FakeHTTPClient) Do(req *http.Request) (resp *http.Response, err error) {
 	c.CallCount++
 
 	if !c.returnNilResponse {

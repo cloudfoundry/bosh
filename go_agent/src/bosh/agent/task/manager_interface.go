@@ -5,7 +5,7 @@ import (
 )
 
 type TaskInfo struct {
-	TaskId  string
+	TaskID  string
 	Method  string
 	Payload []byte
 }
@@ -17,5 +17,5 @@ type ManagerProvider interface {
 type Manager interface {
 	GetTaskInfos() ([]TaskInfo, error)
 	AddTaskInfo(taskInfo TaskInfo) error
-	RemoveTaskInfo(taskId string) error
+	RemoveTaskInfo(taskID string) error
 }

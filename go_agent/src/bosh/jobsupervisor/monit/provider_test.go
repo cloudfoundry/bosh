@@ -25,7 +25,7 @@ func init() {
 
 			Expect(err).ToNot(HaveOccurred())
 
-			expectedClient := NewHttpClient("127.0.0.1:2822", "fake-user", "fake-pass", http.DefaultClient, 1*time.Second, logger)
+			expectedClient := NewHTTPClient("127.0.0.1:2822", "fake-user", "fake-pass", http.DefaultClient, 1*time.Second, logger)
 			Expect(expectedClient).To(Equal(client))
 		})
 	})

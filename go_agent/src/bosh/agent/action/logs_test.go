@@ -19,7 +19,7 @@ func testLogs(t assert.TestingT, logType string, filters []string, expectedFilte
 
 	deps.copier.FilteredCopyToTempTempDir = "/fake-temp-dir"
 	deps.compressor.CompressFilesInDirTarballPath = "logs_test.go"
-	deps.blobstore.CreateBlobId = "my-blob-id"
+	deps.blobstore.CreateBlobID = "my-blob-id"
 
 	logs, err := action.Run(logType, filters)
 	assert.NoError(t, err)
@@ -40,7 +40,7 @@ func testLogs(t assert.TestingT, logType string, filters []string, expectedFilte
 
 	assert.Equal(t, deps.compressor.CompressFilesInDirTarballPath, deps.blobstore.CreateFileName)
 
-	boshassert.MatchesJsonString(t, logs, `{"blobstore_id":"my-blob-id"}`)
+	boshassert.MatchesJSONString(t, logs, `{"blobstore_id":"my-blob-id"}`)
 }
 
 type logsDeps struct {

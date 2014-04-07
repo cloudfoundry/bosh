@@ -8,7 +8,7 @@ import (
 type FakeCompiler struct {
 	CompilePkg    boshcomp.Package
 	CompileDeps   []boshmodels.Package
-	CompileBlobId string
+	CompileBlobID string
 	CompileSha1   string
 	CompileErr    error
 }
@@ -18,10 +18,10 @@ func NewFakeCompiler() (c *FakeCompiler) {
 	return
 }
 
-func (c *FakeCompiler) Compile(pkg boshcomp.Package, deps []boshmodels.Package) (blobId, sha1 string, err error) {
+func (c *FakeCompiler) Compile(pkg boshcomp.Package, deps []boshmodels.Package) (blobID, sha1 string, err error) {
 	c.CompilePkg = pkg
 	c.CompileDeps = deps
-	blobId = c.CompileBlobId
+	blobID = c.CompileBlobID
 	sha1 = c.CompileSha1
 	err = c.CompileErr
 	return

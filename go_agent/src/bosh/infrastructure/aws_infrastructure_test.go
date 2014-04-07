@@ -1,33 +1,35 @@
 package infrastructure_test
 
 import (
-	. "bosh/infrastructure"
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
-	boshdisk "bosh/platform/disk"
-	fakeplatform "bosh/platform/fakes"
-	boshsettings "bosh/settings"
-	fakesys "bosh/system/fakes"
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	. "bosh/infrastructure"
+	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdisk "bosh/platform/disk"
+	fakeplatform "bosh/platform/fakes"
+	boshsettings "bosh/settings"
+	fakesys "bosh/system/fakes"
 )
 
-type FakeDnsResolver struct {
-	LookupHostIp         string
-	LookupHostDnsServers []string
+type FakeDNSResolver struct {
+	LookupHostIP         string
+	LookupHostDNSServers []string
 	LookupHostHost       string
 }
 
-func (res *FakeDnsResolver) LookupHost(dnsServers []string, host string) (ip string, err error) {
-	res.LookupHostDnsServers = dnsServers
+func (res *FakeDNSResolver) LookupHost(dnsServers []string, host string) (ip string, err error) {
+	res.LookupHostDNSServers = dnsServers
 	res.LookupHostHost = host
-	ip = res.LookupHostIp
+	ip = res.LookupHostIP
 	return
 }
 
@@ -39,7 +41,10 @@ func init() {
 
 	BeforeEach(func() {
 		platform = fakeplatform.NewFakePlatform()
-		fakeDevicePathResolver = boshdevicepathresolver.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
+		fakeDevicePathResolver = boshdevicepathresolver.NewFakeDevicePathResolver(
+			1*time.Millisecond,
+			platform.GetFs(),
+		)
 	})
 
 	Describe("AWS Infrastructure", func() {
@@ -48,6 +53,7 @@ func init() {
 				ts  *httptest.Server
 				aws Infrastructure
 			)
+
 			const expectedKey = "some public key"
 
 			BeforeEach(func() {
@@ -64,7 +70,7 @@ func init() {
 			})
 
 			It("gets the public key and sets up ssh via the platform", func() {
-				aws = NewAwsInfrastructure(ts.URL, &FakeDnsResolver{}, platform, fakeDevicePathResolver)
+				aws = NewAwsInfrastructure(ts.URL, &FakeDNSResolver{}, platform, fakeDevicePathResolver)
 				err := aws.SetupSsh("vcap")
 				Expect(err).NotTo(HaveOccurred())
 
@@ -75,12 +81,12 @@ func init() {
 
 		Describe("GetSettings", func() {
 			var (
-				settingsJson     string
+				settingsJSON     string
 				expectedSettings boshsettings.Settings
 			)
 
 			BeforeEach(func() {
-				settingsJson = `{
+				settingsJSON = `{
 					"agent_id": "my-agent-id",
 					"blobstore": {
 						"options": {
@@ -127,14 +133,14 @@ func init() {
 						"name": "vm-abc-def"
 					}
 				}`
-				settingsJson = strings.Replace(settingsJson, `"`, `\"`, -1)
-				settingsJson = strings.Replace(settingsJson, "\n", "", -1)
-				settingsJson = strings.Replace(settingsJson, "\t", "", -1)
+				settingsJSON = strings.Replace(settingsJSON, `"`, `\"`, -1)
+				settingsJSON = strings.Replace(settingsJSON, "\n", "", -1)
+				settingsJSON = strings.Replace(settingsJSON, "\t", "", -1)
 
-				settingsJson = fmt.Sprintf(`{"settings": "%s"}`, settingsJson)
+				settingsJSON = fmt.Sprintf(`{"settings": "%s"}`, settingsJSON)
 
 				expectedSettings = boshsettings.Settings{
-					AgentId: "my-agent-id",
+					AgentID: "my-agent-id",
 					Blobstore: boshsettings.Blobstore{
 						Options: map[string]string{
 							"bucket_name":       "george",
@@ -157,11 +163,11 @@ func init() {
 					Networks: boshsettings.Networks{
 						"netA": boshsettings.Network{
 							Default: []string{"dns", "gateway"},
-							Ip:      "ww.ww.ww.ww",
-							Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy"},
+							IP:      "ww.ww.ww.ww",
+							DNS:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy"},
 						},
 						"netB": boshsettings.Network{
-							Dns: []string{"zz.zz.zz.zz"},
+							DNS: []string{"zz.zz.zz.zz"},
 						},
 					},
 					Mbus: "https://vcap:b00tstrap@0.0.0.0:6868",
@@ -169,7 +175,7 @@ func init() {
 						"0.north-america.pool.ntp.org",
 						"1.north-america.pool.ntp.org",
 					},
-					Vm: boshsettings.Vm{
+					VM: boshsettings.VM{
 						Name: "vm-abc-def",
 					},
 				}
@@ -180,7 +186,7 @@ func init() {
 					boshRegistryHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						Expect(r.Method).To(Equal("GET"))
 						Expect(r.URL.Path).To(Equal("/instances/123-456-789/settings"))
-						w.Write([]byte(settingsJson))
+						w.Write([]byte(settingsJSON))
 					})
 
 					registryTs := httptest.NewServer(boshRegistryHandler)
@@ -188,7 +194,7 @@ func init() {
 
 					expectedUserData := fmt.Sprintf(`{"registry":{"endpoint":"%s"}}`, registryTs.URL)
 
-					instanceId := "123-456-789"
+					instanceID := "123-456-789"
 
 					awsMetaDataHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						Expect(r.Method).To(Equal("GET"))
@@ -197,7 +203,7 @@ func init() {
 						case "/latest/user-data":
 							w.Write([]byte(expectedUserData))
 						case "/latest/meta-data/instance-id":
-							w.Write([]byte(instanceId))
+							w.Write([]byte(instanceID))
 						}
 					})
 
@@ -206,33 +212,31 @@ func init() {
 
 					platform := fakeplatform.NewFakePlatform()
 
-					aws := NewAwsInfrastructure(metadataTs.URL, &FakeDnsResolver{}, platform, fakeDevicePathResolver)
+					aws := NewAwsInfrastructure(metadataTs.URL, &FakeDNSResolver{}, platform, fakeDevicePathResolver)
 
 					settings, err := aws.GetSettings()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(settings).To(Equal(expectedSettings))
 				})
-
 			})
 
 			Context("when dns servers are provided", func() {
 				It("aws get settings", func() {
-
-					fakeDnsResolver := &FakeDnsResolver{
-						LookupHostIp: "127.0.0.1",
+					fakeDNSResolver := &FakeDNSResolver{
+						LookupHostIP: "127.0.0.1",
 					}
 
 					registryHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						Expect(r.Method).To(Equal("GET"))
 						Expect(r.URL.Path).To(Equal("/instances/123-456-789/settings"))
-						w.Write([]byte(settingsJson))
+						w.Write([]byte(settingsJSON))
 					})
 
 					registryTs := httptest.NewServer(registryHandler)
 
-					registryUrl, err := url.Parse(registryTs.URL)
+					registryURL, err := url.Parse(registryTs.URL)
 					Expect(err).NotTo(HaveOccurred())
-					registryTsPort := strings.Split(registryUrl.Host, ":")[1]
+					registryTsPort := strings.Split(registryURL.Host, ":")[1]
 					defer registryTs.Close()
 
 					expectedUserData := fmt.Sprintf(`
@@ -245,7 +249,7 @@ func init() {
 							}
 						}`, registryTsPort)
 
-					instanceId := "123-456-789"
+					instanceID := "123-456-789"
 
 					awsMetaDataHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						Expect(r.Method).To(Equal("GET"))
@@ -254,7 +258,7 @@ func init() {
 						case "/latest/user-data":
 							w.Write([]byte(expectedUserData))
 						case "/latest/meta-data/instance-id":
-							w.Write([]byte(instanceId))
+							w.Write([]byte(instanceID))
 						}
 					})
 
@@ -263,22 +267,22 @@ func init() {
 
 					platform := fakeplatform.NewFakePlatform()
 
-					aws := NewAwsInfrastructure(metadataTs.URL, fakeDnsResolver, platform, fakeDevicePathResolver)
+					aws := NewAwsInfrastructure(metadataTs.URL, fakeDNSResolver, platform, fakeDevicePathResolver)
 
 					settings, err := aws.GetSettings()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(settings).To(Equal(expectedSettings))
-					Expect(fakeDnsResolver.LookupHostHost).To(Equal("the.registry.name"))
-					Expect(fakeDnsResolver.LookupHostDnsServers).To(Equal([]string{"8.8.8.8", "9.9.9.9"}))
+					Expect(fakeDNSResolver.LookupHostHost).To(Equal("the.registry.name"))
+					Expect(fakeDNSResolver.LookupHostDNSServers).To(Equal([]string{"8.8.8.8", "9.9.9.9"}))
 				})
 			})
 		})
 
 		Describe("SetupNetworking", func() {
 			It("sets up DHCP on the platform", func() {
-				fakeDnsResolver := &FakeDnsResolver{}
+				fakeDNSResolver := &FakeDNSResolver{}
 				platform := fakeplatform.NewFakePlatform()
-				aws := NewAwsInfrastructure("", fakeDnsResolver, platform, fakeDevicePathResolver)
+				aws := NewAwsInfrastructure("", fakeDNSResolver, platform, fakeDevicePathResolver)
 				networks := boshsettings.Networks{"bosh": boshsettings.Network{}}
 
 				aws.SetupNetworking(networks)
@@ -289,9 +293,9 @@ func init() {
 
 		Describe("GetEphemeralDiskPath", func() {
 			It("returns the real disk path given an AWS EBS hint", func() {
-				fakeDnsResolver := &FakeDnsResolver{}
+				fakeDNSResolver := &FakeDNSResolver{}
 				platform := fakeplatform.NewFakePlatform()
-				aws := NewAwsInfrastructure("", fakeDnsResolver, platform, fakeDevicePathResolver)
+				aws := NewAwsInfrastructure("", fakeDNSResolver, platform, fakeDevicePathResolver)
 
 				platform.NormalizeDiskPathRealPath = "/dev/xvdb"
 				platform.NormalizeDiskPathFound = true
@@ -305,17 +309,6 @@ func init() {
 		})
 
 		Describe("MountPersistentDisk", func() {
-
-			var (
-				fs        *fakesys.FakeFileSystem
-				cmdRunner *fakesys.FakeCmdRunner
-			)
-
-			BeforeEach(func() {
-				fs = fakesys.NewFakeFileSystem()
-				cmdRunner = &fakesys.FakeCmdRunner{}
-			})
-
 			It("mounts the persistent disk", func() {
 				fakePlatform := fakeplatform.NewFakePlatform()
 
@@ -325,8 +318,8 @@ func init() {
 
 				fakePlatform.GetFs().WriteFile("/dev/vdf", []byte{})
 
-				fakeDnsResolver := &FakeDnsResolver{}
-				aws := NewAwsInfrastructure("", fakeDnsResolver, fakePlatform, fakeDevicePathResolver)
+				fakeDNSResolver := &FakeDNSResolver{}
+				aws := NewAwsInfrastructure("", fakeDNSResolver, fakePlatform, fakeDevicePathResolver)
 
 				fakeDevicePathResolver.RealDevicePath = "/dev/vdf"
 				err := aws.MountPersistentDisk("/dev/sdf", "/mnt/point")
@@ -351,7 +344,6 @@ func init() {
 				Expect(fakeMounter.MountMountPoints[0]).To(Equal("/mnt/point"))
 				Expect(len(fakeMounter.MountPartitionPaths)).To(Equal(1))
 				Expect(fakeMounter.MountPartitionPaths[0]).To(Equal("/dev/vdf1"))
-
 			})
 		})
 	})

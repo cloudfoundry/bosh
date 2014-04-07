@@ -15,10 +15,10 @@ type Provider struct {
 }
 
 func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provider) {
-	digDnsResolver := NewDigDnsResolver(logger)
+	digDNSResolver := NewDigDNSResolver(logger)
 
 	p.infrastructures = map[string]Infrastructure{
-		"aws":     p.createAwsInfrastructure("http://169.254.169.254", digDnsResolver, platform),
+		"aws":     p.createAwsInfrastructure("http://169.254.169.254", digDNSResolver, platform),
 		"dummy":   p.createDummyInfrastructure(platform.GetFs(), platform.GetDirProvider(), platform),
 		"vsphere": p.createVsphereInfrastructure(platform, logger),
 	}

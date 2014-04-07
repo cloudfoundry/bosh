@@ -7,7 +7,7 @@ import (
 
 type status struct {
 	XMLName     xml.Name `xml:"monit"`
-	Id          string   `xml:"id,attr"`
+	ID          string   `xml:"id,attr"`
 	Incarnation string   `xml:"incarnation,attr"`
 	Version     string   `xml:"version,attr"`
 

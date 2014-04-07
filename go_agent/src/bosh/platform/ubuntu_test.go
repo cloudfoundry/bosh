@@ -53,18 +53,17 @@ prepend domain-name-servers xx.xx.xx.xx;
 
 	Describe("ubuntu", func() {
 		var (
-			collector       *fakestats.FakeStatsCollector
-			fs              *fakesys.FakeFileSystem
-			cmdRunner       *fakesys.FakeCmdRunner
-			diskManager     *fakedisk.FakeDiskManager
-			dirProvider     boshdirs.DirectoriesProvider
-			diskWaitTimeout time.Duration
-			platform        Platform
-			cdutil          *fakecd.FakeCdUtil
-			compressor      boshcmd.Compressor
-			copier          boshcmd.Copier
-			vitalsService   boshvitals.Service
-			logger          boshlog.Logger
+			collector     *fakestats.FakeStatsCollector
+			fs            *fakesys.FakeFileSystem
+			cmdRunner     *fakesys.FakeCmdRunner
+			diskManager   *fakedisk.FakeDiskManager
+			dirProvider   boshdirs.DirectoriesProvider
+			platform      Platform
+			cdutil        *fakecd.FakeCdUtil
+			compressor    boshcmd.Compressor
+			copier        boshcmd.Copier
+			vitalsService boshvitals.Service
+			logger        boshlog.Logger
 		)
 
 		BeforeEach(func() {
@@ -73,7 +72,6 @@ prepend domain-name-servers xx.xx.xx.xx;
 			cmdRunner = fakesys.NewFakeCmdRunner()
 			diskManager = fakedisk.NewFakeDiskManager()
 			dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
-			diskWaitTimeout = 1 * time.Millisecond
 			cdutil = fakecd.NewFakeCdUtil()
 			compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 			copier = boshcmd.NewCpCopier(cmdRunner, fs)
@@ -104,11 +102,11 @@ prepend domain-name-servers xx.xx.xx.xx;
 			networks := boshsettings.Networks{
 				"bosh": boshsettings.Network{
 					Default: []string{"dns"},
-					Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
+					DNS:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
 				},
 				"vip": boshsettings.Network{
 					Default: []string{},
-					Dns:     []string{"aa.aa.aa.aa"},
+					DNS:     []string{"aa.aa.aa.aa"},
 				},
 			}
 
@@ -190,11 +188,11 @@ prepend domain-name-servers xx.xx.xx.xx;
 			networks := boshsettings.Networks{
 				"bosh": boshsettings.Network{
 					Default: []string{"dns", "gateway"},
-					Ip:      "192.168.195.6",
+					IP:      "192.168.195.6",
 					Netmask: "255.255.255.0",
 					Gateway: "192.168.195.1",
 					Mac:     "22:00:0a:1f:ac:2a",
-					Dns:     []string{"10.80.130.2", "10.80.130.1"},
+					DNS:     []string{"10.80.130.2", "10.80.130.1"},
 				},
 			}
 

@@ -7,11 +7,11 @@ func NewDummyStatsCollector() (collector StatsCollector) {
 	return dummyStatsCollector{}
 }
 
-func (p dummyStatsCollector) GetCpuLoad() (load CpuLoad, err error) {
+func (p dummyStatsCollector) GetCPULoad() (load CPULoad, err error) {
 	return
 }
 
-func (p dummyStatsCollector) GetCpuStats() (stats CpuStats, err error) {
+func (p dummyStatsCollector) GetCPUStats() (stats CPUStats, err error) {
 	stats.Total = 1
 	return
 }

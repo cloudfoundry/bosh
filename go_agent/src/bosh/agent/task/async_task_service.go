@@ -38,12 +38,12 @@ func (service asyncTaskService) CreateTask(taskFunc TaskFunc, taskEndFunc TaskEn
 		return Task{}, err
 	}
 
-	return service.CreateTaskWithId(uuid, taskFunc, taskEndFunc), nil
+	return service.CreateTaskWithID(uuid, taskFunc, taskEndFunc), nil
 }
 
-func (service asyncTaskService) CreateTaskWithId(id string, taskFunc TaskFunc, taskEndFunc TaskEndFunc) Task {
+func (service asyncTaskService) CreateTaskWithID(id string, taskFunc TaskFunc, taskEndFunc TaskEndFunc) Task {
 	return Task{
-		Id:          id,
+		ID:          id,
 		State:       TaskStateRunning,
 		TaskFunc:    taskFunc,
 		TaskEndFunc: taskEndFunc,
@@ -54,7 +54,7 @@ func (service asyncTaskService) StartTask(task Task) {
 	taskChan := make(chan Task)
 
 	service.taskSem <- func() {
-		service.currentTasks[task.Id] = task
+		service.currentTasks[task.ID] = task
 		taskChan <- task
 	}
 
@@ -62,7 +62,7 @@ func (service asyncTaskService) StartTask(task Task) {
 	service.taskChan <- recordedTask
 }
 
-func (service asyncTaskService) FindTaskWithId(id string) (Task, bool) {
+func (service asyncTaskService) FindTaskWithID(id string) (Task, bool) {
 	taskChan := make(chan Task)
 	foundChan := make(chan bool)
 
@@ -94,7 +94,7 @@ func (service asyncTaskService) processTasks() {
 		if err != nil {
 			task.Error = err
 			task.State = TaskStateFailed
-			service.logger.Error("Task Service", "Failed processing task #%s got: %s", task.Id, err.Error())
+			service.logger.Error("Task Service", "Failed processing task #%s got: %s", task.ID, err.Error())
 		} else {
 			task.Value = value
 			task.State = TaskStateDone
@@ -105,7 +105,7 @@ func (service asyncTaskService) processTasks() {
 		}
 
 		service.taskSem <- func() {
-			service.currentTasks[task.Id] = task
+			service.currentTasks[task.ID] = task
 		}
 	}
 }

@@ -11,15 +11,15 @@ import (
 	"time"
 )
 
-var _ = Describe("HttpsDispatcher", func() {
+var _ = Describe("HTTPSDispatcher", func() {
 	var (
-		dispatcher boshdispatcher.HttpsDispatcher
+		dispatcher boshdispatcher.HTTPSDispatcher
 	)
 
 	BeforeEach(func() {
-		serverUrl, _ := url.Parse("https://127.0.0.1:7788")
+		serverURL, _ := url.Parse("https://127.0.0.1:7788")
 		logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
-		dispatcher = boshdispatcher.NewHttpsDispatcher(serverUrl, logger)
+		dispatcher = boshdispatcher.NewHTTPSDispatcher(serverURL, logger)
 		go dispatcher.Start()
 		time.Sleep(1 * time.Second)
 	})

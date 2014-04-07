@@ -51,7 +51,7 @@ func init() {
 			action := NewListDisk(settings, platform, logger)
 			value, err := action.Run()
 			Expect(err).ToNot(HaveOccurred())
-			boshassert.MatchesJsonString(GinkgoT(), value, `["volume-2","volume-3"]`)
+			boshassert.MatchesJSONString(GinkgoT(), value, `["volume-2","volume-3"]`)
 		})
 	})
 }

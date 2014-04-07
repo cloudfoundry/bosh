@@ -98,7 +98,7 @@ func init() {
 			})
 
 			It("downloads and cleans up job", func() {
-				job.Source.BlobstoreId = "fake-blobstore-id"
+				job.Source.BlobstoreID = "fake-blobstore-id"
 				job.Source.Sha1 = "blob-sha1"
 
 				fs := fakesys.NewFakeFileSystem()
@@ -110,7 +110,7 @@ func init() {
 
 				err := applier.Apply(job)
 				Expect(err).ToNot(HaveOccurred())
-				Expect("fake-blobstore-id").To(Equal(blobstore.GetBlobIds[0]))
+				Expect("fake-blobstore-id").To(Equal(blobstore.GetBlobIDs[0]))
 				Expect("blob-sha1").To(Equal(blobstore.GetFingerprints[0]))
 				Expect(blobstore.GetFileName).To(Equal(blobstore.CleanUpFileName))
 			})

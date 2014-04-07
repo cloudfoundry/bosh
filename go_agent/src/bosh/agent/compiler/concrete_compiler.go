@@ -43,7 +43,7 @@ func NewConcreteCompiler(
 	return
 }
 
-func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (uploadedBlobId, sha1 string, err error) {
+func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (uploadedBlobID, sha1 string, err error) {
 	for _, dep := range deps {
 		err = c.packageApplier.Apply(dep)
 		if err != nil {
@@ -109,7 +109,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (uploa
 		return
 	}
 
-	uploadedBlobId, sha1, err = c.blobstore.Create(tmpPackageTar)
+	uploadedBlobID, sha1, err = c.blobstore.Create(tmpPackageTar)
 	if err != nil {
 		err = bosherr.WrapError(err, "Uploading compiled package")
 	}
@@ -130,9 +130,9 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (uploa
 }
 
 func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) (err error) {
-	depFilePath, err := c.blobstore.Get(pkg.BlobstoreId, pkg.Sha1)
+	depFilePath, err := c.blobstore.Get(pkg.BlobstoreID, pkg.Sha1)
 	if err != nil {
-		err = bosherr.WrapError(err, "Fetching package blob %s", pkg.BlobstoreId)
+		err = bosherr.WrapError(err, "Fetching package blob %s", pkg.BlobstoreID)
 		return
 	}
 
