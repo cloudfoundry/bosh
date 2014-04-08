@@ -47,6 +47,7 @@ func init() {
 			logger := boshlog.NewLogger(boshlog.LevelNone)
 			applier = NewConcretePackageApplier(packagesBc, blobstore, compressor, logger)
 		})
+
 		Describe("Apply", func() {
 			var (
 				pkg    models.Package
@@ -88,9 +89,9 @@ func init() {
 
 				err := applier.Apply(pkg)
 				Expect(err).ToNot(HaveOccurred())
-				Expect("fake-blobstore-id").To(Equal(blobstore.GetBlobIDs[0]))
-				Expect("blob-sha1").To(Equal(blobstore.GetFingerprints[0]))
-				Expect(blobstore.GetFileName).To(Equal(blobstore.CleanUpFileName))
+				Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
+				Expect(blobstore.GetFingerprints[0]).To(Equal("blob-sha1"))
+				Expect(blobstore.CleanUpFileName).To(Equal("/dev/null"))
 			})
 
 			It("returns error when package download errs", func() {
@@ -107,8 +108,8 @@ func init() {
 
 				err := applier.Apply(pkg)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(blobstore.GetFileName).To(Equal(compressor.DecompressFileToDirTarballPaths[0]))
-				Expect("fake-install-path").To(Equal(compressor.DecompressFileToDirDirs[0]))
+				Expect(compressor.DecompressFileToDirTarballPaths[0]).To(Equal(blobstore.GetFileName))
+				Expect(compressor.DecompressFileToDirDirs[0]).To(Equal("fake-install-path"))
 			})
 
 			It("return error when package decompress errs", func() {
