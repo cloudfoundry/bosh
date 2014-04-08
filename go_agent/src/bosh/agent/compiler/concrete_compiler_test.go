@@ -1,6 +1,8 @@
 package compiler_test
 
 import (
+	"errors"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -104,6 +106,21 @@ func init() {
 
 				Expect(blobID).To(Equal("fake-blob-id"))
 				Expect(sha1).To(Equal("fake-blob-sha1"))
+			})
+
+			It("cleans up all packages before applying dependent packages", func() {
+				_, _, err := compiler.Compile(pkg, pkgDeps)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(packageApplier.ActionsCalled).To(Equal([]string{"KeepOnly", "Apply", "Apply"}))
+				Expect(packageApplier.KeptOnlyPackages).To(BeEmpty())
+			})
+
+			It("returns an error if cleaning up packages fails", func() {
+				packageApplier.KeepOnlyErr = errors.New("fake-keep-only-error")
+
+				_, _, err := compiler.Compile(pkg, pkgDeps)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-keep-only-error"))
 			})
 
 			It("fetches source package from blobstore", func() {

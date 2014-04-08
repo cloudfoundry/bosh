@@ -186,8 +186,7 @@ func init() {
 				&fakeas.FakeApplySpec{PackageResults: []models.Package{desiredPkg}},
 			)
 			Expect(err).ToNot(HaveOccurred())
-
-			Expect(packageApplier.KeepOnlyPackages).To(Equal([]models.Package{currentPkg, desiredPkg}))
+			Expect(packageApplier.KeptOnlyPackages).To(Equal([]models.Package{currentPkg, desiredPkg}))
 		})
 
 		It("returns error when packageApplier fails to keep only the packages in the desired and current specs", func() {

@@ -44,6 +44,11 @@ func NewConcreteCompiler(
 }
 
 func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (string, string, error) {
+	err := c.packageApplier.KeepOnly([]boshmodels.Package{})
+	if err != nil {
+		return "", "", bosherr.WrapError(err, "Removing packages")
+	}
+
 	for _, dep := range deps {
 		err := c.packageApplier.Apply(dep)
 		if err != nil {
@@ -52,7 +57,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (strin
 	}
 
 	compilePath := filepath.Join(c.dirProvider.CompileDir(), pkg.Name)
-	err := c.fetchAndUncompress(pkg, compilePath)
+	err = c.fetchAndUncompress(pkg, compilePath)
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Fetching package %s", pkg.Name)
 	}

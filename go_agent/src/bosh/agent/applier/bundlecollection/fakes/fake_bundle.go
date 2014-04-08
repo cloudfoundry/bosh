@@ -7,6 +7,8 @@ import (
 type FakeBundleInstallCallBack func()
 
 type FakeBundle struct {
+	ActionsCalled []string
+
 	InstallSourcePath string
 	InstallCallBack   FakeBundleInstallCallBack
 	InstallFs         boshsys.FileSystem
@@ -19,8 +21,6 @@ type FakeBundle struct {
 	GetDirPath  string
 	GetDirFs    boshsys.FileSystem
 	GetDirError error
-
-	ActionsCalled []string
 
 	EnablePath  string
 	EnableFs    boshsys.FileSystem
