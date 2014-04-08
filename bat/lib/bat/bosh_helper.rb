@@ -55,23 +55,26 @@ module Bat
     def ssh(host, user, command, options = {})
       options = options.dup
       output = nil
-      @logger.info("--> ssh: #{user}@#{host} '#{command}'")
+      @logger.info("--> ssh: #{user}@#{host} #{command.inspect}")
 
       private_key = options.delete(:private_key)
       options[:user_known_hosts_file] = %w[/dev/null]
       options[:keys] = [private_key] unless private_key.nil?
 
       if options[:keys].nil? && options[:password].nil?
-        raise 'need to set ssh :password, :keys, or :private_key'
+        raise 'Need to set ssh :password, :keys, or :private_key'
       end
 
-      @logger.info("SSH host=#{host} user=#{user} options=#{options.inspect}")
-
+      @logger.info("--> ssh options: #{options.inspect}")
       Net::SSH.start(host, user, options) do |ssh|
         output = ssh.exec!(command)
       end
 
-      @logger.info("--> ssh output: '#{output}'")
+      if output.nil?
+        raise 'Output returned from ssh exec was nil!'
+      end
+
+      @logger.info("--> ssh output: #{output.inspect}")
       output
     end
 
