@@ -32,6 +32,9 @@ type FakeFileSystem struct {
 	MkdirAllError    error
 	SymlinkError     error
 
+	ChownErr error
+	ChmodErr error
+
 	CopyDirEntriesError   error
 	CopyDirEntriesSrcPath string
 	CopyDirEntriesDstPath string
@@ -97,16 +100,24 @@ func (fs *FakeFileSystem) MkdirAll(path string, perm os.FileMode) (err error) {
 	return
 }
 
-func (fs *FakeFileSystem) Chown(path, username string) (err error) {
+func (fs *FakeFileSystem) Chown(path, username string) error {
+	// check early to avoid requiring file presence
+	if fs.ChownErr != nil {
+		return fs.ChownErr
+	}
 	stats := fs.GetFileTestStat(path)
 	stats.Username = username
-	return
+	return nil
 }
 
-func (fs *FakeFileSystem) Chmod(path string, perm os.FileMode) (err error) {
+func (fs *FakeFileSystem) Chmod(path string, perm os.FileMode) error {
+	// check early to avoid requiring file presence
+	if fs.ChmodErr != nil {
+		return fs.ChmodErr
+	}
 	stats := fs.GetFileTestStat(path)
 	stats.FileMode = perm
-	return
+	return nil
 }
 
 func (fs *FakeFileSystem) WriteFileString(path, content string) (err error) {
