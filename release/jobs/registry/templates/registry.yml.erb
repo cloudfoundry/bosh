@@ -33,7 +33,7 @@ cloud:
     auth_url: <%= auth_url %>
     username: <%= username %>
     api_key: <%= api_key %>
-    tenant: <%= tenant %>
+    tenant: "<%= tenant %>"
     <% if_p('openstack.region') do |region| %>
     region: <%= region %>
     <% end %>
