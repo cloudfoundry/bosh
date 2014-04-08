@@ -133,7 +133,12 @@ func (fs *FakeFileSystem) Chmod(path string, perm os.FileMode) error {
 	if fs.ChmodErr != nil {
 		return fs.ChmodErr
 	}
+
 	stats := fs.GetFileTestStat(path)
+	if stats == nil {
+		return fmt.Errorf("Path does not exist: %s", path)
+	}
+
 	stats.FileMode = perm
 	return nil
 }

@@ -23,7 +23,7 @@ var _ = Describe("FileBundle", func() {
 	)
 
 	BeforeEach(func() {
-		fs = &fakesys.FakeFileSystem{}
+		fs = fakesys.NewFakeFileSystem()
 		installPath = "/install-path"
 		enablePath = "/enable-path"
 		logger = boshlog.NewLogger(boshlog.LevelNone)
@@ -103,6 +103,14 @@ var _ = Describe("FileBundle", func() {
 			_, _, err := fileBundle.Install(sourcePath)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-chmod-error"))
+		})
+
+		It("does not install bundle if it fails to change permissions", func() {
+			fs.ChmodErr = errors.New("fake-chmod-error")
+
+			_, _, err := fileBundle.Install(sourcePath)
+			Expect(err).To(HaveOccurred())
+			Expect(fs.FileExists(installPath)).To(BeFalse())
 		})
 	})
 

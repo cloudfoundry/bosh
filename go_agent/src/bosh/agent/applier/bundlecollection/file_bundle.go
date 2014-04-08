@@ -38,19 +38,21 @@ func NewFileBundle(
 func (b FileBundle) Install(sourcePath string) (boshsys.FileSystem, string, error) {
 	b.logger.Debug(fileBundleLogTag, "Installing %v", b)
 
-	err := b.fs.MkdirAll(filepath.Dir(b.installPath), installDirsPerms)
+	err := b.fs.Chmod(sourcePath, installDirsPerms)
+	if err != nil {
+		return nil, "", bosherr.WrapError(err, "Settting permissions on source directory")
+	}
+
+	err = b.fs.MkdirAll(filepath.Dir(b.installPath), installDirsPerms)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "Creating parent installation directory")
 	}
 
+	// Rename MUST be the last possibly-failing operation
+	// because IsInstalled() relies on installPath presence.
 	err = b.fs.Rename(sourcePath, b.installPath)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "Moving to installation directory")
-	}
-
-	err = b.fs.Chmod(b.installPath, installDirsPerms)
-	if err != nil {
-		return nil, "", bosherr.WrapError(err, "Settting permissions on installation directory")
 	}
 
 	return b.fs, b.installPath, nil
@@ -59,6 +61,8 @@ func (b FileBundle) Install(sourcePath string) (boshsys.FileSystem, string, erro
 func (b FileBundle) InstallWithoutContents() (boshsys.FileSystem, string, error) {
 	b.logger.Debug(fileBundleLogTag, "Installing without contents %v", b)
 
+	// MkdirAll MUST be the last possibly-failing operation
+	// because IsInstalled() relies on installPath presence.
 	err := b.fs.MkdirAll(b.installPath, installDirsPerms)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "Creating installation directory")
@@ -120,5 +124,8 @@ func (b FileBundle) Disable() error {
 
 func (b FileBundle) Uninstall() error {
 	b.logger.Debug(fileBundleLogTag, "Uninstalling %v", b)
+
+	// RemoveAll MUST be the last possibly-failing operation
+	// because IsInstalled() relies on installPath presence.
 	return b.fs.RemoveAll(b.installPath)
 }
