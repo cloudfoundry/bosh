@@ -53,8 +53,6 @@ describe 'CentOS OS image' do
       psmisc
       unzip
       bison
-      libyaml
-      libyaml-devel
       bzip2-devel
       libcap-devel
       cmake

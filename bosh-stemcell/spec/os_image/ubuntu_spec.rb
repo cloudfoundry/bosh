@@ -103,7 +103,6 @@ describe 'Ubuntu OS image' do
       libcap2-bin
       libcap-dev
       libbz2-dev
-      libyaml-dev
       cmake
       scsitools
       mg
