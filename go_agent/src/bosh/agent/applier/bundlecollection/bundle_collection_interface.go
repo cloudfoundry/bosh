@@ -16,13 +16,13 @@ type BundleCollection interface {
 }
 
 type Bundle interface {
-	Install() (fs boshsys.FileSystem, path string, err error)
+	Install(sourcePath string) (fs boshsys.FileSystem, path string, err error)
+	InstallWithoutContents() (fs boshsys.FileSystem, path string, err error)
+	Uninstall() (err error)
 
+	IsInstalled() (bool, error)
 	GetInstallPath() (fs boshsys.FileSystem, path string, err error)
 
 	Enable() (fs boshsys.FileSystem, path string, err error)
-
 	Disable() (err error)
-
-	Uninstall() (err error)
 }

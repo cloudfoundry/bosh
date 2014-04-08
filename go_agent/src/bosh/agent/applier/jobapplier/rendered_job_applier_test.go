@@ -2,11 +2,9 @@ package jobapplier_test
 
 import (
 	"errors"
-	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 
 	boshbc "bosh/agent/applier/bundlecollection"
 	fakebc "bosh/agent/applier/bundlecollection/fakes"
@@ -28,6 +26,11 @@ func buildJob(bc *fakebc.FakeBundleCollection) (models.Job, *fakebc.FakeBundle) 
 	job := models.Job{
 		Name:    "fake-job-name" + uuid,
 		Version: "fake-job-version",
+		Source: models.Source{
+			Sha1:          "fake-blob-sha1",
+			BlobstoreID:   "fake-blobstore-id",
+			PathInArchive: "fake-path-in-archive",
+		},
 	}
 
 	bundle := bc.FakeGet(job)
@@ -41,6 +44,7 @@ func init() {
 			jobsBc        *fakebc.FakeBundleCollection
 			blobstore     *fakeblob.FakeBlobstore
 			compressor    *fakecmd.FakeCompressor
+			fs            *fakesys.FakeFileSystem
 			jobSupervisor *fakejobsuper.FakeJobSupervisor
 			applier       JobApplier
 		)
@@ -48,10 +52,11 @@ func init() {
 		BeforeEach(func() {
 			jobsBc = fakebc.NewFakeBundleCollection()
 			blobstore = fakeblob.NewFakeBlobstore()
+			fs = fakesys.NewFakeFileSystem()
 			compressor = fakecmd.NewFakeCompressor()
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			applier = NewRenderedJobApplier(jobsBc, blobstore, compressor, jobSupervisor, logger)
+			applier = NewRenderedJobApplier(jobsBc, blobstore, compressor, fs, jobSupervisor, logger)
 		})
 
 		Describe("Apply", func() {
@@ -64,178 +69,207 @@ func init() {
 				job, bundle = buildJob(jobsBc)
 			})
 
-			It("installs and enables job", func() {
-				fs := fakesys.NewFakeFileSystem()
-				bundle.InstallFs = fs
-				bundle.InstallPath = "fake-install-dir"
-				fs.MkdirAll("fake-install-dir", os.FileMode(0))
-
-				err := applier.Apply(job)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(bundle.Installed).To(BeTrue())
-				Expect(bundle.Enabled).To(BeTrue())
-			})
-
-			It("errs when job install fails", func() {
-				bundle.InstallError = errors.New("fake-install-error")
+			It("return an error if getting file bundle fails", func() {
+				jobsBc.GetErr = errors.New("fake-get-bundle-error")
 
 				err := applier.Apply(job)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-install-error"))
+				Expect(err.Error()).To(ContainSubstring("fake-get-bundle-error"))
 			})
 
-			It("errs when job enable fails", func() {
-				fs := fakesys.NewFakeFileSystem()
-				bundle.InstallFs = fs
-				bundle.InstallPath = "fake-install-dir"
-				fs.MkdirAll("fake-install-dir", os.FileMode(0))
-
-				bundle.EnableError = errors.New("fake-enable-error")
+			It("returns an error if checking for installed path fails", func() {
+				bundle.IsInstalledErr = errors.New("fake-is-installed-error")
 
 				err := applier.Apply(job)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-enable-error"))
+				Expect(err.Error()).To(ContainSubstring("fake-is-installed-error"))
 			})
 
-			It("downloads and cleans up job", func() {
-				job.Source.BlobstoreID = "fake-blobstore-id"
-				job.Source.Sha1 = "blob-sha1"
+			Context("when job is already installed", func() {
+				BeforeEach(func() {
+					bundle.Installed = true
+				})
 
-				fs := fakesys.NewFakeFileSystem()
-				bundle.InstallFs = fs
-				bundle.InstallPath = "fake-install-dir"
-				fs.MkdirAll("fake-install-dir", os.FileMode(0))
+				It("does not install but only enables job", func() {
+					err := applier.Apply(job)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(bundle.ActionsCalled).To(Equal([]string{"Enable"})) // no Install
+				})
 
-				blobstore.GetFileName = "/dev/null"
+				It("returns error when job enable fails", func() {
+					bundle.EnableError = errors.New("fake-enable-error")
 
-				err := applier.Apply(job)
-				Expect(err).ToNot(HaveOccurred())
-				Expect("fake-blobstore-id").To(Equal(blobstore.GetBlobIDs[0]))
-				Expect("blob-sha1").To(Equal(blobstore.GetFingerprints[0]))
-				Expect(blobstore.GetFileName).To(Equal(blobstore.CleanUpFileName))
+					err := applier.Apply(job)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-enable-error"))
+				})
+
+				It("does not download the job template", func() {
+					err := applier.Apply(job)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(blobstore.GetBlobIDs).To(BeNil())
+				})
 			})
 
-			It("errs when job download errs", func() {
-				blobstore.GetError = errors.New("fake-get-error")
+			Context("when job is not installed", func() {
+				BeforeEach(func() {
+					bundle.Installed = false
+				})
 
-				err := applier.Apply(job)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-get-error"))
-			})
+				It("installs and enables job", func() {
+					err := applier.Apply(job)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(bundle.ActionsCalled).To(Equal([]string{"Install", "Enable"}))
+				})
 
-			It("decompresses job to tmp path and cleans it up", func() {
-				fs := fakesys.NewFakeFileSystem()
-				fs.TempDirDir = "fake-tmp-dir"
-				fs.MkdirAll("fake-tmp-dir", os.FileMode(0))
+				It("returns error when installing job fails", func() {
+					bundle.InstallError = errors.New("fake-install-error")
 
-				bundle.InstallFs = fs
-				bundle.InstallPath = "fake-install-dir"
-				fs.MkdirAll("fake-install-dir", os.FileMode(0))
+					err := applier.Apply(job)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-install-error"))
+				})
 
-				blobstore.GetFileName = "/dev/null"
+				It("returns error when job enable fails", func() {
+					bundle.EnableError = errors.New("fake-enable-error")
 
-				err := applier.Apply(job)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(blobstore.GetFileName).To(Equal(compressor.DecompressFileToDirTarballPaths[0]))
-				Expect("fake-tmp-dir").To(Equal(compressor.DecompressFileToDirDirs[0]))
-				assert.Nil(GinkgoT(), fs.GetFileTestStat(fs.TempDirDir))
-			})
+					err := applier.Apply(job)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-enable-error"))
+				})
 
-			It("errs when temp dir errs", func() {
-				fs := fakesys.NewFakeFileSystem()
-				fs.TempDirError = errors.New("fake-filesystem-tempdir-error")
-				bundle.InstallFs = fs
+				It("downloads and later cleans up downloaded job template blob", func() {
+					blobstore.GetFileName = "/fake-blobstore-file-name"
 
-				blobstore.GetFileName = "/dev/null"
+					err := applier.Apply(job)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
+					Expect(blobstore.GetFingerprints[0]).To(Equal("fake-blob-sha1"))
 
-				err := applier.Apply(job)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-filesystem-tempdir-error"))
-			})
+					// downloaded file is cleaned up
+					Expect(blobstore.CleanUpFileName).To(Equal("/fake-blobstore-file-name"))
+				})
 
-			It("errs when job decompress errs", func() {
-				compressor.DecompressFileToDirError = errors.New("fake-decompress-error")
+				It("returns error when downloading job template blob fails", func() {
+					blobstore.GetError = errors.New("fake-get-error")
 
-				fs := fakesys.NewFakeFileSystem()
-				bundle.InstallFs = fs
+					err := applier.Apply(job)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-get-error"))
+				})
 
-				err := applier.Apply(job)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-decompress-error"))
-			})
+				It("decompresses job template blob to tmp path and later cleans it up", func() {
+					fs.TempDirDir = "/fake-tmp-dir"
+					blobstore.GetFileName = "/fake-blobstore-file-name"
 
-			It("copies from decompressed tmp path to install path", func() {
-				job.Source.PathInArchive = "fake-path-in-archive"
+					var tmpDirExistsBeforeInstall bool
 
-				fs := fakesys.NewFakeFileSystem()
-				fs.TempDirDir = "fake-tmp-dir"
-				fs.MkdirAll("fake-tmp-dir", os.FileMode(0))
+					bundle.InstallCallBack = func() {
+						tmpDirExistsBeforeInstall = true
+					}
 
-				bundle.InstallFs = fs
-				bundle.InstallPath = "fake-install-dir"
-				fs.MkdirAll("fake-install-dir", os.FileMode(0))
+					err := applier.Apply(job)
+					Expect(err).ToNot(HaveOccurred())
 
-				blobstore.GetFileName = "/dev/null"
+					Expect(compressor.DecompressFileToDirTarballPaths[0]).To(Equal("/fake-blobstore-file-name"))
+					Expect(compressor.DecompressFileToDirDirs[0]).To(Equal("/fake-tmp-dir"))
 
-				compressor.DecompressFileToDirCallBack = func() {
-					fs.MkdirAll("fake-tmp-dir/fake-path-in-archive", os.FileMode(0))
-					fs.WriteFileString("fake-tmp-dir/fake-path-in-archive/file", "file-contents")
-				}
+					// tmp dir exists before bundle install
+					Expect(tmpDirExistsBeforeInstall).To(BeTrue())
 
-				err := applier.Apply(job)
-				Expect(err).ToNot(HaveOccurred())
-				fileInArchiveStat := fs.GetFileTestStat("fake-install-dir/file")
-				Expect(fileInArchiveStat).ToNot(BeNil())
-				Expect([]byte("file-contents")).To(Equal(fileInArchiveStat.Content))
-			})
+					// tmp dir is cleaned up after install
+					Expect(fs.FileExists(fs.TempDirDir)).To(BeFalse())
+				})
 
-			It("sets executable bit for files in bin", func() {
-				job.Source.PathInArchive = "fake-path-in-archive"
+				It("returns error when temporary directory creation fails", func() {
+					fs.TempDirError = errors.New("fake-filesystem-tempdir-error")
 
-				blobstore.GetFileName = "/dev/null"
+					err := applier.Apply(job)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-filesystem-tempdir-error"))
+				})
 
-				fs := fakesys.NewFakeFileSystem()
-				fs.TempDirDir = "fake-tmp-dir"
+				It("returns error when decompressing job template fails", func() {
+					compressor.DecompressFileToDirError = errors.New("fake-decompress-error")
 
-				bundle.InstallFs = fs
-				bundle.InstallPath = "fake-install-dir"
+					err := applier.Apply(job)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-decompress-error"))
+				})
 
-				compressor.DecompressFileToDirCallBack = func() {
-					fs.WriteFile("fake-tmp-dir/fake-path-in-archive/bin/test1", []byte{})
-					fs.WriteFile("fake-tmp-dir/fake-path-in-archive/bin/test2", []byte{})
-					fs.WriteFile("fake-tmp-dir/fake-path-in-archive/config/test", []byte{})
-				}
+				It("returns error when getting the list of bin files fails", func() {
+					fs.GlobErr = errors.New("fake-glob-error")
 
-				fs.SetGlob("fake-install-dir/bin/*", []string{"fake-install-dir/bin/test1", "fake-install-dir/bin/test2"})
+					err := applier.Apply(job)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-glob-error"))
+				})
 
-				err := applier.Apply(job)
-				Expect(err).ToNot(HaveOccurred())
+				It("returns error when changing permissions on bin files fails", func() {
+					fs.TempDirDir = "/fake-tmp-dir"
 
-				testBin1Stats := fs.GetFileTestStat("fake-install-dir/bin/test1")
-				Expect(testBin1Stats).ToNot(BeNil())
-				Expect(0755).To(Equal(int(testBin1Stats.FileMode)))
+					fs.SetGlob("/fake-tmp-dir/fake-path-in-archive/bin/*", []string{
+						"/fake-tmp-dir/fake-path-in-archive/bin/test",
+					})
 
-				testBin2Stats := fs.GetFileTestStat("fake-install-dir/bin/test2")
-				Expect(testBin2Stats).ToNot(BeNil())
-				Expect(0755).To(Equal(int(testBin2Stats.FileMode)))
+					fs.ChmodErr = errors.New("fake-chmod-error")
 
-				testConfigStats := fs.GetFileTestStat("fake-install-dir/config/test")
-				Expect(testConfigStats).ToNot(BeNil())
-				assert.NotEqual(GinkgoT(), 0755, int(testConfigStats.FileMode))
-			})
+					err := applier.Apply(job)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-chmod-error"))
+				})
 
-			It("errs when copy all errs", func() {
-				fs := fakesys.NewFakeFileSystem()
-				fs.TempDirDir = "fake-tmp-dir"
-				fs.CopyDirEntriesError = errors.New("fake-copy-dir-entries-error")
+				It("installs bundle from decompressed tmp path of a job template", func() {
+					fs.TempDirDir = "/fake-tmp-dir"
 
-				bundle.InstallFs = fs
+					var installedBeforeDecompression bool
 
-				blobstore.GetFileName = "/dev/null"
+					compressor.DecompressFileToDirCallBack = func() {
+						installedBeforeDecompression = bundle.Installed
+					}
 
-				err := applier.Apply(job)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-copy-dir-entries-error"))
+					err := applier.Apply(job)
+					Expect(err).ToNot(HaveOccurred())
+
+					// bundle installation did not happen before decompression
+					Expect(installedBeforeDecompression).To(BeFalse())
+
+					// make sure that bundle install happened after decompression
+					Expect(bundle.InstallSourcePath).To(Equal("/fake-tmp-dir/fake-path-in-archive"))
+				})
+
+				It("sets executable bit for files in bin", func() {
+					fs.TempDirDir = "/fake-tmp-dir"
+
+					compressor.DecompressFileToDirCallBack = func() {
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/bin/test1", []byte{})
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/bin/test2", []byte{})
+						fs.WriteFile("/fake-tmp-dir/fake-path-in-archive/config/test", []byte{})
+					}
+
+					fs.SetGlob("/fake-tmp-dir/fake-path-in-archive/bin/*", []string{
+						"/fake-tmp-dir/fake-path-in-archive/bin/test1",
+						"/fake-tmp-dir/fake-path-in-archive/bin/test2",
+					})
+
+					var binTest1Stats, binTest2Stats, configTestStats *fakesys.FakeFileStats
+
+					bundle.InstallCallBack = func() {
+						binTest1Stats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/bin/test1")
+						binTest2Stats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/bin/test2")
+						configTestStats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/config/test")
+					}
+
+					err := applier.Apply(job)
+					Expect(err).ToNot(HaveOccurred())
+
+					// bin files are executable
+					Expect(int(binTest1Stats.FileMode)).To(Equal(0755))
+					Expect(int(binTest2Stats.FileMode)).To(Equal(0755))
+
+					// non-bin files are not made executable
+					Expect(int(configTestStats.FileMode)).ToNot(Equal(0755))
+				})
 			})
 		})
 

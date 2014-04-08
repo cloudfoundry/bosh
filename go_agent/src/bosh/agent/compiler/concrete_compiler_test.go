@@ -148,7 +148,7 @@ func init() {
 			_, _, err := compiler.Compile(pkg, pkgDeps)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(deps.bundle.ActionsCalled).To(Equal([]string{"Install", "Enable", "Disable", "Uninstall"}))
+			Expect(deps.bundle.ActionsCalled).To(Equal([]string{"InstallWithoutContents", "Enable", "Disable", "Uninstall"}))
 		})
 		It("compile compresses compiled package", func() {
 

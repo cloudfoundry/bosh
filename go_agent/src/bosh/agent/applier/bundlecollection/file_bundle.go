@@ -27,17 +27,31 @@ func NewFileBundle(installPath, enablePath string, fs boshsys.FileSystem, logger
 	}
 }
 
-func (b FileBundle) Install() (boshsys.FileSystem, string, error) {
+func (b FileBundle) Install(sourcePath string) (boshsys.FileSystem, string, error) {
 	b.logger.Debug(fileBundleLogTag, "Installing %v", b)
 
-	path := b.installPath
-
-	err := b.fs.MkdirAll(path, os.FileMode(0755))
+	err := b.fs.Rename(sourcePath, b.installPath)
 	if err != nil {
-		return nil, "", bosherr.WrapError(err, "Creating install dir")
+		return nil, "", bosherr.WrapError(err, "Moving to installation directory")
 	}
 
-	return b.fs, path, nil
+	err = b.fs.Chmod(b.installPath, os.FileMode(0755))
+	if err != nil {
+		return nil, "", bosherr.WrapError(err, "Settting permissions on installation directory")
+	}
+
+	return b.fs, b.installPath, nil
+}
+
+func (b FileBundle) InstallWithoutContents() (boshsys.FileSystem, string, error) {
+	b.logger.Debug(fileBundleLogTag, "Installing without contents %v", b)
+
+	err := b.fs.MkdirAll(b.installPath, os.FileMode(0755))
+	if err != nil {
+		return nil, "", bosherr.WrapError(err, "Creating installation directory")
+	}
+
+	return b.fs, b.installPath, nil
 }
 
 func (b FileBundle) GetInstallPath() (boshsys.FileSystem, string, error) {
@@ -47,6 +61,10 @@ func (b FileBundle) GetInstallPath() (boshsys.FileSystem, string, error) {
 	}
 
 	return b.fs, path, nil
+}
+
+func (b FileBundle) IsInstalled() (bool, error) {
+	return b.fs.FileExists(b.installPath), nil
 }
 
 func (b FileBundle) Enable() (boshsys.FileSystem, string, error) {

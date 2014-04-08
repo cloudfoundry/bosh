@@ -13,6 +13,7 @@ import (
 	boshjobsuper "bosh/jobsupervisor"
 	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
+	boshsys "bosh/system"
 )
 
 const logTag = "renderedJobApplier"
@@ -21,6 +22,7 @@ type renderedJobApplier struct {
 	jobsBc        bc.BundleCollection
 	blobstore     boshblob.Blobstore
 	compressor    boshcmd.Compressor
+	fs            boshsys.FileSystem
 	jobSupervisor boshjobsuper.JobSupervisor
 	logger        boshlog.Logger
 }
@@ -29,6 +31,7 @@ func NewRenderedJobApplier(
 	jobsBc bc.BundleCollection,
 	blobstore boshblob.Blobstore,
 	compressor boshcmd.Compressor,
+	fs boshsys.FileSystem,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	logger boshlog.Logger,
 ) *renderedJobApplier {
@@ -36,72 +39,78 @@ func NewRenderedJobApplier(
 		jobsBc:        jobsBc,
 		blobstore:     blobstore,
 		compressor:    compressor,
+		fs:            fs,
 		jobSupervisor: jobSupervisor,
 		logger:        logger,
 	}
 }
 
-func (s *renderedJobApplier) Apply(job models.Job) (err error) {
+func (s *renderedJobApplier) Apply(job models.Job) error {
 	s.logger.Debug(logTag, "Applying job %v", job)
 
 	jobBundle, err := s.jobsBc.Get(job)
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting job bundle")
-		return
+		return bosherr.WrapError(err, "Getting job bundle")
 	}
 
-	fs, jobDir, err := jobBundle.Install()
+	jobInstalled, err := jobBundle.IsInstalled()
 	if err != nil {
-		err = bosherr.WrapError(err, "Installing jobs bundle collection")
-		return
+		return bosherr.WrapError(err, "Checking if job is installed")
 	}
 
-	file, err := s.blobstore.Get(job.Source.BlobstoreID, job.Source.Sha1)
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting job source from blobstore")
-		return
-	}
-
-	defer s.blobstore.CleanUp(file)
-
-	tmpDir, err := fs.TempDir("bosh-agent-applier-jobapplier-RenderedJobApplier-Apply")
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting temp dir")
-		return
-	}
-	defer fs.RemoveAll(tmpDir)
-
-	err = s.compressor.DecompressFileToDir(file, tmpDir)
-	if err != nil {
-		err = bosherr.WrapError(err, "Decompressing files to temp dir")
-		return
-	}
-
-	err = fs.CopyDirEntries(filepath.Join(tmpDir, job.Source.PathInArchive), jobDir)
-	if err != nil {
-		err = bosherr.WrapError(err, "Copying job files to install dir")
-		return
-	}
-
-	files, err := fs.Glob(filepath.Join(jobDir, "bin", "*"))
-	if err != nil {
-		err = bosherr.WrapError(err, "Finding job binary files")
-		return
-	}
-
-	for _, f := range files {
-		err = fs.Chmod(f, os.FileMode(0755))
+	if !jobInstalled {
+		err := s.downloadAndInstall(job, jobBundle)
 		if err != nil {
-			err = bosherr.WrapError(err, "Making %s executable", f)
-			return
+			return err
 		}
 	}
 
 	_, _, err = jobBundle.Enable()
 	if err != nil {
-		err = bosherr.WrapError(err, "Enabling job")
+		return bosherr.WrapError(err, "Enabling job")
 	}
-	return
+
+	return nil
+}
+
+func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle bc.Bundle) error {
+	tmpDir, err := s.fs.TempDir("bosh-agent-applier-jobapplier-RenderedJobApplier-Apply")
+	if err != nil {
+		return bosherr.WrapError(err, "Getting temp dir")
+	}
+
+	defer s.fs.RemoveAll(tmpDir)
+
+	file, err := s.blobstore.Get(job.Source.BlobstoreID, job.Source.Sha1)
+	if err != nil {
+		return bosherr.WrapError(err, "Getting job source from blobstore")
+	}
+
+	defer s.blobstore.CleanUp(file)
+
+	err = s.compressor.DecompressFileToDir(file, tmpDir)
+	if err != nil {
+		return bosherr.WrapError(err, "Decompressing files to temp dir")
+	}
+
+	files, err := s.fs.Glob(filepath.Join(tmpDir, job.Source.PathInArchive, "bin", "*"))
+	if err != nil {
+		return bosherr.WrapError(err, "Finding job binary files")
+	}
+
+	for _, f := range files {
+		err = s.fs.Chmod(f, os.FileMode(0755))
+		if err != nil {
+			return bosherr.WrapError(err, "Making %s executable", f)
+		}
+	}
+
+	_, _, err = jobBundle.Install(filepath.Join(tmpDir, job.Source.PathInArchive))
+	if err != nil {
+		return bosherr.WrapError(err, "Installing job bundle")
+	}
+
+	return nil
 }
 
 func (s *renderedJobApplier) Configure(job models.Job, jobIndex int) (err error) {

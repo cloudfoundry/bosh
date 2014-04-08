@@ -61,8 +61,7 @@ func init() {
 			It("installs and enables package", func() {
 				err := applier.Apply(pkg)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(bundle.Installed).To(BeTrue())
-				Expect(bundle.Enabled).To(BeTrue())
+				Expect(bundle.ActionsCalled).To(Equal([]string{"InstallWithoutContents", "Enable"}))
 			})
 
 			It("returns error when package install fails", func() {

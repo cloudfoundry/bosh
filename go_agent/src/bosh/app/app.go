@@ -128,6 +128,7 @@ func (app *app) Setup(args []string) (err error) {
 		jobsBc,
 		blobstore,
 		app.platform.GetCompressor(),
+		app.platform.GetFs(),
 		jobSupervisor,
 		app.logger,
 	)

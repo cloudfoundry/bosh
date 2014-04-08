@@ -70,7 +70,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (uploa
 		return
 	}
 
-	_, installPath, err := compiledPkgBundle.Install()
+	_, installPath, err := compiledPkgBundle.InstallWithoutContents()
 	if err != nil {
 		err = bosherr.WrapError(err, "setting up new package bundle")
 		return

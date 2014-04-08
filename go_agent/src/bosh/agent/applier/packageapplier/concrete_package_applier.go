@@ -41,7 +41,7 @@ func (s *concretePackageApplier) Apply(pkg models.Package) (err error) {
 		return
 	}
 
-	_, packageDir, err := pkgBundle.Install()
+	_, packageDir, err := pkgBundle.InstallWithoutContents()
 	if err != nil {
 		err = bosherr.WrapError(err, "Installling package directory")
 		return
