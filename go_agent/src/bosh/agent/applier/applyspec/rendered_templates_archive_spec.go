@@ -1,6 +1,8 @@
 package applyspec
 
-import "bosh/agent/applier/models"
+import (
+	"bosh/agent/applier/models"
+)
 
 type RenderedTemplatesArchiveSpec struct {
 	Sha1        string `json:"sha1"`

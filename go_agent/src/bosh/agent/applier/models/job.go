@@ -11,5 +11,8 @@ func (s Job) BundleName() string {
 }
 
 func (s Job) BundleVersion() string {
-	return s.Version
+	// Job template is not unique per version because
+	// Source contains files with interpolated values
+	// which might be different across job versions.
+	return s.Version + "-" + s.Source.Sha1
 }

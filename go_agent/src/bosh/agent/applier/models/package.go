@@ -11,5 +11,5 @@ func (s Package) BundleName() string {
 }
 
 func (s Package) BundleVersion() string {
-	return s.Version
+	return s.Version + "-" + s.Source.Sha1
 }
