@@ -141,7 +141,7 @@ compiled_package_cache:
       openstack_auth_url: <%= openstack_auth_url %>
       openstack_username: <%= openstack_username %>
       openstack_api_key: <%= openstack_api_key %>
-      openstack_tenant: <%= openstack_tenant %>
+      openstack_tenant: "<%= openstack_tenant %>"
       <% if_p('compiled_package_cache.options.openstack_region') do |openstack_region| %>
       openstack_region: <%= openstack_region %>
       <% end %>
@@ -206,7 +206,7 @@ cloud:
       auth_url: <%= auth_url %>
       username: <%= username %>
       api_key: <%= api_key %>
-      tenant: <%= tenant %>
+      tenant: "<%= tenant %>"
       <% if_p("openstack.region") do |region| %>
       region: <%= region %>
       <% end %>
