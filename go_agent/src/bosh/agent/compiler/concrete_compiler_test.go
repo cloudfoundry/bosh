@@ -2,6 +2,7 @@ package compiler_test
 
 import (
 	"errors"
+	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -81,6 +82,10 @@ func init() {
 				packageApplier,
 				packagesBc,
 			)
+		})
+
+		BeforeEach(func() {
+			fs.MkdirAll("/fake-compile-dir", os.ModePerm)
 		})
 
 		Describe("Compile", func() {

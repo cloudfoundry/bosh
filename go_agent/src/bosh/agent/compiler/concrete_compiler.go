@@ -135,16 +135,6 @@ func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) erro
 		return bosherr.WrapError(err, "Fetching package blob %s", pkg.BlobstoreID)
 	}
 
-	err = c.fs.RemoveAll(targetDir)
-	if err != nil {
-		return bosherr.WrapError(err, "Removing install path %s", targetDir)
-	}
-
-	err = c.fs.MkdirAll(targetDir, os.FileMode(0755))
-	if err != nil {
-		return bosherr.WrapError(err, "Creating install path %s", targetDir)
-	}
-
 	err = c.atomicDecompress(depFilePath, targetDir)
 	if err != nil {
 		return bosherr.WrapError(err, "Uncompressing package %s", pkg.Name)
@@ -155,17 +145,32 @@ func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) erro
 
 func (c concreteCompiler) atomicDecompress(archivePath string, finalDir string) error {
 	tmpInstallPath := finalDir + "-bosh-agent-unpack"
-	err := c.fs.RemoveAll(tmpInstallPath)
-	if err != nil {
-		return bosherr.WrapError(err, "Removing temporary compile directory %s", tmpInstallPath)
+
+	{
+		err := c.fs.RemoveAll(finalDir)
+		if err != nil {
+			return bosherr.WrapError(err, "Removing install path %s", finalDir)
+		}
+
+		err = c.fs.MkdirAll(finalDir, os.FileMode(0755))
+		if err != nil {
+			return bosherr.WrapError(err, "Creating install path %s", finalDir)
+		}
 	}
 
-	err = c.fs.MkdirAll(tmpInstallPath, os.FileMode(0755))
-	if err != nil {
-		return bosherr.WrapError(err, "Creating temporary compile directory %s", tmpInstallPath)
+	{
+		err := c.fs.RemoveAll(tmpInstallPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Removing temporary compile directory %s", tmpInstallPath)
+		}
+
+		err = c.fs.MkdirAll(tmpInstallPath, os.FileMode(0755))
+		if err != nil {
+			return bosherr.WrapError(err, "Creating temporary compile directory %s", tmpInstallPath)
+		}
 	}
 
-	err = c.compressor.DecompressFileToDir(archivePath, tmpInstallPath)
+	err := c.compressor.DecompressFileToDir(archivePath, tmpInstallPath)
 	if err != nil {
 		return bosherr.WrapError(err, "Decompressing files from %s to %s", archivePath, tmpInstallPath)
 	}

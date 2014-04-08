@@ -9,7 +9,11 @@ import (
 	boshsys "bosh/system"
 )
 
-const fileBundleLogTag = "FileBundle"
+const (
+	fileBundleLogTag = "FileBundle"
+	installDirsPerms = os.FileMode(0755)
+	enableDirPerms   = os.FileMode(0755)
+)
 
 type FileBundle struct {
 	installPath string
@@ -18,7 +22,11 @@ type FileBundle struct {
 	logger      boshlog.Logger
 }
 
-func NewFileBundle(installPath, enablePath string, fs boshsys.FileSystem, logger boshlog.Logger) FileBundle {
+func NewFileBundle(
+	installPath, enablePath string,
+	fs boshsys.FileSystem,
+	logger boshlog.Logger,
+) FileBundle {
 	return FileBundle{
 		installPath: installPath,
 		enablePath:  enablePath,
@@ -30,12 +38,17 @@ func NewFileBundle(installPath, enablePath string, fs boshsys.FileSystem, logger
 func (b FileBundle) Install(sourcePath string) (boshsys.FileSystem, string, error) {
 	b.logger.Debug(fileBundleLogTag, "Installing %v", b)
 
-	err := b.fs.Rename(sourcePath, b.installPath)
+	err := b.fs.MkdirAll(filepath.Dir(b.installPath), installDirsPerms)
+	if err != nil {
+		return nil, "", bosherr.WrapError(err, "Creating parent installation directory")
+	}
+
+	err = b.fs.Rename(sourcePath, b.installPath)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "Moving to installation directory")
 	}
 
-	err = b.fs.Chmod(b.installPath, os.FileMode(0755))
+	err = b.fs.Chmod(b.installPath, installDirsPerms)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "Settting permissions on installation directory")
 	}
@@ -46,7 +59,7 @@ func (b FileBundle) Install(sourcePath string) (boshsys.FileSystem, string, erro
 func (b FileBundle) InstallWithoutContents() (boshsys.FileSystem, string, error) {
 	b.logger.Debug(fileBundleLogTag, "Installing without contents %v", b)
 
-	err := b.fs.MkdirAll(b.installPath, os.FileMode(0755))
+	err := b.fs.MkdirAll(b.installPath, installDirsPerms)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "Creating installation directory")
 	}
@@ -74,7 +87,7 @@ func (b FileBundle) Enable() (boshsys.FileSystem, string, error) {
 		return nil, "", bosherr.New("bundle must be installed")
 	}
 
-	err := b.fs.MkdirAll(filepath.Dir(b.enablePath), os.FileMode(0755))
+	err := b.fs.MkdirAll(filepath.Dir(b.enablePath), enableDirPerms)
 	if err != nil {
 		return nil, "", bosherr.WrapError(err, "failed to create enable dir")
 	}

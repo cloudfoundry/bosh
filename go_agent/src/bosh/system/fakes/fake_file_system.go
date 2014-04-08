@@ -10,6 +10,7 @@ import (
 	gouuid "github.com/nu7hatch/gouuid"
 
 	bosherr "bosh/errors"
+	"path/filepath"
 )
 
 type FakeFileType string
@@ -194,16 +195,18 @@ func (fs *FakeFileSystem) FileExists(path string) bool {
 	return fs.GetFileTestStat(path) != nil
 }
 
-func (fs *FakeFileSystem) Rename(oldPath, newPath string) (err error) {
+func (fs *FakeFileSystem) Rename(oldPath, newPath string) error {
 	if fs.RenameError != nil {
-		err = fs.RenameError
-		return
+		return fs.RenameError
+	}
+
+	if fs.GetFileTestStat(filepath.Dir(newPath)) == nil {
+		return errors.New("Parent directory does not exist")
 	}
 
 	stats := fs.GetFileTestStat(oldPath)
 	if stats == nil {
-		err = errors.New("Old path did not exist")
-		return
+		return errors.New("Old path did not exist")
 	}
 
 	fs.RenameOldPaths = append(fs.RenameOldPaths, oldPath)
@@ -214,9 +217,10 @@ func (fs *FakeFileSystem) Rename(oldPath, newPath string) (err error) {
 	newStats.FileMode = stats.FileMode
 	newStats.FileType = stats.FileType
 
+	// Ignore error from RemoveAll
 	fs.RemoveAll(oldPath)
 
-	return
+	return nil
 }
 
 func (fs *FakeFileSystem) Symlink(oldPath, newPath string) (err error) {

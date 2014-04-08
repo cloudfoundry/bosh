@@ -52,6 +52,14 @@ var _ = Describe("FileBundle", func() {
 			Expect(fs.RenameNewPaths[0]).To(Equal(installPath))
 		})
 
+		It("returns an error if creation of parent directory fails", func() {
+			fs.MkdirAllError = errors.New("fake-mkdir-error")
+
+			_, _, err := fileBundle.Install(sourcePath)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
+		})
+
 		It("sets correct permissions on install path", func() {
 			fs.Chmod(sourcePath, os.FileMode(0700))
 
