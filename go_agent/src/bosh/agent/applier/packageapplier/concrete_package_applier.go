@@ -7,6 +7,7 @@ import (
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
+	boshsys "bosh/system"
 )
 
 const logTag = "concretePackageApplier"
@@ -15,6 +16,7 @@ type concretePackageApplier struct {
 	packagesBc bc.BundleCollection
 	blobstore  boshblob.Blobstore
 	compressor boshcmd.Compressor
+	fs         boshsys.FileSystem
 	logger     boshlog.Logger
 }
 
@@ -22,51 +24,72 @@ func NewConcretePackageApplier(
 	packagesBc bc.BundleCollection,
 	blobstore boshblob.Blobstore,
 	compressor boshcmd.Compressor,
+	fs boshsys.FileSystem,
 	logger boshlog.Logger,
 ) *concretePackageApplier {
 	return &concretePackageApplier{
 		packagesBc: packagesBc,
 		blobstore:  blobstore,
 		compressor: compressor,
+		fs:         fs,
 		logger:     logger,
 	}
 }
 
-func (s *concretePackageApplier) Apply(pkg models.Package) (err error) {
+func (s *concretePackageApplier) Apply(pkg models.Package) error {
 	s.logger.Debug(logTag, "Applying package %v", pkg)
 
 	pkgBundle, err := s.packagesBc.Get(pkg)
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting package bundle")
-		return
+		return bosherr.WrapError(err, "Getting package bundle")
 	}
 
-	_, packageDir, err := pkgBundle.InstallWithoutContents()
+	pkgInstalled, err := pkgBundle.IsInstalled()
 	if err != nil {
-		err = bosherr.WrapError(err, "Installling package directory")
-		return
+		return bosherr.WrapError(err, "Checking if package is installed")
 	}
 
-	file, err := s.blobstore.Get(pkg.Source.BlobstoreID, pkg.Source.Sha1)
-	if err != nil {
-		err = bosherr.WrapError(err, "Fetching package blob")
-		return
-	}
-
-	defer s.blobstore.CleanUp(file)
-
-	err = s.compressor.DecompressFileToDir(file, packageDir)
-	if err != nil {
-		err = bosherr.WrapError(err, "Decompressing package files")
-		return
+	if !pkgInstalled {
+		err := s.downloadAndInstall(pkg, pkgBundle)
+		if err != nil {
+			return err
+		}
 	}
 
 	_, _, err = pkgBundle.Enable()
 	if err != nil {
-		err = bosherr.WrapError(err, "Enabling package")
+		return bosherr.WrapError(err, "Enabling package")
 	}
 
-	return
+	return nil
+}
+
+func (s *concretePackageApplier) downloadAndInstall(pkg models.Package, pkgBundle bc.Bundle) error {
+	tmpDir, err := s.fs.TempDir("bosh-agent-applier-packageapplier-ConcretePackageApplier-Apply")
+	if err != nil {
+		return bosherr.WrapError(err, "Getting temp dir")
+	}
+
+	defer s.fs.RemoveAll(tmpDir)
+
+	file, err := s.blobstore.Get(pkg.Source.BlobstoreID, pkg.Source.Sha1)
+	if err != nil {
+		return bosherr.WrapError(err, "Fetching package blob")
+	}
+
+	defer s.blobstore.CleanUp(file)
+
+	err = s.compressor.DecompressFileToDir(file, tmpDir)
+	if err != nil {
+		return bosherr.WrapError(err, "Decompressing package files")
+	}
+
+	_, _, err = pkgBundle.Install(tmpDir)
+	if err != nil {
+		return bosherr.WrapError(err, "Installling package directory")
+	}
+
+	return nil
 }
 
 func (s *concretePackageApplier) KeepOnly(pkgs []models.Package) error {

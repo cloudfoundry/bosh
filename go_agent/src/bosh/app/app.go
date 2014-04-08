@@ -145,6 +145,7 @@ func (app *app) Setup(args []string) (err error) {
 		packagesBc,
 		blobstore,
 		app.platform.GetCompressor(),
+		app.platform.GetFs(),
 		app.logger,
 	)
 
