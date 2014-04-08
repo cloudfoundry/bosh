@@ -12,10 +12,15 @@ import (
 	. "bosh/agent/compiler"
 	fakeblobstore "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
-	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
 )
+
+type FakeCompileDirProvider struct {
+	Dir string
+}
+
+func (cdp FakeCompileDirProvider) CompileDir() string { return cdp.Dir }
 
 func getCompileArgs() (Package, []boshmodels.Package) {
 	pkg := Package{
@@ -72,7 +77,7 @@ func init() {
 				blobstore,
 				fs,
 				runner,
-				boshdirs.NewDirectoriesProvider("/fake-dir"),
+				FakeCompileDirProvider{Dir: "/fake-compile-dir"},
 				packageApplier,
 				packagesBc,
 			)
@@ -131,6 +136,38 @@ func init() {
 				Expect(blobstore.GetFingerprints[0]).To(Equal("sha1"))
 			})
 
+			It("returns an error if removing compile target directory during uncompression fails", func() {
+				fs.RegisterRemoveAllError("/fake-compile-dir/pkg_name", errors.New("fake-remove-error"))
+
+				_, _, err := compiler.Compile(pkg, pkgDeps)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-remove-error"))
+			})
+
+			It("returns an error if creating compile target directory during uncompression fails", func() {
+				fs.RegisterMkdirAllError("/fake-compile-dir/pkg_name", errors.New("fake-mkdir-error"))
+
+				_, _, err := compiler.Compile(pkg, pkgDeps)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
+			})
+
+			It("returns an error if removing temporary compile target directory during uncompression fails", func() {
+				fs.RegisterRemoveAllError("/fake-compile-dir/pkg_name-bosh-agent-unpack", errors.New("fake-remove-error"))
+
+				_, _, err := compiler.Compile(pkg, pkgDeps)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-remove-error"))
+			})
+
+			It("returns an error if creating temporary compile target directory during uncompression fails", func() {
+				fs.RegisterMkdirAllError("/fake-compile-dir/pkg_name-bosh-agent-unpack", errors.New("fake-mkdir-error"))
+
+				_, _, err := compiler.Compile(pkg, pkgDeps)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
+			})
+
 			It("installs dependent packages", func() {
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
@@ -141,12 +178,12 @@ func init() {
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(fs.FileExists("/fake-dir/data/compile/pkg_name")).To(BeTrue())
-				Expect(compressor.DecompressFileToDirDirs[0]).To(Equal("/fake-dir/data/compile/pkg_name-bosh-agent-unpack"))
+				Expect(fs.FileExists("/fake-compile-dir/pkg_name")).To(BeTrue())
+				Expect(compressor.DecompressFileToDirDirs[0]).To(Equal("/fake-compile-dir/pkg_name-bosh-agent-unpack"))
 				Expect(compressor.DecompressFileToDirTarballPaths[0]).To(Equal(blobstore.GetFileName))
 
-				Expect(fs.RenameOldPaths[0]).To(Equal("/fake-dir/data/compile/pkg_name-bosh-agent-unpack"))
-				Expect(fs.RenameNewPaths[0]).To(Equal("/fake-dir/data/compile/pkg_name"))
+				Expect(fs.RenameOldPaths[0]).To(Equal("/fake-compile-dir/pkg_name-bosh-agent-unpack"))
+				Expect(fs.RenameNewPaths[0]).To(Equal("/fake-compile-dir/pkg_name"))
 			})
 
 			It("installs, enables and later cleans up bundle", func() {
@@ -168,7 +205,7 @@ func init() {
 
 			It("runs packaging script when packaging script exists", func() {
 				compressor.DecompressFileToDirCallBack = func() {
-					fs.WriteFileString("/fake-dir/data/compile/pkg_name/packaging", "hi")
+					fs.WriteFileString("/fake-compile-dir/pkg_name/packaging", "hi")
 				}
 
 				_, _, err := compiler.Compile(pkg, pkgDeps)
@@ -178,12 +215,12 @@ func init() {
 					Name: "bash",
 					Args: []string{"-x", "packaging"},
 					Env: map[string]string{
-						"BOSH_COMPILE_TARGET":  "/fake-dir/data/compile/pkg_name",
+						"BOSH_COMPILE_TARGET":  "/fake-compile-dir/pkg_name",
 						"BOSH_INSTALL_TARGET":  "/fake-dir/packages/pkg_name",
 						"BOSH_PACKAGE_NAME":    "pkg_name",
 						"BOSH_PACKAGE_VERSION": "pkg_version",
 					},
-					WorkingDir: "/fake-dir/data/compile/pkg_name",
+					WorkingDir: "/fake-compile-dir/pkg_name",
 				}
 
 				Expect(len(runner.RunComplexCommands)).To(Equal(1))

@@ -3,6 +3,7 @@ package fakes
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -29,8 +30,10 @@ type FakeFileSystem struct {
 
 	ReadFileError    error
 	WriteToFileError error
-	MkdirAllError    error
 	SymlinkError     error
+
+	MkdirAllError       error
+	mkdirAllErrorByPath map[string]error
 
 	ChownErr error
 	ChmodErr error
@@ -45,7 +48,8 @@ type FakeFileSystem struct {
 	RenameOldPaths []string
 	RenameNewPaths []string
 
-	RemoveAllError error
+	RemoveAllError       error
+	removeAllErrorByPath map[string]error
 
 	ReadLinkError error
 
@@ -74,7 +78,9 @@ func (stats FakeFileStats) StringContents() string {
 
 func NewFakeFileSystem() *FakeFileSystem {
 	return &FakeFileSystem{
-		globsMap: make(map[string][][]string),
+		globsMap:             map[string][][]string{},
+		removeAllErrorByPath: map[string]error{},
+		mkdirAllErrorByPath:  map[string]error{},
 	}
 }
 
@@ -89,15 +95,26 @@ func (fs *FakeFileSystem) HomeDir(username string) (path string, err error) {
 	return
 }
 
-func (fs *FakeFileSystem) MkdirAll(path string, perm os.FileMode) (err error) {
-	if fs.MkdirAllError == nil {
-		stats := fs.getOrCreateFile(path)
-		stats.FileMode = perm
-		stats.FileType = FakeFileTypeDir
+func (fs *FakeFileSystem) RegisterMkdirAllError(path string, err error) {
+	if _, ok := fs.mkdirAllErrorByPath[path]; ok {
+		panic(fmt.Sprintf("MkdirAll error is already set for path: %s", path))
+	}
+	fs.mkdirAllErrorByPath[path] = err
+}
+
+func (fs *FakeFileSystem) MkdirAll(path string, perm os.FileMode) error {
+	if fs.MkdirAllError != nil {
+		return fs.MkdirAllError
 	}
 
-	err = fs.MkdirAllError
-	return
+	if fs.mkdirAllErrorByPath[path] != nil {
+		return fs.mkdirAllErrorByPath[path]
+	}
+
+	stats := fs.getOrCreateFile(path)
+	stats.FileMode = perm
+	stats.FileType = FakeFileTypeDir
+	return nil
 }
 
 func (fs *FakeFileSystem) Chown(path, username string) error {
@@ -303,9 +320,20 @@ func (fs *FakeFileSystem) TempDir(prefix string) (string, error) {
 	return path, nil
 }
 
+func (fs *FakeFileSystem) RegisterRemoveAllError(path string, err error) {
+	if _, ok := fs.removeAllErrorByPath[path]; ok {
+		panic(fmt.Sprintf("RemoveAll error is already set for path: %s", path))
+	}
+	fs.removeAllErrorByPath[path] = err
+}
+
 func (fs *FakeFileSystem) RemoveAll(path string) (err error) {
 	if fs.RemoveAllError != nil {
 		return fs.RemoveAllError
+	}
+
+	if fs.removeAllErrorByPath[path] != nil {
+		return fs.removeAllErrorByPath[path]
 	}
 
 	filesToRemove := []string{}
