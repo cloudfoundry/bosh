@@ -43,20 +43,18 @@ func NewConcreteCompiler(
 	return
 }
 
-func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (uploadedBlobID, sha1 string, err error) {
+func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (string, string, error) {
 	for _, dep := range deps {
-		err = c.packageApplier.Apply(dep)
+		err := c.packageApplier.Apply(dep)
 		if err != nil {
-			err = bosherr.WrapError(err, "Installing dependent package: '%s'", dep.Name)
-			return
+			return "", "", bosherr.WrapError(err, "Installing dependent package: '%s'", dep.Name)
 		}
 	}
 
 	compilePath := filepath.Join(c.dirProvider.CompileDir(), pkg.Name)
-	err = c.fetchAndUncompress(pkg, compilePath)
+	err := c.fetchAndUncompress(pkg, compilePath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Fetching package %s", pkg.Name)
-		return
+		return "", "", bosherr.WrapError(err, "Fetching package %s", pkg.Name)
 	}
 
 	compiledPkg := boshmodels.Package{
@@ -66,20 +64,17 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (uploa
 
 	compiledPkgBundle, err := c.packagesBc.Get(compiledPkg)
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting bundle for new package")
-		return
+		return "", "", bosherr.WrapError(err, "Getting bundle for new package")
 	}
 
 	_, installPath, err := compiledPkgBundle.InstallWithoutContents()
 	if err != nil {
-		err = bosherr.WrapError(err, "setting up new package bundle")
-		return
+		return "", "", bosherr.WrapError(err, "setting up new package bundle")
 	}
 
 	_, enablePath, err := compiledPkgBundle.Enable()
 	if err != nil {
-		err = bosherr.WrapError(err, "enabling new package bundle")
-		return
+		return "", "", bosherr.WrapError(err, "enabling new package bundle")
 	}
 
 	scriptPath := filepath.Join(compilePath, "packaging")
@@ -96,75 +91,70 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (uploa
 			},
 			WorkingDir: compilePath,
 		}
+
 		_, _, err = c.runner.RunComplexCommand(command)
 		if err != nil {
-			err = bosherr.WrapError(err, "Running packaging script")
-			return
+			return "", "", bosherr.WrapError(err, "Running packaging script")
 		}
 	}
 
 	tmpPackageTar, err := c.compressor.CompressFilesInDir(installPath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Compressing compiled package")
-		return
+		return "", "", bosherr.WrapError(err, "Compressing compiled package")
 	}
 
-	uploadedBlobID, sha1, err = c.blobstore.Create(tmpPackageTar)
+	uploadedBlobID, sha1, err := c.blobstore.Create(tmpPackageTar)
 	if err != nil {
-		err = bosherr.WrapError(err, "Uploading compiled package")
+		return "", "", bosherr.WrapError(err, "Uploading compiled package")
 	}
 
 	err = compiledPkgBundle.Disable()
 	if err != nil {
-		err = bosherr.WrapError(err, "Disabling compiled package")
-		return
+		return "", "", bosherr.WrapError(err, "Disabling compiled package")
 	}
 
 	err = compiledPkgBundle.Uninstall()
 	if err != nil {
-		err = bosherr.WrapError(err, "Uninstalling compiled package")
-		return
+		return "", "", bosherr.WrapError(err, "Uninstalling compiled package")
 	}
 
-	return
+	return uploadedBlobID, sha1, nil
 }
 
-func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) (err error) {
+func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) error {
 	depFilePath, err := c.blobstore.Get(pkg.BlobstoreID, pkg.Sha1)
 	if err != nil {
-		err = bosherr.WrapError(err, "Fetching package blob %s", pkg.BlobstoreID)
-		return
+		return bosherr.WrapError(err, "Fetching package blob %s", pkg.BlobstoreID)
 	}
 
 	c.fs.RemoveAll(targetDir)
 	err = c.fs.MkdirAll(targetDir, os.FileMode(0755))
 	if err != nil {
-		err = bosherr.WrapError(err, "Cleaning package install path %s", targetDir)
-		return
+		return bosherr.WrapError(err, "Cleaning package install path %s", targetDir)
 	}
 
 	err = c.atomicDecompress(depFilePath, targetDir)
 	if err != nil {
-		err = bosherr.WrapError(err, "Uncompressing package %s", pkg.Name)
+		return bosherr.WrapError(err, "Uncompressing package %s", pkg.Name)
 	}
 
-	return
+	return nil
 }
 
-func (c concreteCompiler) atomicDecompress(archivePath string, finalDir string) (err error) {
+func (c concreteCompiler) atomicDecompress(archivePath string, finalDir string) error {
 	tmpInstallPath := finalDir + "-bosh-agent-unpack"
 	c.fs.RemoveAll(tmpInstallPath)
 	c.fs.MkdirAll(tmpInstallPath, os.FileMode(0755))
 
-	err = c.compressor.DecompressFileToDir(archivePath, tmpInstallPath)
+	err := c.compressor.DecompressFileToDir(archivePath, tmpInstallPath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Decompressing files from %s to %s", archivePath, tmpInstallPath)
-		return
+		return bosherr.WrapError(err, "Decompressing files from %s to %s", archivePath, tmpInstallPath)
 	}
 
 	err = c.fs.Rename(tmpInstallPath, finalDir)
 	if err != nil {
-		err = bosherr.WrapError(err, "Moving temporary directory %s to final destination %s", tmpInstallPath, finalDir)
+		return bosherr.WrapError(err, "Moving temporary directory %s to final destination %s", tmpInstallPath, finalDir)
 	}
-	return
+
+	return nil
 }
