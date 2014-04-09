@@ -78,6 +78,7 @@ jobs:
     template: blobstore
     instances: 1
     resource_pool: common
+    persistent_disk: 51200
     networks:
       - name: default
         default: [dns, gateway]
