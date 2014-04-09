@@ -261,11 +261,6 @@ func (fs osFileSystem) RemoveAll(fileOrDir string) (err error) {
 	return
 }
 
-func (fs osFileSystem) Open(path string) (file *os.File, err error) {
-	fs.logger.Debug(fs.logTag, "Open %s", path)
-	return os.Open(path)
-}
-
 func (fs osFileSystem) Glob(pattern string) (matches []string, err error) {
 	fs.logger.Debug(fs.logTag, "Glob '%s'", pattern)
 	return filepath.Glob(pattern)

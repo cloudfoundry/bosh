@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	gouuid "github.com/nu7hatch/gouuid"
 
 	bosherr "bosh/errors"
-	"path/filepath"
 )
 
 type FakeFileType string
@@ -22,12 +22,10 @@ const (
 )
 
 type FakeFileSystem struct {
-	Files map[string]*FakeFileStats
+	files map[string]*FakeFileStats
 
 	HomeDirUsername string
 	HomeDirHomePath string
-
-	FilesToOpen map[string]*os.File
 
 	ReadFileError    error
 	WriteToFileError error
@@ -60,8 +58,7 @@ type FakeFileSystem struct {
 	TempDirDir   string
 	TempDirError error
 
-	GlobErr error
-
+	GlobErr  error
 	globsMap map[string][][]string
 }
 
@@ -86,7 +83,7 @@ func NewFakeFileSystem() *FakeFileSystem {
 }
 
 func (fs *FakeFileSystem) GetFileTestStat(path string) (stats *FakeFileStats) {
-	stats = fs.Files[path]
+	stats = fs.files[path]
 	return
 }
 
@@ -280,7 +277,7 @@ func (fs *FakeFileSystem) CopyFile(srcPath, dstPath string) (err error) {
 		return
 	}
 
-	fs.Files[dstPath] = fs.Files[srcPath]
+	fs.files[dstPath] = fs.files[srcPath]
 	return
 }
 
@@ -347,20 +344,15 @@ func (fs *FakeFileSystem) RemoveAll(path string) (err error) {
 
 	filesToRemove := []string{}
 
-	for name := range fs.Files {
+	for name := range fs.files {
 		if strings.HasPrefix(name, path) {
 			filesToRemove = append(filesToRemove, name)
 		}
 	}
 
 	for _, name := range filesToRemove {
-		delete(fs.Files, name)
+		delete(fs.files, name)
 	}
-	return
-}
-
-func (fs *FakeFileSystem) Open(path string) (file *os.File, err error) {
-	file = fs.FilesToOpen[path]
 	return
 }
 
@@ -385,12 +377,12 @@ func (fs *FakeFileSystem) SetGlob(pattern string, matches ...[]string) {
 func (fs *FakeFileSystem) getOrCreateFile(path string) (stats *FakeFileStats) {
 	stats = fs.GetFileTestStat(path)
 	if stats == nil {
-		if fs.Files == nil {
-			fs.Files = make(map[string]*FakeFileStats)
+		if fs.files == nil {
+			fs.files = make(map[string]*FakeFileStats)
 		}
 
 		stats = new(FakeFileStats)
-		fs.Files[path] = stats
+		fs.files[path] = stats
 	}
 	return
 }
