@@ -67,11 +67,7 @@ module Bat
 
       @logger.info("--> ssh options: #{options.inspect}")
       Net::SSH.start(host, user, options) do |ssh|
-        output = ssh.exec!(command)
-      end
-
-      if output.nil?
-        raise 'Output returned from ssh exec was nil!'
+        output = ssh.exec!(command).to_s
       end
 
       @logger.info("--> ssh output: #{output.inspect}")
