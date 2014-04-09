@@ -134,19 +134,6 @@ module IntegrationExampleGroup
   def get_job_vm(instance_name)
     get_vms.detect { |v| v[:job_index] == instance_name }
   end
-
-  def set_agent_job_state(agent_id, state)
-    NATS.start(uri: "nats://localhost:#{current_sandbox.nats_port}") do
-      NATS.publish("agent.#{agent_id}",
-        Yajl::Encoder.encode(
-          method: 'set_dummy_status',
-          status: state,
-          reply_to: 'integration.tests',
-        )) do
-        NATS.stop
-      end
-    end
-  end
 end
 
 module IntegrationSandboxHelpers
