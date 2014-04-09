@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
@@ -19,7 +20,7 @@ func NewExecCmdRunner(logger boshlog.Logger) (cmRunner CmdRunner) {
 	return execCmdRunner{logger}
 }
 
-func (run execCmdRunner) RunComplexCommand(cmd Command) (stdout, stderr string, err error) {
+func (run execCmdRunner) RunComplexCommand(cmd Command) (string, string, int, error) {
 	execCmd := exec.Command(cmd.Name, cmd.Args...)
 	execCmd.Dir = cmd.WorkingDir
 	env := os.Environ()
@@ -31,18 +32,18 @@ func (run execCmdRunner) RunComplexCommand(cmd Command) (stdout, stderr string, 
 	return run.runCmd(execCmd)
 }
 
-func (run execCmdRunner) RunCommand(cmdName string, args ...string) (stdout, stderr string, err error) {
+func (run execCmdRunner) RunCommand(cmdName string, args ...string) (string, string, int, error) {
 	cmd := exec.Command(cmdName, args...)
 	return run.runCmd(cmd)
 }
 
-func (run execCmdRunner) RunCommandWithInput(input, cmdName string, args ...string) (stdout, stderr string, err error) {
+func (run execCmdRunner) RunCommandWithInput(input, cmdName string, args ...string) (string, string, int, error) {
 	cmd := exec.Command(cmdName, args...)
 	cmd.Stdin = strings.NewReader(input)
 	return run.runCmd(cmd)
 }
 
-func (run execCmdRunner) CommandExists(cmdName string) (exists bool) {
+func (run execCmdRunner) CommandExists(cmdName string) bool {
 	_, err := exec.LookPath(cmdName)
 	if err != nil {
 		return false
@@ -51,7 +52,8 @@ func (run execCmdRunner) CommandExists(cmdName string) (exists bool) {
 	return true
 }
 
-func (run execCmdRunner) runCmd(cmd *exec.Cmd) (stdout, stderr string, err error) {
+func (run execCmdRunner) runCmd(cmd *exec.Cmd) (string, string, int, error) {
+	exitStatus := -1
 	cmdString := strings.Join(cmd.Args, " ")
 
 	run.logger.Debug("Cmd Runner", "Running command: %s", cmdString)
@@ -61,22 +63,23 @@ func (run execCmdRunner) runCmd(cmd *exec.Cmd) (stdout, stderr string, err error
 	cmd.Stdout = stdoutWriter
 	cmd.Stderr = stderrWriter
 
-	err = cmd.Start()
+	err := cmd.Start()
 	if err != nil {
-		err = bosherr.WrapError(err, "Starting command %s", cmdString)
-		return
+		return "", "", exitStatus, bosherr.WrapError(err, "Starting command %s", cmdString)
 	}
 
 	err = cmd.Wait()
-	stdout = string(stdoutWriter.Bytes())
-	stderr = string(stderrWriter.Bytes())
+	stdout := string(stdoutWriter.Bytes())
+	stderr := string(stderrWriter.Bytes())
+
+	exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 
 	run.logger.Debug("Cmd Runner", "Stdout: %s", stdout)
 	run.logger.Debug("Cmd Runner", "Stderr: %s", stderr)
-	run.logger.Debug("Cmd Runner", "Successful: %t", err == nil)
+	run.logger.Debug("Cmd Runner", "Successful: %t (%d)", err == nil, exitStatus)
 
 	if err != nil {
 		err = bosherr.WrapError(err, "Running command: '%s', stdout: '%s', stderr: '%s'", cmdString, stdout, stderr)
 	}
-	return
+	return stdout, stderr, exitStatus, err
 }

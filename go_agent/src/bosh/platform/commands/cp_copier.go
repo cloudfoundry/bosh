@@ -49,7 +49,7 @@ func (c cpCopier) FilteredCopyToTemp(dir string, filters []string) (tempDir stri
 		}
 
 		// Golang does not have a way of copying files and preserving file info...
-		_, _, err = c.cmdRunner.RunCommand("cp", "-Rp", src, dst)
+		_, _, _, err = c.cmdRunner.RunCommand("cp", "-Rp", src, dst)
 		if err != nil {
 			err = bosherr.WrapError(err, "Shelling out to cp")
 			c.fs.RemoveAll(tempDir)

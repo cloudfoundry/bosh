@@ -25,7 +25,7 @@ func (c tarballCompressor) CompressFilesInDir(dir string) (tarballPath string, e
 
 	tarballPath = tarball.Name()
 
-	_, _, err = c.cmdRunner.RunCommand("tar", "czf", tarballPath, "-C", dir, ".")
+	_, _, _, err = c.cmdRunner.RunCommand("tar", "czf", tarballPath, "-C", dir, ".")
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to tar")
 		return
@@ -35,7 +35,7 @@ func (c tarballCompressor) CompressFilesInDir(dir string) (tarballPath string, e
 }
 
 func (c tarballCompressor) DecompressFileToDir(tarballPath string, dir string) (err error) {
-	_, _, err = c.cmdRunner.RunCommand("tar", "--no-same-owner", "-xzvf", tarballPath, "-C", dir)
+	_, _, _, err = c.cmdRunner.RunCommand("tar", "--no-same-owner", "-xzvf", tarballPath, "-C", dir)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to tar")
 		return

@@ -31,9 +31,9 @@ func (udev ConcreteUdevDevice) KickDevice(filePath string) {
 func (udev ConcreteUdevDevice) Settle() (err error) {
 	switch {
 	case udev.runner.CommandExists("udevadm"):
-		_, _, err = udev.runner.RunCommand("udevadm", "settle")
+		_, _, _, err = udev.runner.RunCommand("udevadm", "settle")
 	case udev.runner.CommandExists("udevsettle"):
-		_, _, err = udev.runner.RunCommand("udevsettle")
+		_, _, _, err = udev.runner.RunCommand("udevsettle")
 	default:
 		err = bosherr.New("can not find udevadm or udevsettle commands")
 	}

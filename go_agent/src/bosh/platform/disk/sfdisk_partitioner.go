@@ -46,7 +46,7 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 	}
 	p.logger.Info(p.logTag, "Partitioning %s with %s", devicePath, sfdiskInput)
 
-	_, _, err = p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uM", devicePath)
+	_, _, _, err = p.cmdRunner.RunCommandWithInput(sfdiskInput, "sfdisk", "-uM", devicePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to sfdisk")
 	}
@@ -54,7 +54,7 @@ func (p sfdiskPartitioner) Partition(devicePath string, partitions []Partition) 
 }
 
 func (p sfdiskPartitioner) GetDeviceSizeInMb(devicePath string) (size uint64, err error) {
-	stdout, _, err := p.cmdRunner.RunCommand("sfdisk", "-s", devicePath)
+	stdout, _, _, err := p.cmdRunner.RunCommand("sfdisk", "-s", devicePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to sfdisk")
 		return
@@ -117,7 +117,7 @@ func notWithinDelta(left, right, delta uint64) bool {
 }
 
 func (p sfdiskPartitioner) getPartitions(devicePath string) (partitions []Partition, err error) {
-	stdout, _, err := p.cmdRunner.RunCommand("sfdisk", "-d", devicePath)
+	stdout, _, _, err := p.cmdRunner.RunCommand("sfdisk", "-d", devicePath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to sfdisk")
 		return

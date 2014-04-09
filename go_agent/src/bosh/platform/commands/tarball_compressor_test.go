@@ -54,7 +54,7 @@ func init() {
 			dstDir := createdTmpDir(GinkgoT(), fs)
 			defer os.RemoveAll(dstDir)
 
-			_, _, err = cmdRunner.RunCommand("tar", "--no-same-owner", "-xzpf", tgzName, "-C", dstDir)
+			_, _, _, err = cmdRunner.RunCommand("tar", "--no-same-owner", "-xzpf", tgzName, "-C", dstDir)
 			Expect(err).ToNot(HaveOccurred())
 
 			content, err := fs.ReadFileString(dstDir + "/app.stdout.log")

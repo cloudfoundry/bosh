@@ -121,7 +121,7 @@ func (p linux) SetupDhcp(networks boshsettings.Networks) (err error) {
 }
 
 func (p linux) SetupRuntimeConfiguration() (err error) {
-	_, _, err = p.cmdRunner.RunCommand("bosh-agent-rc")
+	_, _, _, err = p.cmdRunner.RunCommand("bosh-agent-rc")
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to bosh-agent-rc")
 	}
@@ -143,7 +143,7 @@ func (p linux) CreateUser(username, password, basePath string) (err error) {
 
 	args = append(args, username)
 
-	_, _, err = p.cmdRunner.RunCommand("useradd", args...)
+	_, _, _, err = p.cmdRunner.RunCommand("useradd", args...)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to useradd")
 		return
@@ -152,7 +152,7 @@ func (p linux) CreateUser(username, password, basePath string) (err error) {
 }
 
 func (p linux) AddUserToGroups(username string, groups []string) (err error) {
-	_, _, err = p.cmdRunner.RunCommand("usermod", "-G", strings.Join(groups, ","), username)
+	_, _, _, err = p.cmdRunner.RunCommand("usermod", "-G", strings.Join(groups, ","), username)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to usermod")
 	}
@@ -179,7 +179,7 @@ func (p linux) DeleteEphemeralUsersMatching(reg string) (err error) {
 }
 
 func (p linux) deleteUser(user string) (err error) {
-	_, _, err = p.cmdRunner.RunCommand("userdel", "-r", user)
+	_, _, _, err = p.cmdRunner.RunCommand("userdel", "-r", user)
 	return
 }
 
@@ -227,7 +227,7 @@ func (p linux) SetupSsh(publicKey, username string) (err error) {
 }
 
 func (p linux) SetUserPassword(user, encryptedPwd string) (err error) {
-	_, _, err = p.cmdRunner.RunCommand("usermod", "-p", encryptedPwd, user)
+	_, _, _, err = p.cmdRunner.RunCommand("usermod", "-p", encryptedPwd, user)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to usermod")
 	}
@@ -235,7 +235,7 @@ func (p linux) SetUserPassword(user, encryptedPwd string) (err error) {
 }
 
 func (p linux) SetupHostname(hostname string) (err error) {
-	_, _, err = p.cmdRunner.RunCommand("hostname", hostname)
+	_, _, _, err = p.cmdRunner.RunCommand("hostname", hostname)
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to hostname")
 		return
@@ -324,7 +324,7 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 	}
 
 	// Make a best effort to sync time now but don't error
-	_, _, _ = p.cmdRunner.RunCommand("ntpdate")
+	_, _, _, _ = p.cmdRunner.RunCommand("ntpdate")
 	return
 }
 
@@ -382,12 +382,12 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) (err error) {
 		err = bosherr.WrapError(err, "Making %s dir", dir)
 		return
 	}
-	_, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", sysdir)
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", sysdir)
 	if err != nil {
 		err = bosherr.WrapError(err, "chown %s", sysdir)
 		return
 	}
-	_, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", dir)
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", dir)
 	if err != nil {
 		err = bosherr.WrapError(err, "chown %s", dir)
 		return
@@ -400,7 +400,7 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) (err error) {
 		return
 	}
 
-	_, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", dir)
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", dir)
 	if err != nil {
 		err = bosherr.WrapError(err, "chown %s", dir)
 		return
@@ -420,12 +420,12 @@ func (p linux) SetupTmpDir() error {
 		return bosherr.WrapError(err, "Setting TMPDIR")
 	}
 
-	_, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", "/tmp")
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", "/tmp")
 	if err != nil {
 		return bosherr.WrapError(err, "chown /tmp")
 	}
 
-	_, _, err = p.cmdRunner.RunCommand("chmod", "0770", "/tmp")
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0770", "/tmp")
 	if err != nil {
 		return bosherr.WrapError(err, "chmod /tmp")
 	}
@@ -469,7 +469,7 @@ func (p linux) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err e
 	// Golang does not implement a file copy that would allow us to preserve dates...
 	// So we have to shell out to tar to perform the copy instead of delegating to the FileSystem
 	tarCopy := fmt.Sprintf("(tar -C %s -cf - .) | (tar -C %s -xpf -)", fromMountPoint, toMountPoint)
-	_, _, err = p.cmdRunner.RunCommand("sh", "-c", tarCopy)
+	_, _, _, err = p.cmdRunner.RunCommand("sh", "-c", tarCopy)
 	if err != nil {
 		err = bosherr.WrapError(err, "Copying files from old disk to new disk")
 		return
@@ -499,7 +499,7 @@ func (p linux) IsDevicePathMounted(path string) (result bool, err error) {
 }
 
 func (p linux) StartMonit() (err error) {
-	_, _, err = p.cmdRunner.RunCommand("sv", "up", "monit")
+	_, _, _, err = p.cmdRunner.RunCommand("sv", "up", "monit")
 	if err != nil {
 		err = bosherr.WrapError(err, "Shelling out to sv")
 	}

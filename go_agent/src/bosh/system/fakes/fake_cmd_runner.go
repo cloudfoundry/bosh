@@ -1,8 +1,9 @@
 package fakes
 
 import (
-	boshsys "bosh/system"
 	"strings"
+
+	boshsys "bosh/system"
 )
 
 type FakeCmdRunner struct {
@@ -17,10 +18,11 @@ type FakeCmdRunner struct {
 }
 
 type FakeCmdResult struct {
-	Stdout string
-	Stderr string
-	Error  error
-	Sticky bool //Set to true if this result should ALWAYS be returned for the given command
+	Stdout     string
+	Stderr     string
+	ExitStatus int
+	Error      error
+	Sticky     bool //Set to true if this result should ALWAYS be returned for the given command
 }
 
 func NewFakeCmdRunner() *FakeCmdRunner {
@@ -29,31 +31,25 @@ func NewFakeCmdRunner() *FakeCmdRunner {
 	}
 }
 
-func (runner *FakeCmdRunner) RunComplexCommand(cmd boshsys.Command) (stdout, stderr string, err error) {
+func (runner *FakeCmdRunner) RunComplexCommand(cmd boshsys.Command) (string, string, int, error) {
 	runner.RunComplexCommands = append(runner.RunComplexCommands, cmd)
 	runCmd := append([]string{cmd.Name}, cmd.Args...)
-
-	stdout, stderr, err = runner.getOutputsForCmd(runCmd)
-	return
+	return runner.getOutputsForCmd(runCmd)
 }
 
-func (runner *FakeCmdRunner) RunCommand(cmdName string, args ...string) (stdout, stderr string, err error) {
+func (runner *FakeCmdRunner) RunCommand(cmdName string, args ...string) (string, string, int, error) {
 	runCmd := append([]string{cmdName}, args...)
 	runner.RunCommands = append(runner.RunCommands, runCmd)
-
-	stdout, stderr, err = runner.getOutputsForCmd(runCmd)
-	return
+	return runner.getOutputsForCmd(runCmd)
 }
 
-func (runner *FakeCmdRunner) RunCommandWithInput(input, cmdName string, args ...string) (stdout, stderr string, err error) {
+func (runner *FakeCmdRunner) RunCommandWithInput(input, cmdName string, args ...string) (string, string, int, error) {
 	runCmd := append([]string{input, cmdName}, args...)
 	runner.RunCommandsWithInput = append(runner.RunCommandsWithInput, runCmd)
-
-	stdout, stderr, err = runner.getOutputsForCmd(runCmd)
-	return
+	return runner.getOutputsForCmd(runCmd)
 }
 
-func (runner *FakeCmdRunner) CommandExists(cmdName string) (exists bool) {
+func (runner *FakeCmdRunner) CommandExists(cmdName string) bool {
 	if runner.CommandExistsValue {
 		return true
 	}
@@ -73,7 +69,7 @@ func (runner *FakeCmdRunner) AddCmdResult(fullCmd string, result FakeCmdResult) 
 	runner.CommandResults[fullCmd] = append(results, result)
 }
 
-func (runner *FakeCmdRunner) getOutputsForCmd(runCmd []string) (stdout, stderr string, err error) {
+func (runner *FakeCmdRunner) getOutputsForCmd(runCmd []string) (string, string, int, error) {
 	fullCmd := strings.Join(runCmd, " ")
 
 	results, found := runner.CommandResults[fullCmd]
@@ -87,10 +83,7 @@ func (runner *FakeCmdRunner) getOutputsForCmd(runCmd []string) (stdout, stderr s
 		if !result.Sticky {
 			runner.CommandResults[fullCmd] = newResults
 		}
-
-		stdout = result.Stdout
-		stderr = result.Stderr
-		err = result.Error
+		return result.Stdout, result.Stderr, result.ExitStatus, result.Error
 	}
-	return
+	return "", "", -1, nil
 }
