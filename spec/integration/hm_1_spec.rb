@@ -12,6 +12,7 @@ describe 'health_monitor: 1', type: :integration do
     deploy_simple(manifest_hash: deployment_hash)
   end
 
+  # ~50s
   it 'HM can be queried for stats' do
     varz = {}
     20.times do
@@ -25,15 +26,19 @@ describe 'health_monitor: 1', type: :integration do
     expect(varz['agents_count']).to_not eq(0)
   end
 
+  # ~1m20s
   it 'resurrects stateless nodes' do
-    original_cid = kill_job_agent('foobar/0')
-    foobar_vm = wait_for_vm('foobar/0')
-    expect(foobar_vm[:cid]).to_not eq original_cid
+    original_vm = director.vm('foobar/0')
+    original_vm.kill_agent
+    resurrected_vm = director.wait_for_vm('foobar/0', 300)
+    expect(resurrected_vm.cid).to_not eq(original_vm.cid)
   end
 
+  # ~8m
   it 'does not resurrect stateless nodes when paused' do
     run_bosh('vm resurrection foobar 0 off')
-    kill_job_agent('foobar/0')
-    expect(wait_for_vm('foobar/0')).to be_nil
+    original_vm = director.vm('foobar/0')
+    original_vm.kill_agent
+    expect(director.wait_for_vm('foobar/0', 300)).to be_nil
   end
 end

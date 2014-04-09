@@ -9,11 +9,9 @@ describe "Director deprecating the 'template' syntax", type: :integration do
       manifest_hash['releases'].first['version'] = 'latest'
       manifest_hash['jobs'][0].delete('template')
       manifest_hash['jobs'][0]['template'] = [ 'foobar' ]
-
       manifest_hash['jobs'][0]['instances'] = 1
       manifest_hash['resource_pools'][0]['size'] = 1
       output = deploy_simple(manifest_hash: manifest_hash)
-
       expect(output).to match(/Deprecation: .*soon be unsupported/)
     end
   end
@@ -25,7 +23,6 @@ describe "Director deprecating the 'template' syntax", type: :integration do
       manifest_hash['jobs'][0]['instances'] = 1
       manifest_hash['resource_pools'][0]['size'] = 1
       output = deploy_simple(manifest_hash: manifest_hash)
-
       expect(output).to_not include('deprecated')
     end
   end

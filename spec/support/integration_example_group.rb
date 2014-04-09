@@ -6,6 +6,15 @@ module IntegrationExampleGroup
     @logger ||= Logger.new(STDOUT)
   end
 
+  def director
+    @director ||= Bosh::Spec::Director.new(
+      self,
+      current_sandbox.agent_tmp_path,
+      current_sandbox.nats_port,
+      logger,
+    )
+  end
+
   def target_and_login
     run_bosh("target http://localhost:#{current_sandbox.director_port}")
     run_bosh('login admin admin')
@@ -94,45 +103,6 @@ module IntegrationExampleGroup
   def expect_output(cmd, expected_output)
     expect(format_output(run_bosh(cmd, :failure_expected => true))).
       to eq(format_output(expected_output))
-  end
-
-  def get_vms
-    output = run_bosh('vms --details')
-    table = output.lines.grep(/\|/)
-
-    table = table.map { |line| line.split('|').map(&:strip).reject(&:empty?) }
-    headers = table.shift || []
-    headers.map! do |header|
-      header.downcase.tr('/ ', '_').to_sym
-    end
-    output = []
-    table.each do |row|
-      output << Hash[headers.zip(row)]
-    end
-    output
-  end
-
-  def wait_for_vm(instance_name, timeout_seconds = 300)
-    start_time = Time.now
-    loop do
-      vm = get_job_vm(instance_name)
-      return vm if vm
-
-      break if Time.now - start_time >= timeout_seconds
-
-      sleep(1)
-    end
-    nil
-  end
-
-  def kill_job_agent(instance_name)
-    vm = get_job_vm(instance_name)
-    Process.kill('INT', vm[:cid].to_i)
-    vm[:cid]
-  end
-
-  def get_job_vm(instance_name)
-    get_vms.detect { |v| v[:job_index] == instance_name }
   end
 end
 

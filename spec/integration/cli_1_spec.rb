@@ -4,8 +4,8 @@ describe 'cli: 1', type: :integration do
   with_reset_sandbox_before_each
 
   it 'has help message', no_reset: true do
-    run_bosh('help')
-    expect($?).to be_success
+    _, exit_code = run_bosh('help', return_exit_code: true)
+    expect(exit_code).to eq(0)
   end
 
   it 'shows status', no_reset: true do

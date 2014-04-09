@@ -47,8 +47,8 @@ describe 'deployment job control', type: :integration do
   end
 
   def expect_to_have_running_job_indices(job_indicies)
-    vms = get_vms
-    expect(vms.map { |d| d[:job_index] }).to match_array(job_indicies)
-    expect(vms.map { |d| d[:state] }.uniq).to eq(['running'])
+    vms = director.vms
+    expect(vms.map(&:job_name_index)).to match_array(job_indicies)
+    expect(vms.map(&:last_known_state).uniq).to eq(['running'])
   end
 end

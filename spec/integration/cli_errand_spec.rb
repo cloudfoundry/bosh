@@ -51,11 +51,7 @@ describe 'cli: errand', type: :integration do
     end
 
     it 'reallocates and then deallocates errand vms for each errand run' do
-      expect_to_have_running_job_indices(%w(
-        foobar/0
-        unknown/unknown
-        unknown/unknown
-      ))
+      expect_to_have_running_job_indices(%w(foobar/0 unknown/unknown unknown/unknown))
 
       output, exit_code = run_bosh('run errand errand1-name', return_exit_code: true)
       expect(output).to include('some-errand1-stdout')
@@ -241,15 +237,15 @@ describe 'cli: errand', type: :integration do
       upload_stemcell
       set_deployment(manifest_hash: manifest_hash)
 
-      output = deploy(failure_expected: true)
-      expect($?).not_to be_success
+      output, exit_code = deploy(failure_expected: true, return_exit_code: true)
       expect(output).to include("Resource pool `a' is not big enough: 5 VMs needed, capacity is 4")
+      expect(exit_code).to eq(1)
     end
   end
 
   def expect_to_have_running_job_indices(job_indicies)
-    vms = get_vms
-    expect(vms.map { |d| d[:job_index] }).to match_array(job_indicies)
-    expect(vms.map { |d| d[:state] }.uniq).to eq(['running'])
+    vms = director.vms
+    expect(vms.map(&:job_name_index)).to match_array(job_indicies)
+    expect(vms.map(&:last_known_state).uniq).to eq(['running'])
   end
 end

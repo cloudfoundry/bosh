@@ -8,13 +8,16 @@ describe 'deployment integrations', type: :integration do
     manifest_hash['properties'] = { 'test_property' => 1 }
     deploy_simple(manifest_hash: manifest_hash)
 
-    agent_id = get_job_vm('foobar/0')[:agent_id]
-    ctl_path = File.join(current_sandbox.agent_tmp_path, "agent-base-dir-#{agent_id}", 'jobs', 'foobar', 'bin', 'foobar_ctl')
-    expect(File.read(ctl_path)).to include('test_property=1')
+    foobar_vm = director.vm('foobar/0')
+
+    template = foobar_vm.read_job_template('foobar', 'bin/foobar_ctl')
+    expect(template).to include('test_property=1')
 
     manifest_hash['properties'] = { 'test_property' => 2 }
     deploy_simple_manifest(manifest_hash: manifest_hash)
-    expect(File.read(ctl_path)).to include('test_property=2')
+
+    template = foobar_vm.read_job_template('foobar', 'bin/foobar_ctl')
+    expect(template).to include('test_property=2')
   end
 
   it 'updates a job with multiple instances in parallel and obey max_in_flight' do
@@ -46,10 +49,10 @@ describe 'deployment integrations', type: :integration do
 
   it 'does not finish a deployment if job update fails' do
     pending if current_sandbox.agent_type == "ruby"
-    deploy_simple
-    failing_agent_id = get_job_vm('foobar/0')[:agent_id]
 
-    set_agent_job_state(failing_agent_id, "failing")
+    deploy_simple
+
+    director.vm('foobar/0').fail_job
 
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['update']['canary_watch_time'] = 0
@@ -57,10 +60,10 @@ describe 'deployment integrations', type: :integration do
     manifest_hash['resource_pools'][0]['size'] = 2
 
     set_deployment(manifest_hash: manifest_hash)
-    deploy_result = deploy(failure_expected: true)
-    expect($?).to_not be_success
+    deploy_output, exit_code = deploy(failure_expected: true, return_exit_code: true)
+    expect(exit_code).to_not eq(0)
 
-    task_id = get_task_id(deploy_result, 'error')
+    task_id = get_task_id(deploy_output, 'error')
     task_events = events(task_id)
 
     failing_job_event = task_events[-2]
@@ -103,17 +106,5 @@ describe 'deployment integrations', type: :integration do
     match = output.match(/Task (\d+) #{state}/)
     expect(match).to_not be(nil)
     match[1]
-  end
-
-  def set_agent_job_state(agent_id, state)
-    NATS.start(uri: "nats://localhost:#{current_sandbox.nats_port}") do
-      msg = Yajl::Encoder.encode(
-        method: 'set_dummy_status',
-        status: state,
-        reply_to: 'integration.tests',
-      )
-
-      NATS.publish("agent.#{agent_id}", msg) { NATS.stop }
-    end
   end
 end

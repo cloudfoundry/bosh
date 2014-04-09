@@ -11,7 +11,6 @@ describe 'cli: 2', type: :integration do
 
     target_and_login
     out = run_bosh("upload stemcell #{stemcell_filename}")
-
     expect(out).to match /Stemcell uploaded and created/
 
     out = run_bosh('stemcells')

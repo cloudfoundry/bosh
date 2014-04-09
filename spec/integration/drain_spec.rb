@@ -15,9 +15,8 @@ describe 'drain', type: :integration do
       manifest_hash['properties']['test_property'] = 0
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
-      agent_files = Dir["#{current_sandbox.agent_tmp_path}/agent-base-dir-*/*"]
-      drain_output = agent_files.detect { |f| File.basename(f) == 'drain-test.log' }
-      expect(File.read(drain_output)).to eq("job_unchanged hash_changed\n1\n")
+      drain_log = director.vm('foobar/0').read_file('drain-test.log')
+      expect(drain_log).to eq("job_unchanged hash_changed\n1\n")
     end
   end
 
@@ -34,9 +33,8 @@ describe 'drain', type: :integration do
       manifest_hash['properties']['test_property'] = 0
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
-      agent_files = Dir["#{current_sandbox.agent_tmp_path}/agent-base-dir-*/*"]
-      drain_output = agent_files.detect { |f| File.basename(f) == 'drain-test.log' }
-      drain_times = File.read(drain_output).split.map { |time| time.to_i }
+      drain_log = director.vm('foobar/0').read_file('drain-test.log')
+      drain_times = drain_log.split.map(&:to_i)
       expect(drain_times.size).to eq(3)
       expect(drain_times[1] - drain_times[0]).to be >= 3
       expect(drain_times[2] - drain_times[1]).to be >= 2
