@@ -1,14 +1,15 @@
 package net
 
 import (
-	bosherr "bosh/errors"
-	boshsettings "bosh/settings"
-	boshsys "bosh/system"
 	"bytes"
 	"path/filepath"
 	"strings"
 	"text/template"
 	"time"
+
+	bosherr "bosh/errors"
+	boshsettings "bosh/settings"
+	boshsys "bosh/system"
 )
 
 type centos struct {
@@ -28,18 +29,18 @@ func NewCentosNetManager(
 	return
 }
 
-func (net centos) getDNSServers(networks boshsettings.Networks) (dnsServers []string) {
+func (net centos) getDNSServers(networks boshsettings.Networks) []string {
+	var dnsServers []string
 	dnsNetwork, found := networks.DefaultNetworkFor("dns")
 	if found {
 		for i := len(dnsNetwork.DNS) - 1; i >= 0; i-- {
 			dnsServers = append(dnsServers, dnsNetwork.DNS[i])
 		}
 	}
-
-	return
+	return dnsServers
 }
 
-func (net centos) SetupDhcp(networks boshsettings.Networks) (err error) {
+func (net centos) SetupDhcp(networks boshsettings.Networks) error {
 	dnsServers := []string{}
 	dnsNetwork, found := networks.DefaultNetworkFor("dns")
 	if found {
@@ -55,16 +56,14 @@ func (net centos) SetupDhcp(networks boshsettings.Networks) (err error) {
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("dhcp-config").Parse(centosDHCPConfigTemplate))
 
-	err = t.Execute(buffer, dhcpConfigArg{dnsServers})
+	err := t.Execute(buffer, dhcpConfigArg{dnsServers})
 	if err != nil {
-		err = bosherr.WrapError(err, "Generating config from template")
-		return
+		return bosherr.WrapError(err, "Generating config from template")
 	}
 
 	written, err := net.fs.ConvergeFileContents("/etc/dhcp/dhclient.conf", buffer.Bytes())
 	if err != nil {
-		err = bosherr.WrapError(err, "Writing to /etc/dhcp/dhclient.conf")
-		return
+		return bosherr.WrapError(err, "Writing to /etc/dhcp/dhclient.conf")
 	}
 
 	if written {
@@ -72,7 +71,7 @@ func (net centos) SetupDhcp(networks boshsettings.Networks) (err error) {
 		net.cmdRunner.RunCommand("service", "network", "restart")
 	}
 
-	return
+	return err
 }
 
 // DHCP Config file - /etc/dhcp3/dhclient.conf
@@ -90,24 +89,22 @@ request subnet-mask, broadcast-address, time-offset, routers,
 {{ range .DNSServers }}prepend domain-name-servers {{ . }};
 {{ end }}`
 
-func (net centos) SetupManualNetworking(networks boshsettings.Networks) (err error) {
+func (net centos) SetupManualNetworking(networks boshsettings.Networks) error {
 	modifiedNetworks, err := net.writeIfcfgs(networks)
 	if err != nil {
-		err = bosherr.WrapError(err, "Writing network interfaces")
-		return
+		return bosherr.WrapError(err, "Writing network interfaces")
 	}
 
 	net.restartNetwork()
 
 	err = net.writeResolvConf(networks)
 	if err != nil {
-		err = bosherr.WrapError(err, "Writing resolv.conf")
-		return
+		return bosherr.WrapError(err, "Writing resolv.conf")
 	}
 
 	go net.gratuitiousArp(modifiedNetworks)
 
-	return
+	return nil
 }
 
 func (net centos) gratuitiousArp(networks []CustomNetwork) {
@@ -121,22 +118,21 @@ func (net centos) gratuitiousArp(networks []CustomNetwork) {
 			time.Sleep(net.arpWaitInterval)
 		}
 	}
-	return
 }
 
-func (net centos) writeIfcfgs(networks boshsettings.Networks) (modifiedNetworks []CustomNetwork, err error) {
+func (net centos) writeIfcfgs(networks boshsettings.Networks) ([]CustomNetwork, error) {
+	var modifiedNetworks []CustomNetwork
+
 	macAddresses, err := net.detectMacAddresses()
 	if err != nil {
-		err = bosherr.WrapError(err, "Detecting mac addresses")
-		return
+		return modifiedNetworks, bosherr.WrapError(err, "Detecting mac addresses")
 	}
 
 	for _, aNet := range networks {
 		var network, broadcast string
 		network, broadcast, err = boshsys.CalculateNetworkAndBroadcast(aNet.IP, aNet.Netmask)
 		if err != nil {
-			err = bosherr.WrapError(err, "Calculating network and broadcast")
-			return
+			return modifiedNetworks, bosherr.WrapError(err, "Calculating network and broadcast")
 		}
 
 		newNet := CustomNetwork{
@@ -153,18 +149,16 @@ func (net centos) writeIfcfgs(networks boshsettings.Networks) (modifiedNetworks 
 
 		err = t.Execute(buffer, newNet)
 		if err != nil {
-			err = bosherr.WrapError(err, "Generating config from template")
-			return
+			return modifiedNetworks, bosherr.WrapError(err, "Generating config from template")
 		}
 
 		err = net.fs.WriteFile(filepath.Join("/etc/sysconfig/network-scripts", "ifcfg-"+newNet.Interface), buffer.Bytes())
 		if err != nil {
-			err = bosherr.WrapError(err, "Writing to /etc/sysconfig/network-scripts")
-			return
+			return modifiedNetworks, bosherr.WrapError(err, "Writing to /etc/sysconfig/network-scripts")
 		}
 	}
 
-	return
+	return modifiedNetworks, nil
 }
 
 const centosIfcgfTemplate = `DEVICE={{ .Interface }}
@@ -175,45 +169,42 @@ BROADCAST={{ .Broadcast }}
 {{ if .HasDefaultGateway }}GATEWAY={{ .Gateway }}{{ end }}
 ONBOOT=yes`
 
-func (net centos) writeResolvConf(networks boshsettings.Networks) (err error) {
+func (net centos) writeResolvConf(networks boshsettings.Networks) error {
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("resolv-conf").Parse(centosResolvConfTemplate))
 
 	dnsServers := net.getDNSServers(networks)
 	dnsServersArg := dnsConfigArg{dnsServers}
-	err = t.Execute(buffer, dnsServersArg)
+	err := t.Execute(buffer, dnsServersArg)
 	if err != nil {
-		err = bosherr.WrapError(err, "Generating config from template")
-		return
+		return bosherr.WrapError(err, "Generating config from template")
 	}
 
 	err = net.fs.WriteFile("/etc/resolv.conf", buffer.Bytes())
 	if err != nil {
-		err = bosherr.WrapError(err, "Writing to /etc/resolv.conf")
-		return
+		return bosherr.WrapError(err, "Writing to /etc/resolv.conf")
 	}
 
-	return
+	return nil
 }
 
-const centosResolvConfTemplate = `{{ range .DNSServers }}nameserver {{ . }}
+const centosResolvConfTemplate = `# Generated by bosh-agent
+{{ range .DNSServers }}nameserver {{ . }}
 {{ end }}`
 
-func (net centos) detectMacAddresses() (addresses map[string]string, err error) {
-	addresses = map[string]string{}
+func (net centos) detectMacAddresses() (map[string]string, error) {
+	addresses := map[string]string{}
 
 	filePaths, err := net.fs.Glob("/sys/class/net/*")
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting file list from /sys/class/net")
-		return
+		return addresses, bosherr.WrapError(err, "Getting file list from /sys/class/net")
 	}
 
 	var macAddress string
 	for _, filePath := range filePaths {
 		macAddress, err = net.fs.ReadFileString(filepath.Join(filePath, "address"))
 		if err != nil {
-			err = bosherr.WrapError(err, "Reading mac address from file")
-			return
+			return addresses, bosherr.WrapError(err, "Reading mac address from file")
 		}
 
 		macAddress = strings.Trim(macAddress, "\n")
@@ -222,10 +213,9 @@ func (net centos) detectMacAddresses() (addresses map[string]string, err error) 
 		addresses[macAddress] = interfaceName
 	}
 
-	return
+	return addresses, nil
 }
 
 func (net centos) restartNetwork() {
 	net.cmdRunner.RunCommand("service", "network", "restart")
-	return
 }
