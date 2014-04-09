@@ -366,26 +366,7 @@ func init() {
 
 			assert.NotEqual(GinkgoT(), path1, path2)
 		})
-		It("copy dir entries", func() {
 
-			osFs, _ := createOsFs()
-			srcPath := "../../../fixtures/test_copy_dir_entries"
-			destPath, _ := osFs.TempDir("CopyDirEntriesTestDir")
-			defer os.RemoveAll(destPath)
-
-			err := osFs.CopyDirEntries(srcPath, destPath)
-			Expect(err).ToNot(HaveOccurred())
-
-			fooContent, err := osFs.ReadFileString(destPath + "/foo.txt")
-			Expect(err).ToNot(HaveOccurred())
-			Expect("foo\n").To(Equal(fooContent))
-
-			barContent, err := osFs.ReadFileString(destPath + "/bar/bar.txt")
-			Expect(err).ToNot(HaveOccurred())
-			Expect("bar\n").To(Equal(barContent))
-
-			Expect(osFs.FileExists(destPath + "/bar/baz")).To(BeTrue())
-		})
 		It("copy file", func() {
 			osFs, _ := createOsFs()
 			srcPath := "../../../fixtures/test_copy_dir_entries/foo.txt"

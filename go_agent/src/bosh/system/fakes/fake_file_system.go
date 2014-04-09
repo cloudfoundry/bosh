@@ -37,10 +37,6 @@ type FakeFileSystem struct {
 	ChownErr error
 	ChmodErr error
 
-	CopyDirEntriesError   error
-	CopyDirEntriesSrcPath string
-	CopyDirEntriesDstPath string
-
 	CopyFileError error
 
 	RenameError    error
@@ -248,27 +244,6 @@ func (fs *FakeFileSystem) ReadLink(symlinkPath string) (string, error) {
 	}
 
 	return "", os.ErrNotExist
-}
-
-func (fs *FakeFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
-	if fs.CopyDirEntriesError != nil {
-		return fs.CopyDirEntriesError
-	}
-
-	filesToCopy := []string{}
-
-	for filePath := range fs.Files {
-		if strings.HasPrefix(filePath, srcPath) {
-			filesToCopy = append(filesToCopy, filePath)
-		}
-	}
-
-	for _, filePath := range filesToCopy {
-		newPath := strings.Replace(filePath, srcPath, dstPath, 1)
-		fs.Files[newPath] = fs.Files[filePath]
-	}
-
-	return
 }
 
 func (fs *FakeFileSystem) CopyFile(srcPath, dstPath string) (err error) {

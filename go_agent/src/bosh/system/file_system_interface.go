@@ -32,11 +32,6 @@ type FileSystem interface {
 	Symlink(oldPath, newPath string) (err error)
 	ReadLink(symlinkPath string) (targetPath string, err error)
 
-	// Copies contents of one directory into another directory.
-	// Both directories need to exist before copy can succeed.
-	// Overwrites files in the dstPath but does not remove
-	// files from dstPath that are not found in srcPath (= adds/overwrites).
-	CopyDirEntries(srcPath, dstPath string) (err error)
 	CopyFile(srcPath, dstPath string) (err error)
 
 	// Returns *unique* temporary file/dir with a custom prefix

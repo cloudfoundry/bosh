@@ -218,11 +218,6 @@ func (fs osFileSystem) ReadLink(symlinkPath string) (targetPath string, err erro
 	return
 }
 
-func (fs osFileSystem) CopyDirEntries(srcPath, dstPath string) (err error) {
-	_, _, err = fs.runner.RunCommand("cp", "-r", srcPath+"/.", dstPath)
-	return
-}
-
 func (fs osFileSystem) CopyFile(srcPath, dstPath string) (err error) {
 	fs.logger.Debug(fs.logTag, "Copying %s to %s", srcPath, dstPath)
 	srcFile, err := os.Open(srcPath)
