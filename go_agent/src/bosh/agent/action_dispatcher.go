@@ -76,7 +76,7 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshhandler.Request) bos
 		return boshhandler.NewExceptionResponse("unknown message %s", req.Method)
 
 	case action.IsAsynchronous():
-		dispatcher.logger.Error("Action Dispatcher", "Running async action %s", req.Method)
+		dispatcher.logger.Info("Action Dispatcher", "Running async action %s", req.Method)
 
 		var task boshtask.Task
 
@@ -88,7 +88,7 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshhandler.Request) bos
 		// after agent restart so that API consumers do not need to know
 		// if agent is restarted midway through the task.
 		if action.IsPersistent() {
-			dispatcher.logger.Error("Action Dispatcher", "Running persistent action %s", req.Method)
+			dispatcher.logger.Info("Action Dispatcher", "Running persistent action %s", req.Method)
 			task, err = dispatcher.taskService.CreateTask(runTask, dispatcher.removeTaskInfo)
 			if err != nil {
 				err = bosherr.WrapError(err, "Create Task Failed %s", req.Method)
@@ -125,7 +125,7 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshhandler.Request) bos
 		})
 
 	default:
-		dispatcher.logger.Debug("Action Dispatcher", "Running sync action %s", req.Method)
+		dispatcher.logger.Info("Action Dispatcher", "Running sync action %s", req.Method)
 
 		value, err := dispatcher.actionRunner.Run(action, req.GetPayload())
 		if err != nil {
