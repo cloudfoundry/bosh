@@ -3,6 +3,20 @@ require 'spec_helper'
 describe 'deployment integrations', type: :integration do
   with_reset_sandbox_before_each
 
+  it 'updates job template accounting for deployment manifest properties' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['properties'] = { 'test_property' => 1 }
+    deploy_simple(manifest_hash: manifest_hash)
+
+    agent_id = get_job_vm('foobar/0')[:agent_id]
+    ctl_path = File.join(current_sandbox.agent_tmp_path, "agent-base-dir-#{agent_id}", 'jobs', 'foobar', 'bin', 'foobar_ctl')
+    expect(File.read(ctl_path)).to include('test_property=1')
+
+    manifest_hash['properties'] = { 'test_property' => 2 }
+    deploy_simple_manifest(manifest_hash: manifest_hash)
+    expect(File.read(ctl_path)).to include('test_property=2')
+  end
+
   it 'updates a job with multiple instances in parallel and obey max_in_flight' do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['releases'].first['version'] = 'latest'
