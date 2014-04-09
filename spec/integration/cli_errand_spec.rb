@@ -177,7 +177,9 @@ describe 'cli: errand', type: :integration do
     end
 
     it 'returns 1 as exit code and mentions absence of bin/run' do
-      expect(@output).to include('Error 450001: Job template foobar does not have executable bin/run')
+      ruby_msg = 'Job template foobar does not have executable bin/run'
+      go_msg = '.*Running errand script:.*jobs/foobar/bin/run: no such file or directory'
+      expect(@output).to match(%r{Error 450001: (#{ruby_msg}|#{go_msg})})
       expect(@output).to include('Errand `foobar\' did not complete')
       expect(@exit_code).to eq(1)
     end

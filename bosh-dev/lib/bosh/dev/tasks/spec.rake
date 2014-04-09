@@ -20,14 +20,8 @@ namespace :spec do
 
     def run_integration_specs(agent_type)
       ENV['BOSH_INTEGRATION_AGENT_TYPE'] = agent_type
-
-      specs = Dir['spec/integration/*']
-      specs -= ['spec/integration/cli_errand_spec.rb'] if agent_type == 'go'
-
       num_processes = ENV['TRAVIS'] ? 6 : nil
-      regex = "(#{specs.map { |s| Regexp.escape(s) }.join("|")})"
-
-      Rake::Task['parallel:spec'].invoke(num_processes, regex)
+      Rake::Task['parallel:spec'].invoke(num_processes, 'spec/integration')
     end
   end
 

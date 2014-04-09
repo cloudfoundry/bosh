@@ -191,5 +191,11 @@ func init() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(action).To(Equal(NewCompilePackage(compiler)))
 		})
+
+		It("run_errand", func() {
+			action, err := factory.Create("run_errand")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).To(Equal(NewRunErrand(specService, "/var/vcap/jobs", platform.GetRunner())))
+		})
 	})
 }

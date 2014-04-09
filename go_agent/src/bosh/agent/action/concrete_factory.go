@@ -57,6 +57,7 @@ func NewFactory(
 			"stop":       NewStop(jobSupervisor),
 			"drain":      NewDrain(notifier, specService, drainScriptProvider, jobSupervisor),
 			"get_state":  NewGetState(settings, specService, jobSupervisor, vitalsService, ntpService),
+			"run_errand": NewRunErrand(specService, dirProvider.JobsDir(), platform.GetRunner()),
 
 			// Compilation
 			"compile_package":    NewCompilePackage(compiler),

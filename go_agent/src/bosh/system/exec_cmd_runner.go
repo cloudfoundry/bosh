@@ -53,7 +53,6 @@ func (run execCmdRunner) CommandExists(cmdName string) bool {
 }
 
 func (run execCmdRunner) runCmd(cmd *exec.Cmd) (string, string, int, error) {
-	exitStatus := -1
 	cmdString := strings.Join(cmd.Args, " ")
 
 	run.logger.Debug("Cmd Runner", "Running command: %s", cmdString)
@@ -65,14 +64,14 @@ func (run execCmdRunner) runCmd(cmd *exec.Cmd) (string, string, int, error) {
 
 	err := cmd.Start()
 	if err != nil {
-		return "", "", exitStatus, bosherr.WrapError(err, "Starting command %s", cmdString)
+		return "", "", -1, bosherr.WrapError(err, "Starting command %s", cmdString)
 	}
 
 	err = cmd.Wait()
 	stdout := string(stdoutWriter.Bytes())
 	stderr := string(stderrWriter.Bytes())
 
-	exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+	exitStatus := cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 
 	run.logger.Debug("Cmd Runner", "Stdout: %s", stdout)
 	run.logger.Debug("Cmd Runner", "Stderr: %s", stderr)
