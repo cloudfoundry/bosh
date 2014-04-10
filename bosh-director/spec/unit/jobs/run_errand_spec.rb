@@ -52,7 +52,15 @@ module Bosh::Director
               before { allow(job).to receive(:resource_pool).with(no_args).and_return(resource_pool) }
               let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
 
-              it 'runs an errand and returns short result description' do
+              it 'runs an errand with deployment lock and returns short result description' do
+                called_after_block_check = double(:called_in_block_check, call: nil)
+
+                expect(subject).to receive(:with_deployment_lock) do |deployment, &blk|
+                  result = blk.call
+                  called_after_block_check.call
+                  result
+                end
+
                 deployment_preparer = instance_double('Bosh::Director::Errand::DeploymentPreparer')
                 expect(Errand::DeploymentPreparer).to receive(:new).
                   with(deployment, job, event_log, subject).
@@ -92,6 +100,8 @@ module Bosh::Director
 
                 expect(job_manager).to receive(:delete_instances).with(no_args).ordered
                 expect(rp_manager).to receive(:refill).with(no_args).ordered
+
+                expect(called_after_block_check).to receive(:call).ordered
 
                 expect(subject.perform).to eq('fake-result-short-description')
               end

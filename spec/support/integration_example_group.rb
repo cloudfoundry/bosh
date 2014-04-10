@@ -60,24 +60,28 @@ module IntegrationExampleGroup
   end
 
   def run_bosh(cmd, options = {})
-    failure_expected = options.fetch(:failure_expected, false)
     work_dir = options.fetch(:work_dir, BOSH_WORK_DIR)
 
     Dir.chdir(work_dir) do
-      logger.info("Running ... bosh -n #{cmd}")
-      command   = "bosh -n -c #{BOSH_CONFIG} #{cmd}"
-      output    = `#{command} 2>&1`
-      exit_code = $?.exitstatus
-
-      if exit_code != 0 && !failure_expected
-        if output =~ /bosh (task \d+ --debug)/
-          logger.info(run_bosh($1, options.merge(failure_expected: true))) rescue nil
-        end
-        raise "ERROR: #{command} failed with #{output}"
-      end
-
-      options.fetch(:return_exit_code, false) ? [output, exit_code] : output
+      run_bosh_thread_safe(cmd, options)
     end
+  end
+
+  def run_bosh_thread_safe(cmd, options = {})
+    logger.info("Running ... bosh -n #{cmd}")
+    command   = "bosh -n -c #{BOSH_CONFIG} #{cmd}"
+    output    = `#{command} 2>&1`
+    exit_code = $?.exitstatus
+
+    failure_expected = options.fetch(:failure_expected, false)
+    if exit_code != 0 && !failure_expected
+      if output =~ /bosh (task \d+ --debug)/
+        logger.info(run_bosh_thread_safe($1, options.merge(failure_expected: true))) rescue nil
+      end
+      raise "ERROR: #{command} failed with #{output}"
+    end
+
+    options.fetch(:return_exit_code, false) ? [output, exit_code] : output
   end
 
   def yaml_file(name, object)

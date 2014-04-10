@@ -6,6 +6,8 @@ echo -n "<%= properties.errand1.stdout %>"
 ./packages/errand1/file.sh
 <% end %>
 
+sleep <%= properties.errand1.sleep_duration_in_seconds %>
+
 echo -n "<%= properties.errand1.stderr %>" 1>&2
 
 exit <%= properties.errand1.exit_code %>

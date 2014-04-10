@@ -2,6 +2,8 @@ require 'psych'
 
 module Bosh::Director
   class Jobs::RunErrand < Jobs::BaseJob
+    include LockHelper
+
     @queue = :normal
 
     def self.job_type
@@ -48,22 +50,26 @@ module Bosh::Director
     private
 
     def with_updated_instances(deployment, job, &blk)
-      logger.info('Starting to prepare for deployment')
-      prepare_deployment(deployment, job)
+      result = nil
 
-      logger.info('Starting to update resource pool')
-      rp_manager = update_resource_pool(job)
+      with_deployment_lock(deployment) do
+        logger.info('Starting to prepare for deployment')
+        prepare_deployment(deployment, job)
 
-      logger.info('Starting to update job instances')
-      job_manager = update_instances(deployment, job)
+        logger.info('Starting to update resource pool')
+        rp_manager = update_resource_pool(job)
 
-      result = blk.call
+        logger.info('Starting to update job instances')
+        job_manager = update_instances(deployment, job)
 
-      logger.info('Starting to delete job instances')
-      job_manager.delete_instances
+        result = blk.call
 
-      logger.info('Starting to refill resource pool')
-      rp_manager.refill
+        logger.info('Starting to delete job instances')
+        job_manager.delete_instances
+
+        logger.info('Starting to refill resource pool')
+        rp_manager.refill
+      end
 
       result
     end

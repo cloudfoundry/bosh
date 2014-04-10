@@ -1,6 +1,37 @@
 require 'spec_helper'
 
 describe 'cli: errand', type: :integration do
+  context 'while errand is running' do
+    with_reset_sandbox_before_each
+
+    before do
+      manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
+      manifest_hash['properties'] = {
+        'errand1' => {
+          'sleep_duration_in_seconds' => 60,
+        },
+      }
+      deploy_simple(manifest_hash: manifest_hash)
+    end
+
+    it 'creates a deployment lock' do
+      # The sandbox cleanup will stop the process
+      # Later we can use cancel errand feature
+      Thread.new { run_bosh_thread_safe('run errand fake-errand-name') }
+
+      output = ''
+
+      10.times do
+        # bosh locks returns exit code 1 if there are no locks
+        output, exit_code = run_bosh('locks', failure_expected: true, return_exit_code: true)
+        break if exit_code.zero?
+        sleep(0.5)
+      end
+
+      expect(output).to match(/\s*\|\s*deployment\s*\|\s*errand\s*\|/)
+    end
+  end
+
   context 'when errand is deployed and run multiple times in a deployment' do
     with_reset_sandbox_before_all
 

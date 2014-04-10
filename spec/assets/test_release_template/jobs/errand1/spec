@@ -23,3 +23,7 @@ properties:
   errand1.exit_code:
     description: 'Exit code to return from the errand script'
     default: 0
+
+  errand1.sleep_duration_in_seconds:
+    description: 'Number of seconds errand script is going to sleep'
+    default: 0
