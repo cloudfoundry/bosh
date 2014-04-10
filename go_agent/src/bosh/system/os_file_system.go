@@ -1,15 +1,16 @@
 package system
 
 import (
-	bosherr "bosh/errors"
-	boshlog "bosh/logger"
 	"bytes"
 	"io"
 	"io/ioutil"
 	"os"
-	osuser "os/user"
 	"path/filepath"
 	"strconv"
+
+	bosherr "bosh/errors"
+	boshlog "bosh/logger"
+	osuser "os/user"
 )
 
 type osFileSystem struct {

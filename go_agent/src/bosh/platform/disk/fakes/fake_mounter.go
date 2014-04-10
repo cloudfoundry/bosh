@@ -4,6 +4,7 @@ type FakeMounter struct {
 	MountPartitionPaths []string
 	MountMountPoints    []string
 	MountMountOptions   [][]string
+	MountErr            error
 
 	RemountAsReadonlyPath string
 
@@ -16,15 +17,18 @@ type FakeMounter struct {
 	UnmountPartitionPath string
 	UnmountDidUnmount    bool
 
+	IsMountPointResult bool
+	IsMountPointErr    error
+
 	IsMountedDevicePathOrMountPoint string
 	IsMountedResult                 bool
 }
 
-func (m *FakeMounter) Mount(partitionPath, mountPoint string, mountOptions ...string) (err error) {
+func (m *FakeMounter) Mount(partitionPath, mountPoint string, mountOptions ...string) error {
 	m.MountPartitionPaths = append(m.MountPartitionPaths, partitionPath)
 	m.MountMountPoints = append(m.MountMountPoints, mountPoint)
 	m.MountMountOptions = append(m.MountMountOptions, mountOptions)
-	return
+	return m.MountErr
 }
 
 func (m *FakeMounter) RemountAsReadonly(mountPoint string) (err error) {
@@ -51,7 +55,7 @@ func (m *FakeMounter) Unmount(partitionPath string) (didUnmount bool, err error)
 }
 
 func (m *FakeMounter) IsMountPoint(path string) (result bool, err error) {
-	return
+	return m.IsMountPointResult, m.IsMountPointErr
 }
 
 func (m *FakeMounter) IsMounted(devicePathOrMountPoint string) (result bool, err error) {
