@@ -119,7 +119,7 @@ describe 'Ubuntu OS image' do
       end
     end
 
-    describe file('/sbin/rescan-scsi-bus.sh') do
+    describe file('/sbin/rescan-scsi-bus') do
       it { should be_file }
       it { should be_executable }
     end

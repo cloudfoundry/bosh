@@ -39,6 +39,7 @@ module Bosh::Stemcell
         :bosh_sysstat,
         :bosh_sysctl,
         :system_kernel,
+        :system_rescan_scsi_bus,
       ]
     }
 
