@@ -32,7 +32,7 @@ module Bosh::Director
       unless job.can_run_as_errand?
         raise RunErrandError,
               "Job `#{job.name}' is not an errand. To mark a job as an errand " +
-              "set its lifecycle to 'errand' in the deployment manifest."
+                "set its lifecycle to 'errand' in the deployment manifest."
       end
 
       if job.instances.empty?
@@ -43,35 +43,51 @@ module Bosh::Director
 
       with_updated_instances(deployment, job) do
         logger.info('Starting to run errand')
-        runner.run
+
+        result = runner.run do
+          begin
+            task_checkpoint
+          rescue TaskCancelled => e
+            begin
+              runner.cancel
+            rescue RpcRemoteException => re
+              if re.message =~ /unknown message/
+                logger.info("Agent could not respond to can;cel errand: #{re}")
+              else
+                raise re
+              end
+            end
+            raise e
+          end
+        end
+
+        result
       end
     end
 
     private
 
     def with_updated_instances(deployment, job, &blk)
-      result = nil
-
       with_deployment_lock(deployment) do
-        logger.info('Starting to prepare for deployment')
-        prepare_deployment(deployment, job)
+        begin
+          logger.info('Starting to prepare for deployment')
+          prepare_deployment(deployment, job)
 
-        logger.info('Starting to update resource pool')
-        rp_manager = update_resource_pool(job)
+          logger.info('Starting to update resource pool')
+          rp_manager(job).update
 
-        logger.info('Starting to update job instances')
-        job_manager = update_instances(deployment, job)
+          logger.info('Starting to update job instances')
+          job_manager(deployment, job).update_instances
 
-        result = blk.call
+          blk.call
+        ensure
+          logger.info('Starting to delete job instances')
+          job_manager(deployment, job).delete_instances
 
-        logger.info('Starting to delete job instances')
-        job_manager.delete_instances
-
-        logger.info('Starting to refill resource pool')
-        rp_manager.refill
+          logger.info('Starting to refill resource pool')
+          rp_manager(job).refill
+        end
       end
-
-      result
     end
 
     def prepare_deployment(deployment, job)
@@ -82,20 +98,13 @@ module Bosh::Director
       deployment_preparer.prepare_job
     end
 
-    def update_resource_pool(job)
+    def rp_manager(job)
       rp_updaters = [ResourcePoolUpdater.new(job.resource_pool)]
-      rp_manager = DeploymentPlan::ResourcePools.new(event_log, rp_updaters)
-
-      rp_manager.update
-      rp_manager
+      DeploymentPlan::ResourcePools.new(event_log, rp_updaters)
     end
 
-    def update_instances(deployment, job)
-      job_manager = Errand::JobManager.new(
-        deployment, job, @blobstore, event_log)
-
-      job_manager.update_instances
-      job_manager
+    def job_manager(deployment, job)
+      Errand::JobManager.new(deployment, job, @blobstore, event_log)
     end
   end
 end

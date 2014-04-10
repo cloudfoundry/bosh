@@ -49,7 +49,7 @@ module Bosh::Director
 
     # Runs errand on job instances
     # @return [String] short description of the errand result
-    def run
+    def run(&blk)
       instance = @job.instances.first
       unless instance
         raise DirectorError, 'Must have at least one job instance to run an errand'
@@ -60,7 +60,7 @@ module Bosh::Director
       event_log_stage = @event_log.begin_stage('Running errand', 1)
       event_log_stage.advance_and_track("#{@job.name}/#{instance.index}") do
         agent = @instance_manager.agent_client_for(instance.model)
-        agent_task_result = agent.run_errand
+        agent_task_result = agent.run_errand(&blk)
       end
 
       errand_result = ErrandResult.from_agent_task_result(agent_task_result)
@@ -74,6 +74,9 @@ module Bosh::Director
       else
         "#{title_prefix} with error #{exit_code_suffix}"
       end
+    end
+
+    def cancel
     end
   end
 end

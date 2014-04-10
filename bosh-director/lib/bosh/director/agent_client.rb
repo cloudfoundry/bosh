@@ -96,8 +96,8 @@ module Bosh::Director
       send_long_running_message(:stop, *args)
     end
 
-    def run_errand(*args)
-      send_long_running_message(:run_errand, *args)
+    def run_errand(*args, &blk)
+      send_long_running_message(:run_errand, *args, &blk)
     end
 
     def configure_networks(*args)
@@ -235,9 +235,10 @@ module Bosh::Director
       end
     end
 
-    def send_long_running_message(method_name, *args)
+    def send_long_running_message(method_name, *args, &blk)
       task = AgentMessageConverter.convert_old_message_to_new(send_message(method_name, *args))
       while task['state'] == 'running'
+        blk.call if block_given?
         sleep(DEFAULT_POLL_INTERVAL)
         task = AgentMessageConverter.convert_old_message_to_new(get_task(task['agent_task_id']))
       end
