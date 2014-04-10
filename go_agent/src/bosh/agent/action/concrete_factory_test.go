@@ -104,107 +104,98 @@ func init() {
 		It("apply", func() {
 			action, err := factory.Create("apply")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(action).ToNot(BeNil())
-			Expect(NewApply(applier, specService)).To(Equal(action))
+			Expect(action).To(Equal(NewApply(applier, specService)))
 		})
 
 		It("drain", func() {
 			action, err := factory.Create("drain")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(action).ToNot(BeNil())
-			Expect(NewDrain(notifier, specService, drainScriptProvider, jobSupervisor)).To(Equal(action))
+			Expect(action).To(Equal(NewDrain(notifier, specService, drainScriptProvider, jobSupervisor)))
 		})
 
 		It("fetch_logs", func() {
 			action, err := factory.Create("fetch_logs")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(action).ToNot(BeNil())
-			Expect(NewLogs(platform.GetCompressor(), platform.GetCopier(), blobstore, platform.GetDirProvider())).To(Equal(action))
+			Expect(action).To(Equal(NewLogs(platform.GetCompressor(), platform.GetCopier(), blobstore, platform.GetDirProvider())))
 		})
 
 		It("get_task", func() {
 			action, err := factory.Create("get_task")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(action).ToNot(BeNil())
-			Expect(NewGetTask(taskService)).To(Equal(action))
+			Expect(action).To(Equal(NewGetTask(taskService)))
 		})
 
 		It("get_state", func() {
 			ntpService := boshntp.NewConcreteService(platform.GetFs(), platform.GetDirProvider())
 			action, err := factory.Create("get_state")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(action).ToNot(BeNil())
-			Expect(NewGetState(settings, specService, jobSupervisor, platform.GetVitalsService(), ntpService)).To(Equal(action))
+			Expect(action).To(Equal(NewGetState(settings, specService, jobSupervisor, platform.GetVitalsService(), ntpService)))
 		})
 
 		It("list_disk", func() {
 			action, err := factory.Create("list_disk")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(action).ToNot(BeNil())
-			Expect(NewListDisk(settings, platform, logger)).To(Equal(action))
+			Expect(action).To(Equal(NewListDisk(settings, platform, logger)))
 		})
 
 		It("migrate_disk", func() {
 			action, err := factory.Create("migrate_disk")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(action).ToNot(BeNil())
-			Expect(NewMigrateDisk(platform, platform.GetDirProvider())).To(Equal(action))
+			Expect(action).To(Equal(NewMigrateDisk(platform, platform.GetDirProvider())))
 		})
 
 		It("mount_disk", func() {
 			action, err := factory.Create("mount_disk")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(action).ToNot(BeNil())
-			Expect(NewMountDisk(settings, infrastructure, platform, platform.GetDirProvider())).To(Equal(action))
+			Expect(action).To(Equal(NewMountDisk(settings, infrastructure, platform, platform.GetDirProvider())))
 		})
 
 		It("prepare_network_change", func() {
 			action, err := factory.Create("prepare_network_change")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(action).ToNot(BeNil())
-			Expect(NewPrepareNetworkChange(platform.GetFs(), settings)).To(Equal(action))
+			Expect(action).To(Equal(NewPrepareNetworkChange(platform.GetFs(), settings)))
 		})
 
 		It("prepare_configure_networks", func() {
 			action, err := factory.Create("prepare_configure_networks")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(action).ToNot(BeNil())
-			Expect(NewPrepareConfigureNetworks(platform.GetFs(), settings)).To(Equal(action))
+			Expect(action).To(Equal(NewPrepareConfigureNetworks(platform.GetFs(), settings)))
 		})
 
 		It("configure_networks", func() {
 			action, err := factory.Create("configure_networks")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(action).ToNot(BeNil())
-			Expect(NewConfigureNetworks()).To(Equal(action))
+			Expect(action).To(Equal(NewConfigureNetworks()))
 		})
 
 		It("ssh", func() {
 			action, err := factory.Create("ssh")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(action).ToNot(BeNil())
-			Expect(NewSsh(settings, platform, platform.GetDirProvider())).To(Equal(action))
+			Expect(action).To(Equal(NewSsh(settings, platform, platform.GetDirProvider())))
 		})
 
 		It("start", func() {
 			action, err := factory.Create("start")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(action).ToNot(BeNil())
-			Expect(NewStart(jobSupervisor)).To(Equal(action))
+			Expect(action).To(Equal(NewStart(jobSupervisor)))
 		})
 
 		It("unmount_disk", func() {
 			action, err := factory.Create("unmount_disk")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(action).ToNot(BeNil())
-			Expect(NewUnmountDisk(settings, platform)).To(Equal(action))
+			Expect(action).To(Equal(NewUnmountDisk(settings, platform)))
 		})
 
 		It("compile_package", func() {
 			action, err := factory.Create("compile_package")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(action).ToNot(BeNil())
-			Expect(NewCompilePackage(compiler)).To(Equal(action))
+			Expect(action).To(Equal(NewCompilePackage(compiler)))
+		})
+
+		It("run_errand", func() {
+			action, err := factory.Create("run_errand")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).To(Equal(NewRunErrand(specService, "/var/vcap/jobs", platform.GetRunner())))
 		})
 	})
 }

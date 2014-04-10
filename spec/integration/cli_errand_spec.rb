@@ -177,7 +177,9 @@ describe 'cli: errand', type: :integration do
     end
 
     it 'returns 1 as exit code and mentions absence of bin/run' do
-      expect(@output).to include('Error 450001: Job template foobar does not have executable bin/run')
+      ruby_msg = 'Job template foobar does not have executable bin/run'
+      go_msg = '.*Running errand script:.*jobs/foobar/bin/run: no such file or directory'
+      expect(@output).to match(%r{Error 450001: (#{ruby_msg}|#{go_msg})})
       expect(@output).to include('Errand `foobar\' did not complete')
       expect(@exit_code).to eq(1)
     end
@@ -203,11 +205,10 @@ describe 'cli: errand', type: :integration do
   end
 
   context 'when deploying with insufficient resources for all errands' do
-    with_reset_sandbox_before_each
+    with_reset_sandbox_before_all
 
-    it 'returns 1 as exit code and mentions insufficient resources' do
+    before(:all) do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
-
       manifest_hash['resource_pools'].first['size'] += 1
 
       # Errand with sufficient resources
@@ -237,9 +238,12 @@ describe 'cli: errand', type: :integration do
       upload_stemcell
       set_deployment(manifest_hash: manifest_hash)
 
-      output, exit_code = deploy(failure_expected: true, return_exit_code: true)
-      expect(output).to include("Resource pool `a' is not big enough: 5 VMs needed, capacity is 4")
-      expect(exit_code).to eq(1)
+      @output, @exit_code = deploy(failure_expected: true, return_exit_code: true)
+    end
+
+    it 'returns 1 as exit code and mentions insufficient resources' do
+      expect(@output).to include("Resource pool `a' is not big enough: 5 VMs needed, capacity is 4")
+      expect(@exit_code).to eq(1)
     end
   end
 

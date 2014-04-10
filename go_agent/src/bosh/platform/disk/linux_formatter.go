@@ -25,16 +25,16 @@ func (f linuxFormatter) Format(partitionPath string, fsType FileSystemType) (err
 
 	switch fsType {
 	case FileSystemSwap:
-		_, _, err = f.runner.RunCommand("mkswap", partitionPath)
+		_, _, _, err = f.runner.RunCommand("mkswap", partitionPath)
 		if err != nil {
 			err = bosherr.WrapError(err, "Shelling out to mkswap")
 		}
 
 	case FileSystemExt4:
 		if f.fs.FileExists("/sys/fs/ext4/features/lazy_itable_init") {
-			_, _, err = f.runner.RunCommand("mke2fs", "-t", "ext4", "-j", "-E", "lazy_itable_init=1", partitionPath)
+			_, _, _, err = f.runner.RunCommand("mke2fs", "-t", "ext4", "-j", "-E", "lazy_itable_init=1", partitionPath)
 		} else {
-			_, _, err = f.runner.RunCommand("mke2fs", "-t", "ext4", "-j", partitionPath)
+			_, _, _, err = f.runner.RunCommand("mke2fs", "-t", "ext4", "-j", partitionPath)
 		}
 		if err != nil {
 			err = bosherr.WrapError(err, "Shelling out to mke2fs")
@@ -44,7 +44,7 @@ func (f linuxFormatter) Format(partitionPath string, fsType FileSystemType) (err
 }
 
 func (f linuxFormatter) partitionHasGivenType(partitionPath string, fsType FileSystemType) bool {
-	stdout, _, err := f.runner.RunCommand("blkid", "-p", partitionPath)
+	stdout, _, _, err := f.runner.RunCommand("blkid", "-p", partitionPath)
 	if err != nil {
 		return false
 	}

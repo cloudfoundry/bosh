@@ -100,7 +100,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (strin
 			WorkingDir: compilePath,
 		}
 
-		_, _, err = c.runner.RunComplexCommand(command)
+		_, _, _, err = c.runner.RunComplexCommand(command)
 		if err != nil {
 			return "", "", bosherr.WrapError(err, "Running packaging script")
 		}

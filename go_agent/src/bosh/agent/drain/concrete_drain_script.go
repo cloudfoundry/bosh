@@ -48,7 +48,7 @@ func (script ConcreteDrainScript) Run(params DrainScriptParams) (int, error) {
 	command.Args = append(command.Args, jobChange, hashChange)
 	command.Args = append(command.Args, updatedPkgs...)
 
-	stdout, _, err := script.runner.RunComplexCommand(command)
+	stdout, _, _, err := script.runner.RunComplexCommand(command)
 	if err != nil {
 		return 0, bosherr.WrapError(err, "Running drain script")
 	}

@@ -43,26 +43,33 @@ func NewFactory(
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
-			"ping":      NewPing(),
-			"get_task":  NewGetTask(taskService),
-			"get_state": NewGetState(settings, specService, jobSupervisor, vitalsService, ntpService),
+			// Task management
+			"ping":     NewPing(),
+			"get_task": NewGetTask(taskService),
 
+			// VM admin
 			"ssh":        NewSsh(settings, platform, dirProvider),
-			"drain":      NewDrain(notifier, specService, drainScriptProvider, jobSupervisor),
 			"fetch_logs": NewLogs(compressor, copier, blobstore, dirProvider),
 
-			"apply": NewApply(applier, specService),
-			"start": NewStart(jobSupervisor),
-			"stop":  NewStop(jobSupervisor),
+			// Job management
+			"apply":      NewApply(applier, specService),
+			"start":      NewStart(jobSupervisor),
+			"stop":       NewStop(jobSupervisor),
+			"drain":      NewDrain(notifier, specService, drainScriptProvider, jobSupervisor),
+			"get_state":  NewGetState(settings, specService, jobSupervisor, vitalsService, ntpService),
+			"run_errand": NewRunErrand(specService, dirProvider.JobsDir(), platform.GetRunner()),
 
+			// Compilation
 			"compile_package":    NewCompilePackage(compiler),
 			"release_apply_spec": NewReleaseApplySpec(platform),
 
+			// Disk management
 			"list_disk":    NewListDisk(settings, platform, logger),
 			"migrate_disk": NewMigrateDisk(platform, dirProvider),
 			"mount_disk":   NewMountDisk(settings, infrastructure, platform, dirProvider),
 			"unmount_disk": NewUnmountDisk(settings, platform),
 
+			// Networking
 			"prepare_network_change":     NewPrepareNetworkChange(platform.GetFs(), settings),
 			"prepare_configure_networks": NewPrepareConfigureNetworks(platform.GetFs(), settings),
 			"configure_networks":         NewConfigureNetworks(),
