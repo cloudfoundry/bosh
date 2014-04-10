@@ -409,37 +409,89 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) (err error) {
 }
 
 func (p linux) SetupTmpDir() error {
+	systemTmpDir := "/tmp"
+	boshTmpDir := p.dirProvider.TmpDir()
+	boshRootTmpPath := filepath.Join(p.dirProvider.DataDir(), "root_tmp")
+
 	// 0755 to make sure that vcap user can use new temp dir
-	err := p.fs.MkdirAll(p.dirProvider.TmpDir(), os.FileMode(0755))
+	err := p.fs.MkdirAll(boshTmpDir, os.FileMode(0755))
 	if err != nil {
 		return bosherr.WrapError(err, "Creating temp dir")
 	}
 
-	err = os.Setenv("TMPDIR", p.dirProvider.TmpDir())
+	err = os.Setenv("TMPDIR", boshTmpDir)
 	if err != nil {
 		return bosherr.WrapError(err, "Setting TMPDIR")
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", "/tmp")
+	err = p.changeTmpDirPermissions(systemTmpDir)
 	if err != nil {
-		return bosherr.WrapError(err, "chown /tmp")
+		return err
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0770", "/tmp")
+	// /var/tmp is used for preserving temporary files between system reboots
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0700", "/var/tmp")
 	if err != nil {
-		return bosherr.WrapError(err, "chmod /tmp")
+		return bosherr.WrapError(err, "chmod /var/tmp")
+	}
+
+	systemTmpDirIsMounted, err := p.IsMountPoint(systemTmpDir)
+	if err != nil {
+		return bosherr.WrapError(err, "Checking for mount point %s", systemTmpDir)
+	}
+
+	if !systemTmpDirIsMounted {
+		// If it's not mounted on /tmp, blow it away
+		_, _, _, err = p.cmdRunner.RunCommand("truncate", "-s", "128M", boshRootTmpPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Truncating root tmp dir")
+		}
+
+		_, _, _, err = p.cmdRunner.RunCommand("chmod", "0700", boshRootTmpPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Chmoding root tmp dir")
+		}
+
+		_, _, _, err = p.cmdRunner.RunCommand("mke2fs", "-t", "ext4", "-m", "1", "-F", boshRootTmpPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Creating root tmp dir filesystem")
+		}
+
+		err = p.diskManager.GetMounter().Mount(boshRootTmpPath, systemTmpDir, "-t", "ext4", "-o", "loop")
+		if err != nil {
+			return bosherr.WrapError(err, "Mounting root tmp dir over /tmp")
+		}
+
+		// Change permissions for new mount point
+		err = p.changeTmpDirPermissions(systemTmpDir)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (p linux) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {
+func (p linux) changeTmpDirPermissions(path string) error {
+	_, _, _, err := p.cmdRunner.RunCommand("chown", "root:vcap", path)
+	if err != nil {
+		return bosherr.WrapError(err, "chown %s", path)
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0770", path)
+	if err != nil {
+		return bosherr.WrapError(err, "chmod %s", path)
+	}
+
+	return nil
+}
+
+func (p linux) UnmountPersistentDisk(devicePath string) (bool, error) {
 	p.logger.Debug("platform", "Unmounting persistent disk %v", devicePath)
 
 	realPath, err := p.devicePathResolver.GetRealDevicePath(devicePath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting real device path")
-		return
+		return false, bosherr.WrapError(err, "Getting real device path")
 	}
 
 	return p.diskManager.GetMounter().Unmount(realPath + "1")
@@ -453,7 +505,7 @@ func (p linux) NormalizeDiskPath(devicePath string) (realPath string, found bool
 	return
 }
 
-func (p linux) IsMountPoint(path string) (result bool, err error) {
+func (p linux) IsMountPoint(path string) (bool, error) {
 	return p.diskManager.GetMounter().IsMountPoint(path)
 }
 
