@@ -78,17 +78,21 @@ describe Bat::Stemcell do
 
       # Ruby agent does not support prepare_configure_networks/configure_networks
       'bosh-vsphere-esxi-ubuntu' => false,
+      'bosh-vcloud-esxi-ubuntu' => false,
 
       # Centos currently does not include open-vm-tools
       'bosh-vsphere-esxi-centos' => false,
+      'bosh-vcloud-esxi-centos' => false,
 
       # Go agent
       'bosh-custom-xen-ubuntu-go_agent' => true,
       'bosh-custom-xen-centos-go_agent' => true,
       'bosh-vsphere-esxi-ubuntu-go_agent' => true,
+      'bosh-vcloud-esxi-ubuntu-go_agent' => true,
 
       # Centos currently does not include open-vm-tools
       'bosh-vsphere-esxi-centos-go_agent' => false,
+      'bosh-vcloud-esxi-centos-go_agent' => false,
 
     }.each do |stemcell_name, expected|
       it "returns #{expected} for #{stemcell_name}" do

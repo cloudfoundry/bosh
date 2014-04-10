@@ -35,7 +35,7 @@ module Bat
     end
 
     def supports_network_reconfiguration?
-      !(name =~ /vsphere/ && (name =~ /centos/ || name !~ /go_agent/))
+      !((name =~ /vsphere/ || name =~ /vcloud/) && (name =~ /centos/ || name !~ /go_agent/))
     end
 
     def ==(other)
