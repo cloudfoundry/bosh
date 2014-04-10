@@ -8,25 +8,33 @@ module IntegrationExampleGroup
 
   def director
     @director ||= Bosh::Spec::Director.new(
-      self,
+      bosh_runner,
       current_sandbox.agent_tmp_path,
       current_sandbox.nats_port,
       logger,
     )
   end
 
+  def bosh_runner
+    @bosh_runner ||= Bosh::Spec::BoshRunner.new(
+      BOSH_WORK_DIR,
+      BOSH_CONFIG,
+      logger
+    )
+  end
+
   def target_and_login
-    run_bosh("target http://localhost:#{current_sandbox.director_port}")
-    run_bosh('login admin admin')
+    bosh_runner.run("target http://localhost:#{current_sandbox.director_port}")
+    bosh_runner.run('login admin admin')
   end
 
   def upload_release
-    run_bosh('create release', work_dir: TEST_RELEASE_DIR)
-    run_bosh('upload release', work_dir: TEST_RELEASE_DIR)
+    bosh_runner.run('create release', work_dir: TEST_RELEASE_DIR)
+    bosh_runner.run('upload release', work_dir: TEST_RELEASE_DIR)
   end
 
   def upload_stemcell
-    run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
   end
 
   def set_deployment(options)
@@ -35,12 +43,12 @@ module IntegrationExampleGroup
     # Hold reference to the tempfile so that it stays around
     # until the end of tests or next deploy.
     @deployment_manifest = yaml_file('simple', manifest_hash)
-    run_bosh("deployment #{@deployment_manifest.path}")
+    bosh_runner.run("deployment #{@deployment_manifest.path}")
   end
 
   def deploy(options)
     no_track = options.fetch(:no_track, false)
-    run_bosh("#{no_track ? '--no-track ' : ''}deploy", options)
+    bosh_runner.run("#{no_track ? '--no-track ' : ''}deploy", options)
   end
 
   def deploy_simple(options={})
@@ -57,31 +65,6 @@ module IntegrationExampleGroup
     expect($?).to be_success
 
     output
-  end
-
-  def run_bosh(cmd, options = {})
-    work_dir = options.fetch(:work_dir, BOSH_WORK_DIR)
-
-    Dir.chdir(work_dir) do
-      run_bosh_thread_safe(cmd, options)
-    end
-  end
-
-  def run_bosh_thread_safe(cmd, options = {})
-    logger.info("Running ... bosh -n #{cmd}")
-    command   = "bosh -n -c #{BOSH_CONFIG} #{cmd}"
-    output    = `#{command} 2>&1`
-    exit_code = $?.exitstatus
-
-    failure_expected = options.fetch(:failure_expected, false)
-    if exit_code != 0 && !failure_expected
-      if output =~ /bosh (task \d+ --debug)/
-        logger.info(run_bosh_thread_safe($1, options.merge(failure_expected: true))) rescue nil
-      end
-      raise "ERROR: #{command} failed with #{output}"
-    end
-
-    options.fetch(:return_exit_code, false) ? [output, exit_code] : output
   end
 
   def yaml_file(name, object)
@@ -105,7 +88,7 @@ module IntegrationExampleGroup
 
   # forcefully suppress raising on error...caller beware
   def expect_output(cmd, expected_output)
-    expect(format_output(run_bosh(cmd, :failure_expected => true))).
+    expect(format_output(bosh_runner.run(cmd, :failure_expected => true))).
       to eq(format_output(expected_output))
   end
 end

@@ -38,7 +38,7 @@ describe 'deployment integrations', type: :integration do
     deploy_result = deploy_simple(no_track: true)
     task_id = get_task_id(deploy_result, 'running')
 
-    cancel_output = run_bosh("cancel task #{task_id}")
+    cancel_output = bosh_runner.run("cancel task #{task_id}")
     expect($?).to be_success
     expect(cancel_output).to match /Task #{task_id} is getting canceled/
 
@@ -90,7 +90,7 @@ describe 'deployment integrations', type: :integration do
   end
 
   def events(task_id)
-    result = run_bosh("task #{task_id} --raw")
+    result = bosh_runner.run("task #{task_id} --raw")
     event_list = []
     result.each_line do |line|
       begin

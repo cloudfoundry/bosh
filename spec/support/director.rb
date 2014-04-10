@@ -48,7 +48,7 @@ module Bosh::Spec
     private
 
     def fetch_bosh_vms_vitals
-      output = @runner.run_bosh('vms --details')
+      output = @runner.run('vms --details')
       table = output.lines.grep(/\|/)
 
       table = table.map { |line| line.split('|').map(&:strip).reject(&:empty?) }

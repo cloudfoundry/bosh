@@ -11,14 +11,7 @@ describe 'cli: locks', type: :integration do
     end
 
     it 'lists a deployment lock' do
-      output = ''
-
-      10.times do
-        # bosh locks returns exit code 1 if there are no locks
-        output, exit_code = run_bosh('locks', failure_expected: true, return_exit_code: true)
-        break if exit_code.zero?
-        sleep(0.5)
-      end
+      output = bosh_runner.run_until_succeeds('locks')
 
       expect(output).to match(/\s*\|\s*deployment\s*\|\s*simple\s*\|/)
     end

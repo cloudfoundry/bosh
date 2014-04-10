@@ -10,10 +10,10 @@ describe 'cli: 2', type: :integration do
     expected_id = Digest::SHA1.hexdigest("STEMCELL\n")
 
     target_and_login
-    out = run_bosh("upload stemcell #{stemcell_filename}")
+    out = bosh_runner.run("upload stemcell #{stemcell_filename}")
     expect(out).to match /Stemcell uploaded and created/
 
-    out = run_bosh('stemcells')
+    out = bosh_runner.run('stemcells')
     expect(out).to match /stemcells total: 1/i
     expect(out).to match /ubuntu-stemcell.+1/
     expect(out).to match regexp(expected_id.to_s)
@@ -29,12 +29,12 @@ describe 'cli: 2', type: :integration do
     expected_id = Digest::SHA1.hexdigest("STEMCELL\n")
 
     target_and_login
-    out = run_bosh("upload stemcell #{stemcell_filename}")
+    out = bosh_runner.run("upload stemcell #{stemcell_filename}")
     expect(out).to match /Stemcell uploaded and created/
 
     stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
     expect(File).to be_exists(stemcell_path)
-    out = run_bosh('delete stemcell ubuntu-stemcell 1')
+    out = bosh_runner.run('delete stemcell ubuntu-stemcell 1')
     expect(out).to match /Deleted stemcell `ubuntu-stemcell\/1'/
     stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
     expect(File).not_to be_exists(stemcell_path)
@@ -45,7 +45,7 @@ describe 'cli: 2', type: :integration do
     Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
 
-      out = run_bosh('create release --final', work_dir: Dir.pwd, failure_expected: true)
+      out = bosh_runner.run('create release --final', work_dir: Dir.pwd, failure_expected: true)
       expect(out).to match(/Can't create final release without blobstore secret/)
     end
   end
@@ -55,11 +55,11 @@ describe 'cli: 2', type: :integration do
     release_filename = spec_asset('valid_release.tgz')
 
     target_and_login
-    out = run_bosh("upload release #{release_filename}")
+    out = bosh_runner.run("upload release #{release_filename}")
 
     expect(out).to match /release uploaded/i
 
-    out = run_bosh('releases')
+    out = bosh_runner.run('releases')
     expect(out).to match /releases total: 1/i
     expect(out).to match /appcloud.+0\.1/
   end
@@ -68,8 +68,8 @@ describe 'cli: 2', type: :integration do
     release_filename = spec_asset('valid_release.tgz')
 
     target_and_login
-    run_bosh("upload release #{release_filename}")
-    out = run_bosh("upload release #{release_filename}", failure_expected: true)
+    bosh_runner.run("upload release #{release_filename}")
+    out = bosh_runner.run("upload release #{release_filename}", failure_expected: true)
 
     expect(out).to match 'This release version has already been uploaded'
   end
@@ -78,26 +78,26 @@ describe 'cli: 2', type: :integration do
     it 'fails to delete release in use but deletes a different release' do
       target_and_login
 
-      run_bosh('create release', work_dir: TEST_RELEASE_DIR)
-      run_bosh('upload release', work_dir: TEST_RELEASE_DIR)
+      bosh_runner.run('create release', work_dir: TEST_RELEASE_DIR)
+      bosh_runner.run('upload release', work_dir: TEST_RELEASE_DIR)
 
       # change something in TEST_RELEASE_DIR
       FileUtils.touch(File.join(TEST_RELEASE_DIR, 'src', 'bar', 'pretend_something_changed'))
 
-      run_bosh('create release --force', work_dir: TEST_RELEASE_DIR)
-      run_bosh('upload release', work_dir: TEST_RELEASE_DIR)
+      bosh_runner.run('create release --force', work_dir: TEST_RELEASE_DIR)
+      bosh_runner.run('upload release', work_dir: TEST_RELEASE_DIR)
 
-      run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
       deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.simple_manifest)
-      run_bosh("deployment #{deployment_manifest.path}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
 
-      run_bosh('deploy')
+      bosh_runner.run('deploy')
 
-      out = run_bosh('delete release bosh-release', failure_expected: true)
+      out = bosh_runner.run('delete release bosh-release', failure_expected: true)
       expect(out).to match /Error 30007: Release `bosh-release' is still in use/
 
-      out = run_bosh('delete release bosh-release 0.2-dev')
+      out = bosh_runner.run('delete release bosh-release 0.2-dev')
       expect(out).to match %r{Deleted `bosh-release/0.2-dev'}
     end
   end
@@ -112,7 +112,7 @@ describe 'cli: 2', type: :integration do
 
       new_file = File.join('src', 'bar', 'bla')
       FileUtils.touch(new_file)
-      run_bosh('create release --force', work_dir: Dir.pwd)
+      bosh_runner.run('create release --force', work_dir: Dir.pwd)
       FileUtils.rm_rf(new_file)
       expect(File.exists?(release_1)).to be(true)
       release_manifest = Psych.load_file(release_1)
@@ -120,7 +120,7 @@ describe 'cli: 2', type: :integration do
       expect(release_manifest['uncommitted_changes']).to be(true)
 
       target_and_login
-      run_bosh('upload release', work_dir: Dir.pwd)
+      bosh_runner.run('upload release', work_dir: Dir.pwd)
     end
 
     expect_output('releases', <<-OUT)

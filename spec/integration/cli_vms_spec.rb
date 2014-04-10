@@ -8,7 +8,7 @@ describe 'cli: vms', type: :integration do
     manifest_hash['releases'].first['version'] = 'latest'
     deploy_simple(manifest_hash: manifest_hash)
 
-    vms = run_bosh('vms')
+    vms = bosh_runner.run('vms')
     expect(vms).to match /foobar\/0/
     expect(vms).to match /foobar\/1/
     expect(vms).to match /foobar\/2/

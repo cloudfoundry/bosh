@@ -30,7 +30,7 @@ describe 'health_monitor: 1', type: :integration do
     deployment_hash['jobs'][0]['instances'] = 2
     deploy_simple(manifest_hash: deployment_hash)
 
-    run_bosh('vm resurrection foobar 1 off')
+    bosh_runner.run('vm resurrection foobar 1 off')
 
     original_0_vm = director.vm('foobar/0')
     original_1_vm = director.vm('foobar/1')
@@ -61,7 +61,7 @@ describe 'health_monitor: 1', type: :integration do
     director.vm('foobar/0').kill_agent
     director.vm('foobar/1').kill_agent
 
-    _, exit_code = run_bosh('cck --report', failure_expected: true, return_exit_code: true)
+    _, exit_code = bosh_runner.run('cck --report', failure_expected: true, return_exit_code: true)
     expect(exit_code).to eq(1)
 
     # Turn resurrector back on

@@ -17,16 +17,9 @@ describe 'cli: errand', type: :integration do
     it 'creates a deployment lock' do
       # The sandbox cleanup will stop the process
       # Later we can use cancel errand feature
-      Thread.new { run_bosh_thread_safe('run errand fake-errand-name') }
+      Thread.new { bosh_runner.run_thread_safe('run errand fake-errand-name') }
 
-      output = ''
-
-      10.times do
-        # bosh locks returns exit code 1 if there are no locks
-        output, exit_code = run_bosh('locks', failure_expected: true, return_exit_code: true)
-        break if exit_code.zero?
-        sleep(0.5)
-      end
+      output = bosh_runner.run_until_succeeds('locks')
 
       expect(output).to match(/\s*\|\s*deployment\s*\|\s*errand\s*\|/)
     end
@@ -84,12 +77,12 @@ describe 'cli: errand', type: :integration do
     it 'reallocates and then deallocates errand vms for each errand run' do
       expect_to_have_running_job_indices(%w(foobar/0 unknown/unknown unknown/unknown))
 
-      output, exit_code = run_bosh('run errand errand1-name', return_exit_code: true)
+      output, exit_code = bosh_runner.run('run errand errand1-name', return_exit_code: true)
       expect(output).to include('some-errand1-stdout')
       expect(exit_code).to eq(0)
       expect_to_have_running_job_indices(%w(foobar/0 unknown/unknown unknown/unknown))
 
-      output, exit_code = run_bosh('run errand errand2-name', return_exit_code: true)
+      output, exit_code = bosh_runner.run('run errand errand2-name', return_exit_code: true)
       expect(output).to include('some-errand2-stdout')
       expect(exit_code).to eq(0)
       expect_to_have_running_job_indices(%w(foobar/0 unknown/unknown unknown/unknown))
@@ -126,7 +119,7 @@ describe 'cli: errand', type: :integration do
 
       deploy_simple(manifest_hash: manifest_hash)
 
-      @output, @exit_code = run_bosh('run errand errand1-name', return_exit_code: true)
+      @output, @exit_code = bosh_runner.run('run errand errand1-name', return_exit_code: true)
     end
 
     it 'shows bin/run stdout and stderr' do
@@ -173,7 +166,7 @@ describe 'cli: errand', type: :integration do
 
       deploy_simple(manifest_hash: manifest_hash)
 
-      @output, @exit_code = run_bosh('run errand errand1-name', {
+      @output, @exit_code = bosh_runner.run('run errand errand1-name', {
         failure_expected: true,
         return_exit_code: true,
       })
@@ -201,7 +194,7 @@ describe 'cli: errand', type: :integration do
 
       deploy_simple(manifest_hash: manifest_hash)
 
-      @output, @exit_code = run_bosh('run errand foobar', {
+      @output, @exit_code = bosh_runner.run('run errand foobar', {
         failure_expected: true,
         return_exit_code: true,
       })
@@ -222,7 +215,7 @@ describe 'cli: errand', type: :integration do
     before(:all) do
       deploy_simple
 
-      @output, @exit_code = run_bosh('run errand unknown-errand-name', {
+      @output, @exit_code = bosh_runner.run('run errand unknown-errand-name', {
         failure_expected: true,
         return_exit_code: true,
       })
