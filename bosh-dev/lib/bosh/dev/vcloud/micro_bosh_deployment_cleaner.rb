@@ -39,6 +39,7 @@ module Bosh::Dev::VCloud
     def delete_vapp
       vapp = @vdc.find_vapp_by_name(@env['BOSH_VCLOUD_VAPP_NAME'])
       vapp.power_off
+      delete_independent_disks(vapp)
       vapp.delete
       @logger.info("Vapp '#{@env['BOSH_VCLOUD_VAPP_NAME']}' was deleted during clean up.")
     rescue VCloudSdk::ObjectNotFoundError => e
@@ -56,6 +57,15 @@ module Bosh::Dev::VCloud
       catalog = @client.find_catalog_by_name(catalog_name)
       catalog.delete_all_items
       @logger.info("Deleted all items from '#{catalog_name}' catalog during clean up.")
+    end
+
+    def delete_independent_disks(vapp)
+      vapp.vms.each do |vm|
+        vm.independent_disks.each do |disk|
+          vm.detach_disk(disk)
+          disk.delete
+        end
+      end
     end
   end
 end
