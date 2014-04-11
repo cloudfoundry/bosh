@@ -15,9 +15,7 @@ describe 'cli: errand', type: :integration do
     end
 
     it 'creates a deployment lock' do
-      # The sandbox cleanup will stop the process
-      # Later we can use cancel errand feature
-      Thread.new { bosh_runner.run_thread_safe('run errand fake-errand-name') }
+      bosh_runner.run('--no-track run errand fake-errand-name')
 
       output = bosh_runner.run_until_succeeds('locks')
 

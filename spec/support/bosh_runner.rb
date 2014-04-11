@@ -10,27 +10,23 @@ module Bosh::Spec
       work_dir = options.fetch(:work_dir, @bosh_work_dir)
 
       Dir.chdir(work_dir) do
-        run_thread_safe(cmd, options)
-      end
-    end
+        @logger.info("Running ... bosh -n #{cmd}")
+        command   = "bosh -n -c #{@bosh_config} #{cmd}"
+        output    = `#{command} 2>&1`
+        exit_code = $?.exitstatus
 
-    def run_thread_safe(cmd, options = {})
-      @logger.info("Running ... bosh -n #{cmd}")
-      command   = "bosh -n -c #{@bosh_config} #{cmd}"
-      output    = `#{command} 2>&1`
-      exit_code = $?.exitstatus
-
-      failure_expected = options.fetch(:failure_expected, false)
-      if exit_code != 0 && !failure_expected
-        if output =~ /bosh (task \d+ --debug)/
-          @logger.info(
-            run_thread_safe($1, options.merge(failure_expected: true))
-          ) rescue nil
+        failure_expected = options.fetch(:failure_expected, false)
+        if exit_code != 0 && !failure_expected
+          if output =~ /bosh (task \d+ --debug)/
+            @logger.info(
+              run($1, options.merge(failure_expected: true))
+            ) rescue nil
+          end
+          raise "ERROR: #{command} failed with #{output}"
         end
-        raise "ERROR: #{command} failed with #{output}"
-      end
 
-      options.fetch(:return_exit_code, false) ? [output, exit_code] : output
+        options.fetch(:return_exit_code, false) ? [output, exit_code] : output
+      end
     end
 
     def run_until_succeeds(cmd, options = {})
