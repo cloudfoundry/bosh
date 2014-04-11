@@ -236,7 +236,15 @@ module Bosh::Director
     end
 
     def send_long_running_message(method_name, *args, &blk)
-      task = AgentMessageConverter.convert_old_message_to_new(send_message(method_name, *args))
+      task = send_start_long_running_task_message(method_name, *args)
+      track_long_running_task(task, &blk)
+    end
+
+    def send_start_long_running_task_message(method_name, *args)
+      AgentMessageConverter.convert_old_message_to_new(send_message(method_name, *args))
+    end
+
+    def track_long_running_task(task, &blk)
       while task['state'] == 'running'
         blk.call if block_given?
         sleep(DEFAULT_POLL_INTERVAL)
