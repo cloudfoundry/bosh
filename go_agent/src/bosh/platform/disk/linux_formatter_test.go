@@ -12,8 +12,8 @@ func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("linux format when using swap fs", func() {
 
-			fakeRunner := &fakesys.FakeCmdRunner{}
-			fakeFs := &fakesys.FakeFileSystem{}
+			fakeRunner := fakesys.NewFakeCmdRunner()
+			fakeFs := fakesys.NewFakeFileSystem()
 			fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext4" yyyy zzzz`})
 
 			formatter := NewLinuxFormatter(fakeRunner, fakeFs)
@@ -24,8 +24,8 @@ func init() {
 		})
 		It("linux format when using swap fs and partition is swap", func() {
 
-			fakeRunner := &fakesys.FakeCmdRunner{}
-			fakeFs := &fakesys.FakeFileSystem{}
+			fakeRunner := fakesys.NewFakeCmdRunner()
+			fakeFs := fakesys.NewFakeFileSystem()
 			fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="swap" yyyy zzzz`})
 
 			formatter := NewLinuxFormatter(fakeRunner, fakeFs)
@@ -36,8 +36,8 @@ func init() {
 		})
 		It("linux format when using ext4 fs with lazy itable support", func() {
 
-			fakeRunner := &fakesys.FakeCmdRunner{}
-			fakeFs := &fakesys.FakeFileSystem{}
+			fakeRunner := fakesys.NewFakeCmdRunner()
+			fakeFs := fakesys.NewFakeFileSystem()
 			fakeFs.WriteFile("/sys/fs/ext4/features/lazy_itable_init", []byte{})
 			fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext2" yyyy zzzz`})
 
@@ -49,8 +49,8 @@ func init() {
 		})
 		It("linux format when using ext4 fs without lazy itable support", func() {
 
-			fakeRunner := &fakesys.FakeCmdRunner{}
-			fakeFs := &fakesys.FakeFileSystem{}
+			fakeRunner := fakesys.NewFakeCmdRunner()
+			fakeFs := fakesys.NewFakeFileSystem()
 			fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext2" yyyy zzzz`})
 
 			formatter := NewLinuxFormatter(fakeRunner, fakeFs)
@@ -61,8 +61,8 @@ func init() {
 		})
 		It("linux format when using ext4 fs and partition is ext4", func() {
 
-			fakeRunner := &fakesys.FakeCmdRunner{}
-			fakeFs := &fakesys.FakeFileSystem{}
+			fakeRunner := fakesys.NewFakeCmdRunner()
+			fakeFs := fakesys.NewFakeFileSystem()
 			fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext4" yyyy zzzz`})
 
 			formatter := NewLinuxFormatter(fakeRunner, fakeFs)

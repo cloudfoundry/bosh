@@ -5,7 +5,11 @@ import (
 )
 
 type NetManager interface {
-	SetupManualNetworking(networks boshsettings.Networks) (err error)
+	// SetupManualNetworking configures network interfaces with a static ip.
+	// If errChan is provided, nil or an error will be sent
+	// upon completion of background network reconfiguration (e.g. arping).
+	SetupManualNetworking(networks boshsettings.Networks, errChan chan error) (err error)
+
 	SetupDhcp(networks boshsettings.Networks) (err error)
 }
 

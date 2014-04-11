@@ -17,8 +17,8 @@ import (
 )
 
 func getExternalBlobstoreDependencies() (fs *fakesys.FakeFileSystem, runner *fakesys.FakeCmdRunner, uuidGen *fakeuuid.FakeGenerator, configPath string) {
-	fs = &fakesys.FakeFileSystem{}
-	runner = &fakesys.FakeCmdRunner{}
+	fs = fakesys.NewFakeFileSystem()
+	runner = fakesys.NewFakeCmdRunner()
 	uuidGen = &fakeuuid.FakeGenerator{}
 	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
 	configPath = filepath.Join(dirProvider.EtcDir(), "blobstore-fake-provider.json")

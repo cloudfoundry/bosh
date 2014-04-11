@@ -6,16 +6,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	boshlog "bosh/logger"
-	. "bosh/platform"
-	fakecd "bosh/platform/cdutil/fakes"
-	boshcmd "bosh/platform/commands"
-	fakedisk "bosh/platform/disk/fakes"
-	boshnet "bosh/platform/net"
-	fakestats "bosh/platform/stats/fakes"
-	boshvitals "bosh/platform/vitals"
+	. "bosh/platform/net"
 	boshsettings "bosh/settings"
-	boshdirs "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
 )
 
@@ -53,51 +45,17 @@ prepend domain-name-servers yy.yy.yy.yy;
 prepend domain-name-servers xx.xx.xx.xx;
 `
 
-	Describe("ubuntu", func() {
+	Describe("ubuntuNetManager", func() {
 		var (
-			collector     *fakestats.FakeStatsCollector
-			fs            *fakesys.FakeFileSystem
-			cmdRunner     *fakesys.FakeCmdRunner
-			diskManager   *fakedisk.FakeDiskManager
-			dirProvider   boshdirs.DirectoriesProvider
-			platform      Platform
-			cdutil        *fakecd.FakeCdUtil
-			compressor    boshcmd.Compressor
-			copier        boshcmd.Copier
-			vitalsService boshvitals.Service
-			logger        boshlog.Logger
+			fs         *fakesys.FakeFileSystem
+			cmdRunner  *fakesys.FakeCmdRunner
+			netManager NetManager
 		)
 
 		BeforeEach(func() {
-			collector = &fakestats.FakeStatsCollector{}
 			fs = fakesys.NewFakeFileSystem()
 			cmdRunner = fakesys.NewFakeCmdRunner()
-			diskManager = fakedisk.NewFakeDiskManager()
-			dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
-			cdutil = fakecd.NewFakeCdUtil()
-			compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
-			copier = boshcmd.NewCpCopier(cmdRunner, fs)
-			vitalsService = boshvitals.NewService(collector, dirProvider)
-			logger = boshlog.NewLogger(boshlog.LevelNone)
-		})
-
-		JustBeforeEach(func() {
-			netManager := boshnet.NewUbuntuNetManager(fs, cmdRunner, 1*time.Millisecond)
-
-			platform = NewLinuxPlatform(
-				fs,
-				cmdRunner,
-				collector,
-				compressor,
-				copier,
-				dirProvider,
-				vitalsService,
-				cdutil,
-				diskManager,
-				netManager,
-				1*time.Millisecond,
-				logger,
-			)
+			netManager = NewUbuntuNetManager(fs, cmdRunner, 1*time.Millisecond)
 		})
 
 		Describe("SetupDhcp", func() {
@@ -114,7 +72,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 
 			Context("when dhcp was not previously configured", func() {
 				It("updates dhclient.conf", func() {
-					err := platform.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks)
 					Expect(err).ToNot(HaveOccurred())
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
@@ -123,7 +81,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("restarts dhclient", func() {
-					err := platform.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks)
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
@@ -138,7 +96,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("sets up dhcp and restarts dhclient", func() {
-					err := platform.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks)
 					Expect(err).ToNot(HaveOccurred())
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
@@ -147,7 +105,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("sets up dhcp and restarts dhclient", func() {
-					err := platform.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks)
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
@@ -162,7 +120,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("does not restart dhclient", func() {
-					err := platform.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks)
 					Expect(err).ToNot(HaveOccurred())
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
@@ -171,7 +129,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("does not restart dhclient", func() {
-					err := platform.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks)
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(0))
@@ -180,6 +138,12 @@ prepend domain-name-servers xx.xx.xx.xx;
 		})
 
 		Describe("SetupManualNetworking", func() {
+			var errChan chan error
+
+			BeforeEach(func() {
+				errChan = make(chan error)
+			})
+
 			BeforeEach(func() {
 				// For mac addr to interface resolution
 				fs.WriteFile("/sys/class/net/eth0", []byte{})
@@ -200,7 +164,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 
 			Context("when manual networking was not previously configured", func() {
 				It("writes /etc/network/interfaces", func() {
-					err := platform.SetupManualNetworking(networks)
+					err := netManager.SetupManualNetworking(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
@@ -209,8 +173,10 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("restarts networking", func() {
-					err := platform.SetupManualNetworking(networks)
+					err := netManager.SetupManualNetworking(networks, errChan)
 					Expect(err).ToNot(HaveOccurred())
+
+					<-errChan // wait for all arpings
 
 					Expect(len(cmdRunner.RunCommands) >= 2).To(BeTrue())
 					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network-interface", "stop", "INTERFACE=eth0"}))
@@ -218,7 +184,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("updates dns", func() {
-					err := platform.SetupManualNetworking(networks)
+					err := netManager.SetupManualNetworking(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
@@ -227,10 +193,11 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("starts sending arping", func() {
-					err := platform.SetupManualNetworking(networks)
+					err := netManager.SetupManualNetworking(networks, errChan)
 					Expect(err).ToNot(HaveOccurred())
 
-					time.Sleep(100 * time.Millisecond)
+					<-errChan // wait for all arpings
+
 					Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
 					Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
 				})
@@ -242,7 +209,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("updates /etc/network/interfaces", func() {
-					err := platform.SetupManualNetworking(networks)
+					err := netManager.SetupManualNetworking(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
@@ -251,8 +218,10 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("restarts networking", func() {
-					err := platform.SetupManualNetworking(networks)
+					err := netManager.SetupManualNetworking(networks, errChan)
 					Expect(err).ToNot(HaveOccurred())
+
+					<-errChan // wait for all arpings
 
 					Expect(len(cmdRunner.RunCommands) >= 2).To(BeTrue())
 					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network-interface", "stop", "INTERFACE=eth0"}))
@@ -260,7 +229,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("updates dns", func() {
-					err := platform.SetupManualNetworking(networks)
+					err := netManager.SetupManualNetworking(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
@@ -268,11 +237,12 @@ prepend domain-name-servers xx.xx.xx.xx;
 					Expect(resolvConf.StringContents()).To(Equal(expectedUbuntuResolvConf))
 				})
 
-				It("starts sending arping", func() {
-					err := platform.SetupManualNetworking(networks)
+				It("starts sending 6 arp pings", func() {
+					err := netManager.SetupManualNetworking(networks, errChan)
 					Expect(err).ToNot(HaveOccurred())
 
-					time.Sleep(100 * time.Millisecond)
+					<-errChan // wait for all arpings
+
 					Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
 					Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
 				})
@@ -284,7 +254,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("keeps same /etc/network/interfaces", func() {
-					err := platform.SetupManualNetworking(networks)
+					err := netManager.SetupManualNetworking(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
@@ -293,8 +263,10 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("does not restart networking because configuration did not change", func() {
-					err := platform.SetupManualNetworking(networks)
+					err := netManager.SetupManualNetworking(networks, errChan)
 					Expect(err).ToNot(HaveOccurred())
+
+					<-errChan // wait for all arpings
 
 					for _, cmd := range cmdRunner.RunCommands {
 						Expect(cmd[0]).ToNot(Equal("service"))
@@ -302,7 +274,7 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("updates /etc/resolv.conf for DNS", func() {
-					err := platform.SetupManualNetworking(networks)
+					err := netManager.SetupManualNetworking(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
@@ -311,10 +283,11 @@ prepend domain-name-servers xx.xx.xx.xx;
 				})
 
 				It("starts sending 6 arp ping", func() {
-					err := platform.SetupManualNetworking(networks)
+					err := netManager.SetupManualNetworking(networks, errChan)
 					Expect(err).ToNot(HaveOccurred())
 
-					time.Sleep(100 * time.Millisecond)
+					<-errChan // wait for all arpings
+
 					Expect(len(cmdRunner.RunCommands)).To(Equal(6))
 					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
 					Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))

@@ -23,7 +23,7 @@ func init() {
 
 		BeforeEach(func() {
 			specService = fakeas.NewFakeV1Service()
-			cmdRunner = &fakesys.FakeCmdRunner{}
+			cmdRunner = fakesys.NewFakeCmdRunner()
 			action = NewRunErrand(specService, "/fake-jobs-dir", cmdRunner)
 		})
 

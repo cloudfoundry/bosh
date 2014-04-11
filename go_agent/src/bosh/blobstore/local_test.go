@@ -14,7 +14,7 @@ import (
 const fakeBlobstorePath = "/some/local/path"
 
 func buildLocalBlobstore() (fs *fakesys.FakeFileSystem, uuidGen *fakeuuid.FakeGenerator, blobstore local) {
-	fs = &fakesys.FakeFileSystem{}
+	fs = fakesys.NewFakeFileSystem()
 	uuidGen = &fakeuuid.FakeGenerator{}
 	options := map[string]string{
 		"blobstore_path": fakeBlobstorePath,

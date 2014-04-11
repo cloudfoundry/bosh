@@ -6,16 +6,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	boshlog "bosh/logger"
-	. "bosh/platform"
-	fakecd "bosh/platform/cdutil/fakes"
-	boshcmd "bosh/platform/commands"
-	fakedisk "bosh/platform/disk/fakes"
-	boshnet "bosh/platform/net"
-	fakestats "bosh/platform/stats/fakes"
-	boshvitals "bosh/platform/vitals"
+	. "bosh/platform/net"
 	boshsettings "bosh/settings"
-	boshdirs "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
 )
 
@@ -51,49 +43,15 @@ ONBOOT=yes`
 
 	Describe("centos", func() {
 		var (
-			collector     *fakestats.FakeStatsCollector
-			fs            *fakesys.FakeFileSystem
-			cmdRunner     *fakesys.FakeCmdRunner
-			diskManager   *fakedisk.FakeDiskManager
-			dirProvider   boshdirs.DirectoriesProvider
-			platform      Platform
-			cdutil        *fakecd.FakeCdUtil
-			compressor    boshcmd.Compressor
-			copier        boshcmd.Copier
-			vitalsService boshvitals.Service
-			logger        boshlog.Logger
+			fs         *fakesys.FakeFileSystem
+			cmdRunner  *fakesys.FakeCmdRunner
+			netManager NetManager
 		)
 
 		BeforeEach(func() {
-			collector = &fakestats.FakeStatsCollector{}
 			fs = fakesys.NewFakeFileSystem()
 			cmdRunner = fakesys.NewFakeCmdRunner()
-			diskManager = fakedisk.NewFakeDiskManager()
-			dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
-			cdutil = fakecd.NewFakeCdUtil()
-			compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
-			copier = boshcmd.NewCpCopier(cmdRunner, fs)
-			vitalsService = boshvitals.NewService(collector, dirProvider)
-			logger = boshlog.NewLogger(boshlog.LevelNone)
-		})
-
-		JustBeforeEach(func() {
-			netManager := boshnet.NewCentosNetManager(fs, cmdRunner, 1*time.Millisecond)
-
-			platform = NewLinuxPlatform(
-				fs,
-				cmdRunner,
-				collector,
-				compressor,
-				copier,
-				dirProvider,
-				vitalsService,
-				cdutil,
-				diskManager,
-				netManager,
-				1*time.Millisecond,
-				logger,
-			)
+			netManager = NewCentosNetManager(fs, cmdRunner, 1*time.Millisecond)
 		})
 
 		Describe("SetupDhcp", func() {
@@ -110,7 +68,7 @@ ONBOOT=yes`
 
 			Context("when dhcp was not previously configured", func() {
 				It("writes dhcp configuration", func() {
-					err := platform.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks)
 					Expect(err).ToNot(HaveOccurred())
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
@@ -119,7 +77,7 @@ ONBOOT=yes`
 				})
 
 				It("restarts network", func() {
-					err := platform.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks)
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(1))
@@ -133,7 +91,7 @@ ONBOOT=yes`
 				})
 
 				It("updates dhcp configuration", func() {
-					err := platform.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks)
 					Expect(err).ToNot(HaveOccurred())
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
@@ -142,7 +100,7 @@ ONBOOT=yes`
 				})
 
 				It("restarts network", func() {
-					err := platform.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks)
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(1))
@@ -156,7 +114,7 @@ ONBOOT=yes`
 				})
 
 				It("keeps dhcp configuration", func() {
-					err := platform.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks)
 					Expect(err).ToNot(HaveOccurred())
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
@@ -165,7 +123,7 @@ ONBOOT=yes`
 				})
 
 				It("does not restart network", func() {
-					err := platform.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks)
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(0))
@@ -174,6 +132,18 @@ ONBOOT=yes`
 		})
 
 		Describe("SetupManualNetworking", func() {
+			var errChan chan error
+
+			BeforeEach(func() {
+				errChan = make(chan error)
+			})
+
+			BeforeEach(func() {
+				fs.WriteFile("/sys/class/net/eth0", []byte{})
+				fs.WriteFileString("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a\n")
+				fs.SetGlob("/sys/class/net/*", []string{"/sys/class/net/eth0"})
+			})
+
 			networks := boshsettings.Networks{
 				"bosh": boshsettings.Network{
 					Default: []string{"dns", "gateway"},
@@ -185,14 +155,8 @@ ONBOOT=yes`
 				},
 			}
 
-			BeforeEach(func() {
-				fs.WriteFile("/sys/class/net/eth0", []byte{})
-				fs.WriteFileString("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a\n")
-				fs.SetGlob("/sys/class/net/*", []string{"/sys/class/net/eth0"})
-			})
-
 			It("sets up centos expected ifconfig", func() {
-				err := platform.SetupManualNetworking(networks)
+				err := netManager.SetupManualNetworking(networks, nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				networkConfig := fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
@@ -201,7 +165,7 @@ ONBOOT=yes`
 			})
 
 			It("sets up centos /etc/resolv.conf", func() {
-				err := platform.SetupManualNetworking(networks)
+				err := netManager.SetupManualNetworking(networks, nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				resolvConf := fs.GetFileTestStat("/etc/resolv.conf")
@@ -210,24 +174,26 @@ ONBOOT=yes`
 			})
 
 			It("restarts networking", func() {
-				err := platform.SetupManualNetworking(networks)
+				err := netManager.SetupManualNetworking(networks, errChan)
 				Expect(err).ToNot(HaveOccurred())
 
 				fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
 				fs.GetFileTestStat("/etc/resolv.conf")
-				time.Sleep(100 * time.Millisecond)
+
+				<-errChan // wait for all arpings
 
 				Expect(len(cmdRunner.RunCommands)).To(Equal(7))
 				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
 			})
 
 			It("runs arping commands", func() {
-				err := platform.SetupManualNetworking(networks)
+				err := netManager.SetupManualNetworking(networks, errChan)
 				Expect(err).ToNot(HaveOccurred())
 
 				fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
 				fs.GetFileTestStat("/etc/resolv.conf")
-				time.Sleep(100 * time.Millisecond)
+
+				<-errChan // wait for all arpings
 
 				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
 				Expect(cmdRunner.RunCommands[6]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))

@@ -113,7 +113,7 @@ func (p *linux) SetDevicePathResolver(devicePathResolver boshdpresolv.DevicePath
 }
 
 func (p linux) SetupManualNetworking(networks boshsettings.Networks) (err error) {
-	return p.netManager.SetupManualNetworking(networks)
+	return p.netManager.SetupManualNetworking(networks, nil)
 }
 
 func (p linux) SetupDhcp(networks boshsettings.Networks) (err error) {

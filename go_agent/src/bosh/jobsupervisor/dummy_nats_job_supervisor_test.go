@@ -25,7 +25,6 @@ func init() {
 		Describe("MonitorJobFailures", func() {
 			It("monitors job status", func() {
 				dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
-
 				Expect(handler.ReceivedRun).To(BeTrue())
 			})
 		})
@@ -37,8 +36,7 @@ func init() {
 
 			It("returns the received status", func() {
 				statusMessage := boshhandler.NewRequest("", "set_dummy_status", []byte(`{"status":"failing"}`))
-				handler.Func(statusMessage)
-
+				handler.RunFunc(statusMessage)
 				Expect(dummyNats.Status()).To(Equal("failing"))
 			})
 
@@ -48,8 +46,7 @@ func init() {
 
 			It("does not change the status given other messages", func() {
 				statusMessage := boshhandler.NewRequest("", "some_other_message", []byte(`{"status":"failing"}`))
-				handler.Func(statusMessage)
-
+				handler.RunFunc(statusMessage)
 				Expect(dummyNats.Status()).To(Equal("running"))
 			})
 		})

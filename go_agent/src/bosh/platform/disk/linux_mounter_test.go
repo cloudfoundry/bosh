@@ -33,8 +33,8 @@ const swaponUsageOutputWithOtherDevice = `Filename				Type		Size	Used	Priority
 `
 
 func getLinuxMounterDependencies() (runner *fakesys.FakeCmdRunner, fs *fakesys.FakeFileSystem) {
-	runner = &fakesys.FakeCmdRunner{}
-	fs = &fakesys.FakeFileSystem{}
+	runner = fakesys.NewFakeCmdRunner()
+	fs = fakesys.NewFakeFileSystem()
 	return
 }
 func init() {

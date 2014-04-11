@@ -62,8 +62,8 @@ func init() {
 		)
 
 		BeforeEach(func() {
-			fs = &fakesys.FakeFileSystem{}
-			runner = &fakesys.FakeCmdRunner{}
+			fs = fakesys.NewFakeFileSystem()
+			runner = fakesys.NewFakeCmdRunner()
 			client = fakemonit.NewFakeMonitClient()
 			logger = boshlog.NewLogger(boshlog.LevelNone)
 			dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")

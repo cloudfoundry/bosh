@@ -5,28 +5,38 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 
 	fakembus "bosh/mbus/fakes"
 	. "bosh/notification"
 )
 
-func buildConcreteNotifier() (handler *fakembus.FakeHandler, notifier Notifier) {
-	handler = fakembus.NewFakeHandler()
-	notifier = NewNotifier(handler)
-	return
-}
-func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("notify shutdown", func() {
-			handler, notifier := buildConcreteNotifier()
+var _ = Describe("concreteNotifier", func() {
+	Describe("NotifyShutdown", func() {
+		var (
+			handler  *fakembus.FakeHandler
+			notifier Notifier
+		)
 
-			handler.SendToHealthManagerErr = errors.New("fake error")
+		BeforeEach(func() {
+			handler = fakembus.NewFakeHandler()
+			notifier = NewNotifier(handler)
+		})
+
+		It("sends shutdown message to health manager", func() {
+			err := notifier.NotifyShutdown()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(handler.HMRequests).To(Equal([]fakembus.HMRequest{
+				fakembus.HMRequest{Topic: "shutdown", Payload: nil},
+			}))
+		})
+
+		It("returns error if sending shutdown message fails", func() {
+			handler.SendToHealthManagerErr = errors.New("fake-send-error")
 
 			err := notifier.NotifyShutdown()
-			Expect(handler.SendToHealthManagerErr).To(Equal(err))
-			Expect("shutdown").To(Equal(handler.SendToHealthManagerTopic))
-			assert.Nil(GinkgoT(), handler.SendToHealthManagerPayload)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-send-error"))
 		})
 	})
-}
+})

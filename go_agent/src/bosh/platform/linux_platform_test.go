@@ -44,7 +44,7 @@ var _ = Describe("LinuxPlatform", func() {
 	BeforeEach(func() {
 		collector = &fakestats.FakeStatsCollector{}
 		fs = fakesys.NewFakeFileSystem()
-		cmdRunner = &fakesys.FakeCmdRunner{}
+		cmdRunner = fakesys.NewFakeCmdRunner()
 		diskManager = fakedisk.NewFakeDiskManager()
 		dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
 		diskWaitTimeout = 1 * time.Millisecond
@@ -52,13 +52,17 @@ var _ = Describe("LinuxPlatform", func() {
 		compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 		copier = boshcmd.NewCpCopier(cmdRunner, fs)
 		vitalsService = boshvitals.NewService(collector, dirProvider)
+
 		fs.SetGlob("/sys/bus/scsi/devices/*:0:0:0/block/*", []string{
 			"/sys/bus/scsi/devices/0:0:0:0/block/sr0",
 			"/sys/bus/scsi/devices/6:0:0:0/block/sdd",
 			"/sys/bus/scsi/devices/fake-host-id:0:0:0/block/sda",
 		})
-		fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*",
-			[]string{"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf"})
+
+		fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*", []string{
+			"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf",
+		})
+
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 	})
 

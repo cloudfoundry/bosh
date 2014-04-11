@@ -1,6 +1,8 @@
 package fakes
 
-import boshalert "bosh/agent/alert"
+import (
+	boshalert "bosh/agent/alert"
+)
 
 type FakeAlertBuilder struct {
 	BuildInput boshalert.MonitAlert
@@ -8,14 +10,11 @@ type FakeAlertBuilder struct {
 	BuildErr   error
 }
 
-func NewFakeAlertBuilder() (fake *FakeAlertBuilder) {
-	fake = new(FakeAlertBuilder)
-	return
+func NewFakeAlertBuilder() *FakeAlertBuilder {
+	return &FakeAlertBuilder{}
 }
 
-func (b *FakeAlertBuilder) Build(input boshalert.MonitAlert) (alert boshalert.Alert, err error) {
+func (b *FakeAlertBuilder) Build(input boshalert.MonitAlert) (boshalert.Alert, error) {
 	b.BuildInput = input
-	alert = b.BuildAlert
-	err = b.BuildErr
-	return
+	return b.BuildAlert, b.BuildErr
 }
