@@ -1,22 +1,31 @@
 package main
 
 import (
+	"os"
+
 	boshapp "bosh/app"
 	boshlog "bosh/logger"
-	"os"
 )
+
+const mainLogTag = "main"
 
 func main() {
 	logger := boshlog.NewLogger(boshlog.LevelDebug)
 	defer logger.HandlePanic("Main")
-	logger.Debug("main", "Starting agent")
+
+	logger.Debug(mainLogTag, "Starting agent")
 
 	app := boshapp.New(logger)
-	app.Setup(os.Args)
-	err := app.Run()
 
+	err := app.Setup(os.Args)
 	if err != nil {
-		logger.Error("Main", err.Error())
+		logger.Error(mainLogTag, "App setup", err.Error())
+		os.Exit(1)
+	}
+
+	err = app.Run()
+	if err != nil {
+		logger.Error(mainLogTag, "App run", err.Error())
 		os.Exit(1)
 	}
 }
