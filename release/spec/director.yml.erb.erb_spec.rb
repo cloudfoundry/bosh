@@ -123,6 +123,74 @@ describe 'director.yml.erb.erb' do
     end
   end
 
+  context 'vcloud' do
+    before do
+      deployment_manifest_fragment['properties']['vcd'] = {
+        'url' => 'myvcdurl',
+        'user' => 'myvcduser',
+        'password' => 'myvcdpassword',
+        'entities' => {
+          'organization' => 'myorg',
+          'virtual_datacenter' => 'myvdc',
+          'vapp_catalog' => 'myvappcatalog',
+          'media_catalog' => 'mymediacatalog',
+          'vm_metadata_key' => 'mymetadatakey',
+          'description' => 'mydescription'
+        }
+      }
+    end
+
+    context 'when control parameters do not exist' do
+      it 'renders required parameters correctly' do
+        spec = deployment_manifest_fragment
+
+        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+
+        parsed = YAML.load(rendered_yaml)
+
+        expect(parsed['cloud']['properties']['vcds'][0]['url']).to eq 'myvcdurl'
+        expect(parsed['cloud']['properties']['vcds'][0]['user']).to eq 'myvcduser'
+        expect(parsed['cloud']['properties']['vcds'][0]['password']).to eq 'myvcdpassword'
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['organization']).to eq 'myorg'
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['virtual_datacenter']).to eq 'myvdc'
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['vapp_catalog']).to eq 'myvappcatalog'
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['media_catalog']).to eq 'mymediacatalog'
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['vm_metadata_key']).to eq 'mymetadatakey'
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['description']).to eq 'mydescription'
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['control']).to be_nil
+      end
+    end
+
+    context 'when control parameters exist' do
+      before do
+        deployment_manifest_fragment['properties']['vcd']['entities']['control'] = {
+          'wait_max' => '400',
+          'wait_delay' => '10',
+          'cookie_timeout' => '1200',
+          'retry_max' => '5',
+          'retry_delay' => '500'
+        }
+      end
+
+      it 'renders all parameters correctly' do
+        spec = deployment_manifest_fragment
+
+        rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+
+        parsed = YAML.load(rendered_yaml)
+
+        expect(parsed['cloud']['properties']['vcds'][0]['url']).to eq 'myvcdurl'
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['organization']).to eq 'myorg'
+
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['control']['wait_max']).to eq 400
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['control']['wait_delay']).to eq 10
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['control']['cookie_timeout']).to eq 1200
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['control']['retry_max']).to eq 5
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['control']['retry_delay']).to eq 500
+      end
+    end
+  end
+
   context 'openstack' do
     before do
       deployment_manifest_fragment['properties']['openstack'] = {
