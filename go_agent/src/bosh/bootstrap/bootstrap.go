@@ -5,6 +5,7 @@ import (
 
 	bosherr "bosh/errors"
 	boshinf "bosh/infrastructure"
+	boshlog "bosh/logger"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
@@ -17,6 +18,7 @@ type bootstrap struct {
 	platform                boshplatform.Platform
 	dirProvider             boshdir.DirectoriesProvider
 	settingsServiceProvider boshsettings.ServiceProvider
+	logger                  boshlog.Logger
 }
 
 func New(
@@ -24,12 +26,14 @@ func New(
 	platform boshplatform.Platform,
 	dirProvider boshdir.DirectoriesProvider,
 	settingsServiceProvider boshsettings.ServiceProvider,
+	logger boshlog.Logger,
 ) (b bootstrap) {
 	b.fs = platform.GetFs()
 	b.infrastructure = inf
 	b.platform = platform
 	b.dirProvider = dirProvider
 	b.settingsServiceProvider = settingsServiceProvider
+	b.logger = logger
 	return
 }
 
@@ -50,6 +54,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		boot.fs,
 		boot.dirProvider.BoshDir(),
 		boot.infrastructure.GetSettings,
+		boot.logger,
 	)
 
 	err = settingsService.LoadSettings()

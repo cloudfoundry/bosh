@@ -5,8 +5,11 @@ import (
 	"path/filepath"
 
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	boshsys "bosh/system"
 )
+
+const concreteServiceLogTag = "concreteService"
 
 type SettingsFetcher func() (Settings, error)
 
@@ -20,8 +23,9 @@ func (provider concreteServiceProvider) NewService(
 	fs boshsys.FileSystem,
 	dir string,
 	fetcher SettingsFetcher,
+	logger boshlog.Logger,
 ) Service {
-	return NewService(fs, filepath.Join(dir, "settings.json"), fetcher)
+	return NewService(fs, filepath.Join(dir, "settings.json"), fetcher, logger)
 }
 
 type concreteService struct {
@@ -29,18 +33,21 @@ type concreteService struct {
 	settingsPath    string
 	settings        Settings
 	settingsFetcher SettingsFetcher
+	logger          boshlog.Logger
 }
 
 func NewService(
 	fs boshsys.FileSystem,
 	settingsPath string,
 	settingsFetcher SettingsFetcher,
+	logger boshlog.Logger,
 ) (service Service) {
 	return &concreteService{
 		fs:              fs,
 		settingsPath:    settingsPath,
 		settings:        Settings{},
 		settingsFetcher: settingsFetcher,
+		logger:          logger,
 	}
 }
 
@@ -54,15 +61,23 @@ func (service *concreteService) InvalidateSettings() error {
 }
 
 func (service *concreteService) LoadSettings() error {
+	service.logger.Debug(concreteServiceLogTag, "Loading settings from fetcher")
+
 	newSettings, fetchErr := service.settingsFetcher()
 	if fetchErr != nil {
+		service.logger.Error(concreteServiceLogTag, "Failed to load settings via fetcher: %v", fetchErr)
+
 		existingSettingsJSON, readError := service.fs.ReadFile(service.settingsPath)
 		if readError != nil {
 			return bosherr.WrapError(fetchErr, "Invoking settings fetcher")
 		}
 
+		service.logger.Debug(concreteServiceLogTag, "Successfully received settings from file")
+
 		return json.Unmarshal(existingSettingsJSON, &service.settings)
 	}
+
+	service.logger.Debug(concreteServiceLogTag, "Successfully received settings from fetcher")
 
 	service.settings = newSettings
 

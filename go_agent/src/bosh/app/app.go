@@ -70,7 +70,14 @@ func (app *app) Setup(args []string) (err error) {
 
 	settingsServiceProvider := boshsettings.NewServiceProvider()
 
-	boot := boshboot.New(app.infrastructure, app.platform, dirProvider, settingsServiceProvider)
+	boot := boshboot.New(
+		app.infrastructure,
+		app.platform,
+		dirProvider,
+		settingsServiceProvider,
+		app.logger,
+	)
+
 	settingsService, err := boot.Run()
 	if err != nil {
 		err = bosherr.WrapError(err, "Running bootstrap")
@@ -78,6 +85,7 @@ func (app *app) Setup(args []string) (err error) {
 	}
 
 	mbusHandlerProvider := boshmbus.NewHandlerProvider(settingsService, app.logger)
+
 	mbusHandler, err := mbusHandlerProvider.Get(app.platform, dirProvider)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting mbus handler")
@@ -85,6 +93,7 @@ func (app *app) Setup(args []string) (err error) {
 	}
 
 	blobstoreProvider := boshblob.NewProvider(app.platform, dirProvider)
+
 	blobstore, err := blobstoreProvider.Get(settingsService.GetBlobstore())
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting blobstore")
@@ -92,6 +101,7 @@ func (app *app) Setup(args []string) (err error) {
 	}
 
 	monitClientProvider := boshmonit.NewProvider(app.platform, app.logger)
+
 	monitClient, err := monitClientProvider.Get()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting monit client")

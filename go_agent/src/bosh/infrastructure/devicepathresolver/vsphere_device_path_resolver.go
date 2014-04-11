@@ -1,11 +1,12 @@
 package devicepathresolver
 
 import (
-	boshsys "bosh/system"
 	"fmt"
 	"path"
 	"strings"
 	"time"
+
+	boshsys "bosh/system"
 )
 
 const maxScanRetries = 30
@@ -15,7 +16,10 @@ type vsphereDevicePathResolver struct {
 	fs              boshsys.FileSystem
 }
 
-func NewVsphereDevicePathResolver(diskWaitTimeout time.Duration, fs boshsys.FileSystem) (vsphereDevicePathResolver vsphereDevicePathResolver) {
+func NewVsphereDevicePathResolver(
+	diskWaitTimeout time.Duration,
+	fs boshsys.FileSystem,
+) (vsphereDevicePathResolver vsphereDevicePathResolver) {
 	vsphereDevicePathResolver.fs = fs
 	vsphereDevicePathResolver.diskWaitTimeout = diskWaitTimeout
 	return

@@ -1,6 +1,7 @@
 package fakes
 
 import (
+	boshlog "bosh/logger"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 )
@@ -22,6 +23,7 @@ func (provider *FakeSettingsServiceProvider) NewService(
 	fs boshsys.FileSystem,
 	dir string,
 	fetcher boshsettings.SettingsFetcher,
+	logger boshlog.Logger,
 ) boshsettings.Service {
 	provider.NewServiceFs = fs
 	provider.NewServiceDir = dir

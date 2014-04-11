@@ -8,6 +8,7 @@ import (
 
 	. "bosh/bootstrap"
 	fakeinf "bosh/infrastructure/fakes"
+	boshlog "bosh/logger"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
@@ -39,7 +40,8 @@ func init() {
 			})
 
 			bootstrap := func() (boshsettings.Service, error) {
-				return New(inf, platform, dirProvider, settingsServiceProvider).Run()
+				logger := boshlog.NewLogger(boshlog.LevelNone)
+				return New(inf, platform, dirProvider, settingsServiceProvider, logger).Run()
 			}
 
 			It("sets up runtime configuration", func() {

@@ -1,11 +1,12 @@
 package settings
 
 import (
+	boshlog "bosh/logger"
 	boshsys "bosh/system"
 )
 
 type ServiceProvider interface {
-	NewService(boshsys.FileSystem, string, SettingsFetcher) Service
+	NewService(boshsys.FileSystem, string, SettingsFetcher, boshlog.Logger) Service
 }
 
 type Service interface {

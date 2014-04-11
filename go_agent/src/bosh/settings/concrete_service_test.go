@@ -7,13 +7,15 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	boshlog "bosh/logger"
 	. "bosh/settings"
 	fakesys "bosh/system/fakes"
 )
 
 func buildService(fetcher SettingsFetcher) (Service, *fakesys.FakeFileSystem) {
 	fs := fakesys.NewFakeFileSystem()
-	service := NewService(fs, "/setting/path", fetcher)
+	logger := boshlog.NewLogger(boshlog.LevelNone)
+	service := NewService(fs, "/setting/path", fetcher, logger)
 	return service, fs
 }
 
@@ -29,8 +31,9 @@ func init() {
 			It("returns service with settings.json as its settings path", func() {
 				// Cannot compare fetcher functions since function comparison is problematic
 				fs := fakesys.NewFakeFileSystem()
-				service := NewServiceProvider().NewService(fs, "/setting/path", nil)
-				Expect(service).To(Equal(NewService(fs, "/setting/path/settings.json", nil)))
+				logger := boshlog.NewLogger(boshlog.LevelNone)
+				service := NewServiceProvider().NewService(fs, "/setting/path", nil, logger)
+				Expect(service).To(Equal(NewService(fs, "/setting/path/settings.json", nil, logger)))
 			})
 		})
 	})
