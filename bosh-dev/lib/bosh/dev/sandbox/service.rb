@@ -40,7 +40,7 @@ module Bosh::Dev::Sandbox
       return unless running?
 
       begin
-        @logger.info("Killing #{@cmd_array.first} with PID=#{@pid}")
+        @logger.info("Terminating #{@cmd_array.first} with PID=#{@pid}")
         Process.kill(signal, @pid)
       rescue Errno::ESRCH # No such process
         @logger.info("Process #{@cmd_array.first} with PID=#{@pid} not found")
@@ -62,16 +62,17 @@ module Bosh::Dev::Sandbox
     end
 
     def wait_for_process_to_exit_or_be_killed(remaining_attempts = 30)
-      # Actually just twiddle our thumbs here because wait() can hang forever...
       while running?
         remaining_attempts -= 1
         if remaining_attempts == 5
+          @logger.info("Killing #{@cmd_array.first} with PID=#{@pid}")
+
           Process.kill('KILL', @pid)
         elsif remaining_attempts == 0
           raise "KILL signal ignored by #{@cmd_array.first} with PID=#{@pid}"
-        else
-          sleep(0.2)
         end
+
+        sleep(0.2)
       end
     end
   end
