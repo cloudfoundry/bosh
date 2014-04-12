@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	Describe("concreteApplier", func() {
+	Describe("ApplyAction", func() {
 		var (
 			applier     *fakeappl.FakeApplier
 			specService *fakeas.FakeV1Service
@@ -52,7 +52,7 @@ func init() {
 						Expect(applier.ApplyDesiredApplySpec).To(Equal(desiredApplySpec))
 					})
 
-					Context("when applier succeeds", func() {
+					Context("when applier succeeds applying desired spec", func() {
 						Context("when saving desires spec as current spec succeeds", func() {
 							It("returns 'applied' after setting desired spec as current spec", func() {
 								value, err := action.Run(desiredApplySpec)
@@ -74,7 +74,7 @@ func init() {
 						})
 					})
 
-					Context("when applier fails", func() {
+					Context("when applier fails applying desired spec", func() {
 						BeforeEach(func() {
 							applier.ApplyError = errors.New("fake-apply-error")
 						})

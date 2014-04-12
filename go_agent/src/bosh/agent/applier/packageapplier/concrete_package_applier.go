@@ -36,8 +36,8 @@ func NewConcretePackageApplier(
 	}
 }
 
-func (s *concretePackageApplier) Apply(pkg models.Package) error {
-	s.logger.Debug(logTag, "Applying package %v", pkg)
+func (s concretePackageApplier) Prepare(pkg models.Package) error {
+	s.logger.Debug(logTag, "Preparing package %v", pkg)
 
 	pkgBundle, err := s.packagesBc.Get(pkg)
 	if err != nil {
@@ -54,6 +54,22 @@ func (s *concretePackageApplier) Apply(pkg models.Package) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (s concretePackageApplier) Apply(pkg models.Package) error {
+	s.logger.Debug(logTag, "Applying package %v", pkg)
+
+	err := s.Prepare(pkg)
+	if err != nil {
+		return err
+	}
+
+	pkgBundle, err := s.packagesBc.Get(pkg)
+	if err != nil {
+		return bosherr.WrapError(err, "Getting package bundle")
 	}
 
 	_, _, err = pkgBundle.Enable()

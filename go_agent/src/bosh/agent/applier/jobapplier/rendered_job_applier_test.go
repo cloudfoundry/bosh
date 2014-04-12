@@ -59,7 +59,7 @@ func init() {
 			applier = NewRenderedJobApplier(jobsBc, blobstore, compressor, fs, jobSupervisor, logger)
 		})
 
-		Describe("Apply", func() {
+		Describe("Prepare & Apply", func() {
 			var (
 				job    models.Job
 				bundle *fakebc.FakeBundle
@@ -69,79 +69,19 @@ func init() {
 				job, bundle = buildJob(jobsBc)
 			})
 
-			It("return an error if getting file bundle fails", func() {
-				jobsBc.GetErr = errors.New("fake-get-bundle-error")
-
-				err := applier.Apply(job)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-get-bundle-error"))
-			})
-
-			It("returns an error if checking for installed path fails", func() {
-				bundle.IsInstalledErr = errors.New("fake-is-installed-error")
-
-				err := applier.Apply(job)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-is-installed-error"))
-			})
-
-			Context("when job is already installed", func() {
-				BeforeEach(func() {
-					bundle.Installed = true
-				})
-
-				It("does not install but only enables job", func() {
-					err := applier.Apply(job)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(bundle.ActionsCalled).To(Equal([]string{"Enable"})) // no Install
-				})
-
-				It("returns error when job enable fails", func() {
-					bundle.EnableError = errors.New("fake-enable-error")
-
-					err := applier.Apply(job)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-enable-error"))
-				})
-
-				It("does not download the job template", func() {
-					err := applier.Apply(job)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(blobstore.GetBlobIDs).To(BeNil())
-				})
-			})
-
-			Context("when job is not installed", func() {
-				BeforeEach(func() {
-					bundle.Installed = false
-				})
-
-				It("installs and enables job", func() {
-					err := applier.Apply(job)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(bundle.ActionsCalled).To(Equal([]string{"Install", "Enable"}))
-				})
-
+			ItInstallsJob := func(act func() error) {
 				It("returns error when installing job fails", func() {
 					bundle.InstallError = errors.New("fake-install-error")
 
-					err := applier.Apply(job)
+					err := act()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-install-error"))
-				})
-
-				It("returns error when job enable fails", func() {
-					bundle.EnableError = errors.New("fake-enable-error")
-
-					err := applier.Apply(job)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-enable-error"))
 				})
 
 				It("downloads and later cleans up downloaded job template blob", func() {
 					blobstore.GetFileName = "/fake-blobstore-file-name"
 
-					err := applier.Apply(job)
+					err := act()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
 					Expect(blobstore.GetFingerprints[0]).To(Equal("fake-blob-sha1"))
@@ -153,7 +93,7 @@ func init() {
 				It("returns error when downloading job template blob fails", func() {
 					blobstore.GetError = errors.New("fake-get-error")
 
-					err := applier.Apply(job)
+					err := act()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-get-error"))
 				})
@@ -168,7 +108,7 @@ func init() {
 						tmpDirExistsBeforeInstall = true
 					}
 
-					err := applier.Apply(job)
+					err := act()
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(compressor.DecompressFileToDirTarballPaths[0]).To(Equal("/fake-blobstore-file-name"))
@@ -184,7 +124,7 @@ func init() {
 				It("returns error when temporary directory creation fails", func() {
 					fs.TempDirError = errors.New("fake-filesystem-tempdir-error")
 
-					err := applier.Apply(job)
+					err := act()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-filesystem-tempdir-error"))
 				})
@@ -192,7 +132,7 @@ func init() {
 				It("returns error when decompressing job template fails", func() {
 					compressor.DecompressFileToDirError = errors.New("fake-decompress-error")
 
-					err := applier.Apply(job)
+					err := act()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-decompress-error"))
 				})
@@ -200,7 +140,7 @@ func init() {
 				It("returns error when getting the list of bin files fails", func() {
 					fs.GlobErr = errors.New("fake-glob-error")
 
-					err := applier.Apply(job)
+					err := act()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-glob-error"))
 				})
@@ -214,7 +154,7 @@ func init() {
 
 					fs.ChmodErr = errors.New("fake-chmod-error")
 
-					err := applier.Apply(job)
+					err := act()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-chmod-error"))
 				})
@@ -228,7 +168,7 @@ func init() {
 						installedBeforeDecompression = bundle.Installed
 					}
 
-					err := applier.Apply(job)
+					err := act()
 					Expect(err).ToNot(HaveOccurred())
 
 					// bundle installation did not happen before decompression
@@ -260,7 +200,7 @@ func init() {
 						configTestStats = fs.GetFileTestStat("/fake-tmp-dir/fake-path-in-archive/config/test")
 					}
 
-					err := applier.Apply(job)
+					err := act()
 					Expect(err).ToNot(HaveOccurred())
 
 					// bin files are executable
@@ -269,6 +209,126 @@ func init() {
 
 					// non-bin files are not made executable
 					Expect(int(configTestStats.FileMode)).ToNot(Equal(0755))
+				})
+			}
+
+			Describe("Prepare", func() {
+				act := func() error { return applier.Prepare(job) }
+
+				It("return an error if getting file bundle fails", func() {
+					jobsBc.GetErr = errors.New("fake-get-bundle-error")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-get-bundle-error"))
+				})
+
+				It("returns an error if checking for installed path fails", func() {
+					bundle.IsInstalledErr = errors.New("fake-is-installed-error")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-is-installed-error"))
+				})
+
+				Context("when job is already installed", func() {
+					BeforeEach(func() {
+						bundle.Installed = true
+					})
+
+					It("does not install", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(bundle.ActionsCalled).To(Equal([]string{})) // no Install
+					})
+
+					It("does not download the job template", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(blobstore.GetBlobIDs).To(BeNil())
+					})
+				})
+
+				Context("when job is not installed", func() {
+					BeforeEach(func() {
+						bundle.Installed = false
+					})
+
+					It("installs job (but does not enable)", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(bundle.ActionsCalled).To(Equal([]string{"Install"}))
+					})
+
+					ItInstallsJob(act)
+				})
+			})
+
+			Describe("Apply", func() {
+				act := func() error { return applier.Apply(job) }
+
+				It("return an error if getting file bundle fails", func() {
+					jobsBc.GetErr = errors.New("fake-get-bundle-error")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-get-bundle-error"))
+				})
+
+				It("returns an error if checking for installed path fails", func() {
+					bundle.IsInstalledErr = errors.New("fake-is-installed-error")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-is-installed-error"))
+				})
+
+				Context("when job is already installed", func() {
+					BeforeEach(func() {
+						bundle.Installed = true
+					})
+
+					It("does not install but only enables job", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(bundle.ActionsCalled).To(Equal([]string{"Enable"})) // no Install
+					})
+
+					It("returns error when job enable fails", func() {
+						bundle.EnableError = errors.New("fake-enable-error")
+
+						err := act()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-enable-error"))
+					})
+
+					It("does not download the job template", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(blobstore.GetBlobIDs).To(BeNil())
+					})
+				})
+
+				Context("when job is not installed", func() {
+					BeforeEach(func() {
+						bundle.Installed = false
+					})
+
+					It("installs and enables job", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(bundle.ActionsCalled).To(Equal([]string{"Install", "Enable"}))
+					})
+
+					It("returns error when job enable fails", func() {
+						bundle.EnableError = errors.New("fake-enable-error")
+
+						err := act()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-enable-error"))
+					})
+
+					ItInstallsJob(act)
 				})
 			})
 		})

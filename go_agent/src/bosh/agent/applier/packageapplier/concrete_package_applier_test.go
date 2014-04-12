@@ -55,7 +55,7 @@ func init() {
 			applier = NewConcretePackageApplier(packagesBc, blobstore, compressor, fs, logger)
 		})
 
-		Describe("Apply", func() {
+		Describe("Prepare & Apply", func() {
 			var (
 				pkg    models.Package
 				bundle *fakebc.FakeBundle
@@ -65,79 +65,19 @@ func init() {
 				pkg, bundle = buildPkg(packagesBc)
 			})
 
-			It("return an error if getting file bundle fails", func() {
-				packagesBc.GetErr = errors.New("fake-get-bundle-error")
-
-				err := applier.Apply(pkg)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-get-bundle-error"))
-			})
-
-			It("returns an error if checking for package installation fails", func() {
-				bundle.IsInstalledErr = errors.New("fake-is-installed-error")
-
-				err := applier.Apply(pkg)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-is-installed-error"))
-			})
-
-			Context("when package is already installed", func() {
-				BeforeEach(func() {
-					bundle.Installed = true
-				})
-
-				It("does not install but only enables package", func() {
-					err := applier.Apply(pkg)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(bundle.ActionsCalled).To(Equal([]string{"Enable"})) // no Install
-				})
-
-				It("returns error when package enable fails", func() {
-					bundle.EnableError = errors.New("fake-enable-error")
-
-					err := applier.Apply(pkg)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-enable-error"))
-				})
-
-				It("does not download the package", func() {
-					err := applier.Apply(pkg)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(blobstore.GetBlobIDs).To(BeNil())
-				})
-			})
-
-			Context("when package is not installed", func() {
-				BeforeEach(func() {
-					bundle.Installed = false
-				})
-
-				It("installs and enables package", func() {
-					err := applier.Apply(pkg)
-					Expect(err).ToNot(HaveOccurred())
-					Expect(bundle.ActionsCalled).To(Equal([]string{"Install", "Enable"}))
-				})
-
+			ItInstallsPkg := func(act func() error) {
 				It("returns error when installing package fails", func() {
 					bundle.InstallError = errors.New("fake-install-error")
 
-					err := applier.Apply(pkg)
+					err := act()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-install-error"))
-				})
-
-				It("returns error when package enable fails", func() {
-					bundle.EnableError = errors.New("fake-enable-error")
-
-					err := applier.Apply(pkg)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-enable-error"))
 				})
 
 				It("downloads and later cleans up downloaded package blob", func() {
 					blobstore.GetFileName = "/fake-blobstore-file-name"
 
-					err := applier.Apply(pkg)
+					err := act()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(blobstore.GetBlobIDs[0]).To(Equal("fake-blobstore-id"))
 					Expect(blobstore.GetFingerprints[0]).To(Equal("fake-blob-sha1"))
@@ -149,7 +89,7 @@ func init() {
 				It("returns error when downloading package blob fails", func() {
 					blobstore.GetError = errors.New("fake-get-error")
 
-					err := applier.Apply(pkg)
+					err := act()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-get-error"))
 				})
@@ -164,7 +104,7 @@ func init() {
 						tmpDirExistsBeforeInstall = true
 					}
 
-					err := applier.Apply(pkg)
+					err := act()
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(compressor.DecompressFileToDirTarballPaths[0]).To(Equal("/fake-blobstore-file-name"))
@@ -180,7 +120,7 @@ func init() {
 				It("returns error when temporary directory creation fails", func() {
 					fs.TempDirError = errors.New("fake-filesystem-tempdir-error")
 
-					err := applier.Apply(pkg)
+					err := act()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-filesystem-tempdir-error"))
 				})
@@ -188,7 +128,7 @@ func init() {
 				It("returns error when decompressing package blob fails", func() {
 					compressor.DecompressFileToDirError = errors.New("fake-decompress-error")
 
-					err := applier.Apply(pkg)
+					err := act()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-decompress-error"))
 				})
@@ -202,7 +142,7 @@ func init() {
 						installedBeforeDecompression = bundle.Installed
 					}
 
-					err := applier.Apply(pkg)
+					err := act()
 					Expect(err).ToNot(HaveOccurred())
 
 					// bundle installation did not happen before decompression
@@ -210,6 +150,126 @@ func init() {
 
 					// make sure that bundle install happened after decompression
 					Expect(bundle.InstallSourcePath).To(Equal("/fake-tmp-dir"))
+				})
+			}
+
+			Describe("Prepare", func() {
+				act := func() error { return applier.Prepare(pkg) }
+
+				It("return an error if getting file bundle fails", func() {
+					packagesBc.GetErr = errors.New("fake-get-bundle-error")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-get-bundle-error"))
+				})
+
+				It("returns an error if checking for package installation fails", func() {
+					bundle.IsInstalledErr = errors.New("fake-is-installed-error")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-is-installed-error"))
+				})
+
+				Context("when package is already installed", func() {
+					BeforeEach(func() {
+						bundle.Installed = true
+					})
+
+					It("does not install", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(bundle.ActionsCalled).To(Equal([]string{})) // no Install
+					})
+
+					It("does not download the package", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(blobstore.GetBlobIDs).To(BeNil())
+					})
+				})
+
+				Context("when package is not installed", func() {
+					BeforeEach(func() {
+						bundle.Installed = false
+					})
+
+					It("installs package (but does not enable it)", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(bundle.ActionsCalled).To(Equal([]string{"Install"}))
+					})
+
+					ItInstallsPkg(act)
+				})
+			})
+
+			Describe("Apply", func() {
+				act := func() error { return applier.Apply(pkg) }
+
+				It("return an error if getting file bundle fails", func() {
+					packagesBc.GetErr = errors.New("fake-get-bundle-error")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-get-bundle-error"))
+				})
+
+				It("returns an error if checking for package installation fails", func() {
+					bundle.IsInstalledErr = errors.New("fake-is-installed-error")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-is-installed-error"))
+				})
+
+				Context("when package is already installed", func() {
+					BeforeEach(func() {
+						bundle.Installed = true
+					})
+
+					It("does not install but only enables package", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(bundle.ActionsCalled).To(Equal([]string{"Enable"})) // no Install
+					})
+
+					It("returns error when package enable fails", func() {
+						bundle.EnableError = errors.New("fake-enable-error")
+
+						err := act()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-enable-error"))
+					})
+
+					It("does not download the package", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(blobstore.GetBlobIDs).To(BeNil())
+					})
+				})
+
+				Context("when package is not installed", func() {
+					BeforeEach(func() {
+						bundle.Installed = false
+					})
+
+					It("installs and enables package", func() {
+						err := act()
+						Expect(err).ToNot(HaveOccurred())
+						Expect(bundle.ActionsCalled).To(Equal([]string{"Install", "Enable"}))
+					})
+
+					It("returns error when package enable fails", func() {
+						bundle.EnableError = errors.New("fake-enable-error")
+
+						err := act()
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-enable-error"))
+					})
+
+					ItInstallsPkg(act)
 				})
 			})
 		})

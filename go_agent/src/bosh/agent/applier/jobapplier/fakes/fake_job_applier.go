@@ -5,6 +5,9 @@ import (
 )
 
 type FakeJobApplier struct {
+	PreparedJobs []models.Job
+	PrepareError error
+
 	AppliedJobs []models.Job
 	ApplyError  error
 
@@ -20,6 +23,11 @@ func NewFakeJobApplier() *FakeJobApplier {
 	return &FakeJobApplier{
 		AppliedJobs: []models.Job{},
 	}
+}
+
+func (s *FakeJobApplier) Prepare(job models.Job) error {
+	s.PreparedJobs = append(s.PreparedJobs, job)
+	return s.PrepareError
 }
 
 func (s *FakeJobApplier) Apply(job models.Job) error {

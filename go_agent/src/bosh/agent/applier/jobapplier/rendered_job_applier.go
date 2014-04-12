@@ -45,8 +45,8 @@ func NewRenderedJobApplier(
 	}
 }
 
-func (s *renderedJobApplier) Apply(job models.Job) error {
-	s.logger.Debug(logTag, "Applying job %v", job)
+func (s renderedJobApplier) Prepare(job models.Job) error {
+	s.logger.Debug(logTag, "Preparing job %v", job)
 
 	jobBundle, err := s.jobsBc.Get(job)
 	if err != nil {
@@ -63,6 +63,22 @@ func (s *renderedJobApplier) Apply(job models.Job) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (s *renderedJobApplier) Apply(job models.Job) error {
+	s.logger.Debug(logTag, "Applying job %v", job)
+
+	err := s.Prepare(job)
+	if err != nil {
+		return bosherr.WrapError(err, "Preparing job")
+	}
+
+	jobBundle, err := s.jobsBc.Get(job)
+	if err != nil {
+		return bosherr.WrapError(err, "Getting job bundle")
 	}
 
 	_, _, err = jobBundle.Enable()

@@ -34,6 +34,24 @@ func NewConcreteApplier(
 	}
 }
 
+func (a *concreteApplier) Prepare(desiredApplySpec as.ApplySpec) error {
+	for _, job := range desiredApplySpec.Jobs() {
+		err := a.jobApplier.Prepare(job)
+		if err != nil {
+			return bosherr.WrapError(err, "Preparing job %s", job.Name)
+		}
+	}
+
+	for _, pkg := range desiredApplySpec.Packages() {
+		err := a.packageApplier.Prepare(pkg)
+		if err != nil {
+			return bosherr.WrapError(err, "Preparing package %s", pkg.Name)
+		}
+	}
+
+	return nil
+}
+
 func (a *concreteApplier) Apply(currentApplySpec, desiredApplySpec as.ApplySpec) error {
 	err := a.jobSupervisor.RemoveAllJobs()
 	if err != nil {

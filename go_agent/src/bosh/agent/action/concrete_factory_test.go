@@ -51,9 +51,7 @@ func init() {
 			specService = fakeas.NewFakeV1Service()
 			drainScriptProvider = boshdrain.NewConcreteDrainScriptProvider(nil, nil, platform.GetDirProvider())
 			logger = boshlog.NewLogger(boshlog.LevelNone)
-		})
 
-		JustBeforeEach(func() {
 			factory = NewFactory(
 				settings,
 				platform,
@@ -70,33 +68,8 @@ func init() {
 			)
 		})
 
-		It("new factory", func() {
-			actions := []string{
-				"apply",
-				"drain",
-				"fetch_logs",
-				"get_task",
-				"get_state",
-				"list_disk",
-				"migrate_disk",
-				"mount_disk",
-				"ping",
-				"prepare_network_change",
-				"ssh",
-				"start",
-				"stop",
-				"unmount_disk",
-				"compile_package",
-				"release_apply_spec",
-			}
-
-			for _, actionName := range actions {
-				action, err := factory.Create(actionName)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(action).ToNot(BeNil())
-			}
-
-			action, err := factory.Create("gobberish")
+		It("returns error if action cannot be created", func() {
+			action, err := factory.Create("fake-unknown-action")
 			Expect(err).To(HaveOccurred())
 			Expect(action).To(BeNil())
 		})
@@ -150,6 +123,12 @@ func init() {
 			Expect(action).To(Equal(NewMountDisk(settings, infrastructure, platform, platform.GetDirProvider())))
 		})
 
+		It("ping", func() {
+			action, err := factory.Create("ping")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).To(Equal(NewPing()))
+		})
+
 		It("prepare_network_change", func() {
 			action, err := factory.Create("prepare_network_change")
 			Expect(err).NotTo(HaveOccurred())
@@ -180,6 +159,12 @@ func init() {
 			Expect(action).To(Equal(NewStart(jobSupervisor)))
 		})
 
+		It("stop", func() {
+			action, err := factory.Create("start")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).To(Equal(NewStart(jobSupervisor)))
+		})
+
 		It("unmount_disk", func() {
 			action, err := factory.Create("unmount_disk")
 			Expect(err).NotTo(HaveOccurred())
@@ -196,6 +181,12 @@ func init() {
 			action, err := factory.Create("run_errand")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(action).To(Equal(NewRunErrand(specService, "/var/vcap/jobs", platform.GetRunner())))
+		})
+
+		It("prepare", func() {
+			action, err := factory.Create("prepare")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(action).To(Equal(NewPrepare(applier)))
 		})
 	})
 }

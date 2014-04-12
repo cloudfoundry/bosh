@@ -52,6 +52,7 @@ func NewFactory(
 			"fetch_logs": NewLogs(compressor, copier, blobstore, dirProvider),
 
 			// Job management
+			"prepare":    NewPrepare(applier),
 			"apply":      NewApply(applier, specService),
 			"start":      NewStart(jobSupervisor),
 			"stop":       NewStop(jobSupervisor),
@@ -78,10 +79,11 @@ func NewFactory(
 	return
 }
 
-func (f concreteFactory) Create(method string) (action Action, err error) {
+func (f concreteFactory) Create(method string) (Action, error) {
 	action, found := f.availableActions[method]
 	if !found {
-		err = bosherr.New("Could not create action with method %s", method)
+		return nil, bosherr.New("Could not create action with method %s", method)
 	}
-	return
+
+	return action, nil
 }
