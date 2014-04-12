@@ -97,7 +97,7 @@ module Bosh::Dev
 
     def light_stemcell
       name = 'bosh-stemcell'
-      definition = Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'ruby')
+      definition = Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'lucid', 'ruby')
       filename = download_stemcell(name, definition, true, Dir.pwd)
       Bosh::Stemcell::Archive.new(filename)
     end

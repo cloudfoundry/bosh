@@ -12,7 +12,9 @@ module Bosh::Stemcell
     end
     let(:operating_system) do
       instance_double('Bosh::Stemcell::OperatingSystem::Base',
-                      name: 'OPERATING_SYSTEM')
+                      name: 'OPERATING_SYSTEM',
+                      version: 'OPERATING_SYSTEM_VERSION',
+      )
     end
     let(:agent) do
       instance_double(

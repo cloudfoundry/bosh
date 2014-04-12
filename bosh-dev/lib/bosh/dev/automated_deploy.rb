@@ -13,6 +13,7 @@ module Bosh::Dev
         args.build_number,
         args.infrastructure_name,
         args.operating_system_name,
+        args.operating_system_version,
         args.agent_name,
       )
 

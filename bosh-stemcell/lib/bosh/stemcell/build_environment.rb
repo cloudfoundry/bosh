@@ -32,11 +32,16 @@ module Bosh::Stemcell
     end
 
     def os_image_rspec_command
+      spec_name = operating_system.name
+      if operating_system.version
+        spec_name = "#{spec_name}_#{operating_system.version}"
+      end
+
       [
         "cd #{STEMCELL_SPECS_DIR};",
         "OS_IMAGE=#{os_image_tarball_path}",
         'bundle exec rspec -fd',
-        "spec/os_image/#{operating_system.name}_spec.rb",
+        "spec/os_image/#{spec_name}_spec.rb",
       ].join(' ')
     end
 

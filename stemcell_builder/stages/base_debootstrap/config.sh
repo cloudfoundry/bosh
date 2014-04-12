@@ -23,7 +23,7 @@ base_debootstrap_arch=amd64
 
 if [ -z "${base_debootstrap_suite:-}" ]
 then
-  base_debootstrap_suite=lucid
+  base_debootstrap_suite=$stemcell_operating_system_version
 fi
 
 persist_value base_debootstrap_arch

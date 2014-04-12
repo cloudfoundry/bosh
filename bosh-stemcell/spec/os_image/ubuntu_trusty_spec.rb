@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Ubuntu OS image' do
+describe 'Ubuntu 14.04 OS image' do
   it_behaves_like 'an OS image'
 
   describe package('apt') do
@@ -20,13 +20,13 @@ describe 'Ubuntu OS image' do
       console-setup
       dash
       debconf
-      dhcp3-client
       eject
       gnupg
       ifupdown
       initramfs-tools
-      iproute
+      iproute2
       iputils-ping
+      isc-dhcp-client
       kbd
       less
       locales
@@ -40,9 +40,7 @@ describe 'Ubuntu OS image' do
       ntpdate
       passwd
       procps
-      python
       sudo
-      tasksel
       tzdata
       ubuntu-keyring
       udev
@@ -58,8 +56,8 @@ describe 'Ubuntu OS image' do
 
     describe file('/etc/lsb-release') do
       it { should be_file }
-      it { should contain 'DISTRIB_RELEASE=10.04' }
-      it { should contain 'DISTRIB_CODENAME=lucid' }
+      it { should contain 'DISTRIB_RELEASE=14.04' }
+      it { should contain 'DISTRIB_CODENAME=trusty' }
     end
   end
 
@@ -126,11 +124,11 @@ describe 'Ubuntu OS image' do
   end
 
   context 'installed by system_grub' do
-    {
-      'grub' => '0.97-29ubuntu60.10.04.2',
-    }.each do |pkg, version|
+    %w(
+      grub
+    ).each do |pkg|
       describe package(pkg) do
-        it { should be_installed.with_version(version) }
+        it { should be_installed }
       end
     end
 
@@ -143,9 +141,8 @@ describe 'Ubuntu OS image' do
 
   context 'installed by system_kernel' do
     %w(
-      linux-image-3.0.0-32-virtual
-      linux-headers-3.0.0-32
-      linux-headers-3.0.0-32-virtual
+      linux-headers-virtual
+      linux-image-virtual
     ).each do |pkg|
       describe package(pkg) do
         it { should be_installed }
@@ -157,6 +154,12 @@ describe 'Ubuntu OS image' do
     describe file('/etc/passwd') do
       it { should be_file }
       it { should contain '/home/vcap:/bin/bash' }
+    end
+  end
+
+  context 'installed from source' do
+    describe package('libyaml-dev') do
+      it { should_not be_installed }
     end
   end
 end

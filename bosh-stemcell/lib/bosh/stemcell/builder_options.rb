@@ -30,6 +30,7 @@ module Bosh::Stemcell
         'stemcell_hypervisor' => infrastructure.hypervisor,
         'stemcell_infrastructure' => infrastructure.name,
         'stemcell_operating_system' => operating_system.name,
+        'stemcell_operating_system_version' => operating_system.version,
         'bosh_protocol_version' => Bosh::Agent::BOSH_PROTOCOL,
         'ruby_bin' => ruby_bin,
         'bosh_release_src_dir' => File.join(source_root, 'release/src/bosh'),

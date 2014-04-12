@@ -3,12 +3,13 @@ require 'bosh/stemcell/definition'
 
 module Bosh::Stemcell
   describe Definition do
-    subject { Bosh::Stemcell::Definition.new(infrastructure, operating_system, agent) }
+    subject(:definition) { Bosh::Stemcell::Definition.new(infrastructure, operating_system, agent) }
 
     let(:infrastructure) do
       instance_double(
         'Bosh::Stemcell::Infrastructure::Base',
         name: 'infrastructure-name',
+        hypervisor: 'hypervisor',
         light?: false,
       )
     end
@@ -17,12 +18,14 @@ module Bosh::Stemcell
       instance_double(
         'Bosh::Stemcell::OperatingSystem::Base',
         name: 'operating-system-name',
+        version: 'operating-system-version',
       )
     end
 
     let(:agent) do
       instance_double(
-        'Bosh::Stemcell::Agent::Go'
+        'Bosh::Stemcell::Agent::Go',
+        name: 'go'
       )
     end
 
@@ -35,7 +38,7 @@ module Bosh::Stemcell
 
         Bosh::Stemcell::OperatingSystem
           .should_receive(:for)
-          .with('operating-system-name')
+          .with('operating-system-name', 'operating-system-version')
           .and_return(operating_system)
 
         Bosh::Stemcell::Agent
@@ -49,7 +52,12 @@ module Bosh::Stemcell
           .with(infrastructure, operating_system, agent)
           .and_return(definition)
 
-        Bosh::Stemcell::Definition.for('infrastructure-name', 'operating-system-name', 'agent-name')
+        Bosh::Stemcell::Definition.for(
+          'infrastructure-name',
+          'operating-system-name',
+          'operating-system-version',
+          'agent-name'
+        )
       end
     end
 
