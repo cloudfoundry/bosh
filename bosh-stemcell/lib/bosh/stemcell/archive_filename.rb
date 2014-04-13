@@ -15,11 +15,8 @@ module Bosh::Stemcell
       stemcell_filename_parts = [
         name,
         version,
-        infrastructure.name,
-        infrastructure.hypervisor,
-        operating_system.name,
+        @definition.stemcell_name
       ]
-      stemcell_filename_parts << "#{agent.name}_agent" unless agent.name == 'ruby'
       "#{stemcell_filename_parts.join('-')}.tgz"
     end
 
@@ -28,13 +25,6 @@ module Bosh::Stemcell
     def name
       light ? "light-#{base_name}" : base_name
     end
-
-    def_delegators(
-      :@definition,
-      :infrastructure,
-      :operating_system,
-      :agent,
-    )
 
     attr_reader(
       :base_name,

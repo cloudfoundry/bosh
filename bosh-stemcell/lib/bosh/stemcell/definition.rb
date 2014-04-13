@@ -20,6 +20,17 @@ module Bosh::Stemcell
       @agent = agent
     end
 
+    def stemcell_name
+      stemcell_name_parts = [
+        infrastructure.name,
+        infrastructure.hypervisor,
+        operating_system.name,
+      ]
+      stemcell_name_parts << operating_system.version if operating_system.version
+      stemcell_name_parts << "#{agent.name}_agent" unless agent.name == 'ruby'
+      stemcell_name_parts.join('-')
+    end
+
     def ==(other)
       infrastructure == other.infrastructure &&
         operating_system == other.operating_system &&

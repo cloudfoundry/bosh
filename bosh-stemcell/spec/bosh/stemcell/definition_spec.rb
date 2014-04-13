@@ -25,7 +25,7 @@ module Bosh::Stemcell
     let(:agent) do
       instance_double(
         'Bosh::Stemcell::Agent::Go',
-        name: 'go'
+        name: 'go',
       )
     end
 
@@ -70,8 +70,8 @@ module Bosh::Stemcell
     describe '#==' do
       it 'compares by value instead of reference' do
         expect_eq = [
-          %w(aws centos ruby),
-          %w(vsphere ubuntu go),
+          %w(aws centos 6.5 ruby),
+          %w(vsphere ubuntu penguin go),
         ]
 
         expect_eq.each do |tuple|
@@ -79,11 +79,49 @@ module Bosh::Stemcell
         end
 
         expect_not_equal = [
-          [%w(aws ubuntu ruby), %w(aws centos ruby)],
-          [%w(vsphere ubuntu go), %w(vsphere ubuntu ruby)],
+          [%w(aws ubuntu penguin ruby), %w(aws centos 6.5 ruby)],
+          [%w(vsphere ubuntu penguin go), %w(vsphere ubuntu penguin ruby)],
         ]
         expect_not_equal.each do |left, right|
           expect(Definition.for(*left)).to_not eq(Definition.for(*right))
+        end
+      end
+    end
+
+    describe '#stemcell_name' do
+      context 'when the agent name is ruby' do
+        before { allow(agent).to receive(:name).and_return('ruby') }
+
+        it 'does not include the agent name in the stemcell name' do
+          expect(definition.stemcell_name).to eq(
+            'infrastructure-name-hypervisor-operating-system-name-operating-system-version'
+          )
+        end
+      end
+
+      context 'when the agent name is go' do
+        it 'includes go_agent in the stemcell name' do
+          expect(definition.stemcell_name).to eq(
+            'infrastructure-name-hypervisor-operating-system-name-operating-system-version-go_agent'
+          )
+        end
+      end
+
+      context 'when the operating system has a version' do
+        it 'includes version in stemcell name' do
+          expect(definition.stemcell_name).to eq(
+            'infrastructure-name-hypervisor-operating-system-name-operating-system-version-go_agent'
+          )
+        end
+      end
+
+      context 'when the operating system does not have a version' do
+        before { allow(operating_system).to receive(:version).and_return(nil) }
+
+        it 'does not include version in stemcell name' do
+          expect(definition.stemcell_name).to eq(
+            'infrastructure-name-hypervisor-operating-system-name-go_agent'
+          )
         end
       end
     end

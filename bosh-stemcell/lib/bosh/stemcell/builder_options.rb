@@ -19,11 +19,8 @@ module Bosh::Stemcell
     end
 
     def default
-      stemcell_name = "bosh-#{infrastructure.name}-#{infrastructure.hypervisor}-#{operating_system.name}"
-      stemcell_name += "-#{agent.name}_agent" unless agent.name == 'ruby'
-
       {
-        'stemcell_name' => stemcell_name,
+        'stemcell_name' => "bosh-#{@definition.stemcell_name}",
         'stemcell_tgz' => archive_filename.to_s,
         'stemcell_image_name' => stemcell_image_name,
         'stemcell_version' => stemcell_version,
