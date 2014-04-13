@@ -32,16 +32,11 @@ module Bosh::Stemcell
     end
 
     def os_image_rspec_command
-      spec_name = operating_system.name
-      if operating_system.version
-        spec_name = "#{spec_name}_#{operating_system.version}"
-      end
-
       [
         "cd #{STEMCELL_SPECS_DIR};",
         "OS_IMAGE=#{os_image_tarball_path}",
         'bundle exec rspec -fd',
-        "spec/os_image/#{spec_name}_spec.rb",
+        "spec/os_image/#{operating_system_spec_name}_spec.rb",
       ].join(' ')
     end
 
@@ -50,7 +45,7 @@ module Bosh::Stemcell
         "cd #{STEMCELL_SPECS_DIR};",
         "STEMCELL_IMAGE=#{image_file_path}",
         "bundle exec rspec -fd#{exclude_exclusions}",
-        "spec/stemcells/#{operating_system.name}_spec.rb",
+        "spec/stemcells/#{operating_system_spec_name}_spec.rb",
         "spec/stemcells/#{agent.name}_agent_spec.rb",
         "spec/stemcells/#{infrastructure.name}_spec.rb",
       ].join(' ')
@@ -106,6 +101,14 @@ module Bosh::Stemcell
       shell.run("sudo umount #{image_mount_point} 2> /dev/null", { ignore_failures: true })
 
       shell.run("sudo rm -rf #{base_directory}", { ignore_failures: true })
+    end
+
+    def operating_system_spec_name
+      spec_name = operating_system.name
+      if operating_system.version
+        spec_name = "#{spec_name}_#{operating_system.version}"
+      end
+      spec_name
     end
 
     def prepare_build_path
