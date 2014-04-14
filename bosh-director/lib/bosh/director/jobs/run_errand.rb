@@ -44,24 +44,14 @@ module Bosh::Director
       with_updated_instances(deployment, job) do
         logger.info('Starting to run errand')
 
-        result = runner.run do
+        runner.run do
           begin
             task_checkpoint
           rescue TaskCancelled => e
-            begin
-              runner.cancel
-            rescue RpcRemoteException => re
-              if re.message =~ /unknown message/
-                logger.info("Agent could not respond to can;cel errand: #{re}")
-              else
-                raise re
-              end
-            end
+            runner.cancel
             raise e
           end
         end
-
-        result
       end
     end
 

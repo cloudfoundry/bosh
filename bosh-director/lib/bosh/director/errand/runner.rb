@@ -51,27 +51,27 @@ module Bosh::Director
     # Runs errand on job instances
     # @return [String] short description of the errand result
     def run(&blk)
-      instance = @job.instances.first
       unless instance
         raise DirectorError, 'Must have at least one job instance to run an errand'
       end
 
       agent_task_result = nil
-      agent = @instance_manager.agent_client_for(instance.model)
 
       event_log_stage = @event_log.begin_stage('Running errand', 1)
       begin
         event_log_stage.advance_and_track("#{@job.name}/#{instance.index}") do
           start_errand_result = agent.start_errand
           @agent_task_id = start_errand_result['agent_task_id']
-          agent_task_result = agent.wait_for_task(@agent_task_id, &blk)
+          agent_task_result = agent.wait_for_task(agent_task_id, &blk)
         end
       rescue TaskCancelled => e
-        agent_task_result = agent.wait_for_task(@agent_task_id)
+        agent_task_result = agent.wait_for_task(agent_task_id)
         raise e
       ensure
-        errand_result = ErrandResult.from_agent_task_result(agent_task_result)
-        @result_file.write(JSON.dump(errand_result.to_hash) + "\n")
+        if agent_task_result
+          errand_result = ErrandResult.from_agent_task_result(agent_task_result)
+          @result_file.write(JSON.dump(errand_result.to_hash) + "\n")
+        end
       end
 
       title_prefix = "Errand `#{@job.name}' completed"
@@ -85,6 +85,19 @@ module Bosh::Director
     end
 
     def cancel
+      agent.cancel_task(agent_task_id) if agent_task_id
+    end
+
+    private
+
+    attr_reader :agent_task_id
+
+    def agent
+      @agent ||= @instance_manager.agent_client_for(instance.model)
+    end
+
+    def instance
+      @instance ||= @job.instances.first
     end
   end
 end

@@ -8,30 +8,30 @@ module Bosh::Director
     let(:instance_manager) { Bosh::Director::Api::InstanceManager.new }
     let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
-    describe '#run' do
-      context 'when there is at least 1 instance' do
-        before { allow(job).to receive(:instances).with(no_args).and_return([instance1, instance2]) }
-        let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 0) }
+    context 'when there is at least 1 instance' do
+      before { allow(job).to receive(:instances).with(no_args).and_return([instance1, instance2]) }
+      let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 0) }
 
-        # This instance will not currently run an errand
-        let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 1) }
+      # This instance will not currently run an errand
+      let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 1) }
 
-        before { allow(instance1).to receive(:model).with(no_args).and_return(instance1_model) }
-        let(:instance1_model) do
-          Models::Instance.make(
-            job: 'fake-job-name',
-            index: 0,
-            vm: vm,
-            deployment: deployment,
-          )
-        end
+      before { allow(instance1).to receive(:model).with(no_args).and_return(instance1_model) }
+      let(:instance1_model) do
+        Models::Instance.make(
+          job: 'fake-job-name',
+          index: 0,
+          vm: vm,
+          deployment: deployment,
+        )
+      end
 
-        let(:deployment) { Models::Deployment.make(name: 'fake-dep-name') }
-        let(:vm) { Models::Vm.make(deployment: deployment) }
+      let(:deployment) { Models::Deployment.make(name: 'fake-dep-name') }
+      let(:vm) { Models::Vm.make(deployment: deployment) }
 
-        before { allow(AgentClient).to receive(:with_defaults).with(vm.agent_id).and_return(agent_client) }
-        let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
+      before { allow(AgentClient).to receive(:with_defaults).with(vm.agent_id).and_return(agent_client) }
+      let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
+      describe '#run' do
         before { allow(event_log).to receive(:begin_stage).and_return(event_log_stage) }
         let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
 
@@ -56,7 +56,7 @@ module Bosh::Director
           end
 
           it 'runs a block while polling' do
-            fake_block = Proc.new { }
+            fake_block = Proc.new {}
 
             expect(agent_client).to receive(:start_errand).with(no_args)
 
@@ -79,13 +79,9 @@ module Bosh::Director
 
           it 'records errand running in the event log' do
             event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
-            expect(event_log).to receive(:begin_stage).
-              with('Running errand', 1).
-              and_return(event_log_stage)
+            expect(event_log).to receive(:begin_stage).with('Running errand', 1).and_return(event_log_stage)
 
-            expect(event_log_stage).to receive(:advance_and_track).
-              with('fake-job-name/0').
-              and_yield
+            expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/0').and_yield
 
             subject.run
           end
@@ -175,16 +171,44 @@ module Bosh::Director
           end
         end
       end
+
+      describe '#cancel' do
+        context 'when an errand is running' do
+          before { allow(subject).to receive(:agent_task_id).and_return('fake-agent-task-id') }
+
+          it 'sends cancel_task message to the agent' do
+            expect(agent_client).to receive(:cancel_task).with('fake-agent-task-id')
+
+            subject.cancel
+          end
+        end
+
+        context 'when no errand is running' do
+          it 'does not send a message to the agent' do
+            expect(agent_client).not_to receive(:cancel_task)
+
+            subject.cancel
+          end
+        end
+      end
     end
 
     context 'when there are 0 instances' do
       before { allow(job).to receive(:instances).with(no_args).and_return([]) }
 
-      it 'raises an error' do
-        expect { subject.run }.to raise_error(
-          DirectorError,
-          /Must have at least one job instance to run an errand/,
-        )
+      describe '#run' do
+        it 'raises an error' do
+          expect { subject.run }.to raise_error(
+            DirectorError,
+            /Must have at least one job instance to run an errand/,
+          )
+        end
+      end
+
+      describe '#cancel' do
+        it 'does not send a message to the agent' do
+          expect { subject.cancel }.not_to raise_error
+        end
       end
     end
   end

@@ -163,21 +163,6 @@ module Bosh::Director
                   expect { subject.perform }.to raise_error(TaskCancelled)
                 end
 
-                context 'when the agent does not responds with unknown message' do
-                  it 'raises TaskCancelled and cleans up errand VMs' do
-                    expect(job_manager).to receive(:update_instances).with(no_args).ordered
-
-                    expect(runner).to receive(:run).with(no_args).ordered.and_yield
-
-                    expect(runner).to receive(:cancel).with(no_args).ordered.and_raise(RpcRemoteException, 'unknown message')
-
-                    expect(job_manager).to receive(:delete_instances).with(no_args).ordered
-                    expect(rp_manager).to receive(:refill).with(no_args).ordered
-
-                    expect { subject.perform }.to raise_error(TaskCancelled)
-                  end
-                end
-
                 context 'when the agent throws an exception' do
                   it 'raises RpcRemoteException and cleans up errand VMs' do
                     expect(job_manager).to receive(:update_instances).with(no_args).ordered
