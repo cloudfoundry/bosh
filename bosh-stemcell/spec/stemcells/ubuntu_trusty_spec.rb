@@ -27,7 +27,7 @@ describe 'Ubuntu 14.04 stemcell' do
 
   context 'installed by bosh_harden' do
     describe 'disallow unsafe setuid binaries' do
-      subject { backend.run_command('find / -xdev -perm +6000 -a -type f')[:stdout].split }
+      subject { backend.run_command('find -L / -xdev -perm +6000 -a -type f')[:stdout].split }
 
       it { should match_array(%w(/bin/su /usr/bin/sudo /usr/bin/sudoedit)) }
     end
