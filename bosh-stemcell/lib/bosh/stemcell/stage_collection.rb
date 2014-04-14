@@ -42,7 +42,6 @@ module Bosh::Stemcell
       end
     end
 
-    # rubocop:disable MethodLength
     def infrastructure_stages
       case infrastructure
       when Infrastructure::Aws then
@@ -55,7 +54,6 @@ module Bosh::Stemcell
         vcloud_stages
       end
     end
-    # rubocop:enable MethodLength
 
     def openstack_stages
       if operating_system.instance_of?(OperatingSystem::Centos)
