@@ -39,7 +39,7 @@ module Bosh::Director
         it 'stops polling once the task is no longer running' do
           task['state'] = 'something other than running'
           client.public_send(message_name, 'fake', 'args')
-          expect(client).not_to have_received(:get_task)
+          expect(client).to have_received(:get_task).with('fake-agent_task_id').exactly(1).times
         end
 
         it 'returns the task value' do
@@ -68,7 +68,6 @@ module Bosh::Director
       it_acts_as_a_long_running_message :mount_disk
       it_acts_as_a_long_running_message :unmount_disk
       it_acts_as_a_long_running_message :stop
-      it_acts_as_a_long_running_message :run_errand
       it_acts_as_a_long_running_message :configure_networks
     end
 
@@ -340,6 +339,150 @@ module Bosh::Director
 
         client = AgentClient.new('foo', 'bar')
         client.format_exception(exception).should == expected_error
+      end
+    end
+
+    describe '#start_errand' do
+      it 'sends a run errand message over nats and returns a task' do
+        nats_rpc = instance_double('Bosh::Director::NatsRpc')
+        allow(Config).to receive(:nats_rpc).and_return(nats_rpc)
+
+        client = AgentClient.new('fake-service-name', 'fake-client-id')
+
+        args = double
+        nats_rpc_response = {
+          'value' => {
+            'state' => 'running',
+            'agent_task_id' => 'fake-task-id',
+          }
+        }
+
+        expect(nats_rpc).to receive(:send_request).with(
+          'fake-service-name.fake-client-id', method: :run_errand, arguments: [args])
+          .and_yield(nats_rpc_response)
+
+        expect(client.start_errand(args)).to eq({
+          'state' => 'running',
+          'agent_task_id' => 'fake-task-id',
+        })
+      end
+    end
+
+    describe '#wait_for_task' do
+      let(:nats_rpc) { instance_double('Bosh::Director::NatsRpc') }
+      before { allow(Config).to receive(:nats_rpc).and_return(nats_rpc) }
+
+      context 'when a block is passed' do
+        let(:fake_block) { Proc.new {} }
+
+        it 'calls the block while the task is running' do
+          client = AgentClient.new('fake-service-name', 'fake-client-id')
+
+          nats_rpc_response = {
+            'value' => {
+              'state' => 'running',
+              'agent_task_id' => 'fake-task-id',
+            }
+          }
+
+          expect(nats_rpc).to receive(:send_request).once.with(
+            'fake-service-name.fake-client-id', method: :get_task, arguments: ['fake-task-id'])
+            .and_yield(nats_rpc_response)
+
+          nats_rpc_response = {
+            'value' => {
+              'state' => 'done',
+              'agent_task_id' => 'fake-task-id'
+            }
+          }
+
+          expect(nats_rpc).to receive(:send_request).once.with(
+            'fake-service-name.fake-client-id', method: :get_task, arguments: ['fake-task-id'])
+            .and_yield(nats_rpc_response)
+
+          expect(fake_block).to receive(:call).exactly(1).times
+
+          client.wait_for_task('fake-task-id', &fake_block)
+        end
+
+        it 'sleeps for the default poll interval' do
+          client = AgentClient.new('fake-service-name', 'fake-client-id')
+
+          allow(fake_block).to receive(:call)
+
+          nats_rpc_response = {
+            'value' => {
+              'state' => 'running',
+            }
+          }
+
+          expect(nats_rpc).to receive(:send_request).once.with(
+            'fake-service-name.fake-client-id', method: :get_task, arguments: ['fake-task-id'])
+            .and_yield(nats_rpc_response)
+
+          nats_rpc_response = {
+            'value' => {
+              'value' => 'fake-return-value',
+            }
+          }
+
+          expect(nats_rpc).to receive(:send_request).once.with(
+            'fake-service-name.fake-client-id', method: :get_task, arguments: ['fake-task-id'])
+            .and_yield(nats_rpc_response)
+
+          expect(client).to receive(:sleep).with(1.0)
+
+          client.wait_for_task('fake-task-id', &fake_block)
+        end
+
+        it 'returns the task value' do
+          client = AgentClient.new('fake-service-name', 'fake-client-id')
+
+          nats_rpc_response = {
+            'value' => {
+              'state' => 'done',
+              'value' => 'fake-return-value',
+            }
+          }
+
+          expect(nats_rpc).to receive(:send_request).once.with(
+            'fake-service-name.fake-client-id', method: :get_task, arguments: ['fake-task-id'])
+            .and_yield(nats_rpc_response)
+
+          expect(client.wait_for_task('fake-task-id', &fake_block)).to eq('fake-return-value')
+        end
+      end
+
+      context 'when no block is passed' do
+        it 'sleeps for the default poll interval and returns task value' do
+          client = AgentClient.new('fake-service-name', 'fake-client-id')
+
+          nats_rpc_response = {
+            'value' => {
+              'state' => 'running',
+              'agent_task_id' => 'fake-task-id'
+            }
+          }
+
+          expect(nats_rpc).to receive(:send_request).once.with(
+            'fake-service-name.fake-client-id', method: :get_task, arguments: ['fake-task-id'])
+            .and_yield(nats_rpc_response)
+
+          nats_rpc_response = {
+            'value' => {
+              'state' => 'done',
+              'value' => 'fake-return-value',
+            }
+          }
+
+          expect(nats_rpc).to receive(:send_request).once.with(
+            'fake-service-name.fake-client-id', method: :get_task, arguments: ['fake-task-id'])
+            .and_yield(nats_rpc_response)
+
+          expect(client).to receive(:sleep).with(1.0)
+
+          client.wait_for_task('fake-task-id')
+        end
       end
     end
   end

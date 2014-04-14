@@ -45,6 +45,7 @@ module Bosh::Director
       @result_file = result_file
       @instance_manager = instance_manager
       @event_log = event_log
+      @agent_task_id = nil
     end
 
     # Runs errand on job instances
@@ -56,15 +57,22 @@ module Bosh::Director
       end
 
       agent_task_result = nil
+      agent = @instance_manager.agent_client_for(instance.model)
 
       event_log_stage = @event_log.begin_stage('Running errand', 1)
-      event_log_stage.advance_and_track("#{@job.name}/#{instance.index}") do
-        agent = @instance_manager.agent_client_for(instance.model)
-        agent_task_result = agent.run_errand(&blk)
+      begin
+        event_log_stage.advance_and_track("#{@job.name}/#{instance.index}") do
+          start_errand_result = agent.start_errand
+          @agent_task_id = start_errand_result['agent_task_id']
+          agent_task_result = agent.wait_for_task(@agent_task_id, &blk)
+        end
+      rescue TaskCancelled => e
+        agent_task_result = agent.wait_for_task(@agent_task_id)
+        raise e
+      ensure
+        errand_result = ErrandResult.from_agent_task_result(agent_task_result)
+        @result_file.write(JSON.dump(errand_result.to_hash) + "\n")
       end
-
-      errand_result = ErrandResult.from_agent_task_result(agent_task_result)
-      @result_file.write(JSON.dump(errand_result.to_hash) + "\n")
 
       title_prefix = "Errand `#{@job.name}' completed"
       exit_code_suffix = "(exit code #{errand_result.exit_code})"

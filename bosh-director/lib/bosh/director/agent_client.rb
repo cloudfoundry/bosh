@@ -96,8 +96,20 @@ module Bosh::Director
       send_long_running_message(:stop, *args)
     end
 
-    def run_errand(*args, &blk)
-      send_long_running_message(:run_errand, *args, &blk)
+    def start_errand(*args)
+      start_long_running_task(:run_errand, *args)
+    end
+
+    def wait_for_task(agent_task_id, &blk)
+      task = get_task_status(agent_task_id)
+
+      while task['state'] == 'running'
+        blk.call if block_given?
+        sleep(DEFAULT_POLL_INTERVAL)
+        task = get_task_status(agent_task_id)
+      end
+
+      task['value']
     end
 
     def configure_networks(*args)
@@ -236,21 +248,16 @@ module Bosh::Director
     end
 
     def send_long_running_message(method_name, *args, &blk)
-      task = send_start_long_running_task_message(method_name, *args)
-      track_long_running_task(task, &blk)
+      task = start_long_running_task(method_name, *args)
+      wait_for_task(task['agent_task_id'], &blk)
     end
 
-    def send_start_long_running_task_message(method_name, *args)
+    def start_long_running_task(method_name, *args)
       AgentMessageConverter.convert_old_message_to_new(send_message(method_name, *args))
     end
 
-    def track_long_running_task(task, &blk)
-      while task['state'] == 'running'
-        blk.call if block_given?
-        sleep(DEFAULT_POLL_INTERVAL)
-        task = AgentMessageConverter.convert_old_message_to_new(get_task(task['agent_task_id']))
-      end
-      task['value']
+    def get_task_status(agent_task_id)
+      AgentMessageConverter.convert_old_message_to_new(get_task(agent_task_id))
     end
   end
 end

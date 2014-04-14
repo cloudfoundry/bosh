@@ -38,18 +38,38 @@ module Bosh::Director
         before { allow(event_log_stage).to receive(:advance_and_track).and_yield }
 
         context 'when agent is able to run errands' do
-          errand_result = {
-            'exit_code' => 123,
-            'stdout' => 'fake-stdout',
-            'stderr' => 'fake-stderr',
-          }
-
           before { allow(Config).to receive(:result).and_return(result_file) }
           let(:result_file) { instance_double('File', write: nil) }
 
-          it 'writes run_errand agent response with exit_code, stdout and stderr to task result file' do
-            allow(agent_client).to receive(:run_errand).with(no_args).and_return(errand_result)
+          let(:start_response) { { 'agent_task_id' => 'fake-agent-task-id' } }
+          let(:errand_result) {
+            {
+              'exit_code' => 123,
+              'stdout' => 'fake-stdout',
+              'stderr' => 'fake-stderr',
+            }
+          }
 
+          before do
+            allow(agent_client).to receive(:start_errand).and_return(start_response)
+            allow(agent_client).to receive(:wait_for_task).and_return(errand_result)
+          end
+
+          it 'runs a block while polling' do
+            fake_block = Proc.new { }
+
+            expect(agent_client).to receive(:start_errand).with(no_args)
+
+            expect(agent_client).to receive(:wait_for_task) do |args, &blk|
+              expect(args).to eq('fake-agent-task-id')
+              expect(blk).to eq(fake_block)
+              errand_result
+            end
+
+            subject.run(&fake_block)
+          end
+
+          it 'writes run_errand agent response with exit_code, stdout and stderr to task result file' do
             result_file.should_receive(:write) do |text|
               expect(JSON.parse(text)).to eq(errand_result)
             end
@@ -58,8 +78,6 @@ module Bosh::Director
           end
 
           it 'records errand running in the event log' do
-            allow(agent_client).to receive(:run_errand).with(no_args).and_return(errand_result)
-
             event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
             expect(event_log).to receive(:begin_stage).
               with('Running errand', 1).
@@ -75,7 +93,7 @@ module Bosh::Director
           %w(exit_code stdout stderr).each do |field_name|
             it "raises an error when #{field_name} is missing in the errand result" do
               invalid_errand_result = errand_result.reject { |k, _| k == field_name }
-              allow(agent_client).to receive(:run_errand).and_return(invalid_errand_result)
+              allow(agent_client).to receive(:wait_for_task).and_return(invalid_errand_result)
 
               expect { subject.run }.to raise_error(AgentInvalidTaskResult, /#{field_name}.*missing/i)
             end
@@ -84,7 +102,7 @@ module Bosh::Director
           it 'does not pass through unexpected fields in the errand result' do
             errand_result_with_extras = errand_result.dup
             errand_result_with_extras['unexpected-key'] = 'extra-value'
-            allow(agent_client).to receive(:run_errand).and_return(errand_result_with_extras)
+            allow(agent_client).to receive(:wait_for_task).and_return(errand_result_with_extras)
 
             result_file.should_receive(:write) do |text|
               expect(JSON.parse(text)).to eq(errand_result)
@@ -94,7 +112,9 @@ module Bosh::Director
           end
 
           context 'when errand exit_code is 0' do
-            before { allow(agent_client).to receive(:run_errand).and_return(errand_result.merge('exit_code' => 0)) }
+            before do
+              allow(agent_client).to receive(:wait_for_task).and_return(errand_result.merge('exit_code' => 0))
+            end
 
             it 'returns successful errand completion message as task short result (not result file)' do
               expect(subject.run).to eq('Errand `fake-job-name\' completed successfully (exit code 0)')
@@ -102,16 +122,35 @@ module Bosh::Director
           end
 
           context 'when errand exit_code is non-0' do
-            before { allow(agent_client).to receive(:run_errand).and_return(errand_result.merge('exit_code' => 123)) }
+            before do
+              allow(agent_client).to receive(:wait_for_task).and_return(errand_result.merge('exit_code' => 123))
+            end
 
             it 'returns error errand completion message as task short result (not result file)' do
               expect(subject.run).to eq('Errand `fake-job-name\' completed with error (exit code 123)')
             end
           end
+
+          context 'when errand is canceled' do
+            before do
+              allow(agent_client).to receive(:wait_for_task) do |args, &blk|
+                raise TaskCancelled if blk
+                errand_result
+              end
+            end
+
+            it 'writes the errand result' do
+              result_file.should_receive(:write) do |text|
+                expect(JSON.parse(text)).to eq(errand_result)
+              end
+
+              expect { subject.run {} }.to raise_error(TaskCancelled)
+            end
+          end
         end
 
         context 'when agent does not support run_errand command' do
-          before { allow(agent_client).to receive(:run_errand).and_raise(error) }
+          before { allow(agent_client).to receive(:start_errand).and_raise(error) }
           let(:error) { RpcRemoteException.new('unknown message {"method"=>"run_errand", "error"=>"details"}') }
 
           it 'raises an error' do
@@ -119,8 +158,8 @@ module Bosh::Director
           end
         end
 
-        context 'when agent times out responding to run errand task status check' do
-          before { allow(agent_client).to receive(:run_errand).and_raise(error) }
+        context 'when agent times out responding to start errand task status check' do
+          before { allow(agent_client).to receive(:start_errand).and_raise(error) }
           let(:error) { RpcRemoteException.new('timeout') }
 
           it 'propagates timeout error' do
@@ -132,9 +171,7 @@ module Bosh::Director
           before { instance1_model.update(vm: nil) }
 
           it 'raises an error' do
-            expect {
-              subject.run
-            }.to raise_error(InstanceVmMissing, %r{fake-job-name/0.*doesn't reference a VM})
+            expect { subject.run }.to raise_error(InstanceVmMissing, %r{fake-job-name/0.*doesn't reference a VM})
           end
         end
       end
@@ -144,9 +181,7 @@ module Bosh::Director
       before { allow(job).to receive(:instances).with(no_args).and_return([]) }
 
       it 'raises an error' do
-        expect {
-          subject.run
-        }.to raise_error(
+        expect { subject.run }.to raise_error(
           DirectorError,
           /Must have at least one job instance to run an errand/,
         )
