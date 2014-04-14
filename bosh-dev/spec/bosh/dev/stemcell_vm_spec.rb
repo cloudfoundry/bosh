@@ -10,6 +10,7 @@ module Bosh::Dev
           vm_name: 'remote',
           infrastructure_name: 'fake-infrastructure_name',
           operating_system_name: 'fake-operating_system_name',
+          operating_system_version: 'fake-operating_system_version',
           agent_name: 'fake-agent_name',
           os_image_s3_bucket_name: 'fake-bucket',
           os_image_s3_key: 'fake-key',
@@ -28,22 +29,22 @@ module Bosh::Dev
 
       subject(:vm) { StemcellVm.new(options, env, build_environment) }
 
-      before { Rake::FileUtilsExt.stub(:sh) }
+      before { allow(Rake::FileUtilsExt).to receive(:sh) }
 
       it 'changes to the bosh-stemcell dir so its Vagrantfile is visible' do
-        Rake::FileUtilsExt.should_receive(:sh).with(/cd bosh-stemcell/)
+        expect(Rake::FileUtilsExt).to receive(:sh).with(/cd bosh-stemcell/)
 
         vm.publish
       end
 
       it 'avoids loading the virtualbox driver by checking for a running ami' do
-        Rake::FileUtilsExt.should_receive(:sh).with(include('[ -e .vagrant/machines/remote/aws/id ] && vagrant destroy remote --force'))
+        expect(Rake::FileUtilsExt).to receive(:sh).with(include('[ -e .vagrant/machines/remote/aws/id ] && vagrant destroy remote --force'))
 
         vm.publish
       end
 
       it 'recreates the VM to ensure a clean environment' do
-        Rake::FileUtilsExt.should_receive(:sh) do |cmd|
+        expect(Rake::FileUtilsExt).to receive(:sh) do |cmd|
           expect(cmd).to match /vagrant destroy remote --force/
           expect(cmd).to match /vagrant up remote/
         end
@@ -71,10 +72,10 @@ module Bosh::Dev
         end
 
         it 'publishes a stemcell inside the VM' do
-          Rake::FileUtilsExt.should_receive(:sh) do |cmd|
+          expect(Rake::FileUtilsExt).to receive(:sh) do |cmd|
             actual = strip_heredoc(cmd)
             expected = expected_cmd(
-              'fake-infrastructure_name,fake-operating_system_name,fake-agent_name,fake-bucket,fake-key',
+              'fake-infrastructure_name,fake-operating_system_name,fake-operating_system_version,fake-agent_name,fake-bucket,fake-key',
               'fake-stemcell.tgz'
             )
 
@@ -86,7 +87,7 @@ module Bosh::Dev
       end
 
       it 'cleans up the VM even if something fails' do
-        Rake::FileUtilsExt.should_receive(:sh) do |cmd|
+        expect(Rake::FileUtilsExt).to receive(:sh) do |cmd|
           raise 'BANG' if cmd =~ /rake ci:publish_stemcell/
 
           actual = strip_heredoc(cmd)
@@ -106,14 +107,14 @@ module Bosh::Dev
         before { env['UBUNTU_ISO'] = 'fake-UBUNTU_ISO' }
 
         it 'exports UBUNTU_ISO for vagrant ssh -c' do
-          Rake::FileUtilsExt.should_receive(:sh).with(/export UBUNTU_ISO='fake-UBUNTU_ISO'/)
+          expect(Rake::FileUtilsExt).to receive(:sh).with(/export UBUNTU_ISO='fake-UBUNTU_ISO'/)
 
           vm.publish
         end
       end
 
       it 'fails early' do
-        Rake::FileUtilsExt.should_receive(:sh).with(/set -eu/)
+        expect(Rake::FileUtilsExt).to receive(:sh).with(/set -eu/)
 
         vm.publish
       end
@@ -122,7 +123,7 @@ module Bosh::Dev
         before { options[:vm_name] = 'remote' }
 
         it 'uses the "aws" provider' do
-          Rake::FileUtilsExt.should_receive(:sh).with(/vagrant up remote --provider aws/)
+          expect(Rake::FileUtilsExt).to receive(:sh).with(/vagrant up remote --provider aws/)
 
           vm.publish
         end
@@ -132,7 +133,7 @@ module Bosh::Dev
         before { options[:vm_name] = 'local' }
 
         it 'uses the "virtualbox" provider' do
-          Rake::FileUtilsExt.should_receive(:sh).with(/vagrant up local --provider virtualbox/)
+          expect(Rake::FileUtilsExt).to receive(:sh).with(/vagrant up local --provider virtualbox/)
 
           vm.publish
         end
