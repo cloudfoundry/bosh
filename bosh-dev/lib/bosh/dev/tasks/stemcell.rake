@@ -56,7 +56,7 @@ namespace :stemcell do
     puts "OS image #{args.os_image_path} uploaded to S3 in bucket #{args.s3_bucket_name} with key #{key}."
   end
 
-  task :build, [:infrastructure_name, :operating_system_name, :agent_name, :os_image_s3_bucket_name, :key] do |_, args|
+  task :build, [:infrastructure_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_s3_bucket_name, :key] do |_, args|
     require 'uri'
     require 'tempfile'
     require 'bosh/dev/download_adapter'
@@ -67,7 +67,7 @@ namespace :stemcell do
       downloader = Bosh::Dev::DownloadAdapter.new(Logger.new($stdout))
       downloader.download(os_image_uri, os_image_path)
 
-      Rake::Task['stemcell:build_with_local_os_image'].invoke(args.infrastructure_name, args.operating_system_name, args.agent_name, os_image_path)
+      Rake::Task['stemcell:build_with_local_os_image'].invoke(args.infrastructure_name, args.operating_system_name, args.operating_system_version, args.agent_name, os_image_path)
     end
   end
 
