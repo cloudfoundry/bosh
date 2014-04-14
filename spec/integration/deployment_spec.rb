@@ -48,6 +48,7 @@ describe 'deployment integrations', type: :integration do
   end
 
   it 'does not finish a deployment if job update fails' do
+    # Ruby agent does not implement fail_job functionality for integration testing
     pending if current_sandbox.agent_type == "ruby"
 
     deploy_simple

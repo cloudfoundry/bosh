@@ -37,6 +37,7 @@ module Bosh::Dev::Sandbox
     attr_reader :agent_type
 
     attr_accessor :director_fix_stateful_nodes
+    attr_reader :logs_path
 
     attr_reader :cpi
 
@@ -291,6 +292,6 @@ module Bosh::Dev::Sandbox
       61000 + @test_env_number * 100 + @port_names.index(name)
     end
 
-    attr_reader :logs_path, :director_tmp_path, :dns_db_path, :task_logs_dir
+    attr_reader :director_tmp_path, :dns_db_path, :task_logs_dir
   end
 end

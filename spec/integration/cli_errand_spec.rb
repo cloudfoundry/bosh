@@ -16,9 +16,7 @@ describe 'cli: errand', type: :integration do
 
     it 'creates a deployment lock' do
       bosh_runner.run('--no-track run errand fake-errand-name')
-
       output = bosh_runner.run_until_succeeds('locks')
-
       expect(output).to match(/\s*\|\s*deployment\s*\|\s*errand\s*\|/)
     end
   end

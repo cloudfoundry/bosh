@@ -32,18 +32,13 @@ describe 'director_scheduler', type: :integration do
     after { current_sandbox.scheduler_process.stop }
 
     it 'snapshots a disk on a defined schedule' do
-      30.times do
-        break unless snapshots.empty?
-        sleep 1
-      end
+      waiter.wait(60) { expect(snapshots).to_not be_empty }
 
       keys = %w[deployment job index director_name director_uuid agent_id instance_id]
       snapshots.each do |snapshot|
         json = JSON.parse(File.read(snapshot))
         expect(json.keys - keys).to be_empty
       end
-
-      expect(snapshots).to_not be_empty
     end
 
     def snapshots
@@ -58,12 +53,7 @@ describe 'director_scheduler', type: :integration do
     after { current_sandbox.scheduler_process.stop }
 
     it 'backs up bosh on a defined schedule' do
-      30.times do
-        break unless backups.empty?
-        sleep 1
-      end
-
-      expect(backups).to_not be_empty
+      waiter.wait(60) { expect(backups).to_not be_empty }
     end
 
     def backups

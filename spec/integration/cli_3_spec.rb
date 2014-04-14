@@ -116,19 +116,18 @@ describe 'cli: 3', type: :integration do
 
   # ~9s
   it 'cannot upload malformed release', no_reset: true do
-    release_filename = spec_asset('release_invalid_checksum.tgz')
-
     target_and_login
-    out = bosh_runner.run("upload release #{release_filename}", failure_expected: true)
 
+    release_filename = spec_asset('release_invalid_checksum.tgz')
+    out = bosh_runner.run("upload release #{release_filename}", failure_expected: true)
     expect(out).to match /Release is invalid, please fix, verify and upload again/
   end
 
   # ~25s
   it 'allows deleting a whole release' do
-    release_filename = spec_asset('valid_release.tgz')
-
     target_and_login
+
+    release_filename = spec_asset('valid_release.tgz')
     bosh_runner.run("upload release #{release_filename}")
 
     out = bosh_runner.run('delete release appcloud')
@@ -141,9 +140,9 @@ describe 'cli: 3', type: :integration do
 
   # ~22s
   it 'allows deleting a particular release version' do
-    release_filename = spec_asset('valid_release.tgz')
-
     target_and_login
+
+    release_filename = spec_asset('valid_release.tgz')
     bosh_runner.run("upload release #{release_filename}")
 
     out = bosh_runner.run('delete release appcloud 0.1')

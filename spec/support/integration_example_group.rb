@@ -15,12 +15,23 @@ module IntegrationExampleGroup
     )
   end
 
+  def health_monitor
+    @health_monitor ||= Bosh::Spec::HealthMonitor.new(
+      current_sandbox.logs_path,
+      logger,
+    )
+  end
+
   def bosh_runner
     @bosh_runner ||= Bosh::Spec::BoshRunner.new(
       BOSH_WORK_DIR,
       BOSH_CONFIG,
       logger
     )
+  end
+
+  def waiter
+    @waiter ||= Bosh::Spec::Waiter.new(logger)
   end
 
   def target_and_login
