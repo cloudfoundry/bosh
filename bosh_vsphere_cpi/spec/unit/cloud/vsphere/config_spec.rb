@@ -312,6 +312,30 @@ module VSphereCloud
       end
     end
 
+    describe '#datacenter_srm' do
+      context 'when srm is not set' do
+        it 'returns false' do
+          expect(config.datacenter_srm).to be(false)
+        end
+      end
+
+      context 'when srm is falsey' do
+        before { datacenters.first['srm'] = false }
+
+        it 'returns false' do
+          expect(config.datacenter_srm).to be(false)
+        end
+      end
+
+      context 'when srm is truthy' do
+        before { datacenters.first['srm'] = true }
+
+        it 'returns true' do
+          expect(config.datacenter_srm).to be(true)
+        end
+      end
+    end
+
     describe '#datacenter_clusters' do
 
       context 'when there is more than one cluster' do
