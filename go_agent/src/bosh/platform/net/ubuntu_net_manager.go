@@ -3,6 +3,7 @@ package net
 import (
 	"bytes"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
 	"time"
@@ -51,15 +52,16 @@ func (net ubuntuNetManager) SetupDhcp(networks boshsettings.Networks) error {
 		return bosherr.WrapError(err, "Generating config from template")
 	}
 
-	written, err := net.fs.ConvergeFileContents("/etc/dhcp3/dhclient.conf", buffer.Bytes())
+	dhclientConfigFile := net.dhclientConfigFile()
+	written, err := net.fs.ConvergeFileContents(dhclientConfigFile, buffer.Bytes())
 	if err != nil {
-		return bosherr.WrapError(err, "Writing to /etc/dhcp3/dhclient.conf")
+		return bosherr.WrapError(err, "Writing to %s", dhclientConfigFile)
 	}
 
 	if written {
-		// Ignore errors here, just run the commands
-		net.cmdRunner.RunCommand("pkill", "dhclient3")
-		net.cmdRunner.RunCommand("/etc/init.d/networking", "restart")
+		args := net.restartNetworkArguments()
+		net.cmdRunner.RunCommand("ifdown", args...)
+		net.cmdRunner.RunCommand("ifup", args...)
 	}
 
 	return nil
@@ -221,4 +223,26 @@ func (net ubuntuNetManager) restartNetworkingInterfaces(networks []CustomNetwork
 		net.cmdRunner.RunCommand("service", "network-interface", "stop", "INTERFACE="+network.Interface)
 		net.cmdRunner.RunCommand("service", "network-interface", "start", "INTERFACE="+network.Interface)
 	}
+}
+
+func (net ubuntuNetManager) dhclientConfigFile() string {
+	if net.cmdRunner.CommandExists("dhclient3") {
+		// Using dhclient3
+		return "/etc/dhcp3/dhclient.conf"
+	}
+
+	return "/etc/dhcp/dhclient.conf"
+}
+
+func (net ubuntuNetManager) restartNetworkArguments() []string {
+	stdout, _, _, _ := net.cmdRunner.RunCommand("ifup", "--version")
+
+	// Check if command accepts --no-loopback argument
+	// --exclude does not work with ifup > 0.7 which comes in Ubuntu 14.04
+	matched, _ := regexp.MatchString(`ifup version 0\.7`, stdout)
+	if matched {
+		return []string{"-a", "--no-loopback"}
+	}
+
+	return []string{"-a", "--exclude=lo"}
 }

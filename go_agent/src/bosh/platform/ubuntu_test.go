@@ -70,8 +70,44 @@ prepend domain-name-servers xx.xx.xx.xx;
 				},
 			}
 
-			Context("when dhcp was not previously configured", func() {
-				It("updates dhclient.conf", func() {
+			ItRestartsDhcp := func() {
+				Context("when ifconfig version is 0.7", func() {
+					BeforeEach(func() {
+						cmdRunner.AddCmdResult("ifup --version", fakesys.FakeCmdResult{
+							Stdout: "ifup version 0.7.47",
+						})
+					})
+
+					It("restarts dhclient", func() {
+						err := netManager.SetupDhcp(networks)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+						Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"ifdown", "-a", "--no-loopback"}))
+						Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"ifup", "-a", "--no-loopback"}))
+					})
+				})
+
+				Context("when ifconfig version is 0.6", func() {
+					BeforeEach(func() {
+						cmdRunner.AddCmdResult("ifup --version", fakesys.FakeCmdResult{
+							Stdout: "ifup version 0.6.0",
+						})
+					})
+
+					It("restarts dhclient", func() {
+						err := netManager.SetupDhcp(networks)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(len(cmdRunner.RunCommands)).To(Equal(3))
+						Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"ifdown", "-a", "--exclude=lo"}))
+						Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"ifup", "-a", "--exclude=lo"}))
+					})
+				})
+			}
+
+			ItUpdatesDhcp3Config := func() {
+				It("updates /etc/dhcp3/dhclient.conf", func() {
 					err := netManager.SetupDhcp(networks)
 					Expect(err).ToNot(HaveOccurred())
 
@@ -79,60 +115,79 @@ prepend domain-name-servers xx.xx.xx.xx;
 					Expect(dhcpConfig).ToNot(BeNil())
 					Expect(dhcpConfig.StringContents()).To(Equal(expectedUbuntuDHCPConfig))
 				})
+			}
 
-				It("restarts dhclient", func() {
+			ItUpdatesDhcpConfig := func() {
+				It("updates /etc/dhcp/dhclient.conf", func() {
 					err := netManager.SetupDhcp(networks)
 					Expect(err).ToNot(HaveOccurred())
 
-					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
-					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient3"}))
-					Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"/etc/init.d/networking", "restart"}))
-				})
-			})
-
-			Context("when dhcp was previously configured with different configuration", func() {
-				BeforeEach(func() {
-					fs.WriteFileString("/etc/dhcp3/dhclient.conf", "fake-other-configuration")
-				})
-
-				It("sets up dhcp and restarts dhclient", func() {
-					err := netManager.SetupDhcp(networks)
-					Expect(err).ToNot(HaveOccurred())
-
-					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
+					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
 					Expect(dhcpConfig).ToNot(BeNil())
 					Expect(dhcpConfig.StringContents()).To(Equal(expectedUbuntuDHCPConfig))
 				})
+			}
 
-				It("sets up dhcp and restarts dhclient", func() {
-					err := netManager.SetupDhcp(networks)
-					Expect(err).ToNot(HaveOccurred())
-
-					Expect(len(cmdRunner.RunCommands)).To(Equal(2))
-					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient3"}))
-					Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"/etc/init.d/networking", "restart"}))
-				})
-			})
-
-			Context("when dhcp was previously configured with the same configuration", func() {
-				BeforeEach(func() {
-					fs.WriteFileString("/etc/dhcp3/dhclient.conf", expectedUbuntuDHCPConfig)
-				})
-
-				It("does not restart dhclient", func() {
-					err := netManager.SetupDhcp(networks)
-					Expect(err).ToNot(HaveOccurred())
-
-					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
-					Expect(dhcpConfig).ToNot(BeNil())
-					Expect(dhcpConfig.StringContents()).To(Equal(expectedUbuntuDHCPConfig))
-				})
-
+			ItDoesNotRestartDhcp := func() {
 				It("does not restart dhclient", func() {
 					err := netManager.SetupDhcp(networks)
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+				})
+			}
+
+			Context("when dhclient3 is installed on the system", func() {
+				BeforeEach(func() { cmdRunner.CommandExistsValue = true })
+
+				Context("when dhcp was not previously configured", func() {
+					ItUpdatesDhcp3Config()
+					ItRestartsDhcp()
+				})
+
+				Context("when dhcp was previously configured with different configuration", func() {
+					BeforeEach(func() {
+						fs.WriteFileString("/etc/dhcp3/dhclient.conf", "fake-other-configuration")
+					})
+
+					ItUpdatesDhcp3Config()
+					ItRestartsDhcp()
+				})
+
+				Context("when dhcp was previously configured with the same configuration", func() {
+					BeforeEach(func() {
+						fs.WriteFileString("/etc/dhcp3/dhclient.conf", expectedUbuntuDHCPConfig)
+					})
+
+					ItUpdatesDhcp3Config()
+					ItDoesNotRestartDhcp()
+				})
+			})
+
+			Context("when dhclient3 is not installed on the system", func() {
+				BeforeEach(func() { cmdRunner.CommandExistsValue = false })
+
+				Context("when dhcp was not previously configured", func() {
+					ItUpdatesDhcpConfig()
+					ItRestartsDhcp()
+				})
+
+				Context("when dhcp was previously configured with different configuration", func() {
+					BeforeEach(func() {
+						fs.WriteFileString("/etc/dhcp/dhclient.conf", "fake-other-configuration")
+					})
+
+					ItUpdatesDhcpConfig()
+					ItRestartsDhcp()
+				})
+
+				Context("when dhcp was previously configured with the same configuration", func() {
+					BeforeEach(func() {
+						fs.WriteFileString("/etc/dhcp/dhclient.conf", expectedUbuntuDHCPConfig)
+					})
+
+					ItUpdatesDhcpConfig()
+					ItDoesNotRestartDhcp()
 				})
 			})
 		})
