@@ -46,7 +46,8 @@ echo 'vcap' > /etc/cron.allow
 echo 'vcap' > /etc/at.allow
 
 chmod 0770 /var/lock
-chown root:vcap /var/lock
+chown -h root:vcap /var/lock
+chown -LR root:vcap /var/lock
 
 chmod 0640 /etc/cron.allow
 chown root:vcap /etc/cron.allow
