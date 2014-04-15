@@ -3,6 +3,7 @@ module Bosh::Agent
   class Handler
     include Bosh::Exec
 
+    attr_accessor :current_long_running_task
     attr_accessor :nats
     attr_reader :processors
 
@@ -34,7 +35,7 @@ module Bosh::Agent
       @lock = Mutex.new
 
       @results = []
-      @long_running_agent_task = []
+      self.current_long_running_task = {}
       @restarting_agent = false
 
       @nats_fail_count = 0
@@ -158,6 +159,8 @@ module Bosh::Agent
         EM.defer do
           process_in_thread(processor, reply_to, method, args)
         end
+      elsif method == 'cancel_task'
+        handle_cancel_task(reply_to, args.first)
       elsif method == 'get_task'
         handle_get_task(reply_to, args.first)
       elsif method == 'shutdown'
@@ -179,11 +182,11 @@ module Bosh::Agent
           publish(reply_to, exception.to_hash)
         else
           @lock.synchronize do
-            if @long_running_agent_task.empty?
-              process_long_running(reply_to, processor, args)
-            else
+            if current_long_running_task[:task_id]
               exception = RemoteException.new('already running long running task')
               publish(reply_to, exception.to_hash)
+            else
+              process_long_running(reply_to, processor, args)
             end
           end
         end
@@ -206,8 +209,22 @@ module Bosh::Agent
     end
     # rubocop:enable MethodLength
 
+    def handle_cancel_task(reply_to, agent_task_id)
+      if current_long_running_task?(agent_task_id)
+        if current_long_running_task[:processor].respond_to?(:cancel)
+          current_long_running_task[:processor].cancel
+          publish(reply_to, { 'value' => 'canceled' })
+          self.current_long_running_task = {}
+        else
+          publish(reply_to, { 'exception' => "could not cancel task #{agent_task_id}" })
+        end
+      else
+        publish(reply_to, { 'exception' => 'unknown agent_task_id' })
+      end
+    end
+
     def handle_get_task(reply_to, agent_task_id)
-      if @long_running_agent_task == [agent_task_id]
+      if current_long_running_task?(agent_task_id)
         publish(reply_to, { 'value' => { 'state' => 'running', 'agent_task_id' => agent_task_id } })
       else
         rs = @results.find { |time, task_id, result| task_id == agent_task_id }
@@ -249,14 +266,14 @@ module Bosh::Agent
     def process_long_running(reply_to, processor, args)
       agent_task_id = generate_agent_task_id
 
-      @long_running_agent_task = [ agent_task_id ]
+      self.current_long_running_task = { task_id: agent_task_id, processor: processor }
 
       payload = { value: { state: 'running', agent_task_id: agent_task_id } }
       publish(reply_to, payload)
 
       result = process(processor, args)
       @results << [Time.now.to_i, agent_task_id, result]
-      @long_running_agent_task = []
+      self.current_long_running_task = {}
     end
 
     def kill_main_thread_in(seconds)
@@ -381,6 +398,10 @@ module Bosh::Agent
       }
 
       payload
+    end
+
+    def current_long_running_task?(agent_task_id)
+      current_long_running_task[:task_id] == agent_task_id
     end
 
   end
