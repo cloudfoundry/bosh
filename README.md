@@ -10,13 +10,13 @@ Our documentation is available at [docs.cloudfoundry.org/bosh](http://docs.cloud
 To install the latest bosh CLI gems:
 
 ```
-gem install bosh_cli --pre
+gem install bosh_cli
 
 # Plugin required for deploying MicroBosh
-gem install bosh_cli_plugin_micro --pre
+gem install bosh_cli_plugin_micro
 
 # Plugin required for 'bosh aws create' and bootstrap commands
-gem install bosh_cli_plugin_aws --pre
+gem install bosh_cli_plugin_aws
 ```
 
 ## Using BOSH CLI and plugins from Git
