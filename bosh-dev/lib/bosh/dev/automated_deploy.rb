@@ -49,6 +49,8 @@ module Bosh::Dev
 
       manifest_path = @deployment_account.manifest_path
       director_client.deploy(manifest_path)
+
+      director_client.clean_up
     end
 
     private

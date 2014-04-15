@@ -58,7 +58,6 @@ module Bosh::Dev
 
         it 'does not re-upload it' do
           cli.should_not_receive(:run_bosh).with(/upload stemcell/, debug_on_fail: true)
-
           director_client.upload_stemcell(stemcell_archive)
         end
       end
@@ -67,7 +66,6 @@ module Bosh::Dev
     describe '#upload_release' do
       it 'uploads the release using the cli, skipping if the release already exists' do
         cli.should_receive(:run_bosh).with('upload release /path/to/fake-release.tgz --skip-if-exists', debug_on_fail: true)
-
         director_client.upload_release('/path/to/fake-release.tgz')
       end
 
@@ -142,6 +140,24 @@ EOF
         cli.should_receive(:run_bosh).with(/deploy/, debug_on_fail: true).ordered
 
         director_client.deploy(manifest_path)
+      end
+    end
+
+    describe '#clean_up' do
+      it 'cleans up resources on the director' do
+        cli.should_receive(:run_bosh).with('cleanup', debug_on_fail: true)
+        director_client.clean_up
+      end
+
+      it 'always re-targets and logs in first' do
+        target_retryable = double('target-retryable')
+        Bosh::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
+
+        cli.should_receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
+        cli.should_receive(:run_bosh).with('login fake_username fake_password').ordered
+        cli.should_receive(:run_bosh).with(/cleanup/, debug_on_fail: true).ordered
+
+        director_client.clean_up
       end
     end
   end

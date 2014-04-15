@@ -5,18 +5,17 @@ require 'yaml'
 module Bosh::Dev
   class DirectorClient
     def initialize(options = {})
-        @uri = options.fetch(:uri)
-        @username = options.fetch(:username)
-        @password = options.fetch(:password)
-        @cli = BoshCliSession.new
-        @director_handle = Bosh::Cli::Client::Director.new(uri, username, password)
+      @uri = options.fetch(:uri)
+      @username = options.fetch(:username)
+      @password = options.fetch(:password)
+      @cli = BoshCliSession.new
+      @director_handle = Bosh::Cli::Client::Director.new(uri, username, password)
     end
 
     def upload_stemcell(stemcell_archive)
       target_and_login!
       unless has_stemcell?(stemcell_archive.name, stemcell_archive.version)
-        cmd = "upload stemcell #{stemcell_archive.path}"
-        cli.run_bosh(cmd, debug_on_fail: true)
+        cli.run_bosh("upload stemcell #{stemcell_archive.path}", debug_on_fail: true)
       end
     end
 
@@ -30,6 +29,11 @@ module Bosh::Dev
       fix_uuid_in_manifest(manifest_path)
       cli.run_bosh("deployment #{manifest_path}")
       cli.run_bosh('deploy', debug_on_fail: true)
+    end
+
+    def clean_up
+      target_and_login!
+      cli.run_bosh('cleanup', debug_on_fail: true)
     end
 
     private
