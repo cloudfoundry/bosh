@@ -62,7 +62,7 @@ describe 'with release and stemcell and two deployments' do
 
     it 'should use job colocation', ssh: true do
       @jobs.each do |job|
-        grep_cmd = "pgrep -lf #{job}"
+        grep_cmd = "ps -ef | grep #{job} | grep -v grep"
         ssh(static_ip, 'vcap', grep_cmd, @our_ssh_options).should match /#{job}/
       end
     end
