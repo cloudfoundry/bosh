@@ -1,10 +1,6 @@
 package mbus
 
 import (
-	bosherr "bosh/errors"
-	boshhandler "bosh/handler"
-	boshlog "bosh/logger"
-	boshsettings "bosh/settings"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +9,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	bosherr "bosh/errors"
+	boshhandler "bosh/handler"
+	boshlog "bosh/logger"
+	boshsettings "bosh/settings"
 )
 
 type natsHandler struct {

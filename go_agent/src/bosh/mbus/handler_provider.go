@@ -1,6 +1,10 @@
 package mbus
 
 import (
+	"net/url"
+
+	"github.com/cloudfoundry/yagnats"
+
 	bosherr "bosh/errors"
 	boshhandler "bosh/handler"
 	boshlog "bosh/logger"
@@ -8,8 +12,6 @@ import (
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
-	"github.com/cloudfoundry/yagnats"
-	"net/url"
 )
 
 type MbusHandlerProvider struct {
@@ -24,7 +26,10 @@ func NewHandlerProvider(settings boshsettings.Service, logger boshlog.Logger) (p
 	return
 }
 
-func (p MbusHandlerProvider) Get(platform boshplatform.Platform, dirProvider boshdir.DirectoriesProvider) (handler boshhandler.Handler, err error) {
+func (p MbusHandlerProvider) Get(
+	platform boshplatform.Platform,
+	dirProvider boshdir.DirectoriesProvider,
+) (handler boshhandler.Handler, err error) {
 	if p.handler != nil {
 		handler = p.handler
 		return

@@ -1,37 +1,37 @@
 package handler
 
 import (
+	"encoding/json"
+
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
-	"encoding/json"
 )
 
-func PerformHandlerWithJSON(rawJSON []byte, handler HandlerFunc, logger boshlog.Logger) (moreJSON []byte, request Request, err error) {
-	err = json.Unmarshal(rawJSON, &request)
+func PerformHandlerWithJSON(rawJSON []byte, handler HandlerFunc, logger boshlog.Logger) ([]byte, Request, error) {
+	var request Request
+
+	err := json.Unmarshal(rawJSON, &request)
 	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshalling JSON payload")
-		return
+		return []byte{}, request, bosherr.WrapError(err, "Unmarshalling JSON payload")
 	}
+
 	request.Payload = rawJSON
 
 	logger.Info("MBus Handler", "Received request with action %s", request.Method)
 	logger.DebugWithDetails("MBus Handler", "Payload", request.Payload)
 
 	response := handler(request)
-
 	if response == nil {
-		moreJSON = []byte{}
-		return
+		return []byte{}, request, nil
 	}
 
-	moreJSON, err = json.Marshal(response)
+	respJSON, err := json.Marshal(response)
 	if err != nil {
-		err = bosherr.WrapError(err, "Marshalling JSON response")
-		return
+		return respJSON, request, bosherr.WrapError(err, "Marshalling JSON response")
 	}
 
 	logger.Info("MBus Handler", "Responding")
-	logger.DebugWithDetails("MBus Handler", "Payload", moreJSON)
+	logger.DebugWithDetails("MBus Handler", "Payload", respJSON)
 
-	return
+	return respJSON, request, nil
 }
