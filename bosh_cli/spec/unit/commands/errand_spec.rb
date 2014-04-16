@@ -83,6 +83,29 @@ describe Bosh::Cli::Command::Errand do
                 end
               end
 
+              context 'when errand finished with >128 exit code' do
+                let(:errand_result) { Bosh::Cli::Client::ErrandsClient::ErrandResult.new(143, 'fake-stdout', 'fake-stderr') }
+
+                it 'raises an error and prints output' do
+                  expect {
+                    perform
+                  }.to raise_error(
+                    Bosh::Cli::CliError,
+                    /Errand `fake-errand-name' was canceled \(exit code 143\)/,
+                  )
+
+                  expect_output(<<-TEXT)
+
+                    [stdout]
+                    fake-stdout
+
+                    [stderr]
+                    fake-stderr
+
+                  TEXT
+                end
+              end
+
               context 'when errand has stdout and stderr' do
                 let(:errand_result) { Bosh::Cli::Client::ErrandsClient::ErrandResult.new(0, 'fake-stdout', 'fake-stderr') }
 

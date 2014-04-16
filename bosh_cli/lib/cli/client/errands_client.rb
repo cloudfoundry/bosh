@@ -27,7 +27,7 @@ module Bosh::Cli::Client
 
       status, task_id = @director.request_and_track(:post, url, options)
 
-      if status != :done
+      unless [:done, :cancelled].include?(status)
         return [status, task_id, nil]
       end
 

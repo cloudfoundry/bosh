@@ -127,6 +127,16 @@ module Bosh::Director
             end
           end
 
+          context 'when errand exit_code is >128' do
+            before do
+              allow(agent_client).to receive(:wait_for_task).and_return(errand_result.merge('exit_code' => 143))
+            end
+
+            it 'returns error errand cancellation message as task short result (not result file)' do
+              expect(subject.run).to eq('Errand `fake-job-name\' was canceled (exit code 143)')
+            end
+          end
+
           context 'when errand is canceled' do
             before do
               allow(agent_client).to receive(:wait_for_task) do |args, &blk|

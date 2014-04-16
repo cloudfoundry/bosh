@@ -28,13 +28,15 @@ module Bosh::Cli::Command
       say(errand_result.stderr.empty?? 'None' : errand_result.stderr)
       nl
 
-      title_prefix = "Errand `#{errand_name}' completed"
+      title_prefix = "Errand `#{errand_name}'"
       exit_code_suffix = "(exit code #{errand_result.exit_code})"
 
       if errand_result.exit_code == 0
-        say("#{title_prefix} successfully #{exit_code_suffix}".make_green)
+        say("#{title_prefix} completed successfully #{exit_code_suffix}".make_green)
+      elsif errand_result.exit_code > 128
+        err("#{title_prefix} was canceled #{exit_code_suffix}")
       else
-        err("#{title_prefix} with error #{exit_code_suffix}")
+        err("#{title_prefix} completed with error #{exit_code_suffix}")
       end
     end
   end

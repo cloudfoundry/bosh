@@ -179,6 +179,44 @@ describe 'cli: errand', type: :integration do
     end
   end
 
+  context 'when errand is canceled' do
+    with_reset_sandbox_before_all
+
+    before(:all) do
+      manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
+      # sleep so we have time to cancel it
+      manifest_hash['jobs'].last['properties']['errand1']['sleep_duration_in_seconds'] = 5000
+      deploy_simple(manifest_hash: manifest_hash)
+    end
+
+    it 'successfully cancels the errand and returns its output' do
+      run_errand_thread = Thread.new do
+        runner = Bosh::Spec::BoshRunner.new(
+          BOSH_WORK_DIR,
+          BOSH_CONFIG,
+          logger
+        )
+        runner.run_thread_safe('run errand fake-errand-name', failure_expected: true)
+      end
+
+      # FIXME
+      sleep 10
+
+      cancel_output = bosh_runner.run("cancel task 4")
+      expect(cancel_output).to match /Task 4 is getting canceled/
+
+      errand_output = bosh_runner.run("task 4")
+      expect(errand_output).to include('Error 10001: Task 4 cancelled')
+
+      result_output = bosh_runner.run("task 4 --result")
+      expect(result_output).to include('fake-errand-stdout')
+      expect(result_output).to include('fake-errand-stderr')
+
+      errand_result = run_errand_thread.value
+      expect(errand_result).to include("Errand `fake-errand-name' was canceled (exit code 143)")
+    end
+  end
+
   context 'when errand cannot be run because there is no bin/run found in the job template' do
     with_reset_sandbox_before_all
 

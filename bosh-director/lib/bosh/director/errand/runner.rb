@@ -74,13 +74,15 @@ module Bosh::Director
         end
       end
 
-      title_prefix = "Errand `#{@job.name}' completed"
+      title_prefix = "Errand `#{@job.name}'"
       exit_code_suffix = "(exit code #{errand_result.exit_code})"
 
       if errand_result.exit_code == 0
-        "#{title_prefix} successfully #{exit_code_suffix}"
+        "#{title_prefix} completed successfully #{exit_code_suffix}"
+      elsif errand_result.exit_code > 128
+        "#{title_prefix} was canceled #{exit_code_suffix}"
       else
-        "#{title_prefix} with error #{exit_code_suffix}"
+        "#{title_prefix} completed with error #{exit_code_suffix}"
       end
     end
 
