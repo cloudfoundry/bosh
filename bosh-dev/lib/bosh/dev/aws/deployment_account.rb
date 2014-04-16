@@ -35,5 +35,9 @@ module Bosh::Dev::Aws
       @shell.run(". #{@bosh_environment_path} && bosh aws create --trace")
       @deployments_repository.push
     end
+
+    def save
+      @deployments_repository.push
+    end
   end
 end

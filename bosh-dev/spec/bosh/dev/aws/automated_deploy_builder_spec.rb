@@ -30,14 +30,12 @@ module Bosh::Dev::Aws
         automated_deploy = instance_double('Bosh::Dev::AutomatedDeploy')
         Bosh::Dev::AutomatedDeploy.should_receive(:new).with(
           build_target,
-          'fake-bosh-target',
           deployment_account,
           artifacts_downloader,
         ).and_return(automated_deploy)
 
         expect(subject.build(
           build_target,
-          'fake-bosh-target',
           'fake-environment-name',
           'fake-deployment-name',
         )).to eq(automated_deploy)

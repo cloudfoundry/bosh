@@ -22,7 +22,6 @@ module Bosh::Dev
         deployer = instance_double('Bosh::Dev::AutomatedDeploy')
         builder.should_receive(:build).with(
           build_target,
-          'fake-bosh-target',
           'fake-environment-name',
           'fake-deployment-name',
         ).and_return(deployer)
@@ -32,8 +31,6 @@ module Bosh::Dev
           :infrastructure_name,
           :operating_system_name,
           :agent_name,
-          :micro_target,
-          :bosh_target,
           :environment_name,
           :deployment_name,
         ).new(
@@ -41,8 +38,6 @@ module Bosh::Dev
           'fake-infrastructure-name',
           'fake-operating-system-name',
           'fake-agent-name',
-          'fake-micro-target',
-          'fake-bosh-target',
           'fake-environment-name',
           'fake-deployment-name',
         )
@@ -71,7 +66,6 @@ module Bosh::Dev
       subject(:deployer) do
         described_class.new(
           build_target,
-          bosh_target,
           deployment_account,
           artifacts_downloader,
         )
@@ -115,12 +109,67 @@ module Bosh::Dev
       end
 
       it 'prepare deployment account and then follows the normal deploy procedure and then cleans up old resources' do
-        expect(deployment_account).to receive(:prepare).with(no_args)
+        expect(deployment_account).to receive(:prepare).with(no_args).ordered
 
-        artifacts_downloader
-          .should_receive(:download_release)
-          .with('fake-build-number', Dir.pwd)
-          .and_return('/tmp/release.tgz')
+        artifacts_downloader.
+          should_receive(:download_stemcell).
+          with(build_target, Dir.pwd).
+          ordered.
+          and_return('/tmp/stemcell.tgz')
+
+        stemcell_archive = instance_double('Bosh::Stemcell::Archive')
+        Bosh::Stemcell::Archive.should_receive(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
+
+        director_client.should_receive(:upload_stemcell).with(stemcell_archive).ordered
+
+        artifacts_downloader.
+          should_receive(:download_release).
+          with('fake-build-number', Dir.pwd).
+          ordered.
+          and_return('/tmp/release.tgz')
+
+        director_client.should_receive(:upload_release).with('/tmp/release.tgz').ordered
+
+        director_client.should_receive(:deploy).with('/path/to/manifest.yml').ordered
+
+        director_client.should_receive(:clean_up).with(no_args).ordered
+
+        deployer.deploy(bosh_target)
+      end
+    end
+
+    describe '#deploy_micro' do
+      subject(:deployer) do
+        described_class.new(
+          build_target,
+          deployment_account,
+          artifacts_downloader,
+        )
+      end
+
+      let(:build_target) do
+        instance_double(
+          'Bosh::Dev::BuildTarget',
+          build_number: 'fake-build-number',
+        )
+      end
+
+      let(:deployment_account) do
+        instance_double(
+          'Bosh::Dev::Aws::DeploymentAccount',
+          manifest_path: '/path/to/manifest.yml',
+          bosh_user: 'fake-username',
+          bosh_password: 'fake-password',
+        )
+      end
+
+      let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
+
+      before { allow(Bosh::Dev::MicroClient).to receive(:new).with(no_args).and_return(micro_client) }
+      let(:micro_client) { instance_double('Bosh::Dev::MicroClient', deploy: nil) }
+
+      it 'prepare deployment account and then follows the normal micro bosh deploy procedure' do
+        expect(deployment_account).to receive(:prepare).with(no_args).ordered
 
         artifacts_downloader
           .should_receive(:download_stemcell)
@@ -130,12 +179,11 @@ module Bosh::Dev
         stemcell_archive = instance_double('Bosh::Stemcell::Archive')
         Bosh::Stemcell::Archive.should_receive(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
 
-        director_client.should_receive(:upload_stemcell).with(stemcell_archive).ordered
-        director_client.should_receive(:upload_release).with('/tmp/release.tgz').ordered
-        director_client.should_receive(:deploy).with('/path/to/manifest.yml').ordered
-        director_client.should_receive(:clean_up).with(no_args).ordered
+        micro_client.should_receive(:deploy).with('/path/to/manifest.yml', stemcell_archive).ordered
 
-        deployer.deploy
+        expect(deployment_account).to receive(:save).with(no_args).ordered
+
+        deployer.deploy_micro
       end
     end
   end

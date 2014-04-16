@@ -6,7 +6,7 @@ require 'bosh/dev/vcloud/deployment_account'
 
 module Bosh::Dev::VCloud
   class AutomatedDeployBuilder
-    def build(build_target, bosh_target, environment_name, deployment_name)
+    def build(build_target, environment_name, deployment_name)
       logger = Logger.new(STDERR)
 
       deployments_repository = Bosh::Dev::DeploymentsRepository.new(ENV)
@@ -17,7 +17,6 @@ module Bosh::Dev::VCloud
 
       Bosh::Dev::AutomatedDeploy.new(
         build_target,
-        bosh_target,
         deployment_account,
         artifacts_downloader,
       )
