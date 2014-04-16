@@ -32,7 +32,7 @@ module Bosh::Dev::VCloud
     end
 
     def save
-      @deployments_repository.push
+      @deployments_repository.update_and_push
     end
   end
 end

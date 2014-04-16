@@ -47,7 +47,7 @@ module Bosh::Dev::VCloud
 
     describe '#save' do
       it 'pushes changes to deployments repo' do
-        deployments_repository.should_receive(:push)
+        deployments_repository.should_receive(:update_and_push)
         account.save
       end
     end
