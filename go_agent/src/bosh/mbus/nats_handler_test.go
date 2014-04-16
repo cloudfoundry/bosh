@@ -64,11 +64,8 @@ func init() {
 
 				Expect(len(client.PublishedMessages)).To(Equal(1))
 				messages := client.PublishedMessages["reply to me!"]
-
 				Expect(len(messages)).To(Equal(1))
-				message := messages[0]
-
-				Expect([]byte(`{"value":"expected value"}`)).To(Equal(message.Payload))
+				Expect(messages[0].Payload).To(Equal([]byte(`{"value":"expected value"}`)))
 			})
 
 			It("does not respond if the response is nil", func() {
@@ -78,14 +75,55 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 				defer handler.Stop()
 
-				expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`)
 				subscription := client.Subscriptions["agent.my-agent-id"][0]
 				subscription.Callback(&yagnats.Message{
 					Subject: "agent.my-agent-id",
-					Payload: expectedPayload,
+					Payload: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
 				})
 
 				Expect(len(client.PublishedMessages)).To(Equal(0))
+			})
+
+			It("responds with an error if the response is bigger than 1MB", func() {
+				err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+					// gets inflated by json.Marshal when enveloping
+					size := 0
+
+					switch req.Method {
+					case "small":
+						size = 1024*1024 - 12
+					case "big":
+						size = 1024 * 1024
+					default:
+						panic("unknown request size")
+					}
+
+					chars := make([]byte, size)
+					for i := range chars {
+						chars[i] = 'A'
+					}
+					return boshhandler.NewValueResponse(string(chars))
+				})
+				Expect(err).ToNot(HaveOccurred())
+				defer handler.Stop()
+
+				subscription := client.Subscriptions["agent.my-agent-id"][0]
+				subscription.Callback(&yagnats.Message{
+					Subject: "agent.my-agent-id",
+					Payload: []byte(`{"method":"small","arguments":[], "reply_to": "fake-reply-to"}`),
+				})
+
+				subscription.Callback(&yagnats.Message{
+					Subject: "agent.my-agent-id",
+					Payload: []byte(`{"method":"big","arguments":[], "reply_to": "fake-reply-to"}`),
+				})
+
+				Expect(len(client.PublishedMessages)).To(Equal(1))
+				messages := client.PublishedMessages["fake-reply-to"]
+				Expect(len(messages)).To(Equal(2))
+				Expect(messages[0].Payload).To(MatchRegexp("value"))
+				Expect(messages[1].Payload).To(Equal([]byte(
+					`{"exception":{"message":"Response exceeded maximum size allowed to be sent over NATS"}}`)))
 			})
 
 			It("has the correct connection info", func() {
@@ -93,17 +131,11 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 				defer handler.Stop()
 
-				Expect(client.ConnectedConnectionProvider).ToNot(BeNil())
-
-				connInfo := client.ConnectedConnectionProvider
-
-				expectedConnInfo := &yagnats.ConnectionInfo{
+				Expect(client.ConnectedConnectionProvider).To(Equal(&yagnats.ConnectionInfo{
 					Addr:     "127.0.0.1:1234",
 					Username: "fake-username",
 					Password: "fake-password",
-				}
-
-				Expect(connInfo).To(Equal(expectedConnInfo))
+				}))
 			})
 
 			It("does not err when no username and password", func() {

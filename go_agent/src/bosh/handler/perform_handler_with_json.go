@@ -35,3 +35,16 @@ func PerformHandlerWithJSON(rawJSON []byte, handler HandlerFunc, logger boshlog.
 
 	return respJSON, request, nil
 }
+
+func BuildErrorWithJSON(msg string, logger boshlog.Logger) ([]byte, error) {
+	response := NewExceptionResponse(msg)
+
+	respJSON, err := json.Marshal(response)
+	if err != nil {
+		return respJSON, bosherr.WrapError(err, "Marshalling JSON")
+	}
+
+	logger.Info("MBus Handler", "Building error", msg)
+
+	return respJSON, nil
+}
