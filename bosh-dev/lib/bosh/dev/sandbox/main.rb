@@ -94,11 +94,13 @@ module Bosh::Dev::Sandbox
       @director_socket_connector = SocketConnector.new(
         'director', 'localhost', director_port, @logger)
 
-      @worker_process = Service.new(
-        %W[bosh-director-worker -c #{director_config}],
-        { output: "#{base_log_path}.worker.out", env: { 'QUEUE' => '*' } },
-        @logger,
-      )
+      @worker_processes = 3.times.map do |index|
+        Service.new(
+          %W[bosh-director-worker -c #{director_config}],
+          { output: "#{base_log_path}.worker_#{index}.out", env: { 'QUEUE' => '*' } },
+          @logger,
+        )
+      end
 
       @health_monitor_process = Service.new(
         %W[bosh-monitor -c #{sandbox_path(HM_CONFIG)}],
@@ -181,7 +183,7 @@ module Bosh::Dev::Sandbox
     def stop
       @cpi.kill_agents
       @scheduler_process.stop
-      @worker_process.stop
+      @worker_processes.each(&:stop)
       @director_process.stop
       @redis_process.stop
       @nats_process.stop
@@ -231,7 +233,7 @@ module Bosh::Dev::Sandbox
 
     def do_reset(name)
       @cpi.kill_agents
-      @worker_process.stop
+      @worker_processes.each(&:stop)
       @director_process.stop
       @health_monitor_process.stop
 
@@ -256,7 +258,7 @@ module Bosh::Dev::Sandbox
       write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
 
       @director_process.start
-      @worker_process.start
+      @worker_processes.each(&:start)
 
       # CI does not have enough time to start bosh-director
       # for some parallel tests; increasing to 60 secs (= 300 tries).

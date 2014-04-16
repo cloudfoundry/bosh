@@ -190,30 +190,20 @@ describe 'cli: errand', type: :integration do
     end
 
     it 'successfully cancels the errand and returns its output' do
-      run_errand_thread = Thread.new do
-        runner = Bosh::Spec::BoshRunner.new(
-          BOSH_WORK_DIR,
-          BOSH_CONFIG,
-          logger
-        )
-        runner.run_thread_safe('run errand fake-errand-name', failure_expected: true)
-      end
+      errand_result = bosh_runner.run('--no-track run errand fake-errand-name')
+      task_id = Bosh::Spec::OutputParser.new(errand_result).task_id('running')
 
-      # FIXME
-      sleep 10
+      director.wait_for_vm('fake-errand-name/0', 10)
 
-      cancel_output = bosh_runner.run("cancel task 4")
-      expect(cancel_output).to match /Task 4 is getting canceled/
+      cancel_output = bosh_runner.run("cancel task #{task_id}")
+      expect(cancel_output).to match /Task #{task_id} is getting canceled/
 
-      errand_output = bosh_runner.run("task 4")
-      expect(errand_output).to include('Error 10001: Task 4 cancelled')
+      errand_output = bosh_runner.run("task #{task_id}")
+      expect(errand_output).to include("Error 10001: Task #{task_id} cancelled")
 
-      result_output = bosh_runner.run("task 4 --result")
+      result_output = bosh_runner.run("task #{task_id} --result")
       expect(result_output).to include('fake-errand-stdout')
       expect(result_output).to include('fake-errand-stderr')
-
-      errand_result = run_errand_thread.value
-      expect(errand_result).to include("Errand `fake-errand-name' was canceled (exit code 143)")
     end
   end
 

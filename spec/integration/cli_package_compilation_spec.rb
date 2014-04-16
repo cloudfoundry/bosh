@@ -12,7 +12,7 @@ describe 'cli: package compilation', type: :integration do
     release_filename = File.join(TEST_RELEASE_DIR, release_file)
     Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
-      bosh_runner.run('create release --with-tarball', work_dir: Dir.pwd)
+      bosh_runner.run_in_current_dir('create release --with-tarball')
     end
 
     deployment_manifest = yaml_file(

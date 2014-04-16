@@ -15,16 +15,17 @@ describe 'director_scheduler', type: :integration do
 
   before do
     target_and_login
-    bosh_runner.run('reset release', work_dir: TEST_RELEASE_DIR)
-    bosh_runner.run('create release --force', work_dir: TEST_RELEASE_DIR)
-    bosh_runner.run('upload release', work_dir: TEST_RELEASE_DIR)
-    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+    runner = bosh_runner_in_work_dir(TEST_RELEASE_DIR)
+    runner.run('reset release')
+    runner.run('create release --force')
+    runner.run('upload release')
+    runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
     deployment_hash = Bosh::Spec::Deployments.simple_manifest
     deployment_hash['jobs'][0]['persistent_disk'] = 20480
     deployment_manifest = yaml_file('simple', deployment_hash)
-    bosh_runner.run("deployment #{deployment_manifest.path}")
-    bosh_runner.run('deploy')
+    runner.run("deployment #{deployment_manifest.path}")
+    runner.run('deploy')
   end
 
   describe 'scheduled disk snapshots' do
@@ -68,7 +69,8 @@ describe 'director_scheduler', type: :integration do
     let(:tmp_dir) { Dir.mktmpdir('manual-backup') }
 
     it 'backs up director logs, task logs, and database dump' do
-      expect(bosh_runner.run('backup backup.tgz', work_dir: tmp_dir)).to match(/Backup of BOSH director was put in/i)
+      runner = bosh_runner_in_work_dir(tmp_dir)
+      expect(runner.run('backup backup.tgz')).to match(/Backup of BOSH director was put in/i)
 
       files = tar_contents("#{tmp_dir}/backup.tgz")
       files.each { |f| expect(f.size).to be > 0 }

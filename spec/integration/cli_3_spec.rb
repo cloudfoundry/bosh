@@ -8,9 +8,9 @@ describe 'cli: 3', type: :integration do
     Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
 
-      bosh_runner.run('create release', work_dir: Dir.pwd)
+      bosh_runner.run_in_current_dir('create release')
       target_and_login
-      bosh_runner.run('upload release', work_dir: Dir.pwd)
+      bosh_runner.run_in_current_dir('upload release')
     end
 
     out = bosh_runner.run('releases')
@@ -25,7 +25,7 @@ describe 'cli: 3', type: :integration do
     Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
 
-      bosh_runner.run('create release --with-tarball', work_dir: Dir.pwd)
+      bosh_runner.run_in_current_dir('create release --with-tarball')
       expect(File.exists?(release_1)).to be(true)
     end
 
@@ -37,7 +37,7 @@ describe 'cli: 3', type: :integration do
       begin
         FileUtils.touch(new_file)
 
-        bosh_runner.run('create release --force --with-tarball', work_dir: Dir.pwd)
+        bosh_runner.run_in_current_dir('create release --force --with-tarball')
         expect(File.exists?(release_2)).to be(true)
       ensure
         FileUtils.rm_rf(new_file)
@@ -68,11 +68,11 @@ describe 'cli: 3', type: :integration do
     Dir.chdir(TEST_RELEASE_DIR) do
       commit_hash = `git show-ref --head --hash=8 2> /dev/null`.split.first
 
-      bosh_runner.run('create release', work_dir: Dir.pwd)
+      bosh_runner.run_in_current_dir('create release')
       expect(File.exists?(release_1)).to be(true)
 
       target_and_login
-      bosh_runner.run("upload release #{release_1}", work_dir: Dir.pwd)
+      bosh_runner.run_in_current_dir("upload release #{release_1}")
 
       new_file = File.join('src', 'bar', 'bla')
       begin
@@ -80,13 +80,13 @@ describe 'cli: 3', type: :integration do
         # In an ephemeral git repo
         `git add .`
         `git commit -m 'second dev release'`
-        bosh_runner.run('create release', work_dir: Dir.pwd)
+        bosh_runner.run_in_current_dir('create release')
         expect(File.exists?(release_2)).to be(true)
       ensure
         FileUtils.rm_rf(new_file)
       end
 
-      out = bosh_runner.run("upload release #{release_2}", work_dir: Dir.pwd)
+      out = bosh_runner.run_in_current_dir("upload release #{release_2}")
       expect(out).to match regexp('Building tarball')
       expect(out).not_to match regexp('Checking if can repack')
       expect(out).not_to match regexp('Release repacked')

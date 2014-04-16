@@ -6,18 +6,19 @@ describe 'cli: cloudcheck', type: :integration do
   before do
     target_and_login
 
-    bosh_runner.run('reset release', work_dir: TEST_RELEASE_DIR)
-    bosh_runner.run('create release --force', work_dir: TEST_RELEASE_DIR)
-    bosh_runner.run('upload release', work_dir: TEST_RELEASE_DIR)
+    runner = bosh_runner_in_work_dir(TEST_RELEASE_DIR)
+    runner.run('reset release')
+    runner.run('create release --force')
+    runner.run('upload release')
 
-    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+    runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
     deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.simple_manifest)
-    bosh_runner.run("deployment #{deployment_manifest.path}")
+    runner.run("deployment #{deployment_manifest.path}")
 
-    bosh_runner.run('deploy')
+    runner.run('deploy')
 
-    expect(bosh_runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+    expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
   end
 
   it 'provides resolution options for unresponsive agents' do

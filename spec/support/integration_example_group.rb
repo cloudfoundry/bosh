@@ -30,6 +30,14 @@ module IntegrationExampleGroup
     )
   end
 
+  def bosh_runner_in_work_dir(work_dir)
+    Bosh::Spec::BoshRunner.new(
+      work_dir,
+      BOSH_CONFIG,
+      logger
+    )
+  end
+
   def waiter
     @waiter ||= Bosh::Spec::Waiter.new(logger)
   end
@@ -40,8 +48,9 @@ module IntegrationExampleGroup
   end
 
   def upload_release
-    bosh_runner.run('create release', work_dir: TEST_RELEASE_DIR)
-    bosh_runner.run('upload release', work_dir: TEST_RELEASE_DIR)
+    runner = bosh_runner_in_work_dir(TEST_RELEASE_DIR)
+    runner.run('create release')
+    runner.run('upload release')
   end
 
   def upload_stemcell

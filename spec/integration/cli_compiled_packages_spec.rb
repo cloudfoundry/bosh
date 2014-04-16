@@ -52,7 +52,7 @@ describe 'cli: compiled_packages', type: :integration do
   def create_release
     Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
-      bosh_runner.run('create release --with-tarball', work_dir: Dir.pwd)
+      bosh_runner.run_in_current_dir('create release --with-tarball')
     end
     File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0.1-dev.tgz')
   end

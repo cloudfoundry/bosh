@@ -45,7 +45,7 @@ describe 'cli: 2', type: :integration do
     Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
 
-      out = bosh_runner.run('create release --final', work_dir: Dir.pwd, failure_expected: true)
+      out = bosh_runner.run_in_current_dir('create release --final', failure_expected: true)
       expect(out).to match(/Can't create final release without blobstore secret/)
     end
   end
@@ -78,14 +78,15 @@ describe 'cli: 2', type: :integration do
     it 'fails to delete release in use but deletes a different release' do
       target_and_login
 
-      bosh_runner.run('create release', work_dir: TEST_RELEASE_DIR)
-      bosh_runner.run('upload release', work_dir: TEST_RELEASE_DIR)
+      runner = bosh_runner_in_work_dir(TEST_RELEASE_DIR)
+      runner.run('create release')
+      runner.run('upload release')
 
       # change something in TEST_RELEASE_DIR
       FileUtils.touch(File.join(TEST_RELEASE_DIR, 'src', 'bar', 'pretend_something_changed'))
 
-      bosh_runner.run('create release --force', work_dir: TEST_RELEASE_DIR)
-      bosh_runner.run('upload release', work_dir: TEST_RELEASE_DIR)
+      runner.run('create release --force')
+      runner.run('upload release')
 
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
@@ -112,7 +113,7 @@ describe 'cli: 2', type: :integration do
 
       new_file = File.join('src', 'bar', 'bla')
       FileUtils.touch(new_file)
-      bosh_runner.run('create release --force', work_dir: Dir.pwd)
+      bosh_runner.run_in_current_dir('create release --force')
       FileUtils.rm_rf(new_file)
       expect(File.exists?(release_1)).to be(true)
       release_manifest = Psych.load_file(release_1)
@@ -120,7 +121,7 @@ describe 'cli: 2', type: :integration do
       expect(release_manifest['uncommitted_changes']).to be(true)
 
       target_and_login
-      bosh_runner.run('upload release', work_dir: Dir.pwd)
+      bosh_runner.run_in_current_dir('upload release')
     end
 
     expect_output('releases', <<-OUT)

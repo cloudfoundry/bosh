@@ -55,7 +55,7 @@ describe 'cli: deployment process', type: :integration do
 
     Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
-      bosh_runner.run('create release --with-tarball', work_dir: Dir.pwd)
+      bosh_runner.run_in_current_dir('create release --with-tarball')
     end
 
     deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.simple_manifest)
