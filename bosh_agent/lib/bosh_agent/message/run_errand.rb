@@ -40,7 +40,7 @@ module Bosh::Agent
 
         job_template_name = job_templates.first.fetch('name')
 
-        env = { 'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin' }
+        env = { 'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => ENV['TMPDIR'] }
         cmd = "#{@base_dir}/jobs/#{job_template_name}/bin/run"
         opts = { unsetenv_others: true, pgroup: true }
 

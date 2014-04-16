@@ -8,6 +8,12 @@ describe Bosh::Agent::Message::RunErrand do
   before { allow(Bosh::Agent::Config).to receive(:state).and_return(bosh_agent_config_state) }
   let(:bosh_agent_config_state) { { 'job' => { 'templates' => [{ 'name' => 'fake-job-name'}] } } }
 
+  let(:env) { double(:ENV) }
+  before do
+    stub_const('ENV', env)
+    allow(env).to receive(:[]).with('TMPDIR').and_return('/some/tmp')
+  end
+
   before { allow(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thread) }
   let(:stdin) { instance_double('IO', close: nil) }
   let(:stdout) { instance_double('IO', close: nil, read: 'fake-stdout') }
@@ -20,7 +26,7 @@ describe Bosh::Agent::Message::RunErrand do
 
     context 'when executing run errand does not raise any error' do
       it 'runs the job and returns its output and exit code' do
-        expected_env = { 'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin' }
+        expected_env = { 'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp' }
         expected_cmd = 'fake-base-dir/jobs/fake-job-name/bin/run'
         expected_opts = { unsetenv_others: true, pgroup: true }
 
