@@ -1,23 +1,11 @@
 module Bosh::Deployer
   class DeployerRenderer
-    DEFAULT_POLL_INTERVAL = 0.1
-
     def initialize(event_log_renderer)
       @event_log_renderer = event_log_renderer
       @index = 0
     end
 
-    def start
-      @thread = Thread.new do
-        loop do
-          @event_log_renderer.refresh
-          sleep(interval_poll)
-        end
-      end
-    end
-
     def finish(state)
-      @thread.kill
       @event_log_renderer.finish(state)
     end
 
@@ -40,18 +28,13 @@ module Bosh::Deployer
       }
 
       @event_log_renderer.add_output(JSON.generate(event))
+      @event_log_renderer.refresh
 
       @index += 1 if state == :finished
     end
 
     def duration
       @event_log_renderer.duration
-    end
-
-    private
-
-    def interval_poll
-      Bosh::Cli::Config.poll_interval || DEFAULT_POLL_INTERVAL
     end
   end
 end

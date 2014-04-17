@@ -5,38 +5,10 @@ module Bosh::Deployer
   describe DeployerRenderer do
     subject(:renderer) { described_class.new(log_renderer) }
 
-    let(:log_renderer) { instance_double('Bosh::Cli::TaskTracking::EventLogRenderer', finish: nil) }
-
-    describe '#start' do
-      before { Bosh::Cli::Config.poll_interval = 0.1 }
-      after { renderer.finish('done') }
-
-      it 'refreshes the event log periodically in a separate thread' do
-        expect(log_renderer).to receive(:refresh).at_least(2).times
-        expect(renderer).to receive(:sleep).with(0.1).at_least(2).times
-
-        renderer.start
-
-        sleep 0.5
-      end
-    end
+    let(:log_renderer) { instance_double('Bosh::Cli::TaskTracking::EventLogRenderer') }
+    before { allow(log_renderer).to receive(:refresh) }
 
     describe '#finish' do
-      before { renderer.start }
-
-      it 'stops refreshing the event log' do
-        called = 0
-        allow(log_renderer).to receive(:refresh) do
-          called += 1
-        end
-
-        renderer.finish('done')
-
-        sleep DeployerRenderer::DEFAULT_POLL_INTERVAL
-
-        expect(called).to be < 2
-      end
-
       it 'finishes the event log' do
         expect(log_renderer).to receive(:finish).with('done')
         renderer.finish('done')
@@ -63,6 +35,12 @@ module Bosh::Deployer
           'tags' => [],
           'state' => 'fake_state',
         })
+      end
+
+      it 'refreshes the event log' do
+        expect(log_renderer).to receive(:refresh)
+
+        renderer.update(:fake_state, 'fake-task')
       end
 
       context 'when a new stage is set' do

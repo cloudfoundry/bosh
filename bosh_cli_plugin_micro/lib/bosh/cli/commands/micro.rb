@@ -172,7 +172,6 @@ module Bosh::Cli::Command
       end
 
       renderer = Bosh::Deployer::DeployerRenderer.new(Bosh::Cli::TaskTracking::EventLogRenderer.new)
-      renderer.start
       deployer.renderer = renderer
 
       start_time = Time.now
@@ -209,7 +208,6 @@ module Bosh::Cli::Command
       end
 
       renderer = Bosh::Deployer::DeployerRenderer.new(Bosh::Cli::TaskTracking::EventLogRenderer.new)
-      renderer.start
       deployer.renderer = renderer
 
       start_time = Time.now
