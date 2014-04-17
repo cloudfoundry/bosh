@@ -45,6 +45,10 @@ module Bosh::Dev::Sandbox
       rescue Errno::ESRCH # No such process
         @logger.info("Process #{@cmd_array.first} with PID=#{@pid} not found")
         return
+      rescue Errno::EPERM # Owned by some other user/process
+        @logger.info("Process other than #{@cmd_array.first} is running with PID=#{@pid} so this service is stopped.")
+        @logger.debug(`ps #{@pid}`)
+        return
       end
 
       # Block until process exits to avoid race conditions in the caller
@@ -58,6 +62,10 @@ module Bosh::Dev::Sandbox
     def running?
       @pid && Process.kill(0, @pid)
     rescue Errno::ESRCH # No such process
+      false
+    rescue Errno::EPERM # Owned by some other user/process
+      @logger.info("Process other than #{@cmd_array.first} is running with PID=#{@pid} so this service is not running.")
+      @logger.debug(`ps #{@pid}`)
       false
     end
 
