@@ -190,6 +190,8 @@ describe 'cli: errand', type: :integration do
     end
 
     it 'successfully cancels the errand and returns its output' do
+      pending unless current_sandbox.agent_type == 'ruby'
+
       errand_result = bosh_runner.run('--no-track run errand fake-errand-name')
       task_id = Bosh::Spec::OutputParser.new(errand_result).task_id('running')
 
