@@ -2,124 +2,153 @@ require 'spec_helper'
 require 'rack/test'
 
 module Bosh::Director
-  module Api
-    describe Controllers::StemcellsController do
-      include Rack::Test::Methods
+  describe Api::Controllers::StemcellsController do
+    include Rack::Test::Methods
 
-      let!(:temp_dir) { Dir.mktmpdir}
+    subject(:app) { described_class } # "app" is a Rack::Test hook
 
-      before do
-        blobstore_dir = File.join(temp_dir, 'blobstore')
-        FileUtils.mkdir_p(blobstore_dir)
+    let!(:temp_dir) { Dir.mktmpdir}
 
-        test_config = Psych.load(spec_asset('test-director-config.yml'))
-        test_config['dir'] = temp_dir
-        test_config['blobstore'] = {
-            'provider' => 'local',
-            'options' => {'blobstore_path' => blobstore_dir}
-        }
-        test_config['snapshots']['enabled'] = true
-        Config.configure(test_config)
-        @director_app = App.new(Config.load_hash(test_config))
-      end
+    before do
+      config = Psych.load(spec_asset('test-director-config.yml'))
+      config['dir'] = temp_dir
+      config['blobstore'] = {
+        'provider' => 'local',
+        'options' => {'blobstore_path' => File.join(temp_dir, 'blobstore')}
+      }
+      App.new(Config.load_hash(config))
+    end
 
-      after do
-        FileUtils.rm_rf(temp_dir)
-      end
+    after { FileUtils.rm_rf(temp_dir) }
 
-      def app
-        @rack_app ||= Controller.new
-      end
+    describe 'POST', '/stemcells' do
+      context 'authenticated access' do
+        before { authorize 'admin', 'admin' }
 
-      def login_as_admin
-        basic_authorize 'admin', 'admin'
-      end
-
-      def login_as(username, password)
-        basic_authorize username, password
-      end
-
-      it 'requires auth' do
-        get '/'
-        last_response.status.should == 401
-      end
-
-      it 'sets the date header' do
-        get '/'
-        last_response.headers['Date'].should_not be_nil
-      end
-
-      it 'allows Basic HTTP Auth with admin/admin credentials for ' +
-             "test purposes (even though user doesn't exist)" do
-        basic_authorize 'admin', 'admin'
-        get '/'
-        last_response.status.should == 404
-      end
-
-      describe 'API calls' do
-        before(:each) { login_as_admin }
-
-        describe 'creating a stemcell' do
-          it 'expects compressed stemcell file' do
-            post '/stemcells', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/x-compressed' }
-            expect_redirect_to_queued_task(last_response)
-          end
-
-          it 'expects remote stemcell location' do
-            post '/stemcells', Yajl::Encoder.encode('location' => 'http://stemcell_url'), { 'CONTENT_TYPE' => 'application/json' }
-            expect_redirect_to_queued_task(last_response)
-          end
-
-          it 'only consumes application/x-compressed and application/json' do
-            post '/stemcells', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/octet-stream' }
-            last_response.status.should == 404
-          end
+        it 'expects compressed stemcell file' do
+          post '/stemcells', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/x-compressed' }
+          expect_redirect_to_queued_task(last_response)
         end
 
-        describe 'listing stemcells' do
-          context 'stemcells exist' do
-            let(:stemcells) do
-              (1..10).map do |i|
-                Models::Stemcell.
-                  create(:name => "stemcell-#{i}", :version => i,
-                         :cid => rand(25000 * i))
-              end
+        it 'expects remote stemcell location' do
+          post '/stemcells', Yajl::Encoder.encode('location' => 'http://stemcell_url'), { 'CONTENT_TYPE' => 'application/json' }
+          expect_redirect_to_queued_task(last_response)
+        end
+
+        it 'only consumes application/x-compressed and application/json' do
+          post '/stemcells', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/octet-stream' }
+          last_response.status.should == 404
+        end
+      end
+
+      context 'accessing with invalid credentials' do
+        before { authorize 'invalid-user', 'invalid-password' }
+
+        it 'returns 401' do
+          post '/stemcells'
+          expect(last_response.status).to eq(401)
+        end
+      end
+
+      context 'unauthenticated access' do
+        it 'returns 401' do
+          post '/stemcells'
+          expect(last_response.status).to eq(401)
+        end
+      end
+    end
+
+    describe 'GET', '/stemcells' do
+      def perform
+        get '/stemcells', {}, {}
+      end
+
+      context 'authenticated access' do
+        before { authorize 'admin', 'admin' }
+
+        context 'when there are some stemcells' do
+          let(:stemcells) do
+            (1..10).map do |i|
+              Models::Stemcell.create(
+                :name => "stemcell-#{i}",
+                :version => i,
+                :cid => rand(25000 * i),
+              )
             end
+          end
 
-            it 'has API call that returns a list of stemcells in JSON' do
-              stemcells.each { |s| s.stub(:deployments).and_return([]) }
+          context 'when deployments use stemcells' do
+            before { stemcells.each { |s| s.add_deployment(deployment); s.save } }
+            let(:deployment) { Models::Deployment.create(:name => 'fake-deployment-name') }
 
-              get '/stemcells', {}, {}
-              last_response.status.should == 200
+            it 'returns a list of stemcells in JSON with existing deployments' do
+              perform
+              expect(last_response.status).to eq(200)
 
               body = Yajl::Parser.parse(last_response.body)
-
-              body.kind_of?(Array).should be(true)
-              body.size.should == 10
+              expect(body).to be_an_instance_of(Array)
+              expect(body.size).to eq(10)
 
               response_collection = body.map do |e|
                 [e['name'], e['version'], e['cid'], e['deployments']]
               end
 
-              expected_collection = stemcells.sort_by { |e| e.name }.map do |e|
-                [e.name.to_s, e.version.to_s, e.cid.to_s, e.deployments]
+              expected_collection = stemcells.sort_by(&:name).map do |e|
+                [e.name.to_s, e.version.to_s, e.cid.to_s, [{ 'name' => 'fake-deployment-name' }]]
               end
 
-              response_collection.should == expected_collection
+              expect(response_collection).to eq(expected_collection)
             end
           end
 
-          context 'there are no stemcells' do
-            let(:stemcells) { [] }
+          context 'when deployments use stemcells' do
+            before { stemcells.each { |s| s.stub(:deployments).and_return([]) } }
 
-            it 'returns empty collection if there are no stemcells' do
-              get '/stemcells', {}, {}
-              last_response.status.should == 200
+            it 'returns a list of stemcells in JSON with no existing deployments' do
+              perform
+              expect(last_response.status).to eq(200)
 
               body = Yajl::Parser.parse(last_response.body)
-              body.should == []
+              expect(body).to be_an_instance_of(Array)
+              expect(body.size).to eq(10)
+
+              response_collection = body.map do |e|
+                [e['name'], e['version'], e['cid'], e['deployments']]
+              end
+
+              expected_collection = stemcells.sort_by(&:name).map do |e|
+                [e.name.to_s, e.version.to_s, e.cid.to_s, []]
+              end
+
+              expect(response_collection).to eq(expected_collection)
             end
           end
+        end
+
+        context 'when there are no stemcells' do
+          let(:stemcells) { [] }
+
+          it 'returns empty collection if there are no stemcells' do
+            perform
+            expect(last_response.status).to eq(200)
+            expect(Yajl::Parser.parse(last_response.body)).to eq([])
+          end
+        end
+      end
+
+      context 'accessing with invalid credentials' do
+        before { authorize 'invalid-user', 'invalid-password' }
+
+        it 'returns 401' do
+          perform
+          expect(last_response.status).to eq(401)
+        end
+      end
+
+      context 'unauthenticated access' do
+        it 'returns 401' do
+          perform
+          expect(last_response.status).to eq(401)
         end
       end
     end
