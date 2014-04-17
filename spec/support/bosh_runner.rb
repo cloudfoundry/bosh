@@ -24,6 +24,10 @@ module Bosh::Spec
           @logger.info(
             run($1, options.merge(failure_expected: true))
           ) rescue nil
+        elsif output =~ /Task (\d+) error/
+          @logger.info(
+            run("task #{$1} --debug", options.merge(failure_expected: true))
+          ) rescue nil
         end
         raise "ERROR: #{command} failed with #{output}"
       end
