@@ -16,11 +16,12 @@ module Bosh::Director
 
       get '/stemcells' do
         stemcells = Models::Stemcell.order_by(:name.asc).map do |stemcell|
+          deployment_names = stemcell.deployments && stemcell.deployments.map(&:name)
           {
             'name' => stemcell.name,
             'version' => stemcell.version,
             'cid' => stemcell.cid,
-            'deployments' => stemcell.deployments
+            'deployments' => deployment_names
           }
         end
         json_encode(stemcells)

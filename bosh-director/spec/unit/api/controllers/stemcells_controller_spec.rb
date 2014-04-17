@@ -85,8 +85,31 @@ module Bosh::Director
                          :cid => rand(25000 * i))
               end
             end
+            let(:deployment) { Models::Deployment.create(:name => 'deployment') }
 
-            it 'has API call that returns a list of stemcells in JSON' do
+            it 'has API call that returns a list of stemcells in JSON with existing deployments' do
+              stemcells.each { |s| s.add_deployment(deployment); s.save }
+
+              get '/stemcells', {}, {}
+              last_response.status.should == 200
+
+              body = Yajl::Parser.parse(last_response.body)
+
+              body.kind_of?(Array).should be(true)
+              body.size.should == 10
+
+              response_collection = body.map do |e|
+                [e['name'], e['version'], e['cid'], e['deployments']]
+              end
+
+              expected_collection = stemcells.sort_by { |e| e.name }.map do |e|
+                [e.name.to_s, e.version.to_s, e.cid.to_s, ['deployment']]
+              end
+
+              response_collection.should == expected_collection
+            end
+
+            it 'has API call that returns a list of stemcells in JSON with no existing deployments' do
               stemcells.each { |s| s.stub(:deployments).and_return([]) }
 
               get '/stemcells', {}, {}
@@ -102,7 +125,7 @@ module Bosh::Director
               end
 
               expected_collection = stemcells.sort_by { |e| e.name }.map do |e|
-                [e.name.to_s, e.version.to_s, e.cid.to_s, e.deployments]
+                [e.name.to_s, e.version.to_s, e.cid.to_s, []]
               end
 
               response_collection.should == expected_collection
