@@ -40,9 +40,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 	netbios-name-servers, netbios-scope, interface-mtu,
 	rfc3442-classless-static-routes, ntp-servers;
 
-prepend domain-name-servers zz.zz.zz.zz;
-prepend domain-name-servers yy.yy.yy.yy;
-prepend domain-name-servers xx.xx.xx.xx;
+prepend domain-name-servers zz.zz.zz.zz, yy.yy.yy.yy, xx.xx.xx.xx;
 `
 
 	Describe("ubuntuNetManager", func() {
