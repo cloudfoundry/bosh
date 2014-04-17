@@ -6,8 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	bc "bosh/agent/applier/bundlecollection"
+	boshbc "bosh/agent/applier/bundlecollection"
 	models "bosh/agent/applier/models"
+	boshpa "bosh/agent/applier/packageapplier"
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
 	boshjobsuper "bosh/jobsupervisor"
@@ -19,29 +20,32 @@ import (
 const logTag = "renderedJobApplier"
 
 type renderedJobApplier struct {
-	jobsBc        bc.BundleCollection
-	blobstore     boshblob.Blobstore
-	compressor    boshcmd.Compressor
-	fs            boshsys.FileSystem
-	jobSupervisor boshjobsuper.JobSupervisor
-	logger        boshlog.Logger
+	jobsBc                 boshbc.BundleCollection
+	jobSupervisor          boshjobsuper.JobSupervisor
+	packageApplierProvider boshpa.PackageApplierProvider
+	blobstore              boshblob.Blobstore
+	compressor             boshcmd.Compressor
+	fs                     boshsys.FileSystem
+	logger                 boshlog.Logger
 }
 
 func NewRenderedJobApplier(
-	jobsBc bc.BundleCollection,
+	jobsBc boshbc.BundleCollection,
+	jobSupervisor boshjobsuper.JobSupervisor,
+	packageApplierProvider boshpa.PackageApplierProvider,
 	blobstore boshblob.Blobstore,
 	compressor boshcmd.Compressor,
 	fs boshsys.FileSystem,
-	jobSupervisor boshjobsuper.JobSupervisor,
 	logger boshlog.Logger,
 ) *renderedJobApplier {
 	return &renderedJobApplier{
-		jobsBc:        jobsBc,
-		blobstore:     blobstore,
-		compressor:    compressor,
-		fs:            fs,
-		jobSupervisor: jobSupervisor,
-		logger:        logger,
+		jobsBc:                 jobsBc,
+		jobSupervisor:          jobSupervisor,
+		packageApplierProvider: packageApplierProvider,
+		blobstore:              blobstore,
+		compressor:             compressor,
+		fs:                     fs,
+		logger:                 logger,
 	}
 }
 
@@ -86,10 +90,10 @@ func (s *renderedJobApplier) Apply(job models.Job) error {
 		return bosherr.WrapError(err, "Enabling job")
 	}
 
-	return nil
+	return s.applyPackages(job)
 }
 
-func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle bc.Bundle) error {
+func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle boshbc.Bundle) error {
 	tmpDir, err := s.fs.TempDir("bosh-agent-applier-jobapplier-RenderedJobApplier-Apply")
 	if err != nil {
 		return bosherr.WrapError(err, "Getting temp dir")
@@ -124,6 +128,26 @@ func (s *renderedJobApplier) downloadAndInstall(job models.Job, jobBundle bc.Bun
 	_, _, err = jobBundle.Install(filepath.Join(tmpDir, job.Source.PathInArchive))
 	if err != nil {
 		return bosherr.WrapError(err, "Installing job bundle")
+	}
+
+	return nil
+}
+
+// applyPackages keeps job specific packages directory up-to-date with installed packages.
+// (e.g. /var/vcap/jobs/job-a/packages/pkg-a has symlinks to /var/vcap/packages/pkg-a)
+func (s *renderedJobApplier) applyPackages(job models.Job) error {
+	packageApplier := s.packageApplierProvider.JobSpecific(job.Name)
+
+	for _, pkg := range job.Packages {
+		err := packageApplier.Apply(pkg)
+		if err != nil {
+			return bosherr.WrapError(err, "Applying package %s for job %s", pkg.Name, job.Name)
+		}
+	}
+
+	err := packageApplier.KeepOnly(job.Packages)
+	if err != nil {
+		return bosherr.WrapError(err, "Keeping only needed packages for job %s", job.Name)
 	}
 
 	return nil

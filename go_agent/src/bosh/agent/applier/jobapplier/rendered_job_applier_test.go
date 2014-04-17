@@ -10,6 +10,7 @@ import (
 	fakebc "bosh/agent/applier/bundlecollection/fakes"
 	. "bosh/agent/applier/jobapplier"
 	models "bosh/agent/applier/models"
+	fakepa "bosh/agent/applier/packageapplier/fakes"
 	fakeblob "bosh/blobstore/fakes"
 	fakejobsuper "bosh/jobsupervisor/fakes"
 	boshlog "bosh/logger"
@@ -31,6 +32,26 @@ func buildJob(bc *fakebc.FakeBundleCollection) (models.Job, *fakebc.FakeBundle) 
 			BlobstoreID:   "fake-blobstore-id",
 			PathInArchive: "fake-path-in-archive",
 		},
+		Packages: []models.Package{
+			models.Package{
+				Name:    "fake-package1-name" + uuid,
+				Version: "fake-package1-version",
+				Source: models.Source{
+					Sha1:          "fake-package1-sha1",
+					BlobstoreID:   "fake-package1-blobstore-id",
+					PathInArchive: "",
+				},
+			},
+			models.Package{
+				Name:    "fake-package2-name" + uuid,
+				Version: "fake-package2-version",
+				Source: models.Source{
+					Sha1:          "fake-package2-sha1",
+					BlobstoreID:   "fake-package2-blobstore-id",
+					PathInArchive: "",
+				},
+			},
+		},
 	}
 
 	bundle := bc.FakeGet(job)
@@ -41,22 +62,32 @@ func buildJob(bc *fakebc.FakeBundleCollection) (models.Job, *fakebc.FakeBundle) 
 func init() {
 	Describe("renderedJobApplier", func() {
 		var (
-			jobsBc        *fakebc.FakeBundleCollection
-			blobstore     *fakeblob.FakeBlobstore
-			compressor    *fakecmd.FakeCompressor
-			fs            *fakesys.FakeFileSystem
-			jobSupervisor *fakejobsuper.FakeJobSupervisor
-			applier       JobApplier
+			jobsBc                 *fakebc.FakeBundleCollection
+			jobSupervisor          *fakejobsuper.FakeJobSupervisor
+			packageApplierProvider *fakepa.FakePackageApplierProvider
+			blobstore              *fakeblob.FakeBlobstore
+			compressor             *fakecmd.FakeCompressor
+			fs                     *fakesys.FakeFileSystem
+			applier                JobApplier
 		)
 
 		BeforeEach(func() {
 			jobsBc = fakebc.NewFakeBundleCollection()
+			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
+			packageApplierProvider = fakepa.NewFakePackageApplierProvider()
 			blobstore = fakeblob.NewFakeBlobstore()
 			fs = fakesys.NewFakeFileSystem()
 			compressor = fakecmd.NewFakeCompressor()
-			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			applier = NewRenderedJobApplier(jobsBc, blobstore, compressor, fs, jobSupervisor, logger)
+			applier = NewRenderedJobApplier(
+				jobsBc,
+				jobSupervisor,
+				packageApplierProvider,
+				blobstore,
+				compressor,
+				fs,
+				logger,
+			)
 		})
 
 		Describe("Prepare & Apply", func() {
@@ -212,6 +243,46 @@ func init() {
 				})
 			}
 
+			ItUpdatesPackages := func(act func() error) {
+				var packageApplier *fakepa.FakePackageApplier
+
+				BeforeEach(func() {
+					packageApplier = fakepa.NewFakePackageApplier()
+					packageApplierProvider.JobSpecificPackageAppliers[job.Name] = packageApplier
+				})
+
+				It("applies each package that job depends on and then cleans up packages", func() {
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(packageApplier.ActionsCalled).To(Equal([]string{"Apply", "Apply", "KeepOnly"}))
+					Expect(len(packageApplier.AppliedPackages)).To(Equal(2)) // present
+					Expect(packageApplier.AppliedPackages).To(Equal(job.Packages))
+				})
+
+				It("returns error when applying package that job depends on fails", func() {
+					packageApplier.ApplyError = errors.New("fake-apply-err")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-apply-err"))
+				})
+
+				It("keeps only currently required packages but does not completely uninstall them", func() {
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(packageApplier.KeptOnlyPackages)).To(Equal(2)) // present
+					Expect(packageApplier.KeptOnlyPackages).To(Equal(job.Packages))
+				})
+
+				It("returns error when keeping only currently required packages fails", func() {
+					packageApplier.KeepOnlyErr = errors.New("fake-keep-only-err")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-keep-only-err"))
+				})
+			}
+
 			Describe("Prepare", func() {
 				act := func() error { return applier.Prepare(job) }
 
@@ -307,6 +378,8 @@ func init() {
 						Expect(err).ToNot(HaveOccurred())
 						Expect(blobstore.GetBlobIDs).To(BeNil())
 					})
+
+					ItUpdatesPackages(act)
 				})
 
 				Context("when job is not installed", func() {
@@ -329,6 +402,8 @@ func init() {
 					})
 
 					ItInstallsJob(act)
+
+					ItUpdatesPackages(act)
 				})
 			})
 		})

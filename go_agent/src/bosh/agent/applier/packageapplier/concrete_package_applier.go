@@ -14,6 +14,10 @@ const logTag = "concretePackageApplier"
 
 type concretePackageApplier struct {
 	packagesBc bc.BundleCollection
+
+	// KeepOnly will permanently uninstall packages when operating as owner
+	packagesBcOwner bool
+
 	blobstore  boshblob.Blobstore
 	compressor boshcmd.Compressor
 	fs         boshsys.FileSystem
@@ -22,17 +26,19 @@ type concretePackageApplier struct {
 
 func NewConcretePackageApplier(
 	packagesBc bc.BundleCollection,
+	packagesBcOwner bool,
 	blobstore boshblob.Blobstore,
 	compressor boshcmd.Compressor,
 	fs boshsys.FileSystem,
 	logger boshlog.Logger,
 ) *concretePackageApplier {
 	return &concretePackageApplier{
-		packagesBc: packagesBc,
-		blobstore:  blobstore,
-		compressor: compressor,
-		fs:         fs,
-		logger:     logger,
+		packagesBc:      packagesBc,
+		packagesBcOwner: packagesBcOwner,
+		blobstore:       blobstore,
+		compressor:      compressor,
+		fs:              fs,
+		logger:          logger,
 	}
 }
 
@@ -137,12 +143,14 @@ func (s *concretePackageApplier) KeepOnly(pkgs []models.Package) error {
 				return bosherr.WrapError(err, "Disabling package bundle")
 			}
 
-			// If we uninstall the bundle first, and the disable failed (leaving the symlink),
-			// then the next time bundle collection will not include bundle in its list
-			// which means that symlink will never be deleted.
-			err = installedBundle.Uninstall()
-			if err != nil {
-				return bosherr.WrapError(err, "Uninstalling package bundle")
+			if s.packagesBcOwner {
+				// If we uninstall the bundle first, and the disable failed (leaving the symlink),
+				// then the next time bundle collection will not include bundle in its list
+				// which means that symlink will never be deleted.
+				err = installedBundle.Uninstall()
+				if err != nil {
+					return bosherr.WrapError(err, "Uninstalling package bundle")
+				}
 			}
 		}
 	}

@@ -43,6 +43,7 @@ func init() {
 			blobstore  *fakeblob.FakeBlobstore
 			compressor *fakecmd.FakeCompressor
 			fs         *fakesys.FakeFileSystem
+			logger     boshlog.Logger
 			applier    PackageApplier
 		)
 
@@ -51,8 +52,8 @@ func init() {
 			blobstore = fakeblob.NewFakeBlobstore()
 			compressor = fakecmd.NewFakeCompressor()
 			fs = fakesys.NewFakeFileSystem()
-			logger := boshlog.NewLogger(boshlog.LevelNone)
-			applier = NewConcretePackageApplier(packagesBc, blobstore, compressor, fs, logger)
+			logger = boshlog.NewLogger(boshlog.LevelNone)
+			applier = NewConcretePackageApplier(packagesBc, true, blobstore, compressor, fs, logger)
 		})
 
 		Describe("Prepare & Apply", func() {
@@ -275,63 +276,99 @@ func init() {
 		})
 
 		Describe("KeepOnly", func() {
-			It("first disables and then uninstalls packages that are not in keeponly list", func() {
-				_, bundle1 := buildPkg(packagesBc)
-				pkg2, bundle2 := buildPkg(packagesBc)
-				_, bundle3 := buildPkg(packagesBc)
-				pkg4, bundle4 := buildPkg(packagesBc)
+			ItReturnsErrors := func() {
+				It("returns error when bundle collection fails to return list of installed bundles", func() {
+					packagesBc.ListErr = errors.New("fake-bc-list-error")
 
-				packagesBc.ListBundles = []boshbc.Bundle{bundle1, bundle2, bundle3, bundle4}
+					err := applier.KeepOnly([]models.Package{})
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-bc-list-error"))
+				})
 
-				err := applier.KeepOnly([]models.Package{pkg4, pkg2})
-				Expect(err).ToNot(HaveOccurred())
+				It("returns error when bundle collection cannot retrieve bundle for keep-only package", func() {
+					pkg1, bundle1 := buildPkg(packagesBc)
 
-				Expect(bundle1.ActionsCalled).To(Equal([]string{"Disable", "Uninstall"}))
-				Expect(bundle2.ActionsCalled).To(Equal([]string{}))
-				Expect(bundle3.ActionsCalled).To(Equal([]string{"Disable", "Uninstall"}))
-				Expect(bundle4.ActionsCalled).To(Equal([]string{}))
+					packagesBc.ListBundles = []boshbc.Bundle{bundle1}
+					packagesBc.GetErr = errors.New("fake-bc-get-error")
+
+					err := applier.KeepOnly([]models.Package{pkg1})
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-bc-get-error"))
+				})
+
+				It("returns error when at least one bundle cannot be disabled", func() {
+					_, bundle1 := buildPkg(packagesBc)
+
+					packagesBc.ListBundles = []boshbc.Bundle{bundle1}
+					bundle1.DisableErr = errors.New("fake-bc-disable-error")
+
+					err := applier.KeepOnly([]models.Package{})
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-bc-disable-error"))
+				})
+			}
+
+			Context("when operating on packages as a package owner", func() {
+				BeforeEach(func() {
+					applier = NewConcretePackageApplier(packagesBc, true, blobstore, compressor, fs, logger)
+				})
+
+				It("first disables and then uninstalls packages that are not in keeponly list", func() {
+					_, bundle1 := buildPkg(packagesBc)
+					pkg2, bundle2 := buildPkg(packagesBc)
+					_, bundle3 := buildPkg(packagesBc)
+					pkg4, bundle4 := buildPkg(packagesBc)
+
+					packagesBc.ListBundles = []boshbc.Bundle{bundle1, bundle2, bundle3, bundle4}
+
+					err := applier.KeepOnly([]models.Package{pkg4, pkg2})
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(bundle1.ActionsCalled).To(Equal([]string{"Disable", "Uninstall"}))
+					Expect(bundle2.ActionsCalled).To(Equal([]string{}))
+					Expect(bundle3.ActionsCalled).To(Equal([]string{"Disable", "Uninstall"}))
+					Expect(bundle4.ActionsCalled).To(Equal([]string{}))
+				})
+
+				ItReturnsErrors()
+
+				It("returns error when at least one bundle cannot be uninstalled", func() {
+					_, bundle1 := buildPkg(packagesBc)
+
+					packagesBc.ListBundles = []boshbc.Bundle{bundle1}
+					bundle1.UninstallErr = errors.New("fake-bc-uninstall-error")
+
+					err := applier.KeepOnly([]models.Package{})
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-bc-uninstall-error"))
+				})
 			})
 
-			It("returns error when bundle collection fails to return list of installed bundles", func() {
-				packagesBc.ListErr = errors.New("fake-bc-list-error")
+			Context("when operating on packages not as a package owner", func() {
+				BeforeEach(func() {
+					applier = NewConcretePackageApplier(packagesBc, false, blobstore, compressor, fs, logger)
+				})
 
-				err := applier.KeepOnly([]models.Package{})
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-bc-list-error"))
+				It("disables and but does not uninstall packages that are not in keeponly list", func() {
+					_, bundle1 := buildPkg(packagesBc)
+					pkg2, bundle2 := buildPkg(packagesBc)
+					_, bundle3 := buildPkg(packagesBc)
+					pkg4, bundle4 := buildPkg(packagesBc)
+
+					packagesBc.ListBundles = []boshbc.Bundle{bundle1, bundle2, bundle3, bundle4}
+
+					err := applier.KeepOnly([]models.Package{pkg4, pkg2})
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(bundle1.ActionsCalled).To(Equal([]string{"Disable"})) // no Uninstall
+					Expect(bundle2.ActionsCalled).To(Equal([]string{}))
+					Expect(bundle3.ActionsCalled).To(Equal([]string{"Disable"})) // no Uninstall
+					Expect(bundle4.ActionsCalled).To(Equal([]string{}))
+				})
+
+				ItReturnsErrors()
 			})
 
-			It("returns error when bundle collection cannot retrieve bundle for keep-only package", func() {
-				pkg1, bundle1 := buildPkg(packagesBc)
-
-				packagesBc.ListBundles = []boshbc.Bundle{bundle1}
-				packagesBc.GetErr = errors.New("fake-bc-get-error")
-
-				err := applier.KeepOnly([]models.Package{pkg1})
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-bc-get-error"))
-			})
-
-			It("returns error when at least one bundle cannot be disabled", func() {
-				_, bundle1 := buildPkg(packagesBc)
-
-				packagesBc.ListBundles = []boshbc.Bundle{bundle1}
-				bundle1.DisableErr = errors.New("fake-bc-disable-error")
-
-				err := applier.KeepOnly([]models.Package{})
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-bc-disable-error"))
-			})
-
-			It("returns error when at least one bundle cannot be uninstalled", func() {
-				_, bundle1 := buildPkg(packagesBc)
-
-				packagesBc.ListBundles = []boshbc.Bundle{bundle1}
-				bundle1.UninstallErr = errors.New("fake-bc-uninstall-error")
-
-				err := applier.KeepOnly([]models.Package{})
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-bc-uninstall-error"))
-			})
 		})
 	})
 }
