@@ -37,6 +37,7 @@ func (s V1ApplySpec) Jobs() []models.Job {
 	jobsWithSource := []models.Job{}
 	for _, j := range s.JobSpec.JobTemplateSpecsAsJobs() {
 		j.Source = s.RenderedTemplatesArchiveSpec.AsSource(j)
+		j.Packages = s.Packages()
 		jobsWithSource = append(jobsWithSource, j)
 	}
 	return jobsWithSource

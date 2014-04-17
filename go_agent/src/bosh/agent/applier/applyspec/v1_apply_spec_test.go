@@ -11,9 +11,8 @@ import (
 )
 
 func init() {
-	Describe("Testing with Ginkgo", func() {
+	Describe("V1ApplySpec", func() {
 		It("v1 apply spec json conversion", func() {
-
 			specJSON := `{
 				"properties": {
 					"logging": {"max_log_file_size": "10M"}
@@ -144,9 +143,44 @@ func init() {
 						},
 					},
 				},
+				PackageSpecs: map[string]PackageSpec{
+					"fake-package1": PackageSpec{
+						Name:        "fake-package1-name",
+						Version:     "fake-package1-version",
+						Sha1:        "fake-package1-sha1",
+						BlobstoreID: "fake-package1-blob-id",
+					},
+					"fake-package2": PackageSpec{
+						Name:        "fake-package2-name",
+						Version:     "fake-package2-version",
+						Sha1:        "fake-package2-sha1",
+						BlobstoreID: "fake-package2-blob-id",
+					},
+				},
 				RenderedTemplatesArchiveSpec: RenderedTemplatesArchiveSpec{
 					Sha1:        "fake-rendered-templates-archive-sha1",
 					BlobstoreID: "fake-rendered-templates-archive-blobstore-id",
+				},
+			}
+
+			expectedPackagesOnEachJob := []models.Package{
+				models.Package{
+					Name:    "fake-package1-name",
+					Version: "fake-package1-version",
+					Source: models.Source{
+						Sha1:          "fake-package1-sha1",
+						BlobstoreID:   "fake-package1-blob-id",
+						PathInArchive: "",
+					},
+				},
+				models.Package{
+					Name:    "fake-package2-name",
+					Version: "fake-package2-version",
+					Source: models.Source{
+						Sha1:          "fake-package2-sha1",
+						BlobstoreID:   "fake-package2-blob-id",
+						PathInArchive: "",
+					},
 				},
 			}
 
@@ -159,6 +193,7 @@ func init() {
 						BlobstoreID:   "fake-rendered-templates-archive-blobstore-id",
 						PathInArchive: "fake-job1-name",
 					},
+					Packages: expectedPackagesOnEachJob,
 				},
 				models.Job{
 					Name:    "fake-job2-name",
@@ -168,6 +203,7 @@ func init() {
 						BlobstoreID:   "fake-rendered-templates-archive-blobstore-id",
 						PathInArchive: "fake-job2-name",
 					},
+					Packages: expectedPackagesOnEachJob,
 				},
 			}))
 		})

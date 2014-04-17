@@ -4,6 +4,10 @@ type Job struct {
 	Name    string
 	Version string
 	Source  Source
+
+	// Packages that this job depends on; however,
+	// currently it will contain packages from all jobs
+	Packages []Package
 }
 
 func (s Job) BundleName() string {
