@@ -10,9 +10,9 @@ import (
 	models "bosh/agent/applier/models"
 )
 
-func init() {
-	Describe("V1ApplySpec", func() {
-		It("v1 apply spec json conversion", func() {
+var _ = Describe("V1ApplySpec", func() {
+	Describe("json unmarshalling", func() {
+		It("returns parsed apply spec from json", func() {
 			specJSON := `{
 				"properties": {
 					"logging": {"max_log_file_size": "10M"}
@@ -66,6 +66,12 @@ func init() {
 				}
 			}`
 
+			spec := V1ApplySpec{}
+			err := json.Unmarshal([]byte(specJSON), &spec)
+			Expect(err).ToNot(HaveOccurred())
+
+			jobName := "router"
+
 			expectedNetworks := map[string]interface{}{
 				"manual-net": map[string]interface{}{
 					"cloud_properties": map[string]interface{}{"subnet": "subnet-xxxxxx"},
@@ -84,8 +90,6 @@ func init() {
 				},
 			}
 
-			jobName := "router"
-
 			expectedSpec := V1ApplySpec{
 				PropertiesSpec: PropertiesSpec{
 					LoggingSpec: LoggingSpec{MaxLogFileSize: "10M"},
@@ -97,8 +101,8 @@ func init() {
 					Sha1:        "router sha1",
 					BlobstoreID: "router-blob-id-1",
 					JobTemplateSpecs: []JobTemplateSpec{
-						{Name: "template 1", Version: "0.1", Sha1: "template 1 sha1", BlobstoreID: "template-blob-id-1"},
-						{Name: "template 2", Version: "0.2", Sha1: "template 2 sha1", BlobstoreID: "template-blob-id-2"},
+						JobTemplateSpec{Name: "template 1", Version: "0.1", Sha1: "template 1 sha1", BlobstoreID: "template-blob-id-1"},
+						JobTemplateSpec{Name: "template 2", Version: "0.2", Sha1: "template 2 sha1", BlobstoreID: "template-blob-id-2"},
 					},
 				},
 				PackageSpecs: map[string]PackageSpec{
@@ -112,14 +116,13 @@ func init() {
 				NetworkSpecs: expectedNetworks,
 			}
 
-			spec := V1ApplySpec{}
-			err := json.Unmarshal([]byte(specJSON), &spec)
-			Expect(err).ToNot(HaveOccurred())
 			Expect(spec).To(Equal(expectedSpec))
 			Expect(spec.NetworkSpecs).To(Equal(expectedNetworks))
 		})
+	})
 
-		It("jobs with specified job templates", func() {
+	Describe("Jobs", func() {
+		It("returns jobs specified in job specs", func() {
 			jobName := "fake-job-legacy-name"
 
 			spec := V1ApplySpec{
@@ -208,12 +211,14 @@ func init() {
 			}))
 		})
 
-		It("jobs when no jobs specified", func() {
+		It("returns no jobs when no jobs specified", func() {
 			spec := V1ApplySpec{}
 			Expect(spec.Jobs()).To(Equal([]models.Job{}))
 		})
+	})
 
-		It("packages", func() {
+	Describe("Packages", func() {
+		It("retuns packages", func() {
 			spec := V1ApplySpec{
 				PackageSpecs: map[string]PackageSpec{
 					"fake-package1-name-key": PackageSpec{
@@ -237,17 +242,22 @@ func init() {
 			}))
 		})
 
-		It("packages when no packages specified", func() {
+		It("returns no packages when no packages specified", func() {
 			spec := V1ApplySpec{}
 			Expect(spec.Packages()).To(Equal([]models.Package{}))
 		})
+	})
 
-		It("max log file size", func() {
+	Describe("MaxLogFileSize", func() {
+		It("returns 50M if size is not provided", func() {
 			spec := V1ApplySpec{}
 			Expect(spec.MaxLogFileSize()).To(Equal("50M"))
+		})
 
+		It("returns provided size", func() {
+			spec := V1ApplySpec{}
 			spec.PropertiesSpec.LoggingSpec.MaxLogFileSize = "fake-size"
 			Expect(spec.MaxLogFileSize()).To(Equal("fake-size"))
 		})
 	})
-}
+})
