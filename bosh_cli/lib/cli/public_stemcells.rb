@@ -16,9 +16,10 @@ module Bosh::Cli
     end
 
     def all
-      response = HTTPClient.new.get(PUBLIC_STEMCELLS_BASE_URL)
+      response = HTTPClient.new.get(PUBLIC_STEMCELLS_BASE_URL, {'prefix' => 'bosh-stemcell'})
+
       doc = REXML::Document.new(response.body)
-      stemcell_tags = REXML::XPath.match(doc, "/ListBucketResult/Contents[Key[text()[starts-with(.,'bosh-stemcell/') and not(contains(.,'latest'))]]]")
+      stemcell_tags = REXML::XPath.match(doc, "/ListBucketResult/Contents[Key[text()[not(contains(.,'latest'))]]]")
 
       stemcell_tags.map do |stemcell_tag|
         stemcell_key = stemcell_tag.get_text('Key').value
