@@ -3,16 +3,16 @@ require 'timecop'
 
 module Bosh::Deployer
   describe DeployerRenderer do
-    subject(:renderer) { described_class.new(event_log_renderer) }
+    subject(:renderer) { described_class.new(log_renderer) }
 
-    let(:event_log_renderer) { instance_double('Bosh::Cli::TaskTracking::EventLogRenderer', finish: nil) }
+    let(:log_renderer) { instance_double('Bosh::Cli::TaskTracking::EventLogRenderer', finish: nil) }
 
     describe '#start' do
       before { Bosh::Cli::Config.poll_interval = 0.1 }
       after { renderer.finish('done') }
 
       it 'refreshes the event log periodically in a separate thread' do
-        expect(event_log_renderer).to receive(:refresh).at_least(2).times
+        expect(log_renderer).to receive(:refresh).at_least(2).times
         expect(renderer).to receive(:sleep).with(0.1).at_least(2).times
 
         renderer.start
@@ -26,7 +26,7 @@ module Bosh::Deployer
 
       it 'stops refreshing the event log' do
         called = 0
-        allow(event_log_renderer).to receive(:refresh) do
+        allow(log_renderer).to receive(:refresh) do
           called += 1
         end
 
@@ -38,7 +38,7 @@ module Bosh::Deployer
       end
 
       it 'finishes the event log' do
-        expect(event_log_renderer).to receive(:finish).with('done')
+        expect(log_renderer).to receive(:finish).with('done')
         renderer.finish('done')
       end
     end
@@ -46,7 +46,7 @@ module Bosh::Deployer
     describe '#update' do
       before do
         @actual_json = nil
-        allow(event_log_renderer).to receive(:add_output) do |output|
+        allow(log_renderer).to receive(:add_output) do |output|
           @actual_json = output
         end
       end
@@ -115,7 +115,7 @@ module Bosh::Deployer
 
     describe '#duration' do
       it 'delegates to the event log' do
-        expect(event_log_renderer).to receive(:duration).and_return(101)
+        expect(log_renderer).to receive(:duration).and_return(101)
         expect(renderer.duration).to eq(101)
       end
     end
