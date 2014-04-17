@@ -19,7 +19,7 @@ module Bosh::Director
           @deployment_manager = Api::DeploymentManager.new
           @instance_manager = Bosh::Director::Api::InstanceManager.new
           @deployment = @deployment_manager.find_by_name(deployment_name)
-          @jobs = jobs # {j1 => [i1, i2, ...], j2 => [i1, i2, ...]}
+          @jobs = jobs # [[j1, i1], [j1, i2], [j2, i1], [j2, i2], ...]
           @fix_stateful_jobs = fix_stateful_jobs
         end
 
