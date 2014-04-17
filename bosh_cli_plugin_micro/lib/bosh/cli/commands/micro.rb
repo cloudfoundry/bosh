@@ -171,7 +171,7 @@ module Bosh::Cli::Command
         stemcell_archive = Bosh::Stemcell::Archive.new(stemcell)
       end
 
-      renderer = Bosh::Deployer::DeployerRenderer.new
+      renderer = Bosh::Deployer::DeployerRenderer.new(Bosh::Cli::TaskTracking::EventLogRenderer.new)
       renderer.start
       deployer.renderer = renderer
 
@@ -208,7 +208,7 @@ module Bosh::Cli::Command
         return
       end
 
-      renderer = Bosh::Deployer::DeployerRenderer.new
+      renderer = Bosh::Deployer::DeployerRenderer.new(Bosh::Cli::TaskTracking::EventLogRenderer.new)
       renderer.start
       deployer.renderer = renderer
 
