@@ -1,13 +1,14 @@
 package infrastructure
 
 import (
+	"time"
+
 	bosherr "bosh/errors"
 	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshlog "bosh/logger"
 	boshplatform "bosh/platform"
 	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
-	"time"
 )
 
 type Provider struct {
@@ -16,7 +17,6 @@ type Provider struct {
 
 func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provider) {
 	digDNSResolver := NewDigDNSResolver(logger)
-
 	p.infrastructures = map[string]Infrastructure{
 		"aws":     p.createAwsInfrastructure("http://169.254.169.254", digDNSResolver, platform),
 		"dummy":   p.createDummyInfrastructure(platform.GetFs(), platform.GetDirProvider(), platform),
@@ -25,32 +25,33 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 	return
 }
 
-func (p Provider) Get(name string) (inf Infrastructure, err error) {
+func (p Provider) Get(name string) (Infrastructure, error) {
 	inf, found := p.infrastructures[name]
-
 	if !found {
-		err = bosherr.New("Infrastructure %s could not be found", name)
+		return nil, bosherr.New("Infrastructure %s could not be found", name)
 	}
-	return
+	return inf, nil
 }
 
-func (p Provider) createVsphereInfrastructure(platform boshplatform.Platform, logger boshlog.Logger) (inf Infrastructure) {
+func (p Provider) createVsphereInfrastructure(platform boshplatform.Platform, logger boshlog.Logger) Infrastructure {
 	devicePathResolver := boshdpresolv.NewVsphereDevicePathResolver(500*time.Millisecond, platform.GetFs())
-	inf = NewVsphereInfrastructure(platform, devicePathResolver, logger)
-	return
+	return NewVsphereInfrastructure(platform, devicePathResolver, logger)
 }
 
-func (p Provider) createAwsInfrastructure(metadataHost string, resolver dnsResolver,
-	platform boshplatform.Platform) (inf Infrastructure) {
-
+func (p Provider) createAwsInfrastructure(
+	metadataHost string,
+	resolver dnsResolver,
+	platform boshplatform.Platform,
+) Infrastructure {
 	devicePathResolver := boshdpresolv.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
-	inf = NewAwsInfrastructure(metadataHost, resolver, platform, devicePathResolver)
-	return
+	return NewAwsInfrastructure(metadataHost, resolver, platform, devicePathResolver)
 }
 
-func (p Provider) createDummyInfrastructure(fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider,
-	platform boshplatform.Platform) (inf Infrastructure) {
+func (p Provider) createDummyInfrastructure(
+	fs boshsys.FileSystem,
+	dirProvider boshdir.DirectoriesProvider,
+	platform boshplatform.Platform,
+) Infrastructure {
 	devicePathResolver := boshdpresolv.NewDummyDevicePathResolver(1*time.Millisecond, platform.GetFs())
-	inf = NewDummyInfrastructure(fs, dirProvider, platform, devicePathResolver)
-	return
+	return NewDummyInfrastructure(fs, dirProvider, platform, devicePathResolver)
 }
