@@ -55,21 +55,17 @@ module Bosh::Cli
 
       it 'returns the most recent of each variety of stemcell, except legacy stemcells' do
         expect(list_of_stemcells).to eq %w[bosh-stemcell-2416-aws-xen-ubuntu.tgz
-                                          bosh-stemcell-1471_2-aws-xen-ubuntu.tgz
                                           bosh-stemcell-2416-aws-xen-centos.tgz
                                           bosh-stemcell-2416-aws-xen-centos-go_agent.tgz
                                           bosh-stemcell-2416-aws-xen-ubuntu-go_agent.tgz
                                           light-bosh-stemcell-2416-aws-xen-ubuntu.tgz
-                                          light-bosh-stemcell-1471_2-aws-xen-ubuntu.tgz
                                           light-bosh-stemcell-2416-aws-xen-centos.tgz
                                           light-bosh-stemcell-2416-aws-xen-centos-go_agent.tgz
                                           light-bosh-stemcell-2416-aws-xen-ubuntu-go_agent.tgz
                                           bosh-stemcell-2416-openstack-kvm-ubuntu.tgz
-                                          bosh-stemcell-1471_2-openstack-kvm-ubuntu.tgz
                                           bosh-stemcell-2416-openstack-kvm-centos.tgz
                                           bosh-stemcell-2416-vsphere-esxi-ubuntu.tgz
                                           bosh-stemcell-2416-vsphere-esxi-centos.tgz
-                                          bosh-stemcell-1471_2-vsphere-esxi-ubuntu.tgz
                                           bosh-stemcell-2416-vsphere-esxi-centos-go_agent.tgz
                                           bosh-stemcell-2416-vsphere-esxi-ubuntu-go_agent.tgz
                                           bosh-stemcell-53-warden-boshlite-ubuntu.tgz
