@@ -59,9 +59,12 @@ func (dispatcher concreteActionDispatcher) ResumePreviouslyDispatchedTasks() {
 		taskID := taskInfo.TaskID
 		payload := taskInfo.Payload
 
-		task := dispatcher.taskService.CreateTaskWithID(taskID, func() (interface{}, error) {
-			return dispatcher.actionRunner.Resume(action, payload)
-		}, dispatcher.removeTaskInfo)
+		task := dispatcher.taskService.CreateTaskWithID(
+			taskID,
+			func() (interface{}, error) { return dispatcher.actionRunner.Resume(action, payload) },
+			func(_ boshtask.Task) error { return action.Cancel() },
+			dispatcher.removeTaskInfo,
+		)
 
 		dispatcher.taskService.StartTask(task)
 	}
@@ -91,12 +94,14 @@ func (dispatcher concreteActionDispatcher) dispatchAsynchronousAction(action bos
 		return dispatcher.actionRunner.Run(action, req.GetPayload())
 	}
 
+	cancelTask := func(_ boshtask.Task) error { return action.Cancel() }
+
 	// Certain long-running tasks (e.g. configure_networks) must be resumed
 	// after agent restart so that API consumers do not need to know
 	// if agent is restarted midway through the task.
 	if action.IsPersistent() {
 		dispatcher.logger.Info("Action Dispatcher", "Running persistent action %s", req.Method)
-		task, err = dispatcher.taskService.CreateTask(runTask, dispatcher.removeTaskInfo)
+		task, err = dispatcher.taskService.CreateTask(runTask, cancelTask, dispatcher.removeTaskInfo)
 		if err != nil {
 			err = bosherr.WrapError(err, "Create Task Failed %s", req.Method)
 			dispatcher.logger.Error("Action Dispatcher", err.Error())
@@ -116,7 +121,7 @@ func (dispatcher concreteActionDispatcher) dispatchAsynchronousAction(action bos
 			return boshhandler.NewExceptionResponse(err.Error())
 		}
 	} else {
-		task, err = dispatcher.taskService.CreateTask(runTask, nil)
+		task, err = dispatcher.taskService.CreateTask(runTask, cancelTask, nil)
 		if err != nil {
 			err = bosherr.WrapError(err, "Create Task Failed %s", req.Method)
 			dispatcher.logger.Error("Action Dispatcher", err.Error())

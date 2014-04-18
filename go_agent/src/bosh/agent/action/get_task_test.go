@@ -12,7 +12,7 @@ import (
 	boshassert "bosh/assert"
 )
 
-var _ =  Describe("GetTask", func() {
+var _ = Describe("GetTask", func() {
 	var (
 		taskService *faketask.FakeService
 		action      GetTaskAction
@@ -75,4 +75,3 @@ var _ =  Describe("GetTask", func() {
 		Expect(err.Error()).To(Equal("Task with id fake-task-id could not be found"))
 	})
 })
-

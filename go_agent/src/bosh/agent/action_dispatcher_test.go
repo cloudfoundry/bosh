@@ -84,6 +84,26 @@ func init() {
 				actionFactory.RegisterAction("fake-action", action)
 			})
 
+			ItAllowsToCancelTask := func() {
+				It("allows task to be cancelled", func() {
+					dispatcher.Dispatch(req)
+
+					err := taskService.StartedTasks["fake-generated-task-id"].Cancel()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(action.Canceled).To(BeTrue())
+				})
+
+				It("returns error from cancelling task if canceling task fails", func() {
+					action.CancelErr = errors.New("fake-cancel-err")
+					dispatcher.Dispatch(req)
+
+					err := taskService.StartedTasks["fake-generated-task-id"].Cancel()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-cancel-err"))
+				})
+			}
+
 			Context("when action is not persistent", func() {
 				BeforeEach(func() {
 					action.Persistent = false
@@ -133,6 +153,8 @@ func init() {
 					Expect(actionRunner.RunAction).To(Equal(action))
 					Expect(string(actionRunner.RunPayload)).To(Equal("fake-payload"))
 				})
+
+				ItAllowsToCancelTask()
 
 				It("does not add task to task manager since it should not be resumed if agent is restarted", func() {
 					dispatcher.Dispatch(req)
@@ -195,6 +217,8 @@ func init() {
 					Expect(actionRunner.RunAction).To(Equal(action))
 					Expect(string(actionRunner.RunPayload)).To(Equal("fake-payload"))
 				})
+
+				ItAllowsToCancelTask()
 
 				It("adds task to task manager before task starts so that it could be resumed if agent is restarted", func() {
 					dispatcher.Dispatch(req)
@@ -344,6 +368,40 @@ func init() {
 					Expect(actionRunner.ResumeAction).To(Equal(secondAction))
 					Expect(string(actionRunner.ResumePayload)).To(Equal("fake-task-payload-2"))
 				}
+			})
+
+			It("allows to cancel after resume", func() {
+				actionFactory.RegisterAction("fake-action-1", firstAction)
+				actionFactory.RegisterAction("fake-action-2", secondAction)
+
+				dispatcher.ResumePreviouslyDispatchedTasks()
+
+				err := taskService.StartedTasks["fake-task-id-1"].Cancel()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(firstAction.Canceled).To(BeTrue())
+				Expect(secondAction.Canceled).To(BeFalse())
+
+				err = taskService.StartedTasks["fake-task-id-2"].Cancel()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(secondAction.Canceled).To(BeTrue())
+			})
+
+			It("returns error from cancelling task when canceling resumed task fails", func() {
+				actionFactory.RegisterAction("fake-action-1", firstAction)
+				actionFactory.RegisterAction("fake-action-2", secondAction)
+
+				dispatcher.ResumePreviouslyDispatchedTasks()
+
+				firstAction.CancelErr = errors.New("fake-cancel-err-1")
+				secondAction.CancelErr = errors.New("fake-cancel-err-2")
+
+				err := taskService.StartedTasks["fake-task-id-1"].Cancel()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-cancel-err-1"))
+
+				err = taskService.StartedTasks["fake-task-id-2"].Cancel()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-cancel-err-2"))
 			})
 		})
 	})

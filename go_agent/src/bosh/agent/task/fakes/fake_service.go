@@ -18,23 +18,26 @@ func NewFakeService() *FakeService {
 
 func (s *FakeService) CreateTask(
 	taskFunc boshtask.TaskFunc,
+	taskCancelFunc boshtask.TaskCancelFunc,
 	taskEndFunc boshtask.TaskEndFunc,
 ) (boshtask.Task, error) {
 	if s.CreateTaskErr != nil {
 		return boshtask.Task{}, s.CreateTaskErr
 	}
-	return s.CreateTaskWithID("fake-generated-task-id", taskFunc, taskEndFunc), nil
+	return s.CreateTaskWithID("fake-generated-task-id", taskFunc, taskCancelFunc, taskEndFunc), nil
 }
 
 func (s *FakeService) CreateTaskWithID(
 	id string,
 	taskFunc boshtask.TaskFunc,
+	taskCancelFunc boshtask.TaskCancelFunc,
 	taskEndFunc boshtask.TaskEndFunc,
 ) boshtask.Task {
 	return boshtask.Task{
 		ID:          id,
 		State:       boshtask.TaskStateRunning,
 		TaskFunc:    taskFunc,
+		CancelFunc:  taskCancelFunc,
 		TaskEndFunc: taskEndFunc,
 	}
 }
