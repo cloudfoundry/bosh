@@ -1038,6 +1038,8 @@ module VSphereCloud
         @resources.datacenters.each_value do |datacenter|
           @logger.info("Looking for VMs in: #{datacenter.name} - #{datacenter.vm_folder.name}")
           subfolders += datacenter.vm_folder.mob.child_entity
+          @logger.info("Looking for Stemcells in: #{datacenter.name} - #{datacenter.template_folder.name}")
+          subfolders += datacenter.template_folder.mob.child_entity
         end
       end
 
