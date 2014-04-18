@@ -40,6 +40,33 @@ describe 'health_monitor: 1', type: :integration do
     expect(director.wait_for_vm('foobar/0', 150)).to be_nil
   end
 
+  # ~4m
+  it 'only resurrects stateless nodes that are configured to be resurrected' do
+    pending 'The interaction of a resurrected node and a non-resurrected node are important but broken. See #69728124'
+
+    deployment_hash = Bosh::Spec::Deployments.simple_manifest
+    deployment_hash['jobs'][0]['instances'] = 2
+    deploy_simple(manifest_hash: deployment_hash)
+
+    bosh_runner.run('vm resurrection foobar 1 off')
+
+    original_0_vm = director.vm('foobar/0')
+    original_1_vm = director.vm('foobar/1')
+
+    # Kill VMs as close as possible
+    original_0_vm.kill_agent
+    original_1_vm.kill_agent
+
+    new_0_vm = director.wait_for_vm('foobar/0', 150)
+    expect(new_0_vm.cid).to_not eq(original_0_vm.cid)
+
+    # Since at this point 0th VM is back up, assume that
+    # if 1st VM would be resurrected it would've already happened
+    # (i.e do not wait for long time)
+    new_1_vm = director.wait_for_vm('foobar/1', 10)
+    expect(new_1_vm).to be_nil
+  end
+
   # ~3m
   it 'resurrects vms that were down before resurrector started' do
     # Turn resurrector off
