@@ -47,3 +47,7 @@ func (a GetTaskAction) Run(taskID string) (value interface{}, err error) {
 func (a GetTaskAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a GetTaskAction) Cancel() error {
+	return errors.New("not supported")
+}

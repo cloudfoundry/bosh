@@ -1,6 +1,7 @@
 package action
 
 import (
+	"errors"
 	"os"
 	"time"
 )
@@ -41,4 +42,8 @@ func (a ConfigureNetworksAction) Run() (interface{}, error) {
 
 func (a ConfigureNetworksAction) Resume() (interface{}, error) {
 	return "ok", nil
+}
+
+func (a ConfigureNetworksAction) Cancel() error {
+	return errors.New("not supported")
 }

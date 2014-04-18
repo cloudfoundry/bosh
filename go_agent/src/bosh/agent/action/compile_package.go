@@ -66,3 +66,7 @@ func (a CompilePackageAction) Run(blobID, sha1, name, version string, deps boshc
 func (a CompilePackageAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a CompilePackageAction) Cancel() error {
+	return errors.New("not supported")
+}

@@ -73,3 +73,7 @@ func (a RunErrandAction) Run() (ErrandResult, error) {
 func (a RunErrandAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a RunErrandAction) Cancel() error {
+	return errors.New("not supported")
+}

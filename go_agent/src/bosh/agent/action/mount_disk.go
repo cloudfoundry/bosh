@@ -82,3 +82,7 @@ func (a MountDiskAction) Run(diskCid string) (value interface{}, err error) {
 func (a MountDiskAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a MountDiskAction) Cancel() error {
+	return errors.New("not supported")
+}

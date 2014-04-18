@@ -47,3 +47,7 @@ func (a PrepareConfigureNetworksAction) Run() (interface{}, error) {
 func (a PrepareConfigureNetworksAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a PrepareConfigureNetworksAction) Cancel() error {
+	return errors.New("not supported")
+}

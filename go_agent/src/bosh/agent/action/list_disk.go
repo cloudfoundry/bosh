@@ -56,3 +56,7 @@ func (a ListDiskAction) Run() (value interface{}, err error) {
 func (a ListDiskAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a ListDiskAction) Cancel() error {
+	return errors.New("not supported")
+}

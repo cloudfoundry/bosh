@@ -25,3 +25,7 @@ func (a PingAction) Run() (interface{}, error) {
 func (a PingAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a PingAction) Cancel() error {
+	return errors.New("not supported")
+}

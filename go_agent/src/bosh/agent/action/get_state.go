@@ -86,3 +86,7 @@ func (a GetStateAction) Run(filters ...string) (GetStateV1ApplySpec, error) {
 func (a GetStateAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a GetStateAction) Cancel() error {
+	return errors.New("not supported")
+}

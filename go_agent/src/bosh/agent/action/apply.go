@@ -51,3 +51,7 @@ func (a ApplyAction) Run(desiredSpec boshas.V1ApplySpec) (interface{}, error) {
 func (a ApplyAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a ApplyAction) Cancel() error {
+	return errors.New("not supported")
+}

@@ -59,3 +59,7 @@ func (a UnmountDiskAction) Run(volumeID string) (value interface{}, err error) {
 func (a UnmountDiskAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a UnmountDiskAction) Cancel() error {
+	return errors.New("not supported")
+}

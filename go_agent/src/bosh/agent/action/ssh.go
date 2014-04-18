@@ -106,3 +106,7 @@ func (a SshAction) cleanupSsh(params SshParams) (value interface{}, err error) {
 func (a SshAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a SshAction) Cancel() error {
+	return errors.New("not supported")
+}

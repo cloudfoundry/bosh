@@ -40,3 +40,7 @@ func (a StopAction) Run() (value interface{}, err error) {
 func (a StopAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a StopAction) Cancel() error {
+	return errors.New("not supported")
+}

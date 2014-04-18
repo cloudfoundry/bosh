@@ -52,6 +52,10 @@ func (a *actionWithGoodRunMethod) Resume() (interface{}, error) {
 	return nil, nil
 }
 
+func (a *actionWithGoodRunMethod) Cancel() error {
+	return nil
+}
+
 type actionWithOptionalRunArgument struct {
 	SubAction    string
 	OptionalArgs []argsType
@@ -78,6 +82,10 @@ func (a *actionWithOptionalRunArgument) Resume() (interface{}, error) {
 	return nil, nil
 }
 
+func (a *actionWithOptionalRunArgument) Cancel() error {
+	return nil
+}
+
 type actionWithoutRunMethod struct{}
 
 func (a *actionWithoutRunMethod) IsAsynchronous() bool {
@@ -90,6 +98,10 @@ func (a *actionWithoutRunMethod) IsPersistent() bool {
 
 func (a *actionWithoutRunMethod) Resume() (interface{}, error) {
 	return nil, nil
+}
+
+func (a *actionWithoutRunMethod) Cancel() error {
+	return nil
 }
 
 type actionWithOneRunReturnValue struct{}
@@ -110,6 +122,10 @@ func (a *actionWithOneRunReturnValue) Resume() (interface{}, error) {
 	return nil, nil
 }
 
+func (a *actionWithOneRunReturnValue) Cancel() error {
+	return nil
+}
+
 type actionWithSecondReturnValueNotError struct{}
 
 func (a *actionWithSecondReturnValueNotError) IsAsynchronous() bool {
@@ -126,6 +142,10 @@ func (a *actionWithSecondReturnValueNotError) Run() (interface{}, string) {
 
 func (a *actionWithSecondReturnValueNotError) Resume() (interface{}, error) {
 	return nil, nil
+}
+
+func (a *actionWithSecondReturnValueNotError) Cancel() error {
+	return nil
 }
 
 func init() {

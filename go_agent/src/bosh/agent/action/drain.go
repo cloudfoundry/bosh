@@ -106,3 +106,7 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 func (a DrainAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a DrainAction) Cancel() error {
+	return errors.New("not supported")
+}

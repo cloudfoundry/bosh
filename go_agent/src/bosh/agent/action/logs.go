@@ -84,3 +84,7 @@ func (a LogsAction) Run(logType string, filters []string) (value interface{}, er
 func (a LogsAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a LogsAction) Cancel() error {
+	return errors.New("not supported")
+}

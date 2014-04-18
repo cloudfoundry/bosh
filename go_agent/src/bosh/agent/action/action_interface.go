@@ -17,4 +17,5 @@ type Action interface {
 	// See Runner for more details
 
 	Resume() (interface{}, error)
+	Cancel() error
 }
