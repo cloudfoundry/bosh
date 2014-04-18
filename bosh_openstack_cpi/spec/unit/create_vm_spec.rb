@@ -34,6 +34,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       :security_groups => security_groups,
       :nics => nics,
       :user_data => Yajl::Encoder.encode(user_data(unique_name, nameserver, false)),
+      :config_drive => true,
       :personality => [ { "path" => "/var/vcap/bosh/user_data.json",
                           "contents" => Yajl::Encoder.encode(user_data(unique_name, nameserver, true))} ],
       :availability_zone => "foobar-1a"

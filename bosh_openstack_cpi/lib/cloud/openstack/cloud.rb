@@ -229,6 +229,7 @@ module Bosh::OpenStackCloud
           :security_groups => security_groups,
           :nics => nics,
           :user_data => Yajl::Encoder.encode(user_data(server_name, network_spec)),
+          :config_drive => true,
           :personality => [{
                             "path" => "#{BOSH_APP_DIR}/user_data.json",
                             "contents" => Yajl::Encoder.encode(user_data(server_name, network_spec, keypair.public_key))
@@ -732,13 +733,16 @@ module Bosh::OpenStackCloud
     # @return [String] First available letter
     def first_device_name_letter(server)
       letter = "#{FIRST_DEVICE_NAME_LETTER}"
-      return letter if server.flavor.nil?
-      return letter unless server.flavor.has_key?('id')
-      flavor = with_openstack { @openstack.flavors.find { |f| f.id == server.flavor['id'] } }
-      return letter if flavor.nil?
 
-      letter.succ! if flavor_has_ephemeral_disk?(flavor)
-      letter.succ! if flavor_has_swap_disk?(flavor)
+      if server.flavor && server.flavor.has_key?('id')
+        flavor = with_openstack { @openstack.flavors.find { |f| f.id == server.flavor['id'] } }
+        unless flavor.nil?
+          letter.succ! if flavor_has_ephemeral_disk?(flavor)
+          letter.succ! if flavor_has_swap_disk?(flavor)
+        end
+      end
+
+      letter.succ! if server_has_config_drive?(server)
       letter
     end
 
@@ -811,6 +815,16 @@ module Bosh::OpenStackCloud
     # @return [Boolean] true if flavor has swap disk, false otherwise
     def flavor_has_swap_disk?(flavor)
       flavor.swap.nil? || flavor.swap.to_i <= 0 ? false : true
+    end
+
+    ##
+    # Checks if the OpenStack server has config_drive enabled
+    #
+    # @param [Fog::Compute::OpenStack::Server] OpenStack server
+    # @return [Boolean] true if server has config drive, false otherwise
+    def server_has_config_drive?(server)
+      return false unless server.respond_to?(:config_drive)
+      server.config_drive.nil? || server.config_drive.empty? ? false : true
     end
 
     ##

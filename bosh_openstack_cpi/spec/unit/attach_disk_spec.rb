@@ -4,9 +4,11 @@
 require "spec_helper"
 
 describe Bosh::OpenStackCloud::Cloud do
-  let(:server) { double("server", :id => "i-test", :name => "i-test", :flavor =>  { "id" => "f-test" } ) }
+  let(:server) { double("server", :id => "i-test", :name => "i-test", :flavor =>  { "id" => "f-test" },
+                        :config_drive => config_drive ) }
   let(:volume) { double("volume", :id => "v-foobar") }
   let(:flavor) { double("flavor", :id => "f-test", :ephemeral => 10, :swap => "") }
+  let(:config_drive) { nil }
   let(:cloud)  {
     mock_cloud do |openstack|
       openstack.servers.should_receive(:get).with("i-test").and_return(server)
@@ -124,6 +126,16 @@ describe Bosh::OpenStackCloud::Cloud do
 
         cloud.attach_disk("i-test", "v-foobar")
       end
+
+      context 'with config_drive' do
+        let(:config_drive) { '1' }
+
+        it 'return letter c' do
+          volume.should_receive(:attach).with(server.id, '/dev/sdc')
+
+          cloud.attach_disk('i-test', 'v-foobar')
+        end
+      end
     end
 
     context 'when there is ephemeral disk' do
@@ -133,6 +145,16 @@ describe Bosh::OpenStackCloud::Cloud do
         volume.should_receive(:attach).with(server.id, "/dev/sdc")
 
         cloud.attach_disk("i-test", "v-foobar")
+      end
+
+      context 'with config_drive' do
+        let(:config_drive) { '1' }
+
+        it 'return letter d' do
+          volume.should_receive(:attach).with(server.id, '/dev/sdd')
+
+          cloud.attach_disk('i-test', 'v-foobar')
+        end
       end
     end
 
@@ -144,6 +166,16 @@ describe Bosh::OpenStackCloud::Cloud do
 
         cloud.attach_disk("i-test", "v-foobar")
       end
+
+      context 'with config_drive' do
+        let(:config_drive) { '1' }
+
+        it 'return letter d' do
+          volume.should_receive(:attach).with(server.id, '/dev/sdd')
+
+          cloud.attach_disk('i-test', 'v-foobar')
+        end
+      end
     end
 
     context 'when there is ephemeral and swap disk' do
@@ -154,6 +186,16 @@ describe Bosh::OpenStackCloud::Cloud do
 
         cloud.attach_disk("i-test", "v-foobar")
       end
+
+      context 'with config_drive' do
+        let(:config_drive) { '1' }
+
+        it 'return letter e' do
+          volume.should_receive(:attach).with(server.id, '/dev/sde')
+
+          cloud.attach_disk('i-test', 'v-foobar')
+        end
+      end
     end
 
     context 'when server flavor is not found' do
@@ -163,6 +205,16 @@ describe Bosh::OpenStackCloud::Cloud do
         volume.should_receive(:attach).with(server.id, "/dev/sdb")
 
         cloud.attach_disk("i-test", "v-foobar")
+      end
+
+      context 'with config_drive' do
+        let(:config_drive) { '1' }
+
+        it 'return letter c' do
+          volume.should_receive(:attach).with(server.id, '/dev/sdc')
+
+          cloud.attach_disk('i-test', 'v-foobar')
+        end
       end
     end
   end
