@@ -12,68 +12,67 @@ import (
 	boshassert "bosh/assert"
 )
 
-func init() {
-	Describe("GetTask", func() {
-		var (
-			taskService *faketask.FakeService
-			action      GetTaskAction
-		)
+var _ =  Describe("GetTask", func() {
+	var (
+		taskService *faketask.FakeService
+		action      GetTaskAction
+	)
 
-		BeforeEach(func() {
-			taskService = faketask.NewFakeService()
-			action = NewGetTask(taskService)
-		})
-
-		It("is synchronous", func() {
-			Expect(action.IsAsynchronous()).To(BeFalse())
-		})
-
-		It("is not persistent", func() {
-			Expect(action.IsPersistent()).To(BeFalse())
-		})
-
-		It("returns a running task", func() {
-			taskService.StartedTasks["fake-task-id"] = boshtask.Task{
-				ID:    "fake-task-id",
-				State: boshtask.TaskStateRunning,
-			}
-
-			taskValue, err := action.Run("fake-task-id")
-			Expect(err).ToNot(HaveOccurred())
-			boshassert.MatchesJSONString(GinkgoT(), taskValue, `{"agent_task_id":"fake-task-id","state":"running"}`)
-		})
-
-		It("returns a failed task", func() {
-			taskService.StartedTasks["fake-task-id"] = boshtask.Task{
-				ID:    "fake-task-id",
-				State: boshtask.TaskStateFailed,
-				Error: errors.New("fake-task-error"),
-			}
-
-			taskValue, err := action.Run("fake-task-id")
-			Expect(err).To(HaveOccurred())
-			Expect("fake-task-error").To(Equal(err.Error()))
-			boshassert.MatchesJSONString(GinkgoT(), taskValue, `null`)
-		})
-
-		It("returns a successful task", func() {
-			taskService.StartedTasks["fake-task-id"] = boshtask.Task{
-				ID:    "fake-task-id",
-				State: boshtask.TaskStateDone,
-				Value: "some-task-value",
-			}
-
-			taskValue, err := action.Run("fake-task-id")
-			Expect(err).ToNot(HaveOccurred())
-			boshassert.MatchesJSONString(GinkgoT(), taskValue, `"some-task-value"`)
-		})
-
-		It("returns error when task is not found", func() {
-			taskService.StartedTasks = map[string]boshtask.Task{}
-
-			_, err := action.Run("fake-task-id")
-			Expect(err).To(HaveOccurred())
-			Expect("Task with id fake-task-id could not be found").To(Equal(err.Error()))
-		})
+	BeforeEach(func() {
+		taskService = faketask.NewFakeService()
+		action = NewGetTask(taskService)
 	})
-}
+
+	It("is synchronous", func() {
+		Expect(action.IsAsynchronous()).To(BeFalse())
+	})
+
+	It("is not persistent", func() {
+		Expect(action.IsPersistent()).To(BeFalse())
+	})
+
+	It("returns a running task", func() {
+		taskService.StartedTasks["fake-task-id"] = boshtask.Task{
+			ID:    "fake-task-id",
+			State: boshtask.TaskStateRunning,
+		}
+
+		taskValue, err := action.Run("fake-task-id")
+		Expect(err).ToNot(HaveOccurred())
+		boshassert.MatchesJSONString(GinkgoT(), taskValue, `{"agent_task_id":"fake-task-id","state":"running"}`)
+	})
+
+	It("returns a failed task", func() {
+		taskService.StartedTasks["fake-task-id"] = boshtask.Task{
+			ID:    "fake-task-id",
+			State: boshtask.TaskStateFailed,
+			Error: errors.New("fake-task-error"),
+		}
+
+		taskValue, err := action.Run("fake-task-id")
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(Equal("fake-task-error"))
+		boshassert.MatchesJSONString(GinkgoT(), taskValue, `null`)
+	})
+
+	It("returns a successful task", func() {
+		taskService.StartedTasks["fake-task-id"] = boshtask.Task{
+			ID:    "fake-task-id",
+			State: boshtask.TaskStateDone,
+			Value: "some-task-value",
+		}
+
+		taskValue, err := action.Run("fake-task-id")
+		Expect(err).ToNot(HaveOccurred())
+		boshassert.MatchesJSONString(GinkgoT(), taskValue, `"some-task-value"`)
+	})
+
+	It("returns error when task is not found", func() {
+		taskService.StartedTasks = map[string]boshtask.Task{}
+
+		_, err := action.Run("fake-task-id")
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(Equal("Task with id fake-task-id could not be found"))
+	})
+})
+
