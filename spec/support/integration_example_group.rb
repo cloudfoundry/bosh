@@ -26,6 +26,7 @@ module IntegrationExampleGroup
     @bosh_runner ||= Bosh::Spec::BoshRunner.new(
       BOSH_WORK_DIR,
       BOSH_CONFIG,
+      current_sandbox.cpi.method(:agent_log_path),
       logger
     )
   end
@@ -34,6 +35,7 @@ module IntegrationExampleGroup
     Bosh::Spec::BoshRunner.new(
       work_dir,
       BOSH_CONFIG,
+      current_sandbox.cpi.method(:agent_log_path),
       logger
     )
   end
