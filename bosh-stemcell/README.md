@@ -31,7 +31,7 @@ The final two arguments are the S3 bucket and key for the OS image to use, which
 
     vagrant ssh -c '
       cd /bosh
-      CANDIDATE_BUILD_NUMBER=<current_build> http_proxy=http://localhost:3142/ bundle exec rake stemcell:build[vsphere,centos,ruby,ci4-bosh-os-images-centos,aa1590ae6eb031840b59485ad292d4ae313c0327338867263c07a73878fb4a49]
+      CANDIDATE_BUILD_NUMBER=<current_build> http_proxy=http://localhost:3142/ bundle exec rake stemcell:build[vsphere,centos,nil,ruby,bosh-os-images,bosh-centos-6_5-os-image.tgz]
     ' remote
 
 # Run the stemcell locally with Fusion
