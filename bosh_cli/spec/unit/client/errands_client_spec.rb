@@ -37,6 +37,15 @@ describe Bosh::Cli::Client::ErrandsClient do
           expect(task_id).to eq('fake-task-id')
           expect(actual_result).to eq(described_class::ErrandResult.new(123, 'fake-stdout', 'fake-stderr'))
         end
+
+        it 'does not raise an error if output is empty' do
+          expect(director).to receive(:get_task_result_log).with('fake-task-id').and_return(nil)
+
+          actual_status, task_id, actual_result = client.run_errand('fake-deployment-name', 'fake-errand-name')
+          expect(actual_status).to eq(status)
+          expect(task_id).to eq('fake-task-id')
+          expect(actual_result).to be_nil
+        end
       end
     end
 
@@ -47,7 +56,7 @@ describe Bosh::Cli::Client::ErrandsClient do
         status, task_id, result = client.run_errand('fake-deployment-name', 'fake-errand-name')
         expect(status).to eq(:not_done)
         expect(task_id).to eq('fake-task-id')
-        expect(result).to be(nil)
+        expect(result).to be_nil
       end
     end
   end

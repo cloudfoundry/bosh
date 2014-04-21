@@ -31,8 +31,13 @@ module Bosh::Cli::Client
         return [status, task_id, nil]
       end
 
-      task_result = JSON.parse(@director.get_task_result_log(task_id))
-      errand_result = ErrandResult.new(*task_result.values_at('exit_code', 'stdout', 'stderr'))
+      errand_result_output = @director.get_task_result_log(task_id)
+      errand_result = nil
+
+      if errand_result_output
+        task_result = JSON.parse(errand_result_output)
+        errand_result = ErrandResult.new(*task_result.values_at('exit_code', 'stdout', 'stderr'))
+      end
 
       [status, task_id, errand_result]
     end
