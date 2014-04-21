@@ -30,12 +30,14 @@ module Bosh::Director
     # Deletes created all job instances
     # @return [void]
     def delete_instances
+      instances = @job.instances.map(&:model).compact
+      return if instances.empty?
+
       event_log_stage = @event_log.begin_stage(
-        'Deleting instances', @job.instances.size, [@job.name])
+        'Deleting instances', instances.size, [@job.name])
 
       instance_deleter = InstanceDeleter.new(@deployment)
-      instance_deleter.delete_instances(
-        @job.instances.map(&:model), event_log_stage)
+      instance_deleter.delete_instances(instances, event_log_stage)
 
       deallocate_vms
     end
