@@ -412,10 +412,10 @@ describe Bosh::Agent::Handler do
 
   it 'should raise a RemoteException when message > NATS_MAX_PAYLOAD' do
     payload = 'a' * (Bosh::Agent::Handler::NATS_MAX_PAYLOAD_SIZE + 1)
-    @nats.should_receive(:publish).with('reply', 'exception')
+    @nats.should_receive(:publish).with('reply', '{"exception":{"message":"exception"}}')
 
     mock = double(Bosh::Agent::RemoteException)
-    mock.stub(:to_hash).and_return('exception')
+    mock.stub(:to_hash).and_return(:exception => {:message => 'exception'})
     Bosh::Agent::RemoteException.should_receive(:new).and_return(mock)
 
     handler.start

@@ -258,7 +258,7 @@ module Bosh::Agent
         exception = RemoteException.new(msg, nil, unencrypted)
         @logger.fatal(msg)
         EM.next_tick do
-          @nats.publish(reply_to, exception.to_hash, &blk)
+          @nats.publish(reply_to, Yajl::Encoder.encode(exception.to_hash), &blk)
         end
       end
     end
