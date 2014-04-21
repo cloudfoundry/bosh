@@ -1,14 +1,23 @@
 # OS Image Changes
 
+OS images are in bucket "bosh-os-images"
+
 ## CentOS
 
-CentOS images are in the S3 bucket "ci4-bosh-os-images-centos"
+CentOS images have filename `bosh-centos-6_5-os-image.tgz`
 
-* aa1590ae6eb031840b59485ad292d4ae313c0327338867263c07a73878fb4a49 - upgraded OpenSSL to `1.0.1e-16.el6_5.7`
-* 0e9c536a8c647c5c8109bc59d998c01832f984022826e2caf7662cf05ec66597 - CentOS 6.5
+* `IFHfIgS_2fIP.U0cWMH7..afJjo4ysz0` - upgraded OpenSSL to `1.0.1e-16.el6_5.7`
+* `wFNFCug89mKKgjxVdpITswcfWVPETDUS` - CentOS 6.5
 
-## Ubuntu
+## Ubuntu 10.04
 
-Ubuntu images are in the S3 bucket "ci4-bosh-os-images-ubuntu"
+Ubuntu 10.04 images have filename `bosh-ubuntu-lucid-os-image.tgz`
 
-* ecbd58d17f845bf58e2cc0d49efdb9f38785ba71a36ee564846834ebbb8e64bf - Ubuntu 10.04
+* `EGp_C9N3T0ctgdv0FJ44_AuF7MUlpA9G` - using /sbin/rescan-scsi-bus to match Ubuntu 14.04 (e448b0e8b0967288488c929fbbf953b22a046d1d)
+* `r5606X8C8rS8dBlENBVEXoIaPVBVobXw` - Ubuntu 10.04
+
+## Ubuntu 14.04
+
+Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
+
+* `FlU8d.nSgbEqmcr0ahmoTKNbk.lY95uq` - Ubuntu 14.04 (e448b0e8b0967288488c929fbbf953b22a046d1d)
