@@ -55,6 +55,10 @@ module Bosh::Director
       end
     end
 
+    def task_cancelled?
+      super unless @ignore_cancellation
+    end
+
     private
 
     def with_updated_instances(deployment, job, &blk)
@@ -71,13 +75,21 @@ module Bosh::Director
 
           blk.call
         ensure
-          logger.info('Starting to delete job instances')
-          job_manager(deployment, job).delete_instances
+          ignore_cancellation do
+            logger.info('Starting to delete job instances')
+            job_manager(deployment, job).delete_instances
 
-          logger.info('Starting to refill resource pool')
-          rp_manager(job).refill
+            logger.info('Starting to refill resource pool')
+            rp_manager(job).refill
+          end
         end
       end
+    end
+
+    def ignore_cancellation
+      @ignore_cancellation = true
+      yield
+      @ignore_cancellation = false
     end
 
     def prepare_deployment(deployment, job)

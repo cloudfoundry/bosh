@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::RunErrand do
-    subject { described_class.new('fake-dep-name', 'fake-errand-name') }
+    subject(:job) { described_class.new('fake-dep-name', 'fake-errand-name') }
 
     before do
       App.stub_chain(:instance, :blobstores, :blobstore).
@@ -11,7 +11,7 @@ module Bosh::Director
     end
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
-    before { subject.task_id = 'some-task' }
+    before { job.task_id = 'some-task' }
 
     describe 'Resque job class expectations' do
       let(:job_type) { :run_errand }
@@ -38,14 +38,14 @@ module Bosh::Director
         let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment') }
 
         context 'when job representing an errand exists' do
-          before { allow(deployment).to receive(:job).with('fake-errand-name').and_return(job) }
-          let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-errand-name') }
+          before { allow(deployment).to receive(:job).with('fake-errand-name').and_return(deployment_job) }
+          let(:deployment_job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-errand-name') }
 
           context "when job can run as an errand (usually means lifecycle: errand)" do
-            before { allow(job).to receive(:can_run_as_errand?).and_return(true) }
+            before { allow(deployment_job).to receive(:can_run_as_errand?).and_return(true) }
 
             context 'when job has at least 1 instance' do
-              before { allow(job).to receive(:instances).with(no_args).and_return([instance]) }
+              before { allow(deployment_job).to receive(:instances).with(no_args).and_return([instance]) }
               let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
 
               before { allow(Config).to receive(:result).with(no_args).and_return(result_file) }
@@ -57,12 +57,12 @@ module Bosh::Director
               end
               let(:lock) { instance_double('Bosh::Director::Lock') }
 
-              before { allow(job).to receive(:resource_pool).with(no_args).and_return(resource_pool) }
+              before { allow(deployment_job).to receive(:resource_pool).with(no_args).and_return(resource_pool) }
               let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
 
               before do
                 allow(Errand::DeploymentPreparer).to receive(:new).
-                  with(deployment, job, event_log, subject).
+                  with(deployment, deployment_job, event_log, subject).
                   and_return(deployment_preparer)
               end
               let(:deployment_preparer) do
@@ -89,14 +89,14 @@ module Bosh::Director
 
               before do
                 allow(Errand::JobManager).to receive(:new).
-                  with(deployment, job, blobstore, event_log).
+                  with(deployment, deployment_job, blobstore, event_log).
                   and_return(job_manager)
               end
               let(:job_manager) { instance_double('Bosh::Director::Errand::JobManager', update_instances: nil, delete_instances: nil) }
 
               before do
                 allow(Errand::Runner).to receive(:new).
-                  with(job, result_file, be_a(Api::InstanceManager), event_log).
+                  with(deployment_job, result_file, be_a(Api::InstanceManager), event_log).
                   and_return(runner)
               end
               let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
@@ -163,6 +163,21 @@ module Bosh::Director
                   expect { subject.perform }.to raise_error(TaskCancelled)
                 end
 
+                it 'does not allow cancellation within the cleanup' do
+                  expect(job_manager).to receive(:update_instances).with(no_args).ordered
+
+                  expect(runner).to receive(:run).with(no_args).ordered.and_yield
+
+                  expect(runner).to receive(:cancel).with(no_args).ordered
+
+                  expect(job_manager).to receive(:delete_instances) do
+                    job.task_checkpoint
+                  end.ordered
+                  expect(rp_manager).to receive(:refill).with(no_args).ordered
+
+                  expect { subject.perform }.to raise_error(TaskCancelled)
+                end
+
                 context 'when the agent throws an exception' do
                   it 'raises RpcRemoteException and cleans up errand VMs' do
                     expect(job_manager).to receive(:update_instances).with(no_args).ordered
@@ -181,7 +196,7 @@ module Bosh::Director
             end
 
             context 'when job representing an errand has 0 instances' do
-              before { allow(job).to receive(:instances).with(no_args).and_return([]) }
+              before { allow(deployment_job).to receive(:instances).with(no_args).and_return([]) }
 
               it 'raises an error because errand cannot be run on a job without 0 instances' do
                 expect {
@@ -192,7 +207,7 @@ module Bosh::Director
           end
 
           context "when job cannot run as an errand (e.g. marked as 'lifecycle: service')" do
-            before { allow(job).to receive(:can_run_as_errand?).and_return(false) }
+            before { allow(deployment_job).to receive(:can_run_as_errand?).and_return(false) }
 
             it 'raises an error because non-errand jobs cannot be used with run errand cmd' do
               expect {
@@ -218,6 +233,20 @@ module Bosh::Director
           expect {
             subject.perform
           }.to raise_error(DeploymentNotFound, %r{fake-dep-name.*doesn't exist})
+        end
+      end
+    end
+
+    describe '#task_checkpoint' do
+      subject { job.task_checkpoint }
+
+      it_behaves_like 'raising an error when a task has timed out or been canceled'
+
+      context 'when cancellation is ignored' do
+        it 'does not raise an error' do
+          job.send(:ignore_cancellation) do
+            expect { job.task_checkpoint }.not_to raise_error
+          end
         end
       end
     end

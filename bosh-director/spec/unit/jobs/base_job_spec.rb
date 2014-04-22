@@ -108,5 +108,12 @@ module Bosh::Director
       Config.logger.should eql(@logger)
     end
 
+    describe '#task_checkpoint' do
+      subject { job.task_checkpoint }
+
+      let(:job) { described_class.new }
+
+      it_behaves_like 'raising an error when a task has timed out or been canceled'
+    end
   end
 end
