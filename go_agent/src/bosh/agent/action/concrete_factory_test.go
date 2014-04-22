@@ -98,6 +98,12 @@ func init() {
 			Expect(action).To(Equal(NewGetTask(taskService)))
 		})
 
+		It("cancel_task", func() {
+			action, err := factory.Create("cancel_task")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(action).To(Equal(NewCancelTask(taskService)))
+		})
+
 		It("get_state", func() {
 			ntpService := boshntp.NewConcreteService(platform.GetFs(), platform.GetDirProvider())
 			action, err := factory.Create("get_state")

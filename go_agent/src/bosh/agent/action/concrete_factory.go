@@ -44,8 +44,9 @@ func NewFactory(
 	factory = concreteFactory{
 		availableActions: map[string]Action{
 			// Task management
-			"ping":     NewPing(),
-			"get_task": NewGetTask(taskService),
+			"ping":        NewPing(),
+			"get_task":    NewGetTask(taskService),
+			"cancel_task": NewCancelTask(taskService),
 
 			// VM admin
 			"ssh":        NewSsh(settings, platform, dirProvider),

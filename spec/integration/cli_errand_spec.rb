@@ -184,14 +184,14 @@ describe 'cli: errand', type: :integration do
 
     before(:all) do
       manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
-      # sleep so we have time to cancel it
+
+      # Sleep so we have time to cancel it
       manifest_hash['jobs'].last['properties']['errand1']['sleep_duration_in_seconds'] = 5000
+
       deploy_simple(manifest_hash: manifest_hash)
     end
 
-    it 'successfully cancels the errand and returns its output' do
-      pending unless current_sandbox.agent_type == 'ruby'
-
+    it 'successfully cancels the errand and returns exit code' do
       errand_result = bosh_runner.run('--no-track run errand fake-errand-name')
       task_id = Bosh::Spec::OutputParser.new(errand_result).task_id('running')
 
@@ -203,9 +203,10 @@ describe 'cli: errand', type: :integration do
       errand_output = bosh_runner.run("task #{task_id}")
       expect(errand_output).to include("Error 10001: Task #{task_id} cancelled")
 
+      # Cannot assert on output because there is no guarantee
+      # that process will be cancelled after output is echoed
       result_output = bosh_runner.run("task #{task_id} --result")
-      expect(result_output).to include('fake-errand-stdout')
-      expect(result_output).to include('fake-errand-stderr')
+      expect(result_output).to include('"exit_code":143')
     end
   end
 
