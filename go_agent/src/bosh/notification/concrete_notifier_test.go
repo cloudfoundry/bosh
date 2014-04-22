@@ -26,7 +26,7 @@ var _ = Describe("concreteNotifier", func() {
 			err := notifier.NotifyShutdown()
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(handler.HMRequests).To(Equal([]fakembus.HMRequest{
+			Expect(handler.HMRequests()).To(Equal([]fakembus.HMRequest{
 				fakembus.HMRequest{Topic: "shutdown", Payload: nil},
 			}))
 		})

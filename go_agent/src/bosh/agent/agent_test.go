@@ -128,7 +128,7 @@ func init() {
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("stop"))
 
-					Expect(handler.HMRequests).To(Equal([]fakembus.HMRequest{
+					Expect(handler.HMRequests()).To(Equal([]fakembus.HMRequest{
 						fakembus.HMRequest{Topic: "heartbeat", Payload: expectedHb},
 					}))
 				})
@@ -146,7 +146,7 @@ func init() {
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("stop"))
 
-					Expect(handler.HMRequests).To(Equal([]fakembus.HMRequest{
+					Expect(handler.HMRequests()).To(Equal([]fakembus.HMRequest{
 						fakembus.HMRequest{Topic: "heartbeat", Payload: expectedHb},
 						fakembus.HMRequest{Topic: "heartbeat", Payload: expectedHb},
 						fakembus.HMRequest{Topic: "heartbeat", Payload: expectedHb},
@@ -203,7 +203,7 @@ func init() {
 				Expect(alertBuilder.BuildInput).To(Equal(failureAlert))
 
 				// Check for inclusion because heartbeats might have been received
-				Expect(handler.HMRequests).To(ContainElement(
+				Expect(handler.HMRequests()).To(ContainElement(
 					fakembus.HMRequest{Topic: "alert", Payload: builtAlert},
 				))
 			})
