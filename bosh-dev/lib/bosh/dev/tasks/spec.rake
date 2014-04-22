@@ -20,7 +20,10 @@ namespace :spec do
 
     def run_integration_specs(agent_type)
       ENV['BOSH_INTEGRATION_AGENT_TYPE'] = agent_type
-      num_processes = ENV['TRAVIS'] ? 6 : nil
+
+      num_processes   = ENV['NUM_PROCESSES']
+      num_processes ||= ENV['TRAVIS'] ? 6 : nil
+
       Rake::Task['parallel:spec'].invoke(num_processes, 'spec/integration')
     end
   end
