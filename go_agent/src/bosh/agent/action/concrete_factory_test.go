@@ -179,8 +179,10 @@ func init() {
 
 		It("run_errand", func() {
 			action, err := factory.Create("run_errand")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(action).To(Equal(NewRunErrand(specService, "/var/vcap/jobs", platform.GetRunner())))
+			Expect(err).ToNot(HaveOccurred())
+
+			// Cannot do equality check since channel is used in initializer
+			Expect(action).To(BeAssignableToTypeOf(RunErrandAction{}))
 		})
 
 		It("prepare", func() {

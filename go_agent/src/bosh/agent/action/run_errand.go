@@ -3,6 +3,7 @@ package action
 import (
 	"errors"
 	"path/filepath"
+	"time"
 
 	boshas "bosh/agent/applier/applyspec"
 	bosherr "bosh/errors"
@@ -13,6 +14,8 @@ type RunErrandAction struct {
 	specService boshas.V1Service
 	jobsDir     string
 	cmdRunner   boshsys.CmdRunner
+
+	cancelCh chan struct{}
 }
 
 func NewRunErrand(
@@ -24,6 +27,10 @@ func NewRunErrand(
 		specService: specService,
 		jobsDir:     jobsDir,
 		cmdRunner:   cmdRunner,
+
+		// Initialize channel in a constructor to avoid race
+		// between initializing in Run()/Cancel()
+		cancelCh: make(chan struct{}, 1),
 	}
 }
 
@@ -58,15 +65,32 @@ func (a RunErrandAction) Run() (ErrandResult, error) {
 		},
 	}
 
-	stdout, stderr, exitStatus, err := a.cmdRunner.RunComplexCommand(command)
-	if err != nil && exitStatus == -1 {
+	process, err := a.cmdRunner.RunComplexCommandAsync(command)
+	if err != nil {
 		return ErrandResult{}, bosherr.WrapError(err, "Running errand script")
 	}
 
+	var result boshsys.Result
+
+	// Can only wait once on a process but cancelling can happen multiple times
+	for processExitedCh := process.Wait(); processExitedCh != nil; {
+		select {
+		case result = <-processExitedCh:
+			processExitedCh = nil
+		case <-a.cancelCh:
+			// Ignore possible TerminateNicely error since we cannot return it
+			process.TerminateNicely(10 * time.Second)
+		}
+	}
+
+	if result.Error != nil && result.ExitStatus == -1 {
+		return ErrandResult{}, bosherr.WrapError(result.Error, "Running errand script")
+	}
+
 	return ErrandResult{
-		Stdout:     stdout,
-		Stderr:     stderr,
-		ExitStatus: exitStatus,
+		Stdout:     result.Stdout,
+		Stderr:     result.Stderr,
+		ExitStatus: result.ExitStatus,
 	}, nil
 }
 
@@ -74,6 +98,22 @@ func (a RunErrandAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
 
+// Cancelling rules:
+// 1. Cancel action MUST take constant time even if another cancel is pending/running
+// 2. Cancel action DOES NOT have to cancel if another cancel is pending/running
+// 3. Cancelling errand before it starts should cancel errand when it runs
+//    - possible optimization - do not even start errand
+// (e.g. send 5 cancels, 1 is actually doing cancelling, other 4 exit immediately)
+
+// Cancel satisfies above rules though it never returns any error
 func (a RunErrandAction) Cancel() error {
-	return errors.New("not supported")
+	select {
+	case a.cancelCh <- struct{}{}:
+		// Always return no error since we cannot wait until
+		// errand runs in the future and potentially fails to cancel
+
+	default:
+		// Cancel action is already queued up
+	}
+	return nil
 }
