@@ -22,6 +22,7 @@ gemspec path: 'bosh-release'
 gemspec path: 'simple_blobstore_server'
 
 gem 'rake', '~>10.0'
+gem 'redcard', '~>1.1.0'
 
 group :production do
   # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
