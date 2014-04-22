@@ -37,6 +37,7 @@ module Bosh::OpenStackCloud
       @default_security_groups = @openstack_properties["default_security_groups"]
       @state_timeout = @openstack_properties["state_timeout"]
       @stemcell_public_visibility = @openstack_properties["stemcell_public_visibility"]
+      @wait_resource_poll_interval = @openstack_properties["wait_resource_poll_interval"]
 
       unless @openstack_properties["auth_url"].match(/\/tokens$/)
         @openstack_properties["auth_url"] = @openstack_properties["auth_url"] + "/tokens"

@@ -119,7 +119,8 @@ module Bosh::OpenStackCloud
 
         break if target_state.include?(state)
 
-        sleep(1)
+        sleep(@wait_resource_poll_interval)
+        
       end
 
       if @logger
