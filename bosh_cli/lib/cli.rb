@@ -4,6 +4,25 @@ module Bosh
   end
 end
 
+# constrain Ruby version from 1.9.3 > p0 to 2.0.0
+require 'redcard'
+
+required_version_message="bosh requires Ruby 1.9.3 > p0 or 2.0"
+
+if not defined? RUBY_PATCHLEVEL then
+  abort(required_version_message)
+elsif RedCard.check "1.9.3..2.0.0" then
+  if RUBY_VERSION == "1.9.3" and RUBY_PATCHLEVEL == 0 then
+    abort(required_version_message)
+  end
+elsif RedCard.check "1.0..1.9.2" then
+  abort(required_version_message)
+end
+
+if RedCard.check('2.1') then
+  abort(required_version_message)
+end
+
 autoload :HTTPClient, 'httpclient'
 
 require 'blobstore_client'
