@@ -7,7 +7,7 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 source $base_dir/lib/prelude_bosh.bash
-
+export GOPATH="$assets_dir/go_agent:$GOPATH"
 
 mkdir -p $chroot/etc/sv
 cp -a $dir/assets/runit/agent $chroot/etc/sv/agent
