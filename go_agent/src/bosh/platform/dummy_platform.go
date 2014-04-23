@@ -32,9 +32,8 @@ func NewDummyPlatform(
 	cmdRunner boshsys.CmdRunner,
 	dirProvider boshdirs.DirectoriesProvider,
 	diskManager boshdisk.Manager,
-) (platform *dummyPlatform) {
-
-	platform = &dummyPlatform{
+) *dummyPlatform {
+	return &dummyPlatform{
 		fs:            fs,
 		cmdRunner:     cmdRunner,
 		collector:     collector,
@@ -44,7 +43,6 @@ func NewDummyPlatform(
 		vitalsService: boshvitals.NewService(collector, dirProvider),
 		diskManager:   diskManager,
 	}
-	return
 }
 
 func (p dummyPlatform) GetFs() (fs boshsys.FileSystem) {
@@ -132,8 +130,12 @@ func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath string) (err error)
 	return
 }
 
-func (p dummyPlatform) SetupTmpDir() (err error) {
-	return
+func (p dummyPlatform) SetupDataDir() error {
+	return nil
+}
+
+func (p dummyPlatform) SetupTmpDir() error {
+	return nil
 }
 
 func (p dummyPlatform) MountPersistentDisk(devicePath, mountPoint string) (err error) {

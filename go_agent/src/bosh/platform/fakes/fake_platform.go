@@ -49,8 +49,13 @@ type FakePlatform struct {
 	SetTimeWithNtpServersServers []string
 
 	SetupEphemeralDiskWithPathDevicePath string
+	SetupEphemeralDiskWithPathErr        error
+
+	SetupDataDirCalled bool
+	SetupDataDirErr    error
 
 	SetupTmpDirCalled bool
+	SetupTmpDirErr    error
 
 	SetupManualNetworkingNetworks boshsettings.Networks
 	SetupDhcpNetworks             boshsettings.Networks
@@ -198,12 +203,17 @@ func (p *FakePlatform) SetTimeWithNtpServers(servers []string) (err error) {
 
 func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath string) (err error) {
 	p.SetupEphemeralDiskWithPathDevicePath = devicePath
-	return
+	return p.SetupEphemeralDiskWithPathErr
 }
 
-func (p *FakePlatform) SetupTmpDir() (err error) {
+func (p *FakePlatform) SetupDataDir() error {
+	p.SetupDataDirCalled = true
+	return p.SetupDataDirErr
+}
+
+func (p *FakePlatform) SetupTmpDir() error {
 	p.SetupTmpDirCalled = true
-	return
+	return p.SetupTmpDirErr
 }
 
 func (p *FakePlatform) MountPersistentDisk(devicePath, mountPoint string) (err error) {

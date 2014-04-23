@@ -116,10 +116,37 @@ func init() {
 				Expect(inf.GetEphemeralDiskPathDevicePath).To(Equal("fake-ephemeral-disk-setting"))
 			})
 
+			It("returns error if setting ephemeral disk fails", func() {
+				platform.SetupEphemeralDiskWithPathErr = errors.New("fake-setup-ephemeral-disk-err")
+				_, err := bootstrap()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-setup-ephemeral-disk-err"))
+			})
+
+			It("sets up data dir", func() {
+				_, err := bootstrap()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform.SetupDataDirCalled).To(BeTrue())
+			})
+
+			It("returns error if set up of data dir fails", func() {
+				platform.SetupDataDirErr = errors.New("fake-setup-data-dir-err")
+				_, err := bootstrap()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-setup-data-dir-err"))
+			})
+
 			It("sets up tmp dir", func() {
 				_, err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(platform.SetupTmpDirCalled).To(BeTrue())
+			})
+
+			It("returns error if set up of tmp dir fails", func() {
+				platform.SetupTmpDirErr = errors.New("fake-setup-tmp-dir-err")
+				_, err := bootstrap()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-setup-tmp-dir-err"))
 			})
 
 			It("mounts persistent disk", func() {

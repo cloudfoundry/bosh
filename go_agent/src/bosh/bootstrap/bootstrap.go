@@ -103,14 +103,20 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	if len(disks.Persistent) > 1 {
-		err = errors.New("Error mounting persistent disk, there is more than one persistent disk")
+	err = boot.platform.SetupDataDir()
+	if err != nil {
+		err = bosherr.WrapError(err, "Setting up data dir")
 		return
 	}
 
 	err = boot.platform.SetupTmpDir()
 	if err != nil {
-		err = bosherr.WrapError(err, "Changing ownership of /tmp")
+		err = bosherr.WrapError(err, "Setting up tmp dir")
+		return
+	}
+
+	if len(disks.Persistent) > 1 {
+		err = errors.New("Error mounting persistent disk, there is more than one persistent disk")
 		return
 	}
 

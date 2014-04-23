@@ -371,32 +371,39 @@ func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 		}
 	}
 
-	sysdir := filepath.Join(mountPoint, "sys")
-	dir := filepath.Join(sysdir, "log")
-	err := p.fs.MkdirAll(dir, os.FileMode(0750))
+	return nil
+}
+
+func (p linux) SetupDataDir() error {
+	dataDir := p.dirProvider.DataDir()
+
+	sysDir := filepath.Join(dataDir, "sys")
+
+	logDir := filepath.Join(sysDir, "log")
+	err := p.fs.MkdirAll(logDir, os.FileMode(0750))
 	if err != nil {
-		return bosherr.WrapError(err, "Making %s dir", dir)
+		return bosherr.WrapError(err, "Making %s dir", logDir)
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", sysdir)
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", sysDir)
 	if err != nil {
-		return bosherr.WrapError(err, "chown %s", sysdir)
+		return bosherr.WrapError(err, "chown %s", sysDir)
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", dir)
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", logDir)
 	if err != nil {
-		return bosherr.WrapError(err, "chown %s", dir)
+		return bosherr.WrapError(err, "chown %s", logDir)
 	}
 
-	dir = filepath.Join(sysdir, "run")
-	err = p.fs.MkdirAll(dir, os.FileMode(0750))
+	runDir := filepath.Join(sysDir, "run")
+	err = p.fs.MkdirAll(runDir, os.FileMode(0750))
 	if err != nil {
-		return bosherr.WrapError(err, "Making %s dir", dir)
+		return bosherr.WrapError(err, "Making %s dir", runDir)
 	}
 
-	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", dir)
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", runDir)
 	if err != nil {
-		return bosherr.WrapError(err, "chown %s", dir)
+		return bosherr.WrapError(err, "chown %s", runDir)
 	}
 
 	return nil

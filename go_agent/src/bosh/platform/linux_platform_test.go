@@ -315,19 +315,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 				Expect(len(fakeMounter.SwapOnPartitionPaths)).To(Equal(1))
 				Expect(fakeMounter.SwapOnPartitionPaths[0]).To(Equal("/dev/xvda1"))
-
-				sysLogStats := fs.GetFileTestStat("/fake-dir/data/sys/log")
-				Expect(sysLogStats).ToNot(BeNil())
-				Expect(sysLogStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
-				Expect(sysLogStats.FileMode).To(Equal(os.FileMode(0750)))
-				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys"}))
-				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/log"}))
-
-				sysRunStats := fs.GetFileTestStat("/fake-dir/data/sys/run")
-				Expect(sysRunStats).ToNot(BeNil())
-				Expect(sysRunStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
-				Expect(sysRunStats.FileMode).To(Equal(os.FileMode(0750)))
-				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/run"}))
 			})
 
 			It("calculates ephemeral disk partition sizes when disk is bigger than twice the memory", func() {
@@ -382,19 +369,6 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				dataDir := fs.GetFileTestStat("/fake-dir/data")
 				Expect(dataDir.FileType).To(Equal(fakesys.FakeFileTypeDir))
 				Expect(dataDir.FileMode).To(Equal(os.FileMode(0750)))
-
-				sysLogStats := fs.GetFileTestStat("/fake-dir/data/sys/log")
-				Expect(sysLogStats).ToNot(BeNil())
-				Expect(sysLogStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
-				Expect(sysLogStats.FileMode).To(Equal(os.FileMode(0750)))
-				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys"}))
-				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/log"}))
-
-				sysRunStats := fs.GetFileTestStat("/fake-dir/data/sys/run")
-				Expect(sysRunStats).ToNot(BeNil())
-				Expect(sysRunStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
-				Expect(sysRunStats.FileMode).To(Equal(os.FileMode(0750)))
-				Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/run"}))
 			})
 
 			It("does not try to partition anything", func() {
@@ -414,6 +388,26 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(diskManager.FakeMounter.MountMountPoints)).To(Equal(0))
 			})
+		})
+	})
+
+	Describe("SetupDataDir", func() {
+		It("creates sys/log and sys/run directories in data directory", func() {
+			err := platform.SetupDataDir()
+			Expect(err).NotTo(HaveOccurred())
+
+			sysLogStats := fs.GetFileTestStat("/fake-dir/data/sys/log")
+			Expect(sysLogStats).ToNot(BeNil())
+			Expect(sysLogStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(sysLogStats.FileMode).To(Equal(os.FileMode(0750)))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys"}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/log"}))
+
+			sysRunStats := fs.GetFileTestStat("/fake-dir/data/sys/run")
+			Expect(sysRunStats).ToNot(BeNil())
+			Expect(sysRunStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(sysRunStats.FileMode).To(Equal(os.FileMode(0750)))
+			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/run"}))
 		})
 	})
 
