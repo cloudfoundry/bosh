@@ -330,6 +330,7 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 
 func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 	mountPoint := p.dirProvider.DataDir()
+
 	p.fs.MkdirAll(mountPoint, os.FileMode(0750))
 
 	if realPath != "" {

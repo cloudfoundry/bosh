@@ -276,20 +276,19 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 	Describe("SetupEphemeralDiskWithPath", func() {
 		Context("when ephemeral disk path is provided", func() {
 			It("sets up ephemeral disk with path", func() {
-				fakeFormatter := diskManager.FakeFormatter
-				fakePartitioner := diskManager.FakePartitioner
-				fakeMounter := diskManager.FakeMounter
-
-				fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{"/dev/xvda": uint64(1024 * 1024 * 1024)}
-
-				fs.WriteFile("/dev/xvda", []byte{})
-
 				err := platform.SetupEphemeralDiskWithPath("/dev/xvda")
 				Expect(err).NotTo(HaveOccurred())
 
 				dataDir := fs.GetFileTestStat("/fake-dir/data")
 				Expect(dataDir.FileType).To(Equal(fakesys.FakeFileTypeDir))
 				Expect(dataDir.FileMode).To(Equal(os.FileMode(0750)))
+			})
+
+			It("partitions ephemeral disk into swap and data", func() {
+				fakePartitioner := diskManager.FakePartitioner
+
+				err := platform.SetupEphemeralDiskWithPath("/dev/xvda")
+				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePartitioner.PartitionDevicePath).To(Equal("/dev/xvda"))
 				Expect(len(fakePartitioner.PartitionPartitions)).To(Equal(2))
@@ -299,6 +298,13 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 				Expect(swapPartition.Type).To(Equal(boshdisk.PartitionTypeSwap))
 				Expect(ext4Partition.Type).To(Equal(boshdisk.PartitionTypeLinux))
+			})
+
+			It("formats swap and data partitions", func() {
+				fakeFormatter := diskManager.FakeFormatter
+
+				err := platform.SetupEphemeralDiskWithPath("/dev/xvda")
+				Expect(err).NotTo(HaveOccurred())
 
 				Expect(len(fakeFormatter.FormatPartitionPaths)).To(Equal(2))
 				Expect(fakeFormatter.FormatPartitionPaths[0]).To(Equal("/dev/xvda1"))
@@ -307,6 +313,13 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(len(fakeFormatter.FormatFsTypes)).To(Equal(2))
 				Expect(fakeFormatter.FormatFsTypes[0]).To(Equal(boshdisk.FileSystemSwap))
 				Expect(fakeFormatter.FormatFsTypes[1]).To(Equal(boshdisk.FileSystemExt4))
+			})
+
+			It("mounts swap and data partitions", func() {
+				fakeMounter := diskManager.FakeMounter
+
+				err := platform.SetupEphemeralDiskWithPath("/dev/xvda")
+				Expect(err).NotTo(HaveOccurred())
 
 				Expect(len(fakeMounter.MountMountPoints)).To(Equal(1))
 				Expect(fakeMounter.MountMountPoints[0]).To(Equal("/fake-dir/data"))
