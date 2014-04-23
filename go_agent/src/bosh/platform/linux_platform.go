@@ -328,84 +328,78 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 	return
 }
 
-func (p linux) SetupEphemeralDiskWithPath(realPath string) (err error) {
+func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 	mountPoint := p.dirProvider.DataDir()
 	p.fs.MkdirAll(mountPoint, os.FileMode(0750))
 
-	swapSize, linuxSize, err := p.calculateEphemeralDiskPartitionSizes(realPath)
-	if err != nil {
-		err = bosherr.WrapError(err, "Calculating partition sizes")
-		return
-	}
+	if realPath != "" {
+		swapSize, linuxSize, err := p.calculateEphemeralDiskPartitionSizes(realPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Calculating partition sizes")
+		}
 
-	partitions := []boshdisk.Partition{
-		{SizeInMb: swapSize, Type: boshdisk.PartitionTypeSwap},
-		{SizeInMb: linuxSize, Type: boshdisk.PartitionTypeLinux},
-	}
+		partitions := []boshdisk.Partition{
+			{SizeInMb: swapSize, Type: boshdisk.PartitionTypeSwap},
+			{SizeInMb: linuxSize, Type: boshdisk.PartitionTypeLinux},
+		}
 
-	err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
-	if err != nil {
-		err = bosherr.WrapError(err, "Partitioning disk")
-		return
-	}
+		err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
+		if err != nil {
+			return bosherr.WrapError(err, "Partitioning disk")
+		}
 
-	swapPartitionPath := realPath + "1"
-	dataPartitionPath := realPath + "2"
-	err = p.diskManager.GetFormatter().Format(swapPartitionPath, boshdisk.FileSystemSwap)
-	if err != nil {
-		err = bosherr.WrapError(err, "Formatting swap")
-		return
-	}
+		swapPartitionPath := realPath + "1"
+		dataPartitionPath := realPath + "2"
+		err = p.diskManager.GetFormatter().Format(swapPartitionPath, boshdisk.FileSystemSwap)
+		if err != nil {
+			return bosherr.WrapError(err, "Formatting swap")
+		}
 
-	err = p.diskManager.GetFormatter().Format(dataPartitionPath, boshdisk.FileSystemExt4)
-	if err != nil {
-		err = bosherr.WrapError(err, "Formatting data partition with ext4")
-		return
-	}
+		err = p.diskManager.GetFormatter().Format(dataPartitionPath, boshdisk.FileSystemExt4)
+		if err != nil {
+			return bosherr.WrapError(err, "Formatting data partition with ext4")
+		}
 
-	err = p.diskManager.GetMounter().SwapOn(swapPartitionPath)
-	if err != nil {
-		err = bosherr.WrapError(err, "Mounting swap")
-		return
-	}
+		err = p.diskManager.GetMounter().SwapOn(swapPartitionPath)
+		if err != nil {
+			return bosherr.WrapError(err, "Mounting swap")
+		}
 
-	err = p.diskManager.GetMounter().Mount(dataPartitionPath, mountPoint)
-	if err != nil {
-		err = bosherr.WrapError(err, "Mounting data partition")
-		return
+		err = p.diskManager.GetMounter().Mount(dataPartitionPath, mountPoint)
+		if err != nil {
+			return bosherr.WrapError(err, "Mounting data partition")
+		}
 	}
 
 	sysdir := filepath.Join(mountPoint, "sys")
 	dir := filepath.Join(sysdir, "log")
-	err = p.fs.MkdirAll(dir, os.FileMode(0750))
+	err := p.fs.MkdirAll(dir, os.FileMode(0750))
 	if err != nil {
-		err = bosherr.WrapError(err, "Making %s dir", dir)
-		return
+		return bosherr.WrapError(err, "Making %s dir", dir)
 	}
+
 	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", sysdir)
 	if err != nil {
-		err = bosherr.WrapError(err, "chown %s", sysdir)
-		return
+		return bosherr.WrapError(err, "chown %s", sysdir)
 	}
+
 	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", dir)
 	if err != nil {
-		err = bosherr.WrapError(err, "chown %s", dir)
-		return
+		return bosherr.WrapError(err, "chown %s", dir)
 	}
 
 	dir = filepath.Join(sysdir, "run")
 	err = p.fs.MkdirAll(dir, os.FileMode(0750))
 	if err != nil {
-		err = bosherr.WrapError(err, "Making %s dir", dir)
-		return
+		return bosherr.WrapError(err, "Making %s dir", dir)
 	}
 
 	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", dir)
 	if err != nil {
-		err = bosherr.WrapError(err, "chown %s", dir)
-		return
+		return bosherr.WrapError(err, "chown %s", dir)
 	}
-	return
+
+	return nil
 }
 
 func (p linux) SetupTmpDir() error {
