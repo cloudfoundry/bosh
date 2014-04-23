@@ -24,19 +24,21 @@ const (
 )
 
 type natsHandler struct {
-	settings boshsettings.Service
-	logger   boshlog.Logger
-	client   yagnats.NATSClient
+	settings     boshsettings.Service
+	logger       boshlog.Logger
+	client       yagnats.NATSClient
+	handlerFuncs []boshhandler.HandlerFunc
 }
 
-func NewNatsHandler(settings boshsettings.Service, logger boshlog.Logger, client yagnats.NATSClient) (handler natsHandler) {
-	handler.settings = settings
-	handler.logger = logger
-	handler.client = client
-	return
+func NewNatsHandler(settings boshsettings.Service, logger boshlog.Logger, client yagnats.NATSClient) *natsHandler {
+	return &natsHandler{
+		settings: settings,
+		logger:   logger,
+		client:   client,
+	}
 }
 
-func (h natsHandler) Run(handlerFunc boshhandler.HandlerFunc) error {
+func (h *natsHandler) Run(handlerFunc boshhandler.HandlerFunc) error {
 	err := h.Start(handlerFunc)
 	if err != nil {
 		return bosherr.WrapError(err, "Starting nats handler")
@@ -48,7 +50,9 @@ func (h natsHandler) Run(handlerFunc boshhandler.HandlerFunc) error {
 	return nil
 }
 
-func (h natsHandler) Start(handlerFunc boshhandler.HandlerFunc) error {
+func (h *natsHandler) Start(handlerFunc boshhandler.HandlerFunc) error {
+	h.RegisterAdditionalHandlerFunc(handlerFunc)
+
 	connProvider, err := h.getConnectionInfo()
 	if err != nil {
 		return bosherr.WrapError(err, "Getting connection info")
@@ -61,27 +65,20 @@ func (h natsHandler) Start(handlerFunc boshhandler.HandlerFunc) error {
 
 	subject := fmt.Sprintf("agent.%s", h.settings.GetAgentID())
 
+	h.logger.Error(natsHandlerLogTag, "Subscribing to %s", subject)
+
 	_, err = h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {
-		respBytes, req, err := boshhandler.PerformHandlerWithJSON(natsMsg.Payload, handlerFunc, h.logger)
-		if err != nil {
-			h.logger.Error(natsHandlerLogTag, "Running handler: %s", err)
-			return
-		}
-
-		if len(respBytes) > responseMaxSize {
-			respBytes, err = boshhandler.BuildErrorWithJSON(responseMaxSizeErrMsg, h.logger)
-			if err != nil {
-				h.logger.Error(natsHandlerLogTag, "Building response: %s", err)
-				return
-			}
-		}
-
-		if len(respBytes) > 0 {
-			h.client.Publish(req.ReplyTo, respBytes)
+		for _, handlerFunc := range h.handlerFuncs {
+			h.handleNatsMsg(natsMsg, handlerFunc)
 		}
 	})
 
 	return nil
+}
+
+func (h *natsHandler) RegisterAdditionalHandlerFunc(handlerFunc boshhandler.HandlerFunc) {
+	// Currently not locking since RegisterAdditionalHandlerFunc is not a primary way of adding handlerFunc
+	h.handlerFuncs = append(h.handlerFuncs, handlerFunc)
 }
 
 func (h natsHandler) SendToHealthManager(topic string, payload interface{}) error {
@@ -104,6 +101,26 @@ func (h natsHandler) SendToHealthManager(topic string, payload interface{}) erro
 
 func (h natsHandler) Stop() {
 	h.client.Disconnect()
+}
+
+func (h natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshhandler.HandlerFunc) {
+	respBytes, req, err := boshhandler.PerformHandlerWithJSON(natsMsg.Payload, handlerFunc, h.logger)
+	if err != nil {
+		h.logger.Error(natsHandlerLogTag, "Running handler: %s", err)
+		return
+	}
+
+	if len(respBytes) > responseMaxSize {
+		respBytes, err = boshhandler.BuildErrorWithJSON(responseMaxSizeErrMsg, h.logger)
+		if err != nil {
+			h.logger.Error(natsHandlerLogTag, "Building response: %s", err)
+			return
+		}
+	}
+
+	if len(respBytes) > 0 {
+		h.client.Publish(req.ReplyTo, respBytes)
+	}
 }
 
 func (h natsHandler) runUntilInterrupted() {

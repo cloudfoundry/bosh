@@ -19,6 +19,8 @@ type FakeHandler struct {
 	hmRequestsLock sync.Mutex
 	hmRequests     []HMRequest
 
+	RegisteredAdditionalHandlerFunc boshhandler.HandlerFunc
+
 	SendToHealthManagerCallBack func(HMRequest)
 	SendToHealthManagerErr      error
 }
@@ -56,6 +58,10 @@ func (h *FakeHandler) Start(handlerFunc boshhandler.HandlerFunc) error {
 
 func (h *FakeHandler) Stop() {
 	h.ReceivedStop = true
+}
+
+func (h *FakeHandler) RegisterAdditionalHandlerFunc(handlerFunc boshhandler.HandlerFunc) {
+	h.RegisteredAdditionalHandlerFunc = handlerFunc
 }
 
 func (h *FakeHandler) SendToHealthManager(topic string, payload interface{}) error {

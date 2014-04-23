@@ -126,6 +126,49 @@ func init() {
 					`{"exception":{"message":"Response exceeded maximum size allowed to be sent over NATS"}}`)))
 			})
 
+			It("can add additional handler funcs to receive requests", func() {
+				var firstHandlerReq, secondHandlerRequest boshhandler.Request
+
+				handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+					firstHandlerReq = req
+					return boshhandler.NewValueResponse("first-handler-resp")
+				})
+				defer handler.Stop()
+
+				handler.RegisterAdditionalHandlerFunc(func(req boshhandler.Request) (resp boshhandler.Response) {
+					secondHandlerRequest = req
+					return boshhandler.NewValueResponse("second-handler-resp")
+				})
+
+				expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "fake-reply-to"}`)
+
+				subscription := client.Subscriptions["agent.my-agent-id"][0]
+				subscription.Callback(&yagnats.Message{
+					Subject: "agent.my-agent-id",
+					Payload: expectedPayload,
+				})
+
+				// Expected requests received by both handlers
+				Expect(firstHandlerReq).To(Equal(boshhandler.Request{
+					ReplyTo: "fake-reply-to",
+					Method:  "ping",
+					Payload: expectedPayload,
+				}))
+
+				Expect(secondHandlerRequest).To(Equal(boshhandler.Request{
+					ReplyTo: "fake-reply-to",
+					Method:  "ping",
+					Payload: expectedPayload,
+				}))
+
+				// Bosh handler responses were sent
+				Expect(len(client.PublishedMessages)).To(Equal(1))
+				messages := client.PublishedMessages["fake-reply-to"]
+				Expect(len(messages)).To(Equal(2))
+				Expect(messages[0].Payload).To(Equal([]byte(`{"value":"first-handler-resp"}`)))
+				Expect(messages[1].Payload).To(Equal([]byte(`{"value":"second-handler-resp"}`)))
+			})
+
 			It("has the correct connection info", func() {
 				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 				Expect(err).ToNot(HaveOccurred())

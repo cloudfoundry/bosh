@@ -38,30 +38,31 @@ func NewHTTPSHandler(
 	return
 }
 
-func (h HTTPSHandler) Run(handlerFunc boshhandler.HandlerFunc) (err error) {
-	err = h.Start(handlerFunc)
+func (h HTTPSHandler) Run(handlerFunc boshhandler.HandlerFunc) error {
+	err := h.Start(handlerFunc)
 	if err != nil {
-		err = bosherr.WrapError(err, "Starting https handler")
-		return
+		return bosherr.WrapError(err, "Starting https handler")
 	}
-	return
+	return nil
 }
 
-func (h HTTPSHandler) Start(handlerFunc boshhandler.HandlerFunc) (err error) {
+func (h HTTPSHandler) Start(handlerFunc boshhandler.HandlerFunc) error {
 	h.dispatcher.AddRoute("/agent", h.agentHandler(handlerFunc))
 	h.dispatcher.AddRoute("/blobs/", h.blobsHandler())
 	h.dispatcher.Start()
-
-	return
+	return nil
 }
 
 func (h HTTPSHandler) Stop() {
 	h.dispatcher.Stop()
-	return
 }
 
-func (h HTTPSHandler) SendToHealthManager(topic string, payload interface{}) (err error) {
-	return
+func (h HTTPSHandler) RegisterAdditionalHandlerFunc(handlerFunc boshhandler.HandlerFunc) {
+	panic("HTTPSHandler does not support registering additional handler funcs")
+}
+
+func (h HTTPSHandler) SendToHealthManager(topic string, payload interface{}) error {
+	return nil
 }
 
 func (h HTTPSHandler) requestNotAuthorized(request *http.Request) bool {
@@ -91,11 +92,13 @@ func (h HTTPSHandler) agentHandler(handlerFunc boshhandler.HandlerFunc) (agentHa
 			err = bosherr.WrapError(err, "Reading http body")
 			return
 		}
+
 		respBytes, _, err := boshhandler.PerformHandlerWithJSON(rawJSONPayload, handlerFunc, h.logger)
 		if err != nil {
 			err = bosherr.WrapError(err, "Running handler in a nice JSON sandwhich")
 			return
 		}
+
 		w.Write(respBytes)
 	}
 	return
