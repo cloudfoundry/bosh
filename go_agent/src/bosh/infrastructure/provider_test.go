@@ -66,6 +66,21 @@ var _ = Describe("Provider", func() {
 			Expect(inf).To(Equal(expectedInf))
 		})
 
+		It("returns warden infrastructure", func() {
+			expectedDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver(1*time.Millisecond, platform.GetFs())
+
+			expectedInf := NewWardenInfrastructure(
+				platform.GetFs(),
+				platform.GetDirProvider(),
+				platform,
+				expectedDevicePathResolver,
+			)
+
+			inf, err := provider.Get("warden")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(inf).To(Equal(expectedInf))
+		})
+
 		It("returns an error on unknown infrastructure", func() {
 			_, err := provider.Get("some unknown infrastructure name")
 			Expect(err).To(HaveOccurred())

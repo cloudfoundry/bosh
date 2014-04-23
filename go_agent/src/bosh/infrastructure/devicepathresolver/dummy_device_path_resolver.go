@@ -1,8 +1,9 @@
 package devicepathresolver
 
 import (
-	boshsys "bosh/system"
 	"time"
+
+	boshsys "bosh/system"
 )
 
 type dummyDevicePathResolver struct {
@@ -10,12 +11,10 @@ type dummyDevicePathResolver struct {
 	fs              boshsys.FileSystem
 }
 
-func NewDummyDevicePathResolver(diskWaitTimeout time.Duration, fs boshsys.FileSystem) (dummyDevicePathResolver dummyDevicePathResolver) {
-	dummyDevicePathResolver.fs = fs
-	dummyDevicePathResolver.diskWaitTimeout = diskWaitTimeout
-	return
+func NewDummyDevicePathResolver(diskWaitTimeout time.Duration, fs boshsys.FileSystem) dummyDevicePathResolver {
+	return dummyDevicePathResolver{diskWaitTimeout, fs}
 }
 
-func (devicePathResolver dummyDevicePathResolver) GetRealDevicePath(devicePath string) (realPath string, err error) {
+func (resolver dummyDevicePathResolver) GetRealDevicePath(devicePath string) (string, error) {
 	return devicePath, nil
 }
