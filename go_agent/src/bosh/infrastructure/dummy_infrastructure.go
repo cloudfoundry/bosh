@@ -36,36 +36,36 @@ func (inf dummyInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathRe
 	return inf.devicePathResolver
 }
 
-func (inf dummyInfrastructure) SetupSsh(username string) (err error) {
-	return
+func (inf dummyInfrastructure) SetupSsh(username string) error {
+	return nil
 }
 
-func (inf dummyInfrastructure) GetSettings() (settings boshsettings.Settings, err error) {
+func (inf dummyInfrastructure) GetSettings() (boshsettings.Settings, error) {
+	var settings boshsettings.Settings
+
 	// dummy-cpi-agent-env.json is written out by dummy CPI.
 	settingsPath := filepath.Join(inf.dirProvider.BoshDir(), "dummy-cpi-agent-env.json")
 	contents, err := inf.fs.ReadFile(settingsPath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Read settings file")
-		return
+		return settings, bosherr.WrapError(err, "Read settings file")
 	}
 
 	err = json.Unmarshal([]byte(contents), &settings)
 	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshal json settings")
-		return
+		return settings, bosherr.WrapError(err, "Unmarshal json settings")
 	}
 
-	return
+	return settings, nil
 }
 
-func (inf dummyInfrastructure) SetupNetworking(networks boshsettings.Networks) (err error) {
-	return
+func (inf dummyInfrastructure) SetupNetworking(networks boshsettings.Networks) error {
+	return nil
 }
 
-func (inf dummyInfrastructure) GetEphemeralDiskPath(devicePath string) (realPath string, found bool) {
+func (inf dummyInfrastructure) GetEphemeralDiskPath(devicePath string) (string, bool) {
 	return inf.platform.NormalizeDiskPath(devicePath)
 }
 
-func (inf dummyInfrastructure) MountPersistentDisk(volumeID string, mountPoint string) (err error) {
-	return
+func (inf dummyInfrastructure) MountPersistentDisk(volumeID string, mountPoint string) error {
+	return nil
 }

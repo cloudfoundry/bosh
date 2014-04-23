@@ -17,48 +17,56 @@ import (
 	fakefs "bosh/system/fakes"
 )
 
-func init() {
-	Describe("dummyInfrastructure", func() {
-		It("get settings", func() {
-			fs := fakefs.NewFakeFileSystem()
-			dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+var _ = Describe("dummyInfrastructure", func() {
+	Describe("GetSettings", func() {
+		var (
+			fs          *fakefs.FakeFileSystem
+			dirProvider boshdir.DirectoriesProvider
+			inf         Infrastructure
+		)
+
+		BeforeEach(func() {
+			fs = fakefs.NewFakeFileSystem()
+			dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
 			platform := fakeplatform.NewFakePlatform()
 			fakeDevicePathResolver := fakedpresolv.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
+			inf = NewDummyInfrastructure(fs, dirProvider, platform, fakeDevicePathResolver)
+		})
 
-			settingsPath := filepath.Join(dirProvider.BoshDir(), "dummy-cpi-agent-env.json")
+		Context("when infrastructure settings file is found", func() {
+			BeforeEach(func() {
+				settingsPath := filepath.Join(dirProvider.BoshDir(), "dummy-cpi-agent-env.json")
 
-			expectedSettings := boshsettings.Settings{
-				AgentID: "123-456-789",
-				Blobstore: boshsettings.Blobstore{
-					Type: boshsettings.BlobstoreTypeDummy,
-				},
-				Mbus: "nats://127.0.0.1:4222",
-			}
-			existingSettingsBytes, _ := json.Marshal(expectedSettings)
-			fs.WriteFile(settingsPath, existingSettingsBytes)
+				expectedSettings := boshsettings.Settings{
+					AgentID: "123-456-789",
+					Blobstore: boshsettings.Blobstore{
+						Type: boshsettings.BlobstoreTypeDummy,
+					},
+					Mbus: "nats://127.0.0.1:4222",
+				}
+				existingSettingsBytes, err := json.Marshal(expectedSettings)
+				Expect(err).ToNot(HaveOccurred())
 
-			dummy := NewDummyInfrastructure(fs, dirProvider, platform, fakeDevicePathResolver)
+				fs.WriteFile(settingsPath, existingSettingsBytes)
+			})
 
-			settings, err := dummy.GetSettings()
-			Expect(err).ToNot(HaveOccurred())
-			assert.Equal(GinkgoT(), settings, boshsettings.Settings{
-				AgentID:   "123-456-789",
-				Blobstore: boshsettings.Blobstore{Type: boshsettings.BlobstoreTypeDummy},
-				Mbus:      "nats://127.0.0.1:4222",
+			It("returns settings", func() {
+				settings, err := inf.GetSettings()
+				Expect(err).ToNot(HaveOccurred())
+				assert.Equal(GinkgoT(), settings, boshsettings.Settings{
+					AgentID:   "123-456-789",
+					Blobstore: boshsettings.Blobstore{Type: boshsettings.BlobstoreTypeDummy},
+					Mbus:      "nats://127.0.0.1:4222",
+				})
 			})
 		})
 
-		It("get settings errs when settings file does not exist", func() {
-			fs := fakefs.NewFakeFileSystem()
-			dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
-			platform := fakeplatform.NewFakePlatform()
-			fakeDevicePathResolver := fakedpresolv.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
-
-			dummy := NewDummyInfrastructure(fs, dirProvider, platform, fakeDevicePathResolver)
-
-			_, err := dummy.GetSettings()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("Read settings file"))
+		Context("when infrastructure settings file is not found", func() {
+			It("returns error", func() {
+				_, err := inf.GetSettings()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Read settings file"))
+			})
 		})
 	})
-}
+})
