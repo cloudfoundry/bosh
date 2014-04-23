@@ -22,9 +22,10 @@ func copierFixtureSrcDir(t assert.TestingT) string {
 func getCopierDependencies() (boshsys.FileSystem, boshsys.CmdRunner) {
 	logger := boshlog.NewLogger(boshlog.LevelNone)
 	cmdRunner := boshsys.NewExecCmdRunner(logger)
-	fs := boshsys.NewOsFileSystem(logger, cmdRunner)
+	fs := boshsys.NewOsFileSystem(logger)
 	return fs, cmdRunner
 }
+
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("filtered copy to temp", func() {
@@ -66,8 +67,8 @@ func init() {
 			_, err = fs.ReadFile(dstDir + "/../some.config")
 			Expect(err).To(HaveOccurred())
 		})
-		It("clean up", func() {
 
+		It("clean up", func() {
 			fs, cmdRunner := getCopierDependencies()
 			dc := NewCpCopier(cmdRunner, fs)
 

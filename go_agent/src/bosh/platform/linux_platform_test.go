@@ -36,6 +36,7 @@ var _ = Describe("LinuxPlatform", func() {
 		compressor      boshcmd.Compressor
 		copier          boshcmd.Copier
 		vitalsService   boshvitals.Service
+		options         LinuxOptions
 		logger          boshlog.Logger
 	)
 
@@ -81,6 +82,7 @@ var _ = Describe("LinuxPlatform", func() {
 			diskManager,
 			netManager,
 			sleepInterval,
+			options,
 			logger,
 		)
 		devicePathResolver := boshdpresolv.NewAwsDevicePathResolver(diskWaitTimeout, fs)
@@ -444,8 +446,10 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 	})
 
 	Describe("SetupTmpDir", func() {
+		act := func() error { return platform.SetupTmpDir() }
+
 		It("changes permissions on /tmp", func() {
-			err := platform.SetupTmpDir()
+			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"chown", "root:vcap", "/tmp"}))
@@ -454,7 +458,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		})
 
 		It("creates new temp dir", func() {
-			err := platform.SetupTmpDir()
+			err := act()
 			Expect(err).NotTo(HaveOccurred())
 
 			fileStats := fs.GetFileTestStat("/fake-dir/data/tmp")
@@ -466,13 +470,13 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		It("returns error if creating new temp dir errs", func() {
 			fs.MkdirAllError = errors.New("fake-mkdir-error")
 
-			err := platform.SetupTmpDir()
+			err := act()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-mkdir-error"))
 		})
 
 		It("sets TMPDIR environment variable so that children of this process will use new temp dir", func() {
-			err := platform.SetupTmpDir()
+			err := act()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(os.Getenv("TMPDIR")).To(Equal("/fake-dir/data/tmp"))
 		})
@@ -481,57 +485,9 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			// uses os package; no way to trigger err
 		})
 
-		Context("when /tmp is not a mount point", func() {
-			BeforeEach(func() {
-				diskManager.FakeMounter.IsMountPointResult = false
-			})
-
-			It("creates new tmp filesystem of 128MB placed in data dir", func() {
-				err := platform.SetupTmpDir()
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"truncate", "-s", "128M", "/fake-dir/data/root_tmp"}))
-				Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"chmod", "0700", "/fake-dir/data/root_tmp"}))
-				Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"mke2fs", "-t", "ext4", "-m", "1", "-F", "/fake-dir/data/root_tmp"}))
-			})
-
-			It("mounts the new tmp filesystem over /tmp", func() {
-				err := platform.SetupTmpDir()
-				Expect(err).NotTo(HaveOccurred())
-
-				mounter := diskManager.FakeMounter
-				Expect(len(mounter.MountPartitionPaths)).To(Equal(1))
-				Expect(mounter.MountPartitionPaths[0]).To(Equal("/fake-dir/data/root_tmp"))
-				Expect(mounter.MountMountPoints[0]).To(Equal("/tmp"))
-				Expect(mounter.MountMountOptions[0]).To(Equal([]string{"-t", "ext4", "-o", "loop"}))
-			})
-
-			It("returns error if mounting the new tmp filesystem fails", func() {
-				diskManager.FakeMounter.MountErr = errors.New("fake-mount-error")
-
-				err := platform.SetupTmpDir()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-mount-error"))
-			})
-
-			It("changes permissions on /tmp again because it is a new mount", func() {
-				err := platform.SetupTmpDir()
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(cmdRunner.RunCommands[6]).To(Equal([]string{"chown", "root:vcap", "/tmp"}))
-				Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"chmod", "0770", "/tmp"}))
-			})
-		})
-
-		Context("when /tmp is a mount point", func() {
-			BeforeEach(func() {
-				diskManager.FakeMounter.IsMountPointResult = true
-			})
-
+		ItDoesNotTryToUseLoopDevice := func() {
 			It("does not create new tmp filesystem", func() {
-				err := platform.SetupTmpDir()
-				Expect(err).NotTo(HaveOccurred())
-
+				act()
 				for _, cmd := range cmdRunner.RunCommands {
 					Expect(cmd[0]).ToNot(Equal("truncate"))
 					Expect(cmd[0]).ToNot(Equal("mke2fs"))
@@ -539,40 +495,97 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			})
 
 			It("does not try to mount anything /tmp", func() {
-				err := platform.SetupTmpDir()
-				Expect(err).NotTo(HaveOccurred())
+				act()
 				Expect(len(diskManager.FakeMounter.MountPartitionPaths)).To(Equal(0))
 			})
+		}
+
+		Context("when UseDefaultTmpDir option is set to false", func() {
+			BeforeEach(func() {
+				options.UseDefaultTmpDir = false
+			})
+
+			Context("when /tmp is not a mount point", func() {
+				BeforeEach(func() {
+					diskManager.FakeMounter.IsMountPointResult = false
+				})
+
+				It("creates new tmp filesystem of 128MB placed in data dir", func() {
+					err := act()
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"truncate", "-s", "128M", "/fake-dir/data/root_tmp"}))
+					Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"chmod", "0700", "/fake-dir/data/root_tmp"}))
+					Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"mke2fs", "-t", "ext4", "-m", "1", "-F", "/fake-dir/data/root_tmp"}))
+				})
+
+				It("mounts the new tmp filesystem over /tmp", func() {
+					err := act()
+					Expect(err).NotTo(HaveOccurred())
+
+					mounter := diskManager.FakeMounter
+					Expect(len(mounter.MountPartitionPaths)).To(Equal(1))
+					Expect(mounter.MountPartitionPaths[0]).To(Equal("/fake-dir/data/root_tmp"))
+					Expect(mounter.MountMountPoints[0]).To(Equal("/tmp"))
+					Expect(mounter.MountMountOptions[0]).To(Equal([]string{"-t", "ext4", "-o", "loop"}))
+				})
+
+				It("returns error if mounting the new tmp filesystem fails", func() {
+					diskManager.FakeMounter.MountErr = errors.New("fake-mount-error")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-mount-error"))
+				})
+
+				It("changes permissions on /tmp again because it is a new mount", func() {
+					err := act()
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(cmdRunner.RunCommands[6]).To(Equal([]string{"chown", "root:vcap", "/tmp"}))
+					Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"chmod", "0770", "/tmp"}))
+				})
+			})
+
+			Context("when /tmp is a mount point", func() {
+				BeforeEach(func() {
+					diskManager.FakeMounter.IsMountPointResult = true
+				})
+
+				It("returns without an error", func() {
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				ItDoesNotTryToUseLoopDevice()
+			})
+
+			Context("when /tmp cannot be determined if it is a mount point", func() {
+				BeforeEach(func() {
+					diskManager.FakeMounter.IsMountPointErr = errors.New("fake-is-mount-point-error")
+				})
+
+				It("returns error", func() {
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-is-mount-point-error"))
+				})
+
+				ItDoesNotTryToUseLoopDevice()
+			})
 		})
 
-		Context("when /tmp cannot be determined if it is a mount point", func() {
+		Context("when UseDefaultTmpDir option is set to true", func() {
 			BeforeEach(func() {
-				diskManager.FakeMounter.IsMountPointErr = errors.New("fake-is-mount-point-error")
+				options.UseDefaultTmpDir = true
 			})
 
-			It("returns error", func() {
-				err := platform.SetupTmpDir()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("fake-is-mount-point-error"))
+			It("returns without an error", func() {
+				err := act()
+				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("does not create new tmp filesystem", func() {
-				err := platform.SetupTmpDir()
-				Expect(err).To(HaveOccurred())
-
-				for _, cmd := range cmdRunner.RunCommands {
-					Expect(cmd[0]).ToNot(Equal("truncate"))
-					Expect(cmd[0]).ToNot(Equal("mke2fs"))
-				}
-			})
-
-			It("does not try to mount anything /tmp", func() {
-				err := platform.SetupTmpDir()
-				Expect(err).To(HaveOccurred())
-
-				mounter := diskManager.FakeMounter
-				Expect(len(mounter.MountPartitionPaths)).To(Equal(0))
-			})
+			ItDoesNotTryToUseLoopDevice()
 		})
 	})
 

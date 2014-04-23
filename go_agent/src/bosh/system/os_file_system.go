@@ -16,15 +16,10 @@ import (
 type osFileSystem struct {
 	logger boshlog.Logger
 	logTag string
-	runner CmdRunner
 }
 
-func NewOsFileSystem(logger boshlog.Logger, runner CmdRunner) (fs FileSystem) {
-	return osFileSystem{
-		logger: logger,
-		logTag: "File System",
-		runner: runner,
-	}
+func NewOsFileSystem(logger boshlog.Logger) FileSystem {
+	return osFileSystem{logger: logger, logTag: "File System"}
 }
 
 func (fs osFileSystem) HomeDir(username string) (homeDir string, err error) {

@@ -36,9 +36,10 @@ func fixtureSrcTgz(t assert.TestingT) string {
 func getCompressorDependencies() (boshsys.FileSystem, boshsys.CmdRunner) {
 	logger := boshlog.NewLogger(boshlog.LevelNone)
 	cmdRunner := boshsys.NewExecCmdRunner(logger)
-	fs := boshsys.NewOsFileSystem(logger, cmdRunner)
+	fs := boshsys.NewOsFileSystem(logger)
 	return fs, cmdRunner
 }
+
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("compress files in dir", func() {

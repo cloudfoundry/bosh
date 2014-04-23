@@ -27,6 +27,7 @@ import (
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
+	boshsys "bosh/system"
 	boshuuid "bosh/uuid"
 )
 
@@ -37,9 +38,8 @@ type app struct {
 	infrastructure boshinf.Infrastructure
 }
 
-func New(logger boshlog.Logger) (app app) {
-	app.logger = logger
-	return
+func New(logger boshlog.Logger) app {
+	return app{logger: logger}
 }
 
 func (app *app) Setup(args []string) error {
@@ -48,9 +48,15 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Parsing options")
 	}
 
+	config, err := app.loadConfig(opts.ConfigPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Loading config")
+	}
+
 	dirProvider := boshdirs.NewDirectoriesProvider(opts.BaseDirectory)
 
-	platformProvider := boshplatform.NewProvider(app.logger, dirProvider)
+	platformProvider := boshplatform.NewProvider(app.logger, dirProvider, config.Platform)
+
 	app.platform, err = platformProvider.Get(opts.PlatformName)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting platform")
@@ -247,4 +253,10 @@ func (app *app) buildApplierAndCompiler(
 	)
 
 	return applier, compiler
+}
+
+func (app *app) loadConfig(path string) (Config, error) {
+	// Use one off copy of file system to read configuration file
+	fs := boshsys.NewOsFileSystem(app.logger)
+	return LoadConfigFromPath(fs, path)
 }

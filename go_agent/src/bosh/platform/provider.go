@@ -1,6 +1,8 @@
 package platform
 
 import (
+	"time"
+
 	bosherror "bosh/errors"
 	boshlog "bosh/logger"
 	boshcdrom "bosh/platform/cdrom"
@@ -13,16 +15,19 @@ import (
 	boshvitals "bosh/platform/vitals"
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
-	"time"
 )
 
 type provider struct {
 	platforms map[string]Platform
 }
 
-func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider) (p provider) {
+type ProviderOptions struct {
+	Linux LinuxOptions
+}
+
+func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider, options ProviderOptions) (p provider) {
 	runner := boshsys.NewExecCmdRunner(logger)
-	fs := boshsys.NewOsFileSystem(logger, runner)
+	fs := boshsys.NewOsFileSystem(logger)
 	sigarCollector := boshstats.NewSigarStatsCollector()
 	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs)
 
@@ -49,6 +54,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 		linuxDiskManager,
 		centosNetManager,
 		500*time.Millisecond,
+		options.Linux,
 		logger,
 	)
 
@@ -64,6 +70,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 		linuxDiskManager,
 		ubuntuNetManager,
 		500*time.Millisecond,
+		options.Linux,
 		logger,
 	)
 
@@ -75,11 +82,10 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	return
 }
 
-func (p provider) Get(name string) (plat Platform, err error) {
+func (p provider) Get(name string) (Platform, error) {
 	plat, found := p.platforms[name]
-
 	if !found {
-		err = bosherror.New("Platform %s could not be found", name)
+		return nil, bosherror.New("Platform %s could not be found", name)
 	}
-	return
+	return plat, nil
 }

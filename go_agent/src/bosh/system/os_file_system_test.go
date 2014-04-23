@@ -16,8 +16,7 @@ import (
 
 func createOsFs() (fs FileSystem, runner CmdRunner) {
 	logger := boshlog.NewLogger(boshlog.LevelNone)
-	runner = NewExecCmdRunner(logger)
-	fs = NewOsFileSystem(logger, runner)
+	fs = NewOsFileSystem(logger)
 	return
 }
 
@@ -31,6 +30,7 @@ func readFile(file *os.File) string {
 
 	return string(buf.Bytes())
 }
+
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("home dir", func() {

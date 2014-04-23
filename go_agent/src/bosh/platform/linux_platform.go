@@ -1,6 +1,15 @@
 package platform
 
 import (
+	"bytes"
+	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"text/template"
+	"time"
+
 	bosherr "bosh/errors"
 	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshlog "bosh/logger"
@@ -14,15 +23,13 @@ import (
 	boshdir "bosh/settings/directories"
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
-	"bytes"
-	"fmt"
-	"os"
-	"path/filepath"
-	"regexp"
-	"strings"
-	"text/template"
-	"time"
 )
+
+type LinuxOptions struct {
+	// When set to true loop back device
+	// is not going to be overlayed over /tmp to limit /tmp dir size
+	UseDefaultTmpDir bool
+}
 
 type linux struct {
 	fs                 boshsys.FileSystem
@@ -37,6 +44,7 @@ type linux struct {
 	netManager         boshnet.NetManager
 	diskScanDuration   time.Duration
 	devicePathResolver boshdpresolv.DevicePathResolver
+	options            LinuxOptions
 	logger             boshlog.Logger
 }
 
@@ -52,6 +60,7 @@ func NewLinuxPlatform(
 	diskManager boshdisk.Manager,
 	netManager boshnet.NetManager,
 	diskScanDuration time.Duration,
+	options LinuxOptions,
 	logger boshlog.Logger,
 ) (platform *linux) {
 	platform = &linux{
@@ -66,6 +75,7 @@ func NewLinuxPlatform(
 		diskManager:      diskManager,
 		netManager:       netManager,
 		diskScanDuration: diskScanDuration,
+		options:          options,
 		logger:           logger,
 	}
 	return
@@ -441,6 +451,10 @@ func (p linux) SetupTmpDir() error {
 	_, _, _, err = p.cmdRunner.RunCommand("chmod", "0700", "/var/tmp")
 	if err != nil {
 		return bosherr.WrapError(err, "chmod /var/tmp")
+	}
+
+	if p.options.UseDefaultTmpDir {
+		return nil
 	}
 
 	systemTmpDirIsMounted, err := p.IsMountPoint(systemTmpDir)
