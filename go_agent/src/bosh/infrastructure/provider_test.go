@@ -70,7 +70,6 @@ var _ = Describe("Provider", func() {
 			expectedDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver(1*time.Millisecond, platform.GetFs())
 
 			expectedInf := NewWardenInfrastructure(
-				platform.GetFs(),
 				platform.GetDirProvider(),
 				platform,
 				expectedDevicePathResolver,

@@ -26,7 +26,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 	p.infrastructures = map[string]Infrastructure{
 		"aws":     NewAwsInfrastructure("http://169.254.169.254", digDNSResolver, platform, awsDevicePathResolver),
 		"dummy":   NewDummyInfrastructure(fs, dirProvider, platform, dummyDevicePathResolver),
-		"warden":  NewWardenInfrastructure(fs, dirProvider, platform, dummyDevicePathResolver),
+		"warden":  NewWardenInfrastructure(dirProvider, platform, dummyDevicePathResolver),
 		"vsphere": NewVsphereInfrastructure(platform, vsphereDevicePathResolver, logger),
 	}
 	return

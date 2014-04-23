@@ -2,7 +2,9 @@ package infrastructure_test
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -14,25 +16,24 @@ import (
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
-	fakefs "bosh/system/fakes"
+	fakesys "bosh/system/fakes"
 )
 
 var _ = Describe("wardenInfrastructure", func() {
+	var (
+		platform    *fakeplatform.FakePlatform
+		dirProvider boshdir.DirectoriesProvider
+		inf         Infrastructure
+	)
+
+	BeforeEach(func() {
+		dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
+		platform = fakeplatform.NewFakePlatform()
+		fakeDevicePathResolver := fakedpresolv.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
+		inf = NewWardenInfrastructure(dirProvider, platform, fakeDevicePathResolver)
+	})
+
 	Describe("GetSettings", func() {
-		var (
-			fs          *fakefs.FakeFileSystem
-			dirProvider boshdir.DirectoriesProvider
-			inf         Infrastructure
-		)
-
-		BeforeEach(func() {
-			fs = fakefs.NewFakeFileSystem()
-			dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
-			platform := fakeplatform.NewFakePlatform()
-			fakeDevicePathResolver := fakedpresolv.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
-			inf = NewWardenInfrastructure(fs, dirProvider, platform, fakeDevicePathResolver)
-		})
-
 		Context("when infrastructure settings file is found", func() {
 			BeforeEach(func() {
 				settingsPath := filepath.Join(dirProvider.BoshDir(), "warden-cpi-agent-env.json")
@@ -47,7 +48,7 @@ var _ = Describe("wardenInfrastructure", func() {
 				existingSettingsBytes, err := json.Marshal(expectedSettings)
 				Expect(err).ToNot(HaveOccurred())
 
-				fs.WriteFile(settingsPath, existingSettingsBytes)
+				platform.Fs.WriteFile(settingsPath, existingSettingsBytes)
 			})
 
 			It("returns settings", func() {
@@ -67,6 +68,44 @@ var _ = Describe("wardenInfrastructure", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Read settings file"))
 			})
+		})
+	})
+
+	Describe("MountPersistentDisk", func() {
+		It("creates the mount directory with the correct permissions", func() {
+			err := inf.MountPersistentDisk("fake-volume-id", "/mnt/point")
+			Expect(err).ToNot(HaveOccurred())
+
+			mountPoint := platform.Fs.GetFileTestStat("/mnt/point")
+			Expect(mountPoint.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(mountPoint.FileMode).To(Equal(os.FileMode(0700)))
+		})
+
+		It("returns error when creating mount directory fails", func() {
+			platform.Fs.MkdirAllError = errors.New("fake-mkdir-all-err")
+
+			err := inf.MountPersistentDisk("fake-volume-id", "/mnt/point")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
+		})
+
+		It("mounts volume at mount point", func() {
+			err := inf.MountPersistentDisk("fake-volume-id", "/mnt/point")
+			Expect(err).ToNot(HaveOccurred())
+
+			mounter := platform.FakeDiskManager.FakeMounter
+			Expect(len(mounter.MountPartitionPaths)).To(Equal(1))
+			Expect(mounter.MountPartitionPaths[0]).To(Equal("fake-volume-id"))
+			Expect(mounter.MountMountPoints[0]).To(Equal("/mnt/point"))
+			Expect(mounter.MountMountOptions[0]).To(Equal([]string{"--bind"}))
+		})
+
+		It("returns error when mounting fails", func() {
+			platform.FakeDiskManager.FakeMounter.MountErr = errors.New("fake-mount-err")
+
+			err := inf.MountPersistentDisk("fake-volume-id", "/mnt/point")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-mount-err"))
 		})
 	})
 })

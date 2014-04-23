@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"encoding/json"
+	"os"
 	"path/filepath"
 
 	bosherr "bosh/errors"
@@ -9,23 +10,19 @@ import (
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
-	boshsys "bosh/system"
 )
 
 type wardenInfrastructure struct {
-	fs                 boshsys.FileSystem
 	dirProvider        boshdir.DirectoriesProvider
 	platform           boshplatform.Platform
 	devicePathResolver boshdpresolv.DevicePathResolver
 }
 
 func NewWardenInfrastructure(
-	fs boshsys.FileSystem,
 	dirProvider boshdir.DirectoriesProvider,
 	platform boshplatform.Platform,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 ) (inf wardenInfrastructure) {
-	inf.fs = fs
 	inf.dirProvider = dirProvider
 	inf.platform = platform
 	inf.devicePathResolver = devicePathResolver
@@ -45,7 +42,7 @@ func (inf wardenInfrastructure) GetSettings() (boshsettings.Settings, error) {
 
 	// warden-cpi-agent-env.json is written out by warden CPI.
 	settingsPath := filepath.Join(inf.dirProvider.BoshDir(), "warden-cpi-agent-env.json")
-	contents, err := inf.fs.ReadFile(settingsPath)
+	contents, err := inf.platform.GetFs().ReadFile(settingsPath)
 	if err != nil {
 		return settings, bosherr.WrapError(err, "Read settings file")
 	}
@@ -67,5 +64,15 @@ func (inf wardenInfrastructure) GetEphemeralDiskPath(devicePath string) (string,
 }
 
 func (inf wardenInfrastructure) MountPersistentDisk(volumeID string, mountPoint string) error {
+	err := inf.platform.GetFs().MkdirAll(mountPoint, os.FileMode(0700))
+	if err != nil {
+		return bosherr.WrapError(err, "Creating directory %s", mountPoint)
+	}
+
+	err = inf.platform.GetDiskManager().GetMounter().Mount(volumeID, mountPoint, "--bind")
+	if err != nil {
+		return bosherr.WrapError(err, "Mounting partition")
+	}
+
 	return nil
 }

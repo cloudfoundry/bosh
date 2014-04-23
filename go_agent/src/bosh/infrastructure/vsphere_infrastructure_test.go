@@ -101,7 +101,6 @@ func init() {
 
 				Expect(platform.FakeDiskManager.FakeMounter.MountPartitionPaths).To(Equal([]string{"fake-real-device-path1"}))
 				Expect(platform.FakeDiskManager.FakeMounter.MountMountPoints).To(Equal([]string{"/mnt/point"}))
-
 			})
 		})
 	})
