@@ -275,8 +275,10 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 	Describe("SetupEphemeralDiskWithPath", func() {
 		Context("when ephemeral disk path is provided", func() {
+			act := func() error { return platform.SetupEphemeralDiskWithPath("/dev/xvda") }
+
 			It("sets up ephemeral disk with path", func() {
-				err := platform.SetupEphemeralDiskWithPath("/dev/xvda")
+				err := act()
 				Expect(err).NotTo(HaveOccurred())
 
 				dataDir := fs.GetFileTestStat("/fake-dir/data")
@@ -284,10 +286,18 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(dataDir.FileMode).To(Equal(os.FileMode(0750)))
 			})
 
+			It("returns error if creating data dir fails", func() {
+				fs.MkdirAllError = errors.New("fake-mkdir-all-err")
+
+				err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
+			})
+
 			It("partitions ephemeral disk into swap and data", func() {
 				fakePartitioner := diskManager.FakePartitioner
 
-				err := platform.SetupEphemeralDiskWithPath("/dev/xvda")
+				err := act()
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePartitioner.PartitionDevicePath).To(Equal("/dev/xvda"))
@@ -303,7 +313,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			It("formats swap and data partitions", func() {
 				fakeFormatter := diskManager.FakeFormatter
 
-				err := platform.SetupEphemeralDiskWithPath("/dev/xvda")
+				err := act()
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(len(fakeFormatter.FormatPartitionPaths)).To(Equal(2))
@@ -318,7 +328,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			It("mounts swap and data partitions", func() {
 				fakeMounter := diskManager.FakeMounter
 
-				err := platform.SetupEphemeralDiskWithPath("/dev/xvda")
+				err := act()
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(len(fakeMounter.MountMountPoints)).To(Equal(1))
@@ -339,10 +349,10 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 				fakePartitioner := diskManager.FakePartitioner
 				fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{
-					"/dev/hda": diskSizeInMb,
+					"/dev/xvda": diskSizeInMb,
 				}
 
-				err := platform.SetupEphemeralDiskWithPath("/dev/hda")
+				err := act()
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
@@ -360,23 +370,24 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 				fakePartitioner := diskManager.FakePartitioner
 				fakePartitioner.GetDeviceSizeInMbSizes = map[string]uint64{
-					"/dev/hda": diskSizeInMb,
+					"/dev/xvda": diskSizeInMb,
 				}
 
-				err := platform.SetupEphemeralDiskWithPath("/dev/hda")
-
+				err := act()
 				Expect(err).NotTo(HaveOccurred())
-				expectedPartitions := []boshdisk.Partition{
+
+				Expect(fakePartitioner.PartitionPartitions).To(Equal([]boshdisk.Partition{
 					{SizeInMb: expectedSwap, Type: boshdisk.PartitionTypeSwap},
 					{SizeInMb: diskSizeInMb - expectedSwap, Type: boshdisk.PartitionTypeLinux},
-				}
-				Expect(expectedPartitions).To(Equal(fakePartitioner.PartitionPartitions))
+				}))
 			})
 		})
 
 		Context("when ephemeral disk path is not provided", func() {
+			act := func() error { return platform.SetupEphemeralDiskWithPath("") }
+
 			It("creates data directory on a root partition (without swap)", func() {
-				err := platform.SetupEphemeralDiskWithPath("")
+				err := act()
 				Expect(err).NotTo(HaveOccurred())
 
 				dataDir := fs.GetFileTestStat("/fake-dir/data")
@@ -384,20 +395,28 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				Expect(dataDir.FileMode).To(Equal(os.FileMode(0750)))
 			})
 
+			It("returns error if creating data dir fails", func() {
+				fs.MkdirAllError = errors.New("fake-mkdir-all-err")
+
+				err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
+			})
+
 			It("does not try to partition anything", func() {
-				err := platform.SetupEphemeralDiskWithPath("")
+				err := act()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(diskManager.FakePartitioner.PartitionPartitions)).To(Equal(0))
 			})
 
 			It("does not try to format anything", func() {
-				err := platform.SetupEphemeralDiskWithPath("")
+				err := act()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(diskManager.FakeFormatter.FormatPartitionPaths)).To(Equal(0))
 			})
 
 			It("does not try to mount anything", func() {
-				err := platform.SetupEphemeralDiskWithPath("")
+				err := act()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(diskManager.FakeMounter.MountMountPoints)).To(Equal(0))
 			})

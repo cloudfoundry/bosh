@@ -331,45 +331,51 @@ func (p linux) SetTimeWithNtpServers(servers []string) (err error) {
 func (p linux) SetupEphemeralDiskWithPath(realPath string) error {
 	mountPoint := p.dirProvider.DataDir()
 
-	p.fs.MkdirAll(mountPoint, os.FileMode(0750))
+	err := p.fs.MkdirAll(mountPoint, os.FileMode(0750))
+	if err != nil {
+		return bosherr.WrapError(err, "Creating data dir")
+	}
 
-	if realPath != "" {
-		swapSize, linuxSize, err := p.calculateEphemeralDiskPartitionSizes(realPath)
-		if err != nil {
-			return bosherr.WrapError(err, "Calculating partition sizes")
-		}
+	if realPath == "" {
+		p.logger.Debug("platform", "Using root disk as ephemeral disk")
+		return nil
+	}
 
-		partitions := []boshdisk.Partition{
-			{SizeInMb: swapSize, Type: boshdisk.PartitionTypeSwap},
-			{SizeInMb: linuxSize, Type: boshdisk.PartitionTypeLinux},
-		}
+	swapSize, linuxSize, err := p.calculateEphemeralDiskPartitionSizes(realPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Calculating partition sizes")
+	}
 
-		err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
-		if err != nil {
-			return bosherr.WrapError(err, "Partitioning disk")
-		}
+	partitions := []boshdisk.Partition{
+		{SizeInMb: swapSize, Type: boshdisk.PartitionTypeSwap},
+		{SizeInMb: linuxSize, Type: boshdisk.PartitionTypeLinux},
+	}
 
-		swapPartitionPath := realPath + "1"
-		dataPartitionPath := realPath + "2"
-		err = p.diskManager.GetFormatter().Format(swapPartitionPath, boshdisk.FileSystemSwap)
-		if err != nil {
-			return bosherr.WrapError(err, "Formatting swap")
-		}
+	err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
+	if err != nil {
+		return bosherr.WrapError(err, "Partitioning disk")
+	}
 
-		err = p.diskManager.GetFormatter().Format(dataPartitionPath, boshdisk.FileSystemExt4)
-		if err != nil {
-			return bosherr.WrapError(err, "Formatting data partition with ext4")
-		}
+	swapPartitionPath := realPath + "1"
+	dataPartitionPath := realPath + "2"
+	err = p.diskManager.GetFormatter().Format(swapPartitionPath, boshdisk.FileSystemSwap)
+	if err != nil {
+		return bosherr.WrapError(err, "Formatting swap")
+	}
 
-		err = p.diskManager.GetMounter().SwapOn(swapPartitionPath)
-		if err != nil {
-			return bosherr.WrapError(err, "Mounting swap")
-		}
+	err = p.diskManager.GetFormatter().Format(dataPartitionPath, boshdisk.FileSystemExt4)
+	if err != nil {
+		return bosherr.WrapError(err, "Formatting data partition with ext4")
+	}
 
-		err = p.diskManager.GetMounter().Mount(dataPartitionPath, mountPoint)
-		if err != nil {
-			return bosherr.WrapError(err, "Mounting data partition")
-		}
+	err = p.diskManager.GetMounter().SwapOn(swapPartitionPath)
+	if err != nil {
+		return bosherr.WrapError(err, "Mounting swap")
+	}
+
+	err = p.diskManager.GetMounter().Mount(dataPartitionPath, mountPoint)
+	if err != nil {
+		return bosherr.WrapError(err, "Mounting data partition")
 	}
 
 	return nil
