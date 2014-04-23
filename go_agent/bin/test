@@ -2,6 +2,8 @@
 
 result=0
 
+num_processes=$([ -n "$TRAVIS" ] && echo 1 || echo 4)
+
 echo -e "\n Formatting packages..."
 $(dirname $0)/go fmt bosh/...
 let "result+=$?"
@@ -10,8 +12,8 @@ echo -e "\n Installing package dependencies..."
 $(dirname $0)/go test -i bosh/...
 let "result+=$?"
 
-echo -e "\n Testing packages..."
-$(dirname $0)/go test bosh/... -parallel 4 -race $@
+echo -e "\n Testing packages (processes=$num_processes)..."
+$(dirname $0)/go test bosh/... -parallel $num_processes -race $@
 let "result+=$?"
 
 echo -e "\n Vetting packages for potential issues..."
