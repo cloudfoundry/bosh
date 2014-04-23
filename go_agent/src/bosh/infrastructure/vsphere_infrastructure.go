@@ -1,15 +1,16 @@
 package infrastructure
 
 import (
+	"encoding/json"
+	"os"
+	"time"
+
 	bosherr "bosh/errors"
 	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshlog "bosh/logger"
 	boshplatform "bosh/platform"
 	boshdisk "bosh/platform/disk"
 	boshsettings "bosh/settings"
-	"encoding/json"
-	"os"
-	"time"
 )
 
 type vsphereInfrastructure struct {
@@ -19,11 +20,14 @@ type vsphereInfrastructure struct {
 	devicePathResolver boshdpresolv.DevicePathResolver
 }
 
-func NewVsphereInfrastructure(platform boshplatform.Platform, devicePathResolver boshdpresolv.DevicePathResolver, logger boshlog.Logger) (inf vsphereInfrastructure) {
+func NewVsphereInfrastructure(
+	platform boshplatform.Platform,
+	devicePathResolver boshdpresolv.DevicePathResolver,
+	logger boshlog.Logger,
+) (inf vsphereInfrastructure) {
 	inf.platform = platform
 	inf.logger = logger
 	inf.devicePathResolver = devicePathResolver
-
 	return
 }
 
@@ -31,47 +35,49 @@ func (inf vsphereInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePath
 	return inf.devicePathResolver
 }
 
-func (inf vsphereInfrastructure) SetupSsh(username string) (err error) {
-	return
+func (inf vsphereInfrastructure) SetupSsh(username string) error {
+	return nil
 }
 
-func (inf vsphereInfrastructure) GetSettings() (settings boshsettings.Settings, err error) {
+func (inf vsphereInfrastructure) GetSettings() (boshsettings.Settings, error) {
+	var settings boshsettings.Settings
+
 	contents, err := inf.platform.GetFileContentsFromCDROM("env")
 	if err != nil {
-		err = bosherr.WrapError(err, "Reading contents from CDROM")
-		return
+		return settings, bosherr.WrapError(err, "Reading contents from CDROM")
 	}
 
 	inf.logger.Debug("disks", "Got CDrom data %v", string(contents))
 
 	err = json.Unmarshal(contents, &settings)
 	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshalling settings from CDROM")
+		return settings, bosherr.WrapError(err, "Unmarshalling settings from CDROM")
 	}
 
 	inf.logger.Debug("disks", "Number of persistent disks %v", len(settings.Disks.Persistent))
 
-	return
+	return settings, nil
 }
 
-func (inf vsphereInfrastructure) SetupNetworking(networks boshsettings.Networks) (err error) {
+func (inf vsphereInfrastructure) SetupNetworking(networks boshsettings.Networks) error {
 	return inf.platform.SetupManualNetworking(networks)
 }
 
-func (inf vsphereInfrastructure) GetEphemeralDiskPath(string) (realPath string, found bool) {
+func (inf vsphereInfrastructure) GetEphemeralDiskPath(string) (string, bool) {
 	return "/dev/sdb", true
 }
 
-func (inf vsphereInfrastructure) MountPersistentDisk(volumeID string, mountPoint string) (err error) {
+func (inf vsphereInfrastructure) MountPersistentDisk(volumeID string, mountPoint string) error {
 	inf.logger.Debug("disks", "Mounting persistent disks")
 
-	inf.platform.GetFs().MkdirAll(mountPoint, os.FileMode(0700))
+	err := inf.platform.GetFs().MkdirAll(mountPoint, os.FileMode(0700))
+	if err != nil {
+		return bosherr.WrapError(err, "Creating directory %s", mountPoint)
+	}
 
 	realPath, err := inf.devicePathResolver.GetRealDevicePath(volumeID)
-
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting real device path")
-		return
+		return bosherr.WrapError(err, "Getting real device path")
 	}
 
 	partitions := []boshdisk.Partition{
@@ -79,23 +85,20 @@ func (inf vsphereInfrastructure) MountPersistentDisk(volumeID string, mountPoint
 	}
 
 	err = inf.platform.GetDiskManager().GetPartitioner().Partition(realPath, partitions)
-
 	if err != nil {
-		err = bosherr.WrapError(err, "Partitioning disk")
-		return
+		return bosherr.WrapError(err, "Partitioning disk")
 	}
 
 	partitionPath := realPath + "1"
 	err = inf.platform.GetDiskManager().GetFormatter().Format(partitionPath, boshdisk.FileSystemExt4)
 	if err != nil {
-		err = bosherr.WrapError(err, "Formatting partition with ext4")
-		return
+		return bosherr.WrapError(err, "Formatting partition with ext4")
 	}
 
 	err = inf.platform.GetDiskManager().GetMounter().Mount(partitionPath, mountPoint)
 	if err != nil {
-		err = bosherr.WrapError(err, "Mounting partition")
-		return
+		return bosherr.WrapError(err, "Mounting partition")
 	}
-	return
+
+	return nil
 }
