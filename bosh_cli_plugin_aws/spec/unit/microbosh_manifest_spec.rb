@@ -1,13 +1,16 @@
 require 'spec_helper'
 
 describe Bosh::Aws::MicroboshManifest do
+  subject(:manifest) { described_class.new(vpc_receipt, route53_receipt, manifest_options) }
+
   let(:vpc_receipt) { Psych.load_file(asset "test-output.yml") }
   let(:route53_receipt) { Psych.load_file(asset "test-aws_route53_receipt.yml") }
   let(:vpc_config) { vpc_receipt['original_configuration'] }
   let(:hm_director_user) { 'hm' }
   let(:hm_director_password) { 'hmpasswd' }
   let(:manifest_options) { {hm_director_user: hm_director_user, hm_director_password: hm_director_password} }
-  let(:manifest) { Bosh::Aws::MicroboshManifest.new(vpc_receipt, route53_receipt, manifest_options) }
+
+  its(:network_type) { should eq('manual') }
 
   it 'sets health manager director credentials' do
     manifest.hm_director_user.should == 'hm'
@@ -27,10 +30,15 @@ describe Bosh::Aws::MicroboshManifest do
     manifest.to_y
   end
 
-  it 'warns when subnet is missing' do
-    vpc_receipt['vpc']['subnets'] = {}
-    manifest.should_receive(:warning).with('Missing bosh subnet field').at_least(1).times
-    manifest.to_y
+  context 'when subnet is missing' do
+    before { vpc_receipt['vpc']['subnets'] = {} }
+
+    it 'warns that the subnet is missing' do
+      manifest.should_receive(:warning).with('Missing bosh subnet field').at_least(1).times
+      manifest.to_y
+    end
+
+    its(:network_type) { should eq('dynamic') }
   end
 
   it 'warns when availability_zone is missing' do

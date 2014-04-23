@@ -24,6 +24,7 @@ cpi: vcloud
 properties:
   uuid: director-uuid
   static_ip: ip
+  second_static_ip: fake-second-ip
   pool_size: 1
   stemcell:
     name: bosh-infra-hyper-os
@@ -31,6 +32,7 @@ properties:
   instances: 1
   mbus: nats://nats:nats@ip:4222
   network:
+    type: manual
     cidr: net_cidr
     reserved:
       - reserved1
@@ -45,6 +47,7 @@ YAML
       before do
         env.merge!(
           'BOSH_VCLOUD_BAT_IP' => 'ip',
+          'BOSH_VCLOUD_SECOND_BAT_IP' => 'fake-second-ip',
           'BOSH_VCLOUD_NET_ID' => 'net_id',
           'BOSH_VCLOUD_NETWORK_CIDR' => 'net_cidr',
           'BOSH_VCLOUD_NETWORK_STATIC' => 'net_static',

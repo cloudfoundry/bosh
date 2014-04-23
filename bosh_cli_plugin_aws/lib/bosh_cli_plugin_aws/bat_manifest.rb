@@ -28,6 +28,14 @@ module Bosh
         route53_receipt['elastic_ips']['bat']['ips'][0] || warning('Missing vip field')
       end
 
+      def static_ip
+        ENV.fetch('BOSH_AWS_STATIC_IP', '10.10.0.29')
+      end
+
+      def second_static_ip
+        ENV.fetch('BOSH_AWS_SECOND_STATIC_IP', '10.10.0.30')
+      end
+
       def to_y
         ERB.new(File.read(get_template("bat.yml.erb"))).result(binding)
       end

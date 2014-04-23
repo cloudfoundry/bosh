@@ -87,9 +87,13 @@ jobs:
       - name: default
         default: [dns, gateway]
       <% if properties.use_static_ip %>
+        static_ips:
+          - <%= properties.deployment_static_ip %>
+      <% end %>
+      <% if properties.use_vip %>
       - name: static
         static_ips:
-          - <%= properties.static_ip %>
+          - <%= properties.vip %>
       <% end %>
 
 properties:

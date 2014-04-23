@@ -36,6 +36,10 @@ module Bosh
         vpc_receipt['vpc']['subnets']['bosh1'] || warning('Missing bosh subnet field')
       end
 
+      def network_type
+        subnet ? 'manual' : 'dynamic'
+      end
+
       def availability_zone
         vpc_config['vpc']['subnets']['bosh1']['availability_zone'] || warning('Missing availability zone in vpc.subnets.bosh')
       end

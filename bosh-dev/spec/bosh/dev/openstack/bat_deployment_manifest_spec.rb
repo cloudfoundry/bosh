@@ -23,6 +23,7 @@ module Bosh::Dev::Openstack
       before do
         env.merge!(
           'BOSH_OPENSTACK_VIP_BAT_IP'       => 'vip',
+          'BOSH_OPENSTACK_SECOND_BAT_IP'    => 'fake-second-ip',
           'BOSH_OPENSTACK_NET_ID'           => 'net_id',
           'BOSH_OPENSTACK_NETWORK_CIDR'     => 'net_cidr',
           'BOSH_OPENSTACK_NETWORK_RESERVED' => 'net_reserved',
@@ -38,6 +39,7 @@ module Bosh::Dev::Openstack
 cpi: openstack
 properties:
   static_ip: vip
+  second_static_ip: fake-second-ip
   uuid: director-uuid
   pool_size: 1
   stemcell:
@@ -71,6 +73,7 @@ YAML
 cpi: openstack
 properties:
   static_ip: vip
+  second_static_ip: fake-second-ip
   uuid: director-uuid
   pool_size: 1
   stemcell:

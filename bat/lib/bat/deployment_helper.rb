@@ -93,8 +93,24 @@ module Bat
       @spec.fetch('properties', {}).fetch('name', 'bat')
     end
 
+    def use_vip
+      @spec['properties']['use_vip'] = true
+    end
+
+    def no_vip
+      @spec['properties']['use_vip'] = false
+    end
+
+    def public_ip
+      # For AWS and OpenStack, the elastic IP is the public IP
+      # For vSphere and vCloud, the static_ip is the public IP
+      @spec['properties']['vip'] || @spec['properties']['deployment_static_ip']
+    end
+
     def use_static_ip
       @spec['properties']['use_static_ip'] = true
+      @spec['properties']['deployment_static_ip'] = static_ip
+      @spec['properties']['mbus'] = mbus_url(static_ip)
     end
 
     def no_static_ip
@@ -103,6 +119,16 @@ module Bat
 
     def static_ip
       @spec['properties']['static_ip']
+    end
+
+    def use_second_static_ip
+      @spec['properties']['use_static_ip'] = true
+      @spec['properties']['deployment_static_ip'] = second_static_ip
+      @spec['properties']['mbus'] = mbus_url(second_static_ip)
+    end
+
+    def second_static_ip
+      @spec['properties']['second_static_ip']
     end
 
     def use_persistent_disk(size)
@@ -123,6 +149,10 @@ module Bat
 
     def use_failing_job
       @spec['properties']['batlight']['fail'] = 'control'
+    end
+
+    def dynamic_network?
+      @spec['properties']['network']['type'] == 'dynamic'
     end
 
     def get_task_id(output, state = 'done')
@@ -156,6 +186,10 @@ module Bat
     end
 
     private
+
+    def mbus_url(ip)
+      "nats://nats:0b450ada9f830085e2cdeff6@#{ip}:4222"
+    end
 
     def spec
       @spec ||= {}

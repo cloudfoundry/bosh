@@ -59,7 +59,9 @@ jobs:
     default: [dns, gateway]
 
 properties:
-  static_ip: <%= vip %>
+  vip: <%= vip %>
+  static_ip: <%= static_ip %>
+  second_static_ip: <%= second_static_ip %>
   uuid: <%= director_uuid %>
   pool_size: 1
   stemcell:
@@ -69,6 +71,7 @@ properties:
   key_name:  <%= key_pair_name %>
   mbus: nats://nats:0b450ada9f830085e2cdeff6@micro.<%= domain %>:4222
   network:
+    type: <%= network_type %>
     cidr: 10.10.0.0/24
     reserved:
     - <%= reserved_ip_range %>
