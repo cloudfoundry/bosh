@@ -169,7 +169,7 @@ module Bosh::Stemcell
     end
 
     def proxy_settings_from_environment
-      keep = %w(HTTP_PROXY NO_PROXY)
+      keep = %w(HTTP_PROXY HTTPS_PROXY NO_PROXY PATH GOROOT GOPATH)
 
       environment.select { |k| keep.include?(k.upcase) }
     end
