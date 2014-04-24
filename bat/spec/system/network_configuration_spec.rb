@@ -80,7 +80,7 @@ describe 'network configuration' do
       bosh("deployment #{deployment.to_path}").should succeed
       bosh('deploy').should succeed
 
-      ssh(public_ip, 'vcap', 'ifconfig', ssh_options).should include(second_static_ip)
+      ssh(public_ip, 'vcap', '/sbin/ifconfig', ssh_options).should include(second_static_ip)
     end
   end
 end
