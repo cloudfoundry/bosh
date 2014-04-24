@@ -38,6 +38,7 @@ module Bosh::Dev::Openstack
 ---
 cpi: openstack
 properties:
+  vip: vip
   static_ip: vip
   second_static_ip: fake-second-ip
   uuid: director-uuid
@@ -72,6 +73,7 @@ YAML
 ---
 cpi: openstack
 properties:
+  vip: vip
   static_ip: vip
   second_static_ip: fake-second-ip
   uuid: director-uuid

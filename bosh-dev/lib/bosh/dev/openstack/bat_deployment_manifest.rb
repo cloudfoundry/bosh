@@ -19,6 +19,7 @@ module Bosh::Dev::Openstack
       manifest_hash = {
         'cpi' => 'openstack',
         'properties' => {
+          'vip' => env['BOSH_OPENSTACK_VIP_BAT_IP'],
           'static_ip' => env['BOSH_OPENSTACK_VIP_BAT_IP'],
           'second_static_ip' => env['BOSH_OPENSTACK_SECOND_BAT_IP'],
           'uuid' => director_uuid.value,
