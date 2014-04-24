@@ -508,8 +508,44 @@ func (p linux) changeTmpDirPermissions(path string) error {
 	return nil
 }
 
+func (p linux) MountPersistentDisk(devicePath, mountPoint string) error {
+	p.logger.Debug("platform", "Mounting persistent disk %s at %s", devicePath, mountPoint)
+
+	err := p.fs.MkdirAll(mountPoint, os.FileMode(0700))
+	if err != nil {
+		return bosherr.WrapError(err, "Creating directory %s", mountPoint)
+	}
+
+	realPath, err := p.devicePathResolver.GetRealDevicePath(devicePath)
+	if err != nil {
+		return bosherr.WrapError(err, "Getting real device path")
+	}
+
+	partitions := []boshdisk.Partition{
+		{Type: boshdisk.PartitionTypeLinux},
+	}
+
+	err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
+	if err != nil {
+		return bosherr.WrapError(err, "Partitioning disk")
+	}
+
+	partitionPath := realPath + "1"
+	err = p.diskManager.GetFormatter().Format(partitionPath, boshdisk.FileSystemExt4)
+	if err != nil {
+		return bosherr.WrapError(err, "Formatting partition with ext4")
+	}
+
+	err = p.diskManager.GetMounter().Mount(partitionPath, mountPoint)
+	if err != nil {
+		return bosherr.WrapError(err, "Mounting partition")
+	}
+
+	return nil
+}
+
 func (p linux) UnmountPersistentDisk(devicePath string) (bool, error) {
-	p.logger.Debug("platform", "Unmounting persistent disk %v", devicePath)
+	p.logger.Debug("platform", "Unmounting persistent disk %s", devicePath)
 
 	realPath, err := p.devicePathResolver.GetRealDevicePath(devicePath)
 	if err != nil {
@@ -524,6 +560,7 @@ func (p linux) NormalizeDiskPath(devicePath string) (string, bool) {
 	if err == nil {
 		return realPath, true
 	}
+
 	return "", false
 }
 
@@ -562,11 +599,10 @@ func (p linux) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err e
 	return
 }
 
-func (p linux) IsPersistentDiskMounted(path string) (result bool, err error) {
+func (p linux) IsPersistentDiskMounted(path string) (bool, error) {
 	realPath, err := p.devicePathResolver.GetRealDevicePath(path)
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting real device path")
-		return
+		return false, bosherr.WrapError(err, "Getting real device path")
 	}
 
 	return p.diskManager.GetMounter().IsMounted(realPath + "1")

@@ -25,20 +25,20 @@ import (
 
 var _ = Describe("LinuxPlatform", func() {
 	var (
-		collector       *fakestats.FakeStatsCollector
-		fs              *fakesys.FakeFileSystem
-		cmdRunner       *fakesys.FakeCmdRunner
-		diskManager     *fakedisk.FakeDiskManager
-		dirProvider     boshdirs.DirectoriesProvider
-		diskWaitTimeout time.Duration
+		collector          *fakestats.FakeStatsCollector
+		fs                 *fakesys.FakeFileSystem
+		cmdRunner          *fakesys.FakeCmdRunner
+		diskManager        *fakedisk.FakeDiskManager
+		dirProvider        boshdirs.DirectoriesProvider
+		diskWaitTimeout    time.Duration
 		devicePathResolver *fakedpresolv.FakeDevicePathResolver
-		platform        Platform
-		cdutil          *fakecd.FakeCdUtil
-		compressor      boshcmd.Compressor
-		copier          boshcmd.Copier
-		vitalsService   boshvitals.Service
-		options         LinuxOptions
-		logger          boshlog.Logger
+		platform           Platform
+		cdutil             *fakecd.FakeCdUtil
+		compressor         boshcmd.Compressor
+		copier             boshcmd.Copier
+		vitalsService      boshvitals.Service
+		options            LinuxOptions
+		logger             boshlog.Logger
 	)
 
 	const sleepInterval = time.Millisecond * 5
@@ -592,30 +592,102 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		})
 	})
 
+	Describe("MountPersistentDisk", func() {
+		act := func() error { return platform.MountPersistentDisk("fake-volume-id", "/mnt/point") }
+
+		BeforeEach(func() {
+			devicePathResolver.RegisterRealDevicePath("fake-volume-id", "fake-real-device-path")
+		})
+
+		It("creates the mount directory with the correct permissions", func() {
+			err := act()
+			Expect(err).ToNot(HaveOccurred())
+
+			mountPoint := fs.GetFileTestStat("/mnt/point")
+			Expect(mountPoint.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(mountPoint.FileMode).To(Equal(os.FileMode(0700)))
+		})
+
+		It("returns error when creating mount directory fails", func() {
+			fs.MkdirAllError = errors.New("fake-mkdir-all-err")
+
+			err := act()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
+		})
+
+		It("partitions the disk", func() {
+			err := act()
+			Expect(err).ToNot(HaveOccurred())
+
+			partitions := []boshdisk.Partition{{Type: boshdisk.PartitionTypeLinux}}
+			Expect(diskManager.FakePartitioner.PartitionDevicePath).To(Equal("fake-real-device-path"))
+			Expect(diskManager.FakePartitioner.PartitionPartitions).To(Equal(partitions))
+		})
+
+		It("formats the disk", func() {
+			err := act()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(diskManager.FakeFormatter.FormatPartitionPaths).To(Equal([]string{"fake-real-device-path1"}))
+			Expect(diskManager.FakeFormatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
+		})
+
+		It("mounts the disk", func() {
+			err := act()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(diskManager.FakeMounter.MountPartitionPaths).To(Equal([]string{"fake-real-device-path1"}))
+			Expect(diskManager.FakeMounter.MountMountPoints).To(Equal([]string{"/mnt/point"}))
+		})
+	})
+
 	Describe("UnmountPersistentDisk", func() {
-		Context("when not mounted", func() {
-			It("does not unmount persistent disk", func() {
+		act := func() (bool, error) { return platform.UnmountPersistentDisk("fake-device-path") }
+
+		Context("when device path can be resolved", func() {
+			BeforeEach(func() {
+				devicePathResolver.RegisterRealDevicePath("fake-device-path", "fake-real-device-path")
+			})
+
+			It("returs true without an error if unmounting first partition succeeded", func() {
+				diskManager.FakeMounter.UnmountDidUnmount = true
+
+				didUnmount, err := act()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(didUnmount).To(BeTrue())
+				Expect(diskManager.FakeMounter.UnmountPartitionPath).To(Equal("fake-real-device-path1")) // note '1'
+			})
+
+			It("returs false without an error if first partition was already unmounted", func() {
 				diskManager.FakeMounter.UnmountDidUnmount = false
 
-				fs.WriteFile("/dev/vdx", []byte{})
-
-				didUnmount, err := platform.UnmountPersistentDisk("/dev/sdx")
+				didUnmount, err := act()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(didUnmount).To(BeFalse())
-				Expect(diskManager.FakeMounter.UnmountPartitionPath).To(Equal("/dev/vdx1"))
+				Expect(diskManager.FakeMounter.UnmountPartitionPath).To(Equal("fake-real-device-path1")) // note '1'
+			})
+
+			It("returns error if unmounting fails", func() {
+				diskManager.FakeMounter.UnmountDidUnmount = false
+				diskManager.FakeMounter.UnmountErr = errors.New("fake-unmount-err")
+
+				didUnmount, err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-unmount-err"))
+				Expect(didUnmount).To(BeFalse())
+				Expect(diskManager.FakeMounter.UnmountPartitionPath).To(Equal("fake-real-device-path1")) // note '1'
 			})
 		})
 
-		Context("when already mounted", func() {
-			It("unmounts persistent disk", func() {
-				diskManager.FakeMounter.UnmountDidUnmount = true
+		Context("when device path can be resolved", func() {
+			BeforeEach(func() {
+				devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
+			})
 
-				fs.WriteFile("/dev/vdx", []byte{})
-
-				didUnmount, err := platform.UnmountPersistentDisk("/dev/sdx")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(didUnmount).To(BeTrue())
-				Expect(diskManager.FakeMounter.UnmountPartitionPath).To(Equal("/dev/vdx1"))
+			It("returns error", func() {
+				didUnmount, err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-get-real-device-path-err"))
+				Expect(didUnmount).To(BeFalse())
 			})
 		})
 	})
@@ -670,15 +742,54 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 	})
 
 	Describe("IsPersistentDiskMounted", func() {
-		It("is device path mounted", func() {
-			fs.WriteFile("/dev/xvda", []byte{})
-			fakeMounter := diskManager.FakeMounter
-			fakeMounter.IsMountedResult = true
+		act := func() (bool, error) { return platform.IsPersistentDiskMounted("fake-device-path") }
 
-			result, err := platform.IsPersistentDiskMounted("/dev/sda")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(BeTrue())
-			Expect("/dev/xvda1").To(Equal(fakeMounter.IsMountedDevicePathOrMountPoint))
+		Context("when device path can be resolved", func() {
+			BeforeEach(func() {
+				devicePathResolver.RegisterRealDevicePath("fake-device-path", "fake-real-device-path")
+			})
+
+			It("returs true without an error if unmounting first partition succeeded", func() {
+				diskManager.FakeMounter.IsMountedResult = true
+
+				isMounted, err := act()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(isMounted).To(BeTrue())
+				Expect(diskManager.FakeMounter.IsMountedDevicePathOrMountPoint).To(Equal("fake-real-device-path1")) // note '1'
+			})
+
+			It("returs false without an error if first partition was already unmounted", func() {
+				diskManager.FakeMounter.IsMountedResult = false
+
+				isMounted, err := act()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(isMounted).To(BeFalse())
+				Expect(diskManager.FakeMounter.IsMountedDevicePathOrMountPoint).To(Equal("fake-real-device-path1")) // note '1'
+			})
+
+			It("returns error if unmounting fails", func() {
+				diskManager.FakeMounter.IsMountedResult = false
+				diskManager.FakeMounter.IsMountedErr = errors.New("fake-is-mounted-err")
+
+				isMounted, err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-is-mounted-err"))
+				Expect(isMounted).To(BeFalse())
+				Expect(diskManager.FakeMounter.IsMountedDevicePathOrMountPoint).To(Equal("fake-real-device-path1")) // note '1'
+			})
+		})
+
+		Context("when device path can be resolved", func() {
+			BeforeEach(func() {
+				devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
+			})
+
+			It("returns error", func() {
+				isMounted, err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-get-real-device-path-err"))
+				Expect(isMounted).To(BeFalse())
+			})
 		})
 	})
 

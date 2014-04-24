@@ -45,6 +45,7 @@ type Platform interface {
 	SetupRuntimeConfiguration() (err error)
 
 	// Disk management
+	MountPersistentDisk(devicePath, mountPoint string) error
 	UnmountPersistentDisk(devicePath string) (didUnmount bool, err error)
 	MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error)
 	NormalizeDiskPath(devicePath string) (realPath string, found bool)
