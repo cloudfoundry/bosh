@@ -2,14 +2,12 @@ package infrastructure
 
 import (
 	"encoding/json"
-	"os"
 	"time"
 
 	bosherr "bosh/errors"
 	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshlog "bosh/logger"
 	boshplatform "bosh/platform"
-	boshdisk "bosh/platform/disk"
 	boshsettings "bosh/settings"
 )
 
@@ -65,40 +63,4 @@ func (inf vsphereInfrastructure) SetupNetworking(networks boshsettings.Networks)
 
 func (inf vsphereInfrastructure) GetEphemeralDiskPath(string) (string, bool) {
 	return "/dev/sdb", true
-}
-
-func (inf vsphereInfrastructure) MountPersistentDisk(volumeID string, mountPoint string) error {
-	inf.logger.Debug("disks", "Mounting persistent disks")
-
-	err := inf.platform.GetFs().MkdirAll(mountPoint, os.FileMode(0700))
-	if err != nil {
-		return bosherr.WrapError(err, "Creating directory %s", mountPoint)
-	}
-
-	realPath, err := inf.devicePathResolver.GetRealDevicePath(volumeID)
-	if err != nil {
-		return bosherr.WrapError(err, "Getting real device path")
-	}
-
-	partitions := []boshdisk.Partition{
-		{Type: boshdisk.PartitionTypeLinux},
-	}
-
-	err = inf.platform.GetDiskManager().GetPartitioner().Partition(realPath, partitions)
-	if err != nil {
-		return bosherr.WrapError(err, "Partitioning disk")
-	}
-
-	partitionPath := realPath + "1"
-	err = inf.platform.GetDiskManager().GetFormatter().Format(partitionPath, boshdisk.FileSystemExt4)
-	if err != nil {
-		return bosherr.WrapError(err, "Formatting partition with ext4")
-	}
-
-	err = inf.platform.GetDiskManager().GetMounter().Mount(partitionPath, mountPoint)
-	if err != nil {
-		return bosherr.WrapError(err, "Mounting partition")
-	}
-
-	return nil
 }

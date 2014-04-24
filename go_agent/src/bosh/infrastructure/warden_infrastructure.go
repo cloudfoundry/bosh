@@ -2,7 +2,6 @@ package infrastructure
 
 import (
 	"encoding/json"
-	"os"
 	"path/filepath"
 
 	bosherr "bosh/errors"
@@ -61,18 +60,4 @@ func (inf wardenInfrastructure) SetupNetworking(networks boshsettings.Networks) 
 
 func (inf wardenInfrastructure) GetEphemeralDiskPath(devicePath string) (string, bool) {
 	return inf.platform.NormalizeDiskPath(devicePath)
-}
-
-func (inf wardenInfrastructure) MountPersistentDisk(volumeID string, mountPoint string) error {
-	err := inf.platform.GetFs().MkdirAll(mountPoint, os.FileMode(0700))
-	if err != nil {
-		return bosherr.WrapError(err, "Creating directory %s", mountPoint)
-	}
-
-	err = inf.platform.GetDiskManager().GetMounter().Mount(volumeID, mountPoint, "--bind")
-	if err != nil {
-		return bosherr.WrapError(err, "Mounting partition")
-	}
-
-	return nil
 }

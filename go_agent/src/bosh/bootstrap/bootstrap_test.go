@@ -156,8 +156,8 @@ func init() {
 
 				_, err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(inf.MountPersistentDiskVolumeID).To(Equal("/dev/sdb"))
-				Expect(inf.MountPersistentDiskMountPoint).To(Equal(dirProvider.StoreDir()))
+				Expect(platform.MountPersistentDiskDevicePath).To(Equal("/dev/sdb"))
+				Expect(platform.MountPersistentDiskMountPoint).To(Equal(dirProvider.StoreDir()))
 			})
 
 			It("errors if there is more than one persistent disk", func() {

@@ -65,7 +65,3 @@ func (inf dummyInfrastructure) SetupNetworking(networks boshsettings.Networks) e
 func (inf dummyInfrastructure) GetEphemeralDiskPath(devicePath string) (string, bool) {
 	return inf.platform.NormalizeDiskPath(devicePath)
 }
-
-func (inf dummyInfrastructure) MountPersistentDisk(volumeID string, mountPoint string) error {
-	return nil
-}

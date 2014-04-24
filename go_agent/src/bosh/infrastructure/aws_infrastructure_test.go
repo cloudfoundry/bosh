@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -13,10 +12,8 @@ import (
 
 	. "bosh/infrastructure"
 	fakedpresolv "bosh/infrastructure/devicepathresolver/fakes"
-	boshdisk "bosh/platform/disk"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
-	fakesys "bosh/system/fakes"
 )
 
 type FakeDNSResolver struct {
@@ -301,45 +298,6 @@ func init() {
 				Expect(found).To(Equal(true))
 				Expect(realPath).To(Equal("/dev/xvdb"))
 				Expect(platform.NormalizeDiskPathPath).To(Equal("/dev/sdb"))
-			})
-		})
-
-		Describe("MountPersistentDisk", func() {
-			It("mounts the persistent disk", func() {
-				fakePlatform := fakeplatform.NewFakePlatform()
-
-				fakeFormatter := fakePlatform.FakeDiskManager.FakeFormatter
-				fakePartitioner := fakePlatform.FakeDiskManager.FakePartitioner
-				fakeMounter := fakePlatform.FakeDiskManager.FakeMounter
-
-				fakePlatform.GetFs().WriteFile("/dev/vdf", []byte{})
-
-				fakeDNSResolver := &FakeDNSResolver{}
-				aws := NewAwsInfrastructure("", fakeDNSResolver, fakePlatform, devicePathResolver)
-
-				devicePathResolver.RegisterRealDevicePath("/dev/sdf", "/dev/vdf")
-				err := aws.MountPersistentDisk("/dev/sdf", "/mnt/point")
-				Expect(err).NotTo(HaveOccurred())
-
-				mountPoint := fakePlatform.Fs.GetFileTestStat("/mnt/point")
-				Expect(mountPoint.FileType).To(Equal(fakesys.FakeFileTypeDir))
-				Expect(mountPoint.FileMode).To(Equal(os.FileMode(0700)))
-
-				partition := fakePartitioner.PartitionPartitions[0]
-				Expect(fakePartitioner.PartitionDevicePath).To(Equal("/dev/vdf"))
-				Expect(len(fakePartitioner.PartitionPartitions)).To(Equal(1))
-				Expect(partition.Type).To(Equal(boshdisk.PartitionTypeLinux))
-
-				Expect(len(fakeFormatter.FormatPartitionPaths)).To(Equal(1))
-				Expect(fakeFormatter.FormatPartitionPaths[0]).To(Equal("/dev/vdf1"))
-
-				Expect(len(fakeFormatter.FormatFsTypes)).To(Equal(1))
-				Expect(fakeFormatter.FormatFsTypes[0]).To(Equal(boshdisk.FileSystemExt4))
-
-				Expect(len(fakeMounter.MountMountPoints)).To(Equal(1))
-				Expect(fakeMounter.MountMountPoints[0]).To(Equal("/mnt/point"))
-				Expect(len(fakeMounter.MountPartitionPaths)).To(Equal(1))
-				Expect(fakeMounter.MountPartitionPaths[0]).To(Equal("/dev/vdf1"))
 			})
 		})
 	})

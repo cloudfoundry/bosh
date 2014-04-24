@@ -126,7 +126,7 @@ func init() {
 		It("mount_disk", func() {
 			action, err := factory.Create("mount_disk")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(action).To(Equal(NewMountDisk(settings, infrastructure, platform, platform.GetDirProvider())))
+			Expect(action).To(Equal(NewMountDisk(settings, platform, platform, platform.GetDirProvider())))
 		})
 
 		It("ping", func() {

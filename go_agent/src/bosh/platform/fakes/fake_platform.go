@@ -58,8 +58,10 @@ type FakePlatform struct {
 	SetupManualNetworkingNetworks boshsettings.Networks
 	SetupDhcpNetworks             boshsettings.Networks
 
+	MountPersistentDiskCalled     bool
 	MountPersistentDiskDevicePath string
 	MountPersistentDiskMountPoint string
+	MountPersistentDiskErr        error
 
 	UnmountPersistentDiskDidUnmount bool
 	UnmountPersistentDiskDevicePath string
@@ -76,8 +78,9 @@ type FakePlatform struct {
 	MigratePersistentDiskFromMountPoint string
 	MigratePersistentDiskToMountPoint   string
 
-	IsMountPointResult bool
 	IsMountPointPath   string
+	IsMountPointResult bool
+	IsMountPointErr    error
 
 	MountedDevicePaths []string
 
@@ -215,9 +218,10 @@ func (p *FakePlatform) SetupTmpDir() error {
 }
 
 func (p *FakePlatform) MountPersistentDisk(devicePath, mountPoint string) (err error) {
+	p.MountPersistentDiskCalled = true
 	p.MountPersistentDiskDevicePath = devicePath
 	p.MountPersistentDiskMountPoint = mountPoint
-	return
+	return p.MountPersistentDiskErr
 }
 
 func (p *FakePlatform) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {
@@ -245,10 +249,9 @@ func (p *FakePlatform) MigratePersistentDisk(fromMountPoint, toMountPoint string
 	return
 }
 
-func (p *FakePlatform) IsMountPoint(path string) (result bool, err error) {
+func (p *FakePlatform) IsMountPoint(path string) (bool, error) {
 	p.IsMountPointPath = path
-	result = p.IsMountPointResult
-	return
+	return p.IsMountPointResult, p.IsMountPointErr
 }
 
 func (p *FakePlatform) IsPersistentDiskMounted(path string) (result bool, err error) {

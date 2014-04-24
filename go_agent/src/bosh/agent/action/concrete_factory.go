@@ -68,7 +68,7 @@ func NewFactory(
 			// Disk management
 			"list_disk":    NewListDisk(settings, platform, logger),
 			"migrate_disk": NewMigrateDisk(platform, dirProvider),
-			"mount_disk":   NewMountDisk(settings, infrastructure, platform, dirProvider),
+			"mount_disk":   NewMountDisk(settings, platform, platform, dirProvider),
 			"unmount_disk": NewUnmountDisk(settings, platform),
 
 			// Networking

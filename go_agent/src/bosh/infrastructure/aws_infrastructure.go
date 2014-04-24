@@ -1,18 +1,17 @@
 package infrastructure
 
 import (
-	bosherr "bosh/errors"
-	boshdpresolv "bosh/infrastructure/devicepathresolver"
-	boshplatform "bosh/platform"
-	boshdisk "bosh/platform/disk"
-	boshsettings "bosh/settings"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
+
+	bosherr "bosh/errors"
+	boshdpresolv "bosh/infrastructure/devicepathresolver"
+	boshplatform "bosh/platform"
+	boshsettings "bosh/settings"
 )
 
 type awsInfrastructure struct {
@@ -22,13 +21,16 @@ type awsInfrastructure struct {
 	devicePathResolver boshdpresolv.DevicePathResolver
 }
 
-func NewAwsInfrastructure(metadataHost string, resolver dnsResolver, platform boshplatform.Platform,
-	devicePathResolver boshdpresolv.DevicePathResolver) (inf awsInfrastructure) {
+func NewAwsInfrastructure(
+	metadataHost string,
+	resolver dnsResolver,
+	platform boshplatform.Platform,
+	devicePathResolver boshdpresolv.DevicePathResolver,
+) (inf awsInfrastructure) {
 	inf.metadataHost = metadataHost
 	inf.resolver = resolver
 	inf.platform = platform
 	inf.devicePathResolver = devicePathResolver
-
 	return
 }
 
@@ -215,41 +217,6 @@ func (inf awsInfrastructure) getSettingsAtURL(settingsURL string) (settings bosh
 	err = json.Unmarshal([]byte(wrapper.Settings), &settings)
 	if err != nil {
 		err = bosherr.WrapError(err, "Unmarshalling wrapped settings")
-	}
-	return
-}
-
-func (inf awsInfrastructure) MountPersistentDisk(volumeID string, mountPoint string) (err error) {
-	inf.platform.GetFs().MkdirAll(mountPoint, os.FileMode(0700))
-
-	realPath, err := inf.devicePathResolver.GetRealDevicePath(volumeID)
-
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting real device path")
-		return
-	}
-
-	partitions := []boshdisk.Partition{
-		{Type: boshdisk.PartitionTypeLinux},
-	}
-
-	err = inf.platform.GetDiskManager().GetPartitioner().Partition(realPath, partitions)
-	if err != nil {
-		err = bosherr.WrapError(err, "Partitioning disk")
-		return
-	}
-
-	partitionPath := realPath + "1"
-	err = inf.platform.GetDiskManager().GetFormatter().Format(partitionPath, boshdisk.FileSystemExt4)
-	if err != nil {
-		err = bosherr.WrapError(err, "Formatting partition with ext4")
-		return
-	}
-
-	err = inf.platform.GetDiskManager().GetMounter().Mount(partitionPath, mountPoint)
-	if err != nil {
-		err = bosherr.WrapError(err, "Mounting partition")
-		return
 	}
 	return
 }
