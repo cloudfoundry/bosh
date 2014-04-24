@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -29,7 +28,7 @@ var _ = Describe("wardenInfrastructure", func() {
 	BeforeEach(func() {
 		dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
 		platform = fakeplatform.NewFakePlatform()
-		fakeDevicePathResolver := fakedpresolv.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
+		fakeDevicePathResolver := fakedpresolv.NewFakeDevicePathResolver()
 		inf = NewWardenInfrastructure(dirProvider, platform, fakeDevicePathResolver)
 	})
 

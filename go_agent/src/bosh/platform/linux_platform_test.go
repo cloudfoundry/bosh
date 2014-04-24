@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	boshdpresolv "bosh/infrastructure/devicepathresolver"
+	fakedpresolv "bosh/infrastructure/devicepathresolver/fakes"
 	boshlog "bosh/logger"
 	. "bosh/platform"
 	fakecd "bosh/platform/cdutil/fakes"
@@ -31,6 +31,7 @@ var _ = Describe("LinuxPlatform", func() {
 		diskManager     *fakedisk.FakeDiskManager
 		dirProvider     boshdirs.DirectoriesProvider
 		diskWaitTimeout time.Duration
+		devicePathResolver *fakedpresolv.FakeDevicePathResolver
 		platform        Platform
 		cdutil          *fakecd.FakeCdUtil
 		compressor      boshcmd.Compressor
@@ -53,6 +54,7 @@ var _ = Describe("LinuxPlatform", func() {
 		compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 		copier = boshcmd.NewCpCopier(cmdRunner, fs)
 		vitalsService = boshvitals.NewService(collector, dirProvider)
+		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 
 		fs.SetGlob("/sys/bus/scsi/devices/*:0:0:0/block/*", []string{
 			"/sys/bus/scsi/devices/0:0:0:0/block/sr0",
@@ -85,7 +87,7 @@ var _ = Describe("LinuxPlatform", func() {
 			options,
 			logger,
 		)
-		devicePathResolver := boshdpresolv.NewAwsDevicePathResolver(diskWaitTimeout, fs)
+
 		platform.SetDevicePathResolver(devicePathResolver)
 	})
 
@@ -139,6 +141,7 @@ var _ = Describe("LinuxPlatform", func() {
 			Expect(cmdRunner.RunCommands).To(Equal([][]string{expectedUseradd}))
 		})
 	})
+
 	Describe("AddUserToGroups", func() {
 		It("adds user to groups", func() {
 			err := platform.AddUserToGroups("foo-user", []string{"group1", "group2", "group3"})
@@ -592,29 +595,27 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 	Describe("UnmountPersistentDisk", func() {
 		Context("when not mounted", func() {
 			It("does not unmount persistent disk", func() {
-				fakeMounter := diskManager.FakeMounter
-				fakeMounter.UnmountDidUnmount = false
+				diskManager.FakeMounter.UnmountDidUnmount = false
 
 				fs.WriteFile("/dev/vdx", []byte{})
 
 				didUnmount, err := platform.UnmountPersistentDisk("/dev/sdx")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(false).To(Equal(didUnmount))
-				Expect(fakeMounter.UnmountPartitionPath).To(Equal("/dev/vdx1"))
+				Expect(didUnmount).To(BeFalse())
+				Expect(diskManager.FakeMounter.UnmountPartitionPath).To(Equal("/dev/vdx1"))
 			})
 		})
 
 		Context("when already mounted", func() {
 			It("unmounts persistent disk", func() {
-				fakeMounter := diskManager.FakeMounter
-				fakeMounter.UnmountDidUnmount = true
+				diskManager.FakeMounter.UnmountDidUnmount = true
 
 				fs.WriteFile("/dev/vdx", []byte{})
 
 				didUnmount, err := platform.UnmountPersistentDisk("/dev/sdx")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(true).To(Equal(didUnmount))
-				Expect(fakeMounter.UnmountPartitionPath).To(Equal("/dev/vdx1"))
+				Expect(didUnmount).To(BeTrue())
+				Expect(diskManager.FakeMounter.UnmountPartitionPath).To(Equal("/dev/vdx1"))
 			})
 		})
 	})
@@ -631,60 +632,23 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 	})
 
 	Describe("NormalizeDiskPath", func() {
-		It("normalize disk path", func() {
-			fs.WriteFile("/dev/xvda", []byte{})
-			path, found := platform.NormalizeDiskPath("/dev/sda")
-
-			Expect("/dev/xvda").To(Equal(path))
-			Expect(found).To(BeTrue())
-
-			fs.RemoveAll("/dev/xvda")
-			fs.WriteFile("/dev/vda", []byte{})
-			path, found = platform.NormalizeDiskPath("/dev/sda")
-
-			Expect("/dev/vda").To(Equal(path))
-			Expect(found).To(BeTrue())
-
-			fs.RemoveAll("/dev/vda")
-			fs.WriteFile("/dev/sda", []byte{})
-			path, found = platform.NormalizeDiskPath("/dev/sda")
-
-			Expect("/dev/sda").To(Equal(path))
-			Expect(found).To(BeTrue())
-		})
-
-		It("get real device path with multiple possible devices", func() {
-			fs.WriteFile("/dev/xvda", []byte{})
-			fs.WriteFile("/dev/vda", []byte{})
-
-			realPath, found := platform.NormalizeDiskPath("/dev/sda")
-			Expect(found).To(BeTrue())
-			Expect(realPath).To(Equal("/dev/xvda"))
-		})
-
-		Context("within timeout", func() {
-			BeforeEach(func() {
-				diskWaitTimeout = 1 * time.Second
-			})
-
-			It("get real device path with delay", func() {
-				time.AfterFunc(time.Second, func() {
-					fs.WriteFile("/dev/xvda", []byte{})
-				})
-
-				realPath, found := platform.NormalizeDiskPath("/dev/sda")
+		Context("when real device path was resolved without an error", func() {
+			It("returns real device path and true", func() {
+				devicePathResolver.RegisterRealDevicePath("fake-device-path", "fake-real-device-path")
+				realDevicePath, found := platform.NormalizeDiskPath("fake-device-path")
+				Expect(realDevicePath).To(Equal("fake-real-device-path"))
 				Expect(found).To(BeTrue())
-				Expect(realPath).To(Equal("/dev/xvda"))
 			})
 		})
 
-		It("get real device path with delay beyond timeout", func() {
-			time.AfterFunc(2*time.Second, func() {
-				fs.WriteFile("/dev/xvda", []byte{})
-			})
+		Context("when real device path was not resolved without an error", func() {
+			It("returns real device path and true", func() {
+				devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
 
-			_, found := platform.NormalizeDiskPath("/dev/sda")
-			Expect(found).To(BeFalse())
+				realDevicePath, found := platform.NormalizeDiskPath("fake-device-path")
+				Expect(realDevicePath).To(Equal(""))
+				Expect(found).To(BeFalse())
+			})
 		})
 	})
 

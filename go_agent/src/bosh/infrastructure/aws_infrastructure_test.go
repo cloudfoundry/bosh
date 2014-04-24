@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -35,16 +34,13 @@ func (res *FakeDNSResolver) LookupHost(dnsServers []string, host string) (ip str
 
 func init() {
 	var (
-		platform               *fakeplatform.FakePlatform
-		fakeDevicePathResolver *fakedpresolv.FakeDevicePathResolver
+		platform           *fakeplatform.FakePlatform
+		devicePathResolver *fakedpresolv.FakeDevicePathResolver
 	)
 
 	BeforeEach(func() {
 		platform = fakeplatform.NewFakePlatform()
-		fakeDevicePathResolver = fakedpresolv.NewFakeDevicePathResolver(
-			1*time.Millisecond,
-			platform.GetFs(),
-		)
+		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 	})
 
 	Describe("AWS Infrastructure", func() {
@@ -70,7 +66,7 @@ func init() {
 			})
 
 			It("gets the public key and sets up ssh via the platform", func() {
-				aws = NewAwsInfrastructure(ts.URL, &FakeDNSResolver{}, platform, fakeDevicePathResolver)
+				aws = NewAwsInfrastructure(ts.URL, &FakeDNSResolver{}, platform, devicePathResolver)
 				err := aws.SetupSsh("vcap")
 				Expect(err).NotTo(HaveOccurred())
 
@@ -212,7 +208,7 @@ func init() {
 
 					platform := fakeplatform.NewFakePlatform()
 
-					aws := NewAwsInfrastructure(metadataTs.URL, &FakeDNSResolver{}, platform, fakeDevicePathResolver)
+					aws := NewAwsInfrastructure(metadataTs.URL, &FakeDNSResolver{}, platform, devicePathResolver)
 
 					settings, err := aws.GetSettings()
 					Expect(err).NotTo(HaveOccurred())
@@ -267,7 +263,7 @@ func init() {
 
 					platform := fakeplatform.NewFakePlatform()
 
-					aws := NewAwsInfrastructure(metadataTs.URL, fakeDNSResolver, platform, fakeDevicePathResolver)
+					aws := NewAwsInfrastructure(metadataTs.URL, fakeDNSResolver, platform, devicePathResolver)
 
 					settings, err := aws.GetSettings()
 					Expect(err).NotTo(HaveOccurred())
@@ -282,7 +278,7 @@ func init() {
 			It("sets up DHCP on the platform", func() {
 				fakeDNSResolver := &FakeDNSResolver{}
 				platform := fakeplatform.NewFakePlatform()
-				aws := NewAwsInfrastructure("", fakeDNSResolver, platform, fakeDevicePathResolver)
+				aws := NewAwsInfrastructure("", fakeDNSResolver, platform, devicePathResolver)
 				networks := boshsettings.Networks{"bosh": boshsettings.Network{}}
 
 				aws.SetupNetworking(networks)
@@ -295,7 +291,7 @@ func init() {
 			It("returns the real disk path given an AWS EBS hint", func() {
 				fakeDNSResolver := &FakeDNSResolver{}
 				platform := fakeplatform.NewFakePlatform()
-				aws := NewAwsInfrastructure("", fakeDNSResolver, platform, fakeDevicePathResolver)
+				aws := NewAwsInfrastructure("", fakeDNSResolver, platform, devicePathResolver)
 
 				platform.NormalizeDiskPathRealPath = "/dev/xvdb"
 				platform.NormalizeDiskPathFound = true
@@ -319,9 +315,9 @@ func init() {
 				fakePlatform.GetFs().WriteFile("/dev/vdf", []byte{})
 
 				fakeDNSResolver := &FakeDNSResolver{}
-				aws := NewAwsInfrastructure("", fakeDNSResolver, fakePlatform, fakeDevicePathResolver)
+				aws := NewAwsInfrastructure("", fakeDNSResolver, fakePlatform, devicePathResolver)
 
-				fakeDevicePathResolver.RealDevicePath = "/dev/vdf"
+				devicePathResolver.RegisterRealDevicePath("/dev/sdf", "/dev/vdf")
 				err := aws.MountPersistentDisk("/dev/sdf", "/mnt/point")
 				Expect(err).NotTo(HaveOccurred())
 

@@ -519,12 +519,12 @@ func (p linux) UnmountPersistentDisk(devicePath string) (bool, error) {
 	return p.diskManager.GetMounter().Unmount(realPath + "1")
 }
 
-func (p linux) NormalizeDiskPath(devicePath string) (realPath string, found bool) {
+func (p linux) NormalizeDiskPath(devicePath string) (string, bool) {
 	realPath, err := p.devicePathResolver.GetRealDevicePath(devicePath)
 	if err == nil {
-		found = true
+		return realPath, true
 	}
-	return
+	return "", false
 }
 
 func (p linux) IsMountPoint(path string) (bool, error) {

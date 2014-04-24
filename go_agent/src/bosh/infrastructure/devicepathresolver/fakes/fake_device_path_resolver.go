@@ -1,28 +1,34 @@
 package fakes
 
 import (
-	"time"
-
-	boshsys "bosh/system"
+	"fmt"
 )
 
 type FakeDevicePathResolver struct {
-	diskWaitTimeout time.Duration
-	fs              boshsys.FileSystem
-	RealDevicePath  string
+	realDevicePaths      map[string]string
+	GetRealDevicePathErr error
 }
 
-func NewFakeDevicePathResolver(
-	diskWaitTimeout time.Duration,
-	fs boshsys.FileSystem,
-) (fakeDevicePathResolver *FakeDevicePathResolver) {
-	fakeDevicePathResolver = &FakeDevicePathResolver{}
-	fakeDevicePathResolver.fs = fs
-	fakeDevicePathResolver.diskWaitTimeout = diskWaitTimeout
-	return
+func NewFakeDevicePathResolver() *FakeDevicePathResolver {
+	return &FakeDevicePathResolver{realDevicePaths: map[string]string{}}
 }
 
-func (devicePathResolver *FakeDevicePathResolver) GetRealDevicePath(devicePath string) (realPath string, err error) {
-	realPath = devicePathResolver.RealDevicePath
-	return
+func (r *FakeDevicePathResolver) RegisterRealDevicePath(devicePath, realDevicePath string) {
+	_, found := r.realDevicePaths[devicePath]
+	if found {
+		panic(fmt.Sprintf("Already registered %s", devicePath))
+	}
+	r.realDevicePaths[devicePath] = realDevicePath
+}
+
+func (r *FakeDevicePathResolver) GetRealDevicePath(devicePath string) (string, error) {
+	if r.GetRealDevicePathErr != nil {
+		return "", r.GetRealDevicePathErr
+	}
+
+	realDevicePath, found := r.realDevicePaths[devicePath]
+	if !found {
+		panic(fmt.Sprintf("Could not find real device path for %s", devicePath))
+	}
+	return realDevicePath, nil
 }

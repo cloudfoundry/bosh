@@ -2,12 +2,11 @@ package infrastructure_test
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"path/filepath"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
 
 	. "bosh/infrastructure"
 	fakedpresolv "bosh/infrastructure/devicepathresolver/fakes"
@@ -29,7 +28,7 @@ var _ = Describe("dummyInfrastructure", func() {
 			fs = fakefs.NewFakeFileSystem()
 			dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
 			platform := fakeplatform.NewFakePlatform()
-			fakeDevicePathResolver := fakedpresolv.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
+			fakeDevicePathResolver := fakedpresolv.NewFakeDevicePathResolver()
 			inf = NewDummyInfrastructure(fs, dirProvider, platform, fakeDevicePathResolver)
 		})
 

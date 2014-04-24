@@ -3,7 +3,6 @@ package infrastructure_test
 import (
 	"errors"
 	"os"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -19,20 +18,20 @@ import (
 
 var _ = Describe("vSphere Infrastructure", func() {
 	var (
-		logger                 boshlog.Logger
-		vsphere                Infrastructure
-		platform               *fakeplatform.FakePlatform
-		fakeDevicePathResolver *fakedpresolv.FakeDevicePathResolver
+		logger             boshlog.Logger
+		vsphere            Infrastructure
+		platform           *fakeplatform.FakePlatform
+		devicePathResolver *fakedpresolv.FakeDevicePathResolver
 	)
 
 	BeforeEach(func() {
 		platform = fakeplatform.NewFakePlatform()
-		fakeDevicePathResolver = fakedpresolv.NewFakeDevicePathResolver(1*time.Millisecond, platform.GetFs())
+		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 	})
 
 	JustBeforeEach(func() {
-		vsphere = NewVsphereInfrastructure(platform, fakeDevicePathResolver, logger)
+		vsphere = NewVsphereInfrastructure(platform, devicePathResolver, logger)
 	})
 
 	Describe("GetSettings", func() {
@@ -68,7 +67,7 @@ var _ = Describe("vSphere Infrastructure", func() {
 
 	Describe("MountPersistentDisk", func() {
 		BeforeEach(func() {
-			fakeDevicePathResolver.RealDevicePath = "fake-real-device-path"
+			devicePathResolver.RegisterRealDevicePath("fake-volume-id", "fake-real-device-path")
 		})
 
 		It("creates the mount directory with the correct permissions", func() {
