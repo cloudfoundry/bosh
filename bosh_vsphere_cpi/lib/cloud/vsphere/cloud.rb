@@ -414,7 +414,7 @@ module VSphereCloud
         vm = get_vm_by_cid(vm_cid)
 
         datacenter = client.find_parent(vm, Vim::Datacenter)
-        datacenter_name = client.get_property(datacenter, Vim::Datacenter, 'name')
+        datacenter_name = config.datacenter_name
 
         vm_properties = client.get_properties(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
         host_info = get_vm_host_info(vm)
@@ -704,8 +704,7 @@ module VSphereCloud
       vm_name = options[:vm]
 
       unless datacenter_name
-        datacenter = client.find_parent(vm, Vim::Datacenter)
-        datacenter_name = client.get_property(datacenter, Vim::Datacenter, 'name')
+        datacenter_name = config.datacenter_name
       end
 
       if vm_name.nil? || datastore_name.nil?
