@@ -34,8 +34,8 @@ const swaponUsageOutputWithOtherDevice = `Filename				Type		Size	Used	Priority
 
 var _ = Describe("linuxMounter", func() {
 	var (
-		runner *fakesys.FakeCmdRunner
-		fs     *fakesys.FakeFileSystem
+		runner  *fakesys.FakeCmdRunner
+		fs      *fakesys.FakeFileSystem
 		mounter Mounter
 	)
 
