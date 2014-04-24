@@ -599,7 +599,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				devicePathResolver.RegisterRealDevicePath("fake-volume-id", "fake-real-device-path")
 			})
 
-			Context("when BindMountPersistentDisk set to false", func() {
+			Context("when UsePreformattedPersistentDisk set to false", func() {
 				It("creates the mount directory with the correct permissions", func() {
 					err := act()
 					Expect(err).ToNot(HaveOccurred())
@@ -638,12 +638,13 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 					Expect(err).ToNot(HaveOccurred())
 					Expect(diskManager.FakeMounter.MountPartitionPaths).To(Equal([]string{"fake-real-device-path1"}))
 					Expect(diskManager.FakeMounter.MountMountPoints).To(Equal([]string{"/mnt/point"}))
+					Expect(diskManager.FakeMounter.MountMountOptions).To(Equal([][]string{nil}))
 				})
 			})
 
-			Context("when BindMountPersistentDisk set to true", func() {
+			Context("when UsePreformattedPersistentDisk set to true", func() {
 				BeforeEach(func() {
-					options.BindMountPersistentDisk = true
+					options.UsePreformattedPersistentDisk = true
 				})
 
 				It("creates the mount directory with the correct permissions", func() {
@@ -669,9 +670,9 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 					mounter := diskManager.FakeMounter
 					Expect(len(mounter.MountPartitionPaths)).To(Equal(1))
-					Expect(mounter.MountPartitionPaths[0]).To(Equal("fake-real-device-path")) // no '1' because no partition
-					Expect(mounter.MountMountPoints[0]).To(Equal("/mnt/point"))
-					Expect(mounter.MountMountOptions[0]).To(Equal([]string{"--bind"}))
+					Expect(mounter.MountPartitionPaths).To(Equal([]string{"fake-real-device-path"})) // no '1' because no partition
+					Expect(mounter.MountMountPoints).To(Equal([]string{"/mnt/point"}))
+					Expect(mounter.MountMountOptions).To(Equal([][]string{nil}))
 				})
 
 				It("returns error when mounting fails", func() {
@@ -722,7 +723,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 					didUnmount, err := act()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(didUnmount).To(BeTrue())
-					Expect(diskManager.FakeMounter.UnmountPartitionPath).To(Equal(expectedUnmountMountPoint))
+					Expect(diskManager.FakeMounter.UnmountPartitionPathOrMountPoint).To(Equal(expectedUnmountMountPoint))
 				})
 
 				It("returs false without an error if was already unmounted", func() {
@@ -731,7 +732,7 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 					didUnmount, err := act()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(didUnmount).To(BeFalse())
-					Expect(diskManager.FakeMounter.UnmountPartitionPath).To(Equal(expectedUnmountMountPoint))
+					Expect(diskManager.FakeMounter.UnmountPartitionPathOrMountPoint).To(Equal(expectedUnmountMountPoint))
 				})
 
 				It("returns error if unmounting fails", func() {
@@ -742,20 +743,20 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-unmount-err"))
 					Expect(didUnmount).To(BeFalse())
-					Expect(diskManager.FakeMounter.UnmountPartitionPath).To(Equal(expectedUnmountMountPoint))
+					Expect(diskManager.FakeMounter.UnmountPartitionPathOrMountPoint).To(Equal(expectedUnmountMountPoint))
 				})
 			}
 
-			Context("BindMountPersistentDisk is set to false", func() {
+			Context("UsePreformattedPersistentDisk is set to false", func() {
 				ItUnmountsPersistentDisk("fake-real-device-path1") // note partition '1'
 			})
 
-			Context("BindMountPersistentDisk is set to true", func() {
+			Context("UsePreformattedPersistentDisk is set to true", func() {
 				BeforeEach(func() {
-					options.BindMountPersistentDisk = true
+					options.UsePreformattedPersistentDisk = true
 				})
 
-				ItUnmountsPersistentDisk("fake-real-device-path") // note no '1' as this is bind mount
+				ItUnmountsPersistentDisk("fake-real-device-path") // note no '1'; no partitions
 			})
 		})
 
@@ -807,18 +808,18 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 	Describe("MigratePersistentDisk", func() {
 		It("migrate persistent disk", func() {
+			err := platform.MigratePersistentDisk("/from/path", "/to/path")
+			Expect(err).ToNot(HaveOccurred())
+
 			fakeMounter := diskManager.FakeMounter
-
-			platform.MigratePersistentDisk("/from/path", "/to/path")
-
-			Expect("/from/path").To(Equal(fakeMounter.RemountAsReadonlyPath))
+			Expect(fakeMounter.RemountAsReadonlyPath).To(Equal("/from/path"))
 
 			Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"sh", "-c", "(tar -C /from/path -cf - .) | (tar -C /to/path -xpf -)"}))
 
-			Expect("/from/path").To(Equal(fakeMounter.UnmountPartitionPath))
-			Expect("/to/path").To(Equal(fakeMounter.RemountFromMountPoint))
-			Expect("/from/path").To(Equal(fakeMounter.RemountToMountPoint))
+			Expect(fakeMounter.UnmountPartitionPathOrMountPoint).To(Equal("/from/path"))
+			Expect(fakeMounter.RemountFromMountPoint).To(Equal("/to/path"))
+			Expect(fakeMounter.RemountToMountPoint).To(Equal("/from/path"))
 		})
 	})
 
@@ -865,16 +866,16 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 				})
 			}
 
-			Context("BindMountPersistentDisk is set to false", func() {
+			Context("UsePreformattedPersistentDisk is set to false", func() {
 				ItChecksPersistentDiskMountPoint("fake-real-device-path1") // note partition '1'
 			})
 
-			Context("BindMountPersistentDisk is set to true", func() {
+			Context("UsePreformattedPersistentDisk is set to true", func() {
 				BeforeEach(func() {
-					options.BindMountPersistentDisk = true
+					options.UsePreformattedPersistentDisk = true
 				})
 
-				ItChecksPersistentDiskMountPoint("fake-real-device-path") // note no '1' as this is bind mount
+				ItChecksPersistentDiskMountPoint("fake-real-device-path") // note no '1'; no partitions
 			})
 		})
 

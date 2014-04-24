@@ -28,8 +28,8 @@ type ProviderOptions struct {
 func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider, options ProviderOptions) (p provider) {
 	runner := boshsys.NewExecCmdRunner(logger)
 	fs := boshsys.NewOsFileSystem(logger)
-	sigarCollector := boshstats.NewSigarStatsCollector()
-	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs)
+
+	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, options.Linux.BindMountPersistentDisk)
 
 	udev := boshudev.NewConcreteUdevDevice(runner)
 	linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)
@@ -37,6 +37,8 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 
 	compressor := boshcmd.NewTarballCompressor(runner, fs)
 	copier := boshcmd.NewCpCopier(runner, fs)
+
+	sigarCollector := boshstats.NewSigarStatsCollector()
 	vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
 
 	centosNetManager := boshnet.NewCentosNetManager(fs, runner, 10*time.Second)

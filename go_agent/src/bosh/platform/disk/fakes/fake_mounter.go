@@ -6,18 +6,23 @@ type FakeMounter struct {
 	MountMountOptions   [][]string
 	MountErr            error
 
-	RemountAsReadonlyPath string
+	RemountAsReadonlyCalled bool
+	RemountAsReadonlyPath   string
+	RemountAsReadonlyErr    error
 
 	RemountFromMountPoint string
 	RemountToMountPoint   string
 	RemountMountOptions   []string
+	RemountErr            error
 
 	SwapOnPartitionPaths []string
+	SwapOnErr            error
 
-	UnmountPartitionPath string
-	UnmountDidUnmount    bool
-	UnmountErr           error
+	UnmountPartitionPathOrMountPoint string
+	UnmountDidUnmount                bool
+	UnmountErr                       error
 
+	IsMountPointPath   string
 	IsMountPointResult bool
 	IsMountPointErr    error
 
@@ -34,28 +39,30 @@ func (m *FakeMounter) Mount(partitionPath, mountPoint string, mountOptions ...st
 }
 
 func (m *FakeMounter) RemountAsReadonly(mountPoint string) (err error) {
+	m.RemountAsReadonlyCalled = true
 	m.RemountAsReadonlyPath = mountPoint
-	return
+	return m.RemountAsReadonlyErr
 }
 
 func (m *FakeMounter) Remount(fromMountPoint, toMountPoint string, mountOptions ...string) (err error) {
 	m.RemountFromMountPoint = fromMountPoint
 	m.RemountToMountPoint = toMountPoint
 	m.RemountMountOptions = mountOptions
-	return
+	return m.RemountErr
 }
 
 func (m *FakeMounter) SwapOn(partitionPath string) (err error) {
 	m.SwapOnPartitionPaths = append(m.SwapOnPartitionPaths, partitionPath)
-	return
+	return m.SwapOnErr
 }
 
-func (m *FakeMounter) Unmount(partitionPath string) (didUnmount bool, err error) {
-	m.UnmountPartitionPath = partitionPath
+func (m *FakeMounter) Unmount(partitionPathOrMountPoint string) (didUnmount bool, err error) {
+	m.UnmountPartitionPathOrMountPoint = partitionPathOrMountPoint
 	return m.UnmountDidUnmount, m.UnmountErr
 }
 
 func (m *FakeMounter) IsMountPoint(path string) (result bool, err error) {
+	m.IsMountPointPath = path
 	return m.IsMountPointResult, m.IsMountPointErr
 }
 

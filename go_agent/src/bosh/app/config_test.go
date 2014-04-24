@@ -24,6 +24,7 @@ var _ = Describe("LoadConfigFromPath", func() {
 			"Platform": {
 				"Linux": {
 					"UseDefaultTmpDir": true,
+					"UsePreformattedPersistentDisk": true,
 					"BindMountPersistentDisk": true
 				}
 			}
@@ -34,8 +35,9 @@ var _ = Describe("LoadConfigFromPath", func() {
 		Expect(config).To(Equal(Config{
 			Platform: boshplatform.ProviderOptions{
 				Linux: boshplatform.LinuxOptions{
-					UseDefaultTmpDir:        true,
-					BindMountPersistentDisk: true,
+					UseDefaultTmpDir:              true,
+					UsePreformattedPersistentDisk: true,
+					BindMountPersistentDisk:       true,
 				},
 			},
 		}))

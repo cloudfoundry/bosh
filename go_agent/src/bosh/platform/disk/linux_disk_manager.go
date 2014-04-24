@@ -1,9 +1,10 @@
 package disk
 
 import (
+	"time"
+
 	boshlog "bosh/logger"
 	boshsys "bosh/system"
-	"time"
 )
 
 type linuxDiskManager struct {
@@ -12,11 +13,23 @@ type linuxDiskManager struct {
 	mounter     Mounter
 }
 
-func NewLinuxDiskManager(logger boshlog.Logger, runner boshsys.CmdRunner, fs boshsys.FileSystem) (manager Manager) {
+func NewLinuxDiskManager(
+	logger boshlog.Logger,
+	runner boshsys.CmdRunner,
+	fs boshsys.FileSystem,
+	bindMount bool,
+) (manager Manager) {
+	var mounter Mounter
+
+	mounter = NewLinuxMounter(runner, fs, 1*time.Second)
+	if bindMount {
+		mounter = NewLinuxBindMounter(mounter)
+	}
+
 	return linuxDiskManager{
 		partitioner: NewSfdiskPartitioner(logger, runner),
 		formatter:   NewLinuxFormatter(runner, fs),
-		mounter:     NewLinuxMounter(runner, fs, 1*time.Second),
+		mounter:     mounter,
 	}
 }
 

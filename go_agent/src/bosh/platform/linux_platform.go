@@ -30,8 +30,11 @@ type LinuxOptions struct {
 	// is not going to be overlayed over /tmp to limit /tmp dir size
 	UseDefaultTmpDir bool
 
-	// When set to true persistent disk will not be partitioned/formatted
-	// since it will be assumed to be a bind-mountable directory
+	// When set to true persistent disk will be assumed to be pre-formatted;
+	// otherwise agent will partition and format it right before mounting
+	UsePreformattedPersistentDisk bool
+
+	// When set to true persistent disk will be mounted as a bind-mount
 	BindMountPersistentDisk bool
 }
 
@@ -525,31 +528,27 @@ func (p linux) MountPersistentDisk(devicePath, mountPoint string) error {
 		return bosherr.WrapError(err, "Getting real device path")
 	}
 
-	if p.options.BindMountPersistentDisk {
-		err = p.diskManager.GetMounter().Mount(realPath, mountPoint, "--bind")
-		if err != nil {
-			return bosherr.WrapError(err, "Mounting partition")
+	if !p.options.UsePreformattedPersistentDisk {
+		partitions := []boshdisk.Partition{
+			{Type: boshdisk.PartitionTypeLinux},
 		}
 
-		return nil
+		err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
+		if err != nil {
+			return bosherr.WrapError(err, "Partitioning disk")
+		}
+
+		partitionPath := realPath + "1"
+
+		err = p.diskManager.GetFormatter().Format(partitionPath, boshdisk.FileSystemExt4)
+		if err != nil {
+			return bosherr.WrapError(err, "Formatting partition with ext4")
+		}
+
+		realPath = partitionPath
 	}
 
-	partitions := []boshdisk.Partition{
-		{Type: boshdisk.PartitionTypeLinux},
-	}
-
-	err = p.diskManager.GetPartitioner().Partition(realPath, partitions)
-	if err != nil {
-		return bosherr.WrapError(err, "Partitioning disk")
-	}
-
-	partitionPath := realPath + "1"
-	err = p.diskManager.GetFormatter().Format(partitionPath, boshdisk.FileSystemExt4)
-	if err != nil {
-		return bosherr.WrapError(err, "Formatting partition with ext4")
-	}
-
-	err = p.diskManager.GetMounter().Mount(partitionPath, mountPoint)
+	err = p.diskManager.GetMounter().Mount(realPath, mountPoint)
 	if err != nil {
 		return bosherr.WrapError(err, "Mounting partition")
 	}
@@ -565,7 +564,7 @@ func (p linux) UnmountPersistentDisk(devicePath string) (bool, error) {
 		return false, bosherr.WrapError(err, "Getting real device path")
 	}
 
-	if !p.options.BindMountPersistentDisk {
+	if !p.options.UsePreformattedPersistentDisk {
 		realPath += "1"
 	}
 
@@ -622,7 +621,7 @@ func (p linux) IsPersistentDiskMounted(path string) (bool, error) {
 		return false, bosherr.WrapError(err, "Getting real device path")
 	}
 
-	if !p.options.BindMountPersistentDisk {
+	if !p.options.UsePreformattedPersistentDisk {
 		realPath += "1"
 	}
 
