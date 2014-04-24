@@ -75,6 +75,7 @@ module Bosh::Dev::Openstack
           'default_security_groups' => ['default'],
           'private_key' => env['BOSH_OPENSTACK_PRIVATE_KEY'],
           'state_timeout' => state_timeout,
+          'wait_resource_poll_interval' => 5,
           'connection_options' => {
             'connect_timeout' => connection_timeout,
           }
