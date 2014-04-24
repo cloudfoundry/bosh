@@ -565,7 +565,11 @@ func (p linux) UnmountPersistentDisk(devicePath string) (bool, error) {
 		return false, bosherr.WrapError(err, "Getting real device path")
 	}
 
-	return p.diskManager.GetMounter().Unmount(realPath + "1")
+	if !p.options.BindMountPersistentDisk {
+		realPath += "1"
+	}
+
+	return p.diskManager.GetMounter().Unmount(realPath)
 }
 
 func (p linux) NormalizeDiskPath(devicePath string) (string, bool) {
@@ -618,7 +622,11 @@ func (p linux) IsPersistentDiskMounted(path string) (bool, error) {
 		return false, bosherr.WrapError(err, "Getting real device path")
 	}
 
-	return p.diskManager.GetMounter().IsMounted(realPath + "1")
+	if !p.options.BindMountPersistentDisk {
+		realPath += "1"
+	}
+
+	return p.diskManager.GetMounter().IsMounted(realPath)
 }
 
 func (p linux) StartMonit() (err error) {
