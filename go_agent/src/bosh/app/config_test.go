@@ -23,23 +23,22 @@ var _ = Describe("LoadConfigFromPath", func() {
 		fs.WriteFileString("/fake-config.conf", `{
 			"Platform": {
 				"Linux": {
-					"UseDefaultTmpDir": true
+					"UseDefaultTmpDir": true,
+					"BindMountPersistentDisk": true
 				}
 			}
 		}`)
 
 		config, err := LoadConfigFromPath(fs, "/fake-config.conf")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(config).To(Equal(
-			Config{
-				Platform: boshplatform.ProviderOptions{
-					Linux: boshplatform.LinuxOptions{
-						UseDefaultTmpDir: true,
-					},
+		Expect(config).To(Equal(Config{
+			Platform: boshplatform.ProviderOptions{
+				Linux: boshplatform.LinuxOptions{
+					UseDefaultTmpDir:        true,
+					BindMountPersistentDisk: true,
 				},
 			},
-		))
-
+		}))
 	})
 
 	It("returns empty config if path is empty", func() {

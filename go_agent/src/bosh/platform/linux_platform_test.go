@@ -595,48 +595,116 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 	Describe("MountPersistentDisk", func() {
 		act := func() error { return platform.MountPersistentDisk("fake-volume-id", "/mnt/point") }
 
-		BeforeEach(func() {
-			devicePathResolver.RegisterRealDevicePath("fake-volume-id", "fake-real-device-path")
+		Context("when device path is successfully resolved", func() {
+			BeforeEach(func() {
+				devicePathResolver.RegisterRealDevicePath("fake-volume-id", "fake-real-device-path")
+			})
+
+			Context("when BindMountPersistentDisk set to false", func() {
+				It("creates the mount directory with the correct permissions", func() {
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+
+					mountPoint := fs.GetFileTestStat("/mnt/point")
+					Expect(mountPoint.FileType).To(Equal(fakesys.FakeFileTypeDir))
+					Expect(mountPoint.FileMode).To(Equal(os.FileMode(0700)))
+				})
+
+				It("returns error when creating mount directory fails", func() {
+					fs.MkdirAllError = errors.New("fake-mkdir-all-err")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
+				})
+
+				It("partitions the disk", func() {
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+
+					partitions := []boshdisk.Partition{{Type: boshdisk.PartitionTypeLinux}}
+					Expect(diskManager.FakePartitioner.PartitionDevicePath).To(Equal("fake-real-device-path"))
+					Expect(diskManager.FakePartitioner.PartitionPartitions).To(Equal(partitions))
+				})
+
+				It("formats the disk", func() {
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(diskManager.FakeFormatter.FormatPartitionPaths).To(Equal([]string{"fake-real-device-path1"}))
+					Expect(diskManager.FakeFormatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
+				})
+
+				It("mounts the disk", func() {
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(diskManager.FakeMounter.MountPartitionPaths).To(Equal([]string{"fake-real-device-path1"}))
+					Expect(diskManager.FakeMounter.MountMountPoints).To(Equal([]string{"/mnt/point"}))
+				})
+			})
+
+			Context("when BindMountPersistentDisk set to true", func() {
+				BeforeEach(func() {
+					options.BindMountPersistentDisk = true
+				})
+
+				It("creates the mount directory with the correct permissions", func() {
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+
+					mountPoint := fs.GetFileTestStat("/mnt/point")
+					Expect(mountPoint.FileType).To(Equal(fakesys.FakeFileTypeDir))
+					Expect(mountPoint.FileMode).To(Equal(os.FileMode(0700)))
+				})
+
+				It("returns error when creating mount directory fails", func() {
+					fs.MkdirAllError = errors.New("fake-mkdir-all-err")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
+				})
+
+				It("mounts volume at mount point", func() {
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+
+					mounter := diskManager.FakeMounter
+					Expect(len(mounter.MountPartitionPaths)).To(Equal(1))
+					Expect(mounter.MountPartitionPaths[0]).To(Equal("fake-real-device-path")) // no '1' because no partition
+					Expect(mounter.MountMountPoints[0]).To(Equal("/mnt/point"))
+					Expect(mounter.MountMountOptions[0]).To(Equal([]string{"--bind"}))
+				})
+
+				It("returns error when mounting fails", func() {
+					diskManager.FakeMounter.MountErr = errors.New("fake-mount-err")
+
+					err := act()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-mount-err"))
+				})
+
+				It("does not partition the disk", func() {
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(diskManager.FakePartitioner.PartitionCalled).To(BeFalse())
+				})
+
+				It("does not format the disk", func() {
+					err := act()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(diskManager.FakeFormatter.FormatCalled).To(BeFalse())
+				})
+			})
 		})
 
-		It("creates the mount directory with the correct permissions", func() {
-			err := act()
-			Expect(err).ToNot(HaveOccurred())
+		Context("when device path is not successfully resolved", func() {
+			It("return an error", func() {
+				devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
 
-			mountPoint := fs.GetFileTestStat("/mnt/point")
-			Expect(mountPoint.FileType).To(Equal(fakesys.FakeFileTypeDir))
-			Expect(mountPoint.FileMode).To(Equal(os.FileMode(0700)))
-		})
-
-		It("returns error when creating mount directory fails", func() {
-			fs.MkdirAllError = errors.New("fake-mkdir-all-err")
-
-			err := act()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fake-mkdir-all-err"))
-		})
-
-		It("partitions the disk", func() {
-			err := act()
-			Expect(err).ToNot(HaveOccurred())
-
-			partitions := []boshdisk.Partition{{Type: boshdisk.PartitionTypeLinux}}
-			Expect(diskManager.FakePartitioner.PartitionDevicePath).To(Equal("fake-real-device-path"))
-			Expect(diskManager.FakePartitioner.PartitionPartitions).To(Equal(partitions))
-		})
-
-		It("formats the disk", func() {
-			err := act()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(diskManager.FakeFormatter.FormatPartitionPaths).To(Equal([]string{"fake-real-device-path1"}))
-			Expect(diskManager.FakeFormatter.FormatFsTypes).To(Equal([]boshdisk.FileSystemType{boshdisk.FileSystemExt4}))
-		})
-
-		It("mounts the disk", func() {
-			err := act()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(diskManager.FakeMounter.MountPartitionPaths).To(Equal([]string{"fake-real-device-path1"}))
-			Expect(diskManager.FakeMounter.MountMountPoints).To(Equal([]string{"/mnt/point"}))
+				err := act()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-get-real-device-path-err"))
+			})
 		})
 	})
 

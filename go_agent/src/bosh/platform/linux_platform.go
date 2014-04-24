@@ -29,6 +29,10 @@ type LinuxOptions struct {
 	// When set to true loop back device
 	// is not going to be overlayed over /tmp to limit /tmp dir size
 	UseDefaultTmpDir bool
+
+	// When set to true persistent disk will not be partitioned/formatted
+	// since it will be assumed to be a bind-mountable directory
+	BindMountPersistentDisk bool
 }
 
 type linux struct {
@@ -519,6 +523,15 @@ func (p linux) MountPersistentDisk(devicePath, mountPoint string) error {
 	realPath, err := p.devicePathResolver.GetRealDevicePath(devicePath)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting real device path")
+	}
+
+	if p.options.BindMountPersistentDisk {
+		err = p.diskManager.GetMounter().Mount(realPath, mountPoint, "--bind")
+		if err != nil {
+			return bosherr.WrapError(err, "Mounting partition")
+		}
+
+		return nil
 	}
 
 	partitions := []boshdisk.Partition{
