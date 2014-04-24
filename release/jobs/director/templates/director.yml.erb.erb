@@ -249,6 +249,7 @@ cloud:
             datastore_pattern: <%= dc['datastore_pattern'] %>
             persistent_datastore_pattern: <%= dc['persistent_datastore_pattern'] %>
             allow_mixed_datastores: <%= dc.fetch('allow_mixed_datastores', true) %>
+            srm: <%= dc.fetch('srm', false) %>
             clusters:
               <% dc['clusters'].each do |cluster| %>
                 <% case cluster
