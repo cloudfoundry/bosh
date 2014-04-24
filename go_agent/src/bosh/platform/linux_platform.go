@@ -562,7 +562,7 @@ func (p linux) MigratePersistentDisk(fromMountPoint, toMountPoint string) (err e
 	return
 }
 
-func (p linux) IsDevicePathMounted(path string) (result bool, err error) {
+func (p linux) IsPersistentDiskMounted(path string) (result bool, err error) {
 	realPath, err := p.devicePathResolver.GetRealDevicePath(path)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting real device path")

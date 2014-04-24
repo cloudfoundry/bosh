@@ -36,7 +36,7 @@ func (a ListDiskAction) Run() (value interface{}, err error) {
 
 	for volumeID, devicePath := range disks.Persistent {
 		var isMounted bool
-		isMounted, err = a.platform.IsDevicePathMounted(devicePath)
+		isMounted, err = a.platform.IsPersistentDiskMounted(devicePath)
 		if err != nil {
 			bosherr.WrapError(err, "Checking whether device %s is mounted", devicePath)
 			return

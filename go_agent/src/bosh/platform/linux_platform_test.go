@@ -705,13 +705,13 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		})
 	})
 
-	Describe("IsDevicePathMounted", func() {
+	Describe("IsPersistentDiskMounted", func() {
 		It("is device path mounted", func() {
 			fs.WriteFile("/dev/xvda", []byte{})
 			fakeMounter := diskManager.FakeMounter
 			fakeMounter.IsMountedResult = true
 
-			result, err := platform.IsDevicePathMounted("/dev/sda")
+			result, err := platform.IsPersistentDiskMounted("/dev/sda")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(BeTrue())
 			Expect("/dev/xvda1").To(Equal(fakeMounter.IsMountedDevicePathOrMountPoint))

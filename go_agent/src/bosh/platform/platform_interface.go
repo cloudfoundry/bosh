@@ -49,7 +49,7 @@ type Platform interface {
 	MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error)
 	NormalizeDiskPath(devicePath string) (realPath string, found bool)
 	IsMountPoint(path string) (result bool, err error)
-	IsDevicePathMounted(path string) (result bool, err error)
+	IsPersistentDiskMounted(path string) (result bool, err error)
 
 	GetFileContentsFromCDROM(filePath string) (contents []byte, err error)
 

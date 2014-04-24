@@ -162,7 +162,7 @@ func (p dummyPlatform) IsMountPoint(path string) (result bool, err error) {
 	return
 }
 
-func (p dummyPlatform) IsDevicePathMounted(path string) (result bool, err error) {
+func (p dummyPlatform) IsPersistentDiskMounted(path string) (result bool, err error) {
 	return
 }
 

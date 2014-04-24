@@ -253,7 +253,7 @@ func (p *FakePlatform) IsMountPoint(path string) (result bool, err error) {
 	return
 }
 
-func (p *FakePlatform) IsDevicePathMounted(path string) (result bool, err error) {
+func (p *FakePlatform) IsPersistentDiskMounted(path string) (result bool, err error) {
 	for _, mountedPath := range p.MountedDevicePaths {
 		if mountedPath == path {
 			return true, nil
