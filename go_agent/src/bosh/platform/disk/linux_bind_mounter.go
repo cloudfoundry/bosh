@@ -14,7 +14,8 @@ func (m linuxBindMounter) Mount(partitionPath, mountPoint string, mountOptions .
 }
 
 func (m linuxBindMounter) RemountAsReadonly(mountPoint string) error {
-	// Remounting mount points mounted originally by warden with '-r ro --bind' flags does not work
+	// Remounting mount points mounted originally by warden with '-o ro --bind' flags does not work.
+	// See https://lwn.net/Articles/281157/.
 	return nil
 }
 
