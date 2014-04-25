@@ -87,9 +87,9 @@ jobs:
           - <%= properties.deployment_static_ip %>
         <% end %>
       <% end %>
+      <% if properties.use_vip %>
       - name: static
         static_ips:
-      <% if properties.use_vip %>
           - <%= properties.vip %>
       <% end %>
 
