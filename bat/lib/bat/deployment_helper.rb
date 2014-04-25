@@ -152,7 +152,11 @@ module Bat
     end
 
     def dynamic_network?
-      @spec['properties']['network']['type'] == 'dynamic'
+      network_type == 'dynamic'
+    end
+
+    def network_type
+      @spec['properties']['network']['type']
     end
 
     def get_task_id(output, state = 'done')

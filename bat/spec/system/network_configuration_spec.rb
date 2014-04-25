@@ -69,7 +69,7 @@ describe 'network configuration' do
 
   context 'when using manual networking' do
     before do
-      unless @requirements.stemcell.supports_network_reconfiguration?
+      unless @requirements.stemcell.supports_changing_static_ip?(network_type)
         pending "network reconfiguration does not work for #{@requirements.stemcell}"
       end
     end

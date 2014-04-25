@@ -81,10 +81,16 @@ jobs:
     networks:
       - name: default
         default: [dns, gateway]
-      <% if properties.use_static_ip %>
+      <% if p('network.type') == 'manual' %>
+        static_ips:
+        <% if properties.use_static_ip %>
+          - <%= properties.deployment_static_ip %>
+        <% end %>
+      <% end %>
       - name: static
         static_ips:
-          - <%= properties.deployment_static_ip %>
+      <% if properties.use_vip %>
+          - <%= properties.vip %>
       <% end %>
 
 properties:
