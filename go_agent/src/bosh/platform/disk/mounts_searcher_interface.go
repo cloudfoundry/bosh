@@ -1,7 +1,10 @@
 package disk
 
-type MountSearchCallBack func(string, string) (bool, error)
+type Mount struct {
+	PartitionPath string
+	MountPoint string
+}
 
 type MountsSearcher interface {
-	SearchMounts(mountFieldsFunc MountSearchCallBack) (found bool, err error)
+	SearchMounts() ([]Mount, error)
 }

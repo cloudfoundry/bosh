@@ -15,25 +15,26 @@ func NewProcMountsSearcher(fs boshsys.FileSystem) procMountsSearcher {
 	return procMountsSearcher{fs}
 }
 
-func (s procMountsSearcher) SearchMounts(mountFieldsFunc MountSearchCallBack) (bool, error) {
+func (s procMountsSearcher) SearchMounts() ([]Mount, error) {
+	var mounts []Mount
+
 	mountInfo, err := s.fs.ReadFileString("/proc/mounts")
 	if err != nil {
-		return false, bosherr.WrapError(err, "Reading /proc/mounts")
+		return mounts, bosherr.WrapError(err, "Reading /proc/mounts")
 	}
 
 	for _, mountEntry := range strings.Split(mountInfo, "\n") {
 		if mountEntry == "" {
 			continue
 		}
-		mountFields := strings.Fields(mountEntry)
-		mountedPartitionPath := mountFields[0]
-		mountedMountPoint := mountFields[1]
 
-		found, err := mountFieldsFunc(mountedPartitionPath, mountedMountPoint)
-		if found || err != nil {
-			return found, err
-		}
+		mountFields := strings.Fields(mountEntry)
+
+		mounts = append(mounts, Mount{
+			PartitionPath: mountFields[0],
+			MountPoint: mountFields[1],
+		})
 	}
 
-	return false, nil
+	return mounts, nil
 }

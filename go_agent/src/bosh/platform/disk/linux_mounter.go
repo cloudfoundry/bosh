@@ -110,54 +110,60 @@ func (m linuxMounter) Unmount(partitionOrMountPoint string) (bool, error) {
 }
 
 func (m linuxMounter) IsMountPoint(path string) (bool, error) {
-	return m.mountsSearcher.SearchMounts(func(_, mountedMountPoint string) (found bool, err error) {
-		if mountedMountPoint == path {
+	mounts, _ := m.mountsSearcher.SearchMounts()
+	// todo err
+
+	for _, mount:= range mounts {
+		if mount.MountPoint == path {
 			return true, nil
 		}
-		return false, nil
-	})
+	}
+
+	return false, nil
 }
 
 func (m linuxMounter) findDeviceMatchingMountPoint(mountPoint string) (string, bool, error) {
-	var devicePath string
+	mounts, _ := m.mountsSearcher.SearchMounts()
+	// todo err
 
-	found, err := m.mountsSearcher.SearchMounts(func(mountedPartitionPath, mountedMountPoint string) (found bool, err error) {
-		if mountedMountPoint == mountPoint {
-			devicePath = mountedPartitionPath
-			return true, nil
+	for _, mount:= range mounts {
+		if mount.MountPoint == mountPoint {
+			return mount.PartitionPath, true, nil
 		}
-		return false, nil
-	})
-	return devicePath, found, err
+	}
+
+	return "", false, nil
 }
 
 func (m linuxMounter) IsMounted(partitionOrMountPoint string) (bool, error) {
-	return m.mountsSearcher.SearchMounts(func(mountedPartitionPath, mountedMountPoint string) (bool, error) {
-		if mountedPartitionPath == partitionOrMountPoint || mountedMountPoint == partitionOrMountPoint {
+	mounts, _ := m.mountsSearcher.SearchMounts()
+	// todo err
+
+	for _, mount:= range mounts {
+		if mount.PartitionPath == partitionOrMountPoint || mount.MountPoint == partitionOrMountPoint  {
 			return true, nil
 		}
-		return false, nil
-	})
+	}
+
+	return false, nil
 }
 
 func (m linuxMounter) shouldMount(partitionPath, mountPoint string) (bool, error) {
-	isMounted, err := m.mountsSearcher.SearchMounts(func(mountedPartitionPath, mountedMountPoint string) (bool, error) {
+	mounts, _ := m.mountsSearcher.SearchMounts()
+	// todo err
+
+	for _, mount:= range mounts {
 		switch {
-		case mountedPartitionPath == partitionPath && mountedMountPoint == mountPoint:
-			return true, nil
-		case mountedPartitionPath == partitionPath && mountedMountPoint != mountPoint:
-			return false, bosherr.New("Device %s is already mounted to %s, can't mount to %s",
-				mountedPartitionPath, mountedMountPoint, mountPoint)
-		case mountedMountPoint == mountPoint:
-			return false, bosherr.New("Device %s is already mounted to %s, can't mount %s",
-				mountedPartitionPath, mountedMountPoint, partitionPath)
-		default:
+		case mount.PartitionPath == partitionPath && mount.MountPoint == mountPoint:
 			return false, nil
+		case mount.PartitionPath == partitionPath && mount.MountPoint != mountPoint:
+			return false,  bosherr.New("Device %s is already mounted to %s, can't mount to %s",
+				mount.PartitionPath, mount.MountPoint, mountPoint)
+		case mount.MountPoint == mountPoint:
+			return false, bosherr.New("Device %s is already mounted to %s, can't mount %s",
+				mount.PartitionPath, mount.MountPoint, partitionPath)
 		}
-	})
-	if err != nil {
-		return false, bosherr.WrapError(err, "Searching mounts")
 	}
 
-	return !isMounted, nil
+	return true, nil
 }
