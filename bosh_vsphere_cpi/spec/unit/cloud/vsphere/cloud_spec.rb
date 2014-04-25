@@ -3,8 +3,8 @@ require 'spec_helper'
 module VSphereCloud
   describe Cloud do
     let(:config) { { fake: 'config' } }
-    let(:cloud_config) { instance_double('VSphereCloud::Config', logger: logger, rest_client:nil ) }
-    let(:logger) { instance_double('Logger', info: nil) }
+    let(:cloud_config) { instance_double('VSphereCloud::Config', logger: logger, rest_client:nil ).as_null_object }
+    let(:logger) { instance_double('Logger', info: nil, debug: nil) }
     let(:client) { double('fake client') }
 
     subject(:vsphere_cloud) { Cloud.new(config) }
@@ -581,6 +581,140 @@ module VSphereCloud
               )
             ).to eq(vm)
           end
+        end
+      end
+    end
+
+    describe '#attach_disk' do
+      before { allow(vsphere_cloud).to receive(:with_thread_name).and_yield }
+
+      let(:disk_model) { class_double('VSphereCloud::Models::Disk').as_stubbed_const }
+      let(:disk_cid) { 'fake-disk-cid' }
+      let(:disk) do
+        instance_double(
+          'VSphereCloud::Models::Disk',
+          size: 1024,
+          uuid: disk_cid,
+          datacenter: 'fake-folder/fake-datacenter-name',
+          datastore: 'fake-datastore-name',
+          path: nil
+        )
+      end
+      before { allow(disk_model).to receive(:first).with(uuid: disk_cid).and_return(disk) }
+
+      let(:vm_cid) { 'fake-vm-cid' }
+
+      let(:vm_folder) { instance_double('VSphereCloud::Resources::Folder', name: 'vm') }
+
+      before { allow(cloud_config).to receive(:datacenter_name).with(no_args).and_return('fake-folder/fake-datacenter-name') }
+
+      let(:vm) { instance_double('VimSdk::Vim::VirtualMachine') }
+      before { allow(client).to receive(:find_by_inventory_path).and_return(vm) }
+
+      let(:datastore) { instance_double('VSphereCloud::Resources::Datastore', mob: nil, name: 'fake-datastore-name') }
+      before { allow(vsphere_cloud).to receive(:get_vm_host_info).and_return({'datastores' => ['fake-datastore-name']}) }
+      before { allow(vsphere_cloud).to receive(:get_primary_datastore).and_return(datastore) }
+
+      let(:device) { instance_double('VimSdk::Vim::Vm::Device::VirtualDisk', controller_key: nil) }
+      before { allow(device).to receive(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualDisk).and_return(true) }
+
+      let(:datacenter) { instance_double('VSphereCloud::Resources::Datacenter', disk_path: 'fake-disk-path', name: 'fake-datacenter-name', vm_folder: vm_folder) }
+      before do
+        allow_any_instance_of(VSphereCloud::Resources).to receive(:datacenters).and_return({ 'fake-folder/fake-datacenter-name' => datacenter })
+        allow_any_instance_of(VSphereCloud::Resources).to receive(:place_persistent_datastore).and_return(datastore)
+      end
+
+      let(:agent_env) { { 'disks' => { 'persistent' => { disk_cid => 'fake-device-number' } } } }
+      before { allow(vsphere_cloud).to receive(:get_current_agent_env).and_return(agent_env) }
+
+      let(:config_spec) { instance_double('VimSdk::Vim::Vm::ConfigSpec', :device_change= => nil, :device_change => []) }
+      before { allow(VimSdk::Vim::Vm::ConfigSpec).to receive(:new).and_return(config_spec) }
+
+      before do
+        allow(Dir).to receive(:mktmpdir).and_return('fake-tmp-dir')
+        allow_any_instance_of(VSphereCloud::Cloud).to receive(:`).with('tar -C fake-tmp-dir -xzf fake-disk-path 2>&1')
+
+        allow(client).to receive(:find_parent).and_return(:datacenter)
+        allow(client).to receive(:get_properties).and_return({'config.hardware.device' => [device], 'name' => 'fake-vm-name'})
+        allow(client).to receive(:get_property).with(datastore, VimSdk::Vim::Datastore, 'name').and_return('fake-datastore-name')
+      end
+
+      context 'when disk already exists' do
+        before { allow(disk).to receive(:path).and_return('fake-disk-path') }
+
+        context 'when disk is in correct datacenter' do
+          before do
+            allow_any_instance_of(VSphereCloud::Resources).to receive(:validate_persistent_datastore).and_return(true)
+            allow_any_instance_of(VSphereCloud::Resources).to receive(:persistent_datastore).and_return(datastore)
+          end
+
+          it 'does not update the disk' do
+            expect(disk).to_not receive(:save)
+            expect(vsphere_cloud).to receive(:set_agent_env)
+            expect(client).to receive(:reconfig_vm)
+
+            vsphere_cloud.attach_disk('fake-image', disk_cid)
+          end
+        end
+
+        context 'when disk is in incorrect datacenter' do
+          before do
+            allow_any_instance_of(VSphereCloud::Resources).to receive(:validate_persistent_datastore).and_return(false)
+          end
+
+          context 'when it is configured to copy disk' do
+            before { allow(cloud_config).to receive(:copy_disks).and_return(true) }
+
+            it 'copies the disk' do
+              expect(client).to receive(:copy_disk)
+              expect(disk).to receive(:datacenter=).with('fake-folder/fake-datacenter-name')
+              expect(disk).to receive(:datastore=).with('fake-datastore-name')
+              expect(disk).to receive(:path=).with('[fake-datastore-name] fake-disk-path/fake-disk-cid')
+              expect(disk).to receive(:save)
+              expect(vsphere_cloud).to receive(:set_agent_env)
+              expect(client).to receive(:reconfig_vm)
+
+              vsphere_cloud.attach_disk('fake-image', disk_cid)
+            end
+          end
+
+          context 'when it is configured to move disk' do
+            before { allow(cloud_config).to receive(:copy_disks).and_return(false) }
+
+            it 'moves the disk' do
+              expect(client).to receive(:move_disk)
+              expect(disk).to receive(:datacenter=).with('fake-folder/fake-datacenter-name')
+              expect(disk).to receive(:datastore=).with('fake-datastore-name')
+              expect(disk).to receive(:path=).with('[fake-datastore-name] fake-disk-path/fake-disk-cid')
+              expect(disk).to receive(:save)
+
+              expect(vsphere_cloud).to receive(:set_agent_env)
+              expect(client).to receive(:reconfig_vm)
+
+              vsphere_cloud.attach_disk('fake-image', disk_cid)
+            end
+          end
+        end
+      end
+
+      context 'when disk does not exist' do
+        let(:expected_agent_env) { agent_env.merge({}) }
+
+        it 'creates a disk' do
+          expect(disk).to receive(:datacenter=).with('fake-folder/fake-datacenter-name')
+          expect(disk).to receive(:datastore=).with('fake-datastore-name')
+          expect(disk).to receive(:path=).with('[fake-datastore-name] fake-disk-path/fake-disk-cid')
+          expect(disk).to receive(:save)
+
+          expect(vsphere_cloud).to receive(:set_agent_env).with(vm, { datacenter: 'fake-folder/fake-datacenter-name', datastore: 'fake-datastore-name', vm: 'fake-vm-name' }, expected_agent_env)
+          actual_device_changes = []
+          allow(config_spec).to receive(:device_change).and_return(actual_device_changes)
+          expect(client).to receive(:reconfig_vm).with(vm, config_spec)
+
+          vsphere_cloud.attach_disk('fake-image', disk_cid)
+
+          expect(actual_device_changes.size).to eq(1)
+          expect(actual_device_changes.first.file_operation).to eq(VimSdk::Vim::Vm::Device::VirtualDeviceSpec::FileOperation::CREATE)
         end
       end
     end
