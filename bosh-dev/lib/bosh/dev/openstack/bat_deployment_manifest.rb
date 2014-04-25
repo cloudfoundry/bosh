@@ -20,8 +20,8 @@ module Bosh::Dev::Openstack
         'cpi' => 'openstack',
         'properties' => {
           'vip' => env['BOSH_OPENSTACK_VIP_BAT_IP'],
-          'static_ip' => env['BOSH_OPENSTACK_VIP_BAT_IP'],
-          'second_static_ip' => env['BOSH_OPENSTACK_SECOND_BAT_IP'],
+          'static_ip' => env['BOSH_OPENSTACK_STATIC_BAT_IP'],
+          'second_static_ip' => env['BOSH_OPENSTACK_SECOND_STATIC_BAT_IP'],
           'uuid' => director_uuid.value,
           'pool_size' => 1,
           'stemcell' => {
