@@ -568,7 +568,7 @@ module VSphereCloud
         if disk
           if disk.path
             datacenter = client.find_by_inventory_path(disk.datacenter)
-            raise Bosh::Clouds::DiskNotFound.new(true), "disk #{disk_cid} not found" if datacenter.nil? || disk.path.nil?
+            raise Bosh::Clouds::DiskNotFound.new(true), "disk #{disk_cid} not found" if datacenter.nil?
 
             client.delete_disk(datacenter, disk.path)
           end
