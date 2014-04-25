@@ -202,9 +202,16 @@ module Bosh::AwsCloud
     def set_vpc_parameters(network_spec)
       manual_network_spec = network_spec.values.select { |spec| ["manual", nil].include? spec["type"] }.first
       if manual_network_spec
-        instance_params[:subnet] = @region.subnets[manual_network_spec["cloud_properties"]["subnet"]]
         instance_params[:private_ip_address] = manual_network_spec["ip"]
       end
+      
+      subnet_network_spec = network_spec.values.select { |spec| 
+        ["manual", nil, "dynamic"].include?(spec["type"]) && 
+        spec.fetch("cloud_properties", {}).has_key?("subnet")
+      }.first
+      if subnet_network_spec
+          instance_params[:subnet] = @region.subnets[subnet_network_spec["cloud_properties"]["subnet"]]
+      end      
     end
 
     def set_availability_zone_parameter(volume_zones, resource_pool_zone, subnet_zone)
