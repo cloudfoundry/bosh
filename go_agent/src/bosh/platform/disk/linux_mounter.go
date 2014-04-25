@@ -55,7 +55,7 @@ func (m linuxMounter) RemountAsReadonly(mountPoint string) error {
 func (m linuxMounter) Remount(fromMountPoint, toMountPoint string, mountOptions ...string) error {
 	partitionPath, found, err := m.findDeviceMatchingMountPoint(fromMountPoint)
 	if err != nil || !found {
-		return bosherr.New("Error finding device for mount point %s", fromMountPoint)
+		return bosherr.WrapError(err, "Error finding device for mount point %s", fromMountPoint)
 	}
 
 	_, err = m.Unmount(fromMountPoint)
@@ -107,8 +107,10 @@ func (m linuxMounter) Unmount(partitionOrMountPoint string) (bool, error) {
 }
 
 func (m linuxMounter) IsMountPoint(path string) (bool, error) {
-	mounts, _ := m.mountsSearcher.SearchMounts()
-	// todo err
+	mounts, err := m.mountsSearcher.SearchMounts()
+	if err != nil {
+		return false, bosherr.WrapError(err, "Searching mounts")
+	}
 
 	for _, mount := range mounts {
 		if mount.MountPoint == path {
@@ -120,8 +122,10 @@ func (m linuxMounter) IsMountPoint(path string) (bool, error) {
 }
 
 func (m linuxMounter) findDeviceMatchingMountPoint(mountPoint string) (string, bool, error) {
-	mounts, _ := m.mountsSearcher.SearchMounts()
-	// todo err
+	mounts, err := m.mountsSearcher.SearchMounts()
+	if err != nil {
+		return "", false, bosherr.WrapError(err, "Searching mounts")
+	}
 
 	for _, mount := range mounts {
 		if mount.MountPoint == mountPoint {
@@ -133,8 +137,10 @@ func (m linuxMounter) findDeviceMatchingMountPoint(mountPoint string) (string, b
 }
 
 func (m linuxMounter) IsMounted(partitionOrMountPoint string) (bool, error) {
-	mounts, _ := m.mountsSearcher.SearchMounts()
-	// todo err
+	mounts, err := m.mountsSearcher.SearchMounts()
+	if err != nil {
+		return false, bosherr.WrapError(err, "Searching mounts")
+	}
 
 	for _, mount := range mounts {
 		if mount.PartitionPath == partitionOrMountPoint || mount.MountPoint == partitionOrMountPoint {
@@ -146,8 +152,10 @@ func (m linuxMounter) IsMounted(partitionOrMountPoint string) (bool, error) {
 }
 
 func (m linuxMounter) shouldMount(partitionPath, mountPoint string) (bool, error) {
-	mounts, _ := m.mountsSearcher.SearchMounts()
-	// todo err
+	mounts, err := m.mountsSearcher.SearchMounts()
+	if err != nil {
+		return false, bosherr.WrapError(err, "Searching mounts")
+	}
 
 	for _, mount := range mounts {
 		switch {

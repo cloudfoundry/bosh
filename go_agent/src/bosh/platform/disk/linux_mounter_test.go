@@ -83,6 +83,15 @@ var _ = Describe("linuxMounter", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(0).To(Equal(len(runner.RunCommands)))
 		})
+
+		It("returns error and does not try to mount anything when searching mounts fails", func() {
+			mountsSearcher.SearchMountsErr = errors.New("fake-search-mounts-err")
+
+			err := mounter.Mount("/dev/foo", "/mnt/foo")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-search-mounts-err"))
+			Expect(0).To(Equal(len(runner.RunCommands)))
+		})
 	})
 
 	Describe("RemountAsReadonly", func() {
@@ -103,6 +112,15 @@ var _ = Describe("linuxMounter", func() {
 			Expect(runner.RunCommands[0]).To(Equal([]string{"umount", "/mnt/bar"}))
 			Expect(runner.RunCommands[1]).To(Equal([]string{"mount", "/dev/baz", "/mnt/bar", "-o", "ro"}))
 		})
+
+		It("returns error and does not try to unmount/mount anything when searching mounts fails", func() {
+			mountsSearcher.SearchMountsErr = errors.New("fake-search-mounts-err")
+
+			err := mounter.RemountAsReadonly("/mnt/bar")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-search-mounts-err"))
+			Expect(0).To(Equal(len(runner.RunCommands)))
+		})
 	})
 
 	Describe("Remount", func() {
@@ -122,6 +140,15 @@ var _ = Describe("linuxMounter", func() {
 			Expect(2).To(Equal(len(runner.RunCommands)))
 			Expect(runner.RunCommands[0]).To(Equal([]string{"umount", "/mnt/foo"}))
 			Expect(runner.RunCommands[1]).To(Equal([]string{"mount", "/dev/baz", "/mnt/bar"}))
+		})
+
+		It("returns error and does not try to unmount/mount anything when searching mounts fails", func() {
+			mountsSearcher.SearchMountsErr = errors.New("fake-search-mounts-err")
+
+			err := mounter.Remount("/mnt/foo", "/mnt/bar")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-search-mounts-err"))
+			Expect(0).To(Equal(len(runner.RunCommands)))
 		})
 	})
 
@@ -200,11 +227,20 @@ var _ = Describe("linuxMounter", func() {
 			Expect(runner.RunCommands[2]).To(Equal([]string{"umount", "/dev/xvdb2"}))
 		})
 
-		It("linux unmount when it fails too many times", func() {
+		It("returns error when it fails to unmount too many times", func() {
 			runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{Error: errors.New("fake-error"), Sticky: true})
 
 			_, err := mounter.Unmount("/dev/xvdb2")
 			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error and does not try to unmount anything when searching mounts fails", func() {
+			mountsSearcher.SearchMountsErr = errors.New("fake-search-mounts-err")
+
+			_, err := mounter.Unmount("/dev/xvdb2")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-search-mounts-err"))
+			Expect(0).To(Equal(len(runner.RunCommands)))
 		})
 	})
 
@@ -221,6 +257,14 @@ var _ = Describe("linuxMounter", func() {
 			isMountPoint, err = mounter.IsMountPoint("/var/vcap/store")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(isMountPoint).To(BeFalse())
+		})
+
+		It("returns error when searching mounts fails", func() {
+			mountsSearcher.SearchMountsErr = errors.New("fake-search-mounts-err")
+
+			_, err := mounter.IsMountPoint("/var/vcap/store")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-search-mounts-err"))
 		})
 	})
 
@@ -241,6 +285,14 @@ var _ = Describe("linuxMounter", func() {
 			isMounted, err = mounter.IsMounted("/var/foo")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(isMounted).To(BeFalse())
+		})
+
+		It("returns error when searching mounts fails", func() {
+			mountsSearcher.SearchMountsErr = errors.New("fake-search-mounts-err")
+
+			_, err := mounter.IsMounted("/var/foo")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-search-mounts-err"))
 		})
 	})
 })
