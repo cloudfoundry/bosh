@@ -8,20 +8,18 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "bosh/platform/disk"
+	fakedisk "bosh/platform/disk/fakes"
 	fakesys "bosh/system/fakes"
 )
 
-type fsWithChangingFile struct {
-	procMounts []string
-	*fakesys.FakeFileSystem
+type changingMountsSearcher struct {
+	mounts [][]Mount
 }
 
-func (fs *fsWithChangingFile) ReadFileString(path string) (content string, err error) {
-	if path == "/proc/mounts" {
-		content = fs.procMounts[0]
-		fs.procMounts = fs.procMounts[1:]
-	}
-	return
+func (s *changingMountsSearcher) SearchMounts() ([]Mount, error) {
+	result := s.mounts[0]
+	s.mounts = s.mounts[1:]
+	return result, nil
 }
 
 const swaponUsageOutput = `Filename				Type		Size	Used	Priority
@@ -34,30 +32,30 @@ const swaponUsageOutputWithOtherDevice = `Filename				Type		Size	Used	Priority
 
 var _ = Describe("linuxMounter", func() {
 	var (
-		runner  *fakesys.FakeCmdRunner
-		fs      *fakesys.FakeFileSystem
-		mounter Mounter
+		runner         *fakesys.FakeCmdRunner
+		mountsSearcher *fakedisk.FakeMountsSearcher
+		mounter        Mounter
 	)
 
 	BeforeEach(func() {
 		runner = fakesys.NewFakeCmdRunner()
-		fs = fakesys.NewFakeFileSystem()
-		mountsSearcher := NewProcMountsSearcher(fs)
-		mounter = NewLinuxMounter(runner, fs, mountsSearcher, 1*time.Millisecond)
+		mountsSearcher = &fakedisk.FakeMountsSearcher{}
+		mounter = NewLinuxMounter(runner, mountsSearcher, 1*time.Millisecond)
 	})
 
 	Describe("Mount", func() {
-		It("linux mount", func() {
-			fs.WriteFile("/proc/mounts", []byte{})
-
+		It("allows to mount disk at given mount point", func() {
 			err := mounter.Mount("/dev/foo", "/mnt/foo")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(1).To(Equal(len(runner.RunCommands)))
 			Expect(runner.RunCommands[0]).To(Equal([]string{"mount", "/dev/foo", "/mnt/foo"}))
 		})
 
-		It("linux mount when disk is already mounted to the good mount point", func() {
-			fs.WriteFileString("/proc/mounts", "/dev/foo /mnt/foo\n/dev/bar /mnt/bar")
+		It("does not try to mount disk again when disk is already mounted to the expected mount point", func() {
+			mountsSearcher.SearchMountsMounts = []Mount{
+				Mount{PartitionPath: "/dev/foo", MountPoint: "/mnt/foo"},
+				Mount{PartitionPath: "/dev/bar", MountPoint: "/mnt/bar"},
+			}
 
 			err := mounter.Mount("/dev/foo", "/mnt/foo")
 			Expect(err).ToNot(HaveOccurred())
@@ -65,7 +63,10 @@ var _ = Describe("linuxMounter", func() {
 		})
 
 		It("returns error when disk is already mounted to the wrong mount point", func() {
-			fs.WriteFileString("/proc/mounts", "/dev/foo /mnt/foobarbaz\n/dev/bar /mnt/bar")
+			mountsSearcher.SearchMountsMounts = []Mount{
+				Mount{PartitionPath: "/dev/foo", MountPoint: "/mnt/foobarbaz"},
+				Mount{PartitionPath: "/dev/bar", MountPoint: "/mnt/bar"},
+			}
 
 			err := mounter.Mount("/dev/foo", "/mnt/foo")
 			Expect(err).To(HaveOccurred())
@@ -73,7 +74,10 @@ var _ = Describe("linuxMounter", func() {
 		})
 
 		It("returns error when another disk is already mounted to mount point", func() {
-			fs.WriteFileString("/proc/mounts", "/dev/baz /mnt/foo\n/dev/bar /mnt/bar")
+			mountsSearcher.SearchMountsMounts = []Mount{
+				Mount{PartitionPath: "/dev/baz", MountPoint: "/mnt/foo"},
+				Mount{PartitionPath: "/dev/bar", MountPoint: "/mnt/bar"},
+			}
 
 			err := mounter.Mount("/dev/foo", "/mnt/foo")
 			Expect(err).To(HaveOccurred())
@@ -83,10 +87,15 @@ var _ = Describe("linuxMounter", func() {
 
 	Describe("RemountAsReadonly", func() {
 		It("remount as readonly", func() {
-			procMounts := []string{"/dev/baz /mnt/bar ext4", "/dev/baz /mnt/bar ext4", ""}
-			changingFs := &fsWithChangingFile{procMounts, fs}
-			mountsSearcher := NewProcMountsSearcher(changingFs)
-			mounter := NewLinuxMounter(runner, changingFs, mountsSearcher, 1*time.Millisecond)
+			changingMountsSearcher := &changingMountsSearcher{
+				[][]Mount{
+					[]Mount{Mount{PartitionPath: "/dev/baz", MountPoint: "/mnt/bar"}},
+					[]Mount{Mount{PartitionPath: "/dev/baz", MountPoint: "/mnt/bar"}},
+					[]Mount{},
+				},
+			}
+
+			mounter := NewLinuxMounter(runner, changingMountsSearcher, 1*time.Millisecond)
 
 			err := mounter.RemountAsReadonly("/mnt/bar")
 			Expect(err).ToNot(HaveOccurred())
@@ -98,13 +107,17 @@ var _ = Describe("linuxMounter", func() {
 
 	Describe("Remount", func() {
 		It("remount", func() {
-			procMounts := []string{"/dev/baz /mnt/foo ext4", "/dev/baz /mnt/foo ext4", ""}
-			changingFs := &fsWithChangingFile{procMounts, fs}
-			mountsSearcher := NewProcMountsSearcher(changingFs)
-			mounter := NewLinuxMounter(runner, changingFs, mountsSearcher, 1*time.Millisecond)
+			changingMountsSearcher := &changingMountsSearcher{
+				[][]Mount{
+					[]Mount{Mount{PartitionPath: "/dev/baz", MountPoint: "/mnt/foo"}},
+					[]Mount{Mount{PartitionPath: "/dev/baz", MountPoint: "/mnt/foo"}},
+					[]Mount{},
+				},
+			}
+
+			mounter := NewLinuxMounter(runner, changingMountsSearcher, 1*time.Millisecond)
 
 			err := mounter.Remount("/mnt/foo", "/mnt/bar")
-
 			Expect(err).ToNot(HaveOccurred())
 			Expect(2).To(Equal(len(runner.RunCommands)))
 			Expect(runner.RunCommands[0]).To(Equal([]string{"umount", "/mnt/foo"}))
@@ -140,9 +153,13 @@ var _ = Describe("linuxMounter", func() {
 	})
 
 	Describe("Unmount", func() {
-		It("linux unmount when partition is mounted", func() {
-			fs.WriteFileString("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+		BeforeEach(func() {
+			mountsSearcher.SearchMountsMounts = []Mount{
+				Mount{PartitionPath: "/dev/xvdb2", MountPoint: "/var/vcap/data"},
+			}
+		})
 
+		It("unmounts based on partition when partition is mounted", func() {
 			didUnmount, err := mounter.Unmount("/dev/xvdb2")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(didUnmount).To(BeTrue())
@@ -151,9 +168,7 @@ var _ = Describe("linuxMounter", func() {
 			Expect(runner.RunCommands[0]).To(Equal([]string{"umount", "/dev/xvdb2"}))
 		})
 
-		It("linux unmount when mount point is mounted", func() {
-			fs.WriteFileString("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
-
+		It("unmount based on mount point when mount point is mounted", func() {
 			didUnmount, err := mounter.Unmount("/var/vcap/data")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(didUnmount).To(BeTrue())
@@ -162,9 +177,7 @@ var _ = Describe("linuxMounter", func() {
 			Expect(runner.RunCommands[0]).To(Equal([]string{"umount", "/var/vcap/data"}))
 		})
 
-		It("linux unmount when partition or mount point is not mounted", func() {
-			fs.WriteFileString("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
-
+		It("returns without an error indicating that nothing was unmounted when partition or mount point is not mounted", func() {
 			didUnmount, err := mounter.Unmount("/dev/xvdb3")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(didUnmount).To(BeFalse())
@@ -172,9 +185,7 @@ var _ = Describe("linuxMounter", func() {
 			Expect(0).To(Equal(len(runner.RunCommands)))
 		})
 
-		It("linux unmount when it fails several times", func() {
-			fs.WriteFileString("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
-
+		It("returns without an error after failing several times and then succeeding to unmount", func() {
 			runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{Error: errors.New("fake-error")})
 			runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{Error: errors.New("fake-error")})
 			runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{})
@@ -190,8 +201,6 @@ var _ = Describe("linuxMounter", func() {
 		})
 
 		It("linux unmount when it fails too many times", func() {
-			fs.WriteFileString("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
-
 			runner.AddCmdResult("umount /dev/xvdb2", fakesys.FakeCmdResult{Error: errors.New("fake-error"), Sticky: true})
 
 			_, err := mounter.Unmount("/dev/xvdb2")
@@ -201,7 +210,9 @@ var _ = Describe("linuxMounter", func() {
 
 	Describe("IsMountPoint", func() {
 		It("is mount point", func() {
-			fs.WriteFileString("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+			mountsSearcher.SearchMountsMounts = []Mount{
+				Mount{PartitionPath: "/dev/xvdb2", MountPoint: "/var/vcap/data"},
+			}
 
 			isMountPoint, err := mounter.IsMountPoint("/var/vcap/data")
 			Expect(err).ToNot(HaveOccurred())
@@ -215,7 +226,9 @@ var _ = Describe("linuxMounter", func() {
 
 	Describe("IsMounted", func() {
 		It("is mounted", func() {
-			fs.WriteFileString("/proc/mounts", "/dev/xvdb2 /var/vcap/data ext4")
+			mountsSearcher.SearchMountsMounts = []Mount{
+				Mount{PartitionPath: "/dev/xvdb2", MountPoint: "/var/vcap/data"},
+			}
 
 			isMounted, err := mounter.IsMounted("/dev/xvdb2")
 			Expect(err).ToNot(HaveOccurred())

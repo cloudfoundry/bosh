@@ -33,7 +33,7 @@ func (s cmdMountsSearcher) SearchMounts() ([]Mount, error) {
 
 		mounts = append(mounts, Mount{
 			PartitionPath: mountFields[0],
-			MountPoint: mountFields[2],
+			MountPoint:    mountFields[2],
 		})
 	}
 

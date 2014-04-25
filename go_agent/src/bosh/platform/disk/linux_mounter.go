@@ -10,7 +10,6 @@ import (
 
 type linuxMounter struct {
 	runner            boshsys.CmdRunner
-	fs                boshsys.FileSystem
 	mountsSearcher    MountsSearcher
 	maxUnmountRetries int
 	unmountRetrySleep time.Duration
@@ -18,12 +17,10 @@ type linuxMounter struct {
 
 func NewLinuxMounter(
 	runner boshsys.CmdRunner,
-	fs boshsys.FileSystem,
 	mountsSearcher MountsSearcher,
 	unmountRetrySleep time.Duration,
 ) (mounter linuxMounter) {
 	mounter.runner = runner
-	mounter.fs = fs
 	mounter.mountsSearcher = mountsSearcher
 	mounter.maxUnmountRetries = 600
 	mounter.unmountRetrySleep = unmountRetrySleep
@@ -113,7 +110,7 @@ func (m linuxMounter) IsMountPoint(path string) (bool, error) {
 	mounts, _ := m.mountsSearcher.SearchMounts()
 	// todo err
 
-	for _, mount:= range mounts {
+	for _, mount := range mounts {
 		if mount.MountPoint == path {
 			return true, nil
 		}
@@ -126,7 +123,7 @@ func (m linuxMounter) findDeviceMatchingMountPoint(mountPoint string) (string, b
 	mounts, _ := m.mountsSearcher.SearchMounts()
 	// todo err
 
-	for _, mount:= range mounts {
+	for _, mount := range mounts {
 		if mount.MountPoint == mountPoint {
 			return mount.PartitionPath, true, nil
 		}
@@ -139,8 +136,8 @@ func (m linuxMounter) IsMounted(partitionOrMountPoint string) (bool, error) {
 	mounts, _ := m.mountsSearcher.SearchMounts()
 	// todo err
 
-	for _, mount:= range mounts {
-		if mount.PartitionPath == partitionOrMountPoint || mount.MountPoint == partitionOrMountPoint  {
+	for _, mount := range mounts {
+		if mount.PartitionPath == partitionOrMountPoint || mount.MountPoint == partitionOrMountPoint {
 			return true, nil
 		}
 	}
@@ -152,12 +149,12 @@ func (m linuxMounter) shouldMount(partitionPath, mountPoint string) (bool, error
 	mounts, _ := m.mountsSearcher.SearchMounts()
 	// todo err
 
-	for _, mount:= range mounts {
+	for _, mount := range mounts {
 		switch {
 		case mount.PartitionPath == partitionPath && mount.MountPoint == mountPoint:
 			return false, nil
 		case mount.PartitionPath == partitionPath && mount.MountPoint != mountPoint:
-			return false,  bosherr.New("Device %s is already mounted to %s, can't mount to %s",
+			return false, bosherr.New("Device %s is already mounted to %s, can't mount to %s",
 				mount.PartitionPath, mount.MountPoint, mountPoint)
 		case mount.MountPoint == mountPoint:
 			return false, bosherr.New("Device %s is already mounted to %s, can't mount %s",

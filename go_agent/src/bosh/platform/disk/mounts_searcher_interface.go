@@ -2,7 +2,7 @@ package disk
 
 type Mount struct {
 	PartitionPath string
-	MountPoint string
+	MountPoint    string
 }
 
 type MountsSearcher interface {
