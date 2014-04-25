@@ -246,44 +246,40 @@ describe Bosh::AwsCloud::InstanceManager do
         region.stub(:subnets).and_return({"sub-123456" => fake_aws_subnet})
       end
 
-      context "when there is a manual network in the specs" do
-        it "should not set the subnet and private IP address parameters" do
+      context "when there is not a manual network in the specs" do
+        it "should not set the private IP address parameters" do
           instance_manager = described_class.new(region, registry)
           instance_manager.set_vpc_parameters(
               {
                   "network" => {
                       "type" => "designed by robots",
-                      "ip" => "1.2.3.4",
-                      "cloud_properties" => {"subnet" => "sub-123456"}
+                      "ip" => "1.2.3.4"
                   }
               }
           )
 
           instance_manager.instance_params.keys.should_not include(:private_ip_address)
-          instance_manager.instance_params.keys.should_not include(:subnet)
         end
       end
 
       context "when there is a manual network in the specs" do
-        it "should set the subnet and private IP address parameters" do
+        it "should set the private IP address parameters" do
           instance_manager = described_class.new(region, registry)
           instance_manager.set_vpc_parameters(
               {
                   "network" => {
                       "type" => "manual",
-                      "ip" => "1.2.3.4",
-                      "cloud_properties" => {"subnet" => "sub-123456"}
+                      "ip" => "1.2.3.4"
                   }
               }
           )
 
           instance_manager.instance_params[:private_ip_address].should == "1.2.3.4"
-          instance_manager.instance_params[:subnet].should == fake_aws_subnet
         end
       end
 
       context "when there is a network in the specs with unspecified type" do
-        it "should set the subnet and private IP address parameters for that network (treat it as manual)" do
+        it "should set the private IP address parameters for that network (treat it as manual)" do
           instance_manager = described_class.new(region, registry)
           instance_manager.set_vpc_parameters(
               {
@@ -295,9 +291,89 @@ describe Bosh::AwsCloud::InstanceManager do
           )
 
           instance_manager.instance_params[:private_ip_address].should == "1.2.3.4"
-          instance_manager.instance_params[:subnet].should == fake_aws_subnet
         end
       end
+      
+      context "when there is a subnet in the cloud_properties in the specs" do
+        context "and network type is dynamic" do
+          it "should set the subnet parameter" do
+            instance_manager = described_class.new(region, registry)
+            instance_manager.set_vpc_parameters(
+              {
+                "network" => {
+                  "type" => "dynamic",
+                  "cloud_properties" => {"subnet" => "sub-123456"}
+                }
+              }
+            )
+
+            instance_manager.instance_params.keys.should include(:subnet)
+          end
+        end
+
+        context "and network type is manual" do
+          it "should set the subnet parameter" do
+            instance_manager = described_class.new(region, registry)
+            instance_manager.set_vpc_parameters(
+              {
+                "network" => {
+                  "type" => "manual",
+                  "cloud_properties" => {"subnet" => "sub-123456"}
+                }
+              }
+            )
+
+            instance_manager.instance_params.keys.should include(:subnet)
+          end
+        end
+
+        context "and network type is not set" do
+          it "should set the subnet parameter" do
+            instance_manager = described_class.new(region, registry)
+            instance_manager.set_vpc_parameters(
+              {
+                "network" => {
+                  "cloud_properties" => {"subnet" => "sub-123456"}
+                }
+              }
+            )
+
+            instance_manager.instance_params.keys.should include(:subnet)
+          end
+        end
+
+        context "and network type is vip" do
+          it "should not set the subnet parameter" do
+            instance_manager = described_class.new(region, registry)
+            instance_manager.set_vpc_parameters(
+              {
+                "network" => {
+                  "type" => "vip",
+                  "cloud_properties" => {"subnet" => "sub-123456"}
+                }
+              }
+            )
+
+            instance_manager.instance_params.keys.should_not include(:subnet)
+          end
+        end
+      end      
+
+      context "when there is no subnet in the cloud_properties in the specs" do
+        it "should not set the subnet parameter" do
+          instance_manager = described_class.new(region, registry)
+          instance_manager.set_vpc_parameters(
+              {
+                  "network" => {
+                      "type" => "dynamic"
+                  }
+              }
+          )
+
+          instance_manager.instance_params.keys.should_not include(:subnet)
+        end
+      end
+      
     end
 
     describe "#set_availability_zone_parameter" do
