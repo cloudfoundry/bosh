@@ -21,7 +21,9 @@ func NewLinuxDiskManager(
 ) (manager Manager) {
 	var mounter Mounter
 
-	mounter = NewLinuxMounter(runner, fs, 1*time.Second)
+	mountsSearcher := NewProcMountsSearcher(fs)
+
+	mounter = NewLinuxMounter(runner, fs, mountsSearcher, 1*time.Second)
 	if bindMount {
 		mounter = NewLinuxBindMounter(mounter)
 	}

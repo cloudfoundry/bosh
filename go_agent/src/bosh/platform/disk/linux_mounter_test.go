@@ -42,7 +42,8 @@ var _ = Describe("linuxMounter", func() {
 	BeforeEach(func() {
 		runner = fakesys.NewFakeCmdRunner()
 		fs = fakesys.NewFakeFileSystem()
-		mounter = NewLinuxMounter(runner, fs, 1*time.Millisecond)
+		mountsSearcher := NewProcMountsSearcher(fs)
+		mounter = NewLinuxMounter(runner, fs, mountsSearcher, 1*time.Millisecond)
 	})
 
 	Describe("Mount", func() {
@@ -83,7 +84,9 @@ var _ = Describe("linuxMounter", func() {
 	Describe("RemountAsReadonly", func() {
 		It("remount as readonly", func() {
 			procMounts := []string{"/dev/baz /mnt/bar ext4", "/dev/baz /mnt/bar ext4", ""}
-			mounter := NewLinuxMounter(runner, &fsWithChangingFile{procMounts, fs}, 1*time.Millisecond)
+			changingFs := &fsWithChangingFile{procMounts, fs}
+			mountsSearcher := NewProcMountsSearcher(changingFs)
+			mounter := NewLinuxMounter(runner, changingFs, mountsSearcher, 1*time.Millisecond)
 
 			err := mounter.RemountAsReadonly("/mnt/bar")
 			Expect(err).ToNot(HaveOccurred())
@@ -96,7 +99,9 @@ var _ = Describe("linuxMounter", func() {
 	Describe("Remount", func() {
 		It("remount", func() {
 			procMounts := []string{"/dev/baz /mnt/foo ext4", "/dev/baz /mnt/foo ext4", ""}
-			mounter := NewLinuxMounter(runner, &fsWithChangingFile{procMounts, fs}, 1*time.Millisecond)
+			changingFs := &fsWithChangingFile{procMounts, fs}
+			mountsSearcher := NewProcMountsSearcher(changingFs)
+			mounter := NewLinuxMounter(runner, changingFs, mountsSearcher, 1*time.Millisecond)
 
 			err := mounter.Remount("/mnt/foo", "/mnt/bar")
 

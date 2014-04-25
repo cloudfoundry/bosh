@@ -11,6 +11,7 @@ import (
 type linuxMounter struct {
 	runner            boshsys.CmdRunner
 	fs                boshsys.FileSystem
+	mountsSearcher    MountsSearcher
 	maxUnmountRetries int
 	unmountRetrySleep time.Duration
 }
@@ -18,10 +19,12 @@ type linuxMounter struct {
 func NewLinuxMounter(
 	runner boshsys.CmdRunner,
 	fs boshsys.FileSystem,
+	mountsSearcher MountsSearcher,
 	unmountRetrySleep time.Duration,
 ) (mounter linuxMounter) {
 	mounter.runner = runner
 	mounter.fs = fs
+	mounter.mountsSearcher = mountsSearcher
 	mounter.maxUnmountRetries = 600
 	mounter.unmountRetrySleep = unmountRetrySleep
 	return
@@ -107,7 +110,7 @@ func (m linuxMounter) Unmount(partitionOrMountPoint string) (bool, error) {
 }
 
 func (m linuxMounter) IsMountPoint(path string) (bool, error) {
-	return m.searchMounts(func(_, mountedMountPoint string) (found bool, err error) {
+	return m.mountsSearcher.SearchMounts(func(_, mountedMountPoint string) (found bool, err error) {
 		if mountedMountPoint == path {
 			return true, nil
 		}
@@ -118,7 +121,7 @@ func (m linuxMounter) IsMountPoint(path string) (bool, error) {
 func (m linuxMounter) findDeviceMatchingMountPoint(mountPoint string) (string, bool, error) {
 	var devicePath string
 
-	found, err := m.searchMounts(func(mountedPartitionPath, mountedMountPoint string) (found bool, err error) {
+	found, err := m.mountsSearcher.SearchMounts(func(mountedPartitionPath, mountedMountPoint string) (found bool, err error) {
 		if mountedMountPoint == mountPoint {
 			devicePath = mountedPartitionPath
 			return true, nil
@@ -129,7 +132,7 @@ func (m linuxMounter) findDeviceMatchingMountPoint(mountPoint string) (string, b
 }
 
 func (m linuxMounter) IsMounted(partitionOrMountPoint string) (bool, error) {
-	return m.searchMounts(func(mountedPartitionPath, mountedMountPoint string) (bool, error) {
+	return m.mountsSearcher.SearchMounts(func(mountedPartitionPath, mountedMountPoint string) (bool, error) {
 		if mountedPartitionPath == partitionOrMountPoint || mountedMountPoint == partitionOrMountPoint {
 			return true, nil
 		}
@@ -138,7 +141,7 @@ func (m linuxMounter) IsMounted(partitionOrMountPoint string) (bool, error) {
 }
 
 func (m linuxMounter) shouldMount(partitionPath, mountPoint string) (bool, error) {
-	isMounted, err := m.searchMounts(func(mountedPartitionPath, mountedMountPoint string) (bool, error) {
+	isMounted, err := m.mountsSearcher.SearchMounts(func(mountedPartitionPath, mountedMountPoint string) (bool, error) {
 		switch {
 		case mountedPartitionPath == partitionPath && mountedMountPoint == mountPoint:
 			return true, nil
@@ -157,27 +160,4 @@ func (m linuxMounter) shouldMount(partitionPath, mountPoint string) (bool, error
 	}
 
 	return !isMounted, nil
-}
-
-func (m linuxMounter) searchMounts(mountFieldsFunc func(string, string) (bool, error)) (found bool, err error) {
-	mountInfo, err := m.fs.ReadFileString("/proc/mounts")
-	if err != nil {
-		return false, bosherr.WrapError(err, "Reading /proc/mounts")
-	}
-
-	for _, mountEntry := range strings.Split(mountInfo, "\n") {
-		if mountEntry == "" {
-			continue
-		}
-		mountFields := strings.Fields(mountEntry)
-		mountedPartitionPath := mountFields[0]
-		mountedMountPoint := mountFields[1]
-
-		found, err = mountFieldsFunc(mountedPartitionPath, mountedMountPoint)
-		if found || err != nil {
-			return found, err
-		}
-	}
-
-	return false, nil
 }
