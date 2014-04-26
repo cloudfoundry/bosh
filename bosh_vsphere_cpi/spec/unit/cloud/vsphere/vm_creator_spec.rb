@@ -6,9 +6,13 @@ describe VSphereCloud::VmCreator do
     let(:vsphere_client) { instance_double('VSphereCloud::Client') }
     let(:logger) { double('logger', debug: nil) }
     let(:cpi) { instance_double('VSphereCloud::Cloud') }
+    let(:agent_env) { instance_double('VSphereCloud::AgentEnv') }
+    let(:file_provider) { instance_double('VSphereCloud::FileProvider') }
 
     context 'when the number of cpu is not a power of 2' do
-      subject(:creator) { described_class.new(1024, 1024, 3, placer, vsphere_client, logger, cpi) }
+      subject(:creator) do
+        described_class.new(1024, 1024, 3, placer, vsphere_client, logger, cpi, agent_env, file_provider)
+      end
       it 'raises an error  to work around a vCenter bug' do
         expect {
           creator.create(nil, nil, nil, [], {})
@@ -17,7 +21,10 @@ describe VSphereCloud::VmCreator do
     end
 
     context 'when the stemcell vm does not exist' do
-      subject(:creator) { described_class.new(1024, 1024, 1, placer, vsphere_client, logger, cpi) }
+      subject(:creator) do
+        described_class.new(1024, 1024, 1, placer, vsphere_client, logger, cpi, agent_env, file_provider)
+      end
+
       before do
         allow(cpi).to receive(:stemcell_vm).with('sc-beef').and_return(nil)
       end
@@ -29,7 +36,11 @@ describe VSphereCloud::VmCreator do
     end
 
     it 'chooses the placement based on memory, ephemeral and persistent disks' do
-      creator = described_class.new(1024, 10240000, 1, placer, vsphere_client, logger, cpi)
+      creator = described_class.new(
+        1024, 10240000, 1, placer, vsphere_client, logger,
+        cpi, agent_env, file_provider
+      )
+
       disk_spec = double('disk spec')
       disk_locality = ['disk1_cid']
 
@@ -62,7 +73,7 @@ describe VSphereCloud::VmCreator do
       network_env = double('network env rv')
       allow(cpi).to receive(:generate_network_env).with(devices, networks, {}).and_return(network_env)
       allow(cpi).to receive(:disk_spec).with(disk_locality).and_return(disk_spec)
-      allow(cpi).to receive(:upload_file).with('datacenter name', 'datastore name', 'vm-vm_unique_name/env.iso', '')
+      allow(file_provider).to receive(:upload_file).with('datacenter name', 'datastore name', 'vm-vm_unique_name/env.iso', '')
 
       allow(vsphere_client).to receive(:get_property).with(stemcell_vm, anything, anything, anything).and_return(1024*1024)
       replicated_stemcell_vm = double('replicated vm')
@@ -108,7 +119,7 @@ describe VSphereCloud::VmCreator do
       allow(logger).to receive(:info)
       allow(cluster).to receive(:mob).with(no_args).and_return(double('cluster mob'))
       add_cdrom_spec = double('configure env cdrom rv')
-      allow(cpi).to receive(:configure_env_cdrom).with(datastore_mob, devices, '[datastore name] vm-vm_unique_name/env.iso').and_return(add_cdrom_spec)
+      allow(agent_env).to receive(:configure_env_cdrom).with(datastore_mob, devices, '[datastore name] vm-vm_unique_name/env.iso').and_return(add_cdrom_spec)
 
       clone_vm_task = double('cloned vm task')
       allow(cpi).to receive(:clone_vm).with(
@@ -146,7 +157,7 @@ describe VSphereCloud::VmCreator do
                       datastore: 'datastore name',
                       vm: 'vm-vm_unique_name',
                     ).and_return(vm_location)
-      allow(cpi).to receive(:set_agent_env).with(vm_double, vm_location, {'env' => {}})
+      allow(agent_env).to receive(:set_env).with(vm_double, vm_location, {'env' => {}})
 
       allow(vsphere_client).to receive(:power_on_vm).with(datacenter_mob, vm_double)
 

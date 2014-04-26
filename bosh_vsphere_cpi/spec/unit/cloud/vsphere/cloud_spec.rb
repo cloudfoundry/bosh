@@ -464,6 +464,12 @@ module VSphereCloud
         let(:stemcell_cid) { double('stemcell cid string') }
         let(:agent_id) { double('agent id string') }
 
+        let(:file_provider) { instance_double('VSphereCloud::FileProvider') }
+        before { allow(VSphereCloud::FileProvider).to receive(:new).and_return(file_provider) }
+
+        let(:agent_env) { instance_double('VSphereCloud::AgentEnv') }
+        before { allow(VSphereCloud::AgentEnv).to receive(:new).and_return(agent_env) }
+
         context 'using a placer' do
           let(:clusters) {
             [
@@ -503,8 +509,8 @@ module VSphereCloud
                                           nil,
                                         ).and_return(vm)
             expect(creator_builder).to receive(:build).with(
-                                         placer, cloud_properties, client, logger, vsphere_cloud,
-                                       ).and_return(creator_instance)
+              placer, cloud_properties, client, logger, vsphere_cloud, agent_env, file_provider
+            ).and_return(creator_instance)
 
             expect(
               vsphere_cloud.create_vm(
@@ -525,7 +531,7 @@ module VSphereCloud
               nil,
             ).and_return(vm)
             expect(creator_builder).to receive(:build).with(
-              resources, cloud_properties, client, logger, vsphere_cloud,
+              resources, cloud_properties, client, logger, vsphere_cloud, agent_env, file_provider
             ).and_return(creator_instance)
 
             expect(
@@ -548,7 +554,7 @@ module VSphereCloud
               nil,
             ).and_return(vm)
             expect(creator_builder).to receive(:build).with(
-              resources, cloud_properties, client, logger, vsphere_cloud,
+              resources, cloud_properties, client, logger, vsphere_cloud, agent_env, file_provider
             ).and_return(creator_instance)
 
             expect(
@@ -572,7 +578,7 @@ module VSphereCloud
               environment,
             ).and_return(vm)
             expect(creator_builder).to receive(:build).with(
-              resources, cloud_properties, client, logger, vsphere_cloud,
+              resources, cloud_properties, client, logger, vsphere_cloud, agent_env, file_provider
             ).and_return(creator_instance)
 
             expect(
@@ -586,6 +592,11 @@ module VSphereCloud
     end
 
     describe '#attach_disk' do
+      let(:agent_env) { instance_double('VSphereCloud::AgentEnv') }
+      before { allow(VSphereCloud::AgentEnv).to receive(:new).and_return(agent_env) }
+      let(:agent_env_hash) { { 'disks' => { 'persistent' => { disk_cid => 'fake-device-number' } } } }
+      before { allow(agent_env).to receive(:get_current_env).and_return(agent_env_hash) }
+
       before { allow(vsphere_cloud).to receive(:with_thread_name).and_yield }
 
       let(:disk_model) { class_double('VSphereCloud::Models::Disk').as_stubbed_const }
@@ -624,9 +635,6 @@ module VSphereCloud
         allow_any_instance_of(VSphereCloud::Resources).to receive(:place_persistent_datastore).and_return(datastore)
       end
 
-      let(:agent_env) { { 'disks' => { 'persistent' => { disk_cid => 'fake-device-number' } } } }
-      before { allow(vsphere_cloud).to receive(:get_current_agent_env).and_return(agent_env) }
-
       let(:config_spec) { instance_double('VimSdk::Vim::Vm::ConfigSpec', :device_change= => nil, :device_change => []) }
       before { allow(VimSdk::Vim::Vm::ConfigSpec).to receive(:new).and_return(config_spec) }
 
@@ -650,7 +658,7 @@ module VSphereCloud
 
           it 'does not update the disk' do
             expect(disk).to_not receive(:save)
-            expect(vsphere_cloud).to receive(:set_agent_env)
+            expect(agent_env).to receive(:set_env)
             expect(client).to receive(:reconfig_vm)
 
             vsphere_cloud.attach_disk('fake-image', disk_cid)
@@ -671,7 +679,7 @@ module VSphereCloud
               expect(disk).to receive(:datastore=).with('fake-datastore-name')
               expect(disk).to receive(:path=).with('[fake-datastore-name] fake-disk-path/fake-disk-cid')
               expect(disk).to receive(:save)
-              expect(vsphere_cloud).to receive(:set_agent_env)
+              expect(agent_env).to receive(:set_env)
               expect(client).to receive(:reconfig_vm)
 
               vsphere_cloud.attach_disk('fake-image', disk_cid)
@@ -688,7 +696,7 @@ module VSphereCloud
               expect(disk).to receive(:path=).with('[fake-datastore-name] fake-disk-path/fake-disk-cid')
               expect(disk).to receive(:save)
 
-              expect(vsphere_cloud).to receive(:set_agent_env)
+              expect(agent_env).to receive(:set_env)
               expect(client).to receive(:reconfig_vm)
 
               vsphere_cloud.attach_disk('fake-image', disk_cid)
@@ -698,15 +706,13 @@ module VSphereCloud
       end
 
       context 'when disk does not exist' do
-        let(:expected_agent_env) { agent_env.merge({}) }
-
         it 'creates a disk' do
           expect(disk).to receive(:datacenter=).with('fake-folder/fake-datacenter-name')
           expect(disk).to receive(:datastore=).with('fake-datastore-name')
           expect(disk).to receive(:path=).with('[fake-datastore-name] fake-disk-path/fake-disk-cid')
           expect(disk).to receive(:save)
 
-          expect(vsphere_cloud).to receive(:set_agent_env).with(vm, { datacenter: 'fake-folder/fake-datacenter-name', datastore: 'fake-datastore-name', vm: 'fake-vm-name' }, expected_agent_env)
+          expect(agent_env).to receive(:set_env)
           actual_device_changes = []
           allow(config_spec).to receive(:device_change).and_return(actual_device_changes)
           expect(client).to receive(:reconfig_vm).with(vm, config_spec)
