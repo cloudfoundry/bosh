@@ -1,12 +1,11 @@
 package system_test
 
 import (
-	"fmt"
+	"io/ioutil"
 	"os"
-	"regexp"
-	"strconv"
+	"os/exec"
+	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -197,61 +196,41 @@ func init() {
 		})
 
 		Describe("TerminateNicely", func() {
-			parentPidRe := regexp.MustCompile("parent_pid=\\d+")
-			childPidRe := regexp.MustCompile("child_pid=\\d+")
+			var buildDir string
 
-			extractPid := func(output string, reg *regexp.Regexp) int {
-				pidStr := reg.FindString(output)
-				if pidStr == "" {
-					panic(fmt.Sprintf("Failed to find pid in '%s' matching %v", output, reg))
-				}
-
-				pidStrParts := strings.SplitN(pidStr, "=", 2)
-				if len(pidStrParts) != 2 {
-					panic(fmt.Sprintf("Failed to extract pid from '%s'", pidStr))
-				}
-
-				pid, err := strconv.Atoi(pidStrParts[1])
-				if err != nil {
-					panic(fmt.Sprintf("Failed to convert pid '%s' to int: %s", pidStr, err.Error()))
-				}
-
-				return pid
-			}
-
-			expectProcessToNotExist := func(pid int) {
-				process, err := os.FindProcess(pid)
+			expectProcessesToNotExist := func() {
+				// Make sure to show all processes on the system
+				output, err := exec.Command("ps", "-A", "-o", "pid,args").Output()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(process.Kill()).To(Equal(syscall.ESRCH)) // process not found
+
+				// Cannot check for PID existence directly because
+				// PID could have been recycled by the OS; make sure it's not the same process
+				for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
+					Expect(line).ToNot(ContainSubstring(buildDir))
+				}
 			}
+
+			BeforeEach(func() {
+				var err error
+
+				buildDir, err = ioutil.TempDir("", "TerminateNicely")
+				Expect(err).ToNot(HaveOccurred())
+
+				for _, exe := range []string{"child_ignore_term", "child_term", "parent_ignore_term", "parent_term"} {
+					dst := filepath.Join(buildDir, exe)
+					src := filepath.Join("parent_child_exec", exe+".go")
+					err := exec.Command("go", "build", "-o", dst, src).Run()
+					Expect(err).ToNot(HaveOccurred())
+				}
+			})
+
+			AfterEach(func() {
+				os.RemoveAll(buildDir)
+			})
 
 			Context("when parent and child terminate after receiving SIGTERM", func() {
 				It("sends term signal to the whole group and returns with exit status that parent exited", func() {
-					cmd := Command{
-						Name: "bash",
-						Args: []string{"-c", `
-exec 3>&1
-
-function clean_up_parent {
-	echo "Parent received SIGTERM"
-	exit 13
-}
-
-function clean_up_child {
-	echo "Child received SIGTERM" >&3
-	exit 14
-}
-
-echo "parent_pid=$$"
-trap clean_up_parent SIGTERM # Parent
-
-echo $(
-	echo "child_pid=$$" >&3
-	trap clean_up_child SIGTERM # Child
-	while true; do sleep 0.1; done
-)
-`},
-					}
+					cmd := Command{Name: filepath.Join(buildDir, "parent_term")}
 					process, err := runner.RunComplexCommandAsync(cmd)
 					Expect(err).ToNot(HaveOccurred())
 
@@ -275,30 +254,13 @@ echo $(
 					Expect(result.Stdout).To(ContainSubstring("Child received SIGTERM"))
 
 					// All processes are gone
-					expectProcessToNotExist(extractPid(result.Stdout, parentPidRe))
-					expectProcessToNotExist(extractPid(result.Stdout, childPidRe))
+					expectProcessesToNotExist()
 				})
 			})
 
 			Context("when parent and child do not exit after receiving SIGTERM in small amount of time", func() {
 				It("sends kill signal to the whole group and returns with ? exit status", func() {
-					cmd := Command{
-						Name: "bash",
-						Args: []string{"-c", `
-exec 3>&1
-
-function clean_up_noop { 'noop'; }
-
-echo "parent_pid=$$"
-trap clean_up_noop SIGTERM
-
-echo $(
-	echo "child_pid=$$" >&3
-	trap clean_up_noop SIGTERM
-	while true; do sleep 0.1; done
-)
-`},
-					}
+					cmd := Command{Name: filepath.Join(buildDir, "parent_ignore_term")}
 					process, err := runner.RunComplexCommandAsync(cmd)
 					Expect(err).ToNot(HaveOccurred())
 
@@ -316,9 +278,12 @@ echo $(
 					// Parent exit code is returned
 					Expect(result.ExitStatus).To(Equal(128 + 9))
 
+					// Term signal was sent to all processes in the group before kill
+					Expect(result.Stdout).To(ContainSubstring("Parent received SIGTERM"))
+					Expect(result.Stdout).To(ContainSubstring("Child received SIGTERM"))
+
 					// Parent and child are killed
-					expectProcessToNotExist(extractPid(result.Stdout, parentPidRe))
-					expectProcessToNotExist(extractPid(result.Stdout, childPidRe))
+					expectProcessesToNotExist()
 				})
 			})
 
