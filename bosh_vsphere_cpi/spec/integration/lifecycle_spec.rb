@@ -127,12 +127,17 @@ describe VSphereCloud::Cloud do
     }
   }
 
+  def clean_up_vm_and_disk
+    @cpi.delete_vm(@vm_id) if @vm_id
+    @vm_id = nil
+    @cpi.delete_disk(@disk_id) if @disk_id
+    @disk_id = nil
+  end
+
   describe 'lifecycle' do
     before { @vm_id = nil }
-    after { @cpi.delete_vm(@vm_id) if @vm_id }
-
     before { @disk_id = nil }
-    after { @cpi.delete_disk(@disk_id) if @disk_id }
+    after { clean_up_vm_and_disk }
 
     context 'without existing disks' do
       it 'should exercise the vm lifecycle' do
@@ -145,12 +150,16 @@ describe VSphereCloud::Cloud do
         clusters = [{ @cluster => {}, }, { @second_cluster => {} }]
 
         clusters.each do |cluster|
-          resource_pool['datacenters'] = [{ 'name' => @datacenter_name, 'clusters' => [cluster]}]
-          vm_lifecycle(network_spec, [], resource_pool)
+          begin
+            resource_pool['datacenters'] = [{ 'name' => @datacenter_name, 'clusters' => [cluster]}]
+            vm_lifecycle(network_spec, [], resource_pool)
 
-          vm = @cpi.get_vm_by_cid(@vm_id)
-          vm_info = @cpi.get_vm_host_info(vm)
-          expect(vm_info['cluster']).to eq(cluster.keys.first)
+            vm = @cpi.get_vm_by_cid(@vm_id)
+            vm_info = @cpi.get_vm_host_info(vm)
+            expect(vm_info['cluster']).to eq(cluster.keys.first)
+          ensure
+            clean_up_vm_and_disk
+          end
         end
       end
     end
@@ -188,8 +197,7 @@ describe VSphereCloud::Cloud do
       end
 
       after do
-        @cpi.delete_vm(@vm_id) if @vm_id
-        @cpi.delete_disk(@disk_id) if @disk_id
+        clean_up_vm_and_disk
 
         client.move_into_root_folder([datacenter])
         @datacenter_name = @old_datacenter_name
