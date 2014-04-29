@@ -10,19 +10,19 @@ import (
 	boshdirs "bosh/settings/directories"
 )
 
-type LogsAction struct {
+type FetchLogsAction struct {
 	compressor  boshcmd.Compressor
 	copier      boshcmd.Copier
 	blobstore   boshblob.Blobstore
 	settingsDir boshdirs.DirectoriesProvider
 }
 
-func NewLogs(
+func NewFetchLogs(
 	compressor boshcmd.Compressor,
 	copier boshcmd.Copier,
 	blobstore boshblob.Blobstore,
 	settingsDir boshdirs.DirectoriesProvider,
-) (action LogsAction) {
+) (action FetchLogsAction) {
 	action.compressor = compressor
 	action.copier = copier
 	action.blobstore = blobstore
@@ -30,15 +30,15 @@ func NewLogs(
 	return
 }
 
-func (a LogsAction) IsAsynchronous() bool {
+func (a FetchLogsAction) IsAsynchronous() bool {
 	return true
 }
 
-func (a LogsAction) IsPersistent() bool {
+func (a FetchLogsAction) IsPersistent() bool {
 	return false
 }
 
-func (a LogsAction) Run(logType string, filters []string) (value interface{}, err error) {
+func (a FetchLogsAction) Run(logType string, filters []string) (value interface{}, err error) {
 	var logsDir string
 
 	switch logType {
@@ -81,10 +81,10 @@ func (a LogsAction) Run(logType string, filters []string) (value interface{}, er
 	return
 }
 
-func (a LogsAction) Resume() (interface{}, error) {
+func (a FetchLogsAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
 
-func (a LogsAction) Cancel() error {
+func (a FetchLogsAction) Cancel() error {
 	return errors.New("not supported")
 }

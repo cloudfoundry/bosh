@@ -89,7 +89,7 @@ func init() {
 		It("fetch_logs", func() {
 			action, err := factory.Create("fetch_logs")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(action).To(Equal(NewLogs(platform.GetCompressor(), platform.GetCopier(), blobstore, platform.GetDirProvider())))
+			Expect(action).To(Equal(NewFetchLogs(platform.GetCompressor(), platform.GetCopier(), blobstore, platform.GetDirProvider())))
 		})
 
 		It("get_task", func() {

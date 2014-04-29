@@ -50,7 +50,7 @@ func NewFactory(
 
 			// VM admin
 			"ssh":        NewSsh(settings, platform, dirProvider),
-			"fetch_logs": NewLogs(compressor, copier, blobstore, dirProvider),
+			"fetch_logs": NewFetchLogs(compressor, copier, blobstore, dirProvider),
 
 			// Job management
 			"prepare":    NewPrepare(applier),
