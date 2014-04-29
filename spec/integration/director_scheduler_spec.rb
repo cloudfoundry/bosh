@@ -72,18 +72,9 @@ describe 'director_scheduler', type: :integration do
       runner = bosh_runner_in_work_dir(tmp_dir)
       expect(runner.run('backup backup.tgz')).to match(/Backup of BOSH director was put in/i)
 
-      files = tar_contents("#{tmp_dir}/backup.tgz")
-      files.each { |f| expect(f.size).to be > 0 }
-      expect(files.map(&:name)).to match_array(%w(logs.tgz task_logs.tgz director_db.sql blobs.tgz))
-    end
-
-    def tar_contents(tar_path)
-      tar_entries = []
-      tar_reader = Zlib::GzipReader.open(tar_path)
-      Archive::Tar::Minitar.open(tar_reader).each do |entry|
-        tar_entries << entry if entry.file?
-      end
-      tar_entries
+      backup_file = Bosh::Spec::TarFileInspector.new("#{tmp_dir}/backup.tgz")
+      expect(backup_file.file_names).to match_array(%w(logs.tgz task_logs.tgz director_db.sql blobs.tgz))
+      expect(backup_file.smallest_file_size).to be > 0
     end
   end
 end

@@ -12,9 +12,17 @@ properties:
     description: 'Stdout to print from the errand script'
     default: 'errand1-stdout'
 
+  errand1.stdout_multiplier:
+    description: 'Number of times stdout will be repeated in the output'
+    default: 1
+
   errand1.stderr:
     description: 'Stderr to print from the errand script'
     default: 'errand1-stderr'
+
+  errand1.stderr_multiplier:
+    description: 'Number of times stderr will be repeated in the output'
+    default: 1
 
   errand1.run_package_file:
     description: 'Should bin/run run script from errand1 package to show that package is present on the vm'
@@ -27,3 +35,11 @@ properties:
   errand1.sleep_duration_in_seconds:
     description: 'Number of seconds errand script is going to sleep'
     default: 0
+
+  errand1.logs.stdout:
+    description: 'Output to place into sys/log/errand1/stdout.log'
+    default: 'errand1-stdout-log'
+
+  errand1.logs.custom:
+    description: 'Output to place into sys/log/custom.log'
+    default: 'errand1-custom-log'
