@@ -4,6 +4,9 @@
 require "spec_helper"
 
 describe Bosh::OpenStackCloud::Cloud do
+  let(:default_connection_options) {
+      { "instrumentor" => Bosh::OpenStackCloud::ExconLoggingInstrumentor }
+    }
   describe :new do
     let(:cloud_options) { mock_cloud_options }
     let(:openstack_parms) {
@@ -15,10 +18,10 @@ describe Bosh::OpenStackCloud::Cloud do
         :openstack_tenant => 'admin',
         :openstack_region => 'RegionOne',
         :openstack_endpoint_type => nil,
-        :connection_options => connection_options,
+        :connection_options => merged_connection_options,
       }
     }
-    let(:connection_options) { nil }
+    let(:merged_connection_options) { default_connection_options }
     let(:compute) { double('Fog::Compute') }
     let(:image) { double('Fog::Image') }
 
@@ -36,6 +39,10 @@ describe Bosh::OpenStackCloud::Cloud do
         JSON.generate({
           'ssl_verify_peer' => false,
         })
+      }
+
+      let(:merged_connection_options) { 
+        default_connection_options.merge({ "ssl_verify_peer" => false })
       }
 
       it 'should add optional options to the Fog connection' do

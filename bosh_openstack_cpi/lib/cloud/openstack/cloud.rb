@@ -42,6 +42,9 @@ module Bosh::OpenStackCloud
         @openstack_properties["auth_url"] = @openstack_properties["auth_url"] + "/tokens"
       end
 
+      connection_options = JSON.parse(@openstack_properties['connection_options'] || '{}')
+      connection_options["instrumentor"] = Bosh::OpenStackCloud::ExconLoggingInstrumentor
+
       openstack_params = {
         :provider => "OpenStack",
         :openstack_auth_url => @openstack_properties["auth_url"],
@@ -50,7 +53,7 @@ module Bosh::OpenStackCloud
         :openstack_tenant => @openstack_properties["tenant"],
         :openstack_region => @openstack_properties["region"],
         :openstack_endpoint_type => @openstack_properties["endpoint_type"],
-        :connection_options => @openstack_properties['connection_options']
+        :connection_options => connection_options
       }
       begin
         @openstack = Fog::Compute.new(openstack_params)
@@ -67,7 +70,7 @@ module Bosh::OpenStackCloud
         :openstack_tenant => @openstack_properties["tenant"],
         :openstack_region => @openstack_properties["region"],
         :openstack_endpoint_type => @openstack_properties["endpoint_type"],
-        :connection_options => @openstack_properties['connection_options']
+        :connection_options => connection_options
       }
       begin
         @glance = Fog::Image.new(glance_params)
