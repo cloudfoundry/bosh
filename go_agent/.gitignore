@@ -1,6 +1,6 @@
 out
 pkg
 gobin/*
-
+*.sublime-workspace
 .idea/workspace.xml
 .idea/tasks.xml
