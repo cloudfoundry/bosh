@@ -39,17 +39,7 @@ module Bosh::Dev::Sandbox
     def stop(signal = 'TERM')
       return unless running?
 
-      begin
-        @logger.info("Terminating #{@cmd_array.first} with PID=#{@pid}")
-        Process.kill(signal, @pid)
-      rescue Errno::ESRCH # No such process
-        @logger.info("Process #{@cmd_array.first} with PID=#{@pid} not found")
-        return
-      rescue Errno::EPERM # Owned by some other user/process
-        @logger.info("Process other than #{@cmd_array.first} is running with PID=#{@pid} so this service is stopped.")
-        @logger.debug(`ps #{@pid}`)
-        return
-      end
+      kill_process(signal, @pid)
 
       # Block until process exits to avoid race conditions in the caller
       # (e.g. director process is killed but we don't wait and then we
@@ -75,13 +65,23 @@ module Bosh::Dev::Sandbox
         if remaining_attempts == 5
           @logger.info("Killing #{@cmd_array.first} with PID=#{@pid}")
 
-          Process.kill('KILL', @pid)
+          kill_process('KILL', @pid)
         elsif remaining_attempts == 0
           raise "KILL signal ignored by #{@cmd_array.first} with PID=#{@pid}"
         end
 
         sleep(0.2)
       end
+    end
+
+    def kill_process(signal, pid)
+      @logger.info("Terminating #{@cmd_array.first} with PID=#{pid}")
+      Process.kill(signal, pid)
+    rescue Errno::ESRCH # No such process
+      @logger.info("Process #{@cmd_array.first} with PID=#{pid} not found")
+    rescue Errno::EPERM # Owned by some other user/process
+      @logger.info("Process other than #{@cmd_array.first} is running with PID=#{pid} so this service is stopped.")
+      @logger.debug(`ps #{pid}`)
     end
   end
 end
