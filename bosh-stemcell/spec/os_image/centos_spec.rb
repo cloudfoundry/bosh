@@ -24,6 +24,16 @@ describe 'CentOS OS image' do
     describe file('/etc/sysconfig/network') do
       it { should be_file }
     end
+
+    describe file('/etc/localtime') do
+      it { should be_file }
+      it { should contain 'UTC' }
+    end
+
+    describe file('/etc/sysconfig/i18n') do
+      it { should be_file }
+      it { should contain 'en_US.UTF-8' }
+    end
   end
 
   context 'installed by base_yum' do
