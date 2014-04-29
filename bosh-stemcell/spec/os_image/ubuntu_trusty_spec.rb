@@ -17,6 +17,7 @@ describe 'Ubuntu 14.04 OS image' do
       apt
       apt-utils
       bzip2
+      ca-certificates
       console-setup
       dash
       debconf

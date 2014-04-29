@@ -52,7 +52,7 @@ libxml2 libxml2-dev libxslt1.1 libxslt1-dev zip unzip \
 nfs-common flex psmisc apparmor-utils iptables sysstat \
 rsync openssh-server traceroute libncurses5-dev quota \
 libaio1 gdb tripwire libcap2-bin libcap2-dev libbz2-dev \
-cmake uuid-dev libgcrypt-dev"
+cmake uuid-dev libgcrypt-dev ca-certificates"
 pkg_mgr install $debs
 
 # Lifted from bosh_debs
