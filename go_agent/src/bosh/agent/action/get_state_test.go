@@ -19,130 +19,118 @@ import (
 	fakesettings "bosh/settings/fakes"
 )
 
-func buildGetStateAction(settings boshsettings.Service) (
-	specService *fakeas.FakeV1Service,
-	jobSupervisor *fakejobsuper.FakeJobSupervisor,
-	vitalsService *fakevitals.FakeService,
-	action GetStateAction,
-) {
-	jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
-	specService = fakeas.NewFakeV1Service()
-	vitalsService = fakevitals.NewFakeService()
-	fakeNTPService := &fakentp.FakeService{
-		GetOffsetNTPOffset: boshntp.NTPInfo{
-			Offset:    "0.34958",
-			Timestamp: "12 Oct 17:37:58",
-		},
-	}
-	action = NewGetState(settings, specService, jobSupervisor, vitalsService, fakeNTPService)
-	return
-}
-func init() {
-	Describe("GetState", func() {
-		It("get state should be synchronous", func() {
-			settings := &fakesettings.FakeSettingsService{}
-			_, _, _, action := buildGetStateAction(settings)
-			Expect(action.IsAsynchronous()).To(BeFalse())
+var _ = Describe("GetState", func() {
+	var (
+		settings      *fakesettings.FakeSettingsService
+		specService   *fakeas.FakeV1Service
+		jobSupervisor *fakejobsuper.FakeJobSupervisor
+		vitalsService *fakevitals.FakeService
+		action        GetStateAction
+	)
+
+	BeforeEach(func() {
+		settings = &fakesettings.FakeSettingsService{}
+		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
+		specService = fakeas.NewFakeV1Service()
+		vitalsService = fakevitals.NewFakeService()
+		action = NewGetState(settings, specService, jobSupervisor, vitalsService, &fakentp.FakeService{
+			GetOffsetNTPOffset: boshntp.NTPInfo{
+				Offset:    "0.34958",
+				Timestamp: "12 Oct 17:37:58",
+			},
 		})
+	})
 
-		It("is not persistent", func() {
-			settings := &fakesettings.FakeSettingsService{}
-			_, _, _, action := buildGetStateAction(settings)
-			Expect(action.IsPersistent()).To(BeFalse())
-		})
+	It("get state should be synchronous", func() {
+		Expect(action.IsAsynchronous()).To(BeFalse())
+	})
 
-		Describe("Run", func() {
-			It("returns state", func() {
-				settings := &fakesettings.FakeSettingsService{}
-				settings.AgentID = "my-agent-id"
-				settings.VM.Name = "vm-abc-def"
+	It("is not persistent", func() {
+		Expect(action.IsPersistent()).To(BeFalse())
+	})
 
-				specService, jobSupervisor, _, action := buildGetStateAction(settings)
-				jobSupervisor.StatusStatus = "running"
+	Describe("Run", func() {
+		Context("when current spec can be retrieved", func() {
+			Context("when vitals can be retrieved", func() {
+				It("returns state", func() {
+					settings.AgentID = "my-agent-id"
+					settings.VM.Name = "vm-abc-def"
 
-				specService.Spec = boshas.V1ApplySpec{
-					Deployment: "fake-deployment",
-				}
+					jobSupervisor.StatusStatus = "running"
 
-				expectedSpec := GetStateV1ApplySpec{
-					AgentID:      "my-agent-id",
-					JobState:     "running",
-					BoshProtocol: "1",
-					VM:           boshsettings.VM{Name: "vm-abc-def"},
-					Ntp: boshntp.NTPInfo{
-						Offset:    "0.34958",
-						Timestamp: "12 Oct 17:37:58",
-					},
-				}
-				expectedSpec.Deployment = "fake-deployment"
+					specService.Spec = boshas.V1ApplySpec{
+						Deployment: "fake-deployment",
+					}
 
-				state, err := action.Run()
-				Expect(err).ToNot(HaveOccurred())
+					expectedSpec := GetStateV1ApplySpec{
+						AgentID:      "my-agent-id",
+						JobState:     "running",
+						BoshProtocol: "1",
+						VM:           boshsettings.VM{Name: "vm-abc-def"},
+						Ntp: boshntp.NTPInfo{
+							Offset:    "0.34958",
+							Timestamp: "12 Oct 17:37:58",
+						},
+					}
+					expectedSpec.Deployment = "fake-deployment"
 
-				Expect(state.AgentID).To(Equal(expectedSpec.AgentID))
-				Expect(state.JobState).To(Equal(expectedSpec.JobState))
-				Expect(state.Deployment).To(Equal(expectedSpec.Deployment))
-				boshassert.LacksJSONKey(GinkgoT(), state, "vitals")
+					state, err := action.Run()
+					Expect(err).ToNot(HaveOccurred())
 
-				Expect(state).To(Equal(expectedSpec))
-			})
+					Expect(state.AgentID).To(Equal(expectedSpec.AgentID))
+					Expect(state.JobState).To(Equal(expectedSpec.JobState))
+					Expect(state.Deployment).To(Equal(expectedSpec.Deployment))
+					boshassert.LacksJSONKey(GinkgoT(), state, "vitals")
 
-			It("returns state in full format", func() {
-				settings := &fakesettings.FakeSettingsService{}
-				settings.AgentID = "my-agent-id"
-				settings.VM.Name = "vm-abc-def"
+					Expect(state).To(Equal(expectedSpec))
+				})
 
-				specService, jobSupervisor, fakeVitals, action := buildGetStateAction(settings)
-				jobSupervisor.StatusStatus = "running"
+				It("returns state in full format", func() {
+					settings.AgentID = "my-agent-id"
+					settings.VM.Name = "vm-abc-def"
 
-				specService.Spec = boshas.V1ApplySpec{
-					Deployment: "fake-deployment",
-				}
+					jobSupervisor.StatusStatus = "running"
 
-				expectedVitals := boshvitals.Vitals{
-					Load: []string{"foo", "bar", "baz"},
-				}
-				fakeVitals.GetVitals = expectedVitals
-				expectedVM := map[string]interface{}{"name": "vm-abc-def"}
+					specService.Spec = boshas.V1ApplySpec{
+						Deployment: "fake-deployment",
+					}
 
-				state, err := action.Run("full")
-				Expect(err).ToNot(HaveOccurred())
+					expectedVitals := boshvitals.Vitals{
+						Load: []string{"foo", "bar", "baz"},
+					}
+					vitalsService.GetVitals = expectedVitals
+					expectedVM := map[string]interface{}{"name": "vm-abc-def"}
 
-				boshassert.MatchesJSONString(GinkgoT(), state.AgentID, `"my-agent-id"`)
-				boshassert.MatchesJSONString(GinkgoT(), state.JobState, `"running"`)
-				boshassert.MatchesJSONString(GinkgoT(), state.Deployment, `"fake-deployment"`)
-				Expect(*state.Vitals).To(Equal(expectedVitals))
-				boshassert.MatchesJSONMap(GinkgoT(), state.VM, expectedVM)
-			})
+					state, err := action.Run("full")
+					Expect(err).ToNot(HaveOccurred())
 
-			Context("when current cannot be retrieved", func() {
-
-				It("without current spec", func() {
-					settings := &fakesettings.FakeSettingsService{}
-					specService, _, _, action := buildGetStateAction(settings)
-
-					specService.GetErr = errors.New("fake-spec-get-error")
-
-					_, err := action.Run()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-spec-get-error"))
+					boshassert.MatchesJSONString(GinkgoT(), state.AgentID, `"my-agent-id"`)
+					boshassert.MatchesJSONString(GinkgoT(), state.JobState, `"running"`)
+					boshassert.MatchesJSONString(GinkgoT(), state.Deployment, `"fake-deployment"`)
+					Expect(*state.Vitals).To(Equal(expectedVitals))
+					boshassert.MatchesJSONMap(GinkgoT(), state.VM, expectedVM)
 				})
 			})
 
 			Context("when vitals cannot be retrieved", func() {
 				It("returns error", func() {
-					settings := &fakesettings.FakeSettingsService{}
-					_, _, fakeVitals, action := buildGetStateAction(settings)
-
-					fakeVitals.GetErr = errors.New("fake-vitals-get-error")
+					vitalsService.GetErr = errors.New("fake-vitals-get-error")
 
 					_, err := action.Run("full")
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-vitals-get-error"))
 				})
 			})
-
 		})
 
+		Context("when current spec cannot be retrieved", func() {
+			It("without current spec", func() {
+				specService.GetErr = errors.New("fake-spec-get-error")
+
+				_, err := action.Run()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-spec-get-error"))
+			})
+		})
 	})
-}
+})
