@@ -1,4 +1,4 @@
-package devicepathresolver
+package devicepathresolver_test
 
 import (
 	. "github.com/onsi/ginkgo"

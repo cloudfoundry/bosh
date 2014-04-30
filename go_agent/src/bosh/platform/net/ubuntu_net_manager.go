@@ -9,25 +9,36 @@ import (
 	"time"
 
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
+)
+
+const ubuntuNetManagerLogTag = "ubuntuNetManager"
+
+var (
+	ifupVersion07Regex = regexp.MustCompile(`ifup version 0\.7`)
 )
 
 type ubuntuNetManager struct {
 	arpWaitInterval time.Duration
 	cmdRunner       boshsys.CmdRunner
 	fs              boshsys.FileSystem
+	logger          boshlog.Logger
 }
 
 func NewUbuntuNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	arpWaitInterval time.Duration,
-) (net ubuntuNetManager) {
-	net.arpWaitInterval = arpWaitInterval
-	net.cmdRunner = cmdRunner
-	net.fs = fs
-	return
+	logger boshlog.Logger,
+) ubuntuNetManager {
+	return ubuntuNetManager{
+		arpWaitInterval: arpWaitInterval,
+		cmdRunner:       cmdRunner,
+		fs:              fs,
+		logger:          logger,
+	}
 }
 
 func (net ubuntuNetManager) getDNSServers(networks boshsettings.Networks) []string {
@@ -60,8 +71,16 @@ func (net ubuntuNetManager) SetupDhcp(networks boshsettings.Networks) error {
 
 	if written {
 		args := net.restartNetworkArguments()
-		net.cmdRunner.RunCommand("ifdown", args...)
-		net.cmdRunner.RunCommand("ifup", args...)
+
+		_, _, _, err := net.cmdRunner.RunCommand("ifdown", args...)
+		if err != nil {
+			net.logger.Info(ubuntuNetManagerLogTag, "Ignoring ifdown failure: %#v", err)
+		}
+
+		_, _, _, err = net.cmdRunner.RunCommand("ifup", args...)
+		if err != nil {
+			net.logger.Info(ubuntuNetManagerLogTag, "Ignoring ifup failure: %#v", err)
+		}
 	}
 
 	return nil
@@ -110,7 +129,11 @@ func (net ubuntuNetManager) gratuitiousArp(networks []CustomNetwork, errChan cha
 				time.Sleep(100 * time.Millisecond)
 			}
 
-			net.cmdRunner.RunCommand("arping", "-c", "1", "-U", "-I", network.Interface, network.IP)
+			_, _, _, err := net.cmdRunner.RunCommand("arping", "-c", "1", "-U", "-I", network.Interface, network.IP)
+			if err != nil {
+				net.logger.Info(ubuntuNetManagerLogTag, "Ignoring arping failure: %#v", err)
+			}
+
 			time.Sleep(net.arpWaitInterval)
 		}
 	}
@@ -221,8 +244,15 @@ func (net ubuntuNetManager) detectMacAddresses() (map[string]string, error) {
 
 func (net ubuntuNetManager) restartNetworkingInterfaces(networks []CustomNetwork) {
 	for _, network := range networks {
-		net.cmdRunner.RunCommand("service", "network-interface", "stop", "INTERFACE="+network.Interface)
-		net.cmdRunner.RunCommand("service", "network-interface", "start", "INTERFACE="+network.Interface)
+		_, _, _, err := net.cmdRunner.RunCommand("service", "network-interface", "stop", "INTERFACE="+network.Interface)
+		if err != nil {
+			net.logger.Info(ubuntuNetManagerLogTag, "Ignoring network stop failure: %#v", err)
+		}
+
+		_, _, _, err = net.cmdRunner.RunCommand("service", "network-interface", "start", "INTERFACE="+network.Interface)
+		if err != nil {
+			net.logger.Info(ubuntuNetManagerLogTag, "Ignoring network start failure: %#v", err)
+		}
 	}
 }
 
@@ -236,12 +266,14 @@ func (net ubuntuNetManager) dhclientConfigFile() string {
 }
 
 func (net ubuntuNetManager) restartNetworkArguments() []string {
-	stdout, _, _, _ := net.cmdRunner.RunCommand("ifup", "--version")
+	stdout, _, _, err := net.cmdRunner.RunCommand("ifup", "--version")
+	if err != nil {
+		net.logger.Info(ubuntuNetManagerLogTag, "Ignoring ifup version failure: %#v", err)
+	}
 
 	// Check if command accepts --no-loopback argument
 	// --exclude does not work with ifup > 0.7 which comes in Ubuntu 14.04
-	matched, _ := regexp.MatchString(`ifup version 0\.7`, stdout)
-	if matched {
+	if ifupVersion07Regex.MatchString(stdout) {
 		return []string{"-a", "--no-loopback"}
 	}
 

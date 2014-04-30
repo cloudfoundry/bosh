@@ -38,10 +38,11 @@ var _ = Describe("LinuxPlatform", func() {
 		copier             boshcmd.Copier
 		vitalsService      boshvitals.Service
 		options            LinuxOptions
-		logger             boshlog.Logger
 	)
 
 	BeforeEach(func() {
+		logger := boshlog.NewLogger(boshlog.LevelNone)
+
 		collector = &fakestats.FakeStatsCollector{}
 		fs = fakesys.NewFakeFileSystem()
 		cmdRunner = fakesys.NewFakeCmdRunner()
@@ -50,7 +51,7 @@ var _ = Describe("LinuxPlatform", func() {
 		diskWaitTimeout = 1 * time.Millisecond
 		cdutil = fakecd.NewFakeCdUtil()
 		compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
-		copier = boshcmd.NewCpCopier(cmdRunner, fs)
+		copier = boshcmd.NewCpCopier(cmdRunner, fs, logger)
 		vitalsService = boshvitals.NewService(collector, dirProvider)
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		options = LinuxOptions{}
@@ -64,12 +65,12 @@ var _ = Describe("LinuxPlatform", func() {
 		fs.SetGlob("/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/*", []string{
 			"/sys/bus/scsi/devices/fake-host-id:0:fake-disk-id:0/block/sdf",
 		})
-
-		logger = boshlog.NewLogger(boshlog.LevelNone)
 	})
 
 	JustBeforeEach(func() {
-		netManager := boshnet.NewCentosNetManager(fs, cmdRunner, 1*time.Millisecond)
+		logger := boshlog.NewLogger(boshlog.LevelNone)
+
+		netManager := boshnet.NewCentosNetManager(fs, cmdRunner, 1*time.Millisecond, logger)
 
 		platform = NewLinuxPlatform(
 			fs,

@@ -1,4 +1,4 @@
-package devicepathresolver
+package devicepathresolver_test
 
 import (
 	"time"
@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	. "bosh/infrastructure/devicepathresolver"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
 )

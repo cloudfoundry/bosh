@@ -36,13 +36,13 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	linuxCdutil := boshcd.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom)
 
 	compressor := boshcmd.NewTarballCompressor(runner, fs)
-	copier := boshcmd.NewCpCopier(runner, fs)
+	copier := boshcmd.NewCpCopier(runner, fs, logger)
 
 	sigarCollector := boshstats.NewSigarStatsCollector()
 	vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
 
-	centosNetManager := boshnet.NewCentosNetManager(fs, runner, 10*time.Second)
-	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, 10*time.Second)
+	centosNetManager := boshnet.NewCentosNetManager(fs, runner, 10*time.Second, logger)
+	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, 10*time.Second, logger)
 
 	centos := NewLinuxPlatform(
 		fs,
@@ -79,7 +79,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	p.platforms = map[string]Platform{
 		"ubuntu": ubuntu,
 		"centos": centos,
-		"dummy":  NewDummyPlatform(sigarCollector, fs, runner, dirProvider, linuxDiskManager),
+		"dummy":  NewDummyPlatform(sigarCollector, fs, runner, dirProvider, linuxDiskManager, logger),
 	}
 	return
 }

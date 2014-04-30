@@ -8,25 +8,32 @@ import (
 	"time"
 
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 )
+
+const centosNetManagerLogTag = "centosNetManager"
 
 type centosNetManager struct {
 	arpWaitInterval time.Duration
 	cmdRunner       boshsys.CmdRunner
 	fs              boshsys.FileSystem
+	logger          boshlog.Logger
 }
 
 func NewCentosNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	arpWaitInterval time.Duration,
-) (net centosNetManager) {
-	net.arpWaitInterval = arpWaitInterval
-	net.cmdRunner = cmdRunner
-	net.fs = fs
-	return
+	logger boshlog.Logger,
+) centosNetManager {
+	return centosNetManager{
+		arpWaitInterval: arpWaitInterval,
+		cmdRunner:       cmdRunner,
+		fs:              fs,
+		logger:          logger,
+	}
 }
 
 func (net centosNetManager) getDNSServers(networks boshsettings.Networks) []string {
@@ -67,8 +74,7 @@ func (net centosNetManager) SetupDhcp(networks boshsettings.Networks) error {
 	}
 
 	if written {
-		// Ignore errors here, just run the commands
-		net.cmdRunner.RunCommand("service", "network", "restart")
+		net.restartNetwork()
 	}
 
 	return err
@@ -114,7 +120,11 @@ func (net centosNetManager) gratuitiousArp(networks []CustomNetwork, errChan cha
 				time.Sleep(100 * time.Millisecond)
 			}
 
-			net.cmdRunner.RunCommand("arping", "-c", "1", "-U", "-I", network.Interface, network.IP)
+			_, _, _, err := net.cmdRunner.RunCommand("arping", "-c", "1", "-U", "-I", network.Interface, network.IP)
+			if err != nil {
+				net.logger.Info(centosNetManagerLogTag, "Ignoring arping failure: %#v", err)
+			}
+
 			time.Sleep(net.arpWaitInterval)
 		}
 	}
@@ -221,5 +231,8 @@ func (net centosNetManager) detectMacAddresses() (map[string]string, error) {
 }
 
 func (net centosNetManager) restartNetwork() {
-	net.cmdRunner.RunCommand("service", "network", "restart")
+	_, _, _, err := net.cmdRunner.RunCommand("service", "network", "restart")
+	if err != nil {
+		net.logger.Info(centosNetManagerLogTag, "Ignoring network restart failure: %#v", err)
+	}
 }

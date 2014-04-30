@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	boshlog "bosh/logger"
 	. "bosh/platform/net"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
@@ -53,7 +54,8 @@ prepend domain-name-servers zz.zz.zz.zz, yy.yy.yy.yy, xx.xx.xx.xx;
 		BeforeEach(func() {
 			fs = fakesys.NewFakeFileSystem()
 			cmdRunner = fakesys.NewFakeCmdRunner()
-			netManager = NewUbuntuNetManager(fs, cmdRunner, 1*time.Millisecond)
+			logger := boshlog.NewLogger(boshlog.LevelNone)
+			netManager = NewUbuntuNetManager(fs, cmdRunner, 1*time.Millisecond, logger)
 		})
 
 		Describe("SetupDhcp", func() {

@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	boshlog "bosh/logger"
 	. "bosh/platform/net"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
@@ -51,7 +52,8 @@ ONBOOT=yes`
 		BeforeEach(func() {
 			fs = fakesys.NewFakeFileSystem()
 			cmdRunner = fakesys.NewFakeCmdRunner()
-			netManager = NewCentosNetManager(fs, cmdRunner, 1*time.Millisecond)
+			logger := boshlog.NewLogger(boshlog.LevelNone)
+			netManager = NewCentosNetManager(fs, cmdRunner, 1*time.Millisecond, logger)
 		})
 
 		Describe("SetupDhcp", func() {

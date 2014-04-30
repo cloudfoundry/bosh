@@ -32,13 +32,14 @@ func NewDummyPlatform(
 	cmdRunner boshsys.CmdRunner,
 	dirProvider boshdirs.DirectoriesProvider,
 	diskManager boshdisk.Manager,
+	logger boshlog.Logger,
 ) *dummyPlatform {
 	return &dummyPlatform{
 		fs:            fs,
 		cmdRunner:     cmdRunner,
 		collector:     collector,
 		compressor:    boshcmd.NewTarballCompressor(cmdRunner, fs),
-		copier:        boshcmd.NewCpCopier(cmdRunner, fs),
+		copier:        boshcmd.NewCpCopier(cmdRunner, fs, logger),
 		dirProvider:   dirProvider,
 		vitalsService: boshvitals.NewService(collector, dirProvider),
 		diskManager:   diskManager,
