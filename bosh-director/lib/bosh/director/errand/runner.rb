@@ -19,8 +19,8 @@ module Bosh::Director
       end
 
       agent_task_result = nil
-
       event_log_stage = @event_log.begin_stage('Running errand', 1)
+
       begin
         event_log_stage.advance_and_track("#{@job.name}/#{instance.index}") do
           start_errand_result = agent.start_errand
@@ -28,14 +28,28 @@ module Bosh::Director
           agent_task_result = agent.wait_for_task(agent_task_id, &blk)
         end
       rescue TaskCancelled => e
+        # Existing run_errand long running task will return a result
+        # after agent cancels the task
         agent_task_result = agent.wait_for_task(agent_task_id)
-        raise e
-      ensure
-        if agent_task_result
-          errand_result = Errand::Result.from_agent_task_result(agent_task_result)
-          @result_file.write(JSON.dump(errand_result.to_hash) + "\n")
-        end
+        @cancel_error = e
       end
+
+      begin
+        fetch_logs_result = agent.fetch_logs('job', nil)
+      rescue DirectorError => e
+        @fetch_logs_error = e
+      end
+
+      if agent_task_result
+        errand_result = Errand::Result.from_agent_task_results(agent_task_result, fetch_logs_result)
+        @result_file.write(JSON.dump(errand_result.to_hash) + "\n")
+      end
+
+      # Prefer to raise cancel error because
+      # it was triggered before trying to fetch logs
+      raise @cancel_error if @cancel_error
+
+      raise @fetch_logs_error if @fetch_logs_error
 
       errand_result.short_description(@job.name)
     end

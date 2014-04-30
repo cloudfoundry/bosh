@@ -49,9 +49,15 @@ module Bosh::Director
             }
           end
 
+          let(:agent_fetch_logs_result) { { 'blobstore_id' => 'fake-logs-blobstore-id' } }
+
           before do
             allow(agent_client).to receive(:start_errand).
               and_return('agent_task_id' => 'fake-agent-task-id')
+
+            allow(agent_client).to receive(:fetch_logs).
+              and_return(agent_fetch_logs_result)
+
             allow(agent_client).to receive(:wait_for_task).and_return(agent_task_result)
           end
 
@@ -69,12 +75,15 @@ module Bosh::Director
             subject.run(&fake_block)
           end
 
-          it 'writes run_errand agent response with exit_code, stdout and stderr to task result file' do
+          it 'writes run_errand response with exit_code, stdout, stderr and logs result to task result file' do
             result_file.should_receive(:write) do |text|
               expect(JSON.parse(text)).to eq(
                 'exit_code' => 123,
                 'stdout' => 'fake-stdout',
                 'stderr' => 'fake-stderr',
+                'logs' => {
+                  'blobstore_id' => 'fake-logs-blobstore-id',
+                },
               )
             end
             subject.run
@@ -94,11 +103,34 @@ module Bosh::Director
                with('fake-job-name').
                and_return('fake-short-description')
 
-            expect(Errand::Result).to receive(:from_agent_task_result).
-              with(agent_task_result).
+            expect(Errand::Result).to receive(:from_agent_task_results).
+              with(agent_task_result, agent_fetch_logs_result).
               and_return(errand_result)
 
             expect(subject.run).to eq('fake-short-description')
+          end
+
+          it 'fetches the logs from agent with correct job type and filters' do
+            expect(agent_client).to receive(:fetch_logs).with('job', nil)
+            subject.run
+          end
+
+          it 'writes run_errand response with nil fetched lobs blobstore id if fetching logs fails' do
+            result_file.should_receive(:write) do |text|
+              expect(JSON.parse(text)).to eq(
+                'exit_code' => 123,
+                'stdout' => 'fake-stdout',
+                'stderr' => 'fake-stderr',
+                'logs' => {
+                  'blobstore_id' => nil,
+                },
+              )
+            end
+
+            error = DirectorError.new
+            expect(agent_client).to receive(:fetch_logs).and_raise(error)
+
+            expect { subject.run }.to raise_error(error)
           end
 
           context 'when errand is canceled' do
@@ -112,11 +144,43 @@ module Bosh::Director
               end
             end
 
+            it 're-raises task cancelled exception is task is considered to be cancelled' do
+              expect { subject.run {} }.to raise_error(TaskCancelled)
+            end
+
             it 'writes the errand result received from the agent\'s cancellation' do
               result_file.should_receive(:write) do |text|
-                expect(JSON.parse(text)).to eq(agent_task_result)
+                expect(JSON.parse(text)).to eq(
+                  'exit_code' => 123,
+                  'stdout' => 'fake-stdout',
+                  'stderr' => 'fake-stderr',
+                  'logs' => {
+                    'blobstore_id' => 'fake-logs-blobstore-id'
+                  },
+                )
               end
+              expect { subject.run {} }.to raise_error
+            end
+
+            it 'raises cancel error even if fetching logs fails' do
+              expect(agent_client).to receive(:fetch_logs).and_raise(DirectorError)
               expect { subject.run {} }.to raise_error(TaskCancelled)
+            end
+
+            it 'writes run_errand response with nil blobstore_id if fetching logs fails' do
+              result_file.should_receive(:write) do |text|
+                expect(JSON.parse(text)).to eq(
+                  'exit_code' => 123,
+                  'stdout' => 'fake-stdout',
+                  'stderr' => 'fake-stderr',
+                  'logs' => {
+                    'blobstore_id' => nil,
+                  },
+                )
+              end
+
+              expect(agent_client).to receive(:fetch_logs).and_raise(DirectorError)
+              expect { subject.run {} }.to raise_error
             end
           end
         end
@@ -128,6 +192,16 @@ module Bosh::Director
           it 'raises an error' do
             expect { subject.run }.to raise_error(error)
           end
+
+          it 'does write run_errand agent response to result file because we did not run errand' do
+            expect(result_file).to_not receive(:write)
+            expect { subject.run }.to raise_error
+          end
+
+          it 'does not try to fetch logs from the agent because we did not run errand' do
+            expect(agent_client).to_not receive(:fetch_logs)
+            expect { subject.run }.to raise_error
+          end
         end
 
         context 'when agent times out responding to start errand task status check' do
@@ -136,6 +210,16 @@ module Bosh::Director
 
           it 'raises original timeout error' do
             expect { subject.run }.to raise_error(error)
+          end
+
+          it 'does write run_errand agent response to result file because there is was no response' do
+            expect(result_file).to_not receive(:write)
+            expect { subject.run }.to raise_error
+          end
+
+          it 'does not try to fetch logs from the agent because we failed contacting it already' do
+            expect(agent_client).to_not receive(:fetch_logs)
+            expect { subject.run }.to raise_error
           end
         end
 

@@ -4,7 +4,7 @@ module Bosh::Director
   class Errand::Result
     attr_reader :exit_code
 
-    AGENT_TASK_RESULT_SCHEMA = ::Membrane::SchemaParser.parse do
+    AGENT_RUN_ERRAND_RESULT_SCHEMA = ::Membrane::SchemaParser.parse do
       {
         'exit_code' => Integer,
         'stdout' => String,
@@ -12,19 +12,28 @@ module Bosh::Director
       }
     end
 
+    AGENT_FETCH_LOGS_RESULT_SCHEMA = ::Membrane::SchemaParser.parse do
+      { 'blobstore_id' => String }
+    end
+
     # Explicitly write out schema of the director task result
     # to avoid accidently leaking agent task result extra fields.
-    def self.from_agent_task_result(agent_task_result)
-      AGENT_TASK_RESULT_SCHEMA.validate(agent_task_result)
-      new(*agent_task_result.values_at('exit_code', 'stdout', 'stderr'))
+    def self.from_agent_task_results(agent_task_result, fetch_logs_result)
+      AGENT_RUN_ERRAND_RESULT_SCHEMA.validate(agent_task_result)
+      AGENT_FETCH_LOGS_RESULT_SCHEMA.validate(fetch_logs_result) if fetch_logs_result
+      new(
+        *agent_task_result.values_at('exit_code', 'stdout', 'stderr'),
+        fetch_logs_result && fetch_logs_result['blobstore_id'],
+      )
     rescue Membrane::SchemaValidationError => e
       raise AgentInvalidTaskResult, e.message
     end
 
-    def initialize(exit_code, stdout, stderr)
+    def initialize(exit_code, stdout, stderr, logs_blobstore_id)
       @exit_code = exit_code
       @stdout = stdout
       @stderr = stderr
+      @logs_blobstore_id = logs_blobstore_id
     end
 
     def short_description(job_name)
@@ -45,6 +54,9 @@ module Bosh::Director
         'exit_code' => @exit_code,
         'stdout' => @stdout,
         'stderr' => @stderr,
+        'logs' => {
+          'blobstore_id' => @logs_blobstore_id,
+        },
       }
     end
   end
