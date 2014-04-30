@@ -1,42 +1,5 @@
-require 'membrane'
-
 module Bosh::Director
   class Errand::Runner
-    class ErrandResult
-      attr_reader :exit_code
-
-      AGENT_TASK_RESULT_SCHEMA = ::Membrane::SchemaParser.parse do
-        {
-          'exit_code' => Integer,
-          'stdout' => String,
-          'stderr' => String,
-        }
-      end
-
-      # Explicitly write out schema of the director task result
-      # to avoid accidently leaking agent task result extra fields.
-      def self.from_agent_task_result(agent_task_result)
-        AGENT_TASK_RESULT_SCHEMA.validate(agent_task_result)
-        new(*agent_task_result.values_at('exit_code', 'stdout', 'stderr'))
-      rescue Membrane::SchemaValidationError => e
-        raise AgentInvalidTaskResult, e.message
-      end
-
-      def initialize(exit_code, stdout, stderr)
-        @exit_code = exit_code
-        @stdout = stdout
-        @stderr = stderr
-      end
-
-      def to_hash
-        {
-          'exit_code' => @exit_code,
-          'stdout' => @stdout,
-          'stderr' => @stderr,
-        }
-      end
-    end
-
     # @param [Bosh::Director::DeploymentPlan::Job] job
     # @param [Bosh::Director::TaskResultFile] result_file
     # @param [Bosh::Director::EventLog::Log] event_log
@@ -69,7 +32,7 @@ module Bosh::Director
         raise e
       ensure
         if agent_task_result
-          errand_result = ErrandResult.from_agent_task_result(agent_task_result)
+          errand_result = Errand::Result.from_agent_task_result(agent_task_result)
           @result_file.write(JSON.dump(errand_result.to_hash) + "\n")
         end
       end

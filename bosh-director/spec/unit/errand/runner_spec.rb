@@ -42,20 +42,21 @@ module Bosh::Director
           let(:result_file) { instance_double('File', write: nil) }
 
           let(:start_response) { { 'agent_task_id' => 'fake-agent-task-id' } }
-          let(:errand_result) {
+
+          let(:errand_result) do
             {
               'exit_code' => 123,
               'stdout' => 'fake-stdout',
               'stderr' => 'fake-stderr',
             }
-          }
+          end
 
           before do
             allow(agent_client).to receive(:start_errand).and_return(start_response)
             allow(agent_client).to receive(:wait_for_task).and_return(errand_result)
           end
 
-          it 'runs a block while polling' do
+          it 'runs a block argument to run function while polling for errand to finish' do
             fake_block = Proc.new {}
 
             expect(agent_client).to receive(:start_errand).with(no_args)
@@ -73,16 +74,13 @@ module Bosh::Director
             result_file.should_receive(:write) do |text|
               expect(JSON.parse(text)).to eq(errand_result)
             end
-
             subject.run
           end
 
           it 'records errand running in the event log' do
             event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
             expect(event_log).to receive(:begin_stage).with('Running errand', 1).and_return(event_log_stage)
-
             expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/0').and_yield
-
             subject.run
           end
 
@@ -140,16 +138,18 @@ module Bosh::Director
           context 'when errand is canceled' do
             before do
               allow(agent_client).to receive(:wait_for_task) do |args, &blk|
+                # Errand is cancelled by the user
                 raise TaskCancelled if blk
+
+                # Agent returns result after cancelling errand
                 errand_result
               end
             end
 
-            it 'writes the errand result' do
+            it 'writes the errand result received from the agent\'s cancellation' do
               result_file.should_receive(:write) do |text|
                 expect(JSON.parse(text)).to eq(errand_result)
               end
-
               expect { subject.run {} }.to raise_error(TaskCancelled)
             end
           end
@@ -168,7 +168,7 @@ module Bosh::Director
           before { allow(agent_client).to receive(:start_errand).and_raise(error) }
           let(:error) { RpcRemoteException.new('timeout') }
 
-          it 'propagates timeout error' do
+          it 'raises original timeout error' do
             expect { subject.run }.to raise_error(error)
           end
         end
@@ -188,7 +188,6 @@ module Bosh::Director
 
           it 'sends cancel_task message to the agent' do
             expect(agent_client).to receive(:cancel_task).with('fake-agent-task-id')
-
             subject.cancel
           end
         end
@@ -196,7 +195,6 @@ module Bosh::Director
         context 'when no errand is running' do
           it 'does not send a message to the agent' do
             expect(agent_client).not_to receive(:cancel_task)
-
             subject.cancel
           end
         end
