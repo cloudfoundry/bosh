@@ -41,9 +41,7 @@ module Bosh::Director
           before { allow(Config).to receive(:result).and_return(result_file) }
           let(:result_file) { instance_double('File', write: nil) }
 
-          let(:start_response) { { 'agent_task_id' => 'fake-agent-task-id' } }
-
-          let(:errand_result) do
+          let(:agent_task_result) do
             {
               'exit_code' => 123,
               'stdout' => 'fake-stdout',
@@ -52,8 +50,9 @@ module Bosh::Director
           end
 
           before do
-            allow(agent_client).to receive(:start_errand).and_return(start_response)
-            allow(agent_client).to receive(:wait_for_task).and_return(errand_result)
+            allow(agent_client).to receive(:start_errand).
+              and_return('agent_task_id' => 'fake-agent-task-id')
+            allow(agent_client).to receive(:wait_for_task).and_return(agent_task_result)
           end
 
           it 'runs a block argument to run function while polling for errand to finish' do
@@ -64,7 +63,7 @@ module Bosh::Director
             expect(agent_client).to receive(:wait_for_task) do |args, &blk|
               expect(args).to eq('fake-agent-task-id')
               expect(blk).to eq(fake_block)
-              errand_result
+              agent_task_result
             end
 
             subject.run(&fake_block)
@@ -72,7 +71,11 @@ module Bosh::Director
 
           it 'writes run_errand agent response with exit_code, stdout and stderr to task result file' do
             result_file.should_receive(:write) do |text|
-              expect(JSON.parse(text)).to eq(errand_result)
+              expect(JSON.parse(text)).to eq(
+                'exit_code' => 123,
+                'stdout' => 'fake-stdout',
+                'stderr' => 'fake-stderr',
+              )
             end
             subject.run
           end
@@ -84,55 +87,18 @@ module Bosh::Director
             subject.run
           end
 
-          %w(exit_code stdout stderr).each do |field_name|
-            it "raises an error when #{field_name} is missing in the errand result" do
-              invalid_errand_result = errand_result.reject { |k, _| k == field_name }
-              allow(agent_client).to receive(:wait_for_task).and_return(invalid_errand_result)
+          it 'returns a short description from errand result' do
+            errand_result = instance_double('Bosh::Director::Errand::Result', to_hash: {})
 
-              expect { subject.run }.to raise_error(AgentInvalidTaskResult, /#{field_name}.*missing/i)
-            end
-          end
+            expect(errand_result).to receive(:short_description).
+               with('fake-job-name').
+               and_return('fake-short-description')
 
-          it 'does not pass through unexpected fields in the errand result' do
-            errand_result_with_extras = errand_result.dup
-            errand_result_with_extras['unexpected-key'] = 'extra-value'
-            allow(agent_client).to receive(:wait_for_task).and_return(errand_result_with_extras)
+            expect(Errand::Result).to receive(:from_agent_task_result).
+              with(agent_task_result).
+              and_return(errand_result)
 
-            result_file.should_receive(:write) do |text|
-              expect(JSON.parse(text)).to eq(errand_result)
-            end
-
-            subject.run
-          end
-
-          context 'when errand exit_code is 0' do
-            before do
-              allow(agent_client).to receive(:wait_for_task).and_return(errand_result.merge('exit_code' => 0))
-            end
-
-            it 'returns successful errand completion message as task short result (not result file)' do
-              expect(subject.run).to eq('Errand `fake-job-name\' completed successfully (exit code 0)')
-            end
-          end
-
-          context 'when errand exit_code is non-0' do
-            before do
-              allow(agent_client).to receive(:wait_for_task).and_return(errand_result.merge('exit_code' => 123))
-            end
-
-            it 'returns error errand completion message as task short result (not result file)' do
-              expect(subject.run).to eq('Errand `fake-job-name\' completed with error (exit code 123)')
-            end
-          end
-
-          context 'when errand exit_code is >128' do
-            before do
-              allow(agent_client).to receive(:wait_for_task).and_return(errand_result.merge('exit_code' => 143))
-            end
-
-            it 'returns error errand cancellation message as task short result (not result file)' do
-              expect(subject.run).to eq('Errand `fake-job-name\' was canceled (exit code 143)')
-            end
+            expect(subject.run).to eq('fake-short-description')
           end
 
           context 'when errand is canceled' do
@@ -142,13 +108,13 @@ module Bosh::Director
                 raise TaskCancelled if blk
 
                 # Agent returns result after cancelling errand
-                errand_result
+                agent_task_result
               end
             end
 
             it 'writes the errand result received from the agent\'s cancellation' do
               result_file.should_receive(:write) do |text|
-                expect(JSON.parse(text)).to eq(errand_result)
+                expect(JSON.parse(text)).to eq(agent_task_result)
               end
               expect { subject.run {} }.to raise_error(TaskCancelled)
             end

@@ -27,6 +27,19 @@ module Bosh::Director
       @stderr = stderr
     end
 
+    def short_description(job_name)
+      title_prefix = "Errand `#{job_name}'"
+      exit_code_suffix = "(exit code #{@exit_code})"
+
+      if @exit_code == 0
+        "#{title_prefix} completed successfully #{exit_code_suffix}"
+      elsif @exit_code > 128
+        "#{title_prefix} was canceled #{exit_code_suffix}"
+      else
+        "#{title_prefix} completed with error #{exit_code_suffix}"
+      end
+    end
+
     def to_hash
       {
         'exit_code' => @exit_code,
