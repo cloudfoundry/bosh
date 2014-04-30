@@ -2,7 +2,7 @@
   "settings": {
     "GoSublime": {
       "env": {
-        "GOPATH": "."
+        "GOPATH": "$PWD:$GS_GOPATH"
       }
     }
   },
