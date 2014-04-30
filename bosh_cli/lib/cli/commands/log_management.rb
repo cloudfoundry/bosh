@@ -17,9 +17,7 @@ module Bosh::Cli::Command
       logs_downloader = Bosh::Cli::LogsDownloader.new(director, self)
 
       resource_id = fetch_log_resource_id(index, job)
-
       logs_path = logs_downloader.build_destination_path(job, index, options[:dir] || Dir.pwd)
-
       logs_downloader.download(resource_id, logs_path)
     end
 

@@ -26,7 +26,12 @@ describe Bosh::Cli::Client::ErrandsClient do
         before { allow(director).to receive(:request_and_track).and_return([status, 'fake-task-id']) }
 
         it 'fetches the output for the task and return an errand result' do
-          raw_task_output = JSON.dump(exit_code: 123, stdout: 'fake-stdout', stderr: 'fake-stderr')
+          raw_task_output = JSON.dump(
+            exit_code: 123,
+            stdout: 'fake-stdout',
+            stderr: 'fake-stderr',
+            logs: {blobstore_id: 'fake-logs-blobstore-id'},
+          )
 
           expect(director).to receive(:get_task_result_log).
             with('fake-task-id').
@@ -35,7 +40,27 @@ describe Bosh::Cli::Client::ErrandsClient do
           actual_status, task_id, actual_result = client.run_errand('fake-deployment-name', 'fake-errand-name')
           expect(actual_status).to eq(status)
           expect(task_id).to eq('fake-task-id')
-          expect(actual_result).to eq(described_class::ErrandResult.new(123, 'fake-stdout', 'fake-stderr'))
+          expect(actual_result).to eq(described_class::ErrandResult.new(
+            123, 'fake-stdout', 'fake-stderr', 'fake-logs-blobstore-id'))
+        end
+
+        it 'does not set logs_blobstore_id if director does not include return logs key (older directors)' do
+          raw_task_output = JSON.dump(
+            exit_code: 123,
+            stdout: 'fake-stdout',
+            stderr: 'fake-stderr',
+            # no logs key
+          )
+
+          expect(director).to receive(:get_task_result_log).
+            with('fake-task-id').
+            and_return("#{raw_task_output}\n")
+
+          actual_status, task_id, actual_result = client.run_errand('fake-deployment-name', 'fake-errand-name')
+          expect(actual_status).to eq(status)
+          expect(task_id).to eq('fake-task-id')
+          expect(actual_result).to eq(described_class::ErrandResult.new(
+            123, 'fake-stdout', 'fake-stderr', nil))
         end
 
         it 'does not raise an error if output is empty' do
