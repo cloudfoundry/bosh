@@ -80,6 +80,16 @@ func (a GetStateAction) Run(filters ...string) (GetStateV1ApplySpec, error) {
 		a.ntpService.GetInfo(),
 	}
 
+	if value.NetworkSpecs == nil {
+		value.NetworkSpecs = map[string]interface{}{}
+	}
+	if value.ResourcePoolSpecs == nil {
+		value.ResourcePoolSpecs = map[string]interface{}{}
+	}
+	if value.PackageSpecs == nil {
+		value.PackageSpecs = map[string]boshas.PackageSpec{}
+	}
+
 	return value, nil
 }
 

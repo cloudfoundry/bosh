@@ -63,6 +63,11 @@ var _ = Describe("GetState", func() {
 					}
 
 					expectedSpec := GetStateV1ApplySpec{
+						V1ApplySpec: boshas.V1ApplySpec{
+							NetworkSpecs:      map[string]interface{}{},
+							ResourcePoolSpecs: map[string]interface{}{},
+							PackageSpecs:      map[string]boshas.PackageSpec{},
+						},
 						AgentID:      "my-agent-id",
 						JobState:     "running",
 						BoshProtocol: "1",
@@ -109,6 +114,49 @@ var _ = Describe("GetState", func() {
 					boshassert.MatchesJSONString(GinkgoT(), state.Deployment, `"fake-deployment"`)
 					Expect(*state.Vitals).To(Equal(expectedVitals))
 					boshassert.MatchesJSONMap(GinkgoT(), state.VM, expectedVM)
+				})
+
+				Describe("non-populated field formatting", func() {
+					It("returns network as empty hash if not set", func() {
+						specService.Spec = boshas.V1ApplySpec{NetworkSpecs: nil}
+						state, err := action.Run("full")
+						Expect(err).ToNot(HaveOccurred())
+						boshassert.MatchesJSONString(GinkgoT(), state.NetworkSpecs, `{}`)
+
+						// Non-empty NetworkSpecs
+						specService.Spec = boshas.V1ApplySpec{
+							NetworkSpecs: map[string]interface{}{"key": "value"},
+						}
+						state, err = action.Run("full")
+						Expect(err).ToNot(HaveOccurred())
+						boshassert.MatchesJSONString(GinkgoT(), state.NetworkSpecs, `{"key":"value"}`)
+					})
+
+					It("returns resource_pool as empty hash if not set", func() {
+						specService.Spec = boshas.V1ApplySpec{ResourcePoolSpecs: nil}
+						state, err := action.Run("full")
+						Expect(err).ToNot(HaveOccurred())
+						boshassert.MatchesJSONString(GinkgoT(), state.ResourcePoolSpecs, `{}`)
+
+						// Non-empty ResourcePoolSpecs
+						specService.Spec = boshas.V1ApplySpec{ResourcePoolSpecs: "fake-resource-pool"}
+						state, err = action.Run("full")
+						Expect(err).ToNot(HaveOccurred())
+						boshassert.MatchesJSONString(GinkgoT(), state.ResourcePoolSpecs, `"fake-resource-pool"`)
+					})
+
+					It("returns packages as empty hash if not set", func() {
+						specService.Spec = boshas.V1ApplySpec{PackageSpecs: nil}
+						state, err := action.Run("full")
+						Expect(err).ToNot(HaveOccurred())
+						boshassert.MatchesJSONString(GinkgoT(), state.PackageSpecs, `{}`)
+
+						// Non-empty PackageSpecs
+						specService.Spec = boshas.V1ApplySpec{PackageSpecs: map[string]boshas.PackageSpec{}}
+						state, err = action.Run("full")
+						Expect(err).ToNot(HaveOccurred())
+						boshassert.MatchesJSONString(GinkgoT(), state.PackageSpecs, `{}`)
+					})
 				})
 			})
 
