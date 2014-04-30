@@ -70,6 +70,8 @@ require 'cli/release_tarball'
 
 require 'cli/blob_manager'
 
+require 'cli/logs_downloader'
+
 require 'common/properties'
 require 'cli/job_property_collection'
 require 'cli/job_property_validator'
