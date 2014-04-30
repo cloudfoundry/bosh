@@ -12,11 +12,16 @@ module Bosh::Director
       end
     end
 
-    before do
-      Config.stub(:cloud_options).and_return({})
-      @task_dir = Dir.mktmpdir
-      @task = Models::Task.make(id: 42, output: @task_dir)
-    end
+    let(:task) { Models::Task.make(id: 42) }
+
+    let(:tasks_dir) { Dir.mktmpdir }
+    before { allow(Config).to receive(:base_dir).and_return(tasks_dir) }
+    after { FileUtils.rm_rf(tasks_dir) }
+
+    let(:task_dir) { File.join(tasks_dir, 'tasks', task.id.to_s) }
+    before { FileUtils.mkdir_p(task_dir) }
+
+    before { allow(Config).to receive(:cloud_options).and_return({}) }
 
     def make_runner(job_class, task_id)
       JobRunner.new(job_class, task_id)
@@ -31,9 +36,9 @@ module Bosh::Director
     it 'performs the requested job with provided args' do
       runner = make_runner(sample_job_class, 42)
       runner.run
-      @task.reload
-      @task.state.should == 'done'
-      @task.result.should == 'foo'
+      task.reload
+      expect(task.state).to eq('done')
+      expect(task.result).to eq('foo')
     end
 
     it 'whines when no task is found' do
@@ -42,12 +47,14 @@ module Bosh::Director
       }.to raise_error(TaskNotFound)
     end
 
-    it 'whines when task directory is missing' do
-      @task.output = nil
-      @task.save
-      expect {
-        make_runner(sample_job_class, 42)
-      }.to raise_error(DirectorError, /directory.*missing/)
+    context 'when task directory is missing' do
+      let(:task) { Models::Task.make(id: 188) }
+
+      it 'creates task directory if it is missing' do
+        task.save
+        make_runner(sample_job_class, 188)
+        expect(File).to exist(task_dir)
+      end
     end
 
     it 'sets up task logs: debug, event, result' do
@@ -57,21 +64,21 @@ module Bosh::Director
 
       EventLog::Log
         .stub(:new)
-        .with(File.join(@task_dir, 'event'))
+        .with(File.join(task_dir, 'event'))
         .and_return(event_log)
 
-      Logger.stub(:new).with(File.join(@task_dir, 'debug')).and_return(debug_log)
+      Logger.stub(:new).with(File.join(task_dir, 'debug')).and_return(debug_log)
 
       TaskResultFile.stub(:new).
-        with(File.join(@task_dir, 'result')).
+        with(File.join(task_dir, 'result')).
         and_return(result_file)
 
       make_runner(sample_job_class, 42)
 
       config = Config
-      config.event_log.should == event_log
-      config.logger.should == debug_log
-      config.result.should == result_file
+      expect(config.event_log).to eq(event_log)
+      expect(config.logger).to eq(debug_log)
+      expect(config.result).to eq(result_file)
     end
 
     it 'handles task cancellation' do
@@ -82,8 +89,8 @@ module Bosh::Director
       end
 
       make_runner(job, 42).run
-      @task.reload
-      @task.state.should == 'cancelled'
+      task.reload
+      expect(task.state).to eq('cancelled')
     end
 
     it "doesn't update task state when checkpointing" do
@@ -95,8 +102,8 @@ module Bosh::Director
       task.update(:state => 'cancelling')
       runner.checkpoint
 
-      @task.reload
-      @task.state.should == 'cancelling'
+      task.reload
+      expect(task.state).to eq('cancelling')
     end
 
     it 'handles task error' do
@@ -105,9 +112,9 @@ module Bosh::Director
       end
 
       make_runner(job, 42).run
-      @task.reload
-      @task.state.should == 'error'
-      @task.result.should == 'Oops'
+      task.reload
+      expect(task.state).to eq('error')
+      expect(task.result).to eq('Oops')
     end
   end
 end
