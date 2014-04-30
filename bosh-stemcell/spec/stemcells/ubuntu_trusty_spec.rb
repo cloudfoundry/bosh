@@ -10,6 +10,7 @@ describe 'Ubuntu 14.04 stemcell' do
       it { should contain '  root (hd0,0)' }
       it { should contain '  kernel /boot/vmlinuz-3.13.0-24-generic ro root=UUID=' }
       it { should contain ' selinux=0' }
+      it { should contain ' cgroup_enable=memory swapaccount=1' }
       it { should contain '  initrd /boot/initrd.img-3.13.0-24-generic' }
     end
 

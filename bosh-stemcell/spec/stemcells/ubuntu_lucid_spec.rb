@@ -10,6 +10,7 @@ describe 'Ubuntu stemcell' do
       it { should contain '  root (hd0,0)' }
       it { should contain '  kernel /boot/vmlinuz-3.0.0-32-virtual ro root=UUID=' }
       it { should contain ' selinux=0' }
+      it { should contain ' cgroup_enable=memory swapaccount=1' }
       it { should contain '  initrd /boot/initrd.img-3.0.0-32-virtual' }
     end
 
