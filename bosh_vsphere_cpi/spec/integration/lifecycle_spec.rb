@@ -53,6 +53,8 @@ describe VSphereCloud::Cloud do
 
   before(:all) { @cpi = build_cpi }
 
+  subject(:cpi) { @cpi }
+
   before(:all) do
     Dir.mktmpdir do |temp_dir|
       output = `tar -C #{temp_dir} -xzf #{@stemcell_path} 2>&1`
