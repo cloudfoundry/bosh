@@ -6,6 +6,7 @@
       }
     }
   },
+  "tab_width": 2,
   "folders": [{
     "follow_symlinks": true,
     "path": "./",
