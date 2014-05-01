@@ -43,16 +43,19 @@ module Bosh::Director
 
       runner = Errand::Runner.new(job, result_file, @instance_manager, event_log, @logs_fetcher)
 
-      with_updated_instances(deployment, job) do
-        logger.info('Starting to run errand')
+      cancel_blk = lambda {
+        begin
+          task_checkpoint
+        rescue TaskCancelled => e
+          runner.cancel
+          raise e
+        end
+      }
 
-        runner.run do
-          begin
-            task_checkpoint
-          rescue TaskCancelled => e
-            runner.cancel
-            raise e
-          end
+      with_deployment_lock(deployment) do
+        with_updated_instances(deployment, job) do
+          logger.info('Starting to run errand')
+          runner.run(&cancel_blk)
         end
       end
     end
@@ -64,51 +67,43 @@ module Bosh::Director
     private
 
     def with_updated_instances(deployment, job, &blk)
-      with_deployment_lock(deployment) do
-        begin
-          logger.info('Starting to prepare for deployment')
-          prepare_deployment(deployment, job)
+      deployment_preparer = Errand::DeploymentPreparer.new(deployment, job, event_log, self)
 
-          logger.info('Starting to update resource pool')
-          rp_manager(job).update
+      rp_updaters = [ResourcePoolUpdater.new(job.resource_pool)]
+      rp_manager = DeploymentPlan::ResourcePools.new(event_log, rp_updaters)
 
-          logger.info('Starting to update job instances')
-          job_manager(deployment, job).update_instances
+      job_manager = Errand::JobManager.new(deployment, job, @blobstore, event_log)
 
-          blk.call
-        ensure
-          ignore_cancellation do
-            logger.info('Starting to delete job instances')
-            job_manager(deployment, job).delete_instances
-
-            logger.info('Starting to refill resource pool')
-            rp_manager(job).refill
-          end
-        end
+      begin
+        update_instances(deployment_preparer, rp_manager, job_manager)
+        blk.call
+      ensure
+        delete_instances(rp_manager, job_manager)
       end
     end
 
-    def ignore_cancellation
-      @ignore_cancellation = true
-      yield
-      @ignore_cancellation = false
-    end
-
-    def prepare_deployment(deployment, job)
-      deployment_preparer = Errand::DeploymentPreparer.new(
-        deployment, job, event_log, self)
-
+    def update_instances(deployment_preparer, rp_manager, job_manager)
+      logger.info('Starting to prepare for deployment')
       deployment_preparer.prepare_deployment
       deployment_preparer.prepare_job
+
+      logger.info('Starting to update resource pool')
+      rp_manager.update
+
+      logger.info('Starting to update job instances')
+      job_manager.update_instances
     end
 
-    def rp_manager(job)
-      rp_updaters = [ResourcePoolUpdater.new(job.resource_pool)]
-      DeploymentPlan::ResourcePools.new(event_log, rp_updaters)
-    end
+    def delete_instances(rp_manager, job_manager)
+      @ignore_cancellation = true
 
-    def job_manager(deployment, job)
-      Errand::JobManager.new(deployment, job, @blobstore, event_log)
+      logger.info('Starting to delete job instances')
+      job_manager.delete_instances
+
+      logger.info('Starting to refill resource pool')
+      rp_manager.refill
+
+      @ignore_cancellation = false
     end
   end
 end

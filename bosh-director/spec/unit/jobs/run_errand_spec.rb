@@ -150,11 +150,12 @@ module Bosh::Director
                 let(:task_manager) { instance_double('Bosh::Director::Api::TaskManager', find_task: task) }
 
                 it 'cleans up the instances anyway' do
-                  expect(runner).to receive(:run).with(no_args).and_raise(RuntimeError)
+                  error = Exception.new
+                  expect(runner).to receive(:run).with(no_args).and_raise(error)
                   expect(job_manager).to receive(:delete_instances).with(no_args).ordered
                   expect(rp_manager).to receive(:refill).with(no_args).ordered
 
-                  expect { subject.perform }.to raise_error(RuntimeError)
+                  expect { subject.perform }.to raise_error(error)
                 end
               end
 
@@ -167,35 +168,38 @@ module Bosh::Director
 
                 before { job.task_id = 'some-task' }
 
-                it 'cancels the errand, raises TaskCancelled, and cleans up errand VMs' do
-                  expect(job_manager).to receive(:update_instances).with(no_args).ordered
-                  expect(runner).to receive(:run).with(no_args).ordered.and_yield
-                  expect(runner).to receive(:cancel).with(no_args).ordered
-                  expect(job_manager).to receive(:delete_instances).with(no_args).ordered
-                  expect(rp_manager).to receive(:refill).with(no_args).ordered
-
-                  expect { subject.perform }.to raise_error(TaskCancelled)
-                end
-
-                it 'does not allow cancellation within the cleanup' do
-                  expect(job_manager).to receive(:update_instances).with(no_args).ordered
-                  expect(runner).to receive(:run).with(no_args).ordered.and_yield
-                  expect(runner).to receive(:cancel).with(no_args).ordered
-                  expect(job_manager).to(receive(:delete_instances)) { job.task_checkpoint }.ordered
-                  expect(rp_manager).to receive(:refill).with(no_args).ordered
-
-                  expect { subject.perform }.to raise_error(TaskCancelled)
-                end
-
-                context 'when the agent throws an exception' do
-                  it 'raises RpcRemoteException and cleans up errand VMs' do
+                context 'when agent is able to cancel run_errand task successfully' do
+                  it 'cancels the errand, raises TaskCancelled, and cleans up errand VMs' do
                     expect(job_manager).to receive(:update_instances).with(no_args).ordered
                     expect(runner).to receive(:run).with(no_args).ordered.and_yield
-                    expect(runner).to receive(:cancel).with(no_args).ordered.and_raise(RpcRemoteException)
+                    expect(runner).to receive(:cancel).with(no_args).ordered
                     expect(job_manager).to receive(:delete_instances).with(no_args).ordered
                     expect(rp_manager).to receive(:refill).with(no_args).ordered
 
-                    expect { subject.perform }.to raise_error(RpcRemoteException)
+                    expect { subject.perform }.to raise_error(TaskCancelled)
+                  end
+
+                  it 'does not allow cancellation while cleaning up errand VMs' do
+                    expect(job_manager).to receive(:update_instances).with(no_args).ordered
+                    expect(runner).to receive(:run).with(no_args).ordered.and_yield
+                    expect(runner).to receive(:cancel).with(no_args).ordered
+                    expect(job_manager).to(receive(:delete_instances).with(no_args).ordered) { job.task_checkpoint }
+                    expect(rp_manager).to receive(:refill).with(no_args).ordered
+
+                    expect { subject.perform }.to raise_error(TaskCancelled)
+                  end
+                end
+
+                context 'when the agent throws an exception while cancelling run_errand task' do
+                  it 'raises RpcRemoteException and cleans up errand VMs' do
+                    error = RpcRemoteException.new
+                    expect(job_manager).to receive(:update_instances).with(no_args).ordered
+                    expect(runner).to receive(:run).with(no_args).ordered.and_yield
+                    expect(runner).to receive(:cancel).with(no_args).ordered.and_raise(error)
+                    expect(job_manager).to receive(:delete_instances).with(no_args).ordered
+                    expect(rp_manager).to receive(:refill).with(no_args).ordered
+
+                    expect { subject.perform }.to raise_error(error)
                   end
                 end
               end
@@ -245,16 +249,7 @@ module Bosh::Director
 
     describe '#task_checkpoint' do
       subject { job.task_checkpoint }
-
       it_behaves_like 'raising an error when a task has timed out or been canceled'
-
-      context 'when cancellation is ignored' do
-        it 'does not raise an error' do
-          job.send(:ignore_cancellation) do
-            expect { job.task_checkpoint }.not_to raise_error
-          end
-        end
-      end
     end
   end
 end
