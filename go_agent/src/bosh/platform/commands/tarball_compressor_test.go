@@ -70,8 +70,8 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 			assert.Contains(GinkgoT(), content, "this is other app stdout")
 		})
-		It("decompress file to dir", func() {
 
+		It("decompress file to dir", func() {
 			fs, cmdRunner := getCompressorDependencies()
 			dc := NewTarballCompressor(cmdRunner, fs)
 
@@ -101,8 +101,8 @@ func init() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("is a directory"))
 		})
-		It("decompress file to dir returns error", func() {
 
+		It("decompress file to dir returns error", func() {
 			nonExistentDstDir := filepath.Join(os.TempDir(), "TestDecompressFileToDirReturnsError")
 
 			fs, cmdRunner := getCompressorDependencies()
@@ -112,8 +112,8 @@ func init() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(nonExistentDstDir))
 		})
-		It("decompress file to dir uses no same owner option", func() {
 
+		It("decompress file to dir uses no same owner option", func() {
 			fs, _ := getCompressorDependencies()
 			cmdRunner := fakesys.NewFakeCmdRunner()
 			dc := NewTarballCompressor(cmdRunner, fs)
