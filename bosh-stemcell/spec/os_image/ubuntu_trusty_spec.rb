@@ -144,6 +144,7 @@ describe 'Ubuntu 14.04 OS image' do
     %w(
       linux-headers-virtual
       linux-image-virtual
+      linux-image-extra-virtual
     ).each do |pkg|
       describe package(pkg) do
         it { should be_installed }

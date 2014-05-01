@@ -21,4 +21,5 @@ then
   rm $chroot/tmp/*.deb
 else
   pkg_mgr install linux-virtual
+  pkg_mgr install linux-image-extra-virtual
 fi
