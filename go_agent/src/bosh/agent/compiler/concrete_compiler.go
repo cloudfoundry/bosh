@@ -111,7 +111,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (strin
 		return "", "", bosherr.WrapError(err, "Compressing compiled package")
 	}
 
-	defer c.fs.RemoveAll(tmpPackageTar)
+	defer c.compressor.CleanUp(tmpPackageTar)
 
 	uploadedBlobID, sha1, err := c.blobstore.Create(tmpPackageTar)
 	if err != nil {

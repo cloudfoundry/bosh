@@ -257,24 +257,21 @@ func init() {
 			})
 
 			It("cleans up compressed package after uploading it to blobstore", func() {
-				var beforeCreateFileStat, afterCreateFileStat *fakesys.FakeFileStats
-
-				err := fs.WriteFileString("/tmp/compressed-compiled-package", "fake-compressed-package")
-				Expect(err).ToNot(HaveOccurred())
+				var beforeCleanUpTarballPath, afterCleanUpTarballPath string
 
 				blobstore.CreateCallBack = func() {
-					beforeCreateFileStat = fs.GetFileTestStat("/tmp/compressed-compiled-package")
+					beforeCleanUpTarballPath = compressor.CleanUpTarballPath
 				}
 
-				_, _, err = compiler.Compile(pkg, pkgDeps)
+				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
 
-				// Available for upload to blobstore
-				Expect(beforeCreateFileStat).ToNot(BeNil())
+				// Compressed package is not cleaned up before blobstore upload
+				Expect(beforeCleanUpTarballPath).To(Equal(""))
 
 				// Deleted after it was uploaded
-				afterCreateFileStat = fs.GetFileTestStat("/tmp/compressed-compiled-package")
-				Expect(afterCreateFileStat).To(BeNil())
+				afterCleanUpTarballPath = compressor.CleanUpTarballPath
+				Expect(afterCleanUpTarballPath).To(Equal("/tmp/compressed-compiled-package"))
 			})
 		})
 	})
