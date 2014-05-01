@@ -14,9 +14,12 @@ type Provider struct {
 }
 
 func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provider) {
-	metadataService := NewConcreteMetadataService("http://169.254.169.254")
+	metadataService := NewConcreteMetadataService(
+		"http://169.254.169.254",
+		NewDigDNSResolver(logger),
+	)
+
 	registry := NewConcreteRegistry()
-	digDNSResolver := NewDigDNSResolver(logger)
 
 	fs := platform.GetFs()
 	dirProvider := platform.GetDirProvider()
@@ -26,10 +29,8 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 	dummyDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver(1*time.Millisecond, fs)
 
 	awsInfrastructure := NewAwsInfrastructure(
-		"http://169.254.169.254",
 		metadataService,
 		registry,
-		digDNSResolver,
 		platform,
 		awsDevicePathResolver,
 	)
