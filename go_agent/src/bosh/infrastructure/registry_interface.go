@@ -5,5 +5,5 @@ import (
 )
 
 type Registry interface {
-	GetSettingsAtURL(settingsURL string) (boshsettings.Settings, error)
+	GetSettings() (boshsettings.Settings, error)
 }

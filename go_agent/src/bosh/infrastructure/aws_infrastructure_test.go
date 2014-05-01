@@ -39,7 +39,7 @@ func init() {
 
 	BeforeEach(func() {
 		metadataService = NewConcreteMetadataService("fake-metadata-host", &FakeDNSResolver{})
-		registry = NewConcreteRegistry()
+		registry = NewConcreteRegistry(metadataService)
 		platform = fakeplatform.NewFakePlatform()
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 	})
@@ -217,6 +217,8 @@ func init() {
 
 					metadataService = NewConcreteMetadataService(metadataTs.URL, &FakeDNSResolver{})
 
+					registry = NewConcreteRegistry(metadataService)
+
 					platform := fakeplatform.NewFakePlatform()
 
 					aws := NewAwsInfrastructure(metadataService, registry, platform, devicePathResolver)
@@ -273,6 +275,8 @@ func init() {
 					defer metadataTs.Close()
 
 					metadataService = NewConcreteMetadataService(metadataTs.URL, fakeDNSResolver)
+
+					registry = NewConcreteRegistry(metadataService)
 
 					platform := fakeplatform.NewFakePlatform()
 

@@ -32,7 +32,7 @@ var _ = Describe("Provider", func() {
 				NewDigDNSResolver(logger),
 			)
 
-			registry := NewConcreteRegistry()
+			registry := NewConcreteRegistry(metadataService)
 
 			expectedDevicePathResolver := boshdpresolv.NewAwsDevicePathResolver(
 				500*time.Millisecond,

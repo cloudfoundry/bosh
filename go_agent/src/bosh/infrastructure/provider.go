@@ -19,7 +19,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 		NewDigDNSResolver(logger),
 	)
 
-	registry := NewConcreteRegistry()
+	registry := NewConcreteRegistry(metadataService)
 
 	fs := platform.GetFs()
 	dirProvider := platform.GetDirProvider()

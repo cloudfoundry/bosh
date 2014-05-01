@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -9,19 +10,32 @@ import (
 	boshsettings "bosh/settings"
 )
 
-type concreteRegistry struct{}
+type concreteRegistry struct {
+	metadataService MetadataService
+}
 
-func NewConcreteRegistry() concreteRegistry {
-	return concreteRegistry{}
+func NewConcreteRegistry(metadataService MetadataService) concreteRegistry {
+	return concreteRegistry{metadataService: metadataService}
 }
 
 type settingsWrapperType struct {
 	Settings string
 }
 
-func (r concreteRegistry) GetSettingsAtURL(settingsURL string) (boshsettings.Settings, error) {
+func (r concreteRegistry) GetSettings() (boshsettings.Settings, error) {
 	var settings boshsettings.Settings
 
+	instanceID, err := r.metadataService.GetInstanceID()
+	if err != nil {
+		return settings, bosherr.WrapError(err, "Getting instance id")
+	}
+
+	registryEndpoint, err := r.metadataService.GetRegistryEndpoint()
+	if err != nil {
+		return settings, bosherr.WrapError(err, "Getting registry endpoint")
+	}
+
+	settingsURL := fmt.Sprintf("%s/instances/%s/settings", registryEndpoint, instanceID)
 	wrapperResponse, err := http.Get(settingsURL)
 	if err != nil {
 		return settings, bosherr.WrapError(err, "Getting settings from url")

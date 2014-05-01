@@ -1,8 +1,6 @@
 package infrastructure
 
 import (
-	"fmt"
-
 	bosherr "bosh/errors"
 	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshplatform "bosh/platform"
@@ -43,22 +41,9 @@ func (inf awsInfrastructure) SetupSsh(username string) error {
 }
 
 func (inf awsInfrastructure) GetSettings() (boshsettings.Settings, error) {
-	var settings boshsettings.Settings
-
-	instanceID, err := inf.metadataService.GetInstanceID()
+	settings, err := inf.registry.GetSettings()
 	if err != nil {
-		return settings, bosherr.WrapError(err, "Getting instance id")
-	}
-
-	registryEndpoint, err := inf.metadataService.GetRegistryEndpoint()
-	if err != nil {
-		return settings, bosherr.WrapError(err, "Getting registry endpoint")
-	}
-
-	settingsURL := fmt.Sprintf("%s/instances/%s/settings", registryEndpoint, instanceID)
-	settings, err = inf.registry.GetSettingsAtURL(settingsURL)
-	if err != nil {
-		return settings, bosherr.WrapError(err, "Getting settings from url")
+		return settings, bosherr.WrapError(err, "Getting settings from registry")
 	}
 
 	return settings, nil
