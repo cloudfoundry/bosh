@@ -31,12 +31,14 @@ func (res *FakeDNSResolver) LookupHost(dnsServers []string, host string) (ip str
 
 func init() {
 	var (
+		metadataService    MetadataService
 		registry           Registry
 		platform           *fakeplatform.FakePlatform
 		devicePathResolver *fakedpresolv.FakeDevicePathResolver
 	)
 
 	BeforeEach(func() {
+		metadataService = NewConcreteMetadataService("fake-metadata-host")
 		registry = NewConcreteRegistry()
 		platform = fakeplatform.NewFakePlatform()
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
@@ -65,7 +67,17 @@ func init() {
 			})
 
 			It("gets the public key and sets up ssh via the platform", func() {
-				aws = NewAwsInfrastructure(ts.URL, registry, &FakeDNSResolver{}, platform, devicePathResolver)
+				metadataService = NewConcreteMetadataService(ts.URL)
+
+				aws = NewAwsInfrastructure(
+					ts.URL,
+					metadataService,
+					registry,
+					&FakeDNSResolver{},
+					platform,
+					devicePathResolver,
+				)
+
 				err := aws.SetupSsh("vcap")
 				Expect(err).NotTo(HaveOccurred())
 
@@ -207,7 +219,7 @@ func init() {
 
 					platform := fakeplatform.NewFakePlatform()
 
-					aws := NewAwsInfrastructure(metadataTs.URL, registry, &FakeDNSResolver{}, platform, devicePathResolver)
+					aws := NewAwsInfrastructure(metadataTs.URL, metadataService, registry, &FakeDNSResolver{}, platform, devicePathResolver)
 
 					settings, err := aws.GetSettings()
 					Expect(err).NotTo(HaveOccurred())
@@ -262,7 +274,7 @@ func init() {
 
 					platform := fakeplatform.NewFakePlatform()
 
-					aws := NewAwsInfrastructure(metadataTs.URL, registry, fakeDNSResolver, platform, devicePathResolver)
+					aws := NewAwsInfrastructure(metadataTs.URL, metadataService, registry, fakeDNSResolver, platform, devicePathResolver)
 
 					settings, err := aws.GetSettings()
 					Expect(err).NotTo(HaveOccurred())
@@ -277,7 +289,7 @@ func init() {
 			It("sets up DHCP on the platform", func() {
 				fakeDNSResolver := &FakeDNSResolver{}
 				platform := fakeplatform.NewFakePlatform()
-				aws := NewAwsInfrastructure("", registry, fakeDNSResolver, platform, devicePathResolver)
+				aws := NewAwsInfrastructure("", metadataService, registry, fakeDNSResolver, platform, devicePathResolver)
 				networks := boshsettings.Networks{"bosh": boshsettings.Network{}}
 
 				aws.SetupNetworking(networks)
@@ -290,7 +302,7 @@ func init() {
 			It("returns the real disk path given an AWS EBS hint", func() {
 				fakeDNSResolver := &FakeDNSResolver{}
 				platform := fakeplatform.NewFakePlatform()
-				aws := NewAwsInfrastructure("", registry, fakeDNSResolver, platform, devicePathResolver)
+				aws := NewAwsInfrastructure("", metadataService, registry, fakeDNSResolver, platform, devicePathResolver)
 
 				platform.NormalizeDiskPathRealPath = "/dev/xvdb"
 				platform.NormalizeDiskPathFound = true

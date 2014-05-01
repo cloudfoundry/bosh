@@ -27,6 +27,8 @@ var _ = Describe("Provider", func() {
 
 	Describe("Get", func() {
 		It("returns aws infrastructure", func() {
+			metadataService := NewConcreteMetadataService("http://169.254.169.254")
+
 			registry := NewConcreteRegistry()
 
 			expectedDevicePathResolver := boshdpresolv.NewAwsDevicePathResolver(
@@ -36,6 +38,7 @@ var _ = Describe("Provider", func() {
 
 			expectedInf := NewAwsInfrastructure(
 				"http://169.254.169.254",
+				metadataService,
 				registry,
 				NewDigDNSResolver(logger),
 				platform,

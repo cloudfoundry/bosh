@@ -16,6 +16,7 @@ import (
 
 type awsInfrastructure struct {
 	metadataHost       string
+	metadataService    MetadataService
 	registry           Registry
 	resolver           dnsResolver
 	platform           boshplatform.Platform
@@ -24,12 +25,14 @@ type awsInfrastructure struct {
 
 func NewAwsInfrastructure(
 	metadataHost string,
+	metadataService MetadataService,
 	registry Registry,
 	resolver dnsResolver,
 	platform boshplatform.Platform,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 ) (inf awsInfrastructure) {
 	inf.metadataHost = metadataHost
+	inf.metadataService = metadataService
 	inf.registry = registry
 	inf.resolver = resolver
 	inf.platform = platform
@@ -42,34 +45,13 @@ func (inf awsInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathReso
 }
 
 func (inf awsInfrastructure) SetupSsh(username string) (err error) {
-	publicKey, err := inf.getPublicKey()
+	publicKey, err := inf.metadataService.GetPublicKey()
 	if err != nil {
 		err = bosherr.WrapError(err, "Error getting public key")
 		return
 	}
 
 	err = inf.platform.SetupSsh(publicKey, username)
-	return
-}
-
-func (inf awsInfrastructure) getPublicKey() (publicKey string, err error) {
-	url := fmt.Sprintf("%s/latest/meta-data/public-keys/0/openssh-key", inf.metadataHost)
-
-	resp, err := http.Get(url)
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting open ssh key")
-		return
-	}
-
-	defer resp.Body.Close()
-
-	keyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		err = bosherr.WrapError(err, "Reading ssh key response body")
-		return
-	}
-
-	publicKey = string(keyBytes)
 	return
 }
 

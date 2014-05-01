@@ -14,8 +14,8 @@ type Provider struct {
 }
 
 func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provider) {
+	metadataService := NewConcreteMetadataService("http://169.254.169.254")
 	registry := NewConcreteRegistry()
-
 	digDNSResolver := NewDigDNSResolver(logger)
 
 	fs := platform.GetFs()
@@ -27,6 +27,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 
 	awsInfrastructure := NewAwsInfrastructure(
 		"http://169.254.169.254",
+		metadataService,
 		registry,
 		digDNSResolver,
 		platform,
