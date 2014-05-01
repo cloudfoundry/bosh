@@ -127,7 +127,7 @@ func init() {
 				})
 
 				It("returns error when decompressing package blob fails", func() {
-					compressor.DecompressFileToDirError = errors.New("fake-decompress-error")
+					compressor.DecompressFileToDirErr = errors.New("fake-decompress-error")
 
 					err := act()
 					Expect(err).To(HaveOccurred())
