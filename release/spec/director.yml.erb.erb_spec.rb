@@ -158,6 +158,22 @@ describe 'director.yml.erb.erb' do
         expect(parsed['cloud']['properties']['openstack']['connection_options']).to eq(
           {'option1' => 'true', 'option2' => 'false'})
       end
+      
+      context "when one of the openstack options consists of numbers" do
+        before do
+          deployment_manifest_fragment['properties']['openstack']['tenant'] = "00123"
+        end
+        
+        it 'renders openstack tenant correctly (as a string)' do
+          spec = deployment_manifest_fragment
+
+          rendered_yaml = ERB.new(erb_yaml).result(Bosh::Common::TemplateEvaluationContext.new(spec).get_binding)
+
+          parsed = YAML.load(rendered_yaml)
+          expect(parsed['cloud']['properties']['openstack']['tenant']).to eq(
+            "00123")
+        end
+      end
     end
   end
 
