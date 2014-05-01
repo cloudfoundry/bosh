@@ -2,11 +2,12 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Errand::Runner do
-    subject { described_class.new(job, result_file, instance_manager, event_log) }
+    subject { described_class.new(job, result_file, instance_manager, event_log, logs_fetcher) }
     let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-job-name') }
     let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
     let(:instance_manager) { Bosh::Director::Api::InstanceManager.new }
     let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
+    let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
 
     context 'when there is at least 1 instance' do
       before { allow(job).to receive(:instances).with(no_args).and_return([instance1, instance2]) }
@@ -49,14 +50,12 @@ module Bosh::Director
             }
           end
 
-          let(:agent_fetch_logs_result) { { 'blobstore_id' => 'fake-logs-blobstore-id' } }
-
           before do
             allow(agent_client).to receive(:start_errand).
               and_return('agent_task_id' => 'fake-agent-task-id')
 
-            allow(agent_client).to receive(:fetch_logs).
-              and_return(agent_fetch_logs_result)
+            allow(logs_fetcher).to receive(:fetch).
+              and_return('fake-logs-blobstore-id')
 
             allow(agent_client).to receive(:wait_for_task).and_return(agent_task_result)
           end
@@ -104,14 +103,14 @@ module Bosh::Director
                and_return('fake-short-description')
 
             expect(Errand::Result).to receive(:from_agent_task_results).
-              with(agent_task_result, agent_fetch_logs_result).
+              with(agent_task_result, 'fake-logs-blobstore-id').
               and_return(errand_result)
 
             expect(subject.run).to eq('fake-short-description')
           end
 
           it 'fetches the logs from agent with correct job type and filters' do
-            expect(agent_client).to receive(:fetch_logs).with('job', nil)
+            expect(logs_fetcher).to receive(:fetch).with(instance1.model, 'job', nil)
             subject.run
           end
 
@@ -128,7 +127,7 @@ module Bosh::Director
             end
 
             error = DirectorError.new
-            expect(agent_client).to receive(:fetch_logs).and_raise(error)
+            expect(logs_fetcher).to receive(:fetch).and_raise(error)
 
             expect { subject.run }.to raise_error(error)
           end
@@ -163,7 +162,7 @@ module Bosh::Director
             end
 
             it 'raises cancel error even if fetching logs fails' do
-              expect(agent_client).to receive(:fetch_logs).and_raise(DirectorError)
+              expect(logs_fetcher).to receive(:fetch).and_raise(DirectorError)
               expect { subject.run {} }.to raise_error(TaskCancelled)
             end
 
@@ -179,7 +178,7 @@ module Bosh::Director
                 )
               end
 
-              expect(agent_client).to receive(:fetch_logs).and_raise(DirectorError)
+              expect(logs_fetcher).to receive(:fetch).and_raise(DirectorError)
               expect { subject.run {} }.to raise_error
             end
           end
@@ -199,7 +198,7 @@ module Bosh::Director
           end
 
           it 'does not try to fetch logs from the agent because we did not run errand' do
-            expect(agent_client).to_not receive(:fetch_logs)
+            expect(logs_fetcher).to_not receive(:fetch)
             expect { subject.run }.to raise_error
           end
         end
@@ -218,7 +217,7 @@ module Bosh::Director
           end
 
           it 'does not try to fetch logs from the agent because we failed contacting it already' do
-            expect(agent_client).to_not receive(:fetch_logs)
+            expect(logs_fetcher).to_not receive(:fetch)
             expect { subject.run }.to raise_error
           end
         end

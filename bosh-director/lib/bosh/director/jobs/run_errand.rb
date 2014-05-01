@@ -16,11 +16,13 @@ module Bosh::Director
       @deployment_manager = Api::DeploymentManager.new
       @instance_manager = Api::InstanceManager.new
       @blobstore = App.instance.blobstores.blobstore
+
+      log_bundles_cleaner = LogBundlesCleaner.new(@blobstore, 60 * 60 * 24 * 10, logger) # 10 days
+      @logs_fetcher = LogsFetcher.new(event_log, @instance_manager, log_bundles_cleaner, logger)
     end
 
     def perform
       deployment_model = @deployment_manager.find_by_name(@deployment_name)
-
       manifest = Psych.load(deployment_model.manifest)
       deployment = DeploymentPlan::Planner.parse(manifest, event_log, {})
 
@@ -39,7 +41,7 @@ module Bosh::Director
         raise InstanceNotFound, "Instance `#{@deployment_name}/#{@errand_name}/0' doesn't exist"
       end
 
-      runner = Errand::Runner.new(job, result_file, @instance_manager, event_log)
+      runner = Errand::Runner.new(job, result_file, @instance_manager, event_log, @logs_fetcher)
 
       with_updated_instances(deployment, job) do
         logger.info('Starting to run errand')

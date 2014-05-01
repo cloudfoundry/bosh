@@ -2,13 +2,16 @@ module Bosh::Director
   class Errand::Runner
     # @param [Bosh::Director::DeploymentPlan::Job] job
     # @param [Bosh::Director::TaskResultFile] result_file
+    # @param [Bosh::Director::Api::InstanceManager] instance_manager
     # @param [Bosh::Director::EventLog::Log] event_log
-    def initialize(job, result_file, instance_manager, event_log)
+    # @param [Bosh::Director::LogsFetcher] logs_fetcher
+    def initialize(job, result_file, instance_manager, event_log, logs_fetcher)
       @job = job
       @result_file = result_file
       @instance_manager = instance_manager
       @event_log = event_log
       @agent_task_id = nil
+      @logs_fetcher = logs_fetcher
     end
 
     # Runs errand on job instances
@@ -35,13 +38,13 @@ module Bosh::Director
       end
 
       begin
-        fetch_logs_result = agent.fetch_logs('job', nil)
+        logs_blobstore_id = @logs_fetcher.fetch(instance.model, 'job', nil)
       rescue DirectorError => e
         @fetch_logs_error = e
       end
 
       if agent_task_result
-        errand_result = Errand::Result.from_agent_task_results(agent_task_result, fetch_logs_result)
+        errand_result = Errand::Result.from_agent_task_results(agent_task_result, logs_blobstore_id)
         @result_file.write(JSON.dump(errand_result.to_hash) + "\n")
       end
 

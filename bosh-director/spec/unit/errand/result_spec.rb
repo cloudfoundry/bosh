@@ -11,21 +11,13 @@ module Bosh::Director
         }
       end
 
-      let(:agent_fetch_logs_result) { { 'blobstore_id' => 'fake-logs-blobstore-id' } }
-
       %w(exit_code stdout stderr).each do |field_name|
         it "raises an error when #{field_name} is missing from agent run errand result" do
           invalid_errand_result = agent_run_errand_result.reject { |k, _| k == field_name }
           expect {
-            described_class.from_agent_task_results(invalid_errand_result, agent_fetch_logs_result)
+            described_class.from_agent_task_results(invalid_errand_result, nil)
           }.to raise_error(AgentInvalidTaskResult, /#{field_name}.*missing/i)
         end
-      end
-
-      it 'raises an error when blobstore_id is missing from agent fetch logs result' do
-        expect {
-          described_class.from_agent_task_results(agent_run_errand_result, {})
-        }.to raise_error(AgentInvalidTaskResult, /blobstore_id.*missing/i)
       end
 
       it 'does not raise an error if fetch_logs results is nil (not available)' do
@@ -37,7 +29,10 @@ module Bosh::Director
       it 'does not pass through unexpected fields in the errand result' do
         errand_result_with_extras = agent_run_errand_result.dup
         errand_result_with_extras['unexpected-key'] = 'extra-value'
-        subject = described_class.from_agent_task_results(errand_result_with_extras, agent_fetch_logs_result)
+
+        subject = described_class.from_agent_task_results(
+          errand_result_with_extras, 'fake-logs-blobstore-id')
+
         expect(subject.to_hash).to eq(
           'exit_code' => 123,
           'stdout' => 'fake-stdout',

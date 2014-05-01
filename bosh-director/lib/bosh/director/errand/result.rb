@@ -12,19 +12,11 @@ module Bosh::Director
       }
     end
 
-    AGENT_FETCH_LOGS_RESULT_SCHEMA = ::Membrane::SchemaParser.parse do
-      { 'blobstore_id' => String }
-    end
-
     # Explicitly write out schema of the director task result
     # to avoid accidently leaking agent task result extra fields.
-    def self.from_agent_task_results(agent_task_result, fetch_logs_result)
+    def self.from_agent_task_results(agent_task_result, logs_blobstore_id)
       AGENT_RUN_ERRAND_RESULT_SCHEMA.validate(agent_task_result)
-      AGENT_FETCH_LOGS_RESULT_SCHEMA.validate(fetch_logs_result) if fetch_logs_result
-      new(
-        *agent_task_result.values_at('exit_code', 'stdout', 'stderr'),
-        fetch_logs_result && fetch_logs_result['blobstore_id'],
-      )
+      new(*agent_task_result.values_at('exit_code', 'stdout', 'stderr'), logs_blobstore_id)
     rescue Membrane::SchemaValidationError => e
       raise AgentInvalidTaskResult, e.message
     end
