@@ -71,6 +71,8 @@ func (a FetchLogsAction) Run(logType string, filters []string) (value interface{
 		return
 	}
 
+	defer a.compressor.CleanUp(tarball)
+
 	blobID, _, err := a.blobstore.Create(tarball)
 	if err != nil {
 		err = bosherr.WrapError(err, "Create file on blobstore")

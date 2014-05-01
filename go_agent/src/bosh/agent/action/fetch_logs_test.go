@@ -41,7 +41,7 @@ var _ = Describe("FetchLogsAction", func() {
 	Describe("Run", func() {
 		testLogs := func(logType string, filters []string, expectedFilters []string) {
 			copier.FilteredCopyToTempTempDir = "/fake-temp-dir"
-			compressor.CompressFilesInDirTarballPath = "logs_test.go"
+			compressor.CompressFilesInDirTarballPath = "logs_test.tar"
 			blobstore.CreateBlobID = "my-blob-id"
 
 			logs, err := action.Run(logType, filters)
@@ -93,6 +93,26 @@ var _ = Describe("FetchLogsAction", func() {
 			filters := []string{"**/*.stdout.log", "**/*.stderr.log"}
 			expectedFilters := []string{"**/*.stdout.log", "**/*.stderr.log"}
 			testLogs("job", filters, expectedFilters)
+		})
+
+		It("cleans up compressed package after uploading it to blobstore", func() {
+			var beforeCleanUpTarballPath, afterCleanUpTarballPath string
+
+			compressor.CompressFilesInDirTarballPath = "/fake-compressed-logs.tar"
+
+			blobstore.CreateCallBack = func() {
+				beforeCleanUpTarballPath = compressor.CleanUpTarballPath
+			}
+
+			_, err := action.Run("job", []string{})
+			Expect(err).ToNot(HaveOccurred())
+
+			// Logs are not cleaned up before blobstore upload
+			Expect(beforeCleanUpTarballPath).To(Equal(""))
+
+			// Deleted after it was uploaded
+			afterCleanUpTarballPath = compressor.CleanUpTarballPath
+			Expect(afterCleanUpTarballPath).To(Equal("/fake-compressed-logs.tar"))
 		})
 	})
 })

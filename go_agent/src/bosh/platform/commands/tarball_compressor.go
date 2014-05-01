@@ -41,3 +41,7 @@ func (c tarballCompressor) DecompressFileToDir(tarballPath string, dir string) e
 
 	return nil
 }
+
+func (c tarballCompressor) CleanUp(tarballPath string) error {
+	return c.fs.RemoveAll(tarballPath)
+}

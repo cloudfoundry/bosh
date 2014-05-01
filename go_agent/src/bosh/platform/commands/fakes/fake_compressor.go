@@ -1,14 +1,17 @@
 package fakes
 
 type FakeCompressor struct {
-	CompressFilesInDirTarballPath string
 	CompressFilesInDirDir         string
+	CompressFilesInDirTarballPath string
 	CompressFilesInDirErr         error
 
 	DecompressFileToDirTarballPaths []string
 	DecompressFileToDirDirs         []string
 	DecompressFileToDirErr          error
 	DecompressFileToDirCallBack     func()
+
+	CleanUpTarballPath string
+	CleanUpErr         error
 }
 
 func NewFakeCompressor() *FakeCompressor {
@@ -29,4 +32,9 @@ func (fc *FakeCompressor) DecompressFileToDir(tarballPath string, dir string) (e
 	}
 
 	return fc.DecompressFileToDirErr
+}
+
+func (fc *FakeCompressor) CleanUp(tarballPath string) error {
+	fc.CleanUpTarballPath = tarballPath
+	return fc.CleanUpErr
 }

@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -131,6 +132,33 @@ func init() {
 				"-xzvf", tarballPath,
 				"-C", dstDir,
 			}, cmdRunner.RunCommands[0])
+		})
+
+		Describe("CleanUp", func() {
+			It("removes tarball path", func() {
+				_, cmdRunner := getCompressorDependencies()
+				fs := fakesys.NewFakeFileSystem()
+				dc := NewTarballCompressor(cmdRunner, fs)
+
+				err := fs.WriteFileString("/fake-tarball.tar", "")
+				Expect(err).ToNot(HaveOccurred())
+
+				err = dc.CleanUp("/fake-tarball.tar")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(fs.FileExists("/fake-tarball.tar")).To(BeFalse())
+			})
+
+			It("returns error if removing tarball path fails", func() {
+				_, cmdRunner := getCompressorDependencies()
+				fs := fakesys.NewFakeFileSystem()
+				dc := NewTarballCompressor(cmdRunner, fs)
+
+				fs.RemoveAllError = errors.New("fake-remove-all-err")
+
+				err := dc.CleanUp("/fake-tarball.tar")
+				Expect(err).To(MatchError("fake-remove-all-err"))
+			})
 		})
 	})
 }

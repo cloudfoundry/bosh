@@ -2,6 +2,7 @@ out
 pkg
 gobin/*
 
+*\.test
 *.coverprofile
 
 *.sublime-workspace
