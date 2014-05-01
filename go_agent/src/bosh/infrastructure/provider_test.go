@@ -27,10 +27,16 @@ var _ = Describe("Provider", func() {
 
 	Describe("Get", func() {
 		It("returns aws infrastructure", func() {
-			expectedDevicePathResolver := boshdpresolv.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
+			registry := NewConcreteRegistry()
+
+			expectedDevicePathResolver := boshdpresolv.NewAwsDevicePathResolver(
+				500*time.Millisecond,
+				platform.GetFs(),
+			)
 
 			expectedInf := NewAwsInfrastructure(
 				"http://169.254.169.254",
+				registry,
 				NewDigDNSResolver(logger),
 				platform,
 				expectedDevicePathResolver,
@@ -42,7 +48,10 @@ var _ = Describe("Provider", func() {
 		})
 
 		It("returns vsphere infrastructure", func() {
-			expectedDevicePathResolver := boshdpresolv.NewVsphereDevicePathResolver(500*time.Millisecond, platform.GetFs())
+			expectedDevicePathResolver := boshdpresolv.NewVsphereDevicePathResolver(
+				500*time.Millisecond,
+				platform.GetFs(),
+			)
 
 			expectedInf := NewVsphereInfrastructure(platform, expectedDevicePathResolver, logger)
 
@@ -52,7 +61,10 @@ var _ = Describe("Provider", func() {
 		})
 
 		It("returns dummy infrastructure", func() {
-			expectedDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver(1*time.Millisecond, platform.GetFs())
+			expectedDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver(
+				1*time.Millisecond,
+				platform.GetFs(),
+			)
 
 			expectedInf := NewDummyInfrastructure(
 				platform.GetFs(),
@@ -67,7 +79,10 @@ var _ = Describe("Provider", func() {
 		})
 
 		It("returns warden infrastructure", func() {
-			expectedDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver(1*time.Millisecond, platform.GetFs())
+			expectedDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver(
+				1*time.Millisecond,
+				platform.GetFs(),
+			)
 
 			expectedInf := NewWardenInfrastructure(
 				platform.GetDirProvider(),

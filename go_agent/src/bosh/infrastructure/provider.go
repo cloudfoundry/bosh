@@ -14,6 +14,8 @@ type Provider struct {
 }
 
 func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provider) {
+	registry := NewConcreteRegistry()
+
 	digDNSResolver := NewDigDNSResolver(logger)
 
 	fs := platform.GetFs()
@@ -23,8 +25,16 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 	vsphereDevicePathResolver := boshdpresolv.NewVsphereDevicePathResolver(500*time.Millisecond, platform.GetFs())
 	dummyDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver(1*time.Millisecond, fs)
 
+	awsInfrastructure := NewAwsInfrastructure(
+		"http://169.254.169.254",
+		registry,
+		digDNSResolver,
+		platform,
+		awsDevicePathResolver,
+	)
+
 	p.infrastructures = map[string]Infrastructure{
-		"aws":     NewAwsInfrastructure("http://169.254.169.254", digDNSResolver, platform, awsDevicePathResolver),
+		"aws":     awsInfrastructure,
 		"dummy":   NewDummyInfrastructure(fs, dirProvider, platform, dummyDevicePathResolver),
 		"warden":  NewWardenInfrastructure(dirProvider, platform, dummyDevicePathResolver),
 		"vsphere": NewVsphereInfrastructure(platform, vsphereDevicePathResolver, logger),

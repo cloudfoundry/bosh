@@ -16,6 +16,7 @@ import (
 
 type awsInfrastructure struct {
 	metadataHost       string
+	registry           Registry
 	resolver           dnsResolver
 	platform           boshplatform.Platform
 	devicePathResolver boshdpresolv.DevicePathResolver
@@ -23,11 +24,13 @@ type awsInfrastructure struct {
 
 func NewAwsInfrastructure(
 	metadataHost string,
+	registry Registry,
 	resolver dnsResolver,
 	platform boshplatform.Platform,
 	devicePathResolver boshdpresolv.DevicePathResolver,
 ) (inf awsInfrastructure) {
 	inf.metadataHost = metadataHost
+	inf.registry = registry
 	inf.resolver = resolver
 	inf.platform = platform
 	inf.devicePathResolver = devicePathResolver
@@ -57,6 +60,7 @@ func (inf awsInfrastructure) getPublicKey() (publicKey string, err error) {
 		err = bosherr.WrapError(err, "Getting open ssh key")
 		return
 	}
+
 	defer resp.Body.Close()
 
 	keyBytes, err := ioutil.ReadAll(resp.Body)
@@ -83,7 +87,7 @@ func (inf awsInfrastructure) GetSettings() (settings boshsettings.Settings, err 
 	}
 
 	settingsURL := fmt.Sprintf("%s/instances/%s/settings", registryEndpoint, instanceID)
-	settings, err = inf.getSettingsAtURL(settingsURL)
+	settings, err = inf.registry.GetSettingsAtURL(settingsURL)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting settings from url")
 	}
@@ -105,6 +109,7 @@ func (inf awsInfrastructure) getInstanceID() (instanceID string, err error) {
 		err = bosherr.WrapError(err, "Getting instance id from url")
 		return
 	}
+
 	defer instanceIDResp.Body.Close()
 
 	instanceIDBytes, err := ioutil.ReadAll(instanceIDResp.Body)
@@ -154,6 +159,7 @@ func (inf awsInfrastructure) getUserData() (userData userDataType, err error) {
 		err = bosherr.WrapError(err, "Getting user data from url")
 		return
 	}
+
 	defer userDataResp.Body.Close()
 
 	userDataBytes, err := ioutil.ReadAll(userDataResp.Body)
@@ -167,6 +173,7 @@ func (inf awsInfrastructure) getUserData() (userData userDataType, err error) {
 		err = bosherr.WrapError(err, "Unmarshalling user data")
 		return
 	}
+
 	return
 }
 
@@ -186,37 +193,5 @@ func (inf awsInfrastructure) resolveRegistryEndpoint(namedEndpoint string, nameS
 
 	registryURL.Host = fmt.Sprintf("%s:%s", registryIP, registryHostAndPort[1])
 	resolvedEndpoint = registryURL.String()
-	return
-}
-
-type settingsWrapperType struct {
-	Settings string
-}
-
-func (inf awsInfrastructure) getSettingsAtURL(settingsURL string) (settings boshsettings.Settings, err error) {
-	wrapperResponse, err := http.Get(settingsURL)
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting settings from url")
-		return
-	}
-	defer wrapperResponse.Body.Close()
-
-	wrapperBytes, err := ioutil.ReadAll(wrapperResponse.Body)
-	if err != nil {
-		err = bosherr.WrapError(err, "Reading settings response body")
-		return
-	}
-
-	wrapper := new(settingsWrapperType)
-	err = json.Unmarshal(wrapperBytes, wrapper)
-	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshalling settings wrapper")
-		return
-	}
-
-	err = json.Unmarshal([]byte(wrapper.Settings), &settings)
-	if err != nil {
-		err = bosherr.WrapError(err, "Unmarshalling wrapped settings")
-	}
 	return
 }
