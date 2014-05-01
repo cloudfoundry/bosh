@@ -39,26 +39,26 @@ func (cmd *FakeCmd) Run(args []string) (err error) {
 	err = cmd.RunErr
 	return
 }
+
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("run can run a command and return its error", func() {
-
 			factory := &FakeFactory{
 				CreateCmd: &FakeCmd{
-					RunErr: errors.New("Error running cmd"),
+					RunErr: errors.New("fake-run-error"),
 				},
 			}
 			cmdRunner := NewRunner(factory)
 
 			err := cmdRunner.Run([]string{"put", "foo", "bar"})
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Error running cmd"))
+			Expect(err.Error()).To(Equal("fake-run-error"))
 
 			Expect(factory.CreateName).To(Equal("put"))
 			Expect(factory.CreateCmd.RunArgs).To(Equal([]string{"foo", "bar"}))
 		})
-		It("run expects at least one argument", func() {
 
+		It("run expects at least one argument", func() {
 			factory := &FakeFactory{
 				CreateCmd: &FakeCmd{},
 			}
@@ -68,8 +68,8 @@ func init() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("Missing command name"))
 		})
-		It("accepts exactly one argument", func() {
 
+		It("accepts exactly one argument", func() {
 			factory := &FakeFactory{
 				CreateCmd: &FakeCmd{},
 			}
@@ -81,8 +81,8 @@ func init() {
 			Expect(factory.CreateName).To(Equal("put"))
 			Expect(factory.CreateCmd.RunArgs).To(Equal([]string{}))
 		})
-		It("set config", func() {
 
+		It("set config", func() {
 			factory := &FakeFactory{}
 			cmdRunner := NewRunner(factory)
 			conf := davconf.Config{User: "foo"}

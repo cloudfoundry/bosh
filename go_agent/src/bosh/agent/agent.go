@@ -57,7 +57,7 @@ func (a Agent) Run() error {
 
 	go a.subscribeActionDispatcher(errChan)
 	go a.generateHeartbeats(errChan)
-	go a.jobSupervisor.MonitorJobFailures(a.handleJobFailure)
+	go a.jobSupervisor.MonitorJobFailures(a.handleJobFailure(errChan))
 
 	select {
 	case err = <-errChan:
@@ -129,13 +129,19 @@ func (a Agent) getHeartbeat() (boshmbus.Heartbeat, error) {
 	return hb, nil
 }
 
-func (a Agent) handleJobFailure(monitAlert boshalert.MonitAlert) error {
-	alert, err := a.alertBuilder.Build(monitAlert)
-	if err != nil {
-		return bosherr.WrapError(err, "Building alert")
+func (a Agent) handleJobFailure(errChan chan error) boshjobsuper.JobFailureHandler {
+	return func(monitAlert boshalert.MonitAlert) error {
+		alert, err := a.alertBuilder.Build(monitAlert)
+		if err != nil {
+			return bosherr.WrapError(err, "Building alert")
+		}
+
+		err = a.mbusHandler.SendToHealthManager("alert", alert)
+		if err != nil {
+			err = bosherr.WrapError(err, "Sending heartbeat")
+			errChan <- err
+		}
+
+		return nil
 	}
-
-	a.mbusHandler.SendToHealthManager("alert", alert)
-
-	return nil
 }

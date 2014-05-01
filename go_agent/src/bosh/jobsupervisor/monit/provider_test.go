@@ -15,7 +15,7 @@ import (
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("get", func() {
-			logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger := boshlog.NewLogger(boshlog.LevelNone)
 			platform := fakeplatform.NewFakePlatform()
 
 			platform.GetMonitCredentialsUsername = "fake-user"
@@ -25,7 +25,7 @@ func init() {
 
 			Expect(err).ToNot(HaveOccurred())
 
-			expectedClient := NewHttpClient("127.0.0.1:2822", "fake-user", "fake-pass", http.DefaultClient, 1*time.Second, logger)
+			expectedClient := NewHTTPClient("127.0.0.1:2822", "fake-user", "fake-pass", http.DefaultClient, 1*time.Second, logger)
 			Expect(expectedClient).To(Equal(client))
 		})
 	})

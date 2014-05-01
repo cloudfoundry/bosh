@@ -33,6 +33,15 @@ module Bat
       @bosh_api.info['cpi'] == 'openstack'
     end
 
+    def warden?
+      @bosh_api.info['cpi'] == 'warden'
+    end
+
+    def compiled_package_cache?
+      info = @bosh_api.info
+      info['features'] && info['features']['compiled_package_cache']
+    end
+
     def dns?
       info = @bosh_api.info
       info['features'] && info['features']['dns']['status']
@@ -55,23 +64,22 @@ module Bat
     def ssh(host, user, command, options = {})
       options = options.dup
       output = nil
-      @logger.info("--> ssh: #{user}@#{host} '#{command}'")
+      @logger.info("--> ssh: #{user}@#{host} #{command.inspect}")
 
       private_key = options.delete(:private_key)
       options[:user_known_hosts_file] = %w[/dev/null]
       options[:keys] = [private_key] unless private_key.nil?
 
       if options[:keys].nil? && options[:password].nil?
-        raise 'need to set ssh :password, :keys, or :private_key'
+        raise 'Need to set ssh :password, :keys, or :private_key'
       end
 
-      @logger.info("SSH host=#{host} user=#{user} options=#{options.inspect}")
-
+      @logger.info("--> ssh options: #{options.inspect}")
       Net::SSH.start(host, user, options) do |ssh|
-        output = ssh.exec!(command)
+        output = ssh.exec!(command).to_s
       end
 
-      @logger.info("--> ssh output: '#{output}'")
+      @logger.info("--> ssh output: #{output.inspect}")
       output
     end
 

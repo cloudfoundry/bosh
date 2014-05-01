@@ -36,3 +36,9 @@ touch ${chroot}/etc/sysconfig/network # must be present for network to be config
 
 echo 'READAHEAD_COLLECT="no"' >> ${chroot}/etc/sysconfig/readahead
 echo 'READAHEAD_COLLECT_ON_RPM="no"' >> ${chroot}/etc/sysconfig/readahead
+
+# Setting timezone
+cp ${chroot}/usr/share/zoneinfo/UTC ${chroot}/etc/localtime
+
+# Setting locale
+echo "LANG=\"en_US.UTF-8\"" >> ${chroot}/etc/sysconfig/i18n

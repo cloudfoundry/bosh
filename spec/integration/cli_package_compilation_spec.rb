@@ -12,17 +12,17 @@ describe 'cli: package compilation', type: :integration do
     release_filename = File.join(TEST_RELEASE_DIR, release_file)
     Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
-      run_bosh('create release --with-tarball', work_dir: Dir.pwd)
+      bosh_runner.run_in_current_dir('create release --with-tarball')
     end
 
     deployment_manifest = yaml_file(
         'simple_manifest', Bosh::Spec::Deployments.simple_manifest)
 
     target_and_login
-    run_bosh("deployment #{deployment_manifest.path}")
-    run_bosh("upload stemcell #{stemcell_filename}")
-    run_bosh("upload release #{release_filename}")
-    run_bosh('deploy')
+    bosh_runner.run("deployment #{deployment_manifest.path}")
+    bosh_runner.run("upload stemcell #{stemcell_filename}")
+    bosh_runner.run("upload release #{release_filename}")
+    bosh_runner.run('deploy')
     dir_glob = Dir.glob(File.join(simple_blob_store_path, '**/*'))
     cached_items = dir_glob.detect do |cache_item|
       cache_item =~ /foo-/
@@ -30,14 +30,14 @@ describe 'cli: package compilation', type: :integration do
     expect(cached_items).to_not be(nil)
 
     # delete release so that the compiled packages are removed from the local blobstore
-    run_bosh('delete deployment simple')
-    run_bosh('delete release bosh-release')
+    bosh_runner.run('delete deployment simple')
+    bosh_runner.run('delete release bosh-release')
 
     # deploy again
-    run_bosh("upload release #{release_filename}")
-    run_bosh('deploy')
+    bosh_runner.run("upload release #{release_filename}")
+    bosh_runner.run('deploy')
 
-    event_log = run_bosh('task last --event --raw')
+    event_log = bosh_runner.run('task last --event --raw')
     expect(event_log).to match(/Downloading '.+' from global cache/)
     expect(event_log).to_not match(/Compiling packages/)
   end
@@ -53,12 +53,12 @@ describe 'cli: package compilation', type: :integration do
     deployment_manifest = yaml_file('whatevs_manifest', deployment_manifest_hash)
 
     target_and_login
-    run_bosh("upload release #{spec_asset('release_compilation_test.tgz')}")
+    bosh_runner.run("upload release #{spec_asset('release_compilation_test.tgz')}")
 
-    run_bosh("deployment #{deployment_manifest.path}")
-    run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
-    run_bosh('deploy')
-    deploy_results = run_bosh('task last --debug')
+    bosh_runner.run("deployment #{deployment_manifest.path}")
+    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+    bosh_runner.run('deploy')
+    deploy_results = bosh_runner.run('task last --debug')
 
     goo_package_compile_regex = %r{compile_package.goo/0.1-dev.*(..method...compile_package.*)$}
     goo_package_compile_json = goo_package_compile_regex.match(deploy_results)[1]

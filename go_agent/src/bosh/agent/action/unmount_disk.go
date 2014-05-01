@@ -28,11 +28,11 @@ func (a UnmountDiskAction) IsPersistent() bool {
 	return false
 }
 
-func (a UnmountDiskAction) Run(volumeId string) (value interface{}, err error) {
+func (a UnmountDiskAction) Run(volumeID string) (value interface{}, err error) {
 	disksSettings := a.settings.GetDisks()
-	devicePath, found := disksSettings.Persistent[volumeId]
+	devicePath, found := disksSettings.Persistent[volumeID]
 	if !found {
-		err = bosherr.New("Persistent disk with volume id '%s' could not be found", volumeId)
+		err = bosherr.New("Persistent disk with volume id '%s' could not be found", volumeID)
 		return
 	}
 
@@ -58,4 +58,8 @@ func (a UnmountDiskAction) Run(volumeId string) (value interface{}, err error) {
 
 func (a UnmountDiskAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
+}
+
+func (a UnmountDiskAction) Cancel() error {
+	return errors.New("not supported")
 }

@@ -1,11 +1,17 @@
 package ntp
 
 import (
-	boshdir "bosh/settings/directories"
-	boshsys "bosh/system"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	boshdir "bosh/settings/directories"
+	boshsys "bosh/system"
+)
+
+var (
+	offsetRegex    = regexp.MustCompile(`^(.+)\s+ntpdate.+offset\s+(-*\d+\.\d+)`)
+	badServerRegex = regexp.MustCompile(`no server suitable for synchronization found`)
 )
 
 type NTPInfo struct {
@@ -30,31 +36,26 @@ func NewConcreteService(fs boshsys.FileSystem, dirProvider boshdir.DirectoriesPr
 	}
 }
 
-func (oc concreteService) GetInfo() (ntpInfo NTPInfo) {
+func (oc concreteService) GetInfo() NTPInfo {
 	ntpPath := filepath.Join(oc.dirProvider.BaseDir(), "/bosh/log/ntpdate.out")
 	content, err := oc.fs.ReadFileString(ntpPath)
 	if err != nil {
-		ntpInfo = NTPInfo{Message: "file missing"}
-		return
+		return NTPInfo{Message: "file missing"}
 	}
 
 	lines := strings.Split(strings.Trim(content, "\n"), "\n")
 	lastLine := lines[len(lines)-1]
 
-	regex, _ := regexp.Compile(`^(.+)\s+ntpdate.+offset\s+(-*\d+\.\d+)`)
-	badServerRegex, _ := regexp.Compile(`no server suitable for synchronization found`)
-	matches := regex.FindAllStringSubmatch(lastLine, -1)
+	matches := offsetRegex.FindAllStringSubmatch(lastLine, -1)
 
 	if len(matches) > 0 && len(matches[0]) == 3 {
-		ntpInfo = NTPInfo{
+		return NTPInfo{
 			Timestamp: matches[0][1],
 			Offset:    matches[0][2],
 		}
 	} else if badServerRegex.MatchString(lastLine) {
-		ntpInfo = NTPInfo{Message: "bad ntp server"}
+		return NTPInfo{Message: "bad ntp server"}
 	} else {
-		ntpInfo = NTPInfo{Message: "bad file contents"}
+		return NTPInfo{Message: "bad file contents"}
 	}
-
-	return
 }

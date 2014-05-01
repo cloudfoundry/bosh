@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#
+# Copyright (c) 2009-2012 VMware, Inc.
+service=$1
+action=$2
+sv $action $service

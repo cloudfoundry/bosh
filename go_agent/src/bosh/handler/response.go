@@ -1,6 +1,8 @@
 package handler
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Response interface {
 	responseInterfaceFunc()
@@ -15,8 +17,7 @@ func NewValueResponse(value interface{}) (resp Response) {
 	return
 }
 
-func (r valueResponse) responseInterfaceFunc() {
-}
+func (r valueResponse) responseInterfaceFunc() {}
 
 type exceptionResponse struct {
 	Exception struct {

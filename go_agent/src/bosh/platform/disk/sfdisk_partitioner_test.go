@@ -11,7 +11,7 @@ import (
 	fakesys "bosh/system/fakes"
 )
 
-const DEVSDA_SFDISK_EMPTY_DUMP = `# partition table of /dev/sda
+const devSdaSfdiskEmptyDump = `# partition table of /dev/sda
 unit: sectors
 
 /dev/sda1 : start=        0, size=    0, Id= 0
@@ -20,18 +20,18 @@ unit: sectors
 /dev/sda4 : start=        0, size=    0, Id= 0
 `
 
-const DEVSDA_SFDISK_NOTABLE_DUMP_STDERR = `
+const devSdaSfdiskNotableDumpStderr = `
 sfdisk: ERROR: sector 0 does not have an msdos signature
  /dev/sda: unrecognized partition table type
 No partitions found`
 
 func createSfdiskPartitionerForTests(runner *fakesys.FakeCmdRunner) (partitioner Partitioner) {
-	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+	logger := boshlog.NewLogger(boshlog.LevelNone)
 	partitioner = NewSfdiskPartitioner(logger, runner)
 	return
 }
 
-const DEVSDA_SFDISK_DUMP = `# partition table of /dev/sda
+const devSdaSfdiskDump = `# partition table of /dev/sda
 unit: sectors
 
 /dev/sda1 : start=        1, size= xxxx, Id=82
@@ -40,7 +40,7 @@ unit: sectors
 /dev/sda4 : start=        0, size=    0, Id= 0
 `
 
-const DEVSDA_SFDISK_DUMP_ONE_PARTITION = `# partition table of /dev/sda
+const devSdaSfdiskDumpOnePartition = `# partition table of /dev/sda
 unit: sectors
 
 /dev/sda1 : start=        1, size= xxxx, Id=83
@@ -52,8 +52,8 @@ unit: sectors
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("sfdisk partition", func() {
-			runner := &fakesys.FakeCmdRunner{}
-			runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: DEVSDA_SFDISK_EMPTY_DUMP})
+			runner := fakesys.NewFakeCmdRunner()
+			runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskEmptyDump})
 			partitioner := createSfdiskPartitionerForTests(runner)
 
 			partitions := []Partition{
@@ -69,8 +69,8 @@ func init() {
 		})
 		It("sfdisk partition with no partition table", func() {
 
-			runner := &fakesys.FakeCmdRunner{}
-			runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stderr: DEVSDA_SFDISK_NOTABLE_DUMP_STDERR})
+			runner := fakesys.NewFakeCmdRunner()
+			runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stderr: devSdaSfdiskNotableDumpStderr})
 			partitioner := createSfdiskPartitionerForTests(runner)
 
 			partitions := []Partition{
@@ -86,7 +86,7 @@ func init() {
 		})
 		It("sfdisk get device size in mb", func() {
 
-			runner := &fakesys.FakeCmdRunner{}
+			runner := fakesys.NewFakeCmdRunner()
 			runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 40000*1024)})
 			partitioner := createSfdiskPartitionerForTests(runner)
 
@@ -97,8 +97,8 @@ func init() {
 		})
 		It("sfdisk partition when partitions already match", func() {
 
-			runner := &fakesys.FakeCmdRunner{}
-			runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: DEVSDA_SFDISK_DUMP})
+			runner := fakesys.NewFakeCmdRunner()
+			runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskDump})
 			runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 2048*1024)})
 			runner.AddCmdResult("sfdisk -s /dev/sda1", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 525*1024)})
 			runner.AddCmdResult("sfdisk -s /dev/sda2", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 1020*1024)})
@@ -117,8 +117,8 @@ func init() {
 		})
 		It("sfdisk partition with last partition not matching size", func() {
 
-			runner := &fakesys.FakeCmdRunner{}
-			runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: DEVSDA_SFDISK_DUMP_ONE_PARTITION})
+			runner := fakesys.NewFakeCmdRunner()
+			runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskDumpOnePartition})
 			runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 2048*1024)})
 			runner.AddCmdResult("sfdisk -s /dev/sda1", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 1024*1024)})
 			runner.AddCmdResult("sfdisk -s /dev/sda2", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 512*1024)})
@@ -136,8 +136,8 @@ func init() {
 		})
 		It("sfdisk partition with last partition filling disk", func() {
 
-			runner := &fakesys.FakeCmdRunner{}
-			runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: DEVSDA_SFDISK_DUMP_ONE_PARTITION})
+			runner := fakesys.NewFakeCmdRunner()
+			runner.AddCmdResult("sfdisk -d /dev/sda", fakesys.FakeCmdResult{Stdout: devSdaSfdiskDumpOnePartition})
 			runner.AddCmdResult("sfdisk -s /dev/sda", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 2048*1024)})
 			runner.AddCmdResult("sfdisk -s /dev/sda1", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 1024*1024)})
 			runner.AddCmdResult("sfdisk -s /dev/sda2", fakesys.FakeCmdResult{Stdout: fmt.Sprintf("%d\n", 1024*1024)})

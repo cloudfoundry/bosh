@@ -12,6 +12,8 @@ module VSphereCloud
         memory = double('memory in mb')
         disk = double('disk in mb')
         cpu = double('number of cpus')
+        agent_env = double('agent_env')
+        file_provider = double('file_provider')
 
         cloud_properties = {
           'ram' => memory,
@@ -28,9 +30,13 @@ module VSphereCloud
           client,
           logger,
           cpi,
+          agent_env,
+          file_provider
         ).and_return(vm_creator)
 
-        expect(subject.build(resources, cloud_properties, client, logger, cpi)).to eq(vm_creator)
+        expect(
+          subject.build(resources, cloud_properties, client, logger, cpi, agent_env, file_provider)
+        ).to eq(vm_creator)
       end
     end
   end

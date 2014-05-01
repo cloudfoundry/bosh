@@ -2,6 +2,7 @@
 
 require 'erb'
 require 'bosh/director'
+require 'resque/failure/backtrace'
 
 config_file = nil
 index = nil
@@ -70,6 +71,8 @@ Resque.after_fork do
   EM.error_handler { |e| puts "Error raised during event loop: #{e.message}" }
   Thread.new { EM.run }
 end
+
+Resque::Failure.backend = Resque::Failure::Backtrace
 
 worker.log "Starting worker #{worker}"
 

@@ -29,7 +29,7 @@ func init() {
 		BeforeEach(func() {
 			platform = fakeplatform.NewFakePlatform()
 			client = fakemonit.NewFakeMonitClient()
-			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger = boshlog.NewLogger(boshlog.LevelNone)
 			dirProvider = boshdir.NewDirectoriesProvider("/fake-base-dir")
 			jobFailuresServerPort = 2825
 			handler = &fakembus.FakeHandler{}

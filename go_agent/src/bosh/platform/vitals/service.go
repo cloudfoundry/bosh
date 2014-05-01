@@ -25,20 +25,20 @@ func NewService(statsCollector boshstats.StatsCollector, dirProvider boshdirs.Di
 
 func (s concreteService) Get() (vitals Vitals, err error) {
 	var (
-		loadStats boshstats.CpuLoad
-		cpuStats  boshstats.CpuStats
+		loadStats boshstats.CPULoad
+		cpuStats  boshstats.CPUStats
 		memStats  boshstats.Usage
 		swapStats boshstats.Usage
 		diskStats DiskVitals
 	)
 
-	loadStats, err = s.statsCollector.GetCpuLoad()
+	loadStats, err = s.statsCollector.GetCPULoad()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting CPU Load")
 		return
 	}
 
-	cpuStats, err = s.statsCollector.GetCpuStats()
+	cpuStats, err = s.statsCollector.GetCPUStats()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting CPU Stats")
 		return

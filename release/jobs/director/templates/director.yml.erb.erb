@@ -193,11 +193,11 @@ cloud:
 
 <% if_p('openstack.auth_url', 'openstack.username', 'openstack.api_key',
         'openstack.tenant', 'openstack.default_key_name',
-        'openstack.default_security_groups', 'registry.address',
+        'openstack.default_security_groups','openstack.wait_resource_poll_interval', 'registry.address',
         'registry.http.port', 'registry.http.user',
         'registry.http.password') do |auth_url, username, api_key,
                                                 tenant, default_key_name,
-                                                default_security_groups, reg_address,
+                                                default_security_groups, wait_resource_poll_interval, reg_address,
                                                 reg_port, reg_user,
                                                 reg_password| %>
   plugin: openstack <% plugin = "openstack" %>
@@ -224,6 +224,7 @@ cloud:
       <% end %>
       default_key_name: "<%= default_key_name %>"
       default_security_groups: <%= default_security_groups %>
+      wait_resource_poll_interval: <%= wait_resource_poll_interval %>
     registry:
       endpoint: http://<%= reg_address %>:<%= reg_port %>
       user: <%= reg_user %>
@@ -285,6 +286,25 @@ cloud:
           media_catalog: <%= media_catalog %>
           vm_metadata_key: <%= vm_metadata_key %>
           description: <%= description %>
+          <% if_p('vcd.entities.control') do |control| %>
+          control:
+            <% if_p('vcd.entities.control.wait_max') do |wait_max| %>
+            wait_max: <%= wait_max %>
+            <% end %>
+            <% if_p('vcd.entities.control.wait_delay') do |wait_delay| %>
+            wait_delay: <%= wait_delay %>
+            <% end %>
+            <% if_p('vcd.entities.control.cookie_timeout') do |cookie_timeout| %>
+            cookie_timeout: <%= cookie_timeout %>
+            <% end %>
+            <% if_p('vcd.entities.control.retry_max') do |retry_max| %>
+            retry_max: <%= retry_max %>
+            <% end %>
+            <% if_p('vcd.entities.control.retry_delay') do |retry_delay| %>
+            retry_delay: <%= retry_delay %>
+            <% end %>
+          <% end %>
+
 <% end %>
 
 <% raise "Could not find cloud plugin" if plugin.nil? %>

@@ -1,7 +1,8 @@
 package fakes
 
 import (
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/devicepathresolver"
+	fakedpresolv "bosh/infrastructure/devicepathresolver/fakes"
 	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
 	fakecmd "bosh/platform/commands/fakes"
@@ -15,7 +16,6 @@ import (
 	boshdir "bosh/settings/directories"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
-	"time"
 )
 
 type FakePlatform struct {
@@ -28,7 +28,7 @@ type FakePlatform struct {
 	FakeDiskManager    *fakedisk.FakeDiskManager
 	logger             boshlog.Logger
 
-	DevicePathResolver boshdevicepathresolver.DevicePathResolver
+	DevicePathResolver boshdpresolv.DevicePathResolver
 
 	SetupRuntimeConfigurationWasInvoked bool
 
@@ -47,14 +47,21 @@ type FakePlatform struct {
 	SetTimeWithNtpServersServers []string
 
 	SetupEphemeralDiskWithPathDevicePath string
+	SetupEphemeralDiskWithPathErr        error
+
+	SetupDataDirCalled bool
+	SetupDataDirErr    error
 
 	SetupTmpDirCalled bool
+	SetupTmpDirErr    error
 
 	SetupManualNetworkingNetworks boshsettings.Networks
 	SetupDhcpNetworks             boshsettings.Networks
 
+	MountPersistentDiskCalled     bool
 	MountPersistentDiskDevicePath string
 	MountPersistentDiskMountPoint string
+	MountPersistentDiskErr        error
 
 	UnmountPersistentDiskDidUnmount bool
 	UnmountPersistentDiskDevicePath string
@@ -71,8 +78,9 @@ type FakePlatform struct {
 	MigratePersistentDiskFromMountPoint string
 	MigratePersistentDiskToMountPoint   string
 
-	IsMountPointResult bool
 	IsMountPointPath   string
+	IsMountPointResult bool
+	IsMountPointErr    error
 
 	MountedDevicePaths []string
 
@@ -85,15 +93,13 @@ type FakePlatform struct {
 func NewFakePlatform() (platform *FakePlatform) {
 	platform = new(FakePlatform)
 	platform.Fs = fakesys.NewFakeFileSystem()
-	platform.Runner = &fakesys.FakeCmdRunner{}
+	platform.Runner = fakesys.NewFakeCmdRunner()
 	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{}
 	platform.FakeCompressor = fakecmd.NewFakeCompressor()
 	platform.FakeCopier = fakecmd.NewFakeCopier()
 	platform.FakeVitalsService = fakevitals.NewFakeService()
 	platform.FakeDiskManager = fakedisk.NewFakeDiskManager()
-
-	platform.DevicePathResolver = boshdevicepathresolver.NewFakeDevicePathResolver(1*time.Millisecond, platform.Fs)
-
+	platform.DevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 	platform.AddUserToGroupsGroups = make(map[string][]string)
 	platform.SetupSshPublicKeys = make(map[string]string)
 	platform.UserPasswords = make(map[string]string)
@@ -129,11 +135,11 @@ func (p *FakePlatform) GetVitalsService() (service boshvitals.Service) {
 	return p.FakeVitalsService
 }
 
-func (p *FakePlatform) GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver) {
+func (p *FakePlatform) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {
 	return p.DevicePathResolver
 }
 
-func (p *FakePlatform) SetDevicePathResolver(devicePathResolver boshdevicepathresolver.DevicePathResolver) (err error) {
+func (p *FakePlatform) SetDevicePathResolver(devicePathResolver boshdpresolv.DevicePathResolver) (err error) {
 	p.DevicePathResolver = devicePathResolver
 	return
 }
@@ -198,18 +204,24 @@ func (p *FakePlatform) SetTimeWithNtpServers(servers []string) (err error) {
 
 func (p *FakePlatform) SetupEphemeralDiskWithPath(devicePath string) (err error) {
 	p.SetupEphemeralDiskWithPathDevicePath = devicePath
-	return
+	return p.SetupEphemeralDiskWithPathErr
 }
 
-func (p *FakePlatform) SetupTmpDir() (err error) {
+func (p *FakePlatform) SetupDataDir() error {
+	p.SetupDataDirCalled = true
+	return p.SetupDataDirErr
+}
+
+func (p *FakePlatform) SetupTmpDir() error {
 	p.SetupTmpDirCalled = true
-	return
+	return p.SetupTmpDirErr
 }
 
 func (p *FakePlatform) MountPersistentDisk(devicePath, mountPoint string) (err error) {
+	p.MountPersistentDiskCalled = true
 	p.MountPersistentDiskDevicePath = devicePath
 	p.MountPersistentDiskMountPoint = mountPoint
-	return
+	return p.MountPersistentDiskErr
 }
 
 func (p *FakePlatform) UnmountPersistentDisk(devicePath string) (didUnmount bool, err error) {
@@ -237,13 +249,12 @@ func (p *FakePlatform) MigratePersistentDisk(fromMountPoint, toMountPoint string
 	return
 }
 
-func (p *FakePlatform) IsMountPoint(path string) (result bool, err error) {
+func (p *FakePlatform) IsMountPoint(path string) (bool, error) {
 	p.IsMountPointPath = path
-	result = p.IsMountPointResult
-	return
+	return p.IsMountPointResult, p.IsMountPointErr
 }
 
-func (p *FakePlatform) IsDevicePathMounted(path string) (result bool, err error) {
+func (p *FakePlatform) IsPersistentDiskMounted(path string) (result bool, err error) {
 	for _, mountedPath := range p.MountedDevicePaths {
 		if mountedPath == path {
 			return true, nil

@@ -8,7 +8,7 @@ namespace :stemcell do
   end
 
   desc 'Build a base OS image for use in stemcells'
-  task :build_os_image, [:operating_system_name, :os_image_path] do |_, args|
+  task :build_os_image, [:operating_system_name, :operating_system_version, :os_image_path] do |_, args|
     require 'bosh/dev/build'
     require 'bosh/stemcell/archive_handler'
     require 'bosh/stemcell/build_environment'
@@ -17,7 +17,7 @@ namespace :stemcell do
     require 'bosh/stemcell/stage_collection'
     require 'bosh/stemcell/stage_runner'
 
-    definition = Bosh::Stemcell::Definition.for('null', args.operating_system_name, 'null')
+    definition = Bosh::Stemcell::Definition.for('null', args.operating_system_name, args.operating_system_version, 'null')
     # pass in /dev/null for the micro release path as the micro is not built at this stage
     environment = Bosh::Stemcell::BuildEnvironment.new(
       ENV.to_hash,
@@ -56,7 +56,7 @@ namespace :stemcell do
     puts "OS image #{args.os_image_path} uploaded to S3 in bucket #{args.s3_bucket_name} with key #{key}."
   end
 
-  task :build, [:infrastructure_name, :operating_system_name, :agent_name, :os_image_s3_bucket_name, :key] do |_, args|
+  task :build, [:infrastructure_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_s3_bucket_name, :key] do |_, args|
     require 'uri'
     require 'tempfile'
     require 'bosh/dev/download_adapter'
@@ -67,12 +67,12 @@ namespace :stemcell do
       downloader = Bosh::Dev::DownloadAdapter.new(Logger.new($stdout))
       downloader.download(os_image_uri, os_image_path)
 
-      Rake::Task['stemcell:build_with_local_os_image'].invoke(args.infrastructure_name, args.operating_system_name, args.agent_name, os_image_path)
+      Rake::Task['stemcell:build_with_local_os_image'].invoke(args.infrastructure_name, args.operating_system_name, args.operating_system_version, args.agent_name, os_image_path)
     end
   end
 
   desc 'Build a stemcell using a pre-built base OS image'
-  task :build_with_local_os_image, [:infrastructure_name, :operating_system_name, :agent_name, :os_image_path] do |_, args|
+  task :build_with_local_os_image, [:infrastructure_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_path] do |_, args|
     require 'bosh/dev/build'
     require 'bosh/dev/gem_components'
     require 'bosh/stemcell/build_environment'
@@ -84,7 +84,7 @@ namespace :stemcell do
     # build stemcell
     build = Bosh::Dev::Build.candidate
     gem_components = Bosh::Dev::GemComponents.new(build.number)
-    definition = Bosh::Stemcell::Definition.for(args.infrastructure_name, args.operating_system_name, args.agent_name)
+    definition = Bosh::Stemcell::Definition.for(args.infrastructure_name, args.operating_system_name, args.operating_system_version, args.agent_name)
     environment = Bosh::Stemcell::BuildEnvironment.new(
       ENV.to_hash,
       definition,

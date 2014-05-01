@@ -1,10 +1,6 @@
 package mbus
 
 import (
-	bosherr "bosh/errors"
-	boshhandler "bosh/handler"
-	boshlog "bosh/logger"
-	boshsettings "bosh/settings"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,83 +9,118 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	bosherr "bosh/errors"
+	boshhandler "bosh/handler"
+	boshlog "bosh/logger"
+	boshsettings "bosh/settings"
+)
+
+const natsHandlerLogTag = "NATS Handler"
+
+const (
+	responseMaxSize       = 1024 * 1024
+	responseMaxSizeErrMsg = "Response exceeded maximum size allowed to be sent over NATS"
 )
 
 type natsHandler struct {
-	settings boshsettings.Service
-	logger   boshlog.Logger
-	client   yagnats.NATSClient
+	settings     boshsettings.Service
+	logger       boshlog.Logger
+	client       yagnats.NATSClient
+	handlerFuncs []boshhandler.HandlerFunc
 }
 
-func NewNatsHandler(settings boshsettings.Service, logger boshlog.Logger, client yagnats.NATSClient) (handler natsHandler) {
-	handler.settings = settings
-	handler.logger = logger
-	handler.client = client
-	return
+func NewNatsHandler(settings boshsettings.Service, logger boshlog.Logger, client yagnats.NATSClient) *natsHandler {
+	return &natsHandler{
+		settings: settings,
+		logger:   logger,
+		client:   client,
+	}
 }
 
-func (h natsHandler) Run(handlerFunc boshhandler.HandlerFunc) (err error) {
-	err = h.Start(handlerFunc)
+func (h *natsHandler) Run(handlerFunc boshhandler.HandlerFunc) error {
+	err := h.Start(handlerFunc)
 	if err != nil {
-		err = bosherr.WrapError(err, "Starting nats handler")
-		return
+		return bosherr.WrapError(err, "Starting nats handler")
 	}
 	defer h.Stop()
 
 	h.runUntilInterrupted()
-	return
+
+	return nil
 }
 
-func (h natsHandler) Start(handlerFunc boshhandler.HandlerFunc) (err error) {
+func (h *natsHandler) Start(handlerFunc boshhandler.HandlerFunc) error {
+	h.RegisterAdditionalHandlerFunc(handlerFunc)
+
 	connProvider, err := h.getConnectionInfo()
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting connection info")
-		return
+		return bosherr.WrapError(err, "Getting connection info")
 	}
 
 	err = h.client.Connect(connProvider)
 	if err != nil {
-		err = bosherr.WrapError(err, "Connecting")
-		return
+		return bosherr.WrapError(err, "Connecting")
 	}
 
-	subject := fmt.Sprintf("agent.%s", h.settings.GetAgentId())
+	subject := fmt.Sprintf("agent.%s", h.settings.GetAgentID())
 
-	h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {
-		respBytes, req, err := boshhandler.PerformHandlerWithJSON(natsMsg.Payload, handlerFunc, h.logger)
-		if err != nil {
-			err = bosherr.WrapError(err, "Running handler in a nice JSON sandwhich")
-			return
-		}
+	h.logger.Error(natsHandlerLogTag, "Subscribing to %s", subject)
 
-		if len(respBytes) > 0 {
-			h.client.Publish(req.ReplyTo, respBytes)
+	_, err = h.client.Subscribe(subject, func(natsMsg *yagnats.Message) {
+		for _, handlerFunc := range h.handlerFuncs {
+			h.handleNatsMsg(natsMsg, handlerFunc)
 		}
 	})
 
-	return
+	return nil
 }
 
-func (h natsHandler) SendToHealthManager(topic string, payload interface{}) (err error) {
+func (h *natsHandler) RegisterAdditionalHandlerFunc(handlerFunc boshhandler.HandlerFunc) {
+	// Currently not locking since RegisterAdditionalHandlerFunc is not a primary way of adding handlerFunc
+	h.handlerFuncs = append(h.handlerFuncs, handlerFunc)
+}
+
+func (h natsHandler) SendToHealthManager(topic string, payload interface{}) error {
 	msgBytes := []byte("")
 
 	if payload != nil {
+		var err error
 		msgBytes, err = json.Marshal(payload)
 		if err != nil {
-			err = bosherr.WrapError(err, "Marshalling HM message payload")
-			return
+			return bosherr.WrapError(err, "Marshalling HM message payload")
 		}
 	}
 
-	h.logger.Info("NATS Handler", "Sending HM message '%s'", topic)
-	h.logger.DebugWithDetails("NATS Handler", "Payload", msgBytes)
+	h.logger.Info(natsHandlerLogTag, "Sending HM message '%s'", topic)
+	h.logger.DebugWithDetails(natsHandlerLogTag, "Payload", msgBytes)
 
-	subject := fmt.Sprintf("hm.agent.%s.%s", topic, h.settings.GetAgentId())
+	subject := fmt.Sprintf("hm.agent.%s.%s", topic, h.settings.GetAgentID())
 	return h.client.Publish(subject, msgBytes)
 }
 
 func (h natsHandler) Stop() {
 	h.client.Disconnect()
+}
+
+func (h natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshhandler.HandlerFunc) {
+	respBytes, req, err := boshhandler.PerformHandlerWithJSON(natsMsg.Payload, handlerFunc, h.logger)
+	if err != nil {
+		h.logger.Error(natsHandlerLogTag, "Running handler: %s", err)
+		return
+	}
+
+	if len(respBytes) > responseMaxSize {
+		respBytes, err = boshhandler.BuildErrorWithJSON(responseMaxSizeErrMsg, h.logger)
+		if err != nil {
+			h.logger.Error(natsHandlerLogTag, "Building response: %s", err)
+			return
+		}
+	}
+
+	if len(respBytes) > 0 {
+		h.client.Publish(req.ReplyTo, respBytes)
+	}
 }
 
 func (h natsHandler) runUntilInterrupted() {
@@ -108,26 +139,24 @@ func (h natsHandler) runUntilInterrupted() {
 	}
 }
 
-func (h natsHandler) getConnectionInfo() (connInfo *yagnats.ConnectionInfo, err error) {
-	natsUrl, err := url.Parse(h.settings.GetMbusUrl())
+func (h natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
+	natsURL, err := url.Parse(h.settings.GetMbusURL())
 	if err != nil {
-		err = bosherr.WrapError(err, "Parsing Nats URL")
-		return
+		return nil, bosherr.WrapError(err, "Parsing Nats URL")
 	}
 
-	connInfo = new(yagnats.ConnectionInfo)
-	connInfo.Addr = natsUrl.Host
+	connInfo := new(yagnats.ConnectionInfo)
+	connInfo.Addr = natsURL.Host
 
-	user := natsUrl.User
+	user := natsURL.User
 	if user != nil {
 		password, passwordIsSet := user.Password()
 		if !passwordIsSet {
-			err = errors.New("No password set for connection")
-			return
+			return nil, errors.New("No password set for connection")
 		}
 		connInfo.Password = password
 		connInfo.Username = user.Username()
 	}
 
-	return
+	return connInfo, nil
 }

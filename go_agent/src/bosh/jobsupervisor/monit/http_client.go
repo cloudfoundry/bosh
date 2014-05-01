@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"code.google.com/p/go-charset/charset"
-	_ "code.google.com/p/go-charset/data"
+	_ "code.google.com/p/go-charset/data" // translations between char sets
 
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
@@ -22,13 +22,13 @@ type httpClient struct {
 	password            string
 	retryAttempts       int
 	delayBetweenRetries time.Duration
-	client              HttpClient
+	client              HTTPClient
 	logger              boshlog.Logger
 }
 
-func NewHttpClient(
+func NewHTTPClient(
 	host, username, password string,
-	client HttpClient,
+	client HTTPClient,
 	delayBetweenRetries time.Duration,
 	logger boshlog.Logger,
 ) httpClient {
@@ -47,7 +47,6 @@ func (c httpClient) ServicesInGroup(name string) (services []string, err error) 
 	status, err := c.status()
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Getting status from Monit")
-
 	}
 
 	serviceGroup, found := status.ServiceGroups.Get(name)
@@ -59,7 +58,7 @@ func (c httpClient) ServicesInGroup(name string) (services []string, err error) 
 }
 
 func (c httpClient) StartService(serviceName string) (err error) {
-	response, err := c.makeRequest(c.monitUrl(serviceName), "POST", "action=start")
+	response, err := c.makeRequest(c.monitURL(serviceName), "POST", "action=start")
 	if err != nil {
 		return bosherr.WrapError(err, "Sending start request to monit")
 	}
@@ -75,7 +74,7 @@ func (c httpClient) StartService(serviceName string) (err error) {
 }
 
 func (c httpClient) StopService(serviceName string) error {
-	response, err := c.makeRequest(c.monitUrl(serviceName), "POST", "action=stop")
+	response, err := c.makeRequest(c.monitURL(serviceName), "POST", "action=stop")
 	if err != nil {
 		return bosherr.WrapError(err, "Sending stop request to monit")
 	}
@@ -91,7 +90,7 @@ func (c httpClient) StopService(serviceName string) error {
 }
 
 func (c httpClient) UnmonitorService(serviceName string) error {
-	response, err := c.makeRequest(c.monitUrl(serviceName), "POST", "action=unmonitor")
+	response, err := c.makeRequest(c.monitURL(serviceName), "POST", "action=unmonitor")
 	if err != nil {
 		return bosherr.WrapError(err, "Sending unmonitor request to monit")
 	}
@@ -111,7 +110,7 @@ func (c httpClient) Status() (Status, error) {
 }
 
 func (c httpClient) status() (status, error) {
-	url := c.monitUrl("/_status2")
+	url := c.monitURL("/_status2")
 	url.RawQuery = "format=xml"
 
 	response, err := c.makeRequest(url, "GET", "")
@@ -139,7 +138,7 @@ func (c httpClient) status() (status, error) {
 	return st, nil
 }
 
-func (c httpClient) monitUrl(thing string) url.URL {
+func (c httpClient) monitURL(thing string) url.URL {
 	return url.URL{
 		Scheme: "http",
 		Host:   c.host,

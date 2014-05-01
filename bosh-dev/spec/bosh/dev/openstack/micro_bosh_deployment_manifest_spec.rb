@@ -65,6 +65,7 @@ cloud:
       - default
       private_key: private_key_path
       state_timeout: 300
+      wait_resource_poll_interval: 5
       connection_options:
         connect_timeout: 60
 
@@ -121,6 +122,7 @@ cloud:
       - default
       private_key: private_key_path
       state_timeout: 300
+      wait_resource_poll_interval: 5
       connection_options:
         connect_timeout: 60
     registry:
@@ -216,6 +218,7 @@ YAML
             'default_security_groups' => ['default'],
             'private_key' => 'fake-private-key-path',
             'state_timeout' => 300,
+            'wait_resource_poll_interval' => 5,
             'connection_options' => {
               'connect_timeout' => 60,
             }

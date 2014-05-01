@@ -6,18 +6,57 @@ module IntegrationExampleGroup
     @logger ||= Logger.new(STDOUT)
   end
 
+  def director
+    @director ||= Bosh::Spec::Director.new(
+      bosh_runner,
+      current_sandbox.agent_tmp_path,
+      current_sandbox.nats_port,
+      logger,
+    )
+  end
+
+  def health_monitor
+    @health_monitor ||= Bosh::Spec::HealthMonitor.new(
+      current_sandbox.logs_path,
+      logger,
+    )
+  end
+
+  def bosh_runner
+    @bosh_runner ||= Bosh::Spec::BoshRunner.new(
+      BOSH_WORK_DIR,
+      BOSH_CONFIG,
+      current_sandbox.cpi.method(:agent_log_path),
+      logger
+    )
+  end
+
+  def bosh_runner_in_work_dir(work_dir)
+    Bosh::Spec::BoshRunner.new(
+      work_dir,
+      BOSH_CONFIG,
+      current_sandbox.cpi.method(:agent_log_path),
+      logger
+    )
+  end
+
+  def waiter
+    @waiter ||= Bosh::Spec::Waiter.new(logger)
+  end
+
   def target_and_login
-    run_bosh("target http://localhost:#{current_sandbox.director_port}")
-    run_bosh('login admin admin')
+    bosh_runner.run("target http://localhost:#{current_sandbox.director_port}")
+    bosh_runner.run('login admin admin')
   end
 
   def upload_release
-    run_bosh('create release', work_dir: TEST_RELEASE_DIR)
-    run_bosh('upload release', work_dir: TEST_RELEASE_DIR)
+    runner = bosh_runner_in_work_dir(TEST_RELEASE_DIR)
+    runner.run('create release')
+    runner.run('upload release')
   end
 
   def upload_stemcell
-    run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
   end
 
   def set_deployment(options)
@@ -26,12 +65,12 @@ module IntegrationExampleGroup
     # Hold reference to the tempfile so that it stays around
     # until the end of tests or next deploy.
     @deployment_manifest = yaml_file('simple', manifest_hash)
-    run_bosh("deployment #{@deployment_manifest.path}")
+    bosh_runner.run("deployment #{@deployment_manifest.path}")
   end
 
   def deploy(options)
     no_track = options.fetch(:no_track, false)
-    run_bosh("#{no_track ? '--no-track ' : ''}deploy", options)
+    bosh_runner.run("#{no_track ? '--no-track ' : ''}deploy", options)
   end
 
   def deploy_simple(options={})
@@ -48,27 +87,6 @@ module IntegrationExampleGroup
     expect($?).to be_success
 
     output
-  end
-
-  def run_bosh(cmd, options = {})
-    failure_expected = options.fetch(:failure_expected, false)
-    work_dir = options.fetch(:work_dir, BOSH_WORK_DIR)
-
-    Dir.chdir(work_dir) do
-      logger.info("Running ... bosh -n #{cmd}")
-      command   = "bosh -n -c #{BOSH_CONFIG} #{cmd}"
-      output    = `#{command} 2>&1`
-      exit_code = $?.exitstatus
-
-      if exit_code != 0 && !failure_expected
-        if output =~ /bosh (task \d+ --debug)/
-          logger.info(run_bosh($1, options.merge(failure_expected: true))) rescue nil
-        end
-        raise "ERROR: #{command} failed with #{output}"
-      end
-
-      options.fetch(:return_exit_code, false) ? [output, exit_code] : output
-    end
   end
 
   def yaml_file(name, object)
@@ -92,60 +110,8 @@ module IntegrationExampleGroup
 
   # forcefully suppress raising on error...caller beware
   def expect_output(cmd, expected_output)
-    expect(format_output(run_bosh(cmd, :failure_expected => true))).
+    expect(format_output(bosh_runner.run(cmd, :failure_expected => true))).
       to eq(format_output(expected_output))
-  end
-
-  def get_vms
-    output = run_bosh('vms --details')
-    table = output.lines.grep(/\|/)
-
-    table = table.map { |line| line.split('|').map(&:strip).reject(&:empty?) }
-    headers = table.shift || []
-    headers.map! do |header|
-      header.downcase.tr('/ ', '_').to_sym
-    end
-    output = []
-    table.each do |row|
-      output << Hash[headers.zip(row)]
-    end
-    output
-  end
-
-  def wait_for_vm(instance_name, timeout_seconds = 300)
-    start_time = Time.now
-    loop do
-      vm = get_job_vm(instance_name)
-      return vm if vm
-
-      break if Time.now - start_time >= timeout_seconds
-
-      sleep(1)
-    end
-    nil
-  end
-
-  def kill_job_agent(instance_name)
-    vm = get_job_vm(instance_name)
-    Process.kill('INT', vm[:cid].to_i)
-    vm[:cid]
-  end
-
-  def get_job_vm(instance_name)
-    get_vms.detect { |v| v[:job_index] == instance_name }
-  end
-
-  def set_agent_job_state(agent_id, state)
-    NATS.start(uri: "nats://localhost:#{current_sandbox.nats_port}") do
-      NATS.publish("agent.#{agent_id}",
-        Yajl::Encoder.encode(
-          method: 'set_dummy_status',
-          status: state,
-          reply_to: 'integration.tests',
-        )) do
-        NATS.stop
-      end
-    end
   end
 end
 

@@ -65,7 +65,7 @@ func init() {
 
 				specPathStats := fs.GetFileTestStat(specPath)
 				Expect(specPathStats).ToNot(BeNil())
-				boshassert.MatchesJsonBytes(GinkgoT(), newSpec, specPathStats.Content)
+				boshassert.MatchesJSONBytes(GinkgoT(), newSpec, specPathStats.Content)
 			})
 
 			It("returns error if writing spec to filesystem errs", func() {

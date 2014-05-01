@@ -134,7 +134,7 @@ describe Bosh::Cli::Command::LogManagement do
 
           it 'downloads the file and moves it to a timestamped file' do
             Timecop.freeze do
-              time = Time.now.strftime('%Y-%m-%d@%H-%M-%S')
+              time = Time.now.strftime('%Y-%m-%d-%H-%M-%S')
 
               director.stub(fetch_logs: 'resource-id')
               director.should_receive(:download_resource).with('resource-id').and_return('/wonderful/path')
@@ -146,7 +146,7 @@ describe Bosh::Cli::Command::LogManagement do
           it 'downloads the file and moves it to a timestamped file to a different dir' do
             Timecop.freeze do
               command.options[:dir] = '/woah-now'
-              time = Time.now.strftime('%Y-%m-%d@%H-%M-%S')
+              time = Time.now.strftime('%Y-%m-%d-%H-%M-%S')
 
               director.stub(fetch_logs: 'resource-id')
               director.should_receive(:download_resource).with('resource-id').and_return('/wonderful/path')
@@ -177,7 +177,7 @@ describe Bosh::Cli::Command::LogManagement do
 
             it 'does all the same things' do
               Timecop.freeze do
-                time = Time.now.strftime('%Y-%m-%d@%H-%M-%S')
+                time = Time.now.strftime('%Y-%m-%d-%H-%M-%S')
                 director.stub(fetch_logs: 'resource-id')
                 director.should_receive(:download_resource).with('resource-id').and_return('/wonderful/path')
                 FileUtils.should_receive(:mv).with('/wonderful/path', "#{Dir.pwd}/#{job}.0.#{time}.tgz")

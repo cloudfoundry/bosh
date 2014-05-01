@@ -5,17 +5,15 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 
 	. "bosh/agent/applier/applyspec"
 	models "bosh/agent/applier/models"
 )
 
-func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("v1 apply spec json conversion", func() {
-
-			specJson := `{
+var _ = Describe("V1ApplySpec", func() {
+	Describe("json unmarshalling", func() {
+		It("returns parsed apply spec from json", func() {
+			specJSON := `{
 				"properties": {
 					"logging": {"max_log_file_size": "10M"}
 				},
@@ -68,6 +66,12 @@ func init() {
 				}
 			}`
 
+			spec := V1ApplySpec{}
+			err := json.Unmarshal([]byte(specJSON), &spec)
+			Expect(err).ToNot(HaveOccurred())
+
+			jobName := "router"
+
 			expectedNetworks := map[string]interface{}{
 				"manual-net": map[string]interface{}{
 					"cloud_properties": map[string]interface{}{"subnet": "subnet-xxxxxx"},
@@ -86,8 +90,6 @@ func init() {
 				},
 			}
 
-			jobName := "router"
-
 			expectedSpec := V1ApplySpec{
 				PropertiesSpec: PropertiesSpec{
 					LoggingSpec: LoggingSpec{MaxLogFileSize: "10M"},
@@ -97,32 +99,30 @@ func init() {
 					Template:    "router template",
 					Version:     "1.0",
 					Sha1:        "router sha1",
-					BlobstoreId: "router-blob-id-1",
+					BlobstoreID: "router-blob-id-1",
 					JobTemplateSpecs: []JobTemplateSpec{
-						{Name: "template 1", Version: "0.1", Sha1: "template 1 sha1", BlobstoreId: "template-blob-id-1"},
-						{Name: "template 2", Version: "0.2", Sha1: "template 2 sha1", BlobstoreId: "template-blob-id-2"},
+						JobTemplateSpec{Name: "template 1", Version: "0.1", Sha1: "template 1 sha1", BlobstoreID: "template-blob-id-1"},
+						JobTemplateSpec{Name: "template 2", Version: "0.2", Sha1: "template 2 sha1", BlobstoreID: "template-blob-id-2"},
 					},
 				},
 				PackageSpecs: map[string]PackageSpec{
-					"package 1": PackageSpec{Name: "package 1", Version: "0.1", Sha1: "package 1 sha1", BlobstoreId: "package-blob-id-1"},
-					"package 2": PackageSpec{Name: "package 2", Version: "0.2", Sha1: "package 2 sha1", BlobstoreId: "package-blob-id-2"},
+					"package 1": PackageSpec{Name: "package 1", Version: "0.1", Sha1: "package 1 sha1", BlobstoreID: "package-blob-id-1"},
+					"package 2": PackageSpec{Name: "package 2", Version: "0.2", Sha1: "package 2 sha1", BlobstoreID: "package-blob-id-2"},
 				},
 				RenderedTemplatesArchiveSpec: RenderedTemplatesArchiveSpec{
 					Sha1:        "archive sha 1",
-					BlobstoreId: "archive-blob-id-1",
+					BlobstoreID: "archive-blob-id-1",
 				},
 				NetworkSpecs: expectedNetworks,
 			}
 
-			spec := V1ApplySpec{}
-			err := json.Unmarshal([]byte(specJson), &spec)
-
-			Expect(err).ToNot(HaveOccurred())
-			Expect(spec.NetworkSpecs).To(Equal(expectedNetworks))
 			Expect(spec).To(Equal(expectedSpec))
+			Expect(spec.NetworkSpecs).To(Equal(expectedNetworks))
 		})
+	})
 
-		It("jobs with specified job templates", func() {
+	Describe("Jobs", func() {
+		It("returns jobs specified in job specs", func() {
 			jobName := "fake-job-legacy-name"
 
 			spec := V1ApplySpec{
@@ -130,89 +130,134 @@ func init() {
 					Name:        &jobName,
 					Version:     "fake-job-legacy-version",
 					Sha1:        "fake-job-legacy-sha1",
-					BlobstoreId: "fake-job-legacy-blobstore-id",
+					BlobstoreID: "fake-job-legacy-blobstore-id",
 					JobTemplateSpecs: []JobTemplateSpec{
 						JobTemplateSpec{
 							Name:        "fake-job1-name",
 							Version:     "fake-job1-version",
 							Sha1:        "fake-job1-sha1",
-							BlobstoreId: "fake-job1-blobstore-id",
+							BlobstoreID: "fake-job1-blobstore-id",
 						},
 						JobTemplateSpec{
 							Name:        "fake-job2-name",
 							Version:     "fake-job2-version",
 							Sha1:        "fake-job2-sha1",
-							BlobstoreId: "fake-job2-blobstore-id",
+							BlobstoreID: "fake-job2-blobstore-id",
 						},
+					},
+				},
+				PackageSpecs: map[string]PackageSpec{
+					"fake-package1": PackageSpec{
+						Name:        "fake-package1-name",
+						Version:     "fake-package1-version",
+						Sha1:        "fake-package1-sha1",
+						BlobstoreID: "fake-package1-blob-id",
+					},
+					"fake-package2": PackageSpec{
+						Name:        "fake-package2-name",
+						Version:     "fake-package2-version",
+						Sha1:        "fake-package2-sha1",
+						BlobstoreID: "fake-package2-blob-id",
 					},
 				},
 				RenderedTemplatesArchiveSpec: RenderedTemplatesArchiveSpec{
 					Sha1:        "fake-rendered-templates-archive-sha1",
-					BlobstoreId: "fake-rendered-templates-archive-blobstore-id",
+					BlobstoreID: "fake-rendered-templates-archive-blobstore-id",
 				},
 			}
-			assert.Equal(GinkgoT(), []models.Job{
+
+			expectedPackagesOnEachJob := []models.Package{
+				models.Package{
+					Name:    "fake-package1-name",
+					Version: "fake-package1-version",
+					Source: models.Source{
+						Sha1:          "fake-package1-sha1",
+						BlobstoreID:   "fake-package1-blob-id",
+						PathInArchive: "",
+					},
+				},
+				models.Package{
+					Name:    "fake-package2-name",
+					Version: "fake-package2-version",
+					Source: models.Source{
+						Sha1:          "fake-package2-sha1",
+						BlobstoreID:   "fake-package2-blob-id",
+						PathInArchive: "",
+					},
+				},
+			}
+
+			Expect(spec.Jobs()).To(Equal([]models.Job{
 				models.Job{
 					Name:    "fake-job1-name",
 					Version: "fake-job1-version",
 					Source: models.Source{
 						Sha1:          "fake-rendered-templates-archive-sha1",
-						BlobstoreId:   "fake-rendered-templates-archive-blobstore-id",
+						BlobstoreID:   "fake-rendered-templates-archive-blobstore-id",
 						PathInArchive: "fake-job1-name",
 					},
+					Packages: expectedPackagesOnEachJob,
 				},
 				models.Job{
 					Name:    "fake-job2-name",
 					Version: "fake-job2-version",
 					Source: models.Source{
 						Sha1:          "fake-rendered-templates-archive-sha1",
-						BlobstoreId:   "fake-rendered-templates-archive-blobstore-id",
+						BlobstoreID:   "fake-rendered-templates-archive-blobstore-id",
 						PathInArchive: "fake-job2-name",
 					},
+					Packages: expectedPackagesOnEachJob,
 				},
-			}, spec.Jobs())
+			}))
 		})
 
-		It("jobs when no jobs specified", func() {
+		It("returns no jobs when no jobs specified", func() {
 			spec := V1ApplySpec{}
-			Expect([]models.Job{}).To(Equal(spec.Jobs()))
+			Expect(spec.Jobs()).To(Equal([]models.Job{}))
 		})
+	})
 
-		It("packages", func() {
+	Describe("Packages", func() {
+		It("retuns packages", func() {
 			spec := V1ApplySpec{
 				PackageSpecs: map[string]PackageSpec{
 					"fake-package1-name-key": PackageSpec{
 						Name:        "fake-package1-name",
 						Version:     "fake-package1-version",
 						Sha1:        "fake-package1-sha1",
-						BlobstoreId: "fake-package1-blobstore-id",
+						BlobstoreID: "fake-package1-blobstore-id",
 					},
 				},
 			}
 
-			assert.Equal(GinkgoT(), []models.Package{
+			Expect(spec.Packages()).To(Equal([]models.Package{
 				models.Package{
 					Name:    "fake-package1-name",
 					Version: "fake-package1-version",
 					Source: models.Source{
 						Sha1:        "fake-package1-sha1",
-						BlobstoreId: "fake-package1-blobstore-id",
+						BlobstoreID: "fake-package1-blobstore-id",
 					},
 				},
-			}, spec.Packages())
+			}))
 		})
 
-		It("packages when no packages specified", func() {
+		It("returns no packages when no packages specified", func() {
 			spec := V1ApplySpec{}
-			Expect([]models.Package{}).To(Equal(spec.Packages()))
-		})
-
-		It("max log file size", func() {
-			spec := V1ApplySpec{}
-			Expect("50M").To(Equal(spec.MaxLogFileSize()))
-
-			spec.PropertiesSpec.LoggingSpec.MaxLogFileSize = "fake-size"
-			Expect("fake-size").To(Equal(spec.MaxLogFileSize()))
+			Expect(spec.Packages()).To(Equal([]models.Package{}))
 		})
 	})
-}
+
+	Describe("MaxLogFileSize", func() {
+		It("returns 50M if size is not provided", func() {
+			spec := V1ApplySpec{}
+			Expect(spec.MaxLogFileSize()).To(Equal("50M"))
+		})
+
+		It("returns provided size", func() {
+			spec := V1ApplySpec{}
+			spec.PropertiesSpec.LoggingSpec.MaxLogFileSize = "fake-size"
+			Expect(spec.MaxLogFileSize()).To(Equal("fake-size"))
+		})
+	})
+})

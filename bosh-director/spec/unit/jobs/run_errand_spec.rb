@@ -2,13 +2,9 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::RunErrand do
-    subject { described_class.new('fake-dep-name', 'fake-errand-name') }
+    subject(:job) { described_class.new('fake-dep-name', 'fake-errand-name') }
 
-    before do
-      App.stub_chain(:instance, :blobstores, :blobstore).
-        with(no_args).
-        and_return(blobstore)
-    end
+    before { App.stub_chain(:instance, :blobstores, :blobstore).with(no_args).and_return(blobstore) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
     describe 'Resque job class expectations' do
@@ -33,57 +29,108 @@ module Bosh::Director
             with({'manifest' => true}, event_log, {}).
             and_return(deployment)
         end
-        let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner') }
+        let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment') }
 
         context 'when job representing an errand exists' do
-          before { allow(deployment).to receive(:job).with('fake-errand-name').and_return(job) }
-          let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-errand-name') }
+          before { allow(deployment).to receive(:job).with('fake-errand-name').and_return(deployment_job) }
+          let(:deployment_job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-errand-name') }
 
-          context "when job can run as an errand (usually means lifecycle: errand)" do
-            before { allow(job).to receive(:can_run_as_errand?).and_return(true) }
+          context 'when job can run as an errand (usually means lifecycle: errand)' do
+            before { allow(deployment_job).to receive(:can_run_as_errand?).and_return(true) }
 
             context 'when job has at least 1 instance' do
-              before { allow(job).to receive(:instances).with(no_args).and_return([instance]) }
+              before { allow(deployment_job).to receive(:instances).with(no_args).and_return([instance]) }
               let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
 
               before { allow(Config).to receive(:result).with(no_args).and_return(result_file) }
               let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
 
-              before { allow(job).to receive(:resource_pool).with(no_args).and_return(resource_pool) }
+              before { allow(Lock).to receive(:new).with('lock:deployment:deployment', timeout: 10).and_return(lock) }
+              let(:lock) { instance_double('Bosh::Director::Lock') }
+
+              before { allow(lock).to receive(:lock).and_yield }
+
+              before { allow(deployment_job).to receive(:resource_pool).with(no_args).and_return(resource_pool) }
               let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
 
-              it 'runs an errand and returns short result description' do
-                deployment_preparer = instance_double('Bosh::Director::Errand::DeploymentPreparer')
-                expect(Errand::DeploymentPreparer).to receive(:new).
-                  with(deployment, job, event_log, subject).
+              before do
+                allow(LogBundlesCleaner).to receive(:new).
+                  with(blobstore, 86400 * 10, be_a(Logger)).
+                  and_return(log_bundles_cleaner)
+              end
+              let(:log_bundles_cleaner) do
+                instance_double('Bosh::Director::LogBundlesCleaner', {
+                  register_blobstore_id: nil,
+                  clean: nil,
+                })
+              end
+
+              before do
+                allow(LogsFetcher).to receive(:new).
+                  with(event_log, be_a(Api::InstanceManager), log_bundles_cleaner, be_a(Logger)).
+                  and_return(logs_fetcher)
+              end
+              let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
+
+              before do
+                allow(Errand::DeploymentPreparer).to receive(:new).
+                  with(deployment, deployment_job, event_log, subject).
                   and_return(deployment_preparer)
+              end
+              let(:deployment_preparer) do
+                instance_double(
+                  'Bosh::Director::Errand::DeploymentPreparer',
+                  prepare_deployment: nil,
+                  prepare_job: nil,
+                )
+              end
+
+              before do
+                allow(ResourcePoolUpdater).to receive(:new).
+                  with(resource_pool).
+                  and_return(rp_updater)
+              end
+              let(:rp_updater) { instance_double('Bosh::Director::ResourcePoolUpdater') }
+
+              before do
+                allow(DeploymentPlan::ResourcePools).to receive(:new).
+                  with(event_log, [rp_updater]).
+                  and_return(rp_manager)
+              end
+              let(:rp_manager) { instance_double('Bosh::Director::DeploymentPlan::ResourcePools', update: nil, refill: nil) }
+
+              before do
+                allow(Errand::JobManager).to receive(:new).
+                  with(deployment, deployment_job, blobstore, event_log).
+                  and_return(job_manager)
+              end
+              let(:job_manager) do
+                instance_double('Bosh::Director::Errand::JobManager', {
+                  update_instances: nil,
+                  delete_instances: nil,
+                })
+              end
+
+              before do
+                allow(Errand::Runner).to receive(:new).
+                  with(deployment_job, result_file, be_a(Api::InstanceManager), event_log, logs_fetcher).
+                  and_return(runner)
+              end
+              let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
+
+              it 'runs an errand with deployment lock and returns short result description' do
+                called_after_block_check = double(:called_in_block_check, call: nil)
+                expect(subject).to receive(:with_deployment_lock) do |deployment, &blk|
+                  result = blk.call
+                  called_after_block_check.call
+                  result
+                end
 
                 expect(deployment_preparer).to receive(:prepare_deployment).with(no_args).ordered
                 expect(deployment_preparer).to receive(:prepare_job).with(no_args).ordered
 
-                rp_updater = instance_double('Bosh::Director::ResourcePoolUpdater')
-                expect(ResourcePoolUpdater).to receive(:new).
-                  with(resource_pool).
-                  and_return(rp_updater)
-
-                rp_manager = instance_double('Bosh::Director::DeploymentPlan::ResourcePools')
-                expect(DeploymentPlan::ResourcePools).to receive(:new).
-                  with(event_log, [rp_updater]).
-                  and_return(rp_manager)
-
                 expect(rp_manager).to receive(:update).with(no_args).ordered
-
-                job_manager = instance_double('Bosh::Director::Errand::JobManager')
-                expect(Errand::JobManager).to receive(:new).
-                  with(deployment, job, blobstore, event_log).
-                  and_return(job_manager)
-
                 expect(job_manager).to receive(:update_instances).with(no_args).ordered
-
-                runner = instance_double('Bosh::Director::Errand::Runner')
-                expect(Errand::Runner).to receive(:new).
-                  with(job, result_file, be_a(Api::InstanceManager), event_log).
-                  and_return(runner)
 
                 expect(runner).to receive(:run).
                   with(no_args).
@@ -93,12 +140,73 @@ module Bosh::Director
                 expect(job_manager).to receive(:delete_instances).with(no_args).ordered
                 expect(rp_manager).to receive(:refill).with(no_args).ordered
 
+                expect(called_after_block_check).to receive(:call).ordered
+
                 expect(subject.perform).to eq('fake-result-short-description')
+              end
+
+              context 'when the errand fails to run' do
+                let(:task) { instance_double('Bosh::Director::Models::Task') }
+                let(:task_manager) { instance_double('Bosh::Director::Api::TaskManager', find_task: task) }
+
+                it 'cleans up the instances anyway' do
+                  error = Exception.new
+                  expect(runner).to receive(:run).with(no_args).and_raise(error)
+                  expect(job_manager).to receive(:delete_instances).with(no_args).ordered
+                  expect(rp_manager).to receive(:refill).with(no_args).ordered
+
+                  expect { subject.perform }.to raise_error(error)
+                end
+              end
+
+              context 'when the errand is canceled' do
+                before { allow(Api::TaskManager).to receive(:new).and_return(task_manager) }
+                let(:task_manager) { instance_double('Bosh::Director::Api::TaskManager', find_task: task) }
+
+                before { allow(task).to receive(:state).and_return('cancelling') }
+                let(:task) { instance_double('Bosh::Director::Models::Task') }
+
+                before { job.task_id = 'some-task' }
+
+                context 'when agent is able to cancel run_errand task successfully' do
+                  it 'cancels the errand, raises TaskCancelled, and cleans up errand VMs' do
+                    expect(job_manager).to receive(:update_instances).with(no_args).ordered
+                    expect(runner).to receive(:run).with(no_args).ordered.and_yield
+                    expect(runner).to receive(:cancel).with(no_args).ordered
+                    expect(job_manager).to receive(:delete_instances).with(no_args).ordered
+                    expect(rp_manager).to receive(:refill).with(no_args).ordered
+
+                    expect { subject.perform }.to raise_error(TaskCancelled)
+                  end
+
+                  it 'does not allow cancellation while cleaning up errand VMs' do
+                    expect(job_manager).to receive(:update_instances).with(no_args).ordered
+                    expect(runner).to receive(:run).with(no_args).ordered.and_yield
+                    expect(runner).to receive(:cancel).with(no_args).ordered
+                    expect(job_manager).to(receive(:delete_instances).with(no_args).ordered) { job.task_checkpoint }
+                    expect(rp_manager).to receive(:refill).with(no_args).ordered
+
+                    expect { subject.perform }.to raise_error(TaskCancelled)
+                  end
+                end
+
+                context 'when the agent throws an exception while cancelling run_errand task' do
+                  it 'raises RpcRemoteException and cleans up errand VMs' do
+                    error = RpcRemoteException.new
+                    expect(job_manager).to receive(:update_instances).with(no_args).ordered
+                    expect(runner).to receive(:run).with(no_args).ordered.and_yield
+                    expect(runner).to receive(:cancel).with(no_args).ordered.and_raise(error)
+                    expect(job_manager).to receive(:delete_instances).with(no_args).ordered
+                    expect(rp_manager).to receive(:refill).with(no_args).ordered
+
+                    expect { subject.perform }.to raise_error(error)
+                  end
+                end
               end
             end
 
             context 'when job representing an errand has 0 instances' do
-              before { allow(job).to receive(:instances).with(no_args).and_return([]) }
+              before { allow(deployment_job).to receive(:instances).with(no_args).and_return([]) }
 
               it 'raises an error because errand cannot be run on a job without 0 instances' do
                 expect {
@@ -109,7 +217,7 @@ module Bosh::Director
           end
 
           context "when job cannot run as an errand (e.g. marked as 'lifecycle: service')" do
-            before { allow(job).to receive(:can_run_as_errand?).and_return(false) }
+            before { allow(deployment_job).to receive(:can_run_as_errand?).and_return(false) }
 
             it 'raises an error because non-errand jobs cannot be used with run errand cmd' do
               expect {
@@ -137,6 +245,11 @@ module Bosh::Director
           }.to raise_error(DeploymentNotFound, %r{fake-dep-name.*doesn't exist})
         end
       end
+    end
+
+    describe '#task_checkpoint' do
+      subject { job.task_checkpoint }
+      it_behaves_like 'raising an error when a task has timed out or been canceled'
     end
   end
 end

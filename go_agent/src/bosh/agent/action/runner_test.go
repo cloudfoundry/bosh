@@ -12,14 +12,14 @@ import (
 )
 
 type valueType struct {
-	Id      int
+	ID      int
 	Success bool
 }
 
 type argsType struct {
 	User     string `json:"user"`
 	Password string `json:"pwd"`
-	Id       int    `json:"id"`
+	ID       int    `json:"id"`
 }
 
 type actionWithGoodRunMethod struct {
@@ -27,7 +27,7 @@ type actionWithGoodRunMethod struct {
 	Err   error
 
 	SubAction string
-	SomeId    int
+	SomeID    int
 	ExtraArgs argsType
 	SliceArgs []string
 }
@@ -40,9 +40,9 @@ func (a *actionWithGoodRunMethod) IsPersistent() bool {
 	return false
 }
 
-func (a *actionWithGoodRunMethod) Run(subAction string, someId int, extraArgs argsType, sliceArgs []string) (valueType, error) {
+func (a *actionWithGoodRunMethod) Run(subAction string, someID int, extraArgs argsType, sliceArgs []string) (valueType, error) {
 	a.SubAction = subAction
-	a.SomeId = someId
+	a.SomeID = someID
 	a.ExtraArgs = extraArgs
 	a.SliceArgs = sliceArgs
 	return a.Value, a.Err
@@ -50,6 +50,10 @@ func (a *actionWithGoodRunMethod) Run(subAction string, someId int, extraArgs ar
 
 func (a *actionWithGoodRunMethod) Resume() (interface{}, error) {
 	return nil, nil
+}
+
+func (a *actionWithGoodRunMethod) Cancel() error {
+	return nil
 }
 
 type actionWithOptionalRunArgument struct {
@@ -78,6 +82,10 @@ func (a *actionWithOptionalRunArgument) Resume() (interface{}, error) {
 	return nil, nil
 }
 
+func (a *actionWithOptionalRunArgument) Cancel() error {
+	return nil
+}
+
 type actionWithoutRunMethod struct{}
 
 func (a *actionWithoutRunMethod) IsAsynchronous() bool {
@@ -90,6 +98,10 @@ func (a *actionWithoutRunMethod) IsPersistent() bool {
 
 func (a *actionWithoutRunMethod) Resume() (interface{}, error) {
 	return nil, nil
+}
+
+func (a *actionWithoutRunMethod) Cancel() error {
+	return nil
 }
 
 type actionWithOneRunReturnValue struct{}
@@ -110,6 +122,10 @@ func (a *actionWithOneRunReturnValue) Resume() (interface{}, error) {
 	return nil, nil
 }
 
+func (a *actionWithOneRunReturnValue) Cancel() error {
+	return nil
+}
+
 type actionWithSecondReturnValueNotError struct{}
 
 func (a *actionWithSecondReturnValueNotError) IsAsynchronous() bool {
@@ -128,13 +144,17 @@ func (a *actionWithSecondReturnValueNotError) Resume() (interface{}, error) {
 	return nil, nil
 }
 
+func (a *actionWithSecondReturnValueNotError) Cancel() error {
+	return nil
+}
+
 func init() {
 	Describe("concreteRunner", func() {
 		It("runner run parses the payload", func() {
 			runner := NewRunner()
 
-			expectedValue := valueType{Id: 13, Success: true}
-			expectedErr := errors.New("Oops")
+			expectedValue := valueType{ID: 13, Success: true}
+			expectedErr := errors.New("fake-run-error")
 
 			action := &actionWithGoodRunMethod{Value: expectedValue, Err: expectedErr}
 			payload := `{
@@ -149,21 +169,21 @@ func init() {
 
 			value, err := runner.Run(action, []byte(payload))
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Oops"))
+			Expect(err.Error()).To(Equal("fake-run-error"))
 
 			Expect(value).To(Equal(expectedValue))
 			Expect(err).To(Equal(expectedErr))
 
 			Expect(action.SubAction).To(Equal("setup"))
-			Expect(action.SomeId).To(Equal(123))
-			Expect(action.ExtraArgs).To(Equal(argsType{User: "rob", Password: "rob123", Id: 12}))
+			Expect(action.SomeID).To(Equal(123))
+			Expect(action.ExtraArgs).To(Equal(argsType{User: "rob", Password: "rob123", ID: 12}))
 			Expect(action.SliceArgs).To(Equal([]string{"a", "b", "c"}))
 		})
-		It("runner run errs when actions not enough arguments", func() {
 
+		It("runner run errs when actions not enough arguments", func() {
 			runner := NewRunner()
 
-			expectedValue := valueType{Id: 13, Success: true}
+			expectedValue := valueType{ID: 13, Success: true}
 
 			action := &actionWithGoodRunMethod{Value: expectedValue}
 			payload := `{"arguments":["setup"]}`
@@ -171,11 +191,11 @@ func init() {
 			_, err := runner.Run(action, []byte(payload))
 			Expect(err).To(HaveOccurred())
 		})
-		It("runner run errs when action arguments types do not match", func() {
 
+		It("runner run errs when action arguments types do not match", func() {
 			runner := NewRunner()
 
-			expectedValue := valueType{Id: 13, Success: true}
+			expectedValue := valueType{ID: 13, Success: true}
 
 			action := &actionWithGoodRunMethod{Value: expectedValue}
 			payload := `{"arguments":[123, "setup", {"user":"rob","pwd":"rob123","id":12}]}`
@@ -183,12 +203,12 @@ func init() {
 			_, err := runner.Run(action, []byte(payload))
 			Expect(err).To(HaveOccurred())
 		})
-		It("runner handles optional arguments being passed in", func() {
 
+		It("runner handles optional arguments being passed in", func() {
 			runner := NewRunner()
 
-			expectedValue := valueType{Id: 13, Success: true}
-			expectedErr := errors.New("Oops")
+			expectedValue := valueType{ID: 13, Success: true}
+			expectedErr := errors.New("fake-run-error")
 
 			action := &actionWithOptionalRunArgument{Value: expectedValue, Err: expectedErr}
 			payload := `{"arguments":["setup", {"user":"rob","pwd":"rob123","id":12}, {"user":"bob","pwd":"bob123","id":13}]}`
@@ -200,12 +220,12 @@ func init() {
 
 			Expect(action.SubAction).To(Equal("setup"))
 			assert.Equal(GinkgoT(), action.OptionalArgs, []argsType{
-				{User: "rob", Password: "rob123", Id: 12},
-				{User: "bob", Password: "bob123", Id: 13},
+				{User: "rob", Password: "rob123", ID: 12},
+				{User: "bob", Password: "bob123", ID: 13},
 			})
 		})
-		It("runner handles optional arguments when not passed in", func() {
 
+		It("runner handles optional arguments when not passed in", func() {
 			runner := NewRunner()
 			action := &actionWithOptionalRunArgument{}
 			payload := `{"arguments":["setup"]}`
@@ -215,20 +235,20 @@ func init() {
 			Expect(action.SubAction).To(Equal("setup"))
 			Expect(action.OptionalArgs).To(Equal([]argsType{}))
 		})
-		It("runner run errs when action does not implement run", func() {
 
+		It("runner run errs when action does not implement run", func() {
 			runner := NewRunner()
 			_, err := runner.Run(&actionWithoutRunMethod{}, []byte(`{"arguments":[]}`))
 			Expect(err).To(HaveOccurred())
 		})
-		It("runner run errs when actions run does not return two values", func() {
 
+		It("runner run errs when actions run does not return two values", func() {
 			runner := NewRunner()
 			_, err := runner.Run(&actionWithOneRunReturnValue{}, []byte(`{"arguments":[]}`))
 			Expect(err).To(HaveOccurred())
 		})
-		It("runner run errs when actions run second return type is not error", func() {
 
+		It("runner run errs when actions run second return type is not error", func() {
 			runner := NewRunner()
 			_, err := runner.Run(&actionWithSecondReturnValueNotError{}, []byte(`{"arguments":[]}`))
 			Expect(err).To(HaveOccurred())

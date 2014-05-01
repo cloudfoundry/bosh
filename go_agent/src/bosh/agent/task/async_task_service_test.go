@@ -22,7 +22,7 @@ func init() {
 
 		BeforeEach(func() {
 			uuidGen = &fakeuuid.FakeGenerator{}
-			service = NewAsyncTaskService(uuidGen, boshlog.NewLogger(boshlog.LEVEL_NONE))
+			service = NewAsyncTaskService(uuidGen, boshlog.NewLogger(boshlog.LevelNone))
 		})
 
 		Describe("StartTask", func() {
@@ -30,7 +30,7 @@ func init() {
 				service.StartTask(task)
 				for task.State == TaskStateRunning {
 					time.Sleep(time.Nanosecond)
-					task, _ = service.FindTaskWithId(task.Id)
+					task, _ = service.FindTaskWithID(task.ID)
 				}
 				return task
 			}
@@ -38,7 +38,7 @@ func init() {
 			It("sets return value on a successful task", func() {
 				runFunc := func() (interface{}, error) { return 123, nil }
 
-				task, err := service.CreateTask(runFunc, nil)
+				task, err := service.CreateTask(runFunc, nil, nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				task = startAndWaitForTaskCompletion(task)
@@ -51,7 +51,7 @@ func init() {
 				err := errors.New("fake-error")
 				runFunc := func() (interface{}, error) { return nil, err }
 
-				task, createErr := service.CreateTask(runFunc, nil)
+				task, createErr := service.CreateTask(runFunc, nil, nil)
 				Expect(createErr).ToNot(HaveOccurred())
 
 				task = startAndWaitForTaskCompletion(task)
@@ -65,7 +65,7 @@ func init() {
 					ranFunc := false
 					runFunc := func() (interface{}, error) { ranFunc = true; return nil, nil }
 
-					task, err := service.CreateTask(runFunc, nil)
+					task, err := service.CreateTask(runFunc, nil, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					startAndWaitForTaskCompletion(task)
@@ -79,7 +79,7 @@ func init() {
 					ranEndFunc := false
 					endFunc := func(Task) { ranEndFunc = true }
 
-					task, err := service.CreateTask(runFunc, endFunc)
+					task, err := service.CreateTask(runFunc, nil, endFunc)
 					Expect(err).ToNot(HaveOccurred())
 
 					startAndWaitForTaskCompletion(task)
@@ -89,31 +89,31 @@ func init() {
 
 				It("returns an error if generate uuid fails", func() {
 					uuidGen.GenerateError = errors.New("fake-generate-uuid-error")
-					_, err := service.CreateTask(nil, nil)
+					_, err := service.CreateTask(nil, nil, nil)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-generate-uuid-error"))
 				})
 			})
 
-			Describe("CreateTaskWithId", func() {
-				It("can run task created with CreateTaskWithId which does not have end func", func() {
+			Describe("CreateTaskWithID", func() {
+				It("can run task created with CreateTaskWithID which does not have end func", func() {
 					ranFunc := false
 					runFunc := func() (interface{}, error) { ranFunc = true; return nil, nil }
 
-					task := service.CreateTaskWithId("fake-task-id", runFunc, nil)
+					task := service.CreateTaskWithID("fake-task-id", runFunc, nil, nil)
 
 					startAndWaitForTaskCompletion(task)
 					Expect(ranFunc).To(BeTrue())
 				})
 
-				It("can run task created with CreateTaskWithId which has end func", func() {
+				It("can run task created with CreateTaskWithID which has end func", func() {
 					ranFunc := false
 					runFunc := func() (interface{}, error) { ranFunc = true; return nil, nil }
 
 					ranEndFunc := false
 					endFunc := func(Task) { ranEndFunc = true }
 
-					task := service.CreateTaskWithId("fake-task-id", runFunc, endFunc)
+					task := service.CreateTaskWithID("fake-task-id", runFunc, nil, endFunc)
 
 					startAndWaitForTaskCompletion(task)
 					Expect(ranFunc).To(BeTrue())
@@ -133,7 +133,7 @@ func init() {
 					uuidGen.GeneratedUuid = idStr
 					ids = append(ids, idStr)
 
-					task, err := service.CreateTask(taskFunc, nil)
+					task, err := service.CreateTask(taskFunc, nil, nil)
 					Expect(err).ToNot(HaveOccurred())
 					go service.StartTask(task)
 				}
@@ -141,7 +141,7 @@ func init() {
 				for {
 					allDone := true
 					for _, id := range ids {
-						task, _ := service.FindTaskWithId(id)
+						task, _ := service.FindTaskWithID(id)
 						if task.State != TaskStateDone {
 							allDone = false
 							break
@@ -160,24 +160,70 @@ func init() {
 			It("creates a task with auto-assigned id", func() {
 				uuidGen.GeneratedUuid = "fake-uuid"
 
-				runFunc := func() (interface{}, error) { return nil, nil }
-				endFunc := func(Task) {}
+				runFuncCalled := false
+				runFunc := func() (interface{}, error) {
+					runFuncCalled = true
+					return nil, nil
+				}
 
-				task, err := service.CreateTask(runFunc, endFunc)
+				cancelFuncCalled := false
+				cancelFunc := func(_ Task) error {
+					cancelFuncCalled = true
+					return nil
+				}
+
+				endFuncCalled := false
+				endFunc := func(_ Task) {
+					endFuncCalled = true
+				}
+
+				task, err := service.CreateTask(runFunc, cancelFunc, endFunc)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(task.Id).To(Equal("fake-uuid"))
+				Expect(task.ID).To(Equal("fake-uuid"))
 				Expect(task.State).To(Equal(TaskStateRunning))
+
+				task.TaskFunc()
+				Expect(runFuncCalled).To(BeTrue())
+
+				task.CancelFunc(task)
+				Expect(cancelFuncCalled).To(BeTrue())
+
+				task.TaskEndFunc(task)
+				Expect(endFuncCalled).To(BeTrue())
 			})
 		})
 
-		Describe("CreateTaskWithId", func() {
+		Describe("CreateTaskWithID", func() {
 			It("creates a task with given id", func() {
-				runFunc := func() (interface{}, error) { return nil, nil }
-				endFunc := func(Task) {}
+				runFuncCalled := false
+				runFunc := func() (interface{}, error) {
+					runFuncCalled = true
+					return nil, nil
+				}
 
-				task := service.CreateTaskWithId("fake-task-id", runFunc, endFunc)
-				Expect(task.Id).To(Equal("fake-task-id"))
+				cancelFuncCalled := false
+				cancelFunc := func(_ Task) error {
+					cancelFuncCalled = true
+					return nil
+				}
+
+				endFuncCalled := false
+				endFunc := func(_ Task) {
+					endFuncCalled = true
+				}
+
+				task := service.CreateTaskWithID("fake-task-id", runFunc, cancelFunc, endFunc)
+				Expect(task.ID).To(Equal("fake-task-id"))
 				Expect(task.State).To(Equal(TaskStateRunning))
+
+				task.TaskFunc()
+				Expect(runFuncCalled).To(BeTrue())
+
+				task.CancelFunc(task)
+				Expect(cancelFuncCalled).To(BeTrue())
+
+				task.TaskEndFunc(task)
+				Expect(endFuncCalled).To(BeTrue())
 			})
 		})
 	})

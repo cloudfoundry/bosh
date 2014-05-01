@@ -1,55 +1,86 @@
 package fakes
 
-import boshhandler "bosh/handler"
+import (
+	"sync"
+
+	boshhandler "bosh/handler"
+)
 
 type FakeHandler struct {
-	ReceivedRun     bool
-	ReceivedStart   bool
-	ReceivedStop    bool
-	AgentSubscribed bool
-	Func            boshhandler.HandlerFunc
+	RunFunc     boshhandler.HandlerFunc
+	RunCallBack func()
+	RunErr      error
 
-	RunFunc func()
+	ReceivedRun   bool
+	ReceivedStart bool
+	ReceivedStop  bool
 
-	SendToHealthManagerErr     error
-	SendToHealthManagerTopic   string
-	SendToHealthManagerPayload interface{}
+	// Keeps list of all receivd health manager requests
+	hmRequestsLock sync.Mutex
+	hmRequests     []HMRequest
 
-	InitialHeartbeatSent bool
-	TickHeartbeatsSent   bool
+	RegisteredAdditionalHandlerFunc boshhandler.HandlerFunc
+
+	SendToHealthManagerCallBack func(HMRequest)
+	SendToHealthManagerErr      error
+}
+
+type HMRequest struct {
+	Topic   string
+	Payload interface{}
 }
 
 func NewFakeHandler() *FakeHandler {
-	return &FakeHandler{}
+	return &FakeHandler{hmRequests: []HMRequest{}}
 }
 
-func (h *FakeHandler) Run(handlerFunc boshhandler.HandlerFunc) (err error) {
+func (h *FakeHandler) Run(handlerFunc boshhandler.HandlerFunc) error {
 	h.ReceivedRun = true
-	h.Func = handlerFunc
+	h.RunFunc = handlerFunc
 
-	if h.RunFunc != nil {
-		h.RunFunc()
+	if h.RunCallBack != nil {
+		h.RunCallBack()
 	}
-	return
+
+	return h.RunErr
 }
 
-func (h *FakeHandler) Start(handlerFunc boshhandler.HandlerFunc) (err error) {
+func (h *FakeHandler) KeepOnRunning() {
+	block := make(chan error)
+	h.RunCallBack = func() { <-block }
+}
+
+func (h *FakeHandler) Start(handlerFunc boshhandler.HandlerFunc) error {
 	h.ReceivedStart = true
-	h.Func = handlerFunc
-	return
+	h.RunFunc = handlerFunc
+	return nil
 }
 
 func (h *FakeHandler) Stop() {
 	h.ReceivedStop = true
 }
 
-func (h *FakeHandler) SendToHealthManager(topic string, payload interface{}) (err error) {
-	if h.InitialHeartbeatSent {
-		h.TickHeartbeatsSent = true
+func (h *FakeHandler) RegisterAdditionalHandlerFunc(handlerFunc boshhandler.HandlerFunc) {
+	h.RegisteredAdditionalHandlerFunc = handlerFunc
+}
+
+func (h *FakeHandler) SendToHealthManager(topic string, payload interface{}) error {
+	h.hmRequestsLock.Lock()
+	defer h.hmRequestsLock.Unlock()
+
+	hmRequest := HMRequest{topic, payload}
+	h.hmRequests = append(h.hmRequests, hmRequest)
+
+	if h.SendToHealthManagerCallBack != nil {
+		h.SendToHealthManagerCallBack(hmRequest)
 	}
-	h.InitialHeartbeatSent = true
-	h.SendToHealthManagerTopic = topic
-	h.SendToHealthManagerPayload = payload
-	err = h.SendToHealthManagerErr
-	return
+
+	return h.SendToHealthManagerErr
+}
+
+func (h *FakeHandler) HMRequests() []HMRequest {
+	h.hmRequestsLock.Lock()
+	defer h.hmRequestsLock.Unlock()
+
+	return h.hmRequests
 }

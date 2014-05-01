@@ -8,6 +8,8 @@ module Bosh::Stemcell
           Aws.new
         when 'vsphere'
           Vsphere.new
+        when 'warden'
+          Warden.new
         when 'vcloud'
           Vcloud.new
         when 'null'
@@ -66,6 +68,12 @@ module Bosh::Stemcell
     class Aws < Base
       def initialize
         super(name: 'aws', hypervisor: 'xen', supports_light_stemcell: true, default_disk_size: 2048)
+      end
+    end
+
+    class Warden < Base
+      def initialize
+        super(name: 'warden', hypervisor: 'boshlite', default_disk_size: 2048)
       end
     end
   end

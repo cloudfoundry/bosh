@@ -1,7 +1,7 @@
 package infrastructure
 
 import (
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshsettings "bosh/settings"
 )
 
@@ -10,6 +10,5 @@ type Infrastructure interface {
 	GetSettings() (settings boshsettings.Settings, err error)
 	SetupNetworking(networks boshsettings.Networks) (err error)
 	GetEphemeralDiskPath(devicePath string) (realPath string, found bool)
-	GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver)
-	MountPersistentDisk(volumeId string, mountPoint string) error
+	GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver)
 }

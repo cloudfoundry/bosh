@@ -20,7 +20,7 @@ module Bosh::Director
             'name' => stemcell.name,
             'version' => stemcell.version,
             'cid' => stemcell.cid,
-            'deployments' => stemcell.deployments
+            'deployments' => stemcell.deployments.map { |d| { name: d.name } }
           }
         end
         json_encode(stemcells)

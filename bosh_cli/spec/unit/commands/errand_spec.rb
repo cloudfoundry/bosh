@@ -5,6 +5,8 @@ require 'cli/client/errands_client'
 describe Bosh::Cli::Command::Errand do
   subject(:command) { described_class.new }
 
+  ec = Bosh::Cli::Client::ErrandsClient
+
   describe 'run errand' do
     def perform; command.run_errand('fake-errand-name'); end
 
@@ -22,157 +24,328 @@ describe Bosh::Cli::Command::Errand do
         context 'when deployment is selected' do
           with_deployment
 
-          before { allow(command).to receive(:prepare_deployment_manifest).with(no_args).and_return('name' => 'fake-dep-name') }
+          let(:errand_result) { ec::ErrandResult.new(0, 'fake-stdout', 'fake-stderr', nil) }
 
-          context 'when errand name is given' do
-            let(:errand_result) { Bosh::Cli::Client::ErrandsClient::ErrandResult.new(0, 'fake-stdout', 'fake-stderr') }
+          before do
+            allow(command).to receive(:prepare_deployment_manifest).
+              with(no_args).and_return('name' => 'fake-dep-name')
+          end
 
-            it 'tells director to start running errand with given name on given instance' do
-              expect(errands_client).to receive(:run_errand).
-                with('fake-dep-name', 'fake-errand-name').
+          before do
+            allow(Bosh::Cli::LogsDownloader).to receive(:new).
+              with(director, command).
+              and_return(logs_downloader)
+          end
+          let(:logs_downloader) { instance_double('Bosh::Cli::LogsDownloader', build_destination_path: nil) }
+
+          it 'tells director to start running errand with given name on given instance' do
+            expect(errands_client).to receive(:run_errand).
+              with('fake-dep-name', 'fake-errand-name').
+              and_return([:done, 'fake-task-id', errand_result])
+            perform
+          end
+
+          context 'when errand director task finishes successfully' do
+            before do
+              allow(errands_client).to receive(:run_errand).
                 and_return([:done, 'fake-task-id', errand_result])
-              perform
             end
 
-            context 'when errand director task finishes successfully' do
-              before { allow(errands_client).to receive(:run_errand).and_return([:done, 'fake-task-id', errand_result]) }
+            context 'when errand finished with 0 exit code' do
+              let(:errand_result) { ec::ErrandResult.new(0, 'fake-stdout', 'fake-stderr', nil) }
 
-              context 'when errand finished with 0 exit code' do
-                let(:errand_result) { Bosh::Cli::Client::ErrandsClient::ErrandResult.new(0, 'fake-stdout', 'fake-stderr') }
-
-                it 'exits with exit code 0' do
-                  perform
-                  expect(command.exit_code).to eq(0)
-                end
-
-                it 'does not raise an error' do
-                  perform
-                  expect_output(<<-TEXT)
-
-                    [stdout]
-                    fake-stdout
-
-                    [stderr]
-                    fake-stderr
-
-                    Errand `fake-errand-name' completed successfully (exit code 0)
-                  TEXT
-                end
+              it 'exits with exit code 0' do
+                perform
+                expect(command.exit_code).to eq(0)
               end
 
-              context 'when errand finished with non-0 exit code' do
-                let(:errand_result) { Bosh::Cli::Client::ErrandsClient::ErrandResult.new(123, 'fake-stdout', 'fake-stderr') }
-
-                it 'raises an error and prints output' do
-                  expect {
-                    perform
-                  }.to raise_error(
-                    Bosh::Cli::CliError,
-                    /Errand `fake-errand-name' completed with error \(exit code 123\)/,
-                  )
-
-                  expect_output(<<-TEXT)
-
-                    [stdout]
-                    fake-stdout
-
-                    [stderr]
-                    fake-stderr
-
-                  TEXT
-                end
-              end
-
-              context 'when errand has stdout and stderr' do
-                let(:errand_result) { Bosh::Cli::Client::ErrandsClient::ErrandResult.new(0, 'fake-stdout', 'fake-stderr') }
-
-                it 'prints actual output for stdout and stderr' do
-                  perform
-                  expect_output(<<-TEXT)
-
-                    [stdout]
-                    fake-stdout
-
-                    [stderr]
-                    fake-stderr
-
-                    Errand `fake-errand-name' completed successfully (exit code 0)
-                  TEXT
-                end
-              end
-
-              context 'when errand has stdout and no stderr' do
-                let(:errand_result) { Bosh::Cli::Client::ErrandsClient::ErrandResult.new(0, 'fake-stdout', '') }
-
-                it 'prints None for both stderr and actual output for stdout' do
-                  perform
-                  expect_output(<<-TEXT)
-
-                    [stdout]
-                    fake-stdout
-
-                    [stderr]
-                    None
-
-                    Errand `fake-errand-name' completed successfully (exit code 0)
-                  TEXT
-                end
-              end
-
-              context 'when errand has stderr and no stdout' do
-                let(:errand_result) { Bosh::Cli::Client::ErrandsClient::ErrandResult.new(0, '', 'fake-stderr') }
-
-                it 'prints None for both stdout and actual output for stderr' do
-                  perform
-                  expect_output(<<-TEXT)
-
-                    [stdout]
-                    None
-
-                    [stderr]
-                    fake-stderr
-
-                    Errand `fake-errand-name' completed successfully (exit code 0)
-                  TEXT
-                end
-              end
-
-              context 'when errand has no stderr and no stdout' do
-                let(:errand_result) { Bosh::Cli::Client::ErrandsClient::ErrandResult.new(0, '', '') }
-
-                it 'prints None for both stdout and stderr' do
-                  perform
-                  expect_output(<<-TEXT)
-
-                    [stdout]
-                    None
-
-                    [stderr]
-                    None
-
-                    Errand `fake-errand-name' completed successfully (exit code 0)
-                  TEXT
-                end
-              end
-            end
-
-            context 'when errand task does not finish successfully' do
-              before { allow(errands_client).to receive(:run_errand).and_return([:error, 'fake-task-id', nil]) }
-
-              it 'reports task information to the user' do
+              it 'does not raise an error' do
                 perform
                 expect_output(<<-TEXT)
 
-                  Errand `fake-errand-name' did not complete
+                  [stdout]
+                  fake-stdout
 
-                  For a more detailed error report, run: bosh task fake-task-id --debug
+                  [stderr]
+                  fake-stderr
+
+                  Errand `fake-errand-name' completed successfully (exit code 0)
                 TEXT
               end
+            end
 
-              it 'exits with exit code 1' do
-                perform
-                expect(command.exit_code).to eq(1)
+            context 'when errand finished with non-0 exit code' do
+              let(:errand_result) { ec::ErrandResult.new(123, 'fake-stdout', 'fake-stderr', nil) }
+
+              it 'raises an error and prints output' do
+                expect {
+                  perform
+                }.to raise_error(
+                  Bosh::Cli::CliError,
+                  /Errand `fake-errand-name' completed with error \(exit code 123\)/,
+                )
+
+                expect_output(<<-TEXT)
+
+                  [stdout]
+                  fake-stdout
+
+                  [stderr]
+                  fake-stderr
+
+                TEXT
               end
+            end
+
+            context 'when errand finished with >128 exit code' do
+              let(:errand_result) { ec::ErrandResult.new(143, 'fake-stdout', 'fake-stderr', nil) }
+
+              it 'raises an error and prints output' do
+                expect {
+                  perform
+                }.to raise_error(
+                  Bosh::Cli::CliError,
+                  /Errand `fake-errand-name' was canceled \(exit code 143\)/,
+                )
+
+                expect_output(<<-TEXT)
+
+                  [stdout]
+                  fake-stdout
+
+                  [stderr]
+                  fake-stderr
+
+                TEXT
+              end
+            end
+
+            context 'when errand has stdout and stderr' do
+              let(:errand_result) { ec::ErrandResult.new(0, 'fake-stdout', 'fake-stderr', nil) }
+
+              it 'prints actual output for stdout and stderr' do
+                perform
+                expect_output(<<-TEXT)
+
+                  [stdout]
+                  fake-stdout
+
+                  [stderr]
+                  fake-stderr
+
+                  Errand `fake-errand-name' completed successfully (exit code 0)
+                TEXT
+              end
+            end
+
+            context 'when errand has stdout and no stderr' do
+              let(:errand_result) { ec::ErrandResult.new(0, 'fake-stdout', '', nil) }
+
+              it 'prints None for both stderr and actual output for stdout' do
+                perform
+                expect_output(<<-TEXT)
+
+                  [stdout]
+                  fake-stdout
+
+                  [stderr]
+                  None
+
+                  Errand `fake-errand-name' completed successfully (exit code 0)
+                TEXT
+              end
+            end
+
+            context 'when errand has stderr and no stdout' do
+              let(:errand_result) { ec::ErrandResult.new(0, '', 'fake-stderr', nil) }
+
+              it 'prints None for both stdout and actual output for stderr' do
+                perform
+                expect_output(<<-TEXT)
+
+                  [stdout]
+                  None
+
+                  [stderr]
+                  fake-stderr
+
+                  Errand `fake-errand-name' completed successfully (exit code 0)
+                TEXT
+              end
+            end
+
+            context 'when errand has no stderr and no stdout' do
+              let(:errand_result) { ec::ErrandResult.new(0, '', '', nil) }
+
+              it 'prints None for both stdout and stderr' do
+                perform
+                expect_output(<<-TEXT)
+
+                  [stdout]
+                  None
+
+                  [stderr]
+                  None
+
+                  Errand `fake-errand-name' completed successfully (exit code 0)
+                TEXT
+              end
+            end
+
+            context 'when errand result includes logs blobstore id' do
+              let(:errand_result) { ec::ErrandResult.new(0, 'fake-stdout', 'fake-stderr', 'fake-logs-blobstore-id') }
+
+              context 'when --download-logs option is set' do
+                before { command.options[:download_logs] = true }
+
+                it 'downloads the file and moves it to a timestamped file in a current directory' do
+                  expect(logs_downloader).to receive(:build_destination_path).
+                    with('fake-errand-name', 0, Dir.pwd).
+                    and_return('fake-logs-destination-path')
+
+                  expect(logs_downloader).to receive(:download).
+                    with('fake-logs-blobstore-id', 'fake-logs-destination-path')
+
+                  perform
+                end
+
+                it 'downloads the file and moves it to a timestamped file in a desired directory' do
+                  command.options[:logs_dir] = '/fake-path'
+
+                  expect(logs_downloader).to receive(:build_destination_path).
+                    with('fake-errand-name', 0, '/fake-path').
+                    and_return('fake-logs-destination-path')
+
+                  expect(logs_downloader).to receive(:download).
+                    with('fake-logs-blobstore-id', 'fake-logs-destination-path')
+
+                  perform
+                end
+
+                context 'when errand logs are downloaded successfully' do
+                  it 'shows downloaded logs tarball path' do
+                    expect(logs_downloader).to receive(:download) do
+                      command.say('fake-download-output')
+                    end
+
+                    perform
+                    expect_output(<<-TEXT)
+
+                      [stdout]
+                      fake-stdout
+
+                      [stderr]
+                      fake-stderr
+
+                      fake-download-output
+                      Errand `fake-errand-name' completed successfully (exit code 0)
+                    TEXT
+                  end
+                end
+
+                context 'when errand logs are not downloaded successfully' do
+                  before { allow(logs_downloader).to receive(:download).and_raise(error) }
+                  let(:error) { Bosh::Cli::CliError.new('fake-error') }
+
+                  context 'when errand finished with 0 exit code' do
+                    it 'raises fetch logs download error' do
+                      expect { perform }.to raise_error(error)
+
+                      expect_output(<<-TEXT)
+
+                        [stdout]
+                        fake-stdout
+
+                        [stderr]
+                        fake-stderr
+
+                        Errand `fake-errand-name' completed successfully (exit code 0)
+                      TEXT
+                    end
+                  end
+
+                  context 'when errand finished with non-0 exit code' do
+                    let(:errand_result) { ec::ErrandResult.new(123, 'fake-stdout', 'fake-stderr', 'fake-logs-blobstore-id') }
+
+                    it 'raises an error regarding errand exit code and prints output' do
+                      expect {
+                        perform
+                      }.to raise_error(
+                        Bosh::Cli::CliError,
+                        /Errand `fake-errand-name' completed with error \(exit code 123\)/,
+                      )
+
+                      expect_output(<<-TEXT)
+
+                        [stdout]
+                        fake-stdout
+
+                        [stderr]
+                        fake-stderr
+
+                      TEXT
+                    end
+                  end
+
+                  context 'when errand finished with >128 exit code' do
+                    let(:errand_result) { ec::ErrandResult.new(143, 'fake-stdout', 'fake-stderr', 'fake-logs-blobstore-id') }
+
+                    it 'raises an error regarding errand exit code and prints output' do
+                      expect {
+                        perform
+                      }.to raise_error(
+                        Bosh::Cli::CliError,
+                        /Errand `fake-errand-name' was canceled \(exit code 143\)/,
+                      )
+
+                      expect_output(<<-TEXT)
+
+                        [stdout]
+                        fake-stdout
+
+                        [stderr]
+                        fake-stderr
+
+                      TEXT
+                    end
+                  end
+                end
+              end
+
+              context 'when --download-logs option is not set' do
+                it 'does not try to download errand logs' do
+                  expect(logs_downloader).to_not receive(:download)
+                  perform
+                end
+              end
+            end
+
+            context 'when errand result does not include logs blobstore id' do
+              let(:errand_result) { ec::ErrandResult.new(0, 'fake-stdout', 'fake-stderr', nil) }
+
+              it 'does not try to download errand logs' do
+                expect(logs_downloader).to_not receive(:download)
+                perform
+              end
+            end
+          end
+
+          context 'when errand task does not finish successfully' do
+            before { allow(errands_client).to receive(:run_errand).and_return([:error, 'fake-task-id', nil]) }
+
+            it 'reports task information to the user' do
+              perform
+              expect_output(<<-TEXT)
+
+                Errand `fake-errand-name' did not complete
+
+                For a more detailed error report, run: bosh task fake-task-id --debug
+              TEXT
+            end
+
+            it 'exits with exit code 1' do
+              perform
+              expect(command.exit_code).to eq(1)
             end
           end
         end

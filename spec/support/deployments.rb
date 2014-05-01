@@ -75,5 +75,31 @@ module Bosh::Spec
         }]
       )
     end
+
+    def self.manifest_with_errand
+      manifest = simple_manifest.merge(
+        'name' => 'errand'
+      )
+      manifest['resource_pools'].first['size'] = 4
+
+      manifest['jobs'] << {
+          'name' => 'fake-errand-name',
+          'template' => 'errand1',
+          'lifecycle' => 'errand',
+          'resource_pool' => 'a',
+          'instances' => 1,
+          'networks' => [{'name' => 'a'}],
+          'properties' => {
+            'errand1' => {
+              'exit_code' => 0,
+              'stdout' => 'fake-errand-stdout',
+              'stderr' => 'fake-errand-stderr',
+              'run_package_file' => true,
+            },
+          },
+        }
+
+      manifest
+    end
   end
 end

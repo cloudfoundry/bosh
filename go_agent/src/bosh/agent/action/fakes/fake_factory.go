@@ -50,6 +50,9 @@ type TestAction struct {
 	ResumeValue interface{}
 	ResumeErr   error
 	Resumed     bool
+
+	Canceled  bool
+	CancelErr error
 }
 
 func (a *TestAction) IsAsynchronous() bool {
@@ -67,4 +70,9 @@ func (a *TestAction) Run(payload []byte) (interface{}, error) {
 func (a *TestAction) Resume() (interface{}, error) {
 	a.Resumed = true
 	return a.ResumeValue, a.ResumeErr
+}
+
+func (a *TestAction) Cancel() error {
+	a.Canceled = true
+	return a.CancelErr
 }

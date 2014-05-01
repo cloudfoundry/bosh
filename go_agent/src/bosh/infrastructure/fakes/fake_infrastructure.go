@@ -1,7 +1,7 @@
 package fakes
 
 import (
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshsettings "bosh/settings"
 )
 
@@ -14,10 +14,7 @@ type FakeInfrastructure struct {
 	GetEphemeralDiskPathFound      bool
 	GetEphemeralDiskPathRealPath   string
 
-	MountPersistentDiskVolumeId   string
-	MountPersistentDiskMountPoint string
-	MountPersistentDiskError      error
-	DevicePathResolver            boshdevicepathresolver.DevicePathResolver
+	DevicePathResolver boshdpresolv.DevicePathResolver
 }
 
 func NewFakeInfrastructure() (infrastructure *FakeInfrastructure) {
@@ -26,7 +23,7 @@ func NewFakeInfrastructure() (infrastructure *FakeInfrastructure) {
 	return
 }
 
-func (i *FakeInfrastructure) GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver) {
+func (i *FakeInfrastructure) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {
 	return i.DevicePathResolver
 }
 
@@ -49,12 +46,5 @@ func (i *FakeInfrastructure) GetEphemeralDiskPath(devicePath string) (realPath s
 	i.GetEphemeralDiskPathDevicePath = devicePath
 	realPath = i.GetEphemeralDiskPathRealPath
 	found = i.GetEphemeralDiskPathFound
-	return
-}
-
-func (i *FakeInfrastructure) MountPersistentDisk(volumeId string, mountPoint string) (err error) {
-	i.MountPersistentDiskVolumeId = volumeId
-	i.MountPersistentDiskMountPoint = mountPoint
-	err = i.MountPersistentDiskError
 	return
 }

@@ -11,12 +11,12 @@ func init() {
 		It("json with value", func() {
 
 			resp := NewValueResponse("some value")
-			boshassert.MatchesJsonString(GinkgoT(), resp, `{"value":"some value"}`)
+			boshassert.MatchesJSONString(GinkgoT(), resp, `{"value":"some value"}`)
 		})
 		It("json with exception", func() {
 
 			resp := NewExceptionResponse("oops!")
-			boshassert.MatchesJsonString(GinkgoT(), resp, `{"exception":{"message":"oops!"}}`)
+			boshassert.MatchesJSONString(GinkgoT(), resp, `{"exception":{"message":"oops!"}}`)
 		})
 	})
 }

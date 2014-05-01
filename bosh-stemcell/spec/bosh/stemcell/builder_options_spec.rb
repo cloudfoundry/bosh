@@ -22,12 +22,12 @@ module Bosh::Stemcell
         'Bosh::Stemcell::Definition',
         infrastructure: infrastructure,
         operating_system: operating_system,
-        agent: agent,
+        stemcell_name: 'fake-stemcell-name',
       )
     }
 
     let(:infrastructure) { Infrastructure.for('aws') }
-    let(:operating_system) { OperatingSystem.for('ubuntu') }
+    let(:operating_system) { OperatingSystem.for('ubuntu', 'penguin') }
     let(:agent) { Agent.for('ruby') }
     let(:expected_source_root) { File.expand_path('../../../../..', __FILE__) }
     let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'FAKE_STEMCELL.tgz') }
@@ -39,6 +39,13 @@ module Bosh::Stemcell
     describe '#default' do
       let(:default_disk_size) { 2048 }
       let(:rake_args) { {} }
+
+      describe 'stemcell_name' do
+        it 'prepends bosh' do
+          result = stemcell_builder_options.default
+          expect(result['stemcell_name']).to eq('bosh-fake-stemcell-name')
+        end
+      end
 
       it 'sets stemcell_tgz' do
         result = stemcell_builder_options.default
@@ -58,6 +65,11 @@ module Bosh::Stemcell
         expect(result['stemcell_version']).to eq('007')
       end
 
+      it 'sets stemcell operating system version' do
+        result = stemcell_builder_options.default
+        expect(result['stemcell_operating_system_version']).to eq('penguin')
+      end
+
       # rubocop:disable MethodLength
       def self.it_sets_correct_environment_variables
         describe 'setting enviroment variables' do
@@ -75,8 +87,7 @@ module Bosh::Stemcell
 
             result = stemcell_builder_options.default
 
-            expect(result['stemcell_name']).to eq(
-              "bosh-#{infrastructure.name}-#{infrastructure.hypervisor}-#{operating_system.name}")
+            expect(result['stemcell_name']).to eq('bosh-fake-stemcell-name')
             expect(result['stemcell_operating_system']).to eq(operating_system.name)
             expect(result['stemcell_infrastructure']).to eq(infrastructure.name)
             expect(result['stemcell_hypervisor']).to eq(infrastructure.hypervisor)
@@ -126,17 +137,6 @@ module Bosh::Stemcell
               result = stemcell_builder_options.default
 
               expect(result['image_create_disk_size']).to eq(1234)
-            end
-          end
-
-          context 'when go agent is used' do
-            let(:agent) { Agent.for('go') }
-
-            it 'changes the stemcell_name' do
-              result = stemcell_builder_options.default
-
-              expect(result['stemcell_name']).to eq(
-                "bosh-#{infrastructure.name}-#{infrastructure.hypervisor}-#{operating_system.name}-go_agent")
             end
           end
         end

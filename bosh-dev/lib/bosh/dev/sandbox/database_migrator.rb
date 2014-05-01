@@ -9,6 +9,8 @@ module Bosh::Dev::Sandbox
     end
 
     def migrate
+      @logger.info("Migrating database with #{@director_config_path}")
+
       Dir.chdir(@director_dir) do
         output = `bin/bosh-director-migrate -c #{@director_config_path}`
         unless $?.exitstatus == 0

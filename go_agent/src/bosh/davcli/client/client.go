@@ -54,24 +54,24 @@ func (c client) Put(path string, content io.ReadCloser) (err error) {
 	return
 }
 
-func (c client) createReq(method, blobId string, body io.Reader) (req *http.Request, err error) {
-	blobUrl, err := url.Parse(c.config.Endpoint)
+func (c client) createReq(method, blobID string, body io.Reader) (req *http.Request, err error) {
+	blobURL, err := url.Parse(c.config.Endpoint)
 	if err != nil {
 		return
 	}
 
 	digester := sha1.New()
-	digester.Write([]byte(blobId))
+	digester.Write([]byte(blobID))
 	blobPrefix := fmt.Sprintf("%02x", digester.Sum(nil)[0])
 
-	newPath := path.Join(blobUrl.Path, blobPrefix, blobId)
+	newPath := path.Join(blobURL.Path, blobPrefix, blobID)
 	if !strings.HasPrefix(newPath, "/") {
 		newPath = "/" + newPath
 	}
 
-	blobUrl.Path = newPath
+	blobURL.Path = newPath
 
-	req, err = http.NewRequest(method, blobUrl.String(), body)
+	req, err = http.NewRequest(method, blobURL.String(), body)
 	if err != nil {
 		return
 	}

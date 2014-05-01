@@ -21,13 +21,10 @@ namespace :spec do
     def run_integration_specs(agent_type)
       ENV['BOSH_INTEGRATION_AGENT_TYPE'] = agent_type
 
-      specs = Dir['spec/integration/*']
-      specs -= ['spec/integration/cli_errand_spec.rb'] if agent_type == 'go'
+      num_processes   = ENV['NUM_PROCESSES']
+      num_processes ||= ENV['TRAVIS'] ? 6 : nil
 
-      num_processes = ENV['TRAVIS'] ? 6 : nil
-      regex = "(#{specs.map { |s| Regexp.escape(s) }.join("|")})"
-
-      Rake::Task['parallel:spec'].invoke(num_processes, regex)
+      Rake::Task['parallel:spec'].invoke(num_processes, 'spec/integration')
     end
   end
 
@@ -68,9 +65,7 @@ namespace :spec do
       end
     end
 
-    task :go_agent do
-      sh('go_agent/bin/test')
-    end
+    task(:go_agent) { exec('go_agent/bin/test') }
   end
 
   task :unit => %w(spec:unit:ruby_gems spec:unit:go_agent)
@@ -85,12 +80,12 @@ namespace :spec do
 
   namespace :system do
     desc 'Run system (BATs) tests (deploys microbosh)'
-    task :micro, [:infrastructure_name, :operating_system_name, :net_type, :agent_name] do |_, args|
+    task :micro, [:infrastructure_name, :operating_system_name, :operating_system_version, :net_type, :agent_name] do |_, args|
       Bosh::Dev::BatHelper.for_rake_args(args).deploy_microbosh_and_run_bats
     end
 
     desc 'Run system (BATs) tests (uses existing microbosh)'
-    task :existing_micro, [:infrastructure_name, :operating_system_name, :net_type, :agent_name] do |_, args|
+    task :existing_micro, [:infrastructure_name, :operating_system_name, :operating_system_version, :net_type, :agent_name] do |_, args|
       Bosh::Dev::BatHelper.for_rake_args(args).run_bats
     end
   end

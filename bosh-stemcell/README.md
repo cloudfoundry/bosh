@@ -22,18 +22,17 @@ From a fresh copy of the bosh repo:
     export BOSH_AWS_ACCESS_KEY_ID=YOUR-AWS-ACCESS-KEY
     export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
     cd bosh-stemcell
-    vagrant up local
+    vagrant up remote --provider=aws
 
 #### Build the stemcell from inside the VM
 
-Substitute *\<current_build\>* with the current build number, which can be found by looking at 
-[bosh artifacts](http://bosh_artifacts.cfapps.io)
+Substitute *\<current_build\>* with the current build number, which can be found by looking at [bosh artifacts](http://bosh_artifacts.cfapps.io).
+The final two arguments are the S3 bucket and key for the OS image to use, which can be found by reading the OS\_IMAGES document in this project.
 
     vagrant ssh -c '
       cd /bosh
-      bundle install --local
-      CANDIDATE_BUILD_NUMBER=<current_build> http_proxy=http://localhost:3142/ bundle exec rake stemcell:build[vsphere,centos,ruby]
-    ' local
+      CANDIDATE_BUILD_NUMBER=<current_build> http_proxy=http://localhost:3142/ bundle exec rake stemcell:build[vsphere,centos,nil,ruby,bosh-os-images,bosh-centos-6_5-os-image.tgz]
+    ' remote
 
 # Run the stemcell locally with Fusion
 
@@ -106,4 +105,14 @@ route add default gw 10.0.2.2 eth0
 ```
 
 Test the network with `ping 8.8.8.8`
+
+# Build an OS image
+
+A stemcell with a custom OS image can be built using the stemcell-building VM created earlier.
+
+    vagrant ssh -c '
+      cd /bosh
+      bundle exec rake stemcell:build_os_image[ubuntu,lucid,/tmp/ubuntu_base_image.tgz]
+      bundle exec rake stemcell:build_with_local_os_image[aws,ubuntu,lucid,ruby,/tmp/ubuntu_base_image.tgz]
+    ' remote
 

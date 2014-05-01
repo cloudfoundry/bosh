@@ -26,6 +26,18 @@ then
   mirror=$UBUNTU_MIRROR
 fi
 
+if [ $base_debootstrap_suite == "trusty" ]
+then
+  # Older debootstrap leaves udev daemon child process when building trusty release
+  # https://bugs.launchpad.net/ubuntu/+source/debootstrap/+bug/1182540
+  # The issue was fixed in 1.0.52
+  downloaded_file=`mktemp`
+  url="http://archive.ubuntu.com/ubuntu/pool/main/d/debootstrap/debootstrap_1.0.59_all.deb"
+  wget $url -qO $downloaded_file
+  dpkg -i $downloaded_file
+  rm $downloaded_file
+fi
+
 # Bootstrap the base system
 echo "Running debootstrap"
 debootstrap --arch=$base_debootstrap_arch $base_debootstrap_suite $chroot $mirror

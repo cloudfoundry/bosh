@@ -1,13 +1,14 @@
 package jobsupervisor
 
 import (
+	"time"
+
 	bosherr "bosh/errors"
 	boshhandler "bosh/handler"
 	boshmonit "bosh/jobsupervisor/monit"
 	boshlog "bosh/logger"
 	boshplatform "bosh/platform"
 	boshdir "bosh/settings/directories"
-	"time"
 )
 
 type provider struct {

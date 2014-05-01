@@ -9,7 +9,7 @@ import (
 )
 
 type diskMounter interface {
-	MountPersistentDisk(volumeId string, mountPoint string) error
+	MountPersistentDisk(volumeID, mountPoint string) error
 }
 
 type mountPoints interface {
@@ -44,26 +44,22 @@ func (a MountDiskAction) IsPersistent() bool {
 	return false
 }
 
-func (a MountDiskAction) Run(disk_cid string) (value interface{}, err error) {
-	err = a.settings.LoadSettings()
+func (a MountDiskAction) Run(diskCid string) (interface{}, error) {
+	err := a.settings.LoadSettings()
 	if err != nil {
-		err = bosherr.WrapError(err, "Refreshing the settings")
-		return
+		return nil, bosherr.WrapError(err, "Refreshing the settings")
 	}
 
-	disksSettings := a.settings.GetDisks()
-	devicePath, found := disksSettings.Persistent[disk_cid]
+	devicePath, found := a.settings.GetDisks().Persistent[diskCid]
 	if !found {
-		err = bosherr.New("Persistent disk with volume id '%s' could not be found", disk_cid)
-		return
+		return nil, bosherr.New("Persistent disk with volume id '%s' could not be found", diskCid)
 	}
 
 	mountPoint := a.dirProvider.StoreDir()
 
 	isMountPoint, err := a.mountPoints.IsMountPoint(mountPoint)
 	if err != nil {
-		err = bosherr.WrapError(err, "Checking mount point")
-		return
+		return nil, bosherr.WrapError(err, "Checking mount point")
 	}
 	if isMountPoint {
 		mountPoint = a.dirProvider.StoreMigrationDir()
@@ -71,14 +67,16 @@ func (a MountDiskAction) Run(disk_cid string) (value interface{}, err error) {
 
 	err = a.diskMounter.MountPersistentDisk(devicePath, mountPoint)
 	if err != nil {
-		err = bosherr.WrapError(err, "Mounting persistent disk")
-		return
+		return nil, bosherr.WrapError(err, "Mounting persistent disk")
 	}
 
-	value = make(map[string]string)
-	return
+	return map[string]string{}, nil
 }
 
 func (a MountDiskAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
+}
+
+func (a MountDiskAction) Cancel() error {
+	return errors.New("not supported")
 }

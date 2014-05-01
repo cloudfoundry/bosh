@@ -23,7 +23,7 @@ func NewBuilder(settingsService boshsettings.Service, logger boshlog.Logger) Bui
 }
 
 func (b concreteBuilder) Build(input MonitAlert) (alert Alert, err error) {
-	alert.Id = input.Id
+	alert.ID = input.ID
 	alert.Severity = b.getSeverity(input)
 	alert.Title = b.getTitle(input)
 	alert.Summary = input.Description
@@ -34,15 +34,15 @@ func (b concreteBuilder) Build(input MonitAlert) (alert Alert, err error) {
 func (b concreteBuilder) getSeverity(input MonitAlert) (severity SeverityLevel) {
 	severity, severityFound := eventToSeverity[strings.ToLower(input.Event)]
 	if !severityFound {
-		b.logger.Error("Agent", "Unknown monit event name `%s', using default severity %d", input.Event, SEVERITY_DEFAULT)
-		severity = SEVERITY_DEFAULT
+		b.logger.Error("Agent", "Unknown monit event name `%s', using default severity %d", input.Event, SeverityDefault)
+		severity = SeverityDefault
 	}
 	return
 }
 
 func (b concreteBuilder) getTitle(input MonitAlert) (title string) {
 	service := input.Service
-	ips := b.settingsService.GetIps()
+	ips := b.settingsService.GetIPs()
 	sort.Strings(ips)
 
 	if len(ips) > 0 {
@@ -65,94 +65,94 @@ func (b concreteBuilder) getCreatedAt(input MonitAlert) (timestamp int64) {
 type SeverityLevel int
 
 const (
-	SEVERITY_ALERT    SeverityLevel = 1
-	SEVERITY_CRITICAL SeverityLevel = 2
-	SEVERITY_ERROR    SeverityLevel = 3
-	SEVERITY_WARNING  SeverityLevel = 4
-	SEVERITY_IGNORED  SeverityLevel = -1
-	SEVERITY_DEFAULT  SeverityLevel = SEVERITY_CRITICAL
+	SeverityAlert    SeverityLevel = 1
+	SeverityCritical SeverityLevel = 2
+	SeverityError    SeverityLevel = 3
+	SeverityWarning  SeverityLevel = 4
+	SeverityIgnored  SeverityLevel = -1
+	SeverityDefault  SeverityLevel = SeverityCritical
 )
 
 var eventToSeverity = map[string]SeverityLevel{
-	"action done":                  SEVERITY_IGNORED,
-	"checksum failed":              SEVERITY_CRITICAL,
-	"checksum changed":             SEVERITY_WARNING,
-	"checksum succeeded":           SEVERITY_IGNORED,
-	"checksum not changed":         SEVERITY_IGNORED,
-	"connection failed":            SEVERITY_ALERT,
-	"connection succeeded":         SEVERITY_IGNORED,
-	"connection changed":           SEVERITY_ERROR,
-	"connection not changed":       SEVERITY_IGNORED,
-	"content failed":               SEVERITY_ERROR,
-	"content succeeded":            SEVERITY_IGNORED,
-	"content match":                SEVERITY_IGNORED,
-	"content doesn't match":        SEVERITY_ERROR,
-	"data access error":            SEVERITY_ERROR,
-	"data access succeeded":        SEVERITY_IGNORED,
-	"data access changed":          SEVERITY_WARNING,
-	"data access not changed":      SEVERITY_IGNORED,
-	"execution failed":             SEVERITY_ALERT,
-	"execution succeeded":          SEVERITY_IGNORED,
-	"execution changed":            SEVERITY_WARNING,
-	"execution not changed":        SEVERITY_IGNORED,
-	"filesystem flags failed":      SEVERITY_ERROR,
-	"filesystem flags succeeded":   SEVERITY_IGNORED,
-	"filesystem flags changed":     SEVERITY_WARNING,
-	"filesystem flags not changed": SEVERITY_IGNORED,
-	"gid failed":                   SEVERITY_ERROR,
-	"gid succeeded":                SEVERITY_IGNORED,
-	"gid changed":                  SEVERITY_WARNING,
-	"gid not changed":              SEVERITY_IGNORED,
-	"heartbeat failed":             SEVERITY_ERROR,
-	"heartbeat succeeded":          SEVERITY_IGNORED,
-	"heartbeat changed":            SEVERITY_WARNING,
-	"heartbeat not changed":        SEVERITY_IGNORED,
-	"icmp failed":                  SEVERITY_CRITICAL,
-	"icmp succeeded":               SEVERITY_IGNORED,
-	"icmp changed":                 SEVERITY_WARNING,
-	"icmp not changed":             SEVERITY_IGNORED,
-	"monit instance failed":        SEVERITY_ALERT,
-	"monit instance succeeded":     SEVERITY_IGNORED,
-	"monit instance changed":       SEVERITY_IGNORED,
-	"monit instance not changed":   SEVERITY_IGNORED,
-	"invalid type":                 SEVERITY_ERROR,
-	"type succeeded":               SEVERITY_IGNORED,
-	"type changed":                 SEVERITY_WARNING,
-	"type not changed":             SEVERITY_IGNORED,
-	"does not exist":               SEVERITY_ALERT,
-	"exists":                       SEVERITY_IGNORED,
-	"existence changed":            SEVERITY_WARNING,
-	"existence not changed":        SEVERITY_IGNORED,
-	"permission failed":            SEVERITY_ERROR,
-	"permission succeeded":         SEVERITY_IGNORED,
-	"permission changed":           SEVERITY_WARNING,
-	"permission not changed":       SEVERITY_IGNORED,
-	"pid failed":                   SEVERITY_CRITICAL,
-	"pid succeeded":                SEVERITY_IGNORED,
-	"pid changed":                  SEVERITY_WARNING,
-	"pid not changed":              SEVERITY_IGNORED,
-	"ppid failed":                  SEVERITY_CRITICAL,
-	"ppid succeeded":               SEVERITY_IGNORED,
-	"ppid changed":                 SEVERITY_WARNING,
-	"ppid not changed":             SEVERITY_IGNORED,
-	"resource limit matched":       SEVERITY_ERROR,
-	"resource limit succeeded":     SEVERITY_IGNORED,
-	"resource limit changed":       SEVERITY_WARNING,
-	"resource limit not changed":   SEVERITY_IGNORED,
-	"size failed":                  SEVERITY_ERROR,
-	"size succeeded":               SEVERITY_IGNORED,
-	"size changed":                 SEVERITY_ERROR,
-	"size not changed":             SEVERITY_IGNORED,
-	"timeout":                      SEVERITY_CRITICAL,
-	"timeout recovery":             SEVERITY_IGNORED,
-	"timeout changed":              SEVERITY_WARNING,
-	"timeout not changed":          SEVERITY_IGNORED,
-	"timestamp failed":             SEVERITY_ERROR,
-	"timestamp succeeded":          SEVERITY_IGNORED,
-	"timestamp changed":            SEVERITY_WARNING,
-	"timestamp not changed":        SEVERITY_IGNORED,
-	"uid failed":                   SEVERITY_CRITICAL,
-	"uid succeeded":                SEVERITY_IGNORED,
-	"uid changed":                  SEVERITY_WARNING,
-	"uid not changed":              SEVERITY_IGNORED,
+	"action done":                  SeverityIgnored,
+	"checksum failed":              SeverityCritical,
+	"checksum changed":             SeverityWarning,
+	"checksum succeeded":           SeverityIgnored,
+	"checksum not changed":         SeverityIgnored,
+	"connection failed":            SeverityAlert,
+	"connection succeeded":         SeverityIgnored,
+	"connection changed":           SeverityError,
+	"connection not changed":       SeverityIgnored,
+	"content failed":               SeverityError,
+	"content succeeded":            SeverityIgnored,
+	"content match":                SeverityIgnored,
+	"content doesn't match":        SeverityError,
+	"data access error":            SeverityError,
+	"data access succeeded":        SeverityIgnored,
+	"data access changed":          SeverityWarning,
+	"data access not changed":      SeverityIgnored,
+	"execution failed":             SeverityAlert,
+	"execution succeeded":          SeverityIgnored,
+	"execution changed":            SeverityWarning,
+	"execution not changed":        SeverityIgnored,
+	"filesystem flags failed":      SeverityError,
+	"filesystem flags succeeded":   SeverityIgnored,
+	"filesystem flags changed":     SeverityWarning,
+	"filesystem flags not changed": SeverityIgnored,
+	"gid failed":                   SeverityError,
+	"gid succeeded":                SeverityIgnored,
+	"gid changed":                  SeverityWarning,
+	"gid not changed":              SeverityIgnored,
+	"heartbeat failed":             SeverityError,
+	"heartbeat succeeded":          SeverityIgnored,
+	"heartbeat changed":            SeverityWarning,
+	"heartbeat not changed":        SeverityIgnored,
+	"icmp failed":                  SeverityCritical,
+	"icmp succeeded":               SeverityIgnored,
+	"icmp changed":                 SeverityWarning,
+	"icmp not changed":             SeverityIgnored,
+	"monit instance failed":        SeverityAlert,
+	"monit instance succeeded":     SeverityIgnored,
+	"monit instance changed":       SeverityIgnored,
+	"monit instance not changed":   SeverityIgnored,
+	"invalid type":                 SeverityError,
+	"type succeeded":               SeverityIgnored,
+	"type changed":                 SeverityWarning,
+	"type not changed":             SeverityIgnored,
+	"does not exist":               SeverityAlert,
+	"exists":                       SeverityIgnored,
+	"existence changed":            SeverityWarning,
+	"existence not changed":        SeverityIgnored,
+	"permission failed":            SeverityError,
+	"permission succeeded":         SeverityIgnored,
+	"permission changed":           SeverityWarning,
+	"permission not changed":       SeverityIgnored,
+	"pid failed":                   SeverityCritical,
+	"pid succeeded":                SeverityIgnored,
+	"pid changed":                  SeverityWarning,
+	"pid not changed":              SeverityIgnored,
+	"ppid failed":                  SeverityCritical,
+	"ppid succeeded":               SeverityIgnored,
+	"ppid changed":                 SeverityWarning,
+	"ppid not changed":             SeverityIgnored,
+	"resource limit matched":       SeverityError,
+	"resource limit succeeded":     SeverityIgnored,
+	"resource limit changed":       SeverityWarning,
+	"resource limit not changed":   SeverityIgnored,
+	"size failed":                  SeverityError,
+	"size succeeded":               SeverityIgnored,
+	"size changed":                 SeverityError,
+	"size not changed":             SeverityIgnored,
+	"timeout":                      SeverityCritical,
+	"timeout recovery":             SeverityIgnored,
+	"timeout changed":              SeverityWarning,
+	"timeout not changed":          SeverityIgnored,
+	"timestamp failed":             SeverityError,
+	"timestamp succeeded":          SeverityIgnored,
+	"timestamp changed":            SeverityWarning,
+	"timestamp not changed":        SeverityIgnored,
+	"uid failed":                   SeverityCritical,
+	"uid succeeded":                SeverityIgnored,
+	"uid changed":                  SeverityWarning,
+	"uid not changed":              SeverityIgnored,
 }

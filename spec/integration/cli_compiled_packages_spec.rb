@@ -7,7 +7,7 @@ describe 'cli: compiled_packages', type: :integration do
     deploy_simple
 
     Dir.mktmpdir do |download_dir|
-      run_bosh("export compiled_packages bosh-release/0.1-dev ubuntu-stemcell/1 #{download_dir}")
+      bosh_runner.run("export compiled_packages bosh-release/0.1-dev ubuntu-stemcell/1 #{download_dir}")
 
       # Since import is not implemented yet we will inspect received tar file
       download_path = "#{download_dir}/bosh-release-0.1-dev-ubuntu-stemcell-1.tgz"
@@ -24,12 +24,12 @@ describe 'cli: compiled_packages', type: :integration do
     target_and_login
 
     deployment_manifest = yaml_file('simple_manifest', Bosh::Spec::Deployments.simple_manifest)
-    run_bosh("deployment #{deployment_manifest.path}")
-    run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
-    run_bosh("upload release #{create_release}")
-    run_bosh("import compiled_packages #{spec_asset('bosh-release-0.1-dev-ubuntu-stemcell-1.tgz')}")
+    bosh_runner.run("deployment #{deployment_manifest.path}")
+    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+    bosh_runner.run("upload release #{create_release}")
+    bosh_runner.run("import compiled_packages #{spec_asset('bosh-release-0.1-dev-ubuntu-stemcell-1.tgz')}")
 
-    deploy_output = run_bosh('deploy')
+    deploy_output = bosh_runner.run('deploy')
     expect(deploy_output).to_not match(/compiling packages/i)
   end
 
@@ -37,22 +37,22 @@ describe 'cli: compiled_packages', type: :integration do
     target_and_login
 
     deployment_manifest = yaml_file('simple_manifest', Bosh::Spec::Deployments.simple_manifest)
-    run_bosh("deployment #{deployment_manifest.path}")
-    run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
-    run_bosh("upload release #{create_release}")
+    bosh_runner.run("deployment #{deployment_manifest.path}")
+    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+    bosh_runner.run("upload release #{create_release}")
 
     test_export = spec_asset('bosh-release-0.1-dev-ubuntu-stemcell-1.tgz')
-    run_bosh("import compiled_packages #{test_export}")
-    expect{ run_bosh("import compiled_packages #{test_export}") }.to_not raise_error
+    bosh_runner.run("import compiled_packages #{test_export}")
+    expect{ bosh_runner.run("import compiled_packages #{test_export}") }.to_not raise_error
 
-    deploy_output = run_bosh('deploy')
+    deploy_output = bosh_runner.run('deploy')
     expect(deploy_output).to_not match(/compiling packages/i)
   end
 
   def create_release
     Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
-      run_bosh('create release --with-tarball', work_dir: Dir.pwd)
+      bosh_runner.run_in_current_dir('create release --with-tarball')
     end
     File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0.1-dev.tgz')
   end

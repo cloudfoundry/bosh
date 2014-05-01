@@ -22,7 +22,7 @@ module Bosh::Cli
       subject(:list_of_stemcells) { public_stemcells.all.map(&:name) }
 
       it 'returns all promoted bosh-stemcells' do
-        expect(list_of_stemcells.size).to eq(573)
+        expect(list_of_stemcells.size).to eq(968)
       end
 
       it 'returns the most recent aws stemcells' do
@@ -54,13 +54,22 @@ module Bosh::Cli
       end
 
       it 'returns the most recent of each variety of stemcell, except legacy stemcells' do
-        expect(list_of_stemcells).to eq %w[
-                                          bosh-stemcell-1365-aws-xen-ubuntu.tgz
-                                          light-bosh-stemcell-1365-aws-xen-ubuntu.tgz
-                                          bosh-stemcell-1365-openstack-kvm-ubuntu.tgz
-                                          bosh-stemcell-1365-vsphere-esxi-ubuntu.tgz
-                                          bosh-stemcell-1365-vsphere-esxi-centos.tgz
-                                        ]
+        expect(list_of_stemcells).to eq %w[bosh-stemcell-2416-aws-xen-ubuntu.tgz
+                                          bosh-stemcell-2416-aws-xen-centos.tgz
+                                          bosh-stemcell-2416-aws-xen-centos-go_agent.tgz
+                                          bosh-stemcell-2416-aws-xen-ubuntu-go_agent.tgz
+                                          light-bosh-stemcell-2416-aws-xen-ubuntu.tgz
+                                          light-bosh-stemcell-2416-aws-xen-centos.tgz
+                                          light-bosh-stemcell-2416-aws-xen-centos-go_agent.tgz
+                                          light-bosh-stemcell-2416-aws-xen-ubuntu-go_agent.tgz
+                                          bosh-stemcell-2416-openstack-kvm-ubuntu.tgz
+                                          bosh-stemcell-2416-openstack-kvm-centos.tgz
+                                          bosh-stemcell-2416-vsphere-esxi-ubuntu.tgz
+                                          bosh-stemcell-2416-vsphere-esxi-centos.tgz
+                                          bosh-stemcell-2416-vsphere-esxi-centos-go_agent.tgz
+                                          bosh-stemcell-2416-vsphere-esxi-ubuntu-go_agent.tgz
+                                          bosh-stemcell-53-warden-boshlite-ubuntu.tgz
+                                          ]
       end
 
       it 'excludes stemcells with "latest" as their version because these keep changing' do

@@ -42,32 +42,20 @@ module Bosh::Stemcell
       end
     end
 
-    # rubocop:disable MethodLength
     def infrastructure_stages
       case infrastructure
       when Infrastructure::Aws then
         aws_stages
       when Infrastructure::OpenStack then
-        if operating_system.instance_of?(OperatingSystem::Centos)
-          centos_openstack_stages
-        else
-          openstack_stages
-        end
+        openstack_stages
       when Infrastructure::Vsphere then
-        if operating_system.instance_of?(OperatingSystem::Centos)
-          centos_vsphere_stages
-        else
-          vsphere_stages
-        end
+        vsphere_stages
       when Infrastructure::Vcloud then
-        if operating_system.instance_of?(OperatingSystem::Centos)
-          centos_vcloud_stages
-        else
-          default_vcloud_stages
-        end
+        vcloud_stages
+      when Infrastructure::Warden then
+        warden_stages
       end
     end
-    # rubocop:enable MethodLength
 
     def openstack_stages
       if operating_system.instance_of?(OperatingSystem::Centos)
@@ -109,6 +97,7 @@ module Bosh::Stemcell
         :bosh_sysstat,
         :bosh_sysctl,
         :system_kernel,
+        :system_rescan_scsi_bus,
       ]
     end
 
@@ -253,6 +242,22 @@ module Bosh::Stemcell
         :image_ovf_prepare_stemcell,
         # Final stemcell
         :stemcell
+      ]
+    end
+
+    def warden_stages
+      [
+        :system_parameters,
+        :base_warden,
+        # Finalisation
+        :bosh_clean,
+        :bosh_harden,
+        # Image copy
+        :bosh_copy_root,
+        # only used for spec test
+        :image_create,
+        # Final stemcell
+        :stemcell,
       ]
     end
   end

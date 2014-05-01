@@ -4,10 +4,11 @@ module Bosh::Dev
   class BuildTarget
     attr_reader :build_number, :definition
 
-    def self.from_names(build_number, infrastructure_name, operating_system_name, agent_name)
+    def self.from_names(build_number, infrastructure_name, operating_system_name, operating_system_version, agent_name)
       definition = Bosh::Stemcell::Definition.for(
         infrastructure_name,
         operating_system_name,
+        operating_system_version,
         agent_name,
       )
       new(build_number, definition)

@@ -1,7 +1,7 @@
 package platform
 
 import (
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
@@ -22,8 +22,8 @@ type Platform interface {
 	GetMonitCredentials() (username, password string, err error)
 	GetDiskManager() (diskManager boshdisk.Manager)
 
-	GetDevicePathResolver() (devicePathResolver boshdevicepathresolver.DevicePathResolver)
-	SetDevicePathResolver(devicePathResolver boshdevicepathresolver.DevicePathResolver) (err error)
+	GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver)
+	SetDevicePathResolver(devicePathResolver boshdpresolv.DevicePathResolver) (err error)
 
 	// User management
 	CreateUser(username, password, basePath string) (err error)
@@ -39,16 +39,18 @@ type Platform interface {
 	SetupLogrotate(groupName, basePath, size string) (err error)
 	SetTimeWithNtpServers(servers []string) (err error)
 	SetupEphemeralDiskWithPath(devicePath string) (err error)
+	SetupDataDir() (err error)
 	SetupTmpDir() (err error)
 	SetupMonitUser() (err error)
 	SetupRuntimeConfiguration() (err error)
 
 	// Disk management
+	MountPersistentDisk(devicePath, mountPoint string) error
 	UnmountPersistentDisk(devicePath string) (didUnmount bool, err error)
 	MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error)
 	NormalizeDiskPath(devicePath string) (realPath string, found bool)
 	IsMountPoint(path string) (result bool, err error)
-	IsDevicePathMounted(path string) (result bool, err error)
+	IsPersistentDiskMounted(path string) (result bool, err error)
 
 	GetFileContentsFromCDROM(filePath string) (contents []byte, err error)
 

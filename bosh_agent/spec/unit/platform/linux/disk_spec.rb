@@ -26,7 +26,7 @@ describe Bosh::Agent::Platform::Linux::Disk do
       let(:settings) { { 'disks' => { 'persistent' => { 2 => '333' } } } }
       let(:infrastructure_name) { infra }
 
-      before { disk_manager.stub(:sh).with('rescan-scsi-bus.sh') }
+      before { disk_manager.stub(:sh).with('rescan-scsi-bus') }
 
       it 'looks up disk by cid' do
         Dir.should_receive(:glob).with(dev_path, 0).and_return(['/dev/sdy'])

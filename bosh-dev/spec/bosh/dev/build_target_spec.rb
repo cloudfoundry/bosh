@@ -10,6 +10,7 @@ module Bosh::Dev
         'fake-build-number',
         'fake-infrastructure-name',
         'fake-operating-system-name',
+        'fake-operating-system-version',
         'fake-agent-name',
       )
     end
@@ -38,8 +39,12 @@ module Bosh::Dev
         it 'builds definition using infrastructure and operating system names and hardcoded ruby' do
           subject.definition
 
-          expect(Bosh::Stemcell::Definition).to have_received(:for)
-            .with('fake-infrastructure-name', 'fake-operating-system-name', 'fake-agent-name')
+          expect(Bosh::Stemcell::Definition).to have_received(:for).with(
+            'fake-infrastructure-name',
+            'fake-operating-system-name',
+            'fake-operating-system-version',
+            'fake-agent-name'
+          )
         end
       end
 

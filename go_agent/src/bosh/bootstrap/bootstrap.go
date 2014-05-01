@@ -5,6 +5,7 @@ import (
 
 	bosherr "bosh/errors"
 	boshinf "bosh/infrastructure"
+	boshlog "bosh/logger"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
@@ -17,6 +18,7 @@ type bootstrap struct {
 	platform                boshplatform.Platform
 	dirProvider             boshdir.DirectoriesProvider
 	settingsServiceProvider boshsettings.ServiceProvider
+	logger                  boshlog.Logger
 }
 
 func New(
@@ -24,12 +26,14 @@ func New(
 	platform boshplatform.Platform,
 	dirProvider boshdir.DirectoriesProvider,
 	settingsServiceProvider boshsettings.ServiceProvider,
+	logger boshlog.Logger,
 ) (b bootstrap) {
 	b.fs = platform.GetFs()
 	b.infrastructure = inf
 	b.platform = platform
 	b.dirProvider = dirProvider
 	b.settingsServiceProvider = settingsServiceProvider
+	b.logger = logger
 	return
 }
 
@@ -40,7 +44,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	err = boot.infrastructure.SetupSsh(boshsettings.VCAP_USERNAME)
+	err = boot.infrastructure.SetupSsh(boshsettings.VCAPUsername)
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting up ssh")
 		return
@@ -50,6 +54,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		boot.fs,
 		boot.dirProvider.BoshDir(),
 		boot.infrastructure.GetSettings,
+		boot.logger,
 	)
 
 	err = settingsService.LoadSettings()
@@ -66,7 +71,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	err = boot.platform.SetupHostname(settings.AgentId)
+	err = boot.platform.SetupHostname(settings.AgentID)
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting up hostname")
 		return
@@ -98,19 +103,25 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	if len(disks.Persistent) > 1 {
-		err = errors.New("Error mounting persistent disk, there is more than one persistent disk")
+	err = boot.platform.SetupDataDir()
+	if err != nil {
+		err = bosherr.WrapError(err, "Setting up data dir")
 		return
 	}
 
 	err = boot.platform.SetupTmpDir()
 	if err != nil {
-		err = bosherr.WrapError(err, "Changing ownership of /tmp")
+		err = bosherr.WrapError(err, "Setting up tmp dir")
+		return
+	}
+
+	if len(disks.Persistent) > 1 {
+		err = errors.New("Error mounting persistent disk, there is more than one persistent disk")
 		return
 	}
 
 	for _, devicePath := range disks.Persistent {
-		err = boot.infrastructure.MountPersistentDisk(devicePath, boot.dirProvider.StoreDir())
+		err = boot.platform.MountPersistentDisk(devicePath, boot.dirProvider.StoreDir())
 		if err != nil {
 			err = bosherr.WrapError(err, "Mounting persistent disk")
 			return
@@ -137,13 +148,13 @@ func (boot bootstrap) setUserPasswords(settings boshsettings.Settings) (err erro
 		return
 	}
 
-	err = boot.platform.SetUserPassword(boshsettings.ROOT_USERNAME, settings.Env.GetPassword())
+	err = boot.platform.SetUserPassword(boshsettings.RootUsername, settings.Env.GetPassword())
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting root password")
 		return
 	}
 
-	err = boot.platform.SetUserPassword(boshsettings.VCAP_USERNAME, settings.Env.GetPassword())
+	err = boot.platform.SetUserPassword(boshsettings.VCAPUsername, settings.Env.GetPassword())
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting vcap password")
 	}

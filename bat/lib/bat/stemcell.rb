@@ -35,7 +35,12 @@ module Bat
     end
 
     def supports_network_reconfiguration?
-      !(name =~ /vsphere/ && (name =~ /centos/ || name !~ /go_agent/))
+      !((name =~ /vsphere/ || name =~ /vcloud/) && (name =~ /centos/ || name !~ /go_agent/)) && name !~ /warden/
+    end
+
+    def supports_changing_static_ip?(network_type)
+      # Does not support for openstack dynamic
+      supports_network_reconfiguration? && !(name =~ /openstack/ && network_type == 'dynamic')
     end
 
     def ==(other)

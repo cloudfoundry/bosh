@@ -15,14 +15,14 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "bosh/jobsupervisor/monit"
-	"bosh/jobsupervisor/monit/http_fakes"
+	fakemonit "bosh/jobsupervisor/monit/fakes"
 	boshlog "bosh/logger"
 )
 
 func init() {
 	Describe("httpClient", func() {
 		var (
-			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger = boshlog.NewLogger(boshlog.LevelNone)
 		)
 
 		It("services in group returns services when found", func() {})
@@ -46,7 +46,7 @@ func init() {
 				ts := httptest.NewServer(handler)
 				defer ts.Close()
 
-				client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
+				client := NewHTTPClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 				err := client.StartService("test-service")
 				Expect(err).ToNot(HaveOccurred())
@@ -54,26 +54,26 @@ func init() {
 			})
 
 			It("start service retries when non200 response", func() {
-				fakeHttpClient := http_fakes.NewFakeHttpClient()
-				fakeHttpClient.StatusCode = 500
-				fakeHttpClient.SetMessage("fake error message")
+				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient.StatusCode = 500
+				fakeHTTPClient.SetMessage("fake error message")
 
-				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
+				client := NewHTTPClient("agent.example.com", "fake-user", "fake-pass", fakeHTTPClient, 1*time.Millisecond, logger)
 
 				err := client.StartService("test-service")
-				Expect(fakeHttpClient.CallCount).To(Equal(20))
+				Expect(fakeHTTPClient.CallCount).To(Equal(20))
 				Expect(err).To(HaveOccurred())
 			})
 
 			It("start service retries when connection refused", func() {
-				fakeHttpClient := http_fakes.NewFakeHttpClient()
-				fakeHttpClient.SetNilResponse()
-				fakeHttpClient.Error = errors.New("some error")
+				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient.SetNilResponse()
+				fakeHTTPClient.Error = errors.New("some error")
 
-				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
+				client := NewHTTPClient("agent.example.com", "fake-user", "fake-pass", fakeHTTPClient, 1*time.Millisecond, logger)
 
 				err := client.StartService("test-service")
-				Expect(fakeHttpClient.CallCount).To(Equal(20))
+				Expect(fakeHTTPClient.CallCount).To(Equal(20))
 				Expect(err).To(HaveOccurred())
 			})
 		})
@@ -95,7 +95,7 @@ func init() {
 				ts := httptest.NewServer(handler)
 				defer ts.Close()
 
-				client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
+				client := NewHTTPClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 				err := client.StopService("test-service")
 				Expect(err).ToNot(HaveOccurred())
@@ -103,27 +103,27 @@ func init() {
 			})
 
 			It("stop service retries when non200 response", func() {
-				fakeHttpClient := http_fakes.NewFakeHttpClient()
-				fakeHttpClient.StatusCode = 500
-				fakeHttpClient.SetMessage("fake error message")
+				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient.StatusCode = 500
+				fakeHTTPClient.SetMessage("fake error message")
 
-				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
+				client := NewHTTPClient("agent.example.com", "fake-user", "fake-pass", fakeHTTPClient, 1*time.Millisecond, logger)
 
 				err := client.StopService("test-service")
-				Expect(fakeHttpClient.CallCount).To(Equal(20))
+				Expect(fakeHTTPClient.CallCount).To(Equal(20))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake error message"))
 			})
 
 			It("stop service retries when connection refused", func() {
-				fakeHttpClient := http_fakes.NewFakeHttpClient()
-				fakeHttpClient.SetNilResponse()
-				fakeHttpClient.Error = errors.New("some error")
+				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient.SetNilResponse()
+				fakeHTTPClient.Error = errors.New("some error")
 
-				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
+				client := NewHTTPClient("agent.example.com", "fake-user", "fake-pass", fakeHTTPClient, 1*time.Millisecond, logger)
 
 				err := client.StopService("test-service")
-				Expect(fakeHttpClient.CallCount).To(Equal(20))
+				Expect(fakeHTTPClient.CallCount).To(Equal(20))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("some error"))
 			})
@@ -147,7 +147,7 @@ func init() {
 				ts := httptest.NewServer(handler)
 				defer ts.Close()
 
-				client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
+				client := NewHTTPClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 				err := client.UnmonitorService("test-service")
 				Expect(err).ToNot(HaveOccurred())
@@ -155,31 +155,31 @@ func init() {
 			})
 
 			It("retries when non200 response", func() {
-				fakeHttpClient := http_fakes.NewFakeHttpClient()
-				fakeHttpClient.StatusCode = 500
-				fakeHttpClient.SetMessage("fake-http-response-message")
+				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient.StatusCode = 500
+				fakeHTTPClient.SetMessage("fake-http-response-message")
 
-				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
+				client := NewHTTPClient("agent.example.com", "fake-user", "fake-pass", fakeHTTPClient, 1*time.Millisecond, logger)
 
 				err := client.UnmonitorService("test-service")
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-http-response-message"))
 
-				Expect(fakeHttpClient.CallCount).To(Equal(20))
+				Expect(fakeHTTPClient.CallCount).To(Equal(20))
 			})
 
 			It("retries when connection refused", func() {
-				fakeHttpClient := http_fakes.NewFakeHttpClient()
-				fakeHttpClient.SetNilResponse()
-				fakeHttpClient.Error = errors.New("fake-http-error")
+				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient.SetNilResponse()
+				fakeHTTPClient.Error = errors.New("fake-http-error")
 
-				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
+				client := NewHTTPClient("agent.example.com", "fake-user", "fake-pass", fakeHTTPClient, 1*time.Millisecond, logger)
 
 				err := client.UnmonitorService("test-service")
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-http-error"))
 
-				Expect(fakeHttpClient.CallCount).To(Equal(20))
+				Expect(fakeHTTPClient.CallCount).To(Equal(20))
 			})
 		})
 
@@ -201,7 +201,7 @@ func init() {
 				ts := httptest.NewServer(handler)
 				defer ts.Close()
 
-				client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
+				client := NewHTTPClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 				services, err := client.ServicesInGroup("vcap")
 				Expect(err).ToNot(HaveOccurred())
@@ -227,7 +227,7 @@ func init() {
 				ts := httptest.NewServer(handler)
 				defer ts.Close()
 
-				client := NewHttpClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
+				client := NewHTTPClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
 
 				status, err := client.Status()
 				Expect(err).ToNot(HaveOccurred())
@@ -236,31 +236,31 @@ func init() {
 			})
 
 			It("status retries when non200 response", func() {
-				fakeHttpClient := http_fakes.NewFakeHttpClient()
-				fakeHttpClient.StatusCode = 500
-				fakeHttpClient.SetMessage("fake error message")
+				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient.StatusCode = 500
+				fakeHTTPClient.SetMessage("fake error message")
 
-				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
+				client := NewHTTPClient("agent.example.com", "fake-user", "fake-pass", fakeHTTPClient, 1*time.Millisecond, logger)
 
 				_, err := client.Status()
-				Expect(fakeHttpClient.CallCount).To(Equal(20))
+				Expect(fakeHTTPClient.CallCount).To(Equal(20))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake error message"))
 			})
 
 			It("status retries when connection refused", func() {
-				fakeHttpClient := http_fakes.NewFakeHttpClient()
-				fakeHttpClient.SetNilResponse()
-				fakeHttpClient.Error = errors.New("some error")
+				fakeHTTPClient := fakemonit.NewFakeHTTPClient()
+				fakeHTTPClient.SetNilResponse()
+				fakeHTTPClient.Error = errors.New("some error")
 
-				client := NewHttpClient("agent.example.com", "fake-user", "fake-pass", fakeHttpClient, 1*time.Millisecond, logger)
+				client := NewHTTPClient("agent.example.com", "fake-user", "fake-pass", fakeHTTPClient, 1*time.Millisecond, logger)
 
 				err := client.StartService("hello")
-				Expect(fakeHttpClient.CallCount).To(Equal(20))
+				Expect(fakeHTTPClient.CallCount).To(Equal(20))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("some error"))
 
-				for _, req := range fakeHttpClient.RequestBodies {
+				for _, req := range fakeHTTPClient.RequestBodies {
 					Expect(req).To(Equal("action=start"))
 				}
 			})

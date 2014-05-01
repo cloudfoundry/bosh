@@ -2,5 +2,10 @@ out
 pkg
 gobin/*
 
+*\.test
+*.coverprofile
+
+*.sublime-workspace
+
 .idea/workspace.xml
 .idea/tasks.xml

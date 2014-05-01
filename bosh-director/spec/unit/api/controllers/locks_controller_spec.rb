@@ -12,9 +12,7 @@ module Bosh::Director
 
     let(:redis) { double('Redis') }
 
-    before do
-      allow(BD::Config).to receive(:redis).and_return(redis)
-    end
+    before { allow(BD::Config).to receive(:redis).and_return(redis) }
 
     context 'authenticated access' do
       before { authorize 'admin', 'admin' }
@@ -26,7 +24,7 @@ module Bosh::Director
 
         it 'should list the current locks' do
           get '/locks'
-          expect(last_response.status).to eq 200
+          expect(last_response.status).to eq(200)
 
           body = Yajl::Parser.parse(last_response.body)
           expect(body).to eq([])
@@ -34,14 +32,14 @@ module Bosh::Director
       end
 
       context 'when there are current locks' do
-        let(:locks) {
+        let(:locks) do
           [
             'lock:deployment:test-deployment',
             'lock:stemcells:test-stemcell:1',
             'lock:release:test-release',
             'lock:compile:test-package:test-stemcell'
           ]
-        }
+        end
         let(:lock_timeout) { Time.now.to_f.to_s }
         let(:lock_id) { SecureRandom.uuid }
 
@@ -53,7 +51,7 @@ module Bosh::Director
 
         it 'should list the current locks' do
           get '/locks'
-          expect(last_response.status).to eq 200
+          expect(last_response.status).to eq(200)
 
           body = Yajl::Parser.parse(last_response.body)
           expect(body).to eq([

@@ -12,7 +12,7 @@ func NewSigarStatsCollector() (collector StatsCollector) {
 	return sigarStatsCollector{}
 }
 
-func (s sigarStatsCollector) GetCpuLoad() (load CpuLoad, err error) {
+func (s sigarStatsCollector) GetCPULoad() (load CPULoad, err error) {
 	l := sigar.LoadAverage{}
 	err = l.Get()
 	if err != nil {
@@ -27,11 +27,11 @@ func (s sigarStatsCollector) GetCpuLoad() (load CpuLoad, err error) {
 	return
 }
 
-func (s sigarStatsCollector) GetCpuStats() (stats CpuStats, err error) {
+func (s sigarStatsCollector) GetCPUStats() (stats CPUStats, err error) {
 	cpu := sigar.Cpu{}
 	err = cpu.Get()
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting Sigar Cpu")
+		err = bosherr.WrapError(err, "Getting Sigar CPU")
 		return
 	}
 

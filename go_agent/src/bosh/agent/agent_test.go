@@ -51,7 +51,7 @@ func init() {
 		)
 
 		BeforeEach(func() {
-			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger = boshlog.NewLogger(boshlog.LevelDebug)
 			handler = &fakembus.FakeHandler{}
 			platform = fakeplatform.NewFakePlatform()
 			actionDispatcher = &FakeActionDispatcher{}
@@ -62,36 +62,39 @@ func init() {
 		})
 
 		Describe("Run", func() {
-			It("sets the dispatcher as message handler", func() {
-				actionDispatcher.DispatchResp = boshhandler.NewValueResponse("pong")
-
+			It("lets dispatcher handle requests arriving via handler", func() {
 				err := agent.Run()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(handler.ReceivedRun).To(BeTrue())
+
+				expectedResp := boshhandler.NewValueResponse("pong")
+				actionDispatcher.DispatchResp = expectedResp
 
 				req := boshhandler.NewRequest("fake-reply", "fake-action", []byte("fake-payload"))
-				resp := handler.Func(req)
+				resp := handler.RunFunc(req)
 
-				Expect(req).To(Equal(actionDispatcher.DispatchReq))
-				Expect(actionDispatcher.DispatchResp).To(Equal(resp))
+				Expect(actionDispatcher.DispatchReq).To(Equal(req))
+				Expect(resp).To(Equal(expectedResp))
 			})
 
 			It("resumes persistent actions *before* dispatching new requests", func() {
-				resumedBefore := false
-				handler.RunFunc = func() {
-					resumedBefore = actionDispatcher.ResumedPreviouslyDispatchedTasks
+				resumedBeforeStartingToDispatch := false
+				handler.RunCallBack = func() {
+					resumedBeforeStartingToDispatch = actionDispatcher.ResumedPreviouslyDispatchedTasks
 				}
 
 				err := agent.Run()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(resumedBefore).To(BeTrue())
+				Expect(resumedBeforeStartingToDispatch).To(BeTrue())
 			})
 
 			Context("when heartbeats can be sent", func() {
 				BeforeEach(func() {
+					handler.KeepOnRunning()
+				})
+
+				BeforeEach(func() {
 					jobName := "fake-job"
 					jobIndex := 1
-
 					specService.Spec = boshas.V1ApplySpec{
 						JobSpec: boshas.JobSpec{Name: &jobName},
 						Index:   &jobIndex,
@@ -114,34 +117,47 @@ func init() {
 				}
 
 				It("sends initial heartbeat", func() {
+					// Configure periodic heartbeat every 5 hours
+					// so that we are sure that we will not receive it
+					agent = New(logger, handler, platform, actionDispatcher, alertBuilder, jobSupervisor, specService, 5*time.Hour)
+
+					// Immediately exit after sending initial heartbeat
+					handler.SendToHealthManagerErr = errors.New("stop")
+
 					err := agent.Run()
-					Expect(err).ToNot(HaveOccurred())
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("stop"))
 
-					Expect(handler.InitialHeartbeatSent).To(BeTrue())
-					Expect(handler.TickHeartbeatsSent).To(BeFalse())
-
-					Expect(handler.SendToHealthManagerTopic).To(Equal("heartbeat"))
-					Expect(handler.SendToHealthManagerPayload.(boshmbus.Heartbeat)).To(Equal(expectedHb))
+					Expect(handler.HMRequests()).To(Equal([]fakembus.HMRequest{
+						fakembus.HMRequest{Topic: "heartbeat", Payload: expectedHb},
+					}))
 				})
 
 				It("sends periodic heartbeats", func() {
+					sentRequests := 0
+					handler.SendToHealthManagerCallBack = func(_ fakembus.HMRequest) {
+						sentRequests++
+						if sentRequests == 3 {
+							handler.SendToHealthManagerErr = errors.New("stop")
+						}
+					}
+
 					err := agent.Run()
-					Expect(err).ToNot(HaveOccurred())
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("stop"))
 
-					Expect(handler.TickHeartbeatsSent).To(BeFalse())
-					time.Sleep(5 * time.Millisecond)
-					Expect(handler.TickHeartbeatsSent).To(BeTrue())
-
-					Expect(handler.SendToHealthManagerTopic).To(Equal("heartbeat"))
-					Expect(handler.SendToHealthManagerPayload.(boshmbus.Heartbeat)).To(Equal(expectedHb))
+					Expect(handler.HMRequests()).To(Equal([]fakembus.HMRequest{
+						fakembus.HMRequest{Topic: "heartbeat", Payload: expectedHb},
+						fakembus.HMRequest{Topic: "heartbeat", Payload: expectedHb},
+						fakembus.HMRequest{Topic: "heartbeat", Payload: expectedHb},
+					}))
 				})
 			})
 
 			Context("when the agent fails to get job spec for a heartbeat", func() {
 				BeforeEach(func() {
-					block := make(chan error)
-					handler.RunFunc = func() { <-block }
 					specService.GetErr = errors.New("fake-spec-service-error")
+					handler.KeepOnRunning()
 				})
 
 				It("returns the error", func() {
@@ -153,9 +169,8 @@ func init() {
 
 			Context("when the agent fails to get vitals for a heartbeat", func() {
 				BeforeEach(func() {
-					block := make(chan error)
-					handler.RunFunc = func() { <-block }
 					platform.FakeVitalsService.GetErr = errors.New("fake-vitals-service-error")
+					handler.KeepOnRunning()
 				})
 
 				It("returns the error", func() {
@@ -165,20 +180,32 @@ func init() {
 				})
 			})
 
-			It("sets the callback for job failures monitoring", func() {
-				builtAlert := boshalert.Alert{Id: "some built alert id"}
+			It("sends job failure alerts to health manager", func() {
+				handler.KeepOnRunning()
+
+				failureAlert := boshalert.MonitAlert{ID: "fake-monit-alert"}
+				jobSupervisor.JobFailureAlert = &failureAlert
+
+				builtAlert := boshalert.Alert{ID: "fake-built-alert"}
 				alertBuilder.BuildAlert = builtAlert
 
+				// Immediately exit from Run() after alert is sent
+				handler.SendToHealthManagerCallBack = func(hmRequest fakembus.HMRequest) {
+					if hmRequest.Topic == "alert" {
+						handler.SendToHealthManagerErr = errors.New("stop")
+					}
+				}
+
 				err := agent.Run()
-				Expect(err).ToNot(HaveOccurred())
-				Expect(handler.SendToHealthManagerTopic).ToNot(Equal("alert"))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("stop"))
 
-				failureAlert := boshalert.MonitAlert{Id: "some random id"}
-				jobSupervisor.OnJobFailure(failureAlert)
+				Expect(alertBuilder.BuildInput).To(Equal(failureAlert))
 
-				Expect(failureAlert).To(Equal(alertBuilder.BuildInput))
-				Expect(handler.SendToHealthManagerTopic).To(Equal("alert"))
-				Expect(builtAlert).To(Equal(handler.SendToHealthManagerPayload))
+				// Check for inclusion because heartbeats might have been received
+				Expect(handler.HMRequests()).To(ContainElement(
+					fakembus.HMRequest{Topic: "alert", Payload: builtAlert},
+				))
 			})
 		})
 	})

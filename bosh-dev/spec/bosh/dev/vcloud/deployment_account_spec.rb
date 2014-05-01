@@ -44,5 +44,12 @@ module Bosh::Dev::VCloud
     describe '#prepare' do
       it('does nothing') { subject.prepare }
     end
+
+    describe '#save' do
+      it 'pushes changes to deployments repo' do
+        deployments_repository.should_receive(:update_and_push)
+        account.save
+      end
+    end
   end
 end

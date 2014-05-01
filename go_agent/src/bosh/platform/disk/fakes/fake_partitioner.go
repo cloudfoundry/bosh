@@ -5,12 +5,15 @@ import (
 )
 
 type FakePartitioner struct {
+	PartitionCalled     bool
+	PartitionDevicePath string
+	PartitionPartitions []boshdisk.Partition
+
 	GetDeviceSizeInMbSizes map[string]uint64
-	PartitionDevicePath    string
-	PartitionPartitions    []boshdisk.Partition
 }
 
 func (p *FakePartitioner) Partition(devicePath string, partitions []boshdisk.Partition) (err error) {
+	p.PartitionCalled = true
 	p.PartitionDevicePath = devicePath
 	p.PartitionPartitions = partitions
 	return

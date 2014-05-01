@@ -63,3 +63,7 @@ func (a PrepareNetworkChangeAction) killAgent() {
 func (a PrepareNetworkChangeAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a PrepareNetworkChangeAction) Cancel() error {
+	return errors.New("not supported")
+}

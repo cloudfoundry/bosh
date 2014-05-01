@@ -29,7 +29,7 @@ func init() {
 		)
 
 		BeforeEach(func() {
-			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger = boshlog.NewLogger(boshlog.LevelNone)
 			taskService = faketask.NewFakeService()
 			taskManager = faketask.NewFakeManager()
 			actionFactory = fakeaction.NewFakeFactory()
@@ -42,7 +42,7 @@ func init() {
 
 			req := boshhandler.NewRequest("fake-reply", "fake-action", []byte{})
 			resp := dispatcher.Dispatch(req)
-			boshassert.MatchesJsonString(GinkgoT(), resp, `{"exception":{"message":"unknown message fake-action"}}`)
+			boshassert.MatchesJSONString(GinkgoT(), resp, `{"exception":{"message":"unknown message fake-action"}}`)
 		})
 
 		Context("when action is synchronous", func() {
@@ -67,8 +67,8 @@ func init() {
 				actionRunner.RunErr = errors.New("fake-run-error")
 
 				resp := dispatcher.Dispatch(req)
-				expectedJson := fmt.Sprintf("{\"exception\":{\"message\":\"Action Failed %s: fake-run-error\"}}", req.Method)
-				boshassert.MatchesJsonString(GinkgoT(), resp, expectedJson)
+				expectedJSON := fmt.Sprintf("{\"exception\":{\"message\":\"Action Failed %s: fake-run-error\"}}", req.Method)
+				boshassert.MatchesJSONString(GinkgoT(), resp, expectedJSON)
 			})
 		})
 
@@ -84,6 +84,26 @@ func init() {
 				actionFactory.RegisterAction("fake-action", action)
 			})
 
+			ItAllowsToCancelTask := func() {
+				It("allows task to be cancelled", func() {
+					dispatcher.Dispatch(req)
+
+					err := taskService.StartedTasks["fake-generated-task-id"].Cancel()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(action.Canceled).To(BeTrue())
+				})
+
+				It("returns error from cancelling task if canceling task fails", func() {
+					action.CancelErr = errors.New("fake-cancel-err")
+					dispatcher.Dispatch(req)
+
+					err := taskService.StartedTasks["fake-generated-task-id"].Cancel()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-cancel-err"))
+				})
+			}
+
 			Context("when action is not persistent", func() {
 				BeforeEach(func() {
 					action.Persistent = false
@@ -91,7 +111,7 @@ func init() {
 
 				It("responds with task id and state", func() {
 					resp := dispatcher.Dispatch(req)
-					boshassert.MatchesJsonString(GinkgoT(), resp,
+					boshassert.MatchesJSONString(GinkgoT(), resp,
 						`{"value":{"agent_task_id":"fake-generated-task-id","state":"running"}}`)
 				})
 
@@ -104,9 +124,9 @@ func init() {
 				It("returns create task error", func() {
 					taskService.CreateTaskErr = errors.New("fake-create-task-error")
 					resp := dispatcher.Dispatch(req)
-					respJson, err := json.Marshal(resp)
+					respJSON, err := json.Marshal(resp)
 					Expect(err).ToNot(HaveOccurred())
-					Expect(string(respJson)).To(ContainSubstring("fake-create-task-error"))
+					Expect(string(respJSON)).To(ContainSubstring("fake-create-task-error"))
 				})
 
 				It("return run value to the task", func() {
@@ -133,6 +153,8 @@ func init() {
 					Expect(actionRunner.RunAction).To(Equal(action))
 					Expect(string(actionRunner.RunPayload)).To(Equal("fake-payload"))
 				})
+
+				ItAllowsToCancelTask()
 
 				It("does not add task to task manager since it should not be resumed if agent is restarted", func() {
 					dispatcher.Dispatch(req)
@@ -153,7 +175,7 @@ func init() {
 
 				It("responds with task id and state", func() {
 					resp := dispatcher.Dispatch(req)
-					boshassert.MatchesJsonString(GinkgoT(), resp,
+					boshassert.MatchesJSONString(GinkgoT(), resp,
 						`{"value":{"agent_task_id":"fake-generated-task-id","state":"running"}}`)
 				})
 
@@ -166,9 +188,9 @@ func init() {
 				It("returns create task error", func() {
 					taskService.CreateTaskErr = errors.New("fake-create-task-error")
 					resp := dispatcher.Dispatch(req)
-					respJson, err := json.Marshal(resp)
+					respJSON, err := json.Marshal(resp)
 					Expect(err).ToNot(HaveOccurred())
-					Expect(string(respJson)).To(ContainSubstring("fake-create-task-error"))
+					Expect(string(respJSON)).To(ContainSubstring("fake-create-task-error"))
 				})
 
 				It("return run value to the task", func() {
@@ -196,12 +218,14 @@ func init() {
 					Expect(string(actionRunner.RunPayload)).To(Equal("fake-payload"))
 				})
 
+				ItAllowsToCancelTask()
+
 				It("adds task to task manager before task starts so that it could be resumed if agent is restarted", func() {
 					dispatcher.Dispatch(req)
 					taskInfos, _ := taskManager.GetTaskInfos()
 					Expect(taskInfos).To(Equal([]boshtask.TaskInfo{
 						boshtask.TaskInfo{
-							TaskId:  "fake-generated-task-id",
+							TaskID:  "fake-generated-task-id",
 							Method:  "fake-action",
 							Payload: []byte("fake-payload"),
 						},
@@ -210,7 +234,7 @@ func init() {
 
 				It("removes task from task manager after task finishes", func() {
 					dispatcher.Dispatch(req)
-					taskService.StartedTasks["fake-generated-task-id"].TaskEndFunc(boshtask.Task{Id: "fake-generated-task-id"})
+					taskService.StartedTasks["fake-generated-task-id"].TaskEndFunc(boshtask.Task{ID: "fake-generated-task-id"})
 
 					taskInfos, _ := taskManager.GetTaskInfos()
 					Expect(taskInfos).To(BeEmpty())
@@ -220,7 +244,7 @@ func init() {
 					taskManager.AddTaskInfoErr = errors.New("fake-add-task-info-error")
 
 					resp := dispatcher.Dispatch(req)
-					boshassert.MatchesJsonString(GinkgoT(), resp,
+					boshassert.MatchesJSONString(GinkgoT(), resp,
 						`{"exception":{"message":"Action Failed fake-action: fake-add-task-info-error"}}`)
 
 					Expect(len(taskService.StartedTasks)).To(Equal(0))
@@ -233,14 +257,14 @@ func init() {
 
 			BeforeEach(func() {
 				err := taskManager.AddTaskInfo(boshtask.TaskInfo{
-					TaskId:  "fake-task-id-1",
+					TaskID:  "fake-task-id-1",
 					Method:  "fake-action-1",
 					Payload: []byte("fake-task-payload-1"),
 				})
 				Expect(err).ToNot(HaveOccurred())
 
 				err = taskManager.AddTaskInfo(boshtask.TaskInfo{
-					TaskId:  "fake-task-id-2",
+					TaskID:  "fake-task-id-2",
 					Method:  "fake-action-2",
 					Payload: []byte("fake-task-payload-2"),
 				})
@@ -284,8 +308,8 @@ func init() {
 				Expect(len(taskService.StartedTasks)).To(Equal(2))
 
 				// Simulate all tasks ending
-				taskService.StartedTasks["fake-task-id-1"].TaskEndFunc(boshtask.Task{Id: "fake-task-id-1"})
-				taskService.StartedTasks["fake-task-id-2"].TaskEndFunc(boshtask.Task{Id: "fake-task-id-2"})
+				taskService.StartedTasks["fake-task-id-1"].TaskEndFunc(boshtask.Task{ID: "fake-task-id-1"})
+				taskService.StartedTasks["fake-task-id-2"].TaskEndFunc(boshtask.Task{ID: "fake-task-id-2"})
 
 				taskInfos, err := taskManager.GetTaskInfos()
 				Expect(err).ToNot(HaveOccurred())
@@ -332,7 +356,7 @@ func init() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(taskInfos).To(Equal([]boshtask.TaskInfo{
 						boshtask.TaskInfo{
-							TaskId:  "fake-task-id-2",
+							TaskID:  "fake-task-id-2",
 							Method:  "fake-action-2",
 							Payload: []byte("fake-task-payload-2"),
 						},
@@ -344,6 +368,40 @@ func init() {
 					Expect(actionRunner.ResumeAction).To(Equal(secondAction))
 					Expect(string(actionRunner.ResumePayload)).To(Equal("fake-task-payload-2"))
 				}
+			})
+
+			It("allows to cancel after resume", func() {
+				actionFactory.RegisterAction("fake-action-1", firstAction)
+				actionFactory.RegisterAction("fake-action-2", secondAction)
+
+				dispatcher.ResumePreviouslyDispatchedTasks()
+
+				err := taskService.StartedTasks["fake-task-id-1"].Cancel()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(firstAction.Canceled).To(BeTrue())
+				Expect(secondAction.Canceled).To(BeFalse())
+
+				err = taskService.StartedTasks["fake-task-id-2"].Cancel()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(secondAction.Canceled).To(BeTrue())
+			})
+
+			It("returns error from cancelling task when canceling resumed task fails", func() {
+				actionFactory.RegisterAction("fake-action-1", firstAction)
+				actionFactory.RegisterAction("fake-action-2", secondAction)
+
+				dispatcher.ResumePreviouslyDispatchedTasks()
+
+				firstAction.CancelErr = errors.New("fake-cancel-err-1")
+				secondAction.CancelErr = errors.New("fake-cancel-err-2")
+
+				err := taskService.StartedTasks["fake-task-id-1"].Cancel()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-cancel-err-1"))
+
+				err = taskService.StartedTasks["fake-task-id-2"].Cancel()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-cancel-err-2"))
 			})
 		})
 	})

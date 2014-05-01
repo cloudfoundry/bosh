@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli::Command
   class LogManagement < Base
     # bosh logs
@@ -16,9 +14,11 @@ module Bosh::Cli::Command
       index = valid_index_for(job, index)
       check_arguments(index)
 
+      logs_downloader = Bosh::Cli::LogsDownloader.new(director, self)
+
       resource_id = fetch_log_resource_id(index, job)
-      log_file_path = log_file_destination(index, job)
-      download_logs(log_file_path, resource_id)
+      logs_path = logs_downloader.build_destination_path(job, index, options[:dir] || Dir.pwd)
+      logs_downloader.download(resource_id, logs_path)
     end
 
     def fetch_log_resource_id(index, job)
@@ -36,20 +36,6 @@ module Bosh::Cli::Command
 
     def job_logs_wanted?
       options[:job]
-    end
-
-    def download_logs(log_file_path, resource_id)
-      say("Downloading log bundle (#{resource_id.to_s.make_green})...")
-
-      begin
-        tmp_file = director.download_resource(resource_id)
-        FileUtils.mv(tmp_file, log_file_path)
-        say("Logs saved in `#{log_file_path.make_green}'")
-      rescue Bosh::Cli::DirectorError => e
-        err("Unable to download logs from director: #{e}")
-      ensure
-        FileUtils.rm_rf(tmp_file) if tmp_file && File.exists?(tmp_file)
-      end
     end
 
     def check_arguments(index)
@@ -83,15 +69,6 @@ module Bosh::Cli::Command
         filter = nil
       end
       filter
-    end
-
-    def log_file_destination(index, job)
-      time = Time.now.strftime('%Y-%m-%d@%H-%M-%S')
-      File.join(log_directory, "#{job}.#{index}.#{time}.tgz")
-    end
-
-    def log_directory
-      options[:dir] || Dir.pwd
     end
 
     def deployment_name

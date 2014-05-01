@@ -10,8 +10,8 @@ import (
 	boshlog "bosh/logger"
 )
 
-func createResolver() (r DigDnsResolver) {
-	r = NewDigDnsResolver(boshlog.NewLogger(boshlog.LEVEL_NONE))
+func createResolver() (r DigDNSResolver) {
+	r = NewDigDNSResolver(boshlog.NewLogger(boshlog.LevelNone))
 	return
 }
 func init() {

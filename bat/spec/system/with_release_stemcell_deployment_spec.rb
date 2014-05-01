@@ -9,6 +9,7 @@ describe 'with release, stemcell and deployment' do
   before(:all) do
     load_deployment_spec
     use_static_ip
+    use_vip
     @requirements.requirement(deployment, @spec) # 2.5 min on local vsphere
   end
 
@@ -19,7 +20,7 @@ describe 'with release, stemcell and deployment' do
   describe 'agent' do
     it 'should survive agent dying', ssh: true do
       Dir.mktmpdir do |tmpdir|
-        ssh(static_ip, 'vcap', "echo #{@env.vcap_password} | sudo -S pkill -9 agent", ssh_options)
+        ssh(public_ip, 'vcap', "echo #{@env.vcap_password} | sudo -S pkill -9 agent", ssh_options)
         wait_for_vm('batlight/0')
         bosh_safe("logs batlight 0 --agent --dir #{tmpdir}").should succeed
       end

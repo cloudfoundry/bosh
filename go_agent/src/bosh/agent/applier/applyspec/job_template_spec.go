@@ -6,7 +6,7 @@ type JobTemplateSpec struct {
 	Name        string `json:"name"`
 	Version     string `json:"version"`
 	Sha1        string `json:"sha1"`
-	BlobstoreId string `json:"blobstore_id"`
+	BlobstoreID string `json:"blobstore_id"`
 }
 
 func (s *JobTemplateSpec) AsJob() models.Job {
@@ -15,7 +15,7 @@ func (s *JobTemplateSpec) AsJob() models.Job {
 		Version: s.Version,
 		Source: models.Source{
 			Sha1:        s.Sha1,
-			BlobstoreId: s.BlobstoreId,
+			BlobstoreID: s.BlobstoreID,
 		},
 	}
 }

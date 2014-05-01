@@ -30,5 +30,9 @@ module Bosh::Dev::VCloud
     def prepare
       # noop
     end
+
+    def save
+      @deployments_repository.update_and_push
+    end
   end
 end

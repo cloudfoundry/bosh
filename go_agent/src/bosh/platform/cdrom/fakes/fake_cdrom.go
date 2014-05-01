@@ -1,9 +1,10 @@
 package fakes
 
 import (
-	fakesys "bosh/system/fakes"
 	"errors"
 	"path/filepath"
+
+	fakesys "bosh/system/fakes"
 )
 
 type FakeCdrom struct {
@@ -21,71 +22,73 @@ type FakeCdrom struct {
 	Mounted        bool
 }
 
-func NewFakeCdrom(fs *fakesys.FakeFileSystem, filepath, contents string) (cdrom *FakeCdrom) {
-	cdrom = &FakeCdrom{
+func NewFakeCdrom(fs *fakesys.FakeFileSystem, filepath, contents string) *FakeCdrom {
+	return &FakeCdrom{
 		Fs:                fs,
 		MediaFilePath:     filepath,
 		MediaFileContents: contents,
 	}
-	return
 }
 
-func (cdrom *FakeCdrom) WaitForMedia() (err error) {
+func (cdrom *FakeCdrom) WaitForMedia() error {
 	if cdrom.WaitForMediaError != nil {
-		err = cdrom.WaitForMediaError
-		return
+		return cdrom.WaitForMediaError
 	}
 
 	cdrom.MediaAvailable = true
-	return
+
+	return nil
 }
 
-func (cdrom *FakeCdrom) Mount(mountPath string) (err error) {
+func (cdrom *FakeCdrom) Mount(mountPath string) error {
 	switch {
 	case !cdrom.MediaAvailable:
-		err = errors.New("media not available")
+		return errors.New("media not available")
 	case cdrom.Mounted:
-		err = errors.New("already mounted")
+		return errors.New("already mounted")
 	case cdrom.MountError != nil:
-		err = cdrom.MountError
-	}
-	if err != nil {
-		return
+		return cdrom.MountError
 	}
 
 	cdrom.MountMountPath = mountPath
-	cdrom.Fs.WriteFileString(filepath.Join(mountPath, cdrom.MediaFilePath), cdrom.MediaFileContents)
+
+	err := cdrom.Fs.WriteFileString(filepath.Join(mountPath, cdrom.MediaFilePath), cdrom.MediaFileContents)
+	if err != nil {
+		return err
+	}
+
 	cdrom.Mounted = true
-	return
+
+	return nil
 }
 
-func (cdrom *FakeCdrom) Unmount() (err error) {
+func (cdrom *FakeCdrom) Unmount() error {
 	switch {
 	case !cdrom.Mounted:
-		err = errors.New("device not mounted")
+		return errors.New("device not mounted")
 	case cdrom.UnmountError != nil:
-		err = cdrom.UnmountError
-	}
-	if err != nil {
-		return
+		return cdrom.UnmountError
 	}
 
-	cdrom.Fs.RemoveAll(filepath.Join(cdrom.MountMountPath, cdrom.MediaFilePath))
+	err := cdrom.Fs.RemoveAll(filepath.Join(cdrom.MountMountPath, cdrom.MediaFilePath))
+	if err != nil {
+		return err
+	}
+
 	cdrom.Mounted = false
-	return
+
+	return nil
 }
 
 func (cdrom *FakeCdrom) Eject() (err error) {
 	switch {
 	case cdrom.Mounted:
-		err = errors.New("device busy")
+		return errors.New("device busy")
 	case cdrom.EjectError != nil:
-		err = cdrom.EjectError
-	}
-	if err != nil {
-		return
+		return cdrom.EjectError
 	}
 
 	cdrom.MediaAvailable = false
+
 	return
 }

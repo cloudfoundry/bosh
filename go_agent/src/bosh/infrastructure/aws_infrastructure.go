@@ -1,38 +1,40 @@
 package infrastructure
 
 import (
-	bosherr "bosh/errors"
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
-	boshplatform "bosh/platform"
-	boshdisk "bosh/platform/disk"
-	boshsettings "bosh/settings"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
+
+	bosherr "bosh/errors"
+	boshdpresolv "bosh/infrastructure/devicepathresolver"
+	boshplatform "bosh/platform"
+	boshsettings "bosh/settings"
 )
 
 type awsInfrastructure struct {
 	metadataHost       string
 	resolver           dnsResolver
 	platform           boshplatform.Platform
-	devicePathResolver boshdevicepathresolver.DevicePathResolver
+	devicePathResolver boshdpresolv.DevicePathResolver
 }
 
-func NewAwsInfrastructure(metadataHost string, resolver dnsResolver, platform boshplatform.Platform,
-	devicePathResolver boshdevicepathresolver.DevicePathResolver) (inf awsInfrastructure) {
+func NewAwsInfrastructure(
+	metadataHost string,
+	resolver dnsResolver,
+	platform boshplatform.Platform,
+	devicePathResolver boshdpresolv.DevicePathResolver,
+) (inf awsInfrastructure) {
 	inf.metadataHost = metadataHost
 	inf.resolver = resolver
 	inf.platform = platform
 	inf.devicePathResolver = devicePathResolver
-
 	return
 }
 
-func (inf awsInfrastructure) GetDevicePathResolver() boshdevicepathresolver.DevicePathResolver {
+func (inf awsInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathResolver {
 	return inf.devicePathResolver
 }
 
@@ -68,7 +70,7 @@ func (inf awsInfrastructure) getPublicKey() (publicKey string, err error) {
 }
 
 func (inf awsInfrastructure) GetSettings() (settings boshsettings.Settings, err error) {
-	instanceId, err := inf.getInstanceId()
+	instanceID, err := inf.getInstanceID()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting instance id")
 		return
@@ -80,8 +82,8 @@ func (inf awsInfrastructure) GetSettings() (settings boshsettings.Settings, err 
 		return
 	}
 
-	settingsUrl := fmt.Sprintf("%s/instances/%s/settings", registryEndpoint, instanceId)
-	settings, err = inf.getSettingsAtUrl(settingsUrl)
+	settingsURL := fmt.Sprintf("%s/instances/%s/settings", registryEndpoint, instanceID)
+	settings, err = inf.getSettingsAtURL(settingsURL)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting settings from url")
 	}
@@ -96,22 +98,22 @@ func (inf awsInfrastructure) GetEphemeralDiskPath(devicePath string) (realPath s
 	return inf.platform.NormalizeDiskPath(devicePath)
 }
 
-func (inf awsInfrastructure) getInstanceId() (instanceId string, err error) {
-	instanceIdUrl := fmt.Sprintf("%s/latest/meta-data/instance-id", inf.metadataHost)
-	instanceIdResp, err := http.Get(instanceIdUrl)
+func (inf awsInfrastructure) getInstanceID() (instanceID string, err error) {
+	instanceIDURL := fmt.Sprintf("%s/latest/meta-data/instance-id", inf.metadataHost)
+	instanceIDResp, err := http.Get(instanceIDURL)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting instance id from url")
 		return
 	}
-	defer instanceIdResp.Body.Close()
+	defer instanceIDResp.Body.Close()
 
-	instanceIdBytes, err := ioutil.ReadAll(instanceIdResp.Body)
+	instanceIDBytes, err := ioutil.ReadAll(instanceIDResp.Body)
 	if err != nil {
 		err = bosherr.WrapError(err, "Reading instance id response body")
 		return
 	}
 
-	instanceId = string(instanceIdBytes)
+	instanceID = string(instanceIDBytes)
 	return
 }
 
@@ -123,7 +125,7 @@ func (inf awsInfrastructure) getRegistryEndpoint() (endpoint string, err error) 
 	}
 
 	endpoint = userData.Registry.Endpoint
-	nameServers := userData.Dns.Nameserver
+	nameServers := userData.DNS.Nameserver
 
 	if len(nameServers) > 0 {
 		endpoint, err = inf.resolveRegistryEndpoint(endpoint, nameServers)
@@ -139,15 +141,15 @@ type userDataType struct {
 	Registry struct {
 		Endpoint string
 	}
-	Dns struct {
+	DNS struct {
 		Nameserver []string
 	}
 }
 
 func (inf awsInfrastructure) getUserData() (userData userDataType, err error) {
-	userDataUrl := fmt.Sprintf("%s/latest/user-data", inf.metadataHost)
+	userDataURL := fmt.Sprintf("%s/latest/user-data", inf.metadataHost)
 
-	userDataResp, err := http.Get(userDataUrl)
+	userDataResp, err := http.Get(userDataURL)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting user data from url")
 		return
@@ -169,21 +171,21 @@ func (inf awsInfrastructure) getUserData() (userData userDataType, err error) {
 }
 
 func (inf awsInfrastructure) resolveRegistryEndpoint(namedEndpoint string, nameServers []string) (resolvedEndpoint string, err error) {
-	registryUrl, err := url.Parse(namedEndpoint)
+	registryURL, err := url.Parse(namedEndpoint)
 	if err != nil {
 		err = bosherr.WrapError(err, "Parsing registry named endpoint")
 		return
 	}
 
-	registryHostAndPort := strings.Split(registryUrl.Host, ":")
-	registryIp, err := inf.resolver.LookupHost(nameServers, registryHostAndPort[0])
+	registryHostAndPort := strings.Split(registryURL.Host, ":")
+	registryIP, err := inf.resolver.LookupHost(nameServers, registryHostAndPort[0])
 	if err != nil {
 		err = bosherr.WrapError(err, "Looking up registry")
 		return
 	}
 
-	registryUrl.Host = fmt.Sprintf("%s:%s", registryIp, registryHostAndPort[1])
-	resolvedEndpoint = registryUrl.String()
+	registryURL.Host = fmt.Sprintf("%s:%s", registryIP, registryHostAndPort[1])
+	resolvedEndpoint = registryURL.String()
 	return
 }
 
@@ -191,8 +193,8 @@ type settingsWrapperType struct {
 	Settings string
 }
 
-func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (settings boshsettings.Settings, err error) {
-	wrapperResponse, err := http.Get(settingsUrl)
+func (inf awsInfrastructure) getSettingsAtURL(settingsURL string) (settings boshsettings.Settings, err error) {
+	wrapperResponse, err := http.Get(settingsURL)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting settings from url")
 		return
@@ -215,41 +217,6 @@ func (inf awsInfrastructure) getSettingsAtUrl(settingsUrl string) (settings bosh
 	err = json.Unmarshal([]byte(wrapper.Settings), &settings)
 	if err != nil {
 		err = bosherr.WrapError(err, "Unmarshalling wrapped settings")
-	}
-	return
-}
-
-func (inf awsInfrastructure) MountPersistentDisk(volumeId string, mountPoint string) (err error) {
-	inf.platform.GetFs().MkdirAll(mountPoint, os.FileMode(0700))
-
-	realPath, err := inf.devicePathResolver.GetRealDevicePath(volumeId)
-
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting real device path")
-		return
-	}
-
-	partitions := []boshdisk.Partition{
-		{Type: boshdisk.PartitionTypeLinux},
-	}
-
-	err = inf.platform.GetDiskManager().GetPartitioner().Partition(realPath, partitions)
-	if err != nil {
-		err = bosherr.WrapError(err, "Partitioning disk")
-		return
-	}
-
-	partitionPath := realPath + "1"
-	err = inf.platform.GetDiskManager().GetFormatter().Format(partitionPath, boshdisk.FileSystemExt4)
-	if err != nil {
-		err = bosherr.WrapError(err, "Formatting partition with ext4")
-		return
-	}
-
-	err = inf.platform.GetDiskManager().GetMounter().Mount(partitionPath, mountPoint)
-	if err != nil {
-		err = bosherr.WrapError(err, "Mounting partition")
-		return
 	}
 	return
 }

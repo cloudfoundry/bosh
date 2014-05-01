@@ -1,6 +1,26 @@
 require 'spec_helper'
 
-describe 'cli: errand', type: :integration do
+describe 'cli: errand', type: :integration, with_tmp_dir: true do
+  context 'while errand is running' do
+    with_reset_sandbox_before_all
+
+    before(:all) do
+      manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
+      manifest_hash['properties'] = {
+        'errand1' => {
+          'sleep_duration_in_seconds' => 60,
+        },
+      }
+      deploy_simple(manifest_hash: manifest_hash)
+    end
+
+    it 'creates a deployment lock' do
+      bosh_runner.run('--no-track run errand fake-errand-name')
+      output = bosh_runner.run_until_succeeds('locks')
+      expect(output).to match(/\s*\|\s*deployment\s*\|\s*errand\s*\|/)
+    end
+  end
+
   context 'when errand is deployed and run multiple times in a deployment' do
     with_reset_sandbox_before_all
 
@@ -51,26 +71,29 @@ describe 'cli: errand', type: :integration do
     end
 
     it 'reallocates and then deallocates errand vms for each errand run' do
-      expect_to_have_running_job_indices(%w(
-        foobar/0
-        unknown/unknown
-        unknown/unknown
-      ))
+      expect_to_have_running_job_indices(%w(foobar/0 unknown/unknown unknown/unknown))
 
-      output, exit_code = run_bosh('run errand errand1-name', return_exit_code: true)
+      output, exit_code = bosh_runner.run('run errand errand1-name', return_exit_code: true)
       expect(output).to include('some-errand1-stdout')
       expect(exit_code).to eq(0)
       expect_to_have_running_job_indices(%w(foobar/0 unknown/unknown unknown/unknown))
 
-      output, exit_code = run_bosh('run errand errand2-name', return_exit_code: true)
+      output, exit_code = bosh_runner.run('run errand errand2-name', return_exit_code: true)
       expect(output).to include('some-errand2-stdout')
       expect(exit_code).to eq(0)
       expect_to_have_running_job_indices(%w(foobar/0 unknown/unknown unknown/unknown))
+    end
+
+    def expect_to_have_running_job_indices(job_indicies)
+      vms = director.vms
+      expect(vms.map(&:job_name_index)).to match_array(job_indicies)
+      expect(vms.map(&:last_known_state).uniq).to eq(['running'])
     end
   end
 
   context 'when errand script exits with 0 exit code' do
     with_reset_sandbox_before_all
+    with_tmp_dir_before_all
 
     before(:all) do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
@@ -99,7 +122,9 @@ describe 'cli: errand', type: :integration do
 
       deploy_simple(manifest_hash: manifest_hash)
 
-      @output, @exit_code = run_bosh('run errand errand1-name', return_exit_code: true)
+      @output, @exit_code = bosh_runner.run("run errand errand1-name --download-logs --logs-dir #{@tmp_dir}", {
+        return_exit_code: true,
+      })
     end
 
     it 'shows bin/run stdout and stderr' do
@@ -111,6 +136,13 @@ describe 'cli: errand', type: :integration do
       expect(@output).to include('stdout-from-errand1-package')
     end
 
+    it 'downloads errand logs and shows downloaded location' do
+      expect(@output =~ /Logs saved in `(.*errand1-name\.0\..*\.tgz)'/).to_not(be_nil, @output)
+      logs_file = Bosh::Spec::TarFileInspector.new($1)
+      expect(logs_file.file_names).to match_array(%w(./errand1/stdout.log ./custom.log))
+      expect(logs_file.smallest_file_size).to be > 0
+    end
+
     it 'returns 0 as exit code from the cli and indicates that errand ran successfully' do
       expect(@output).to include('Errand `errand1-name\' completed successfully (exit code 0)')
       expect(@exit_code).to eq(0)
@@ -119,6 +151,7 @@ describe 'cli: errand', type: :integration do
 
   context 'when errand script exits with non-0 exit code' do
     with_reset_sandbox_before_all
+    with_tmp_dir_before_all
 
     before(:all) do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
@@ -146,7 +179,7 @@ describe 'cli: errand', type: :integration do
 
       deploy_simple(manifest_hash: manifest_hash)
 
-      @output, @exit_code = run_bosh('run errand errand1-name', {
+      @output, @exit_code = bosh_runner.run("run errand errand1-name --download-logs --logs-dir #{@tmp_dir}", {
         failure_expected: true,
         return_exit_code: true,
       })
@@ -157,9 +190,47 @@ describe 'cli: errand', type: :integration do
       expect(@output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
     end
 
+    it 'downloads errand logs and shows downloaded location' do
+      expect(@output =~ /Logs saved in `(.*errand1-name\.0\..*\.tgz)'/).to_not(be_nil, @output)
+      logs_file = Bosh::Spec::TarFileInspector.new($1)
+      expect(logs_file.file_names).to match_array(%w(./errand1/stdout.log ./custom.log))
+      expect(logs_file.smallest_file_size).to be > 0
+    end
+
     it 'returns 1 as exit code from the cli and indicates that errand completed with error' do
       expect(@output).to include('Errand `errand1-name\' completed with error (exit code 23)')
       expect(@exit_code).to eq(1)
+    end
+  end
+
+  context 'when errand is canceled' do
+    with_reset_sandbox_before_all
+
+    before(:all) do
+      manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
+
+      # Sleep so we have time to cancel it
+      manifest_hash['jobs'].last['properties']['errand1']['sleep_duration_in_seconds'] = 5000
+
+      deploy_simple(manifest_hash: manifest_hash)
+    end
+
+    it 'successfully cancels the errand and returns exit code' do
+      errand_result = bosh_runner.run('--no-track run errand fake-errand-name')
+      task_id = Bosh::Spec::OutputParser.new(errand_result).task_id('running')
+
+      director.wait_for_vm('fake-errand-name/0', 10)
+
+      cancel_output = bosh_runner.run("cancel task #{task_id}")
+      expect(cancel_output).to match(/Task #{task_id} is getting canceled/)
+
+      errand_output = bosh_runner.run("task #{task_id}")
+      expect(errand_output).to include("Error 10001: Task #{task_id} cancelled")
+
+      # Cannot assert on output because there is no guarantee
+      # that process will be cancelled after output is echoed
+      result_output = bosh_runner.run("task #{task_id} --result")
+      expect(result_output).to include('"exit_code":143')
     end
   end
 
@@ -174,26 +245,28 @@ describe 'cli: errand', type: :integration do
 
       deploy_simple(manifest_hash: manifest_hash)
 
-      @output, @exit_code = run_bosh('run errand foobar', {
+      @output, @exit_code = bosh_runner.run('run errand foobar', {
         failure_expected: true,
         return_exit_code: true,
       })
     end
 
     it 'returns 1 as exit code and mentions absence of bin/run' do
-      expect(@output).to include('Error 450001: Job template foobar does not have executable bin/run')
+      ruby_msg = 'Job template foobar does not have executable bin/run'
+      go_msg = '.*Running errand script:.*jobs/foobar/bin/run: no such file or directory'
+      expect(@output).to match(%r{Error 450001: (#{ruby_msg}|#{go_msg})})
       expect(@output).to include('Errand `foobar\' did not complete')
       expect(@exit_code).to eq(1)
     end
   end
 
-  context 'when errand does not exist' do
+  context 'when errand does not exist in the deployment manifest' do
     with_reset_sandbox_before_all
 
     before(:all) do
       deploy_simple
 
-      @output, @exit_code = run_bosh('run errand unknown-errand-name', {
+      @output, @exit_code = bosh_runner.run('run errand unknown-errand-name', {
         failure_expected: true,
         return_exit_code: true,
       })
@@ -207,11 +280,10 @@ describe 'cli: errand', type: :integration do
   end
 
   context 'when deploying with insufficient resources for all errands' do
-    with_reset_sandbox_before_each
+    with_reset_sandbox_before_all
 
-    it 'returns 1 as exit code and mentions insufficient resources' do
+    before(:all) do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
-
       manifest_hash['resource_pools'].first['size'] += 1
 
       # Errand with sufficient resources
@@ -241,15 +313,12 @@ describe 'cli: errand', type: :integration do
       upload_stemcell
       set_deployment(manifest_hash: manifest_hash)
 
-      output = deploy(failure_expected: true)
-      expect($?).not_to be_success
-      expect(output).to include("Resource pool `a' is not big enough: 5 VMs needed, capacity is 4")
+      @output, @exit_code = deploy(failure_expected: true, return_exit_code: true)
     end
-  end
 
-  def expect_to_have_running_job_indices(job_indicies)
-    vms = get_vms
-    expect(vms.map { |d| d[:job_index] }).to match_array(job_indicies)
-    expect(vms.map { |d| d[:state] }.uniq).to eq(['running'])
+    it 'returns 1 as exit code and mentions insufficient resources' do
+      expect(@output).to include("Resource pool `a' is not big enough: 5 VMs needed, capacity is 4")
+      expect(@exit_code).to eq(1)
+    end
   end
 end

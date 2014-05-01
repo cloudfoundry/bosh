@@ -1,12 +1,12 @@
 package stats
 
-type CpuLoad struct {
+type CPULoad struct {
 	One     float64
 	Five    float64
 	Fifteen float64
 }
 
-type CpuStats struct {
+type CPUStats struct {
 	User  uint64
 	Sys   uint64
 	Wait  uint64
@@ -24,22 +24,22 @@ type DiskStats struct {
 }
 
 type StatsCollector interface {
-	GetCpuLoad() (load CpuLoad, err error)
-	GetCpuStats() (stats CpuStats, err error)
+	GetCPULoad() (load CPULoad, err error)
+	GetCPUStats() (stats CPUStats, err error)
 	GetMemStats() (usage Usage, err error)
 	GetSwapStats() (usage Usage, err error)
 	GetDiskStats(mountedPath string) (stats DiskStats, err error)
 }
 
-func (cpuStats CpuStats) UserPercent() Percentage {
+func (cpuStats CPUStats) UserPercent() Percentage {
 	return NewPercentage(cpuStats.User, cpuStats.Total)
 }
 
-func (cpuStats CpuStats) SysPercent() Percentage {
+func (cpuStats CPUStats) SysPercent() Percentage {
 	return NewPercentage(cpuStats.Sys, cpuStats.Total)
 }
 
-func (cpuStats CpuStats) WaitPercent() Percentage {
+func (cpuStats CPUStats) WaitPercent() Percentage {
 	return NewPercentage(cpuStats.Wait, cpuStats.Total)
 }
 

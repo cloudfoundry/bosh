@@ -86,6 +86,9 @@ require 'bosh/director/resource_pool_updater'
 require 'bosh/director/sequel'
 require 'common/thread_pool'
 
+require 'bosh/director/log_bundles_cleaner'
+require 'bosh/director/logs_fetcher'
+
 require 'bosh/director/cloudcheck_helper'
 require 'bosh/director/problem_handlers/base'
 require 'bosh/director/problem_handlers/invalid_problem'

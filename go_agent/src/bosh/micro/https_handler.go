@@ -1,65 +1,71 @@
 package micro
 
 import (
-	"bosh/blobstore"
-	bosherr "bosh/errors"
-	boshhandler "bosh/handler"
-	boshhttps "bosh/https_dispatcher"
-	boshlog "bosh/logger"
-	boshdir "bosh/settings/directories"
-	boshsys "bosh/system"
 	"encoding/base64"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
+
+	"bosh/blobstore"
+	bosherr "bosh/errors"
+	boshhandler "bosh/handler"
+	boshdispatcher "bosh/httpsdispatcher"
+	boshlog "bosh/logger"
+	boshdir "bosh/settings/directories"
+	boshsys "bosh/system"
 )
 
-type HttpsHandler struct {
+type HTTPSHandler struct {
 	parsedURL   *url.URL
 	logger      boshlog.Logger
-	dispatcher  boshhttps.HttpsDispatcher
+	dispatcher  boshdispatcher.HTTPSDispatcher
 	fs          boshsys.FileSystem
 	dirProvider boshdir.DirectoriesProvider
 }
 
-func NewHttpsHandler(parsedURL *url.URL, logger boshlog.Logger, fs boshsys.FileSystem, dirProvider boshdir.DirectoriesProvider) (handler HttpsHandler) {
+func NewHTTPSHandler(
+	parsedURL *url.URL,
+	logger boshlog.Logger,
+	fs boshsys.FileSystem,
+	dirProvider boshdir.DirectoriesProvider,
+) (handler HTTPSHandler) {
 	handler.parsedURL = parsedURL
 	handler.logger = logger
 	handler.fs = fs
 	handler.dirProvider = dirProvider
-	handler.dispatcher = boshhttps.NewHttpsDispatcher(parsedURL, logger)
-
+	handler.dispatcher = boshdispatcher.NewHTTPSDispatcher(parsedURL, logger)
 	return
 }
 
-func (h HttpsHandler) Run(handlerFunc boshhandler.HandlerFunc) (err error) {
-	err = h.Start(handlerFunc)
+func (h HTTPSHandler) Run(handlerFunc boshhandler.HandlerFunc) error {
+	err := h.Start(handlerFunc)
 	if err != nil {
-		err = bosherr.WrapError(err, "Starting https handler")
-		return
+		return bosherr.WrapError(err, "Starting https handler")
 	}
-	return
+	return nil
 }
 
-func (h HttpsHandler) Start(handlerFunc boshhandler.HandlerFunc) (err error) {
+func (h HTTPSHandler) Start(handlerFunc boshhandler.HandlerFunc) error {
 	h.dispatcher.AddRoute("/agent", h.agentHandler(handlerFunc))
 	h.dispatcher.AddRoute("/blobs/", h.blobsHandler())
 	h.dispatcher.Start()
-
-	return
+	return nil
 }
 
-func (h HttpsHandler) Stop() {
+func (h HTTPSHandler) Stop() {
 	h.dispatcher.Stop()
-	return
 }
 
-func (h HttpsHandler) SendToHealthManager(topic string, payload interface{}) (err error) {
-	return
+func (h HTTPSHandler) RegisterAdditionalHandlerFunc(handlerFunc boshhandler.HandlerFunc) {
+	panic("HTTPSHandler does not support registering additional handler funcs")
 }
 
-func (h HttpsHandler) requestNotAuthorized(request *http.Request) bool {
+func (h HTTPSHandler) SendToHealthManager(topic string, payload interface{}) error {
+	return nil
+}
+
+func (h HTTPSHandler) requestNotAuthorized(request *http.Request) bool {
 	username := h.parsedURL.User.Username()
 	password, _ := h.parsedURL.User.Password()
 	auth := username + ":" + password
@@ -68,7 +74,7 @@ func (h HttpsHandler) requestNotAuthorized(request *http.Request) bool {
 	return expectedAuthorizationHeader != request.Header.Get("Authorization")
 }
 
-func (h HttpsHandler) agentHandler(handlerFunc boshhandler.HandlerFunc) (agentHandler func(http.ResponseWriter, *http.Request)) {
+func (h HTTPSHandler) agentHandler(handlerFunc boshhandler.HandlerFunc) (agentHandler func(http.ResponseWriter, *http.Request)) {
 	agentHandler = func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			w.WriteHeader(404)
@@ -86,17 +92,19 @@ func (h HttpsHandler) agentHandler(handlerFunc boshhandler.HandlerFunc) (agentHa
 			err = bosherr.WrapError(err, "Reading http body")
 			return
 		}
+
 		respBytes, _, err := boshhandler.PerformHandlerWithJSON(rawJSONPayload, handlerFunc, h.logger)
 		if err != nil {
 			err = bosherr.WrapError(err, "Running handler in a nice JSON sandwhich")
 			return
 		}
+
 		w.Write(respBytes)
 	}
 	return
 }
 
-func (h HttpsHandler) blobsHandler() (blobsHandler func(http.ResponseWriter, *http.Request)) {
+func (h HTTPSHandler) blobsHandler() (blobsHandler func(http.ResponseWriter, *http.Request)) {
 	blobsHandler = func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
@@ -111,8 +119,8 @@ func (h HttpsHandler) blobsHandler() (blobsHandler func(http.ResponseWriter, *ht
 	return
 }
 
-func (h HttpsHandler) putBlob(w http.ResponseWriter, r *http.Request) {
-	_, blobId := path.Split(r.URL.Path)
+func (h HTTPSHandler) putBlob(w http.ResponseWriter, r *http.Request) {
+	_, blobID := path.Split(r.URL.Path)
 	blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider)
 
 	payload, err := ioutil.ReadAll(r.Body)
@@ -122,7 +130,7 @@ func (h HttpsHandler) putBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = blobManager.Write(blobId, payload)
+	err = blobManager.Write(blobID, payload)
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))
@@ -132,11 +140,11 @@ func (h HttpsHandler) putBlob(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(201)
 }
 
-func (h HttpsHandler) getBlob(w http.ResponseWriter, r *http.Request) {
-	_, blobId := path.Split(r.URL.Path)
+func (h HTTPSHandler) getBlob(w http.ResponseWriter, r *http.Request) {
+	_, blobID := path.Split(r.URL.Path)
 	blobManager := blobstore.NewBlobManager(h.fs, h.dirProvider)
 
-	blobBytes, err := blobManager.Fetch(blobId)
+	blobBytes, err := blobManager.Fetch(blobID)
 
 	if err != nil {
 		w.WriteHeader(404)

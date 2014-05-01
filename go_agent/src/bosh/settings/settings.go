@@ -1,21 +1,21 @@
 package settings
 
 const (
-	ROOT_USERNAME         = "root"
-	VCAP_USERNAME         = "vcap"
-	ADMIN_GROUP           = "admin"
-	EPHEMERAL_USER_PREFIX = "bosh_"
+	RootUsername        = "root"
+	VCAPUsername        = "vcap"
+	AdminGroup          = "admin"
+	EphemeralUserPrefix = "bosh_"
 )
 
 type Settings struct {
-	AgentId   string    `json:"agent_id"`
+	AgentID   string    `json:"agent_id"`
 	Blobstore Blobstore `json:"blobstore"`
 	Disks     Disks     `json:"disks"`
 	Env       Env       `json:"env"`
 	Networks  Networks  `json:"networks"`
 	Ntp       []string  `json:"ntp"`
 	Mbus      string    `json:"mbus"`
-	Vm        Vm        `json:"vm"`
+	VM        VM        `json:"vm"`
 }
 
 const (
@@ -34,7 +34,7 @@ type Disks struct {
 	Persistent map[string]string `json:"persistent"`
 }
 
-type Vm struct {
+type VM struct {
 	Name string `json:"name"`
 }
 
@@ -61,8 +61,8 @@ type Networks map[string]Network
 
 type Network struct {
 	Default []string `json:"default"`
-	Dns     []string `json:"dns"`
-	Ip      string   `json:"ip"`
+	DNS     []string `json:"dns"`
+	IP      string   `json:"ip"`
 	Netmask string   `json:"netmask"`
 	Gateway string   `json:"gateway"`
 	Mac     string   `json:"mac"`
@@ -92,13 +92,13 @@ func (n Networks) DefaultNetworkFor(category string) (network Network, found boo
 	return
 }
 
-func (n Networks) DefaultIp() (ip string, found bool) {
+func (n Networks) DefaultIP() (ip string, found bool) {
 	for _, networkSettings := range n {
 		if ip == "" {
-			ip = networkSettings.Ip
+			ip = networkSettings.IP
 		}
 		if len(networkSettings.Default) > 0 {
-			ip = networkSettings.Ip
+			ip = networkSettings.IP
 		}
 	}
 
@@ -108,10 +108,10 @@ func (n Networks) DefaultIp() (ip string, found bool) {
 	return
 }
 
-func (n Networks) Ips() (ips []string) {
+func (n Networks) IPs() (ips []string) {
 	for _, net := range n {
-		if net.Ip != "" {
-			ips = append(ips, net.Ip)
+		if net.IP != "" {
+			ips = append(ips, net.IP)
 		}
 	}
 	return

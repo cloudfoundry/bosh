@@ -21,6 +21,7 @@ module Bosh::Dev
       instance_double(
         'Bosh::Stemcell::OperatingSystem::Base',
         name: 'operating-system-name',
+        version: 'operating-system-version',
       )
     end
 
@@ -41,7 +42,9 @@ module Bosh::Dev
     let(:artifacts) { instance_double('Bosh::Dev::Bat::Artifacts', prepare_directories: nil, path: artifacts_path) }
     before { allow(Bosh::Dev::Bat::Artifacts).to receive(:new).and_return(artifacts) }
 
-    let(:artifacts_path) { '/tmp/ci-artifacts/infrastructure-name/networking-type/operating-system-name/agent-name/deployments' }
+    let(:artifacts_path) do
+      '/tmp/ci-artifacts/infrastructure-name/networking-type/operating-system-name/operating-system-version/agent-name/deployments'
+    end
 
     describe '#initialize' do
       it 'builds an artifacts object' do
@@ -57,9 +60,10 @@ module Bosh::Dev
         rake_args = Struct.new(
           :infrastructure_name,
           :operating_system_name,
+          :operating_system_version,
           :net_type,
           :agent_name
-        ).new('infrastructure-name', 'operating-system-name', networking_type, 'agent-name')
+        ).new('infrastructure-name', 'operating-system-name', 'operating-system-version', networking_type, 'agent-name')
 
         described_class
           .should_receive(:runner_builder_for_infrastructure_name)
@@ -69,7 +73,7 @@ module Bosh::Dev
         Build.should_receive(:candidate).and_return(build)
 
         expect(Bosh::Stemcell::Definition).to receive(:for)
-                                              .with('infrastructure-name', 'operating-system-name', 'agent-name')
+                                              .with('infrastructure-name', 'operating-system-name', 'operating-system-version', 'agent-name')
                                               .and_return(definition)
 
         bat_helper = instance_double('Bosh::Dev::BatHelper')

@@ -53,7 +53,7 @@ module Bosh::Director
       agent = AgentClient.with_defaults(agent_id)
 
       drain_time = agent.drain("shutdown")
-      if drain_time < 0
+      while drain_time < 0
         drain_time = drain_time.abs
         begin
           Config.job_cancelled?
@@ -64,10 +64,10 @@ module Bosh::Director
           @logger.warn("Failed to check drain-status: #{e.inspect}")
           raise if e.kind_of?(Bosh::Director::TaskCancelled)
           break
-        end while drain_time > 0
-      else
-        sleep(drain_time)
+        end
       end
+
+      sleep(drain_time)
       agent.stop
     end
 

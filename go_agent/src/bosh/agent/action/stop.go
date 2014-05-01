@@ -26,8 +26,8 @@ func (a StopAction) IsPersistent() bool {
 	return false
 }
 
-func (s StopAction) Run() (value interface{}, err error) {
-	err = s.jobSupervisor.Stop()
+func (a StopAction) Run() (value interface{}, err error) {
+	err = a.jobSupervisor.Stop()
 	if err != nil {
 		err = bosherr.WrapError(err, "Stopping Monitored Services")
 		return
@@ -39,4 +39,8 @@ func (s StopAction) Run() (value interface{}, err error) {
 
 func (a StopAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
+}
+
+func (a StopAction) Cancel() error {
+	return errors.New("not supported")
 }

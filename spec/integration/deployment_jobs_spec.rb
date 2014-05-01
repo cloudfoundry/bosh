@@ -38,17 +38,17 @@ describe 'deployment job control', type: :integration do
 
   it 'restarts a job' do
     deploy_simple
-    expect(run_bosh('restart foobar 0')).to match %r{foobar/0 has been restarted}
+    expect(bosh_runner.run('restart foobar 0')).to match %r{foobar/0 has been restarted}
   end
 
   it 'recreates a job' do
     deploy_simple
-    expect(run_bosh('recreate foobar 1')).to match %r{foobar/1 has been recreated}
+    expect(bosh_runner.run('recreate foobar 1')).to match %r{foobar/1 has been recreated}
   end
 
   def expect_to_have_running_job_indices(job_indicies)
-    vms = get_vms
-    expect(vms.map { |d| d[:job_index] }).to match_array(job_indicies)
-    expect(vms.map { |d| d[:state] }.uniq).to eq(['running'])
+    vms = director.vms
+    expect(vms.map(&:job_name_index)).to match_array(job_indicies)
+    expect(vms.map(&:last_known_state).uniq).to eq(['running'])
   end
 end

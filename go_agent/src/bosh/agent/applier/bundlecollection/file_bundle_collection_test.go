@@ -28,7 +28,7 @@ var _ = Describe("FileBundleCollection", func() {
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
-		logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+		logger = boshlog.NewLogger(boshlog.LevelNone)
 		fileBundleCollection = NewFileBundleCollection(
 			"/fake-collection-path/data",
 			"/fake-collection-path",

@@ -6,10 +6,10 @@ module Bosh::Stemcell
   class Definition
     attr_reader :infrastructure, :operating_system, :agent
 
-    def self.for(infrastructure_name, operating_system_name, agent_name)
+    def self.for(infrastructure_name, operating_system_name, operating_system_version, agent_name)
       new(
         Bosh::Stemcell::Infrastructure.for(infrastructure_name),
-        Bosh::Stemcell::OperatingSystem.for(operating_system_name),
+        Bosh::Stemcell::OperatingSystem.for(operating_system_name, operating_system_version),
         Bosh::Stemcell::Agent.for(agent_name),
       )
     end
@@ -18,6 +18,17 @@ module Bosh::Stemcell
       @infrastructure = infrastructure
       @operating_system = operating_system
       @agent = agent
+    end
+
+    def stemcell_name
+      stemcell_name_parts = [
+        infrastructure.name,
+        infrastructure.hypervisor,
+        operating_system.name,
+      ]
+      stemcell_name_parts << operating_system.version if operating_system.version
+      stemcell_name_parts << "#{agent.name}_agent" unless agent.name == 'ruby'
+      stemcell_name_parts.join('-')
     end
 
     def ==(other)

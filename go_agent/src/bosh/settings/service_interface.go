@@ -1,11 +1,12 @@
 package settings
 
 import (
+	boshlog "bosh/logger"
 	boshsys "bosh/system"
 )
 
 type ServiceProvider interface {
-	NewService(boshsys.FileSystem, string, SettingsFetcher) Service
+	NewService(boshsys.FileSystem, string, SettingsFetcher, boshlog.Logger) Service
 }
 
 type Service interface {
@@ -15,10 +16,10 @@ type Service interface {
 	InvalidateSettings() error
 
 	GetBlobstore() Blobstore
-	GetAgentId() string
-	GetVm() Vm
-	GetMbusUrl() string
+	GetAgentID() string
+	GetVM() VM
+	GetMbusURL() string
 	GetDisks() Disks
-	GetDefaultIp() (string, bool)
-	GetIps() []string
+	GetDefaultIP() (string, bool)
+	GetIPs() []string
 }

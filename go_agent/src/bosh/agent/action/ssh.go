@@ -62,7 +62,7 @@ func (a SshAction) setupSsh(params SshParams) (value interface{}, err error) {
 		return
 	}
 
-	err = a.platform.AddUserToGroups(params.User, []string{boshsettings.VCAP_USERNAME, boshsettings.ADMIN_GROUP})
+	err = a.platform.AddUserToGroups(params.User, []string{boshsettings.VCAPUsername, boshsettings.AdminGroup})
 	if err != nil {
 		err = bosherr.WrapError(err, "Adding user to groups")
 		return
@@ -74,7 +74,7 @@ func (a SshAction) setupSsh(params SshParams) (value interface{}, err error) {
 		return
 	}
 
-	defaultIp, found := a.settings.GetDefaultIp()
+	defaultIP, found := a.settings.GetDefaultIP()
 
 	if !found {
 		err = errors.New("No default ip could be found")
@@ -84,7 +84,7 @@ func (a SshAction) setupSsh(params SshParams) (value interface{}, err error) {
 	value = map[string]string{
 		"command": "setup",
 		"status":  "success",
-		"ip":      defaultIp,
+		"ip":      defaultIP,
 	}
 	return
 }
@@ -105,4 +105,8 @@ func (a SshAction) cleanupSsh(params SshParams) (value interface{}, err error) {
 
 func (a SshAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
+}
+
+func (a SshAction) Cancel() error {
+	return errors.New("not supported")
 }

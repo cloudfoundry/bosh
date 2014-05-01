@@ -45,3 +45,7 @@ func (a ReleaseApplySpecAction) Run() (value interface{}, err error) {
 func (a ReleaseApplySpecAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a ReleaseApplySpecAction) Cancel() error {
+	return errors.New("not supported")
+}

@@ -25,9 +25,9 @@ func (a CompilePackageAction) IsPersistent() bool {
 	return false
 }
 
-func (a CompilePackageAction) Run(blobId, sha1, name, version string, deps boshcomp.Dependencies) (val map[string]interface{}, err error) {
+func (a CompilePackageAction) Run(blobID, sha1, name, version string, deps boshcomp.Dependencies) (val map[string]interface{}, err error) {
 	pkg := boshcomp.Package{
-		BlobstoreId: blobId,
+		BlobstoreID: blobID,
 		Name:        name,
 		Sha1:        sha1,
 		Version:     version,
@@ -41,19 +41,19 @@ func (a CompilePackageAction) Run(blobId, sha1, name, version string, deps boshc
 			Version: dep.Version,
 			Source: boshmodels.Source{
 				Sha1:        dep.Sha1,
-				BlobstoreId: dep.BlobstoreId,
+				BlobstoreID: dep.BlobstoreID,
 			},
 		})
 	}
 
-	uploadedBlobId, uploadedSha1, err := a.compiler.Compile(pkg, modelsDeps)
+	uploadedBlobID, uploadedSha1, err := a.compiler.Compile(pkg, modelsDeps)
 	if err != nil {
 		err = bosherr.WrapError(err, "Compiling package %s", pkg.Name)
 		return
 	}
 
 	result := map[string]string{
-		"blobstore_id": uploadedBlobId,
+		"blobstore_id": uploadedBlobID,
 		"sha1":         uploadedSha1,
 	}
 
@@ -65,4 +65,8 @@ func (a CompilePackageAction) Run(blobId, sha1, name, version string, deps boshc
 
 func (a CompilePackageAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
+}
+
+func (a CompilePackageAction) Cancel() error {
+	return errors.New("not supported")
 }

@@ -34,7 +34,7 @@ func init() {
 
 			value, err := action.Run()
 			Expect(err).ToNot(HaveOccurred())
-			boshassert.MatchesJsonString(GinkgoT(), value, "{}")
+			boshassert.MatchesJSONString(GinkgoT(), value, "{}")
 
 			Expect(platform.MigratePersistentDiskFromMountPoint).To(Equal("/foo/store"))
 			Expect(platform.MigratePersistentDiskToMountPoint).To(Equal("/foo/store_migration_target"))

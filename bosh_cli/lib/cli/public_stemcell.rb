@@ -5,6 +5,8 @@ module Bosh::Cli
     def initialize(key, size)
       @key = key
       @size = size
+
+      @parsed_version = key.scan(/[\d]*_?[\d]+/).first
     end
 
     def name
@@ -12,12 +14,11 @@ module Bosh::Cli
     end
 
     def version
-      version_digits = @key.gsub(/[^\d]/, '')
-      version_digits.to_i
+      @parsed_version.gsub('_', '.').to_f
     end
 
     def variety
-      name.gsub(version.to_s, '')
+      name.gsub(/(.tgz)|(bosh-stemcell-)|(#{@parsed_version})/, '').split('-').reject { |c| c.empty? }.join('-')
     end
 
     def url
@@ -27,5 +28,6 @@ module Bosh::Cli
     def legacy?
       @key.include?('legacy')
     end
+
   end
 end

@@ -37,6 +37,7 @@ module Bosh::Dev::Sandbox
     attr_reader :agent_type
 
     attr_accessor :director_fix_stateful_nodes
+    attr_reader :logs_path
 
     attr_reader :cpi
 
@@ -93,11 +94,13 @@ module Bosh::Dev::Sandbox
       @director_socket_connector = SocketConnector.new(
         'director', 'localhost', director_port, @logger)
 
-      @worker_process = Service.new(
-        %W[bosh-director-worker -c #{director_config}],
-        { output: "#{base_log_path}.worker.out", env: { 'QUEUE' => '*' } },
-        @logger,
-      )
+      @worker_processes = 3.times.map do |index|
+        Service.new(
+          %W[bosh-director-worker -c #{director_config}],
+          { output: "#{base_log_path}.worker_#{index}.out", env: { 'QUEUE' => '*' } },
+          @logger,
+        )
+      end
 
       @health_monitor_process = Service.new(
         %W[bosh-monitor -c #{sandbox_path(HM_CONFIG)}],
@@ -139,14 +142,10 @@ module Bosh::Dev::Sandbox
       setup_sandbox_root
 
       @redis_process.start
-      @logger.info("Waiting for redis-server to come up on port #{redis_port}")
       @redis_socket_connector.try_to_connect
-      @nats_process.start
-      @logger.info("Waiting for nats-server to come up on port #{nats_port}")
-      @nats_socket_connector.try_to_connect
 
-      @database.create_db
-      @database_migrator.migrate
+      @nats_process.start
+      @nats_socket_connector.try_to_connect
 
       FileUtils.mkdir_p(cloud_storage_dir)
       FileUtils.rm_rf(logs_path)
@@ -184,7 +183,7 @@ module Bosh::Dev::Sandbox
     def stop
       @cpi.kill_agents
       @scheduler_process.stop
-      @worker_process.stop
+      @worker_processes.each(&:stop)
       @director_process.stop
       @redis_process.stop
       @nats_process.stop
@@ -234,13 +233,15 @@ module Bosh::Dev::Sandbox
 
     def do_reset(name)
       @cpi.kill_agents
-      @worker_process.stop
+      @worker_processes.each(&:stop)
       @director_process.stop
       @health_monitor_process.stop
 
       Redis.new(host: 'localhost', port: redis_port).flushdb
 
-      @database.drop_db
+      @database.drop_db if @database_created
+      @database_created = true
+
       @database.create_db
       @database_migrator.migrate
 
@@ -257,11 +258,10 @@ module Bosh::Dev::Sandbox
       write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
 
       @director_process.start
-      @worker_process.start
+      @worker_processes.each(&:start)
 
       # CI does not have enough time to start bosh-director
       # for some parallel tests; increasing to 60 secs (= 300 tries).
-      @logger.info("Waiting for director to come up on port #{director_port}")
       @director_socket_connector.try_to_connect(300)
     end
 
@@ -294,6 +294,6 @@ module Bosh::Dev::Sandbox
       61000 + @test_env_number * 100 + @port_names.index(name)
     end
 
-    attr_reader :logs_path, :director_tmp_path, :dns_db_path, :task_logs_dir
+    attr_reader :director_tmp_path, :dns_db_path, :task_logs_dir
   end
 end

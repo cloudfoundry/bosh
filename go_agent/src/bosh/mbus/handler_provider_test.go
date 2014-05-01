@@ -21,9 +21,9 @@ type providerDeps struct {
 	logger      boshlog.Logger
 }
 
-func buildProvider(mbusUrl string) (deps providerDeps, provider MbusHandlerProvider) {
-	deps.settings = &fakesettings.FakeSettingsService{MbusUrl: mbusUrl}
-	deps.logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+func buildProvider(mbusURL string) (deps providerDeps, provider MbusHandlerProvider) {
+	deps.settings = &fakesettings.FakeSettingsService{MbusURL: mbusURL}
+	deps.logger = boshlog.NewLogger(boshlog.LevelNone)
 	provider = NewHandlerProvider(deps.settings, deps.logger)
 
 	deps.platform = fakeplatform.NewFakePlatform()
@@ -45,7 +45,7 @@ func init() {
 			handler, err := provider.Get(deps.platform, deps.dirProvider)
 
 			Expect(err).ToNot(HaveOccurred())
-			assert.IsType(GinkgoT(), micro.HttpsHandler{}, handler)
+			assert.IsType(GinkgoT(), micro.HTTPSHandler{}, handler)
 		})
 		It("handler provider get returns an error if not supported", func() {
 

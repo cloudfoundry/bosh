@@ -64,31 +64,32 @@ func (m *concreteManager) GetTaskInfos() ([]TaskInfo, error) {
 
 	if err != nil {
 		return nil, err
-	} else {
-		var r []TaskInfo
-		for _, taskInfo := range taskInfos {
-			r = append(r, taskInfo)
-		}
-		return r, nil
 	}
+
+	var r []TaskInfo
+	for _, taskInfo := range taskInfos {
+		r = append(r, taskInfo)
+	}
+
+	return r, nil
 }
 
 func (m *concreteManager) AddTaskInfo(taskInfo TaskInfo) error {
 	errChan := make(chan error)
 
 	m.fsSem <- func() {
-		m.taskInfos[taskInfo.TaskId] = taskInfo
+		m.taskInfos[taskInfo.TaskID] = taskInfo
 		err := m.writeTaskInfos(m.taskInfos)
 		errChan <- err
 	}
 	return <-errChan
 }
 
-func (m *concreteManager) RemoveTaskInfo(taskId string) error {
+func (m *concreteManager) RemoveTaskInfo(taskID string) error {
 	errChan := make(chan error)
 
 	m.fsSem <- func() {
-		delete(m.taskInfos, taskId)
+		delete(m.taskInfos, taskID)
 		err := m.writeTaskInfos(m.taskInfos)
 		errChan <- err
 	}
@@ -112,12 +113,12 @@ func (m *concreteManager) readTaskInfos() (map[string]TaskInfo, error) {
 		return taskInfos, nil
 	}
 
-	tasksJson, err := m.fs.ReadFile(m.tasksPath)
+	tasksJSON, err := m.fs.ReadFile(m.tasksPath)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Reading tasks json")
 	}
 
-	err = json.Unmarshal(tasksJson, &taskInfos)
+	err = json.Unmarshal(tasksJSON, &taskInfos)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Unmarshaling tasks json")
 	}
@@ -126,12 +127,12 @@ func (m *concreteManager) readTaskInfos() (map[string]TaskInfo, error) {
 }
 
 func (m *concreteManager) writeTaskInfos(taskInfos map[string]TaskInfo) error {
-	newTasksJson, err := json.Marshal(taskInfos)
+	newTasksJSON, err := json.Marshal(taskInfos)
 	if err != nil {
 		return bosherr.WrapError(err, "Marshalling tasks json")
 	}
 
-	err = m.fs.WriteFile(m.tasksPath, newTasksJson)
+	err = m.fs.WriteFile(m.tasksPath, newTasksJSON)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing tasks json")
 	}

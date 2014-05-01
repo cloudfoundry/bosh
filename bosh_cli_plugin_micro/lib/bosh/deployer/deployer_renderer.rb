@@ -1,35 +1,18 @@
 module Bosh::Deployer
-  class DeployerRenderer < Bosh::Cli::TaskTracking::EventLogRenderer
-    attr_accessor :stage, :total, :index
-
-    DEFAULT_POLL_INTERVAL = 1
-
-    def interval_poll
-      Bosh::Cli::Config.poll_interval || DEFAULT_POLL_INTERVAL
-    end
-
-    def start
-      @thread = Thread.new do
-        loop do
-          refresh
-          sleep(interval_poll)
-        end
-      end
+  class DeployerRenderer
+    def initialize(event_log_renderer)
+      @event_log_renderer = event_log_renderer
+      @index = 0
     end
 
     def finish(state)
-      @thread.kill
-      super(state)
+      @event_log_renderer.finish(state)
     end
 
     def enter_stage(stage, total)
       @stage = stage
       @total = total
       @index = 0
-    end
-
-    def parse_event(event)
-      event
     end
 
     def update(state, task)
@@ -41,12 +24,17 @@ module Bosh::Deployer
         'index'    => @index + 1,
         'total'    => @total,
         'state'    => state.to_s,
-        'progress' => state == :finished ? 100 : 0
+        'progress' => state == :finished ? 100 : 0,
       }
 
-      add_event(event)
+      @event_log_renderer.add_output(JSON.generate(event))
+      @event_log_renderer.refresh
 
       @index += 1 if state == :finished
+    end
+
+    def duration
+      @event_log_renderer.duration
     end
   end
 end

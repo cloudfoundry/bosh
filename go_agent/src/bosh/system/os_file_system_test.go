@@ -15,9 +15,8 @@ import (
 )
 
 func createOsFs() (fs FileSystem, runner CmdRunner) {
-	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
-	runner = NewExecCmdRunner(logger)
-	fs = NewOsFileSystem(logger, runner)
+	logger := boshlog.NewLogger(boshlog.LevelNone)
+	fs = NewOsFileSystem(logger)
 	return
 }
 
@@ -31,6 +30,7 @@ func readFile(file *os.File) string {
 
 	return string(buf.Bytes())
 }
+
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("home dir", func() {
@@ -40,8 +40,8 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 			assert.Contains(GinkgoT(), homeDir, "/root")
 		})
-		It("mkdir all", func() {
 
+		It("mkdir all", func() {
 			osFs, _ := createOsFs()
 			tmpPath := os.TempDir()
 			testPath := filepath.Join(tmpPath, "MkdirAllTestDir", "bar", "baz")
@@ -64,8 +64,8 @@ func init() {
 			err = osFs.MkdirAll(testPath, fileMode)
 			Expect(err).ToNot(HaveOccurred())
 		})
-		It("chown", func() {
 
+		It("chown", func() {
 			osFs, _ := createOsFs()
 			testPath := filepath.Join(os.TempDir(), "ChownTestDir")
 
@@ -77,8 +77,8 @@ func init() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("not permitted"))
 		})
-		It("chmod", func() {
 
+		It("chmod", func() {
 			osFs, _ := createOsFs()
 			testPath := filepath.Join(os.TempDir(), "ChmodTestDir")
 
@@ -98,7 +98,6 @@ func init() {
 
 		Context("the file already exists and is not write only", func() {
 			It("writes to file", func() {
-
 				osFs, _ := createOsFs()
 				testPath := filepath.Join(os.TempDir(), "subDir", "ConvergeFileContentsTestFile")
 
@@ -138,7 +137,6 @@ func init() {
 
 		Context("the file already exists and is write only", func() {
 			It("writes to file", func() {
-
 				osFs, _ := createOsFs()
 				testPath := filepath.Join(os.TempDir(), "subDir", "ConvergeFileContentsTestFile")
 
@@ -173,7 +171,6 @@ func init() {
 		})
 
 		It("read file", func() {
-
 			osFs, _ := createOsFs()
 			testPath := filepath.Join(os.TempDir(), "ReadFileTestFile")
 
@@ -184,8 +181,8 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect("some contents").To(Equal(string(content)))
 		})
-		It("file exists", func() {
 
+		It("file exists", func() {
 			osFs, _ := createOsFs()
 			testPath := filepath.Join(os.TempDir(), "FileExistsTestFile")
 
@@ -196,8 +193,8 @@ func init() {
 
 			Expect(osFs.FileExists(testPath)).To(BeTrue())
 		})
-		It("rename", func() {
 
+		It("rename", func() {
 			osFs, _ := createOsFs()
 			tempDir := os.TempDir()
 			oldPath := filepath.Join(tempDir, "old")
@@ -216,8 +213,8 @@ func init() {
 			newFilePath := filepath.Join(newPath, "test.txt")
 			Expect(osFs.FileExists(newFilePath)).To(BeTrue())
 		})
-		It("symlink", func() {
 
+		It("symlink", func() {
 			osFs, _ := createOsFs()
 			filePath := filepath.Join(os.TempDir(), "SymlinkTestFile")
 			containingDir := filepath.Join(os.TempDir(), "SubDir")
@@ -238,8 +235,8 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect("some content").To(Equal(readFile(symlinkFile)))
 		})
-		It("symlink when link already exists and links to the intended path", func() {
 
+		It("symlink when link already exists and links to the intended path", func() {
 			osFs, _ := createOsFs()
 			filePath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1File")
 			symlinkPath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1Symlink")
@@ -260,8 +257,8 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(firstSymlinkStats.ModTime()).To(Equal(secondSymlinkStats.ModTime()))
 		})
-		It("symlink when link already exists and does not link to the intended path", func() {
 
+		It("symlink when link already exists and does not link to the intended path", func() {
 			osFs, _ := createOsFs()
 			filePath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1File")
 			otherFilePath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1OtherFile")
@@ -289,8 +286,8 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect("some content").To(Equal(readFile(symlinkFile)))
 		})
-		It("symlink when a file exists at intended path", func() {
 
+		It("symlink when a file exists at intended path", func() {
 			osFs, _ := createOsFs()
 			filePath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1File")
 			symlinkPath := filepath.Join(os.TempDir(), "SymlinkTestIdempotent1Symlink")
@@ -314,8 +311,8 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect("some content").To(Equal(readFile(symlinkFile)))
 		})
-		It("read link", func() {
 
+		It("read link", func() {
 			osFs, _ := createOsFs()
 			filePath := filepath.Join(os.TempDir(), "SymlinkTestFile")
 			containingDir := filepath.Join(os.TempDir(), "SubDir")
@@ -333,8 +330,8 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(actualFilePath).To(Equal(filePath))
 		})
-		It("temp file", func() {
 
+		It("temp file", func() {
 			osFs, _ := createOsFs()
 
 			file1, err := osFs.TempFile("fake-prefix")
@@ -351,8 +348,8 @@ func init() {
 
 			assert.NotEqual(GinkgoT(), file1.Name(), file2.Name())
 		})
-		It("temp dir", func() {
 
+		It("temp dir", func() {
 			osFs, _ := createOsFs()
 
 			path1, err := osFs.TempDir("fake-prefix")
@@ -369,28 +366,8 @@ func init() {
 
 			assert.NotEqual(GinkgoT(), path1, path2)
 		})
-		It("copy dir entries", func() {
 
-			osFs, _ := createOsFs()
-			srcPath := "../../../fixtures/test_copy_dir_entries"
-			destPath, _ := osFs.TempDir("CopyDirEntriesTestDir")
-			defer os.RemoveAll(destPath)
-
-			err := osFs.CopyDirEntries(srcPath, destPath)
-			Expect(err).ToNot(HaveOccurred())
-
-			fooContent, err := osFs.ReadFileString(destPath + "/foo.txt")
-			Expect(err).ToNot(HaveOccurred())
-			Expect("foo\n").To(Equal(fooContent))
-
-			barContent, err := osFs.ReadFileString(destPath + "/bar/bar.txt")
-			Expect(err).ToNot(HaveOccurred())
-			Expect("bar\n").To(Equal(barContent))
-
-			Expect(osFs.FileExists(destPath + "/bar/baz")).To(BeTrue())
-		})
 		It("copy file", func() {
-
 			osFs, _ := createOsFs()
 			srcPath := "../../../fixtures/test_copy_dir_entries/foo.txt"
 			dstFile, err := osFs.TempFile("CopyFileTestFile")
@@ -403,8 +380,8 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(fooContent).To(Equal("foo\n"))
 		})
-		It("remove all", func() {
 
+		It("remove all", func() {
 			osFs, _ := createOsFs()
 			dstFile, err := osFs.TempFile("CopyFileTestFile")
 			Expect(err).ToNot(HaveOccurred())

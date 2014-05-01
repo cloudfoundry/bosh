@@ -11,25 +11,27 @@ module Bosh::Director
         raise DirectorError, "Invalid director job class `#{job_class}'"
       end
 
+      @task_id = task_id
+      setup_task_logging
+
       task_manager = Bosh::Director::Api::TaskManager.new
 
       @job_class = job_class
-      @task = task_manager.find_task(task_id)
-
-      setup_logging
+      @task_logger.info("Looking for task with task id #{@task_id}")
+      @task = task_manager.find_task(@task_id)
     end
 
     # Runs director job
     def run(*args)
       Config.current_job = nil
 
-      @debug_logger.info("Starting task: #{@task.id}")
+      @task_logger.info("Starting task: #{@task_id}")
       started_at = Time.now
 
-      with_thread_name("task:#{@task.id}") { perform_job(*args) }
+      with_thread_name("task:#{@task_id}") { perform_job(*args) }
 
       duration = Duration.duration(Time.now - started_at)
-      @debug_logger.info("Task took #{duration} to process.")
+      @task_logger.info("Task took #{duration} to process.")
     end
 
     # Task checkpoint: updates timestamp so running task isn't marked as
@@ -43,34 +45,31 @@ module Bosh::Director
 
     # Sets up job logging.
     # @return [void]
-    def setup_logging
-      # It's up to a caller to set up task output directory
-      unless @task.output && File.directory?(@task.output)
-        raise DirectorError,
-              "Task directory `#{@task.output}' is missing"
-      end
+    def setup_task_logging
+      log_dir = File.join(Config.base_dir, 'tasks', @task_id.to_s)
+      FileUtils.mkdir_p(log_dir)
 
-      debug_log = File.join(@task.output, "debug")
-      event_log = File.join(@task.output, "event")
-      result_log = File.join(@task.output, "result")
+      debug_log = File.join(log_dir, 'debug')
+      event_log = File.join(log_dir, 'event')
+      result_log = File.join(log_dir, 'result')
 
-      @debug_logger = Logger.new(debug_log)
-      @debug_logger.level = Config.logger.level
-      @debug_logger.formatter = ThreadFormatter.new
+      @task_logger = Logger.new(debug_log)
+      @task_logger.level = Config.logger.level
+      @task_logger.formatter = ThreadFormatter.new
 
       Config.event_log = EventLog::Log.new(event_log)
       Config.result = TaskResultFile.new(result_log)
-      Config.logger = @debug_logger
+      Config.logger = @task_logger
 
-      Config.db.logger = @debug_logger
+      Config.db.logger = @task_logger
 
       if Config.dns_enabled?
-        Config.dns_db.logger = @debug_logger
+        Config.dns_db.logger = @task_logger
       end
 
-      cpi_log = File.join(@task.output, "cpi")
-      Config.cloud_options["properties"] ||= {}
-      Config.cloud_options["properties"]["cpi_log"] = cpi_log
+      cpi_log = File.join(log_dir, 'cpi')
+      Config.cloud_options['properties'] ||= {}
+      Config.cloud_options['properties']['cpi_log'] = cpi_log
     end
 
     # Instantiates and performs director job.
@@ -78,17 +77,17 @@ module Bosh::Director
     #   instantiate the new job object.
     # @return [void]
     def perform_job(*args)
-      @debug_logger.info("Creating job")
+      @task_logger.info('Creating job')
 
       job = @job_class.new(*args)
       Config.current_job = job
 
-      job.task_id = @task.id
+      job.task_id = @task_id
       job.task_checkpoint # cancelled in the queue?
 
       run_checkpointing
 
-      @debug_logger.info("Performing task: #{@task.id}")
+      @task_logger.info("Performing task: #{@task.id}")
 
       @task.state = :processing
       @task.timestamp = Time.now
@@ -97,16 +96,16 @@ module Bosh::Director
 
       result = job.perform
 
-      @debug_logger.info("Done")
+      @task_logger.info('Done')
       finish_task(:done, result)
 
     rescue Bosh::Director::TaskCancelled => e
       log_exception(e)
-      @debug_logger.info("Task #{@task.id} cancelled")
-      finish_task(:cancelled, "task cancelled")
+      @task_logger.info("Task #{@task.id} cancelled")
+      finish_task(:cancelled, 'task cancelled')
     rescue Exception => e
       log_exception(e)
-      @debug_logger.error("#{e}\n#{e.backtrace.join("\n")}")
+      @task_logger.error("#{e}\n#{e.backtrace.join("\n")}")
       finish_task(:error, e)
     end
 

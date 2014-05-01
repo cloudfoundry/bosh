@@ -1,19 +1,23 @@
 module Bosh::Cli::Client
   class ErrandsClient
     class ErrandResult
-      attr_reader :exit_code, :stdout, :stderr
+      attr_reader :exit_code, :stdout, :stderr, :logs_blobstore_id
 
-      def initialize(exit_code, stdout, stderr)
+      def initialize(exit_code, stdout, stderr, logs_blobstore_id)
         @exit_code = exit_code
         @stdout = stdout
         @stderr = stderr
+        @logs_blobstore_id = logs_blobstore_id
       end
 
       def ==(other)
         unless other.is_a?(self.class)
           raise ArgumentError, "Must be #{self.class} to compare"
         end
-        [exit_code, stdout, stderr] == [other.exit_code, other.stdout, other.stderr]
+
+        local = [exit_code, stdout, stderr, logs_blobstore_id]
+        other = [other.exit_code, other.stdout, other.stderr, other.logs_blobstore_id]
+        local == other
       end
     end
 
@@ -27,12 +31,20 @@ module Bosh::Cli::Client
 
       status, task_id = @director.request_and_track(:post, url, options)
 
-      if status != :done
+      unless [:done, :cancelled].include?(status)
         return [status, task_id, nil]
       end
 
-      task_result = JSON.parse(@director.get_task_result_log(task_id))
-      errand_result = ErrandResult.new(*task_result.values_at('exit_code', 'stdout', 'stderr'))
+      errand_result_output = @director.get_task_result_log(task_id)
+      errand_result = nil
+
+      if errand_result_output
+        task_result = JSON.parse(errand_result_output)
+        errand_result = ErrandResult.new(
+          *task_result.values_at('exit_code', 'stdout', 'stderr'),
+          task_result.fetch('logs', {})['blobstore_id'],
+        )
+      end
 
       [status, task_id, errand_result]
     end

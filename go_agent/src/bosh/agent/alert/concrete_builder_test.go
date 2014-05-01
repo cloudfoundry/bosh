@@ -14,7 +14,7 @@ import (
 
 func buildMonitAlert() MonitAlert {
 	return MonitAlert{
-		Id:          "some random id",
+		ID:          "some random id",
 		Service:     "nats",
 		Event:       "does not exist",
 		Action:      "restart",
@@ -31,7 +31,7 @@ func init() {
 		)
 
 		BeforeEach(func() {
-			logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger := boshlog.NewLogger(boshlog.LevelNone)
 			settingsService = &fakesettings.FakeSettingsService{}
 			builder = NewBuilder(settingsService, logger)
 		})
@@ -42,8 +42,8 @@ func init() {
 				Expect(err).ToNot(HaveOccurred())
 
 				expectedAlert := Alert{
-					Id:        "some random id",
-					Severity:  SEVERITY_ALERT,
+					ID:        "some random id",
+					Severity:  SeverityAlert,
 					Title:     "nats - does not exist - restart",
 					Summary:   "process is not running",
 					CreatedAt: 1306076861,
@@ -54,9 +54,9 @@ func init() {
 
 			It("sets the severity based on event", func() {
 				alerts := map[string]SeverityLevel{
-					"action done": SEVERITY_IGNORED,
-					"Action done": SEVERITY_IGNORED,
-					"action Done": SEVERITY_IGNORED,
+					"action done": SeverityIgnored,
+					"Action done": SeverityIgnored,
+					"action Done": SeverityIgnored,
 				}
 
 				for event, expectedSeverity := range alerts {
@@ -72,7 +72,7 @@ func init() {
 				inputAlert.Event = "some unknown event"
 
 				builtAlert, _ := builder.Build(inputAlert)
-				Expect(builtAlert.Severity).To(Equal(SEVERITY_CRITICAL))
+				Expect(builtAlert.Severity).To(Equal(SeverityCritical))
 			})
 
 			It("sets created at", func() {
@@ -97,7 +97,7 @@ func init() {
 
 			It("sets the title with ips", func() {
 				inputAlert := buildMonitAlert()
-				settingsService.Ips = []string{"192.168.0.1", "10.0.0.1"}
+				settingsService.IPs = []string{"192.168.0.1", "10.0.0.1"}
 
 				builtAlert, _ := builder.Build(inputAlert)
 

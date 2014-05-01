@@ -5,47 +5,84 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 
 	. "bosh/infrastructure"
-	boshdevicepathresolver "bosh/infrastructure/device_path_resolver"
+	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshlog "bosh/logger"
 	fakeplatform "bosh/platform/fakes"
 )
 
-func getNewProvider() (logger boshlog.Logger, platform *fakeplatform.FakePlatform, provider Provider) {
-	platform = fakeplatform.NewFakePlatform()
-	logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
-	provider = NewProvider(logger, platform)
-	return
-}
-func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("get returns an aws infrastructure", func() {
-			logger, platform, provider := getNewProvider()
+var _ = Describe("Provider", func() {
+	var (
+		logger   boshlog.Logger
+		platform *fakeplatform.FakePlatform
+		provider Provider
+	)
+
+	BeforeEach(func() {
+		platform = fakeplatform.NewFakePlatform()
+		logger = boshlog.NewLogger(boshlog.LevelNone)
+		provider = NewProvider(logger, platform)
+	})
+
+	Describe("Get", func() {
+		It("returns aws infrastructure", func() {
+			expectedDevicePathResolver := boshdpresolv.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
+
+			expectedInf := NewAwsInfrastructure(
+				"http://169.254.169.254",
+				NewDigDNSResolver(logger),
+				platform,
+				expectedDevicePathResolver,
+			)
+
 			inf, err := provider.Get("aws")
-
-			devicePathResolver := boshdevicepathresolver.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
-
 			Expect(err).ToNot(HaveOccurred())
-			assert.IsType(GinkgoT(), NewAwsInfrastructure("http://169.254.169.254", NewDigDnsResolver(logger), platform, devicePathResolver), inf)
+			Expect(inf).To(Equal(expectedInf))
 		})
-		It("get returns vsphere infrastructure", func() {
 
-			logger, platform, provider := getNewProvider()
+		It("returns vsphere infrastructure", func() {
+			expectedDevicePathResolver := boshdpresolv.NewVsphereDevicePathResolver(500*time.Millisecond, platform.GetFs())
+
+			expectedInf := NewVsphereInfrastructure(platform, expectedDevicePathResolver, logger)
+
 			inf, err := provider.Get("vsphere")
-
-			devicePathResolver := boshdevicepathresolver.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
-
 			Expect(err).ToNot(HaveOccurred())
-			assert.IsType(GinkgoT(), NewVsphereInfrastructure(platform, devicePathResolver, logger), inf)
+			Expect(inf).To(Equal(expectedInf))
 		})
-		It("get returns an error on unknown infrastructure", func() {
 
-			_, _, provider := getNewProvider()
+		It("returns dummy infrastructure", func() {
+			expectedDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver(1*time.Millisecond, platform.GetFs())
+
+			expectedInf := NewDummyInfrastructure(
+				platform.GetFs(),
+				platform.GetDirProvider(),
+				platform,
+				expectedDevicePathResolver,
+			)
+
+			inf, err := provider.Get("dummy")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(inf).To(Equal(expectedInf))
+		})
+
+		It("returns warden infrastructure", func() {
+			expectedDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver(1*time.Millisecond, platform.GetFs())
+
+			expectedInf := NewWardenInfrastructure(
+				platform.GetDirProvider(),
+				platform,
+				expectedDevicePathResolver,
+			)
+
+			inf, err := provider.Get("warden")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(inf).To(Equal(expectedInf))
+		})
+
+		It("returns an error on unknown infrastructure", func() {
 			_, err := provider.Get("some unknown infrastructure name")
-
 			Expect(err).To(HaveOccurred())
 		})
 	})
-}
+})

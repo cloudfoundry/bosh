@@ -1,0 +1,19 @@
+#!/bin/bash 
+
+BINDIR=$(dirname $0)
+BASEDIR=$(dirname $BINDIR)
+
+$BINDIR/go install github.com/golang/lint/golint
+
+export PATH=$PATH:$($BINDIR/go env GOBIN)
+
+errors=$(
+  golint $BASEDIR/src/bosh                                           \
+    | grep -v -e 'should have comment.* or be unexported'   \
+    | grep -v    'error strings should not be capitalized'
+)
+
+if [ "$(echo -n "$errors")" != "" ]; then
+  echo "$errors"
+  exit 1
+fi

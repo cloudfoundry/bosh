@@ -11,7 +11,7 @@ module Bosh::Dev
     def self.for_rake_args(args)
       new(
         runner_builder_for_infrastructure_name(args.infrastructure_name),
-        Bosh::Stemcell::Definition.for(args.infrastructure_name, args.operating_system_name, args.agent_name),
+        Bosh::Stemcell::Definition.for(args.infrastructure_name, args.operating_system_name, args.operating_system_version, args.agent_name),
         Build.candidate,
         args.net_type,
       )
@@ -36,9 +36,11 @@ module Bosh::Dev
         artifact_definition.infrastructure.name,
         net_type,
         artifact_definition.operating_system.name,
+        artifact_definition.operating_system.version.to_s,
         artifact_definition.agent.name,
         'deployments'
       )
+
       @artifacts = Bosh::Dev::Bat::Artifacts.new(artifacts_path, build, artifact_definition)
     end
 

@@ -43,7 +43,7 @@ func init() {
 
 			result, err := unmountDisk.Run("vol-123")
 			Expect(err).ToNot(HaveOccurred())
-			boshassert.MatchesJsonString(GinkgoT(), result, `{"message":"Unmounted partition of /dev/sdf"}`)
+			boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Unmounted partition of /dev/sdf"}`)
 
 			Expect(platform.UnmountPersistentDiskDevicePath).To(Equal("/dev/sdf"))
 		})
@@ -56,7 +56,7 @@ func init() {
 
 			result, err := mountDisk.Run("vol-123")
 			Expect(err).ToNot(HaveOccurred())
-			boshassert.MatchesJsonString(GinkgoT(), result, `{"message":"Partition of /dev/sdf is not mounted"}`)
+			boshassert.MatchesJSONString(GinkgoT(), result, `{"message":"Partition of /dev/sdf is not mounted"}`)
 
 			Expect(platform.UnmountPersistentDiskDevicePath).To(Equal("/dev/sdf"))
 		})

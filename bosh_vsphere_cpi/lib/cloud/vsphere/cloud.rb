@@ -2,8 +2,11 @@ require 'json'
 require 'membrane'
 require 'ruby_vim_sdk'
 require 'cloud'
+require 'cloud/vsphere/retry_block'
 require 'cloud/vsphere/client'
 require 'cloud/vsphere/config'
+require 'cloud/vsphere/file_provider'
+require 'cloud/vsphere/agent_env'
 require 'cloud/vsphere/lease_obtainer'
 require 'cloud/vsphere/lease_updater'
 require 'cloud/vsphere/resources'
@@ -23,6 +26,7 @@ module VSphereCloud
 
   class Cloud < Bosh::Cloud
     include VimSdk
+    include RetryBlock
 
     class TimeoutException < StandardError;
     end
@@ -34,8 +38,9 @@ module VSphereCloud
 
       @logger = config.logger
       @client = config.client
-      @rest_client = config.rest_client
       @resources = Resources.new(config)
+      @file_provider = FileProvider.new(config.rest_client, config.vcenter_host)
+      @agent_env = AgentEnv.new(client, @file_provider)
 
       # Global lock
       @lock = Mutex.new
@@ -167,22 +172,16 @@ module VSphereCloud
 
     def create_vm(agent_id, stemcell, cloud_properties, networks, disk_locality = nil, environment = nil)
       with_thread_name("create_vm(#{agent_id}, ...)") do
-        VmCreatorBuilder.new.build(choose_placer(cloud_properties), cloud_properties, @client, @logger, self).
-          create(agent_id, stemcell, networks, disk_locality, environment)
+        VmCreatorBuilder.new.build(
+          choose_placer(cloud_properties),
+          cloud_properties,
+          @client,
+          @logger,
+          self,
+          @agent_env,
+          @file_provider
+        ).create(agent_id, stemcell, networks, disk_locality, environment)
       end
-    end
-
-    def retry_block(num = 2)
-      result = nil
-      num.times do |i|
-        begin
-          result = yield
-          break
-        rescue RuntimeError
-          raise if i + 1 >= num
-        end
-      end
-      result
     end
 
     def delete_vm(vm_cid)
@@ -357,14 +356,14 @@ module VSphereCloud
         @client.reconfig_vm(vm, config)
 
         location = get_vm_location(vm, datacenter: datacenter_name)
-        env = get_current_agent_env(location)
+        env = @agent_env.get_current_env(location)
         @logger.debug("Reading current agent env: #{env.pretty_inspect}")
 
         devices = client.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
         env['networks'] = generate_network_env(devices, networks, dvs_index)
 
         @logger.debug("Updating agent env to: #{env.pretty_inspect}")
-        set_agent_env(vm, location, env)
+        @agent_env.set_env(vm, location, env)
 
         @logger.debug('Powering the VM back on')
         client.power_on_vm(datacenter, vm)
@@ -414,7 +413,7 @@ module VSphereCloud
         vm = get_vm_by_cid(vm_cid)
 
         datacenter = client.find_parent(vm, Vim::Datacenter)
-        datacenter_name = client.get_property(datacenter, Vim::Datacenter, 'name')
+        datacenter_name = config.datacenter_name
 
         vm_properties = client.get_properties(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
         host_info = get_vm_host_info(vm)
@@ -488,11 +487,11 @@ module VSphereCloud
         fix_device_unit_numbers(devices, config.device_change)
 
         location = get_vm_location(vm, datacenter: datacenter_name)
-        env = get_current_agent_env(location)
+        env = @agent_env.get_current_env(location)
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
         env['disks']['persistent'][disk.uuid] = attached_disk_config.device.unit_number.to_s
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
-        set_agent_env(vm, location, env)
+        @agent_env.set_env(vm, location, env)
         @logger.info('Attaching disk')
         client.reconfig_vm(vm, config)
         @logger.info('Finished attaching disk')
@@ -521,11 +520,11 @@ module VSphereCloud
         config.device_change << create_delete_device_spec(virtual_disk)
 
         location = get_vm_location(vm)
-        env = get_current_agent_env(location)
+        env = @agent_env.get_current_env(location)
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
         env['disks']['persistent'].delete(disk.uuid)
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
-        set_agent_env(vm, location, env)
+        @agent_env.set_env(vm, location, env)
         @logger.info('Detaching disk')
         client.reconfig_vm(vm, config)
 
@@ -568,7 +567,7 @@ module VSphereCloud
         if disk
           if disk.path
             datacenter = client.find_by_inventory_path(disk.datacenter)
-            raise Bosh::Clouds::DiskNotFound.new(true), "disk #{disk_cid} not found" if datacenter.nil? || disk.path.nil?
+            raise Bosh::Clouds::DiskNotFound.new(true), "disk #{disk_cid} not found" if datacenter.nil?
 
             client.delete_disk(datacenter, disk.path)
           end
@@ -704,8 +703,7 @@ module VSphereCloud
       vm_name = options[:vm]
 
       unless datacenter_name
-        datacenter = client.find_parent(vm, Vim::Datacenter)
-        datacenter_name = client.get_property(datacenter, Vim::Datacenter, 'name')
+        datacenter_name = config.datacenter_name
       end
 
       if vm_name.nil? || datastore_name.nil?
@@ -737,103 +735,6 @@ module VSphereCloud
       end
 
       datastore
-    end
-
-    def get_current_agent_env(location)
-      contents = fetch_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.json")
-      contents ? JSON.load(contents) : nil
-    end
-
-    def set_agent_env(vm, location, env)
-      env_json = JSON.dump(env)
-
-      connect_cdrom(vm, false)
-      upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.json", env_json)
-      upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.iso", generate_env_iso(env_json))
-      connect_cdrom(vm, true)
-    end
-
-    def connect_cdrom(vm, connected = true)
-      devices = client.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
-      cdrom = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
-
-      if cdrom.connectable.connected != connected
-        cdrom.connectable.connected = connected
-        config = Vim::Vm::ConfigSpec.new
-        config.device_change = [create_edit_device_spec(cdrom)]
-        client.reconfig_vm(vm, config)
-      end
-    end
-
-    def configure_env_cdrom(datastore, devices, file_name)
-      backing_info = Vim::Vm::Device::VirtualCdrom::IsoBackingInfo.new
-      backing_info.datastore = datastore
-      backing_info.file_name = file_name
-
-      connect_info = Vim::Vm::Device::VirtualDevice::ConnectInfo.new
-      connect_info.allow_guest_control = false
-      connect_info.start_connected = true
-      connect_info.connected = true
-
-      cdrom = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
-      cdrom.connectable = connect_info
-      cdrom.backing = backing_info
-
-      create_edit_device_spec(cdrom)
-    end
-
-    def which(programs)
-      ENV['PATH'].split(File::PATH_SEPARATOR).each do |path|
-        programs.each do |bin|
-          exe = File.join(path, bin)
-          return exe if File.exists?(exe)
-        end
-      end
-      programs.first
-    end
-
-    def genisoimage
-      @genisoimage ||= which(%w{genisoimage mkisofs})
-    end
-
-    def generate_env_iso(env)
-      Dir.mktmpdir do |path|
-        env_path = File.join(path, 'env')
-        iso_path = File.join(path, 'env.iso')
-        File.open(env_path, 'w') { |f| f.write(env) }
-        output = `#{genisoimage} -o #{iso_path} #{env_path} 2>&1`
-        raise "#{$?.exitstatus} -#{output}" if $?.exitstatus != 0
-        File.open(iso_path, 'r') { |f| f.read }
-      end
-    end
-
-    def fetch_file(datacenter_name, datastore_name, path)
-      retry_block do
-        url =
-          "https://#{config.vcenter_host}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}&dsName=#{URI.escape(datastore_name)}"
-
-        response = @rest_client.get(url)
-
-        if response.code < 400
-          response.body
-        elsif response.code == 404
-          nil
-        else
-          raise "Could not fetch file: #{url}, status code: #{response.code}"
-        end
-      end
-    end
-
-    def upload_file(datacenter_name, datastore_name, path, contents)
-      retry_block do
-        url =
-          "https://#{config.vcenter_host}/folder/#{path}?dcPath=#{URI.escape(datacenter_name)}&dsName=#{URI.escape(datastore_name)}"
-        response = @rest_client.put(url,
-                                    contents,
-                                    { 'Content-Type' => 'application/octet-stream', 'Content-Length' => contents.length })
-
-        raise "Could not upload file: #{url}, status code: #{response.code}" unless response.code < 400
-      end
     end
 
     def clone_vm(vm, name, folder, resource_pool, options={})
@@ -926,13 +827,6 @@ module VSphereCloud
       if options[:destroy]
         device_config_spec.file_operation = Vim::Vm::Device::VirtualDeviceSpec::FileOperation::DESTROY
       end
-      device_config_spec
-    end
-
-    def create_edit_device_spec(device)
-      device_config_spec = Vim::Vm::Device::VirtualDeviceSpec.new
-      device_config_spec.device = device
-      device_config_spec.operation = Vim::Vm::Device::VirtualDeviceSpec::Operation::EDIT
       device_config_spec
     end
 
@@ -1038,6 +932,8 @@ module VSphereCloud
         @resources.datacenters.each_value do |datacenter|
           @logger.info("Looking for VMs in: #{datacenter.name} - #{datacenter.vm_folder.name}")
           subfolders += datacenter.vm_folder.mob.child_entity
+          @logger.info("Looking for Stemcells in: #{datacenter.name} - #{datacenter.template_folder.name}")
+          subfolders += datacenter.template_folder.mob.child_entity
         end
       end
 

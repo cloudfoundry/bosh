@@ -75,7 +75,7 @@ module Bosh::Agent
     private
 
     def rescan_scsi_bus
-      sh "rescan-scsi-bus.sh"
+      sh "rescan-scsi-bus"
     end
 
     def get_dev_paths(dev_path)

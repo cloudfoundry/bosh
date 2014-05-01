@@ -1,6 +1,8 @@
 package platform
 
 import (
+	"time"
+
 	bosherror "bosh/errors"
 	boshlog "bosh/logger"
 	boshcdrom "bosh/platform/cdrom"
@@ -13,31 +15,34 @@ import (
 	boshvitals "bosh/platform/vitals"
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
-	"time"
 )
 
 type provider struct {
 	platforms map[string]Platform
 }
 
-// There is a reason the runner is not injected.
-// Other entities should not use a runner, they should go through the platform
-func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider) (p provider) {
+type ProviderOptions struct {
+	Linux LinuxOptions
+}
+
+func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider, options ProviderOptions) (p provider) {
 	runner := boshsys.NewExecCmdRunner(logger)
-	fs := boshsys.NewOsFileSystem(logger, runner)
-	sigarCollector := boshstats.NewSigarStatsCollector()
-	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs)
+	fs := boshsys.NewOsFileSystem(logger)
+
+	linuxDiskManager := boshdisk.NewLinuxDiskManager(logger, runner, fs, options.Linux.BindMountPersistentDisk)
 
 	udev := boshudev.NewConcreteUdevDevice(runner)
 	linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)
 	linuxCdutil := boshcd.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom)
 
 	compressor := boshcmd.NewTarballCompressor(runner, fs)
-	copier := boshcmd.NewCpCopier(runner, fs)
+	copier := boshcmd.NewCpCopier(runner, fs, logger)
+
+	sigarCollector := boshstats.NewSigarStatsCollector()
 	vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
 
-	centosNetManager := boshnet.NewCentosNetManager(fs, runner, 10*time.Second)
-	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, 10*time.Second)
+	centosNetManager := boshnet.NewCentosNetManager(fs, runner, 10*time.Second, logger)
+	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, 10*time.Second, logger)
 
 	centos := NewLinuxPlatform(
 		fs,
@@ -51,6 +56,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 		linuxDiskManager,
 		centosNetManager,
 		500*time.Millisecond,
+		options.Linux,
 		logger,
 	)
 
@@ -66,22 +72,22 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 		linuxDiskManager,
 		ubuntuNetManager,
 		500*time.Millisecond,
+		options.Linux,
 		logger,
 	)
 
 	p.platforms = map[string]Platform{
 		"ubuntu": ubuntu,
 		"centos": centos,
-		"dummy":  NewDummyPlatform(sigarCollector, fs, runner, dirProvider, linuxDiskManager),
+		"dummy":  NewDummyPlatform(sigarCollector, fs, runner, dirProvider, linuxDiskManager, logger),
 	}
 	return
 }
 
-func (p provider) Get(name string) (plat Platform, err error) {
+func (p provider) Get(name string) (Platform, error) {
 	plat, found := p.platforms[name]
-
 	if !found {
-		err = bosherror.New("Platform %s could not be found", name)
+		return nil, bosherror.New("Platform %s could not be found", name)
 	}
-	return
+	return plat, nil
 }

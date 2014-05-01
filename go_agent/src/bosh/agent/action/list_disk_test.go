@@ -21,7 +21,7 @@ func init() {
 
 		BeforeEach(func() {
 			platform = fakeplatform.NewFakePlatform()
-			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger = boshlog.NewLogger(boshlog.LevelNone)
 		})
 
 		It("list disk should be synchronous", func() {
@@ -51,7 +51,7 @@ func init() {
 			action := NewListDisk(settings, platform, logger)
 			value, err := action.Run()
 			Expect(err).ToNot(HaveOccurred())
-			boshassert.MatchesJsonString(GinkgoT(), value, `["volume-2","volume-3"]`)
+			boshassert.MatchesJSONString(GinkgoT(), value, `["volume-2","volume-3"]`)
 		})
 	})
 }

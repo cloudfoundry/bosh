@@ -8,6 +8,7 @@ module Bosh::Stemcell
         expect(Infrastructure.for('openstack')).to be_an(Infrastructure::OpenStack)
         expect(Infrastructure.for('aws')).to be_an(Infrastructure::Aws)
         expect(Infrastructure.for('vsphere')).to be_a(Infrastructure::Vsphere)
+        expect(Infrastructure.for('warden')).to be_a(Infrastructure::Warden)
         expect(Infrastructure.for('vcloud')).to be_a(Infrastructure::Vcloud)
         expect(Infrastructure.for('null')).to be_an(Infrastructure::NullInfrastructure)
       end

@@ -17,10 +17,10 @@ import (
 	"time"
 )
 
-var _ = Describe("HttpsHandler", func() {
+var _ = Describe("HTTPSHandler", func() {
 	var (
 		serverURL       string
-		handler         HttpsHandler
+		handler         HTTPSHandler
 		fs              *fakesys.FakeFileSystem
 		receivedRequest boshhandler.Request
 		httpClient      http.Client
@@ -28,11 +28,11 @@ var _ = Describe("HttpsHandler", func() {
 
 	BeforeEach(func() {
 		serverURL = "https://user:pass@127.0.0.1:6900"
-		mbusUrl, _ := url.Parse(serverURL)
-		logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+		mbusURL, _ := url.Parse(serverURL)
+		logger := boshlog.NewLogger(boshlog.LevelNone)
 		fs = fakesys.NewFakeFileSystem()
 		dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
-		handler = NewHttpsHandler(mbusUrl, logger, fs, dirProvider)
+		handler = NewHTTPSHandler(mbusURL, logger, fs, dirProvider)
 
 		go handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 			receivedRequest = req

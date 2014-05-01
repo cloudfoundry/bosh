@@ -21,7 +21,7 @@ func init() {
 			It("with single network", func() {
 				networks := Networks{
 					"bosh": Network{
-						Dns: []string{"xx.xx.xx.xx"},
+						DNS: []string{"xx.xx.xx.xx"},
 					},
 				}
 
@@ -34,11 +34,11 @@ func init() {
 				networks := Networks{
 					"bosh": Network{
 						Default: []string{"dns"},
-						Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
+						DNS:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
 					},
 					"vip": Network{
 						Default: []string{},
-						Dns:     []string{"aa.aa.aa.aa"},
+						DNS:     []string{"aa.aa.aa.aa"},
 					},
 				}
 
@@ -51,11 +51,11 @@ func init() {
 				networks := Networks{
 					"bosh": Network{
 						Default: []string{"foo"},
-						Dns:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
+						DNS:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
 					},
 					"vip": Network{
 						Default: []string{},
-						Dns:     []string{"aa.aa.aa.aa"},
+						DNS:     []string{"aa.aa.aa.aa"},
 					},
 				}
 
@@ -64,18 +64,18 @@ func init() {
 			})
 		})
 
-		Describe("DefaultIp", func() {
+		Describe("DefaultIP", func() {
 			It("with two networks", func() {
 				networks := Networks{
 					"bosh": Network{
-						Ip: "xx.xx.xx.xx",
+						IP: "xx.xx.xx.xx",
 					},
 					"vip": Network{
-						Ip: "aa.aa.aa.aa",
+						IP: "aa.aa.aa.aa",
 					},
 				}
 
-				ip, found := networks.DefaultIp()
+				ip, found := networks.DefaultIP()
 				Expect(found).To(BeTrue())
 				Expect(ip).To(Equal("xx.xx.xx.xx"))
 			})
@@ -83,15 +83,15 @@ func init() {
 			It("with two networks only with defaults", func() {
 				networks := Networks{
 					"bosh": Network{
-						Ip: "xx.xx.xx.xx",
+						IP: "xx.xx.xx.xx",
 					},
 					"vip": Network{
-						Ip:      "aa.aa.aa.aa",
+						IP:      "aa.aa.aa.aa",
 						Default: []string{"dns"},
 					},
 				}
 
-				ip, found := networks.DefaultIp()
+				ip, found := networks.DefaultIP()
 				Expect(found).To(BeTrue())
 				Expect(ip).To(Equal("aa.aa.aa.aa"))
 			})
@@ -104,7 +104,7 @@ func init() {
 					},
 				}
 
-				_, found := networks.DefaultIp()
+				_, found := networks.DefaultIP()
 				Expect(found).To(BeFalse())
 			})
 		})
@@ -126,11 +126,11 @@ func init() {
 
 		It("marshals into JSON in snake case to stay consistent with CPI agent env formatting", func() {
 			settings := Settings{}
-			settingsJson, err := json.Marshal(settings)
+			settingsJSON, err := json.Marshal(settings)
 			Expect(err).NotTo(HaveOccurred())
 
 			var settingsMap map[string]interface{}
-			err = json.Unmarshal(settingsJson, &settingsMap)
+			err = json.Unmarshal(settingsJSON, &settingsMap)
 			Expect(err).NotTo(HaveOccurred())
 			expectSnakeCaseKeys(settingsMap)
 		})

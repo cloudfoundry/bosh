@@ -30,7 +30,7 @@ func (blobstore local) Validate() (err error) {
 	return
 }
 
-func (blobstore local) Get(blobId, _ string) (fileName string, err error) {
+func (blobstore local) Get(blobID, _ string) (fileName string, err error) {
 	file, err := blobstore.fs.TempFile("bosh-blobstore-external-Get")
 	if err != nil {
 		err = bosherr.WrapError(err, "Creating temporary file")
@@ -39,7 +39,7 @@ func (blobstore local) Get(blobId, _ string) (fileName string, err error) {
 
 	fileName = file.Name()
 
-	err = blobstore.fs.CopyFile(filepath.Join(blobstore.path(), blobId), fileName)
+	err = blobstore.fs.CopyFile(filepath.Join(blobstore.path(), blobID), fileName)
 	if err != nil {
 		err = bosherr.WrapError(err, "Copying file")
 		blobstore.fs.RemoveAll(fileName)
@@ -54,17 +54,17 @@ func (blobstore local) CleanUp(fileName string) (err error) {
 	return
 }
 
-func (blobstore local) Create(fileName string) (blobId string, fingerprint string, err error) {
-	blobId, err = blobstore.uuidGen.Generate()
+func (blobstore local) Create(fileName string) (blobID string, fingerprint string, err error) {
+	blobID, err = blobstore.uuidGen.Generate()
 	if err != nil {
-		err = bosherr.WrapError(err, "Generating blobId")
+		err = bosherr.WrapError(err, "Generating blobID")
 		return
 	}
 
-	err = blobstore.fs.CopyFile(fileName, filepath.Join(blobstore.path(), blobId))
+	err = blobstore.fs.CopyFile(fileName, filepath.Join(blobstore.path(), blobID))
 	if err != nil {
 		err = bosherr.WrapError(err, "Copying file to blobstore path")
-		blobId = ""
+		blobID = ""
 		return
 	}
 	return

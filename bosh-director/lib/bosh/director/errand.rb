@@ -5,3 +5,4 @@ end
 require 'bosh/director/errand/deployment_preparer'
 require 'bosh/director/errand/job_manager'
 require 'bosh/director/errand/runner'
+require 'bosh/director/errand/result'

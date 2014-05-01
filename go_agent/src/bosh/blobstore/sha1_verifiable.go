@@ -18,8 +18,8 @@ func NewSha1Verifiable(blobstore Blobstore) Blobstore {
 	}
 }
 
-func (b sha1Verifiable) Get(blobId, fingerprint string) (fileName string, err error) {
-	fileName, err = b.blobstore.Get(blobId, fingerprint)
+func (b sha1Verifiable) Get(blobID, fingerprint string) (fileName string, err error) {
+	fileName, err = b.blobstore.Get(blobID, fingerprint)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting blob from inner blobstore")
 		return
@@ -45,13 +45,13 @@ func (b sha1Verifiable) CleanUp(fileName string) (err error) {
 	return b.blobstore.CleanUp(fileName)
 }
 
-func (b sha1Verifiable) Create(fileName string) (blobId string, fingerprint string, err error) {
+func (b sha1Verifiable) Create(fileName string) (blobID string, fingerprint string, err error) {
 	fingerprint, err = calculateSha1(fileName)
 	if err != nil {
 		return
 	}
 
-	blobId, _, err = b.blobstore.Create(fileName)
+	blobID, _, err = b.blobstore.Create(fileName)
 	return
 }
 

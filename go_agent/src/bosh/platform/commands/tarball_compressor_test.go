@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -34,11 +35,12 @@ func fixtureSrcTgz(t assert.TestingT) string {
 }
 
 func getCompressorDependencies() (boshsys.FileSystem, boshsys.CmdRunner) {
-	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
+	logger := boshlog.NewLogger(boshlog.LevelNone)
 	cmdRunner := boshsys.NewExecCmdRunner(logger)
-	fs := boshsys.NewOsFileSystem(logger, cmdRunner)
+	fs := boshsys.NewOsFileSystem(logger)
 	return fs, cmdRunner
 }
+
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("compress files in dir", func() {
@@ -54,7 +56,7 @@ func init() {
 			dstDir := createdTmpDir(GinkgoT(), fs)
 			defer os.RemoveAll(dstDir)
 
-			_, _, err = cmdRunner.RunCommand("tar", "--no-same-owner", "-xzpf", tgzName, "-C", dstDir)
+			_, _, _, err = cmdRunner.RunCommand("tar", "--no-same-owner", "-xzpf", tgzName, "-C", dstDir)
 			Expect(err).ToNot(HaveOccurred())
 
 			content, err := fs.ReadFileString(dstDir + "/app.stdout.log")
@@ -69,8 +71,8 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 			assert.Contains(GinkgoT(), content, "this is other app stdout")
 		})
-		It("decompress file to dir", func() {
 
+		It("decompress file to dir", func() {
 			fs, cmdRunner := getCompressorDependencies()
 			dc := NewTarballCompressor(cmdRunner, fs)
 
@@ -100,8 +102,8 @@ func init() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("is a directory"))
 		})
-		It("decompress file to dir returns error", func() {
 
+		It("decompress file to dir returns error", func() {
 			nonExistentDstDir := filepath.Join(os.TempDir(), "TestDecompressFileToDirReturnsError")
 
 			fs, cmdRunner := getCompressorDependencies()
@@ -111,8 +113,8 @@ func init() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(nonExistentDstDir))
 		})
-		It("decompress file to dir uses no same owner option", func() {
 
+		It("decompress file to dir uses no same owner option", func() {
 			fs, _ := getCompressorDependencies()
 			cmdRunner := fakesys.NewFakeCmdRunner()
 			dc := NewTarballCompressor(cmdRunner, fs)
@@ -130,6 +132,33 @@ func init() {
 				"-xzvf", tarballPath,
 				"-C", dstDir,
 			}, cmdRunner.RunCommands[0])
+		})
+
+		Describe("CleanUp", func() {
+			It("removes tarball path", func() {
+				_, cmdRunner := getCompressorDependencies()
+				fs := fakesys.NewFakeFileSystem()
+				dc := NewTarballCompressor(cmdRunner, fs)
+
+				err := fs.WriteFileString("/fake-tarball.tar", "")
+				Expect(err).ToNot(HaveOccurred())
+
+				err = dc.CleanUp("/fake-tarball.tar")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(fs.FileExists("/fake-tarball.tar")).To(BeFalse())
+			})
+
+			It("returns error if removing tarball path fails", func() {
+				_, cmdRunner := getCompressorDependencies()
+				fs := fakesys.NewFakeFileSystem()
+				dc := NewTarballCompressor(cmdRunner, fs)
+
+				fs.RemoveAllError = errors.New("fake-remove-all-err")
+
+				err := dc.CleanUp("/fake-tarball.tar")
+				Expect(err).To(MatchError("fake-remove-all-err"))
+			})
 		})
 	})
 }

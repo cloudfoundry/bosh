@@ -44,3 +44,7 @@ func (a MigrateDiskAction) Run() (value interface{}, err error) {
 func (a MigrateDiskAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
+
+func (a MigrateDiskAction) Cancel() error {
+	return errors.New("not supported")
+}

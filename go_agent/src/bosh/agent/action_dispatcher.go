@@ -8,6 +8,8 @@ import (
 	boshlog "bosh/logger"
 )
 
+const actionDispatcherLogTag = "Action Dispatcher"
+
 type ActionDispatcher interface {
 	ResumePreviouslyDispatchedTasks()
 	Dispatch(req boshhandler.Request) (resp boshhandler.Response)
@@ -44,24 +46,27 @@ func (dispatcher concreteActionDispatcher) ResumePreviouslyDispatchedTasks() {
 		// API consumers will encounter unknown task id error when they request get_task.
 		// Other option is to return an error which will cause agent to restart again
 		// which does not help API consumer to determine that agent cannot continue tasks.
-		dispatcher.logger.Error("Action Dispatcher", err.Error())
+		dispatcher.logger.Error(actionDispatcherLogTag, err.Error())
 		return
 	}
 
 	for _, taskInfo := range taskInfos {
 		action, err := dispatcher.actionFactory.Create(taskInfo.Method)
 		if err != nil {
-			dispatcher.logger.Error("Action Dispatcher", "Unknown action %s", taskInfo.Method)
-			dispatcher.taskManager.RemoveTaskInfo(taskInfo.TaskId)
+			dispatcher.logger.Error(actionDispatcherLogTag, "Unknown action %s", taskInfo.Method)
+			dispatcher.taskManager.RemoveTaskInfo(taskInfo.TaskID)
 			continue
 		}
 
-		taskId := taskInfo.TaskId
+		taskID := taskInfo.TaskID
 		payload := taskInfo.Payload
 
-		task := dispatcher.taskService.CreateTaskWithId(taskId, func() (interface{}, error) {
-			return dispatcher.actionRunner.Resume(action, payload)
-		}, dispatcher.removeTaskInfo)
+		task := dispatcher.taskService.CreateTaskWithID(
+			taskID,
+			func() (interface{}, error) { return dispatcher.actionRunner.Resume(action, payload) },
+			func(_ boshtask.Task) error { return action.Cancel() },
+			dispatcher.removeTaskInfo,
+		)
 
 		dispatcher.taskService.StartTask(task)
 	}
@@ -69,80 +74,95 @@ func (dispatcher concreteActionDispatcher) ResumePreviouslyDispatchedTasks() {
 
 func (dispatcher concreteActionDispatcher) Dispatch(req boshhandler.Request) boshhandler.Response {
 	action, err := dispatcher.actionFactory.Create(req.Method)
-
-	switch {
-	case err != nil:
-		dispatcher.logger.Error("Action Dispatcher", "Unknown action %s", req.Method)
+	if err != nil {
+		dispatcher.logger.Error(actionDispatcherLogTag, "Unknown action %s", req.Method)
 		return boshhandler.NewExceptionResponse("unknown message %s", req.Method)
+	}
 
-	case action.IsAsynchronous():
-		dispatcher.logger.Error("Action Dispatcher", "Running async action %s", req.Method)
+	if action.IsAsynchronous() {
+		return dispatcher.dispatchAsynchronousAction(action, req)
+	}
 
-		var task boshtask.Task
+	return dispatcher.dispatchSynchronousAction(action, req)
+}
 
-		runTask := func() (interface{}, error) {
-			return dispatcher.actionRunner.Run(action, req.GetPayload())
-		}
+func (dispatcher concreteActionDispatcher) dispatchAsynchronousAction(
+	action boshaction.Action,
+	req boshhandler.Request,
+) boshhandler.Response {
+	dispatcher.logger.Info(actionDispatcherLogTag, "Running async action %s", req.Method)
 
-		// Certain long-running tasks (e.g. configure_networks) must be resumed
-		// after agent restart so that API consumers do not need to know
-		// if agent is restarted midway through the task.
-		if action.IsPersistent() {
-			dispatcher.logger.Error("Action Dispatcher", "Running persistent action %s", req.Method)
-			task, err = dispatcher.taskService.CreateTask(runTask, dispatcher.removeTaskInfo)
-			if err != nil {
-				err = bosherr.WrapError(err, "Create Task Failed %s", req.Method)
-				dispatcher.logger.Error("Action Dispatcher", err.Error())
-				return boshhandler.NewExceptionResponse(err.Error())
-			}
+	var task boshtask.Task
+	var err error
 
-			taskInfo := boshtask.TaskInfo{
-				TaskId:  task.Id,
-				Method:  req.Method,
-				Payload: req.GetPayload(),
-			}
+	runTask := func() (interface{}, error) {
+		return dispatcher.actionRunner.Run(action, req.GetPayload())
+	}
 
-			err = dispatcher.taskManager.AddTaskInfo(taskInfo)
-			if err != nil {
-				err = bosherr.WrapError(err, "Action Failed %s", req.Method)
-				dispatcher.logger.Error("Action Dispatcher", err.Error())
-				return boshhandler.NewExceptionResponse(err.Error())
-			}
-		} else {
-			task, err = dispatcher.taskService.CreateTask(runTask, nil)
-			if err != nil {
-				err = bosherr.WrapError(err, "Create Task Failed %s", req.Method)
-				dispatcher.logger.Error("Action Dispatcher", err.Error())
-				return boshhandler.NewExceptionResponse(err.Error())
-			}
-		}
+	cancelTask := func(_ boshtask.Task) error { return action.Cancel() }
 
-		dispatcher.taskService.StartTask(task)
-
-		return boshhandler.NewValueResponse(boshtask.TaskStateValue{
-			AgentTaskId: task.Id,
-			State:       task.State,
-		})
-
-	default:
-		dispatcher.logger.Debug("Action Dispatcher", "Running sync action %s", req.Method)
-
-		value, err := dispatcher.actionRunner.Run(action, req.GetPayload())
+	// Certain long-running tasks (e.g. configure_networks) must be resumed
+	// after agent restart so that API consumers do not need to know
+	// if agent is restarted midway through the task.
+	if action.IsPersistent() {
+		dispatcher.logger.Info(actionDispatcherLogTag, "Running persistent action %s", req.Method)
+		task, err = dispatcher.taskService.CreateTask(runTask, cancelTask, dispatcher.removeTaskInfo)
 		if err != nil {
-			err = bosherr.WrapError(err, "Action Failed %s", req.Method)
-			dispatcher.logger.Error("Action Dispatcher", err.Error())
+			err = bosherr.WrapError(err, "Create Task Failed %s", req.Method)
+			dispatcher.logger.Error(actionDispatcherLogTag, err.Error())
 			return boshhandler.NewExceptionResponse(err.Error())
 		}
 
-		return boshhandler.NewValueResponse(value)
+		taskInfo := boshtask.TaskInfo{
+			TaskID:  task.ID,
+			Method:  req.Method,
+			Payload: req.GetPayload(),
+		}
+
+		err = dispatcher.taskManager.AddTaskInfo(taskInfo)
+		if err != nil {
+			err = bosherr.WrapError(err, "Action Failed %s", req.Method)
+			dispatcher.logger.Error(actionDispatcherLogTag, err.Error())
+			return boshhandler.NewExceptionResponse(err.Error())
+		}
+	} else {
+		task, err = dispatcher.taskService.CreateTask(runTask, cancelTask, nil)
+		if err != nil {
+			err = bosherr.WrapError(err, "Create Task Failed %s", req.Method)
+			dispatcher.logger.Error(actionDispatcherLogTag, err.Error())
+			return boshhandler.NewExceptionResponse(err.Error())
+		}
 	}
+
+	dispatcher.taskService.StartTask(task)
+
+	return boshhandler.NewValueResponse(boshtask.TaskStateValue{
+		AgentTaskID: task.ID,
+		State:       task.State,
+	})
+}
+
+func (dispatcher concreteActionDispatcher) dispatchSynchronousAction(
+	action boshaction.Action,
+	req boshhandler.Request,
+) boshhandler.Response {
+	dispatcher.logger.Info(actionDispatcherLogTag, "Running sync action %s", req.Method)
+
+	value, err := dispatcher.actionRunner.Run(action, req.GetPayload())
+	if err != nil {
+		err = bosherr.WrapError(err, "Action Failed %s", req.Method)
+		dispatcher.logger.Error(actionDispatcherLogTag, err.Error())
+		return boshhandler.NewExceptionResponse(err.Error())
+	}
+
+	return boshhandler.NewValueResponse(value)
 }
 
 func (dispatcher concreteActionDispatcher) removeTaskInfo(task boshtask.Task) {
-	err := dispatcher.taskManager.RemoveTaskInfo(task.Id)
+	err := dispatcher.taskManager.RemoveTaskInfo(task.ID)
 	if err != nil {
 		// There is not much we can do about failing to write state of a finished task.
 		// On next agent restart, task will be Resume()d again so it must be idempotent.
-		dispatcher.logger.Error("Action Dispatcher", err.Error())
+		dispatcher.logger.Error(actionDispatcherLogTag, err.Error())
 	}
 }

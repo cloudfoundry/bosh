@@ -24,6 +24,13 @@ module Bosh::Dev
       git_repo_updater.update_directory(path)
     end
 
+    def update_and_push
+      # git pull will work in a git repository
+      # unless local changes conflict with upstream changes
+      update_repo
+      push
+    end
+
     private
 
     attr_reader :env, :shell, :path_root

@@ -21,7 +21,7 @@ func init() {
 			os.Mkdir(filepath.Join(baseDir, "bosh"), os.ModePerm)
 			settingsPath := filepath.Join(baseDir, "bosh", "settings.json")
 
-			settingsJson := `{
+			settingsJSON := `{
 					"agent_id": "my-agent-id",
 					"blobstore": {
 						"options": {
@@ -69,7 +69,7 @@ func init() {
 					}
 				}`
 
-			ioutil.WriteFile(settingsPath, []byte(settingsJson), 0640)
+			ioutil.WriteFile(settingsPath, []byte(settingsJSON), 0640)
 		})
 
 		AfterEach(func() {
@@ -77,7 +77,7 @@ func init() {
 		})
 
 		It("Sets up device path resolver on platform specific to infrastructure", func() {
-			logger := boshlog.NewLogger(boshlog.LEVEL_DEBUG)
+			logger := boshlog.NewLogger(boshlog.LevelNone)
 			app := boshapp.New(logger)
 
 			err := app.Setup([]string{

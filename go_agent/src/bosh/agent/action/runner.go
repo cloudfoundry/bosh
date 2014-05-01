@@ -19,7 +19,7 @@ func NewRunner() Runner {
 type concreteRunner struct{}
 
 func (r concreteRunner) Run(action Action, payloadBytes []byte) (value interface{}, err error) {
-	payloadArgs, err := r.extractJsonArguments(payloadBytes)
+	payloadArgs, err := r.extractJSONArguments(payloadBytes)
 	if err != nil {
 		err = bosherr.WrapError(err, "Extracting json arguments")
 		return
@@ -52,7 +52,7 @@ func (r concreteRunner) Resume(action Action, payloadBytes []byte) (value interf
 	return action.Resume()
 }
 
-func (r concreteRunner) extractJsonArguments(payloadBytes []byte) (args []interface{}, err error) {
+func (r concreteRunner) extractJSONArguments(payloadBytes []byte) (args []interface{}, err error) {
 	type payloadType struct {
 		Arguments []interface{} `json:"arguments"`
 	}

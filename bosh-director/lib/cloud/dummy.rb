@@ -40,9 +40,6 @@ module Bosh
       # rubocop:disable ParameterLists
       def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, env = nil)
       # rubocop:enable ParameterLists
-        root_dir = File.join(agent_base_dir(agent_id), 'root_dir')
-        FileUtils.mkdir_p(File.join(root_dir, 'etc', 'logrotate.d'))
-
         write_agent_settings(agent_id, {
           agent_id: agent_id,
           blobstore: @options['agent']['blobstore'],
@@ -52,10 +49,7 @@ module Bosh
           mbus: @options['nats'],
         })
 
-        agent_cmd = agent_cmd(agent_id, root_dir)
-        agent_log = "#{@base_dir}/agent.#{agent_id}.log"
-        agent_pid = Process.spawn(*agent_cmd, chdir: agent_base_dir(agent_id), out: agent_log, err: agent_log)
-        Process.detach(agent_pid)
+        agent_pid = spawn_agent_process(agent_id)
 
         FileUtils.mkdir_p(@running_vms_dir)
         File.write(vm_file(agent_pid), agent_id)
@@ -150,7 +144,29 @@ module Bosh
         end
       end
 
+      def agent_log_path(agent_id)
+        "#{@base_dir}/agent.#{agent_id}.log"
+      end
+
       private
+
+      def spawn_agent_process(agent_id)
+        root_dir = File.join(agent_base_dir(agent_id), 'root_dir')
+        FileUtils.mkdir_p(File.join(root_dir, 'etc', 'logrotate.d'))
+
+        agent_cmd = agent_cmd(agent_id, root_dir)
+        agent_log = agent_log_path(agent_id)
+
+        agent_pid = Process.spawn(*agent_cmd, {
+          chdir: agent_base_dir(agent_id),
+          out: agent_log,
+          err: agent_log,
+        })
+
+        Process.detach(agent_pid)
+
+        agent_pid
+      end
 
       def agent_id_for_vm_id(vm_id)
         File.read(vm_file(vm_id))

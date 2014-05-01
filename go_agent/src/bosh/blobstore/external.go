@@ -1,12 +1,13 @@
 package blobstore
 
 import (
-	bosherr "bosh/errors"
-	boshsys "bosh/system"
-	boshuuid "bosh/uuid"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+
+	bosherr "bosh/errors"
+	boshsys "bosh/system"
+	boshuuid "bosh/uuid"
 )
 
 type external struct {
@@ -18,7 +19,14 @@ type external struct {
 	options        map[string]string
 }
 
-func NewExternalBlobstore(provider string, options map[string]string, fs boshsys.FileSystem, runner boshsys.CmdRunner, uuidGen boshuuid.Generator, configFilePath string) (blobstore Blobstore) {
+func NewExternalBlobstore(
+	provider string,
+	options map[string]string,
+	fs boshsys.FileSystem,
+	runner boshsys.CmdRunner,
+	uuidGen boshuuid.Generator,
+	configFilePath string,
+) (blobstore Blobstore) {
 	return external{
 		provider:       provider,
 		fs:             fs,
@@ -29,79 +37,78 @@ func NewExternalBlobstore(provider string, options map[string]string, fs boshsys
 	}
 }
 
-func (blobstore external) writeConfigFile() (err error) {
-	configJson, err := json.Marshal(blobstore.options)
+func (blobstore external) writeConfigFile() error {
+	configJSON, err := json.Marshal(blobstore.options)
 	if err != nil {
-		err = bosherr.WrapError(err, "Marshalling JSON")
-		return
+		return bosherr.WrapError(err, "Marshalling JSON")
 	}
 
-	err = blobstore.fs.WriteFile(blobstore.configFilePath, configJson)
+	err = blobstore.fs.WriteFile(blobstore.configFilePath, configJSON)
 	if err != nil {
-		err = bosherr.WrapError(err, "Writing config file")
-		return
+		return bosherr.WrapError(err, "Writing config file")
 	}
-	return
+
+	return nil
 }
 
-func (blobstore external) Get(blobId, _ string) (fileName string, err error) {
+func (blobstore external) Get(blobID, _ string) (string, error) {
 	file, err := blobstore.fs.TempFile("bosh-blobstore-external-Get")
 	if err != nil {
-		err = bosherr.WrapError(err, "Creating temporary file")
-		return
+		return "", bosherr.WrapError(err, "Creating temporary file")
 	}
 
-	fileName = file.Name()
+	fileName := file.Name()
 
-	err = blobstore.run("get", blobId, fileName)
+	err = blobstore.run("get", blobID, fileName)
 	if err != nil {
 		blobstore.fs.RemoveAll(fileName)
-		fileName = ""
+		return "", err
 	}
 
-	return
+	return fileName, nil
 }
 
-func (blobstore external) CleanUp(fileName string) (err error) {
+func (blobstore external) CleanUp(fileName string) error {
 	blobstore.fs.RemoveAll(fileName)
-	return
+	return nil
 }
 
-func (blobstore external) Create(fileName string) (blobId string, fingerprint string, err error) {
+func (blobstore external) Create(fileName string) (string, string, error) {
 	filePath, err := filepath.Abs(fileName)
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting absolute file path")
-		return
+		return "", "", bosherr.WrapError(err, "Getting absolute file path")
 	}
 
-	blobId, err = blobstore.uuidGen.Generate()
+	blobID, err := blobstore.uuidGen.Generate()
 	if err != nil {
-		err = bosherr.WrapError(err, "Generating UUID")
-		return
+		return "", "", bosherr.WrapError(err, "Generating UUID")
 	}
 
-	err = blobstore.run("put", filePath, blobId)
-	return
+	err = blobstore.run("put", filePath, blobID)
+	if err != nil {
+		return "", "", bosherr.WrapError(err, "Making put command")
+	}
+
+	return blobID, "", nil
 }
 
-func (blobstore external) Validate() (err error) {
+func (blobstore external) Validate() error {
 	if !blobstore.runner.CommandExists(blobstore.executable()) {
-		err = bosherr.New("executable %s not found in PATH", blobstore.executable())
-		return
+		return bosherr.New("executable %s not found in PATH", blobstore.executable())
 	}
-	err = blobstore.writeConfigFile()
-	return
+
+	return blobstore.writeConfigFile()
 }
 
 func (blobstore external) run(method, src, dst string) (err error) {
-	_, _, err = blobstore.runner.RunCommand(blobstore.executable(), "-c", blobstore.configFilePath, method, src, dst)
+	_, _, _, err = blobstore.runner.RunCommand(blobstore.executable(), "-c", blobstore.configFilePath, method, src, dst)
 	if err != nil {
-		err = bosherr.WrapError(err, "Shelling out to %s cli", blobstore.executable())
-		return
+		return bosherr.WrapError(err, "Shelling out to %s cli", blobstore.executable())
 	}
-	return
+
+	return nil
 }
 
-func (blobstore external) executable() (exec string) {
+func (blobstore external) executable() string {
 	return fmt.Sprintf("bosh-blobstore-%s", blobstore.provider)
 }

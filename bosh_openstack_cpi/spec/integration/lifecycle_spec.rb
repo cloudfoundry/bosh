@@ -25,7 +25,8 @@ describe Bosh::OpenStackCloud::Cloud do
         "region" => @region,
         "endpoint_type" => "publicURL",
         "default_key_name" => "jenkins",
-        "default_security_groups" => ["default"]
+        "default_security_groups" => ["default"],
+        "wait_resource_poll_interval" => 5,
       },
       "registry" => {
         "endpoint" => "fake",

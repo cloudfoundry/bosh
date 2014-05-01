@@ -89,6 +89,29 @@ module Bosh::Director
 
         subject.delete_instances
       end
+
+      context 'when instances are not bound' do
+        let(:instance1_model) { nil }
+        let(:instance2_model) { nil }
+
+        it 'does not create an event log stage' do
+          expect(event_log).not_to receive(:begin_stage)
+
+          subject.delete_instances
+        end
+
+        it 'does not delete instances' do
+          expect(instance_deleter).not_to receive(:delete_instances)
+
+          subject.delete_instances
+        end
+
+        it 'does not deallocate vms' do
+          expect(resource_pool).not_to receive(:deallocate_vm)
+
+          subject.delete_instances
+        end
+      end
     end
   end
 end

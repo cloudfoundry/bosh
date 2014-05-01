@@ -100,10 +100,27 @@ module Bosh::Director
         Config.stub(:job_cancelled?).and_return(nil)
 
         agent.should_receive(:drain).with('shutdown').and_return(-2)
-        agent.should_receive(:drain).with('status').and_return(1, 0)
+        agent.should_receive(:drain).with('status').and_return(-3, 1)
 
         @deleter.should_receive(:sleep).with(2)
+        @deleter.should_receive(:sleep).with(3)
         @deleter.should_receive(:sleep).with(1)
+
+        agent.should_receive(:stop)
+        @deleter.drain('some_agent_id')
+      end
+
+      it 'should dynamically drain the VM when drain script returns 0 eventually' do
+        agent = double('agent')
+        AgentClient.stub(:with_defaults).with('some_agent_id').and_return(agent)
+        Config.stub(:job_cancelled?).and_return(nil)
+
+        agent.should_receive(:drain).with('shutdown').and_return(-2)
+        agent.should_receive(:drain).with('status').and_return(-3, 0)
+
+        @deleter.should_receive(:sleep).with(2)
+        @deleter.should_receive(:sleep).with(3)
+        @deleter.should_receive(:sleep).with(0)
 
         agent.should_receive(:stop)
         @deleter.drain('some_agent_id')

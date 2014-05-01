@@ -1,9 +1,10 @@
 package applier
 
 import (
-	as "bosh/agent/applier/applyspec"
+	boshas "bosh/agent/applier/applyspec"
 )
 
 type Applier interface {
-	Apply(currentApplySpec, desiredApplySpec as.ApplySpec) error
+	Prepare(desiredApplySpec boshas.ApplySpec) error
+	Apply(currentApplySpec, desiredApplySpec boshas.ApplySpec) error
 }

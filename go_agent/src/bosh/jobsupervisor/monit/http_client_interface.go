@@ -1,7 +1,9 @@
 package monit
 
-import "net/http"
+import (
+	"net/http"
+)
 
-type HttpClient interface {
+type HTTPClient interface {
 	Do(req *http.Request) (resp *http.Response, err error)
 }

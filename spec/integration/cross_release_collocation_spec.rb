@@ -26,14 +26,14 @@ describe 'collocating templates from multiple releases', type: :integration do
     it 'successfully deploys' do
       target_and_login
 
-      run_bosh("upload release #{spec_asset('dummy-release.tgz')}")
-      run_bosh("upload release #{spec_asset('dummy2-release.tgz')}")
-      run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("upload release #{spec_asset('dummy-release.tgz')}")
+      bosh_runner.run("upload release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
       manifest_hash = Bosh::Spec::Deployments.simple_manifest.merge(manifest)
       deployment_manifest = yaml_file('simple', manifest_hash)
-      run_bosh("deployment #{deployment_manifest.path}")
-      run_bosh("deploy")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("deploy")
     end
   end
 
@@ -60,15 +60,15 @@ describe 'collocating templates from multiple releases', type: :integration do
     it 'refuses to deploy' do
       target_and_login
 
-      run_bosh("upload release #{spec_asset('dummy-release.tgz')}")
-      run_bosh("upload release #{spec_asset('dummy2-release.tgz')}")
-      run_bosh("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("upload release #{spec_asset('dummy-release.tgz')}")
+      bosh_runner.run("upload release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
       manifest_hash = Bosh::Spec::Deployments.simple_manifest.merge(manifest)
       deployment_manifest = yaml_file('simple', manifest_hash)
-      run_bosh("deployment #{deployment_manifest.path}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
 
-      output = run_bosh("deploy", failure_expected: true)
+      output = bosh_runner.run("deploy", failure_expected: true)
       expect(output).to match(%r[Package name collision detected in job `foobar': template `dummy/dummy_with_package' depends on package `dummy/dummy_package',])
     end
   end

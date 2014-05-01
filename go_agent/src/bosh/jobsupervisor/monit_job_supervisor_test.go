@@ -42,7 +42,7 @@ func doJobFailureEmail(email string, port int) (err error) {
 	return
 }
 
-var jobFailureServerPort int = 5000
+var jobFailureServerPort = 5000
 
 func getJobFailureServerPort() int {
 	jobFailureServerPort++
@@ -62,10 +62,10 @@ func init() {
 		)
 
 		BeforeEach(func() {
-			fs = &fakesys.FakeFileSystem{}
-			runner = &fakesys.FakeCmdRunner{}
+			fs = fakesys.NewFakeFileSystem()
+			runner = fakesys.NewFakeCmdRunner()
 			client = fakemonit.NewFakeMonitClient()
-			logger = boshlog.NewLogger(boshlog.LEVEL_NONE)
+			logger = boshlog.NewLogger(boshlog.LevelNone)
 			dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
 			jobFailuresServerPort = getJobFailureServerPort()
 
@@ -218,7 +218,7 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 
 			assert.Equal(GinkgoT(), handledAlert, boshalert.MonitAlert{
-				Id:          "1304319946.0@localhost",
+				ID:          "1304319946.0@localhost",
 				Service:     "nats",
 				Event:       "does not exist",
 				Action:      "restart",

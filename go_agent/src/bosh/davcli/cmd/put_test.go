@@ -37,7 +37,7 @@ func init() {
 
 			handler := func(w http.ResponseWriter, r *http.Request) {
 				serverWasHit = true
-				req := testcmd.NewHttpRequest(r)
+				req := testcmd.NewHTTPRequest(r)
 
 				username, password, err := req.ExtractBasicAuth()
 

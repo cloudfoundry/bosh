@@ -1,19 +1,19 @@
 package udevdevice
 
 import (
-	bosherr "bosh/errors"
-	boshsys "bosh/system"
 	"os"
 	"time"
+
+	bosherr "bosh/errors"
+	boshsys "bosh/system"
 )
 
 type ConcreteUdevDevice struct {
 	runner boshsys.CmdRunner
 }
 
-func NewConcreteUdevDevice(runner boshsys.CmdRunner) (udev ConcreteUdevDevice) {
-	udev.runner = runner
-	return
+func NewConcreteUdevDevice(runner boshsys.CmdRunner) ConcreteUdevDevice {
+	return ConcreteUdevDevice{runner}
 }
 
 func (udev ConcreteUdevDevice) KickDevice(filePath string) {
@@ -24,51 +24,53 @@ func (udev ConcreteUdevDevice) KickDevice(filePath string) {
 		}
 		time.Sleep(time.Second / 2)
 	}
+
 	readByte(filePath)
+
 	return
 }
 
 func (udev ConcreteUdevDevice) Settle() (err error) {
 	switch {
 	case udev.runner.CommandExists("udevadm"):
-		_, _, err = udev.runner.RunCommand("udevadm", "settle")
+		_, _, _, err = udev.runner.RunCommand("udevadm", "settle")
 	case udev.runner.CommandExists("udevsettle"):
-		_, _, err = udev.runner.RunCommand("udevsettle")
+		_, _, _, err = udev.runner.RunCommand("udevsettle")
 	default:
 		err = bosherr.New("can not find udevadm or udevsettle commands")
 	}
 	return
 }
 
-func (udev ConcreteUdevDevice) EnsureDeviceReadable(filePath string) (err error) {
+func (udev ConcreteUdevDevice) EnsureDeviceReadable(filePath string) error {
 	for i := 0; i < 5; i++ {
 		readByte(filePath)
 		time.Sleep(time.Second / 2)
 	}
-	readByte(filePath)
 
+	err := readByte(filePath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Reading udev device")
-		return
+		return bosherr.WrapError(err, "Reading udev device")
 	}
-	return
+
+	return nil
 }
 
-func readByte(filePath string) (err error) {
+func readByte(filePath string) error {
 	device, err := os.Open(filePath)
 	if err != nil {
-		return
+		return err
 	}
 
 	bytes := make([]byte, 1, 1)
 	read, err := device.Read(bytes)
 	if err != nil {
-		return
+		return err
 	}
 
 	if read != 1 {
-		err = bosherr.New("Device readable but zero length")
-		return
+		return bosherr.New("Device readable but zero length")
 	}
-	return
+
+	return nil
 }

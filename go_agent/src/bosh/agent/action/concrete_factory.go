@@ -43,26 +43,35 @@ func NewFactory(
 
 	factory = concreteFactory{
 		availableActions: map[string]Action{
-			"ping":      NewPing(),
-			"get_task":  NewGetTask(taskService),
-			"get_state": NewGetState(settings, specService, jobSupervisor, vitalsService, ntpService),
+			// Task management
+			"ping":        NewPing(),
+			"get_task":    NewGetTask(taskService),
+			"cancel_task": NewCancelTask(taskService),
 
+			// VM admin
 			"ssh":        NewSsh(settings, platform, dirProvider),
+			"fetch_logs": NewFetchLogs(compressor, copier, blobstore, dirProvider),
+
+			// Job management
+			"prepare":    NewPrepare(applier),
+			"apply":      NewApply(applier, specService),
+			"start":      NewStart(jobSupervisor),
+			"stop":       NewStop(jobSupervisor),
 			"drain":      NewDrain(notifier, specService, drainScriptProvider, jobSupervisor),
-			"fetch_logs": NewLogs(compressor, copier, blobstore, dirProvider),
+			"get_state":  NewGetState(settings, specService, jobSupervisor, vitalsService, ntpService),
+			"run_errand": NewRunErrand(specService, dirProvider.JobsDir(), platform.GetRunner()),
 
-			"apply": NewApply(applier, specService),
-			"start": NewStart(jobSupervisor),
-			"stop":  NewStop(jobSupervisor),
-
+			// Compilation
 			"compile_package":    NewCompilePackage(compiler),
 			"release_apply_spec": NewReleaseApplySpec(platform),
 
+			// Disk management
 			"list_disk":    NewListDisk(settings, platform, logger),
 			"migrate_disk": NewMigrateDisk(platform, dirProvider),
-			"mount_disk":   NewMountDisk(settings, infrastructure, platform, dirProvider),
+			"mount_disk":   NewMountDisk(settings, platform, platform, dirProvider),
 			"unmount_disk": NewUnmountDisk(settings, platform),
 
+			// Networking
 			"prepare_network_change":     NewPrepareNetworkChange(platform.GetFs(), settings),
 			"prepare_configure_networks": NewPrepareConfigureNetworks(platform.GetFs(), settings),
 			"configure_networks":         NewConfigureNetworks(),
@@ -71,10 +80,11 @@ func NewFactory(
 	return
 }
 
-func (f concreteFactory) Create(method string) (action Action, err error) {
+func (f concreteFactory) Create(method string) (Action, error) {
 	action, found := f.availableActions[method]
 	if !found {
-		err = bosherr.New("Could not create action with method %s", method)
+		return nil, bosherr.New("Could not create action with method %s", method)
 	}
-	return
+
+	return action, nil
 }

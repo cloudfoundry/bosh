@@ -5,7 +5,7 @@ type Builder interface {
 }
 
 type Alert struct {
-	Id        string        `json:"id"`
+	ID        string        `json:"id"`
 	Severity  SeverityLevel `json:"severity"`
 	Title     string        `json:"title"`
 	Summary   string        `json:"summary"`
@@ -13,7 +13,7 @@ type Alert struct {
 }
 
 type MonitAlert struct {
-	Id          string
+	ID          string
 	Service     string
 	Event       string
 	Action      string

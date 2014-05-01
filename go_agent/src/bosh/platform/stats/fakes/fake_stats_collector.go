@@ -6,20 +6,20 @@ import (
 )
 
 type FakeStatsCollector struct {
-	CpuLoad   boshstats.CpuLoad
-	CpuStats  boshstats.CpuStats
+	CPULoad   boshstats.CPULoad
+	CPUStats  boshstats.CPUStats
 	MemStats  boshstats.Usage
 	SwapStats boshstats.Usage
 	DiskStats map[string]boshstats.DiskStats
 }
 
-func (c *FakeStatsCollector) GetCpuLoad() (load boshstats.CpuLoad, err error) {
-	load = c.CpuLoad
+func (c *FakeStatsCollector) GetCPULoad() (load boshstats.CPULoad, err error) {
+	load = c.CPULoad
 	return
 }
 
-func (c *FakeStatsCollector) GetCpuStats() (stats boshstats.CpuStats, err error) {
-	stats = c.CpuStats
+func (c *FakeStatsCollector) GetCPUStats() (stats boshstats.CPUStats, err error) {
+	stats = c.CPUStats
 	return
 }
 

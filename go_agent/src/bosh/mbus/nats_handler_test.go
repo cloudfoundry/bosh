@@ -12,26 +12,29 @@ import (
 	boshhandler "bosh/handler"
 	boshlog "bosh/logger"
 	. "bosh/mbus"
-	boshsettings "bosh/settings"
 	fakesettings "bosh/settings/fakes"
 )
 
-func buildNatsClientAndHandler(settings boshsettings.Service) (client *fakeyagnats.FakeYagnats, handler boshhandler.Handler) {
-	logger := boshlog.NewLogger(boshlog.LEVEL_NONE)
-	client = fakeyagnats.New()
-	handler = NewNatsHandler(settings, logger, client)
-	return
-}
 func init() {
 	Describe("natsHandler", func() {
+		var (
+			client  *fakeyagnats.FakeYagnats
+			logger  boshlog.Logger
+			handler boshhandler.Handler
+		)
+
+		BeforeEach(func() {
+			settings := &fakesettings.FakeSettingsService{
+				AgentID: "my-agent-id",
+				MbusURL: "nats://fake-username:fake-password@127.0.0.1:1234",
+			}
+			logger = boshlog.NewLogger(boshlog.LevelNone)
+			client = fakeyagnats.New()
+			handler = NewNatsHandler(settings, logger, client)
+		})
+
 		Describe("Start", func() {
 			It("starts", func() {
-				settings := &fakesettings.FakeSettingsService{
-					AgentId: "my-agent-id",
-					MbusUrl: "nats://foo:bar@127.0.0.1:1234",
-				}
-				client, handler := buildNatsClientAndHandler(settings)
-
 				var receivedRequest boshhandler.Request
 
 				handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
@@ -61,60 +64,126 @@ func init() {
 
 				Expect(len(client.PublishedMessages)).To(Equal(1))
 				messages := client.PublishedMessages["reply to me!"]
-
 				Expect(len(messages)).To(Equal(1))
-				message := messages[0]
-
-				Expect([]byte(`{"value":"expected value"}`)).To(Equal(message.Payload))
+				Expect(messages[0].Payload).To(Equal([]byte(`{"value":"expected value"}`)))
 			})
 
 			It("does not respond if the response is nil", func() {
-				settings := &fakesettings.FakeSettingsService{
-					AgentId: "my-agent-id",
-					MbusUrl: "nats://foo:bar@127.0.0.1:1234",
-				}
-				client, handler := buildNatsClientAndHandler(settings)
-
 				err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
 					return nil
 				})
 				Expect(err).ToNot(HaveOccurred())
 				defer handler.Stop()
 
-				expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`)
+				subscription := client.Subscriptions["agent.my-agent-id"][0]
+				subscription.Callback(&yagnats.Message{
+					Subject: "agent.my-agent-id",
+					Payload: []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "reply to me!"}`),
+				})
+
+				Expect(len(client.PublishedMessages)).To(Equal(0))
+			})
+
+			It("responds with an error if the response is bigger than 1MB", func() {
+				err := handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+					// gets inflated by json.Marshal when enveloping
+					size := 0
+
+					switch req.Method {
+					case "small":
+						size = 1024*1024 - 12
+					case "big":
+						size = 1024 * 1024
+					default:
+						panic("unknown request size")
+					}
+
+					chars := make([]byte, size)
+					for i := range chars {
+						chars[i] = 'A'
+					}
+					return boshhandler.NewValueResponse(string(chars))
+				})
+				Expect(err).ToNot(HaveOccurred())
+				defer handler.Stop()
+
+				subscription := client.Subscriptions["agent.my-agent-id"][0]
+				subscription.Callback(&yagnats.Message{
+					Subject: "agent.my-agent-id",
+					Payload: []byte(`{"method":"small","arguments":[], "reply_to": "fake-reply-to"}`),
+				})
+
+				subscription.Callback(&yagnats.Message{
+					Subject: "agent.my-agent-id",
+					Payload: []byte(`{"method":"big","arguments":[], "reply_to": "fake-reply-to"}`),
+				})
+
+				Expect(len(client.PublishedMessages)).To(Equal(1))
+				messages := client.PublishedMessages["fake-reply-to"]
+				Expect(len(messages)).To(Equal(2))
+				Expect(messages[0].Payload).To(MatchRegexp("value"))
+				Expect(messages[1].Payload).To(Equal([]byte(
+					`{"exception":{"message":"Response exceeded maximum size allowed to be sent over NATS"}}`)))
+			})
+
+			It("can add additional handler funcs to receive requests", func() {
+				var firstHandlerReq, secondHandlerRequest boshhandler.Request
+
+				handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) {
+					firstHandlerReq = req
+					return boshhandler.NewValueResponse("first-handler-resp")
+				})
+				defer handler.Stop()
+
+				handler.RegisterAdditionalHandlerFunc(func(req boshhandler.Request) (resp boshhandler.Response) {
+					secondHandlerRequest = req
+					return boshhandler.NewValueResponse("second-handler-resp")
+				})
+
+				expectedPayload := []byte(`{"method":"ping","arguments":["foo","bar"], "reply_to": "fake-reply-to"}`)
+
 				subscription := client.Subscriptions["agent.my-agent-id"][0]
 				subscription.Callback(&yagnats.Message{
 					Subject: "agent.my-agent-id",
 					Payload: expectedPayload,
 				})
 
-				Expect(len(client.PublishedMessages)).To(Equal(0))
+				// Expected requests received by both handlers
+				Expect(firstHandlerReq).To(Equal(boshhandler.Request{
+					ReplyTo: "fake-reply-to",
+					Method:  "ping",
+					Payload: expectedPayload,
+				}))
+
+				Expect(secondHandlerRequest).To(Equal(boshhandler.Request{
+					ReplyTo: "fake-reply-to",
+					Method:  "ping",
+					Payload: expectedPayload,
+				}))
+
+				// Bosh handler responses were sent
+				Expect(len(client.PublishedMessages)).To(Equal(1))
+				messages := client.PublishedMessages["fake-reply-to"]
+				Expect(len(messages)).To(Equal(2))
+				Expect(messages[0].Payload).To(Equal([]byte(`{"value":"first-handler-resp"}`)))
+				Expect(messages[1].Payload).To(Equal([]byte(`{"value":"second-handler-resp"}`)))
 			})
 
 			It("has the correct connection info", func() {
-				settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://foo:bar@127.0.0.1:1234"}
-				client, handler := buildNatsClientAndHandler(settings)
-
 				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 				Expect(err).ToNot(HaveOccurred())
 				defer handler.Stop()
 
-				Expect(client.ConnectedConnectionProvider).ToNot(BeNil())
-
-				connInfo := client.ConnectedConnectionProvider
-
-				expectedConnInfo := &yagnats.ConnectionInfo{
+				Expect(client.ConnectedConnectionProvider).To(Equal(&yagnats.ConnectionInfo{
 					Addr:     "127.0.0.1:1234",
-					Username: "foo",
-					Password: "bar",
-				}
-
-				Expect(connInfo).To(Equal(expectedConnInfo))
+					Username: "fake-username",
+					Password: "fake-password",
+				}))
 			})
 
 			It("does not err when no username and password", func() {
-				settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://127.0.0.1:1234"}
-				_, handler := buildNatsClientAndHandler(settings)
+				settings := &fakesettings.FakeSettingsService{MbusURL: "nats://127.0.0.1:1234"}
+				handler = NewNatsHandler(settings, logger, client)
 
 				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 				Expect(err).ToNot(HaveOccurred())
@@ -122,8 +191,8 @@ func init() {
 			})
 
 			It("errs when has username without password", func() {
-				settings := &fakesettings.FakeSettingsService{MbusUrl: "nats://foo@127.0.0.1:1234"}
-				_, handler := buildNatsClientAndHandler(settings)
+				settings := &fakesettings.FakeSettingsService{MbusURL: "nats://foo@127.0.0.1:1234"}
+				handler = NewNatsHandler(settings, logger, client)
 
 				err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 				Expect(err).To(HaveOccurred())
@@ -133,12 +202,6 @@ func init() {
 
 		Describe("SendToHealthManager", func() {
 			It("sends periodic heartbeats", func() {
-				settings := &fakesettings.FakeSettingsService{
-					AgentId: "my-agent-id",
-					MbusUrl: "nats://foo:bar@127.0.0.1:1234",
-				}
-				client, handler := buildNatsClientAndHandler(settings)
-
 				errChan := make(chan error, 1)
 
 				jobName := "foo"
@@ -161,8 +224,8 @@ func init() {
 				Expect(len(messages)).To(Equal(1))
 				message := messages[0]
 
-				expectedJson, _ := json.Marshal(expectedHeartbeat)
-				Expect(string(expectedJson)).To(Equal(string(message.Payload)))
+				expectedJSON, _ := json.Marshal(expectedHeartbeat)
+				Expect(string(expectedJSON)).To(Equal(string(message.Payload)))
 			})
 		})
 	})

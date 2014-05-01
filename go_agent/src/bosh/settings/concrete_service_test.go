@@ -7,13 +7,15 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	boshlog "bosh/logger"
 	. "bosh/settings"
 	fakesys "bosh/system/fakes"
 )
 
 func buildService(fetcher SettingsFetcher) (Service, *fakesys.FakeFileSystem) {
 	fs := fakesys.NewFakeFileSystem()
-	service := NewService(fs, "/setting/path", fetcher)
+	logger := boshlog.NewLogger(boshlog.LevelNone)
+	service := NewService(fs, "/setting/path", fetcher, logger)
 	return service, fs
 }
 
@@ -29,8 +31,9 @@ func init() {
 			It("returns service with settings.json as its settings path", func() {
 				// Cannot compare fetcher functions since function comparison is problematic
 				fs := fakesys.NewFakeFileSystem()
-				service := NewServiceProvider().NewService(fs, "/setting/path", nil)
-				Expect(service).To(Equal(NewService(fs, "/setting/path/settings.json", nil)))
+				logger := boshlog.NewLogger(boshlog.LevelNone)
+				service := NewServiceProvider().NewService(fs, "/setting/path", nil, logger)
+				Expect(service).To(Equal(NewService(fs, "/setting/path/settings.json", nil, logger)))
 			})
 		})
 	})
@@ -38,7 +41,7 @@ func init() {
 	Describe("concreteService", func() {
 		Describe("LoadSettings", func() {
 			Context("when settings fetcher succeeds fetching settings", func() {
-				fetchedSettings := Settings{AgentId: "some-new-agent-id"}
+				fetchedSettings := Settings{AgentID: "some-new-agent-id"}
 				fetcher := func() (Settings, error) { return fetchedSettings, nil }
 
 				It("updates the service with settings from the fetcher", func() {
@@ -46,7 +49,7 @@ func init() {
 
 					err := service.LoadSettings()
 					Expect(err).NotTo(HaveOccurred())
-					Expect(service.GetAgentId()).To(Equal("some-new-agent-id"))
+					Expect(service.GetAgentID()).To(Equal("some-new-agent-id"))
 				})
 
 				It("persists settings to the settings file", func() {
@@ -81,7 +84,7 @@ func init() {
 					It("returns settings from the settings file", func() {
 						service, fs := buildService(fetcher)
 
-						expectedSettings := Settings{AgentId: "some-agent-id"}
+						expectedSettings := Settings{AgentID: "some-agent-id"}
 						fs.WriteFile("/setting/path", []byte(`{"agent_id":"some-agent-id"}`))
 
 						err := service.LoadSettings()
@@ -129,31 +132,31 @@ func init() {
 
 		Describe("GetSettings", func() {
 			It("returns settings", func() {
-				settings := Settings{AgentId: "some-agent-id"}
+				settings := Settings{AgentID: "some-agent-id"}
 				service := buildServiceWithInitialSettings(settings)
 				Expect(service.GetSettings()).To(Equal(settings))
 			})
 		})
 
-		Describe("GetAgentId", func() {
+		Describe("GetAgentID", func() {
 			It("returns agent id", func() {
-				service := buildServiceWithInitialSettings(Settings{AgentId: "some-agent-id"})
-				Expect(service.GetAgentId()).To(Equal("some-agent-id"))
+				service := buildServiceWithInitialSettings(Settings{AgentID: "some-agent-id"})
+				Expect(service.GetAgentID()).To(Equal("some-agent-id"))
 			})
 		})
 
-		Describe("GetVm", func() {
+		Describe("GetVM", func() {
 			It("returns vm", func() {
-				vm := Vm{Name: "some-vm-id"}
-				service := buildServiceWithInitialSettings(Settings{Vm: vm})
-				Expect(service.GetVm()).To(Equal(vm))
+				vm := VM{Name: "some-vm-id"}
+				service := buildServiceWithInitialSettings(Settings{VM: vm})
+				Expect(service.GetVM()).To(Equal(vm))
 			})
 		})
 
-		Describe("GetMbusUrl", func() {
+		Describe("GetMbusURL", func() {
 			It("returns mbus url", func() {
 				service := buildServiceWithInitialSettings(Settings{Mbus: "nats://user:pwd@some-ip:some-port"})
-				Expect(service.GetMbusUrl()).To(Equal("nats://user:pwd@some-ip:some-port"))
+				Expect(service.GetMbusURL()).To(Equal("nats://user:pwd@some-ip:some-port"))
 			})
 		})
 
@@ -165,28 +168,28 @@ func init() {
 			})
 		})
 
-		Describe("GetDefaultIp", func() {
+		Describe("GetDefaultIP", func() {
 			It("returns default ip", func() {
 				networks := Networks{
-					"bosh": Network{Ip: "xx.xx.xx.xx"},
+					"bosh": Network{IP: "xx.xx.xx.xx"},
 				}
 				service := buildServiceWithInitialSettings(Settings{Networks: networks})
 
-				ip, found := service.GetDefaultIp()
+				ip, found := service.GetDefaultIP()
 				Expect(found).To(BeTrue())
 				Expect(ip).To(Equal("xx.xx.xx.xx"))
 			})
 		})
 
-		Describe("GetIps", func() {
+		Describe("GetIPs", func() {
 			It("returns ips", func() {
 				networks := Networks{
-					"bosh":  Network{Ip: "xx.xx.xx.xx"},
-					"vip":   Network{Ip: "zz.zz.zz.zz"},
+					"bosh":  Network{IP: "xx.xx.xx.xx"},
+					"vip":   Network{IP: "zz.zz.zz.zz"},
 					"other": Network{},
 				}
 				service := buildServiceWithInitialSettings(Settings{Networks: networks})
-				Expect(service.GetIps()).To(Equal([]string{"xx.xx.xx.xx", "zz.zz.zz.zz"}))
+				Expect(service.GetIPs()).To(Equal([]string{"xx.xx.xx.xx", "zz.zz.zz.zz"}))
 			})
 		})
 	})
