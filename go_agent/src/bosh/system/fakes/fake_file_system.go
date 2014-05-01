@@ -345,6 +345,10 @@ func (fs *FakeFileSystem) RegisterRemoveAllError(path string, err error) {
 }
 
 func (fs *FakeFileSystem) RemoveAll(path string) error {
+	if path == "" {
+		panic("RemoveAll requires path")
+	}
+
 	fs.filesLock.Lock()
 	defer fs.filesLock.Unlock()
 

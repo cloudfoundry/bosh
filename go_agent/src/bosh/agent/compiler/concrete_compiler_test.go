@@ -104,6 +104,8 @@ func init() {
 				bundle.InstallPath = "/fake-dir/data/packages/pkg_name/pkg_version"
 				bundle.EnablePath = "/fake-dir/packages/pkg_name"
 
+				compressor.CompressFilesInDirTarballPath = "/tmp/compressed-compiled-package"
+
 				pkg, pkgDeps = getCompileArgs()
 			})
 
@@ -202,12 +204,6 @@ func init() {
 				}))
 			})
 
-			It("compresses compiled package", func() {
-				_, _, err := compiler.Compile(pkg, pkgDeps)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(compressor.CompressFilesInDirDir).To(Equal("/fake-dir/data/packages/pkg_name/pkg_version"))
-			})
-
 			It("runs packaging script when packaging script exists", func() {
 				compressor.DecompressFileToDirCallBack = func() {
 					fs.WriteFileString("/fake-compile-dir/pkg_name/packaging", "hi")
@@ -238,12 +234,47 @@ func init() {
 				Expect(runner.RunCommands).To(BeEmpty())
 			})
 
-			It("uploads compressed package", func() {
-				compressor.CompressFilesInDirTarballPath = "/tmp/foo"
+			It("compresses compiled package", func() {
+				_, _, err := compiler.Compile(pkg, pkgDeps)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(compressor.CompressFilesInDirDir).To(Equal("/fake-dir/data/packages/pkg_name/pkg_version"))
+			})
+
+			It("uploads compressed package to blobstore", func() {
+				compressor.CompressFilesInDirTarballPath = "/tmp/compressed-compiled-package"
 
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(blobstore.CreateFileName).To(Equal("/tmp/foo"))
+				Expect(blobstore.CreateFileName).To(Equal("/tmp/compressed-compiled-package"))
+			})
+
+			It("returs error if uploading compressed package fails", func() {
+				blobstore.CreateErr = errors.New("fake-create-err")
+
+				_, _, err := compiler.Compile(pkg, pkgDeps)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-create-err"))
+			})
+
+			It("cleans up compressed package after uploading it to blobstore", func() {
+				var beforeCreateFileStat, afterCreateFileStat *fakesys.FakeFileStats
+
+				err := fs.WriteFileString("/tmp/compressed-compiled-package", "fake-compressed-package")
+				Expect(err).ToNot(HaveOccurred())
+
+				blobstore.CreateCallBack = func() {
+					beforeCreateFileStat = fs.GetFileTestStat("/tmp/compressed-compiled-package")
+				}
+
+				_, _, err = compiler.Compile(pkg, pkgDeps)
+				Expect(err).ToNot(HaveOccurred())
+
+				// Available for upload to blobstore
+				Expect(beforeCreateFileStat).ToNot(BeNil())
+
+				// Deleted after it was uploaded
+				afterCreateFileStat = fs.GetFileTestStat("/tmp/compressed-compiled-package")
+				Expect(afterCreateFileStat).To(BeNil())
 			})
 		})
 	})

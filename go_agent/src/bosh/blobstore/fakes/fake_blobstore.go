@@ -13,6 +13,7 @@ type FakeBlobstore struct {
 	CreateBlobID      string
 	CreateFingerprint string
 	CreateErr         error
+	CreateCallBack    func()
 
 	ValidateError error
 }
@@ -34,6 +35,11 @@ func (bs *FakeBlobstore) CleanUp(fileName string) error {
 
 func (bs *FakeBlobstore) Create(fileName string) (string, string, error) {
 	bs.CreateFileName = fileName
+
+	if bs.CreateCallBack != nil {
+		bs.CreateCallBack()
+	}
+
 	return bs.CreateBlobID, bs.CreateFingerprint, bs.CreateErr
 }
 
