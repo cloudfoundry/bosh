@@ -1,6 +1,10 @@
 out
 pkg
 gobin/*
+
+*.coverprofile
+
 *.sublime-workspace
+
 .idea/workspace.xml
 .idea/tasks.xml

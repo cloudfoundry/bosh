@@ -2,30 +2,30 @@
 
 result=0
 
-num_processes=$([ -n "$TRAVIS" ] && echo 1 || echo 4)
+bin=$(dirname $0)
 
 echo -e "\n Formatting packages..."
-$(dirname $0)/go fmt bosh/...
+$bin/go fmt bosh/...
 let "result+=$?"
 
-echo -e "\n Installing package dependencies..."
-$(dirname $0)/go test -i bosh/...
+echo -e "\n Installing ginkgo..."
+$bin/go install github.com/onsi/ginkgo/ginkgo
 let "result+=$?"
 
-echo -e "\n Testing packages (processes=$num_processes)..."
-$(dirname $0)/go test bosh/... -parallel $num_processes -race $@
+echo -e "\n Testing packages..."
+$bin/env ginkgo -r -race $bin/../src/bosh
 let "result+=$?"
 
 echo -e "\n Vetting packages for potential issues..."
-$(dirname $0)/go vet bosh/...
+$bin/go vet bosh/...
 let "result+=$?"
 
 echo -e "\n Checking with golint..."
-$(dirname $0)/golint
+$bin/golint
 let "result+=$?"
 
 echo -e "\n Running build script to confirm everything compiles..."
-$(dirname $0)/build
+$bin/build
 let "result+=$?"
 
 if [ $result -eq 0 ]; then

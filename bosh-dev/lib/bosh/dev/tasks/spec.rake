@@ -65,9 +65,7 @@ namespace :spec do
       end
     end
 
-    task :go_agent do
-      sh('go_agent/bin/test')
-    end
+    task(:go_agent) { exec('go_agent/bin/test') }
   end
 
   task :unit => %w(spec:unit:ruby_gems spec:unit:go_agent)
