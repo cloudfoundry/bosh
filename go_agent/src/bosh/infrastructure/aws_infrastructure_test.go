@@ -12,22 +12,10 @@ import (
 
 	. "bosh/infrastructure"
 	fakedpresolv "bosh/infrastructure/devicepathresolver/fakes"
+	fakeinf "bosh/infrastructure/fakes"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 )
-
-type FakeDNSResolver struct {
-	LookupHostIP         string
-	LookupHostDNSServers []string
-	LookupHostHost       string
-}
-
-func (res *FakeDNSResolver) LookupHost(dnsServers []string, host string) (ip string, err error) {
-	res.LookupHostDNSServers = dnsServers
-	res.LookupHostHost = host
-	ip = res.LookupHostIP
-	return
-}
 
 func init() {
 	var (
@@ -38,7 +26,7 @@ func init() {
 	)
 
 	BeforeEach(func() {
-		metadataService = NewConcreteMetadataService("fake-metadata-host", &FakeDNSResolver{})
+		metadataService = NewConcreteMetadataService("fake-metadata-host", &fakeinf.FakeDNSResolver{})
 		registry = NewConcreteRegistry(metadataService)
 		platform = fakeplatform.NewFakePlatform()
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
@@ -67,7 +55,7 @@ func init() {
 			})
 
 			It("gets the public key and sets up ssh via the platform", func() {
-				metadataService = NewConcreteMetadataService(ts.URL, &FakeDNSResolver{})
+				metadataService = NewConcreteMetadataService(ts.URL, &fakeinf.FakeDNSResolver{})
 
 				aws = NewAwsInfrastructure(
 					metadataService,
@@ -215,7 +203,7 @@ func init() {
 					metadataTs := httptest.NewServer(awsMetaDataHandler)
 					defer metadataTs.Close()
 
-					metadataService = NewConcreteMetadataService(metadataTs.URL, &FakeDNSResolver{})
+					metadataService = NewConcreteMetadataService(metadataTs.URL, &fakeinf.FakeDNSResolver{})
 
 					registry = NewConcreteRegistry(metadataService)
 
@@ -231,7 +219,7 @@ func init() {
 
 			Context("when dns servers are provided", func() {
 				It("aws get settings", func() {
-					fakeDNSResolver := &FakeDNSResolver{
+					fakeDNSResolver := &fakeinf.FakeDNSResolver{
 						LookupHostIP: "127.0.0.1",
 					}
 
