@@ -49,6 +49,7 @@ func (r concreteRegistry) GetSettings() (boshsettings.Settings, error) {
 	}
 
 	var wrapper settingsWrapperType
+
 	err = json.Unmarshal(wrapperBytes, &wrapper)
 	if err != nil {
 		return settings, bosherr.WrapError(err, "Unmarshalling settings wrapper")

@@ -1,6 +1,7 @@
 package infrastructure_test
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -18,57 +19,50 @@ import (
 )
 
 func init() {
-	var (
-		metadataService    MetadataService
-		registry           Registry
-		platform           *fakeplatform.FakePlatform
-		devicePathResolver *fakedpresolv.FakeDevicePathResolver
-	)
+	Describe("awsInfrastructure", func() {
+		var (
+			metadataService    *fakeinf.FakeMetadataService
+			registry           Registry
+			platform           *fakeplatform.FakePlatform
+			devicePathResolver *fakedpresolv.FakeDevicePathResolver
+			aws                Infrastructure
+		)
 
-	BeforeEach(func() {
-		metadataService = NewConcreteMetadataService("fake-metadata-host", &fakeinf.FakeDNSResolver{})
-		registry = NewConcreteRegistry(metadataService)
-		platform = fakeplatform.NewFakePlatform()
-		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
-	})
+		BeforeEach(func() {
+			metadataService = &fakeinf.FakeMetadataService{}
+			registry = NewConcreteRegistry(metadataService)
+			platform = fakeplatform.NewFakePlatform()
+			devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
+			aws = NewAwsInfrastructure(metadataService, registry, platform, devicePathResolver)
+		})
 
-	Describe("AWS Infrastructure", func() {
 		Describe("SetupSsh", func() {
-			var (
-				ts  *httptest.Server
-				aws Infrastructure
-			)
-
-			const expectedKey = "some public key"
-
-			BeforeEach(func() {
-				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					Expect(r.Method).To(Equal("GET"))
-					Expect(r.URL.Path).To(Equal("/latest/meta-data/public-keys/0/openssh-key"))
-					w.Write([]byte(expectedKey))
-				})
-				ts = httptest.NewServer(handler)
-			})
-
-			AfterEach(func() {
-				ts.Close()
-			})
-
 			It("gets the public key and sets up ssh via the platform", func() {
-				metadataService = NewConcreteMetadataService(ts.URL, &fakeinf.FakeDNSResolver{})
-
-				aws = NewAwsInfrastructure(
-					metadataService,
-					registry,
-					platform,
-					devicePathResolver,
-				)
+				metadataService.PublicKey = "fake-public-key"
 
 				err := aws.SetupSsh("vcap")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(platform.SetupSshPublicKey).To(Equal(expectedKey))
+				Expect(platform.SetupSshPublicKey).To(Equal("fake-public-key"))
 				Expect(platform.SetupSshUsername).To(Equal("vcap"))
+			})
+
+			It("returns error without configuring ssh on the platform if getting public key fails", func() {
+				metadataService.GetPublicKeyErr = errors.New("fake-get-public-key-err")
+
+				err := aws.SetupSsh("vcap")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-get-public-key-err"))
+
+				Expect(platform.SetupSshCalled).To(BeFalse())
+			})
+
+			It("returns error if configuring ssh on the platform fails", func() {
+				platform.SetupSshErr = errors.New("fake-setup-ssh-err")
+
+				err := aws.SetupSsh("vcap")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-setup-ssh-err"))
 			})
 		})
 
@@ -203,7 +197,7 @@ func init() {
 					metadataTs := httptest.NewServer(awsMetaDataHandler)
 					defer metadataTs.Close()
 
-					metadataService = NewConcreteMetadataService(metadataTs.URL, &fakeinf.FakeDNSResolver{})
+					metadataService := NewConcreteMetadataService(metadataTs.URL, &fakeinf.FakeDNSResolver{})
 
 					registry = NewConcreteRegistry(metadataService)
 
@@ -266,7 +260,7 @@ func init() {
 					metadataTs := httptest.NewServer(awsMetaDataHandler)
 					defer metadataTs.Close()
 
-					metadataService = NewConcreteMetadataService(metadataTs.URL, fakeDNSResolver)
+					metadataService := NewConcreteMetadataService(metadataTs.URL, fakeDNSResolver)
 
 					registry = NewConcreteRegistry(metadataService)
 

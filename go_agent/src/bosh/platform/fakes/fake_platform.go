@@ -39,10 +39,14 @@ type FakePlatform struct {
 	AddUserToGroupsGroups             map[string][]string
 	DeleteEphemeralUsersMatchingRegex string
 	SetupSshPublicKeys                map[string]string
-	SetupSshPublicKey                 string
-	SetupSshUsername                  string
-	UserPasswords                     map[string]string
-	SetupHostnameHostname             string
+
+	SetupSshCalled    bool
+	SetupSshPublicKey string
+	SetupSshUsername  string
+	SetupSshErr       error
+
+	UserPasswords         map[string]string
+	SetupHostnameHostname string
 
 	SetTimeWithNtpServersServers []string
 
@@ -166,11 +170,12 @@ func (p *FakePlatform) DeleteEphemeralUsersMatching(regex string) (err error) {
 	return
 }
 
-func (p *FakePlatform) SetupSsh(publicKey, username string) (err error) {
+func (p *FakePlatform) SetupSsh(publicKey, username string) error {
+	p.SetupSshCalled = true
 	p.SetupSshPublicKeys[username] = publicKey
 	p.SetupSshPublicKey = publicKey
 	p.SetupSshUsername = username
-	return
+	return p.SetupSshErr
 }
 
 func (p *FakePlatform) SetUserPassword(user, encryptedPwd string) (err error) {
