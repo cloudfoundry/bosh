@@ -1,5 +1,5 @@
 module Bosh
   module Common
-    VERSION = '1.2513.0'
+    VERSION = '1.2524.0'
   end
 end
