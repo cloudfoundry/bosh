@@ -34,7 +34,7 @@ var _ = Describe("Provider", func() {
 
 			registry := NewConcreteRegistry(metadataService)
 
-			expectedDevicePathResolver := boshdpresolv.NewAwsDevicePathResolver(
+			expectedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(
 				500*time.Millisecond,
 				platform.GetFs(),
 			)
@@ -47,6 +47,31 @@ var _ = Describe("Provider", func() {
 			)
 
 			inf, err := provider.Get("aws")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(inf).To(Equal(expectedInf))
+		})
+
+		It("returns openstack infrastructure", func() {
+			metadataService := NewConcreteMetadataService(
+				"http://169.254.169.254",
+				NewDigDNSResolver(logger),
+			)
+
+			registry := NewConcreteRegistry(metadataService)
+
+			expectedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(
+				500*time.Millisecond,
+				platform.GetFs(),
+			)
+
+			expectedInf := NewOpenstackInfrastructure(
+				metadataService,
+				registry,
+				platform,
+				expectedDevicePathResolver,
+			)
+
+			inf, err := provider.Get("openstack")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(inf).To(Equal(expectedInf))
 		})

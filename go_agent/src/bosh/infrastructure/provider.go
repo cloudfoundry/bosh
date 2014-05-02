@@ -24,7 +24,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 	fs := platform.GetFs()
 	dirProvider := platform.GetDirProvider()
 
-	awsDevicePathResolver := boshdpresolv.NewAwsDevicePathResolver(500*time.Millisecond, platform.GetFs())
+	mappedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(500*time.Millisecond, platform.GetFs())
 	vsphereDevicePathResolver := boshdpresolv.NewVsphereDevicePathResolver(500*time.Millisecond, platform.GetFs())
 	dummyDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver(1*time.Millisecond, fs)
 
@@ -32,14 +32,22 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 		metadataService,
 		registry,
 		platform,
-		awsDevicePathResolver,
+		mappedDevicePathResolver,
+	)
+
+	openstackInfrastructure := NewOpenstackInfrastructure(
+		metadataService,
+		registry,
+		platform,
+		mappedDevicePathResolver,
 	)
 
 	p.infrastructures = map[string]Infrastructure{
-		"aws":     awsInfrastructure,
-		"dummy":   NewDummyInfrastructure(fs, dirProvider, platform, dummyDevicePathResolver),
-		"warden":  NewWardenInfrastructure(dirProvider, platform, dummyDevicePathResolver),
-		"vsphere": NewVsphereInfrastructure(platform, vsphereDevicePathResolver, logger),
+		"aws":       awsInfrastructure,
+		"openstack": openstackInfrastructure,
+		"dummy":     NewDummyInfrastructure(fs, dirProvider, platform, dummyDevicePathResolver),
+		"warden":    NewWardenInfrastructure(dirProvider, platform, dummyDevicePathResolver),
+		"vsphere":   NewVsphereInfrastructure(platform, vsphereDevicePathResolver, logger),
 	}
 	return
 }

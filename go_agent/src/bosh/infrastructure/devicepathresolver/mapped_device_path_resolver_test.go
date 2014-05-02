@@ -11,7 +11,7 @@ import (
 	fakesys "bosh/system/fakes"
 )
 
-var _ = Describe("awsDevicePathResolver", func() {
+var _ = Describe("mappedDevicePathResolver", func() {
 	var (
 		fs       boshsys.FileSystem
 		resolver DevicePathResolver
@@ -19,7 +19,7 @@ var _ = Describe("awsDevicePathResolver", func() {
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
-		resolver = NewAwsDevicePathResolver(time.Second, fs)
+		resolver = NewMappedDevicePathResolver(time.Second, fs)
 	})
 
 	Context("when a matching /dev/xvdX device is found", func() {
