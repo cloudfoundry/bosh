@@ -44,6 +44,7 @@ var _ = Describe("Provider", func() {
 				registry,
 				platform,
 				expectedDevicePathResolver,
+				logger,
 			)
 
 			inf, err := provider.Get("aws")
@@ -69,6 +70,7 @@ var _ = Describe("Provider", func() {
 				registry,
 				platform,
 				expectedDevicePathResolver,
+				logger,
 			)
 
 			inf, err := provider.Get("openstack")

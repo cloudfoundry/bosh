@@ -3,15 +3,19 @@ package infrastructure
 import (
 	bosherr "bosh/errors"
 	boshdpresolv "bosh/infrastructure/devicepathresolver"
+	boshlog "bosh/logger"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 )
+
+const openstackInfrastructureLogTag = "openstackInfrastructure"
 
 type openstackInfrastructure struct {
 	metadataService    MetadataService
 	registry           Registry
 	platform           boshplatform.Platform
 	devicePathResolver boshdpresolv.DevicePathResolver
+	logger             boshlog.Logger
 }
 
 func NewOpenstackInfrastructure(
@@ -19,11 +23,13 @@ func NewOpenstackInfrastructure(
 	registry Registry,
 	platform boshplatform.Platform,
 	devicePathResolver boshdpresolv.DevicePathResolver,
+	logger boshlog.Logger,
 ) (inf openstackInfrastructure) {
 	inf.metadataService = metadataService
 	inf.registry = registry
 	inf.platform = platform
 	inf.devicePathResolver = devicePathResolver
+	inf.logger = logger
 	return
 }
 
@@ -54,5 +60,10 @@ func (inf openstackInfrastructure) SetupNetworking(networks boshsettings.Network
 }
 
 func (inf openstackInfrastructure) GetEphemeralDiskPath(devicePath string) (realPath string, found bool) {
+	if devicePath == "" {
+		inf.logger.Info(openstackInfrastructureLogTag, "Ephemeral disk path is empty")
+		return "", true
+	}
+
 	return inf.platform.NormalizeDiskPath(devicePath)
 }

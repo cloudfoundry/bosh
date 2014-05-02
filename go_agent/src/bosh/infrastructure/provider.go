@@ -33,6 +33,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 		registry,
 		platform,
 		mappedDevicePathResolver,
+		logger,
 	)
 
 	openstackInfrastructure := NewOpenstackInfrastructure(
@@ -40,6 +41,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 		registry,
 		platform,
 		mappedDevicePathResolver,
+		logger,
 	)
 
 	p.infrastructures = map[string]Infrastructure{

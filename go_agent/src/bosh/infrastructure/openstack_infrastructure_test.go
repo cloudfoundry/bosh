@@ -9,6 +9,7 @@ import (
 	. "bosh/infrastructure"
 	fakedpresolv "bosh/infrastructure/devicepathresolver/fakes"
 	fakeinf "bosh/infrastructure/fakes"
+	boshlog "bosh/logger"
 	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 )
@@ -28,7 +29,8 @@ func init() {
 			registry = &fakeinf.FakeRegistry{}
 			platform = fakeplatform.NewFakePlatform()
 			devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
-			openstack = NewOpenstackInfrastructure(metadataService, registry, platform, devicePathResolver)
+			logger := boshlog.NewLogger(boshlog.LevelNone)
+			openstack = NewOpenstackInfrastructure(metadataService, registry, platform, devicePathResolver, logger)
 		})
 
 		Describe("SetupSsh", func() {
@@ -103,18 +105,34 @@ func init() {
 		})
 
 		Describe("GetEphemeralDiskPath", func() {
-			It("returns the real disk path given an AWS EBS hint", func() {
-				platform := fakeplatform.NewFakePlatform()
-				openstack := NewOpenstackInfrastructure(metadataService, registry, platform, devicePathResolver)
-
+			It("returns the real disk path given an openstack hint", func() {
 				platform.NormalizeDiskPathRealPath = "/dev/xvdb"
 				platform.NormalizeDiskPathFound = true
 
 				realPath, found := openstack.GetEphemeralDiskPath("/dev/sdb")
-
-				Expect(found).To(Equal(true))
+				Expect(found).To(BeTrue())
 				Expect(realPath).To(Equal("/dev/xvdb"))
+
 				Expect(platform.NormalizeDiskPathPath).To(Equal("/dev/sdb"))
+			})
+
+			It("returns false if path cannot be normalized", func() {
+				platform.NormalizeDiskPathRealPath = ""
+				platform.NormalizeDiskPathFound = false
+
+				realPath, found := openstack.GetEphemeralDiskPath("/dev/sdb")
+				Expect(found).To(BeFalse())
+				Expect(realPath).To(Equal(""))
+
+				Expect(platform.NormalizeDiskPathPath).To(Equal("/dev/sdb"))
+			})
+
+			It("returns an empty string to indicated that there is no ephemeral disk path if device path is empty", func() {
+				realPath, found := openstack.GetEphemeralDiskPath("")
+				Expect(found).To(BeTrue())
+				Expect(realPath).To(BeEmpty())
+
+				Expect(platform.NormalizeDiskPathCalled).To(BeFalse())
 			})
 		})
 	})
