@@ -38,9 +38,9 @@ describe 'deployment integrations', type: :integration do
     deploy_result = deploy_simple(no_track: true)
     task_id = Bosh::Spec::OutputParser.new(deploy_result).task_id('running')
 
-    cancel_output = bosh_runner.run("cancel task #{task_id}")
-    expect($?).to be_success
-    expect(cancel_output).to match /Task #{task_id} is getting canceled/
+    output, exit_code = bosh_runner.run("cancel task #{task_id}", return_exit_code: true)
+    expect(output).to match(/Task #{task_id} is getting canceled/)
+    expect(exit_code).to eq(0)
 
     error_event = events(task_id).last['error']
     expect(error_event['code']).to eq(10001)
