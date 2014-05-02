@@ -60,7 +60,9 @@ type FakePlatform struct {
 	SetupTmpDirErr    error
 
 	SetupManualNetworkingNetworks boshsettings.Networks
-	SetupDhcpNetworks             boshsettings.Networks
+
+	SetupDhcpNetworks boshsettings.Networks
+	SetupDhcpErr      error
 
 	MountPersistentDiskCalled     bool
 	MountPersistentDiskDevicePath string
@@ -190,7 +192,7 @@ func (p *FakePlatform) SetupHostname(hostname string) (err error) {
 
 func (p *FakePlatform) SetupDhcp(networks boshsettings.Networks) (err error) {
 	p.SetupDhcpNetworks = networks
-	return
+	return p.SetupDhcpErr
 }
 
 func (p *FakePlatform) SetupManualNetworking(networks boshsettings.Networks) (err error) {

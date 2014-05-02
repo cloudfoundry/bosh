@@ -277,13 +277,20 @@ func init() {
 
 		Describe("SetupNetworking", func() {
 			It("sets up DHCP on the platform", func() {
-				platform := fakeplatform.NewFakePlatform()
-				aws := NewAwsInfrastructure(metadataService, registry, platform, devicePathResolver)
 				networks := boshsettings.Networks{"bosh": boshsettings.Network{}}
 
-				aws.SetupNetworking(networks)
+				err := aws.SetupNetworking(networks)
+				Expect(err).ToNot(HaveOccurred())
 
 				Expect(platform.SetupDhcpNetworks).To(Equal(networks))
+			})
+
+			It("returns error if configuring DHCP fails", func() {
+				platform.SetupDhcpErr = errors.New("fake-setup-dhcp-err")
+
+				err := aws.SetupNetworking(boshsettings.Networks{})
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-setup-dhcp-err"))
 			})
 		})
 
