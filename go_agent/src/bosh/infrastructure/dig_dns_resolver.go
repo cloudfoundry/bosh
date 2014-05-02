@@ -1,40 +1,48 @@
 package infrastructure
 
 import (
-	bosherr "bosh/errors"
-	boshlog "bosh/logger"
 	"bytes"
 	"errors"
 	"fmt"
 	"net"
 	"os/exec"
 	"strings"
+
+	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 )
+
+const digDNSResolverLogTag = "Dig DNS Resolver"
 
 type DigDNSResolver struct {
 	logger boshlog.Logger
 }
 
-func NewDigDNSResolver(logger boshlog.Logger) (resolver DigDNSResolver) {
-	resolver.logger = logger
-	return
+func NewDigDNSResolver(logger boshlog.Logger) DigDNSResolver {
+	return DigDNSResolver{logger: logger}
 }
 
-func (res DigDNSResolver) LookupHost(dnsServers []string, host string) (ipString string, err error) {
+func (res DigDNSResolver) LookupHost(dnsServers []string, host string) (string, error) {
 	ip := net.ParseIP(host)
 	if ip != nil {
-		ipString = host
-		return
+		return host, nil
+	}
+
+	var err error
+	var ipString string
+
+	if len(dnsServers) == 0 {
+		err = errors.New("No DNS servers provided")
 	}
 
 	for _, dnsServer := range dnsServers {
 		ipString, err = res.lookupHostWithDNSServer(dnsServer, host)
 		if err == nil {
-			return
+			return ipString, nil
 		}
 	}
 
-	return
+	return "", err
 }
 
 func (res DigDNSResolver) lookupHostWithDNSServer(dnsServer string, host string) (ipString string, err error) {
@@ -45,22 +53,21 @@ func (res DigDNSResolver) lookupHostWithDNSServer(dnsServer string, host string)
 		"+short",
 		"+time=1",
 	)
-
 	if err != nil {
-		err = bosherr.WrapError(err, "Shelling out to dig")
-		return
+		return "", bosherr.WrapError(err, "Shelling out to dig")
 	}
 
 	ipString = strings.Split(stdout, "\n")[0]
 	ip := net.ParseIP(ipString)
 	if ip == nil {
-		err = errors.New("Resolving host")
+		return "", errors.New("Resolving host")
 	}
-	return
+
+	return ipString, nil
 }
 
-func (res DigDNSResolver) runCommand(cmdName string, args ...string) (stdout, stderr string, err error) {
-	res.logger.Debug("Dig DNS Resolver", "Running command: %s %s", cmdName, strings.Join(args, " "))
+func (res DigDNSResolver) runCommand(cmdName string, args ...string) (string, string, error) {
+	res.logger.Debug(digDNSResolverLogTag, "Running command: %s %s", cmdName, strings.Join(args, " "))
 	cmd := exec.Command(cmdName, args...)
 
 	stdoutWriter := bytes.NewBufferString("")
@@ -68,22 +75,24 @@ func (res DigDNSResolver) runCommand(cmdName string, args ...string) (stdout, st
 	cmd.Stdout = stdoutWriter
 	cmd.Stderr = stderrWriter
 
-	err = cmd.Start()
+	err := cmd.Start()
 	if err != nil {
-		err = bosherr.WrapError(err, "Starting dig command")
-		return
+		return "", "", bosherr.WrapError(err, "Starting dig command")
 	}
 
 	err = cmd.Wait()
-	stdout = string(stdoutWriter.Bytes())
-	stderr = string(stderrWriter.Bytes())
 
-	res.logger.Debug("Cmd Runner", "Stdout: %s", stdout)
-	res.logger.Debug("Cmd Runner", "Stderr: %s", stderr)
-	res.logger.Debug("Cmd Runner", "Successful: %t", err == nil)
+	stdout := string(stdoutWriter.Bytes())
+	res.logger.Debug(digDNSResolverLogTag, "Stdout: %s", stdout)
+
+	stderr := string(stderrWriter.Bytes())
+	res.logger.Debug(digDNSResolverLogTag, "Stderr: %s", stderr)
+
+	res.logger.Debug(digDNSResolverLogTag, "Successful: %t", err == nil)
 
 	if err != nil {
-		err = bosherr.WrapError(err, "Waiting for dig command")
+		return "", "", bosherr.WrapError(err, "Waiting for dig command")
 	}
-	return
+
+	return stdout, stderr, nil
 }
