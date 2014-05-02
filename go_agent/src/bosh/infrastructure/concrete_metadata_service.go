@@ -37,7 +37,6 @@ func NewConcreteMetadataService(
 
 func (ms concreteMetadataService) GetPublicKey() (string, error) {
 	url := fmt.Sprintf("%s/latest/meta-data/public-keys/0/openssh-key", ms.metadataHost)
-
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Getting open ssh key")
@@ -45,29 +44,29 @@ func (ms concreteMetadataService) GetPublicKey() (string, error) {
 
 	defer resp.Body.Close()
 
-	keyBytes, err := ioutil.ReadAll(resp.Body)
+	bytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Reading ssh key response body")
 	}
 
-	return string(keyBytes), nil
+	return string(bytes), nil
 }
 
 func (ms concreteMetadataService) GetInstanceID() (string, error) {
-	instanceIDURL := fmt.Sprintf("%s/latest/meta-data/instance-id", ms.metadataHost)
-	instanceIDResp, err := http.Get(instanceIDURL)
+	url := fmt.Sprintf("%s/latest/meta-data/instance-id", ms.metadataHost)
+	resp, err := http.Get(url)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Getting instance id from url")
 	}
 
-	defer instanceIDResp.Body.Close()
+	defer resp.Body.Close()
 
-	instanceIDBytes, err := ioutil.ReadAll(instanceIDResp.Body)
+	bytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Reading instance id response body")
 	}
 
-	return string(instanceIDBytes), nil
+	return string(bytes), nil
 }
 
 func (ms concreteMetadataService) GetRegistryEndpoint() (string, error) {
@@ -126,7 +125,11 @@ func (ms concreteMetadataService) resolveRegistryEndpoint(namedEndpoint string, 
 		return "", bosherr.WrapError(err, "Looking up registry")
 	}
 
-	registryURL.Host = fmt.Sprintf("%s:%s", registryIP, registryHostAndPort[1])
+	if len(registryHostAndPort) == 2 {
+		registryURL.Host = fmt.Sprintf("%s:%s", registryIP, registryHostAndPort[1])
+	} else {
+		registryURL.Host = registryIP
+	}
 
 	return registryURL.String(), nil
 }

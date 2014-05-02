@@ -219,9 +219,13 @@ func init() {
 
 			Context("when dns servers are provided", func() {
 				It("aws get settings", func() {
-					fakeDNSResolver := &fakeinf.FakeDNSResolver{
-						LookupHostIP: "127.0.0.1",
-					}
+					fakeDNSResolver := &fakeinf.FakeDNSResolver{}
+
+					fakeDNSResolver.RegisterRecord(fakeinf.FakeDNSRecord{
+						DNSServers: []string{"8.8.8.8", "9.9.9.9"},
+						Host:       "the.registry.name",
+						IP:         "127.0.0.1",
+					})
 
 					registryHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						Expect(r.Method).To(Equal("GET"))
@@ -273,8 +277,6 @@ func init() {
 					settings, err := aws.GetSettings()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(settings).To(Equal(expectedSettings))
-					Expect(fakeDNSResolver.LookupHostHost).To(Equal("the.registry.name"))
-					Expect(fakeDNSResolver.LookupHostDNSServers).To(Equal([]string{"8.8.8.8", "9.9.9.9"}))
 				})
 			})
 		})
