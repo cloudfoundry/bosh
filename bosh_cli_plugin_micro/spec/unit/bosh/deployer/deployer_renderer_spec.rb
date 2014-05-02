@@ -30,7 +30,7 @@ module Bosh::Deployer
         end
 
         expect(JSON.parse(@actual_json)).to include({
-          'time' => time.to_s,
+          'time' => time.to_i,
           'task' => 'fake-task',
           'tags' => [],
           'state' => 'fake_state',

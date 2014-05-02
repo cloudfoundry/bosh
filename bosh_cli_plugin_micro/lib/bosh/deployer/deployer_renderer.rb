@@ -17,7 +17,7 @@ module Bosh::Deployer
 
     def update(state, task)
       event = {
-        'time'     => Time.now,
+        'time'     => Time.now.to_i,
         'stage'    => @stage,
         'task'     => task,
         'tags'     => [],
