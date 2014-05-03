@@ -19,7 +19,7 @@ type Agent struct {
 	platform          boshplatform.Platform
 	actionDispatcher  ActionDispatcher
 	heartbeatInterval time.Duration
-	alertBuilder      boshalert.Builder
+	alertSender       AlertSender
 	jobSupervisor     boshjobsuper.JobSupervisor
 	specService       boshas.V1Service
 }
@@ -29,7 +29,7 @@ func New(
 	mbusHandler boshhandler.Handler,
 	platform boshplatform.Platform,
 	actionDispatcher ActionDispatcher,
-	alertBuilder boshalert.Builder,
+	alertSender AlertSender,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	specService boshas.V1Service,
 	heartbeatInterval time.Duration,
@@ -39,7 +39,7 @@ func New(
 	a.platform = platform
 	a.actionDispatcher = actionDispatcher
 	a.heartbeatInterval = heartbeatInterval
-	a.alertBuilder = alertBuilder
+	a.alertSender = alertSender
 	a.jobSupervisor = jobSupervisor
 	a.specService = specService
 	return
@@ -131,15 +131,9 @@ func (a Agent) getHeartbeat() (boshmbus.Heartbeat, error) {
 
 func (a Agent) handleJobFailure(errChan chan error) boshjobsuper.JobFailureHandler {
 	return func(monitAlert boshalert.MonitAlert) error {
-		alert, err := a.alertBuilder.Build(monitAlert)
+		err := a.alertSender.SendAlert(monitAlert)
 		if err != nil {
-			return bosherr.WrapError(err, "Building alert")
-		}
-
-		err = a.mbusHandler.SendToHealthManager("alert", alert)
-		if err != nil {
-			err = bosherr.WrapError(err, "Sending heartbeat")
-			errChan <- err
+			errChan <- bosherr.WrapError(err, "Sending alert")
 		}
 
 		return nil

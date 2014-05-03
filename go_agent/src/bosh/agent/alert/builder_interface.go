@@ -4,6 +4,17 @@ type Builder interface {
 	Build(input MonitAlert) (alert Alert, err error)
 }
 
+type SeverityLevel int
+
+const (
+	SeverityAlert    SeverityLevel = 1
+	SeverityCritical SeverityLevel = 2
+	SeverityError    SeverityLevel = 3
+	SeverityWarning  SeverityLevel = 4
+	SeverityIgnored  SeverityLevel = -1
+	SeverityDefault  SeverityLevel = SeverityCritical
+)
+
 type Alert struct {
 	ID        string        `json:"id"`
 	Severity  SeverityLevel `json:"severity"`

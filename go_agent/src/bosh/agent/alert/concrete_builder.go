@@ -62,17 +62,6 @@ func (b concreteBuilder) getCreatedAt(input MonitAlert) (timestamp int64) {
 	return createdAt.Unix()
 }
 
-type SeverityLevel int
-
-const (
-	SeverityAlert    SeverityLevel = 1
-	SeverityCritical SeverityLevel = 2
-	SeverityError    SeverityLevel = 3
-	SeverityWarning  SeverityLevel = 4
-	SeverityIgnored  SeverityLevel = -1
-	SeverityDefault  SeverityLevel = SeverityCritical
-)
-
 var eventToSeverity = map[string]SeverityLevel{
 	"action done":                  SeverityIgnored,
 	"checksum failed":              SeverityCritical,

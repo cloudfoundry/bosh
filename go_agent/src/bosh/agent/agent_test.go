@@ -46,6 +46,7 @@ func init() {
 			platform         *fakeplatform.FakePlatform
 			actionDispatcher *FakeActionDispatcher
 			alertBuilder     *fakealert.FakeAlertBuilder
+			alertSender      AlertSender
 			jobSupervisor    *fakejobsuper.FakeJobSupervisor
 			specService      *fakeas.FakeV1Service
 		)
@@ -56,9 +57,10 @@ func init() {
 			platform = fakeplatform.NewFakePlatform()
 			actionDispatcher = &FakeActionDispatcher{}
 			alertBuilder = fakealert.NewFakeAlertBuilder()
+			alertSender = NewAlertSender(handler, alertBuilder)
 			jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 			specService = fakeas.NewFakeV1Service()
-			agent = New(logger, handler, platform, actionDispatcher, alertBuilder, jobSupervisor, specService, 5*time.Millisecond)
+			agent = New(logger, handler, platform, actionDispatcher, alertSender, jobSupervisor, specService, 5*time.Millisecond)
 		})
 
 		Describe("Run", func() {
@@ -119,7 +121,7 @@ func init() {
 				It("sends initial heartbeat", func() {
 					// Configure periodic heartbeat every 5 hours
 					// so that we are sure that we will not receive it
-					agent = New(logger, handler, platform, actionDispatcher, alertBuilder, jobSupervisor, specService, 5*time.Hour)
+					agent = New(logger, handler, platform, actionDispatcher, alertSender, jobSupervisor, specService, 5*time.Hour)
 
 					// Immediately exit after sending initial heartbeat
 					handler.SendToHealthManagerErr = errors.New("stop")

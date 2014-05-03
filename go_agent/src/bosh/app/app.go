@@ -170,12 +170,14 @@ func (app *app) Setup(args []string) error {
 
 	alertBuilder := boshalert.NewBuilder(settingsService, app.logger)
 
+	alertSender := NewAlertSender(mbusHandler, alertBuilder)
+
 	app.agent = boshagent.New(
 		app.logger,
 		mbusHandler,
 		app.platform,
 		actionDispatcher,
-		alertBuilder,
+		alertSender,
 		jobSupervisor,
 		specService,
 		time.Minute,
