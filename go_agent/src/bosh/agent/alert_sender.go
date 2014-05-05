@@ -27,6 +27,10 @@ func (as AlertSender) SendAlert(monitAlert boshalert.MonitAlert) error {
 		return bosherr.WrapError(err, "Building alert")
 	}
 
+	if alert.Severity == boshalert.SeverityIgnored {
+		return nil
+	}
+
 	err = as.mbusHandler.SendToHealthManager("alert", alert)
 	if err != nil {
 		return bosherr.WrapError(err, "Sending heartbeat")
