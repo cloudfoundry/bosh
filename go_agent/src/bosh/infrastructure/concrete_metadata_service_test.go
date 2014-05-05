@@ -31,8 +31,11 @@ var _ = Describe("concreteMetadataService", func() {
 
 		BeforeEach(func() {
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				GinkgoRecover()
+
 				Expect(r.Method).To(Equal("GET"))
 				Expect(r.URL.Path).To(Equal("/latest/meta-data/public-keys/0/openssh-key"))
+
 				w.Write([]byte("fake-public-key"))
 			})
 
@@ -59,8 +62,11 @@ var _ = Describe("concreteMetadataService", func() {
 
 		BeforeEach(func() {
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				GinkgoRecover()
+
 				Expect(r.Method).To(Equal("GET"))
 				Expect(r.URL.Path).To(Equal("/latest/meta-data/instance-id"))
+
 				w.Write([]byte("fake-instance-id"))
 			})
 
@@ -87,6 +93,8 @@ var _ = Describe("concreteMetadataService", func() {
 		)
 
 		handlerFunc := func(w http.ResponseWriter, r *http.Request) {
+			GinkgoRecover()
+
 			Expect(r.Method).To(Equal("GET"))
 			Expect(r.URL.Path).To(Equal("/latest/user-data"))
 
@@ -147,6 +155,8 @@ var _ = Describe("concreteMetadataService", func() {
 		)
 
 		handlerFunc := func(w http.ResponseWriter, r *http.Request) {
+			GinkgoRecover()
+
 			Expect(r.Method).To(Equal("GET"))
 			Expect(r.URL.Path).To(Equal("/latest/user-data"))
 
