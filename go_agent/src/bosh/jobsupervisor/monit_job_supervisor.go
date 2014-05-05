@@ -47,22 +47,19 @@ func NewMonitJobSupervisor(
 	}
 }
 
-func (m monitJobSupervisor) Reload() (err error) {
+func (m monitJobSupervisor) Reload() error {
 	oldIncarnation, err := m.getIncarnation()
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting monit incarnation")
-		return err
+		return bosherr.WrapError(err, "Getting monit incarnation")
 	}
 
 	// Exit code or output cannot be trusted
 	m.runner.RunCommand("monit", "reload")
 
 	for attempt := 1; attempt < 60; attempt++ {
-		err = nil
 		currentIncarnation, err := m.getIncarnation()
 		if err != nil {
-			err = bosherr.WrapError(err, "Getting monit incarnation")
-			return err
+			return bosherr.WrapError(err, "Getting monit incarnation")
 		}
 
 		if oldIncarnation < currentIncarnation {
@@ -72,46 +69,41 @@ func (m monitJobSupervisor) Reload() (err error) {
 		time.Sleep(m.delayBetweenReloadCheckRetries)
 	}
 
-	err = bosherr.New("Failed to reload monit")
-	return
+	return bosherr.New("Failed to reload monit")
 }
 
-func (m monitJobSupervisor) Start() (err error) {
+func (m monitJobSupervisor) Start() error {
 	services, err := m.client.ServicesInGroup("vcap")
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting vcap services")
-		return
+		return bosherr.WrapError(err, "Getting vcap services")
 	}
 
 	for _, service := range services {
 		err = m.client.StartService(service)
 		if err != nil {
-			err = bosherr.WrapError(err, "Starting service %s", service)
-			return
+			return bosherr.WrapError(err, "Starting service %s", service)
 		}
 		m.logger.Debug(MonitTag, "Starting service %s", service)
 	}
 
-	return
+	return nil
 }
 
-func (m monitJobSupervisor) Stop() (err error) {
+func (m monitJobSupervisor) Stop() error {
 	services, err := m.client.ServicesInGroup("vcap")
 	if err != nil {
-		err = bosherr.WrapError(err, "Getting vcap services")
-		return
+		return bosherr.WrapError(err, "Getting vcap services")
 	}
 
 	for _, service := range services {
 		err = m.client.StopService(service)
 		if err != nil {
-			err = bosherr.WrapError(err, "Stopping service %s", service)
-			return
+			return bosherr.WrapError(err, "Stopping service %s", service)
 		}
 		m.logger.Debug(MonitTag, "Stopping service %s", service)
 	}
 
-	return
+	return nil
 }
 
 func (m monitJobSupervisor) Unmonitor() error {
@@ -147,6 +139,7 @@ func (m monitJobSupervisor) Status() (status string) {
 			status = "failing"
 		}
 	}
+
 	return
 }
 

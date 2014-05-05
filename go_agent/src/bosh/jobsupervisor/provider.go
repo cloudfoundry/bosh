@@ -22,8 +22,18 @@ func NewProvider(
 	dirProvider boshdir.DirectoriesProvider,
 	handler boshhandler.Handler,
 ) (p provider) {
+	monitJobSupervisor := NewMonitJobSupervisor(
+		platform.GetFs(),
+		platform.GetRunner(),
+		client,
+		logger,
+		dirProvider,
+		2825,
+		5*time.Second,
+	)
+
 	p.supervisors = map[string]JobSupervisor{
-		"monit":      NewMonitJobSupervisor(platform.GetFs(), platform.GetRunner(), client, logger, dirProvider, 2825, 5*time.Second),
+		"monit":      monitJobSupervisor,
 		"dummy":      newDummyJobSupervisor(),
 		"dummy-nats": NewDummyNatsJobSupervisor(handler),
 	}
@@ -33,7 +43,6 @@ func NewProvider(
 
 func (p provider) Get(name string) (supervisor JobSupervisor, err error) {
 	supervisor, found := p.supervisors[name]
-
 	if !found {
 		err = bosherr.New("JobSupervisor %s could not be found", name)
 	}
