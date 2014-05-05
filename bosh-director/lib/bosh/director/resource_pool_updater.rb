@@ -134,7 +134,7 @@ module Bosh::Director
     def reserve_networks
       network = @resource_pool.network
 
-      each_idle_vm do |idle_vm|
+      each_idle_vm_with_index do |idle_vm, index|
         unless idle_vm.network_reservation
           reservation = NetworkReservation.new(
               :type => NetworkReservation::DYNAMIC)
@@ -144,11 +144,11 @@ module Bosh::Director
             case reservation.error
               when NetworkReservation::CAPACITY
                 raise NetworkReservationNotEnoughCapacity,
-                      "`#{name}/#{index}' asked for a dynamic IP " +
+                      "'#{@resource_pool.name}/#{index}' asked for a dynamic IP " +
                       "but there were no more available"
               else
                 raise NetworkReservationError,
-                      "`#{name}/#{index}' failed to reserve " +
+                      "'#{@resource_pool.name}/#{index}' failed to reserve " +
                       "dynamic IP: #{reservation.error}"
             end
           end

@@ -170,6 +170,73 @@ module Bosh::Director
       end
     end
 
-    describe :reserve_networks
+    describe '#reserve_networks' do
+      let(:network) { instance_double('Bosh::Director::DeploymentPlan::DynamicNetwork') }
+      before { allow(resource_pool).to receive(:network).and_return(network) }
+
+      let(:vm) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-allocated-vm') }
+      let(:allocated_vm) { instance_double('Bosh::Director::DeploymentPlan::IdleVm', changed?: true, vm: vm, network_reservation: nil) }
+
+      let(:vm) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-idle-vm') }
+      let(:idle_vm) { instance_double('Bosh::Director::DeploymentPlan::IdleVm', changed?: true, vm: vm, network_reservation: nil) }
+
+      before do
+        allow(resource_pool).to receive(:allocated_vms).and_return([allocated_vm])
+        allow(resource_pool).to receive(:idle_vms).and_return([idle_vm])
+      end
+
+      let(:network_reservation) { instance_double('Bosh::Director::NetworkReservation', reserved?: true) }
+
+      it 'finds first unreserved network to reserve' do
+        expect(NetworkReservation).to receive(:new).with(type: NetworkReservation::DYNAMIC).and_return(network_reservation).twice
+        expect(network).to receive(:reserve).with(network_reservation).twice
+
+        expect(idle_vm).to receive(:network_reservation=).with(network_reservation)
+        expect(allocated_vm).to receive(:network_reservation=).with(network_reservation)
+
+        resource_pool_updater.reserve_networks
+      end
+
+      context 'when network was already reserved' do
+        let(:network_reservation) do
+          instance_double(
+            'Bosh::Director::NetworkReservation',
+            reserved?: false,
+            error: 'fake-default-error'
+          )
+        end
+
+        it 'raises an error' do
+          expect(NetworkReservation).to receive(:new).with(type: NetworkReservation::DYNAMIC).and_return(network_reservation)
+          expect(network).to receive(:reserve).with(network_reservation)
+          expect {
+            resource_pool_updater.reserve_networks
+          }.to raise_error(NetworkReservationError,
+            %r{'large/0' failed to reserve dynamic IP: fake-default-error}
+          )
+        end
+      end
+
+      context 'when network reservation fails with not enough capacity' do
+        let(:network_reservation) do
+          instance_double(
+            'Bosh::Director::NetworkReservation',
+            reserved?: false,
+            error: NetworkReservation::CAPACITY
+          )
+        end
+
+        it 'raises an error' do
+          expect(NetworkReservation).to receive(:new).with(type: NetworkReservation::DYNAMIC).and_return(network_reservation)
+          expect(network).to receive(:reserve).with(network_reservation)
+          expect {
+            resource_pool_updater.reserve_networks
+          }.to raise_error(
+            NetworkReservationNotEnoughCapacity,
+            %r{'large/0' asked for a dynamic IP but there were no more available}
+          )
+        end
+      end
+    end
   end
 end
