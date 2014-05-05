@@ -1,19 +1,16 @@
 package infrastructure_test
 
 import (
-	//	"fmt"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
-	//	"net/url"
-	//	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"bosh/errors"
 	. "bosh/infrastructure"
 	fakeinf "bosh/infrastructure/fakes"
-	"fmt"
 )
 
 var _ = Describe("concreteMetadataService", func() {
