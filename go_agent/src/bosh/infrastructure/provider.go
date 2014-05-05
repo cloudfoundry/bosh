@@ -19,7 +19,10 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 		NewDigDNSResolver(logger),
 	)
 
-	registry := NewConcreteRegistry(metadataService)
+	// Currently useServerNameAsID boolean setting is hard coded below
+	// because we do not support arbitrary infrastructure configurations
+	awsRegistry := NewConcreteRegistry(metadataService, false)
+	openstackRegistry := NewConcreteRegistry(metadataService, true)
 
 	fs := platform.GetFs()
 	dirProvider := platform.GetDirProvider()
@@ -30,7 +33,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 
 	awsInfrastructure := NewAwsInfrastructure(
 		metadataService,
-		registry,
+		awsRegistry,
 		platform,
 		mappedDevicePathResolver,
 		logger,
@@ -38,7 +41,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 
 	openstackInfrastructure := NewOpenstackInfrastructure(
 		metadataService,
-		registry,
+		openstackRegistry,
 		platform,
 		mappedDevicePathResolver,
 		logger,

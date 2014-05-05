@@ -32,7 +32,7 @@ var _ = Describe("Provider", func() {
 				NewDigDNSResolver(logger),
 			)
 
-			registry := NewConcreteRegistry(metadataService)
+			registry := NewConcreteRegistry(metadataService, false)
 
 			expectedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(
 				500*time.Millisecond,
@@ -58,7 +58,7 @@ var _ = Describe("Provider", func() {
 				NewDigDNSResolver(logger),
 			)
 
-			registry := NewConcreteRegistry(metadataService)
+			registry := NewConcreteRegistry(metadataService, true)
 
 			expectedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(
 				500*time.Millisecond,

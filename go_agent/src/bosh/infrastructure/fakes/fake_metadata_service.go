@@ -7,6 +7,9 @@ type FakeMetadataService struct {
 	InstanceID       string
 	GetInstanceIDErr error
 
+	ServerName       string
+	GetServerNameErr error
+
 	RegistryEndpoint       string
 	GetRegistryEndpointErr error
 }
@@ -17,6 +20,10 @@ func (ms FakeMetadataService) GetPublicKey() (string, error) {
 
 func (ms FakeMetadataService) GetInstanceID() (string, error) {
 	return ms.InstanceID, ms.GetInstanceIDErr
+}
+
+func (ms FakeMetadataService) GetServerName() (string, error) {
+	return ms.ServerName, ms.GetServerNameErr
 }
 
 func (ms FakeMetadataService) GetRegistryEndpoint() (string, error) {

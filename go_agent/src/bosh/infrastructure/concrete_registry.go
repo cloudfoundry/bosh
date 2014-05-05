@@ -11,11 +11,18 @@ import (
 )
 
 type concreteRegistry struct {
-	metadataService MetadataService
+	metadataService   MetadataService
+	useServerNameAsID bool
 }
 
-func NewConcreteRegistry(metadataService MetadataService) concreteRegistry {
-	return concreteRegistry{metadataService: metadataService}
+func NewConcreteRegistry(
+	metadataService MetadataService,
+	useServerNameAsID bool,
+) concreteRegistry {
+	return concreteRegistry{
+		metadataService:   metadataService,
+		useServerNameAsID: useServerNameAsID,
+	}
 }
 
 type settingsWrapperType struct {
@@ -25,9 +32,19 @@ type settingsWrapperType struct {
 func (r concreteRegistry) GetSettings() (boshsettings.Settings, error) {
 	var settings boshsettings.Settings
 
-	instanceID, err := r.metadataService.GetInstanceID()
-	if err != nil {
-		return settings, bosherr.WrapError(err, "Getting instance id")
+	var identifier string
+	var err error
+
+	if r.useServerNameAsID {
+		identifier, err = r.metadataService.GetServerName()
+		if err != nil {
+			return settings, bosherr.WrapError(err, "Getting server name")
+		}
+	} else {
+		identifier, err = r.metadataService.GetInstanceID()
+		if err != nil {
+			return settings, bosherr.WrapError(err, "Getting instance id")
+		}
 	}
 
 	registryEndpoint, err := r.metadataService.GetRegistryEndpoint()
@@ -35,7 +52,7 @@ func (r concreteRegistry) GetSettings() (boshsettings.Settings, error) {
 		return settings, bosherr.WrapError(err, "Getting registry endpoint")
 	}
 
-	settingsURL := fmt.Sprintf("%s/instances/%s/settings", registryEndpoint, instanceID)
+	settingsURL := fmt.Sprintf("%s/instances/%s/settings", registryEndpoint, identifier)
 	wrapperResponse, err := http.Get(settingsURL)
 	if err != nil {
 		return settings, bosherr.WrapError(err, "Getting settings from url")

@@ -80,6 +80,65 @@ var _ = Describe("concreteMetadataService", func() {
 		})
 	})
 
+	Describe("GetServerName", func() {
+		var (
+			ts         *httptest.Server
+			serverName *string
+		)
+
+		handlerFunc := func(w http.ResponseWriter, r *http.Request) {
+			Expect(r.Method).To(Equal("GET"))
+			Expect(r.URL.Path).To(Equal("/latest/user-data"))
+
+			var jsonStr string
+
+			if serverName == nil {
+				jsonStr = `{}`
+			} else {
+				jsonStr = fmt.Sprintf(`{"server":{"name":"%s"}}`, *serverName)
+			}
+
+			w.Write([]byte(jsonStr))
+		}
+
+		BeforeEach(func() {
+			serverName = nil
+
+			handler := http.HandlerFunc(handlerFunc)
+			ts = httptest.NewServer(handler)
+			metadataService = NewConcreteMetadataService(ts.URL, dnsResolver)
+		})
+
+		AfterEach(func() {
+			ts.Close()
+		})
+
+		Context("when the server name is present in the JSON", func() {
+			BeforeEach(func() {
+				name := "fake-server-name"
+				serverName = &name
+			})
+
+			It("returns the server name", func() {
+				name, err := metadataService.GetServerName()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(name).To(Equal("fake-server-name"))
+			})
+		})
+
+		Context("when the server name is not present in the JSON", func() {
+			BeforeEach(func() {
+				serverName = nil
+			})
+
+			It("returns an error", func() {
+				name, err := metadataService.GetServerName()
+				Expect(err).To(HaveOccurred())
+				Expect(name).To(BeEmpty())
+			})
+		})
+	})
+
 	Describe("GetRegistryEndpoint", func() {
 		var (
 			ts          *httptest.Server

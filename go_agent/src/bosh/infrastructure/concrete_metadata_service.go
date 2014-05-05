@@ -20,6 +20,9 @@ type userDataType struct {
 	Registry struct {
 		Endpoint string
 	}
+	Server struct {
+		Name string // Name given by CPI e.g. vm-384sd4-r7re9e...
+	}
 	DNS struct {
 		Nameserver []string
 	}
@@ -67,6 +70,21 @@ func (ms concreteMetadataService) GetInstanceID() (string, error) {
 	}
 
 	return string(bytes), nil
+}
+
+func (ms concreteMetadataService) GetServerName() (string, error) {
+	userData, err := ms.getUserData()
+	if err != nil {
+		return "", bosherr.WrapError(err, "Getting user data")
+	}
+
+	serverName := userData.Server.Name
+
+	if len(serverName) == 0 {
+		return "", bosherr.New("Empty server name")
+	}
+
+	return serverName, nil
 }
 
 func (ms concreteMetadataService) GetRegistryEndpoint() (string, error) {
