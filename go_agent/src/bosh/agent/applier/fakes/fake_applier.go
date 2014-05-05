@@ -1,17 +1,17 @@
 package fakes
 
 import (
-	as "bosh/agent/applier/applyspec"
+	boshas "bosh/agent/applier/applyspec"
 )
 
 type FakeApplier struct {
 	Prepared                bool
-	PrepareDesiredApplySpec as.ApplySpec
+	PrepareDesiredApplySpec boshas.ApplySpec
 	PrepareError            error
 
 	Applied               bool
-	ApplyCurrentApplySpec as.ApplySpec
-	ApplyDesiredApplySpec as.ApplySpec
+	ApplyCurrentApplySpec boshas.ApplySpec
+	ApplyDesiredApplySpec boshas.ApplySpec
 	ApplyError            error
 }
 
@@ -19,13 +19,13 @@ func NewFakeApplier() *FakeApplier {
 	return &FakeApplier{}
 }
 
-func (s *FakeApplier) Prepare(desiredApplySpec as.ApplySpec) error {
+func (s *FakeApplier) Prepare(desiredApplySpec boshas.ApplySpec) error {
 	s.Prepared = true
 	s.PrepareDesiredApplySpec = desiredApplySpec
 	return s.PrepareError
 }
 
-func (s *FakeApplier) Apply(currentApplySpec, desiredApplySpec as.ApplySpec) error {
+func (s *FakeApplier) Apply(currentApplySpec, desiredApplySpec boshas.ApplySpec) error {
 	s.Applied = true
 	s.ApplyCurrentApplySpec = currentApplySpec
 	s.ApplyDesiredApplySpec = desiredApplySpec

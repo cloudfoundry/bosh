@@ -92,10 +92,7 @@ var _ = Describe("Provider", func() {
 		})
 
 		It("returns dummy infrastructure", func() {
-			expectedDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver(
-				1*time.Millisecond,
-				platform.GetFs(),
-			)
+			expectedDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver()
 
 			expectedInf := NewDummyInfrastructure(
 				platform.GetFs(),
@@ -110,10 +107,7 @@ var _ = Describe("Provider", func() {
 		})
 
 		It("returns warden infrastructure", func() {
-			expectedDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver(
-				1*time.Millisecond,
-				platform.GetFs(),
-			)
+			expectedDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver()
 
 			expectedInf := NewWardenInfrastructure(
 				platform.GetDirProvider(),

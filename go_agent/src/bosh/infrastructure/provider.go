@@ -26,7 +26,7 @@ func NewProvider(logger boshlog.Logger, platform boshplatform.Platform) (p Provi
 
 	mappedDevicePathResolver := boshdpresolv.NewMappedDevicePathResolver(500*time.Millisecond, platform.GetFs())
 	vsphereDevicePathResolver := boshdpresolv.NewVsphereDevicePathResolver(500*time.Millisecond, platform.GetFs())
-	dummyDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver(1*time.Millisecond, fs)
+	dummyDevicePathResolver := boshdpresolv.NewDummyDevicePathResolver()
 
 	awsInfrastructure := NewAwsInfrastructure(
 		metadataService,
