@@ -62,7 +62,9 @@ func (m monitJobSupervisor) Reload() error {
 			return bosherr.WrapError(err, "Getting monit incarnation")
 		}
 
-		if oldIncarnation < currentIncarnation {
+		// Incarnation id can decrease or increase because
+		// monit uses time(...) and system time can be changed
+		if oldIncarnation != currentIncarnation {
 			return nil
 		}
 

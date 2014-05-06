@@ -119,6 +119,24 @@ var _ = Describe("monitJobSupervisor", func() {
 			Expect(runner.RunCommands[0]).To(Equal([]string{"monit", "reload"}))
 			Expect(client.StatusCalledTimes).To(Equal(60))
 		})
+
+		It("is successful if the incarnation id is different (<, or > old incarnation id)", func() {
+			client.Incarnations = []int{2, 2, 1}
+			client.StatusStatus = fakemonit.FakeMonitStatus{
+				Services: []boshmonit.Service{
+					boshmonit.Service{Monitored: true, Status: "failing"},
+					boshmonit.Service{Monitored: true, Status: "running"},
+				},
+				Incarnation: 2,
+			}
+
+			err := monit.Reload()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(len(runner.RunCommands)).To(Equal(1))
+			Expect(runner.RunCommands[0]).To(Equal([]string{"monit", "reload"}))
+			Expect(client.StatusCalledTimes).To(Equal(3))
+		})
 	})
 
 	Describe("Start", func() {
