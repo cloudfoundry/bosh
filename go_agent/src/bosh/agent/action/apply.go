@@ -27,7 +27,7 @@ func (a ApplyAction) IsPersistent() bool {
 	return false
 }
 
-func (a ApplyAction) Run(desiredSpec boshas.V1ApplySpec) (interface{}, error) {
+func (a ApplyAction) Run(desiredSpec boshas.V1ApplySpec) (string, error) {
 	if desiredSpec.ConfigurationHash != "" {
 		currentSpec, err := a.specService.Get()
 		if err != nil {
