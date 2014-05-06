@@ -25,7 +25,7 @@ type monitJobSupervisor struct {
 	delayBetweenReloadCheckRetries time.Duration
 }
 
-const MonitTag = "Monit Job Supervisor"
+const monitJobSupervisorLogTag = "monitJobSupervisor"
 
 func NewMonitJobSupervisor(
 	fs boshsys.FileSystem,
@@ -48,6 +48,8 @@ func NewMonitJobSupervisor(
 }
 
 func (m monitJobSupervisor) Reload() error {
+	var oldIncarnation, currentIncarnation int
+
 	oldIncarnation, err := m.getIncarnation()
 	if err != nil {
 		return bosherr.WrapError(err, "Getting monit incarnation")
@@ -57,7 +59,7 @@ func (m monitJobSupervisor) Reload() error {
 	m.runner.RunCommand("monit", "reload")
 
 	for attempt := 1; attempt < 60; attempt++ {
-		currentIncarnation, err := m.getIncarnation()
+		currentIncarnation, err = m.getIncarnation()
 		if err != nil {
 			return bosherr.WrapError(err, "Getting monit incarnation")
 		}
@@ -68,10 +70,19 @@ func (m monitJobSupervisor) Reload() error {
 			return nil
 		}
 
+		m.logger.Debug(
+			monitJobSupervisorLogTag,
+			"Waiting for monit to reload: before=%s after=%s",
+			oldIncarnation, currentIncarnation,
+		)
+
 		time.Sleep(m.delayBetweenReloadCheckRetries)
 	}
 
-	return bosherr.New("Failed to reload monit")
+	return bosherr.New(
+		"Failed to reload monit: before=%s after=%s",
+		oldIncarnation, currentIncarnation,
+	)
 }
 
 func (m monitJobSupervisor) Start() error {
@@ -85,7 +96,7 @@ func (m monitJobSupervisor) Start() error {
 		if err != nil {
 			return bosherr.WrapError(err, "Starting service %s", service)
 		}
-		m.logger.Debug(MonitTag, "Starting service %s", service)
+		m.logger.Debug(monitJobSupervisorLogTag, "Starting service %s", service)
 	}
 
 	return nil
@@ -102,7 +113,7 @@ func (m monitJobSupervisor) Stop() error {
 		if err != nil {
 			return bosherr.WrapError(err, "Stopping service %s", service)
 		}
-		m.logger.Debug(MonitTag, "Stopping service %s", service)
+		m.logger.Debug(monitJobSupervisorLogTag, "Stopping service %s", service)
 	}
 
 	return nil
@@ -119,7 +130,7 @@ func (m monitJobSupervisor) Unmonitor() error {
 		if err != nil {
 			return bosherr.WrapError(err, "Unmonitoring service %s", service)
 		}
-		m.logger.Debug(MonitTag, "Unmonitoring service %s", service)
+		m.logger.Debug(monitJobSupervisorLogTag, "Unmonitoring service %s", service)
 	}
 
 	return nil
