@@ -1,8 +1,9 @@
 package stats
 
 import (
-	bosherr "bosh/errors"
 	sigar "github.com/cloudfoundry/gosigar"
+
+	bosherr "bosh/errors"
 )
 
 type sigarStatsCollector struct {

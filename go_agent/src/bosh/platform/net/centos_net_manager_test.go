@@ -1,4 +1,4 @@
-package platform_test
+package net_test
 
 import (
 	"time"
