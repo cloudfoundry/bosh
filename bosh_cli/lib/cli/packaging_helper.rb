@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 # This relies on having the following instance variables in a host class:
 # @dev_builds_dir, @final_builds_dir, @blobstore,
 # @name, @version, @tarball_path, @final, @artefact_type
@@ -44,15 +42,15 @@ module Bosh::Cli
         new_final_version = @final_index.latest_version.to_i + 1
         notes << "new final version #{new_final_version}"
       elsif new_version?
-        notes << "new version"
+        notes << 'new version'
       end
 
-      notes << "older than latest" if older_version?
+      notes << 'older than latest' if older_version?
       notes
     end
 
     def build
-      with_indent("  ") do
+      with_indent('  ') do
         use_final_version || use_dev_version || generate_tarball
       end
       upload_tarball(@tarball_path) if final? && !dry_run?
@@ -60,20 +58,20 @@ module Bosh::Cli
     end
 
     def use_final_version
-      say("Final version:", " ")
+      say('Final version:', ' ')
 
       item = @final_index[fingerprint]
 
       if item.nil?
-        say("NOT FOUND".make_red)
+        say('NOT FOUND'.make_red)
         return nil
       end
 
-      blobstore_id = item["blobstore_id"]
-      version      = item["version"]
+      blobstore_id = item['blobstore_id']
+      version      = item['version']
 
       if blobstore_id.nil?
-        say("No blobstore id".make_red)
+        say('No blobstore id'.make_red)
         return nil
       end
 
@@ -81,29 +79,29 @@ module Bosh::Cli
       need_fetch = true
 
       if File.exists?(filename)
-        say("FOUND LOCAL".make_green)
-        if file_checksum(filename) == item["sha1"]
+        say('FOUND LOCAL'.make_green)
+        if file_checksum(filename) == item['sha1']
           @tarball_path = filename
           need_fetch = false
         else
-          say("LOCAL CHECKSUM MISMATCH".make_red)
+          say('LOCAL CHECKSUM MISMATCH'.make_red)
           need_fetch = true
         end
       end
 
       if need_fetch
         say("Downloading `#{name} (#{version})'...".make_green)
-        tmp_file = File.open(File.join(Dir.mktmpdir, name), "w")
+        tmp_file = File.open(File.join(Dir.mktmpdir, name), 'w')
         @blobstore.get(blobstore_id, tmp_file)
         tmp_file.close
-        if Digest::SHA1.file(tmp_file.path).hexdigest == item["sha1"]
+        if Digest::SHA1.file(tmp_file.path).hexdigest == item['sha1']
           @tarball_path = @final_index.add_version(fingerprint,
                                                    item,
                                                    tmp_file.path)
         else
           err("`#{name}' (#{version}) is corrupted in blobstore " +
                   "(id=#{blobstore_id}), " +
-                  "please remove it manually and re-generate the final release")
+            'please remove it manually and re-generate the final release')
         end
       end
 
@@ -117,25 +115,25 @@ module Bosh::Cli
     end
 
     def use_dev_version
-      say("Dev version:", "   ")
+      say('Dev version:', '   ')
       item = @dev_index[fingerprint]
 
       if item.nil?
-        say("NOT FOUND".make_red)
+        say('NOT FOUND'.make_red)
         return nil
       end
 
-      version = item["version"]
+      version = item['version']
       filename = @dev_index.filename(version)
 
       if File.exists?(filename)
-        say("FOUND LOCAL".make_green)
+        say('FOUND LOCAL'.make_green)
       else
-        say("TARBALL MISSING".make_red)
+        say('TARBALL MISSING'.make_red)
         return nil
       end
 
-      if file_checksum(filename) == item["sha1"]
+      if file_checksum(filename) == item['sha1']
         @tarball_path = filename
         @version = version
         @used_dev_version = true
@@ -147,7 +145,7 @@ module Bosh::Cli
 
     def generate_tarball
       if final?
-        err_message = "No matching build found for " +
+        err_message = 'No matching build found for ' +
             "`#{@name}' #{@artefact_type}.\n" +
             "Please consider creating a dev release first.\n" +
             "The fingerprint is `#{fingerprint}'."
@@ -160,7 +158,7 @@ module Bosh::Cli
       version = "#{current_final}.#{new_minor}-dev"
       tmp_file = Tempfile.new(name)
 
-      say("Generating...")
+      say('Generating...')
 
       copy_files
 
@@ -172,7 +170,7 @@ module Bosh::Cli
       end
 
       item = {
-        "version" => version
+        'version' => version
       }
 
       unless dry_run?
@@ -192,20 +190,20 @@ module Bosh::Cli
       say("Uploading final version #{version}...")
 
       if item
-        say("This package has already been uploaded")
+        say('This package has already been uploaded')
         return
       end
 
       version = @final_index.latest_version.to_i + 1
 
       blobstore_id = nil
-      File.open(path, "r") do |f|
+      File.open(path, 'r') do |f|
         blobstore_id = @blobstore.create(f)
       end
 
       item = {
-        "blobstore_id" => blobstore_id,
-        "version" => version
+        'blobstore_id' => blobstore_id,
+        'version' => version
       }
 
       say("Uploaded, blobstore id #{blobstore_id}")
@@ -227,7 +225,7 @@ module Bosh::Cli
         file_checksum(@tarball_path)
       else
         raise RuntimeError,
-              "cannot read checksum for not yet generated package/job"
+          'cannot read checksum for not yet generated package/job'
       end
     end
 
@@ -239,11 +237,11 @@ module Bosh::Cli
     # fingerprints to change, hence the exact values below.
     def tracked_permissions(path)
       if File.directory?(path)
-        "40755"
+        '40755'
       elsif File.executable?(path)
-        "100755"
+        '100755'
       else
-        "100644"
+        '100644'
       end
     end
   end
