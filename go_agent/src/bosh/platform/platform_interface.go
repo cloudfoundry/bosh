@@ -37,6 +37,7 @@ type Platform interface {
 	SetupDataDir() (err error)
 	SetupTmpDir() (err error)
 	SetupMonitUser() (err error)
+	StartMonit() (err error)
 	SetupRuntimeConfiguration() (err error)
 
 	// Disk management
@@ -49,6 +50,8 @@ type Platform interface {
 
 	GetFileContentsFromCDROM(filePath string) (contents []byte, err error)
 
-	StartMonit() (err error)
+	GetDefaultNetwork() (boshsettings.Network, error)
+
+	// Additional monit management
 	GetMonitCredentials() (username, password string, err error)
 }

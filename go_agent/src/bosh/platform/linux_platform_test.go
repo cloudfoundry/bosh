@@ -16,7 +16,7 @@ import (
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	fakedisk "bosh/platform/disk/fakes"
-	boshnet "bosh/platform/net"
+	fakenet "bosh/platform/net/fakes"
 	fakestats "bosh/platform/stats/fakes"
 	boshvitals "bosh/platform/vitals"
 	boshdirs "bosh/settings/directories"
@@ -70,7 +70,7 @@ var _ = Describe("LinuxPlatform", func() {
 	JustBeforeEach(func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
 
-		netManager := boshnet.NewCentosNetManager(fs, cmdRunner, 1*time.Millisecond, logger)
+		netManager := &fakenet.FakeNetManager{}
 
 		platform = NewLinuxPlatform(
 			fs,

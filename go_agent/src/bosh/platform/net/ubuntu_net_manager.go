@@ -102,7 +102,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 prepend domain-name-servers {{ . }};
 `
 
-func (net ubuntuNetManager) SetupManualNetworking(networks boshsettings.Networks, errChan chan error) error {
+func (net ubuntuNetManager) SetupManualNetworking(networks boshsettings.Networks, errCh chan error) error {
 	modifiedNetworks, written, err := net.writeNetworkInterfaces(networks)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing network interfaces")
@@ -117,12 +117,16 @@ func (net ubuntuNetManager) SetupManualNetworking(networks boshsettings.Networks
 		return bosherr.WrapError(err, "Writing resolv.conf")
 	}
 
-	go net.gratuitiousArp(modifiedNetworks, errChan)
+	go net.gratuitiousArp(modifiedNetworks, errCh)
 
 	return nil
 }
 
-func (net ubuntuNetManager) gratuitiousArp(networks []customNetwork, errChan chan error) {
+func (net ubuntuNetManager) GetDefaultNetwork() (boshsettings.Network, error) {
+	return boshsettings.Network{}, nil
+}
+
+func (net ubuntuNetManager) gratuitiousArp(networks []customNetwork, errCh chan error) {
 	for i := 0; i < 6; i++ {
 		for _, network := range networks {
 			for !net.fs.FileExists(filepath.Join("/sys/class/net", network.Interface)) {
@@ -138,8 +142,8 @@ func (net ubuntuNetManager) gratuitiousArp(networks []customNetwork, errChan cha
 		}
 	}
 
-	if errChan != nil {
-		errChan <- nil
+	if errCh != nil {
+		errCh <- nil
 	}
 }
 

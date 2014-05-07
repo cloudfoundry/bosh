@@ -95,7 +95,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 {{ range .DNSServers }}prepend domain-name-servers {{ . }};
 {{ end }}`
 
-func (net centosNetManager) SetupManualNetworking(networks boshsettings.Networks, errChan chan error) error {
+func (net centosNetManager) SetupManualNetworking(networks boshsettings.Networks, errCh chan error) error {
 	modifiedNetworks, err := net.writeIfcfgs(networks)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing network interfaces")
@@ -108,12 +108,16 @@ func (net centosNetManager) SetupManualNetworking(networks boshsettings.Networks
 		return bosherr.WrapError(err, "Writing resolv.conf")
 	}
 
-	go net.gratuitiousArp(modifiedNetworks, errChan)
+	go net.gratuitiousArp(modifiedNetworks, errCh)
 
 	return nil
 }
 
-func (net centosNetManager) gratuitiousArp(networks []customNetwork, errChan chan error) {
+func (net centosNetManager) GetDefaultNetwork() (boshsettings.Network, error) {
+	return boshsettings.Network{}, nil
+}
+
+func (net centosNetManager) gratuitiousArp(networks []customNetwork, errCh chan error) {
 	for i := 0; i < 6; i++ {
 		for _, network := range networks {
 			for !net.fs.FileExists(filepath.Join("/sys/class/net", network.Interface)) {
@@ -129,8 +133,8 @@ func (net centosNetManager) gratuitiousArp(networks []customNetwork, errChan cha
 		}
 	}
 
-	if errChan != nil {
-		errChan <- nil
+	if errCh != nil {
+		errCh <- nil
 	}
 }
 

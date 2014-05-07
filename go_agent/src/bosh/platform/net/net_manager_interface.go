@@ -6,11 +6,15 @@ import (
 
 type NetManager interface {
 	// SetupManualNetworking configures network interfaces with a static ip.
-	// If errChan is provided, nil or an error will be sent
+	// If errCh is provided, nil or an error will be sent
 	// upon completion of background network reconfiguration (e.g. arping).
-	SetupManualNetworking(networks boshsettings.Networks, errChan chan error) (err error)
+	SetupManualNetworking(networks boshsettings.Networks, errCh chan error) error
 
-	SetupDhcp(networks boshsettings.Networks) (err error)
+	SetupDhcp(networks boshsettings.Networks) error
+
+	// Ideally we would find a network based on a MAC address
+	// but current CPI implementations do not include it
+	GetDefaultNetwork() (boshsettings.Network, error)
 }
 
 type customNetwork struct {

@@ -51,21 +51,21 @@ func (a Agent) Run() error {
 		return bosherr.WrapError(err, "Starting Monit")
 	}
 
-	errChan := make(chan error, 1)
+	errCh := make(chan error, 1)
 
 	a.actionDispatcher.ResumePreviouslyDispatchedTasks()
 
-	go a.subscribeActionDispatcher(errChan)
-	go a.generateHeartbeats(errChan)
-	go a.jobSupervisor.MonitorJobFailures(a.handleJobFailure(errChan))
+	go a.subscribeActionDispatcher(errCh)
+	go a.generateHeartbeats(errCh)
+	go a.jobSupervisor.MonitorJobFailures(a.handleJobFailure(errCh))
 
 	select {
-	case err = <-errChan:
+	case err = <-errCh:
 		return err
 	}
 }
 
-func (a Agent) subscribeActionDispatcher(errChan chan error) {
+func (a Agent) subscribeActionDispatcher(errCh chan error) {
 	defer a.logger.HandlePanic("Agent Message Bus Handler")
 
 	err := a.mbusHandler.Run(a.actionDispatcher.Dispatch)
@@ -73,37 +73,37 @@ func (a Agent) subscribeActionDispatcher(errChan chan error) {
 		err = bosherr.WrapError(err, "Message Bus Handler")
 	}
 
-	errChan <- err
+	errCh <- err
 }
 
-func (a Agent) generateHeartbeats(errChan chan error) {
+func (a Agent) generateHeartbeats(errCh chan error) {
 	defer a.logger.HandlePanic("Agent Generate Heartbeats")
 
 	// Send initial heartbeat
-	a.sendHeartbeat(errChan)
+	a.sendHeartbeat(errCh)
 
 	tickChan := time.Tick(a.heartbeatInterval)
 
 	for {
 		select {
 		case <-tickChan:
-			a.sendHeartbeat(errChan)
+			a.sendHeartbeat(errCh)
 		}
 	}
 }
 
-func (a Agent) sendHeartbeat(errChan chan error) {
+func (a Agent) sendHeartbeat(errCh chan error) {
 	heartbeat, err := a.getHeartbeat()
 	if err != nil {
 		err = bosherr.WrapError(err, "Building heartbeat")
-		errChan <- err
+		errCh <- err
 		return
 	}
 
 	err = a.mbusHandler.SendToHealthManager("heartbeat", heartbeat)
 	if err != nil {
 		err = bosherr.WrapError(err, "Sending heartbeat")
-		errChan <- err
+		errCh <- err
 	}
 }
 
@@ -129,11 +129,11 @@ func (a Agent) getHeartbeat() (boshmbus.Heartbeat, error) {
 	return hb, nil
 }
 
-func (a Agent) handleJobFailure(errChan chan error) boshjobsuper.JobFailureHandler {
+func (a Agent) handleJobFailure(errCh chan error) boshjobsuper.JobFailureHandler {
 	return func(monitAlert boshalert.MonitAlert) error {
 		err := a.alertSender.SendAlert(monitAlert)
 		if err != nil {
-			errChan <- bosherr.WrapError(err, "Sending alert")
+			errCh <- bosherr.WrapError(err, "Sending alert")
 		}
 
 		return nil
