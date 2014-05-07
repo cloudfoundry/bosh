@@ -7,6 +7,7 @@ require "forwardable"
 require "cloud/config"
 require "cloud/errors"
 require "cloud/provider"
+require "cloud/external_cpi"
 
 module Bosh
 
