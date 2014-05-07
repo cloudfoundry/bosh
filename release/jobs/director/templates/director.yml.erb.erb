@@ -19,7 +19,7 @@ logging:
 resque:
   logging:
     level: <%= resque_loglevel %>
-<% end %>    
+<% end %>
 
 redis:
   host: <%= p('redis.address') %>
@@ -162,8 +162,13 @@ compiled_package_cache:
 <% end %>
 
 cloud:
-<% plugin = nil %>
+<% if_p('external_cpi') do %>
+  external_cpi:
+    enabled: <%= p('external_cpi.enabled') %>
+    cpi_path: /var/vcap/jobs/<%= p('external_cpi.name') %>
+<% end %>
 
+<% plugin = nil %>
 <% if_p('aws.access_key_id', 'aws.secret_access_key',
         'aws.default_key_name', 'aws.default_security_groups',
         'aws.region', 'registry.address',
@@ -307,7 +312,7 @@ cloud:
 
 <% end %>
 
-<% raise "Could not find cloud plugin" if plugin.nil? %>
+<% raise "Could not find cloud plugin" if plugin.nil? && p('external_cpi.enabled', false) == false %>
 
     agent:
       ntp: [<%= p('ntp').join(", ") %>]

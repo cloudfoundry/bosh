@@ -238,6 +238,12 @@ properties:
     description: List of ntp server IPs
     default: []
 
+  # Cpi
+  external_cpi.enabled:
+    description: Enables external cpi
+    default: false
+  external_cpi.name:
+    description: Name of external cpi package
   agent.blobstore.access_key_id:
     description: AWS access_key_id for agent used by s3 blobstore plugin
   agent.blobstore.secret_access_key:
