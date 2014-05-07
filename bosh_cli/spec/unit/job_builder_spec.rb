@@ -276,35 +276,34 @@ describe Bosh::Cli::JobBuilder do
 
     builder = new_builder('foo', [], ['bar', 'baz'], [])
 
-    File.exists?(@release_dir + '/.dev_builds/jobs/foo/0.1-dev.tgz').
+    v1_fingerprint = builder.fingerprint
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").
         should be(false)
     builder.build
-    File.exists?(@release_dir + '/.dev_builds/jobs/foo/0.1-dev.tgz').
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").
         should be(true)
-    v1_fingerprint = builder.fingerprint
 
     add_templates('foo', 'zb.yml')
     builder = new_builder('foo', [], ['bar', 'baz', 'zb.yml'], [])
     builder.build
+    v2_fingerprint = builder.fingerprint
 
-    File.exists?(@release_dir + '/.dev_builds/jobs/foo/0.1-dev.tgz').
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").
         should be(true)
-    File.exists?(@release_dir + '/.dev_builds/jobs/foo/0.2-dev.tgz').
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v2_fingerprint}.tgz").
         should be(true)
 
     remove_templates('foo', 'zb.yml')
 
     builder = new_builder('foo', [], ['bar', 'baz'], [])
     builder.build
-    builder.version.should == '0.1-dev'
+    builder.version.should == v1_fingerprint
 
     builder.fingerprint.should == v1_fingerprint
-    File.exists?(@release_dir + '/.dev_builds/jobs/foo/0.1-dev.tgz').
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").
         should be(true)
-    File.exists?(@release_dir + '/.dev_builds/jobs/foo/0.2-dev.tgz').
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v2_fingerprint}.tgz").
         should be(true)
-    File.exists?(@release_dir + '/.dev_builds/jobs/foo/0.3-dev.tgz').
-        should be(false)
   end
 
   it 'can point to either dev or a final version of a job' do
@@ -318,11 +317,11 @@ describe Bosh::Cli::JobBuilder do
         File.join(@release_dir, '.dev_builds', 'jobs', 'foo'))
 
     final_versions.add_version(fingerprint,
-                               { 'version' => '4', 'blobstore_id' => '12321' },
+                               { 'version' => fingerprint, 'blobstore_id' => '12321' },
                                get_tmp_file_path('payload'))
 
     dev_versions.add_version(fingerprint,
-                             { 'version' => '0.7-dev' },
+                             { 'version' => fingerprint },
                              get_tmp_file_path('dev_payload'))
 
     builder = new_builder('foo', [], ['bar', 'baz'], [])
@@ -330,14 +329,14 @@ describe Bosh::Cli::JobBuilder do
     builder.fingerprint.should == fingerprint
 
     builder.use_final_version
-    builder.version.should == '4'
+    builder.version.should == fingerprint
     builder.tarball_path.should == File.join(
-        @release_dir, '.final_builds', 'jobs', 'foo', '4.tgz')
+        @release_dir, '.final_builds', 'jobs', 'foo', "#{fingerprint}.tgz")
 
     builder.use_dev_version
-    builder.version.should == '0.7-dev'
+    builder.version.should == fingerprint
     builder.tarball_path.should == File.join(
-        @release_dir, '.dev_builds', 'jobs', 'foo', '0.7-dev.tgz')
+        @release_dir, '.dev_builds', 'jobs', 'foo', "#{fingerprint}.tgz")
   end
 
   it 'bumps major dev version in sync with final version' do
@@ -347,7 +346,7 @@ describe Bosh::Cli::JobBuilder do
     builder = new_builder('foo', [], ['bar', 'baz'], [])
     builder.build
 
-    builder.version.should == '0.1-dev'
+    builder.version.should == builder.fingerprint
 
     blobstore = double('blobstore')
     blobstore.should_receive(:create).and_return('object_id')
@@ -355,12 +354,12 @@ describe Bosh::Cli::JobBuilder do
                                 true, true, blobstore)
     final_builder.build
 
-    final_builder.version.should == 1
+    final_builder.version.should == final_builder.fingerprint
 
     add_templates('foo', 'bzz')
     builder2 = new_builder('foo', [], ['bar', 'baz', 'bzz'], [])
     builder2.build
-    builder2.version.should == '1.1-dev'
+    builder2.version.should == builder2.fingerprint
   end
 
   it 'whines on attempt to create final build if not matched ' +
@@ -418,14 +417,15 @@ describe Bosh::Cli::JobBuilder do
     builder = new_builder('foo', [], ['bar', 'baz'], [])
     builder.dry_run = true
     builder.build
+    v1_fingerprint = builder.fingerprint
 
-    builder.version.should == '0.1-dev'
-    File.exists?(@release_dir + '/.dev_builds/jobs/foo/0.1-dev.tgz').
+    builder.version.should == v1_fingerprint
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").
         should be(false)
 
     builder.dry_run = false
     builder.reload.build
-    File.exists?(@release_dir + '/.dev_builds/jobs/foo/0.1-dev.tgz').
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").
         should be(true)
 
     blobstore = double('blobstore')
@@ -436,17 +436,20 @@ describe Bosh::Cli::JobBuilder do
     final_builder.build
 
     # Shouldn't be promoted during dry run:
-    final_builder.version.should == '0.1-dev'
-    File.exists?(@release_dir + '/.final_builds/jobs/foo/1.tgz').should be(false)
+    final_builder.version.should == v1_fingerprint
+    File.exists?(@release_dir + "/.final_builds/jobs/foo/#{v1_fingerprint}.tgz").
+      should be(false)
 
     add_templates('foo', 'bzz')
     builder2 = new_builder('foo', [], ['bar', 'baz', 'bzz'], [])
     builder2.dry_run = true
     builder2.build
-    builder2.version.should == '0.2-dev'
-    File.exists?(@release_dir + '/.dev_builds/jobs/foo/0.1-dev.tgz').
+    v2_fingerprint = builder2.fingerprint
+    builder2.version.should == v2_fingerprint
+
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").
         should be(true)
-    File.exists?(@release_dir + '/.dev_builds/jobs/foo/0.2-dev.tgz').
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v2_fingerprint}.tgz").
         should be(false)
   end
 

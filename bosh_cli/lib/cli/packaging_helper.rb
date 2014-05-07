@@ -68,7 +68,7 @@ module Bosh::Cli
       end
 
       blobstore_id = item['blobstore_id']
-      version      = item['version']
+      version      = fingerprint
 
       if blobstore_id.nil?
         say('No blobstore id'.make_red)
@@ -123,7 +123,7 @@ module Bosh::Cli
         return nil
       end
 
-      version = item['version']
+      version = fingerprint
       filename = @dev_index.filename(version)
 
       if File.exists?(filename)
@@ -152,10 +152,7 @@ module Bosh::Cli
         err(err_message)
       end
 
-      current_final = @final_index.latest_version.to_i
-      new_minor = minor_version(@dev_index.latest_version(current_final)) + 1
-
-      version = "#{current_final}.#{new_minor}-dev"
+      version = fingerprint
       tmp_file = Tempfile.new(name)
 
       say('Generating...')
@@ -194,7 +191,7 @@ module Bosh::Cli
         return
       end
 
-      version = @final_index.latest_version.to_i + 1
+      version = fingerprint
 
       blobstore_id = nil
       File.open(path, 'r') do |f|

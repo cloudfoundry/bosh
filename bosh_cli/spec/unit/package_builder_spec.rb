@@ -211,10 +211,11 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
   end
 
   it 'can point to either dev or a final version of a package' do
+    fingerprint = 'fake-fingerprint'
+    allow(Digest::SHA1).to receive(:hexdigest).and_return(fingerprint)
+
     add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
     globs = %w(foo/**/* baz)
-
-    fingerprint = '86e8d5f5530a89659f588f5884fe8c13e639d94b'
 
     final_versions = Bosh::Cli::VersionsIndex.new(
         File.join(@release_dir, '.final_builds', 'packages', 'bar'))
@@ -222,24 +223,21 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
         File.join(@release_dir, '.dev_builds', 'packages', 'bar'))
 
     final_versions.add_version(fingerprint,
-                               { 'version' => '4', 'blobstore_id' => '12321' },
+                               { 'version' => fingerprint, 'blobstore_id' => '12321' },
                                get_tmp_file_path('payload'))
     dev_versions.add_version(fingerprint,
-                             { 'version' => '0.7-dev' },
+                             { 'version' => fingerprint },
                              get_tmp_file_path('dev_payload'))
 
     builder = make_builder('bar', globs)
-    builder.fingerprint.should == fingerprint
 
     builder.use_final_version
-    builder.version.should == '4'
     builder.tarball_path.should == File.join(
-        @release_dir, '.final_builds', 'packages', 'bar', '4.tgz')
+        @release_dir, '.final_builds', 'packages', 'bar', "#{fingerprint}.tgz")
 
     builder.use_dev_version
-    builder.version.should == '0.7-dev'
     builder.tarball_path.should == File.join(
-        @release_dir, '.dev_builds', 'packages', 'bar', '0.7-dev.tgz')
+        @release_dir, '.dev_builds', 'packages', 'bar', "#{fingerprint}.tgz")
   end
 
   it 'creates a new version tarball' do
@@ -247,66 +245,60 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     globs = %w(foo/**/* baz)
     builder = make_builder('bar', globs)
 
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.1-dev.tgz').
+    v1_fingerprint = builder.fingerprint
+
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v1_fingerprint}.tgz").
         should be(false)
     builder.build
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.1-dev.tgz').
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v1_fingerprint}.tgz").
         should be(true)
 
     builder = make_builder('bar', globs)
     builder.build
-    v1_fingerprint = builder.fingerprint
 
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.1-dev.tgz').
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v1_fingerprint}.tgz").
         should be(true)
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.2-dev.tgz').
+    File.exists?(@release_dir + '/.dev_builds/packages/bar/other-fingerprint.tgz').
         should be(false)
 
     add_file('src', 'foo/3.rb')
     builder = make_builder('bar', globs)
     builder.build
 
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.1-dev.tgz').
+    v2_fingerprint = builder.fingerprint
+
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v1_fingerprint}.tgz").
         should be(true)
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.2-dev.tgz').
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v2_fingerprint}.tgz").
         should be(true)
 
     remove_file('src', 'foo/3.rb')
     builder = make_builder('bar', globs)
     builder.build
-    builder.version.should == '0.1-dev'
+    builder.version.should == v1_fingerprint
 
     builder.fingerprint.should == v1_fingerprint
 
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.1-dev.tgz').
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v1_fingerprint}.tgz").
         should be(true)
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.2-dev.tgz').
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v2_fingerprint}.tgz").
         should be(true)
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.3-dev.tgz').
-        should be(false)
 
     # Now add packaging
     add_file('packages', 'bar/packaging', 'make install')
     builder = make_builder('bar', globs)
     builder.build
-    builder.version.should == '0.3-dev'
+    v3_fingerprint = builder.fingerprint
+    builder.version.should == v3_fingerprint
 
     # Add prepackaging
     add_file('packages', 'bar/pre_packaging', 'exit 0')
     builder = make_builder('bar', globs)
+    v4_fingerprint = builder.fingerprint
     builder.build
 
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.3-dev.tgz').
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v4_fingerprint}.tgz").
         should be(true)
-
-    # And remove all
-    builder = make_builder('bar', globs)
-    builder.build
-    builder.version.should == '0.4-dev'
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.4-dev.tgz').
-        should be(true)
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.5-dev.tgz').
-        should be(false)
   end
 
   it 'stops if pre_packaging fails' do
@@ -330,7 +322,7 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     builder = make_builder('bar', globs)
     builder.build
 
-    builder.version.should == '0.1-dev'
+    builder.version.should == builder.fingerprint
 
     blobstore = double('blobstore')
     blobstore.should_receive(:create).and_return('object_id')
@@ -339,52 +331,15 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
                                                   @release_dir,
                                                   true, blobstore)
     final_builder.build
-    final_builder.version.should == 1
+    final_builder.version.should == builder.fingerprint
 
     add_file('src', 'foo/foo15.rb')
+
     builder2 = make_builder('bar', globs)
     builder2.build
-    builder2.version.should == '1.1-dev'
-  end
+    builder2.version.should == builder2.fingerprint
 
-  it 'uses the appropriate final version for bumping a dev version' do
-    add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
-    globs = %w(foo/**/* baz)
-    builder = make_builder('bar', globs)
-    final_builds_dir = File.join(@release_dir,
-      '.final_builds', 'packages', 'bar')
-    builder.build
-
-    final_index = Bosh::Cli::VersionsIndex.new(final_builds_dir)
-    final_index.add_version('deadbeef',
-                            { 'version' => 34 },
-                            get_tmp_file_path('payload'))
-
-    add_file('src', 'foo/foo14.rb')
-    builder.reload.build
-    builder.version.should == '34.1-dev'
-
-    final_index.add_version('deadbeef2',
-                            { 'version' => 37 },
-                            get_tmp_file_path('payload'))
-
-    add_file('src', 'foo/foo15.rb')
-    builder.reload.build
-    builder.version.should == '37.1-dev'
-
-    add_file('src', 'foo/foo16.rb')
-    builder.reload.build
-    builder.version.should == '37.2-dev'
-
-    FileUtils.rm_rf(final_builds_dir)
-    final_index = Bosh::Cli::VersionsIndex.new(final_builds_dir)
-    final_index.add_version('deadbeef3',
-                            { 'version' => 34 },
-                            get_tmp_file_path('payload'))
-
-    add_file('src', 'foo/foo17.rb')
-    builder.reload.build
-    builder.version.should == '34.2-dev'
+    expect(builder2.version).to_not eq(builder.version)
   end
 
   it 'whines on attempt to create final build if not matched ' +
@@ -406,12 +361,12 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     builder = make_builder('bar', globs)
     builder.build
 
-    builder.version.should == '0.1-dev'
+    builder.version.should == builder.fingerprint
 
     final_builder2 = Bosh::Cli::PackageBuilder.new(
         { 'name' => 'bar', 'files' => globs }, @release_dir, true, blobstore)
     final_builder2.build
-    final_builder2.version.should == 1
+    final_builder2.version.should == final_builder.fingerprint
 
     add_file('src', 'foo/foo15.rb')
     final_builder3 = Bosh::Cli::PackageBuilder.new(
@@ -450,14 +405,14 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     builder.dry_run = true
     builder.build
 
-    builder.version.should == '0.1-dev'
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.1-dev.tgz').
+    builder.version.should == builder.fingerprint
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/#{builder.fingerprint}.tgz").
         should be(false)
 
     builder.dry_run = false
     builder.reload.build
-    builder.version.should == '0.1-dev'
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.1-dev.tgz').
+    builder.version.should == builder.fingerprint
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/#{builder.fingerprint}.tgz").
         should be(true)
 
     blobstore = double('blobstore')
@@ -468,16 +423,16 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     final_builder.build
 
     # Hasn't been promoted b/c of dry run
-    final_builder.version.should == '0.1-dev'
+    final_builder.version.should == builder.version
 
     add_file('src', 'foo/foo15.rb')
     builder2 = make_builder('bar', globs)
     builder2.dry_run = true
     builder2.build
-    builder2.version.should == '0.2-dev'
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.1-dev.tgz').
+    builder2.version.should == builder2.fingerprint
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/#{builder.fingerprint}.tgz").
         should be(true)
-    File.exists?(@release_dir + '/.dev_builds/packages/bar/0.2-dev.tgz').
+    File.exists?(@release_dir + "/.dev_builds/packages/bar/#{builder2.fingerprint}.tgz").
         should be(false)
   end
 
