@@ -13,7 +13,7 @@ type NetManager interface {
 	SetupDhcp(networks boshsettings.Networks) (err error)
 }
 
-type CustomNetwork struct {
+type customNetwork struct {
 	boshsettings.Network
 	Interface         string
 	NetworkIP         string

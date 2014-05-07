@@ -12,10 +12,8 @@ type concreteV1Service struct {
 	fs           boshsys.FileSystem
 }
 
-func NewConcreteV1Service(fs boshsys.FileSystem, specFilePath string) (service concreteV1Service) {
-	service.fs = fs
-	service.specFilePath = specFilePath
-	return
+func NewConcreteV1Service(fs boshsys.FileSystem, specFilePath string) concreteV1Service {
+	return concreteV1Service{fs: fs, specFilePath: specFilePath}
 }
 
 func (s concreteV1Service) Get() (V1ApplySpec, error) {

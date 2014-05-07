@@ -76,6 +76,5 @@ func init() {
 				Expect(err.Error()).To(ContainSubstring("fake-write-error"))
 			})
 		})
-
 	})
 }

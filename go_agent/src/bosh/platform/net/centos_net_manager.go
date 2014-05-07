@@ -113,7 +113,7 @@ func (net centosNetManager) SetupManualNetworking(networks boshsettings.Networks
 	return nil
 }
 
-func (net centosNetManager) gratuitiousArp(networks []CustomNetwork, errChan chan error) {
+func (net centosNetManager) gratuitiousArp(networks []customNetwork, errChan chan error) {
 	for i := 0; i < 6; i++ {
 		for _, network := range networks {
 			for !net.fs.FileExists(filepath.Join("/sys/class/net", network.Interface)) {
@@ -134,8 +134,8 @@ func (net centosNetManager) gratuitiousArp(networks []CustomNetwork, errChan cha
 	}
 }
 
-func (net centosNetManager) writeIfcfgs(networks boshsettings.Networks) ([]CustomNetwork, error) {
-	var modifiedNetworks []CustomNetwork
+func (net centosNetManager) writeIfcfgs(networks boshsettings.Networks) ([]customNetwork, error) {
+	var modifiedNetworks []customNetwork
 
 	macAddresses, err := net.detectMacAddresses()
 	if err != nil {
@@ -149,7 +149,7 @@ func (net centosNetManager) writeIfcfgs(networks boshsettings.Networks) ([]Custo
 			return modifiedNetworks, bosherr.WrapError(err, "Calculating network and broadcast")
 		}
 
-		newNet := CustomNetwork{
+		newNet := customNetwork{
 			aNet,
 			macAddresses[aNet.Mac],
 			network,
