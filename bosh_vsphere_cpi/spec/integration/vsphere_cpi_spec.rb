@@ -11,6 +11,9 @@ describe VSphereCloud::Cloud do
   let(:user) { ENV.fetch('BOSH_VSPHERE_CPI_USER') }
   let(:password) { ENV.fetch('BOSH_VSPHERE_CPI_PASSWORD', '') }
   let(:datacenter_name) { ENV.fetch('BOSH_VSPHERE_CPI_DATACENTER', 'BOSH_DC') }
+  let(:resource_pool_name) { ENV.fetch('BOSH_VSPHERE_CPI_RESOURCE_POOL', 'ACCEPTANCE_RP') }
+  let(:cluster_name) { ENV.fetch('BOSH_VSPHERE_CPI_CLUSTER', 'BOSH_CL') }
+
   let(:config) do
     {
       'db' => {
@@ -34,7 +37,7 @@ describe VSphereCloud::Cloud do
               'persistent_datastore_pattern' => ENV.fetch('BOSH_VSPHERE_CPI_PERSISTENT_DATASTORE_PATTERN', 'jalapeno'),
               'allow_mixed_datastores' => true,
               'clusters' => [{
-                'BOSH_CL' => { 'resource_pool' => 'ACCEPTANCE_RP' },
+                cluster_name => { 'resource_pool' => resource_pool_name },
               }],
             }]
           }]
