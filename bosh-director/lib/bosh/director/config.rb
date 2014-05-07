@@ -191,9 +191,7 @@ module Bosh::Director
       def cloud
         @lock.synchronize do
           if @cloud.nil?
-            plugin = @cloud_options['plugin']
-            properties = @cloud_options['properties']
-            @cloud = Bosh::Clouds::Provider.create(plugin, properties)
+            @cloud = Bosh::Clouds::Provider.create(@cloud_options)
           end
         end
         @cloud

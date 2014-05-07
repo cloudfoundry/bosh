@@ -58,6 +58,7 @@ module Bosh::Deployer
       @disk_model = nil
       @cloud = nil
       @networks = nil
+      @uuid = SecureRandom.uuid
 
       self
     end
@@ -65,8 +66,7 @@ module Bosh::Deployer
 
     def cloud
       if @cloud.nil?
-        @cloud = Bosh::Clouds::Provider.create(
-          @cloud_options['plugin'], @cloud_options['properties'])
+        @cloud = Bosh::Clouds::Provider.create(@cloud_options, @uuid)
       end
       @cloud
     end

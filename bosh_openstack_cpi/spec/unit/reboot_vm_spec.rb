@@ -8,7 +8,7 @@ describe Bosh::OpenStackCloud::Cloud do
   before :each do
     @server = double("server", :id => "i-foobar")
 
-    @cloud = mock_cloud(mock_cloud_options) do |openstack|
+    @cloud = mock_cloud(mock_cloud_options['properties']) do |openstack|
       openstack.servers.stub(:get).with("i-foobar").and_return(@server)
     end
   end

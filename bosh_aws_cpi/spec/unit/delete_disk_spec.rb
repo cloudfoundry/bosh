@@ -43,7 +43,7 @@ describe Bosh::AwsCloud::Cloud do
   end
 
   it 'does a fast path delete when asked to' do
-    options = mock_cloud_options
+    options = mock_cloud_options['properties']
     options['aws']['fast_path_delete'] = 'yes'
     cloud = mock_cloud(options) do |ec2|
       ec2.volumes.stub(:[]).with('v-foo').and_return(volume)

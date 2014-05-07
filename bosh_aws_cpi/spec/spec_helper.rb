@@ -22,27 +22,30 @@ end
 
 def mock_cloud_options
   {
-    'aws' => {
-      'access_key_id' => MOCK_AWS_ACCESS_KEY_ID,
-      'secret_access_key' => MOCK_AWS_SECRET_ACCESS_KEY,
-      'region' => 'us-east-1',
-      'default_key_name' => 'sesame',
-      'default_security_groups' => []
-    },
-    'registry' => {
-      'endpoint' => 'localhost:42288',
-      'user' => 'admin',
-      'password' => 'admin'
-    },
-    'agent' => {
-      'foo' => 'bar',
-      'baz' => 'zaz'
+    'plugin' => 'aws',
+    'properties' => {
+      'aws' => {
+        'access_key_id' => MOCK_AWS_ACCESS_KEY_ID,
+        'secret_access_key' => MOCK_AWS_SECRET_ACCESS_KEY,
+        'region' => 'us-east-1',
+        'default_key_name' => 'sesame',
+        'default_security_groups' => []
+      },
+      'registry' => {
+        'endpoint' => 'localhost:42288',
+        'user' => 'admin',
+        'password' => 'admin'
+      },
+      'agent' => {
+        'foo' => 'bar',
+        'baz' => 'zaz'
+      }
     }
   }
 end
 
 def make_cloud(options = nil)
-  Bosh::AwsCloud::Cloud.new(options || mock_cloud_options)
+  Bosh::AwsCloud::Cloud.new(options || mock_cloud_options['properties'])
 end
 
 def mock_registry(endpoint = 'http://registry:3333')
@@ -57,7 +60,7 @@ def mock_cloud(options = nil)
 
   yield ec2, region if block_given?
 
-  Bosh::AwsCloud::Cloud.new(options || mock_cloud_options)
+  Bosh::AwsCloud::Cloud.new(options || mock_cloud_options['properties'])
 end
 
 def mock_ec2

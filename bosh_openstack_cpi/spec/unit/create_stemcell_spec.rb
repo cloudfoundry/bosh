@@ -117,7 +117,7 @@ describe Bosh::OpenStackCloud::Cloud do
         :is_public => true,
       }
 
-      cloud_options = mock_cloud_options
+      cloud_options = mock_cloud_options['properties']
       cloud_options["openstack"]["stemcell_public_visibility"] = true
       cloud = mock_glance(cloud_options) do |glance|
         glance.images.should_receive(:create).with(image_params).and_return(image)

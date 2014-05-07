@@ -19,6 +19,14 @@ module Bosh::Stemcell::Aws
     before { Logger.stub(:new) }
 
     describe '#publish' do
+      let(:env) do
+        {
+          'BOSH_AWS_ACCESS_KEY_ID' => 'fake-access-key',
+          'BOSH_AWS_SECRET_ACCESS_KEY' => 'fake-secret-access-key',
+        }
+      end
+      before { stub_const('ENV', env) }
+
       it 'creates a new ami and makes it public' do
         image = instance_double('AWS::EC2::Image')
         expect(image).to receive(:public=).with(true)
@@ -31,7 +39,12 @@ module Bosh::Stemcell::Aws
           ec2: ec2,
         )
 
-        Bosh::Clouds::Provider.stub(create: cpi)
+        expect(Bosh::Clouds::Provider).to receive(:create) do |cloud_config|
+          expect(cloud_config['plugin']).to eq('aws')
+          expect(cloud_config['properties']['aws']['access_key_id']).to eq('fake-access-key')
+          expect(cloud_config['properties']['aws']['secret_access_key']).to eq('fake-secret-access-key')
+          cpi
+        end
 
         expect(ami.publish).to eq('fake-ami-id')
       end

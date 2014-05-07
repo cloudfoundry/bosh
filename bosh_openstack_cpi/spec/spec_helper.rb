@@ -26,29 +26,32 @@ end
 
 def mock_cloud_options
   {
-    'openstack' => {
-      'auth_url' => 'http://127.0.0.1:5000/v2.0',
-      'username' => 'admin',
-      'api_key' => 'nova',
-      'tenant' => 'admin',
-      'region' => 'RegionOne',
-      'state_timeout' => 0.1,
-      'wait_resource_poll_interval' => 3
-    },
-    'registry' => {
-      'endpoint' => 'localhost:42288',
-      'user' => 'admin',
-      'password' => 'admin'
-    },
-    'agent' => {
-      'foo' => 'bar',
-      'baz' => 'zaz'
+    'plugin' => 'openstack',
+    'properties' => {
+      'openstack' => {
+        'auth_url' => 'http://127.0.0.1:5000/v2.0',
+        'username' => 'admin',
+        'api_key' => 'nova',
+        'tenant' => 'admin',
+        'region' => 'RegionOne',
+        'state_timeout' => 0.1,
+        'wait_resource_poll_interval' => 3
+      },
+      'registry' => {
+        'endpoint' => 'localhost:42288',
+        'user' => 'admin',
+        'password' => 'admin'
+      },
+      'agent' => {
+        'foo' => 'bar',
+        'baz' => 'zaz'
+      }
     }
   }
 end
 
 def make_cloud(options = nil)
-  Bosh::OpenStackCloud::Cloud.new(options || mock_cloud_options)
+  Bosh::OpenStackCloud::Cloud.new(options || mock_cloud_options['properties'])
 end
 
 def mock_registry(endpoint = 'http://registry:3333')
@@ -85,7 +88,7 @@ def mock_cloud(options = nil)
 
   yield openstack if block_given?
 
-  Bosh::OpenStackCloud::Cloud.new(options || mock_cloud_options)
+  Bosh::OpenStackCloud::Cloud.new(options || mock_cloud_options['properties'])
 end
 
 def mock_glance(options = nil)
@@ -101,7 +104,7 @@ def mock_glance(options = nil)
 
   yield glance if block_given?
 
-  Bosh::OpenStackCloud::Cloud.new(options || mock_cloud_options)
+  Bosh::OpenStackCloud::Cloud.new(options || mock_cloud_options['properties'])
 end
 
 def dynamic_network_spec

@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2013 VMware, Inc.
 # Copyright (c) 2012 Piston Cloud Computing, Inc.
 
-require "spec_helper"
+require 'spec_helper'
 
 describe Bosh::OpenStackCloud::Cloud do
   describe :new do
@@ -25,7 +25,7 @@ describe Bosh::OpenStackCloud::Cloud do
     it 'should create a Fog connection' do
       Fog::Compute.stub(:new).with(openstack_parms).and_return(compute)
       Fog::Image.should_receive(:new).with(openstack_parms).and_return(image)
-      cloud = Bosh::Clouds::Provider.create(:openstack, cloud_options)
+      cloud = Bosh::Clouds::Provider.create(cloud_options, 'fake-director-uuid')
 
       expect(cloud.openstack).to eql(compute)
       expect(cloud.glance).to eql(image)
@@ -39,10 +39,10 @@ describe Bosh::OpenStackCloud::Cloud do
       }
 
       it 'should add optional options to the Fog connection' do
-        cloud_options['openstack']['connection_options'] = connection_options
+        cloud_options['properties']['openstack']['connection_options'] = connection_options
         Fog::Compute.stub(:new).with(openstack_parms).and_return(compute)
         Fog::Image.should_receive(:new).with(openstack_parms).and_return(image)
-        cloud = Bosh::Clouds::Provider.create(:openstack, cloud_options)
+        cloud = Bosh::Clouds::Provider.create(cloud_options, 'fake-director-uuid')
 
         expect(cloud.openstack).to eql(compute)
         expect(cloud.glance).to eql(image)
@@ -50,44 +50,44 @@ describe Bosh::OpenStackCloud::Cloud do
     end
   end
 
-  describe "creating via provider" do
-    it "can be created using Bosh::Cloud::Provider" do
+  describe 'creating via provider' do
+    it 'can be created using Bosh::Cloud::Provider' do
       Fog::Compute.stub(:new)
       Fog::Image.stub(:new)
-      cloud = Bosh::Clouds::Provider.create(:openstack, mock_cloud_options)
+      cloud = Bosh::Clouds::Provider.create(mock_cloud_options, 'fake-director-uuid')
       cloud.should be_an_instance_of(Bosh::OpenStackCloud::Cloud)
     end
 
-    it "raises ArgumentError on initializing with blank options" do
-    	options = Hash.new("options")
+    it 'raises ArgumentError on initializing with blank options' do
+    	options = Hash.new('options')
     	expect { 
     		Bosh::OpenStackCloud::Cloud.new(options)
     	}.to raise_error(ArgumentError, /Invalid OpenStack configuration/)
     end
 
-    it "raises ArgumentError on initializing with non Hash options" do
-    	options = "this is a string"
+    it 'raises ArgumentError on initializing with non Hash options' do
+    	options = 'this is a string'
     	expect { 
     		Bosh::OpenStackCloud::Cloud.new(options)
     	}.to raise_error(ArgumentError, /Invalid OpenStack configuration/)
     end
 
-    it "raises a CloudError exception if cannot connect to the OpenStack Compute API" do
-      Fog::Compute.should_receive(:new).and_raise(Excon::Errors::Unauthorized, "Unauthorized")
+    it 'raises a CloudError exception if cannot connect to the OpenStack Compute API' do
+      Fog::Compute.should_receive(:new).and_raise(Excon::Errors::Unauthorized, 'Unauthorized')
       Fog::Image.stub(:new)
       expect {
-        Bosh::Clouds::Provider.create(:openstack, mock_cloud_options)
+        Bosh::Clouds::Provider.create(mock_cloud_options, 'fake-director-uuid')
       }.to raise_error(Bosh::Clouds::CloudError,
-                       "Unable to connect to the OpenStack Compute API. Check task debug log for details.")
+        'Unable to connect to the OpenStack Compute API. Check task debug log for details.')
     end
 
-    it "raises a CloudError exception if cannot connect to the OpenStack Image Service API" do
+    it 'raises a CloudError exception if cannot connect to the OpenStack Image Service API' do
       Fog::Compute.stub(:new)
-      Fog::Image.should_receive(:new).and_raise(Excon::Errors::Unauthorized, "Unauthorized")
+      Fog::Image.should_receive(:new).and_raise(Excon::Errors::Unauthorized, 'Unauthorized')
       expect {
-        Bosh::Clouds::Provider.create(:openstack, mock_cloud_options)
+        Bosh::Clouds::Provider.create(mock_cloud_options, 'fake-director-uuid')
       }.to raise_error(Bosh::Clouds::CloudError,
-                       "Unable to connect to the OpenStack Image Service API. Check task debug log for details.")
+        'Unable to connect to the OpenStack Image Service API. Check task debug log for details.')
     end
   end
 end

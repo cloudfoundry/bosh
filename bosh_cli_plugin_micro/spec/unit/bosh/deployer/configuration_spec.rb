@@ -165,9 +165,9 @@ module Bosh::Deployer
       end
 
       it 'creates a cloud provider with the merged cloud properties' do
-        expected_cloud_properties = configuration_hash['cloud']['properties']
+        expected_cloud_properties = configuration_hash['cloud']
         expect(Bosh::Clouds::Provider).to receive(:create)
-                                          .with('vsphere', expected_cloud_properties)
+                                          .with(expected_cloud_properties, anything)
                                           .once.and_return(:cloud)
         config.cloud
         expect(config.cloud).to eq(:cloud)

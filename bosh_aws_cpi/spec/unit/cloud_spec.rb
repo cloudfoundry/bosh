@@ -6,7 +6,7 @@ describe Bosh::AwsCloud::Cloud do
   describe 'creating via provider' do
 
     it 'can be created using Bosh::Cloud::Provider' do
-      cloud = Bosh::Clouds::Provider.create(:aws, mock_cloud_options)
+      cloud = Bosh::Clouds::Provider.create(mock_cloud_options, 'fake-director-uuid')
       cloud.should be_an_instance_of(Bosh::AwsCloud::Cloud)
     end
 

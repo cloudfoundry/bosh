@@ -18,7 +18,7 @@ module Bosh::Stemcell::Aws
       cloud_config = OpenStruct.new(logger: Logger.new('ami.log'), task_checkpoint: nil)
       Bosh::Clouds::Config.configure(cloud_config)
 
-      cloud = Bosh::Clouds::Provider.create('aws', options)
+      cloud = Bosh::Clouds::Provider.create(options, 'fake-director-uuid')
 
       stemcell.extract do |tmp_dir, stemcell_manifest|
         ami_id = cloud.create_stemcell("#{tmp_dir}/image", stemcell_manifest['cloud_properties'])
@@ -34,11 +34,14 @@ module Bosh::Stemcell::Aws
     def options
       # just fake the registry struct, as we don't use it
       {
-        'aws' => aws,
-        'registry' => {
-          'endpoint' => 'http://fake.registry',
-          'user' => 'fake',
-          'password' => 'fake'
+        'plugin' => 'aws',
+        'properties' => {
+          'aws' => aws,
+          'registry' => {
+            'endpoint' => 'http://fake.registry',
+            'user' => 'fake',
+            'password' => 'fake'
+          }
         }
       }
     end

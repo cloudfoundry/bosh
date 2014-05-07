@@ -18,6 +18,8 @@ describe Bosh::WardenCloud::Cloud do
     allow(Warden::Client).to receive(:new).and_return(@warden_client)
 
     cloud_options = {
+      'plugin' => 'warden',
+      'properties' => {
         'disk' => {
             'root' => @disk_root,
             'fs' => 'ext4',
@@ -33,8 +35,9 @@ describe Bosh::WardenCloud::Cloud do
             }                          ,
             'ntp' => []
         }
+      }
     }
-    @cloud = Bosh::Clouds::Provider.create(:warden, cloud_options)
+    @cloud = Bosh::Clouds::Provider.create(cloud_options, 'fake-director-uuid')
 
     allow(@warden_client).to receive(:connect) {}
     allow(@warden_client).to receive(:disconnect) {}
