@@ -6,10 +6,6 @@ import (
 	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
 	fakecmd "bosh/platform/commands/fakes"
-	boshdisk "bosh/platform/disk"
-	fakedisk "bosh/platform/disk/fakes"
-	boshstats "bosh/platform/stats"
-	fakestats "bosh/platform/stats/fakes"
 	boshvitals "bosh/platform/vitals"
 	fakevitals "bosh/platform/vitals/fakes"
 	boshsettings "bosh/settings"
@@ -19,14 +15,12 @@ import (
 )
 
 type FakePlatform struct {
-	Fs                 *fakesys.FakeFileSystem
-	Runner             *fakesys.FakeCmdRunner
-	FakeStatsCollector *fakestats.FakeStatsCollector
-	FakeCompressor     *fakecmd.FakeCompressor
-	FakeCopier         *fakecmd.FakeCopier
-	FakeVitalsService  *fakevitals.FakeService
-	FakeDiskManager    *fakedisk.FakeDiskManager
-	logger             boshlog.Logger
+	Fs                *fakesys.FakeFileSystem
+	Runner            *fakesys.FakeCmdRunner
+	FakeCompressor    *fakecmd.FakeCompressor
+	FakeCopier        *fakecmd.FakeCopier
+	FakeVitalsService *fakevitals.FakeService
+	logger            boshlog.Logger
 
 	DevicePathResolver boshdpresolv.DevicePathResolver
 
@@ -101,11 +95,9 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform = new(FakePlatform)
 	platform.Fs = fakesys.NewFakeFileSystem()
 	platform.Runner = fakesys.NewFakeCmdRunner()
-	platform.FakeStatsCollector = &fakestats.FakeStatsCollector{}
 	platform.FakeCompressor = fakecmd.NewFakeCompressor()
 	platform.FakeCopier = fakecmd.NewFakeCopier()
 	platform.FakeVitalsService = fakevitals.NewFakeService()
-	platform.FakeDiskManager = fakedisk.NewFakeDiskManager()
 	platform.DevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 	platform.AddUserToGroupsGroups = make(map[string][]string)
 	platform.SetupSshPublicKeys = make(map[string]string)
@@ -120,10 +112,6 @@ func (p *FakePlatform) GetFs() (fs boshsys.FileSystem) {
 
 func (p *FakePlatform) GetRunner() (runner boshsys.CmdRunner) {
 	return p.Runner
-}
-
-func (p *FakePlatform) GetStatsCollector() (collector boshstats.StatsCollector) {
-	return p.FakeStatsCollector
 }
 
 func (p *FakePlatform) GetCompressor() (compressor boshcmd.Compressor) {
@@ -286,8 +274,4 @@ func (p *FakePlatform) GetMonitCredentials() (username, password string, err err
 	username = p.GetMonitCredentialsUsername
 	password = p.GetMonitCredentialsPassword
 	return
-}
-
-func (p *FakePlatform) GetDiskManager() (diskManager boshdisk.Manager) {
-	return p.FakeDiskManager
 }

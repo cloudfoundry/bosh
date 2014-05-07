@@ -28,6 +28,7 @@ func getFileContent(path string) (content string) {
 	content = string(fileBytes)
 	return
 }
+
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("get run with valid args", func() {

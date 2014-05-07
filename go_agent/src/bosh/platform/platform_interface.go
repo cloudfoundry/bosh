@@ -3,8 +3,6 @@ package platform
 import (
 	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshcmd "bosh/platform/commands"
-	boshdisk "bosh/platform/disk"
-	boshstats "bosh/platform/stats"
 	boshvitals "bosh/platform/vitals"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
@@ -14,13 +12,10 @@ import (
 type Platform interface {
 	GetFs() (fs boshsys.FileSystem)
 	GetRunner() (runner boshsys.CmdRunner)
-	GetStatsCollector() (statsCollector boshstats.StatsCollector)
 	GetCompressor() (compressor boshcmd.Compressor)
 	GetCopier() (copier boshcmd.Copier)
 	GetDirProvider() (dirProvider boshdir.DirectoriesProvider)
 	GetVitalsService() (service boshvitals.Service)
-	GetMonitCredentials() (username, password string, err error)
-	GetDiskManager() (diskManager boshdisk.Manager)
 
 	GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver)
 	SetDevicePathResolver(devicePathResolver boshdpresolv.DevicePathResolver) (err error)
@@ -55,4 +50,5 @@ type Platform interface {
 	GetFileContentsFromCDROM(filePath string) (contents []byte, err error)
 
 	StartMonit() (err error)
+	GetMonitCredentials() (username, password string, err error)
 }

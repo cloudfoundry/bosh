@@ -146,7 +146,6 @@ func (app *app) Setup(args []string) error {
 	actionFactory := boshaction.NewFactory(
 		settingsService,
 		app.platform,
-		app.infrastructure,
 		blobstore,
 		taskService,
 		notifier,

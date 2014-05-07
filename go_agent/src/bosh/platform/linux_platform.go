@@ -96,10 +96,6 @@ func (p linux) GetRunner() (runner boshsys.CmdRunner) {
 	return p.cmdRunner
 }
 
-func (p linux) GetStatsCollector() (statsCollector boshstats.StatsCollector) {
-	return p.collector
-}
-
 func (p linux) GetCompressor() (runner boshcmd.Compressor) {
 	return p.compressor
 }
@@ -666,10 +662,6 @@ func (p linux) GetMonitCredentials() (username, password string, err error) {
 	username = credParts[0]
 	password = credParts[1]
 	return
-}
-
-func (p linux) GetDiskManager() boshdisk.Manager {
-	return p.diskManager
 }
 
 func (p linux) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSize, linuxSize uint64, err error) {
