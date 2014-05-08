@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.bindir       = 'bin'
 
-  s.executables = 'vsphere_cpi_console'
+  s.executables = %w(vsphere_cpi vsphere_cpi_console)
 
   s.add_dependency 'bosh_common', "~>#{version}"
   s.add_dependency 'bosh_cpi',    "~>#{version}"
