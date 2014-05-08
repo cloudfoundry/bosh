@@ -107,3 +107,4 @@ This is a sample of how AWS specific properties are used in a BOSH deployment ma
         default_key_name: bosh
         default_security_groups: ["bosh"]
         ec2_private_key: /home/bosh/.ssh/bosh
+        associate_public_ip_address: true
