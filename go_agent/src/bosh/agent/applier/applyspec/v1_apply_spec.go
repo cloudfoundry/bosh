@@ -58,3 +58,7 @@ func (s V1ApplySpec) MaxLogFileSize() string {
 	}
 	return "50M"
 }
+
+func (s NetworkSpec) IsDynamic() bool {
+	return s.Type == "dynamic"
+}

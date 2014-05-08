@@ -261,3 +261,16 @@ var _ = Describe("V1ApplySpec", func() {
 		})
 	})
 })
+
+var _ = Describe("NetworkSpec", func() {
+	Describe("IsDynamic", func() {
+		It("returns true if type is 'dynamic'", func() {
+			Expect(NetworkSpec{Type: "dynamic"}.IsDynamic()).To(BeTrue())
+		})
+
+		It("returns false if type is not 'dynamic'", func() {
+			Expect(NetworkSpec{Type: "vip"}.IsDynamic()).To(BeFalse())
+			Expect(NetworkSpec{}.IsDynamic()).To(BeFalse())
+		})
+	})
+})
