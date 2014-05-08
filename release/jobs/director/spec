@@ -179,6 +179,7 @@ properties:
     default: true
   blobstore.s3_multipart_threshold:
     description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
+    default: 16777216
   blobstore.director.user:
     description: Username director uses to connect to blobstore used by simple blobstore plugin
   blobstore.director.password:
@@ -230,6 +231,7 @@ properties:
     default: false    
   compiled_package_cache.options.s3_multipart_threshold:
     description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
+    default: 16777216    
   compiled_package_cache.options.swift_provider:
     description:  OpenStack Swift provider (supported providers are hp, openstack and rackspace)
   compiled_package_cache.options.container_name:
@@ -283,6 +285,7 @@ properties:
     default: false        
   agent.blobstore.s3_multipart_threshold:
     description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
+    default: 16777216    
   agent.nats.address:
     description: Address for agent to connect to nats
   registry.address:
