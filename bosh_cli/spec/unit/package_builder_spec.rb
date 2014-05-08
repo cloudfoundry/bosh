@@ -116,7 +116,7 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
 
     builder = make_builder('A', %w(lib/*.rb README.*))
     builder.glob_matches.size.should == 4
-    builder.fingerprint.should == '397a99ccd267ebc9bcc632b746db2cd5b29db050'
+    builder.fingerprint.should == '167bd0b339d78606cf00a8740791b54b1cf619a6'
   end
 
   it 'has stable fingerprint' do
@@ -292,9 +292,10 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     builder.version.should == v3_fingerprint
 
     # Add prepackaging
-    add_file('packages', 'bar/pre_packaging', 'exit 0')
+    add_file('packages', 'bar/pre_packaging', 'echo 0; exit 0')
     builder = make_builder('bar', globs)
     v4_fingerprint = builder.fingerprint
+
     builder.build
 
     File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v4_fingerprint}.tgz").
@@ -381,19 +382,19 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
 
     builder = make_builder('A', %w(lib/*.rb README.*))
     builder.glob_matches.size.should == 4
-    builder.fingerprint.should == '397a99ccd267ebc9bcc632b746db2cd5b29db050'
+    builder.fingerprint.should == '167bd0b339d78606cf00a8740791b54b1cf619a6'
 
     add_file('src', 'lib/.zb.rb')
     builder.reload
 
     builder.glob_matches.size.should == 5
-    builder.fingerprint.should == '351b3bb8dc430e58a3264bcfb5c9c19c06ece4af'
+    builder.fingerprint.should == '8e07f3d3176170c0e17baa9e2ad4e9b8b38d024a'
 
     remove_file('src', 'lib/.zb.rb')
     builder.reload
 
     builder.glob_matches.size.should == 4
-    builder.fingerprint.should == '397a99ccd267ebc9bcc632b746db2cd5b29db050'
+    builder.fingerprint.should == '167bd0b339d78606cf00a8740791b54b1cf619a6'
   end
 
   it 'supports dry run' do
@@ -442,7 +443,7 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
 
     builder = make_builder('A', %w(lib/*.rb README.*))
     builder.glob_matches.size.should == 4
-    builder.fingerprint.should == '397a99ccd267ebc9bcc632b746db2cd5b29db050'
+    builder.fingerprint.should == '167bd0b339d78606cf00a8740791b54b1cf619a6'
   end
 
   it "moving files to blobs directory doesn't change fingerprint" do

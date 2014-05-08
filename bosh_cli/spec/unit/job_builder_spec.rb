@@ -74,7 +74,7 @@ describe Bosh::Cli::JobBuilder do
     add_monit('foo')
     builder = new_builder('foo', ['foo', 'bar'],
                           ['a.conf', 'b.yml'], ['foo', 'bar'])
-    builder.fingerprint.should == '457a3618ecca5fcf375e479627eb0a574c63574d'
+    builder.fingerprint.should == '962d57a4f8bc4f48fd6282d8c4d94e4a744f155b'
   end
 
   it 'has a stable portable fingerprint' do
@@ -309,7 +309,7 @@ describe Bosh::Cli::JobBuilder do
   it 'can point to either dev or a final version of a job' do
     add_templates('foo', 'bar', 'baz')
     add_monit('foo')
-    fingerprint = '34586bac103c208361ae5dcadd101807110c4546'
+    fingerprint = '44cf6c4f4976f482ec497dfe77e47d876a7a83a1'
 
     final_versions = Bosh::Cli::VersionsIndex.new(
         File.join(@release_dir, '.final_builds', 'jobs', 'foo'))
