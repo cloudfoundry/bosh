@@ -25,16 +25,6 @@ module Bosh::Cli
       @tarball_generated || @promoted || @will_be_promoted
     end
 
-    def older_version?
-      if @tarball_generated
-        false
-      elsif @used_final_version
-        version_cmp(@version, @final_index.latest_version) < 0
-      else
-        version_cmp(@version, @dev_index.latest_version) < 0
-      end
-    end
-
     def notes
       notes = []
 
@@ -45,7 +35,6 @@ module Bosh::Cli
         notes << 'new version'
       end
 
-      notes << 'older than latest' if older_version?
       notes
     end
 
