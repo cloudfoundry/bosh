@@ -234,7 +234,8 @@ module Bosh::Cli
     private
 
     def make_fingerprint
-      contents = ""
+      versioning_scheme = 2
+      contents = "v#{versioning_scheme}"
 
       files = all_templates
       files << File.join(job_dir, "spec")

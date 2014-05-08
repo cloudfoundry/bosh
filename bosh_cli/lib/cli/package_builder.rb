@@ -211,7 +211,8 @@ module Bosh::Cli
     private
 
     def make_fingerprint
-      contents = ""
+      versioning_scheme = 2
+      contents = "v#{versioning_scheme}"
 
       signatures = glob_matches.map do |match|
         file_digest = nil
