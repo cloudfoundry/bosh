@@ -8,6 +8,7 @@ import (
 
 	boshlog "bosh/logger"
 	. "bosh/platform/net"
+	fakenet "bosh/platform/net/fakes"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
 )
@@ -46,16 +47,18 @@ prepend domain-name-servers zz.zz.zz.zz, yy.yy.yy.yy, xx.xx.xx.xx;
 
 	Describe("ubuntuNetManager", func() {
 		var (
-			fs         *fakesys.FakeFileSystem
-			cmdRunner  *fakesys.FakeCmdRunner
-			netManager NetManager
+			fs                     *fakesys.FakeFileSystem
+			cmdRunner              *fakesys.FakeCmdRunner
+			defaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
+			netManager             NetManager
 		)
 
 		BeforeEach(func() {
 			fs = fakesys.NewFakeFileSystem()
 			cmdRunner = fakesys.NewFakeCmdRunner()
+			defaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			netManager = NewUbuntuNetManager(fs, cmdRunner, 1*time.Millisecond, logger)
+			netManager = NewUbuntuNetManager(fs, cmdRunner, defaultNetworkResolver, 1*time.Millisecond, logger)
 		})
 
 		Describe("SetupDhcp", func() {

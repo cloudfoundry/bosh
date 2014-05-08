@@ -8,6 +8,7 @@ import (
 
 	boshlog "bosh/logger"
 	. "bosh/platform/net"
+	fakenet "bosh/platform/net/fakes"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
 )
@@ -44,16 +45,18 @@ ONBOOT=yes`
 
 	Describe("centos", func() {
 		var (
-			fs         *fakesys.FakeFileSystem
-			cmdRunner  *fakesys.FakeCmdRunner
-			netManager NetManager
+			fs                     *fakesys.FakeFileSystem
+			cmdRunner              *fakesys.FakeCmdRunner
+			defaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
+			netManager             NetManager
 		)
 
 		BeforeEach(func() {
 			fs = fakesys.NewFakeFileSystem()
 			cmdRunner = fakesys.NewFakeCmdRunner()
+			defaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			netManager = NewCentosNetManager(fs, cmdRunner, 1*time.Millisecond, logger)
+			netManager = NewCentosNetManager(fs, cmdRunner, defaultNetworkResolver, 1*time.Millisecond, logger)
 		})
 
 		Describe("SetupDhcp", func() {

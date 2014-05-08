@@ -5,15 +5,14 @@ import (
 )
 
 type FakeNetManager struct {
+	FakeDefaultNetworkResolver
+
 	SetupManualNetworkingNetworks boshsettings.Networks
-	SetupManualNetworkingErrCh chan error
-	SetupManualNetworkingErr error
+	SetupManualNetworkingErrCh    chan error
+	SetupManualNetworkingErr      error
 
 	SetupDhcpNetworks boshsettings.Networks
-	SetupDhcpErr error
-
-	GetDefaultNetworkNetwork boshsettings.Network
-	GetDefaultNetworkErr error
+	SetupDhcpErr      error
 }
 
 func (net *FakeNetManager) SetupManualNetworking(networks boshsettings.Networks, errCh chan error) error {
@@ -25,8 +24,4 @@ func (net *FakeNetManager) SetupManualNetworking(networks boshsettings.Networks,
 func (net *FakeNetManager) SetupDhcp(networks boshsettings.Networks) error {
 	net.SetupDhcpNetworks = networks
 	return net.SetupDhcpErr
-}
-
-func (net *FakeNetManager) GetDefaultNetwork() (boshsettings.Network, error) {
-	return net.GetDefaultNetworkNetwork, net.GetDefaultNetworkErr
 }

@@ -175,6 +175,6 @@ func (p dummyPlatform) GetMonitCredentials() (username, password string, err err
 	return
 }
 
-func (d dummyPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
+func (p dummyPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 	return boshsettings.Network{}, nil
 }

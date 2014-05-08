@@ -21,6 +21,8 @@ var (
 )
 
 type ubuntuNetManager struct {
+	DefaultNetworkResolver
+
 	arpWaitInterval time.Duration
 	cmdRunner       boshsys.CmdRunner
 	fs              boshsys.FileSystem
@@ -30,14 +32,16 @@ type ubuntuNetManager struct {
 func NewUbuntuNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
+	defaultNetworkResolver DefaultNetworkResolver,
 	arpWaitInterval time.Duration,
 	logger boshlog.Logger,
 ) ubuntuNetManager {
 	return ubuntuNetManager{
-		arpWaitInterval: arpWaitInterval,
-		cmdRunner:       cmdRunner,
-		fs:              fs,
-		logger:          logger,
+		DefaultNetworkResolver: defaultNetworkResolver,
+		arpWaitInterval:        arpWaitInterval,
+		cmdRunner:              cmdRunner,
+		fs:                     fs,
+		logger:                 logger,
 	}
 }
 
@@ -120,10 +124,6 @@ func (net ubuntuNetManager) SetupManualNetworking(networks boshsettings.Networks
 	go net.gratuitiousArp(modifiedNetworks, errCh)
 
 	return nil
-}
-
-func (net ubuntuNetManager) GetDefaultNetwork() (boshsettings.Network, error) {
-	return boshsettings.Network{}, nil
 }
 
 func (net ubuntuNetManager) gratuitiousArp(networks []customNetwork, errCh chan error) {

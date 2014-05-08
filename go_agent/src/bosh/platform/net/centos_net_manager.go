@@ -16,22 +16,27 @@ import (
 const centosNetManagerLogTag = "centosNetManager"
 
 type centosNetManager struct {
-	arpWaitInterval time.Duration
-	cmdRunner       boshsys.CmdRunner
+	DefaultNetworkResolver
+
 	fs              boshsys.FileSystem
+	cmdRunner       boshsys.CmdRunner
+	routesSearcher  RoutesSearcher
+	arpWaitInterval time.Duration
 	logger          boshlog.Logger
 }
 
 func NewCentosNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
+	defaultNetworkResolver DefaultNetworkResolver,
 	arpWaitInterval time.Duration,
 	logger boshlog.Logger,
 ) centosNetManager {
 	return centosNetManager{
-		arpWaitInterval: arpWaitInterval,
-		cmdRunner:       cmdRunner,
+		DefaultNetworkResolver: defaultNetworkResolver,
 		fs:              fs,
+		cmdRunner:       cmdRunner,
+		arpWaitInterval: arpWaitInterval,
 		logger:          logger,
 	}
 }
@@ -111,10 +116,6 @@ func (net centosNetManager) SetupManualNetworking(networks boshsettings.Networks
 	go net.gratuitiousArp(modifiedNetworks, errCh)
 
 	return nil
-}
-
-func (net centosNetManager) GetDefaultNetwork() (boshsettings.Network, error) {
-	return boshsettings.Network{}, nil
 }
 
 func (net centosNetManager) gratuitiousArp(networks []customNetwork, errCh chan error) {

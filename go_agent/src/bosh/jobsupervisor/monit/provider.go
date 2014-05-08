@@ -15,7 +15,7 @@ type clientProvider struct {
 }
 
 func NewProvider(platform boshplatform.Platform, logger boshlog.Logger) clientProvider {
-	return clientProvider{platform: platform, logger:   logger}
+	return clientProvider{platform: platform, logger: logger}
 }
 
 func (p clientProvider) Get() (client Client, err error) {

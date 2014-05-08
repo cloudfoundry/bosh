@@ -91,7 +91,7 @@ type FakePlatform struct {
 	GetMonitCredentialsPassword string
 
 	GetDefaultNetworkNetwork boshsettings.Network
-	GetDefaultNetworkErr error
+	GetDefaultNetworkErr     error
 }
 
 func NewFakePlatform() (platform *FakePlatform) {

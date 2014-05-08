@@ -665,7 +665,7 @@ func (p linux) GetMonitCredentials() (username, password string, err error) {
 }
 
 func (p linux) GetDefaultNetwork() (boshsettings.Network, error) {
-	return boshsettings.Network{}, nil
+	return p.netManager.GetDefaultNetwork()
 }
 
 func (p linux) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSize, linuxSize uint64, err error) {

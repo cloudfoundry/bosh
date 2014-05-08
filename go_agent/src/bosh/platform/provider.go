@@ -41,8 +41,14 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	sigarCollector := boshstats.NewSigarStatsCollector()
 	vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
 
-	centosNetManager := boshnet.NewCentosNetManager(fs, runner, 10*time.Second, logger)
-	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, 10*time.Second, logger)
+	routesSearcher := boshnet.NewCmdRoutesSearcher(runner)
+	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(
+		routesSearcher,
+		boshnet.DefaultInterfaceToAddrsFunc,
+	)
+
+	centosNetManager := boshnet.NewCentosNetManager(fs, runner, defaultNetworkResolver, 10*time.Second, logger)
+	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, defaultNetworkResolver, 10*time.Second, logger)
 
 	centos := NewLinuxPlatform(
 		fs,

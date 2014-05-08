@@ -19,6 +19,7 @@ import (
 	fakenet "bosh/platform/net/fakes"
 	fakestats "bosh/platform/stats/fakes"
 	boshvitals "bosh/platform/vitals"
+	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
 )
@@ -37,6 +38,7 @@ var _ = Describe("LinuxPlatform", func() {
 		compressor         boshcmd.Compressor
 		copier             boshcmd.Copier
 		vitalsService      boshvitals.Service
+		netManager         *fakenet.FakeNetManager
 		options            LinuxOptions
 	)
 
@@ -53,6 +55,7 @@ var _ = Describe("LinuxPlatform", func() {
 		compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 		copier = boshcmd.NewCpCopier(cmdRunner, fs, logger)
 		vitalsService = boshvitals.NewService(collector, dirProvider)
+		netManager = &fakenet.FakeNetManager{}
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		options = LinuxOptions{}
 
@@ -69,8 +72,6 @@ var _ = Describe("LinuxPlatform", func() {
 
 	JustBeforeEach(func() {
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-
-		netManager := &fakenet.FakeNetManager{}
 
 		platform = NewLinuxPlatform(
 			fs,
@@ -951,6 +952,25 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 
 			Expect(username).To(Equal("fake-user"))
 			Expect(password).To(Equal("fake:random:password"))
+		})
+	})
+
+	Describe("GetDefaultNetwork", func() {
+		It("returns default network according to net manager", func() {
+			netManager.GetDefaultNetworkNetwork = boshsettings.Network{IP: "fake-ip"}
+
+			network, err := platform.GetDefaultNetwork()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(network).To(Equal(boshsettings.Network{IP: "fake-ip"}))
+		})
+
+		It("returns error if net manager fails to retrieve default network", func() {
+			netManager.GetDefaultNetworkErr = errors.New("fake-get-default-network-err")
+
+			network, err := platform.GetDefaultNetwork()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-get-default-network-err"))
+			Expect(network).To(Equal(boshsettings.Network{}))
 		})
 	})
 })

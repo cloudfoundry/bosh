@@ -4,6 +4,12 @@ import (
 	boshsettings "bosh/settings"
 )
 
+type DefaultNetworkResolver interface {
+	// Ideally we would find a network based on a MAC address
+	// but current CPI implementations do not include it
+	GetDefaultNetwork() (boshsettings.Network, error)
+}
+
 type NetManager interface {
 	// SetupManualNetworking configures network interfaces with a static ip.
 	// If errCh is provided, nil or an error will be sent
@@ -12,9 +18,7 @@ type NetManager interface {
 
 	SetupDhcp(networks boshsettings.Networks) error
 
-	// Ideally we would find a network based on a MAC address
-	// but current CPI implementations do not include it
-	GetDefaultNetwork() (boshsettings.Network, error)
+	DefaultNetworkResolver
 }
 
 type customNetwork struct {
