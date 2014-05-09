@@ -81,7 +81,7 @@ func (a GetStateAction) Run(filters ...string) (GetStateV1ApplySpec, error) {
 	}
 
 	if value.NetworkSpecs == nil {
-		value.NetworkSpecs = map[string]boshas.NetworkSpec{}
+		value.NetworkSpecs = map[string]interface{}{}
 	}
 	if value.ResourcePoolSpecs == nil {
 		value.ResourcePoolSpecs = map[string]interface{}{}

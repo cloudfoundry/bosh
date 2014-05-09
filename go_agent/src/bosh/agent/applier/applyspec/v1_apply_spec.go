@@ -4,17 +4,12 @@ import (
 	models "bosh/agent/applier/models"
 )
 
-// V1ApplySpec should lowercase all JSON keys
-// because apply spec is returned to Director via get_state action
 type V1ApplySpec struct {
-	ConfigurationHash string `json:"configuration_hash"`
-
-	PropertiesSpec PropertiesSpec `json:"properties"`
-
-	JobSpec      JobSpec                `json:"job"`
-	PackageSpecs map[string]PackageSpec `json:"packages"`
-
-	NetworkSpecs      map[string]NetworkSpec `json:"networks"`
+	PropertiesSpec    PropertiesSpec         `json:"properties"`
+	JobSpec           JobSpec                `json:"job"`
+	PackageSpecs      map[string]PackageSpec `json:"packages"`
+	ConfigurationHash string                 `json:"configuration_hash"`
+	NetworkSpecs      map[string]interface{} `json:"networks"`
 	ResourcePoolSpecs interface{}            `json:"resource_pool"`
 	Deployment        string                 `json:"deployment"`
 
@@ -34,27 +29,6 @@ type PropertiesSpec struct {
 
 type LoggingSpec struct {
 	MaxLogFileSize string `json:"max_log_file_size"`
-}
-
-type NetworkSpec struct {
-	Type string `json:"type"`
-
-	CloudProperties map[string]interface{} `json:"cloud_properties,omitempty"`
-
-	// e.g. ["dns", "gateway"]
-	Default []string `json:"default,omitempty"`
-
-	// e.g. ["10.80.130.1","172.16.79.16"]
-	DNS []string `json:"dns,omitempty"`
-
-	DNSRecordName string `json:"dns_record_name"`
-
-	Gateway string `json:"gateway"`
-	IP      string `json:"ip"`
-	Netmask string `json:"netmask"`
-
-	// e.g. "00:50:56:ba:46:f0"
-	MAC string `json:"mac"`
 }
 
 // Jobs returns a list of pre-rendered job templates

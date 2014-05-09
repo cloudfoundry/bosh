@@ -34,17 +34,27 @@ var _ = Describe("V1ApplySpec", func() {
 				},
 				"networks": {
 					"manual-net": {
-						"cloud_properties": {"subnet": "subnet-xxxxxx"},
-						"default": ["dns", "gateway"],
-						"dns": ["xx.xx.xx.xx"],
+						"cloud_properties": {
+							"subnet": "subnet-xxxxxx"
+						},
+						"default": [
+							"dns",
+							"gateway"
+						],
+						"dns": [
+							"xx.xx.xx.xx"
+						],
 						"dns_record_name": "job-index.job-name.manual-net.deployment-name.bosh",
 						"gateway": "xx.xx.xx.xx",
 						"ip": "xx.xx.xx.xx",
-						"netmask": "xx.xx.xx.xx",
-						"mac": "00:50:56:ba:46:f0"
+						"netmask": "xx.xx.xx.xx"
 					},
 					"vip-net": {
-						"cloud_properties": {"security_groups": ["bosh"]},
+						"cloud_properties": {
+							"security_groups": [
+								"bosh"
+							]
+						},
 						"dns_record_name": "job-index.job-name.vip-net.deployment-name.bosh",
 						"ip": "xx.xx.xx.xx",
 						"type": "vip"
@@ -62,22 +72,21 @@ var _ = Describe("V1ApplySpec", func() {
 
 			jobName := "router"
 
-			expectedNetworks := map[string]NetworkSpec{
-				"manual-net": NetworkSpec{
-					CloudProperties: map[string]interface{}{"subnet": "subnet-xxxxxx"},
-					Default:         []string{"dns", "gateway"},
-					DNS:             []string{"xx.xx.xx.xx"},
-					DNSRecordName:   "job-index.job-name.manual-net.deployment-name.bosh",
-					Gateway:         "xx.xx.xx.xx",
-					IP:              "xx.xx.xx.xx",
-					Netmask:         "xx.xx.xx.xx",
-					MAC:             "00:50:56:ba:46:f0",
+			expectedNetworks := map[string]interface{}{
+				"manual-net": map[string]interface{}{
+					"cloud_properties": map[string]interface{}{"subnet": "subnet-xxxxxx"},
+					"default":          []interface{}{"dns", "gateway"},
+					"dns":              []interface{}{"xx.xx.xx.xx"},
+					"dns_record_name":  "job-index.job-name.manual-net.deployment-name.bosh",
+					"gateway":          "xx.xx.xx.xx",
+					"ip":               "xx.xx.xx.xx",
+					"netmask":          "xx.xx.xx.xx",
 				},
-				"vip-net": NetworkSpec{
-					CloudProperties: map[string]interface{}{"security_groups": []interface{}{"bosh"}},
-					DNSRecordName:   "job-index.job-name.vip-net.deployment-name.bosh",
-					IP:              "xx.xx.xx.xx",
-					Type:            "vip",
+				"vip-net": map[string]interface{}{
+					"cloud_properties": map[string]interface{}{"security_groups": []interface{}{"bosh"}},
+					"dns_record_name":  "job-index.job-name.vip-net.deployment-name.bosh",
+					"ip":               "xx.xx.xx.xx",
+					"type":             "vip",
 				},
 			}
 
