@@ -17,7 +17,8 @@ describe VSphereCloud::Cloud do
   let(:config) do
     {
       'db' => {
-        'database' => db_path
+        'database' => db_path,
+        'adapter' => 'sqlite',
       },
       'cloud' => {
         'properties' => {
@@ -73,7 +74,7 @@ describe VSphereCloud::Cloud do
     it 'runs migrations on database from config' do
       run_vsphere_cpi({})
       db = Sequel.sqlite(database: db_path)
-      result = db["SELECT * FROM schema_migrations"]
+      result = db["SELECT * FROM vsphere_cpi_schema"]
       expect(result.count).to be > 0
       expect(result.first[:filename]).to match(/initial/)
     end

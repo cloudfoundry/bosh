@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 
+require 'rubygems'
 require 'yaml'
 require 'sequel'
-require 'sequel/adapters/sqlite'
 require 'logger'
 require 'cloud'
 require 'cloud/vsphere'
@@ -14,10 +14,18 @@ require 'bosh/cpi/cli'
 Sequel.extension(:migration)
 
 director_config = YAML.load_file(ARGV.shift)
+db_config = director_config.fetch('db')
 
-db = Sequel.sqlite(director_config['db'])
+require 'sequel/adapters/sqlite' if db_config['adapter'] == 'sqlite'
+
+connection_options = db_config.delete('connection_options') { {} }
+db_config.delete_if { |_, v| v.to_s.empty? }
+db_config = db_config.merge(connection_options)
+
+db = Sequel.connect(db_config)
+
 db_migrations_path = File.expand_path('../../db/migrations', __FILE__)
-Sequel::TimestampMigrator.new(db, db_migrations_path, {}).run
+Sequel::TimestampMigrator.new(db, db_migrations_path, {table: 'vsphere_cpi_schema'}).run
 
 Bosh::Clouds::Config.configure(OpenStruct.new(
   logger: Logger.new(STDERR),
@@ -28,4 +36,5 @@ Bosh::Clouds::Config.configure(OpenStruct.new(
 cpi = Bosh::Clouds::VSphere.new(director_config['cloud']['properties'])
 
 cli = Bosh::Cpi::Cli.new(cpi, STDOUT)
+
 cli.run(ARGF.read)
