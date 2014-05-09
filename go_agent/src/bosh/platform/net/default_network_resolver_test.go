@@ -30,16 +30,26 @@ var _ = Describe("defaultNetworkResolver", func() {
 
 	Describe("Resolve", func() {
 		It("returns a network associated with a first default gateway", func() {
+			var ifaceName string
+
+			if _, err := gonet.InterfaceByName("en0"); err == nil {
+				ifaceName = "en0"
+			} else if _, err := gonet.InterfaceByName("eth0"); err == nil {
+				ifaceName = "eth0"
+			} else {
+				panic("Not sure which interface name to use: en0 and eth0 are not found")
+			}
+
 			routesSearcher.SearchRoutesRoutes = []Route{
 				Route{
-					Destination: "fake-route1-dest",
-					Gateway: "fake-route1-gatewa	y",
+					Destination:   "fake-route1-dest",
+					Gateway:       "fake-route1-gateway",
 					InterfaceName: "fake-route1-iface",
 				},
 				Route{
 					Destination:   "0.0.0.0",
 					Gateway:       "fake-route2-gateway",
-					InterfaceName: "en0",
+					InterfaceName: ifaceName,
 				},
 			}
 
