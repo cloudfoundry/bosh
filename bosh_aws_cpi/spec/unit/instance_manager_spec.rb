@@ -1,5 +1,4 @@
 require "spec_helper"
-require 'pry-debugger'
 
 describe Bosh::AwsCloud::InstanceManager do
   let(:registry) { double("registry", :endpoint => "http://...", :update_settings => nil) }
