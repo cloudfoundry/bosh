@@ -1,13 +1,14 @@
 package blobstore
 
 import (
+	"fmt"
+	"path/filepath"
+
 	bosherr "bosh/errors"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
 	boshuuid "bosh/uuid"
-	"fmt"
-	"path/filepath"
 )
 
 type Provider struct {
@@ -16,7 +17,10 @@ type Provider struct {
 	uuidGen     boshuuid.Generator
 }
 
-func NewProvider(platform boshplatform.Platform, dirProvider boshdir.DirectoriesProvider) (p Provider) {
+func NewProvider(
+	platform boshplatform.Platform,
+	dirProvider boshdir.DirectoriesProvider,
+) (p Provider) {
 	p.uuidGen = boshuuid.NewGenerator()
 	p.platform = platform
 	p.dirProvider = dirProvider
@@ -24,16 +28,17 @@ func NewProvider(platform boshplatform.Platform, dirProvider boshdir.Directories
 }
 
 func (p Provider) Get(settings boshsettings.Blobstore) (blobstore Blobstore, err error) {
-	externalConfigFile := filepath.Join(p.dirProvider.EtcDir(), fmt.Sprintf("blobstore-%s.json", settings.Type))
+	configName := fmt.Sprintf("blobstore-%s.json", settings.Type)
+	externalConfigFile := filepath.Join(p.dirProvider.EtcDir(), configName)
 
 	switch settings.Type {
 	case boshsettings.BlobstoreTypeDummy:
 		blobstore = newDummyBlobstore()
 	case boshsettings.BlobstoreTypeLocal:
 		blobstore = newLocalBlobstore(
-			settings.Options,
 			p.platform.GetFs(),
 			p.uuidGen,
+			settings.Options,
 		)
 	default:
 		blobstore = NewExternalBlobstore(

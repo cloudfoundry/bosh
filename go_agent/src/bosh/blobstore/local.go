@@ -1,19 +1,24 @@
 package blobstore
 
 import (
+	"path/filepath"
+
 	bosherr "bosh/errors"
 	boshsys "bosh/system"
 	boshuuid "bosh/uuid"
-	"path/filepath"
 )
 
 type local struct {
 	fs      boshsys.FileSystem
 	uuidGen boshuuid.Generator
-	options map[string]string
+	options map[string]interface{}
 }
 
-func newLocalBlobstore(options map[string]string, fs boshsys.FileSystem, uuidGen boshuuid.Generator) (blobstore local) {
+func newLocalBlobstore(
+	fs boshsys.FileSystem,
+	uuidGen boshuuid.Generator,
+	options map[string]interface{},
+) local {
 	return local{
 		fs:      fs,
 		uuidGen: uuidGen,
@@ -21,37 +26,40 @@ func newLocalBlobstore(options map[string]string, fs boshsys.FileSystem, uuidGen
 	}
 }
 
-func (blobstore local) Validate() (err error) {
-	_, found := blobstore.options["blobstore_path"]
+func (blobstore local) Validate() error {
+	path, found := blobstore.options["blobstore_path"]
 	if !found {
-		err = bosherr.New("missing blobstore_path")
-		return
+		return bosherr.New("missing blobstore_path")
 	}
-	return
+
+	_, ok := path.(string)
+	if !ok {
+		return bosherr.New("blobstore_path must be a string")
+	}
+
+	return nil
 }
 
 func (blobstore local) Get(blobID, _ string) (fileName string, err error) {
 	file, err := blobstore.fs.TempFile("bosh-blobstore-external-Get")
 	if err != nil {
-		err = bosherr.WrapError(err, "Creating temporary file")
-		return
+		return "", bosherr.WrapError(err, "Creating temporary file")
 	}
 
 	fileName = file.Name()
 
 	err = blobstore.fs.CopyFile(filepath.Join(blobstore.path(), blobID), fileName)
 	if err != nil {
-		err = bosherr.WrapError(err, "Copying file")
 		blobstore.fs.RemoveAll(fileName)
-		fileName = ""
+		return "", bosherr.WrapError(err, "Copying file")
 	}
 
-	return
+	return fileName, nil
 }
 
-func (blobstore local) CleanUp(fileName string) (err error) {
+func (blobstore local) CleanUp(fileName string) error {
 	blobstore.fs.RemoveAll(fileName)
-	return
+	return nil
 }
 
 func (blobstore local) Create(fileName string) (blobID string, fingerprint string, err error) {
@@ -70,6 +78,7 @@ func (blobstore local) Create(fileName string) (blobID string, fingerprint strin
 	return
 }
 
-func (blobstore local) path() (path string) {
-	return blobstore.options["blobstore_path"]
+func (blobstore local) path() string {
+	// Validate() makes sure that it's a string
+	return blobstore.options["blobstore_path"].(string)
 }

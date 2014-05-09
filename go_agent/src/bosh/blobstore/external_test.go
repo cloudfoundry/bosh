@@ -34,7 +34,7 @@ func init() {
 		})
 
 		It("external validate writes config file", func() {
-			options := map[string]string{"fake-key": "fake-value"}
+			options := map[string]interface{}{"fake-key": "fake-value"}
 
 			blobstore := NewExternalBlobstore("fake-provider", options, fs, runner, uuidGen, configPath)
 
@@ -49,7 +49,7 @@ func init() {
 		})
 
 		It("external validate errors when command not in path", func() {
-			options := map[string]string{}
+			options := map[string]interface{}{}
 
 			blobstore := NewExternalBlobstore("fake-provider", options, fs, runner, uuidGen, configPath)
 
@@ -57,7 +57,7 @@ func init() {
 		})
 
 		It("external get", func() {
-			blobstore := NewExternalBlobstore("fake-provider", map[string]string{}, fs, runner, uuidGen, configPath)
+			blobstore := NewExternalBlobstore("fake-provider", map[string]interface{}{}, fs, runner, uuidGen, configPath)
 
 			tempFile, err := fs.TempFile("bosh-blobstore-external-TestGet")
 			Expect(err).ToNot(HaveOccurred())
@@ -80,7 +80,7 @@ func init() {
 		})
 
 		It("external get errs when temp file create errs", func() {
-			blobstore := NewExternalBlobstore("fake-provider", map[string]string{}, fs, runner, uuidGen, configPath)
+			blobstore := NewExternalBlobstore("fake-provider", map[string]interface{}{}, fs, runner, uuidGen, configPath)
 
 			fs.TempFileError = errors.New("fake-error")
 
@@ -92,7 +92,7 @@ func init() {
 		})
 
 		It("external get errs when external cli errs", func() {
-			blobstore := NewExternalBlobstore("fake-provider", map[string]string{}, fs, runner, uuidGen, configPath)
+			blobstore := NewExternalBlobstore("fake-provider", map[string]interface{}{}, fs, runner, uuidGen, configPath)
 
 			tempFile, err := fs.TempFile("bosh-blobstore-external-TestGetErrsWhenExternalCliErrs")
 			Expect(err).ToNot(HaveOccurred())
@@ -116,7 +116,7 @@ func init() {
 		})
 
 		It("external clean up", func() {
-			blobstore := NewExternalBlobstore("fake-provider", map[string]string{}, fs, runner, uuidGen, configPath)
+			blobstore := NewExternalBlobstore("fake-provider", map[string]interface{}{}, fs, runner, uuidGen, configPath)
 
 			file, err := fs.TempFile("bosh-blobstore-external-TestCleanUp")
 			Expect(err).ToNot(HaveOccurred())
@@ -133,7 +133,7 @@ func init() {
 			fileName := "../../../fixtures/some.config"
 			expectedPath, _ := filepath.Abs(fileName)
 
-			blobstore := NewExternalBlobstore("fake-provider", map[string]string{}, fs, runner, uuidGen, configPath)
+			blobstore := NewExternalBlobstore("fake-provider", map[string]interface{}{}, fs, runner, uuidGen, configPath)
 
 			uuidGen.GeneratedUuid = "some-uuid"
 

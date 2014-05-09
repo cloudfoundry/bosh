@@ -113,7 +113,8 @@ var _ = Describe("concreteRegistry", func() {
 								"bucket_name": "george",
 								"encryption_key": "optional encryption key",
 								"access_key_id": "optional access key id",
-								"secret_access_key": "optional secret access key"
+								"secret_access_key": "optional secret access key",
+								"port": 443
 							},
 							"provider": "s3"
 						},
@@ -161,13 +162,14 @@ var _ = Describe("concreteRegistry", func() {
 					expectedSettings := boshsettings.Settings{
 						AgentID: "my-agent-id",
 						Blobstore: boshsettings.Blobstore{
-							Options: map[string]string{
+							Type: "s3",
+							Options: map[string]interface{}{
 								"bucket_name":       "george",
 								"encryption_key":    "optional encryption key",
 								"access_key_id":     "optional access key id",
 								"secret_access_key": "optional secret access key",
+								"port":              443.0,
 							},
-							Type: "s3",
 						},
 						Disks: boshsettings.Disks{
 							Ephemeral:  "/dev/sdb",

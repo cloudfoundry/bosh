@@ -134,5 +134,19 @@ func init() {
 			Expect(err).NotTo(HaveOccurred())
 			expectSnakeCaseKeys(settingsMap)
 		})
+
+		It("allows different types for blobstore option values", func() {
+			var settings Settings
+			settingsJSON := `{"blobstore":{"options":{"string":"value", "int":443, "bool":true, "map":{}}}}`
+
+			err := json.Unmarshal([]byte(settingsJSON), &settings)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(settings.Blobstore.Options).To(Equal(map[string]interface{}{
+				"string": "value",
+				"int":    443.0,
+				"bool":   true,
+				"map":    map[string]interface{}{},
+			}))
+		})
 	})
 }

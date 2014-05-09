@@ -30,7 +30,7 @@ func init() {
 		It("get external when external command in path", func() {
 
 			platform, provider := buildProvider()
-			options := map[string]string{
+			options := map[string]interface{}{
 				"key": "value",
 			}
 
@@ -52,7 +52,7 @@ func init() {
 		It("get external errs when external command not in path", func() {
 
 			platform, provider := buildProvider()
-			options := map[string]string{
+			options := map[string]interface{}{
 				"key": "value",
 			}
 

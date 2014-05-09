@@ -16,12 +16,12 @@ type external struct {
 	uuidGen        boshuuid.Generator
 	configFilePath string
 	provider       string
-	options        map[string]string
+	options        map[string]interface{}
 }
 
 func NewExternalBlobstore(
 	provider string,
-	options map[string]string,
+	options map[string]interface{},
 	fs boshsys.FileSystem,
 	runner boshsys.CmdRunner,
 	uuidGen boshuuid.Generator,
