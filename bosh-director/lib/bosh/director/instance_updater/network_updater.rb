@@ -69,6 +69,8 @@ module Bosh::Director
         @logger.info('Waiting for agent to become responsive')
         @agent_client.wait_until_ready
 
+        # Agent's configure_networks is a long running task
+        # hence we do not need to wait_until_ready after it
         @agent_client.configure_networks(@network_settings)
       end
     end
