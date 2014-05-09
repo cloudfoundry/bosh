@@ -37,20 +37,6 @@ func NewExternalBlobstore(
 	}
 }
 
-func (blobstore external) writeConfigFile() error {
-	configJSON, err := json.Marshal(blobstore.options)
-	if err != nil {
-		return bosherr.WrapError(err, "Marshalling JSON")
-	}
-
-	err = blobstore.fs.WriteFile(blobstore.configFilePath, configJSON)
-	if err != nil {
-		return bosherr.WrapError(err, "Writing config file")
-	}
-
-	return nil
-}
-
 func (blobstore external) Get(blobID, _ string) (string, error) {
 	file, err := blobstore.fs.TempFile("bosh-blobstore-external-Get")
 	if err != nil {
@@ -98,6 +84,20 @@ func (blobstore external) Validate() error {
 	}
 
 	return blobstore.writeConfigFile()
+}
+
+func (blobstore external) writeConfigFile() error {
+	configJSON, err := json.Marshal(blobstore.options)
+	if err != nil {
+		return bosherr.WrapError(err, "Marshalling JSON")
+	}
+
+	err = blobstore.fs.WriteFile(blobstore.configFilePath, configJSON)
+	if err != nil {
+		return bosherr.WrapError(err, "Writing config file")
+	}
+
+	return nil
 }
 
 func (blobstore external) run(method, src, dst string) (err error) {

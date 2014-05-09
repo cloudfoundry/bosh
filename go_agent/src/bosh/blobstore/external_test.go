@@ -7,7 +7,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 
 	boshassert "bosh/assert"
 	. "bosh/blobstore"
@@ -16,30 +15,34 @@ import (
 	fakeuuid "bosh/uuid/fakes"
 )
 
-func init() {
-	Describe("external", func() {
-		var (
-			fs         *fakesys.FakeFileSystem
-			runner     *fakesys.FakeCmdRunner
-			uuidGen    *fakeuuid.FakeGenerator
-			configPath string
-		)
+var _ = Describe("external", func() {
+	var (
+		fs         *fakesys.FakeFileSystem
+		runner     *fakesys.FakeCmdRunner
+		uuidGen    *fakeuuid.FakeGenerator
+		configPath string
+		blobstore  Blobstore
+	)
 
-		BeforeEach(func() {
-			fs = fakesys.NewFakeFileSystem()
-			runner = fakesys.NewFakeCmdRunner()
-			uuidGen = &fakeuuid.FakeGenerator{}
-			dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
-			configPath = filepath.Join(dirProvider.EtcDir(), "blobstore-fake-provider.json")
-		})
+	BeforeEach(func() {
+		fs = fakesys.NewFakeFileSystem()
+		runner = fakesys.NewFakeCmdRunner()
+		uuidGen = &fakeuuid.FakeGenerator{}
+		dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+		configPath = filepath.Join(dirProvider.EtcDir(), "blobstore-fake-provider.json")
+		blobstore = NewExternalBlobstore("fake-provider", map[string]interface{}{}, fs, runner, uuidGen, configPath)
+	})
 
+	Describe("Validate", func() {
 		It("external validate writes config file", func() {
 			options := map[string]interface{}{"fake-key": "fake-value"}
 
 			blobstore := NewExternalBlobstore("fake-provider", options, fs, runner, uuidGen, configPath)
 
 			runner.CommandExistsValue = true
-			assert.NoError(GinkgoT(), blobstore.Validate())
+
+			err := blobstore.Validate()
+			Expect(err).ToNot(HaveOccurred())
 
 			s3CliConfig, err := fs.ReadFileString(configPath)
 			Expect(err).ToNot(HaveOccurred())
@@ -53,12 +56,14 @@ func init() {
 
 			blobstore := NewExternalBlobstore("fake-provider", options, fs, runner, uuidGen, configPath)
 
-			assert.Error(GinkgoT(), blobstore.Validate())
+			err := blobstore.Validate()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("not found in PATH"))
 		})
+	})
 
+	Describe("Get", func() {
 		It("external get", func() {
-			blobstore := NewExternalBlobstore("fake-provider", map[string]interface{}{}, fs, runner, uuidGen, configPath)
-
 			tempFile, err := fs.TempFile("bosh-blobstore-external-TestGet")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -68,32 +73,28 @@ func init() {
 			fileName, err := blobstore.Get("fake-blob-id", "")
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(1).To(Equal(len(runner.RunCommands)))
-			assert.Equal(GinkgoT(), []string{
+			Expect(len(runner.RunCommands)).To(Equal(1))
+			Expect(runner.RunCommands[0]).To(Equal([]string{
 				"bosh-blobstore-fake-provider", "-c", configPath, "get",
 				"fake-blob-id",
 				tempFile.Name(),
-			}, runner.RunCommands[0])
+			}))
 
 			Expect(fileName).To(Equal(tempFile.Name()))
 			Expect(fs.FileExists(tempFile.Name())).To(BeTrue())
 		})
 
 		It("external get errs when temp file create errs", func() {
-			blobstore := NewExternalBlobstore("fake-provider", map[string]interface{}{}, fs, runner, uuidGen, configPath)
-
 			fs.TempFileError = errors.New("fake-error")
 
 			fileName, err := blobstore.Get("fake-blob-id", "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-error"))
 
-			assert.Empty(GinkgoT(), fileName)
+			Expect(fileName).To(BeEmpty())
 		})
 
 		It("external get errs when external cli errs", func() {
-			blobstore := NewExternalBlobstore("fake-provider", map[string]interface{}{}, fs, runner, uuidGen, configPath)
-
 			tempFile, err := fs.TempFile("bosh-blobstore-external-TestGetErrsWhenExternalCliErrs")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -111,13 +112,13 @@ func init() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-error"))
 
-			assert.Empty(GinkgoT(), fileName)
+			Expect(fileName).To(BeEmpty())
 			Expect(fs.FileExists(tempFile.Name())).To(BeFalse())
 		})
+	})
 
+	Describe("CleanUp", func() {
 		It("external clean up", func() {
-			blobstore := NewExternalBlobstore("fake-provider", map[string]interface{}{}, fs, runner, uuidGen, configPath)
-
 			file, err := fs.TempFile("bosh-blobstore-external-TestCleanUp")
 			Expect(err).ToNot(HaveOccurred())
 			fileName := file.Name()
@@ -128,25 +129,26 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(fs.FileExists(fileName)).To(BeFalse())
 		})
+	})
 
+	Describe("Create", func() {
 		It("external create", func() {
 			fileName := "../../../fixtures/some.config"
-			expectedPath, _ := filepath.Abs(fileName)
-
-			blobstore := NewExternalBlobstore("fake-provider", map[string]interface{}{}, fs, runner, uuidGen, configPath)
+			expectedPath, err := filepath.Abs(fileName)
+			Expect(err).ToNot(HaveOccurred())
 
 			uuidGen.GeneratedUuid = "some-uuid"
 
 			blobID, fingerprint, err := blobstore.Create(fileName)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(blobID).To(Equal("some-uuid"))
-			assert.Empty(GinkgoT(), fingerprint)
+			Expect(fingerprint).To(BeEmpty())
 
-			Expect(1).To(Equal(len(runner.RunCommands)))
-			assert.Equal(GinkgoT(), []string{
+			Expect(len(runner.RunCommands)).To(Equal(1))
+			Expect(runner.RunCommands[0]).To(Equal([]string{
 				"bosh-blobstore-fake-provider", "-c", configPath, "put",
 				expectedPath, "some-uuid",
-			}, runner.RunCommands[0])
+			}))
 		})
 	})
-}
+})

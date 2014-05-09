@@ -26,20 +26,6 @@ func newLocalBlobstore(
 	}
 }
 
-func (blobstore local) Validate() error {
-	path, found := blobstore.options["blobstore_path"]
-	if !found {
-		return bosherr.New("missing blobstore_path")
-	}
-
-	_, ok := path.(string)
-	if !ok {
-		return bosherr.New("blobstore_path must be a string")
-	}
-
-	return nil
-}
-
 func (blobstore local) Get(blobID, _ string) (fileName string, err error) {
 	file, err := blobstore.fs.TempFile("bosh-blobstore-external-Get")
 	if err != nil {
@@ -76,6 +62,20 @@ func (blobstore local) Create(fileName string) (blobID string, fingerprint strin
 		return
 	}
 	return
+}
+
+func (blobstore local) Validate() error {
+	path, found := blobstore.options["blobstore_path"]
+	if !found {
+		return bosherr.New("missing blobstore_path")
+	}
+
+	_, ok := path.(string)
+	if !ok {
+		return bosherr.New("blobstore_path must be a string")
+	}
+
+	return nil
 }
 
 func (blobstore local) path() string {
