@@ -65,7 +65,7 @@ describe Bosh::Director::Config do
 
     it 'creates the cloud from the provider' do
       cloud = double('cloud')
-      expect(Bosh::Clouds::Provider).to receive(:create).with(test_config['cloud']).and_return(cloud)
+      expect(Bosh::Clouds::Provider).to receive(:create).with(test_config['cloud'], described_class.uuid).and_return(cloud)
       expect(described_class.cloud).to equal(cloud)
     end
 

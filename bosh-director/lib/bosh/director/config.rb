@@ -191,7 +191,7 @@ module Bosh::Director
       def cloud
         @lock.synchronize do
           if @cloud.nil?
-            @cloud = Bosh::Clouds::Provider.create(@cloud_options)
+            @cloud = Bosh::Clouds::Provider.create(@cloud_options, @uuid)
           end
         end
         @cloud

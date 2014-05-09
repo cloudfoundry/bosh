@@ -57,15 +57,19 @@ module Bosh::Clouds
       }
     end
 
-    def initialize(cpi_path)
+    def initialize(cpi_path, director_uuid)
       @cpi_path = cpi_path
+      @director_uuid = director_uuid
     end
 
     KNOWN_RPC_METHODS.each do |method_name|
       define_method method_name do |*arguments|
         opts = JSON.dump({
           'method' => method_name.gsub(/\?$/,''),
-          'arguments' => arguments
+          'arguments' => arguments,
+          'context' => {
+            'director_uuid' => @director_uuid
+          }
         })
 
         env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => ENV['TMPDIR']}
