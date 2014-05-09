@@ -25,6 +25,27 @@ describe Bosh::OpenStackCloud::Cloud do
     cloud.create_disk(2048).should == "v-foobar"
   end
 
+  it "creates an OpenStack boot volume" do
+    unique_name = SecureRandom.uuid
+    stemcell_id = SecureRandom.uuid
+    disk_params = {
+      :display_name => "volume-#{unique_name}",
+      :size => 2,
+      :imageRef => stemcell_id
+    }
+    boot_volume = double("volume", :id => "v-foobar")
+
+    cloud = mock_cloud do |openstack|
+      openstack.volumes.should_receive(:create).
+        with(disk_params).and_return(boot_volume)
+    end
+
+    cloud.should_receive(:generate_unique_name).and_return(unique_name)
+    cloud.should_receive(:wait_resource).with(boot_volume, :available)
+
+    cloud.create_boot_disk(2048, stemcell_id).should == "v-foobar"
+  end
+
   it "rounds up disk size" do
     unique_name = SecureRandom.uuid
     disk_params = {
