@@ -54,7 +54,11 @@ func init() {
 				logger,
 				dirProvider,
 				jobFailuresServerPort,
-				5*time.Second,
+				MonitReloadOptions{
+					MaxTries:               3,
+					MaxCheckTries:          6,
+					DelayBetweenCheckTries: 5 * time.Second,
+				},
 			)
 			Expect(actualSupervisor).To(Equal(expectedSupervisor))
 		})

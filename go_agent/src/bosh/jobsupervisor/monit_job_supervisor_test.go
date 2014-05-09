@@ -52,7 +52,11 @@ var _ = Describe("monitJobSupervisor", func() {
 			logger,
 			dirProvider,
 			jobFailuresServerPort,
-			0*time.Millisecond,
+			MonitReloadOptions{
+				MaxTries:               3,
+				MaxCheckTries:          10,
+				DelayBetweenCheckTries: 0 * time.Millisecond,
+			},
 		)
 	})
 
@@ -99,8 +103,8 @@ var _ = Describe("monitJobSupervisor", func() {
 			Expect(client.StatusCalledTimes).To(Equal(4))
 		})
 
-		It("stops trying to reload after 60 attempts", func() {
-			for i := 0; i < 61; i++ {
+		It("returns error after monit reloading X times, each time checking incarnation Y times", func() {
+			for i := 0; i < 100; i++ {
 				client.Incarnations = append(client.Incarnations, 1)
 			}
 
@@ -115,13 +119,15 @@ var _ = Describe("monitJobSupervisor", func() {
 			err := monit.Reload()
 			Expect(err).To(HaveOccurred())
 
-			Expect(len(runner.RunCommands)).To(Equal(1))
+			Expect(len(runner.RunCommands)).To(Equal(3))
 			Expect(runner.RunCommands[0]).To(Equal([]string{"monit", "reload"}))
-			Expect(client.StatusCalledTimes).To(Equal(60))
+			Expect(runner.RunCommands[1]).To(Equal([]string{"monit", "reload"}))
+			Expect(runner.RunCommands[2]).To(Equal([]string{"monit", "reload"}))
+			Expect(client.StatusCalledTimes).To(Equal(1 + 30)) // old incarnation + new incarnation checks
 		})
 
-		It("is successful if the incarnation id is different (<, or > old incarnation id)", func() {
-			client.Incarnations = []int{2, 2, 1}
+		It("is successful if the incarnation id is different (does not matter if < or >)", func() {
+			client.Incarnations = []int{2, 2, 1} // different and less than old one
 			client.StatusStatus = fakemonit.FakeMonitStatus{
 				Services: []boshmonit.Service{
 					boshmonit.Service{Monitored: true, Status: "failing"},

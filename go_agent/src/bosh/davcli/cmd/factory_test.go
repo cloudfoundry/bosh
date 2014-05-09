@@ -12,11 +12,11 @@ import (
 
 func buildFactory() (factory Factory) {
 	config := davconf.Config{User: "some user"}
-
 	factory = NewFactory()
 	factory.SetConfig(config)
 	return
 }
+
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("factory create a put command", func() {

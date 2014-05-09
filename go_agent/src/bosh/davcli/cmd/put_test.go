@@ -27,6 +27,7 @@ func fileBytes(path string) (content []byte) {
 	content, _ = ioutil.ReadAll(f)
 	return
 }
+
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("put run with valid args", func() {

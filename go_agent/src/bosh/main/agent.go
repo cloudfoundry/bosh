@@ -19,13 +19,13 @@ func main() {
 
 	err := app.Setup(os.Args)
 	if err != nil {
-		logger.Error(mainLogTag, "App setup", err.Error())
+		logger.Error(mainLogTag, "App setup %s", err.Error())
 		os.Exit(1)
 	}
 
 	err = app.Run()
 	if err != nil {
-		logger.Error(mainLogTag, "App run", err.Error())
+		logger.Error(mainLogTag, "App run %s", err.Error())
 		os.Exit(1)
 	}
 }

@@ -54,10 +54,6 @@ func (p dummyPlatform) GetRunner() (runner boshsys.CmdRunner) {
 	return p.cmdRunner
 }
 
-func (p dummyPlatform) GetStatsCollector() (collector boshstats.StatsCollector) {
-	return p.collector
-}
-
 func (p dummyPlatform) GetCompressor() (compressor boshcmd.Compressor) {
 	return p.compressor
 }
@@ -176,9 +172,5 @@ func (p dummyPlatform) SetupMonitUser() (err error) {
 }
 
 func (p dummyPlatform) GetMonitCredentials() (username, password string, err error) {
-	return
-}
-
-func (p dummyPlatform) GetDiskManager() (diskManager boshdisk.Manager) {
 	return
 }

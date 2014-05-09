@@ -96,10 +96,6 @@ func (p linux) GetRunner() (runner boshsys.CmdRunner) {
 	return p.cmdRunner
 }
 
-func (p linux) GetStatsCollector() (statsCollector boshstats.StatsCollector) {
-	return p.collector
-}
-
 func (p linux) GetCompressor() (runner boshcmd.Compressor) {
 	return p.compressor
 }
@@ -628,23 +624,25 @@ func (p linux) IsPersistentDiskMounted(path string) (bool, error) {
 	return p.diskManager.GetMounter().IsMounted(realPath)
 }
 
-func (p linux) StartMonit() (err error) {
-	_, _, _, err = p.cmdRunner.RunCommand("sv", "up", "monit")
+func (p linux) StartMonit() error {
+	_, _, _, err := p.cmdRunner.RunCommand("sv", "up", "monit")
 	if err != nil {
-		err = bosherr.WrapError(err, "Shelling out to sv")
+		return bosherr.WrapError(err, "Shelling out to sv")
 	}
-	return
+
+	return nil
 }
 
-func (p linux) SetupMonitUser() (err error) {
+func (p linux) SetupMonitUser() error {
 	monitUserFilePath := filepath.Join(p.dirProvider.BaseDir(), "monit", "monit.user")
 	if !p.fs.FileExists(monitUserFilePath) {
-		err = p.fs.WriteFileString(monitUserFilePath, "vcap:random-password")
+		err := p.fs.WriteFileString(monitUserFilePath, "vcap:random-password")
 		if err != nil {
-			err = bosherr.WrapError(err, "Writing monit user file")
+			return bosherr.WrapError(err, "Writing monit user file")
 		}
 	}
-	return
+
+	return nil
 }
 
 func (p linux) GetMonitCredentials() (username, password string, err error) {
@@ -664,10 +662,6 @@ func (p linux) GetMonitCredentials() (username, password string, err error) {
 	username = credParts[0]
 	password = credParts[1]
 	return
-}
-
-func (p linux) GetDiskManager() (diskManager boshdisk.Manager) {
-	return p.diskManager
 }
 
 func (p linux) calculateEphemeralDiskPartitionSizes(devicePath string) (swapSize, linuxSize uint64, err error) {

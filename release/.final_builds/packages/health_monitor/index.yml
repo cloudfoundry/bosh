@@ -300,3 +300,8 @@ builds:
     version: 61
     sha1: !binary |-
       YjgyZjZhZWQxNTY2NTIzNWQwNTk5OTg3YzRmM2IyZDJlMThmNTk2Nw==
+  !binary "Y2U3MTMwMDE0NWM4MWM0MTZlNzczMDU4YjRjY2E0NzZlZTIwYzExMg==":
+    blobstore_id: fcd09148-9d0b-4885-9601-75f653f4492c
+    version: 62
+    sha1: !binary |-
+      MDU5NmY2NjMyYmYzMWVhNWJiMzM2MTBhOWI0MmViM2MwNWFkMDFhOA==

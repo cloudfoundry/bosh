@@ -8,7 +8,6 @@ import (
 	boshtask "bosh/agent/task"
 	boshblob "bosh/blobstore"
 	bosherr "bosh/errors"
-	boshinfrastructure "bosh/infrastructure"
 	boshjobsuper "bosh/jobsupervisor"
 	boshlog "bosh/logger"
 	boshnotif "bosh/notification"
@@ -24,7 +23,6 @@ type concreteFactory struct {
 func NewFactory(
 	settings boshsettings.Service,
 	platform boshplatform.Platform,
-	infrastructure boshinfrastructure.Infrastructure,
 	blobstore boshblob.Blobstore,
 	taskService boshtask.Service,
 	notifier boshnotif.Notifier,

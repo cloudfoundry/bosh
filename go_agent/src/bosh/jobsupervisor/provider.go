@@ -29,7 +29,11 @@ func NewProvider(
 		logger,
 		dirProvider,
 		2825,
-		5*time.Second,
+		MonitReloadOptions{
+			MaxTries:               3,
+			MaxCheckTries:          6,
+			DelayBetweenCheckTries: 5 * time.Second,
+		},
 	)
 
 	p.supervisors = map[string]JobSupervisor{
