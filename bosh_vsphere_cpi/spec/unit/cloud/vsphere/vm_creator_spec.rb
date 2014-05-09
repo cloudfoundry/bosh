@@ -9,17 +9,6 @@ describe VSphereCloud::VmCreator do
     let(:agent_env) { instance_double('VSphereCloud::AgentEnv') }
     let(:file_provider) { instance_double('VSphereCloud::FileProvider') }
 
-    context 'when the number of cpu is not a power of 2' do
-      subject(:creator) do
-        described_class.new(1024, 1024, 3, placer, vsphere_client, logger, cpi, agent_env, file_provider)
-      end
-      it 'raises an error  to work around a vCenter bug' do
-        expect {
-          creator.create(nil, nil, nil, [], {})
-        }.to raise_error('Number of vCPUs: 3 is not a power of 2.')
-      end
-    end
-
     context 'when the stemcell vm does not exist' do
       subject(:creator) do
         described_class.new(1024, 1024, 1, placer, vsphere_client, logger, cpi, agent_env, file_provider)
@@ -37,7 +26,7 @@ describe VSphereCloud::VmCreator do
 
     it 'chooses the placement based on memory, ephemeral and persistent disks' do
       creator = described_class.new(
-        1024, 10240000, 1, placer, vsphere_client, logger,
+        1024, 10240000, 3, placer, vsphere_client, logger,
         cpi, agent_env, file_provider
       )
 
@@ -133,7 +122,7 @@ describe VSphereCloud::VmCreator do
           snapshot: current_snapshot,
           config: match_attributes(
             memory_mb: 1024,
-            num_cpus: 1,
+            num_cpus: 3,
             device_change: [ephemeral_disk_config, add_nic_spec, delete_nic_spec],
           ),
         },

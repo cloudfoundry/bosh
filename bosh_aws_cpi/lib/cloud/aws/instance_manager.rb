@@ -22,7 +22,19 @@ module Bosh::AwsCloud
       @instance_params[:instance_type] = resource_pool["instance_type"]
       set_user_data_parameter(networks_spec)
       set_key_name_parameter(resource_pool["key_name"], options["aws"]["default_key_name"])
-      set_security_groups_parameter(networks_spec, options["aws"]["default_security_groups"])
+      if manual_network?(networks_spec) && !vip?(networks_spec)
+        @logger.info "Manual network detected without VIP"
+        set_associate_public_ip_parameter(resource_pool["associate_public_ip_address"], options["aws"]["associate_public_ip_address"])
+        if @instance_params[:associate_public_ip_address]
+          set_secutity_group_ids_parameter(networks_spec, options["aws"]["default_security_groups"])
+        else 
+          @logger.warn "VM in manual network has no VIP or associate_public_ip_address parameter!"
+          set_security_groups_parameter(networks_spec, options["aws"]["default_security_groups"])
+        end
+      else
+        set_security_groups_parameter(networks_spec, options["aws"]["default_security_groups"])
+      end
+
       set_vpc_parameters(networks_spec)
       set_availability_zone_parameter(
           (disk_locality || []).map { |volume_id| @region.volumes[volume_id].availability_zone.to_s },
@@ -34,10 +46,12 @@ module Bosh::AwsCloud
       
       if resource_pool["spot_bid_price"]
         @logger.info("Launching spot instance...")
-        security_group_ids = []
-        @region.security_groups.each do |group|
-           security_group_ids << group.security_group_id if @instance_params[:security_groups].include?(group.name)
-        end 
+        security_group_ids = @instance_params[:security_group_ids] || []
+        unless @instance_params[:security_groups].nil?
+          @region.security_groups.each do |group|
+             security_group_ids << group.security_group_id if @instance_params[:security_groups].include?(group.name)
+          end 
+        end
         spot_request_spec = create_spot_request_spec(instance_params, security_group_ids, resource_pool["spot_bid_price"])
         @logger.debug("Requesting spot instance with: #{spot_request_spec.inspect}")
         spot_instance_requests = @region.client.request_spot_instances(spot_request_spec) 
@@ -199,6 +213,22 @@ module Bosh::AwsCloud
       end
     end
 
+    def set_secutity_group_ids_parameter(networks_spec, default_security_groups)
+      security_group_names = extract_security_group_names(networks_spec)
+      if security_group_names.empty?
+        security_group_names = default_security_groups
+      end
+      security_group_ids = @region.security_groups
+                             .select {|group| security_group_names.include?(group.name)}
+                             .map {|group| group.id}
+      instance_params[:security_group_ids] = security_group_ids
+    end
+
+    def set_associate_public_ip_parameter(resource_pool_parameter, default_parameter)
+      associate_public_ip_spec = [resource_pool_parameter, default_parameter, true].find {|param| !param.nil?}      
+      instance_params[:associate_public_ip_address] = associate_public_ip_spec
+    end
+
     def set_vpc_parameters(network_spec)
       manual_network_spec = network_spec.values.select { |spec| ["manual", nil].include? spec["type"] }.first
       if manual_network_spec
@@ -209,6 +239,7 @@ module Bosh::AwsCloud
         ["manual", nil, "dynamic"].include?(spec["type"]) && 
         spec.fetch("cloud_properties", {}).has_key?("subnet")
       }.first
+      
       if subnet_network_spec
           instance_params[:subnet] = @region.subnets[subnet_network_spec["cloud_properties"]["subnet"]]
       end      
@@ -228,6 +259,14 @@ module Bosh::AwsCloud
       @instance_params[:user_data] = Yajl::Encoder.encode(user_data)
     end
 
+    def manual_network?(network_spec)
+      network_spec.values.select { |spec| ["manual", nil].include? spec["type"] }.first
+    end
+
+    def vip?(network_spec)
+      network_spec["vip"]
+    end
+ 
     private
 
     def instance_create_wait_time; 30; end

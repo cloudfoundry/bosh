@@ -36,7 +36,21 @@ describe Bosh::AwsCloud::InstanceManager do
   describe "#create" do
     let(:availability_zone_selector) { double(Bosh::AwsCloud::AvailabilityZoneSelector, common_availability_zone: "us-east-1a") }
     let(:fake_aws_subnet) { double(AWS::EC2::Subnet).as_null_object }
-    let(:aws_instance_params) do
+    let(:aws_instance_params_vpc) do
+      {
+          count: 1,
+          image_id: "stemcell-id",
+          instance_type: "m1.small",
+          user_data: "{\"registry\":{\"endpoint\":\"http://...\"},\"dns\":{\"nameserver\":\"foo\"}}",
+          key_name: "bar",
+          security_group_ids: ["sg-baz-1234"],
+          subnet: fake_aws_subnet,
+          private_ip_address: "1.2.3.4",
+          availability_zone: "us-east-1a",
+          associate_public_ip_address: true
+      }
+    end
+    let(:aws_instance_params_no_vpc) do
       {
           count: 1,
           image_id: "stemcell-id",
@@ -56,8 +70,9 @@ describe Bosh::AwsCloud::InstanceManager do
     it "should ask AWS to create an instance in the given region, with parameters built up from the given arguments" do
       allow(region).to receive(:instances).and_return(aws_instances)
       allow(region).to receive(:subnets).and_return({"sub-123456" => fake_aws_subnet})
+      allow(region).to receive(:security_groups).and_return( mock_security_groups )
 
-      expect(aws_instances).to receive(:create).with(aws_instance_params).and_return(instance)
+      expect(aws_instances).to receive(:create).with(aws_instance_params_vpc).and_return(instance)
       allow(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: instance, state: :running)
 
       instance_manager = described_class.new(region, registry, availability_zone_selector)
@@ -87,11 +102,7 @@ describe Bosh::AwsCloud::InstanceManager do
       allow(region).to receive(:client).and_return(aws_client)
       allow(region).to receive(:subnets).and_return({"sub-123456" => fake_aws_subnet})
       allow(region).to receive(:instances).and_return( {'i-12345678' => instance } )
-
-      #need to translate security group names to security group ids
-      sg1 = double(AWS::EC2::SecurityGroup, security_group_id:"sg-baz-1234")
-      allow(sg1).to receive(:name).and_return("baz")
-      allow(region).to receive(:security_groups).and_return([sg1])
+      allow(region).to receive(:security_groups).and_return( mock_security_groups )
 
       agent_id = "agent-id"
       stemcell_id = "stemcell-id"
@@ -115,7 +126,7 @@ describe Bosh::AwsCloud::InstanceManager do
       resource_pool = {"spot_bid_price"=>0.15, "instance_type" => "m1.small", "key_name" => "bar"}
 
       #Should not recieve an ondemand instance create call
-      expect(aws_instances).to_not receive(:create).with(aws_instance_params)
+      expect(aws_instances).to_not receive(:create).with(aws_instance_params_no_vpc)
 
       #Should rather recieve a spot instance request
       expect(aws_client).to receive(:request_spot_instances) do |spot_request|
@@ -160,9 +171,10 @@ describe Bosh::AwsCloud::InstanceManager do
     it "should retry creating the VM when AWS::EC2::Errors::InvalidIPAddress::InUse raised" do
       allow(region).to receive(:instances).and_return(aws_instances)
       allow(region).to receive(:subnets).and_return({"sub-123456" => fake_aws_subnet})
+      allow(region).to receive(:security_groups).and_return( mock_security_groups )
 
-      expect(aws_instances).to receive(:create).with(aws_instance_params).and_raise(AWS::EC2::Errors::InvalidIPAddress::InUse)
-      expect(aws_instances).to receive(:create).with(aws_instance_params).and_return(instance)
+      expect(aws_instances).to receive(:create).with(aws_instance_params_vpc).and_raise(AWS::EC2::Errors::InvalidIPAddress::InUse)
+      expect(aws_instances).to receive(:create).with(aws_instance_params_vpc).and_return(instance)
       allow(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: instance, state: :running)
       
       instance_manager = described_class.new(region, registry, availability_zone_selector)
