@@ -64,6 +64,8 @@ describe Bosh::Deployer::Config do
     Fog::Compute.stub(:new).and_return(openstack)
     glance = double(Fog::Image)
     Fog::Image.stub(:new).and_return(glance)
+    volume = double(Fog::Volume)
+    Fog::Volume.stub(:new).and_return(volume)
     cloud = Bosh::Deployer::Config.cloud
     cloud.respond_to?(:openstack).should be(true)
     cloud.respond_to?(:registry).should be(true)
