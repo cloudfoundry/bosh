@@ -60,6 +60,7 @@ module Bosh::Clouds
     def initialize(cpi_path, director_uuid)
       @cpi_path = cpi_path
       @director_uuid = director_uuid
+      @logger = Config.logger
     end
 
     KNOWN_RPC_METHODS.each do |method_name|
@@ -75,7 +76,9 @@ module Bosh::Clouds
         env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => ENV['TMPDIR']}
         cpi_exec_path = checked_cpi_exec_path
 
-        cpi_response, _ = Open3.capture2(env, cpi_exec_path, stdin_data: request)
+        @logger.debug("External CPI sending request: #{request} with command: #{cpi_exec_path}")
+        cpi_response, stderr, exit_status = Open3.capture3(env, cpi_exec_path, stdin_data: request)
+        @logger.debug("External CPI got response: #{cpi_response}, err: #{stderr}, exit_status: #{exit_status}")
 
         parsed_response = parsed_response(cpi_response)
         validate_response(parsed_response)

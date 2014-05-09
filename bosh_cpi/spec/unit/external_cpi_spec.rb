@@ -15,7 +15,11 @@ describe Bosh::Clouds::ExternalCpi do
   let(:env) { {'TMPDIR' => '/some/tmp'} }
   before { stub_const('ENV', env) }
 
-  before { allow(Open3).to receive(:capture2).and_return([cpi_response, exit_status]) }
+  let(:config) { double(:config, logger: double(:logger, debug: nil)) }
+  before { stub_const('Bosh::Clouds::Config', config)}
+
+  before { allow(Open3).to receive(:capture3).and_return([cpi_response, stderr, exit_status]) }
+  let(:stderr) { double('fake-stderr-data') }
   let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
 
   def self.it_calls_cpi_method(method, cpi_method, *arguments)
@@ -26,7 +30,7 @@ describe Bosh::Clouds::ExternalCpi do
       expected_cmd = '/path/to/fake-cpi/bin/cpi'
       expected_stdin = %Q{{"method":"#{cpi_method}","arguments":#{arguments.to_json},"context":{"director_uuid":"#{director_uuid}"}}}
 
-      expect(Open3).to receive(:capture2).with(expected_env, expected_cmd, stdin_data: expected_stdin).and_return([cpi_response, exit_status])
+      expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin).and_return([cpi_response, stderr, exit_status])
       call_cpi_method
     end
 
