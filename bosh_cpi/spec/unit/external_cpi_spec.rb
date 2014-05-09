@@ -15,18 +15,18 @@ describe Bosh::Clouds::ExternalCpi do
   let(:env) { {'TMPDIR' => '/some/tmp'} }
   before { stub_const('ENV', env) }
 
-  before do
-    allow(Open3).to(receive(:popen3)) { [nil, cpi_response, nil, nil] }
-  end
+  before { allow(Open3).to receive(:capture2).and_return([cpi_response, exit_status]) }
+  let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
 
   def self.it_calls_cpi_method(method, cpi_method, *arguments)
     subject(:call_cpi_method) { external_cpi.public_send(method, *arguments) }
 
     it 'calls cpi binary with correct arguments' do
       expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
-      expected_cmd = %Q{/path/to/fake-cpi/bin/cpi {"method":"#{cpi_method}","arguments":#{arguments.to_json}}}
+      expected_cmd = '/path/to/fake-cpi/bin/cpi'
+      expected_stdin = %Q{{"method":"#{cpi_method}","arguments":#{arguments.to_json},"context":{"director_uuid":"#{director_uuid}"}}}
 
-      expect(Open3).to receive(:popen3).with(expected_env, expected_cmd)
+      expect(Open3).to receive(:capture2).with(expected_env, expected_cmd, stdin_data: expected_stdin).and_return([cpi_response, exit_status])
       call_cpi_method
     end
 
@@ -175,10 +175,7 @@ describe Bosh::Clouds::ExternalCpi do
     end
 
     context 'when exit status is non zero' do
-      before do
-        wait_thr = double('wait thread', value: instance_double('Process::Status', success?: false))
-        allow(Open3).to(receive(:popen3)) { [nil, cpi_response, nil, wait_thr] }
-      end
+      let(:exit_status) { instance_double('Process::Status', exitstatus: 123) }
 
       it 'ignores the exit status and returns result because the CPI script currently catches CPI error and returns response' do
         expect {

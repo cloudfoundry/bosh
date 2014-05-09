@@ -64,7 +64,7 @@ module Bosh::Clouds
 
     KNOWN_RPC_METHODS.each do |method_name|
       define_method method_name do |*arguments|
-        opts = JSON.dump({
+        request = JSON.dump({
           'method' => method_name.gsub(/\?$/,''),
           'arguments' => arguments,
           'context' => {
@@ -75,16 +75,16 @@ module Bosh::Clouds
         env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => ENV['TMPDIR']}
         cpi_exec_path = checked_cpi_exec_path
 
-        _, stdout, _, _ = Open3.popen3(env, "#{cpi_exec_path} #{opts}")
+        cpi_response, _ = Open3.capture2(env, cpi_exec_path, stdin_data: request)
 
-        response = parsed_response(stdout)
-        validate_response(response)
+        parsed_response = parsed_response(cpi_response)
+        validate_response(parsed_response)
 
-        if response['error']
-          handle_error(response['error'])
+        if parsed_response['error']
+          handle_error(parsed_response['error'])
         end
 
-        response['result']
+        parsed_response['result']
       end
     end
 
