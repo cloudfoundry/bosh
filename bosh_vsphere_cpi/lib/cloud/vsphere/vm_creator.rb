@@ -17,11 +17,6 @@ module VSphereCloud
     end
 
     def create(agent_id, stemcell_cid, networks, disk_cids, environment)
-      # Make sure number of cores is a power of 2. kb.vmware.com/kb/2003484
-      if @cpu & @cpu - 1 != 0
-        raise "Number of vCPUs: #{@cpu} is not a power of 2."
-      end
-
       stemcell_vm = @cpi.stemcell_vm(stemcell_cid)
       raise "Could not find stemcell: #{stemcell_cid}" if stemcell_vm.nil?
 

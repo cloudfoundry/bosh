@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli
   class JobBuilder
     include PackagingHelper
@@ -236,7 +234,8 @@ module Bosh::Cli
     private
 
     def make_fingerprint
-      contents = ""
+      versioning_scheme = 2
+      contents = "v#{versioning_scheme}"
 
       files = all_templates
       files << File.join(job_dir, "spec")
