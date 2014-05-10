@@ -72,21 +72,25 @@ var _ = Describe("V1ApplySpec", func() {
 
 			jobName := "router"
 
-			expectedNetworks := map[string]interface{}{
-				"manual-net": map[string]interface{}{
-					"cloud_properties": map[string]interface{}{"subnet": "subnet-xxxxxx"},
-					"default":          []interface{}{"dns", "gateway"},
-					"dns":              []interface{}{"xx.xx.xx.xx"},
-					"dns_record_name":  "job-index.job-name.manual-net.deployment-name.bosh",
-					"gateway":          "xx.xx.xx.xx",
-					"ip":               "xx.xx.xx.xx",
-					"netmask":          "xx.xx.xx.xx",
+			expectedNetworks := map[string]NetworkSpec{
+				"manual-net": NetworkSpec{
+					Fields: map[string]interface{}{
+						"cloud_properties": map[string]interface{}{"subnet": "subnet-xxxxxx"},
+						"default":          []interface{}{"dns", "gateway"},
+						"dns":              []interface{}{"xx.xx.xx.xx"},
+						"dns_record_name":  "job-index.job-name.manual-net.deployment-name.bosh",
+						"gateway":          "xx.xx.xx.xx",
+						"ip":               "xx.xx.xx.xx",
+						"netmask":          "xx.xx.xx.xx",
+					},
 				},
-				"vip-net": map[string]interface{}{
-					"cloud_properties": map[string]interface{}{"security_groups": []interface{}{"bosh"}},
-					"dns_record_name":  "job-index.job-name.vip-net.deployment-name.bosh",
-					"ip":               "xx.xx.xx.xx",
-					"type":             "vip",
+				"vip-net": NetworkSpec{
+					Fields: map[string]interface{}{
+						"cloud_properties": map[string]interface{}{"security_groups": []interface{}{"bosh"}},
+						"dns_record_name":  "job-index.job-name.vip-net.deployment-name.bosh",
+						"ip":               "xx.xx.xx.xx",
+						"type":             "vip",
+					},
 				},
 			}
 
@@ -117,7 +121,6 @@ var _ = Describe("V1ApplySpec", func() {
 			}
 
 			Expect(spec).To(Equal(expectedSpec))
-			Expect(spec.NetworkSpecs).To(Equal(expectedNetworks))
 		})
 	})
 
@@ -265,12 +268,55 @@ var _ = Describe("V1ApplySpec", func() {
 var _ = Describe("NetworkSpec", func() {
 	Describe("IsDynamic", func() {
 		It("returns true if type is 'dynamic'", func() {
-			Expect(NetworkSpec{Type: "dynamic"}.IsDynamic()).To(BeTrue())
+			networkSpec := NetworkSpec{
+				Fields: map[string]interface{}{"type": NetworkSpecTypeDynamic},
+			}
+			Expect(networkSpec.IsDynamic()).To(BeTrue())
 		})
 
 		It("returns false if type is not 'dynamic'", func() {
-			Expect(NetworkSpec{Type: "vip"}.IsDynamic()).To(BeFalse())
 			Expect(NetworkSpec{}.IsDynamic()).To(BeFalse())
+
+			networkSpec := NetworkSpec{
+				Fields: map[string]interface{}{"type": "vip"},
+			}
+			Expect(networkSpec.IsDynamic()).To(BeFalse())
+		})
+	})
+
+	Describe("PopulateIPInfo", func() {
+		It("populates network spec with ip, netmask and gateway addressess", func() {
+			networkSpec := NetworkSpec{}
+
+			networkSpec = networkSpec.PopulateIPInfo("fake-ip", "fake-netmask", "fake-gateway")
+
+			Expect(networkSpec).To(Equal(NetworkSpec{
+				Fields: map[string]interface{}{
+					"ip":      "fake-ip",
+					"netmask": "fake-netmask",
+					"gateway": "fake-gateway",
+				},
+			}))
+		})
+
+		It("overwrites network spec with ip, netmask and gateway addressess", func() {
+			networkSpec := NetworkSpec{
+				Fields: map[string]interface{}{
+					"ip":      "fake-old-ip",
+					"netmask": "fake-old-netmask",
+					"gateway": "fake-old-gateway",
+				},
+			}
+
+			networkSpec = networkSpec.PopulateIPInfo("fake-ip", "fake-netmask", "fake-gateway")
+
+			Expect(networkSpec).To(Equal(NetworkSpec{
+				Fields: map[string]interface{}{
+					"ip":      "fake-ip",
+					"netmask": "fake-netmask",
+					"gateway": "fake-gateway",
+				},
+			}))
 		})
 	})
 })

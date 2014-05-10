@@ -85,7 +85,9 @@ func init() {
 				unresolvedSpec := V1ApplySpec{
 					Deployment: "fake-deployment",
 					NetworkSpecs: map[string]NetworkSpec{
-						"fake-net": NetworkSpec{IP: "fake-net-ip"},
+						"fake-net": NetworkSpec{
+							Fields: map[string]interface{}{"ip": "fake-net-ip"},
+						},
 					},
 				}
 
@@ -95,7 +97,9 @@ func init() {
 					Expect(spec).To(Equal(V1ApplySpec{
 						Deployment: "fake-deployment",
 						NetworkSpecs: map[string]NetworkSpec{
-							"fake-net": NetworkSpec{IP: "fake-net-ip"},
+							"fake-net": NetworkSpec{
+								Fields: map[string]interface{}{"ip": "fake-net-ip"},
+							},
 						},
 					}))
 				})
@@ -106,15 +110,19 @@ func init() {
 					Deployment: "fake-deployment",
 					NetworkSpecs: map[string]NetworkSpec{
 						"fake-net1": NetworkSpec{
-							IP:      "fake-net1-ip",
-							Netmask: "fake-net1-netmask",
-							Gateway: "fake-net1-gateway",
+							Fields: map[string]interface{}{
+								"ip":      "fake-net1-ip",
+								"netmask": "fake-net1-netmask",
+								"gateway": "fake-net1-gateway",
+							},
 						},
 						"fake-net2": NetworkSpec{
-							Type:    "dynamic",
-							IP:      "fake-net2-ip",
-							Netmask: "fake-net2-netmask",
-							Gateway: "fake-net2-gateway",
+							Fields: map[string]interface{}{
+								"type":    NetworkSpecTypeDynamic,
+								"ip":      "fake-net2-ip",
+								"netmask": "fake-net2-netmask",
+								"gateway": "fake-net2-gateway",
+							},
 						},
 					},
 				}
@@ -135,15 +143,19 @@ func init() {
 							Deployment: "fake-deployment",
 							NetworkSpecs: map[string]NetworkSpec{
 								"fake-net1": NetworkSpec{
-									IP:      "fake-net1-ip",
-									Netmask: "fake-net1-netmask",
-									Gateway: "fake-net1-gateway",
+									Fields: map[string]interface{}{
+										"ip":      "fake-net1-ip",
+										"netmask": "fake-net1-netmask",
+										"gateway": "fake-net1-gateway",
+									},
 								},
 								"fake-net2": NetworkSpec{
-									Type:    "dynamic",
-									IP:      "fake-resolved-ip",
-									Netmask: "fake-resolved-netmask",
-									Gateway: "fake-resolved-gateway",
+									Fields: map[string]interface{}{
+										"type":    NetworkSpecTypeDynamic,
+										"ip":      "fake-resolved-ip",
+										"netmask": "fake-resolved-netmask",
+										"gateway": "fake-resolved-gateway",
+									},
 								},
 							},
 						}))
@@ -167,8 +179,12 @@ func init() {
 			Context("when there is are multiple dynamic networks", func() {
 				unresolvedSpec := V1ApplySpec{
 					NetworkSpecs: map[string]NetworkSpec{
-						"fake-net1": NetworkSpec{Type: "dynamic"},
-						"fake-net2": NetworkSpec{Type: "dynamic"},
+						"fake-net1": NetworkSpec{
+							Fields: map[string]interface{}{"type": NetworkSpecTypeDynamic},
+						},
+						"fake-net2": NetworkSpec{
+							Fields: map[string]interface{}{"type": NetworkSpecTypeDynamic},
+						},
 					},
 				}
 

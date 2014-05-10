@@ -82,10 +82,11 @@ func (s concreteV1Service) ResolveDynamicNetworks(spec V1ApplySpec) (V1ApplySpec
 			return V1ApplySpec{}, bosherr.WrapError(err, "Getting default network")
 		}
 
-		networkSpec.IP = network.IP
-		networkSpec.Netmask = network.Netmask
-		networkSpec.Gateway = network.Gateway
-		spec.NetworkSpecs[networkName] = networkSpec
+		spec.NetworkSpecs[networkName] = networkSpec.PopulateIPInfo(
+			network.IP,
+			network.Netmask,
+			network.Gateway,
+		)
 	}
 
 	return spec, nil
