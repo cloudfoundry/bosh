@@ -15,7 +15,7 @@ namespace :release do
     require 'bosh/dev/vsphere_cpi_release_components'
 
     gem_components = Bosh::Dev::VsphereCpiReleaseComponents.new
-    gem_components.build_gems
+    gem_components.build_release_gems
     create_release(name: 'vsphere_cpi', release_dir: 'vsphere-cpi-release')
   end
 

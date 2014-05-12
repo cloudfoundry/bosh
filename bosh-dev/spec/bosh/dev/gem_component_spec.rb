@@ -17,9 +17,13 @@ module Bosh::Dev
       Rake::FileUtilsExt.stub(:sh)
     end
 
+    after do
+      FileUtils.rm_rf(root)
+    end
+
     its(:dot_gem) { should eq('fake-component-1.1234.0.gem') }
 
-    describe '#build_release_gem' do
+    describe '#build_gem' do
       include FakeFS::SpecHelpers
 
       before do
@@ -29,16 +33,10 @@ module Bosh::Dev
 
       it 'shells out to build the gem' do
         Rake::FileUtilsExt.should_receive(:sh).with('cd fake-component && ' +
-                                                     'gem build fake-component.gemspec && ' +
-                                                     "mv fake-component-1.1234.0.gem #{root}/pkg/gems/")
+                                                    'gem build fake-component.gemspec && ' +
+                                                    'mv fake-component-1.1234.0.gem fake-destination-dir')
 
-        gem_component.build_release_gem
-      end
-
-      it 'creates its destination dir' do
-        expect {
-          gem_component.build_release_gem
-        }.to change { File.directory?(File.join(root, 'pkg/gems')) }.to(true)
+        gem_component.build_gem('fake-destination-dir')
       end
     end
 
@@ -66,6 +64,37 @@ module Bosh::Dev
                 VERSION = '1.1234.0'
               end
         RUBY
+      end
+    end
+
+    describe '#dependencies' do
+      subject(:gem_component) do
+        GemComponent.new('bosh-core', '1.0000.0')
+      end
+
+      before do
+        File.open(File.join(root, 'Gemfile.lock'), 'w+') do |f|
+          f.write <<-GEMFILE
+PATH
+  remote: bosh-core
+  specs:
+    bosh-core (1.0000.0)
+      gibberish
+      yajl-ruby
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  bosh-core!
+          GEMFILE
+        end
+      end
+
+      it 'returns dependencies specified in Gemfile.lock' do
+        expect(gem_component.dependencies.map(&:name)).to eq(
+          %w(gibberish yajl-ruby bosh-core)
+        )
       end
     end
   end

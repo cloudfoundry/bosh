@@ -3,26 +3,19 @@ module Bosh
     class GemComponent
       ROOT = File.expand_path('../../../../../', __FILE__)
 
-      def initialize(component, version)
-        @component = component
+      attr_reader :name, :version
+
+      def initialize(name, version)
+        @name = name
         @version = version
       end
 
       def dot_gem
-        "#{component}-#{version}.gem"
-      end
-
-      def build_release_gem
-        FileUtils.mkdir_p "#{ROOT}/pkg/gems/"
-
-        update_version
-
-        gemspec = "#{component}.gemspec"
-        Rake::FileUtilsExt.sh "cd #{component} && gem build #{gemspec} && mv #{dot_gem} #{ROOT}/pkg/gems/"
+        "#{name}-#{version}.gem"
       end
 
       def update_version
-        glob = File.join(ROOT, component, 'lib', '**', 'version.rb')
+        glob = File.join(ROOT, name, 'lib', '**', 'version.rb')
 
         version_file_path = Dir.glob(glob).first
         file_contents = File.read(version_file_path)
@@ -31,9 +24,22 @@ module Bosh
         File.open(version_file_path, 'w') { |f| f.write(file_contents) }
       end
 
-      private
+      def build_gem(destination_dir)
+        gemspec = "#{name}.gemspec"
+        Rake::FileUtilsExt.sh "cd #{name} && gem build #{gemspec} && mv #{dot_gem} #{destination_dir}"
+      end
 
-      attr_reader :component, :version
+      def dependencies
+        gemfile_lock_path = File.join(ROOT, 'Gemfile.lock')
+        lockfile = Bundler::LockfileParser.new(File.read(gemfile_lock_path))
+
+        Bundler::Resolver.resolve(
+          Bundler.definition.send(:expand_dependencies, Bundler.definition.dependencies.select { |d| d.name == name }),
+          Bundler.definition.index,
+          {},
+          lockfile.specs
+        )
+      end
     end
   end
 end
