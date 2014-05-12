@@ -11,26 +11,29 @@ import (
 	boshuuid "bosh/uuid"
 )
 
-func buildProvider() (platform *fakeplatform.FakePlatform, provider Provider) {
-	platform = fakeplatform.NewFakePlatform()
-	dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
-	provider = NewProvider(platform, dirProvider)
-	return
-}
-func init() {
-	Describe("Testing with Ginkgo", func() {
+var _ = Describe("Provider", func() {
+	var (
+		platform *fakeplatform.FakePlatform
+		provider Provider
+	)
+
+	BeforeEach(func() {
+		platform = fakeplatform.NewFakePlatform()
+		dirProvider := boshdir.NewDirectoriesProvider("/var/vcap")
+		provider = NewProvider(platform, dirProvider)
+	})
+
+	Describe("Get", func() {
 		It("get dummy", func() {
-			_, provider := buildProvider()
 			blobstore, err := provider.Get(boshsettings.Blobstore{
 				Type: boshsettings.BlobstoreTypeDummy,
 			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(blobstore).ToNot(BeNil())
 		})
-		It("get external when external command in path", func() {
 
-			platform, provider := buildProvider()
-			options := map[string]string{
+		It("get external when external command in path", func() {
+			options := map[string]interface{}{
 				"key": "value",
 			}
 
@@ -49,10 +52,9 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(blobstore).To(Equal(expectedBlobstore))
 		})
-		It("get external errs when external command not in path", func() {
 
-			platform, provider := buildProvider()
-			options := map[string]string{
+		It("get external errs when external command not in path", func() {
+			options := map[string]interface{}{
 				"key": "value",
 			}
 
@@ -64,4 +66,4 @@ func init() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
-}
+})

@@ -16,12 +16,12 @@ type external struct {
 	uuidGen        boshuuid.Generator
 	configFilePath string
 	provider       string
-	options        map[string]string
+	options        map[string]interface{}
 }
 
 func NewExternalBlobstore(
 	provider string,
-	options map[string]string,
+	options map[string]interface{},
 	fs boshsys.FileSystem,
 	runner boshsys.CmdRunner,
 	uuidGen boshuuid.Generator,
@@ -35,20 +35,6 @@ func NewExternalBlobstore(
 		configFilePath: configFilePath,
 		options:        options,
 	}
-}
-
-func (blobstore external) writeConfigFile() error {
-	configJSON, err := json.Marshal(blobstore.options)
-	if err != nil {
-		return bosherr.WrapError(err, "Marshalling JSON")
-	}
-
-	err = blobstore.fs.WriteFile(blobstore.configFilePath, configJSON)
-	if err != nil {
-		return bosherr.WrapError(err, "Writing config file")
-	}
-
-	return nil
 }
 
 func (blobstore external) Get(blobID, _ string) (string, error) {
@@ -98,6 +84,20 @@ func (blobstore external) Validate() error {
 	}
 
 	return blobstore.writeConfigFile()
+}
+
+func (blobstore external) writeConfigFile() error {
+	configJSON, err := json.Marshal(blobstore.options)
+	if err != nil {
+		return bosherr.WrapError(err, "Marshalling JSON")
+	}
+
+	err = blobstore.fs.WriteFile(blobstore.configFilePath, configJSON)
+	if err != nil {
+		return bosherr.WrapError(err, "Writing config file")
+	}
+
+	return nil
 }
 
 func (blobstore external) run(method, src, dst string) (err error) {

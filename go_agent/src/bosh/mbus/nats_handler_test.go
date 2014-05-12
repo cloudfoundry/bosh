@@ -202,19 +202,19 @@ func init() {
 
 		Describe("SendToHealthManager", func() {
 			It("sends periodic heartbeats", func() {
-				errChan := make(chan error, 1)
+				errCh := make(chan error, 1)
 
 				jobName := "foo"
 				jobIndex := 0
 				expectedHeartbeat := Heartbeat{Job: &jobName, Index: &jobIndex}
 
 				go func() {
-					errChan <- handler.SendToHealthManager("heartbeat", expectedHeartbeat)
+					errCh <- handler.SendToHealthManager("heartbeat", expectedHeartbeat)
 				}()
 
 				var err error
 				select {
-				case err = <-errChan:
+				case err = <-errCh:
 				}
 				Expect(err).ToNot(HaveOccurred())
 

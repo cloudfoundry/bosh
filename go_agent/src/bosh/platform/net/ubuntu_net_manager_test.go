@@ -8,6 +8,7 @@ import (
 
 	boshlog "bosh/logger"
 	. "bosh/platform/net"
+	fakenet "bosh/platform/net/fakes"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
 )
@@ -46,16 +47,18 @@ prepend domain-name-servers zz.zz.zz.zz, yy.yy.yy.yy, xx.xx.xx.xx;
 
 	Describe("ubuntuNetManager", func() {
 		var (
-			fs         *fakesys.FakeFileSystem
-			cmdRunner  *fakesys.FakeCmdRunner
-			netManager NetManager
+			fs                     *fakesys.FakeFileSystem
+			cmdRunner              *fakesys.FakeCmdRunner
+			defaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
+			netManager             NetManager
 		)
 
 		BeforeEach(func() {
 			fs = fakesys.NewFakeFileSystem()
 			cmdRunner = fakesys.NewFakeCmdRunner()
+			defaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			netManager = NewUbuntuNetManager(fs, cmdRunner, 1*time.Millisecond, logger)
+			netManager = NewUbuntuNetManager(fs, cmdRunner, defaultNetworkResolver, 1*time.Millisecond, logger)
 		})
 
 		Describe("SetupDhcp", func() {
@@ -193,10 +196,10 @@ prepend domain-name-servers zz.zz.zz.zz, yy.yy.yy.yy, xx.xx.xx.xx;
 		})
 
 		Describe("SetupManualNetworking", func() {
-			var errChan chan error
+			var errCh chan error
 
 			BeforeEach(func() {
-				errChan = make(chan error)
+				errCh = make(chan error)
 			})
 
 			BeforeEach(func() {
@@ -228,10 +231,10 @@ prepend domain-name-servers zz.zz.zz.zz, yy.yy.yy.yy, xx.xx.xx.xx;
 				})
 
 				It("restarts networking", func() {
-					err := netManager.SetupManualNetworking(networks, errChan)
+					err := netManager.SetupManualNetworking(networks, errCh)
 					Expect(err).ToNot(HaveOccurred())
 
-					<-errChan // wait for all arpings
+					<-errCh // wait for all arpings
 
 					Expect(len(cmdRunner.RunCommands) >= 2).To(BeTrue())
 					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network-interface", "stop", "INTERFACE=eth0"}))
@@ -248,10 +251,10 @@ prepend domain-name-servers zz.zz.zz.zz, yy.yy.yy.yy, xx.xx.xx.xx;
 				})
 
 				It("starts sending arping", func() {
-					err := netManager.SetupManualNetworking(networks, errChan)
+					err := netManager.SetupManualNetworking(networks, errCh)
 					Expect(err).ToNot(HaveOccurred())
 
-					<-errChan // wait for all arpings
+					<-errCh // wait for all arpings
 
 					Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
 					Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
@@ -273,10 +276,10 @@ prepend domain-name-servers zz.zz.zz.zz, yy.yy.yy.yy, xx.xx.xx.xx;
 				})
 
 				It("restarts networking", func() {
-					err := netManager.SetupManualNetworking(networks, errChan)
+					err := netManager.SetupManualNetworking(networks, errCh)
 					Expect(err).ToNot(HaveOccurred())
 
-					<-errChan // wait for all arpings
+					<-errCh // wait for all arpings
 
 					Expect(len(cmdRunner.RunCommands) >= 2).To(BeTrue())
 					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network-interface", "stop", "INTERFACE=eth0"}))
@@ -293,10 +296,10 @@ prepend domain-name-servers zz.zz.zz.zz, yy.yy.yy.yy, xx.xx.xx.xx;
 				})
 
 				It("starts sending 6 arp pings", func() {
-					err := netManager.SetupManualNetworking(networks, errChan)
+					err := netManager.SetupManualNetworking(networks, errCh)
 					Expect(err).ToNot(HaveOccurred())
 
-					<-errChan // wait for all arpings
+					<-errCh // wait for all arpings
 
 					Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
 					Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
@@ -318,10 +321,10 @@ prepend domain-name-servers zz.zz.zz.zz, yy.yy.yy.yy, xx.xx.xx.xx;
 				})
 
 				It("does not restart networking because configuration did not change", func() {
-					err := netManager.SetupManualNetworking(networks, errChan)
+					err := netManager.SetupManualNetworking(networks, errCh)
 					Expect(err).ToNot(HaveOccurred())
 
-					<-errChan // wait for all arpings
+					<-errCh // wait for all arpings
 
 					for _, cmd := range cmdRunner.RunCommands {
 						Expect(cmd[0]).ToNot(Equal("service"))
@@ -338,10 +341,10 @@ prepend domain-name-servers zz.zz.zz.zz, yy.yy.yy.yy, xx.xx.xx.xx;
 				})
 
 				It("starts sending 6 arp ping", func() {
-					err := netManager.SetupManualNetworking(networks, errChan)
+					err := netManager.SetupManualNetworking(networks, errCh)
 					Expect(err).ToNot(HaveOccurred())
 
-					<-errChan // wait for all arpings
+					<-errCh // wait for all arpings
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(6))
 					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))

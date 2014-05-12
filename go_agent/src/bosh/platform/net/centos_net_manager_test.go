@@ -8,6 +8,7 @@ import (
 
 	boshlog "bosh/logger"
 	. "bosh/platform/net"
+	fakenet "bosh/platform/net/fakes"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
 )
@@ -44,16 +45,18 @@ ONBOOT=yes`
 
 	Describe("centos", func() {
 		var (
-			fs         *fakesys.FakeFileSystem
-			cmdRunner  *fakesys.FakeCmdRunner
-			netManager NetManager
+			fs                     *fakesys.FakeFileSystem
+			cmdRunner              *fakesys.FakeCmdRunner
+			defaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
+			netManager             NetManager
 		)
 
 		BeforeEach(func() {
 			fs = fakesys.NewFakeFileSystem()
 			cmdRunner = fakesys.NewFakeCmdRunner()
+			defaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			netManager = NewCentosNetManager(fs, cmdRunner, 1*time.Millisecond, logger)
+			netManager = NewCentosNetManager(fs, cmdRunner, defaultNetworkResolver, 1*time.Millisecond, logger)
 		})
 
 		Describe("SetupDhcp", func() {
@@ -134,10 +137,10 @@ ONBOOT=yes`
 		})
 
 		Describe("SetupManualNetworking", func() {
-			var errChan chan error
+			var errCh chan error
 
 			BeforeEach(func() {
-				errChan = make(chan error)
+				errCh = make(chan error)
 			})
 
 			BeforeEach(func() {
@@ -176,26 +179,26 @@ ONBOOT=yes`
 			})
 
 			It("restarts networking", func() {
-				err := netManager.SetupManualNetworking(networks, errChan)
+				err := netManager.SetupManualNetworking(networks, errCh)
 				Expect(err).ToNot(HaveOccurred())
 
 				fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
 				fs.GetFileTestStat("/etc/resolv.conf")
 
-				<-errChan // wait for all arpings
+				<-errCh // wait for all arpings
 
 				Expect(len(cmdRunner.RunCommands)).To(Equal(7))
 				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
 			})
 
 			It("runs arping commands", func() {
-				err := netManager.SetupManualNetworking(networks, errChan)
+				err := netManager.SetupManualNetworking(networks, errCh)
 				Expect(err).ToNot(HaveOccurred())
 
 				fs.GetFileTestStat("/etc/sysconfig/network-scripts/ifcfg-eth0")
 				fs.GetFileTestStat("/etc/resolv.conf")
 
-				<-errChan // wait for all arpings
+				<-errCh // wait for all arpings
 
 				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
 				Expect(cmdRunner.RunCommands[6]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))

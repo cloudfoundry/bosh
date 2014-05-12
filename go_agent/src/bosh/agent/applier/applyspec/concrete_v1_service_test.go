@@ -8,6 +8,8 @@ import (
 
 	. "bosh/agent/applier/applyspec"
 	boshassert "bosh/assert"
+	fakeplatform "bosh/platform/fakes"
+	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
 )
 
@@ -15,14 +17,15 @@ func init() {
 	Describe("concreteV1Service", func() {
 		var (
 			fs       *fakesys.FakeFileSystem
-			specPath string
+			platform *fakeplatform.FakePlatform
+			specPath = "/spec.json"
 			service  V1Service
 		)
 
 		BeforeEach(func() {
 			fs = fakesys.NewFakeFileSystem()
-			specPath = "/spec.json"
-			service = NewConcreteV1Service(fs, specPath)
+			platform = fakeplatform.NewFakePlatform()
+			service = NewConcreteV1Service(fs, platform, specPath)
 		})
 
 		Describe("Get", func() {
@@ -77,5 +80,121 @@ func init() {
 			})
 		})
 
+		Describe("ResolveDynamicNetworks", func() {
+			Context("when there is are no dynamic networks", func() {
+				unresolvedSpec := V1ApplySpec{
+					Deployment: "fake-deployment",
+					NetworkSpecs: map[string]NetworkSpec{
+						"fake-net": NetworkSpec{
+							Fields: map[string]interface{}{"ip": "fake-net-ip"},
+						},
+					},
+				}
+
+				It("returns spec without modifying any networks", func() {
+					spec, err := service.ResolveDynamicNetworks(unresolvedSpec)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(spec).To(Equal(V1ApplySpec{
+						Deployment: "fake-deployment",
+						NetworkSpecs: map[string]NetworkSpec{
+							"fake-net": NetworkSpec{
+								Fields: map[string]interface{}{"ip": "fake-net-ip"},
+							},
+						},
+					}))
+				})
+			})
+
+			Context("when there is one dynamic network", func() {
+				unresolvedSpec := V1ApplySpec{
+					Deployment: "fake-deployment",
+					NetworkSpecs: map[string]NetworkSpec{
+						"fake-net1": NetworkSpec{
+							Fields: map[string]interface{}{
+								"ip":      "fake-net1-ip",
+								"netmask": "fake-net1-netmask",
+								"gateway": "fake-net1-gateway",
+							},
+						},
+						"fake-net2": NetworkSpec{
+							Fields: map[string]interface{}{
+								"type":    NetworkSpecTypeDynamic,
+								"ip":      "fake-net2-ip",
+								"netmask": "fake-net2-netmask",
+								"gateway": "fake-net2-gateway",
+							},
+						},
+					},
+				}
+
+				Context("when default network can be retrieved", func() {
+					BeforeEach(func() {
+						platform.GetDefaultNetworkNetwork = boshsettings.Network{
+							IP:      "fake-resolved-ip",
+							Netmask: "fake-resolved-netmask",
+							Gateway: "fake-resolved-gateway",
+						}
+					})
+
+					It("returns spec with modified dynamic network and keeping everything else the same", func() {
+						spec, err := service.ResolveDynamicNetworks(unresolvedSpec)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(spec).To(Equal(V1ApplySpec{
+							Deployment: "fake-deployment",
+							NetworkSpecs: map[string]NetworkSpec{
+								"fake-net1": NetworkSpec{
+									Fields: map[string]interface{}{
+										"ip":      "fake-net1-ip",
+										"netmask": "fake-net1-netmask",
+										"gateway": "fake-net1-gateway",
+									},
+								},
+								"fake-net2": NetworkSpec{
+									Fields: map[string]interface{}{
+										"type":    NetworkSpecTypeDynamic,
+										"ip":      "fake-resolved-ip",
+										"netmask": "fake-resolved-netmask",
+										"gateway": "fake-resolved-gateway",
+									},
+								},
+							},
+						}))
+					})
+				})
+
+				Context("when default network fails to be retrieved", func() {
+					BeforeEach(func() {
+						platform.GetDefaultNetworkErr = errors.New("fake-get-default-network-err")
+					})
+
+					It("returns error", func() {
+						spec, err := service.ResolveDynamicNetworks(unresolvedSpec)
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-get-default-network-err"))
+						Expect(spec).To(Equal(V1ApplySpec{}))
+					})
+				})
+			})
+
+			Context("when there is are multiple dynamic networks", func() {
+				unresolvedSpec := V1ApplySpec{
+					NetworkSpecs: map[string]NetworkSpec{
+						"fake-net1": NetworkSpec{
+							Fields: map[string]interface{}{"type": NetworkSpecTypeDynamic},
+						},
+						"fake-net2": NetworkSpec{
+							Fields: map[string]interface{}{"type": NetworkSpecTypeDynamic},
+						},
+					},
+				}
+
+				It("returns error because multiple dynamic networks are not supported", func() {
+					spec, err := service.ResolveDynamicNetworks(unresolvedSpec)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Multiple dynamic networks are not supported"))
+					Expect(spec).To(Equal(V1ApplySpec{}))
+				})
+			})
+		})
 	})
 }

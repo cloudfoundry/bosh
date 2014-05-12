@@ -50,17 +50,17 @@ func NewManager(logger boshlog.Logger, fs boshsys.FileSystem, tasksPath string) 
 
 func (m *concreteManager) GetTaskInfos() ([]TaskInfo, error) {
 	taskInfosChan := make(chan map[string]TaskInfo)
-	errChan := make(chan error)
+	errCh := make(chan error)
 
 	m.fsSem <- func() {
 		taskInfos, err := m.readTaskInfos()
 		m.taskInfos = taskInfos
 		taskInfosChan <- taskInfos
-		errChan <- err
+		errCh <- err
 	}
 
 	taskInfos := <-taskInfosChan
-	err := <-errChan
+	err := <-errCh
 
 	if err != nil {
 		return nil, err
@@ -75,25 +75,25 @@ func (m *concreteManager) GetTaskInfos() ([]TaskInfo, error) {
 }
 
 func (m *concreteManager) AddTaskInfo(taskInfo TaskInfo) error {
-	errChan := make(chan error)
+	errCh := make(chan error)
 
 	m.fsSem <- func() {
 		m.taskInfos[taskInfo.TaskID] = taskInfo
 		err := m.writeTaskInfos(m.taskInfos)
-		errChan <- err
+		errCh <- err
 	}
-	return <-errChan
+	return <-errCh
 }
 
 func (m *concreteManager) RemoveTaskInfo(taskID string) error {
-	errChan := make(chan error)
+	errCh := make(chan error)
 
 	m.fsSem <- func() {
 		delete(m.taskInfos, taskID)
 		err := m.writeTaskInfos(m.taskInfos)
-		errChan <- err
+		errCh <- err
 	}
-	return <-errChan
+	return <-errCh
 }
 
 func (m *concreteManager) processFsFuncs() {

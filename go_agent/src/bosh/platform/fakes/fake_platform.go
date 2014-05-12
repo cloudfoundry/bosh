@@ -89,6 +89,9 @@ type FakePlatform struct {
 	SetupMonitUserSetup         bool
 	GetMonitCredentialsUsername string
 	GetMonitCredentialsPassword string
+
+	GetDefaultNetworkNetwork boshsettings.Network
+	GetDefaultNetworkErr     error
 }
 
 func NewFakePlatform() (platform *FakePlatform) {
@@ -274,4 +277,8 @@ func (p *FakePlatform) GetMonitCredentials() (username, password string, err err
 	username = p.GetMonitCredentialsUsername
 	password = p.GetMonitCredentialsPassword
 	return
+}
+
+func (p *FakePlatform) GetDefaultNetwork() (boshsettings.Network, error) {
+	return p.GetDefaultNetworkNetwork, p.GetDefaultNetworkErr
 }

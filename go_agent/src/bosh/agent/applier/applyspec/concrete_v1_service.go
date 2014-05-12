@@ -8,14 +8,21 @@ import (
 )
 
 type concreteV1Service struct {
-	specFilePath string
-	fs           boshsys.FileSystem
+	fs                     boshsys.FileSystem
+	defaultNetworkDelegate DefaultNetworkDelegate
+	specFilePath           string
 }
 
-func NewConcreteV1Service(fs boshsys.FileSystem, specFilePath string) (service concreteV1Service) {
-	service.fs = fs
-	service.specFilePath = specFilePath
-	return
+func NewConcreteV1Service(
+	fs boshsys.FileSystem,
+	defaultNetworkDelegate DefaultNetworkDelegate,
+	specFilePath string,
+) concreteV1Service {
+	return concreteV1Service{
+		fs: fs,
+		defaultNetworkDelegate: defaultNetworkDelegate,
+		specFilePath:           specFilePath,
+	}
 }
 
 func (s concreteV1Service) Get() (V1ApplySpec, error) {
@@ -50,4 +57,37 @@ func (s concreteV1Service) Set(spec V1ApplySpec) error {
 	}
 
 	return nil
+}
+
+func (s concreteV1Service) ResolveDynamicNetworks(spec V1ApplySpec) (V1ApplySpec, error) {
+	var foundOneDynamicNetwork bool
+
+	for networkName, networkSpec := range spec.NetworkSpecs {
+		if !networkSpec.IsDynamic() {
+			continue
+		}
+
+		// Currently proper support for multiple dynamic networks is not possible
+		// because CPIs (e.g. AWS and OpenStack) do not include MAC address
+		// for dynamic networks and that is the only way to reliably determine
+		// network to interface to IP mapping
+		if foundOneDynamicNetwork {
+			return V1ApplySpec{}, bosherr.New("Multiple dynamic networks are not supported")
+		}
+		foundOneDynamicNetwork = true
+
+		// Ideally this would be GetNetworkByMACAddress(mac string)
+		network, err := s.defaultNetworkDelegate.GetDefaultNetwork()
+		if err != nil {
+			return V1ApplySpec{}, bosherr.WrapError(err, "Getting default network")
+		}
+
+		spec.NetworkSpecs[networkName] = networkSpec.PopulateIPInfo(
+			network.IP,
+			network.Netmask,
+			network.Gateway,
+		)
+	}
+
+	return spec, nil
 }

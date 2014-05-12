@@ -21,6 +21,8 @@ var (
 )
 
 type ubuntuNetManager struct {
+	DefaultNetworkResolver
+
 	arpWaitInterval time.Duration
 	cmdRunner       boshsys.CmdRunner
 	fs              boshsys.FileSystem
@@ -30,14 +32,16 @@ type ubuntuNetManager struct {
 func NewUbuntuNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
+	defaultNetworkResolver DefaultNetworkResolver,
 	arpWaitInterval time.Duration,
 	logger boshlog.Logger,
 ) ubuntuNetManager {
 	return ubuntuNetManager{
-		arpWaitInterval: arpWaitInterval,
-		cmdRunner:       cmdRunner,
-		fs:              fs,
-		logger:          logger,
+		DefaultNetworkResolver: defaultNetworkResolver,
+		arpWaitInterval:        arpWaitInterval,
+		cmdRunner:              cmdRunner,
+		fs:                     fs,
+		logger:                 logger,
 	}
 }
 
@@ -102,7 +106,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 prepend domain-name-servers {{ . }};
 `
 
-func (net ubuntuNetManager) SetupManualNetworking(networks boshsettings.Networks, errChan chan error) error {
+func (net ubuntuNetManager) SetupManualNetworking(networks boshsettings.Networks, errCh chan error) error {
 	modifiedNetworks, written, err := net.writeNetworkInterfaces(networks)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing network interfaces")
@@ -117,12 +121,12 @@ func (net ubuntuNetManager) SetupManualNetworking(networks boshsettings.Networks
 		return bosherr.WrapError(err, "Writing resolv.conf")
 	}
 
-	go net.gratuitiousArp(modifiedNetworks, errChan)
+	go net.gratuitiousArp(modifiedNetworks, errCh)
 
 	return nil
 }
 
-func (net ubuntuNetManager) gratuitiousArp(networks []CustomNetwork, errChan chan error) {
+func (net ubuntuNetManager) gratuitiousArp(networks []customNetwork, errCh chan error) {
 	for i := 0; i < 6; i++ {
 		for _, network := range networks {
 			for !net.fs.FileExists(filepath.Join("/sys/class/net", network.Interface)) {
@@ -138,13 +142,13 @@ func (net ubuntuNetManager) gratuitiousArp(networks []CustomNetwork, errChan cha
 		}
 	}
 
-	if errChan != nil {
-		errChan <- nil
+	if errCh != nil {
+		errCh <- nil
 	}
 }
 
-func (net ubuntuNetManager) writeNetworkInterfaces(networks boshsettings.Networks) ([]CustomNetwork, bool, error) {
-	var modifiedNetworks []CustomNetwork
+func (net ubuntuNetManager) writeNetworkInterfaces(networks boshsettings.Networks) ([]customNetwork, bool, error) {
+	var modifiedNetworks []customNetwork
 
 	macAddresses, err := net.detectMacAddresses()
 	if err != nil {
@@ -157,7 +161,7 @@ func (net ubuntuNetManager) writeNetworkInterfaces(networks boshsettings.Network
 			return modifiedNetworks, false, bosherr.WrapError(err, "Calculating network and broadcast")
 		}
 
-		newNet := CustomNetwork{
+		newNet := customNetwork{
 			aNet,
 			macAddresses[aNet.Mac],
 			network,
@@ -242,7 +246,7 @@ func (net ubuntuNetManager) detectMacAddresses() (map[string]string, error) {
 	return addresses, nil
 }
 
-func (net ubuntuNetManager) restartNetworkingInterfaces(networks []CustomNetwork) {
+func (net ubuntuNetManager) restartNetworkingInterfaces(networks []customNetwork) {
 	for _, network := range networks {
 		_, _, _, err := net.cmdRunner.RunCommand("service", "network-interface", "stop", "INTERFACE="+network.Interface)
 		if err != nil {

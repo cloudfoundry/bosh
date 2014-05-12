@@ -64,7 +64,7 @@ var _ = Describe("GetState", func() {
 
 					expectedSpec := GetStateV1ApplySpec{
 						V1ApplySpec: boshas.V1ApplySpec{
-							NetworkSpecs:      map[string]interface{}{},
+							NetworkSpecs:      map[string]boshas.NetworkSpec{},
 							ResourcePoolSpecs: map[string]interface{}{},
 							PackageSpecs:      map[string]boshas.PackageSpec{},
 						},
@@ -125,11 +125,15 @@ var _ = Describe("GetState", func() {
 
 						// Non-empty NetworkSpecs
 						specService.Spec = boshas.V1ApplySpec{
-							NetworkSpecs: map[string]interface{}{"key": "value"},
+							NetworkSpecs: map[string]boshas.NetworkSpec{
+								"fake-net-name": boshas.NetworkSpec{
+									Fields: map[string]interface{}{"ip": "fake-ip"},
+								},
+							},
 						}
 						state, err = action.Run("full")
 						Expect(err).ToNot(HaveOccurred())
-						boshassert.MatchesJSONString(GinkgoT(), state.NetworkSpecs, `{"key":"value"}`)
+						boshassert.MatchesJSONString(GinkgoT(), state.NetworkSpecs, `{"fake-net-name":{"ip":"fake-ip"}}`)
 					})
 
 					It("returns resource_pool as empty hash if not set", func() {

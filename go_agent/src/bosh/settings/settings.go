@@ -24,8 +24,8 @@ const (
 )
 
 type Blobstore struct {
-	Type    string            `json:"provider"`
-	Options map[string]string `json:"options"`
+	Type    string                 `json:"provider"`
+	Options map[string]interface{} `json:"options"`
 }
 
 type Disks struct {

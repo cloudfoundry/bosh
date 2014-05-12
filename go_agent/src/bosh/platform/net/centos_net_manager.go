@@ -16,22 +16,27 @@ import (
 const centosNetManagerLogTag = "centosNetManager"
 
 type centosNetManager struct {
-	arpWaitInterval time.Duration
-	cmdRunner       boshsys.CmdRunner
+	DefaultNetworkResolver
+
 	fs              boshsys.FileSystem
+	cmdRunner       boshsys.CmdRunner
+	routesSearcher  RoutesSearcher
+	arpWaitInterval time.Duration
 	logger          boshlog.Logger
 }
 
 func NewCentosNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
+	defaultNetworkResolver DefaultNetworkResolver,
 	arpWaitInterval time.Duration,
 	logger boshlog.Logger,
 ) centosNetManager {
 	return centosNetManager{
-		arpWaitInterval: arpWaitInterval,
-		cmdRunner:       cmdRunner,
+		DefaultNetworkResolver: defaultNetworkResolver,
 		fs:              fs,
+		cmdRunner:       cmdRunner,
+		arpWaitInterval: arpWaitInterval,
 		logger:          logger,
 	}
 }
@@ -95,7 +100,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 {{ range .DNSServers }}prepend domain-name-servers {{ . }};
 {{ end }}`
 
-func (net centosNetManager) SetupManualNetworking(networks boshsettings.Networks, errChan chan error) error {
+func (net centosNetManager) SetupManualNetworking(networks boshsettings.Networks, errCh chan error) error {
 	modifiedNetworks, err := net.writeIfcfgs(networks)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing network interfaces")
@@ -108,12 +113,12 @@ func (net centosNetManager) SetupManualNetworking(networks boshsettings.Networks
 		return bosherr.WrapError(err, "Writing resolv.conf")
 	}
 
-	go net.gratuitiousArp(modifiedNetworks, errChan)
+	go net.gratuitiousArp(modifiedNetworks, errCh)
 
 	return nil
 }
 
-func (net centosNetManager) gratuitiousArp(networks []CustomNetwork, errChan chan error) {
+func (net centosNetManager) gratuitiousArp(networks []customNetwork, errCh chan error) {
 	for i := 0; i < 6; i++ {
 		for _, network := range networks {
 			for !net.fs.FileExists(filepath.Join("/sys/class/net", network.Interface)) {
@@ -129,13 +134,13 @@ func (net centosNetManager) gratuitiousArp(networks []CustomNetwork, errChan cha
 		}
 	}
 
-	if errChan != nil {
-		errChan <- nil
+	if errCh != nil {
+		errCh <- nil
 	}
 }
 
-func (net centosNetManager) writeIfcfgs(networks boshsettings.Networks) ([]CustomNetwork, error) {
-	var modifiedNetworks []CustomNetwork
+func (net centosNetManager) writeIfcfgs(networks boshsettings.Networks) ([]customNetwork, error) {
+	var modifiedNetworks []customNetwork
 
 	macAddresses, err := net.detectMacAddresses()
 	if err != nil {
@@ -149,7 +154,7 @@ func (net centosNetManager) writeIfcfgs(networks boshsettings.Networks) ([]Custo
 			return modifiedNetworks, bosherr.WrapError(err, "Calculating network and broadcast")
 		}
 
-		newNet := CustomNetwork{
+		newNet := customNetwork{
 			aNet,
 			macAddresses[aNet.Mac],
 			network,

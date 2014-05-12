@@ -1,5 +1,5 @@
 module Bosh
   module Stemcell
-    VERSION = '1.2534.0'
+    VERSION = '1.2539.0'
   end
 end
