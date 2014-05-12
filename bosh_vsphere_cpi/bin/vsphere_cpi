@@ -13,8 +13,8 @@ require 'bosh/cpi/cli'
 
 Sequel.extension(:migration)
 
-director_config = YAML.load_file(ARGV.shift)
-db_config = director_config.fetch('db')
+cpi_config = YAML.load_file(ARGV.shift)
+db_config = cpi_config.fetch('db')
 
 require 'sequel/adapters/sqlite' if db_config['adapter'] == 'sqlite'
 
@@ -33,7 +33,7 @@ Bosh::Clouds::Config.configure(OpenStruct.new(
   db: db,
 ))
 
-cpi = Bosh::Clouds::VSphere.new(director_config['cloud']['properties'])
+cpi = Bosh::Clouds::VSphere.new(cpi_config['cloud']['properties'])
 
 cli = Bosh::Cpi::Cli.new(cpi, STDOUT)
 
