@@ -10,6 +10,15 @@ namespace :release do
     create_release
   end
 
+  task :create_vsphere_cpi_release do
+    require 'bosh/dev/build'
+    require 'bosh/dev/vsphere_cpi_release_components'
+
+    gem_components = Bosh::Dev::VsphereCpiReleaseComponents.new
+    gem_components.build_gems
+    create_release(name: 'vsphere_cpi', release_dir: 'vsphere-cpi-release')
+  end
+
   desc 'Upload BOSH dev release'
   task :upload_dev_release, [:rebase] => :create_dev_release do |_, args|
     args.with_defaults(rebase: false)
@@ -22,9 +31,11 @@ namespace :release do
   end
 
   def create_release(options={})
-    name = options[:name] || "bosh"
+    name = options[:name] || 'bosh'
     final = options[:final] || false
-    Dir.chdir('release') do
+    release_dir = options[:release_dir] || 'release'
+
+    Dir.chdir(release_dir) do
       if final
         sh('bosh create release --final')
       else

@@ -46,9 +46,7 @@ module Bosh::Dev
     end
 
     def components
-      return @components if @components
-
-      @components = map { |component| GemComponent.new(component, @gem_version.version) }
+      @components ||= map { |component| GemComponent.new(component, @gem_version.version) }
     end
 
     def has_db?(component)
