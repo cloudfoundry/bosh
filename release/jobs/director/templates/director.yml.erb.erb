@@ -165,7 +165,7 @@ cloud:
 <% if_p('external_cpi') do %>
   external_cpi:
     enabled: <%= p('external_cpi.enabled') %>
-    cpi_path: /var/vcap/jobs/<%= p('external_cpi.name') %>
+    cpi_path: /var/vcap/jobs/<%= p('external_cpi.name') %>/bin/cpi
 <% end %>
 
 <% plugin = nil %>

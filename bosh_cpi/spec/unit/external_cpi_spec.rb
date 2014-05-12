@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Clouds::ExternalCpi do
   let(:director_uuid) { 'fake-director-uuid' }
-  subject(:external_cpi) { described_class.new('/path/to/fake-cpi', director_uuid) }
+  subject(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', director_uuid) }
   before { allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true) }
 
   let(:cpi_response) do

@@ -382,7 +382,7 @@ describe 'director.yml.erb.erb' do
 
     it 'sets external_cpi' do
       expect(parsed_yaml['cloud']['external_cpi']['enabled']).to eq(true)
-      expect(parsed_yaml['cloud']['external_cpi']['cpi_path']).to eq('/var/vcap/jobs/fake-external-cpi')
+      expect(parsed_yaml['cloud']['external_cpi']['cpi_path']).to eq('/var/vcap/jobs/fake-external-cpi/bin/cpi')
     end
   end
 end
