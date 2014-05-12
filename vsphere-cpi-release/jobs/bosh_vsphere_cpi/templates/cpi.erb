@@ -1,0 +1,13 @@
+#!/bin/bash
+
+read INPUT
+
+PATH=/var/vcap/packages/ruby_vsphere_cpi/bin:/var/vcap/packages/genisoimage_vsphere_cpi:$PATH
+export PATH
+
+export GEM_HOME=/var/vcap/packages/bosh_vsphere_cpi/gem_home
+
+echo $INPUT | /var/vcap/packages/bosh_vsphere_cpi/bin/vsphere_cpi \
+  /var/vcap/jobs/bosh_vsphere_cpi/config/cpi.yml
+
+exit 0

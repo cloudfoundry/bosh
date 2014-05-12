@@ -1,0 +1,72 @@
+db:
+  adapter: <%= p('director.db.adapter') %>
+  user: <%= p('director.db.user') %>
+  password: <%= p('director.db.password') %>
+  host: <%= p('director.db.host') %>
+  port: <%= p('director.db.port') %>
+  database: <%= p('director.db.database') %>
+  connection_options: <%= JSON.generate(p('director.db.connection_options')) %>
+
+cloud:
+  plugin: vsphere
+  properties:
+    mem_overcommit_ratio: 0.7
+    cpi_log: /var/vcap/sys/log/cpi/cpi.log
+    vcenters:
+      - host: <%= JSON.dump(p('vcenter.address')) %>
+        user: <%= JSON.dump(p('vcenter.user')) %>
+        password: <%= JSON.dump(p('vcenter.password')) %>
+        datacenters:
+          <% p('vcenter.datacenters').each do |dc| %>
+          - name: <%= dc['name'] %>
+            vm_folder: <%= dc['vm_folder'] || "BOSH_VMs" %>
+            template_folder: <%= dc['template_folder'] || "BOSH_Templates" %>
+            disk_path: <%= dc['disk_path'] || "BOSH_Disks" %>
+            datastore_pattern: <%= dc['datastore_pattern'] %>
+            persistent_datastore_pattern: <%= dc['persistent_datastore_pattern'] %>
+            allow_mixed_datastores: <%= dc.fetch('allow_mixed_datastores', true) %>
+            clusters:
+              <% dc['clusters'].each do |cluster| %>
+                <% case cluster
+                   when Hash %>
+                  <% cluster.each do |cluster_name, cluster_properties| %>
+              - <%= cluster_name.to_s %>:
+                    <% cluster_properties.each do |k, v| %>
+                  <%= "#{k.to_s}: #{v}" %>
+                    <% end %>
+                  <% end %>
+                <% when String %>
+              - <%= cluster.to_s %>
+                <% end %>
+              <% end %>
+          <% end %>
+
+    agent:
+      ntp: [<%= p('ntp').join(", ") %>]
+
+      blobstore:
+        provider: <%= p('blobstore.provider') %>
+        options:
+      <% if p('blobstore.provider') == "s3" %>
+          bucket_name: <%= p('blobstore.bucket_name') %>
+          access_key_id: <%= p(['agent.blobstore.access_key_id', 'blobstore.access_key_id']) %>
+          secret_access_key: <%= p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key']) %>
+      <% if_p('blobstore.use_ssl') do |use_ssl| %>
+          use_ssl: <%= use_ssl %>
+      <% end %>
+      <% if_p('blobstore.s3_port') do |port| %>
+          port: <%= port %>
+      <% end %>
+      <% if_p('blobstore.host') do |host| %>
+          host: <%= host %>
+      <% end %>
+      <% if_p('blobstore.s3_force_path_style') do |s3_force_path_style| %>
+          s3_force_path_style: <%= s3_force_path_style %>
+      <% end %>
+      <% else %>
+          endpoint: 'http://<%= p(['agent.blobstore.address', 'blobstore.address']) %>:<%= p('blobstore.port') %>'
+          user: <%= p('blobstore.agent.user') %>
+          password: <%= p('blobstore.agent.password') %>
+      <% end %>
+
+      mbus: nats://<%= p('nats.user') %>:<%= p('nats.password') %>@<%= p(['agent.nats.address', 'nats.address']) %>:<%= p('nats.port') %>

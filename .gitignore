@@ -51,6 +51,23 @@ pkg/
 /release/releases/*.tgz
 /release/src/bosh/*
 
+/vsphere-cpi-release/.blobs
+/vsphere-cpi-release/.dev_builds
+/vsphere-cpi-release/.final_builds/jobs/**/*.tgz
+/vsphere-cpi-release/.final_builds/packages/**/*.tgz
+/vsphere-cpi-release/.idea
+/vsphere-cpi-release/blobs
+/vsphere-cpi-release/blobs
+/vsphere-cpi-release/config/dev.yml
+/vsphere-cpi-release/config/private.yml
+/vsphere-cpi-release/dev-releases
+/vsphere-cpi-release/dev_releases
+/vsphere-cpi-release/jobs/micro_*/monit
+/vsphere-cpi-release/jobs/micro_*/spec
+/vsphere-cpi-release/jobs/micro_*/templates/
+/vsphere-cpi-release/releases/*.tgz
+/vsphere-cpi-release/src/bosh_vsphere_cpi/*
+
 /*/spec/reports/
 /spec/reports
 spec.log

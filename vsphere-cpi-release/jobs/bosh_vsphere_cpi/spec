@@ -1,0 +1,16 @@
+---
+name: bosh_vsphere_cpi
+templates:
+  cpi.erb: bin/cpi
+  cpi.yml.erb: config/cpi.yml
+  post_install: bin/post_install
+
+packages:
+- ruby_vsphere_cpi
+- bosh_vsphere_cpi
+- libpq_vsphere_cpi
+- mysql_vsphere_cpi
+- genisoimage_vsphere_cpi
+
+properties:
+  some_key: some_value

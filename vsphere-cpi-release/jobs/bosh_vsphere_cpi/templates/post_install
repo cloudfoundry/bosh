@@ -1,0 +1,5 @@
+#!/bin/bash
+
+LOG_DIR=/var/vcap/sys/log/cpi
+mkdir -p $LOG_DIR
+chown -R vcap:vcap $LOG_DIR
