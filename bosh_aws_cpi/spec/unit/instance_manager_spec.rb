@@ -157,6 +157,27 @@ describe Bosh::AwsCloud::InstanceManager do
 
     end
 
+    it "should retry checking spot instance request state when AWS::EC2::Errors::InvalidSpotInstanceRequestID::NotFound raised" do
+      spot_instance_requests = {
+        :spot_instance_request_set => [ { :spot_instance_request_id=>"sir-12345c", :other_params_here => "which aren't used" }], 
+        :request_id => "request-id-12345"
+      }
+      
+      allow(region).to receive(:client).and_return(aws_client)
+      allow(region).to receive(:instances).and_return( {'i-12345678' => instance } )
+
+      #Simulate first recieving an error when asking for spot request state
+      expect(aws_client).to receive(:describe_spot_instance_requests) \
+        .with({:spot_instance_request_ids=>["sir-12345c"]}) \
+        .and_raise(AWS::EC2::Errors::InvalidSpotInstanceRequestID::NotFound)
+      expect(aws_client).to receive(:describe_spot_instance_requests) \
+        .with({:spot_instance_request_ids=>["sir-12345c"]}) \
+        .and_return({ :spot_instance_request_set => [ {:state => "active", :instance_id=>"i-12345678"} ] })
+
+      instance_manager = described_class.new(region, registry, availability_zone_selector)     
+      instance_manager.wait_for_spot_instance_request_to_be_active spot_instance_requests
+    end
+
     it "should retry creating the VM when AWS::EC2::Errors::InvalidIPAddress::InUse raised" do
       allow(region).to receive(:instances).and_return(aws_instances)
       allow(region).to receive(:subnets).and_return({"sub-123456" => fake_aws_subnet})

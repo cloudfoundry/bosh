@@ -101,7 +101,12 @@ module Bosh::AwsCloud
     end
 
     def wait_for_spot_instance_request_to_be_active(spot_instance_requests)
-      Bosh::Common.retryable(sleep: instance_create_wait_time*2, tries: 20) do |tries, error|
+      # Query the spot request state until it becomes "active".
+      # This can result in the errors listed below; this is normally because AWS has 
+      # been slow to update its state so the correct response is to wait a bit and try again.
+      errors = [AWS::EC2::Errors::InvalidSpotInstanceRequestID::NotFound]
+      Bosh::Common.retryable(sleep: instance_create_wait_time*2, tries: 20, on: errors) do |tries, error|
+          @logger.warn("Retrying after expected error: #{error}") if error
           @logger.debug("Checking state of spot instance requests...")
           spot_instance_request_ids = spot_instance_requests[:spot_instance_request_set].map { |r| r[:spot_instance_request_id] } 
           response = @region.client.describe_spot_instance_requests(:spot_instance_request_ids => spot_instance_request_ids)
