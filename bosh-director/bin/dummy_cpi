@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'yaml'
+require 'logger'
+require 'cloud'
+require 'cloud/dummy'
+require 'ostruct'
+require 'bosh/cpi'
+require 'bosh/cpi/cli'
+
+director_config = YAML.load_file(ARGV.shift)
+
+Bosh::Clouds::Config.configure(OpenStruct.new(
+  logger: Logger.new(STDERR),
+  task_checkpoint: nil,
+))
+
+cpi = Bosh::Clouds::Dummy.new(director_config['cloud']['properties'])
+
+cli = Bosh::Cpi::Cli.new(cpi, STDOUT)
+
+cli.run(ARGF.read)

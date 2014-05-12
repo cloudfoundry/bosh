@@ -1,0 +1,7 @@
+#!/bin/bash
+
+read INPUT
+
+export PATH=<%= external_cpi_config[:env_path] %>:$PATH
+
+echo $INPUT | <%= external_cpi_config[:exec_path] %> <%= external_cpi_config[:config_path] %>

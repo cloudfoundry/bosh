@@ -49,6 +49,9 @@ scan_and_fix:
 snapshots:
   enabled: true
 cloud:
+  external_cpi:
+    enabled: <%= external_cpi_enabled || false %>
+    cpi_path: <%= external_cpi_config[:director_path] %>
   plugin: dummy
   properties:
     nats: nats://localhost:<%= nats_port %>

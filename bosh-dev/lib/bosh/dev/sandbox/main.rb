@@ -25,6 +25,9 @@ module Bosh::Dev::Sandbox
     HM_CONFIG = 'health_monitor.yml'
     HM_CONF_TEMPLATE = File.join(ASSETS_DIR, 'health_monitor.yml.erb')
 
+    EXTERNAL_CPI = 'cpi'
+    EXTERNAL_CPI_TEMPLATE = File.join(ASSETS_DIR, 'cpi.erb')
+
     DIRECTOR_PATH = File.expand_path('bosh-director', REPO_ROOT)
     MIGRATIONS_PATH = File.join(DIRECTOR_PATH, 'db', 'migrations')
 
@@ -40,6 +43,8 @@ module Bosh::Dev::Sandbox
     attr_reader :logs_path
 
     attr_reader :cpi
+
+    attr_accessor :external_cpi_enabled
 
     def self.from_env
       db_opts = {
@@ -163,6 +168,12 @@ module Bosh::Dev::Sandbox
       @director_process.start
     end
 
+    def reconfigure_workers
+      @worker_processes.each(&:stop)
+      write_in_sandbox(DIRECTOR_CONFIG, load_config_template(DIRECTOR_CONF_TEMPLATE))
+      @worker_processes.each(&:start)
+    end
+
     def reconfigure_health_monitor(erb_template)
       @health_monitor_process.stop
       write_in_sandbox(HM_CONFIG, load_config_template(File.join(ASSETS_DIR, erb_template)))
@@ -229,6 +240,15 @@ module Bosh::Dev::Sandbox
       @sandbox_root ||= Dir.mktmpdir.tap { |p| @logger.info("sandbox=#{p}") }
     end
 
+    def external_cpi_config
+      {
+        exec_path: File.join(REPO_ROOT, 'bosh-director', 'bin', 'dummy_cpi'),
+        director_path: sandbox_path(EXTERNAL_CPI),
+        config_path: sandbox_path(DIRECTOR_CONFIG),
+        env_path: ENV['PATH']
+      }
+    end
+
     private
 
     def do_reset(name)
@@ -269,6 +289,8 @@ module Bosh::Dev::Sandbox
       write_in_sandbox(DIRECTOR_CONFIG, load_config_template(DIRECTOR_CONF_TEMPLATE))
       write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
       write_in_sandbox(REDIS_CONFIG, load_config_template(REDIS_CONF_TEMPLATE))
+      write_in_sandbox(EXTERNAL_CPI, load_config_template(EXTERNAL_CPI_TEMPLATE))
+      FileUtils.chmod(0755, sandbox_path(EXTERNAL_CPI))
       FileUtils.mkdir_p(sandbox_path('redis'))
       FileUtils.mkdir_p(blobstore_storage_dir)
     end

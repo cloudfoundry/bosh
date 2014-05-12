@@ -148,6 +148,8 @@ module Bosh
         "#{@base_dir}/agent.#{agent_id}.log"
       end
 
+      def set_vm_metadata(vm, metadata); end
+
       private
 
       def spawn_agent_process(agent_id)
