@@ -30,15 +30,15 @@ cloud:
 <% if_p('openstack.auth_url', 'openstack.username', 'openstack.api_key', 'openstack.tenant') do |auth_url, username, api_key, tenant| %>
   plugin: openstack <% plugin = 'openstack' %>
   openstack:
-    auth_url: <%= auth_url %>
-    username: <%= username %>
-    api_key: <%= api_key %>
-    tenant: <%= tenant %>
+    auth_url: "<%= auth_url %>"
+    username: "<%= username %>"
+    api_key: "<%= api_key %>"
+    tenant: "<%= tenant %>"
     <% if_p('openstack.region') do |region| %>
-    region: <%= region %>
+    region: "<%= region %>"
     <% end %>
     <% if_p('openstack.endpoint_type') do |endpoint_type| %>
-    endpoint_type: <%= endpoint_type %>
+    endpoint_type: "<%= endpoint_type %>"
     <% end %>
     <% if_p('openstack.connection_options') do |connection_options| %>
     connection_options: <%= JSON.generate(connection_options) %>
