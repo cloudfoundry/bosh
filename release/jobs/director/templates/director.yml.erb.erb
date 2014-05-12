@@ -222,6 +222,9 @@ cloud:
       <% if_p('openstack.connection_options') do |connection_options| %>
       connection_options: <%= JSON.generate(connection_options) %>
       <% end %>
+      <% if_p("openstack.boot_from_volume") do |boot_from_volume| %>
+      boot_from_volume: <%= boot_from_volume %>
+      <% end %>
       default_key_name: <%= default_key_name %>
       default_security_groups: <%= default_security_groups %>
       wait_resource_poll_interval: <%= wait_resource_poll_interval %>
