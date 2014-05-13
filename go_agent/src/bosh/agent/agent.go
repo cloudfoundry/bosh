@@ -11,6 +11,7 @@ import (
 	boshlog "bosh/logger"
 	boshmbus "bosh/mbus"
 	boshplatform "bosh/platform"
+	boshsyslog "bosh/syslog"
 )
 
 type Agent struct {
@@ -22,6 +23,7 @@ type Agent struct {
 	alertSender       AlertSender
 	jobSupervisor     boshjobsuper.JobSupervisor
 	specService       boshas.V1Service
+	syslogServer      boshsyslog.Server
 }
 
 func New(
@@ -32,6 +34,7 @@ func New(
 	alertSender AlertSender,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	specService boshas.V1Service,
+	syslogServer boshsyslog.Server,
 	heartbeatInterval time.Duration,
 ) (a Agent) {
 	a.logger = logger
@@ -42,6 +45,7 @@ func New(
 	a.alertSender = alertSender
 	a.jobSupervisor = jobSupervisor
 	a.specService = specService
+	a.syslogServer = syslogServer
 	return
 }
 
@@ -56,8 +60,12 @@ func (a Agent) Run() error {
 	a.actionDispatcher.ResumePreviouslyDispatchedTasks()
 
 	go a.subscribeActionDispatcher(errCh)
+
 	go a.generateHeartbeats(errCh)
+
 	go a.jobSupervisor.MonitorJobFailures(a.handleJobFailure(errCh))
+
+	go a.syslogServer.Start(a.handleSyslogMsg(errCh))
 
 	select {
 	case err = <-errCh:
@@ -137,5 +145,14 @@ func (a Agent) handleJobFailure(errCh chan error) boshjobsuper.JobFailureHandler
 		}
 
 		return nil
+	}
+}
+
+func (a Agent) handleSyslogMsg(errCh chan error) boshsyslog.CallbackFunc {
+	return func(msg boshsyslog.Msg) {
+		err := a.alertSender.SendSSHAlert(msg)
+		if err != nil {
+			errCh <- bosherr.WrapError(err, "Sending SSH alert")
+		}
 	}
 }

@@ -57,3 +57,6 @@ ln -nsf data/sys /var/vcap/sys
 # Since go agent is always specified with -C provide empty conf.
 # File will be overwritten in whole by infrastructures.
 echo '{}' > $chroot/var/vcap/bosh/agent.json
+
+# We need to capture ssh events
+cp $dir/assets/rsyslog.d/10-auth_agent_forwarder.conf $chroot/etc/rsyslog.d/10-auth_agent_forwarder.conf

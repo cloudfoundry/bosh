@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"runtime/debug"
@@ -22,11 +23,16 @@ type Logger struct {
 	err   *log.Logger
 }
 
-func NewLogger(level LogLevel) (l Logger) {
-	l.level = level
-	l.out = log.New(os.Stdout, "", log.LstdFlags)
-	l.err = log.New(os.Stderr, "", log.LstdFlags)
-	return
+func NewLogger(level LogLevel) Logger {
+	return NewWriterLogger(level, os.Stdout, os.Stderr)
+}
+
+func NewWriterLogger(level LogLevel, out, err io.Writer) Logger {
+	return Logger{
+		level: level,
+		out:   log.New(out, "", log.LstdFlags),
+		err:   log.New(err, "", log.LstdFlags),
+	}
 }
 
 func (l Logger) Debug(tag, msg string, args ...interface{}) {

@@ -27,7 +27,9 @@ import (
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
+	boshsyslog "bosh/syslog"
 	boshsys "bosh/system"
+	boshtime "bosh/time"
 	boshuuid "bosh/uuid"
 )
 
@@ -126,6 +128,8 @@ func (app *app) Setup(args []string) error {
 
 	uuidGen := boshuuid.NewGenerator()
 
+	timeService := boshtime.NewConcreteService()
+
 	taskService := boshtask.NewAsyncTaskService(uuidGen, app.logger)
 
 	taskManager := boshtask.NewManagerProvider().NewManager(
@@ -173,7 +177,14 @@ func (app *app) Setup(args []string) error {
 
 	alertBuilder := boshalert.NewBuilder(settingsService, app.logger)
 
-	alertSender := boshagent.NewAlertSender(mbusHandler, alertBuilder)
+	alertSender := boshagent.NewConcreteAlertSender(
+		mbusHandler,
+		alertBuilder,
+		uuidGen,
+		timeService,
+	)
+
+	syslogServer := boshsyslog.NewServer(33331, app.logger)
 
 	app.agent = boshagent.New(
 		app.logger,
@@ -183,6 +194,7 @@ func (app *app) Setup(args []string) error {
 		alertSender,
 		jobSupervisor,
 		specService,
+		syslogServer,
 		time.Minute,
 	)
 
