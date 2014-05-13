@@ -197,6 +197,10 @@ module Bosh::Director
         @cloud
       end
 
+      def cpi_task_log
+        Config.cloud_options.fetch('properties', {}).fetch('cpi_log')
+      end
+
       def logger=(logger)
         @logger = logger
         redis_options[:logger] = @logger

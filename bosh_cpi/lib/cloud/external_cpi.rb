@@ -88,6 +88,8 @@ module Bosh::Clouds
           handle_error(parsed_response['error'])
         end
 
+        save_cpi_log(parsed_response['log'])
+
         parsed_response['result']
       end
     end
@@ -117,6 +119,14 @@ module Bosh::Clouds
       end
 
       raise error, error_message
+    end
+
+    def save_cpi_log(output)
+      # cpi log path is set up at the beginning of every task in Config
+      # see JobRunner#setup_task_logging
+      File.open(Config.cpi_task_log, 'a') do |f|
+        f.write(output)
+      end
     end
 
     def parsed_response(input)

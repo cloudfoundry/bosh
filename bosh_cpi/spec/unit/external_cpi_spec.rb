@@ -1,6 +1,9 @@
 require 'spec_helper'
+require 'fakefs/spec_helpers'
 
 describe Bosh::Clouds::ExternalCpi do
+  include FakeFS::SpecHelpers
+
   let(:director_uuid) { 'fake-director-uuid' }
   subject(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', director_uuid) }
   before { allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true) }
@@ -16,8 +19,15 @@ describe Bosh::Clouds::ExternalCpi do
   let(:env) { {'TMPDIR' => '/some/tmp'} }
   before { stub_const('ENV', env) }
 
-  let(:config) { double(:config, logger: double(:logger, debug: nil)) }
+  let(:config) do
+    double(:config,
+      logger: double(:logger, debug: nil),
+      cpi_task_log: cpi_log_path
+    )
+  end
   before { stub_const('Bosh::Clouds::Config', config)}
+  let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
+  before { FileUtils.mkdir_p('/var/vcap/task/5') }
 
   before { allow(Open3).to receive(:capture3).and_return([cpi_response, stderr, exit_status]) }
   let(:stderr) { double('fake-stderr-data') }
@@ -47,6 +57,29 @@ describe Bosh::Clouds::ExternalCpi do
 
       it 'returns result' do
         expect(call_cpi_method).to eq(result)
+      end
+    end
+
+    describe 'log' do
+      let(:cpi_response) do
+        JSON.dump({
+          result: 'fake-result',
+          error: nil,
+          log: 'fake-log'
+        })
+      end
+
+      it 'saves the log in task cpi log' do
+        call_cpi_method
+
+        expect(File.read(cpi_log_path)).to eq('fake-log')
+      end
+
+      it 'adds to existing file if for a given task several cpi requests were made' do
+        external_cpi.public_send(method, *arguments)
+        external_cpi.public_send(method, *arguments)
+
+        expect(File.read(cpi_log_path)).to eq('fake-logfake-log')
       end
     end
 
