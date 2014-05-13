@@ -28,8 +28,9 @@ class Bosh::Cpi::Cli
   INVALID_CALL_ERROR_TYPE = 'InvalidCall'.freeze
   UNKNOWN_ERROR_TYPE      = 'Unknown'.freeze
 
-  def initialize(cpi, result_io)
+  def initialize(cpi, logs_string_io, result_io)
     @cpi = cpi
+    @logs_string_io = logs_string_io
     @result_io = result_io
   end
 
@@ -92,6 +93,7 @@ class Bosh::Cpi::Cli
         message: message,
         ok_to_retry: ok_to_retry,
       },
+      log: @logs_string_io.string,
     }
     @result_io.print(JSON.dump(hash)); nil
   end
@@ -100,6 +102,7 @@ class Bosh::Cpi::Cli
     hash = {
       result: result,
       error: nil,
+      log: @logs_string_io.string,
     }
     @result_io.print(JSON.dump(hash)); nil
   end

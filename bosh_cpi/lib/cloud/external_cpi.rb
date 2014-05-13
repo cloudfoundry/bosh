@@ -53,7 +53,8 @@ module Bosh::Clouds
             'message' => String,
             'ok_to_retry' => bool
           }
-        )
+        ),
+        'log' => String
       }
     end
 

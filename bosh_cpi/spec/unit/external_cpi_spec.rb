@@ -9,6 +9,7 @@ describe Bosh::Clouds::ExternalCpi do
     JSON.dump(
       result: nil,
       error: nil,
+      log: ''
     )
   end
 
@@ -39,7 +40,8 @@ describe Bosh::Clouds::ExternalCpi do
       let(:cpi_response) do
         JSON.dump({
           result: result,
-          error: nil
+          error: nil,
+          log: 'fake-log'
         })
       end
 
@@ -94,7 +96,8 @@ describe Bosh::Clouds::ExternalCpi do
               type: error_class.name,
               message: message,
               ok_to_retry: true
-            }
+            },
+            log: 'fake-log'
           )
         end
 
@@ -117,7 +120,8 @@ describe Bosh::Clouds::ExternalCpi do
               type: error_class.name,
               message: message,
               ok_to_retry: true
-            }
+            },
+            log: 'fake-log'
           )
         end
 
@@ -163,7 +167,8 @@ describe Bosh::Clouds::ExternalCpi do
               type: 'FakeUnrecognizableError',
               message: 'Something went wrong',
               ok_to_retry: true
-            }
+            },
+            log: 'fake-log'
           )
         end
 

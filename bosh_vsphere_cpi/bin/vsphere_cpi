@@ -33,8 +33,11 @@ Bosh::Clouds::Config.configure(OpenStruct.new(
   db: db,
 ))
 
-cpi = Bosh::Clouds::VSphere.new(cpi_config['cloud']['properties'])
+cloud_properties = cpi_config['cloud']['properties']
+cloud_properties['soap_log'] = StringIO.new
 
-cli = Bosh::Cpi::Cli.new(cpi, STDOUT)
+cpi = Bosh::Clouds::VSphere.new(cloud_properties)
+
+cli = Bosh::Cpi::Cli.new(cpi, cloud_properties['soap_log'], STDOUT)
 
 cli.run(ARGF.read)
