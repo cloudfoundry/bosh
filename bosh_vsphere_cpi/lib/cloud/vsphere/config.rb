@@ -148,27 +148,27 @@ module VSphereCloud
       schema = Membrane::SchemaParser.parse do
         {
           'agent' => dict(String, Object), # passthrough to the agent
-          optional('cpi_log') => String,
-          optional('soap_log') => String,
+          optional('cpi_log') => enum(String, Object),
+          optional('soap_log') => enum(String, Object),
           optional('mem_overcommit_ratio') => Numeric,
           optional('copy_disks') => bool,
           'vcenters' => [{
-                           'host' => String,
-                           'user' => String,
-                           'password' => String,
-                           'datacenters' => [{
-                                               'name' => String,
-                                               'vm_folder' => String,
-                                               'template_folder' => String,
-                                               optional('use_sub_folder') => bool,
-                                               'disk_path' => String,
-                                               'datastore_pattern' => String,
-                                               'persistent_datastore_pattern' => String,
-                                               optional('allow_mixed_datastores') => bool,
-                                               'clusters' => [enum(String,
-                                                                   dict(String, { 'resource_pool' => String }))]
-                                             }]
-                         }]
+            'host' => String,
+            'user' => String,
+            'password' => String,
+            'datacenters' => [{
+              'name' => String,
+              'vm_folder' => String,
+              'template_folder' => String,
+              optional('use_sub_folder') => bool,
+              'disk_path' => String,
+              'datastore_pattern' => String,
+              'persistent_datastore_pattern' => String,
+              optional('allow_mixed_datastores') => bool,
+              'clusters' => [enum(String,
+                dict(String, { 'resource_pool' => String }))]
+            }]
+          }]
         }
       end
 
