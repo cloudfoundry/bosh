@@ -21,7 +21,10 @@ func buildService(fetcher SettingsFetcher) (Service, *fakesys.FakeFileSystem) {
 
 func buildServiceWithInitialSettings(initialSettings Settings) Service {
 	service, _ := buildService(func() (Settings, error) { return initialSettings, nil })
-	service.LoadSettings()
+
+	err := service.LoadSettings()
+	Expect(err).NotTo(HaveOccurred())
+
 	return service
 }
 

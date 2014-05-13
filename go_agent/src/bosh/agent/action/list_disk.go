@@ -15,7 +15,11 @@ type ListDiskAction struct {
 	logger   boshlog.Logger
 }
 
-func NewListDisk(settings boshsettings.Service, platform boshplatform.Platform, logger boshlog.Logger) (action ListDiskAction) {
+func NewListDisk(
+	settings boshsettings.Service,
+	platform boshplatform.Platform,
+	logger boshlog.Logger,
+) (action ListDiskAction) {
 	action.settings = settings
 	action.platform = platform
 	action.logger = logger
@@ -36,6 +40,7 @@ func (a ListDiskAction) Run() (value interface{}, err error) {
 
 	for volumeID, devicePath := range disks.Persistent {
 		var isMounted bool
+
 		isMounted, err = a.platform.IsPersistentDiskMounted(devicePath)
 		if err != nil {
 			bosherr.WrapError(err, "Checking whether device %s is mounted", devicePath)

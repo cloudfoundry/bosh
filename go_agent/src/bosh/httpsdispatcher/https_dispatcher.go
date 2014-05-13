@@ -36,21 +36,19 @@ func NewHTTPSDispatcher(baseURL *url.URL, logger boshlog.Logger) (dispatcher HTT
 	return
 }
 
-func (h HTTPSDispatcher) Start() (err error) {
-	config := &tls.Config{}
-
-	config.NextProtos = []string{"http/1.1"}
-
-	config.Certificates = make([]tls.Certificate, 1)
-	config.Certificates[0], err = tls.LoadX509KeyPair("agent.cert", "agent.key")
+func (h HTTPSDispatcher) Start() error {
+	cert, err := tls.LoadX509KeyPair("agent.cert", "agent.key")
 	if err != nil {
-		err = bosherr.WrapError(err, "creating cert")
-		return
+		return bosherr.WrapError(err, "creating cert")
 	}
-	tlsListener := tls.NewListener(h.listener, config)
-	h.httpServer.Serve(tlsListener)
 
-	return
+	config := &tls.Config{}
+	config.NextProtos = []string{"http/1.1"}
+	config.Certificates = []tls.Certificate{cert}
+
+	tlsListener := tls.NewListener(h.listener, config)
+
+	return h.httpServer.Serve(tlsListener)
 }
 
 func (h *HTTPSDispatcher) Stop() {
@@ -60,5 +58,4 @@ func (h *HTTPSDispatcher) Stop() {
 
 func (h HTTPSDispatcher) AddRoute(route string, handler HTTPHandlerFunc) {
 	h.mux.HandleFunc(route, handler)
-	return
 }

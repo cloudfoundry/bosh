@@ -15,18 +15,24 @@ import (
 	davconf "bosh/davcli/config"
 )
 
-func runGet(config davconf.Config, args []string) (err error) {
+func runGet(config davconf.Config, args []string) error {
 	factory := NewFactory()
 	factory.SetConfig(config)
-	cmd, _ := factory.Create("get")
+
+	cmd, err := factory.Create("get")
+	Expect(err).ToNot(HaveOccurred())
+
 	return cmd.Run(args)
 }
 
-func getFileContent(path string) (content string) {
-	file, _ := os.Open(path)
-	fileBytes, _ := ioutil.ReadAll(file)
-	content = string(fileBytes)
-	return
+func getFileContent(path string) string {
+	file, err := os.Open(path)
+	Expect(err).ToNot(HaveOccurred())
+
+	fileBytes, err := ioutil.ReadAll(file)
+	Expect(err).ToNot(HaveOccurred())
+
+	return string(fileBytes)
 }
 
 func init() {
@@ -40,7 +46,6 @@ func init() {
 				req := testcmd.NewHTTPRequest(r)
 
 				username, password, err := req.ExtractBasicAuth()
-
 				Expect(err).ToNot(HaveOccurred())
 				Expect(req.URL.Path).To(Equal("/0d/" + requestedBlob))
 				Expect(req.Method).To(Equal("GET"))
@@ -63,11 +68,9 @@ func init() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(getFileContent(targetFilePath)).To(Equal("this is your blob"))
 		})
+
 		It("get run with incorrect arg count", func() {
-
-			config := davconf.Config{}
-			err := runGet(config, []string{})
-
+			err := runGet(davconf.Config{}, []string{})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Incorrect usage"))
 		})

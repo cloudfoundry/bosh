@@ -1,11 +1,12 @@
 package blobstore
 
 import (
-	bosherr "bosh/errors"
 	"crypto/sha1"
 	"fmt"
 	"io"
 	"os"
+
+	bosherr "bosh/errors"
 )
 
 type sha1Verifiable struct {
@@ -36,7 +37,6 @@ func (b sha1Verifiable) Get(blobID, fingerprint string) (fileName string, err er
 
 	if actualSha1 != fingerprint {
 		err = bosherr.New("SHA1 mismatch. Expected %s, got %s for blob %s", fingerprint, actualSha1, fileName)
-
 	}
 	return
 }

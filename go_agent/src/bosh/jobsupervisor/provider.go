@@ -11,7 +11,7 @@ import (
 	boshdir "bosh/settings/directories"
 )
 
-type provider struct {
+type Provider struct {
 	supervisors map[string]JobSupervisor
 }
 
@@ -21,7 +21,7 @@ func NewProvider(
 	logger boshlog.Logger,
 	dirProvider boshdir.DirectoriesProvider,
 	handler boshhandler.Handler,
-) (p provider) {
+) (p Provider) {
 	monitJobSupervisor := NewMonitJobSupervisor(
 		platform.GetFs(),
 		platform.GetRunner(),
@@ -38,14 +38,14 @@ func NewProvider(
 
 	p.supervisors = map[string]JobSupervisor{
 		"monit":      monitJobSupervisor,
-		"dummy":      newDummyJobSupervisor(),
+		"dummy":      NewDummyJobSupervisor(),
 		"dummy-nats": NewDummyNatsJobSupervisor(handler),
 	}
 
 	return
 }
 
-func (p provider) Get(name string) (supervisor JobSupervisor, err error) {
+func (p Provider) Get(name string) (supervisor JobSupervisor, err error) {
 	supervisor, found := p.supervisors[name]
 	if !found {
 		err = bosherr.New("JobSupervisor %s could not be found", name)

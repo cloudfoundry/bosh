@@ -1,4 +1,4 @@
-package jobsupervisor
+package jobsupervisor_test
 
 import (
 	"time"
@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	. "bosh/jobsupervisor"
 	fakemonit "bosh/jobsupervisor/monit/fakes"
 	boshlog "bosh/logger"
 	fakembus "bosh/mbus/fakes"
@@ -22,8 +23,7 @@ func init() {
 			dirProvider           boshdir.DirectoriesProvider
 			jobFailuresServerPort int
 			handler               *fakembus.FakeHandler
-
-			provider provider
+			provider              Provider
 		)
 
 		BeforeEach(func() {
@@ -67,7 +67,7 @@ func init() {
 			actualSupervisor, err := provider.Get("dummy")
 			Expect(err).ToNot(HaveOccurred())
 
-			expectedSupervisor := newDummyJobSupervisor()
+			expectedSupervisor := NewDummyJobSupervisor()
 			Expect(actualSupervisor).To(Equal(expectedSupervisor))
 		})
 

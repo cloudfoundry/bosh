@@ -1,4 +1,4 @@
-package blobstore
+package blobstore_test
 
 import (
 	"errors"
@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	. "bosh/blobstore"
 	fakesys "bosh/system/fakes"
 	fakeuuid "bosh/uuid/fakes"
 )
@@ -15,14 +16,14 @@ var _ = Describe("local", func() {
 		fs                *fakesys.FakeFileSystem
 		uuidGen           *fakeuuid.FakeGenerator
 		fakeBlobstorePath = "/some/local/path"
-		blobstore         local
+		blobstore         Blobstore
 	)
 
 	BeforeEach(func() {
 		fs = fakesys.NewFakeFileSystem()
 		uuidGen = &fakeuuid.FakeGenerator{}
 		options := map[string]interface{}{"blobstore_path": fakeBlobstorePath}
-		blobstore = newLocalBlobstore(fs, uuidGen, options)
+		blobstore = NewLocalBlobstore(fs, uuidGen, options)
 	})
 
 	Describe("Validate", func() {
@@ -32,7 +33,8 @@ var _ = Describe("local", func() {
 		})
 
 		It("returns error when missing blobstore path", func() {
-			blobstore.options = map[string]interface{}{}
+			options := map[string]interface{}{}
+			blobstore = NewLocalBlobstore(fs, uuidGen, options)
 
 			err := blobstore.Validate()
 			Expect(err).To(HaveOccurred())
@@ -40,7 +42,8 @@ var _ = Describe("local", func() {
 		})
 
 		It("returns error when blobstore path is not a string", func() {
-			blobstore.options = map[string]interface{}{"blobstore_path": 443}
+			options := map[string]interface{}{"blobstore_path": 443}
+			blobstore = NewLocalBlobstore(fs, uuidGen, options)
 
 			err := blobstore.Validate()
 			Expect(err).To(HaveOccurred())

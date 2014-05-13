@@ -36,8 +36,8 @@ var _ = Describe("defaultNetworkResolver", func() {
 				ifaceName = "en0"
 			} else if _, err := gonet.InterfaceByName("eth0"); err == nil {
 				ifaceName = "eth0"
-			// Travis CI uses venet0 as primary network interface
 			} else if _, err := gonet.InterfaceByName("venet0"); err == nil {
+				// Travis CI uses venet0 as primary network interface
 				ifaceName = "venet0"
 			} else {
 				panic("Not sure which interface name to use: en0 and eth0 are not found")

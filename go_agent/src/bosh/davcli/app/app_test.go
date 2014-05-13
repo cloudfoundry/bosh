@@ -24,14 +24,18 @@ func (r *FakeRunner) SetConfig(newConfig davconf.Config) {
 
 func (r *FakeRunner) Run(cmdArgs []string) (err error) {
 	r.RunArgs = cmdArgs
-	err = r.RunErr
-	return
+	return r.RunErr
 }
 
 func pathToFixture(file string) string {
-	pwd, _ := os.Getwd()
+	pwd, err := os.Getwd()
+	Expect(err).ToNot(HaveOccurred())
+
 	fixturePath := filepath.Join(pwd, "../../../../fixtures", file)
-	absPath, _ := filepath.Abs(fixturePath)
+
+	absPath, err := filepath.Abs(fixturePath)
+	Expect(err).ToNot(HaveOccurred())
+
 	return absPath
 }
 

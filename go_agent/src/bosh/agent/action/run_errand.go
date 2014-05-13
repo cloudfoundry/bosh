@@ -7,13 +7,17 @@ import (
 
 	boshas "bosh/agent/applier/applyspec"
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	boshsys "bosh/system"
 )
+
+const runErrandActionLogTag = "runErrandAction"
 
 type RunErrandAction struct {
 	specService boshas.V1Service
 	jobsDir     string
 	cmdRunner   boshsys.CmdRunner
+	logger      boshlog.Logger
 
 	cancelCh chan struct{}
 }
@@ -22,11 +26,13 @@ func NewRunErrand(
 	specService boshas.V1Service,
 	jobsDir string,
 	cmdRunner boshsys.CmdRunner,
+	logger boshlog.Logger,
 ) RunErrandAction {
 	return RunErrandAction{
 		specService: specService,
 		jobsDir:     jobsDir,
 		cmdRunner:   cmdRunner,
+		logger:      logger,
 
 		// Initialize channel in a constructor to avoid race
 		// between initializing in Run()/Cancel()
@@ -79,7 +85,10 @@ func (a RunErrandAction) Run() (ErrandResult, error) {
 			processExitedCh = nil
 		case <-a.cancelCh:
 			// Ignore possible TerminateNicely error since we cannot return it
-			process.TerminateNicely(10 * time.Second)
+			err := process.TerminateNicely(10 * time.Second)
+			if err != nil {
+				a.logger.Error(runErrandActionLogTag, "Failed to terminate %s", err.Error())
+			}
 		}
 	}
 

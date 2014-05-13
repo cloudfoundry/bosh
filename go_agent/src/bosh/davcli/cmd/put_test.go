@@ -15,23 +15,32 @@ import (
 	davconf "bosh/davcli/config"
 )
 
-func runPut(config davconf.Config, args []string) (err error) {
+func runPut(config davconf.Config, args []string) error {
 	factory := NewFactory()
 	factory.SetConfig(config)
-	cmd, _ := factory.Create("put")
+
+	cmd, err := factory.Create("put")
+	Expect(err).ToNot(HaveOccurred())
+
 	return cmd.Run(args)
 }
 
-func fileBytes(path string) (content []byte) {
-	f, _ := os.Open(path)
-	content, _ = ioutil.ReadAll(f)
-	return
+func fileBytes(path string) []byte {
+	file, err := os.Open(path)
+	Expect(err).ToNot(HaveOccurred())
+
+	content, err := ioutil.ReadAll(file)
+	Expect(err).ToNot(HaveOccurred())
+
+	return content
 }
 
-func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("put run with valid args", func() {
-			pwd, _ := os.Getwd()
+var _ = Describe("PutCmd", func() {
+	Describe("Run", func() {
+		It("with valid args", func() {
+			pwd, err := os.Getwd()
+			Expect(err).ToNot(HaveOccurred())
+
 			sourceFilePath := filepath.Join(pwd, "../../../../fixtures/cat.jpg")
 			targetBlob := "some-other-awesome-guid"
 			serverWasHit := false
@@ -41,7 +50,6 @@ func init() {
 				req := testcmd.NewHTTPRequest(r)
 
 				username, password, err := req.ExtractBasicAuth()
-
 				Expect(err).ToNot(HaveOccurred())
 				Expect(req.URL.Path).To(Equal("/d1/" + targetBlob))
 				Expect(req.Method).To(Equal("PUT"))
@@ -64,17 +72,15 @@ func init() {
 				Endpoint: ts.URL,
 			}
 
-			err := runPut(config, []string{sourceFilePath, targetBlob})
+			err = runPut(config, []string{sourceFilePath, targetBlob})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(serverWasHit).To(BeTrue())
 		})
-		It("put run with incorrect arg count", func() {
 
-			config := davconf.Config{}
-			err := runPut(config, []string{})
-
+		It("with incorrect arg count", func() {
+			err := runPut(davconf.Config{}, []string{})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Incorrect usage"))
 		})
 	})
-}
+})

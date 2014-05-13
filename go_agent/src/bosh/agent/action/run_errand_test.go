@@ -10,6 +10,7 @@ import (
 	. "bosh/agent/action"
 	boshas "bosh/agent/applier/applyspec"
 	fakeas "bosh/agent/applier/applyspec/fakes"
+	boshlog "bosh/logger"
 	boshsys "bosh/system"
 	fakesys "bosh/system/fakes"
 )
@@ -24,7 +25,8 @@ var _ = Describe("RunErrand", func() {
 	BeforeEach(func() {
 		specService = fakeas.NewFakeV1Service()
 		cmdRunner = fakesys.NewFakeCmdRunner()
-		action = NewRunErrand(specService, "/fake-jobs-dir", cmdRunner)
+		logger := boshlog.NewLogger(boshlog.LevelNone)
+		action = NewRunErrand(specService, "/fake-jobs-dir", cmdRunner, logger)
 	})
 
 	It("is asynchronous", func() {

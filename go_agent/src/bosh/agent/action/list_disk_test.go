@@ -13,42 +13,40 @@ import (
 )
 
 func init() {
-	Describe("Testing with Ginkgo", func() {
+	Describe("ListDisk", func() {
 		var (
-			logger   boshlog.Logger
+			settings *fakesettings.FakeSettingsService
 			platform *fakeplatform.FakePlatform
+			logger   boshlog.Logger
+			action   ListDiskAction
 		)
 
 		BeforeEach(func() {
+			settings = &fakesettings.FakeSettingsService{}
 			platform = fakeplatform.NewFakePlatform()
 			logger = boshlog.NewLogger(boshlog.LevelNone)
+			action = NewListDisk(settings, platform, logger)
 		})
 
 		It("list disk should be synchronous", func() {
-			settings := &fakesettings.FakeSettingsService{}
-			action := NewListDisk(settings, platform, logger)
 			Expect(action.IsAsynchronous()).To(BeFalse())
 		})
 
 		It("is not persistent", func() {
-			settings := &fakesettings.FakeSettingsService{}
-			action := NewListDisk(settings, platform, logger)
 			Expect(action.IsPersistent()).To(BeFalse())
 		})
 
 		It("list disk run", func() {
-			settings := &fakesettings.FakeSettingsService{
-				Disks: boshsettings.Disks{
-					Persistent: map[string]string{
-						"volume-1": "/dev/sda",
-						"volume-2": "/dev/sdb",
-						"volume-3": "/dev/sdc",
-					},
-				},
-			}
 			platform.MountedDevicePaths = []string{"/dev/sdb", "/dev/sdc"}
 
-			action := NewListDisk(settings, platform, logger)
+			settings.Disks = boshsettings.Disks{
+				Persistent: map[string]string{
+					"volume-1": "/dev/sda",
+					"volume-2": "/dev/sdb",
+					"volume-3": "/dev/sdc",
+				},
+			}
+
 			value, err := action.Run()
 			Expect(err).ToNot(HaveOccurred())
 			boshassert.MatchesJSONString(GinkgoT(), value, `["volume-2","volume-3"]`)

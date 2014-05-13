@@ -31,7 +31,6 @@ var _ = Describe("LinuxPlatform", func() {
 		cmdRunner          *fakesys.FakeCmdRunner
 		diskManager        *fakedisk.FakeDiskManager
 		dirProvider        boshdirs.DirectoriesProvider
-		diskWaitTimeout    time.Duration
 		devicePathResolver *fakedpresolv.FakeDevicePathResolver
 		platform           Platform
 		cdutil             *fakecd.FakeCdUtil
@@ -50,7 +49,6 @@ var _ = Describe("LinuxPlatform", func() {
 		cmdRunner = fakesys.NewFakeCmdRunner()
 		diskManager = fakedisk.NewFakeDiskManager()
 		dirProvider = boshdirs.NewDirectoriesProvider("/fake-dir")
-		diskWaitTimeout = 1 * time.Millisecond
 		cdutil = fakecd.NewFakeCdUtil()
 		compressor = boshcmd.NewTarballCompressor(cmdRunner, fs)
 		copier = boshcmd.NewCpCopier(cmdRunner, fs, logger)

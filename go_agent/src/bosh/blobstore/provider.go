@@ -34,12 +34,14 @@ func (p Provider) Get(settings boshsettings.Blobstore) (blobstore Blobstore, err
 	switch settings.Type {
 	case boshsettings.BlobstoreTypeDummy:
 		blobstore = newDummyBlobstore()
+
 	case boshsettings.BlobstoreTypeLocal:
-		blobstore = newLocalBlobstore(
+		blobstore = NewLocalBlobstore(
 			p.platform.GetFs(),
 			p.uuidGen,
 			settings.Options,
 		)
+
 	default:
 		blobstore = NewExternalBlobstore(
 			settings.Type,

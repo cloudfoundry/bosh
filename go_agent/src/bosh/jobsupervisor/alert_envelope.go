@@ -1,14 +1,17 @@
 package jobsupervisor
 
 import (
-	boshalert "bosh/agent/alert"
-	"github.com/pivotal/go-smtpd/smtpd"
 	"regexp"
 	"strings"
+
+	"github.com/pivotal/go-smtpd/smtpd"
+
+	boshalert "bosh/agent/alert"
 )
 
 type alertEnvelope struct {
 	*smtpd.BasicEnvelope
+
 	handler JobFailureHandler
 	alert   *boshalert.MonitAlert
 }

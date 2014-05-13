@@ -14,7 +14,7 @@ type local struct {
 	options map[string]interface{}
 }
 
-func newLocalBlobstore(
+func NewLocalBlobstore(
 	fs boshsys.FileSystem,
 	uuidGen boshuuid.Generator,
 	options map[string]interface{},

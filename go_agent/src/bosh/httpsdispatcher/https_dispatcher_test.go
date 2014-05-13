@@ -1,14 +1,16 @@
 package httpsdispatcher_test
 
 import (
-	boshdispatcher "bosh/httpsdispatcher"
-	boshlog "bosh/logger"
 	"crypto/tls"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"net/http"
 	"net/url"
 	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	boshdispatcher "bosh/httpsdispatcher"
+	boshlog "bosh/logger"
 )
 
 var _ = Describe("HTTPSDispatcher", func() {

@@ -13,15 +13,13 @@ import (
 
 var _ = Describe("NewLinuxDiskManager", func() {
 	var (
-		runner   *fakesys.FakeCmdRunner
-		searcher MountsSearcher
-		fs       *fakesys.FakeFileSystem
-		logger   boshlog.Logger
+		runner *fakesys.FakeCmdRunner
+		fs     *fakesys.FakeFileSystem
+		logger boshlog.Logger
 	)
 
 	BeforeEach(func() {
 		runner = fakesys.NewFakeCmdRunner()
-		searcher = NewCmdMountsSearcher(runner)
 		fs = fakesys.NewFakeFileSystem()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 	})

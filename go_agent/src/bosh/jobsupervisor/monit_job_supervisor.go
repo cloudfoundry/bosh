@@ -76,7 +76,10 @@ func (m monitJobSupervisor) Reload() error {
 	// because monit incarnation id is just a timestamp with 1 sec resolution.
 	for reloadI := 0; reloadI < m.reloadOptions.MaxTries; reloadI++ {
 		// Exit code or output cannot be trusted
-		m.runner.RunCommand("monit", "reload")
+		_, _, _, err := m.runner.RunCommand("monit", "reload")
+		if err != nil {
+			m.logger.Debug(monitJobSupervisorLogTag, "Failed to reload monit %s", err.Error())
+		}
 
 		for checkI := 0; checkI < m.reloadOptions.MaxCheckTries; checkI++ {
 			currentIncarnation, err = m.getIncarnation()

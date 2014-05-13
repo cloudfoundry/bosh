@@ -43,14 +43,18 @@ func captureOutputs(f func()) (stdout, stderr []byte) {
 		errC <- bytes
 	}()
 
-	wOut.Close()
-	wErr.Close()
+	err = wOut.Close()
+	Expect(err).ToNot(HaveOccurred())
+
+	err = wErr.Close()
+	Expect(err).ToNot(HaveOccurred())
 
 	stdout = <-outC
 	stderr = <-errC
 
 	os.Stdout = oldStdout
 	os.Stderr = oldStderr
+
 	return
 }
 
