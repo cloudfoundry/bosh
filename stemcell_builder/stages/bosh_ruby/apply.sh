@@ -11,7 +11,7 @@ mkdir -p $chroot/$bosh_dir/src
 # Libyaml
 mkdir -p $chroot/usr/lib64
 
-libyaml_basename=yaml-0.1.5
+libyaml_basename=yaml-0.1.6
 libyaml_archive=$libyaml_basename.tar.gz
 
 cp -r $dir/assets/$libyaml_archive $chroot/$bosh_dir/src
