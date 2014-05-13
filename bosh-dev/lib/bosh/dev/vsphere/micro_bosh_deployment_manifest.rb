@@ -12,6 +12,7 @@ module Bosh::Dev::VSphere
       @filename = 'micro_bosh.yml'
     end
 
+    # rubocop:disable MethodLength
     def to_h
       { 'name' => 'microbosh-vsphere-jenkins',
         'network' =>
@@ -43,6 +44,7 @@ module Bosh::Dev::VSphere
                           'persistent_datastore_pattern' =>
                             env['BOSH_VSPHERE_VCENTER_UBOSH_DATASTORE_PATTERN'],
                           'allow_mixed_datastores' => true,
+                          'srm' => env['BOSH_VSPHERE_VCENTER_SRM'].nil? ? false : env['BOSH_VSPHERE_VCENTER_SRM'] == 'true',
                           'clusters' =>
                             [{ env['BOSH_VSPHERE_VCENTER_CLUSTER'] =>
                                  { 'resource_pool' =>
@@ -63,12 +65,14 @@ module Bosh::Dev::VSphere
                          'persistent_datastore_pattern' =>
                            env['BOSH_VSPHERE_VCENTER_DATASTORE_PATTERN'],
                          'allow_mixed_datastores' => true,
+                         'srm' => env['BOSH_VSPHERE_VCENTER_SRM'].nil? ? false : env['BOSH_VSPHERE_VCENTER_SRM'] == 'true',
                          'clusters' =>
                            [{ env['BOSH_VSPHERE_VCENTER_CLUSTER'] =>
                                 { 'resource_pool' =>
                                     env['BOSH_VSPHERE_VCENTER_RESOURCE_POOL']
                                 } }] }] } } } }
     end
+    # rubocop:enable MethodLength
 
     private
 

@@ -1,11 +1,171 @@
+require 'yaml'
 require 'spec_helper'
 
 module VSphereCloud
   describe Cloud do
-    let(:config) { { fake: 'config' } }
+    let(:config) do
+      settings = <<-INFO
+agent:
+ntp:
+- ntp01.las01.emcatmos.com
+vcenters:
+- host: 10.146.19.1
+user: r
+password: v
+datacenters:
+- name: datacenter1
+vm_folder: Manage VMs
+template_folder: BOSH_Templates
+disk_path: BOSH_Disks
+datastore_pattern: .*
+persistent_datastore_pattern: .*
+allow_mixed_datastores: true
+clusters:
+- cluster1
+      INFO
+
+      YAML.load(settings)
+    end
     let(:cloud_config) { instance_double('VSphereCloud::Config', logger: logger, rest_client:nil ).as_null_object }
     let(:logger) { instance_double('Logger', info: nil, debug: nil) }
     let(:client) { double('fake client') }
+
+    shared_context 'base' do
+      let(:vm) { double('vm', name: 'vm1') }
+      let(:location) do
+        {
+          datacenter: 'datacenter1',
+          datastore: 'datastore1',
+          vm: 'vm1'
+        }
+      end
+      let(:host_info) do
+        {
+          'cluster' => 'cluster1',
+          'datastores' => ['datastore1', 'datastore2']
+        }
+      end
+      let(:datastore) { double('datastore1', name: 'datastore1') }
+      let(:cluster) { double('cluster1') }
+      let(:networks) do
+        {
+          'default' => {
+            'ip' => '10.146.17.174',
+            'netmask' => '255.255.255.128',
+            'cloud_properties' => {
+              'name' => 'VM Network'
+            },
+            'default' => ['dns', 'gateway'],
+            'dns' => ['10.146.17.140', '10.146.17.124'],
+            'gateway' => '10.146.17.253'
+          }
+        }
+      end
+      let(:snapshot) { double('vm snapshot', current_snapshot: double('snapshot')) }
+      let(:vm_properties) do
+        {
+          obj: double('vm1'),
+          'config.hardware.device' =>
+            [
+              VimSdk::Vim::Vm::Device::VirtualIDEController.new,
+              VimSdk::Vim::Vm::Device::VirtualPS2Controller.new,
+              VimSdk::Vim::Vm::Device::VirtualPCIController.new,
+              VimSdk::Vim::Vm::Device::VirtualSIOController.new,
+              VimSdk::Vim::Vm::Device::VirtualKeyboard.new,
+              VimSdk::Vim::Vm::Device::VirtualDisk.new
+            ],
+          'snapshot' => snapshot
+        }
+      end
+      let(:vm_env) do
+        {
+          "vm" => {
+            "name" => "vm-9536a37b-0bc4-4847-9cdc-ca3f33d50bd6",
+            "id" => "vm-483"
+          },
+          "agent_id" => "73ca28f2-ae87-46ca-ad23-84a17eb11d11",
+          "networks" => {
+            "default" => {
+              "ip" => "192.168.1.17",
+              "netmask" => "255.255.255.128",
+              "cloud_properties" => {
+                "name" => "VM Network Private"},
+              "default" => ["dns", "gateway"],
+              "dns" => ["192.168.1.11", "10.146.17.124"],
+              "gateway" => "192.168.1.1",
+              "dns_record_name" => "0.cloud-controller-fa872c2249cf1acc9762.default.cf-9c670da16245d99a8384.microbosh",
+              "mac"=>"00:50:56:a6:1d:72"
+            }
+          },
+          "disks" => {
+            "system" => 0,
+            "ephemeral" => 1,
+            "persistent" => {}
+          },
+          "ntp" => [],
+          "blobstore" => {
+            "provider" => "dav",
+            "options" => {
+              "endpoint" => "http://192.168.1.11:25250",
+              "user"=>"agent",
+              "password"=>"agent"
+            }
+          },
+          "mbus" => "nats://nats:nats@192.168.1.11:4222",
+          "env" => {
+            "bosh" => {
+              "password" => "pswd"
+            }
+          }
+        }
+      end
+      let(:env_json){ JSON.dump(vm_env) }
+      let(:agent_id) { 'agent_id' }
+      let(:catalog_vapp_id) { 'catalog_vapp_id' }
+      let(:vm_cid) { 'vm_cid' }
+      let(:disk_cid) { 'disk_cid' }
+      let(:resource_pool) do
+        { 'ram' => 1024, 'cpu' => 2, 'disk' => 4096 }
+      end
+      let(:stemcell_vm) { double('stemcell_vm') }
+      let(:disk) do
+        disk = double('disk')
+        disk.stub(:datacenter) { 'datacenter1' }
+        disk.stub(:datastore) { 'datastore1' }
+        disk.stub(:uuid) { 'uuid' }
+        disk.stub(:path)
+        disk.stub(:size) { 3 }
+        disk.stub(:datacenter=)
+        disk.stub(:datastore=)
+        disk.stub(:path=)
+        disk.stub(:save)
+        disk
+      end
+      let(:disks) { double('disks') }
+      let(:cluster1) do
+        cluster1 = double('cluster1', mob: cluster)
+        cluster1.stub_chain(:datacenter, :mob) { double('datacenter1') }
+        cluster1.stub_chain(:datacenter, :name) { 'datacenter1' }
+        cluster1.stub_chain(:datacenter, :vm_folder, :mob) { 'vm folder' }
+        cluster1.stub_chain(:resource_pool, :mob) { 'resource pool' }
+        cluster1
+      end
+
+      let(:datacenter) { double('datacenter1') }
+      let(:datastore1) { double('datastore1', mob: datastore, name: 'datastore1') }
+      let(:replicated_stemcell_vm) { double('replicated_stemcell_vm') }
+      let(:attached_disk_config) { double('attached_disk_config') }
+      let(:network_mob) { double('network_mob') }
+      let(:nic_config) { double('nic_config') }
+      let(:virtual_disk) do
+        vdisk_controller_key = double('virtual disk controller key')
+        VimSdk::Vim::Vm::Device::VirtualDisk.new(controller_key: vdisk_controller_key)
+      end
+      let(:pci_controller) do
+        pci_controller_key = double('virtual pci controller key')
+        VimSdk::Vim::Vm::Device::VirtualPCIController.new(key: pci_controller_key)
+      end
+    end
 
     subject(:vsphere_cloud) { Cloud.new(config) }
 
@@ -721,6 +881,188 @@ module VSphereCloud
 
           expect(actual_device_changes.size).to eq(1)
           expect(actual_device_changes.first.file_operation).to eq(VimSdk::Vim::Vm::Device::VirtualDeviceSpec::FileOperation::CREATE)
+        end
+      end
+    end
+
+    describe '#attach_independent_disk' do
+      include_context 'base'
+
+      it 'attaches independent disk successfully' do
+        attached_disk_config = double('attached_disk_config')
+        datastore1 = double('datastore1')
+        datastore1.stub(:mob) { datastore }
+
+        subject
+          .should_receive(:get_vm_host_info)
+          .with(vm)
+          .and_return host_info
+        subject
+          .should_receive(:find_persistent_datastore)
+          .with(location[:datacenter],
+                host_info,
+                3)
+          .and_return datastore1
+        subject
+          .client
+          .should_receive(:get_properties)
+          .with(vm,
+                VimSdk::Vim::VirtualMachine,
+                'config.hardware.device',
+                ensure_all: true)
+          .and_return vm_properties
+        subject
+          .should_receive(:create_disk_config_spec)
+          .with(datastore,
+                'vmdk_path',
+                anything,
+                3,
+                create: false,
+                independent: true)
+          .and_return attached_disk_config
+        subject
+          .should_receive(:fix_device_unit_numbers)
+          .with(anything, [attached_disk_config])
+        subject
+          .client
+          .should_receive(:reconfig_vm)
+          .with(vm, anything)
+
+        expect do
+          subject.send(:attach_independent_disk, vm, "vmdk_path", location, 3)
+        end.to_not raise_error
+      end
+
+      context 'datastore does not exist' do
+        it 'raises an exception' do
+          attached_disk_config = double('attached_disk_config')
+          subject
+            .should_receive(:get_vm_host_info)
+            .with(vm)
+            .and_return host_info
+          subject
+            .should_receive('find_persistent_datastore')
+            .with(location[:datacenter],
+                  host_info,
+                  3)
+            .and_return nil
+          subject
+            .client
+            .should_not_receive(:reconfig_vm)
+
+          expect do
+            subject.send(:attach_independent_disk, vm, "vmdk_path", location, 3)
+          end.to raise_error "Unable to find datastore datastore1!"
+        end
+      end
+
+      context 'error occurred when reconfiguring vm' do
+        it 'raises the exception' do
+          attached_disk_config = double('attached_disk_config')
+          datastore1 = double('datastore1')
+          datastore1.stub(:mob) { datastore }
+          error_msg = "400 Bad Request"
+
+          subject
+            .should_receive(:get_vm_host_info)
+            .with(vm)
+            .and_return host_info
+          subject
+            .should_receive('find_persistent_datastore')
+            .with(location[:datacenter],
+                  host_info,
+                  3)
+            .and_return datastore1
+          subject
+            .client
+            .should_receive(:get_properties)
+            .with(vm,
+                  VimSdk::Vim::VirtualMachine,
+                  'config.hardware.device',
+                  ensure_all: true)
+            .and_return vm_properties
+          subject
+            .should_receive(:create_disk_config_spec)
+            .with(datastore,
+                  'vmdk_path',
+                  anything,
+                  3,
+                  create: false,
+                  independent: true)
+            .and_return attached_disk_config
+          subject
+            .should_receive(:fix_device_unit_numbers)
+            .with(anything, [attached_disk_config])
+          subject
+            .client
+            .should_receive(:reconfig_vm)
+            .with(vm, anything)
+            .and_raise error_msg
+
+          expect do
+            subject.send(:attach_independent_disk, vm, "vmdk_path", location, 3)
+          end.to raise_error error_msg
+        end
+      end
+    end
+
+    describe '#detach_independent_disk' do
+      include_context 'base'
+
+      it 'detaches independent disk successfully' do
+        independent_disk = double('independent_disk')
+        independent_disk
+        .stub_chain(:backing, :uuid) { 1234 }
+        subject
+          .should_receive(:get_independent_disk_in_vm)
+          .twice
+          .with(vm, "vmdk_path")
+          .and_return(independent_disk, nil)
+        subject
+          .client
+          .should_receive(:reconfig_vm)
+          .with(vm, anything)
+
+        expect do
+          subject.send(:detach_independent_disk, vm, "vmdk_path", location)
+        end.to_not raise_error
+      end
+
+      context 'independent disk is not attached to vm' do
+        it 'does not try to detach disk' do
+          subject
+            .should_receive(:get_independent_disk_in_vm)
+            .with(vm, "vmdk_path")
+            .and_return nil
+
+          subject
+            .client
+            .should_not_receive(:reconfig_vm)
+
+          expect do
+            subject.send(:detach_independent_disk, vm, "vmdk_path", location)
+          end.to_not raise_error
+        end
+      end
+
+      context 'fail to detach disk' do
+        it 'raises an exception' do
+          independent_disk = double('independent_disk')
+          independent_disk
+            .stub_chain(:backing, :uuid) { 1234 }
+          subject
+            .should_receive(:get_independent_disk_in_vm)
+            .exactly(6)
+            .with(vm, "vmdk_path")
+            .and_return(independent_disk)
+          subject
+            .client
+            .should_receive(:reconfig_vm)
+            .with(vm, anything)
+
+          expect do
+            subject.send(:detach_independent_disk, vm, "vmdk_path", location)
+          end.to raise_error "Failed to detach disk: vmdk_path from vm: vm1"
         end
       end
     end
