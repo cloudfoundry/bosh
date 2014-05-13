@@ -162,10 +162,10 @@ compiled_package_cache:
 <% end %>
 
 cloud:
-<% if_p('external_cpi') do %>
+<% if_p('external_cpi.enabled', 'external_cpi.name') do |external_cpi_enabled, external_cpi_name| %>
   external_cpi:
-    enabled: <%= p('external_cpi.enabled') %>
-    cpi_path: /var/vcap/jobs/<%= p('external_cpi.name') %>/bin/cpi
+    enabled: <%= external_cpi_enabled %>
+    cpi_path: /var/vcap/jobs/<%= external_cpi_name %>/bin/cpi
 <% end %>
 
 <% plugin = nil %>
