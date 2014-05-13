@@ -28,3 +28,6 @@
 [submodule "go_agent/src/github.com/golang/lint"]
 	path = go_agent/src/github.com/golang/lint
 	url = https://github.com/golang/lint.git
+[submodule "go_agent/src/github.com/jeromer/syslogparser"]
+	path = go_agent/src/github.com/jeromer/syslogparser
+	url = https://github.com/jeromer/syslogparser.git
