@@ -8,7 +8,7 @@ $BINDIR/go install github.com/golang/lint/golint
 export PATH=$PATH:$($BINDIR/go env GOBIN)
 
 errors=$(
-  golint $BASEDIR/src/bosh                                           \
+  golint $BASEDIR/src/bosh                                  \
     | grep -v -e 'should have comment.* or be unexported'   \
     | grep -v    'error strings should not be capitalized'
 )
