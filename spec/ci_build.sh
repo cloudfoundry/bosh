@@ -1,10 +1,15 @@
 #!/bin/bash -l
-set -e
 
-env | sort                      # so we know what variables are present.
+set -e -x
 
-git clean -df && git checkout . # ensure that any modifications or stray files are removed
-rm -rf .bundle                  # Cleanup any left over gems and bundler config
+env | sort
+
+# Ensure that any modifications or stray files are removed
+git clean -df
+git checkout .
+
+# Cleanup any left over gems and bundler config
+rm -rf .bundle
 
 # BUILD_FLOW_GIT_COMMIT gets set in the bosh_build_flow jenkins jobs.
 # This ensures we check out the same git commit for all jenkins jobs in the flow.
