@@ -45,11 +45,11 @@ describe 'cli: 3', type: :integration do
     end
 
     out = bosh_runner.run("upload release #{release_2}")
-    expect(out).to match regexp("foo (0.1-dev)                 SKIP\n")
+    expect(out).to match /foo\s*\(.*\)\s*SKIP/
     # No job skipping for the moment (because of rebase),
     # will be added back once job matching is implemented
-    expect(out).to match regexp("foobar (0.1-dev)              UPLOAD\n")
-    expect(out).to match regexp("bar (0.2-dev)                 UPLOAD\n")
+    expect(out).to match /foobar\s*\(.*\)\s*UPLOAD/
+    expect(out).to match /bar\s*\(.*\)\s*UPLOAD/
     expect(out).to match regexp('Checking if can repack release for faster upload')
     expect(out).to match regexp('Release repacked')
     expect(out).to match /Release uploaded/
