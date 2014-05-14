@@ -99,9 +99,23 @@ module Bosh::WardenCloud
         request.handle = handle
         request.privileged = true
         request.script = '/usr/sbin/runsvdir-start'
+        request.rlimits = resource_limits
         client.call(request)
       end
     end
 
+    def resource_limits
+      Warden::Protocol::ResourceLimits.new(
+        symbolize_keys(
+          @warden_properties.fetch('rlimits', {})
+        )
+      )
+    end
+
+    def symbolize_keys(hash_with_string_keys)
+      hash_with_string_keys.each_with_object({}) do |(key, value), result|
+        result[key.to_sym] = value
+      end
+    end
   end
 end

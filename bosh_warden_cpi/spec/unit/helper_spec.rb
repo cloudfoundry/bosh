@@ -86,10 +86,12 @@ describe Bosh::WardenCloud::Helpers do
 
   context 'start agent' do
     before :each do
+      @warden_properties = { 'rlimits' => { 'nofile' => 1111 } }
       allow(@warden_client).to receive(:call) do |req|
         res = req.create_response
         case req
           when Warden::Protocol::SpawnRequest
+            expect(req.rlimits).to eq(nofile: 1111)
             expect(req.script).to eq('/usr/sbin/runsvdir-start')
           else
             raise "#{req} not supported"
