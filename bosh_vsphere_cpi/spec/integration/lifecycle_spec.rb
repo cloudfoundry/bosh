@@ -16,6 +16,7 @@ describe VSphereCloud::Cloud do
     @template_folder              = ENV.fetch('BOSH_VSPHERE_CPI_TEMPLATE_FOLDER', 'ACCEPTANCE_BOSH_Templates')
     @disk_path                    = ENV.fetch('BOSH_VSPHERE_CPI_DISK_PATH', 'ACCEPTANCE_BOSH_Disks')
     @datastore_pattern            = ENV.fetch('BOSH_VSPHERE_CPI_DATASTORE_PATTERN', 'jalapeno')
+    @srm                          = ENV['BOSH_VSPHERE_VCENTER_SRM'].nil? ? false : ENV['BOSH_VSPHERE_VCENTER_SRM'] == 'true'
     @persistent_datastore_pattern = ENV.fetch('BOSH_VSPHERE_CPI_PERSISTENT_DATASTORE_PATTERN', 'jalapeno')
     @cluster                      = ENV.fetch('BOSH_VSPHERE_CPI_CLUSTER', 'BOSH_CL')
     @resource_pool_name           = ENV.fetch('BOSH_VSPHERE_CPI_RESOURCE_POOL', 'ACCEPTANCE_RP')
@@ -40,6 +41,7 @@ describe VSphereCloud::Cloud do
           'datastore_pattern' => @datastore_pattern,
           'persistent_datastore_pattern' => @persistent_datastore_pattern,
           'allow_mixed_datastores' => true,
+          'srm' => @srm,
           'clusters' => [{
               @cluster => { 'resource_pool' => @resource_pool_name },
             },

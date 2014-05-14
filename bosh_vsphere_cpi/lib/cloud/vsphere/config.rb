@@ -122,6 +122,10 @@ module VSphereCloud
       !!vcenter_datacenter['allow_mixed_datastores']
     end
 
+    def datacenter_srm
+      !!vcenter_datacenter['srm']
+    end
+
     def datacenter_use_sub_folder
       datacenter_clusters.any? { |_, cluster| cluster.resource_pool } ||
         !!vcenter_datacenter['use_sub_folder']
@@ -165,6 +169,7 @@ module VSphereCloud
                                                'datastore_pattern' => String,
                                                'persistent_datastore_pattern' => String,
                                                optional('allow_mixed_datastores') => bool,
+                                               optional('srm') => bool,
                                                'clusters' => [enum(String,
                                                                    dict(String, { 'resource_pool' => String }))]
                                              }]

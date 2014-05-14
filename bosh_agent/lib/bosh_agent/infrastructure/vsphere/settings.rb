@@ -10,29 +10,30 @@ module Bosh::Agent
       base_dir = Bosh::Agent::Config.base_dir
       @logger = Bosh::Agent::Config.logger
       @cdrom_retry_wait = DEFAULT_CDROM_RETRY_WAIT
-      @cdrom_settings_mount_point = File.join(base_dir, 'bosh', 'settings')
+      @settings_mount_point = File.join(base_dir, 'bosh', 'settings')
       @cdrom_device = nil
     end
 
-    def cdrom_device
-      unless @cdrom_device
-        # only do this when not already done
-        cd_drive = File.read("/proc/sys/dev/cdrom/info").slice(/drive name:\s*\S*/).slice(/\S*\z/)
-        @cdrom_device = "/dev/#{cd_drive.strip}"
+    def load_settings
+      begin
+        @logger.info("Checking cdrom")
+        check_cdrom
+      rescue Bosh::Agent::LoadSettingsError
+        @logger.info("Loading settings from vmdk")
+        load_vmdk_settings
+      else
+        @logger.info("Loading settings from cdrom #{cdrom_device}")
+        load_cdrom_settings
       end
-      @cdrom_device
     end
 
-    def load_settings
-      load_cdrom_settings
-    end
+    private
 
     def load_cdrom_settings
-      check_cdrom
-      create_cdrom_settings_mount_point
+      create_settings_mount_point
       mount_cdrom
 
-      env_file = File.join(@cdrom_settings_mount_point, 'env')
+      env_file = File.join(@settings_mount_point, 'env')
 
       begin
         settings_json = File.read(env_file)
@@ -44,6 +45,15 @@ module Bosh::Agent
         eject_cdrom
       end
       @settings
+    end
+
+    def cdrom_device
+      unless @cdrom_device
+        # only do this when not already done
+        cd_drive = File.read("/proc/sys/dev/cdrom/info").slice(/drive name:\s*\S*/).slice(/\S*\z/)
+        @cdrom_device = "/dev/#{cd_drive.strip}"
+      end
+      @cdrom_device
     end
 
     def check_cdrom
@@ -116,24 +126,61 @@ module Bosh::Agent
       File.read(cdrom_device, 1)
     end
 
-    def create_cdrom_settings_mount_point
-      FileUtils.mkdir_p(@cdrom_settings_mount_point)
-      FileUtils.chmod(0700, @cdrom_settings_mount_point)
+    def create_settings_mount_point
+      FileUtils.mkdir_p(@settings_mount_point)
+      FileUtils.chmod(0700, @settings_mount_point)
+      @logger.info("Settings mount point #@settings_mount_point is created")
     end
 
     def mount_cdrom
-      result = Bosh::Exec.sh "mount #{cdrom_device} #@cdrom_settings_mount_point 2>&1"
+      result = Bosh::Exec.sh "mount #{cdrom_device} #@settings_mount_point 2>&1"
       raise Bosh::Agent::LoadSettingsError,
-        "Failed to mount settings on #@cdrom_settings_mount_point: #{result.output}" if result.failed?
+        "Failed to mount settings on #@settings_mount_point: #{result.output}" if result.failed?
     end
 
     def umount_cdrom
-      Bosh::Exec.sh "umount #@cdrom_settings_mount_point 2>&1"
+      Bosh::Exec.sh "umount #@settings_mount_point 2>&1"
     end
 
     def eject_cdrom
       Bosh::Exec.sh "eject #{cdrom_device}"
     end
 
+    def load_vmdk_settings
+      create_settings_mount_point
+      mount_vmdk_disk
+
+      env_file = File.join(@settings_mount_point, 'env')
+
+      begin
+        settings_json = File.read(env_file)
+        @settings = Yajl::Parser.new.parse(settings_json)
+      rescue Exception => ex
+        fail Bosh::Agent::LoadSettingsError,
+             "Failed to read/write env/settings.json: #{ex}"
+      ensure
+        remove_vmdk_disk
+      end
+      @settings
+    end
+
+    def mount_vmdk_disk
+      vmdk_disk_line = (`blkid /dev/sd* 2>&1`)
+                        .split(/\r?\n/)
+                        .find { |s| s.include? 'LABEL="CDROM" TYPE="iso9660"' }
+      fail Bosh::Agent::LoadSettingsError,
+           'Unable to find disk of LABEL="CDROM" TYPE="iso9660"' if vmdk_disk_line.nil?
+
+      @logger.info("vmdk_disk_line: #{vmdk_disk_line}")
+      vmdk_disk = vmdk_disk_line.match(/(?<disk>\/dev\/sd\w+):/)[:disk]
+      result = Bosh::Exec.sh "mount #{vmdk_disk} #@settings_mount_point 2>&1"
+      fail Bosh::Agent::LoadSettingsError,
+           "Failed to mount settings on #@settings_mount_point: #{result.output}" if result.failed?
+    end
+
+    def remove_vmdk_disk
+      Bosh::Exec.sh "umount #@settings_mount_point 2>&1"
+      FileUtils.rm_rf(@settings_mount_point)
+    end
   end
 end

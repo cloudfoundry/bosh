@@ -40,7 +40,7 @@ module VSphereCloud
       @client = config.client
       @resources = Resources.new(config)
       @file_provider = FileProvider.new(config.rest_client, config.vcenter_host)
-      @agent_env = AgentEnv.new(client, @file_provider)
+      @agent_env = AgentEnv.new(self, client, @file_provider, @config, @logger)
 
       # Global lock
       @lock = Mutex.new
@@ -236,7 +236,7 @@ module VSphereCloud
         retry_block { client.delete_vm(vm) }
         @logger.info("Deleted vm: #{vm_cid}")
 
-        # Delete env.iso and VM specific files managed by the director
+        # Delete env.iso or env.vmdk and VM specific files managed by the director
         retry_block do
           datastore = get_primary_datastore(devices)
           datastore_name = client.get_property(datastore, Vim::Datastore, 'name')
@@ -948,6 +948,66 @@ module VSphereCloud
       "pong"
     end
 
+    def attach_independent_disk(vm, vmdk_path, location, disk_size)
+      with_thread_name("attach_independent_disk(#{vm.name}, #{vmdk_path})") do
+        @logger.info("Attaching disk: #{vmdk_path} on vm: #{vm.name}")
+        host_info = get_vm_host_info(vm)
+        persistent_datastore = find_persistent_datastore(location[:datacenter], host_info, disk_size)
+        fail "Unable to find datastore #{location[:datastore]}!" if persistent_datastore.nil?
+        vm_properties = @client.get_properties(vm,
+                                               Vim::VirtualMachine,
+                                               'config.hardware.device',
+                                               ensure_all: true)
+        devices = vm_properties['config.hardware.device']
+        system_disk = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) }
+        attached_disk_config = create_disk_config_spec(persistent_datastore.mob,
+                                                       vmdk_path,
+                                                       system_disk.controller_key,
+                                                       disk_size,
+                                                       create: false,
+                                                       independent: true)
+        config = Vim::Vm::ConfigSpec.new
+        config.device_change = []
+        config.device_change << attached_disk_config
+        fix_device_unit_numbers(devices, config.device_change)
+
+        @logger.info('Attaching independent disk')
+        @client.reconfig_vm(vm, config)
+        @logger.info('Finished attaching independent disk')
+      end
+    end
+
+    def detach_independent_disk(vm, vmdk_path, location)
+      with_thread_name("detach_independent_disk(#{vm.name}, #{vmdk_path})") do
+        @logger.info("Detaching disk: #{vmdk_path} from vm: #{vm.name}")
+        independent_disk = get_independent_disk_in_vm(vm, vmdk_path)
+        if independent_disk.nil?
+          @logger.info("Disk (#{vmdk_path}) is not attached to VM (#{vm.name})")
+          return
+        end
+
+        config = Vim::Vm::ConfigSpec.new
+        config.device_change = []
+        config.device_change << create_delete_device_spec(independent_disk)
+
+        @logger.info('Detaching independent disk')
+        @client.reconfig_vm(vm, config)
+
+        # detach-disk is async and task completion does not necessarily mean
+        # that changes have been applied to VC side. Query VC until we confirm
+        # that the change has been applied. This is a known issue for vsphere 4.
+        # Fixed in vsphere 5.
+        5.times do
+          independent_disk = get_independent_disk_in_vm(vm, vmdk_path)
+          break if independent_disk.nil?
+          sleep(1.0)
+        end
+        fail "Failed to detach disk: #{vmdk_path} from vm: #{vm.name}" unless independent_disk.nil?
+
+        @logger.info('Finished detaching independent disk')
+      end
+    end
+
     private
 
     def choose_placer(cloud_properties)
@@ -961,6 +1021,18 @@ module VSphereCloud
     def find_cluster(cluster_spec)
       datacenter = Resources::Datacenter.new(config)
       datacenter.clusters[cluster_spec.keys.first]
+    end
+
+    def get_independent_disk_in_vm(vm, vmdk_path)
+      vm_properties = @client.get_properties(vm,
+                                             Vim::VirtualMachine,
+                                             'config.hardware.device',
+                                             ensure_all: true)
+      devices = vm_properties['config.hardware.device']
+      devices.find do |device|
+        device.kind_of?(Vim::Vm::Device::VirtualDisk) &&
+          device.backing.file_name == vmdk_path
+      end
     end
 
     attr_reader :config

@@ -62,7 +62,6 @@ describe VSphereCloud::VmCreator do
       network_env = double('network env rv')
       allow(cpi).to receive(:generate_network_env).with(devices, networks, {}).and_return(network_env)
       allow(cpi).to receive(:disk_spec).with(disk_locality).and_return(disk_spec)
-      allow(file_provider).to receive(:upload_file).with('datacenter name', 'datastore name', 'vm-vm_unique_name/env.iso', '')
 
       allow(vsphere_client).to receive(:get_property).with(stemcell_vm, anything, anything, anything).and_return(1024*1024)
       replicated_stemcell_vm = double('replicated vm')
@@ -107,8 +106,6 @@ describe VSphereCloud::VmCreator do
                     ).and_return(ephemeral_disk_config)
       allow(logger).to receive(:info)
       allow(cluster).to receive(:mob).with(no_args).and_return(double('cluster mob'))
-      add_cdrom_spec = double('configure env cdrom rv')
-      allow(agent_env).to receive(:configure_env_cdrom).with(datastore_mob, devices, '[datastore name] vm-vm_unique_name/env.iso').and_return(add_cdrom_spec)
 
       clone_vm_task = double('cloned vm task')
       allow(cpi).to receive(:clone_vm).with(
@@ -128,16 +125,10 @@ describe VSphereCloud::VmCreator do
         },
       ).and_return(clone_vm_task)
       vm_double = double('cloned vm')
+      allow(agent_env).to receive(:configure_vm_cdrom).with(cluster, datastore, "vm-vm_unique_name", vm_double, devices)
       allow(vsphere_client).to receive(:wait_for_task).with(clone_vm_task).and_return(vm_double)
       allow(vsphere_client).to receive(:get_properties).with(vm_double, VimSdk::Vim::VirtualMachine, ['config.hardware.device'], ensure_all: true).and_return(stemcell_properties)
       allow(cpi).to receive(:generate_agent_env).with("vm-vm_unique_name", vm_double, 'agent_id', network_env, disk_env).and_return({})
-
-      allow(vsphere_client).to receive(:reconfig_vm).with(
-        vm_double,
-        match_attributes(
-          device_change: [ add_cdrom_spec ],
-        ),
-      )
 
       vm_location = double('vm location')
       allow(cpi).to receive(:get_vm_location).with(

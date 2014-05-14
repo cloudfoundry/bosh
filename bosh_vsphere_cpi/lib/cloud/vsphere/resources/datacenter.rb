@@ -43,6 +43,10 @@ module VSphereCloud
         @config.datacenter_allow_mixed_datastores
       end
 
+      def srm
+        @config.datacenter_srm
+      end
+
       def inspect
         "<Datacenter: #{mob} / #{name}>"
       end
