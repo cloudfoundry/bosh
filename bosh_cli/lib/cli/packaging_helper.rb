@@ -4,8 +4,6 @@
 
 module Bosh::Cli
   module PackagingHelper
-    include Bosh::Cli::VersionCalc
-
     attr_accessor :dry_run
 
     def init_indices
@@ -29,7 +27,7 @@ module Bosh::Cli
       notes = []
 
       if @will_be_promoted
-        new_final_version = @final_index.latest_version.to_i + 1
+        new_final_version = @version
         notes << "new final version #{new_final_version}"
       elsif new_version?
         notes << 'new version'

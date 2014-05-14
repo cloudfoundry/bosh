@@ -1,9 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli
   module DeploymentHelper
-    include VersionCalc
-
     def prepare_deployment_manifest(options = {})
       deployment_required
       manifest_filename = deployment
@@ -372,7 +368,7 @@ module Bosh::Cli
         end
 
         stemcells.inject({}) do |hash, (name, versions)|
-          hash[name] = versions.sort { |v1, v2| version_cmp(v2, v1) }.first
+          hash[name] = versions.map { |v| Bosh::Common::VersionNumber.new(v) }.max.to_s
           hash
         end
       end

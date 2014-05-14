@@ -1,7 +1,10 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'common/version_number'
 
+##
+# This module is in general unsafe to use as packages and jobs
+# use their fingerprints as versions and therefore are not numerically
+# comparable. At the moment releases retain a numerically comparable
+# version which necessitates this code
 module Bosh::Cli
   module VersionCalc
 
