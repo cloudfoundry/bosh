@@ -174,8 +174,11 @@ describe Bosh::AwsCloud::InstanceManager do
         .with({:spot_instance_request_ids=>["sir-12345c"]}) \
         .and_return({ :spot_instance_request_set => [ {:state => "active", :instance_id=>"i-12345678"} ] })
 
-      instance_manager = described_class.new(region, registry, availability_zone_selector)     
-      instance_manager.wait_for_spot_instance_request_to_be_active spot_instance_requests
+      instance_manager = described_class.new(region, registry, availability_zone_selector)
+
+      expect {
+        instance_manager.wait_for_spot_instance_request_to_be_active(spot_instance_requests)
+      }.to_not raise_error
     end
 
     it "should retry creating the VM when AWS::EC2::Errors::InvalidIPAddress::InUse raised" do
