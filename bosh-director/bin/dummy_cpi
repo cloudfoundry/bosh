@@ -16,8 +16,12 @@ Bosh::Clouds::Config.configure(OpenStruct.new(
   task_checkpoint: nil,
 ))
 
-cpi = Bosh::Clouds::Dummy.new(director_config['cloud']['properties'])
+cloud_properties = director_config['cloud']['properties']
+log_device = StringIO.new
+cloud_properties['log_device'] = log_device
 
-cli = Bosh::Cpi::Cli.new(cpi, STDOUT)
+cpi = Bosh::Clouds::Dummy.new(cloud_properties)
+
+cli = Bosh::Cpi::Cli.new(cpi, log_device, STDOUT)
 
 cli.run(ARGF.read)

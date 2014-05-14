@@ -1,10 +1,14 @@
 require 'spec_helper'
+require 'fakefs/spec_helpers'
 require 'cloud/vsphere/client'
 
 module VSphereCloud
   describe Client do
-    subject(:client) { Client.new('http://www.example.com') }
+    include FakeFS::SpecHelpers
 
+    subject(:client) { Client.new('http://www.example.com', options) }
+
+    let(:options) { {} }
     let(:fake_search_index) { double }
     let(:fake_service_content) { double('service content', root_folder: double('fake-root-folder')) }
 
@@ -12,6 +16,78 @@ module VSphereCloud
       fake_instance = double('service instance', content: fake_service_content)
       VimSdk::Vim::ServiceInstance.stub(new: fake_instance)
       fake_service_content.stub(search_index: fake_search_index)
+    end
+
+    describe '#initialize' do
+      let(:ssl_config) { double(:ssl_config, :verify_mode= => nil) }
+      let(:http_client) do
+        instance_double('HTTPClient',
+          :debug_dev= => nil,
+          :send_timeout= => nil,
+          :receive_timeout= => nil,
+          :connect_timeout= => nil,
+          :ssl_config => ssl_config,
+        )
+      end
+
+      before { allow(HTTPClient).to receive(:new).and_return(http_client) }
+
+      let(:options) { { 'soap_log' => soap_log } }
+
+      def self.it_configures_http_client
+        it 'configures http client ' do
+          expect(http_client).to receive(:send_timeout=).with(14400)
+          expect(http_client).to receive(:receive_timeout=).with(14400)
+          expect(http_client).to receive(:connect_timeout=).with(4)
+          expect(ssl_config).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_NONE)
+
+          subject
+        end
+      end
+
+      context 'when soap log is an IO' do
+        let(:soap_log) { IO.new(0) }
+
+        it 'uses given IO for http_client logging' do
+          expect(http_client).to receive(:debug_dev=).with(soap_log)
+          expect(VimSdk::Soap::StubAdapter).to receive(:new).with('http://www.example.com', 'vim.version.version6', http_client)
+
+          subject
+        end
+
+        it_configures_http_client
+      end
+
+      context 'when soap log is a StringIO' do
+        let(:soap_log) { StringIO.new }
+
+        it 'uses given IO for http_client logging' do
+          expect(http_client).to receive(:debug_dev=).with(soap_log)
+          expect(VimSdk::Soap::StubAdapter).to receive(:new).with('http://www.example.com', 'vim.version.version6', http_client)
+
+          subject
+        end
+
+        it_configures_http_client
+      end
+
+      context 'when soap log is a file path' do
+        let(:soap_log) { '/fake-log-file' }
+        before { FileUtils.touch('/fake-log-file') }
+
+        it 'creates a file IO for http_client logging' do
+          expect(http_client).to receive(:debug_dev=) do |log_file|
+            expect(log_file).to be_instance_of(File)
+            expect(log_file.path).to eq('/fake-log-file')
+          end
+
+          expect(VimSdk::Soap::StubAdapter).to receive(:new).with('http://www.example.com', 'vim.version.version6', http_client)
+
+          subject
+        end
+
+        it_configures_http_client
+      end
     end
 
     describe '#find_by_inventory_path' do

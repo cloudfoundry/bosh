@@ -76,4 +76,16 @@ describe Bosh::Director::Config do
       expect(described_class.cloud).to equal(cloud)
     end
   end
+
+  describe '#cpi_task_log' do
+    before do
+      config = described_class.load_hash(test_config)
+      described_class.configure(config.hash)
+      described_class.cloud_options['properties']['cpi_log'] = 'fake-cpi-log'
+    end
+
+    it 'returns cpi task log' do
+      expect(described_class.cpi_task_log).to eq('fake-cpi-log')
+    end
+  end
 end

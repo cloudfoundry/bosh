@@ -2,14 +2,15 @@ require 'spec_helper'
 
 describe Bosh::Cpi::Cli do
   describe '#run' do
-    subject { described_class.new(cpi, result_io) }
+    subject { described_class.new(cpi, logs_io, result_io) }
     let(:cpi) { instance_double('Bosh::Cloud') }
+    let(:logs_io) { StringIO.new }
     let(:result_io) { StringIO.new }
 
     describe 'current_vm_id' do
       it 'takes json and calls specified method on the cpi' do
-        expect(cpi).to receive(:current_vm_id).
-          with(no_args).
+        expect(cpi).to(receive(:current_vm_id).
+          with(no_args)) { logs_io.write('fake-log') }.
           and_return('fake-vm-cid')
 
         subject.run <<-JSON
@@ -20,14 +21,14 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":"fake-vm-cid","error":null}')
+        expect(result_io.string).to eq('{"result":"fake-vm-cid","error":null,"log":"fake-log"}')
       end
     end
 
     describe 'create_stemcell' do
       it 'takes json and calls specified method on the cpi' do
-        expect(cpi).to receive(:create_stemcell).
-          with('fake-stemcell-image-path', {'cloud' => 'props'}).
+        expect(cpi).to(receive(:create_stemcell).
+          with('fake-stemcell-image-path', {'cloud' => 'props'})) { logs_io.write('fake-log') }.
           and_return('fake-stemcell-cid')
 
         subject.run <<-JSON
@@ -41,14 +42,14 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":"fake-stemcell-cid","error":null}')
+        expect(result_io.string).to eq('{"result":"fake-stemcell-cid","error":null,"log":"fake-log"}')
       end
     end
 
     describe 'delete_stemcell' do
       it 'takes json and calls specified method on the cpi' do
-        expect(cpi).to receive(:delete_stemcell).
-          with('fake-stemcell-cid').
+        expect(cpi).to(receive(:delete_stemcell).
+          with('fake-stemcell-cid')) { logs_io.write('fake-log') }.
           and_return(nil)
 
         subject.run <<-JSON
@@ -59,7 +60,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null}')
+        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
       end
     end
 
@@ -73,7 +74,7 @@ describe Bosh::Cpi::Cli do
             {'net' => 'props'},
             ['fake-disk-cid'],
             {'env' => 'props'},
-          ).
+          ) { logs_io.write('fake-log') }.
           and_return('fake-vm-cid')
 
         subject.run <<-JSON
@@ -91,14 +92,14 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":"fake-vm-cid","error":null}')
+        expect(result_io.string).to eq('{"result":"fake-vm-cid","error":null,"log":"fake-log"}')
       end
     end
 
     describe 'delete_vm' do
       it 'takes json and calls specified method on the cpi' do
-        expect(cpi).to receive(:delete_vm).
-          with('fake-vm-cid').
+        expect(cpi).to(receive(:delete_vm).
+          with('fake-vm-cid')) { logs_io.write('fake-log') }.
           and_return(nil)
 
         subject.run <<-JSON
@@ -109,15 +110,15 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null}')
+        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
       end
     end
 
     describe 'has_vm' do
       [true, false].each do |result|
         it 'takes json and calls specified method on the cpi' do
-          expect(cpi).to receive(:has_vm?).
-            with('fake-vm-cid').
+          expect(cpi).to(receive(:has_vm?).
+            with('fake-vm-cid')) { logs_io.write('fake-log') }.
             and_return(result)
 
           subject.run <<-JSON
@@ -128,15 +129,15 @@ describe Bosh::Cpi::Cli do
             }
           JSON
 
-          expect(result_io.string).to eq("{\"result\":#{result},\"error\":null}")
+          expect(result_io.string).to eq("{\"result\":#{result},\"error\":null,\"log\":\"fake-log\"}")
         end
       end
     end
 
     describe 'reboot_vm' do
       it 'takes json and calls specified method on the cpi' do
-        expect(cpi).to receive(:reboot_vm).
-          with('fake-vm-cid').
+        expect(cpi).to(receive(:reboot_vm).
+          with('fake-vm-cid')) { logs_io.write('fake-log') }.
           and_return(nil)
 
         subject.run <<-JSON
@@ -147,14 +148,14 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null}')
+        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
       end
     end
 
     describe 'set_vm_metadata' do
       it 'takes json and calls specified method on the cpi' do
-        expect(cpi).to receive(:set_vm_metadata).
-          with('fake-vm-cid', {'metadata' => 'hash'}).
+        expect(cpi).to(receive(:set_vm_metadata).
+          with('fake-vm-cid', {'metadata' => 'hash'})) { logs_io.write('fake-log') }.
           and_return(nil)
 
         subject.run <<-JSON
@@ -168,14 +169,14 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null}')
+        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
       end
     end
 
     describe 'configure_networks' do
       it 'takes json and calls specified method on the cpi' do
-        expect(cpi).to receive(:configure_networks).
-          with('fake-vm-cid', {'net' => 'props'}).
+        expect(cpi).to(receive(:configure_networks).
+          with('fake-vm-cid', {'net' => 'props'})) { logs_io.write('fake-log') }.
           and_return(nil)
 
         subject.run <<-JSON
@@ -189,14 +190,14 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null}')
+        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
       end
     end
 
     describe 'create_disk' do
       it 'takes json and calls specified method on the cpi' do
-        expect(cpi).to receive(:create_disk).
-          with(100_000, 'fake-vm-cid').
+        expect(cpi).to(receive(:create_disk).
+          with(100_000, 'fake-vm-cid')) { logs_io.write('fake-log') }.
           and_return('fake-disk-cid')
 
         subject.run <<-JSON
@@ -210,14 +211,14 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":"fake-disk-cid","error":null}')
+        expect(result_io.string).to eq('{"result":"fake-disk-cid","error":null,"log":"fake-log"}')
       end
     end
 
     describe 'delete_disk' do
       it 'takes json and calls specified method on the cpi' do
-        expect(cpi).to receive(:delete_disk).
-          with('fake-disk-cid').
+        expect(cpi).to(receive(:delete_disk).
+          with('fake-disk-cid')) { logs_io.write('fake-log') }.
           and_return(nil)
 
         subject.run <<-JSON
@@ -228,14 +229,14 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null}')
+        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
       end
     end
 
     describe 'attach_disk' do
       it 'takes json and calls specified method on the cpi' do
-        expect(cpi).to receive(:attach_disk).
-          with('fake-vm-cid', 'fake-disk-cid').
+        expect(cpi).to(receive(:attach_disk).
+          with('fake-vm-cid', 'fake-disk-cid')) { logs_io.write('fake-log') }.
           and_return(nil)
 
         subject.run <<-JSON
@@ -246,14 +247,14 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null}')
+        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
       end
     end
 
     describe 'detach_disk' do
       it 'takes json and calls specified method on the cpi' do
-        expect(cpi).to receive(:detach_disk).
-          with('fake-vm-cid', 'fake-disk-cid').
+        expect(cpi).to(receive(:detach_disk).
+          with('fake-vm-cid', 'fake-disk-cid')) { logs_io.write('fake-log') }.
           and_return(nil)
 
         subject.run <<-JSON
@@ -264,14 +265,14 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null}')
+        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
       end
     end
 
     describe 'snapshot_disk' do
       it 'takes json and calls specified method on the cpi' do
-        expect(cpi).to receive(:snapshot_disk).
-          with('fake-disk-cid').
+        expect(cpi).to(receive(:snapshot_disk).
+          with('fake-disk-cid')) { logs_io.write('fake-log') }.
           and_return('fake-snapshot-cid')
 
         subject.run <<-JSON
@@ -282,14 +283,14 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":"fake-snapshot-cid","error":null}')
+        expect(result_io.string).to eq('{"result":"fake-snapshot-cid","error":null,"log":"fake-log"}')
       end
     end
 
     describe 'delete_snapshot' do
       it 'takes json and calls specified method on the cpi' do
-        expect(cpi).to receive(:delete_snapshot).
-          with('fake-snapshot-cid').
+        expect(cpi).to(receive(:delete_snapshot).
+          with('fake-snapshot-cid')) { logs_io.write('fake-log') }.
           and_return(nil)
 
         subject.run <<-JSON
@@ -300,14 +301,14 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":null,"error":null}')
+        expect(result_io.string).to eq('{"result":null,"error":null,"log":"fake-log"}')
       end
     end
 
     describe 'get_disks' do
       it 'takes json and calls specified method on the cpi' do
-        expect(cpi).to receive(:get_disks).
-          with('fake-vm-cid').
+        expect(cpi).to(receive(:get_disks).
+          with('fake-vm-cid')) { logs_io.write('fake-log') }.
           and_return(['fake-disk-cid'])
 
         subject.run <<-JSON
@@ -318,7 +319,7 @@ describe Bosh::Cpi::Cli do
           }
         JSON
 
-        expect(result_io.string).to eq('{"result":["fake-disk-cid"],"error":null}')
+        expect(result_io.string).to eq('{"result":["fake-disk-cid"],"error":null,"log":"fake-log"}')
       end
     end
 
@@ -335,7 +336,7 @@ describe Bosh::Cpi::Cli do
       it 'returns invalid_call error' do
         subject.run('invalid-json')
         expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"InvalidCall","message":"Request cannot be deserialized","ok_to_retry":false}}')
+          '{"result":null,"error":{"type":"InvalidCall","message":"Request cannot be deserialized","ok_to_retry":false},"log":""}')
       end
     end
 
@@ -343,7 +344,7 @@ describe Bosh::Cpi::Cli do
       it 'returns invalid_call error' do
         subject.run('{"method":[]}')
         expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"InvalidCall","message":"Method must be a String","ok_to_retry":false}}')
+          '{"result":null,"error":{"type":"InvalidCall","message":"Method must be a String","ok_to_retry":false},"log":""}')
       end
     end
 
@@ -351,7 +352,7 @@ describe Bosh::Cpi::Cli do
       it 'returns invalid_call error' do
         subject.run('{"method":"unknown-method"}')
         expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"InvalidCall","message":"Method is not known","ok_to_retry":false}}')
+          '{"result":null,"error":{"type":"InvalidCall","message":"Method is not known","ok_to_retry":false},"log":""}')
       end
     end
 
@@ -359,7 +360,7 @@ describe Bosh::Cpi::Cli do
       it 'returns invalid_call error' do
         subject.run('{"method":"create_vm"}')
         expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"InvalidCall","message":"Arguments must be an Array","ok_to_retry":false}}')
+          '{"result":null,"error":{"type":"InvalidCall","message":"Arguments must be an Array","ok_to_retry":false},"log":""}')
       end
     end
 
@@ -367,7 +368,7 @@ describe Bosh::Cpi::Cli do
       it 'returns invalid_call error' do
         subject.run('{"method":"create_vm","arguments":"string"}')
         expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"InvalidCall","message":"Arguments must be an Array","ok_to_retry":false}}')
+          '{"result":null,"error":{"type":"InvalidCall","message":"Arguments must be an Array","ok_to_retry":false},"log":""}')
       end
     end
 
@@ -375,7 +376,7 @@ describe Bosh::Cpi::Cli do
       it 'returns invalid_call error' do
         subject.run('{"method":"create_vm","arguments":[]}')
         expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"InvalidCall","message":"Request should include context with director uuid","ok_to_retry":false}}')
+          '{"result":null,"error":{"type":"InvalidCall","message":"Request should include context with director uuid","ok_to_retry":false},"log":""}')
       end
     end
 
@@ -385,7 +386,7 @@ describe Bosh::Cpi::Cli do
       it 'returns invalid_call error' do
         subject.run('{"method":"create_vm","arguments":["only-one-arg"],"context":{"director_uuid":"abc"}}')
         expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"InvalidCall","message":"Arguments are not correct","ok_to_retry":false}}')
+          '{"result":null,"error":{"type":"InvalidCall","message":"Arguments are not correct","ok_to_retry":false},"log":""}')
       end
     end
 
@@ -400,7 +401,7 @@ describe Bosh::Cpi::Cli do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ErrorClass1, 'fake-error-message')
         subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
         expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"ErrorClass1","message":"fake-error-message","ok_to_retry":false}}')
+          '{"result":null,"error":{"type":"ErrorClass1","message":"fake-error-message","ok_to_retry":false},"log":""}')
       end
     end
 
@@ -411,7 +412,7 @@ describe Bosh::Cpi::Cli do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ErrorClass2, 'fake-error-message')
         subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
         expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"ErrorClass2","message":"fake-error-message","ok_to_retry":false}}')
+          '{"result":null,"error":{"type":"ErrorClass2","message":"fake-error-message","ok_to_retry":false},"log":""}')
       end
     end
 
@@ -426,7 +427,7 @@ describe Bosh::Cpi::Cli do
           expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(exception)
           subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
           expect(result_io.string).to eq(
-            '{"result":null,"error":{"type":"ErrorClass3","message":"ErrorClass3","ok_to_retry":true}}')
+            '{"result":null,"error":{"type":"ErrorClass3","message":"ErrorClass3","ok_to_retry":true},"log":""}')
         end
       end
 
@@ -438,7 +439,7 @@ describe Bosh::Cpi::Cli do
           expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(exception)
           subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
           expect(result_io.string).to eq(
-            '{"result":null,"error":{"type":"ErrorClass3","message":"ErrorClass3","ok_to_retry":false}}')
+            '{"result":null,"error":{"type":"ErrorClass3","message":"ErrorClass3","ok_to_retry":false},"log":""}')
         end
       end
     end
@@ -450,7 +451,7 @@ describe Bosh::Cpi::Cli do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ErrorClass4, 'fake-error-message')
         subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
         expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"Unknown","message":"fake-error-message","ok_to_retry":false}}')
+          '{"result":null,"error":{"type":"Unknown","message":"fake-error-message","ok_to_retry":false},"log":""}')
       end
     end
 
@@ -461,7 +462,7 @@ describe Bosh::Cpi::Cli do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ERRClass5, 'fake-error-message')
         subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
         expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"ERRClass5","message":"fake-error-message","ok_to_retry":false}}')
+          '{"result":null,"error":{"type":"ERRClass5","message":"fake-error-message","ok_to_retry":false},"log":""}')
       end
     end
   end

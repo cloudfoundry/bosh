@@ -15,20 +15,23 @@ module VSphereCloud
 
     def initialize(host, options = {})
       http_client = HTTPClient.new
-      log_path = options["soap_log"]
-      if log_path
-        log_file = File.open(log_path, "w")
+      soap_log = options['soap_log']
+      case soap_log
+      when String
+        log_file = File.open(soap_log, 'w')
         log_file.sync = true
         http_client.debug_dev = log_file
+      when IO, StringIO
+        http_client.debug_dev = soap_log
       end
       http_client.send_timeout = 14400
       http_client.receive_timeout = 14400
       http_client.connect_timeout = 4
       http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
 
-      @soap_stub = Soap::StubAdapter.new(host, "vim.version.version6", http_client)
+      @soap_stub = Soap::StubAdapter.new(host, 'vim.version.version6', http_client)
 
-      @service_instance = Vim::ServiceInstance.new("ServiceInstance", soap_stub)
+      @service_instance = Vim::ServiceInstance.new('ServiceInstance', soap_stub)
       @service_content = service_instance.content
       @metrics_cache  = {}
       @lock = Mutex.new

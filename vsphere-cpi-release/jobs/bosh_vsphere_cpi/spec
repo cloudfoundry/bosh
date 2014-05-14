@@ -3,7 +3,6 @@ name: bosh_vsphere_cpi
 templates:
   cpi.erb: bin/cpi
   cpi.yml.erb: config/cpi.yml
-  post_install: bin/post_install
 
 packages:
 - ruby_vsphere_cpi

@@ -47,13 +47,11 @@ describe VSphereCloud::Cloud do
     }
   end
 
-  before do
-    @config_path = Tempfile.new('vsphere_cpi_config').path
-    File.open(@config_path, 'w') { |f| f.write(YAML.dump(config)) }
-  end
+  let(:config_path) { Tempfile.new('vsphere_cpi_config').path }
+  before { File.open(config_path, 'w') { |f| f.write(YAML.dump(config)) } }
 
   def run_vsphere_cpi(json)
-    stdin, stdout, stderr, exit_status = Open3.popen3(bin_path, @config_path)
+    stdin, stdout, stderr, exit_status = Open3.popen3(bin_path, config_path)
     stdin.puts(JSON.dump(json))
     stdin.close
 
@@ -66,7 +64,7 @@ describe VSphereCloud::Cloud do
 
     it 'ping-pongs' do
       output = run_vsphere_cpi(json)
-      expect(output).to eq('{"result":"pong","error":null}')
+      expect(output).to match /{"result":"pong","error":null,"log":".*Request.*"}/
     end
   end
 
@@ -74,7 +72,7 @@ describe VSphereCloud::Cloud do
     it 'runs migrations on database from config' do
       run_vsphere_cpi({})
       db = Sequel.sqlite(database: db_path)
-      result = db["SELECT * FROM vsphere_cpi_schema"]
+      result = db['SELECT * FROM vsphere_cpi_schema']
       expect(result.count).to be > 0
       expect(result.first[:filename]).to match(/initial/)
     end

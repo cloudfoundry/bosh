@@ -22,6 +22,9 @@ module Bosh
 
         @running_vms_dir = File.join(@base_dir, 'running_vms')
 
+        log_device = options['log_device'] || STDOUT
+        @logger = Logger.new(log_device)
+
         FileUtils.mkdir_p(@base_dir)
       rescue Errno::EACCES
         raise ArgumentError, "cannot create dummy cloud base directory #{@base_dir}"
@@ -39,6 +42,7 @@ module Bosh
 
       # rubocop:disable ParameterLists
       def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, env = nil)
+        @logger.info('Dummy: create_vm')
       # rubocop:enable ParameterLists
         write_agent_settings(agent_id, {
           agent_id: agent_id,
