@@ -236,7 +236,7 @@ describe 'director.yml.erb.erb' do
           'secret_access_key' => 'secret',
           'use_ssl' => false,
           'ssl_verify_peer' => false,
-          's3_multipart_threshold' => 123,          
+          's3_multipart_threshold' => 123,
           's3_port' => 5155,
           'host' => 'myhost.hostland.edu',
           's3_force_path_style' => true,
