@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli
   class VersionsIndex
     include VersionCalc
@@ -27,6 +25,14 @@ module Bosh::Cli
       @data["builds"][fingerprint]
     end
 
+    ##
+    # Return the last version from the version index file
+    # as jobs and packages have a non-numeric versioning
+    # scheme based on their fingerprint. This function relies
+    # on hash insertion order being preserved. While this
+    # is the behavior for Ruby 1.9.X and 2.X we should
+    # remember that this implementation is
+    # a little brittle.
     def latest_version(major = nil)
       builds = @data["builds"].values
 
@@ -38,16 +44,7 @@ module Bosh::Cli
 
       return nil if builds.empty?
 
-      sorted = builds.sort do |build1, build2|
-        cmp = version_cmp(build2["version"], build1["version"])
-        if cmp == 0
-          raise "There is a duplicate version `#{build1["version"]}' " +
-                  "in index `#{@index_file}'"
-        end
-        cmp
-      end
-
-      sorted[0]["version"]
+      builds.last["version"]
     end
 
     def version_exists?(version)
