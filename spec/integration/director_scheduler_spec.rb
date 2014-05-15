@@ -68,12 +68,12 @@ describe 'director_scheduler', type: :integration do
     after { FileUtils.rm_f(tmp_dir) }
     let(:tmp_dir) { Dir.mktmpdir('manual-backup') }
 
-    it 'backs up director logs, task logs, and database dump' do
+    it 'backs up task logs, database and blobs' do
       runner = bosh_runner_in_work_dir(tmp_dir)
       expect(runner.run('backup backup.tgz')).to match(/Backup of BOSH director was put in/i)
 
       backup_file = Bosh::Spec::TarFileInspector.new("#{tmp_dir}/backup.tgz")
-      expect(backup_file.file_names).to match_array(%w(logs.tgz task_logs.tgz director_db.sql blobs.tgz))
+      expect(backup_file.file_names).to match_array(%w(task_logs.tgz director_db.sql blobs.tgz))
       expect(backup_file.smallest_file_size).to be > 0
     end
   end

@@ -17,7 +17,7 @@ module IntegrationExampleGroup
 
   def health_monitor
     @health_monitor ||= Bosh::Spec::HealthMonitor.new(
-      current_sandbox.logs_path,
+      current_sandbox.health_monitor_process,
       logger,
     )
   end
