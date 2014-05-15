@@ -40,7 +40,11 @@ describe 'Ubuntu Lucid stemcell' do
     end
   end
 
-  context 'with system-aws-network', exclude_on_vsphere: true, exclude_on_vcloud: true, exclude_on_warden: true do
+  context 'with system-aws-network', {
+    exclude_on_vsphere: true,
+    exclude_on_vcloud: true,
+    exclude_on_warden: true,
+  } do
     describe file('/etc/network/interfaces') do
       it { should be_file }
       it { should contain 'auto eth0' }
