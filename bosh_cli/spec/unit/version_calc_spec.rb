@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 
 describe Bosh::Cli::VersionCalc do
@@ -21,6 +19,16 @@ describe Bosh::Cli::VersionCalc do
       calculator.minor_version('10').should == 0
       calculator.minor_version('10.6').should == 6
       calculator.minor_version('10.3-dev').should == 3
+    end
+  end
+
+  describe 'least_significant version' do
+    it 'returns the most granular version number available' do
+      calculator.least_significant_version('3').should == 3
+      calculator.least_significant_version('10').should == 10
+      calculator.least_significant_version('10.6').should == 6
+      calculator.least_significant_version('10.3-dev').should == 3
+      calculator.least_significant_version('10.3.7-dev').should == 7
     end
   end
 

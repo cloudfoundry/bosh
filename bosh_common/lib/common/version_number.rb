@@ -30,6 +30,10 @@ module Bosh::Common
       components[1].to_i
     end
 
+    def least_significant
+      components[-1].to_i
+    end
+
     def components
       @version.split('.')
     end

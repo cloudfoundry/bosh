@@ -23,6 +23,16 @@ describe Bosh::Common::VersionNumber do
     end
   end
 
+  describe 'least_significant version' do
+    it 'returns the least significant version number' do
+      expect(version('3').least_significant).to eq 3
+      expect(version('10').least_significant).to eq 10
+      expect(version('10.6').least_significant).to eq 6
+      expect(version('10.3-dev').least_significant).to eq 3
+      expect(version('10.7.3-dev').least_significant).to eq 3
+    end
+  end
+
   describe 'comparing' do
     describe 'only major version numbers' do
       context 'when version are strings' do
