@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Ubuntu stemcell' do
+describe 'Ubuntu Lucid stemcell' do
   context 'installed by image_install_grub', exclude_on_warden: true do
     describe file('/boot/grub/grub.conf') do
       it { should be_file }
