@@ -48,14 +48,18 @@ module Bosh::Dev::Sandbox
     end
 
     def stop(signal = 'TERM')
-      return unless running?
+      if running?
+        kill_process(signal, @pid)
 
-      kill_process(signal, @pid)
+        # Block until process exits to avoid race conditions in the caller
+        # (e.g. director process is killed but we don't wait and then we
+        # try to delete db which is in use by director)
+        wait_for_process_to_exit_or_be_killed
+      end
 
-      # Block until process exits to avoid race conditions in the caller
-      # (e.g. director process is killed but we don't wait and then we
-      # try to delete db which is in use by director)
-      wait_for_process_to_exit_or_be_killed
+      # Reset pid so that we do not think that service is still running
+      # when pid is given to some other unrelated process
+      @pid = nil
     end
 
     def stdout_contents
@@ -83,7 +87,6 @@ module Bosh::Dev::Sandbox
         remaining_attempts -= 1
         if remaining_attempts == 5
           @logger.info("Killing #{@description} with PID=#{@pid}")
-
           kill_process('KILL', @pid)
         elsif remaining_attempts == 0
           raise "KILL signal ignored by #{@description} with PID=#{@pid}"
