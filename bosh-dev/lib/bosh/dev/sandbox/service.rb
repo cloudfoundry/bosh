@@ -1,29 +1,40 @@
 require 'timeout'
 require 'bosh/dev'
+require 'securerandom'
 
 module Bosh::Dev::Sandbox
   class Service
+    attr_reader :description
+
     def initialize(cmd_array, cmd_options, logger)
       @cmd_array = cmd_array
       @cmd_options = cmd_options
       @logger = logger
       @pid = nil
+
+      # Add unique identifier to avoid confusing log information
+      @description = "#{@cmd_array.first} (#{SecureRandom.hex(4)})"
+
+      @stdout = @cmd_options[:output]
+      @stderr = "#{@stdout}.err" if @stdout
     end
 
     def start
       env = ENV.to_hash.merge(@cmd_options.fetch(:env, {}))
-      output = @cmd_options.fetch(:output, :close)
-      err_output = output == :close ? output : "#{output}.err"
 
       if running?
-        @logger.info("Already started #{@cmd_array.first} with PID #{@pid}")
+        @logger.info("Already started #{@description} with PID #{@pid}")
       else
         unless system("which #{@cmd_array.first} > /dev/null")
-          raise "Cannot find #{@cmd_array.first} in the $PATH"
+          raise "Cannot find #{@description} in the $PATH"
         end
 
-        @pid = Process.spawn(env, *@cmd_array, out: output, err: err_output, in: :close)
-        @logger.info("Started #{@cmd_array.first} with PID #{@pid}")
+        @pid = Process.spawn(env, *@cmd_array, {
+          out: @stdout || :close,
+          err: @stderr || :close,
+          in: :close,
+        })
+        @logger.info("Started #{@description} with PID #{@pid}")
 
         Process.detach(@pid)
 
@@ -47,6 +58,14 @@ module Bosh::Dev::Sandbox
       wait_for_process_to_exit_or_be_killed
     end
 
+    def stdout_contents
+      @stdout ? File.read(@stdout) : ''
+    end
+
+    def stderr_contents
+      @stderr ? File.read(@stderr) : ''
+    end
+
     private
 
     def running?
@@ -54,7 +73,7 @@ module Bosh::Dev::Sandbox
     rescue Errno::ESRCH # No such process
       false
     rescue Errno::EPERM # Owned by some other user/process
-      @logger.info("Process other than #{@cmd_array.first} is running with PID=#{@pid} so this service is not running.")
+      @logger.info("Process other than #{@description} is running with PID=#{@pid} so this service is not running.")
       @logger.debug(`ps #{@pid}`)
       false
     end
@@ -63,11 +82,11 @@ module Bosh::Dev::Sandbox
       while running?
         remaining_attempts -= 1
         if remaining_attempts == 5
-          @logger.info("Killing #{@cmd_array.first} with PID=#{@pid}")
+          @logger.info("Killing #{@description} with PID=#{@pid}")
 
           kill_process('KILL', @pid)
         elsif remaining_attempts == 0
-          raise "KILL signal ignored by #{@cmd_array.first} with PID=#{@pid}"
+          raise "KILL signal ignored by #{@description} with PID=#{@pid}"
         end
 
         sleep(0.2)
@@ -75,12 +94,12 @@ module Bosh::Dev::Sandbox
     end
 
     def kill_process(signal, pid)
-      @logger.info("Terminating #{@cmd_array.first} with PID=#{pid}")
+      @logger.info("Terminating #{@description} with PID=#{pid}")
       Process.kill(signal, pid)
     rescue Errno::ESRCH # No such process
-      @logger.info("Process #{@cmd_array.first} with PID=#{pid} not found")
+      @logger.info("Process #{@description} with PID=#{pid} not found")
     rescue Errno::EPERM # Owned by some other user/process
-      @logger.info("Process other than #{@cmd_array.first} is running with PID=#{pid} so this service is stopped.")
+      @logger.info("Process other than #{@description} is running with PID=#{pid} so this service is stopped.")
       @logger.debug(`ps #{pid}`)
     end
   end

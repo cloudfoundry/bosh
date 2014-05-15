@@ -280,9 +280,14 @@ module Bosh::Dev::Sandbox
       @director_process.start
       @worker_processes.each(&:start)
 
-      # CI does not have enough time to start bosh-director
-      # for some parallel tests; increasing to 60 secs (= 300 tries).
-      @director_socket_connector.try_to_connect(300)
+      begin
+        # CI does not have enough time to start bosh-director
+        # for some parallel tests; increasing to 60 secs (= 300 tries).
+        @director_socket_connector.try_to_connect(300)
+      rescue
+        output_service_log(@director_process)
+        raise
+      end
     end
 
     def setup_sandbox_root
@@ -310,10 +315,21 @@ module Bosh::Dev::Sandbox
     end
 
     def get_named_port(name)
-      # I don't want to optimize for look-up speed, we only have 5 named ports anyway
       @port_names ||= []
       @port_names << name unless @port_names.include?(name)
       61000 + @test_env_number * 100 + @port_names.index(name)
+    end
+
+    DEBUG_HEADER = '*' * 20
+
+    def output_service_log(service)
+      @logger.error("#{DEBUG_HEADER} start #{service.description} stdout #{DEBUG_HEADER}")
+      @logger.error(service.stdout_contents)
+      @logger.error("#{DEBUG_HEADER} end #{service.description} stdout #{DEBUG_HEADER}")
+
+      @logger.error("#{DEBUG_HEADER} start #{service.description} stderr #{DEBUG_HEADER}")
+      @logger.error(service.stderr_contents)
+      @logger.error("#{DEBUG_HEADER} end #{service.description} stderr #{DEBUG_HEADER}")
     end
 
     attr_reader :director_tmp_path, :dns_db_path, :task_logs_dir
