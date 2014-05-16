@@ -3,7 +3,7 @@ require 'open3'
 require 'tempfile'
 require 'yaml'
 
-describe VSphereCloud::Cloud do
+describe VSphereCloud::Cloud, external_cpi: true do
   before(:all) do
     @workspace_dir = Dir.mktmpdir('vsphere-cloud-spec')
     @config_path = File.join(@workspace_dir, 'vsphere_cpi_config')

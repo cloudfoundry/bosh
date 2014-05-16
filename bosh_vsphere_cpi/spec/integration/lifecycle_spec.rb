@@ -3,7 +3,7 @@ require 'bosh/cpi/compatibility_helpers/delete_vm'
 require 'tempfile'
 require 'yaml'
 
-describe VSphereCloud::Cloud do
+describe VSphereCloud::Cloud, external_cpi: false do
   before(:all) do
     @host          = ENV['BOSH_VSPHERE_CPI_HOST']     || raise('Missing BOSH_VSPHERE_CPI_HOST')
     @user          = ENV['BOSH_VSPHERE_CPI_USER']     || raise('Missing BOSH_VSPHERE_CPI_USER')
