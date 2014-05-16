@@ -47,11 +47,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'yajl-ruby',        '~>1.1.0'
   s.add_dependency 'membrane',         '~>0.0.2'
 
-  s.add_development_dependency 'rspec'
-  s.add_development_dependency 'rspec-its'
-  s.add_development_dependency 'fakefs'
-  s.add_development_dependency 'machinist', '~>1.0'
-
   s.bindir      = 'bin'
   s.executables << 'bosh-director'
   s.executables << 'bosh-director-console'
