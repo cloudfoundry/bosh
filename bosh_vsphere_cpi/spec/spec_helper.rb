@@ -22,3 +22,13 @@ config.logger.level = Logger::ERROR
 config.uuid = '123'
 
 Bosh::Clouds::Config.configure(config)
+
+def by(message)
+  if block_given?
+    yield
+  else
+    pending message
+  end
+end
+
+alias and_by by

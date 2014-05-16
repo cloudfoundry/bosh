@@ -236,7 +236,7 @@ describe 'director.yml.erb.erb' do
           'secret_access_key' => 'secret',
           'use_ssl' => false,
           'ssl_verify_peer' => false,
-          's3_multipart_threshold' => 123,          
+          's3_multipart_threshold' => 123,
           's3_port' => 5155,
           'host' => 'myhost.hostland.edu',
           's3_force_path_style' => true,
@@ -299,6 +299,11 @@ describe 'director.yml.erb.erb' do
               'blobstore' => {
                 'access_key_id' => 'agent-key',
                 'secret_access_key' => 'agent-secret',
+                'host' => 'fakehost.example.com',
+                'use_ssl' => true,
+                'ssl_verify_peer' => true,
+                's3_force_path_style' => false,
+                's3_multipart_threshold' => 456,
               }
             }
           end
@@ -308,12 +313,12 @@ describe 'director.yml.erb.erb' do
               'bucket_name' => 'mybucket',
               'access_key_id' => 'agent-key',
               'secret_access_key' => 'agent-secret',
-              'use_ssl' => false,
-              'ssl_verify_peer' => false,
-              's3_multipart_threshold' => 123,
+              'use_ssl' => true,
+              'ssl_verify_peer' => true,
+              's3_force_path_style' => false,
+              's3_multipart_threshold' => 456,
               'port' => 5155,
-              'host' => 'myhost.hostland.edu',
-              's3_force_path_style' => true,
+              'host' => 'fakehost.example.com',
             })
           end
         end
@@ -326,7 +331,7 @@ describe 'director.yml.erb.erb' do
           'provider' => 's3',
           'bucket_name' => 'mybucket',
           'access_key_id' => 'key',
-          'secret_access_key' => 'secret'
+          'secret_access_key' => 'secret',
         }
       end
 
@@ -352,7 +357,7 @@ describe 'director.yml.erb.erb' do
             deployment_manifest_fragment['properties']['agent'] = {
               'blobstore' => {
                 'access_key_id' => 'agent-key',
-                'secret_access_key' => 'agent-secret'
+                'secret_access_key' => 'agent-secret',
               }
             }
           end

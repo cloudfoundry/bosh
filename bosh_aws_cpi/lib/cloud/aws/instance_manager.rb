@@ -43,18 +43,7 @@ module Bosh::AwsCloud
         spot_instance_requests = @region.client.request_spot_instances(spot_request_spec) 
         @logger.debug("Got spot instance requests: #{spot_instance_requests.inspect}") 
         
-        Bosh::Common.retryable(sleep: instance_create_wait_time*2, tries: 20) do |tries, error|
-            @logger.debug("Checking state of spot instance requests...")
-            spot_instance_request_ids = spot_instance_requests[:spot_instance_request_set].map { |r| r[:spot_instance_request_id] } 
-            response = @region.client.describe_spot_instance_requests(:spot_instance_request_ids => spot_instance_request_ids)
-            statuses = response[:spot_instance_request_set].map { |rr| rr[:state] }
-            @logger.debug("Spot instance request states: #{statuses.inspect}")
-            if statuses.all? { |s| s == 'active' }
-               @logger.info("Spot request instances fulfilled: #{response.inspect}")
-               instance_id = response[:spot_instance_request_set].map { |rr| rr[:instance_id] }[0]
-               @instance = @region.instances[instance_id]
-            end
-        end
+        wait_for_spot_instance_request_to_be_active spot_instance_requests
       else
         # Retry the create instance operation a couple of times if we are told that the IP
         # address is in use - it can happen when the director recreates a VM and AWS
@@ -109,6 +98,26 @@ module Bosh::AwsCloud
         ]
       }
     }
+    end
+
+    def wait_for_spot_instance_request_to_be_active(spot_instance_requests)
+      # Query the spot request state until it becomes "active".
+      # This can result in the errors listed below; this is normally because AWS has 
+      # been slow to update its state so the correct response is to wait a bit and try again.
+      errors = [AWS::EC2::Errors::InvalidSpotInstanceRequestID::NotFound]
+      Bosh::Common.retryable(sleep: instance_create_wait_time*2, tries: 20, on: errors) do |tries, error|
+          @logger.warn("Retrying after expected error: #{error}") if error
+          @logger.debug("Checking state of spot instance requests...")
+          spot_instance_request_ids = spot_instance_requests[:spot_instance_request_set].map { |r| r[:spot_instance_request_id] } 
+          response = @region.client.describe_spot_instance_requests(:spot_instance_request_ids => spot_instance_request_ids)
+          statuses = response[:spot_instance_request_set].map { |rr| rr[:state] }
+          @logger.debug("Spot instance request states: #{statuses.inspect}")
+          if statuses.all? { |s| s == 'active' }
+             @logger.info("Spot request instances fulfilled: #{response.inspect}")
+             instance_id = response[:spot_instance_request_set].map { |rr| rr[:instance_id] }[0]
+             @instance = @region.instances[instance_id]
+          end
+      end
     end
 
     def terminate(instance_id, fast=false)

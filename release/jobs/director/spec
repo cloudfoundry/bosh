@@ -168,6 +168,7 @@ properties:
     description: Host of blobstore server used by simple blobstore plugin
   blobstore.use_ssl:
     description: Whether the simple blobstore plugin should use SSL to connect to the blobstore server
+    default: true
   blobstore.s3_port:
     description: Port of blobstore server used by s3 blobstore plugin
     default: 443
@@ -219,7 +220,8 @@ properties:
   compiled_package_cache.options.host:
     description: Host of blobstore server used for compiled package cache
   compiled_package_cache.options.use_ssl:
-    description: Whether the simple blobstore plugin should use SSL to connect to the blobstore server  
+    description: Whether the simple blobstore plugin should use SSL to connect to the blobstore server
+    default: true
   compiled_package_cache.options.ssl_verify_peer:
     description: Verify the SSL certificate used on the blobstore?
     default: true
@@ -228,10 +230,10 @@ properties:
     default: 443
   compiled_package_cache.options.s3_force_path_style:
     description: Whether s3 blobstore plugin will always use path style for bucket access
-    default: false    
+    default: false
   compiled_package_cache.options.s3_multipart_threshold:
     description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
-    default: 16777216    
+    default: 16777216
   compiled_package_cache.options.swift_provider:
     description:  OpenStack Swift provider (supported providers are hp, openstack and rackspace)
   compiled_package_cache.options.container_name:
@@ -283,15 +285,16 @@ properties:
     description: Host of blobstore server used by simple blobstore plugin
   agent.blobstore.use_ssl:
     description: Whether the simple blobstore plugin should use SSL to connect to the blobstore server
+    default: true
   agent.blobstore.ssl_verify_peer:
     description: Verify the SSL certificate used on the blobstore?
     default: true
   agent.blobstore.s3_force_path_style:
     description: Whether s3 blobstore plugin will always use path style for bucket access
-    default: false        
+    default: false
   agent.blobstore.s3_multipart_threshold:
     description: Byte threshold at which blob uploads should be broken into multi-part FORM uploads instead of single PUT
-    default: 16777216    
+    default: 16777216
   agent.nats.address:
     description: Address for agent to connect to nats
   registry.address:

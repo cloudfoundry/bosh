@@ -348,22 +348,34 @@ cloud:
           bucket_name: <%= p('blobstore.bucket_name') %>
           access_key_id: <%= p(['agent.blobstore.access_key_id', 'blobstore.access_key_id']) %>
           secret_access_key: <%= p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key']) %>
-      <% if_p('blobstore.use_ssl') do |use_ssl| %>
-          use_ssl: <%= use_ssl %>
+
+      <% port = p(['agent.blobstore.s3_port', 'blobstore.s3_port'], nil) %>
+      <% unless port.nil? %>
+          port: <%= port  %>
       <% end %>
-      <% if_p('blobstore.s3_port') do |port| %>
-          port: <%= port %>
-      <% end %>
-      <% if_p('blobstore.host') do |host| %>
+
+      <% host = p(['agent.blobstore.host', 'blobstore.host'], nil) %>
+      <% unless host.nil? %>
           host: <%= host %>
       <% end %>
-      <% if_p('blobstore.s3_force_path_style') do |s3_force_path_style| %>
-          s3_force_path_style: <%= s3_force_path_style %>
+
+      <% use_ssl = p(['agent.blobstore.use_ssl', 'blobstore.use_ssl'], nil) %>
+      <% unless use_ssl.nil? %>
+          use_ssl: <%= use_ssl %>
       <% end %>
-      <% if_p('blobstore.ssl_verify_peer') do |ssl_verify_peer| %>
+
+      <% ssl_verify_peer = p(['agent.blobstore.ssl_verify_peer', 'blobstore.ssl_verify_peer'], nil) %>
+      <% unless ssl_verify_peer.nil? %>
           ssl_verify_peer: <%= ssl_verify_peer %>
       <% end %>
-      <% if_p('blobstore.s3_multipart_threshold') do |s3_multipart_threshold| %>
+
+      <% s3_force_path_style = p(['agent.blobstore.s3_force_path_style', 'blobstore.s3_force_path_style'], nil) %>
+      <% unless s3_force_path_style.nil? %>
+          s3_force_path_style: <%= s3_force_path_style %>
+      <% end %>
+
+      <% s3_multipart_threshold = p(['agent.blobstore.s3_multipart_threshold', 'blobstore.s3_multipart_threshold'], nil) %>
+      <% unless s3_multipart_threshold.nil? %>
           s3_multipart_threshold: <%= s3_multipart_threshold %>
       <% end %>
       <% else %>
