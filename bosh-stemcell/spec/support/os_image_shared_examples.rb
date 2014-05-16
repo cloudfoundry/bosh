@@ -33,7 +33,12 @@ shared_examples_for 'an OS image' do
 
     describe file('/etc/rsyslog.conf') do
       it { should be_file }
-      it { should_not contain('$ModLoad imklog') }
+
+      # Make sure imklog module is not loaded in rsyslog
+      # to avoid CentOS stemcell pegging CPU on AWS
+      # (do not add $ in front of ModLoad
+      # because it will break the serverspec regex match)
+      it { should_not contain('ModLoad imklog') }
     end
 
     describe user('syslog') do
