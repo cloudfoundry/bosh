@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli::Command
   class Release < Base
     DEFAULT_RELEASE_NAME = "bosh-release"
@@ -39,6 +37,7 @@ module Bosh::Cli::Command
     option "--final", "create final release"
     option "--with-tarball", "create release tarball"
     option "--dry-run", "stop before writing release manifest"
+    option "--version VERSION", "specify a custom version number of the form x[.y]..."
     def create(manifest_file = nil)
       check_if_release_dir
 
@@ -52,6 +51,8 @@ module Bosh::Cli::Command
         release.latest_release_filename = release_filename
         release.save_config
       end
+    rescue Bosh::Cli::ReleaseVersionError => e
+      say(e.message.make_red)
     end
 
     # bosh verify release
@@ -190,8 +191,7 @@ module Bosh::Cli::Command
       end
     end
 
-
-    protected
+    private
 
     def upload_manifest(manifest_path, upload_options = {})
       package_matches = match_remote_packages(File.read(manifest_path))
@@ -282,7 +282,7 @@ module Bosh::Cli::Command
         task_report(status, task_id, "Release uploaded")
       end
     end
-    
+
     def create_from_manifest(manifest_file)
       say("Recreating release from the manifest")
       Bosh::Cli::ReleaseCompiler.compile(manifest_file, release.blobstore)
@@ -294,6 +294,7 @@ module Bosh::Cli::Command
       force = options[:force]
       manifest_only = !options[:with_tarball]
       dry_run = options[:dry_run]
+      version = options[:version]
 
       err("Can't create final release without blobstore secret") if final && !release.has_blobstore_secret?
 
@@ -317,7 +318,7 @@ module Bosh::Cli::Command
       jobs = build_jobs(packages.map(&:name), dry_run, final)
 
       header("Building release")
-      release_builder = build_release(dry_run, final, jobs, manifest_only, packages)
+      release_builder = build_release(dry_run, final, jobs, manifest_only, packages, version)
 
       header("Release summary")
       show_summary(release_builder)
@@ -389,9 +390,10 @@ module Bosh::Cli::Command
       packages
     end
 
-    def build_release(dry_run, final, jobs, manifest_only, packages)
+    def build_release(dry_run, final, jobs, manifest_only, packages, version)
       release_builder = Bosh::Cli::ReleaseBuilder.new(release, packages, jobs, final: final,
-                                                      commit_hash: commit_hash, uncommitted_changes: dirty_state?)
+                                                      commit_hash: commit_hash, version: version,
+                                                      uncommitted_changes: dirty_state?)
 
       unless dry_run
         if manifest_only

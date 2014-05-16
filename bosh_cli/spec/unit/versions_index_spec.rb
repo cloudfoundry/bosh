@@ -51,7 +51,6 @@ describe Bosh::Cli::VersionsIndex do
                        item2,
                        get_tmp_file_path('payload2'))
 
-    expect(@index.latest_version).to eq(2)
     expect(@index['deadbeef']).to eq(item1.merge('sha1' => Digest::SHA1.hexdigest('payload1')))
     expect(@index['deadcafe']).to eq(item2.merge('sha1' => Digest::SHA1.hexdigest('payload2')))
     expect(@index.version_exists?(1)).to be(true)
@@ -70,18 +69,6 @@ describe Bosh::Cli::VersionsIndex do
       Bosh::Cli::InvalidIndex,
       'Cannot save index entry without knowing its version'
     )
-  end
-
-  it 'it uses the last version in the index as the latest version' do
-    item1 = { 'a' => 1, 'b' => 2, 'version' => 'z' }
-    item2 = { 'a' => 3, 'b' => 4, 'version' => 'y' }
-    item3 = { 'a' => 3, 'b' => 4, 'version' => 'a' }
-
-    @index.add_version('deadbeef', item1, get_tmp_file_path('payload1'))
-    @index.add_version('deadcafe', item2, get_tmp_file_path('payload2'))
-    expect(@index.latest_version).to eq('y')
-    @index.add_version('addedface', item3, get_tmp_file_path('payload2'))
-    expect(@index.latest_version).to eq('a')
   end
 
   it 'does not allow duplicate versions with different fingerprints' do
@@ -125,5 +112,33 @@ describe Bosh::Cli::VersionsIndex do
     @index = Bosh::Cli::VersionsIndex.new(@dir, 'foobar')
     @index.add_version('deadbeef', item, get_tmp_file_path('payload1'))
     expect(@index.filename(1)).to eq(File.join(@dir, 'foobar-1.tgz'))
+  end
+
+  describe '#latest_version' do
+    it 'returns the last version in the index' do
+      item1 = { 'a' => 1, 'b' => 2, 'version' => 'z' }
+      item2 = { 'a' => 3, 'b' => 4, 'version' => 'y' }
+      item3 = { 'a' => 3, 'b' => 4, 'version' => 'a' }
+
+      @index.add_version('deadbeef', item1, get_tmp_file_path('payload1'))
+      @index.add_version('deadcafe', item2, get_tmp_file_path('payload2'))
+      expect(@index.latest_version).to eq('y')
+      @index.add_version('addedface', item3, get_tmp_file_path('payload2'))
+      expect(@index.latest_version).to eq('a')
+    end
+  end
+
+  describe '#latest_dev_version' do
+    it 'returns the last version in the index matching the given final version' do
+      item1 = { 'a' => 1, 'b' => 2, 'version' => '1.1.6-dev' }
+      item2 = { 'a' => 3, 'b' => 4, 'version' => '1.0.7-dev' }
+      item3 = { 'a' => 3, 'b' => 4, 'version' => '1.1.8-dev' }
+
+      @index.add_version('deadbeef', item1, get_tmp_file_path('payload1'))
+      @index.add_version('deadcafe', item2, get_tmp_file_path('payload2'))
+      expect(@index.latest_dev_version('1.1')).to eq('1.1.6-dev')
+      @index.add_version('addedface', item3, get_tmp_file_path('payload2'))
+      expect(@index.latest_dev_version('1.1')).to eq('1.1.8-dev')
+    end
   end
 end

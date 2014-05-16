@@ -12,6 +12,7 @@ describe Bosh::Cli::Command::Release do
   end
 
   describe 'create release' do
+    let(:interactive) { true }
     let(:release) { instance_double('Bosh::Cli::Release') }
     let(:question) { instance_double('HighLine::Question') }
 
@@ -30,6 +31,18 @@ describe Bosh::Cli::Command::Release do
       command.options[:dry_run] = true
     end
 
+    it 'is a command with the correct options' do
+      command = Bosh::Cli::Config.commands['create release']
+      expect(command).to have_options
+      expect(command.options.map(&:first)).to match_array([
+        '--force',
+        '--final',
+        '--with-tarball',
+        '--dry-run',
+        '--version VERSION',
+      ])
+    end
+
     context 'dev release' do
       context 'interactive' do
         let(:interactive) { true }
@@ -38,7 +51,7 @@ describe Bosh::Cli::Command::Release do
           it 'development release name prompt should not have any default' do
             expect(release).to receive(:dev_name).and_return(nil)
             expect(release).to receive(:final_name).and_return(nil)
-            expect(command).to receive(:ask).with("Please enter development release name: ").and_yield(question)
+            expect(command).to receive(:ask).with('Please enter development release name: ').and_yield(question)
             expect(question).to_not receive(:default=)
             expect(release).to receive(:dev_name=).with('')
             expect(release).to receive(:dev_name).and_return('test-release')
@@ -51,10 +64,22 @@ describe Bosh::Cli::Command::Release do
           it 'development release name prompt should default to final release name' do
             expect(release).to receive(:dev_name).and_return(nil)
             expect(release).to receive(:final_name).twice.and_return('test-release')
-            expect(command).to receive(:ask).with("Please enter development release name: ").and_yield(question)
+            expect(command).to receive(:ask).with('Please enter development release name: ').and_yield(question)
             expect(question).to receive(:default=).with('test-release')
             expect(release).to receive(:dev_name=).with('test-release')
             expect(release).to receive(:dev_name).and_return('test-release')
+
+            command.create
+          end
+        end
+
+        context 'when building a release raises an error' do
+          it 'prints the error message' do
+            allow(release).to receive(:dev_name).and_return('test-release')
+
+            allow(command).to receive(:build_release).and_raise(Bosh::Cli::ReleaseVersionError.new('the message'))
+            allow(command).to receive(:say)
+            expect(command).to receive(:say).with('the message')
 
             command.create
           end
@@ -86,7 +111,7 @@ describe Bosh::Cli::Command::Release do
       end
     end
   end
-  
+
 
   describe 'upload release' do
     it_requires_logged_in_user ->(command) { command.upload('http://release_location') }

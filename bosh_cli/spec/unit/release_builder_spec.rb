@@ -1,30 +1,68 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
-require "spec_helper"
+require 'spec_helper'
 
 describe Bosh::Cli::ReleaseBuilder do
 
   before(:each) do
     @release_dir = Dir.mktmpdir
-    FileUtils.mkdir_p(File.join(@release_dir, "config"))
+    FileUtils.mkdir_p(File.join(@release_dir, 'config'))
     @release = Bosh::Cli::Release.new(@release_dir)
   end
 
-  def new_builder
-    Bosh::Cli::ReleaseBuilder.new(@release, [], [])
+  def new_builder(options = {})
+    Bosh::Cli::ReleaseBuilder.new(@release, [], [], options)
   end
 
-  it "uses version 0.1-dev if no previous releases have been created" do
-    new_builder.version.should == "0.1-dev"
+  context 'when there is a final release' do
+    it 'bumps dev version in sync with final version' do
+      final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'releases'))
+      final_index.add_version('deadbeef',
+                              { 'version' => '7.3' },
+                              get_tmp_file_path('payload'))
+
+      builder = new_builder
+      builder.version.should == '7.3.1-dev'
+      builder.build
+    end
+
+    it 'bumps the more minor version of the dev release with subsequent releases' do
+      final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'releases'))
+      final_index.add_version('deadbeef',
+                              { 'version' => '7.3' },
+                              get_tmp_file_path('payload'))
+
+      dev_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'dev_releases'))
+      dev_index.add_version('deadbeef',
+                            { 'version' => '7.3.1-dev' },
+                            get_tmp_file_path('payload'))
+
+      builder = new_builder
+      builder.version.should == '7.3.2-dev'
+      builder.build
+    end
   end
 
-  it "builds a release" do
+  context 'when there are no final releases' do
+    it 'starts with version 0.1-dev' do
+      new_builder.version.should == '0.1-dev'
+    end
+
+    it 'increments the dev version' do
+      dev_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'dev_releases'))
+      dev_index.add_version('deadbeef',
+                            { 'version' => '0.1-dev' },
+                            get_tmp_file_path('payload'))
+
+      new_builder.version.should == '0.2-dev'
+    end
+  end
+
+  it 'builds a release' do
     builder = new_builder
     builder.build
 
     expected_tarball_path = File.join(@release_dir,
-                                      "dev_releases",
-                                      "bosh_release-0.1-dev.tgz")
+      'dev_releases',
+      'bosh_release-0.1-dev.tgz')
 
     builder.tarball_path.should == expected_tarball_path
     File.file?(expected_tarball_path).should be(true)
@@ -45,28 +83,28 @@ describe Bosh::Cli::ReleaseBuilder do
     builder.build
     builder.build
 
-    File.file?(File.join(@release_dir, "dev_releases",
-                         "bosh_release-0.1-dev.tgz")).
+    File.file?(File.join(@release_dir, 'dev_releases',
+      'bosh_release-0.1-dev.tgz')).
         should be(true)
-    File.file?(File.join(@release_dir, "dev_releases",
-                         "bosh_release-0.2-dev.tgz")).
+    File.file?(File.join(@release_dir, 'dev_releases',
+      'bosh_release-0.2-dev.tgz')).
         should be(false)
   end
 
-  it "has a list of jobs affected by building this release" do
+  it 'has a list of jobs affected by building this release' do
     job1 = double(:job, :new_version? => true,
-                :packages => %w(bar baz), :name => "job1")
+                :packages => %w(bar baz), :name => 'job1')
     job2 = double(:job, :new_version? => false,
-                :packages => %w(foo baz), :name => "job2")
+                :packages => %w(foo baz), :name => 'job2')
     job3 = double(:job, :new_version? => false,
-                :packages => %w(baz zb), :name => "job3")
+                :packages => %w(baz zb), :name => 'job3')
     job4 = double(:job, :new_version? => false,
-                :packages => %w(bar baz), :name => "job4")
+                :packages => %w(bar baz), :name => 'job4')
 
-    package1 = double(:package, :name => "foo", :new_version? => true)
-    package2 = double(:package, :name => "bar", :new_version? => false)
-    package3 = double(:package, :name => "baz", :new_version? => false)
-    package4 = double(:package, :name => "zb", :new_version? => true)
+    package1 = double(:package, :name => 'foo', :new_version? => true)
+    package2 = double(:package, :name => 'bar', :new_version? => false)
+    package3 = double(:package, :name => 'baz', :new_version? => false)
+    package4 = double(:package, :name => 'zb', :new_version? => true)
 
     builder = Bosh::Cli::ReleaseBuilder.new(@release,
                                             [package1, package2,
@@ -75,43 +113,24 @@ describe Bosh::Cli::ReleaseBuilder do
     builder.affected_jobs.should =~ [job1, job2, job3]
   end
 
-  it "bumps dev version in sync with final version" do
-    final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir,
-                                                         "releases"))
-
-    final_index.add_version("deadbeef",
-                            { "version" => 2 },
-                            get_tmp_file_path("payload"))
-
-    builder = new_builder
-    builder.version.should == "2.1-dev"
-    builder.build
-
-    final_index.add_version("deadbeef",
-                            { "version" => 7 },
-                            get_tmp_file_path("payload"))
-    builder = new_builder
-    builder.version.should == "7.1-dev"
-  end
-
-  it "has packages and jobs fingerprints in spec" do
+  it 'has packages and jobs fingerprints in spec' do
     job = double(
       Bosh::Cli::JobBuilder,
-      :name => "job1",
-      :version => "1.1",
+      :name => 'job1',
+      :version => '1.1',
       :new_version? => true,
       :packages => %w(foo),
-      :fingerprint => "deadbeef",
-      :checksum => "cafebad"
+      :fingerprint => 'deadbeef',
+      :checksum => 'cafebad'
     )
 
     package = double(
       Bosh::Cli::PackageBuilder,
-      :name => "foo",
-      :version => "42",
+      :name => 'foo',
+      :version => '42',
       :new_version? => true,
-      :fingerprint => "deadcafe",
-      :checksum => "baddeed",
+      :fingerprint => 'deadcafe',
+      :checksum => 'baddeed',
       :dependencies => []
     )
 
@@ -123,8 +142,30 @@ describe Bosh::Cli::ReleaseBuilder do
 
     manifest = Psych.load_file(builder.manifest_path)
 
-    manifest["jobs"][0]["fingerprint"].should == "deadbeef"
-    manifest["packages"][0]["fingerprint"].should == "deadcafe"
+    manifest['jobs'][0]['fingerprint'].should == 'deadbeef'
+    manifest['packages'][0]['fingerprint'].should == 'deadcafe'
   end
 
+  context 'when version options is passed into initializer' do
+    context 'when creating final release' do
+      it 'uses given version' do
+        builder = new_builder({ final: true, version: '3.123' })
+        expect(builder.version).to eq('3.123')
+        builder.build
+      end
+    end
+
+    context 'when creating dev release' do
+      it 'does not allow a version to be specified for dev releases' do
+        builder = new_builder({ final: true, version: '3.123' })
+        expect(builder.version).to eq('3.123')
+        builder.build
+
+        expect{ new_builder({ version: '3.123.1-dev' }) }.to raise_error(
+          Bosh::Cli::ReleaseVersionError,
+          'Version numbers cannot be specified for dev releases'
+        )
+      end
+    end
+  end
 end

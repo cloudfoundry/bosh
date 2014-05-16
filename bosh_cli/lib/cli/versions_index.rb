@@ -33,13 +33,17 @@ module Bosh::Cli
     # is the behavior for Ruby 1.9.X and 2.X we should
     # remember that this implementation is
     # a little brittle.
-    def latest_version(major = nil)
+    def latest_version
       builds = @data["builds"].values
 
-      if major
-        builds = builds.select do |build|
-          major_version(build["version"]) == major
-        end
+      return nil if builds.empty?
+
+      builds.last["version"]
+    end
+
+    def latest_dev_version(final_version)
+      builds = @data["builds"].values.select do |build|
+        build["version"].match(/^#{final_version}.\d-dev/)
       end
 
       return nil if builds.empty?

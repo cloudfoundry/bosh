@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli
   class CommandHandler
 
@@ -14,6 +12,8 @@ module Bosh::Cli
 
     # @return [Bosh::Cli::Runner]
     attr_accessor :runner
+
+    attr_reader :options
 
     # @param [Class] klass
     # @param [UnboundMethod] method
@@ -56,7 +56,7 @@ module Bosh::Cli
       begin
         command.send(@method.name, *args)
         command.exit_code
-      rescue ArgumentError => e
+      rescue ArgumentError => _
         err("Usage: #{usage_with_params}")
       end
     end

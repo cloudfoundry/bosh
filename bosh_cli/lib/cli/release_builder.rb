@@ -20,6 +20,9 @@ module Bosh::Cli
       @uncommitted_changes = options.fetch(:uncommitted_changes, true)
       @packages = packages
       @jobs = jobs
+      @version = options.fetch(:version, nil)
+
+      raise ReleaseVersionError.new('Version numbers cannot be specified for dev releases') if (@version && !@final)
 
       @final_index = VersionsIndex.new(final_releases_dir, release_name)
       @dev_index = VersionsIndex.new(dev_releases_dir, release_name)
@@ -145,11 +148,10 @@ module Bosh::Cli
         say("This version is no different from version #{old_version}")
         @version = old_version
       else
-        @version = assign_version
-        @index.add_version(fingerprint, { "version" => @version })
+        @index.add_version(fingerprint, { "version" => version })
       end
 
-      manifest["version"] = @version
+      manifest["version"] = version
       manifest_yaml = Psych.dump(manifest)
 
       say("Writing manifest...")
@@ -166,7 +168,7 @@ module Bosh::Cli
 
     def generate_tarball
       generate_manifest unless @manifest_generated
-      return if @index.version_exists?(@version)
+      return if @index.version_exists?(version)
 
       unless @jobs_copied
         header("Copying jobs...")
@@ -224,19 +226,15 @@ module Bosh::Cli
 
     private
 
-    def version=(version)
-      @version = version
-    end
-
     def assign_version
-      latest_final_version = @final_index.latest_version.to_i
-      latest_dev_version = @dev_index.latest_version(latest_final_version)
+      latest_final_version = @final_index.latest_version || 0
+      latest_dev_version = @dev_index.latest_dev_version(latest_final_version)
 
       if @final
-        latest_final_version + 1
+        latest_final_version.to_i + 1
       else
         major = latest_final_version
-        minor = minor_version(latest_dev_version).to_i + 1
+        minor = least_significant_version(latest_dev_version).to_i + 1
         "#{major}.#{minor}-dev"
       end
     end
