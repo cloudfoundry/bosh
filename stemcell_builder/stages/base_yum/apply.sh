@@ -22,11 +22,7 @@ libaio1 gdb libcap2-bin libcap-devel bzip2-devel \
 cmake sudo nc libuuid-devel"
 pkg_mgr install $packages
 
-# Lifted from bosh_debs
-#pkg_mgr install "scsitools mg htop module-assistant debhelper"
-#/Lifted from bosh_debs
-
-# runit
+# Install runit
 pkg_mgr install "rpm-build rpmdevtools glibc-static"
 cookbook_release=1.2.0
 runit_version=runit-2.1.1
@@ -38,4 +34,3 @@ run_in_chroot $chroot "
   ./build.sh
   rpm -i /rpmbuild/RPMS/${runit_version}.rpm
 "
-#/runit
