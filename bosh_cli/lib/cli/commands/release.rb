@@ -42,7 +42,13 @@ module Bosh::Cli::Command
       check_if_release_dir
 
       if manifest_file && File.file?(manifest_file)
-        release_filename = create_from_manifest(manifest_file)
+        if options[:version]
+          err('Cannot specify a custom version number when creating from a manifest. The manifest already specifies a version.'.make_red)
+        end
+
+        say('Recreating release from the manifest')
+        Bosh::Cli::ReleaseCompiler.compile(manifest_file, release.blobstore)
+        release_filename = manifest_file
       else
         release_filename = create_from_spec
       end
@@ -52,7 +58,7 @@ module Bosh::Cli::Command
         release.save_config
       end
     rescue Bosh::Cli::ReleaseVersionError => e
-      say(e.message.make_red)
+      err(e.message.make_red)
     end
 
     # bosh verify release
@@ -260,33 +266,27 @@ module Bosh::Cli::Command
       end
 
       if rebase
-        say("Uploading release (#{"will be rebased".make_yellow})")
+        say("Uploading release (#{'will be rebased'.make_yellow})")
         status, task_id = director.rebase_release(tarball_path)
-        task_report(status, task_id, "Release rebased")
+        task_report(status, task_id, 'Release rebased')
       else
         say("\nUploading release\n")
         status, task_id = director.upload_release(tarball_path)
-        task_report(status, task_id, "Release uploaded")
+        task_report(status, task_id, 'Release uploaded')
       end
     end
 
     def upload_remote_release(release_location, upload_options = {})
       nl
       if upload_options[:rebase]
-        say("Using remote release `#{release_location}' (#{"will be rebased".make_yellow})")
+        say("Using remote release `#{release_location}' (#{'will be rebased'.make_yellow})")
         status, task_id = director.rebase_remote_release(release_location)
-        task_report(status, task_id, "Release rebased")
+        task_report(status, task_id, 'Release rebased')
       else
         say("Using remote release `#{release_location}'")
         status, task_id = director.upload_remote_release(release_location)
-        task_report(status, task_id, "Release uploaded")
+        task_report(status, task_id, 'Release uploaded')
       end
-    end
-
-    def create_from_manifest(manifest_file)
-      say("Recreating release from the manifest")
-      Bosh::Cli::ReleaseCompiler.compile(manifest_file, release.blobstore)
-      manifest_file
     end
 
     def create_from_spec
@@ -474,14 +474,11 @@ module Bosh::Cli::Command
       say("Unable to run 'git init'".make_red)
     end
 
-
-    private
-
     # if we aren't already in a release directory, try going up two levels
     # to see if that is a release directory, and then use that as the base
     def find_release_dir(manifest_path)
       unless in_release_dir?
-        dir = File.expand_path("../..", manifest_path)
+        dir = File.expand_path('../..', manifest_path)
         Dir.chdir(dir)
         if in_release_dir?
           @release = Bosh::Cli::Release.new(dir)

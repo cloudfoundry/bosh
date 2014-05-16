@@ -78,10 +78,8 @@ describe Bosh::Cli::Command::Release do
             allow(release).to receive(:dev_name).and_return('test-release')
 
             allow(command).to receive(:build_release).and_raise(Bosh::Cli::ReleaseVersionError.new('the message'))
-            allow(command).to receive(:say)
-            expect(command).to receive(:say).with('the message')
 
-            command.create
+            expect { command.create }.to raise_error(Bosh::Cli::CliError, 'the message')
           end
         end
       end
@@ -108,6 +106,38 @@ describe Bosh::Cli::Command::Release do
             command.create
           end
         end
+      end
+    end
+
+    context 'when a manifest file is given' do
+      let(:manifest_file) { 'manifest_file.yml' }
+
+      context 'when the manifest file exists' do
+        it 'creates a release from the given manifest' do
+          allow(File).to receive(:file?).with(manifest_file).and_return(true)
+          allow(release).to receive(:blobstore).and_return('fake-blobstore')
+
+          expect(Bosh::Cli::ReleaseCompiler).to receive(:compile).with(manifest_file, 'fake-blobstore')
+          expect(release).to receive(:latest_release_filename=).with(manifest_file)
+          expect(release).to receive(:save_config)
+
+          command.create(manifest_file)
+        end
+      end
+
+      context 'when the manifest file does not exist' do
+        it 'goes through standard route to create a release from spec' do
+          expect(release).to receive(:dev_name).and_return('fake-release-name')
+
+          command.create(manifest_file)
+        end
+      end
+
+      it 'does not allow a user-defined version' do
+        command.options[:version] = '123'
+        allow(File).to receive(:file?).with(manifest_file).and_return(true)
+
+        expect { command.create(manifest_file) }.to raise_error(Bosh::Cli::CliError, 'Cannot specify a custom version number when creating from a manifest. The manifest already specifies a version.')
       end
     end
   end
