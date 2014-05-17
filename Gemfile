@@ -2,25 +2,29 @@
 
 source 'https://rubygems.org'
 
-gemspec path: 'agent_client'
-gemspec path: 'blobstore_client'
-gemspec path: 'bosh_agent'
-gemspec path: 'bosh_aws_cpi'
-gemspec path: 'bosh_common'
-gemspec path: 'bosh-core'
-gemspec path: 'bosh_cpi'
-gemspec path: 'bosh_cli'
-gemspec path: 'bosh_cli_plugin_aws'
-gemspec path: 'bosh_cli_plugin_micro'
-gemspec path: 'bosh_openstack_cpi'
-gemspec path: 'bosh-registry'
-gemspec path: 'bosh_vsphere_cpi'
-gemspec path: 'bosh_warden_cpi'
-gemspec path: 'bosh-director'
-gemspec path: 'bosh-director-core'
-gemspec path: 'bosh-monitor'
-gemspec path: 'bosh-release'
-gemspec path: 'simple_blobstore_server'
+%w(
+  agent_client
+  blobstore_client
+  bosh_agent
+  bosh_aws_cpi
+  bosh_common
+  bosh-core
+  bosh_cpi
+  bosh_cli
+  bosh_cli_plugin_aws
+  bosh_cli_plugin_micro
+  bosh_openstack_cpi
+  bosh-registry
+  bosh_vsphere_cpi
+  bosh_warden_cpi
+  bosh-director
+  bosh-director-core
+  bosh-monitor
+  bosh-release
+  simple_blobstore_server
+).each do |gem_name|
+  gem gem_name, path: gem_name
+end
 
 gem 'rake', '~>10.0'
 

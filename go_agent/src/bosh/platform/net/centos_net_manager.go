@@ -42,24 +42,12 @@ func NewCentosNetManager(
 }
 
 func (net centosNetManager) getDNSServers(networks boshsettings.Networks) []string {
-	var dnsServers []string
-	dnsNetwork, found := networks.DefaultNetworkFor("dns")
-	if found {
-		for i := len(dnsNetwork.DNS) - 1; i >= 0; i-- {
-			dnsServers = append(dnsServers, dnsNetwork.DNS[i])
-		}
-	}
-	return dnsServers
+	dnsNetwork, _ := networks.DefaultNetworkFor("dns")
+	return dnsNetwork.DNS
 }
 
 func (net centosNetManager) SetupDhcp(networks boshsettings.Networks) error {
-	dnsServers := []string{}
-	dnsNetwork, found := networks.DefaultNetworkFor("dns")
-	if found {
-		for i := len(dnsNetwork.DNS) - 1; i >= 0; i-- {
-			dnsServers = append(dnsServers, dnsNetwork.DNS[i])
-		}
-	}
+	dnsNetwork, _ := networks.DefaultNetworkFor("dns")
 
 	type dhcpConfigArg struct {
 		DNSServers []string
@@ -68,7 +56,7 @@ func (net centosNetManager) SetupDhcp(networks boshsettings.Networks) error {
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("dhcp-config").Parse(centosDHCPConfigTemplate))
 
-	err := t.Execute(buffer, dhcpConfigArg{dnsServers})
+	err := t.Execute(buffer, dhcpConfigArg{dnsNetwork.DNS})
 	if err != nil {
 		return bosherr.WrapError(err, "Generating config from template")
 	}

@@ -32,7 +32,4 @@ Gem::Specification.new do |s|
   s.add_dependency 'bosh_vsphere_cpi',   "~>#{version}"
   s.add_dependency 'bosh-director-core', "~>#{version}"
   s.add_dependency 'blobstore_client',   "~>#{version}"
-
-  s.add_development_dependency 'rspec'
-  s.add_development_dependency 'fakefs'
 end
