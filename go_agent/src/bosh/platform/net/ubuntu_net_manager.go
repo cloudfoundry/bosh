@@ -46,14 +46,8 @@ func NewUbuntuNetManager(
 }
 
 func (net ubuntuNetManager) getDNSServers(networks boshsettings.Networks) []string {
-	var dnsServers []string
-	dnsNetwork, found := networks.DefaultNetworkFor("dns")
-	if found {
-		for i := len(dnsNetwork.DNS) - 1; i >= 0; i-- {
-			dnsServers = append(dnsServers, dnsNetwork.DNS[i])
-		}
-	}
-	return dnsServers
+	dnsNetwork, _ := networks.DefaultNetworkFor("dns")
+	return dnsNetwork.DNS
 }
 
 func (net ubuntuNetManager) SetupDhcp(networks boshsettings.Networks) error {

@@ -42,7 +42,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 	netbios-name-servers, netbios-scope, interface-mtu,
 	rfc3442-classless-static-routes, ntp-servers;
 
-prepend domain-name-servers zz.zz.zz.zz, yy.yy.yy.yy, xx.xx.xx.xx;
+prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 `
 
 	Describe("ubuntuNetManager", func() {
@@ -216,7 +216,7 @@ prepend domain-name-servers zz.zz.zz.zz, yy.yy.yy.yy, xx.xx.xx.xx;
 					Netmask: "255.255.255.0",
 					Gateway: "192.168.195.1",
 					Mac:     "22:00:0a:1f:ac:2a",
-					DNS:     []string{"10.80.130.2", "10.80.130.1"},
+					DNS:     []string{"10.80.130.1", "10.80.130.2"},
 				},
 			}
 
