@@ -68,6 +68,8 @@ type FakePlatform struct {
 
 	GetFileContentsFromCDROMPath     string
 	GetFileContentsFromCDROMContents []byte
+	GetFileContentsFromVMDKPath      string
+	GetFileContentsFromVMDKContents  []byte
 
 	NormalizeDiskPathCalled   bool
 	NormalizeDiskPathPath     string
@@ -240,6 +242,12 @@ func (p *FakePlatform) NormalizeDiskPath(devicePath string) (realPath string, fo
 func (p *FakePlatform) GetFileContentsFromCDROM(path string) (contents []byte, err error) {
 	p.GetFileContentsFromCDROMPath = path
 	contents = p.GetFileContentsFromCDROMContents
+	return
+}
+
+func (p *FakePlatform) GetFileContentsFromVMDK(path string) (contents []byte, err error) {
+	p.GetFileContentsFromVMDKPath = path
+	contents = p.GetFileContentsFromVMDKContents
 	return
 }
 

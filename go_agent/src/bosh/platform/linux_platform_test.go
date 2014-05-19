@@ -19,6 +19,8 @@ import (
 	fakenet "bosh/platform/net/fakes"
 	fakestats "bosh/platform/stats/fakes"
 	boshvitals "bosh/platform/vitals"
+	"bosh/platform/vmdk"
+	fakevmdk "bosh/platform/vmdkutil/fakes"
 	boshsettings "bosh/settings"
 	boshdirs "bosh/settings/directories"
 	fakesys "bosh/system/fakes"
@@ -34,6 +36,7 @@ var _ = Describe("LinuxPlatform", func() {
 		devicePathResolver *fakedpresolv.FakeDevicePathResolver
 		platform           Platform
 		cdutil             *fakecd.FakeCdUtil
+		vmdkutil           *fakevmdk.FakeVmdkUtil
 		compressor         boshcmd.Compressor
 		copier             boshcmd.Copier
 		vitalsService      boshvitals.Service
@@ -781,6 +784,17 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 			contents, err := platform.GetFileContentsFromCDROM(filename)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cdutil.GetFileContentsFilename).To(Equal(filename))
+			Expect(contents).To(Equal(cdutil.GetFileContentsContents))
+		})
+	})
+
+	Describe("GetFileContentsFromVMDK", func() {
+		It("delegates to vmdkutil", func() {
+			vmdkutil.GetFileContentsContents = []byte("fake-contents")
+			filename := "fake-env"
+			contents, err := platform.GetFileContentsFromVMDK(filename)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(vmdkutil.GetFileContentsFilename).To(Equal(filename))
 			Expect(contents).To(Equal(cdutil.GetFileContentsContents))
 		})
 	})

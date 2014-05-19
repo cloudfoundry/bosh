@@ -13,6 +13,8 @@ import (
 	boshnet "bosh/platform/net"
 	boshstats "bosh/platform/stats"
 	boshvitals "bosh/platform/vitals"
+	boshvmdk "bosh/platform/vmdk"
+	boshvmdktuil "bosh/platform/vmdkutil"
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
 )
@@ -33,7 +35,9 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 
 	udev := boshudev.NewConcreteUdevDevice(runner)
 	linuxCdrom := boshcdrom.NewLinuxCdrom("/dev/sr0", udev, runner)
+	linuxVmdk := boshvmdk.NewLinuxVmdk(runner, logger)
 	linuxCdutil := boshcd.NewCdUtil(dirProvider.SettingsDir(), fs, linuxCdrom)
+	linuxVmdkutil := boshvmdktuil.NewVmdkUtil(dirProvider.SettingsDir(), fs, linuxVmdk)
 
 	compressor := boshcmd.NewTarballCompressor(runner, fs)
 	copier := boshcmd.NewCpCopier(runner, fs, logger)
@@ -59,6 +63,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 		dirProvider,
 		vitalsService,
 		linuxCdutil,
+		linuxVmdkutil,
 		linuxDiskManager,
 		centosNetManager,
 		500*time.Millisecond,
@@ -75,6 +80,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 		dirProvider,
 		vitalsService,
 		linuxCdutil,
+		linuxVmdkutil,
 		linuxDiskManager,
 		ubuntuNetManager,
 		500*time.Millisecond,

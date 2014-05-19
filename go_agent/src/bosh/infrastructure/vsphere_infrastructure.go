@@ -42,7 +42,11 @@ func (inf vsphereInfrastructure) GetSettings() (boshsettings.Settings, error) {
 
 	contents, err := inf.platform.GetFileContentsFromCDROM("env")
 	if err != nil {
-		return settings, bosherr.WrapError(err, "Reading contents from CDROM")
+		contents, err = inf.platform.GetFileContentsFromVMDK("env")
+	}
+
+	if err != nil {
+		return settings, bosherr.WrapError(err, "Reading contents from CDROM or VMDK")
 	}
 
 	inf.logger.Debug("disks", "Got CDrom data %v", string(contents))

@@ -49,6 +49,7 @@ type Platform interface {
 	IsPersistentDiskMounted(path string) (result bool, err error)
 
 	GetFileContentsFromCDROM(filePath string) (contents []byte, err error)
+	GetFileContentsFromVMDK(filePath string) (contents []byte, err error)
 
 	GetDefaultNetwork() (boshsettings.Network, error)
 

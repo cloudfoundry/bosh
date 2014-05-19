@@ -19,6 +19,7 @@ import (
 	boshnet "bosh/platform/net"
 	boshstats "bosh/platform/stats"
 	boshvitals "bosh/platform/vitals"
+	boshvmdkutil "bosh/platform/vmdkutil"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
 	boshdirs "bosh/settings/directories"
@@ -47,6 +48,7 @@ type linux struct {
 	dirProvider        boshdirs.DirectoriesProvider
 	vitalsService      boshvitals.Service
 	cdutil             boshcd.CdUtil
+	vmdkutil           boshvmdkutil.VmdkUtil
 	diskManager        boshdisk.Manager
 	netManager         boshnet.NetManager
 	diskScanDuration   time.Duration
@@ -64,6 +66,7 @@ func NewLinuxPlatform(
 	dirProvider boshdirs.DirectoriesProvider,
 	vitalsService boshvitals.Service,
 	cdutil boshcd.CdUtil,
+	vmdkutil boshvmdkutil.VmdkUtil,
 	diskManager boshdisk.Manager,
 	netManager boshnet.NetManager,
 	diskScanDuration time.Duration,
@@ -79,6 +82,7 @@ func NewLinuxPlatform(
 		dirProvider:      dirProvider,
 		vitalsService:    vitalsService,
 		cdutil:           cdutil,
+		vmdkutil:         vmdkutil,
 		diskManager:      diskManager,
 		netManager:       netManager,
 		diskScanDuration: diskScanDuration,
@@ -114,6 +118,10 @@ func (p linux) GetVitalsService() (service boshvitals.Service) {
 
 func (p linux) GetFileContentsFromCDROM(fileName string) (contents []byte, err error) {
 	return p.cdutil.GetFileContents(fileName)
+}
+
+func (p linux) GetFileContentsFromVMDK(fileName string) (contents []byte, err error) {
+	return p.vmdkutil.GetFileContents(fileName)
 }
 
 func (p linux) GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver) {
