@@ -28,6 +28,8 @@ module Bosh::Cli
       @dev_index = VersionsIndex.new(dev_releases_dir, release_name)
       @index = @final ? @final_index : @dev_index
 
+      raise ReleaseVersionError.new('Release version already exists') if (@version && @index.version_exists?(@version))
+
       @build_dir = Dir.mktmpdir
 
       in_build_dir do

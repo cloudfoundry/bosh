@@ -148,10 +148,24 @@ describe Bosh::Cli::ReleaseBuilder do
 
   context 'when version options is passed into initializer' do
     context 'when creating final release' do
-      it 'uses given version' do
-        builder = new_builder({ final: true, version: '3.123' })
-        expect(builder.version).to eq('3.123')
-        builder.build
+      context 'when given release version already exists' do
+        it 'raises error' do
+          final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'releases'))
+          final_index.add_version('deadbeef',
+                                  { 'version' => '7.3' },
+                                  get_tmp_file_path('payload'))
+          FileUtils.touch(File.join(@release_dir, 'releases', 'bosh_release-7.3.tgz'))
+
+          expect { new_builder({ final: true, version: '7.3' }) }.to raise_error(Bosh::Cli::ReleaseVersionError, 'Release version already exists')
+        end
+      end
+
+      context 'when given version does not exist' do
+        it 'uses given version' do
+          builder = new_builder({ final: true, version: '3.123' })
+          expect(builder.version).to eq('3.123')
+          builder.build
+        end
       end
     end
 
