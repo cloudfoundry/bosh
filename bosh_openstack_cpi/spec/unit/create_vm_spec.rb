@@ -70,7 +70,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   let(:flavor) { double("flavor", :id => "f-test", :name => "m1.tiny", :ram => 1024, :disk => 2, :ephemeral => 2) }
   let(:key_pair) { double("key_pair", :id => "k-test", :name => "test_key",
                    :fingerprint => "00:01:02:03:04", :public_key => "public openssh key") }
-  
+
   before(:each) do
     @registry = mock_registry
   end
@@ -266,8 +266,9 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     boot_volume = double("volume", :id => "v-foobar")
 
     cloud_options = mock_cloud_options
-    cloud_options["openstack"]["boot_from_volume"] = true
-    cloud = mock_cloud(cloud_options) do |openstack|
+    cloud_options['properties']['openstack']['boot_from_volume'] = true
+    
+    cloud = mock_cloud(cloud_options['properties']) do |openstack|
       openstack.servers.should_receive(:create).
           with(openstack_params(unique_name, %w[default], [], "1.2.3.4", "v-foobar")).and_return(server)
       openstack.security_groups.should_receive(:collect).and_return(%w[default])
