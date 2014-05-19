@@ -1,6 +1,3 @@
-# Copyright (c) 2009-2013 VMware, Inc.
-# Copyright (c) 2012 Piston Cloud Computing, Inc.
-
 require 'spec_helper'
 
 describe Bosh::OpenStackCloud::Cloud do
@@ -76,17 +73,17 @@ describe Bosh::OpenStackCloud::Cloud do
     end
 
     it 'raises ArgumentError on initializing with blank options' do
-    	options = Hash.new('options')
-    	expect {
-    		Bosh::OpenStackCloud::Cloud.new(options)
-    	}.to raise_error(ArgumentError, /Invalid OpenStack configuration/)
+      options = Hash.new('options')
+      expect {
+        Bosh::OpenStackCloud::Cloud.new(options)
+      }.to raise_error(ArgumentError, /Invalid OpenStack configuration/)
     end
 
     it 'raises ArgumentError on initializing with non Hash options' do
-    	options = 'this is a string'
-    	expect {
-    		Bosh::OpenStackCloud::Cloud.new(options)
-    	}.to raise_error(ArgumentError, /Invalid OpenStack configuration/)
+      options = 'this is a string'
+      expect {
+        Bosh::OpenStackCloud::Cloud.new(options)
+      }.to raise_error(ArgumentError, /Invalid OpenStack configuration/)
     end
 
     it 'raises a CloudError exception if cannot connect to the OpenStack Compute API' do
