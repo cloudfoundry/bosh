@@ -86,7 +86,8 @@ module Bat
     end
 
     def use_additional_dns_server(dns_server)
-      @spec['properties']['dns'] = [dns_server, @env.dns_host]
+      # Make sure working dns is the first entry in resolv.conf
+      @spec['properties']['dns'] = [@env.dns_host, dns_server]
     end
 
     def deployment_name
