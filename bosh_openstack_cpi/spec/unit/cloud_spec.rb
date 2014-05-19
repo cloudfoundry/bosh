@@ -111,7 +111,7 @@ describe Bosh::OpenStackCloud::Cloud do
       Fog::Image.stub(:new)
       Fog::Volume.should_receive(:new).and_raise(Excon::Errors::Unauthorized, "Unauthorized")
       expect {
-        Bosh::Clouds::Provider.create(:openstack, mock_cloud_options)
+        Bosh::Clouds::Provider.create(mock_cloud_options, 'fake-director-uuid')
       }.to raise_error(Bosh::Clouds::CloudError,
                        "Unable to connect to the OpenStack Volume API. Check task debug log for details.")
     end
