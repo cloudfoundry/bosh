@@ -5,33 +5,39 @@ require "logger"
 
 describe Bosh::OpenStackCloud::Cloud do
   before(:all) do
-    @auth_url    = ENV['BOSH_OPENSTACK_AUTH_URL']    || raise("Missing BOSH_OPENSTACK_AUTH_URL")
-    @username    = ENV['BOSH_OPENSTACK_USERNAME']    || raise("Missing BOSH_OPENSTACK_USERNAME")
-    @api_key     = ENV['BOSH_OPENSTACK_API_KEY']     || raise("Missing BOSH_OPENSTACK_API_KEY")
-    @tenant      = ENV['BOSH_OPENSTACK_TENANT']      || raise("Missing BOSH_OPENSTACK_TENANT")
-    @region      = ENV['BOSH_OPENSTACK_REGION']      || raise("Missing BOSH_OPENSTACK_REGION")
-    @stemcell_id = ENV['BOSH_OPENSTACK_STEMCELL_ID'] || raise("Missing BOSH_OPENSTACK_STEMCELL_ID")
-    @net_id      = ENV['BOSH_OPENSTACK_NET_ID']      || raise("Missing BOSH_OPENSTACK_NET_ID")
-    @manual_ip   = ENV['BOSH_OPENSTACK_MANUAL_IP']   || raise("Missing BOSH_OPENSTACK_MANUAL_IP")
+    @auth_url         = ENV['BOSH_OPENSTACK_AUTH_URL']    || raise('Missing BOSH_OPENSTACK_AUTH_URL')
+    @username         = ENV['BOSH_OPENSTACK_USERNAME']    || raise('Missing BOSH_OPENSTACK_USERNAME')
+    @api_key          = ENV['BOSH_OPENSTACK_API_KEY']     || raise('Missing BOSH_OPENSTACK_API_KEY')
+    @tenant           = ENV['BOSH_OPENSTACK_TENANT']      || raise('Missing BOSH_OPENSTACK_TENANT')
+    @stemcell_id      = ENV['BOSH_OPENSTACK_STEMCELL_ID'] || raise('Missing BOSH_OPENSTACK_STEMCELL_ID')
+    @net_id           = ENV['BOSH_OPENSTACK_NET_ID']      || raise('Missing BOSH_OPENSTACK_NET_ID')
+    @manual_ip        = ENV['BOSH_OPENSTACK_MANUAL_IP']   || raise('Missing BOSH_OPENSTACK_MANUAL_IP')
+    @default_key_name = ENV.fetch('BOSH_OPENSTACK_DEFAULT_KEY_NAME', 'jenkins')
+
+    # some environments may not have this set, and it isn't strictly necessary so don't raise if it isn't set
+    @region = ENV['BOSH_OPENSTACK_REGION']
   end
+
+  let(:boot_from_volume) { false }
 
   subject(:cpi) do
     described_class.new(
-      "openstack" => {
-        "auth_url" => @auth_url,
-        "username" => @username,
-        "api_key" => @api_key,
-        "tenant" => @tenant,
-        "region" => @region,
-        "endpoint_type" => "publicURL",
-        "default_key_name" => "jenkins",
-        "default_security_groups" => ["default"],
-        "wait_resource_poll_interval" => 5,
+      'openstack' => {
+        'auth_url' => @auth_url,
+        'username' => @username,
+        'api_key' => @api_key,
+        'tenant' => @tenant,
+        'region' => @region,
+        'endpoint_type' => 'publicURL',
+        'default_key_name' => @default_key_name,
+        'default_security_groups' => %w(default),
+        'wait_resource_poll_interval' => 5,
+        'boot_from_volume' => boot_from_volume,
       },
-      "registry" => {
-        "endpoint" => "fake",
-        "user" => "fake",
-        "password" => "fake"
+      'registry' => {
+        'endpoint' => 'fake',
+        'user' => 'fake',
+        'password' => 'fake'
       }
     )
   end
@@ -47,11 +53,15 @@ describe Bosh::OpenStackCloud::Cloud do
   before { Bosh::Registry::Client.stub(new: double("registry").as_null_object) }
 
   describe "dynamic network" do
+    # even for dynamic networking we need to set the net_id as we may be in an environment
+    # with multiple networks
     let(:network_spec) do
       {
         "default" => {
           "type" => "dynamic",
-          "cloud_properties" => {}
+          "cloud_properties" => {
+            "net_id" => @net_id
+          }
         }
       }
     end
@@ -102,6 +112,26 @@ describe Bosh::OpenStackCloud::Cloud do
         # This should be removed once we figure out how to deal with this situation.
         sleep(120)
         vm_lifecycle(@stemcell_id, network_spec, [@existing_volume_id])
+      end
+    end
+  end
+
+  context 'when booting from volume' do
+    let(:boot_from_volume) { true }
+
+    let(:network_spec) do
+      {
+        "default" => {
+          "type" => "manual",
+          "ip" => @manual_ip,
+          "cloud_properties" => {
+            "net_id" => @net_id
+          }
+        }
+      }
+
+      it 'should exercise the vm lifecycle' do
+        vm_lifecycle(@stemcell_id, network_spec, [])
       end
     end
   end
