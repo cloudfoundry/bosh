@@ -1,6 +1,3 @@
-# Copyright (c) 2009-2013 VMware, Inc.
-# Copyright (c) 2012 Piston Cloud Computing, Inc.
-
 require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
 
 require 'tmpdir'
