@@ -25,32 +25,6 @@ module Bosh::Cli
       @data["builds"][fingerprint]
     end
 
-    ##
-    # Return the last version from the version index file
-    # as jobs and packages have a non-numeric versioning
-    # scheme based on their fingerprint. This function relies
-    # on hash insertion order being preserved. While this
-    # is the behavior for Ruby 1.9.X and 2.X we should
-    # remember that this implementation is
-    # a little brittle.
-    def latest_version
-      builds = @data["builds"].values
-
-      return nil if builds.empty?
-
-      builds.last["version"]
-    end
-
-    def latest_dev_version(final_version)
-      builds = @data["builds"].values.select do |build|
-        build["version"].match(/^#{final_version}.\d-dev/)
-      end
-
-      return nil if builds.empty?
-
-      builds.last["version"]
-    end
-
     def version_exists?(version)
       File.exists?(filename(version))
     end
@@ -95,6 +69,10 @@ module Bosh::Cli
       File.join(@storage_dir, name)
     end
 
+    def versions
+      @data['builds'].map { |_, build| build['version'] }
+    end
+
     private
 
     def create_directories
@@ -119,7 +97,6 @@ module Bosh::Cli
             "#{data.class} given, Hash expected"
       end
       @data = data
-      @data.delete("latest_version") # Indices used to track latest versions
       @data["builds"] ||= {}
     end
   end

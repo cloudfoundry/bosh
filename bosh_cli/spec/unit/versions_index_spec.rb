@@ -13,9 +13,9 @@ describe Bosh::Cli::VersionsIndex do
 
   it 'only creates directory structure on writes to index' do
     expect(File).to_not exist(@index_file)
-    @index.version_exists?(1).should be(false)
-    @index['deadbeef'].should be_nil
-    @index.latest_version.should be_nil
+    expect(@index.version_exists?(1)).to be(false)
+    expect(@index['deadbeef']).to be_nil
+    expect(@index.versions).to be_empty
     expect(File).to_not exist(@index_file)
 
     @index.add_version('deadcafe',
@@ -37,7 +37,7 @@ describe Bosh::Cli::VersionsIndex do
   it "doesn't choke on empty index file" do
     File.open(@index_file, 'w') { |f| f.write('') }
     @index = Bosh::Cli::VersionsIndex.new(@dir)
-    expect(@index.latest_version).to be_nil
+    expect(@index.versions).to be_empty
   end
 
   it 'can be used to add versioned payloads to index' do
@@ -114,31 +114,13 @@ describe Bosh::Cli::VersionsIndex do
     expect(@index.filename(1)).to eq(File.join(@dir, 'foobar-1.tgz'))
   end
 
-  describe '#latest_version' do
-    it 'returns the last version in the index' do
-      item1 = { 'a' => 1, 'b' => 2, 'version' => 'z' }
-      item2 = { 'a' => 3, 'b' => 4, 'version' => 'y' }
-      item3 = { 'a' => 3, 'b' => 4, 'version' => 'a' }
+  it 'exposes the versions in the index' do
+    item1 = { 'a' => 1, 'b' => 2, 'version' => '1.8-dev' }
+    item2 = { 'b' => 2, 'c' => 3, 'version' => '1.9-dev' }
 
-      @index.add_version('deadbeef', item1, get_tmp_file_path('payload1'))
-      @index.add_version('deadcafe', item2, get_tmp_file_path('payload2'))
-      expect(@index.latest_version).to eq('y')
-      @index.add_version('addedface', item3, get_tmp_file_path('payload2'))
-      expect(@index.latest_version).to eq('a')
-    end
-  end
+    @index.add_version('deadbeef', item1, get_tmp_file_path('payload1'))
+    @index.add_version('deadcafe', item2, get_tmp_file_path('payload3'))
 
-  describe '#latest_dev_version' do
-    it 'returns the last version in the index matching the given final version' do
-      item1 = { 'a' => 1, 'b' => 2, 'version' => '1.1.6-dev' }
-      item2 = { 'a' => 3, 'b' => 4, 'version' => '1.0.7-dev' }
-      item3 = { 'a' => 3, 'b' => 4, 'version' => '1.1.8-dev' }
-
-      @index.add_version('deadbeef', item1, get_tmp_file_path('payload1'))
-      @index.add_version('deadcafe', item2, get_tmp_file_path('payload2'))
-      expect(@index.latest_dev_version('1.1')).to eq('1.1.6-dev')
-      @index.add_version('addedface', item3, get_tmp_file_path('payload2'))
-      expect(@index.latest_dev_version('1.1')).to eq('1.1.8-dev')
-    end
+    expect(@index.versions).to eq(%w(1.8-dev 1.9-dev))
   end
 end

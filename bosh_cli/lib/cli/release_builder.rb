@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli
   class ReleaseBuilder
     include Bosh::Cli::DependencyHelper
@@ -229,8 +227,8 @@ module Bosh::Cli
     private
 
     def assign_version
-      latest_final_version = @final_index.latest_version || 0
-      latest_dev_version = @dev_index.latest_dev_version(latest_final_version)
+      latest_final_version = @final_index.versions.map { |v| Bosh::Common::VersionNumber.new(v) }.max || 0
+      latest_dev_version = @dev_index.versions.map { |v| Bosh::Common::VersionNumber.new(v) }.max
 
       if @final
         latest_final_version.to_i + 1

@@ -13,30 +13,39 @@ describe Bosh::Cli::ReleaseBuilder do
   end
 
   context 'when there is a final release' do
-    it 'bumps dev version in sync with final version' do
+    it 'bumps dev version in sync with latest final version' do
+      final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'releases'))
+      final_index.add_version('deadbeef',
+                              { 'version' => '7.4' },
+                              get_tmp_file_path('payload'))
+      final_index.add_version('deadcafe',
+                              { 'version' => '7.3.1' },
+                              get_tmp_file_path('payload'))
+
+      builder = new_builder
+      builder.version.should == '7.4.1-dev'
+      builder.build
+    end
+
+    it 'bumps the dev version matching the latest final release' do
       final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'releases'))
       final_index.add_version('deadbeef',
                               { 'version' => '7.3' },
                               get_tmp_file_path('payload'))
-
-      builder = new_builder
-      builder.version.should == '7.3.1-dev'
-      builder.build
-    end
-
-    it 'bumps the more minor version of the dev release with subsequent releases' do
-      final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'releases'))
-      final_index.add_version('deadbeef',
-                              { 'version' => '7.3' },
+      final_index.add_version('deadcafe',
+                              { 'version' => '7.2' },
                               get_tmp_file_path('payload'))
 
       dev_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'dev_releases'))
       dev_index.add_version('deadbeef',
+                            { 'version' => '7.3.2-dev' },
+                            get_tmp_file_path('payload'))
+      dev_index.add_version('deadcafe',
                             { 'version' => '7.3.1-dev' },
                             get_tmp_file_path('payload'))
 
       builder = new_builder
-      builder.version.should == '7.3.2-dev'
+      builder.version.should == '7.3.3-dev'
       builder.build
     end
   end
