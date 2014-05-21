@@ -1,10 +1,11 @@
 package drain
 
 import (
-	bosherr "bosh/errors"
-	boshsys "bosh/system"
 	"strconv"
 	"strings"
+
+	bosherr "bosh/errors"
+	boshsys "bosh/system"
 )
 
 type ConcreteDrainScript struct {

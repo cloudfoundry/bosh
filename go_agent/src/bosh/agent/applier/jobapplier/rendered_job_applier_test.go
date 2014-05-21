@@ -422,21 +422,30 @@ func init() {
 				err := applier.Configure(job, 0)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(2).To(Equal(len(jobSupervisor.AddJobArgs)))
+				Expect(len(jobSupervisor.AddJobArgs)).To(Equal(2))
 
-				firstArgs := fakejobsuper.AddJobArgs{
+				Expect(jobSupervisor.AddJobArgs[0]).To(Equal(fakejobsuper.AddJobArgs{
 					Name:       job.Name,
 					Index:      0,
 					ConfigPath: "/path/to/job/monit",
-				}
+				}))
 
-				secondArgs := fakejobsuper.AddJobArgs{
+				Expect(jobSupervisor.AddJobArgs[1]).To(Equal(fakejobsuper.AddJobArgs{
 					Name:       job.Name + "_subjob",
 					Index:      0,
 					ConfigPath: "/path/to/job/subjob.monit",
-				}
-				Expect(firstArgs).To(Equal(jobSupervisor.AddJobArgs[0]))
-				Expect(secondArgs).To(Equal(jobSupervisor.AddJobArgs[1]))
+				}))
+			})
+
+			It("does not require monit script", func() {
+				job, bundle := buildJob(jobsBc)
+
+				fs := fakesys.NewFakeFileSystem()
+				bundle.GetDirFs = fs
+
+				err := applier.Configure(job, 0)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(jobSupervisor.AddJobArgs)).To(Equal(0))
 			})
 		})
 
