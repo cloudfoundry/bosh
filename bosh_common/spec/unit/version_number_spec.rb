@@ -1,3 +1,5 @@
+# coding: UTF-8
+
 require 'common/version_number'
 
 describe Bosh::Common::VersionNumber do
@@ -139,6 +141,28 @@ describe Bosh::Common::VersionNumber do
       expect {
         version.dev
       }.to_not change(version, :to_s)
+    end
+  end
+
+  describe 'validation' do
+    it 'must consist of numbers' do
+      expect(version(nil)).to_not be_valid
+      expect(version('a')).to_not be_valid
+      expect(version('1a')).to_not be_valid
+      expect(version('1°')).to_not be_valid
+
+      expect(version('1')).to be_valid
+      expect(version('10')).to be_valid
+    end
+
+    it 'can contain multiple segments' do
+      expect(version('1.21')).to be_valid
+      expect(version('1.21.35')).to be_valid
+    end
+
+    it 'can have a trailing -dev' do
+      expect(version('1.21.35-dev')).to be_valid
+      expect(version('1.21.35-dev-not')).to_not be_valid
     end
   end
 end

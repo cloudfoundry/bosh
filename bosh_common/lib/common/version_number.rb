@@ -6,6 +6,10 @@ module Bosh::Common
       @version = version_value.to_s
     end
 
+    def valid?
+      /\A\d+(\.\d+)*(-dev)?\z/ =~ @version
+    end
+
     def <=>(other)
       v1 = @version
       v2 = other.to_s

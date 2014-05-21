@@ -37,7 +37,7 @@ module Bosh::Cli::Command
     option '--final', 'create final release'
     option '--with-tarball', 'create release tarball'
     option '--dry-run', 'stop before writing release manifest'
-    option '--version VERSION', 'specify a custom version number of the form x[.y]...'
+    option '--version VERSION', 'specify a custom version number of the form x(.y)* where x, y are numerical'
     def create(manifest_file = nil)
       check_if_release_dir
 
@@ -50,6 +50,10 @@ module Bosh::Cli::Command
         Bosh::Cli::ReleaseCompiler.compile(manifest_file, release.blobstore)
         release_filename = manifest_file
       else
+        if options[:version] && !Bosh::Common::VersionNumber.new(options[:version]).valid?
+          err("Invalid version: `#{options[:version]}'. Please specify a custom version number of the form x(.y)* where x, y are numerical.")
+        end
+
         release_filename = create_from_spec
       end
 

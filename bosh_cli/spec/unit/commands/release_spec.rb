@@ -1,7 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Cli::Command::Release do
-  let(:command) { described_class.new }
+  subject(:command) { described_class.new }
+
   let(:director) { instance_double('Bosh::Cli::Client::Director') }
   let(:release_archive) { spec_asset('valid_release.tgz') }
   let(:release_manifest) { spec_asset(File.join('release', 'release.MF')) }
@@ -13,7 +14,7 @@ describe Bosh::Cli::Command::Release do
 
   describe 'create release' do
     let(:interactive) { true }
-    let(:release) { instance_double('Bosh::Cli::Release') }
+    let(:release) { instance_double('Bosh::Cli::Release', dev_name: 'a-release') }
     let(:question) { instance_double('HighLine::Question') }
 
     before do
@@ -105,6 +106,34 @@ describe Bosh::Cli::Command::Release do
 
             command.create
           end
+        end
+      end
+    end
+
+    context 'when a custom release version is given' do
+      context 'and valid' do
+        before do
+          command.options[:version] = '1'
+        end
+
+        it 'does not print error message' do
+          expect(command).to_not receive(:err)
+
+          command.create
+        end
+      end
+
+      context 'and not valid' do
+        before do
+          command.options[:version] = '1.y'
+        end
+
+        it 'prints the error message' do
+          expected_error = 'Invalid version: `1.y\'. ' +
+            'Please specify a custom version number of the form x(.y)* where x, y are numerical.'
+          expect(command).to receive(:err).with(expected_error)
+
+          command.create
         end
       end
     end
