@@ -3,7 +3,7 @@ require 'spec_helper'
 describe 'cli: login', type: :integration do
   with_reset_sandbox_before_each
 
-  it 'requires login when talking to director', no_reset: true do
+  it 'requires login when talking to director' do
     expect(bosh_runner.run('properties', failure_expected: true)).to match(/please choose target first/i)
     bosh_runner.run("target http://localhost:#{current_sandbox.director_port}")
     expect(bosh_runner.run('properties', failure_expected: true)).to match(/please log in first/i)
