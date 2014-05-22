@@ -31,6 +31,7 @@ module Bosh::Director
       @current_state = {}
 
       @network_updater = NetworkUpdater.new(@instance, @vm, agent, self, @cloud, @logger)
+      @stopper = Stopper.new(@instance, agent, @target_state, Config, @logger)
     end
 
     def instance_name
@@ -140,38 +141,7 @@ module Bosh::Director
     end
 
     def stop
-      drain_time = shutting_down? ? agent.drain("shutdown") : agent.drain("update", @instance.spec)
-
-      if drain_time > 0
-        sleep(drain_time)
-      else
-        wait_for_dynamic_drain(drain_time)
-      end
-
-      agent.stop
-    end
-
-    def wait_for_dynamic_drain(initial_drain_time)
-      drain_time = initial_drain_time
-      loop do
-        # This could go on forever if drain script is broken, canceling the task is a way out.
-        Config.task_checkpoint
-
-        wait_time = drain_time.abs
-        if wait_time > 0
-          @logger.info("`#{@instance}' is draining: checking back in #{wait_time}s")
-          sleep(wait_time)
-        end
-        # Positive number always means last drain call:
-        break if drain_time >= 0
-
-        # We used to ignore exceptions from drain status for compatibility
-        # with older agents but it doesn't need to happen anymore, as
-        # realistically speaking, all agents have already been updated
-        # to support drain status mechanism and swallowing real errors
-        # would be bad here, as it could mask potential problems.
-        drain_time = agent.drain("status")
-      end
+      @stopper.stop
     end
 
     def take_snapshot
@@ -463,15 +433,6 @@ module Bosh::Director
       step = [1000, delta / (intervals - 1)].max
 
       [min_watch_time] + ([step] * (delta / step).floor)
-    end
-
-    # @return [Boolean] Is instance shutting down for this update?
-    def shutting_down?
-      @instance.resource_pool_changed? ||
-          @instance.persistent_disk_changed? ||
-          @instance.networks_changed? ||
-          @target_state == "stopped" ||
-          @target_state == "detached"
     end
 
     def min_watch_time

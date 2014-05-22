@@ -411,103 +411,21 @@ module Bosh::Director
     end
 
     describe '#stop' do
-      before do
-        agent_client.should_receive(:stop)
+      let(:state) { 'fake-target-state' }
+
+      it 'stop an instance' do
+        stopper = instance_double('Bosh::Director::InstanceUpdater::Stopper')
+        expect(InstanceUpdater::Stopper).to receive(:new).
+          with(instance, agent_client, 'fake-target-state', Config, Config.logger).
+          and_return(stopper)
+
+        expect(stopper).to receive(:stop).with(no_args)
+
+        subject.stop
       end
-
-      let(:drain_time) { 1 }
-
-      context 'when shutting down' do
-
-        before do
-          subject.stub(shutting_down?: true)
-        end
-
-        context 'with dynamic drain' do
-          let(:drain_time) { -1 }
-
-          it 'sends the shutdown message' do
-            agent_client.should_receive(:drain).with('shutdown').and_return(drain_time)
-            subject.should_receive(:wait_for_dynamic_drain).with(drain_time)
-            subject.stop
-          end
-        end
-
-        context 'with static drain' do
-          it 'sends the shutdown message' do
-            agent_client.should_receive(:drain).with('shutdown').and_return(drain_time)
-            subject.should_receive(:sleep).with(drain_time)
-            subject.stop
-          end
-        end
-      end
-
-      context 'when updating' do
-
-        before do
-          subject.stub(shutting_down?: false)
-        end
-
-        context 'with dynamic drain' do
-          let(:drain_time) { -1 }
-
-          it 'sends the shutdown message' do
-            agent_client.should_receive(:drain) { |message, spec|
-              expect(message).to eq 'update'
-              expect(spec).to eq({})
-            }.and_return(drain_time)
-            subject.should_receive(:wait_for_dynamic_drain).with(drain_time)
-            subject.stop
-          end
-        end
-
-        context 'with static drain' do
-          it 'sends the update message' do
-            agent_client.should_receive(:drain) { |message, spec|
-              expect(message).to eq 'update'
-              expect(spec).to eq({})
-            }.and_return(drain_time)
-            subject.stop
-          end
-        end
-      end
-    end
-
-    describe '#wait_for_dynamic_drain' do
-      let(:drain_time) { -1 }
-
-      before do
-        subject.stub(:sleep)
-      end
-
-      it 'can be canceled' do
-        Config.should_receive(:task_checkpoint).and_raise(TaskCancelled)
-        expect {
-          subject.wait_for_dynamic_drain(drain_time)
-        }.to raise_error TaskCancelled
-      end
-
-      it 'should wait until the agent says it is done draining' do
-        agent_client.stub(:drain).with("status").and_return(-2, 0)
-        subject.should_receive(:sleep).with(1).ordered
-        subject.should_receive(:sleep).with(2).ordered
-
-        subject.wait_for_dynamic_drain(drain_time)
-      end
-
-      it 'should wait until the agent says it is done draining' do
-        agent_client.stub(:drain).with("status").and_return(-2, 3)
-        subject.should_receive(:sleep).with(1).ordered
-        subject.should_receive(:sleep).with(2).ordered
-        subject.should_receive(:sleep).with(3).ordered
-
-        subject.wait_for_dynamic_drain(drain_time)
-      end
-
     end
 
     describe '#take_snapshot' do
-
       it 'tells the snapshot manager to take a snapshot' do
         Api::SnapshotManager.should_receive(:take_snapshot).with(instance_model, clean: true)
         subject.take_snapshot
@@ -515,7 +433,6 @@ module Bosh::Director
     end
 
     describe '#delete_snapshots' do
-
       let(:snapshots) {
         [
           instance_double('Bosh::Director::Models::Snapshot'),
@@ -874,44 +791,6 @@ module Bosh::Director
 
       it 'should calculate the correct number of sleeps' do
         expect(subject.watch_schedule(1000, 5000, 3)).to eq [1000, 2000, 2000]
-      end
-    end
-
-    describe 'shutting_down?' do
-
-      context 'when the resource pool has changed' do
-        let(:resource_pool_changed) { true }
-
-        its(:shutting_down?) { should be(true) }
-      end
-      context 'when the persistent disks have changed' do
-        let(:persistent_disk_changed) { true }
-
-        its(:shutting_down?) { should be(true) }
-      end
-
-      context 'when the networks have changed' do
-        let(:networks_changed) { true }
-
-        its(:shutting_down?) { should be(true) }
-      end
-
-      context 'when the target state is detached' do
-        let(:state) { 'detached' }
-
-        its(:shutting_down?) { should be(true) }
-      end
-
-      context 'when the target state is stopped' do
-        let(:state) { 'stopped' }
-
-        its(:shutting_down?) { should be(true) }
-      end
-
-      context 'when the target state is started' do
-        let(:state) { 'started' }
-
-        its(:shutting_down?) { should be(false) }
       end
     end
 
