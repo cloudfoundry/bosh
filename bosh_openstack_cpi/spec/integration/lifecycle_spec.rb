@@ -1,7 +1,7 @@
-require "spec_helper"
-require "tempfile"
-require "cloud"
-require "logger"
+require 'spec_helper'
+require 'tempfile'
+require 'cloud'
+require 'logger'
 
 describe Bosh::OpenStackCloud::Cloud do
   before(:all) do
@@ -43,75 +43,81 @@ describe Bosh::OpenStackCloud::Cloud do
   end
 
   before do
-    delegate = double("delegate", task_checkpoint: nil, logger: logger)
+    delegate = double('delegate', task_checkpoint: nil, logger: logger)
     Bosh::Clouds::Config.configure(delegate)
   end
 
-  before { Bosh::Clouds::Config.stub(logger: logger) }
+  before { allow(Bosh::Clouds::Config).to receive(:logger).and_return(logger) }
   let(:logger) { Logger.new(STDERR) }
 
-  before { Bosh::Registry::Client.stub(new: double("registry").as_null_object) }
+  before { allow(Bosh::Registry::Client).to receive(:new).and_return(double('registry').as_null_object) }
 
-  describe "dynamic network" do
+  describe 'dynamic network' do
     # even for dynamic networking we need to set the net_id as we may be in an environment
     # with multiple networks
     let(:network_spec) do
       {
-        "default" => {
-          "type" => "dynamic",
-          "cloud_properties" => {
-            "net_id" => @net_id
+        'default' => {
+          'type' => 'dynamic',
+          'cloud_properties' => {
+            'net_id' => @net_id
           }
         }
       }
     end
 
-    context "without existing disks" do
-      it "should exercise the vm lifecycle" do
+    context 'without existing disks' do
+      it 'exercises the vm lifecycle' do
         vm_lifecycle(@stemcell_id, network_spec, [])
       end
     end
 
-    context "with existing disks" do
+    context 'with existing disks' do
       before { @existing_volume_id = cpi.create_disk(2048) }
       after { cpi.delete_disk(@existing_volume_id) if @existing_volume_id }
 
-      it "should exercise the vm lifecycle" do
-        vm_lifecycle(@stemcell_id, network_spec, [@existing_volume_id])
+      it 'exercises the vm lifecycle' do
+        expect {
+          vm_lifecycle(@stemcell_id, network_spec, [@existing_volume_id])
+        }.to_not raise_error
       end
     end
   end
 
-  describe "manual network" do
+  describe 'manual network' do
     let(:network_spec) do
       {
-        "default" => {
-          "type" => "manual",
-          "ip" => @manual_ip,
-          "cloud_properties" => {
-            "net_id" => @net_id
+        'default' => {
+          'type' => 'manual',
+          'ip' => @manual_ip,
+          'cloud_properties' => {
+            'net_id' => @net_id
           }
         }
       }
     end
 
-    context "without existing disks" do
-      it "should exercise the vm lifecycle" do
-        vm_lifecycle(@stemcell_id, network_spec, [])
+    context 'without existing disks' do
+      it 'exercises the vm lifecycle' do
+        expect {
+          vm_lifecycle(@stemcell_id, network_spec, [])
+        }.to_not raise_error
       end
     end
 
-    context "with existing disks" do
+    context 'with existing disks' do
       before { @existing_volume_id = cpi.create_disk(2048) }
       after { cpi.delete_disk(@existing_volume_id) if @existing_volume_id }
 
-      it "should exercise the vm lifecycle" do
+      it 'exercises the vm lifecycle' do
         # Sometimes Quantum is too slow to release an IP address, so when we
         # spin up a new vm reusing the same IP it fails with a vm state error
         # but without any clue what the problem is (you should check the nova log).
         # This should be removed once we figure out how to deal with this situation.
-        sleep(120)
-        vm_lifecycle(@stemcell_id, network_spec, [@existing_volume_id])
+        #sleep(120)
+        expect {
+          vm_lifecycle(@stemcell_id, network_spec, [@existing_volume_id])
+        }.to_not raise_error
       end
     end
   end
@@ -121,17 +127,19 @@ describe Bosh::OpenStackCloud::Cloud do
 
     let(:network_spec) do
       {
-        "default" => {
-          "type" => "manual",
-          "ip" => @manual_ip,
-          "cloud_properties" => {
-            "net_id" => @net_id
+        'default' => {
+          'type' => 'manual',
+          'ip' => @manual_ip,
+          'cloud_properties' => {
+            'net_id' => @net_id
           }
         }
       }
 
-      it 'should exercise the vm lifecycle' do
-        vm_lifecycle(@stemcell_id, network_spec, [])
+      it 'exercises the vm lifecycle' do
+        expect {
+          vm_lifecycle(@stemcell_id, network_spec, [])
+        }.to_not raise_error
       end
     end
   end
@@ -153,17 +161,17 @@ describe Bosh::OpenStackCloud::Cloud do
   def create_vm(stemcell_id, network_spec, disk_locality)
     logger.info("Creating VM with stemcell_id=#{stemcell_id}")
     vm_id = cpi.create_vm(
-      "agent-007",
+      'agent-007',
       stemcell_id,
-      { "instance_type" => "m1.small" },
+      { 'instance_type' => 'm1.small'},
       network_spec,
       disk_locality,
-      { "key" => "value" }
+      { 'key' => 'value'}
     )
-    vm_id.should_not be_nil
+    expect(vm_id).to be
 
     logger.info("Checking VM existence vm_id=#{vm_id}")
-    cpi.has_vm?(vm_id).should be(true)
+    expect(cpi).to have_vm(vm_id)
 
     logger.info("Setting VM metadata vm_id=#{vm_id}")
     cpi.set_vm_metadata(vm_id, {
@@ -181,16 +189,16 @@ describe Bosh::OpenStackCloud::Cloud do
       cpi.delete_vm(vm_id)
 
       logger.info("Checking VM existence vm_id=#{vm_id}")
-      cpi.has_vm?(vm_id).should be(false)
+      expect(cpi).to_not have_vm(vm_id)
     else
-      logger.info("No VM to delete")
+      logger.info('No VM to delete')
     end
   end
 
   def create_disk(vm_id)
     logger.info("Creating disk for VM vm_id=#{vm_id}")
     disk_id = cpi.create_disk(2048, vm_id)
-    disk_id.should_not be_nil
+    expect(disk_id).to be
 
     logger.info("Attaching disk vm_id=#{vm_id} disk_id=#{disk_id}")
     cpi.attach_disk(vm_id, disk_id)
@@ -206,7 +214,7 @@ describe Bosh::OpenStackCloud::Cloud do
       logger.info("Deleting disk disk_id=#{disk_id}")
       cpi.delete_disk(disk_id)
     else
-      logger.info("No disk to delete")
+      logger.info('No disk to delete')
     end
   end
 
@@ -221,7 +229,7 @@ describe Bosh::OpenStackCloud::Cloud do
       :director_name => 'Director',
       :director_uuid => '6d06b0cc-2c08-43c5-95be-f1b2dd247e18',
     })
-    disk_snapshot_id.should_not be_nil
+    expect(disk_snapshot_id).to be
 
     logger.info("Created disk snapshot disk_snapshot_id=#{disk_snapshot_id}")
     disk_snapshot_id
@@ -232,7 +240,7 @@ describe Bosh::OpenStackCloud::Cloud do
       logger.info("Deleting disk snapshot disk_snapshot_id=#{disk_snapshot_id}")
       cpi.delete_snapshot(disk_snapshot_id)
     else
-      logger.info("No disk snapshot to delete")
+      logger.info('No disk snapshot to delete')
     end
   end
 
