@@ -47,9 +47,9 @@ func buildDrainScript(commandResult fakesys.FakeCmdResult) (
 	return
 }
 
-func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("run args", func() {
+var _ = Describe("ConcreteDrainScript", func() {
+	Describe("Run", func() {
+		It("runs drain script", func() {
 			drainScript, params, runner, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "1"})
 
 			_, err := drainScript.Run(params)
@@ -63,48 +63,49 @@ func init() {
 				},
 			}
 
-			Expect(1).To(Equal(len(runner.RunComplexCommands)))
-			Expect(expectedCmd).To(Equal(runner.RunComplexCommands[0]))
+			Expect(len(runner.RunComplexCommands)).To(Equal(1))
+			Expect(runner.RunComplexCommands[0]).To(Equal(expectedCmd))
 		})
-		It("run returns parsed s t d o u t", func() {
 
+		It("returns parsed stdout", func() {
 			drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "1"})
 
 			value, err := drainScript.Run(params)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(value).To(Equal(1))
 		})
-		It("run returns parsed s t d o u t after trimming", func() {
 
+		It("returns parsed stdout after trimming", func() {
 			drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "-56\n"})
 
 			value, err := drainScript.Run(params)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(value).To(Equal(-56))
 		})
-		It("run errors with non integer s t d o u t", func() {
 
+		It("returns error with non integer stdout", func() {
 			drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Stdout: "hello!"})
 
 			_, err := drainScript.Run(params)
 			Expect(err).To(HaveOccurred())
 		})
-		It("run errors when running command errors", func() {
 
+		It("returns error when running command errors", func() {
 			drainScript, params, _, _ := buildDrainScript(fakesys.FakeCmdResult{Error: errors.New("woops")})
 
 			_, err := drainScript.Run(params)
 			Expect(err).To(HaveOccurred())
 		})
-		It("exists", func() {
+	})
 
+	Describe("Exists", func() {
+		It("returns bool", func() {
 			drainScript, _, _, fs := buildDrainScript(fakesys.FakeCmdResult{Stdout: "1"})
 
 			Expect(drainScript.Exists()).To(BeFalse())
 
 			fs.WriteFile("/fake/script", []byte{})
-
 			Expect(drainScript.Exists()).To(BeTrue())
 		})
 	})
-}
+})
