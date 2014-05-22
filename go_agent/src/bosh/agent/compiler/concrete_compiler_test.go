@@ -135,12 +135,12 @@ func init() {
 				Expect(err.Error()).To(ContainSubstring("fake-keep-only-error"))
 			})
 
-			It("fetches source package from blobstore", func() {
+			It("fetches source package from blobstore without checking SHA1 by default because of Director bug", func() {
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(blobstore.GetBlobIDs[0]).To(Equal("blobstore_id"))
-				Expect(blobstore.GetFingerprints[0]).To(Equal("sha1"))
+				Expect(blobstore.GetFingerprints[0]).To(Equal(""))
 			})
 
 			It("returns an error if removing compile target directory during uncompression fails", func() {
