@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'psych'
 
 describe 'cli: 2', type: :integration do
   with_reset_sandbox_before_each
@@ -45,8 +46,23 @@ describe 'cli: 2', type: :integration do
     Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
 
+      # We switched to using a local provider in the template, so move in a config from elsewhere
+      FileUtils.cp(spec_asset('blobstore_config_requiring_credentials.yml'), 'config/final.yml')
+
       out = bosh_runner.run_in_current_dir('create release --final', failure_expected: true)
       expect(out).to match(/Can't create final release without blobstore secret/)
+    end
+  end
+
+  it 'allows creation of a final release without an existing dev release', no_reset: false do
+    Dir.chdir(TEST_RELEASE_DIR) do
+      expect(File.exist?('releases/bosh-release-1.yml')).to eq(false)
+
+      out = bosh_runner.run_in_current_dir('create release --final', failure_expected: false)
+      expect(out).to_not match(/Please consider creating a dev release first/)
+
+      expect(Dir.exist?('dev_releases')).to eq(false)
+      expect(File.exist?('releases/bosh-release-1.yml')).to eq(true)
     end
   end
 

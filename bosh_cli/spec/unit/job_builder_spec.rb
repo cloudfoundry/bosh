@@ -362,37 +362,6 @@ describe Bosh::Cli::JobBuilder do
     builder2.version.should == builder2.fingerprint
   end
 
-  it 'whines on attempt to create final build if not matched ' +
-    'by existing final or dev build' do
-    add_templates('foo', 'bar', 'baz')
-    add_monit('foo')
-
-    blobstore = double('blobstore')
-
-    final_builder = new_builder('foo', [], ['bar', 'baz'],
-                                [], true, true, blobstore)
-    lambda {
-      final_builder.build
-    }.should raise_error(Bosh::Cli::CliError)
-
-    dev_builder = new_builder('foo', [], ['bar', 'baz'],
-                              [], true, false, blobstore)
-    dev_builder.build
-
-    final_builder2 = new_builder('foo', [], ['bar', 'baz'],
-                                 [], true, true, blobstore)
-    blobstore.should_receive(:create)
-    final_builder2.build
-
-    add_templates('foo', 'bzz')
-    final_builder3 = new_builder('foo', [], ['bar', 'baz', 'bzz'],
-                                 [], true, true, blobstore)
-
-    lambda {
-      final_builder3.build
-    }.should raise_error(Bosh::Cli::CliError)
-  end
-
   it 'allows template subdirectories' do
     add_templates('foo', 'foo/bar', 'bar/baz')
     add_monit('foo')

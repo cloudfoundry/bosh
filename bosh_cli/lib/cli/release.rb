@@ -61,6 +61,11 @@ module Bosh::Cli
 
     def has_blobstore_secret?
       bs = @private_config["blobstore"]
+
+      # Add special handling for local blobstore which should not need need credentials
+      provider = @final_config['blobstore']['provider']
+      return true if provider == 'local'
+
       has_legacy_secret? ||
         has_blobstore_secrets?(bs, "atmos", "secret") ||
         has_blobstore_secrets?(bs, "simple", "user", "password") ||

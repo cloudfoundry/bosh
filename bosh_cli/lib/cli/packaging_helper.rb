@@ -131,14 +131,6 @@ module Bosh::Cli
     end
 
     def generate_tarball
-      if final?
-        err_message = 'No matching build found for ' +
-            "`#{@name}' #{@artefact_type}.\n" +
-            "Please consider creating a dev release first.\n" +
-            "The fingerprint is `#{fingerprint}'."
-        err(err_message)
-      end
-
       version = fingerprint
       tmp_file = Tempfile.new(name)
 
@@ -157,7 +149,11 @@ module Bosh::Cli
         'version' => version
       }
 
-      unless dry_run?
+      if final?
+        @final_index.add_version(fingerprint, item, tmp_file.path)
+        @tarball_path = @final_index.filename(version)
+      elsif dry_run?
+      else
         @dev_index.add_version(fingerprint, item, tmp_file.path)
         @tarball_path = @dev_index.filename(version)
       end
