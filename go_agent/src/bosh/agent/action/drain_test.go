@@ -9,6 +9,7 @@ import (
 	. "bosh/agent/action"
 	boshas "bosh/agent/applier/applyspec"
 	fakeas "bosh/agent/applier/applyspec/fakes"
+	boshdrain "bosh/agent/drain"
 	fakedrain "bosh/agent/drain/fakes"
 	fakejobsuper "bosh/jobsupervisor/fakes"
 	fakenotif "bosh/notification/fakes"
@@ -33,10 +34,6 @@ func init() {
 		})
 
 		BeforeEach(func() {
-			currentSpec := boshas.V1ApplySpec{}
-			currentSpec.JobSpec.Template = "foo"
-			specService.Spec = currentSpec
-
 			drainScriptProvider.NewDrainScriptDrainScript.ExistsBool = true
 		})
 
@@ -52,6 +49,14 @@ func init() {
 			act := func() (int, error) { return action.Run(DrainTypeUpdate, boshas.V1ApplySpec{}) }
 
 			Context("when current agent has a job spec template", func() {
+				var currentSpec boshas.V1ApplySpec
+
+				BeforeEach(func() {
+					currentSpec = boshas.V1ApplySpec{}
+					currentSpec.JobSpec.Template = "foo"
+					specService.Spec = currentSpec
+				})
+
 				It("unmonitors services so that drain scripts can kill processes on their own", func() {
 					value, err := act()
 					Expect(err).ToNot(HaveOccurred())
@@ -87,9 +92,9 @@ func init() {
 
 								Expect(drainScriptProvider.NewDrainScriptTemplateName).To(Equal("foo"))
 								Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeTrue())
-								Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.JobChange()).To(Equal("job_new"))
-								Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.HashChange()).To(Equal("hash_new"))
-								Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.UpdatedPackages()).To(Equal([]string{"foo"}))
+
+								params := drainScriptProvider.NewDrainScriptDrainScript.RunParams
+								Expect(params).To(Equal(boshdrain.NewUpdateDrainParams(currentSpec, newSpec)))
 							})
 
 							Context("when drain script runs and errs", func() {
@@ -156,6 +161,14 @@ func init() {
 			act := func() (int, error) { return action.Run(DrainTypeShutdown) }
 
 			Context("when current agent has a job spec template", func() {
+				var currentSpec boshas.V1ApplySpec
+
+				BeforeEach(func() {
+					currentSpec = boshas.V1ApplySpec{}
+					currentSpec.JobSpec.Template = "foo"
+					specService.Spec = currentSpec
+				})
+
 				It("unmonitors services so that drain scripts can kill processes on their own", func() {
 					value, err := act()
 					Expect(err).ToNot(HaveOccurred())
@@ -175,16 +188,31 @@ func init() {
 
 					Context("when job shutdown notification succeeds", func() {
 						Context("when drain script exists", func() {
-							It("runs drain script with job_shutdown param", func() {
-								value, err := act()
+							It("runs drain script with job_shutdown param passing no apply spec", func() {
+								value, err := action.Run(DrainTypeShutdown)
 								Expect(err).ToNot(HaveOccurred())
 								Expect(value).To(Equal(1))
 
 								Expect(drainScriptProvider.NewDrainScriptTemplateName).To(Equal("foo"))
 								Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeTrue())
-								Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.JobChange()).To(Equal("job_shutdown"))
-								Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.HashChange()).To(Equal("hash_unchanged"))
-								Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.UpdatedPackages()).To(Equal([]string{}))
+
+								params := drainScriptProvider.NewDrainScriptDrainScript.RunParams
+								Expect(params).To(Equal(boshdrain.NewShutdownDrainParams(currentSpec, nil)))
+							})
+
+							It("runs drain script with job_shutdown param passing in first apply spec", func() {
+								newSpec := boshas.V1ApplySpec{}
+								newSpec.JobSpec.Template = "fake-updated-template"
+
+								value, err := action.Run(DrainTypeShutdown, newSpec)
+								Expect(err).ToNot(HaveOccurred())
+								Expect(value).To(Equal(1))
+
+								Expect(drainScriptProvider.NewDrainScriptTemplateName).To(Equal("foo"))
+								Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeTrue())
+
+								params := drainScriptProvider.NewDrainScriptDrainScript.RunParams
+								Expect(params).To(Equal(boshdrain.NewShutdownDrainParams(currentSpec, &newSpec)))
 							})
 
 							Context("when drain script runs and errs", func() {
@@ -253,6 +281,14 @@ func init() {
 			act := func() (int, error) { return action.Run(DrainTypeStatus) }
 
 			Context("when current agent has a job spec template", func() {
+				var currentSpec boshas.V1ApplySpec
+
+				BeforeEach(func() {
+					currentSpec = boshas.V1ApplySpec{}
+					currentSpec.JobSpec.Template = "foo"
+					specService.Spec = currentSpec
+				})
+
 				It("unmonitors services so that drain scripts can kill processes on their own", func() {
 					value, err := act()
 					Expect(err).ToNot(HaveOccurred())
@@ -271,16 +307,31 @@ func init() {
 
 				Context("when unmonitoring services succeeds", func() {
 					Context("when drain script exists", func() {
-						It("runs drain script with job_check_status param", func() {
-							value, err := act()
+						It("runs drain script with job_check_status param passing no apply spec", func() {
+							value, err := action.Run(DrainTypeStatus)
 							Expect(err).ToNot(HaveOccurred())
 							Expect(value).To(Equal(1))
 
 							Expect(drainScriptProvider.NewDrainScriptTemplateName).To(Equal("foo"))
 							Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeTrue())
-							Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.JobChange()).To(Equal("job_check_status"))
-							Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.HashChange()).To(Equal("hash_unchanged"))
-							Expect(drainScriptProvider.NewDrainScriptDrainScript.RunParams.UpdatedPackages()).To(Equal([]string{}))
+
+							params := drainScriptProvider.NewDrainScriptDrainScript.RunParams
+							Expect(params).To(Equal(boshdrain.NewStatusDrainParams(currentSpec, nil)))
+						})
+
+						It("runs drain script with job_check_status param passing in first apply spec", func() {
+							newSpec := boshas.V1ApplySpec{}
+							newSpec.JobSpec.Template = "fake-updated-template"
+
+							value, err := action.Run(DrainTypeStatus, newSpec)
+							Expect(err).ToNot(HaveOccurred())
+							Expect(value).To(Equal(1))
+
+							Expect(drainScriptProvider.NewDrainScriptTemplateName).To(Equal("foo"))
+							Expect(drainScriptProvider.NewDrainScriptDrainScript.DidRun).To(BeTrue())
+
+							params := drainScriptProvider.NewDrainScriptDrainScript.RunParams
+							Expect(params).To(Equal(boshdrain.NewStatusDrainParams(currentSpec, &newSpec)))
 						})
 
 						Context("when drain script runs and errs", func() {

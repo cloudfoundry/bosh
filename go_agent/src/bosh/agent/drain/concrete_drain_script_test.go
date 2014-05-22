@@ -15,11 +15,17 @@ type fakeDrainParams struct {
 	jobChange       string
 	hashChange      string
 	updatedPackages []string
+
+	jobState     string
+	jobNextState string
 }
 
 func (p fakeDrainParams) JobChange() (change string)       { return p.jobChange }
 func (p fakeDrainParams) HashChange() (change string)      { return p.hashChange }
 func (p fakeDrainParams) UpdatedPackages() (pkgs []string) { return p.updatedPackages }
+
+func (p fakeDrainParams) JobState() (string, error)     { return p.jobState, nil }
+func (p fakeDrainParams) JobNextState() (string, error) { return p.jobNextState, nil }
 
 func buildDrainScript(commandResult fakesys.FakeCmdResult) (
 	drainScript ConcreteDrainScript,
@@ -40,6 +46,7 @@ func buildDrainScript(commandResult fakesys.FakeCmdResult) (
 
 	return
 }
+
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("run args", func() {

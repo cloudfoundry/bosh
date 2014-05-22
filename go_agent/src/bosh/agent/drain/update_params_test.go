@@ -8,10 +8,9 @@ import (
 	. "bosh/agent/drain"
 )
 
-func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("update packages", func() {
-
+var _ = Describe("updateDrainParams", func() {
+	Describe("UpdatedPackages", func() {
+		It("returns list of packages that changed or got added", func() {
 			oldPkgs := map[string]boshas.PackageSpec{
 				"foo": boshas.PackageSpec{
 					Name: "foo",
@@ -22,6 +21,7 @@ func init() {
 					Sha1: "bar-sha1",
 				},
 			}
+
 			newPkgs := map[string]boshas.PackageSpec{
 				"foo": boshas.PackageSpec{
 					Name: "foo",
@@ -40,6 +40,7 @@ func init() {
 			oldSpec := boshas.V1ApplySpec{
 				PackageSpecs: oldPkgs,
 			}
+
 			newSpec := boshas.V1ApplySpec{
 				PackageSpecs: newPkgs,
 			}
@@ -49,4 +50,28 @@ func init() {
 			Expect(params.UpdatedPackages()).To(Equal([]string{"foo", "baz"}))
 		})
 	})
-}
+
+	Describe("JobState", func() {
+		It("returns JSON serialized current spec that only includes persistent disk", func() {
+			oldSpec := boshas.V1ApplySpec{PersistentDisk: 200}
+			newSpec := boshas.V1ApplySpec{PersistentDisk: 301}
+			params := NewUpdateDrainParams(oldSpec, newSpec)
+
+			state, err := params.JobState()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state).To(Equal(`{"persistent_disk":200}`))
+		})
+	})
+
+	Describe("JobNextState", func() {
+		It("returns JSON serialized future spec that only includes persistent disk", func() {
+			oldSpec := boshas.V1ApplySpec{PersistentDisk: 200}
+			newSpec := boshas.V1ApplySpec{PersistentDisk: 301}
+			params := NewUpdateDrainParams(oldSpec, newSpec)
+
+			state, err := params.JobNextState()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state).To(Equal(`{"persistent_disk":301}`))
+		})
+	})
+})
