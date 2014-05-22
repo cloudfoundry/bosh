@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func Test_devicepathresolver(t *testing.T) {
+func TestDevicepathresolver(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "ALL devicepathresolver Suite")
+	RunSpecs(t, "Devicepathresolver Suite")
 }

@@ -10,14 +10,13 @@ import (
 	boshmodels "bosh/agent/applier/models"
 	boshcomp "bosh/agent/compiler"
 	fakecomp "bosh/agent/compiler/fakes"
-	boshassert "bosh/assert"
 )
 
 func getCompileActionArguments() (blobID, sha1, name, version string, deps boshcomp.Dependencies) {
-	blobID = "blobstore_id"
-	sha1 = "sha1"
-	name = "pkg_name"
-	version = "pkg_version"
+	blobID = "fake-blobstore-id"
+	sha1 = "fake-sha1"
+	name = "fake-package-name"
+	version = "fake-package-version"
 	deps = boshcomp.Dependencies{
 		"first_dep": boshcomp.Package{
 			BlobstoreID: "first_dep_blobstore_id",
@@ -35,43 +34,44 @@ func getCompileActionArguments() (blobID, sha1, name, version string, deps boshc
 	return
 }
 
-func buildCompilePackageAction() (compiler *fakecomp.FakeCompiler, action CompilePackageAction) {
-	compiler = fakecomp.NewFakeCompiler()
-	action = NewCompilePackage(compiler)
-	return
-}
-func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("compile package should be asynchronous", func() {
-			_, action := buildCompilePackageAction()
-			Expect(action.IsAsynchronous()).To(BeTrue())
-		})
+var _ = Describe("CompilePackageAction", func() {
+	var (
+		compiler *fakecomp.FakeCompiler
+		action   CompilePackageAction
+	)
 
-		It("is not persistent", func() {
-			_, action := buildCompilePackageAction()
-			Expect(action.IsPersistent()).To(BeFalse())
-		})
+	BeforeEach(func() {
+		compiler = fakecomp.NewFakeCompiler()
+		action = NewCompilePackage(compiler)
+	})
 
+	It("is asynchronous", func() {
+		Expect(action.IsAsynchronous()).To(BeTrue())
+	})
+
+	It("is not persistent", func() {
+		Expect(action.IsPersistent()).To(BeFalse())
+	})
+
+	Describe("Run", func() {
 		It("compile package compiles the package abd returns blob id", func() {
-
-			compiler, action := buildCompilePackageAction()
 			compiler.CompileBlobID = "my-blob-id"
 			compiler.CompileSha1 = "some sha1"
 
-			blobID, sha1, name, version, deps := getCompileActionArguments()
-
 			expectedPkg := boshcomp.Package{
-				BlobstoreID: blobID,
-				Sha1:        sha1,
-				Name:        name,
-				Version:     version,
+				BlobstoreID: "fake-blobstore-id",
+				Sha1:        "fake-sha1",
+				Name:        "fake-package-name",
+				Version:     "fake-package-version",
 			}
-			expectedJSON := map[string]interface{}{
+
+			expectedValue := map[string]interface{}{
 				"result": map[string]string{
 					"blobstore_id": "my-blob-id",
 					"sha1":         "some sha1",
 				},
 			}
+
 			expectedDeps := []boshmodels.Package{
 				{
 					Name:    "first_dep",
@@ -91,25 +91,20 @@ func init() {
 				},
 			}
 
-			val, err := action.Run(blobID, sha1, name, version, deps)
-
+			value, err := action.Run(getCompileActionArguments())
 			Expect(err).ToNot(HaveOccurred())
+			Expect(value).To(Equal(expectedValue))
+
 			Expect(expectedPkg).To(Equal(compiler.CompilePkg))
-
 			Expect(expectedDeps).To(Equal(compiler.CompileDeps))
-
-			boshassert.MatchesJSONMap(GinkgoT(), val, expectedJSON)
 		})
-		It("compile package errs when compile fails", func() {
 
-			compiler, action := buildCompilePackageAction()
+		It("returns error when compile fails", func() {
 			compiler.CompileErr = errors.New("fake-compile-error")
 
-			blobID, sha1, name, version, deps := getCompileActionArguments()
-
-			_, err := action.Run(blobID, sha1, name, version, deps)
+			_, err := action.Run(getCompileActionArguments())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fake-compile-error"))
 		})
 	})
-}
+})

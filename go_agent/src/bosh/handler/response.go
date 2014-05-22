@@ -31,5 +31,4 @@ func NewExceptionResponse(msg string, args ...interface{}) (resp Response) {
 	return r
 }
 
-func (r exceptionResponse) responseInterfaceFunc() {
-}
+func (r exceptionResponse) responseInterfaceFunc() {}
