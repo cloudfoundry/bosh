@@ -24,8 +24,8 @@ module Bosh::Director
         before { subject.stub(shutting_down?: true) }
 
         context 'with static drain' do
-          it 'sends shutdown and then stops services' do
-            expect(agent_client).to receive(:drain).with('shutdown').and_return(1).ordered
+          it 'sends shutdown with next apply spec and then stops services' do
+            expect(agent_client).to receive(:drain).with('shutdown', 'fake-spec').and_return(1).ordered
             expect(subject).to receive(:sleep).with(1).ordered
             expect(agent_client).to receive(:stop).with(no_args).ordered
             subject.stop
@@ -33,8 +33,8 @@ module Bosh::Director
         end
 
         context 'with dynamic drain' do
-          it 'sends shutdown and then stops services' do
-            expect(agent_client).to receive(:drain).with('shutdown').and_return(-2).ordered
+          it 'sends shutdown with next apply spec and then stops services' do
+            expect(agent_client).to receive(:drain).with('shutdown', 'fake-spec').and_return(-2).ordered
             expect(subject).to receive(:wait_for_dynamic_drain).with(-2).ordered
             expect(agent_client).to receive(:stop).with(no_args).ordered
             subject.stop

@@ -9,11 +9,12 @@ module Bosh::Director
     end
 
     def stop
-      drain_time = if shutting_down?
-        @agent_client.drain('shutdown')
-      else
-        @agent_client.drain('update', @instance.spec)
-      end
+      drain_type = shutting_down? ? 'shutdown' : 'update'
+
+      # Apply spec might change after shutdown drain (unlike update drain)
+      # because instance's VM could be reconfigured.
+      # Drain script can still capture intent from non-final apply spec.
+      drain_time = @agent_client.drain(drain_type, @instance.spec)
 
       if drain_time > 0
         sleep(drain_time)
