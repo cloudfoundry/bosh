@@ -121,7 +121,6 @@ describe Bosh::AwsCloud::InstanceManager do
       expect(aws_client).to receive(:request_spot_instances) do |spot_request|
         expect(spot_request[:spot_price]).to eq("0.15")
         expect(spot_request[:instance_count]).to eq(1)
-        #expect(spot_request[:valid_until]).to  #TODO - not sure how to test this
         expect(spot_request[:launch_specification]).to eq({ 
           :image_id=>"stemcell-id", 
           :key_name=>"bar", 
@@ -179,6 +178,9 @@ describe Bosh::AwsCloud::InstanceManager do
       # Override total_spot_instance_request_wait_time to be "unit test" speed
       allow(instance_manager).to receive(:total_spot_instance_request_wait_time).and_return(0.1)
 
+      # When erroring, should cancel any pending spot requests
+      expect(aws_client).to receive(:cancel_spot_instance_requests)
+
       start_waiting = Time.now
 
       expect {
@@ -190,22 +192,6 @@ describe Bosh::AwsCloud::InstanceManager do
       # Exact duration will vary, but anything around 0.1s is correct
       expect(duration).to be > 0.08
       expect(duration).to be < 0.12
-    end
-
-    # We want AWS to expire the spot request shortly after BOSH has given up waiting for it to be fulfilled
-    it "should set the spot instance request to be valid until just after BOSH has finished waiting for it to become active" do
-      Subnet = Struct.new(:subnet_id)
-      instance_params = {:image_id => "stemcell-id", :key_name => "some-key-name", :instance_type => "m1.small", :user_data => "", :availability_zone => "eu-west-1c", :subnet => Subnet.new("subnet=12345"), :private_ip_address => "10.0.1.42" }
-      security_group_ids = ["sg-12345"]
-
-      instance_manager = described_class.new(region, registry, availability_zone_selector)
-      
-      # Override valid_until date calculation to specify a static value we can check for below
-      allow(instance_manager).to receive(:calculate_spot_instance_valid_until).and_return("2014-05-20 10:42:00Z")
-
-      spot_request_spec = instance_manager.create_spot_request_spec(instance_params, security_group_ids, 0.15)
-
-      expect(spot_request_spec[:valid_until]).to eq("2014-05-20 10:42:00Z")
     end
 
     it "should retry checking spot instance request state when AWS::EC2::Errors::InvalidSpotInstanceRequestID::NotFound raised" do
@@ -229,6 +215,9 @@ describe Bosh::AwsCloud::InstanceManager do
       expect(aws_client).to receive(:describe_spot_instance_requests) \
         .with({:spot_instance_request_ids=>["sir-12345c"]}) \
         .and_return({ :spot_instance_request_set => [ {:state => "active", :instance_id=>"i-12345678"} ] })
+
+      #Shouldn't cancel spot request when things succeed
+      expect(aws_client).to_not receive(:cancel_spot_instance_requests)
 
       expect {
         instance_manager.wait_for_spot_instance_request_to_be_active(spot_instance_requests)
@@ -254,6 +243,9 @@ describe Bosh::AwsCloud::InstanceManager do
 
       instance_manager = described_class.new(region, registry, availability_zone_selector)
 
+      # When erroring, should cancel any pending spot requests
+      expect(aws_client).to receive(:cancel_spot_instance_requests)
+
       expect {
         instance_manager.wait_for_spot_instance_request_to_be_active(spot_instance_requests)
       }.to raise_error(Bosh::Clouds::VMCreationFailed)
@@ -278,6 +270,9 @@ describe Bosh::AwsCloud::InstanceManager do
 
       instance_manager = described_class.new(region, registry, availability_zone_selector)
 
+      # When erroring, should cancel any pending spot requests
+      expect(aws_client).to receive(:cancel_spot_instance_requests)
+      
       expect {
         instance_manager.wait_for_spot_instance_request_to_be_active(spot_instance_requests)
       }.to raise_error(Bosh::Clouds::VMCreationFailed)
