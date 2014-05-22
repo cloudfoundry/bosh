@@ -157,14 +157,70 @@ describe Bosh::AwsCloud::InstanceManager do
 
     end
 
-    it "should retry checking spot instance request state when AWS::EC2::Errors::InvalidSpotInstanceRequestID::NotFound raised" do
+    it "should wait total_spot_instance_request_wait_time() seconds for a SPOT instance to be started, and then fail" do
       spot_instance_requests = {
-        :spot_instance_request_set => [ { :spot_instance_request_id=>"sir-12345c", :other_params_here => "which aren't used" }], 
+        :spot_instance_request_set => [ { :spot_instance_request_id=>"sir-12345c", :other_params_here => "which aren't used" } ], 
         :request_id => "request-id-12345"
       }
       
       allow(region).to receive(:client).and_return(aws_client)
       allow(region).to receive(:instances).and_return( {'i-12345678' => instance } )
+      
+      expect(aws_client).to receive(:describe_spot_instance_requests) \
+        .exactly(10).times
+        .with({:spot_instance_request_ids=>["sir-12345c"]}) \
+        .and_return({ :spot_instance_request_set => [{ \
+                        :state => "open" \
+                      }] \
+                    })
+
+      instance_manager = described_class.new(region, registry, availability_zone_selector)
+
+      # Override total_spot_instance_request_wait_time to be "unit test" speed
+      allow(instance_manager).to receive(:total_spot_instance_request_wait_time).and_return(0.1)
+
+      start_waiting = Time.now
+
+      expect {
+        instance_manager.wait_for_spot_instance_request_to_be_active(spot_instance_requests)
+      }.to raise_error(Bosh::Clouds::VMCreationFailed)
+
+      duration = Time.now - start_waiting
+
+      # Exact duration will vary, but anything around 0.1s is correct
+      expect(duration).to be > 0.08
+      expect(duration).to be < 0.12
+    end
+
+    # We want AWS to expire the spot request shortly after BOSH has given up waiting for it to be fulfilled
+    it "should set the spot instance request to be valid until just after BOSH has finished waiting for it to become active" do
+      Subnet = Struct.new(:subnet_id)
+      instance_params = {:image_id => "stemcell-id", :key_name => "some-key-name", :instance_type => "m1.small", :user_data => "", :availability_zone => "eu-west-1c", :subnet => Subnet.new("subnet=12345"), :private_ip_address => "10.0.1.42" }
+      security_group_ids = ["sg-12345"]
+
+      instance_manager = described_class.new(region, registry, availability_zone_selector)
+      
+      # Override valid_until date calculation to specify a static value we can check for below
+      allow(instance_manager).to receive(:calculate_spot_instance_valid_until).and_return("2014-05-20 10:42:00Z")
+
+      spot_request_spec = instance_manager.create_spot_request_spec(instance_params, security_group_ids, 0.15)
+
+      expect(spot_request_spec[:valid_until]).to eq("2014-05-20 10:42:00Z")
+    end
+
+    it "should retry checking spot instance request state when AWS::EC2::Errors::InvalidSpotInstanceRequestID::NotFound raised" do
+      spot_instance_requests = {
+        :spot_instance_request_set => [ { :spot_instance_request_id=>"sir-12345c", :other_params_here => "which aren't used" }], 
+        :request_id => "request-id-12345"
+      }
+
+      instance_manager = described_class.new(region, registry, availability_zone_selector)
+      
+      allow(region).to receive(:client).and_return(aws_client)
+      allow(region).to receive(:instances).and_return( {'i-12345678' => instance } )
+
+      # Override total_spot_instance_request_wait_time to be "unit test" speed
+      allow(instance_manager).to receive(:total_spot_instance_request_wait_time).and_return(0.1)
 
       #Simulate first recieving an error when asking for spot request state
       expect(aws_client).to receive(:describe_spot_instance_requests) \
@@ -174,11 +230,57 @@ describe Bosh::AwsCloud::InstanceManager do
         .with({:spot_instance_request_ids=>["sir-12345c"]}) \
         .and_return({ :spot_instance_request_set => [ {:state => "active", :instance_id=>"i-12345678"} ] })
 
+      expect {
+        instance_manager.wait_for_spot_instance_request_to_be_active(spot_instance_requests)
+      }.to_not raise_error
+    end
+
+    it "should fail VM creation when spot bid price is below market price" do
+      spot_instance_requests = {
+        :spot_instance_request_set => [ { :spot_instance_request_id=>"sir-12345c", :other_params_here => "which aren't used" } ], 
+        :request_id => "request-id-12345"
+      }
+      
+      allow(region).to receive(:client).and_return(aws_client)
+      allow(region).to receive(:instances).and_return( {'i-12345678' => instance } )
+      
+      expect(aws_client).to receive(:describe_spot_instance_requests) \
+        .with({:spot_instance_request_ids=>["sir-12345c"]}) \
+        .and_return({ :spot_instance_request_set => [{ \
+                        :instance_id=>"i-12345678", \
+                        :state => "open", :status => { :code => "price-too-low" } \
+                      }] \
+                    })
+
       instance_manager = described_class.new(region, registry, availability_zone_selector)
 
       expect {
         instance_manager.wait_for_spot_instance_request_to_be_active(spot_instance_requests)
-      }.to_not raise_error
+      }.to raise_error(Bosh::Clouds::VMCreationFailed)
+    end
+
+    it "should fail VM creation when spot request status == failed" do
+      spot_instance_requests = {
+        :spot_instance_request_set => [ { :spot_instance_request_id=>"sir-12345c", :other_params_here => "which aren't used" } ], 
+        :request_id => "request-id-12345"
+      }
+      
+      allow(region).to receive(:client).and_return(aws_client)
+      allow(region).to receive(:instances).and_return( {'i-12345678' => instance } )
+      
+      expect(aws_client).to receive(:describe_spot_instance_requests) \
+        .with({:spot_instance_request_ids=>["sir-12345c"]}) \
+        .and_return({ :spot_instance_request_set => [{ \
+                        :instance_id=>"i-12345678", \
+                        :state => "failed" \
+                      }] \
+                    })
+
+      instance_manager = described_class.new(region, registry, availability_zone_selector)
+
+      expect {
+        instance_manager.wait_for_spot_instance_request_to_be_active(spot_instance_requests)
+      }.to raise_error(Bosh::Clouds::VMCreationFailed)
     end
 
     it "should retry creating the VM when AWS::EC2::Errors::InvalidIPAddress::InUse raised" do
