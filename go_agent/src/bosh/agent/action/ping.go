@@ -18,7 +18,7 @@ func (a PingAction) IsPersistent() bool {
 	return false
 }
 
-func (a PingAction) Run() (interface{}, error) {
+func (a PingAction) Run() (string, error) {
 	return "pong", nil
 }
 

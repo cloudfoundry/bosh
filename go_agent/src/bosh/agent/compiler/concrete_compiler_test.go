@@ -3,6 +3,7 @@ package compiler_test
 import (
 	"errors"
 	"os"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -135,12 +136,26 @@ func init() {
 				Expect(err.Error()).To(ContainSubstring("fake-keep-only-error"))
 			})
 
-			It("fetches source package from blobstore", func() {
+			It("fetches source package from blobstore without checking SHA1 by default because of Director bug", func() {
 				_, _, err := compiler.Compile(pkg, pkgDeps)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(blobstore.GetBlobIDs[0]).To(Equal("blobstore_id"))
-				Expect(blobstore.GetFingerprints[0]).To(Equal("sha1"))
+				Expect(blobstore.GetFingerprints[0]).To(Equal(""))
+			})
+
+			It("fetches source package from blobstore and checks SHA1 by default in future", func() {
+				_, _, err := compiler.Compile(pkg, pkgDeps)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(blobstore.GetBlobIDs[0]).To(Equal("blobstore_id"))
+
+				// Wait for some time fixing default SHA1 check to stay backwards compatible
+				fixDeadline := time.Date(2014, time.September, 22, 6, 0, 0, 0, time.UTC)
+
+				if time.Now().After(fixDeadline) {
+					Expect(blobstore.GetFingerprints[0]).To(Equal("sha1"))
+				}
 			})
 
 			It("returns an error if removing compile target directory during uncompression fails", func() {

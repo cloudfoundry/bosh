@@ -343,3 +343,9 @@ builds:
       ZDFiNjgxOWQwZDYxMTg0NmI3ZDczMTk4NmQyMzIyYjRlMmViZDYzYw==
     sha1: !binary |-
       OGY5MjZjNWViOGViNmM3MDFlZjEzMGJkZDM0MTg0ZTc4MmQ2OWUwOA==
+  !binary "ODBkZTNmNzZjZjFkOGRkZGY4Nzc2MGQyNzY5ODlkMjkwMzViYzE2YQ==":
+    blobstore_id: db49ee7f-48fd-45f0-b3ab-feee3964346e
+    version: !binary |-
+      ODBkZTNmNzZjZjFkOGRkZGY4Nzc2MGQyNzY5ODlkMjkwMzViYzE2YQ==
+    sha1: !binary |-
+      ZTQwYzg5ZDhiZTg5ZGU2YmYyYjg1YTBkYjQzOGJmODg5NjMwMTI2Ng==

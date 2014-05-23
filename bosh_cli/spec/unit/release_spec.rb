@@ -166,6 +166,11 @@ describe Bosh::Cli::Release do
       r.has_blobstore_secret?.should be(true)
     end
 
+    it 'should not use credentials for a local blobstore' do
+      r = Bosh::Cli::Release.new(spec_asset("config/local"))
+      expect(r.has_blobstore_secret?).to eq(true)
+    end
+
     it "should not throw an error when merging empty secrets into options" do
       r = Bosh::Cli::Release.new(spec_asset("config/local"))
       opts = {

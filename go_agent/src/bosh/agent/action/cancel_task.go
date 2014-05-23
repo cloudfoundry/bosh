@@ -24,10 +24,10 @@ func (a CancelTaskAction) IsPersistent() bool {
 	return false
 }
 
-func (a CancelTaskAction) Run(taskID string) (interface{}, error) {
+func (a CancelTaskAction) Run(taskID string) (string, error) {
 	task, found := a.taskService.FindTaskWithID(taskID)
 	if !found {
-		return nil, bosherr.New("Task with id %s could not be found", taskID)
+		return "", bosherr.New("Task with id %s could not be found", taskID)
 	}
 
 	return "canceled", task.Cancel()

@@ -14,9 +14,7 @@ type sha1Verifiable struct {
 }
 
 func NewSha1Verifiable(blobstore Blobstore) Blobstore {
-	return sha1Verifiable{
-		blobstore: blobstore,
-	}
+	return sha1Verifiable{blobstore: blobstore}
 }
 
 func (b sha1Verifiable) Get(blobID, fingerprint string) (fileName string, err error) {

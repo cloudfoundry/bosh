@@ -66,15 +66,20 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 
 	drainScript := a.drainScriptProvider.NewDrainScript(currentSpec.JobSpec.Template)
 
+	var newSpec *boshas.V1ApplySpec
 	var params boshdrain.DrainScriptParams
+
+	if len(newSpecs) > 0 {
+		newSpec = &newSpecs[0]
+	}
 
 	switch drainType {
 	case DrainTypeUpdate:
-		if len(newSpecs) == 0 {
+		if newSpec == nil {
 			return 0, bosherr.New("Drain update requires new spec")
 		}
 
-		params = boshdrain.NewUpdateDrainParams(currentSpec, newSpecs[0])
+		params = boshdrain.NewUpdateDrainParams(currentSpec, *newSpec)
 
 	case DrainTypeShutdown:
 		err = a.notifier.NotifyShutdown()
@@ -82,10 +87,10 @@ func (a DrainAction) Run(drainType DrainType, newSpecs ...boshas.V1ApplySpec) (i
 			return 0, bosherr.WrapError(err, "Notifying shutdown")
 		}
 
-		params = boshdrain.NewShutdownDrainParams()
+		params = boshdrain.NewShutdownDrainParams(currentSpec, newSpec)
 
 	case DrainTypeStatus:
-		params = boshdrain.NewStatusDrainParams()
+		params = boshdrain.NewStatusDrainParams(currentSpec, newSpec)
 	}
 
 	if !drainScript.Exists() {

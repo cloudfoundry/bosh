@@ -9,12 +9,11 @@ type updateDrainParams struct {
 	newSpec boshas.V1ApplySpec
 }
 
-func NewUpdateDrainParams(oldSpec, newSpec boshas.V1ApplySpec) (params updateDrainParams) {
-	params = updateDrainParams{
+func NewUpdateDrainParams(oldSpec, newSpec boshas.V1ApplySpec) updateDrainParams {
+	return updateDrainParams{
 		oldSpec: oldSpec,
 		newSpec: newSpec,
 	}
-	return
 }
 
 func (p updateDrainParams) JobChange() string {
@@ -50,4 +49,12 @@ func (p updateDrainParams) UpdatedPackages() (pkgs []string) {
 		}
 	}
 	return
+}
+
+func (p updateDrainParams) JobState() (string, error) {
+	return newPresentedJobState(&p.oldSpec).MarshalToJSONString()
+}
+
+func (p updateDrainParams) JobNextState() (string, error) {
+	return newPresentedJobState(&p.newSpec).MarshalToJSONString()
 }

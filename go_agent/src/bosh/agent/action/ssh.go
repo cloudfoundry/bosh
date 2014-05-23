@@ -42,7 +42,7 @@ type SshParams struct {
 	PublicKey string `json:"public_key"`
 }
 
-func (a SshAction) Run(cmd string, params SshParams) (value interface{}, err error) {
+func (a SshAction) Run(cmd string, params SshParams) (value map[string]string, err error) {
 	switch cmd {
 	case "setup":
 		return a.setupSsh(params)
@@ -54,7 +54,7 @@ func (a SshAction) Run(cmd string, params SshParams) (value interface{}, err err
 	return
 }
 
-func (a SshAction) setupSsh(params SshParams) (value interface{}, err error) {
+func (a SshAction) setupSsh(params SshParams) (value map[string]string, err error) {
 	boshSshPath := filepath.Join(a.dirProvider.BaseDir(), "bosh_ssh")
 	err = a.platform.CreateUser(params.User, params.Password, boshSshPath)
 	if err != nil {
@@ -89,7 +89,7 @@ func (a SshAction) setupSsh(params SshParams) (value interface{}, err error) {
 	return
 }
 
-func (a SshAction) cleanupSsh(params SshParams) (value interface{}, err error) {
+func (a SshAction) cleanupSsh(params SshParams) (value map[string]string, err error) {
 	err = a.platform.DeleteEphemeralUsersMatching(params.UserRegex)
 	if err != nil {
 		err = bosherr.WrapError(err, "Ssh Cleanup: Deleting Ephemeral Users")

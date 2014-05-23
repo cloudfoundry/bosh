@@ -1,4 +1,5 @@
 ---
 blobstore:
-  provider: atmos
+  provider: local
   options:
+    blobstore_path: /tmp/bosh-integration-tests/blobstore

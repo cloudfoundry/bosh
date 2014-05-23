@@ -38,7 +38,7 @@ func (a FetchLogsAction) IsPersistent() bool {
 	return false
 }
 
-func (a FetchLogsAction) Run(logType string, filters []string) (value interface{}, err error) {
+func (a FetchLogsAction) Run(logType string, filters []string) (value map[string]string, err error) {
 	var logsDir string
 
 	switch logType {

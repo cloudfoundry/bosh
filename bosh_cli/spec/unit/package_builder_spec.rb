@@ -343,40 +343,6 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     expect(builder2.version).to_not eq(builder.version)
   end
 
-  it 'whines on attempt to create final build if not matched ' +
-    'by existing final or dev build' do
-    FileUtils.rm_rf(File.join(@release_dir, 'src_alt'))
-
-    add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
-    globs = %w(foo/**/* baz)
-
-    blobstore = double('blobstore')
-    blobstore.should_receive(:create).and_return('object_id')
-
-    final_builder = Bosh::Cli::PackageBuilder.new(
-      { 'name' => 'bar', 'files' => globs }, @release_dir, true, blobstore)
-    lambda {
-      final_builder.build
-    }.should raise_error(Bosh::Cli::CliError)
-
-    builder = make_builder('bar', globs)
-    builder.build
-
-    builder.version.should == builder.fingerprint
-
-    final_builder2 = Bosh::Cli::PackageBuilder.new(
-        { 'name' => 'bar', 'files' => globs }, @release_dir, true, blobstore)
-    final_builder2.build
-    final_builder2.version.should == final_builder.fingerprint
-
-    add_file('src', 'foo/foo15.rb')
-    final_builder3 = Bosh::Cli::PackageBuilder.new(
-      { 'name' => 'bar', 'files' => globs }, @release_dir, true, blobstore)
-    lambda {
-      final_builder3.build
-    }.should raise_error(Bosh::Cli::CliError)
-  end
-
   it 'includes dotfiles in a fingerprint' do
     add_files('src', %w(lib/1.rb lib/2.rb lib/README.txt README.2 README.md))
 

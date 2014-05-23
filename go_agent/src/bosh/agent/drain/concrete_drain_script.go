@@ -1,10 +1,11 @@
 package drain
 
 import (
-	bosherr "bosh/errors"
-	boshsys "bosh/system"
 	"strconv"
 	"strings"
+
+	bosherr "bosh/errors"
+	boshsys "bosh/system"
 )
 
 type ConcreteDrainScript struct {
@@ -45,6 +46,25 @@ func (script ConcreteDrainScript) Run(params DrainScriptParams) (int, error) {
 			"PATH": "/usr/sbin:/usr/bin:/sbin:/bin",
 		},
 	}
+
+	jobState, err := params.JobState()
+	if err != nil {
+		return 0, bosherr.WrapError(err, "Getting job state")
+	}
+
+	if jobState != "" {
+		command.Env["BOSH_JOB_STATE"] = jobState
+	}
+
+	jobNextState, err := params.JobNextState()
+	if err != nil {
+		return 0, bosherr.WrapError(err, "Getting job next state")
+	}
+
+	if jobNextState != "" {
+		command.Env["BOSH_JOB_NEXT_STATE"] = jobNextState
+	}
+
 	command.Args = append(command.Args, jobChange, hashChange)
 	command.Args = append(command.Args, updatedPkgs...)
 

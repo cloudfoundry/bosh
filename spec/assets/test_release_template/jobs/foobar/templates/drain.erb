@@ -3,6 +3,10 @@
 DRAIN_TYPE=<%= p('drain_type') %>
 DYNAMIC_DRAIN_WAIT1=<%= p('dynamic_drain_wait1') %>
 DYNAMIC_DRAIN_WAIT2=<%= p('dynamic_drain_wait2') %>
+
+# Save off job state
+env | grep BOSH > drain-job-state.log
+
 DRAIN_OUTPUT=drain-test.log
 
 case $DRAIN_TYPE in
@@ -15,7 +19,6 @@ case $DRAIN_TYPE in
 
     echo 0
   ;;
-
 
   dynamic)
     # echo timestamp (in seconds) to FLAG. When deployment finishes, we ssh to get
