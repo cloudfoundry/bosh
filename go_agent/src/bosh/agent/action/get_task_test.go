@@ -39,7 +39,10 @@ var _ = Describe("GetTask", func() {
 
 		taskValue, err := action.Run("fake-task-id")
 		Expect(err).ToNot(HaveOccurred())
-		boshassert.MatchesJSONString(GinkgoT(), taskValue, `{"agent_task_id":"fake-task-id","state":"running"}`)
+
+		// Check JSON key casing
+		boshassert.MatchesJSONString(GinkgoT(), taskValue,
+			`{"agent_task_id":"fake-task-id","state":"running"}`)
 	})
 
 	It("returns a failed task", func() {
@@ -51,8 +54,8 @@ var _ = Describe("GetTask", func() {
 
 		taskValue, err := action.Run("fake-task-id")
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(Equal("fake-task-error"))
-		boshassert.MatchesJSONString(GinkgoT(), taskValue, `null`)
+		Expect(err.Error()).To(Equal("Task fake-task-id result: fake-task-error"))
+		Expect(taskValue).To(BeNil())
 	})
 
 	It("returns a successful task", func() {
@@ -64,7 +67,7 @@ var _ = Describe("GetTask", func() {
 
 		taskValue, err := action.Run("fake-task-id")
 		Expect(err).ToNot(HaveOccurred())
-		boshassert.MatchesJSONString(GinkgoT(), taskValue, `"some-task-value"`)
+		Expect(taskValue).To(Equal("some-task-value"))
 	})
 
 	It("returns error when task is not found", func() {
