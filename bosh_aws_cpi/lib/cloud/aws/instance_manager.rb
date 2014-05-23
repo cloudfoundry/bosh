@@ -118,12 +118,12 @@ module Bosh::AwsCloud
               # Failure states+status.  If any of these occur we should give up, since waiting won't help
               if status[:state] == 'failed' 
                 @logger.error("VM spot instance creation failed: #{status.inspect}")
-                raise Bosh::Clouds::VMCreationFailed, "VM spot instance creation failed: #{status.inspect}"
+                raise Bosh::Clouds::VMCreationFailed.new(false), "VM spot instance creation failed: #{status.inspect}"
               end
               if status[:state] == 'open'
                 if status[:status] != nil and status[:status][:code] == "price-too-low"
                   @logger.error("Cannot create VM spot instance because bid price is too low: #{status.inspect}")
-                  raise Bosh::Clouds::VMCreationFailed, "VM spot instance creation failed because bid price is too low: #{status.inspect}"
+                  raise Bosh::Clouds::VMCreationFailed.new(false), "VM spot instance creation failed because bid price is too low: #{status.inspect}"
                 end
               end
               
