@@ -156,7 +156,7 @@ describe Bosh::AwsCloud::InstanceManager do
 
     end
 
-    it "should wait total_spot_instance_request_wait_time() seconds for a SPOT instance to be started, and then fail" do
+    it "should wait total_spot_instance_request_wait_time() seconds for a SPOT instance to be started, and then fail (but allow retries)" do
       spot_instance_requests = {
         :spot_instance_request_set => [ { :spot_instance_request_id=>"sir-12345c", :other_params_here => "which aren't used" } ], 
         :request_id => "request-id-12345"
@@ -185,7 +185,9 @@ describe Bosh::AwsCloud::InstanceManager do
 
       expect {
         instance_manager.wait_for_spot_instance_request_to_be_active(spot_instance_requests)
-      }.to raise_error(Bosh::Clouds::VMCreationFailed)
+      }.to raise_error(Bosh::Clouds::VMCreationFailed){ |error|
+        expect(error.ok_to_retry).to eq true
+      }
 
       duration = Time.now - start_waiting
 
@@ -224,7 +226,7 @@ describe Bosh::AwsCloud::InstanceManager do
       }.to_not raise_error
     end
 
-    it "should fail VM creation when spot bid price is below market price" do
+    it "should fail VM creation (no retries) when spot bid price is below market price" do
       spot_instance_requests = {
         :spot_instance_request_set => [ { :spot_instance_request_id=>"sir-12345c", :other_params_here => "which aren't used" } ], 
         :request_id => "request-id-12345"
@@ -248,10 +250,12 @@ describe Bosh::AwsCloud::InstanceManager do
 
       expect {
         instance_manager.wait_for_spot_instance_request_to_be_active(spot_instance_requests)
-      }.to raise_error(Bosh::Clouds::VMCreationFailed)
+      }.to raise_error(Bosh::Clouds::VMCreationFailed) { |error|
+        expect(error.ok_to_retry).to eq false
+      }
     end
 
-    it "should fail VM creation when spot request status == failed" do
+    it "should fail VM creation (no retries) when spot request status == failed" do
       spot_instance_requests = {
         :spot_instance_request_set => [ { :spot_instance_request_id=>"sir-12345c", :other_params_here => "which aren't used" } ], 
         :request_id => "request-id-12345"
@@ -275,7 +279,9 @@ describe Bosh::AwsCloud::InstanceManager do
       
       expect {
         instance_manager.wait_for_spot_instance_request_to_be_active(spot_instance_requests)
-      }.to raise_error(Bosh::Clouds::VMCreationFailed)
+      }.to raise_error(Bosh::Clouds::VMCreationFailed){ |error|
+        expect(error.ok_to_retry).to eq false
+      }
     end
 
     it "should retry creating the VM when AWS::EC2::Errors::InvalidIPAddress::InUse raised" do
