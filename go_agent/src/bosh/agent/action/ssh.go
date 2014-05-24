@@ -75,7 +75,6 @@ func (a SshAction) setupSsh(params SshParams) (value map[string]string, err erro
 	}
 
 	defaultIP, found := a.settings.GetDefaultIP()
-
 	if !found {
 		err = errors.New("No default ip could be found")
 		return
