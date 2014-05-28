@@ -20,7 +20,6 @@ daemon=yes
 guardian=no
 max-tcp-connections=256
 module-dir=/usr/local/lib
-allow-recursion-override=yes
 <% if_p('dns.recursor') do |recursor| %>
 recursor=<%= recursor %>
 <% end %>
