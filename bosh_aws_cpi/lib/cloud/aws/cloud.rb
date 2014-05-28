@@ -448,12 +448,6 @@ module Bosh::AwsCloud
       logger.error("could not tag #{instance.id}: #{e.message}")
     end
 
-    # @note Not implemented in the AWS CPI
-    def validate_deployment(old_manifest, new_manifest)
-      # Not implemented in VSphere CPI as well
-      not_implemented(:validate_deployment)
-    end
-
     def find_ebs_device(sd_name)
       xvd_name = sd_name.gsub(/^\/dev\/sd/, "/dev/xvd")
 

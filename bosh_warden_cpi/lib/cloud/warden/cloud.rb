@@ -232,10 +232,6 @@ module Bosh::WardenCloud
       end
     end
 
-    def validate_deployment(old_manifest, new_manifest)
-      # no-op
-    end
-
     private
 
     def has_disk?(disk_id)

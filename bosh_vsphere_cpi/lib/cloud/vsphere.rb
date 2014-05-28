@@ -17,7 +17,6 @@ module Bosh
                      :configure_networks,
                      :create_disk, :delete_disk,
                      :attach_disk, :detach_disk,
-                     :validate_deployment,
                      :snapshot_disk, :delete_snapshot,
                      :current_vm_id, :get_disks, :ping
 

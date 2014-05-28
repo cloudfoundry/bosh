@@ -127,10 +127,6 @@ module Bosh
         FileUtils.rm(snapshot_file(snapshot_id))
       end
 
-      def validate_deployment(old_manifest, new_manifest)
-        raise NotImplemented, 'Dummy CPI does not implement validate_deployment'
-      end
-
       # Additional Dummy test helpers
 
       def vm_cids

@@ -591,14 +591,6 @@ module Bosh::OpenStackCloud
     end
 
     ##
-    # Validates the deployment
-    #
-    # @note Not implemented in the OpenStack CPI
-    def validate_deployment(old_manifest, new_manifest)
-      not_implemented(:validate_deployment)
-    end
-
-    ##
     # Selects the availability zone to use from a list of disk volumes,
     # resource pool availability zone (if any) and the default availability
     # zone.

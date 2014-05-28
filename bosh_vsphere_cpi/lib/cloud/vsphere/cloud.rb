@@ -579,9 +579,6 @@ module VSphereCloud
       end
     end
 
-    def validate_deployment(old_manifest, new_manifest)
-    end
-
     def get_vm_by_cid(vm_cid)
       @resources.datacenters.each_value do |datacenter|
         vm = client.find_by_inventory_path([datacenter.name, 'vm', datacenter.vm_folder.name, vm_cid])
