@@ -13,7 +13,21 @@ describe Bosh::Cli::ReleaseBuilder do
   end
 
   context 'when there is a final release' do
-    it 'bumps dev version in sync with latest final version' do
+    it 'bumps the least significant segment for the next version' do
+      final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'releases'))
+      final_index.add_version('deadbeef',
+                              { 'version' => '7.4.1' },
+                              get_tmp_file_path('payload'))
+      final_index.add_version('deadcafe',
+                              { 'version' => '7.3.1' },
+                              get_tmp_file_path('payload'))
+
+      builder = new_builder(final: true)
+      builder.version.should == '7.4.2'
+      builder.build
+    end
+
+    it 'creates a dev version in sync with latest final version' do
       final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'releases'))
       final_index.add_version('deadbeef',
                               { 'version' => '7.4' },
@@ -23,7 +37,7 @@ describe Bosh::Cli::ReleaseBuilder do
                               get_tmp_file_path('payload'))
 
       builder = new_builder
-      builder.version.should == '7.4.1-dev'
+      builder.version.should == '7.4+dev.1'
       builder.build
     end
 
@@ -37,6 +51,12 @@ describe Bosh::Cli::ReleaseBuilder do
                               get_tmp_file_path('payload'))
 
       dev_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'dev_releases'))
+      dev_index.add_version('deadabcd',
+                            { 'version' => '7.4.1-dev' },
+                            get_tmp_file_path('payload'))
+      dev_index.add_version('deadbeef',
+                            { 'version' => '7.3.2.1-dev' },
+                            get_tmp_file_path('payload'))
       dev_index.add_version('deadbeef',
                             { 'version' => '7.3.2-dev' },
                             get_tmp_file_path('payload'))
@@ -45,14 +65,14 @@ describe Bosh::Cli::ReleaseBuilder do
                             get_tmp_file_path('payload'))
 
       builder = new_builder
-      builder.version.should == '7.3.3-dev'
+      builder.version.should == '7.3+dev.3'
       builder.build
     end
   end
 
   context 'when there are no final releases' do
-    it 'starts with version 0.1-dev' do
-      new_builder.version.should == '0.1-dev'
+    it 'starts with version 0+dev.1' do
+      new_builder.version.should == '0+dev.1'
     end
 
     it 'increments the dev version' do
@@ -61,7 +81,7 @@ describe Bosh::Cli::ReleaseBuilder do
                             { 'version' => '0.1-dev' },
                             get_tmp_file_path('payload'))
 
-      new_builder.version.should == '0.2-dev'
+      new_builder.version.should == '0+dev.2'
     end
   end
 
@@ -71,7 +91,7 @@ describe Bosh::Cli::ReleaseBuilder do
 
     expected_tarball_path = File.join(@release_dir,
       'dev_releases',
-      'bosh_release-0.1-dev.tgz')
+      'bosh_release-0+dev.1.tgz')
 
     builder.tarball_path.should == expected_tarball_path
     File.file?(expected_tarball_path).should be(true)
@@ -93,10 +113,10 @@ describe Bosh::Cli::ReleaseBuilder do
     builder.build
 
     File.file?(File.join(@release_dir, 'dev_releases',
-      'bosh_release-0.1-dev.tgz')).
+      'bosh_release-0+dev.1.tgz')).
         should be(true)
     File.file?(File.join(@release_dir, 'dev_releases',
-      'bosh_release-0.2-dev.tgz')).
+      'bosh_release-0+dev.2.tgz')).
         should be(false)
   end
 

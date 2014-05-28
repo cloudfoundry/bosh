@@ -20,13 +20,26 @@ module Bosh::Director
       # @param [Models::Release] release Release model
       # @param [String] version Release version
       # @return [Models::ReleaseVersion] Release version model
-      # @raise [ReleaseVersionNotFound]
+      # @raise [ReleaseVersionInvalid, ReleaseVersionNotFound]
       def find_version(release, version)
         dataset = release.versions_dataset
+
         release_version = dataset.filter(:version => version).first
         if release_version.nil?
-          raise ReleaseVersionNotFound,
-                "Release version `#{release.name}/#{version}' doesn't exist"
+          begin
+            # specified version not found, try formatted version
+            formatted_version = Bosh::Common::VersionNumber.parse(version).to_s
+            unless version == formatted_version
+              # only check db if the formatted version is different
+              release_version = dataset.filter(:version => formatted_version).first
+            end
+            if release_version.nil?
+              raise ReleaseVersionNotFound,
+                    "Release version `#{release.name}/#{version}' doesn't exist"
+            end
+          rescue SemiSemantic::ParseError
+            raise ReleaseVersionInvalid, "Release version invalid: #{version}"
+          end
         end
 
         release_version

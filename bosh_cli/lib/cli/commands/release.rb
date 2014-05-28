@@ -37,7 +37,7 @@ module Bosh::Cli::Command
     option '--final', 'create final release'
     option '--with-tarball', 'create release tarball'
     option '--dry-run', 'stop before writing release manifest'
-    option '--version VERSION', 'specify a custom version number of the form x(.y)* where x, y are numerical'
+    option '--version VERSION', 'specify a custom version number (ex: 1.0.0 or 1.0-beta.2+dev.10)'
     def create(manifest_file = nil)
       check_if_release_dir
 
@@ -50,17 +50,18 @@ module Bosh::Cli::Command
         Bosh::Cli::ReleaseCompiler.compile(manifest_file, release.blobstore)
         release_filename = manifest_file
       else
-        if options[:version] && !Bosh::Common::VersionNumber.new(options[:version]).valid?
-          err("Invalid version: `#{options[:version]}'. Please specify a custom version number of the form x(.y)* where x, y are numerical.")
-        end
+        version = options[:version]
+        version = Bosh::Common::VersionNumber.parse(version) unless version.nil?
 
-        release_filename = create_from_spec
+        release_filename = create_from_spec(version)
       end
 
       if release_filename
         release.latest_release_filename = release_filename
         release.save_config
       end
+    rescue SemiSemantic::ParseError
+      err("Invalid version: `#{version}'. Please specify a valid version (ex: 1.0.0 or 1.0-beta.2+dev.10).".make_red)
     rescue Bosh::Cli::ReleaseVersionError => e
       err(e.message.make_red)
     end
@@ -163,16 +164,21 @@ module Bosh::Cli::Command
 
       err('No releases') if releases.empty?
 
+      currently_deployed = false
+      uncommited_changes = false
       if releases.first.has_key? 'release_versions'
         releases_table = build_releases_table(releases, options)
+        currently_deployed, uncommited_changes = release_version_details(releases)
       elsif releases.first.has_key? 'versions'
         releases_table = build_releases_table_for_old_director(releases)
+        currently_deployed, uncommited_changes = release_version_details_for_old_director(releases)
       end
 
       nl
       say(releases_table.render)
-      say('(*) Currently deployed') if releases_table.to_s =~ /\*/
-      say('(+) Uncommitted changes') if releases_table.to_s =~ /^\|.*\+{1}.*\|$/
+
+      say('(*) Currently deployed') if currently_deployed
+      say('(+) Uncommitted changes') if uncommited_changes
       nl
       say('Releases total: %d' % releases.size)
     end
@@ -293,12 +299,11 @@ module Bosh::Cli::Command
       end
     end
 
-    def create_from_spec
+    def create_from_spec(version)
       final = options[:final]
       force = options[:force]
       manifest_only = !options[:with_tarball]
       dry_run = options[:dry_run]
-      version = options[:version]
 
       err("Can't create final release without blobstore secret") if final && !release.has_blobstore_secret?
 
@@ -624,6 +629,34 @@ module Bosh::Cli::Command
       status.output.split.first
     rescue Bosh::Exec::Error => e
       '00000000'
+    end
+
+    def release_version_details(releases)
+      currently_deployed = false
+      uncommitted_changes = false
+      releases.each do |release|
+        release['release_versions'].each do |version|
+          currently_deployed ||= version['currently_deployed']
+          uncommitted_changes ||= version['uncommitted_changes']
+          if currently_deployed && uncommitted_changes
+            return true, true
+          end
+        end
+      end
+      return currently_deployed, uncommitted_changes
+    end
+
+    def release_version_details_for_old_director(releases)
+      currently_deployed = false
+      # old director did not support uncommitted changes
+      uncommitted_changes = false
+      releases.each do |release|
+        currently_deployed ||= release['in_use'].any?
+        if currently_deployed
+          return true, uncommitted_changes
+        end
+      end
+      return currently_deployed, uncommitted_changes
     end
   end
 end

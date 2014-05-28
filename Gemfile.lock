@@ -63,6 +63,7 @@ PATH
       resque (~> 1.23.0)
       resque-backtrace (~> 0.0.1)
       rufus-scheduler (~> 2.0.18)
+      semi_semantic (~> 1.1.0)
       sequel (~> 3.43.0)
       sinatra (~> 1.4.2)
       sys-filesystem (~> 1.1.0)
@@ -192,6 +193,7 @@ PATH
   remote: bosh_common
   specs:
     bosh_common (1.2579.0)
+      semi_semantic (~> 1.1.0)
 
 PATH
   remote: bosh_cpi
@@ -397,6 +399,7 @@ GEM
     rufus-scheduler (2.0.24)
       tzinfo (>= 0.3.22)
     rugged (0.16.0)
+    semi_semantic (1.1.0)
     sequel (3.43.0)
     serverspec (0.13.7)
       highline

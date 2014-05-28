@@ -1,61 +1,37 @@
+require 'semi_semantic/version'
+
 module Bosh::Common
   class VersionNumber
-    include Comparable
+    DEFAULT_DEV_RELEASE_SEGMENT = SemiSemantic::VersionSegment.parse('dev.1')
 
-    def initialize(version_value)
-      @version = version_value.to_s
-    end
+    def self.parse(version)
+      raise ArgumentError, 'Invalid Version: nil' if version.nil?
+      #raise ArgumentError, "Invalid Version Type: #{version.class}" if version.is_a?(String)
+      version = version.to_s
 
-    def valid?
-      /\A\d+(\.\d+)*(-dev)?\z/ =~ @version
-    end
+      #discard anything after a space, including the space, to support compound bosh versions
+      version = version.split(' ', 2)[0] if version =~ / /
 
-    def <=>(other)
-      v1 = @version
-      v2 = other.to_s
-      return v1 <=> v2 if [v1, v2].all? { |v| v.to_s.match(/^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$/) }
-
-      vp1 = components
-      vp2 = other.components
-
-      [vp1.size, vp2.size].max.times do |i|
-        result = vp1[i].to_i <=> vp2[i].to_i
-        return result unless result == 0
+      #convert old-style dev version suffix to new dev post-release segment
+      matches = /\A(?<release>.*)(\.(?<dev>[0-9]+)-dev)\z/.match(version)
+      unless matches.nil?
+        version = matches[:release] + "+dev." + matches[:dev]
       end
 
-      0
+      #replace underscores with periods to maintain reverse compatibility with stemcell versions
+      version = version.gsub('_', '.')
+
+      SemiSemantic::Version.parse(version)
     end
 
-    def major
-      components[0].to_i
+    # @param [Array<#version>] Collection of version strings
+    def self.parse_list(versions)
+      versions.map { |v| self.parse(v) }
     end
 
-    def minor
-      components[1].to_i
-    end
-
-    def least_significant
-      components[-1].to_i
-    end
-
-    def components
-      @version.split('.')
-    end
-
-    def to_s
-      @version
-    end
-
-    def final?
-      !@version.end_with?('-dev')
-    end
-
-    def next_minor
-      self.class.new("#{major}.#{minor + 1}")
-    end
-
-    def dev
-      final? ? self.class.new("#{@version}-dev") : self
+    # @param [Array<#version>] Collection of version strings
+    def self.latest(versions)
+      versions.max
     end
   end
 end

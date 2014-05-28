@@ -70,6 +70,7 @@ module Bosh::Director
   ReleaseInUse = err(30007)
   ReleaseVersionInUse = err(30008)
   ReleaseDeleteFailed = err(30009)
+  ReleaseVersionInvalid = err(30010)
 
   ValidationInvalidType = err(40000)
   ValidationMissingField = err(40001)

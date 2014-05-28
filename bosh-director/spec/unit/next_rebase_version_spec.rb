@@ -1,34 +1,75 @@
 require 'spec_helper'
+require 'semi_semantic/version'
 
 describe Bosh::Director::NextRebaseVersion do
-  let(:versionable) { Struct.new(:version) }
-  let(:existing_versions) { [] }
-  let(:next_version) { Bosh::Director::NextRebaseVersion.new(existing_versions) }
+  let(:next_version) { Bosh::Director::NextRebaseVersion.new(server_versions) }
 
-  it 'leaves final versions alone' do
-    expect(Bosh::Director::NextRebaseVersion.new([]).calculate('9.1')).to eq '9.1'
+  def parse(version)
+    Bosh::Common::VersionNumber.parse(version)
   end
 
-  context 'with existing versions that have the same major version as the current version' do
-    let(:existing_versions) { [versionable.new('10.1-dev'), versionable.new('10.2-dev'), versionable.new('11.1-dev')] }
+  context 'when there are no versions on the server' do
+    let(:server_versions) { [] }
 
-    it 'finds the next version that has not already been used' do
-      expect(next_version.calculate('10.1-dev')).to eq '10.3-dev'
-      expect(next_version.calculate('10.3-dev')).to eq '10.3-dev'
-      expect(next_version.calculate('10.9-dev')).to eq '10.3-dev'
+    it 'does not change the release or pre-release segments' do
+      expect(next_version.calculate(parse('9.1'))).to eq parse('9.1')
+      expect(next_version.calculate(parse('9.1-RC.1'))).to eq parse('9.1-RC.1')
     end
 
-    it 'leaves -dev as a suffix for versioning consistency' do
-      expect(next_version.calculate('10.1-dev')).to end_with '-dev'
+    it 'uses the provided release and pre-release with the default dev post-release segment' do
+      expect(next_version.calculate(parse('10.9-dev'))).to eq parse('10.1-dev')
+      expect(next_version.calculate(parse('8.5-dev'))).to eq parse('8.1-dev')
+
+      expect(next_version.calculate(parse('1.0.0-RC.1+dev.10'))).to eq parse('1.0.0-RC.1+dev.1')
     end
   end
 
-  context 'with existing versions that do not have the same major version as the current version' do
-    let(:existing_versions) { [versionable.new('9.1'), versionable.new('9.2')] }
+  context 'when the server has a version that matches the release and pre-release segments with no post-release segment' do
+    let(:server_versions) { Bosh::Common::VersionNumber.parse_list(['9.1']) }
 
-    it 'starts the new major version (with -dev for consistency)' do
-      expect(next_version.calculate('10.9-dev')).to eq '10.1-dev'
-      expect(next_version.calculate('8.5-dev')).to eq '8.1-dev'
+    it 'does not change release and pre-release segments' do
+      expect(next_version.calculate(parse('9.2'))).to eq parse('9.2')
+    end
+
+    it 'uses the provided release and pre-release with a new dev post-release segment' do
+      expect(next_version.calculate(parse('9+dev.9'))).to eq parse('9+dev.1')
+    end
+  end
+
+  context 'when the server has a version that matches the release and pre-release segments and any post-release segment' do
+    let(:server_versions) { Bosh::Common::VersionNumber.parse_list(['9.1', '9.1.1-dev']) }
+
+    it 'does not change release and pre-release segments' do
+      expect(next_version.calculate(parse('9.2'))).to eq parse('9.2')
+    end
+
+    it 'increments the latest post-release segment with the same release and pre-release segments' do
+      expect(next_version.calculate(parse('9.1.8-dev'))).to eq parse('9.1.2-dev')
+    end
+  end
+
+  context 'when the server does not have a version that matches the release and post-release segments' do
+    let(:server_versions) { Bosh::Common::VersionNumber.parse_list(['9.1', '9.1.1-dev']) }
+
+    it 'does not change release and pre-release segments' do
+      expect(next_version.calculate(parse('9.2'))).to eq parse('9.2')
+    end
+
+    it 'uses the provided release and pre-release with a new dev post-release segment' do
+      expect(next_version.calculate(parse('8.9-dev'))).to eq parse('8.1-dev')
+      expect(next_version.calculate(parse('9.2.9-dev'))).to eq parse('9.2.1-dev')
+    end
+  end
+
+  context 'when there are multiple final versions on the server' do
+    let(:server_versions) { Bosh::Common::VersionNumber.parse_list(['9.1', '9.2']) }
+
+    it 'does not change final versions' do
+      expect(next_version.calculate(parse('9.3'))).to eq parse('9.3')
+    end
+
+    it 'supports rebasing onto older final versions' do
+      expect(next_version.calculate(parse('9.1.5-dev'))).to eq parse('9.1.1-dev')
     end
   end
 end

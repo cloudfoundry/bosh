@@ -199,7 +199,7 @@ module Bosh
           url = "/stemcells/#{name}/#{version}"
 
           extras = []
-          extras << 'force=true' if force
+          extras << ['force', 'true'] if force
 
           request_and_track(:delete, add_query_string(url, extras), options)
         end
@@ -211,7 +211,7 @@ module Bosh
           url = "/deployments/#{name}"
 
           extras = []
-          extras << 'force=true' if force
+          extras << ['force', 'true'] if force
 
           request_and_track(:delete, add_query_string(url, extras), options)
         end
@@ -224,8 +224,8 @@ module Bosh
           url = "/releases/#{name}"
 
           extras = []
-          extras << 'force=true' if force
-          extras << "version=#{version}" if version
+          extras << ['force', 'true'] if force
+          extras << ['version', version] if version
 
           request_and_track(:delete, add_query_string(url, extras), options)
         end
@@ -240,7 +240,7 @@ module Bosh
           url = '/deployments'
 
           extras = []
-          extras << 'recreate=true' if recreate
+          extras << ['recreate', 'true'] if recreate
 
           request_and_track(:post, add_query_string(url, extras), options)
         end
@@ -325,8 +325,8 @@ module Bosh
           url = "/deployments/#{deployment_name}/jobs/#{old_name}"
 
           extras = []
-          extras << "new_name=#{new_name}"
-          extras << 'force=true' if force
+          extras << ['new_name', new_name]
+          extras << ['force', 'true'] if force
 
           options[:content_type] = 'text/yaml'
           options[:payload]      = manifest_yaml
@@ -730,7 +730,7 @@ module Bosh
 
         def add_query_string(url, parts)
           if parts.size > 0
-            "#{url}?#{parts.join('&')}"
+            "#{url}?#{URI.encode_www_form(parts)}"
           else
             url
           end

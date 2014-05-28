@@ -227,22 +227,27 @@ module Bosh::Cli
     private
 
     def assign_version
-      latest_final_version = @final_index.versions.map { |v| Bosh::Common::VersionNumber.new(v) }.max || 0
-      latest_dev_version = @dev_index.versions.map { |v| Bosh::Common::VersionNumber.new(v) }.max
+      latest_final_version = Bosh::Common::VersionNumber.parse_list(@final_index.versions).max
+      latest_final_version ||= Bosh::Common::VersionNumber.parse('0')
 
       if @final
-        latest_final_version.to_i + 1
+        # Drop pre-release and post-release segments, and increment the release segment
+        SemiSemantic::Version.new(latest_final_version.release.increment).to_s
       else
-        major = latest_final_version
-        minor = least_significant_version(latest_dev_version).to_i + 1
-        "#{major}.#{minor}-dev"
+        dev_versions =  Bosh::Common::VersionNumber.parse_list(@dev_index.versions)
+        parent_dev_versions = dev_versions.select { |v| v.release == latest_final_version.release && v.pre_release == latest_final_version.pre_release }
+        latest_dev_version = parent_dev_versions.max
+
+        if latest_dev_version
+          SemiSemantic::Version.new(latest_dev_version.release, latest_dev_version.pre_release, latest_dev_version.post_release.increment).to_s
+        else
+          SemiSemantic::Version.new(latest_final_version.release, latest_final_version.pre_release, Bosh::Common::VersionNumber::DEFAULT_DEV_RELEASE_SEGMENT).to_s
+        end
       end
     end
 
     def in_build_dir(&block)
       Dir.chdir(build_dir) { yield }
     end
-
   end
-
 end

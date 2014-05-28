@@ -1,20 +1,34 @@
+require 'semi_semantic/version'
+
 module Bosh::Director
   class NextRebaseVersion
+
+    # See Bosh::Common::VersionNumber.parse_list to parse a list of strings
     def initialize(existing_versions)
+      existing_versions.each { |v| raise TypeError, "Invalid Version Type: #{v.class}" unless v.is_a?(SemiSemantic::Version) }
       @existing_versions = existing_versions
     end
 
-    def calculate(current_version)
-      current_version = Bosh::Common::VersionNumber.new(current_version)
-      versions = @existing_versions.map { |item| Bosh::Common::VersionNumber.new(item.version) }
+    def calculate(version)
+      raise TypeError, "Invalid Version Type: #{version.class}" unless version.is_a?(SemiSemantic::Version)
 
-      return current_version.to_s if current_version.final?
+      # Only rebase post-release versions
+      return version if version.post_release.nil?
 
-      latest = versions.select { |version|
-        version.major == current_version.major
+      # Find the latest existing version with the same release and pre-release segments as the provided version
+      latest = @existing_versions.select { |v|
+        v.release == version.release && v.pre_release == version.pre_release
       }.max
 
-      latest ? latest.next_minor.dev.to_s : "#{current_version.major}.1-dev"
+      if latest
+        if latest.post_release.nil?
+          SemiSemantic::Version.new(latest.release, latest.pre_release, Bosh::Common::VersionNumber::DEFAULT_DEV_RELEASE_SEGMENT)
+        else
+          SemiSemantic::Version.new(latest.release, latest.pre_release, latest.post_release.increment)
+        end
+      else
+        SemiSemantic::Version.new(version.release, version.pre_release, Bosh::Common::VersionNumber::DEFAULT_DEV_RELEASE_SEGMENT)
+      end
     end
   end
 end

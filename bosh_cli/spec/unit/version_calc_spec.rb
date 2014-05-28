@@ -3,35 +3,6 @@ require 'spec_helper'
 describe Bosh::Cli::VersionCalc do
   let(:calculator) { Object.new.extend(Bosh::Cli::VersionCalc) }
 
-  describe 'major version' do
-    it 'returns the integer before the first separator' do
-      calculator.major_version('3').should == 3
-      calculator.major_version('10').should == 10
-      calculator.major_version('10.6').should == 10
-      calculator.major_version('10.3-dev').should == 10
-    end
-
-  end
-
-  describe 'minor version' do
-    it 'returns the integer after the first separator' do
-      calculator.minor_version('3').should == 0
-      calculator.minor_version('10').should == 0
-      calculator.minor_version('10.6').should == 6
-      calculator.minor_version('10.3-dev').should == 3
-    end
-  end
-
-  describe 'least_significant version' do
-    it 'returns the most granular version number available' do
-      calculator.least_significant_version('3').should == 3
-      calculator.least_significant_version('10').should == 10
-      calculator.least_significant_version('10.6').should == 6
-      calculator.least_significant_version('10.3-dev').should == 3
-      calculator.least_significant_version('10.3.7-dev').should == 7
-    end
-  end
-
   describe 'comparing' do
     describe 'only major version numbers' do
       context 'when version are strings' do
@@ -78,16 +49,17 @@ describe Bosh::Cli::VersionCalc do
         calculator.version_cmp('10.10-dev', '10.9-dev').should == 1
       end
 
-      it 'ignores -dev for comparison' do
-        calculator.version_cmp('10.10', '10.10-dev').should == 0
+      it '-dev is treated as a post-release, greater than the release version' do
+        calculator.version_cmp('10', '10.10-dev').should == -1
+        calculator.version_cmp('10.1.2.10-dev', '10.1.2').should == 1
       end
     end
 
     describe 'version numbers with a date (YYYY-MM-DD_hh-mm-ss) suffix' do
-      it 'correctly orders them based on their version number only' do
+      it 'correctly orders them based on their version number and post-release date' do
         calculator.version_cmp('10.0.at-2013-02-27_21-38-27', '2.0.at-2013-02-26_01-26-46').should == 1
         calculator.version_cmp('2.0.at-2013-02-27_21-38-27', '10.0.at-2013-02-26_01-26-46').should == -1
-        calculator.version_cmp('2.0.at-2013-02-27_21-38-27', '2.0.at-2013-02-26_01-26-46').should == 0
+        calculator.version_cmp('2.0.at-2013-02-27_21-38-27', '2.0.at-2013-02-27_21-38-27').should == 0
       end
     end
 

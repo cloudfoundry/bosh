@@ -66,9 +66,9 @@ describe 'cli releases', type: :integration do
   end
 
   it 'creates a new final release with a user defined version' do
-    dev_release_1 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0.1-dev.yml')
+    dev_release_1 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0+dev.1.yml')
     release_1 = File.join(TEST_RELEASE_DIR, 'releases/bosh-release-1.0.yml')
-    dev_release_2 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-1.0.1-dev.yml')
+    dev_release_2 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-1.0+dev.1.yml')
     release_2 = File.join(TEST_RELEASE_DIR, 'releases/bosh-release-2.0.yml')
 
     Dir.chdir(TEST_RELEASE_DIR) do
@@ -130,13 +130,13 @@ describe 'cli releases', type: :integration do
     end
 
     out = bosh_runner.run('releases')
-    expect(out).to match /bosh-release.+0\.1\-dev/
+    expect(out).to match /bosh-release.+0\+dev\.1/
   end
 
   # ~41s
   it 'sparsely uploads the release' do
-    release_1 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0.1-dev.tgz')
-    release_2 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0.2-dev.tgz')
+    release_1 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0+dev.1.tgz')
+    release_2 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0+dev.2.tgz')
 
     Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
@@ -172,7 +172,7 @@ describe 'cli releases', type: :integration do
 
     out = bosh_runner.run('releases')
     expect(out).to match /releases total: 1/i
-    expect(out).to match /bosh-release.+0\.1\-dev.*0\.2\-dev/m
+    expect(out).to match /bosh-release.+0\+dev\.1.*0\+dev\.2/m
   end
 
   # ~9s
@@ -196,7 +196,7 @@ describe 'cli releases', type: :integration do
 
   # ~32s
   it 'marks releases that have uncommitted changes' do
-    release_1 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0.1-dev.yml')
+    release_1 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0+dev.1.yml')
     commit_hash = ''
 
     Dir.chdir(TEST_RELEASE_DIR) do
@@ -219,7 +219,7 @@ describe 'cli releases', type: :integration do
     +--------------+----------+-------------+
     | Name         | Versions | Commit Hash |
     +--------------+----------+-------------+
-    | bosh-release | 0.1-dev  | #{commit_hash}+   |
+    | bosh-release | 0+dev.1  | #{commit_hash}+   |
     +--------------+----------+-------------+
     (+) Uncommitted changes
 
@@ -284,8 +284,8 @@ describe 'cli releases', type: :integration do
   it 'release lifecycle: create, upload, update (w/sparse upload), delete' do
     runner = bosh_runner_in_work_dir(TEST_RELEASE_DIR)
 
-    release_1 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0.1-dev.yml')
-    release_2 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0.2-dev.yml')
+    release_1 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0+dev.1.yml')
+    release_2 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0+dev.2.yml')
     commit_hash = ''
 
     Dir.chdir(TEST_RELEASE_DIR) do
@@ -316,20 +316,20 @@ describe 'cli releases', type: :integration do
 
     out = bosh_runner.run('releases')
     expect(out).to match /releases total: 1/i
-    expect(out).to match /bosh-release.+0\.1\-dev.*0\.2\-dev/m
+    expect(out).to match /bosh-release.+0\+dev\.1.*0\+dev\.2/m
 
-    bosh_runner.run('delete release bosh-release 0.2-dev')
+    bosh_runner.run('delete release bosh-release 0+dev.2')
     expect_output('releases', <<-OUT)
     +--------------+----------+-------------+
     | Name         | Versions | Commit Hash |
     +--------------+----------+-------------+
-    | bosh-release | 0.1-dev  | #{commit_hash}    |
+    | bosh-release | 0+dev.1  | #{commit_hash}    |
     +--------------+----------+-------------+
 
     Releases total: 1
     OUT
 
-    bosh_runner.run('delete release bosh-release 0.1-dev')
+    bosh_runner.run('delete release bosh-release 0+dev.1')
     expect_output('releases', <<-OUT )
     No releases
     OUT

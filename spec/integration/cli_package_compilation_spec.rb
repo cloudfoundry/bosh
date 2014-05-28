@@ -8,7 +8,7 @@ describe 'cli: package compilation', type: :integration do
 
     simple_blob_store_path = current_sandbox.blobstore_storage_dir
 
-    release_file = 'dev_releases/bosh-release-0.1-dev.tgz'
+    release_file = 'dev_releases/bosh-release-0+dev.1.tgz'
     release_filename = File.join(TEST_RELEASE_DIR, release_file)
     Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')

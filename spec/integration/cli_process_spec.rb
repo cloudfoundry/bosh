@@ -49,7 +49,7 @@ describe 'cli: deployment process', type: :integration do
 
   it 'generates release and deploys it via simple manifest' do
     # Test release created with bosh (see spec/assets/test_release_template)
-    release_file = 'dev_releases/bosh-release-0.1-dev.tgz'
+    release_file = 'dev_releases/bosh-release-0+dev.1.tgz'
     release_filename = File.join(TEST_RELEASE_DIR, release_file)
     stemcell_filename = spec_asset('valid_stemcell.tgz') # Dummy stemcell (ubuntu-stemcell 1)
 
