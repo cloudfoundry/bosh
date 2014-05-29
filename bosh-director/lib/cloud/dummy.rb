@@ -1,11 +1,14 @@
 require 'digest/sha1'
 require 'fileutils'
 require 'securerandom'
+require 'logger'
 
 module Bosh
   module Clouds
     class Dummy
       class NotImplemented < StandardError; end
+
+      attr_reader :commands
 
       def initialize(options)
         @options = options
@@ -22,8 +25,9 @@ module Bosh
 
         @running_vms_dir = File.join(@base_dir, 'running_vms')
 
-        log_device = options['log_device'] || STDOUT
-        @logger = Logger.new(log_device)
+        @logger = Logger.new(options['log_device'] || STDOUT)
+
+        @commands = CommandTransport.new(@base_dir, @logger)
 
         FileUtils.mkdir_p(@base_dir)
       rescue Errno::EACCES
@@ -71,7 +75,7 @@ module Bosh
         FileUtils.rm_rf(File.join(@base_dir, 'running_vms', vm_name))
       end
 
-      def reboot_vm(vm)
+      def reboot_vm(vm_id)
         raise NotImplemented, 'Dummy CPI does not implement reboot_vm'
       end
 
@@ -79,7 +83,9 @@ module Bosh
         File.exists?(vm_file(vm_id))
       end
 
-      def configure_networks(vm, networks)
+      def configure_networks(vm_id, networks)
+        cmd = commands.next_configure_networks_cmd(vm_id)
+        raise NotSupported, 'Dummy CPI was configured to return NotSupported' if cmd.not_supported
         raise NotImplemented, 'Dummy CPI does not implement configure_networks'
       end
 
@@ -221,6 +227,34 @@ module Bosh
       def snapshot_file(snapshot_id)
         File.join(@base_dir, 'snapshots', snapshot_id)
       end
+
+      # Example file system layout for arranging commands information.
+      # Currently uses file system as transport but could be switch to use NATS.
+      #   base_dir/cpi/create_vm/next -> {"something": true}
+      #   base_dir/cpi/configure_networks/<vm_id> -> (presence)
+      class CommandTransport
+        def initialize(base_dir, logger)
+          @cpi_commands = File.join(base_dir, 'cpi_commands')
+          @logger = logger
+        end
+
+        def make_configure_networks_not_supported(vm_id)
+          @logger.info("Making configure_networks for #{vm_id} raise NotSupported")
+          path = File.join(@cpi_commands, 'configure_networks', vm_id)
+          FileUtils.mkdir_p(File.dirname(path))
+          File.write(path, 'marker')
+        end
+
+        def next_configure_networks_cmd(vm_id)
+          @logger.info("Reading configure_networks configuration for #{vm_id}")
+          path = File.join(@cpi_commands, 'configure_networks', vm_id)
+          cmd = ConfigureNetworksCommand.new(File.exists?(path))
+          FileUtils.rm_rf(path)
+          cmd
+        end
+      end
+
+      class ConfigureNetworksCommand < Struct.new(:not_supported); end
     end
   end
 end
