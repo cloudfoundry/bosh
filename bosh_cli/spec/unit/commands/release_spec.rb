@@ -314,6 +314,7 @@ describe Bosh::Cli::Command::Release do
 
     before do
       allow(command).to receive(:logged_in?).and_return(true)
+      command.options[:target] = 'http://bosh-target.example.com'
       allow(director).to receive(:list_releases).and_return(releases)
     end
 
