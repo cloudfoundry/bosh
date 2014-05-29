@@ -46,15 +46,16 @@ namespace :spec do
 
       Bosh::ThreadPool.new(max_threads: 10, logger: Logger.new('/dev/null')).wrap do |pool|
         builds.each do |build|
-          puts "-----Building #{build}-----"
-
           pool.process do
             log_file    = "#{spec_logs}/#{build}.log"
             rspec_files = cpi_builds.include?(build) ? "spec/unit/" : "spec/"
-            rspec_cmd   = "cd #{build} && rspec --tty -c -f p #{rspec_files} > #{log_file} 2>&1"
+            rspec_cmd   = "rspec --tty -c -f p #{rspec_files}"
 
-            if system(rspec_cmd)
+            if system("cd #{build} && #{rspec_cmd} > #{log_file} 2>&1")
+              puts "----- BEGIN #{build}"
+              puts "           #{rspec_cmd}"
               print File.read(log_file)
+              puts "----- END   #{build}\n\n"
             else
               raise("#{build} failed to build unit tests: #{File.read(log_file)}")
             end
