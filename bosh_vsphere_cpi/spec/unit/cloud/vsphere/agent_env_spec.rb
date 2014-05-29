@@ -219,11 +219,11 @@ module VSphereCloud
 
           it_uploads_environment_json.ordered
 
-          expect(agent_env).to receive(:generate_vmdk_iso).with('["fake-json"]').and_return('local_vmdk_file_dir')
-          expect(agent_env).to receive(:convert_iso_to_vmdk).with('local_vmdk_file_dir')
-          expect(agent_env).to receive(:convert_vmdk_to_esx_type).with('local_vmdk_file_dir')
-          expect(agent_env).to receive(:upload_vmdk_file).with(location, 'local_vmdk_file_dir')
-          FakeFS::FileUtils.should_receive(:remove_entry_secure).with('local_vmdk_file_dir')
+          expect(agent_env).to receive(:generate_vmdk_iso).with('["fake-json"]').and_return('/local_vmdk_file_dir/env.iso')
+          expect(agent_env).to receive(:convert_iso_to_vmdk).with('/local_vmdk_file_dir')
+          expect(agent_env).to receive(:convert_vmdk_to_esx_type).with('/local_vmdk_file_dir')
+          expect(agent_env).to receive(:upload_vmdk_file).with(location, '/local_vmdk_file_dir')
+          FakeFS::FileUtils.should_receive(:remove_entry_secure).with('/local_vmdk_file_dir')
 
           expect(cpi).to receive(:attach_independent_disk).with(vm, '[fake-datastore-name 1] fake-vm-name/env.vmdk', location, 3)
 

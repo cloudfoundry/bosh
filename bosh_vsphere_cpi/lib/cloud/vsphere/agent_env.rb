@@ -105,10 +105,8 @@ module VSphereCloud
     def find_bin(bin_path, bin)
       exe = File.join(bin_path, bin)
       return exe if File.exists?(exe)
-      ENV['PATH'].split(File::PATH_SEPARATOR).each do |path|
-        exe = File.join(path, bin)
-        return exe if File.exists?(exe)
-      end
+      program = which([bin])
+      return program unless program == bin
 
       fail "Unable to find #{bin} in either #{bin_path} or system PATH"
     end
@@ -137,14 +135,16 @@ module VSphereCloud
       # HACK: Write a dummy file to make iso file exceed 1 MB
       # Because SRM needs at least 1 MB to replicate a disk
       File.open(File.join(path, 'env_dummy'), 'w') do |f|
+        s = ''
         193000.times do |i|
-          f.write(i)
+          s << i.to_s
         end
+        f.write(s)
       end
 
       output = `#{genisoimage} -o #{iso_path} #{env_path}* 2>&1`
       raise "#{$?.exitstatus} -#{output}" if $?.exitstatus != 0
-      path
+      iso_path
     end
 
     def upload_vmdk_file(location, local_vmdk_file_dir)
@@ -163,14 +163,19 @@ module VSphereCloud
       iso_file = File.join(tmp_dir, 'env.iso')
       fail "ISO file #{iso_file} does not exist!" if !File.exists?(iso_file)
       output = `#{qemu_img} convert -O vmdk #{iso_file} #{File.join(tmp_dir, 'env_source.vmdk')} 2>&1`
+      env_source_vmdk = File.join(tmp_dir, 'env_source.vmdk')
+      output = `#{qemu_img} convert -O vmdk #{iso_file} #{env_source_vmdk} 2>&1`
       fail "#{$?.exitstatus} -#{output}" if $?.exitstatus != 0
+      env_source_vmdk
     end
 
     def convert_vmdk_to_esx_type(tmp_dir)
       env_source_vmdk = File.join(tmp_dir, 'env_source.vmdk')
       fail "ENV source vmdk file #{env_source_vmdk} does not exist!" if !File.exists?(env_source_vmdk)
       target_vmdk_file = File.join(tmp_dir, 'env.vmdk')
-      [target_vmdk_file, File.join(tmp_dir, 'env-flat.vmdk')].each do |f|
+      target_vmdk_flat_file =  File.join(tmp_dir, 'env-flat.vmdk')
+      target_files = [target_vmdk_file, target_vmdk_flat_file]
+      target_files.each do |f|
         File.delete(f) if File.exists?(f)
       end
 
@@ -178,6 +183,7 @@ module VSphereCloud
       vdiskmanager = find_bin("#{module_dir}/vdiskmanager/bin", 'vmware-vdiskmanager')
       output = `#{vdiskmanager} -r #{env_source_vmdk} -t 4 #{target_vmdk_file} 2>&1`
       fail "#{$?.exitstatus} -#{output}" if $?.exitstatus != 0
+      target_files
     end
 
     def set_vmdk_content(vm, location, env)
@@ -191,7 +197,7 @@ module VSphereCloud
                                  location[:datastore],
                                  "#{location[:vm]}/env.json", env_json)
 
-      local_vmdk_file_dir = generate_vmdk_iso(env_json)
+      local_vmdk_file_dir = File.dirname(generate_vmdk_iso(env_json))
       begin
         convert_iso_to_vmdk(local_vmdk_file_dir)
         convert_vmdk_to_esx_type(local_vmdk_file_dir)
