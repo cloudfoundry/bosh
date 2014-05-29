@@ -4,7 +4,6 @@ module Bosh::Director
   class InstanceUpdater
     include DnsHelper
 
-    MAX_ATTACH_DISK_TRIES = 3
     UPDATE_STEPS = 7
     WATCH_INTERVALS = 10
 
@@ -23,19 +22,14 @@ module Bosh::Director
       @target_state = @instance.state
 
       @deployment_plan = @job.deployment
-      @resource_pool_spec = @job.resource_pool
+      @resource_pool = @job.resource_pool
       @update_config = @job.update
 
       @vm = @instance.model.vm
 
       @current_state = {}
 
-      @network_updater = NetworkUpdater.new(@instance, @vm, agent, self, @cloud, @logger)
-      @stopper = Stopper.new(@instance, agent, @target_state, Config, @logger)
-    end
-
-    def instance_name
-      "#{@job.name}/#{@instance.index}"
+      @agent = AgentClient.with_defaults(@vm.agent_id)
     end
 
     def step
@@ -67,13 +61,11 @@ module Bosh::Director
       step { take_snapshot }
 
       if @target_state == "detached"
-        detach_disk
-        delete_vm
-        @resource_pool_spec.add_idle_vm
+        vm_updater.detach
         return
       end
 
-      step { update_resource_pool }
+      step { update_resource_pool(nil) }
       step { update_networks }
       step { update_dns }
       step { update_persistent_disk }
@@ -89,11 +81,11 @@ module Bosh::Director
       step { wait_until_running }
 
       if @target_state == "started" && current_state["job_state"] != "running"
-        raise AgentJobNotRunning, "`#{instance_name}' is not running after update"
+        raise AgentJobNotRunning, "`#{@instance}' is not running after update"
       end
 
       if @target_state == "stopped" && current_state["job_state"] == "running"
-        raise AgentJobNotStopped, "`#{instance_name}' is still running despite the stop command"
+        raise AgentJobNotStopped, "`#{@instance}' is still running despite the stop command"
       end
     end
 
@@ -103,9 +95,9 @@ module Bosh::Director
     def wait_until_running
       watch_schedule(min_watch_time, max_watch_time).each do |watch_time|
         sleep_time = watch_time.to_f / 1000
-        @logger.info("Waiting for #{sleep_time} seconds to check #{instance_name} status")
+        @logger.info("Waiting for #{sleep_time} seconds to check #{@instance} status")
         sleep(sleep_time)
-        @logger.info("Checking if #{instance_name} has been updated after #{sleep_time} seconds")
+        @logger.info("Checking if #{@instance} has been updated after #{sleep_time} seconds")
 
         @current_state = agent.get_state
 
@@ -141,7 +133,8 @@ module Bosh::Director
     end
 
     def stop
-      @stopper.stop
+      stopper = Stopper.new(@instance, agent, @target_state, Config, @logger)
+      stopper.stop
     end
 
     def take_snapshot
@@ -150,59 +143,6 @@ module Bosh::Director
 
     def delete_snapshots(disk)
       Api::SnapshotManager.delete_snapshots(disk.snapshots)
-    end
-
-    def detach_disk
-      return unless @instance.disk_currently_attached?
-
-      if @instance.model.persistent_disk_cid.nil?
-        raise AgentUnexpectedDisk,
-              "`#{instance_name}' VM has disk attached " +
-                  "but it's not reflected in director DB"
-      end
-
-      agent.unmount_disk(@instance.model.persistent_disk_cid)
-      @cloud.detach_disk(@vm.cid, @instance.model.persistent_disk_cid)
-    end
-
-    def attach_disk
-      return if @instance.model.persistent_disk_cid.nil?
-
-      @cloud.attach_disk(@vm.cid, @instance.model.persistent_disk_cid)
-      agent.mount_disk(@instance.model.persistent_disk_cid)
-    end
-
-    def delete_vm
-      @cloud.delete_vm(@vm.cid)
-
-      @instance.model.db.transaction do
-        @instance.model.vm = nil
-        @instance.model.save
-        @vm.destroy
-      end
-    end
-
-    def create_vm(new_disk_id)
-      stemcell = @resource_pool_spec.stemcell
-      disks = [@instance.model.persistent_disk_cid, new_disk_id].compact
-
-      @vm = VmCreator.create(@deployment_plan.model, stemcell.model,
-                             @resource_pool_spec.cloud_properties,
-                             @instance.network_settings, disks,
-                             @resource_pool_spec.env)
-
-      begin
-        @instance.model.vm = @vm
-        @instance.model.save
-
-        agent.wait_until_ready
-      rescue => e
-        if @vm
-          @logger.error("error during create_vm(), deleting vm #{@vm.cid}")
-          delete_vm
-        end
-        raise e
-      end
     end
 
     def apply_state(state)
@@ -225,6 +165,7 @@ module Bosh::Director
 
     def delete_disk(disk, vm_cid)
       disk_cid = disk.disk_cid
+
       # Unmount the disk only if disk is known by the agent
       if agent && disk_info.include?(disk_cid)
         agent.unmount_disk(disk_cid)
@@ -235,7 +176,7 @@ module Bosh::Director
       rescue Bosh::Clouds::DiskNotAttached
         if disk.active
           raise CloudDiskNotAttached,
-                "`#{instance_name}' VM should have persistent disk attached " +
+                "`#{@instance}' VM should have persistent disk attached " +
                     "but it doesn't (according to CPI)"
         end
       end
@@ -266,57 +207,12 @@ module Bosh::Director
       end
     end
 
-    def update_resource_pool(new_disk_cid = nil)
-      return unless @instance.resource_pool_changed? || new_disk_cid
-
-      detach_disk
-      num_retries = 0
-      begin
-        delete_vm
-        create_vm(new_disk_cid)
-        attach_disk
-      rescue Bosh::Clouds::NoDiskSpace => e
-        if e.ok_to_retry && num_retries < MAX_ATTACH_DISK_TRIES
-          num_retries += 1
-          @logger.warn("Retrying attach disk operation #{num_retries}")
-          retry
-        end
-        @logger.warn("Giving up on attach disk operation")
-        e.ok_to_retry = false
-        raise CloudNotEnoughDiskSpace,
-              "Not enough disk space to update `#{instance_name}'"
-      end
-
-      state = {
-          "deployment" => @deployment_plan.name,
-          "networks" => @instance.network_settings,
-          "resource_pool" => @job.resource_pool.spec,
-          "job" => @job.spec,
-          "index" => @instance.index,
-      }
-
-      if @instance.disk_size > 0
-        state["persistent_disk"] = @instance.disk_size
-      end
-
-      # if we have a failure above the new VM doesn't get any state,
-      # which makes it impossible to recreate it
-      apply_state(state)
-      @instance.current_state = agent.get_state
-    end
-
-    def attach_missing_disk
-      if @instance.model.persistent_disk_cid &&
-          !@instance.disk_currently_attached?
-        attach_disk
-      end
-    rescue Bosh::Clouds::NoDiskSpace => e
-      update_resource_pool(@instance.model.persistent_disk_cid)
+    def update_resource_pool(new_disk_cid)
+      @vm, @agent = vm_updater.update(new_disk_cid)
     end
 
     # Synchronizes persistent_disks with the agent.
-    #
-    # NOTE: Currently assumes that we only have 1 persistent disk.
+    # (Currently assumes that we only have 1 persistent disk.)
     # @return [void]
     def check_persistent_disk
       return if @instance.model.persistent_disks.empty?
@@ -324,23 +220,20 @@ module Bosh::Director
 
       if agent_disk_cid != @instance.model.persistent_disk_cid
         raise AgentDiskOutOfSync,
-              "`#{instance_name}' has invalid disks: agent reports " +
+              "`#{@instance}' has invalid disks: agent reports " +
                   "`#{agent_disk_cid}' while director record shows " +
                   "`#{@instance.model.persistent_disk_cid}'"
       end
 
       @instance.model.persistent_disks.each do |disk|
         unless disk.active
-          @logger.warn("`#{instance_name}' has inactive disk #{disk.disk_cid}")
+          @logger.warn("`#{@instance}' has inactive disk #{disk.disk_cid}")
         end
       end
     end
 
     def update_persistent_disk
-      # CLEANUP FIXME
-      # [olegs] Error cleanup should be performed AFTER logic cleanup, I can't
-      # event comprehend this method.
-      attach_missing_disk
+      vm_updater.attach_missing_disk
       check_persistent_disk
 
       disk_cid = nil
@@ -399,22 +292,8 @@ module Bosh::Director
     end
 
     def update_networks
-      @network_updater.update
-    end
-
-    def agent
-      if @agent && @agent.id == @vm.agent_id
-        @agent
-      else
-        if @vm.agent_id.nil?
-          raise VmAgentIdMissing, "VM #{@vm.id} is missing agent id"
-        end
-        @agent = AgentClient.with_defaults(@vm.agent_id)
-      end
-    end
-
-    def generate_agent_id
-      SecureRandom.uuid
+      network_updater = NetworkUpdater.new(@instance, @vm, agent, vm_updater, @cloud, @logger)
+      @vm, @agent = network_updater.update
     end
 
     # Returns an array of wait times distributed
@@ -445,6 +324,14 @@ module Bosh::Director
 
     def canary?
       @canary
+    end
+
+    attr_reader :agent
+
+    def vm_updater
+      # Do not memoize to avoid caching same VM and agent
+      # which could be replaced after updating a VM
+      VmUpdater.new(@instance, @vm, agent, @cloud, 3, @logger)
     end
   end
 end
