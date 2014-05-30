@@ -98,9 +98,9 @@ describe 'cli releases', type: :integration do
 
       with_changed_release do
         runner.run_in_current_dir('create release --force')
-        expect(Dir[File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-*.yml')]).to eq([dev_release_1, dev_release_2])
+        expect(Dir[File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-*.yml')].sort).to eq([dev_release_1, dev_release_2].sort)
         runner.run_in_current_dir('create release --final --force --version 2.0')
-        expect(Dir[File.join(TEST_RELEASE_DIR, 'releases/bosh-release-*.yml')]).to eq([release_1, release_2])
+        expect(Dir[File.join(TEST_RELEASE_DIR, 'releases/bosh-release-*.yml')].sort).to eq([release_1, release_2].sort)
       end
     end
   end
