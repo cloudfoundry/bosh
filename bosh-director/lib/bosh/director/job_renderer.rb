@@ -17,8 +17,12 @@ module Bosh::Director
         configuration_hash = rendered_job_instance.configuration_hash
 
         archive_model = instance.model.latest_rendered_templates_archive
+
         if archive_model && archive_model.content_sha1 == configuration_hash
-          rendered_templates_archive = Core::Templates::RenderedTemplatesArchive.new(archive_model.blobstore_id, archive_model.sha1)
+          rendered_templates_archive = Core::Templates::RenderedTemplatesArchive.new(
+            archive_model.blobstore_id,
+            archive_model.sha1,
+          )
         else
           rendered_templates_archive = rendered_job_instance.persist(blobstore)
           instance.model.add_rendered_templates_archive(

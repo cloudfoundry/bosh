@@ -12,7 +12,8 @@ module Bosh::Director::Core::Templates
 
     def configuration_hash
       instance_digest = Digest::SHA1.new
-      job_templates.sort { |x, y| x.name <=> y.name }.each do |rendered_job_template|
+
+      @job_templates.sort { |x, y| x.name <=> y.name }.each do |rendered_job_template|
         bound_templates = ''
         bound_templates << rendered_job_template.monit
 
@@ -26,7 +27,7 @@ module Bosh::Director::Core::Templates
     end
 
     def template_hashes
-      job_templates.reduce({}) do |h, rendered_job_template|
+      @job_templates.reduce({}) do |h, rendered_job_template|
         h.merge(rendered_job_template.name => rendered_job_template.template_hash)
       end
     end
@@ -35,16 +36,12 @@ module Bosh::Director::Core::Templates
       file = Tempfile.new('compressed-rendered-job-templates')
 
       compressed_archive = CompressedRenderedJobTemplates.new(file.path)
-      compressed_archive.write(job_templates)
+      compressed_archive.write(@job_templates)
 
       blobstore_id = blobstore.create(compressed_archive.contents)
       RenderedTemplatesArchive.new(blobstore_id, compressed_archive.sha1)
     ensure
       file.close!
     end
-
-    private
-
-    attr_reader :job_templates
   end
 end

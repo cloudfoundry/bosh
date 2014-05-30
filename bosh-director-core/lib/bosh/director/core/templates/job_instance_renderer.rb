@@ -9,7 +9,7 @@ module Bosh::Director::Core::Templates
     end
 
     def render(spec)
-      rendered_templates = templates.map do |template|
+      rendered_templates = @templates.map do |template|
         job_template_renderer = job_template_renderers[template.name]
         job_template_renderer.render(spec)
       end
@@ -20,12 +20,10 @@ module Bosh::Director::Core::Templates
     private
 
     def job_template_renderers
-      @job_template_renderers ||= templates.reduce({}) do |hash, template|
-        hash[template.name] = job_template_loader.process(template)
+      @job_template_renderers ||= @templates.reduce({}) do |hash, template|
+        hash[template.name] = @job_template_loader.process(template)
         hash
       end
     end
-
-    attr_reader :job_template_loader, :templates
   end
 end

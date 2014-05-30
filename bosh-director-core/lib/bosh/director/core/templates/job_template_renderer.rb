@@ -5,7 +5,6 @@ require 'common/properties'
 
 module Bosh::Director::Core::Templates
   class JobTemplateRenderer
-
     attr_reader :monit_erb, :source_erbs
 
     def initialize(name, monit_erb, source_erbs, logger)
@@ -20,18 +19,14 @@ module Bosh::Director::Core::Templates
       job_name = spec['job']['name']
       index = spec['index']
 
-      monit = monit_erb.render(template_context, job_name, index, logger)
+      monit = monit_erb.render(template_context, job_name, index, @logger)
 
       rendered_files = source_erbs.map do |source_erb|
-        file_contents = source_erb.render(template_context, job_name, index, logger)
+        file_contents = source_erb.render(template_context, job_name, index, @logger)
         RenderedFileTemplate.new(source_erb.src_name, source_erb.dest_name, file_contents)
       end
 
-      RenderedJobTemplate.new(name, monit, rendered_files)
+      RenderedJobTemplate.new(@name, monit, rendered_files)
     end
-
-    private
-
-    attr_reader :name, :logger
   end
 end
