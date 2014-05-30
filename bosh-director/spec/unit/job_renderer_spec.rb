@@ -10,15 +10,30 @@ module Bosh::Director
     let(:templates) { [instance_double('Bosh::Director::DeploymentPlan::Template')] }
 
     before { allow(Core::Templates::JobInstanceRenderer).to receive(:new).and_return(job_instance_renderer) }
-    let(:job_instance_renderer) do
-      instance_double('Bosh::Director::Core::Templates::JobInstanceRenderer', render: rendered_job_instance)
-    end
+    let(:job_instance_renderer) { instance_double('Bosh::Director::Core::Templates::JobInstanceRenderer') }
 
     before { allow(Core::Templates::JobTemplateLoader).to receive(:new).and_return(job_template_loader) }
     let(:job_template_loader) { instance_double('Bosh::Director::Core::Templates::JobTemplateLoader') }
 
     describe '#render_job_instances' do
-      before { job.stub(instances: [instance]) }
+      before { allow(job).to receive(:instances).with(no_args).and_return([instance1, instance2]) }
+      let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+      let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
+
+      let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+
+      it 'renders each jobs instance' do
+        expect(renderer).to receive(:render_job_instance).with(instance1)
+        expect(renderer).to receive(:render_job_instance).with(instance2)
+        renderer.render_job_instances
+      end
+    end
+
+    describe '#render_job_instance' do
+      def perform
+        renderer.render_job_instance(instance)
+      end
+
       let(:instance) do
         instance_double('Bosh::Director::DeploymentPlan::Instance', {
           :configuration_hash= => nil,
@@ -29,6 +44,8 @@ module Bosh::Director
         })
       end
 
+      let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+
       let(:instance_model) do
         # not using an instance double since Sequel Model classes are a bit meta
         double('Bosh::Director::Models::Instance', {
@@ -37,6 +54,7 @@ module Bosh::Director
         })
       end
 
+      before { allow(job_instance_renderer).to receive(:render).and_return(rendered_job_instance) }
       let(:rendered_job_instance) do
         instance_double('Bosh::Director::Core::Templates::RenderedJobInstance', {
           configuration_hash: configuration_hash,
@@ -53,10 +71,6 @@ module Bosh::Director
       end
 
       let(:configuration_hash) { 'fake-content-sha1' }
-
-      def perform
-        renderer.render_job_instances
-      end
 
       it 'correctly initializes JobInstanceRenderer' do
         perform
@@ -95,23 +109,21 @@ module Bosh::Director
         before { allow(instance_model).to receive(:latest_rendered_templates_archive).and_return(latest_archive) }
         let(:latest_archive) do
           # Not using an instance double since Sequel Model classes are a bit meta
-          double(
-            'Bosh::Directore::Models::RenderedTemplatesArchive',
+          double('Bosh::Directore::Models::RenderedTemplatesArchive', {
             instance: instance_model,
             blobstore_id: 'fake-latest-blob-id',
             sha1: 'fake-latest-sha1',
             content_sha1: 'fake-latest-content-sha1',
             created_at: Time.new(2013, 02, 01),
-          )
+          })
         end
 
         before { allow(Core::Templates::RenderedTemplatesArchive).to receive(:new).and_return(latest_rendered_templates_archive) }
         let(:latest_rendered_templates_archive) do
-          instance_double(
-            'Bosh::Director::Core::Templates::RenderedTemplatesArchive',
+          instance_double('Bosh::Director::Core::Templates::RenderedTemplatesArchive', {
             blobstore_id: 'fake-latest-blob-id',
             sha1: 'fake-latest-sha1',
-          )
+          })
         end
 
         context 'when latest archive has matching content_sha1' do
@@ -132,6 +144,7 @@ module Bosh::Director
 
         context 'when latest archive does have matching content_sha1' do
           let(:configuration_hash) { 'fake-latest-non-matching-content-sha1' }
+
           it 'persists new archive' do
             perform
             expect(rendered_job_instance).to have_received(:persist).with(blobstore)

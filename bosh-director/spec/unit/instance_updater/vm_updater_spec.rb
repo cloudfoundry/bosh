@@ -663,6 +663,9 @@ module Bosh::Director
           expect(agent_client).to receive(:get_state).and_return('fake-agent-state').ordered
           expect(instance).to receive(:current_state=).with('fake-agent-state').ordered
 
+          # Re-renders job templates because agent can return changed dynamic network configuration
+          expect(job_renderer).to receive(:render_job_instance).with(instance).ordered
+
           vm_state_applier.apply
         end
       end
@@ -684,6 +687,9 @@ module Bosh::Director
           expect(agent_client).to receive(:apply).with(state).ordered
           expect(agent_client).to receive(:get_state).and_return('fake-agent-state').ordered
           expect(instance).to receive(:current_state=).with('fake-agent-state').ordered
+
+          # Re-renders job templates because agent can return changed dynamic network configuration
+          expect(job_renderer).to receive(:render_job_instance).with(instance).ordered
 
           vm_state_applier.apply
         end

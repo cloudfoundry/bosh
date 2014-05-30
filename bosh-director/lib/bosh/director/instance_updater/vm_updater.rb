@@ -215,6 +215,8 @@ module Bosh::Director
         # Agent will potentially return modified version of state
         # with resolved dynamic networks information
         @instance.current_state = @agent_client.get_state
+
+        @job_renderer.render_job_instance(@instance)
       end
     end
   end
