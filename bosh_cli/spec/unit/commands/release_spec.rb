@@ -22,7 +22,6 @@ describe Bosh::Cli::Command::Release do
       allow(command).to receive(:check_if_release_dir)
       allow(command).to receive(:dirty_blob_check)
       allow(command).to receive(:dirty_state?).and_return(false)
-      allow(command).to receive(:version_greater).and_return(false)
       allow(command).to receive(:build_packages).and_return([])
       allow(command).to receive(:build_jobs)
       allow(command).to receive(:build_release)

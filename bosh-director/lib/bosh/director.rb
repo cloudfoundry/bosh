@@ -23,6 +23,7 @@ require 'zlib'
 
 require 'common/exec'
 require 'common/properties'
+require 'common/version/release_version_list'
 
 require 'bcrypt'
 require 'blobstore_client'
@@ -48,7 +49,6 @@ require 'bosh/director/validation_helper'
 require 'bosh/director/download_helper'
 
 require 'bosh/director/version'
-require 'bosh/director/next_rebase_version'
 require 'bosh/director/config'
 require 'bosh/director/event_log'
 require 'bosh/director/task_result_file'

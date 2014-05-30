@@ -1,6 +1,5 @@
 module Bosh::Cli
   class VersionsIndex
-    include VersionCalc
 
     def initialize(storage_dir, name_prefix = nil)
       @storage_dir = File.expand_path(storage_dir)

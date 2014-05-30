@@ -28,7 +28,7 @@ module Bosh::Director
         if release_version.nil?
           begin
             # specified version not found, try formatted version
-            formatted_version = Bosh::Common::VersionNumber.parse(version).to_s
+            formatted_version = Bosh::Common::Version::ReleaseVersion.parse(version).to_s
             unless version == formatted_version
               # only check db if the formatted version is different
               release_version = dataset.filter(:version => formatted_version).first

@@ -1,7 +1,6 @@
 module Bosh::Cli
   class ReleaseBuilder
     include Bosh::Cli::DependencyHelper
-    include Bosh::Cli::VersionCalc
 
     DEFAULT_RELEASE_NAME = "bosh_release"
 
@@ -44,7 +43,7 @@ module Bosh::Cli
 
     # @return [String] Release version
     def version
-      @version ||= assign_version
+      @version ||= assign_version.to_s
     end
 
     # @return [Boolean] Is release final?
@@ -227,21 +226,25 @@ module Bosh::Cli
     private
 
     def assign_version
-      latest_final_version = Bosh::Common::VersionNumber.parse_list(@final_index.versions).max
-      latest_final_version ||= Bosh::Common::VersionNumber.parse('0')
+      latest_final_version = Bosh::Common::Version::ReleaseVersion.parse_list(@final_index.versions).latest
+      latest_final_version ||= Bosh::Common::Version::ReleaseVersion.parse('0')
 
       if @final
         # Drop pre-release and post-release segments, and increment the release segment
-        SemiSemantic::Version.new(latest_final_version.release.increment).to_s
+        latest_final_version.increment_release
       else
-        dev_versions =  Bosh::Common::VersionNumber.parse_list(@dev_index.versions)
-        parent_dev_versions = dev_versions.select { |v| v.release == latest_final_version.release && v.pre_release == latest_final_version.pre_release }
-        latest_dev_version = parent_dev_versions.max
+        # Increment or Reset the post-release segment
+        dev_versions =  Bosh::Common::Version::ReleaseVersion.parse_list(@dev_index.versions)
+        latest_dev_version = dev_versions.latest_with_pre_release(latest_final_version)
 
         if latest_dev_version
-          SemiSemantic::Version.new(latest_dev_version.release, latest_dev_version.pre_release, latest_dev_version.post_release.increment).to_s
+          if latest_dev_version.version.post_release.nil?
+            latest_dev_version.default_post_release
+          else
+            latest_dev_version.increment_post_release
+          end
         else
-          SemiSemantic::Version.new(latest_final_version.release, latest_final_version.pre_release, Bosh::Common::VersionNumber::DEFAULT_DEV_RELEASE_SEGMENT).to_s
+          latest_final_version.default_post_release
         end
       end
     end

@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require 'common/version_number'
+require 'common/version/release_version'
 
 module Bosh::Director
   module Jobs
@@ -106,7 +106,7 @@ module Bosh::Director
         @name = @manifest["name"]
 
         begin
-          @version = Bosh::Common::VersionNumber.parse(@manifest["version"])
+          @version = Bosh::Common::Version::ReleaseVersion.parse(@manifest["version"])
           unless @version == @manifest["version"]
             logger.info("Formatted version '#{@manifest["version"]}' => '#{@version}'")
           end
@@ -550,8 +550,8 @@ module Bosh::Director
         }
         models = Models::ReleaseVersion.filter(attrs).all
         strings = models.map(&:version)
-        versions = Bosh::Common::VersionNumber.parse_list(strings)
-        Bosh::Director::NextRebaseVersion.new(versions).calculate(@version)
+        list = Bosh::Common::Version::ReleaseVersionList.parse(strings)
+        list.rebase(@version)
       end
 
       # Removes release version model, along with all packages and templates.

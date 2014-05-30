@@ -2,7 +2,6 @@
 
 module Bosh::Cli::Command
   class Maintenance < Base
-    include Bosh::Cli::VersionCalc
 
     RELEASES_TO_KEEP = 2
     STEMCELLS_TO_KEEP = 2
@@ -58,11 +57,11 @@ module Bosh::Cli::Command
       delete_list = []
       say('Deleting old stemcells')
 
-      stemcells_by_name.each_pair do |name, stemcells|
-        stemcells.sort! do |sc1, sc2|
-          version_cmp(sc1['version'], sc2['version'])
+      stemcells_by_name.each_pair do |_, stemcells|
+        sorted_stemcells = stemcells.sort do |sc1, sc2|
+          Bosh::Common::Version::StemcellVersion.parse(sc1['version']) <=> Bosh::Common::Version::StemcellVersion.parse(sc2['version'])
         end
-        delete_list += stemcells[0...(-n_to_keep)]
+        delete_list += sorted_stemcells[0...(-n_to_keep)]
       end
 
       if delete_list.size > 0
@@ -90,7 +89,7 @@ module Bosh::Cli::Command
           release['release_versions'].map { |release_version| release_version['version'] }
         end
 
-        versions.sort! { |v1, v2| version_cmp(v1, v2) }
+        versions = Bosh::Common::Version::ReleaseVersion.parse_list(versions).sort.map(&:to_s)
 
         versions[0...(-n_to_keep)].each do |version|
           delete_list << [name, version]
