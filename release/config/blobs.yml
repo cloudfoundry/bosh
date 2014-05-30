@@ -140,3 +140,38 @@ powerdns/pdns-static_3.3.1-1_amd64.deb:
   sha: !binary |-
     MjJiYjQ2YWEwYjNlNzY3MWUwZWU5YWEzMGVkOTVjMzg4NDExMDZhYg==
   size: 9353694
+nats/vendor/cache/daemons-1.1.9.gem:
+  object_id: 688133be-f542-4a6a-b139-cd1290cedcd7
+  sha: !binary |-
+    ZTczYmE1OGZlOWU5NDhmN2VkYzUwMTdmOTFmNTNiOGYwYTk1NWEzNw==
+  size: 32768
+nats/vendor/cache/eventmachine-1.0.3.gem:
+  object_id: 530fa989-bb5d-40ff-a723-8ab058006685
+  sha: !binary |-
+    ZjFkM2MwY2ZjZGNhODU1YjliN2VmY2FmOWE2YzkwNzA0MzM0OWFjOQ==
+  size: 225792
+nats/vendor/cache/json_pure-1.8.1.gem:
+  object_id: ce934969-81b7-4d2b-a50c-48a9ee54d50b
+  sha: !binary |-
+    N2I4ZjA4ODUyZjczNGVmMjg3NDY4ZmUxNjc2YzFjNGU3YTlmNjc4YQ==
+  size: 148992
+nats/vendor/cache/nats-0.5.0.beta.12.gem:
+  object_id: 714da93b-b55f-4adf-a5e5-b11ea991cd1f
+  sha: !binary |-
+    ZjM5Yjc5ODQ0NzQxZDAwMTljZDZlMjc3ZGVkMmIyMDI1YjY5YmNhMw==
+  size: 30208
+nats/vendor/cache/rack-1.5.2.gem:
+  object_id: 8e0440d6-d7cb-4085-9b33-2957bfb9a5bd
+  sha: !binary |-
+    YTE3ZjQwYzliZWIwM2I0NThmNTM3ZjQyY2YzNmRkOTBkODIzMDYyNQ==
+  size: 216576
+nats/vendor/cache/thin-1.5.1.gem:
+  object_id: 5b19908f-9a4c-4b03-a377-29d7b9d00a9b
+  sha: !binary |-
+    NDI4MGY1YTNkYjdjNGQ2NDcwYzE1ZjZhY2VjOWEwZGRlZDA1N2FiOA==
+  size: 55296
+nats/vendor/cache/yajl-ruby-1.1.0.gem:
+  object_id: 9d949fd3-d8d9-45f0-92ab-4a8f5a9abc56
+  sha: !binary |-
+    YjIyNTEyZmMxYmQ2OGY0OTVmNDUzOGQzZTI5NzM1ZGE0OTRiZWEwNA==
+  size: 559616
