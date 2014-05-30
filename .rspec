@@ -1,5 +1,2 @@
 --color
 --format progress
---profile
---require rspec/instafail
---format RSpec::Instafail

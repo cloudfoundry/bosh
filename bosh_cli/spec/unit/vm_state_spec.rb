@@ -23,7 +23,7 @@ module Bosh::Cli
     end
 
     before do
-      command.stub(:inspect_deployment_changes).and_return do |manifest, _|
+      command.stub(:inspect_deployment_changes) do |manifest, _|
         manifest['inspected'] = true
       end
     end

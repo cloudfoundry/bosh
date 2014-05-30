@@ -11,7 +11,7 @@ module Bosh::Director
       started = Time.now.to_f
 
       stored_value = nil
-      redis.should_receive(:setnx).with('foo', anything).and_return do |_, value|
+      redis.should_receive(:setnx).with('foo', anything) do |_, value|
         stored_value = value
         timestamp = stored_value.split(':')[0].to_f
         timestamp.should be_within(2.0).of(started + 10)
@@ -20,7 +20,7 @@ module Bosh::Director
       redis.stub(:watch).with('foo')
       redis.stub(:multi).and_yield
 
-      redis.stub(:get).with('foo').and_return do
+      redis.stub(:get).with('foo') do
         stored_value
       end
 
@@ -28,7 +28,7 @@ module Bosh::Director
         stored_value = value
       end
 
-      redis.should_receive(:del).with('foo').and_return do
+      redis.should_receive(:del).with('foo') do
         stored_value = nil
         nil
       end
@@ -48,8 +48,7 @@ module Bosh::Director
       Config.stub(:redis).and_return(redis)
 
       stored_value = nil
-      redis.stub(:setnx).with('foo', anything).
-        and_return do |_, value|
+      redis.stub(:setnx).with('foo', anything) do |_, value|
         timestamp = value.split(':')[0].to_f
         timestamp.should be_within(2.0).of(Time.now.to_f + 10)
         if stored_value.nil?
@@ -63,13 +62,13 @@ module Bosh::Director
       redis.stub(:watch).with('foo')
       redis.stub(:multi).and_yield
 
-      redis.stub(:get).with('foo').and_return { stored_value }
+      redis.stub(:get).with('foo') { stored_value }
 
       redis.should_receive(:set).with('foo', anything()) do |_, value|
         stored_value = value
       end
 
-      redis.should_receive(:del).with('foo').and_return do
+      redis.should_receive(:del).with('foo') do
         stored_value = nil
         nil
       end
@@ -91,8 +90,7 @@ module Bosh::Director
       Config.stub(:redis).and_return(redis)
 
       stored_value = nil
-      redis.stub(:setnx).with('foo', anything).
-        and_return do |_, value|
+      redis.stub(:setnx).with('foo', anything) do |_, value|
         timestamp = value.split(':')[0].to_f
         timestamp.should be_within(2.0).of(Time.now.to_f + 10)
         if stored_value.nil?
@@ -106,11 +104,11 @@ module Bosh::Director
       redis.stub(:watch).with('foo')
       redis.stub(:multi).and_yield
 
-      redis.stub(:get).with('foo').and_return do
+      redis.stub(:get).with('foo') do
         stored_value
       end
 
-      redis.should_receive(:del).with('foo').and_return do
+      redis.should_receive(:del).with('foo') do
         stored_value = nil
         nil
       end

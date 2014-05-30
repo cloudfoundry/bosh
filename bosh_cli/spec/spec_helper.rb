@@ -20,8 +20,6 @@ RSpec.configure do |c|
   end
 
   c.include WebMock::API
-
-  c.color_enabled = true
 end
 
 def get_tmp_file_path(content)

@@ -4,13 +4,13 @@ module Bosh::Cli
   describe Resurrection do
     subject(:resurrection) { Resurrection.new(state) }
 
-    share_examples_for 'enabled resurrection' do
+    shared_examples_for 'enabled resurrection' do
       it { should be_enabled }
       it { should_not be_disabled }
       it { should_not be_paused }
     end
 
-    share_examples_for 'disabled resurrection' do
+    shared_examples_for 'disabled resurrection' do
       it { should_not be_enabled }
       it { should be_disabled }
       it { should be_paused }

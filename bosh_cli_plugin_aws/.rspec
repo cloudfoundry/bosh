@@ -1,6 +1,3 @@
 --color
 --format progress
---profile
---require rspec/instafail
---format RSpec::Instafail
 --tag ~s3_credentials

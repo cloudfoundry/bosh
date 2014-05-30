@@ -22,9 +22,9 @@ module Bosh::Stemcell
     end
 
     before do
-      Bosh::Core::Shell.stub(:new).and_return(shell)
+      allow(Bosh::Core::Shell).to receive(:new).and_return(shell)
 
-      stage_runner.stub(:puts)
+      allow(stage_runner).to receive(:puts)
     end
 
     describe '#initialize' do
@@ -64,23 +64,23 @@ module Bosh::Stemcell
           File.chmod(0700, config_script)
         end
 
-        File.stub(executable?: true) # because FakeFs does not support :executable?
+        allow(File).to receive(:executable?).and_return(true) # because FakeFs does not support :executable?
       end
 
       it 'prints the expected messages' do
-        stage_runner.should_receive(:puts).with("=== Configuring 'stage_0' stage ===")
-        stage_runner.should_receive(:puts).with("== Started #{Time.now.strftime('%a %b %e %H:%M:%S %Z %Y')} ==")
-        stage_runner.should_receive(:puts).with("=== Configuring 'stage_1' stage ===")
-        stage_runner.should_receive(:puts).with("== Started #{Time.now.strftime('%a %b %e %H:%M:%S %Z %Y')} ==")
+        allow(stage_runner).to receive(:puts).with("=== Configuring 'stage_0' stage ===")
+        allow(stage_runner).to receive(:puts).with("== Started #{Time.now.strftime('%a %b %e %H:%M:%S %Z %Y')} ==")
+        allow(stage_runner).to receive(:puts).with("=== Configuring 'stage_1' stage ===")
+        allow(stage_runner).to receive(:puts).with("== Started #{Time.now.strftime('%a %b %e %H:%M:%S %Z %Y')} ==")
 
         stage_runner.configure(stages)
       end
 
       it 'runs the configure script for each stage in order' do
-        shell.should_receive(:run).
+        expect(shell).to receive(:run).
           with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_0/config.sh /fake/path/to/settings.bash 2>&1',
                { output_command: true })
-        shell.should_receive(:run).
+        expect(shell).to receive(:run).
           with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/config.sh /fake/path/to/settings.bash 2>&1',
                { output_command: true })
 
@@ -93,10 +93,10 @@ module Bosh::Stemcell
         end
 
         it 'does not attempt to run the configure step which is missing a config.sh' do
-          shell.should_not_receive(:run).
+          expect(shell).not_to receive(:run).
             with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_0/config.sh /fake/path/to/settings.bash 2>&1',
                  { output_command: true })
-          shell.should_receive(:run).
+          expect(shell).to receive(:run).
             with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/config.sh /fake/path/to/settings.bash 2>&1',
                  { output_command: true })
 
@@ -106,14 +106,15 @@ module Bosh::Stemcell
 
       context 'when a stage has config.sh file which is not executable' do
         before do
-          File.stub(:executable?).with('/fake/path/to/build_dir/stages/stage_1/config.sh').and_return(false)
+          allow(File).to receive(:executable?).
+                           with('/fake/path/to/build_dir/stages/stage_1/config.sh').and_return(false)
         end
 
         it 'does not attempt to run the configure step which has a non-executable config.sh' do
-          shell.should_receive(:run).
+          expect(shell).to receive(:run).
             with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_0/config.sh /fake/path/to/settings.bash 2>&1',
                  { output_command: true })
-          shell.should_not_receive(:run).
+          expect(shell).not_to receive(:run).
             with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/config.sh /fake/path/to/settings.bash 2>&1',
                  { output_command: true })
 
@@ -125,22 +126,22 @@ module Bosh::Stemcell
     describe '#apply' do
       it 'prints the expected messages' do
         Timecop.freeze do
-          stage_runner.should_receive(:puts).with("=== Applying 'stage_0' stage ===")
-          stage_runner.should_receive(:puts).with("== Started #{Time.now.strftime('%a %b %e %H:%M:%S %Z %Y')} ==")
-          stage_runner.should_receive(:puts).with("=== Applying 'stage_1' stage ===")
-          stage_runner.should_receive(:puts).with("== Started #{Time.now.strftime('%a %b %e %H:%M:%S %Z %Y')} ==")
+          expect(stage_runner).to receive(:puts).with("=== Applying 'stage_0' stage ===")
+          expect(stage_runner).to receive(:puts).with("== Started #{Time.now.strftime('%a %b %e %H:%M:%S %Z %Y')} ==")
+          expect(stage_runner).to receive(:puts).with("=== Applying 'stage_1' stage ===")
+          expect(stage_runner).to receive(:puts).with("== Started #{Time.now.strftime('%a %b %e %H:%M:%S %Z %Y')} ==")
 
           stage_runner.apply(stages)
         end
       end
 
       it 'runs the apply script for each stage in order' do
-        FileUtils.should_receive(:mkdir_p).with(work_path).exactly(2).times
+        expect(FileUtils).to receive(:mkdir_p).with(work_path).exactly(2).times
 
-        shell.should_receive(:run).
+        expect(shell).to receive(:run).
           with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_0/apply.sh /fake/path/to/work_dir/work 2>&1',
                { output_command: true })
-        shell.should_receive(:run).
+        expect(shell).to receive(:run).
           with('sudo env FOO=bar /fake/path/to/build_dir/stages/stage_1/apply.sh /fake/path/to/work_dir/work 2>&1',
                { output_command: true })
 

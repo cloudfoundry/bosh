@@ -31,11 +31,10 @@ describe Bosh::Director::NatsRpc do
 
     it "should fire callback when message is received" do
       subscribe_callback = nil
-      @nats.should_receive(:subscribe).with("director.123.>").
-          and_return do |&block|
+      @nats.should_receive(:subscribe).with("director.123.>") do |&block|
         subscribe_callback = block
       end
-      @nats.should_receive(:publish).and_return do
+      @nats.should_receive(:publish) do
         subscribe_callback.call("", nil, "director.123.req1")
       end
 
@@ -53,11 +52,10 @@ describe Bosh::Director::NatsRpc do
 
     it "should fire once even if two messages were received" do
       subscribe_callback = nil
-      @nats.should_receive(:subscribe).with("director.123.>").
-          and_return do |&block|
+      @nats.should_receive(:subscribe).with("director.123.>") do |&block|
         subscribe_callback = block
       end
-      @nats.should_receive(:publish).and_return do
+      @nats.should_receive(:publish) do
         subscribe_callback.call("", nil, "director.123.req1")
         subscribe_callback.call("", nil, "director.123.req1")
       end
@@ -79,8 +77,7 @@ describe Bosh::Director::NatsRpc do
 
     it "should not fire after cancel was called" do
       subscribe_callback = nil
-      @nats.should_receive(:subscribe).with("director.123.>").
-          and_return do |&block|
+      @nats.should_receive(:subscribe).with("director.123.>") do |&block|
         subscribe_callback = block
       end
       @nats.should_receive(:publish)

@@ -6,7 +6,7 @@ module Bosh::Stemcell
   module Aws
     describe LightStemcell do
       let(:stemcell) do
-        Archive.new(spec_asset('fake-stemcell-aws.tgz'))
+        Bosh::Stemcell::Archive.new(spec_asset('fake-stemcell-aws.tgz'))
       end
 
       subject(:light_stemcell) do
@@ -25,7 +25,7 @@ module Bosh::Stemcell
         end
 
         let(:stemcell) do
-          Archive.new(spec_asset('fake-stemcell-aws.tgz'))
+          Bosh::Stemcell::Archive.new(spec_asset('fake-stemcell-aws.tgz'))
         end
 
         subject(:light_stemcell) do
@@ -33,34 +33,34 @@ module Bosh::Stemcell
         end
 
         before do
-          Region.stub(new: region)
-          Ami.stub(:new).with(stemcell, region).and_return(ami)
-          Rake::FileUtilsExt.stub(:sh)
-          FileUtils.stub(:touch)
+          allow(Region).to receive(:new).and_return(region)
+          allow(Ami).to receive(:new).with(stemcell, region).and_return(ami)
+          allow(Rake::FileUtilsExt).to receive(:sh)
+          allow(FileUtils).to receive(:touch)
         end
 
         it 'creates an ami from the stemcell' do
-          ami.should_receive(:publish)
+          expect(ami).to receive(:publish)
 
           light_stemcell.write_archive
         end
 
         it 'creates a new tgz' do
-          Rake::FileUtilsExt.should_receive(:sh) do |command|
-            command.should match(/tar xzf #{stemcell.path} --directory .*/)
+          expect(Rake::FileUtilsExt).to receive(:sh) do |command|
+            expect(command).to match(/tar xzf #{stemcell.path} --directory .*/)
           end
 
           expected_tarfile = File.join(File.dirname(stemcell.path), 'light-fake-stemcell-aws.tgz')
 
-          Rake::FileUtilsExt.should_receive(:sh) do |command|
-            command.should match(/sudo tar cvzf #{expected_tarfile} \*/)
+          expect(Rake::FileUtilsExt).to receive(:sh) do |command|
+            expect(command).to match(/sudo tar cvzf #{expected_tarfile} \*/)
           end
 
           light_stemcell.write_archive
         end
 
         it 'replaces the raw image with a blank placeholder' do
-          FileUtils.should_receive(:touch).and_return do |file, options|
+          expect(FileUtils).to receive(:touch) do |file, options|
             expect(file).to match('image')
             expect(options).to eq(verbose: true)
           end
@@ -68,7 +68,7 @@ module Bosh::Stemcell
         end
 
         it 'adds the ami to the stemcell manifest' do
-          Psych.should_receive(:dump).and_return do |stemcell_properties, out|
+          expect(Psych).to receive(:dump) do |stemcell_properties, out|
             expect(stemcell_properties['cloud_properties']['ami']).to eq({ 'fake-region' => 'fake-ami-id' })
           end
 
@@ -77,8 +77,8 @@ module Bosh::Stemcell
 
         it 'names the stemcell manifest correctly' do
           # Example fails on linux without File.stub
-          File.stub(:open).and_call_original
-          File.should_receive(:open).with('stemcell.MF', 'w')
+          allow(File).to receive(:open).and_call_original
+          expect(File).to receive(:open).with('stemcell.MF', 'w')
 
           light_stemcell.write_archive
         end

@@ -47,7 +47,7 @@ module Bosh::Director
         unbound_vm.stub(:bound_instance).and_return(nil)
 
         called = false
-        resource_pool_updater.should_receive(:create_missing_vms).and_return do |&block|
+        resource_pool_updater.should_receive(:create_missing_vms) do |&block|
           called = true
           block.call(bound_vm).should == true
           block.call(unbound_vm).should == false

@@ -81,9 +81,9 @@ describe Bosh::Director::DeploymentPlan::ParallelMultiJobUpdater do
 
       it 'enqueues all given jobs to run in parallel' do
         enqueued = []
-        expect(thread_pool).to receive(:process).twice.and_return { |&blk| enqueued << blk }
+        expect(thread_pool).to receive(:process).twice { |&blk| enqueued << blk }
 
-        expect(thread_pool).to receive(:wrap).and_return do |&blk|
+        expect(thread_pool).to receive(:wrap) do |&blk|
           blk.call(thread_pool)
           # all jobs were enqueued by the time wrap block executes
           expect(enqueued.size).to eq(2)

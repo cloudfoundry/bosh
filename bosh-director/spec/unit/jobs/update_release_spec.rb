@@ -475,7 +475,7 @@ module Bosh::Director
       it 'should create a proper template and upload job bits to blobstore' do
         File.open(@tarball, 'w') { |f| f.write(@job_bits) }
 
-        blobstore.should_receive(:create).and_return do |f|
+        blobstore.should_receive(:create) do |f|
           f.rewind
           Digest::SHA1.hexdigest(f.read).should == Digest::SHA1.hexdigest(@job_bits)
 
