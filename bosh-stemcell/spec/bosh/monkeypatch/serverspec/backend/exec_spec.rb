@@ -30,7 +30,7 @@ CHROOT_CMD
         it 'extracts the exit code returned from within the chroot into an Integer' do
           allow(exec).to receive(:`).and_return("ATTENTION\nDO NOT CARE\nEXIT_CODE=8675309\n")
           result = exec.run_command('do_not_care')
-          expect(result[:exit_status]).to eq(867_5309)
+          expect(result.exit_status).to eq(867_5309)
         end
       end
     end
