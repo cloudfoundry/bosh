@@ -1,5 +1,4 @@
 # Copyright (c) 2009-2012 VMware, Inc.
-require 'cli/version_calc'
 require 'cli/core_ext'
 require 'cli/errors'
 
@@ -12,7 +11,6 @@ module Bosh
   module Cli
     module Client
       class Director
-        include Bosh::Cli::VersionCalc
 
         DIRECTOR_HTTP_ERROR_CODES = [400, 403, 404, 500]
 
@@ -124,7 +122,8 @@ module Bosh
         end
 
         def list_running_tasks(verbose = 1)
-          if version_less(get_version, '0.3.5')
+
+          if Bosh::Common::Version::BoshVersion.parse(get_version) < Bosh::Common::Version::BoshVersion.parse('0.3.5')
             get_json('/tasks?state=processing')
           else
             get_json('/tasks?state=processing,cancelling,queued' +
