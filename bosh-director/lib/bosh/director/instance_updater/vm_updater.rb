@@ -1,9 +1,10 @@
 module Bosh::Director
   class InstanceUpdater::VmUpdater
-    def initialize(instance, vm_model, agent_client, cloud, max_update_tries, logger)
+    def initialize(instance, vm_model, agent_client, job_renderer, cloud, max_update_tries, logger)
       @instance = instance
       @vm_model = vm_model
       @agent_client = agent_client
+      @job_renderer = job_renderer
       @cloud = cloud
       @max_update_tries = max_update_tries
       @logger = logger
@@ -41,7 +42,7 @@ module Bosh::Director
         end
       end
 
-      vm_state_applier = VmStateApplier.new(@instance, @vm_model, @agent_client, @logger)
+      vm_state_applier = VmStateApplier.new(@instance, @vm_model, @agent_client, @job_renderer, @logger)
       vm_state_applier.apply
 
       [@vm_model, @agent_client]
@@ -184,10 +185,11 @@ module Bosh::Director
     end
 
     class VmStateApplier
-      def initialize(instance, vm_model, agent_client, logger)
+      def initialize(instance, vm_model, agent_client, job_renderer, logger)
         @instance = instance
         @vm_model = vm_model
         @agent_client = agent_client
+        @job_renderer = job_renderer
         @logger = logger
       end
 

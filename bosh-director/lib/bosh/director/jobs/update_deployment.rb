@@ -12,6 +12,8 @@ module Bosh::Director
       # @param [String] manifest_file Path to deployment manifest
       # @param [Hash] options Deployment options
       def initialize(manifest_file, options = {})
+        @blobstore = App.instance.blobstores.blobstore
+
         logger.info('Reading deployment manifest')
         @manifest_file = manifest_file
         @manifest = File.read(@manifest_file)
@@ -47,7 +49,8 @@ module Bosh::Director
 
       def update
         resource_pools = DeploymentPlan::ResourcePools.new(event_log, @resource_pool_updaters)
-        multi_job_updater = DeploymentPlan::BatchMultiJobUpdater.new
+        job_updater_factory = JobUpdaterFactory.new(@blobstore)
+        multi_job_updater = DeploymentPlan::BatchMultiJobUpdater.new(job_updater_factory)
         updater = DeploymentPlan::Updater.new(self, event_log, resource_pools, @assembler, @deployment_plan, multi_job_updater)
         updater.update
       end

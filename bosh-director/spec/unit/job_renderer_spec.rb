@@ -2,8 +2,11 @@ require 'spec_helper'
 
 module Bosh::Director
   describe JobRenderer do
-    subject(:renderer) { JobRenderer.new(job) }
-    let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', templates: templates) }
+    subject(:renderer) { described_class.new(job, blobstore) }
+    let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job') }
+    let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+
+    before { allow(job).to receive(:templates).with(no_args).and_return(templates) }
     let(:templates) { [instance_double('Bosh::Director::DeploymentPlan::Template')] }
 
     before { allow(Core::Templates::JobInstanceRenderer).to receive(:new).and_return(job_instance_renderer) }
@@ -51,10 +54,8 @@ module Bosh::Director
 
       let(:configuration_hash) { 'fake-content-sha1' }
 
-      let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
-
       def perform
-        renderer.render_job_instances(blobstore)
+        renderer.render_job_instances
       end
 
       it 'correctly initializes JobInstanceRenderer' do

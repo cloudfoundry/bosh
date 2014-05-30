@@ -4,13 +4,15 @@ require 'bosh/director/core/templates/job_instance_renderer'
 module Bosh::Director
   class JobRenderer
     # @param [DeploymentPlan::Job]
-    def initialize(job)
+    def initialize(job, blobstore)
       @job = job
+      @blobstore = blobstore
+
       job_template_loader = Core::Templates::JobTemplateLoader.new(Config.logger)
       @instance_renderer = Core::Templates::JobInstanceRenderer.new(@job.templates, job_template_loader)
     end
 
-    def render_job_instances(blobstore)
+    def render_job_instances
       @job.instances.each do |instance|
         rendered_job_instance = @instance_renderer.render(instance.spec)
 
@@ -24,7 +26,7 @@ module Bosh::Director
             archive_model.sha1,
           )
         else
-          rendered_templates_archive = rendered_job_instance.persist(blobstore)
+          rendered_templates_archive = rendered_job_instance.persist(@blobstore)
           instance.model.add_rendered_templates_archive(
             blobstore_id: rendered_templates_archive.blobstore_id,
             sha1: rendered_templates_archive.sha1,

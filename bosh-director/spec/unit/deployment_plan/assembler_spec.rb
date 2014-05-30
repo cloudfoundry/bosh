@@ -567,8 +567,8 @@ module Bosh::Director
 
         it 'renders job templates for all instances' do
           job_renderer = instance_double('Bosh::Director::JobRenderer')
-          allow(JobRenderer).to receive(:new).with(job).and_return(job_renderer)
-          expect(job_renderer).to receive(:render_job_instances).with(blobstore)
+          allow(JobRenderer).to receive(:new).with(job, blobstore).and_return(job_renderer)
+          expect(job_renderer).to receive(:render_job_instances).with(no_args)
           assembler.bind_configuration
         end
       end

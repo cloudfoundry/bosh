@@ -3,10 +3,11 @@ require 'logger'
 
 module Bosh::Director
   describe InstanceUpdater::VmUpdater do
-    subject(:updater) { described_class.new(instance, vm_model, agent_client, cloud, 2, logger) }
+    subject(:updater) { described_class.new(instance, vm_model, agent_client, job_renderer, cloud, 2, logger) }
     let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
     let(:vm_model) { instance_double('Bosh::Director::Models::Vm') }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
+    let(:job_renderer) { instance_double('Bosh::Director::JobRenderer') }
     let(:cloud) { instance_double('Bosh::Cloud') }
     let(:logger) { Logger.new('/dev/null') }
 
@@ -41,7 +42,7 @@ module Bosh::Director
           
           vm_state_applier = instance_double('Bosh::Director::InstanceUpdater::VmUpdater::VmStateApplier')
           expect(InstanceUpdater::VmUpdater::VmStateApplier).to receive(:new).
-            with(instance, new_vm_model, new_agent_client, logger).
+            with(instance, new_vm_model, new_agent_client, job_renderer, logger).
             and_return(vm_state_applier)
 
           expect(disk_detacher).to receive(:detach).with(no_args).ordered
@@ -616,11 +617,12 @@ module Bosh::Director
   end
 
   describe InstanceUpdater::VmUpdater::VmStateApplier do
-    subject(:vm_state_applier) { described_class.new(instance, vm_model, agent_client, logger) }
+    subject(:vm_state_applier) { described_class.new(instance, vm_model, agent_client, job_renderer, logger) }
     let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model, index: 123) }
     let(:instance_model) { instance_double('Bosh::Director::Models::Instance') }
     let(:vm_model) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-vm-cid') }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
+    let(:job_renderer) { instance_double('Bosh::Director::JobRenderer') }
     let(:logger) { Logger.new('/dev/null') }
 
     describe '#apply' do

@@ -10,15 +10,16 @@ module Bosh::Director
     attr_reader :current_state
 
     # @params [DeploymentPlan::Instance] instance
-    def initialize(instance, event_log_task)
+    def initialize(instance, event_log_task, job_renderer)
+      @instance = instance
+      @event_log_task = event_log_task
+      @job_renderer = job_renderer
+
       @cloud = Config.cloud
       @logger = Config.logger
-      @event_log_task = event_log_task
       @blobstore = App.instance.blobstores.blobstore
 
-      @instance = instance
       @job = instance.job
-
       @target_state = @instance.state
 
       @deployment_plan = @job.deployment
@@ -331,7 +332,7 @@ module Bosh::Director
     def vm_updater
       # Do not memoize to avoid caching same VM and agent
       # which could be replaced after updating a VM
-      VmUpdater.new(@instance, @vm, agent, @cloud, 3, @logger)
+      VmUpdater.new(@instance, @vm, agent, @job_renderer, @cloud, 3, @logger)
     end
   end
 end

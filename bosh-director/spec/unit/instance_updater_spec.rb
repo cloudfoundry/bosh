@@ -2,10 +2,10 @@ require 'spec_helper'
 
 module Bosh::Director
   describe InstanceUpdater do
-    subject do
-      ticker = double('ticker', advance: nil)
-      described_class.new(instance, ticker)
-    end
+    subject { described_class.new(instance, ticker, job_renderer) }
+
+    let(:ticker) { double('ticker', advance: nil) }
+    let(:job_renderer) { instance_double('Bosh::Director::JobRenderer') }
 
     before { App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
@@ -86,7 +86,7 @@ module Bosh::Director
     end
 
     describe '#report_progress' do
-      subject { described_class.new(instance, event_log_task) }
+      subject { described_class.new(instance, event_log_task, job_renderer) }
       let(:event_log_task) { instance_double('Bosh::Director::EventLog::Task') }
 
       it 'advances the ticker' do
@@ -572,7 +572,7 @@ module Bosh::Director
       it 'updates the VM' do
         vm_updater = instance_double('Bosh::Director::InstanceUpdater::VmUpdater')
         expect(InstanceUpdater::VmUpdater).to receive(:new).
-          with(instance, vm_model, agent_client, cloud, 3, Config.logger).
+          with(instance, vm_model, agent_client, job_renderer, cloud, 3, Config.logger).
           and_return(vm_updater)
 
         expect(vm_updater).to receive(:update).with('new-disk-cid')
@@ -585,7 +585,7 @@ module Bosh::Director
       it 'updates networks' do
         vm_updater = instance_double('Bosh::Director::InstanceUpdater::VmUpdater')
         expect(InstanceUpdater::VmUpdater).to receive(:new).
-          with(instance, vm_model, agent_client, cloud, 3, Config.logger).
+          with(instance, vm_model, agent_client, job_renderer, cloud, 3, Config.logger).
           and_return(vm_updater)
 
         network_updater = instance_double('Bosh::Director::InstanceUpdater::NetworkUpdater')

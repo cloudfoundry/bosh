@@ -86,7 +86,8 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     end
 
     describe '#update' do
-      let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater') }
+      before { Bosh::Director::App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
+      let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
       it 'should update the deployment' do
         assembler = instance_double('Bosh::Director::DeploymentPlan::Assembler')
@@ -100,7 +101,14 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         resource_pool_updater.stub(:missing_vm_count).and_return(5)
 
         Bosh::Director::ResourcePoolUpdater.stub(:new).with(resource_pool).and_return(resource_pool_updater)
-        Bosh::Director::DeploymentPlan::BatchMultiJobUpdater.stub(:new).with(no_args).and_return(multi_job_updater)
+
+        job_updater_factory = instance_double('Bosh::Director::JobUpdaterFactory')
+        allow(Bosh::Director::JobUpdaterFactory).to receive(:new).
+           with(blobstore).and_return(job_updater_factory)
+
+        multi_job_updater = instance_double('Bosh::Director::DeploymentPlan::BatchMultiJobUpdater')
+        allow(Bosh::Director::DeploymentPlan::BatchMultiJobUpdater).to receive(:new).
+          with(job_updater_factory).and_return(multi_job_updater)
 
         resource_pool.stub(:name).and_return('resource_pool_name')
 
