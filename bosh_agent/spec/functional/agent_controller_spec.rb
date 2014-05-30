@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require File.expand_path("../../spec_helper", __FILE__)
 
 require "bosh_agent/http_handler"
@@ -32,6 +30,8 @@ describe Bosh::Agent::AgentController do
   def agent_response
     Yajl::Parser.parse(last_response.body)
   end
+
+  around { |ex| EM.run_block { ex.call } }
 
   it "can ping" do
     agent_call("ping")

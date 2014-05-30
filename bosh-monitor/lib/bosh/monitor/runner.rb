@@ -38,6 +38,7 @@ module Bosh::Monitor
       @logger.info("HealthMonitor shutting down...")
       @http_server.stop! if @http_server
       EM.stop
+      sleep(0.1) until !EM.reactor_running? # EM.stop is not blocking with EM 1.0
       exit(0) unless soft
     end
 
