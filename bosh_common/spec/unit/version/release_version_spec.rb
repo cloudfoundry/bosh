@@ -37,6 +37,26 @@ module Bosh::Common::Version
       end
     end
 
+    describe 'to_old_format' do
+      subject { described_class.parse(version) }
+
+      context 'when the format supplied can be converted to the old-format' do
+        let(:version) { '1.2+dev.0' }
+
+        it 'returns the version in the old format' do
+          expect(subject.to_old_format).to eq('1.2.0-dev')
+        end
+      end
+
+      context 'when the format supplied cannot be converted to the old-format' do
+        let(:version) { '1.2.0-alpha.1+build.1.0' }
+
+        it 'returns nil' do
+          expect(subject.to_old_format).to be_nil
+        end
+      end
+    end
+
     describe '#default_post_release' do
       let(:a) { described_class.parse('1.0.1') }
       let(:b) { described_class.parse('1.0.2+dev.10') }

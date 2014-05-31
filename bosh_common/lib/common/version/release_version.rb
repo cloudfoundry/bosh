@@ -18,6 +18,14 @@ module Bosh::Common::Version
       self.new(SemiSemantic::Version.parse(version))
     end
 
+    def to_old_format
+      matches = /\A(?<release>.*)(\+dev\.(?<dev>[0-9]+))\z/.match(to_s)
+      if matches.nil?
+        return nil
+      end
+      matches[:release] + '.' + matches[:dev] + "-dev"
+    end
+
     private
 
     def default_post_release_segment

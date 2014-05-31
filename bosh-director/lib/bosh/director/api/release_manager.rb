@@ -27,18 +27,21 @@ module Bosh::Director
         release_version = dataset.filter(:version => version).first
         if release_version.nil?
           begin
-            # specified version not found, try formatted version
-            formatted_version = Bosh::Common::Version::ReleaseVersion.parse(version).to_s
-            unless version == formatted_version
-              # only check db if the formatted version is different
-              release_version = dataset.filter(:version => formatted_version).first
-            end
-            if release_version.nil?
-              raise ReleaseVersionNotFound,
-                    "Release version `#{release.name}/#{version}' doesn't exist"
-            end
+            new_formatted_version = Bosh::Common::Version::ReleaseVersion.parse(version)
           rescue SemiSemantic::ParseError
             raise ReleaseVersionInvalid, "Release version invalid: #{version}"
+          end
+          if version == new_formatted_version.to_s
+            old_formatted_version = new_formatted_version.to_old_format
+            if old_formatted_version
+              release_version = dataset.filter(:version => old_formatted_version).first
+            end
+          else
+            release_version = dataset.filter(:version => new_formatted_version.to_s).first
+          end
+          if release_version.nil?
+            raise ReleaseVersionNotFound,
+                  "Release version `#{release.name}/#{version}' doesn't exist"
           end
         end
 

@@ -71,6 +71,12 @@ module Bosh::Director
       end
 
       context 'when version as specified does not exist in the database' do
+        context 'when an equivalent old-format version exists in the database' do
+          it 'returns the matching version model' do
+            expect(subject.find_version(@release, '9+dev.1')).to eq(@old_dev_release_version)
+          end
+        end
+
         context 'when version as specified is an invalid format' do
           it 'raises an error' do
             expect {
@@ -89,6 +95,10 @@ module Bosh::Director
           it 'raises an error' do
             expect {
               subject.find_version(@release, '9.1')
+            }.to raise_error(ReleaseVersionNotFound)
+
+            expect {
+              subject.find_version(@release, '9.1.3-dev')
             }.to raise_error(ReleaseVersionNotFound)
           end
         end
