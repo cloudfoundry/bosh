@@ -85,7 +85,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	p.platforms = map[string]Platform{
 		"ubuntu": ubuntu,
 		"centos": centos,
-		"dummy":  NewDummyPlatform(sigarCollector, fs, runner, dirProvider, linuxDiskManager, logger),
+		"dummy":  NewDummyPlatform(sigarCollector, fs, runner, dirProvider, logger),
 	}
 	return
 }

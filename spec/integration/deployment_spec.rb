@@ -20,6 +20,36 @@ describe 'deployment integrations', type: :integration do
     expect(template).to include('test_property=2')
   end
 
+  it 'updates job template accounting for changed dynamic network configuration' do
+    # Ruby agent does not determine dynamic ip for dummy infrastructure
+    pending if current_sandbox.agent_type == "ruby"
+
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['networks'].first['type'] = 'dynamic'
+    manifest_hash['networks'].first['cloud_properties'] = {}
+    manifest_hash['networks'].first.delete('subnets')
+    manifest_hash['resource_pools'].first['size'] = 1
+    manifest_hash['jobs'].first['instances'] = 1
+    manifest_hash['jobs'].first['properties'] = { 'network_name' => 'a' }
+
+    current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.101')
+    deploy_simple(manifest_hash: manifest_hash)
+
+    # VM deployed for the first time knows about correct dynamic IP
+    template = director.vm('foobar/0').read_job_template('foobar', 'bin/foobar_ctl')
+    expect(template).to include('a_ip=127.0.0.101')
+
+    # Force VM recreation
+    manifest_hash['resource_pools'].first['cloud_properties'] = {'changed' => true}
+
+    current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.102')
+    deploy_simple_manifest(manifest_hash: manifest_hash)
+
+    # Recreated VM due to the resource pool change knows about correct dynamic IP
+    template = director.vm('foobar/0').read_job_template('foobar', 'bin/foobar_ctl')
+    expect(template).to include('a_ip=127.0.0.102')
+  end
+
   it 'updates a job with multiple instances in parallel and obey max_in_flight' do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['releases'].first['version'] = 'latest'

@@ -46,8 +46,13 @@ module Bosh
 
       # rubocop:disable ParameterLists
       def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, env = nil)
-        @logger.info('Dummy: create_vm')
       # rubocop:enable ParameterLists
+        @logger.info('Dummy: create_vm')
+
+        cmd = commands.next_create_vm_cmd
+
+        write_agent_default_network(agent_id, cmd.ip_address) if cmd.ip_address
+
         write_agent_settings(agent_id, {
           agent_id: agent_id,
           blobstore: @options['agent']['blobstore'],
@@ -196,6 +201,13 @@ module Bosh
         File.write(agent_settings_file(agent_id), JSON.generate(settings))
       end
 
+      def write_agent_default_network(agent_id, ip_address)
+        # Agent looks for following file to resolve default network on dummy infrastructure
+        path = File.join(agent_base_dir(agent_id), 'bosh', 'dummy-default-network-settings.json')
+        FileUtils.mkdir_p(File.dirname(path))
+        File.write(path, JSON.generate('ip' => ip_address))
+      end
+
       def agent_cmd(agent_id, root_dir)
         go_agent_exe = File.expand_path('../../../../go_agent/out/bosh-agent', __FILE__)
         {
@@ -247,14 +259,29 @@ module Bosh
 
         def next_configure_networks_cmd(vm_id)
           @logger.info("Reading configure_networks configuration for #{vm_id}")
-          path = File.join(@cpi_commands, 'configure_networks', vm_id)
-          cmd = ConfigureNetworksCommand.new(File.exists?(path))
-          FileUtils.rm_rf(path)
-          cmd
+          vm_path = File.join(@cpi_commands, 'configure_networks', vm_id)
+          vm_supported = File.exists?(vm_path)
+          FileUtils.rm_rf(vm_path)
+          ConfigureNetworksCommand.new(vm_supported)
+        end
+
+        def make_create_vm_always_use_dynamic_ip(ip_address)
+          @logger.info("Making create_vm method to set ip address #{ip_address}")
+          always_path = File.join(@cpi_commands, 'create_vm', 'always')
+          FileUtils.mkdir_p(File.dirname(always_path))
+          File.write(always_path, ip_address)
+        end
+
+        def next_create_vm_cmd
+          @logger.info('Reading create_vm configuration')
+          always_path = File.join(@cpi_commands, 'create_vm', 'always')
+          ip_address = File.read(always_path) if File.exists?(always_path)
+          CreareVmCommand.new(ip_address)
         end
       end
 
       class ConfigureNetworksCommand < Struct.new(:not_supported); end
+      class CreareVmCommand < Struct.new(:ip_address); end
     end
   end
 end
