@@ -6,10 +6,9 @@ import (
 	bosherr "bosh/errors"
 )
 
-type sigarStatsCollector struct {
-}
+type sigarStatsCollector struct{}
 
-func NewSigarStatsCollector() (collector StatsCollector) {
+func NewSigarStatsCollector() StatsCollector {
 	return sigarStatsCollector{}
 }
 
