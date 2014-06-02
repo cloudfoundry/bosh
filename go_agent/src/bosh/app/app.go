@@ -95,7 +95,7 @@ func (app *app) Setup(args []string) error {
 		return bosherr.WrapError(err, "Getting mbus handler")
 	}
 
-	blobstoreProvider := boshblob.NewProvider(app.platform, dirProvider)
+	blobstoreProvider := boshblob.NewProvider(app.platform, dirProvider, app.logger)
 
 	blobstore, err := blobstoreProvider.Get(settingsService.GetBlobstore())
 	if err != nil {

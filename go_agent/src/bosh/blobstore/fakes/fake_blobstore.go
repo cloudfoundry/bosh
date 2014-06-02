@@ -4,7 +4,9 @@ type FakeBlobstore struct {
 	GetBlobIDs      []string
 	GetFingerprints []string
 	GetFileName     string
+	GetFileNames    []string
 	GetError        error
+	GetErrs         []error
 
 	CleanUpFileName string
 	CleanUpErr      error
@@ -25,7 +27,20 @@ func NewFakeBlobstore() *FakeBlobstore {
 func (bs *FakeBlobstore) Get(blobID, fingerprint string) (string, error) {
 	bs.GetBlobIDs = append(bs.GetBlobIDs, blobID)
 	bs.GetFingerprints = append(bs.GetFingerprints, fingerprint)
-	return bs.GetFileName, bs.GetError
+
+	fileName, err := bs.GetFileName, bs.GetError
+
+	if len(bs.GetFileNames) > 0 {
+		fileName = bs.GetFileNames[0]
+		bs.GetFileNames = bs.GetFileNames[1:]
+	}
+
+	if len(bs.GetErrs) > 0 {
+		err = bs.GetErrs[0]
+		bs.GetErrs = bs.GetErrs[1:]
+	}
+
+	return fileName, err
 }
 
 func (bs *FakeBlobstore) CleanUp(fileName string) error {
