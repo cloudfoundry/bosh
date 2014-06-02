@@ -90,6 +90,9 @@ type FakePlatform struct {
 	GetMonitCredentialsUsername string
 	GetMonitCredentialsPassword string
 
+	PrepareForNetworkingChangeCalled bool
+	PrepareForNetworkingChangeErr    error
+
 	GetDefaultNetworkNetwork boshsettings.Network
 	GetDefaultNetworkErr     error
 }
@@ -277,6 +280,11 @@ func (p *FakePlatform) GetMonitCredentials() (username, password string, err err
 	username = p.GetMonitCredentialsUsername
 	password = p.GetMonitCredentialsPassword
 	return
+}
+
+func (p *FakePlatform) PrepareForNetworkingChange() error {
+	p.PrepareForNetworkingChangeCalled = true
+	return p.PrepareForNetworkingChangeErr
 }
 
 func (p *FakePlatform) GetDefaultNetwork() (boshsettings.Network, error) {

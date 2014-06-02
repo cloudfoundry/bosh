@@ -4,22 +4,23 @@ import (
 	"errors"
 
 	bosherr "bosh/errors"
+	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
-	boshsys "bosh/system"
 )
 
 type PrepareConfigureNetworksAction struct {
-	fs              boshsys.FileSystem
+	platform        boshplatform.Platform
 	settingsService boshsettings.Service
 }
 
 func NewPrepareConfigureNetworks(
-	fs boshsys.FileSystem,
+	platform boshplatform.Platform,
 	settingsService boshsettings.Service,
-) (prepareAction PrepareConfigureNetworksAction) {
-	prepareAction.fs = fs
-	prepareAction.settingsService = settingsService
-	return
+) PrepareConfigureNetworksAction {
+	return PrepareConfigureNetworksAction{
+		platform:        platform,
+		settingsService: settingsService,
+	}
 }
 
 func (a PrepareConfigureNetworksAction) IsAsynchronous() bool {
@@ -30,15 +31,15 @@ func (a PrepareConfigureNetworksAction) IsPersistent() bool {
 	return false
 }
 
-func (a PrepareConfigureNetworksAction) Run() (interface{}, error) {
+func (a PrepareConfigureNetworksAction) Run() (string, error) {
 	err := a.settingsService.InvalidateSettings()
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Invalidating settings")
+		return "", bosherr.WrapError(err, "Invalidating settings")
 	}
 
-	err = a.fs.RemoveAll("/etc/udev/rules.d/70-persistent-net.rules")
+	err = a.platform.PrepareForNetworkingChange()
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Removing network rules file")
+		return "", bosherr.WrapError(err, "Preparing for networking change")
 	}
 
 	return "ok", nil

@@ -953,6 +953,25 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/*/*.log fake-base-
 		})
 	})
 
+	Describe("PrepareForNetworkingChange", func() {
+		It("removes the network persistent rules file", func() {
+			fs.WriteFile("/etc/udev/rules.d/70-persistent-net.rules", []byte{})
+
+			err := platform.PrepareForNetworkingChange()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(fs.FileExists("/etc/udev/rules.d/70-persistent-net.rules")).To(BeFalse())
+		})
+
+		It("returns error if removing persistent rules file fails", func() {
+			fs.RemoveAllError = errors.New("fake-remove-all-error")
+
+			err := platform.PrepareForNetworkingChange()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-remove-all-error"))
+		})
+	})
+
 	Describe("GetDefaultNetwork", func() {
 		It("returns default network according to net manager", func() {
 			netManager.GetDefaultNetworkNetwork = boshsettings.Network{IP: "fake-ip"}

@@ -7,32 +7,32 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "bosh/agent/action"
+	fakeplatform "bosh/platform/fakes"
 	fakesettings "bosh/settings/fakes"
-	fakesys "bosh/system/fakes"
 )
 
-func init() {
-	Describe("prepareConfigureNetworks", func() {
-		var (
-			action          PrepareConfigureNetworksAction
-			fs              *fakesys.FakeFileSystem
-			settingsService *fakesettings.FakeSettingsService
-		)
+var _ = Describe("prepareConfigureNetworks", func() {
+	var (
+		action          PrepareConfigureNetworksAction
+		platform        *fakeplatform.FakePlatform
+		settingsService *fakesettings.FakeSettingsService
+	)
 
-		BeforeEach(func() {
-			fs = fakesys.NewFakeFileSystem()
-			settingsService = &fakesettings.FakeSettingsService{}
-			action = NewPrepareConfigureNetworks(fs, settingsService)
-		})
+	BeforeEach(func() {
+		platform = fakeplatform.NewFakePlatform()
+		settingsService = &fakesettings.FakeSettingsService{}
+		action = NewPrepareConfigureNetworks(platform, settingsService)
+	})
 
-		It("is synchronous", func() {
-			Expect(action.IsAsynchronous()).To(BeFalse())
-		})
+	It("is synchronous", func() {
+		Expect(action.IsAsynchronous()).To(BeFalse())
+	})
 
-		It("is not persistent", func() {
-			Expect(action.IsPersistent()).To(BeFalse())
-		})
+	It("is not persistent", func() {
+		Expect(action.IsPersistent()).To(BeFalse())
+	})
 
+	Describe("Run", func() {
 		It("invalidates settings so that load settings cannot fall back on old settings", func() {
 			resp, err := action.Run()
 			Expect(err).NotTo(HaveOccurred())
@@ -42,30 +42,22 @@ func init() {
 		})
 
 		Context("when settings invalidation succeeds", func() {
-			Context("when the network rules file can be removed", func() {
-				It("removes the network rules file", func() {
-					fs.WriteFile("/etc/udev/rules.d/70-persistent-net.rules", []byte{})
+			It("prepares platform for networking change", func() {
+				resp, err := action.Run()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp).To(Equal("ok"))
 
-					resp, err := action.Run()
-					Expect(err).NotTo(HaveOccurred())
-					Expect(resp).To(Equal("ok"))
-
-					Expect(fs.FileExists("/etc/udev/rules.d/70-persistent-net.rules")).To(BeFalse())
-				})
+				Expect(platform.PrepareForNetworkingChangeCalled).To(BeTrue())
 			})
 
-			Context("when the network rules file cannot be removed", func() {
-				BeforeEach(func() {
-					fs.RemoveAllError = errors.New("fake-remove-all-error")
-				})
+			It("returns error if preparing for networking change fails", func() {
+				platform.PrepareForNetworkingChangeErr = errors.New("fake-prepare-error")
 
-				It("returns error from removing the network rules file", func() {
-					resp, err := action.Run()
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-remove-all-error"))
+				resp, err := action.Run()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-prepare-error"))
 
-					Expect(resp).To(BeNil())
-				})
+				Expect(resp).To(Equal(""))
 			})
 		})
 
@@ -79,15 +71,15 @@ func init() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-invalidate-error"))
 
-				Expect(resp).To(BeNil())
+				Expect(resp).To(Equal(""))
 			})
 
-			It("does not remove the network rules file", func() {
-				fs.WriteFile("/etc/udev/rules.d/70-persistent-net.rules", []byte{})
+			It("does not prepare platform for networking change", func() {
+				_, err := action.Run()
+				Expect(err).To(HaveOccurred())
 
-				action.Run()
-				Expect(fs.FileExists("/etc/udev/rules.d/70-persistent-net.rules")).To(BeTrue())
+				Expect(platform.PrepareForNetworkingChangeCalled).To(BeFalse())
 			})
 		})
 	})
-}
+})

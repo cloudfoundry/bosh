@@ -175,6 +175,10 @@ func (p dummyPlatform) GetMonitCredentials() (username, password string, err err
 	return
 }
 
+func (p dummyPlatform) PrepareForNetworkingChange() error {
+	return nil
+}
+
 func (p dummyPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
 	var network boshsettings.Network
 

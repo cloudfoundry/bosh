@@ -139,7 +139,7 @@ var _ = Describe("concreteFactory", func() {
 	It("prepare_configure_networks", func() {
 		action, err := factory.Create("prepare_configure_networks")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewPrepareConfigureNetworks(platform.GetFs(), settings)))
+		Expect(action).To(Equal(NewPrepareConfigureNetworks(platform, settings)))
 	})
 
 	It("configure_networks", func() {

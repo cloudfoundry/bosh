@@ -71,7 +71,7 @@ func NewFactory(
 
 			// Networking
 			"prepare_network_change":     NewPrepareNetworkChange(platform.GetFs(), settings),
-			"prepare_configure_networks": NewPrepareConfigureNetworks(platform.GetFs(), settings),
+			"prepare_configure_networks": NewPrepareConfigureNetworks(platform, settings),
 			"configure_networks":         NewConfigureNetworks(),
 		},
 	}
