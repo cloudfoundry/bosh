@@ -11,7 +11,7 @@ import (
 	fakeuuid "bosh/uuid/fakes"
 )
 
-var _ = Describe("local", func() {
+var _ = Describe("localBlobstore", func() {
 	var (
 		fs                *fakesys.FakeFileSystem
 		uuidGen           *fakeuuid.FakeGenerator

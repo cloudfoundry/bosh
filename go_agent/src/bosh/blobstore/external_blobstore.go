@@ -10,7 +10,7 @@ import (
 	boshuuid "bosh/uuid"
 )
 
-type external struct {
+type externalBlobstore struct {
 	fs             boshsys.FileSystem
 	runner         boshsys.CmdRunner
 	uuidGen        boshuuid.Generator
@@ -26,8 +26,8 @@ func NewExternalBlobstore(
 	runner boshsys.CmdRunner,
 	uuidGen boshuuid.Generator,
 	configFilePath string,
-) (blobstore Blobstore) {
-	return external{
+) Blobstore {
+	return externalBlobstore{
 		provider:       provider,
 		fs:             fs,
 		runner:         runner,
@@ -37,40 +37,39 @@ func NewExternalBlobstore(
 	}
 }
 
-func (blobstore external) Get(blobID, _ string) (string, error) {
-	file, err := blobstore.fs.TempFile("bosh-blobstore-external-Get")
+func (b externalBlobstore) Get(blobID, _ string) (string, error) {
+	file, err := b.fs.TempFile("bosh-blobstore-externalBlobstore-Get")
 	if err != nil {
 		return "", bosherr.WrapError(err, "Creating temporary file")
 	}
 
 	fileName := file.Name()
 
-	err = blobstore.run("get", blobID, fileName)
+	err = b.run("get", blobID, fileName)
 	if err != nil {
-		blobstore.fs.RemoveAll(fileName)
+		b.fs.RemoveAll(fileName)
 		return "", err
 	}
 
 	return fileName, nil
 }
 
-func (blobstore external) CleanUp(fileName string) error {
-	blobstore.fs.RemoveAll(fileName)
-	return nil
+func (b externalBlobstore) CleanUp(fileName string) error {
+	return b.fs.RemoveAll(fileName)
 }
 
-func (blobstore external) Create(fileName string) (string, string, error) {
+func (b externalBlobstore) Create(fileName string) (string, string, error) {
 	filePath, err := filepath.Abs(fileName)
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Getting absolute file path")
 	}
 
-	blobID, err := blobstore.uuidGen.Generate()
+	blobID, err := b.uuidGen.Generate()
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Generating UUID")
 	}
 
-	err = blobstore.run("put", filePath, blobID)
+	err = b.run("put", filePath, blobID)
 	if err != nil {
 		return "", "", bosherr.WrapError(err, "Making put command")
 	}
@@ -78,21 +77,21 @@ func (blobstore external) Create(fileName string) (string, string, error) {
 	return blobID, "", nil
 }
 
-func (blobstore external) Validate() error {
-	if !blobstore.runner.CommandExists(blobstore.executable()) {
-		return bosherr.New("executable %s not found in PATH", blobstore.executable())
+func (b externalBlobstore) Validate() error {
+	if !b.runner.CommandExists(b.executable()) {
+		return bosherr.New("executable %s not found in PATH", b.executable())
 	}
 
-	return blobstore.writeConfigFile()
+	return b.writeConfigFile()
 }
 
-func (blobstore external) writeConfigFile() error {
-	configJSON, err := json.Marshal(blobstore.options)
+func (b externalBlobstore) writeConfigFile() error {
+	configJSON, err := json.Marshal(b.options)
 	if err != nil {
 		return bosherr.WrapError(err, "Marshalling JSON")
 	}
 
-	err = blobstore.fs.WriteFile(blobstore.configFilePath, configJSON)
+	err = b.fs.WriteFile(b.configFilePath, configJSON)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing config file")
 	}
@@ -100,15 +99,15 @@ func (blobstore external) writeConfigFile() error {
 	return nil
 }
 
-func (blobstore external) run(method, src, dst string) (err error) {
-	_, _, _, err = blobstore.runner.RunCommand(blobstore.executable(), "-c", blobstore.configFilePath, method, src, dst)
+func (b externalBlobstore) run(method, src, dst string) (err error) {
+	_, _, _, err = b.runner.RunCommand(b.executable(), "-c", b.configFilePath, method, src, dst)
 	if err != nil {
-		return bosherr.WrapError(err, "Shelling out to %s cli", blobstore.executable())
+		return bosherr.WrapError(err, "Shelling out to %s cli", b.executable())
 	}
 
 	return nil
 }
 
-func (blobstore external) executable() string {
-	return fmt.Sprintf("bosh-blobstore-%s", blobstore.provider)
+func (b externalBlobstore) executable() string {
+	return fmt.Sprintf("bosh-blobstore-%s", b.provider)
 }

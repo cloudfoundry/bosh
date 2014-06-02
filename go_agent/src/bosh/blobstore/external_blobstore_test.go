@@ -15,7 +15,7 @@ import (
 	fakeuuid "bosh/uuid/fakes"
 )
 
-var _ = Describe("external", func() {
+var _ = Describe("externalBlobstore", func() {
 	var (
 		fs         *fakesys.FakeFileSystem
 		runner     *fakesys.FakeCmdRunner
