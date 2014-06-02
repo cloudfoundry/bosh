@@ -33,6 +33,7 @@ describe 'network configuration', type: :integration do
   it 'creates new VM if existing VM cannot be reconfigured to desired network settings' do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['networks'].first['subnets'].first['static'] = %w(192.168.1.100)
+    manifest_hash['resource_pools'].first['size'] = 1
     manifest_hash['jobs'].first['instances'] = 1
     deploy_simple(manifest_hash: manifest_hash)
 

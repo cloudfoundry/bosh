@@ -141,7 +141,8 @@ module Bosh
       # Additional Dummy test helpers
 
       def vm_cids
-        Dir.glob(File.join(@running_vms_dir, '*')).map { |vm| File.basename(vm) }
+        # Shuffle so that no one relies on the order of VMs
+        Dir.glob(File.join(@running_vms_dir, '*')).map { |vm| File.basename(vm) }.shuffle
       end
 
       def kill_agents
