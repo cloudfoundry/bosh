@@ -54,7 +54,7 @@ var _ = Describe("Provider", func() {
 				boshuuid.NewGenerator(),
 				"/var/vcap/bosh/etc/blobstore-fake-external-type.json",
 			)
-			expectedBlobstore = NewSha1Verifiable(expectedBlobstore)
+			expectedBlobstore = NewSHA1VerifiableBlobstore(expectedBlobstore)
 			expectedBlobstore = NewRetryableBlobstore(expectedBlobstore, 3, logger)
 			Expect(blobstore).To(Equal(expectedBlobstore))
 

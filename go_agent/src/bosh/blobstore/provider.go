@@ -57,7 +57,7 @@ func (p Provider) Get(settings boshsettings.Blobstore) (blobstore Blobstore, err
 		)
 	}
 
-	blobstore = NewSha1Verifiable(blobstore)
+	blobstore = NewSHA1VerifiableBlobstore(blobstore)
 
 	blobstore = NewRetryableBlobstore(blobstore, 3, p.logger)
 

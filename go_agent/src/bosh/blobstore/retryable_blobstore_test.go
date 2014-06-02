@@ -15,7 +15,7 @@ import (
 var _ = Describe("retryableBlobstore", func() {
 	var (
 		innerBlobstore     *fakeblob.FakeBlobstore
-		logger boshlog.Logger
+		logger             boshlog.Logger
 		retryableBlobstore boshblob.Blobstore
 	)
 
