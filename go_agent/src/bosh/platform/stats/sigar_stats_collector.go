@@ -52,7 +52,10 @@ func (s sigarStatsCollector) GetMemStats() (usage Usage, err error) {
 	}
 
 	usage.Total = mem.Total
-	usage.Used = mem.Used
+
+	// actual_used = mem->used - (kern_buffers + kern_cached)
+	// (https://github.com/hyperic/sigar/blob/1898438/src/os/linux/linux_sigar.c#L344)
+	usage.Used = mem.ActualUsed
 
 	return
 }
