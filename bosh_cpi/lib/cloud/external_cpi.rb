@@ -3,16 +3,12 @@ require 'open3'
 
 module Bosh::Clouds
   class ExternalCpi
-    ##
     # Raised when the external CPI executable returns an error unknown to director
-    #
     class UnknownError < StandardError; end
 
-    ##
     # Raised when the external CPI executable returns nil or invalid JSON format to director
     class InvalidResponse < StandardError; end
 
-    ##
     # Raised when the external CPI bin/cpi is not executable
     class NonExecutable < StandardError; end
 

@@ -1,27 +1,31 @@
 require 'spec_helper'
 
 describe 'external CPIs', type: :integration do
-  with_reset_sandbox_before_each
+  describe 'director configured to use external dummy CPI' do
+    with_reset_sandbox_before_all
 
-  it 'deploys using the external CPI' do
-    current_sandbox.external_cpi_enabled = true
-    current_sandbox.reconfigure_director
-    current_sandbox.reconfigure_workers
+    before(:all) do
+      current_sandbox.external_cpi_enabled = true
+      current_sandbox.reconfigure_director
+      current_sandbox.reconfigure_workers
+    end
 
-    expect(deploy_simple).to match /Task (\d+) done/
+    after(:all) do
+      current_sandbox.external_cpi_enabled = false
+      current_sandbox.reconfigure_director
+      current_sandbox.reconfigure_workers
+    end
 
-    deploy_results = bosh_runner.run('task last --debug')
-    expect(deploy_results).to include('External CPI sending request')
-  end
+    before(:all) { deploy_simple }
 
-  it 'saves external CPI logs' do
-    current_sandbox.external_cpi_enabled = true
-    current_sandbox.reconfigure_director
-    current_sandbox.reconfigure_workers
+    it 'deploys using the external CPI' do
+      deploy_results = bosh_runner.run('task last --debug')
+      expect(deploy_results).to include('External CPI sending request')
+    end
 
-    expect(deploy_simple).to match /Task (\d+) done/
-
-    deploy_results = bosh_runner.run('task last --cpi')
-    expect(deploy_results).to include('Dummy: create_vm')
+    it 'saves external CPI logs' do
+      deploy_results = bosh_runner.run('task last --cpi')
+      expect(deploy_results).to include('Dummy: create_vm')
+    end
   end
 end
