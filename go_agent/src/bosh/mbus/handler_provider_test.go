@@ -1,10 +1,12 @@
 package mbus_test
 
 import (
+	gourl "net/url"
+	"reflect"
+
 	"github.com/cloudfoundry/yagnats"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/assert"
 
 	boshlog "bosh/logger"
 	. "bosh/mbus"
@@ -14,45 +16,48 @@ import (
 	fakesettings "bosh/settings/fakes"
 )
 
-type providerDeps struct {
-	settings    *fakesettings.FakeSettingsService
-	platform    *fakeplatform.FakePlatform
-	dirProvider boshdir.DirectoriesProvider
-	logger      boshlog.Logger
-}
+var _ = Describe("MbusHandlerProvider", func() {
+	var (
+		settingsService *fakesettings.FakeSettingsService
+		platform        *fakeplatform.FakePlatform
+		dirProvider     boshdir.DirectoriesProvider
+		logger          boshlog.Logger
+		provider        MbusHandlerProvider
+	)
 
-func buildProvider(mbusURL string) (deps providerDeps, provider MbusHandlerProvider) {
-	deps.settings = &fakesettings.FakeSettingsService{MbusURL: mbusURL}
-	deps.logger = boshlog.NewLogger(boshlog.LevelNone)
-	provider = NewHandlerProvider(deps.settings, deps.logger)
+	BeforeEach(func() {
+		settingsService = &fakesettings.FakeSettingsService{}
+		logger = boshlog.NewLogger(boshlog.LevelNone)
+		platform = fakeplatform.NewFakePlatform()
+		dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
+		provider = NewHandlerProvider(settingsService, logger)
+	})
 
-	deps.platform = fakeplatform.NewFakePlatform()
-	deps.dirProvider = boshdir.NewDirectoriesProvider("/var/vcap")
-	return
-}
-func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("handler provider get returns nats handler", func() {
-			deps, provider := buildProvider("nats://0.0.0.0")
-			handler, err := provider.Get(deps.platform, deps.dirProvider)
-
+	Describe("Get", func() {
+		It("returns nats handler", func() {
+			settingsService.Settings.Mbus = "nats://lol"
+			handler, err := provider.Get(platform, dirProvider)
 			Expect(err).ToNot(HaveOccurred())
-			assert.IsType(GinkgoT(), NewNatsHandler(deps.settings, deps.logger, yagnats.NewClient()), handler)
+
+			// yagnats.NewClient returns new object every time
+			expectedHandler := NewNatsHandler(settingsService, yagnats.NewClient(), logger)
+			Expect(reflect.TypeOf(handler)).To(Equal(reflect.TypeOf(expectedHandler)))
 		})
-		It("handler provider get returns https handler", func() {
 
-			deps, provider := buildProvider("https://0.0.0.0")
-			handler, err := provider.Get(deps.platform, deps.dirProvider)
-
+		It("returns https handler", func() {
+			url, err := gourl.Parse("https://lol")
 			Expect(err).ToNot(HaveOccurred())
-			assert.IsType(GinkgoT(), micro.HTTPSHandler{}, handler)
+
+			settingsService.Settings.Mbus = "https://lol"
+			handler, err := provider.Get(platform, dirProvider)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(handler).To(Equal(micro.NewHTTPSHandler(url, logger, platform.GetFs(), dirProvider)))
 		})
-		It("handler provider get returns an error if not supported", func() {
 
-			deps, provider := buildProvider("foo://0.0.0.0")
-			_, err := provider.Get(deps.platform, deps.dirProvider)
-
+		It("returns an error if not supported", func() {
+			settingsService.Settings.Mbus = "unknown-scheme://lol"
+			_, err := provider.Get(platform, dirProvider)
 			Expect(err).To(HaveOccurred())
 		})
 	})
-}
+})

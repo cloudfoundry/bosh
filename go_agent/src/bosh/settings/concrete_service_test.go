@@ -52,7 +52,7 @@ func init() {
 
 					err := service.LoadSettings()
 					Expect(err).NotTo(HaveOccurred())
-					Expect(service.GetAgentID()).To(Equal("some-new-agent-id"))
+					Expect(service.GetSettings().AgentID).To(Equal("some-new-agent-id"))
 				})
 
 				It("persists settings to the settings file", func() {
@@ -138,61 +138,6 @@ func init() {
 				settings := Settings{AgentID: "some-agent-id"}
 				service := buildServiceWithInitialSettings(settings)
 				Expect(service.GetSettings()).To(Equal(settings))
-			})
-		})
-
-		Describe("GetAgentID", func() {
-			It("returns agent id", func() {
-				service := buildServiceWithInitialSettings(Settings{AgentID: "some-agent-id"})
-				Expect(service.GetAgentID()).To(Equal("some-agent-id"))
-			})
-		})
-
-		Describe("GetVM", func() {
-			It("returns vm", func() {
-				vm := VM{Name: "some-vm-id"}
-				service := buildServiceWithInitialSettings(Settings{VM: vm})
-				Expect(service.GetVM()).To(Equal(vm))
-			})
-		})
-
-		Describe("GetMbusURL", func() {
-			It("returns mbus url", func() {
-				service := buildServiceWithInitialSettings(Settings{Mbus: "nats://user:pwd@some-ip:some-port"})
-				Expect(service.GetMbusURL()).To(Equal("nats://user:pwd@some-ip:some-port"))
-			})
-		})
-
-		Describe("GetDisks", func() {
-			It("returns disks", func() {
-				disks := Disks{System: "foo", Ephemeral: "bar"}
-				service := buildServiceWithInitialSettings(Settings{Disks: disks})
-				Expect(service.GetDisks()).To(Equal(disks))
-			})
-		})
-
-		Describe("GetDefaultIP", func() {
-			It("returns default ip", func() {
-				networks := Networks{
-					"bosh": Network{IP: "xx.xx.xx.xx"},
-				}
-				service := buildServiceWithInitialSettings(Settings{Networks: networks})
-
-				ip, found := service.GetDefaultIP()
-				Expect(found).To(BeTrue())
-				Expect(ip).To(Equal("xx.xx.xx.xx"))
-			})
-		})
-
-		Describe("GetIPs", func() {
-			It("returns ips", func() {
-				networks := Networks{
-					"bosh":  Network{IP: "xx.xx.xx.xx"},
-					"vip":   Network{IP: "zz.zz.zz.zz"},
-					"other": Network{},
-				}
-				service := buildServiceWithInitialSettings(Settings{Networks: networks})
-				Expect(service.GetIPs()).To(Equal([]string{"xx.xx.xx.xx", "zz.zz.zz.zz"}))
 			})
 		})
 	})

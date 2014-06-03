@@ -89,11 +89,9 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	disks := settingsService.GetDisks()
-
-	ephemeralDiskPath, found := boot.infrastructure.GetEphemeralDiskPath(disks.Ephemeral)
+	ephemeralDiskPath, found := boot.infrastructure.GetEphemeralDiskPath(settings.Disks.Ephemeral)
 	if !found {
-		err = bosherr.New("Could not find ephemeral disk '%s'", disks.Ephemeral)
+		err = bosherr.New("Could not find ephemeral disk '%s'", settings.Disks.Ephemeral)
 		return
 	}
 
@@ -115,12 +113,12 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	if len(disks.Persistent) > 1 {
+	if len(settings.Disks.Persistent) > 1 {
 		err = errors.New("Error mounting persistent disk, there is more than one persistent disk")
 		return
 	}
 
-	for _, devicePath := range disks.Persistent {
+	for _, devicePath := range settings.Disks.Persistent {
 		err = boot.platform.MountPersistentDisk(devicePath, boot.dirProvider.StoreDir())
 		if err != nil {
 			err = bosherr.WrapError(err, "Mounting persistent disk")

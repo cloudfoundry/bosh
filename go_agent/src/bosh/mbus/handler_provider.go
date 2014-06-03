@@ -15,13 +15,16 @@ import (
 )
 
 type MbusHandlerProvider struct {
-	settings boshsettings.Service
-	logger   boshlog.Logger
-	handler  boshhandler.Handler
+	settingsService boshsettings.Service
+	logger          boshlog.Logger
+	handler         boshhandler.Handler
 }
 
-func NewHandlerProvider(settings boshsettings.Service, logger boshlog.Logger) (p MbusHandlerProvider) {
-	p.settings = settings
+func NewHandlerProvider(
+	settingsService boshsettings.Service,
+	logger boshlog.Logger,
+) (p MbusHandlerProvider) {
+	p.settingsService = settingsService
 	p.logger = logger
 	return
 }
@@ -35,7 +38,7 @@ func (p MbusHandlerProvider) Get(
 		return
 	}
 
-	mbusURL, err := url.Parse(p.settings.GetMbusURL())
+	mbusURL, err := url.Parse(p.settingsService.GetSettings().Mbus)
 	if err != nil {
 		err = bosherr.WrapError(err, "Parsing handler URL")
 		return
@@ -43,7 +46,7 @@ func (p MbusHandlerProvider) Get(
 
 	switch mbusURL.Scheme {
 	case "nats":
-		handler = NewNatsHandler(p.settings, p.logger, yagnats.NewClient())
+		handler = NewNatsHandler(p.settingsService, yagnats.NewClient(), p.logger)
 	case "https":
 		handler = micro.NewHTTPSHandler(mbusURL, p.logger, platform.GetFs(), dirProvider)
 	default:

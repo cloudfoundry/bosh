@@ -24,17 +24,21 @@ const (
 )
 
 type natsHandler struct {
-	settings     boshsettings.Service
-	logger       boshlog.Logger
-	client       yagnats.NATSClient
-	handlerFuncs []boshhandler.HandlerFunc
+	settingsService boshsettings.Service
+	client          yagnats.NATSClient
+	logger          boshlog.Logger
+	handlerFuncs    []boshhandler.HandlerFunc
 }
 
-func NewNatsHandler(settings boshsettings.Service, logger boshlog.Logger, client yagnats.NATSClient) *natsHandler {
+func NewNatsHandler(
+	settingsService boshsettings.Service,
+	client yagnats.NATSClient,
+	logger boshlog.Logger,
+) *natsHandler {
 	return &natsHandler{
-		settings: settings,
-		logger:   logger,
-		client:   client,
+		settingsService: settingsService,
+		client:          client,
+		logger:          logger,
 	}
 }
 
@@ -43,6 +47,7 @@ func (h *natsHandler) Run(handlerFunc boshhandler.HandlerFunc) error {
 	if err != nil {
 		return bosherr.WrapError(err, "Starting nats handler")
 	}
+
 	defer h.Stop()
 
 	h.runUntilInterrupted()
@@ -63,7 +68,9 @@ func (h *natsHandler) Start(handlerFunc boshhandler.HandlerFunc) error {
 		return bosherr.WrapError(err, "Connecting")
 	}
 
-	subject := fmt.Sprintf("agent.%s", h.settings.GetAgentID())
+	settings := h.settingsService.GetSettings()
+
+	subject := fmt.Sprintf("agent.%s", settings.AgentID)
 
 	h.logger.Error(natsHandlerLogTag, "Subscribing to %s", subject)
 
@@ -95,7 +102,9 @@ func (h natsHandler) SendToHealthManager(topic string, payload interface{}) erro
 	h.logger.Info(natsHandlerLogTag, "Sending HM message '%s'", topic)
 	h.logger.DebugWithDetails(natsHandlerLogTag, "Payload", msgBytes)
 
-	subject := fmt.Sprintf("hm.agent.%s.%s", topic, h.settings.GetAgentID())
+	settings := h.settingsService.GetSettings()
+
+	subject := fmt.Sprintf("hm.agent.%s.%s", topic, settings.AgentID)
 	return h.client.Publish(subject, msgBytes)
 }
 
@@ -140,7 +149,9 @@ func (h natsHandler) runUntilInterrupted() {
 }
 
 func (h natsHandler) getConnectionInfo() (*yagnats.ConnectionInfo, error) {
-	natsURL, err := url.Parse(h.settings.GetMbusURL())
+	settings := h.settingsService.GetSettings()
+
+	natsURL, err := url.Parse(settings.Mbus)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Parsing Nats URL")
 	}

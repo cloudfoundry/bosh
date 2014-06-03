@@ -12,14 +12,5 @@ type ServiceProvider interface {
 type Service interface {
 	LoadSettings() error
 	GetSettings() Settings
-
 	InvalidateSettings() error
-
-	GetBlobstore() Blobstore
-	GetAgentID() string
-	GetVM() VM
-	GetMbusURL() string
-	GetDisks() Disks
-	GetDefaultIP() (string, bool)
-	GetIPs() []string
 }

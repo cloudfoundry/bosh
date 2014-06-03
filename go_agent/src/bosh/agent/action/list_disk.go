@@ -10,17 +10,17 @@ import (
 )
 
 type ListDiskAction struct {
-	settings boshsettings.Service
-	platform boshplatform.Platform
-	logger   boshlog.Logger
+	settingsService boshsettings.Service
+	platform        boshplatform.Platform
+	logger          boshlog.Logger
 }
 
 func NewListDisk(
-	settings boshsettings.Service,
+	settingsService boshsettings.Service,
 	platform boshplatform.Platform,
 	logger boshlog.Logger,
 ) (action ListDiskAction) {
-	action.settings = settings
+	action.settingsService = settingsService
 	action.platform = platform
 	action.logger = logger
 	return
@@ -35,10 +35,10 @@ func (a ListDiskAction) IsPersistent() bool {
 }
 
 func (a ListDiskAction) Run() (value interface{}, err error) {
-	disks := a.settings.GetDisks()
+	settings := a.settingsService.GetSettings()
 	volumeIDs := []string{}
 
-	for volumeID, devicePath := range disks.Persistent {
+	for volumeID, devicePath := range settings.Disks.Persistent {
 		var isMounted bool
 
 		isMounted, err = a.platform.IsPersistentDiskMounted(devicePath)

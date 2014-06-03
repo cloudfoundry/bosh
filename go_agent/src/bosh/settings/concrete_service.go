@@ -97,31 +97,3 @@ func (service *concreteService) LoadSettings() error {
 func (service concreteService) GetSettings() Settings {
 	return service.settings
 }
-
-func (service concreteService) GetBlobstore() Blobstore {
-	return service.settings.Blobstore
-}
-
-func (service concreteService) GetAgentID() string {
-	return service.settings.AgentID
-}
-
-func (service concreteService) GetVM() VM {
-	return service.settings.VM
-}
-
-func (service concreteService) GetMbusURL() string {
-	return service.settings.Mbus
-}
-
-func (service concreteService) GetDisks() Disks {
-	return service.settings.Disks
-}
-
-func (service concreteService) GetDefaultIP() (ip string, found bool) {
-	return service.settings.Networks.DefaultIP()
-}
-
-func (service concreteService) GetIPs() (ips []string) {
-	return service.settings.Networks.IPs()
-}

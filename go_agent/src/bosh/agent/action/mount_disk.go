@@ -17,19 +17,19 @@ type mountPoints interface {
 }
 
 type MountDiskAction struct {
-	settings    boshsettings.Service
-	diskMounter diskMounter
-	mountPoints mountPoints
-	dirProvider boshdirs.DirectoriesProvider
+	settingsService boshsettings.Service
+	diskMounter     diskMounter
+	mountPoints     mountPoints
+	dirProvider     boshdirs.DirectoriesProvider
 }
 
 func NewMountDisk(
-	settings boshsettings.Service,
+	settingsService boshsettings.Service,
 	diskMounter diskMounter,
 	mountPoints mountPoints,
 	dirProvider boshdirs.DirectoriesProvider,
 ) (mountDisk MountDiskAction) {
-	mountDisk.settings = settings
+	mountDisk.settingsService = settingsService
 	mountDisk.diskMounter = diskMounter
 	mountDisk.mountPoints = mountPoints
 	mountDisk.dirProvider = dirProvider
@@ -45,12 +45,14 @@ func (a MountDiskAction) IsPersistent() bool {
 }
 
 func (a MountDiskAction) Run(diskCid string) (interface{}, error) {
-	err := a.settings.LoadSettings()
+	err := a.settingsService.LoadSettings()
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Refreshing the settings")
 	}
 
-	devicePath, found := a.settings.GetDisks().Persistent[diskCid]
+	settings := a.settingsService.GetSettings()
+
+	devicePath, found := settings.Disks.Persistent[diskCid]
 	if !found {
 		return nil, bosherr.New("Persistent disk with volume id '%s' could not be found", diskCid)
 	}
