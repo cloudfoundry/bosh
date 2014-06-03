@@ -13,12 +13,17 @@ module Bosh::Clouds
     class NonExecutable < StandardError; end
 
     KNOWN_RPC_ERRORS = %w(
-      Bosh::Clouds::VMCreationFailed
-      Bosh::Clouds::DiskNotFound
-      Bosh::Clouds::DiskNotAttached
-      Bosh::Clouds::NoDiskSpace
-      Bosh::Clouds::CloudError
       Bosh::Clouds::CpiError
+      Bosh::Clouds::NotSupported
+      Bosh::Clouds::NotImplemented
+
+      Bosh::Clouds::CloudError
+      Bosh::Clouds::VMNotFound
+
+      Bosh::Clouds::NoDiskSpace
+      Bosh::Clouds::DiskNotAttached
+      Bosh::Clouds::DiskNotFound
+      Bosh::Clouds::VMCreationFailed
     ).freeze
 
     KNOWN_RPC_METHODS = %w(

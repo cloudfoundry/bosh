@@ -86,16 +86,34 @@ describe Bosh::Clouds::ExternalCpi do
     end
 
     describe 'error response' do
-      def self.it_raises_an_error_with_ok_to_retry(error_class, message)
+      def self.it_raises_an_error(error_class)
         let(:cpi_response) do
           JSON.dump(
             result: nil,
             error: {
               type: error_class.name,
-              message: message,
-              ok_to_retry: true
+              message: 'fake-error-message',
+              ok_to_retry: false,
             },
-            log: 'fake-log'
+            log: 'fake-log',
+          )
+        end
+
+        it 'raises an error constructed from error response' do
+          expect { call_cpi_method }.to raise_error(error_class, 'fake-error-message')
+        end
+      end
+
+      def self.it_raises_an_error_with_ok_to_retry(error_class)
+        let(:cpi_response) do
+          JSON.dump(
+            result: nil,
+            error: {
+              type: error_class.name,
+              message: 'fake-error-message',
+              ok_to_retry: true,
+            },
+            log: 'fake-log',
           )
         end
 
@@ -104,52 +122,46 @@ describe Bosh::Clouds::ExternalCpi do
             call_cpi_method
           }.to raise_error do |error|
             expect(error.class).to eq(error_class)
-            expect(error.message).to eq(message)
+            expect(error.message).to eq('fake-error-message')
             expect(error.ok_to_retry).to eq(true)
           end
         end
       end
 
-      def self.it_raises_an_error(error_class, message)
-        let(:cpi_response) do
-          JSON.dump(
-            result: nil,
-            error: {
-              type: error_class.name,
-              message: message,
-              ok_to_retry: true
-            },
-            log: 'fake-log'
-          )
-        end
-
-        it 'raises an error constructed from error response' do
-          expect { call_cpi_method }.to raise_error(error_class, message)
-        end
+      context 'when cpi returns CpiError error' do
+        it_raises_an_error(Bosh::Clouds::CpiError)
       end
 
-      context 'when cpi returns a NoDiskSpace error' do
-        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::NoDiskSpace, 'Not enough disk space')
+      context 'when cpi returns NotImplemented error' do
+        it_raises_an_error(Bosh::Clouds::NotImplemented)
       end
 
-      context 'when cpi returns a DiskNotAttached error' do
-        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::DiskNotAttached, 'Not enough disk space')
-      end
-
-      context 'when cpi returns a DiskNotFound error' do
-        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::DiskNotFound, 'Not enough disk space')
-      end
-
-      context 'when cpi returns a VMCreationFailed error' do
-        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::VMCreationFailed, 'Not enough disk space')
+      context 'when cpi returns NotSupported error' do
+        it_raises_an_error(Bosh::Clouds::NotSupported)
       end
 
       context 'when cpi returns CloudError error' do
-        it_raises_an_error(Bosh::Clouds::CloudError, 'Something went wrong')
+        it_raises_an_error(Bosh::Clouds::CloudError)
       end
 
-      context 'when cpi returns CpiError error' do
-        it_raises_an_error(Bosh::Clouds::CpiError, 'Something went wrong')
+      context 'when cpi returns VMNotFound error' do
+        it_raises_an_error(Bosh::Clouds::VMNotFound)
+      end
+
+      context 'when cpi returns a NoDiskSpace error' do
+        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::NoDiskSpace)
+      end
+
+      context 'when cpi returns a DiskNotAttached error' do
+        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::DiskNotAttached)
+      end
+
+      context 'when cpi returns a DiskNotFound error' do
+        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::DiskNotFound)
+      end
+
+      context 'when cpi returns a VMCreationFailed error' do
+        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::VMCreationFailed)
       end
 
       context 'when cpi raises unrecognizable error' do
