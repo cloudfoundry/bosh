@@ -27,7 +27,7 @@ describe Bat::BoshRunner do
     end
 
     it 'returns the result of Bosh::Exec' do
-      allow(bosh_exec).to receive(sh).and_return(bosh_exec_result)
+      allow(bosh_exec).to receive(:sh).and_return(bosh_exec_result)
 
       expect(subject.bosh('FAKE_ARGS')).to eq(bosh_exec_result)
     end
@@ -60,7 +60,7 @@ describe Bat::BoshRunner do
 
     context 'when a block is passed' do
       it 'yields the Bosh::Exec result' do
-        allow(bosh_exec).to receive(sh).and_return(bosh_exec_result)
+        allow(bosh_exec).to receive(:sh).and_return(bosh_exec_result)
 
         expect { |b|
           subject.bosh('fake arg', &b)
