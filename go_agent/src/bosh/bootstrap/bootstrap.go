@@ -54,6 +54,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		boot.fs,
 		boot.dirProvider.BoshDir(),
 		boot.infrastructure.GetSettings,
+		boot.platform,
 		boot.logger,
 	)
 
@@ -137,24 +138,25 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		err = bosherr.WrapError(err, "Starting monit")
 		return
 	}
+
 	return
 }
 
-func (boot bootstrap) setUserPasswords(env boshsettings.Env) (err error) {
+func (boot bootstrap) setUserPasswords(env boshsettings.Env) error {
 	password := env.GetPassword()
 	if password == "" {
-		return
+		return nil
 	}
 
-	err = boot.platform.SetUserPassword(boshsettings.RootUsername, env.GetPassword())
+	err := boot.platform.SetUserPassword(boshsettings.RootUsername, password)
 	if err != nil {
-		err = bosherr.WrapError(err, "Setting root password")
-		return
+		return bosherr.WrapError(err, "Setting root password")
 	}
 
-	err = boot.platform.SetUserPassword(boshsettings.VCAPUsername, env.GetPassword())
+	err = boot.platform.SetUserPassword(boshsettings.VCAPUsername, password)
 	if err != nil {
-		err = bosherr.WrapError(err, "Setting vcap password")
+		return bosherr.WrapError(err, "Setting vcap password")
 	}
-	return
+
+	return nil
 }

@@ -6,7 +6,13 @@ import (
 )
 
 type ServiceProvider interface {
-	NewService(boshsys.FileSystem, string, SettingsFetcher, boshlog.Logger) Service
+	NewService(
+		boshsys.FileSystem,
+		string,
+		SettingsFetcher,
+		DefaultNetworkDelegate,
+		boshlog.Logger,
+	) Service
 }
 
 type Service interface {
