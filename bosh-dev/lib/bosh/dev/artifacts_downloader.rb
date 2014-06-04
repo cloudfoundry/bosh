@@ -27,7 +27,7 @@ module Bosh::Dev
         build_target.infrastructure_light?,
       ).to_s
 
-      remote_uri = Bosh::Dev::UriProvider.pipeline_uri("#{stemcell_name}/#{build_target.infrastructure.name}", file_name)
+      remote_uri = Bosh::Dev::UriProvider.pipeline_uri("#{build_target.build_number}/#{stemcell_name}/#{build_target.infrastructure.name}", file_name)
       local_path = File.join(output_dir, file_name)
 
       @download_adapter.download(remote_uri, local_path)
