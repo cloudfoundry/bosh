@@ -123,4 +123,17 @@ describe Bosh::Cli::VersionsIndex do
 
     expect(@index.versions).to eq(%w(1.8-dev 1.9-dev))
   end
+
+  describe 'latest_version' do
+    before do
+      @index.add_version('fingerprint-1', { 'version' => '7' })
+      @index.add_version('fingerprint-2', { 'version' => '8' })
+      @index.add_version('fingerprint-3', { 'version' => '9' })
+      @index.add_version('fingerprint-4', { 'version' => '8.1' })
+    end
+
+    it 'returns the maximum version' do
+      expect(@index.latest_version).to eq('9')
+    end
+  end
 end
