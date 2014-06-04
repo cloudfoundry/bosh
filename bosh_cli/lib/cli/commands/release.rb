@@ -50,7 +50,7 @@ module Bosh::Cli::Command
         release_filename = manifest_file
       else
         version = options[:version]
-        version = Bosh::Common::Version::ReleaseVersion.parse(version) unless version.nil?
+        version = Bosh::Common::Version::ReleaseVersion.parse(version).to_s unless version.nil?
 
         release_filename = create_from_spec(version)
       end

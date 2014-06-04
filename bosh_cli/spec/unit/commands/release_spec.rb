@@ -43,6 +43,14 @@ describe Bosh::Cli::Command::Release do
       ])
     end
 
+    context 'when version is specified' do
+      it 'builds release with the specified version' do
+        expect(command).to receive(:build_release).with(true, nil, nil, true, [], '1.0.1')
+        command.options[:version] = '1.0.1'
+        command.create
+      end
+    end
+
     context 'dev release' do
       context 'interactive' do
         let(:interactive) { true }
