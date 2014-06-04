@@ -64,7 +64,7 @@ module Bosh::Director
       job2 = make_job(@deployment)
 
       messages = []
-      job2.should_receive(:track_and_log).exactly(3).times.and_return { |message| messages << message }
+      job2.should_receive(:track_and_log).exactly(3).times { |message| messages << message }
       job2.apply_resolutions({
                                problems[0].id.to_s => 'ignore',
                                problems[1].id.to_s => 'ignore',

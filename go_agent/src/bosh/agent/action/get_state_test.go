@@ -21,24 +21,25 @@ import (
 
 var _ = Describe("GetState", func() {
 	var (
-		settings      *fakesettings.FakeSettingsService
-		specService   *fakeas.FakeV1Service
-		jobSupervisor *fakejobsuper.FakeJobSupervisor
-		vitalsService *fakevitals.FakeService
-		action        GetStateAction
+		settingsService *fakesettings.FakeSettingsService
+		specService     *fakeas.FakeV1Service
+		jobSupervisor   *fakejobsuper.FakeJobSupervisor
+		vitalsService   *fakevitals.FakeService
+		action          GetStateAction
 	)
 
 	BeforeEach(func() {
-		settings = &fakesettings.FakeSettingsService{}
+		settingsService = &fakesettings.FakeSettingsService{}
 		jobSupervisor = fakejobsuper.NewFakeJobSupervisor()
 		specService = fakeas.NewFakeV1Service()
 		vitalsService = fakevitals.NewFakeService()
-		action = NewGetState(settings, specService, jobSupervisor, vitalsService, &fakentp.FakeService{
+		ntpService := &fakentp.FakeService{
 			GetOffsetNTPOffset: boshntp.NTPInfo{
 				Offset:    "0.34958",
 				Timestamp: "12 Oct 17:37:58",
 			},
-		})
+		}
+		action = NewGetState(settingsService, specService, jobSupervisor, vitalsService, ntpService)
 	})
 
 	It("get state should be synchronous", func() {
@@ -53,8 +54,8 @@ var _ = Describe("GetState", func() {
 		Context("when current spec can be retrieved", func() {
 			Context("when vitals can be retrieved", func() {
 				It("returns state", func() {
-					settings.AgentID = "my-agent-id"
-					settings.VM.Name = "vm-abc-def"
+					settingsService.Settings.AgentID = "my-agent-id"
+					settingsService.Settings.VM.Name = "vm-abc-def"
 
 					jobSupervisor.StatusStatus = "running"
 
@@ -91,8 +92,8 @@ var _ = Describe("GetState", func() {
 				})
 
 				It("returns state in full format", func() {
-					settings.AgentID = "my-agent-id"
-					settings.VM.Name = "vm-abc-def"
+					settingsService.Settings.AgentID = "my-agent-id"
+					settingsService.Settings.VM.Name = "vm-abc-def"
 
 					jobSupervisor.StatusStatus = "running"
 

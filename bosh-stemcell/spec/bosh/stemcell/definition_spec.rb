@@ -31,24 +31,24 @@ module Bosh::Stemcell
 
     describe '.for' do
       it 'sets the infrastructure, operating system, and agent' do
-        Bosh::Stemcell::Infrastructure
-          .should_receive(:for)
+        expect(Bosh::Stemcell::Infrastructure)
+          .to receive(:for)
           .with('infrastructure-name')
           .and_return(infrastructure)
 
-        Bosh::Stemcell::OperatingSystem
-          .should_receive(:for)
+        expect(Bosh::Stemcell::OperatingSystem)
+          .to receive(:for)
           .with('operating-system-name', 'operating-system-version')
           .and_return(operating_system)
 
-        Bosh::Stemcell::Agent
-          .should_receive(:for)
+        expect(Bosh::Stemcell::Agent)
+          .to receive(:for)
           .with('agent-name')
           .and_return(agent)
 
         definition = instance_double('Bosh::Stemcell::Definition')
-        Bosh::Stemcell::Definition
-          .should_receive(:new)
+        expect(Bosh::Stemcell::Definition)
+          .to receive(:new)
           .with(infrastructure, operating_system, agent)
           .and_return(definition)
 

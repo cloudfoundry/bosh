@@ -1,17 +1,25 @@
 require 'spec_helper'
 
 describe Bosh::Director::JobUpdater do
-  subject(:job_updater) { described_class.new(deployment_plan, job) }
+  subject(:job_updater) { described_class.new(deployment_plan, job, job_renderer) }
+
   let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan') }
+
   let(:job) do
-    instance_double('Bosh::Director::DeploymentPlan::Job',
+    instance_double('Bosh::Director::DeploymentPlan::Job', {
       name: 'job_name',
       update: update_config,
-      unneeded_instances: [])
+      unneeded_instances: [],
+    })
   end
 
+  let(:job_renderer) { instance_double('Bosh::Director::JobRenderer') }
+
   let(:update_config) do
-    instance_double('Bosh::Director::DeploymentPlan::UpdateConfig', canaries: 1, max_in_flight: 1)
+    instance_double('Bosh::Director::DeploymentPlan::UpdateConfig', {
+      canaries: 1,
+      max_in_flight: 1,
+    })
   end
 
   describe 'update' do
@@ -24,11 +32,7 @@ describe Bosh::Director::JobUpdater do
     before { allow(Bosh::Director::InstanceDeleter).to receive(:new).and_return(instance_deleter) }
 
     context 'when job is up to date' do
-      let(:instances) do
-        [
-          instance_double('Bosh::Director::DeploymentPlan::Instance', changed?: false),
-        ]
-      end
+      let(:instances) { [instance_double('Bosh::Director::DeploymentPlan::Instance', changed?: false)] }
 
       it 'should do nothing' do
         job_updater.update
@@ -53,11 +57,14 @@ describe Bosh::Director::JobUpdater do
       let(:unchanged_updater) { instance_double('Bosh::Director::InstanceUpdater') }
 
       before do
-        allow(Bosh::Director::InstanceUpdater).to receive(:new).with(canary, anything).and_return(canary_updater)
         allow(Bosh::Director::InstanceUpdater).to receive(:new).
-          with(changed_instance, anything).and_return(changed_updater)
+          with(canary, anything, job_renderer).and_return(canary_updater)
+
         allow(Bosh::Director::InstanceUpdater).to receive(:new).
-          with(unchanged_instance, anything).and_return(unchanged_updater)
+          with(changed_instance, anything, job_renderer).and_return(changed_updater)
+
+        allow(Bosh::Director::InstanceUpdater).to receive(:new).
+          with(unchanged_instance, anything, job_renderer).and_return(unchanged_updater)
       end
 
       it 'should update changed job instances with canaries' do

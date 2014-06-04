@@ -1,5 +1,5 @@
 module Bosh
   module Registry
-    VERSION = '1.2577.0'
+    VERSION = '1.2583.0'
   end
 end

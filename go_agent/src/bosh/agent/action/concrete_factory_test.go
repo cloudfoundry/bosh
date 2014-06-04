@@ -21,7 +21,7 @@ import (
 
 var _ = Describe("concreteFactory", func() {
 	var (
-		settings            *fakesettings.FakeSettingsService
+		settingsService     *fakesettings.FakeSettingsService
 		platform            *fakeplatform.FakePlatform
 		blobstore           *fakeblobstore.FakeBlobstore
 		taskService         *faketask.FakeService
@@ -36,7 +36,7 @@ var _ = Describe("concreteFactory", func() {
 	)
 
 	BeforeEach(func() {
-		settings = &fakesettings.FakeSettingsService{}
+		settingsService = &fakesettings.FakeSettingsService{}
 		platform = fakeplatform.NewFakePlatform()
 		blobstore = &fakeblobstore.FakeBlobstore{}
 		taskService = &faketask.FakeService{}
@@ -49,7 +49,7 @@ var _ = Describe("concreteFactory", func() {
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 
 		factory = NewFactory(
-			settings,
+			settingsService,
 			platform,
 			blobstore,
 			taskService,
@@ -103,13 +103,13 @@ var _ = Describe("concreteFactory", func() {
 		ntpService := boshntp.NewConcreteService(platform.GetFs(), platform.GetDirProvider())
 		action, err := factory.Create("get_state")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewGetState(settings, specService, jobSupervisor, platform.GetVitalsService(), ntpService)))
+		Expect(action).To(Equal(NewGetState(settingsService, specService, jobSupervisor, platform.GetVitalsService(), ntpService)))
 	})
 
 	It("list_disk", func() {
 		action, err := factory.Create("list_disk")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewListDisk(settings, platform, logger)))
+		Expect(action).To(Equal(NewListDisk(settingsService, platform, logger)))
 	})
 
 	It("migrate_disk", func() {
@@ -121,7 +121,7 @@ var _ = Describe("concreteFactory", func() {
 	It("mount_disk", func() {
 		action, err := factory.Create("mount_disk")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewMountDisk(settings, platform, platform, platform.GetDirProvider())))
+		Expect(action).To(Equal(NewMountDisk(settingsService, platform, platform, platform.GetDirProvider())))
 	})
 
 	It("ping", func() {
@@ -133,13 +133,13 @@ var _ = Describe("concreteFactory", func() {
 	It("prepare_network_change", func() {
 		action, err := factory.Create("prepare_network_change")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewPrepareNetworkChange(platform.GetFs(), settings)))
+		Expect(action).To(Equal(NewPrepareNetworkChange(platform.GetFs(), settingsService)))
 	})
 
 	It("prepare_configure_networks", func() {
 		action, err := factory.Create("prepare_configure_networks")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewPrepareConfigureNetworks(platform.GetFs(), settings)))
+		Expect(action).To(Equal(NewPrepareConfigureNetworks(platform, settingsService)))
 	})
 
 	It("configure_networks", func() {
@@ -151,7 +151,7 @@ var _ = Describe("concreteFactory", func() {
 	It("ssh", func() {
 		action, err := factory.Create("ssh")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewSsh(settings, platform, platform.GetDirProvider())))
+		Expect(action).To(Equal(NewSsh(settingsService, platform, platform.GetDirProvider())))
 	})
 
 	It("start", func() {
@@ -169,7 +169,7 @@ var _ = Describe("concreteFactory", func() {
 	It("unmount_disk", func() {
 		action, err := factory.Create("unmount_disk")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewUnmountDisk(settings, platform)))
+		Expect(action).To(Equal(NewUnmountDisk(settingsService, platform)))
 	})
 
 	It("compile_package", func() {

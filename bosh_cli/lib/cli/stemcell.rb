@@ -23,7 +23,7 @@ module Bosh::Cli
       tar = nil
       step("Read tarball",
            "Cannot read tarball #{@stemcell_file}", :fatal) do
-        tgz = Zlib::GzipReader.new(File.open(@stemcell_file))
+        tgz = Zlib::GzipReader.new(File.open(@stemcell_file,'rb'))
         tar = Minitar.open(tgz)
         !!tar
       end

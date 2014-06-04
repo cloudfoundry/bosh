@@ -1,16 +1,19 @@
 module Bosh::Director
   class JobUpdater
-    # @param [Bosh::Director::DeploymentPlan] deployment_plan
-    # @param [DeploymentPlan::Job] job
-    def initialize(deployment_plan, job)
+    # @param [Bosh::Director::DeploymentPlan::Planner] deployment_plan
+    # @param [Bosh::Director::DeploymentPlan::Job] job
+    # @param [Bosh::Director::JobRenderer] job_renderer
+    def initialize(deployment_plan, job, job_renderer)
       @deployment_plan = deployment_plan
       @job = job
+      @job_renderer = job_renderer
+
       @logger = Config.logger
       @event_log = Config.event_log
     end
 
     def update
-      @logger.info("Deleting no longer needed instances")
+      @logger.info('Deleting no longer needed instances')
       delete_unneeded_instances
 
       instances = []
@@ -31,7 +34,7 @@ module Bosh::Director
         @logger.info("Starting canary update num_canaries=#{num_canaries}")
         update_canaries(pool, instances, num_canaries, event_log_stage)
 
-        @logger.info("Waiting for canaries to update")
+        @logger.info('Waiting for canaries to update')
         pool.wait
 
         @logger.info("Finished canary update")
@@ -68,7 +71,7 @@ module Bosh::Director
       event_log_stage.advance_and_track("#{desc} (canary)") do |ticker|
         with_thread_name("canary_update(#{desc})") do
           begin
-            InstanceUpdater.new(instance, ticker).update(:canary => true)
+            InstanceUpdater.new(instance, ticker, @job_renderer).update(:canary => true)
           rescue Exception => e
             @logger.error("Error updating canary instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise
@@ -88,7 +91,7 @@ module Bosh::Director
       event_log_stage.advance_and_track(desc) do |ticker|
         with_thread_name("instance_update(#{desc})") do
           begin
-            InstanceUpdater.new(instance, ticker).update
+            InstanceUpdater.new(instance, ticker, @job_renderer).update
           rescue Exception => e
             @logger.error("Error updating instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise

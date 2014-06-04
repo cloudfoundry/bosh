@@ -111,8 +111,8 @@ module Bosh::Stemcell
             before { env.delete('RUBY_BIN') }
 
             before do
-              RbConfig::CONFIG.stub(:[]).with('bindir').and_return('/a/path/to/')
-              RbConfig::CONFIG.stub(:[]).with('ruby_install_name').and_return('ruby')
+              allow(RbConfig::CONFIG).to receive(:[]).with('bindir').and_return('/a/path/to/')
+              allow(RbConfig::CONFIG).to receive(:[]).with('ruby_install_name').and_return('ruby')
             end
 
             it 'uses the RbConfig values' do

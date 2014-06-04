@@ -26,7 +26,7 @@ module VSphereCloud
       end
       http_client.send_timeout = 14400
       http_client.receive_timeout = 14400
-      http_client.connect_timeout = 4
+      http_client.connect_timeout = 30
       http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
 
       @soap_stub = Soap::StubAdapter.new(host, 'vim.version.version6', http_client)

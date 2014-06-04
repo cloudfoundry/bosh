@@ -21,7 +21,7 @@ type concreteFactory struct {
 }
 
 func NewFactory(
-	settings boshsettings.Service,
+	settingsService boshsettings.Service,
 	platform boshplatform.Platform,
 	blobstore boshblob.Blobstore,
 	taskService boshtask.Service,
@@ -47,7 +47,7 @@ func NewFactory(
 			"cancel_task": NewCancelTask(taskService),
 
 			// VM admin
-			"ssh":        NewSsh(settings, platform, dirProvider),
+			"ssh":        NewSsh(settingsService, platform, dirProvider),
 			"fetch_logs": NewFetchLogs(compressor, copier, blobstore, dirProvider),
 
 			// Job management
@@ -56,7 +56,7 @@ func NewFactory(
 			"start":      NewStart(jobSupervisor),
 			"stop":       NewStop(jobSupervisor),
 			"drain":      NewDrain(notifier, specService, drainScriptProvider, jobSupervisor),
-			"get_state":  NewGetState(settings, specService, jobSupervisor, vitalsService, ntpService),
+			"get_state":  NewGetState(settingsService, specService, jobSupervisor, vitalsService, ntpService),
 			"run_errand": NewRunErrand(specService, dirProvider.JobsDir(), platform.GetRunner(), logger),
 
 			// Compilation
@@ -64,14 +64,14 @@ func NewFactory(
 			"release_apply_spec": NewReleaseApplySpec(platform),
 
 			// Disk management
-			"list_disk":    NewListDisk(settings, platform, logger),
+			"list_disk":    NewListDisk(settingsService, platform, logger),
 			"migrate_disk": NewMigrateDisk(platform, dirProvider),
-			"mount_disk":   NewMountDisk(settings, platform, platform, dirProvider),
-			"unmount_disk": NewUnmountDisk(settings, platform),
+			"mount_disk":   NewMountDisk(settingsService, platform, platform, dirProvider),
+			"unmount_disk": NewUnmountDisk(settingsService, platform),
 
 			// Networking
-			"prepare_network_change":     NewPrepareNetworkChange(platform.GetFs(), settings),
-			"prepare_configure_networks": NewPrepareConfigureNetworks(platform.GetFs(), settings),
+			"prepare_network_change":     NewPrepareNetworkChange(platform.GetFs(), settingsService),
+			"prepare_configure_networks": NewPrepareConfigureNetworks(platform, settingsService),
 			"configure_networks":         NewConfigureNetworks(),
 		},
 	}

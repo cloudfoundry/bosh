@@ -156,3 +156,9 @@ builds:
     version: 77
   !binary "OWIxMjI4NmMyZjNiODNlMDkxMTkwY2NhYmM4M2UwOGQ5MTM3MWI2OQ==":
     version: 78
+  !binary "MDliMmYwZjExMjM5ODRlNmRlMjg5YTUyNzZjNGYzMjdmZjZhNDQzMQ==":
+    version: 79
+  !binary "MTQwYzNkNjRlY2U0M2U3YjE4MmMzZDU3MDQ1NTNjNTJiMzllMDhkNg==":
+    version: 80
+  !binary "NDVmNTViNTAyMGUxMDAyYTBlZWMxNzFmOTJhNGYzNTQzZTE5MmU2MQ==":
+    version: '81'

@@ -37,7 +37,11 @@ func (a GetTaskAction) Run(taskID string) (interface{}, error) {
 		}, nil
 	}
 
-	return task.Value, task.Error
+	if task.Error != nil {
+		return task.Value, bosherr.WrapError(task.Error, "Task %s result", taskID)
+	}
+
+	return task.Value, nil
 }
 
 func (a GetTaskAction) Resume() (interface{}, error) {

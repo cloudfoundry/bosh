@@ -7,49 +7,54 @@ import (
 	. "bosh/platform/stats"
 )
 
-func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("ubuntu get cpu load", func() {
+var _ = Describe("sigarStatsCollector", func() {
+	var (
+		collector StatsCollector
+	)
 
-			collector := NewSigarStatsCollector()
+	BeforeEach(func() {
+		collector = NewSigarStatsCollector()
+	})
 
+	Describe("GetCPULoad", func() {
+		It("returns cpu load", func() {
 			load, err := collector.GetCPULoad()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(load.One >= 0).To(BeTrue())
 			Expect(load.Five >= 0).To(BeTrue())
 			Expect(load.Fifteen >= 0).To(BeTrue())
 		})
-		It("ubuntu get cpu stats", func() {
+	})
 
-			collector := NewSigarStatsCollector()
-
+	Describe("GetCPUStats", func() {
+		It("returns cpu stats", func() {
 			stats, err := collector.GetCPUStats()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(stats.User > 0).To(BeTrue())
 			Expect(stats.Sys > 0).To(BeTrue())
 			Expect(stats.Total > 0).To(BeTrue())
 		})
-		It("ubuntu get mem stats", func() {
+	})
 
-			collector := NewSigarStatsCollector()
-
+	Describe("GetMemStats", func() {
+		It("returns mem stats", func() {
 			stats, err := collector.GetMemStats()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(stats.Total > 0).To(BeTrue())
 			Expect(stats.Used > 0).To(BeTrue())
 		})
-		It("ubuntu get swap stats", func() {
+	})
 
-			collector := NewSigarStatsCollector()
-
+	Describe("GetSwapStats", func() {
+		It("returns swap stats", func() {
 			stats, err := collector.GetSwapStats()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(stats.Total > 0).To(BeTrue())
 		})
-		It("ubuntu get disk stats", func() {
+	})
 
-			collector := NewSigarStatsCollector()
-
+	Describe("GetDiskStats", func() {
+		It("returns disk stats", func() {
 			stats, err := collector.GetDiskStats("/")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -59,4 +64,4 @@ func init() {
 			Expect(stats.InodeUsage.Used > 0).To(BeTrue())
 		})
 	})
-}
+})

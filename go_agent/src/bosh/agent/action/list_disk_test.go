@@ -15,17 +15,17 @@ import (
 func init() {
 	Describe("ListDisk", func() {
 		var (
-			settings *fakesettings.FakeSettingsService
-			platform *fakeplatform.FakePlatform
-			logger   boshlog.Logger
-			action   ListDiskAction
+			settingsService *fakesettings.FakeSettingsService
+			platform        *fakeplatform.FakePlatform
+			logger          boshlog.Logger
+			action          ListDiskAction
 		)
 
 		BeforeEach(func() {
-			settings = &fakesettings.FakeSettingsService{}
+			settingsService = &fakesettings.FakeSettingsService{}
 			platform = fakeplatform.NewFakePlatform()
 			logger = boshlog.NewLogger(boshlog.LevelNone)
-			action = NewListDisk(settings, platform, logger)
+			action = NewListDisk(settingsService, platform, logger)
 		})
 
 		It("list disk should be synchronous", func() {
@@ -39,7 +39,7 @@ func init() {
 		It("list disk run", func() {
 			platform.MountedDevicePaths = []string{"/dev/sdb", "/dev/sdc"}
 
-			settings.Disks = boshsettings.Disks{
+			settingsService.Settings.Disks = boshsettings.Disks{
 				Persistent: map[string]string{
 					"volume-1": "/dev/sda",
 					"volume-2": "/dev/sdb",

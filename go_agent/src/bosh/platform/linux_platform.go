@@ -664,6 +664,15 @@ func (p linux) GetMonitCredentials() (username, password string, err error) {
 	return
 }
 
+func (p linux) PrepareForNetworkingChange() error {
+	err := p.fs.RemoveAll("/etc/udev/rules.d/70-persistent-net.rules")
+	if err != nil {
+		return bosherr.WrapError(err, "Removing network rules file")
+	}
+
+	return nil
+}
+
 func (p linux) GetDefaultNetwork() (boshsettings.Network, error) {
 	return p.netManager.GetDefaultNetwork()
 }

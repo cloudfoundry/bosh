@@ -29,7 +29,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   end
 
   it "should upload a local stemcell" do
-    @cloud.should_receive(:create_stemcell).with(anything(), {"ram" => "2gb"}).and_return do |image, _|
+    @cloud.should_receive(:create_stemcell).with(anything(), {"ram" => "2gb"}) do|image, _|
       contents = File.open(image) { |f| f.read }
       contents.should eql("image contents")
       "stemcell-cid"
@@ -45,7 +45,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   end
 
   it "should upload a remote stemcell" do
-    @cloud.should_receive(:create_stemcell).with(anything(), {"ram" => "2gb"}).and_return do |image, _|
+    @cloud.should_receive(:create_stemcell).with(anything(), {"ram" => "2gb"}) do|image, _|
       contents = File.open(image) { |f| f.read }
       contents.should eql("image contents")
       "stemcell-cid"
@@ -62,7 +62,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   end
   
   it "should cleanup the stemcell file" do
-    @cloud.should_receive(:create_stemcell).with(anything(), {"ram" => "2gb"}).and_return do |image, _|
+    @cloud.should_receive(:create_stemcell).with(anything(), {"ram" => "2gb"}) do|image, _|
       contents = File.open(image) { |f| f.read }
       contents.should eql("image contents")
       "stemcell-cid"

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	bosherr "bosh/errors"
+	boshlog "bosh/logger"
 	boshplatform "bosh/platform"
 	boshsettings "bosh/settings"
 	boshdir "bosh/settings/directories"
@@ -15,15 +16,18 @@ type Provider struct {
 	platform    boshplatform.Platform
 	dirProvider boshdir.DirectoriesProvider
 	uuidGen     boshuuid.Generator
+	logger      boshlog.Logger
 }
 
 func NewProvider(
 	platform boshplatform.Platform,
 	dirProvider boshdir.DirectoriesProvider,
+	logger boshlog.Logger,
 ) (p Provider) {
 	p.uuidGen = boshuuid.NewGenerator()
 	p.platform = platform
 	p.dirProvider = dirProvider
+	p.logger = logger
 	return
 }
 
@@ -53,7 +57,9 @@ func (p Provider) Get(settings boshsettings.Blobstore) (blobstore Blobstore, err
 		)
 	}
 
-	blobstore = NewSha1Verifiable(blobstore)
+	blobstore = NewSHA1VerifiableBlobstore(blobstore)
+
+	blobstore = NewRetryableBlobstore(blobstore, 3, p.logger)
 
 	err = blobstore.Validate()
 	if err != nil {

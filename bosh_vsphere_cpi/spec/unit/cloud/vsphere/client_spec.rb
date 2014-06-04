@@ -12,6 +12,9 @@ module VSphereCloud
     let(:fake_search_index) { double }
     let(:fake_service_content) { double('service content', root_folder: double('fake-root-folder')) }
 
+    let(:logger) { instance_double('Logger') }
+    before { class_double('Bosh::Clouds::Config', logger: logger).as_stubbed_const }
+
     before do
       fake_instance = double('service instance', content: fake_service_content)
       VimSdk::Vim::ServiceInstance.stub(new: fake_instance)
@@ -29,7 +32,6 @@ module VSphereCloud
           :ssl_config => ssl_config,
         )
       end
-
       before { allow(HTTPClient).to receive(:new).and_return(http_client) }
 
       let(:options) { { 'soap_log' => soap_log } }
@@ -38,7 +40,7 @@ module VSphereCloud
         it 'configures http client ' do
           expect(http_client).to receive(:send_timeout=).with(14400)
           expect(http_client).to receive(:receive_timeout=).with(14400)
-          expect(http_client).to receive(:connect_timeout=).with(4)
+          expect(http_client).to receive(:connect_timeout=).with(30)
           expect(ssl_config).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_NONE)
 
           subject

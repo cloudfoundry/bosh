@@ -54,6 +54,6 @@ describe 'cli: compiled_packages', type: :integration do
       FileUtils.rm_rf('dev_releases')
       bosh_runner.run_in_current_dir('create release --with-tarball')
     end
-    File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0.1-dev.tgz')
+    File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0+dev.1.tgz')
   end
 end

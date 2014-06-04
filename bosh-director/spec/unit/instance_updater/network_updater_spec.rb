@@ -3,23 +3,11 @@ require 'logger'
 
 module Bosh::Director
   describe InstanceUpdater::NetworkUpdater do
-    subject(:updater) { described_class.new(instance, vm_model, agent_client, resource_pool_updater, cloud, logger) }
+    subject(:updater) { described_class.new(instance, vm_model, agent_client, vm_updater, cloud, logger) }
     let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', :recreate= => nil) }
     let(:vm_model) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-vm-cid') }
-
-    let(:agent_client) do
-      instance_double('Bosh::Director::AgentClient', {
-        prepare_network_change: nil,
-        wait_until_ready: nil,
-      })
-    end
-
-    let(:resource_pool_updater) do
-      instance_double('Bosh::Director::InstanceUpdater', {
-        update_resource_pool: nil,
-      })
-    end
-
+    let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
+    let(:vm_updater) { instance_double('Bosh::Director::InstanceUpdater::VmUpdater', update: nil) }
     let(:cloud) { instance_double('Bosh::Cloud') }
     let(:logger) { Logger.new('/dev/null') }
 
@@ -36,6 +24,10 @@ module Bosh::Director
           expect(agent_client).to_not receive(:prepare_network_change)
           expect(agent_client).to_not receive(:wait_until_ready)
           updater.update
+        end
+
+        it 'returns same vm model and agent client' do
+          expect(updater.update).to eq([vm_model, agent_client])
         end
       end
 
@@ -85,6 +77,10 @@ module Bosh::Director
               expect(prepare_network_change_strategy).to_not receive(:after_configure_networks)
               updater.update
             end
+
+            it 'returns same vm model and agent client' do
+              expect(updater.update).to eq([vm_model, agent_client])
+            end
           end
 
           context 'when cloud does not support re-configuring vm with network settings' do
@@ -101,10 +97,17 @@ module Bosh::Director
               updater.update
             end
 
-            it 'asks instance updater to recreate instance vm' do
+            it 'asks vm updater to recreate instance vm' do
               expect(instance).to receive(:recreate=).with(true).ordered
-              expect(resource_pool_updater).to receive(:update_resource_pool).with(no_args).ordered
+              expect(vm_updater).to receive(:update).with(nil).ordered
               updater.update
+            end
+
+            it 'returns newly recreated vm model and agent client' do
+              new_vm_model = instance_double('Bosh::Director::Models::Vm')
+              new_agent_client = instance_double('Bosh::Director::AgentClient')
+              expect(vm_updater).to receive(:update).with(nil).and_return([new_vm_model, new_agent_client])
+              expect(updater.update).to eq([new_vm_model, new_agent_client])
             end
           end
         end
@@ -133,6 +136,10 @@ module Bosh::Director
                 expect(configure_networks_strategy).to_not receive(:after_configure_networks)
                 updater.update
               end
+
+              it 'returns same vm model and agent client' do
+                expect(updater.update).to eq([vm_model, agent_client])
+              end
             end
 
             context 'when cloud does not support re-configuring vm with network settings' do
@@ -150,8 +157,15 @@ module Bosh::Director
 
               it 'asks instance updater to recreate instance vm' do
                 expect(instance).to receive(:recreate=).with(true).ordered
-                expect(resource_pool_updater).to receive(:update_resource_pool).with(no_args).ordered
+                expect(vm_updater).to receive(:update).with(nil).ordered
                 updater.update
+              end
+
+              it 'returns newly recreated vm model and agent client' do
+                new_vm_model = instance_double('Bosh::Director::Models::Vm')
+                new_agent_client = instance_double('Bosh::Director::AgentClient')
+                expect(vm_updater).to receive(:update).with(nil).and_return([new_vm_model, new_agent_client])
+                expect(updater.update).to eq([new_vm_model, new_agent_client])
               end
             end
           end
@@ -162,15 +176,7 @@ module Bosh::Director
 
   describe InstanceUpdater::NetworkUpdater::ConfigureNetworksStrategy do
     subject(:strategy) { described_class.new(agent_client, network_settings, logger) }
-
-    let(:agent_client) do
-      instance_double('Bosh::Director::AgentClient', {
-        prepare_configure_networks: nil,
-        configure_networks: nil,
-        wait_until_ready: nil,
-      })
-    end
-
+    let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:network_settings) { double('fake-network-settings') }
     let(:logger) { Logger.new('/dev/null') }
 
@@ -215,14 +221,7 @@ module Bosh::Director
 
   describe InstanceUpdater::NetworkUpdater::PrepareNetworkChangeStrategy do
     subject(:strategy) { described_class.new(agent_client, network_settings, logger) }
-
-    let(:agent_client) do
-      instance_double('Bosh::Director::AgentClient', {
-        prepare_network_change: nil,
-        wait_until_ready: nil,
-      })
-    end
-
+    let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:network_settings) { double('fake-network-settings') }
     let(:logger) { Logger.new('/dev/null') }
 

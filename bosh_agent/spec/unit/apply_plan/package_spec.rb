@@ -87,8 +87,7 @@ describe Bosh::Agent::ApplyPlan::Package do
       job = make_job(job_spec, template_spec['name'], template_spec)
 
       Bosh::Agent::Util.should_receive(:unpack_blob).
-        with('deadcafe', 'deadbeef', subject.install_path).
-        and_return { FileUtils.mkdir_p(subject.install_path) }
+        with('deadcafe', 'deadbeef', subject.install_path) { FileUtils.mkdir_p(subject.install_path) }
 
       subject.install_for_job(job)
 

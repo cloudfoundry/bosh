@@ -1,9 +1,6 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli
   class ReleaseBuilder
     include Bosh::Cli::DependencyHelper
-    include Bosh::Cli::VersionCalc
 
     DEFAULT_RELEASE_NAME = "bosh_release"
 
@@ -20,10 +17,15 @@ module Bosh::Cli
       @uncommitted_changes = options.fetch(:uncommitted_changes, true)
       @packages = packages
       @jobs = jobs
+      @version = options.fetch(:version, nil)
+
+      raise ReleaseVersionError.new('Version numbers cannot be specified for dev releases') if (@version && !@final)
 
       @final_index = VersionsIndex.new(final_releases_dir, release_name)
       @dev_index = VersionsIndex.new(dev_releases_dir, release_name)
       @index = @final ? @final_index : @dev_index
+
+      raise ReleaseVersionError.new('Release version already exists') if (@version && @index.version_exists?(@version))
 
       @build_dir = Dir.mktmpdir
 
@@ -41,7 +43,7 @@ module Bosh::Cli
 
     # @return [String] Release version
     def version
-      @version ||= assign_version
+      @version ||= assign_version.to_s
     end
 
     # @return [Boolean] Is release final?
@@ -145,11 +147,10 @@ module Bosh::Cli
         say("This version is no different from version #{old_version}")
         @version = old_version
       else
-        @version = assign_version
-        @index.add_version(fingerprint, { "version" => @version })
+        @index.add_version(fingerprint, { "version" => version })
       end
 
-      manifest["version"] = @version
+      manifest["version"] = version
       manifest_yaml = Psych.dump(manifest)
 
       say("Writing manifest...")
@@ -166,7 +167,7 @@ module Bosh::Cli
 
     def generate_tarball
       generate_manifest unless @manifest_generated
-      return if @index.version_exists?(@version)
+      return if @index.version_exists?(version)
 
       unless @jobs_copied
         header("Copying jobs...")
@@ -224,27 +225,32 @@ module Bosh::Cli
 
     private
 
-    def version=(version)
-      @version = version
-    end
-
     def assign_version
-      latest_final_version = @final_index.latest_version.to_i
-      latest_dev_version = @dev_index.latest_version(latest_final_version)
+      latest_final_version = Bosh::Common::Version::ReleaseVersion.parse_list(@final_index.versions).latest
+      latest_final_version ||= Bosh::Common::Version::ReleaseVersion.parse('0')
 
       if @final
-        latest_final_version + 1
+        # Drop pre-release and post-release segments, and increment the release segment
+        latest_final_version.increment_release
       else
-        major = latest_final_version
-        minor = minor_version(latest_dev_version).to_i + 1
-        "#{major}.#{minor}-dev"
+        # Increment or Reset the post-release segment
+        dev_versions =  Bosh::Common::Version::ReleaseVersion.parse_list(@dev_index.versions)
+        latest_dev_version = dev_versions.latest_with_pre_release(latest_final_version)
+
+        if latest_dev_version
+          if latest_dev_version.version.post_release.nil?
+            latest_dev_version.default_post_release
+          else
+            latest_dev_version.increment_post_release
+          end
+        else
+          latest_final_version.default_post_release
+        end
       end
     end
 
     def in_build_dir(&block)
       Dir.chdir(build_dir) { yield }
     end
-
   end
-
 end

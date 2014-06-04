@@ -14,15 +14,16 @@ import (
 
 var _ = Describe("MountDiskAction", func() {
 	var (
-		settings *fakesettings.FakeSettingsService
-		platform *fakeplatform.FakePlatform
-		action   MountDiskAction
+		settingsService *fakesettings.FakeSettingsService
+		platform        *fakeplatform.FakePlatform
+		action          MountDiskAction
 	)
 
 	BeforeEach(func() {
-		settings = &fakesettings.FakeSettingsService{}
+		settingsService = &fakesettings.FakeSettingsService{}
 		platform = fakeplatform.NewFakePlatform()
-		action = NewMountDisk(settings, platform, platform, boshdirs.NewDirectoriesProvider("/fake-base-dir"))
+		dirProvider := boshdirs.NewDirectoriesProvider("/fake-base-dir")
+		action = NewMountDisk(settingsService, platform, platform, dirProvider)
 	})
 
 	It("is asynchronous", func() {
@@ -37,7 +38,9 @@ var _ = Describe("MountDiskAction", func() {
 		Context("when settings can be loaded", func() {
 			Context("when disk cid can be resolved to a device path from infrastructure settings", func() {
 				BeforeEach(func() {
-					settings.Disks.Persistent = map[string]string{"fake-disk-cid": "fake-device-path"}
+					settingsService.Settings.Disks.Persistent = map[string]string{
+						"fake-disk-cid": "fake-device-path",
+					}
 				})
 
 				It("checks if store directory is already mounted", func() {
@@ -121,7 +124,9 @@ var _ = Describe("MountDiskAction", func() {
 
 			Context("when disk cid cannot be resolved to a device path from infrastructure settings", func() {
 				BeforeEach(func() {
-					settings.Disks.Persistent = map[string]string{"fake-known-disk-cid": "/dev/sdf"}
+					settingsService.Settings.Disks.Persistent = map[string]string{
+						"fake-known-disk-cid": "/dev/sdf",
+					}
 				})
 
 				It("returns error", func() {
@@ -134,7 +139,7 @@ var _ = Describe("MountDiskAction", func() {
 
 		Context("when settings cannot be loaded", func() {
 			It("returns error", func() {
-				settings.LoadSettingsError = errors.New("fake-load-settings-err")
+				settingsService.LoadSettingsError = errors.New("fake-load-settings-err")
 
 				_, err := action.Run("fake-disk-cid")
 				Expect(err).To(HaveOccurred())

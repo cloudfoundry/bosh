@@ -4,81 +4,54 @@ require 'fakefs/spec_helpers'
 describe Bosh::Clouds::ExternalCpi do
   include FakeFS::SpecHelpers
 
-  let(:director_uuid) { 'fake-director-uuid' }
-  subject(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', director_uuid) }
-  before { allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true) }
-
-  let(:cpi_response) do
-    JSON.dump(
-      result: nil,
-      error: nil,
-      log: ''
-    )
-  end
-
-  let(:env) { {'TMPDIR' => '/some/tmp'} }
-  before { stub_const('ENV', env) }
-
-  let(:config) do
-    double(:config,
-      logger: double(:logger, debug: nil),
-      cpi_task_log: cpi_log_path
-    )
-  end
-  before { stub_const('Bosh::Clouds::Config', config)}
-  let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
-  before { FileUtils.mkdir_p('/var/vcap/task/5') }
-
-  before { allow(Open3).to receive(:capture3).and_return([cpi_response, stderr, exit_status]) }
-  let(:stderr) { double('fake-stderr-data') }
-  let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
+  subject(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', 'fake-director-uuid') }
 
   def self.it_calls_cpi_method(method, cpi_method, *arguments)
-    subject(:call_cpi_method) { external_cpi.public_send(method, *arguments) }
+    define_method(:call_cpi_method) { external_cpi.public_send(method, *arguments) }
+
+    before { allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true) }
+
+    let(:cpi_response) { JSON.dump(result: nil, error: nil, log: '') }
+
+    before { stub_const('Bosh::Clouds::Config', config) }
+    let(:config) { double('Bosh::Clouds::Config', logger: double(:logger, debug: nil), cpi_task_log: cpi_log_path) }
+    let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
+
+    before { FileUtils.mkdir_p('/var/vcap/task/5') }
+
+    before { allow(Open3).to receive(:capture3).and_return([cpi_response, 'fake-stderr-data', exit_status]) }
+    let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
 
     it 'calls cpi binary with correct arguments' do
+      stub_const('ENV', 'TMPDIR' => '/some/tmp')
+
       expected_env = {'PATH' => '/usr/sbin:/usr/bin:/sbin:/bin', 'TMPDIR' => '/some/tmp'}
       expected_cmd = '/path/to/fake-cpi/bin/cpi'
-      expected_stdin = %Q{{"method":"#{cpi_method}","arguments":#{arguments.to_json},"context":{"director_uuid":"#{director_uuid}"}}}
+      expected_stdin = %({"method":"#{cpi_method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid"}})
 
-      expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin).and_return([cpi_response, stderr, exit_status])
+      expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin)
       call_cpi_method
     end
 
     describe 'result' do
-      let(:result) { 'fake-result' }
-      let(:cpi_response) do
-        JSON.dump({
-          result: result,
-          error: nil,
-          log: 'fake-log'
-        })
-      end
+      let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
 
       it 'returns result' do
-        expect(call_cpi_method).to eq(result)
+        expect(call_cpi_method).to eq('fake-result')
       end
     end
 
     describe 'log' do
-      let(:cpi_response) do
-        JSON.dump({
-          result: 'fake-result',
-          error: nil,
-          log: 'fake-log'
-        })
-      end
+      let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
 
       it 'saves the log in task cpi log' do
         call_cpi_method
-
         expect(File.read(cpi_log_path)).to eq('fake-log')
       end
 
       it 'adds to existing file if for a given task several cpi requests were made' do
         external_cpi.public_send(method, *arguments)
         external_cpi.public_send(method, *arguments)
-
         expect(File.read(cpi_log_path)).to eq('fake-logfake-log')
       end
     end
@@ -87,23 +60,15 @@ describe Bosh::Clouds::ExternalCpi do
       let(:cpi_response) { 'invalid-json' }
 
       it 'raises an error' do
-        expect {
-          call_cpi_method
-        }.to raise_error(
-          Bosh::Clouds::ExternalCpi::InvalidResponse
-        )
+        expect { call_cpi_method }.to raise_error(Bosh::Clouds::ExternalCpi::InvalidResponse)
       end
     end
 
     context 'when response is in incorrect format' do
-      let(:cpi_response) { JSON.dump({some_key: 'some_value'}) }
+      let(:cpi_response) { JSON.dump(some_key: 'some_value') }
 
       it 'raises an error' do
-        expect {
-          call_cpi_method
-        }.to raise_error(
-          Bosh::Clouds::ExternalCpi::InvalidResponse
-        )
+        expect { call_cpi_method }.to raise_error(Bosh::Clouds::ExternalCpi::InvalidResponse)
       end
     end
 
@@ -121,16 +86,34 @@ describe Bosh::Clouds::ExternalCpi do
     end
 
     describe 'error response' do
-      def self.it_raises_an_error_with_ok_to_retry(error_class, message)
+      def self.it_raises_an_error(error_class)
         let(:cpi_response) do
           JSON.dump(
             result: nil,
             error: {
               type: error_class.name,
-              message: message,
-              ok_to_retry: true
+              message: 'fake-error-message',
+              ok_to_retry: false,
             },
-            log: 'fake-log'
+            log: 'fake-log',
+          )
+        end
+
+        it 'raises an error constructed from error response' do
+          expect { call_cpi_method }.to raise_error(error_class, 'fake-error-message')
+        end
+      end
+
+      def self.it_raises_an_error_with_ok_to_retry(error_class)
+        let(:cpi_response) do
+          JSON.dump(
+            result: nil,
+            error: {
+              type: error_class.name,
+              message: 'fake-error-message',
+              ok_to_retry: true,
+            },
+            log: 'fake-log',
           )
         end
 
@@ -139,57 +122,46 @@ describe Bosh::Clouds::ExternalCpi do
             call_cpi_method
           }.to raise_error do |error|
             expect(error.class).to eq(error_class)
-            expect(error.message).to eq(message)
+            expect(error.message).to eq('fake-error-message')
             expect(error.ok_to_retry).to eq(true)
           end
         end
       end
 
-      def self.it_raises_an_error(error_class, message)
-        let(:cpi_response) do
-          JSON.dump(
-            result: nil,
-            error: {
-              type: error_class.name,
-              message: message,
-              ok_to_retry: true
-            },
-            log: 'fake-log'
-          )
-        end
-
-        it 'raises an error constructed from error response' do
-          expect {
-            call_cpi_method
-          }.to raise_error do |error|
-            expect(error.class).to eq(error_class)
-            expect(error.message).to eq(message)
-          end
-        end
+      context 'when cpi returns CpiError error' do
+        it_raises_an_error(Bosh::Clouds::CpiError)
       end
 
-      context 'when cpi returns a NoDiskSpace error' do
-        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::NoDiskSpace, 'Not enough disk space')
+      context 'when cpi returns NotImplemented error' do
+        it_raises_an_error(Bosh::Clouds::NotImplemented)
       end
 
-      context 'when cpi returns a DiskNotAttached error' do
-        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::DiskNotAttached, 'Not enough disk space')
-      end
-
-      context 'when cpi returns a DiskNotFound error' do
-        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::DiskNotFound, 'Not enough disk space')
-      end
-
-      context 'when cpi returns a VMCreationFailed error' do
-        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::VMCreationFailed, 'Not enough disk space')
+      context 'when cpi returns NotSupported error' do
+        it_raises_an_error(Bosh::Clouds::NotSupported)
       end
 
       context 'when cpi returns CloudError error' do
-        it_raises_an_error(Bosh::Clouds::CloudError, 'Something went wrong')
+        it_raises_an_error(Bosh::Clouds::CloudError)
       end
 
-      context 'when cpi returns CpiError error' do
-        it_raises_an_error(Bosh::Clouds::CpiError, 'Something went wrong')
+      context 'when cpi returns VMNotFound error' do
+        it_raises_an_error(Bosh::Clouds::VMNotFound)
+      end
+
+      context 'when cpi returns a NoDiskSpace error' do
+        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::NoDiskSpace)
+      end
+
+      context 'when cpi returns a DiskNotAttached error' do
+        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::DiskNotAttached)
+      end
+
+      context 'when cpi returns a DiskNotFound error' do
+        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::DiskNotFound)
+      end
+
+      context 'when cpi returns a VMCreationFailed error' do
+        it_raises_an_error_with_ok_to_retry(Bosh::Clouds::VMCreationFailed)
       end
 
       context 'when cpi raises unrecognizable error' do
@@ -208,10 +180,10 @@ describe Bosh::Clouds::ExternalCpi do
         it 'raises an error constructed from error response' do
           expect {
             call_cpi_method
-          }.to raise_error { |error|
-            expect(error.class).to eq(Bosh::Clouds::ExternalCpi::UnknownError)
-            expect(error.message).to eq('Received unknown error from cpi: FakeUnrecognizableError with message Something went wrong')
-          }
+          }.to raise_error(
+            Bosh::Clouds::ExternalCpi::UnknownError,
+            'Received unknown error from cpi: FakeUnrecognizableError with message Something went wrong',
+          )
         end
       end
     end
@@ -220,9 +192,7 @@ describe Bosh::Clouds::ExternalCpi do
       let(:exit_status) { instance_double('Process::Status', exitstatus: 123) }
 
       it 'ignores the exit status and returns result because the CPI script currently catches CPI error and returns response' do
-        expect {
-          call_cpi_method
-        }.to_not raise_error
+        expect { call_cpi_method }.to_not raise_error
       end
     end
   end

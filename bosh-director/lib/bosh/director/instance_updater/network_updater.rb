@@ -1,10 +1,10 @@
 module Bosh::Director
   class InstanceUpdater::NetworkUpdater
-    def initialize(instance, vm_model, agent_client, resource_pool_updater, cloud, logger)
+    def initialize(instance, vm_model, agent_client, vm_updater, cloud, logger)
       @instance = instance
       @vm_model = vm_model
       @agent_client = agent_client
-      @resource_pool_updater = resource_pool_updater
+      @vm_updater = vm_updater
       @cloud = cloud
       @logger = logger
     end
@@ -12,39 +12,37 @@ module Bosh::Director
     def update
       unless @instance.networks_changed?
         @logger.info('Skipping network re-configuration')
-        return
+        return [@vm_model, @agent_client]
       end
 
       network_settings = @instance.network_settings
-      @logger.info("Planning to reconfigure network with settings: #{network_settings}")
 
       strategies = [
         ConfigureNetworksStrategy.new(@agent_client, network_settings, @logger),
         PrepareNetworkChangeStrategy.new(@agent_client, network_settings, @logger),
       ]
 
+      @logger.info("Planning to reconfigure network with settings: #{network_settings}")
       selected_strategy = strategies.find { |s| s.before_configure_networks }
 
       @cloud.configure_networks(@vm_model.cid, network_settings)
 
       selected_strategy.after_configure_networks
 
+      [@vm_model, @agent_client]
+
     rescue Bosh::Clouds::NotSupported => e
-      # If configure_networks can't configure the network as
-      # requested, e.g. when the security groups change on AWS,
-      # configure_networks() will raise an exception and we'll
-      # recreate the VM to work around it
-      @logger.info("configure_networks CPI call failed with error: #{e.inspect}")
-      configure_new_vm
+      @logger.info("Failed reconfiguring existing VM: #{e.inspect}")
+
+      # If configure_networks CPI method cannot reconfigure VM networking
+      # (e.g. when the security groups change on AWS)
+      # it raises Bosh::Clouds::NotSupported to indicate new VM is needed.
+      @logger.info('Creating VM with new network configurations')
+      @instance.recreate = true
+      @vm_updater.update(nil)
     end
 
     private
-
-    def configure_new_vm
-      @logger.info('Creating VM with new network configurations')
-      @instance.recreate = true
-      @resource_pool_updater.update_resource_pool
-    end
 
     # Newer agents support prepare_configure_networks/configure_networks messages
     class ConfigureNetworksStrategy

@@ -312,7 +312,7 @@ module Bosh::Director
     # @return [void]
     def bind_configuration
       @deployment_plan.jobs_starting_on_deploy.each do |job|
-        JobRenderer.new(job).render_job_instances(@blobstore)
+        JobRenderer.new(job, @blobstore).render_job_instances
       end
     end
 

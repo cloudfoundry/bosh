@@ -52,6 +52,7 @@ module Bosh::Dev::Sandbox
         user: ENV['TRAVIS'] ? 'travis' : 'root',
         password: ENV['TRAVIS'] ? '' : 'password',
       }
+
       agent_type = ENV['BOSH_INTEGRATION_AGENT_TYPE'] || 'ruby'
 
       new(

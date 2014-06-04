@@ -15,33 +15,15 @@ import (
 	boshlog "bosh/logger"
 )
 
-func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("services in group returns slice of service", func() {
-
-			expectedServices := []Service{
-				{
-					Monitored: true,
-					Status:    "running",
-				},
-				{
-					Monitored: false,
-					Status:    "unknown",
-				},
-				{
-					Monitored: true,
-					Status:    "starting",
-				},
-				{
-					Monitored: true,
-					Status:    "failing",
-				},
-			}
+var _ = Describe("status", func() {
+	Describe("ServicesInGroup", func() {
+		It("returns list of service", func() {
 			monitStatusFilePath, _ := filepath.Abs("../../../../fixtures/monit_status_with_multiple_services.xml")
 			Expect(monitStatusFilePath).ToNot(BeNil())
 
 			file, err := os.Open(monitStatusFilePath)
 			Expect(err).ToNot(HaveOccurred())
+
 			defer file.Close()
 
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -50,21 +32,37 @@ func init() {
 				Expect(r.URL.Path).To(Equal("/_status2"))
 				Expect(r.URL.Query().Get("format")).To(Equal("xml"))
 			})
+
 			ts := httptest.NewServer(handler)
+
 			defer ts.Close()
 
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			client := NewHTTPClient(ts.Listener.Addr().String(), "fake-user", "fake-pass", http.DefaultClient, 1*time.Millisecond, logger)
+			client := NewHTTPClient(
+				ts.Listener.Addr().String(),
+				"fake-user",
+				"fake-pass",
+				http.DefaultClient,
+				1*time.Millisecond,
+				logger,
+			)
 
 			status, err := client.Status()
 			Expect(err).ToNot(HaveOccurred())
 
+			expectedServices := []Service{
+				Service{Monitored: true, Status: "running"},
+				Service{Monitored: false, Status: "unknown"},
+				Service{Monitored: true, Status: "starting"},
+				Service{Monitored: true, Status: "failing"},
+			}
+
 			services := status.ServicesInGroup("vcap")
-			Expect(len(expectedServices)).To(Equal(len(services)))
+			Expect(len(services)).To(Equal(len(expectedServices)))
 
 			for i, expectedService := range expectedServices {
 				Expect(expectedService).To(Equal(services[i]))
 			}
 		})
 	})
-}
+})

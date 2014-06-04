@@ -28,10 +28,10 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
 
   describe 'binding release version model' do
     it 'should bind release version model' do
-      spec = {'name' => 'foo', 'version' => '42-dev'}
+      spec = {'name' => 'foo', 'version' => '42.1-dev'}
       deployment = make_deployment('mycloud')
       plan = make_plan(deployment)
-      rv1 = make_version('foo', '42-dev')
+      rv1 = make_version('foo', '42+dev.1')
 
       release = make(plan, spec)
       release.bind_model
@@ -43,7 +43,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
     it "should fail if release doesn't exist" do
       deployment = make_deployment('mycloud')
       plan = make_plan(deployment)
-      spec = {'name' => 'foo', 'version' => '42-dev'}
+      spec = {'name' => 'foo', 'version' => '42.1-dev'}
 
       expect {
         release = make(plan, spec)
@@ -54,8 +54,8 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
     it "should fail if release version doesn't exist" do
       deployment = make_deployment('mycloud')
       plan = make_plan(deployment)
-      spec = {'name' => 'foo', 'version' => '42-dev'}
-      make_version('foo', '55-dev')
+      spec = {'name' => 'foo', 'version' => '42.1-dev'}
+      make_version('foo', '55.1-dev')
 
       expect {
         release = make(plan, spec)
@@ -67,11 +67,11 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       deployment = make_deployment('mycloud')
       plan = make_plan(deployment)
 
-      rv1 = make_version('foo', '42-dev')
-      rv2 = make_version('bar', '55-dev')
+      rv1 = make_version('foo', '42.1-dev')
+      rv2 = make_version('bar', '55.1-dev')
 
-      spec1 = {'name' => 'foo', 'version' => '42-dev'}
-      spec2 = {'name' => 'bar', 'version' => '55-dev'}
+      spec1 = {'name' => 'foo', 'version' => '42.1-dev'}
+      spec2 = {'name' => 'bar', 'version' => '55.1-dev'}
 
       make(plan, spec1).bind_model
       make(plan, spec2).bind_model
@@ -93,7 +93,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
   describe 'looking up/adding templates' do
     it 'registers templates used in the release' do
       plan = make_plan(nil)
-      spec = {'name' => 'foo', 'version' => '42-dev'}
+      spec = {'name' => 'foo', 'version' => '42.1-dev'}
 
       release = make(plan, spec)
       release.templates.should == []

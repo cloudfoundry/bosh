@@ -9,6 +9,7 @@ import (
 
 	. "bosh/agent/alert"
 	boshlog "bosh/logger"
+	boshsettings "bosh/settings"
 	fakesettings "bosh/settings/fakes"
 )
 
@@ -40,16 +41,13 @@ func init() {
 			It("builds alert with id, severity and other monit related info", func() {
 				builtAlert, err := builder.Build(buildMonitAlert())
 				Expect(err).ToNot(HaveOccurred())
-
-				expectedAlert := Alert{
+				Expect(builtAlert).To(Equal(Alert{
 					ID:        "some random id",
 					Severity:  SeverityAlert,
 					Title:     "nats - does not exist - restart",
 					Summary:   "process is not running",
 					CreatedAt: 1306076861,
-				}
-
-				Expect(builtAlert).To(Equal(expectedAlert))
+				}))
 			})
 
 			It("sets the severity based on event", func() {
@@ -88,19 +86,18 @@ func init() {
 				inputAlert.Date = "Thu, 02 May 2013 20:07:0"
 
 				builtAlert, _ := builder.Build(inputAlert)
-
 				createdAt := time.Unix(builtAlert.CreatedAt, 0)
-				now := time.Now()
-
-				assert.WithinDuration(GinkgoT(), now, createdAt, 1*time.Second)
+				assert.WithinDuration(GinkgoT(), time.Now(), createdAt, 1*time.Second)
 			})
 
 			It("sets the title with ips", func() {
 				inputAlert := buildMonitAlert()
-				settingsService.IPs = []string{"192.168.0.1", "10.0.0.1"}
+				settingsService.Settings.Networks = boshsettings.Networks{
+					"fake-net1": boshsettings.Network{IP: "192.168.0.1"},
+					"fake-net2": boshsettings.Network{IP: "10.0.0.1"},
+				}
 
 				builtAlert, _ := builder.Build(inputAlert)
-
 				Expect(builtAlert.Title).To(Equal("nats (10.0.0.1, 192.168.0.1) - does not exist - restart"))
 			})
 		})

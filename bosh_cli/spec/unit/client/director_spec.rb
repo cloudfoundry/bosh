@@ -442,6 +442,12 @@ describe Bosh::Cli::Client::Director do
         end
       end
     end
+
+    it 'escapes URL parameters' do
+      expect(@director).to receive(:request_and_track).
+        with(:delete, '/releases/fake-release-name?version=1%2Bdev.1', {}).and_return(true)
+      @director.delete_release('fake-release-name', version: '1+dev.1')
+    end
   end
 
   describe 'create_backup' do
@@ -777,6 +783,36 @@ describe Bosh::Cli::Client::Director do
       code.should == 200
       File.read(filename).should == 'test body'
       headers.should == {}
+    end
+  end
+
+  describe 'list_running_tasks' do
+    before do
+      allow(@director).to receive(:get).
+        with('/info', 'application/json').
+        and_return([200, "{\"version\":\"#{director_version}\"}"])
+    end
+
+    context 'when director version is less than 0.3.5' do
+      let(:director_version) { '0.0.1' }
+      it 'sends tasks request in old format' do
+        expect(@director).to receive(:get).
+          with('/tasks?state=processing', 'application/json').
+          and_return([200, '{}'])
+
+        @director.list_running_tasks
+      end
+    end
+
+    context 'when director version is greater than 0.3.5' do
+      let(:director_version) { '1.0000.0 (release:6a18d402 bosh:6a18d402)' }
+      it 'sends tasks request in new format' do
+        expect(@director).to receive(:get).
+          with('/tasks?state=processing,cancelling,queued&verbose=1', 'application/json').
+          and_return([200, '{}'])
+
+        @director.list_running_tasks
+      end
     end
   end
 end

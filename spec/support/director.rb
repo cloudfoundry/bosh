@@ -51,7 +51,7 @@ module Bosh::Spec
       output = @runner.run('vms --details')
       table = output.lines.grep(/\|/)
 
-      table = table.map { |line| line.split('|').map(&:strip).reject(&:empty?) }
+      table = table.map { |line| line.split('|').map(&:strip) }
       headers = table.shift || []
       headers.map! { |header| header.downcase.tr('/ ', '_').to_sym }
 

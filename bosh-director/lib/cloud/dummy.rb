@@ -1,11 +1,14 @@
 require 'digest/sha1'
 require 'fileutils'
 require 'securerandom'
+require 'logger'
 
 module Bosh
   module Clouds
     class Dummy
       class NotImplemented < StandardError; end
+
+      attr_reader :commands
 
       def initialize(options)
         @options = options
@@ -22,8 +25,9 @@ module Bosh
 
         @running_vms_dir = File.join(@base_dir, 'running_vms')
 
-        log_device = options['log_device'] || STDOUT
-        @logger = Logger.new(log_device)
+        @logger = Logger.new(options['log_device'] || STDOUT)
+
+        @commands = CommandTransport.new(@base_dir, @logger)
 
         FileUtils.mkdir_p(@base_dir)
       rescue Errno::EACCES
@@ -42,8 +46,13 @@ module Bosh
 
       # rubocop:disable ParameterLists
       def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, env = nil)
-        @logger.info('Dummy: create_vm')
       # rubocop:enable ParameterLists
+        @logger.info('Dummy: create_vm')
+
+        cmd = commands.next_create_vm_cmd
+
+        write_agent_default_network(agent_id, cmd.ip_address) if cmd.ip_address
+
         write_agent_settings(agent_id, {
           agent_id: agent_id,
           blobstore: @options['agent']['blobstore'],
@@ -71,7 +80,7 @@ module Bosh
         FileUtils.rm_rf(File.join(@base_dir, 'running_vms', vm_name))
       end
 
-      def reboot_vm(vm)
+      def reboot_vm(vm_id)
         raise NotImplemented, 'Dummy CPI does not implement reboot_vm'
       end
 
@@ -79,7 +88,9 @@ module Bosh
         File.exists?(vm_file(vm_id))
       end
 
-      def configure_networks(vm, networks)
+      def configure_networks(vm_id, networks)
+        cmd = commands.next_configure_networks_cmd(vm_id)
+        raise NotSupported, 'Dummy CPI was configured to return NotSupported' if cmd.not_supported
         raise NotImplemented, 'Dummy CPI does not implement configure_networks'
       end
 
@@ -127,14 +138,11 @@ module Bosh
         FileUtils.rm(snapshot_file(snapshot_id))
       end
 
-      def validate_deployment(old_manifest, new_manifest)
-        raise NotImplemented, 'Dummy CPI does not implement validate_deployment'
-      end
-
       # Additional Dummy test helpers
 
       def vm_cids
-        Dir.glob(File.join(@running_vms_dir, '*')).map { |vm| File.basename(vm) }
+        # Shuffle so that no one relies on the order of VMs
+        Dir.glob(File.join(@running_vms_dir, '*')).map { |vm| File.basename(vm) }.shuffle
       end
 
       def kill_agents
@@ -194,6 +202,13 @@ module Bosh
         File.write(agent_settings_file(agent_id), JSON.generate(settings))
       end
 
+      def write_agent_default_network(agent_id, ip_address)
+        # Agent looks for following file to resolve default network on dummy infrastructure
+        path = File.join(agent_base_dir(agent_id), 'bosh', 'dummy-default-network-settings.json')
+        FileUtils.mkdir_p(File.dirname(path))
+        File.write(path, JSON.generate('ip' => ip_address))
+      end
+
       def agent_cmd(agent_id, root_dir)
         go_agent_exe = File.expand_path('../../../../go_agent/out/bosh-agent', __FILE__)
         {
@@ -225,6 +240,49 @@ module Bosh
       def snapshot_file(snapshot_id)
         File.join(@base_dir, 'snapshots', snapshot_id)
       end
+
+      # Example file system layout for arranging commands information.
+      # Currently uses file system as transport but could be switch to use NATS.
+      #   base_dir/cpi/create_vm/next -> {"something": true}
+      #   base_dir/cpi/configure_networks/<vm_id> -> (presence)
+      class CommandTransport
+        def initialize(base_dir, logger)
+          @cpi_commands = File.join(base_dir, 'cpi_commands')
+          @logger = logger
+        end
+
+        def make_configure_networks_not_supported(vm_id)
+          @logger.info("Making configure_networks for #{vm_id} raise NotSupported")
+          path = File.join(@cpi_commands, 'configure_networks', vm_id)
+          FileUtils.mkdir_p(File.dirname(path))
+          File.write(path, 'marker')
+        end
+
+        def next_configure_networks_cmd(vm_id)
+          @logger.info("Reading configure_networks configuration for #{vm_id}")
+          vm_path = File.join(@cpi_commands, 'configure_networks', vm_id)
+          vm_supported = File.exists?(vm_path)
+          FileUtils.rm_rf(vm_path)
+          ConfigureNetworksCommand.new(vm_supported)
+        end
+
+        def make_create_vm_always_use_dynamic_ip(ip_address)
+          @logger.info("Making create_vm method to set ip address #{ip_address}")
+          always_path = File.join(@cpi_commands, 'create_vm', 'always')
+          FileUtils.mkdir_p(File.dirname(always_path))
+          File.write(always_path, ip_address)
+        end
+
+        def next_create_vm_cmd
+          @logger.info('Reading create_vm configuration')
+          always_path = File.join(@cpi_commands, 'create_vm', 'always')
+          ip_address = File.read(always_path) if File.exists?(always_path)
+          CreareVmCommand.new(ip_address)
+        end
+      end
+
+      class ConfigureNetworksCommand < Struct.new(:not_supported); end
+      class CreareVmCommand < Struct.new(:ip_address); end
     end
   end
 end

@@ -20,10 +20,10 @@ module Bosh::Director
       instance_vm_binder = DeploymentPlan::InstanceVmBinder.new(@event_log)
       instance_vm_binder.bind_instance_vms(@job.instances)
 
-      job_renderer = JobRenderer.new(@job)
-      job_renderer.render_job_instances(@blobstore)
+      job_renderer = JobRenderer.new(@job, @blobstore)
+      job_renderer.render_job_instances
 
-      job_updater = JobUpdater.new(@deployment, @job)
+      job_updater = JobUpdater.new(@deployment, @job, job_renderer)
       job_updater.update
     end
 

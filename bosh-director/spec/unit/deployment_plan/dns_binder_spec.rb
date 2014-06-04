@@ -16,8 +16,7 @@ module Bosh::Director
 
         it "should create the domain if it doesn't exist" do
           domain = nil
-          deployment.should_receive(:dns_domain=).
-            and_return { |*args| domain = args.first }
+          deployment.should_receive(:dns_domain=) { |*args| domain = args.first }
           subject.bind_deployment
 
           Models::Dns::Domain.count.should == 1

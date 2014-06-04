@@ -23,11 +23,11 @@ module Bosh::Director
         expect(vm_binder).to receive(:bind_instance_vms).with([instance1, instance2])
 
         job_renderer = instance_double('Bosh::Director::JobRenderer')
-        expect(JobRenderer).to receive(:new).with(job).and_return(job_renderer)
-        expect(job_renderer).to receive(:render_job_instances).with(blobstore)
+        expect(JobRenderer).to receive(:new).with(job, blobstore).and_return(job_renderer)
+        expect(job_renderer).to receive(:render_job_instances).with(no_args)
 
         job_updater = instance_double('Bosh::Director::JobUpdater')
-        expect(JobUpdater).to receive(:new).with(deployment, job).and_return(job_updater)
+        expect(JobUpdater).to receive(:new).with(deployment, job, job_renderer).and_return(job_updater)
         expect(job_updater).to receive(:update).with(no_args)
 
         subject.update_instances

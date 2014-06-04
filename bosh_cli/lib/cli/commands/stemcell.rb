@@ -3,7 +3,6 @@ require 'cli/public_stemcells'
 
 module Bosh::Cli
   class Command::Stemcell < Command::Base
-    include Bosh::Cli::VersionCalc
     STEMCELL_EXISTS_ERROR_CODE = 50002
 
     usage 'verify stemcell'
@@ -87,9 +86,11 @@ module Bosh::Cli
     def list
       auth_required
       stemcells = director.list_stemcells.sort do |sc1, sc2|
-        sc1['name'] == sc2['name'] ?
-            version_cmp(sc1['version'], sc2['version']) :
-            sc1['name'] <=> sc2['name']
+        if sc1['name'] == sc2['name']
+          Bosh::Common::Version::StemcellVersion.parse_and_compare(sc1['version'], sc2['version'])
+        else
+          sc1['name'] <=> sc2['name']
+        end
       end
 
       err('No stemcells') if stemcells.empty?

@@ -13,6 +13,7 @@ module Bosh::OpenStackCloud
     attr_reader :openstack
     attr_reader :registry
     attr_reader :glance
+    attr_reader :volume
     attr_accessor :logger
 
     ##
@@ -33,11 +34,12 @@ module Bosh::OpenStackCloud
       @agent_properties = @options['agent'] || {}
       @openstack_properties = @options['openstack']
 
-      @default_key_name = @openstack_properties['default_key_name']
-      @default_security_groups = @openstack_properties['default_security_groups']
-      @state_timeout = @openstack_properties['state_timeout']
-      @stemcell_public_visibility = @openstack_properties['stemcell_public_visibility']
-      @wait_resource_poll_interval = @openstack_properties['wait_resource_poll_interval']
+      @default_key_name = @openstack_properties["default_key_name"]
+      @default_security_groups = @openstack_properties["default_security_groups"]
+      @state_timeout = @openstack_properties["state_timeout"]
+      @stemcell_public_visibility = @openstack_properties["stemcell_public_visibility"]
+      @wait_resource_poll_interval = @openstack_properties["wait_resource_poll_interval"]
+      @boot_from_volume = @openstack_properties["boot_from_volume"]
 
       unless @openstack_properties['auth_url'].match(/\/tokens$/)
         @openstack_properties['auth_url'] = @openstack_properties['auth_url'] + '/tokens'
@@ -75,6 +77,22 @@ module Bosh::OpenStackCloud
       rescue Exception => e
         @logger.error(e)
         cloud_error('Unable to connect to the OpenStack Image Service API. Check task debug log for details.')
+      end
+
+      volume_params = {
+        :provider => "OpenStack",
+        :openstack_auth_url => @openstack_properties["auth_url"],
+        :openstack_username => @openstack_properties["username"],
+        :openstack_api_key => @openstack_properties["api_key"],
+        :openstack_tenant => @openstack_properties["tenant"],
+        :openstack_endpoint_type => @openstack_properties["endpoint_type"],
+        :connection_options => @openstack_properties['connection_options']
+      }
+      begin
+        @volume = Fog::Volume.new(volume_params)
+      rescue Exception => e
+        @logger.error(e)
+        cloud_error("Unable to connect to the OpenStack Volume API. Check task debug log for details.")
       end
 
       @metadata_lock = Mutex.new
@@ -222,6 +240,14 @@ module Bosh::OpenStackCloud
         cloud_error("Key-pair `#{keyname}' not found") if keypair.nil?
         @logger.debug("Using key-pair: `#{keypair.name}' (#{keypair.fingerprint})")
 
+        if @boot_from_volume
+          boot_vol_size = flavor.disk * 1024
+
+          boot_vol_id = create_boot_disk(boot_vol_size, stemcell_id)
+          cloud_error("Failed to create boot volume.") if boot_vol_id.nil?
+          @logger.debug("Using boot volume: `#{boot_vol_id}'")
+        end
+
         server_params = {
           :name => server_name,
           :image_ref => image.id,
@@ -229,15 +255,25 @@ module Bosh::OpenStackCloud
           :key_name => keypair.name,
           :security_groups => security_groups,
           :nics => nics,
-          :user_data => Yajl::Encoder.encode(user_data(server_name, network_spec)),
-          :personality => [{
-                            'path' => "#{BOSH_APP_DIR}/user_data.json",
-                            'contents' => Yajl::Encoder.encode(user_data(server_name, network_spec, keypair.public_key))
-                          }]
+          :user_data => Yajl::Encoder.encode(user_data(server_name, network_spec))
         }
 
         availability_zone = select_availability_zone(disk_locality, resource_pool['availability_zone'])
         server_params[:availability_zone] = availability_zone if availability_zone
+
+        if @boot_from_volume
+          server_params[:block_device_mapping] = [{
+                                                   :volume_size => "",
+                                                   :volume_id => boot_vol_id,
+                                                   :delete_on_termination => "1",
+                                                   :device_name => "/dev/vda"
+                                                 }]
+        else
+          server_params[:personality] = [{
+                                          "path" => "#{BOSH_APP_DIR}/user_data.json",
+                                          "contents" => Yajl::Encoder.encode(user_data(server_name, network_spec, keypair.public_key))
+                                        }]
+        end
 
         @logger.debug("Using boot parms: `#{server_params.inspect}'")
         server = with_openstack { @openstack.servers.create(server_params) }
@@ -373,6 +409,35 @@ module Bosh::OpenStackCloud
         wait_resource(volume, :available)
 
         volume.id.to_s
+      end
+    end
+
+    ##
+    # Creates a new OpenStack boot volume
+    #
+    # @param [Integer] size disk size in MiB
+    # @param [String] stemcell_id OpenStack image UUID that will be used to
+    #   populate the boot volume
+    # @return [String] OpenStack volume UUID
+    def create_boot_disk(size, stemcell_id)
+      with_thread_name("create_boot_disk(#{size}, #{stemcell_id})") do
+        raise ArgumentError, "Disk size needs to be an integer" unless size.kind_of?(Integer)
+        cloud_error("Minimum disk size is 1 GiB") if (size < 1024)
+        cloud_error("Maximum disk size is 1 TiB") if (size > 1024 * 1000)
+
+        volume_params = {
+          :display_name => "volume-#{generate_unique_name}",
+          :size => (size / 1024.0).ceil,
+          :imageRef => stemcell_id
+        }
+
+        @logger.info("Creating new boot volume...")
+        boot_volume = with_openstack { @volume.volumes.create(volume_params) }
+
+        @logger.info("Creating new boot volume `#{boot_volume.id}'...")
+        wait_resource(boot_volume, :available)
+
+        boot_volume.id.to_s
       end
     end
 
@@ -523,14 +588,6 @@ module Bosh::OpenStackCloud
           end
         end
       end
-    end
-
-    ##
-    # Validates the deployment
-    #
-    # @note Not implemented in the OpenStack CPI
-    def validate_deployment(old_manifest, new_manifest)
-      not_implemented(:validate_deployment)
     end
 
     ##

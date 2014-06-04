@@ -11,17 +11,17 @@ import (
 )
 
 type SshAction struct {
-	settings    boshsettings.Service
-	platform    boshplatform.Platform
-	dirProvider boshdirs.DirectoriesProvider
+	settingsService boshsettings.Service
+	platform        boshplatform.Platform
+	dirProvider     boshdirs.DirectoriesProvider
 }
 
 func NewSsh(
-	settings boshsettings.Service,
+	settingsService boshsettings.Service,
 	platform boshplatform.Platform,
 	dirProvider boshdirs.DirectoriesProvider,
 ) (action SshAction) {
-	action.settings = settings
+	action.settingsService = settingsService
 	action.platform = platform
 	action.dirProvider = dirProvider
 	return
@@ -74,8 +74,9 @@ func (a SshAction) setupSsh(params SshParams) (value map[string]string, err erro
 		return
 	}
 
-	defaultIP, found := a.settings.GetDefaultIP()
+	settings := a.settingsService.GetSettings()
 
+	defaultIP, found := settings.Networks.DefaultIP()
 	if !found {
 		err = errors.New("No default ip could be found")
 		return

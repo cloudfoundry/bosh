@@ -292,14 +292,14 @@ module Bosh::Director
           deployment_plan.stub(:network).with('bar').and_return(bar_network)
 
           foo_reservation = nil
-          foo_network.should_receive(:reserve).and_return do |reservation|
+          foo_network.should_receive(:reserve) do |reservation|
             reservation.ip.should == NetAddr::CIDR.create('1.2.3.4').to_i
             reservation.reserved = true
             foo_reservation = reservation
             true
           end
 
-          bar_network.should_receive(:reserve).and_return do |reservation|
+          bar_network.should_receive(:reserve) do |reservation|
             reservation.ip.should == NetAddr::CIDR.create('10.20.30.40').to_i
             reservation.reserved = false
             false
@@ -567,8 +567,8 @@ module Bosh::Director
 
         it 'renders job templates for all instances' do
           job_renderer = instance_double('Bosh::Director::JobRenderer')
-          allow(JobRenderer).to receive(:new).with(job).and_return(job_renderer)
-          expect(job_renderer).to receive(:render_job_instances).with(blobstore)
+          allow(JobRenderer).to receive(:new).with(job, blobstore).and_return(job_renderer)
+          expect(job_renderer).to receive(:render_job_instances).with(no_args)
           assembler.bind_configuration
         end
       end

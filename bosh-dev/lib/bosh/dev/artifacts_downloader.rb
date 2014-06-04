@@ -11,7 +11,7 @@ module Bosh::Dev
     def download_release(build_number, output_dir)
       file_name = "bosh-#{build_number}.tgz"
 
-      remote_uri = Bosh::Dev::UriProvider.artifacts_uri('release', file_name)
+      remote_uri = Bosh::Dev::UriProvider.pipeline_uri('release', file_name)
       local_path = File.join(output_dir, file_name)
 
       @download_adapter.download(remote_uri, local_path)
@@ -27,7 +27,7 @@ module Bosh::Dev
         build_target.infrastructure_light?,
       ).to_s
 
-      remote_uri = Bosh::Dev::UriProvider.artifacts_uri("#{stemcell_name}/#{build_target.infrastructure.name}", file_name)
+      remote_uri = Bosh::Dev::UriProvider.pipeline_uri("#{stemcell_name}/#{build_target.infrastructure.name}", file_name)
       local_path = File.join(output_dir, file_name)
 
       @download_adapter.download(remote_uri, local_path)

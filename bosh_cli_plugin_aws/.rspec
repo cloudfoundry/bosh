@@ -1,4 +1,3 @@
 --color
 --format progress
---profile
 --tag ~s3_credentials

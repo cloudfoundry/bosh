@@ -13,7 +13,7 @@ module Bosh::Dev
 
     describe '#download_release' do
       it 'downloads a release and returns path' do
-        expected_remote_uri = URI('http://bosh-jenkins-artifacts.s3.amazonaws.com/release/bosh-fake-build-number.tgz')
+        expected_remote_uri = URI('http://bosh-ci-pipeline.s3.amazonaws.com/release/bosh-fake-build-number.tgz')
         expected_local_path = 'fake-output-dir/bosh-fake-build-number.tgz'
 
         download_adapter
@@ -60,7 +60,7 @@ module Bosh::Dev
       end
 
       it 'downloads a stemcell and returns path' do
-        expected_remote_uri = URI("http://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-stemcell/fake-infrastructure-name/#{archive_filename}")
+        expected_remote_uri = URI("http://bosh-ci-pipeline.s3.amazonaws.com/bosh-stemcell/fake-infrastructure-name/#{archive_filename}")
         expected_local_path = "fake-output-dir/#{archive_filename}"
 
         download_adapter

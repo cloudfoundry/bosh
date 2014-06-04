@@ -103,7 +103,7 @@ func init() {
 			})
 
 			It("sets up ephemeral disk", func() {
-				settingsService.Disks = boshsettings.Disks{
+				settingsService.Settings.Disks = boshsettings.Disks{
 					Ephemeral: "fake-ephemeral-disk-setting",
 				}
 
@@ -150,7 +150,7 @@ func init() {
 			})
 
 			It("mounts persistent disk", func() {
-				settingsService.Disks = boshsettings.Disks{
+				settingsService.Settings.Disks = boshsettings.Disks{
 					Persistent: map[string]string{"vol-123": "/dev/sdb"},
 				}
 
@@ -161,7 +161,7 @@ func init() {
 			})
 
 			It("errors if there is more than one persistent disk", func() {
-				settingsService.Disks = boshsettings.Disks{
+				settingsService.Settings.Disks = boshsettings.Disks{
 					Persistent: map[string]string{
 						"vol-123": "/dev/sdb",
 						"vol-456": "/dev/sdc",
@@ -173,7 +173,7 @@ func init() {
 			})
 
 			It("does not try to mount when no persistent disk", func() {
-				settingsService.Disks = boshsettings.Disks{
+				settingsService.Settings.Disks = boshsettings.Disks{
 					Persistent: map[string]string{},
 				}
 

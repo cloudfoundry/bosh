@@ -51,6 +51,7 @@ module Bosh::Director
           idle_vm.vm.update(:apply_spec => state)
           instance.model.update(:vm => idle_vm.vm)
         end
+
         instance.current_state = state
       end
     end

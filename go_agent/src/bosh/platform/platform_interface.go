@@ -10,15 +10,15 @@ import (
 )
 
 type Platform interface {
-	GetFs() (fs boshsys.FileSystem)
-	GetRunner() (runner boshsys.CmdRunner)
-	GetCompressor() (compressor boshcmd.Compressor)
-	GetCopier() (copier boshcmd.Copier)
-	GetDirProvider() (dirProvider boshdir.DirectoriesProvider)
-	GetVitalsService() (service boshvitals.Service)
+	GetFs() boshsys.FileSystem
+	GetRunner() boshsys.CmdRunner
+	GetCompressor() boshcmd.Compressor
+	GetCopier() boshcmd.Copier
+	GetDirProvider() boshdir.DirectoriesProvider
+	GetVitalsService() boshvitals.Service
 
 	GetDevicePathResolver() (devicePathResolver boshdpresolv.DevicePathResolver)
-	SetDevicePathResolver(devicePathResolver boshdpresolv.DevicePathResolver) (err error)
+	SetDevicePathResolver(devicePathResolver boshdpresolv.DevicePathResolver) error
 
 	// User management
 	CreateUser(username, password, basePath string) (err error)
@@ -50,6 +50,8 @@ type Platform interface {
 
 	GetFileContentsFromCDROM(filePath string) (contents []byte, err error)
 
+	// Network misc
+	PrepareForNetworkingChange() error
 	GetDefaultNetwork() (boshsettings.Network, error)
 
 	// Additional monit management

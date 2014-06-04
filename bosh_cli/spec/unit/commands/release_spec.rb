@@ -1,7 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Cli::Command::Release do
-  let(:command) { described_class.new }
+  subject(:command) { described_class.new }
+
   let(:director) { instance_double('Bosh::Cli::Client::Director') }
   let(:release_archive) { spec_asset('valid_release.tgz') }
   let(:release_manifest) { spec_asset(File.join('release', 'release.MF')) }
@@ -12,7 +13,8 @@ describe Bosh::Cli::Command::Release do
   end
 
   describe 'create release' do
-    let(:release) { instance_double('Bosh::Cli::Release') }
+    let(:interactive) { true }
+    let(:release) { instance_double('Bosh::Cli::Release', dev_name: 'a-release') }
     let(:question) { instance_double('HighLine::Question') }
 
     before do
@@ -20,7 +22,6 @@ describe Bosh::Cli::Command::Release do
       allow(command).to receive(:check_if_release_dir)
       allow(command).to receive(:dirty_blob_check)
       allow(command).to receive(:dirty_state?).and_return(false)
-      allow(command).to receive(:version_greater).and_return(false)
       allow(command).to receive(:build_packages).and_return([])
       allow(command).to receive(:build_jobs)
       allow(command).to receive(:build_release)
@@ -28,6 +29,18 @@ describe Bosh::Cli::Command::Release do
       allow(command).to receive(:release).and_return(release)
       allow(release).to receive(:save_config)
       command.options[:dry_run] = true
+    end
+
+    it 'is a command with the correct options' do
+      command = Bosh::Cli::Config.commands['create release']
+      expect(command).to have_options
+      expect(command.options.map(&:first)).to match_array([
+        '--force',
+        '--final',
+        '--with-tarball',
+        '--dry-run',
+        '--version VERSION',
+      ])
     end
 
     context 'dev release' do
@@ -38,7 +51,7 @@ describe Bosh::Cli::Command::Release do
           it 'development release name prompt should not have any default' do
             expect(release).to receive(:dev_name).and_return(nil)
             expect(release).to receive(:final_name).and_return(nil)
-            expect(command).to receive(:ask).with("Please enter development release name: ").and_yield(question)
+            expect(command).to receive(:ask).with('Please enter development release name: ').and_yield(question)
             expect(question).to_not receive(:default=)
             expect(release).to receive(:dev_name=).with('')
             expect(release).to receive(:dev_name).and_return('test-release')
@@ -51,12 +64,22 @@ describe Bosh::Cli::Command::Release do
           it 'development release name prompt should default to final release name' do
             expect(release).to receive(:dev_name).and_return(nil)
             expect(release).to receive(:final_name).twice.and_return('test-release')
-            expect(command).to receive(:ask).with("Please enter development release name: ").and_yield(question)
+            expect(command).to receive(:ask).with('Please enter development release name: ').and_yield(question)
             expect(question).to receive(:default=).with('test-release')
             expect(release).to receive(:dev_name=).with('test-release')
             expect(release).to receive(:dev_name).and_return('test-release')
 
             command.create
+          end
+        end
+
+        context 'when building a release raises an error' do
+          it 'prints the error message' do
+            allow(release).to receive(:dev_name).and_return('test-release')
+
+            allow(command).to receive(:build_release).and_raise(Bosh::Cli::ReleaseVersionError.new('the message'))
+
+            expect { command.create }.to raise_error(Bosh::Cli::CliError, 'the message')
           end
         end
       end
@@ -85,8 +108,67 @@ describe Bosh::Cli::Command::Release do
         end
       end
     end
+
+    context 'when a custom release version is given' do
+      context 'and valid' do
+        before do
+          command.options[:version] = '1'
+        end
+
+        it 'does not print error message' do
+          expect(command).to_not receive(:err)
+
+          command.create
+        end
+      end
+
+      context 'and not valid' do
+        before do
+          command.options[:version] = '1+1+1+1'
+        end
+
+        it 'prints the error message' do
+          expected_error = 'Invalid version: `1+1+1+1\'. ' +
+            'Please specify a valid version (ex: 1.0.0 or 1.0-beta.2+dev.10).'
+          expect(command).to receive(:err).with(expected_error)
+
+          command.create
+        end
+      end
+    end
+
+    context 'when a manifest file is given' do
+      let(:manifest_file) { 'manifest_file.yml' }
+
+      context 'when the manifest file exists' do
+        it 'creates a release from the given manifest' do
+          allow(File).to receive(:file?).with(manifest_file).and_return(true)
+          allow(release).to receive(:blobstore).and_return('fake-blobstore')
+
+          expect(Bosh::Cli::ReleaseCompiler).to receive(:compile).with(manifest_file, 'fake-blobstore')
+          expect(release).to receive(:latest_release_filename=).with(manifest_file)
+          expect(release).to receive(:save_config)
+
+          command.create(manifest_file)
+        end
+      end
+
+      context 'when the manifest file does not exist' do
+        it 'goes through standard route to create a release from spec' do
+          expect(release).to receive(:dev_name).and_return('fake-release-name')
+
+          command.create(manifest_file)
+        end
+      end
+
+      it 'does not allow a user-defined version' do
+        command.options[:version] = '123'
+        allow(File).to receive(:file?).with(manifest_file).and_return(true)
+
+        expect { command.create(manifest_file) }.to raise_error(Bosh::Cli::CliError, 'Cannot specify a custom version number when creating from a manifest. The manifest already specifies a version.')
+      end
+    end
   end
-  
 
   describe 'upload release' do
     it_requires_logged_in_user ->(command) { command.upload('http://release_location') }
@@ -200,5 +282,129 @@ describe Bosh::Cli::Command::Release do
         end
       end
     end
+  end
+
+  describe 'list' do
+    let(:releases) do
+      [
+        {
+          'name' => 'bosh-release',
+          'release_versions' => [
+            {
+              'version' => '0+dev.3',
+              'commit_hash' => 'fake-hash-3',
+              'currently_deployed' => false,
+              'uncommitted_changes' => true
+            },
+            {
+              'version' => '0+dev.2',
+              'commit_hash' => 'fake-hash-2',
+              'currently_deployed' => true,
+            },
+            {
+              'version' => '0+dev.1',
+              'commit_hash' => 'fake-hash-1',
+              'currently_deployed' => false,
+            }
+          ],
+        }
+      ]
+    end
+
+    before do
+      allow(command).to receive(:logged_in?).and_return(true)
+      command.options[:target] = 'http://bosh-target.example.com'
+      allow(director).to receive(:list_releases).and_return(releases)
+    end
+
+    it 'lists all releases' do
+      command.list
+      expect_output(<<-OUT)
+
+      +--------------+----------+--------------+
+      | Name         | Versions | Commit Hash  |
+      +--------------+----------+--------------+
+      | bosh-release | 0+dev.1  | fake-hash-1  |
+      |              | 0+dev.2* | fake-hash-2  |
+      |              | 0+dev.3  | fake-hash-3+ |
+      +--------------+----------+--------------+
+      (*) Currently deployed
+      (+) Uncommitted changes
+
+      Releases total: 1
+      OUT
+    end
+
+    context 'when there is a deployed release' do
+      let(:releases) do
+        [
+          {
+            'name' => 'bosh-release',
+            'release_versions' => [
+              {
+                'version' => '0+dev.3',
+                'commit_hash' => 'fake-hash-3',
+                'currently_deployed' => true,
+                'uncommitted_changes' => false
+              }
+            ],
+          }
+        ]
+      end
+
+      it 'prints Currently deployed' do
+        command.list
+        expect_output(<<-OUT)
+
+        +--------------+----------+-------------+
+        | Name         | Versions | Commit Hash |
+        +--------------+----------+-------------+
+        | bosh-release | 0+dev.3* | fake-hash-3 |
+        +--------------+----------+-------------+
+        (*) Currently deployed
+
+        Releases total: 1
+        OUT
+      end
+    end
+
+    context 'when there are releases with uncommited changes' do
+      let(:releases) do
+        [
+          {
+            'name' => 'bosh-release',
+            'release_versions' => [
+              {
+                'version' => '0+dev.3',
+                'commit_hash' => 'fake-hash-3',
+                'currently_deployed' => false,
+                'uncommitted_changes' => true
+              }
+            ],
+          }
+        ]
+      end
+
+      it 'prints Uncommited changes' do
+        command.list
+        expect_output(<<-OUT)
+
+        +--------------+----------+--------------+
+        | Name         | Versions | Commit Hash  |
+        +--------------+----------+--------------+
+        | bosh-release | 0+dev.3  | fake-hash-3+ |
+        +--------------+----------+--------------+
+        (+) Uncommitted changes
+
+        Releases total: 1
+        OUT
+      end
+    end
+  end
+
+  def expect_output(expected_output)
+    actual = Bosh::Cli::Config.output.string
+    indent = expected_output.scan(/^[ \t]*(?=\S)/).min.size || 0
+    expect(actual).to eq(expected_output.gsub(/^[ \t]{#{indent}}/, ''))
   end
 end

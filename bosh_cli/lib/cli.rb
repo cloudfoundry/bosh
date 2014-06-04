@@ -37,12 +37,15 @@ end
 
 require 'common/common'
 require 'common/exec'
+require 'common/version/release_version'
+require 'common/version/bosh_version'
+require 'common/version/stemcell_version'
+require 'common/properties'
 
 require 'cli/config'
 require 'cli/core_ext'
 require 'cli/errors'
 require 'cli/yaml_helper'
-require 'cli/version_calc'
 require 'cli/dependency_helper'
 require 'cli/deployment_manifest'
 require 'cli/manifest_warnings'
@@ -72,7 +75,6 @@ require 'cli/blob_manager'
 
 require 'cli/logs_downloader'
 
-require 'common/properties'
 require 'cli/job_property_collection'
 require 'cli/job_property_validator'
 

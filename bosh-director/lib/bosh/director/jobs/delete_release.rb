@@ -158,13 +158,13 @@ module Bosh::Director
         with_release_lock(@name, :timeout => 10) do
           logger.info("Looking up release: #{@name}")
           release = @release_manager.find_by_name(@name)
-          desc = "#{@name}/#{@version}"
-          logger.info("Found: #{release.name}")
+          logger.info("Found release: #{release.name}")
 
           if @version
-            logger.info("Looking up release version `#{desc}'")
+            logger.info("Looking up release version `#{release.name}/#{@version}'")
             release_version = @release_manager.find_version(release, @version)
-            logger.info("Found release version `#{desc}'")
+            # found version may be different than the requested version, due to version formatting
+            logger.info("Found release version: `#{release.name}/#{release_version.version}'")
             logger.info("Checking for any deployments still using " +
                          "this particular release version")
 
@@ -173,7 +173,7 @@ module Bosh::Director
             unless deployments.empty?
               names = deployments.map{ |d| d.name }.join(", ")
               raise ReleaseVersionInUse,
-                    "ReleaseVersion `#{desc}' is still in use by: #{names}"
+                    "ReleaseVersion `#{release.name}/#{release_version.version}' is still in use by: #{names}"
             end
 
             delete_release_version(release_version)
@@ -186,7 +186,7 @@ module Bosh::Director
             unless deployments.empty?
               names = deployments.map { |d| d.name }.join(", ")
               raise ReleaseInUse,
-                    "Release `#{@name}' is still in use by: #{names}"
+                    "Release `#{release.name}' is still in use by: #{names}"
             end
 
             delete_release(release)

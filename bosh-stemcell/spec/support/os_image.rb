@@ -10,6 +10,6 @@ RSpec.configure do |config|
   end
 
   config.after(:all, example_group: { file_path: /(spec|support)\/os_image/ }) do
-    FileUtils.rm_rf(@os_image_dir)
+    FileUtils.rm_rf(@os_image_dir) if ENV['OS_IMAGE']
   end
 end

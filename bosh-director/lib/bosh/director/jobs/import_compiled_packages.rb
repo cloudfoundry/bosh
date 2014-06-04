@@ -24,8 +24,11 @@ module Bosh::Director
           release_version_version = manifest.fetch('release_version')
 
           release = Bosh::Director::Models::Release[name: release_name]
+          if release.nil?
+            raise ReleaseNotFound, "Release version `#{release}/#{release_version_version}' doesn't exist"
+          end
 
-          release_version = Bosh::Director::Models::ReleaseVersion[version: release_version_version, release: release]
+          release_version = Bosh::Director::Api::ReleaseManager.new.find_version(release, release_version_version)
           inserter = Bosh::Director::CompiledPackage::CompiledPackageInserter.new(@blobstore_client)
 
           packages.each { |p| p.check_blob_sha }

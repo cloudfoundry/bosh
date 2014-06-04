@@ -53,7 +53,6 @@ group :development, :test do
 
   gem 'rspec', '3.0.0.beta1'
   gem 'rspec-its'
-  gem 'rspec-instafail'
 
   gem 'rubocop', require: false
   gem 'parallel_tests'

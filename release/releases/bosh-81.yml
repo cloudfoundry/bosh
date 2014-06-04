@@ -1,0 +1,184 @@
+---
+packages:
+- name: nginx
+  version: !binary |-
+    MzgzYTRiZTA0Y2M3NzY4OTNmZDcwNmQ0ZDEwYWVkNzEzYTZjYWU1OA==
+  sha1: !binary |-
+    ZjA2ZjdlOWZiYzY0OGQ0YjI0MDliYzNiY2EzMWM3YWIwMTJmNmM0Yg==
+  fingerprint: !binary |-
+    MzgzYTRiZTA0Y2M3NzY4OTNmZDcwNmQ0ZDEwYWVkNzEzYTZjYWU1OA==
+  dependencies: []
+- name: genisoimage
+  version: !binary |-
+    MDA4ZDMzMmJhMTQ3MWJjY2Y5ZDlhZWI2NGMyNThmZGQ0YmY3NjIwMQ==
+  sha1: !binary |-
+    MmFjZjhkYTAyNTBkYjMxZTc2MmEyMzc1NmZkMGUxMmNmYTk0N2ViOQ==
+  fingerprint: !binary |-
+    MDA4ZDMzMmJhMTQ3MWJjY2Y5ZDlhZWI2NGMyNThmZGQ0YmY3NjIwMQ==
+  dependencies: []
+- name: powerdns
+  version: !binary |-
+    ZTQxYmFmOGUyMzZiNWZlZDUyYmEzYzMzY2Y2NDZlNGIyZTBkNWE0ZQ==
+  sha1: !binary |-
+    NTdhNzZlNjVkYjA5MDAyYjFiOWEyNzdjMDQ4NzY3ZjUwZjQ4OGUzMQ==
+  fingerprint: !binary |-
+    ZTQxYmFmOGUyMzZiNWZlZDUyYmEzYzMzY2Y2NDZlNGIyZTBkNWE0ZQ==
+  dependencies: []
+- name: blobstore
+  version: !binary |-
+    N2Q0Zjg3ZDQzMjhjZjQ2OTg3Y2VjNjAyYzBlYTc0NjNhZmM3ZTcyZQ==
+  sha1: !binary |-
+    N2JkOGQ1OWMzMjlkZjY4NTI1MGY2ODFlZjFjODdjYmZjNGZkYWUwOQ==
+  fingerprint: !binary |-
+    N2Q0Zjg3ZDQzMjhjZjQ2OTg3Y2VjNjAyYzBlYTc0NjNhZmM3ZTcyZQ==
+  dependencies:
+  - ruby
+- name: ruby
+  version: !binary |-
+    ODFmZTgwMDk5MTMwZjA0ZGZmMmIwOGM4MGMwNGUwY2IzM2E5ZDNjYQ==
+  sha1: !binary |-
+    ZGU3MzRkNDZmZjE4NDI4YTgyNzhmZjZiYTc0NmEwYjIxMTZkYWU3NQ==
+  fingerprint: !binary |-
+    ODFmZTgwMDk5MTMwZjA0ZGZmMmIwOGM4MGMwNGUwY2IzM2E5ZDNjYQ==
+  dependencies: []
+- name: mysql
+  version: !binary |-
+    ZTUzMDlhZWQ4OGY1Y2M2NjJiYzc3OTg4YTMxODc0NDYxZjdjNGZiOA==
+  sha1: !binary |-
+    Y2MyY2I5MjZiNmE2NDRkMjY5MjcwMGM1YWUzYmQ0ZjViODRkY2I4Mg==
+  fingerprint: !binary |-
+    ZTUzMDlhZWQ4OGY1Y2M2NjJiYzc3OTg4YTMxODc0NDYxZjdjNGZiOA==
+  dependencies: []
+- name: nats
+  version: !binary |-
+    NzIwNDIyYjFiYTZhZGY5ODFlODNiNDY0NTIxMDZjYmQwOTczZTU3OA==
+  sha1: !binary |-
+    Nzg3MjkyMjFkY2E3MjQ2ODMyNmM3ZTQxNzlkNDRhOTliM2ZjZjZlZQ==
+  fingerprint: !binary |-
+    NzIwNDIyYjFiYTZhZGY5ODFlODNiNDY0NTIxMDZjYmQwOTczZTU3OA==
+  dependencies:
+  - ruby
+- name: common
+  version: !binary |-
+    MTMyNGQzMmRiZGE0MGRhODhhYWRlMWUwN2IyMjZhMjA4NjAyYmFmZg==
+  sha1: !binary |-
+    OTQwN2QxZDNkYTMwZGVkMWU5NTVhY2ZjODg5OTMwNGFhNThhMGU3OA==
+  fingerprint: !binary |-
+    MTMyNGQzMmRiZGE0MGRhODhhYWRlMWUwN2IyMjZhMjA4NjAyYmFmZg==
+  dependencies: []
+- name: director
+  version: !binary |-
+    ZTIyYzRlZWFjNWZkZDlkZDQ5NzYzZmJlZjc1ZTQ2Y2NmYTQ5ZGZiMw==
+  sha1: !binary |-
+    NDI1OTYxNGFiYTA0NzEzYTg1MTQ2MTMyODRmYmI5ZGEzOGNmYTViMw==
+  fingerprint: !binary |-
+    ZTIyYzRlZWFjNWZkZDlkZDQ5NzYzZmJlZjc1ZTQ2Y2NmYTQ5ZGZiMw==
+  dependencies:
+  - libpq
+  - mysql
+  - ruby
+- name: redis
+  version: !binary |-
+    ZWMyN2EwYjc4NDk4NjNiYzE2MGFjNTRjZTY2N2VjYWNkMDdmYzRjYg==
+  sha1: !binary |-
+    MzljYTA4OTY0MzQyNjcwMzc1NzVjNzU3ZTAxYmFkYjUwYjE1ZmQwYw==
+  fingerprint: !binary |-
+    ZWMyN2EwYjc4NDk4NjNiYzE2MGFjNTRjZTY2N2VjYWNkMDdmYzRjYg==
+  dependencies: []
+- name: registry
+  version: !binary |-
+    MDhlMmFmMTgxMWVlYjIxNDM4OTQzZWNmNTE3ZTdiMGFlMzUwYzA3OQ==
+  sha1: !binary |-
+    NWU5ZTRjZjQzMzgwOWJhMzQyMTkxNjJiZWJkMGUzY2Q0NmUwNTVkMw==
+  fingerprint: !binary |-
+    MDhlMmFmMTgxMWVlYjIxNDM4OTQzZWNmNTE3ZTdiMGFlMzUwYzA3OQ==
+  dependencies:
+  - libpq
+  - mysql
+  - ruby
+- name: libpq
+  version: !binary |-
+    NmFhMTlhZmIxNTNkYzI3NjkyNDY5M2RjNzI0NzYwNjY0Y2U2MTU5Mw==
+  sha1: !binary |-
+    N2YwZjQxODNkZWE5NjgzNzNmNzMwOTFkMWM5MTFkNWVkZWJjM2YyNQ==
+  fingerprint: !binary |-
+    NmFhMTlhZmIxNTNkYzI3NjkyNDY5M2RjNzI0NzYwNjY0Y2U2MTU5Mw==
+  dependencies: []
+- name: postgres
+  version: !binary |-
+    YWE3ZjViMTEwZThiMzY4ZWViOGY1ZGQwMzJlMWNhYjY2ZDg2MTRjZQ==
+  sha1: !binary |-
+    YTg1ZjJhMWVmYTdkZmYzNGFiNzcyZDY3MTkxZDIzMzYzOTU5Mjc2YQ==
+  fingerprint: !binary |-
+    YWE3ZjViMTEwZThiMzY4ZWViOGY1ZGQwMzJlMWNhYjY2ZDg2MTRjZQ==
+  dependencies: []
+- name: health_monitor
+  version: !binary |-
+    OTU5YzliYjMwNjY0NDNkMzA5YTAzMjg2NTRmNDEzZDU5MTRlMzhhNA==
+  sha1: !binary |-
+    YzVkNzZkMWJjODE5ZmY1MjkxYjY2MzVjMzgwMTg4ZTllZTIwNjFmOQ==
+  fingerprint: !binary |-
+    OTU5YzliYjMwNjY0NDNkMzA5YTAzMjg2NTRmNDEzZDU5MTRlMzhhNA==
+  dependencies:
+  - ruby
+jobs:
+- name: powerdns
+  version: !binary |-
+    ZTUwODk4NmUxZDIyZWQzZDhmYzZhNWU5NjIwZDY3YTUxNWRhZjQ5NQ==
+  fingerprint: !binary |-
+    ZTUwODk4NmUxZDIyZWQzZDhmYzZhNWU5NjIwZDY3YTUxNWRhZjQ5NQ==
+  sha1: !binary |-
+    MDEyOTQ3ZWUyMTI3ZTVhYTg5MzRhYmJkMmI4YzUwMDgyOTZjOWZkNA==
+- name: blobstore
+  version: !binary |-
+    ODE1MzkxYzBlZjI2YjBmMWJlNDg4ODk5Y2Q1ZGE5OTY3ZjQ4NmQ2NA==
+  fingerprint: !binary |-
+    ODE1MzkxYzBlZjI2YjBmMWJlNDg4ODk5Y2Q1ZGE5OTY3ZjQ4NmQ2NA==
+  sha1: !binary |-
+    ZjkwZWI5NjExYzFlZDZmYWJjZmFmYWM2Y2JmZWU0OWNhMDFjMTk3Yg==
+- name: nats
+  version: !binary |-
+    YjYxOWZkZDM5ZjM0NGVlOWZiMWE3NjBkMGFkZTllYmY5ZGRjZWZlMg==
+  fingerprint: !binary |-
+    YjYxOWZkZDM5ZjM0NGVlOWZiMWE3NjBkMGFkZTllYmY5ZGRjZWZlMg==
+  sha1: !binary |-
+    ODAxZjU2OTQxOWYxNjA0MjhjMTQ3YjQzZjI4YjEwNzg5ZjkzNTY3ZA==
+- name: director
+  version: !binary |-
+    MmM3YjIxMzRjMjk4MDExNzc2YjdhNGI4ODIyNDRkM2VmZGY1YzBiOQ==
+  fingerprint: !binary |-
+    MmM3YjIxMzRjMjk4MDExNzc2YjdhNGI4ODIyNDRkM2VmZGY1YzBiOQ==
+  sha1: !binary |-
+    MTg0NzQwMmVlMWNmYjE1ZmEwOWY1NDEyNjVkMmRmZTdjY2NkZjVkZg==
+- name: redis
+  version: !binary |-
+    ODc1ZDVjYmM5YTA1YTMxNDc3N2VkYTliMzRmYWQ0MjFhZDI0NThiMA==
+  fingerprint: !binary |-
+    ODc1ZDVjYmM5YTA1YTMxNDc3N2VkYTliMzRmYWQ0MjFhZDI0NThiMA==
+  sha1: !binary |-
+    YzZmODFiN2MxMzkxNWM2ODM4NjFiYWYyY2I4MTFhYmQ0ZmRlM2VjNg==
+- name: registry
+  version: !binary |-
+    YmQ5OWRlZjMxYzMzZjk1Mjc4ZTg1NTNjYjhmMjFlM2E1MzU5ZTU2Nw==
+  fingerprint: !binary |-
+    YmQ5OWRlZjMxYzMzZjk1Mjc4ZTg1NTNjYjhmMjFlM2E1MzU5ZTU2Nw==
+  sha1: !binary |-
+    ZjhjZjBkMzZmNmU0NGEzOTFlZjAwMDIzMDg1NTBlMWU1NjU4NzUxNg==
+- name: postgres
+  version: !binary |-
+    NTFhNzM0Y2MzYWJiMDZhYjZkMmJhZjY4N2IyYjVlMzBkYzRkZDliNw==
+  fingerprint: !binary |-
+    NTFhNzM0Y2MzYWJiMDZhYjZkMmJhZjY4N2IyYjVlMzBkYzRkZDliNw==
+  sha1: !binary |-
+    MDQ1OTIxZjkzNGQ0YzFjMWFiYmE0MDJkMWMzZDU3MjAwYzM3ZTg4MQ==
+- name: health_monitor
+  version: !binary |-
+    Y2M0YmFjMTE1N2MyZGE3ZmMwMTI3NGMxMzRmZGM2NzYxMGNiMWEwZg==
+  fingerprint: !binary |-
+    Y2M0YmFjMTE1N2MyZGE3ZmMwMTI3NGMxMzRmZGM2NzYxMGNiMWEwZg==
+  sha1: !binary |-
+    OTM5NDkwYWJkYzQwM2RmMTNlYmQ0NTExMWRjN2Q3ZmEzMWFlZmEwNg==
+commit_hash: b96a9274
+uncommitted_changes: true
+name: bosh
+version: '81'

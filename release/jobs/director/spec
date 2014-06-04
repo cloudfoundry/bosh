@@ -334,6 +334,9 @@ properties:
   openstack.state_timeout:
     description: Timeout (in seconds) for OpenStack resources desired state (optional, by default 300)
     default: 300
+  openstack.boot_from_volume:
+    description: Boot from volume
+    default: false
   openstack.stemcell_public_visibility:
     description: Set public visibility for stemcells (optional, false by default)
     default: false

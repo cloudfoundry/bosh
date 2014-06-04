@@ -8,7 +8,7 @@ module Bosh::Stemcell::Aws
 
     let(:stemcell) do
       instance_double('Bosh::Stemcell::Archive').tap do |s|
-        s.stub(:extract).and_yield('/foo/bar', {
+        allow(s).to receive(:extract).and_yield('/foo/bar', {
           'cloud_properties' => { 'ami' => '' }
         })
       end
@@ -16,7 +16,7 @@ module Bosh::Stemcell::Aws
 
     let(:region) { instance_double('Bosh::Stemcell::Aws::Region', name: 'fake-region') }
 
-    before { Logger.stub(:new) }
+    before { allow(Logger).to receive(:new) }
 
     describe '#publish' do
       let(:env) do

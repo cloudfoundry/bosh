@@ -35,7 +35,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'nats',             '~>0.4.28'
   s.add_dependency 'netaddr',          '~>1.5.0'
   s.add_dependency 'rack-test',        '~>0.6.2' # needed for console
-  s.add_dependency 'rake',             '~>10.0.3'
+  s.add_dependency 'rake'
   s.add_dependency 'redis',            '~>3.0.2'
   s.add_dependency 'resque',           '~>1.23.0'
   s.add_dependency 'resque-backtrace', '~>0.0.1'
@@ -46,6 +46,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'thin',             '~>1.5.0'
   s.add_dependency 'yajl-ruby',        '~>1.1.0'
   s.add_dependency 'membrane',         '~>0.0.2'
+  s.add_dependency 'semi_semantic',    '~>1.1.0'
 
   s.bindir      = 'bin'
   s.executables << 'bosh-director'

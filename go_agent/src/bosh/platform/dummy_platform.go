@@ -1,10 +1,13 @@
 package platform
 
 import (
+	"encoding/json"
+	"path/filepath"
+
+	bosherr "bosh/errors"
 	boshdpresolv "bosh/infrastructure/devicepathresolver"
 	boshlog "bosh/logger"
 	boshcmd "bosh/platform/commands"
-	boshdisk "bosh/platform/disk"
 	boshstats "bosh/platform/stats"
 	boshvitals "bosh/platform/vitals"
 	boshsettings "bosh/settings"
@@ -21,7 +24,6 @@ type dummyPlatform struct {
 	copier             boshcmd.Copier
 	dirProvider        boshdirs.DirectoriesProvider
 	vitalsService      boshvitals.Service
-	diskManager        boshdisk.Manager
 	devicePathResolver boshdpresolv.DevicePathResolver
 	logger             boshlog.Logger
 }
@@ -31,7 +33,6 @@ func NewDummyPlatform(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	dirProvider boshdirs.DirectoriesProvider,
-	diskManager boshdisk.Manager,
 	logger boshlog.Logger,
 ) *dummyPlatform {
 	return &dummyPlatform{
@@ -42,7 +43,6 @@ func NewDummyPlatform(
 		copier:        boshcmd.NewCpCopier(cmdRunner, fs, logger),
 		dirProvider:   dirProvider,
 		vitalsService: boshvitals.NewService(collector, dirProvider),
-		diskManager:   diskManager,
 	}
 }
 
@@ -175,6 +175,23 @@ func (p dummyPlatform) GetMonitCredentials() (username, password string, err err
 	return
 }
 
+func (p dummyPlatform) PrepareForNetworkingChange() error {
+	return nil
+}
+
 func (p dummyPlatform) GetDefaultNetwork() (boshsettings.Network, error) {
-	return boshsettings.Network{}, nil
+	var network boshsettings.Network
+
+	networkPath := filepath.Join(p.dirProvider.BoshDir(), "dummy-default-network-settings.json")
+	contents, err := p.fs.ReadFile(networkPath)
+	if err != nil {
+		return network, nil
+	}
+
+	err = json.Unmarshal([]byte(contents), &network)
+	if err != nil {
+		return network, bosherr.WrapError(err, "Unmarshal json settings")
+	}
+
+	return network, nil
 }

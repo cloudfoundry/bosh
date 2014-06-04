@@ -90,6 +90,25 @@ module Bosh::Director
         FileUtils.mkpath(export_dir)
       end
 
+      context 'when the database does not include the specified release' do
+        it 'raises an ReleaseVersionNotFound error' do
+          expect{import_job.perform}.to raise_error(ReleaseNotFound)
+        end
+      end
+
+      context 'when the database does not include the specified release version' do
+        before do
+          release_version = Bosh::Director::Models::ReleaseVersion.make(
+            release: release,
+            version: 'different-version',
+          )
+        end
+
+        it 'raises an ReleaseVersionNotFound error' do
+          expect{import_job.perform}.to raise_error(ReleaseVersionNotFound)
+        end
+      end
+
       context 'when there is one Release and one ReleaseVersion' do
         before do
           release_version.add_package(package_model1)
@@ -105,6 +124,13 @@ module Bosh::Director
           import_job.perform
           expect(inserter).to have_received(:insert).with(package1, release_version)
           expect(inserter).to have_received(:insert).with(package2, release_version)
+        end
+
+        it 'finds version with ReleaseManager' do
+          release_version = '0.1+dev.1'
+          expect_any_instance_of(Bosh::Director::Api::ReleaseManager).to receive(:find_version).and_return(release_version)
+
+          import_job.perform
         end
 
         it 'extracts the export' do

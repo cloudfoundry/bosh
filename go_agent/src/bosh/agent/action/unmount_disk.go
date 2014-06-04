@@ -10,12 +10,15 @@ import (
 )
 
 type UnmountDiskAction struct {
-	settings boshsettings.Service
-	platform boshplatform.Platform
+	settingsService boshsettings.Service
+	platform        boshplatform.Platform
 }
 
-func NewUnmountDisk(settings boshsettings.Service, platform boshplatform.Platform) (unmountDisk UnmountDiskAction) {
-	unmountDisk.settings = settings
+func NewUnmountDisk(
+	settingsService boshsettings.Service,
+	platform boshplatform.Platform,
+) (unmountDisk UnmountDiskAction) {
+	unmountDisk.settingsService = settingsService
 	unmountDisk.platform = platform
 	return
 }
@@ -29,8 +32,9 @@ func (a UnmountDiskAction) IsPersistent() bool {
 }
 
 func (a UnmountDiskAction) Run(volumeID string) (value interface{}, err error) {
-	disksSettings := a.settings.GetDisks()
-	devicePath, found := disksSettings.Persistent[volumeID]
+	settings := a.settingsService.GetSettings()
+
+	devicePath, found := settings.Disks.Persistent[volumeID]
 	if !found {
 		err = bosherr.New("Persistent disk with volume id '%s' could not be found", volumeID)
 		return

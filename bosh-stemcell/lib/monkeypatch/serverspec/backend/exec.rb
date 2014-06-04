@@ -4,28 +4,29 @@ require 'serverspec'
 require 'serverspec/helper/backend'
 require 'pathname'
 
-unless Serverspec::VERSION == '0.13.7'
+unless Serverspec::VERSION == '0.15.4'
   raise "Unexpected Serverspec version #{Serverspec::VERSION}"
 end
 
 module SpecInfra::Backend
   class Exec
     # ORIGINAL
-    #def run_command(cmd, opts={})
-    #  cmd = build_command(cmd)
-    #  cmd = add_pre_command(cmd)
-    #  stdout = `#{build_command(cmd)} 2>&1`
-    #  # In ruby 1.9, it is possible to use Open3.capture3, but not in 1.8
-    #  #stdout, stderr, status = Open3.capture3(cmd)
+    # def run_command(cmd, opts={})
+    #   cmd = build_command(cmd)
+    #   cmd = add_pre_command(cmd)
+    #   stdout = run_with_no_ruby_environment do
+    #     `#{build_command(cmd)} 2>&1`
+    #   end
+    #   # In ruby 1.9, it is possible to use Open3.capture3, but not in 1.8
+    #   # stdout, stderr, status = Open3.capture3(cmd)
     #
-    #  if @example
-    #    @example.metadata[:command] = cmd
-    #    @example.metadata[:stdout]  = stdout
-    #  end
+    #   if @example
+    #     @example.metadata[:command] = cmd
+    #     @example.metadata[:stdout]  = stdout
+    #   end
     #
-    #  { :stdout => stdout, :stderr => nil,
-    #    :exit_status => $?, :exit_signal => nil }
-    #end
+    #   CommandResult.new :stdout => stdout, :exit_status => $?.exitstatus
+    # end
     #/ORIGINAL
 
     def run_command(cmd, opts={})
@@ -39,8 +40,8 @@ module SpecInfra::Backend
         stdout = get_stdout(chroot_stdout)
         exit_status = get_exit_status(chroot_stdout)
       else
-        stdout = `#{cmd} 2>&1`
-        exit_status = $?
+        stdout = run_with_no_ruby_environment { `#{cmd} 2>&1` }
+        exit_status = $?.exitstatus
       end
       # In ruby 1.9, it is possible to use Open3.capture3, but not in 1.8
       #stdout, stderr, status = Open3.capture3(cmd)
@@ -50,8 +51,7 @@ module SpecInfra::Backend
         @example.metadata[:stdout] = stdout
       end
 
-      { :stdout => stdout, :stderr => nil,
-        :exit_status => exit_status, :exit_signal => nil }
+      CommandResult.new :stdout => stdout, :exit_status => exit_status
     end
 
     attr_accessor :chroot_dir

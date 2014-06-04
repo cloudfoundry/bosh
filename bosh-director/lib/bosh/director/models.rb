@@ -22,7 +22,7 @@ require 'bosh/director/models/rendered_templates_archive'
 
 module Bosh::Director
   module Models
-    VALID_ID = /^[-a-z0-9_.]+$/i
+    VALID_ID = /^[-0-9A-Za-z_+.]+$/i
 
     autoload :Dns, 'bosh/director/models/dns'
   end

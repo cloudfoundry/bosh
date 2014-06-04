@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
-require 'common/version_number'
+require 'common/version/release_version'
 
 module Bosh::Director
   module Jobs
@@ -34,9 +34,9 @@ module Bosh::Director
 
         @packages_unchanged = false
         @jobs_unchanged = false
-        
+
         @remote_release = options['remote'] || false
-        @remote_release_location = options['location'] if @remote_release 
+        @remote_release_location = options['location'] if @remote_release
       end
 
       # Extracts release tarball, verifies release manifest and saves release
@@ -69,7 +69,7 @@ module Bosh::Director
         end
       end
 
-      def download_remote_release         
+      def download_remote_release
         release_file = File.join(@tmp_release_dir, Api::ReleaseManager::RELEASE_TGZ)
         download_remote_file('release', @remote_release_location, release_file)
       end
@@ -104,7 +104,16 @@ module Bosh::Director
         normalize_manifest
 
         @name = @manifest["name"]
-        @version = @manifest["version"]
+
+        begin
+          @version = Bosh::Common::Version::ReleaseVersion.parse(@manifest["version"])
+          unless @version == @manifest["version"]
+            logger.info("Formatted version '#{@manifest["version"]}' => '#{@version}'")
+          end
+        rescue SemiSemantic::ParseError
+          raise ReleaseVersionInvalid, "Release version invalid: #{@manifest["version"]}"
+        end
+
         @commit_hash = @manifest.fetch("commit_hash", nil)
         @uncommitted_changes = @manifest.fetch("uncommitted_changes", nil)
       end
@@ -113,13 +122,14 @@ module Bosh::Director
       # @return [void]
       def process_release
         @release_model = Models::Release.find_or_create(:name => @name)
+
         if @rebase
           @version = next_release_version
         end
 
         version_attrs = {
           :release => @release_model,
-          :version => @version
+          :version => @version.to_s
         }
         version_attrs[:uncommitted_changes] = @uncommitted_changes if @uncommitted_changes
         version_attrs[:commit_hash] = @commit_hash if @commit_hash
@@ -223,27 +233,6 @@ module Bosh::Director
             next
           end
 
-          # Rebase is an interesting use case: we don't really care about
-          # preserving the original package/job versions, so if we have a
-          # checksum/fingerprint match, we can just substitute the original
-          # package/job version with an existing one.
-          if @rebase
-            substitutes = packages.select do |package|
-              package.release_id == @release_model.id &&
-              package.name == package_meta["name"] &&
-              package.dependency_set == Set.new(package_meta["dependencies"])
-            end
-
-            substitute = pick_best(substitutes, package_meta["version"])
-
-            if substitute
-              package_meta["version"] = substitute.version
-              package_meta["sha1"] = substitute.sha1
-              existing_packages << [substitute, package_meta]
-              next
-            end
-          end
-
           # We can reuse an existing package as long as it
           # belongs to the same release and has the same name and version.
           existing_package = packages.find do |package|
@@ -333,17 +322,6 @@ module Bosh::Director
           :version => version
         }
 
-        if @rebase
-          new_version = next_package_version(name, version)
-          if new_version != version
-            transition = "#{version} -> #{new_version}"
-            logger.info("Package `#{name}' rebased: #{transition}")
-            package_attrs[:version] = new_version
-            version = new_version
-            @package_rebase_mapping[name] = transition
-          end
-        end
-
         package = Models::Package.new(package_attrs)
         package.dependency_set = package_meta["dependencies"]
 
@@ -400,25 +378,6 @@ module Bosh::Director
           # Checking whether we might have the same bits somewhere
           jobs = Models::Template.where(filter).all
 
-          if @rebase
-            substitutes = jobs.select do |job|
-              job.release_id == @release_model.id &&
-              job.name == job_meta["name"]
-            end
-
-            substitute = pick_best(substitutes, job_meta["version"])
-
-            if substitute
-              job_meta["version"] = substitute.version
-              job_meta["sha1"] = substitute.sha1
-              existing_jobs << [substitute, job_meta]
-            else
-              new_jobs << job_meta
-            end
-
-            next
-          end
-
           template = jobs.find do |job|
             job.release_id == @release_model.id &&
             job.name == job_meta["name"] &&
@@ -463,17 +422,6 @@ module Bosh::Director
           :fingerprint => job_meta["fingerprint"],
           :version => version
         }
-
-        if @rebase
-          new_version = next_template_version(name, version)
-          if new_version != version
-            transition = "#{version} -> #{new_version}"
-            logger.info("Job `#{name}' rebased: #{transition}")
-            template_attrs[:version] = new_version
-            version = new_version
-            @job_rebase_mapping[name] = transition
-          end
-        end
 
         logger.info("Creating job template `#{name}/#{version}' " +
                     "from provided bits")
@@ -600,42 +548,10 @@ module Bosh::Director
         attrs = {
           :release_id => @release_model.id
         }
-        next_version(Models::ReleaseVersion.filter(attrs).all, @version)
-      end
-
-      # Returns the next package version (to be used for rebased package)
-      # @param [String] name Package name
-      # @param [String] version Package version
-      # @return [String]
-      def next_package_version(name, version)
-        attrs = {
-          :release_id => @release_model.id,
-          :name => name
-        }
-
-        next_version(Models::Package.filter(attrs).all, version)
-      end
-
-      # Returns the next job template version (to be used for rebased template)
-      # @param [String] name Template name
-      # @param [Fixnum] version Template version
-      # @return [String]
-      def next_template_version(name, version)
-        attrs = {
-          :release_id => @release_model.id,
-          :name => name
-        }
-
-        next_version(Models::Template.filter(attrs).all, version)
-      end
-
-      # Takes collection of versioned items and returns the version
-      # that new item should be promoted to if auto-versioning is used
-      # @param [Array<#version>] Collection of items
-      # @param [String] version Current version of item
-      # @return [String] Next version to be used
-      def next_version(collection, version)
-        Bosh::Director::NextRebaseVersion.new(collection).calculate(version)
+        models = Models::ReleaseVersion.filter(attrs).all
+        strings = models.map(&:version)
+        list = Bosh::Common::Version::ReleaseVersionList.parse(strings)
+        list.rebase(@version)
       end
 
       # Removes release version model, along with all packages and templates.
@@ -646,26 +562,6 @@ module Bosh::Director
         @release_version_model.remove_all_packages
         @release_version_model.remove_all_templates
         @release_version_model.destroy
-      end
-
-      # Picks the best matching package/job from collection based on a simple
-      # heuristics: items with same version are preferred, then items
-      # with non-dev versions, then items with most compiled packages,
-      # then everything else.
-      # @param [Array<#name,#version>] collection
-      # @param [String] original_version
-      def pick_best(collection, original_version)
-        collection.sort_by { |item|
-          if item.version == original_version
-            1
-          elsif Bosh::Common::VersionNumber.new(item.version).final?
-            2
-          elsif item.is_a?(Bosh::Director::Models::Package)
-            3000 - [item.compiled_packages.size, 900].min
-          else
-            3000
-          end
-        }.first
       end
     end
   end

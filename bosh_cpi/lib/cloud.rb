@@ -210,12 +210,6 @@ module Bosh
       not_implemented(:get_disks)
     end
 
-    # Validates the deployment
-    # @api not_yet_used
-    def validate_deployment(old_manifest, new_manifest)
-      not_implemented(:validate_deployment)
-    end
-
     private
 
     def not_implemented(method)

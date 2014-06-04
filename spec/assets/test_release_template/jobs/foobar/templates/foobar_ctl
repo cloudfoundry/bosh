@@ -7,6 +7,10 @@ case $1 in
   start)
     echo "test_property=<%= p('test_property') %>"
 
+    <% if_p('network_name') do |net_name| %>
+      echo "<%= net_name %>_ip=<%= spec.networks.send(net_name).ip %>"
+    <% end %>
+
     echo $$ > $PIDFILE
 
     exec /bin/sh /var/vcap/packages/bar/run.sh
@@ -21,4 +25,5 @@ case $1 in
   *)
   echo "Usage: foobar_ctl {start|stop}" ;;
 esac
+
 exit 0

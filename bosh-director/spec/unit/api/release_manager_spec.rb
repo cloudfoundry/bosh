@@ -53,5 +53,56 @@ module Bosh::Director
         expect(subject.delete_release(username, release, options)).to eq(task)
       end
     end
+
+    describe '#find_version' do
+      before do
+        @release = BD::Models::Release.make(:name => 'fake-release-name')
+        @final_release_version = BD::Models::ReleaseVersion.make(:release => @release, :version => '9')
+        @old_dev_release_version = BD::Models::ReleaseVersion.make(:release => @release, :version => '9.1-dev')
+        @new_dev_release_version = BD::Models::ReleaseVersion.make(:release => @release, :version => '9+dev.2')
+      end
+
+      context 'when version as specified exists in the database' do
+        it 'returns the matching version model' do
+          expect(subject.find_version(@release, '9')).to eq(@final_release_version)
+          expect(subject.find_version(@release, '9.1-dev')).to eq(@old_dev_release_version)
+          expect(subject.find_version(@release, '9+dev.2')).to eq(@new_dev_release_version)
+        end
+      end
+
+      context 'when version as specified does not exist in the database' do
+        context 'when an equivalent old-format version exists in the database' do
+          it 'returns the matching version model' do
+            expect(subject.find_version(@release, '9+dev.1')).to eq(@old_dev_release_version)
+          end
+        end
+
+        context 'when version as specified is an invalid format' do
+          it 'raises an error' do
+            expect {
+              subject.find_version(@release, '1+2+3')
+            }.to raise_error(ReleaseVersionInvalid)
+          end
+        end
+
+        context 'when formatted version exists in the database' do
+          it 'returns the matching version model' do
+            expect(subject.find_version(@release, '9.2-dev')).to eq(@new_dev_release_version)
+          end
+        end
+
+        context 'when formatted version does not exist in the database' do
+          it 'raises an error' do
+            expect {
+              subject.find_version(@release, '9.1')
+            }.to raise_error(ReleaseVersionNotFound)
+
+            expect {
+              subject.find_version(@release, '9.1.3-dev')
+            }.to raise_error(ReleaseVersionNotFound)
+          end
+        end
+      end
+    end
   end
 end

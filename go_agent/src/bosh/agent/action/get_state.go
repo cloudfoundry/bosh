@@ -12,21 +12,21 @@ import (
 )
 
 type GetStateAction struct {
-	settings      boshsettings.Service
-	specService   boshas.V1Service
-	jobSupervisor boshjobsuper.JobSupervisor
-	vitalsService boshvitals.Service
-	ntpService    boshntp.Service
+	settingsService boshsettings.Service
+	specService     boshas.V1Service
+	jobSupervisor   boshjobsuper.JobSupervisor
+	vitalsService   boshvitals.Service
+	ntpService      boshntp.Service
 }
 
 func NewGetState(
-	settings boshsettings.Service,
+	settingsService boshsettings.Service,
 	specService boshas.V1Service,
 	jobSupervisor boshjobsuper.JobSupervisor,
 	vitalsService boshvitals.Service,
 	ntpService boshntp.Service,
 ) (action GetStateAction) {
-	action.settings = settings
+	action.settingsService = settingsService
 	action.specService = specService
 	action.jobSupervisor = jobSupervisor
 	action.vitalsService = vitalsService
@@ -70,13 +70,15 @@ func (a GetStateAction) Run(filters ...string) (GetStateV1ApplySpec, error) {
 		vitalsReference = &vitals
 	}
 
+	settings := a.settingsService.GetSettings()
+
 	value := GetStateV1ApplySpec{
 		spec,
-		a.settings.GetAgentID(),
+		settings.AgentID,
 		"1",
 		a.jobSupervisor.Status(),
 		vitalsReference,
-		a.settings.GetVM(),
+		settings.VM,
 		a.ntpService.GetInfo(),
 	}
 

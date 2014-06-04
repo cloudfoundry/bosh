@@ -12,17 +12,19 @@ import (
 )
 
 func buildUnmountDiskAction(platform *fakeplatform.FakePlatform) (unmountDisk UnmountDiskAction) {
-	settings := &fakesettings.FakeSettingsService{
-		Disks: boshsettings.Disks{
-			Persistent: map[string]string{"vol-123": "/dev/sdf"},
+	settingsService := &fakesettings.FakeSettingsService{
+		Settings: boshsettings.Settings{
+			Disks: boshsettings.Disks{
+				Persistent: map[string]string{"vol-123": "/dev/sdf"},
+			},
 		},
 	}
-	return NewUnmountDisk(settings, platform)
+	return NewUnmountDisk(settingsService, platform)
 }
 
 func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("unmount disk should be asynchronous", func() {
+	Describe("UnmountDiskAction", func() {
+		It("is asynchronous", func() {
 			platform := fakeplatform.NewFakePlatform()
 			action := buildUnmountDiskAction(platform)
 			Expect(action.IsAsynchronous()).To(BeTrue())
@@ -35,7 +37,6 @@ func init() {
 		})
 
 		It("unmount disk when the disk is mounted", func() {
-
 			platform := fakeplatform.NewFakePlatform()
 			platform.UnmountPersistentDiskDidUnmount = true
 
@@ -47,8 +48,8 @@ func init() {
 
 			Expect(platform.UnmountPersistentDiskDevicePath).To(Equal("/dev/sdf"))
 		})
-		It("unmount disk when the disk is not mounted", func() {
 
+		It("unmount disk when the disk is not mounted", func() {
 			platform := fakeplatform.NewFakePlatform()
 			platform.UnmountPersistentDiskDidUnmount = false
 
@@ -60,8 +61,8 @@ func init() {
 
 			Expect(platform.UnmountPersistentDiskDevicePath).To(Equal("/dev/sdf"))
 		})
-		It("unmount disk when device path not found", func() {
 
+		It("unmount disk when device path not found", func() {
 			platform := fakeplatform.NewFakePlatform()
 			mountDisk := buildUnmountDiskAction(platform)
 

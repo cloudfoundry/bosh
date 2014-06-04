@@ -3,26 +3,27 @@ require 'open3'
 
 module Bosh::Clouds
   class ExternalCpi
-    ##
     # Raised when the external CPI executable returns an error unknown to director
-    #
     class UnknownError < StandardError; end
 
-    ##
     # Raised when the external CPI executable returns nil or invalid JSON format to director
     class InvalidResponse < StandardError; end
 
-    ##
     # Raised when the external CPI bin/cpi is not executable
     class NonExecutable < StandardError; end
 
     KNOWN_RPC_ERRORS = %w(
-      Bosh::Clouds::VMCreationFailed
-      Bosh::Clouds::DiskNotFound
-      Bosh::Clouds::DiskNotAttached
-      Bosh::Clouds::NoDiskSpace
-      Bosh::Clouds::CloudError
       Bosh::Clouds::CpiError
+      Bosh::Clouds::NotSupported
+      Bosh::Clouds::NotImplemented
+
+      Bosh::Clouds::CloudError
+      Bosh::Clouds::VMNotFound
+
+      Bosh::Clouds::NoDiskSpace
+      Bosh::Clouds::DiskNotAttached
+      Bosh::Clouds::DiskNotFound
+      Bosh::Clouds::VMCreationFailed
     ).freeze
 
     KNOWN_RPC_METHODS = %w(
