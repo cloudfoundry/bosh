@@ -28,10 +28,10 @@ func testSshSetupWithGivenPassword(expectedPwd string) {
 
 	response, err := action.Run("setup", params)
 	Expect(err).ToNot(HaveOccurred())
-	Expect(response).To(Equal(map[string]string{
-		"command": "setup",
-		"status":  "success",
-		"ip":      "ww.xx.yy.zz",
+	Expect(response).To(Equal(SshResult{
+		Command: "setup",
+		Status:  "success",
+		IP:      "ww.xx.yy.zz",
 	}))
 
 	Expect(platform.CreateUserUsername).To(Equal("fake-user"))
@@ -52,29 +52,28 @@ func buildSshAction(settingsService boshsettings.Service) (*fakeplatform.FakePla
 	return platform, action
 }
 
-func init() {
-	Describe("Testing with Ginkgo", func() {
-		var (
-			settingsService boshsettings.Service
-		)
+var _ = Describe("SshAction", func() {
+	var (
+		platform        *fakeplatform.FakePlatform
+		settingsService boshsettings.Service
+		action          SshAction
+	)
 
-		BeforeEach(func() {
-			settingsService = &fakesettings.FakeSettingsService{}
-		})
+	BeforeEach(func() {
+		settingsService = &fakesettings.FakeSettingsService{}
+		platform, action = buildSshAction(settingsService)
+	})
 
-		It("ssh should be synchronous", func() {
-			_, action := buildSshAction(settingsService)
-			Expect(action.IsAsynchronous()).To(BeFalse())
-		})
+	It("ssh should be synchronous", func() {
+		Expect(action.IsAsynchronous()).To(BeFalse())
+	})
 
-		It("is not persistent", func() {
-			_, action := buildSshAction(settingsService)
-			Expect(action.IsPersistent()).To(BeFalse())
-		})
+	It("is not persistent", func() {
+		Expect(action.IsPersistent()).To(BeFalse())
+	})
 
+	Describe("Run", func() {
 		It("ssh setup without default ip", func() {
-			_, action := buildSshAction(settingsService)
-
 			params := SshParams{
 				User:      "some-user",
 				Password:  "some-pwd",
@@ -95,18 +94,15 @@ func init() {
 		})
 
 		It("ssh run cleanup deletes ephemeral user", func() {
-			platform, action := buildSshAction(settingsService)
-
-			params := SshParams{UserRegex: "^foobar.*"}
-
-			response, err := action.Run("cleanup", params)
+			response, err := action.Run("cleanup", SshParams{UserRegex: "^foobar.*"})
 			Expect(err).ToNot(HaveOccurred())
-			Expect("^foobar.*").To(Equal(platform.DeleteEphemeralUsersMatchingRegex))
+			Expect(platform.DeleteEphemeralUsersMatchingRegex).To(Equal("^foobar.*"))
 
+			// Make sure empty ip field is not included in the response
 			boshassert.MatchesJSONMap(GinkgoT(), response, map[string]interface{}{
 				"command": "cleanup",
 				"status":  "success",
 			})
 		})
 	})
-}
+})

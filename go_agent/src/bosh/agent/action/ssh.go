@@ -42,7 +42,13 @@ type SshParams struct {
 	PublicKey string `json:"public_key"`
 }
 
-func (a SshAction) Run(cmd string, params SshParams) (value map[string]string, err error) {
+type SshResult struct {
+	Command string `json:"command"`
+	Status  string `json:"status"`
+	IP      string `json:"ip,omitempty"`
+}
+
+func (a SshAction) Run(cmd string, params SshParams) (SshResult, error) {
 	switch cmd {
 	case "setup":
 		return a.setupSsh(params)
@@ -50,58 +56,57 @@ func (a SshAction) Run(cmd string, params SshParams) (value map[string]string, e
 		return a.cleanupSsh(params)
 	}
 
-	err = errors.New("Unknown command for SSH method")
-	return
+	return SshResult{}, errors.New("Unknown command for SSH method")
 }
 
-func (a SshAction) setupSsh(params SshParams) (value map[string]string, err error) {
+func (a SshAction) setupSsh(params SshParams) (SshResult, error) {
+	var result SshResult
+
 	boshSshPath := filepath.Join(a.dirProvider.BaseDir(), "bosh_ssh")
-	err = a.platform.CreateUser(params.User, params.Password, boshSshPath)
+
+	err := a.platform.CreateUser(params.User, params.Password, boshSshPath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Creating user")
-		return
+		return result, bosherr.WrapError(err, "Creating user")
 	}
 
 	err = a.platform.AddUserToGroups(params.User, []string{boshsettings.VCAPUsername, boshsettings.AdminGroup})
 	if err != nil {
-		err = bosherr.WrapError(err, "Adding user to groups")
-		return
+		return result, bosherr.WrapError(err, "Adding user to groups")
 	}
 
 	err = a.platform.SetupSsh(params.PublicKey, params.User)
 	if err != nil {
-		err = bosherr.WrapError(err, "Setting ssh public key")
-		return
+		return result, bosherr.WrapError(err, "Setting ssh public key")
 	}
 
 	settings := a.settingsService.GetSettings()
 
 	defaultIP, found := settings.Networks.DefaultIP()
 	if !found {
-		err = errors.New("No default ip could be found")
-		return
+		return result, errors.New("No default ip could be found")
 	}
 
-	value = map[string]string{
-		"command": "setup",
-		"status":  "success",
-		"ip":      defaultIP,
+	result = SshResult{
+		Command: "setup",
+		Status:  "success",
+		IP:      defaultIP,
 	}
-	return
+
+	return result, nil
 }
 
-func (a SshAction) cleanupSsh(params SshParams) (value map[string]string, err error) {
-	err = a.platform.DeleteEphemeralUsersMatching(params.UserRegex)
+func (a SshAction) cleanupSsh(params SshParams) (SshResult, error) {
+	err := a.platform.DeleteEphemeralUsersMatching(params.UserRegex)
 	if err != nil {
-		err = bosherr.WrapError(err, "Ssh Cleanup: Deleting Ephemeral Users")
-		return
+		return SshResult{}, bosherr.WrapError(err, "Ssh Cleanup: Deleting Ephemeral Users")
 	}
 
-	value = map[string]string{
-		"command": "cleanup",
-		"status":  "success",
+	result := SshResult{
+		Command: "cleanup",
+		Status:  "success",
 	}
-	return
+
+	return result, nil
 }
 
 func (a SshAction) Resume() (interface{}, error) {
