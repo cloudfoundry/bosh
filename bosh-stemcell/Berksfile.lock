@@ -4,5 +4,5 @@ DEPENDENCIES
     path: sites-cookbooks/stemcell-golang
 
 GRAPH
-  golang (1.3.0)
+  golang (1.4.0)
   stemcell-golang (0.0.1)
