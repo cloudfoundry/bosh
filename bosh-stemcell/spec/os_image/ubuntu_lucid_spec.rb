@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Ubuntu 10.04 OS image' do
+describe 'Ubuntu 10.04 OS image', os_image: true do
   it_behaves_like 'an OS image'
 
   describe package('apt') do
