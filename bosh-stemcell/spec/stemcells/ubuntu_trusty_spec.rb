@@ -15,7 +15,7 @@ describe 'Ubuntu 14.04 stemcell' do
     end
 
     describe file('/boot/grub/menu.lst') do
-      before { pending 'until aws/openstack stop clobbering the symlink with "update-grub"' }
+      before { skip 'until aws/openstack stop clobbering the symlink with "update-grub"' }
       it { should be_linked_to('./grub.conf') }
     end
   end
