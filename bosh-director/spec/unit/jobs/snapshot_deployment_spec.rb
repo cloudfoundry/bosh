@@ -88,20 +88,22 @@ module Bosh::Director
       let(:fake_nats) { double('nats') }
 
       it 'sends an alert over NATS on hm.director.alert' do
-        fake_nats.should_receive(:publish).with('hm.director.alert', json_match(
-          eq(
-            {
-              'id' => 'director',
-              'severity' => 3,
-              'title' => 'director - snapshot failure',
-              'summary' => "failed to snapshot #{job}/#{index}: hello",
-              'created_at' => anything,
-            }
-          ))
-        )
+        Timecop.freeze do
+          fake_nats.should_receive(:publish).with('hm.director.alert', json_match(
+            eq(
+              {
+                'id' => 'director',
+                'severity' => 3,
+                'title' => 'director - snapshot failure',
+                'summary' => "failed to snapshot #{job}/#{index}: hello",
+                'created_at' => Time.now.to_i,
+              }
+            ))
+          )
 
-        Bosh::Director::Config.stub(:nats => fake_nats)
-        subject.send_alert(fake_instance, 'hello')
+          Bosh::Director::Config.stub(:nats => fake_nats)
+          subject.send_alert(fake_instance, 'hello')
+        end
       end
     end
   end
