@@ -4,7 +4,7 @@ describe Bosh::Director::ValidationHelper do
   let(:obj) { Object.new.tap { |o| o.extend(Bosh::Director::ValidationHelper) } }
 
   it 'should pass if required fields are present' do
-    obj.safe_property({'test' => 1}, 'test').should eq(1)
+    expect(obj.safe_property({'test' => 1}, 'test')).to eq(1)
   end
 
   describe 'class equality' do
@@ -26,7 +26,7 @@ describe Bosh::Director::ValidationHelper do
       it 'raises an error' do
         expect {
           obj.safe_property({'test' => 1}, 'test', :class => Array)
-        }.should raise_error(
+        }.to raise_error(
           Bosh::Director::ValidationInvalidType,
           "Property `test' (value 1) did not match the required type `Array'",
         )
@@ -46,7 +46,7 @@ describe Bosh::Director::ValidationHelper do
       it 'raises an error because required property is missing' do
         expect {
           obj.safe_property(hash, 'test', options)
-        }.should raise_error(
+        }.to raise_error(
           Bosh::Director::ValidationMissingField,
           "Required property `test' was not specified in object (#{hash.inspect})",
         )
@@ -57,7 +57,7 @@ describe Bosh::Director::ValidationHelper do
       it "raises an error because #{hash.inspect} cannot be used for property lookup" do
         expect {
           obj.safe_property(hash, 'test', options)
-        }.should raise_error(
+        }.to raise_error(
           Bosh::Director::ValidationInvalidType,
           %Q{Object (#{hash.inspect}) did not match the required type `Hash'},
         )
@@ -127,21 +127,21 @@ describe Bosh::Director::ValidationHelper do
 
   describe 'when numeric constraints' do
     it 'should pass if numbers do not have constraints' do
-      obj.safe_property({'test' => 1}, 'test', :class => Numeric).should eql(1)
+      expect(obj.safe_property({'test' => 1}, 'test', :class => Numeric)).to eql(1)
     end
 
     it 'should pass if numbers pass min constraints' do
-      obj.safe_property({'test' => 3}, 'test', :min => 2).should eql(3)
+      expect(obj.safe_property({'test' => 3}, 'test', :min => 2)).to eql(3)
     end
 
     it 'should pass if numbers pass max constraints' do
-      obj.safe_property({'test' => 3}, 'test', :max => 4).should eql(3)
+      expect(obj.safe_property({'test' => 3}, 'test', :max => 4)).to eql(3)
     end
 
     it 'should fail if numbers do not pass min constraints' do
       expect {
-        obj.safe_property({'test' => 3}, 'test', :min => 4).should eql(3)
-      }.should raise_error(
+        expect(obj.safe_property({'test' => 3}, 'test', :min => 4)).to eql(3)
+      }.to raise_error(
         Bosh::Director::ValidationViolatedMin,
         "`test' value (3) should be greater than 4",
       )
@@ -149,8 +149,8 @@ describe Bosh::Director::ValidationHelper do
 
     it 'should fail if numbers do not pass max constraints' do
       expect {
-        obj.safe_property({'test' => 3}, 'test', :max => 2).should eql(3)
-      }.should raise_error(
+        expect(obj.safe_property({'test' => 3}, 'test', :max => 2)).to eql(3)
+      }.to raise_error(
         Bosh::Director::ValidationViolatedMax,
         "`test' value (3) should be less than 2",
       )
