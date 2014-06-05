@@ -168,9 +168,9 @@ describe Bosh::Cli::BlobManager do
       end
 
       @manager = make_manager(@release)
-      @blobstore.should_receive(:get).with("deadbeef",
-                                           an_instance_of(File)).
-        and_return { |_, f | f.write("blob contents") }
+      @blobstore
+        .should_receive(:get)
+        .with("deadbeef", an_instance_of(File)) { |_, f | f.write("blob contents") }
 
       path = @manager.download_blob("foo")
       File.read(path).should == "blob contents"

@@ -34,8 +34,10 @@ describe Bosh::Agent::ApplyPlan::Job do
   end
 
   def mock_template(blobstore_id, checksum, path)
-    Bosh::Agent::Util.should_receive(:unpack_blob).
-      with(blobstore_id, checksum, path) { template = MockTemplate.new(path); yield template }
+    expect(Bosh::Agent::Util).to receive(:unpack_blob).
+      with(blobstore_id, checksum, path) do
+      yield MockTemplate.new(path)
+    end
   end
 
   JOB_NAME = "ccdb"
