@@ -128,9 +128,9 @@ describe Bosh::Cli::Runner do
         @unique_plugin_2 = FileUtils.touch('gems/bosh/cli/commands/unique_plugin_2.rb').first
         @common_plugin = FileUtils.touch('gems/bosh/cli/commands/common.rb').first
 
-        Gem::Specification.stub(:latest_specs).with(true).and_return([spec_1, spec_2])
-        spec_1.stub(:matches_for_glob).with('bosh/cli/commands/*.rb').and_return ([@unique_plugin_1, @common_plugin])
-        spec_2.stub(:matches_for_glob).with('bosh/cli/commands/*.rb').and_return ([@unique_plugin_2, @common_plugin])
+        Gem::Specification.stub(:latest_specs).with(true) { [spec_1, spec_2] }
+        spec_1.stub(:matches_for_glob).with('bosh/cli/commands/*.rb') { [@unique_plugin_1, @common_plugin] }
+        spec_2.stub(:matches_for_glob).with('bosh/cli/commands/*.rb') { [@unique_plugin_2, @common_plugin] }
       end
 
       after { FileUtils.rm_rf('gems') }
