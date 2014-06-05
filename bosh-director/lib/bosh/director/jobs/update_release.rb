@@ -170,8 +170,7 @@ module Bosh::Director
         event_log.track("#{@name}/#{@version}") {}
       end
 
-      # Normalizes release manifest, so all names, versions, and checksums
-      # are Strings.
+      # Normalizes release manifest, so all names, versions, and checksums are Strings.
       # @return [void]
       def normalize_manifest
         Bosh::Director.hash_string_vals(@manifest, 'name', 'version')
@@ -455,8 +454,7 @@ module Bosh::Director
             path = File.join(job_dir, "templates", relative_path)
             unless File.file?(path)
               raise JobMissingTemplateFile,
-                    "Missing template file `#{relative_path}' " +
-                    "for job `#{template.name}'"
+                    "Missing template file `#{relative_path}' for job `#{template.name}'"
             end
           end
         end
@@ -509,15 +507,13 @@ module Bosh::Director
         return if jobs.empty?
 
         n_jobs = jobs.size
-        event_log.begin_stage("Processing #{n_jobs} existing " +
-                              "job#{n_jobs > 1 ? "s" : ""}", 1)
+        event_log.begin_stage("Processing #{n_jobs} existing job#{n_jobs > 1 ? "s" : ""}", 1)
 
         event_log.track("Verifying checksums") do
           jobs.each do |template, job_meta|
             job_desc = "#{template.name}/#{template.version}"
 
-            logger.info("Job `#{job_desc}' already exists, " +
-                        "verifying checksum")
+            logger.info("Job `#{job_desc}' already exists, verifying checksum")
 
             expected = template.sha1
             received = job_meta["sha1"]
@@ -546,9 +542,7 @@ module Bosh::Director
       # Returns the next release version (to be used for rebased release)
       # @return [String]
       def next_release_version
-        attrs = {
-          :release_id => @release_model.id
-        }
+        attrs = {:release_id => @release_model.id}
         models = Models::ReleaseVersion.filter(attrs).all
         strings = models.map(&:version)
         list = Bosh::Common::Version::ReleaseVersionList.parse(strings)

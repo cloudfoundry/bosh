@@ -102,8 +102,6 @@ module Bosh::Director
     end
 
     describe 'rebasing release' do
-      let(:job_fingerprint) { 'job-fingerprint-3' }
-      let(:package_fingerprint) { 'package-fingerprint-3' }
       let(:manifest) do
         {
           'name' => 'appcloud',
@@ -131,7 +129,7 @@ module Bosh::Director
               'version' => '666',
               'templates' => {},
               'packages' => %w(zbb),
-              'fingerprint' => job_fingerprint
+              'fingerprint' => 'job-fingerprint-3'
             }
           ],
           'packages' => [
@@ -153,7 +151,7 @@ module Bosh::Director
               'name' => 'zbb',
               'version' => '333',
               'dependencies' => [],
-              'fingerprint' => package_fingerprint,
+              'fingerprint' => 'package-fingerprint-3',
               'sha1' => 'package-sha1-3'
             }
           ]
@@ -213,7 +211,7 @@ module Bosh::Director
           # Fingerprints are the same because package contents did not change
           zbbs.map(&:fingerprint).should =~ %w(package-fingerprint-3 package-fingerprint-3)
 
-          # SHA1a are the same because first blob was copied
+          # SHA1s are the same because first blob was copied
           zbbs.map(&:sha1).should =~ %w(package-sha1-old package-sha1-old)
         end
 
@@ -229,42 +227,62 @@ module Bosh::Director
 
       context 'when the package fingerprint matches multiple in the database' do
         before do
-          Models::Package.make(release: @release, name: 'zbb', version: '25', fingerprint: 'package-fingerprint-3')
-          Models::Package.make(release: @release, name: 'zbb', version: '26', fingerprint: 'package-fingerprint-3')
+          Models::Package.make(release: @release, name: 'zbb', version: '25', fingerprint: 'package-fingerprint-3', sha1: 'package-sha1-25')
+          Models::Package.make(release: @release, name: 'zbb', version: '26', fingerprint: 'package-fingerprint-3', sha1: 'package-sha1-26')
         end
 
-        it 'uses one of the existing package blobs' do
+        it 'creates new package (version) with copied blob (sha1)' do
           expect(blobstore).to receive(:create).exactly(6).times # creates new blobs for each package & job
           expect(blobstore).to receive(:get).exactly(1).times # copies the existing 'zbb' package
           @job.perform
 
           zbbs = Models::Package.filter(release_id: @release.id, name: 'zbb').all
           zbbs.map(&:version).should =~ %w(26 25 333)
+
+          # Fingerprints are the same because package contents did not change
           zbbs.map(&:fingerprint).should =~ %w(package-fingerprint-3 package-fingerprint-3 package-fingerprint-3)
 
+          # SHA1s are the same because first blob was copied
+          zbbs.map(&:sha1).should =~ %w(package-sha1-25 package-sha1-25 package-sha1-26)
+        end
+
+        it 'associates newly created packages to the release version' do
+          @job.perform
+
           rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
+          rv.packages.map(&:version).should =~ %w(2.33-dev 3.14-dev 333)
           rv.packages.map(&:fingerprint).should =~ %w(package-fingerprint-1 package-fingerprint-2 package-fingerprint-3)
+          rv.packages.map(&:sha1).should =~ %w(package-sha1-1 package-sha1-2 package-sha1-25)
         end
       end
 
       context 'when the package fingerprint is new' do
-        let(:package_fingerprint) { 'package-fingerprint-new' }
-
         before do
-          Models::Package.make(release: @release, name: 'zbb', version: '25', fingerprint: 'package-fingerprint-3')
+          Models::Package.make(release: @release, name: 'zbb', version: '25', fingerprint: 'package-fingerprint-old', sha1: 'package-sha1-25')
         end
 
-        it 'uses the new package blob' do
+        it 'creates new package (version) with new blob (sha1)' do
           expect(blobstore).to receive(:create).exactly(6).times # creates new blobs for each package & job
           expect(blobstore).to receive(:get).exactly(0).times # does not copy any existing packages or jobs
           @job.perform
 
           zbbs = Models::Package.filter(release_id: @release.id, name: 'zbb').all
           zbbs.map(&:version).should =~ %w(25 333)
-          zbbs.map(&:fingerprint).should =~ %w(package-fingerprint-3 package-fingerprint-new)
+
+          # Fingerprints are different because package contents are different
+          zbbs.map(&:fingerprint).should =~ %w(package-fingerprint-old package-fingerprint-3)
+
+          # SHA1s are different because package tars are different
+          zbbs.map(&:sha1).should =~ %w(package-sha1-25 package-sha1-3)
+        end
+
+        it 'associates newly created packages to the release version' do
+          @job.perform
 
           rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
-          rv.packages.map(&:fingerprint).should =~ %w(package-fingerprint-1 package-fingerprint-2 package-fingerprint-new)
+          rv.packages.map(&:version).should =~ %w(2.33-dev 3.14-dev 333)
+          rv.packages.map(&:fingerprint).should =~ %w(package-fingerprint-1 package-fingerprint-2 package-fingerprint-3)
+          rv.packages.map(&:sha1).should =~ %w(package-sha1-1 package-sha1-2 package-sha1-3)
         end
       end
 
@@ -288,10 +306,8 @@ module Bosh::Director
       end
 
       context 'when the job fingerprint is new' do
-        let(:job_fingerprint) { 'job-fingerprint-new' }
-
         before do
-          Models::Template.make(release: @release, name: 'zbz', version: '28', fingerprint: 'job-fingerprint-3')
+          Models::Template.make(release: @release, name: 'zbz', version: '28', fingerprint: 'job-fingerprint-old')
         end
 
         it 'uses the new job blob' do
@@ -301,10 +317,10 @@ module Bosh::Director
 
           zbzs = Models::Template.filter(release_id: @release.id, name: 'zbz').all
           zbzs.map(&:version).should =~ %w(28 666)
-          zbzs.map(&:fingerprint).should =~ %w(job-fingerprint-3 job-fingerprint-new)
+          zbzs.map(&:fingerprint).should =~ %w(job-fingerprint-old job-fingerprint-3)
 
           rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
-          rv.templates.map(&:fingerprint).should =~ %w(job-fingerprint-1 job-fingerprint-2 job-fingerprint-new)
+          rv.templates.map(&:fingerprint).should =~ %w(job-fingerprint-1 job-fingerprint-2 job-fingerprint-3)
         end
       end
 
