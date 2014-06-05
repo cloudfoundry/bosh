@@ -24,10 +24,11 @@ module Bosh
       let(:logger) { instance_double('Logger', debug: nil, info: nil) }
 
       before do
-        Open3.stub(capture2e: ['output', double('Process::Status', exitstatus: 0)])
-        config.stub(cloud: cloud)
-        config.stub(agent_properties: {})
-        SecureRandom.stub(uuid: 'deadbeef')
+        allow(Open3).to receive(:capture2e)
+                        .and_return(['output', double('Process::Status', exitstatus: 0)])
+        allow(config).to receive(:cloud).and_return(cloud)
+        allow(config).to receive(:agent_properties).and_return({})
+        allow(SecureRandom).to receive(:uuid).and_return('deadbeef')
 
         allow(MicroboshJobInstance).to receive(:new).and_return(FakeMicroboshJobInstance.new)
         allow(Bosh::Agent::HTTPClient).to receive(:new).and_return agent
@@ -235,10 +236,10 @@ module Bosh
         end
 
         context 'when stemcell archive is provided(it includes sha1 in the stemcell.MF)' do
-          before { stemcell_archive.stub(sha1: 'fake-stemcell-sha1') }
+          before { allow(stemcell_archive).to receive(:sha1).and_return('fake-stemcell-sha1') }
           let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive') }
 
-          before { cloud.stub(create_stemcell: 'fake-stemcell-cid') }
+          before { allow(cloud).to receive(:create_stemcell).and_return('fake-stemcell-cid') }
           let(:stemcell_id) { 'bosh-instance-1.0.tgz' }
 
           before { Specification.stub(load_apply_spec: apply_spec) }
@@ -253,6 +254,7 @@ module Bosh
 
           context 'with no vm_cid but existing disk_id and same config' do
             before { deployer.state.vm_cid = nil }
+            before { deployer.state.config_sha1 = 'fake-config-sha1' }
             it_updates_deployed_instance 'fake-stemcell-cid', will_create_stemcell: true
             it_updates_stemcell_sha1 'fake-stemcell-sha1'
             it_keeps_config_sha1 'fake-config-sha1'
