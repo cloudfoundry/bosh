@@ -48,6 +48,8 @@ Gem::Specification.new do |s|
   s.add_dependency 'membrane',         '~>0.0.2'
   s.add_dependency 'semi_semantic',    '~>1.1.0'
 
+  s.add_development_dependency 'timecop'
+
   s.bindir      = 'bin'
   s.executables << 'bosh-director'
   s.executables << 'bosh-director-console'

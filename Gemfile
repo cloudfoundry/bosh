@@ -51,7 +51,7 @@ group :development, :test do
   gemspec path: 'bosh-dev'
   gemspec path: 'bosh-stemcell'
 
-  gem 'rspec', '3.0.0.beta1'
+  gem 'rspec', '~> 3.0'
   gem 'rspec-its'
 
   gem 'rubocop', require: false
