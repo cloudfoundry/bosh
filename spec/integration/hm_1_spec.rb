@@ -42,7 +42,7 @@ describe 'health_monitor: 1', type: :integration do
 
   # ~4m
   it 'only resurrects stateless nodes that are configured to be resurrected' do
-    pending 'The interaction of a resurrected node and a non-resurrected node are important but broken. See #69728124'
+    skip 'The interaction of a resurrected node and a non-resurrected node are important but broken. See #69728124'
 
     deployment_hash = Bosh::Spec::Deployments.simple_manifest
     deployment_hash['jobs'][0]['instances'] = 2
