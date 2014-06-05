@@ -200,7 +200,13 @@ module Bosh::Cli
         director.list_releases.inject({}) do |hash, release|
           name = release['name']
           versions = release['versions'] || release['release_versions'].map { |release_version| release_version['version'] }
-          latest_version = Bosh::Common::Version::ReleaseVersion.parse_list(versions).latest
+          parsed_versions = versions.map do |version|
+            {
+              original: version,
+              parsed: Bosh::Common::Version::ReleaseVersion.parse(version)
+            }
+          end
+          latest_version = parsed_versions.sort_by {|v| v[:parsed] }.last[:original]
           hash[name] = latest_version.to_s
           hash
         end

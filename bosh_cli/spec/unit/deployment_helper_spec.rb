@@ -67,7 +67,7 @@ describe Bosh::Cli::DeploymentHelper do
         director.stub(list_releases: [
           {
             'name' => 'bat',
-            'versions' => ['1', '3+dev.1', '3', '2'],
+            'versions' => ['1', '8.2-dev', '2', '8.1-dev'],
             'in_use' => ['1'],
           },
           {
@@ -80,18 +80,30 @@ describe Bosh::Cli::DeploymentHelper do
 
       it 'should have the latest version for each release' do
         deployment_helper.latest_release_versions.should == {
-          'bat' => '3+dev.1',
+          'bat' => '8.2-dev',
           'bosh' => '2'
         }
       end
     end
 
     context 'for director version >= 1.5' do
-      before { director.stub(list_releases: release_list) }
+      before { director.stub(list_releases: [
+          {
+            'name' => 'bat',
+            'versions' => ['1', '8.2-dev', '8+dev.3', '2', '8+dev.1'],
+            'in_use' => ['1'],
+          },
+          {
+            'name' => 'bosh',
+            'versions' => ['2', '1.2-dev'],
+            'in_use' => [],
+          },
+        ])
+      }
 
       it 'should have the latest version for each release' do
         deployment_helper.latest_release_versions.should == {
-          'bat' => '3+dev.1',
+          'bat' => '8+dev.3',
           'bosh' => '2'
         }
       end
