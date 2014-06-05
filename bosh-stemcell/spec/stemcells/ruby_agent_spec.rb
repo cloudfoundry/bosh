@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Stemcell with Ruby Agent' do
+describe 'Stemcell with Ruby Agent', stemcell_image: true do
   describe 'installed by bosh_ruby' do
     describe command('/var/vcap/bosh/bin/ruby -r yaml -e "Psych::SyntaxError"') do
       it { should return_exit_status(0) }
