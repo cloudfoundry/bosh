@@ -62,3 +62,7 @@ def make_heartbeat(attrs = {})
   }
   Bhm::Events::Heartbeat.new(defaults.merge(attrs))
 end
+
+RSpec.configure do |c|
+  c.color = true
+end
