@@ -40,7 +40,7 @@ module Bosh::Spec
 
         'releases' => [{
           'name'    => 'bosh-release',
-          'version' => '0.1-dev'
+          'version' => '0.1-dev',
         }],
 
         'networks' => [{
@@ -52,7 +52,7 @@ module Bosh::Spec
             'static'   => ['192.168.1.10'],
             'reserved' => [],
             'cloud_properties' => {},
-          }]
+          }],
         }],
 
         'resource_pools' => [{
@@ -62,8 +62,8 @@ module Bosh::Spec
           'network'   => 'a',
           'stemcell'  => {
             'name'    => 'ubuntu-stemcell',
-            'version' => '1'
-          }
+            'version' => '1',
+          },
         }],
 
         'jobs' => [{
@@ -71,8 +71,8 @@ module Bosh::Spec
           'template'      => 'foobar',
           'resource_pool' => 'a',
           'instances'     => 3,
-          'networks'      => [{ 'name' => 'a' }]
-        }]
+          'networks'      => [{ 'name' => 'a' }],
+        }],
       )
     end
 

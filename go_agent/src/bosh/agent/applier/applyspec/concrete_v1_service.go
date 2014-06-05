@@ -4,25 +4,17 @@ import (
 	"encoding/json"
 
 	bosherr "bosh/errors"
+	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 )
 
 type concreteV1Service struct {
-	fs                     boshsys.FileSystem
-	defaultNetworkDelegate DefaultNetworkDelegate
-	specFilePath           string
+	fs           boshsys.FileSystem
+	specFilePath string
 }
 
-func NewConcreteV1Service(
-	fs boshsys.FileSystem,
-	defaultNetworkDelegate DefaultNetworkDelegate,
-	specFilePath string,
-) concreteV1Service {
-	return concreteV1Service{
-		fs: fs,
-		defaultNetworkDelegate: defaultNetworkDelegate,
-		specFilePath:           specFilePath,
-	}
+func NewConcreteV1Service(fs boshsys.FileSystem, specFilePath string) concreteV1Service {
+	return concreteV1Service{fs: fs, specFilePath: specFilePath}
 }
 
 func (s concreteV1Service) Get() (V1ApplySpec, error) {
@@ -59,27 +51,15 @@ func (s concreteV1Service) Set(spec V1ApplySpec) error {
 	return nil
 }
 
-func (s concreteV1Service) ResolveDynamicNetworks(spec V1ApplySpec) (V1ApplySpec, error) {
-	var foundOneDynamicNetwork bool
-
+func (s concreteV1Service) PopulateDynamicNetworks(spec V1ApplySpec, settings boshsettings.Settings) (V1ApplySpec, error) {
 	for networkName, networkSpec := range spec.NetworkSpecs {
 		if !networkSpec.IsDynamic() {
 			continue
 		}
 
-		// Currently proper support for multiple dynamic networks is not possible
-		// because CPIs (e.g. AWS and OpenStack) do not include MAC address
-		// for dynamic networks and that is the only way to reliably determine
-		// network to interface to IP mapping
-		if foundOneDynamicNetwork {
-			return V1ApplySpec{}, bosherr.New("Multiple dynamic networks are not supported")
-		}
-		foundOneDynamicNetwork = true
-
-		// Ideally this would be GetNetworkByMACAddress(mac string)
-		network, err := s.defaultNetworkDelegate.GetDefaultNetwork()
-		if err != nil {
-			return V1ApplySpec{}, bosherr.WrapError(err, "Getting default network")
+		network, ok := settings.Networks[networkName]
+		if !ok {
+			return V1ApplySpec{}, bosherr.New("Network %s is not found in settings", networkName)
 		}
 
 		spec.NetworkSpecs[networkName] = networkSpec.PopulateIPInfo(

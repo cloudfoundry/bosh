@@ -2,6 +2,7 @@ package fakes
 
 import (
 	boshas "bosh/agent/applier/applyspec"
+	boshsettings "bosh/settings"
 )
 
 type FakeV1Service struct {
@@ -11,9 +12,10 @@ type FakeV1Service struct {
 	GetErr error
 	SetErr error
 
-	ResolveDynamicNetworksSpec       boshas.V1ApplySpec
-	ResolveDynamicNetworksResultSpec boshas.V1ApplySpec
-	ResolveDynamicNetworksErr        error
+	PopulateDynamicNetworksSpec       boshas.V1ApplySpec
+	PopulateDynamicNetworksSettings   boshsettings.Settings
+	PopulateDynamicNetworksResultSpec boshas.V1ApplySpec
+	PopulateDynamicNetworksErr        error
 }
 
 func NewFakeV1Service() *FakeV1Service {
@@ -31,8 +33,9 @@ func (s *FakeV1Service) Set(spec boshas.V1ApplySpec) error {
 	return s.SetErr
 }
 
-func (s *FakeV1Service) ResolveDynamicNetworks(spec boshas.V1ApplySpec) (boshas.V1ApplySpec, error) {
-	s.ActionsCalled = append(s.ActionsCalled, "ResolveDynamicNetworks")
-	s.ResolveDynamicNetworksSpec = spec
-	return s.ResolveDynamicNetworksResultSpec, s.ResolveDynamicNetworksErr
+func (s *FakeV1Service) PopulateDynamicNetworks(spec boshas.V1ApplySpec, settings boshsettings.Settings) (boshas.V1ApplySpec, error) {
+	s.ActionsCalled = append(s.ActionsCalled, "PopulateDynamicNetworks")
+	s.PopulateDynamicNetworksSpec = spec
+	s.PopulateDynamicNetworksSettings = settings
+	return s.PopulateDynamicNetworksResultSpec, s.PopulateDynamicNetworksErr
 }

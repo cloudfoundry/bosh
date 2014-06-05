@@ -58,6 +58,7 @@ module Bosh
           blobstore: @options['agent']['blobstore'],
           ntp: [],
           disks: { persistent: {} },
+          networks: networks,
           vm: { name: "vm-#{agent_id}" },
           mbus: @options['nats'],
         })
