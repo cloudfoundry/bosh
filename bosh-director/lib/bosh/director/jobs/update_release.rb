@@ -251,6 +251,7 @@ module Bosh::Director
             # of the package blob and create a new db entry for it
             package = packages.first
             package_meta["blobstore_id"] = package.blobstore_id
+            package_meta["sha1"] = package.sha1
             new_packages << package_meta
           end
         end

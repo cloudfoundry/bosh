@@ -139,19 +139,22 @@ module Bosh::Director
               'name' => 'foo',
               'version' => '2.33-dev',
               'dependencies' => %w(bar),
-              'fingerprint' => 'package-fingerprint-1'
+              'fingerprint' => 'package-fingerprint-1',
+              'sha1' => 'package-sha1-1'
             },
             {
               'name' => 'bar',
               'version' => '3.14-dev',
               'dependencies' => [],
-              'fingerprint' => 'package-fingerprint-2'
+              'fingerprint' => 'package-fingerprint-2',
+              'sha1' => 'package-sha1-2'
             },
             {
               'name' => 'zbb',
               'version' => '333',
               'dependencies' => [],
-              'fingerprint' => package_fingerprint
+              'fingerprint' => package_fingerprint,
+              'sha1' => 'package-sha1-3'
             }
           ]
         }
@@ -190,20 +193,37 @@ module Bosh::Director
 
       context 'when the package fingerprint matches one in the database' do
         before do
-          Models::Package.make(release: @release, name: 'zbb', version: '25', fingerprint: 'package-fingerprint-3')
+          Models::Package.make(
+            release: @release,
+            name: 'zbb',
+            version: '25',
+            fingerprint: 'package-fingerprint-3',
+            sha1: 'package-sha1-old',
+          )
         end
 
-        it 'uses the existing package blob' do
+        it 'creates new package (version) with copied blob (sha1)' do
           expect(blobstore).to receive(:create).exactly(6).times # creates new blobs for each package & job
           expect(blobstore).to receive(:get).exactly(1).times # copies the existing 'zbb' package
           @job.perform
 
           zbbs = Models::Package.filter(release_id: @release.id, name: 'zbb').all
           zbbs.map(&:version).should =~ %w(25 333)
+
+          # Fingerprints are the same because package contents did not change
           zbbs.map(&:fingerprint).should =~ %w(package-fingerprint-3 package-fingerprint-3)
 
+          # SHA1a are the same because first blob was copied
+          zbbs.map(&:sha1).should =~ %w(package-sha1-old package-sha1-old)
+        end
+
+        it 'associates newly created packages to the release version' do
+          @job.perform
+
           rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
+          rv.packages.map(&:version).should =~ %w(2.33-dev 3.14-dev 333)
           rv.packages.map(&:fingerprint).should =~ %w(package-fingerprint-1 package-fingerprint-2 package-fingerprint-3)
+          rv.packages.map(&:sha1).should =~ %w(package-sha1-1 package-sha1-2 package-sha1-old)
         end
       end
 
@@ -456,7 +476,6 @@ module Bosh::Director
                             ])
       end
     end
-
 
     describe 'create jobs' do
       before do
