@@ -4,7 +4,7 @@ require '20130826150635_update_elb_for_websockets'
 describe UpdateElbForWebsockets do
   include MigrationSpecHelper
 
-  subject { described_class.new(config, '') }
+  subject { UpdateElbForWebsockets.new(config, '') }
 
   it "configures elb and security group for websockets" do
     receipt = YAML.load_file(asset "test-output.yml")
