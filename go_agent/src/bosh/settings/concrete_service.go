@@ -66,11 +66,11 @@ func (s *concreteService) LoadSettings() error {
 
 	newSettings, fetchErr := s.settingsFetcher()
 	if fetchErr != nil {
-		s.logger.Error(concreteServiceLogTag, "Failed to load settings via fetcher: %v", fetchErr)
+		s.logger.Error(concreteServiceLogTag, "Failed loading settings via fetcher: %v", fetchErr)
 
 		existingSettingsJSON, readError := s.fs.ReadFile(s.settingsPath)
 		if readError != nil {
-			s.logger.Debug(concreteServiceLogTag, "Failed reading settings from file %s", readError.Error())
+			s.logger.Error(concreteServiceLogTag, "Failed reading settings from file %s", readError.Error())
 			return bosherr.WrapError(fetchErr, "Invoking settings fetcher")
 		}
 
@@ -78,7 +78,7 @@ func (s *concreteService) LoadSettings() error {
 
 		err := json.Unmarshal(existingSettingsJSON, &s.settings)
 		if err != nil {
-			s.logger.Debug(concreteServiceLogTag, "Failed unmarshalling settings from file %s", err.Error())
+			s.logger.Error(concreteServiceLogTag, "Failed unmarshalling settings from file %s", err.Error())
 			return bosherr.WrapError(fetchErr, "Invoking settings fetcher")
 		}
 
@@ -141,6 +141,7 @@ func (s *concreteService) GetSettings() Settings {
 		// Ideally this would be GetNetworkByMACAddress(mac string)
 		resolvedNetwork, err := s.defaultNetworkDelegate.GetDefaultNetwork()
 		if err != nil {
+			s.logger.Error(concreteServiceLogTag, "Failed retrieving default network %s", err.Error())
 			break
 		}
 
