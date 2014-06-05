@@ -3,7 +3,12 @@ require 'spec_helper'
 describe Bosh::Cli::Command::Release do
   subject(:command) { described_class.new }
 
-  let(:director) { instance_double('Bosh::Cli::Client::Director') }
+  let(:director) do
+    instance_double(
+      'Bosh::Cli::Client::Director',
+      get_status: { 'version' => '1.2580.0' }
+    )
+  end
   let(:release_archive) { spec_asset('valid_release.tgz') }
   let(:release_manifest) { spec_asset(File.join('release', 'release.MF')) }
   let(:release_location) { 'http://release_location' }
@@ -188,6 +193,75 @@ describe Bosh::Cli::Command::Release do
       end
 
       context 'local release' do
+        before { allow(director).to receive(:get_release).and_raise(Bosh::Cli::ResourceNotFound) }
+        before { allow(director).to receive(:match_packages).and_return([]) }
+
+        describe 'converting to old format' do
+          let!(:tarball) do
+            instance_double(
+              'Bosh::Cli::ReleaseTarball',
+              validate: nil,
+              valid?: true,
+              release_name: 'fake-release-name',
+              version: tarball_version,
+              manifest: nil,
+              repack: nil
+            )
+          end
+          let(:tarball_version) { '8.1' }
+
+          before { allow(Bosh::Cli::ReleaseTarball).to receive(:new).and_return(tarball) }
+
+          before { allow(director).to receive(:upload_release) }
+
+          before do
+            allow(director).to receive(:get_status).and_return(
+              {
+                'version' => director_version
+              }
+            )
+          end
+
+          context 'when director is an older version and release is in new format' do
+            let(:director_version) { '1.2579.0 (release:4fef83a2 bosh:4fef83a2)' }
+            context 'when the tarball version can be converted to old format' do
+              let(:tarball_version) { '8.1+dev.3' }
+
+              it 'converts tarball version to the old format' do
+                expect(tarball).to receive(:convert_to_old_format)
+                command.upload(release_archive)
+              end
+            end
+
+            context 'when the tarball version is already in the old format' do
+              let(:tarball_version) { '8.1.3-dev' }
+
+              it 'does not convert tarball version to the old format' do
+                expect(tarball).to_not receive(:convert_to_old_format)
+                command.upload(release_archive)
+              end
+            end
+
+            context 'when the tarball version can not be converted to the old format' do
+              let(:tarball_version) { '8.1' }
+
+              it 'does not convert tarball version to the old format' do
+                expect(tarball).to_not receive(:convert_to_old_format)
+                command.upload(release_archive)
+              end
+            end
+          end
+
+          context 'when director is a new version' do
+            let(:director_version) { '1.2580.0 (release:4fef83a2 bosh:4fef83a2)' }
+
+            it 'does not convert tarball version to old format' do
+              expect(tarball).to_not receive(:convert_to_old_format)
+              command.upload(release_archive)
+            end
+          end
+        end
+
         context 'without rebase' do
           it 'should upload the release manifest' do
             expect(command).to receive(:upload_manifest)
@@ -219,8 +293,6 @@ describe Bosh::Cli::Command::Release do
         end
 
         context 'when release does not exist' do
-          before { allow(director).to receive(:match_packages).and_return([]) }
-          before { allow(director).to receive(:get_release).and_raise(Bosh::Cli::ResourceNotFound) }
           let(:tarball_path) { spec_asset('valid_release.tgz') }
 
           it 'uploads release and returns successfully' do
@@ -230,7 +302,6 @@ describe Bosh::Cli::Command::Release do
         end
 
         context 'when release already exists' do
-          before { allow(director).to receive(:match_packages).and_return([]) }
           before { allow(director).to receive(:get_release).and_return(
             {'jobs' => nil, 'packages' => nil, 'versions' => ['0.1']}) }
           let(:tarball_path) { spec_asset('valid_release.tgz') }

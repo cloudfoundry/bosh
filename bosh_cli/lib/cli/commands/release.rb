@@ -243,6 +243,16 @@ module Bosh::Cli::Command
         err('Release is invalid, please fix, verify and upload again')
       end
 
+      if should_convert_to_old_format?(tarball.version)
+        msg = "You are using CLI > 1.2579.0 with a director that doesn't support" +
+          'the new version format you are using. Upgrade your ' +
+          'director to match the version of your CLI or downgrade your ' +
+          'CLI to 1.2579.0 to avoid versioning mismatch issues.'
+
+        say(msg.make_yellow)
+        tarball_path = tarball.convert_to_old_format
+      end
+
       remote_release = get_remote_release(tarball.release_name) rescue nil
       if remote_release && !rebase
         if remote_release['versions'].include?(tarball.version)
@@ -657,5 +667,18 @@ module Bosh::Cli::Command
       end
       return currently_deployed, uncommitted_changes
     end
+
+    def should_convert_to_old_format?(version)
+      director_version = director.get_status['version']
+      new_format_director_version = '1.2580.0'
+      if Bosh::Common::Version::BoshVersion.parse(director_version) >=
+        Bosh::Common::Version::BoshVersion.parse(new_format_director_version)
+        return false
+      end
+
+      old_format = Bosh::Common::Version::ReleaseVersion.parse(version).to_old_format
+      old_format && version != old_format
+    end
+
   end
 end
