@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Stemcell with Go Agent' do
+describe 'Stemcell with Go Agent', stemcell_image: true do
   describe 'installed by bosh_go_agent' do
     %w(bosh-agent bosh-agent-rc bosh-blobstore-dav bosh-blobstore-s3).each do |binary|
       describe file("/var/vcap/bosh/bin/#{binary}") do
