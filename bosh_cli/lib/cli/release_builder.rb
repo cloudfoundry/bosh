@@ -234,7 +234,7 @@ module Bosh::Cli
         latest_final_version.increment_release
       else
         # Increment or Reset the post-release segment
-        dev_versions =  Bosh::Common::Version::ReleaseVersion.parse_list(@dev_index.versions)
+        dev_versions = Bosh::Common::Version::ReleaseVersion.parse_list(@dev_index.versions)
         latest_dev_version = dev_versions.latest_with_pre_release(latest_final_version)
 
         if latest_dev_version

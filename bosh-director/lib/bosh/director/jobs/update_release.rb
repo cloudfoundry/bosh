@@ -218,28 +218,18 @@ module Bosh::Director
         existing_packages = []
 
         @manifest["packages"].each do |package_meta|
-          filter = {:sha1 => package_meta["sha1"]}
-          if package_meta["fingerprint"]
-            filter[:fingerprint] = package_meta["fingerprint"]
-            filter = filter.sql_or
-          end
-
           # Checking whether we might have the same bits somewhere
-          packages = Models::Package.where(filter).all
+          packages = Models::Package.where(fingerprint: package_meta["fingerprint"]).all
 
           if packages.empty?
             new_packages << package_meta
             next
           end
 
-          # We can reuse an existing package as long as it
-          # belongs to the same release and has the same name and version.
           existing_package = packages.find do |package|
             package.release_id == @release_model.id &&
             package.name == package_meta["name"] &&
             package.version == package_meta["version"]
-            # NOT checking dependencies here b/c dependency change would
-            # bump the package version anyway.
           end
 
           if existing_package
@@ -284,25 +274,10 @@ module Bosh::Director
       def use_existing_packages(packages)
         return if packages.empty?
 
-        n_packages = packages.size
-        event_log.begin_stage("Processing #{n_packages} existing " +
-                              "package#{n_packages > 1 ? "s" : ""}", 1)
-
-        event_log.track("Verifying checksums") do
-          packages.each do |package, package_meta|
+        single_step_stage("Processing #{packages.size} existing package#{"s" if packages.size > 1}") do
+          packages.each do |package, _|
             package_desc = "#{package.name}/#{package.version}"
-            logger.info("Package `#{package_desc}' already exists, " +
-                        "verifying checksum")
-
-            expected = package.sha1
-            received = package_meta["sha1"]
-
-            if expected != received
-              raise ReleaseExistingPackageHashMismatch,
-                    "`#{package_desc}' checksum mismatch, " +
-                      "expected #{expected} but received #{received}"
-            end
-            logger.info("Package `#{package_desc}' verified")
+            logger.info("Using existing package `#{package_desc}'")
             register_package(package)
           end
         end
@@ -359,8 +334,7 @@ module Bosh::Director
 
       # Finds job template definitions in release manifest and sorts them into
       # two buckets: new and existing job templates, then creates new job
-      # template records in the database and points release version to existing
-      # ones.
+      # template records in the database and points release version to existing ones.
       # @return [void]
       def process_jobs
         logger.info("Checking for new jobs in release")
@@ -369,14 +343,8 @@ module Bosh::Director
         existing_jobs = []
 
         @manifest["jobs"].each do |job_meta|
-          filter = {:sha1 => job_meta["sha1"]}
-          if job_meta["fingerprint"]
-            filter[:fingerprint] = job_meta["fingerprint"]
-            filter = filter.sql_or
-          end
-
           # Checking whether we might have the same bits somewhere
-          jobs = Models::Template.where(filter).all
+          jobs = Models::Template.where(fingerprint: job_meta["fingerprint"]).all
 
           template = jobs.find do |job|
             job.release_id == @release_model.id &&
@@ -506,25 +474,10 @@ module Bosh::Director
       def use_existing_jobs(jobs)
         return if jobs.empty?
 
-        n_jobs = jobs.size
-        event_log.begin_stage("Processing #{n_jobs} existing job#{n_jobs > 1 ? "s" : ""}", 1)
-
-        event_log.track("Verifying checksums") do
-          jobs.each do |template, job_meta|
+        single_step_stage("Processing #{jobs.size} existing job#{"s" if jobs.size > 1}") do
+          jobs.each do |template, _|
             job_desc = "#{template.name}/#{template.version}"
-
-            logger.info("Job `#{job_desc}' already exists, verifying checksum")
-
-            expected = template.sha1
-            received = job_meta["sha1"]
-
-            if expected != received
-              raise ReleaseExistingJobHashMismatch,
-                    "`#{job_desc}' checksum mismatch, " +
-                    "expected #{expected} but received #{received}"
-            end
-
-            logger.info("Job `#{job_desc}' verified")
+            logger.info("Using existing job `#{job_desc}'")
             register_template(template)
           end
         end

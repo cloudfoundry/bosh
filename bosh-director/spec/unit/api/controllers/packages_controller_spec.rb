@@ -6,54 +6,168 @@ module Bosh::Director
     describe Controllers::PackagesController do
       include Rack::Test::Methods
 
-      let!(:temp_dir) { Dir.mktmpdir}
+      subject(:app) { described_class } # "app" is a Rack::Test hook
 
-      before do
-        blobstore_dir = File.join(temp_dir, 'blobstore')
-        FileUtils.mkdir_p(blobstore_dir)
+      before { Api::ResourceManager.stub(:new) }
 
-        test_config = Psych.load(spec_asset('test-director-config.yml'))
-        test_config['dir'] = temp_dir
-        test_config['blobstore'] = {
-            'provider' => 'local',
-            'options' => {'blobstore_path' => blobstore_dir}
-        }
-        test_config['snapshots']['enabled'] = true
-        Config.configure(test_config)
-        @director_app = App.new(Config.load_hash(test_config))
-      end
+      describe 'POST', '/packages/matches' do
+        def perform
+          post '/packages/matches', YAML.dump(params), { 'CONTENT_TYPE' => 'text/yaml' }
+        end
 
-      after do
-        FileUtils.rm_rf(temp_dir)
-      end
+        let(:params) { {'packages' => []} }
 
-      def app
-        @rack_app ||= Controller.new
-      end
+        context 'authenticated access' do
+          before { authorize 'admin', 'admin' }
 
-      def login_as_admin
-        basic_authorize 'admin', 'admin'
-      end
+          context 'when manifest is a hash and packages is an array' do
+            context 'when manifest contains fingerprints' do
+              before do
+                params.merge!('packages' => [
+                  { 'fingerprint' => 'fake-pkg1-fingerprint' },
+                  { 'fingerprint' => 'fake-pkg2-fingerprint' },
+                  { 'fingerprint' => 'fake-pkg3-fingerprint' },
+                ])
+              end
 
-      def login_as(username, password)
-        basic_authorize username, password
-      end
+              context 'when there are packages with same fingerprint in the database' do
+                before do
+                  release = Models::Release.make(name: 'fake-release-name')
 
-      it 'requires auth' do
-        get '/'
-        last_response.status.should == 401
-      end
+                  Models::Package.make(
+                    release: release,
+                    name: 'fake-pkg1',
+                    version: 'fake-pkg1-version',
+                    version: 'fake-pkg1-sha',
+                    fingerprint: 'fake-pkg1-fingerprint',
+                  )
 
-      it 'sets the date header' do
-        get '/'
-        last_response.headers['Date'].should_not be_nil
-      end
+                  # No match for pkg2 in db
 
-      it 'allows Basic HTTP Auth with admin/admin credentials for ' +
-             "test purposes (even though user doesn't exist)" do
-        basic_authorize 'admin', 'admin'
-        get '/'
-        last_response.status.should == 404
+                  Models::Package.make(
+                    release: release,
+                    name: 'fake-pkg3',
+                    version: 'fake-pkg3-version',
+                    version: 'fake-pkg3-sha',
+                    fingerprint: 'fake-pkg3-fingerprint',
+                  )
+                end
+
+                it 'returns list of matched fingerprints' do
+                  perform
+                  expect(last_response.status).to eq(200)
+                  expect(JSON.load(last_response.body)).to eq(%w(fake-pkg1-fingerprint fake-pkg3-fingerprint))
+                end
+              end
+
+              context 'when there are no packages with same fingerprint in the database' do
+                before do
+                  release = Models::Release.make(name: 'fake-release-name')
+
+                  Models::Package.make(
+                    release: release,
+                    name: 'fake-pkg5',
+                    version: 'fake-pkg5-version',
+                    version: 'fake-pkg5-sha',
+                    fingerprint: 'fake-pkg5-fingerprint',
+                  )
+                end
+
+                it 'returns empty array' do
+                  perform
+                  expect(last_response.status).to eq(200)
+                  expect(JSON.parse(last_response.body)).to eq([])
+                end
+              end
+            end
+
+            context 'when manifest contains nil fingerprints' do
+              before do
+                params.merge!('packages' => [
+                  { 'fingerprint' => nil },
+                  { 'fingerprint' => 'fake-pkg2-fingerprint' },
+                  { 'fingerprint' => 'fake-pkg3-fingerprint' },
+                ])
+              end
+
+              before do
+                release = Models::Release.make(name: 'fake-release-name')
+
+                Models::Package.make(
+                  release: release,
+                  name: 'fake-pkg1',
+                  version: 'fake-pkg1-version',
+                  version: 'fake-pkg1-sha',
+                  fingerprint: 'fake-pkg1-fingerprint',
+                )
+
+                Models::Package.make(
+                  release: release,
+                  name: 'fake-pkg2',
+                  version: 'fake-pkg2-version',
+                  version: 'fake-pkg2-sha',
+                  fingerprint: nil, # set to nil explicitly
+                )
+
+                Models::Package.make(
+                  release: release,
+                  name: 'fake-pkg3',
+                  version: 'fake-pkg3-version',
+                  version: 'fake-pkg3-sha',
+                  fingerprint: 'fake-pkg3-fingerprint',
+                )
+              end
+
+              it 'returns list of fingerprints ignoring nil fingerprint' do
+                perform
+                expect(last_response.status).to eq(200)
+                expect(JSON.load(last_response.body)).to eq(%w(fake-pkg3-fingerprint))
+              end
+            end
+          end
+
+          context 'when manifest is a hash but packages is not an array' do
+            before { params.merge!('packages' => nil) }
+
+            it 'returns BadManifest error' do
+              perform
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)).to eq(
+                'code' => 440001,
+                'description' => 'Manifest doesn\'t have a usable packages section',
+              )
+            end
+          end
+
+          context 'when manifest is not a hash' do
+            let(:params) { nil }
+
+            it 'returns BadManifest error' do
+              perform
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)).to eq(
+                'code' => 440001,
+                'description' => 'Manifest doesn\'t have a usable packages section',
+              )
+            end
+          end
+        end
+
+        context 'accessing with invalid credentials' do
+          before { authorize 'invalid-user', 'invalid-password' }
+
+          it 'returns 401' do
+            perform
+            expect(last_response.status).to eq(401)
+          end
+        end
+
+        context 'unauthenticated access' do
+          it 'returns 401' do
+            perform
+            expect(last_response.status).to eq(401)
+          end
+        end
       end
     end
   end

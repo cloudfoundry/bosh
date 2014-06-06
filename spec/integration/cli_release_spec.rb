@@ -82,9 +82,9 @@ describe 'cli releases', type: :integration do
             'provider' => 'local',
             'options' => { 'blobstore_path' => current_sandbox.blobstore_storage_dir },
           },
-
         )
       end
+
       File.open('config/private.yml', 'w') do |final|
         final.puts YAML.dump(
           'blobstore_secret' => 'something',
@@ -190,13 +190,14 @@ describe 'cli releases', type: :integration do
     end
 
     out = bosh_runner.run("upload release #{release_2}")
+    expect(out).to match /Checking if can repack release for faster upload/
     expect(out).to match /foo\s*\(.*\)\s*SKIP/
-    # No job skipping for the moment (because of rebase),
-    # will be added back once job matching is implemented
     expect(out).to match /foobar\s*\(.*\)\s*UPLOAD/
     expect(out).to match /bar\s*\(.*\)\s*UPLOAD/
-    expect(out).to match regexp('Checking if can repack release for faster upload')
-    expect(out).to match regexp('Release repacked')
+    expect(out).to match /Release repacked/
+    expect(out).to match /Started creating new packages > bar.*Done/
+    expect(out).to match /Started processing 2 existing packages > Processing 2 existing packages.*Done/
+    expect(out).to match /Started processing 2 existing jobs > Processing 2 existing jobs.*Done/
     expect(out).to match /Release uploaded/
 
     out = bosh_runner.run('releases')
