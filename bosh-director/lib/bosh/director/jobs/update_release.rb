@@ -136,8 +136,13 @@ module Bosh::Director
 
         @release_version_model = Models::ReleaseVersion.new(version_attrs)
         unless @release_version_model.valid?
-          raise ReleaseAlreadyExists,
-                "Release `#{@name}/#{@version}' already exists"
+          if @release_version_model.errors[:version] == [:format]
+            raise ReleaseVersionInvalid,
+              "Release version invalid `#{@name}/#{@version}'"
+          else
+            raise ReleaseAlreadyExists,
+              "Release `#{@name}/#{@version}' already exists"
+          end
         end
 
         @release_version_model.save

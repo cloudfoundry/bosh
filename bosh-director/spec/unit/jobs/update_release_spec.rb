@@ -21,20 +21,27 @@ module Bosh::Director
     end
 
     describe 'updating a release' do
+      let(:job) { Jobs::UpdateRelease.new(release_dir, job_options) }
+      let(:job_options) { {} }
+      let(:release_dir) { Test::ReleaseHelper.new.create_release_tarball(manifest) }
       let(:manifest) do
         {
           'name' => 'appcloud',
-          'version' => '42.6-dev',
+          'version' => release_version,
           'commit_hash' => '12345678',
           'uncommitted_changes' => 'true',
-          'jobs' => [],
-          'packages' => []
+          'jobs' => manifest_jobs,
+          'packages' => manifest_packages
         }
       end
+      let(:release_version) { '42+dev.6' }
+      let(:release) { Models::Release.make(name: 'appcloud') }
+      let(:manifest_packages) { [] }
+      let(:manifest_jobs) { [] }
+      before { allow(job).to receive(:with_release_lock).and_yield }
 
       context 'processing update release' do
         it 'with a local release' do
-          job = Jobs::UpdateRelease.new(@release_dir)
           job.should_not_receive(:download_remote_release)
           job.should_receive(:extract_release)
           job.should_receive(:verify_manifest)
@@ -43,21 +50,22 @@ module Bosh::Director
           job.perform
         end
 
-        it 'with a remote release' do
-          job = Jobs::UpdateRelease.new(@release_dir, {'remote' => true, 'location' => 'release_location'})
-          job.should_receive(:download_remote_release)
-          job.should_receive(:extract_release)
-          job.should_receive(:verify_manifest)
-          job.should_receive(:process_release)
+        context 'when release is remote' do
+          let(:job_options) { {'remote' => true, 'location' => 'release_location'} }
 
-          job.perform
+          it 'with a remote release' do
+            job.should_receive(:download_remote_release)
+            job.should_receive(:extract_release)
+            job.should_receive(:verify_manifest)
+            job.should_receive(:process_release)
+
+            job.perform
+          end
         end
       end
 
       context 'commit_hash and uncommitted changes flag' do
         it 'sets commit_hash and uncommitted changes flag on release_version' do
-          release_dir = Test::ReleaseHelper.new.create_release_tarball(manifest)
-          job = Jobs::UpdateRelease.new(release_dir)
           job.extract_release
           job.verify_manifest
           job.process_release
@@ -69,20 +77,27 @@ module Bosh::Director
           rv.uncommitted_changes.should be(true)
         end
 
-        it 'sets default commit_hash and uncommitted_changes flag if missing' do
-          manifest.delete('commit_hash')
-          manifest.delete('uncommitted_changes')
-          release_dir = Test::ReleaseHelper.new.create_release_tarball(manifest)
-          job = Jobs::UpdateRelease.new(release_dir)
-          job.extract_release
-          job.verify_manifest
-          job.process_release
+        context 'when commit_hash and uncommitted_changes flag are missing' do
+          let(:manifest) do
+            {
+              'name' => 'appcloud',
+              'version' => '42.6-dev',
+              'jobs' => [],
+              'packages' => []
+            }
+          end
 
-          rv = Models::ReleaseVersion.filter(version: '42+dev.6').first
+          it 'sets default commit_hash and uncommitted changes' do
+            job.extract_release
+            job.verify_manifest
+            job.process_release
 
-          rv.should_not be_nil
-          rv.commit_hash.should == 'unknown'
-          rv.uncommitted_changes.should be(false)
+            rv = Models::ReleaseVersion.filter(version: '42+dev.6').first
+
+            rv.should_not be_nil
+            rv.commit_hash.should == 'unknown'
+            rv.uncommitted_changes.should be(false)
+          end
         end
       end
 
@@ -91,12 +106,187 @@ module Bosh::Director
           result = Bosh::Exec::Result.new('cmd', 'output', 1)
           Bosh::Exec.should_receive(:sh).and_return(result)
 
-          release_dir = Test::ReleaseHelper.new.create_release_tarball(manifest)
-          job = Jobs::UpdateRelease.new(release_dir)
-
           expect {
             job.extract_release
           }.to raise_exception(Bosh::Director::ReleaseInvalidArchive)
+        end
+      end
+
+      describe 'processing release' do
+        context 'release already exists' do
+          before do
+            Models::ReleaseVersion.make(release: release, version: '42+dev.6')
+          end
+
+          it 'raises an error ReleaseAlreadyExists' do
+            expect {
+              job.perform
+            }.to raise_error(
+              ReleaseAlreadyExists,
+              %Q{Release `appcloud/42+dev.6' already exists}
+            )
+          end
+
+          context 'when the rebase is passed' do
+            let(:job_options) { { 'rebase' => true } }
+            context 'when there are package changes' do
+              let(:manifest_packages) do
+                [
+                  {
+                    'sha1' => 'fake-sha-1',
+                    'fingerprint' => 'fake-fingerprint-1',
+                    'name' => 'fake-name-1',
+                    'version' => 'fake-version-1'
+                  }
+                ]
+              end
+
+              it 'sets a next release version' do
+                expect(job).to receive(:create_package)
+                expect(job).to receive(:register_package)
+                job.perform
+
+                rv = Models::ReleaseVersion.filter(version: '42+dev.7').first
+                expect(rv).to_not be_nil
+              end
+            end
+
+            context 'when there are no job and package changes' do
+              it 'raises an error' do
+                expect {
+                  job.perform
+                }.to raise_error(
+                  Bosh::Director::DirectorError,
+                  /Rebase is attempted without any job or package changes/
+                )
+              end
+            end
+          end
+        end
+
+        context 'when the release version does not match database valid format' do
+          before do
+            # We only want to verify that the proper error is raised
+            # If version can not be validated because it has wrong model format
+            # Currently SemiSemantic Version validates version that matches the model format
+            stub_const("Bosh::Director::Models::VALID_ID", /^[a-z0-9]+$/i)
+          end
+
+          let(:release_version) { 'bad-version' }
+
+          it 'raises an error ReleaseVersionInvalid' do
+            expect {
+              job.perform
+            }.to raise_error(
+              ReleaseVersionInvalid,
+              %Q{Release version invalid `appcloud/#{release_version}'}
+            )
+          end
+        end
+
+        it 'saves release version' do
+          job.perform
+
+          rv = Models::ReleaseVersion.filter(version: '42+dev.6').first
+          expect(rv).to_not be_nil
+        end
+
+        it 'resolves package dependencies' do
+          expect(job).to receive(:resolve_package_dependencies)
+          job.perform
+        end
+
+        context 'when there are packages in manifest' do
+          let(:manifest_packages) do
+            [
+              {
+                'sha1' => 'fake-sha-1',
+                'fingerprint' => 'fake-fingerprint-1',
+                'name' => 'fake-name-1',
+                'version' => 'fake-version-1'
+              },
+              {
+                'sha1' => 'fake-sha-2',
+                'fingerprint' => 'fake-fingerprint-2',
+                'name' => 'fake-name-2',
+                'version' => 'fake-version-2'
+              }
+            ]
+          end
+
+          before do
+            Models::Package.make(release: release, name: 'fake-name-1', version: 'fake-version-1', fingerprint: 'fake-fingerprint-1')
+          end
+
+          it "creates packages that don't already exist" do
+            expect(job).to receive(:create_packages).with([
+              {
+                'sha1' => 'fake-sha-2',
+                'fingerprint' => 'fake-fingerprint-2',
+                'name' => 'fake-name-2',
+                'version' => 'fake-version-2',
+                'dependencies' => []
+              }
+            ])
+            job.perform
+          end
+        end
+
+        context 'when there are jobs in manifest' do
+          let(:manifest_jobs) do
+            [
+              {
+                'sha1' => 'fake-sha-1',
+                'fingerprint' => 'fake-fingerprint-1',
+                'name' => 'fake-name-1',
+                'version' => 'fake-version-1',
+                'templates' => {}
+              },
+              {
+                'sha1' => 'fake-sha-2',
+                'fingerprint' => 'fake-fingerprint-2',
+                'name' => 'fake-name-2',
+                'version' => 'fake-version-2',
+                'templates' => {}
+              }
+            ]
+          end
+
+          before do
+            Models::Template.make(
+              release: release,
+              name: 'fake-name-1',
+              version: 'fake-version-1',
+              fingerprint: 'fake-fingerprint-1'
+            )
+          end
+
+          it "creates jobs that don't already exist" do
+            expect(job).to receive(:create_jobs).with([
+              {
+                'sha1' => 'fake-sha-2',
+                'fingerprint' => 'fake-fingerprint-2',
+                'name' => 'fake-name-2',
+                'version' => 'fake-version-2',
+                'templates' => {}
+              }
+            ])
+            job.perform
+          end
+        end
+
+        describe 'event_log' do
+          it 'prints that release was created' do
+            allow(Config.event_log).to receive(:begin_stage).and_call_original
+            expect(Config.event_log).to receive(:begin_stage).with('Release has been created', 1)
+            job.perform
+          end
+
+          it 'prints name and version' do
+            allow(Config.event_log).to receive(:track).and_call_original
+            expect(Config.event_log).to receive(:track).with('appcloud/42+dev.6')
+            job.perform
+          end
         end
       end
     end
