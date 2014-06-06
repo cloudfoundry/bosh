@@ -25,8 +25,6 @@ module Bosh::Director
         @release_version_model = nil
 
         @rebase = !!options["rebase"]
-        @package_rebase_mapping = {}
-        @job_rebase_mapping = {}
 
         @manifest = nil
         @name = nil
@@ -154,22 +152,6 @@ module Bosh::Director
         @packages = {}
         process_packages
         process_jobs
-
-        unless @package_rebase_mapping.empty?
-          event_log.begin_stage(
-            "Rebased packages", @package_rebase_mapping.size)
-          @package_rebase_mapping.each_pair do |name, transition|
-            event_log.track("#{name}: #{transition}") {}
-          end
-        end
-
-        unless @job_rebase_mapping.empty?
-          event_log.begin_stage(
-            "Rebased jobs", @job_rebase_mapping.size)
-          @job_rebase_mapping.each_pair do |name, transition|
-            event_log.track("#{name}: #{transition}") {}
-          end
-        end
 
         event_log.begin_stage("Release has been created", 1)
         event_log.track("#{@name}/#{@version}") {}
