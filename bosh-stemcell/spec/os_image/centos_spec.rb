@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'CentOS OS image', os_image: true do
+describe 'CentOS OS image' do
   it_behaves_like 'an OS image'
 
   describe package('apt') do

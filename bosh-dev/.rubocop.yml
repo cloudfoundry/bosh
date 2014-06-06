@@ -7,8 +7,5 @@ MethodLength:
 LineLength:
   Max: 240
 
-AccessModifierIndentation:
-  Enabled: false
-
-EmptyLinesAroundAccessModifier:
+AccessControl:
   Enabled: false

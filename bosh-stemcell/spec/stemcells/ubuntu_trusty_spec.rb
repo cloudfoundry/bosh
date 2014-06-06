@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Ubuntu 14.04 stemcell', stemcell_image: true do
+describe 'Ubuntu 14.04 stemcell' do
   context 'installed by image_install_grub', exclude_on_warden: true do
     describe file('/boot/grub/grub.conf') do
       it { should be_file }
@@ -15,7 +15,7 @@ describe 'Ubuntu 14.04 stemcell', stemcell_image: true do
     end
 
     describe file('/boot/grub/menu.lst') do
-      before { skip 'until aws/openstack stop clobbering the symlink with "update-grub"' }
+      before { pending 'until aws/openstack stop clobbering the symlink with "update-grub"' }
       it { should be_linked_to('./grub.conf') }
     end
   end

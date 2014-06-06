@@ -20,7 +20,9 @@ module Bosh::Director
       redis.stub(:watch).with('foo')
       redis.stub(:multi).and_yield
 
-      redis.stub(:get).with('foo') { stored_value }
+      redis.stub(:get).with('foo') do
+        stored_value
+      end
 
       redis.stub(:set).with('foo', anything()) do |_, value|
         stored_value = value
@@ -102,7 +104,9 @@ module Bosh::Director
       redis.stub(:watch).with('foo')
       redis.stub(:multi).and_yield
 
-      redis.stub(:get).with('foo') { stored_value }
+      redis.stub(:get).with('foo') do
+        stored_value
+      end
 
       redis.should_receive(:del).with('foo') do
         stored_value = nil

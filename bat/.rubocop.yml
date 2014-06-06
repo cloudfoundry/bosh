@@ -1,10 +1,10 @@
 inherit_from: ../.rubocop.yml
 
 AllCops:
-  Exclude:
-  - spec/system/assets/**/*
+  Excludes:
+  - spec/system/assets/**
 
-SpecialGlobalVars:
+AvoidPerlisms:
   Enabled: false
 
 CaseIndentation:

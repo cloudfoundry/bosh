@@ -47,7 +47,7 @@ module Bosh::Core
 
         context 'because the working directory has gone missing' do
           it 'fails gracefully with a slightly helpful error message' do
-            allow(Dir).to receive(:pwd).and_raise(Errno::ENOENT, 'No such file or directory - getcwd')
+            Dir.stub(:pwd).and_raise(Errno::ENOENT, 'No such file or directory - getcwd')
             expect {
               subject.run('false')
             }.to raise_error /from a deleted directory/

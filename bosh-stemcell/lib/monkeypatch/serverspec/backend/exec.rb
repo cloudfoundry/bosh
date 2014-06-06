@@ -32,8 +32,7 @@ module SpecInfra::Backend
     def run_command(cmd, opts={})
       cmd = build_command(cmd)
       cmd = add_pre_command(cmd)
-      # In ruby 1.9, it is possible to use Open3.capture3, but not in 1.8
-      # stdout, stderr, status = Open3.capture3(cmd)
+      cmd = build_command(cmd)
 
       if use_chroot?
         chroot_stdout = `#{chroot_cmd(cmd)} 2>&1`
@@ -44,10 +43,12 @@ module SpecInfra::Backend
         stdout = run_with_no_ruby_environment { `#{cmd} 2>&1` }
         exit_status = $?.exitstatus
       end
+      # In ruby 1.9, it is possible to use Open3.capture3, but not in 1.8
+      #stdout, stderr, status = Open3.capture3(cmd)
 
       if @example
         @example.metadata[:command] = cmd
-        @example.metadata[:stdout]  = stdout
+        @example.metadata[:stdout] = stdout
       end
 
       CommandResult.new :stdout => stdout, :exit_status => exit_status

@@ -112,14 +112,14 @@ module VSphereCloud
 
       context 'the vm is found' do
         it 'returns true' do
-          expect(vsphere_cloud).to receive(:get_vm_by_cid).with(vm_id)
+          vsphere_cloud.should_receive(:get_vm_by_cid).with(vm_id)
           expect(vsphere_cloud.has_vm?(vm_id)).to be(true)
         end
       end
 
       context 'the vm is not found' do
         it 'returns false' do
-          expect(vsphere_cloud).to receive(:get_vm_by_cid).with(vm_id).and_raise(Bosh::Clouds::VMNotFound)
+          vsphere_cloud.should_receive(:get_vm_by_cid).with(vm_id).and_raise(Bosh::Clouds::VMNotFound)
           expect(vsphere_cloud.has_vm?(vm_id)).to be(false)
         end
       end
@@ -169,7 +169,7 @@ module VSphereCloud
         end
 
         it 'searches for stemcell on all cluster datastores' do
-          expect(client).to receive(:find_by_inventory_path).with(
+          client.should_receive(:find_by_inventory_path).with(
             [
               cluster.datacenter.name,
               'vm',

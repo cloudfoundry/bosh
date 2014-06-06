@@ -48,8 +48,7 @@ describe Bhm::Plugins::Email do
   end
 
   it "doesn't start if event loop isn't running" do
-    EM.stop if EM.reactor_running?
-    @plugin.run.should eq(false)
+    @plugin.run.should be(false)
   end
 
   it "has a list of recipients and smtp options" do
