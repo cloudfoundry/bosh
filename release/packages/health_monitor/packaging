@@ -3,6 +3,16 @@ set -e
 cd bosh/bosh-monitor
 
 mkdir -p ${BOSH_INSTALL_TARGET}/{bin,gem_home}
-gem_cmd="/var/vcap/packages/ruby/bin/gem install --local --no-ri --no-rdoc -w -n ${BOSH_INSTALL_TARGET}/bin -i ${BOSH_INSTALL_TARGET}/gem_home"
 
-$gem_cmd bosh-monitor
+cat >> Gemfile <<EOF
+gem 'bosh-monitor'
+EOF
+
+/var/vcap/packages/ruby/bin/bundle install \
+  --local \
+  --no-prune \
+  --binstubs ${BOSH_INSTALL_TARGET}/bin \
+  --path ${BOSH_INSTALL_TARGET}/gem_home
+
+cp Gemfile ${BOSH_INSTALL_TARGET}
+cp Gemfile.lock ${BOSH_INSTALL_TARGET}

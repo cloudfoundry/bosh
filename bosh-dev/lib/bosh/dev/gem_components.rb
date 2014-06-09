@@ -57,6 +57,9 @@ module Bosh::Dev
       %w(bosh-director bosh-registry).include?(component_name)
     end
 
+    def uses_bundler?(component_name)
+      %w(bosh-director bosh-monitor).include?(component_name)
+    end
 
     def root
       GemComponent::ROOT
@@ -79,19 +82,20 @@ module Bosh::Dev
 
     def finalize_release_directory(component)
       dirname = "#{root}/release/src/bosh/#{component.name}"
+      if uses_bundler?(component.name)
+        dirname = File.join(dirname, 'vendor/cache')
+      end
 
       FileUtils.rm_rf dirname
       FileUtils.mkdir_p dirname
 
-      Dir.chdir dirname do
-        component.dependencies.each do |dependency|
-          Rake::FileUtilsExt.sh "cp #{build_dir}/#{dependency.name}-*.gem ."
-        end
+      component.dependencies.each do |dependency|
+        Rake::FileUtilsExt.sh "cp #{build_dir}/#{dependency.name}-*.gem #{dirname}"
+      end
 
-        if has_db?(component.name)
-          Rake::FileUtilsExt.sh "cp #{build_dir}/pg*.gem ."
-          Rake::FileUtilsExt.sh "cp #{build_dir}/mysql*.gem ."
-        end
+      if has_db?(component.name)
+        Rake::FileUtilsExt.sh "cp #{build_dir}/pg*.gem #{dirname}"
+        Rake::FileUtilsExt.sh "cp #{build_dir}/mysql*.gem #{dirname}"
       end
     end
 

@@ -20,7 +20,8 @@ PATH=/var/vcap/packages/ruby/bin:/var/vcap/packages/genisoimage:$PATH
 PATH=$PATH:/var/vcap/jobs/director/bin
 export PATH LD_LIBRARY_PATH
 
-export GEM_HOME=/var/vcap/packages/director/gem_home
+export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
+export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/1.9.1
 
 export TMPDIR=/var/vcap/data/tmp/director
 

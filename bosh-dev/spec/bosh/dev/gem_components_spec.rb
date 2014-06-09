@@ -100,23 +100,36 @@ module Bosh::Dev
       end
 
       context 'when components have dependencies' do
-        let(:fake_dependency) { double(:fake_dependency, name: 'fake-dep-name') }
+        context 'when the components use Bundler' do
+          it 'copies vendored dependencies to vendor/cache of the component root directory' do
+            expected_components.each do |c|
+              allow(c).to receive(:dependencies).and_return([double(:fake_dependency, name: "fake-dep-name-for-#{c.name}")])
+            end
 
-        it 'copies vendored dependencies' do
-          allow(expected_components[0]).to receive(:dependencies).and_return([fake_dependency])
+            expect(Rake::FileUtilsExt).to receive(:sh).with(%r{cp /tmp/all_the_gems/\d+/fake-dep-name-for-bosh-director-\*\.gem .*/release/src/bosh/bosh-director/vendor/cache}).once
+            expect(Rake::FileUtilsExt).to receive(:sh).with(%r{cp /tmp/all_the_gems/\d+/fake-dep-name-for-bosh-monitor-\*\.gem .*/release/src/bosh/bosh-monitor/vendor/cache}).once
 
-          expect(Rake::FileUtilsExt).to receive(:sh).with(%r{cp /tmp/all_the_gems/\d+/fake-dep-name-\*\.gem \.})
+            gem_components.build_release_gems
+          end
+        end
 
-          gem_components.build_release_gems
+        context 'when the components do not use Bundler' do
+          it 'copies vendored dependencies to the root directory of the component' do
+            fake_dependency = double(:fake_dependency, name: 'fake-dep-name')
+            allow(expected_components[0]).to receive(:dependencies).and_return([fake_dependency])
+
+            expect(Rake::FileUtilsExt).to receive(:sh).with(%r{cp /tmp/all_the_gems/\d+/fake-dep-name-\*\.gem .*/release/src/bosh/#{expected_components[0].name}$})
+
+            gem_components.build_release_gems
+          end
         end
       end
 
       context 'when components have database dependency' do
-
         it 'copies pg and mysql gems' do
           # Only bosh-director and bosh-registry will copy db gems
-          expect(Rake::FileUtilsExt).to receive(:sh).with(%r{cp /tmp/all_the_gems/\d+/pg\*\.gem \.}).twice
-          expect(Rake::FileUtilsExt).to receive(:sh).with(%r{cp /tmp/all_the_gems/\d+/mysql\*\.gem \.}).twice
+          expect(Rake::FileUtilsExt).to receive(:sh).with(%r{cp /tmp/all_the_gems/\d+/pg\*\.gem .*/release/src/bosh/.*}).twice
+          expect(Rake::FileUtilsExt).to receive(:sh).with(%r{cp /tmp/all_the_gems/\d+/mysql\*\.gem .*/release/src/bosh/.*}).twice
 
           gem_components.build_release_gems
         end
