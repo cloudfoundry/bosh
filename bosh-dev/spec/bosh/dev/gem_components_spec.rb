@@ -75,9 +75,6 @@ module Bosh::Dev
       end
     end
 
-    it { should have_db('bosh-director') }
-    it { should have_db('bosh-registry') }
-
     describe '#build_release_gems' do
       it 'updates components versions' do
         expected_components.each do |component|
@@ -115,16 +112,9 @@ module Bosh::Dev
       end
 
       context 'when components have database dependency' do
-        let(:fake_dependency) { double(:fake_dependency, name: 'fake-dep-name') }
 
         it 'copies pg and mysql gems' do
           # Only bosh-director and bosh-registry will copy db gems
-          allow(expected_components[0]).to receive(:name).and_return('bosh-director')
-          allow(expected_components[0]).to receive(:dependencies).and_return([fake_dependency])
-
-          allow(expected_components[1]).to receive(:name).and_return('bosh-registry')
-          allow(expected_components[1]).to receive(:dependencies).and_return([fake_dependency])
-
           expect(Rake::FileUtilsExt).to receive(:sh).with(%r{cp /tmp/all_the_gems/\d+/pg\*\.gem \.}).twice
           expect(Rake::FileUtilsExt).to receive(:sh).with(%r{cp /tmp/all_the_gems/\d+/mysql\*\.gem \.}).twice
 
