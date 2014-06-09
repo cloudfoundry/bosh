@@ -93,7 +93,12 @@ func (h HTTPSHandler) agentHandler(handlerFunc boshhandler.HandlerFunc) (agentHa
 			return
 		}
 
-		respBytes, _, err := boshhandler.PerformHandlerWithJSON(rawJSONPayload, handlerFunc, h.logger)
+		respBytes, _, err := boshhandler.PerformHandlerWithJSON(
+			rawJSONPayload,
+			handlerFunc,
+			boshhandler.UnlimitedResponseLength,
+			h.logger,
+		)
 		if err != nil {
 			err = bosherr.WrapError(err, "Running handler in a nice JSON sandwhich")
 			return

@@ -16,11 +16,9 @@ import (
 	boshsettings "bosh/settings"
 )
 
-const natsHandlerLogTag = "NATS Handler"
-
 const (
-	responseMaxSize       = 1024 * 1024
-	responseMaxSizeErrMsg = "Response exceeded maximum size allowed to be sent over NATS"
+	natsHandlerLogTag = "NATS Handler"
+	responseMaxLength = 1024 * 1024
 )
 
 type natsHandler struct {
@@ -84,7 +82,8 @@ func (h *natsHandler) Start(handlerFunc boshhandler.HandlerFunc) error {
 }
 
 func (h *natsHandler) RegisterAdditionalHandlerFunc(handlerFunc boshhandler.HandlerFunc) {
-	// Currently not locking since RegisterAdditionalHandlerFunc is not a primary way of adding handlerFunc
+	// Currently not locking since RegisterAdditionalHandlerFunc
+	// is not a primary way of adding handlerFunc.
 	h.handlerFuncs = append(h.handlerFuncs, handlerFunc)
 }
 
@@ -113,18 +112,15 @@ func (h natsHandler) Stop() {
 }
 
 func (h natsHandler) handleNatsMsg(natsMsg *yagnats.Message, handlerFunc boshhandler.HandlerFunc) {
-	respBytes, req, err := boshhandler.PerformHandlerWithJSON(natsMsg.Payload, handlerFunc, h.logger)
+	respBytes, req, err := boshhandler.PerformHandlerWithJSON(
+		natsMsg.Payload,
+		handlerFunc,
+		responseMaxLength,
+		h.logger,
+	)
 	if err != nil {
 		h.logger.Error(natsHandlerLogTag, "Running handler: %s", err)
 		return
-	}
-
-	if len(respBytes) > responseMaxSize {
-		respBytes, err = boshhandler.BuildErrorWithJSON(responseMaxSizeErrMsg, h.logger)
-		if err != nil {
-			h.logger.Error(natsHandlerLogTag, "Building response: %s", err)
-			return
-		}
 	}
 
 	if len(respBytes) > 0 {

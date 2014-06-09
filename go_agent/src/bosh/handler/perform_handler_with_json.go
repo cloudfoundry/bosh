@@ -7,9 +7,13 @@ import (
 	boshlog "bosh/logger"
 )
 
-const mbusHandlerLogTag = "MBus Handler"
+const (
+	mbusHandlerLogTag       = "MBus Handler"
+	responseMaxLengthErrMsg = "Response exceeded maximum allowed length"
+	UnlimitedResponseLength = -1
+)
 
-func PerformHandlerWithJSON(rawJSON []byte, handler HandlerFunc, logger boshlog.Logger) ([]byte, Request, error) {
+func PerformHandlerWithJSON(rawJSON []byte, handler HandlerFunc, maxResponseLength int, logger boshlog.Logger) ([]byte, Request, error) {
 	var request Request
 
 	err := json.Unmarshal(rawJSON, &request)
@@ -28,10 +32,9 @@ func PerformHandlerWithJSON(rawJSON []byte, handler HandlerFunc, logger boshlog.
 		return []byte{}, request, nil
 	}
 
-	respJSON, err := json.Marshal(response)
+	respJSON, err := marshalResponse(response, maxResponseLength, logger)
 	if err != nil {
-		logger.Info(mbusHandlerLogTag, "Marshal response error")
-		return respJSON, request, bosherr.WrapError(err, "Marshalling JSON response")
+		return respJSON, request, err
 	}
 
 	logger.Info(mbusHandlerLogTag, "Responding")
@@ -41,7 +44,7 @@ func PerformHandlerWithJSON(rawJSON []byte, handler HandlerFunc, logger boshlog.
 }
 
 func BuildErrorWithJSON(msg string, logger boshlog.Logger) ([]byte, error) {
-	response := NewExceptionResponse(msg)
+	response := NewExceptionResponse(bosherr.New(msg))
 
 	respJSON, err := json.Marshal(response)
 	if err != nil {
@@ -49,6 +52,36 @@ func BuildErrorWithJSON(msg string, logger boshlog.Logger) ([]byte, error) {
 	}
 
 	logger.Info(mbusHandlerLogTag, "Building error", msg)
+
+	return respJSON, nil
+}
+
+func marshalResponse(response Response, maxResponseLength int, logger boshlog.Logger) ([]byte, error) {
+	respJSON, err := json.Marshal(response)
+	if err != nil {
+		logger.Error(mbusHandlerLogTag, "Failed to marshal response: %s", err.Error())
+		return respJSON, bosherr.WrapError(err, "Marshalling JSON response")
+	}
+
+	if maxResponseLength == UnlimitedResponseLength {
+		return respJSON, nil
+	}
+
+	if len(respJSON) > maxResponseLength {
+		respJSON, err = json.Marshal(response.Shorten())
+		if err != nil {
+			logger.Error(mbusHandlerLogTag, "Failed to marshal response: %s", err.Error())
+			return respJSON, bosherr.WrapError(err, "Marshalling JSON response")
+		}
+	}
+
+	if len(respJSON) > maxResponseLength {
+		respJSON, err = BuildErrorWithJSON(responseMaxLengthErrMsg, logger)
+		if err != nil {
+			logger.Error(mbusHandlerLogTag, "Failed to build 'max length exceeded' response: %s", err.Error())
+			return respJSON, bosherr.WrapError(err, "Building error")
+		}
+	}
 
 	return respJSON, nil
 }

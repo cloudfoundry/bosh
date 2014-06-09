@@ -127,7 +127,7 @@ func init() {
 				Expect(len(messages)).To(Equal(2))
 				Expect(messages[0].Payload).To(MatchRegexp("value"))
 				Expect(messages[1].Payload).To(Equal([]byte(
-					`{"exception":{"message":"Response exceeded maximum size allowed to be sent over NATS"}}`)))
+					`{"exception":{"message":"Response exceeded maximum allowed length"}}`)))
 			})
 
 			It("can add additional handler funcs to receive requests", func() {
