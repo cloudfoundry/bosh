@@ -11,7 +11,7 @@ module Bosh::Dev
     def download_release(build_number, output_dir)
       file_name = "bosh-#{build_number}.tgz"
 
-      remote_uri = Bosh::Dev::UriProvider.pipeline_uri('release', file_name)
+      remote_uri = Bosh::Dev::UriProvider.pipeline_uri("#{build_number}/release", file_name)
       local_path = File.join(output_dir, file_name)
 
       @download_adapter.download(remote_uri, local_path)
