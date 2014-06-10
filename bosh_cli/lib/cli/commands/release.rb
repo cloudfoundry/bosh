@@ -244,7 +244,7 @@ module Bosh::Cli::Command
       end
 
       if should_convert_to_old_format?(tarball.version)
-        msg = "You are using CLI > 1.2579.0 with a director that doesn't support" +
+        msg = "You are using CLI > 1.2579.0 with a director that doesn't support " +
           'the new version format you are using. Upgrade your ' +
           'director to match the version of your CLI or downgrade your ' +
           'CLI to 1.2579.0 to avoid versioning mismatch issues.'
