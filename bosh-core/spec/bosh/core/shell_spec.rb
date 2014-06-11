@@ -17,6 +17,12 @@ module Bosh::Core
         expect(stdout.string).to include('VAR=123')
       end
 
+      it 'shells out with specified additional env variables even when SHELL env variable is not available' do
+        stub_const('ENV', 'SHELL' => nil)
+        expect(subject.run('env env', env: { 'VAR' => '123' })).to include('VAR=123')
+        expect(stdout.string).to include('VAR=123')
+      end
+
       context 'when "output_command" is specified' do
         it 'outputs the command' do
           subject.run('echo 1;echo 2;echo 3;echo 4;echo 5', output_command: true)

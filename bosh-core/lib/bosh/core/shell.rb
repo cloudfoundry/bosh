@@ -24,7 +24,7 @@ module Bosh::Core
       if options[:env]
         # Wrap in a shell because existing api to Shell#run takes a string
         # which makes it really hard to pass it to popen with custom environment.
-         popen_args = [options[:env], ENV['SHELL'], '-c', command]
+         popen_args = [options[:env], ENV['SHELL'] || 'bash', '-c', command]
       else
         popen_args = command
       end
