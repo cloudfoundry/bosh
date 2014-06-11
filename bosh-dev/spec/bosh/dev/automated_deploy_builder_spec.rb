@@ -45,7 +45,10 @@ module Bosh::Dev
 
     describe '#build' do
       it 'builds automated deploy' do
-        build_target = instance_double('Bosh::Dev::BuildTarget', infrastructure_name: 'aws')
+        build_target = instance_double('Bosh::Dev::BuildTarget', {
+          build_number: 'fake-number',
+          infrastructure_name: 'aws',
+        })
 
         deployments_repository = instance_double('Bosh::Dev::DeploymentsRepository')
         expect(Bosh::Dev::DeploymentsRepository).to receive(:new).with(ENV).and_return(deployments_repository)
@@ -63,11 +66,22 @@ module Bosh::Dev
           be_an_instance_of(::Logger),
         ).and_return(artifacts_downloader)
 
+        s3_gem_bosh_cmd = instance_double('Bosh::Dev::S3GemBoshCmd')
+        expect(Bosh::Dev::S3GemBoshCmd).to receive(:new).
+          with('fake-number', be_an_instance_of(::Logger)).
+          and_return(s3_gem_bosh_cmd)
+
+        bosh_cli_session = instance_double('Bosh::Dev::BoshCliSession')
+        expect(Bosh::Dev::BoshCliSession).to receive(:new).
+          with(s3_gem_bosh_cmd).
+          and_return(bosh_cli_session)
+
         automated_deploy = instance_double('Bosh::Dev::AutomatedDeploy')
         expect(Bosh::Dev::AutomatedDeploy).to receive(:new).with(
           build_target,
           deployment_account,
           artifacts_downloader,
+          bosh_cli_session,
         ).and_return(automated_deploy)
 
         builder = described_class.new(

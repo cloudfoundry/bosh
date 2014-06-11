@@ -4,19 +4,21 @@ require 'bosh/dev/micro_client'
 
 module Bosh::Dev
   class AutomatedDeploy
-    def initialize(build_target, deployment_account, artifacts_downloader)
+    def initialize(build_target, deployment_account, artifacts_downloader, bosh_cli_session)
       @build_target = build_target
       @deployment_account = deployment_account
       @artifacts_downloader = artifacts_downloader
+      @bosh_cli_session = bosh_cli_session
     end
 
     def deploy(bosh_target)
       @deployment_account.prepare
 
       director_client = DirectorClient.new(
-        uri: bosh_target,
-        username: @deployment_account.bosh_user,
-        password: @deployment_account.bosh_password,
+        bosh_target,
+        @deployment_account.bosh_user,
+        @deployment_account.bosh_password,
+        @bosh_cli_session,
       )
 
       stemcell_archive = download_stemcell_archive
@@ -27,14 +29,15 @@ module Bosh::Dev
 
       manifest_path = @deployment_account.manifest_path
       director_client.deploy(manifest_path)
-
       director_client.clean_up
+    ensure
+      @bosh_cli_session.close
     end
 
     def deploy_micro
       @deployment_account.prepare
 
-      micro_client = MicroClient.new
+      micro_client = MicroClient.new(@bosh_cli_session)
 
       manifest_path = @deployment_account.manifest_path
       stemcell_archive = download_stemcell_archive
@@ -45,6 +48,8 @@ module Bosh::Dev
       # micro bosh leaves receipt file for created bosh vms
       # which is needed to do further updates.
       @deployment_account.save
+    ensure
+      @bosh_cli_session.close
     end
 
     private

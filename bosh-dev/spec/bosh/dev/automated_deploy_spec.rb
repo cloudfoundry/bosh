@@ -12,34 +12,36 @@ module Bosh::Dev
           build_target,
           deployment_account,
           artifacts_downloader,
+          bosh_cli_session,
         )
       end
 
       let(:build_target) do
-        instance_double(
-          'Bosh::Dev::BuildTarget',
+        instance_double('Bosh::Dev::BuildTarget', {
           build_number: 'fake-build-number',
-        )
+        })
       end
 
       let(:bosh_target) { 'https://bosh.target.example.com:25555' }
 
       let(:deployment_account) do
-        instance_double(
-          'Bosh::Dev::Aws::DeploymentAccount',
+        instance_double('Bosh::Dev::Aws::DeploymentAccount', {
           manifest_path: '/path/to/manifest.yml',
           bosh_user: 'fake-username',
           bosh_password: 'fake-password',
-        )
+        })
       end
 
       let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
 
+      let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession') }
+
       before do
         Bosh::Dev::DirectorClient.stub(:new).with(
-          uri: bosh_target,
-          username: 'fake-username',
-          password: 'fake-password',
+          bosh_target,
+          'fake-username',
+          'fake-password',
+          bosh_cli_session,
         ).and_return(director_client)
       end
 
@@ -52,31 +54,31 @@ module Bosh::Dev
         })
       end
 
-      it 'prepare deployment account and then follows the normal deploy procedure and then cleans up old resources' do
+      it 'prepare deployment account, follows the normal deploy procedure and then cleans up old resources' do
         expect(deployment_account).to receive(:prepare).with(no_args).ordered
 
-        artifacts_downloader.
-          should_receive(:download_stemcell).
-          with(build_target, Dir.pwd).
-          ordered.
+        expect(artifacts_downloader).to receive(:download_stemcell).
+          with(build_target, Dir.pwd).ordered.
           and_return('/tmp/stemcell.tgz')
 
         stemcell_archive = instance_double('Bosh::Stemcell::Archive')
-        Bosh::Stemcell::Archive.should_receive(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
+        expect(Bosh::Stemcell::Archive).to receive(:new).
+          with('/tmp/stemcell.tgz').
+          and_return(stemcell_archive)
 
-        director_client.should_receive(:upload_stemcell).with(stemcell_archive).ordered
+        expect(director_client).to receive(:upload_stemcell).with(stemcell_archive).ordered
 
-        artifacts_downloader.
-          should_receive(:download_release).
-          with('fake-build-number', Dir.pwd).
-          ordered.
+        expect(artifacts_downloader).to receive(:download_release).
+          with('fake-build-number', Dir.pwd).ordered.
           and_return('/tmp/release.tgz')
 
-        director_client.should_receive(:upload_release).with('/tmp/release.tgz').ordered
+        expect(director_client).to receive(:upload_release).with('/tmp/release.tgz').ordered
 
-        director_client.should_receive(:deploy).with('/path/to/manifest.yml').ordered
+        expect(director_client).to receive(:deploy).with('/path/to/manifest.yml').ordered
 
-        director_client.should_receive(:clean_up).with(no_args).ordered
+        expect(director_client).to receive(:clean_up).with(no_args).ordered
+
+        expect(bosh_cli_session).to receive(:close).with(no_args).ordered
 
         deployer.deploy(bosh_target)
       end
@@ -88,44 +90,54 @@ module Bosh::Dev
           build_target,
           deployment_account,
           artifacts_downloader,
+          bosh_cli_session,
         )
       end
 
       let(:build_target) do
-        instance_double(
-          'Bosh::Dev::BuildTarget',
+        instance_double('Bosh::Dev::BuildTarget', {
           build_number: 'fake-build-number',
-        )
+        })
       end
 
       let(:deployment_account) do
-        instance_double(
-          'Bosh::Dev::Aws::DeploymentAccount',
+        instance_double('Bosh::Dev::Aws::DeploymentAccount', {
           manifest_path: '/path/to/manifest.yml',
           bosh_user: 'fake-username',
           bosh_password: 'fake-password',
-        )
+        })
       end
 
       let(:artifacts_downloader) { instance_double('Bosh::Dev::ArtifactsDownloader') }
 
-      before { allow(Bosh::Dev::MicroClient).to receive(:new).with(no_args).and_return(micro_client) }
+      let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession') }
+
+      before do
+        allow(Bosh::Dev::MicroClient).to receive(:new).
+          with(bosh_cli_session).
+          and_return(micro_client)
+      end
+
       let(:micro_client) { instance_double('Bosh::Dev::MicroClient', deploy: nil) }
 
       it 'prepare deployment account and then follows the normal micro bosh deploy procedure' do
         expect(deployment_account).to receive(:prepare).with(no_args).ordered
 
-        artifacts_downloader
-          .should_receive(:download_stemcell)
+        expect(artifacts_downloader).to receive(:download_stemcell)
           .with(build_target, Dir.pwd)
           .and_return('/tmp/stemcell.tgz')
 
         stemcell_archive = instance_double('Bosh::Stemcell::Archive')
-        Bosh::Stemcell::Archive.should_receive(:new).with('/tmp/stemcell.tgz').and_return(stemcell_archive)
+        expect(Bosh::Stemcell::Archive).to receive(:new).
+          with('/tmp/stemcell.tgz').
+          and_return(stemcell_archive)
 
-        micro_client.should_receive(:deploy).with('/path/to/manifest.yml', stemcell_archive).ordered
+        expect(micro_client).to receive(:deploy).
+          with('/path/to/manifest.yml', stemcell_archive).ordered
 
         expect(deployment_account).to receive(:save).with(no_args).ordered
+
+        expect(bosh_cli_session).to receive(:close).with(no_args)
 
         deployer.deploy_micro
       end

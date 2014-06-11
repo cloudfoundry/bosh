@@ -6,6 +6,8 @@ require 'bosh/dev/aws/deployment_account'
 require 'bosh/dev/vsphere/deployment_account'
 require 'bosh/dev/vcloud/deployment_account'
 require 'bosh/dev/automated_deploy'
+require 'bosh/dev/bosh_cli_session'
+require 'bosh/dev/build_target'
 
 module Bosh::Dev
   class AutomatedDeployBuilder
@@ -35,7 +37,17 @@ module Bosh::Dev
       download_adapter = DownloadAdapter.new(logger)
       artifacts_downloader = ArtifactsDownloader.new(download_adapter, logger)
 
-      AutomatedDeploy.new(@build_target, deployment_account, artifacts_downloader)
+      # Configure to use real gems (not bundle exec)
+      # to make sure bosh_cli/bosh_cli_plugin_micro actually work.
+      bosh_cmd = Bosh::Dev::S3GemBoshCmd.new(@build_target.build_number, logger)
+      bosh_cli_session = Bosh::Dev::BoshCliSession.new(bosh_cmd)
+
+      AutomatedDeploy.new(
+        @build_target,
+        deployment_account,
+        artifacts_downloader,
+        bosh_cli_session,
+      )
     end
 
     private
