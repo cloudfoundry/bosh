@@ -14,7 +14,7 @@ module Bosh::Dev::Aws
       logger = Logger.new(STDOUT)
 
       director_address = Bosh::Dev::Bat::DirectorAddress.resolved_from_env(env, 'BOSH_VPC_SUBDOMAIN')
-      bosh_cli_session = Bosh::Dev::BoshCliSession.new
+      bosh_cli_session = Bosh::Dev::BoshCliSession.default
       stemcell_archive = Bosh::Stemcell::Archive.new(artifacts.stemcell_path)
 
       microbosh_deployment_manifest =

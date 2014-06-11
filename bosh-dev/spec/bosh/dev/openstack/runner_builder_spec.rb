@@ -19,7 +19,7 @@ module Bosh::Dev::Openstack
 
         bosh_cli_session = instance_double('Bosh::Dev::BoshCliSession')
         class_double('Bosh::Dev::BoshCliSession').as_stubbed_const
-          .should_receive(:new)
+          .should_receive(:default)
           .with(no_args)
           .and_return(bosh_cli_session)
 

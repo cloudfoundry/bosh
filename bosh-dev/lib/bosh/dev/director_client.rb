@@ -8,7 +8,7 @@ module Bosh::Dev
       @uri = options.fetch(:uri)
       @username = options.fetch(:username)
       @password = options.fetch(:password)
-      @cli = BoshCliSession.new
+      @cli = BoshCliSession.default
       @director_handle = Bosh::Cli::Client::Director.new(uri, username, password)
     end
 

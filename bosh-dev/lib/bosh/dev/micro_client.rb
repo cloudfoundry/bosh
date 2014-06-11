@@ -3,7 +3,7 @@ require 'bosh/dev/bosh_cli_session'
 module Bosh::Dev
   class MicroClient
     def initialize
-      @cli = BoshCliSession.new
+      @cli = BoshCliSession.default
     end
 
     def deploy(manifest_path, stemcell_archive)

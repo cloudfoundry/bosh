@@ -7,7 +7,7 @@ module Bosh::Dev
   describe MicroClient do
     subject(:micro_client) { described_class.new }
 
-    before { BoshCliSession.stub(new: cli) }
+    before { BoshCliSession.stub(default: cli) }
     let(:cli) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: nil) }
 
     describe '#deploy' do
