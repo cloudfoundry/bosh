@@ -1,32 +1,9 @@
 require 'bosh/stemcell/archive'
-require 'bosh/dev/build_target'
-require 'bosh/dev/bosh_cli_session'
 require 'bosh/dev/director_client'
 require 'bosh/dev/micro_client'
-require 'bosh/dev/aws/automated_deploy_builder'
-require 'bosh/dev/vsphere/automated_deploy_builder'
 
 module Bosh::Dev
   class AutomatedDeploy
-    def self.for_rake_args(args)
-      build_target = BuildTarget.from_names(
-        args.build_number,
-        args.infrastructure_name,
-        args.operating_system_name,
-        args.operating_system_version,
-        args.agent_name,
-      )
-
-      builder = builder_for_infrastructure_name(args.infrastructure_name)
-      builder.build(build_target, args.environment_name, args.deployment_name)
-    end
-
-    def self.builder_for_infrastructure_name(name)
-      { 'aws'     => Bosh::Dev::Aws::AutomatedDeployBuilder.new,
-        'vsphere' => Bosh::Dev::VSphere::AutomatedDeployBuilder.new,
-      }[name]
-    end
-
     def initialize(build_target, deployment_account, artifacts_downloader)
       @build_target = build_target
       @deployment_account = deployment_account

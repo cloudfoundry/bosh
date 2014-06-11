@@ -23,6 +23,10 @@ module Bosh::Dev
       definition.infrastructure
     end
 
+    def infrastructure_name
+      definition.infrastructure.name
+    end
+
     def infrastructure_light?
       !!definition.infrastructure.light?
     end
