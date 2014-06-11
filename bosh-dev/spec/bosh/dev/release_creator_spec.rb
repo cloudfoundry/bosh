@@ -20,12 +20,13 @@ module Bosh::Dev
       OUTPUT
 
       it 'is inside release directory when creating final release' do
+        old_current_dir = Dir.pwd
         cli_session.stub(:run_bosh).with(/create release/) do
           @current_dir = Dir.pwd
           create_release_output
         end
         subject.create_final
-        expect(@current_dir).to eq(File.expand_path('../../../../release', __FILE__))
+        expect(@current_dir).to eq(File.join(old_current_dir, 'release'))
       end
 
       it 'creates a dev release then creates a new final release tarball' do
@@ -55,12 +56,13 @@ module Bosh::Dev
       OUTPUT
 
       it 'is inside release directory when creating final release' do
+        old_current_dir = Dir.pwd
         cli_session.stub(:run_bosh).with(/create release/) do
           @current_dir = Dir.pwd
           create_release_output
         end
         subject.create_dev
-        expect(@current_dir).to eq(File.expand_path('../../../../release', __FILE__))
+        expect(@current_dir).to eq(File.join(old_current_dir, 'release'))
       end
 
       it 'creates a dev release then creates a new final release tarball' do

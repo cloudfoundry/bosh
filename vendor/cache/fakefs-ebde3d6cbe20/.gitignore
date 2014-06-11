@@ -1,0 +1,10 @@
+*.sw?
+pkg
+Gemfile.lock
+.rbenv-version
+docs
+pkg
+.rbx
+.idea
+.bundle
+Gemfile.lock

@@ -25,7 +25,7 @@ module Bosh::Dev::Bat
     end
 
     let(:env) { {} }
-    let(:logger) { Logger.new('/dev/null') }
+    let(:logger) { Logger.new(StringIO.new) }
 
     before { FileUtils.mkdir_p(artifacts.micro_bosh_deployment_dir) }
     let(:artifacts) do

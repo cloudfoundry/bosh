@@ -1,3 +1,10 @@
+GIT
+  remote: https://github.com/pivotal-cf-experimental/fakefs.git
+  revision: ebde3d6cbe20339895adcb511108a12ee7820c2c
+  ref: ebde3d6c
+  specs:
+    fakefs (0.5.2)
+
 PATH
   remote: agent_client
   specs:
@@ -281,7 +288,6 @@ GEM
     escape_utils (1.0.1)
     eventmachine (1.0.3)
     excon (0.25.3)
-    fakefs (0.4.2)
     ffi (1.9.3)
     fog (1.14.0)
       builder
@@ -477,7 +483,7 @@ DEPENDENCIES
   bosh_warden_cpi!
   ci_reporter
   codeclimate-test-reporter
-  fakefs
+  fakefs!
   foodcritic
   httpclient
   jenkins_api_client
