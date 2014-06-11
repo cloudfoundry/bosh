@@ -267,6 +267,8 @@ GEM
     builder (3.1.4)
     ci_reporter (1.8.4)
       builder (>= 2.1.2)
+    codeclimate-test-reporter (0.3.0)
+      simplecov (>= 0.7.1, < 1.0.0)
     crack (0.3.2)
     daemons (1.1.9)
     diff-lcs (1.2.5)
@@ -322,7 +324,7 @@ GEM
     mime-types (1.23)
     minitar (0.5.4)
     mixlib-shellout (1.1.0)
-    multi_json (1.7.8)
+    multi_json (1.10.1)
     mysql2 (0.3.11)
     nats (0.4.28)
       daemons (>= 1.1.5)
@@ -412,8 +414,6 @@ GEM
       multi_json (~> 1.0)
       simplecov-html (~> 0.7.1)
     simplecov-html (0.7.1)
-    simplecov-rcov (0.2.3)
-      simplecov (>= 0.4.1)
     sinatra (1.4.3)
       rack (~> 1.4)
       rack-protection (~> 1.4)
@@ -477,6 +477,7 @@ DEPENDENCIES
   bosh_vsphere_cpi!
   bosh_warden_cpi!
   ci_reporter
+  codeclimate-test-reporter
   fakefs
   foodcritic
   git-duet
@@ -501,8 +502,7 @@ DEPENDENCIES
   rugged
   serverspec
   simple_blobstore_server!
-  simplecov
-  simplecov-rcov
+  simplecov (~> 0.7.1)
   specinfra
   sqlite3
   timecop

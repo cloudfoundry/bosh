@@ -1,4 +1,11 @@
 namespace :ci do
+  desc "Publish the code coverage report"
+  task :publish_coverage_report do
+    require 'codeclimate-test-reporter'
+    SimpleCov.formatter = CodeClimate::TestReporter::Formatter
+    SimpleCov::ResultMerger.merged_result.format!
+  end
+
   desc 'Publish CI pipeline gems to S3'
   task :publish_pipeline_gems do
     require 'bosh/dev/build'

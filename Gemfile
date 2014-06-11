@@ -60,8 +60,9 @@ group :development, :test do
   gem 'ci_reporter'
   gem 'webmock'
   gem 'fakefs'
-  gem 'simplecov'
-  gem 'simplecov-rcov'
+  # simplecov 0.8.x has an exit code bug: https://github.com/colszowka/simplecov/issues/281
+  gem 'simplecov', '~> 0.7.1'
+  gem 'codeclimate-test-reporter', require: false
   gem 'vcr'
 
   # Explicitly do not require serverspec dependency
