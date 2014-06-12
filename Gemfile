@@ -35,11 +35,6 @@ group :production do
   gem 'mysql2'
 end
 
-group :development do
-  gem 'ruby_gntp'
-  gem 'git-duet', require: false
-end
-
 group :bat do
   gem 'httpclient'
   gem 'json'
