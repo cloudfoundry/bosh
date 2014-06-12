@@ -26,24 +26,4 @@ fi
 HERE
     end
   end
-
-  context 'installed by system_open_vm_tools stage on Ubuntu' do
-    before(:each) do
-      pending 'only installed on Ubuntu' unless file('/var/vcap/bosh/etc/operating_system').contain('ubuntu', nil, nil)
-    end
-
-    %w(
-      open-vm-dkms
-      open-vm-tools
-      vmware-tools-vmxnet3-modules-source
-    ).each do |pkg|
-      describe package(pkg) do
-        it { should be_installed }
-      end
-    end
-
-    describe file('/etc/rc2.d/S88open-vm-tools') do
-      it { should be_linked_to('/etc/init.d/open-vm-tools') }
-    end
-  end
 end
