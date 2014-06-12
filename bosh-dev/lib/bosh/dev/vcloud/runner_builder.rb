@@ -15,7 +15,7 @@ module Bosh::Dev::VCloud
       logger = Logger.new(STDOUT)
 
       director_address = Bosh::Dev::Bat::DirectorAddress.from_env(env, 'BOSH_VCLOUD_MICROBOSH_IP')
-      bosh_cli_session = Bosh::Dev::BoshCliSession.new
+      bosh_cli_session = Bosh::Dev::BoshCliSession.default
       director_uuid    = Bosh::Dev::Bat::DirectorUuid.new(bosh_cli_session)
       stemcell_archive = Bosh::Stemcell::Archive.new(artifacts.stemcell_path)
 

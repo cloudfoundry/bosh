@@ -21,11 +21,20 @@ module Bosh::Core
       stdout.puts command if options[:output_command]
       lines = []
 
-      io = IO.popen(command)
+      if options[:env]
+        # Wrap in a shell because existing api to Shell#run takes a string
+        # which makes it really hard to pass it to popen with custom environment.
+         popen_args = [options[:env], ENV['SHELL'] || 'bash', '-c', command]
+      else
+        popen_args = command
+      end
+
+      io = IO.popen(popen_args)
       io.each do |line|
         stdout.puts line.chomp
         lines << line.chomp
       end
+
       io.close
 
       lines

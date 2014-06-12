@@ -10,20 +10,24 @@ import (
 	boshas "bosh/agent/applier/applyspec"
 	fakeas "bosh/agent/applier/applyspec/fakes"
 	fakeappl "bosh/agent/applier/fakes"
+	boshsettings "bosh/settings"
+	fakesettings "bosh/settings/fakes"
 )
 
 func init() {
 	Describe("ApplyAction", func() {
 		var (
-			applier     *fakeappl.FakeApplier
-			specService *fakeas.FakeV1Service
-			action      ApplyAction
+			applier         *fakeappl.FakeApplier
+			specService     *fakeas.FakeV1Service
+			settingsService *fakesettings.FakeSettingsService
+			action          ApplyAction
 		)
 
 		BeforeEach(func() {
 			applier = fakeappl.NewFakeApplier()
 			specService = fakeas.NewFakeV1Service()
-			action = NewApply(applier, specService)
+			settingsService = &fakesettings.FakeSettingsService{}
+			action = NewApply(applier, specService, settingsService)
 		})
 
 		It("apply should be asynchronous", func() {
@@ -35,11 +39,17 @@ func init() {
 		})
 
 		Describe("Run", func() {
+			settings := boshsettings.Settings{AgentID: "fake-agent-id"}
+
+			BeforeEach(func() {
+				settingsService.Settings = settings
+			})
+
 			Context("when desired spec has configuration hash", func() {
 				currentApplySpec := boshas.V1ApplySpec{ConfigurationHash: "fake-current-config-hash"}
 				desiredApplySpec := boshas.V1ApplySpec{ConfigurationHash: "fake-desired-config-hash"}
-				resolvedDesiredApplySpec := boshas.V1ApplySpec{
-					ConfigurationHash: "fake-resolved-desired-config-hash",
+				populatedDesiredApplySpec := boshas.V1ApplySpec{
+					ConfigurationHash: "fake-populated-desired-config-hash",
 				}
 
 				Context("when current spec can be retrieved", func() {
@@ -47,37 +57,38 @@ func init() {
 						specService.Spec = currentApplySpec
 					})
 
-					It("resolves dynamic networks in desired spec", func() {
+					It("populates dynamic networks in desired spec", func() {
 						_, err := action.Run(desiredApplySpec)
 						Expect(err).ToNot(HaveOccurred())
-						Expect(specService.ResolveDynamicNetworksSpec).To(Equal(desiredApplySpec))
+						Expect(specService.PopulateDynamicNetworksSpec).To(Equal(desiredApplySpec))
+						Expect(specService.PopulateDynamicNetworksSettings).To(Equal(settings))
 					})
 
 					Context("when resolving dynamic networks succeeds", func() {
 						BeforeEach(func() {
-							specService.ResolveDynamicNetworksResultSpec = resolvedDesiredApplySpec
+							specService.PopulateDynamicNetworksResultSpec = populatedDesiredApplySpec
 						})
 
-						It("runs applier with resolved desired spec", func() {
+						It("runs applier with populated desired spec", func() {
 							_, err := action.Run(desiredApplySpec)
 							Expect(err).ToNot(HaveOccurred())
 							Expect(applier.Applied).To(BeTrue())
 							Expect(applier.ApplyCurrentApplySpec).To(Equal(currentApplySpec))
-							Expect(applier.ApplyDesiredApplySpec).To(Equal(resolvedDesiredApplySpec))
+							Expect(applier.ApplyDesiredApplySpec).To(Equal(populatedDesiredApplySpec))
 						})
 
 						Context("when applier succeeds applying desired spec", func() {
 							Context("when saving desires spec as current spec succeeds", func() {
-								It("returns 'applied' after setting resolved desired spec as current spec", func() {
+								It("returns 'applied' after setting populated desired spec as current spec", func() {
 									value, err := action.Run(desiredApplySpec)
 									Expect(err).ToNot(HaveOccurred())
 									Expect(value).To(Equal("applied"))
 
-									Expect(specService.Spec).To(Equal(resolvedDesiredApplySpec))
+									Expect(specService.Spec).To(Equal(populatedDesiredApplySpec))
 								})
 							})
 
-							Context("when saving resolved desires spec as current spec fails", func() {
+							Context("when saving populated desires spec as current spec fails", func() {
 								It("returns error because agent was not able to remember that is converged to desired spec", func() {
 									specService.SetErr = errors.New("fake-set-error")
 
@@ -109,13 +120,13 @@ func init() {
 
 					Context("when resolving dynamic networks fails", func() {
 						BeforeEach(func() {
-							specService.ResolveDynamicNetworksErr = errors.New("fake-resolve-dynamic-networks-err")
+							specService.PopulateDynamicNetworksErr = errors.New("fake-populate-dynamic-networks-err")
 						})
 
 						It("returns error", func() {
 							_, err := action.Run(desiredApplySpec)
 							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(ContainSubstring("fake-resolve-dynamic-networks-err"))
+							Expect(err.Error()).To(ContainSubstring("fake-populate-dynamic-networks-err"))
 						})
 
 						It("does not apply desired spec as current spec", func() {
@@ -165,21 +176,22 @@ func init() {
 					},
 				}
 
-				resolvedDesiredApplySpec := boshas.V1ApplySpec{
+				populatedDesiredApplySpec := boshas.V1ApplySpec{
 					JobSpec: boshas.JobSpec{
-						Template: "fake-resolved-job-template",
+						Template: "fake-populated-job-template",
 					},
 				}
 
-				It("resolves dynamic networks in desired spec", func() {
+				It("populates dynamic networks in desired spec", func() {
 					_, err := action.Run(desiredApplySpec)
 					Expect(err).ToNot(HaveOccurred())
-					Expect(specService.ResolveDynamicNetworksSpec).To(Equal(desiredApplySpec))
+					Expect(specService.PopulateDynamicNetworksSpec).To(Equal(desiredApplySpec))
+					Expect(specService.PopulateDynamicNetworksSettings).To(Equal(settings))
 				})
 
 				Context("when resolving dynamic networks succeeds", func() {
 					BeforeEach(func() {
-						specService.ResolveDynamicNetworksResultSpec = resolvedDesiredApplySpec
+						specService.PopulateDynamicNetworksResultSpec = populatedDesiredApplySpec
 					})
 
 					Context("when saving desires spec as current spec succeeds", func() {
@@ -188,7 +200,7 @@ func init() {
 							Expect(err).ToNot(HaveOccurred())
 							Expect(value).To(Equal("applied"))
 
-							Expect(specService.Spec).To(Equal(resolvedDesiredApplySpec))
+							Expect(specService.Spec).To(Equal(populatedDesiredApplySpec))
 						})
 
 						It("does not try to apply desired spec since it does not have jobs and packages", func() {
@@ -219,13 +231,13 @@ func init() {
 
 				Context("when resolving dynamic networks fails", func() {
 					BeforeEach(func() {
-						specService.ResolveDynamicNetworksErr = errors.New("fake-resolve-dynamic-networks-err")
+						specService.PopulateDynamicNetworksErr = errors.New("fake-populate-dynamic-networks-err")
 					})
 
 					It("returns error", func() {
 						_, err := action.Run(desiredApplySpec)
 						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("fake-resolve-dynamic-networks-err"))
+						Expect(err.Error()).To(ContainSubstring("fake-populate-dynamic-networks-err"))
 					})
 
 					It("does not apply desired spec as current spec", func() {

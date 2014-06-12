@@ -114,7 +114,7 @@ end
 
 RSpec.configure do |config|
   config.before(:each) do
-    logger = double('evil global stub in spec_helper').as_null_object
+    logger = Logger.new("/dev/null")
     Bosh::Clouds::Config.stub(:logger).and_return(logger)
   end
 end

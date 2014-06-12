@@ -64,7 +64,7 @@ func (d *dummyNatsJobSupervisor) statusHandler(req boshhandler.Request) boshhand
 
 		err := json.Unmarshal(req.GetPayload(), &body)
 		if err != nil {
-			return boshhandler.NewExceptionResponse(err.Error())
+			return boshhandler.NewExceptionResponse(err)
 		}
 
 		d.status = body["status"]

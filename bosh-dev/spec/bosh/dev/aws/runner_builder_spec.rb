@@ -19,7 +19,7 @@ module Bosh::Dev::Aws
 
         bosh_cli_session = instance_double('Bosh::Dev::BoshCliSession')
         Bosh::Dev::BoshCliSession
-          .should_receive(:new)
+          .should_receive(:default)
           .and_return(bosh_cli_session)
 
         stemcell_archive = instance_double(

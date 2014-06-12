@@ -11,6 +11,8 @@ module Bosh::Dev
     end
 
     def build_release_gems
+      FileUtils.mkdir_p build_dir
+
       stage_with_dependencies
 
       components.each do |component|
@@ -49,11 +51,15 @@ module Bosh::Dev
       @components ||= map { |component| GemComponent.new(component, @gem_version.version) }
     end
 
+    private
+
     def has_db?(component_name)
       %w(bosh-director bosh-registry).include?(component_name)
     end
 
-    private
+    def uses_bundler?(component_name)
+      %w(bosh-director bosh-monitor).include?(component_name)
+    end
 
     def root
       GemComponent::ROOT
@@ -66,7 +72,6 @@ module Bosh::Dev
       components.each { |component| component.update_version }
       components.each { |component| component.build_gem(stage_dir) }
 
-      FileUtils.mkdir_p "/tmp/all_the_gems/#{Process.pid}"
       Rake::FileUtilsExt.sh "cp #{root}/pkg/gems/*.gem #{build_dir}"
       Rake::FileUtilsExt.sh "cp #{root}/vendor/cache/*.gem #{build_dir}"
     end
@@ -77,16 +82,20 @@ module Bosh::Dev
 
     def finalize_release_directory(component)
       dirname = "#{root}/release/src/bosh/#{component.name}"
+      if uses_bundler?(component.name)
+        dirname = File.join(dirname, 'vendor/cache')
+      end
 
       FileUtils.rm_rf dirname
       FileUtils.mkdir_p dirname
 
-      Dir.chdir dirname do
-        component.dependencies.each do |dependency|
-          Rake::FileUtilsExt.sh "cp #{build_dir}/#{dependency.name}-*.gem ."
-          Rake::FileUtilsExt.sh "cp #{build_dir}/pg*.gem ." if has_db?(component.name)
-          Rake::FileUtilsExt.sh "cp #{build_dir}/mysql*.gem ." if has_db?(component.name)
-        end
+      component.dependencies.each do |dependency|
+        Rake::FileUtilsExt.sh "cp #{build_dir}/#{dependency.name}-*.gem #{dirname}"
+      end
+
+      if has_db?(component.name)
+        Rake::FileUtilsExt.sh "cp #{build_dir}/pg*.gem #{dirname}"
+        Rake::FileUtilsExt.sh "cp #{build_dir}/mysql*.gem #{dirname}"
       end
     end
 

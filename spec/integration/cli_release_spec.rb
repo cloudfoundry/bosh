@@ -65,11 +65,15 @@ describe 'cli releases', type: :integration do
     end
   end
 
-  it 'creates a new final release with a user defined version' do
+  it 'creates and deploys a new final release with a user defined version' do
+    target_and_login
+
     dev_release_1 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0+dev.1.yml')
     release_1 = File.join(TEST_RELEASE_DIR, 'releases/bosh-release-1.0.yml')
     dev_release_2 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-1.0+dev.1.yml')
     release_2 = File.join(TEST_RELEASE_DIR, 'releases/bosh-release-2.0.yml')
+
+    commit_hash = ''
 
     Dir.chdir(TEST_RELEASE_DIR) do
       File.open('config/final.yml', 'w') do |final|
@@ -78,9 +82,9 @@ describe 'cli releases', type: :integration do
             'provider' => 'local',
             'options' => { 'blobstore_path' => current_sandbox.blobstore_storage_dir },
           },
-
         )
       end
+
       File.open('config/private.yml', 'w') do |final|
         final.puts YAML.dump(
           'blobstore_secret' => 'something',
@@ -102,7 +106,32 @@ describe 'cli releases', type: :integration do
         runner.run_in_current_dir('create release --final --force --version 2.0')
         expect(Dir[File.join(TEST_RELEASE_DIR, 'releases/bosh-release-*.yml')].sort).to eq([release_1, release_2].sort)
       end
+      runner.run('upload release')
+
+      commit_hash = `git show-ref --head --hash=8 2> /dev/null`.split.first
     end
+
+    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+
+    manifest = Bosh::Spec::Deployments.simple_manifest
+    manifest['releases'].first['version'] = 'latest'
+
+    deployment_manifest = yaml_file('simple', manifest)
+    bosh_runner.run("deployment #{deployment_manifest.path}")
+
+    bosh_runner.run('deploy')
+
+    expect_output('releases', <<-OUT)
+    +--------------+----------+-------------+
+    | Name         | Versions | Commit Hash |
+    +--------------+----------+-------------+
+    | bosh-release | 2.0*     | #{commit_hash}+   |
+    +--------------+----------+-------------+
+    (*) Currently deployed
+    (+) Uncommitted changes
+
+    Releases total: 1
+    OUT
   end
 
   # ~31s
@@ -161,13 +190,14 @@ describe 'cli releases', type: :integration do
     end
 
     out = bosh_runner.run("upload release #{release_2}")
+    expect(out).to match /Checking if can repack release for faster upload/
     expect(out).to match /foo\s*\(.*\)\s*SKIP/
-    # No job skipping for the moment (because of rebase),
-    # will be added back once job matching is implemented
     expect(out).to match /foobar\s*\(.*\)\s*UPLOAD/
     expect(out).to match /bar\s*\(.*\)\s*UPLOAD/
-    expect(out).to match regexp('Checking if can repack release for faster upload')
-    expect(out).to match regexp('Release repacked')
+    expect(out).to match /Release repacked/
+    expect(out).to match /Started creating new packages > bar.*Done/
+    expect(out).to match /Started processing 2 existing packages > Processing 2 existing packages.*Done/
+    expect(out).to match /Started processing 2 existing jobs > Processing 2 existing jobs.*Done/
     expect(out).to match /Release uploaded/
 
     out = bosh_runner.run('releases')

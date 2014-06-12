@@ -6,16 +6,23 @@ import (
 	boshappl "bosh/agent/applier"
 	boshas "bosh/agent/applier/applyspec"
 	bosherr "bosh/errors"
+	boshsettings "bosh/settings"
 )
 
 type ApplyAction struct {
-	applier     boshappl.Applier
-	specService boshas.V1Service
+	applier         boshappl.Applier
+	specService     boshas.V1Service
+	settingsService boshsettings.Service
 }
 
-func NewApply(applier boshappl.Applier, specService boshas.V1Service) (action ApplyAction) {
+func NewApply(
+	applier boshappl.Applier,
+	specService boshas.V1Service,
+	settingsService boshsettings.Service,
+) (action ApplyAction) {
 	action.applier = applier
 	action.specService = specService
+	action.settingsService = settingsService
 	return
 }
 
@@ -28,7 +35,9 @@ func (a ApplyAction) IsPersistent() bool {
 }
 
 func (a ApplyAction) Run(desiredSpec boshas.V1ApplySpec) (string, error) {
-	resolvedDesiredSpec, err := a.specService.ResolveDynamicNetworks(desiredSpec)
+	settings := a.settingsService.GetSettings()
+
+	resolvedDesiredSpec, err := a.specService.PopulateDynamicNetworks(desiredSpec, settings)
 	if err != nil {
 		return "", bosherr.WrapError(err, "Resolving dynamic networks")
 	}

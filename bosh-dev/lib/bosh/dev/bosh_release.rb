@@ -4,7 +4,7 @@ require 'bosh/dev/release_creator'
 module Bosh::Dev
   class BoshRelease
     def self.build
-      bosh_cli_session = BoshCliSession.new
+      bosh_cli_session = BoshCliSession.default
       release_creator = ReleaseCreator.new(bosh_cli_session)
       new(release_creator)
     end

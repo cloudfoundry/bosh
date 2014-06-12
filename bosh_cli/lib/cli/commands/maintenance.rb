@@ -56,11 +56,12 @@ module Bosh::Cli::Command
 
       delete_list = []
       say('Deleting old stemcells')
-
       stemcells_by_name.each_pair do |_, stemcells|
+        stemcells.reject! { |stemcell| !stemcell['deployments'].empty? }
         sorted_stemcells = stemcells.sort do |sc1, sc2|
           Bosh::Common::Version::StemcellVersion.parse(sc1['version']) <=> Bosh::Common::Version::StemcellVersion.parse(sc2['version'])
         end
+
         delete_list += sorted_stemcells[0...(-n_to_keep)]
       end
 
@@ -83,16 +84,27 @@ module Bosh::Cli::Command
 
       director.list_releases.each do |release|
         name = release['name']
-        versions = if release['versions']
-          release['versions']
+        if release['release_versions']
+          # reverse compatibility with old director response format
+          versions = release['release_versions'].map { |release_version| release_version['version'] }
+          currently_deployed = release['release_versions'].
+            select { |release_version| release_version['currently_deployed'] }.
+            map{ |release_version| release_version['version'] }
         else
-          release['release_versions'].map { |release_version| release_version['version'] }
+          versions = release['versions']
+          currently_deployed = release['in_use']
         end
 
-        versions = Bosh::Common::Version::ReleaseVersion.parse_list(versions).sort.map(&:to_s)
+        version_tuples = versions.map do |v|
+          {
+            provided: v,
+            parsed: Bosh::Common::Version::ReleaseVersion.parse(v)
+          }
+        end
+        versions = version_tuples.sort_by { |v| v[:parsed] }.map { |v| v[:provided] }
 
         versions[0...(-n_to_keep)].each do |version|
-          delete_list << [name, version]
+          delete_list << [name, version] unless currently_deployed.include?(version)
         end
       end
 

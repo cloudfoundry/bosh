@@ -93,6 +93,7 @@ type FakePlatform struct {
 	PrepareForNetworkingChangeCalled bool
 	PrepareForNetworkingChangeErr    error
 
+	GetDefaultNetworkCalled  bool
 	GetDefaultNetworkNetwork boshsettings.Network
 	GetDefaultNetworkErr     error
 }
@@ -288,5 +289,6 @@ func (p *FakePlatform) PrepareForNetworkingChange() error {
 }
 
 func (p *FakePlatform) GetDefaultNetwork() (boshsettings.Network, error) {
+	p.GetDefaultNetworkCalled = true
 	return p.GetDefaultNetworkNetwork, p.GetDefaultNetworkErr
 }

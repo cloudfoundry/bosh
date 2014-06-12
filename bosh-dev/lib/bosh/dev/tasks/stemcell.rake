@@ -56,6 +56,7 @@ namespace :stemcell do
     puts "OS image #{args.os_image_path} uploaded to S3 in bucket #{args.s3_bucket_name} with key #{key}."
   end
 
+  desc 'Build a stemcell with a remote pre-built base OS image'
   task :build, [:infrastructure_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_s3_bucket_name, :key] do |_, args|
     require 'uri'
     require 'tempfile'
@@ -71,7 +72,7 @@ namespace :stemcell do
     end
   end
 
-  desc 'Build a stemcell using a pre-built base OS image'
+  desc 'Build a stemcell using a local pre-built base OS image'
   task :build_with_local_os_image, [:infrastructure_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_path] do |_, args|
     require 'bosh/dev/build'
     require 'bosh/dev/gem_components'

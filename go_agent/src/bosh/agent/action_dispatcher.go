@@ -76,7 +76,7 @@ func (dispatcher concreteActionDispatcher) Dispatch(req boshhandler.Request) bos
 	action, err := dispatcher.actionFactory.Create(req.Method)
 	if err != nil {
 		dispatcher.logger.Error(actionDispatcherLogTag, "Unknown action %s", req.Method)
-		return boshhandler.NewExceptionResponse("unknown message %s", req.Method)
+		return boshhandler.NewExceptionResponse(bosherr.New("unknown message %s", req.Method))
 	}
 
 	if action.IsAsynchronous() {
@@ -110,7 +110,7 @@ func (dispatcher concreteActionDispatcher) dispatchAsynchronousAction(
 		if err != nil {
 			err = bosherr.WrapError(err, "Create Task Failed %s", req.Method)
 			dispatcher.logger.Error(actionDispatcherLogTag, err.Error())
-			return boshhandler.NewExceptionResponse(err.Error())
+			return boshhandler.NewExceptionResponse(err)
 		}
 
 		taskInfo := boshtask.TaskInfo{
@@ -123,14 +123,14 @@ func (dispatcher concreteActionDispatcher) dispatchAsynchronousAction(
 		if err != nil {
 			err = bosherr.WrapError(err, "Action Failed %s", req.Method)
 			dispatcher.logger.Error(actionDispatcherLogTag, err.Error())
-			return boshhandler.NewExceptionResponse(err.Error())
+			return boshhandler.NewExceptionResponse(err)
 		}
 	} else {
 		task, err = dispatcher.taskService.CreateTask(runTask, cancelTask, nil)
 		if err != nil {
 			err = bosherr.WrapError(err, "Create Task Failed %s", req.Method)
 			dispatcher.logger.Error(actionDispatcherLogTag, err.Error())
-			return boshhandler.NewExceptionResponse(err.Error())
+			return boshhandler.NewExceptionResponse(err)
 		}
 	}
 
@@ -152,7 +152,7 @@ func (dispatcher concreteActionDispatcher) dispatchSynchronousAction(
 	if err != nil {
 		err = bosherr.WrapError(err, "Action Failed %s", req.Method)
 		dispatcher.logger.Error(actionDispatcherLogTag, err.Error())
-		return boshhandler.NewExceptionResponse(err.Error())
+		return boshhandler.NewExceptionResponse(err)
 	}
 
 	return boshhandler.NewValueResponse(value)

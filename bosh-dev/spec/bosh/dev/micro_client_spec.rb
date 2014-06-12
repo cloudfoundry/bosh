@@ -1,14 +1,13 @@
 require 'spec_helper'
+require 'fileutils'
 require 'bosh/dev/micro_client'
 require 'bosh/stemcell/archive'
-require 'fileutils'
 
 module Bosh::Dev
   describe MicroClient do
-    subject(:micro_client) { described_class.new }
+    subject(:micro_client) { described_class.new(bosh_cli_session) }
 
-    before { BoshCliSession.stub(new: cli) }
-    let(:cli) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: nil) }
+    let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: nil) }
 
     describe '#deploy' do
       include FakeFS::SpecHelpers
@@ -25,13 +24,13 @@ module Bosh::Dev
           path: '/path/to/fake-stemcell-008.tgz',
         )
 
-        cli.should_receive(:run_bosh).
+        bosh_cli_session.should_receive(:run_bosh).
           with('micro deployment /path/to/fake-manifest.yml').
           ordered
 
         deploy_pwd = nil
 
-        cli.should_receive(:run_bosh).
+        bosh_cli_session.should_receive(:run_bosh).
           with('micro deploy /path/to/fake-stemcell-008.tgz --update-if-exists').
           ordered { deploy_pwd = Dir.pwd }
 

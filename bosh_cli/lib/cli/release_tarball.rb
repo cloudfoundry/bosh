@@ -30,6 +30,26 @@ module Bosh::Cli
       File.read(File.join(@unpack_dir, "release.MF"))
     end
 
+    def convert_to_old_format
+      step('Converting to old format',
+           "Cannot extract tarball #{@tarball_path}", :fatal) do
+        unpack
+      end
+
+      manifest_file = File.expand_path('release.MF', @unpack_dir)
+      manifest = load_yaml_file(manifest_file)
+      old_format_version = Bosh::Common::Version::ReleaseVersion.parse(manifest['version']).to_old_format
+      manifest['version'] = old_format_version
+      write_yaml(manifest, manifest_file)
+      tmpdir = Dir.mktmpdir
+      repacked_path = File.join(tmpdir, 'release-reformat.tgz')
+
+      Dir.chdir(@unpack_dir) do
+        `tar -czf #{repacked_path} . 2>&1`
+        return repacked_path if $? == 0
+      end
+    end
+
     # Repacks tarball according to the structure of remote release
     # Return path to repackaged tarball or nil if repack has failed
     def repack(package_matches = [])

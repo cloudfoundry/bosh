@@ -38,8 +38,8 @@ module Bosh::Dev::Openstack
       let(:volume_collection) { instance_double('Fog::Compute::OpenStack::Volumes', all: []) }
 
       it 'uses openstack cloud with cpi options from the manifest' do
-        Bosh::OpenStackCloud::Cloud
-          .should_receive(:new)
+        allow(Bosh::OpenStackCloud::Cloud)
+          .to receive(:new)
           .with('fake-cpi-options')
           .and_return(cloud)
         cleaner.clean
@@ -102,7 +102,7 @@ module Bosh::Dev::Openstack
             destroy: nil,
           )
 
-          retryable.should_receive(:retryer) do |&blk|
+          allow(retryable).to receive(:retryer) do |&blk|
             servers_collection.stub(all: [server1, server2])
             blk.call.should be(false)
 
@@ -144,7 +144,7 @@ module Bosh::Dev::Openstack
         before { image_collection.stub(all: [image_to_be_deleted_1, image_to_be_deleted_2, image_to_be_ignored]) }
 
         it 'deletes all images' do
-          pending
+          skip
           cleaner.clean
 
           expect(image_to_be_deleted_1).to have_received(:destroy)
@@ -153,7 +153,7 @@ module Bosh::Dev::Openstack
         end
 
         it 'logs messages' do
-          pending
+          skip
           cleaner.clean
 
           expect(logger).to have_received(:info).with('Destroying image BOSH-fake-image-1')
@@ -182,7 +182,7 @@ module Bosh::Dev::Openstack
         before { volume_collection.stub(all: [volume1, volume2]) }
 
         it 'deletes all unattached volumes' do
-          pending
+          skip
           expect(volume1).to receive(:destroy)
           expect(volume2).to_not receive(:destroy)
 
@@ -190,7 +190,7 @@ module Bosh::Dev::Openstack
         end
 
         it 'logs messages' do
-          pending
+          skip
           expect(logger).to receive(:info).with('Destroying volume fake-volume-1')
 
           cleaner.clean

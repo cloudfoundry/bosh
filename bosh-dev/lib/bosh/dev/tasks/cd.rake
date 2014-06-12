@@ -9,9 +9,9 @@ namespace :cd do
     :environment_name,
     :deployment_name,
   ] do |_, args|
-    require 'bosh/dev/automated_deploy'
-    deployer = Bosh::Dev::AutomatedDeploy.for_rake_args(args)
-    deployer.deploy_micro
+    require 'bosh/dev/automated_deploy_builder'
+    builder = Bosh::Dev::AutomatedDeployBuilder.for_rake_args(args)
+    builder.build.deploy_micro
   end
 
   desc 'Deploy or update full BOSH'
@@ -25,8 +25,8 @@ namespace :cd do
     :environment_name,
     :deployment_name,
   ] do |_, args|
-    require 'bosh/dev/automated_deploy'
-    deployer = Bosh::Dev::AutomatedDeploy.for_rake_args(args)
-    deployer.deploy(args.bosh_target)
+    require 'bosh/dev/automated_deploy_builder'
+    builder = Bosh::Dev::AutomatedDeployBuilder.for_rake_args(args)
+    builder.build.deploy(args.bosh_target)
   end
 end

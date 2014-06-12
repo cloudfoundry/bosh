@@ -141,7 +141,6 @@ func (app *app) Setup(args []string) error {
 	specFilePath := filepath.Join(dirProvider.BoshDir(), "spec.json")
 	specService := boshas.NewConcreteV1Service(
 		app.platform.GetFs(),
-		app.platform,
 		specFilePath,
 	)
 

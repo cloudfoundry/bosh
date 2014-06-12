@@ -1,13 +1,3 @@
-inherit_from: ../.rubocop.yml
-
-AllCops:
-  Excludes:
-    - lib/bosh/director/*
-    - lib/bosh/director/api/**
-    - lib/bosh/director/compiled_package/**
-    - lib/bosh/director/db_backup/**
-    - lib/bosh/director/jobs/**
-    - lib/bosh/director/models/**
-    - lib/bosh/director/problem_helpers/**
-    - spec/**
-    - db/migrations/**
+inherit_from:
+  - ../.rubocop.yml
+  - ./.rubocop_todo.yml

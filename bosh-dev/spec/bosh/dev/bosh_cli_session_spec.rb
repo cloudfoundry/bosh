@@ -1,27 +1,31 @@
 require 'spec_helper'
+require 'logger'
 require 'bosh/dev/bosh_cli_session'
 
 module Bosh::Dev
   describe BoshCliSession do
-    let(:shell)    { instance_double('Bosh::Core::Shell') }
-    let(:tempfile) { instance_double('Tempfile', path: 'fake-tmp/bosh_config') }
-
-    before do
-      Bosh::Core::Shell.stub(:new).and_return(shell)
-      subject.stub(:puts)
-      Tempfile.stub(:new).with('bosh_config').and_return(tempfile)
-    end
-
     describe '#run_bosh' do
+      subject { described_class.new(bosh_cmd) }
+      let(:bosh_cmd) { instance_double('Bosh::Dev::PathBoshCmd', cmd: 'fake-bosh-bin', env: bosh_cmd_env) }
+      let(:bosh_cmd_env) { { 'fake-env' => 'fake-env-value' } }
+
+      before { Bosh::Core::Shell.stub(:new).and_return(shell) }
+      let(:shell) { instance_double('Bosh::Core::Shell') }
+
+      before { subject.stub(:puts) }
+
+      before { Tempfile.stub(:new).with('bosh_config').and_return(tempfile) }
+      let(:tempfile) { instance_double('Tempfile', path: 'fake-tmp/bosh_config') }
+
       it 'runs the specified bosh command' do
-        expected_cmd = "bosh -v -n -P 10 --config 'fake-tmp/bosh_config' fake-cmd"
+        expected_cmd = "fake-bosh-bin -v -n -P 10 --config 'fake-tmp/bosh_config' fake-cmd"
         output       = double('cmd-output')
-        shell.should_receive(:run).with(expected_cmd, fake: 'options').and_return(output)
+        shell.should_receive(:run).with(expected_cmd, env: bosh_cmd_env).and_return(output)
         expect(subject.run_bosh('fake-cmd', fake: 'options')).to eq(output)
       end
 
       context 'when bosh fails with a RuntimeError and retrying' do
-        full_cmd = "bosh -v -n -P 10 --config 'fake-tmp/bosh_config' fake-cmd"
+        full_cmd = "fake-bosh-bin -v -n -P 10 --config 'fake-tmp/bosh_config' fake-cmd"
 
         before { retryable.stub(:sleep) }
         let(:retryable) { Bosh::Retryable.new(tries: 2, on: [RuntimeError]) }
@@ -29,15 +33,15 @@ module Bosh::Dev
 
         context 'when command finally succeeds on the third time' do
           it 'retries same command given number of times' do
-            shell.should_receive(:run).with(full_cmd, {}).ordered.and_raise(error)
-            shell.should_receive(:run).with(full_cmd, {}).ordered.and_return('cmd-output')
+            shell.should_receive(:run).with(full_cmd, env: bosh_cmd_env).ordered.and_raise(error)
+            shell.should_receive(:run).with(full_cmd, env: bosh_cmd_env).ordered.and_return('cmd-output')
             expect(subject.run_bosh('fake-cmd', retryable: retryable)).to eq('cmd-output')
           end
         end
 
         context 'when command still raises an error on the third time' do
           it 'retries and eventually raises an error' do
-            shell.should_receive(:run).with(full_cmd, {}).ordered.exactly(2).times.and_raise(error)
+            shell.should_receive(:run).with(full_cmd, env: bosh_cmd_env).ordered.exactly(2).times.and_raise(error)
             expect {
               subject.run_bosh('fake-cmd', retryable: retryable)
             }.to raise_error(error)
@@ -47,14 +51,12 @@ module Bosh::Dev
 
       context 'when bosh fails and debugging failures' do
         before do
-          shell.stub(:run) do |cmd, _|
-            raise 'fake-cmd broke' if cmd =~ /fake-cmd/
-          end
+          shell.stub(:run) { |cmd, _| raise 'fake-cmd broke' if cmd =~ /fake-cmd/ }
         end
 
         it 'debugs the last task' do
-          expect_cmd = "bosh -v -n -P 10 --config 'fake-tmp/bosh_config' task last --debug"
-          shell.should_receive(:run).with(expect_cmd, last_number: 100).and_return('cmd-output')
+          expect_cmd = "fake-bosh-bin -v -n -P 10 --config 'fake-tmp/bosh_config' task last --debug"
+          shell.should_receive(:run).with(expect_cmd, last_number: 100, env: bosh_cmd_env).and_return('cmd-output')
 
           expect {
             subject.run_bosh('fake-cmd', debug_on_fail: true)
@@ -71,6 +73,149 @@ module Bosh::Dev
               subject.run_bosh('fake-cmd', debug_on_fail: true)
             }.to raise_error
           end
+        end
+      end
+    end
+
+    describe '#close' do
+      subject { described_class.new(bosh_cmd) }
+      let(:bosh_cmd) { instance_double('Bosh::Dev::PathBoshCmd', cmd: 'fake-bosh-bin') }
+
+      it 'tells bosh command to close' do
+        expect(bosh_cmd).to receive(:close).with(no_args)
+        subject.close
+      end
+    end
+  end
+
+  describe PathBoshCmd do
+    describe '#cmd' do
+      it('returns bosh') { expect(subject.cmd).to eq('bosh') }
+    end
+
+    describe '#close' do
+      it('can run close') { expect { subject.close }.to_not raise_error }
+    end
+  end
+
+  describe S3GemBoshCmd do
+    subject { described_class.new('fake-number', logger) }
+    let(:logger) { Logger.new('/dev/null') }
+
+    include FakeFS::SpecHelpers
+
+    before { Bosh::Core::Shell.stub(:new).and_return(shell) }
+    let(:shell) { instance_double('Bosh::Core::Shell', run: nil) }
+
+    describe '#cmd' do
+      tmp_dir = '/fake-tmp-path'
+      gem_home = '/fake-tmp-path/ruby/1.9.1'
+      gemfile_path = '/fake-tmp-path/Gemfile'
+
+      before { allow(Dir).to receive(:mktmpdir).and_return(tmp_dir) }
+
+      context 'when gems were not yet installed' do
+        it 'installs gems into temporary location with bundler' do
+          file = instance_double('File')
+          expect(File).to receive(:open).with(gemfile_path, 'w').and_yield(file)
+
+          expect(file).to receive(:write).with(<<-GEMFILE).ordered
+source "https://bosh-ci-pipeline.s3.amazonaws.com/fake-number/gems"
+source "https://rubygems.org"
+gem "bosh_cli_plugin_micro", "1.fake-number.0"
+GEMFILE
+
+          expect(Bundler).to receive(:with_clean_env).ordered.and_yield
+
+          expect(shell).to receive(:run).
+            with("bundle install --no-prune --path #{tmp_dir}", env: { 'BUNDLE_GEMFILE' => gemfile_path }).
+            ordered
+
+          subject.cmd
+        end
+
+        it 'returns cmd for running bosh from temporary location' do
+          expect(subject.cmd).to eq("#{gem_home}/bin/bosh")
+        end
+      end
+
+      context 'when gems were installed (presence of Gemfile)' do
+        before { subject.cmd }
+
+        it 'does not install gems into temporary location again' do
+          expect(shell).to_not receive(:run)
+          subject.cmd
+        end
+
+        it 'returns cmd for running bosh from temporary location' do
+          expect(subject.cmd).to eq("#{gem_home}/bin/bosh")
+        end
+      end
+    end
+
+    describe '#env' do
+      tmp_dir = '/fake-tmp-path'
+      gem_home = '/fake-tmp-path/ruby/1.9.1'
+      gemfile_path = '/fake-tmp-path/Gemfile'
+
+      before { allow(Dir).to receive(:mktmpdir).and_return(tmp_dir) }
+
+      context 'when gems were not yet installed' do
+        it 'installs gems into temporary location with bundler' do
+          file = instance_double('File')
+          expect(File).to receive(:open).with(gemfile_path, 'w').and_yield(file)
+
+          expect(file).to receive(:write).with(<<-GEMFILE).ordered
+source "https://bosh-ci-pipeline.s3.amazonaws.com/fake-number/gems"
+source "https://rubygems.org"
+gem "bosh_cli_plugin_micro", "1.fake-number.0"
+GEMFILE
+
+          expect(Bundler).to receive(:with_clean_env).ordered.and_yield
+
+          expect(shell).to receive(:run).
+            with("bundle install --no-prune --path #{tmp_dir}", env: { 'BUNDLE_GEMFILE' => gemfile_path }).
+            ordered
+
+          subject.env
+        end
+
+        it 'returns env for the command to use' do
+          expect(subject.env).to eq('GEM_PATH' => '', 'GEM_HOME' => gem_home)
+        end
+      end
+
+      context 'when gems were installed (presence of Gemfile)' do
+        before { subject.env }
+
+        it 'does not install gems into temporary location again' do
+          expect(shell).to_not receive(:run)
+          subject.env
+        end
+
+        it 'returns cmd for running bosh from temporary location' do
+          expect(subject.env).to eq('GEM_PATH' => '', 'GEM_HOME' => gem_home)
+        end
+      end
+    end
+
+    describe '#close' do
+      context 'when command was previously requested' do
+        tmp_dir = '/fake-tmp-path'
+        before { allow(Dir).to receive(:mktmpdir).and_return(tmp_dir) }
+
+        before { subject.cmd }
+
+        it 'removes temporary location where gems were installed' do
+          expect(FileUtils).to receive(:rm_rf).with(tmp_dir)
+          subject.close
+        end
+      end
+
+      context 'when command was not previously requested' do
+        it 'does not remove any temporary location' do
+          expect(FileUtils).to_not receive(:rm_rf)
+          subject.close
         end
       end
     end

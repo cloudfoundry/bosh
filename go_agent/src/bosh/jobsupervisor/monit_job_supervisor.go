@@ -78,7 +78,7 @@ func (m monitJobSupervisor) Reload() error {
 		// Exit code or output cannot be trusted
 		_, _, _, err := m.runner.RunCommand("monit", "reload")
 		if err != nil {
-			m.logger.Debug(monitJobSupervisorLogTag, "Failed to reload monit %s", err.Error())
+			m.logger.Error(monitJobSupervisorLogTag, "Failed to reload monit %s", err.Error())
 		}
 
 		for checkI := 0; checkI < m.reloadOptions.MaxCheckTries; checkI++ {

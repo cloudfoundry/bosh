@@ -13,7 +13,45 @@ import (
 	boshlog "bosh/logger"
 )
 
-const execProcessLogTag = "Cmd Runner"
+const (
+	execProcessLogTag      = "Cmd Runner"
+	execErrorMsgFmt        = "Running command: '%s', stdout: '%s', stderr: '%s'"
+	execShortErrorMaxLines = 100
+)
+
+type ExecError struct {
+	cmd    string
+	stdout string
+	stderr string
+}
+
+func NewExecError(cmd, stdout, stderr string) ExecError {
+	return ExecError{
+		cmd:    cmd,
+		stdout: stdout,
+		stderr: stderr,
+	}
+}
+
+func (e ExecError) Error() string {
+	return fmt.Sprintf(execErrorMsgFmt, e.cmd, e.stdout, e.stderr)
+}
+
+// ShortError returns an error message that has stdout/stderr truncated.
+func (e ExecError) ShortError() string {
+	outStr := e.truncateStr(e.stdout, execShortErrorMaxLines)
+	errStr := e.truncateStr(e.stderr, execShortErrorMaxLines)
+	return fmt.Sprintf(execErrorMsgFmt, e.cmd, outStr, errStr)
+}
+
+func (e ExecError) truncateStr(in string, maxLines int) string {
+	outLines := strings.Split(in, "\n")
+	if i := len(outLines); i > maxLines {
+		outLines = outLines[i-maxLines:]
+	}
+
+	return strings.Join(outLines, "\n")
+}
 
 type execProcess struct {
 	cmd          *exec.Cmd
@@ -90,7 +128,7 @@ func (p execProcess) wait() Result {
 
 	if err != nil {
 		cmdString := strings.Join(p.cmd.Args, " ")
-		err = bosherr.WrapError(err, "Running command: '%s', stdout: '%s', stderr: '%s'", cmdString, stdout, stderr)
+		err = bosherr.WrapComplexError(err, NewExecError(cmdString, stdout, stderr))
 	}
 
 	return Result{

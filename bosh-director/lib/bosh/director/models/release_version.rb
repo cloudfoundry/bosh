@@ -6,9 +6,9 @@ module Bosh::Director::Models
     many_to_many :deployments
 
     def validate
+      validates_format VALID_ID, :version
       validates_presence [:release_id, :version]
       validates_unique [:release_id, :version]
-      validates_format VALID_ID, :version
     end
 
     def dependencies(package_name)

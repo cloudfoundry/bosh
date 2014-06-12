@@ -59,13 +59,23 @@ type BoshEnv struct {
 
 type Networks map[string]Network
 
+type NetworkType string
+
+const (
+	NetworkTypeDynamic NetworkType = "dynamic"
+)
+
 type Network struct {
+	Type NetworkType `json:"type"`
+
+	IP      string `json:"ip"`
+	Netmask string `json:"netmask"`
+	Gateway string `json:"gateway"`
+
 	Default []string `json:"default"`
 	DNS     []string `json:"dns"`
-	IP      string   `json:"ip"`
-	Netmask string   `json:"netmask"`
-	Gateway string   `json:"gateway"`
-	Mac     string   `json:"mac"`
+
+	Mac string `json:"mac"`
 }
 
 func (n Networks) DefaultNetworkFor(category string) (network Network, found bool) {
@@ -115,6 +125,10 @@ func (n Networks) IPs() (ips []string) {
 		}
 	}
 	return
+}
+
+func (n Network) IsDynamic() bool {
+	return n.Type == NetworkTypeDynamic
 }
 
 //{

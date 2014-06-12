@@ -24,6 +24,15 @@ module Bosh::Cli
       @data["builds"][fingerprint]
     end
 
+    def latest_version
+      builds = @data["builds"].values
+
+      return nil if builds.empty?
+
+      version_strings = builds.map { |b| b["version"] }
+      Bosh::Common::Version::ReleaseVersion.parse_list(version_strings).latest.to_s
+    end
+
     def version_exists?(version)
       File.exists?(filename(version))
     end

@@ -37,7 +37,7 @@ module Bosh::Deployer
       allow(infrastructure).to receive(:update_spec)
       allow(infrastructure).to receive(:client_services_ip).and_return('client-ip')
 
-      allow(Bosh::Agent::HTTPClient).to receive(:new).and_return double('agent', run_task: nil)
+      allow(Bosh::Agent::HTTPClient).to receive(:new).and_return(double('agent', run_task: nil))
 
       class_double('Bosh::Deployer::DeploymentsState').as_stubbed_const
       allow(DeploymentsState).to receive(:load_from_dir).and_return(deployments_state)
@@ -138,7 +138,7 @@ module Bosh::Deployer
 
     describe '#apply' do
       before do
-        allow(Bosh::Agent::HTTPClient).to receive(:new).and_return double('agent', run_task: nil)
+        allow(Bosh::Agent::HTTPClient).to receive(:new).and_return(double('agent', run_task: nil))
         allow(infrastructure).to receive(:update_spec)
         allow(infrastructure).to receive(:agent_services_ip).and_return('agent_ip')
         allow(infrastructure).to receive(:internal_services_ip).and_return('internal_ip')

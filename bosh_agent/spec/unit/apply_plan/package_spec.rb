@@ -86,8 +86,11 @@ describe Bosh::Agent::ApplyPlan::Package do
     it 'fetches package and creates symlink in packages and jobs' do
       job = make_job(job_spec, template_spec['name'], template_spec)
 
-      Bosh::Agent::Util.should_receive(:unpack_blob).
-        with('deadcafe', 'deadbeef', subject.install_path) { FileUtils.mkdir_p(subject.install_path) }
+      expect(Bosh::Agent::Util)
+        .to receive(:unpack_blob)
+        .with('deadcafe', 'deadbeef', subject.install_path) do
+        FileUtils.mkdir_p(subject.install_path)
+      end
 
       subject.install_for_job(job)
 

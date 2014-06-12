@@ -3,8 +3,6 @@ require 'bosh/director/models/rendered_templates_archive'
 
 module Bosh::Director::Models
   describe RenderedTemplatesArchive do
-    it { expect(RenderedTemplatesArchive.ancestors).to include(Sequel::Model) }
-
     it 'belongs to an instance' do
       expect(RenderedTemplatesArchive.associations).to include(:instance)
     end

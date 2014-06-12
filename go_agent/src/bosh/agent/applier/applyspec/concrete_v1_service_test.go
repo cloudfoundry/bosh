@@ -8,7 +8,6 @@ import (
 
 	. "bosh/agent/applier/applyspec"
 	boshassert "bosh/assert"
-	fakeplatform "bosh/platform/fakes"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
 )
@@ -17,15 +16,13 @@ func init() {
 	Describe("concreteV1Service", func() {
 		var (
 			fs       *fakesys.FakeFileSystem
-			platform *fakeplatform.FakePlatform
 			specPath = "/spec.json"
 			service  V1Service
 		)
 
 		BeforeEach(func() {
 			fs = fakesys.NewFakeFileSystem()
-			platform = fakeplatform.NewFakePlatform()
-			service = NewConcreteV1Service(fs, platform, specPath)
+			service = NewConcreteV1Service(fs, specPath)
 		})
 
 		Describe("Get", func() {
@@ -80,8 +77,8 @@ func init() {
 			})
 		})
 
-		Describe("ResolveDynamicNetworks", func() {
-			Context("when there is are no dynamic networks", func() {
+		Describe("PopulateDynamicNetworks", func() {
+			Context("when there are no dynamic networks", func() {
 				unresolvedSpec := V1ApplySpec{
 					Deployment: "fake-deployment",
 					NetworkSpecs: map[string]NetworkSpec{
@@ -92,7 +89,7 @@ func init() {
 				}
 
 				It("returns spec without modifying any networks", func() {
-					spec, err := service.ResolveDynamicNetworks(unresolvedSpec)
+					spec, err := service.PopulateDynamicNetworks(unresolvedSpec, boshsettings.Settings{})
 					Expect(err).ToNot(HaveOccurred())
 					Expect(spec).To(Equal(V1ApplySpec{
 						Deployment: "fake-deployment",
@@ -105,7 +102,7 @@ func init() {
 				})
 			})
 
-			Context("when there is one dynamic network", func() {
+			Context("when there are dynamic networks", func() {
 				unresolvedSpec := V1ApplySpec{
 					Deployment: "fake-deployment",
 					NetworkSpecs: map[string]NetworkSpec{
@@ -124,26 +121,46 @@ func init() {
 								"gateway": "fake-net2-gateway",
 							},
 						},
+						"fake-net3": NetworkSpec{
+							Fields: map[string]interface{}{
+								"type":    NetworkSpecTypeDynamic,
+								"ip":      "fake-net3-ip",
+								"netmask": "fake-net3-netmask",
+								"gateway": "fake-net3-gateway",
+							},
+						},
 					},
 				}
 
-				Context("when default network can be retrieved", func() {
-					BeforeEach(func() {
-						platform.GetDefaultNetworkNetwork = boshsettings.Network{
-							IP:      "fake-resolved-ip",
-							Netmask: "fake-resolved-netmask",
-							Gateway: "fake-resolved-gateway",
-						}
-					})
+				Context("when associated network is in settings", func() {
+					settings := boshsettings.Settings{
+						Networks: boshsettings.Networks{
+							"fake-net1": boshsettings.Network{
+								IP:      "fake-resolved1-ip",
+								Netmask: "fake-resolved1-netmask",
+								Gateway: "fake-resolved1-gateway",
+							},
+							"fake-net2": boshsettings.Network{
+								IP:      "fake-resolved2-ip",
+								Netmask: "fake-resolved2-netmask",
+								Gateway: "fake-resolved2-gateway",
+							},
+							"fake-net3": boshsettings.Network{
+								IP:      "fake-resolved3-ip",
+								Netmask: "fake-resolved3-netmask",
+								Gateway: "fake-resolved3-gateway",
+							},
+						},
+					}
 
-					It("returns spec with modified dynamic network and keeping everything else the same", func() {
-						spec, err := service.ResolveDynamicNetworks(unresolvedSpec)
+					It("returns spec with modified dynamic networks and keeping everything else the same", func() {
+						spec, err := service.PopulateDynamicNetworks(unresolvedSpec, settings)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(spec).To(Equal(V1ApplySpec{
 							Deployment: "fake-deployment",
 							NetworkSpecs: map[string]NetworkSpec{
 								"fake-net1": NetworkSpec{
-									Fields: map[string]interface{}{
+									Fields: map[string]interface{}{ // ip info not replaced
 										"ip":      "fake-net1-ip",
 										"netmask": "fake-net1-netmask",
 										"gateway": "fake-net1-gateway",
@@ -152,9 +169,17 @@ func init() {
 								"fake-net2": NetworkSpec{
 									Fields: map[string]interface{}{
 										"type":    NetworkSpecTypeDynamic,
-										"ip":      "fake-resolved-ip",
-										"netmask": "fake-resolved-netmask",
-										"gateway": "fake-resolved-gateway",
+										"ip":      "fake-resolved2-ip",
+										"netmask": "fake-resolved2-netmask",
+										"gateway": "fake-resolved2-gateway",
+									},
+								},
+								"fake-net3": NetworkSpec{
+									Fields: map[string]interface{}{
+										"type":    NetworkSpecTypeDynamic,
+										"ip":      "fake-resolved3-ip",
+										"netmask": "fake-resolved3-netmask",
+										"gateway": "fake-resolved3-gateway",
 									},
 								},
 							},
@@ -162,37 +187,12 @@ func init() {
 					})
 				})
 
-				Context("when default network fails to be retrieved", func() {
-					BeforeEach(func() {
-						platform.GetDefaultNetworkErr = errors.New("fake-get-default-network-err")
-					})
-
+				Context("when associated network cannot be found in settings", func() {
 					It("returns error", func() {
-						spec, err := service.ResolveDynamicNetworks(unresolvedSpec)
-						Expect(err).To(HaveOccurred())
-						Expect(err.Error()).To(ContainSubstring("fake-get-default-network-err"))
+						spec, err := service.PopulateDynamicNetworks(unresolvedSpec, boshsettings.Settings{})
+						Expect(err).To(Equal(errors.New("Network fake-net2 is not found in settings")))
 						Expect(spec).To(Equal(V1ApplySpec{}))
 					})
-				})
-			})
-
-			Context("when there is are multiple dynamic networks", func() {
-				unresolvedSpec := V1ApplySpec{
-					NetworkSpecs: map[string]NetworkSpec{
-						"fake-net1": NetworkSpec{
-							Fields: map[string]interface{}{"type": NetworkSpecTypeDynamic},
-						},
-						"fake-net2": NetworkSpec{
-							Fields: map[string]interface{}{"type": NetworkSpecTypeDynamic},
-						},
-					},
-				}
-
-				It("returns error because multiple dynamic networks are not supported", func() {
-					spec, err := service.ResolveDynamicNetworks(unresolvedSpec)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("Multiple dynamic networks are not supported"))
-					Expect(spec).To(Equal(V1ApplySpec{}))
 				})
 			})
 		})

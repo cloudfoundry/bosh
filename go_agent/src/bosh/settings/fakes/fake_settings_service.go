@@ -10,6 +10,7 @@ type FakeSettingsServiceProvider struct {
 	NewServiceFs              boshsys.FileSystem
 	NewServiceDir             string
 	NewServiceFetcher         boshsettings.SettingsFetcher
+	NewDefaultNetworkResolver boshsettings.DefaultNetworkDelegate
 	NewServiceSettingsService *FakeSettingsService
 }
 
@@ -23,11 +24,13 @@ func (provider *FakeSettingsServiceProvider) NewService(
 	fs boshsys.FileSystem,
 	dir string,
 	fetcher boshsettings.SettingsFetcher,
+	defaultNetworkResolver boshsettings.DefaultNetworkDelegate,
 	logger boshlog.Logger,
 ) boshsettings.Service {
 	provider.NewServiceFs = fs
 	provider.NewServiceDir = dir
 	provider.NewServiceFetcher = fetcher
+	provider.NewDefaultNetworkResolver = defaultNetworkResolver
 	return provider.NewServiceSettingsService
 }
 

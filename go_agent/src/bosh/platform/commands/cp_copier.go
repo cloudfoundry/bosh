@@ -70,6 +70,6 @@ func (c cpCopier) FilteredCopyToTemp(dir string, filters []string) (string, erro
 func (c cpCopier) CleanUp(tempDir string) {
 	err := c.fs.RemoveAll(tempDir)
 	if err != nil {
-		c.logger.Info(cpCopierLogTag, "Failed to clean up temporary directory %s: %#v", tempDir, err)
+		c.logger.Error(cpCopierLogTag, "Failed to clean up temporary directory %s: %#v", tempDir, err)
 	}
 }

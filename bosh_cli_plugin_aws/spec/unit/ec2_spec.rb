@@ -189,7 +189,7 @@ describe Bosh::Aws::EC2 do
           should_receive(:associate_elastic_ip).
           with(elastic_ip).
           and_raise(AWS::EC2::Errors::InvalidAddress::NotFound)
-        nat_instance.should_receive(:associate_elastic_ip).with(elastic_ip).and_return
+        nat_instance.should_receive(:associate_elastic_ip).with(elastic_ip)
 
         create_nat_instance
       end

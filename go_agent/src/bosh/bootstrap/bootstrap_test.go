@@ -65,13 +65,15 @@ func init() {
 			})
 
 			It("returns the settings service", func() {
-				settingsService, err := bootstrap()
+				result, err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(settingsService).To(Equal(settingsService))
+				Expect(result).To(Equal(settingsService))
 
 				Expect(settingsServiceProvider.NewServiceFs).To(Equal(platform.GetFs()))
 				Expect(settingsServiceProvider.NewServiceDir).To(Equal(dirProvider.BoshDir()))
+				Expect(settingsServiceProvider.NewDefaultNetworkResolver).To(Equal(platform))
 
+				// cannot compare NewServiceFetcher so call it to see that it returns inf settings
 				fetchedSettings, err := settingsServiceProvider.NewServiceFetcher()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fetchedSettings).To(Equal(inf.Settings))
