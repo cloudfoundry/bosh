@@ -104,13 +104,6 @@ module Bosh::Director
         reservation
       end
 
-      # Returns a number of VMs that need to be created in order to bring
-      # this resource pool to a desired size
-      # @return [Integer]
-      def missing_vm_count
-        @size - @active_vm_count - @idle_vms.size
-      end
-
       # Adds a new VM to a list of managed idle VMs
       def add_idle_vm
         idle_vm = IdleVm.new(self)
@@ -146,7 +139,7 @@ module Bosh::Director
         if needed > @size
           raise ResourcePoolNotEnoughCapacity,
                 "Resource pool `#{@name}' is not big enough: " +
-                "#{@reserved_capacity} VMs needed, capacity is #{@size}"
+                "#{needed} VMs needed, capacity is #{@size}"
         end
         @reserved_capacity = needed
       end
@@ -164,6 +157,15 @@ module Bosh::Director
           reserve_capacity(needed)
           @reserved_errand_capacity = n
         end
+      end
+
+      private
+
+      # Returns a number of VMs that need to be created in order to bring
+      # this resource pool to a desired size
+      # @return [Integer]
+      def missing_vm_count
+        @size - @active_vm_count - @idle_vms.size
       end
     end
   end

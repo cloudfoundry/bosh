@@ -74,21 +74,40 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
   end
 
   describe 'processing idle VMs' do
-    it 'creates idle vm objects for missing idle VMs' do
-      allow(network).to receive(:reserve!)
+    before { allow(network).to receive(:reserve!) }
 
-      expect(resource_pool.idle_vms.size).to eq(0)
-      expect(resource_pool.missing_vm_count).to eq(max_size)
-
-      resource_pool.add_idle_vm
-      expect(resource_pool.missing_vm_count).to eq(max_size - 1) # 1 is idle
-
-      resource_pool.mark_active_vm
-      expect(resource_pool.missing_vm_count).to eq(max_size - 2) # 1 is active & 1 is idle
-
+    it 'creates VMs up to the size' do
       resource_pool.process_idle_vms
-      expect(resource_pool.missing_vm_count).to eq(0)
-      expect(resource_pool.idle_vms.size).to eq(max_size - 1) # 1 is active
+      expect(resource_pool.idle_vms.size).to eq(max_size)
+    end
+
+    context 'when some VMs are already active' do
+      before { resource_pool.mark_active_vm }
+
+      it 'creates idle vm objects for missing idle VMs' do
+        resource_pool.process_idle_vms
+        expect(resource_pool.idle_vms.size).to eq(max_size - 1) # 1 is active
+      end
+    end
+
+    context 'when some idle VMs are already created' do
+      let(:max_size) { 4 }
+
+      before { resource_pool.add_idle_vm }
+
+      it 'creates VMs up to the size' do
+        resource_pool.process_idle_vms
+        expect(resource_pool.idle_vms.size).to eq(max_size)
+      end
+
+      context 'and some VMs are already active' do
+        before { resource_pool.mark_active_vm }
+
+        it 'creates idle vm objects for missing idle VMs' do
+          resource_pool.process_idle_vms
+          expect(resource_pool.idle_vms.size).to eq(max_size - 1) # 1 is active
+        end
+      end
     end
 
     it 'reserves dynamic networks for idle VMs that do not have reservations' do
