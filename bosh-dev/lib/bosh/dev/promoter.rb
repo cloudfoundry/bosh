@@ -40,11 +40,11 @@ module Bosh::Dev
 
         tagger.tag_and_push(final_release_sha, @candidate_build_number)
 
-        git_branch_merger = GitBranchMerger.new
-        git_branch_merger.merge('develop', "Merge final release for build #{@candidate_build_number} to develop")
-
         build = Build.candidate
         build.promote_artifacts
+
+        git_branch_merger = GitBranchMerger.new
+        git_branch_merger.merge('develop', "Merge final release for build #{@candidate_build_number} to develop")
       end
     end
   end

@@ -5,7 +5,6 @@ module Bosh::Director
     include LockHelper
     include IpUtil
 
-    # @param [DeploymentPlan] deployment_plan Deployment plan
     def initialize(deployment_plan)
       @deployment_plan = deployment_plan
       @cloud = Config.cloud
@@ -115,23 +114,31 @@ module Bosh::Director
         end
       end
 
-      # Does the job instance exist in the new deployment?
-      if (job = @deployment_plan.job(instance_model.job)) &&
-         (instance = job.instance(instance_model.index))
+      instance_name = "#{instance_model.job}/#{instance_model.index}"
 
-        @logger.debug('Found job and instance spec')
-        instance.use_model(instance_model)
-        instance.current_state = state
-
-        @logger.debug('Copying network reservations')
-        instance.take_network_reservations(reservations)
-
-        @logger.debug('Copying resource pool reservation')
-        job.resource_pool.mark_active_vm
-      else
-        @logger.debug('Job/instance not found, marking for deletion')
+      job = @deployment_plan.job(instance_model.job)
+      unless job
+        @logger.debug("Job '#{instance_model.job}' not found, marking for deletion")
         @deployment_plan.delete_instance(instance_model)
+        return
       end
+
+      instance = job.instance(instance_model.index)
+      unless instance
+        @logger.debug("Job instance #{instance_name} not found, marking for deletion")
+        @deployment_plan.delete_instance(instance_model)
+        return
+      end
+
+      @logger.debug("Found job instance #{instance_name}")
+      instance.use_model(instance_model)
+      instance.current_state = state
+
+      @logger.debug("Copying job instance #{instance_name} network reservations")
+      instance.take_network_reservations(reservations)
+
+      @logger.debug("Copying job instance #{instance_name} resource pool reservation")
+      job.resource_pool.mark_active_vm
     end
 
     def get_network_reservations(state)
