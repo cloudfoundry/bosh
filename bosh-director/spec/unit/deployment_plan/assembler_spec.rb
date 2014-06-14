@@ -6,7 +6,7 @@ module Bosh::Director
       subject(:assembler) { described_class.new(deployment_plan) }
       let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner') }
 
-      before { App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
+      before { allow(App). to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
       let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
       before { allow(Config).to receive(:cloud).and_return(cloud) }
@@ -180,53 +180,106 @@ module Bosh::Director
       end
 
       describe '#bind_idle_vm' do
+        let(:deployment_plan) { Planner.new(deployment_manifest['name']) }
+        let(:state) { { 'state' => 'foo' } }
+        let(:network) { Network.new(deployment_plan, {'name' => deployment_manifest['network']}) }
+        let(:resource_pool) { ResourcePool.new(deployment_plan, deployment_manifest) }
+        let(:vm) { Models::Vm.make }
+        let(:idle_vm) { IdleVm.new(resource_pool) }
+        let(:deployment_manifest) do
+          {
+            'name' => 'fake-release',
+            'size' => 1,
+            'cloud_properties' => {},
+            'stemcell' => {
+              'name' => 'fake-stemcell',
+              'version' => 'fake-stemcell-version',
+            },
+            'network' => 'fake-network',
+          }
+        end
+
         before do
-          @network = instance_double('Bosh::Director::DeploymentPlan::Network')
-          @network.stub(:name).and_return('foo')
-          @reservation = instance_double('Bosh::Director::NetworkReservation')
-          @resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
-          @resource_pool.stub(:name).and_return('baz')
-          @resource_pool.stub(:network).and_return(@network)
-          @idle_vm = instance_double('Bosh::Director::DeploymentPlan::IdleVm')
-          @vm = Models::Vm.make
+          # add mock network
+          deployment_plan.add_network(network)
+
+          # release is not implemented in the base Network object
+          allow(network).to receive(:release)
+
+          # return mock idle vm
+          allow(resource_pool).to receive(:add_idle_vm).and_return(idle_vm)
         end
 
-        it 'should add the existing idle VM' do
-          @resource_pool.should_receive(:add_idle_vm).and_return(@idle_vm)
-          @idle_vm.should_receive(:vm=).with(@vm)
-          @idle_vm.should_receive(:current_state=).with({ 'state' => 'foo' })
+        context 'when any of the network reservations are static' do
+          let(:reservations) do
+            {
+              'fake-network' => NetworkReservation.new(type: NetworkReservation::STATIC),
+              'bar' => NetworkReservation.new(type: NetworkReservation::DYNAMIC),
+              'baz' => NetworkReservation.new(type: NetworkReservation::STATIC),
+            }
+          end
 
-          assembler.bind_idle_vm(
-            @vm, @resource_pool, { 'state' => 'foo' }, {})
+          it 'does not add the existing idle VM to the resource pool' do
+            expect(resource_pool).not_to receive(:add_idle_vm)
+
+            assembler.bind_idle_vm(vm, resource_pool, state, reservations)
+          end
+
+          it 'releases all network reservations' do
+            reservations.each do |network_name, reservation|
+              expect(network).to receive(:release).with(reservation)
+            end
+
+            assembler.bind_idle_vm(vm, resource_pool, state, reservations)
+          end
+
+          it 'marks VM for deletion' do
+            expect(deployment_plan).to receive(:delete_vm).with(vm)
+
+            assembler.bind_idle_vm(vm, resource_pool, state, reservations)
+          end
         end
 
-        it 'should release a static network reservation' do
-          @reservation.stub(:static?).and_return(true)
+        context 'when none of the network reservations are static' do
+          let(:reservations) do
+            {
+              'fake-network' => NetworkReservation.new(type: NetworkReservation::DYNAMIC),
+              'bar' => NetworkReservation.new(type: NetworkReservation::DYNAMIC),
+              'baz' => NetworkReservation.new(type: NetworkReservation::DYNAMIC),
+            }
+          end
 
-          @resource_pool.should_receive(:add_idle_vm).and_return(@idle_vm)
-          @idle_vm.should_receive(:vm=).with(@vm)
-          @idle_vm.should_receive(:current_state=).with({ 'state' => 'foo' })
-          @network.should_receive(:release).with(@reservation)
+          it 'adds the existing idle VM to the resource pool' do
+            expect(resource_pool).to receive(:add_idle_vm).and_return(idle_vm)
 
-          assembler.bind_idle_vm(
-            @vm, @resource_pool, { 'state' => 'foo' }, { 'foo' => @reservation })
-        end
+            assembler.bind_idle_vm(vm, resource_pool, state, reservations)
 
-        it 'should reuse a valid network reservation' do
-          @reservation.stub(:static?).and_return(false)
+            expect(idle_vm.vm).to eq(vm)
+            expect(idle_vm.current_state).to eq(state)
+          end
 
-          @resource_pool.should_receive(:add_idle_vm).and_return(@idle_vm)
-          @idle_vm.should_receive(:vm=).with(@vm)
-          @idle_vm.should_receive(:current_state=).with({ 'state' => 'foo' })
-          @idle_vm.should_receive(:use_reservation).with(@reservation)
+          it 'reuses dynamic network reservations' do
+            expect(idle_vm).to receive(:use_reservation).with(reservations[network.name])
 
-          assembler.bind_idle_vm(
-            @vm, @resource_pool, { 'state' => 'foo' }, { 'foo' => @reservation })
+            assembler.bind_idle_vm(vm, resource_pool, state, reservations)
+          end
+
+          it 'does not release any network reservations' do
+            expect(network).not_to receive(:release)
+
+            assembler.bind_idle_vm(vm, resource_pool, state, reservations)
+          end
+
+          it 'does not mark VM for deletion' do
+            expect(deployment_plan).not_to receive(:delete_vm)
+
+            assembler.bind_idle_vm(vm, resource_pool, state, reservations)
+          end
         end
       end
 
       describe '#bind_instance' do
-        before { @model = Models::Instance.make(:job => 'foo', :index => 3) }
+        let(:model) { Models::Instance.make(:job => 'foo', :index => 3) }
 
         it 'should associate the instance to the instance spec' do
           state = { 'state' => 'baz' }
@@ -241,12 +294,12 @@ module Bosh::Director
           deployment_plan.stub(:job_rename).and_return({})
           deployment_plan.stub(:rename_in_progress?).and_return(false)
 
-          instance.should_receive(:use_model).with(@model)
+          instance.should_receive(:use_model).with(model)
           instance.should_receive(:current_state=).with(state)
           instance.should_receive(:take_network_reservations).with(reservations)
           resource_pool.should_receive(:mark_active_vm)
 
-          assembler.bind_instance(@model, state, reservations)
+          assembler.bind_instance(model, state, reservations)
         end
 
         it 'should update the instance name if it is being renamed' do
@@ -263,23 +316,23 @@ module Bosh::Director
             and_return({ 'old_name' => 'foo', 'new_name' => 'bar' })
           deployment_plan.stub(:rename_in_progress?).and_return(true)
 
-          instance.should_receive(:use_model).with(@model)
+          instance.should_receive(:use_model).with(model)
           instance.should_receive(:current_state=).with(state)
           instance.should_receive(:take_network_reservations).with(reservations)
           resource_pool.should_receive(:mark_active_vm)
 
-          assembler.bind_instance(@model, state, reservations)
+          assembler.bind_instance(model, state, reservations)
         end
 
         it "should mark the instance for deletion when it's no longer valid" do
           state = { 'state' => 'baz' }
           reservations = { 'net' => 'reservation' }
           deployment_plan.stub(:job).with('foo').and_return(nil)
-          deployment_plan.should_receive(:delete_instance).with(@model)
+          deployment_plan.should_receive(:delete_instance).with(model)
           deployment_plan.stub(:job_rename).and_return({})
           deployment_plan.stub(:rename_in_progress?).and_return(false)
 
-          assembler.bind_instance(@model, state, reservations)
+          assembler.bind_instance(model, state, reservations)
         end
       end
 

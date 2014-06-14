@@ -51,24 +51,24 @@ module Bosh::Director
     def bind_existing_vm(vm, lock)
       state = get_state(vm)
       lock.synchronize do
-        @logger.debug('Processing network reservations')
+        @logger.debug('Processing VM network reservations')
         reservations = get_network_reservations(state)
 
         instance = vm.instance
         if instance
           bind_instance(instance, state, reservations)
         else
-          @logger.debug('Binding resource pool VM')
-          resource_pool = @deployment_plan.resource_pool(
-              state['resource_pool']['name'])
+          resource_pool_name = state['resource_pool']['name']
+          resource_pool = @deployment_plan.resource_pool(resource_pool_name)
           if resource_pool
+            @logger.debug("Binding VM to resource pool '#{resource_pool_name}'")
             bind_idle_vm(vm, resource_pool, state, reservations)
           else
-            @logger.debug("Resource pool doesn't exist, marking for deletion")
+            @logger.debug("Resource pool '#{resource_pool_name}' does not exist, marking VM for deletion")
             @deployment_plan.delete_vm(vm)
           end
         end
-        @logger.debug('Finished binding VM')
+        @logger.debug('Finished processing VM network reservations')
       end
     end
 
@@ -78,20 +78,29 @@ module Bosh::Director
     # @param [Hash] state VM state according to its agent
     # @param [Hash] reservations Network reservations
     def bind_idle_vm(vm, resource_pool, state, reservations)
-      @logger.debug('Adding to resource pool')
+      if reservations.any? { |network_name, reservation| reservation.static? }
+        @logger.debug("Releasing all network reservations for VM `#{vm.cid}'")
+        reservations.each do |network_name, reservation|
+          @logger.debug("Releasing #{reservation.type} network reservation `#{network_name}' for VM `#{vm.cid}'")
+          resource_pool.network.release(reservation)
+        end
+
+        @logger.debug("Deleting VM `#{vm.cid}' with static network reservation")
+        @deployment_plan.delete_vm(vm)
+        return
+      end
+
+      @logger.debug("Adding VM `#{vm.cid}' to resource pool `#{resource_pool.name}'")
       idle_vm = resource_pool.add_idle_vm
       idle_vm.vm = vm
       idle_vm.current_state = state
 
-      reservation = reservations[resource_pool.network.name]
+      network_name = resource_pool.network.name
+      reservation = reservations[network_name]
       if reservation
-        if reservation.static?
-          @logger.debug('Releasing static network reservation for ' +
-                        "resource pool VM `#{vm.cid}'")
-          resource_pool.network.release(reservation)
-        else
-          idle_vm.use_reservation(reservation)
-        end
+        @logger.debug("Using existing `#{reservation.type}' " +
+          "network reservation of `#{reservation.ip}' for VM `#{vm.cid}'")
+        idle_vm.use_reservation(reservation)
       else
         @logger.debug("No network reservation for VM `#{vm.cid}'")
       end
@@ -118,26 +127,26 @@ module Bosh::Director
 
       job = @deployment_plan.job(instance_model.job)
       unless job
-        @logger.debug("Job '#{instance_model.job}' not found, marking for deletion")
+        @logger.debug("Job `#{instance_model.job}' not found, marking for deletion")
         @deployment_plan.delete_instance(instance_model)
         return
       end
 
       instance = job.instance(instance_model.index)
       unless instance
-        @logger.debug("Job instance #{instance_name} not found, marking for deletion")
+        @logger.debug("Job instance `#{instance_name}' not found, marking for deletion")
         @deployment_plan.delete_instance(instance_model)
         return
       end
 
-      @logger.debug("Found job instance #{instance_name}")
+      @logger.debug("Found job instance `#{instance_name}'")
       instance.use_model(instance_model)
       instance.current_state = state
 
-      @logger.debug("Copying job instance #{instance_name} network reservations")
+      @logger.debug("Copying job instance `#{instance_name}' network reservations")
       instance.take_network_reservations(reservations)
 
-      @logger.debug("Copying job instance #{instance_name} resource pool reservation")
+      @logger.debug("Copying job instance `#{instance_name}' resource pool reservation")
       job.resource_pool.mark_active_vm
     end
 
