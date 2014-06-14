@@ -32,7 +32,8 @@ module Bosh::Dev
       @net_type = net_type
 
       artifacts_path = File.join(
-        '/tmp/ci-artifacts',
+        ENV.fetch('WORKSPACE', '/tmp'),
+        'ci-artifacts',
         artifact_definition.infrastructure.name,
         net_type,
         artifact_definition.operating_system.name,
