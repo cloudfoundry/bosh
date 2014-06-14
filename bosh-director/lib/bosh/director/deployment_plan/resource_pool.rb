@@ -35,6 +35,9 @@ module Bosh::Director
       # @return [Integer] Number of active resource pool VMs
       attr_reader :active_vm_count
 
+      # @return [Integer] Number of VMs reserved
+      attr_reader :reserved_capacity
+
       # @param [DeploymentPlan] deployment_plan Deployment plan
       # @param [Hash] spec Raw resource pool spec from the deployment manifest
       def initialize(deployment_plan, spec)
@@ -63,8 +66,8 @@ module Bosh::Director
         @idle_vms = []
         @allocated_vms = []
         @active_vm_count = 0
-        @required_capacity = 0
-        @errand_capacity = 0
+        @reserved_capacity = 0
+        @reserved_errand_capacity = 0
       end
 
       # Returns resource pools spec as Hash (usually for agent to serialize)
@@ -101,13 +104,6 @@ module Bosh::Director
         reservation
       end
 
-      # Returns a number of VMs that need to be created in order to bring
-      # this resource pool to a desired size
-      # @return [Integer]
-      def missing_vm_count
-        @size - @active_vm_count - @idle_vms.size
-      end
-
       # Adds a new VM to a list of managed idle VMs
       def add_idle_vm
         idle_vm = IdleVm.new(self)
@@ -134,26 +130,42 @@ module Bosh::Director
         @active_vm_count += 1
       end
 
-      # Checks if there is enough capacity to run extra N VMs,
+      # Checks if there is enough capacity to run _extra_ N VMs,
       # raise error if not enough capacity
       # @raise [ResourcePoolNotEnoughCapacity]
       # @return [void]
       def reserve_capacity(n)
-        @required_capacity += n
-        if @required_capacity > @size
+        needed = @reserved_capacity + n
+        if needed > @size
           raise ResourcePoolNotEnoughCapacity,
                 "Resource pool `#{@name}' is not big enough: " +
-                "#{@required_capacity} VMs needed, capacity is #{@size}"
+                "#{needed} VMs needed, capacity is #{@size}"
         end
+        @reserved_capacity = needed
       end
 
+      # Checks if there is enough capacity to run _up to_ N VMs,
+      # raise error if not enough capacity.
+      # Only enough capacity to run the largest errand is required,
+      # because errands can only run one at a time.
+      # @raise [ResourcePoolNotEnoughCapacity]
+      # @return [void]
       def reserve_errand_capacity(n)
-        needed = n - @errand_capacity
+        needed = n - @reserved_errand_capacity
 
         if needed > 0
           reserve_capacity(needed)
-          @errand_capacity = n
+          @reserved_errand_capacity = n
         end
+      end
+
+      private
+
+      # Returns a number of VMs that need to be created in order to bring
+      # this resource pool to a desired size
+      # @return [Integer]
+      def missing_vm_count
+        @size - @active_vm_count - @idle_vms.size
       end
     end
   end

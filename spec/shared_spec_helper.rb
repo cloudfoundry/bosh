@@ -14,7 +14,7 @@ end
 
 require 'rspec'
 RSpec.configure do |config|
-  config.deprecation_stream = StringIO.new
+  #config.deprecation_stream = StringIO.new
 
   config.mock_with :rspec do |mocks|
     # Turn on after fixing several specs that stub out private methods

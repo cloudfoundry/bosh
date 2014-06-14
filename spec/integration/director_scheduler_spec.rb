@@ -8,7 +8,7 @@ describe 'director_scheduler', type: :integration do
   def self.pending_for_travis_mysql!
     before do
       if ENV['TRAVIS'] && ENV['DB'] == 'mysql'
-        pending 'Travis does not currently support mysqldump'
+        skip 'Travis does not currently support mysqldump'
       end
     end
   end
