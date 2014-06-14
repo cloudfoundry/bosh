@@ -119,14 +119,15 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
         expect(assembler).to receive(:bind_dns).ordered
 
+        expect(assembler).to receive(:delete_unneeded_vms).ordered
+        expect(assembler).to receive(:delete_unneeded_instances).ordered
+
         expect(resource_pool_updater).to receive(:delete_extra_vms).ordered
         expect(resource_pool_updater).to receive(:delete_outdated_idle_vms).ordered
         expect(resource_pool_updater).to receive(:create_bound_missing_vms).ordered
 
         expect(assembler).to receive(:bind_instance_vms).ordered
         expect(assembler).to receive(:bind_configuration).ordered
-        expect(assembler).to receive(:delete_unneeded_vms).ordered
-        expect(assembler).to receive(:delete_unneeded_instances).ordered
 
         expect(multi_job_updater).to receive(:run).ordered
 

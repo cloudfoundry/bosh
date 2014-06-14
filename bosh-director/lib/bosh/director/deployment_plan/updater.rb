@@ -17,6 +17,12 @@ module Bosh::Director
           @assembler.bind_dns
         end
 
+        @logger.info('Deleting no longer needed VMs')
+        @assembler.delete_unneeded_vms
+
+        @logger.info('Deleting no longer needed instances')
+        @assembler.delete_unneeded_instances
+
         @logger.info('Updating resource pools')
         @resource_pools.update
         @base_job.task_checkpoint
@@ -28,12 +34,6 @@ module Bosh::Director
         @base_job.track_and_log('Binding configuration') do
           @assembler.bind_configuration
         end
-
-        @logger.info('Deleting no longer needed VMs')
-        @assembler.delete_unneeded_vms
-
-        @logger.info('Deleting no longer needed instances')
-        @assembler.delete_unneeded_instances
 
         @logger.info('Updating jobs')
         @multi_job_updater.run(

@@ -19,12 +19,12 @@ describe Bosh::Director::DeploymentPlan::Updater do
   describe '#update' do
     it 'runs deployment plan update stages in a specific order' do
       expect(assembler).to receive(:bind_dns).with(no_args).ordered
+      expect(assembler).to receive(:delete_unneeded_vms).with(no_args).ordered
+      expect(assembler).to receive(:delete_unneeded_instances).with(no_args).ordered
       expect(resource_pools).to receive(:update).with(no_args).ordered
       expect(base_job).to receive(:task_checkpoint).with(no_args).ordered
       expect(assembler).to receive(:bind_instance_vms).with(no_args).ordered
       expect(assembler).to receive(:bind_configuration).with(no_args).ordered
-      expect(assembler).to receive(:delete_unneeded_vms).with(no_args).ordered
-      expect(assembler).to receive(:delete_unneeded_instances).with(no_args).ordered
       expect(multi_job_updater).to receive(:run).with(base_job, deployment_plan, jobs).ordered
       expect(resource_pools).to receive(:refill).with(no_args).ordered
       subject.update

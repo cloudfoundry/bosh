@@ -31,8 +31,12 @@ module Bosh::Director
       #   All jobs in the deployment
       attr_reader :jobs
 
+      # Job instances from the old manifest that are not in the new manifest
       attr_accessor :unneeded_instances
+
+      # VMs from the old manifest that are not in the new manifest
       attr_accessor :unneeded_vms
+
       attr_accessor :dns_domain
 
       attr_reader :job_rename
