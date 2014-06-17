@@ -15,10 +15,12 @@ module Bosh::Dev
         GemArtifact.new(component, 's3://bosh-ci-pipeline/1234/', '1234')
       end
 
+      let(:credentials_path) { File.expand_path('~/.gem/credentials') }
+
       before do
         RakeFileUtils.stub(:sh)
-        FileUtils.mkdir_p('~/.gem')
-        FileUtils.touch('~/.gem/credentials')
+        FileUtils.mkdir_p(File.dirname(credentials_path))
+        FileUtils.touch(credentials_path)
         subject.stub(:puts)
         subject.stub(:warn)
       end
@@ -55,7 +57,7 @@ module Bosh::Dev
       end
 
       it 'fails with a debuggable error if the RubyGems credentials are missing' do
-        FileUtils.rm('~/.gem/credentials')
+        FileUtils.rm(credentials_path)
         expect {
           gem_artifact.promote
         }.to raise_error("Your rubygems.org credentials aren't set. Run `gem push` to set them.")

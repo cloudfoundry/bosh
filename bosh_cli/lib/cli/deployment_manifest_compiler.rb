@@ -15,7 +15,7 @@ module Bosh::Cli
     end
 
     def result
-      ERB.new(@raw_manifest, 4).result(binding.taint)
+      ERB.new(@raw_manifest).result(binding.taint)
     rescue SyntaxError => e
       raise MalformedManifest,
             "Deployment manifest contains a syntax error\n" + e.to_s

@@ -1,0 +1,5 @@
+Autotest.add_hook :initialize do |at|
+  at.add_mapping(%r%^test/.+_test.rb$%) do |filename, _|
+    filename
+  end
+end

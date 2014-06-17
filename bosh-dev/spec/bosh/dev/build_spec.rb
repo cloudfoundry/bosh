@@ -9,7 +9,7 @@ module Bosh::Dev
 
     describe '.candidate' do
       subject { described_class.candidate(logger) }
-      let(:logger) { Logger.new('/dev/null') }
+      let(:logger) { Logger.new(StringIO.new) }
 
       context 'when CANDIDATE_BUILD_NUMBER is set' do
         before { stub_const('ENV', 'CANDIDATE_BUILD_NUMBER' => 'candidate') }

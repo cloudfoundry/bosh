@@ -8,7 +8,7 @@ module Bosh::Dev
       include FakeFS::SpecHelpers
 
       subject { described_class.new(logger) }
-      let(:logger) { Logger.new('/dev/null') }
+      let(:logger) { Logger.new(StringIO.new) }
 
       before(:each) { FileUtils.mkdir('/tmp') }
 

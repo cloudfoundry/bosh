@@ -62,7 +62,7 @@ describe "http messages" do
     while !http_up?
       counter += 1
       # wait max 10 seconds for the agent to start
-      if counter > 100
+      if counter > 300
         puts File.read(@agent_sandbox.agent_logfile)
         raise "unable to connect to agent"
       end
