@@ -12,9 +12,9 @@ module Bosh::Dev
         vagrant ssh -c "bash -l -c '#{cmd}'" #{vm_name}
         popd
       BASH
-      Rake::FileUtilsExt.sh(vagrant_up_cmd + run_cmd)
+      Rake::FileUtilsExt.sh('bash', '-c', vagrant_up_cmd + run_cmd)
     ensure
-      Rake::FileUtilsExt.sh(vagrant_destroy_cmd)
+      Rake::FileUtilsExt.sh('bash', '-c', vagrant_destroy_cmd)
     end
 
     private

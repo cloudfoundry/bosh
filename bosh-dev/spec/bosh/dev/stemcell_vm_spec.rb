@@ -15,8 +15,10 @@ module Bosh::Dev
         let(:vm_name) { vm_name }
 
         it 'sets up the stemcell VM' do
-          expect(Rake::FileUtilsExt).to receive(:sh) do |cmd|
-            expect(strip_heredoc(cmd)).to include(strip_heredoc(<<-BASH))
+          expect(Rake::FileUtilsExt).to receive(:sh) do |cmd, opt, actual_cmd|
+            expect(cmd).to eq('bash')
+            expect(opt).to eq('-c')
+            expect(strip_heredoc(actual_cmd)).to include(strip_heredoc(<<-BASH))
               pushd bosh-stemcell
               [ -e .vagrant/machines/remote/aws/id ] && vagrant destroy #{vm_name} --force
               vagrant up #{vm_name} --provider #{provider}
@@ -29,7 +31,9 @@ module Bosh::Dev
         end
 
         it 'runs the given command in the VM' do
-          expect(Rake::FileUtilsExt).to receive(:sh) do |actual_cmd|
+          expect(Rake::FileUtilsExt).to receive(:sh) do |cmd, opt, actual_cmd|
+            expect(cmd).to eq('bash')
+            expect(opt).to eq('-c')
             expect(strip_heredoc(actual_cmd)).to include(strip_heredoc(<<-BASH))
               set -eu
 
@@ -44,7 +48,9 @@ module Bosh::Dev
 
         it 'cleans up the VM even if something fails' do
           allow(Rake::FileUtilsExt).to receive(:sh).and_raise('BANG')
-          expect(Rake::FileUtilsExt).to receive(:sh) do |actual_cmd|
+          expect(Rake::FileUtilsExt).to receive(:sh) do |cmd, opt, actual_cmd|
+            expect(cmd).to eq('bash')
+            expect(opt).to eq('-c')
             expect(strip_heredoc(actual_cmd)).to include(strip_heredoc(<<-BASH))
               set -eu
               pushd bosh-stemcell
