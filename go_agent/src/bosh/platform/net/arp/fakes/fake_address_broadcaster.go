@@ -1,13 +1,13 @@
 package fakes
 
 import (
-	bosharp "bosh/platform/net/arp"
+	boship "bosh/platform/net/ip"
 )
 
 type FakeAddressBroadcaster struct {
-	BroadcastMACAddressesAddresses []bosharp.InterfaceAddress
+	BroadcastMACAddressesAddresses []boship.InterfaceAddress
 }
 
-func (b *FakeAddressBroadcaster) BroadcastMACAddresses(addresses []bosharp.InterfaceAddress) {
+func (b *FakeAddressBroadcaster) BroadcastMACAddresses(addresses []boship.InterfaceAddress) {
 	b.BroadcastMACAddressesAddresses = addresses
 }

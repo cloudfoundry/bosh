@@ -6,9 +6,10 @@ import (
 
 	boshlog "bosh/logger"
 	. "bosh/platform/net"
-	bosharp "bosh/platform/net/arp"
 	fakearp "bosh/platform/net/arp/fakes"
 	fakenet "bosh/platform/net/fakes"
+	boship "bosh/platform/net/ip"
+	fakeip "bosh/platform/net/ip/fakes"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
 )
@@ -48,6 +49,7 @@ ONBOOT=yes`
 			fs                     *fakesys.FakeFileSystem
 			cmdRunner              *fakesys.FakeCmdRunner
 			defaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
+			ipResolver             *fakeip.FakeIPResolver
 			addressBroadcaster     *fakearp.FakeAddressBroadcaster
 			netManager             NetManager
 		)
@@ -56,9 +58,17 @@ ONBOOT=yes`
 			fs = fakesys.NewFakeFileSystem()
 			cmdRunner = fakesys.NewFakeCmdRunner()
 			defaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
+			ipResolver = &fakeip.FakeIPResolver{}
 			addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			netManager = NewCentosNetManager(fs, cmdRunner, defaultNetworkResolver, addressBroadcaster, logger)
+			netManager = NewCentosNetManager(
+				fs,
+				cmdRunner,
+				defaultNetworkResolver,
+				ipResolver,
+				addressBroadcaster,
+				logger,
+			)
 		})
 
 		Describe("SetupDhcp", func() {
@@ -73,9 +83,27 @@ ONBOOT=yes`
 				},
 			}
 
+			ItBroadcastsMACAddresses := func() {
+				It("starts broadcasting the MAC addresses", func() {
+					errCh := make(chan error)
+
+					err := netManager.SetupDhcp(networks, errCh)
+					Expect(err).ToNot(HaveOccurred())
+
+					<-errCh // wait for all arpings
+
+					Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal(
+						[]boship.InterfaceAddress{
+							// Resolve IP address because IP may not be known
+							boship.NewResolvingInterfaceAddress("eth0", ipResolver),
+						},
+					))
+				})
+			}
+
 			Context("when dhcp was not previously configured", func() {
 				It("writes dhcp configuration", func() {
-					err := netManager.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
@@ -84,12 +112,14 @@ ONBOOT=yes`
 				})
 
 				It("restarts network", func() {
-					err := netManager.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
 				})
+
+				ItBroadcastsMACAddresses()
 			})
 
 			Context("when dhcp was previously configured with different configuration", func() {
@@ -98,7 +128,7 @@ ONBOOT=yes`
 				})
 
 				It("updates dhcp configuration", func() {
-					err := netManager.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
@@ -107,12 +137,14 @@ ONBOOT=yes`
 				})
 
 				It("restarts network", func() {
-					err := netManager.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
 				})
+
+				ItBroadcastsMACAddresses()
 			})
 
 			Context("when dhcp was previously configured with same configuration", func() {
@@ -121,7 +153,7 @@ ONBOOT=yes`
 				})
 
 				It("keeps dhcp configuration", func() {
-					err := netManager.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
@@ -130,11 +162,13 @@ ONBOOT=yes`
 				})
 
 				It("does not restart network", func() {
-					err := netManager.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(0))
 				})
+
+				ItBroadcastsMACAddresses()
 			})
 		})
 
@@ -192,7 +226,7 @@ ONBOOT=yes`
 				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
 			})
 
-			It("runs arping commands", func() {
+			It("starts broadcasting the MAC addresses", func() {
 				err := netManager.SetupManualNetworking(networks, errCh)
 				Expect(err).ToNot(HaveOccurred())
 
@@ -201,11 +235,8 @@ ONBOOT=yes`
 
 				<-errCh // wait for all arpings
 
-				Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]bosharp.InterfaceAddress{
-					bosharp.InterfaceAddress{
-						Interface: "eth0",
-						IP:        "192.168.195.6",
-					},
+				Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]boship.InterfaceAddress{
+					boship.NewSimpleInterfaceAddress("eth0", "192.168.195.6"),
 				}))
 			})
 		})

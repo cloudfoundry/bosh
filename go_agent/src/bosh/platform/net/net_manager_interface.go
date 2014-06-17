@@ -16,7 +16,10 @@ type NetManager interface {
 	// upon completion of background network reconfiguration (e.g. arping).
 	SetupManualNetworking(networks boshsettings.Networks, errCh chan error) error
 
-	SetupDhcp(networks boshsettings.Networks) error
+	// SetupDhcp configures network interfaces using DHCP.
+	// If errCh is provided, nil or an error will be sent
+	// upon completion of background network reconfiguration (e.g. arping).
+	SetupDhcp(networks boshsettings.Networks, errCh chan error) error
 
 	DefaultNetworkResolver
 }

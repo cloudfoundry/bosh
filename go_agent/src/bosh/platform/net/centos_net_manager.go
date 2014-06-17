@@ -9,6 +9,7 @@ import (
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
 	bosharp "bosh/platform/net/arp"
+	boship "bosh/platform/net/ip"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 )
@@ -21,6 +22,7 @@ type centosNetManager struct {
 	fs                 boshsys.FileSystem
 	cmdRunner          boshsys.CmdRunner
 	routesSearcher     RoutesSearcher
+	ipResolver         boship.IPResolver
 	addressBroadcaster bosharp.AddressBroadcaster
 	logger             boshlog.Logger
 }
@@ -29,6 +31,7 @@ func NewCentosNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	defaultNetworkResolver DefaultNetworkResolver,
+	ipResolver boship.IPResolver,
 	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
 ) centosNetManager {
@@ -36,6 +39,7 @@ func NewCentosNetManager(
 		DefaultNetworkResolver: defaultNetworkResolver,
 		fs:                 fs,
 		cmdRunner:          cmdRunner,
+		ipResolver:         ipResolver,
 		addressBroadcaster: addressBroadcaster,
 		logger:             logger,
 	}
@@ -46,7 +50,7 @@ func (net centosNetManager) getDNSServers(networks boshsettings.Networks) []stri
 	return dnsNetwork.DNS
 }
 
-func (net centosNetManager) SetupDhcp(networks boshsettings.Networks) error {
+func (net centosNetManager) SetupDhcp(networks boshsettings.Networks, errCh chan error) error {
 	dnsNetwork, _ := networks.DefaultNetworkFor("dns")
 
 	type dhcpConfigArg struct {
@@ -69,6 +73,19 @@ func (net centosNetManager) SetupDhcp(networks boshsettings.Networks) error {
 	if written {
 		net.restartNetwork()
 	}
+
+	addresses := []boship.InterfaceAddress{
+		// eth0 is hard coded in AWS and OpenStack stemcells.
+		// TODO: abstract hardcoded network interface name to the NetManager
+		boship.NewResolvingInterfaceAddress("eth0", net.ipResolver),
+	}
+
+	go func() {
+		net.addressBroadcaster.BroadcastMACAddresses(addresses)
+		if errCh != nil {
+			errCh <- nil
+		}
+	}()
 
 	return err
 }

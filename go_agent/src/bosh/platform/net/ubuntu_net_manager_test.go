@@ -6,9 +6,10 @@ import (
 
 	boshlog "bosh/logger"
 	. "bosh/platform/net"
-	bosharp "bosh/platform/net/arp"
 	fakearp "bosh/platform/net/arp/fakes"
 	fakenet "bosh/platform/net/fakes"
+	boship "bosh/platform/net/ip"
+	fakeip "bosh/platform/net/ip/fakes"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
 )
@@ -50,6 +51,7 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 			fs                     *fakesys.FakeFileSystem
 			cmdRunner              *fakesys.FakeCmdRunner
 			defaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
+			ipResolver             *fakeip.FakeIPResolver
 			addressBroadcaster     *fakearp.FakeAddressBroadcaster
 			netManager             NetManager
 		)
@@ -58,9 +60,17 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 			fs = fakesys.NewFakeFileSystem()
 			cmdRunner = fakesys.NewFakeCmdRunner()
 			defaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
+			ipResolver = &fakeip.FakeIPResolver{}
 			addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			netManager = NewUbuntuNetManager(fs, cmdRunner, defaultNetworkResolver, addressBroadcaster, logger)
+			netManager = NewUbuntuNetManager(
+				fs,
+				cmdRunner,
+				defaultNetworkResolver,
+				ipResolver,
+				addressBroadcaster,
+				logger,
+			)
 		})
 
 		Describe("SetupDhcp", func() {
@@ -84,7 +94,7 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 					})
 
 					It("restarts dhclient", func() {
-						err := netManager.SetupDhcp(networks)
+						err := netManager.SetupDhcp(networks, nil)
 						Expect(err).ToNot(HaveOccurred())
 
 						Expect(len(cmdRunner.RunCommands)).To(Equal(3))
@@ -101,7 +111,7 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 					})
 
 					It("restarts dhclient", func() {
-						err := netManager.SetupDhcp(networks)
+						err := netManager.SetupDhcp(networks, nil)
 						Expect(err).ToNot(HaveOccurred())
 
 						Expect(len(cmdRunner.RunCommands)).To(Equal(3))
@@ -113,7 +123,7 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 
 			ItUpdatesDhcp3Config := func() {
 				It("updates /etc/dhcp3/dhclient.conf", func() {
-					err := netManager.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
@@ -124,7 +134,7 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 
 			ItUpdatesDhcpConfig := func() {
 				It("updates /etc/dhcp/dhclient.conf", func() {
-					err := netManager.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
@@ -135,10 +145,25 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 
 			ItDoesNotRestartDhcp := func() {
 				It("does not restart dhclient", func() {
-					err := netManager.SetupDhcp(networks)
+					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+				})
+			}
+
+			ItBroadcastsMACAddresses := func() {
+				It("starts broadcasting the MAC addresses", func() {
+					errCh := make(chan error)
+
+					err := netManager.SetupDhcp(networks, errCh)
+					Expect(err).ToNot(HaveOccurred())
+
+					<-errCh // wait for all arpings
+
+					Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]boship.InterfaceAddress{
+						boship.NewResolvingInterfaceAddress("eth0", ipResolver),
+					}))
 				})
 			}
 
@@ -148,6 +173,7 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 				Context("when dhcp was not previously configured", func() {
 					ItUpdatesDhcp3Config()
 					ItRestartsDhcp()
+					ItBroadcastsMACAddresses()
 				})
 
 				Context("when dhcp was previously configured with different configuration", func() {
@@ -157,6 +183,7 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 
 					ItUpdatesDhcp3Config()
 					ItRestartsDhcp()
+					ItBroadcastsMACAddresses()
 				})
 
 				Context("when dhcp was previously configured with the same configuration", func() {
@@ -166,6 +193,7 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 
 					ItUpdatesDhcp3Config()
 					ItDoesNotRestartDhcp()
+					ItBroadcastsMACAddresses()
 				})
 			})
 
@@ -258,11 +286,8 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 
 					<-errCh // wait for all arpings
 
-					Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]bosharp.InterfaceAddress{
-						bosharp.InterfaceAddress{
-							Interface: "eth0",
-							IP:        "192.168.195.6",
-						},
+					Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]boship.InterfaceAddress{
+						boship.NewSimpleInterfaceAddress("eth0", "192.168.195.6"),
 					}))
 				})
 			})
@@ -307,11 +332,8 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 
 					<-errCh // wait for all arpings
 
-					Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]bosharp.InterfaceAddress{
-						bosharp.InterfaceAddress{
-							Interface: "eth0",
-							IP:        "192.168.195.6",
-						},
+					Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]boship.InterfaceAddress{
+						boship.NewSimpleInterfaceAddress("eth0", "192.168.195.6"),
 					}))
 				})
 			})
@@ -350,17 +372,14 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 					Expect(resolvConf.StringContents()).To(Equal(expectedUbuntuResolvConf))
 				})
 
-				It("starts sending 6 arp ping", func() {
+				It("starts broadcasting the MAC addresses", func() {
 					err := netManager.SetupManualNetworking(networks, errCh)
 					Expect(err).ToNot(HaveOccurred())
 
 					<-errCh // wait for all arpings
 
-					Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]bosharp.InterfaceAddress{
-						bosharp.InterfaceAddress{
-							Interface: "eth0",
-							IP:        "192.168.195.6",
-						},
+					Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]boship.InterfaceAddress{
+						boship.NewSimpleInterfaceAddress("eth0", "192.168.195.6"),
 					}))
 				})
 			})

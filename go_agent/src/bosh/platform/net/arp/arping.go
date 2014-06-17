@@ -5,6 +5,7 @@ import (
 	"time"
 
 	boshlog "bosh/logger"
+	boship "bosh/platform/net/ip"
 	boshsys "bosh/system"
 )
 
@@ -39,7 +40,7 @@ func NewArping(
 }
 
 // BroadcastMACAddresses broadcasts multiple IP/MAC pairs, multiple times
-func (a arping) BroadcastMACAddresses(addresses []InterfaceAddress) {
+func (a arping) BroadcastMACAddresses(addresses []boship.InterfaceAddress) {
 	for i := 0; i < a.iterations; i++ {
 		a.broadcastMACAddressesOnce(addresses)
 		if i < a.iterations-1 {
@@ -50,9 +51,9 @@ func (a arping) BroadcastMACAddresses(addresses []InterfaceAddress) {
 
 // broadcastMACAddressesOnce broadcasts multiple IP/MAC pairs to the specified networks
 // and logs any failures
-func (a arping) broadcastMACAddressesOnce(addresses []InterfaceAddress) {
+func (a arping) broadcastMACAddressesOnce(addresses []boship.InterfaceAddress) {
 	for _, address := range addresses {
-		a.blockUntilInterfaceExists(address.Interface)
+		a.blockUntilInterfaceExists(address.GetInterfaceName())
 		a.broadcastMACAddress(address)
 	}
 }
@@ -60,15 +61,23 @@ func (a arping) broadcastMACAddressesOnce(addresses []InterfaceAddress) {
 // blockUntilInterfaceExists block until the specified network interface exists
 // at /sys/class/net/<interfaceName>
 func (a arping) blockUntilInterfaceExists(interfaceName string) {
-	//TODO: Timeout waiting for net interface to exist?
+	// TODO: Timeout waiting for net interface to exist?
 	for !a.fs.FileExists(filepath.Join("/sys/class/net", interfaceName)) {
 		time.Sleep(a.interfaceCheckDelay)
 	}
 }
 
 // broadcastMACAddress broadcasts an IP/MAC pair to the specified network and logs any failure
-func (a arping) broadcastMACAddress(address InterfaceAddress) {
-	_, _, _, err := a.cmdRunner.RunCommand("arping", "-c", "1", "-U", "-I", address.Interface, address.IP)
+func (a arping) broadcastMACAddress(address boship.InterfaceAddress) {
+	ip, err := address.GetIP()
+	if err != nil {
+		a.logger.Info(arpingLogTag, "Ignoring GetIP failure: %s", err.Error())
+		return
+	}
+
+	ifaceName := address.GetInterfaceName()
+
+	_, _, _, err = a.cmdRunner.RunCommand("arping", "-c", "1", "-U", "-I", ifaceName, ip)
 	if err != nil {
 		a.logger.Info(arpingLogTag, "Ignoring arping failure: %s", err.Error())
 	}

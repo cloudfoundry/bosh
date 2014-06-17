@@ -10,6 +10,7 @@ import (
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
 	bosharp "bosh/platform/net/arp"
+	boship "bosh/platform/net/ip"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 )
@@ -25,6 +26,7 @@ type ubuntuNetManager struct {
 
 	cmdRunner          boshsys.CmdRunner
 	fs                 boshsys.FileSystem
+	ipResolver         boship.IPResolver
 	addressBroadcaster bosharp.AddressBroadcaster
 	logger             boshlog.Logger
 }
@@ -33,6 +35,7 @@ func NewUbuntuNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	defaultNetworkResolver DefaultNetworkResolver,
+	ipResolver boship.IPResolver,
 	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
 ) ubuntuNetManager {
@@ -40,6 +43,7 @@ func NewUbuntuNetManager(
 		DefaultNetworkResolver: defaultNetworkResolver,
 		cmdRunner:              cmdRunner,
 		fs:                     fs,
+		ipResolver:             ipResolver,
 		addressBroadcaster:     addressBroadcaster,
 		logger:                 logger,
 	}
@@ -50,7 +54,7 @@ func (net ubuntuNetManager) getDNSServers(networks boshsettings.Networks) []stri
 	return dnsNetwork.DNS
 }
 
-func (net ubuntuNetManager) SetupDhcp(networks boshsettings.Networks) error {
+func (net ubuntuNetManager) SetupDhcp(networks boshsettings.Networks, errCh chan error) error {
 	dnsServers := net.getDNSServers(networks)
 	dnsServersList := strings.Join(dnsServers, ", ")
 	buffer := bytes.NewBuffer([]byte{})
@@ -80,6 +84,19 @@ func (net ubuntuNetManager) SetupDhcp(networks boshsettings.Networks) error {
 			net.logger.Info(ubuntuNetManagerLogTag, "Ignoring ifup failure: %#v", err)
 		}
 	}
+
+	addresses := []boship.InterfaceAddress{
+		// eth0 is hard coded in AWS and OpenStack stemcells.
+		// TODO: abstract hardcoded network interface name to the NetManager
+		boship.NewResolvingInterfaceAddress("eth0", net.ipResolver),
+	}
+
+	go func() {
+		net.addressBroadcaster.BroadcastMACAddresses(addresses)
+		if errCh != nil {
+			errCh <- nil
+		}
+	}()
 
 	return nil
 }

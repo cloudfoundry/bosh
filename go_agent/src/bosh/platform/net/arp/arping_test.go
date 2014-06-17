@@ -1,13 +1,24 @@
 package arp_test
 
 import (
+	"errors"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	boshlog "bosh/logger"
 	. "bosh/platform/net/arp"
+	boship "bosh/platform/net/ip"
 	fakesys "bosh/system/fakes"
 )
+
+type failingInterfaceAddress struct{}
+
+func (ia failingInterfaceAddress) GetInterfaceName() string { return "eth0" }
+
+func (ia failingInterfaceAddress) GetIP() (string, error) {
+	return "", errors.New("fake-get-ip-err")
+}
 
 var _ = Describe("arping", func() {
 	const arpingIterations = 6
@@ -31,18 +42,12 @@ var _ = Describe("arping", func() {
 			fs.WriteFile("/sys/class/net/eth1", []byte{})
 		})
 
-		addresses := []InterfaceAddress{
-			InterfaceAddress{
-				Interface: "eth0",
-				IP:        "192.168.195.6",
-			},
-			InterfaceAddress{
-				Interface: "eth1",
-				IP:        "127.0.0.1",
-			},
-		}
-
 		It("runs arping commands for each interface", func() {
+			addresses := []boship.InterfaceAddress{
+				boship.NewSimpleInterfaceAddress("eth0", "192.168.195.6"),
+				boship.NewSimpleInterfaceAddress("eth1", "127.0.0.1"),
+			}
+
 			arping.BroadcastMACAddresses(addresses)
 
 			for i := 0; i < arpingIterations; i++ {
@@ -54,6 +59,13 @@ var _ = Describe("arping", func() {
 					"arping", "-c", "1", "-U", "-I", "eth1", "127.0.0.1",
 				}))
 			}
+		})
+
+		It("does not run arping command if failed to get interface IP address", func() {
+			addresses := []boship.InterfaceAddress{failingInterfaceAddress{}}
+
+			arping.BroadcastMACAddresses(addresses)
+			Expect(cmdRunner.RunCommands).To(BeEmpty())
 		})
 	})
 })

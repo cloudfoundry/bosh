@@ -1,7 +1,7 @@
 package net
 
 import (
-	bosharp "bosh/platform/net/arp"
+	boship "bosh/platform/net/ip"
 	boshsettings "bosh/settings"
 )
 
@@ -17,12 +17,12 @@ type customNetwork struct {
 	HasDefaultGateway bool
 }
 
-func (c customNetwork) ToInterfaceAddress() bosharp.InterfaceAddress {
-	return bosharp.InterfaceAddress{Interface: c.Interface, IP: c.IP}
+func (c customNetwork) ToInterfaceAddress() boship.InterfaceAddress {
+	return boship.NewSimpleInterfaceAddress(c.Interface, c.IP)
 }
 
 // toInterfaceAddresses bulk converts customNetworks to InterfaceAddresses
-func toInterfaceAddresses(networks []customNetwork) (addresses []bosharp.InterfaceAddress) {
+func toInterfaceAddresses(networks []customNetwork) (addresses []boship.InterfaceAddress) {
 	for _, network := range networks {
 		addresses = append(addresses, network.ToInterfaceAddress())
 	}

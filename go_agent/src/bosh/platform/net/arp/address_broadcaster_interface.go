@@ -1,13 +1,9 @@
 package arp
 
-type InterfaceAddress struct {
-	// the interface name
-	Interface string
-
-	// the exposed internet protocol address of the above interface
-	IP string
-}
+import (
+	boship "bosh/platform/net/ip"
+)
 
 type AddressBroadcaster interface {
-	BroadcastMACAddresses([]InterfaceAddress)
+	BroadcastMACAddresses([]boship.InterfaceAddress)
 }
