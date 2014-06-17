@@ -22,6 +22,11 @@ module Bosh::Dev
     end
 
     let(:tempfile) { instance_double(Tempfile, close: nil, unlink: nil, path: '/tmpdir/tmpfile') }
+    before do
+      allow(tempfile).to receive(:unlink) do
+        allow(tempfile).to receive(:path).and_return(nil)
+      end
+    end
     before { class_double(Tempfile, new: tempfile).as_stubbed_const }
 
     describe '#to_s' do

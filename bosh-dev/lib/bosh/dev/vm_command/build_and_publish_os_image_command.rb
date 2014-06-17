@@ -29,8 +29,9 @@ module Bosh::Dev
         @filename ||= begin
           file = Tempfile.new('os_image')
           file.close
+          path = file.path
           file.unlink
-          file.path
+          path
         end
       end
 
