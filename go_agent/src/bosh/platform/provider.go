@@ -12,6 +12,7 @@ import (
 	boshdisk "bosh/platform/disk"
 	boshnet "bosh/platform/net"
 	bosharp "bosh/platform/net/arp"
+	boship "bosh/platform/net/ip"
 	boshstats "bosh/platform/stats"
 	boshvitals "bosh/platform/vitals"
 	boshdirs "bosh/settings/directories"
@@ -49,11 +50,9 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
 
 	routesSearcher := boshnet.NewCmdRoutesSearcher(runner)
-	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(
-		routesSearcher,
-		boshnet.DefaultInterfaceToAddrsFunc,
-	)
+	ipResolver := boship.NewIPResolver(boship.NetworkInterfaceToAddrsFunc)
 
+	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
 	arping := bosharp.NewArping(runner, fs, logger, ArpIterations, ArpIterationDelay, ArpInterfaceCheckDelay)
 
 	centosNetManager := boshnet.NewCentosNetManager(fs, runner, defaultNetworkResolver, arping, logger)
