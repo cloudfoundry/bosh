@@ -20,6 +20,7 @@ then
 
   rm $chroot/tmp/*.deb
 else
-  pkg_mgr install linux-virtual
-  pkg_mgr install linux-image-extra-virtual
+  pkg_mgr install linux-generic
+  pkg_mgr install linux-image-generic
+  pkg_mgr install linux-headers-generic
 fi
