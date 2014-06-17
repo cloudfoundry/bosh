@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'rake'
 require 'bosh/dev/vm_command/build_and_publish_os_image_command'
 
 module Bosh::Dev
