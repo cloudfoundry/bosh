@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	ArpIterations          = 6
-	ArpIterationDelay      = 10 * time.Second
+	ArpIterations          = 20
+	ArpIterationDelay      = 5 * time.Second
 	ArpInterfaceCheckDelay = 100 * time.Millisecond
 )
 
