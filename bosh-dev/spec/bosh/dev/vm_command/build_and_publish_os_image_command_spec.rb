@@ -22,10 +22,14 @@ module Bosh::Dev
       }
     end
 
-    before { class_double(Dir, mktmpdir: "/tmpdir").as_stubbed_const }
+    let(:tempfile) { instance_double(Tempfile, close: nil, unlink: nil, path: '/tmpdir/tmpfile') }
+    before { class_double(Tempfile, new: tempfile).as_stubbed_const }
 
     describe '#to_s' do
       it 'is the command to execute on vagrant to build and publish an OS image' do
+        expect(tempfile).to receive(:close).ordered
+        expect(tempfile).to receive(:unlink).ordered
+
         expected_cmd = strip_heredoc(<<-BASH)
           set -eu
           cd /bosh
@@ -33,8 +37,8 @@ module Bosh::Dev
           export BOSH_AWS_ACCESS_KEY_ID='fake-BOSH_AWS_ACCESS_KEY_ID'
           export BOSH_AWS_SECRET_ACCESS_KEY='fake-BOSH_AWS_SECRET_ACCESS_KEY'
 
-          bundle exec rake stemcell:build_os_image[ubuntu,trusty,/tmpdir/os_image.tgz]
-          bundle exec rake stemcell:publish_os_image[/tmpdir/os_image.tgz,bosh-os-images,bosh-ubuntu-trusty-os-image.tgz]
+          bundle exec rake stemcell:build_os_image[ubuntu,trusty,/tmpdir/tmpfile]
+          bundle exec rake stemcell:publish_os_image[/tmpdir/tmpfile,bosh-os-images,bosh-ubuntu-trusty-os-image.tgz]
         BASH
 
         expect(strip_heredoc(subject.to_s)).to eq(strip_heredoc(expected_cmd))

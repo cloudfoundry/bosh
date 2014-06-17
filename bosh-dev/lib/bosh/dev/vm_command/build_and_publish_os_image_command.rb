@@ -1,3 +1,5 @@
+require 'tempfile'
+
 module Bosh::Dev
   module VmCommand
     class BuildAndPublishOsImageCommand
@@ -24,7 +26,12 @@ module Bosh::Dev
                   :options
 
       def filename
-        @filename ||= File.join(Dir.mktmpdir, 'os_image.tgz')
+        @filename ||= begin
+          file = Tempfile.new('os_image')
+          file.close
+          file.unlink
+          file.path
+        end
       end
 
       def build_task_args
