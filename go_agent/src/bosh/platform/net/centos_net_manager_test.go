@@ -1,13 +1,13 @@
 package net_test
 
 import (
-	"time"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	boshlog "bosh/logger"
 	. "bosh/platform/net"
+	bosharp "bosh/platform/net/arp"
+	fakearp "bosh/platform/net/arp/fakes"
 	fakenet "bosh/platform/net/fakes"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
@@ -48,6 +48,7 @@ ONBOOT=yes`
 			fs                     *fakesys.FakeFileSystem
 			cmdRunner              *fakesys.FakeCmdRunner
 			defaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
+			addressBroadcaster     *fakearp.FakeAddressBroadcaster
 			netManager             NetManager
 		)
 
@@ -55,8 +56,9 @@ ONBOOT=yes`
 			fs = fakesys.NewFakeFileSystem()
 			cmdRunner = fakesys.NewFakeCmdRunner()
 			defaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
+			addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			netManager = NewCentosNetManager(fs, cmdRunner, defaultNetworkResolver, 1*time.Millisecond, logger)
+			netManager = NewCentosNetManager(fs, cmdRunner, defaultNetworkResolver, addressBroadcaster, logger)
 		})
 
 		Describe("SetupDhcp", func() {
@@ -144,7 +146,6 @@ ONBOOT=yes`
 			})
 
 			BeforeEach(func() {
-				fs.WriteFile("/sys/class/net/eth0", []byte{})
 				fs.WriteFileString("/sys/class/net/eth0/address", "22:00:0a:1f:ac:2a\n")
 				fs.SetGlob("/sys/class/net/*", []string{"/sys/class/net/eth0"})
 			})
@@ -187,7 +188,7 @@ ONBOOT=yes`
 
 				<-errCh // wait for all arpings
 
-				Expect(len(cmdRunner.RunCommands)).To(Equal(7))
+				Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
 			})
 
@@ -200,8 +201,12 @@ ONBOOT=yes`
 
 				<-errCh // wait for all arpings
 
-				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
-				Expect(cmdRunner.RunCommands[6]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+				Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]bosharp.InterfaceAddress{
+					bosharp.InterfaceAddress{
+						Interface: "eth0",
+						IP:        "192.168.195.6",
+					},
+				}))
 			})
 		})
 	})

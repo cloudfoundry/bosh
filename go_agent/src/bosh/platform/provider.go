@@ -11,10 +11,17 @@ import (
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshnet "bosh/platform/net"
+	bosharp "bosh/platform/net/arp"
 	boshstats "bosh/platform/stats"
 	boshvitals "bosh/platform/vitals"
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
+)
+
+const (
+	ArpIterations          = 6
+	ArpIterationDelay      = 10 * time.Second
+	ArpInterfaceCheckDelay = 100 * time.Millisecond
 )
 
 type provider struct {
@@ -47,8 +54,10 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 		boshnet.DefaultInterfaceToAddrsFunc,
 	)
 
-	centosNetManager := boshnet.NewCentosNetManager(fs, runner, defaultNetworkResolver, 10*time.Second, logger)
-	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, defaultNetworkResolver, 10*time.Second, logger)
+	arping := bosharp.NewArping(runner, fs, logger, ArpIterations, ArpIterationDelay, ArpInterfaceCheckDelay)
+
+	centosNetManager := boshnet.NewCentosNetManager(fs, runner, defaultNetworkResolver, arping, logger)
+	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, defaultNetworkResolver, arping, logger)
 
 	centos := NewLinuxPlatform(
 		fs,

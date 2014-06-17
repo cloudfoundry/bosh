@@ -1,13 +1,13 @@
 package net_test
 
 import (
-	"time"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	boshlog "bosh/logger"
 	. "bosh/platform/net"
+	bosharp "bosh/platform/net/arp"
+	fakearp "bosh/platform/net/arp/fakes"
 	fakenet "bosh/platform/net/fakes"
 	boshsettings "bosh/settings"
 	fakesys "bosh/system/fakes"
@@ -50,6 +50,7 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 			fs                     *fakesys.FakeFileSystem
 			cmdRunner              *fakesys.FakeCmdRunner
 			defaultNetworkResolver *fakenet.FakeDefaultNetworkResolver
+			addressBroadcaster     *fakearp.FakeAddressBroadcaster
 			netManager             NetManager
 		)
 
@@ -57,8 +58,9 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 			fs = fakesys.NewFakeFileSystem()
 			cmdRunner = fakesys.NewFakeCmdRunner()
 			defaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
+			addressBroadcaster = &fakearp.FakeAddressBroadcaster{}
 			logger := boshlog.NewLogger(boshlog.LevelNone)
-			netManager = NewUbuntuNetManager(fs, cmdRunner, defaultNetworkResolver, 1*time.Millisecond, logger)
+			netManager = NewUbuntuNetManager(fs, cmdRunner, defaultNetworkResolver, addressBroadcaster, logger)
 		})
 
 		Describe("SetupDhcp", func() {
@@ -250,14 +252,18 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 					Expect(resolvConf.StringContents()).To(Equal(expectedUbuntuResolvConf))
 				})
 
-				It("starts sending arping", func() {
+				It("starts broadcasting the MAC addresses", func() {
 					err := netManager.SetupManualNetworking(networks, errCh)
 					Expect(err).ToNot(HaveOccurred())
 
 					<-errCh // wait for all arpings
 
-					Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
-					Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+					Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]bosharp.InterfaceAddress{
+						bosharp.InterfaceAddress{
+							Interface: "eth0",
+							IP:        "192.168.195.6",
+						},
+					}))
 				})
 			})
 
@@ -295,14 +301,18 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 					Expect(resolvConf.StringContents()).To(Equal(expectedUbuntuResolvConf))
 				})
 
-				It("starts sending 6 arp pings", func() {
+				It("starts broadcasting the MAC addresses", func() {
 					err := netManager.SetupManualNetworking(networks, errCh)
 					Expect(err).ToNot(HaveOccurred())
 
 					<-errCh // wait for all arpings
 
-					Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
-					Expect(cmdRunner.RunCommands[7]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+					Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]bosharp.InterfaceAddress{
+						bosharp.InterfaceAddress{
+							Interface: "eth0",
+							IP:        "192.168.195.6",
+						},
+					}))
 				})
 			})
 
@@ -346,9 +356,12 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 
 					<-errCh // wait for all arpings
 
-					Expect(len(cmdRunner.RunCommands)).To(Equal(6))
-					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
-					Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}))
+					Expect(addressBroadcaster.BroadcastMACAddressesAddresses).To(Equal([]bosharp.InterfaceAddress{
+						bosharp.InterfaceAddress{
+							Interface: "eth0",
+							IP:        "192.168.195.6",
+						},
+					}))
 				})
 			})
 		})

@@ -20,15 +20,3 @@ type NetManager interface {
 
 	DefaultNetworkResolver
 }
-
-type customNetwork struct {
-	boshsettings.Network
-	Interface         string
-	NetworkIP         string
-	Broadcast         string
-	HasDefaultGateway bool
-}
-
-type dnsConfigArg struct {
-	DNSServers []string
-}

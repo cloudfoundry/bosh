@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
-	"time"
 
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
+	bosharp "bosh/platform/net/arp"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 )
@@ -18,26 +18,26 @@ const centosNetManagerLogTag = "centosNetManager"
 type centosNetManager struct {
 	DefaultNetworkResolver
 
-	fs              boshsys.FileSystem
-	cmdRunner       boshsys.CmdRunner
-	routesSearcher  RoutesSearcher
-	arpWaitInterval time.Duration
-	logger          boshlog.Logger
+	fs                 boshsys.FileSystem
+	cmdRunner          boshsys.CmdRunner
+	routesSearcher     RoutesSearcher
+	addressBroadcaster bosharp.AddressBroadcaster
+	logger             boshlog.Logger
 }
 
 func NewCentosNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	defaultNetworkResolver DefaultNetworkResolver,
-	arpWaitInterval time.Duration,
+	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
 ) centosNetManager {
 	return centosNetManager{
 		DefaultNetworkResolver: defaultNetworkResolver,
-		fs:              fs,
-		cmdRunner:       cmdRunner,
-		arpWaitInterval: arpWaitInterval,
-		logger:          logger,
+		fs:                 fs,
+		cmdRunner:          cmdRunner,
+		addressBroadcaster: addressBroadcaster,
+		logger:             logger,
 	}
 }
 
@@ -101,30 +101,16 @@ func (net centosNetManager) SetupManualNetworking(networks boshsettings.Networks
 		return bosherr.WrapError(err, "Writing resolv.conf")
 	}
 
-	go net.gratuitiousArp(modifiedNetworks, errCh)
+	addresses := toInterfaceAddresses(modifiedNetworks)
+
+	go func() {
+		net.addressBroadcaster.BroadcastMACAddresses(addresses)
+		if errCh != nil {
+			errCh <- nil
+		}
+	}()
 
 	return nil
-}
-
-func (net centosNetManager) gratuitiousArp(networks []customNetwork, errCh chan error) {
-	for i := 0; i < 6; i++ {
-		for _, network := range networks {
-			for !net.fs.FileExists(filepath.Join("/sys/class/net", network.Interface)) {
-				time.Sleep(100 * time.Millisecond)
-			}
-
-			_, _, _, err := net.cmdRunner.RunCommand("arping", "-c", "1", "-U", "-I", network.Interface, network.IP)
-			if err != nil {
-				net.logger.Info(centosNetManagerLogTag, "Ignoring arping failure: %#v", err)
-			}
-
-			time.Sleep(net.arpWaitInterval)
-		}
-	}
-
-	if errCh != nil {
-		errCh <- nil
-	}
 }
 
 func (net centosNetManager) writeIfcfgs(networks boshsettings.Networks) ([]customNetwork, error) {
