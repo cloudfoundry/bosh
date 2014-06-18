@@ -31,7 +31,7 @@ var _ = Describe("sigarStatsCollector", func() {
 	Describe("StartCollecting", func() {
 		It("updates cpu stats", func() {
 			collector.StartCollecting(100 * time.Millisecond)
-			time.Sleep(200 * time.Millisecond)
+			time.Sleep(1 * time.Second)
 
 			stats, err := collector.GetCPUStats()
 			Expect(err).ToNot(HaveOccurred())
