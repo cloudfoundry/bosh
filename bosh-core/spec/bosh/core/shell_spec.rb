@@ -13,12 +13,13 @@ module Bosh::Core
       end
 
       it 'shells out with specified additional env variables' do
+        stub_const('ENV', 'SHELL' => '/bin/bash')
         expect(subject.run('env env', env: { 'VAR' => '123' })).to include('VAR=123')
         expect(stdout.string).to include('VAR=123')
       end
 
       it 'shells out with specified additional env variables even when SHELL env variable is not available' do
-        stub_const('ENV', 'SHELL' => nil)
+        stub_const('ENV', {})
         expect(subject.run('env env', env: { 'VAR' => '123' })).to include('VAR=123')
         expect(stdout.string).to include('VAR=123')
       end

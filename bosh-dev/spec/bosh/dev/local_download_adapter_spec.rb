@@ -6,7 +6,7 @@ describe Bosh::Dev::LocalDownloadAdapter do
   include FakeFS::SpecHelpers
 
   subject { described_class.new(logger) }
-  let(:logger) { Logger.new('/dev/null') }
+  let(:logger) { Logger.new(StringIO.new) }
 
   describe '#download' do
     before { FileUtils.mkdir('/tmp') }

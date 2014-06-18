@@ -23,7 +23,7 @@ namespace :ci do
     Bosh::Dev::BoshReleasePublisher.setup_for(build).publish
   end
 
-  desc 'Build a stemcell for the given :infrastructure, :operating_system, and :agent_name and publish to S3'
+  desc 'Publish the given stemcell to S3'
   task :publish_stemcell, [:stemcell_path] do |_, args|
     require 'bosh/dev/stemcell_publisher'
 
@@ -37,12 +37,24 @@ namespace :ci do
     require 'bosh/dev/stemcell_vm'
     require 'bosh/stemcell/definition'
     require 'bosh/stemcell/build_environment'
+    require 'bosh/dev/vm_command/build_and_publish_stemcell_command'
 
     definition = Bosh::Stemcell::Definition.for(args.infrastructure_name, args.operating_system_name, args.operating_system_version, args.agent_name)
     environment = Bosh::Stemcell::BuildEnvironment.new(ENV.to_hash, definition, Bosh::Dev::Build.candidate.number, nil, nil)
 
-    stemcell_vm = Bosh::Dev::StemcellVm.new(args.to_hash, ENV, environment)
-    stemcell_vm.publish
+    stemcell_vm = Bosh::Dev::StemcellVm.new(args.vm_name)
+    command = Bosh::Dev::VmCommand::BuildAndPublishStemcellCommand.new(environment, ENV, args.to_hash)
+    stemcell_vm.run(command)
+  end
+
+  desc 'Build and publish an OS image on a stemcell building VM'
+  task :publish_os_image_in_vm, [:operating_system_name, :operating_system_version, :vm_name, :os_image_s3_bucket_name, :os_image_s3_key] do |_, args|
+    require 'bosh/dev/stemcell_vm'
+    require 'bosh/dev/vm_command/build_and_publish_os_image_command'
+
+    stemcell_vm = Bosh::Dev::StemcellVm.new(args.vm_name)
+    command = Bosh::Dev::VmCommand::BuildAndPublishOsImageCommand.new(ENV, args.to_hash)
+    stemcell_vm.run(command)
   end
 
   desc 'Promote from pipeline to artifacts bucket'

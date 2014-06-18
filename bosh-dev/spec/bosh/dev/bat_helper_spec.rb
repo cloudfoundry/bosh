@@ -53,6 +53,20 @@ module Bosh::Dev
         expect(Bosh::Dev::Bat::Artifacts).to have_received(:new)
                                              .with(artifacts_path, build, definition)
       end
+
+      context 'when WORKSPACE is set' do
+        before { stub_const('ENV', {'WORKSPACE' => '/fake-workspace'}) }
+
+        it 'builds artifacts inside of workspace' do
+          artifacts_path = '/fake-workspace/ci-artifacts/infrastructure-name' +
+            '/networking-type/operating-system-name/operating-system-version/agent-name/deployments'
+
+          subject
+
+          expect(Bosh::Dev::Bat::Artifacts).to have_received(:new)
+                                               .with(artifacts_path, build, definition)
+        end
+      end
     end
 
     describe '.for_rake_args' do

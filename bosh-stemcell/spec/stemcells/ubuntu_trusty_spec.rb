@@ -6,12 +6,12 @@ describe 'Ubuntu 14.04 stemcell', stemcell_image: true do
       it { should be_file }
       it { should contain 'default=0' }
       it { should contain 'timeout=1' }
-      it { should contain 'title Ubuntu 14.04 LTS (3.13.0-24-generic)' }
+      it { should contain 'title Ubuntu 14.04 LTS' }
       it { should contain '  root (hd0,0)' }
-      it { should contain '  kernel /boot/vmlinuz-3.13.0-24-generic ro root=UUID=' }
+      it { should contain %r{kernel /boot/vmlinuz-\S+generic ro root=UUID=} }
       it { should contain ' selinux=0' }
       it { should contain ' cgroup_enable=memory swapaccount=1' }
-      it { should contain '  initrd /boot/initrd.img-3.13.0-24-generic' }
+      it { should contain %r{initrd /boot/initrd.img-\S+-generic} }
     end
 
     describe file('/boot/grub/menu.lst') do

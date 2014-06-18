@@ -1,5 +1,5 @@
 module Bosh
   module Deployer
-    VERSION = '1.2605.0'
+    VERSION = '1.2606.0'
   end
 end

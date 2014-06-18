@@ -9,6 +9,7 @@ install:
 
 rvm:
   - ruby-1.9.3
+  - ruby-2.1.1
 
 env:
   # limit unit test threads to 1 to avoid SimpleCov race conditions:
