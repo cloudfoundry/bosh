@@ -23,48 +23,45 @@ class FakeNATS
 end
 
 describe 'notifying plugins' do
-  def start_health_monitor
-    Thread.new { runner.run }
-    sleep 1
-  end
-
-  def send_failure_message
-    @nats.alert(JSON.dump(payload))
-  end
-
-  def start_fake_nats
-    @nats = FakeNATS.new
-    NATS.stub(:connect => @nats)
-  end
-
-  def fake_director
-    director = double(Bosh::Monitor::Director, :get_deployments => [])
-    Bosh::Monitor::Director.stub(:new => director)
-  end
-
   let(:runner) { Bosh::Monitor::Runner.new(spec_asset("dummy_plugin_config.yml")) }
-  let(:event_processor) { Bosh::Monitor.event_processor }
-  let(:dummy_plugin) { event_processor.plugins[:alert].first }
-  let(:payload) { {
-      "id" => 'payload-id',
-      "severity" => 3,
-      "title" => 'payload-title',
-      "summary" => 'payload-summary',
-      "created_at" => Time.now.to_i
-  } }
 
   before do
     start_fake_nats
     start_health_monitor
   end
 
-  after do
-    runner.stop(true)
-  end
+  after { runner.stop(true) }
 
   it 'sends an alert to its plugins' do
-    send_failure_message
+    payload = {
+      "id" => 'payload-id',
+      "severity" => 3,
+      "title" => 'payload-title',
+      "summary" => 'payload-summary',
+      "created_at" => Time.now.to_i,
+    }
+
+    @nats.alert(JSON.dump(payload))
+
+    dummy_plugin = Bosh::Monitor.event_processor.plugins[:alert].first
+
     alert = dummy_plugin.events.first
-    expect(alert.attributes).to eq payload
+
+    expect(alert.attributes).to eq(payload)
+  end
+
+  def start_health_monitor(tries=60)
+    Thread.new { runner.run }
+    while tries > 0
+      tries -= 1
+      return if Bosh::Monitor.event_processor
+      sleep 0.2
+    end
+    raise "Failed to configure event_processor in time"
+  end
+
+  def start_fake_nats
+    @nats = FakeNATS.new
+    NATS.stub(:connect => @nats)
   end
 end
