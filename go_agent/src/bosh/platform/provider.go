@@ -25,6 +25,10 @@ const (
 	ArpInterfaceCheckDelay = 100 * time.Millisecond
 )
 
+const (
+	SigarStatsCollectionInterval = 10 * time.Second
+)
+
 type provider struct {
 	platforms map[string]Platform
 }
@@ -47,6 +51,10 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	copier := boshcmd.NewCpCopier(runner, fs, logger)
 
 	sigarCollector := boshstats.NewSigarStatsCollector()
+
+	// Kick of stats collection as soon as possible
+	sigarCollector.StartCollecting(SigarStatsCollectionInterval)
+
 	vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
 
 	routesSearcher := boshnet.NewCmdRoutesSearcher(runner)
