@@ -11,7 +11,7 @@ module Bosh::Spec
     end
 
     def vms
-      fetch_bosh_vms_vitals.map do |vm_data|
+      vms_details.map do |vm_data|
         Vm.new(
           vm_data[:job_index],
           vm_data[:state],
@@ -45,17 +45,44 @@ module Bosh::Spec
       nil
     end
 
+    def vms_vitals
+      parse_table(@runner.run('vms --vitals'))
+    end
+
+    def vms_details
+      parse_table(@runner.run('vms --details'))
+    end
+
     private
 
-    def fetch_bosh_vms_vitals
-      output = @runner.run('vms --details')
-      table = output.lines.grep(/\|/)
+    def parse_table(output)
+      rows = []
+      current_row = -1
 
-      table = table.map { |line| line.split('|').map(&:strip) }
-      headers = table.shift || []
-      headers.map! { |header| header.downcase.tr('/ ', '_').to_sym }
+      output.lines.each do |line|
+        if line =~ /^\+/
+          current_row += 1
+        elsif line =~ /^\|/
+          rows[current_row] ||= []
+          rows[current_row] << line
+        end
+      end
 
-      table.map { |row| Hash[headers.zip(row)] }
+      header_row = rows.shift
+      values_row = rows.shift
+
+      headers = {}
+      header_row.each_with_index do |row_line|
+        row_titles = row_line.split('|').map(&:strip)
+        row_titles.each_with_index do |row_title, key|
+          headers[key] ||= ""
+          headers[key] += " " + row_title
+        end
+      end
+
+      headers = headers.values.map { |header| header.strip.gsub(/[\(\),]/, '').downcase.tr('/ ', '_').to_sym }
+
+      values_row.map { |row| Hash[headers.zip(row.split('|').map(&:strip))] }
     end
   end
 end
