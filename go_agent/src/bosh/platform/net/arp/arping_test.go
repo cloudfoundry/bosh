@@ -2,6 +2,8 @@ package arp_test
 
 import (
 	"errors"
+	"reflect"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -50,15 +52,25 @@ var _ = Describe("arping", func() {
 
 			arping.BroadcastMACAddresses(addresses)
 
-			for i := 0; i < arpingIterations; i++ {
-				Expect(cmdRunner.RunCommands[i*2]).To(Equal([]string{
-					"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6",
-				}))
+			countA := 0
+			countB := 0
 
-				Expect(cmdRunner.RunCommands[i*2+1]).To(Equal([]string{
-					"arping", "-c", "1", "-U", "-I", "eth1", "127.0.0.1",
-				}))
+			a := []string{"arping", "-c", "1", "-U", "-I", "eth0", "192.168.195.6"}
+			b := []string{"arping", "-c", "1", "-U", "-I", "eth1", "127.0.0.1"}
+
+			for i := 0; i < arpingIterations*2; i++ {
+				cmd := cmdRunner.RunCommands[i]
+				if reflect.DeepEqual(cmd, a) {
+					countA++
+				} else if reflect.DeepEqual(cmd, b) {
+					countB++
+				} else {
+					Fail("Unexpected command executed: " + strings.Join(cmd, " "))
+				}
 			}
+
+			Expect(countA).To(Equal(arpingIterations))
+			Expect(countB).To(Equal(arpingIterations))
 		})
 
 		It("does not run arping command if failed to get interface IP address", func() {

@@ -2,6 +2,7 @@ package arp
 
 import (
 	"path/filepath"
+	"sync"
 	"time"
 
 	boshlog "bosh/logger"
@@ -41,21 +42,27 @@ func NewArping(
 
 // BroadcastMACAddresses broadcasts multiple IP/MAC pairs, multiple times
 func (a arping) BroadcastMACAddresses(addresses []boship.InterfaceAddress) {
-	for i := 0; i < a.iterations; i++ {
-		a.broadcastMACAddressesOnce(addresses)
-		if i < a.iterations-1 {
-			time.Sleep(a.iterationDelay)
-		}
-	}
-}
+	var wg sync.WaitGroup
 
-// broadcastMACAddressesOnce broadcasts multiple IP/MAC pairs to the specified networks
-// and logs any failures
-func (a arping) broadcastMACAddressesOnce(addresses []boship.InterfaceAddress) {
-	for _, address := range addresses {
-		a.blockUntilInterfaceExists(address.GetInterfaceName())
-		a.broadcastMACAddress(address)
+	for _, addr := range addresses {
+		wg.Add(1) // Outside of goroutine
+
+		go func(address boship.InterfaceAddress) {
+			a.blockUntilInterfaceExists(address.GetInterfaceName())
+
+			for i := 0; i < a.iterations; i++ {
+				a.broadcastMACAddress(address)
+				if i < a.iterations-1 {
+					// Sleep between iterations
+					time.Sleep(a.iterationDelay)
+				}
+			}
+
+			wg.Done()
+		}(addr)
 	}
+
+	wg.Wait()
 }
 
 // blockUntilInterfaceExists block until the specified network interface exists
