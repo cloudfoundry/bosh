@@ -16,7 +16,7 @@ module Bosh::Dev
           #{exports.join("\n")}
 
           bundle exec rake stemcell:build_os_image[#{build_task_args}]
-          bundle exec rake stemcell:publish_os_image[#{publish_task_args}]
+          bundle exec rake stemcell:upload_os_image[#{publish_task_args}]
         BASH
       end
 
