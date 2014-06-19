@@ -46,7 +46,10 @@ module SpecHelper
       else
         path = File.expand_path("/tmp/spec.log", __FILE__)
         log_file = File.open(path, "w")
-        log_file.sync = true
+        
+        # Unbuffered logging to file is not thread-safe
+        # log_file.sync = true
+        
         @logger = Logger.new(log_file)
       end
     end
