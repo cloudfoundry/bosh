@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'bosh-core',          "~>#{version}"
   s.add_dependency 'bosh-director-core', "~>#{version}"
   s.add_dependency 'bosh_common',        "~>#{version}"
+  s.add_dependency 'bosh-template',      "~>#{version}"
   s.add_dependency 'bosh_cpi',           "~>#{version}"
   s.add_dependency 'bosh_openstack_cpi', "~>#{version}"
   s.add_dependency 'bosh_aws_cpi',       "~>#{version}"

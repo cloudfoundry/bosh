@@ -1,7 +1,7 @@
 require 'bosh/director/core/templates'
 require 'bosh/director/core/templates/rendered_job_template'
 require 'bosh/director/core/templates/rendered_file_template'
-require 'common/properties'
+require 'bosh/template/evaluation_context'
 
 module Bosh::Director::Core::Templates
   class JobTemplateRenderer
@@ -15,7 +15,7 @@ module Bosh::Director::Core::Templates
     end
 
     def render(spec)
-      template_context = Bosh::Common::TemplateEvaluationContext.new(spec)
+      template_context = Bosh::Template::EvaluationContext.new(spec)
       job_name = spec['job']['name']
       index = spec['index']
 

@@ -21,4 +21,5 @@ Gem::Specification.new do |spec|
   spec.require_paths = %w[lib]
 
   spec.add_dependency 'bosh_common', "~>#{version}"
+  spec.add_dependency 'bosh-template', "~>#{version}"
 end

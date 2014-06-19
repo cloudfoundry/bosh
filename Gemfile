@@ -20,6 +20,7 @@ source 'https://rubygems.org'
   bosh-director-core
   bosh-monitor
   bosh-release
+  bosh-template
   simple_blobstore_server
 ).each do |gem_name|
   gem gem_name, path: gem_name

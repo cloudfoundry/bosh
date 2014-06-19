@@ -1,6 +1,6 @@
 require 'rspec'
 require 'yaml'
-require 'common/properties'
+require 'bosh/template/evaluation_context'
 require 'json'
 
 describe 'director.yml.erb.erb' do
@@ -55,17 +55,11 @@ describe 'director.yml.erb.erb' do
     }
   end
 
-  let(:erb_yaml) do
-    erb_yaml_path = File.join(File.dirname(__FILE__), '../jobs/director/templates/director.yml.erb.erb')
-
-    File.read(erb_yaml_path)
-  end
+  let(:erb_yaml) { File.read(File.join(File.dirname(__FILE__), '../jobs/director/templates/director.yml.erb.erb')) }
 
   subject(:parsed_yaml) do
-    rendered_yaml = ERB.new(erb_yaml).result(
-      Bosh::Common::TemplateEvaluationContext.new(deployment_manifest_fragment).get_binding
-    )
-    YAML.load(rendered_yaml)
+    binding = Bosh::Template::EvaluationContext.new(deployment_manifest_fragment).get_binding
+    YAML.load(ERB.new(erb_yaml).result(binding))
   end
 
   context 'vsphere' do

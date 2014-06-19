@@ -1,11 +1,12 @@
 # Copyright (c) 2009-2012 VMware, Inc.
 
 require 'common/deep_copy'
+require 'bosh/template/property_helper'
 
 module Bosh::Cli
   class JobPropertyCollection
     include Enumerable
-    include Bosh::Common::PropertyHelper
+    include Bosh::Template::PropertyHelper
 
     # @param [JobBuilder] job_builder Which job this property collection is for
     # @param [Hash] global_properties Globally defined properties

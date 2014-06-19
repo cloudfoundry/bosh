@@ -9,7 +9,7 @@ module Bosh::Director::Core::Templates
 
     describe '#render' do
       let(:context) do
-        Bosh::Common::TemplateEvaluationContext.new({})
+        Bosh::Template::EvaluationContext.new({})
       end
       let(:job_name) { 'fake-job-name' }
       let(:index) { 0 }

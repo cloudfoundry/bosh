@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh/template/evaluation_context'
 
 module Bosh::Cli
   class JobPropertyValidator
@@ -108,7 +109,7 @@ module Bosh::Cli
     # @param [Hash] spec Fake instance spec
     def evaluate_template(job, template_path, spec)
       erb = ERB.new(File.read(template_path))
-      context = Bosh::Common::TemplateEvaluationContext.new(spec)
+      context = Bosh::Template::EvaluationContext.new(spec)
       begin
         erb.result(context.get_binding)
       rescue Exception => e

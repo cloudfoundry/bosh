@@ -40,7 +40,7 @@ require 'common/exec'
 require 'common/version/release_version'
 require 'common/version/bosh_version'
 require 'common/version/stemcell_version'
-require 'common/properties'
+require 'bosh/template/evaluation_context'
 
 require 'cli/config'
 require 'cli/core_ext'

@@ -36,9 +36,9 @@ module Bosh::Director::Core::Templates
         JobTemplateRenderer.new('template-name', monit_erb, [source_erb], logger)
       end
 
-      let(:context) { instance_double('Bosh::Common::TemplateEvaluationContext') }
+      let(:context) { instance_double('Bosh::Template::EvaluationContext') }
       before do
-        allow(Bosh::Common::TemplateEvaluationContext).to receive(:new).and_return(context)
+        allow(Bosh::Template::EvaluationContext).to receive(:new).and_return(context)
       end
 
       it 'returns a collection of rendered templates' do

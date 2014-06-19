@@ -1,7 +1,9 @@
+require 'bosh/template/property_helper'
+
 module Bosh
   module Release
     class Compiler
-      include Bosh::Common::PropertyHelper
+      include Bosh::Template::PropertyHelper
 
       OPTIONS = {
         "blobstore_options" => { "blobstore_path" => "/var/vcap/micro_bosh/data/cache" },

@@ -1,5 +1,5 @@
 require 'bosh/director/core/templates'
-require 'common/properties'
+require 'bosh/template/evaluation_context'
 
 module Bosh::Director::Core::Templates
   class SourceErb
