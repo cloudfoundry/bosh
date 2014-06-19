@@ -180,15 +180,15 @@ module Bosh::Director
       end
 
       describe '#bind_idle_vm' do
-        let(:deployment_plan) { Planner.new(deployment_manifest['name']) }
+        let(:deployment_plan) { Planner.new('fake-deployment') }
         let(:state) { { 'state' => 'foo' } }
-        let(:network) { Network.new(deployment_plan, {'name' => deployment_manifest['network']}) }
-        let(:resource_pool) { ResourcePool.new(deployment_plan, deployment_manifest) }
+        let(:network) { Network.new(deployment_plan, {'name' => resource_pool_manifest['network']}) }
+        let(:resource_pool) { ResourcePool.new(deployment_plan, resource_pool_manifest) }
         let(:vm) { Models::Vm.make }
         let(:idle_vm) { IdleVm.new(resource_pool) }
-        let(:deployment_manifest) do
+        let(:resource_pool_manifest) do
           {
-            'name' => 'fake-release',
+            'name' => 'fake-resource-pool',
             'size' => 1,
             'cloud_properties' => {},
             'stemcell' => {

@@ -4,12 +4,12 @@ require 'bosh/director/job_updater'
 
 describe Bosh::Director::DeploymentPlan::Updater do
   subject { described_class.new(base_job, event_log, resource_pools, assembler, deployment_plan, multi_job_updater) }
-  let(:base_job)        { instance_double('Bosh::Director::Jobs::BaseJob') }
-  let(:event_log)       { instance_double('Bosh::Director::EventLog::Log', begin_stage: nil) }
-  let(:resource_pools)  { instance_double('Bosh::Director::DeploymentPlan::ResourcePools') }
-  let(:assembler)       { instance_double('Bosh::Director::DeploymentPlan::Assembler') }
+  let(:base_job) { instance_double('Bosh::Director::Jobs::BaseJob') }
+  let(:event_log) { instance_double('Bosh::Director::EventLog::Log', begin_stage: nil) }
+  let(:resource_pools) { instance_double('Bosh::Director::DeploymentPlan::ResourcePools') }
+  let(:assembler) { instance_double('Bosh::Director::DeploymentPlan::Assembler') }
   let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', jobs_starting_on_deploy: jobs) }
-  let(:jobs)            { instance_double('Array') }
+  let(:jobs) { instance_double('Array') }
   let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater') }
 
   before { allow(base_job).to receive(:logger).and_return(Logger.new('/dev/null')) }
