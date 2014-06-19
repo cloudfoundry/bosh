@@ -18,7 +18,7 @@ type FakeStatsCollector struct {
 	DiskStats map[string]boshstats.DiskStats
 }
 
-func (c *FakeStatsCollector) StartCollecting(collectionInterval time.Duration) {
+func (c *FakeStatsCollector) StartCollecting(collectionInterval time.Duration, latestGotUpdated chan struct{}) {
 	c.cpuStats = c.StartCollectingCPUStats
 }
 

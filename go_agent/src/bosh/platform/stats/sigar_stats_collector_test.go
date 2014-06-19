@@ -7,15 +7,21 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "bosh/platform/stats"
+	sigar "github.com/cloudfoundry/gosigar"
+	fakesigar "github.com/cloudfoundry/gosigar/fakes"
 )
 
 var _ = Describe("sigarStatsCollector", func() {
 	var (
 		collector StatsCollector
+		fakeSigar *fakesigar.FakeSigar
+		doneCh    chan struct{}
 	)
 
 	BeforeEach(func() {
-		collector = NewSigarStatsCollector()
+		fakeSigar = fakesigar.NewFakeSigar()
+		collector = NewSigarStatsCollector(fakeSigar)
+		doneCh = make(chan struct{})
 	})
 
 	Describe("GetCPULoad", func() {
@@ -30,35 +36,46 @@ var _ = Describe("sigarStatsCollector", func() {
 
 	Describe("StartCollecting", func() {
 		It("updates cpu stats", func() {
-			collector.StartCollecting(100 * time.Millisecond)
-			time.Sleep(1 * time.Second)
+			fakeSigar.CollectCpuStatsCpuCh <- sigar.Cpu{
+				User: 10,
+				Nice: 20,
+				Sys:  30,
+				Wait: 40,
+			}
 
-			stats, err := collector.GetCPUStats()
-			Expect(err).ToNot(HaveOccurred())
+			latestGotUpdated := make(chan struct{})
 
-			Expect(stats.User).ToNot(BeZero())
-			Expect(stats.Sys).ToNot(BeZero())
-			Expect(stats.Total).ToNot(BeZero())
-		})
-	})
+			go collector.StartCollecting(1*time.Millisecond, latestGotUpdated)
+			<-latestGotUpdated
 
-	Describe("GetCPUStats", func() {
-		It("gets delta cpu stats if it is collecting", func() {
-			collector.StartCollecting(10 * time.Millisecond)
+			stats, _ := collector.GetCPUStats()
+			Expect(stats).To(Equal(CPUStats{
+				User:  uint64(10),
+				Nice:  uint64(20),
+				Sys:   uint64(30),
+				Wait:  uint64(40),
+				Total: uint64(100),
+			}))
 
-			time.Sleep(5 * time.Millisecond)
-			initialStats, err := collector.GetCPUStats()
-			Expect(err).ToNot(HaveOccurred())
+			fakeSigar.CollectCpuStatsCpuCh <- sigar.Cpu{
+				User: 100,
+				Nice: 200,
+				Sys:  300,
+				Wait: 400,
+			}
 
-			// First iteration will return total cpu stats, so we wait > 2*duration
-			time.Sleep(15 * time.Millisecond)
-			currentStats, err := collector.GetCPUStats()
-			Expect(err).ToNot(HaveOccurred())
+			<-latestGotUpdated
 
-			// The next iteration will return the deltas instead of cpu
-			Expect(currentStats.User).To(BeNumerically("<", initialStats.User))
-			Expect(currentStats.Sys).To(BeNumerically("<", initialStats.Sys))
-			Expect(currentStats.Total).To(BeNumerically("<", initialStats.Total))
+			stats, _ = collector.GetCPUStats()
+			Expect(stats).To(Equal(CPUStats{
+				User:  uint64(100),
+				Nice:  uint64(200),
+				Sys:   uint64(300),
+				Wait:  uint64(400),
+				Total: uint64(1000),
+			}))
+
+			fakeSigar.CollectCpuStatsStopCh <- struct{}{}
 		})
 	})
 

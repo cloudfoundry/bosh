@@ -52,7 +52,7 @@ func buildVitalsService() (statsCollector *fakestats.FakeStatsCollector, service
 	}
 
 	service = NewService(statsCollector, dirProvider)
-	statsCollector.StartCollecting(1 * time.Millisecond)
+	statsCollector.StartCollecting(1*time.Millisecond, nil)
 	return
 }
 func init() {

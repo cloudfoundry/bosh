@@ -10,28 +10,33 @@ import (
 )
 
 type sigarStatsCollector struct {
+	statsSigar         sigar.Sigar
 	latestCPUStats     CPUStats
 	latestCPUStatsLock sync.RWMutex
 }
 
-func NewSigarStatsCollector() *sigarStatsCollector {
-	return &sigarStatsCollector{}
+func NewSigarStatsCollector(sigar sigar.Sigar) *sigarStatsCollector {
+	return &sigarStatsCollector{
+		statsSigar: sigar,
+	}
 }
 
-func (s *sigarStatsCollector) StartCollecting(collectionInterval time.Duration) {
-	go func() {
-		cpuSamplesCh, _ := sigar.CollectCpuStats(collectionInterval)
+func (s *sigarStatsCollector) StartCollecting(collectionInterval time.Duration, latestGotUpdated chan struct{}) {
+	cpuSamplesCh, _ := s.statsSigar.CollectCpuStats(collectionInterval)
 
-		for cpuSample := range cpuSamplesCh {
-			s.latestCPUStatsLock.Lock()
-			s.latestCPUStats.User = cpuSample.User
-			s.latestCPUStats.Nice = cpuSample.Nice
-			s.latestCPUStats.Sys = cpuSample.Sys
-			s.latestCPUStats.Wait = cpuSample.Wait
-			s.latestCPUStats.Total = cpuSample.Total()
-			s.latestCPUStatsLock.Unlock()
+	for cpuSample := range cpuSamplesCh {
+		s.latestCPUStatsLock.Lock()
+		s.latestCPUStats.User = cpuSample.User
+		s.latestCPUStats.Nice = cpuSample.Nice
+		s.latestCPUStats.Sys = cpuSample.Sys
+		s.latestCPUStats.Wait = cpuSample.Wait
+		s.latestCPUStats.Total = cpuSample.Total()
+		s.latestCPUStatsLock.Unlock()
+
+		if latestGotUpdated != nil {
+			latestGotUpdated <- struct{}{}
 		}
-	}()
+	}
 }
 
 func (s *sigarStatsCollector) GetCPULoad() (load CPULoad, err error) {
