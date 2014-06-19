@@ -1,0 +1,21 @@
+# Bosh::Template
+
+Renders bosh templates
+
+## Installation
+
+Add this line to your application's Gemfile:
+
+    gem 'bosh-template'
+
+And then execute:
+
+    $ bundle
+
+Or install it yourself as:
+
+    $ gem install bosh-template
+
+## Usage
+
+    $ bosh-template <template.erb> --context-file <context.json>

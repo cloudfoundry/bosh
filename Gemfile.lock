@@ -126,6 +126,12 @@ PATH
       bosh_aws_cpi (~> 1.2611.0)
 
 PATH
+  remote: bosh-template
+  specs:
+    bosh-template (1.2611.0)
+      semi_semantic (~> 1.1.0)
+
+PATH
   remote: bosh_agent
   specs:
     bosh_agent (1.2611.0)
@@ -471,6 +477,7 @@ DEPENDENCIES
   bosh-registry!
   bosh-release!
   bosh-stemcell!
+  bosh-template!
   bosh_agent!
   bosh_aws_cpi!
   bosh_cli!
