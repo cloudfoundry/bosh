@@ -15,13 +15,19 @@ env:
   # limit unit test threads to 1 to avoid SimpleCov race conditions:
   # https://github.com/colszowka/simplecov/issues/305
   - COVERAGE=true BOSH_MAX_THREADS=1 TASKS="travis:install_go spec:unit ci:publish_coverage_report"
-
   - DB=mysql    TASKS="spec:integration:ruby_agent"
   - DB=postgres TASKS="spec:integration:ruby_agent"
 
   # Go agent integration tests do not need to test every DB flavor
   # since integration tests above already tested them
   - TASKS="travis:install_go spec:integration:go_agent"
+
+matrix:
+  exclude:
+    - rvm: ruby-2.1.1
+      env: DB=mysql    TASKS="spec:integration:ruby_agent"
+    - rvm: ruby-2.1.1
+      env: DB=postgres TASKS="spec:integration:ruby_agent"
 
 addons:
   code_climate:

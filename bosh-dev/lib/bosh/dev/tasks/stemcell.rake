@@ -53,7 +53,7 @@ namespace :stemcell do
     adapter.upload(
       bucket_name: args.s3_bucket_name,
       key: args.s3_bucket_key,
-      body: args.os_image_path,
+      body: File.open(args.os_image_path),
       public: true,
     )
     puts "OS image #{args.os_image_path} uploaded to S3 in bucket #{args.s3_bucket_name} with key #{args.s3_bucket_key}."
