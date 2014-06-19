@@ -26,11 +26,18 @@ var _ = Describe("sigarStatsCollector", func() {
 
 	Describe("GetCPULoad", func() {
 		It("returns cpu load", func() {
+			fakeSigar.LoadAverage = sigar.LoadAverage{
+				One:     1,
+				Five:    5,
+				Fifteen: 15,
+			}
+
 			load, err := collector.GetCPULoad()
+
 			Expect(err).ToNot(HaveOccurred())
-			Expect(load.One >= 0).To(BeTrue())
-			Expect(load.Five >= 0).To(BeTrue())
-			Expect(load.Fifteen >= 0).To(BeTrue())
+			Expect(load.One).To(Equal(float64(1)))
+			Expect(load.Five).To(Equal(float64(5)))
+			Expect(load.Fifteen).To(Equal(float64(15)))
 		})
 	})
 
@@ -81,30 +88,52 @@ var _ = Describe("sigarStatsCollector", func() {
 
 	Describe("GetMemStats", func() {
 		It("returns mem stats", func() {
+			fakeSigar.Mem = sigar.Mem{
+				Total:      100,
+				ActualUsed: 80,
+			}
+
 			stats, err := collector.GetMemStats()
+
 			Expect(err).ToNot(HaveOccurred())
-			Expect(stats.Total > 0).To(BeTrue())
-			Expect(stats.Used > 0).To(BeTrue())
+			Expect(stats.Total).To(Equal(uint64(100)))
+			Expect(stats.Used).To(Equal(uint64(80)))
 		})
 	})
 
 	Describe("GetSwapStats", func() {
 		It("returns swap stats", func() {
+			fakeSigar.Swap = sigar.Swap{
+				Total: 100,
+				Used:  80,
+			}
+
 			stats, err := collector.GetSwapStats()
 			Expect(err).ToNot(HaveOccurred())
-			Expect(stats.Total > 0).To(BeTrue())
+
+			Expect(stats.Total).To(Equal(uint64(100)))
+			Expect(stats.Used).To(Equal(uint64(80)))
 		})
 	})
 
 	Describe("GetDiskStats", func() {
 		It("returns disk stats", func() {
-			stats, err := collector.GetDiskStats("/")
+			fakeSigar.FileSystemUsage = sigar.FileSystemUsage{
+				Total:     100,
+				Used:      80,
+				Files:     1200,
+				FreeFiles: 800,
+			}
+
+			stats, err := collector.GetDiskStats("/fake-mount-path")
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(stats.DiskUsage.Total).ToNot(BeZero())
-			Expect(stats.DiskUsage.Used).ToNot(BeZero())
-			Expect(stats.InodeUsage.Total).ToNot(BeZero())
-			Expect(stats.InodeUsage.Used).ToNot(BeZero())
+			Expect(fakeSigar.FileSystemUsagePath).To(Equal("/fake-mount-path"))
+
+			Expect(stats.DiskUsage.Total).To(Equal(uint64(100)))
+			Expect(stats.DiskUsage.Used).To(Equal(uint64(80)))
+			Expect(stats.InodeUsage.Total).To(Equal(uint64(1200)))
+			Expect(stats.InodeUsage.Used).To(Equal(uint64(400)))
 		})
 	})
 })

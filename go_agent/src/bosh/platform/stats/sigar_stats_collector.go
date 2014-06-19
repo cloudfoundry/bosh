@@ -40,8 +40,7 @@ func (s *sigarStatsCollector) StartCollecting(collectionInterval time.Duration, 
 }
 
 func (s *sigarStatsCollector) GetCPULoad() (load CPULoad, err error) {
-	l := sigar.LoadAverage{}
-	err = l.Get()
+	l, err := s.statsSigar.GetLoadAverage()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting Sigar Load Average")
 		return
@@ -62,8 +61,7 @@ func (s *sigarStatsCollector) GetCPUStats() (CPUStats, error) {
 }
 
 func (s *sigarStatsCollector) GetMemStats() (usage Usage, err error) {
-	mem := sigar.Mem{}
-	err = mem.Get()
+	mem, err := s.statsSigar.GetMem()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting Sigar Mem")
 		return
@@ -79,8 +77,7 @@ func (s *sigarStatsCollector) GetMemStats() (usage Usage, err error) {
 }
 
 func (s *sigarStatsCollector) GetSwapStats() (usage Usage, err error) {
-	swap := sigar.Swap{}
-	err = swap.Get()
+	swap, err := s.statsSigar.GetSwap()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting Sigar Swap")
 		return
@@ -93,8 +90,7 @@ func (s *sigarStatsCollector) GetSwapStats() (usage Usage, err error) {
 }
 
 func (s *sigarStatsCollector) GetDiskStats(mountedPath string) (stats DiskStats, err error) {
-	fsUsage := sigar.FileSystemUsage{}
-	err = fsUsage.Get(mountedPath)
+	fsUsage, err := s.statsSigar.GetFileSystemUsage(mountedPath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting Sigar File System Usage")
 		return
