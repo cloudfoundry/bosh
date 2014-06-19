@@ -2,9 +2,11 @@ package system_test
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -367,18 +369,55 @@ func init() {
 			assert.NotEqual(GinkgoT(), path1, path2)
 		})
 
-		It("copy file", func() {
-			osFs, _ := createOsFs()
-			srcPath := "../../../fixtures/test_copy_dir_entries/foo.txt"
-			dstFile, err := osFs.TempFile("CopyFileTestFile")
-			Expect(err).ToNot(HaveOccurred())
-			defer os.Remove(dstFile.Name())
+		Describe("CopyFile", func() {
+			It("copies file", func() {
+				osFs, _ := createOsFs()
+				srcPath := "../../../fixtures/test_copy_dir_entries/foo.txt"
+				dstFile, err := osFs.TempFile("CopyFileTestFile")
+				Expect(err).ToNot(HaveOccurred())
+				defer os.Remove(dstFile.Name())
 
-			err = osFs.CopyFile(srcPath, dstFile.Name())
+				err = osFs.CopyFile(srcPath, dstFile.Name())
 
-			fooContent, err := osFs.ReadFileString(dstFile.Name())
-			Expect(err).ToNot(HaveOccurred())
-			Expect(fooContent).To(Equal("foo\n"))
+				fooContent, err := osFs.ReadFileString(dstFile.Name())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(fooContent).To(Equal("foo\n"))
+			})
+
+			It("does not leak file descriptors", func() {
+				osFs, _ := createOsFs()
+
+				srcFile, err := osFs.TempFile("srcPath")
+				Expect(err).ToNot(HaveOccurred())
+
+				err = srcFile.Close()
+				Expect(err).ToNot(HaveOccurred())
+
+				dstFile, err := osFs.TempFile("dstPath")
+				Expect(err).ToNot(HaveOccurred())
+
+				err = dstFile.Close()
+				Expect(err).ToNot(HaveOccurred())
+
+				err = osFs.CopyFile(srcFile.Name(), dstFile.Name())
+				Expect(err).ToNot(HaveOccurred())
+
+				runner := NewExecCmdRunner(boshlog.NewLogger(boshlog.LevelNone))
+				stdout, _, _, err := runner.RunCommand("lsof")
+				Expect(err).ToNot(HaveOccurred())
+
+				for _, line := range strings.Split(stdout, "\n") {
+					if strings.Contains(line, srcFile.Name()) {
+						Fail(fmt.Sprintf("CopyFile did not close: srcFile: %s", srcFile.Name()))
+					}
+					if strings.Contains(line, dstFile.Name()) {
+						Fail(fmt.Sprintf("CopyFile did not close: dstFile: %s", dstFile.Name()))
+					}
+				}
+
+				os.Remove(srcFile.Name())
+				os.Remove(dstFile.Name())
+			})
 		})
 
 		It("remove all", func() {

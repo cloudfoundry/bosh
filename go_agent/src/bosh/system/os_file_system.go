@@ -214,26 +214,28 @@ func (fs osFileSystem) ReadLink(symlinkPath string) (targetPath string, err erro
 	return
 }
 
-func (fs osFileSystem) CopyFile(srcPath, dstPath string) (err error) {
+func (fs osFileSystem) CopyFile(srcPath, dstPath string) error {
 	fs.logger.Debug(fs.logTag, "Copying %s to %s", srcPath, dstPath)
 	srcFile, err := os.Open(srcPath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Opening source path")
-		return
+		return bosherr.WrapError(err, "Opening source path")
 	}
+
+	defer srcFile.Close()
 
 	dstFile, err := os.Create(dstPath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Creating destination file")
-		return
+		return bosherr.WrapError(err, "Creating destination file")
 	}
+
+	defer dstFile.Close()
 
 	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
-		err = bosherr.WrapError(err, "Copying file")
-		return
+		return bosherr.WrapError(err, "Copying file")
 	}
-	return
+
+	return nil
 }
 
 func (fs osFileSystem) TempFile(prefix string) (file *os.File, err error) {
