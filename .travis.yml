@@ -26,7 +26,7 @@ matrix:
   exclude:
     - rvm: ruby-2.1.1
       env: DB=mysql    TASKS="spec:integration:ruby_agent"
-    - rmv: ruby-2.1.1
+    - rvm: ruby-2.1.1
       env: DB=postgres TASKS="spec:integration:ruby_agent"
 
 addons:
