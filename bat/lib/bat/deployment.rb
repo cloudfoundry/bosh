@@ -3,7 +3,7 @@ require 'tempfile'
 require 'yaml'
 
 module Bosh; end # Ugly hack
-require 'common/properties'
+require 'bosh/template/evaluation_context'
 
 module Bat
   class Deployment
@@ -26,7 +26,7 @@ module Bat
     end
 
     def generate_deployment_manifest(spec)
-      @context = Bosh::Common::TemplateEvaluationContext.new(spec)
+      @context = Bosh::Template::EvaluationContext.new(spec)
       erb = ERB.new(load_template(@context.spec.cpi))
       result = erb.result(@context.get_binding)
       puts result
