@@ -18,4 +18,4 @@ Or install it yourself as:
 
 ## Usage
 
-    $ bosh-template <template.erb> --context-file <context.json>
+    $ bosh-template <template.erb> --context '{ "...": ... }'

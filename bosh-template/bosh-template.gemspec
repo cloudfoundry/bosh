@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.license = 'Apache 2.0'
   s.email        = 'support@cloudfoundry.com'
   s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
-
+  s.executables   = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
   s.files        = `git ls-files -- lib/*`.split("\n") + %w(README)
   s.require_path = 'lib'
 
