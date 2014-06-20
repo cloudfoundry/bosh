@@ -4,32 +4,22 @@ import (
 	gonet "net"
 
 	bosherr "bosh/errors"
+	boship "bosh/platform/net/ip"
 	boshsettings "bosh/settings"
 )
 
-type InterfaceToAddrsFunc func(interfaceName string) ([]gonet.Addr, error)
-
-func DefaultInterfaceToAddrsFunc(interfaceName string) ([]gonet.Addr, error) {
-	iface, err := gonet.InterfaceByName(interfaceName)
-	if err != nil {
-		return []gonet.Addr{}, bosherr.WrapError(err, "Searching interfaces %s", interfaceName)
-	}
-
-	return iface.Addrs()
-}
-
 type defaultNetworkResolver struct {
-	routesSearcher   RoutesSearcher
-	ifaceToAddrsFunc InterfaceToAddrsFunc
+	routesSearcher RoutesSearcher
+	ipResolver     boship.IPResolver
 }
 
 func NewDefaultNetworkResolver(
 	routesSearcher RoutesSearcher,
-	ifaceToAddrsFunc InterfaceToAddrsFunc,
+	ipResolver boship.IPResolver,
 ) defaultNetworkResolver {
 	return defaultNetworkResolver{
-		routesSearcher:   routesSearcher,
-		ifaceToAddrsFunc: ifaceToAddrsFunc,
+		routesSearcher: routesSearcher,
+		ipResolver:     ipResolver,
 	}
 }
 
@@ -42,7 +32,7 @@ func (r defaultNetworkResolver) GetDefaultNetwork() (boshsettings.Network, error
 	}
 
 	if len(routes) == 0 {
-		return network, bosherr.New("No routes")
+		return network, bosherr.New("No routes found")
 	}
 
 	for _, route := range routes {
@@ -50,33 +40,18 @@ func (r defaultNetworkResolver) GetDefaultNetwork() (boshsettings.Network, error
 			continue
 		}
 
-		addrs, err := r.ifaceToAddrsFunc(route.InterfaceName)
+		ip, err := r.ipResolver.GetPrimaryIPv4(route.InterfaceName)
 		if err != nil {
-			return network, bosherr.WrapError(err, "Looking addrs for interface %s", route.InterfaceName)
+			return network, bosherr.WrapError(
+				err, "Getting primary IPv4 for interface '%s'", route.InterfaceName)
 		}
 
-		if len(addrs) == 0 {
-			return network, bosherr.New("No addresses")
-		}
+		return boshsettings.Network{
+			IP:      ip.IP.String(),
+			Netmask: gonet.IP(ip.Mask).String(),
+			Gateway: route.Gateway,
+		}, nil
 
-		for _, addr := range addrs {
-			ip, ok := addr.(*gonet.IPNet)
-			if !ok {
-				continue
-			}
-
-			if ip.IP.To4() == nil { // filter out ipv6
-				continue
-			}
-
-			return boshsettings.Network{
-				IP:      ip.IP.String(),
-				Netmask: gonet.IP(ip.Mask).String(),
-				Gateway: route.Gateway,
-			}, nil
-		}
-
-		return network, bosherr.New("Failed to find IPv4 address")
 	}
 
 	return network, bosherr.New("Failed to find default route")

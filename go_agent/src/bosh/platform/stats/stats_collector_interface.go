@@ -1,5 +1,7 @@
 package stats
 
+import "time"
+
 type CPULoad struct {
 	One     float64
 	Five    float64
@@ -8,6 +10,7 @@ type CPULoad struct {
 
 type CPUStats struct {
 	User  uint64
+	Nice  uint64
 	Sys   uint64
 	Wait  uint64
 	Total uint64
@@ -24,15 +27,18 @@ type DiskStats struct {
 }
 
 type StatsCollector interface {
+	StartCollecting(time.Duration, chan struct{})
+
 	GetCPULoad() (load CPULoad, err error)
 	GetCPUStats() (stats CPUStats, err error)
+
 	GetMemStats() (usage Usage, err error)
 	GetSwapStats() (usage Usage, err error)
 	GetDiskStats(mountedPath string) (stats DiskStats, err error)
 }
 
 func (cpuStats CPUStats) UserPercent() Percentage {
-	return NewPercentage(cpuStats.User, cpuStats.Total)
+	return NewPercentage(cpuStats.User+cpuStats.Nice, cpuStats.Total)
 }
 
 func (cpuStats CPUStats) SysPercent() Percentage {

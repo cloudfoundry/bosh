@@ -1,6 +1,8 @@
 package vitals_test
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -19,7 +21,7 @@ func buildVitalsService() (statsCollector *fakestats.FakeStatsCollector, service
 			Five:    4.55,
 			Fifteen: 1.123,
 		},
-		CPUStats: boshstats.CPUStats{
+		StartCollectingCPUStats: boshstats.CPUStats{
 			User:  56,
 			Sys:   10,
 			Wait:  1,
@@ -50,6 +52,7 @@ func buildVitalsService() (statsCollector *fakestats.FakeStatsCollector, service
 	}
 
 	service = NewService(statsCollector, dirProvider)
+	statsCollector.StartCollecting(1*time.Millisecond, nil)
 	return
 }
 func init() {
@@ -93,6 +96,7 @@ func init() {
 
 			boshassert.MatchesJSONMap(GinkgoT(), vitals, expectedVitals)
 		})
+
 		It("getting vitals when missing disks", func() {
 
 			statsCollector, service := buildVitalsService()

@@ -1,16 +1,25 @@
 package fakes
 
 import (
-	boshstats "bosh/platform/stats"
 	"errors"
+	"time"
+
+	boshstats "bosh/platform/stats"
 )
 
 type FakeStatsCollector struct {
-	CPULoad   boshstats.CPULoad
-	CPUStats  boshstats.CPUStats
+	StartCollectingCPUStats boshstats.CPUStats
+
+	CPULoad  boshstats.CPULoad
+	cpuStats boshstats.CPUStats
+
 	MemStats  boshstats.Usage
 	SwapStats boshstats.Usage
 	DiskStats map[string]boshstats.DiskStats
+}
+
+func (c *FakeStatsCollector) StartCollecting(collectionInterval time.Duration, latestGotUpdated chan struct{}) {
+	c.cpuStats = c.StartCollectingCPUStats
 }
 
 func (c *FakeStatsCollector) GetCPULoad() (load boshstats.CPULoad, err error) {
@@ -19,7 +28,7 @@ func (c *FakeStatsCollector) GetCPULoad() (load boshstats.CPULoad, err error) {
 }
 
 func (c *FakeStatsCollector) GetCPUStats() (stats boshstats.CPUStats, err error) {
-	stats = c.CPUStats
+	stats = c.cpuStats
 	return
 }
 
