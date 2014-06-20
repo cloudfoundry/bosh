@@ -51,4 +51,14 @@ describe 'Ubuntu Lucid stemcell', stemcell_image: true do
       it { should contain 'iface eth0 inet dhcp' }
     end
   end
+
+  context 'installed by system_open_vm_tools', {
+    exclude_on_aws: true,
+    exclude_on_vcloud: true,
+    exclude_on_warden: true,
+  } do
+    describe package('open-vm-tools') do
+      it { should be_installed }
+    end
+  end
 end
