@@ -92,6 +92,7 @@ module Bosh::Stemcell
     def ubuntu_os_stages
       [
         :base_debootstrap,
+        :base_ubuntu_firstboot,
         :base_apt,
         :bosh_dpkg_list,
         :bosh_sysstat,

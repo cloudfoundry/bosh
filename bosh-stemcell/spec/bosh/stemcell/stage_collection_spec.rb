@@ -34,6 +34,7 @@ module Bosh::Stemcell
     let(:ubuntu_stages) {
       [
         :base_debootstrap,
+        :base_ubuntu_firstboot,
         :base_apt,
         :bosh_dpkg_list,
         :bosh_sysstat,
