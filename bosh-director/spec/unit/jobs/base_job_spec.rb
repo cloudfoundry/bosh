@@ -40,7 +40,7 @@ module Bosh::Director
       expect(task.state).to eq('done')
       expect(task.result).to eq('5')
 
-      expect(Config.logger).to be_instance_of(Logger)
+      expect(Config.logger).to be_instance_of(MonoLogger)
     end
 
     it 'should pass on the rest of the arguments to the actual job' do
@@ -96,7 +96,7 @@ module Bosh::Director
       described_class.perform(1)
       task.refresh
       expect(task.state).to eq('cancelled')
-      expect(Config.logger).to be_instance_of(Logger)
+      expect(Config.logger).to be_instance_of(MonoLogger)
     end
 
     it 'should cancel timeout-task' do
@@ -106,7 +106,7 @@ module Bosh::Director
       described_class.perform(task_id)
       task.refresh
       expect(task.state).to eq('cancelled')
-      expect(Config.logger).to be_instance_of(Logger)
+      expect(Config.logger).to be_instance_of(MonoLogger)
     end
 
     describe '#task_checkpoint' do

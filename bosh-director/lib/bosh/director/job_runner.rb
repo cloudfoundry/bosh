@@ -53,7 +53,7 @@ module Bosh::Director
       event_log = File.join(log_dir, 'event')
       result_log = File.join(log_dir, 'result')
 
-      @task_logger = Logger.new(debug_log)
+      @task_logger = MonoLogger.new(debug_log)
       @task_logger.level = Config.logger.level
       @task_logger.formatter = ThreadFormatter.new
 

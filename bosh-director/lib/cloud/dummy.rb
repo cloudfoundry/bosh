@@ -1,7 +1,7 @@
 require 'digest/sha1'
 require 'fileutils'
 require 'securerandom'
-require 'logger'
+require 'mono_logger'
 
 module Bosh
   module Clouds
@@ -25,7 +25,7 @@ module Bosh
 
         @running_vms_dir = File.join(@base_dir, 'running_vms')
 
-        @logger = Logger.new(options['log_device'] || STDOUT)
+        @logger = MonoLogger.new(options['log_device'] || STDOUT)
 
         @commands = CommandTransport.new(@base_dir, @logger)
 
