@@ -40,6 +40,7 @@ module Bosh::OpenStackCloud
       @stemcell_public_visibility = @openstack_properties["stemcell_public_visibility"]
       @wait_resource_poll_interval = @openstack_properties["wait_resource_poll_interval"]
       @boot_from_volume = @openstack_properties["boot_from_volume"]
+      @skip_personality = @openstack_properties["skip_personality"]
 
       unless @openstack_properties['auth_url'].match(/\/tokens$/)
         @openstack_properties['auth_url'] = @openstack_properties['auth_url'] + '/tokens'
@@ -268,7 +269,7 @@ module Bosh::OpenStackCloud
                                                    :delete_on_termination => "1",
                                                    :device_name => "/dev/vda"
                                                  }]
-        else
+        elsif not @skip_personality
           server_params[:personality] = [{
                                           "path" => "#{BOSH_APP_DIR}/user_data.json",
                                           "contents" => Yajl::Encoder.encode(user_data(server_name, network_spec, keypair.public_key))
