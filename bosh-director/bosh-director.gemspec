@@ -37,7 +37,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'rack-test',        '~>0.6.2' # needed for console
   s.add_dependency 'rake'
   s.add_dependency 'redis',            '~>3.0.2'
-  s.add_dependency 'resque',           '~>1.23.0'
+  s.add_dependency 'resque',           '~>1.25.0'
   s.add_dependency 'resque-backtrace', '~>0.0.1'
   s.add_dependency 'rufus-scheduler',  '~>2.0.18'
   s.add_dependency 'sequel',           '~>3.43.0'

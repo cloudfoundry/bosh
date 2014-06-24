@@ -5,6 +5,7 @@ namespace :travis do
     sh('tar xzf tmp/go.tgz -C tmp')
 
     ENV['PATH'] = "#{File.absolute_path('tmp/go/bin')}:#{ENV['PATH']}"
+    ENV['GOROOT'] = File.absolute_path('tmp/go')
 
     vet_repo = 'code.google.com/p/go.tools/cmd/vet'
     sh("go get #{vet_repo}")

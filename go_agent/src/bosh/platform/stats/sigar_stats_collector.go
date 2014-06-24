@@ -1,20 +1,46 @@
 package stats
 
 import (
+	"sync"
+	"time"
+
 	sigar "github.com/cloudfoundry/gosigar"
 
 	bosherr "bosh/errors"
 )
 
-type sigarStatsCollector struct{}
-
-func NewSigarStatsCollector() StatsCollector {
-	return sigarStatsCollector{}
+type sigarStatsCollector struct {
+	statsSigar         sigar.Sigar
+	latestCPUStats     CPUStats
+	latestCPUStatsLock sync.RWMutex
 }
 
-func (s sigarStatsCollector) GetCPULoad() (load CPULoad, err error) {
-	l := sigar.LoadAverage{}
-	err = l.Get()
+func NewSigarStatsCollector(sigar sigar.Sigar) *sigarStatsCollector {
+	return &sigarStatsCollector{
+		statsSigar: sigar,
+	}
+}
+
+func (s *sigarStatsCollector) StartCollecting(collectionInterval time.Duration, latestGotUpdated chan struct{}) {
+	cpuSamplesCh, _ := s.statsSigar.CollectCpuStats(collectionInterval)
+
+	for cpuSample := range cpuSamplesCh {
+		s.latestCPUStatsLock.Lock()
+		s.latestCPUStats.User = cpuSample.User
+		s.latestCPUStats.Nice = cpuSample.Nice
+		s.latestCPUStats.Sys = cpuSample.Sys
+		s.latestCPUStats.Wait = cpuSample.Wait
+		s.latestCPUStats.Total = cpuSample.Total()
+		s.latestCPUStatsLock.Unlock()
+
+		if latestGotUpdated != nil {
+			latestGotUpdated <- struct{}{}
+		}
+	}
+}
+
+func (s *sigarStatsCollector) GetCPULoad() (load CPULoad, err error) {
+	l, err := s.statsSigar.GetLoadAverage()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting Sigar Load Average")
 		return
@@ -27,25 +53,15 @@ func (s sigarStatsCollector) GetCPULoad() (load CPULoad, err error) {
 	return
 }
 
-func (s sigarStatsCollector) GetCPUStats() (stats CPUStats, err error) {
-	cpu := sigar.Cpu{}
-	err = cpu.Get()
-	if err != nil {
-		err = bosherr.WrapError(err, "Getting Sigar CPU")
-		return
-	}
+func (s *sigarStatsCollector) GetCPUStats() (CPUStats, error) {
+	s.latestCPUStatsLock.RLock()
+	defer s.latestCPUStatsLock.RUnlock()
 
-	stats.User = cpu.User
-	stats.Sys = cpu.Sys
-	stats.Wait = cpu.Wait
-	stats.Total = cpu.Total()
-
-	return
+	return s.latestCPUStats, nil
 }
 
-func (s sigarStatsCollector) GetMemStats() (usage Usage, err error) {
-	mem := sigar.Mem{}
-	err = mem.Get()
+func (s *sigarStatsCollector) GetMemStats() (usage Usage, err error) {
+	mem, err := s.statsSigar.GetMem()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting Sigar Mem")
 		return
@@ -60,9 +76,8 @@ func (s sigarStatsCollector) GetMemStats() (usage Usage, err error) {
 	return
 }
 
-func (s sigarStatsCollector) GetSwapStats() (usage Usage, err error) {
-	swap := sigar.Swap{}
-	err = swap.Get()
+func (s *sigarStatsCollector) GetSwapStats() (usage Usage, err error) {
+	swap, err := s.statsSigar.GetSwap()
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting Sigar Swap")
 		return
@@ -74,9 +89,8 @@ func (s sigarStatsCollector) GetSwapStats() (usage Usage, err error) {
 	return
 }
 
-func (s sigarStatsCollector) GetDiskStats(mountedPath string) (stats DiskStats, err error) {
-	fsUsage := sigar.FileSystemUsage{}
-	err = fsUsage.Get(mountedPath)
+func (s *sigarStatsCollector) GetDiskStats(mountedPath string) (stats DiskStats, err error) {
+	fsUsage, err := s.statsSigar.GetFileSystemUsage(mountedPath)
 	if err != nil {
 		err = bosherr.WrapError(err, "Getting Sigar File System Usage")
 		return

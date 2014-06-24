@@ -3,6 +3,8 @@ package platform
 import (
 	"time"
 
+	sigar "github.com/cloudfoundry/gosigar"
+
 	bosherror "bosh/errors"
 	boshlog "bosh/logger"
 	boshcdrom "bosh/platform/cdrom"
@@ -11,10 +13,22 @@ import (
 	boshcmd "bosh/platform/commands"
 	boshdisk "bosh/platform/disk"
 	boshnet "bosh/platform/net"
+	bosharp "bosh/platform/net/arp"
+	boship "bosh/platform/net/ip"
 	boshstats "bosh/platform/stats"
 	boshvitals "bosh/platform/vitals"
 	boshdirs "bosh/settings/directories"
 	boshsys "bosh/system"
+)
+
+const (
+	ArpIterations          = 20
+	ArpIterationDelay      = 5 * time.Second
+	ArpInterfaceCheckDelay = 100 * time.Millisecond
+)
+
+const (
+	SigarStatsCollectionInterval = 10 * time.Second
 )
 
 type provider struct {
@@ -38,17 +52,21 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	compressor := boshcmd.NewTarballCompressor(runner, fs)
 	copier := boshcmd.NewCpCopier(runner, fs, logger)
 
-	sigarCollector := boshstats.NewSigarStatsCollector()
+	sigarCollector := boshstats.NewSigarStatsCollector(&sigar.ConcreteSigar{})
+
+	// Kick of stats collection as soon as possible
+	go sigarCollector.StartCollecting(SigarStatsCollectionInterval, nil)
+
 	vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
 
 	routesSearcher := boshnet.NewCmdRoutesSearcher(runner)
-	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(
-		routesSearcher,
-		boshnet.DefaultInterfaceToAddrsFunc,
-	)
+	ipResolver := boship.NewIPResolver(boship.NetworkInterfaceToAddrsFunc)
 
-	centosNetManager := boshnet.NewCentosNetManager(fs, runner, defaultNetworkResolver, 10*time.Second, logger)
-	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, defaultNetworkResolver, 10*time.Second, logger)
+	defaultNetworkResolver := boshnet.NewDefaultNetworkResolver(routesSearcher, ipResolver)
+	arping := bosharp.NewArping(runner, fs, logger, ArpIterations, ArpIterationDelay, ArpInterfaceCheckDelay)
+
+	centosNetManager := boshnet.NewCentosNetManager(fs, runner, defaultNetworkResolver, ipResolver, arping, logger)
+	ubuntuNetManager := boshnet.NewUbuntuNetManager(fs, runner, defaultNetworkResolver, ipResolver, arping, logger)
 
 	centos := NewLinuxPlatform(
 		fs,

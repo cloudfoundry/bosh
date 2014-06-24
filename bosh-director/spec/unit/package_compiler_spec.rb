@@ -473,7 +473,7 @@ module Bosh::Director
       task = CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key')
 
       compiler = PackageCompiler.new(@plan)
-      fake_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage')
+      fake_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
       task.stub(:find_compiled_package).and_return(fake_compiled_package)
 
       compiler.stub(:with_compile_lock).with(package.id, stemcell.id).and_yield
@@ -502,7 +502,8 @@ module Bosh::Director
         task.stub(:find_compiled_package)
         BlobUtil.should_not_receive(:save_to_global_cache)
         compiler.stub(:prepare_vm)
-        Models::CompiledPackage.stub(:create)
+        compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
+        allow(Models::CompiledPackage).to receive(:create).and_return(compiled_package)
 
         compiler.compile_package(task)
       end
@@ -511,11 +512,14 @@ module Bosh::Director
         compiler.should_receive(:with_compile_lock).with(package.id, stemcell.id).and_yield
 
         task.stub(:find_compiled_package)
-        compiled_package = double('compiled package', package: package, stemcell: stemcell, blobstore_id: 'some blobstore id')
+        compiled_package = instance_double(
+          'Bosh::Director::Models::CompiledPackage',
+          name: 'fake-package-name', package: package,
+          stemcell: stemcell, blobstore_id: 'some blobstore id')
         BlobUtil.should_receive(:exists_in_global_cache?).with(package, cache_key).and_return(false)
         BlobUtil.should_receive(:save_to_global_cache).with(compiled_package, cache_key)
         compiler.stub(:prepare_vm)
-        Models::CompiledPackage.stub(:create).and_return(compiled_package)
+        allow(Models::CompiledPackage).to receive(:create).and_return(compiled_package)
 
         compiler.compile_package(task)
       end
@@ -528,7 +532,8 @@ module Bosh::Director
         BlobUtil.should_not_receive(:exists_in_global_cache?)
         BlobUtil.should_not_receive(:save_to_global_cache)
         compiler.stub(:prepare_vm)
-        Models::CompiledPackage.stub(:create)
+        compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
+        allow(Models::CompiledPackage).to receive(:create).and_return(compiled_package)
 
         compiler.compile_package(task)
       end

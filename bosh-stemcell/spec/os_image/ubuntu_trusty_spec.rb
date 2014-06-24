@@ -142,9 +142,9 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
 
   context 'installed by system_kernel' do
     %w(
-      linux-headers-virtual
-      linux-image-virtual
-      linux-image-extra-virtual
+      linux-generic
+      linux-image-generic
+      linux-headers-generic
     ).each do |pkg|
       describe package(pkg) do
         it { should be_installed }

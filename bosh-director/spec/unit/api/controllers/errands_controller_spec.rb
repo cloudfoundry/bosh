@@ -11,7 +11,8 @@ module Bosh::Director
     before { Api::ResourceManager.stub(:new) }
 
     describe 'POST', '/deployments/:deployment_name/errands/:name/runs' do
-      before { Config.base_dir = 'base_dir' }
+      before { Config.base_dir = Dir.mktmpdir }
+      after { FileUtils.rm_rf(Config.base_dir) }
 
       def perform
         post(

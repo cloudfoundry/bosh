@@ -6,10 +6,11 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
-	"time"
 
 	bosherr "bosh/errors"
 	boshlog "bosh/logger"
+	bosharp "bosh/platform/net/arp"
+	boship "bosh/platform/net/ip"
 	boshsettings "bosh/settings"
 	boshsys "bosh/system"
 )
@@ -23,24 +24,27 @@ var (
 type ubuntuNetManager struct {
 	DefaultNetworkResolver
 
-	arpWaitInterval time.Duration
-	cmdRunner       boshsys.CmdRunner
-	fs              boshsys.FileSystem
-	logger          boshlog.Logger
+	cmdRunner          boshsys.CmdRunner
+	fs                 boshsys.FileSystem
+	ipResolver         boship.IPResolver
+	addressBroadcaster bosharp.AddressBroadcaster
+	logger             boshlog.Logger
 }
 
 func NewUbuntuNetManager(
 	fs boshsys.FileSystem,
 	cmdRunner boshsys.CmdRunner,
 	defaultNetworkResolver DefaultNetworkResolver,
-	arpWaitInterval time.Duration,
+	ipResolver boship.IPResolver,
+	addressBroadcaster bosharp.AddressBroadcaster,
 	logger boshlog.Logger,
 ) ubuntuNetManager {
 	return ubuntuNetManager{
 		DefaultNetworkResolver: defaultNetworkResolver,
-		arpWaitInterval:        arpWaitInterval,
 		cmdRunner:              cmdRunner,
 		fs:                     fs,
+		ipResolver:             ipResolver,
+		addressBroadcaster:     addressBroadcaster,
 		logger:                 logger,
 	}
 }
@@ -50,7 +54,7 @@ func (net ubuntuNetManager) getDNSServers(networks boshsettings.Networks) []stri
 	return dnsNetwork.DNS
 }
 
-func (net ubuntuNetManager) SetupDhcp(networks boshsettings.Networks) error {
+func (net ubuntuNetManager) SetupDhcp(networks boshsettings.Networks, errCh chan error) error {
 	dnsServers := net.getDNSServers(networks)
 	dnsServersList := strings.Join(dnsServers, ", ")
 	buffer := bytes.NewBuffer([]byte{})
@@ -80,6 +84,19 @@ func (net ubuntuNetManager) SetupDhcp(networks boshsettings.Networks) error {
 			net.logger.Info(ubuntuNetManagerLogTag, "Ignoring ifup failure: %#v", err)
 		}
 	}
+
+	addresses := []boship.InterfaceAddress{
+		// eth0 is hard coded in AWS and OpenStack stemcells.
+		// TODO: abstract hardcoded network interface name to the NetManager
+		boship.NewResolvingInterfaceAddress("eth0", net.ipResolver),
+	}
+
+	go func() {
+		net.addressBroadcaster.BroadcastMACAddresses(addresses)
+		if errCh != nil {
+			errCh <- nil
+		}
+	}()
 
 	return nil
 }
@@ -115,30 +132,16 @@ func (net ubuntuNetManager) SetupManualNetworking(networks boshsettings.Networks
 		return bosherr.WrapError(err, "Writing resolv.conf")
 	}
 
-	go net.gratuitiousArp(modifiedNetworks, errCh)
+	addresses := toInterfaceAddresses(modifiedNetworks)
+
+	go func() {
+		net.addressBroadcaster.BroadcastMACAddresses(addresses)
+		if errCh != nil {
+			errCh <- nil
+		}
+	}()
 
 	return nil
-}
-
-func (net ubuntuNetManager) gratuitiousArp(networks []customNetwork, errCh chan error) {
-	for i := 0; i < 6; i++ {
-		for _, network := range networks {
-			for !net.fs.FileExists(filepath.Join("/sys/class/net", network.Interface)) {
-				time.Sleep(100 * time.Millisecond)
-			}
-
-			_, _, _, err := net.cmdRunner.RunCommand("arping", "-c", "1", "-U", "-I", network.Interface, network.IP)
-			if err != nil {
-				net.logger.Info(ubuntuNetManagerLogTag, "Ignoring arping failure: %#v", err)
-			}
-
-			time.Sleep(net.arpWaitInterval)
-		}
-	}
-
-	if errCh != nil {
-		errCh <- nil
-	}
 }
 
 func (net ubuntuNetManager) writeNetworkInterfaces(networks boshsettings.Networks) ([]customNetwork, bool, error) {

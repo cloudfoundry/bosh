@@ -1,10 +1,16 @@
 package stats
 
-type dummyStatsCollector struct {
-}
+import (
+	"time"
+)
+
+type dummyStatsCollector struct{}
 
 func NewDummyStatsCollector() (collector StatsCollector) {
 	return dummyStatsCollector{}
+}
+
+func (p dummyStatsCollector) StartCollecting(collectionInterval time.Duration, latestGotUpdated chan struct{}) {
 }
 
 func (p dummyStatsCollector) GetCPULoad() (load CPULoad, err error) {
