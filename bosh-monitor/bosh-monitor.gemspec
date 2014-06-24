@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'yajl-ruby', '~>1.1.0'
   s.add_dependency 'thin',      '~>1.5.0'
   s.add_dependency 'sinatra',   '~>1.4.2'
-  s.add_dependency 'aws-sdk',   '1.32.0'
+  s.add_dependency 'aws-sdk',   '1.44.0'
   s.add_dependency 'dogapi',    '~> 1.6.0'
   s.add_dependency 'uuidtools', '~> 2.1'
 
