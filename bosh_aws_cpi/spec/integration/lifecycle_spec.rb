@@ -236,7 +236,7 @@ describe Bosh::AwsCloud::Cloud do
     end
   end
 
-  describe 'spot' do
+  describe 'spot' do 
     
     context 'without existing disks' do
       
