@@ -27,7 +27,7 @@ type DiskStats struct {
 }
 
 type StatsCollector interface {
-	StartCollecting(time.Duration)
+	StartCollecting(time.Duration, chan struct{})
 
 	GetCPULoad() (load CPULoad, err error)
 	GetCPUStats() (stats CPUStats, err error)

@@ -3,6 +3,8 @@ package platform
 import (
 	"time"
 
+	sigar "github.com/cloudfoundry/gosigar"
+
 	bosherror "bosh/errors"
 	boshlog "bosh/logger"
 	boshcdrom "bosh/platform/cdrom"
@@ -50,10 +52,10 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.DirectoriesProvider
 	compressor := boshcmd.NewTarballCompressor(runner, fs)
 	copier := boshcmd.NewCpCopier(runner, fs, logger)
 
-	sigarCollector := boshstats.NewSigarStatsCollector()
+	sigarCollector := boshstats.NewSigarStatsCollector(&sigar.ConcreteSigar{})
 
 	// Kick of stats collection as soon as possible
-	sigarCollector.StartCollecting(SigarStatsCollectionInterval)
+	go sigarCollector.StartCollecting(SigarStatsCollectionInterval, nil)
 
 	vitalsService := boshvitals.NewService(sigarCollector, dirProvider)
 

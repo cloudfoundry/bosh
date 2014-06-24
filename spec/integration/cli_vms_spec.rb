@@ -14,4 +14,26 @@ describe 'cli: vms', type: :integration do
     expect(vms).to match /foobar\/2/
     expect(vms).to match /VMs total: 3/
   end
+
+  it 'should return vm --vitals' do
+    if current_sandbox.agent_type == 'ruby'
+      skip 'ruby agent is using monit for vitals which is not running in integration tests'
+    end
+
+    deploy_simple
+    vitals = director.vms_vitals[0]
+
+    expect(vitals[:cpu_user]).to match /\d+\.?\d*[%]/
+    expect(vitals[:cpu_sys]).to match /\d+\.?\d*[%]/
+    expect(vitals[:cpu_wait]).to match /\d+\.?\d*[%]/
+
+    expect(vitals[:memory_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d*\w\)/
+    expect(vitals[:swap_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d*\w\)/
+
+    expect(vitals[:system_disk_usage]).to match /\d+\.?\d*[%]/
+    expect(vitals[:ephemeral_disk_usage]).to match /\d+\.?\d*[%]/
+
+    # persistent disk was not deployed
+    expect(vitals[:persistent_disk_usage]).to match /n\/a/
+  end
 end
