@@ -9,7 +9,7 @@ install:
 
 rvm:
   - ruby-1.9.3
-  - ruby-2.1.1
+  - ruby-2.1.2
 
 env:
   # limit unit test threads to 1 to avoid SimpleCov race conditions:
@@ -24,9 +24,9 @@ env:
 
 matrix:
   exclude:
-    - rvm: ruby-2.1.1
+    - rvm: ruby-2.1.2
       env: DB=mysql    TASKS="spec:integration:ruby_agent"
-    - rvm: ruby-2.1.1
+    - rvm: ruby-2.1.2
       env: DB=postgres TASKS="spec:integration:ruby_agent"
 
 addons:

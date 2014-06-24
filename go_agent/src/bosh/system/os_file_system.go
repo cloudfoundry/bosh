@@ -91,6 +91,7 @@ func (fs osFileSystem) WriteFile(path string, content []byte) (err error) {
 		err = bosherr.WrapError(err, "Creating file %s", path)
 		return
 	}
+
 	defer file.Close()
 
 	_, err = file.Write(content)
@@ -118,6 +119,7 @@ func (fs osFileSystem) ConvergeFileContents(path string, content []byte) (writte
 		err = bosherr.WrapError(err, "Creating file %s", path)
 		return
 	}
+
 	defer file.Close()
 
 	_, err = file.Write(content)
@@ -148,6 +150,7 @@ func (fs osFileSystem) ReadFile(path string) (content []byte, err error) {
 		err = bosherr.WrapError(err, "Opening file %s", path)
 		return
 	}
+
 	defer file.Close()
 
 	bytes, err := ioutil.ReadAll(file)
@@ -179,25 +182,23 @@ func (fs osFileSystem) Rename(oldPath, newPath string) (err error) {
 	return os.Rename(oldPath, newPath)
 }
 
-func (fs osFileSystem) Symlink(oldPath, newPath string) (err error) {
+func (fs osFileSystem) Symlink(oldPath, newPath string) error {
 	fs.logger.Debug(fs.logTag, "Symlinking oldPath %s with newPath %s", oldPath, newPath)
 
 	actualOldPath, err := filepath.EvalSymlinks(oldPath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Evaluating symlinks for %s", oldPath)
-		return
+		return bosherr.WrapError(err, "Evaluating symlinks for %s", oldPath)
 	}
 
 	existingTargetedPath, err := filepath.EvalSymlinks(newPath)
 	if err == nil {
 		if existingTargetedPath == actualOldPath {
-			return
+			return nil
 		}
 
 		err = os.Remove(newPath)
 		if err != nil {
-			err = bosherr.WrapError(err, "Failed to delete symlimk at %s", newPath)
-			return
+			return bosherr.WrapError(err, "Failed to delete symlimk at %s", newPath)
 		}
 	}
 
@@ -214,26 +215,28 @@ func (fs osFileSystem) ReadLink(symlinkPath string) (targetPath string, err erro
 	return
 }
 
-func (fs osFileSystem) CopyFile(srcPath, dstPath string) (err error) {
+func (fs osFileSystem) CopyFile(srcPath, dstPath string) error {
 	fs.logger.Debug(fs.logTag, "Copying %s to %s", srcPath, dstPath)
 	srcFile, err := os.Open(srcPath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Opening source path")
-		return
+		return bosherr.WrapError(err, "Opening source path")
 	}
+
+	defer srcFile.Close()
 
 	dstFile, err := os.Create(dstPath)
 	if err != nil {
-		err = bosherr.WrapError(err, "Creating destination file")
-		return
+		return bosherr.WrapError(err, "Creating destination file")
 	}
+
+	defer dstFile.Close()
 
 	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
-		err = bosherr.WrapError(err, "Copying file")
-		return
+		return bosherr.WrapError(err, "Copying file")
 	}
-	return
+
+	return nil
 }
 
 func (fs osFileSystem) TempFile(prefix string) (file *os.File, err error) {

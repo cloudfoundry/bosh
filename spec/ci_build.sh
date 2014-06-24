@@ -4,6 +4,9 @@ set -e -x
 
 env | sort
 
+export TMPDIR=/mnt/ci-tmp
+mkdir -p $TMPDIR
+
 # Ensure that any modifications or stray files are removed
 git clean -df
 git checkout .
@@ -22,7 +25,7 @@ echo "--- Starting bundle install @ `date` ---"
 # Reuse gems directory so that same job does not have to
 # spend so much redownloading and reinstalling same gems.
 # (Destination directory is created by bundler)
-bundle install --local --clean --path "/tmp/$JOB_NAME/"
+bundle install --local --clean --path "/mnt/ci-tmp/$JOB_NAME/"
 
 echo "--- Starting rspec @ `date` ---"
 
