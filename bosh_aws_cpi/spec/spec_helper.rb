@@ -48,6 +48,13 @@ def make_cloud(options = nil)
   Bosh::AwsCloud::Cloud.new(options || mock_cloud_options['properties'])
 end
 
+def mock_security_groups(group_id="sg-baz-1234", group_name="baz")
+  sg1 = double(AWS::EC2::SecurityGroup, security_group_id: group_id)
+  allow(sg1).to receive(:id).and_return(group_id)
+  allow(sg1).to receive(:name).and_return(group_name)
+  [sg1]
+end
+
 def mock_registry(endpoint = 'http://registry:3333')
   registry = double('registry', :endpoint => endpoint)
   Bosh::Registry::Client.stub(:new).and_return(registry)
