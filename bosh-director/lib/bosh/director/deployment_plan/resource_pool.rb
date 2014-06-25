@@ -40,11 +40,14 @@ module Bosh::Director
 
       # @param [DeploymentPlan] deployment_plan Deployment plan
       # @param [Hash] spec Raw resource pool spec from the deployment manifest
-      def initialize(deployment_plan, spec)
+      # @param [Logger] logger Director logger
+      def initialize(deployment_plan, spec, logger)
         @deployment_plan = deployment_plan
 
+        @logger = logger
+
         @name = safe_property(spec, "name", :class => String)
-        @size = safe_property(spec, "size", :class => Integer)
+        @size = safe_property(spec, "size", :class => Integer, :optional => true)
 
         @cloud_properties =
           safe_property(spec, "cloud_properties", :class => Hash)
@@ -112,6 +115,14 @@ module Bosh::Director
       end
 
       def allocate_vm
+        if @idle_vms.empty?
+          if dynamically_sized?
+            add_idle_vm
+          else
+            raise ResourcePoolNotEnoughCapacity,
+                  "Resource pool `#{@name}' has no more VMs to allocate"
+          end
+        end
         allocated_vm = @idle_vms.pop
         @allocated_vms << allocated_vm
         allocated_vm
@@ -119,9 +130,16 @@ module Bosh::Director
 
       def deallocate_vm(idle_vm_cid)
         deallocated_vm = @allocated_vms.find { |idle_vm| idle_vm.vm.cid == idle_vm_cid }
+        if deallocated_vm.nil?
+          raise DirectorError, "Resource pool `#{@name}' does not contain an allocated VM with the cid `#{idle_vm_cid}'"
+        end
+
+        @logger.info("Deallocating VM: #{deallocated_vm.vm.cid}")
         @allocated_vms.delete(deallocated_vm)
-        @idle_vms << deallocated_vm
-        deallocated_vm
+
+        add_idle_vm unless dynamically_sized? # don't refill if dynamically sized
+
+        nil
       end
 
       # "Active" VM is a VM that is currently running a job
@@ -136,7 +154,7 @@ module Bosh::Director
       # @return [void]
       def reserve_capacity(n)
         needed = @reserved_capacity + n
-        if needed > @size
+        if !dynamically_sized? && needed > @size
           raise ResourcePoolNotEnoughCapacity,
                 "Resource pool `#{@name}' is not big enough: " +
                 "#{needed} VMs needed, capacity is #{@size}"
@@ -159,12 +177,17 @@ module Bosh::Director
         end
       end
 
+      def dynamically_sized?
+        @size.nil?
+      end
+
       private
 
       # Returns a number of VMs that need to be created in order to bring
       # this resource pool to a desired size
       # @return [Integer]
       def missing_vm_count
+        return 0 if dynamically_sized?
         @size - @active_vm_count - @idle_vms.size
       end
     end

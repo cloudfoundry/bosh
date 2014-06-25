@@ -80,7 +80,7 @@ module Bosh::Spec
       manifest = simple_manifest.merge(
         'name' => 'errand'
       )
-      manifest['resource_pools'].first['size'] = 4
+      manifest['resource_pools'].first.delete('size')
 
       manifest['jobs'] << {
           'name' => 'fake-errand-name',

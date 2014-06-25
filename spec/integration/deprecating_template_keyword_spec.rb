@@ -17,7 +17,7 @@ describe "Director deprecating the 'template' syntax", type: :integration do
   end
 
   context 'when the manifest uses template with a string' do
-    it 'is chill' do
+    it 'does not issue a deprecation warning' do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
       manifest_hash['releases'].first['version'] = 'latest'
       manifest_hash['jobs'][0]['instances'] = 1

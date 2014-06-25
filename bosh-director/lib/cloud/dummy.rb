@@ -92,7 +92,8 @@ module Bosh
       def configure_networks(vm_id, networks)
         cmd = commands.next_configure_networks_cmd(vm_id)
         raise NotSupported, 'Dummy CPI was configured to return NotSupported' if cmd.not_supported
-        raise NotImplemented, 'Dummy CPI does not implement configure_networks'
+
+        # No tests currently require implementing configure_networks to reconfigure Agent's networks
       end
 
       def attach_disk(vm_id, disk_id)
@@ -278,12 +279,12 @@ module Bosh
           @logger.info('Reading create_vm configuration')
           always_path = File.join(@cpi_commands, 'create_vm', 'always')
           ip_address = File.read(always_path) if File.exists?(always_path)
-          CreareVmCommand.new(ip_address)
+          CreateVmCommand.new(ip_address)
         end
       end
 
       class ConfigureNetworksCommand < Struct.new(:not_supported); end
-      class CreareVmCommand < Struct.new(:ip_address); end
+      class CreateVmCommand < Struct.new(:ip_address); end
     end
   end
 end

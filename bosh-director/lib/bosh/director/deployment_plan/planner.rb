@@ -41,13 +41,15 @@ module Bosh::Director
       attr_reader :recreate
 
       # @param [Hash] manifest Raw deployment manifest
-      # @param [Bosh::Director::EventLog::Log]
-      #   event_log Event log for recording deprecations
       # @param [Hash] options Additional options for deployment
       #   (e.g. job_states, job_rename)
+      # @param [Bosh::Director::EventLog::Log]
+      #   event_log Event log for recording deprecations
+      # @param [Logger]
+      #   logger Log for director logging
       # @return [Bosh::Director::DeploymentPlan::Planner]
-      def self.parse(manifest, event_log, options)
-        parser = DeploymentSpecParser.new(event_log)
+      def self.parse(manifest, options, event_log, logger)
+        parser = DeploymentSpecParser.new(event_log, logger)
         parser.parse(manifest, options)
       end
 

@@ -24,7 +24,7 @@ module Bosh::Director
     def perform
       deployment_model = @deployment_manager.find_by_name(@deployment_name)
       manifest = Psych.load(deployment_model.manifest)
-      deployment = DeploymentPlan::Planner.parse(manifest, event_log, {})
+      deployment = DeploymentPlan::Planner.parse(manifest, {}, event_log, logger)
 
       job = deployment.job(@errand_name)
       if job.nil?
@@ -70,38 +70,38 @@ module Bosh::Director
       deployment_preparer = Errand::DeploymentPreparer.new(deployment, job, event_log, self)
 
       rp_updaters = [ResourcePoolUpdater.new(job.resource_pool)]
-      rp_manager = DeploymentPlan::ResourcePools.new(event_log, rp_updaters)
+      resource_pools = DeploymentPlan::ResourcePools.new(event_log, rp_updaters)
 
-      job_manager = Errand::JobManager.new(deployment, job, @blobstore, event_log)
+      job_manager = Errand::JobManager.new(deployment, job, @blobstore, event_log, logger)
 
       begin
-        update_instances(deployment_preparer, rp_manager, job_manager)
+        update_instances(deployment_preparer, resource_pools, job_manager)
         blk.call
       ensure
-        delete_instances(rp_manager, job_manager)
+        delete_instances(resource_pools, job_manager)
       end
     end
 
-    def update_instances(deployment_preparer, rp_manager, job_manager)
+    def update_instances(deployment_preparer, resource_pools, job_manager)
       logger.info('Starting to prepare for deployment')
       deployment_preparer.prepare_deployment
       deployment_preparer.prepare_job
 
       logger.info('Starting to update resource pool')
-      rp_manager.update
+      resource_pools.update
 
       logger.info('Starting to update job instances')
       job_manager.update_instances
     end
 
-    def delete_instances(rp_manager, job_manager)
+    def delete_instances(resource_pools, job_manager)
       @ignore_cancellation = true
 
       logger.info('Starting to delete job instances')
       job_manager.delete_instances
 
       logger.info('Starting to refill resource pool')
-      rp_manager.refill
+      resource_pools.refill
 
       @ignore_cancellation = false
     end

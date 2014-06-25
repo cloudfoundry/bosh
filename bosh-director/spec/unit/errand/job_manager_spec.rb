@@ -2,11 +2,12 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Errand::JobManager do
-    subject { described_class.new(deployment, job, blobstore, event_log) }
+    subject { described_class.new(deployment, job, blobstore, event_log, logger) }
     let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner') }
     let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'job_name') }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
+    let(:logger) { Logger.new('/dev/null') }
 
     describe '#update' do
       before { allow(job).to receive(:instances).with(no_args).and_return([instance1, instance2]) }
@@ -65,7 +66,7 @@ module Bosh::Director
       end
 
       it 'creates an event log stage' do
-        expect(event_log).to receive(:begin_stage).with('Deleting instances', 2, ['job_name'])
+        expect(event_log).to receive(:begin_stage).with('Deleting errand instances', 2, ['job_name'])
         subject.delete_instances
       end
 
@@ -80,13 +81,6 @@ module Bosh::Director
       it 'deallocates vms for deleted instances' do
         expect(resource_pool).to receive(:deallocate_vm).with('fake-vm-cid-1')
         expect(resource_pool).to receive(:deallocate_vm).with('fake-vm-cid-2')
-        subject.delete_instances
-      end
-
-      it 'removes associations from its instances to idle vms' do
-        expect(idle_vm1).to receive(:clean_vm).with(no_args)
-        expect(idle_vm2).to receive(:clean_vm).with(no_args)
-
         subject.delete_instances
       end
 

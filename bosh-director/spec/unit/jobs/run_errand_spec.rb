@@ -24,9 +24,12 @@ module Bosh::Director
         before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
         let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
+        before { allow(Config).to receive(:logger).with(no_args).and_return(logger) }
+        let(:logger) { Logger.new('/dev/null') }
+
         before do
           allow(DeploymentPlan::Planner).to receive(:parse).
-            with({'manifest' => true}, event_log, {}).
+            with({'manifest' => true}, {}, event_log, logger).
             and_return(deployment)
         end
         let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment') }
@@ -55,7 +58,7 @@ module Bosh::Director
 
               before do
                 allow(LogBundlesCleaner).to receive(:new).
-                  with(blobstore, 86400 * 10, be_a(Logger)).
+                  with(blobstore, 86400 * 10, logger).
                   and_return(log_bundles_cleaner)
               end
               let(:log_bundles_cleaner) do
@@ -67,7 +70,7 @@ module Bosh::Director
 
               before do
                 allow(LogsFetcher).to receive(:new).
-                  with(event_log, be_a(Api::InstanceManager), log_bundles_cleaner, be_a(Logger)).
+                  with(event_log, be_a(Api::InstanceManager), log_bundles_cleaner, logger).
                   and_return(logs_fetcher)
               end
               let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
@@ -101,7 +104,7 @@ module Bosh::Director
 
               before do
                 allow(Errand::JobManager).to receive(:new).
-                  with(deployment, deployment_job, blobstore, event_log).
+                  with(deployment, deployment_job, blobstore, event_log, logger).
                   and_return(job_manager)
               end
               let(:job_manager) do

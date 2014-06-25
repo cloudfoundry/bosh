@@ -82,11 +82,13 @@ module IntegrationExampleGroup
 
   def deploy_simple_manifest(options={})
     set_deployment(options)
+    return_exit_code = options.fetch(:return_exit_code, false)
 
-    output = deploy(options)
-    expect($?).to be_success
+    output, exit_code = deploy(options.merge({return_exit_code: true}))
 
-    output
+    expect($?.success?).to_not eq(options.fetch(:failure_expected, false))
+
+    return_exit_code ? [output, exit_code] : output
   end
 
   def yaml_file(name, object)

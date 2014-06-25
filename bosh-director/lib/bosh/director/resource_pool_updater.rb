@@ -176,6 +176,7 @@ module Bosh::Director
     end
 
     def extra_vm_count
+      return 0 if @resource_pool.dynamically_sized?
       @resource_pool.active_vm_count +
           @resource_pool.idle_vms.size +
           @resource_pool.allocated_vms.size -

@@ -145,7 +145,44 @@ module Bosh::Director
       end
     end
 
-    describe :delete_extra_vms
+    describe :delete_extra_vms do
+      let(:vm) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-cid') }
+      let(:idle_vm) { instance_double('Bosh::Director::DeploymentPlan::IdleVm', changed?: true, vm: vm) }
+      let(:unchanged_idle_vm) { instance_double('Bosh::Director::DeploymentPlan::IdleVm', changed?: false, vm: vm) }
+
+      before do
+        allow(resource_pool).to receive(:active_vm_count).and_return(1)
+        allow(resource_pool).to receive(:idle_vms).and_return([idle_vm])
+        allow(resource_pool).to receive(:allocated_vms).and_return([unchanged_idle_vm])
+      end
+
+      context 'when the resource pool has a fixed size' do
+        before do
+          allow(resource_pool).to receive(:dynamically_sized?).and_return(false)
+          allow(resource_pool).to receive(:size).and_return(2)
+        end
+
+        it 'deletes idle VMs until the pool is the expected size' do
+          expect(cloud).to receive(:delete_vm).with('fake-cid')
+          expect(vm).to receive(:destroy).with(no_args)
+
+          resource_pool_updater.delete_extra_vms(thread_pool)
+        end
+      end
+
+      context 'when the resource pool is dynamically sized' do
+        before do
+          allow(resource_pool).to receive(:dynamically_sized?).and_return(true)
+        end
+
+        it 'does not delete any VMs' do
+          expect(cloud).to_not receive(:delete_vm)
+          expect(vm).to_not receive(:destroy)
+
+          resource_pool_updater.delete_extra_vms(thread_pool)
+        end
+      end
+    end
 
     describe '#delete_outdated_idle_vms' do
       let(:vm) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-cid') }
