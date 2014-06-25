@@ -31,13 +31,13 @@ module Bosh::Director
       end
 
       it 'should bind existing VMs' do
-        vm1 = Models::Vm.make
-        vm2 = Models::Vm.make
+        vm_model1 = Models::Vm.make
+        vm_model2 = Models::Vm.make
 
-        deployment_plan.stub(:vms).and_return([vm1, vm2])
+        deployment_plan.stub(:vms).and_return([vm_model1, vm_model2])
 
-        assembler.should_receive(:bind_existing_vm).with(vm1, an_instance_of(Mutex))
-        assembler.should_receive(:bind_existing_vm).with(vm2, an_instance_of(Mutex))
+        assembler.should_receive(:bind_existing_vm).with(vm_model1, an_instance_of(Mutex))
+        assembler.should_receive(:bind_existing_vm).with(vm_model2, an_instance_of(Mutex))
 
         assembler.bind_existing_deployment
       end
@@ -129,21 +129,21 @@ module Bosh::Director
       describe '#bind_existing_vm' do
         before do
           @lock = Mutex.new
-          @vm = Models::Vm.make(:agent_id => 'foo')
+          @vm_model = Models::Vm.make(:agent_id => 'foo')
         end
 
         it 'should bind an instance' do
-          instance = Models::Instance.make(:vm => @vm)
+          instance = Models::Instance.make(:vm => @vm_model)
           state = { 'state' => 'foo' }
           reservations = { 'foo' => 'reservation' }
 
-          assembler.should_receive(:get_state).with(@vm).
+          assembler.should_receive(:get_state).with(@vm_model).
             and_return(state)
           assembler.should_receive(:get_network_reservations).
             with(state).and_return(reservations)
           assembler.should_receive(:bind_instance).
             with(instance, state, reservations)
-          assembler.bind_existing_vm(@vm, @lock)
+          assembler.bind_existing_vm(@vm_model, @lock)
         end
 
         it 'should bind an idle vm' do
@@ -154,13 +154,13 @@ module Bosh::Director
           deployment_plan.stub(:resource_pool).with('baz').
             and_return(resource_pool)
 
-          assembler.should_receive(:get_state).with(@vm).
+          assembler.should_receive(:get_state).with(@vm_model).
             and_return(state)
           assembler.should_receive(:get_network_reservations).
             with(state).and_return(reservations)
           assembler.should_receive(:bind_idle_vm).
-            with(@vm, resource_pool, state, reservations)
-          assembler.bind_existing_vm(@vm, @lock)
+            with(@vm_model, resource_pool, state, reservations)
+          assembler.bind_existing_vm(@vm_model, @lock)
         end
 
         it 'should delete no longer needed vms' do
@@ -170,12 +170,12 @@ module Bosh::Director
           deployment_plan.stub(:resource_pool).with('baz').
             and_return(nil)
 
-          assembler.should_receive(:get_state).with(@vm).
+          assembler.should_receive(:get_state).with(@vm_model).
             and_return(state)
           assembler.should_receive(:get_network_reservations).
             with(state).and_return(reservations)
-          deployment_plan.should_receive(:delete_vm).with(@vm)
-          assembler.bind_existing_vm(@vm, @lock)
+          deployment_plan.should_receive(:delete_vm).with(@vm_model)
+          assembler.bind_existing_vm(@vm_model, @lock)
         end
       end
 
@@ -184,8 +184,8 @@ module Bosh::Director
         let(:state) { { 'state' => 'foo' } }
         let(:network) { Network.new(deployment_plan, {'name' => resource_pool_manifest['network']}) }
         let(:resource_pool) { ResourcePool.new(deployment_plan, resource_pool_manifest, logger) }
-        let(:vm) { Models::Vm.make }
-        let(:idle_vm) { IdleVm.new(resource_pool) }
+        let(:vm_model) { Models::Vm.make }
+        let(:idle_vm) { Vm.new(resource_pool) }
         let(:logger) { Logger.new('/dev/null') }
         let(:resource_pool_manifest) do
           {
@@ -223,7 +223,7 @@ module Bosh::Director
           it 'does not add the existing idle VM to the resource pool' do
             expect(resource_pool).not_to receive(:add_idle_vm)
 
-            assembler.bind_idle_vm(vm, resource_pool, state, reservations)
+            assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
           end
 
           it 'releases all network reservations' do
@@ -231,13 +231,13 @@ module Bosh::Director
               expect(network).to receive(:release).with(reservation)
             end
 
-            assembler.bind_idle_vm(vm, resource_pool, state, reservations)
+            assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
           end
 
           it 'marks VM for deletion' do
-            expect(deployment_plan).to receive(:delete_vm).with(vm)
+            expect(deployment_plan).to receive(:delete_vm).with(vm_model)
 
-            assembler.bind_idle_vm(vm, resource_pool, state, reservations)
+            assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
           end
         end
 
@@ -253,28 +253,28 @@ module Bosh::Director
           it 'adds the existing idle VM to the resource pool' do
             expect(resource_pool).to receive(:add_idle_vm).and_return(idle_vm)
 
-            assembler.bind_idle_vm(vm, resource_pool, state, reservations)
+            assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
 
-            expect(idle_vm.vm).to eq(vm)
+            expect(idle_vm.model).to eq(vm_model)
             expect(idle_vm.current_state).to eq(state)
           end
 
           it 'reuses dynamic network reservations' do
             expect(idle_vm).to receive(:use_reservation).with(reservations[network.name])
 
-            assembler.bind_idle_vm(vm, resource_pool, state, reservations)
+            assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
           end
 
           it 'does not release any network reservations' do
             expect(network).not_to receive(:release)
 
-            assembler.bind_idle_vm(vm, resource_pool, state, reservations)
+            assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
           end
 
           it 'does not mark VM for deletion' do
             expect(deployment_plan).not_to receive(:delete_vm)
 
-            assembler.bind_idle_vm(vm, resource_pool, state, reservations)
+            assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
           end
         end
       end
@@ -376,21 +376,21 @@ module Bosh::Director
         it 'should return the processed agent state' do
           state = { 'state' => 'baz' }
 
-          vm = Models::Vm.make(:agent_id => 'agent-1')
+          vm_model = Models::Vm.make(:agent_id => 'agent-1')
           client = double('AgentClient')
           AgentClient.should_receive(:with_defaults).with('agent-1').and_return(client)
 
           client.should_receive(:get_state).and_return(state)
-          assembler.should_receive(:verify_state).with(vm, state)
+          assembler.should_receive(:verify_state).with(vm_model, state)
           assembler.should_receive(:migrate_legacy_state).
-            with(vm, state)
+            with(vm_model, state)
 
-          assembler.get_state(vm).should eq(state)
+          assembler.get_state(vm_model).should eq(state)
         end
 
         context 'when the returned state contains top level "release" key' do
           let(:agent_client) { double('AgentClient') }
-          let(:vm) { Models::Vm.make(:agent_id => 'agent-1') }
+          let(:vm_model) { Models::Vm.make(:agent_id => 'agent-1') }
           before do
             allow(AgentClient).to receive(:with_defaults).with('agent-1').and_return(agent_client)
           end
@@ -400,10 +400,10 @@ module Bosh::Director
             final_state = { 'other' => 'data', 'job' => {} }
             agent_client.stub(:get_state).and_return(legacy_state)
 
-            assembler.stub(:verify_state).with(vm, legacy_state)
-            assembler.stub(:migrate_legacy_state).with(vm, legacy_state)
+            assembler.stub(:verify_state).with(vm_model, legacy_state)
+            assembler.stub(:migrate_legacy_state).with(vm_model, legacy_state)
 
-            assembler.get_state(vm).should eq(final_state)
+            assembler.get_state(vm_model).should eq(final_state)
           end
 
           context 'and the returned state contains a job level release' do
@@ -424,10 +424,10 @@ module Bosh::Director
               }
               agent_client.stub(:get_state).and_return(legacy_state)
 
-              assembler.stub(:verify_state).with(vm, legacy_state)
-              assembler.stub(:migrate_legacy_state).with(vm, legacy_state)
+              assembler.stub(:verify_state).with(vm_model, legacy_state)
+              assembler.stub(:migrate_legacy_state).with(vm_model, legacy_state)
 
-              assembler.get_state(vm).should eq(final_state)
+              assembler.get_state(vm_model).should eq(final_state)
             end
           end
 
@@ -448,17 +448,17 @@ module Bosh::Director
               }
               agent_client.stub(:get_state).and_return(legacy_state)
 
-              assembler.stub(:verify_state).with(vm, legacy_state)
-              assembler.stub(:migrate_legacy_state).with(vm, legacy_state)
+              assembler.stub(:verify_state).with(vm_model, legacy_state)
+              assembler.stub(:migrate_legacy_state).with(vm_model, legacy_state)
 
-              assembler.get_state(vm).should eq(final_state)
+              assembler.get_state(vm_model).should eq(final_state)
             end
           end
         end
 
         context 'when the returned state does not contain top level "release" key' do
           let(:agent_client) { double('AgentClient') }
-          let(:vm) { Models::Vm.make(:agent_id => 'agent-1') }
+          let(:vm_model) { Models::Vm.make(:agent_id => 'agent-1') }
           before do
             allow(AgentClient).to receive(:with_defaults).with('agent-1').and_return(agent_client)
           end
@@ -480,10 +480,10 @@ module Bosh::Director
               }
               agent_client.stub(:get_state).and_return(legacy_state)
 
-              assembler.stub(:verify_state).with(vm, legacy_state)
-              assembler.stub(:migrate_legacy_state).with(vm, legacy_state)
+              assembler.stub(:verify_state).with(vm_model, legacy_state)
+              assembler.stub(:migrate_legacy_state).with(vm_model, legacy_state)
 
-              assembler.get_state(vm).should eq(final_state)
+              assembler.get_state(vm_model).should eq(final_state)
             end
           end
 
@@ -504,10 +504,10 @@ module Bosh::Director
               }
               agent_client.stub(:get_state).and_return(legacy_state)
 
-              assembler.stub(:verify_state).with(vm, legacy_state)
-              assembler.stub(:migrate_legacy_state).with(vm, legacy_state)
+              assembler.stub(:verify_state).with(vm_model, legacy_state)
+              assembler.stub(:migrate_legacy_state).with(vm_model, legacy_state)
 
-              assembler.get_state(vm).should eq(final_state)
+              assembler.get_state(vm_model).should eq(final_state)
             end
           end
         end
@@ -516,19 +516,19 @@ module Bosh::Director
       describe '#verify_state' do
         before do
           @deployment = Models::Deployment.make(:name => 'foo')
-          @vm = Models::Vm.make(:deployment => @deployment, :cid => 'foo')
+          @vm_model = Models::Vm.make(:deployment => @deployment, :cid => 'foo')
           deployment_plan.stub(:name).and_return('foo')
           deployment_plan.stub(:model).and_return(@deployment)
         end
 
         it 'should do nothing when VM is ok' do
-          assembler.verify_state(@vm, { 'deployment' => 'foo' })
+          assembler.verify_state(@vm_model, { 'deployment' => 'foo' })
         end
 
         it 'should do nothing when instance is ok' do
           Models::Instance.make(
-            :deployment => @deployment, :vm => @vm, :job => 'bar', :index => 11)
-          assembler.verify_state(@vm, {
+            :deployment => @deployment, :vm => @vm_model, :job => 'bar', :index => 11)
+          assembler.verify_state(@vm_model, {
             'deployment' => 'foo',
             'job' => {
               'name' => 'bar'
@@ -540,10 +540,10 @@ module Bosh::Director
         it 'should make sure VM and instance belong to the same deployment' do
           other_deployment = Models::Deployment.make
           Models::Instance.make(
-            :deployment => other_deployment, :vm => @vm, :job => 'bar',
+            :deployment => other_deployment, :vm => @vm_model, :job => 'bar',
             :index => 11)
           lambda {
-            assembler.verify_state(@vm, {
+            assembler.verify_state(@vm_model, {
               'deployment' => 'foo',
               'job' => { 'name' => 'bar' },
               'index' => 11
@@ -555,13 +555,13 @@ module Bosh::Director
 
         it 'should make sure the state is a Hash' do
           lambda {
-            assembler.verify_state(@vm, 'state')
+            assembler.verify_state(@vm_model, 'state')
           }.should raise_error(AgentInvalidStateFormat, /expected Hash/)
         end
 
         it 'should make sure the deployment name is correct' do
           lambda {
-            assembler.verify_state(@vm, { 'deployment' => 'foz' })
+            assembler.verify_state(@vm_model, { 'deployment' => 'foz' })
           }.should raise_error(AgentWrongDeployment,
                                "VM `foo' is out of sync: expected to be a part " +
                                  "of deployment `foo' but is actually a part " +
@@ -570,7 +570,7 @@ module Bosh::Director
 
         it 'should make sure the job and index exist' do
           lambda {
-            assembler.verify_state(@vm, {
+            assembler.verify_state(@vm_model, {
               'deployment' => 'foo',
               'job' => { 'name' => 'bar' },
               'index' => 11
@@ -585,8 +585,8 @@ module Bosh::Director
             deployment_plan.stub(:job_rename).and_return({})
             deployment_plan.stub(:rename_in_progress?).and_return(false)
             Models::Instance.make(
-              :deployment => @deployment, :vm => @vm, :job => 'bar', :index => 11)
-            assembler.verify_state(@vm, {
+              :deployment => @deployment, :vm => @vm_model, :job => 'bar', :index => 11)
+            assembler.verify_state(@vm_model, {
               'deployment' => 'foo',
               'job' => { 'name' => 'bar' },
               'index' => 22
@@ -663,13 +663,13 @@ module Bosh::Director
 
       describe '#delete_unneeded_vms' do
         it 'should delete unneeded VMs' do
-          vm = Models::Vm.make(:cid => 'vm-cid')
-          deployment_plan.stub(:unneeded_vms).and_return([vm])
+          vm_model = Models::Vm.make(:cid => 'vm-cid')
+          deployment_plan.stub(:unneeded_vms).and_return([vm_model])
 
           cloud.should_receive(:delete_vm).with('vm-cid')
           assembler.delete_unneeded_vms
 
-          Models::Vm[vm.id].should be_nil
+          Models::Vm[vm_model.id].should be_nil
           check_event_log do |events|
             events.size.should == 2
             events.map { |e| e['stage'] }.uniq.should == ['Deleting unneeded VMs']

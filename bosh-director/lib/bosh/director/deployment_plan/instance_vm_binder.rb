@@ -33,11 +33,11 @@ module Bosh::Director
     # @param [DeploymentPlan::Instance] instance
     def bind_instance_vm(instance)
       @event_log.track("#{instance.job.name}/#{instance.index}") do
-        idle_vm = instance.idle_vm
+        vm = instance.vm
 
         # Apply the assignment to the VM
-        agent = AgentClient.with_defaults(idle_vm.vm.agent_id)
-        state = idle_vm.current_state
+        agent = AgentClient.with_defaults(vm.model.agent_id)
+        state = vm.current_state
         state['job'] = instance.job.spec
         state['index'] = instance.index
         agent.apply(state)
@@ -47,9 +47,9 @@ module Bosh::Director
         # so we only update database after we see a successful agent apply.
         # If database update fails subsequent deploy will try to
         # assign a new VM to this instance which is ok.
-        idle_vm.vm.db.transaction do
-          idle_vm.vm.update(:apply_spec => state)
-          instance.model.update(:vm => idle_vm.vm)
+        vm.model.db.transaction do
+          vm.model.update(:apply_spec => state)
+          instance.model.update(:vm => vm.model)
         end
 
         instance.current_state = state

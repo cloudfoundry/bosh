@@ -52,7 +52,7 @@ module Bosh::Director
     # @return [void]
     def deallocate_vms
       @logger.info('Deallocating errand VMs')
-      instance_vm_cids = @job.instances.map { |i| i.model.vm.cid }
+      instance_vm_cids = @job.instances.map { |instance| instance.model.vm.cid }
       instance_vm_cids.each { |cid| @job.resource_pool.deallocate_vm(cid) }
     end
   end

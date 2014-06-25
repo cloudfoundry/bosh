@@ -11,7 +11,7 @@ module Bosh::Director
       let(:instance) do
         instance_double('Bosh::Director::DeploymentPlan::Instance', {
           job: job,
-          idle_vm: idle_vm,
+          vm: vm,
           index: 'fake-index',
           :current_state= => nil,
           model: instance_model,
@@ -30,14 +30,14 @@ module Bosh::Director
 
       let(:instance_model) { Models::Instance.make(vm: nil) }
 
-      let(:idle_vm) do
-        instance_double('Bosh::Director::DeploymentPlan::IdleVm', {
+      let(:vm) do
+        instance_double('Bosh::Director::DeploymentPlan::Vm', {
           current_state: { 'fake-vm-existing-state' => true },
-          vm: idle_vm_model,
+          model: vm_model,
         })
       end
 
-      let(:idle_vm_model) { Models::Vm.make(agent_id: 'fake-agent-id') }
+      let(:vm_model) { Models::Vm.make(agent_id: 'fake-agent-id') }
 
       before { AgentClient.stub(with_defaults: agent) }
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
@@ -71,7 +71,7 @@ module Bosh::Director
         it 'does not change apply spec on vm model' do
           expect {
             expect { subject.bind_instance_vm(instance) }.to raise_error(error)
-          }.to_not change { idle_vm_model.refresh.apply_spec }.from(nil)
+          }.to_not change { vm_model.refresh.apply_spec }.from(nil)
         end
 
         it 'does not change current state on the instance' do
@@ -87,13 +87,13 @@ module Bosh::Director
           it 'the instance points to the vm' do
             expect {
               subject.bind_instance_vm(instance)
-            }.to change { instance_model.refresh.vm }.from(nil).to(idle_vm_model)
+            }.to change { instance_model.refresh.vm }.from(nil).to(vm_model)
           end
 
           it 'the vm apply spec is set to new state' do
             expect {
               subject.bind_instance_vm(instance)
-            }.to change { idle_vm_model.refresh.apply_spec }.from(nil).to(hash_including(
+            }.to change { vm_model.refresh.apply_spec }.from(nil).to(hash_including(
               'fake-vm-existing-state' => true,
               'job' => 'fake-job-spec',
             ))
@@ -116,7 +116,7 @@ module Bosh::Director
 
         context 'when update vm apply spec in the database fails' do
           error = Exception.new('error')
-          before { idle_vm_model.stub(:_update_without_checking).and_raise(error) }
+          before { vm_model.stub(:_update_without_checking).and_raise(error) }
           it_rolls_back_instance_and_vm_state(error)
         end
       end

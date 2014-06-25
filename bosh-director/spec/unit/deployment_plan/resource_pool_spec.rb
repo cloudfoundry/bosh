@@ -272,7 +272,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
 
         it 'moves vm from idle to allocated vms' do
           allocated_vm = resource_pool.allocate_vm
-          allocated_vm.vm = instance_double('Bosh::Director::Models::Vm', cid: 'abc')
+          allocated_vm.model = instance_double('Bosh::Director::Models::Vm', cid: 'abc')
 
           expect(resource_pool.allocated_vms).to eq([allocated_vm])
           expect(resource_pool.idle_vms).to eq([])
@@ -299,7 +299,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
 
         it 'moves vm from idle to allocated vms' do
           allocated_vm = resource_pool.allocate_vm
-          allocated_vm.vm = instance_double('Bosh::Director::Models::Vm', cid: 'abc')
+          allocated_vm.model = instance_double('Bosh::Director::Models::Vm', cid: 'abc')
 
           expect(resource_pool.allocated_vms).to eq([allocated_vm])
           expect(resource_pool.idle_vms).to eq([])
@@ -309,7 +309,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
       context 'when the pool does not contain any idle VMs' do
         it 'creates a new vm if dynamically sized and the idle pool is empty' do
           allocated_vm = resource_pool.allocate_vm
-          allocated_vm.vm = instance_double('Bosh::Director::Models::Vm', cid: 'abc')
+          allocated_vm.model = instance_double('Bosh::Director::Models::Vm', cid: 'abc')
 
           expect(resource_pool.allocated_vms).to eq([allocated_vm])
           expect(resource_pool.idle_vms).to eq([])
@@ -321,20 +321,20 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
   describe '#deallocate_vm' do
     context 'when resource pool has a fixed size' do
       context 'when the pool contains an allocated vm' do
-        let(:model) { instance_double('Bosh::Director::Models::Vm', cid: 'abc') }
+        let(:vm_model) { instance_double('Bosh::Director::Models::Vm', cid: 'abc') }
 
         before do
           resource_pool.add_idle_vm
           @allocated_vm = resource_pool.allocate_vm
-          @allocated_vm.vm = model
+          @allocated_vm.model = vm_model
         end
 
         it 'removes vm from allocated list and adds a new idle vm' do
-          resource_pool.deallocate_vm(model.cid)
+          resource_pool.deallocate_vm(vm_model.cid)
           expect(resource_pool.allocated_vms).to be_empty
           expect(resource_pool.idle_vms.size).to eq(1)
           expect(resource_pool.idle_vms[0]).to_not eq(@allocated_vm)
-          expect(resource_pool.idle_vms[0]).to be_an_instance_of(Bosh::Director::DeploymentPlan::IdleVm)
+          expect(resource_pool.idle_vms[0]).to be_an_instance_of(Bosh::Director::DeploymentPlan::Vm)
         end
       end
 
@@ -354,16 +354,16 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
       before { valid_spec.delete('size') }
 
       context 'when the pool contains an allocated vm' do
-        let(:model) { instance_double('Bosh::Director::Models::Vm', cid: 'abc') }
+        let(:vm_model) { instance_double('Bosh::Director::Models::Vm', cid: 'abc') }
 
         before do
           resource_pool.add_idle_vm
           @allocated_vm = resource_pool.allocate_vm
-          @allocated_vm.vm = model
+          @allocated_vm.model = vm_model
         end
 
         it 'removes vm from allocated and does not add it to idle vms' do
-          resource_pool.deallocate_vm(model.cid)
+          resource_pool.deallocate_vm(vm_model.cid)
           expect(resource_pool.allocated_vms).to be_empty
           expect(resource_pool.idle_vms).to be_empty
         end

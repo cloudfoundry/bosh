@@ -1,11 +1,7 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::VipNetwork do
-  before(:each) do
-    @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
-  end
+  before { @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner') }
 
   describe :initialize do
     it "should require cloud properties" do

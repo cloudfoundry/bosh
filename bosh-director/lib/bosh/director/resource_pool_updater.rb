@@ -12,26 +12,26 @@ module Bosh::Director
     #
     # @param [ThreadPool] thread_pool Thread pool that will be used to
     #   parallelize the operation
-    # @yield [idle_vm] filter for which missing VMs to create
+    # @yield [VirtualMachine] filter for which missing VMs to create
     def create_missing_vms(thread_pool)
       counter = 0
       vms_to_process = []
 
-      each_idle_vm do |idle_vm|
-        next if idle_vm.vm
-        if !block_given? || yield(idle_vm)
+      each_vm do |vm|
+        next if vm.model
+        if !block_given? || yield(vm)
           counter += 1
-          vms_to_process << idle_vm
+          vms_to_process << vm
         end
       end
 
       @logger.info("Creating #{counter} missing VMs")
-      vms_to_process.each_with_index do |idle_vm, index|
+      vms_to_process.each_with_index do |vm, index|
         thread_pool.process do
           @event_log.track("#{@resource_pool.name}/#{index}") do
             with_thread_name("create_missing_vm(#{@resource_pool.name}, #{index}/#{counter})") do
               @logger.info("Creating missing VM")
-              create_missing_vm(idle_vm)
+              create_missing_vm(vm)
             end
           end
         end
@@ -41,42 +41,42 @@ module Bosh::Director
     # Creates missing VMs that have bound instances
     # (as opposed to missing resource pool VMs)
     def create_bound_missing_vms(thread_pool)
-      create_missing_vms(thread_pool) { |idle_vm| !idle_vm.bound_instance.nil? }
+      create_missing_vms(thread_pool) { |vm| !vm.bound_instance.nil? }
     end
 
-    def create_missing_vm(idle_vm)
+    def create_missing_vm(vm)
       deployment = @resource_pool.deployment_plan.model
       stemcell = @resource_pool.stemcell.model
 
-      vm = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
-                                idle_vm.network_settings, nil, @resource_pool.env)
+      vm_model = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
+                                vm.network_settings, nil, @resource_pool.env)
 
-      agent = AgentClient.with_defaults(vm.agent_id)
+      agent = AgentClient.with_defaults(vm_model.agent_id)
       agent.wait_until_ready
 
-      update_state(agent, vm, idle_vm)
+      update_state(agent, vm_model, vm)
 
-      idle_vm.vm = vm
-      idle_vm.current_state = agent.get_state
+      vm.model = vm_model
+      vm.current_state = agent.get_state
     rescue Exception => e
       @logger.info("Cleaning up the created VM due to an error: #{e}")
       begin
-        @cloud.delete_vm(vm.cid) if vm && vm.cid
-        vm.destroy if vm && vm.id
+        @cloud.delete_vm(vm_model.cid) if vm_model && vm_model.cid
+        vm_model.destroy if vm_model && vm_model.id
       rescue Exception
-        @logger.info("Could not cleanup VM: #{vm.cid}") if vm
+        @logger.info("Could not cleanup VM: #{vm_model.cid}") if vm_model
       end
       raise e
     end
 
-    def update_state(agent, vm, idle_vm)
+    def update_state(agent, vm_model, vm)
       state = {
           "deployment" => @resource_pool.deployment_plan.name,
           "resource_pool" => @resource_pool.spec,
-          "networks" => idle_vm.network_settings
+          "networks" => vm.network_settings
       }
 
-      vm.update(:apply_spec => state)
+      vm_model.update(:apply_spec => state)
       agent.apply(state)
     end
 
@@ -87,14 +87,14 @@ module Bosh::Director
       @logger.info("Deleting #{count} extra VMs")
 
       count.times do
-        idle_vm = @resource_pool.idle_vms.shift
-        vm_cid = idle_vm.vm.cid
+        vm = @resource_pool.idle_vms.shift
+        vm_cid = vm.model.cid
 
         thread_pool.process do
           @event_log.track("#{@resource_pool.name}/#{vm_cid}") do
             @logger.info("Deleting extra VM: #{vm_cid}")
             @cloud.delete_vm(vm_cid)
-            idle_vm.vm.destroy
+            vm.model.destroy
           end
         end
       end
@@ -107,9 +107,9 @@ module Bosh::Director
 
       @logger.info("Deleting #{count} outdated idle VMs")
 
-      @resource_pool.idle_vms.each do |idle_vm|
-        next unless idle_vm.vm && idle_vm.changed?
-        vm_cid = idle_vm.vm.cid
+      @resource_pool.idle_vms.each do |vm|
+        next unless vm.model && vm.changed?
+        vm_cid = vm.model.cid
 
         thread_pool.process do
           @event_log.track("#{@resource_pool.name}/#{vm_cid}") do
@@ -118,9 +118,9 @@ module Bosh::Director
             with_thread_name("delete_outdated_vm(#{@resource_pool.name}, #{index - 1}/#{count})") do
               @logger.info("Deleting outdated VM: #{vm_cid}")
               @cloud.delete_vm(vm_cid)
-              vm = idle_vm.vm
-              idle_vm.clean_vm
-              vm.destroy
+              vm_model = vm.model
+              vm.clean_vm
+              vm_model.destroy
             end
           end
         end
@@ -134,8 +134,8 @@ module Bosh::Director
     def reserve_networks
       network = @resource_pool.network
 
-      each_idle_vm_with_index do |idle_vm, index|
-        unless idle_vm.network_reservation
+      each_vm_with_index do |vm, index|
+        unless vm.network_reservation
           reservation = NetworkReservation.new(
               :type => NetworkReservation::DYNAMIC)
           network.reserve(reservation)
@@ -153,7 +153,7 @@ module Bosh::Director
             end
           end
 
-          idle_vm.network_reservation = reservation
+          vm.network_reservation = reservation
         end
       end
     end
@@ -162,15 +162,15 @@ module Bosh::Director
       SecureRandom.uuid
     end
 
-    def each_idle_vm
-      @resource_pool.allocated_vms.each { |idle_vm| yield idle_vm }
-      @resource_pool.idle_vms.each { |idle_vm| yield idle_vm }
+    def each_vm
+      @resource_pool.allocated_vms.each { |vm| yield vm }
+      @resource_pool.idle_vms.each { |vm| yield vm }
     end
 
-    def each_idle_vm_with_index
+    def each_vm_with_index
       index = 0
-      each_idle_vm do |idle_vm|
-        yield(idle_vm, index)
+      each_vm do |vm|
+        yield(vm, index)
         index += 1
       end
     end
@@ -185,16 +185,16 @@ module Bosh::Director
 
     def outdated_idle_vm_count
       counter = 0
-      @resource_pool.idle_vms.each do |idle_vm|
-        counter += 1 if idle_vm.vm && idle_vm.changed?
+      @resource_pool.idle_vms.each do |vm|
+        counter += 1 if vm.model && vm.changed?
       end
       counter
     end
 
     def missing_vm_count
       counter = 0
-      each_idle_vm do |idle_vm|
-        next if idle_vm.vm
+      each_vm do |vm|
+        next if vm.model
         counter += 1
       end
       counter
@@ -202,9 +202,9 @@ module Bosh::Director
 
     def bound_missing_vm_count
       counter = 0
-      each_idle_vm do |idle_vm|
-        next if idle_vm.vm
-        next if idle_vm.bound_instance.nil?
+      each_vm do |vm|
+        next if vm.model
+        next if vm.bound_instance.nil?
         counter += 1
       end
       counter

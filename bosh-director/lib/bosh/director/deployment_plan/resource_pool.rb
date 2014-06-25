@@ -109,7 +109,8 @@ module Bosh::Director
 
       # Adds a new VM to a list of managed idle VMs
       def add_idle_vm
-        idle_vm = IdleVm.new(self)
+        @logger.info("ResourcePool `#{name}' - Adding idle VM (index=#{@idle_vms.size})")
+        idle_vm = Vm.new(self)
         @idle_vms << idle_vm
         idle_vm
       end
@@ -123,18 +124,20 @@ module Bosh::Director
                   "Resource pool `#{@name}' has no more VMs to allocate"
           end
         end
+
         allocated_vm = @idle_vms.pop
+        @logger.info("ResourcePool `#{name}' - Allocating VM (index=#{@allocated_vms.size})")
         @allocated_vms << allocated_vm
         allocated_vm
       end
 
-      def deallocate_vm(idle_vm_cid)
-        deallocated_vm = @allocated_vms.find { |idle_vm| idle_vm.vm.cid == idle_vm_cid }
+      def deallocate_vm(vm_cid)
+        deallocated_vm = @allocated_vms.find { |vm| vm.model.cid == vm_cid }
         if deallocated_vm.nil?
-          raise DirectorError, "Resource pool `#{@name}' does not contain an allocated VM with the cid `#{idle_vm_cid}'"
+          raise DirectorError, "Resource pool `#{@name}' does not contain an allocated VM with the cid `#{vm_cid}'"
         end
 
-        @logger.info("Deallocating VM: #{deallocated_vm.vm.cid}")
+        @logger.info("ResourcePool `#{name}' - Deallocating VM: #{deallocated_vm.model.cid}")
         @allocated_vms.delete(deallocated_vm)
 
         add_idle_vm unless dynamically_sized? # don't refill if dynamically sized

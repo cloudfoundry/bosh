@@ -31,8 +31,8 @@ module Bosh::Director
       # @return [Hash] current state as provided by the BOSH Agent
       attr_accessor :current_state
 
-      # @return [DeploymentPlan::IdleVm] Associated resource pool VM
-      attr_reader :idle_vm
+      # @return [DeploymentPlan::Vm] Associated resource pool VM
+      attr_reader :vm
 
       # @return [Boolean] true if this instance needs to be recreated
       attr_accessor :recreate
@@ -51,7 +51,7 @@ module Bosh::Director
         @model = nil
         @configuration_hash = nil
         @template_hashes = nil
-        @idle_vm = nil
+        @vm = nil
         @current_state = nil
 
         @network_reservations = {}
@@ -89,13 +89,13 @@ module Bosh::Director
       end
 
       # Looks up instance model in DB and binds it to this instance spec.
-      # Instance model is created if it's not found in DB. New idle VM is
+      # Instance model is created if it's not found in DB. New VM is
       # allocated if instance DB record doesn't reference one.
       # @return [void]
       def bind_unallocated_vm
         bind_model
         if @model.vm.nil?
-          allocate_idle_vm
+          allocate_vm
         end
       end
 
@@ -399,31 +399,31 @@ module Bosh::Director
         end
       end
 
-      # Allocates an idle VM in this job resource pool and binds current
-      # instance to that idle VM.
+      # Allocates an VM in this job resource pool and binds current instance to that VM.
       # @return [void]
-      def allocate_idle_vm
+      def allocate_vm
         resource_pool = @job.resource_pool
-        idle_vm = resource_pool.allocate_vm
+        vm = resource_pool.allocate_vm
         network = resource_pool.network
 
-        if idle_vm.vm
+        if vm.model
           # There's already a resource pool VM that can become our instance,
           # so we can try to reuse its reservation
           instance_reservation = @network_reservations[network.name]
           if instance_reservation
-            instance_reservation.take(idle_vm.network_reservation)
+            instance_reservation.take(vm.network_reservation)
           end
         else
           # VM is not created yet: let's just make it reference this instance
           # so later it knows what it needs to become
-          idle_vm.bound_instance = self
+          vm.bound_instance = self
+
           # this also means we no longer need previous VM network reservation
           # (instance has its own)
-          idle_vm.release_reservation
+          vm.release_reservation
         end
 
-        @idle_vm = idle_vm
+        @vm = vm
       end
     end
   end

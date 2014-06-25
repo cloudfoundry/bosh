@@ -74,11 +74,11 @@ module Bosh::Director
             plan = make_plan('my_cloud')
 
             deployment = make_deployment('my_cloud')
-            vm1 = Models::Vm.make(deployment: deployment)
-            vm2 = Models::Vm.make(deployment: deployment)
+            vm_model1 = Models::Vm.make(deployment: deployment)
+            vm_model2 = Models::Vm.make(deployment: deployment)
 
             plan.bind_model
-            plan.vms.should =~ [vm1, vm2]
+            plan.vms.should =~ [vm_model1, vm_model2]
           end
         end
 

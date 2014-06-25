@@ -2,12 +2,9 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe Instance do
-
     let(:domain_name) { 'test_domain' }
 
-    before do
-      Bosh::Director::Config.stub(dns_domain_name: domain_name)
-    end
+    before { Bosh::Director::Config.stub(dns_domain_name: domain_name) }
 
     let(:index) { 0 }
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'mycloud') }
@@ -154,44 +151,44 @@ module Bosh::Director::DeploymentPlan
       let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
       let(:rp) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', network: net) }
       let(:old_ip) { NetAddr::CIDR.create('10.0.0.5').to_i }
-      let(:idle_vm_ip) { NetAddr::CIDR.create('10.0.0.3').to_i }
+      let(:vm_ip) { NetAddr::CIDR.create('10.0.0.3').to_i }
       let(:old_reservation) { Bosh::Director::NetworkReservation.new_dynamic(old_ip) }
-      let(:idle_vm_reservation) { Bosh::Director::NetworkReservation.new_dynamic(idle_vm_ip) }
-      let(:idle_vm) { IdleVm.new(rp) }
+      let(:vm_reservation) { Bosh::Director::NetworkReservation.new_dynamic(vm_ip) }
+      let(:vm) { Vm.new(rp) }
 
       before do
         job.stub(:instance_state).with(2).and_return('started')
         job.stub(resource_pool: rp)
-        idle_vm.use_reservation(idle_vm_reservation)
+        vm.use_reservation(vm_reservation)
       end
 
       it 'binds a VM from job resource pool (real VM exists)' do
-        idle_vm.vm = Bosh::Director::Models::Vm.make
+        vm.model = Bosh::Director::Models::Vm.make
 
-        rp.should_receive(:allocate_vm).and_return(idle_vm)
+        rp.should_receive(:allocate_vm).and_return(vm)
 
         instance.add_network_reservation('net_a', old_reservation)
         instance.bind_unallocated_vm
 
         instance.model.should_not be_nil
-        instance.idle_vm.should == idle_vm
-        idle_vm.bound_instance.should be_nil
-        idle_vm.network_reservation.ip.should == idle_vm_ip
+        instance.vm.should == vm
+        vm.bound_instance.should be_nil
+        vm.network_reservation.ip.should == vm_ip
       end
 
       it "binds a VM from job resource pool (real VM doesn't exist)" do
-        idle_vm.vm.should be_nil
+        vm.model.should be_nil
 
-        rp.should_receive(:allocate_vm).and_return(idle_vm)
-        net.should_receive(:release).with(idle_vm_reservation)
+        rp.should_receive(:allocate_vm).and_return(vm)
+        net.should_receive(:release).with(vm_reservation)
 
         instance.add_network_reservation('net_a', old_reservation)
         instance.bind_unallocated_vm
 
         instance.model.should_not be_nil
-        instance.idle_vm.should == idle_vm
-        idle_vm.bound_instance.should == instance
-        idle_vm.network_reservation.should be_nil
+        instance.vm.should == vm
+        vm.bound_instance.should == instance
+        vm.network_reservation.should be_nil
       end
     end
 

@@ -51,8 +51,8 @@ module Bosh::Director
     describe 'long running messages' do
       subject(:client) { AgentClient.with_defaults('fake-agent_id') }
 
-      before { Models::Vm.stub(:find).with(agent_id: 'fake-agent_id').and_return(vm) }
-      let(:vm) { instance_double('Bosh::Director::Models::Vm', credentials: nil) }
+      before { Models::Vm.stub(:find).with(agent_id: 'fake-agent_id').and_return(vm_model) }
+      let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil) }
 
       before do
         Config.stub(:nats_rpc)
@@ -80,7 +80,7 @@ module Bosh::Director
         { 'network_a' => { 'ip' => '1.2.3.4' } }
       end
 
-      let(:vm) do
+      let(:vm_model) do
         cloud = instance_double('Bosh::Cloud')
         Config.stub(:cloud).and_return(cloud)
         env = {}
@@ -99,7 +99,7 @@ module Bosh::Director
       end
 
       subject(:client) do
-        AgentClient.with_defaults(vm.agent_id)
+        AgentClient.with_defaults(vm_model.agent_id)
       end
 
       it 'should use vm credentials' do
@@ -110,7 +110,7 @@ module Bosh::Director
 
         App.stub(instance: double('App Instance').as_null_object)
 
-        handler = Bosh::Core::EncryptionHandler.new(vm.agent_id, vm.credentials)
+        handler = Bosh::Core::EncryptionHandler.new(vm_model.agent_id, vm_model.credentials)
         nats_rpc.should_receive(:send_request) do |*args, &blk|
           data = args[1]['encrypted_data']
           handler.decrypt(data) # decrypt to initiate session

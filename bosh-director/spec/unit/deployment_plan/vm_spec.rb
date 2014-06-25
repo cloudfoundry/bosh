@@ -1,7 +1,7 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require 'spec_helper'
 
-describe Bosh::Director::DeploymentPlan::IdleVm do
-  before(:each) do
+describe Bosh::Director::DeploymentPlan::Vm do
+  before do
     @reservation = instance_double('Bosh::Director::NetworkReservation')
     @network = instance_double('Bosh::Director::DeploymentPlan::Network')
     @network.stub(:name).and_return('test_network')
@@ -11,7 +11,7 @@ describe Bosh::Director::DeploymentPlan::IdleVm do
     @resource_pool.stub(:network).and_return(@network)
     @resource_pool.stub(:spec).and_return({'size' => 'small'})
     @resource_pool.stub(:deployment_plan).and_return(@deployment)
-    @vm = BD::DeploymentPlan::IdleVm.new(@resource_pool)
+    @vm = BD::DeploymentPlan::Vm.new(@resource_pool)
   end
 
   describe :initialize do
@@ -74,11 +74,11 @@ describe Bosh::Director::DeploymentPlan::IdleVm do
       @resource_pool.stub(:env).and_return({'foo' => 'bar'})
 
       @vm.current_state = {'resource_pool' => {'size' => 'small'}}
-      @vm.vm = BD::Models::Vm.make
+      @vm.model = BD::Models::Vm.make
 
-      @vm.vm.update(:env => {'foo' => 'bar'})
+      @vm.model.update(:env => {'foo' => 'bar'})
       @vm.resource_pool_changed?.should == false
-      @vm.vm.update(:env => {'foo' => 'baz'})
+      @vm.model.update(:env => {'foo' => 'baz'})
       @vm.resource_pool_changed?.should == true
     end
   end
@@ -106,8 +106,8 @@ describe Bosh::Director::DeploymentPlan::IdleVm do
 
   describe :clean_vm do
     it 'sets vm to nil' do
-      @vm.vm = 'fake-vm'
-      expect{ @vm.clean_vm }.to change(@vm, :vm).to(nil)
+      @vm.model = 'fake-vm'
+      expect{ @vm.clean_vm }.to change(@vm, :model).to(nil)
     end
 
     it 'sets current_state to nil' do

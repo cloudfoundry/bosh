@@ -400,7 +400,7 @@ describe Bosh::Director::DeploymentPlan::Job do
     before { job.name = 'job-name' }
 
     before { job.instances[0] = instance }
-    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 3, idle_vm: nil) }
+    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', index: 3, vm: nil) }
 
     before { allow(plan).to receive(:network).with('network-name').and_return(network) }
     let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'network-name') }
@@ -432,12 +432,12 @@ describe Bosh::Director::DeploymentPlan::Job do
       end
 
       context 'when instance has idle vm' do
-        let(:idle_vm) { instance_double('Bosh::Director::DeploymentPlan::IdleVm') }
-        before { allow(instance).to receive(:idle_vm).and_return(idle_vm) }
+        let(:vm) { instance_double('Bosh::Director::DeploymentPlan::Vm') }
+        before { allow(instance).to receive(:vm).and_return(vm) }
 
         it 'sets network reservation for idle vm' do
           expect(network).to receive(:reserve!)
-          expect(idle_vm).to receive(:use_reservation).with(network_reservation)
+          expect(vm).to receive(:use_reservation).with(network_reservation)
 
           job.bind_instance_networks
         end

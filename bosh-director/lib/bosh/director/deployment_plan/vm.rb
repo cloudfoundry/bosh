@@ -7,15 +7,15 @@ module Bosh::Director
     # reserved for an instance to minimize the number of CPI operations
     # (network & storage) required for the VM to match the instance
     # requirements.
-    class IdleVm
+    class Vm
       # @return [DeploymentPlan::ResourcePool] Associated resource pool
       attr_reader :resource_pool
 
       # @return [NetworkReservation] VM network reservation
       attr_accessor :network_reservation
 
-      # @return [Models::Vm] Associated model
-      attr_accessor :vm
+      # @return [Models::Vm] Associated DB model
+      attr_accessor :model
 
       # @return [Hash] Current state as provided by the BOSH Agent
       attr_writer :current_state
@@ -38,7 +38,7 @@ module Bosh::Director
         @current_state = nil
         @bound_instance = nil
         @network_reservation = nil
-        @vm = nil
+        @model = nil
       end
 
       #
@@ -98,7 +98,7 @@ module Bosh::Director
       def resource_pool_changed?
         return true if resource_pool.spec != @current_state['resource_pool']
         return true if resource_pool.deployment_plan.recreate
-        return true if @vm && @vm.env != resource_pool.env
+        return true if @model && @model.env != resource_pool.env
 
         false
       end
@@ -110,8 +110,9 @@ module Bosh::Director
         resource_pool_changed? || networks_changed?
       end
 
+      #TODO: rename 'clean'
       def clean_vm
-        self.vm = nil
+        self.model = nil
         self.current_state = nil
       end
     end

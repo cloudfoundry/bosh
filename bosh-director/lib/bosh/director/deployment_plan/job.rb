@@ -234,9 +234,7 @@ module Bosh::Director
             unless reservation.reserved?
               network = @deployment.network(net_name)
               network.reserve!(reservation, "`#{name}/#{instance.index}'")
-              if instance.idle_vm
-                instance.idle_vm.use_reservation(reservation)
-              end
+              instance.vm.use_reservation(reservation) if instance.vm
             end
           end
         end

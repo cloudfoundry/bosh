@@ -4,7 +4,7 @@ module Bosh::Director
 end
 
 require 'bosh/director/deployment_plan/compilation_config'
-require 'bosh/director/deployment_plan/idle_vm'
+require 'bosh/director/deployment_plan/vm'
 require 'bosh/director/deployment_plan/instance'
 require 'bosh/director/deployment_plan/job'
 require 'bosh/director/deployment_plan/network'

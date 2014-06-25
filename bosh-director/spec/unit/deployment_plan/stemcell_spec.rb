@@ -1,9 +1,6 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::Stemcell do
-
   def make(resource_pool, spec)
     BD::DeploymentPlan::Stemcell.new(resource_pool, spec)
   end

@@ -35,10 +35,10 @@ module Bosh::Director
     def bind_existing_deployment
       lock = Mutex.new
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
-        @deployment_plan.vms.each do |vm|
+        @deployment_plan.vms.each do |vm_model|
           pool.process do
-            with_thread_name("bind_existing_deployment(#{vm.agent_id})") do
-              bind_existing_vm(vm, lock)
+            with_thread_name("bind_existing_deployment(#{vm_model.agent_id})") do
+              bind_existing_vm(vm_model, lock)
             end
           end
         end
@@ -46,15 +46,15 @@ module Bosh::Director
     end
 
     # Queries agent for VM state and updates deployment plan accordingly
-    # @param [Models::Vm] vm VM database model
+    # @param [Models::Vm] vm_model VM database model
     # @param [Mutex] lock Lock to hold on to while updating deployment plan
-    def bind_existing_vm(vm, lock)
-      state = get_state(vm)
+    def bind_existing_vm(vm_model, lock)
+      state = get_state(vm_model)
       lock.synchronize do
         @logger.debug('Processing VM network reservations')
         reservations = get_network_reservations(state)
 
-        instance = vm.instance
+        instance = vm_model.instance
         if instance
           bind_instance(instance, state, reservations)
         else
@@ -62,10 +62,10 @@ module Bosh::Director
           resource_pool = @deployment_plan.resource_pool(resource_pool_name)
           if resource_pool
             @logger.debug("Binding VM to resource pool '#{resource_pool_name}'")
-            bind_idle_vm(vm, resource_pool, state, reservations)
+            bind_idle_vm(vm_model, resource_pool, state, reservations)
           else
             @logger.debug("Resource pool '#{resource_pool_name}' does not exist, marking VM for deletion")
-            @deployment_plan.delete_vm(vm)
+            @deployment_plan.delete_vm(vm_model)
           end
         end
         @logger.debug('Finished processing VM network reservations')
@@ -73,36 +73,36 @@ module Bosh::Director
     end
 
     # Binds idle VM to a resource pool with a proper network reservation
-    # @param [Models::Vm] vm VM DB model
+    # @param [Models::Vm] vm_model VM DB model
     # @param [DeploymentPlan::ResourcePool] resource_pool Resource pool
     # @param [Hash] state VM state according to its agent
     # @param [Hash] reservations Network reservations
-    def bind_idle_vm(vm, resource_pool, state, reservations)
+    def bind_idle_vm(vm_model, resource_pool, state, reservations)
       if reservations.any? { |network_name, reservation| reservation.static? }
-        @logger.debug("Releasing all network reservations for VM `#{vm.cid}'")
+        @logger.debug("Releasing all network reservations for VM `#{vm_model.cid}'")
         reservations.each do |network_name, reservation|
-          @logger.debug("Releasing #{reservation.type} network reservation `#{network_name}' for VM `#{vm.cid}'")
+          @logger.debug("Releasing #{reservation.type} network reservation `#{network_name}' for VM `#{vm_model.cid}'")
           resource_pool.network.release(reservation)
         end
 
-        @logger.debug("Deleting VM `#{vm.cid}' with static network reservation")
-        @deployment_plan.delete_vm(vm)
+        @logger.debug("Deleting VM `#{vm_model.cid}' with static network reservation")
+        @deployment_plan.delete_vm(vm_model)
         return
       end
 
-      @logger.debug("Adding VM `#{vm.cid}' to resource pool `#{resource_pool.name}'")
+      @logger.debug("Adding VM `#{vm_model.cid}' to resource pool `#{resource_pool.name}'")
       idle_vm = resource_pool.add_idle_vm
-      idle_vm.vm = vm
+      idle_vm.model = vm_model
       idle_vm.current_state = state
 
       network_name = resource_pool.network.name
       reservation = reservations[network_name]
       if reservation
         @logger.debug("Using existing `#{reservation.type}' " +
-          "network reservation of `#{reservation.ip}' for VM `#{vm.cid}'")
+          "network reservation of `#{reservation.ip}' for VM `#{vm_model.cid}'")
         idle_vm.use_reservation(reservation)
       else
-        @logger.debug("No network reservation for VM `#{vm.cid}'")
+        @logger.debug("No network reservation for VM `#{vm_model.cid}'")
       end
     end
 
@@ -163,16 +163,16 @@ module Bosh::Director
       reservations
     end
 
-    def get_state(vm)
-      @logger.debug("Requesting current VM state for: #{vm.agent_id}")
-      agent = AgentClient.with_defaults(vm.agent_id)
+    def get_state(vm_model)
+      @logger.debug("Requesting current VM state for: #{vm_model.agent_id}")
+      agent = AgentClient.with_defaults(vm_model.agent_id)
       state = agent.get_state
 
       @logger.debug("Received VM state: #{state.pretty_inspect}")
-      verify_state(vm, state)
+      verify_state(vm_model, state)
       @logger.debug('Verified VM state')
 
-      migrate_legacy_state(vm, state)
+      migrate_legacy_state(vm_model, state)
       state.delete('release')
       if state.include?('job')
         state['job'].delete('release')
@@ -180,21 +180,21 @@ module Bosh::Director
       state
     end
 
-    def verify_state(vm, state)
-      instance = vm.instance
+    def verify_state(vm_model, state)
+      instance = vm_model.instance
 
-      if instance && instance.deployment_id != vm.deployment_id
+      if instance && instance.deployment_id != vm_model.deployment_id
         # Both VM and instance should reference same deployment
         raise VmInstanceOutOfSync,
-              "VM `#{vm.cid}' and instance " +
+              "VM `#{vm_model.cid}' and instance " +
               "`#{instance.job}/#{instance.index}' " +
               "don't belong to the same deployment"
       end
 
       unless state.kind_of?(Hash)
-        @logger.error("Invalid state for `#{vm.cid}': #{state.pretty_inspect}")
+        @logger.error("Invalid state for `#{vm_model.cid}': #{state.pretty_inspect}")
         raise AgentInvalidStateFormat,
-              "VM `#{vm.cid}' returns invalid state: " +
+              "VM `#{vm_model.cid}' returns invalid state: " +
               "expected Hash, got #{state.class}"
       end
 
@@ -203,7 +203,7 @@ module Bosh::Director
 
       if actual_deployment_name != expected_deployment_name
         raise AgentWrongDeployment,
-              "VM `#{vm.cid}' is out of sync: " +
+              "VM `#{vm_model.cid}' is out of sync: " +
                 'expected to be a part of deployment ' +
               "`#{expected_deployment_name}' " +
                 'but is actually a part of deployment ' +
@@ -215,7 +215,7 @@ module Bosh::Director
 
       if instance.nil? && !actual_job.nil?
         raise AgentUnexpectedJob,
-              "VM `#{vm.cid}' is out of sync: " +
+              "VM `#{vm_model.cid}' is out of sync: " +
               "it reports itself as `#{actual_job}/#{actual_index}' but " +
                 'there is no instance reference in DB'
       end
@@ -237,22 +237,22 @@ module Bosh::Director
           end
         else
           raise AgentJobMismatch,
-                "VM `#{vm.cid}' is out of sync: " +
+                "VM `#{vm_model.cid}' is out of sync: " +
                 "it reports itself as `#{actual_job}/#{actual_index}' but " +
                 "according to DB it is `#{instance.job}/#{instance.index}'"
         end
       end
     end
 
-    def migrate_legacy_state(vm, state)
+    def migrate_legacy_state(vm_model, state)
       # Persisting apply spec for VMs that were introduced before we started
       # persisting it on apply itself (this is for cloudcheck purposes only)
-      if vm.apply_spec.nil?
+      if vm_model.apply_spec.nil?
         # The assumption is that apply_spec <=> VM state
-        vm.update(:apply_spec => state)
+        vm_model.update(:apply_spec => state)
       end
 
-      instance = vm.instance
+      instance = vm_model.instance
       if instance
         disk_size = state['persistent_disk'].to_i
         persistent_disk = instance.persistent_disk
@@ -354,12 +354,12 @@ module Bosh::Director
 
       @event_log.begin_stage('Deleting unneeded VMs', unneeded_vms.size)
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
-        unneeded_vms.each do |vm|
+        unneeded_vms.each do |vm_model|
           pool.process do
-            @event_log.track(vm.cid) do
-              @logger.info("Delete unneeded VM #{vm.cid}")
-              @cloud.delete_vm(vm.cid)
-              vm.destroy
+            @event_log.track(vm_model.cid) do
+              @logger.info("Delete unneeded VM #{vm_model.cid}")
+              @cloud.delete_vm(vm_model.cid)
+              vm_model.destroy
             end
           end
         end

@@ -50,8 +50,8 @@ module Bosh::Director
 
       let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
 
-      let(:idle_vm1) { instance_double('Bosh::Director::DeploymentPlan::IdleVm', clean_vm: nil) }
-      let(:idle_vm2) { instance_double('Bosh::Director::DeploymentPlan::IdleVm', clean_vm: nil) }
+      let(:vm1) { instance_double('Bosh::Director::DeploymentPlan::Vm', clean_vm: nil) }
+      let(:vm2) { instance_double('Bosh::Director::DeploymentPlan::Vm', clean_vm: nil) }
 
       before do
         allow(job).to receive(:instances).with(no_args).and_return([instance1, instance2])
@@ -60,8 +60,8 @@ module Bosh::Director
         allow(instance_deleter).to receive(:delete_instances)
         allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
 
-        allow(resource_pool).to receive(:deallocate_vm).with('fake-vm-cid-1').and_return(idle_vm1)
-        allow(resource_pool).to receive(:deallocate_vm).with('fake-vm-cid-2').and_return(idle_vm2)
+        allow(resource_pool).to receive(:deallocate_vm).with('fake-vm-cid-1').and_return(vm1)
+        allow(resource_pool).to receive(:deallocate_vm).with('fake-vm-cid-2').and_return(vm2)
         allow(job).to receive(:resource_pool).and_return(resource_pool)
       end
 

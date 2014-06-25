@@ -1,12 +1,7 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
-require File.expand_path("../../../spec_helper", __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::NetworkSubnet do
-
-  before(:each) do
-    @network = instance_double('Bosh::Director::DeploymentPlan::Network', :name => "net_a")
-  end
+  before { @network = instance_double('Bosh::Director::DeploymentPlan::Network', :name => "net_a") }
 
   def subnet_spec(properties)
     BD::DeploymentPlan::NetworkSubnet.new(@network, properties)
