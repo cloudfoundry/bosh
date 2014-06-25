@@ -91,9 +91,13 @@ module Bosh
 
       def configure_networks(vm_id, networks)
         cmd = commands.next_configure_networks_cmd(vm_id)
-        raise NotSupported, 'Dummy CPI was configured to return NotSupported' if cmd.not_supported
 
-        # No tests currently require implementing configure_networks to reconfigure Agent's networks
+        # The only configure_networks test so far only tests the negative case.
+        # If a positive case is added, the agent will need to be re-started.
+        # Normally runit would handle that.
+        if cmd.not_supported || true
+          raise NotSupported, 'Dummy CPI was configured to return NotSupported'
+        end
       end
 
       def attach_disk(vm_id, disk_id)
