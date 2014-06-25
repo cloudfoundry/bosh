@@ -309,7 +309,6 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       openstack.flavors.should_receive(:find).and_return(flavor)
       openstack.key_pairs.should_receive(:find).and_return(key_pair)
       openstack.addresses.should_receive(:each).and_yield(address)
-      openstack.should_not_receive(:personality)
     end
 
     cloud.should_receive(:generate_unique_name).and_return(unique_name)
