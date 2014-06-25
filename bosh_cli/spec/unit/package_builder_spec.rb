@@ -30,12 +30,13 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     names.each { |name| remove_file(dir, name) }
   end
 
-  def make_builder(name, files, dependencies = [], sources_dir = nil)
+  def make_builder(name, files, dependencies = [], sources_dir = nil, excluded_files=[])
     blobstore = double('blobstore')
     spec = {
       'name' => name,
       'files' => files,
-      'dependencies' => dependencies
+      'dependencies' => dependencies,
+      'excluded_files' => excluded_files,
     }
 
     Bosh::Cli::PackageBuilder.new(spec, @release_dir,
@@ -202,6 +203,22 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
 
     # Also turned out to be a nice test for directory portability
     builder.fingerprint.should == builder2.fingerprint
+  end
+
+  it 'excludes excluded_files from build directory' do
+    add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README foo/.git baz))
+    add_files('blobs', %w(bar/bar.tgz bar/fake.tgz))
+    globs = %w(foo/**/* baz bar/**)
+    excluded_globs = %w(foo/.git bar/fake.tgz)
+
+    builder = make_builder('bar', globs, [], nil, excluded_globs)
+
+    expect(builder.copy_files).to eq(6)
+    excluded_file = File.join(builder.build_dir, 'foo', '.git')
+    expect(File).to_not exist(excluded_file)
+
+    excluded_blob_file = File.join(builder.build_dir, 'blobs', 'bar.tgz')
+    expect(File).to_not exist(excluded_blob_file)
   end
 
   it 'generates tarball' do

@@ -377,6 +377,23 @@ describe 'cli releases', type: :integration do
     expect(out).to match(regexp("`#{release_filename}' is not a valid release"))
   end
 
+  it 'does include excluded files' do
+    Dir.chdir(TEST_RELEASE_DIR) do
+      release_tarball = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0+dev.1.tgz')
+
+      FileUtils.rm_rf('dev_releases')
+
+      bosh_runner.run_in_current_dir('create release --with-tarball')
+      Dir.mktmpdir do |temp_dir|
+        `tar xzf #{release_tarball} -C #{temp_dir}`
+        foo_package = File.join(temp_dir, 'packages', 'foo.tgz')
+        release_file_list = `tar -tzf #{foo_package}`
+        expect(release_file_list).to_not include('excluded_file')
+        expect(release_file_list).to include('foo')
+      end
+    end
+  end
+
   def with_changed_release
     new_file = File.join('src', 'bar', SecureRandom.uuid)
     begin

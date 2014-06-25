@@ -76,6 +76,7 @@ module Bosh::Cli
 
       @name = spec["name"]
       @globs = spec["files"]
+      @excluded_globs = spec["excluded_files"] || []
       @dependencies = Array(spec["dependencies"])
 
       @release_dir = release_dir
@@ -292,6 +293,9 @@ module Bosh::Cli
         all_matches += matches
       end
 
+      all_matches.reject! do |match|
+        @excluded_globs.detect {|excluded_glob| File.fnmatch(excluded_glob, match.path)}
+      end
       all_matches.sort
     end
 
