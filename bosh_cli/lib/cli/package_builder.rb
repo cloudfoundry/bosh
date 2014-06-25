@@ -54,7 +54,7 @@ module Bosh::Cli
         if package_spec["name"] != package_dirname
           raise InvalidPackage,
                 "Found `#{package_spec["name"]}' package in " +
-                "`#{package_dirname}' directory, please fix it"
+                  "`#{package_dirname}' directory, please fix it"
         end
 
         is_final = options[:final]
@@ -71,7 +71,7 @@ module Bosh::Cli
     end
 
     def initialize(spec, release_dir, final, blobstore,
-        sources_dir = nil, blobs_dir = nil, alt_src_dir = nil)
+                   sources_dir = nil, blobs_dir = nil, alt_src_dir = nil)
       spec = load_yaml_file(spec) if spec.is_a?(String) && File.file?(spec)
 
       @name = spec["name"]
@@ -119,7 +119,7 @@ module Bosh::Cli
     end
 
     def reload # Mostly for tests
-      @fingerprint    = nil
+      @fingerprint = nil
       @resolved_globs = nil
       init_indices
       self
@@ -248,10 +248,10 @@ module Bosh::Cli
       @globs.each do |glob|
         matches = Set.new
 
-        src_matches = Dir.chdir(@sources_dir) { resolve_glob_in_cwd(glob) }
+        src_matches = resolve_glob_in_dir(glob, @sources_dir)
         src_alt_matches = []
         if File.directory?(@alt_sources_dir)
-          src_alt_matches = Dir.chdir(@alt_sources_dir) { resolve_glob_in_cwd(glob) }
+          src_alt_matches = resolve_glob_in_dir(glob, @alt_sources_dir)
         end
 
         # Glob like core/dea/**/* might not yield anything in alt source even
@@ -260,7 +260,7 @@ module Bosh::Cli
         top_dir = glob.split(File::SEPARATOR)[0]
         top_dir_in_src_alt_exists = top_dir && File.exists?(File.join(@alt_sources_dir, top_dir))
 
-        if top_dir_in_src_alt_exists && src_alt_matches.empty? && !src_matches.empty?
+        if top_dir_in_src_alt_exists && src_alt_matches.empty? && src_matches.any?
           raise InvalidPackage, "Package `#{name}' has a glob that " +
             "doesn't match in `#{File.basename(@alt_sources_dir)}' " +
             "but matches in `#{File.basename(@sources_dir)}'. " +
@@ -280,10 +280,7 @@ module Bosh::Cli
         # will complement already found matches, unless this particular path
         # has already been matched.
         if File.directory?(File.join(@blobs_dir))
-          Dir.chdir(@blobs_dir) do
-            blob_matches = resolve_glob_in_cwd(glob)
-            blob_matches.each { |path| matches << GlobMatch.new(@blobs_dir, path) }
-          end
+          resolve_glob_in_dir(glob, @blobs_dir).each { |path| matches << GlobMatch.new(@blobs_dir, path) }
         end
 
         if matches.empty?
@@ -294,14 +291,16 @@ module Bosh::Cli
       end
 
       all_matches.reject! do |match|
-        @excluded_globs.detect {|excluded_glob| File.fnmatch(excluded_glob, match.path)}
+        @excluded_globs.detect { |excluded_glob| File.fnmatch(excluded_glob, match.path) }
       end
       all_matches.sort
     end
 
-    def resolve_glob_in_cwd(glob)
-      Dir.glob(glob, File::FNM_DOTMATCH).reject do |fn|
-        %w(. ..).include?(File.basename(fn))
+    def resolve_glob_in_dir(glob, dir)
+      Dir.chdir(dir) do
+        Dir.glob(glob, File::FNM_DOTMATCH).reject do |fn|
+          %w(. ..).include?(File.basename(fn))
+        end
       end
     end
 
