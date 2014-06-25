@@ -56,7 +56,7 @@ module Bosh::Director::DeploymentPlan
           let(:rp_updaters) { deployment_plan.resource_pools.map { |resource_pool| Bosh::Director::ResourcePoolUpdater.new(resource_pool) } }
           let(:assembler) { Assembler.new(deployment_plan) }
 
-          let(:deployment_plan) { Planner.parse(deployment_manifest, event_log, {}) }
+          let(:deployment_plan) { Planner.parse(deployment_manifest, {}, event_log, logger) }
           let(:deployment_manifest) do
             {
               'name' => 'fake-deployment',
@@ -133,18 +133,15 @@ module Bosh::Director::DeploymentPlan
           before { allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
           let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
+          let(:event_log) { Bosh::Director::Config.event_log }
+
+          before { allow(Bosh::Director::Config).to receive(:logger).and_return(logger) }
+          let(:logger) { Logger.new('/dev/null') }
+
           before do
             allow(assembler).to receive(:bind_properties)
             allow(assembler).to receive(:bind_configuration)
           end
-
-          # To enable STDOUT logging, uncomment the following lines
-          # before { allow(Bosh::Director::Config).to receive(:logger).and_return(logger) }
-          # let(:logger) { Logger.new(STDOUT) }
-          # before { logger.level = Logger::DEBUG }
-
-          # Use the event_log set up by the spec_helper
-          let(:event_log) { Bosh::Director::Config.event_log }
 
           it 'deletes the existing VM, and creates a new VM with the same IP' do
             expect(cloud).to receive(:delete_vm).with(vm.cid).ordered

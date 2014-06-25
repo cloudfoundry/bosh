@@ -183,9 +183,10 @@ module Bosh::Director
         let(:deployment_plan) { Planner.new('fake-deployment') }
         let(:state) { { 'state' => 'foo' } }
         let(:network) { Network.new(deployment_plan, {'name' => resource_pool_manifest['network']}) }
-        let(:resource_pool) { ResourcePool.new(deployment_plan, resource_pool_manifest) }
+        let(:resource_pool) { ResourcePool.new(deployment_plan, resource_pool_manifest, logger) }
         let(:vm) { Models::Vm.make }
         let(:idle_vm) { IdleVm.new(resource_pool) }
+        let(:logger) { Logger.new('/dev/null') }
         let(:resource_pool_manifest) do
           {
             'name' => 'fake-resource-pool',
