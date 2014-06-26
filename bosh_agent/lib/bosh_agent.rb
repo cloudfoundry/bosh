@@ -17,7 +17,7 @@ require 'httpclient'
 require 'sigar'
 
 require 'common/exec'
-require 'common/properties'
+require 'bosh/template/evaluation_context'
 require 'bosh/core/encryption_handler'
 
 module Bosh::Agent

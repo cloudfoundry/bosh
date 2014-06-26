@@ -23,7 +23,7 @@ require 'time'
 require 'zlib'
 
 require 'common/exec'
-require 'common/properties'
+require 'bosh/template/evaluation_context'
 require 'common/version/release_version_list'
 
 require 'bcrypt'

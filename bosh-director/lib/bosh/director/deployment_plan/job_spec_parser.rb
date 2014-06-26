@@ -1,11 +1,12 @@
 require 'common/deep_copy'
+require 'bosh/template/property_helper'
 
 module Bosh::Director
   module DeploymentPlan
     class JobSpecParser
       include DnsHelper
       include ValidationHelper
-      include Bosh::Common::PropertyHelper
+      include Bosh::Template::PropertyHelper
       include IpUtil
 
       # @param [Bosh::Director::DeploymentPlan] deployment Deployment plan

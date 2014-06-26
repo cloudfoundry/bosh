@@ -16,14 +16,14 @@ describe Bat::Deployment do
   end
   after { FileUtils.rm_f(@cpi_template_path) }
 
-  before { Bosh::Common::TemplateEvaluationContext.stub(new: template_evaluation_context) }
+  before { Bosh::Template::EvaluationContext.stub(new: template_evaluation_context) }
   let(:template_evaluation_context) { FakeTemplateEvaluationContext.new }
 
   before { template_evaluation_context.stub_chain(:spec, cpi: 'FAKE_SPEC_CPI') }
 
   describe '#initialize' do
     it 'generates a deployment manifest' do
-      Bosh::Common::TemplateEvaluationContext.should_receive(:new).with('FAKE_DEPLOYMENT_SPEC')
+      Bosh::Template::EvaluationContext.should_receive(:new).with('FAKE_DEPLOYMENT_SPEC')
       Bat::Deployment.new('FAKE_DEPLOYMENT_SPEC')
       expect(File.read("#{tmp_dir}/deployment")).to eq("---\nname: FAKE_DEPLOYMENT_NAME")
     end
@@ -32,7 +32,7 @@ describe Bat::Deployment do
   describe '#generate_deployment_manifest' do
     it 'generates a deployment manifest' do
       deployment # force load
-      Bosh::Common::TemplateEvaluationContext.should_receive(:new).with('FAKE_DEPLOYMENT_SPEC')
+      Bosh::Template::EvaluationContext.should_receive(:new).with('FAKE_DEPLOYMENT_SPEC')
       deployment.generate_deployment_manifest('FAKE_DEPLOYMENT_SPEC')
       expect(File.read("#{tmp_dir}/deployment")).to eq("---\nname: FAKE_DEPLOYMENT_NAME")
     end

@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'bosh/template/evaluation_context'
 
 module Bosh::Agent
   class Util
@@ -61,7 +62,7 @@ module Bosh::Agent
       # @param [Hash] Instance spec
       # @return [Binding] Template evaluation binding
       def config_binding(spec)
-        Bosh::Common::TemplateEvaluationContext.new(spec).get_binding
+        Bosh::Template::EvaluationContext.new(spec).get_binding
       end
 
       def partition_disk(dev, sfdisk_input)

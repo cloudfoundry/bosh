@@ -27,6 +27,7 @@ Gem::Specification.new do |s|
   # Bosh Dependencies
   s.add_dependency 'bosh-core',        "~>#{version}"
   s.add_dependency 'bosh_common',      "~>#{version}"
+  s.add_dependency 'bosh-template',    "~>#{version}"
   s.add_dependency 'blobstore_client', "~>#{version}"
 
   s.files         = `git ls-files -- lib/*`.split("\n") + %w(CHANGELOG)

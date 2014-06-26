@@ -1,6 +1,6 @@
 require 'rspec'
 require 'yaml'
-require 'common/properties'
+require 'bosh/template/evaluation_context'
 require 'json'
 
 describe 'director.yml.erb.erb' do
@@ -63,7 +63,7 @@ describe 'director.yml.erb.erb' do
 
   subject(:parsed_yaml) do
     rendered_yaml = ERB.new(erb_yaml).result(
-      Bosh::Common::TemplateEvaluationContext.new(deployment_manifest_fragment).get_binding
+        Bosh::Template::EvaluationContext.new(deployment_manifest_fragment).get_binding
     )
     YAML.load(rendered_yaml)
   end

@@ -1,0 +1,28 @@
+{
+    "networks": {
+        "foobar": {
+            "ip": "127.0.0.1"
+        }
+    },
+    "properties": {
+        "networks": {
+            "apps": "foobar"
+        },
+        "nats": {
+            "port": 1234,
+            "prof_port": 4321,
+            "monitor_port": 6789,
+            "debug": 0,
+            "trace": 1,
+            "user": "user",
+            "password": "password",
+            "authorization_timeout": 0,
+            "machines": [
+                "127.0.0.1",
+                "127.0.0.2",
+                "127.0.0.3",
+                "127.0.0.4"
+            ]
+        }
+    }
+}

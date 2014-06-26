@@ -1,9 +1,10 @@
 require 'bosh/director/deployment_plan/job_spec_parser'
+require 'bosh/template/property_helper'
 
 module Bosh::Director
   module DeploymentPlan
     class Job
-      include Bosh::Common::PropertyHelper
+      include Bosh::Template::PropertyHelper
 
       VALID_LIFECYCLE_PROFILES = %w(service errand)
       DEFAULT_LIFECYCLE_PROFILE = 'service'

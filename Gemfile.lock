@@ -51,6 +51,7 @@ PATH
       blobstore_client (~> 1.2611.0)
       bosh-core (~> 1.2611.0)
       bosh-director-core (~> 1.2611.0)
+      bosh-template (~> 1.2611.0)
       bosh_aws_cpi (~> 1.2611.0)
       bosh_common (~> 1.2611.0)
       bosh_cpi (~> 1.2611.0)
@@ -82,6 +83,7 @@ PATH
   remote: bosh-director-core
   specs:
     bosh-director-core (1.2611.0)
+      bosh-template (~> 1.2611.0)
       bosh_common (~> 1.2611.0)
 
 PATH
@@ -116,6 +118,7 @@ PATH
     bosh-release (1.2611.0)
       agent_client (~> 1.2611.0)
       blobstore_client (~> 1.2611.0)
+      bosh-template (~> 1.2611.0)
       bosh_common (~> 1.2611.0)
       trollop (~> 1.16)
       yajl-ruby (~> 1.1.0)
@@ -127,11 +130,18 @@ PATH
       bosh_aws_cpi (~> 1.2611.0)
 
 PATH
+  remote: bosh-template
+  specs:
+    bosh-template (1.2611.0)
+      semi_semantic (~> 1.1.0)
+
+PATH
   remote: bosh_agent
   specs:
     bosh_agent (1.2611.0)
       blobstore_client (~> 1.2611.0)
       bosh-core (~> 1.2611.0)
+      bosh-template (~> 1.2611.0)
       bosh_common (~> 1.2611.0)
       crack (~> 0.3.2)
       httpclient (= 2.2.4)
@@ -159,6 +169,7 @@ PATH
   specs:
     bosh_cli (1.2611.0)
       blobstore_client (~> 1.2611.0)
+      bosh-template (~> 1.2611.0)
       bosh_common (~> 1.2611.0)
       highline (~> 1.6.2)
       httpclient (= 2.2.4)
@@ -474,6 +485,7 @@ DEPENDENCIES
   bosh-registry!
   bosh-release!
   bosh-stemcell!
+  bosh-template!
   bosh_agent!
   bosh_aws_cpi!
   bosh_cli!
