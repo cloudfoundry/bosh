@@ -26,5 +26,15 @@ module Bosh::Dev::Sandbox
       @logger.info("Dropping mysql database #{db_name}")
       @runner.run(%Q{mysql --user=#{@username} --password=#{@password} -e 'drop database `#{db_name}`;' > /dev/null 2>&1})
     end
+
+    def truncate_db
+      @logger.info("Truncating mysql database #{db_name}")
+      table_name_cmd = %Q{mysql --user=#{@username} --password=#{@password} -e "show tables;" #{db_name}}
+      table_names = `#{table_name_cmd}`.lines.to_a[1..-1].map(&:strip)
+      table_names.reject!{|name| name == "schema_migrations" }
+      table_names.each do |table_name|
+        @runner.run(%Q{mysql --user=#{@username} --password=#{@password} -e 'SET FOREIGN_KEY_CHECKS=0; truncate table "#{table_name}"; SET FOREIGN_KEY_CHECKS=1;' > /dev/null 2>&1})
+      end
+    end
   end
 end

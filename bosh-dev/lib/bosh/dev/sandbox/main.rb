@@ -156,6 +156,14 @@ module Bosh::Dev::Sandbox
       FileUtils.mkdir_p(cloud_storage_dir)
       FileUtils.rm_rf(logs_path)
       FileUtils.mkdir_p(logs_path)
+
+      @database.drop_db
+      @database.create_db
+      @database_created = true
+      @database_migrator.migrate
+
+      @director_process.start
+      @worker_processes.each(&:start)
     end
 
     def reset(name)
@@ -263,11 +271,7 @@ module Bosh::Dev::Sandbox
 
       Redis.new(host: 'localhost', port: redis_port).flushdb
 
-      @database.drop_db if @database_created
-      @database_created = true
-
-      @database.create_db
-      @database_migrator.migrate
+      @database.truncate_db
 
       FileUtils.rm_rf(blobstore_storage_dir)
       FileUtils.mkdir_p(blobstore_storage_dir)
