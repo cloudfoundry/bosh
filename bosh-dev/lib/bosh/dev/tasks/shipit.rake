@@ -6,4 +6,4 @@ namespace :shipit do
   task go: %w(git:pull rubocop gospec git:push)
 end
 
-task :shipit => %w(shipit:ruby)
+task :shipit => %w(shipit:go)
