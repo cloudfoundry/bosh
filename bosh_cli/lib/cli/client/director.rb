@@ -700,7 +700,7 @@ module Bosh
             :header => headers,
           }, &block)
 
-        rescue URI::Error, SocketError, Errno::ECONNREFUSED, Timeout::Error, HTTPClient::TimeoutError => e
+        rescue URI::Error, SocketError, Errno::ECONNREFUSED, Timeout::Error, HTTPClient::TimeoutError, HTTPClient::KeepAliveDisconnected => e
           raise DirectorInaccessible, "cannot access director (#{e.message})"
 
         rescue HTTPClient::BadResponseError => e
