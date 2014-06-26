@@ -16,7 +16,9 @@ module Bosh::Spec
 
       @logger.info("Running ... bosh -n #{cmd}")
       command   = "bosh -n -c #{@bosh_config} #{cmd}"
-      output    = `#{command} 2>&1`
+      output    = nil
+      time      = Benchmark.realtime { output = `#{command} 2>&1` }
+      @logger.info("Command took #{time} seconds")
       exit_code = $?.exitstatus
 
       if exit_code != 0 && !failure_expected
