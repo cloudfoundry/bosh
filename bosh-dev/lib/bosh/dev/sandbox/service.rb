@@ -62,16 +62,6 @@ module Bosh::Dev::Sandbox
       @pid = nil
     end
 
-    def stdout_contents
-      @stdout ? File.read(@stdout) : ''
-    end
-
-    def stderr_contents
-      @stderr ? File.read(@stderr) : ''
-    end
-
-    private
-
     def running?
       @pid && Process.kill(0, @pid)
     rescue Errno::ESRCH # No such process
@@ -81,6 +71,16 @@ module Bosh::Dev::Sandbox
       @logger.debug(`ps #{@pid}`)
       false
     end
+
+    def stdout_contents
+      @stdout ? File.read(@stdout) : ''
+    end
+
+    def stderr_contents
+      @stderr ? File.read(@stderr) : ''
+    end
+
+    private
 
     def wait_for_process_to_exit_or_be_killed(remaining_attempts = 60)
       while running?

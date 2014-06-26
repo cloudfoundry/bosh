@@ -119,7 +119,6 @@ end
 
 module IntegrationSandboxHelpers
   def start_sandbox
-    return if $sandbox_started
     $sandbox_started = true
 
     logger.info('Starting sandboxed environment for BOSH tests...')
@@ -135,6 +134,10 @@ module IntegrationSandboxHelpers
         exit(status)
       end
     end
+  end
+
+  def sandbox_started?
+    !!$sandbox_started
   end
 
   def current_sandbox
@@ -199,8 +202,9 @@ module IntegrationSandboxBeforeHelpers
   def with_reset_sandbox_before_each
     before do |example|
       prepare_sandbox
-      start_sandbox
-      unless example.metadata[:no_reset]
+      if !sandbox_started?
+        start_sandbox
+      elsif !example.metadata[:no_reset]
         reset_sandbox(example ? example.metadata[:description] : '')
       end
     end
@@ -210,8 +214,11 @@ module IntegrationSandboxBeforeHelpers
     # `example` is not available in before(:all)
     before(:all) do
       prepare_sandbox
-      start_sandbox
-      reset_sandbox('')
+      if !sandbox_started?
+        start_sandbox
+      else
+        reset_sandbox('')
+      end
     end
   end
 end
