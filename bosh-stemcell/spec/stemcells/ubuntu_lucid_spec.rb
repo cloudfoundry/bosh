@@ -61,4 +61,14 @@ describe 'Ubuntu Lucid stemcell', stemcell_image: true do
       it { should be_installed }
     end
   end
+
+  context 'installed by image_vsphere_cdrom stage', {
+    exclude_on_aws: true,
+    exclude_on_vcloud: true,
+    exclude_on_warden: true,
+  } do
+    describe file('/etc/udev/rules.d/60-cdrom_id.rules') do
+      it { should_not be_file }
+    end
+  end
 end
