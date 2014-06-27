@@ -2,6 +2,14 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe 'deployment prepare & update' do
+    let(:redis) { double('Redis').as_null_object }
+    before { allow(Bosh::Director::Config).to receive(:redis).and_return(redis) }
+
+    let(:event_log) { Bosh::Director::Config.event_log }
+
+    before { allow(Bosh::Director::Config).to receive(:logger).and_return(logger) }
+    let(:logger) { Logger.new('/dev/null') }
+
     context 'the director database contains a VM with a static ip but no job instance assigned (due to deploy failure)' do
       before do
         release = Bosh::Director::Models::Release.make(name: 'fake-release')
@@ -132,11 +140,6 @@ module Bosh::Director::DeploymentPlan
 
           before { allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
           let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
-
-          let(:event_log) { Bosh::Director::Config.event_log }
-
-          before { allow(Bosh::Director::Config).to receive(:logger).and_return(logger) }
-          let(:logger) { Logger.new('/dev/null') }
 
           before do
             allow(assembler).to receive(:bind_properties)
