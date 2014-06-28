@@ -32,9 +32,6 @@ module Bosh::Director
       # @return [Array<DeploymentPlan::IdleVm] List of allocated idle VMs
       attr_reader :allocated_vms
 
-      # @return [Integer] Number of active resource pool VMs
-      attr_reader :active_vm_count
-
       # @return [Integer] Number of VMs reserved
       attr_reader :reserved_capacity
 
@@ -68,7 +65,6 @@ module Bosh::Director
 
         @idle_vms = []
         @allocated_vms = []
-        @active_vm_count = 0
         @reserved_capacity = 0
         @reserved_errand_capacity = 0
       end
@@ -83,7 +79,7 @@ module Bosh::Director
         }
       end
 
-      # Creates IdleVm objects for any missing resource pool VMs and reserves
+      # Creates idle VMs for any missing resource pool VMs and reserves
       # dynamic networks for all idle VMs.
       # @return [void]
       def process_idle_vms
@@ -107,7 +103,7 @@ module Bosh::Director
         reservation
       end
 
-      # Adds a new VM to a list of managed idle VMs
+      # Adds a new VM to idle_vms
       def add_idle_vm
         @logger.info("ResourcePool `#{name}' - Adding idle VM (index=#{@idle_vms.size})")
         idle_vm = Vm.new(self)
@@ -116,19 +112,22 @@ module Bosh::Director
       end
 
       def allocate_vm
-        if @idle_vms.empty?
-          if dynamically_sized?
-            add_idle_vm
-          else
-            raise ResourcePoolNotEnoughCapacity,
-                  "Resource pool `#{@name}' has no more VMs to allocate"
-          end
+        if @idle_vms.empty? && dynamically_sized?
+          vm = Vm.new(self)
+        else
+          vm = @idle_vms.pop
+          raise ResourcePoolNotEnoughCapacity, "Resource pool `#{@name}' has no more VMs to allocate" if vm.nil?
         end
 
-        allocated_vm = @idle_vms.pop
-        @logger.info("ResourcePool `#{name}' - Allocating VM (index=#{@allocated_vms.size})")
-        @allocated_vms << allocated_vm
-        allocated_vm
+        add_allocated_vm(vm)
+      end
+
+      # Adds an existing VM to allocated_vms
+      def add_allocated_vm(vm=nil)
+        vm ||= Vm.new(self)
+        @logger.info("ResourcePool `#{name}' - Adding allocated VM (index=#{@allocated_vms.size})")
+        @allocated_vms << vm
+        vm
       end
 
       def deallocate_vm(vm_cid)
@@ -143,12 +142,6 @@ module Bosh::Director
         add_idle_vm unless dynamically_sized? # don't refill if dynamically sized
 
         nil
-      end
-
-      # "Active" VM is a VM that is currently running a job
-      # @return [void]
-      def mark_active_vm
-        @active_vm_count += 1
       end
 
       # Checks if there is enough capacity to run _extra_ N VMs,
@@ -180,18 +173,26 @@ module Bosh::Director
         end
       end
 
-      def dynamically_sized?
-        @size.nil?
+      # Returns a number of VMs that need to be deleted in order to bring
+      # this resource pool to the desired size
+      # @return [Integer]
+      def extra_vm_count
+        return 0 if dynamically_sized?
+        @idle_vms.size + @allocated_vms.size - @size
       end
 
       private
 
+      def dynamically_sized?
+        @size.nil?
+      end
+
       # Returns a number of VMs that need to be created in order to bring
-      # this resource pool to a desired size
+      # this resource pool to the desired size
       # @return [Integer]
       def missing_vm_count
         return 0 if dynamically_sized?
-        @size - @active_vm_count - @idle_vms.size
+        @size - @allocated_vms.size - @idle_vms.size
       end
     end
   end

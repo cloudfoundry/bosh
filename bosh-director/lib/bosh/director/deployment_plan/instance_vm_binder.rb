@@ -25,34 +25,12 @@ module Bosh::Director
 
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
         unbound_instances.each do |instance|
-          pool.process { bind_instance_vm(instance) }
+          pool.process do
+            @event_log.track("#{instance.job.name}/#{instance.index}") do
+              instance.apply_partial_vm_state
+            end
+          end
         end
-      end
-    end
-
-    # @param [DeploymentPlan::Instance] instance
-    def bind_instance_vm(instance)
-      @event_log.track("#{instance.job.name}/#{instance.index}") do
-        vm = instance.vm
-
-        # Apply the assignment to the VM
-        agent = AgentClient.with_defaults(vm.model.agent_id)
-        state = vm.current_state
-        state['job'] = instance.job.spec
-        state['index'] = instance.index
-        agent.apply(state)
-
-        # Our assumption here is that director database access
-        # is much less likely to fail than VM agent communication
-        # so we only update database after we see a successful agent apply.
-        # If database update fails subsequent deploy will try to
-        # assign a new VM to this instance which is ok.
-        vm.model.db.transaction do
-          vm.model.update(:apply_spec => state)
-          instance.model.update(:vm => vm.model)
-        end
-
-        instance.current_state = state
       end
     end
   end

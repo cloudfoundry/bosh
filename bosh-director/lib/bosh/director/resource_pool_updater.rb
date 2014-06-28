@@ -83,7 +83,7 @@ module Bosh::Director
     # Deletes extra VMs in a resource pool
     # @param thread_pool Thread pool used to parallelize delete operations
     def delete_extra_vms(thread_pool)
-      count = extra_vm_count
+      count = @resource_pool.extra_vm_count
       @logger.info("Deleting #{count} extra VMs")
 
       count.times do
@@ -176,11 +176,7 @@ module Bosh::Director
     end
 
     def extra_vm_count
-      return 0 if @resource_pool.dynamically_sized?
-      @resource_pool.active_vm_count +
-          @resource_pool.idle_vms.size +
-          @resource_pool.allocated_vms.size -
-          @resource_pool.size
+      @resource_pool.extra_vm_count
     end
 
     def outdated_idle_vm_count

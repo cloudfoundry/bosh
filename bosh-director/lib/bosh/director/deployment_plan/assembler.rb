@@ -139,15 +139,8 @@ module Bosh::Director
         return
       end
 
-      @logger.debug("Found job instance `#{instance_name}'")
-      instance.use_model(instance_model)
-      instance.current_state = state
-
-      @logger.debug("Copying job instance `#{instance_name}' network reservations")
-      instance.take_network_reservations(reservations)
-
-      @logger.debug("Copying job instance `#{instance_name}' resource pool reservation")
-      job.resource_pool.mark_active_vm
+      @logger.debug("Found existing job instance `#{instance_name}'")
+      instance.bind_existing_instance(instance_model, state, reservations)
     end
 
     def get_network_reservations(state)

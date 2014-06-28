@@ -42,8 +42,8 @@ module Bosh::Director
         end
       end
 
-      vm_state_applier = VmStateApplier.new(@instance, @vm_model, @agent_client, @job_renderer, @logger)
-      vm_state_applier.apply
+      @instance.apply_vm_state
+      @job_renderer.render_job_instance(@instance)
 
       [@vm_model, @agent_client]
     end
@@ -181,42 +181,6 @@ module Bosh::Director
         @agent_client.unmount_disk(@instance.model.persistent_disk_cid)
 
         @cloud.detach_disk(@vm_model.cid, @instance.model.persistent_disk_cid)
-      end
-    end
-
-    class VmStateApplier
-      def initialize(instance, vm_model, agent_client, job_renderer, logger)
-        @instance = instance
-        @vm_model = vm_model
-        @agent_client = agent_client
-        @job_renderer = job_renderer
-        @logger = logger
-      end
-
-      def apply
-        @logger.info('Applying VM state')
-
-        state = {
-          'deployment' => @instance.job.deployment.name,
-          'networks' => @instance.network_settings,
-          'resource_pool' => @instance.job.resource_pool.spec,
-          'job' => @instance.job.spec,
-          'index' => @instance.index,
-        }
-
-        if @instance.disk_size > 0
-          state['persistent_disk'] = @instance.disk_size
-        end
-
-        @vm_model.update(:apply_spec => state)
-
-        @agent_client.apply(state)
-
-        # Agent will potentially return modified version of state
-        # with resolved dynamic networks information
-        @instance.current_state = @agent_client.get_state
-
-        @job_renderer.render_job_instance(@instance)
       end
     end
   end

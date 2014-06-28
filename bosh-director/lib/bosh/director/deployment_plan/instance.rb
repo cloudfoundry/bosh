@@ -29,7 +29,7 @@ module Bosh::Director
       attr_accessor :state
 
       # @return [Hash] current state as provided by the BOSH Agent
-      attr_accessor :current_state
+      attr_reader :current_state
 
       # @return [DeploymentPlan::Vm] Associated resource pool VM
       attr_reader :vm
@@ -40,14 +40,14 @@ module Bosh::Director
       # @return [Boolean] true if this instance needs to be restarted
       attr_accessor :restart
 
-      ##
       # Creates a new instance specification based on the job and index.
-      #
       # @param [DeploymentPlan::Job] job associated job
       # @param [Integer] index index for this instance
-      def initialize(job, index)
+      def initialize(job, index, logger)
         @job = job
         @index = index
+        @logger = logger
+
         @model = nil
         @configuration_hash = nil
         @template_hashes = nil
@@ -72,17 +72,7 @@ module Bosh::Director
         "#{@job.name}/#{@index}"
       end
 
-      # @param [Models::Instance] model Instance DB model
-      # @return [void]
-      def use_model(model)
-        if @model
-          raise DirectorError, 'Instance model is already bound'
-        end
-        @model = model
-      end
-
-      # Looks up a DB model for this instance, creates one if doesn't exist
-      # yet.
+      # Looks up a DB model for this instance, creates one if doesn't exist yet.
       # @return [void]
       def bind_model
         @model ||= find_or_create_model
@@ -99,6 +89,67 @@ module Bosh::Director
         end
       end
 
+      ##
+      # Updates this domain object to reflect an existing instance running on an existing vm
+      def bind_existing_instance(instance_model, state, reservations)
+        raise DirectorError, "Instance `#{self}' model is already bound" if @model
+        @model = instance_model
+        @current_state = state
+
+        take_network_reservations(reservations)
+        add_allocated_vm(instance_model.vm, state)
+      end
+
+      def apply_partial_vm_state
+        @logger.info('Applying partial VM state')
+
+        state = @vm.current_state
+        state['job'] = job.spec
+        state['index'] = index
+
+        # Apply the assignment to the VM
+        agent = AgentClient.with_defaults(@vm.model.agent_id)
+        agent.apply(state)
+
+        # Our assumption here is that director database access
+        # is much less likely to fail than VM agent communication
+        # so we only update database after we see a successful agent apply.
+        # If database update fails subsequent deploy will try to
+        # assign a new VM to this instance which is ok.
+        @vm.model.db.transaction do
+          @vm.model.update(:apply_spec => state)
+          @model.update(:vm => @vm.model)
+        end
+
+        @current_state = state
+      end
+
+      def apply_vm_state
+        @logger.info('Applying VM state')
+
+        state = {
+          'deployment' => @job.deployment.name,
+          'networks' => network_settings,
+          'resource_pool' => @job.resource_pool.spec,
+          'job' => @job.spec,
+          'index' => @index,
+        }
+
+        if disk_size > 0
+          state['persistent_disk'] = disk_size
+        end
+
+        @model.vm.update(:apply_spec => state)
+
+        agent = AgentClient.with_defaults(@model.vm.agent_id)
+        agent.apply(state)
+
+        # Agent will potentially return modified version of state
+        # with resolved dynamic networks information
+        @current_state = agent.get_state
+      end
+
+      ##
       # Syncs instance state with instance model in DB. This is needed because
       # not all instance states are available in the deployment manifest and we
       # we cannot really persist this data in the agent state (as VM might be
@@ -136,18 +187,6 @@ module Bosh::Director
                 "for network `#{name}', IP #{old_reservation.ip}"
         end
         @network_reservations[name] = reservation
-      end
-
-      ##
-      # Take any existing valid network reservations
-      #
-      # @param [Hash<String, NetworkReservation>] reservations
-      # @return [void]
-      def take_network_reservations(reservations)
-        reservations.each do |name, provided_reservation|
-          reservation = @network_reservations[name]
-          reservation.take(provided_reservation) if reservation
-        end
       end
 
       ##
@@ -220,8 +259,7 @@ module Bosh::Director
       end
 
       ##
-      # @return [Boolean] returns true if the persistent disk is attached to the
-      #   VM
+      # @return [Boolean] returns true if the persistent disk is attached to the VM
       def disk_currently_attached?
         current_state['persistent_disk'].to_i > 0
       end
@@ -233,8 +271,7 @@ module Bosh::Director
       end
 
       ##
-      # @return [Boolean] returns true if the expected resource pool differs
-      #   from the one provided by the VM
+      # @return [Boolean] returns true if the expected resource pool differs from the one provided by the VM
       def resource_pool_changed?
         if @recreate || @job.deployment.recreate
           return true
@@ -251,8 +288,7 @@ module Bosh::Director
         # doesn't persist VM env to the version that does, there needs to
         # be at least one deployment that recreates all VMs before the following
         # code path gets exercised.
-        if @model && @model.vm && @model.vm.env &&
-          @job.resource_pool.env != @model.vm.env
+        if @model && @model.vm && @model.vm.env && @job.resource_pool.env != @model.vm.env
           return true
         end
 
@@ -270,6 +306,8 @@ module Bosh::Director
       # @return [Boolean] returns true if the expected job configuration differs
       #   from the one provided by the VM
       def job_changed?
+        return true if @current_state.nil?
+
         job_spec = @job.spec
         if job_spec != @current_state['job']
           # The agent job spec could be in legacy form.  job_spec cannot be,
@@ -330,8 +368,7 @@ module Bosh::Director
       end
 
       ##
-      # @return [Set<Symbol>] returns a set of all of the specification
-      #   differences
+      # @return [Set<Symbol>] returns a set of all of the specification differences
       def changes
         changes = Set.new
         unless @state == 'detached' && @current_state.nil?
@@ -351,7 +388,6 @@ module Bosh::Director
       ##
       # Instance spec that's passed to the VM during the BOSH Agent apply call.
       # It's what's used for comparing the expected vs the actual state.
-      #
       # @return [Hash<String, Object>] instance spec
       def spec
         spec = {
@@ -422,6 +458,32 @@ module Bosh::Director
           # (instance has its own)
           vm.release_reservation
         end
+
+        @vm = vm
+      end
+
+      private
+
+      ##
+      # Take any existing valid network reservations
+      # @param [Hash<String, NetworkReservation>] reservations
+      # @return [void]
+      def take_network_reservations(reservations)
+        @logger.debug("Copying job instance `#{self}' network reservations")
+        reservations.each do |name, provided_reservation|
+          reservation = @network_reservations[name]
+          reservation.take(provided_reservation) if reservation
+        end
+      end
+
+      def add_allocated_vm(vm_model, state)
+        resource_pool = @job.resource_pool
+        vm = resource_pool.add_allocated_vm
+
+        @logger.debug("Found VM `#{vm_model.cid}' running job instance `#{self}' in resource pool `#{resource_pool.name}'")
+        vm.model = vm_model
+        vm.bound_instance = self
+        vm.current_state = state
 
         @vm = vm
       end

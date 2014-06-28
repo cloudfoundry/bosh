@@ -9,9 +9,10 @@ module Bosh::Director
       include IpUtil
 
       # @param [Bosh::Director::DeploymentPlan] deployment Deployment plan
-      def initialize(deployment, event_log)
+      def initialize(deployment, event_log, logger)
         @deployment = deployment
         @event_log = event_log
+        @logger = logger
       end
 
       # @param [Hash] job_spec Raw job spec from the deployment manifest
@@ -222,7 +223,7 @@ module Bosh::Director
           @job.resource_pool.reserve_capacity(job_size)
         end
         job_size.times do |index|
-          @job.instances[index] = Instance.new(@job, index)
+          @job.instances[index] = Instance.new(@job, index, @logger)
         end
       end
 

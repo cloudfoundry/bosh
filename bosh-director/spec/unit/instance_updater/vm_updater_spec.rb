@@ -39,17 +39,15 @@ module Bosh::Director
           expect(InstanceUpdater::VmUpdater::DiskAttacher).to receive(:new).
             with(instance, new_vm_model, new_agent_client, cloud, logger).
             and_return(disk_attacher)
-          
-          vm_state_applier = instance_double('Bosh::Director::InstanceUpdater::VmUpdater::VmStateApplier')
-          expect(InstanceUpdater::VmUpdater::VmStateApplier).to receive(:new).
-            with(instance, new_vm_model, new_agent_client, job_renderer, logger).
-            and_return(vm_state_applier)
 
           expect(disk_detacher).to receive(:detach).with(no_args).ordered
           expect(vm_deleter).to receive(:delete).with(no_args).ordered
           expect(vm_creator).to receive(:create).with(new_disk_cid).ordered.and_return([new_vm_model, new_agent_client])
           expect(disk_attacher).to receive(:attach).with(no_args).ordered
-          expect(vm_state_applier).to receive(:apply).with(no_args).ordered
+
+          # Re-renders job templates because agent can return changed dynamic network configuration
+          expect(instance).to receive(:apply_vm_state).with(no_args).ordered
+          expect(job_renderer).to receive(:render_job_instance).with(instance).ordered
 
           expect(updater.update(new_disk_cid)).to eq([new_vm_model, new_agent_client])
         end
@@ -101,8 +99,9 @@ module Bosh::Director
               expect(InstanceUpdater::VmUpdater::DiskDetacher).to receive(:new).once.and_return(disk_detacher)
               expect(disk_detacher).to receive(:detach).once
 
-              vm_state_applier = instance_double('Bosh::Director::InstanceUpdater::VmUpdater::VmStateApplier', apply: nil)
-              expect(InstanceUpdater::VmUpdater::VmStateApplier).to receive(:new).and_return(vm_state_applier)
+              # Re-renders job templates because agent can return changed dynamic network configuration
+              expect(instance).to receive(:apply_vm_state).with(no_args)
+              expect(job_renderer).to receive(:render_job_instance).with(instance)
 
               expect { updater.update(new_disk_cid) }.to_not raise_error
             end
@@ -611,87 +610,6 @@ module Bosh::Director
               "`fake-instance' VM has disk attached but it's not reflected in director DB"
             )
           end
-        end
-      end
-    end
-  end
-
-  describe InstanceUpdater::VmUpdater::VmStateApplier do
-    subject(:vm_state_applier) { described_class.new(instance, vm_model, agent_client, job_renderer, logger) }
-    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model, index: 123) }
-    let(:instance_model) { instance_double('Bosh::Director::Models::Instance') }
-    let(:vm_model) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-vm-cid') }
-    let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
-    let(:job_renderer) { instance_double('Bosh::Director::JobRenderer') }
-    let(:logger) { Logger.new('/dev/null') }
-
-    describe '#apply' do
-      before { allow(job).to receive(:deployment).with(no_args).and_return(deployment) }
-      let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'fake-deployment-name') }
-
-      before { allow(instance).to receive(:job).with(no_args).and_return(job) }
-
-      let(:job) do
-        instance_double('Bosh::Director::DeploymentPlan::Job', {
-          resource_pool: resource_pool,
-          spec: 'fake-job-spec',
-        })
-      end
-
-      let(:resource_pool) do
-        instance_double('Bosh::Director::DeploymentPlan::ResourcePool', {
-          spec: 'fake-res-pool-spec',
-        })
-      end
-
-      before { allow(instance).to receive(:network_settings).with(no_args).and_return('fake-network-settings') }
-
-      context 'when persistent disk size is 0' do
-        before { allow(instance).to receive(:disk_size).with(no_args).and_return(0) }
-
-        it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
-          state = {
-            'deployment' => 'fake-deployment-name',
-            'networks' => 'fake-network-settings',
-            'resource_pool' => 'fake-res-pool-spec',
-            'job' => 'fake-job-spec',
-            'index' => 123,
-          }
-
-          expect(vm_model).to receive(:update).with(apply_spec: state).ordered
-          expect(agent_client).to receive(:apply).with(state).ordered
-          expect(agent_client).to receive(:get_state).and_return('fake-agent-state').ordered
-          expect(instance).to receive(:current_state=).with('fake-agent-state').ordered
-
-          # Re-renders job templates because agent can return changed dynamic network configuration
-          expect(job_renderer).to receive(:render_job_instance).with(instance).ordered
-
-          vm_state_applier.apply
-        end
-      end
-
-      context 'when persistent disk size is greater than 0' do
-        before { allow(instance).to receive(:disk_size).with(no_args).and_return(100) }
-
-        it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
-          state = {
-            'deployment' => 'fake-deployment-name',
-            'networks' => 'fake-network-settings',
-            'resource_pool' => 'fake-res-pool-spec',
-            'job' => 'fake-job-spec',
-            'index' => 123,
-            'persistent_disk' => 100,
-          }
-
-          expect(vm_model).to receive(:update).with(apply_spec: state).ordered
-          expect(agent_client).to receive(:apply).with(state).ordered
-          expect(agent_client).to receive(:get_state).and_return('fake-agent-state').ordered
-          expect(instance).to receive(:current_state=).with('fake-agent-state').ordered
-
-          # Re-renders job templates because agent can return changed dynamic network configuration
-          expect(job_renderer).to receive(:render_job_instance).with(instance).ordered
-
-          vm_state_applier.apply
         end
       end
     end

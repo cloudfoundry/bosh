@@ -118,7 +118,7 @@ module Bosh::Director
             job_spec.recursive_merge!(state_overrides)
           end
 
-          @deployment.add_job(Job.parse(@deployment, job_spec, @event_log))
+          @deployment.add_job(Job.parse(@deployment, job_spec, @event_log, @logger))
         end
       end
     end

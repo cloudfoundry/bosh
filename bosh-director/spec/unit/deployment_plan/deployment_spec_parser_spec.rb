@@ -423,11 +423,11 @@ module Bosh::Director
 
               it 'delegates to Job to parse job specs' do
                 expect(Job).to receive(:parse).
-                  with(be_a(Planner), {'name' => 'job1-name'}, event_log).
+                  with(be_a(Planner), {'name' => 'job1-name'}, event_log, logger).
                   and_return(job1)
 
                 expect(Job).to receive(:parse).
-                  with(be_a(Planner), {'name' => 'job2-name'}, event_log).
+                  with(be_a(Planner), {'name' => 'job2-name'}, event_log, logger).
                   and_return(job2)
 
                 deployment = parser.parse(deployment_spec)
@@ -436,11 +436,11 @@ module Bosh::Director
 
               it 'allows to look up job by name' do
                 allow(Job).to receive(:parse).
-                  with(be_a(Planner), {'name' => 'job1-name'}, event_log).
+                  with(be_a(Planner), {'name' => 'job1-name'}, event_log, logger).
                   and_return(job1)
 
                 allow(Job).to receive(:parse).
-                  with(be_a(Planner), {'name' => 'job2-name'}, event_log).
+                  with(be_a(Planner), {'name' => 'job2-name'}, event_log, logger).
                   and_return(job2)
 
                 deployment = parser.parse(deployment_spec)
@@ -473,11 +473,11 @@ module Bosh::Director
 
               it 'raises an error' do
                 allow(Job).to receive(:parse).
-                  with(be_a(Planner), {'name' => 'job1-name'}, event_log).
+                  with(be_a(Planner), {'name' => 'job1-name'}, event_log, logger).
                   and_return(job1)
 
                 allow(Job).to receive(:parse).
-                  with(be_a(Planner), {'name' => 'job2-name'}, event_log).
+                  with(be_a(Planner), {'name' => 'job2-name'}, event_log, logger).
                   and_return(job2)
 
                 expect {
@@ -522,7 +522,7 @@ module Bosh::Director
 
             it 'raises an error because only new_name should reference a job' do
               allow(Job).to receive(:parse).
-                with(be_a(Planner), {'name' => 'job-old-name'}, event_log).
+                with(be_a(Planner), {'name' => 'job-old-name'}, event_log, logger).
                 and_return(job)
 
               options = {

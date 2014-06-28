@@ -2,105 +2,135 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe Instance do
+    subject(:instance) { Instance.new(job, index, logger) }
+    let(:index) { 0 }
+    let(:logger) { Logger.new('/dev/null') }
+
+    before { allow(Bosh::Director::Config).to receive(:dns_domain_name).and_return(domain_name) }
     let(:domain_name) { 'test_domain' }
 
-    before { Bosh::Director::Config.stub(dns_domain_name: domain_name) }
-
-    let(:index) { 0 }
-    let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'mycloud') }
-    subject(:instance) { Instance.new(job, index) }
-    let(:plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', canonical_name: 'mycloud', model: deployment) }
+    let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
+    let(:plan) do
+      instance_double('Bosh::Director::DeploymentPlan::Planner', {
+        name: 'fake-deployment',
+        canonical_name: 'mycloud',
+        model: deployment
+      })
+    end
 
     describe '#network_settings' do
-      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', deployment: plan, canonical_name: 'job', starts_on_deploy?: true) }
+      let(:job) do
+        instance_double('Bosh::Director::DeploymentPlan::Job', {
+          deployment: plan,
+          name: 'fake-job',
+          canonical_name: 'job',
+          starts_on_deploy?: true,
+          resource_pool: resource_pool,
+        })
+      end
+      let(:instance_model) { Bosh::Director::Models::Instance.make }
+
       let(:network_name) { 'net_a' }
-      let(:cloud_properties) { { 'foo' => 'bar' } }
+      let(:cloud_properties) { {'foo' => 'bar'} }
       let(:dns) { ['1.2.3.4'] }
       let(:dns_record_name) { "0.job.net-a.mycloud.#{domain_name}" }
       let(:ipaddress) { '10.0.0.6' }
       let(:subnet_range) { '10.0.0.1/24' }
       let(:netmask) { '255.255.255.0' }
       let(:gateway) { '10.0.0.1' }
-      let(:network_settings) {
+
+      let(:network_settings) do
         {
           'cloud_properties' => cloud_properties,
+          'dns_record_name' => dns_record_name,
           'dns' => dns,
-          'dns_record_name' => dns_record_name
         }
-      }
-      let(:network_info) {
+      end
+
+      let(:network_info) do
         {
           'ip' => ipaddress,
           'netmask' => netmask,
           'gateway' => gateway,
         }
-      }
-      let(:current_state) { { 'networks' => { network_name => network_info } } }
+      end
+
+      let(:resource_pool) do
+        instance_double('Bosh::Director::DeploymentPlan::ResourcePool', {
+          name: 'fake-resource-pool',
+          add_allocated_vm: vm,
+        })
+      end
+
+      let(:vm) do
+        instance_double('Bosh::Director::DeploymentPlan::Vm', {
+          :model= => nil,
+          :bound_instance= => nil,
+          :current_state= => nil,
+        })
+      end
+
+      let(:current_state) { {'networks' => {network_name => network_info}} }
 
       before do
-        job.stub(:instance_state).with(0).and_return('started')
-        job.stub(:default_network).and_return({})
+        allow(job).to receive(:instance_state).with(0).and_return('started')
+        allow(job).to receive(:default_network).and_return({})
       end
 
       before { allow(job).to receive(:starts_on_deploy?).with(no_args).and_return(true) }
 
       context 'dynamic network' do
-        let(:network_type) { 'dynamic' }
-        let(:dynamic_network) {
+        before { allow(plan).to receive(:network).with(network_name).and_return(dynamic_network) }
+        let(:dynamic_network) do
           DynamicNetwork.new(plan, {
             'name' => network_name,
             'cloud_properties' => cloud_properties,
             'dns' => dns
           })
-        }
-        let(:reservation) { Bosh::Director::NetworkReservation.new_dynamic }
-        let(:dynamic_network_settings) {
-          { network_name => network_settings.merge('type' => network_type) }
-        }
-        let(:dynamic_network_settings_info) {
-          { network_name => network_settings.merge(network_info).merge('type' => network_type) }
-        }
+        end
+
+        before do
+          reservation = Bosh::Director::NetworkReservation.new_dynamic
+          dynamic_network.reserve(reservation)
+          instance.add_network_reservation(network_name, reservation)
+        end
 
         it 'returns the network settings plus current IP, Netmask & Gateway from agent state' do
-          plan.stub(:network).with(network_name).and_return(dynamic_network)
-          dynamic_network.reserve(reservation)
+          net_settings_with_type = network_settings.merge('type' => 'dynamic')
+          expect(instance.network_settings).to eql(network_name => net_settings_with_type)
 
-          instance.add_network_reservation(network_name, reservation)
-          expect(instance.network_settings).to eql(dynamic_network_settings)
-
-          instance.current_state = current_state
-          expect(instance.network_settings).to eql(dynamic_network_settings_info)
+          instance.bind_existing_instance(instance_model, current_state, {})
+          expect(instance.network_settings).to eql({network_name => net_settings_with_type.merge(network_info)})
         end
       end
 
       context 'manual network' do
-        let(:network_type) { 'manual' }
-        let(:manual_network) {
+        before { allow(plan).to receive(:network).with(network_name).and_return(manual_network) }
+        let(:manual_network) do
           ManualNetwork.new(plan, {
             'name' => network_name,
             'dns' => dns,
             'subnets' => [{
-                            'range' => subnet_range,
-                            'gateway' => gateway,
-                            'dns' => dns,
-                            'cloud_properties' => cloud_properties
-                          }]
+              'range' => subnet_range,
+              'gateway' => gateway,
+              'dns' => dns,
+              'cloud_properties' => cloud_properties
+            }]
           })
-        }
-        let(:reservation) { Bosh::Director::NetworkReservation.new_static(ipaddress) }
-        let(:manual_network_settings) {
-          { network_name => network_settings.merge(network_info) }
-        }
+        end
+
+        before do
+          reservation = Bosh::Director::NetworkReservation.new_static(ipaddress)
+          manual_network.reserve(reservation)
+          instance.add_network_reservation(network_name, reservation)
+        end
 
         it 'returns the network settings as set at the network spec' do
-          plan.stub(:network).with(network_name).and_return(manual_network)
-          manual_network.reserve(reservation)
+          net_settings = {network_name => network_settings.merge(network_info)}
+          expect(instance.network_settings).to eql(net_settings)
 
-          instance.add_network_reservation(network_name, reservation)
-          expect(instance.network_settings).to eql(manual_network_settings)
-
-          instance.current_state = current_state
-          expect(instance.network_settings).to eql(manual_network_settings)
+          instance.bind_existing_instance(instance_model, current_state, {})
+          expect(instance.network_settings).to eql(net_settings)
         end
       end
 
@@ -121,7 +151,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         before do
-          plan.stub(:network).with(network_name).and_return(manual_network)
+          allow(plan).to receive(:network).with(network_name).and_return(manual_network)
           manual_network.reserve(reservation)
         end
 
@@ -145,87 +175,400 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe 'binding unallocated VM' do
+    describe '#bind_unallocated_vm' do
       let(:index) { 2 }
       let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', deployment: plan, name: 'dea') }
       let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
-      let(:rp) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', network: net) }
+      let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', network: net) }
       let(:old_ip) { NetAddr::CIDR.create('10.0.0.5').to_i }
       let(:vm_ip) { NetAddr::CIDR.create('10.0.0.3').to_i }
       let(:old_reservation) { Bosh::Director::NetworkReservation.new_dynamic(old_ip) }
       let(:vm_reservation) { Bosh::Director::NetworkReservation.new_dynamic(vm_ip) }
-      let(:vm) { Vm.new(rp) }
+      let(:vm) { Vm.new(resource_pool) }
 
       before do
-        job.stub(:instance_state).with(2).and_return('started')
-        job.stub(resource_pool: rp)
+        allow(job).to receive(:instance_state).with(2).and_return('started')
+        allow(job).to receive(:resource_pool).and_return(resource_pool)
         vm.use_reservation(vm_reservation)
       end
 
       it 'binds a VM from job resource pool (real VM exists)' do
         vm.model = Bosh::Director::Models::Vm.make
 
-        rp.should_receive(:allocate_vm).and_return(vm)
+        expect(resource_pool).to receive(:allocate_vm).and_return(vm)
 
         instance.add_network_reservation('net_a', old_reservation)
         instance.bind_unallocated_vm
 
         instance.model.should_not be_nil
-        instance.vm.should == vm
-        vm.bound_instance.should be_nil
-        vm.network_reservation.ip.should == vm_ip
+        expect(instance.vm).to eq(vm)
+        expect(vm.bound_instance).to be_nil
+        expect(vm.network_reservation.ip).to eq(vm_ip)
       end
 
       it "binds a VM from job resource pool (real VM doesn't exist)" do
-        vm.model.should be_nil
+        expect(vm.model).to be_nil
 
-        rp.should_receive(:allocate_vm).and_return(vm)
-        net.should_receive(:release).with(vm_reservation)
+        expect(resource_pool).to receive(:allocate_vm).and_return(vm)
+        expect(net).to receive(:release).with(vm_reservation)
 
         instance.add_network_reservation('net_a', old_reservation)
         instance.bind_unallocated_vm
 
         instance.model.should_not be_nil
-        instance.vm.should == vm
-        vm.bound_instance.should == instance
-        vm.network_reservation.should be_nil
+        expect(instance.vm).to eq(vm)
+        expect(vm.bound_instance).to eq(instance)
+        expect(vm.network_reservation).to be_nil
       end
     end
 
-    describe 'syncing state' do
+    describe '#bind_existing_instance' do
+      let(:job) { Job.new(plan) }
+
+      before { job.resource_pool = resource_pool }
+      let(:resource_pool) do
+        instance_double('Bosh::Director::DeploymentPlan::ResourcePool', {
+          name: 'fake-resource-pool',
+          # spec: 'fake-resource-pool-spec',
+        })
+      end
+
+      before { allow(resource_pool).to receive(:add_allocated_vm).and_return(vm) }
+      let(:vm) { Vm.new(resource_pool) }
+
+      let(:instance_model) { Bosh::Director::Models::Instance.make }
+
+      it 'raises an error if instance already has a model' do
+        state = {}
+        reservations = {}
+
+        instance.bind_existing_instance(instance_model, state, reservations)
+
+        expect {
+          instance.bind_existing_instance(instance_model, state, reservations)
+        }.to raise_error(Bosh::Director::DirectorError, /model is already bound/)
+      end
+
+      it 'sets the instance model and state' do
+        state = {}
+        reservations = {}
+
+        instance.bind_existing_instance(instance_model, state, reservations)
+
+        expect(instance.model).to eq(instance_model)
+        expect(instance.current_state).to eq(state)
+      end
+
+      it 'takes the new reservation for each existing reservation with the same network name' do
+        existing_reservations = {
+          'fake-network1' => Bosh::Director::NetworkReservation.new_dynamic,
+          'fake-network2' => Bosh::Director::NetworkReservation.new_dynamic,
+        }
+        existing_reservations.each { |name, reservation| instance.add_network_reservation(name, reservation) }
+
+        state = {}
+        new_reservations = {
+          'fake-network1' => Bosh::Director::NetworkReservation.new_static,
+        }
+
+        expect(existing_reservations['fake-network1']).to receive(:take).with(new_reservations['fake-network1'])
+        expect(existing_reservations['fake-network2']).to_not receive(:take)
+
+        instance.bind_existing_instance(instance_model, state, new_reservations)
+      end
+
+      it "adds the existing VM as allocated on the job's resource pool" do
+        vm_model = Bosh::Director::Models::Vm.make
+        instance_model.vm = vm_model
+
+        state = {}
+        reservations = {}
+
+        expect(resource_pool).to receive(:add_allocated_vm).with(no_args).and_return(vm)
+
+        instance.bind_existing_instance(instance_model, state, reservations)
+
+        expect(vm.model).to be(vm_model)
+        expect(vm.bound_instance).to be(instance)
+        expect(vm.current_state).to be(state)
+
+        expect(instance.vm).to be(vm)
+      end
+    end
+
+    describe '#apply_partial_vm_state' do
+      let(:job) { Job.new(plan) }
+
+      before do
+        job.templates = [template]
+        job.name = 'fake-job'
+      end
+
+      let(:template) do
+        instance_double('Bosh::Director::DeploymentPlan::Template', {
+          name: 'fake-template',
+          version: 'fake-template-version',
+          sha1: 'fake-template-sha1',
+          blobstore_id: 'fake-template-blobstore-id',
+          logs: nil,
+        })
+      end
+
+      before { job.resource_pool = resource_pool }
+      let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'fake-resource-pool') }
+      let(:vm) { Vm.new(resource_pool) }
+
+      let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
+      before { allow(resource_pool).to receive(:network).and_return(network) }
+
+      let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
+      before { allow(agent_client).to receive(:apply) }
+
+      before { allow(Bosh::Director::AgentClient).to receive(:with_defaults).with(vm_model.agent_id).and_return(agent_client) }
+      let(:vm_model) { Bosh::Director::Models::Vm.make }
+
+      before do
+        # Create a new VM
+        vm.model = vm_model
+        vm.current_state = { 'fake-vm-existing-state' => true }
+
+        # Allocate the new vm to the resource pool specified by the job spec
+        allow(resource_pool).to receive(:allocate_vm).and_return(vm)
+        instance.bind_unallocated_vm
+      end
+
+      it 'sends apply message to an agent that includes existing vm state, new job spec, instance index' do
+        expect(agent_client).to receive(:apply).with(
+          'fake-vm-existing-state' => true,
+          'job' => {
+            'name' => 'fake-job',
+            'templates' => [{
+              'name' => 'fake-template',
+              'version' => 'fake-template-version',
+              'sha1' => 'fake-template-sha1',
+              'blobstore_id' => 'fake-template-blobstore-id',
+            }],
+            'template' => 'fake-template',
+            'version' => 'fake-template-version',
+            'sha1' => 'fake-template-sha1',
+            'blobstore_id' => 'fake-template-blobstore-id',
+          },
+          'index' => 0,
+        )
+        instance.apply_partial_vm_state
+      end
+
+      def self.it_rolls_back_instance_and_vm_state(error)
+        it 'does not point instance to the vm so that during the next deploy instance can be re-associated with new vm' do
+          expect {
+            expect { instance.apply_partial_vm_state }.to raise_error(error)
+          }.to_not change { instance.model.refresh.vm }.from(nil)
+        end
+
+        it 'does not change apply spec on vm model' do
+          expect {
+            expect { instance.apply_partial_vm_state }.to raise_error(error)
+          }.to_not change { vm_model.refresh.apply_spec }.from(nil)
+        end
+      end
+
+      context 'when agent apply succeeds' do
+        context 'when saving state changes to the database succeeds' do
+          it 'the instance points to the vm' do
+            expect {
+              instance.apply_partial_vm_state
+            }.to change { instance.model.refresh.vm }.from(nil).to(vm_model)
+          end
+
+          it 'the vm apply spec is set to new state' do
+            expect {
+              instance.apply_partial_vm_state
+            }.to change { vm_model.refresh.apply_spec }.from(nil).to(
+              hash_including(
+                'fake-vm-existing-state' => true,
+                'job' => hash_including('name' => 'fake-job'),
+              ),
+            )
+          end
+
+          it 'the instance current state is set to new state' do
+            expect {
+              instance.apply_partial_vm_state
+            }.to change { instance.job_changed? }.from(true).to(false)
+          end
+        end
+
+        context 'when update vm instance in the database fails' do
+          error = Exception.new('error')
+          before { allow(instance.model).to receive(:_update_without_checking).and_raise(error) }
+          it_rolls_back_instance_and_vm_state(error)
+        end
+
+        context 'when update vm apply spec in the database fails' do
+          error = Exception.new('error')
+          before { allow(vm_model).to receive(:_update_without_checking).and_raise(error) }
+          it_rolls_back_instance_and_vm_state(error)
+        end
+      end
+
+      context 'when agent apply fails' do
+        error = Bosh::Director::RpcTimeout.new('error')
+        before { allow(agent_client).to receive(:apply).and_raise(error) }
+        it_rolls_back_instance_and_vm_state(error)
+      end
+    end
+
+    describe '#apply_vm_state' do
+      let(:job) { Job.new(plan) }
+
+      before do
+        job.templates = [template]
+        job.name = 'fake-job'
+        job.default_network = {}
+      end
+
+      let(:template) do
+        instance_double('Bosh::Director::DeploymentPlan::Template', {
+          name: 'fake-template',
+          version: 'fake-template-version',
+          sha1: 'fake-template-sha1',
+          blobstore_id: 'fake-template-blobstore-id',
+          logs: nil,
+        })
+      end
+
+      before { job.resource_pool = resource_pool }
+      let(:resource_pool) do
+        instance_double('Bosh::Director::DeploymentPlan::ResourcePool', {
+          name: 'fake-resource-pool',
+          spec: 'fake-resource-pool-spec',
+        })
+      end
+
+      before { allow(job).to receive(:spec).with(no_args).and_return('fake-job-spec') }
+
+      let(:vm) { Vm.new(resource_pool) }
+
+      let(:network) do
+        instance_double('Bosh::Director::DeploymentPlan::Network', {
+          name: 'fake-network',
+          network_settings: 'fake-network-settings',
+        })
+      end
+
+      before { allow(resource_pool).to receive(:network).and_return(network) }
+
+      let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
+      before { allow(agent_client).to receive(:apply) }
+
+      before { allow(Bosh::Director::AgentClient).to receive(:with_defaults).with(vm_model.agent_id).and_return(agent_client) }
+      let(:vm_model) { Bosh::Director::Models::Vm.make }
+
+      before { allow(plan).to receive(:network).with('fake-network').and_return(network) }
+
+      before do
+        instance.configuration_hash = 'fake-desired-configuration-hash'
+
+        # Create a new VM
+        vm.model = vm_model
+        vm.current_state = {
+          'fake-vm-existing-state' => true,
+        }
+
+        reservation = Bosh::Director::NetworkReservation.new_dynamic
+        vm.network_reservation = reservation
+        instance.add_network_reservation('fake-network', reservation)
+
+        # Allocate the new vm to the resource pool specified by the job spec
+        allow(resource_pool).to receive(:allocate_vm).and_return(vm)
+        instance.bind_unallocated_vm
+        instance.apply_partial_vm_state
+      end
+
+      context 'when persistent disk size is 0' do
+        before { allow(instance).to receive(:disk_size).with(no_args).and_return(0) }
+
+        it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
+          state = {
+            'deployment' => 'fake-deployment',
+            'networks' => {'fake-network' => 'fake-network-settings'},
+            'resource_pool' => 'fake-resource-pool-spec',
+            'job' => 'fake-job-spec',
+            'index' => 0,
+          }
+
+          expect(vm_model).to receive(:update).with(apply_spec: state).ordered
+          expect(agent_client).to receive(:apply).with(state).ordered
+
+          returned_state = state.merge('configuration_hash' => 'fake-desired-configuration-hash')
+          expect(agent_client).to receive(:get_state).and_return(returned_state).ordered
+
+          expect {
+            instance.apply_vm_state
+          }.to change { instance.configuration_changed? }.from(true).to(false)
+        end
+      end
+
+      context 'when persistent disk size is greater than 0' do
+        before { allow(instance).to receive(:disk_size).with(no_args).and_return(100) }
+
+        it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
+          state = {
+            'deployment' => 'fake-deployment',
+            'networks' => {'fake-network' => 'fake-network-settings'},
+            'resource_pool' => 'fake-resource-pool-spec',
+            'job' => 'fake-job-spec',
+            'index' => 0,
+            'persistent_disk' => 100,
+          }
+
+          expect(vm_model).to receive(:update).with(apply_spec: state).ordered
+          expect(agent_client).to receive(:apply).with(state).ordered
+
+          returned_state = state.merge('configuration_hash' => 'fake-desired-configuration-hash')
+          expect(agent_client).to receive(:get_state).and_return(returned_state).ordered
+
+          expect {
+            instance.apply_vm_state
+          }.to change { instance.configuration_changed? }.from(true).to(false)
+        end
+      end
+    end
+
+    describe '#sync_state_with_db' do
       let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', deployment: plan, name: 'dea') }
       let(:index) { 3 }
 
       it 'deployment plan -> DB' do
-        job.stub(:instance_state).with(3).and_return('stopped')
+        allow(job).to receive(:instance_state).with(3).and_return('stopped')
 
         expect {
           instance.sync_state_with_db
         }.to raise_error(Bosh::Director::DirectorError, /model is not bound/)
 
         instance.bind_model
-        instance.model.state.should == 'started'
+        expect(instance.model.state).to eq('started')
         instance.sync_state_with_db
-        instance.state.should == 'stopped'
-        instance.model.state.should == 'stopped'
+        expect(instance.state).to eq('stopped')
+        expect(instance.model.state).to eq('stopped')
       end
 
       it 'DB -> deployment plan' do
-        job.stub(:instance_state).with(3).and_return(nil)
+        allow(job).to receive(:instance_state).with(3).and_return(nil)
 
         instance.bind_model
         instance.model.update(:state => 'stopped')
 
         instance.sync_state_with_db
-        instance.model.state.should == 'stopped'
-        instance.state.should == 'stopped'
+        expect(instance.model.state).to eq('stopped')
+        expect(instance.state).to eq('stopped')
       end
 
       it 'needs to find state in order to sync it' do
-        job.stub(:instance_state).with(3).and_return(nil)
+        allow(job).to receive(:instance_state).with(3).and_return(nil)
 
         instance.bind_model
-        instance.model.should_receive(:state).and_return(nil)
+        expect(instance.model).to receive(:state).and_return(nil)
 
         expect {
           instance.sync_state_with_db
@@ -233,140 +576,220 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe 'updating deployment' do
+    describe '#job_changed?' do
       let(:job) { Job.new(plan) }
-      let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
-      let(:template) { instance_double('Bosh::Director::DeploymentPlan::Template') }
-
-      it 'needs to smartly compare specs before deciding to update a job' do
-        job.release = release
+      before do
         job.templates = [template]
-        job.stub(name: 'dea')
-
-        template.should_receive(:name).exactly(4).times.and_return('hbase_slave')
-        template.should_receive(:version).exactly(4).times.and_return('2')
-        template.should_receive(:sha1).exactly(4).times.and_return('24aeaf29768a100d500615dc02ae6126e019f99f')
-        template.should_receive(:blobstore_id).exactly(4).times.and_return('4ec237cb-5f07-4658-aabe-787c82f39c76')
-        template.should_receive(:logs).exactly(4).times
-
-        job.should_receive(:instance_state).and_return('some_state')
-        instance.current_state = {
+        job.name = state['job']['name']
+      end
+      let(:template) do
+        instance_double('Bosh::Director::DeploymentPlan::Template', {
+          name: state['job']['name'],
+          version: state['job']['version'],
+          sha1: state['job']['sha1'],
+          blobstore_id: state['job']['blobstore_id'],
+          logs: nil,
+        })
+      end
+      let(:state) do
+        {
           'job' => {
             'name' => 'hbase_slave',
             'template' => 'hbase_slave',
-            'version' => '0.9-dev',
+            'version' => '0+dev.9',
             'sha1' => 'a8ab636b7c340f98891178096a44c09487194f03',
             'blobstore_id' => 'e2e4e58e-a40e-43ec-bac5-fc50457d5563'
           }
         }
-        instance.job_changed?.should == true
-        # Check that the old way of comparing would say that the job has changed.
-        expect(job.spec).to_not eq instance.current_state
       end
 
-      describe 'changes' do
-        let(:resource_pool) {
-          instance_double('Bosh::Director::DeploymentPlan::ResourcePool',
-                          spec: { 'foo' => 'bar' },
-                          env: { 'key' => 'value' })
-        }
-        let(:job) { Job.new(plan) }
+      before { job.resource_pool = resource_pool }
+      let(:resource_pool) do
+        instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'fake-resource-pool')
+      end
+      let(:vm) { Vm.new(resource_pool) }
 
+      context 'when an instance exists (with the same job name & instance index)' do
         before do
-          job.stub(:instance_state).with(0).and_return('started')
-          job.stub(:resource_pool).and_return(resource_pool)
+          allow(resource_pool).to receive(:add_allocated_vm).and_return(vm)
 
-          plan.stub(recreate: false)
-        end
-
-        it 'detects resource pool change when instance VM env changes' do
           instance_model = Bosh::Director::Models::Instance.make
-          instance_model.vm.update(:env => { 'key' => 'value' })
+          instance.bind_existing_instance(instance_model, instance_state, {})
+        end
 
-          instance.current_state = { 'resource_pool' => { 'foo' => 'bar' } }
-          instance.use_model(instance_model)
+        context 'that fully matches the job spec' do
+          let(:instance_state) { {'job' => job.spec} }
 
-          instance.resource_pool_changed?.should be(false)
-          instance_model.vm.update(env: { 'key' => 'value2' })
+          it 'returns false' do
+            expect(instance.job_changed?).to eq(false)
+          end
+        end
 
-          instance.resource_pool_changed?.should be(true)
+        context 'that does not match the job spec' do
+          let(:instance_state) { {'job' => job.spec.merge('version' => 'old-version')} }
+
+          it 'returns true' do
+            expect(instance.job_changed?).to eq(true)
+          end
         end
       end
 
-      describe 'spec' do
-        let(:job_spec) { { name: 'job', release: 'release', templates: [] } }
-        let(:release_spec) { { name: 'release', version: '1.1-dev' } }
-        let(:resource_pool_spec) { { 'name' => 'default', 'stemcell' => { 'name' => 'stemcell-name', 'version' => '1.0' } } }
-        let(:packages) { { 'pkg' => { 'name' => 'package', 'version' => '1.0' } } }
-        let(:properties) { { 'key' => 'value' } }
-        let(:reservation) { Bosh::Director::NetworkReservation.new_dynamic }
-        let(:network_spec) { { 'name' => 'default', 'cloud_properties' => { 'foo' => 'bar' } } }
-        let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: resource_pool_spec) }
-        let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: release_spec) }
-        let(:network) {
-          network = DynamicNetwork.new(plan, network_spec)
-          network.reserve(reservation)
-          network
-        }
-        let(:job) {
-          job = instance_double('Bosh::Director::DeploymentPlan::Job',
-                       deployment: plan,
-                       spec: job_spec,
-                       canonical_name: 'job',
-                       instances: ['instance0'],
-                       release: release,
-                       default_network: {},
-                       resource_pool: resource_pool,
-                       package_spec: packages,
-                       persistent_disk: 0,
-                       starts_on_deploy?: true,
-                       properties: properties)
-        }
+      context 'when the instance is being created' do
+        let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
+        before { allow(resource_pool).to receive(:network).and_return(network) }
+
+        let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
+        before do
+          allow(Bosh::Director::AgentClient).to receive(:with_defaults).with(vm_model.agent_id).and_return(agent_client)
+          allow(agent_client).to receive(:apply)
+        end
+        let(:vm_model) { Bosh::Director::Models::Vm.make }
 
         before do
-          plan.stub(network: network)
-          plan.stub(name: 'mycloud')
-          job.stub(:instance_state).with(index).and_return('started')
+          # Create a new VM
+          vm.model = vm_model
+          vm.current_state = {} # new VM; actual VM does not have any job associated
+
+          # Allocate the new vm to the resource pool specified by the job spec
+          allow(resource_pool).to receive(:allocate_vm).and_return(vm)
+          instance.bind_unallocated_vm
+
+          # Set the job spec on the Agent and the DB (instance model & vm model)
+          instance.apply_partial_vm_state
         end
 
-        it 'returns instance spec' do
-          network_name = network_spec['name']
-          instance.add_network_reservation(network_name, reservation)
-
-          spec = instance.spec
-          expect(spec['deployment']).to eq('mycloud')
-          expect(spec['job']).to eq(job_spec)
-          expect(spec['index']).to eq(index)
-          expect(spec['networks']).to include(network_name)
-
-          expect_dns_name = "#{index}.#{job.canonical_name}.#{network_name}.#{plan.canonical_name}.#{domain_name}"
-          expect(spec['networks'][network_name]).to include(
-            'type' => 'dynamic',
-            'cloud_properties' => network_spec['cloud_properties'],
-            'dns_record_name' => expect_dns_name
-          )
-
-          expect(spec['resource_pool']).to eq(resource_pool_spec)
-          expect(spec['packages']).to eq(packages)
-          expect(spec['persistent_disk']).to eq(0)
-          expect(spec['configuration_hash']).to be_nil
-          expect(spec['properties']).to eq(properties)
-          expect(spec['dns_domain_name']).to eq(domain_name)
+        it 'returns false' do
+          expect(instance.job_changed?).to eq(false)
         end
+      end
+    end
 
-        it 'includes rendered_templates_archive key after rendered templates were archived' do
-          instance.rendered_templates_archive =
-            Bosh::Director::Core::Templates::RenderedTemplatesArchive.new('fake-blobstore-id', 'fake-sha1')
+    describe '#resource_pool_changed?' do
+      let(:resource_pool) { ResourcePool.new(plan, resource_pool_manifest, logger) }
 
-          expect(instance.spec['rendered_templates_archive']).to eq(
-            'blobstore_id' => 'fake-blobstore-id',
-            'sha1' => 'fake-sha1',
-          )
-        end
+      let(:resource_pool_manifest) do
+        {
+          'name' => 'fake-resource-pool',
+          'env' => {'key' => 'value'},
+          'cloud_properties' => {},
+          'stemcell' => {
+            'name' => 'fake-stemcell',
+            'version' => '1.0.0',
+          },
+          'network' => 'fake-network',
+        }
+      end
 
-        it 'does not include rendered_templates_archive key before rendered templates were archived' do
-          expect(instance.spec).to_not have_key('rendered_templates_archive')
-        end
+      let(:resource_pool_spec) do
+        {
+          'name' => 'fake-resource-pool',
+          'cloud_properties' => {},
+          'stemcell' => {
+            'name' => 'fake-stemcell',
+            'version' => '1.0.0',
+          },
+        }
+      end
+
+      let(:job) { Job.new(plan) }
+
+      before { allow(plan).to receive(:network).with('fake-network').and_return(network) }
+      let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network') }
+
+      before do
+        allow(job).to receive(:instance_state).with(0).and_return('started')
+        allow(job).to receive(:resource_pool).and_return(resource_pool)
+        allow(plan).to receive(:recreate).and_return(false)
+      end
+
+      it 'detects resource pool change when instance VM env changes' do
+        instance_model = Bosh::Director::Models::Instance.make
+
+        # set up in-memory domain model state
+        instance.bind_existing_instance(instance_model, {'resource_pool' => resource_pool_spec}, {})
+
+        # set DB to match real instance/vm
+        instance_model.vm.update(:env => {'key' => 'value'})
+        expect(instance.resource_pool_changed?).to be(false)
+
+        # change DB to NOT match real instance/vm
+        instance_model.vm.update(env: {'key' => 'value2'})
+        expect(instance.resource_pool_changed?).to be(true)
+      end
+    end
+
+    describe '#spec' do
+      let(:job_spec) { {name: 'job', release: 'release', templates: []} }
+      let(:release_spec) { {name: 'release', version: '1.1-dev'} }
+      let(:resource_pool_spec) { {'name' => 'default', 'stemcell' => {'name' => 'stemcell-name', 'version' => '1.0'}} }
+      let(:packages) { {'pkg' => {'name' => 'package', 'version' => '1.0'}} }
+      let(:properties) { {'key' => 'value'} }
+      let(:reservation) { Bosh::Director::NetworkReservation.new_dynamic }
+      let(:network_spec) { {'name' => 'default', 'cloud_properties' => {'foo' => 'bar'}} }
+      let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', spec: resource_pool_spec) }
+      let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', spec: release_spec) }
+      let(:network) {
+        network = DynamicNetwork.new(plan, network_spec)
+        network.reserve(reservation)
+        network
+      }
+      let(:job) {
+        job = instance_double('Bosh::Director::DeploymentPlan::Job',
+          deployment: plan,
+          spec: job_spec,
+          canonical_name: 'job',
+          instances: ['instance0'],
+          release: release,
+          default_network: {},
+          resource_pool: resource_pool,
+          package_spec: packages,
+          persistent_disk: 0,
+          starts_on_deploy?: true,
+          properties: properties)
+      }
+
+      before do
+        allow(plan).to receive(:network).and_return(network)
+        allow(job).to receive(:instance_state).with(index).and_return('started')
+      end
+
+      it 'returns instance spec' do
+        network_name = network_spec['name']
+        instance.add_network_reservation(network_name, reservation)
+
+        spec = instance.spec
+        expect(spec['deployment']).to eq('fake-deployment')
+        expect(spec['job']).to eq(job_spec)
+        expect(spec['index']).to eq(index)
+        expect(spec['networks']).to include(network_name)
+
+        expect_dns_name = "#{index}.#{job.canonical_name}.#{network_name}.#{plan.canonical_name}.#{domain_name}"
+        expect(spec['networks'][network_name]).to include(
+          'type' => 'dynamic',
+          'cloud_properties' => network_spec['cloud_properties'],
+          'dns_record_name' => expect_dns_name
+        )
+
+        expect(spec['resource_pool']).to eq(resource_pool_spec)
+        expect(spec['packages']).to eq(packages)
+        expect(spec['persistent_disk']).to eq(0)
+        expect(spec['configuration_hash']).to be_nil
+        expect(spec['properties']).to eq(properties)
+        expect(spec['dns_domain_name']).to eq(domain_name)
+      end
+
+      it 'includes rendered_templates_archive key after rendered templates were archived' do
+        instance.rendered_templates_archive =
+          Bosh::Director::Core::Templates::RenderedTemplatesArchive.new('fake-blobstore-id', 'fake-sha1')
+
+        expect(instance.spec['rendered_templates_archive']).to eq(
+          'blobstore_id' => 'fake-blobstore-id',
+          'sha1' => 'fake-sha1',
+        )
+      end
+
+      it 'does not include rendered_templates_archive key before rendered templates were archived' do
+        expect(instance.spec).to_not have_key('rendered_templates_archive')
       end
     end
   end

@@ -93,8 +93,11 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
         expect(resource_pool.idle_vms.size).to eq(max_size)
       end
 
-      context 'when some VMs are already active' do
-        before { resource_pool.mark_active_vm }
+      context 'when some VMs are already allocated' do
+        before do
+          resource_pool.add_idle_vm
+          resource_pool.allocate_vm
+        end
 
         it 'creates idle vm objects for missing idle VMs' do
           resource_pool.process_idle_vms
@@ -102,7 +105,7 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
         end
       end
 
-      context 'when some idle VMs are already created' do
+      context 'when some VMs are already idle' do
         let(:max_size) { 4 }
 
         before { resource_pool.add_idle_vm }
@@ -111,14 +114,20 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
           resource_pool.process_idle_vms
           expect(resource_pool.idle_vms.size).to eq(max_size)
         end
+      end
 
-        context 'and some VMs are already active' do
-          before { resource_pool.mark_active_vm }
+      context 'when some VMs are already idle and others are active' do
+        let(:max_size) { 4 }
 
-          it 'creates idle vm objects for missing idle VMs' do
-            resource_pool.process_idle_vms
-            expect(resource_pool.idle_vms.size).to eq(max_size - 1) # 1 is active
-          end
+        before do
+          resource_pool.add_idle_vm
+          resource_pool.add_idle_vm
+          resource_pool.allocate_vm
+        end
+
+        it 'creates idle vm objects for missing idle VMs' do
+          resource_pool.process_idle_vms
+          expect(resource_pool.idle_vms.size).to eq(max_size - 1) # 1 is active
         end
       end
 
@@ -378,22 +387,6 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
             /Resource pool `small' does not contain an allocated VM with the cid `abc'/,
           )
         end
-      end
-    end
-  end
-
-  describe '#dynamically_sized?' do
-    context 'when resource pool has a fixed size' do
-      it 'return false' do
-        expect(resource_pool.dynamically_sized?).to be_falsey
-      end
-    end
-
-    context 'when resource pool is dynamically sized' do
-      before { valid_spec.delete('size') }
-
-      it 'return true' do
-        expect(resource_pool.dynamically_sized?).to be_truthy
       end
     end
   end
