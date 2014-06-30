@@ -27,6 +27,7 @@ module Bosh::Stemcell
               :base_ubuntu_firstboot,
               :base_apt,
               :base_ubuntu_build_essential,
+              :base_openssl,
               :base_ubuntu_packages,
               :bosh_dpkg_list,
               :bosh_sysstat,
@@ -51,6 +52,7 @@ module Bosh::Stemcell
           expect(stage_collection.operating_system_stages).to eq(
             [
               :base_centos,
+              :base_openssl,
               :base_centos_packages,
               :bosh_users,
               :bosh_monit,
