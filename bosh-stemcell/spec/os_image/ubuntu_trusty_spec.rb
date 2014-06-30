@@ -45,7 +45,6 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       tzdata
       ubuntu-keyring
       udev
-      upstart
       ureadahead
       vim-tiny
       whiptail
@@ -62,10 +61,26 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
     end
   end
 
-  context 'installed by base_apt' do
+  describe 'base_apt' do
+    describe file('/etc/apt/sources.list') do
+      it { should contain 'deb http://archive.ubuntu.com/ubuntu trusty main universe multiverse' }
+      it { should contain 'deb http://archive.ubuntu.com/ubuntu trusty-updates main universe multiverse' }
+      it { should contain 'deb http://security.ubuntu.com/ubuntu trusty-security main universe multiverse' }
+    end
+
+    describe package('upstart') do
+      it { should be_installed }
+    end
+  end
+
+  context 'installed by base_ubuntu_build_essential' do
+    describe package('build-essential') do
+      it { should be_installed }
+    end
+  end
+
+  context 'installed by base_ubuntu_packages' do
     %w(
-      upstart
-      build-essential
       libssl-dev
       lsof
       strace

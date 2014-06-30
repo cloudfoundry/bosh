@@ -36,7 +36,7 @@ describe 'CentOS OS image', os_image: true do
     end
   end
 
-  context 'installed by base_yum' do
+  context 'installed by base_centos_packages' do
     %w(
       upstart
       openssl-devel

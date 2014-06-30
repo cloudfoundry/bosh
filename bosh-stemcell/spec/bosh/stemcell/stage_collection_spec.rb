@@ -36,6 +36,8 @@ module Bosh::Stemcell
         :base_debootstrap,
         :base_ubuntu_firstboot,
         :base_apt,
+        :base_ubuntu_build_essential,
+        :base_ubuntu_packages,
         :bosh_dpkg_list,
         :bosh_sysstat,
         :bosh_sysctl,
@@ -47,7 +49,7 @@ module Bosh::Stemcell
     let(:centos_stages) {
       [
         :base_centos,
-        :base_yum,
+        :base_centos_packages,
       ]
     }
 

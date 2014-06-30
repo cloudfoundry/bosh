@@ -9,7 +9,7 @@ source $base_dir/lib/prelude_apply.bash
 pkg_mgr install upstart
 
 # Install base packages needed by both the warden and bosh
-packages="build-essential openssl-devel lsof \
+packages="openssl-devel lsof \
 strace bind9-host dnsutils tcpdump iputils-arping \
 curl wget libcurl3 libcurl3-dev bison \
 readline-devel \

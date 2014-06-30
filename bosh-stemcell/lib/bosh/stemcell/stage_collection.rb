@@ -86,7 +86,10 @@ module Bosh::Stemcell
     def_delegators :@definition, :infrastructure, :operating_system, :agent
 
     def centos_os_stages
-      [:base_centos, :base_yum]
+      [
+        :base_centos,
+        :base_centos_packages,
+      ]
     end
 
     def ubuntu_os_stages
@@ -94,6 +97,8 @@ module Bosh::Stemcell
         :base_debootstrap,
         :base_ubuntu_firstboot,
         :base_apt,
+        :base_ubuntu_build_essential,
+        :base_ubuntu_packages,
         :bosh_dpkg_list,
         :bosh_sysstat,
         :bosh_sysctl,
