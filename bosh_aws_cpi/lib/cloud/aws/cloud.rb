@@ -387,7 +387,7 @@ module Bosh::AwsCloud
         return creator.fake.id if creator.fake?
 
         begin
-          # These three variables are used in 'ensure' clause
+          # These variables are used in 'ensure' clause
           instance = nil
           volume = nil
 
