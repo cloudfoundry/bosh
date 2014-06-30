@@ -60,4 +60,15 @@ describe 'CentOS stemcell', stemcell_image: true do
       it { should contain 'TYPE="Ethernet"' }
     end
   end
+
+  context 'installed by image_vsphere_cdrom stage', {
+    exclude_on_aws: true,
+    exclude_on_vcloud: true,
+    exclude_on_warden: true,
+  } do
+    describe file('/etc/sysctl.conf') do
+      it { should be_file }
+      it { should contain 'dev.cdrom.lock=0' }
+    end
+  end
 end
