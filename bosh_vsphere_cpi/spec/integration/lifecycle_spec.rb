@@ -212,5 +212,13 @@ describe VSphereCloud::Cloud, external_cpi: false do
         vm_lifecycle(network_spec, [], resource_pool)
       end
     end
+
+    context 'when disk is being re-attached' do
+      it 'does not lock cd-rom' do
+        vm_lifecycle(network_spec, [], resource_pool)
+        @cpi.attach_disk(@vm_id, @disk_id)
+        @cpi.detach_disk(@vm_id, @disk_id)
+      end
+    end
   end
 end
