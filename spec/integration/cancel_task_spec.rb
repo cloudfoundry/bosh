@@ -11,9 +11,10 @@ describe 'cancel task', type: :integration do
     expect(output).to match(/Task #{task_id} is getting canceled/)
     expect(exit_code).to eq(0)
 
-    error_event = events(task_id).last['error']
-    expect(error_event['code']).to eq(10001)
-    expect(error_event['message']).to eq("Task #{task_id} cancelled")
+    task_event = events(task_id).last
+    expect(task_event).to include('error')
+    expect(task_event['error']['code']).to eq(10001)
+    expect(task_event['error']['message']).to eq("Task #{task_id} cancelled")
   end
 
   def events(task_id)
