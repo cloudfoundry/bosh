@@ -15,10 +15,12 @@ module Bosh::AwsCloud
       spot_request_spec = create_spot_request_spec(instance_params, spot_bid_price)
       @logger.debug("Requesting spot instance with: #{spot_request_spec.inspect}")
 
-      @spot_instance_requests = @region.client.request_spot_instances(spot_request_spec)
-      @logger.debug("Got spot instance requests: #{@spot_instance_requests.inspect}")
-
-      wait_for_spot_instance_request_to_be_active
+      begin
+        @spot_instance_requests = @region.client.request_spot_instances(spot_request_spec)
+        @logger.debug("Got spot instance requests: #{@spot_instance_requests.inspect}")
+      rescue => e
+        raise Bosh::Clouds::VMCreationFailed.new(false), e.inspect
+      end
 
       request_spot_instance
     end

@@ -176,4 +176,15 @@ describe Bosh::AwsCloud::SpotManager do
       expect(error.ok_to_retry).to eq false
     }
   end
+
+  it 'should fail VM creation when there is a CPI error' do
+    aws_error = AWS::EC2::Errors::InvalidParameterValue.new(%q{price "0.3" exceeds your maximum Spot price limit of "0.24"})
+    allow(aws_client).to receive(:request_spot_instances).and_raise(aws_error)
+    expect {
+      spot_manager.create(instance_params, spot_bid_price)
+    }.to raise_error(Bosh::Clouds::VMCreationFailed) { |error|
+      expect(error.ok_to_retry).to eq false
+      expect(error.message).to include(aws_error.inspect)
+    }
+  end
 end
