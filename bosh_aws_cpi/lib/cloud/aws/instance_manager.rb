@@ -34,16 +34,8 @@ module Bosh::AwsCloud
       
       if resource_pool["spot_bid_price"]
         @logger.info("Launching spot instance...")
-        security_group_ids = []
-        @region.security_groups.each do |group|
-           security_group_ids << group.security_group_id if @instance_params[:security_groups].include?(group.name)
-        end 
-        spot_request_spec = create_spot_request_spec(instance_params, security_group_ids, resource_pool["spot_bid_price"])
-        @logger.debug("Requesting spot instance with: #{spot_request_spec.inspect}")
-        spot_instance_requests = @region.client.request_spot_instances(spot_request_spec) 
-        @logger.debug("Got spot instance requests: #{spot_instance_requests.inspect}") 
-        
-        wait_for_spot_instance_request_to_be_active spot_instance_requests
+        spot_manager = Bosh::AwsCloud::SpotManager.new(@region)
+        @instance = spot_manager.create(instance_params, resource_pool["spot_bid_price"])
       else
         # Retry the create instance operation a couple of times if we are told that the IP
         # address is in use - it can happen when the director recreates a VM and AWS
@@ -74,50 +66,6 @@ module Bosh::AwsCloud
       attach_to_load_balancers if elbs
 
       instance
-    end
-
-    def create_spot_request_spec(instance_params, security_group_ids, spot_price) {
-      spot_price: "#{spot_price}",
-      instance_count: 1,
-      valid_until: "#{(Time.now + 20*60).utc.iso8601}",
-      launch_specification: {
-        image_id: instance_params[:image_id],
-        key_name: instance_params[:key_name],
-        instance_type: instance_params[:instance_type],
-        user_data: Base64.encode64(instance_params[:user_data]),
-        placement: {
-          availability_zone: instance_params[:availability_zone]
-        },
-        network_interfaces: [ 
-          { 
-            subnet_id: instance_params[:subnet].subnet_id,
-            groups: security_group_ids,
-            device_index: 0,
-            private_ip_address: instance_params[:private_ip_address]
-          } 
-        ]
-      }
-    }
-    end
-
-    def wait_for_spot_instance_request_to_be_active(spot_instance_requests)
-      # Query the spot request state until it becomes "active".
-      # This can result in the errors listed below; this is normally because AWS has 
-      # been slow to update its state so the correct response is to wait a bit and try again.
-      errors = [AWS::EC2::Errors::InvalidSpotInstanceRequestID::NotFound]
-      Bosh::Common.retryable(sleep: instance_create_wait_time*2, tries: 20, on: errors) do |tries, error|
-          @logger.warn("Retrying after expected error: #{error}") if error
-          @logger.debug("Checking state of spot instance requests...")
-          spot_instance_request_ids = spot_instance_requests[:spot_instance_request_set].map { |r| r[:spot_instance_request_id] } 
-          response = @region.client.describe_spot_instance_requests(:spot_instance_request_ids => spot_instance_request_ids)
-          statuses = response[:spot_instance_request_set].map { |rr| rr[:state] }
-          @logger.debug("Spot instance request states: #{statuses.inspect}")
-          if statuses.all? { |s| s == 'active' }
-             @logger.info("Spot request instances fulfilled: #{response.inspect}")
-             instance_id = response[:spot_instance_request_set].map { |rr| rr[:instance_id] }[0]
-             @instance = @region.instances[instance_id]
-          end
-      end
     end
 
     def terminate(instance_id, fast=false)
