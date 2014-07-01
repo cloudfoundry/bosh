@@ -6,9 +6,10 @@ require 'cloud'
 
 describe Bosh::AwsCloud::Cloud do
   before(:all) do
-    @access_key_id     = ENV['BOSH_AWS_ACCESS_KEY_ID']     || raise("Missing BOSH_AWS_ACCESS_KEY_ID")
-    @secret_access_key = ENV['BOSH_AWS_SECRET_ACCESS_KEY'] || raise("Missing BOSH_AWS_SECRET_ACCESS_KEY")
-    @subnet_id         = ENV['BOSH_AWS_SUBNET_ID']         || raise("Missing BOSH_AWS_SUBNET_ID")
+    @access_key_id     = ENV['BOSH_AWS_ACCESS_KEY_ID']       || raise("Missing BOSH_AWS_ACCESS_KEY_ID")
+    @secret_access_key = ENV['BOSH_AWS_SECRET_ACCESS_KEY']   || raise("Missing BOSH_AWS_SECRET_ACCESS_KEY")
+    @subnet_id         = ENV['BOSH_AWS_SUBNET_ID']           || raise("Missing BOSH_AWS_SUBNET_ID")
+    @manual_ip         = ENV['BOSH_AWS_LIFECYCLE_MANUAL_IP'] || raise("Missing BOSH_AWS_LIFECYCLE_MANUAL_IP")
   end
 
   before { Bosh::Registry::Client.stub(new: double('registry').as_null_object) }
@@ -207,7 +208,7 @@ describe Bosh::AwsCloud::Cloud do
       {
         'default' => {
           'type' => 'manual',
-          'ip' => '10.0.0.9', # use different IP to avoid race condition
+          'ip' => @manual_ip, # use different IP to avoid race condition
           'cloud_properties' => { 'subnet' => @subnet_id }
         }
       }
