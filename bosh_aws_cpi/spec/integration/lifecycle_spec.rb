@@ -9,6 +9,7 @@ describe Bosh::AwsCloud::Cloud do
     @access_key_id     = ENV['BOSH_AWS_ACCESS_KEY_ID']     || raise("Missing BOSH_AWS_ACCESS_KEY_ID")
     @secret_access_key = ENV['BOSH_AWS_SECRET_ACCESS_KEY'] || raise("Missing BOSH_AWS_SECRET_ACCESS_KEY")
     @subnet_id         = ENV['BOSH_AWS_SUBNET_ID']         || raise("Missing BOSH_AWS_SUBNET_ID")
+    @spot_bid_price_for_m1_small = ENV['SPOT_BID_PRICE_FOR_M1_SMALL'] || 0.30
   end
 
   before { Bosh::Registry::Client.stub(new: double('registry').as_null_object) }
@@ -233,5 +234,31 @@ describe Bosh::AwsCloud::Cloud do
         cpi.set_vm_metadata(@instance_id, metadata)
       end
     end
+  end
+
+  describe 'spot' do 
+    
+    context 'without existing disks' do
+      
+      it 'excercises vm lifecycle with light stemcell' do
+        expect {
+          stemcell_id = cpi.create_stemcell('/not/a/real/path', { 'ami' => { 'us-east-1' => 'ami-809a48e9' } })
+          instance_id = cpi.create_vm(
+            nil,
+            stemcell_id,
+            { 'instance_type' => 'm1.small', 'spot_bid_price' => @spot_bid_price_for_m1_small },
+            network_spec,
+            [],
+            {}
+          )
+          vm_metadata = { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' }
+          cpi.set_vm_metadata(instance_id, vm_metadata)
+          cpi.delete_vm(instance_id)
+          cpi.delete_stemcell(stemcell_id)
+        }.not_to raise_error
+      end
+      
+    end
+
   end
 end
