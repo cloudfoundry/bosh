@@ -1,4 +1,4 @@
-require 'tempfile'
+require 'securerandom'
 
 module Bosh::Dev
   module VmCommand
@@ -26,13 +26,7 @@ module Bosh::Dev
                   :options
 
       def filename
-        @filename ||= begin
-          file = Tempfile.new('os_image')
-          file.close
-          path = file.path
-          file.unlink
-          path
-        end
+        @filename ||= "/tmp/#{SecureRandom.uuid}"
       end
 
       def build_task_args
