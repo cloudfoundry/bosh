@@ -172,11 +172,11 @@ bosh_foobar:...`
 		})
 	})
 
-	Describe("SetupSsh", func() {
+	Describe("SetupSSH", func() {
 		It("setup ssh", func() {
 			fs.HomeDirHomePath = "/some/home/dir"
 
-			platform.SetupSsh("some public key", "vcap")
+			platform.SetupSSH("some public key", "vcap")
 
 			sshDirPath := "/some/home/dir/.ssh"
 			sshDirStat := fs.GetFileTestStat(sshDirPath)

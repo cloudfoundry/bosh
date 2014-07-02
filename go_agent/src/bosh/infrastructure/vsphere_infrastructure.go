@@ -33,7 +33,7 @@ func (inf vsphereInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePath
 	return inf.devicePathResolver
 }
 
-func (inf vsphereInfrastructure) SetupSsh(username string) error {
+func (inf vsphereInfrastructure) SetupSSH(username string) error {
 	return nil
 }
 

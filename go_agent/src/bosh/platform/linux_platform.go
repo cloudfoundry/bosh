@@ -215,7 +215,7 @@ func (p linux) findEphemeralUsersMatching(reg *regexp.Regexp) (matchingUsers []s
 	return
 }
 
-func (p linux) SetupSsh(publicKey, username string) (err error) {
+func (p linux) SetupSSH(publicKey, username string) (err error) {
 	homeDir, err := p.fs.HomeDir(username)
 	if err != nil {
 		err = bosherr.WrapError(err, "Finding home dir for user")

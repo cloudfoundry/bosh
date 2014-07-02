@@ -151,7 +151,7 @@ var _ = Describe("concreteFactory", func() {
 	It("ssh", func() {
 		action, err := factory.Create("ssh")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(action).To(Equal(NewSsh(settings, platform, platform.GetDirProvider())))
+		Expect(action).To(Equal(NewSSH(settings, platform, platform.GetDirProvider())))
 	})
 
 	It("start", func() {
