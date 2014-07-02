@@ -203,5 +203,19 @@ module Bosh::Deployer
         expect(http_client).to have_received(:get).with('https://client-ip:80808/info')
       end
     end
+
+    it 'retries on BadResponseError (503 bad proxy) when waiting for agent' +
+        ' and director through an http proxy' do
+      described_class.stub(:require)
+      described_class.any_instance.stub(:initialize) {}
+      allow(Bosh::Common).to receive(:retryable)
+      instance_manager = Bosh::Deployer::InstanceManager.create(config)
+
+      instance_manager.send(:wait_until_ready, 'director')
+
+      expect(Bosh::Common).to have_received(:retryable) do |args|
+        expect(args[:on]).to include HTTPClient::BadResponseError
+      end
+    end
   end
 end
