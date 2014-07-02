@@ -27,3 +27,6 @@ properties:
     description: Username agents must use to access blobstore via HTTP Basic
   blobstore.agent.password:
     description: Password agents must use to access blobstore via HTTP Basic
+  blobstore.max_upload_size:
+    description: Max release size
+    default: 1G

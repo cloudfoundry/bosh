@@ -5,7 +5,7 @@ server {
   access_log  /var/vcap/sys/log/blobstore/blobstore_access.log;
   error_log   /var/vcap/sys/log/blobstore/blobstore_error.log;
 
-  client_max_body_size 1G;
+  client_max_body_size <%= p("blobstore.max_upload_size") %>;
 
   location / {
     root /var/vcap/store/blobstore/store/;
