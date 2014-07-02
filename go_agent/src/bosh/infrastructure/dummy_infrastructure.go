@@ -36,7 +36,7 @@ func (inf dummyInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathRe
 	return inf.devicePathResolver
 }
 
-func (inf dummyInfrastructure) SetupSsh(username string) error {
+func (inf dummyInfrastructure) SetupSSH(username string) error {
 	return nil
 }
 
