@@ -102,19 +102,15 @@ describe Bosh::AwsCloud::SpotManager do
     # When erroring, should cancel any pending spot requests
     expect(aws_client).to receive(:cancel_spot_instance_requests)
 
-    start_waiting = Time.now
+    expect(Bosh::Common).to receive(:retryable).
+      with(sleep: 0.01, tries: 10, on: [AWS::EC2::Errors::InvalidSpotInstanceRequestID::NotFound]).
+      and_call_original
 
     expect {
       spot_manager.create(instance_params, spot_bid_price)
     }.to raise_error(Bosh::Clouds::VMCreationFailed){ |error|
       expect(error.ok_to_retry).to eq true
     }
-
-    duration = Time.now - start_waiting
-
-    # Exact duration will vary, but anything around 0.1s is correct
-    expect(duration).to be > 0.08
-    expect(duration).to be < 0.12
   end
 
   it 'should retry checking spot instance request state when AWS::EC2::Errors::InvalidSpotInstanceRequestID::NotFound raised' do
