@@ -1,3 +1,5 @@
+require 'rspec/core/formatters/console_codes'
+
 RSpec.configure do |config|
   if ENV['OS_IMAGE']
     config.before(:all) do

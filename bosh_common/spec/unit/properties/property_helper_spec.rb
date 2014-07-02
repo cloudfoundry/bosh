@@ -15,36 +15,36 @@ describe Bosh::Common::PropertyHelper do
     src = {"foo" => {"bar" => "baz", "secret" => "zazzle"}}
 
     @helper.copy_property(dst, src, "foo.bar")
-    dst.should == {"foo" => {"bar" => "baz"}}
+    expect(dst).to eq({"foo" => {"bar" => "baz"}})
 
     @helper.copy_property(dst, src, "no.such.prop", "default")
-    dst.should == {
+    expect(dst).to eq({
       "foo" => {"bar" => "baz"},
       "no" => {
         "such" => {"prop" => "default"}
       }
-    }
+    })
   end
 
   it "should return the default value if the value not found in src" do
     dst = {}
     src = {}
     @helper.copy_property(dst, src, "foo.bar", "foobar")
-    dst.should == {"foo" => {"bar" => "foobar"}}
+    expect(dst).to eq({"foo" => {"bar" => "foobar"}})
   end
 
   it "should return the 'false' value when parsing a boolean false value" do
     dst = {}
     src = {"foo" => {"bar" => false}}
     @helper.copy_property(dst, src, "foo.bar", true)
-    dst.should == {"foo" => {"bar" => false}}
+    expect(dst).to eq({"foo" => {"bar" => false}})
   end
 
   it "should get a nil when value not found in src and no default value specified " do
     dst = {}
     src = {}
     @helper.copy_property(dst, src, "foo.bar")
-    dst.should == {"foo" => {"bar" => nil}}
+    expect(dst).to eq({"foo" => {"bar" => nil}})
   end
 
   it "can lookup the property in a Hash using dot-syntax" do
@@ -53,9 +53,9 @@ describe Bosh::Common::PropertyHelper do
       "router" => {"token" => "foo"}
     }
 
-    @helper.lookup_property(properties, "foo.bar").should == "baz"
-    @helper.lookup_property(properties, "router").should == {"token" => "foo"}
-    @helper.lookup_property(properties, "no.prop").should be_nil
+    expect(@helper.lookup_property(properties, "foo.bar")).to eq("baz")
+    expect(@helper.lookup_property(properties, "router")).to eq({"token" => "foo"})
+    expect(@helper.lookup_property(properties, "no.prop")).to be_nil
   end
 
 end

@@ -5,10 +5,8 @@ module Bosh::Dev
   class StemcellArtifacts
     def self.all(version)
       definitions = [
-        Bosh::Stemcell::Definition.for('vsphere', 'ubuntu', 'lucid', 'ruby'),
         Bosh::Stemcell::Definition.for('vsphere', 'ubuntu', 'lucid', 'go'),
         Bosh::Stemcell::Definition.for('vsphere', 'ubuntu', 'trusty', 'go'),
-        Bosh::Stemcell::Definition.for('vsphere', 'centos', nil, 'ruby'),
         Bosh::Stemcell::Definition.for('vsphere', 'centos', nil, 'go'),
 
         Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'lucid', 'ruby'),

@@ -1,0 +1,9 @@
+#!/bin/sh -e
+#execute firstboot.sh only once
+if [ ! -e /root/firstboot_done ]; then
+    if [ -e /root/firstboot.sh ]; then
+        /root/firstboot.sh
+    fi
+    touch /root/firstboot_done
+fi
+exit 0

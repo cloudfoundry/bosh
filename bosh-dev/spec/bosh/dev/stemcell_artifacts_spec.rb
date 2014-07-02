@@ -9,22 +9,20 @@ module Bosh::Dev
 
         described_class.should_receive(:new) do |version, definitions|
           expect(version).to eq('version')
-          expect(definitions.size).to eq(12)
 
           matrix = definitions.map { |d| [d.infrastructure.name, d.operating_system.name, d.operating_system.version, d.agent.name] }
-
-          expect(matrix[0]).to  eq(%w(vsphere ubuntu lucid ruby))
-          expect(matrix[1]).to  eq(%w(vsphere ubuntu lucid go))
-          expect(matrix[2]).to  eq(%w(vsphere ubuntu trusty go))
-          expect(matrix[3]).to  eq(['vsphere', 'centos', nil, 'ruby'])
-          expect(matrix[4]).to  eq(['vsphere', 'centos', nil, 'go'])
-          expect(matrix[5]).to  eq(%w(aws ubuntu lucid ruby))
-          expect(matrix[6]).to  eq(%w(aws ubuntu lucid go))
-          expect(matrix[7]).to  eq(%w(aws ubuntu trusty go))
-          expect(matrix[8]).to eq(['aws', 'centos', nil, 'ruby'])
-          expect(matrix[9]).to eq(['aws', 'centos', nil, 'go'])
-          expect(matrix[10]).to eq(%w(openstack ubuntu lucid ruby))
-          expect(matrix[11]).to eq(['openstack', 'centos', nil, 'ruby'])
+          expect(matrix).to eq([
+            %w(vsphere ubuntu lucid go),
+            %w(vsphere ubuntu trusty go),
+            ['vsphere', 'centos', nil, 'go'],
+            %w(aws ubuntu lucid ruby),
+            %w(aws ubuntu lucid go),
+            %w(aws ubuntu trusty go),
+            ['aws', 'centos', nil, 'ruby'],
+            ['aws', 'centos', nil, 'go'],
+            %w(openstack ubuntu lucid ruby),
+            ['openstack', 'centos', nil, 'ruby'],
+          ])
 
           artifacts
         end

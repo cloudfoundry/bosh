@@ -25,11 +25,11 @@ describe Bosh::Common do
     it "should not modify the original hash" do
       duplicate = ORIGINAL.dup
       Bosh::Common.symbolize_keys(ORIGINAL)
-      ORIGINAL.should == duplicate
+      expect(ORIGINAL).to eq(duplicate)
     end
 
     it "should return a new hash with all keys as symbols" do
-      Bosh::Common.symbolize_keys(ORIGINAL).should == EXPECTED
+      expect(Bosh::Common.symbolize_keys(ORIGINAL)).to eq(EXPECTED)
     end
   end
 
@@ -40,19 +40,19 @@ describe Bosh::Common do
     }
 
     it "should return the path when it finds the executable" do
-      Bosh::Common.which("foo1", path).should_not be_nil
+      expect(Bosh::Common.which("foo1", path)).to_not be_nil
     end
 
     it "should return the path when it finds an executable" do
-      Bosh::Common.which(%w[foo2 foo1], path).should match(%r{/foo1$})
+      expect(Bosh::Common.which(%w[foo2 foo1], path)).to match(%r{/foo1$})
     end
 
     it "should return nil when it isn't executable" do
-      Bosh::Common.which("foo2", path).should be_nil
+      expect(Bosh::Common.which("foo2", path)).to be_nil
     end
 
     it "should return nil when it doesn't find an executable" do
-      Bosh::Common.which("foo1").should be_nil
+      expect(Bosh::Common.which("foo1")).to be_nil
     end
   end
 
@@ -62,8 +62,8 @@ describe Bosh::Common do
       retryer = double(Bosh::Retryable)
       block = Proc.new { true }
 
-      Bosh::Retryable.should_receive(:new).with(opts).and_return retryer
-      retryer.should_receive(:retryer)
+      expect(Bosh::Retryable).to receive(:new).with(opts).and_return retryer
+      expect(retryer).to receive(:retryer)
 
       Bosh::Common.retryable(opts, &block)
     end

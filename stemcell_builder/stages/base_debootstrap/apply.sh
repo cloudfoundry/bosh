@@ -46,3 +46,16 @@ debootstrap --arch=$base_debootstrap_arch $base_debootstrap_suite $chroot $mirro
 # the debian list caches. There is a discussion in:
 # https://bugs.launchpad.net/ubuntu/+source/update-manager/+bug/24061
 rm -f $chroot/var/lib/apt/lists/{archive,security,lock}*
+
+# Copy over some other system assets
+# Networking...
+cp $assets_dir/etc/hosts $chroot/etc/hosts
+
+# Timezone
+cp $assets_dir/etc/timezone $chroot/etc/timezone
+
+# TODO: see if non-interactive flag can be removed
+run_in_chroot $chroot "dpkg-reconfigure -fnoninteractive -pcritical tzdata"
+
+# Locale
+cp $assets_dir/etc/default/locale $chroot/etc/default/locale

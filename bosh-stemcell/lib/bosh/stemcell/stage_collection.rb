@@ -12,9 +12,9 @@ module Bosh::Stemcell
     def operating_system_stages
       case operating_system
       when OperatingSystem::Centos then
-        centos_os_stages + common_os_stages
+        centos_os_stages
       when OperatingSystem::Ubuntu then
-        ubuntu_os_stages + common_os_stages
+        ubuntu_os_stages
       end
     end
 
@@ -86,23 +86,34 @@ module Bosh::Stemcell
     def_delegators :@definition, :infrastructure, :operating_system, :agent
 
     def centos_os_stages
-      [:base_centos, :base_yum]
+      [
+        :base_centos,
+        :base_openssl,
+        :base_centos_packages,
+        # Bosh steps
+        :bosh_users,
+        :bosh_monit,
+        :bosh_ntpdate,
+        :bosh_sudoers,
+        :rsyslog,
+        # Install GRUB/kernel/etc
+        :system_grub,
+      ]
     end
 
     def ubuntu_os_stages
       [
         :base_debootstrap,
+        :base_ubuntu_firstboot,
         :base_apt,
+        :base_ubuntu_build_essential,
+        :base_openssl,
+        :base_ubuntu_packages,
         :bosh_dpkg_list,
         :bosh_sysstat,
         :bosh_sysctl,
         :system_kernel,
         :system_rescan_scsi_bus,
-      ]
-    end
-
-    def common_os_stages
-      [
         # Bosh steps
         :bosh_users,
         :bosh_monit,

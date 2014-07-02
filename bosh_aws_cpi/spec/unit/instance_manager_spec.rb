@@ -121,7 +121,6 @@ describe Bosh::AwsCloud::InstanceManager do
       expect(aws_client).to receive(:request_spot_instances) do |spot_request|
         expect(spot_request[:spot_price]).to eq("0.15")
         expect(spot_request[:instance_count]).to eq(1)
-        #expect(spot_request[:valid_until]).to  #TODO - not sure how to test this
         expect(spot_request[:launch_specification]).to eq({ 
           :image_id=>"stemcell-id", 
           :key_name=>"bar", 
@@ -155,30 +154,6 @@ describe Bosh::AwsCloud::InstanceManager do
       instance_manager = described_class.new(region, registry, availability_zone_selector)
       instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, options)
 
-    end
-
-    it "should retry checking spot instance request state when AWS::EC2::Errors::InvalidSpotInstanceRequestID::NotFound raised" do
-      spot_instance_requests = {
-        :spot_instance_request_set => [ { :spot_instance_request_id=>"sir-12345c", :other_params_here => "which aren't used" }], 
-        :request_id => "request-id-12345"
-      }
-      
-      allow(region).to receive(:client).and_return(aws_client)
-      allow(region).to receive(:instances).and_return( {'i-12345678' => instance } )
-
-      #Simulate first recieving an error when asking for spot request state
-      expect(aws_client).to receive(:describe_spot_instance_requests) \
-        .with({:spot_instance_request_ids=>["sir-12345c"]}) \
-        .and_raise(AWS::EC2::Errors::InvalidSpotInstanceRequestID::NotFound)
-      expect(aws_client).to receive(:describe_spot_instance_requests) \
-        .with({:spot_instance_request_ids=>["sir-12345c"]}) \
-        .and_return({ :spot_instance_request_set => [ {:state => "active", :instance_id=>"i-12345678"} ] })
-
-      instance_manager = described_class.new(region, registry, availability_zone_selector)
-
-      expect {
-        instance_manager.wait_for_spot_instance_request_to_be_active(spot_instance_requests)
-      }.to_not raise_error
     end
 
     it "should retry creating the VM when AWS::EC2::Errors::InvalidIPAddress::InUse raised" do
