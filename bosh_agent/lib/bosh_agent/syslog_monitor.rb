@@ -2,7 +2,7 @@
 
 require 'eventmachine'
 require 'syslog_protocol'
-require 'uuidtools'
+require 'securerandom'
 
 module Bosh::Agent::SyslogMonitor
 
@@ -32,7 +32,7 @@ module Bosh::Agent::SyslogMonitor
 
       json = Yajl::Encoder.encode(
         {
-          'id' => UUIDTools::UUID.random_create,
+          'id' => SecureRandom.uuid,
           'severity' => SEVERITY,
           'title' => title,
           'summary' => parsed.content,

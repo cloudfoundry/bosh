@@ -21,7 +21,7 @@ describe Bosh::Agent::SyslogMonitor do
 
   before do
     Timecop.freeze
-    UUIDTools::UUID.stub(random_create: uuid)
+    allow(SecureRandom).to receive(:uuid).and_return(uuid)
   end
 
   after do
