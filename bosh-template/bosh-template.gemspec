@@ -15,6 +15,8 @@ Gem::Specification.new do |s|
   s.executables   = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
   s.files        = `git ls-files -- lib/*`.split("\n") + %w(README)
   s.require_path = 'lib'
+  s.bindir       = 'bin'
+  s.executables  = %w(bosh-template)
 
   s.add_dependency 'semi_semantic', '~>1.1.0'
 end
