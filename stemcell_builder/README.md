@@ -40,6 +40,3 @@ responsible for taking in the seed configuration, and storing its own
 configuration in its own path is `config.sh`. It is not necessary that
 this file exists; stages without this file are assumed not to require
 any configuration.
-
-
-

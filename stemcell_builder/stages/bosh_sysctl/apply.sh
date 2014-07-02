@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# Copyright (c) 2009-2012 VMware, Inc.
 
 set -e
 
@@ -10,3 +8,8 @@ source $base_dir/lib/prelude_bosh.bash
 
 cp $dir/assets/60-bosh-sysctl.conf $chroot/etc/sysctl.d
 chmod 0644 $chroot/etc/sysctl.d/60-bosh-sysctl.conf
+
+if [ "${stemcell_operating_system_version}" == "trusty" ]; then
+  cp $dir/assets/60-bosh-sysctl-neigh-fix.conf $chroot/etc/sysctl.d
+  chmod 0644 $chroot/etc/sysctl.d/60-bosh-sysctl-neigh-fix.conf
+fi
