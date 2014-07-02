@@ -95,7 +95,7 @@ func (p dummyPlatform) DeleteEphemeralUsersMatching(regex string) (err error) {
 	return
 }
 
-func (p dummyPlatform) SetupSsh(publicKey, username string) (err error) {
+func (p dummyPlatform) SetupSSH(publicKey, username string) (err error) {
 	return
 }
 

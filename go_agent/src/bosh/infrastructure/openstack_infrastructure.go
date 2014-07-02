@@ -37,13 +37,13 @@ func (inf openstackInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePa
 	return inf.devicePathResolver
 }
 
-func (inf openstackInfrastructure) SetupSsh(username string) error {
+func (inf openstackInfrastructure) SetupSSH(username string) error {
 	publicKey, err := inf.metadataService.GetPublicKey()
 	if err != nil {
 		return bosherr.WrapError(err, "Error getting public key")
 	}
 
-	return inf.platform.SetupSsh(publicKey, username)
+	return inf.platform.SetupSSH(publicKey, username)
 }
 
 func (inf openstackInfrastructure) GetSettings() (boshsettings.Settings, error) {

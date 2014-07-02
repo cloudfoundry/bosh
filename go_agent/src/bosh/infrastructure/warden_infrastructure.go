@@ -32,7 +32,7 @@ func (inf wardenInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathR
 	return inf.devicePathResolver
 }
 
-func (inf wardenInfrastructure) SetupSsh(username string) error {
+func (inf wardenInfrastructure) SetupSSH(username string) error {
 	return nil
 }
 
