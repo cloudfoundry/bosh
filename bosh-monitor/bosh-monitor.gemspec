@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.email        = 'support@cloudfoundry.com'
   s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files        = `git ls-files -- lib/*`.split("\n") + %w(README)
+  s.files        = `git ls-files -- lib/*`.split("\n") + %w(README.md)
   s.require_path = 'lib'
 
   s.add_dependency 'eventmachine',    '~>1.0.0'
