@@ -53,7 +53,7 @@ func init() {
 			It("sets up ssh", func() {
 				_, err := bootstrap()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(inf.SetupSshUsername).To(Equal("vcap"))
+				Expect(inf.SetupSSHUsername).To(Equal("vcap"))
 			})
 
 			It("sets up hostname", func() {

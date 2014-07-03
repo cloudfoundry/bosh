@@ -47,7 +47,7 @@ func NewFactory(
 			"cancel_task": NewCancelTask(taskService),
 
 			// VM admin
-			"ssh":        NewSsh(settingsService, platform, dirProvider),
+			"ssh":        NewSSH(settingsService, platform, dirProvider),
 			"fetch_logs": NewFetchLogs(compressor, copier, blobstore, dirProvider),
 
 			// Job management

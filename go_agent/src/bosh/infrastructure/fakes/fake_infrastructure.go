@@ -7,7 +7,7 @@ import (
 
 type FakeInfrastructure struct {
 	Settings                boshsettings.Settings
-	SetupSshUsername        string
+	SetupSSHUsername        string
 	SetupNetworkingNetworks boshsettings.Networks
 
 	GetEphemeralDiskPathDevicePath string
@@ -27,8 +27,8 @@ func (i *FakeInfrastructure) GetDevicePathResolver() (devicePathResolver boshdpr
 	return i.DevicePathResolver
 }
 
-func (i *FakeInfrastructure) SetupSsh(username string) (err error) {
-	i.SetupSshUsername = username
+func (i *FakeInfrastructure) SetupSSH(username string) (err error) {
+	i.SetupSSHUsername = username
 	return
 }
 

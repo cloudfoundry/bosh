@@ -32,12 +32,12 @@ type FakePlatform struct {
 
 	AddUserToGroupsGroups             map[string][]string
 	DeleteEphemeralUsersMatchingRegex string
-	SetupSshPublicKeys                map[string]string
+	SetupSSHPublicKeys                map[string]string
 
-	SetupSshCalled    bool
-	SetupSshPublicKey string
-	SetupSshUsername  string
-	SetupSshErr       error
+	SetupSSHCalled    bool
+	SetupSSHPublicKey string
+	SetupSSHUsername  string
+	SetupSSHErr       error
 
 	UserPasswords         map[string]string
 	SetupHostnameHostname string
@@ -107,7 +107,7 @@ func NewFakePlatform() (platform *FakePlatform) {
 	platform.FakeVitalsService = fakevitals.NewFakeService()
 	platform.DevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 	platform.AddUserToGroupsGroups = make(map[string][]string)
-	platform.SetupSshPublicKeys = make(map[string]string)
+	platform.SetupSSHPublicKeys = make(map[string]string)
 	platform.UserPasswords = make(map[string]string)
 	platform.ScsiDiskMap = make(map[string]string)
 	return
@@ -168,12 +168,12 @@ func (p *FakePlatform) DeleteEphemeralUsersMatching(regex string) (err error) {
 	return
 }
 
-func (p *FakePlatform) SetupSsh(publicKey, username string) error {
-	p.SetupSshCalled = true
-	p.SetupSshPublicKeys[username] = publicKey
-	p.SetupSshPublicKey = publicKey
-	p.SetupSshUsername = username
-	return p.SetupSshErr
+func (p *FakePlatform) SetupSSH(publicKey, username string) error {
+	p.SetupSSHCalled = true
+	p.SetupSSHPublicKeys[username] = publicKey
+	p.SetupSSHPublicKey = publicKey
+	p.SetupSSHUsername = username
+	return p.SetupSSHErr
 }
 
 func (p *FakePlatform) SetUserPassword(user, encryptedPwd string) (err error) {

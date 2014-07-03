@@ -12,15 +12,15 @@ import (
 	fakesettings "bosh/settings/fakes"
 )
 
-func testSshSetupWithGivenPassword(expectedPwd string) {
+func testSSHSetupWithGivenPassword(expectedPwd string) {
 	settingsService := &fakesettings.FakeSettingsService{}
 	settingsService.Settings.Networks = boshsettings.Networks{
 		"fake-net": boshsettings.Network{IP: "ww.xx.yy.zz"},
 	}
 
-	platform, action := buildSshAction(settingsService)
+	platform, action := buildSSHAction(settingsService)
 
-	params := SshParams{
+	params := SSHParams{
 		User:      "fake-user",
 		PublicKey: "fake-public-key",
 		Password:  expectedPwd,
@@ -28,7 +28,7 @@ func testSshSetupWithGivenPassword(expectedPwd string) {
 
 	response, err := action.Run("setup", params)
 	Expect(err).ToNot(HaveOccurred())
-	Expect(response).To(Equal(SshResult{
+	Expect(response).To(Equal(SSHResult{
 		Command: "setup",
 		Status:  "success",
 		IP:      "ww.xx.yy.zz",
@@ -42,26 +42,26 @@ func testSshSetupWithGivenPassword(expectedPwd string) {
 		[]string{boshsettings.VCAPUsername, boshsettings.AdminGroup},
 	))
 
-	Expect(platform.SetupSshPublicKeys["fake-user"]).To(Equal("fake-public-key"))
+	Expect(platform.SetupSSHPublicKeys["fake-user"]).To(Equal("fake-public-key"))
 }
 
-func buildSshAction(settingsService boshsettings.Service) (*fakeplatform.FakePlatform, SshAction) {
+func buildSSHAction(settingsService boshsettings.Service) (*fakeplatform.FakePlatform, SSHAction) {
 	platform := fakeplatform.NewFakePlatform()
 	dirProvider := boshdirs.NewDirectoriesProvider("/foo")
-	action := NewSsh(settingsService, platform, dirProvider)
+	action := NewSSH(settingsService, platform, dirProvider)
 	return platform, action
 }
 
-var _ = Describe("SshAction", func() {
+var _ = Describe("SSHAction", func() {
 	var (
 		platform        *fakeplatform.FakePlatform
 		settingsService boshsettings.Service
-		action          SshAction
+		action          SSHAction
 	)
 
 	BeforeEach(func() {
 		settingsService = &fakesettings.FakeSettingsService{}
-		platform, action = buildSshAction(settingsService)
+		platform, action = buildSSHAction(settingsService)
 	})
 
 	It("ssh should be synchronous", func() {
@@ -74,7 +74,7 @@ var _ = Describe("SshAction", func() {
 
 	Describe("Run", func() {
 		It("ssh setup without default ip", func() {
-			params := SshParams{
+			params := SSHParams{
 				User:      "some-user",
 				Password:  "some-pwd",
 				PublicKey: "some-key",
@@ -86,15 +86,15 @@ var _ = Describe("SshAction", func() {
 		})
 
 		It("ssh setup with username and password", func() {
-			testSshSetupWithGivenPassword("some-password")
+			testSSHSetupWithGivenPassword("some-password")
 		})
 
 		It("ssh setup without password", func() {
-			testSshSetupWithGivenPassword("")
+			testSSHSetupWithGivenPassword("")
 		})
 
 		It("ssh run cleanup deletes ephemeral user", func() {
-			response, err := action.Run("cleanup", SshParams{UserRegex: "^foobar.*"})
+			response, err := action.Run("cleanup", SSHParams{UserRegex: "^foobar.*"})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(platform.DeleteEphemeralUsersMatchingRegex).To(Equal("^foobar.*"))
 
