@@ -108,10 +108,9 @@ module Bosh::Deployer
             end
 
             context 'when public ip is not set' do
-              it 'raises RuntimeError error' do
+              it 'return client_services_ip' do
                 allow(instance).to receive(:public_ip_address).and_return(nil)
-                expect { aws.send(method) }.to raise_error(
-                  RuntimeError, /Failed to discover public ip address/)
+                expect(aws.send(method)).to eq('fake-client-services-ip')
               end
             end
           end
