@@ -26,7 +26,7 @@ type Platform interface {
 	DeleteEphemeralUsersMatching(regex string) (err error)
 
 	// Bootstrap functionality
-	SetupSsh(publicKey, username string) (err error)
+	SetupSSH(publicKey, username string) (err error)
 	SetUserPassword(user, encryptedPwd string) (err error)
 	SetupHostname(hostname string) (err error)
 	SetupDhcp(networks boshsettings.Networks) (err error)

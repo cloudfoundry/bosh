@@ -10,61 +10,61 @@ import (
 	boshdirs "bosh/settings/directories"
 )
 
-type SshAction struct {
+type SSHAction struct {
 	settingsService boshsettings.Service
 	platform        boshplatform.Platform
 	dirProvider     boshdirs.DirectoriesProvider
 }
 
-func NewSsh(
+func NewSSH(
 	settingsService boshsettings.Service,
 	platform boshplatform.Platform,
 	dirProvider boshdirs.DirectoriesProvider,
-) (action SshAction) {
+) (action SSHAction) {
 	action.settingsService = settingsService
 	action.platform = platform
 	action.dirProvider = dirProvider
 	return
 }
 
-func (a SshAction) IsAsynchronous() bool {
+func (a SSHAction) IsAsynchronous() bool {
 	return false
 }
 
-func (a SshAction) IsPersistent() bool {
+func (a SSHAction) IsPersistent() bool {
 	return false
 }
 
-type SshParams struct {
+type SSHParams struct {
 	UserRegex string `json:"user_regex"`
 	User      string
 	Password  string
 	PublicKey string `json:"public_key"`
 }
 
-type SshResult struct {
+type SSHResult struct {
 	Command string `json:"command"`
 	Status  string `json:"status"`
 	IP      string `json:"ip,omitempty"`
 }
 
-func (a SshAction) Run(cmd string, params SshParams) (SshResult, error) {
+func (a SSHAction) Run(cmd string, params SSHParams) (SSHResult, error) {
 	switch cmd {
 	case "setup":
-		return a.setupSsh(params)
+		return a.setupSSH(params)
 	case "cleanup":
-		return a.cleanupSsh(params)
+		return a.cleanupSSH(params)
 	}
 
-	return SshResult{}, errors.New("Unknown command for SSH method")
+	return SSHResult{}, errors.New("Unknown command for SSH method")
 }
 
-func (a SshAction) setupSsh(params SshParams) (SshResult, error) {
-	var result SshResult
+func (a SSHAction) setupSSH(params SSHParams) (SSHResult, error) {
+	var result SSHResult
 
-	boshSshPath := filepath.Join(a.dirProvider.BaseDir(), "bosh_ssh")
+	boshSSHPath := filepath.Join(a.dirProvider.BaseDir(), "bosh_ssh")
 
-	err := a.platform.CreateUser(params.User, params.Password, boshSshPath)
+	err := a.platform.CreateUser(params.User, params.Password, boshSSHPath)
 	if err != nil {
 		return result, bosherr.WrapError(err, "Creating user")
 	}
@@ -74,7 +74,7 @@ func (a SshAction) setupSsh(params SshParams) (SshResult, error) {
 		return result, bosherr.WrapError(err, "Adding user to groups")
 	}
 
-	err = a.platform.SetupSsh(params.PublicKey, params.User)
+	err = a.platform.SetupSSH(params.PublicKey, params.User)
 	if err != nil {
 		return result, bosherr.WrapError(err, "Setting ssh public key")
 	}
@@ -86,7 +86,7 @@ func (a SshAction) setupSsh(params SshParams) (SshResult, error) {
 		return result, errors.New("No default ip could be found")
 	}
 
-	result = SshResult{
+	result = SSHResult{
 		Command: "setup",
 		Status:  "success",
 		IP:      defaultIP,
@@ -95,13 +95,13 @@ func (a SshAction) setupSsh(params SshParams) (SshResult, error) {
 	return result, nil
 }
 
-func (a SshAction) cleanupSsh(params SshParams) (SshResult, error) {
+func (a SSHAction) cleanupSSH(params SSHParams) (SSHResult, error) {
 	err := a.platform.DeleteEphemeralUsersMatching(params.UserRegex)
 	if err != nil {
-		return SshResult{}, bosherr.WrapError(err, "Ssh Cleanup: Deleting Ephemeral Users")
+		return SSHResult{}, bosherr.WrapError(err, "SSH Cleanup: Deleting Ephemeral Users")
 	}
 
-	result := SshResult{
+	result := SSHResult{
 		Command: "cleanup",
 		Status:  "success",
 	}
@@ -109,10 +109,10 @@ func (a SshAction) cleanupSsh(params SshParams) (SshResult, error) {
 	return result, nil
 }
 
-func (a SshAction) Resume() (interface{}, error) {
+func (a SSHAction) Resume() (interface{}, error) {
 	return nil, errors.New("not supported")
 }
 
-func (a SshAction) Cancel() error {
+func (a SSHAction) Cancel() error {
 	return errors.New("not supported")
 }

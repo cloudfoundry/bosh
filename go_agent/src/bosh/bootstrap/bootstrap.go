@@ -44,7 +44,7 @@ func (boot bootstrap) Run() (settingsService boshsettings.Service, err error) {
 		return
 	}
 
-	err = boot.infrastructure.SetupSsh(boshsettings.VCAPUsername)
+	err = boot.infrastructure.SetupSSH(boshsettings.VCAPUsername)
 	if err != nil {
 		err = bosherr.WrapError(err, "Setting up ssh")
 		return

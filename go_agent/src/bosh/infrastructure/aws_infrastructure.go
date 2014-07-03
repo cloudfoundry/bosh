@@ -37,13 +37,13 @@ func (inf awsInfrastructure) GetDevicePathResolver() boshdpresolv.DevicePathReso
 	return inf.devicePathResolver
 }
 
-func (inf awsInfrastructure) SetupSsh(username string) error {
+func (inf awsInfrastructure) SetupSSH(username string) error {
 	publicKey, err := inf.metadataService.GetPublicKey()
 	if err != nil {
 		return bosherr.WrapError(err, "Error getting public key")
 	}
 
-	return inf.platform.SetupSsh(publicKey, username)
+	return inf.platform.SetupSSH(publicKey, username)
 }
 
 func (inf awsInfrastructure) GetSettings() (boshsettings.Settings, error) {

@@ -33,31 +33,31 @@ func init() {
 			openstack = NewOpenstackInfrastructure(metadataService, registry, platform, devicePathResolver, logger)
 		})
 
-		Describe("SetupSsh", func() {
+		Describe("SetupSSH", func() {
 			It("gets the public key and sets up ssh via the platform", func() {
 				metadataService.PublicKey = "fake-public-key"
 
-				err := openstack.SetupSsh("vcap")
+				err := openstack.SetupSSH("vcap")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(platform.SetupSshPublicKey).To(Equal("fake-public-key"))
-				Expect(platform.SetupSshUsername).To(Equal("vcap"))
+				Expect(platform.SetupSSHPublicKey).To(Equal("fake-public-key"))
+				Expect(platform.SetupSSHUsername).To(Equal("vcap"))
 			})
 
 			It("returns error without configuring ssh on the platform if getting public key fails", func() {
 				metadataService.GetPublicKeyErr = errors.New("fake-get-public-key-err")
 
-				err := openstack.SetupSsh("vcap")
+				err := openstack.SetupSSH("vcap")
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-get-public-key-err"))
 
-				Expect(platform.SetupSshCalled).To(BeFalse())
+				Expect(platform.SetupSSHCalled).To(BeFalse())
 			})
 
 			It("returns error if configuring ssh on the platform fails", func() {
-				platform.SetupSshErr = errors.New("fake-setup-ssh-err")
+				platform.SetupSSHErr = errors.New("fake-setup-ssh-err")
 
-				err := openstack.SetupSsh("vcap")
+				err := openstack.SetupSSH("vcap")
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-setup-ssh-err"))
 			})
