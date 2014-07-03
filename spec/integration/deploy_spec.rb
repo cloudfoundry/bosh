@@ -88,6 +88,20 @@ describe 'deploy', type: :integration do
     expect_running_vms(%w(foobar/0 foobar/1 foobar/2 foobar/3))
   end
 
+  it 'deletes extra vms when switching from fixed-size to dynamically-sized resource pools' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+
+    manifest_hash['resource_pools'].first['size'] = 2
+    manifest_hash['jobs'].first['instances'] = 1
+
+    deploy_simple(manifest_hash: manifest_hash)
+    expect_running_vms(%w(foobar/0 unknown/unknown))
+
+    manifest_hash['resource_pools'].first.delete('size')
+    deploy_simple_manifest(manifest_hash: manifest_hash)
+    expect_running_vms(%w(foobar/0))
+  end
+
   def expect_running_vms(job_name_index_list)
     vms = director.vms
     expect(vms.map(&:job_name_index)).to match_array(job_name_index_list)

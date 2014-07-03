@@ -177,7 +177,7 @@ module Bosh::Director
       # this resource pool to the desired size
       # @return [Integer]
       def extra_vm_count
-        return 0 if dynamically_sized?
+        return @idle_vms.size if dynamically_sized?
         @idle_vms.size + @allocated_vms.size - @size
       end
 

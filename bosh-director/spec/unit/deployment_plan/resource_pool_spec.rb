@@ -390,4 +390,36 @@ describe Bosh::Director::DeploymentPlan::ResourcePool do
       end
     end
   end
+
+  describe '#extra_vm_count' do
+    context 'when resource pool has a fixed size' do
+      before { valid_spec['size'] = 2 }
+
+      it 'returns the number of extra vms over the fixed size' do
+        resource_pool.add_idle_vm # from db: job/0
+        resource_pool.allocate_vm # from db: job/0
+        resource_pool.add_idle_vm # from db: unknown/unknown
+
+        expect(resource_pool.extra_vm_count).to eq(0)
+
+        resource_pool.add_idle_vm # from db: unknown/unknown, because previous deployment had more vms
+
+        expect(resource_pool.extra_vm_count).to eq(1)
+      end
+    end
+
+    context 'when resource pool is dynamically sized' do
+      before { valid_spec.delete('size') }
+
+      it 'returns the size of idle_vms (so they all get deleted)' do
+        resource_pool.allocate_vm # from db: job/0
+
+        expect(resource_pool.extra_vm_count).to eq(0)
+
+        resource_pool.add_idle_vm # from db: unknown/unknown, because previous deployment had more vms
+
+        expect(resource_pool.extra_vm_count).to eq(1)
+      end
+    end
+  end
 end
