@@ -143,6 +143,8 @@ module Bosh::Stemcell
         ' --tag ~exclude_on_warden'
       when 'aws'
         ' --tag ~exclude_on_aws'
+      when 'openstack'
+        ' --tag ~exclude_on_openstack'
       else
         ''
       end

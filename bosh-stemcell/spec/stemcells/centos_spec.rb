@@ -65,6 +65,7 @@ describe 'CentOS stemcell', stemcell_image: true do
     exclude_on_aws: true,
     exclude_on_vcloud: true,
     exclude_on_warden: true,
+    exclude_on_openstack: true,
   } do
     describe file('/etc/sysctl.conf') do
       it { should be_file }
