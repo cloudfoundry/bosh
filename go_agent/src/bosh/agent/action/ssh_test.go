@@ -18,7 +18,7 @@ func testSSHSetupWithGivenPassword(expectedPwd string) {
 		"fake-net": boshsettings.Network{IP: "ww.xx.yy.zz"},
 	}
 
-	platform, action := buildSshAction(settingsService)
+	platform, action := buildSSHAction(settingsService)
 
 	params := SSHParams{
 		User:      "fake-user",
@@ -61,7 +61,7 @@ var _ = Describe("SSHAction", func() {
 
 	BeforeEach(func() {
 		settingsService = &fakesettings.FakeSettingsService{}
-		platform, action = buildSshAction(settingsService)
+		platform, action = buildSSHAction(settingsService)
 	})
 
 	It("ssh should be synchronous", func() {
