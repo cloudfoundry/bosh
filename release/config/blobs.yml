@@ -19,22 +19,10 @@ genisoimage/cdrkit-1.1.11.tar.gz:
   object_id: bb61a16c-6078-4e18-9c1f-9c2d6f056cd6
   sha: 3f7ddc06db0272942e1a4cd98c3c96462df77387
   size: 1445133
-ruby/rubygems-2.1.11.tgz:
-  object_id: a949ba57-c5f8-43a1-a3e5-44faf1ab3b88
-  sha: ca3033432cae28deb7ced79cda271cb292b70e59
-  size: 367166
-ruby/bundler-1.5.2.gem:
-  object_id: 7ab3bb7d-9ed5-4ff7-ae53-22ad6cac7342
-  sha: 78a9fe1161407778f437fae39cb5ac51127f4635
-  size: 286208
 ruby/yaml-0.1.5.tar.gz:
   object_id: db07c821-62f8-4fd1-a99a-ff1c88b2474b
   sha: 8b78cb9f759c7d80db8a7328c0ebecfe34fde737
   size: 504897
-ruby/ruby-1.9.3-p545.tar.gz:
-  object_id: c685bafb-6eb0-451c-bc3e-bf21ca6565b0
-  sha: 03455364740914e8d2dfd6421f681b3fb68a4313
-  size: 12582277
 powerdns/pdns-static_3.3.1-1_amd64.deb:
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
   sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
@@ -91,3 +79,15 @@ redis/redis-2.6.9.tar.gz:
   object_id: d24e2fbd-ea3f-4c4b-b4e3-a0ccfd60dafa
   sha: 519fc3d1e7a477217f1ace73252be622e0101001
   size: 989119
+ruby/bundler-1.6.3.gem:
+  object_id: 2cbdd2bc-bc00-4b4b-b617-2433cea68a02
+  sha: c8a000f75b6a6f60d9fb727f8076ec9171e14c20
+  size: 293376
+ruby/ruby-2.1.2.tar.gz:
+  object_id: 571e7798-c372-42b9-81bf-76bb3a3adff1
+  sha: b818d56b4638f1949239038623b761517d4a5686
+  size: 15096114
+ruby/rubygems-2.3.0.tgz:
+  object_id: df4ed379-a229-4a7c-b6ea-734e446c4f69
+  sha: 6902fff7749fa264b8f9020f33daf92170375f75
+  size: 431240

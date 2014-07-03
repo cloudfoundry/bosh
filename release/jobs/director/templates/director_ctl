@@ -12,7 +12,7 @@ PATH=$PATH:/var/vcap/jobs/director/bin
 export PATH
 
 export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
-export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/1.9.1
+export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.1.0
 
 export TMPDIR=/var/vcap/data/tmp/director
 

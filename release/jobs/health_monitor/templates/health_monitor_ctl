@@ -6,7 +6,7 @@ PIDFILE=$RUN_DIR/health_monitor.pid
 RUNAS=vcap
 
 export PATH=/var/vcap/packages/ruby/bin:$PATH
-export GEM_HOME=/var/vcap/packages/health_monitor/gem_home/ruby/1.9.1
+export GEM_HOME=/var/vcap/packages/health_monitor/gem_home/ruby/2.1.0
 export BUNDLE_GEMFILE=/var/vcap/packages/health_monitor/Gemfile
 
 case $1 in
