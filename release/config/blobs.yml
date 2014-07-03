@@ -1,32 +1,4 @@
 ---
-nats/vendor/cache/daemons-1.1.4.gem:
-  object_id: rest/objects/4e4e78bca61e122204e4e98643d9ae04fbd4f12c0c03
-  sha: 6603f661cc3b9f591db66b5fbb18d648288651a0
-  size: 33792
-nats/vendor/cache/eventmachine-0.12.10.gem:
-  object_id: rest/objects/4e4e78bca51e121004e4e7d51906cd04fbd4f140c2b7
-  sha: d9b3ec65e3e94e461ed2d53c01a2b9ab62fe6a07
-  size: 220672
-nats/vendor/cache/json_pure-1.6.2.gem:
-  object_id: rest/objects/4e4e78bca11e121204e4e86ee1529404fbd4f1585c83
-  sha: d0f2fdad9414f0ec17ac4730d12a3c87134517e8
-  size: 659968
-nats/vendor/cache/nats-0.4.22.beta.1.gem:
-  object_id: rest/objects/4e4e78bca51e122004e4e8ec68407704fbd4f16ef604
-  sha: a35bfbbd3b2513c7bfde53b68f750d9789c94ff4
-  size: 23040
-nats/vendor/cache/rack-1.3.5.gem:
-  object_id: rest/objects/4e4e78bca31e122204e4e9863b1b7404fbd4f189097f
-  sha: 8ceed89e9a1d0039002eca26e579de8ad5883516
-  size: 155648
-nats/vendor/cache/thin-1.3.1.gem:
-  object_id: rest/objects/4e4e78bca21e121004e4e7d511f55304fbd4f19d419b
-  sha: e009f5ce3ba092299cd0810652e67c080ffaef14
-  size: 141824
-nats/vendor/cache/yajl-ruby-0.7.8.gem:
-  object_id: rest/objects/4e4e78bca61e121204e4e86eebe59104fbd4f1b4ae88
-  sha: d9a29e4321fd26dfa15cc17befccdb9442e42310
-  size: 555008
 postgres/postgres-9.0.3-1.amd64.tar.gz:
   object_id: rest/objects/4e4e78bca11e122004e4e8ec64843104fbd4f219f4b7
   sha: e47ee9c841ecde4df121f44df282aeb3c50a48d2
@@ -39,115 +11,61 @@ postgres/postgresql-9.0.3.tar.gz:
   object_id: rest/objects/4e4e78bca61e121004e4e7d51d950e04fbd4f2ca2d89
   sha: c8fb5d1d7930e78211e554bb5751183a8148d0ee
   size: 18335858
-redis/redis-2.2.4.tar.gz:
-  object_id: rest/objects/4e4e78bca41e122004e4e8ec65f67f04fbd4f388786e
-  sha: 063e6e9f615ceda664d0691a6ea59befb22ebc40
-  size: 447499
-ruby/bundler-1.0.12.gem:
-  object_id: rest/objects/4e4e78bca61e122204e4e98643d9ae04fbd4f39d1431
-  sha: 4acd470b77d0d8f66440f137c918464b3e967a42
-  size: 160768
-ruby/rake-0.8.7.gem:
-  object_id: rest/objects/4e4e78bca31e121004e4e7d514745f04fbd4f3ae519a
-  sha: 91daad079d404b68a7dd179716b9fdd0c195144c
-  size: 104960
-ruby/ruby-1.8.7-p302.tar.bz2:
-  object_id: rest/objects/4e4e78bca31e121204e4e86ee3969204fbd4f3c13434
-  sha: d93bd2f1099f3473b496cda2422b27a8da2beb00
-  size: 4184764
-ruby/ruby-1.9.2-p180.tar.gz:
-  object_id: rest/objects/4e4e78bca51e122004e4e8ec68407704fbd4f3e88d6f
-  sha: 6a482bc07239b37bcadf68dda63c65d20dc19ebe
-  size: 11158935
-ruby/rubygems-1.7.2.tgz:
-  object_id: rest/objects/4e4e78bca11e122204e4e98638b76304fbd4f43e7a27
-  sha: d878ae52f40eb71e59708afc57303172f0327fad
-  size: 245606
-ruby/bundler-1.2.1.gem:
-  object_id: rest/objects/4e4e78bca51e122204e4e9863f28f3050aa6aab5548d
-  sha: 0cbe6ad7a41f064d6c11c1058465fffb1bd58069
-  size: 226816
-ruby/rubygems-1.8.24.tgz:
-  object_id: rest/objects/4e4e78bca21e121004e4e7d511f553050aa6aad74ec8
-  sha: 30f27047e74f7943117736a0d3e224994fee0905
-  size: 380101
-golang/go1.0.3.src.tar.gz:
-  object_id: rest/objects/4e4e78bca21e122204e4e9863926b1050b511f8d9fe0
-  sha: 1a67293c10d6c06c633c078a7ca67e98c8b58471
-  size: 7404849
 mysql/server-5.1.62-rel13.3-435-Linux-x86_64.tar.gz:
   object_id: rest/objects/4e4e78bca31e121004e4e7d514745f04fb68b2898dd0
   sha: 2bfd575545fe78729c56bb832aa69d8d9fc8630d
   size: 34179263
 genisoimage/cdrkit-1.1.11.tar.gz:
   object_id: bb61a16c-6078-4e18-9c1f-9c2d6f056cd6
-  sha: !binary |-
-    M2Y3ZGRjMDZkYjAyNzI5NDJlMWE0Y2Q5OGMzYzk2NDYyZGY3NzM4Nw==
+  sha: 3f7ddc06db0272942e1a4cd98c3c96462df77387
   size: 1445133
-ruby/ruby-1.9.3-p484.tar.gz:
-  object_id: e2ef4d3e-59bd-4c7c-aba2-e9df6d2a9c7e
-  sha: !binary |-
-    NmFlODBmNDI0OTY4YjVjZTY2MWVlOWIyYmVlMWMyMWFkYzllZTY3Yw==
-  size: 12576996
 ruby/rubygems-2.1.11.tgz:
   object_id: a949ba57-c5f8-43a1-a3e5-44faf1ab3b88
-  sha: !binary |-
-    Y2EzMDMzNDMyY2FlMjhkZWI3Y2VkNzljZGEyNzFjYjI5MmI3MGU1OQ==
+  sha: ca3033432cae28deb7ced79cda271cb292b70e59
   size: 367166
 ruby/bundler-1.5.2.gem:
   object_id: 7ab3bb7d-9ed5-4ff7-ae53-22ad6cac7342
-  sha: !binary |-
-    NzhhOWZlMTE2MTQwNzc3OGY0MzdmYWUzOWNiNWFjNTExMjdmNDYzNQ==
+  sha: 78a9fe1161407778f437fae39cb5ac51127f4635
   size: 286208
 ruby/yaml-0.1.5.tar.gz:
   object_id: db07c821-62f8-4fd1-a99a-ff1c88b2474b
-  sha: !binary |-
-    OGI3OGNiOWY3NTljN2Q4MGRiOGE3MzI4YzBlYmVjZmUzNGZkZTczNw==
+  sha: 8b78cb9f759c7d80db8a7328c0ebecfe34fde737
   size: 504897
 ruby/ruby-1.9.3-p545.tar.gz:
   object_id: c685bafb-6eb0-451c-bc3e-bf21ca6565b0
-  sha: !binary |-
-    MDM0NTUzNjQ3NDA5MTRlOGQyZGZkNjQyMWY2ODFiM2ZiNjhhNDMxMw==
+  sha: 03455364740914e8d2dfd6421f681b3fb68a4313
   size: 12582277
 powerdns/pdns-static_3.3.1-1_amd64.deb:
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
-  sha: !binary |-
-    MjJiYjQ2YWEwYjNlNzY3MWUwZWU5YWEzMGVkOTVjMzg4NDExMDZhYg==
+  sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
   size: 9353694
 nats/vendor/cache/daemons-1.1.9.gem:
   object_id: 688133be-f542-4a6a-b139-cd1290cedcd7
-  sha: !binary |-
-    ZTczYmE1OGZlOWU5NDhmN2VkYzUwMTdmOTFmNTNiOGYwYTk1NWEzNw==
+  sha: e73ba58fe9e948f7edc5017f91f53b8f0a955a37
   size: 32768
 nats/vendor/cache/eventmachine-1.0.3.gem:
   object_id: 530fa989-bb5d-40ff-a723-8ab058006685
-  sha: !binary |-
-    ZjFkM2MwY2ZjZGNhODU1YjliN2VmY2FmOWE2YzkwNzA0MzM0OWFjOQ==
+  sha: f1d3c0cfcdca855b9b7efcaf9a6c907043349ac9
   size: 225792
 nats/vendor/cache/json_pure-1.8.1.gem:
   object_id: ce934969-81b7-4d2b-a50c-48a9ee54d50b
-  sha: !binary |-
-    N2I4ZjA4ODUyZjczNGVmMjg3NDY4ZmUxNjc2YzFjNGU3YTlmNjc4YQ==
+  sha: 7b8f08852f734ef287468fe1676c1c4e7a9f678a
   size: 148992
 nats/vendor/cache/nats-0.5.0.beta.12.gem:
   object_id: 714da93b-b55f-4adf-a5e5-b11ea991cd1f
-  sha: !binary |-
-    ZjM5Yjc5ODQ0NzQxZDAwMTljZDZlMjc3ZGVkMmIyMDI1YjY5YmNhMw==
+  sha: f39b79844741d0019cd6e277ded2b2025b69bca3
   size: 30208
 nats/vendor/cache/rack-1.5.2.gem:
   object_id: 8e0440d6-d7cb-4085-9b33-2957bfb9a5bd
-  sha: !binary |-
-    YTE3ZjQwYzliZWIwM2I0NThmNTM3ZjQyY2YzNmRkOTBkODIzMDYyNQ==
+  sha: a17f40c9beb03b458f537f42cf36dd90d8230625
   size: 216576
 nats/vendor/cache/thin-1.5.1.gem:
   object_id: 5b19908f-9a4c-4b03-a377-29d7b9d00a9b
-  sha: !binary |-
-    NDI4MGY1YTNkYjdjNGQ2NDcwYzE1ZjZhY2VjOWEwZGRlZDA1N2FiOA==
+  sha: 4280f5a3db7c4d6470c15f6acec9a0dded057ab8
   size: 55296
 nats/vendor/cache/yajl-ruby-1.1.0.gem:
   object_id: 9d949fd3-d8d9-45f0-92ab-4a8f5a9abc56
-  sha: !binary |-
-    YjIyNTEyZmMxYmQ2OGY0OTVmNDUzOGQzZTI5NzM1ZGE0OTRiZWEwNA==
+  sha: b22512fc1bd68f495f4538d3e29735da494bea04
   size: 559616
 nginx/headers-more-v0.25.tgz:
   object_id: 62f787d7-b4e2-4530-b105-d0eade4d6728
@@ -169,3 +87,7 @@ nginx/pcre-8.34.tar.gz:
   sha: !binary |-
     ZDQ2ZTUzNzMzN2VlNzBkZjE5MDg0MDAxYTRiNjgxNWIzZDY5ZmU2Yw==
   size: 1933734
+redis/redis-2.6.9.tar.gz:
+  object_id: d24e2fbd-ea3f-4c4b-b4e3-a0ccfd60dafa
+  sha: 519fc3d1e7a477217f1ace73252be622e0101001
+  size: 989119
