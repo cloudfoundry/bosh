@@ -36,10 +36,15 @@ describe 'CentOS OS image', os_image: true do
     end
   end
 
+  describe 'base_openssl' do
+    describe command('openssl version') do
+      it { should return_stdout %r{\b1\.0\.1h\b} }
+    end
+  end
+
   context 'installed by base_centos_packages' do
     %w(
       upstart
-      openssl-devel
       lsof
       quota
       rsync
