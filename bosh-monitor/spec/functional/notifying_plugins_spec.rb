@@ -54,7 +54,8 @@ describe 'notifying plugins' do
     Thread.new { runner.run }
     while tries > 0
       tries -= 1
-      return if Bosh::Monitor.event_processor
+      # wait for alert plugin to load
+      return if Bosh::Monitor.event_processor && Bosh::Monitor.event_processor.plugins[:alert]
       sleep 0.2
     end
     raise "Failed to configure event_processor in time"
