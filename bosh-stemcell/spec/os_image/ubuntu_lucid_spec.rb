@@ -81,14 +81,9 @@ describe 'Ubuntu 10.04 OS image', os_image: true do
     end
   end
 
-  describe 'base_openssl' do
-    describe command('openssl version') do
-      it { should return_stdout %r{\b1\.0\.1h\b} }
-    end
-  end
-
   context 'installed by base_ubuntu_packages' do
     %w(
+      libssl-dev
       lsof
       strace
       bind9-host
