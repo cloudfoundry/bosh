@@ -212,8 +212,6 @@ properties:
     description: AWS access_key_id used for the compiled package cache
   compiled_package_cache.options.secret_access_key:
     description: AWS secret_access_key used for the compiled package cache
-  compiled_package_cache.options.address:
-    description: Addess of blobstore server used for compiled package cache
   compiled_package_cache.options.port:
     description: Port of blobstore server used for compiled package cache
     default: 25250
