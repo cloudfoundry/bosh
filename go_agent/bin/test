@@ -4,34 +4,34 @@ result=0
 
 bin=$(dirname $0)
 
-printf  "\n Formatting packages..."
+printf "\n Formatting packages..."
 $bin/go fmt bosh/...
 let "result+=$?"
 
-printf  "\n Installing ginkgo..."
+printf "\n Installing ginkgo..."
 $bin/go install github.com/onsi/ginkgo/ginkgo
 let "result+=$?"
 
-printf  "\n Testing packages..."
+printf "\n Testing packages..."
 $bin/env ginkgo -r -race $bin/../src/bosh
 let "result+=$?"
 
-printf  "\n Vetting packages for potential issues..."
+printf "\n Vetting packages for potential issues..."
 $bin/go vet bosh/...
 let "result+=$?"
 
-printf  "\n Checking with golint..."
+printf "\n Checking with golint..."
 $bin/golint
 let "result+=$?"
 
-printf  "\n Running build script to confirm everything compiles..."
+printf "\n Running build script to confirm everything compiles..."
 $bin/build
 let "result+=$?"
 
 if [ $result -eq 0 ]; then
-	printf  "\nSUITE SUCCESS"
+	printf "\nSUITE SUCCESS"
 else
-	printf  "\nSUITE FAILURE"
+	printf "\nSUITE FAILURE"
 fi
 
 exit $result
