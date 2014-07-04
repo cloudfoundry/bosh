@@ -1,10 +1,10 @@
 package ip_test
 
 import (
-	gonet "net"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	gonet "net"
+	"os"
 
 	. "bosh/platform/net/ip"
 )
@@ -25,6 +25,10 @@ var _ = Describe("ipResolver", func() {
 
 	Describe("GetPrimaryIPv4", func() {
 		findInterfaceName := func() string {
+			ifName := os.Getenv("PRIMARY_IPv4_NIC")
+			if ifName != "" {
+				return ifName
+			}
 			if _, err := gonet.InterfaceByName("en0"); err == nil {
 				return "en0"
 			} else if _, err := gonet.InterfaceByName("eth0"); err == nil {
