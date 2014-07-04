@@ -9,6 +9,8 @@ module Bosh::Dev
 
       def to_s
         <<-BASH
+          set -eu
+
           cd /bosh
 
           #{exports.join("\n")}

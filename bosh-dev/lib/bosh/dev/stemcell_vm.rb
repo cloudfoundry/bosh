@@ -42,6 +42,7 @@ module Bosh::Dev
     def vagrant_destroy_cmd
       <<-BASH
         set -eu
+
         pushd bosh-stemcell
         vagrant destroy #{vm_name} --force
         popd

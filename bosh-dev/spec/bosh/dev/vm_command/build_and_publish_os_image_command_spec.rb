@@ -27,6 +27,7 @@ module Bosh::Dev
       it 'is the command to execute on vagrant to build and publish an OS image' do
         expected_cmd = strip_heredoc(<<-BASH)
           set -eu
+
           cd /bosh
 
           export BOSH_AWS_ACCESS_KEY_ID='fake-BOSH_AWS_ACCESS_KEY_ID'

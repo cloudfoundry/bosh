@@ -28,6 +28,8 @@ module Bosh::Dev
     describe '#to_s' do
       it 'is the command to execute on vagrant to build and publish a stemcell' do
         expected_cmd = <<-BASH
+          set -eu
+
           cd /bosh
 
           export CANDIDATE_BUILD_NUMBER='fake-CANDIDATE_BUILD_NUMBER'

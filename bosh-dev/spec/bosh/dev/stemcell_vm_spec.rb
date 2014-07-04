@@ -53,6 +53,7 @@ module Bosh::Dev
             expect(opt).to eq('-c')
             expect(strip_heredoc(actual_cmd)).to include(strip_heredoc(<<-BASH))
               set -eu
+
               pushd bosh-stemcell
               vagrant destroy remote --force
               popd
