@@ -10,7 +10,7 @@ templates:
   write_users.erb:    config/write_users
 
 packages:
-  - nginx
+- nginx
 
 properties:
   blobstore.port:
@@ -19,14 +19,17 @@ properties:
   blobstore.backend_port:
     description: TCP port backend blobstore server (simple blobstore) listens on
     default: 25251
+
   blobstore.director.user:
     description: Username director must use to access blobstore via HTTP Basic
   blobstore.director.password:
     description: Password director must use to access blobstore via HTTP Basic
+
   blobstore.agent.user:
     description: Username agents must use to access blobstore via HTTP Basic
   blobstore.agent.password:
     description: Password agents must use to access blobstore via HTTP Basic
+
   blobstore.max_upload_size:
-    description: Max release size
-    default: 1G
+    description: Max allowed file size for upload
+    default: 5000m

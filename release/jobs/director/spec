@@ -34,17 +34,17 @@ properties:
     description: Port that the director listens on
     default: 25556
   director.nginx.workers:
-    default: 2
     description: Number of nginx workers for director
+    default: 2
   director.timeout:
-    default: 7200
     description: Timeout for connection from bosh CLI to nginx
+    default: 7200
   director.proxy_timeout:
-    default: 900
     description: Timeout for proxy connection from nginx to director
+    default: 900
   director.max_upload_size:
-    default: 5000m
     description: Max allowed file size for upload
+    default: 5000m
   director.ssl.cert:
     description: SSL Certificate for director (PEM encoded)
   director.ssl.key:
