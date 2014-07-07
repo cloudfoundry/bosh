@@ -30,7 +30,6 @@ which bosh
 The `bosh` CLI is now in your `$PATH`, including the `bosh micro` plugin from the git source, rather than any rubygems you have installed.
 
 
-
 ## Ask Questions
 
 Questions about the Cloud Foundry Open Source Project can be directed to our Google Groups.
