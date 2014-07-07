@@ -61,6 +61,10 @@ describe 'Ubuntu 10.04 OS image', os_image: true do
       it { should contain 'DISTRIB_RELEASE=10.04' }
       it { should contain 'DISTRIB_CODENAME=lucid' }
     end
+
+    describe command('locale -a') do
+      its(:stdout) { should include 'en_US.utf8' }
+    end
   end
 
   describe 'base_apt' do

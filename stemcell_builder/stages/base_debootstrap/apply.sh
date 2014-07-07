@@ -59,3 +59,5 @@ run_in_chroot $chroot "dpkg-reconfigure -fnoninteractive -pcritical tzdata"
 
 # Locale
 cp $assets_dir/etc/default/locale $chroot/etc/default/locale
+run_in_chroot $chroot "locale-gen en_US.UTF-8"
+run_in_chroot $chroot "dpkg-reconfigure locales"
