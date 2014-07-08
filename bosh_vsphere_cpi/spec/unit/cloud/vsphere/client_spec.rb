@@ -170,6 +170,58 @@ module VSphereCloud
       end
     end
 
+    describe '#delete_path' do
+      let(:datacenter) { instance_double('VimSdk::Vim::Datacenter') }
+      let(:task) { instance_double('VimSdk::Vim::Task') }
+      let(:file_manager) { instance_double('VimSdk::Vim::FileManager') }
+
+      before do
+        allow(fake_service_content).to receive(:file_manager).and_return(file_manager)
+      end
+
+      context 'when the path exits' do
+        it 'calls delete_file on file manager' do
+          expect(client).to receive(:wait_for_task).with(task)
+
+          expect(file_manager).to receive(:delete_file).
+            with('[some-datastore] some/path', datacenter).
+            and_return(task)
+
+          client.delete_path(datacenter, '[some-datastore] some/path')
+        end
+      end
+
+      context 'when file manager raises "File not found" error' do
+        it 'does not raise error' do
+          expect(client).to receive(:wait_for_task).with(task).
+            and_raise(RuntimeError.new('File [some-datastore] some/path was not found'))
+
+          expect(file_manager).to receive(:delete_file).
+            with('[some-datastore] some/path', datacenter).
+            and_return(task)
+
+          expect {
+            client.delete_path(datacenter, '[some-datastore] some/path')
+          }.to_not raise_error
+        end
+      end
+
+      context 'when file manager raises other error' do
+        it 'raises that error' do
+          error = RuntimeError.new('Invalid datastore path some/path')
+          expect(client).to receive(:wait_for_task).with(task).
+            and_raise(error)
+          expect(file_manager).to receive(:delete_file).
+            with('some/path', datacenter).
+            and_return(task)
+
+          expect {
+            client.delete_path(datacenter, 'some/path')
+          }.to raise_error
+        end
+      end
+    end
+
     describe '#delete_folder' do
       let(:folder) { instance_double('VimSdk::Vim::Folder') }
 
