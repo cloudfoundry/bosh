@@ -17,8 +17,8 @@ module VSphereCloud
 
     before do
       fake_instance = double('service instance', content: fake_service_content)
-      VimSdk::Vim::ServiceInstance.stub(new: fake_instance)
-      fake_service_content.stub(search_index: fake_search_index)
+      allow(VimSdk::Vim::ServiceInstance).to receive(:new).and_return(fake_instance)
+      allow(fake_service_content).to receive(:search_index).and_return(fake_search_index)
     end
 
     describe '#initialize' do
@@ -95,39 +95,39 @@ module VSphereCloud
     describe '#find_by_inventory_path' do
       context 'given a string' do
         it 'passes the path to a SearchIndex object when path contains no slashes' do
-          fake_search_index.should_receive(:find_by_inventory_path).with('foobar')
+          expect(fake_search_index).to receive(:find_by_inventory_path).with('foobar')
           client.find_by_inventory_path("foobar")
         end
 
         it 'does not escape slashes into %2f' +
            'because we want to allow users to specify nested objects' do
-          fake_search_index.should_receive(:find_by_inventory_path).with('foo/bar')
+          expect(fake_search_index).to receive(:find_by_inventory_path).with('foo/bar')
           client.find_by_inventory_path("foo/bar")
         end
       end
 
       context 'given a flat array of strings' do
         it 'joins them with slashes' do
-          fake_search_index.should_receive(:find_by_inventory_path).with('foo/bar')
+          expect(fake_search_index).to receive(:find_by_inventory_path).with('foo/bar')
           client.find_by_inventory_path(['foo', 'bar'])
         end
 
         it 'does not escape slashes into %2f' +
            'because we want to allow users to specify nested objects' do
-          fake_search_index.should_receive(:find_by_inventory_path).with('foo/bar/baz')
+          expect(fake_search_index).to receive(:find_by_inventory_path).with('foo/bar/baz')
           client.find_by_inventory_path(['foo', 'bar/baz'])
         end
       end
 
       context 'given a nested array of strings' do
         it 'joins them with slashes recursively' do
-          fake_search_index.should_receive(:find_by_inventory_path).with('foo/bar/baz')
+          expect(fake_search_index).to receive(:find_by_inventory_path).with('foo/bar/baz')
           client.find_by_inventory_path(['foo', ['bar', 'baz']])
         end
 
         it 'does not escape slashes into %2f' +
            'because we want to allow users to specify nested objects' do
-          fake_search_index.should_receive(:find_by_inventory_path).with('foo/bar/baz/jaz')
+          expect(fake_search_index).to receive(:find_by_inventory_path).with('foo/bar/baz/jaz')
           client.find_by_inventory_path(['foo', ['bar', 'baz/jaz']])
         end
       end
