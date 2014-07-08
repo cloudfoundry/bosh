@@ -238,10 +238,11 @@ module VSphereCloud
 
         # Delete env.iso and VM specific files managed by the director
         retry_block do
-          datastore = get_primary_datastore(devices)
-          datastore_name = client.get_property(datastore, Vim::Datastore, 'name')
-          vm_name = properties['name']
-          client.delete_path(datacenter, "[#{datastore_name}] #{vm_name}")
+          cdrom_device = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
+          if cdrom_device
+            env_iso_folder = File.dirname(cdrom_device.backing.file_name)
+            client.delete_path(datacenter, env_iso_folder)
+          end
         end
       end
     end
@@ -355,14 +356,14 @@ module VSphereCloud
         @logger.debug('Reconfiguring the networks')
         @client.reconfig_vm(vm, config)
 
-        location = get_vm_location(vm, datacenter: datacenter_name)
-        env = @agent_env.get_current_env(location)
+        env = @agent_env.get_current_env(vm, datacenter_name)
         @logger.debug("Reading current agent env: #{env.pretty_inspect}")
 
         devices = client.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
         env['networks'] = generate_network_env(devices, networks, dvs_index)
 
         @logger.debug("Updating agent env to: #{env.pretty_inspect}")
+        location = get_vm_location(vm, datacenter: datacenter_name)
         @agent_env.set_env(vm, location, env)
 
         @logger.debug('Powering the VM back on')
@@ -486,11 +487,12 @@ module VSphereCloud
         config.device_change << attached_disk_config
         fix_device_unit_numbers(devices, config.device_change)
 
-        location = get_vm_location(vm, datacenter: datacenter_name)
-        env = @agent_env.get_current_env(location)
+        env = @agent_env.get_current_env(vm, datacenter_name)
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
         env['disks']['persistent'][disk.uuid] = attached_disk_config.device.unit_number.to_s
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
+
+        location = get_vm_location(vm, datacenter: datacenter_name)
         @agent_env.set_env(vm, location, env)
         @logger.info('Attaching disk')
         client.reconfig_vm(vm, config)
@@ -520,10 +522,11 @@ module VSphereCloud
         config.device_change << create_delete_device_spec(virtual_disk)
 
         location = get_vm_location(vm)
-        env = @agent_env.get_current_env(location)
+        env = @agent_env.get_current_env(vm, location[:datacenter])
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
         env['disks']['persistent'].delete(disk.uuid)
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
+
         @agent_env.set_env(vm, location, env)
         @logger.info('Detaching disk')
         client.reconfig_vm(vm, config)

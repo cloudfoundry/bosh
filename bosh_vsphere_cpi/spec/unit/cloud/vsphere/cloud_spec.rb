@@ -745,5 +745,91 @@ module VSphereCloud
         end
       end
     end
+
+    describe '#delete_vm' do
+      let(:vm) { instance_double('VimSdk::Vim::VirtualMachine') }
+      before { allow(vsphere_cloud).to receive(:get_vm_by_cid).with('fake-vm-id').and_return(vm) }
+
+      let(:datacenter) { instance_double('VimSdk::Vim::Datacenter') }
+      before { allow(client).to receive(:find_parent).with(vm, VimSdk::Vim::Datacenter).and_return(datacenter) }
+
+      let(:devices) { [virtual_disk_device] }
+      before do
+        allow(client).to receive(:get_properties).with(
+          vm,
+          VimSdk::Vim::VirtualMachine,
+          ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name'],
+          ensure: ['config.hardware.device']
+        ).and_return(
+          {
+            'runtime.question' => false,
+            'runtime.powerState' => VimSdk::Vim::VirtualMachine::PowerState::POWERED_OFF,
+            'config.hardware.device' => devices,
+            'name' => 'fake-vm-name'
+          }
+        )
+      end
+      let(:virtual_disk_device) { instance_double('VimSdk::Vim::Vm::Device::VirtualDisk', backing: virtual_disk_backing) }
+      before do
+        allow(virtual_disk_device).to receive(:kind_of?).and_return(false)
+        allow(virtual_disk_device).to receive(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualDisk).and_return(true)
+      end
+
+      let(:virtual_disk_backing) do
+        instance_double('VimSdk::Vim::Vm::Device::VirtualDisk::FlatVer2BackingInfo',
+          datastore: datastore,
+          disk_mode: VimSdk::Vim::Vm::Device::VirtualDiskOption::DiskMode::INDEPENDENT_NONPERSISTENT
+        )
+      end
+
+      let(:datastore) { instance_double('VimSdk::Vim::Datastore') }
+      before do
+        allow(client).to receive(:get_property).
+          with(datastore, VimSdk::Vim::Datastore, 'name').
+          and_return('fake-datastore-name')
+      end
+
+      it 'deletes vm' do
+        expect(client).to receive(:delete_vm).with(vm)
+        vsphere_cloud.delete_vm('fake-vm-id')
+      end
+
+      context 'vm has cdrom' do
+        let(:devices) { [virtual_disk_device, cdrom_device] }
+        let(:cdrom_device) { instance_double('VimSdk::Vim::Vm::Device::VirtualCdrom', backing: cdrom_backing) }
+        before do
+          allow(cdrom_device).to receive(:kind_of?).and_return(false)
+          allow(cdrom_device).to receive(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualCdrom).and_return(true)
+        end
+
+        let(:cdrom_backing) do
+          instance_double('VimSdk::Vim::Vm::Device::VirtualCdrom::IsoBackingInfo',
+            datastore: cdrom_datastore,
+            file_name: '[fake-cdrom-datastore-name] some-vm-uuid/env.iso'
+          )
+        end
+        let(:devices) { [virtual_disk_device, cdrom_device] }
+
+        let(:cdrom_datastore) { instance_double('VimSdk::Vim::Datastore') }
+        before do
+          allow(client).to receive(:get_property).
+            with(cdrom_datastore, VimSdk::Vim::Datastore, 'name').
+            and_return('fake-cdrom-datastore-name')
+        end
+
+        before { allow(client).to receive(:delete_vm).with(vm) }
+
+        before do
+          allow(client).to receive(:path_exists?).
+            with(cdrom_datastore, '[fake-cdrom-datastore-name] some-vm-uuid').
+            and_return(true)
+        end
+
+        it 'cleans up the folder where ISO image is stored' do
+          expect(client).to receive(:delete_path).with(datacenter, '[fake-cdrom-datastore-name] some-vm-uuid')
+          vsphere_cloud.delete_vm('fake-vm-id')
+        end
+      end
+    end
   end
 end

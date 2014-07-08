@@ -8,8 +8,13 @@ module VSphereCloud
       @file_provider = file_provider
     end
 
-    def get_current_env(location)
-      contents = @file_provider.fetch_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.json")
+    def get_current_env(vm, datacenter_name)
+      cdrom = get_cdrom_device(vm)
+      env_iso_folder = File.dirname(cdrom.backing.file_name)
+      datastore_name = cdrom.backing.datastore.name
+      env_path = env_iso_folder.match(/\[#{datastore_name}\] (.*)/)[1]
+
+      contents = @file_provider.fetch_file(datacenter_name, datastore_name, "#{env_path}/env.json")
       contents ? JSON.load(contents) : nil
     end
 
@@ -42,15 +47,18 @@ module VSphereCloud
     private
 
     def connect_cdrom(vm, connected = true)
-      devices = @client.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
-      cdrom = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
-
+      cdrom = get_cdrom_device(vm)
       if cdrom.connectable.connected != connected
         cdrom.connectable.connected = connected
         config = Vim::Vm::ConfigSpec.new
         config.device_change = [create_edit_device_spec(cdrom)]
         @client.reconfig_vm(vm, config)
       end
+    end
+
+    def get_cdrom_device(vm)
+      devices = @client.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
+      devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
     end
 
     def generate_env_iso(env)

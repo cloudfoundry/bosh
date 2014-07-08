@@ -19,6 +19,38 @@ module VSphereCloud
     end
 
     describe '#get_current_env' do
+      let(:vm) { instance_double('VimSdk::Vim::Vm') }
+
+      before do
+        allow(client).to receive(:get_property).with(
+          vm,
+          VimSdk::Vim::VirtualMachine,
+          'config.hardware.device',
+          ensure_all: true
+        ).and_return([cdrom_device])
+      end
+
+      let(:cdrom_device) do
+        instance_double(
+          'VimSdk::Vim::Vm::Device::VirtualCdrom',
+          backing: cdrom_backing
+        )
+      end
+
+      before do
+        allow(cdrom_device).to receive(:kind_of?).
+          with(VimSdk::Vim::Vm::Device::VirtualCdrom).and_return(true)
+      end
+
+      let(:cdrom_backing) do
+        instance_double('VimSdk::Vim::Vm::Device::VirtualCdrom::IsoBackingInfo',
+          datastore: cdrom_datastore,
+          file_name: '[fake-datastore-name 1] fake-vm-name/env.iso'
+        )
+      end
+
+      let(:cdrom_datastore) { instance_double('VimSdk::Vim::Datastore', name: 'fake-datastore-name 1') }
+
       it 'gets current agent environment from fetched file' do
         expect(file_provider).to receive(:fetch_file).with(
           'fake-datacenter-name 1',
@@ -26,7 +58,7 @@ module VSphereCloud
           'fake-vm-name/env.json',
         ).and_return('{"fake-response-json" : "some-value"}')
 
-        expect(agent_env.get_current_env(location)).to eq({'fake-response-json' => 'some-value'})
+        expect(agent_env.get_current_env(vm, 'fake-datacenter-name 1')).to eq({'fake-response-json' => 'some-value'})
       end
     end
 
