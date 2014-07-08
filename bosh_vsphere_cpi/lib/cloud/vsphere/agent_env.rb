@@ -15,7 +15,9 @@ module VSphereCloud
       env_path = env_iso_folder.match(/\[#{datastore_name}\] (.*)/)[1]
 
       contents = @file_provider.fetch_file(datacenter_name, datastore_name, "#{env_path}/env.json")
-      contents ? JSON.load(contents) : nil
+      raise Bosh::Clouds::CloudError.new('Unable to load env.json') unless contents
+
+      JSON.load(contents)
     end
 
     def set_env(vm, location, env)

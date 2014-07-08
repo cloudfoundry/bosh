@@ -60,6 +60,18 @@ module VSphereCloud
 
         expect(agent_env.get_current_env(vm, 'fake-datacenter-name 1')).to eq({'fake-response-json' => 'some-value'})
       end
+
+      it 'raises if env.json is empty' do
+        allow(file_provider).to receive(:fetch_file).with(
+          'fake-datacenter-name 1',
+          'fake-datastore-name 1',
+          'fake-vm-name/env.json',
+        ).and_return(nil)
+
+        expect {
+          agent_env.get_current_env(vm, 'fake-datacenter-name 1')
+        }.to raise_error(Bosh::Clouds::CloudError)
+      end
     end
 
     describe '#set_env' do
