@@ -27,7 +27,14 @@ module VSphereCloud
       clean_up_old_env(vm)
       @file_provider.upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.json", env_json)
       @file_provider.upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.iso", generate_env_iso(env_json))
-      connect_cdrom(vm, true)
+
+      datastore = @client.get_managed_object(Vim::Datastore, name: location[:datastore])
+      file_name = "[#{location[:datastore]}] #{location[:vm]}/env.iso"
+
+      config = Vim::Vm::ConfigSpec.new
+      cdrom_change = configure_env_cdrom(datastore, vm.config.hardware.device, file_name)
+      config.device_change = [cdrom_change]
+      @client.reconfig_vm(vm, config)
     end
 
     def configure_env_cdrom(datastore, devices, file_name)
