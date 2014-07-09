@@ -56,94 +56,105 @@ module Bosh::Director
         last_response.status.should == 404
       end
 
-      describe 'API calls' do
-        before(:each) { login_as_admin }
+      describe 'POST', '/releases' do
+        before { authorize 'admin', 'admin' }
 
-        describe 'creating a release' do
-          it 'expects compressed release file' do
-            post '/releases', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/x-compressed' }
-            expect_redirect_to_queued_task(last_response)
-          end
-
-          it 'expects remote release location' do
-            post '/releases', Yajl::Encoder.encode('location' => 'http://release_url'), { 'CONTENT_TYPE' => 'application/json' }
-            expect_redirect_to_queued_task(last_response)
-          end
-
-          it 'only consumes application/x-compressed and application/json' do
-            post '/releases', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/octet-stream' }
-            last_response.status.should == 404
-          end
+        it 'allows body to be a compressed release file' do
+          post '/releases', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/x-compressed' }
+          expect_redirect_to_queued_task(last_response)
         end
 
-        describe 'listing releases' do
-          it 'has API call that returns a list of releases in JSON' do
-            release1 = Models::Release.create(name: 'release-1')
-            Models::ReleaseVersion.
-                create(release: release1, version: 1)
-            deployment1 = Models::Deployment.create(name: 'deployment-1')
-            release1 = deployment1.add_release_version(release1.versions.first) # release-1 is now currently_deployed
-            release2 = Models::Release.create(name: 'release-2')
-            Models::ReleaseVersion.
-                create(release: release2, version: 2, commit_hash: '0b2c3d', uncommitted_changes: true)
-
-            get '/releases', {}, {}
-            last_response.status.should == 200
-            body = last_response.body
-
-            expected_collection = [
-                {'name' => 'release-1',
-                 'release_versions' => [Hash['version', '1', 'commit_hash', 'unknown', 'uncommitted_changes', false, 'currently_deployed', true, 'job_names', []]]},
-                {'name' => 'release-2',
-                 'release_versions' => [Hash['version', '2', 'commit_hash', '0b2c3d', 'uncommitted_changes', true, 'currently_deployed', false, 'job_names', []]]}
-            ]
-
-            body.should == Yajl::Encoder.encode(expected_collection)
-          end
-
-          it 'returns empty collection if there are no releases' do
-            get '/releases', {}, {}
-            last_response.status.should == 200
-
-            body = Yajl::Parser.parse(last_response.body)
-            body.should == []
-          end
+        it 'allows json body with remote release location' do
+          post '/releases', Yajl::Encoder.encode('location' => 'http://release_url'), { 'CONTENT_TYPE' => 'application/json' }
+          expect_redirect_to_queued_task(last_response)
         end
 
-        describe 'deleting release' do
-          it 'deletes the whole release' do
-            release = Models::Release.create(:name => 'test_release')
-            release.add_version(Models::ReleaseVersion.make(:version => '1'))
-            release.save
+        it 'allow form parameters with a release local file path' do
+          allow(File).to receive(:exists?).with('/path/to/release.tgz').and_return(true)
 
-            delete '/releases/test_release'
-            expect_redirect_to_queued_task(last_response)
-          end
-
-          it 'deletes a particular version' do
-            release = Models::Release.create(:name => 'test_release')
-            release.add_version(Models::ReleaseVersion.make(:version => '1'))
-            release.save
-
-            delete '/releases/test_release?version=1'
-            expect_redirect_to_queued_task(last_response)
-          end
+          post '/releases', { 'nginx_upload_path' => '/path/to/release.tgz'}, { 'CONTENT_TYPE' => 'multipart/form-data' }
+          expect_redirect_to_queued_task(last_response)
         end
 
-        describe 'getting release info' do
-          it 'returns versions' do
-            release = Models::Release.create(:name => 'test_release')
-            (1..10).map do |i|
-              release.add_version(Models::ReleaseVersion.make(:version => i))
-            end
-            release.save
+        it 'only consumes application/x-compressed, application/json & multipart/form-data' do
+          post '/releases', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/octet-stream' }
+          expect(last_response.status).to eq(404)
+        end
+      end
 
-            get '/releases/test_release'
-            last_response.status.should == 200
-            body = Yajl::Parser.parse(last_response.body)
+      describe 'GET', '/releases' do
+        before { authorize 'admin', 'admin' }
 
-            body['versions'].sort.should == (1..10).map { |i| i.to_s }.sort
+        it 'has API call that returns a list of releases in JSON' do
+          release1 = Models::Release.create(name: 'release-1')
+          Models::ReleaseVersion.
+              create(release: release1, version: 1)
+          deployment1 = Models::Deployment.create(name: 'deployment-1')
+          release1 = deployment1.add_release_version(release1.versions.first) # release-1 is now currently_deployed
+          release2 = Models::Release.create(name: 'release-2')
+          Models::ReleaseVersion.
+              create(release: release2, version: 2, commit_hash: '0b2c3d', uncommitted_changes: true)
+
+          get '/releases', {}, {}
+          last_response.status.should == 200
+          body = last_response.body
+
+          expected_collection = [
+              {'name' => 'release-1',
+               'release_versions' => [Hash['version', '1', 'commit_hash', 'unknown', 'uncommitted_changes', false, 'currently_deployed', true, 'job_names', []]]},
+              {'name' => 'release-2',
+               'release_versions' => [Hash['version', '2', 'commit_hash', '0b2c3d', 'uncommitted_changes', true, 'currently_deployed', false, 'job_names', []]]}
+          ]
+
+          body.should == Yajl::Encoder.encode(expected_collection)
+        end
+
+        it 'returns empty collection if there are no releases' do
+          get '/releases', {}, {}
+          last_response.status.should == 200
+
+          body = Yajl::Parser.parse(last_response.body)
+          body.should == []
+        end
+      end
+
+      describe 'DELETE', '/releases/<id>' do
+        before { authorize 'admin', 'admin' }
+
+        it 'deletes the whole release' do
+          release = Models::Release.create(:name => 'test_release')
+          release.add_version(Models::ReleaseVersion.make(:version => '1'))
+          release.save
+
+          delete '/releases/test_release'
+          expect_redirect_to_queued_task(last_response)
+        end
+
+        it 'deletes a particular version' do
+          release = Models::Release.create(:name => 'test_release')
+          release.add_version(Models::ReleaseVersion.make(:version => '1'))
+          release.save
+
+          delete '/releases/test_release?version=1'
+          expect_redirect_to_queued_task(last_response)
+        end
+      end
+
+      describe 'GET', '/releases/<id>' do
+        before { authorize 'admin', 'admin' }
+
+        it 'returns versions' do
+          release = Models::Release.create(:name => 'test_release')
+          (1..10).map do |i|
+            release.add_version(Models::ReleaseVersion.make(:version => i))
           end
+          release.save
+
+          get '/releases/test_release'
+          last_response.status.should == 200
+          body = Yajl::Parser.parse(last_response.body)
+
+          body['versions'].sort.should == (1..10).map { |i| i.to_s }.sort
         end
       end
     end

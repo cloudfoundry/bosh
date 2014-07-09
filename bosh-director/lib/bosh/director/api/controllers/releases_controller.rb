@@ -4,36 +4,40 @@ module Bosh::Director
   module Api::Controllers
     class ReleasesController < BaseController
       post '/releases', :consumes => :tgz do
-        options = {}
-        options['remote'] = false
-        options['rebase'] = true if params['rebase'] == 'true'
-
-        task = @release_manager.create_release(@user, request.body, options)
+        rebase = params['rebase'] == 'true'
+        task = @release_manager.create_release_from_stream(@user, request.body, rebase)
         redirect "/tasks/#{task.id}"
       end
 
       post '/releases', :consumes => :json do
-        options = {}
-        options['remote'] = true
-        options['rebase'] = true if params['rebase'] == 'true'
         payload = json_decode(request.body)
+        rebase = params['rebase'] == 'true'
+        task = @release_manager.create_release_from_url(@user, payload['location'], rebase)
+        redirect "/tasks/#{task.id}"
+      end
 
-        task = @release_manager.create_release(@user, payload['location'], options)
+      post '/releases', :consumes => :multipart do
+        rebase = params['rebase'] == 'true'
+        task = @release_manager.create_release_from_file_path(@user, params[:nginx_upload_path], rebase)
         redirect "/tasks/#{task.id}"
       end
 
       get '/releases' do
         releases = Models::Release.order_by(:name.asc).map do |release|
           release_versions = release.versions_dataset.order_by(:version.asc).map do |rv|
-            Hash['version', rv.version.to_s,
-                 'commit_hash', rv.commit_hash,
-                 'uncommitted_changes', rv.uncommitted_changes,
-                 'currently_deployed', !rv.deployments.empty?,
-                 'job_names', rv.templates.map(&:name)]
+            {
+              'version' => rv.version.to_s,
+              'commit_hash' => rv.commit_hash,
+              'uncommitted_changes' => rv.uncommitted_changes,
+              'currently_deployed' => !rv.deployments.empty?,
+              'job_names' => rv.templates.map(&:name),
+            }
           end
 
-          Hash['name', release.name,
-               'release_versions', release_versions]
+          {
+            'name' => release.name,
+            'release_versions' => release_versions,
+          }
         end
 
         json_encode(releases)

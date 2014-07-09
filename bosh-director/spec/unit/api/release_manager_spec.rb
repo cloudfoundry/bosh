@@ -4,41 +4,91 @@ module Bosh::Director
   describe Api::ReleaseManager do
     let(:task) { double('Task') }
     let(:username) { 'username-1' }
-    let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
     let(:options) { { foo: 'bar' } }
 
-    before do
-      JobQueue.stub(:new).and_return(job_queue)
-      Dir.stub(mktmpdir: 'FAKE_TMPDIR')
+    before { allow(Dir).to receive(:mktmpdir).with('release').and_return(tmp_release_dir) }
+    let(:tmp_release_dir) { 'fake-tmp-release-dir' }
+
+    before { allow(JobQueue).to receive(:new).and_return(job_queue) }
+    let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
+
+    describe '#create_release_from_url' do
+      let(:release_url) { 'http://fake-domain.com/release.tgz' }
+
+      it 'enqueues a task to upload a remote release' do
+        rebase = double('bool')
+
+        expect(job_queue).to receive(:enqueue).with(
+          username,
+          Jobs::UpdateRelease,
+          'create release',
+          [release_url, { remote: true, rebase: rebase }],
+        ).and_return(task)
+
+        expect(subject.create_release_from_url(username, release_url, rebase)).to eql(task)
+      end
     end
 
-    describe '#create_release' do
-      context 'when sufficient disk space is available' do
-        before do
-          subject.stub(check_available_disk_space: true)
-          subject.stub(:write_file)
+    describe '#create_release_from_stream' do
+      before do
+        allow(SecureRandom).to receive(:uuid).and_return('fake-uuid')
+        allow(File).to receive(:exists?).and_return(true)
+      end
+
+      let(:release_stream) { double('fake-release-stream', size: 1024) }
+
+      it 'enqueues a task to upload a local release' do
+        rebase = double('bool')
+
+        expect(subject).to receive(:check_available_disk_space).
+          with(anything, release_stream.size).
+          and_return(true)
+
+        tmp_file_path = File.join(Dir.tmpdir, 'release-fake-uuid')
+        expect(subject).to receive(:write_file).with(tmp_file_path, release_stream)
+
+        expect(job_queue).to receive(:enqueue).with(
+          username,
+          Jobs::UpdateRelease,
+          'create release',
+          [tmp_file_path, { rebase: rebase }],
+        ).and_return(task)
+
+        expect(subject.create_release_from_stream(username, release_stream, rebase)).to eql(task)
+      end
+    end
+
+    describe '#create_release_from_file_path' do
+      let(:release_path) { '/path/to/release.tgz' }
+
+      context 'when release file exists' do
+        before { allow(File).to receive(:exists?).with(release_path).and_return(true) }
+
+        it 'enqueues a task to upload a remote release' do
+          rebase = double('bool')
+
+          expect(job_queue).to receive(:enqueue).with(
+            username,
+            Jobs::UpdateRelease,
+            'create release',
+            [release_path, { rebase: rebase }],
+          ).and_return(task)
+
+          expect(subject.create_release_from_file_path(username, release_path, rebase)).to eql(task)
         end
+      end
 
-        context 'local release' do
-          it 'enqueues a resque job' do
-            job_queue.should_receive(:enqueue).with(
-              username, Jobs::UpdateRelease, 'create release', ['FAKE_TMPDIR', options]).and_return(task)
+      context 'when release file does not exist' do
+        before { allow(File).to receive(:exists?).with(release_path).and_return(false) }
 
-            expect(subject.create_release(username, 'FAKE_RELEASE_BUNDLE', options)).to eq(task)
-          end
-        end
+        it 'raises an error' do
+          rebase = double('bool')
 
-        context 'remote release' do
-          let(:options) { { 'remote' => true } }
+          expect(job_queue).to_not receive(:enqueue)
 
-          it 'enqueues a resque job' do
-            modified_options = options.merge({ 'location' => 'FAKE_RELEASE_BUNDLE' })
-
-            job_queue.should_receive(:enqueue).with(
-              username, Jobs::UpdateRelease, 'create release', ['FAKE_TMPDIR', modified_options]).and_return(task)
-
-            expect(subject.create_release(username, 'FAKE_RELEASE_BUNDLE', options)).to eq(task)
-          end
+          expect {
+            expect(subject.create_release_from_file_path(username, release_path, rebase))
+          }.to raise_error(DirectorError, /Failed to create release: file not found/)
         end
       end
     end

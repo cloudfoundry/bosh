@@ -1,5 +1,4 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
+require 'securerandom'
 require 'common/version/release_version'
 
 module Bosh::Director
@@ -11,20 +10,27 @@ module Bosh::Director
       @queue = :normal
 
       attr_accessor :release_model
-      attr_accessor :tmp_release_dir
 
       def self.job_type
         :update_release
       end
 
-      # @param [String] tmp_release_dir Directory containing release bundle
+      # @param [String] release_path local path or remote url of the release archive
       # @param [Hash] options Release update options
-      def initialize(tmp_release_dir, options = {})
-        @tmp_release_dir = tmp_release_dir
+      def initialize(release_path, options = {})
+        if options['remote']
+          # file will be downloaded to the release_path
+          @release_path = File.join(Dir.tmpdir, "release-#{SecureRandom.uuid}")
+          @release_url = release_path
+        else
+          # file already exists at the release_path
+          @release_path = release_path
+        end
+
         @release_model = nil
         @release_version_model = nil
 
-        @rebase = !!options["rebase"]
+        @rebase = !!options['rebase']
 
         @manifest = nil
         @name = nil
@@ -32,68 +38,62 @@ module Bosh::Director
 
         @packages_unchanged = false
         @jobs_unchanged = false
-
-        @remote_release = options['remote'] || false
-        @remote_release_location = options['location'] if @remote_release
       end
 
-      # Extracts release tarball, verifies release manifest and saves release
-      # in DB
+      # Extracts release tarball, verifies release manifest and saves release in DB
       # @return [void]
       def perform
         logger.info("Processing update release")
-        if @rebase
-          logger.info("Release rebase will be performed")
-        end
+        logger.info("Release rebase will be performed") if @rebase
 
-        single_step_stage("Downloading remote release") { download_remote_release } if @remote_release
-        single_step_stage("Extracting release") { extract_release }
-        single_step_stage("Verifying manifest") { verify_manifest }
+        single_step_stage("Downloading remote release") { download_remote_release } if @release_url
 
-        with_release_lock(@name) { process_release }
+        release_dir = nil
+        single_step_stage("Extracting release") { release_dir = extract_release }
+
+        single_step_stage("Verifying manifest") { verify_manifest(release_dir) }
+
+        with_release_lock(@name) { process_release(release_dir) }
 
         if @rebase && @packages_unchanged && @jobs_unchanged
-          raise DirectorError,
-                "Rebase is attempted without any job or package changes"
+          raise DirectorError, "Rebase is attempted without any job or package changes"
         end
 
         "Created release `#{@name}/#{@version}'"
+
       rescue Exception => e
         remove_release_version_model
         raise e
+
       ensure
-        if @tmp_release_dir && File.exists?(@tmp_release_dir)
-          FileUtils.rm_rf(@tmp_release_dir)
-        end
+        FileUtils.rm_rf(release_dir) if release_dir
+        FileUtils.rm_rf(@release_path) if @release_path
       end
 
       def download_remote_release
-        release_file = File.join(@tmp_release_dir, Api::ReleaseManager::RELEASE_TGZ)
-        download_remote_file('release', @remote_release_location, release_file)
+        download_remote_file('release', @release_url, @release_path)
       end
 
       # Extracts release tarball
       # @return [void]
       def extract_release
-        release_tgz = File.join(@tmp_release_dir,
-                                Api::ReleaseManager::RELEASE_TGZ)
+        release_dir = Dir.mktmpdir
 
-        result = Bosh::Exec.sh("tar -C #{@tmp_release_dir} -xzf #{release_tgz} 2>&1", :on_error => :return)
+        result = Bosh::Exec.sh("tar -C #{release_dir} -xzf #{@release_path} 2>&1", :on_error => :return)
         if result.failed?
-          logger.error("Extracting release archive failed in dir #{@tmp_release_dir}, " +
+          logger.error("Failed to extract release archive '#{@release_path}' into dir '#{release_dir}', " +
                        "tar returned #{result.exit_status}, " +
                        "output: #{result.output}")
           raise ReleaseInvalidArchive, "Extracting release archive failed. Check task debug log for details."
         end
-      ensure
-        if release_tgz && File.exists?(release_tgz)
-          FileUtils.rm(release_tgz)
-        end
+
+        release_dir
       end
 
+      # @param [String] release_dir local path to the unpacked release
       # @return [void]
-      def verify_manifest
-        manifest_file = File.join(@tmp_release_dir, "release.MF")
+      def verify_manifest(release_dir)
+        manifest_file = File.join(release_dir, "release.MF")
         unless File.file?(manifest_file)
           raise ReleaseManifestNotFound, "Release manifest not found"
         end
@@ -117,8 +117,9 @@ module Bosh::Director
       end
 
       # Processes uploaded release, creates jobs and packages in DB if needed
+      # @param [String] release_dir local path to the unpacked release
       # @return [void]
-      def process_release
+      def process_release(release_dir)
         @release_model = Models::Release.find_or_create(:name => @name)
 
         if @rebase
@@ -150,8 +151,8 @@ module Bosh::Director
         end
 
         @packages = {}
-        process_packages
-        process_jobs
+        process_packages(release_dir)
+        process_jobs(release_dir)
 
         event_log.begin_stage("Release has been created", 1)
         event_log.track("#{@name}/#{@version}") {}
@@ -197,8 +198,9 @@ module Bosh::Director
       # Finds all package definitions in the manifest and sorts them into two
       # buckets: new and existing packages, then creates new packages and points
       # current release version to the existing packages.
+      # @param [String] release_dir local path to the unpacked release
       # @return [void]
-      def process_packages
+      def process_packages(release_dir)
         logger.info("Checking for new packages in release")
 
         new_packages = []
@@ -232,14 +234,15 @@ module Bosh::Director
           end
         end
 
-        create_packages(new_packages)
+        create_packages(new_packages, release_dir)
         use_existing_packages(existing_packages)
       end
 
       # Creates packages using provided metadata
       # @param [Array<Hash>] packages Packages metadata
+      # @param [String] release_dir local path to the unpacked release
       # @return [void]
-      def create_packages(packages)
+      def create_packages(packages, release_dir)
         if packages.empty?
           @packages_unchanged = true
           return
@@ -250,7 +253,7 @@ module Bosh::Director
           package_desc = "#{package_meta["name"]}/#{package_meta["version"]}"
           event_log.track(package_desc) do
             logger.info("Creating new package `#{package_desc}'")
-            package = create_package(package_meta)
+            package = create_package(package_meta, release_dir)
             register_package(package)
           end
         end
@@ -272,8 +275,9 @@ module Bosh::Director
 
       # Creates package in DB according to given metadata
       # @param [Hash] package_meta Package metadata
+      # @param [String] release_dir local path to the unpacked release
       # @return [void]
-      def create_package(package_meta)
+      def create_package(package_meta, release_dir)
         name, version = package_meta["name"], package_meta["version"]
 
         package_attrs = {
@@ -296,7 +300,7 @@ module Bosh::Director
         else
           logger.info("Creating #{desc} from provided bits")
 
-          package_tgz = File.join(@tmp_release_dir, "packages", "#{name}.tgz")
+          package_tgz = File.join(release_dir, "packages", "#{name}.tgz")
           result = Bosh::Exec.sh("tar -tzf #{package_tgz} 2>&1", :on_error => :return)
           if result.failed?
             logger.error("Extracting #{desc} archive failed, " +
@@ -322,8 +326,9 @@ module Bosh::Director
       # Finds job template definitions in release manifest and sorts them into
       # two buckets: new and existing job templates, then creates new job
       # template records in the database and points release version to existing ones.
+      # @param [String] release_dir local path to the unpacked release
       # @return [void]
-      def process_jobs
+      def process_jobs(release_dir)
         logger.info("Checking for new jobs in release")
 
         new_jobs = []
@@ -346,11 +351,11 @@ module Bosh::Director
           end
         end
 
-        create_jobs(new_jobs)
+        create_jobs(new_jobs, release_dir)
         use_existing_jobs(existing_jobs)
       end
 
-      def create_jobs(jobs)
+      def create_jobs(jobs, release_dir)
         if jobs.empty?
           @jobs_unchanged = true
           return
@@ -361,13 +366,13 @@ module Bosh::Director
           job_desc = "#{job_meta["name"]}/#{job_meta["version"]}"
           event_log.track(job_desc) do
             logger.info("Creating new template `#{job_desc}'")
-            template = create_job(job_meta)
+            template = create_job(job_meta, release_dir)
             register_template(template)
           end
         end
       end
 
-      def create_job(job_meta)
+      def create_job(job_meta, release_dir)
         name, version = job_meta["name"], job_meta["version"]
 
         template_attrs = {
@@ -382,8 +387,8 @@ module Bosh::Director
                     "from provided bits")
         template = Models::Template.new(template_attrs)
 
-        job_tgz = File.join(@tmp_release_dir, "jobs", "#{name}.tgz")
-        job_dir = File.join(@tmp_release_dir, "jobs", "#{name}")
+        job_tgz = File.join(release_dir, "jobs", "#{name}.tgz")
+        job_dir = File.join(release_dir, "jobs", "#{name}")
 
         FileUtils.mkdir_p(job_dir)
 

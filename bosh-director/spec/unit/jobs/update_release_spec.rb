@@ -3,33 +3,27 @@ require 'support/release_helper'
 
 module Bosh::Director
   describe Jobs::UpdateRelease do
-    let(:blobstore) { double('Blobstore') }
-
-    before(:each) do
-      # Stubbing the blobstore used in BlobUtil :( needs refactoring
-      App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
-      @release_dir = Dir.mktmpdir('release_dir')
-    end
-
-    after(:each) do
-      FileUtils.remove_entry_secure(@release_dir) if File.exist?(@release_dir)
-    end
+    before { App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
+    let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
     describe 'Resque job class expectations' do
       let(:job_type) { :update_release }
       it_behaves_like 'a Resque job'
     end
 
-    describe 'updating a release' do
-      let(:job) { Jobs::UpdateRelease.new(release_dir, job_options) }
+    describe '#perform' do
+      subject(:job) { Jobs::UpdateRelease.new(release_path, job_options) }
       let(:job_options) { {} }
+
       let(:release_dir) { Test::ReleaseHelper.new.create_release_tarball(manifest) }
+      before { allow(Dir).to receive(:mktmpdir).and_return(release_dir) }
+
+      let(:release_path) { File.join(release_dir, 'release.tgz') }
+
       let(:manifest) do
         {
           'name' => 'appcloud',
           'version' => release_version,
-          'commit_hash' => '12345678',
-          'uncommitted_changes' => 'true',
           'jobs' => manifest_jobs,
           'packages' => manifest_packages
         }
@@ -40,83 +34,115 @@ module Bosh::Director
       let(:manifest_jobs) { [] }
       before { allow(job).to receive(:with_release_lock).and_yield }
 
-      context 'processing update release' do
+      context 'when release is local' do
+        let(:job_options) { {} }
+
         it 'with a local release' do
           job.should_not_receive(:download_remote_release)
           job.should_receive(:extract_release)
           job.should_receive(:verify_manifest)
           job.should_receive(:process_release)
-
           job.perform
-        end
-
-        context 'when release is remote' do
-          let(:job_options) { {'remote' => true, 'location' => 'release_location'} }
-
-          it 'with a remote release' do
-            job.should_receive(:download_remote_release)
-            job.should_receive(:extract_release)
-            job.should_receive(:verify_manifest)
-            job.should_receive(:process_release)
-
-            job.perform
-          end
         end
       end
 
-      context 'commit_hash and uncommitted changes flag' do
+      context 'when release is remote' do
+        let(:job_options) { {'remote' => true, 'location' => 'release_location'} }
+
+        it 'with a remote release' do
+          job.should_receive(:download_remote_release)
+          job.should_receive(:extract_release)
+          job.should_receive(:verify_manifest)
+          job.should_receive(:process_release)
+          job.perform
+        end
+      end
+
+      context 'when commit_hash and uncommitted changes flag are present' do
+        let(:manifest) do
+          {
+            'name' => 'appcloud',
+            'version' => '42.6-dev',
+            'commit_hash' => '12345678',
+            'uncommitted_changes' => 'true',
+            'jobs' => [],
+            'packages' => [],
+          }
+        end
+
         it 'sets commit_hash and uncommitted changes flag on release_version' do
-          job.extract_release
-          job.verify_manifest
-          job.process_release
+          job.perform
 
           rv = Models::ReleaseVersion.filter(version: '42+dev.6').first
-
           rv.should_not be_nil
           rv.commit_hash.should == '12345678'
           rv.uncommitted_changes.should be(true)
         end
+      end
 
-        context 'when commit_hash and uncommitted_changes flag are missing' do
-          let(:manifest) do
-            {
-              'name' => 'appcloud',
-              'version' => '42.6-dev',
-              'jobs' => [],
-              'packages' => []
-            }
-          end
+      context 'when commit_hash and uncommitted_changes flag are missing' do
+        let(:manifest) do
+          {
+            'name' => 'appcloud',
+            'version' => '42.6-dev',
+            'jobs' => [],
+            'packages' => []
+          }
+        end
 
-          it 'sets default commit_hash and uncommitted changes' do
-            job.extract_release
-            job.verify_manifest
-            job.process_release
+        it 'sets default commit_hash and uncommitted changes' do
+          job.perform
 
-            rv = Models::ReleaseVersion.filter(version: '42+dev.6').first
-
-            rv.should_not be_nil
-            rv.commit_hash.should == 'unknown'
-            rv.uncommitted_changes.should be(false)
-          end
+          rv = Models::ReleaseVersion.filter(version: '42+dev.6').first
+          rv.should_not be_nil
+          rv.commit_hash.should == 'unknown'
+          rv.uncommitted_changes.should be(false)
         end
       end
 
-      context 'extracting a release' do
-        it 'should fail if cannot extract release archive' do
+      context 'when extracting release fails' do
+        before do
           result = Bosh::Exec::Result.new('cmd', 'output', 1)
           Bosh::Exec.should_receive(:sh).and_return(result)
+        end
+
+        it 'raises an error' do
+          expect {
+            job.perform
+          }.to raise_exception(Bosh::Director::ReleaseInvalidArchive)
+        end
+
+        it 'deletes release archive' do
+          expect(FileUtils).to receive(:rm_rf).with(release_path)
 
           expect {
-            job.extract_release
+            job.perform
           }.to raise_exception(Bosh::Director::ReleaseInvalidArchive)
         end
       end
 
-      describe 'processing release' do
+      context 'when extraction succeeds' do
+        it 'saves release version' do
+          job.perform
+
+          rv = Models::ReleaseVersion.filter(version: '42+dev.6').first
+          expect(rv).to_not be_nil
+        end
+
+        it 'resolves package dependencies' do
+          expect(job).to receive(:resolve_package_dependencies)
+          job.perform
+        end
+
+        it 'deletes release archive and extraction directory' do
+          expect(FileUtils).to receive(:rm_rf).with(release_dir)
+          expect(FileUtils).to receive(:rm_rf).with(release_path)
+
+          job.perform
+        end
+
         context 'release already exists' do
-          before do
-            Models::ReleaseVersion.make(release: release, version: '42+dev.6')
-          end
+          before { Models::ReleaseVersion.make(release: release, version: '42+dev.6') }
 
           it 'raises an error ReleaseAlreadyExists' do
             expect {
@@ -129,6 +155,7 @@ module Bosh::Director
 
           context 'when the rebase is passed' do
             let(:job_options) { { 'rebase' => true } }
+
             context 'when there are package changes' do
               let(:manifest_packages) do
                 [
@@ -184,18 +211,6 @@ module Bosh::Director
           end
         end
 
-        it 'saves release version' do
-          job.perform
-
-          rv = Models::ReleaseVersion.filter(version: '42+dev.6').first
-          expect(rv).to_not be_nil
-        end
-
-        it 'resolves package dependencies' do
-          expect(job).to receive(:resolve_package_dependencies)
-          job.perform
-        end
-
         context 'when there are packages in manifest' do
           let(:manifest_packages) do
             [
@@ -227,7 +242,7 @@ module Bosh::Director
                 'version' => 'fake-version-2',
                 'dependencies' => []
               }
-            ])
+            ], release_dir)
             job.perform
           end
         end
@@ -270,7 +285,7 @@ module Bosh::Director
                 'version' => 'fake-version-2',
                 'templates' => {}
               }
-            ])
+            ], release_dir)
             job.perform
           end
         end
@@ -350,8 +365,9 @@ module Bosh::Director
 
       before do
         @release_dir = Test::ReleaseHelper.new.create_release_tarball(manifest)
+        @release_path = File.join(@release_dir, 'release.tgz')
 
-        @job = Jobs::UpdateRelease.new(@release_dir, 'rebase' => true)
+        @job = Jobs::UpdateRelease.new(@release_path, 'rebase' => true)
 
         @release = Models::Release.make(name: 'appcloud')
         @rv = Models::ReleaseVersion.make(release: @release, version: '37')
@@ -540,47 +556,46 @@ module Bosh::Director
       end
 
       it 'performs no rebase if same release is being rebased twice' do
-        dup_release_dir = Dir.mktmpdir
-        FileUtils.cp(File.join(@release_dir, 'release.tgz'), dup_release_dir)
-
         @job.perform
 
-        job = Jobs::UpdateRelease.new(dup_release_dir, 'rebase' => true)
-        job.should_receive(:with_release_lock).with('appcloud').and_yield
+        @release_dir = Test::ReleaseHelper.new.create_release_tarball(manifest)
+        @release_path = File.join(@release_dir, 'release.tgz')
+        @job = Jobs::UpdateRelease.new(@release_path, 'rebase' => true)
 
         expect {
-          job.perform
+          @job.perform
         }.to raise_error(/Rebase is attempted without any job or package change/)
       end
     end
 
     describe 'create_package' do
+      let(:release_dir) { Dir.mktmpdir }
+      after { FileUtils.rm_rf(release_dir) }
+
       before do
         @release = Models::Release.make
-        @job = Jobs::UpdateRelease.new(@release_dir)
+        @job = Jobs::UpdateRelease.new(release_dir)
         @job.release_model = @release
       end
 
       it 'should create simple packages' do
-        FileUtils.mkdir_p(File.join(@release_dir, 'packages'))
-        package_path = File.join(@release_dir, 'packages', 'test_package.tgz')
+        FileUtils.mkdir_p(File.join(release_dir, 'packages'))
+        package_path = File.join(release_dir, 'packages', 'test_package.tgz')
 
         File.open(package_path, 'w') do |f|
-          f.write(create_package({'test' => 'test contents'}))
+          f.write(create_package('test' => 'test contents'))
         end
 
         blobstore.should_receive(:create).
           with(satisfy { |obj| obj.path == package_path }).
           and_return('blob_id')
 
-        @job.create_package(
-          {
-            'name' => 'test_package',
-            'version' => '1.0',
-            'sha1' => 'some-sha',
-            'dependencies' => %w(foo_package bar_package)
-          }
-        )
+        @job.create_package({
+          'name' => 'test_package',
+          'version' => '1.0',
+          'sha1' => 'some-sha',
+          'dependencies' => %w(foo_package bar_package)
+        }, release_dir)
 
         package = Models::Package[name: 'test_package', version: '1.0']
         package.should_not be_nil
@@ -593,16 +608,18 @@ module Bosh::Director
 
       it 'should copy package blob' do
         BlobUtil.should_receive(:copy_blob).and_return('blob_id')
-        FileUtils.mkdir_p(File.join(@release_dir, 'packages'))
-        package_path = File.join(@release_dir, 'packages', 'test_package.tgz')
+        FileUtils.mkdir_p(File.join(release_dir, 'packages'))
+        package_path = File.join(release_dir, 'packages', 'test_package.tgz')
         File.open(package_path, 'w') do |f|
-          f.write(create_package({'test' => 'test contents'}))
+          f.write(create_package('test' => 'test contents'))
         end
 
-        @job.create_package({'name' => 'test_package',
-                             'version' => '1.0', 'sha1' => 'some-sha',
-                             'dependencies' => ['foo_package', 'bar_package'],
-                             'blobstore_id' => 'blah'})
+        @job.create_package({
+          'name' => 'test_package',
+          'version' => '1.0', 'sha1' => 'some-sha',
+          'dependencies' => ['foo_package', 'bar_package'],
+          'blobstore_id' => 'blah',
+        }, release_dir)
 
         package = Models::Package[name: 'test_package', version: '1.0']
         package.should_not be_nil
@@ -618,14 +635,12 @@ module Bosh::Director
         Bosh::Exec.should_receive(:sh).and_return(result)
 
         expect {
-          @job.create_package(
-            {
-              'name' => 'test_package',
-              'version' => '1.0',
-              'sha1' => 'some-sha',
-              'dependencies' => %w(foo_package bar_package)
-            }
-          )
+          @job.create_package({
+            'name' => 'test_package',
+            'version' => '1.0',
+            'sha1' => 'some-sha',
+            'dependencies' => %w(foo_package bar_package),
+          }, release_dir)
         }.to raise_exception(Bosh::Director::PackageInvalidArchive)
       end
 
@@ -644,8 +659,8 @@ module Bosh::Director
     end
 
     describe 'resolve_package_dependencies' do
-      before(:each) do
-        @job = Jobs::UpdateRelease.new(@release_dir)
+      before do
+        @job = Jobs::UpdateRelease.new('fake-release-path')
       end
 
       it 'should normalize nil dependencies' do
@@ -684,16 +699,19 @@ module Bosh::Director
     end
 
     describe 'create jobs' do
+      let(:release_dir) { Dir.mktmpdir }
+      after { FileUtils.rm_rf(release_dir) }
+
       before do
         @release = Models::Release.make
-        @tarball = File.join(@release_dir, 'jobs', 'foo.tgz')
+        @tarball = File.join(release_dir, 'jobs', 'foo.tgz')
         @job_bits = create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}})
 
         @job_attrs = {'name' => 'foo', 'version' => '1', 'sha1' => 'deadbeef'}
 
         FileUtils.mkdir_p(File.dirname(@tarball))
 
-        @job = Jobs::UpdateRelease.new(@release_dir)
+        @job = Jobs::UpdateRelease.new('fake-release-path')
         @job.release_model = @release
       end
 
@@ -708,7 +726,7 @@ module Bosh::Director
         end
 
         Models::Template.count.should == 0
-        @job.create_job(@job_attrs)
+        @job.create_job(@job_attrs, release_dir)
 
         template = Models::Template.first
         template.name.should == 'foo'
@@ -721,7 +739,7 @@ module Bosh::Director
         result = Bosh::Exec::Result.new('cmd', 'output', 1)
         Bosh::Exec.should_receive(:sh).and_return(result)
 
-        expect { @job.create_job(@job_attrs) }.to raise_error(JobInvalidArchive)
+        expect { @job.create_job(@job_attrs, release_dir) }.to raise_error(JobInvalidArchive)
       end
 
       it 'whines on missing manifest' do
@@ -730,7 +748,7 @@ module Bosh::Director
 
         File.open(@tarball, 'w') { |f| f.write(@job_no_mf) }
 
-        lambda { @job.create_job(@job_attrs) }.should raise_error(JobMissingManifest)
+        lambda { @job.create_job(@job_attrs, release_dir) }.should raise_error(JobMissingManifest)
       end
 
       it 'whines on missing monit file' do
@@ -738,7 +756,7 @@ module Bosh::Director
           create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}}, skip_monit: true)
         File.open(@tarball, 'w') { |f| f.write(@job_no_monit) }
 
-        lambda { @job.create_job(@job_attrs) }.should raise_error(JobMissingMonit)
+        lambda { @job.create_job(@job_attrs, release_dir) }.should raise_error(JobMissingMonit)
       end
 
       it 'does not whine when it has a foo.monit file' do
@@ -748,7 +766,7 @@ module Bosh::Director
 
         File.open(@tarball, 'w') { |f| f.write(@job_no_monit) }
 
-        expect { @job.create_job(@job_attrs) }.to_not raise_error
+        expect { @job.create_job(@job_attrs, release_dir) }.to_not raise_error
       end
 
       it 'whines on missing template' do
@@ -757,7 +775,7 @@ module Bosh::Director
 
         File.open(@tarball, 'w') { |f| f.write(@job_no_monit) }
 
-        lambda { @job.create_job(@job_attrs) }.should raise_error(JobMissingTemplateFile)
+        lambda { @job.create_job(@job_attrs, release_dir) }.should raise_error(JobMissingTemplateFile)
       end
     end
 
