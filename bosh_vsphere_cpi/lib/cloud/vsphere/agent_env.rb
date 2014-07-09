@@ -9,7 +9,7 @@ module VSphereCloud
     end
 
     def get_current_env(vm, datacenter_name)
-      cdrom = get_cdrom_device(vm)
+      cdrom = @client.get_cdrom_device(vm)
       env_iso_folder = File.dirname(cdrom.backing.file_name)
       datastore_name = cdrom.backing.datastore.name
       env_path = env_iso_folder.match(/\[#{datastore_name}\] (.*)/)[1]
@@ -24,6 +24,7 @@ module VSphereCloud
       env_json = JSON.dump(env)
 
       connect_cdrom(vm, false)
+      clean_up_old_env(vm)
       @file_provider.upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.json", env_json)
       @file_provider.upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.iso", generate_env_iso(env_json))
       connect_cdrom(vm, true)
@@ -49,18 +50,13 @@ module VSphereCloud
     private
 
     def connect_cdrom(vm, connected = true)
-      cdrom = get_cdrom_device(vm)
+      cdrom = @client.get_cdrom_device(vm)
       if cdrom.connectable.connected != connected
         cdrom.connectable.connected = connected
         config = Vim::Vm::ConfigSpec.new
         config.device_change = [create_edit_device_spec(cdrom)]
         @client.reconfig_vm(vm, config)
       end
-    end
-
-    def get_cdrom_device(vm)
-      devices = @client.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
-      devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
     end
 
     def generate_env_iso(env)
@@ -72,6 +68,17 @@ module VSphereCloud
         raise "#{$?.exitstatus} -#{output}" if $?.exitstatus != 0
         File.open(iso_path, 'r') { |f| f.read }
       end
+    end
+
+    def clean_up_old_env(vm)
+      cdrom = @client.get_cdrom_device(vm)
+      return unless cdrom
+
+      env_iso_folder = File.dirname(cdrom.backing.file_name)
+      datacenter = @client.find_parent(vm, Vim::Datacenter)
+
+      @client.delete_path(datacenter, File.join(env_iso_folder, 'env.json'))
+      @client.delete_path(datacenter, File.join(env_iso_folder, 'env.iso'))
     end
 
     def which(programs)

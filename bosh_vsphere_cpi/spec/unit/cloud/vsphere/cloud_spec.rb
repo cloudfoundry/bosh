@@ -768,7 +768,9 @@ module VSphereCloud
             'name' => 'fake-vm-name'
           }
         )
+        allow(client).to receive(:get_cdrom_device).and_return(nil)
       end
+
       let(:virtual_disk_device) { instance_double('VimSdk::Vim::Vm::Device::VirtualDisk', backing: virtual_disk_backing) }
       before do
         allow(virtual_disk_device).to receive(:kind_of?).and_return(false)
@@ -795,35 +797,22 @@ module VSphereCloud
       end
 
       context 'vm has cdrom' do
-        let(:devices) { [virtual_disk_device, cdrom_device] }
         let(:cdrom_device) { instance_double('VimSdk::Vim::Vm::Device::VirtualCdrom', backing: cdrom_backing) }
-        before do
-          allow(cdrom_device).to receive(:kind_of?).and_return(false)
-          allow(cdrom_device).to receive(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualCdrom).and_return(true)
-        end
-
         let(:cdrom_backing) do
           instance_double('VimSdk::Vim::Vm::Device::VirtualCdrom::IsoBackingInfo',
-            datastore: cdrom_datastore,
             file_name: '[fake-cdrom-datastore-name] some-vm-uuid/env.iso'
           )
         end
         let(:devices) { [virtual_disk_device, cdrom_device] }
 
-        let(:cdrom_datastore) { instance_double('VimSdk::Vim::Datastore') }
         before do
-          allow(client).to receive(:get_property).
-            with(cdrom_datastore, VimSdk::Vim::Datastore, 'name').
-            and_return('fake-cdrom-datastore-name')
+          allow(cdrom_device).to receive(:kind_of?).and_return(false)
+          allow(cdrom_device).to receive(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualCdrom).and_return(true)
         end
+
+        before { allow(client).to receive(:get_cdrom_device).and_return(cdrom_device) }
 
         before { allow(client).to receive(:delete_vm).with(vm) }
-
-        before do
-          allow(client).to receive(:path_exists?).
-            with(cdrom_datastore, '[fake-cdrom-datastore-name] some-vm-uuid').
-            and_return(true)
-        end
 
         it 'cleans up the folder where ISO image is stored' do
           expect(client).to receive(:delete_path).with(datacenter, '[fake-cdrom-datastore-name] some-vm-uuid')

@@ -159,7 +159,7 @@ module VSphereCloud
       task = datacenter.power_on_vm([vm], nil)
       result = wait_for_task(task)
 
-      raise "Recommendations were detected, you may be running in Manual DRS mode. Aborting." if result.recommendations.any?
+      raise 'Recommendations were detected, you may be running in Manual DRS mode. Aborting.' if result.recommendations.any?
 
       if result.attempted.empty?
         raise "Could not power on VM: #{result.not_attempted.map(&:msg).join(', ')}"
@@ -172,6 +172,11 @@ module VSphereCloud
     def power_off_vm(vm)
       task = vm.power_off
       wait_for_task(task)
+    end
+
+    def get_cdrom_device(vm)
+      devices = get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
+      devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
     end
 
     def delete_path(datacenter, path)
