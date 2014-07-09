@@ -1,27 +1,27 @@
-set -e
+set -e -x
 
 echo "Extracting pcre..."
-tar xzvf nginx/pcre-8.32.tar.gz
+tar xzvf nginx/pcre-8.34.tar.gz
 
-if [[ $? != 0 ]] ; then
-  echo "Failed extracting pcre"
-  exit 1
-fi
+echo "Extracting headers-more module..."
+tar xzvf nginx/headers-more-v0.25.tgz
+
+echo "Extracting nginx_upload module..."
+tar xzvf nginx/nginx-upload-module-2.2.tar.gz
 
 echo "Extracting nginx..."
-tar xzvf nginx/nginx-1.4.1.tar.gz
-
-if [[ $? != 0 ]] ; then
-  echo "Failed extracting nginx"
-  exit 1
-fi
+tar xzvf nginx/nginx-1.4.5.tar.gz
 
 echo "Building nginx..."
-cd nginx-1.4.1
-./configure \
-  --prefix=${BOSH_INSTALL_TARGET} \
-  --with-pcre=../pcre-8.32 \
-  --with-http_ssl_module \
-  --with-http_dav_module
-make
-make install
+pushd nginx-1.4.5
+  ./configure \
+    --prefix=${BOSH_INSTALL_TARGET} \
+    --with-pcre=../pcre-8.34 \
+    --add-module=../headers-more-nginx-module-0.25 \
+    --with-http_ssl_module \
+    --with-http_dav_module \
+    --add-module=../nginx-upload-module-2.2
+
+  make
+  make install
+popd

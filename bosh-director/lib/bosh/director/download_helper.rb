@@ -1,12 +1,10 @@
+require 'net/http'
+require 'timeout'
+require 'uri'
+
 module Bosh::Director
   module DownloadHelper
-    require 'net/http'
-    require 'timeout'
-    require 'uri'
-
-    ##
     # Downloads a remote file
-    #
     # @param [String] resource Resource name to be logged
     # @param [String] remote_file Remote file to download
     # @param [String] local_file Local file to store the downloaded file

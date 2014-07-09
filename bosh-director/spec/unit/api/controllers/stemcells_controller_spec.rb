@@ -25,19 +25,26 @@ module Bosh::Director
       context 'authenticated access' do
         before { authorize 'admin', 'admin' }
 
-        it 'expects compressed stemcell file' do
+        it 'allows body to be a compressed stemcell file' do
           post '/stemcells', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/x-compressed' }
           expect_redirect_to_queued_task(last_response)
         end
 
-        it 'expects remote stemcell location' do
+        it 'allows json body with remote stemcell location' do
           post '/stemcells', Yajl::Encoder.encode('location' => 'http://stemcell_url'), { 'CONTENT_TYPE' => 'application/json' }
           expect_redirect_to_queued_task(last_response)
         end
 
-        it 'only consumes application/x-compressed and application/json' do
+        it 'allow form parameters with a stemcell local file path' do
+          allow(File).to receive(:exists?).with('/path/to/stemcell.tgz').and_return(true)
+
+          post '/stemcells', { 'nginx_upload_path' => '/path/to/stemcell.tgz'}, { 'CONTENT_TYPE' => 'multipart/form-data' }
+          expect_redirect_to_queued_task(last_response)
+        end
+
+        it 'only consumes application/x-compressed, application/json & multipart/form-data' do
           post '/stemcells', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/octet-stream' }
-          last_response.status.should == 404
+          expect(last_response.status).to eq(404)
         end
       end
 

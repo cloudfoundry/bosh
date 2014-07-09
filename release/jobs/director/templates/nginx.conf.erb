@@ -1,47 +1,77 @@
 user vcap;
-worker_processes  <%= p('director.nginx.workers') %>;
+worker_processes <%= p('director.nginx.workers') %>;
 daemon off;
 
-error_log  /var/vcap/sys/log/director/error.log;
-pid        /var/vcap/sys/run/director/nginx.pid;
+error_log /var/vcap/sys/log/director/error.log;
+pid       /var/vcap/sys/run/director/nginx.pid;
 
 events {
-  worker_connections  8192;
+  worker_connections 8192;
 }
 
 http {
-  include       /var/vcap/jobs/director/config/mime.types;
-  default_type  text/html;
+  include      /var/vcap/jobs/director/config/mime.types;
+  default_type text/html;
+
+  access_log /var/vcap/sys/log/director/access.log;
   server_tokens off;
+
+  sendfile    off;
+  tcp_nopush  on;
+  tcp_nodelay on;
+
+  keepalive_timeout    <%= p('director.timeout') %>;
+  client_max_body_size <%= p('director.max_upload_size') %>;
+
+  upstream director {
+    server 127.0.0.1:<%= p('director.backend_port') %>;
+  }
 
   server {
     listen <%= p('director.port') %>;
 
-    location / {
-      proxy_pass         http://127.0.0.1:<%= p('director.backend_port') %>;
-      proxy_read_timeout <%= p('director.proxy_timeout') %>;
+    ssl                 on;
+    ssl_certificate     /var/vcap/store/director/nginx/director.pem;
+    ssl_certificate_key /var/vcap/store/director/nginx/director.key;
+    ssl_session_timeout <%= p('director.timeout') %>;
 
-      proxy_set_header         Host             $host;
-      proxy_set_header         X-Real-IP        $remote_addr;
-      proxy_set_header         X-Forwarded-For  $proxy_add_x_forwarded_for;
-      proxy_set_header         X-Forwarded-Proto $scheme;
-      proxy_max_temp_file_size 0;
+    proxy_set_header    Host              $host;
+    proxy_set_header    X-Real-IP         $remote_addr;
+    proxy_set_header    X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header    X-Forwarded-Proto $scheme;
+
+    proxy_read_timeout       <%= p('director.proxy_timeout') %>;
+    proxy_max_temp_file_size 0;
+
+    location / {
+      proxy_pass http://director;
+
+      if ($content_type = "application/x-compressed") {
+        more_set_input_headers "Content-Disposition: attachment";
+
+        # Pass altered request body to this location
+        upload_pass @director_upload;
+
+        upload_resumable on;
+
+        # Store files to this directory
+        upload_store /var/vcap/data/tmp/director/;
+
+        # Allow uploaded files to be read only by user
+        upload_store_access user:r;
+
+        # Set specified fields in request body
+        upload_set_form_field "nginx_upload_path" $upload_tmp_path;
+
+        # On any error, delete uploaded files.
+        upload_cleanup 400-505;
+      }
     }
 
-    ssl on;
-    ssl_certificate           /var/vcap/store/director/nginx/director.pem;
-    ssl_certificate_key       /var/vcap/store/director/nginx/director.key;
-    ssl_session_timeout       <%= p('director.timeout') %>;
+    location @director_upload {
+      proxy_pass http://director;
+    }
   }
-
-  access_log           /var/vcap/sys/log/director/access.log;
-
-  sendfile             off;
-  tcp_nopush           on;
-  tcp_nodelay          on;
-
-  keepalive_timeout    <%= p('director.timeout') %>;
-  client_max_body_size <%= p('director.max_upload_size') %>;
 
   gzip                 on;
   gzip_min_length      1250;
@@ -51,5 +81,4 @@ http {
   gzip_types           text/plain text/css application/javascript application/x-javascript text/xml application/xml application/xml+rss text/javascript;
   gzip_vary            on;
   gzip_disable         "MSIE [1-6]\.(?!.*SV1)";
-
 }

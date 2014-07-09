@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2012 VMware, Inc.
+require 'securerandom'
 
 module Bosh::Director
   module Jobs
@@ -14,27 +14,33 @@ module Bosh::Director
         :update_stemcell
       end
 
-      # @param [String] stemcell_file Stemcell tarball path
-      def initialize(stemcell_file, options = {})
-        @stemcell_file = stemcell_file
+      # @param [String] stemcell_path local path or remote url of the stemcell archive
+      # @param [Hash] options Stemcell update options
+      def initialize(stemcell_path, options = {})
+        if options['remote']
+          # file will be downloaded to the stemcell_path
+          @stemcell_path = File.join(Dir.tmpdir, "stemcell-#{SecureRandom.uuid}")
+          @stemcell_url = stemcell_path
+        else
+          # file already exists at the stemcell_path
+          @stemcell_path = stemcell_path
+        end
+
         @cloud = Config.cloud
         @stemcell_manager = Api::StemcellManager.new
-        @remote_stemcell = options['remote'] || false
       end
 
       def perform
         logger.info("Processing update stemcell")
-        event_log.begin_stage("Update stemcell", update_steps)
 
-        if @remote_stemcell
-          downloaded_stemcell_dir = Dir.mktmpdir("downloaded-stemcell")        
-          download_remote_stemcell(downloaded_stemcell_dir)
-        end
-        
+        event_log.begin_stage("Update stemcell", @stemcell_url ? UPDATE_STEPS + 1 : UPDATE_STEPS)
+
+        track_and_log("Downloading remote stemcell") { download_remote_stemcell } if @stemcell_url
+
         stemcell_dir = Dir.mktmpdir("stemcell")
 
         track_and_log("Extracting stemcell archive") do
-          result = Bosh::Exec.sh("tar -C #{stemcell_dir} -xzf #{@stemcell_file} 2>&1", :on_error => :return)
+          result = Bosh::Exec.sh("tar -C #{stemcell_dir} -xzf #{@stemcell_path} 2>&1", :on_error => :return)
           if result.failed?
             logger.error("Extracting stemcell archive failed in dir #{stemcell_dir}, " +
                          "tar returned #{result.exit_status}, " +
@@ -75,8 +81,7 @@ module Bosh::Director
         stemcell.sha1 = @sha1
 
         track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud") do
-          stemcell.cid =
-            @cloud.create_stemcell(@stemcell_image, @cloud_properties)
+          stemcell.cid = @cloud.create_stemcell(@stemcell_image, @cloud_properties)
           logger.info("Cloud created stemcell: #{stemcell.cid}")
         end
 
@@ -87,22 +92,13 @@ module Bosh::Director
         "/stemcells/#{stemcell.name}/#{stemcell.version}"
       ensure
         FileUtils.rm_rf(stemcell_dir) if stemcell_dir
-        FileUtils.rm_rf(downloaded_stemcell_dir) if downloaded_stemcell_dir
-        FileUtils.rm_rf(@stemcell_file) if @stemcell_file
-      end
-      
-      def download_remote_stemcell(downloaded_stemcell_dir)
-        track_and_log("Downloading remote stemcell") do
-          downloaded_stemcell_file = File.join(downloaded_stemcell_dir, "stemcell-#{SecureRandom.uuid}")
-          download_remote_file('stemcell', @stemcell_file, downloaded_stemcell_file)
-          @stemcell_file = downloaded_stemcell_file          
-        end
+        FileUtils.rm_rf(@stemcell_path) if @stemcell_path
       end
       
       private
-      
-      def update_steps
-        @remote_stemcell ? UPDATE_STEPS + 1 : UPDATE_STEPS
+
+      def download_remote_stemcell
+        download_remote_file('stemcell', @stemcell_url, @stemcell_path)
       end
     end
   end

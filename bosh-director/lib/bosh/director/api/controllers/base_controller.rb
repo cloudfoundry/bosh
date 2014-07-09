@@ -27,13 +27,17 @@ module Bosh::Director
         end
 
         mime_type :tgz, 'application/x-compressed'
+        mime_type :multipart, 'multipart/form-data'
 
         def self.consumes(*types)
           types = Set.new(types)
           types.map! { |t| mime_type(t) }
 
           condition do
-            types.include?(request.content_type)
+            # Content-Type header may include charset or boundry info
+            content_type = request.content_type || ''
+            mime_type = content_type.split(';')[0]
+            types.include?(mime_type)
           end
         end
 
