@@ -23,7 +23,7 @@ module VSphereCloud
     def set_env(vm, location, env)
       env_json = JSON.dump(env)
 
-      connect_cdrom(vm, false)
+      disconnect_cdrom(vm)
       clean_up_old_env(vm)
       @file_provider.upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.json", env_json)
       @file_provider.upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.iso", generate_env_iso(env_json))
@@ -31,13 +31,12 @@ module VSphereCloud
       datastore = @client.get_managed_object(Vim::Datastore, name: location[:datastore])
       file_name = "[#{location[:datastore]}] #{location[:vm]}/env.iso"
 
-      config = Vim::Vm::ConfigSpec.new
-      cdrom_change = configure_env_cdrom(datastore, vm.config.hardware.device, file_name)
-      config.device_change = [cdrom_change]
-      @client.reconfig_vm(vm, config)
+      update_cdrom_env(vm, datastore, file_name)
     end
 
-    def configure_env_cdrom(datastore, devices, file_name)
+    private
+
+    def update_cdrom_env(vm, datastore, file_name)
       backing_info = Vim::Vm::Device::VirtualCdrom::IsoBackingInfo.new
       backing_info.datastore = datastore
       backing_info.file_name = file_name
@@ -47,19 +46,20 @@ module VSphereCloud
       connect_info.start_connected = true
       connect_info.connected = true
 
+      devices = vm.config.hardware.device
       cdrom = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
       cdrom.connectable = connect_info
       cdrom.backing = backing_info
 
-      create_edit_device_spec(cdrom)
+      config = Vim::Vm::ConfigSpec.new
+      config.device_change = [create_edit_device_spec(cdrom)]
+      @client.reconfig_vm(vm, config)
     end
 
-    private
-
-    def connect_cdrom(vm, connected = true)
+    def disconnect_cdrom(vm)
       cdrom = @client.get_cdrom_device(vm)
-      if cdrom.connectable.connected != connected
-        cdrom.connectable.connected = connected
+      if cdrom.connectable.connected
+        cdrom.connectable.connected = false
         config = Vim::Vm::ConfigSpec.new
         config.device_change = [create_edit_device_spec(cdrom)]
         @client.reconfig_vm(vm, config)
@@ -79,7 +79,7 @@ module VSphereCloud
 
     def clean_up_old_env(vm)
       cdrom = @client.get_cdrom_device(vm)
-      return unless cdrom
+      return unless cdrom && cdrom.backing.respond_to?(:file_name)
 
       env_iso_folder = File.dirname(cdrom.backing.file_name)
       datacenter = @client.find_parent(vm, Vim::Datacenter)

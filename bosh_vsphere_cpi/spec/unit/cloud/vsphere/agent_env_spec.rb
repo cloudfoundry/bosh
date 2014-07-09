@@ -84,9 +84,13 @@ module VSphereCloud
           connectable: VimSdk::Vim::Vm::Device::VirtualDevice::ConnectInfo.new(
             connected: cdrom_connectable_connected
           ),
-          backing: VimSdk::Vim::Vm::Device::VirtualCdrom::IsoBackingInfo.new(
-            file_name: '[fake-old-datastore-name 1] fake-vm-name/env.iso'
-          )
+          backing: cdrom_backing
+        )
+      end
+
+      let(:cdrom_backing) do
+        VimSdk::Vim::Vm::Device::VirtualCdrom::IsoBackingInfo.new(
+          file_name: '[fake-old-datastore-name 1] fake-vm-name/env.iso'
         )
       end
 
@@ -250,31 +254,23 @@ module VSphereCloud
           }.to raise_error
         end
       end
-    end
 
-    describe '#configure_env_cdrom' do
-      let(:backing_info) { instance_double('VimSdk::Vim::Vm::Device::VirtualCdrom::IsoBackingInfo') }
-      before { allow(VimSdk::Vim::Vm::Device::VirtualCdrom::IsoBackingInfo).to receive(:new).and_return(backing_info) }
+      context 'when the cdrom backing is without file backing' do
+        let(:cdrom_backing) do
+          VimSdk::Vim::Vm::Device::VirtualCdrom::AtapiBackingInfo.new
+        end
 
-      let(:connect_info) { instance_double('VimSdk::Vim::Vm::Device::VirtualDevice::ConnectInfo') }
-      before { allow(VimSdk::Vim::Vm::Device::VirtualDevice::ConnectInfo).to receive(:new).and_return(connect_info) }
+        it 'does not clean up the env files' do
+          it_disconnects_cdrom.ordered
+          it_uploads_environment_json.ordered
+          it_generates_environment_iso.ordered
+          it_uploads_environment_iso.ordered
+          it_reconfigures_cdrom.ordered
 
-      let(:datastore) { instance_double('VSphereCloud::Resources::Datastore') }
-      let(:device) { instance_double('VimSdk::Vim::Vm::Device::VirtualCdrom') }
-      before { allow(device).to receive(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualCdrom).and_return(true) }
+          expect(client).not_to receive(:delete_path)
 
-      it 'configures env cdrom' do
-        expect(backing_info).to receive(:datastore=)
-        expect(backing_info).to receive(:file_name=).with('fake-file-name')
-
-        expect(connect_info).to receive(:allow_guest_control=).with(false)
-        expect(connect_info).to receive(:start_connected=).with(true)
-        expect(connect_info).to receive(:connected=).with(true)
-
-        expect(device).to receive(:connectable=).with(connect_info)
-        expect(device).to receive(:backing=).with(backing_info)
-
-        agent_env.configure_env_cdrom(datastore, [device], 'fake-file-name')
+          agent_env.set_env(vm, location, env)
+        end
       end
     end
   end
