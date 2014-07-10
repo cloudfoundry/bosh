@@ -106,12 +106,10 @@ module Bosh::Dev
 
     before { Bosh::Core::Shell.stub(:new).and_return(shell) }
     let(:shell) { instance_double('Bosh::Core::Shell', run: nil) }
+    before { allow(Bundler).to receive(:ruby_scope).and_return('fake-bundler-ruby-scope') }
+
 
     describe '#cmd' do
-      before do
-        allow(Bundler).to receive(:ruby_scope).and_return('fake-bundler-ruby-scope')
-      end
-
       tmp_dir = '/fake-tmp-path'
       gemfile_path = '/fake-tmp-path/Gemfile'
 
@@ -158,7 +156,6 @@ GEMFILE
 
     describe '#env' do
       tmp_dir = '/fake-tmp-path'
-      gem_home = '/fake-tmp-path/ruby/1.9.1'
       gemfile_path = '/fake-tmp-path/Gemfile'
 
       before { allow(Dir).to receive(:mktmpdir).and_return(tmp_dir) }
@@ -184,7 +181,7 @@ GEMFILE
         end
 
         it 'returns env for the command to use' do
-          expect(subject.env).to eq('GEM_PATH' => '', 'GEM_HOME' => gem_home)
+          expect(subject.env).to eq('GEM_PATH' => '', 'GEM_HOME' => '/fake-tmp-path/fake-bundler-ruby-scope')
         end
       end
 
@@ -197,7 +194,7 @@ GEMFILE
         end
 
         it 'returns cmd for running bosh from temporary location' do
-          expect(subject.env).to eq('GEM_PATH' => '', 'GEM_HOME' => gem_home)
+          expect(subject.env).to eq('GEM_PATH' => '', 'GEM_HOME' => '/fake-tmp-path/fake-bundler-ruby-scope')
         end
       end
     end
