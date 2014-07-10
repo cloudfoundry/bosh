@@ -2,7 +2,7 @@
 
 module Bosh
   module Agent
-    VERSION = '1.2624.0'
+    VERSION = '1.2640.0'
     BOSH_PROTOCOL = "1"
   end
 end
