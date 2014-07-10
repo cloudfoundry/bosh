@@ -48,7 +48,7 @@ module Bosh::Dev::Bat
     end
 
     def run_bats
-      @logger.info('Targetting microbosh')
+      @logger.info('Targeting microbosh')
       target_micro
 
       @logger.info('Creating bat manifest')
