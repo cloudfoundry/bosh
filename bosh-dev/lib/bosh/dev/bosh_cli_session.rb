@@ -95,7 +95,7 @@ module Bosh::Dev
       return if @tmp_dir
 
       @tmp_dir = Dir.mktmpdir
-      @gem_home = "#{@tmp_dir}/ruby/1.9.1"
+      @gem_home = File.join(@tmp_dir, Bundler.ruby_scope)
 
       @logger.info("Installing gems for version #{@build_number} to #{@tmp_dir}")
 

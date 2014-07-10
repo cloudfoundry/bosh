@@ -108,8 +108,11 @@ module Bosh::Dev
     let(:shell) { instance_double('Bosh::Core::Shell', run: nil) }
 
     describe '#cmd' do
+      before do
+        allow(Bundler).to receive(:ruby_scope).and_return('fake-bundler-ruby-scope')
+      end
+
       tmp_dir = '/fake-tmp-path'
-      gem_home = '/fake-tmp-path/ruby/1.9.1'
       gemfile_path = '/fake-tmp-path/Gemfile'
 
       before { allow(Dir).to receive(:mktmpdir).and_return(tmp_dir) }
@@ -135,7 +138,7 @@ GEMFILE
         end
 
         it 'returns cmd for running bosh from temporary location' do
-          expect(subject.cmd).to eq("#{gem_home}/bin/bosh")
+          expect(subject.cmd).to eq('/fake-tmp-path/fake-bundler-ruby-scope/bin/bosh')
         end
       end
 
@@ -148,7 +151,7 @@ GEMFILE
         end
 
         it 'returns cmd for running bosh from temporary location' do
-          expect(subject.cmd).to eq("#{gem_home}/bin/bosh")
+          expect(subject.cmd).to eq('/fake-tmp-path/fake-bundler-ruby-scope/bin/bosh')
         end
       end
     end
