@@ -10,14 +10,13 @@ module Bosh::Director
         :import_compiled_packages
       end
 
-      def initialize(export_dir)
-        @export_dir = export_dir
-
+      def initialize(compiled_packages_path)
+        @compiled_packages_path = compiled_packages_path
         @blobstore_client = Bosh::Director::App.instance.blobstores.blobstore
       end
 
       def perform
-        export = Bosh::Director::CompiledPackage::CompiledPackagesExport.new(file: export_path)
+        export = Bosh::Director::CompiledPackage::CompiledPackagesExport.new(file: @compiled_packages_path)
 
         export.extract do |manifest, packages|
           release_name = manifest.fetch('release_name')
@@ -38,17 +37,8 @@ module Bosh::Director
           end
         end
       ensure
-        FileUtils.rm_rf(@export_dir)
+        FileUtils.rm_rf(@compiled_packages_path)
       end
-
-      private
-
-      def export_path
-        File.join(@export_dir, 'compiled_packages_export.tgz')
-      end
-
-      attr_reader :blobstore_client
-      attr_reader :export_dir
     end
   end
 end

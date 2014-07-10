@@ -1,193 +1,135 @@
 require 'spec_helper'
 require 'bosh/director/jobs/import_compiled_packages'
-require 'fakefs/spec_helpers'
 
 module Bosh::Director
   describe Jobs::ImportCompiledPackages do
     describe 'Resque job class expectations' do
-      let(:job_type) { :import_compiled_packages } # because the shared example needs it
+      let(:job_type) { :import_compiled_packages }
       it_behaves_like 'a Resque job'
     end
 
     describe '#perform' do
-      include FakeFS::SpecHelpers
+      subject(:import_job) { described_class.new(compiled_packages_path) }
+      let(:compiled_packages_path) { '/tmp/fake-export.tgz' }
 
-      subject(:import_job) { described_class.new(export_dir) }
       before { Bosh::Director::App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client) }
+      let(:blobstore_client) { instance_double('Bosh::Blobstore::BaseClient') }
 
-      let(:export_dir) { '/tmp/export/dir' }
-      let(:exported_tar) { asset('bosh-release-0.1-dev-ubuntu-stemcell-1.tgz') }
       let(:export) { instance_double('Bosh::Director::CompiledPackage::CompiledPackagesExport') }
-      let(:blobstore_client) { double('blobstore client') }
-
-      let(:package1) do
-        instance_double('Bosh::Director::CompiledPackage::CompiledPackage',
-                        package_name: 'package1',
-                        blobstore_id: 'blob-id1',
-                        blob_path: '/tmp/blob1',
-                        package_fingerprint: 'package-fingerprint1',
-                        stemcell_sha1: 'stemcell-sha1',
-                        sha1: 'test-sha1-1',
-                        check_blob_sha: nil
-        )
+      before do
+        allow(Bosh::Director::CompiledPackage::CompiledPackagesExport).to receive(:new).
+          with(file: compiled_packages_path).
+          and_return(export)
       end
 
-      let(:package2) do
-        instance_double('Bosh::Director::CompiledPackage::CompiledPackage',
-                        package_name: 'package2',
-                        blobstore_id: 'blob-id2',
-                        blob_path: '/tmp/blob2',
-                        package_fingerprint: 'package-fingerprint2',
-                        stemcell_sha1: 'stemcell-sha1',
-                        sha1: 'test-sha1-2',
-                        check_blob_sha: nil
-        )
-      end
+      before { allow(export).to receive(:extract).and_yield(manifest, [package1, package2]) }
 
-      let(:manifest) {
+      let(:manifest) do
         {
           'release_name' => 'test-release-name',
           'release_version' => 'test-release-version',
           'release_commit_hash' => 'test-commit-hash',
         }
-      }
-
-      let(:package_model1) do
-        Bosh::Director::Models::Package.make(
-          release: release,
-          name: package1.package_name,
-          fingerprint: package1.package_fingerprint,
-        )
       end
 
-      let(:package_model2) do
-        Bosh::Director::Models::Package.make(
-          release: release,
-          name: package2.package_name,
-          fingerprint: package2.package_fingerprint,
-          dependency_set_json: Yajl::Encoder.encode([package1.package_name]))
+      let(:package1) do
+        instance_double('Bosh::Director::CompiledPackage::CompiledPackage', {
+          package_name: 'package1',
+          blobstore_id: 'blob-id1',
+          blob_path: '/tmp/blob1',
+          package_fingerprint: 'package-fingerprint1',
+          stemcell_sha1: 'stemcell-sha1',
+          sha1: 'test-sha1-1',
+          check_blob_sha: nil
+        })
       end
 
-      let!(:stemcell) { Bosh::Director::Models::Stemcell.make(sha1: package1.stemcell_sha1) }
-      let(:release) do
-        Bosh::Director::Models::Release.make(name: manifest['release_name'])
-      end
-      let(:inserter) { instance_double('Bosh::Director::CompiledPackage::CompiledPackageInserter') }
-
-      let(:release_version) do
-        Bosh::Director::Models::ReleaseVersion.make(
-          release: release,
-          version: manifest['release_version'],
-        )
-      end
-
-      before do
-
-        Bosh::Director::CompiledPackage::CompiledPackagesExport.stub(:new).with(
-          file: '/tmp/export/dir/compiled_packages_export.tgz').and_return(export)
-        export.stub(:extract).and_yield(manifest, [package1, package2])
-
-        FileUtils.mkpath(export_dir)
+      let(:package2) do
+        instance_double('Bosh::Director::CompiledPackage::CompiledPackage', {
+          package_name: 'package2',
+          blobstore_id: 'blob-id2',
+          blob_path: '/tmp/blob2',
+          package_fingerprint: 'package-fingerprint2',
+          stemcell_sha1: 'stemcell-sha1',
+          sha1: 'test-sha1-2',
+          check_blob_sha: nil
+        })
       end
 
-      context 'when the database does not include the specified release' do
+      context 'when release (not release version) is found' do
+        let(:release) { Bosh::Director::Models::Release.make(name: manifest['release_name']) }
+
+        context 'when release version is found' do
+          let!(:release_version) do
+            Bosh::Director::Models::ReleaseVersion.make(
+              release: release,
+              version: manifest['release_version'],
+            )
+          end
+
+          before { release_version.add_package(package_model1) }
+          let(:package_model1) do
+            Bosh::Director::Models::Package.make(
+              release: release,
+              name: package1.package_name,
+              fingerprint: package1.package_fingerprint,
+            )
+          end
+
+          before { release_version.add_package(package_model2) }
+          let(:package_model2) do
+            Bosh::Director::Models::Package.make(
+              release: release,
+              name: package2.package_name,
+              fingerprint: package2.package_fingerprint,
+              dependency_set_json: Yajl::Encoder.encode([package1.package_name]),
+            )
+          end
+
+          before { allow(Bosh::Director::CompiledPackage::CompiledPackageInserter).to receive(:new).with(blobstore_client).and_return(inserter) }
+          let(:inserter) { instance_double('Bosh::Director::CompiledPackage::CompiledPackageInserter', insert: nil) }
+
+          it 'inserts compiled packages for a release version' do
+            expect(inserter).to receive(:insert).with(package1, release_version)
+            expect(inserter).to receive(:insert).with(package2, release_version)
+            import_job.perform
+          end
+
+          it 'checks the blob integrity' do
+            package1.should_receive(:check_blob_sha)
+            package2.should_receive(:check_blob_sha)
+            import_job.perform
+          end
+
+          it 'cleans up the compiled packages path' do
+            expect(FileUtils).to receive(:rm_rf).with(compiled_packages_path)
+            import_job.perform
+          end
+        end
+
+        context 'when release version is not found' do
+          before { Bosh::Director::Models::ReleaseVersion.make(release: release, version: 'other-version') }
+
+          it 'raises an ReleaseVersionNotFound error' do
+            expect { import_job.perform }.to raise_error(ReleaseVersionNotFound)
+          end
+        end
+      end
+
+      context 'when release (not release version) is not found' do
         it 'raises an ReleaseVersionNotFound error' do
-          expect{import_job.perform}.to raise_error(ReleaseNotFound)
+          expect { import_job.perform }.to raise_error(ReleaseNotFound)
         end
       end
 
-      context 'when the database does not include the specified release version' do
-        before do
-          release_version = Bosh::Director::Models::ReleaseVersion.make(
-            release: release,
-            version: 'different-version',
-          )
+      context 'when extracting compiled packages archive fails' do
+        it 'cleans up compiled packages path' do
+          error = StandardError.new
+          allow(export).to receive(:extract).and_raise(error)
+
+          expect(FileUtils).to receive(:rm_rf).with(compiled_packages_path)
+          expect { import_job.perform }.to raise_error(error)
         end
-
-        it 'raises an ReleaseVersionNotFound error' do
-          expect{import_job.perform}.to raise_error(ReleaseVersionNotFound)
-        end
-      end
-
-      context 'when there is one Release and one ReleaseVersion' do
-        before do
-          release_version.add_package(package_model1)
-          release_version.add_package(package_model2)
-
-          Bosh::Director::CompiledPackage::CompiledPackageInserter.stub(new: inserter)
-          inserter.stub(:insert)
-        end
-
-        it 'creates a CompiledPackageInserter' do
-          expect(Bosh::Director::CompiledPackage::CompiledPackageInserter).to receive(:new).with(blobstore_client)
-
-          import_job.perform
-          expect(inserter).to have_received(:insert).with(package1, release_version)
-          expect(inserter).to have_received(:insert).with(package2, release_version)
-        end
-
-        it 'finds version with ReleaseManager' do
-          release_version = '0.1+dev.1'
-          expect_any_instance_of(Bosh::Director::Api::ReleaseManager).to receive(:find_version).and_return(release_version)
-
-          import_job.perform
-        end
-
-        it 'extracts the export' do
-          expect(export).to receive(:extract)
-          import_job.perform
-        end
-
-        it 'checks the blob integrity' do
-          package1.should_receive(:check_blob_sha)
-          package2.should_receive(:check_blob_sha)
-
-          import_job.perform
-        end
-
-        it 'cleans up the temp dir' do
-          expect(FileUtils).to receive(:rm_rf).with(export_dir)
-          import_job.perform
-        end
-      end
-
-      context 'when there are multiple release versions' do
-        before do
-          Bosh::Director::CompiledPackage::CompiledPackageInserter.stub(new: inserter)
-          inserter.stub(:insert)
-
-          Bosh::Director::Models::Release.make(
-            name: 'another_release',
-          ).add_version(version: 'test-release-version')
-
-          release_version.add_package(package_model1)
-          release_version.add_package(package_model2)
-        end
-
-        it 'inserts each package with the inserter' do
-          import_job.perform
-
-          expect(inserter).to have_received(:insert).with(package1, release_version)
-        end
-      end
-
-      context 'when an exception is raised in perform' do
-        it 'cleans up the temp dir' do
-          export.stub(:extract).and_raise(StandardError, 'fff')
-
-          expect { import_job.perform }.to raise_error(StandardError, 'fff')
-          expect(File.exist?(export_dir)).to be(false)
-        end
-      end
-
-      def find_compiled_package(package_model, stemcell_id, dependencies)
-        dependency_array = dependencies.map { |package_model| [package_model.name, package_model.version] }
-
-        Bosh::Director::Models::CompiledPackage[
-          package_id: package_model.id,
-          stemcell_id: stemcell_id,
-          dependency_key: Yajl::Encoder.encode(dependency_array)
-        ]
       end
     end
   end

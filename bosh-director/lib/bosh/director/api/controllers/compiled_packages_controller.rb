@@ -1,5 +1,6 @@
 require 'json'
 require 'tempfile'
+require 'bosh/director/api/compiled_package_group_manager'
 require 'bosh/director/api/controllers/base_controller'
 require 'bosh/director/api/stemcell_manager'
 require 'bosh/director/compiled_package_group'
@@ -10,7 +11,12 @@ require 'bosh/director/jobs/import_compiled_packages'
 module Bosh::Director
   module Api::Controllers
     class CompiledPackagesController < BaseController
-      post '/compiled_package_groups/export', consumes: [:json] do
+      def initialize(*args)
+        super
+        @compiled_package_group_manager = Api::CompiledPackageGroupManager.new
+      end
+
+      post '/compiled_package_groups/export', consumes: :json do
         stemcell = find_stemcell_by_name_and_version
         release_version = find_release_version_by_name_and_version
 
@@ -30,19 +36,17 @@ module Bosh::Director
         send_file(output_path, type: :tgz)
       end
 
-      post '/compiled_package_groups/import', consumes: [:tgz] do
-        tempdir = Dir.mktmpdir
-        export_path = File.join(tempdir, 'compiled_packages_export.tgz')
-        # the job is responsible for cleaning this up
-        File.open(export_path, 'w') do |f|
-          while buf = request.body.read(4096)
-            f.write(buf)
-          end
-        end
-
-        task = JobQueue.new.enqueue(@user, Jobs::ImportCompiledPackages, 'import compiled packages', [tempdir])
+      post '/compiled_package_groups/import', consumes: :tgz do
+        task = @compiled_package_group_manager.create_from_stream(@user, request.body)
         redirect "/tasks/#{task.id}"
       end
+
+      post '/compiled_package_groups/import', consumes: :multipart do
+        task = @compiled_package_group_manager.create_from_file_path(@user, params[:nginx_upload_path])
+        redirect "/tasks/#{task.id}"
+      end
+
+      private
 
       def find_stemcell_by_name_and_version
         stemcell_manager = Api::StemcellManager.new
