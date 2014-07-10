@@ -121,14 +121,15 @@ module Bosh::Deployer
             raise RuntimeError, 'Failed to discover elastic public ip address' unless ip
           else
             ip = instance.public_ip_address
-            raise RuntimeError, 'Failed to discover public ip address' unless ip
           end
 
-          logger.info("discovered bosh ip=#{ip}")
-          ip
-        else
-          config.client_services_ip
+          if ip
+            logger.info("discovered bosh ip=#{ip}")
+            return ip
+          end
         end
+        logger.info("using configured ip=#{config.client_services_ip}")
+        config.client_services_ip
       end
     end
   end

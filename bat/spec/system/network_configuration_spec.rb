@@ -20,7 +20,7 @@ describe 'network configuration' do
   describe 'resolving DNS entries' do
     before { skip 'director not configured with dns' unless dns? }
 
-    let(:dns) { Resolv::DNS.new(nameserver: @env.director) }
+    let(:dns) { Resolv::DNS.new(nameserver: @env.dns_host) }
 
     it 'forward looks up instance' do
       address = dns.getaddress("0.batlight.static.bat.#{bosh_tld}").to_s
