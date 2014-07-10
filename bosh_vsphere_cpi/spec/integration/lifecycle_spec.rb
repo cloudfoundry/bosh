@@ -11,6 +11,9 @@ describe VSphereCloud::Cloud, external_cpi: false do
     @vlan          = ENV['BOSH_VSPHERE_VLAN']         || raise('Missing BOSH_VSPHERE_VLAN')
     @stemcell_path = ENV['BOSH_VSPHERE_STEMCELL']     || raise('Missing BOSH_VSPHERE_STEMCELL')
 
+    @second_datastore = ENV['BOSH_VSPHERE_CPI_SECOND_DATASTORE'] ||
+      raise('Missing BOSH_VSPHERE_CPI_SECOND_DATASTORE')
+
     @datacenter_name              = ENV.fetch('BOSH_VSPHERE_CPI_DATACENTER', 'BOSH_DC')
     @vm_folder                    = ENV.fetch('BOSH_VSPHERE_CPI_VM_FOLDER', 'ACCEPTANCE_BOSH_VMs')
     @template_folder              = ENV.fetch('BOSH_VSPHERE_CPI_TEMPLATE_FOLDER', 'ACCEPTANCE_BOSH_Templates')
@@ -81,6 +84,8 @@ describe VSphereCloud::Cloud, external_cpi: false do
     @vm_id.should_not be_nil
     @cpi.has_vm?(@vm_id).should be(true)
 
+    yield if block_given?
+
     metadata = {deployment: 'deployment', job: 'cpi_spec', index: '0'}
     @cpi.set_vm_metadata(@vm_id, metadata)
 
@@ -99,8 +104,6 @@ describe VSphereCloud::Cloud, external_cpi: false do
       @cpi.snapshot_disk(@disk_id, metadata)
     }.to raise_error Bosh::Clouds::NotImplemented
 
-    yield if block_given?
-
     expect {
       @cpi.delete_snapshot(123)
     }.to raise_error Bosh::Clouds::NotImplemented
@@ -111,12 +114,12 @@ describe VSphereCloud::Cloud, external_cpi: false do
   let(:network_spec) do
     {
       'static' => {
-        'ip' => '169.254.1.1', #172.16.69.102",
+        'ip' => '169.254.1.1',
         'netmask' => '255.255.254.0',
-        'cloud_properties' => { 'name' => @vlan},
+        'cloud_properties' => { 'name' => @vlan },
         'default' => ['dns', 'gateway'],
-        'dns' => ['169.254.1.2'],  #["172.16.69.100"],
-        'gateway' => '169.254.1.3' #"172.16.68.1"
+        'dns' => ['169.254.1.2'],
+        'gateway' => '169.254.1.3'
       }
     }
   end
@@ -214,10 +217,32 @@ describe VSphereCloud::Cloud, external_cpi: false do
     end
 
     context 'when disk is being re-attached' do
+      after { clean_up_vm_and_disk }
+
       it 'does not lock cd-rom' do
         vm_lifecycle(network_spec, [], resource_pool)
         @cpi.attach_disk(@vm_id, @disk_id)
         @cpi.detach_disk(@vm_id, @disk_id)
+      end
+    end
+
+    context 'when vm was migrated' do
+      after { clean_up_vm_and_disk }
+
+      def relocate_vm_to_second_datastore
+        vm = @cpi.get_vm_by_cid(@vm_id)
+
+        datastore = @cpi.client.get_managed_object(VimSdk::Vim::Datastore, name: @second_datastore)
+        relocate_spec = VimSdk::Vim::Vm::RelocateSpec.new(datastore: datastore)
+
+        task = vm.relocate(relocate_spec, 'defaultPriority')
+        @cpi.client.wait_for_task(task)
+      end
+
+      it 'should exercise the vm lifecycle' do
+        vm_lifecycle(network_spec, [], resource_pool) do
+          relocate_vm_to_second_datastore
+        end
       end
     end
   end
