@@ -2,25 +2,25 @@ user vcap;
 worker_processes  2;
 daemon off;
 
-error_log  /var/vcap/sys/log/blobstore/error.log;
-pid        /var/vcap/sys/run/blobstore/nginx.pid;
+error_log /var/vcap/sys/log/blobstore/error.log;
+pid       /var/vcap/sys/run/blobstore/nginx.pid;
 
 events {
-  worker_connections  8192;
+  worker_connections 8192;
 }
 
 http {
-  include       /var/vcap/jobs/blobstore/config/mime.types;
-  default_type  text/html;
+  include      /var/vcap/jobs/blobstore/config/mime.types;
+  default_type text/html;
+
+  access_log	  /var/vcap/sys/log/blobstore/access.log;
   server_tokens off;
 
-  access_log	/var/vcap/sys/log/blobstore/access.log;
-
-  sendfile on;
-  tcp_nopush on;
+  sendfile    on;
+  tcp_nopush  on;
   tcp_nodelay on;
 
-  keepalive_timeout  75 20;
+  keepalive_timeout 75 20;
 
   gzip                 on;
   gzip_min_length      1250;
