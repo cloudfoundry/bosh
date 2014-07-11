@@ -88,7 +88,6 @@ module Bosh::Stemcell
     def centos_os_stages
       [
         :base_centos,
-        :base_centos_openssl,
         :base_centos_packages,
         # Bosh steps
         :bosh_users,
@@ -107,7 +106,6 @@ module Bosh::Stemcell
         :base_ubuntu_firstboot,
         :base_apt,
         :base_ubuntu_build_essential,
-        :base_ubuntu_openssl,
         :base_ubuntu_packages,
         :bosh_dpkg_list,
         :bosh_sysstat,
