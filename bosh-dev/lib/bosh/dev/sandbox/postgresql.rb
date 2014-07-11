@@ -30,8 +30,9 @@ module Bosh::Dev::Sandbox
     def truncate_db
       @logger.info("Truncating postgres database #{db_name}")
       table_name_cmd = %Q{psql -U postgres #{db_name} -c "select tablename from pg_tables where schemaname='public';"}
-      table_names = `#{table_name_cmd}`.lines.to_a[2...-2].map(&:strip)
-      table_names.reject!{|name| name == "schema_migrations" }
+      table_names = @runner.run(table_name_cmd).lines.to_a[2...-2] || []
+      table_names.map!(&:strip)
+      table_names.reject! { |name| name == "schema_migrations" }
       table_names.each do |table_name|
         @runner.run(%Q{psql -U postgres #{db_name} -c 'truncate table "#{table_name}" cascade;' > /dev/null 2>&1})
       end
