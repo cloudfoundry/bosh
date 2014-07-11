@@ -394,6 +394,54 @@ describe 'cli releases', type: :integration do
     end
   end
 
+  describe 'uploading a release that already exists' do
+    before { target_and_login }
+
+    context 'when the release is local' do
+      let(:local_release_path) { spec_asset('valid_release.tgz') }
+      before { bosh_runner.run("upload release #{local_release_path}") }
+
+      context 'when using the --skip-if-exists flag' do
+        it 'tells the user and does not exit as a failure' do
+          output = bosh_runner.run("upload release #{local_release_path} --skip-if-exists")
+          expect(output).to include("Release `appcloud/0.1' already exists. Skipping upload.")
+        end
+      end
+
+      context 'when NOT using the --skip-if-exists flag' do
+        it 'tells the user and does exit as a failure' do
+          output, exit_code = bosh_runner.run("upload release #{local_release_path}", {
+            failure_expected: true,
+            return_exit_code: true,
+          })
+          expect(output).to include('This release version has already been uploaded')
+          expect(exit_code).to eq(1)
+        end
+      end
+    end
+
+    context 'when the release is remote' do
+      let(:webserver) do
+        local_server_cmd = %W(rackup -b run(Rack::Directory.new('#{spec_asset('')}')))
+        Bosh::Dev::Sandbox::Service.new(local_server_cmd, {}, Logger.new(STDOUT))
+      end
+      before { webserver.start }
+      after { webserver.stop }
+
+      let(:remote_release_url) { 'http://localhost:9292/valid_release.tgz' }
+      before { bosh_runner.run("upload release #{remote_release_url}") }
+
+      it 'tells the user and does exit as a failure' do
+        output, exit_code = bosh_runner.run("upload release #{remote_release_url}", {
+          failure_expected: true,
+          return_exit_code: true,
+        })
+        expect(output).to include("Release `appcloud/0.1' already exists")
+        expect(exit_code).to eq(1)
+      end
+    end
+  end
+
   def with_changed_release
     new_file = File.join('src', 'bar', SecureRandom.uuid)
     begin

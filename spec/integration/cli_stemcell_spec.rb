@@ -56,53 +56,61 @@ describe 'cli: stemcell', type: :integration do
     it 'refuses to delete it' do
       deploy_simple
       results = bosh_runner.run('delete stemcell ubuntu-stemcell 1', failure_expected: true)
-      expect(results).to match %r{Stemcell `ubuntu-stemcell/1' is still in use by: simple}
+      expect(results).to include("Stemcell `ubuntu-stemcell/1' is still in use by: simple")
     end
   end
 
   describe 'uploading a stemcell that already exists' do
+    before { target_and_login }
+
     context 'when the stemcell is local' do
       let(:local_stemcell_path) { spec_asset('valid_stemcell.tgz') }
+      before { bosh_runner.run("upload stemcell #{local_stemcell_path}") }
 
       context 'when using the --skip-if-exists flag' do
         it 'tells the user and does not exit as a failure' do
-          deploy_simple # uploads the same stemcell "spec_asset('valid_stemcell.tgz')" used below
-          results = bosh_runner.run("upload stemcell #{local_stemcell_path} --skip-if-exists", failure_expected: false)
-          expect(results).to match %r{Stemcell `ubuntu-stemcell/1' already exists. Skipping upload.}
+          output = bosh_runner.run("upload stemcell #{local_stemcell_path} --skip-if-exists")
+          expect(output).to include("Stemcell `ubuntu-stemcell/1' already exists. Skipping upload.")
         end
       end
 
       context 'when NOT using the --skip-if-exists flag' do
         it 'tells the user and does exit as a failure' do
-          deploy_simple # uploads the same stemcell "spec_asset('valid_stemcell.tgz')" used below
-          results = bosh_runner.run("upload stemcell #{local_stemcell_path}", failure_expected: true)
-          expect(results).to match(%r{Stemcell `ubuntu-stemcell/1' already exists. Increment the version if it has changed.})
+          output, exit_code = bosh_runner.run("upload stemcell #{local_stemcell_path}", {
+            failure_expected: true,
+            return_exit_code: true,
+          })
+          expect(output).to include("Stemcell `ubuntu-stemcell/1' already exists")
+          expect(exit_code).to eq(1)
         end
       end
     end
 
     context 'when the stemcell is remote' do
-      let(:remote_stemcell_url) { 'http://localhost:9292/valid_stemcell.tgz' }
-
       let(:webserver) do
-        asset_root = spec_asset('')
-        Bosh::Dev::Sandbox::Service.new(%W(rackup -b run(Rack::Directory.new('#{asset_root}'))), {}, Logger.new(STDOUT))
+        local_server_cmd = %W(rackup -b run(Rack::Directory.new('#{spec_asset('')}')))
+        Bosh::Dev::Sandbox::Service.new(local_server_cmd, {}, Logger.new(STDOUT))
       end
       before { webserver.start }
       after { webserver.stop }
 
+      let(:remote_stemcell_url) { 'http://localhost:9292/valid_stemcell.tgz' }
+      before { bosh_runner.run("upload stemcell #{remote_stemcell_url}") }
+
       context 'when using the --skip-if-exists flag' do
         it 'tells the user and does not exit as a failure' do
-          deploy_simple # uploads the same stemcell "spec_asset('valid_stemcell.tgz')" used below
-          results = bosh_runner.run("upload stemcell #{remote_stemcell_url} --skip-if-exists", failure_expected: false)
-          expect(results).to match %r{Stemcell at #{remote_stemcell_url} already exists.}
+          output = bosh_runner.run("upload stemcell #{remote_stemcell_url} --skip-if-exists")
+          expect(output).to include("Stemcell at #{remote_stemcell_url} already exists")
         end
       end
 
       context 'when NOT using the --skip-if-exists flag' do
         it 'tells the user and does exit as a failure' do
-          deploy_simple # uploads the same stemcell "spec_asset('valid_stemcell.tgz')" used below
-          bosh_runner.run("upload stemcell #{remote_stemcell_url}", failure_expected: true)
+          _, exit_code = bosh_runner.run("upload stemcell #{remote_stemcell_url}", {
+            failure_expected: true,
+            return_exit_code: true,
+          })
+          expect(exit_code).to eq(1)
         end
       end
     end
