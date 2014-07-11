@@ -59,11 +59,6 @@ module Bosh::Director
       describe 'POST', '/releases' do
         before { authorize 'admin', 'admin' }
 
-        it 'allows body to be a compressed release file' do
-          post '/releases', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/x-compressed' }
-          expect_redirect_to_queued_task(last_response)
-        end
-
         it 'allows json body with remote release location' do
           post '/releases', Yajl::Encoder.encode('location' => 'http://release_url'), { 'CONTENT_TYPE' => 'application/json' }
           expect_redirect_to_queued_task(last_response)
@@ -76,8 +71,8 @@ module Bosh::Director
           expect_redirect_to_queued_task(last_response)
         end
 
-        it 'only consumes application/x-compressed, application/json & multipart/form-data' do
-          post '/releases', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/octet-stream' }
+        it 'only consumes application/json and multipart/form-data' do
+          post '/releases', 'fake-data', { 'CONTENT_TYPE' => 'application/octet-stream' }
           expect(last_response.status).to eq(404)
         end
       end

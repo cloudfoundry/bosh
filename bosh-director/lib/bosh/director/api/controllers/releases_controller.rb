@@ -3,12 +3,6 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class ReleasesController < BaseController
-      post '/releases', :consumes => :tgz do
-        rebase = params['rebase'] == 'true'
-        task = @release_manager.create_release_from_stream(@user, request.body, rebase)
-        redirect "/tasks/#{task.id}"
-      end
-
       post '/releases', :consumes => :json do
         payload = json_decode(request.body)
         rebase = params['rebase'] == 'true'

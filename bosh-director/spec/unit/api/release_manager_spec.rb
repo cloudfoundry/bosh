@@ -29,35 +29,6 @@ module Bosh::Director
       end
     end
 
-    describe '#create_release_from_stream' do
-      before do
-        allow(SecureRandom).to receive(:uuid).and_return('fake-uuid')
-        allow(File).to receive(:exists?).and_return(true)
-      end
-
-      let(:release_stream) { double('fake-release-stream', size: 1024) }
-
-      it 'enqueues a task to upload a local release' do
-        rebase = double('bool')
-
-        expect(subject).to receive(:check_available_disk_space).
-          with(anything, release_stream.size).
-          and_return(true)
-
-        tmp_file_path = File.join(Dir.tmpdir, 'release-fake-uuid')
-        expect(subject).to receive(:write_file).with(tmp_file_path, release_stream)
-
-        expect(job_queue).to receive(:enqueue).with(
-          username,
-          Jobs::UpdateRelease,
-          'create release',
-          [tmp_file_path, { rebase: rebase }],
-        ).and_return(task)
-
-        expect(subject.create_release_from_stream(username, release_stream, rebase)).to eql(task)
-      end
-    end
-
     describe '#create_release_from_file_path' do
       let(:release_path) { '/path/to/release.tgz' }
 

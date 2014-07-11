@@ -26,7 +26,7 @@ module Bosh::Director
           @logger = Config.logger
         end
 
-        mime_type :tgz, 'application/x-compressed'
+        mime_type :tgz,       'application/x-compressed'
         mime_type :multipart, 'multipart/form-data'
 
         def self.consumes(*types)

@@ -21,20 +21,6 @@ module Bosh::Director
         false
       end
 
-      def create_stemcell_from_stream(user, stemcell_stream)
-        stemcell_dir = Dir.tmpdir
-        stemcell_path = File.join(stemcell_dir, "stemcell-#{SecureRandom.uuid}")
-
-        unless check_available_disk_space(stemcell_dir, stemcell_stream.size)
-          raise NotEnoughDiskSpace, "Uploading stemcell archive failed. " +
-            "Insufficient space on BOSH director in #{stemcell_dir}"
-        end
-
-        write_file(stemcell_path, stemcell_stream)
-
-        create_stemcell_from_file_path(user, stemcell_path)
-      end
-
       def create_stemcell_from_url(user, stemcell_url)
         JobQueue.new.enqueue(user, Jobs::UpdateStemcell, 'create stemcell', [stemcell_url, { remote: true }])
       end

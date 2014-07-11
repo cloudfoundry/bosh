@@ -36,11 +36,6 @@ module Bosh::Director
         send_file(output_path, type: :tgz)
       end
 
-      post '/compiled_package_groups/import', consumes: :tgz do
-        task = @compiled_package_group_manager.create_from_stream(@user, request.body)
-        redirect "/tasks/#{task.id}"
-      end
-
       post '/compiled_package_groups/import', consumes: :multipart do
         task = @compiled_package_group_manager.create_from_file_path(@user, params[:nginx_upload_path])
         redirect "/tasks/#{task.id}"

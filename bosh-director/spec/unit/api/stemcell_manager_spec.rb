@@ -23,33 +23,6 @@ module Bosh::Director
       end
     end
 
-    describe '#create_stemcell_from_stream' do
-      before do
-        allow(SecureRandom).to receive(:uuid).and_return('fake-uuid')
-        allow(File).to receive(:exists?).and_return(true)
-      end
-
-      let(:stemcell_stream) { double('fake-stemcell-stream', size: 1024) }
-
-      it 'enqueues a task to upload a local stemcell' do
-        expect(subject).to receive(:check_available_disk_space).
-          with(anything, stemcell_stream.size).
-          and_return(true)
-
-        tmp_file_path = File.join(Dir.tmpdir, 'stemcell-fake-uuid')
-        expect(subject).to receive(:write_file).with(tmp_file_path, stemcell_stream)
-
-        expect(job_queue).to receive(:enqueue).with(
-          username,
-          Jobs::UpdateStemcell,
-          'create stemcell',
-          [tmp_file_path],
-        ).and_return(task)
-
-        expect(subject.create_stemcell_from_stream(username, stemcell_stream)).to eql(task)
-      end
-    end
-
     describe '#create_stemcell_from_file_path' do
       let(:stemcell_path) { '/path/to/stemcell.tgz' }
 

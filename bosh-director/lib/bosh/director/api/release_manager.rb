@@ -51,20 +51,6 @@ module Bosh::Director
         JobQueue.new.enqueue(user, Jobs::UpdateRelease, 'create release', [release_url, options])
       end
 
-      def create_release_from_stream(user, release_stream, rebase)
-        release_dir = Dir.tmpdir
-        release_path = File.join(release_dir, "release-#{SecureRandom.uuid}")
-
-        unless check_available_disk_space(release_dir, release_stream.size)
-          raise NotEnoughDiskSpace, 'Uploading release archive failed. ' +
-            "Insufficient space on BOSH director in #{release_dir}"
-        end
-
-        write_file(release_path, release_stream)
-
-        create_release_from_file_path(user, release_path, rebase)
-      end
-
       def create_release_from_file_path(user, release_path, rebase)
         unless File.exists?(release_path)
           raise DirectorError, "Failed to create release: file not found - #{release_path}"

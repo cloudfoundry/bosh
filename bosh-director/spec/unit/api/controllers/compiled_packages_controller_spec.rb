@@ -126,39 +126,6 @@ module Bosh::Director
       end
     end
 
-    describe 'POST', '/compiled_package_groups/import (tgz)' do
-      def perform
-        post '/compiled_package_groups/import', 'fake-tar-data', {'CONTENT_TYPE' => 'application/x-compressed'}
-      end
-
-      before { Config.configure(Psych.load(spec_asset('test-director-config.yml'))) }
-
-      context 'authenticated access' do
-        before { authorize 'admin', 'admin' }
-
-        it 'returns a task' do
-          perform
-          expect_redirect_to_queued_task(last_response)
-        end
-      end
-
-      context 'accessing with invalid credentials' do
-        before { authorize 'invalid-user', 'invalid-password' }
-
-        it 'returns 401' do
-          perform
-          expect(last_response.status).to eq(401)
-        end
-      end
-
-      context 'unauthenticated access' do
-        it 'returns 401' do
-          perform
-          expect(last_response.status).to eq(401)
-        end
-      end
-    end
-
     describe 'POST', '/compiled_package_groups/import (multipart)' do
       def perform
         post '/compiled_package_groups/import', { 'nginx_upload_path' => tar_path }, {'CONTENT_TYPE' => 'multipart/form-data'}

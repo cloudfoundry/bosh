@@ -3,11 +3,6 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class StemcellsController < BaseController
-      post '/stemcells', :consumes => :tgz do
-        task = @stemcell_manager.create_stemcell_from_stream(@user, request.body)
-        redirect "/tasks/#{task.id}"
-      end
-
       post '/stemcells', :consumes => :json do
         payload = json_decode(request.body)
         task = @stemcell_manager.create_stemcell_from_url(@user, payload['location'])

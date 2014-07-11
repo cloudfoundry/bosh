@@ -1,0 +1,51 @@
+worker_processes 1;
+daemon off;
+
+error_log <%= sandbox_root %>/director_nginx.error.log;
+
+events { }
+
+http {
+  access_log <%= sandbox_root %>/director_nginx.access.log;
+
+  client_max_body_size 5G;
+
+  upstream director {
+    server 127.0.0.1:<%= director_ruby_port %>;
+  }
+
+  server {
+    listen <%= director_port %>;
+
+    proxy_max_temp_file_size 0;
+
+    location / {
+      proxy_pass http://director;
+
+      if ($content_type = "application/x-compressed") {
+        more_set_input_headers "Content-Disposition: attachment";
+
+        # Pass altered request body to this location
+        upload_pass @director_upload;
+
+        upload_resumable on;
+
+        # Store files to this directory
+        upload_store <%= sandbox_root %>;
+
+        # Allow uploaded files to be read only by user
+        upload_store_access user:r;
+
+        # Set specified fields in request body
+        upload_set_form_field "nginx_upload_path" $upload_tmp_path;
+
+        # On any error, delete uploaded files.
+        upload_cleanup 400-505;
+      }
+    }
+
+    location @director_upload {
+      proxy_pass http://director;
+    }
+  }
+}

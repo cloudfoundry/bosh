@@ -2,20 +2,27 @@ require 'rspec'
 require 'tempfile'
 require 'rspec/core/rake_task'
 require 'bosh/dev/bat_helper'
+require 'bosh/dev/sandbox/nginx'
 require 'common/thread_pool'
 require 'parallel_tests/tasks'
 
 namespace :spec do
   namespace :integration do
     desc 'Run BOSH integration tests against a local sandbox with Ruby agent'
-    task :ruby_agent do
+    task :ruby_agent => :install_dependencies do
       run_integration_specs('ruby')
     end
 
     desc 'Run BOSH integration tests against a local sandbox with Go agent'
-    task :go_agent do
+    task :go_agent => :install_dependencies do
       sh('go_agent/bin/build')
       run_integration_specs('go')
+    end
+
+    desc 'Install BOSH integration test dependencies (currently Nginx)'
+    task :install_dependencies do
+      nginx = Bosh::Dev::Sandbox::Nginx.new
+      nginx.install
     end
 
     def run_integration_specs(agent_type)

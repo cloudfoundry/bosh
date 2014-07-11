@@ -15,8 +15,8 @@ module Bosh::Director
         test_config = Psych.load(spec_asset('test-director-config.yml'))
         test_config['dir'] = temp_dir
         test_config['blobstore'] = {
-            'provider' => 'local',
-            'options' => {'blobstore_path' => blobstore_dir}
+          'provider' => 'local',
+          'options' => {'blobstore_path' => blobstore_dir}
         }
         test_config['snapshots']['enabled'] = true
         Config.configure(test_config)
@@ -94,68 +94,54 @@ module Bosh::Director
 
         describe 'polling task status' do
           it 'has API call that return task status' do
-            post '/releases', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/x-compressed' }
-            new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
+            task = Models::Task.make(state: 'queued', description: 'fake-description')
 
-            get "/tasks/#{new_task_id}"
-
+            get "/tasks/#{task.id}"
             last_response.status.should == 200
             task_json = Yajl::Parser.parse(last_response.body)
-            task_json['id'].should == 1
+            task_json['id'].should == task.id
             task_json['state'].should == 'queued'
-            task_json['description'].should == 'create release'
+            task_json['description'].should == 'fake-description'
 
-            task = Models::Task[new_task_id]
             task.state = 'processed'
             task.save
 
-            get "/tasks/#{new_task_id}"
+            get "/tasks/#{task.id}"
             last_response.status.should == 200
             task_json = Yajl::Parser.parse(last_response.body)
             task_json['id'].should == 1
             task_json['state'].should == 'processed'
-            task_json['description'].should == 'create release'
+            task_json['description'].should == 'fake-description'
           end
 
           it 'has API call that return task output and task output with ranges' do
-            post '/releases', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/x-compressed' }
-
-            new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
-
             output_file = File.new(File.join(temp_dir, 'debug'), 'w+')
             output_file.print('Test output')
             output_file.close
 
-            task = Models::Task[new_task_id]
-            task.output = temp_dir
-            task.save
+            task = Models::Task.make(output: temp_dir)
 
-            get "/tasks/#{new_task_id}/output"
+            get "/tasks/#{task.id}/output"
             last_response.status.should == 200
             last_response.body.should == 'Test output'
           end
 
           it 'has API call that return task output with ranges' do
-            post '/releases', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/x-compressed' }
-            new_task_id = last_response.location.match(/\/tasks\/(\d+)/)[1]
-
             output_file = File.new(File.join(temp_dir, 'debug'), 'w+')
             output_file.print('Test output')
             output_file.close
 
-            task = Models::Task[new_task_id]
-            task.output = temp_dir
-            task.save
+            task = Models::Task.make(output: temp_dir)
 
             # Range test
-            get "/tasks/#{new_task_id}/output", {}, {'HTTP_RANGE' => 'bytes=0-3'}
+            get "/tasks/#{task.id}/output", {}, {'HTTP_RANGE' => 'bytes=0-3'}
             last_response.status.should == 206
             last_response.body.should == 'Test'
             last_response.headers['Content-Length'].should == '4'
             last_response.headers['Content-Range'].should == 'bytes 0-3/11'
 
             # Range test
-            get "/tasks/#{new_task_id}/output", {}, {'HTTP_RANGE' => 'bytes=5-'}
+            get "/tasks/#{task.id}/output", {}, {'HTTP_RANGE' => 'bytes=5-'}
             last_response.status.should == 206
             last_response.body.should == 'output'
             last_response.headers['Content-Length'].should == '6'

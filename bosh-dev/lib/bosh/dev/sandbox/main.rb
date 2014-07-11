@@ -6,6 +6,7 @@ require 'bosh/dev/sandbox/socket_connector'
 require 'bosh/dev/sandbox/database_migrator'
 require 'bosh/dev/sandbox/postgresql'
 require 'bosh/dev/sandbox/mysql'
+require 'bosh/dev/sandbox/nginx'
 require 'cloud/dummy'
 
 module Bosh::Dev::Sandbox
@@ -18,6 +19,9 @@ module Bosh::Dev::Sandbox
 
     DIRECTOR_CONFIG = 'director_test.yml'
     DIRECTOR_CONF_TEMPLATE = File.join(ASSETS_DIR, 'director_test.yml.erb')
+
+    DIRECTOR_NGINX_CONFIG = 'director_nginx.conf'
+    DIRECTOR_NGINX_CONF_TEMPLATE = File.join(ASSETS_DIR, 'director_nginx.conf.erb')
 
     REDIS_CONFIG = 'redis_test.conf'
     REDIS_CONF_TEMPLATE = File.join(ASSETS_DIR, 'redis_test.conf.erb')
@@ -77,28 +81,31 @@ module Bosh::Dev::Sandbox
       @director_tmp_path = sandbox_path('boshdir')
       @blobstore_storage_dir = sandbox_path('bosh_test_blobstore')
 
-      director_config = sandbox_path(DIRECTOR_CONFIG)
       base_log_path = File.join(logs_path, @name)
 
-      @redis_process = Service.new(
-        %W[redis-server #{sandbox_path(REDIS_CONFIG)}], {}, @logger)
+      @redis_process = Service.new(%W[redis-server #{sandbox_path(REDIS_CONFIG)}], {}, @logger)
 
-      @redis_socket_connector = SocketConnector.new(
-        'redis', 'localhost', redis_port, @logger)
+      @redis_socket_connector = SocketConnector.new('redis', 'localhost', redis_port, @logger)
 
       @nats_process = Service.new(%W[nats-server -p #{nats_port}], {}, @logger)
 
-      @nats_socket_connector = SocketConnector.new(
-        'nats', 'localhost', nats_port, @logger)
+      @nats_socket_connector = SocketConnector.new('nats', 'localhost', nats_port, @logger)
 
+      @nginx = Nginx.new
+
+      @director_nginx_process = Service.new(
+        %W[#{@nginx.executable_path} -c #{sandbox_path(DIRECTOR_NGINX_CONFIG)}], {}, @logger)
+
+      director_config = sandbox_path(DIRECTOR_CONFIG)
       @director_process = Service.new(
         %W[bosh-director -c #{director_config}],
         { output: "#{base_log_path}.director.out" },
         @logger,
       )
 
-      @director_socket_connector = SocketConnector.new(
-        'director', 'localhost', director_port, @logger)
+      @director_nginx_socket_connector = SocketConnector.new('director_nginx', 'localhost', director_port, @logger)
+
+      @director_socket_connector = SocketConnector.new('director', 'localhost', director_ruby_port, @logger)
 
       @worker_processes = 3.times.map do |index|
         Service.new(
@@ -149,6 +156,9 @@ module Bosh::Dev::Sandbox
 
       @redis_process.start
       @redis_socket_connector.try_to_connect
+
+      @director_nginx_process.start
+      @director_nginx_socket_connector.try_to_connect
 
       @nats_process.start
       @nats_socket_connector.try_to_connect
@@ -221,8 +231,11 @@ module Bosh::Dev::Sandbox
       @scheduler_process.stop
       @worker_processes.each(&:stop)
       @director_process.stop
+
+      @director_nginx_process.stop
       @redis_process.stop
       @nats_process.stop
+
       @health_monitor_process.stop
       @database.drop_db
       FileUtils.rm_f(dns_db_path)
@@ -258,6 +271,10 @@ module Bosh::Dev::Sandbox
 
     def director_port
       @director_port ||= get_named_port(:director)
+    end
+
+    def director_ruby_port
+      @director_ruby_port ||= get_named_port(:director_ruby)
     end
 
     def redis_port
@@ -296,6 +313,7 @@ module Bosh::Dev::Sandbox
 
     def setup_sandbox_root
       write_in_sandbox(DIRECTOR_CONFIG, load_config_template(DIRECTOR_CONF_TEMPLATE))
+      write_in_sandbox(DIRECTOR_NGINX_CONFIG, load_config_template(DIRECTOR_NGINX_CONF_TEMPLATE))
       write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
       write_in_sandbox(REDIS_CONFIG, load_config_template(REDIS_CONF_TEMPLATE))
       write_in_sandbox(EXTERNAL_CPI, load_config_template(EXTERNAL_CPI_TEMPLATE))

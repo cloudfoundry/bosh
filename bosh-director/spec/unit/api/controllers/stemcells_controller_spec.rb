@@ -25,11 +25,6 @@ module Bosh::Director
       context 'authenticated access' do
         before { authorize 'admin', 'admin' }
 
-        it 'allows body to be a compressed stemcell file' do
-          post '/stemcells', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/x-compressed' }
-          expect_redirect_to_queued_task(last_response)
-        end
-
         it 'allows json body with remote stemcell location' do
           post '/stemcells', Yajl::Encoder.encode('location' => 'http://stemcell_url'), { 'CONTENT_TYPE' => 'application/json' }
           expect_redirect_to_queued_task(last_response)
@@ -42,8 +37,8 @@ module Bosh::Director
           expect_redirect_to_queued_task(last_response)
         end
 
-        it 'only consumes application/x-compressed, application/json & multipart/form-data' do
-          post '/stemcells', spec_asset('tarball.tgz'), { 'CONTENT_TYPE' => 'application/octet-stream' }
+        it 'only consumes application/json and multipart/form-data' do
+          post '/stemcells', 'fake-data', { 'CONTENT_TYPE' => 'application/octet-stream' }
           expect(last_response.status).to eq(404)
         end
       end

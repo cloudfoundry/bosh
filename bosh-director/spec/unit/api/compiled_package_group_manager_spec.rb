@@ -8,33 +8,6 @@ module Bosh::Director
     before { allow(JobQueue).to receive(:new).and_return(job_queue) }
     let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
 
-    describe '#create_from_stream' do
-      before do
-        allow(SecureRandom).to receive(:uuid).and_return('fake-uuid')
-        allow(File).to receive(:exists?).and_return(true)
-      end
-
-      let(:compiled_package_group_stream) { double('fake-compiled-package-group-stream', size: 1024) }
-
-      it 'enqueues a task to import a compiled_package_group archive stream' do
-        expect(subject).to receive(:check_available_disk_space).
-          with(anything, compiled_package_group_stream.size).
-          and_return(true)
-
-        tmp_file_path = File.join(Dir.tmpdir, 'compiled-package-group-fake-uuid')
-        expect(subject).to receive(:write_file).with(tmp_file_path, compiled_package_group_stream)
-
-        expect(job_queue).to receive(:enqueue).with(
-          username,
-          Jobs::ImportCompiledPackages,
-          'import compiled packages',
-          [tmp_file_path],
-        ).and_return(task)
-
-        expect(subject.create_from_stream(username, compiled_package_group_stream)).to eql(task)
-      end
-    end
-
     describe '#create_from_file_path' do
       let(:compiled_package_group_path) { '/path/to/compiled_package_group.tgz' }
 
