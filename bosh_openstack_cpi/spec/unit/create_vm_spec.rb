@@ -42,6 +42,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
                                          :volume_id => volume_id,
                                          :delete_on_termination => "1",
                                          :device_name => "/dev/vda" }]
+    end
 
     params
   end

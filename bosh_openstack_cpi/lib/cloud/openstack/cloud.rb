@@ -268,6 +268,7 @@ module Bosh::OpenStackCloud
                                                    :delete_on_termination => "1",
                                                    :device_name => "/dev/vda"
                                                  }]
+        end
 
         @logger.debug("Using boot parms: `#{server_params.inspect}'")
         server = with_openstack { @openstack.servers.create(server_params) }
