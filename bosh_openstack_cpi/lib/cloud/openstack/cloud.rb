@@ -268,11 +268,6 @@ module Bosh::OpenStackCloud
                                                    :delete_on_termination => "1",
                                                    :device_name => "/dev/vda"
                                                  }]
-        else
-          server_params[:personality] = [{
-                                          "path" => "#{BOSH_APP_DIR}/user_data.json",
-                                          "contents" => Yajl::Encoder.encode(user_data(server_name, network_spec, keypair.public_key))
-                                        }]
         end
 
         @logger.debug("Using boot parms: `#{server_params.inspect}'")
