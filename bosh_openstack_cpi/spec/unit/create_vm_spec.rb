@@ -25,7 +25,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     }
   end
 
-  def openstack_params(unique_name, security_groups = [], nics = [], nameserver = nil, volume_id = nil)
+  def openstack_params(unique_name, security_groups = [], nics = [], nameserver = nil, volume_id = nil, skip_personality = false)
     params = {
                :name => "vm-#{unique_name}",
                :image_ref => "sc-id",
@@ -42,7 +42,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
                                          :volume_id => volume_id,
                                          :delete_on_termination => "1",
                                          :device_name => "/dev/vda" }]
-    else
+    elsif not skip_personality
       params[:personality] = [{ "path" => "/var/vcap/bosh/user_data.json",
                                 "contents" => Yajl::Encoder.encode(user_data(unique_name, nameserver, true)) }]
     end
@@ -290,6 +290,37 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     vm_id = cloud.create_vm("agent-id", "sc-id",
                             resource_pool_spec,
                             { "network_a" => network_spec },
+                            nil, { "test_env" => "value" })
+    vm_id.should == "i-test"
+  end
+
+  it "creates an OpenStack server without a personality" do
+    address = double("address", :id => "a-test", :ip => "10.0.0.1",
+                     :instance_id => "i-test")
+
+    cloud_options = mock_cloud_options
+    cloud_options['properties']['openstack']['skip_personality'] = true
+
+    cloud = mock_cloud(cloud_options['properties']) do |openstack|
+      openstack.servers.should_receive(:create).
+          with(openstack_params(unique_name, %w[default], [], nil, nil, true)).and_return(server)
+      openstack.security_groups.should_receive(:collect).and_return(%w[default])
+      openstack.images.should_receive(:find).and_return(image)
+      openstack.flavors.should_receive(:find).and_return(flavor)
+      openstack.key_pairs.should_receive(:find).and_return(key_pair)
+      openstack.addresses.should_receive(:each).and_yield(address)
+    end
+
+    cloud.should_receive(:generate_unique_name).and_return(unique_name)
+    address.should_receive(:server=).with(nil)
+    cloud.should_receive(:wait_resource).with(server, :active, :state)
+
+    @registry.should_receive(:update_settings).
+        with("i-test", agent_settings(unique_name))
+
+    vm_id = cloud.create_vm("agent-id", "sc-id",
+                            resource_pool_spec,
+                            { "network_a" => dynamic_network_spec },
                             nil, { "test_env" => "value" })
     vm_id.should == "i-test"
   end
