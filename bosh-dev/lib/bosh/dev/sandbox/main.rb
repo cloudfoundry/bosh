@@ -57,7 +57,7 @@ module Bosh::Dev::Sandbox
         password: ENV['TRAVIS'] ? '' : 'password',
       }
 
-      agent_type = ENV['BOSH_INTEGRATION_AGENT_TYPE'] || 'ruby'
+      agent_type = ENV['BOSH_INTEGRATION_AGENT_TYPE'] || 'go'
 
       new(
         db_opts,

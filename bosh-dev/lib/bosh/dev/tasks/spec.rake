@@ -35,7 +35,7 @@ namespace :spec do
     end
   end
 
-  task :integration => %w(spec:integration:ruby_agent)
+  task :integration => %w(spec:integration:go_agent)
 
   namespace :unit do
     desc 'Run unit tests for each BOSH component gem in parallel'
