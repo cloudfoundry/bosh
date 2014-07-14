@@ -27,22 +27,6 @@ nats/vendor/cache/yajl-ruby-0.7.8.gem:
   object_id: rest/objects/4e4e78bca61e121204e4e86eebe59104fbd4f1b4ae88
   sha: d9a29e4321fd26dfa15cc17befccdb9442e42310
   size: 555008
-nginx/headers-more-v0.15rc1.tgz:
-  object_id: rest/objects/4e4e78bca41e122004e4e8ec65f67f04fbd4f1cd4bf3
-  sha: ba7bf757be8004d9dbffbe583396620cfcbed788
-  size: 25490
-nginx/nginx-0.8.54.tar.gz:
-  object_id: rest/objects/4e4e78bca21e122204e4e9863926b104fbd4f1e1f6fa
-  sha: 4d63c35b8974dba42cc62dd5046ae89df3528e34
-  size: 650001
-nginx/nginx_upload_module-2.2.0.tar.gz:
-  object_id: rest/objects/4e4e78bca11e121004e4e7d511f82104fbd4f1f40a30
-  sha: 93d6e83e613a0ce2ed057a434b344fa1b6609b47
-  size: 25796
-nginx/pcre-8.12.tar.gz:
-  object_id: rest/objects/4e4e78bca51e121204e4e86ee8e2c904fbd4f203c8e7
-  sha: b3ab606864606c9f980045653554bf4a12cadde2
-  size: 1316863
 postgres/postgres-9.0.3-1.amd64.tar.gz:
   object_id: rest/objects/4e4e78bca11e122004e4e8ec64843104fbd4f219f4b7
   sha: e47ee9c841ecde4df121f44df282aeb3c50a48d2
@@ -91,16 +75,6 @@ golang/go1.0.3.src.tar.gz:
   object_id: rest/objects/4e4e78bca21e122204e4e9863926b1050b511f8d9fe0
   sha: 1a67293c10d6c06c633c078a7ca67e98c8b58471
   size: 7404849
-nginx/nginx-1.4.1.tar.gz:
-  object_id: 963ead7f-fb2f-4a6b-83be-5d3d25afafd9
-  sha: !binary |-
-    OWM3MjgzODk3MzU3MjMyMzUzNWRhZTEwZjRlNDEyZDY3MWIyN2E3ZQ==
-  size: 767107
-nginx/pcre-8.32.tar.gz:
-  object_id: 9af63f91-2ad7-4894-a8ca-cb036211ce3f
-  sha: !binary |-
-    OTIyNmE1MzM2ZTA0YmJkY2FiMWQ5NGY3NDEzMTUzYWZiZjRhYmY2YQ==
-  size: 1790055
 mysql/server-5.1.62-rel13.3-435-Linux-x86_64.tar.gz:
   object_id: rest/objects/4e4e78bca31e121004e4e7d514745f04fb68b2898dd0
   sha: 2bfd575545fe78729c56bb832aa69d8d9fc8630d
@@ -175,3 +149,23 @@ nats/vendor/cache/yajl-ruby-1.1.0.gem:
   sha: !binary |-
     YjIyNTEyZmMxYmQ2OGY0OTVmNDUzOGQzZTI5NzM1ZGE0OTRiZWEwNA==
   size: 559616
+nginx/headers-more-v0.25.tgz:
+  object_id: 62f787d7-b4e2-4530-b105-d0eade4d6728
+  sha: !binary |-
+    NTE0YmMzZGYzMGIyNGViMGEwNjUzM2YxZWJhYTU3OWI4OTg5OTBmNQ==
+  size: 27973
+nginx/nginx-1.4.5.tar.gz:
+  object_id: 3ccf2492-9a27-4de8-a179-c88bc6f95f30
+  sha: !binary |-
+    OTZjMWFlY2QzMTRmNzNhM2MzMGEwZGI4YzM5YWQxNWRkYWNiMDc0ZQ==
+  size: 768728
+nginx/nginx-upload-module-2.2.tar.gz:
+  object_id: 118f94b0-2738-4019-9aa2-1832b948a5b1
+  sha: !binary |-
+    NzRjY2QxMTY1MjVhMTU1ZGI3NmY5MmExY2Q0ODRkOTUxNmE3MDM5OA==
+  size: 28505
+nginx/pcre-8.34.tar.gz:
+  object_id: ea6a3dd5-8620-4bed-bd6c-17a7eda02cf5
+  sha: !binary |-
+    ZDQ2ZTUzNzMzN2VlNzBkZjE5MDg0MDAxYTRiNjgxNWIzZDY5ZmU2Yw==
+  size: 1933734
