@@ -89,12 +89,13 @@ module Bat
     end
 
     def require_deployment(what, deployment_spec, options)
+      @bosh_runner.bosh_safe("deployment #{what.to_path}").should succeed
+
       if @bosh_api.deployments.include?(what.name) && !options[:force]
         @logger.info('deployment already deployed')
       else
         @logger.info('deployment not deployed')
         what.generate_deployment_manifest(deployment_spec)
-        @bosh_runner.bosh_safe("deployment #{what.to_path}").should succeed
         @bosh_runner.bosh_safe('deploy').should succeed
       end
     end
