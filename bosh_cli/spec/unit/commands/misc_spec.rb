@@ -87,7 +87,7 @@ describe Bosh::Cli::Command::Misc do
     it 'should not show director data when fetching director status timeouts' do
       command.add_option(:config, @config_file)
       command.stub(:target).and_return(target)
-      director.should_receive(:get_status).and_raise(TimeoutError)
+      director.should_receive(:get_status).and_raise(Timeout::Error)
 
       command.should_receive(:say).with('Config')
       command.should_receive(:say).with(/#{@config_file}/)

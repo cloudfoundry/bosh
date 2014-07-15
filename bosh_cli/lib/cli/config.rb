@@ -156,7 +156,7 @@ module Bosh::Cli
     end
 
     [:target, :target_name, :target_version, :release,
-     :target_uuid, :status_timeout].each do |attr|
+     :target_uuid].each do |attr|
       define_method attr do
         read(attr, false)
       end

@@ -1,8 +1,5 @@
-
 module Bosh::Cli::Command
   class Misc < Base
-    DEFAULT_STATUS_TIMEOUT = 3 # seconds
-
     # bosh version
     usage "version"
     desc  "Show version"
@@ -314,9 +311,7 @@ module Bosh::Cli::Command
     end
 
     def get_director_status
-      timeout(config.status_timeout || DEFAULT_STATUS_TIMEOUT) do
-        Bosh::Cli::Client::Director.new(target).get_status
-      end
+      Bosh::Cli::Client::Director.new(target).get_status
     end
   end
 end
