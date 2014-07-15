@@ -1,11 +1,12 @@
 require 'common/version/release_version_list'
+require 'common/version/version_list'
 
 module Bosh::Common::Version
   describe ReleaseVersionList do
     let(:version_list) { described_class.parse(versions) }
 
     def parse(version)
-      Bosh::Common::Version::ReleaseVersion.parse(version)
+      ReleaseVersion.parse(version)
     end
 
     describe '#parse' do
@@ -70,6 +71,18 @@ module Bosh::Common::Version
         it 'supports rebasing onto older final versions' do
           expect(version_list.rebase(parse('9.1.5-dev'))).to eq parse('9.1.1-dev')
         end
+      end
+    end
+
+    describe 'equals' do
+      let(:versions) { ['1.0.0', '1.0.1', '1.1.0'] }
+
+      it 'supports equality comparison' do
+        expect(version_list).to eq(ReleaseVersionList.parse(versions))
+      end
+
+      it 'supports equality comparison with VersionList' do
+        expect(version_list).to eq(VersionList.parse(versions, ReleaseVersion))
       end
     end
   end

@@ -25,20 +25,6 @@ module Bosh::Common::Version
       end
     end
 
-    describe 'parse_list' do
-      let(:versions) { ['1.0.1', 'blue.thirty.two'] }
-
-      it 'creates a new VersionList object from an array of strings' do
-        expect(described_class.parse_list(versions)).to be_instance_of(VersionList)
-      end
-
-      it 'delegates to VersionList' do
-        expect(VersionList).to receive(:parse).with(versions, described_class).and_call_original
-
-        described_class.parse_list(versions)
-      end
-    end
-
     describe 'described_class.parse_and_compare' do
       let(:a) { described_class.parse('1.0.1') }
       let(:b) { described_class.parse('1.0.2+dev.10') }

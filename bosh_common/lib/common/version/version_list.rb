@@ -17,6 +17,7 @@ module Bosh::Common::Version
 
     # @param [Array<#version>] Collection of SemiSemanticVersion objects
     def initialize(versions)
+      raise TypeError, "Invalid Version Array: '#{versions.inspect}'" unless versions.kind_of?(Array)
       @versions = versions
     end
 
@@ -40,6 +41,14 @@ module Bosh::Common::Version
 
     def each(&block)
       @versions.each(&block)
+    end
+
+    def ==(other)
+      @versions == other.versions
+    end
+
+    def to_s
+      @versions.map{ |v| v.to_s }.to_s
     end
   end
 end
