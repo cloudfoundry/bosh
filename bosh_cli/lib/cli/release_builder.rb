@@ -21,11 +21,14 @@ module Bosh::Cli
 
       raise ReleaseVersionError.new('Version numbers cannot be specified for dev releases') if (@version && !@final)
 
-      @final_index = VersionsIndex.new(final_releases_dir, release_name)
-      @dev_index = VersionsIndex.new(dev_releases_dir, release_name)
-      @index = @final ? @final_index : @dev_index
+      @final_index = VersionsIndex.new(final_releases_dir)
+      @dev_index = VersionsIndex.new(dev_releases_dir)
+      version_index = @final ? @final_index : @dev_index
+      @index = CachingVersionsIndex.new(version_index, release_name)
 
-      raise ReleaseVersionError.new('Release version already exists') if (@version && @index.version_exists?(@version))
+      if @version && @index.version_exists?(@version)
+        raise ReleaseVersionError.new('Release version already exists')
+      end
 
       @build_dir = Dir.mktmpdir
 
@@ -147,7 +150,8 @@ module Bosh::Cli
         say("This version is no different from version #{old_version}")
         @version = old_version
       else
-        @index.add_version(fingerprint, { "version" => version })
+        # add the version to the index without a file
+        @index.versions_index.add_version(fingerprint, { "version" => version })
       end
 
       manifest["version"] = version
@@ -167,7 +171,7 @@ module Bosh::Cli
 
     def generate_tarball
       generate_manifest unless @manifest_generated
-      return if @index.version_exists?(version)
+      return if @index.version_exists?(@version)
 
       unless @jobs_copied
         header("Copying jobs...")
@@ -226,7 +230,7 @@ module Bosh::Cli
     private
 
     def assign_version
-      latest_final_version = Bosh::Common::Version::ReleaseVersionList.parse(@final_index.versions).latest
+      latest_final_version = ReleaseVersionsIndex.new(@final_index).latest_version
       latest_final_version ||= Bosh::Common::Version::ReleaseVersion.parse('0')
 
       if @final
@@ -234,7 +238,7 @@ module Bosh::Cli
         latest_final_version.increment_release
       else
         # Increment or Reset the post-release segment
-        dev_versions = Bosh::Common::Version::ReleaseVersionList.parse(@dev_index.versions)
+        dev_versions = ReleaseVersionsIndex.new(@dev_index).versions
         latest_dev_version = dev_versions.latest_with_pre_release(latest_final_version)
 
         if latest_dev_version

@@ -7,8 +7,8 @@ module Bosh::Cli
     attr_accessor :dry_run
 
     def init_indices
-      @dev_index   = VersionsIndex.new(@dev_builds_dir)
-      @final_index = VersionsIndex.new(@final_builds_dir)
+      @dev_index   = CachingVersionsIndex.new(VersionsIndex.new(@dev_builds_dir))
+      @final_index = CachingVersionsIndex.new(VersionsIndex.new(@final_builds_dir))
     end
 
     def final?
@@ -120,14 +120,18 @@ module Bosh::Cli
         return nil
       end
 
-      if file_checksum(filename) == item['sha1']
-        @tarball_path = filename
-        @version = version
-        @used_dev_version = true
-      else
+      if file_checksum(filename) != item['sha1']
         say("`#{name} (#{version})' tarball corrupted".make_red)
         return nil
       end
+
+      if final? && !dry_run?
+        @tarball_path = @final_index.add_version(fingerprint, item, filename)
+      end
+
+      @tarball_path = filename
+      @version = version
+      @used_dev_version = true
     end
 
     def generate_tarball
@@ -150,12 +154,10 @@ module Bosh::Cli
       }
 
       if final?
-        @final_index.add_version(fingerprint, item, tmp_file.path)
-        @tarball_path = @final_index.filename(version)
+        @tarball_path = @final_index.add_version(fingerprint, item, tmp_file.path)
       elsif dry_run?
       else
-        @dev_index.add_version(fingerprint, item, tmp_file.path)
-        @tarball_path = @dev_index.filename(version)
+        @tarball_path = @dev_index.add_version(fingerprint, item, tmp_file.path)
       end
 
       @version = version
@@ -167,29 +169,25 @@ module Bosh::Cli
     def upload_tarball(path)
       item = @final_index[fingerprint]
 
-      say("Uploading final version #{version}...")
-
-      if item
-        say('This package has already been uploaded')
+      unless item
+        say("Failed to find entry `#{fingerprint}' in index, check local storage")
         return
       end
 
-      version = fingerprint
+      say("Uploading final version `#{version}'...")
+
+      if item['blobstore_id']
+        say('This package has already been uploaded')
+        return
+      end
 
       blobstore_id = nil
       File.open(path, 'r') do |f|
         blobstore_id = @blobstore.create(f)
       end
 
-      item = {
-        'blobstore_id' => blobstore_id,
-        'version' => version
-      }
-
-      say("Uploaded, blobstore id #{blobstore_id}")
-      @final_index.add_version(fingerprint, item, path)
-      @tarball_path = @final_index.filename(version)
-      @version = version
+      say("Uploaded, blobstore id `#{blobstore_id}'")
+      @final_index.set_blobstore_id(fingerprint, blobstore_id)
       @promoted = true
       true
     rescue Bosh::Blobstore::BlobstoreError => e

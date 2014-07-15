@@ -1,10 +1,12 @@
 module Bosh::Cli
   class VersionsIndex
 
-    def initialize(storage_dir, name_prefix = nil)
+    attr_reader :index_file
+    attr_reader :storage_dir
+
+    def initialize(storage_dir)
       @storage_dir = File.expand_path(storage_dir)
-      @index_file  = File.join(@storage_dir, "index.yml")
-      @name_prefix = name_prefix
+      @index_file  = File.join(@storage_dir, 'index.yml')
 
       if File.file?(@index_file)
         init_index(load_yaml_file(@index_file, nil))
@@ -13,15 +15,12 @@ module Bosh::Cli
       end
     end
 
-    def find_by_checksum(checksum)
-      @data["builds"].each_pair do |fingerprint, build_data|
-        return build_data if build_data["sha1"] == checksum
-      end
-      nil
+    def [](key)
+      @data['builds'][key]
     end
 
-    def [](fingerprint)
-      @data["builds"][fingerprint]
+    def each_pair(&block)
+      @data['builds'].each_pair(&block)
     end
 
     def latest_version
@@ -33,52 +32,62 @@ module Bosh::Cli
       Bosh::Common::Version::ReleaseVersionList.parse(version_strings).latest.to_s
     end
 
-    def version_exists?(version)
-      File.exists?(filename(version))
+    def select(&block)
+      @data['builds'].select(&block)
     end
 
-    def add_version(fingerprint, item, tmp_file_path = nil)
-      version = item["version"]
+    # both (tmp_file_path=nil only used by release)
+    def add_version(new_key, new_build)
+      version = new_build['version']
 
       if version.blank?
-        raise InvalidIndex,
-              "Cannot save index entry without knowing its version"
+        raise InvalidIndex, "Cannot save index entry without a version: `#{new_build}'"
+      end
+
+      if @data['builds'][new_key]
+        raise "Trying to add duplicate entry `#{new_key}' into index `#{@index_file}'"
+      end
+
+      self.each_pair do |key, build|
+        if build['version'] == version && key != new_key
+          raise "Trying to add duplicate version `#{version}' into index `#{@index_file}'"
+        end
       end
 
       create_directories
 
-      if tmp_file_path
-        FileUtils.cp(tmp_file_path, filename(version), :preserve => true)
-      end
+      @data['builds'][new_key] = new_build
 
-      @data["builds"].each_pair do |fp, build|
-        if build["version"] == version && fp != fingerprint
-          raise "Trying to add duplicate version `#{version}' " +
-                    "into index `#{@index_file}'"
-        end
-      end
-
-      @data["builds"][fingerprint] = item
-      if tmp_file_path
-        file_sha1 = Digest::SHA1.file(tmp_file_path).hexdigest
-        @data["builds"][fingerprint]["sha1"] = file_sha1
-      end
-
-      File.open(@index_file, "w") do |f|
+      File.open(@index_file, 'w') do |f|
         f.write(Psych.dump(@data))
       end
 
-      File.expand_path(filename(version))
+      version
     end
 
-    def filename(version)
-      name = @name_prefix.blank? ?
-          "#{version}.tgz" : "#{@name_prefix}-#{version}.tgz"
-      File.join(@storage_dir, name)
+    def update_version(key, new_build)
+      old_build = @data['builds'][key]
+      unless old_build
+        raise "Cannot update non-existent entry with key `#{key}'"
+      end
+
+      if new_build['version'] != old_build['version']
+        raise "Cannot update entry `#{old_build}' with a different version: `#{new_build}'"
+      end
+
+      @data['builds'][key] = new_build
+
+      File.open(@index_file, 'w') do |f|
+        f.write(Psych.dump(@data))
+      end
     end
 
-    def versions
-      @data['builds'].map { |_, build| build['version'] }
+    def version_strings
+      @data['builds'].map { |_, build| build['version'].to_s }
+    end
+
+    def to_s
+      @data['builds'].to_s
     end
 
     private
@@ -101,11 +110,10 @@ module Bosh::Cli
       data ||= {}
 
       unless data.kind_of?(Hash)
-        raise InvalidIndex, "Invalid versions index data type, " +
-            "#{data.class} given, Hash expected"
+        raise InvalidIndex, "Invalid versions index data type, #{data.class} given, Hash expected"
       end
       @data = data
-      @data["builds"] ||= {}
+      @data['builds'] ||= {}
     end
   end
 end

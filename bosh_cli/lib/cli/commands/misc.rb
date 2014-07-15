@@ -64,19 +64,16 @@ module Bosh::Cli::Command
           nl
           say("Release".make_green)
 
-          dev_version = Bosh::Cli::VersionsIndex.new(
-            File.join(work_dir, "dev_releases")).latest_version
-
-          final_version = Bosh::Cli::VersionsIndex.new(
-            File.join(work_dir, "releases")).latest_version
-
+          dev_release_version_index = Bosh::Cli::VersionsIndex.new(File.join(work_dir, "dev_releases"))
+          latest_dev_version = Bosh::Cli::ReleaseVersionsIndex.new(dev_release_version_index).latest_version
           dev = release.dev_name
-          dev += "/#{dev_version}" if dev && dev_version
-
-          final = release.final_name
-          final += "/#{final_version}" if final && final_version
-
+          dev += "/#{latest_dev_version}" if dev && latest_dev_version
           print_value("dev", dev)
+
+          final_releases_version_index = Bosh::Cli::VersionsIndex.new(File.join(work_dir, "releases"))
+          latest_final_version = Bosh::Cli::ReleaseVersionsIndex.new(final_releases_version_index).latest_version
+          final = release.final_name
+          final += "/#{latest_final_version}" if final && latest_final_version
           print_value("final", final)
         end
       end

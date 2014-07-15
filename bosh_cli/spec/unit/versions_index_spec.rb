@@ -1,139 +1,165 @@
 require 'spec_helper'
 
-describe Bosh::Cli::VersionsIndex do
-  before :each do
-    @dir = Dir.mktmpdir
-    @index_file = File.join(@dir, 'index.yml')
-    @index = Bosh::Cli::VersionsIndex.new(@dir)
-  end
+module Bosh::Cli
+  describe VersionsIndex do
+    let(:versions_index) { VersionsIndex.new(tmp_dir) }
+    let(:tmp_dir) { Dir.mktmpdir }
+    let(:index_file) { File.join(tmp_dir, 'index.yml') }
+  
+    after { FileUtils.rm_rf(tmp_dir) }
 
-  after :each do
-    FileUtils.rm_rf(@dir)
-  end
+    describe '#initialize' do
+      it 'errors if the index file is malformed' do
+        File.open(index_file, 'w') { |f| f.write('fake index file') }
 
-  it 'only creates directory structure on writes to index' do
-    expect(File).to_not exist(@index_file)
-    expect(@index.version_exists?(1)).to be(false)
-    expect(@index['deadbeef']).to be_nil
-    expect(@index.versions).to be_empty
-    expect(File).to_not exist(@index_file)
+        expect {
+          versions_index = VersionsIndex.new(tmp_dir)
+        }.to raise_error(InvalidIndex, 'Invalid versions index data type, String given, Hash expected')
+      end
 
-    @index.add_version('deadcafe',
-                       { 'version' => 2 },
-                       get_tmp_file_path('payload2'))
-    expect(File).to exist(@index_file)
-  end
+      it 'allows index file to be empty' do
+        File.open(index_file, 'w') { |f| f.write('') }
 
-  it 'chokes on malformed index file' do
-    File.open(@index_file, 'w') { |f| f.write('deadbeef') }
-
-    expect {
-      @index = Bosh::Cli::VersionsIndex.new(@dir)
-    }.to raise_error(Bosh::Cli::InvalidIndex,
-                         'Invalid versions index data type, ' +
-                           'String given, Hash expected')
-  end
-
-  it "doesn't choke on empty index file" do
-    File.open(@index_file, 'w') { |f| f.write('') }
-    @index = Bosh::Cli::VersionsIndex.new(@dir)
-    expect(@index.versions).to be_empty
-  end
-
-  it 'can be used to add versioned payloads to index' do
-    item1 = { 'a' => 1, 'b' => 2, 'version' => 1 }
-    item2 = { 'a' => 3, 'b' => 4, 'version' => 2 }
-
-    @index.add_version('deadbeef',
-                       item1,
-                       get_tmp_file_path('payload1'))
-    @index.add_version('deadcafe',
-                       item2,
-                       get_tmp_file_path('payload2'))
-
-    expect(@index['deadbeef']).to eq(item1.merge('sha1' => Digest::SHA1.hexdigest('payload1')))
-    expect(@index['deadcafe']).to eq(item2.merge('sha1' => Digest::SHA1.hexdigest('payload2')))
-    expect(@index.version_exists?(1)).to be(true)
-    expect(@index.version_exists?(2)).to be(true)
-    expect(@index.version_exists?(3)).to be(false)
-
-    expect(@index.filename(1)).to eq(File.join(@dir, '1.tgz'))
-    expect(@index.filename(2)).to eq(File.join(@dir, '2.tgz'))
-  end
-
-  it 'you shall not pass without version' do
-    item_noversion = { 'a' => 1, 'b' => 2 }
-    expect {
-      @index.add_version('deadbeef', item_noversion, 'payload1')
-    }.to raise_error(
-      Bosh::Cli::InvalidIndex,
-      'Cannot save index entry without knowing its version'
-    )
-  end
-
-  it 'does not allow duplicate versions with different fingerprints' do
-    item1 = { 'a' => 1, 'b' => 2, 'version' => '1.9-dev' }
-
-    @index.add_version('deadbeef', item1, get_tmp_file_path('payload1'))
-
-    expect {
-      @index.add_version('deadcafe', item1, get_tmp_file_path('payload3'))
-    }.to raise_error(
-      "Trying to add duplicate version `1.9-dev' into index `#{File.join(@dir, 'index.yml')}'"
-    )
-  end
-
-  it 'overwrites a payload with identical fingerprint' do
-    item1 = { 'a' => 1, 'b' => 2, 'version' => '1.8-dev' }
-    item2 = { 'b' => 2, 'c' => 3, 'version' => '1.9-dev' }
-
-    @index.add_version('deadbeef', item1, get_tmp_file_path('payload1'))
-    @index.add_version('deadbeef', item2, get_tmp_file_path('payload3'))
-    expect(@index['deadbeef']).to eq(item2)
-  end
-
-  it 'supports finding entries by checksum' do
-    item1 = { 'a' => 1, 'b' => 2, 'version' => 1 }
-    item2 = { 'a' => 3, 'b' => 4, 'version' => 2 }
-
-    @index.add_version('deadbeef', item1, get_tmp_file_path('payload1'))
-    @index.add_version('deadcafe', item2, get_tmp_file_path('payload2'))
-
-    checksum1 = Digest::SHA1.hexdigest('payload1')
-    checksum2 = Digest::SHA1.hexdigest('payload2')
-
-    expect(@index.find_by_checksum(checksum1)).to eq(item1.merge('sha1' => checksum1))
-    expect(@index.find_by_checksum(checksum2)).to eq(item2.merge('sha1' => checksum2))
-  end
-
-  it 'supports name prefix' do
-    item = { 'a' => 1, 'b' => 2, 'version' => 1 }
-
-    @index = Bosh::Cli::VersionsIndex.new(@dir, 'foobar')
-    @index.add_version('deadbeef', item, get_tmp_file_path('payload1'))
-    expect(@index.filename(1)).to eq(File.join(@dir, 'foobar-1.tgz'))
-  end
-
-  it 'exposes the versions in the index' do
-    item1 = { 'a' => 1, 'b' => 2, 'version' => '1.8-dev' }
-    item2 = { 'b' => 2, 'c' => 3, 'version' => '1.9-dev' }
-
-    @index.add_version('deadbeef', item1, get_tmp_file_path('payload1'))
-    @index.add_version('deadcafe', item2, get_tmp_file_path('payload3'))
-
-    expect(@index.versions).to eq(%w(1.8-dev 1.9-dev))
-  end
-
-  describe 'latest_version' do
-    before do
-      @index.add_version('fingerprint-1', { 'version' => '7' })
-      @index.add_version('fingerprint-2', { 'version' => '8' })
-      @index.add_version('fingerprint-3', { 'version' => '9' })
-      @index.add_version('fingerprint-4', { 'version' => '8.1' })
+        versions_index = Bosh::Cli::VersionsIndex.new(tmp_dir)
+        expect(versions_index.version_strings).to be_empty
+      end
     end
 
-    it 'returns the maximum version' do
-      expect(@index.latest_version).to eq('9')
+    describe '#add_version' do
+      it 'lazily creates index file when a version has been added' do
+        expect(File).to_not exist(index_file)
+
+        versions_index.add_version('fake-key', { 'version' => 2 })
+        expect(File).to exist(index_file)
+      end
+
+      context 'when storage dir does not exist' do
+        let(:versions_index) { VersionsIndex.new(missing_storage_dir) }
+        let(:missing_storage_dir) { File.join(tmp_dir, 'missing-dir') }
+
+        it 'lazily creates storage dir when a version has been added' do
+          expect(Dir).to_not exist(missing_storage_dir)
+
+          versions_index.add_version('fake-key', { 'version' => 2 })
+          expect(Dir).to exist(missing_storage_dir)
+        end
+      end
+
+      it 'records the versioned build data and returns the version' do
+        build1 = { 'a' => 1, 'b' => 2, 'version' => 1 }
+        build2 = { 'a' => 3, 'b' => 4, 'version' => 2 }
+
+        version1 = versions_index.add_version('fake-key-1', build1)
+        version2 = versions_index.add_version('fake-key-2', build2)
+
+        expect(version1).to be(1)
+        expect(version2).to be(2)
+
+        expect(versions_index['fake-key-1']).to eq(build1)
+        expect(versions_index['fake-key-2']).to eq(build2)
+      end
+
+      it 'errors if the build data does not include a version' do
+        build_without_version = { 'a' => 1, 'b' => 2 }
+        expect {
+          versions_index.add_version('fake-key', build_without_version)
+        }.to raise_error(
+          InvalidIndex, "Cannot save index entry without a version: `#{build_without_version}'"
+        )
+      end
+
+      it 'does not allow duplicate versions with different keys' do
+        item1 = { 'version' => '1.9-dev' }
+
+        versions_index.add_version('fake-key-1', item1)
+
+        expect {
+          versions_index.add_version('fake-key-2', item1)
+        }.to raise_error(
+          "Trying to add duplicate version `1.9-dev' into index `#{File.join(tmp_dir, 'index.yml')}'"
+        )
+      end
+
+      it 'does not overwrite a payload with identical fingerprint' do
+        item1 = { 'a' => 1, 'b' => 2, 'version' => '1.8-dev' }
+        item2 = { 'b' => 2, 'c' => 3, 'version' => '1.9-dev' }
+
+        versions_index.add_version('fake-key', item1)
+        expect {
+          versions_index.add_version('fake-key', item2)
+        }.to raise_error(
+          "Trying to add duplicate entry `fake-key' into index `#{File.join(tmp_dir, 'index.yml')}'"
+        )
+        expect(versions_index['fake-key']).to eq(item1)
+      end
     end
+
+    context 'after versions have been added' do
+      let(:builds) do
+        {
+          'fake-key-1' => { 'a' => 1, 'b' => 2, 'version' => 1 },
+          'fake-key-2' => { 'a' => 3, 'b' => 4, 'version' => 2 },
+          'fake-key-3' => { 'a' => 5, 'b' => 6, 'version' => 3 },
+        }
+      end
+
+      before { builds.each{ |k, v| versions_index.add_version(k, v) } }
+
+      describe '#each_pair' do
+        it 'executes the block on each hash entry' do
+          versions_index.each_pair { |k, v| expect(v).to eq(builds[k]) }
+        end
+      end
+
+      describe '#select' do
+        it 'executes the block on each hash entry' do
+          selected = versions_index.select { |k, v| v['version'] > 1 }
+          expected = builds.select { |k, v| v['version'] > 1 }
+
+          expect(selected).to eq(expected)
+        end
+      end
+
+      describe '#update_version' do
+        it 'replaces the build data indexed by the given key & returns the index file path' do
+          build_data = versions_index['fake-key-2'].merge('a' => 10)
+
+          versions_index.update_version('fake-key-2', build_data)
+          expect(versions_index['fake-key-2']).to eq(build_data)
+        end
+
+        it 'errors if the build does not already exist' do
+          expect{
+            versions_index.update_version('fake-key-4', { 'version' => 4 })
+          }.to raise_error(
+            "Cannot update non-existent entry with key `fake-key-4'"
+          )
+        end
+
+        it 'errors if the new version does not match the old version' do
+          old_build = versions_index['fake-key-2']
+          new_build = versions_index['fake-key-2'].merge('version' => 10)
+
+          expect{
+            versions_index.update_version('fake-key-2', new_build)
+          }.to raise_error(
+            "Cannot update entry `#{old_build}' with a different version: `#{new_build}'"
+          )
+        end
+      end
+
+      describe '#version_strings' do
+        it 'returns an array of the versions as strings' do
+          expect(versions_index.version_strings).to eq(['1', '2', '3'])
+        end
+      end
+
+      describe '#to_s' do
+        it 'returns a string representation for debugging' do
+          expect(versions_index.to_s).to eq(builds.to_s)
+        end
+      end
+    end
+
   end
 end

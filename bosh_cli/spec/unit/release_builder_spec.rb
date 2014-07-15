@@ -14,7 +14,8 @@ describe Bosh::Cli::ReleaseBuilder do
 
   context 'when there is a final release' do
     it 'bumps the least significant segment for the next version' do
-      final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'releases'))
+      final_index = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
+        File.join(@release_dir, 'releases')))
       final_index.add_version('deadbeef',
                               { 'version' => '7.4.1' },
                               get_tmp_file_path('payload'))
@@ -28,7 +29,8 @@ describe Bosh::Cli::ReleaseBuilder do
     end
 
     it 'creates a dev version in sync with latest final version' do
-      final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'releases'))
+      final_index = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
+        File.join(@release_dir, 'releases')))
       final_index.add_version('deadbeef',
                               { 'version' => '7.4' },
                               get_tmp_file_path('payload'))
@@ -42,7 +44,8 @@ describe Bosh::Cli::ReleaseBuilder do
     end
 
     it 'bumps the dev version matching the latest final release' do
-      final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'releases'))
+      final_index = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
+        File.join(@release_dir, 'releases')))
       final_index.add_version('deadbeef',
                               { 'version' => '7.3' },
                               get_tmp_file_path('payload'))
@@ -50,14 +53,15 @@ describe Bosh::Cli::ReleaseBuilder do
                               { 'version' => '7.2' },
                               get_tmp_file_path('payload'))
 
-      dev_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'dev_releases'))
+      dev_index = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
+        File.join(@release_dir, 'dev_releases')))
       dev_index.add_version('deadabcd',
                             { 'version' => '7.4.1-dev' },
                             get_tmp_file_path('payload'))
       dev_index.add_version('deadbeef',
                             { 'version' => '7.3.2.1-dev' },
                             get_tmp_file_path('payload'))
-      dev_index.add_version('deadbeef',
+      dev_index.add_version('deadturkey',
                             { 'version' => '7.3.2-dev' },
                             get_tmp_file_path('payload'))
       dev_index.add_version('deadcafe',
@@ -76,7 +80,8 @@ describe Bosh::Cli::ReleaseBuilder do
     end
 
     it 'increments the dev version' do
-      dev_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'dev_releases'))
+      dev_index = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
+        File.join(@release_dir, 'dev_releases')))
       dev_index.add_version('deadbeef',
                             { 'version' => '0.1-dev' },
                             get_tmp_file_path('payload'))
@@ -179,7 +184,8 @@ describe Bosh::Cli::ReleaseBuilder do
     context 'when creating final release' do
       context 'when given release version already exists' do
         it 'raises error' do
-          final_index = Bosh::Cli::VersionsIndex.new(File.join(@release_dir, 'releases'))
+          final_index = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
+            File.join(@release_dir, 'releases')))
           final_index.add_version('deadbeef',
                                   { 'version' => '7.3' },
                                   get_tmp_file_path('payload'))
