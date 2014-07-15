@@ -45,14 +45,7 @@ func NewCentosNetManager(
 	}
 }
 
-func (net centosNetManager) getDNSServers(networks boshsettings.Networks) []string {
-	dnsNetwork, _ := networks.DefaultNetworkFor("dns")
-	return dnsNetwork.DNS
-}
-
 func (net centosNetManager) SetupDhcp(networks boshsettings.Networks, errCh chan error) error {
-	dnsNetwork, _ := networks.DefaultNetworkFor("dns")
-
 	type dhcpConfigArg struct {
 		DNSServers []string
 	}
@@ -60,7 +53,9 @@ func (net centosNetManager) SetupDhcp(networks boshsettings.Networks, errCh chan
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("dhcp-config").Parse(centosDHCPConfigTemplate))
 
-	err := t.Execute(buffer, dhcpConfigArg{dnsNetwork.DNS})
+	// Reverse order of DNS servers because they are added by the DHCP's prepend command
+	dnsServers := net.getDNSServersInReverse(networks)
+	err := t.Execute(buffer, dhcpConfigArg{dnsServers})
 	if err != nil {
 		return bosherr.WrapError(err, "Generating config from template")
 	}
@@ -183,8 +178,10 @@ func (net centosNetManager) writeResolvConf(networks boshsettings.Networks) erro
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("resolv-conf").Parse(centosResolvConfTemplate))
 
-	dnsServers := net.getDNSServers(networks)
-	dnsServersArg := dnsConfigArg{dnsServers}
+	// Keep DNS servers in the order specified by the network
+	dnsNetwork, _ := networks.DefaultNetworkFor("dns")
+	dnsServersArg := dnsConfigArg{dnsNetwork.DNS}
+
 	err := t.Execute(buffer, dnsServersArg)
 	if err != nil {
 		return bosherr.WrapError(err, "Generating config from template")
@@ -231,4 +228,15 @@ func (net centosNetManager) restartNetwork() {
 	if err != nil {
 		net.logger.Info(centosNetManagerLogTag, "Ignoring network restart failure: %#v", err)
 	}
+}
+
+func (net centosNetManager) getDNSServersInReverse(networks boshsettings.Networks) []string {
+	var dnsServers []string
+	dnsNetwork, found := networks.DefaultNetworkFor("dns")
+	if found {
+		for i := len(dnsNetwork.DNS) - 1; i >= 0; i-- {
+			dnsServers = append(dnsServers, dnsNetwork.DNS[i])
+		}
+	}
+	return dnsServers
 }
