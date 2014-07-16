@@ -53,13 +53,20 @@ module Bosh::Director
       event_log = File.join(log_dir, 'event')
       result_log = File.join(log_dir, 'result')
 
-      @task_logger = MonoLogger.new(debug_log)
+      debug_log_device = MonoLogger::LocklessLogDevice.new(debug_log)
+
+      @task_logger = MonoLogger.new(debug_log_device)
       @task_logger.level = Config.logger.level
       @task_logger.formatter = ThreadFormatter.new
 
       Config.event_log = EventLog::Log.new(event_log)
       Config.result = TaskResultFile.new(result_log)
       Config.logger = @task_logger
+
+      redis_task_logger = MonoLogger.new(debug_log_device)
+      redis_task_logger.level = Config.redis_logger_level
+      redis_task_logger.formatter = ThreadFormatter.new
+      Config.redis_logger = redis_task_logger
 
       Config.db.logger = @task_logger
 

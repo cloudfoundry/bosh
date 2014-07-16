@@ -41,7 +41,7 @@ module Bosh::Director
         attr_accessor option
       end
 
-      attr_reader :db_config
+      attr_reader :db_config, :redis_logger_level
 
       def clear
         CONFIG_OPTIONS.each do |option|
@@ -75,14 +75,14 @@ module Bosh::Director
         logging = config.fetch('logging', {})
         @log_device = MonoLogger::LocklessLogDevice.new(logging.fetch('file', STDOUT))
         @logger = MonoLogger.new(@log_device)
-        @logger.level = MonoLogger.const_get(logging.fetch('level', 'debug').upcase)
+        @logger.level = Logger.const_get(logging.fetch('level', 'debug').upcase)
         @logger.formatter = ThreadFormatter.new
 
         # use a separate logger for redis to make it stfu
         redis_logger = MonoLogger.new(@log_device)
         logging = config.fetch('redis', {}).fetch('logging', {})
-        redis_logger_level = logging.fetch('level', 'info').upcase
-        redis_logger.level = MonoLogger.const_get(redis_logger_level)
+        @redis_logger_level = Logger.const_get(logging.fetch('level', 'info').upcase)
+        redis_logger.level = @redis_logger_level
 
         # Event logger supposed to be overridden per task,
         # the default one does nothing
@@ -93,7 +93,7 @@ module Bosh::Director
 
         @max_threads = config.fetch('max_threads', 32).to_i
 
-        self.redis_options= {
+        self.redis_options = {
           :host     => config['redis']['host'],
           :port     => config['redis']['port'],
           :password => config['redis']['password'],
@@ -201,22 +201,18 @@ module Bosh::Director
         Config.cloud_options.fetch('properties', {}).fetch('cpi_log')
       end
 
-      def logger=(logger)
-        @logger = logger
-        redis_options[:logger] = @logger
-        if redis?
-          redis.client.logger = @logger
-        end
-      end
-
       def job_cancelled?
         @current_job.task_checkpoint if @current_job
       end
-      alias_method :task_checkpoint, :job_cancelled?
 
+      alias_method :task_checkpoint, :job_cancelled?
 
       def redis_options
         @redis_options ||= {}
+      end
+
+      def redis_logger_level
+        @redis_logger_level || Logger::INFO
       end
 
       def redis_options=(options)
@@ -250,6 +246,14 @@ module Bosh::Director
 
       def redis
         threaded[:redis] ||= Redis.new(redis_options)
+      end
+
+      def redis_logger=(logger)
+        if redis?
+          redis.client.logger = logger
+        else
+          redis_options[:logger] = logger
+        end
       end
 
       def redis?
@@ -346,6 +350,5 @@ module Bosh::Director
     def initialize(hash)
       @hash = hash
     end
-
   end
 end
