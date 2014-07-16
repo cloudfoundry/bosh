@@ -69,9 +69,11 @@ module Bosh::Spec
       end
 
       header_row = rows.shift
-      values_row = rows.shift
+      return [] unless header_row
 
+      values_row = rows.shift
       headers = {}
+
       header_row.each_with_index do |row_line|
         row_titles = row_line.split('|').map(&:strip)
         row_titles.each_with_index do |row_title, key|
