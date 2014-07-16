@@ -12,6 +12,8 @@ describe 'cancel task', type: :integration do
     deploy_result = deploy_simple(manifest_hash: manifest_hash, no_track: true)
     task_id = Bosh::Spec::OutputParser.new(deploy_result).task_id('running')
 
+    wait_for_package_compilation_vm
+
     output, exit_code = bosh_runner.run("cancel task #{task_id}", return_exit_code: true)
     expect(output).to include("Task #{task_id} is getting canceled")
     expect(exit_code).to eq(0)
@@ -22,6 +24,10 @@ describe 'cancel task', type: :integration do
     expect(task_event).to include('error')
     expect(task_event['error']['code']).to eq(10001)
     expect(task_event['error']['message']).to eq("Task #{task_id} cancelled")
+  end
+
+  def wait_for_package_compilation_vm
+    waiter.wait(60) { director.vms.first || raise('Must have at least 1 VM') }
   end
 
   def unblock_package_compilation

@@ -91,7 +91,12 @@ describe 'cli: stemcell', type: :integration do
         local_server_cmd = %W(rackup -b run(Rack::Directory.new('#{spec_asset('')}')))
         Bosh::Dev::Sandbox::Service.new(local_server_cmd, {}, Logger.new(STDOUT))
       end
-      before { webserver.start }
+
+      before do
+        webserver.start
+        Bosh::Dev::Sandbox::SocketConnector.new('stemcell-repo', 'localhost', 9292, logger).try_to_connect
+      end
+
       after { webserver.stop }
 
       let(:remote_stemcell_url) { 'http://localhost:9292/valid_stemcell.tgz' }
