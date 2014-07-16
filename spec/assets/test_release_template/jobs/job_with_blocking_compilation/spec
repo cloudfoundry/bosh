@@ -1,0 +1,6 @@
+---
+name: job_with_blocking_compilation
+templates: {}
+
+packages:
+- blocking_package

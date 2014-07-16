@@ -1,0 +1,5 @@
+---
+name: blocking_package
+
+files:
+- foo

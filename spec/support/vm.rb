@@ -40,6 +40,10 @@ module Bosh::Spec
       end
     end
 
+    def package_path(package_name)
+      File.join(@agent_base_dir, 'packages', package_name)
+    end
+
     def kill_agent
       @logger.info("Killing agent #{@cid}")
       Process.kill('INT', @cid.to_i)

@@ -196,8 +196,8 @@ describe 'cli releases', type: :integration do
     expect(out).to match /bar\s*\(.*\)\s*UPLOAD/
     expect(out).to match /Release repacked/
     expect(out).to match /Started creating new packages > bar.*Done/
-    expect(out).to match /Started processing 2 existing packages > Processing 2 existing packages.*Done/
-    expect(out).to match /Started processing 2 existing jobs > Processing 2 existing jobs.*Done/
+    expect(out).to match /Started processing 3 existing packages > Processing 3 existing packages.*Done/
+    expect(out).to match /Started processing 3 existing jobs > Processing 3 existing jobs.*Done/
     expect(out).to match /Release uploaded/
 
     out = bosh_runner.run('releases')
