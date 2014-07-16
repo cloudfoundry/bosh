@@ -1,4 +1,4 @@
-require "logger"
+require 'logger'
 
 module Bosh
   class ThreadPool
@@ -45,14 +45,14 @@ module Bosh
         @actions << block
         if @state == :open
           if @available_threads > 0
-            @logger.debug("Creating new thread")
+            @logger.debug('Creating new thread')
             @available_threads -= 1
             create_thread
           else
-            @logger.debug("All threads are currently busy, queuing action")
+            @logger.debug('All threads are currently busy, queuing action')
           end
         elsif @state == :paused
-          @logger.debug("Pool is paused, queueing action.")
+          @logger.debug('Pool is paused, queueing action')
         end
       end
     end
@@ -64,10 +64,8 @@ module Bosh
             action = nil
             @lock.synchronize do
               action = @actions.shift unless @boom
-              if action
-                @logger.debug("Found an action that needs to be processed")
-              else
-                @logger.debug("Thread is no longer needed, cleaning up")
+              unless action
+                @logger.debug('Thread is no longer needed, cleaning up')
                 @available_threads += 1
                 @threads.delete(thread) if @state == :open
               end
@@ -103,7 +101,7 @@ module Bosh
     end
 
     def wait
-      @logger.debug("Waiting for tasks to complete")
+      @logger.debug('Waiting for tasks to complete')
       @lock.synchronize do
         @cv.wait(@lock) while working?
         raise @boom if @boom
@@ -112,7 +110,7 @@ module Bosh
 
     def shutdown
       return if @state == :closed
-      @logger.debug("Shutting down pool")
+      @logger.debug('Shutting down pool')
       @lock.synchronize do
         return if @state == :closed
         @state = :closed
