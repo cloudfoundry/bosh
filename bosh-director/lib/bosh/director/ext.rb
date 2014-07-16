@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Resque
   def redis
     Bosh::Director::Config.redis
@@ -7,15 +5,15 @@ module Resque
 end
 
 class Object
- def to_openstruct
-   self
- end
+  def to_openstruct
+    self
+  end
 end
 
 class Array
- def to_openstruct
-   map { |el| el.to_openstruct }
- end
+  def to_openstruct
+    map { |el| el.to_openstruct }
+  end
 end
 
 class Hash
@@ -30,35 +28,9 @@ class Hash
     self
   end
 
- def to_openstruct
-   mapped = {}
-   each { |key, value| mapped[key] = value.to_openstruct }
-   OpenStruct.new(mapped)
- end
-end
-
-require "sequel/connection_pool/threaded"
-
-class Sequel::ThreadedConnectionPool < Sequel::ConnectionPool
-
-  alias_method :acquire_original, :acquire
-  alias_method :release_original, :release
-
-  def acquire(thread)
-    logger = Bosh::Director::Config.logger
-    result = acquire_original(thread)
-    if logger
-      logger.debug("Acquired connection: #{@allocated[thread].object_id}")
-    end
-    result
+  def to_openstruct
+    mapped = {}
+    each { |key, value| mapped[key] = value.to_openstruct }
+    OpenStruct.new(mapped)
   end
-
-  def release(thread)
-    logger = Bosh::Director::Config.logger
-    if logger
-      logger.debug("Released connection: #{@allocated[thread].object_id}")
-    end
-    release_original(thread)
-  end
-
 end
