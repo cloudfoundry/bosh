@@ -139,20 +139,12 @@ module Bosh::Cli
       manifest["name"] = release_name
 
       unless manifest["name"].bosh_valid_id?
-        raise InvalidRelease, "Release name `#{manifest["name"]}' " +
-                              "is not a valid BOSH identifier"
+        raise InvalidRelease, "Release name `#{manifest["name"]}' is not a valid BOSH identifier"
       end
 
-      fingerprint = make_fingerprint(manifest)
-
-      if @index[fingerprint]
-        old_version = @index[fingerprint]["version"]
-        say("This version is no different from version #{old_version}")
-        @version = old_version
-      else
-        # add the version to the index without a file
-        @index.versions_index.add_version(fingerprint, { "version" => version })
-      end
+      # New release versions are allowed to have the same fingerprint as old versions.
+      # For reverse compatibility, random uuids are stored instead.
+      @index.versions_index.add_version(SecureRandom.uuid, { "version" => version })
 
       manifest["version"] = version
       manifest_yaml = Psych.dump(manifest)
@@ -213,18 +205,6 @@ module Bosh::Cli
 
     def manifest_path
       File.join(releases_dir, "#{release_name}-#{version}.yml")
-    end
-
-    def make_fingerprint(item)
-      case item
-      when Array
-        source = item.map { |e| make_fingerprint(e) }.sort.join("")
-      when Hash
-        source = item.keys.sort.map{ |k| make_fingerprint(item[k]) }.join("")
-      else
-        source = item.to_s
-      end
-      Digest::SHA1.hexdigest(source)
     end
 
     private
