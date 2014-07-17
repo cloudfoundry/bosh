@@ -87,12 +87,21 @@ module Bosh
 
         create_instance(instance_options).tap do |instance|
           Bosh::AwsCloud::ResourceWait.for_instance(instance: instance, state: :running)
+
           instance.add_tag("Name", {value: name})
+
           elastic_ip = allocate_elastic_ip
-          Bosh::Common.retryable(tries: 30, on: AWS::EC2::Errors::InvalidAddress::NotFound) do
+
+          ignorable_errors = [
+            AWS::EC2::Errors::InvalidAddress::NotFound,
+            AWS::EC2::Errors::InvalidAllocationID::NotFound,
+          ]
+
+          Bosh::Common.retryable(tries: 30, on: ignorable_errors) do
             instance.associate_elastic_ip(elastic_ip)
             true
           end
+
           disable_src_dest_checking(instance.id)
         end
       end
