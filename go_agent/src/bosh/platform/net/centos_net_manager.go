@@ -53,9 +53,11 @@ func (net centosNetManager) SetupDhcp(networks boshsettings.Networks, errCh chan
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("dhcp-config").Parse(centosDHCPConfigTemplate))
 
-	// Reverse order of DNS servers because they are added by the DHCP's prepend command
-	dnsServers := net.getDNSServersInReverse(networks)
-	err := t.Execute(buffer, dhcpConfigArg{dnsServers})
+	// Keep DNS servers in the order specified by the network
+	// because they are added by a *single* DHCP's prepend command
+	dnsNetwork, _ := networks.DefaultNetworkFor("dns")
+	dnsServersList := strings.Join(dnsNetwork.DNS, ", ")
+	err := t.Execute(buffer, dnsServersList)
 	if err != nil {
 		return bosherr.WrapError(err, "Generating config from template")
 	}
@@ -97,8 +99,8 @@ request subnet-mask, broadcast-address, time-offset, routers,
 	netbios-name-servers, netbios-scope, interface-mtu,
 	rfc3442-classless-static-routes, ntp-servers;
 
-{{ range .DNSServers }}prepend domain-name-servers {{ . }};
-{{ end }}`
+prepend domain-name-servers {{ . }};
+`
 
 func (net centosNetManager) SetupManualNetworking(networks boshsettings.Networks, errCh chan error) error {
 	modifiedNetworks, err := net.writeIfcfgs(networks)
@@ -228,15 +230,4 @@ func (net centosNetManager) restartNetwork() {
 	if err != nil {
 		net.logger.Info(centosNetManagerLogTag, "Ignoring network restart failure: %#v", err)
 	}
-}
-
-func (net centosNetManager) getDNSServersInReverse(networks boshsettings.Networks) []string {
-	var dnsServers []string
-	dnsNetwork, found := networks.DefaultNetworkFor("dns")
-	if found {
-		for i := len(dnsNetwork.DNS) - 1; i >= 0; i-- {
-			dnsServers = append(dnsServers, dnsNetwork.DNS[i])
-		}
-	}
-	return dnsServers
 }

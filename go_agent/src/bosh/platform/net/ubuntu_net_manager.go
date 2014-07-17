@@ -53,9 +53,10 @@ func (net ubuntuNetManager) SetupDhcp(networks boshsettings.Networks, errCh chan
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("dhcp-config").Parse(ubuntuDHCPConfigTemplate))
 
-	// Reverse order of DNS servers because they are added by the DHCP's prepend command
-	dnsServers := net.getDNSServersInReverse(networks)
-	dnsServersList := strings.Join(dnsServers, ", ")
+	// Keep DNS servers in the order specified by the network
+	// because they are added by a *single* DHCP's prepend command
+	dnsNetwork, _ := networks.DefaultNetworkFor("dns")
+	dnsServersList := strings.Join(dnsNetwork.DNS, ", ")
 	err := t.Execute(buffer, dnsServersList)
 	if err != nil {
 		return bosherr.WrapError(err, "Generating config from template")
@@ -276,15 +277,4 @@ func (net ubuntuNetManager) restartNetworkArguments() []string {
 	}
 
 	return []string{"-a", "--exclude=lo"}
-}
-
-func (net ubuntuNetManager) getDNSServersInReverse(networks boshsettings.Networks) []string {
-	var dnsServers []string
-	dnsNetwork, found := networks.DefaultNetworkFor("dns")
-	if found {
-		for i := len(dnsNetwork.DNS) - 1; i >= 0; i-- {
-			dnsServers = append(dnsServers, dnsNetwork.DNS[i])
-		}
-	}
-	return dnsServers
 }

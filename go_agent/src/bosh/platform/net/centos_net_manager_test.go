@@ -26,9 +26,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 	netbios-name-servers, netbios-scope, interface-mtu,
 	rfc3442-classless-static-routes, ntp-servers;
 
-prepend domain-name-servers zz.zz.zz.zz;
-prepend domain-name-servers yy.yy.yy.yy;
-prepend domain-name-servers xx.xx.xx.xx;
+prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 `
 
 	const expectedCentosIfcfg = `DEVICE=eth0
@@ -106,16 +104,14 @@ ONBOOT=yes`
 					Expect(dhcpConfig.StringContents()).To(Equal(expectedCentosDHCPConfig))
 				})
 
-				It("writes out DNS servers in reverse because DHCP prepend command will add them in correct order", func() {
+				It("writes out DNS servers in order that was provided by the network because *single* DHCP prepend command is used", func() {
 					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
 					Expect(dhcpConfig).ToNot(BeNil())
 					Expect(dhcpConfig.StringContents()).To(ContainSubstring(`
-prepend domain-name-servers zz.zz.zz.zz;
-prepend domain-name-servers yy.yy.yy.yy;
-prepend domain-name-servers xx.xx.xx.xx;
+prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 `))
 				})
 
