@@ -110,8 +110,8 @@ request subnet-mask, broadcast-address, time-offset, routers,
 	domain-name, domain-name-servers, domain-search, host-name,
 	netbios-name-servers, netbios-scope, interface-mtu,
 	rfc3442-classless-static-routes, ntp-servers;
-
-prepend domain-name-servers {{ . }};
+{{ if . }}
+prepend domain-name-servers {{ . }};{{ end }}
 `
 
 func (net ubuntuNetManager) SetupManualNetworking(networks boshsettings.Networks, errCh chan error) error {

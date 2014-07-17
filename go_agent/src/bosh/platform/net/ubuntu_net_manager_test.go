@@ -74,16 +74,27 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 		})
 
 		Describe("SetupDhcp", func() {
-			networks := boshsettings.Networks{
-				"bosh": boshsettings.Network{
-					Default: []string{"dns"},
-					DNS:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
-				},
-				"vip": boshsettings.Network{
-					Default: []string{},
-					DNS:     []string{"aa.aa.aa.aa"},
-				},
-			}
+			const (
+				dhcpConfPath  = "/etc/dhcp/dhclient.conf"
+				dhcp3ConfPath = "/etc/dhcp3/dhclient.conf"
+			)
+
+			var (
+				networks boshsettings.Networks
+			)
+
+			BeforeEach(func() {
+				networks = boshsettings.Networks{
+					"bosh": boshsettings.Network{
+						Default: []string{"dns"},
+						DNS:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
+					},
+					"vip": boshsettings.Network{
+						Default: []string{},
+						DNS:     []string{"aa.aa.aa.aa"},
+					},
+				}
+			})
 
 			ItRestartsDhcp := func() {
 				Context("when ifconfig version is 0.7", func() {
@@ -121,12 +132,12 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 				})
 			}
 
-			ItUpdatesDhcp3Config := func() {
-				It("updates /etc/dhcp3/dhclient.conf", func() {
+			ItUpdatesDhcpConfig := func(dhcpConfPath string) {
+				It("writes dhcp configuration", func() {
 					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
-					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
+					dhcpConfig := fs.GetFileTestStat(dhcpConfPath)
 					Expect(dhcpConfig).ToNot(BeNil())
 					Expect(dhcpConfig.StringContents()).To(Equal(expectedUbuntuDHCPConfig))
 				})
@@ -135,33 +146,24 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
-					dhcpConfig := fs.GetFileTestStat("/etc/dhcp3/dhclient.conf")
+					dhcpConfig := fs.GetFileTestStat(dhcpConfPath)
 					Expect(dhcpConfig).ToNot(BeNil())
 					Expect(dhcpConfig.StringContents()).To(ContainSubstring(`
 prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 `))
 				})
-			}
 
-			ItUpdatesDhcpConfig := func() {
-				It("updates /etc/dhcp/dhclient.conf", func() {
+				It("does not prepend any DNS servers if network does not provide them", func() {
+					net := networks["bosh"]
+					net.DNS = []string{}
+					networks["bosh"] = net
+
 					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
-					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
+					dhcpConfig := fs.GetFileTestStat(dhcpConfPath)
 					Expect(dhcpConfig).ToNot(BeNil())
-					Expect(dhcpConfig.StringContents()).To(Equal(expectedUbuntuDHCPConfig))
-				})
-
-				It("writes out DNS servers in order that was provided by the network because *single* DHCP prepend command is used", func() {
-					err := netManager.SetupDhcp(networks, nil)
-					Expect(err).ToNot(HaveOccurred())
-
-					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
-					Expect(dhcpConfig).ToNot(BeNil())
-					Expect(dhcpConfig.StringContents()).To(ContainSubstring(`
-prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
-`))
+					Expect(dhcpConfig.StringContents()).ToNot(ContainSubstring(`prepend domain-name-servers`))
 				})
 			}
 
@@ -193,27 +195,27 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 				BeforeEach(func() { cmdRunner.CommandExistsValue = true })
 
 				Context("when dhcp was not previously configured", func() {
-					ItUpdatesDhcp3Config()
+					ItUpdatesDhcpConfig(dhcp3ConfPath)
 					ItRestartsDhcp()
 					ItBroadcastsMACAddresses()
 				})
 
 				Context("when dhcp was previously configured with different configuration", func() {
 					BeforeEach(func() {
-						fs.WriteFileString("/etc/dhcp3/dhclient.conf", "fake-other-configuration")
+						fs.WriteFileString(dhcp3ConfPath, "fake-other-configuration")
 					})
 
-					ItUpdatesDhcp3Config()
+					ItUpdatesDhcpConfig(dhcp3ConfPath)
 					ItRestartsDhcp()
 					ItBroadcastsMACAddresses()
 				})
 
 				Context("when dhcp was previously configured with the same configuration", func() {
 					BeforeEach(func() {
-						fs.WriteFileString("/etc/dhcp3/dhclient.conf", expectedUbuntuDHCPConfig)
+						fs.WriteFileString(dhcp3ConfPath, expectedUbuntuDHCPConfig)
 					})
 
-					ItUpdatesDhcp3Config()
+					ItUpdatesDhcpConfig(dhcp3ConfPath)
 					ItDoesNotRestartDhcp()
 					ItBroadcastsMACAddresses()
 				})
@@ -223,25 +225,25 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 				BeforeEach(func() { cmdRunner.CommandExistsValue = false })
 
 				Context("when dhcp was not previously configured", func() {
-					ItUpdatesDhcpConfig()
+					ItUpdatesDhcpConfig(dhcpConfPath)
 					ItRestartsDhcp()
 				})
 
 				Context("when dhcp was previously configured with different configuration", func() {
 					BeforeEach(func() {
-						fs.WriteFileString("/etc/dhcp/dhclient.conf", "fake-other-configuration")
+						fs.WriteFileString(dhcpConfPath, "fake-other-configuration")
 					})
 
-					ItUpdatesDhcpConfig()
+					ItUpdatesDhcpConfig(dhcpConfPath)
 					ItRestartsDhcp()
 				})
 
 				Context("when dhcp was previously configured with the same configuration", func() {
 					BeforeEach(func() {
-						fs.WriteFileString("/etc/dhcp/dhclient.conf", expectedUbuntuDHCPConfig)
+						fs.WriteFileString(dhcpConfPath, expectedUbuntuDHCPConfig)
 					})
 
-					ItUpdatesDhcpConfig()
+					ItUpdatesDhcpConfig(dhcpConfPath)
 					ItDoesNotRestartDhcp()
 				})
 			})

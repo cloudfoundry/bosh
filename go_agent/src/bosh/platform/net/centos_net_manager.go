@@ -46,10 +46,6 @@ func NewCentosNetManager(
 }
 
 func (net centosNetManager) SetupDhcp(networks boshsettings.Networks, errCh chan error) error {
-	type dhcpConfigArg struct {
-		DNSServers []string
-	}
-
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("dhcp-config").Parse(centosDHCPConfigTemplate))
 
@@ -98,8 +94,8 @@ request subnet-mask, broadcast-address, time-offset, routers,
 	domain-name, domain-name-servers, domain-search, host-name,
 	netbios-name-servers, netbios-scope, interface-mtu,
 	rfc3442-classless-static-routes, ntp-servers;
-
-prepend domain-name-servers {{ . }};
+{{ if . }}
+prepend domain-name-servers {{ . }};{{ end }}
 `
 
 func (net centosNetManager) SetupManualNetworking(networks boshsettings.Networks, errCh chan error) error {

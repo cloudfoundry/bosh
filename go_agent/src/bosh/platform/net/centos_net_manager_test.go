@@ -65,16 +65,26 @@ ONBOOT=yes`
 		})
 
 		Describe("SetupDhcp", func() {
-			networks := boshsettings.Networks{
-				"bosh": boshsettings.Network{
-					Default: []string{"dns"},
-					DNS:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
-				},
-				"vip": boshsettings.Network{
-					Default: []string{},
-					DNS:     []string{"aa.aa.aa.aa"},
-				},
-			}
+			const (
+				dhcpConfPath = "/etc/dhcp/dhclient.conf"
+			)
+
+			var (
+				networks boshsettings.Networks
+			)
+
+			BeforeEach(func() {
+				networks = boshsettings.Networks{
+					"bosh": boshsettings.Network{
+						Default: []string{"dns"},
+						DNS:     []string{"xx.xx.xx.xx", "yy.yy.yy.yy", "zz.zz.zz.zz"},
+					},
+					"vip": boshsettings.Network{
+						Default: []string{},
+						DNS:     []string{"aa.aa.aa.aa"},
+					},
+				}
+			})
 
 			ItBroadcastsMACAddresses := func() {
 				It("starts broadcasting the MAC addresses", func() {
@@ -94,12 +104,12 @@ ONBOOT=yes`
 				})
 			}
 
-			Context("when dhcp was not previously configured", func() {
+			ItUpdatesDhcpConfig := func() {
 				It("writes dhcp configuration", func() {
 					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
-					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
+					dhcpConfig := fs.GetFileTestStat(dhcpConfPath)
 					Expect(dhcpConfig).ToNot(BeNil())
 					Expect(dhcpConfig.StringContents()).To(Equal(expectedCentosDHCPConfig))
 				})
@@ -108,13 +118,28 @@ ONBOOT=yes`
 					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
-					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
+					dhcpConfig := fs.GetFileTestStat(dhcpConfPath)
 					Expect(dhcpConfig).ToNot(BeNil())
 					Expect(dhcpConfig.StringContents()).To(ContainSubstring(`
 prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 `))
 				})
 
+				It("does not prepend any DNS servers if network does not provide them", func() {
+					net := networks["bosh"]
+					net.DNS = []string{}
+					networks["bosh"] = net
+
+					err := netManager.SetupDhcp(networks, nil)
+					Expect(err).ToNot(HaveOccurred())
+
+					dhcpConfig := fs.GetFileTestStat(dhcpConfPath)
+					Expect(dhcpConfig).ToNot(BeNil())
+					Expect(dhcpConfig.StringContents()).ToNot(ContainSubstring(`prepend domain-name-servers`))
+				})
+			}
+
+			ItRestartsDhcp := func() {
 				It("restarts network", func() {
 					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
@@ -122,45 +147,34 @@ prepend domain-name-servers xx.xx.xx.xx, yy.yy.yy.yy, zz.zz.zz.zz;
 					Expect(len(cmdRunner.RunCommands)).To(Equal(1))
 					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
 				})
+			}
 
+			Context("when dhcp was not previously configured", func() {
+				ItUpdatesDhcpConfig()
+				ItRestartsDhcp()
 				ItBroadcastsMACAddresses()
 			})
 
 			Context("when dhcp was previously configured with different configuration", func() {
 				BeforeEach(func() {
-					fs.WriteFileString("/etc/dhcp/dhclient.conf", "fake-other-configuration")
+					fs.WriteFileString(dhcpConfPath, "fake-other-configuration")
 				})
 
-				It("updates dhcp configuration", func() {
-					err := netManager.SetupDhcp(networks, nil)
-					Expect(err).ToNot(HaveOccurred())
-
-					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
-					Expect(dhcpConfig).ToNot(BeNil())
-					Expect(dhcpConfig.StringContents()).To(Equal(expectedCentosDHCPConfig))
-				})
-
-				It("restarts network", func() {
-					err := netManager.SetupDhcp(networks, nil)
-					Expect(err).ToNot(HaveOccurred())
-
-					Expect(len(cmdRunner.RunCommands)).To(Equal(1))
-					Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"service", "network", "restart"}))
-				})
-
+				ItUpdatesDhcpConfig()
+				ItRestartsDhcp()
 				ItBroadcastsMACAddresses()
 			})
 
 			Context("when dhcp was previously configured with same configuration", func() {
 				BeforeEach(func() {
-					fs.WriteFileString("/etc/dhcp/dhclient.conf", expectedCentosDHCPConfig)
+					fs.WriteFileString(dhcpConfPath, expectedCentosDHCPConfig)
 				})
 
 				It("keeps dhcp configuration", func() {
 					err := netManager.SetupDhcp(networks, nil)
 					Expect(err).ToNot(HaveOccurred())
 
-					dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
+					dhcpConfig := fs.GetFileTestStat(dhcpConfPath)
 					Expect(dhcpConfig).ToNot(BeNil())
 					Expect(dhcpConfig.StringContents()).To(Equal(expectedCentosDHCPConfig))
 				})
