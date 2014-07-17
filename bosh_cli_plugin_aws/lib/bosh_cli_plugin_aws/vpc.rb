@@ -78,10 +78,18 @@ module Bosh
           if group_name_available group_spec["name"]
             security_group = @aws_vpc.security_groups.create(group_spec["name"])
             Bosh::AwsCloud::ResourceWait.for_sgroup(sgroup: security_group, state: true)
+
             group_spec["ingress"].each do |ingress|
               range_match = ingress["ports"].to_s.match(/(\d+)\s*-\s*(\d+)/)
               ports = range_match ? (range_match[1].to_i)..(range_match[2].to_i) : ingress["ports"].to_i
-              security_group.authorize_ingress(ingress["protocol"], ports, ingress["sources"])
+
+              # Wait for eventual consistancy
+              ignorable_errors = [AWS::EC2::Errors::InvalidGroup::NotFound]
+
+              Bosh::Common.retryable(tries: 30, on: ignorable_errors) do
+                security_group.authorize_ingress(ingress["protocol"], ports, ingress["sources"])
+                true
+              end
             end
           end
         end
