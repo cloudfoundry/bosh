@@ -38,6 +38,17 @@ describe Bosh::AwsCloud::ResourceWait do
         end
       end
 
+      context 'when resource status service is not available' do
+        it 'should wait until the service is available and the state is running' do
+          instance.should_receive(:status).and_raise(
+            AWS::Errors::ServerError.new('The service is unavailable. Please try again shortly.'))
+          instance.should_receive(:status).and_return(:pending)
+          instance.should_receive(:status).and_return(:running)
+
+          described_class.for_instance(instance: instance, state: :running)
+        end
+      end
+
       it 'should fail if AWS terminates the instance' do
         instance.should_receive(:status).and_return(:pending)
         instance.should_receive(:status).and_return(:pending)

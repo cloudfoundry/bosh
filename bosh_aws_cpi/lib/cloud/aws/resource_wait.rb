@@ -18,7 +18,11 @@ module Bosh::AwsCloud
 
       ignored_errors = [
         AWS::EC2::Errors::InvalidInstanceID::NotFound,
-        AWS::Core::Resource::NotFound
+        AWS::Core::Resource::NotFound,
+        Bosh::Retryable::ErrorMatcher.new(
+          AWS::Errors::ServerError,
+          /The service is unavailable. Please try again shortly./,
+        ),
       ]
 
       new.for_resource(resource: instance, errors: ignored_errors, target_state: target_state) do |current_state|
