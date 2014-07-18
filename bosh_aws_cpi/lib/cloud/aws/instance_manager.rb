@@ -25,13 +25,13 @@ module Bosh::AwsCloud
       set_security_groups_parameter(networks_spec, options["aws"]["default_security_groups"])
       set_vpc_parameters(networks_spec)
       set_availability_zone_parameter(
-          (disk_locality || []).map { |volume_id| @region.volumes[volume_id].availability_zone.to_s },
-          resource_pool["availability_zone"],
-          (@instance_params[:subnet].availability_zone_name if @instance_params[:subnet])
+        (disk_locality || []).map { |volume_id| @region.volumes[volume_id].availability_zone.to_s },
+        resource_pool["availability_zone"],
+        (@instance_params[:subnet].availability_zone_name if @instance_params[:subnet])
       )
-      
+
       @logger.info("Creating new instance with: #{instance_params.inspect}")
-      
+
       if resource_pool["spot_bid_price"]
         @logger.info("Launching spot instance...")
         spot_manager = Bosh::AwsCloud::SpotManager.new(@region)
@@ -43,11 +43,11 @@ module Bosh::AwsCloud
         # realocate it again.
         errors = [AWS::EC2::Errors::InvalidIPAddress::InUse]
         Bosh::Common.retryable(sleep: instance_create_wait_time, tries: 10, on: errors) do |tries, error|
-          @logger.info("Launching on demand instance...") 
+          @logger.info("Launching on demand instance...")
           @logger.warn("IP address was in use: #{error}") if tries > 0
           @instance = @region.instances.create(instance_params)
         end
-      end 
+      end
 
       # We need to wait here for the instance to be running, as if we are going to
       # attach to a load balancer, the instance must be running.
@@ -55,17 +55,27 @@ module Bosh::AwsCloud
       # so we signal the director that it is ok to retry the operation. At the moment this
       # forever (until the operation is cancelled by the user).
       begin
-        @logger.info("Waiting for instance to be ready...") 
-        ResourceWait.for_instance(instance: instance, state: :running)
-      rescue Bosh::Common::RetryCountExceeded => e
-        @logger.warn("timed out waiting for #{instance.id} to be running")
+        @logger.info("Waiting for instance to be ready...")
+        ResourceWait.for_instance(instance: @instance, state: :running)
+      rescue Bosh::Common::RetryCountExceeded
+        @logger.warn("Timed out waiting for instance '#{@instance.id}' to be running")
         raise Bosh::Clouds::VMCreationFailed.new(true)
       end
 
       @elbs = resource_pool['elbs']
       attach_to_load_balancers if elbs
 
-      instance
+      @instance
+    # rescue => e
+    #   if @instance
+    #     @logger.warn("Failed configuring created instance #{@instance.id}: #{e.inspect}. Attempting to delete.")
+    #     begin
+    #       terminate(@instance.id)
+    #     rescue => e
+    #       @logger.error("Failed to delete instance #{@instance.id}: #{e.inspect}")
+    #     end
+    #   end
+    #   raise
     end
 
     def terminate(instance_id, fast=false)
@@ -76,7 +86,7 @@ module Bosh::AwsCloud
       begin
         instance.terminate
       rescue AWS::EC2::Errors::InvalidInstanceID::NotFound => e
-        @logger.info("Failed to terminate instance because it was not found: #{e.inspect}")
+        @logger.warn("Failed to terminate instance '#{instance_id}' because it was not found: #{e.inspect}")
         raise Bosh::Clouds::VMNotFound, "VM `#{instance_id}' not found"
       ensure
         @logger.info("Deleting instance settings for '#{instance_id}'")
@@ -92,7 +102,8 @@ module Bosh::AwsCloud
       begin
         @logger.info("Deleting instance '#{instance.id}'")
         ResourceWait.for_instance(instance: instance, state: :terminated)
-      rescue AWS::EC2::Errors::InvalidInstanceID::NotFound
+      rescue AWS::EC2::Errors::InvalidInstanceID::NotFound => e
+        @logger.debug("Failed to find terminated instance '#{instance.id}' after deletion: #{e.inspect}")
         # It's OK, just means that instance has already been deleted
       end
     end
@@ -161,14 +172,14 @@ module Bosh::AwsCloud
       if manual_network_spec
         instance_params[:private_ip_address] = manual_network_spec["ip"]
       end
-      
-      subnet_network_spec = network_spec.values.select { |spec| 
-        ["manual", nil, "dynamic"].include?(spec["type"]) && 
+
+      subnet_network_spec = network_spec.values.select { |spec|
+        ["manual", nil, "dynamic"].include?(spec["type"]) &&
         spec.fetch("cloud_properties", {}).has_key?("subnet")
       }.first
       if subnet_network_spec
           instance_params[:subnet] = @region.subnets[subnet_network_spec["cloud_properties"]["subnet"]]
-      end      
+      end
     end
 
     def set_availability_zone_parameter(volume_zones, resource_pool_zone, subnet_zone)

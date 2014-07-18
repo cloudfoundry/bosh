@@ -11,9 +11,7 @@ describe Bosh::AwsCloud::InstanceManager do
     let(:fake_aws_instance) { double("aws_instance", id: instance_id) }
     let(:instance_manager) { described_class.new(region, registry, availability_zone_selector) }
 
-    before do
-      region.stub_chain(:instances, :[]).with(instance_id).and_return(fake_aws_instance)
-    end
+    before { region.stub_chain(:instances, :[]).with(instance_id).and_return(fake_aws_instance) }
 
     it "returns false if instance does not exist" do
       expect(fake_aws_instance).to receive(:exists?).and_return(false)
@@ -38,15 +36,15 @@ describe Bosh::AwsCloud::InstanceManager do
     let(:fake_aws_subnet) { double(AWS::EC2::Subnet).as_null_object }
     let(:aws_instance_params) do
       {
-          count: 1,
-          image_id: "stemcell-id",
-          instance_type: "m1.small",
-          user_data: "{\"registry\":{\"endpoint\":\"http://...\"},\"dns\":{\"nameserver\":\"foo\"}}",
-          key_name: "bar",
-          security_groups: ["baz"],
-          subnet: fake_aws_subnet,
-          private_ip_address: "1.2.3.4",
-          availability_zone: "us-east-1a"
+        count: 1,
+        image_id: "stemcell-id",
+        instance_type: "m1.small",
+        user_data: "{\"registry\":{\"endpoint\":\"http://...\"},\"dns\":{\"nameserver\":\"foo\"}}",
+        key_name: "bar",
+        security_groups: ["baz"],
+        subnet: fake_aws_subnet,
+        private_ip_address: "1.2.3.4",
+        availability_zone: "us-east-1a"
       }
     end
     let(:aws_instances) { double(AWS::EC2::InstanceCollection) }
@@ -66,16 +64,16 @@ describe Bosh::AwsCloud::InstanceManager do
       stemcell_id = "stemcell-id"
       resource_pool = {"instance_type" => "m1.small", "key_name" => "bar"}
       networks_spec = {
-          "default" => {
-              "type" => "dynamic",
-              "dns" => "foo",
-              "cloud_properties" => {"security_groups" => "baz"}
-          },
-          "other" => {
-              "type" => "manual",
-              "cloud_properties" => {"subnet" => "sub-123456"},
-              "ip" => "1.2.3.4"
-          }
+        "default" => {
+          "type" => "dynamic",
+          "dns" => "foo",
+          "cloud_properties" => {"security_groups" => "baz"}
+        },
+        "other" => {
+          "type" => "manual",
+          "cloud_properties" => {"subnet" => "sub-123456"},
+          "ip" => "1.2.3.4"
+        }
       }
       disk_locality = nil
       environment = nil
@@ -96,16 +94,16 @@ describe Bosh::AwsCloud::InstanceManager do
       agent_id = "agent-id"
       stemcell_id = "stemcell-id"
       networks_spec = {
-          "default" => {
-              "type" => "dynamic",
-              "dns" => "foo",
-              "cloud_properties" => {"security_groups" => "baz"}
-          },
-          "other" => {
-              "type" => "manual",
-              "cloud_properties" => {"subnet" => "sub-123456"},
-              "ip" => "1.2.3.4"
-          }
+        "default" => {
+          "type" => "dynamic",
+          "dns" => "foo",
+          "cloud_properties" => {"security_groups" => "baz"}
+        },
+        "other" => {
+          "type" => "manual",
+          "cloud_properties" => {"subnet" => "sub-123456"},
+          "ip" => "1.2.3.4"
+        }
       }
       disk_locality = nil
       environment = nil
@@ -121,39 +119,38 @@ describe Bosh::AwsCloud::InstanceManager do
       expect(aws_client).to receive(:request_spot_instances) do |spot_request|
         expect(spot_request[:spot_price]).to eq("0.15")
         expect(spot_request[:instance_count]).to eq(1)
-        expect(spot_request[:launch_specification]).to eq({ 
-          :image_id=>"stemcell-id", 
-          :key_name=>"bar", 
-          :instance_type=>"m1.small", 
+        expect(spot_request[:launch_specification]).to eq({
+          :image_id=>"stemcell-id",
+          :key_name=>"bar",
+          :instance_type=>"m1.small",
           :user_data=>Base64.encode64("{\"registry\":{\"endpoint\":\"http://...\"},\"dns\":{\"nameserver\":\"foo\"}}"),
-          :placement=> { :availability_zone=>"us-east-1a" }, 
-          :network_interfaces=>[ { 
+          :placement=> { :availability_zone=>"us-east-1a" },
+          :network_interfaces=>[ {
             :subnet_id=>fake_aws_subnet,
-            :groups=>["sg-baz-1234"], 
-            :device_index=>0, 
+            :groups=>["sg-baz-1234"],
+            :device_index=>0,
             :private_ip_address=>"1.2.3.4"
           }]
         })
-        
-        # return 
+
+        # return
         {
-          :spot_instance_request_set => [ { :spot_instance_request_id=>"sir-12345c", :other_params_here => "which aren't used" }], 
+          :spot_instance_request_set => [ { :spot_instance_request_id=>"sir-12345c", :other_params_here => "which aren't used" }],
           :request_id => "request-id-12345"
         }
       end
 
       # Should poll the spot instance request until state is active
-      expect(aws_client).to receive(:describe_spot_instance_requests) \
-        .with({:spot_instance_request_ids=>["sir-12345c"]}) \
-        .and_return({ :spot_instance_request_set => [ {:state => "active", :instance_id=>"i-12345678"} ] })
-       
+      expect(aws_client).to receive(:describe_spot_instance_requests).
+        with({:spot_instance_request_ids=>["sir-12345c"]}).
+        and_return({ :spot_instance_request_set => [ {:state => "active", :instance_id=>"i-12345678"} ] })
+
       # Should then wait for instance to be running, just like in the case of on deman
       expect(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: instance, state: :running)
 
       # Trigger spot instance request
       instance_manager = described_class.new(region, registry, availability_zone_selector)
       instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, options)
-
     end
 
     it "should retry creating the VM when AWS::EC2::Errors::InvalidIPAddress::InUse raised" do
@@ -163,7 +160,7 @@ describe Bosh::AwsCloud::InstanceManager do
       expect(aws_instances).to receive(:create).with(aws_instance_params).and_raise(AWS::EC2::Errors::InvalidIPAddress::InUse)
       expect(aws_instances).to receive(:create).with(aws_instance_params).and_return(instance)
       allow(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: instance, state: :running)
-      
+
       instance_manager = described_class.new(region, registry, availability_zone_selector)
       allow(instance_manager).to receive(:instance_create_wait_time).and_return(0)
 
@@ -171,16 +168,16 @@ describe Bosh::AwsCloud::InstanceManager do
       stemcell_id = "stemcell-id"
       resource_pool = {"instance_type" => "m1.small", "key_name" => "bar"}
       networks_spec = {
-          "default" => {
-              "type" => "dynamic",
-              "dns" => "foo",
-              "cloud_properties" => {"security_groups" => "baz"}
-          },
-          "other" => {
-              "type" => "manual",
-              "cloud_properties" => {"subnet" => "sub-123456"},
-              "ip" => "1.2.3.4"
-          }
+        "default" => {
+          "type" => "dynamic",
+          "dns" => "foo",
+          "cloud_properties" => {"security_groups" => "baz"}
+        },
+        "other" => {
+          "type" => "manual",
+          "cloud_properties" => {"subnet" => "sub-123456"},
+          "ip" => "1.2.3.4"
+        }
       }
       disk_locality = nil
       environment = nil
@@ -203,9 +200,8 @@ describe Bosh::AwsCloud::InstanceManager do
 
       it "should not have a key name instance parameter if it receives only null arguments" do
         instance_manager = described_class.new(region, registry)
-
         instance_manager.set_key_name_parameter(nil, nil)
-        expect(instance_manager.instance_params.keys).to_not include(:key_name)        
+        expect(instance_manager.instance_params.keys).to_not include(:key_name)
       end
     end
 
@@ -214,11 +210,11 @@ describe Bosh::AwsCloud::InstanceManager do
         it "returns a unique list of the specified group names" do
           instance_manager = described_class.new(region, registry)
           instance_manager.set_security_groups_parameter(
-              {
-                  "network" => {"cloud_properties" => {"security_groups" => "yay"}},
-                  "artwork" => {"cloud_properties" => {"security_groups" => ["yay", "aya"]}}
-              },
-              ["default_1", "default_2"]
+            {
+              "network" => {"cloud_properties" => {"security_groups" => "yay"}},
+              "artwork" => {"cloud_properties" => {"security_groups" => ["yay", "aya"]}}
+            },
+            ["default_1", "default_2"]
           )
 
           expect(instance_manager.instance_params[:security_groups].size).to eq(2)
@@ -230,8 +226,8 @@ describe Bosh::AwsCloud::InstanceManager do
         it "returns the list of default AWS group names" do
           instance_manager = described_class.new(region, registry)
           instance_manager.set_security_groups_parameter(
-              {"network" => {"cloud_properties" => {"foo" => "bar"}}},
-              ["default_1", "default_2"]
+            {"network" => {"cloud_properties" => {"foo" => "bar"}}},
+            ["default_1", "default_2"],
           )
 
           expect(instance_manager.instance_params[:security_groups].size).to eq(2)
@@ -243,23 +239,19 @@ describe Bosh::AwsCloud::InstanceManager do
     describe "#set_vpc_parameters" do
       let(:fake_aws_subnet) { double("aws_subnet") }
 
-      before do
-        allow(region).to receive(:subnets).and_return({"sub-123456" => fake_aws_subnet})
-      end
+      before { allow(region).to receive(:subnets).and_return("sub-123456" => fake_aws_subnet) }
 
       context "when there is not a manual network in the specs" do
         it "should not set the private IP address parameters" do
           instance_manager = described_class.new(region, registry)
           instance_manager.set_vpc_parameters(
-              {
-                  "network" => {
-                      "type" => "designed by robots",
-                      "ip" => "1.2.3.4"
-                  }
-              }
+            "network" => {
+              "type" => "designed by robots",
+              "ip" => "1.2.3.4",
+            },
           )
 
-          expect(instance_manager.instance_params.keys).to_not include(:private_ip_address)          
+          expect(instance_manager.instance_params.keys).to_not include(:private_ip_address)
         end
       end
 
@@ -267,12 +259,10 @@ describe Bosh::AwsCloud::InstanceManager do
         it "should set the private IP address parameters" do
           instance_manager = described_class.new(region, registry)
           instance_manager.set_vpc_parameters(
-              {
-                  "network" => {
-                      "type" => "manual",
-                      "ip" => "1.2.3.4"
-                  }
-              }
+            "network" => {
+              "type" => "manual",
+              "ip" => "1.2.3.4",
+            },
           )
 
           expect(instance_manager.instance_params[:private_ip_address]).to eq("1.2.3.4")
@@ -283,29 +273,25 @@ describe Bosh::AwsCloud::InstanceManager do
         it "should set the private IP address parameters for that network (treat it as manual)" do
           instance_manager = described_class.new(region, registry)
           instance_manager.set_vpc_parameters(
-              {
-                  "network" => {
-                      "ip" => "1.2.3.4",
-                      "cloud_properties" => {"subnet" => "sub-123456"}
-                  }
-              }
+            "network" => {
+              "ip" => "1.2.3.4",
+              "cloud_properties" => {"subnet" => "sub-123456"},
+            },
           )
 
           expect(instance_manager.instance_params[:private_ip_address]).to eq("1.2.3.4")
         end
       end
-      
+
       context "when there is a subnet in the cloud_properties in the specs" do
         context "and network type is dynamic" do
           it "should set the subnet parameter" do
             instance_manager = described_class.new(region, registry)
             instance_manager.set_vpc_parameters(
-              {
-                "network" => {
-                  "type" => "dynamic",
-                  "cloud_properties" => {"subnet" => "sub-123456"}
-                }
-              }
+              "network" => {
+                "type" => "dynamic",
+                "cloud_properties" => {"subnet" => "sub-123456"},
+              },
             )
 
             expect(instance_manager.instance_params.keys).to include(:subnet)
@@ -316,12 +302,10 @@ describe Bosh::AwsCloud::InstanceManager do
           it "should set the subnet parameter" do
             instance_manager = described_class.new(region, registry)
             instance_manager.set_vpc_parameters(
-              {
-                "network" => {
-                  "type" => "manual",
-                  "cloud_properties" => {"subnet" => "sub-123456"}
-                }
-              }
+              "network" => {
+                "type" => "manual",
+                "cloud_properties" => {"subnet" => "sub-123456"},
+              },
             )
 
             expect(instance_manager.instance_params.keys).to include(:subnet)
@@ -332,11 +316,9 @@ describe Bosh::AwsCloud::InstanceManager do
           it "should set the subnet parameter" do
             instance_manager = described_class.new(region, registry)
             instance_manager.set_vpc_parameters(
-              {
-                "network" => {
-                  "cloud_properties" => {"subnet" => "sub-123456"}
-                }
-              }
+              "network" => {
+                "cloud_properties" => {"subnet" => "sub-123456"},
+              },
             )
 
             expect(instance_manager.instance_params.keys).to include(:subnet)
@@ -347,34 +329,25 @@ describe Bosh::AwsCloud::InstanceManager do
           it "should not set the subnet parameter" do
             instance_manager = described_class.new(region, registry)
             instance_manager.set_vpc_parameters(
-              {
-                "network" => {
-                  "type" => "vip",
-                  "cloud_properties" => {"subnet" => "sub-123456"}
-                }
-              }
+              "network" => {
+                "type" => "vip",
+                "cloud_properties" => {"subnet" => "sub-123456"},
+              },
             )
 
             expect(instance_manager.instance_params.keys).to_not include(:subnet)
           end
         end
-      end      
+      end
 
       context "when there is no subnet in the cloud_properties in the specs" do
         it "should not set the subnet parameter" do
           instance_manager = described_class.new(region, registry)
-          instance_manager.set_vpc_parameters(
-              {
-                  "network" => {
-                      "type" => "dynamic"
-                  }
-              }
-          )
+          instance_manager.set_vpc_parameters("network" => { "type" => "dynamic" })
 
           expect(instance_manager.instance_params.keys).to_not include(:subnet)
         end
       end
-      
     end
 
     describe "#set_availability_zone_parameter" do
@@ -409,28 +382,20 @@ describe Bosh::AwsCloud::InstanceManager do
       context "when a dns configuration is provided" do
         it "populates the user data parameter with registry and dns data" do
           instance_manager = described_class.new(region, registry)
-          instance_manager.set_user_data_parameter(
-              {
-                  "foo" => {"dns" => "bar"}
-              }
-          )
+          instance_manager.set_user_data_parameter("foo" => {"dns" => "bar"})
 
-          expect(instance_manager.instance_params[:user_data])
-             .to eq("{\"registry\":{\"endpoint\":\"http://...\"},\"dns\":{\"nameserver\":\"bar\"}}")
+          expect(instance_manager.instance_params[:user_data]).
+             to eq("{\"registry\":{\"endpoint\":\"http://...\"},\"dns\":{\"nameserver\":\"bar\"}}")
         end
       end
 
       context "when a dns configuration is not provided" do
         it "populates the user data parameter with only the registry data" do
           instance_manager = described_class.new(region, registry)
-          instance_manager.set_user_data_parameter(
-              {
-                  "foo" => {"no_dns" => "bar"}
-              }
-          )
+          instance_manager.set_user_data_parameter("foo" => {"no_dns" => "bar"})
 
-          expect(instance_manager.instance_params[:user_data])
-            .to eq("{\"registry\":{\"endpoint\":\"http://...\"}}")
+          expect(instance_manager.instance_params[:user_data]).
+            to eq("{\"registry\":{\"endpoint\":\"http://...\"}}")
         end
       end
     end
@@ -489,8 +454,7 @@ describe Bosh::AwsCloud::InstanceManager do
         instance_manager.terminate(instance_id, true)
       end
     end
-
-end
+  end
 
   describe "#reboot" do
     let(:fake_aws_instance) { double("aws_instance") }
@@ -499,9 +463,7 @@ end
 
     it "should reboot the instance" do
       expect(fake_aws_instance).to receive(:reboot)
-
       allow(region).to receive(:instances).and_return({instance_id => fake_aws_instance})
-
       instance_manager.reboot(instance_id)
     end
   end
@@ -527,7 +489,6 @@ end
     describe '#remove_from_load_balancers' do
       it 'should remove the instance from all load balancers' do
         expect(instances).to receive(:deregister).with(instance)
-
         instance_manager.remove_from_load_balancers
       end
     end
@@ -536,7 +497,6 @@ end
       it 'should attach the instance the list of load balancers in the resource pool' do
         allow(instance_manager).to receive(:elbs).and_return(%w[lb])
         expect(instances).to receive(:register).with(instance)
-
         instance_manager.attach_to_load_balancers
       end
     end

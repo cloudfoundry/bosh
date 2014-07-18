@@ -1,9 +1,6 @@
-# Copyright (c) 2009-2013 VMware, Inc.
-
 require "spec_helper"
 
 describe Bosh::Registry::InstanceManager do
-
   before(:each) do
     @ec2 = double("ec2")
     AWS::EC2.stub(:new).and_return(@ec2)
