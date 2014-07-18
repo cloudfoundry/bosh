@@ -6,7 +6,7 @@ describe Bosh::AwsCloud::InstanceManager do
 
   describe "#has_instance?" do
     let(:instance_id) { "instance id" }
-    let(:availability_zone_selector) { double(Bosh::AwsCloud::AvailabilityZoneSelector, common_availability_zone: "us-east-1a") }
+    let(:availability_zone_selector) { instance_double('Bosh::AwsCloud::AvailabilityZoneSelector', common_availability_zone: "us-east-1a") }
 
     let(:fake_aws_instance) { double("aws_instance", id: instance_id) }
     let(:instance_manager) { described_class.new(region, registry, availability_zone_selector) }
@@ -33,7 +33,7 @@ describe Bosh::AwsCloud::InstanceManager do
 
   describe "#create" do
     let(:availability_zone_selector) { double(Bosh::AwsCloud::AvailabilityZoneSelector, common_availability_zone: "us-east-1a") }
-    let(:fake_aws_subnet) { double(AWS::EC2::Subnet).as_null_object }
+    let(:fake_aws_subnet) { instance_double('AWS::EC2::Subnet').as_null_object }
     let(:aws_instance_params) do
       {
         count: 1,
@@ -47,8 +47,8 @@ describe Bosh::AwsCloud::InstanceManager do
         availability_zone: "us-east-1a"
       }
     end
-    let(:aws_instances) { double(AWS::EC2::InstanceCollection) }
-    let(:instance) { double(AWS::EC2::Instance, id: 'i-12345678') }
+    let(:aws_instances) { instance_double('AWS::EC2::InstanceCollection') }
+    let(:instance) { instance_double('AWS::EC2::Instance', id: 'i-12345678') }
     let(:aws_client) { double(AWS::EC2::Client) }
 
     it "should ask AWS to create an instance in the given region, with parameters built up from the given arguments" do
@@ -86,8 +86,8 @@ describe Bosh::AwsCloud::InstanceManager do
       allow(region).to receive(:subnets).and_return({"sub-123456" => fake_aws_subnet})
       allow(region).to receive(:instances).and_return( {'i-12345678' => instance } )
 
-      #need to translate security group names to security group ids
-      sg1 = double(AWS::EC2::SecurityGroup, security_group_id:"sg-baz-1234")
+      # need to translate security group names to security group ids
+      sg1 = instance_double('AWS::EC2::SecurityGroup', security_group_id:"sg-baz-1234")
       allow(sg1).to receive(:name).and_return("baz")
       allow(region).to receive(:security_groups).and_return([sg1])
 
@@ -237,7 +237,7 @@ describe Bosh::AwsCloud::InstanceManager do
     end
 
     describe "#set_vpc_parameters" do
-      let(:fake_aws_subnet) { double("aws_subnet") }
+      let(:fake_aws_subnet) { instance_double('AWS::EC2::Subnet') }
 
       before { allow(region).to receive(:subnets).and_return("sub-123456" => fake_aws_subnet) }
 
@@ -351,7 +351,7 @@ describe Bosh::AwsCloud::InstanceManager do
     end
 
     describe "#set_availability_zone_parameter" do
-      let(:availability_zone_selector) { double(Bosh::AwsCloud::AvailabilityZoneSelector) }
+      let(:availability_zone_selector) { instance_double('Bosh::AwsCloud::AvailabilityZoneSelector') }
 
       context "if there is a common availability zone specified" do
         before do
@@ -403,7 +403,7 @@ describe Bosh::AwsCloud::InstanceManager do
 
   describe "#terminate" do
     let(:instance_id) { "i-123456" }
-    let(:fake_aws_instance) { double("aws_instance", id: instance_id) }
+    let(:fake_aws_instance) { instance_double('AWS::EC2::Instance', id: instance_id) }
     let(:instance_manager) { described_class.new(region, registry) }
 
     it "should terminate an instance given the id" do
@@ -478,7 +478,7 @@ describe Bosh::AwsCloud::InstanceManager do
       allow(l).to receive(:[]).and_return(lb)
       l
     end
-    let(:elb) { double(AWS::ELB, :load_balancers => load_balancers) }
+    let(:elb) { double('AWS::ELB', :load_balancers => load_balancers) }
 
     before(:each) do
       allow(AWS::ELB).to receive(:new).and_return(elb)
