@@ -4,6 +4,16 @@ require 'common/retryable'
 describe Bosh::Retryable do
   before { Kernel.stub(:sleep) }
 
+  class CustomMatcher
+    def initialize(messages)
+      @matching_messages = messages
+    end
+
+    def matches?(error)
+      @matching_messages.include?(error.message)
+    end
+  end
+
   it 'should raise an ArgumentError error if invalid options are used' do
     expect {
       described_class.new(foo: 'bar')
@@ -94,6 +104,41 @@ describe Bosh::Retryable do
     end
   end
 
+  it 'should retry the given number of times when matcher matches an error' do
+    count = 0
+
+    error_class = ArgumentError
+    matcher = CustomMatcher.new(['fake-msg1', 'fake-msg2'])
+
+    described_class.new(tries: 10, on: [error_class, matcher]).retryer do |tries|
+      count += 1
+      raise 'fake-msg1'   if tries == 1
+      raise ArgumentError if tries == 2
+      raise 'fake-msg2'   if tries == 3
+      tries == 4
+    end
+
+    count.should == 4
+  end
+
+  it 'should retry the given number of times when matcher matches an error raise from the sleeper' do
+    count = 0
+
+    sleeper = Proc.new do
+      count += 1
+      raise('fake-msg1') if count == 1
+      raise('fake-msg2')
+    end
+
+    matcher = CustomMatcher.new(['fake-msg1'])
+
+    expect {
+      described_class.new(tries: 10, on: matcher, sleep: sleeper).retryer { false }
+    }.to raise_error(RuntimeError, /fake-msg2/)
+
+    count.should == 2
+  end
+
   it 'should retry when given error is raised and given message matches' do
     count = 0
 
@@ -171,5 +216,84 @@ describe Bosh::Retryable do
     }.to raise_error(StandardError)
 
     count.should == 3
+  end
+end
+
+describe Bosh::Retryable::ErrorMatcher do
+  class Superclass < StandardError; end
+  class Middleclass < Superclass; end
+  class Subclass < Middleclass; end
+  class Other < StandardError; end
+
+  describe 'by_class' do
+    let(:klass) { Middleclass }
+
+    it 'returns an ErrorMatcher that matches any message' do
+      expect(Bosh::Retryable::ErrorMatcher).to receive(:new).with(klass, /.*/).and_call_original
+      matcher = Bosh::Retryable::ErrorMatcher.by_class(klass)
+      expect(matcher).to be_an_instance_of(Bosh::Retryable::ErrorMatcher)
+      expect(matcher.matches?(klass.new('fake-message'))).to be(true)
+    end
+  end
+
+  describe '#matches?' do
+    subject { described_class.new(Middleclass, /match/) }
+    let(:error) { klass.new(message) }
+
+    context 'when error class matches provided class exactly' do
+      let(:klass) { Middleclass }
+
+      context 'when error messages matches provided message regex' do
+        let(:message) { 'match' }
+        it('returns true') { expect(subject.matches?(error)).to be(true) }
+      end
+
+      context 'when error messages does not match provided message regex' do
+        let(:message) { 'other' }
+        it('returns false') { expect(subject.matches?(error)).to be(false) }
+      end
+    end
+
+    context 'when error class is a subclass of provided class' do
+      let(:klass) { Subclass }
+
+      context 'when error messages matches provided message regex' do
+        let(:message) { 'match' }
+        it('returns true') { expect(subject.matches?(error)).to be(true) }
+      end
+
+      context 'when error messages does not match provided message regex' do
+        let(:message) { 'other' }
+        it('returns false') { expect(subject.matches?(error)).to be(false) }
+      end
+    end
+
+    context 'when error class is a superclass of provided class' do
+      let(:klass) { Superclass }
+
+      context 'when error messages matches provided message regex' do
+        let(:message) { 'match' }
+        it('returns false') { expect(subject.matches?(error)).to be(false) }
+      end
+
+      context 'when error messages does not match provided message regex' do
+        let(:message) { 'other' }
+        it('returns false') { expect(subject.matches?(error)).to be(false) }
+      end
+    end
+
+    context 'when error class does not match provided class' do
+      let(:klass) { Other }
+
+      context 'when error messages matches provided message regex' do
+        let(:message) { 'match' }
+        it('returns false') { expect(subject.matches?(error)).to be(false) }
+      end
+
+      context 'when error messages does not match provided message regex' do
+        let(:message) { 'other' }
+        it('returns false') { expect(subject.matches?(error)).to be(false) }
+      end
+    end
   end
 end

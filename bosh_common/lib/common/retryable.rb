@@ -7,24 +7,32 @@ module Bosh
 
       @ensure_callback = opts[:ensure]
       @matching        = opts[:matching]
-      @on_exception    = [opts[:on]].flatten
       @try_count       = 0
       @retry_exception = nil
       @retry_limit     = opts[:tries]
       @sleeper         = opts[:sleep]
+
+      @matchers = Array(opts[:on]).map do |klass_or_matcher|
+        if klass_or_matcher.is_a?(Class)
+          ErrorMatcher.by_class(klass_or_matcher)
+        else
+          klass_or_matcher
+        end
+      end
     end
 
-    # this method will loop until the block returns a true value
-    def retryer(&block)
+    # Loops until the block returns a true value
+    def retryer(&blk)
       loop do
         @try_count += 1
-        y = yield @try_count, @retry_exception
-        @retry_exception = nil  # no exception was raised in the block
+        y = blk.call(@try_count, @retry_exception)
+        @retry_exception = nil # no exception was raised in the block
         return y if y
         raise Bosh::Common::RetryCountExceeded if @try_count >= @retry_limit
         wait
       end
-    rescue *@on_exception => exception
+    rescue Exception => exception
+      raise unless @matchers.any? { |m| m.matches?(exception) }
       raise unless exception.message =~ @matching
       raise if @try_count >= @retry_limit
 
@@ -41,7 +49,6 @@ module Bosh
       merged_options = default_options.merge(options)
       invalid_options = merged_options.keys - default_options.keys
       raise ArgumentError.new("Invalid options: #{invalid_options.join(", ")}") unless invalid_options.empty?
-
       merged_options
     end
 
@@ -51,13 +58,14 @@ module Bosh
         sleep: exponential_sleeper,
         on: [],
         matching: /.*/,
-        ensure: Proc.new {}
+        ensure: Proc.new {},
       }
     end
 
     def wait
       sleep(@sleeper.respond_to?(:call) ? @sleeper.call(@try_count, @retry_exception) : @sleeper)
-    rescue *@on_exception
+    rescue Exception => exception
+      raise unless @matchers.any? { |m| m.matches?(exception) }
       # SignalException could be raised while sleeping, so if you want to catch it,
       # it need to be passed in the list of exceptions to ignore
     end
@@ -69,6 +77,20 @@ module Bosh
     def sleep(*args, &blk)
       Kernel.sleep(*args, &blk)
     end
+
+    class ErrorMatcher
+      def self.by_class(klass)
+        new(klass, /.*/)
+      end
+
+      def initialize(klass, message_regex)
+        @klass = klass
+        @message_regex = message_regex
+      end
+
+      def matches?(error)
+        !!(error.kind_of?(@klass) && error.message =~ @message_regex)
+      end
+    end
   end
 end
-
