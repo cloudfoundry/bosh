@@ -1,8 +1,15 @@
 package system
 
 import (
+	"io"
 	"os"
 )
+
+type ReadWriteCloseStater interface {
+	io.ReadWriteCloser
+	ReadAt([]byte, int64) (int, error)
+	Stat() (os.FileInfo, error)
+}
 
 type FileSystem interface {
 	HomeDir(username string) (path string, err error)
@@ -14,6 +21,8 @@ type FileSystem interface {
 
 	Chown(path, username string) (err error)
 	Chmod(path string, perm os.FileMode) (err error)
+
+	OpenFile(path string, flag int, perm os.FileMode) (ReadWriteCloseStater, error)
 
 	WriteFileString(path, content string) (err error)
 	WriteFile(path string, content []byte) (err error)

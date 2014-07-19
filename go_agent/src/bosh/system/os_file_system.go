@@ -75,6 +75,10 @@ func (fs osFileSystem) Chmod(path string, perm os.FileMode) (err error) {
 	return os.Chmod(path, perm)
 }
 
+func (fs osFileSystem) OpenFile(path string, flag int, perm os.FileMode) (ReadWriteCloseStater, error) {
+	return os.OpenFile(path, flag, perm)
+}
+
 func (fs osFileSystem) WriteFileString(path, content string) (err error) {
 	return fs.WriteFile(path, []byte(content))
 }

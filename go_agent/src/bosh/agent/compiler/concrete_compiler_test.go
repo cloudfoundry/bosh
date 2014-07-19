@@ -11,6 +11,7 @@ import (
 	fakebc "bosh/agent/applier/bundlecollection/fakes"
 	boshmodels "bosh/agent/applier/models"
 	fakepa "bosh/agent/applier/packageapplier/fakes"
+	fakerunner "bosh/agent/cmdrunner/fakes"
 	. "bosh/agent/compiler"
 	fakeblobstore "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
@@ -61,7 +62,7 @@ func init() {
 			compressor     *fakecmd.FakeCompressor
 			blobstore      *fakeblobstore.FakeBlobstore
 			fs             *fakesys.FakeFileSystem
-			runner         *fakesys.FakeCmdRunner
+			runner         *fakerunner.FakeFileLoggingCmdRunner
 			packageApplier *fakepa.FakePackageApplier
 			packagesBc     *fakebc.FakeBundleCollection
 		)
@@ -70,7 +71,7 @@ func init() {
 			compressor = fakecmd.NewFakeCompressor()
 			blobstore = &fakeblobstore.FakeBlobstore{}
 			fs = fakesys.NewFakeFileSystem()
-			runner = fakesys.NewFakeCmdRunner()
+			runner = fakerunner.NewFakeFileLoggingCmdRunner("/fake-runner-base-dir")
 			packageApplier = fakepa.NewFakePackageApplier()
 			packagesBc = fakebc.NewFakeBundleCollection()
 
@@ -219,28 +220,42 @@ func init() {
 				}))
 			})
 
-			It("runs packaging script when packaging script exists", func() {
-				compressor.DecompressFileToDirCallBack = func() {
-					fs.WriteFileString("/fake-compile-dir/pkg_name/packaging", "hi")
-				}
+			Context("when packaging script exists", func() {
+				BeforeEach(func() {
+					compressor.DecompressFileToDirCallBack = func() {
+						fs.WriteFileString("/fake-compile-dir/pkg_name/packaging", "hi")
+					}
+				})
 
-				_, _, err := compiler.Compile(pkg, pkgDeps)
-				Expect(err).ToNot(HaveOccurred())
+				It("runs packaging script ", func() {
+					_, _, err := compiler.Compile(pkg, pkgDeps)
+					Expect(err).ToNot(HaveOccurred())
 
-				expectedCmd := boshsys.Command{
-					Name: "bash",
-					Args: []string{"-x", "packaging"},
-					Env: map[string]string{
-						"BOSH_COMPILE_TARGET":  "/fake-compile-dir/pkg_name",
-						"BOSH_INSTALL_TARGET":  "/fake-dir/packages/pkg_name",
-						"BOSH_PACKAGE_NAME":    "pkg_name",
-						"BOSH_PACKAGE_VERSION": "pkg_version",
-					},
-					WorkingDir: "/fake-compile-dir/pkg_name",
-				}
+					expectedCmd := boshsys.Command{
+						Name: "bash",
+						Args: []string{"-x", "packaging"},
+						Env: map[string]string{
+							"BOSH_COMPILE_TARGET":  "/fake-compile-dir/pkg_name",
+							"BOSH_INSTALL_TARGET":  "/fake-dir/packages/pkg_name",
+							"BOSH_PACKAGE_NAME":    "pkg_name",
+							"BOSH_PACKAGE_VERSION": "pkg_version",
+						},
+						WorkingDir: "/fake-compile-dir/pkg_name",
+					}
 
-				Expect(len(runner.RunComplexCommands)).To(Equal(1))
-				Expect(runner.RunComplexCommands[0]).To(Equal(expectedCmd))
+					Expect(len(runner.RunCommands)).To(Equal(1))
+					Expect(runner.RunCommands[0]).To(Equal(expectedCmd))
+					Expect(runner.RunCommandLogsDirName).To(Equal("compilation"))
+					Expect(runner.RunCommandLogsFileName).To(Equal("packaging"))
+				})
+
+				It("propagates the error from packaging script", func() {
+					runner.RunCommandErr = errors.New("fake-packaging-error")
+
+					_, _, err := compiler.Compile(pkg, pkgDeps)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-packaging-error"))
+				})
 			})
 
 			It("does not run packaging script when script does not exist", func() {

@@ -1,0 +1,7 @@
+---
+name: fails_with_too_much_output
+
+templates: {}
+
+packages:
+- fails_with_too_much_output

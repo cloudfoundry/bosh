@@ -1,6 +1,7 @@
 package system
 
 import (
+	"io"
 	"time"
 )
 
@@ -9,6 +10,9 @@ type Command struct {
 	Args       []string
 	Env        map[string]string
 	WorkingDir string
+
+	Stdout io.Writer
+	Stderr io.Writer
 }
 
 type Process interface {

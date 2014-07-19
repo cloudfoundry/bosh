@@ -12,6 +12,7 @@ import (
 	boshbc "bosh/agent/applier/bundlecollection"
 	boshja "bosh/agent/applier/jobapplier"
 	boshpa "bosh/agent/applier/packageapplier"
+	boshrunner "bosh/agent/cmdrunner"
 	boshcomp "bosh/agent/compiler"
 	boshdrain "bosh/agent/drain"
 	boshtask "bosh/agent/task"
@@ -258,11 +259,20 @@ func (app *app) buildApplierAndCompiler(
 		dirProvider,
 	)
 
+	platformRunner := app.platform.GetRunner()
+	fileSystem := app.platform.GetFs()
+	cmdRunner := boshrunner.NewFileLoggingCmdRunner(
+		fileSystem,
+		platformRunner,
+		dirProvider.LogsDir(),
+		10*1024, // 10 Kb
+	)
+
 	compiler := boshcomp.NewConcreteCompiler(
 		app.platform.GetCompressor(),
 		blobstore,
-		app.platform.GetFs(),
-		app.platform.GetRunner(),
+		fileSystem,
+		cmdRunner,
 		dirProvider,
 		packageApplierProvider.Root(),
 		packageApplierProvider.RootBundleCollection(),

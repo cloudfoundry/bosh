@@ -12,6 +12,7 @@ import (
 	gouuid "github.com/nu7hatch/gouuid"
 
 	bosherr "bosh/errors"
+	boshsys "bosh/system"
 )
 
 type FakeFileType string
@@ -28,6 +29,8 @@ type FakeFileSystem struct {
 
 	HomeDirUsername string
 	HomeDirHomePath string
+
+	OpenFileErr error
 
 	ReadFileError    error
 	WriteToFileError error
@@ -70,6 +73,63 @@ type FakeFileStats struct {
 
 func (stats FakeFileStats) StringContents() string {
 	return string(stats.Content)
+}
+
+type FakeFileInfo struct {
+	os.FileInfo
+	file FakeFile
+}
+
+func (fi FakeFileInfo) Size() int64 {
+	return int64(len(fi.file.Contents))
+}
+
+type FakeFile struct {
+	path string
+	fs   *FakeFileSystem
+
+	WriteErr error
+	Contents []byte
+
+	ReadErr   error
+	ReadAtErr error
+
+	CloseErr error
+
+	StatErr error
+}
+
+func (f *FakeFile) Write(contents []byte) (int, error) {
+	if f.WriteErr != nil {
+		return 0, f.WriteErr
+	}
+
+	f.fs.filesLock.Lock()
+	defer f.fs.filesLock.Unlock()
+
+	stats := f.fs.getOrCreateFile(f.path)
+	stats.Content = contents
+
+	f.Contents = contents
+	return len(contents), nil
+}
+
+func (f *FakeFile) Read(p []byte) (int, error) {
+	copy(p, f.Contents)
+	return len(f.Contents), f.ReadErr
+}
+
+func (f *FakeFile) ReadAt(b []byte, offset int64) (int, error) {
+	copy(b, f.Contents[offset:])
+	return len(f.Contents[offset:]), f.ReadAtErr
+}
+
+func (f *FakeFile) Close() error {
+	return f.CloseErr
+}
+
+func (f FakeFile) Stat() (os.FileInfo, error) {
+	return FakeFileInfo{file: f}, f.StatErr
 }
 
 func NewFakeFileSystem() *FakeFileSystem {
@@ -116,6 +176,27 @@ func (fs *FakeFileSystem) MkdirAll(path string, perm os.FileMode) error {
 	stats.FileMode = perm
 	stats.FileType = FakeFileTypeDir
 	return nil
+}
+
+func (fs *FakeFileSystem) OpenFile(path string, flag int, perm os.FileMode) (boshsys.ReadWriteCloseStater, error) {
+	fs.filesLock.Lock()
+	defer fs.filesLock.Unlock()
+
+	if fs.OpenFileErr != nil {
+		return nil, fs.OpenFileErr
+	}
+
+	// Make sure to record a reference for FileExist, etc. to work
+	stats := fs.getOrCreateFile(path)
+	stats.FileMode = perm
+	stats.FileType = FakeFileTypeFile
+
+	file := &FakeFile{
+		path: path,
+		fs:   fs,
+	}
+
+	return file, nil
 }
 
 func (fs *FakeFileSystem) Chown(path, username string) error {

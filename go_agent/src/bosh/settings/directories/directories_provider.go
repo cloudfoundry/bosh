@@ -63,3 +63,7 @@ func (p DirectoriesProvider) SettingsDir() string {
 func (p DirectoriesProvider) TmpDir() string {
 	return filepath.Join(p.DataDir(), "tmp")
 }
+
+func (p DirectoriesProvider) LogsDir() string {
+	return filepath.Join(p.DataDir(), "sys", "log")
+}

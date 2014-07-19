@@ -14,6 +14,7 @@ import (
 
 	boshlog "bosh/logger"
 	. "bosh/system"
+	fakesys "bosh/system/fakes"
 )
 
 func init() {
@@ -54,6 +55,39 @@ func init() {
 				Expect(stdout).To(ContainSubstring("PATH="))
 				Expect(stderr).To(BeEmpty())
 				Expect(status).To(Equal(0))
+			})
+
+			It("prints stdout/stderr to provided I/O object", func() {
+				fs := fakesys.NewFakeFileSystem()
+				stdoutFile, err := fs.OpenFile("/fake-stdout-path", os.O_RDWR, os.FileMode(0644))
+				Expect(err).ToNot(HaveOccurred())
+
+				stderrFile, err := fs.OpenFile("/fake-stderr-path", os.O_RDWR, os.FileMode(0644))
+				Expect(err).ToNot(HaveOccurred())
+
+				cmd := Command{
+					Name:   "bash",
+					Args:   []string{"-c", "echo fake-out >&1; echo fake-err >&2"},
+					Stdout: stdoutFile,
+					Stderr: stderrFile,
+				}
+
+				stdout, stderr, status, err := runner.RunComplexCommand(cmd)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(stdout).To(BeEmpty())
+				Expect(stderr).To(BeEmpty())
+				Expect(status).To(Equal(0))
+
+				stdoutContents := make([]byte, 1024)
+				_, err = stdoutFile.Read(stdoutContents)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(stdoutContents)).To(ContainSubstring("fake-out"))
+
+				stderrContents := make([]byte, 1024)
+				_, err = stderrFile.Read(stderrContents)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(stderrContents)).To(ContainSubstring("fake-err"))
 			})
 		})
 

@@ -83,7 +83,17 @@ func (r *FakeCmdRunner) RunComplexCommand(cmd boshsys.Command) (string, string, 
 	r.RunComplexCommands = append(r.RunComplexCommands, cmd)
 
 	runCmd := append([]string{cmd.Name}, cmd.Args...)
-	return r.getOutputsForCmd(runCmd)
+	stdout, stderr, exitstatus, err := r.getOutputsForCmd(runCmd)
+
+	if cmd.Stdout != nil {
+		cmd.Stdout.Write([]byte(stdout))
+	}
+
+	if cmd.Stderr != nil {
+		cmd.Stderr.Write([]byte(stderr))
+	}
+
+	return stdout, stderr, exitstatus, err
 }
 
 func (r *FakeCmdRunner) RunComplexCommandAsync(cmd boshsys.Command) (boshsys.Process, error) {

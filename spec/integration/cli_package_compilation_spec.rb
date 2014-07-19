@@ -95,4 +95,18 @@ describe 'cli: package compilation', type: :integration do
     end
     expect(packages.keys).to match_array(%w(foo bar baz))
   end
+
+  it 'returns truncated output' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['compilation']['workers'] = 1
+    manifest_hash['jobs'][0]['template'] = 'fails_with_too_much_output'
+    manifest_hash['jobs'][0]['instances'] = 1
+
+    deploy_output = deploy_simple(manifest_hash: manifest_hash, failure_expected: true)
+
+    expect(deploy_output).to include('Truncated stdout: ++++++++++')
+    expect(deploy_output).to include('Truncated stderr: yyyyyyyyyy')
+    expect(deploy_output).to_not include('---------')
+    expect(deploy_output).to_not include('nnnnnnnnn')
+  end
 end
