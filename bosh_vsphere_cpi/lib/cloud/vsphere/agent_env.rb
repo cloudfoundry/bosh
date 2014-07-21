@@ -10,7 +10,9 @@ module VSphereCloud
 
     def get_current_env(vm, datacenter_name)
       cdrom = @client.get_cdrom_device(vm)
-      env_iso_folder = File.dirname(cdrom.backing.file_name)
+      env_iso_folder = env_iso_folder(cdrom)
+      return unless env_iso_folder
+
       datastore_name = cdrom.backing.datastore.name
       env_path = env_iso_folder.match(/\[#{datastore_name}\] (.*)/)[1]
 
@@ -34,6 +36,11 @@ module VSphereCloud
       update_cdrom_env(vm, datastore, file_name)
     end
 
+    def env_iso_folder(cdrom_device)
+      return unless cdrom_device && cdrom_device.backing.respond_to?(:file_name)
+      File.dirname(cdrom_device.backing.file_name)
+    end
+
     private
 
     def update_cdrom_env(vm, datastore, file_name)
@@ -46,8 +53,7 @@ module VSphereCloud
       connect_info.start_connected = true
       connect_info.connected = true
 
-      devices = vm.config.hardware.device
-      cdrom = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
+      cdrom = @client.get_cdrom_device(vm)
       cdrom.connectable = connect_info
       cdrom.backing = backing_info
 
@@ -79,9 +85,9 @@ module VSphereCloud
 
     def clean_up_old_env(vm)
       cdrom = @client.get_cdrom_device(vm)
-      return unless cdrom && cdrom.backing.respond_to?(:file_name)
+      env_iso_folder = env_iso_folder(cdrom)
+      return unless env_iso_folder
 
-      env_iso_folder = File.dirname(cdrom.backing.file_name)
       datacenter = @client.find_parent(vm, Vim::Datacenter)
 
       @client.delete_path(datacenter, File.join(env_iso_folder, 'env.json'))

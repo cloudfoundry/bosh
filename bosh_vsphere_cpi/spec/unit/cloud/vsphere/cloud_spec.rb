@@ -747,6 +747,9 @@ module VSphereCloud
     end
 
     describe '#delete_vm' do
+      let(:agent_env) { instance_double('VSphereCloud::AgentEnv') }
+      before { allow(VSphereCloud::AgentEnv).to receive(:new).and_return(agent_env) }
+
       let(:vm) { instance_double('VimSdk::Vim::VirtualMachine') }
       before { allow(vsphere_cloud).to receive(:get_vm_by_cid).with('fake-vm-id').and_return(vm) }
 
@@ -797,12 +800,7 @@ module VSphereCloud
       end
 
       context 'vm has cdrom' do
-        let(:cdrom_device) { instance_double('VimSdk::Vim::Vm::Device::VirtualCdrom', backing: cdrom_backing) }
-        let(:cdrom_backing) do
-          instance_double('VimSdk::Vim::Vm::Device::VirtualCdrom::IsoBackingInfo',
-            file_name: '[fake-cdrom-datastore-name] some-vm-uuid/env.iso'
-          )
-        end
+        let(:cdrom_device) { instance_double('VimSdk::Vim::Vm::Device::VirtualCdrom') }
         let(:devices) { [virtual_disk_device, cdrom_device] }
 
         before do
@@ -814,9 +812,28 @@ module VSphereCloud
 
         before { allow(client).to receive(:delete_vm).with(vm) }
 
-        it 'cleans up the folder where ISO image is stored' do
-          expect(client).to receive(:delete_path).with(datacenter, '[fake-cdrom-datastore-name] some-vm-uuid')
-          vsphere_cloud.delete_vm('fake-vm-id')
+        context 'when the cdrom has ISO folder' do
+          before do
+            allow(agent_env).to receive(:env_iso_folder).
+              and_return('[fake-cdrom-datastore-name] some-vm-uuid')
+          end
+
+          it 'does not clean up the ISO folder' do
+            expect(client).to receive(:delete_path).with(datacenter, '[fake-cdrom-datastore-name] some-vm-uuid')
+            vsphere_cloud.delete_vm('fake-vm-id')
+          end
+        end
+
+        context 'when the cdrom does not have ISO folder' do
+          before do
+            allow(agent_env).to receive(:env_iso_folder).
+              and_return(nil)
+          end
+
+          it 'does not clean up the ISO folder' do
+            expect(client).to_not receive(:delete_path)
+            vsphere_cloud.delete_vm('fake-vm-id')
+          end
         end
       end
     end

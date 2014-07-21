@@ -238,10 +238,12 @@ module VSphereCloud
 
         # Delete env.iso and VM specific files managed by the director
         retry_block do
-          cdrom_device = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
-          if cdrom_device
-            env_iso_folder = File.dirname(cdrom_device.backing.file_name)
-            client.delete_path(datacenter, env_iso_folder)
+          cdrom = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
+          if cdrom
+            env_iso_folder = @agent_env.env_iso_folder(cdrom)
+            if env_iso_folder
+              client.delete_path(datacenter, env_iso_folder)
+            end
           end
         end
       end

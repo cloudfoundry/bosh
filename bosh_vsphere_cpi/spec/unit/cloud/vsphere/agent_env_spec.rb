@@ -273,5 +273,30 @@ module VSphereCloud
         end
       end
     end
+
+    describe '#env_iso_folder' do
+      let(:cdrom) { instance_double('VimSdk::Vim::Vm::Device::VirtualCdrom', backing: cdrom_backing) }
+      context 'when the backing has filename' do
+        let(:cdrom_backing) do
+          VimSdk::Vim::Vm::Device::VirtualCdrom::IsoBackingInfo.new(
+            file_name: '[fake-old-datastore-name 1] fake-vm-name/env.iso'
+          )
+        end
+
+        it 'returns iso parent folder' do
+          expect(agent_env.env_iso_folder(cdrom)).to eql('[fake-old-datastore-name 1] fake-vm-name')
+        end
+      end
+
+      context 'when the backing does not have filename' do
+        let(:cdrom_backing) do
+          VimSdk::Vim::Vm::Device::VirtualCdrom::AtapiBackingInfo.new
+        end
+
+        it 'returns nil' do
+          expect(agent_env.env_iso_folder(cdrom)).to be_nil
+        end
+      end
+    end
   end
 end
