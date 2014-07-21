@@ -99,8 +99,8 @@ def asset(filename)
 end
 
 RSpec.configure do |config|
-  config.before(:each) do
-    logger = Logger.new("/dev/null")
-    Bosh::Clouds::Config.stub(:logger).and_return(logger)
+  config.before do
+    logger = Logger.new('/dev/null')
+    allow(Bosh::Clouds::Config).to receive(:logger).and_return(logger)
   end
 end

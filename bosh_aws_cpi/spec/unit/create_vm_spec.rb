@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require "spec_helper"
 
 describe Bosh::AwsCloud::Cloud, "create_vm" do
@@ -7,8 +5,8 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
   let(:region) { double("region") }
   let(:availability_zone_selector) { double("availability zone selector") }
   let(:stemcell) { double("stemcell", root_device_name: "root name", image_id: stemcell_id) }
-  let(:instance_manager) { double("instance manager") }
-  let(:instance) { double("instance", id: "expected instance id", status: :running) }
+  let(:instance_manager) { instance_double("Bosh::AwsCloud::InstanceManager") }
+  let(:instance) { instance_double("Bosh::AwsCloud::Instance", id: "fake-id") }
   let(:network_configurator) { double("network configurator") }
 
   let(:agent_id) { "agent_id" }
@@ -18,53 +16,48 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
   let(:disk_locality) { double("disk locality") }
   let(:environment) { "environment" }
 
-  let(:options) {
+  let(:options) do
     {
-        "aws" => {
-            "default_availability_zone" => "foo",
-            "region" => "bar",
-            "access_key_id" => "access",
-            "secret_access_key" => "secret",
-            "default_key_name" => "sesame"
-        },
-        "registry" => {
-            "endpoint" => "endpoint",
-            "user" => "user",
-            "password" => "password"
-        },
-        "agent" => {
-            "baz" => "qux"
-        }
+      "aws" => {
+        "default_availability_zone" => "foo",
+        "region" => "bar",
+        "access_key_id" => "access",
+        "secret_access_key" => "secret",
+        "default_key_name" => "sesame"
+      },
+      "registry" => {
+        "endpoint" => "endpoint",
+        "user" => "user",
+        "password" => "password"
+      },
+      "agent" => {
+        "baz" => "qux"
+      }
     }
-  }
+  end
 
   let(:cloud) { described_class.new(options) }
 
   before do
-    Bosh::Registry::Client.
-        stub(:new).
-        and_return(registry)
-    AWS::EC2.
-        stub(:new).
-        and_return(double("ec2", regions: {"bar" => region}))
-    Bosh::AwsCloud::AvailabilityZoneSelector.
-        stub(:new).
+    Bosh::Registry::Client.stub(:new).and_return(registry)
+
+    AWS::EC2.stub(:new).and_return(double("ec2", regions: {"bar" => region}))
+
+    Bosh::AwsCloud::AvailabilityZoneSelector.stub(:new).
         with(region, "foo").
         and_return(availability_zone_selector)
-    Bosh::AwsCloud::Stemcell.
-        stub(:find).
-        with(region, stemcell_id).
-        and_return(stemcell)
-    Bosh::AwsCloud::InstanceManager.
-        stub(:new).
-        with(region, registry, availability_zone_selector).
+
+    Bosh::AwsCloud::Stemcell.stub(:find).with(region, stemcell_id).and_return(stemcell)
+
+    Bosh::AwsCloud::InstanceManager.stub(:new).
+        with(region, registry, be_an_instance_of(AWS::ELB), availability_zone_selector, be_an_instance_of(Logger)).
         and_return(instance_manager)
-    instance_manager.
-        stub(:create).
+
+    instance_manager.stub(:create).
         with(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, options).
         and_return(instance)
-    Bosh::AwsCloud::NetworkConfigurator.
-        stub(:new).
+
+    Bosh::AwsCloud::NetworkConfigurator.stub(:new).
         with(networks_spec).
         and_return(network_configurator)
 
@@ -86,23 +79,20 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
       anything,
       anything,
     ).and_return(instance)
-    cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment).should == "expected instance id"
+    cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment).should == "fake-id"
   end
 
   it "should create an EC2 instance and return its id" do
     network_configurator.stub(:configure)
     registry.stub(:update_settings)
     Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: instance, state: :running)
-
-    cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment).should == "expected instance id"
+    cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment).should == "fake-id"
   end
 
   it "should configure the IP for the created instance according to the network specifications" do
     registry.stub(:update_settings)
     Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: instance, state: :running)
-
     network_configurator.should_receive(:configure).with(region, instance)
-
     cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)
   end
 
@@ -125,20 +115,27 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
         "env" => environment,
         "baz" => "qux"
     }
-    registry.should_receive(:update_settings).with("expected instance id", agent_settings)
+    registry.should_receive(:update_settings).with("fake-id", agent_settings)
 
     cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)
   end
 
-  it 'should clean up after itself if something fails' do
-    network_configurator.stub(:configure)
-    registry.stub(:update_settings).and_raise(ArgumentError)
-    Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: instance, state: :running)
-
-    instance_manager.should_receive(:terminate)
+  it 'terminates instance if updating registry settings fails' do
+    allow(network_configurator).to receive(:configure).and_raise(StandardError)
+    expect(instance).to receive(:terminate)
 
     expect {
       cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)
-    }.to raise_error(ArgumentError)
+    }.to raise_error(StandardError)
+  end
+
+  it 'terminates instance if updating registry settings fails' do
+    allow(network_configurator).to receive(:configure)
+    allow(registry).to receive(:update_settings).and_raise(StandardError)
+    expect(instance).to receive(:terminate)
+
+    expect {
+      cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)
+    }.to raise_error(StandardError)
   end
 end

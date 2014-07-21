@@ -31,6 +31,10 @@ module Bosh::AwsCloud
       initialize_aws
       initialize_registry
 
+      elb = AWS::ELB.new
+
+      @instance_manager = InstanceManager.new(region, registry, elb, az_selector, @logger)
+
       @metadata_lock = Mutex.new
     end
 
@@ -84,26 +88,32 @@ module Bosh::AwsCloud
         stemcell = StemcellFinder.find_by_region_and_id(region, stemcell_id)
 
         begin
-          instance_manager = InstanceManager.new(region, registry, az_selector)
-          instance = instance_manager.
-              create(agent_id, stemcell.image_id, resource_pool, network_spec, (disk_locality || []), environment, options)
+          instance = @instance_manager.create(
+            agent_id,
+            stemcell.image_id,
+            resource_pool,
+            network_spec,
+            (disk_locality || []),
+            environment,
+            options,
+          )
 
           logger.info("Creating new instance '#{instance.id}'")
 
           NetworkConfigurator.new(network_spec).configure(region, instance)
 
           registry_settings = initial_agent_settings(
-              agent_id,
-              network_spec,
-              environment,
-              stemcell.root_device_name,
+            agent_id,
+            network_spec,
+            environment,
+            stemcell.root_device_name,
           )
           registry.update_settings(instance.id, registry_settings)
 
           instance.id
         rescue => e # is this rescuing too much?
           logger.error(%Q[Failed to create instance: #{e.message}\n#{e.backtrace.join("\n")}])
-          instance_manager.terminate(instance.id, fast_path_delete?) if instance
+          instance.terminate(fast_path_delete?) if instance
           raise e
         end
       end
@@ -124,7 +134,7 @@ module Bosh::AwsCloud
     def delete_vm(instance_id)
       with_thread_name("delete_vm(#{instance_id})") do
         logger.info("Deleting instance '#{instance_id}'")
-        InstanceManager.new(region, registry).terminate(instance_id, fast_path_delete?)
+        @instance_manager.find(instance_id).terminate(fast_path_delete?)
       end
     end
 
@@ -133,7 +143,7 @@ module Bosh::AwsCloud
     # @param [String] instance_id EC2 instance id
     def reboot_vm(instance_id)
       with_thread_name("reboot_vm(#{instance_id})") do
-        InstanceManager.new(region, registry).reboot(instance_id)
+        @instance_manager.find(instance_id).reboot
       end
     end
 
@@ -142,7 +152,7 @@ module Bosh::AwsCloud
     # @param [String] instance_id EC2 instance id
     def has_vm?(instance_id)
       with_thread_name("has_vm?(#{instance_id})") do
-        InstanceManager.new(region, registry).has_instance?(instance_id)
+        @instance_manager.find(instance_id).exists?
       end
     end
 
