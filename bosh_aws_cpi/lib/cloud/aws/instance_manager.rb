@@ -19,11 +19,8 @@ module Bosh::AwsCloud
       instance_params[:instance_type] = resource_pool["instance_type"]
 
       set_user_data_parameter(instance_params, networks_spec)
-
       set_key_name_parameter(instance_params, resource_pool["key_name"], options["aws"]["default_key_name"])
-
       set_security_groups_parameter(instance_params, networks_spec, options["aws"]["default_security_groups"])
-
       set_vpc_parameters(instance_params, networks_spec)
 
       set_availability_zone_parameter(
@@ -55,10 +52,20 @@ module Bosh::AwsCloud
 
       instance = Instance.new(aws_instance, @registry, @elb, @logger)
 
-      # We need to wait here for the instance to be running, as if we are going to
-      # attach to a load balancer, the instance must be running.
-      instance.wait_for_running
-      instance.attach_to_load_balancers(resource_pool['elbs'] || [])
+      begin
+        # We need to wait here for the instance to be running, as if we are going to
+        # attach to a load balancer, the instance must be running.
+        instance.wait_for_running
+        instance.attach_to_load_balancers(resource_pool['elbs'] || [])
+      rescue => e
+        @logger.warn("Failed to configure instance '#{instance.id}': #{e.inspect}")
+        begin
+          instance.terminate
+        rescue => e
+          @logger.error("Failed to terminate mis-configured instance '#{instance.id}': #{e.inspect}")
+        end
+        raise
+      end
 
       instance
     end
