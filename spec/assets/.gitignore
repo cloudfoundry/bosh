@@ -6,20 +6,3 @@ bosh_config.yml
 bosh_work_dir/tmp
 logs/*
 *.log
-
-# From Bosh::Cli::Command::Release#git_init
-config/dev.yml
-config/private.yml
-releases/*.tgz
-dev_releases
-.blobs
-blobs
-.dev_builds
-.idea
-.DS_Store
-.final_builds/jobs/**/*.tgz
-.final_builds/packages/**/*.tgz
-*.swp
-*~
-*#
-#*
