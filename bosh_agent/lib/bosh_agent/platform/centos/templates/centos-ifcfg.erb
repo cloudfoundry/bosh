@@ -1,9 +1,0 @@
-DEVICE=<%= network['interface'] %>
-BOOTPROTO=static
-IPADDR=<%= network['ip']%>
-NETMASK=<%= network['netmask']%>
-BROADCAST=<%= network['broadcast'] %>
-<% if network.fetch('default', []).include?('gateway') -%>
-GATEWAY=<%= network['gateway'] %>
-<% end %>
-ONBOOT=yes

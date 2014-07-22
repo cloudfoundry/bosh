@@ -8,9 +8,6 @@
 # parameters for `bosh_users`
 bosh_users_password=c1oudc0w
 
-# parameters for `bosh_agent`
-# bosh_agent_src_dir=/some/path/to/the/bosh/agent
-
 # parameters for `bosh_micro`
 # bosh_micro_enabled=yes
 # bosh_micro_package_compiler_path=/path/to/package_compiler
@@ -32,4 +29,3 @@ bosh_users_password=c1oudc0w
 # stemcell_version=unknown
 # stemcell_infrastructure=vcloud|vsphere|aws|openstack
 # stemcell_hypervisor=esxi|xen|kvm
-# bosh_protocol_version=unknown

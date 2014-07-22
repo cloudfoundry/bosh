@@ -4,14 +4,11 @@ module Bosh::Stemcell
       case name
         when 'go'
           Go.new
-        when 'ruby'
-          Ruby.new
         when 'null'
           NullAgent.new
         else
           raise ArgumentError.new("invalid agent: #{name}")
       end
-
     end
 
     class NullAgent
@@ -27,16 +24,6 @@ module Bosh::Stemcell
     class Go
       def name
         'go'
-      end
-
-      def ==(other)
-        name == other.name
-      end
-    end
-
-    class Ruby
-      def name
-        'ruby'
       end
 
       def ==(other)

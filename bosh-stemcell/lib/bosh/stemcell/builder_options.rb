@@ -1,8 +1,6 @@
 require 'rbconfig'
-require 'bosh_agent/version'
-require 'bosh/stemcell/archive_filename'
-
 require 'forwardable'
+require 'bosh/stemcell/archive_filename'
 
 module Bosh::Stemcell
   class BuilderOptions
@@ -28,10 +26,8 @@ module Bosh::Stemcell
         'stemcell_infrastructure' => infrastructure.name,
         'stemcell_operating_system' => operating_system.name,
         'stemcell_operating_system_version' => operating_system.version,
-        'bosh_protocol_version' => Bosh::Agent::BOSH_PROTOCOL,
         'ruby_bin' => ruby_bin,
         'bosh_release_src_dir' => File.join(source_root, 'release/src/bosh'),
-        'bosh_agent_src_dir' => File.join(source_root, 'bosh_agent'),
         'go_agent_src_dir' => File.join(source_root, 'go_agent'),
         'image_create_disk_size' => image_create_disk_size,
         'os_image_tgz' => os_image_tgz_path,

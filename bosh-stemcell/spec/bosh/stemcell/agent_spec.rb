@@ -6,7 +6,6 @@ module Bosh::Stemcell
     describe '.for' do
       it 'returns the correct agent' do
         expect(Agent.for('go')).to be_an(Agent::Go)
-        expect(Agent.for('ruby')).to be_an(Agent::Ruby)
         expect(Agent.for('null')).to be_an(Agent::NullAgent)
       end
 
@@ -25,21 +24,12 @@ module Bosh::Stemcell
 
     it 'is comparable to other agents' do
       expect(subject).to eq(Agent::NullAgent.new)
-
       expect(subject).to_not eq(Agent::Go.new)
-      expect(subject).to_not eq(Agent::Ruby.new)
     end
   end
 
   describe Agent::Go do
     its(:name) { should eq('go') }
     it { should eq Agent::Go.new }
-    it { should_not eq Agent::Ruby.new }
-  end
-
-  describe Agent::Ruby do
-    its(:name) { should eq('ruby') }
-    it { should eq Agent::Ruby.new }
-    it { should_not eq Agent::Go.new }
   end
 end

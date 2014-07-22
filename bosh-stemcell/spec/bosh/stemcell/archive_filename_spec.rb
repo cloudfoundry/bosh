@@ -18,8 +18,8 @@ module Bosh::Stemcell
     end
     let(:agent) do
       instance_double(
-        'Bosh::Stemcell::Agent::Ruby',
-        name: 'ruby'
+        'Bosh::Stemcell::Agent::Go',
+        name: 'go'
       )
     end
     let(:definition) do

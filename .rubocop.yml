@@ -5,7 +5,6 @@ AllCops:
   Exclude:
     - agent_client/docs/**/*
     - bin/**/*
-    - bosh_agent/**/*
     - bosh_aws_cpi/**/*
     - bosh_cli/**/*
     - bosh_cli_plugin_aws/**/*

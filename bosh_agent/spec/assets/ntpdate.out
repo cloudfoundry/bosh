@@ -1,2 +1,0 @@
-server 10.16.45.209, stratum 2, offset -0.081236, delay 0.04291
-12 Oct 17:37:58 ntpdate[42757]: adjust time server 10.16.45.209 offset -0.081236 sec

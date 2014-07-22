@@ -28,7 +28,6 @@ module Bosh::Dev
        blobstore_client
        bosh-core
        bosh-stemcell
-       bosh_agent
        bosh_aws_cpi
        bosh_cli
        bosh_cli_plugin_aws

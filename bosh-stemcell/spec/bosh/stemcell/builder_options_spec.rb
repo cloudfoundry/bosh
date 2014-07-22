@@ -28,7 +28,7 @@ module Bosh::Stemcell
 
     let(:infrastructure) { Infrastructure.for('aws') }
     let(:operating_system) { OperatingSystem.for('ubuntu', 'penguin') }
-    let(:agent) { Agent.for('ruby') }
+    let(:agent) { Agent.for('go') }
     let(:expected_source_root) { File.expand_path('../../../../..', __FILE__) }
     let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'FAKE_STEMCELL.tgz') }
 
@@ -91,12 +91,10 @@ module Bosh::Stemcell
             expect(result['stemcell_operating_system']).to eq(operating_system.name)
             expect(result['stemcell_infrastructure']).to eq(infrastructure.name)
             expect(result['stemcell_hypervisor']).to eq(infrastructure.hypervisor)
-            expect(result['bosh_protocol_version']).to eq('1')
             expect(result['UBUNTU_ISO']).to eq('fake_ubuntu_iso')
             expect(result['UBUNTU_MIRROR']).to eq('fake_ubuntu_mirror')
             expect(result['ruby_bin']).to eq('fake_ruby_bin')
             expect(result['bosh_release_src_dir']).to eq(File.join(expected_source_root, '/release/src/bosh'))
-            expect(result['bosh_agent_src_dir']).to eq(File.join(expected_source_root, 'bosh_agent'))
             expect(result['go_agent_src_dir']).to eq(File.join(expected_source_root, 'go_agent'))
             expect(result['image_create_disk_size']).to eq(default_disk_size)
             expect(result['bosh_micro_enabled']).to eq('yes')

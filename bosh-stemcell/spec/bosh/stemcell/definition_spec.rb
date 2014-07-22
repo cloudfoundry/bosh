@@ -70,7 +70,7 @@ module Bosh::Stemcell
     describe '#==' do
       it 'compares by value instead of reference' do
         expect_eq = [
-          %w(aws centos 6.5 ruby),
+          %w(aws centos 6.5 go),
           %w(vsphere ubuntu penguin go),
         ]
 
@@ -79,8 +79,8 @@ module Bosh::Stemcell
         end
 
         expect_not_equal = [
-          [%w(aws ubuntu penguin ruby), %w(aws centos 6.5 ruby)],
-          [%w(vsphere ubuntu penguin go), %w(vsphere ubuntu penguin ruby)],
+          [%w(aws ubuntu penguin null), %w(aws centos 6.5 null)],
+          [%w(vsphere ubuntu penguin go), %w(vsphere ubuntu penguin null)],
         ]
         expect_not_equal.each do |left, right|
           expect(Definition.for(*left)).to_not eq(Definition.for(*right))

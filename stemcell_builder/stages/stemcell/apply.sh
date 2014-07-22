@@ -23,7 +23,7 @@ require "yaml"
 stemcell_name = "$stemcell_name"
 stemcell_tgz = "$stemcell_tgz"
 version = "$stemcell_version"
-bosh_protocol = "$bosh_protocol_version".to_i
+bosh_protocol = 1
 stemcell_infrastructure = "$stemcell_infrastructure"
 stemcell_checksum = "$stemcell_checksum"
 

@@ -65,37 +65,19 @@ module Bosh::Stemcell
     end
 
     describe '#agent_stages' do
-      context 'for the Ruby agent' do
-        let(:agent) { Agent.for('ruby') }
+      let(:agent) { Agent.for('go') }
 
-        let(:agent_stages) {
-          [
-            :bosh_ruby,
-            :bosh_agent,
-            :bosh_micro,
-          ]
-        }
-
-        it 'returns the correct stages' do
-          expect(stage_collection.agent_stages).to eq(agent_stages)
-        end
-
+      let(:agent_stages) do
+        [
+          :bosh_ruby,
+          :bosh_go_agent,
+          :bosh_micro_go,
+          :aws_cli,
+        ]
       end
 
-      context 'for the Go agent' do
-        let(:agent) { Agent.for('go') }
-        let(:agent_stages) {
-          [
-            :bosh_ruby,
-            :bosh_go_agent,
-            :bosh_micro_go,
-            :aws_cli,
-          ]
-        }
-
-        it 'returns the correct stages' do
-          expect(stage_collection.agent_stages).to eq(agent_stages)
-        end
+      it 'returns the correct stages' do
+        expect(stage_collection.agent_stages).to eq(agent_stages)
       end
     end
 

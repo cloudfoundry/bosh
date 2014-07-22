@@ -34,5 +34,4 @@ persist_value stemcell_name
 persist_value stemcell_tgz
 persist_value stemcell_version
 persist_value stemcell_infrastructure
-persist_value bosh_protocol_version
 persist_value ruby_bin

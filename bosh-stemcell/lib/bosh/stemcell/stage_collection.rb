@@ -25,21 +25,12 @@ module Bosh::Stemcell
     end
 
     def agent_stages
-      case agent
-      when Agent::Go
-        [
-          :bosh_ruby,
-          :bosh_go_agent,
-          :bosh_micro_go,
-          :aws_cli,
-        ]
-      when Agent::Ruby
-        [
-          :bosh_ruby,
-          :bosh_agent,
-          :bosh_micro,
-        ]
-      end
+      [
+        :bosh_ruby,
+        :bosh_go_agent,
+        :bosh_micro_go,
+        :aws_cli,
+      ]
     end
 
     def infrastructure_stages

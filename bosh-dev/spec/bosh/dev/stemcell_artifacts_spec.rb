@@ -34,7 +34,7 @@ module Bosh::Dev
       let(:version) { 123 }
       let(:definitions) do
         [
-          Bosh::Stemcell::Definition.for('vsphere', 'ubuntu', 'lucid', 'ruby'),
+          Bosh::Stemcell::Definition.for('vsphere', 'ubuntu', 'lucid', 'go'),
           Bosh::Stemcell::Definition.for('openstack', 'centos', nil, 'go'),
         ]
       end
@@ -67,7 +67,7 @@ module Bosh::Dev
       context 'when definition includes aws' do
         let(:definitions) do
           [
-            Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'lucid', 'ruby')
+            Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'lucid', 'go')
           ]
         end
 
