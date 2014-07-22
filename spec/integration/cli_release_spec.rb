@@ -284,31 +284,31 @@ describe 'cli releases', type: :integration do
   end
 
   it 'fails to delete release in use but deletes a different release' do
-      target_and_login
+    target_and_login
 
-      runner = bosh_runner_in_work_dir(TEST_RELEASE_DIR)
-      runner.run('create release')
-      runner.run('upload release')
+    runner = bosh_runner_in_work_dir(TEST_RELEASE_DIR)
+    runner.run('create release')
+    runner.run('upload release')
 
-      # change something in TEST_RELEASE_DIR
-      FileUtils.touch(File.join(TEST_RELEASE_DIR, 'src', 'bar', 'pretend_something_changed'))
+    # change something in TEST_RELEASE_DIR
+    FileUtils.touch(File.join(TEST_RELEASE_DIR, 'src', 'bar', 'pretend_something_changed'))
 
-      runner.run('create release --force')
-      runner.run('upload release')
+    runner.run('create release --force')
+    runner.run('upload release')
 
-      bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
-      deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.simple_manifest)
-      bosh_runner.run("deployment #{deployment_manifest.path}")
+    deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.simple_manifest)
+    bosh_runner.run("deployment #{deployment_manifest.path}")
 
-      bosh_runner.run('deploy')
+    bosh_runner.run('deploy')
 
-      out = bosh_runner.run('delete release bosh-release', failure_expected: true)
-      expect(out).to match /Error 30007: Release `bosh-release' is still in use/
+    out = bosh_runner.run('delete release bosh-release', failure_expected: true)
+    expect(out).to match /Error 30007: Release `bosh-release' is still in use/
 
-      out = bosh_runner.run('delete release bosh-release 0.2-dev')
-      expect(out).to match %r{Deleted `bosh-release/0.2-dev'}
-    end
+    out = bosh_runner.run('delete release bosh-release 0.2-dev')
+    expect(out).to match %r{Deleted `bosh-release/0.2-dev'}
+  end
 
   # ~57s
   it 'release lifecycle: create, upload, update (w/sparse upload), delete' do
