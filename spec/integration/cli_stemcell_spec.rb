@@ -87,31 +87,26 @@ describe 'cli: stemcell', type: :integration do
     end
 
     context 'when the stemcell is remote' do
-      let(:webserver) do
-        local_server_cmd = %W(rackup -b run(Rack::Directory.new('#{spec_asset('')}')))
-        Bosh::Dev::Sandbox::Service.new(local_server_cmd, {}, Logger.new(STDOUT))
-      end
+      let(:file_server) { Bosh::Spec::LocalFileServer.new(spec_asset(''), file_server_port, logger) }
+      let(:file_server_port) { current_sandbox.get_named_port('stemcell-repo') }
 
-      before do
-        webserver.start
-        Bosh::Dev::Sandbox::SocketConnector.new('stemcell-repo', 'localhost', 9292, logger).try_to_connect
-      end
+      before { file_server.start }
+      after { file_server.stop }
 
-      after { webserver.stop }
+      let(:stemcell_url) { file_server.http_url("valid_stemcell.tgz") }
 
-      let(:remote_stemcell_url) { 'http://localhost:9292/valid_stemcell.tgz' }
-      before { bosh_runner.run("upload stemcell #{remote_stemcell_url}") }
+      before { bosh_runner.run("upload stemcell #{stemcell_url}") }
 
       context 'when using the --skip-if-exists flag' do
         it 'tells the user and does not exit as a failure' do
-          output = bosh_runner.run("upload stemcell #{remote_stemcell_url} --skip-if-exists")
-          expect(output).to include("Stemcell at #{remote_stemcell_url} already exists")
+          output = bosh_runner.run("upload stemcell #{stemcell_url} --skip-if-exists")
+          expect(output).to include("Stemcell at #{stemcell_url} already exists")
         end
       end
 
       context 'when NOT using the --skip-if-exists flag' do
         it 'tells the user and does exit as a failure' do
-          _, exit_code = bosh_runner.run("upload stemcell #{remote_stemcell_url}", {
+          _, exit_code = bosh_runner.run("upload stemcell #{stemcell_url}", {
             failure_expected: true,
             return_exit_code: true,
           })

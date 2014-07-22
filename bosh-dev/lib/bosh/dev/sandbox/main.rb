@@ -281,6 +281,12 @@ module Bosh::Dev::Sandbox
       @redis_port ||= get_named_port(:redis)
     end
 
+    def get_named_port(name)
+      @port_names ||= []
+      @port_names << name unless @port_names.include?(name)
+      61000 + @test_env_number * 100 + @port_names.index(name)
+    end
+
     def sandbox_root
       @sandbox_root ||= Dir.mktmpdir.tap { |p| @logger.info("sandbox=#{p}") }
     end
@@ -344,12 +350,6 @@ module Bosh::Dev::Sandbox
       template_contents = File.read(filename)
       template = ERB.new(template_contents)
       template.result(binding)
-    end
-
-    def get_named_port(name)
-      @port_names ||= []
-      @port_names << name unless @port_names.include?(name)
-      61000 + @test_env_number * 100 + @port_names.index(name)
     end
 
     DEBUG_HEADER = '*' * 20

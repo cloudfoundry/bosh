@@ -421,18 +421,18 @@ describe 'cli releases', type: :integration do
     end
 
     context 'when the release is remote' do
-      let(:webserver) do
-        local_server_cmd = %W(rackup -b run(Rack::Directory.new('#{spec_asset('')}')))
-        Bosh::Dev::Sandbox::Service.new(local_server_cmd, {}, Logger.new(STDOUT))
-      end
-      before { webserver.start }
-      after { webserver.stop }
+      let(:file_server) { Bosh::Spec::LocalFileServer.new(spec_asset(''), file_server_port, logger) }
+      let(:file_server_port) { current_sandbox.get_named_port('releases-repo') }
 
-      let(:remote_release_url) { 'http://localhost:9292/valid_release.tgz' }
-      before { bosh_runner.run("upload release #{remote_release_url}") }
+      before { file_server.start }
+      after { file_server.stop }
+
+      let(:release_url) { file_server.http_url("valid_release.tgz") }
+
+      before { bosh_runner.run("upload release #{release_url}") }
 
       it 'tells the user and does exit as a failure' do
-        output, exit_code = bosh_runner.run("upload release #{remote_release_url}", {
+        output, exit_code = bosh_runner.run("upload release #{release_url}", {
           failure_expected: true,
           return_exit_code: true,
         })
