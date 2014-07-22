@@ -68,6 +68,73 @@ module Bosh::Cli
       end
     end
 
+    describe '#store_file' do
+      let(:index_key) { 'fake-key' }
+
+      let(:src_dir) { Dir.mktmpdir }
+      let(:src_file_path) { File.join(src_dir, 'fake-src-file.tgz') }
+      before { File.open(src_file_path, 'w') { |f| f.write('fake-bits') } }
+
+      after { FileUtils.rm_rf(src_dir) }
+
+      context 'when version record exists' do
+        context 'when the version record includes a sha1' do
+          before { caching_versions_index.add_version(index_key, { 'version' => 'fake-version' }, src_file_path) }
+
+          context 'when the sha1 of the supplied file matches the version record sha1' do
+            it 'copies the provided file to the storage dir and returns the file path' do
+              file_path = caching_versions_index.store_file(index_key, src_file_path)
+
+              version = caching_versions_index[index_key]['version']
+              expect(file_path).to eq(caching_versions_index.filename(version))
+
+              expect(File).to exist(file_path)
+
+              new_sha1 = Digest::SHA1.file(src_file_path).hexdigest
+              expected_sha1 = caching_versions_index[index_key]['sha1']
+              expect(new_sha1).to eq(expected_sha1)
+            end
+          end
+
+          context 'when the sha1 of the supplied file does not match the version record sha1' do
+            before { File.open(src_file_path, 'w') { |f| f.write('fake-corrupted-bits') } }
+
+            it 'raises a Sha1MismatchError' do
+              new_sha1 = Digest::SHA1.file(src_file_path).hexdigest
+              expect {
+                caching_versions_index.store_file(index_key, src_file_path)
+              }.to raise_error(
+                CachingVersionsIndex::Sha1MismatchError,
+                "Expected sha1 '#{caching_versions_index[index_key]['sha1']}', but got sha1 '#{new_sha1}'",
+              )
+            end
+          end
+        end
+
+        context 'when the version record does not include a sha1' do
+          before { versions_index.add_version(index_key, { 'version' => 'fake-version' }) }
+
+          it 'raises an error' do
+            expect {
+              caching_versions_index.store_file(index_key, src_file_path)
+            }.to raise_error(
+              "Trying to cache file with no sha1 in version record `#{index_key}' in index `#{versions_index.index_file}'"
+            )
+          end
+        end
+      end
+
+      context 'when version record does not exists' do
+        it 'raises an error' do
+          expect {
+            caching_versions_index.store_file(index_key, src_file_path)
+          }.to raise_error(
+            "Trying to cache file for missing version record `#{index_key}' in index `#{versions_index.index_file}'"
+          )
+        end
+      end
+    end
+
     describe '#filename' do
       context 'when a name prefix exists' do
         let(:caching_versions_index) { CachingVersionsIndex.new(versions_index, 'fake-prefix') }

@@ -81,11 +81,10 @@ module Bosh::Cli
         tmp_file = File.open(File.join(Dir.mktmpdir, name), 'w')
         @blobstore.get(blobstore_id, tmp_file)
         tmp_file.close
-        if Digest::SHA1.file(tmp_file.path).hexdigest == item['sha1']
-          @tarball_path = @final_index.add_version(fingerprint,
-                                                   item,
-                                                   tmp_file.path)
-        else
+
+        begin
+          @tarball_path = @final_index.store_file(fingerprint, tmp_file.path)
+        rescue Bosh::Cli::CachingVersionsIndex::Sha1MismatchError
           err("`#{name}' (#{version}) is corrupted in blobstore " +
                   "(id=#{blobstore_id}), " +
             'please remove it manually and re-generate the final release')
@@ -95,7 +94,7 @@ module Bosh::Cli
       @version = version
       @used_final_version = true
       true
-    rescue Bosh::Blobstore::NotFound => e
+    rescue Bosh::Blobstore::NotFound
       raise BlobstoreError, "Final version of `#{name}' not found in blobstore"
     rescue Bosh::Blobstore::BlobstoreError => e
       raise BlobstoreError, "Blobstore error: #{e}"

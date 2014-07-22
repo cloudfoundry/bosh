@@ -1,5 +1,7 @@
 module Bosh::Cli
-  class CachingVersionsIndex
+  class LocalVersionStorage
+
+    class Sha1MismatchError < StandardError; end
 
     attr_reader :versions_index
 
@@ -23,6 +25,34 @@ module Bosh::Cli
 
       new_build['sha1'] = Digest::SHA1.file(src_payload_path).hexdigest
       @versions_index.update_version(new_key, new_build)
+
+      File.expand_path(destination)
+    end
+
+    def store_file(key, src_payload_path)
+      build = @versions_index[key]
+      unless build
+        raise "Trying to cache file for missing version record `#{key}' in index `#{@versions_index.index_file}'"
+      end
+
+      sha1 = build['sha1']
+      unless sha1
+        raise "Trying to cache file with no sha1 in version record `#{key}' in index `#{@versions_index.index_file}'"
+      end
+
+      version = build['version'] || key
+
+      unless File.exist?(src_payload_path)
+        raise "Trying to copy payload `#{src_payload_path}' for version `#{version}'"
+      end
+
+      src_sha1 = Digest::SHA1.file(src_payload_path).hexdigest
+      unless src_sha1 == sha1
+        raise Sha1MismatchError, "Expected sha1 '#{sha1}', but got sha1 '#{src_sha1}'"
+      end
+
+      destination = filename(version)
+      FileUtils.cp(src_payload_path, destination, :preserve => true)
 
       File.expand_path(destination)
     end

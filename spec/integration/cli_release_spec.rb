@@ -85,6 +85,20 @@ describe 'cli releases', type: :integration do
     end
   end
 
+  it 'allows creation of new final release without .gitignore files' do
+    Dir.chdir(TEST_RELEASE_DIR) do
+      out = bosh_runner.run_in_current_dir('create release --final', failure_expected: false)
+      expect(out).to match(/Release version: 1/)
+
+      `git add .`
+      `git commit -m 'final release 1'`
+      `git clean -fdx`
+
+      out = bosh_runner.run_in_current_dir('create release --final --force', failure_expected: false)
+      expect(out).to match(/Release version: 2/)
+    end
+  end
+
   context 'when no previous releases have been made' do
     it 'final release uploads the job & package blobs' do
       Dir.chdir(TEST_RELEASE_DIR) do
