@@ -231,9 +231,11 @@ func init() {
 		})
 
 		Describe("TerminateNicely", func() {
-			var buildDir string
+			var (
+				buildDir string
+			)
 
-			expectProcessesToNotExist := func() {
+			hasProcessesFromBuildDir := func() (bool, string) {
 				// Make sure to show all processes on the system
 				output, err := exec.Command("ps", "-A", "-o", "pid,args").Output()
 				Expect(err).ToNot(HaveOccurred())
@@ -241,17 +243,36 @@ func init() {
 				// Cannot check for PID existence directly because
 				// PID could have been recycled by the OS; make sure it's not the same process
 				for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
-					Expect(line).ToNot(ContainSubstring(buildDir))
+					if strings.Contains(line, buildDir) {
+						return true, line
+					}
 				}
+
+				return false, ""
+			}
+
+			expectProcessesToNotExist := func() {
+				exists, ps := hasProcessesFromBuildDir()
+				Expect(exists).To(BeFalse(), "Expected following process to not exist %s", ps)
 			}
 
 			BeforeEach(func() {
-				var err error
+				var (
+					err error
+				)
 
 				buildDir, err = ioutil.TempDir("", "TerminateNicely")
 				Expect(err).ToNot(HaveOccurred())
 
-				for _, exe := range []string{"child_ignore_term", "child_term", "parent_ignore_term", "parent_term"} {
+				exesToCompile := []string{
+					"exe_exits",
+					"child_ignore_term",
+					"child_term",
+					"parent_ignore_term",
+					"parent_term",
+				}
+
+				for _, exe := range exesToCompile {
 					dst := filepath.Join(buildDir, exe)
 					src := filepath.Join("parent_child_exec", exe+".go")
 					err := exec.Command("go", "build", "-o", dst, src).Run()
@@ -269,7 +290,7 @@ func init() {
 					process, err := runner.RunComplexCommandAsync(cmd)
 					Expect(err).ToNot(HaveOccurred())
 
-					// Wait for sh script to start and output pids
+					// Wait for script to start and output pids
 					time.Sleep(2 * time.Second)
 
 					waitCh := process.Wait()
@@ -299,7 +320,7 @@ func init() {
 					process, err := runner.RunComplexCommandAsync(cmd)
 					Expect(err).ToNot(HaveOccurred())
 
-					// Wait for sh script to start and output pids
+					// Wait for script to start and output pids
 					time.Sleep(2 * time.Second)
 
 					waitCh := process.Wait()
@@ -324,15 +345,20 @@ func init() {
 
 			Context("when parent and child already exited before calling TerminateNicely", func() {
 				It("returns without an error since all processes are gone", func() {
-					cmd := Command{
-						Name: "bash",
-						Args: []string{"-c", `exit 0`},
-					}
+					cmd := Command{Name: filepath.Join(buildDir, "exe_exits")}
 					process, err := runner.RunComplexCommandAsync(cmd)
 					Expect(err).ToNot(HaveOccurred())
 
-					// Wait for sh script to exit
-					time.Sleep(2 * time.Second)
+					// Wait for script to exit
+					for i := 0; i < 20; i++ {
+						if exists, _ := hasProcessesFromBuildDir(); !exists {
+							break
+						}
+						if i == 19 {
+							Fail("Expected process did not exit fast enough")
+						}
+						time.Sleep(500 * time.Millisecond)
+					}
 
 					waitCh := process.Wait()
 
