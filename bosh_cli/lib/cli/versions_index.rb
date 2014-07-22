@@ -30,7 +30,7 @@ module Bosh::Cli
       return nil if builds.empty?
 
       version_strings = builds.map { |b| b["version"] }
-      Bosh::Common::Version::ReleaseVersionList.parse(version_strings).latest.to_s
+      Bosh::Common::Version::ReleaseVersion.parse_list(version_strings).latest.to_s
     end
 
     def version_exists?(version)

@@ -1,13 +1,13 @@
 require 'semi_semantic/version'
 require 'common/version/release_version'
-require 'common/version/version_list'
 
 module Bosh::Common::Version
   class ReleaseVersionList < VersionList
 
     # @param [Array<#version>] Collection of version strings
+    # @param [class] Version type to parse as (ex: SemiSemantic::Version, ReleaseVersion, StemcellVersion, BoshVersion)
     def self.parse(versions)
-      self.new(VersionList.parse(versions, ReleaseVersion).versions)
+      self.new(VersionList.parse(versions, ReleaseVersion))
     end
 
     # @param [#version] ReleaseVersion from which to rebase the post-release segment
