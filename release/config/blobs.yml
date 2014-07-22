@@ -43,6 +43,34 @@ redis/redis-2.2.4.tar.gz:
   object_id: rest/objects/4e4e78bca41e122004e4e8ec65f67f04fbd4f388786e
   sha: 063e6e9f615ceda664d0691a6ea59befb22ebc40
   size: 447499
+ruby/bundler-1.0.12.gem:
+  object_id: rest/objects/4e4e78bca61e122204e4e98643d9ae04fbd4f39d1431
+  sha: 4acd470b77d0d8f66440f137c918464b3e967a42
+  size: 160768
+ruby/rake-0.8.7.gem:
+  object_id: rest/objects/4e4e78bca31e121004e4e7d514745f04fbd4f3ae519a
+  sha: 91daad079d404b68a7dd179716b9fdd0c195144c
+  size: 104960
+ruby/ruby-1.8.7-p302.tar.bz2:
+  object_id: rest/objects/4e4e78bca31e121204e4e86ee3969204fbd4f3c13434
+  sha: d93bd2f1099f3473b496cda2422b27a8da2beb00
+  size: 4184764
+ruby/ruby-1.9.2-p180.tar.gz:
+  object_id: rest/objects/4e4e78bca51e122004e4e8ec68407704fbd4f3e88d6f
+  sha: 6a482bc07239b37bcadf68dda63c65d20dc19ebe
+  size: 11158935
+ruby/rubygems-1.7.2.tgz:
+  object_id: rest/objects/4e4e78bca11e122204e4e98638b76304fbd4f43e7a27
+  sha: d878ae52f40eb71e59708afc57303172f0327fad
+  size: 245606
+ruby/bundler-1.2.1.gem:
+  object_id: rest/objects/4e4e78bca51e122204e4e9863f28f3050aa6aab5548d
+  sha: 0cbe6ad7a41f064d6c11c1058465fffb1bd58069
+  size: 226816
+ruby/rubygems-1.8.24.tgz:
+  object_id: rest/objects/4e4e78bca21e121004e4e7d511f553050aa6aad74ec8
+  sha: 30f27047e74f7943117736a0d3e224994fee0905
+  size: 380101
 golang/go1.0.3.src.tar.gz:
   object_id: rest/objects/4e4e78bca21e122204e4e9863926b1050b511f8d9fe0
   sha: 1a67293c10d6c06c633c078a7ca67e98c8b58471
@@ -56,11 +84,31 @@ genisoimage/cdrkit-1.1.11.tar.gz:
   sha: !binary |-
     M2Y3ZGRjMDZkYjAyNzI5NDJlMWE0Y2Q5OGMzYzk2NDYyZGY3NzM4Nw==
   size: 1445133
+ruby/ruby-1.9.3-p484.tar.gz:
+  object_id: e2ef4d3e-59bd-4c7c-aba2-e9df6d2a9c7e
+  sha: !binary |-
+    NmFlODBmNDI0OTY4YjVjZTY2MWVlOWIyYmVlMWMyMWFkYzllZTY3Yw==
+  size: 12576996
+ruby/rubygems-2.1.11.tgz:
+  object_id: a949ba57-c5f8-43a1-a3e5-44faf1ab3b88
+  sha: !binary |-
+    Y2EzMDMzNDMyY2FlMjhkZWI3Y2VkNzljZGEyNzFjYjI5MmI3MGU1OQ==
+  size: 367166
+ruby/bundler-1.5.2.gem:
+  object_id: 7ab3bb7d-9ed5-4ff7-ae53-22ad6cac7342
+  sha: !binary |-
+    NzhhOWZlMTE2MTQwNzc3OGY0MzdmYWUzOWNiNWFjNTExMjdmNDYzNQ==
+  size: 286208
 ruby/yaml-0.1.5.tar.gz:
   object_id: db07c821-62f8-4fd1-a99a-ff1c88b2474b
   sha: !binary |-
     OGI3OGNiOWY3NTljN2Q4MGRiOGE3MzI4YzBlYmVjZmUzNGZkZTczNw==
   size: 504897
+ruby/ruby-1.9.3-p545.tar.gz:
+  object_id: c685bafb-6eb0-451c-bc3e-bf21ca6565b0
+  sha: !binary |-
+    MDM0NTUzNjQ3NDA5MTRlOGQyZGZkNjQyMWY2ODFiM2ZiNjhhNDMxMw==
+  size: 12582277
 powerdns/pdns-static_3.3.1-1_amd64.deb:
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
   sha: !binary |-
@@ -121,18 +169,3 @@ nginx/pcre-8.34.tar.gz:
   sha: !binary |-
     ZDQ2ZTUzNzMzN2VlNzBkZjE5MDg0MDAxYTRiNjgxNWIzZDY5ZmU2Yw==
   size: 1933734
-ruby/bundler-1.6.3.gem:
-  object_id: 4e5629bd-4f64-4ba7-b178-07c75166850c
-  sha: !binary |-
-    YzhhMDAwZjc1YjZhNmY2MGQ5ZmI3MjdmODA3NmVjOTE3MWUxNGMyMA==
-  size: 293376
-ruby/ruby-2.1.2.tar.gz:
-  object_id: ce4e8510-ee09-4edb-8a8d-9f686d72f4d0
-  sha: !binary |-
-    YjgxOGQ1NmI0NjM4ZjE5NDkyMzkwMzg2MjNiNzYxNTE3ZDRhNTY4Ng==
-  size: 15096114
-ruby/rubygems-2.3.0.tgz:
-  object_id: 7c53542d-dfdc-4da0-a9e1-96047515ec73
-  sha: !binary |-
-    NjkwMmZmZjc3NDlmYTI2NGI4ZjkwMjBmMzNkYWY5MjE3MDM3NWY3NQ==
-  size: 431240

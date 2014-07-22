@@ -1,17 +1,5 @@
 set -e
 
-RUBY_PREFIX=ruby
-RUBYGEMS_PREFIX=rubygems
-BUNDLER_PREFIX=bundler
-
-RUBY_VERSION=2.1.2
-RUBYGEMS_VERSION=2.3.0
-BUNDLER_VERSION=1.6.3
-
-RUBY=$RUBY_PREFIX-$RUBY_VERSION
-RUBYGEMS=$RUBYGEMS_PREFIX-$RUBYGEMS_VERSION
-BUNDLER=$BUNDLER_PREFIX-$BUNDLER_VERSION
-
 tar xzf ruby/yaml-0.1.5.tar.gz
 (
   set -e
@@ -21,22 +9,22 @@ tar xzf ruby/yaml-0.1.5.tar.gz
   make install
 )
 
-tar xzf ruby/$RUBY.tgz
+tar xzf ruby/ruby-1.9.3-p545.tar.gz
 (
   set -e
-  cd $RUBY
+  cd ruby-1.9.3-p545
   LDFLAGS="-Wl,-rpath -Wl,${BOSH_INSTALL_TARGET}" CFLAGS='-fPIC' ./configure --prefix=${BOSH_INSTALL_TARGET} --disable-install-doc --with-opt-dir=${BOSH_INSTALL_TARGET}
   make
   make install
 )
 
-tar zxvf ruby/$RUBYGEMS.tgz
+tar zxvf ruby/rubygems-2.1.11.tgz
 
 (
   set -e
-  cd $RUBYGEMS
+  cd rubygems-2.1.11
 
-  ${BOSH_INSTALL_TARGET}/bin/ruby setup.rb --no-ri --no-rdoc
+  ${BOSH_INSTALL_TARGET}/bin/ruby setup.rb
 
   if [[ $? != 0 ]] ; then
     echo "Cannot install rubygems"
@@ -44,4 +32,4 @@ tar zxvf ruby/$RUBYGEMS.tgz
   fi
 )
 
-${BOSH_INSTALL_TARGET}/bin/gem install ruby/$BUNDLER.gem --local --no-ri --no-rdoc
+${BOSH_INSTALL_TARGET}/bin/gem install ruby/bundler-1.5.2.gem --local --no-ri --no-rdoc
