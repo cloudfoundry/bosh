@@ -21,7 +21,7 @@ tar xzf ruby/yaml-0.1.5.tar.gz
   make install
 )
 
-tar xzf ruby/$RUBY.tar.gz
+tar xzf ruby/$RUBY.tgz
 (
   set -e
   cd $RUBY
