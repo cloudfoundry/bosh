@@ -274,7 +274,7 @@ func init() {
 
 				for _, exe := range exesToCompile {
 					dst := filepath.Join(buildDir, exe)
-					src := filepath.Join("parent_child_exec", exe+".go")
+					src := filepath.Join("exec_cmd_runner_fixtures", exe+".go")
 					err := exec.Command("go", "build", "-o", dst, src).Run()
 					Expect(err).ToNot(HaveOccurred())
 				}
