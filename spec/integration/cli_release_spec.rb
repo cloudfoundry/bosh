@@ -29,18 +29,6 @@ describe 'cli releases', type: :integration do
     end
   end
 
-  context 'when no previous releases have been made' do
-    it 'final release uploads the job & package blobs' do
-      Dir.chdir(TEST_RELEASE_DIR) do
-        expect(File.exist?('releases/bosh-release-1.yml')).to eq(false)
-
-        out = bosh_runner.run_in_current_dir('create release --final', failure_expected: false)
-        expect(out).to match(/Uploaded, blobstore id/)
-        expect(out).to_not match(/This package has already been uploaded/)
-      end
-    end
-  end
-
   it 'creates a new final release with a default version' do
     release_1 = File.join(TEST_RELEASE_DIR, 'releases/bosh-release-1.yml')
     release_2 = File.join(TEST_RELEASE_DIR, 'releases/bosh-release-2.yml')

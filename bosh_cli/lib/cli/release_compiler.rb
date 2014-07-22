@@ -45,7 +45,9 @@ module Bosh::Cli
         quit("You already have this version in `#{tarball_path.make_green}'")
       end
 
-      FileUtils.cp(@manifest_file, File.join(@build_dir, "release.MF"), :preserve => true)
+      FileUtils.cp(@manifest_file,
+                   File.join(@build_dir, "release.MF"),
+                   :preserve => true)
 
       header("Copying packages")
       @packages.each do |package|
@@ -100,40 +102,40 @@ module Bosh::Cli
     end
 
     def find_package(package)
-      final_package_dir = File.join(@release_dir, ".final_builds", "packages", package.name)
-      final_index = CachingVersionsIndex.new(VersionsIndex.new(final_package_dir))
-      dev_package_dir = File.join(@release_dir, ".dev_builds", "packages", package.name)
-      dev_index = CachingVersionsIndex.new(VersionsIndex.new(dev_package_dir))
-      find_in_indices(final_index, dev_index, package, 'package')
+      final_index = VersionsIndex.new(
+          File.join(@release_dir, ".final_builds", "packages", package.name))
+      dev_index = VersionsIndex.new(
+          File.join(@release_dir, ".dev_builds", "packages", package.name))
+      find_in_indices(final_index, dev_index, package)
     end
 
     def find_job(job)
-      final_jobs_dir = File.join(@release_dir, ".final_builds", "jobs", job.name)
-      final_index = CachingVersionsIndex.new(VersionsIndex.new(final_jobs_dir))
-      dev_jobs_dir = File.join(@release_dir, ".dev_builds", "jobs", job.name)
-      dev_index = CachingVersionsIndex.new(VersionsIndex.new(dev_jobs_dir))
-      find_in_indices(final_index, dev_index, job, 'job')
+      final_index = VersionsIndex.new(
+          File.join(@release_dir, ".final_builds", "jobs", job.name))
+      dev_index = VersionsIndex.new(
+          File.join(@release_dir, ".dev_builds", "jobs", job.name))
+      find_in_indices(final_index, dev_index, job)
     end
 
-    def find_in_indices(final_index, dev_index, build, build_type)
-      desc = "#{build.name} (#{build.version})"
+    def find_in_indices(final_index, dev_index, object)
+      desc = "#{object.name} (#{object.version})"
 
       index = final_index
-      found_build = index.find_by_checksum(build.sha1)
+      build_data = index.find_by_checksum(object.sha1)
 
-      if found_build.nil?
+      if build_data.nil?
         index = dev_index
-        found_build = index.find_by_checksum(build.sha1)
+        build_data = index.find_by_checksum(object.sha1)
       end
 
-      if found_build.nil?
+      if build_data.nil?
         say("MISSING".make_red)
-        err("Cannot find #{build_type} with checksum `#{build.sha1}'")
+        err("Cannot find object with given checksum")
       end
 
-      version = found_build["version"]
-      sha1 = found_build["sha1"]
-      blobstore_id = found_build["blobstore_id"]
+      version = build_data["version"]
+      sha1 = build_data["sha1"]
+      blobstore_id = build_data["blobstore_id"]
       filename = index.filename(version)
 
       if File.exists?(filename)

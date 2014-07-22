@@ -233,10 +233,10 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
     globs = %w(foo/**/* baz)
 
-    final_versions = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
-        File.join(@release_dir, '.final_builds', 'packages', 'bar')))
-    dev_versions   = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
-        File.join(@release_dir, '.dev_builds', 'packages', 'bar')))
+    final_versions = Bosh::Cli::VersionsIndex.new(
+        File.join(@release_dir, '.final_builds', 'packages', 'bar'))
+    dev_versions   = Bosh::Cli::VersionsIndex.new(
+        File.join(@release_dir, '.dev_builds', 'packages', 'bar'))
 
     final_versions.add_version(fingerprint,
                                { 'version' => fingerprint, 'blobstore_id' => '12321' },

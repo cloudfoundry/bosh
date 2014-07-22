@@ -311,10 +311,10 @@ describe Bosh::Cli::JobBuilder do
     add_monit('foo')
     fingerprint = '44cf6c4f4976f482ec497dfe77e47d876a7a83a1'
 
-    final_versions = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
-        File.join(@release_dir, '.final_builds', 'jobs', 'foo')))
-    dev_versions   = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
-        File.join(@release_dir, '.dev_builds', 'jobs', 'foo')))
+    final_versions = Bosh::Cli::VersionsIndex.new(
+        File.join(@release_dir, '.final_builds', 'jobs', 'foo'))
+    dev_versions   = Bosh::Cli::VersionsIndex.new(
+        File.join(@release_dir, '.dev_builds', 'jobs', 'foo'))
 
     final_versions.add_version(fingerprint,
                                { 'version' => fingerprint, 'blobstore_id' => '12321' },
@@ -406,7 +406,8 @@ describe Bosh::Cli::JobBuilder do
 
     # Shouldn't be promoted during dry run:
     final_builder.version.should == v1_fingerprint
-    File.exists?(@release_dir + "/.final_builds/jobs/foo/#{v1_fingerprint}.tgz").should be(false)
+    File.exists?(@release_dir + "/.final_builds/jobs/foo/#{v1_fingerprint}.tgz").
+      should be(false)
 
     add_templates('foo', 'bzz')
     builder2 = new_builder('foo', [], ['bar', 'baz', 'bzz'], [])
@@ -415,8 +416,10 @@ describe Bosh::Cli::JobBuilder do
     v2_fingerprint = builder2.fingerprint
     builder2.version.should == v2_fingerprint
 
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").should be(true)
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v2_fingerprint}.tgz").should be(false)
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").
+        should be(true)
+    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v2_fingerprint}.tgz").
+        should be(false)
   end
 
 end
