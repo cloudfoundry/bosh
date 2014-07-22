@@ -42,6 +42,8 @@ func NewArping(
 
 // BroadcastMACAddresses broadcasts multiple IP/MAC pairs, multiple times
 func (a arping) BroadcastMACAddresses(addresses []boship.InterfaceAddress) {
+	a.logger.Debug(arpingLogTag, "Broadcasting MAC addresses")
+
 	var wg sync.WaitGroup
 
 	for _, addr := range addresses {

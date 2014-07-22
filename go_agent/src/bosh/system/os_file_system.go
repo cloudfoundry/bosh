@@ -83,57 +83,57 @@ func (fs osFileSystem) WriteFileString(path, content string) (err error) {
 	return fs.WriteFile(path, []byte(content))
 }
 
-func (fs osFileSystem) WriteFile(path string, content []byte) (err error) {
-	err = fs.MkdirAll(filepath.Dir(path), os.ModePerm)
+func (fs osFileSystem) WriteFile(path string, content []byte) error {
+	fs.logger.Debug(fs.logTag, "Writing %s", path)
+
+	err := fs.MkdirAll(filepath.Dir(path), os.ModePerm)
 	if err != nil {
-		err = bosherr.WrapError(err, "Creating dir to write file")
-		return
+		return bosherr.WrapError(err, "Creating dir to write file")
 	}
 
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		err = bosherr.WrapError(err, "Creating file %s", path)
-		return
+		return bosherr.WrapError(err, "Creating file %s", path)
 	}
 
 	defer file.Close()
 
+	fs.logger.DebugWithDetails(fs.logTag, "Write content", content)
+
 	_, err = file.Write(content)
 	if err != nil {
-		err = bosherr.WrapError(err, "Writing content to file %s", path)
-		return
+		return bosherr.WrapError(err, "Writing content to file %s", path)
 	}
 
-	return
+	return nil
 }
 
-func (fs osFileSystem) ConvergeFileContents(path string, content []byte) (written bool, err error) {
+func (fs osFileSystem) ConvergeFileContents(path string, content []byte) (bool, error) {
 	if fs.filesAreIdentical(content, path) {
-		return
+		fs.logger.Debug(fs.logTag, "Skipping writing %s because contents are identical", path)
+		return false, nil
 	}
 
-	err = fs.MkdirAll(filepath.Dir(path), os.ModePerm)
+	fs.logger.Debug(fs.logTag, "File %s will be overwritten", path)
+
+	err := fs.MkdirAll(filepath.Dir(path), os.ModePerm)
 	if err != nil {
-		err = bosherr.WrapError(err, "Making dir for file %s", path)
-		return
+		return true, bosherr.WrapError(err, "Making dir for file %s", path)
 	}
 
 	file, err := os.Create(path)
 	if err != nil {
-		err = bosherr.WrapError(err, "Creating file %s", path)
-		return
+		return true, bosherr.WrapError(err, "Creating file %s", path)
 	}
 
 	defer file.Close()
 
 	_, err = file.Write(content)
 	if err != nil {
-		err = bosherr.WrapError(err, "Writing content to file %s", path)
-		return
+		return true, bosherr.WrapError(err, "Writing content to file %s", path)
 	}
 
-	written = true
-	return
+	return true, nil
 }
 
 func (fs osFileSystem) ReadFileString(path string) (content string, err error) {

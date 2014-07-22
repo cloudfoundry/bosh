@@ -46,6 +46,8 @@ func NewCentosNetManager(
 }
 
 func (net centosNetManager) SetupDhcp(networks boshsettings.Networks, errCh chan error) error {
+	net.logger.Debug(centosNetManagerLogTag, "Configuring DHCP networking")
+
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("dhcp-config").Parse(centosDHCPConfigTemplate))
 
@@ -99,6 +101,8 @@ prepend domain-name-servers {{ . }};{{ end }}
 `
 
 func (net centosNetManager) SetupManualNetworking(networks boshsettings.Networks, errCh chan error) error {
+	net.logger.Debug(centosNetManagerLogTag, "Configuring manual networking")
+
 	modifiedNetworks, err := net.writeIfcfgs(networks)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing network interfaces")
@@ -222,8 +226,10 @@ func (net centosNetManager) detectMacAddresses() (map[string]string, error) {
 }
 
 func (net centosNetManager) restartNetwork() {
+	net.logger.Debug(centosNetManagerLogTag, "Restarting networking")
+
 	_, _, _, err := net.cmdRunner.RunCommand("service", "network", "restart")
 	if err != nil {
-		net.logger.Info(centosNetManagerLogTag, "Ignoring network restart failure: %#v", err)
+		net.logger.Error(centosNetManagerLogTag, "Ignoring network restart failure: %#v", err)
 	}
 }

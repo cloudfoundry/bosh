@@ -50,6 +50,8 @@ func NewUbuntuNetManager(
 }
 
 func (net ubuntuNetManager) SetupDhcp(networks boshsettings.Networks, errCh chan error) error {
+	net.logger.Debug(ubuntuNetManagerLogTag, "Configuring DHCP networking")
+
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("dhcp-config").Parse(ubuntuDHCPConfigTemplate))
 
@@ -71,14 +73,16 @@ func (net ubuntuNetManager) SetupDhcp(networks boshsettings.Networks, errCh chan
 	if written {
 		args := net.restartNetworkArguments()
 
+		net.logger.Debug(ubuntuNetManagerLogTag, "Restarting network interfaces")
+
 		_, _, _, err := net.cmdRunner.RunCommand("ifdown", args...)
 		if err != nil {
-			net.logger.Info(ubuntuNetManagerLogTag, "Ignoring ifdown failure: %#v", err)
+			net.logger.Error(ubuntuNetManagerLogTag, "Ignoring ifdown failure: %s", err)
 		}
 
 		_, _, _, err = net.cmdRunner.RunCommand("ifup", args...)
 		if err != nil {
-			net.logger.Info(ubuntuNetManagerLogTag, "Ignoring ifup failure: %#v", err)
+			net.logger.Error(ubuntuNetManagerLogTag, "Ignoring ifup failure: %s", err)
 		}
 	}
 
@@ -115,6 +119,8 @@ prepend domain-name-servers {{ . }};{{ end }}
 `
 
 func (net ubuntuNetManager) SetupManualNetworking(networks boshsettings.Networks, errCh chan error) error {
+	net.logger.Debug(ubuntuNetManagerLogTag, "Configuring manual networking")
+
 	modifiedNetworks, written, err := net.writeNetworkInterfaces(networks)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing network interfaces")
@@ -194,6 +200,8 @@ iface {{ .Interface }} inet static
 {{ if .HasDefaultGateway }}    gateway {{ .Gateway }}{{ end }}{{ end }}`
 
 func (net ubuntuNetManager) writeResolvConf(networks boshsettings.Networks) error {
+	net.logger.Debug(ubuntuNetManagerLogTag, "Writing resolv.conf")
+
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("resolv-conf").Parse(ubuntuResolvConfTemplate))
 
@@ -243,14 +251,16 @@ func (net ubuntuNetManager) detectMacAddresses() (map[string]string, error) {
 
 func (net ubuntuNetManager) restartNetworkingInterfaces(networks []customNetwork) {
 	for _, network := range networks {
+		net.logger.Debug(ubuntuNetManagerLogTag, "Restarting network interface %s", network.Interface)
+
 		_, _, _, err := net.cmdRunner.RunCommand("service", "network-interface", "stop", "INTERFACE="+network.Interface)
 		if err != nil {
-			net.logger.Info(ubuntuNetManagerLogTag, "Ignoring network stop failure: %#v", err)
+			net.logger.Error(ubuntuNetManagerLogTag, "Ignoring network stop failure: %s", err)
 		}
 
 		_, _, _, err = net.cmdRunner.RunCommand("service", "network-interface", "start", "INTERFACE="+network.Interface)
 		if err != nil {
-			net.logger.Info(ubuntuNetManagerLogTag, "Ignoring network start failure: %#v", err)
+			net.logger.Error(ubuntuNetManagerLogTag, "Ignoring network start failure: %s", err)
 		}
 	}
 }
@@ -267,7 +277,7 @@ func (net ubuntuNetManager) dhclientConfigFile() string {
 func (net ubuntuNetManager) restartNetworkArguments() []string {
 	stdout, _, _, err := net.cmdRunner.RunCommand("ifup", "--version")
 	if err != nil {
-		net.logger.Info(ubuntuNetManagerLogTag, "Ignoring ifup version failure: %#v", err)
+		net.logger.Error(ubuntuNetManagerLogTag, "Ignoring ifup version failure: %s", err)
 	}
 
 	// Check if command accepts --no-loopback argument
