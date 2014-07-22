@@ -9,10 +9,8 @@ module Bosh::Dev
         Bosh::Stemcell::Definition.for('vsphere', 'ubuntu', 'trusty', 'go'),
         Bosh::Stemcell::Definition.for('vsphere', 'centos', nil, 'go'),
 
-        Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'lucid', 'ruby'),
         Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'lucid', 'go'),
         Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'trusty', 'go'),
-        Bosh::Stemcell::Definition.for('aws', 'centos', nil, 'ruby'),
         Bosh::Stemcell::Definition.for('aws', 'centos', nil, 'go'),
 
         Bosh::Stemcell::Definition.for('openstack', 'ubuntu', 'trusty', 'go'),
