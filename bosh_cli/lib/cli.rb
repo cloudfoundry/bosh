@@ -31,6 +31,8 @@ require 'zlib'
 require 'archive/tar/minitar'
 include Archive::Tar
 
+require 'bosh/template/evaluation_context'
+
 unless defined?(Bosh::Cli::VERSION)
   require 'cli/version'
 end
@@ -38,9 +40,10 @@ end
 require 'common/common'
 require 'common/exec'
 require 'common/version/release_version'
+require 'common/version/release_version_list'
 require 'common/version/bosh_version'
 require 'common/version/stemcell_version'
-require 'bosh/template/evaluation_context'
+require 'common/version/stemcell_version_list'
 
 require 'cli/config'
 require 'cli/core_ext'
@@ -59,6 +62,8 @@ require 'cli/line_wrap'
 require 'cli/backup_destination_path'
 
 require 'cli/versions_index'
+require 'cli/caching_versions_index'
+require 'cli/release_versions_index'
 require 'cli/packaging_helper'
 require 'cli/package_builder'
 require 'cli/job_builder'

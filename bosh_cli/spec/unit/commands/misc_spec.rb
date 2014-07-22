@@ -37,9 +37,8 @@ describe Bosh::Cli::Command::Misc do
                                                        'cpi' => 'dummy'})
       release.should_receive(:dev_name).and_return('dev-name')
       release.should_receive(:final_name).and_return('final_name')
-      versions_index.should_receive(:latest_version).and_return('1-dev')
-      versions_index.should_receive(:latest_version).and_return('1')
-
+      versions_index.should_receive(:version_strings).and_return(['1-dev'])
+      versions_index.should_receive(:version_strings).and_return(['1'])
 
       command.should_receive(:say).with('Config')
       command.should_receive(:say).with(/#{@config_file}/)

@@ -5,7 +5,7 @@ module Bosh::Common::Version
   describe VersionList do
     subject(:version_list) { described_class.parse(versions, SemiSemanticVersion) }
 
-    describe 'parse' do
+    describe '#parse' do
       it 'creates a new object' do
         expect(described_class.parse([], SemiSemanticVersion)).to be_instance_of(described_class)
       end
@@ -17,7 +17,7 @@ module Bosh::Common::Version
       end
     end
 
-    describe 'latest_with_pre_release' do
+    describe '#latest_with_pre_release' do
       let(:versions) { ['1.0.1+dev.1', '0.0.5', '1.0.1', '1.0.1-alpha.1', '1.0.1-alpha.1+dev.2'] }
 
       it 'returns the maximum version with the same release and pre-release segments' do
@@ -36,7 +36,7 @@ module Bosh::Common::Version
       end
     end
 
-    describe 'latest_with_release' do
+    describe '#latest_with_release' do
       let(:versions) { ['1.0.1+dev.1', '0.0.5', '1.0.1', '1.0.1-alpha.1', '1.0.1-alpha.1+dev.2'] }
 
       it 'returns the maximum version with the same release' do
@@ -55,7 +55,7 @@ module Bosh::Common::Version
       end
     end
 
-    describe 'sort' do
+    describe '#sort' do
       let(:versions) { ['1.0.1+dev.1', '0.0.5', '1.0.1', '1.0.1-alpha.1', '1.0.1-alpha.1+dev.2'] }
       let(:asc_versions) { ['0.0.5', '1.0.1-alpha.1', '1.0.1-alpha.1+dev.2', '1.0.1', '1.0.1+dev.1'] }
 
@@ -64,11 +64,28 @@ module Bosh::Common::Version
       end
     end
 
-    describe 'max' do
+    describe '#max' do
       let(:versions) { ['1.0.1+dev.1', '0.0.5', '1.0.1'] }
 
       it 'returns the maximum of the versions in the list' do
         expect(version_list.max.to_s).to eq('1.0.1+dev.1')
+      end
+    end
+
+    describe 'equals' do
+      let(:versions) { ['1.0.0', '1.0.1', '1.1.0'] }
+
+      it 'supports equality comparison' do
+        expect(version_list).to eq(VersionList.parse(versions, SemiSemanticVersion))
+        expect(version_list).to_not eq(VersionList.parse(versions.concat(['1.2.0']), SemiSemanticVersion))
+      end
+    end
+
+    describe '#to_s' do
+      let(:versions) { ['1.0.0', '1.0.1', '1.1.0'] }
+
+      it 'returns a string representation' do
+        expect(version_list.to_s).to eq(versions.to_s)
       end
     end
   end

@@ -1,5 +1,4 @@
 require 'semi_semantic/version'
-require 'common/version/version_list'
 
 module Bosh::Common::Version
   class UnavailableMethodError < StandardError; end
@@ -16,10 +15,6 @@ module Bosh::Common::Version
       version = version.to_s
 
       self.new(SemiSemantic::Version.parse(version))
-    end
-
-    def self.parse_list(versions)
-      VersionList.parse(versions, self)
     end
 
     def self.parse_and_compare(a, b)

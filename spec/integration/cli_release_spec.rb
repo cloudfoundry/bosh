@@ -17,6 +17,62 @@ describe 'cli releases', type: :integration do
     end
   end
 
+  it 'allows creation of new final releases with the same content as the latest final release' do
+    Dir.chdir(TEST_RELEASE_DIR) do
+      out = bosh_runner.run_in_current_dir('create release --final', failure_expected: false)
+      expect(out).to match(/Release version: 1/)
+
+      out = bosh_runner.run_in_current_dir('create release --final --force', failure_expected: false)
+      expect(out).to match(/Release version: 2/)
+
+      out = bosh_runner.run_in_current_dir('create release --final --force', failure_expected: false)
+      expect(out).to match(/Release version: 3/)
+    end
+  end
+
+  it 'allows creation of new dev releases with the same content as the latest dev release' do
+    Dir.chdir(TEST_RELEASE_DIR) do
+      out = bosh_runner.run_in_current_dir('create release', failure_expected: false)
+      expect(out).to match(/Release version: 0\+dev.1/)
+
+      out = bosh_runner.run_in_current_dir('create release --force', failure_expected: false)
+      expect(out).to match(/Release version: 0\+dev.2/)
+
+      out = bosh_runner.run_in_current_dir('create release --force', failure_expected: false)
+      expect(out).to match(/Release version: 0\+dev.3/)
+    end
+  end
+
+  it 'allows creation of new final releases with the same content as a previous final release' do
+    Dir.chdir(TEST_RELEASE_DIR) do
+      out = bosh_runner.run_in_current_dir('create release --final', failure_expected: false)
+      expect(out).to match(/Release version: 1/)
+
+      with_changed_release do
+        out = bosh_runner.run_in_current_dir('create release --final --force', failure_expected: false)
+        expect(out).to match(/Release version: 2/)
+      end
+
+      out = bosh_runner.run_in_current_dir('create release --final --force', failure_expected: false)
+      expect(out).to match(/Release version: 3/)
+    end
+  end
+
+  it 'allows creation of new dev releases with the same content as a previous dev release' do
+    Dir.chdir(TEST_RELEASE_DIR) do
+      out = bosh_runner.run_in_current_dir('create release', failure_expected: false)
+      expect(out).to match(/Release version: 0\+dev.1/)
+
+      with_changed_release do
+        out = bosh_runner.run_in_current_dir('create release --force', failure_expected: false)
+        expect(out).to match(/Release version: 0\+dev.2/)
+      end
+
+      out = bosh_runner.run_in_current_dir('create release --force', failure_expected: false)
+      expect(out).to match(/Release version: 0\+dev.3/)
+    end
+  end
+
   it 'allows creation of a final release without an existing dev release', no_reset: false do
     Dir.chdir(TEST_RELEASE_DIR) do
       expect(File.exist?('releases/bosh-release-1.yml')).to eq(false)
@@ -26,6 +82,18 @@ describe 'cli releases', type: :integration do
 
       expect(Dir.exist?('dev_releases')).to eq(false)
       expect(File.exist?('releases/bosh-release-1.yml')).to eq(true)
+    end
+  end
+
+  context 'when no previous releases have been made' do
+    it 'final release uploads the job & package blobs' do
+      Dir.chdir(TEST_RELEASE_DIR) do
+        expect(File.exist?('releases/bosh-release-1.yml')).to eq(false)
+
+        out = bosh_runner.run_in_current_dir('create release --final', failure_expected: false)
+        expect(out).to match(/Uploaded, blobstore id/)
+        expect(out).to_not match(/This package has already been uploaded/)
+      end
     end
   end
 
@@ -52,15 +120,14 @@ describe 'cli releases', type: :integration do
         )
       end
 
-      runner = bosh_runner_in_work_dir(TEST_RELEASE_DIR)
-      runner.run_in_current_dir('create release --force')
-      runner.run_in_current_dir('create release --final --force')
+      bosh_runner.run_in_current_dir('create release --force')
+      bosh_runner.run_in_current_dir('create release --final --force')
       expect(File.exists?(release_1)).to be(true)
 
       # modify a release file to force a new version
       `echo ' ' >> #{File.join(TEST_RELEASE_DIR, 'jobs', 'foobar', 'templates', 'foobar_ctl')}`
-      runner.run_in_current_dir('create release --force')
-      runner.run_in_current_dir('create release --final --force')
+      bosh_runner.run_in_current_dir('create release --force')
+      bosh_runner.run_in_current_dir('create release --final --force')
       expect(File.exists?(release_2)).to be(true)
     end
   end
@@ -68,14 +135,14 @@ describe 'cli releases', type: :integration do
   it 'creates and deploys a new final release with a user defined version' do
     target_and_login
 
-    dev_release_1 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0+dev.1.yml')
-    release_1 = File.join(TEST_RELEASE_DIR, 'releases/bosh-release-1.0.yml')
-    dev_release_2 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-1.0+dev.1.yml')
-    release_2 = File.join(TEST_RELEASE_DIR, 'releases/bosh-release-2.0.yml')
-
     commit_hash = ''
 
     Dir.chdir(TEST_RELEASE_DIR) do
+      dev_release_1 = File.join('dev_releases/bosh-release-0+dev.1.yml')
+      release_1 = File.join('releases/bosh-release-1.0.yml')
+      dev_release_2 = File.join('dev_releases/bosh-release-1.0+dev.1.yml')
+      release_2 = File.join('releases/bosh-release-2.0.yml')
+
       File.open('config/final.yml', 'w') do |final|
         final.puts YAML.dump(
           'blobstore' => {
@@ -94,19 +161,18 @@ describe 'cli releases', type: :integration do
         )
       end
 
-      runner = bosh_runner_in_work_dir(TEST_RELEASE_DIR)
-      runner.run_in_current_dir('create release --force')
-      expect(Dir[File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-*.yml')]).to eq([dev_release_1])
-      runner.run_in_current_dir('create release --final --force --version 1.0')
-      expect(Dir[File.join(TEST_RELEASE_DIR, 'releases/bosh-release-*.yml')]).to eq([release_1])
+      bosh_runner.run_in_current_dir('create release --force')
+      expect(Dir[File.join('dev_releases/bosh-release-*.yml')]).to eq([dev_release_1])
+      bosh_runner.run_in_current_dir('create release --final --force --version 1.0')
+      expect(Dir[File.join('releases/bosh-release-*.yml')]).to eq([release_1])
 
       with_changed_release do
-        runner.run_in_current_dir('create release --force')
-        expect(Dir[File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-*.yml')].sort).to eq([dev_release_1, dev_release_2].sort)
-        runner.run_in_current_dir('create release --final --force --version 2.0')
-        expect(Dir[File.join(TEST_RELEASE_DIR, 'releases/bosh-release-*.yml')].sort).to eq([release_1, release_2].sort)
+        bosh_runner.run_in_current_dir('create release --force')
+        expect(Dir[File.join('dev_releases/bosh-release-*.yml')].sort).to eq([dev_release_1, dev_release_2].sort)
+        bosh_runner.run_in_current_dir('create release --final --force --version 2.0')
+        expect(Dir[File.join('releases/bosh-release-*.yml')].sort).to eq([release_1, release_2].sort)
       end
-      runner.run('upload release')
+      bosh_runner.run_in_current_dir('upload release')
 
       commit_hash = `git show-ref --head --hash=8 2> /dev/null`.split.first
     end
@@ -286,15 +352,16 @@ describe 'cli releases', type: :integration do
   it 'fails to delete release in use but deletes a different release' do
     target_and_login
 
-    runner = bosh_runner_in_work_dir(TEST_RELEASE_DIR)
-    runner.run('create release')
-    runner.run('upload release')
+    Dir.chdir(TEST_RELEASE_DIR) do
+      bosh_runner.run_in_current_dir('create release')
+      bosh_runner.run_in_current_dir('upload release')
 
-    # change something in TEST_RELEASE_DIR
-    FileUtils.touch(File.join(TEST_RELEASE_DIR, 'src', 'bar', 'pretend_something_changed'))
+      # change something in TEST_RELEASE_DIR
+      FileUtils.touch(File.join('src', 'bar', 'pretend_something_changed'))
 
-    runner.run('create release --force')
-    runner.run('upload release')
+      bosh_runner.run_in_current_dir('create release --force')
+      bosh_runner.run_in_current_dir('upload release')
+    end
 
     bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
@@ -312,20 +379,19 @@ describe 'cli releases', type: :integration do
 
   # ~57s
   it 'release lifecycle: create, upload, update (w/sparse upload), delete' do
-    runner = bosh_runner_in_work_dir(TEST_RELEASE_DIR)
-
-    release_1 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0+dev.1.yml')
-    release_2 = File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0+dev.2.yml')
     commit_hash = ''
 
     Dir.chdir(TEST_RELEASE_DIR) do
+      release_1 = File.join('dev_releases/bosh-release-0+dev.1.yml')
+      release_2 = File.join('dev_releases/bosh-release-0+dev.2.yml')
+
       commit_hash = `git show-ref --head --hash=8 2> /dev/null`.split.first
 
-      runner.run_in_current_dir('create release')
+      bosh_runner.run_in_current_dir('create release')
       expect(File.exists?(release_1)).to be(true)
 
       target_and_login
-      runner.run_in_current_dir("upload release #{release_1}")
+      bosh_runner.run_in_current_dir("upload release #{release_1}")
 
       with_changed_release do
         #  In an ephemeral git repo
@@ -333,7 +399,7 @@ describe 'cli releases', type: :integration do
         `git commit -m 'second dev release'`
         expect(File.exists?(release_1)).to be(true)
 
-        runner.run_in_current_dir('create release')
+        bosh_runner.run_in_current_dir('create release')
         expect(File.exists?(release_2)).to be(true)
       end
 

@@ -21,11 +21,14 @@ module Bosh::Cli
 
       raise ReleaseVersionError.new('Version numbers cannot be specified for dev releases') if (@version && !@final)
 
-      @final_index = VersionsIndex.new(final_releases_dir, release_name)
-      @dev_index = VersionsIndex.new(dev_releases_dir, release_name)
-      @index = @final ? @final_index : @dev_index
+      @final_index = VersionsIndex.new(final_releases_dir)
+      @dev_index = VersionsIndex.new(dev_releases_dir)
+      version_index = @final ? @final_index : @dev_index
+      @index = CachingVersionsIndex.new(version_index, release_name)
 
-      raise ReleaseVersionError.new('Release version already exists') if (@version && @index.version_exists?(@version))
+      if @version && @index.version_exists?(@version)
+        raise ReleaseVersionError.new('Release version already exists')
+      end
 
       @build_dir = Dir.mktmpdir
 
@@ -136,19 +139,12 @@ module Bosh::Cli
       manifest["name"] = release_name
 
       unless manifest["name"].bosh_valid_id?
-        raise InvalidRelease, "Release name `#{manifest["name"]}' " +
-                              "is not a valid BOSH identifier"
+        raise InvalidRelease, "Release name `#{manifest["name"]}' is not a valid BOSH identifier"
       end
 
-      fingerprint = make_fingerprint(manifest)
-
-      if @index[fingerprint]
-        old_version = @index[fingerprint]["version"]
-        say("This version is no different from version #{old_version}")
-        @version = old_version
-      else
-        @index.add_version(fingerprint, { "version" => version })
-      end
+      # New release versions are allowed to have the same fingerprint as old versions.
+      # For reverse compatibility, random uuids are stored instead.
+      @index.versions_index.add_version(SecureRandom.uuid, { "version" => version })
 
       manifest["version"] = version
       manifest_yaml = Psych.dump(manifest)
@@ -167,7 +163,7 @@ module Bosh::Cli
 
     def generate_tarball
       generate_manifest unless @manifest_generated
-      return if @index.version_exists?(version)
+      return if @index.version_exists?(@version)
 
       unless @jobs_copied
         header("Copying jobs...")
@@ -211,22 +207,10 @@ module Bosh::Cli
       File.join(releases_dir, "#{release_name}-#{version}.yml")
     end
 
-    def make_fingerprint(item)
-      case item
-      when Array
-        source = item.map { |e| make_fingerprint(e) }.sort.join("")
-      when Hash
-        source = item.keys.sort.map{ |k| make_fingerprint(item[k]) }.join("")
-      else
-        source = item.to_s
-      end
-      Digest::SHA1.hexdigest(source)
-    end
-
     private
 
     def assign_version
-      latest_final_version = Bosh::Common::Version::ReleaseVersion.parse_list(@final_index.versions).latest
+      latest_final_version = ReleaseVersionsIndex.new(@final_index).latest_version
       latest_final_version ||= Bosh::Common::Version::ReleaseVersion.parse('0')
 
       if @final
@@ -234,7 +218,7 @@ module Bosh::Cli
         latest_final_version.increment_release
       else
         # Increment or Reset the post-release segment
-        dev_versions = Bosh::Common::Version::ReleaseVersion.parse_list(@dev_index.versions)
+        dev_versions = ReleaseVersionsIndex.new(@dev_index).versions
         latest_dev_version = dev_versions.latest_with_pre_release(latest_final_version)
 
         if latest_dev_version

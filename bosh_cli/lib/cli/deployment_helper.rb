@@ -374,7 +374,7 @@ module Bosh::Cli
         end
 
         stemcells.inject({}) do |hash, (name, versions)|
-          hash[name] = Bosh::Common::Version::StemcellVersion.parse_list(versions).latest.to_s
+          hash[name] = Bosh::Common::Version::StemcellVersionList.parse(versions).latest.to_s
           hash
         end
       end
