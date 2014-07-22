@@ -6,11 +6,14 @@ import (
 )
 
 type Command struct {
-	Name       string
-	Args       []string
-	Env        map[string]string
+	Name string
+	Args []string
+	Env  map[string]string
+
 	WorkingDir string
 
+	// Full stdout and stderr will be captured to memory
+	// and returned in the Result unless custom Stdout/Stderr are specified.
 	Stdout io.Writer
 	Stderr io.Writer
 }
@@ -26,8 +29,10 @@ type Process interface {
 }
 
 type Result struct {
-	Stdout     string
-	Stderr     string
+	// Full stdout and stderr are captured to memory
+	Stdout string
+	Stderr string
+
 	ExitStatus int
 	Error      error
 }

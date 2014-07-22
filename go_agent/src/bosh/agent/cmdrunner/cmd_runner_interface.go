@@ -7,11 +7,14 @@ import (
 type CmdResult struct {
 	IsStdoutTruncated bool
 	IsStderrTruncated bool
-	Stdout            []byte
-	Stderr            []byte
-	ExitStatus        int
+
+	// Not using string to avoid copying
+	Stdout []byte
+	Stderr []byte
+
+	ExitStatus int
 }
 
 type CmdRunner interface {
-	RunCommand(logsDirName string, logsFileName string, cmd boshsys.Command) (*CmdResult, error)
+	RunCommand(jobName, taskName string, cmd boshsys.Command) (*CmdResult, error)
 }

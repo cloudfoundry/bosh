@@ -30,6 +30,7 @@ type FakeFileSystem struct {
 	HomeDirUsername string
 	HomeDirHomePath string
 
+	openFiles   map[string]*FakeFile
 	OpenFileErr error
 
 	ReadFileError    error
@@ -64,11 +65,14 @@ type FakeFileSystem struct {
 }
 
 type FakeFileStats struct {
-	FileMode      os.FileMode
-	Username      string
-	Content       []byte
+	FileType FakeFileType
+
+	FileMode os.FileMode
+	Username string
+
 	SymlinkTarget string
-	FileType      FakeFileType
+
+	Content []byte
 }
 
 func (stats FakeFileStats) StringContents() string {
@@ -97,6 +101,10 @@ type FakeFile struct {
 	CloseErr error
 
 	StatErr error
+}
+
+func NewFakeFile(fs *FakeFileSystem) *FakeFile {
+	return &FakeFile{fs: fs}
 }
 
 func (f *FakeFile) Write(contents []byte) (int, error) {
@@ -135,6 +143,7 @@ func (f FakeFile) Stat() (os.FileInfo, error) {
 func NewFakeFileSystem() *FakeFileSystem {
 	return &FakeFileSystem{
 		files:                map[string]*FakeFileStats{},
+		openFiles:            map[string]*FakeFile{},
 		globsMap:             map[string][][]string{},
 		removeAllErrorByPath: map[string]error{},
 		mkdirAllErrorByPath:  map[string]error{},
@@ -178,6 +187,10 @@ func (fs *FakeFileSystem) MkdirAll(path string, perm os.FileMode) error {
 	return nil
 }
 
+func (fs *FakeFileSystem) RegisterOpenFile(path string, file *FakeFile) {
+	fs.openFiles[path] = file
+}
+
 func (fs *FakeFileSystem) OpenFile(path string, flag int, perm os.FileMode) (boshsys.ReadWriteCloseStater, error) {
 	fs.filesLock.Lock()
 	defer fs.filesLock.Unlock()
@@ -190,6 +203,10 @@ func (fs *FakeFileSystem) OpenFile(path string, flag int, perm os.FileMode) (bos
 	stats := fs.getOrCreateFile(path)
 	stats.FileMode = perm
 	stats.FileType = FakeFileTypeFile
+
+	if fs.openFiles[path] != nil {
+		return fs.openFiles[path], nil
+	}
 
 	file := &FakeFile{
 		path: path,

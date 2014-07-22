@@ -11,7 +11,7 @@ import (
 	fakebc "bosh/agent/applier/bundlecollection/fakes"
 	boshmodels "bosh/agent/applier/models"
 	fakepa "bosh/agent/applier/packageapplier/fakes"
-	fakerunner "bosh/agent/cmdrunner/fakes"
+	fakecmdrunner "bosh/agent/cmdrunner/fakes"
 	. "bosh/agent/compiler"
 	fakeblobstore "bosh/blobstore/fakes"
 	fakecmd "bosh/platform/commands/fakes"
@@ -62,7 +62,7 @@ func init() {
 			compressor     *fakecmd.FakeCompressor
 			blobstore      *fakeblobstore.FakeBlobstore
 			fs             *fakesys.FakeFileSystem
-			runner         *fakerunner.FakeFileLoggingCmdRunner
+			runner         *fakecmdrunner.FakeFileLoggingCmdRunner
 			packageApplier *fakepa.FakePackageApplier
 			packagesBc     *fakebc.FakeBundleCollection
 		)
@@ -71,7 +71,7 @@ func init() {
 			compressor = fakecmd.NewFakeCompressor()
 			blobstore = &fakeblobstore.FakeBlobstore{}
 			fs = fakesys.NewFakeFileSystem()
-			runner = fakerunner.NewFakeFileLoggingCmdRunner("/fake-runner-base-dir")
+			runner = fakecmdrunner.NewFakeFileLoggingCmdRunner()
 			packageApplier = fakepa.NewFakePackageApplier()
 			packagesBc = fakebc.NewFakeBundleCollection()
 
@@ -245,8 +245,8 @@ func init() {
 
 					Expect(len(runner.RunCommands)).To(Equal(1))
 					Expect(runner.RunCommands[0]).To(Equal(expectedCmd))
-					Expect(runner.RunCommandLogsDirName).To(Equal("compilation"))
-					Expect(runner.RunCommandLogsFileName).To(Equal("packaging"))
+					Expect(runner.RunCommandJobName).To(Equal("compilation"))
+					Expect(runner.RunCommandTaskName).To(Equal("packaging"))
 				})
 
 				It("propagates the error from packaging script", func() {

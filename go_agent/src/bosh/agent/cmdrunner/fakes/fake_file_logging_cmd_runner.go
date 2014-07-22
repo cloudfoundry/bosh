@@ -1,29 +1,25 @@
 package fakes
 
 import (
-	cmdrunner "bosh/agent/cmdrunner"
+	boshcmdrunner "bosh/agent/cmdrunner"
 	boshsys "bosh/system"
 )
 
 type FakeFileLoggingCmdRunner struct {
-	BaseDir                string
-	RunCommands            []boshsys.Command
-	RunCommandResult       *cmdrunner.CmdResult
-	RunCommandLogsDirName  string
-	RunCommandLogsFileName string
-	RunCommandErr          error
+	RunCommands        []boshsys.Command
+	RunCommandJobName  string
+	RunCommandTaskName string
+	RunCommandResult   *boshcmdrunner.CmdResult
+	RunCommandErr      error
 }
 
-func NewFakeFileLoggingCmdRunner(baseDir string) *FakeFileLoggingCmdRunner {
-	return &FakeFileLoggingCmdRunner{
-		BaseDir: baseDir,
-	}
+func NewFakeFileLoggingCmdRunner() *FakeFileLoggingCmdRunner {
+	return &FakeFileLoggingCmdRunner{}
 }
 
-func (f *FakeFileLoggingCmdRunner) RunCommand(logsDirName string, logsFileName string, cmd boshsys.Command) (*cmdrunner.CmdResult, error) {
-	f.RunCommandLogsDirName = logsDirName
-	f.RunCommandLogsFileName = logsFileName
+func (f *FakeFileLoggingCmdRunner) RunCommand(jobName, taskName string, cmd boshsys.Command) (*boshcmdrunner.CmdResult, error) {
+	f.RunCommandJobName = jobName
+	f.RunCommandTaskName = taskName
 	f.RunCommands = append(f.RunCommands, cmd)
-
 	return f.RunCommandResult, f.RunCommandErr
 }
