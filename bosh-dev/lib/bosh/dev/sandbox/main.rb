@@ -73,7 +73,7 @@ module Bosh::Dev::Sandbox
       @agent_type = agent_type
       @test_env_number = test_env_number
       @logger = logger
-      @name = SecureRandom.hex(6)
+      @name = SecureRandom.uuid.gsub('-', '')
 
       @logs_path = sandbox_path('logs')
       @dns_db_path = sandbox_path('director-dns.sqlite')
