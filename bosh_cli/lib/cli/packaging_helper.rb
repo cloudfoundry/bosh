@@ -12,6 +12,8 @@ module Bosh::Cli
 
       @final_index = VersionsIndex.new(@final_builds_dir)
       @final_storage = LocalVersionStorage.new(@final_builds_dir)
+
+      @final_resolver = VersionFileResolver.new(@final_storage, @blobstore)
     end
 
     def final?
@@ -66,34 +68,9 @@ module Bosh::Cli
         return nil
       end
 
-      need_fetch = true
+      desc = "#{name} (#{version})"
 
-      if @final_storage.has_file?(version)
-        say('FOUND LOCAL'.make_green)
-        file_path = @final_storage.get_file(version)
-        if file_checksum(file_path) == sha1
-          @tarball_path = file_path
-          need_fetch = false
-        else
-          say('LOCAL CHECKSUM MISMATCH'.make_red)
-          need_fetch = true
-        end
-      end
-
-      if need_fetch
-        say("Downloading `#{name} (#{version})'...".make_green)
-        tmp_file = File.open(File.join(Dir.mktmpdir, name), 'w')
-        @blobstore.get(blobstore_id, tmp_file)
-        tmp_file.close
-
-        if file_checksum(tmp_file.path) == sha1
-          @tarball_path = @final_storage.put_file(version, tmp_file.path)
-        else
-          err("`#{name}' (#{version}) is corrupted in blobstore " +
-                  "(id=#{blobstore_id}), " +
-            'please remove it manually and re-generate the final release')
-        end
-      end
+      @tarball_path = @final_resolver.find_file(blobstore_id, sha1, version, "package #{desc}")
 
       @version = version
       @used_final_version = true
@@ -188,12 +165,11 @@ module Bosh::Cli
         return
       end
 
-      say("Uploading final version `#{version}'...")
-
       if item['blobstore_id']
-        say('This package has already been uploaded')
         return
       end
+
+      say("Uploading final version `#{version}'...")
 
       blobstore_id = nil
       File.open(path, 'r') do |f|
@@ -239,4 +215,3 @@ module Bosh::Cli
     end
   end
 end
-

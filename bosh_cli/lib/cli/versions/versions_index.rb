@@ -24,11 +24,11 @@ module Bosh::Cli
     end
 
     def latest_version
-      builds = @data["builds"].values
+      builds = @data['builds'].values
 
       return nil if builds.empty?
 
-      version_strings = builds.map { |b| b["version"] }
+      version_strings = builds.map { |b| b['version'] }
       Bosh::Common::Version::ReleaseVersionList.parse(version_strings).latest.to_s
     end
 

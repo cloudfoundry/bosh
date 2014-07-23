@@ -54,11 +54,8 @@ module Bosh::Cli
           say("SKIP".make_yellow)
           next
         end
-        package_filename = find_package(package)
-        if package_filename.nil?
-          err("Cannot find package `#{package.name} (#{package.version})'")
-        end
-        FileUtils.cp(package_filename,
+        package_file_path = find_package(package)
+        FileUtils.cp(package_file_path,
                      File.join(@packages_dir, "#{package.name}.tgz"),
                      :preserve => true)
       end
@@ -70,11 +67,8 @@ module Bosh::Cli
           say("SKIP".make_yellow)
           next
         end
-        job_filename = find_job(job)
-        if job_filename.nil?
-          err("Cannot find job `#{job.name} (#{job.version})")
-        end
-        FileUtils.cp(job_filename,
+        job_file_path = find_job(job)
+        FileUtils.cp(job_file_path,
                      File.join(@jobs_dir, "#{job.name}.tgz"),
                      :preserve => true)
       end
@@ -141,30 +135,8 @@ module Bosh::Cli
 
       storage = LocalVersionStorage.new(index.storage_dir)
 
-      file_path = nil
-
-      if storage.has_file?(version)
-        say("FOUND LOCAL".make_green)
-        file_path = storage.get_file(version)
-        if Digest::SHA1.file(file_path).hexdigest != sha1
-          err("#{desc} is corrupted locally")
-        end
-      elsif blobstore_id
-        say("FOUND REMOTE".make_yellow)
-        say("Downloading #{blobstore_id.to_s.make_green}...")
-        tmp_file = Tempfile.new("")
-        @blobstore.get(blobstore_id, tmp_file)
-        tmp_file.close
-
-        if Digest::SHA1.file(tmp_file.path).hexdigest == sha1
-          file_path = storage.put_file(version, tmp_file.path)
-        else
-          err("#{desc} is corrupted in blobstore (id=#{blobstore_id})")
-        end
-      end
-
-      file_path
-
+      resolver = VersionFileResolver.new(storage, @blobstore)
+      resolver.find_file(blobstore_id, sha1, version, "#{build_type} #{desc}")
     rescue Bosh::Blobstore::BlobstoreError => e
       raise BlobstoreError, "Blobstore error: #{e}"
     end
@@ -186,5 +158,4 @@ module Bosh::Cli
       false
     end
   end
-
 end
