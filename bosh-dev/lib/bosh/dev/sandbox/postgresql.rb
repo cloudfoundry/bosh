@@ -34,7 +34,7 @@ module Bosh::Dev::Sandbox
       table_names.map!(&:strip)
       table_names.reject! { |name| name == "schema_migrations" }
       table_names.each do |table_name|
-        @runner.run(%Q{psql -U postgres #{db_name} -c 'truncate table "#{table_name}" cascade;' > /dev/null 2>&1})
+        @runner.run(%Q{psql -U postgres #{db_name} -c 'truncate table "#{table_name}" cascade;' 2>&1})
       end
     end
   end
