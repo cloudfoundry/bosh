@@ -226,6 +226,13 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     expect(builder.generate_tarball).to eql(true)
   end
 
+  def add_version(index, storage, key, build, src_file_path)
+    index.add_version(key, build)
+    file_path = storage.put_file(key, src_file_path)
+    build['sha1'] = Digest::SHA1.file(file_path).hexdigest
+    index.update_version(key, build)
+  end
+
   it 'can point to either dev or a final version of a package' do
     fingerprint = 'fake-fingerprint'
     allow(Digest::SHA1).to receive(:hexdigest).and_return(fingerprint)
@@ -233,17 +240,23 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
     globs = %w(foo/**/* baz)
 
-    final_versions = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
-        File.join(@release_dir, '.final_builds', 'packages', 'bar')))
-    dev_versions   = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
-        File.join(@release_dir, '.dev_builds', 'packages', 'bar')))
+    final_storage_dir = File.join(@release_dir, '.final_builds', 'packages', 'bar')
+    final_versions = Bosh::Cli::VersionsIndex.new(final_storage_dir)
+    final_storage = Bosh::Cli::LocalVersionStorage.new(final_storage_dir)
 
-    final_versions.add_version(fingerprint,
-                               { 'version' => fingerprint, 'blobstore_id' => '12321' },
-                               get_tmp_file_path('payload'))
-    dev_versions.add_version(fingerprint,
-                             { 'version' => fingerprint },
-                             get_tmp_file_path('dev_payload'))
+    dev_storage_dir = File.join(@release_dir, '.dev_builds', 'packages', 'bar')
+    dev_versions   = Bosh::Cli::VersionsIndex.new(dev_storage_dir)
+    dev_storage = Bosh::Cli::LocalVersionStorage.new(dev_storage_dir)
+
+    add_version(final_versions, final_storage,
+      fingerprint,
+      { 'version' => fingerprint, 'blobstore_id' => '12321' },
+      get_tmp_file_path('payload'))
+
+    add_version(dev_versions, dev_storage,
+      fingerprint,
+      { 'version' => fingerprint },
+      get_tmp_file_path('dev_payload'))
 
     builder = make_builder('bar', globs)
 

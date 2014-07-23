@@ -7,8 +7,11 @@ module Bosh::Cli
     attr_accessor :dry_run
 
     def init_indices
-      @dev_index   = CachingVersionsIndex.new(VersionsIndex.new(@dev_builds_dir))
-      @final_index = CachingVersionsIndex.new(VersionsIndex.new(@final_builds_dir))
+      @dev_index   = VersionsIndex.new(@dev_builds_dir)
+      @dev_storage = LocalVersionStorage.new(@dev_builds_dir)
+
+      @final_index = VersionsIndex.new(@final_builds_dir)
+      @final_storage = LocalVersionStorage.new(@final_builds_dir)
     end
 
     def final?
@@ -55,20 +58,21 @@ module Bosh::Cli
       end
 
       blobstore_id = item['blobstore_id']
-      version      = fingerprint
+      version      = item['version'] || fingerprint
+      sha1         = item['sha1']
 
       if blobstore_id.nil?
         say('No blobstore id'.make_red)
         return nil
       end
 
-      filename = @final_index.filename(version)
       need_fetch = true
 
-      if File.exists?(filename)
+      if @final_storage.has_file?(version)
         say('FOUND LOCAL'.make_green)
-        if file_checksum(filename) == item['sha1']
-          @tarball_path = filename
+        file_path = @final_storage.get_file(version)
+        if file_checksum(file_path) == sha1
+          @tarball_path = file_path
           need_fetch = false
         else
           say('LOCAL CHECKSUM MISMATCH'.make_red)
@@ -82,9 +86,9 @@ module Bosh::Cli
         @blobstore.get(blobstore_id, tmp_file)
         tmp_file.close
 
-        begin
-          @tarball_path = @final_index.store_file(fingerprint, tmp_file.path)
-        rescue Bosh::Cli::CachingVersionsIndex::Sha1MismatchError
+        if file_checksum(tmp_file.path) == sha1
+          @tarball_path = @final_storage.put_file(version, tmp_file.path)
+        else
           err("`#{name}' (#{version}) is corrupted in blobstore " +
                   "(id=#{blobstore_id}), " +
             'please remove it manually and re-generate the final release')
@@ -109,26 +113,29 @@ module Bosh::Cli
         return nil
       end
 
-      version = fingerprint
-      filename = @dev_index.filename(version)
+      version = @dev_index['version'] || fingerprint
 
-      if File.exists?(filename)
-        say('FOUND LOCAL'.make_green)
-      else
+      if !@dev_storage.has_file?(version)
         say('TARBALL MISSING'.make_red)
         return nil
       end
 
-      if file_checksum(filename) != item['sha1']
+      say('FOUND LOCAL'.make_green)
+      @tarball_path = @dev_storage.get_file(version)
+
+      if file_checksum(@tarball_path) != item['sha1']
         say("`#{name} (#{version})' tarball corrupted".make_red)
         return nil
       end
 
       if final? && !dry_run?
-        @tarball_path = @final_index.add_version(fingerprint, item, filename)
+        # copy from dev index/storage to final index/storage
+        @final_index.add_version(fingerprint, item)
+        @tarball_path = @final_storage.put_file(version, @tarball_path)
+        item['sha1'] = Digest::SHA1.file(@tarball_path).hexdigest
+        @final_index.update_version(fingerprint, item)
       end
 
-      @tarball_path = filename
       @version = version
       @used_dev_version = true
     end
@@ -153,10 +160,18 @@ module Bosh::Cli
       }
 
       if final?
-        @tarball_path = @final_index.add_version(fingerprint, item, tmp_file.path)
+        # add version (with its validation) before adding sha1
+        @final_index.add_version(fingerprint, item)
+        @tarball_path = @final_storage.put_file(fingerprint, tmp_file.path)
+        item['sha1'] = file_checksum(@tarball_path)
+        @final_index.update_version(fingerprint, item)
       elsif dry_run?
       else
-        @tarball_path = @dev_index.add_version(fingerprint, item, tmp_file.path)
+        # add version (with its validation) before adding sha1
+        @dev_index.add_version(fingerprint, item)
+        @tarball_path = @dev_storage.put_file(fingerprint, tmp_file.path)
+        item['sha1'] = file_checksum(@tarball_path)
+        @dev_index.update_version(fingerprint, item)
       end
 
       @version = version
@@ -186,7 +201,8 @@ module Bosh::Cli
       end
 
       say("Uploaded, blobstore id `#{blobstore_id}'")
-      @final_index.set_blobstore_id(fingerprint, blobstore_id)
+      item['blobstore_id'] = blobstore_id
+      @final_index.update_version(fingerprint, item)
       @promoted = true
       true
     rescue Bosh::Blobstore::BlobstoreError => e

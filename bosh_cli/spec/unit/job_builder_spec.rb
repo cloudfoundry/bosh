@@ -2,9 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Cli::JobBuilder do
 
-  before(:each) do
-    @release_dir = Dir.mktmpdir
-  end
+  before { @release_dir = Dir.mktmpdir }
 
   def new_builder(name, packages = [], templates = { }, built_packages = [],
       create_spec = true, final = false, blobstore = double('blobstore'))
@@ -306,23 +304,35 @@ describe Bosh::Cli::JobBuilder do
         should be(true)
   end
 
+  def add_version(index, storage, key, build, src_file_path)
+    index.add_version(key, build)
+    file_path = storage.put_file(key, src_file_path)
+    build['sha1'] = Digest::SHA1.file(file_path).hexdigest
+    index.update_version(key, build)
+  end
+
   it 'can point to either dev or a final version of a job' do
     add_templates('foo', 'bar', 'baz')
     add_monit('foo')
     fingerprint = '44cf6c4f4976f482ec497dfe77e47d876a7a83a1'
 
-    final_versions = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
-        File.join(@release_dir, '.final_builds', 'jobs', 'foo')))
-    dev_versions   = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
-        File.join(@release_dir, '.dev_builds', 'jobs', 'foo')))
+    final_storage_dir = File.join(@release_dir, '.final_builds', 'jobs', 'foo')
+    final_versions = Bosh::Cli::VersionsIndex.new(final_storage_dir)
+    final_storage = Bosh::Cli::LocalVersionStorage.new(final_storage_dir)
 
-    final_versions.add_version(fingerprint,
-                               { 'version' => fingerprint, 'blobstore_id' => '12321' },
-                               get_tmp_file_path('payload'))
+    dev_storage_dir = File.join(@release_dir, '.dev_builds', 'jobs', 'foo')
+    dev_versions   = Bosh::Cli::VersionsIndex.new(dev_storage_dir)
+    dev_storage = Bosh::Cli::LocalVersionStorage.new(dev_storage_dir)
 
-    dev_versions.add_version(fingerprint,
-                             { 'version' => fingerprint },
-                             get_tmp_file_path('dev_payload'))
+    add_version(final_versions, final_storage,
+      fingerprint,
+      { 'version' => fingerprint, 'blobstore_id' => '12321' },
+      get_tmp_file_path('payload'))
+
+    add_version(dev_versions, dev_storage,
+      fingerprint,
+      { 'version' => fingerprint },
+      get_tmp_file_path('dev_payload'))
 
     builder = new_builder('foo', [], ['bar', 'baz'], [])
 

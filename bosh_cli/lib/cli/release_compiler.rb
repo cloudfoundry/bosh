@@ -101,29 +101,33 @@ module Bosh::Cli
 
     def find_package(package)
       final_package_dir = File.join(@release_dir, ".final_builds", "packages", package.name)
-      final_index = CachingVersionsIndex.new(VersionsIndex.new(final_package_dir))
+      final_index = VersionsIndex.new(final_package_dir)
       dev_package_dir = File.join(@release_dir, ".dev_builds", "packages", package.name)
-      dev_index = CachingVersionsIndex.new(VersionsIndex.new(dev_package_dir))
+      dev_index = VersionsIndex.new(dev_package_dir)
       find_in_indices(final_index, dev_index, package, 'package')
     end
 
     def find_job(job)
       final_jobs_dir = File.join(@release_dir, ".final_builds", "jobs", job.name)
-      final_index = CachingVersionsIndex.new(VersionsIndex.new(final_jobs_dir))
+      final_index = VersionsIndex.new(final_jobs_dir)
       dev_jobs_dir = File.join(@release_dir, ".dev_builds", "jobs", job.name)
-      dev_index = CachingVersionsIndex.new(VersionsIndex.new(dev_jobs_dir))
+      dev_index = VersionsIndex.new(dev_jobs_dir)
       find_in_indices(final_index, dev_index, job, 'job')
+    end
+
+    def find_version_by_sha1(index, sha1)
+      index.select{ |_, build| build['sha1'] == sha1 }.values.first
     end
 
     def find_in_indices(final_index, dev_index, build, build_type)
       desc = "#{build.name} (#{build.version})"
 
       index = final_index
-      found_build = index.find_by_checksum(build.sha1)
+      found_build = find_version_by_sha1(index, build.sha1)
 
       if found_build.nil?
         index = dev_index
-        found_build = index.find_by_checksum(build.sha1)
+        found_build = find_version_by_sha1(index, build.sha1)
       end
 
       if found_build.nil?
@@ -134,11 +138,15 @@ module Bosh::Cli
       version = found_build["version"]
       sha1 = found_build["sha1"]
       blobstore_id = found_build["blobstore_id"]
-      filename = index.filename(version)
 
-      if File.exists?(filename)
+      storage = LocalVersionStorage.new(index.storage_dir)
+
+      file_path = nil
+
+      if storage.has_file?(version)
         say("FOUND LOCAL".make_green)
-        if Digest::SHA1.file(filename) != sha1
+        file_path = storage.get_file(version)
+        if Digest::SHA1.file(file_path).hexdigest != sha1
           err("#{desc} is corrupted locally")
         end
       elsif blobstore_id
@@ -149,13 +157,13 @@ module Bosh::Cli
         tmp_file.close
 
         if Digest::SHA1.file(tmp_file.path).hexdigest == sha1
-          FileUtils.mv(tmp_file.path, filename)
+          file_path = storage.put_file(version, tmp_file.path)
         else
           err("#{desc} is corrupted in blobstore (id=#{blobstore_id})")
         end
       end
 
-      File.exists?(filename) ? filename : nil
+      file_path
 
     rescue Bosh::Blobstore::BlobstoreError => e
       raise BlobstoreError, "Blobstore error: #{e}"

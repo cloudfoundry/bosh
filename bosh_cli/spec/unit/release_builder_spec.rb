@@ -15,14 +15,11 @@ module Bosh::Cli
 
     context 'when there is a final release' do
       it 'bumps the least significant segment for the next version' do
-        final_index = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
-          File.join(@release_dir, 'releases')))
-        final_index.add_version('deadbeef',
-                                { 'version' => '7.4.1' },
-                                get_tmp_file_path('payload'))
-        final_index.add_version('deadcafe',
-                                { 'version' => '7.3.1' },
-                                get_tmp_file_path('payload'))
+        final_storage_dir = File.join(@release_dir, 'releases')
+        final_index = Bosh::Cli::VersionsIndex.new(final_storage_dir)
+
+        final_index.add_version('deadbeef', { 'version' => '7.4.1' })
+        final_index.add_version('deadcafe', { 'version' => '7.3.1' })
 
         builder = new_builder(final: true)
         builder.version.should == '7.4.2'
@@ -30,14 +27,11 @@ module Bosh::Cli
       end
 
       it 'creates a dev version in sync with latest final version' do
-        final_index = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
-          File.join(@release_dir, 'releases')))
-        final_index.add_version('deadbeef',
-                                { 'version' => '7.4' },
-                                get_tmp_file_path('payload'))
-        final_index.add_version('deadcafe',
-                                { 'version' => '7.3.1' },
-                                get_tmp_file_path('payload'))
+        final_storage_dir = File.join(@release_dir, 'releases')
+        final_index = Bosh::Cli::VersionsIndex.new(final_storage_dir)
+
+        final_index.add_version('deadbeef', { 'version' => '7.4' })
+        final_index.add_version('deadcafe', { 'version' => '7.3.1' })
 
         builder = new_builder
         builder.version.should == '7.4+dev.1'
@@ -45,29 +39,19 @@ module Bosh::Cli
       end
 
       it 'bumps the dev version matching the latest final release' do
-        final_index = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
-          File.join(@release_dir, 'releases')))
-        final_index.add_version('deadbeef',
-                                { 'version' => '7.3' },
-                                get_tmp_file_path('payload'))
-        final_index.add_version('deadcafe',
-                                { 'version' => '7.2' },
-                                get_tmp_file_path('payload'))
+        final_storage_dir = File.join(@release_dir, 'releases')
+        final_index = Bosh::Cli::VersionsIndex.new(final_storage_dir)
 
-        dev_index = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
-          File.join(@release_dir, 'dev_releases')))
-        dev_index.add_version('deadabcd',
-                              { 'version' => '7.4.1-dev' },
-                              get_tmp_file_path('payload'))
-        dev_index.add_version('deadbeef',
-                              { 'version' => '7.3.2.1-dev' },
-                              get_tmp_file_path('payload'))
-        dev_index.add_version('deadturkey',
-                              { 'version' => '7.3.2-dev' },
-                              get_tmp_file_path('payload'))
-        dev_index.add_version('deadcafe',
-                              { 'version' => '7.3.1-dev' },
-                              get_tmp_file_path('payload'))
+        final_index.add_version('deadbeef', { 'version' => '7.3' })
+        final_index.add_version('deadcafe', { 'version' => '7.2' })
+
+        dev_storage_dir = File.join(@release_dir, 'dev_releases')
+        dev_index = Bosh::Cli::VersionsIndex.new(dev_storage_dir)
+
+        dev_index.add_version('deadabcd', { 'version' => '7.4.1-dev' })
+        dev_index.add_version('deadbeef', { 'version' => '7.3.2.1-dev' })
+        dev_index.add_version('deadturkey', { 'version' => '7.3.2-dev' })
+        dev_index.add_version('deadcafe', { 'version' => '7.3.1-dev' })
 
         builder = new_builder
         builder.version.should == '7.3+dev.3'
@@ -81,11 +65,10 @@ module Bosh::Cli
       end
 
       it 'increments the dev version' do
-        dev_index = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
-          File.join(@release_dir, 'dev_releases')))
-        dev_index.add_version('deadbeef',
-                              { 'version' => '0.1-dev' },
-                              get_tmp_file_path('payload'))
+        dev_storage_dir = File.join(@release_dir, 'dev_releases')
+        dev_index = Bosh::Cli::VersionsIndex.new(dev_storage_dir)
+
+        dev_index.add_version('deadbeef', { 'version' => '0.1-dev' })
 
         new_builder.version.should == '0+dev.2'
       end
@@ -188,11 +171,11 @@ module Bosh::Cli
       context 'when creating final release' do
         context 'when given release version already exists' do
           it 'raises error' do
-            final_index = Bosh::Cli::CachingVersionsIndex.new(Bosh::Cli::VersionsIndex.new(
-              File.join(@release_dir, 'releases')))
-            final_index.add_version('deadbeef',
-                                    { 'version' => '7.3' },
-                                    get_tmp_file_path('payload'))
+            final_storage_dir = File.join(@release_dir, 'releases')
+            final_index = Bosh::Cli::VersionsIndex.new(final_storage_dir)
+
+            final_index.add_version('deadbeef', { 'version' => '7.3' })
+
             FileUtils.touch(File.join(@release_dir, 'releases', 'bosh_release-7.3.tgz'))
 
             expect { new_builder({ final: true, version: '7.3' }) }.to raise_error(Bosh::Cli::ReleaseVersionError, 'Release version already exists')

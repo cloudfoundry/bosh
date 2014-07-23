@@ -62,7 +62,7 @@ require 'cli/line_wrap'
 require 'cli/backup_destination_path'
 
 require 'cli/versions_index'
-require 'cli/caching_versions_index'
+require 'cli/local_version_storage'
 require 'cli/release_versions_index'
 require 'cli/packaging_helper'
 require 'cli/package_builder'

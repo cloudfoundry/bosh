@@ -23,10 +23,10 @@ module Bosh::Cli
 
       @final_index = VersionsIndex.new(final_releases_dir)
       @dev_index = VersionsIndex.new(dev_releases_dir)
-      version_index = @final ? @final_index : @dev_index
-      @index = CachingVersionsIndex.new(version_index, release_name)
+      @index = @final ? @final_index : @dev_index
+      @release_storage = LocalVersionStorage.new(@index.storage_dir, release_name)
 
-      if @version && @index.version_exists?(@version)
+      if @version && @release_storage.has_file?(@version)
         raise ReleaseVersionError.new('Release version already exists')
       end
 
@@ -144,7 +144,7 @@ module Bosh::Cli
 
       # New release versions are allowed to have the same fingerprint as old versions.
       # For reverse compatibility, random uuids are stored instead.
-      @index.versions_index.add_version(SecureRandom.uuid, { "version" => version })
+      @index.add_version(SecureRandom.uuid, { "version" => version })
 
       manifest["version"] = version
       manifest_yaml = Psych.dump(manifest)
@@ -163,7 +163,7 @@ module Bosh::Cli
 
     def generate_tarball
       generate_manifest unless @manifest_generated
-      return if @index.version_exists?(@version)
+      return if @release_storage.has_file?(@version)
 
       unless @jobs_copied
         header("Copying jobs...")
