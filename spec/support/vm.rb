@@ -3,6 +3,7 @@ module Bosh::Spec
     attr_reader :job_name_index, :last_known_state, :cid
 
     def initialize(
+      waiter,
       job_name_index,
       job_state,
       cid,
@@ -11,6 +12,7 @@ module Bosh::Spec
       nats_port,
       logger
     )
+      @waiter = waiter
       @job_name_index = job_name_index
       @last_known_state = job_state
       @cid = cid
@@ -37,6 +39,14 @@ module Bosh::Spec
           reply_to: 'integration.tests',
         )
         NATS.publish("agent.#{@agent_id}", msg) { NATS.stop }
+      end
+    end
+
+    def unblock_package
+      @waiter.wait(300) do
+        package_dir = package_path('blocking_package')
+        raise('Must find package dir') unless File.exists?(package_dir)
+        FileUtils.touch(File.join(package_dir, 'unblock_packaging'))
       end
     end
 

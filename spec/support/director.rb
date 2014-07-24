@@ -3,8 +3,9 @@ module Bosh::Spec
   # State might not be necessarily in sync with what CPI thinks
   # (e.g. CPI might know about more VMs that director does).
   class Director
-    def initialize(runner, agents_base_dir, director_nats_port, logger)
+    def initialize(runner, waiter, agents_base_dir, director_nats_port, logger)
       @runner = runner
+      @waiter = waiter
       @agents_base_dir = agents_base_dir
       @director_nats_port = director_nats_port
       @logger = logger
@@ -13,6 +14,7 @@ module Bosh::Spec
     def vms
       vms_details.map do |vm_data|
         Vm.new(
+          @waiter,
           vm_data[:job_index],
           vm_data[:state],
           vm_data[:cid],
@@ -43,6 +45,10 @@ module Bosh::Spec
 
       @logger.info("Did not find VM after waiting for #{timeout_seconds}")
       nil
+    end
+
+    def wait_for_first_available_vm(timeout = 60)
+      @waiter.wait(timeout) { vms.first || raise('Must have at least 1 VM') }
     end
 
     def vms_vitals
