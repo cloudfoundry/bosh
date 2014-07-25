@@ -1,8 +1,6 @@
 script: 'bundle exec rake --trace travis:install_go $TASKS'
 
-# Required by the go agent
 before_install: 'sudo apt-get update'
-
 install:
   - 'sudo apt-get install dnsutils'
   - 'bundle install --local --without development'

@@ -15,7 +15,7 @@ namespace :spec do
 
     desc 'Run BOSH integration tests against a local sandbox with Go agent'
     task :go_agent => :install_dependencies do
-      sh('go_agent/bin/build')
+      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
       run_integration_specs('go')
     end
 
@@ -75,13 +75,13 @@ namespace :spec do
       end
     end
 
-    task(:go_agent) do
+    task(:agent) do
       # Do not use exec because this task is part of other tasks
-      sh('go_agent/bin/test')
+      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/test')
     end
   end
 
-  task :unit => %w(spec:unit:ruby_gems spec:unit:go_agent)
+  task :unit => %w(spec:unit:ruby_gems spec:unit:agent)
 
   namespace :external do
     desc 'AWS bootstrap CLI can provision and destroy resources'
