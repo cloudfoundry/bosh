@@ -13,6 +13,10 @@ if ENV['COVERAGE']
 end
 
 require 'rspec'
+
+# Useful to see that tests are using expected version of Ruby in CI
+puts "Using #{RUBY_DESCRIPTION}"
+
 RSpec.configure do |config|
   #config.deprecation_stream = StringIO.new
 

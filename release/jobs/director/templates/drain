@@ -2,7 +2,8 @@
 
 export PATH=/var/vcap/packages/ruby/bin:$PATH
 
-export GEM_HOME=/var/vcap/packages/director/gem_home
+export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/1.9.1
+export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
 
 RUN_DIR=/var/vcap/sys/run/director
 LOG_DIR=/var/vcap/sys/log/director

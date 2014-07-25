@@ -42,9 +42,6 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
                                          :volume_id => volume_id,
                                          :delete_on_termination => "1",
                                          :device_name => "/dev/vda" }]
-    else
-      params[:personality] = [{ "path" => "/var/vcap/bosh/user_data.json",
-                                "contents" => Yajl::Encoder.encode(user_data(unique_name, nameserver, true)) }]
     end
 
     params

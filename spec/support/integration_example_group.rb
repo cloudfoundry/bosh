@@ -9,6 +9,7 @@ module IntegrationExampleGroup
   def director
     @director ||= Bosh::Spec::Director.new(
       bosh_runner,
+      waiter,
       current_sandbox.agent_tmp_path,
       current_sandbox.nats_port,
       logger,

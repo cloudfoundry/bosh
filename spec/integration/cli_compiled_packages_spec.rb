@@ -3,34 +3,29 @@ require 'spec_helper'
 describe 'cli: compiled_packages', type: :integration do
   with_reset_sandbox_before_each
 
-  it 'allows user to export compiled packages after a deploy' do
-    deploy_simple
+  it 'compiled packages can be exported and imported to a new director' do
+    compile_packages_matcher = match(/compiling packages/i)
+
+    output = deploy_simple
+    expect(output).to(compile_packages_matcher)
 
     Dir.mktmpdir do |download_dir|
-      bosh_runner.run("export compiled_packages bosh-release/0.1-dev ubuntu-stemcell/1 #{download_dir}")
-
-      # Since import is not implemented yet we will inspect received tar file
       download_path = "#{download_dir}/bosh-release-0.1-dev-ubuntu-stemcell-1.tgz"
-      result = Bosh::Exec.sh("tar -Oxzf '#{download_path}' compiled_packages.MF", on_error: :return)
-      expect(result).to be_success
 
-      bar_blobstore_id = YAML.load(result.output)["compiled_packages"].first["blobstore_id"]
-      result = Bosh::Exec.sh("tar -Otzf '#{download_path}' compiled_packages/blobs/#{bar_blobstore_id} 2>/dev/null", on_error: :return)
-      expect(result).to be_success
-    end
-  end
+      output = bosh_runner.run("export compiled_packages bosh-release/0.1-dev ubuntu-stemcell/1 #{download_dir}")
+      expect(output).to include("Exported compiled packages to `#{download_path}'")
+      expect(File).to exist(download_path)
 
-  it 'allows the user to import compiled packages' do
-    target_and_login
+      reset_sandbox('resetting director to import compiled packages')
 
-    deployment_manifest = yaml_file('simple_manifest', Bosh::Spec::Deployments.simple_manifest)
-    bosh_runner.run("deployment #{deployment_manifest.path}")
-    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
-    bosh_runner.run("upload release #{create_release}")
-    bosh_runner.run("import compiled_packages #{spec_asset('bosh-release-0.1-dev-ubuntu-stemcell-1.tgz')}")
+      target_and_login
+      upload_release
+      upload_stemcell
+      bosh_runner.run("import compiled_packages #{download_path}")
+   end
 
-    deploy_output = bosh_runner.run('deploy')
-    expect(deploy_output).to_not match(/compiling packages/i)
+    output = deploy_simple_manifest
+    expect(output).to_not(compile_packages_matcher)
   end
 
   it 'allows the user to import compiled packages after a previously successful import' do
