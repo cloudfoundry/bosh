@@ -23,18 +23,18 @@ ln -s /etc/sv/monit /etc/service/monit
 # Alerts for monit config
 cp -a $dir/assets/alerts.monitrc $chroot/var/vcap/monit/alerts.monitrc
 
-cd $assets_dir/go_agent
+cd $assets_dir/go/src/github.com/cloudfoundry/bosh-agent
 
 bin/build
 
 mv out/bosh-agent $chroot/var/vcap/bosh/bin/
-cp src/bosh-agent-rc $chroot/var/vcap/bosh/bin/
+cp Tools/bosh-agent-rc $chroot/var/vcap/bosh/bin/
 mv out/dav-cli $chroot/var/vcap/bosh/bin/bosh-blobstore-dav
 chmod +x $chroot/var/vcap/bosh/bin/bosh-agent
 chmod +x $chroot/var/vcap/bosh/bin/bosh-agent-rc
 chmod +x $chroot/var/vcap/bosh/bin/bosh-blobstore-dav
 
-cp src/bosh/mbus/agent.{cert,key} $chroot/var/vcap/bosh/
+cp mbus/agent.{cert,key} $chroot/var/vcap/bosh/
 
 # Setup additional permissions
 run_in_chroot $chroot "

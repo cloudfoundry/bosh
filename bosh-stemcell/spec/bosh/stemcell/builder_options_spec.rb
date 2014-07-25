@@ -95,7 +95,9 @@ module Bosh::Stemcell
             expect(result['UBUNTU_MIRROR']).to eq('fake_ubuntu_mirror')
             expect(result['ruby_bin']).to eq('fake_ruby_bin')
             expect(result['bosh_release_src_dir']).to eq(File.join(expected_source_root, '/release/src/bosh'))
-            expect(result['go_agent_src_dir']).to eq(File.join(expected_source_root, 'go_agent'))
+            expect(result['agent_src_dir']).to eq(
+              File.join(expected_source_root, 'go/src/github.com/cloudfoundry/bosh-agent')
+            )
             expect(result['image_create_disk_size']).to eq(default_disk_size)
             expect(result['bosh_micro_enabled']).to eq('yes')
             expect(result['bosh_micro_package_compiler_path']).to eq(
