@@ -1,5 +1,5 @@
 env = ENV.to_hash
-vm_box = 'bosh-stemcell-dbef1d'
+vm_box = 'bosh-stemcell-937f30'
 
 Vagrant.configure('2') do |config|
   config.vm.box = vm_box
@@ -38,35 +38,6 @@ Vagrant.configure('2') do |config|
 
   config.vm.provision :shell do |shell|
     shell.inline = <<-BASH
-cat > /etc/apt/sources.list <<EOS
-deb http://us.archive.ubuntu.com/ubuntu/ saucy main restricted
-deb-src http://us.archive.ubuntu.com/ubuntu/ saucy main restricted
-
-deb http://us.archive.ubuntu.com/ubuntu/ saucy-updates main restricted
-deb-src http://us.archive.ubuntu.com/ubuntu/ saucy-updates main restricted
-
-deb http://security.ubuntu.com/ubuntu saucy-security main restricted
-deb-src http://security.ubuntu.com/ubuntu saucy-security main restricted
-deb http://security.ubuntu.com/ubuntu saucy-security universe
-deb-src http://security.ubuntu.com/ubuntu saucy-security universe
-deb http://security.ubuntu.com/ubuntu saucy-security multiverse
-deb-src http://security.ubuntu.com/ubuntu saucy-security multiverse
-
-## N.B. software from this repository is ENTIRELY UNSUPPORTED by the Ubuntu
-## team. Also, please note that software in universe WILL NOT receive any
-## review or updates from the Ubuntu security team.
-deb http://us.archive.ubuntu.com/ubuntu/ saucy universe
-deb-src http://us.archive.ubuntu.com/ubuntu/ saucy universe
-deb http://us.archive.ubuntu.com/ubuntu/ saucy-updates universe
-deb-src http://us.archive.ubuntu.com/ubuntu/ saucy-updates universe
-deb http://us.archive.ubuntu.com/ubuntu/ saucy multiverse
-deb-src http://us.archive.ubuntu.com/ubuntu/ saucy multiverse
-deb http://us.archive.ubuntu.com/ubuntu/ saucy-updates multiverse
-deb-src http://us.archive.ubuntu.com/ubuntu/ saucy-updates multiverse
-EOS
-
-      rm -rf /etc/apt/sources.list.d/multiverse-raring*
-
       apt-get -y update
     BASH
   end
