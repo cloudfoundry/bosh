@@ -116,6 +116,25 @@ def manual_network_spec
   }
 end
 
+def manual_network_without_netid_spec
+  {
+    'type' => 'manual',
+    'cloud_properties' => {
+      'security_groups' => %w[default],
+    }
+  }
+end
+
+def dynamic_network_with_netid_spec
+  {
+    'type' => 'dynamic',
+    'cloud_properties' => {
+      'security_groups' => %w[default],
+      'net_id' => 'net'
+    }
+  }
+end
+
 def vip_network_spec
   {
     'type' => 'vip',
