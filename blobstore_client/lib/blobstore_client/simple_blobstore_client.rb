@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'base64'
 require 'httpclient'
 
@@ -9,15 +7,18 @@ module Bosh
 
       def initialize(options)
         super(options)
+
         @client = HTTPClient.new
         @endpoint = @options[:endpoint]
         @bucket = @options[:bucket] || 'resources'
         @headers = {}
+
         user = @options[:user]
         password = @options[:password]
+
         if user && password
           @headers['Authorization'] = 'Basic ' +
-            Base64.encode64("#{user}:#{password}").strip
+            Base64.strict_encode64("#{user}:#{password}").strip
         end
       end
 
@@ -35,7 +36,7 @@ module Bosh
       end
 
       def get_file(id, file)
-        response = @client.get(url(id), {}, @headers) do |block|
+        response = @client.get(url(id), header: @headers) do |block|
           file.write(block)
         end
 
@@ -46,7 +47,7 @@ module Bosh
       end
 
       def delete_object(id)
-        response = @client.delete(url(id), @headers)
+        response = @client.delete(url(id), header: @headers)
         if response.status != 204
           raise BlobstoreError,
                 "Could not delete object, #{response.status}/#{response.content}"

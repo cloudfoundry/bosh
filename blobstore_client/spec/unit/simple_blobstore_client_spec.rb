@@ -16,8 +16,8 @@ module Bosh::Blobstore
         allow(response).to receive_messages(status: 200, content: 'content_id')
 
         expect(httpclient).to receive(:get).with(
-          'http://localhost/resources/foo', {},
-          { 'Authorization' => 'Basic am9objpzbWl0aA==' }
+          'http://localhost/resources/foo',
+          :header => { 'Authorization' => 'Basic am9objpzbWl0aA==' },
         ).and_return(response)
 
         SimpleBlobstoreClient.new(
@@ -67,7 +67,7 @@ module Bosh::Blobstore
       it 'should fetch an object' do
         allow(response).to receive_messages(status: 200)
         expect(httpclient).to receive(:get).
-          with('http://localhost/resources/some object', {}, {}).
+          with('http://localhost/resources/some object', :header => {}).
           and_yield('content_id').
           and_return(response)
 
@@ -76,21 +76,27 @@ module Bosh::Blobstore
 
       it 'should raise an exception when there is an error fetching an object' do
         allow(response).to receive_messages(status: 500, content: 'error message')
-        expect(httpclient).to receive(:get).with('http://localhost/resources/some object', {}, {}).and_return(response)
+        expect(httpclient).to receive(:get).
+          with('http://localhost/resources/some object', :header => {}).
+          and_return(response)
 
         expect { client.get('some object') }.to raise_error BlobstoreError, /Could not fetch object/
       end
 
       it 'should delete an object' do
         allow(response).to receive_messages(status: 204, content: '')
-        expect(httpclient).to receive(:delete).with('http://localhost/resources/some object', {}).and_return(response)
+        expect(httpclient).to receive(:delete).
+          with('http://localhost/resources/some object', :header => {}).
+          and_return(response)
 
         client.delete('some object')
       end
 
       it 'should raise an exception when there is an error deleting an object' do
         allow(response).to receive_messages(status: 404, content: '')
-        expect(httpclient).to receive(:delete).with('http://localhost/resources/some object', {}).and_return(response)
+        expect(httpclient).to receive(:delete).
+          with('http://localhost/resources/some object', :header => {}).
+          and_return(response)
 
         expect { client.delete('some object') }.to raise_error BlobstoreError, /Could not delete object/
       end

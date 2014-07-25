@@ -28,10 +28,10 @@ Gem::Specification.new do |s|
   s.add_dependency 'bosh_aws_cpi',       "~>#{version}"
   s.add_dependency 'bosh_vsphere_cpi',   "~>#{version}"
   s.add_dependency 'bosh_warden_cpi',    "~>#{version}"
-  s.add_dependency 'bosh_vcloud_cpi',    '~>0.5.4'
+  s.add_dependency 'bosh_vcloud_cpi',    '~>0.5.5'
   s.add_dependency 'eventmachine',       '~>1.0.0'
   s.add_dependency 'fog',              '~>1.14.0'
-  s.add_dependency 'httpclient',       '=2.2.4'
+  s.add_dependency 'httpclient',       '=2.4.0'
   s.add_dependency 'mono_logger',      '~>1.1.0'
   s.add_dependency 'nats',             '=0.5.0.beta.12'
   s.add_dependency 'netaddr',          '~>1.5.0'
