@@ -50,10 +50,11 @@ module IntegrationExampleGroup
     bosh_runner.run('login admin admin')
   end
 
-  def upload_release
-    runner = bosh_runner_in_work_dir(TEST_RELEASE_DIR)
-    runner.run('create release')
-    runner.run('upload release')
+  def create_and_upload_test_release
+    Dir.chdir(TEST_RELEASE_DIR) do
+      bosh_runner.run_in_current_dir('create release')
+      bosh_runner.run_in_current_dir('upload release')
+    end
   end
 
   def upload_stemcell
@@ -76,7 +77,7 @@ module IntegrationExampleGroup
 
   def deploy_simple(options={})
     target_and_login
-    upload_release
+    create_and_upload_test_release
     upload_stemcell
     deploy_simple_manifest(options)
   end

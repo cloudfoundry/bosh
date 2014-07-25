@@ -3,29 +3,55 @@ require 'spec_helper'
 describe 'cli: compiled_packages', type: :integration do
   with_reset_sandbox_before_each
 
-  it 'compiled packages can be exported and imported to a new director' do
-    compile_packages_matcher = match(/compiling packages/i)
-
-    output = deploy_simple
-    expect(output).to(compile_packages_matcher)
-
-    Dir.mktmpdir do |download_dir|
-      download_path = "#{download_dir}/bosh-release-0.1-dev-ubuntu-stemcell-1.tgz"
-
-      output = bosh_runner.run("export compiled_packages bosh-release/0.1-dev ubuntu-stemcell/1 #{download_dir}")
-      expect(output).to include("Exported compiled packages to `#{download_path}'")
-      expect(File).to exist(download_path)
-
-      reset_sandbox('resetting director to import compiled packages')
-
+  context 'when a release has been created' do
+    let(:runner) { bosh_runner_in_work_dir(TEST_RELEASE_DIR) }
+    let(:release_tarball_path) do
       target_and_login
-      upload_release
-      upload_stemcell
-      bosh_runner.run("import compiled_packages #{download_path}")
-   end
+      output = runner.run('create release --with-tarball')
+      matches = /^Release tarball \(.*\): (.*\.tgz)$/.match(output)
+      old_path = matches[1]
+      new_path = File.join(tmp_dir, 'release.tgz')
+      FileUtils.cp(old_path, new_path)
+      new_path
+    end
 
-    output = deploy_simple_manifest
-    expect(output).to_not(compile_packages_matcher)
+    let(:tmp_dir) { Dir.mktmpdir }
+    after { FileUtils.rm_r(tmp_dir) }
+
+    it 'packages can be compiled, exported, and imported to a new director' do
+      compile_packages_matcher = match(/compiling packages/i)
+
+      # upload the provided release tarball
+      target_and_login
+      bosh_runner.run("upload release #{release_tarball_path}")
+      upload_stemcell
+
+      # deploy must compile the packages
+      output = deploy_simple_manifest
+      expect(output).to(compile_packages_matcher)
+
+      # export the compiled packages into the provided dir
+      output = bosh_runner.run("export compiled_packages bosh-release/0+dev.1 ubuntu-stemcell/1 #{tmp_dir}")
+      matches = /^Exported compiled packages to `(.*\.tgz)'.$/.match(output)
+      compiled_packages_tarball_path = matches[1]
+      expect(File).to exist(compiled_packages_tarball_path)
+      expect(compiled_packages_tarball_path).to start_with(tmp_dir)
+
+      # reset the sandbox/director to delete previously compiled packages
+      prepare_sandbox
+      reset_sandbox('resetting to clear compile packages')
+
+      # re-upload the provided release tarball
+      target_and_login
+      bosh_runner.run("upload release #{release_tarball_path}")
+      upload_stemcell
+
+      bosh_runner.run("import compiled_packages #{compiled_packages_tarball_path}")
+
+      # deploying after importing all release packages should not compile again
+      output = deploy_simple_manifest
+      expect(output).to_not(compile_packages_matcher)
+    end
   end
 
   it 'allows the user to import compiled packages after a previously successful import' do
