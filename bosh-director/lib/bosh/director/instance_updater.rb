@@ -57,7 +57,7 @@ module Bosh::Director
         return
       end
 
-      step { Preparer.new(@instance, agent).prepare }
+      step { Preparer.new(@instance, agent, @logger).prepare }
       step { stop }
       step { take_snapshot }
 

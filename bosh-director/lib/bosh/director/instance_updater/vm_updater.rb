@@ -11,7 +11,7 @@ module Bosh::Director
     end
 
     def update(new_disk_cid)
-      unless @instance.resource_pool_changed? || new_disk_cid
+      if !@instance.resource_pool_changed? && !new_disk_cid
         @logger.info('Skipping VM update')
         return [@vm_model, @agent_client]
       end
