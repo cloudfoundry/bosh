@@ -12,7 +12,6 @@
 .yardoc
 
 /*/vendor/
-go_agent/src/bosh/scratch
 Checkfile
 TAGS
 
@@ -30,6 +29,8 @@ create-rds-output*.yml
 create-vpc-output*.yml
 
 micro/tmp
+
+/go/gobin/
 
 pkg/
 

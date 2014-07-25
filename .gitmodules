@@ -1,33 +1,3 @@
-[submodule "go_agent/src/github.com/stretchr/testify"]
-	path = go_agent/src/github.com/stretchr/testify
-	url = https://github.com/stretchr/testify.git
-[submodule "go_agent/src/github.com/stretchr/objx"]
-	path = go_agent/src/github.com/stretchr/objx
-	url = https://github.com/stretchr/objx.git
-[submodule "go_agent/src/github.com/cloudfoundry/yagnats"]
-	path = go_agent/src/github.com/cloudfoundry/yagnats
-	url = https://github.com/cloudfoundry/yagnats.git
-[submodule "go_agent/src/github.com/cloudfoundry/gosigar"]
-	path = go_agent/src/github.com/cloudfoundry/gosigar
-	url = https://github.com/cloudfoundry/gosigar.git
-[submodule "go_agent/src/github.com/nu7hatch/gouuid"]
-	path = go_agent/src/github.com/nu7hatch/gouuid
-	url = https://github.com/nu7hatch/gouuid.git
-[submodule "go_agent/src/github.com/pivotal/go-smtpd"]
-	path = go_agent/src/github.com/pivotal/go-smtpd
-	url = https://github.com/pivotal/go-smtpd.git
-[submodule "go_agent/src/github.com/cloudfoundry/gofileutils"]
-	path = go_agent/src/github.com/cloudfoundry/gofileutils
-	url = https://github.com/cloudfoundry/gofileutils.git
-[submodule "go_agent/src/github.com/onsi/ginkgo"]
-	path = go_agent/src/github.com/onsi/ginkgo
-	url = https://github.com/onsi/ginkgo.git
-[submodule "go_agent/src/github.com/onsi/gomega"]
-	path = go_agent/src/github.com/onsi/gomega
-	url = https://github.com/onsi/gomega.git
-[submodule "go_agent/src/github.com/golang/lint"]
-	path = go_agent/src/github.com/golang/lint
-	url = https://github.com/golang/lint.git
-[submodule "go_agent/src/github.com/jeromer/syslogparser"]
-	path = go_agent/src/github.com/jeromer/syslogparser
-	url = https://github.com/jeromer/syslogparser.git
+[submodule "go/src/github.com/cloudfoundry/bosh-agent"]
+	path = go/src/github.com/cloudfoundry/bosh-agent
+	url = https://github.com/cloudfoundry/bosh-agent.git
