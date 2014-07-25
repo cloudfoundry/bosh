@@ -122,7 +122,7 @@ module Bosh::Director
         end
       end
 
-      before { allow(InstanceUpdater::Preparer).to receive(:new).with(instance, agent_client).and_return(preparer) }
+      before { allow(InstanceUpdater::Preparer).to receive(:new).with(instance, agent_client, Config.logger).and_return(preparer) }
       let(:preparer) { instance_double('Bosh::Director::InstanceUpdater::Preparer', prepare: nil) }
 
       before { allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance_model, blobstore).and_return(templates_cleaner) }
