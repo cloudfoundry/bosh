@@ -20,5 +20,5 @@ run_in_bosh_chroot $chroot "$bosh_dir/src/micro_bosh/configure_micro_bosh.sh ${s
 
 # Copy the generated apply spec to stemcell directory
 mkdir -p $work/stemcell
-# go_agent expects a json file on disk, microbosh deployer expects a yaml file (fortunately json is yaml)
+# agent expects a json file on disk, microbosh deployer expects a yaml file (fortunately json is yaml)
 cp $chroot/$bosh_app_dir/micro/apply_spec.json $work/stemcell/apply_spec.yml
