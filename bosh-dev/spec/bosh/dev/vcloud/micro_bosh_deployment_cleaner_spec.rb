@@ -23,7 +23,7 @@ module Bosh::Dev::VCloud
       let(:vapp) { instance_double('VCloudSdk::VApp', power_off: nil, delete: nil, vms: []) }
       let(:vm1) { instance_double('VCloudSdk::VM') }
       let(:vm2) { instance_double('VCloudSdk::VM') }
-      let(:disk) { instance_double('VCloudSdk::Disk') }
+      let(:disk) { instance_double('VCloudSdk::Disk', name: 'fake-disk-name') }
       let(:catalog) { instance_double('VCloudSdk::Catalog') }
 
       before { manifest.stub(:to_h).and_return(config) }
@@ -48,15 +48,13 @@ module Bosh::Dev::VCloud
 
       context 'when vapp exists' do
         it 'powers off vapp, deletes independent disks and deletes the vapp' do
-          pending '#delete was removed from the Disk model'
-
           vdc.should_receive(:find_vapp_by_name).with('vapp-name').and_return(vapp)
 
           vapp.should_receive(:power_off).once.ordered
           vapp.should_receive(:vms).once.ordered.and_return([vm1, vm2])
           vm1.should_receive(:independent_disks).once.ordered.and_return([disk])
           vm1.should_receive(:detach_disk).with(disk).once.ordered
-          disk.should_receive(:delete).once.ordered
+          vdc.should_receive(:delete_all_disks_by_name).with('fake-disk-name').once.ordered
           vm2.should_receive(:independent_disks).once.ordered.and_return([])
           vapp.should_receive(:delete).once.ordered
 
@@ -67,8 +65,8 @@ module Bosh::Dev::VCloud
       context 'when vapp does not exist' do
         it 'does not delete anything' do
           vdc.should_receive(:find_vapp_by_name).with('vapp-name').and_raise(VCloudSdk::ObjectNotFoundError)
-          logger.should_receive(:info).with('No vapp was deleted during clean up. Details: #<VCloudSdk::ObjectNotFoundError: VCloudSdk::ObjectNotFoundError>')
-
+          logger.should_receive(:info).
+            with('No vapp was deleted during clean up. Details: #<VCloudSdk::ObjectNotFoundError: VCloudSdk::ObjectNotFoundError>')
           subject.clean
         end
       end

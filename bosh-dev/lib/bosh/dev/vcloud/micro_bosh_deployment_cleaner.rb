@@ -27,11 +27,14 @@ module Bosh::Dev::VCloud
       raise ArgumentError, 'Must have exactly one vCD' unless vcds && vcds.size == 1
 
       vcd = vcds[0]
-      @client = VCloudSdk::Client.new(vcd['url'],
-                                     "#{vcd['user']}@#{vcd['entities']['organization']}",
-                                     vcd['password'],
-                                     {},
-                                     @logger)
+
+      @client = VCloudSdk::Client.new(
+        vcd['url'],
+        "#{vcd['user']}@#{vcd['entities']['organization']}",
+        vcd['password'],
+        {},
+        @logger,
+      )
 
       @vdc = @client.find_vdc_by_name(vcd['entities']['virtual_datacenter'])
     end
@@ -63,7 +66,7 @@ module Bosh::Dev::VCloud
       vapp.vms.each do |vm|
         vm.independent_disks.each do |disk|
           vm.detach_disk(disk)
-          disk.delete
+          @vdc.delete_all_disks_by_name(disk.name)
         end
       end
     end
