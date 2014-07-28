@@ -6,9 +6,9 @@ describe Bosh::Cli::Command::Misc do
   include FakeFS::SpecHelpers
 
   let(:command) { described_class.new }
-  let(:director) { double(Bosh::Cli::Client::Director) }
-  let(:versions_index) { double(Bosh::Cli::VersionsIndex) }
-  let(:release) { double(Bosh::Cli::Release) }
+  let(:director) { instance_double(Bosh::Cli::Client::Director) }
+  let(:versions_index) { instance_double(Bosh::Cli::VersionsIndex) }
+  let(:release) { instance_double(Bosh::Cli::Release) }
   let(:target) { 'https://127.0.0.1:2555' }
   let(:target_name) { 'micro-fake-bosh' }
   let(:uuid) { SecureRandom.uuid }
@@ -26,19 +26,17 @@ describe Bosh::Cli::Command::Misc do
   describe 'status' do
     it 'should show current status' do
       command.add_option(:config, @config_file)
-      command.stub(:target).and_return(target)
-      command.stub(:target_url).and_return(target)
-      command.stub(:deployment).and_return('deployment-file')
-      command.stub(:in_release_dir?).and_return(true)
 
-      director.should_receive(:get_status).and_return({'name' => target_name,
-                                                       'version' => 'v.m (release:rrrrrrrr bosh:bbbbbbbb)',
-                                                       'uuid' => uuid,
-                                                       'cpi' => 'dummy'})
-      release.should_receive(:dev_name).and_return('dev-name')
-      release.should_receive(:final_name).and_return('final_name')
-      versions_index.should_receive(:version_strings).and_return(['1-dev'])
-      versions_index.should_receive(:version_strings).and_return(['1'])
+      allow(command).to receive(:target).and_return(target)
+      allow(command).to receive(:target_url).and_return(target)
+      allow(command).to receive(:deployment).and_return('deployment-file')
+
+      allow(director).to receive(:get_status).and_return({
+        'name' => target_name,
+        'version' => 'v.m (release:rrrrrrrr bosh:bbbbbbbb)',
+        'uuid' => uuid,
+        'cpi' => 'dummy'
+      })
 
       command.should_receive(:say).with('Config')
       command.should_receive(:say).with(/#{@config_file}/)
@@ -55,11 +53,6 @@ describe Bosh::Cli::Command::Misc do
       command.should_receive(:say).with("\n")
       command.should_receive(:say).with('Deployment')
       command.should_receive(:say).with(/deployment-file/)
-
-      command.should_receive(:say).with("\n")
-      command.should_receive(:say).with('Release')
-      command.should_receive(:say).with(/dev-name\/1-dev/)
-      command.should_receive(:say).with(/final_name\/1/)
 
       command.status
     end
