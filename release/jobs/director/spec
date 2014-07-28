@@ -1,9 +1,9 @@
 ---
 name: director
 templates:
-  director_ctl: bin/director_ctl
+  director_ctl.erb: bin/director_ctl
   director.yml.erb.erb: config/director.yml.erb
-  worker_ctl: bin/worker_ctl
+  worker_ctl.erb: bin/worker_ctl
   drain: bin/drain
   sudoers: config/sudoers
   stemcell-copy.sh: bin/stemcell-copy
@@ -14,7 +14,7 @@ templates:
   nginx.conf.erb: config/nginx.conf
   nginx_ctl: bin/nginx_ctl
   mime.types: config/mime.types
-  scheduler_ctl: bin/scheduler_ctl
+  scheduler_ctl.erb: bin/scheduler_ctl
 packages:
 - director
 - nginx
@@ -25,6 +25,12 @@ packages:
 - ruby
 
 properties:
+  director.env.http_proxy:
+    description: HTTP proxy that the director, scheduler and workers should use
+  director.env.https_proxy:
+    description: HTTPS proxy that the director, scheduler and workers should use 
+  director.env.no_proxy:
+    description: List of comma-separated hosts that should skip connecting to the proxy in the director, scheduler and workers
   director.name:
     description: Name of the director
   director.port:
