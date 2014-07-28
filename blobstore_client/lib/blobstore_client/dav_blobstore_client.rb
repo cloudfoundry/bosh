@@ -23,7 +23,7 @@ module Bosh
         password = @options[:password]
         if user && password
           @headers['Authorization'] = 'Basic ' +
-            Base64.encode64("#{user}:#{password}").strip
+            Base64.strict_encode64("#{user}:#{password}").strip
         end
       end
 
@@ -52,7 +52,7 @@ module Bosh
       end
 
       def delete_object(id)
-        response = @client.delete(url(id), @headers)
+        response = @client.delete(url(id), header: @headers)
 
         raise BlobstoreError, "Could not delete object, #{response.status}/#{response.content}" if response.status != 204
       end

@@ -104,14 +104,14 @@ module Bosh::Blobstore
 
       it 'should delete an object' do
         allow(response).to receive_messages(status: 204, content: '')
-        expect(httpclient).to receive(:delete).with('http://localhost/88/foobar', {}).and_return(response)
+        expect(httpclient).to receive(:delete).with('http://localhost/88/foobar', header: {}).and_return(response)
 
         subject.delete('foobar')
       end
 
       it 'should raise an exception when there is an error deleting an object' do
         allow(response).to receive_messages(status: 404, content: '')
-        expect(httpclient).to receive(:delete).with('http://localhost/88/foobar', {}).and_return(response)
+        expect(httpclient).to receive(:delete).with('http://localhost/88/foobar', header: {}).and_return(response)
 
         expect { subject.delete('foobar') }.to raise_error BlobstoreError, /Could not delete object/
       end
