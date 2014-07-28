@@ -10,7 +10,8 @@ export PATH=$PATH:$($BINDIR/go env GOBIN)
 errors=$(
   golint $BASEDIR/src/bosh                                  \
     | grep -v -e 'should have comment.* or be unexported'   \
-    | grep -v    'error strings should not be capitalized'
+    | grep -v    'error strings should not be capitalized'  \
+    | grep -v    'and that stutters'
 )
 
 if [ "$(echo -n "$errors")" != "" ]; then
