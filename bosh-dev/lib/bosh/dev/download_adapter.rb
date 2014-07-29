@@ -9,6 +9,7 @@ module Bosh::Dev
 
     def download(uri, write_path)
       @logger.info("Downloading #{uri} to #{write_path}")
+      FileUtils.mkdir_p(File.dirname(write_path))
       download_file(URI(uri), write_path)
       File.expand_path(write_path)
     end

@@ -25,6 +25,11 @@ module Bosh::Dev
           expect(File.read(write_path)).to eq(content)
         end
 
+        it 'creates the parent directory for destination' do
+          expect(FileUtils).to receive(:mkdir_p).with('/tmp')
+          subject.download(uri, write_path)
+        end
+
         context 'when write path is an absolute path' do
           it 'returns the full path of the downloaded file' do
             actual = subject.download(uri, write_path)
