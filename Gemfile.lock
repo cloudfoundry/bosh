@@ -219,7 +219,7 @@ PATH
       bosh_common (~> 1.2657.0)
       bosh_cpi (~> 1.2657.0)
       builder (~> 3.1.4)
-      httpclient (~> 2.4.0)
+      httpclient (= 2.4.0)
       membrane (~> 0.0.2)
       mysql2 (~> 0.3.11)
       nokogiri (~> 1.5.10)
