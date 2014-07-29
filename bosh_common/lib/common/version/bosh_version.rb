@@ -1,22 +1,24 @@
 require 'common/version/semi_semantic_version'
 
-module Bosh::Common::Version
-  class BoshVersion < SemiSemanticVersion
+module Bosh::Common
+  module Version
+    class BoshVersion < SemiSemanticVersion
 
-    def self.parse(version)
-      raise ArgumentError, 'Invalid Version: nil' if version.nil?
-      version = version.to_s
+      def self.parse(version)
+        raise ArgumentError, 'Invalid Version: nil' if version.nil?
+        version = version.to_s
 
-      #discard anything after a space, including the space, to support compound bosh versions
-      version = version.split(' ', 2)[0] if version =~ / /
+        #discard anything after a space, including the space, to support compound bosh versions
+        version = version.split(' ', 2)[0] if version =~ / /
 
-      self.new(SemiSemantic::Version.parse(version))
-    end
+        self.new(SemiSemantic::Version.parse(version))
+      end
 
-    private
+      private
 
-    def default_post_release_segment
-      raise NotImplementedError, 'Bosh post-release versions unsupported'
+      def default_post_release_segment
+        raise NotImplementedError, 'Bosh post-release versions unsupported'
+      end
     end
   end
 end
