@@ -77,6 +77,7 @@ EOS
       chown -R ubuntu /mnt/stemcells
       mkdir -p /bosh/tmp
       git --git-dir=/bosh/.git --work-tree=/bosh checkout /bosh
+      (cd /bosh && git clean -dfx)
       (cd /bosh && git submodule update --init --recursive)
       chown -R ubuntu:ubuntu /bosh
       (cd /bosh && bundle install --local)
