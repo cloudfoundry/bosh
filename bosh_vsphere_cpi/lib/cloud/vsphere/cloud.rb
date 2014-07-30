@@ -311,24 +311,17 @@ module VSphereCloud
         vm = get_vm_by_cid(vm_cid)
 
         @logger.debug('Waiting for the VM to shutdown')
-        state = :initial
         begin
-          wait_until_off(vm, 30)
-        rescue TimeoutException
-          case state
-            when :initial
-              @logger.debug('The guest did not shutdown in time, requesting it to shutdown')
-              begin
-                vm.shutdown_guest
-              rescue => e
-                @logger.debug("Ignoring possible race condition when a VM has powered off by the time we ask it to shutdown: #{e.message}")
-              end
-              state = :shutdown_guest
-              retry
-            else
-              @logger.error('The guest did not shutdown in time, even after a request')
-              raise
+          begin
+            vm.shutdown_guest
+          rescue => e
+            @logger.debug("Ignoring possible race condition when a VM has powered off by the time we ask it to shutdown: #{e.message}")
           end
+
+          wait_until_off(vm, 60)
+        rescue TimeoutException
+          @logger.debug('The guest did not shutdown in time, requesting it to power off')
+          client.power_off_vm(vm)
         end
 
         @logger.info("Configuring: #{vm_cid} to use the following network settings: #{networks.pretty_inspect}")

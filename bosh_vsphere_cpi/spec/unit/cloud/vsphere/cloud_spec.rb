@@ -2,12 +2,14 @@ require 'spec_helper'
 
 module VSphereCloud
   describe Cloud do
+    subject(:vsphere_cloud) { Cloud.new(config) }
+
     let(:config) { { fake: 'config' } }
     let(:cloud_config) { instance_double('VSphereCloud::Config', logger: logger, rest_client:nil ).as_null_object }
     let(:logger) { instance_double('Logger', info: nil, debug: nil) }
     let(:client) { double('fake client') }
-
-    subject(:vsphere_cloud) { Cloud.new(config) }
+    let(:agent_env) { instance_double('VSphereCloud::AgentEnv') }
+    before { allow(VSphereCloud::AgentEnv).to receive(:new).and_return(agent_env) }
 
     before do
       allow(Config).to receive(:build).with(config).and_return(cloud_config)
@@ -488,9 +490,6 @@ module VSphereCloud
         let(:file_provider) { instance_double('VSphereCloud::FileProvider') }
         before { allow(VSphereCloud::FileProvider).to receive(:new).and_return(file_provider) }
 
-        let(:agent_env) { instance_double('VSphereCloud::AgentEnv') }
-        before { allow(VSphereCloud::AgentEnv).to receive(:new).and_return(agent_env) }
-
         context 'using a placer' do
           let(:clusters) {
             [
@@ -613,8 +612,6 @@ module VSphereCloud
     end
 
     describe '#attach_disk' do
-      let(:agent_env) { instance_double('VSphereCloud::AgentEnv') }
-      before { allow(VSphereCloud::AgentEnv).to receive(:new).and_return(agent_env) }
       let(:agent_env_hash) { { 'disks' => { 'persistent' => { disk_cid => 'fake-device-number' } } } }
       before { allow(agent_env).to receive(:get_current_env).and_return(agent_env_hash) }
 
@@ -747,9 +744,6 @@ module VSphereCloud
     end
 
     describe '#delete_vm' do
-      let(:agent_env) { instance_double('VSphereCloud::AgentEnv') }
-      before { allow(VSphereCloud::AgentEnv).to receive(:new).and_return(agent_env) }
-
       let(:vm) { instance_double('VimSdk::Vim::VirtualMachine') }
       before { allow(vsphere_cloud).to receive(:get_vm_by_cid).with('fake-vm-id').and_return(vm) }
 
@@ -835,6 +829,135 @@ module VSphereCloud
             vsphere_cloud.delete_vm('fake-vm-id')
           end
         end
+      end
+    end
+
+    describe '#configure_networks' do
+      let(:vm) { instance_double('VimSdk::Vim::VirtualMachine') }
+      before { allow(vsphere_cloud).to receive(:get_vm_by_cid).with('fake-vm-id').and_return(vm) }
+      let(:networks) do
+        {
+          'default' => {
+            'cloud_properties' => {
+              'name' => 'fake-network-name'
+            }
+          }
+        }
+      end
+
+      let(:devices) { [VimSdk::Vim::Vm::Device::VirtualPCIController.new(key: 'fake-pci-key')] }
+      before do
+        allow(client).to receive(:get_property).with(
+          vm,
+          VimSdk::Vim::VirtualMachine,
+          'config.hardware.device',
+          ensure_all: true
+        ).and_return(devices)
+      end
+
+      let(:datacenter) { instance_double('VimSdk::Vim::Datacenter') }
+      before do
+        allow(client).to receive(:get_property).with(
+          datacenter,
+          VimSdk::Vim::Datacenter,
+          'name'
+        ).and_return('fake-datacenter-name')
+      end
+      before { allow(client).to receive(:find_parent).with(vm, VimSdk::Vim::Datacenter).and_return(datacenter) }
+
+      let(:network_mob) { double(:network_mob) }
+      before do
+        allow(client).to receive(:find_by_inventory_path).with([
+          'fake-datacenter-name',
+          'network',
+          'fake-network-name'
+        ]).and_return(network_mob)
+      end
+
+      let(:nic_config) { double(:nic_config) }
+      before do
+        allow(vsphere_cloud).to receive(:create_nic_config_spec).with(
+          'fake-network-name',
+          network_mob,
+          'fake-pci-key',
+          {}
+        ).and_return(nic_config)
+
+        allow(vsphere_cloud).to receive(:fix_device_unit_numbers).with(
+          devices,
+          [nic_config]
+        )
+      end
+
+      before do
+        allow(agent_env).to receive(:get_current_env).and_return(
+          { 'old-key' => 'old-value' }
+        )
+
+        allow(vsphere_cloud).to receive(:generate_network_env).and_return('fake-network-env')
+        allow(vsphere_cloud).to receive(:get_vm_location).and_return('fake-vm-location')
+      end
+
+      it 'sends shutdown command to vm' do
+        allow(client).to receive(:get_property).with(
+          vm,
+          VimSdk::Vim::VirtualMachine,
+          'runtime.powerState'
+        ).and_return(VimSdk::Vim::VirtualMachine::PowerState::POWERED_OFF)
+
+        expect(vm).to receive(:shutdown_guest)
+
+        expect(client).to receive(:reconfig_vm) do |reconfig_vm, vm_config|
+          expect(reconfig_vm).to eq(vm)
+          expect(vm_config.device_change).to eq([nic_config])
+        end
+
+        expect(agent_env).to receive(:set_env).with(
+          vm,
+          'fake-vm-location',
+          {
+            'old-key' => 'old-value',
+            'networks' => 'fake-network-env'
+          }
+        )
+
+        expect(client).to receive(:power_on_vm).with(datacenter, vm)
+
+        vsphere_cloud.configure_networks('fake-vm-id', networks)
+      end
+
+      it 'waits for vm to shutdown for 60 seconds' do
+        expect(client).to receive(:get_property).with(
+          vm,
+          VimSdk::Vim::VirtualMachine,
+          'runtime.powerState'
+        ).and_return(
+          VimSdk::Vim::VirtualMachine::PowerState::POWERED_ON,
+          VimSdk::Vim::VirtualMachine::PowerState::POWERED_ON,
+          VimSdk::Vim::VirtualMachine::PowerState::POWERED_OFF
+        ).exactly(3).times
+
+        expect(vsphere_cloud).to receive(:wait_until_off).with(vm, 60).and_call_original
+
+        expect(vm).to receive(:shutdown_guest).ordered
+        expect(client).to receive(:reconfig_vm).ordered
+        expect(agent_env).to receive(:set_env).ordered
+        expect(client).to receive(:power_on_vm).with(datacenter, vm)
+
+        vsphere_cloud.configure_networks('fake-vm-id', networks)
+      end
+
+      it 'sends poweroff to vm if did not shutdown' do
+        expect(vsphere_cloud).to receive(:wait_until_off).with(vm, 60).
+          and_raise(VSphereCloud::Cloud::TimeoutException)
+        expect(client).to receive(:power_off_vm).with(vm)
+
+        expect(vm).to receive(:shutdown_guest).ordered
+        expect(client).to receive(:reconfig_vm).ordered
+        expect(agent_env).to receive(:set_env).ordered
+        expect(client).to receive(:power_on_vm).with(datacenter, vm)
+
+        vsphere_cloud.configure_networks('fake-vm-id', networks)
       end
     end
   end
