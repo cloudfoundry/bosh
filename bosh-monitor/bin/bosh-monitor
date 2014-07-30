@@ -22,7 +22,6 @@ runner = Bosh::Monitor::Runner.new(config_file)
 
 Signal.trap("INT") do
   runner.stop
-  exit(1)
 end
 
 runner.run

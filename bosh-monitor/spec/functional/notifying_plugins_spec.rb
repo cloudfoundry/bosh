@@ -30,7 +30,7 @@ describe 'notifying plugins' do
     start_health_monitor
   end
 
-  after { runner.stop(true) }
+  after { runner.stop }
 
   it 'sends an alert to its plugins' do
     payload = {
