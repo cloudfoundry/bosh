@@ -34,4 +34,11 @@ describe Bosh::Monitor::ApiController do
       end
     end
   end
+
+  describe "/healthz" do
+    it 'returns 200 OK' do
+      get '/healthz'
+      last_response.status.should == 200
+    end
+  end
 end
