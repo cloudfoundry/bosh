@@ -30,7 +30,13 @@ case $1 in
     rm -f $PIDFILE
     ;;
 
+  kill)
+    PID=$(head -1 $PIDFILE)
+    kill -9 $PID
+    rm -f $PIDFILE
+    ;;
+
   *)
-  echo "Usage: health_monitor_ctl {start|stop}" ;;
+  echo "Usage: health_monitor_ctl {start|stop|kill}" ;;
 esac
 exit 0
