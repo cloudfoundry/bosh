@@ -49,7 +49,9 @@ module Bosh::Dev::VSphere
                                      env['BOSH_VSPHERE_VCENTER_RESOURCE_POOL'] } }] }] }] } },
         'apply_spec' =>
           { 'properties' =>
-              { 'vcenter' =>
+              {
+                'ntp' => [env['BOSH_VSPHERE_NTP_SERVER']],
+                'vcenter' =>
                   { 'host' => env['BOSH_VSPHERE_VCENTER'],
                     'user' => env['BOSH_VSPHERE_VCENTER_USER'],
                     'password' => env['BOSH_VSPHERE_VCENTER_PASSWORD'],

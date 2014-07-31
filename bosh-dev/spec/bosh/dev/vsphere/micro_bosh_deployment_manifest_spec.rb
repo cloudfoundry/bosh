@@ -57,6 +57,8 @@ cloud:
                   resource_pool: vcenter_rp
 apply_spec:
   properties:
+    ntp:
+    - ntp_server
     vcenter:
       host: vcenter
       user: vcenter_user

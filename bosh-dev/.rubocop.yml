@@ -2,7 +2,7 @@ inherit_from: ../.rubocop.yml
 
 MethodLength:
   CountComments: false
-  Max: 55
+  Max: 57
 
 LineLength:
   Max: 240
