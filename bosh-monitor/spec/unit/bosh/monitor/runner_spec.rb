@@ -44,4 +44,13 @@ describe Bhm::Runner do
       end
     end
   end
+
+  describe "start_http_server" do
+    it 'starts a Thin::Server with the correct parameters' do
+      http_server = double(Thin::Server)
+      expect(thin_server_class).to receive(:new).with('0.0.0.0', Bhm.http_port, signals: false).and_return(http_server)
+      expect(http_server).to receive(:start!)
+      runner.start_http_server
+    end
+  end
 end

@@ -85,9 +85,6 @@ module Bosh::Monitor
       @logger.info "HTTP server is starting on port #{Bhm.http_port}..."
       @http_server = Thin::Server.new("0.0.0.0", Bhm.http_port, :signals => false) do
         Thin::Logging.silent = true
-        use Rack::Auth::Basic do |user, password|
-          [ user, password ] == [ Bhm.http_user, Bhm.http_password ]
-        end
         map "/" do
           run Bhm::ApiController.new
         end
