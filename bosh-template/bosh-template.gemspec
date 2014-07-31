@@ -15,9 +15,11 @@ Gem::Specification.new do |s|
   s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
   s.files        = `git ls-files -- lib/*`.split("\n") + %w(README)
-  s.executables  = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
   s.test_files   = s.files.grep(%r{^(test|spec|features)/})
   s.require_path = 'lib'
 
   s.add_dependency 'semi_semantic', '~>1.1.0'
+
+  s.bindir      = 'bin'
+  s.executables << 'bosh-template'
 end
