@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bosh::Cli
+module Bosh::Cli::Versions
   describe LocalVersionStorage do
     let(:storage) { LocalVersionStorage.new(storage_dir) }
     let(:storage_dir) { Dir.mktmpdir }

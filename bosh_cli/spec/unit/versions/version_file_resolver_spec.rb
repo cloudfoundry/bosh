@@ -1,9 +1,9 @@
 require 'spec_helper'
 
-module Bosh::Cli
+module Bosh::Cli::Versions
   describe VersionFileResolver do
     subject(:resolver) { VersionFileResolver.new(storage, blobstore) }
-    let(:storage) { instance_double('Bosh::Cli::LocalVersionStorage') }
+    let(:storage) { instance_double('Bosh::Cli::Versions::LocalVersionStorage') }
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
     let(:tmp_dir) { Dir.mktmpdir }
     let(:desc) { 'fake-description' }

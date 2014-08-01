@@ -1,4 +1,4 @@
-module Bosh::Cli
+module Bosh::Cli::Versions
   class LocalVersionStorage
 
     class Sha1MismatchError < StandardError; end

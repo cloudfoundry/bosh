@@ -2,29 +2,30 @@ module Bosh::Cli
   class ReleaseBuilder
     include Bosh::Cli::DependencyHelper
 
-    DEFAULT_RELEASE_NAME = "bosh_release"
-
-    attr_reader :release, :packages, :jobs, :version, :build_dir, :commit_hash, :uncommitted_changes
+    attr_reader :release, :packages, :jobs, :name, :version, :build_dir, :commit_hash, :uncommitted_changes
 
     # @param [Bosh::Cli::Release] release Current release
     # @param [Array<Bosh::Cli::PackageBuilder>] packages Built packages
     # @param [Array<Bosh::Cli::JobBuilder>] jobs Built jobs
     # @param [Hash] options Release build options
-    def initialize(release, packages, jobs, options = { })
+    def initialize(release, packages, jobs, name, options = { })
       @release = release
       @final = options.has_key?(:final) ? !!options[:final] : false
       @commit_hash = options.fetch(:commit_hash, '00000000')
       @uncommitted_changes = options.fetch(:uncommitted_changes, true)
       @packages = packages
       @jobs = jobs
+      @name = name
+      raise 'Release name is blank' if name.blank?
+
       @version = options.fetch(:version, nil)
 
       raise ReleaseVersionError.new('Version numbers cannot be specified for dev releases') if (@version && !@final)
 
-      @final_index = VersionsIndex.new(final_releases_dir)
-      @dev_index = VersionsIndex.new(dev_releases_dir)
+      @final_index = Versions::VersionsIndex.new(final_releases_dir)
+      @dev_index = Versions::VersionsIndex.new(dev_releases_dir)
       @index = @final ? @final_index : @dev_index
-      @release_storage = LocalVersionStorage.new(@index.storage_dir, release_name)
+      @release_storage = Versions::LocalVersionStorage.new(@index.storage_dir, @name)
 
       if @version && @release_storage.has_file?(@version)
         raise ReleaseVersionError.new('Release version already exists')
@@ -36,12 +37,6 @@ module Bosh::Cli
         FileUtils.mkdir("packages")
         FileUtils.mkdir("jobs")
       end
-    end
-
-    # @return [String] Release name
-    def release_name
-      name = @final ? @release.final_name : @release.dev_name
-      name.blank? ? DEFAULT_RELEASE_NAME : name
     end
 
     # @return [String] Release version
@@ -136,11 +131,10 @@ module Bosh::Cli
       manifest["commit_hash"] = commit_hash
       manifest["uncommitted_changes"] = uncommitted_changes
 
-      manifest["name"] = release_name
-
-      unless manifest["name"].bosh_valid_id?
-        raise InvalidRelease, "Release name `#{manifest["name"]}' is not a valid BOSH identifier"
+      unless @name.bosh_valid_id?
+        raise InvalidRelease, "Release name `#{@name}' is not a valid BOSH identifier"
       end
+      manifest["name"] = @name
 
       # New release versions are allowed to have the same fingerprint as old versions.
       # For reverse compatibility, random uuids are stored instead.
@@ -192,25 +186,25 @@ module Bosh::Cli
     end
 
     def final_releases_dir
-      File.join(@release.dir, "releases")
+      File.join(@release.dir, 'releases', @name)
     end
 
     def dev_releases_dir
-      File.join(@release.dir, "dev_releases")
+      File.join(@release.dir, 'dev_releases', @name)
     end
 
     def tarball_path
-      File.join(releases_dir, "#{release_name}-#{version}.tgz")
+      File.join(releases_dir, "#{@name}-#{version}.tgz")
     end
 
     def manifest_path
-      File.join(releases_dir, "#{release_name}-#{version}.yml")
+      File.join(releases_dir, "#{@name}-#{version}.yml")
     end
 
     private
 
     def assign_version
-      latest_final_version = ReleaseVersionsIndex.new(@final_index).latest_version
+      latest_final_version = Versions::ReleaseVersionsIndex.new(@final_index).latest_version
       latest_final_version ||= Bosh::Common::Version::ReleaseVersion.parse('0')
 
       if @final
@@ -218,7 +212,7 @@ module Bosh::Cli
         latest_final_version.increment_release
       else
         # Increment or Reset the post-release segment
-        dev_versions = ReleaseVersionsIndex.new(@dev_index).versions
+        dev_versions = Versions::ReleaseVersionsIndex.new(@dev_index).versions
         latest_dev_version = dev_versions.latest_with_pre_release(latest_final_version)
 
         if latest_dev_version

@@ -240,13 +240,14 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
     globs = %w(foo/**/* baz)
 
-    final_storage_dir = File.join(@release_dir, '.final_builds', 'packages', 'bar')
-    final_versions = Bosh::Cli::VersionsIndex.new(final_storage_dir)
-    final_storage = Bosh::Cli::LocalVersionStorage.new(final_storage_dir)
+    package_name = 'bar'
+    final_storage_dir = File.join(@release_dir, '.final_builds', 'packages', package_name)
+    final_versions = Bosh::Cli::Versions::VersionsIndex.new(final_storage_dir)
+    final_storage = Bosh::Cli::Versions::LocalVersionStorage.new(final_storage_dir)
 
-    dev_storage_dir = File.join(@release_dir, '.dev_builds', 'packages', 'bar')
-    dev_versions   = Bosh::Cli::VersionsIndex.new(dev_storage_dir)
-    dev_storage = Bosh::Cli::LocalVersionStorage.new(dev_storage_dir)
+    dev_storage_dir = File.join(@release_dir, '.dev_builds', 'packages', package_name)
+    dev_versions   = Bosh::Cli::Versions::VersionsIndex.new(dev_storage_dir)
+    dev_storage = Bosh::Cli::Versions::LocalVersionStorage.new(dev_storage_dir)
 
     add_version(final_versions, final_storage,
       fingerprint,
@@ -258,15 +259,15 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
       { 'version' => fingerprint },
       get_tmp_file_path('dev_payload'))
 
-    builder = make_builder('bar', globs)
+    builder = make_builder(package_name, globs)
 
     builder.use_final_version
     expect(builder.tarball_path).to eql(File.join(
-        @release_dir, '.final_builds', 'packages', 'bar', "#{fingerprint}.tgz"))
+        @release_dir, '.final_builds', 'packages', package_name, "#{fingerprint}.tgz"))
 
     builder.use_dev_version
     expect(builder.tarball_path).to eql(File.join(
-        @release_dir, '.dev_builds', 'packages', 'bar', "#{fingerprint}.tgz"))
+        @release_dir, '.dev_builds', 'packages', package_name, "#{fingerprint}.tgz"))
   end
 
   it 'creates a new version tarball' do
