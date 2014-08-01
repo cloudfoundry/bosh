@@ -1,5 +1,27 @@
-module Bosh::Cli
+module Bosh::Cli::Versions
   class VersionsIndex
+    include Enumerable
+
+    CURRENT_INDEX_VERSION = SemiSemantic::Version.parse('2')
+
+    def self.load_index_yaml(index_path)
+      contents = load_yaml_file(index_path, nil)
+      # Psych.load returns false if file is empty
+      return nil if contents === false
+      unless contents.kind_of?(Hash)
+        raise Bosh::Cli::InvalidIndex, "Invalid versions index data type, #{contents.class} given, Hash expected"
+      end
+      contents
+    end
+
+    def self.write_index_yaml(index_path, contents)
+      unless contents.kind_of?(Hash)
+        raise Bosh::Cli::InvalidIndex, "Invalid versions index data type, #{contents.class} given, Hash expected"
+      end
+      File.open(index_path, 'w') do |f|
+        f.write(Psych.dump(contents))
+      end
+    end
 
     attr_reader :index_file
     attr_reader :storage_dir
@@ -9,7 +31,7 @@ module Bosh::Cli
       @index_file  = File.join(@storage_dir, 'index.yml')
 
       if File.file?(@index_file)
-        init_index(load_yaml_file(@index_file, nil))
+        init_index(VersionsIndex.load_index_yaml(@index_file))
       else
         init_index({})
       end
@@ -19,17 +41,8 @@ module Bosh::Cli
       @data['builds'][key]
     end
 
-    def each_pair(&block)
-      @data['builds'].each_pair(&block)
-    end
-
-    def latest_version
-      builds = @data['builds'].values
-
-      return nil if builds.empty?
-
-      version_strings = builds.map { |b| b['version'] }
-      Bosh::Common::Version::ReleaseVersionList.parse(version_strings).latest.to_s
+    def each(&block)
+      @data['builds'].each(&block)
     end
 
     def select(&block)
@@ -41,15 +54,15 @@ module Bosh::Cli
       version = new_build['version']
 
       if version.blank?
-        raise InvalidIndex, "Cannot save index entry without a version: `#{new_build}'"
+        raise Bosh::Cli::InvalidIndex, "Cannot save index entry without a version: `#{new_build}'"
       end
 
       if @data['builds'][new_key]
         raise "Trying to add duplicate entry `#{new_key}' into index `#{@index_file}'"
       end
 
-      self.each_pair do |key, build|
-        if build['version'] == version && key != new_key
+      each do |key, build|
+        if key != new_key && build['version'] == version
           raise "Trying to add duplicate version `#{version}' into index `#{@index_file}'"
         end
       end
@@ -58,9 +71,7 @@ module Bosh::Cli
 
       @data['builds'][new_key] = new_build
 
-      File.open(@index_file, 'w') do |f|
-        f.write(Psych.dump(@data))
-      end
+      save
 
       version
     end
@@ -77,9 +88,24 @@ module Bosh::Cli
 
       @data['builds'][key] = new_build
 
-      File.open(@index_file, 'w') do |f|
-        f.write(Psych.dump(@data))
+      save
+    end
+
+    def remove_version(key)
+      build = @data['builds'][key]
+      unless build
+        raise "Cannot remove non-existent entry with key `#{key}'"
       end
+
+      @data['builds'].delete(key)
+
+      save
+    end
+
+    def find_key_by_version(version)
+      key_and_build = find { |_, build| build['version'] == version }
+
+      key_and_build.first unless key_and_build.nil?
     end
 
     def version_strings
@@ -88,6 +114,18 @@ module Bosh::Cli
 
     def to_s
       @data['builds'].to_s
+    end
+
+    def format_version
+      format_version_string = @data['format-version']
+      SemiSemantic::Version.parse(format_version_string)
+    rescue ArgumentError, SemiSemantic::ParseError
+      raise InvalidIndex, "Invalid versions index version in `#{@index_file}', " +
+        "`#{format_version_string}' given, SemiSemantic version expected"
+    end
+
+    def save
+      VersionsIndex.write_index_yaml(@index_file, @data)
     end
 
     private
@@ -107,13 +145,9 @@ module Bosh::Cli
     end
 
     def init_index(data)
-      data ||= {}
-
-      unless data.kind_of?(Hash)
-        raise InvalidIndex, "Invalid versions index data type, #{data.class} given, Hash expected"
-      end
-      @data = data
+      @data = data || {}
       @data['builds'] ||= {}
+      @data['format-version'] ||= CURRENT_INDEX_VERSION.to_s
     end
   end
 end

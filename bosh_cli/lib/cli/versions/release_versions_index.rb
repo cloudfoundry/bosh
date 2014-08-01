@@ -1,4 +1,4 @@
-module Bosh::Cli
+module Bosh::Cli::Versions
   class ReleaseVersionsIndex
 
     def initialize(versions_index)

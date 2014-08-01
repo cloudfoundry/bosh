@@ -1,4 +1,4 @@
-module Bosh::Cli
+module Bosh::Cli::Versions
   class VersionFileResolver
 
     def initialize(storage, blobstore, tmpdir=Dir.tmpdir)

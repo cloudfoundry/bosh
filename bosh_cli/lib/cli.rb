@@ -31,6 +31,8 @@ require 'zlib'
 require 'archive/tar/minitar'
 include Archive::Tar
 
+require 'semi_semantic/version'
+
 require 'bosh/template/evaluation_context'
 
 unless defined?(Bosh::Cli::VERSION)
@@ -61,10 +63,15 @@ require 'cli/director_task'
 require 'cli/line_wrap'
 require 'cli/backup_destination_path'
 
+require 'cli/source_control/git_ignore'
+
 require 'cli/versions/versions_index'
 require 'cli/versions/local_version_storage'
 require 'cli/versions/release_versions_index'
+require 'cli/versions/releases_dir_migrator'
 require 'cli/versions/version_file_resolver'
+require 'cli/versions/multi_release_support'
+
 require 'cli/packaging_helper'
 require 'cli/package_builder'
 require 'cli/job_builder'

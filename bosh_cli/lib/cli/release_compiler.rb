@@ -94,18 +94,20 @@ module Bosh::Cli
     end
 
     def find_package(package)
-      final_package_dir = File.join(@release_dir, ".final_builds", "packages", package.name)
-      final_index = VersionsIndex.new(final_package_dir)
-      dev_package_dir = File.join(@release_dir, ".dev_builds", "packages", package.name)
-      dev_index = VersionsIndex.new(dev_package_dir)
+      name = package.name
+      final_package_dir = File.join(@release_dir, '.final_builds', 'packages', name)
+      final_index = Versions::VersionsIndex.new(final_package_dir)
+      dev_package_dir = File.join(@release_dir, '.dev_builds', 'packages', name)
+      dev_index = Versions::VersionsIndex.new(dev_package_dir)
       find_in_indices(final_index, dev_index, package, 'package')
     end
 
     def find_job(job)
-      final_jobs_dir = File.join(@release_dir, ".final_builds", "jobs", job.name)
-      final_index = VersionsIndex.new(final_jobs_dir)
-      dev_jobs_dir = File.join(@release_dir, ".dev_builds", "jobs", job.name)
-      dev_index = VersionsIndex.new(dev_jobs_dir)
+      name = job.name
+      final_jobs_dir = File.join(@release_dir, '.final_builds', 'jobs', name)
+      final_index = Versions::VersionsIndex.new(final_jobs_dir)
+      dev_jobs_dir = File.join(@release_dir, '.dev_builds', 'jobs', name)
+      dev_index = Versions::VersionsIndex.new(dev_jobs_dir)
       find_in_indices(final_index, dev_index, job, 'job')
     end
 
@@ -133,9 +135,9 @@ module Bosh::Cli
       sha1 = found_build["sha1"]
       blobstore_id = found_build["blobstore_id"]
 
-      storage = LocalVersionStorage.new(index.storage_dir)
+      storage = Versions::LocalVersionStorage.new(index.storage_dir)
 
-      resolver = VersionFileResolver.new(storage, @blobstore)
+      resolver = Versions::VersionFileResolver.new(storage, @blobstore)
       resolver.find_file(blobstore_id, sha1, version, "#{build_type} #{desc}")
     rescue Bosh::Blobstore::BlobstoreError => e
       raise BlobstoreError, "Blobstore error: #{e}"

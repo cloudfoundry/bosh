@@ -1,12 +1,60 @@
 require 'spec_helper'
 
-module Bosh::Cli
+module Bosh::Cli::Versions
   describe VersionsIndex do
     let(:versions_index) { VersionsIndex.new(tmp_dir) }
     let(:tmp_dir) { Dir.mktmpdir }
     let(:index_file) { File.join(tmp_dir, 'index.yml') }
-  
+    let(:name) { 'build-name' }
+
     after { FileUtils.rm_rf(tmp_dir) }
+
+    describe 'self.load_index_yaml' do
+      let(:tmp_path) { Dir.mktmpdir }
+      after { FileUtils.rm_r(tmp_path) }
+
+      let(:index_path) { File.join(tmp_path, 'index.yml') }
+
+      it 'loads the yml if it is a hash' do
+        contents = { 'fake-contents' => 'fake' }
+        VersionsIndex.write_index_yaml(index_path, contents)
+
+        expect(VersionsIndex.load_index_yaml(index_path)).to eq(contents)
+      end
+
+      it 'loads the yml if it is empty' do
+        FileUtils.touch(index_path)
+
+        expect(VersionsIndex.load_index_yaml(index_path)).to eq(nil)
+      end
+
+      it 'raises an InvalidIndex error if the yml does not contain a hash' do
+        contents = 2
+        File.open(index_path, 'w') { |f| f.write(contents) }
+
+        expect { VersionsIndex.load_index_yaml(index_path) }.to raise_error(Bosh::Cli::InvalidIndex)
+      end
+    end
+
+    describe 'self.write_index_yaml' do
+      let(:tmp_path) { Dir.mktmpdir }
+      after { FileUtils.rm_r(tmp_path) }
+
+      let(:index_path) { File.join(tmp_path, 'index.yml') }
+
+      it 'writes the provided contents as yaml to the provided file' do
+        contents = { 'fake-contents' => 'fake' }
+        VersionsIndex.write_index_yaml(index_path, contents)
+
+        expect(VersionsIndex.load_index_yaml(index_path)).to eq(contents)
+      end
+
+      it 'raises an InvalidIndex error if the yml does not contain a hash' do
+        contents = 2
+
+        expect { VersionsIndex.write_index_yaml(index_path, contents) }.to raise_error(Bosh::Cli::InvalidIndex)
+      end
+    end
 
     describe '#initialize' do
       it 'errors if the index file is malformed' do
@@ -14,14 +62,37 @@ module Bosh::Cli
 
         expect {
           versions_index = VersionsIndex.new(tmp_dir)
-        }.to raise_error(InvalidIndex, 'Invalid versions index data type, String given, Hash expected')
+        }.to raise_error(Bosh::Cli::InvalidIndex)
       end
 
       it 'allows index file to be empty' do
         File.open(index_file, 'w') { |f| f.write('') }
 
-        versions_index = Bosh::Cli::VersionsIndex.new(tmp_dir)
+        versions_index = VersionsIndex.new(tmp_dir)
         expect(versions_index.version_strings).to be_empty
+      end
+
+      it 'allows index file to not contain format-version' do
+        old_index_hash = {'builds' => { 'fake-key' => { 'version' => 'fake-version' } }}
+        File.open(index_file, 'w') { |f| f.write(Psych.dump(old_index_hash)) }
+
+        expect {
+          VersionsIndex.new(tmp_dir)
+        }.to_not raise_error
+      end
+    end
+
+    describe '#save' do
+      it 'writes defaults to disk' do
+        expect(File).to_not exist(index_file)
+
+        versions_index.save
+
+        expect(File).to exist(index_file)
+
+        data = VersionsIndex.load_index_yaml(index_file)
+        expect(data['builds']).to eq({})
+        expect(data['format-version']).to eq(VersionsIndex::CURRENT_INDEX_VERSION.to_s)
       end
     end
 
@@ -31,6 +102,20 @@ module Bosh::Cli
 
         versions_index.add_version('fake-key', { 'version' => 2 })
         expect(File).to exist(index_file)
+        expect(load_yaml_file(index_file)).to include(
+          'builds' => {
+            'fake-key' => {
+              'version' => 2
+            }
+          }
+        )
+      end
+
+      it 'lazily initializes the format-version' do
+        expect(File).to_not exist(index_file)
+
+        versions_index.add_version('fake-key', { 'version' => 'fake-version' })
+        expect(load_yaml_file(index_file)).to include('format-version' => VersionsIndex::CURRENT_INDEX_VERSION.to_s)
       end
 
       context 'when storage dir does not exist' do
@@ -64,19 +149,21 @@ module Bosh::Cli
         expect {
           versions_index.add_version('fake-key', build_without_version)
         }.to raise_error(
-          InvalidIndex, "Cannot save index entry without a version: `#{build_without_version}'"
+          Bosh::Cli::InvalidIndex,
+          "Cannot save index entry without a version: `#{build_without_version}'"
         )
       end
 
       it 'does not allow duplicate versions with different keys' do
-        item1 = { 'version' => '1.9-dev' }
+        version = '1.9-dev'
+        item1 = { 'version' => version }
 
         versions_index.add_version('fake-key-1', item1)
 
         expect {
           versions_index.add_version('fake-key-2', item1)
         }.to raise_error(
-          "Trying to add duplicate version `1.9-dev' into index `#{File.join(tmp_dir, 'index.yml')}'"
+          "Trying to add duplicate version `#{version}' into index `#{File.join(tmp_dir, 'index.yml')}'"
         )
       end
 
@@ -94,6 +181,20 @@ module Bosh::Cli
       end
     end
 
+    context 'when versions are loaded from the index file' do
+      before do
+        old_index_hash = {'builds' => { 'fake-key' => { 'version' => 'fake-version' } }}
+        File.open(index_file, 'w') { |f| f.write(Psych.dump(old_index_hash)) }
+      end
+
+      describe '#update_version' do
+        it 'lazily initializes the format-version' do
+          versions_index.update_version('fake-key', { 'version' => 'fake-version', 'sha1' => 'fake-sha1' })
+          expect(load_yaml_file(index_file)).to include('format-version' => VersionsIndex::CURRENT_INDEX_VERSION.to_s)
+        end
+      end
+    end
+
     context 'after versions have been added' do
       let(:builds) do
         {
@@ -105,18 +206,27 @@ module Bosh::Cli
 
       before { builds.each{ |k, v| versions_index.add_version(k, v) } }
 
-      describe '#each_pair' do
+      describe '#each' do
         it 'executes the block on each hash entry' do
-          versions_index.each_pair { |k, v| expect(v).to eq(builds[k]) }
+          versions_index.each { |k, v| expect(v).to eq(builds[k]) }
         end
       end
 
       describe '#select' do
-        it 'executes the block on each hash entry' do
+        it 'calls select on the build hash' do
           selected = versions_index.select { |k, v| v['version'] > 1 }
           expected = builds.select { |k, v| v['version'] > 1 }
 
           expect(selected).to eq(expected)
+        end
+      end
+
+      describe '#find' do
+        it 'calls find on the build hash' do
+          found = versions_index.find { |k, v| v['version'] == 2 }
+          expected = builds.find { |k, v| v['version'] == 2 }
+
+          expect(found).to eq(expected)
         end
       end
 
@@ -145,6 +255,33 @@ module Bosh::Cli
           }.to raise_error(
             "Cannot update entry `#{old_build}' with a different version: `#{new_build}'"
           )
+        end
+      end
+
+      describe '#remove_version' do
+        it 'errors if the entry does not exist' do
+          expect { versions_index.remove_version('non-existant-key') }.to raise_error
+        end
+
+        it 'removes the entry if it exists' do
+          versions_index.add_version('fake-key', { 'version' => 'fake-version' })
+
+          versions_index.remove_version('fake-key')
+
+          expect(versions_index['fake-key']).to be_nil
+        end
+      end
+
+      describe '#find_key_by_version' do
+        it 'returns the key associated with the provided version' do
+          versions_index.add_version('fake-key-61', { 'version' => '61' })
+          versions_index.add_version('fake-key-63', { 'version' => '63' })
+
+          expect(versions_index.find_key_by_version('61')).to eq('fake-key-61')
+        end
+
+        it 'returns nil if the version is not found' do
+          expect(versions_index.find_key_by_version('293')).to be_nil
         end
       end
 

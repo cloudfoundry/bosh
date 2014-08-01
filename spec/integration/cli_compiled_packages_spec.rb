@@ -70,11 +70,17 @@ describe 'cli: compiled_packages', type: :integration do
     expect(deploy_output).to_not match(/compiling packages/i)
   end
 
+  def parse_release_tarball_path(create_release_output)
+    regex = /^Release tarball \(.*\): (.*\.tgz)$/
+    expect(create_release_output).to match(regex)
+    create_release_output.match(regex)[1]
+  end
+
   def create_release
     Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
-      bosh_runner.run_in_current_dir('create release --with-tarball')
+      output = bosh_runner.run_in_current_dir('create release --with-tarball')
+      parse_release_tarball_path(output)
     end
-    File.join(TEST_RELEASE_DIR, 'dev_releases/bosh-release-0+dev.1.tgz')
   end
 end

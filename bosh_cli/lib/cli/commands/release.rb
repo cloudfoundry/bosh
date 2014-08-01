@@ -36,9 +36,12 @@ module Bosh::Cli::Command
     option '--final', 'create final release'
     option '--with-tarball', 'create release tarball'
     option '--dry-run', 'stop before writing release manifest'
+    option '--name NAME', 'specify a custom release name'
     option '--version VERSION', 'specify a custom version number (ex: 1.0.0 or 1.0-beta.2+dev.10)'
     def create(manifest_file = nil)
       check_if_release_dir
+
+      migrate_to_support_multiple_releases
 
       if manifest_file && File.file?(manifest_file)
         if options[:version]
@@ -208,6 +211,15 @@ module Bosh::Cli::Command
 
     private
 
+    def migrate_to_support_multiple_releases
+      default_release_name = release.final_name
+
+      # can't migrate without a default release name
+      return if default_release_name.blank?
+
+      Bosh::Cli::Versions::MultiReleaseSupport.new(@work_dir, default_release_name, self).migrate
+    end
+
     def upload_manifest(manifest_path, upload_options = {})
       package_matches = match_remote_packages(File.read(manifest_path))
 
@@ -309,10 +321,11 @@ module Bosh::Cli::Command
     end
 
     def create_from_spec(version)
-      final = options[:final]
-      force = options[:force]
+      final         = options[:final]
+      force         = options[:force]
+      name          = options[:name]
       manifest_only = !options[:with_tarball]
-      dry_run = options[:dry_run]
+      dry_run       = options[:dry_run]
 
       err("Can't create final release without blobstore secret") if final && !release.has_blobstore_secret?
 
@@ -322,10 +335,16 @@ module Bosh::Cli::Command
 
       if final
         confirm_final_release(dry_run)
-        save_final_release_name if release.final_name.blank?
+        unless name
+          save_final_release_name if release.final_name.blank?
+          name = release.final_name
+        end
         header('Building FINAL release'.make_green)
       else
-        save_dev_release_name if release.dev_name.blank?
+        unless name
+          save_dev_release_name if release.dev_name.blank?
+          name = release.dev_name
+        end
         header('Building DEV release'.make_green)
       end
 
@@ -336,7 +355,7 @@ module Bosh::Cli::Command
       jobs = build_jobs(packages.map(&:name), dry_run, final)
 
       header('Building release')
-      release_builder = build_release(dry_run, final, jobs, manifest_only, packages, version)
+      release_builder = build_release(dry_run, final, jobs, manifest_only, packages, name, version)
 
       header('Release summary')
       show_summary(release_builder)
@@ -344,6 +363,7 @@ module Bosh::Cli::Command
 
       return nil if dry_run
 
+      say("Release name: #{name.make_green}")
       say("Release version: #{release_builder.version.to_s.make_green}")
       say("Release manifest: #{release_builder.manifest_path.make_green}")
 
@@ -408,10 +428,13 @@ module Bosh::Cli::Command
       packages
     end
 
-    def build_release(dry_run, final, jobs, manifest_only, packages, version)
-      release_builder = Bosh::Cli::ReleaseBuilder.new(release, packages, jobs, final: final,
-                                                      commit_hash: commit_hash, version: version,
-                                                      uncommitted_changes: dirty_state?)
+    def build_release(dry_run, final, jobs, manifest_only, packages, name, version)
+      release_builder = Bosh::Cli::ReleaseBuilder.new(release, packages, jobs, name,
+        final: final,
+        commit_hash: commit_hash,
+        version: version,
+        uncommitted_changes: dirty_state?
+      )
 
       unless dry_run
         if manifest_only
@@ -468,25 +491,7 @@ module Bosh::Cli::Command
       if $? != 0
         say("error running 'git init':\n#{out}")
       else
-        File.open('.gitignore', 'w') do |f|
-          f << <<-EOS.gsub(/^\s{10}/, '')
-          config/dev.yml
-          config/private.yml
-          releases/*.tgz
-          dev_releases
-          .blobs
-          blobs
-          .dev_builds
-          .idea
-          .DS_Store
-          .final_builds/jobs/**/*.tgz
-          .final_builds/packages/**/*.tgz
-          *.swp
-          *~
-          *#
-          #*
-          EOS
-        end
+        Bosh::Cli::SourceControl::GitIgnore.new(@work_dir).update
       end
     rescue Errno::ENOENT
       say("Unable to run 'git init'".make_red)

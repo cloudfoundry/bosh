@@ -7,13 +7,13 @@ module Bosh::Cli
     attr_accessor :dry_run
 
     def init_indices
-      @dev_index   = VersionsIndex.new(@dev_builds_dir)
-      @dev_storage = LocalVersionStorage.new(@dev_builds_dir)
+      @dev_index   = Versions::VersionsIndex.new(@dev_builds_dir)
+      @dev_storage = Versions::LocalVersionStorage.new(@dev_builds_dir)
 
-      @final_index = VersionsIndex.new(@final_builds_dir)
-      @final_storage = LocalVersionStorage.new(@final_builds_dir)
+      @final_index = Versions::VersionsIndex.new(@final_builds_dir)
+      @final_storage = Versions::LocalVersionStorage.new(@final_builds_dir)
 
-      @final_resolver = VersionFileResolver.new(@final_storage, @blobstore)
+      @final_resolver = Versions::VersionFileResolver.new(@final_storage, @blobstore)
     end
 
     def final?

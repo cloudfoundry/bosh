@@ -3,16 +3,21 @@ require 'spec_helper'
 describe 'cli: package compilation', type: :integration do
   with_reset_sandbox_before_each
 
+  def parse_release_tarball_path(create_release_output)
+    regex = /^Release tarball \(.*\): (.*\.tgz)$/
+    expect(create_release_output).to match(regex)
+    create_release_output.match(regex)[1]
+  end
+
   it 'uses compile package cache for previously compiled packages' do
     stemcell_filename = spec_asset('valid_stemcell.tgz')
 
     simple_blob_store_path = current_sandbox.blobstore_storage_dir
 
-    release_file = 'dev_releases/bosh-release-0+dev.1.tgz'
-    release_filename = File.join(TEST_RELEASE_DIR, release_file)
-    Dir.chdir(TEST_RELEASE_DIR) do
+    release_filename = Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
-      bosh_runner.run_in_current_dir('create release --with-tarball')
+      output = bosh_runner.run_in_current_dir('create release --with-tarball')
+      parse_release_tarball_path(output)
     end
 
     deployment_manifest = yaml_file(

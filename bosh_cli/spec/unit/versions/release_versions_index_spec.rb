@@ -1,9 +1,9 @@
 require 'spec_helper'
 require 'common/version/release_version_list'
 
-module Bosh::Cli
+module Bosh::Cli::Versions
   describe ReleaseVersionsIndex do
-    let(:version_index) { instance_double('Bosh::Cli::VersionsIndex') }
+    let(:version_index) { instance_double('Bosh::Cli::Versions::VersionsIndex') }
     let(:release_versions_index) { ReleaseVersionsIndex.new(version_index) }
 
     describe '#versions' do

@@ -3,6 +3,12 @@ require 'spec_helper'
 describe 'cli: deployment process', type: :integration do
   with_reset_sandbox_before_each
 
+  def parse_release_tarball_path(create_release_output)
+    regex = /^Release tarball \(.*\): (.*\.tgz)$/
+    expect(create_release_output).to match(regex)
+    create_release_output.match(regex)[1]
+  end
+
   it 'successfully performed with minimal manifest' do
     release_filename = spec_asset('valid_release.tgz')
     deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.minimal_manifest)
@@ -49,18 +55,17 @@ describe 'cli: deployment process', type: :integration do
 
   it 'generates release and deploys it via simple manifest' do
     # Test release created with bosh (see spec/assets/test_release_template)
-    release_file = 'dev_releases/bosh-release-0+dev.1.tgz'
-    release_filename = File.join(TEST_RELEASE_DIR, release_file)
     stemcell_filename = spec_asset('valid_stemcell.tgz') # Dummy stemcell (ubuntu-stemcell 1)
 
-    Dir.chdir(TEST_RELEASE_DIR) do
+    release_filename = Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
-      bosh_runner.run_in_current_dir('create release --with-tarball')
+      output = bosh_runner.run_in_current_dir('create release --with-tarball')
+      parse_release_tarball_path(output)
     end
 
     deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.simple_manifest)
-    expect(File.exists?(release_filename)).to be(true)
-    expect(File.exists?(deployment_manifest.path)).to be(true)
+    expect(File).to exist(release_filename)
+    expect(File).to exist(deployment_manifest.path)
 
     target_and_login
     bosh_runner.run("deployment #{deployment_manifest.path}")

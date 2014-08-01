@@ -316,13 +316,14 @@ describe Bosh::Cli::JobBuilder do
     add_monit('foo')
     fingerprint = '44cf6c4f4976f482ec497dfe77e47d876a7a83a1'
 
-    final_storage_dir = File.join(@release_dir, '.final_builds', 'jobs', 'foo')
-    final_versions = Bosh::Cli::VersionsIndex.new(final_storage_dir)
-    final_storage = Bosh::Cli::LocalVersionStorage.new(final_storage_dir)
+    job_name = 'foo'
+    final_storage_dir = File.join(@release_dir, '.final_builds', 'jobs', job_name)
+    final_versions = Bosh::Cli::Versions::VersionsIndex.new(final_storage_dir)
+    final_storage = Bosh::Cli::Versions::LocalVersionStorage.new(final_storage_dir)
 
-    dev_storage_dir = File.join(@release_dir, '.dev_builds', 'jobs', 'foo')
-    dev_versions   = Bosh::Cli::VersionsIndex.new(dev_storage_dir)
-    dev_storage = Bosh::Cli::LocalVersionStorage.new(dev_storage_dir)
+    dev_storage_dir = File.join(@release_dir, '.dev_builds', 'jobs', job_name)
+    dev_versions   = Bosh::Cli::Versions::VersionsIndex.new(dev_storage_dir)
+    dev_storage = Bosh::Cli::Versions::LocalVersionStorage.new(dev_storage_dir)
 
     add_version(final_versions, final_storage,
       fingerprint,
@@ -334,19 +335,19 @@ describe Bosh::Cli::JobBuilder do
       { 'version' => fingerprint },
       get_tmp_file_path('dev_payload'))
 
-    builder = new_builder('foo', [], ['bar', 'baz'], [])
+    builder = new_builder(job_name, [], ['bar', 'baz'], [])
 
     builder.fingerprint.should == fingerprint
 
     builder.use_final_version
     builder.version.should == fingerprint
     builder.tarball_path.should == File.join(
-        @release_dir, '.final_builds', 'jobs', 'foo', "#{fingerprint}.tgz")
+        @release_dir, '.final_builds', 'jobs', job_name, "#{fingerprint}.tgz")
 
     builder.use_dev_version
     builder.version.should == fingerprint
     builder.tarball_path.should == File.join(
-        @release_dir, '.dev_builds', 'jobs', 'foo', "#{fingerprint}.tgz")
+        @release_dir, '.dev_builds', 'jobs', job_name, "#{fingerprint}.tgz")
   end
 
   it 'bumps major dev version in sync with final version' do

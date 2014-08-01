@@ -25,7 +25,7 @@ module CommandLoggedInUserSharedExamples
 
   def it_requires_logged_in_user(runnable)
     context 'when user is not logged in' do
-      before { command.stub(:logged_in? => false) }
+      before { allow(command).to receive(:logged_in?).and_return(false) }
       before { command.options[:target] = 'http://bosh-target.example.com' }
 
       it 'requires that the user is logged in' do

@@ -7,7 +7,7 @@ describe Bosh::Cli::Command::Misc do
 
   let(:command) { described_class.new }
   let(:director) { instance_double(Bosh::Cli::Client::Director) }
-  let(:versions_index) { instance_double(Bosh::Cli::VersionsIndex) }
+  let(:versions_index) { instance_double(Bosh::Cli::Versions::VersionsIndex) }
   let(:release) { instance_double(Bosh::Cli::Release) }
   let(:target) { 'https://127.0.0.1:2555' }
   let(:target_name) { 'micro-fake-bosh' }
@@ -15,7 +15,7 @@ describe Bosh::Cli::Command::Misc do
 
   before do
     Bosh::Cli::Client::Director.stub(:new).and_return(director)
-    Bosh::Cli::VersionsIndex.stub(:new).and_return(versions_index)
+    Bosh::Cli::Versions::VersionsIndex.stub(:new).and_return(versions_index)
     Bosh::Cli::Release.stub(:new).and_return(release)
   end
 
