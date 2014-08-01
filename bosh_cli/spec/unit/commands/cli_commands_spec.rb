@@ -157,11 +157,11 @@ describe Bosh::Cli::Command::Base do
     end
   end
 
-  describe Bosh::Cli::Command::Release do
-    before :each do
-      @director = double(Bosh::Cli::Client::Director)
+  describe Bosh::Cli::Command::Release::DeleteRelease do
+    before do
+      @director = instance_double('Bosh::Cli::Client::Director')
 
-      @cmd = Bosh::Cli::Command::Release.new
+      @cmd = Bosh::Cli::Command::Release::DeleteRelease.new
       @cmd.add_option(:non_interactive, true)
 
       @cmd.stub(:target).and_return('test')
@@ -207,6 +207,20 @@ describe Bosh::Cli::Command::Base do
       @cmd.stub(:ask).and_return('')
       @cmd.delete('foo')
     end
+  end
+
+  describe Bosh::Cli::Command::Release::ListReleases do
+    before do
+      @director = instance_double('Bosh::Cli::Client::Director')
+
+      @cmd = Bosh::Cli::Command::Release::ListReleases.new
+      @cmd.add_option(:non_interactive, true)
+
+      @cmd.stub(:target).and_return('test')
+      @cmd.stub(:username).and_return('user')
+      @cmd.stub(:password).and_return('pass')
+      @cmd.stub(:director).and_return(@director)
+    end
 
     describe 'listing releases' do
       before do
@@ -231,6 +245,7 @@ describe Bosh::Cli::Command::Base do
       +-----------+--------------------+
           OUT
         end
+
 
         it 'lists releases in a nice table and include information about current deployments' do
           @director.stub(list_releases: [release])
