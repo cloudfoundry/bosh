@@ -2,6 +2,28 @@ require 'cli/client/errands_client'
 
 module Bosh::Cli::Command
   class Errand < Base
+    usage 'errands'
+    desc 'List available errands'
+    def errands
+      deployment_required
+      errands = list_errands
+
+      if errands.size > 0
+        errands_table = table do |t|
+          headings = ['Job', 'VMs']
+          t.headings = headings
+
+          errands.each do |errand|
+            t << [errand['name'], errand['instances']]
+          end
+        end
+        nl
+        say(errands_table)
+      else
+        err("Deployment has no available errands")
+      end
+    end
+
     usage 'run errand'
     desc 'Run specified errand'
     option '--download-logs', 'download logs'
