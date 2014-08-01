@@ -155,6 +155,31 @@ describe 'cli releases', type: :integration do
         expect(parse_release_version(out)).to eq('0+dev.1')
       end
     end
+
+    it 'allows creation of a new final release with a new name' do
+      Dir.chdir(TEST_RELEASE_DIR) do
+        out = bosh_runner.run_in_current_dir('create release --final')
+        expect(parse_release_name(out)).to eq('bosh-release')
+        expect(parse_release_version(out)).to eq('1')
+
+        `git add config/final.yml`
+        `git add .final_builds`
+        `git add releases`
+        `git commit -m 'final release 1'`
+
+        out = bosh_runner.run_in_current_dir('create release --final --name "bosh-fork"')
+        expect(parse_release_name(out)).to eq('bosh-fork')
+        expect(parse_release_version(out)).to eq('1')
+      end
+    end
+
+    it 'allows creation of a new final release with a custom name & version' do
+      Dir.chdir(TEST_RELEASE_DIR) do
+        out = bosh_runner.run_in_current_dir('create release --final --name fake-release --version 2.0.1')
+        expect(parse_release_name(out)).to eq('fake-release')
+        expect(parse_release_version(out)).to eq('2.0.1')
+      end
+    end
   end
 
   it 'creates a new final release with a default version' do
