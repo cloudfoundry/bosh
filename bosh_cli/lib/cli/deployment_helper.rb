@@ -282,6 +282,11 @@ module Bosh::Cli
       jobs.find { |job| job.fetch('name') == job_name }
     end
 
+    def list_errands
+      jobs = prepare_deployment_manifest.fetch('jobs')
+      jobs.select { |job| job.fetch('lifecycle', nil) == 'errand' }
+    end
+
     def find_deployment(name)
       if File.exists?(name)
         File.expand_path(name)
