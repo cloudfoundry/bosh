@@ -100,6 +100,6 @@ tmpdir = Dir.mktmpdir
 at_exit { FileUtils.rm_rf(tmpdir) }
 ENV['TMPDIR'] = tmpdir
 
-Dir[File.dirname(__FILE__) + '/cli/commands/*.rb'].each do |file|
+Dir[File.dirname(__FILE__) + '/cli/commands/**/*.rb'].each do |file|
   require file
 end

@@ -197,7 +197,7 @@ describe 'AWS Bootstrap commands' do
       it 'use the existent release' do
         mock_s3.should_not_receive(:copy_remote_file)
         Bosh::Exec.should_not_receive(:sh).with('bundle exec rake release:create_dev_release')
-        Bosh::Cli::Command::Release.any_instance.should_not_receive(:upload)
+        Bosh::Cli::Command::Release::UploadRelease.any_instance.should_not_receive(:upload)
 
         expect do
           aws.bootstrap_bosh
@@ -289,7 +289,7 @@ describe 'AWS Bootstrap commands' do
 
         # Stub out the release creation to make the tests MUCH faster,
         # instead of actually building the tarball.
-        Bosh::Cli::Command::Release.any_instance.should_receive(:upload)
+        Bosh::Cli::Command::Release::UploadRelease.any_instance.should_receive(:upload)
 
         stub_request(:get, 'http://127.0.0.1:25555/stemcells').
             to_return(:status => 200, :body => '[]').then.

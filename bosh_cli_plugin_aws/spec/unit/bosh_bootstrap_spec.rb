@@ -20,8 +20,8 @@ module Bosh::Aws
     let(:deployment_command) { instance_double('Bosh::Cli::Command::Deployment').as_null_object }
     before { allow(Bosh::Cli::Command::Deployment).to receive(:new).and_return(deployment_command) }
 
-    let(:release_command) { instance_double('Bosh::Cli::Command::Release').as_null_object }
-    before { allow(Bosh::Cli::Command::Release).to receive(:new).and_return(release_command) }
+    let(:upload_command) { instance_double('Bosh::Cli::Command::Release::UploadRelease').as_null_object }
+    before { allow(Bosh::Cli::Command::Release::UploadRelease).to receive(:new).and_return(upload_command) }
 
     let(:misc_command) { instance_double('Bosh::Cli::Command::Misc', options: {}).as_null_object }
     before { allow(Bosh::Cli::Command::Misc).to receive(:new).and_return(misc_command) }

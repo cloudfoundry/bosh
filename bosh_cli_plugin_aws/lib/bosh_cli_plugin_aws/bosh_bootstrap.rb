@@ -84,9 +84,9 @@ This command should be used for bootstrapping bosh from scratch.
       end
 
       def fetch_and_upload_release
-        release_command = Bosh::Cli::Command::Release.new
-        release_command.options = self.options
-        release_command.upload(bosh_release)
+        upload_command = Bosh::Cli::Command::Release::UploadRelease.new
+        upload_command.options = self.options
+        upload_command.upload(bosh_release)
       end
 
       def target_bosh_and_log_in
