@@ -9,6 +9,10 @@ export PATH=/var/vcap/packages/ruby/bin:$PATH
 export GEM_HOME=/var/vcap/packages/health_monitor/gem_home/ruby/1.9.1
 export BUNDLE_GEMFILE=/var/vcap/packages/health_monitor/Gemfile
 
+function pid_exists() {
+  ps -p $1 &> /dev/null
+}
+
 case $1 in
 
   start)
@@ -25,14 +29,18 @@ case $1 in
 
   stop)
     PID=$(head -1 $PIDFILE)
-    kill $PID
+    if [ ! -z $PID ] && pid_exists $PID; then
+      kill $PID
+    fi
     while [ -e /proc/$PID ]; do sleep 0.1; done
     rm -f $PIDFILE
     ;;
 
   kill)
     PID=$(head -1 $PIDFILE)
-    kill -9 $PID
+    if [ ! -z $PID ] && pid_exists $PID; then
+      kill -9 $PID
+    fi
     rm -f $PIDFILE
     ;;
 

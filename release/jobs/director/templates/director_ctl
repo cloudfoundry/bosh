@@ -19,6 +19,10 @@ export TMPDIR=/var/vcap/data/tmp/director
 export C_INCLUDE_PATH=/var/vcap/packages/sqlite/include:/var/vcap/packages/libpq/include:$C_INCLUDE_PATH
 export LIBRARY_PATH=/var/vcap/packages/sqlite/lib:/var/vcap/packages/libpq/lib:/var/vcap/packages/mysqlclient/lib:$LIBRARY_PATH
 
+function pid_exists() {
+  ps -p $1 &> /dev/null
+}
+
 case $1 in
 
   start)
@@ -63,7 +67,9 @@ case $1 in
 
   stop)
     PID=$(head -1 $PIDFILE)
-    kill $PID
+    if [ ! -z $PID ] && pid_exists $PID; then
+      kill $PID
+    fi
     while [ -e /proc/$PID ]; do sleep 0.1; done
     rm -f $PIDFILE
     ;;

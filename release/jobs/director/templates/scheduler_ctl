@@ -16,6 +16,10 @@ export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/1.9.1
 
 export TMPDIR=/var/vcap/data/tmp/director
 
+function pid_exists() {
+  ps -p $1 &> /dev/null
+}
+
 case $1 in
 
   start)
@@ -35,7 +39,9 @@ case $1 in
 
   stop)
     PID=$(head -1 $PIDFILE)
-    kill $PID
+    if [ ! -z $PID ] && pid_exists $PID; then
+      kill $PID
+    fi
     while [ -e /proc/$PID ]; do sleep 0.1; done
     rm -f $PIDFILE
     ;;

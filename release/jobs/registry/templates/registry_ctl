@@ -8,6 +8,10 @@ RUNAS=vcap
 export PATH=/var/vcap/packages/ruby/bin:$PATH
 export GEM_HOME=/var/vcap/packages/registry/gem_home
 
+function pid_exists() {
+  ps -p $1 &> /dev/null
+}
+
 case $1 in
 
   start)
@@ -34,7 +38,9 @@ case $1 in
 
   stop)
     PID=$(head -1 $PIDFILE)
-    kill $PID
+    if [ ! -z $PID ] && pid_exists $PID; then
+      kill $PID
+    fi
     while [ -e /proc/$PID ]; do sleep 0.1; done
     rm -f $PIDFILE
     ;;
