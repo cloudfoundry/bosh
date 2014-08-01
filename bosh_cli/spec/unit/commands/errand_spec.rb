@@ -7,6 +7,33 @@ describe Bosh::Cli::Command::Errand do
 
   ec = Bosh::Cli::Client::ErrandsClient
 
+  describe 'errands' do
+    def perform; command.errands; end
+
+    it 'shows errands in a table' do
+      allow(command).to receive(:prepare_deployment_manifest).and_return({
+        "jobs" => [
+          { "name" => "not-an-errand" },
+          { "name" => "an-errand-with-1-instance", "lifecycle" => "errand", "instances" => 1 },
+          { "name" => "an-errand-with-0-instances", "lifecycle" => "errand", "instances" => 0 },
+        ]
+      })
+      perform
+      expect(command.exit_code).to eq(0)
+    end
+
+    it 'errors if no errands in manifest' do
+      allow(command).to receive(:prepare_deployment_manifest).and_return({
+        "jobs" => [
+          { "name" => "not-an-errand" },
+        ]
+      })
+      expect {
+        perform
+      }.to raise_error(Bosh::Cli::CliError, 'Deployment has no available errands')
+    end
+  end
+
   describe 'run errand' do
     def perform; command.run_errand('fake-errand-name'); end
 
