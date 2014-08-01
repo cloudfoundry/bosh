@@ -10,6 +10,8 @@ describe Bosh::Cli::Command::Errand do
   describe 'errands' do
     def perform; command.errands; end
 
+    with_deployment
+
     it 'shows errands in a table' do
       allow(command).to receive(:prepare_deployment_manifest).and_return({
         "jobs" => [
