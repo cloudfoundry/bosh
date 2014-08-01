@@ -28,10 +28,19 @@ module Bosh::Cli::Command
     desc 'Run specified errand'
     option '--download-logs', 'download logs'
     option '--logs-dir destination_directory', String, 'logs download directory'
-    def run_errand(errand_name)
+    def run_errand(errand_name=nil)
       auth_required
       deployment_required
 
+      unless errand_name
+        errand = prompt_for_errand_name
+        errand_name = errand['name']
+      end
+      perform_run_errand(errand_name)
+    end
+
+    private
+    def perform_run_errand(errand_name)
       deployment_name = prepare_deployment_manifest['name']
 
       errands_client = Bosh::Cli::Client::ErrandsClient.new(director)

@@ -264,6 +264,21 @@ module Bosh::Cli
       end
     end
 
+    # return a job/errand selected by user by name
+    def prompt_for_errand_name
+      errands = list_errands
+
+      err("Deployment has no available errands") if errands.size == 0
+      return errands.first if errands.size == 1
+
+      choose do |menu|
+        menu.prompt = 'Choose an errand: '
+        errands.each do |errand, index|
+          menu.choice("#{errand['name']}") { errand }
+        end
+      end
+    end
+
     def jobs_and_indexes
       jobs = prepare_deployment_manifest.fetch('jobs')
 

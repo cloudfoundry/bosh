@@ -14,10 +14,10 @@ describe Bosh::Cli::Command::Errand do
 
     it 'shows errands in a table' do
       allow(command).to receive(:prepare_deployment_manifest).and_return({
-        "jobs" => [
-          { "name" => "not-an-errand" },
-          { "name" => "an-errand-with-1-instance", "lifecycle" => "errand", "instances" => 1 },
-          { "name" => "an-errand-with-0-instances", "lifecycle" => "errand", "instances" => 0 },
+        'jobs' => [
+          { 'name' => 'not-an-errand' },
+          { 'name' => 'an-errand-with-1-instance', 'lifecycle' => 'errand', 'instances' => 1 },
+          { 'name' => 'an-errand-with-0-instances', 'lifecycle' => 'errand', 'instances' => 0 },
         ]
       })
       perform
@@ -26,8 +26,8 @@ describe Bosh::Cli::Command::Errand do
 
     it 'errors if no errands in manifest' do
       allow(command).to receive(:prepare_deployment_manifest).and_return({
-        "jobs" => [
-          { "name" => "not-an-errand" },
+        'jobs' => [
+          { 'name' => 'not-an-errand' },
         ]
       })
       expect {
@@ -36,7 +36,7 @@ describe Bosh::Cli::Command::Errand do
     end
   end
 
-  describe 'run errand' do
+  describe 'run errand NAME' do
     def perform; command.run_errand('fake-errand-name'); end
 
     with_director
@@ -386,6 +386,50 @@ describe Bosh::Cli::Command::Errand do
     end
 
     it_requires_target ->(command) { command.run_errand(nil) }
+  end
+
+  describe 'run errand' do
+    def perform; command.run_errand; end
+
+    with_director
+    with_target
+    with_logged_in_user
+    with_deployment
+
+    it 'with 0 errands raise error' do
+      allow(command).to receive(:prepare_deployment_manifest).and_return({
+        'jobs' => [
+          { 'name' => 'not-an-errand' },
+        ]
+      })
+      expect {
+        perform
+      }.to raise_error(Bosh::Cli::CliError, 'Deployment has no available errands')
+    end
+
+    it 'with 1 errand selects only errand and invokes run_errand(name)' do
+      expect(command).to receive(:perform_run_errand).with('an-errand-with-1-instance')
+      allow(command).to receive(:prepare_deployment_manifest).and_return({
+        'jobs' => [
+          { 'name' => 'not-an-errand' },
+          { 'name' => 'an-errand-with-1-instance', 'lifecycle' => 'errand', 'instances' => 1 },
+        ]
+      })
+      perform
+    end
+
+    it 'with 2+ errands, prompts and invokes run_errand(name)' do
+      expect(command).to receive(:perform_run_errand).with('an-errand-with-1-instance')
+      expect(command).to receive(:choose).and_return({'name' => 'an-errand-with-1-instance'})
+      allow(command).to receive(:prepare_deployment_manifest).and_return({
+        'jobs' => [
+          { 'name' => 'not-an-errand' },
+          { 'name' => 'an-errand-with-1-instance', 'lifecycle' => 'errand', 'instances' => 1 },
+          { 'name' => 'an-errand-with-0-instances', 'lifecycle' => 'errand', 'instances' => 0 },
+        ]
+      })
+      perform
+    end
   end
 
   def expect_output(expected_output)
