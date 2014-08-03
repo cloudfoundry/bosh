@@ -10,12 +10,8 @@ module Bosh::Cli::Command
 
       if errands.size > 0
         errands_table = table do |t|
-          headings = ['Job', 'VMs']
-          t.headings = headings
-
-          errands.each do |errand|
-            t << [errand['name'], errand['instances']]
-          end
+          t.headings = ['Name']
+          errands.each { |errand| t << [errand['name']] }
         end
         nl
         say(errands_table)
