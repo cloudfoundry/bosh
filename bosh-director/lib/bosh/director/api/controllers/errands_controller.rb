@@ -10,9 +10,9 @@ module Bosh::Director
 
         manifest = Psych.load(deployment.manifest)
         # Bosh::Director::DeploymentPlan::Planner
-        deployment = DeploymentPlan::Planner.parse(manifest, {}, Config.event_log, Config.logger)
+        deployment_plan = DeploymentPlan::Planner.parse(manifest, {}, Config.event_log, Config.logger)
 
-        errands = deployment.jobs.select { |job| job.can_run_as_errand? }
+        errands = deployment_plan.jobs.select { |job| job.can_run_as_errand? }
         # Bosh::Director::DeploymentPlan::Job
         errand_data = errands.map do |errand|
           {
