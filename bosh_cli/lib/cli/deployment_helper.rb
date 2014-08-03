@@ -298,8 +298,8 @@ module Bosh::Cli
     end
 
     def list_errands
-      jobs = prepare_deployment_manifest.fetch('jobs')
-      jobs.select { |job| job.fetch('lifecycle', nil) == 'errand' }
+      deployment_name = prepare_deployment_manifest.fetch('name')
+      director.list_errands(deployment_name)
     end
 
     def find_deployment(name)
