@@ -121,6 +121,10 @@ module Bosh
           get_json('/deployments')
         end
 
+        def list_errands(deployment_name)
+          get_json("/deployments/#{deployment_name}/errands")
+        end
+
         def list_running_tasks(verbose = 1)
           get_json("/tasks?state=processing,cancelling,queued&verbose=#{verbose}")
         end

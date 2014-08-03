@@ -10,29 +10,33 @@ describe Bosh::Cli::Command::Errand do
   describe 'errands' do
     def perform; command.errands; end
 
-    with_deployment
+    with_director
 
-    it 'shows errands in a table' do
-      allow(command).to receive(:prepare_deployment_manifest).and_return({
-        'jobs' => [
-          { 'name' => 'not-an-errand' },
-          { 'name' => 'an-errand-with-1-instance', 'lifecycle' => 'errand', 'instances' => 1 },
-          { 'name' => 'an-errand-with-0-instances', 'lifecycle' => 'errand', 'instances' => 0 },
-        ]
-      })
-      perform
-      expect(command.exit_code).to eq(0)
-    end
+    context 'when some director is targeted' do
+      with_target
 
-    it 'errors if no errands in manifest' do
-      allow(command).to receive(:prepare_deployment_manifest).and_return({
-        'jobs' => [
-          { 'name' => 'not-an-errand' },
-        ]
-      })
-      expect {
-        perform
-      }.to raise_error(Bosh::Cli::CliError, 'Deployment has no available errands')
+      context 'when user is logged in' do
+        with_logged_in_user
+
+        context 'when deployment is selected' do
+          with_deployment
+
+          before { allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'fake-deployment'}) }
+
+          it 'shows errands in a table' do
+            expect(director).to receive(:list_errands).and_return([{"name" => "an-errand"}, {"name" => "another-errand"}])
+            perform
+            expect(command.exit_code).to eq(0)
+          end
+
+          it 'errors if no errands in manifest' do
+            expect(director).to receive(:list_errands).and_return([])
+            expect {
+              perform
+            }.to raise_error(Bosh::Cli::CliError, 'Deployment has no available errands')
+          end
+        end
+      end
     end
   end
 
@@ -397,37 +401,27 @@ describe Bosh::Cli::Command::Errand do
     with_deployment
 
     it 'with 0 errands raise error' do
-      allow(command).to receive(:prepare_deployment_manifest).and_return({
-        'jobs' => [
-          { 'name' => 'not-an-errand' },
-        ]
-      })
+      allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'fake-deployment'})
+      expect(director).to receive(:list_errands).and_return([])
+
       expect {
         perform
       }.to raise_error(Bosh::Cli::CliError, 'Deployment has no available errands')
     end
 
     it 'with 1 errand selects only errand and invokes run_errand(name)' do
-      expect(command).to receive(:perform_run_errand).with('an-errand-with-1-instance')
-      allow(command).to receive(:prepare_deployment_manifest).and_return({
-        'jobs' => [
-          { 'name' => 'not-an-errand' },
-          { 'name' => 'an-errand-with-1-instance', 'lifecycle' => 'errand', 'instances' => 1 },
-        ]
-      })
+      expect(command).to receive(:perform_run_errand).with('an-errand')
+      allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'fake-deployment'})
+      expect(director).to receive(:list_errands).and_return([{"name" => "an-errand"}])
+
       perform
     end
 
     it 'with 2+ errands, prompts and invokes run_errand(name)' do
-      expect(command).to receive(:perform_run_errand).with('an-errand-with-1-instance')
-      expect(command).to receive(:choose).and_return({'name' => 'an-errand-with-1-instance'})
-      allow(command).to receive(:prepare_deployment_manifest).and_return({
-        'jobs' => [
-          { 'name' => 'not-an-errand' },
-          { 'name' => 'an-errand-with-1-instance', 'lifecycle' => 'errand', 'instances' => 1 },
-          { 'name' => 'an-errand-with-0-instances', 'lifecycle' => 'errand', 'instances' => 0 },
-        ]
-      })
+      expect(command).to receive(:perform_run_errand).with('an-errand')
+      expect(command).to receive(:choose).and_return({'name' => 'an-errand'})
+      allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'fake-deployment'})
+      expect(director).to receive(:list_errands).and_return([{"name" => "an-errand"}, {"name" => "another-errand"}])
       perform
     end
   end
