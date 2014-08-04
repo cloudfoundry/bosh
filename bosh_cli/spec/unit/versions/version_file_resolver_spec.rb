@@ -18,15 +18,16 @@ module Bosh::Cli::Versions
           let(:blobstore_id) { 'fake-blobstore-id' }
 
           context 'when the file is in the blobstore' do
+            let(:blobstore_file_sha1) { Digest::SHA1.hexdigest(blobstore_file_content) }
+
             before do
-              allow(blobstore).to receive(:get).with(blobstore_id, anything) do |blobstore_id, dest_file|
+              allow(blobstore).to receive(:get).with(blobstore_id, anything, sha1: blobstore_file_sha1) do |blobstore_id, dest_file|
                 dest_file.write(blobstore_file_content)
               end
             end
             let(:blobstore_file_content) { 'fake-blobstore-file-contents' }
 
             context 'when the sha1 of the blobstore file matches the requested sha1' do
-              let(:blobstore_file_sha1) { Digest::SHA1.hexdigest(blobstore_file_content) }
 
               it 'downloads the file form the blobstore and puts it in the storage' do
                 expect(storage).to receive(:put_file).with(version, anything).and_return('fake/storage/path')
@@ -36,20 +37,26 @@ module Bosh::Cli::Versions
               end
             end
 
-            context 'when the sha1 of the blobstore file does not match the requested sha1' do
-              it 'raises an error' do
+            context 'when the blobstore raises an error' do
+              let(:blobstore_file_sha1) { 'fake-non-matching-sha1' }
+              let(:blobstore_error) { Bosh::Cli::BlobstoreError.new('sha1 mismatch') }
+
+              before do
+                allow(blobstore).to receive(:get).with(blobstore_id, anything, sha1: blobstore_file_sha1).
+                  and_raise(blobstore_error)
+              end
+
+              it 'propagates that error' do
                 expect {
-                  resolver.find_file(blobstore_id, 'fake-non-matching-sha1', version, desc)
-                }.to raise_error(
-                  /does not match expected SHA1/
-                )
+                  resolver.find_file(blobstore_id, blobstore_file_sha1, version, desc)
+                }.to raise_error(blobstore_error)
               end
             end
           end
 
           context 'when the file is not in the blobstore' do
             it 'raises an error' do
-              expect(blobstore).to receive(:get).with(blobstore_id, anything) do
+              expect(blobstore).to receive(:get).with(blobstore_id, anything, sha1: 'fake-non-matching-sha1') do
                 raise 'file not in blobstore'
               end
 
