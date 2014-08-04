@@ -166,9 +166,12 @@ module Bosh::AwsCloud
       with_thread_name("create_disk(#{size}, #{instance_id})") do
         validate_disk_size(size)
 
+        volume_type = "gp2" #hardcode usage of SSD backed EBS instances, until a way to configure volume_type this is completed
+
         # if the disk is created for an instance, use the same availability zone as they must match
         volume = @ec2.volumes.create(:size => (size / 1024.0).ceil,
-                                     :availability_zone => @az_selector.select_availability_zone(instance_id))
+                                     :availability_zone => @az_selector.select_availability_zone(instance_id),
+                                     :volume_type => volume_type)
 
         logger.info("Creating volume '#{volume.id}'")
         ResourceWait.for_volume(volume: volume, state: :available)
