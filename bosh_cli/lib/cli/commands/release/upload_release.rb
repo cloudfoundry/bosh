@@ -95,9 +95,14 @@ module Bosh::Cli::Command
 
         remote_release = get_remote_release(tarball.release_name) rescue nil
         if remote_release && !rebase
-          if remote_release['versions'].include?(tarball.version)
+          version = if new_director?
+                      Bosh::Common::Version::ReleaseVersion.parse(tarball.version)
+                    else
+                      tarball.version
+                    end
+          if remote_release['versions'].include?(version.to_s)
             if upload_options[:skip_if_exists]
-              say("Release `#{tarball.release_name}/#{tarball.version}' already exists. Skipping upload.")
+              say("Release `#{tarball.release_name}/#{version}' already exists. Skipping upload.")
               return
             else
               err('This release version has already been uploaded')
@@ -187,15 +192,16 @@ module Bosh::Cli::Command
       end
 
       def should_convert_to_old_format?(version)
-        director_version = director.get_status['version']
-        new_format_director_version = '1.2580.0'
-        if Bosh::Common::Version::BoshVersion.parse(director_version) >=
-          Bosh::Common::Version::BoshVersion.parse(new_format_director_version)
-          return false
-        end
-
+        return false if new_director?
         old_format = Bosh::Common::Version::ReleaseVersion.parse(version).to_old_format
         old_format && version != old_format
+      end
+
+      def new_director?
+        director_version = director.get_status['version']
+        new_format_director_version = '1.2580.0'
+        Bosh::Common::Version::BoshVersion.parse(director_version) >=
+          Bosh::Common::Version::BoshVersion.parse(new_format_director_version)
       end
     end
   end

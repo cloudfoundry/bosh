@@ -137,35 +137,82 @@ module Bosh::Cli::Command::Release
           end
 
           context 'when release already exists' do
-            before { allow(director).to receive(:get_release).and_return(
-              {'jobs' => nil, 'packages' => nil, 'versions' => ['0.1']}) }
-            let(:tarball_path) { spec_asset('valid_release.tgz') }
+            before do
+              allow(director).to receive(:get_status).and_return(
+                {
+                  'version' => director_version
+                }
+              )
+            end
 
-            context 'when --skip-if-exists flag is provided' do
-              before { command.add_option(:skip_if_exists, true) }
+            context 'when the director is a new version' do
+              let(:director_version) { '1.2580.0 (release:4fef83a2 bosh:4fef83a2)' }
+              before { allow(director).to receive(:get_release).and_return(
+                {'jobs' => nil, 'packages' => nil, 'versions' => ['0+dev.1']}) }
+              let(:tarball_path) { spec_asset('valid_release.tgz') }
 
-              it 'does not upload release' do
-                expect(director).to_not receive(:upload_release)
-                command.upload(tarball_path)
+              context 'when --skip-if-exists flag is given' do
+                before { command.add_option(:skip_if_exists, true) }
+
+                it 'does not upload release' do
+                  expect(director).to_not receive(:upload_release)
+                  command.upload(tarball_path)
+                end
+
+                it 'returns successfully' do
+                  expect {
+                    command.upload(tarball_path)
+                  }.to_not raise_error
+                end
               end
 
-              it 'returns successfully' do
-                expect {
-                  command.upload(tarball_path)
-                }.to_not raise_error
+              context 'when --skip-if-exists flag is not given' do
+                it 'does not upload release' do
+                  expect(director).to_not receive(:upload_release)
+                  command.upload(tarball_path) rescue nil
+                end
+
+                it 'raises an error' do
+                  expect {
+                    command.upload(tarball_path)
+                  }.to raise_error(Bosh::Cli::CliError, /already been uploaded/)
+                end
               end
             end
 
-            context 'when --skip-if-exists flag is not provided' do
-              it 'does not upload release' do
-                expect(director).to_not receive(:upload_release)
-                command.upload(tarball_path) rescue nil
+            context 'when the director is an old version' do
+              let(:director_version) { '1.2579.0 (release:4fef83a2 bosh:4fef83a2)' }
+
+              before { allow(director).to receive(:get_release).and_return(
+                {'jobs' => nil, 'packages' => nil, 'versions' => ['0.1-dev']}) }
+              let(:tarball_path) { spec_asset('valid_release.tgz') }
+
+              context 'when --skip-if-exists flag is given' do
+                before { command.add_option(:skip_if_exists, true) }
+
+                it 'does not upload release' do
+                  expect(director).to_not receive(:upload_release)
+                  command.upload(tarball_path)
+                end
+
+                it 'returns successfully' do
+                  expect {
+                    command.upload(tarball_path)
+                  }.to_not raise_error
+                end
               end
 
-              it 'raises an error' do
-                expect {
-                  command.upload(tarball_path)
-                }.to raise_error(Bosh::Cli::CliError, /already been uploaded/)
+              context 'when --skip-if-exists flag is not given' do
+                it 'does not upload release' do
+                  expect(director).to_not receive(:upload_release)
+                  command.upload(tarball_path) rescue nil
+                end
+
+                it 'raises an error' do
+                  expect {
+                    command.upload(tarball_path)
+                  }.to raise_error(Bosh::Cli::CliError, /already been uploaded/)
+                end
               end
             end
           end
