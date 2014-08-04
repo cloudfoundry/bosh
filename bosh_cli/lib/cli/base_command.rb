@@ -208,7 +208,49 @@ module Bosh::Cli
         url = "https://#{url}" unless url.match(/^http:?/)
         uri = URI.parse(url)
         uri.port = DEFAULT_DIRECTOR_PORT unless had_port
-        uri.to_s.strip.gsub(/\/$/, '')
+        uri_to_string(uri)
+      end
+
+      def uri_to_string(uri)
+        str = ''
+        if uri.scheme
+          str << uri.scheme
+          str << ':'
+        end
+        if uri.opaque
+          str << uri.opaque
+        else
+          if uri.registry
+            str << uri.registry
+          else
+            if uri.host
+              str << '//'
+            end
+            if uri.userinfo
+              str << uri.userinfo
+              str << '@'
+            end
+            if uri.host
+              str << uri.host
+            end
+            if uri.port
+              str << ':'
+              str << uri.port.to_s
+            end
+          end
+          if uri.path
+            str << uri.path
+          end
+          if uri.query
+            str << '?'
+            str << uri.query
+          end
+        end
+        if uri.fragment
+          str << '#'
+          str << uri.fragment
+        end
+        str.strip.gsub(/\/$/, '')
       end
     end
   end
