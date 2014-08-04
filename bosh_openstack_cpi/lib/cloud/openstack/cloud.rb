@@ -274,6 +274,10 @@ module Bosh::OpenStackCloud
         server = with_openstack { @openstack.servers.create(server_params) }
 
         @logger.info("Creating new server `#{server.id}'...")
+
+        @logger.info("Configuring network for server `#{server.id}'...")
+        network_configurator.configure(@openstack, server)
+
         begin
           wait_resource(server, :active, :state)
         rescue Bosh::Clouds::CloudError => e
@@ -283,9 +287,6 @@ module Bosh::OpenStackCloud
 
           raise Bosh::Clouds::VMCreationFailed.new(true)
         end
-
-        @logger.info("Configuring network for server `#{server.id}'...")
-        network_configurator.configure(@openstack, server)
 
         @logger.info("Updating settings for server `#{server.id}'...")
         settings = initial_agent_settings(server_name, agent_id, network_spec, environment,
