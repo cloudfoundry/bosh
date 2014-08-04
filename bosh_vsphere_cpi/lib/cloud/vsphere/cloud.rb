@@ -295,7 +295,7 @@ module VSphereCloud
             value = '' if value.nil? # value is required
             fields_manager.set_field(vm, name_to_key_id[name], value)
           end
-        rescue SoapException => e
+        rescue SoapError => e
           if e.fault.kind_of?(Vim::Fault::NoPermission)
             @logger.warn("Can't set custom fields due to lack of " +
                            "permission: #{e.message}")
