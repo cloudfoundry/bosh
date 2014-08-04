@@ -1,5 +1,5 @@
 module VimSdk
-  class SoapException < Exception
+  class SoapError < StandardError
 
     attr_reader :fault
 

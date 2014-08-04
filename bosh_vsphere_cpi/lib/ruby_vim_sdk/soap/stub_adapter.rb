@@ -36,9 +36,9 @@ module VimSdk
           elsif status == 200
             result = object
           elsif object.kind_of?(Vmodl::MethodFault)
-            raise SoapException.new(object.msg, object)
+            raise SoapError.new(object.msg, object)
           else
-            raise SoapException.new("Unknown SOAP fault", object)
+            raise SoapError.new("Unknown SOAP fault", object)
           end
         else
           raise Net::HTTPError.new("#{status}", nil)
@@ -74,7 +74,7 @@ module VimSdk
           fault = Vmodl::Fault::MethodNotFound.new
           fault.receiver = managed_object
           fault.method = info.name
-          raise SoapException(fault)
+          raise SoapError(fault)
         end
 
         namespace_map = SOAP_NAMESPACE_MAP.dup
