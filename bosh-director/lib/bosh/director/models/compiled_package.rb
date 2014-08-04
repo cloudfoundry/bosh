@@ -12,6 +12,12 @@ module Bosh::Director::Models
       validates_unique [:package_id, :stemcell_id, :build]
     end
 
+    def before_save
+      self.dependency_key_sha1 = Digest::SHA1.hexdigest(self.dependency_key)
+
+      super
+    end
+
     def name
       package.name
     end
@@ -28,6 +34,5 @@ module Bosh::Director::Models
 
       filter(attrs).max(:build).to_i + 1
     end
-
   end
 end
