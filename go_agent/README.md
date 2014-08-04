@@ -69,6 +69,7 @@ Set up Go for BOSH Agent development:
 
 You should now be able to run the tests for the Go Agent:
 
+- `export PRIMARY_IPv4_NIC=<desired NIC name>` (this step is optional, needed only if the primary NIC is not 'en0','eth0', 'venet0')
 - `bin/test`
 
 At this point all the tests should be passing. If you encounter any issues, please document them and add solutions to this README.

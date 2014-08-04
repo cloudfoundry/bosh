@@ -1,10 +1,10 @@
 package ip_test
 
 import (
-	gonet "net"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	gonet "net"
+	"os"
 
 	. "bosh/platform/net/ip"
 )
@@ -25,16 +25,23 @@ var _ = Describe("ipResolver", func() {
 
 	Describe("GetPrimaryIPv4", func() {
 		findInterfaceName := func() string {
-			if _, err := gonet.InterfaceByName("en0"); err == nil {
-				return "en0"
-			} else if _, err := gonet.InterfaceByName("eth0"); err == nil {
-				return "eth0"
-			} else if _, err := gonet.InterfaceByName("venet0"); err == nil {
-				// Travis CI uses venet0 as primary network interface
-				return "venet0"
+			ifName := os.Getenv("PRIMARY_IPv4_NIC")
+			if ifName == "" {
+				if _, err := gonet.InterfaceByName("en0"); err == nil {
+					return "en0"
+				} else if _, err := gonet.InterfaceByName("eth0"); err == nil {
+					return "eth0"
+				} else if _, err := gonet.InterfaceByName("venet0"); err == nil {
+					// Travis CI uses venet0 as primary network interface
+					return "venet0"
+				}
+				panic("Not sure which interface name to use: en0 and eth0 are not found")
+			} else {
+				if _, err := gonet.InterfaceByName(ifName); err == nil {
+					return ifName
+				}
+				panic("Interface defined in environment variable not found")
 			}
-
-			panic("Not sure which interface name to use: en0 and eth0 are not found")
 		}
 
 		It("returns primary IPv4 for an interface", func() {
