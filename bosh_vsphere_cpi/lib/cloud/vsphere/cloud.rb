@@ -315,7 +315,7 @@ module VSphereCloud
           begin
             vm.shutdown_guest
           rescue => e
-            @logger.debug("Ignoring possible race condition when a VM has powered off by the time we ask it to shutdown: #{e.message}")
+            @logger.debug("Ignoring possible race condition when a VM has powered off by the time we ask it to shutdown: #{e.inspect}")
           end
 
           wait_until_off(vm, 60)
