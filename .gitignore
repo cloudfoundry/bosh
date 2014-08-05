@@ -31,6 +31,8 @@ create-vpc-output*.yml
 micro/tmp
 
 /go/gobin/
+/go/src/code.google.com/p/go.tools
+/go/src/github.com/golang
 
 pkg/
 
