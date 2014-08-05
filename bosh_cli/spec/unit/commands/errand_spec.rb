@@ -7,7 +7,40 @@ describe Bosh::Cli::Command::Errand do
 
   ec = Bosh::Cli::Client::ErrandsClient
 
-  describe 'run errand' do
+  describe 'errands' do
+    def perform; command.errands; end
+
+    with_director
+
+    context 'when some director is targeted' do
+      with_target
+
+      context 'when user is logged in' do
+        with_logged_in_user
+
+        context 'when deployment is selected' do
+          with_deployment
+
+          before { allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'fake-deployment'}) }
+
+          it 'shows errands in a table' do
+            expect(director).to receive(:list_errands).and_return([{"name" => "an-errand"}, {"name" => "another-errand"}])
+            perform
+            expect(command.exit_code).to eq(0)
+          end
+
+          it 'errors if no errands in manifest' do
+            expect(director).to receive(:list_errands).and_return([])
+            expect {
+              perform
+            }.to raise_error(Bosh::Cli::CliError, 'Deployment has no available errands')
+          end
+        end
+      end
+    end
+  end
+
+  describe 'run errand NAME' do
     def perform; command.run_errand('fake-errand-name'); end
 
     with_director
@@ -357,6 +390,40 @@ describe Bosh::Cli::Command::Errand do
     end
 
     it_requires_target ->(command) { command.run_errand(nil) }
+  end
+
+  describe 'run errand' do
+    def perform; command.run_errand; end
+
+    with_director
+    with_target
+    with_logged_in_user
+    with_deployment
+
+    it 'with 0 errands raise error' do
+      allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'fake-deployment'})
+      expect(director).to receive(:list_errands).and_return([])
+
+      expect {
+        perform
+      }.to raise_error(Bosh::Cli::CliError, 'Deployment has no available errands')
+    end
+
+    it 'with 1 errand selects only errand and invokes run_errand(name)' do
+      expect(command).to receive(:perform_run_errand).with('an-errand')
+      allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'fake-deployment'})
+      expect(director).to receive(:list_errands).and_return([{"name" => "an-errand"}])
+
+      perform
+    end
+
+    it 'with 2+ errands, prompts and invokes run_errand(name)' do
+      expect(command).to receive(:perform_run_errand).with('an-errand')
+      expect(command).to receive(:choose).and_return({'name' => 'an-errand'})
+      allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'fake-deployment'})
+      expect(director).to receive(:list_errands).and_return([{"name" => "an-errand"}, {"name" => "another-errand"}])
+      perform
+    end
   end
 
   def expect_output(expected_output)

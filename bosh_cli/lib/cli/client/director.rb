@@ -121,6 +121,10 @@ module Bosh
           get_json('/deployments')
         end
 
+        def list_errands(deployment_name)
+          get_json("/deployments/#{deployment_name}/errands")
+        end
+
         def list_running_tasks(verbose = 1)
 
           if Bosh::Common::Version::BoshVersion.parse(get_version) < Bosh::Common::Version::BoshVersion.parse('0.3.5')

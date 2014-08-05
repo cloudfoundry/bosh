@@ -162,6 +162,12 @@ describe Bosh::Cli::Client::Director do
       @director.list_deployments
     end
 
+    it 'lists errands in current deployment' do
+      expect(@director).to receive(:get).with('/deployments/fake-deployment/errands', 'application/json').
+        and_return([200, JSON.generate([{"name" => "errand"}]), {}])
+      @director.list_errands("fake-deployment")
+    end
+
     it 'lists currently running tasks (director version < 0.3.5)' do
       expect(@director).to receive(:get).with('/info', 'application/json').
         and_return([200, JSON.generate({ :version => '0.3.2' })])
