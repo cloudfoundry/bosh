@@ -3,7 +3,7 @@ require 'bosh/dev/sandbox/main'
 
 module Bosh::Dev::Sandbox
   describe Main do
-    subject(:sandbox) { Main.new({}, nil, 'ruby', 0, logger) }
+    subject(:sandbox) { Main.new({}, nil, 0, logger) }
     let(:logger) { instance_double('Logger', info: nil) }
 
     describe '#run' do

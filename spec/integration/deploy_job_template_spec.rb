@@ -21,9 +21,6 @@ describe 'deploy job template', type: :integration do
   end
 
   it 're-evaluates job templates with new dynamic network configuration' do
-    # Ruby agent does not determine dynamic ip for dummy infrastructure
-    pending if current_sandbox.agent_type == "ruby"
-
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['networks'].first['type'] = 'dynamic'
     manifest_hash['networks'].first['cloud_properties'] = {}

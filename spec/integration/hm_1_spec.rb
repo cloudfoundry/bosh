@@ -91,9 +91,6 @@ describe 'health_monitor: 1', type: :integration do
 
   # ~50s
   it 'notifies health monitor about job failures' do
-    # Ruby agent does not implement fail_job functionality for integration testing
-    pending if current_sandbox.agent_type == "ruby"
-
     deployment_hash = Bosh::Spec::Deployments.simple_manifest
     deployment_hash['jobs'][0]['instances'] = 1
     deploy_simple(manifest_hash: deployment_hash)

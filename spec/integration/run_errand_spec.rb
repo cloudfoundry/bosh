@@ -268,9 +268,9 @@ describe 'run errand', type: :integration, with_tmp_dir: true do
 
       output, exit_code = bosh_runner.run('run errand foobar', {failure_expected: true, return_exit_code: true})
 
-      ruby_msg = 'Job template foobar does not have executable bin/run'
-      go_msg = '.*Running errand script:.*jobs/foobar/bin/run: no such file or directory'
-      expect(output).to match(%r{Error 450001: (#{ruby_msg}|#{go_msg})})
+      expect(output).to match(
+        %r{Error 450001: (.*Running errand script:.*jobs/foobar/bin/run: no such file or directory)}
+      )
       expect(output).to include('Errand `foobar\' did not complete')
       expect(exit_code).to eq(1)
     end

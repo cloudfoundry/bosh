@@ -102,9 +102,6 @@ describe 'cli: package compilation', type: :integration do
   end
 
   it 'returns truncated output' do
-    # Ruby agent does not truncate packaging output
-    pending if current_sandbox.agent_type == 'ruby'
-
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['compilation']['workers'] = 1
     manifest_hash['jobs'][0]['template'] = 'fails_with_too_much_output'

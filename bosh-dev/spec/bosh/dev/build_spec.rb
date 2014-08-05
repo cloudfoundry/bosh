@@ -371,7 +371,7 @@ module Bosh::Dev
         allow(Bosh::Stemcell::Archive).to receive(:new).and_return(archive)
       end
 
-      it 'fetches the light stemcell for aws + ubuntu + ruby agent' do
+      it 'fetches the light stemcell for aws + ubuntu' do
         subject.light_stemcell
 
         expect(UriProvider).to have_received(:pipeline_uri).with('123/bosh-stemcell/aws', 'fake-filename')

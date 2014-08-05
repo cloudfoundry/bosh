@@ -18,11 +18,6 @@ module Bosh
           raise ArgumentError, 'Must specify dir'
         end
 
-        @agent_type = options['agent']['type']
-        unless %w(ruby go).include?(@agent_type)
-          raise ArgumentError, 'Unknown agent type provided'
-        end
-
         @running_vms_dir = File.join(@base_dir, 'running_vms')
 
         @logger = MonoLogger.new(options['log_device'] || STDOUT)
@@ -174,7 +169,7 @@ module Bosh
         root_dir = File.join(agent_base_dir(agent_id), 'root_dir')
         FileUtils.mkdir_p(File.join(root_dir, 'etc', 'logrotate.d'))
 
-        agent_cmd = agent_cmd(agent_id, root_dir)
+        agent_cmd = agent_cmd(agent_id)
         agent_log = agent_log_path(agent_id)
 
         agent_pid = Process.spawn(*agent_cmd, {
@@ -215,12 +210,9 @@ module Bosh
         File.write(path, JSON.generate('ip' => ip_address))
       end
 
-      def agent_cmd(agent_id, root_dir)
+      def agent_cmd(agent_id)
         go_agent_exe = File.expand_path('../../../../go/src/github.com/cloudfoundry/bosh-agent/out/bosh-agent', __FILE__)
-        {
-          'ruby' => %W[bosh_agent      -b #{agent_base_dir(agent_id)} -I dummy -r #{root_dir} --no-alerts],
-          'go'   => %W[#{go_agent_exe} -b #{agent_base_dir(agent_id)} -I dummy -P dummy -M dummy-nats],
-        }[@agent_type.to_s]
+        %W[#{go_agent_exe} -b #{agent_base_dir(agent_id)} -I dummy -P dummy -M dummy-nats]
       end
 
       def read_agent_settings(agent_id)

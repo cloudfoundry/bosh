@@ -16,10 +16,6 @@ describe 'cli: vms', type: :integration do
   end
 
   it 'should return vm --vitals' do
-    if current_sandbox.agent_type == 'ruby'
-      skip 'ruby agent is using monit for vitals which is not running in integration tests'
-    end
-
     deploy_simple
     vitals = director.vms_vitals[0]
 
