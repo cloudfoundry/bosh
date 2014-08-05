@@ -17,9 +17,6 @@ describe 'deploy job update', type: :integration do
   end
 
   it 'stops deployment when a job update fails' do
-    # Ruby agent does not implement fail_job functionality for integration testing
-    pending if current_sandbox.agent_type == "ruby"
-
     deploy_simple
 
     director.vm('foobar/0').fail_job

@@ -8,15 +8,10 @@ require 'parallel_tests/tasks'
 
 namespace :spec do
   namespace :integration do
-    desc 'Run BOSH integration tests against a local sandbox with Ruby agent'
-    task :ruby_agent => :install_dependencies do
-      run_integration_specs('ruby')
-    end
-
-    desc 'Run BOSH integration tests against a local sandbox with Go agent'
-    task :go_agent => :install_dependencies do
+    desc 'Run BOSH integration tests against a local sandbox'
+    task :agent => :install_dependencies do
       sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
-      run_integration_specs('go')
+      run_integration_specs
     end
 
     desc 'Install BOSH integration test dependencies (currently Nginx)'
@@ -25,9 +20,7 @@ namespace :spec do
       nginx.install
     end
 
-    def run_integration_specs(agent_type)
-      ENV['BOSH_INTEGRATION_AGENT_TYPE'] = agent_type
-
+    def run_integration_specs
       num_processes   = ENV['NUM_PROCESSES']
       num_processes ||= ENV['TRAVIS'] ? 4 : nil
 
@@ -35,7 +28,7 @@ namespace :spec do
     end
   end
 
-  task :integration => %w(spec:integration:go_agent)
+  task :integration => %w(spec:integration:agent)
 
   namespace :unit do
     desc 'Run unit tests for each BOSH component gem in parallel'

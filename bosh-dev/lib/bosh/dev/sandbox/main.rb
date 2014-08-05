@@ -41,7 +41,6 @@ module Bosh::Dev::Sandbox
 
     alias_method :db_name, :name
     attr_reader :blobstore_storage_dir
-    attr_reader :agent_type
 
     attr_accessor :director_fix_stateful_nodes
     attr_reader :logs_path
@@ -57,20 +56,16 @@ module Bosh::Dev::Sandbox
         password: ENV['TRAVIS'] ? '' : 'password',
       }
 
-      agent_type = ENV['BOSH_INTEGRATION_AGENT_TYPE'] || 'go'
-
       new(
         db_opts,
         ENV['DEBUG'],
-        agent_type,
         ENV['TEST_ENV_NUMBER'].to_i,
         Logger.new(STDOUT),
       )
     end
 
-    def initialize(db_opts, debug, agent_type, test_env_number, logger)
+    def initialize(db_opts, debug, test_env_number, logger)
       @debug = debug
-      @agent_type = agent_type
       @test_env_number = test_env_number
       @logger = logger
       @name = SecureRandom.uuid.gsub('-', '')
@@ -136,8 +131,7 @@ module Bosh::Dev::Sandbox
       # Note that this is not the same object
       # as dummy cpi used inside bosh-director process
       @cpi = Bosh::Clouds::Dummy.new(
-        'dir' => cloud_storage_dir,
-        'agent' => { 'type' => agent_type },
+        'dir' => cloud_storage_dir
       )
 
       @database_migrator = DatabaseMigrator.new(DIRECTOR_PATH, director_config, @logger)

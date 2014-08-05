@@ -23,9 +23,6 @@ describe 'drain', type: :integration do
     end
 
     it 'sets BOSH_JOB_STATE and BOSH_JOB_NEXT_STATE env vars with changed values' do
-      # Ruby agent does not implement BOSH_JOB_STATE & BOSH_JOB_NEXT_STATE
-      pending if current_sandbox.agent_type == "ruby"
-
       drain_log = director.vm('foobar/0').read_file('drain-job-state.log')
       expect(drain_log).to include('BOSH_JOB_STATE={"persistent_disk":0}')
       expect(drain_log).to include('BOSH_JOB_NEXT_STATE={"persistent_disk":100}')
