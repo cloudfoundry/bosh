@@ -2,7 +2,8 @@
 
 This document lists different migration cases, symptomps and errors that can be observed in vSphere CPI.
 
-## vMotion migrates VM (Disks are in the shared datastore)
+
+## vMotion migrates VM (disks are in the shared datastore)
 
 We triggered vMotion by migrating VM manually from one host to another. 
 
@@ -18,7 +19,8 @@ In VM `Events` there is an event called `Task: Migrate virtual machine` and the 
 
 * Changing release succeeds.
 
-## DRS migrates VM + Disks
+
+## DRS migrates VM + disk
 
 ### Symptoms
 
@@ -61,7 +63,8 @@ New disk was created in first datastore in SYSTEM_MICRO_VSPHERE_DISKS as specifi
 
 Exact same behavior was observed as with `DRS migrates VM`. The symptom would be that in `Tasks & Events` in Events section `Migrating of virtual machine …` would be initiated by `root`.
 
-## DRS migrates disk (not VM)
+
+## DRS migrates disk (without migrating VM)
 
 To turn disk only migration without VM itself we set DRS rules to not keep VMDKs together for our VM. After applying DRS migration only disks were migrated without VM itself.
 
@@ -92,6 +95,7 @@ E, [2014-08-05T17:30:39.714445 #11419] [canary_update(dummy_package/0)] ERROR --
 
 * After moving ephemeral disk back and leaving persistent disk on old datastore we still see the same error as above.
 
+
 ## User migrates disk
 
 ### Symptoms
@@ -120,6 +124,7 @@ E, [2014-08-05T21:06:55.601512 #14766] [canary_update(dummy/0)] ERROR -- : Error
 /var/vcap/packages/director/gem_home/ruby/1.9.1/gems/bosh-director-1.0000.0/lib/bosh/director/job_updater.rb:74:in `block (2 levels) in update_canary_instance'
 ``` 
 
+
 ## Disk was removed by user
 
 Exactly the same issues as in `User migrates VM` which is not a supported behavior. In datastore1 in `Events` there is an event `File .. deleted from datastore1` and `User` is root.
@@ -137,6 +142,7 @@ App setup Running bootstrap: Setting up epehmeral disk: Calculating partition si
 sfdisk: cannot open /dev/sdb for reading
 ': exit status 1
 ```
+
 
 ## VM was removed by user (without detaching disk)
 
