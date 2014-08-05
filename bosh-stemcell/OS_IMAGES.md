@@ -55,6 +55,10 @@ CentOS images have filename `bosh-centos-6_5-os-image.tgz`
 
 Ubuntu 10.04 images have filename `bosh-ubuntu-lucid-os-image.tgz`
 
+* `hGvKHxxg9bboL3e1Ldi27H746AsmEcRQ`
+  Remove resolv.conf clearing from firstboot.sh
+  (307d760b783454c96717a9b1036265783826a369)
+
 * `IFBbp72WZyd3SHN.75RWZz.jWJeEU40s`
   using latest OpenSSL `1.0.1f`
   (23fe6fcd8518446cbdbec360c2f1e4b37834db88)
