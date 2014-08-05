@@ -90,4 +90,38 @@ describe Bosh::Cli::Command::Base do
     cmd.add_option(:password, 'bar')
     cmd.logged_in?.should be(true)
   end
+
+  context 'target' do
+    context 'when port 443 is specified' do
+      it 'persists the port within the target' do
+        cmd = make
+        cmd.add_option(:target, 'https://foo:443')
+        cmd.target.should == 'https://foo:443'
+      end
+    end
+
+    context 'when port 443 is specified' do
+      it 'persists the port within the target' do
+        cmd = make
+        cmd.add_option(:target, 'https://foo:25555')
+        cmd.target.should == 'https://foo:25555'
+      end
+    end
+
+    context 'when a trailing slash is provided' do
+      it 'strips the trailing slash' do
+        cmd = make
+        cmd.add_option(:target, 'https://foo/')
+        cmd.target.should == 'https://foo:25555'
+      end
+    end
+
+    context 'when no scheme is provided' do
+      it 'adds https as the default scheme' do
+        cmd = make
+        cmd.add_option(:target, 'foo')
+        cmd.target.should == 'https://foo:25555'
+      end
+    end
+  end
 end
