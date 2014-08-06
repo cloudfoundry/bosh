@@ -26,6 +26,7 @@ module Bosh::Director::ProblemScanner
       end
 
       @event_logger.track_and_log("#{results[:ok]} OK, " +
+        "#{results[:missing]} missing, " +
         "#{results[:inactive]} inactive, " +
         "#{results[:mount_info_mismatch]} mount-info mismatch")
     end
@@ -33,6 +34,16 @@ module Bosh::Director::ProblemScanner
     private
 
     def scan_disk(disk)
+      begin
+        unless @cloud.has_disk?(disk.disk_cid)
+          @logger.info("Found missing disk: #{disk.id}")
+          @problem_register.problem_found(:missing_disk, disk)
+          return :missing
+        end
+      rescue Bosh::Clouds::NotImplemented
+        @logger.info('Ignored check for disk presence, CPI does not implement has_disk? method')
+      end
+
       # inactive disks
       unless disk.active
         @logger.info("Found inactive disk: #{disk.id}")
