@@ -12,11 +12,11 @@ module Bosh::Director
     describe 'instance methods' do
       before do
         deployment = Models::Deployment.make(name: 'deployment')
-        ProblemScanner.should_receive(:new).with(deployment).and_return(scanner)
+        ProblemScanner::Scanner.should_receive(:new).with(deployment).and_return(scanner)
       end
 
       let(:job) { described_class.new('deployment') }
-      let(:scanner) { instance_double('Bosh::Director::ProblemScanner') }
+      let(:scanner) { instance_double('Bosh::Director::ProblemScanner::Scanner') }
       let(:deployment) { Models::Deployment[1] }
 
       it 'should obtain a deployment lock' do

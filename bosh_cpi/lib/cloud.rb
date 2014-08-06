@@ -116,6 +116,15 @@ module Bosh
     end
 
     ##
+    # Checks if a disk exists
+    #
+    # @param [String] disk disk_id that was once returned by {#create_disk}
+    # @return [Boolean] True if the disk exists
+    def has_disk?(disk_id)
+      not_implemented(:has_disk?)
+    end
+
+    ##
     # Reboots a VM
     #
     # @param [String] vm vm id that was once returned by {#create_vm}

@@ -29,7 +29,7 @@ module Bosh::Director
           begin
             with_deployment_lock(@deployment, :timeout => 0) do
 
-              scanner = ProblemScanner.new(@deployment)
+              scanner = ProblemScanner::Scanner.new(@deployment)
               scanner.reset(jobs)
               scanner.scan_vms(jobs)
 

@@ -44,8 +44,8 @@ module Bosh::Director
         ProblemResolver.should_receive(:new).with(deployment).and_return(resolver)
         scan_and_fix.stub(:with_deployment_lock).and_yield
 
-        scanner = instance_double('Bosh::Director::ProblemScanner')
-        ProblemScanner.should_receive(:new).and_return(scanner)
+        scanner = instance_double('Bosh::Director::ProblemScanner::Scanner')
+        ProblemScanner::Scanner.should_receive(:new).and_return(scanner)
         scanner.should_receive(:reset).with(filtered_jobs)
         scanner.should_receive(:scan_vms).with(filtered_jobs)
 
@@ -65,8 +65,8 @@ module Bosh::Director
         ProblemResolver.should_receive(:new).with(deployment).and_return(resolver)
         scan_and_fix.stub(:with_deployment_lock).and_yield
 
-        scanner = instance_double('Bosh::Director::ProblemScanner')
-        ProblemScanner.should_receive(:new).and_return(scanner)
+        scanner = instance_double('Bosh::Director::ProblemScanner::Scanner')
+        ProblemScanner::Scanner.should_receive(:new).and_return(scanner)
         scanner.should_receive(:reset).with(jobs)
         scanner.should_receive(:scan_vms).with(jobs)
 
@@ -75,8 +75,8 @@ module Bosh::Director
     end
 
     it 'should call the problem resolver' do
-      scanner = instance_double('Bosh::Director::ProblemScanner').as_null_object
-      ProblemScanner.stub(new: scanner)
+      scanner = instance_double('Bosh::Director::ProblemScanner::Scanner').as_null_object
+      ProblemScanner::Scanner.stub(new: scanner)
       scan_and_fix.stub(:with_deployment_lock).and_yield
 
       resolver = instance_double('Bosh::Director::ProblemResolver')
