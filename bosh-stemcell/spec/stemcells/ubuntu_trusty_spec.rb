@@ -6,7 +6,7 @@ describe 'Ubuntu 14.04 stemcell', stemcell_image: true do
       it { should be_file }
       it { should contain 'default=0' }
       it { should contain 'timeout=1' }
-      it { should contain 'title Ubuntu 14.04 LTS' }
+      its(:content) { should match %r{^title Ubuntu 14\.04.* LTS \(.*\)$} }
       it { should contain '  root (hd0,0)' }
       its(:content) { should match %r{kernel /boot/vmlinuz-\S+-generic ro root=UUID=} }
       it { should contain ' selinux=0' }
