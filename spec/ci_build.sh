@@ -18,6 +18,7 @@ rm -rf .bundle
 # This ensures we check out the same git commit for all jenkins jobs in the flow.
 if [ -n "$BUILD_FLOW_GIT_COMMIT" ]; then
     git checkout $BUILD_FLOW_GIT_COMMIT
+    git submodule update --init --recursive
 fi
 
 echo "--- Starting bundle install @ `date` ---"
