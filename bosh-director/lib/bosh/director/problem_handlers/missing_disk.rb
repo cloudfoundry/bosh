@@ -1,0 +1,74 @@
+module Bosh::Director
+  module ProblemHandlers
+    class MissingDisk < Base
+
+      register_as :missing_disk
+      auto_resolution :ignore
+
+      def initialize(disk_id, data)
+        super
+        @disk_id = disk_id
+        @data = data
+        @disk = Models::PersistentDisk[@disk_id]
+
+        if @disk.nil?
+          handler_error("Disk `#{@disk_id}' is no longer in the database")
+        end
+
+        @instance = @disk.instance
+        if @instance.nil?
+          handler_error("Cannot find instance for disk `#{@disk.disk_cid}'")
+        end
+
+        @vm = @instance.vm
+      end
+
+      def description
+        job = @instance.job || "unknown job"
+        index = @instance.index || "unknown index"
+        disk_label = "`#{@disk.disk_cid}' (#{job}/#{index}, #{@disk.size.to_i}M)"
+        "Disk #{disk_label} is missing"
+      end
+
+      resolution :ignore do
+        plan { 'Ignore problem' }
+        action { }
+      end
+
+      resolution :delete_disk_reference do
+        plan { 'Delete disk reference (DANGEROUS!)' }
+        action { delete_disk_reference }
+      end
+
+      def delete_disk_reference
+        @disk.db.transaction do
+          @disk.update(active: false)
+        end
+
+        agent_client = agent_client(@vm)
+        disk_list = []
+
+        begin
+          disk_list = agent_client.list_disk
+          if disk_list.include?(@disk.disk_cid)
+            agent_client.unmount_disk(@disk.disk_cid)
+          end
+
+        rescue Bosh::Director::RpcTimeout
+          handler_error('Cannot unmount disk, agent is not responding')
+        rescue Bosh::Director::RpcRemoteException => e
+          handler_error("Cannot unmount disk, #{e.message}")
+        end
+
+        begin
+          cloud.detach_disk(@vm.cid, @disk.disk_cid) if @vm.cid
+        rescue Bosh::Clouds::DiskNotAttached
+        end
+
+        Api::SnapshotManager.delete_snapshots(@disk.snapshots)
+
+        @disk.destroy
+      end
+    end
+  end
+end
