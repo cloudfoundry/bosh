@@ -188,3 +188,8 @@ builds:
     version: '93'
   ab0a77d8-b553-4cb2-b653-2c0ced83e106:
     version: '94'
+  25453110-2f68-490b-ac11-821d518379e0:
+    version: '95'
+  0be3304e-c217-4b0b-8f21-2b4ae1811f02:
+    version: '96'
+format-version: '2'
