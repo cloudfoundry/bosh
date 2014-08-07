@@ -171,7 +171,7 @@ module Bosh::Cli::Versions
           end
         end
 
-        it 'creates a symlink dir for the default release name' do
+        it 'creates a relative symlink dir for the default release name' do
           symlink_path = File.join(releases_path, default_release_name)
           expect(File).to_not exist(symlink_path)
 
@@ -179,7 +179,7 @@ module Bosh::Cli::Versions
 
           expect(File).to exist(symlink_path)
           expect(File.symlink?(symlink_path)).to eq(true)
-          expect(File.readlink(symlink_path)).to eq(releases_path)
+          expect(File.readlink(symlink_path)).to eq('.')
         end
 
         it 'updates the format-version in the version index' do

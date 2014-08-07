@@ -99,7 +99,10 @@ module Bosh::Cli::Versions
     end
 
     def create_release_symlink
-      File.symlink(@releases_path, File.join(@releases_path, @default_release_name))
+      # symlink must be relative in order to be portable (ex: git clone)
+      Dir.chdir(@releases_path) do
+         File.symlink('.', @default_release_name)
+      end
     end
   end
 end
