@@ -513,8 +513,17 @@ module VSphereCloud
 
         vm = get_vm_by_cid(vm_cid)
 
-        devices = client.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
+        location = get_vm_location(vm)
+        env = @agent_env.get_current_env(vm, location[:datacenter])
+        @logger.info("Reading current agent env: #{env.pretty_inspect}")
+        if env['disks']['persistent'][disk.uuid]
+          env['disks']['persistent'].delete(disk.uuid)
+          @logger.info("Updating agent env to: #{env.pretty_inspect}")
 
+          @agent_env.set_env(vm, location, env)
+        end
+
+        devices = client.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
         vmdk_path = "#{disk.path}.vmdk"
         virtual_disk =
           devices.find do |device|
@@ -526,13 +535,6 @@ module VSphereCloud
         config.device_change = []
         config.device_change << create_delete_device_spec(virtual_disk)
 
-        location = get_vm_location(vm)
-        env = @agent_env.get_current_env(vm, location[:datacenter])
-        @logger.info("Reading current agent env: #{env.pretty_inspect}")
-        env['disks']['persistent'].delete(disk.uuid)
-        @logger.info("Updating agent env to: #{env.pretty_inspect}")
-
-        @agent_env.set_env(vm, location, env)
         @logger.info('Detaching disk')
         client.reconfig_vm(vm, config)
 

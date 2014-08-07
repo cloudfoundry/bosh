@@ -696,9 +696,6 @@ module VSphereCloud
         )
       end
       before { allow(disk_model).to receive(:first).with(uuid: disk_cid).and_return(disk) }
-
-      let(:vm_cid) { 'fake-vm-cid' }
-
       let(:vm_folder) { instance_double('VSphereCloud::Resources::Folder', name: 'vm') }
 
       before { allow(cloud_config).to receive(:datacenter_name).with(no_args).and_return('fake-folder/fake-datacenter-name') }
@@ -894,6 +891,117 @@ module VSphereCloud
             expect(client).to_not receive(:delete_path)
             vsphere_cloud.delete_vm('fake-vm-id')
           end
+        end
+      end
+    end
+
+    describe '#detach_disk' do
+      let(:vm) { instance_double('VimSdk::Vim::VirtualMachine') }
+
+      it 'raises an error if disk is not found in vSphere database' do
+        expect {
+          vsphere_cloud.detach_disk('vm-cid', 'non-existent-disk-cid')
+        }.to raise_error /Disk not found: non-existent-disk-cid/
+      end
+
+      context 'when disk exists in database' do
+        let!(:disk) do
+          Models::Disk.create(uuid: 'disk-cid', size: 100, path: 'fake-disk-path')
+        end
+
+        before do
+          allow(vsphere_cloud).to receive(:get_vm_by_cid).with('vm-cid').and_return(vm)
+          allow(client).to receive(:get_property).with(
+            vm,
+            VimSdk::Vim::VirtualMachine,
+            'config.hardware.device',
+            ensure_all: true
+          ).and_return(devices)
+
+          allow(vsphere_cloud).to receive(:get_vm_location).and_return(vm_location)
+
+          allow(agent_env).to receive(:get_current_env).with(vm, 'fake-datacenter-name').
+            and_return(env)
+          allow(agent_env).to receive(:set_env)
+          allow(client).to receive(:reconfig_vm) do
+            allow(attached_disk.backing).to receive(:file_name).and_return(nil)
+          end
+        end
+
+        after { disk.destroy }
+
+        let(:env) do
+          {'disks' => {'persistent' => {'disk-cid' => 'fake-data'}}}
+        end
+
+        let(:vm_location) do
+          {
+            datacenter: 'fake-datacenter-name',
+            datastore: 'fake-datastore-name',
+            vm: 'fake-vm-name'
+          }
+        end
+
+        let(:attached_disk) do
+          disk = VimSdk::Vim::Vm::Device::VirtualDisk.new
+          disk.backing = double(:backing, file_name: 'fake-disk-path.vmdk')
+          disk
+        end
+
+        let(:devices) { [attached_disk] }
+
+        it 'updates VM with new settings' do
+          expect(agent_env).to receive(:set_env).with(
+            vm,
+            vm_location,
+            {'disks' => {'persistent' => {}}}
+          )
+          vsphere_cloud.detach_disk('vm-cid', 'disk-cid')
+        end
+
+        context 'when old settings do not contain disk to be detached' do
+          let(:env) do
+            {'disks' => {'persistent' => {}}}
+          end
+
+          it 'does not update VM with new setting' do
+            expect(agent_env).to_not receive(:set_env)
+            vsphere_cloud.detach_disk('vm-cid', 'disk-cid')
+          end
+        end
+
+        context 'when disk is not attached' do
+          let(:devices) { [] }
+
+          it 'updates VM with new settings' do
+            expect(agent_env).to receive(:set_env).with(
+              vm,
+              vm_location,
+              {'disks' => {'persistent' => {}}}
+            )
+            expect {
+              vsphere_cloud.detach_disk('vm-cid', 'disk-cid')
+            }.to raise_error(Bosh::Clouds::DiskNotAttached)
+          end
+
+          it 'raises an error if disk is not attached' do
+            expect {
+              vsphere_cloud.detach_disk('vm-cid', 'disk-cid')
+            }.to raise_error(Bosh::Clouds::DiskNotAttached)
+          end
+        end
+
+        it 'reconfigures VM with new config' do
+          expect(client).to receive(:reconfig_vm) do |config_vm, config|
+            expect(config_vm).to eq(vm)
+            expect(config.device_change.first.device).to eq(attached_disk)
+            expect(config.device_change.first.operation).to eq(
+              VimSdk::Vim::Vm::Device::VirtualDeviceSpec::Operation::REMOVE
+            )
+            allow(attached_disk.backing).to receive(:file_name).and_return(nil)
+          end
+
+          vsphere_cloud.detach_disk('vm-cid', 'disk-cid')
         end
       end
     end
