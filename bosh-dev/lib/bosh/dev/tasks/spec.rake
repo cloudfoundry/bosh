@@ -99,6 +99,3 @@ end
 
 desc 'Run unit and integration specs'
 task :spec => %w(spec:unit spec:integration)
-
-desc 'Run unit and integration specs for Go related code'
-task :gospec => %w(spec:unit spec:integration:go_agent)

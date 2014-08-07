@@ -1,1 +1,1 @@
-task shipit: %w(git:pull rubocop gospec git:push)
+task shipit: %w(git:pull rubocop spec git:push)
