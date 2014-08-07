@@ -12,6 +12,7 @@ class Bosh::Cpi::Cli
     set_vm_metadata
     configure_networks
     create_disk
+    has_disk
     delete_disk
     attach_disk
     detach_disk
@@ -23,6 +24,7 @@ class Bosh::Cpi::Cli
 
   RPC_METHOD_TO_RUBY_METHOD = {
     'has_vm' => 'has_vm?',
+    'has_disk' => 'has_disk?',
   }.freeze
 
   INVALID_CALL_ERROR_TYPE = 'InvalidCall'.freeze

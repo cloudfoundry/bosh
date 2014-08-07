@@ -37,6 +37,7 @@ module Bosh::Clouds
       set_vm_metadata
       configure_networks
       create_disk
+      has_disk?
       delete_disk
       attach_disk
       detach_disk
