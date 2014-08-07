@@ -78,7 +78,7 @@ module Bosh::Cli::Command
               swap = vitals['swap']
               disk = vitals['disk']
 
-              row << vitals['load'].map { |l| "#{l}%" }.join(', ')
+              row << vitals['load'].join(', ')
               row << "#{cpu['user']}%"
               row << "#{cpu['sys']}%"
               row << "#{cpu['wait']}%"
