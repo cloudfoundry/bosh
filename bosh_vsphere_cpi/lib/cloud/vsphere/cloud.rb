@@ -72,6 +72,16 @@ module VSphereCloud
       false
     end
 
+    def has_disk?(disk_id)
+      disk = VSphereCloud::Models::Disk.find(uuid: disk_id)
+
+      return false unless disk
+      return false unless disk.path
+      return false unless disk.datacenter
+
+      @client.has_disk?(disk.path, disk.datacenter)
+    end
+
     def create_stemcell(image, _)
       with_thread_name("create_stemcell(#{image}, _)") do
         result = nil

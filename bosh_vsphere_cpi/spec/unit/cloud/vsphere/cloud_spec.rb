@@ -127,6 +127,72 @@ module VSphereCloud
       end
     end
 
+    describe 'has_disk?' do
+      let(:disk_model) { class_double('VSphereCloud::Models::Disk').as_stubbed_const }
+      let(:disk_cid) { 'fake-disk-cid' }
+      let(:disk) do
+        instance_double(
+          'VSphereCloud::Models::Disk',
+          size: 1024,
+          uuid: disk_cid,
+          datacenter: disk_datacenter,
+          datastore: 'fake-datastore-name',
+          path: disk_path
+        )
+      end
+
+      let(:disk_path) { 'fake-path' }
+      let(:disk_datacenter) { 'fake-folder/fake-datacenter-name' }
+
+      context 'when disk is found in database' do
+        before { allow(disk_model).to receive(:find).with(uuid: disk_cid).and_return(disk) }
+
+        context 'the disk is found' do
+          it 'returns true' do
+            expect(client).to receive(:has_disk?).with(
+              'fake-path', 'fake-folder/fake-datacenter-name'
+            ).and_return(true)
+
+            expect(vsphere_cloud.has_disk?(disk_cid)).to be(true)
+          end
+        end
+
+        context 'the disk is not found' do
+          it 'returns false' do
+            expect(client).to receive(:has_disk?).with(
+              'fake-path', 'fake-folder/fake-datacenter-name'
+            ).and_return(false)
+
+            expect(vsphere_cloud.has_disk?(disk_cid)).to be(false)
+          end
+        end
+
+        context 'when disk does not have path' do
+          let(:disk_path) { nil }
+
+          it 'returns false' do
+            expect(vsphere_cloud.has_disk?(disk_cid)).to be(false)
+          end
+        end
+
+        context 'when disk does not have datacenter' do
+          let(:disk_datacenter) { nil }
+
+          it 'returns false' do
+            expect(vsphere_cloud.has_disk?(disk_cid)).to be(false)
+          end
+        end
+      end
+
+      context 'when disk is not found in database' do
+        before { allow(disk_model).to receive(:find).with(uuid: disk_cid).and_return(nil) }
+
+        it 'returns false' do
+          expect(vsphere_cloud.has_disk?(disk_cid)).to be(false)
+        end
+      end
+    end
+
     describe 'snapshot_disk' do
       it 'raises not implemented exception when called' do
         expect { vsphere_cloud.snapshot_disk('123') }.to raise_error(Bosh::Clouds::NotImplemented)
