@@ -13,7 +13,10 @@ describe 'cli: cloudcheck', type: :integration do
 
     runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
-    deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.simple_manifest)
+    manifest = Bosh::Spec::Deployments.simple_manifest
+    manifest['jobs'][0]['persistent_disk'] = 100
+    deployment_manifest = yaml_file('simple', manifest)
+
     runner.run("deployment #{deployment_manifest.path}")
 
     runner.run('deploy')
@@ -42,6 +45,16 @@ describe 'cli: cloudcheck', type: :integration do
    expect(cloudcheck_response).to match(regexp('1. Ignore problem
   2. Recreate VM using last known apply spec
   3. Delete VM reference (DANGEROUS!)') )
+  end
+
+  it 'provides resolution options for missing disks' do
+    current_sandbox.cpi.delete_disk(current_sandbox.cpi.disk_cids.first)
+
+    cloudcheck_response = bosh_run_cck_ignore_errors(1)
+    expect(cloudcheck_response).to_not match(regexp('No problems found'))
+    expect(cloudcheck_response).to match(regexp('1 missing'))
+    expect(cloudcheck_response).to match(regexp('1. Ignore problem
+  2. Delete disk reference (DANGEROUS!)') )
   end
 
   def bosh_run_cck_ignore_errors(num_errors)

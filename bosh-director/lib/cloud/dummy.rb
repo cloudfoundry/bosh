@@ -84,6 +84,11 @@ module Bosh
         File.exists?(vm_file(vm_id))
       end
 
+      def has_disk?(disk_id)
+        puts "Disk exists? #{File.exists?(disk_file(disk_id))}"
+        File.exists?(disk_file(disk_id))
+      end
+
       def configure_networks(vm_id, networks)
         cmd = commands.next_configure_networks_cmd(vm_id)
 
@@ -144,6 +149,11 @@ module Bosh
       def vm_cids
         # Shuffle so that no one relies on the order of VMs
         Dir.glob(File.join(@running_vms_dir, '*')).map { |vm| File.basename(vm) }.shuffle
+      end
+
+      def disk_cids
+        # Shuffle so that no one relies on the order of disks
+        Dir.glob(disk_file('*')).map { |disk| File.basename(disk) }.shuffle
       end
 
       def kill_agents
