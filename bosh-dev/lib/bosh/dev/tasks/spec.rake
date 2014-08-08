@@ -21,10 +21,22 @@ namespace :spec do
     end
 
     def run_integration_specs
-      num_processes   = ENV['NUM_PROCESSES']
+      num_processes   = ENV['NUM_GROUPS']
       num_processes ||= ENV['TRAVIS'] ? 4 : nil
 
-      Rake::Task['parallel:spec'].invoke(num_processes, 'spec/integration')
+      options = {}
+      options[:count] = num_processes if num_processes
+      options[:group] = ENV['GROUP'] if ENV['GROUP']
+
+      run_in_parallel('spec/integration', options)
+    end
+
+    def run_in_parallel(test_path, options={})
+      count = " -n #{options[:count]}" unless options[:count].to_s.empty?
+      group = " --only-group #{options[:group]}" unless options[:group].to_s.empty?
+      command = "bundle exec parallel_test '#{test_path}'#{count}#{group} --group-by filesize --type rspec"
+      puts command
+      abort unless system(command)
     end
   end
 
