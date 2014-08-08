@@ -75,21 +75,6 @@ module Bosh::Director
           status(204)
         end
       end
-
-      delete '/:id' do
-        task_id = params[:id]
-        task = @task_manager.find_task(task_id)
-
-        if task.state != 'processing' && task.state != 'queued'
-          status(400)
-          body("Cannot cancel task #{task_id}: invalid state (#{task.state})")
-        else
-          task.state = :cancelling
-          task.save
-          status(204)
-          body("Cancelling task #{task_id}")
-        end
-      end
     end
   end
 end
