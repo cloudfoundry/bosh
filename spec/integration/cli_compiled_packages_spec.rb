@@ -1,6 +1,8 @@
 require 'spec_helper'
 
 describe 'cli: compiled_packages', type: :integration do
+  include Bosh::Spec::CreateReleaseOutputParsers
+
   with_reset_sandbox_before_each
 
   context 'when a release has been created' do
@@ -68,12 +70,6 @@ describe 'cli: compiled_packages', type: :integration do
 
     deploy_output = bosh_runner.run('deploy')
     expect(deploy_output).to_not match(/compiling packages/i)
-  end
-
-  def parse_release_tarball_path(create_release_output)
-    regex = /^Release tarball \(.*\): (.*\.tgz)$/
-    expect(create_release_output).to match(regex)
-    create_release_output.match(regex)[1]
   end
 
   def create_release

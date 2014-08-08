@@ -1,13 +1,8 @@
 require 'spec_helper'
 
 describe 'cli: package compilation', type: :integration do
+  include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
-
-  def parse_release_tarball_path(create_release_output)
-    regex = /^Release tarball \(.*\): (.*\.tgz)$/
-    expect(create_release_output).to match(regex)
-    create_release_output.match(regex)[1]
-  end
 
   it 'uses compile package cache for previously compiled packages' do
     stemcell_filename = spec_asset('valid_stemcell.tgz')

@@ -1,13 +1,8 @@
 require 'spec_helper'
 
 describe 'cli: deployment process', type: :integration do
+  include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
-
-  def parse_release_tarball_path(create_release_output)
-    regex = /^Release tarball \(.*\): (.*\.tgz)$/
-    expect(create_release_output).to match(regex)
-    create_release_output.match(regex)[1]
-  end
 
   it 'successfully performed with minimal manifest' do
     release_filename = spec_asset('valid_release.tgz')
