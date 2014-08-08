@@ -81,8 +81,8 @@ describe VSphereCloud::Cloud, external_cpi: false do
       {'key' => 'value'}
     )
 
-    @vm_id.should_not be_nil
-    @cpi.has_vm?(@vm_id).should be(true)
+    expect(@vm_id).to_not be_nil
+    expect(@cpi.has_vm?(@vm_id)).to be(true)
 
     yield if block_given?
 
@@ -90,9 +90,10 @@ describe VSphereCloud::Cloud, external_cpi: false do
     @cpi.set_vm_metadata(@vm_id, metadata)
 
     @disk_id = @cpi.create_disk(2048, @vm_id)
-    @disk_id.should_not be_nil
+    expect(@disk_id).to_not be_nil
 
     @cpi.attach_disk(@vm_id, @disk_id)
+    expect(@cpi.has_disk?(@disk_id)).to be(true)
 
     metadata[:bosh_data] = 'bosh data'
     metadata[:instance_id] = 'instance'
