@@ -159,7 +159,7 @@ describe Bosh::Cli::Command::Vms do
             expect(s.to_s).to include 'rp1'
             expect(s.to_s).to include '| 192.168.0.1'
             expect(s.to_s).to include '| 192.168.0.2'
-            expect(s.to_s).to include '1%, 2%, 3%'
+            expect(s.to_s).to include '1, 2, 3'
             expect(s.to_s).to include '4%'
             expect(s.to_s).to include '5%'
             expect(s.to_s).to include '6%'
