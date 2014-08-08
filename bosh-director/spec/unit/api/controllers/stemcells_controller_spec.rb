@@ -21,24 +21,24 @@ module Bosh::Director
 
     after { FileUtils.rm_rf(temp_dir) }
 
-    describe 'POST', '/stemcells' do
+    describe 'POST', '/' do
       context 'authenticated access' do
         before { authorize 'admin', 'admin' }
 
         it 'allows json body with remote stemcell location' do
-          post '/stemcells', Yajl::Encoder.encode('location' => 'http://stemcell_url'), { 'CONTENT_TYPE' => 'application/json' }
+          post '/', Yajl::Encoder.encode('location' => 'http://stemcell_url'), { 'CONTENT_TYPE' => 'application/json' }
           expect_redirect_to_queued_task(last_response)
         end
 
         it 'allow form parameters with a stemcell local file path' do
           allow(File).to receive(:exists?).with('/path/to/stemcell.tgz').and_return(true)
 
-          post '/stemcells', { 'nginx_upload_path' => '/path/to/stemcell.tgz'}, { 'CONTENT_TYPE' => 'multipart/form-data' }
+          post '/', { 'nginx_upload_path' => '/path/to/stemcell.tgz'}, { 'CONTENT_TYPE' => 'multipart/form-data' }
           expect_redirect_to_queued_task(last_response)
         end
 
         it 'only consumes application/json and multipart/form-data' do
-          post '/stemcells', 'fake-data', { 'CONTENT_TYPE' => 'application/octet-stream' }
+          post '/', 'fake-data', { 'CONTENT_TYPE' => 'application/octet-stream' }
           expect(last_response.status).to eq(404)
         end
       end
@@ -62,7 +62,7 @@ module Bosh::Director
 
     describe 'GET', '/stemcells' do
       def perform
-        get '/stemcells', {}, {}
+        get '/', {}, {}
       end
 
       context 'authenticated access' do

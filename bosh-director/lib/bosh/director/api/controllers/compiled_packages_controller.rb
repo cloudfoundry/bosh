@@ -16,7 +16,7 @@ module Bosh::Director
         @compiled_package_group_manager = Api::CompiledPackageGroupManager.new
       end
 
-      post '/compiled_package_groups/export', consumes: :json do
+      post '/export', consumes: :json do
         stemcell = find_stemcell_by_name_and_version
         release_version = find_release_version_by_name_and_version
 
@@ -36,7 +36,7 @@ module Bosh::Director
         send_file(output_path, type: :tgz)
       end
 
-      post '/compiled_package_groups/import', consumes: :multipart do
+      post '/import', consumes: :multipart do
         task = @compiled_package_group_manager.create_from_file_path(@user, params[:nginx_upload_path])
         redirect "/tasks/#{task.id}"
       end

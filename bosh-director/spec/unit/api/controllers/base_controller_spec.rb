@@ -28,31 +28,12 @@ module Bosh::Director
       end
 
       def app
-        @rack_app ||= Controller.new
-      end
-
-      def login_as_admin
-        basic_authorize 'admin', 'admin'
-      end
-
-      def login_as(username, password)
-        basic_authorize username, password
-      end
-
-      it 'requires auth' do
-        get '/'
-        last_response.status.should == 401
+        @rack_app ||= described_class.new
       end
 
       it 'sets the date header' do
         get '/'
         last_response.headers['Date'].should_not be_nil
-      end
-
-      it "allows Basic HTTP Auth with admin/admin credentials for test purposes (even though user doesn't exist)" do
-        basic_authorize 'admin', 'admin'
-        get '/'
-        last_response.status.should == 404
       end
     end
   end

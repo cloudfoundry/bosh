@@ -8,6 +8,8 @@ module Bosh::Director
 
       let!(:temp_dir) { Dir.mktmpdir}
 
+      before { basic_authorize 'admin', 'admin' }
+
       before do
         blobstore_dir = File.join(temp_dir, 'blobstore')
         FileUtils.mkdir_p(blobstore_dir)
@@ -28,20 +30,7 @@ module Bosh::Director
       end
 
       def app
-        @rack_app ||= Controller.new
-      end
-
-      def login_as_admin
-        basic_authorize 'admin', 'admin'
-      end
-
-      def login_as(username, password)
-        basic_authorize username, password
-      end
-
-      it 'requires auth' do
-        get '/'
-        last_response.status.should == 401
+        @rack_app ||= described_class
       end
 
       it 'sets the date header' do
@@ -49,16 +38,7 @@ module Bosh::Director
         last_response.headers['Date'].should_not be_nil
       end
 
-      it 'allows Basic HTTP Auth with admin/admin credentials for ' +
-             "test purposes (even though user doesn't exist)" do
-        basic_authorize 'admin', 'admin'
-        get '/'
-        last_response.status.should == 404
-      end
-
       describe 'API calls' do
-        before(:each) { login_as_admin }
-
         describe 'resurrection' do
           it 'allows putting all job instances into different resurrection_paused values' do
             deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump('foo' => 'bar'))
@@ -67,7 +47,7 @@ module Bosh::Director
               Models::Instance.create(deployment: deployment, job: 'dea', index: '1', state: 'started'),
               Models::Instance.create(deployment: deployment, job: 'dea', index: '2', state: 'started'),
             ]
-            put '/resurrection', Yajl::Encoder.encode('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
+            put '/', Yajl::Encoder.encode('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
             last_response.status.should == 200
             instances.each do |instance|
               expect(instance.reload.resurrection_paused).to be(true)

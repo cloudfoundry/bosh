@@ -6,6 +6,8 @@ module Bosh::Director
     describe Controllers::DeploymentsController do
       include Rack::Test::Methods
 
+      before { basic_authorize 'admin', 'admin' }
+
       let!(:temp_dir) { Dir.mktmpdir}
 
       before do
@@ -28,20 +30,7 @@ module Bosh::Director
       end
 
       def app
-        @rack_app ||= Controller.new
-      end
-
-      def login_as_admin
-        basic_authorize 'admin', 'admin'
-      end
-
-      def login_as(username, password)
-        basic_authorize username, password
-      end
-
-      it 'requires auth' do
-        get '/'
-        last_response.status.should == 401
+        @rack_app ||= described_class
       end
 
       it 'sets the date header' do
@@ -49,24 +38,15 @@ module Bosh::Director
         last_response.headers['Date'].should_not be_nil
       end
 
-      it 'allows Basic HTTP Auth with admin/admin credentials for ' +
-             "test purposes (even though user doesn't exist)" do
-        basic_authorize 'admin', 'admin'
-        get '/'
-        last_response.status.should == 404
-      end
-
       describe 'API calls' do
-        before(:each) { login_as_admin }
-
         describe 'creating a deployment' do
           it 'expects compressed deployment file' do
-            post '/deployments', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+            post '/', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'only consumes text/yaml' do
-            post '/deployments', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/plain' }
+            post '/', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/plain' }
             last_response.status.should == 404
           end
         end
@@ -75,14 +55,14 @@ module Bosh::Director
           it 'allows putting jobs into different states' do
             Models::Deployment.
                 create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
-            put '/deployments/foo/jobs/nats?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+            put '/foo/jobs/nats?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'allows putting job instances into different states' do
             Models::Deployment.
                 create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
-            put '/deployments/foo/jobs/dea/2?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+            put '/foo/jobs/dea/2?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
             expect_redirect_to_queued_task(last_response)
           end
 
@@ -92,13 +72,13 @@ module Bosh::Director
             instance = Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started')
-            put '/deployments/foo/jobs/dea/0/resurrection', Yajl::Encoder.encode('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
+            put '/foo/jobs/dea/0/resurrection', Yajl::Encoder.encode('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
             last_response.status.should == 200
             expect(instance.reload.resurrection_paused).to be(true)
           end
 
           it "doesn't like invalid indices" do
-            put '/deployments/foo/jobs/dea/zb?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+            put '/foo/jobs/dea/zb?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
             last_response.status.should == 400
           end
 
@@ -107,7 +87,7 @@ module Bosh::Director
             instance = Models::Instance.create(deployment: deployment, job: 'nats', index: '0', state: 'started')
             disk = Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
 
-            get '/deployments/foo/jobs/nats/0', {}
+            get '/foo/jobs/nats/0', {}
 
             last_response.status.should == 200
             expected = {
@@ -122,7 +102,7 @@ module Bosh::Director
           end
 
           it 'should return 404 if the instance cannot be found' do
-            get '/deployments/foo/jobs/nats/0', {}
+            get '/foo/jobs/nats/0', {}
             last_response.status.should == 404
           end
         end
@@ -134,19 +114,19 @@ module Bosh::Director
             instance = Models::Instance.
                 create(:deployment => deployment, :job => 'nats',
                        :index => '0', :state => 'started')
-            get '/deployments/foo/jobs/nats/0/logs', {}
+            get '/foo/jobs/nats/0/logs', {}
             expect_redirect_to_queued_task(last_response)
           end
 
           it '404 if no instance' do
-            get '/deployments/baz/jobs/nats/0/logs', {}
+            get '/baz/jobs/nats/0/logs', {}
             last_response.status.should == 404
           end
 
           it '404 if no deployment' do
             deployment = Models::Deployment.
                 create(:name => 'bar', :manifest => Psych.dump({'foo' => 'bar'}))
-            get '/deployments/bar/jobs/nats/0/logs', {}
+            get '/bar/jobs/nats/0/logs', {}
             last_response.status.should == 404
           end
         end
@@ -172,7 +152,7 @@ module Bosh::Director
               d
             }
 
-            get '/deployments', {}, {}
+            get '/', {}, {}
             last_response.status.should == 200
 
             body = Yajl::Parser.parse(last_response.body)
@@ -199,7 +179,7 @@ module Bosh::Director
             deployment = Models::Deployment.
                 create(:name => 'test_deployment',
                        :manifest => Psych.dump({'foo' => 'bar'}))
-            get '/deployments/test_deployment'
+            get '/test_deployment'
 
             last_response.status.should == 200
             body = Yajl::Parser.parse(last_response.body)
@@ -232,7 +212,7 @@ module Bosh::Director
               instance = Models::Instance.create(instance_params)
             end
 
-            get '/deployments/test_deployment/vms'
+            get '/test_deployment/vms'
 
             last_response.status.should == 200
             body = Yajl::Parser.parse(last_response.body)
@@ -254,7 +234,7 @@ module Bosh::Director
           it 'deletes the deployment' do
             deployment = Models::Deployment.create(:name => 'test_deployment', :manifest => Psych.dump({'foo' => 'bar'}))
 
-            delete '/deployments/test_deployment'
+            delete '/test_deployment'
             expect_redirect_to_queued_task(last_response)
           end
         end
@@ -266,32 +246,32 @@ module Bosh::Director
 
             deployment = Models::Deployment.make(:name => 'mycloud')
 
-            get '/deployments/mycloud/properties/foo'
+            get '/mycloud/properties/foo'
             last_response.status.should == 404
 
-            get '/deployments/othercloud/properties/foo'
+            get '/othercloud/properties/foo'
             last_response.status.should == 404
 
-            post '/deployments/mycloud/properties', Yajl::Encoder.encode('name' => 'foo', 'value' => 'bar'), { 'CONTENT_TYPE' => 'application/json' }
+            post '/mycloud/properties', Yajl::Encoder.encode('name' => 'foo', 'value' => 'bar'), { 'CONTENT_TYPE' => 'application/json' }
             last_response.status.should == 204
 
-            get '/deployments/mycloud/properties/foo'
+            get '/mycloud/properties/foo'
             last_response.status.should == 200
             Yajl::Parser.parse(last_response.body)['value'].should == 'bar'
 
-            get '/deployments/othercloud/properties/foo'
+            get '/othercloud/properties/foo'
             last_response.status.should == 404
 
-            put '/deployments/mycloud/properties/foo', Yajl::Encoder.encode('value' => 'baz'), { 'CONTENT_TYPE' => 'application/json' }
+            put '/mycloud/properties/foo', Yajl::Encoder.encode('value' => 'baz'), { 'CONTENT_TYPE' => 'application/json' }
             last_response.status.should == 204
 
-            get '/deployments/mycloud/properties/foo'
+            get '/mycloud/properties/foo'
             Yajl::Parser.parse(last_response.body)['value'].should == 'baz'
 
-            delete '/deployments/mycloud/properties/foo'
+            delete '/mycloud/properties/foo'
             last_response.status.should == 204
 
-            get '/deployments/mycloud/properties/foo'
+            get '/mycloud/properties/foo'
             last_response.status.should == 404
           end
         end
@@ -300,26 +280,26 @@ module Bosh::Director
           let!(:deployment) { Models::Deployment.make(:name => 'mycloud') }
 
           it 'exposes problem managent REST API' do
-            get '/deployments/mycloud/problems'
+            get '/mycloud/problems'
             last_response.status.should == 200
             Yajl::Parser.parse(last_response.body).should == []
 
-            post '/deployments/mycloud/scans'
+            post '/mycloud/scans'
             expect_redirect_to_queued_task(last_response)
 
-            put '/deployments/mycloud/problems', Yajl::Encoder.encode('solutions' => { 42 => 'do_this', 43 => 'do_that', 44 => nil }), { 'CONTENT_TYPE' => 'application/json' }
+            put '/mycloud/problems', Yajl::Encoder.encode('solutions' => { 42 => 'do_this', 43 => 'do_that', 44 => nil }), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
 
             problem = Models::DeploymentProblem.
                 create(:deployment_id => deployment.id, :resource_id => 2,
                        :type => 'test', :state => 'open', :data => {})
 
-            put '/deployments/mycloud/problems', Yajl::Encoder.encode('solution' => 'default'), { 'CONTENT_TYPE' => 'application/json' }
+            put '/mycloud/problems', Yajl::Encoder.encode('solution' => 'default'), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
           end
 
           it 'scans and fixes problems' do
-            put '/deployments/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => { 'job' => [0] }), { 'CONTENT_TYPE' => 'application/json' }
+            put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => { 'job' => [0] }), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
           end
         end
@@ -340,45 +320,78 @@ module Bosh::Director
 
           describe 'creating' do
             it 'should create a snapshot for a job' do
-              post '/deployments/mycloud/jobs/job/1/snapshots'
+              post '/mycloud/jobs/job/1/snapshots'
               expect_redirect_to_queued_task(last_response)
             end
 
             it 'should create a snapshot for a deployment' do
-              post '/deployments/mycloud/snapshots'
+              post '/mycloud/snapshots'
               expect_redirect_to_queued_task(last_response)
             end
           end
 
           describe 'deleting' do
             it 'should delete all snapshots of a deployment' do
-              delete '/deployments/mycloud/snapshots'
+              delete '/mycloud/snapshots'
               expect_redirect_to_queued_task(last_response)
             end
 
             it 'should delete a snapshot' do
-              delete '/deployments/mycloud/snapshots/snap1a'
+              delete '/mycloud/snapshots/snap1a'
               expect_redirect_to_queued_task(last_response)
             end
 
             it 'should raise an error if the snapshot belongs to a different deployment' do
               snap = Models::Snapshot.make(snapshot_cid: 'snap2b')
-              delete "/deployments/#{snap.persistent_disk.instance.deployment.name}/snapshots/snap2a"
+              delete "/#{snap.persistent_disk.instance.deployment.name}/snapshots/snap2a"
               last_response.status.should == 400
             end
           end
 
           describe 'listing' do
             it 'should list all snapshots for a job' do
-              get '/deployments/mycloud/jobs/job/0/snapshots'
+              get '/mycloud/jobs/job/0/snapshots'
               last_response.status.should == 200
             end
 
             it 'should list all snapshots for a deployment' do
-              get '/deployments/mycloud/snapshots'
+              get '/mycloud/snapshots'
               last_response.status.should == 200
             end
           end
+        end
+      end
+
+      describe 'POST', '/:deployment_name/errands/:name/runs' do
+        before { Config.base_dir = Dir.mktmpdir }
+        after { FileUtils.rm_rf(Config.base_dir) }
+
+        def perform
+          post(
+            '/fake-dep-name/errands/fake-errand-name/runs',
+            JSON.dump({}),
+            { 'CONTENT_TYPE' => 'application/json' },
+          )
+        end
+
+        it 'enqueues a RunErrand task' do
+          job_queue = instance_double('Bosh::Director::JobQueue')
+          allow(JobQueue).to receive(:new).and_return(job_queue)
+
+          task = instance_double('Bosh::Director::Models::Task', id: 1)
+          expect(job_queue).to receive(:enqueue).with(
+            'admin',
+            Jobs::RunErrand,
+            'run errand fake-errand-name from deployment fake-dep-name',
+            ['fake-dep-name', 'fake-errand-name'],
+          ).and_return(task)
+
+          perform
+        end
+
+        it 'returns a task' do
+          perform
+          expect_redirect_to_queued_task(last_response)
         end
       end
     end

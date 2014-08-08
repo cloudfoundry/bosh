@@ -28,7 +28,7 @@ module Bosh::Director
       end
 
       def app
-        @rack_app ||= Controller.new
+        @rack_app ||= described_class
       end
 
       def login_as_admin
@@ -66,7 +66,7 @@ module Bosh::Director
           it 'creates a user' do
             Models::User.all.size.should == 0
 
-            post '/users', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
+            post '/', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
             new_user = Models::User[:username => username]
             new_user.should_not be_nil
@@ -74,21 +74,21 @@ module Bosh::Director
           end
 
           it "doesn't create a user with exising username" do
-            post '/users', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
+            post '/', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
             login_as(username, password)
-            post '/users', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
+            post '/', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
             last_response.status.should == 400
             Models::User.all.size.should == 1
           end
 
           it 'updates user password but not username' do
-            post '/users', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
+            post '/', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
             login_as(username, password)
             new_data = {'username' => username, 'password' => '456'}
-            put "/users/#{username}", Yajl::Encoder.encode(new_data), { 'CONTENT_TYPE' => 'application/json' }
+            put "/#{username}", Yajl::Encoder.encode(new_data), { 'CONTENT_TYPE' => 'application/json' }
 
             last_response.status.should == 204
             user = Models::User[:username => username]
@@ -96,17 +96,17 @@ module Bosh::Director
 
             login_as(username, '456')
             change_name = {'username' => 'john2', 'password' => password}
-            put "/users/#{username}", Yajl::Encoder.encode(change_name), { 'CONTENT_TYPE' => 'application/json' }
+            put "/#{username}", Yajl::Encoder.encode(change_name), { 'CONTENT_TYPE' => 'application/json' }
             last_response.status.should == 400
             last_response.body.should ==
               "{\"code\":20001,\"description\":\"The username is immutable\"}"
           end
 
           it 'deletes user' do
-            post '/users', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
+            post '/', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
             login_as(username, password)
-            delete "/users/#{username}"
+            delete "/#{username}"
 
             last_response.status.should == 204
 

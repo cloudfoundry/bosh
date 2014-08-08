@@ -3,20 +3,20 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class ReleasesController < BaseController
-      post '/releases', :consumes => :json do
+      post '/', :consumes => :json do
         payload = json_decode(request.body)
         rebase = params['rebase'] == 'true'
         task = @release_manager.create_release_from_url(@user, payload['location'], rebase)
         redirect "/tasks/#{task.id}"
       end
 
-      post '/releases', :consumes => :multipart do
+      post '/', :consumes => :multipart do
         rebase = params['rebase'] == 'true'
         task = @release_manager.create_release_from_file_path(@user, params[:nginx_upload_path], rebase)
         redirect "/tasks/#{task.id}"
       end
 
-      get '/releases' do
+      get '/' do
         releases = Models::Release.order_by(:name.asc).map do |release|
           release_versions = release.versions_dataset.order_by(:version.asc).map do |rv|
             {
@@ -37,7 +37,7 @@ module Bosh::Director
         json_encode(releases)
       end
 
-      get '/releases/:name' do
+      get '/:name' do
         name = params[:name].to_s.strip
         release = @release_manager.find_by_name(name)
 
@@ -69,7 +69,7 @@ module Bosh::Director
         json_encode(result)
       end
 
-      delete '/releases/:name' do
+      delete '/:name' do
         release = @release_manager.find_by_name(params[:name])
 
         options = {}

@@ -3,7 +3,7 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class InfoController < BaseController
-      get '/info' do
+      get '/' do
         status = {
           'name' => Config.name,
           'uuid' => Config.uuid,

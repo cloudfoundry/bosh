@@ -3,18 +3,18 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class StemcellsController < BaseController
-      post '/stemcells', :consumes => :json do
+      post '/', :consumes => :json do
         payload = json_decode(request.body)
         task = @stemcell_manager.create_stemcell_from_url(@user, payload['location'])
         redirect "/tasks/#{task.id}"
       end
 
-      post '/stemcells', :consumes => :multipart do
+      post '/', :consumes => :multipart do
         task = @stemcell_manager.create_stemcell_from_file_path(@user, params[:nginx_upload_path])
         redirect "/tasks/#{task.id}"
       end
 
-      get '/stemcells' do
+      get '/' do
         stemcells = Models::Stemcell.order_by(:name.asc).map do |stemcell|
           {
             'name' => stemcell.name,
@@ -26,7 +26,7 @@ module Bosh::Director
         json_encode(stemcells)
       end
 
-      delete '/stemcells/:name/:version' do
+      delete '/:name/:version' do
         name, version = params[:name], params[:version]
         options = {}
         options['force'] = true if params['force'] == 'true'

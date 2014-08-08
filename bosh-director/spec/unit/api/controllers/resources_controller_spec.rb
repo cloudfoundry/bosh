@@ -28,7 +28,7 @@ module Bosh::Director
       end
 
       def app
-        @rack_app ||= Controller.new
+        described_class.new
       end
 
       def login_as_admin
@@ -61,8 +61,8 @@ module Bosh::Director
         let(:tmp_file) { File.join(Dir.tmpdir, "resource-#{SecureRandom.uuid}") }
 
         def app
-          ResourceManager.stub(new: resouce_manager)
-          Controller.new
+          allow(ResourceManager).to receive(:new).and_return(resouce_manager)
+          described_class.new
         end
 
         before do
@@ -75,11 +75,10 @@ module Bosh::Director
 
         it 'cleans up temp file after serving it' do
           login_as_admin
-
-          resouce_manager.should_receive(:get_resource_path).with('deadbeef').and_return(tmp_file)
+          expect(resouce_manager).to receive(:get_resource_path).with('deadbeef').and_return(tmp_file)
 
           File.exists?(tmp_file).should be(true)
-          get '/resources/deadbeef'
+          get '/deadbeef'
           last_response.body.should == 'some data'
           File.exists?(tmp_file).should be(false)
         end
@@ -90,13 +89,13 @@ module Bosh::Director
 
         describe 'resources' do
           it '404 on missing resource' do
-            get '/resources/deadbeef'
+            get '/missing_resource'
             last_response.status.should == 404
           end
 
           it 'can fetch resources from blobstore' do
             id = @director_app.blobstores.blobstore.create('some data')
-            get "/resources/#{id}"
+            get "/#{id}"
             last_response.status.should == 200
             last_response.body.should == 'some data'
           end

@@ -28,7 +28,7 @@ module Bosh::Director
       end
 
       def app
-        @rack_app ||= Controller.new
+        @rack_app ||= described_class.new
       end
 
       def login_as_admin
@@ -53,44 +53,36 @@ module Bosh::Director
              "test purposes (even though user doesn't exist)" do
         basic_authorize 'admin', 'admin'
         get '/'
-        last_response.status.should == 404
+        last_response.status.should == 200
       end
 
-      describe 'Fetching status' do
-        it 'not authenticated' do
-          get '/info'
-          last_response.status.should == 200
-          Yajl::Parser.parse(last_response.body)['user'].should == nil
-        end
+      it 'responds with expected json' do
+        login_as_admin
 
-        it 'authenticated' do
-          login_as_admin
-          get '/info'
+        get '/'
 
-          last_response.status.should == 200
-          expected = {
-              'name' => 'Test Director',
-              'version' => "#{VERSION} (#{Config.revision})",
-              'uuid' => Config.uuid,
-              'user' => 'admin',
-              'cpi' => 'dummy',
-              'features' => {
-                  'dns' => {
-                      'status' => true,
-                      'extras' => {'domain_name' => 'bosh'}
-                  },
-                  'compiled_package_cache' => {
-                      'status' => true,
-                      'extras' => {'provider' => 'local'}
-                  },
-                  'snapshots' => {
-                      'status' => true
-                  }
-              }
+        expected = {
+          'name' => 'Test Director',
+          'version' => "#{VERSION} (#{Config.revision})",
+          'uuid' => Config.uuid,
+          'user' => 'admin',
+          'cpi' => 'dummy',
+          'features' => {
+            'dns' => {
+              'status' => true,
+              'extras' => {'domain_name' => 'bosh'}
+            },
+            'compiled_package_cache' => {
+              'status' => true,
+              'extras' => {'provider' => 'local'}
+            },
+            'snapshots' => {
+              'status' => true
+            }
           }
+        }
 
-          Yajl::Parser.parse(last_response.body).should == expected
-        end
+        Yajl::Parser.parse(last_response.body).should == expected
       end
     end
   end

@@ -3,7 +3,7 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class TasksController < BaseController
-      get '/tasks' do
+      get '/' do
         dataset = Models::Task.dataset
         limit = params['limit']
         if limit
@@ -45,7 +45,7 @@ module Bosh::Director
         json_encode(tasks)
       end
 
-      get '/tasks/:id' do
+      get '/:id' do
         task = @task_manager.find_task(params[:id])
         if task_timeout?(task)
           task.state = :timeout
@@ -59,7 +59,7 @@ module Bosh::Director
       # Sends back output of given task id and params[:type]
       # Example: `get /tasks/5/output?type=event` will send back the file
       # at /var/vcap/store/director/tasks/5/event
-      get '/tasks/:id/output' do
+      get '/:id/output' do
         log_type = params[:type] || 'debug'
         task = @task_manager.find_task(params[:id])
 
@@ -76,7 +76,7 @@ module Bosh::Director
         end
       end
 
-      delete '/task/:id' do
+      delete '/:id' do
         task_id = params[:id]
         task = @task_manager.find_task(task_id)
 

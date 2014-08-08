@@ -28,7 +28,7 @@ module Bosh::Director
       end
 
       def app
-        @rack_app ||= Controller.new
+        @rack_app ||= described_class.new
       end
 
       def login_as_admin
@@ -53,7 +53,7 @@ module Bosh::Director
              "test purposes (even though user doesn't exist)" do
         basic_authorize 'admin', 'admin'
         get '/'
-        last_response.status.should == 404
+        last_response.status.should == 200
       end
 
       describe 'API calls' do
@@ -67,12 +67,12 @@ module Bosh::Director
                   :state => state,
                   :timestamp => Time.now.to_i - i) }
             end
-            get '/tasks?state=processing'
+            get '/?state=processing'
             last_response.status.should == 200
             body = Yajl::Parser.parse(last_response.body)
             body.size.should == 20
 
-            get '/tasks?state=processing,cancelling,queued'
+            get '/?state=processing,cancelling,queued'
             last_response.status.should == 200
             body = Yajl::Parser.parse(last_response.body)
             body.size.should == 60
@@ -85,7 +85,7 @@ module Bosh::Director
                   :state => state,
                   :timestamp => Time.now.to_i - i) }
             end
-            get '/tasks?limit=20'
+            get '/?limit=20'
             last_response.status.should == 200
             body = Yajl::Parser.parse(last_response.body)
             body.size.should == 20
@@ -96,7 +96,7 @@ module Bosh::Director
           it 'has API call that return task status' do
             task = Models::Task.make(state: 'queued', description: 'fake-description')
 
-            get "/tasks/#{task.id}"
+            get "/#{task.id}"
             last_response.status.should == 200
             task_json = Yajl::Parser.parse(last_response.body)
             task_json['id'].should == task.id
@@ -106,7 +106,7 @@ module Bosh::Director
             task.state = 'processed'
             task.save
 
-            get "/tasks/#{task.id}"
+            get "/#{task.id}"
             last_response.status.should == 200
             task_json = Yajl::Parser.parse(last_response.body)
             task_json['id'].should == 1
@@ -121,7 +121,7 @@ module Bosh::Director
 
             task = Models::Task.make(output: temp_dir)
 
-            get "/tasks/#{task.id}/output"
+            get "/#{task.id}/output"
             last_response.status.should == 200
             last_response.body.should == 'Test output'
           end
@@ -134,14 +134,14 @@ module Bosh::Director
             task = Models::Task.make(output: temp_dir)
 
             # Range test
-            get "/tasks/#{task.id}/output", {}, {'HTTP_RANGE' => 'bytes=0-3'}
+            get "/#{task.id}/output", {}, {'HTTP_RANGE' => 'bytes=0-3'}
             last_response.status.should == 206
             last_response.body.should == 'Test'
             last_response.headers['Content-Length'].should == '4'
             last_response.headers['Content-Range'].should == 'bytes 0-3/11'
 
             # Range test
-            get "/tasks/#{task.id}/output", {}, {'HTTP_RANGE' => 'bytes=5-'}
+            get "/#{task.id}/output", {}, {'HTTP_RANGE' => 'bytes=5-'}
             last_response.status.should == 206
             last_response.body.should == 'output'
             last_response.headers['Content-Length'].should == '6'
@@ -164,18 +164,18 @@ module Bosh::Director
             task.save
 
             %w(debug event cpi).each do |log_type|
-              get "/tasks/#{task.id}/output?type=#{log_type}"
+              get "/#{task.id}/output?type=#{log_type}"
               last_response.status.should == 200
               last_response.body.should == "Test output #{log_type}"
             end
 
             # Backward compatibility: when log_type=soap return cpi log
-            get "/tasks/#{task.id}/output?type=soap"
+            get "/#{task.id}/output?type=soap"
             last_response.status.should == 200
             last_response.body.should == 'Test output cpi'
 
             # Default output is debug
-            get "/tasks/#{task.id}/output"
+            get "/#{task.id}/output"
             last_response.status.should == 200
             last_response.body.should == 'Test output debug'
           end
@@ -194,7 +194,7 @@ module Bosh::Director
             task.save
 
             %w(soap cpi).each do |log_type|
-              get "/tasks/#{task.id}/output?type=#{log_type}"
+              get "/#{task.id}/output?type=#{log_type}"
               last_response.status.should == 200
               last_response.body.should == 'Test output soap'
             end

@@ -23,7 +23,7 @@ module Bosh::Director
         let(:locks) { [] }
 
         it 'should list the current locks' do
-          get '/locks'
+          get '/'
           expect(last_response.status).to eq(200)
 
           body = Yajl::Parser.parse(last_response.body)
@@ -50,7 +50,7 @@ module Bosh::Director
         end
 
         it 'should list the current locks' do
-          get '/locks'
+          get '/'
           expect(last_response.status).to eq(200)
 
           body = Yajl::Parser.parse(last_response.body)

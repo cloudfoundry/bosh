@@ -527,7 +527,7 @@ module Bosh
         end
 
         def cancel_task(task_id)
-          response_code, body = delete("/task/#{task_id}")
+          response_code, body = delete("/tasks/#{task_id}")
           raise AuthError if response_code == 401
           raise MissingTask, "No task##{task_id} found" if response_code == 404
           [body, response_code]

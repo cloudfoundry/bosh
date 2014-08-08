@@ -28,7 +28,7 @@ module Bosh::Director
       end
 
       def app
-        @rack_app ||= Controller.new
+        @rack_app ||= described_class.new
       end
 
       def login_as_admin
@@ -53,31 +53,31 @@ module Bosh::Director
              "test purposes (even though user doesn't exist)" do
         basic_authorize 'admin', 'admin'
         get '/'
-        last_response.status.should == 404
+        last_response.status.should == 200
       end
 
-      describe 'POST', '/releases' do
+      describe 'POST', '/' do
         before { authorize 'admin', 'admin' }
 
         it 'allows json body with remote release location' do
-          post '/releases', Yajl::Encoder.encode('location' => 'http://release_url'), { 'CONTENT_TYPE' => 'application/json' }
+          post '/', Yajl::Encoder.encode('location' => 'http://release_url'), { 'CONTENT_TYPE' => 'application/json' }
           expect_redirect_to_queued_task(last_response)
         end
 
         it 'allow form parameters with a release local file path' do
           allow(File).to receive(:exists?).with('/path/to/release.tgz').and_return(true)
 
-          post '/releases', { 'nginx_upload_path' => '/path/to/release.tgz'}, { 'CONTENT_TYPE' => 'multipart/form-data' }
+          post '/', { 'nginx_upload_path' => '/path/to/release.tgz'}, { 'CONTENT_TYPE' => 'multipart/form-data' }
           expect_redirect_to_queued_task(last_response)
         end
 
         it 'only consumes application/json and multipart/form-data' do
-          post '/releases', 'fake-data', { 'CONTENT_TYPE' => 'application/octet-stream' }
+          post '/', 'fake-data', { 'CONTENT_TYPE' => 'application/octet-stream' }
           expect(last_response.status).to eq(404)
         end
       end
 
-      describe 'GET', '/releases' do
+      describe 'GET', '/' do
         before { authorize 'admin', 'admin' }
 
         it 'has API call that returns a list of releases in JSON' do
@@ -90,7 +90,7 @@ module Bosh::Director
           Models::ReleaseVersion.
               create(release: release2, version: 2, commit_hash: '0b2c3d', uncommitted_changes: true)
 
-          get '/releases', {}, {}
+          get '/', {}, {}
           last_response.status.should == 200
           body = last_response.body
 
@@ -105,7 +105,7 @@ module Bosh::Director
         end
 
         it 'returns empty collection if there are no releases' do
-          get '/releases', {}, {}
+          get '/', {}, {}
           last_response.status.should == 200
 
           body = Yajl::Parser.parse(last_response.body)
@@ -113,7 +113,7 @@ module Bosh::Director
         end
       end
 
-      describe 'DELETE', '/releases/<id>' do
+      describe 'DELETE', '/<id>' do
         before { authorize 'admin', 'admin' }
 
         it 'deletes the whole release' do
@@ -121,7 +121,7 @@ module Bosh::Director
           release.add_version(Models::ReleaseVersion.make(:version => '1'))
           release.save
 
-          delete '/releases/test_release'
+          delete '/test_release'
           expect_redirect_to_queued_task(last_response)
         end
 
@@ -130,14 +130,14 @@ module Bosh::Director
           release.add_version(Models::ReleaseVersion.make(:version => '1'))
           release.save
 
-          delete '/releases/test_release?version=1'
+          delete '/test_release?version=1'
           expect_redirect_to_queued_task(last_response)
         end
       end
 
-      describe 'GET', '/releases/<id>' do
+      describe 'GET', '<id>' do
         before { authorize 'admin', 'admin' }
-
+        
         it 'returns versions' do
           release = Models::Release.create(:name => 'test_release')
           (1..10).map do |i|
@@ -145,7 +145,7 @@ module Bosh::Director
           end
           release.save
 
-          get '/releases/test_release'
+          get '/test_release'
           last_response.status.should == 200
           body = Yajl::Parser.parse(last_response.body)
 

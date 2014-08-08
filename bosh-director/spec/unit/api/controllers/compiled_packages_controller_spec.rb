@@ -12,7 +12,7 @@ module Bosh::Director
 
     before { Api::ResourceManager.stub(:new) }
 
-    describe 'POST', '/compiled_package_groups/export' do
+    describe 'POST', 'export' do
       def perform
         params = {
           stemcell_name:    'bosh-stemcell',
@@ -20,7 +20,7 @@ module Bosh::Director
           release_name:     'cf-release',
           release_version:  '456',
         }
-        post '/compiled_package_groups/export', JSON.dump(params), { 'CONTENT_TYPE' => 'application/json' }
+        post '/export', JSON.dump(params), { 'CONTENT_TYPE' => 'application/json' }
       end
 
       context 'authenticated access' do
@@ -126,9 +126,9 @@ module Bosh::Director
       end
     end
 
-    describe 'POST', '/compiled_package_groups/import (multipart)' do
+    describe 'POST', '/import (multipart)' do
       def perform
-        post '/compiled_package_groups/import', { 'nginx_upload_path' => tar_path }, {'CONTENT_TYPE' => 'multipart/form-data'}
+        post '/import', { 'nginx_upload_path' => tar_path }, {'CONTENT_TYPE' => 'multipart/form-data'}
       end
 
       let(:tar_path) { "/tmp/archive-#{SecureRandom.uuid}.tgz" }

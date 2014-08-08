@@ -57,7 +57,7 @@ module Bosh::Director
             request.env.has_key?(key)
           end
 
-          protected! if auth_provided || !PUBLIC_URLS.include?(request.path_info)
+          protected! if auth_provided || !PUBLIC_URLS.include?(request.path)
         end
 
         after { headers('Date' => Time.now.rfc822) } # As thin doesn't inject date

@@ -28,7 +28,7 @@ module Bosh::Director
       end
 
       def app
-        @rack_app ||= Controller.new
+        @rack_app ||= described_class.new
       end
 
       def login_as_admin
@@ -77,7 +77,7 @@ module Bosh::Director
           describe 'backup' do
             describe 'creating' do
               it 'returns a successful response' do
-                post '/backups'
+                post '/'
                 expect_redirect_to_queued_task(last_response)
               end
             end
@@ -89,13 +89,13 @@ module Bosh::Director
                   FileUtils.touch(backup_file)
                   BackupManager.any_instance.stub(destination_path: backup_file)
 
-                  get '/backups'
+                  get '/'
                   expect(last_response.status).to eq 200
                 end
               end
 
               it 'returns file not found for missing tarball' do
-                get '/backups'
+                get '/'
                 expect(last_response.status).to eq 404
               end
             end

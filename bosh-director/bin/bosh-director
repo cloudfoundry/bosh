@@ -20,8 +20,57 @@ Bosh::Director::App.new(config)
 
 thin_server = Thin::Server.new('127.0.0.1', config.hash['port'], signals: false) do
   use Rack::CommonLogger
-  map '/' do
-    run Bosh::Director::Api::Controller.new
+
+  map '/info' do
+    run Bosh::Director::Api::Controllers::InfoController.new
+  end
+
+  map '/tasks' do
+    run Bosh::Director::Api::Controllers::TasksController.new
+  end
+
+  map '/backups' do
+    run Bosh::Director::Api::Controllers::BackupsController.new
+  end
+
+  map '/deployments' do
+    run Bosh::Director::Api::Controllers::DeploymentsController.new
+  end
+
+  map '/packages' do
+    run Bosh::Director::Api::Controllers::PackagesController.new
+  end
+
+  map '/releases' do
+    run Bosh::Director::Api::Controllers::ReleasesController.new
+  end
+
+  map '/resources' do
+    run Bosh::Director::Api::Controllers::ResourcesController.new
+  end
+
+  map '/resurrection' do
+    run Bosh::Director::Api::Controllers::ResurrectionController.new
+  end
+
+  map '/stemcells' do
+    run Bosh::Director::Api::Controllers::StemcellsController.new
+  end
+
+  map '/tasks' do
+    run Bosh::Director::Api::Controllers::TasksController.new
+  end
+
+  map '/users' do
+    run Bosh::Director::Api::Controllers::UsersController.new
+  end
+
+  map '/compiled_package_groups' do
+    run Bosh::Director::Api::Controllers::CompiledPackagesController.new
+  end
+
+  map '/locks' do
+    run Bosh::Director::Api::Controllers::LocksController.new
   end
 end
 

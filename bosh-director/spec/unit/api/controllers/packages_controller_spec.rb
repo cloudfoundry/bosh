@@ -10,9 +10,9 @@ module Bosh::Director
 
       before { Api::ResourceManager.stub(:new) }
 
-      describe 'POST', '/packages/matches' do
+      describe 'POST', '/matches' do
         def perform
-          post '/packages/matches', YAML.dump(params), { 'CONTENT_TYPE' => 'text/yaml' }
+          post '/matches', YAML.dump(params), { 'CONTENT_TYPE' => 'text/yaml' }
         end
 
         let(:params) { {'packages' => []} }
