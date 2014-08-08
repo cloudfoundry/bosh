@@ -576,8 +576,7 @@ module Bosh::Director
 
     describe '#detach' do
       context 'when disk is not currently attached' do
-        before { allow(instance).to receive(:disk_currently_attached?).with(no_args).and_return(false) }
-
+        before { allow(agent_client).to receive(:list_disk).and_return([]) }
         it 'does not try to unmount and detach disk' do
           expect(agent_client).to_not receive(:unmount_disk)
           expect(cloud).to_not receive(:detach_disk)
@@ -586,7 +585,7 @@ module Bosh::Director
       end
 
       context 'when disk is attached' do
-        before { allow(instance).to receive(:disk_currently_attached?).with(no_args).and_return(true) }
+        before { allow(agent_client).to receive(:list_disk).and_return(['fake-disk-cid']) }
 
         context 'when disk cid can be determined' do
           before { allow(instance_model).to receive(:persistent_disk_cid).and_return('fake-disk-cid') }

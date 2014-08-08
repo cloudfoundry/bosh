@@ -168,7 +168,8 @@ module Bosh::Director
       end
 
       def detach
-        unless @instance.disk_currently_attached?
+        disk_list = @agent_client.list_disk
+        if disk_list.empty?
           @logger.info('Skipping disk detaching')
           return
         end
