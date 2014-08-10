@@ -27,7 +27,7 @@ module Bosh::Cli::Versions
 
       tmp_file_path = File.join(@tmpdir, "bosh-tmp-file-#{SecureRandom.uuid}")
       begin
-        File.open(tmp_file_path, 'w') do |tmp_file|
+        File.open(tmp_file_path, 'wb') do |tmp_file|
           @blobstore.get(blobstore_id, tmp_file, sha1: sha1)
         end
 
