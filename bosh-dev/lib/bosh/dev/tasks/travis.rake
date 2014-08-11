@@ -7,6 +7,9 @@ namespace :travis do
     ENV['PATH'] = "#{File.absolute_path('tmp/go/bin')}:#{ENV['PATH']}"
     ENV['GOROOT'] = File.absolute_path('tmp/go')
 
+    ENV['GOPATH'] = File.absolute_path('go')
+    ENV['GOBIN'] = File.absolute_path('go/gobin')
+
     vet_repo = 'code.google.com/p/go.tools/cmd/vet'
     sh("go get #{vet_repo}")
     sh("go install #{vet_repo}")
