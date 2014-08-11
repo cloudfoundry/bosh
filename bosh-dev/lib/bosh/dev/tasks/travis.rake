@@ -10,5 +10,9 @@ namespace :travis do
     vet_repo = 'code.google.com/p/go.tools/cmd/vet'
     sh("go get #{vet_repo}")
     sh("go install #{vet_repo}")
+
+    golint_repo = 'github.com/golang/lint/golint'
+    sh("go get #{golint_repo}")
+    sh("go install #{golint_repo}")
   end
 end
