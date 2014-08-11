@@ -49,6 +49,8 @@ module Bosh::Dev::Sandbox
 
     attr_accessor :external_cpi_enabled
 
+    attr_reader :nats_log_path
+
     def self.from_env
       db_opts = {
         type: ENV['DB'] || 'postgresql',
@@ -82,7 +84,14 @@ module Bosh::Dev::Sandbox
 
       @redis_socket_connector = SocketConnector.new('redis', 'localhost', redis_port, @logger)
 
-      @nats_process = Service.new(%W[nats-server -p #{nats_port}], {}, @logger)
+      @nats_log_path = File.join(@logs_path, 'nats.log')
+      FileUtils.mkdir_p(@logs_path)
+
+      @nats_process = Service.new(
+        %W[nats-server -p #{nats_port} -D -T -l #{@nats_log_path}],
+        { stdout: $stdout, stderr: $stderr },
+        @logger
+      )
 
       @nats_socket_connector = SocketConnector.new('nats', 'localhost', nats_port, @logger)
 
@@ -148,6 +157,10 @@ module Bosh::Dev::Sandbox
     def start
       setup_sandbox_root
 
+      FileUtils.mkdir_p(cloud_storage_dir)
+      FileUtils.rm_rf(logs_path)
+      FileUtils.mkdir_p(logs_path)
+
       @redis_process.start
       @redis_socket_connector.try_to_connect
 
@@ -156,10 +169,6 @@ module Bosh::Dev::Sandbox
 
       @nats_process.start
       @nats_socket_connector.try_to_connect
-
-      FileUtils.mkdir_p(cloud_storage_dir)
-      FileUtils.rm_rf(logs_path)
-      FileUtils.mkdir_p(logs_path)
 
       @database.create_db
       @database_created = true
