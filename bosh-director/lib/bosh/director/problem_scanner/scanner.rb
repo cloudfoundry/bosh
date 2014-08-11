@@ -37,7 +37,6 @@ module Bosh::Director
         end
       end
 
-      # TODO: can we merge these two methods?
       def scan_vms(vms=nil)
         vm_scanner = VmScanStage.new(
           @instance_manager,

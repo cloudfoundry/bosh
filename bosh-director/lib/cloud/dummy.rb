@@ -85,7 +85,6 @@ module Bosh
       end
 
       def has_disk?(disk_id)
-        puts "Disk exists? #{File.exists?(disk_file(disk_id))}"
         File.exists?(disk_file(disk_id))
       end
 
