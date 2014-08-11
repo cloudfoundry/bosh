@@ -65,6 +65,33 @@ module Bosh::Dev
               end
         RUBY
       end
+
+      context 'when there is more than one version file' do
+        before do
+          FileUtils.mkdir_p(File.dirname(component_version_file))
+          File.open(component_version_file, 'w') do |file|
+            file.write <<-RUBY.gsub /^\s+/, ''
+            module Fake::Component
+              VERSION = '1.5.0.pre.3'
+            end
+            RUBY
+          end
+
+          another_version_file_path = File.join(File.dirname(component_version_file), 'somecomponent')
+          FileUtils.mkdir_p(another_version_file_path)
+          File.open(File.join(another_version_file_path, 'version.rb'), 'w') do |file|
+            file.write <<-RUBY.gsub /^\s+/, ''
+            module Fake::Component
+              VERSION = '1.5.0.pre.3'
+            end
+            RUBY
+          end
+        end
+
+        it 'raises an error' do
+          expect { gem_component.update_version }.to raise_error
+        end
+      end
     end
 
     describe '#dependencies' do

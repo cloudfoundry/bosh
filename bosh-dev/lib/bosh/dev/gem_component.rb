@@ -17,7 +17,10 @@ module Bosh
       def update_version
         glob = File.join(ROOT, name, 'lib', '**', 'version.rb')
 
-        version_file_path = Dir.glob(glob).first
+        version_file_paths = Dir.glob(glob)
+        raise if version_file_paths.size > 1
+        version_file_path = version_file_paths.first
+
         file_contents = File.read(version_file_path)
         file_contents.gsub!(/^(\s*)VERSION = (.*?)$/, "\\1VERSION = '#{version}'")
 
