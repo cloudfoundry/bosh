@@ -15,8 +15,13 @@ module Bosh::Dev::Sandbox
       # Add unique identifier to avoid confusing log information
       @description = "#{@cmd_array.first} (#{SecureRandom.hex(4)})"
 
-      @stdout = @cmd_options[:output]
-      @stderr = "#{@stdout}.err" if @stdout
+      if @cmd_options[:output]
+        @stdout = @cmd_options[:output]
+        @stderr = "#{@stdout}.err"
+      else
+        @stdout = @cmd_options[:stdout]
+        @stderr = @cmd_options[:stderr]
+      end
     end
 
     def start

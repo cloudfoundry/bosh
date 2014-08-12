@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `EhzrTcjEIEfEBBfcl3dnlBld2ZDjTveA`
+  using latest libssl `1.0.1f-1ubuntu2`
+
 * `KXC8x5eWAI71IOc_IelrkLEGNA6_cjRw`
   Remove resolv.conf clearing from firstboot.sh
   (3c785776c5093995e66bb1dce3253dfbeec51e40)
@@ -54,6 +57,9 @@ CentOS images have filename `bosh-centos-6_5-os-image.tgz`
 ## Ubuntu 10.04
 
 Ubuntu 10.04 images have filename `bosh-ubuntu-lucid-os-image.tgz`
+
+* `L9pIPNIBLrq7zRcuh.8ufAseBvWfP.1d`
+  using latest libssl `0.9.8k-7ubuntu8`
 
 * `hGvKHxxg9bboL3e1Ldi27H746AsmEcRQ`
   Remove resolv.conf clearing from firstboot.sh

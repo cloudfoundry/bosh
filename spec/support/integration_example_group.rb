@@ -28,6 +28,7 @@ module IntegrationExampleGroup
       BOSH_WORK_DIR,
       BOSH_CONFIG,
       current_sandbox.cpi.method(:agent_log_path),
+      @current_sandbox.nats_log_path,
       logger
     )
   end
@@ -37,6 +38,7 @@ module IntegrationExampleGroup
       work_dir,
       BOSH_CONFIG,
       current_sandbox.cpi.method(:agent_log_path),
+      @current_sandbox.nats_log_path,
       logger
     )
   end

@@ -1,9 +1,10 @@
 module Bosh::Spec
   class BoshRunner
-    def initialize(bosh_work_dir, bosh_config, agent_log_path_resolver, logger)
+    def initialize(bosh_work_dir, bosh_config, agent_log_path_resolver, nats_log_path, logger)
       @bosh_work_dir = bosh_work_dir
       @bosh_config = bosh_config
       @agent_log_path_resolver = agent_log_path_resolver
+      @nats_log_path = nats_log_path
       @logger = logger
     end
 
@@ -33,6 +34,7 @@ module Bosh::Spec
         if output =~ /Timed out pinging to ([a-z\-\d]+) after \d+ seconds/
           agent_output = File.read(@agent_log_path_resolver.call($1)) rescue nil
           output_debug_log("Agent log #{$1}", agent_output)
+          output_debug_log("Nats log #{$1}", File.read(@nats_log_path)) if File.exists?(@nats_log_path)
         end
 
         raise "ERROR: #{command} failed with output:\n#{output}"
