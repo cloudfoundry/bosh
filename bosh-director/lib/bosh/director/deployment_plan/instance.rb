@@ -469,10 +469,12 @@ module Bosh::Director
       # @param [Hash<String, NetworkReservation>] reservations
       # @return [void]
       def take_network_reservations(reservations)
-        @logger.debug("Copying job instance `#{self}' network reservations")
         reservations.each do |name, provided_reservation|
           reservation = @network_reservations[name]
-          reservation.take(provided_reservation) if reservation
+          if reservation
+            @logger.debug("Copying job instance `#{self}' network reservation #{provided_reservation}")
+            reservation.take(provided_reservation)
+          end
         end
       end
 
@@ -480,10 +482,15 @@ module Bosh::Director
         resource_pool = @job.resource_pool
         vm = resource_pool.add_allocated_vm
 
-        @logger.debug("Found VM `#{vm_model.cid}' running job instance `#{self}' in resource pool `#{resource_pool.name}'")
+        reservation = @network_reservations[vm.resource_pool.network.name]
+
+        @logger.debug("Found VM '#{vm_model.cid}' running job instance '#{self}'" +
+          " in resource pool `#{resource_pool.name}'" +
+          " with reservation '#{reservation}'")
         vm.model = vm_model
         vm.bound_instance = self
         vm.current_state = state
+        vm.use_reservation(reservation)
 
         @vm = vm
       end

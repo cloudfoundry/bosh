@@ -47,4 +47,28 @@ describe 'network configuration', type: :integration do
     output = bosh_runner.run('vms')
     expect(output).to match(/192\.168\.1\.100/)
   end
+
+  it 'preserves existing network reservations on a second deployment' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    # For routed subnets larger than /31 or /32,
+    # the number of available host addresses is usually reduced by two,
+    # namely the largest address, which is reserved as the broadcast address,
+    # and the smallest address, which identifies the network itself.
+
+    # range(8) - identity(1) - broadcast(1) - dns(2) = 4 available IPs
+    manifest_hash['networks'].first['subnets'][0] = {
+      'range'    => '192.168.1.0/29',
+      'gateway'  => '192.168.1.1',
+      'dns'      => ['192.168.1.1', '192.168.1.2'],
+      'static'   => [],
+      'reserved' => [],
+      'cloud_properties' => {},
+    }
+    manifest_hash['resource_pools'].first['size'] = 4
+    manifest_hash['jobs'].first['instances'] = 4
+
+    deploy_simple(manifest_hash: manifest_hash)
+
+    deploy_simple_manifest(manifest_hash: manifest_hash) # expected to not failed
+  end
 end

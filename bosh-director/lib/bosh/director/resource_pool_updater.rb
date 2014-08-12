@@ -17,7 +17,7 @@ module Bosh::Director
       counter = 0
       vms_to_process = []
 
-      each_vm do |vm|
+      @resource_pool.vms.each do |vm|
         next if vm.model
         if !block_given? || yield(vm)
           counter += 1
@@ -132,47 +132,11 @@ module Bosh::Director
     # in case any of resource pools is not big enough to accommodate
     # those VMs.
     def reserve_networks
-      network = @resource_pool.network
-
-      each_vm_with_index do |vm, index|
-        unless vm.network_reservation
-          reservation = NetworkReservation.new(
-              :type => NetworkReservation::DYNAMIC)
-          network.reserve(reservation)
-
-          unless reservation.reserved?
-            case reservation.error
-              when NetworkReservation::CAPACITY
-                raise NetworkReservationNotEnoughCapacity,
-                      "'#{@resource_pool.name}/#{index}' asked for a dynamic IP " +
-                      "but there were no more available"
-              else
-                raise NetworkReservationError,
-                      "'#{@resource_pool.name}/#{index}' failed to reserve " +
-                      "dynamic IP: #{reservation.error}"
-            end
-          end
-
-          vm.network_reservation = reservation
-        end
-      end
+      @resource_pool.reserve_dynamic_networks
     end
 
     def generate_agent_id
       SecureRandom.uuid
-    end
-
-    def each_vm
-      @resource_pool.allocated_vms.each { |vm| yield vm }
-      @resource_pool.idle_vms.each { |vm| yield vm }
-    end
-
-    def each_vm_with_index
-      index = 0
-      each_vm do |vm|
-        yield(vm, index)
-        index += 1
-      end
     end
 
     def extra_vm_count
@@ -189,7 +153,7 @@ module Bosh::Director
 
     def missing_vm_count
       counter = 0
-      each_vm do |vm|
+      @resource_pool.vms.each do |vm|
         next if vm.model
         counter += 1
       end
@@ -198,7 +162,7 @@ module Bosh::Director
 
     def bound_missing_vm_count
       counter = 0
-      each_vm do |vm|
+      @resource_pool.vms.each do |vm|
         next if vm.model
         next if vm.bound_instance.nil?
         counter += 1

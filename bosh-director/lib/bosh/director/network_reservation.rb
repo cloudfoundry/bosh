@@ -89,7 +89,6 @@ module Bosh::Director
     # @return void
     def handle_error(origin)
       if static?
-        formatted_ip = ip_to_netaddr(@ip).ip
         case @error
           when NetworkReservation::USED
             raise NetworkReservationAlreadyInUse,
@@ -116,6 +115,16 @@ module Bosh::Director
                   "#{formatted_ip}: #{@error}"
         end
       end
+    end
+
+    def to_s
+      "{type=#{@type}, ip=#{formatted_ip.inspect}}"
+    end
+
+    private
+
+    def formatted_ip
+      @ip.nil? ? nil : ip_to_netaddr(@ip).ip
     end
   end
 end

@@ -69,6 +69,10 @@ module Bosh::Director
         @reserved_errand_capacity = 0
       end
 
+      def vms
+        @allocated_vms + @idle_vms
+      end
+
       # Returns resource pools spec as Hash (usually for agent to serialize)
       # @return [Hash] Resource pool spec
       def spec
@@ -94,12 +98,24 @@ module Bosh::Director
         end
       end
 
+      # Attempts to allocate a dynamic IP addresses for all VMs
+      # (unless they already have one).
+      def reserve_dynamic_networks
+        vms.each do |vm|
+          unless vm.has_network_reservation?
+            instance = vm.bound_instance
+            origin = instance ? "Job instance `#{instance}' in resource pool `#{@name}'" : nil
+            vm.network_reservation = reserve_dynamic_network(origin)
+          end
+        end
+      end
+
       # Tries to obtain one dynamic reservation in its own network
       # @raise [NetworkReservationError]
       # @return [NetworkReservation] Obtained reservation
-      def reserve_dynamic_network
+      def reserve_dynamic_network(origin="Resource pool `#{@name}'")
         reservation = NetworkReservation.new_dynamic
-        @network.reserve!(reservation, "Resource pool `#{@name}'")
+        @network.reserve!(reservation, origin)
         reservation
       end
 

@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 
 module Bosh::Director
@@ -17,8 +15,7 @@ module Bosh::Director
 
     describe :create_missing_vms do
       it 'should do nothing when everything is created' do
-        allow(resource_pool).to receive(:allocated_vms).and_return([])
-        allow(resource_pool).to receive(:idle_vms).and_return([])
+        allow(resource_pool).to receive(:vms).and_return([])
 
         resource_pool_updater.should_not_receive(:create_missing_vm)
         resource_pool_updater.create_missing_vms(thread_pool)
@@ -28,8 +25,7 @@ module Bosh::Director
         vm = instance_double('Bosh::Director::DeploymentPlan::Vm')
         allow(vm).to receive(:model).and_return(nil)
 
-        allow(resource_pool).to receive(:allocated_vms).and_return([])
-        allow(resource_pool).to receive(:idle_vms).and_return([vm])
+        allow(resource_pool).to receive(:vms).and_return([vm])
 
         thread_pool.should_receive(:process).and_yield
 
@@ -206,71 +202,9 @@ module Bosh::Director
     end
 
     describe '#reserve_networks' do
-      let(:network) { instance_double('Bosh::Director::DeploymentPlan::DynamicNetwork') }
-      before { allow(resource_pool).to receive(:network).and_return(network) }
-
-      let(:vm_model) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-allocated-vm') }
-      let(:allocated_vm) { instance_double('Bosh::Director::DeploymentPlan::Vm', changed?: true, model: vm_model, network_reservation: nil) }
-
-      let(:vm) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-idle-vm') }
-      let(:vm) { instance_double('Bosh::Director::DeploymentPlan::Vm', changed?: true, model: vm_model, network_reservation: nil) }
-
-      before do
-        allow(resource_pool).to receive(:allocated_vms).and_return([allocated_vm])
-        allow(resource_pool).to receive(:idle_vms).and_return([vm])
-      end
-
-      let(:network_reservation) { instance_double('Bosh::Director::NetworkReservation', reserved?: true) }
-
-      it 'finds first unreserved network to reserve' do
-        expect(NetworkReservation).to receive(:new).with(type: NetworkReservation::DYNAMIC).and_return(network_reservation).twice
-        expect(network).to receive(:reserve).with(network_reservation).twice
-
-        expect(vm).to receive(:network_reservation=).with(network_reservation)
-        expect(allocated_vm).to receive(:network_reservation=).with(network_reservation)
-
+      it 'delegates to ResourcePool#reserve_dynamic_networks' do
+        expect(resource_pool).to receive(:reserve_dynamic_networks).with(no_args)
         resource_pool_updater.reserve_networks
-      end
-
-      context 'when network was already reserved' do
-        let(:network_reservation) do
-          instance_double(
-            'Bosh::Director::NetworkReservation',
-            reserved?: false,
-            error: 'fake-default-error'
-          )
-        end
-
-        it 'raises an error' do
-          expect(NetworkReservation).to receive(:new).with(type: NetworkReservation::DYNAMIC).and_return(network_reservation)
-          expect(network).to receive(:reserve).with(network_reservation)
-          expect {
-            resource_pool_updater.reserve_networks
-          }.to raise_error(NetworkReservationError,
-            %r{'large/0' failed to reserve dynamic IP: fake-default-error}
-          )
-        end
-      end
-
-      context 'when network reservation fails with not enough capacity' do
-        let(:network_reservation) do
-          instance_double(
-            'Bosh::Director::NetworkReservation',
-            reserved?: false,
-            error: NetworkReservation::CAPACITY
-          )
-        end
-
-        it 'raises an error' do
-          expect(NetworkReservation).to receive(:new).with(type: NetworkReservation::DYNAMIC).and_return(network_reservation)
-          expect(network).to receive(:reserve).with(network_reservation)
-          expect {
-            resource_pool_updater.reserve_networks
-          }.to raise_error(
-            NetworkReservationNotEnoughCapacity,
-            %r{'large/0' asked for a dynamic IP but there were no more available}
-          )
-        end
       end
     end
   end

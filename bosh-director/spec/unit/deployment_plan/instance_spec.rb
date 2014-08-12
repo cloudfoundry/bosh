@@ -58,17 +58,21 @@ module Bosh::Director::DeploymentPlan
       let(:resource_pool) do
         instance_double('Bosh::Director::DeploymentPlan::ResourcePool', {
           name: 'fake-resource-pool',
-          add_allocated_vm: vm,
+          network: network,
         })
       end
+      before { allow(resource_pool).to receive(:add_allocated_vm).and_return(vm) }
 
       let(:vm) do
         instance_double('Bosh::Director::DeploymentPlan::Vm', {
           :model= => nil,
           :bound_instance= => nil,
           :current_state= => nil,
+          :resource_pool => resource_pool,
         })
       end
+      before { allow(vm).to receive(:use_reservation).with(reservation).and_return(vm) }
+      let(:reservation) { Bosh::Director::NetworkReservation.new_static(ipaddress) }
 
       let(:current_state) { {'networks' => {network_name => network_info}} }
 
@@ -80,8 +84,8 @@ module Bosh::Director::DeploymentPlan
       before { allow(job).to receive(:starts_on_deploy?).with(no_args).and_return(true) }
 
       context 'dynamic network' do
-        before { allow(plan).to receive(:network).with(network_name).and_return(dynamic_network) }
-        let(:dynamic_network) do
+        before { allow(plan).to receive(:network).with(network_name).and_return(network) }
+        let(:network) do
           DynamicNetwork.new(plan, {
             'name' => network_name,
             'cloud_properties' => cloud_properties,
@@ -89,9 +93,9 @@ module Bosh::Director::DeploymentPlan
           })
         end
 
+        let(:reservation) { Bosh::Director::NetworkReservation.new_dynamic }
         before do
-          reservation = Bosh::Director::NetworkReservation.new_dynamic
-          dynamic_network.reserve(reservation)
+          network.reserve(reservation)
           instance.add_network_reservation(network_name, reservation)
         end
 
@@ -105,8 +109,8 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'manual network' do
-        before { allow(plan).to receive(:network).with(network_name).and_return(manual_network) }
-        let(:manual_network) do
+        before { allow(plan).to receive(:network).with(network_name).and_return(network) }
+        let(:network) do
           ManualNetwork.new(plan, {
             'name' => network_name,
             'dns' => dns,
@@ -120,8 +124,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         before do
-          reservation = Bosh::Director::NetworkReservation.new_static(ipaddress)
-          manual_network.reserve(reservation)
+          network.reserve(reservation)
           instance.add_network_reservation(network_name, reservation)
         end
 
@@ -135,9 +138,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       describe 'temporary errand hack' do
-        let(:reservation) { Bosh::Director::NetworkReservation.new_static(ipaddress) }
-
-        let(:manual_network) do
+        let(:network) do
           ManualNetwork.new(plan, {
             'name' => network_name,
             'dns' => dns,
@@ -151,8 +152,8 @@ module Bosh::Director::DeploymentPlan
         end
 
         before do
-          allow(plan).to receive(:network).with(network_name).and_return(manual_network)
-          manual_network.reserve(reservation)
+          allow(plan).to receive(:network).with(network_name).and_return(network)
+          network.reserve(reservation)
         end
 
         context 'when job is started on deploy' do
@@ -230,8 +231,10 @@ module Bosh::Director::DeploymentPlan
         instance_double('Bosh::Director::DeploymentPlan::ResourcePool', {
           name: 'fake-resource-pool',
           # spec: 'fake-resource-pool-spec',
+          network: network,
         })
       end
+      let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
 
       before { allow(resource_pool).to receive(:add_allocated_vm).and_return(vm) }
       let(:vm) { Vm.new(resource_pool) }
@@ -315,11 +318,14 @@ module Bosh::Director::DeploymentPlan
       end
 
       before { job.resource_pool = resource_pool }
-      let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'fake-resource-pool') }
-      let(:vm) { Vm.new(resource_pool) }
-
+      let(:resource_pool) do
+        instance_double('Bosh::Director::DeploymentPlan::ResourcePool', {
+          name: 'fake-resource-pool',
+          network: network,
+        })
+      end
       let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
-      before { allow(resource_pool).to receive(:network).and_return(network) }
+      let(:vm) { Vm.new(resource_pool) }
 
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
       before { allow(agent_client).to receive(:apply) }
@@ -605,8 +611,12 @@ module Bosh::Director::DeploymentPlan
 
       before { job.resource_pool = resource_pool }
       let(:resource_pool) do
-        instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'fake-resource-pool')
+        instance_double('Bosh::Director::DeploymentPlan::ResourcePool', {
+          name: 'fake-resource-pool',
+          network: network,
+        })
       end
+      let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
       let(:vm) { Vm.new(resource_pool) }
 
       context 'when an instance exists (with the same job name & instance index)' do
@@ -635,9 +645,6 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when the instance is being created' do
-        let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
-        before { allow(resource_pool).to receive(:network).and_return(network) }
-
         let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
         before do
           allow(Bosh::Director::AgentClient).to receive(:with_defaults).with(vm_model.agent_id).and_return(agent_client)
@@ -694,7 +701,7 @@ module Bosh::Director::DeploymentPlan
       let(:job) { Job.new(plan) }
 
       before { allow(plan).to receive(:network).with('fake-network').and_return(network) }
-      let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network') }
+      let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
 
       before do
         allow(job).to receive(:instance_state).with(0).and_return('started')
