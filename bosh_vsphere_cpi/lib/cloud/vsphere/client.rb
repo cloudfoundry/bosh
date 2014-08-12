@@ -108,10 +108,7 @@ module VSphereCloud
     end
 
     def get_managed_objects(type, options={})
-      root = options[:root] || @service_content.root_folder
-      property_specs = [PC::PropertySpec.new(:type => type, :all => false, :path_set => ["name"])]
-      filter_spec = get_search_filter_spec(root, property_specs)
-      object_specs = get_all_properties(filter_spec)
+      object_specs = get_object_specs(type, options[:root], 'name')
 
       result = []
       object_specs.each do |object_spec|
@@ -125,6 +122,22 @@ module VSphereCloud
         end
       end
       result
+    end
+
+    def get_managed_objects_with_attribute(type, custom_field_key, options = {})
+      object_specs = get_object_specs(type, options[:root], 'customValue')
+
+      results = []
+      object_specs.each do |object|
+        object.prop_set.each do |property|
+          property.val.each do |value|
+            if value.key == custom_field_key
+              results << object.obj
+            end
+          end
+        end
+      end
+      results
     end
 
     def get_managed_object(type, options)
@@ -476,6 +489,15 @@ module VSphereCloud
       metrics.each { |metric| result[metric_names[metric.counter_id]] = metric }
       result
     end
-  end
 
+    private
+
+    def get_object_specs(type, root, path_set)
+      root ||= @service_content.root_folder
+
+      property_specs = [PC::PropertySpec.new(:type => type, :all => false, :path_set => [path_set])]
+      filter_spec = get_search_filter_spec(root, property_specs)
+      get_all_properties(filter_spec)
+    end
+  end
 end
