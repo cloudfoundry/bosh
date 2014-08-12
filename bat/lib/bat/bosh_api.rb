@@ -35,7 +35,13 @@ module Bat
     private
 
     def http_get(path)
-      JSON.parse(http_client.get([@director_url, path].join, 'application/json').body)
+      response = http_client.get([@director_url, path].join, 'application/json')
+      if response.status != 200
+        raise "Director request failed to '#{path}' with status #{response.status}:\nBODY:\n#{response.body}"
+      end
+      JSON.parse(response.body)
+    rescue JSON::ParserError => e
+      raise "Failed to parse director response to '#{path}':\nBODY:\n#{response.body}\nERROR: #{e}"
     end
 
     def http_client
