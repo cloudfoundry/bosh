@@ -1,6 +1,4 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
-require File.expand_path('../../spec_helper', __FILE__)
+require 'spec_helper'
 
 module Bosh::Director
   describe NetworkReservation do
@@ -53,6 +51,56 @@ module Bosh::Director
         reservation.take(other)
         reservation.reserved?.should == false
         reservation.ip.should == nil
+      end
+    end
+
+    describe :handle_error do
+      context 'when reservation is static' do
+        let(:reservation) { NetworkReservation.new(ip: '0.0.0.1', type: NetworkReservation::STATIC) }
+
+        it 'handles already-in-use errors' do
+          reservation.error = NetworkReservation::USED
+
+          expect{
+            reservation.handle_error('fake-origin')
+          }.to raise_error(NetworkReservationAlreadyInUse)
+        end
+
+        it 'handles wrong pool type errors' do
+          reservation.error = NetworkReservation::WRONG_TYPE
+
+          expect{
+            reservation.handle_error('fake-origin')
+          }.to raise_error(NetworkReservationWrongType)
+        end
+
+        it 'handles other reservation errors' do
+          reservation.error = StandardError.new
+
+          expect{
+            reservation.handle_error('fake-origin')
+          }.to raise_error(NetworkReservationError)
+        end
+      end
+
+      context 'when reservation is dynamic' do
+        let(:reservation) { NetworkReservation.new(ip: '0.0.0.1', type: NetworkReservation::DYNAMIC) }
+
+        it 'handles pool capacity errors' do
+          reservation.error = NetworkReservation::CAPACITY
+
+          expect{
+            reservation.handle_error('fake-origin')
+          }.to raise_error(NetworkReservationNotEnoughCapacity)
+        end
+
+        it 'handles other reservation errors' do
+          reservation.error = StandardError.new
+
+          expect{
+            reservation.handle_error('fake-origin')
+          }.to raise_error(NetworkReservationError)
+        end
       end
     end
   end
