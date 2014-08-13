@@ -3,7 +3,8 @@ require 'cloud/vsphere/fixed_cluster_placer'
 module VSphereCloud
   describe FixedClusterPlacer do
     describe "#place" do
-      subject(:fixed_cluster_placer) { described_class.new(cluster) }
+      subject(:fixed_cluster_placer) { described_class.new(cluster, drs_rules) }
+      let(:drs_rules) { [] }
       let(:memory) { 2 * 1024 }
       let(:ephemeral) { 2 * 1024 * 1024 }
       let(:persistent) { Hash.new }
@@ -32,8 +33,8 @@ module VSphereCloud
         it "raises 'No available resources'" do
           allow(cluster).to receive(:pick_ephemeral).and_return(nil)
 
-          expect { fixed_cluster_placer.place(memory, ephemeral, persistent) }.to raise_error RuntimeError,
-                                                                                            "No available resources"
+          expect { fixed_cluster_placer.place(memory, ephemeral, persistent) }.
+            to raise_error(RuntimeError, "No available resources")
         end
       end
     end

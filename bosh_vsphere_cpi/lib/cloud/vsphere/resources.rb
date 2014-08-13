@@ -7,11 +7,14 @@ module VSphereCloud
     STALE_TIMEOUT = 60
     BYTES_IN_MB = 1024 * 1024
 
+    attr_reader :drs_rules
+
     def initialize(config)
       @config = config
       @logger = config.logger
       @last_update = 0
       @lock = Monitor.new
+      @drs_rules = []
     end
 
     # Returns the list of datacenters available for placement.

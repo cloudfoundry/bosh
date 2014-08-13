@@ -2,7 +2,11 @@ require 'cloud/vsphere/vm_creator'
 
 describe VSphereCloud::VmCreator do
   describe '#create' do
-    let(:placer) { double('placer') }
+    subject(:creator) do
+      described_class.new(1024, 1024, 3, placer, vsphere_client, cloud_searcher, logger, cpi, agent_env, file_provider)
+    end
+
+    let(:placer) { instance_double('VSphereCloud::FixedClusterPlacer', drs_rules: []) }
     let(:vsphere_client) { instance_double('VSphereCloud::Client') }
     let(:logger) { double('logger', debug: nil) }
     let(:cpi) { instance_double('VSphereCloud::Cloud') }
@@ -10,38 +14,37 @@ describe VSphereCloud::VmCreator do
     let(:file_provider) { instance_double('VSphereCloud::FileProvider') }
     let(:cloud_searcher) { instance_double('VSphereCloud::CloudSearcher') }
 
-    context 'when the stemcell vm does not exist' do
-      subject(:creator) do
-        described_class.new(1024, 1024, 1, placer, vsphere_client, cloud_searcher, logger, cpi, agent_env, file_provider)
-      end
-
-      before do
-        allow(cpi).to receive(:stemcell_vm).with('sc-beef').and_return(nil)
-      end
-      it 'raises an error' do
-        expect {
-          creator.create(nil, 'sc-beef', nil, [], {})
-        }.to raise_error('Could not find stemcell: sc-beef')
-      end
-    end
-
-    it 'chooses the placement based on memory, ephemeral and persistent disks' do
-      creator = described_class.new(
-        1024, 10240000, 3, placer, vsphere_client, cloud_searcher, logger,
-        cpi, agent_env, file_provider
-      )
-
-      disk_spec = double('disk spec')
-      disk_locality = ['disk1_cid']
-
-      networks = {
+    let(:networks) do
+      {
         'network_name' => {
           'cloud_properties' => {
             'name' => 'network_name',
           },
         },
       }
+    end
+
+    let(:disk_locality) { ['disk1_cid'] }
+    let(:disk_spec) { double('disk spec') }
+    let(:folder_mob) { double('folder managed object') }
+    let(:datacenter_mob) { double('datacenter mob') }
+    let(:resource_pool_mob) { double('resource pool managed object') }
+    let(:cluster_mob) { double(:cluster_mob) }
+
+    let(:cluster) do
+      datacenter = double('datacenter', :name => 'datacenter name', :vm_folder => double('vm_folder', :mob => folder_mob), mob: datacenter_mob)
+
+      double('cluster', :datacenter => datacenter, :resource_pool => double('resource pool', :mob => resource_pool_mob), mob: cluster_mob)
+    end
+
+    let(:datastore) { double('datastore') }
+
+    let(:vm_double) { double('cloned vm') }
+
+    before do
       stemcell_vm = double('stemcell vm')
+      allow(cpi).to receive(:stemcell_vm).with('stemcell_cid').and_return(stemcell_vm)
+
       current_snapshot = double('current snapshot')
       snapshot = double('snapshot', :current_snapshot => current_snapshot)
 
@@ -59,23 +62,19 @@ describe VSphereCloud::VmCreator do
       delete_nic_spec = double('nic config')
       allow(cpi).to receive(:create_delete_device_spec).with(virtual_nic).and_return(delete_nic_spec)
 
-      allow(cpi).to receive(:stemcell_vm).with('stemcell_cid').and_return(stemcell_vm)
       network_env = double('network env rv')
       allow(cpi).to receive(:generate_network_env).with(devices, networks, {}).and_return(network_env)
       allow(cpi).to receive(:disk_spec).with(disk_locality).and_return(disk_spec)
       allow(file_provider).to receive(:upload_file).with('datacenter name', 'datastore name', 'vm-vm_unique_name/env.iso', '')
 
       allow(cloud_searcher).to receive(:get_property).with(stemcell_vm, anything, anything, anything).and_return(1024*1024)
+
+      allow(placer).to receive(:place).and_return([cluster, datastore])
+
       replicated_stemcell_vm = double('replicated vm')
       allow(cloud_searcher).to receive(:get_properties).with(replicated_stemcell_vm, VimSdk::Vim::VirtualMachine, ['config.hardware.device', 'snapshot'], ensure_all: true).and_return(stemcell_properties)
 
-      datastore = double('datastore')
       allow(datastore).to receive(:name).with(no_args).and_return("datastore name")
-      datacenter_mob = double('datacenter mob')
-      folder_mob = double('folder managed object')
-      datacenter = double('datacenter', :name => 'datacenter name', :vm_folder => double('vm_folder', :mob => folder_mob), mob: datacenter_mob)
-      resource_pool_mob = double('resource pool managed object')
-      cluster = double('cluster', :datacenter => datacenter, :resource_pool => double('resource pool', :mob => resource_pool_mob))
 
       allow(cpi).to receive(:generate_unique_name).with(no_args).and_return("vm_unique_name")
       allow(cpi).to receive(:replicate_stemcell).with(cluster, datastore, "stemcell_cid").and_return(replicated_stemcell_vm)
@@ -100,14 +99,13 @@ describe VSphereCloud::VmCreator do
       datastore_mob = double('datastore mob')
       allow(datastore).to receive(:mob).with(no_args).and_return(datastore_mob)
       allow(cpi).to receive(:create_disk_config_spec).with(
-                      datastore_mob,
-                      '[datastore name] vm-vm_unique_name/ephemeral_disk.vmdk',
-                      vdisk_controller_key,
-                      10240000,
-                      :create => true,
-                    ).and_return(ephemeral_disk_config)
+        datastore_mob,
+        '[datastore name] vm-vm_unique_name/ephemeral_disk.vmdk',
+        vdisk_controller_key,
+        1024,
+        :create => true,
+      ).and_return(ephemeral_disk_config)
       allow(logger).to receive(:info)
-      allow(cluster).to receive(:mob).with(no_args).and_return(double('cluster mob'))
 
       clone_vm_task = double('cloned vm task')
       allow(cpi).to receive(:clone_vm).with(
@@ -126,25 +124,65 @@ describe VSphereCloud::VmCreator do
           ),
         },
       ).and_return(clone_vm_task)
-      vm_double = double('cloned vm')
       allow(vsphere_client).to receive(:wait_for_task).with(clone_vm_task).and_return(vm_double)
       allow(cloud_searcher).to receive(:get_properties).with(vm_double, VimSdk::Vim::VirtualMachine, ['config.hardware.device'], ensure_all: true).and_return(stemcell_properties)
       allow(cpi).to receive(:generate_agent_env).with("vm-vm_unique_name", vm_double, 'agent_id', network_env, disk_env).and_return({})
 
       vm_location = double('vm location')
       allow(cpi).to receive(:get_vm_location).with(
-                      vm_double,
-                      datacenter: 'datacenter name',
-                      datastore: 'datastore name',
-                      vm: 'vm-vm_unique_name',
-                    ).and_return(vm_location)
+        vm_double,
+        datacenter: 'datacenter name',
+        datastore: 'datastore name',
+        vm: 'vm-vm_unique_name',
+      ).and_return(vm_location)
       allow(agent_env).to receive(:set_env).with(vm_double, vm_location, {'env' => {}})
 
       allow(vsphere_client).to receive(:power_on_vm).with(datacenter_mob, vm_double)
+    end
 
-      expect(placer).to receive(:place).with(1024, 10241025, disk_spec).
+    context 'when the stemcell vm does not exist' do
+      before do
+        allow(cpi).to receive(:stemcell_vm).with('sc-beef').and_return(nil)
+      end
+
+      it 'raises an error' do
+        expect {
+          creator.create(nil, 'sc-beef', nil, [], {})
+        }.to raise_error('Could not find stemcell: sc-beef')
+      end
+    end
+
+    it 'chooses the placement based on memory, ephemeral and persistent disks' do
+      expect(placer).to receive(:place).with(1024, 2049, disk_spec).
                           and_return([cluster, datastore])
       creator.create('agent_id', 'stemcell_cid', networks, disk_locality, {})
+    end
+
+    context 'when vm has DRS rules specified in cloud properties' do
+      before do
+        allow(placer).to receive(:drs_rules).and_return(
+          [
+            { 'name' => 'fake-drs-rule-1', 'type' => 'separate_vms' },
+            { 'name' => 'fake-drs-rule-2', 'type' => 'separate_vms' },
+          ]
+        )
+      end
+
+      it 'adds VM to specified drs rules' do
+        drs_rule_1 = instance_double('VSphereCloud::DrsRule')
+        expect(VSphereCloud::DrsRule).to receive(:new).
+          with('fake-drs-rule-1', vsphere_client, cloud_searcher, cluster_mob).
+          and_return(drs_rule_1)
+        expect(drs_rule_1).to receive(:add_vm).with(vm_double)
+
+        drs_rule_2 = instance_double('VSphereCloud::DrsRule')
+        expect(VSphereCloud::DrsRule).to receive(:new).
+          with('fake-drs-rule-2', vsphere_client, cloud_searcher, cluster_mob).
+          and_return(drs_rule_2)
+        expect(drs_rule_2).to receive(:add_vm).with(vm_double)
+
+        creator.create('agent_id', 'stemcell_cid', networks, disk_locality, {})
+      end
     end
   end
 

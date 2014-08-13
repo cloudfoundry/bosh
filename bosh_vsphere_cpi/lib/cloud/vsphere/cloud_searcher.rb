@@ -128,6 +128,24 @@ module VSphereCloud
       results
     end
 
+    def has_managed_object_with_attribute?(type, custom_field_key, options = {})
+      object_specs = get_object_specs(type, options[:root], 'customValue')
+
+      object_specs.each do |object|
+        object.prop_set.each do |property|
+          property.val.each do |property_value|
+            if property_value.key == custom_field_key
+              if options[:value].nil? || property_value.value == options[:value]
+                return true
+              end
+            end
+          end
+        end
+      end
+
+      false
+    end
+
     private
 
     def get_object_specs(type, root, path_set)

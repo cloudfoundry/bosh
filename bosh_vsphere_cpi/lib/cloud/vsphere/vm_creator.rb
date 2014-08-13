@@ -1,4 +1,5 @@
 require 'ruby_vim_sdk'
+require 'cloud/vsphere/drs_rules/drs_rule'
 
 module VSphereCloud
   class VmCreator
@@ -98,12 +99,23 @@ module VSphereCloud
 
         @logger.info("Powering on VM: #{vm} (#{name})")
         @client.power_on_vm(cluster.datacenter.mob, vm)
+
+        create_drs_rules(vm, cluster)
       rescue => e
         @logger.info("#{e} - #{e.backtrace.join("\n")}")
         @cpi.delete_vm(name)
         raise e
       end
       name
+    end
+
+    def create_drs_rules(vm, cluster)
+      unless @placer.drs_rules.empty?
+        @placer.drs_rules.each do |rule|
+          drs_rule = VSphereCloud::DrsRule.new(rule['name'], @client, @cloud_searcher, cluster.mob)
+          drs_rule.add_vm(vm)
+        end
+      end
     end
   end
 end

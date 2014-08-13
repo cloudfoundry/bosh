@@ -1,7 +1,10 @@
 module VSphereCloud
   class FixedClusterPlacer
-    def initialize(cluster)
+    attr_reader :drs_rules
+
+    def initialize(cluster, drs_rules)
       @cluster = cluster
+      @drs_rules = drs_rules
     end
 
     def place(memory, ephemeral, persistent)

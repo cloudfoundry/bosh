@@ -562,31 +562,31 @@ module VSphereCloud
         context 'using a placer' do
           let(:clusters) {
             [
-              { "BOSH_CL" => {}, },
-              { "BOSH_CL2" => {} }
+              { 'BOSH_CL' => { 'drs_rules' => 'fake-drs-rules' }, },
+              { 'BOSH_CL2' => {} }
             ]
           }
 
           let(:datacenters) {
             [{
-              "name" => "BOSH_DC",
-              "clusters" => clusters,
+              'name' => 'BOSH_DC',
+              'clusters' => clusters,
             }]
           }
 
           let(:placer) { double('placer') }
-          let(:cluster) { double('cluster') }
+          let(:cluster) { double('cluster', mob: nil) }
           let(:datacenter) { double('datacenter') }
 
-          before {
+          before do
             allow(Resources::Datacenter).to receive(:new).with(cloud_config).and_return(datacenter)
             allow(cloud_properties).to receive(:fetch).with('datacenters', []).and_return(datacenters)
             allow(cloud_config).to receive(:datacenter_name).with(no_args).and_return(datacenters.first['name'])
             allow(datacenter).to receive(:clusters).with(no_args).and_return({'BOSH_CL' => cluster})
 
             placer_class = class_double('VSphereCloud::FixedClusterPlacer').as_stubbed_const
-            allow(placer_class).to receive(:new).with(cluster).and_return(placer)
-          }
+            allow(placer_class).to receive(:new).with(cluster, 'fake-drs-rules').and_return(placer)
+          end
 
           it 'passes disk locality and environment as nils' do
             vm = double('created vm')

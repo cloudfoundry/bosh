@@ -963,14 +963,21 @@ module VSphereCloud
     def choose_placer(cloud_properties)
       datacenter_spec = cloud_properties.fetch('datacenters', []).first
       cluster_spec = datacenter_spec.fetch('clusters', []).first if datacenter_spec
-      placer = FixedClusterPlacer.new(find_cluster(cluster_spec)) unless cluster_spec.nil?
+
+      unless cluster_spec.nil?
+        cluster_name = cluster_spec.keys.first
+        cluster = find_cluster(cluster_name)
+        cluster_config = cluster_spec.values.first
+        drs_rules = cluster_config.fetch('drs_rules', [])
+        placer = FixedClusterPlacer.new(cluster, drs_rules)
+      end
 
       placer.nil? ? @resources : placer
     end
 
-    def find_cluster(cluster_spec)
+    def find_cluster(cluster_name)
       datacenter = Resources::Datacenter.new(config)
-      datacenter.clusters[cluster_spec.keys.first]
+      datacenter.clusters[cluster_name]
     end
 
     attr_reader :config
