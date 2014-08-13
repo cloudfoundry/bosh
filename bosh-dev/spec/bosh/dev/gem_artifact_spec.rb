@@ -42,7 +42,7 @@ module Bosh::Dev
       end
 
       it 'pushes the downloaded gem' do
-        RakeFileUtils.should_receive(:sh).with('gem push tmp/gems-1234/bosh-foo-1.5.0.pre.789.gem')
+        RakeFileUtils.should_receive(:sh).with('gem push tmp/gems-1234/bosh-foo-1.5.0.pre.789.gem 2>&1', verbose: true)
 
         gem_artifact.promote
       end
