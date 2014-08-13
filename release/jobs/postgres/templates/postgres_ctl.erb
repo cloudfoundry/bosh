@@ -25,6 +25,8 @@ case "$1" in
     mkdir -p $DATA_DIR
     chown -R vcap:vcap $DATA_DIR
 
+    sysctl -w "kernel.shmmax=284934144"
+
     # We cannot kill the following conditional
     # because initdb is very picky about looking at an empty dir
     if [ ! -f $DATA_DIR/postgresql.conf ]; then
