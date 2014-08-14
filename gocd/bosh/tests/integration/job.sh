@@ -7,7 +7,7 @@ fi
 echo "Ruby Version: $RUBY_VERSION"
 chruby $RUBY_VERSION
 
-bundle install
+bundle install --local --without development
 
 echo "DB: ${DB:?'<default>'}"
 echo "Installing Go & Running integration tests..."

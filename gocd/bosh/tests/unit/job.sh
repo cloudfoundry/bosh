@@ -7,7 +7,8 @@ fi
 echo "Ruby Version: $RUBY_VERSION"
 chruby $RUBY_VERSION
 
-bundle install
+bundle install --local --without development
 
 echo "Installing Go & Running unit tests..."
-COVERAGE=true bundle exec rake --trace go spec:unit ci:publish_coverage_report
+bundle exec rake --trace go spec:unit
+#COVERAGE=true bundle exec rake --trace go spec:unit ci:publish_coverage_report
