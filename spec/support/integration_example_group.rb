@@ -1,3 +1,4 @@
+require 'yaml'
 require 'yajl'
 require 'bosh/dev/sandbox/main'
 
@@ -164,6 +165,11 @@ module IntegrationSandboxHelpers
 
   def setup_test_release_dir
     FileUtils.cp_r(TEST_RELEASE_TEMPLATE, TEST_RELEASE_DIR, :preserve => true)
+
+    final_config_path = File.join(TEST_RELEASE_DIR, 'config', 'final.yml')
+    final_config = YAML.load_file(final_config_path)
+    final_config['blobstore']['options']['blobstore_path'] = File.join(SANDBOX_DIR, 'release_blobstore')
+    File.open(final_config_path, 'w') { |file| file.write(YAML.dump(final_config)) }
 
     Dir.chdir(TEST_RELEASE_DIR) do
       ignore = %w(

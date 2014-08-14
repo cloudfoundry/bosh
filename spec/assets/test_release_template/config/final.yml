@@ -2,4 +2,4 @@
 blobstore:
   provider: local
   options:
-    blobstore_path: /tmp/bosh-integration-tests/blobstore
+    blobstore_path: changed_in_integration_example_group
