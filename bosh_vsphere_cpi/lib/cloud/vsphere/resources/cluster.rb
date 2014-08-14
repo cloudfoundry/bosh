@@ -54,7 +54,7 @@ module VSphereCloud
 
         @config = cluster_config
         @cloud_config = cloud_config
-        @mob = properties['obj']
+        @mob = properties[:obj]
         @resource_pool = ResourcePool.new(cloud_config, cluster_config, properties["resourcePool"])
 
         @allocated_after_sync = 0

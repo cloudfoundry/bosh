@@ -32,7 +32,7 @@ class VSphereCloud::Resources
 
     let(:properties) do
       {
-        'obj' => cluster_mob,
+        :obj => cluster_mob,
         'host' => cluster_hosts,
         'datastore' => 'fake-datastore-name',
         'resourcePool' => fake_resource_pool_mob,
