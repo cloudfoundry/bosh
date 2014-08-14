@@ -7,6 +7,8 @@ fi
 echo "Ruby Version: $RUBY_VERSION"
 chruby $RUBY_VERSION
 
+bundle install
+
 echo "DB: ${DB:?'<default>'}"
 echo "Installing Go & Running integration tests..."
 bundle exec rake --trace go spec:integration
