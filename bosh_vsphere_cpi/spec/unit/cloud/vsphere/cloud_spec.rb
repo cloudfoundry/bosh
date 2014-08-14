@@ -7,7 +7,13 @@ module VSphereCloud
     let(:config) { { fake: 'config' } }
     let(:cloud_config) { instance_double('VSphereCloud::Config', logger: logger, rest_client:nil ).as_null_object }
     let(:logger) { instance_double('Logger', info: nil, debug: nil) }
-    let(:client) { instance_double('VSphereCloud::Client') }
+    let(:client) { instance_double('VSphereCloud::Client', service_content: service_content) }
+    let(:service_content) do
+      instance_double('VimSdk::Vim::ServiceInstanceContent',
+        custom_fields_manager: custom_fields_manager
+      )
+    end
+    let(:custom_fields_manager) { instance_double('VimSdk::Vim::CustomFieldsManager') }
     let(:agent_env) { instance_double('VSphereCloud::AgentEnv') }
     before { allow(VSphereCloud::AgentEnv).to receive(:new).and_return(agent_env) }
 
@@ -854,6 +860,14 @@ module VSphereCloud
           and_return('fake-datastore-name')
       end
 
+      let(:drs_rule_cleaner) { instance_double('VSphereCloud::DrsRuleCleaner', clean: nil) }
+      before do
+        allow(DrsRuleCleaner).to receive(:new).
+          with(cloud_searcher, custom_fields_manager).and_return(drs_rule_cleaner)
+      end
+
+      before { allow(client).to receive(:delete_vm).with(vm) }
+
       it 'deletes vm' do
         expect(client).to receive(:delete_vm).with(vm)
         vsphere_cloud.delete_vm('fake-vm-id')
@@ -869,8 +883,6 @@ module VSphereCloud
         end
 
         before { allow(client).to receive(:get_cdrom_device).and_return(cdrom_device) }
-
-        before { allow(client).to receive(:delete_vm).with(vm) }
 
         context 'when the cdrom has ISO folder' do
           before do
@@ -895,6 +907,11 @@ module VSphereCloud
             vsphere_cloud.delete_vm('fake-vm-id')
           end
         end
+      end
+
+      it 'cleans up drs rules' do
+        expect(drs_rule_cleaner).to receive(:clean)
+        vsphere_cloud.delete_vm('fake-vm-id')
       end
     end
 
