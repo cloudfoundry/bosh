@@ -17,7 +17,7 @@ if [ "$RUBY_VERSION" == "" ]; then
 fi
 echo "Ruby Version: $RUBY_VERSION"
 
-source /usr/local/etc/profile.d/chruby.sh
+source /etc/profile.d/chruby.sh
 
 chruby $RUBY_VERSION
 
