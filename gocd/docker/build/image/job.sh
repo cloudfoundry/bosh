@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+set -x
+
 # builds and pushes a new 'bosh-container' to the Pivotal GoCD Docker Registry
 VM_NAME=bosh-docker-builder
 

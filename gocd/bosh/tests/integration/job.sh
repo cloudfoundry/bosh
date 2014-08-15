@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+set -x
+
 if [ "$RUBY_VERSION" == "" ]; then
   echo "RUBY_VERSION environment variable is required!"
   exit 1
