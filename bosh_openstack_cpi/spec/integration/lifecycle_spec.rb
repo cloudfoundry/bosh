@@ -135,12 +135,12 @@ describe Bosh::OpenStackCloud::Cloud do
           }
         }
       }
+    end
 
-      it 'exercises the vm lifecycle' do
-        expect {
-          vm_lifecycle(@stemcell_id, network_spec, [])
-        }.to_not raise_error
-      end
+    it 'exercises the vm lifecycle' do
+      expect {
+        vm_lifecycle(@stemcell_id, network_spec, [])
+      }.to_not raise_error
     end
   end
 
