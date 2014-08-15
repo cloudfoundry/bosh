@@ -4,7 +4,7 @@ set -e
 set -x
 
 if [ "$1" == "" ]; then
-  echo "Argument required: <path/to/script.sh>"
+  echo "At least one argument required. ex: run-in-container.sh /path/to/cmd arg1 arg2"
   exit 1
 fi
 
@@ -20,4 +20,4 @@ docker run \
   -e DB \
   -e CODECLIMATE_REPO_TOKEN \
   $DOCKER_REGISTRY/$IMAGE_TAG \
-  $1
+  $@
