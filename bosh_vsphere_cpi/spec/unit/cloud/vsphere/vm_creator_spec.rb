@@ -158,30 +158,57 @@ describe VSphereCloud::VmCreator do
       creator.create('agent_id', 'stemcell_cid', networks, disk_locality, {})
     end
 
-    context 'when vm has DRS rules specified in cloud properties' do
-      before do
-        allow(placer).to receive(:drs_rules).and_return(
-          [
-            { 'name' => 'fake-drs-rule-1', 'type' => 'separate_vms' },
-            { 'name' => 'fake-drs-rule-2', 'type' => 'separate_vms' },
-          ]
-        )
+    describe 'DRS rules' do
+      context 'when several DRS rules are specified in cloud properties' do
+        before do
+          allow(placer).to receive(:drs_rules).and_return(
+            [
+              { 'name' => 'fake-drs-rule-1', 'type' => 'separate_vms' },
+              { 'name' => 'fake-drs-rule-2', 'type' => 'separate_vms' },
+            ]
+          )
+        end
+
+        it 'raises an error' do
+          expect(cpi).to receive(:delete_vm)
+          expect {
+            creator.create('agent_id', 'stemcell_cid', networks, disk_locality, {})
+          }.to raise_error /vSphere CPI supports only one DRS rule per resource pool/
+        end
       end
 
-      it 'adds VM to specified drs rules' do
-        drs_rule_1 = instance_double('VSphereCloud::DrsRule')
-        expect(VSphereCloud::DrsRule).to receive(:new).
-          with('fake-drs-rule-1', vsphere_client, cloud_searcher, cluster_mob).
-          and_return(drs_rule_1)
-        expect(drs_rule_1).to receive(:add_vm).with(vm_double)
+      context 'when one DRS rule is specified' do
+        before do
+          allow(placer).to receive(:drs_rules).and_return(
+            [
+              { 'name' => 'fake-drs-rule-1', 'type' => drs_rule_type },
+            ]
+          )
+        end
+        let(:drs_rule_type) { 'separate_vms' }
 
-        drs_rule_2 = instance_double('VSphereCloud::DrsRule')
-        expect(VSphereCloud::DrsRule).to receive(:new).
-          with('fake-drs-rule-2', vsphere_client, cloud_searcher, cluster_mob).
-          and_return(drs_rule_2)
-        expect(drs_rule_2).to receive(:add_vm).with(vm_double)
+        context 'when DRS rule type is separate_vms' do
+          it 'adds VM to specified drs rules' do
+            drs_rule_1 = instance_double('VSphereCloud::DrsRule')
+            expect(VSphereCloud::DrsRule).to receive(:new).
+              with('fake-drs-rule-1', vsphere_client, cloud_searcher, cluster_mob).
+              and_return(drs_rule_1)
+            expect(drs_rule_1).to receive(:add_vm).with(vm_double)
 
-        creator.create('agent_id', 'stemcell_cid', networks, disk_locality, {})
+            creator.create('agent_id', 'stemcell_cid', networks, disk_locality, {})
+          end
+        end
+
+        context 'when DRS rule type is not separate_vms' do
+          let(:drs_rule_type) { 'bad_type' }
+
+          it 'raises an error' do
+            expect(cpi).to receive(:delete_vm)
+            expect {
+              creator.create('agent_id', 'stemcell_cid', networks, disk_locality, {})
+            }.to raise_error /vSphere CPI only supports DRS rule of 'separate_vms' type/
+          end
+        end
       end
     end
   end

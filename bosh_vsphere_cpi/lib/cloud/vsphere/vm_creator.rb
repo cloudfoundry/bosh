@@ -110,12 +110,21 @@ module VSphereCloud
     end
 
     def create_drs_rules(vm, cluster)
-      unless @placer.drs_rules.empty?
-        @placer.drs_rules.each do |rule|
-          drs_rule = VSphereCloud::DrsRule.new(rule['name'], @client, @cloud_searcher, cluster.mob)
-          drs_rule.add_vm(vm)
-        end
+      return unless @placer.drs_rules
+      return if @placer.drs_rules.size == 0
+
+      if @placer.drs_rules.size > 1
+        raise 'vSphere CPI supports only one DRS rule per resource pool'
       end
+
+      rule_config = @placer.drs_rules.first
+
+      if rule_config['type'] != 'separate_vms'
+        raise "vSphere CPI only supports DRS rule of 'separate_vms' type"
+      end
+
+      drs_rule = VSphereCloud::DrsRule.new(rule_config['name'], @client, @cloud_searcher, cluster.mob)
+      drs_rule.add_vm(vm)
     end
   end
 end
