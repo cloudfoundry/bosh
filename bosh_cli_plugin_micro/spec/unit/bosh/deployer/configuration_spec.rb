@@ -94,6 +94,27 @@ module Bosh::Deployer
       end
     end
 
+    describe '#cpi_task_log' do
+      before do
+        config.configure(configuration_hash)
+      end
+
+      it 'returns nil' do
+        expect(config.cpi_task_log).to be_nil
+      end
+
+      context 'when a cpi_log is specified' do
+        before do
+          configuration_hash['cloud']['properties']['cpi_log'] = 'fake-cpi-log'
+          config.configure(configuration_hash)
+        end
+
+        it 'returns cpi log' do
+          expect(config.cpi_task_log).to eq('fake-cpi-log')
+        end
+      end
+    end
+
     describe 'services ips' do
       subject(:config) { described_class.new.configure(configuration_hash) }
 

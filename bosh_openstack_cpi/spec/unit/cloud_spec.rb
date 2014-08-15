@@ -1,6 +1,10 @@
 require 'spec_helper'
 
 describe Bosh::OpenStackCloud::Cloud do
+  let(:default_connection_options) {
+    { "instrumentor" => Bosh::OpenStackCloud::ExconLoggingInstrumentor }
+  }
+
   describe :new do
     let(:cloud_options) { mock_cloud_options }
     let(:openstack_parms) {
@@ -12,7 +16,7 @@ describe Bosh::OpenStackCloud::Cloud do
         :openstack_tenant => 'admin',
         :openstack_region => 'RegionOne',
         :openstack_endpoint_type => nil,
-        :connection_options => connection_options,
+        :connection_options => merged_connection_options,
       }
     }
     let(:volume_parms) {
@@ -23,10 +27,11 @@ describe Bosh::OpenStackCloud::Cloud do
         :openstack_api_key => 'nova',
         :openstack_tenant => 'admin',
         :openstack_endpoint_type => nil,
-        :connection_options => connection_options,
+        :connection_options => merged_connection_options,
       }
     }
     let(:connection_options) { nil }
+    let(:merged_connection_options) { default_connection_options }
     let(:compute) { instance_double('Fog::Compute') }
     let(:image) { instance_double('Fog::Image') }
     let(:volume) { instance_double('Fog::Volume') }
@@ -87,20 +92,21 @@ describe Bosh::OpenStackCloud::Cloud do
     end
 
     context 'with connection options' do
-      let(:connection_options) {
-        JSON.generate({
-          'ssl_verify_peer' => false,
-        })
+      let(:connection_options) { {'ssl_verify_peer' => false} }
+      let(:merged_connection_options) {
+        default_connection_options.merge(connection_options)
       }
 
       it 'should add optional options to the Fog connection' do
         cloud_options['properties']['openstack']['connection_options'] = connection_options
         allow(Fog::Compute).to receive(:new).and_return(compute)
-        allow(Fog::Image).to receive(:new).with(openstack_parms).and_return(image)
+        allow(Fog::Image).to receive(:new).and_return(image)
         allow(Fog::Volume).to receive(:new).and_return(volume)
         Bosh::OpenStackCloud::Cloud.new(cloud_options['properties'])
 
-        expect(Fog::Compute).to have_received(:new).with(hash_including(connection_options: connection_options))
+        expect(Fog::Compute).to have_received(:new).with(hash_including(connection_options: merged_connection_options))
+        expect(Fog::Image).to have_received(:new).with(hash_including(connection_options: merged_connection_options))
+        expect(Fog::Volume).to have_received(:new).with(hash_including(connection_options: merged_connection_options))
       end
     end
   end

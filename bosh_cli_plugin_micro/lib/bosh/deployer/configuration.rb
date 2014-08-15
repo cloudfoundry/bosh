@@ -114,6 +114,10 @@ module Bosh::Deployer
       '127.0.0.1'
     end
 
+    def cpi_task_log
+      cloud_options.fetch('properties', {})['cpi_log']
+    end
+
     private
 
     def vip_network

@@ -45,6 +45,10 @@ module Bosh::OpenStackCloud
         @openstack_properties['auth_url'] = @openstack_properties['auth_url'] + '/tokens'
       end
 
+      @openstack_properties['connection_options'] ||= {}
+
+      extra_connection_options = {'instrumentor' => Bosh::OpenStackCloud::ExconLoggingInstrumentor}
+
       openstack_params = {
         :provider => 'OpenStack',
         :openstack_auth_url => @openstack_properties['auth_url'],
@@ -53,7 +57,7 @@ module Bosh::OpenStackCloud
         :openstack_tenant => @openstack_properties['tenant'],
         :openstack_region => @openstack_properties['region'],
         :openstack_endpoint_type => @openstack_properties['endpoint_type'],
-        :connection_options => @openstack_properties['connection_options']
+        :connection_options => @openstack_properties['connection_options'].merge(extra_connection_options)
       }
       begin
         @openstack = Fog::Compute.new(openstack_params)
@@ -70,7 +74,7 @@ module Bosh::OpenStackCloud
         :openstack_tenant => @openstack_properties['tenant'],
         :openstack_region => @openstack_properties['region'],
         :openstack_endpoint_type => @openstack_properties['endpoint_type'],
-        :connection_options => @openstack_properties['connection_options']
+        :connection_options => @openstack_properties['connection_options'].merge(extra_connection_options)
       }
       begin
         @glance = Fog::Image.new(glance_params)
@@ -86,7 +90,7 @@ module Bosh::OpenStackCloud
         :openstack_api_key => @openstack_properties["api_key"],
         :openstack_tenant => @openstack_properties["tenant"],
         :openstack_endpoint_type => @openstack_properties["endpoint_type"],
-        :connection_options => @openstack_properties['connection_options']
+        :connection_options => @openstack_properties['connection_options'].merge(extra_connection_options)
       }
       begin
         @volume = Fog::Volume.new(volume_params)
