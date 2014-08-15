@@ -154,7 +154,7 @@ describe Bosh::OpenStackCloud::Cloud do
     run_all_and_raise_any_errors(create_error, [
       lambda { clean_up_disk_snapshot(disk_snapshot_id) },
       lambda { clean_up_disk(disk_id) },
-      lambda { clean_up_vm(vm_id) },
+      lambda { clean_up_vm(vm_id, network_spec) },
     ])
   end
 
@@ -183,13 +183,19 @@ describe Bosh::OpenStackCloud::Cloud do
     vm_id
   end
 
-  def clean_up_vm(vm_id)
+  def clean_up_vm(vm_id, network_spec)
     if vm_id
       logger.info("Deleting VM vm_id=#{vm_id}")
       cpi.delete_vm(vm_id)
 
       logger.info("Checking VM existence vm_id=#{vm_id}")
       expect(cpi).to_not have_vm(vm_id)
+
+      if network_spec['default']['type'] == 'manual'
+        # Wait for manual IP to be released by the infrastructure
+        # We have seen Piston take around a minute to release an IP address
+        sleep 60
+      end
     else
       logger.info('No VM to delete')
     end
