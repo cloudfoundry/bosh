@@ -4,7 +4,8 @@ describe VSphereCloud::Resources::ResourcePool do
   subject { VSphereCloud::Resources::ResourcePool.new(cloud_config, cluster_config, root_resource_pool_mob) }
   let(:cloud_config) { instance_double('VSphereCloud::Config', logger: fake_logger, client: fake_client) }
   let(:fake_logger) { instance_double('Logger', debug: nil) }
-  let(:fake_client) { instance_double('VSphereCloud::Client') }
+  let(:fake_client) { instance_double('VSphereCloud::Client', cloud_searcher: cloud_searcher) }
+  let(:cloud_searcher) { instance_double('VSphereCloud::CloudSearcher') }
   let(:cluster_config) do
     instance_double('VSphereCloud::ClusterConfig', name: 'fake-cluster-name', resource_pool: cluster_resource_pool)
   end
@@ -24,7 +25,7 @@ describe VSphereCloud::Resources::ResourcePool do
       it 'uses the cluster config resource pool' do
         resource_pool_mob = instance_double('VimSdk::Vim::ResourcePool')
 
-        allow(fake_client).to receive(:get_managed_object)
+        allow(cloud_searcher).to receive(:get_managed_object)
                               .with(VimSdk::Vim::ResourcePool, root: root_resource_pool_mob, name: cluster_resource_pool)
                               .and_return(resource_pool_mob)
 

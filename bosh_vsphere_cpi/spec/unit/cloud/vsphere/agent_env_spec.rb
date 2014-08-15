@@ -5,10 +5,11 @@ module VSphereCloud
   describe AgentEnv do
     include FakeFS::SpecHelpers
 
-    subject(:agent_env) { described_class.new(client, file_provider) }
+    subject(:agent_env) { described_class.new(client, file_provider, cloud_searcher) }
 
     let(:client) { instance_double('VSphereCloud::Client') }
     let(:file_provider) { double('VSphereCloud::FileProvider') }
+    let(:cloud_searcher) { double('VSphereCloud::CloudSearcher') }
 
     let(:location) do
       {
@@ -100,7 +101,7 @@ module VSphereCloud
         allow(cdrom).to receive(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualCdrom).and_return(true)
         allow(client).to receive(:get_cdrom_device).with(vm).and_return(cdrom)
         allow(client).to receive(:find_parent).with(vm, VimSdk::Vim::Datacenter).and_return(datacenter)
-        allow(client).to receive(:get_managed_object).with(VimSdk::Vim::Datastore, name: 'fake-datastore-name 1').
+        allow(cloud_searcher).to receive(:get_managed_object).with(VimSdk::Vim::Datastore, name: 'fake-datastore-name 1').
           and_return(vm_datastore)
       end
 

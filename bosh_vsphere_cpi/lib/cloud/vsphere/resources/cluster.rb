@@ -131,7 +131,7 @@ module VSphereCloud
       attr_reader :cloud_config, :config, :client, :properties, :logger
 
       def setup_datastores
-        datastores_properties = client.get_properties(properties['datastore'], Vim::Datastore, Datastore::PROPERTIES)
+        datastores_properties = @client.cloud_searcher.get_properties(properties['datastore'], Vim::Datastore, Datastore::PROPERTIES)
 
         datastores_properties.each_value do |datastore_properties|
           name = datastore_properties["name"]
@@ -204,7 +204,7 @@ module VSphereCloud
       # @param [Array<Vim::HostSystem>] cluster_host_systems cluster hosts.
       # @return [void]
       def fetch_cluster_utilization(cluster_host_systems)
-        hosts_properties = @client.get_properties(
+        hosts_properties = @client.cloud_searcher.get_properties(
           cluster_host_systems, Vim::HostSystem, HOST_PROPERTIES, ensure_all: true)
         active_host_mobs = select_active_host_mobs(hosts_properties)
 
@@ -247,7 +247,7 @@ module VSphereCloud
       #
       # @return [void]
       def fetch_resource_pool_utilization
-        properties = @client.get_properties(resource_pool.mob, Vim::ResourcePool, 'summary')
+        properties = @client.cloud_searcher.get_properties(resource_pool.mob, Vim::ResourcePool, 'summary')
         raise "Failed to get utilization for resource pool #{resource_pool}" if properties.nil?
 
         runtime_info = properties["summary"].runtime

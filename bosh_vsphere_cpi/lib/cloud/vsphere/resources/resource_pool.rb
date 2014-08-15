@@ -18,7 +18,7 @@ module VSphereCloud
         else
           client = cloud_config.client
           logger = cloud_config.logger
-          @mob = client.get_managed_object(
+          @mob = client.cloud_searcher.get_managed_object(
               Vim::ResourcePool,
               :root => root_resource_pool,
               :name => cluster_config.resource_pool)

@@ -233,7 +233,7 @@ describe VSphereCloud::Cloud, external_cpi: false do
       def relocate_vm_to_second_datastore
         vm = @cpi.get_vm_by_cid(@vm_id)
 
-        datastore = @cpi.client.get_managed_object(VimSdk::Vim::Datastore, name: @second_datastore)
+        datastore = @cpi.client.cloud_searcher.get_managed_object(VimSdk::Vim::Datastore, name: @second_datastore)
         relocate_spec = VimSdk::Vim::Vm::RelocateSpec.new(datastore: datastore)
 
         task = vm.relocate(relocate_spec, 'defaultPriority')

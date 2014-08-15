@@ -30,6 +30,11 @@ module VSphereCloud
          ],
        }]
     end
+    let(:service_content) { double(:service_content) }
+    before do
+      allow(VimSdk::Vim::ServiceInstance).to receive(:new).
+        and_return(double(:service_instance, content: service_content))
+    end
 
     let(:config_hash) do
       {
@@ -40,6 +45,7 @@ module VSphereCloud
           'password' => password,
           'datacenters' => datacenters,
         ],
+        'soap_log' => 'fake-soap-log'
       }
     end
 
@@ -121,10 +127,7 @@ module VSphereCloud
       let(:client) { instance_double('VSphereCloud::Client') }
 
       before do
-        config_hash.merge!({ 'cpi_log' => 'batz-log' })
-        allow(Client).to receive(:new).with("https://#{host}/sdk/vimService", {
-          'soap_log' => config_hash['cpi_log']
-        }).and_return(client)
+        allow(Client).to receive(:new).with('https://some-host/sdk/vimService', soap_log: 'fake-soap-log').and_return(client)
       end
 
       context 'when the client has not been created yet' do
@@ -149,19 +152,25 @@ module VSphereCloud
     end
 
     describe '#rest_client' do
-      let(:rest_client) { instance_double('HTTPClient', ssl_config: ssl_config, cookie_manager: cookie_manager) }
+      let(:rest_client) do
+        instance_double(
+          'HTTPClient',
+          ssl_config: ssl_config,
+          cookie_manager: cookie_manager,
+          :receive_timeout= => nil,
+          :connect_timeout= => nil
+        )
+      end
       let(:cookie_manager) { instance_double('WebAgent::CookieManager', parse: nil) }
       let(:ssl_config) { instance_double('HTTPClient::SSLConfig') }
-      let(:client) { instance_double('VSphereCloud::Client', login: nil, soap_stub: stub_adapter) }
-      let(:stub_adapter) { instance_double('VimSdk::Soap::StubAdapter', cookie: nil) }
+      let(:client) { instance_double('VSphereCloud::Client', login: nil, soap_stub: soap_stub) }
+      let(:soap_stub) { double(:stub_adapter, cookie: 'fake-cookie') }
 
       before do
-        allow(HTTPClient).to receive(:new).exactly(1).times.and_return(rest_client)
+        allow(HTTPClient).to receive(:new).exactly(2).times.and_return(rest_client)
         allow(rest_client).to receive(:send_timeout=).with(14400)
         allow(ssl_config).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_NONE)
-        allow(Client).to receive(:new).with("https://#{host}/sdk/vimService", {
-          'soap_log' => config_hash['cpi_log']
-        }).and_return(client)
+        allow(Client).to receive(:new).with('https://some-host/sdk/vimService', soap_log: 'fake-soap-log').and_return(client)
       end
 
       context 'when the rest client has not been created yet' do
@@ -176,7 +185,6 @@ module VSphereCloud
         end
 
         it 'copies the cookie from the SOAP client to the rest client' do
-          expect(stub_adapter).to receive(:cookie).and_return('fake-cookie')
           expect(cookie_manager).to receive(:parse).with('fake-cookie', URI.parse("https://some-host"))
           config.rest_client
         end

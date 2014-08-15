@@ -4,8 +4,8 @@ require 'cloud/vsphere/lease_obtainer'
 module VSphereCloud
   describe LeaseObtainer do
     describe '#obtain' do
-      subject(:lease_obtainer) { described_class.new(client, logger) }
-      let(:client) { instance_double('VSphereCloud::Client') }
+      subject(:lease_obtainer) { described_class.new(cloud_searcher, logger) }
+      let(:cloud_searcher) { instance_double('VSphereCloud::CloudSearcher') }
       let(:logger) { Logger.new('/dev/null') }
 
       let(:resource_pool) { instance_double('VSphereCloud::Resources::ResourcePool', mob: resource_pool_mob) }
@@ -23,7 +23,7 @@ module VSphereCloud
       end
 
       it 'asks the resource pool to create a new entity' do
-        allow(client).to receive(:get_property)
+        allow(cloud_searcher).to receive(:get_property)
           .and_return(VimSdk::Vim::HttpNfcLease::State::READY)
 
         expect(resource_pool_mob).to receive(:import_vapp)
@@ -36,17 +36,17 @@ module VSphereCloud
       it 'waits untils lease stops initializing' do
         allow(resource_pool_mob).to receive(:import_vapp).and_return(nfc_lease)
 
-        expect(client).to receive(:get_property).ordered
+        expect(cloud_searcher).to receive(:get_property).ordered
           .with(nfc_lease, VimSdk::Vim::HttpNfcLease, 'state')
           .and_return(VimSdk::Vim::HttpNfcLease::State::INITIALIZING)
         expect(subject).to receive(:sleep).ordered.with(1.0)
 
-        expect(client).to receive(:get_property).ordered
+        expect(cloud_searcher).to receive(:get_property).ordered
           .with(nfc_lease, VimSdk::Vim::HttpNfcLease, 'state')
           .and_return(VimSdk::Vim::HttpNfcLease::State::INITIALIZING)
         expect(subject).to receive(:sleep).ordered.with(1.0)
 
-        expect(client).to receive(:get_property).ordered
+        expect(cloud_searcher).to receive(:get_property).ordered
           .with(nfc_lease, VimSdk::Vim::HttpNfcLease, 'state')
           .and_return(VimSdk::Vim::HttpNfcLease::State::READY)
 
@@ -56,7 +56,7 @@ module VSphereCloud
       context 'when there is an error obtaining the lease' do
         before do
           allow(resource_pool_mob).to receive(:import_vapp).and_return(nfc_lease)
-          allow(client).to receive(:get_property)
+          allow(cloud_searcher).to receive(:get_property)
             .with(nfc_lease, VimSdk::Vim::HttpNfcLease, 'state')
             .and_return(VimSdk::Vim::HttpNfcLease::State::ERROR)
         end
@@ -70,7 +70,7 @@ module VSphereCloud
             dynamic_property: [double('fake-dynamic-property')],
           )
 
-          allow(client).to receive(:get_property)
+          allow(cloud_searcher).to receive(:get_property)
             .with(nfc_lease, VimSdk::Vim::HttpNfcLease, 'error')
             .and_return(nfc_lease_error)
 
@@ -84,7 +84,7 @@ module VSphereCloud
       context 'when state of the lease becomes ready (means "disks may be transferred")' do
         before do
           allow(resource_pool_mob).to receive(:import_vapp).and_return(nfc_lease)
-          allow(client).to receive(:get_property)
+          allow(cloud_searcher).to receive(:get_property)
             .with(nfc_lease, VimSdk::Vim::HttpNfcLease, 'state')
             .and_return(VimSdk::Vim::HttpNfcLease::State::READY)
         end
@@ -97,7 +97,7 @@ module VSphereCloud
       context 'when state of the lease is not ready or error' do
         before do
           allow(resource_pool_mob).to receive(:import_vapp).and_return(nfc_lease)
-          allow(client).to receive(:get_property)
+          allow(cloud_searcher).to receive(:get_property)
             .with(nfc_lease, VimSdk::Vim::HttpNfcLease, 'state')
             .and_return(double('unknown-lease-state')) # could be DONE
         end

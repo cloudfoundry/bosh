@@ -6,6 +6,7 @@ module VSphereCloud
       it 'injects the placer, memory size, disk size, number of cpu, vsphere client, logger and the cpi into the VmCreator instance' do
         resources = double('resources')
         client = double('client')
+        cloud_searcher = instance_double('VSphereCloud::CloudSearcher')
         logger = double('logger')
         cpi = double('cpi')
         vm_creator = double('vm creator')
@@ -28,6 +29,7 @@ module VSphereCloud
           cpu,
           resources,
           client,
+          cloud_searcher,
           logger,
           cpi,
           agent_env,
@@ -35,7 +37,7 @@ module VSphereCloud
         ).and_return(vm_creator)
 
         expect(
-          subject.build(resources, cloud_properties, client, logger, cpi, agent_env, file_provider)
+          subject.build(resources, cloud_properties, client, cloud_searcher, logger, cpi, agent_env, file_provider)
         ).to eq(vm_creator)
       end
     end

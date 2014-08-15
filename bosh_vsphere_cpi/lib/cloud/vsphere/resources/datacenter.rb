@@ -49,12 +49,12 @@ module VSphereCloud
 
       def clusters
         client = @config.client
-        cluster_mobs = client.get_managed_objects(
+        cluster_mobs = client.cloud_searcher.get_managed_objects(
           Vim::ClusterComputeResource, root: mob, include_name: true)
         cluster_mobs.delete_if { |name, _| !config.datacenter_clusters.has_key?(name) }
         cluster_mobs = Hash[*cluster_mobs.flatten]
 
-        clusters_properties = client.get_properties(
+        clusters_properties = client.cloud_searcher.get_properties(
           cluster_mobs.values, Vim::ClusterComputeResource,
           Cluster::PROPERTIES, :ensure_all => true)
 

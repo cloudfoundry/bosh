@@ -3,9 +3,10 @@ module VSphereCloud
     include VimSdk
     include RetryBlock
 
-    def initialize(client, file_provider)
+    def initialize(client, file_provider, cloud_searcher)
       @client = client
       @file_provider = file_provider
+      @cloud_searcher = cloud_searcher
     end
 
     def get_current_env(vm, datacenter_name)
@@ -30,7 +31,7 @@ module VSphereCloud
       @file_provider.upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.json", env_json)
       @file_provider.upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.iso", generate_env_iso(env_json))
 
-      datastore = @client.get_managed_object(Vim::Datastore, name: location[:datastore])
+      datastore = @cloud_searcher.get_managed_object(Vim::Datastore, name: location[:datastore])
       file_name = "[#{location[:datastore]}] #{location[:vm]}/env.iso"
 
       update_cdrom_env(vm, datastore, file_name)

@@ -18,7 +18,8 @@ class VSphereCloud::Resources
       )
     end
     let(:logger) { instance_double('Logger', debug: nil, warn: nil) }
-    let(:client) { instance_double('VSphereCloud::Client') }
+    let(:client) { instance_double('VSphereCloud::Client', cloud_searcher: cloud_searcher) }
+    let(:cloud_searcher) { instance_double('VSphereCloud::CloudSearcher') }
     let(:allow_mixed) { false }
 
 
@@ -88,7 +89,7 @@ class VSphereCloud::Resources
     end
 
     before do
-      allow(client).to receive(:get_properties)
+      allow(cloud_searcher).to receive(:get_properties)
                        .with('fake-datastore-name', VimSdk::Vim::Datastore, Datastore::PROPERTIES)
                        .and_return(fake_datastore_properties)
     end
@@ -116,7 +117,7 @@ class VSphereCloud::Resources
     end
 
     before do
-      allow(client).to receive(:get_properties)
+      allow(cloud_searcher).to receive(:get_properties)
                        .with(fake_resource_pool_mob, VimSdk::Vim::ResourcePool, "summary")
                        .and_return({
                                      'summary' => instance_double(
@@ -167,7 +168,7 @@ class VSphereCloud::Resources
 
         context 'when there are no datastores' do
           it 'initializes ephemeral, persistent and shared to empty hashes' do
-            allow(client).to receive(:get_properties).with('fake-datastore-name',
+            allow(cloud_searcher).to receive(:get_properties).with('fake-datastore-name',
                                                            VimSdk::Vim::Datastore,
                                                            Datastore::PROPERTIES).and_return({})
 
@@ -208,7 +209,7 @@ class VSphereCloud::Resources
 
           context 'when we fail to get the utilization for a resource pool' do
             before do
-              allow(client).to receive(:get_properties)
+              allow(cloud_searcher).to receive(:get_properties)
                                .with(fake_resource_pool_mob, VimSdk::Vim::ResourcePool, "summary")
                                .and_return(nil)
             end
@@ -254,7 +255,7 @@ class VSphereCloud::Resources
                 generate_host_property(active_host_2_mob, false, 40 * 1024 * 1024)
               )
 
-              allow(client).to receive(:get_properties)
+              allow(cloud_searcher).to receive(:get_properties)
                                .with(cluster_hosts,
                                      VimSdk::Vim::HostSystem,
                                      described_class::HOST_PROPERTIES,
@@ -287,7 +288,7 @@ class VSphereCloud::Resources
 
           context 'when there are no active cluster hosts' do
             before do
-              allow(client).to receive(:get_properties)
+              allow(cloud_searcher).to receive(:get_properties)
                                .with(cluster_hosts,
                                      VimSdk::Vim::HostSystem,
                                      described_class::HOST_PROPERTIES,

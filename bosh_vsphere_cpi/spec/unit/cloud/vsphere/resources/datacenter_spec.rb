@@ -27,14 +27,16 @@ describe VSphereCloud::Resources::Datacenter do
   let(:ephemeral_pattern) {instance_double('Regexp')}
   let(:persistent_pattern) {instance_double('Regexp')}
   let(:allow_mixed) { false }
+  let(:cloud_searcher) { instance_double('VSphereCloud::CloudSearcher') }
 
   before do
     allow(client).to receive(:find_by_inventory_path).with('fake-datacenter-name').and_return(datacenter_mob)
+    allow(client).to receive(:cloud_searcher).and_return(cloud_searcher)
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
                                                 'fake-vm-folder', config).and_return(vm_folder)
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
                                                 'fake-template-folder', config).and_return(template_folder)
-    allow(client).to receive(:get_managed_objects).with(
+    allow(cloud_searcher).to receive(:get_managed_objects).with(
                        VimSdk::Vim::ClusterComputeResource,
                        root: datacenter_mob, include_name: true).and_return(
                        {
@@ -42,7 +44,7 @@ describe VSphereCloud::Resources::Datacenter do
                          'cluster2' => cluster_mob2,
                        }
                      )
-    allow(client).to receive(:get_properties).with(
+    allow(cloud_searcher).to receive(:get_properties).with(
                        [cluster_mob1, cluster_mob2],
                        VimSdk::Vim::ClusterComputeResource,
                        VSphereCloud::Resources::Cluster::PROPERTIES,
@@ -139,7 +141,7 @@ describe VSphereCloud::Resources::Datacenter do
 
     context 'when a cluster mob cannot be found' do
       it 'raises an exception' do
-        allow(client).to receive(:get_managed_objects).with(
+        allow(cloud_searcher).to receive(:get_managed_objects).with(
                            VimSdk::Vim::ClusterComputeResource,
                            root: datacenter_mob, include_name: true).and_return(
                            {
@@ -147,7 +149,7 @@ describe VSphereCloud::Resources::Datacenter do
                            }
                          )
 
-        allow(client).to receive(:get_properties).with(
+        allow(cloud_searcher).to receive(:get_properties).with(
                            [cluster_mob2],
                            VimSdk::Vim::ClusterComputeResource,
                            VSphereCloud::Resources::Cluster::PROPERTIES,
@@ -160,7 +162,7 @@ describe VSphereCloud::Resources::Datacenter do
 
     context 'when properties for a cluster cannot be found' do
       it 'raises an exception' do
-        allow(client).to receive(:get_properties).with(
+        allow(cloud_searcher).to receive(:get_properties).with(
                            [cluster_mob1, cluster_mob2],
                            VimSdk::Vim::ClusterComputeResource,
                            VSphereCloud::Resources::Cluster::PROPERTIES,

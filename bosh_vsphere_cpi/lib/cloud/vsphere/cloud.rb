@@ -38,9 +38,11 @@ module VSphereCloud
 
       @logger = config.logger
       @client = config.client
+      @cloud_searcher = CloudSearcher.new(@client.service_content, @logger)
+
       @resources = Resources.new(config)
       @file_provider = FileProvider.new(config.rest_client, config.vcenter_host)
-      @agent_env = AgentEnv.new(client, @file_provider)
+      @agent_env = AgentEnv.new(client, @file_provider, @cloud_searcher)
 
       # Global lock
       @lock = Mutex.new
@@ -103,7 +105,7 @@ module VSphereCloud
 
           import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool.mob, datastore.mob)
 
-          lease_obtainer = LeaseObtainer.new(@client, @logger)
+          lease_obtainer = LeaseObtainer.new(@cloud_searcher, @logger)
           nfc_lease = lease_obtainer.obtain(
             cluster.resource_pool,
             import_spec_result.import_spec,
@@ -115,7 +117,7 @@ module VSphereCloud
           result = name
 
           @logger.info('Removing NICs')
-          devices = client.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
+          devices = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
           config = Vim::Vm::ConfigSpec.new
           config.device_change = []
 
@@ -142,8 +144,8 @@ module VSphereCloud
         Bosh::ThreadPool.new(max_threads: 32, logger: @logger).wrap do |pool|
           @resources.datacenters.each_value do |datacenter|
             @logger.info("Looking for stemcell replicas in: #{datacenter.name}")
-            templates = client.get_property(datacenter.template_folder.mob, Vim::Folder, 'childEntity', ensure_all: true)
-            template_properties = client.get_properties(templates, Vim::VirtualMachine, ['name'])
+            templates = @cloud_searcher.get_property(datacenter.template_folder.mob, Vim::Folder, 'childEntity', ensure_all: true)
+            template_properties = @cloud_searcher.get_properties(templates, Vim::VirtualMachine, ['name'])
             template_properties.each_value do |properties|
               template_name = properties['name'].gsub('%2f', '/')
               if template_name.split('/').first.strip == stemcell
@@ -186,6 +188,7 @@ module VSphereCloud
           choose_placer(cloud_properties),
           cloud_properties,
           @client,
+          @cloud_searcher,
           @logger,
           self,
           @agent_env,
@@ -201,7 +204,7 @@ module VSphereCloud
         vm = get_vm_by_cid(vm_cid)
         datacenter = client.find_parent(vm, Vim::Datacenter)
         properties =
-          client.get_properties(
+          @cloud_searcher.get_properties(
             vm,
             Vim::VirtualMachine,
             ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name'],
@@ -215,7 +218,7 @@ module VSphereCloud
             @logger.info("VM is blocked on a question: #{question.text}, " +
                            "providing default answer: #{choices.choice_info[choices.default_index].label}")
             client.answer_vm(vm, question.id, choices.choice_info[choices.default_index].key)
-            power_state = client.get_property(vm, Vim::VirtualMachine, 'runtime.powerState')
+            power_state = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'runtime.powerState')
           else
             power_state = properties['runtime.powerState']
           end
@@ -263,7 +266,7 @@ module VSphereCloud
       with_thread_name("reboot_vm(#{vm_cid})") do
         vm = get_vm_by_cid(vm_cid)
         datacenter = client.find_parent(vm, Vim::Datacenter)
-        power_state = client.get_property(vm, Vim::VirtualMachine, 'runtime.powerState')
+        power_state = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'runtime.powerState')
 
         @logger.info("Reboot vm = #{vm_cid}")
         if power_state != Vim::VirtualMachine::PowerState::POWERED_ON
@@ -336,9 +339,9 @@ module VSphereCloud
 
         @logger.info("Configuring: #{vm_cid} to use the following network settings: #{networks.pretty_inspect}")
         vm = get_vm_by_cid(vm_cid)
-        devices = client.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
+        devices = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
         datacenter = client.find_parent(vm, Vim::Datacenter)
-        datacenter_name = client.get_property(datacenter, Vim::Datacenter, 'name')
+        datacenter_name = @cloud_searcher.get_property(datacenter, Vim::Datacenter, 'name')
         pci_controller = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualPCIController) }
 
         config = Vim::Vm::ConfigSpec.new
@@ -364,7 +367,7 @@ module VSphereCloud
         env = @agent_env.get_current_env(vm, datacenter_name)
         @logger.debug("Reading current agent env: #{env.pretty_inspect}")
 
-        devices = client.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
+        devices = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
         env['networks'] = generate_network_env(devices, networks, dvs_index)
 
         @logger.debug("Updating agent env to: #{env.pretty_inspect}")
@@ -377,18 +380,18 @@ module VSphereCloud
     end
 
     def get_vm_host_info(vm_ref)
-      vm = @client.get_properties(vm_ref, Vim::VirtualMachine, 'runtime')
+      vm = @cloud_searcher.get_properties(vm_ref, Vim::VirtualMachine, 'runtime')
       vm_runtime = vm['runtime']
 
-      properties = @client.get_properties(vm_runtime.host, Vim::HostSystem, ['datastore', 'parent'], ensure_all: true)
+      properties = @cloud_searcher.get_properties(vm_runtime.host, Vim::HostSystem, ['datastore', 'parent'], ensure_all: true)
 
       # Get the cluster that the vm's host belongs to.
-      cluster = @client.get_properties(properties['parent'], Vim::ClusterComputeResource, 'name')
+      cluster = @cloud_searcher.get_properties(properties['parent'], Vim::ClusterComputeResource, 'name')
 
       # Get the datastores that are accessible to the vm's host.
       datastores_accessible = []
       properties['datastore'].each do |store|
-        ds = @client.get_properties(store, Vim::Datastore, 'info', ensure_all: true)
+        ds = @cloud_searcher.get_properties(store, Vim::Datastore, 'info', ensure_all: true)
         datastores_accessible << ds['info'].name
       end
 
@@ -421,7 +424,7 @@ module VSphereCloud
         datacenter = client.find_parent(vm, Vim::Datacenter)
         datacenter_name = config.datacenter_name
 
-        vm_properties = client.get_properties(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
+        vm_properties = @cloud_searcher.get_properties(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
         host_info = get_vm_host_info(vm)
 
         create_disk = false
@@ -523,7 +526,7 @@ module VSphereCloud
           @agent_env.set_env(vm, location, env)
         end
 
-        devices = client.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
+        devices = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
         vmdk_path = "#{disk.path}.vmdk"
         virtual_disk =
           devices.find do |device|
@@ -543,7 +546,7 @@ module VSphereCloud
         # that the change has been applied. This is a known issue for vsphere 4.
         # Fixed in vsphere 5.
         5.times do
-          devices = client.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
+          devices = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
           virtual_disk =
             devices.find do |device|
               device.kind_of?(Vim::Vm::Device::VirtualDisk) &&
@@ -601,7 +604,7 @@ module VSphereCloud
       stemcell_vm = client.find_by_inventory_path([cluster.datacenter.name, 'vm',
                                                    cluster.datacenter.template_folder.name, stemcell])
       raise "Could not find stemcell: #{stemcell}" if stemcell_vm.nil?
-      stemcell_datastore = client.get_property(stemcell_vm, Vim::VirtualMachine, 'datastore', ensure_all: true)
+      stemcell_datastore = @cloud_searcher.get_property(stemcell_vm, Vim::VirtualMachine, 'datastore', ensure_all: true)
 
       if stemcell_datastore != datastore.mob
         @logger.info("Stemcell lives on a different datastore, looking for a local copy of: #{stemcell}.")
@@ -715,13 +718,13 @@ module VSphereCloud
 
       if vm_name.nil? || datastore_name.nil?
         vm_properties =
-          client.get_properties(vm, Vim::VirtualMachine, ['config.hardware.device', 'name'], ensure_all: true)
+          @cloud_searcher.get_properties(vm, Vim::VirtualMachine, ['config.hardware.device', 'name'], ensure_all: true)
         vm_name = vm_properties['name']
 
         unless datastore_name
           devices = vm_properties['config.hardware.device']
           datastore = get_primary_datastore(devices)
-          datastore_name = client.get_property(datastore, Vim::Datastore, 'name')
+          datastore_name = @cloud_searcher.get_property(datastore, Vim::Datastore, 'name')
         end
       end
 
@@ -794,13 +797,13 @@ module VSphereCloud
     def create_nic_config_spec(v_network_name, network, controller_key, dvs_index)
       raise "Can't find network: #{v_network_name}" if network.nil?
       if network.class == Vim::Dvs::DistributedVirtualPortgroup
-        portgroup_properties = client.get_properties(network,
+        portgroup_properties = @cloud_searcher.get_properties(network,
                                                      Vim::Dvs::DistributedVirtualPortgroup,
                                                      ['config.key', 'config.distributedVirtualSwitch'],
                                                      ensure_all: true)
 
         switch = portgroup_properties['config.distributedVirtualSwitch']
-        switch_uuid = client.get_property(switch, Vim::DistributedVirtualSwitch, 'uuid', ensure_all: true)
+        switch_uuid = @cloud_searcher.get_property(switch, Vim::DistributedVirtualSwitch, 'uuid', ensure_all: true)
 
         port = Vim::Dvs::PortConnection.new
         port.switch_uuid = switch_uuid
@@ -878,14 +881,14 @@ module VSphereCloud
 
     def wait_for_nfc_lease(lease)
       loop do
-        state = client.get_property(lease, Vim::HttpNfcLease, 'state')
+        state = @cloud_searcher.get_property(lease, Vim::HttpNfcLease, 'state')
         return state unless state == Vim::HttpNfcLease::State::INITIALIZING
         sleep(1.0)
       end
     end
 
     def upload_ovf(ovf, lease, file_items)
-      info = client.get_property(lease, Vim::HttpNfcLease, 'info', ensure_all: true)
+      info = @cloud_searcher.get_property(lease, Vim::HttpNfcLease, 'info', ensure_all: true)
       lease_updater = LeaseUpdater.new(client, lease)
 
       info.device_url.each do |device_url|
@@ -925,7 +928,7 @@ module VSphereCloud
     def wait_until_off(vm, timeout)
       started = Time.now
       loop do
-        power_state = client.get_property(vm, Vim::VirtualMachine, 'runtime.powerState')
+        power_state = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'runtime.powerState')
         break if power_state == Vim::VirtualMachine::PowerState::POWERED_OFF
         raise TimeoutException if Time.now - started > timeout
         sleep(1.0)

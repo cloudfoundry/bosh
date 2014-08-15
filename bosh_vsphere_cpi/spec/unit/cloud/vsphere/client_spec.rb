@@ -6,11 +6,10 @@ module VSphereCloud
   describe Client do
     include FakeFS::SpecHelpers
 
-    subject(:client) { Client.new('http://www.example.com', options) }
-
-    let(:options) { {} }
-    let(:fake_search_index) { double(:search_index) }
+    subject(:client) { described_class.new('fake-host', soap_log: 'fake-soap-log') }
     let(:fake_service_content) { double('service content', root_folder: double('fake-root-folder')) }
+
+    let(:fake_search_index) { double(:search_index) }
 
     let(:logger) { instance_double('Logger') }
     before { class_double('Bosh::Clouds::Config', logger: logger).as_stubbed_const }
@@ -22,73 +21,11 @@ module VSphereCloud
     end
 
     describe '#initialize' do
-      let(:ssl_config) { double(:ssl_config, :verify_mode= => nil) }
-      let(:http_client) do
-        instance_double('HTTPClient',
-          :debug_dev= => nil,
-          :send_timeout= => nil,
-          :receive_timeout= => nil,
-          :connect_timeout= => nil,
-          :ssl_config => ssl_config,
-        )
-      end
-      before { allow(HTTPClient).to receive(:new).and_return(http_client) }
-
-      let(:options) { { 'soap_log' => soap_log } }
-
-      def self.it_configures_http_client
-        it 'configures http client ' do
-          expect(http_client).to receive(:send_timeout=).with(14400)
-          expect(http_client).to receive(:receive_timeout=).with(14400)
-          expect(http_client).to receive(:connect_timeout=).with(30)
-          expect(ssl_config).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_NONE)
-
-          subject
-        end
-      end
-
-      context 'when soap log is an IO' do
-        let(:soap_log) { IO.new(0) }
-
-        it 'uses given IO for http_client logging' do
-          expect(http_client).to receive(:debug_dev=).with(soap_log)
-          expect(VimSdk::Soap::StubAdapter).to receive(:new).with('http://www.example.com', 'vim.version.version6', http_client)
-
-          subject
-        end
-
-        it_configures_http_client
-      end
-
-      context 'when soap log is a StringIO' do
-        let(:soap_log) { StringIO.new }
-
-        it 'uses given IO for http_client logging' do
-          expect(http_client).to receive(:debug_dev=).with(soap_log)
-          expect(VimSdk::Soap::StubAdapter).to receive(:new).with('http://www.example.com', 'vim.version.version6', http_client)
-
-          subject
-        end
-
-        it_configures_http_client
-      end
-
-      context 'when soap log is a file path' do
-        let(:soap_log) { '/fake-log-file' }
-        before { FileUtils.touch('/fake-log-file') }
-
-        it 'creates a file IO for http_client logging' do
-          expect(http_client).to receive(:debug_dev=) do |log_file|
-            expect(log_file).to be_instance_of(File)
-            expect(log_file.path).to eq('/fake-log-file')
-          end
-
-          expect(VimSdk::Soap::StubAdapter).to receive(:new).with('http://www.example.com', 'vim.version.version6', http_client)
-
-          subject
-        end
-
-        it_configures_http_client
+      it 'creates soap stub' do
+        stub_adapter = instance_double('VimSdk::Soap::StubAdapter')
+        soap_stub = instance_double('VSphereCloud::SoapStub', create: stub_adapter)
+        expect(SoapStub).to receive(:new).with('fake-host', 'fake-soap-log').and_return(soap_stub)
+        expect(client.soap_stub).to eq(stub_adapter)
       end
     end
 
@@ -171,12 +108,6 @@ module VSphereCloud
           expect(fake_search_index).to receive(:find_by_inventory_path).with('foo/bar/baz/jaz')
           client.find_by_inventory_path(['foo', ['bar', 'baz/jaz']])
         end
-      end
-    end
-
-    describe '#soap_stub' do
-      it 'returns the soap stub adapter' do
-        expect(client.soap_stub).to be_a(VimSdk::Soap::StubAdapter)
       end
     end
 
@@ -272,46 +203,6 @@ module VSphereCloud
         expect(folder).to receive(:destroy).and_return(task)
         expect(client).to receive(:wait_for_task).with(task)
         client.delete_folder(folder)
-      end
-    end
-
-    describe 'get_managed_objects_with_attribute' do
-      let(:property_collector) { instance_double('VimSdk::Vmodl::Query::PropertyCollector') }
-      let(:object_1) { double(:object) }
-      let(:object_2) { double(:object) }
-      let(:object_3) { double(:object) }
-      let(:object_spec_1) do
-        property = double(:prop_set, val: [ double(:val, key: 102) ])
-        double(:object_spec, obj: object_1, prop_set: [property])
-      end
-
-      let(:object_spec_2) do
-        property = double(:prop_set, val: [ double(:val, key: 102) ])
-        double(:object_spec, obj: object_2, prop_set: [property])
-      end
-
-      let(:object_spec_3) do
-        property = double(:prop_set, val: [ double(:val, key: 201) ])
-        double(:object_spec, obj: object_3, prop_set: [property])
-      end
-
-      before do
-        allow(fake_service_content).to receive(:property_collector).and_return(property_collector)
-      end
-
-      it 'returns objects that have the provided custom attribute' do
-        expect(property_collector).to receive(:retrieve_properties_ex).
-          and_return(double(:result, token: 'fake-token', objects: [object_spec_1, object_spec_2]))
-        expect(property_collector).to receive(:continue_retrieve_properties_ex).
-          and_return(nil)
-
-        results = client.get_managed_objects_with_attribute(VimSdk::Vim::VirtualMachine, 102)
-        expect(results).to eq(
-          [
-            object_1,
-            object_2
-          ]
-        )
       end
     end
   end

@@ -7,9 +7,12 @@ module VSphereCloud
     let(:config) { { fake: 'config' } }
     let(:cloud_config) { instance_double('VSphereCloud::Config', logger: logger, rest_client:nil ).as_null_object }
     let(:logger) { instance_double('Logger', info: nil, debug: nil) }
-    let(:client) { double('fake client') }
+    let(:client) { instance_double('VSphereCloud::Client') }
     let(:agent_env) { instance_double('VSphereCloud::AgentEnv') }
     before { allow(VSphereCloud::AgentEnv).to receive(:new).and_return(agent_env) }
+
+    let(:cloud_searcher) { instance_double('VSphereCloud::CloudSearcher') }
+    before { allow(CloudSearcher).to receive(:new).and_return(cloud_searcher) }
 
     before do
       allow(Config).to receive(:build).with(config).and_return(cloud_config)
@@ -243,7 +246,7 @@ module VSphereCloud
             ]
           ).and_return(stemcell_vm)
 
-          allow(client).to receive(:get_property).with(stemcell_vm, anything, 'datastore', anything).and_return('fake_stemcell_datastore')
+          allow(cloud_searcher).to receive(:get_property).with(stemcell_vm, anything, 'datastore', anything).and_return('fake_stemcell_datastore')
         end
 
         it 'searches for stemcell on all cluster datastores' do
@@ -288,7 +291,7 @@ module VSphereCloud
       context 'when stemcell resides on the given datastore' do
         it 'returns the found replica' do
           allow(client).to receive(:find_by_inventory_path).with(any_args).and_return(stemcell_vm)
-          allow(client).to receive(:get_property).with(any_args).and_return(datastore)
+          allow(cloud_searcher).to receive(:get_property).with(any_args).and_return(datastore)
           allow(datastore).to receive(:mob).and_return(datastore)
           expect(vsphere_cloud.replicate_stemcell(cluster, datastore, stemcell_id)).to eql(stemcell_vm)
         end
@@ -414,11 +417,11 @@ module VSphereCloud
         let(:portgroup_properties) { { 'config.distributedVirtualSwitch' => switch, 'config.key' => 'fake_portgroup_key' } }
 
         before do
-          allow(client).to receive(:get_properties).with(network, VimSdk::Vim::Dvs::DistributedVirtualPortgroup,
+          allow(cloud_searcher).to receive(:get_properties).with(network, VimSdk::Vim::Dvs::DistributedVirtualPortgroup,
                                             ['config.key', 'config.distributedVirtualSwitch'],
                                             ensure_all: true).and_return(portgroup_properties)
 
-          allow(client).to receive(:get_property).with(switch, VimSdk::Vim::DistributedVirtualSwitch,
+          allow(cloud_searcher).to receive(:get_property).with(switch, VimSdk::Vim::DistributedVirtualSwitch,
                                           'uuid', ensure_all: true).and_return('fake_switch_uuid')
         end
 
@@ -595,7 +598,7 @@ module VSphereCloud
                                           nil,
                                         ).and_return(vm)
             expect(creator_builder).to receive(:build).with(
-              placer, cloud_properties, client, logger, vsphere_cloud, agent_env, file_provider
+              placer, cloud_properties, client, cloud_searcher, logger, vsphere_cloud, agent_env, file_provider
             ).and_return(creator_instance)
 
             expect(
@@ -617,7 +620,7 @@ module VSphereCloud
               nil,
             ).and_return(vm)
             expect(creator_builder).to receive(:build).with(
-              resources, cloud_properties, client, logger, vsphere_cloud, agent_env, file_provider
+              resources, cloud_properties, client, cloud_searcher, logger, vsphere_cloud, agent_env, file_provider
             ).and_return(creator_instance)
 
             expect(
@@ -640,7 +643,7 @@ module VSphereCloud
               nil,
             ).and_return(vm)
             expect(creator_builder).to receive(:build).with(
-              resources, cloud_properties, client, logger, vsphere_cloud, agent_env, file_provider
+              resources, cloud_properties, client, cloud_searcher, logger, vsphere_cloud, agent_env, file_provider
             ).and_return(creator_instance)
 
             expect(
@@ -664,7 +667,7 @@ module VSphereCloud
               environment,
             ).and_return(vm)
             expect(creator_builder).to receive(:build).with(
-              resources, cloud_properties, client, logger, vsphere_cloud, agent_env, file_provider
+              resources, cloud_properties, client, cloud_searcher, logger, vsphere_cloud, agent_env, file_provider
             ).and_return(creator_instance)
 
             expect(
@@ -724,8 +727,8 @@ module VSphereCloud
         allow_any_instance_of(VSphereCloud::Cloud).to receive(:`).with('tar -C fake-tmp-dir -xzf fake-disk-path 2>&1')
 
         allow(client).to receive(:find_parent).and_return(:datacenter)
-        allow(client).to receive(:get_properties).and_return({'config.hardware.device' => [device], 'name' => 'fake-vm-name'})
-        allow(client).to receive(:get_property).with(datastore, VimSdk::Vim::Datastore, 'name').and_return('fake-datastore-name')
+        allow(cloud_searcher).to receive(:get_properties).and_return({'config.hardware.device' => [device], 'name' => 'fake-vm-name'})
+        allow(cloud_searcher).to receive(:get_property).with(datastore, VimSdk::Vim::Datastore, 'name').and_return('fake-datastore-name')
       end
 
       context 'when disk already exists' do
@@ -815,7 +818,7 @@ module VSphereCloud
 
       let(:devices) { [virtual_disk_device] }
       before do
-        allow(client).to receive(:get_properties).with(
+        allow(cloud_searcher).to receive(:get_properties).with(
           vm,
           VimSdk::Vim::VirtualMachine,
           ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name'],
@@ -846,7 +849,7 @@ module VSphereCloud
 
       let(:datastore) { instance_double('VimSdk::Vim::Datastore') }
       before do
-        allow(client).to receive(:get_property).
+        allow(cloud_searcher).to receive(:get_property).
           with(datastore, VimSdk::Vim::Datastore, 'name').
           and_return('fake-datastore-name')
       end
@@ -911,7 +914,7 @@ module VSphereCloud
 
         before do
           allow(vsphere_cloud).to receive(:get_vm_by_cid).with('vm-cid').and_return(vm)
-          allow(client).to receive(:get_property).with(
+          allow(cloud_searcher).to receive(:get_property).with(
             vm,
             VimSdk::Vim::VirtualMachine,
             'config.hardware.device',
@@ -1021,7 +1024,7 @@ module VSphereCloud
 
       let(:devices) { [VimSdk::Vim::Vm::Device::VirtualPCIController.new(key: 'fake-pci-key')] }
       before do
-        allow(client).to receive(:get_property).with(
+        allow(cloud_searcher).to receive(:get_property).with(
           vm,
           VimSdk::Vim::VirtualMachine,
           'config.hardware.device',
@@ -1031,7 +1034,7 @@ module VSphereCloud
 
       let(:datacenter) { instance_double('VimSdk::Vim::Datacenter') }
       before do
-        allow(client).to receive(:get_property).with(
+        allow(cloud_searcher).to receive(:get_property).with(
           datacenter,
           VimSdk::Vim::Datacenter,
           'name'
@@ -1073,7 +1076,7 @@ module VSphereCloud
       end
 
       it 'sends shutdown command to vm' do
-        allow(client).to receive(:get_property).with(
+        allow(cloud_searcher).to receive(:get_property).with(
           vm,
           VimSdk::Vim::VirtualMachine,
           'runtime.powerState'
@@ -1101,7 +1104,7 @@ module VSphereCloud
       end
 
       it 'waits for vm to shutdown for 60 seconds' do
-        expect(client).to receive(:get_property).with(
+        expect(cloud_searcher).to receive(:get_property).with(
           vm,
           VimSdk::Vim::VirtualMachine,
           'runtime.powerState'

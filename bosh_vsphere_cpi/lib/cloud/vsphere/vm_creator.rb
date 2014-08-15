@@ -2,9 +2,10 @@ require 'ruby_vim_sdk'
 
 module VSphereCloud
   class VmCreator
-    def initialize(memory, disk, cpu, placer, client, logger, cpi, agent_env, file_provider)
+    def initialize(memory, disk, cpu, placer, client, cloud_searcher, logger, cpi, agent_env, file_provider)
       @placer = placer
       @client = client
+      @cloud_searcher = cloud_searcher
       @logger = logger
       @cpi = cpi
       @memory = memory
@@ -21,7 +22,7 @@ module VSphereCloud
       raise "Could not find stemcell: #{stemcell_cid}" if stemcell_vm.nil?
 
       stemcell_size =
-        @client.get_property(stemcell_vm, VimSdk::Vim::VirtualMachine, 'summary.storage.committed', ensure_all: true)
+        @cloud_searcher.get_property(stemcell_vm, VimSdk::Vim::VirtualMachine, 'summary.storage.committed', ensure_all: true)
       stemcell_size /= 1024 * 1024
 
       disks = @cpi.disk_spec(disk_cids)
@@ -33,7 +34,7 @@ module VSphereCloud
       @logger.info("Creating vm: #{name} on #{cluster.mob} stored in #{datastore.mob}")
 
       replicated_stemcell_vm = @cpi.replicate_stemcell(cluster, datastore, stemcell_cid)
-      replicated_stemcell_properties = @client.get_properties(replicated_stemcell_vm, VimSdk::Vim::VirtualMachine,
+      replicated_stemcell_properties = @cloud_searcher.get_properties(replicated_stemcell_vm, VimSdk::Vim::VirtualMachine,
                                                              ['config.hardware.device', 'snapshot'],
                                                              ensure_all: true)
 
@@ -77,7 +78,7 @@ module VSphereCloud
       vm = @client.wait_for_task(task)
 
       begin
-        vm_properties = @client.get_properties(vm, VimSdk::Vim::VirtualMachine, ['config.hardware.device'], ensure_all: true)
+        vm_properties = @cloud_searcher.get_properties(vm, VimSdk::Vim::VirtualMachine, ['config.hardware.device'], ensure_all: true)
         devices = vm_properties['config.hardware.device']
 
         network_env = @cpi.generate_network_env(devices, networks, dvs_index)

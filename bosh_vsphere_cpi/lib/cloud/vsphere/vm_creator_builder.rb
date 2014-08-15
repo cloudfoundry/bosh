@@ -2,13 +2,14 @@ require 'cloud/vsphere/vm_creator'
 
 module VSphereCloud
   class VmCreatorBuilder
-    def build(resources, cloud_properties, client, logger, cpi, agent_env, file_provider)
+    def build(resources, cloud_properties, client, cloud_searcher, logger, cpi, agent_env, file_provider)
       VmCreator.new(
         cloud_properties.fetch('ram'),
         cloud_properties.fetch('disk'),
         cloud_properties.fetch('cpu'),
         resources,
         client,
+        cloud_searcher,
         logger,
         cpi,
         agent_env,

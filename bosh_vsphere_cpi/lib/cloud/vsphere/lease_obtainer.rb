@@ -4,8 +4,8 @@ module VSphereCloud
   class LeaseObtainer
     include VimSdk
 
-    def initialize(client, logger)
-      @client = client
+    def initialize(cloud_searcher, logger)
+      @cloud_searcher = cloud_searcher
       @logger = logger
     end
 
@@ -31,14 +31,14 @@ module VSphereCloud
 
     def wait_for_nfc_lease(nfc_lease)
       loop do
-        state = @client.get_property(nfc_lease, Vim::HttpNfcLease, 'state')
+        state = @cloud_searcher.get_property(nfc_lease, Vim::HttpNfcLease, 'state')
         return state unless state == Vim::HttpNfcLease::State::INITIALIZING
         sleep(1.0)
       end
     end
 
     def raise_nfc_lease_error(nfc_lease)
-      error = @client.get_property(nfc_lease, Vim::HttpNfcLease, 'error')
+      error = @cloud_searcher.get_property(nfc_lease, Vim::HttpNfcLease, 'error')
       raise "Could not acquire HTTP NFC lease, message is: '#{error.msg}' " +
               "fault cause is: '#{error.fault_cause}', " +
               "fault message is: #{error.fault_message}, " +

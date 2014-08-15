@@ -1,3 +1,4 @@
+require 'ruby_vim_sdk'
 require 'cloud/vsphere/cluster_config'
 
 module VSphereCloud
@@ -41,14 +42,17 @@ module VSphereCloud
 
     def client
       unless @client
-        @client = Client.new("https://#{vcenter['host']}/sdk/vimService", {
-          'soap_log' => config['soap_log'] || config['cpi_log']
-        })
+        host = "https://#{vcenter['host']}/sdk/vimService"
+        @client = Client.new(host, soap_log: soap_log)
 
         @client.login(vcenter['user'], vcenter['password'], 'en')
       end
 
       @client
+    end
+
+    def soap_log
+      config['soap_log'] || config['cpi_log']
     end
 
     def rest_client

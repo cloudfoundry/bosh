@@ -8,10 +8,11 @@ describe VSphereCloud::VmCreator do
     let(:cpi) { instance_double('VSphereCloud::Cloud') }
     let(:agent_env) { instance_double('VSphereCloud::AgentEnv') }
     let(:file_provider) { instance_double('VSphereCloud::FileProvider') }
+    let(:cloud_searcher) { instance_double('VSphereCloud::CloudSearcher') }
 
     context 'when the stemcell vm does not exist' do
       subject(:creator) do
-        described_class.new(1024, 1024, 1, placer, vsphere_client, logger, cpi, agent_env, file_provider)
+        described_class.new(1024, 1024, 1, placer, vsphere_client, cloud_searcher, logger, cpi, agent_env, file_provider)
       end
 
       before do
@@ -26,7 +27,7 @@ describe VSphereCloud::VmCreator do
 
     it 'chooses the placement based on memory, ephemeral and persistent disks' do
       creator = described_class.new(
-        1024, 10240000, 3, placer, vsphere_client, logger,
+        1024, 10240000, 3, placer, vsphere_client, cloud_searcher, logger,
         cpi, agent_env, file_provider
       )
 
@@ -64,9 +65,9 @@ describe VSphereCloud::VmCreator do
       allow(cpi).to receive(:disk_spec).with(disk_locality).and_return(disk_spec)
       allow(file_provider).to receive(:upload_file).with('datacenter name', 'datastore name', 'vm-vm_unique_name/env.iso', '')
 
-      allow(vsphere_client).to receive(:get_property).with(stemcell_vm, anything, anything, anything).and_return(1024*1024)
+      allow(cloud_searcher).to receive(:get_property).with(stemcell_vm, anything, anything, anything).and_return(1024*1024)
       replicated_stemcell_vm = double('replicated vm')
-      allow(vsphere_client).to receive(:get_properties).with(replicated_stemcell_vm, VimSdk::Vim::VirtualMachine, ['config.hardware.device', 'snapshot'], ensure_all: true).and_return(stemcell_properties)
+      allow(cloud_searcher).to receive(:get_properties).with(replicated_stemcell_vm, VimSdk::Vim::VirtualMachine, ['config.hardware.device', 'snapshot'], ensure_all: true).and_return(stemcell_properties)
 
       datastore = double('datastore')
       allow(datastore).to receive(:name).with(no_args).and_return("datastore name")
@@ -127,7 +128,7 @@ describe VSphereCloud::VmCreator do
       ).and_return(clone_vm_task)
       vm_double = double('cloned vm')
       allow(vsphere_client).to receive(:wait_for_task).with(clone_vm_task).and_return(vm_double)
-      allow(vsphere_client).to receive(:get_properties).with(vm_double, VimSdk::Vim::VirtualMachine, ['config.hardware.device'], ensure_all: true).and_return(stemcell_properties)
+      allow(cloud_searcher).to receive(:get_properties).with(vm_double, VimSdk::Vim::VirtualMachine, ['config.hardware.device'], ensure_all: true).and_return(stemcell_properties)
       allow(cpi).to receive(:generate_agent_env).with("vm-vm_unique_name", vm_double, 'agent_id', network_env, disk_env).and_return({})
 
       vm_location = double('vm location')
