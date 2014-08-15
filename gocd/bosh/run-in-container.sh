@@ -10,4 +10,9 @@ DOCKER_REGISTRY=docker.gocd.cf-app.com:5000
 
 docker pull $DOCKER_REGISTRY/$IMAGE_TAG
 
-docker run -v ../bosh:/opt/bosh $1
+docker run \
+  -v $(pwd):/opt/bosh \
+  -e RUBY_VERSION \
+  -e DB \
+  $DOCKER_REGISTRY/$IMAGE_TAG \
+  $1
