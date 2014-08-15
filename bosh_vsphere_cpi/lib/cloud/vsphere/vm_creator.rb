@@ -123,7 +123,13 @@ module VSphereCloud
         raise "vSphere CPI only supports DRS rule of 'separate_vms' type"
       end
 
-      drs_rule = VSphereCloud::DrsRule.new(rule_config['name'], @client, @cloud_searcher, cluster.mob)
+      drs_rule = VSphereCloud::DrsRule.new(
+        rule_config['name'],
+        @client,
+        @cloud_searcher,
+        cluster.mob,
+        @logger
+      )
       drs_rule.add_vm(vm)
     end
   end

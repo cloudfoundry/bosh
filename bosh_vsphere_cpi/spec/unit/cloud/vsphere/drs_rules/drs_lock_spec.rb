@@ -2,8 +2,9 @@ require 'cloud/vsphere/drs_rules/drs_lock'
 require 'timecop'
 
 describe VSphereCloud::DrsLock do
-  subject(:drs_lock) { described_class.new(vm_attribute_manager) }
+  subject(:drs_lock) { described_class.new(vm_attribute_manager, logger) }
   let(:vm_attribute_manager) { instance_double('VSphereCloud::VMAttributeManager') }
+  let(:logger) { instance_double('Logger', debug: nil) }
 
   context 'when drs lock exists' do
     context 'when lock is released within timeout' do

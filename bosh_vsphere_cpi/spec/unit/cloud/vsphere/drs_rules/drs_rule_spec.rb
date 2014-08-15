@@ -1,7 +1,15 @@
 require 'cloud/vsphere/drs_rules/drs_rule'
 
 describe VSphereCloud::DrsRule do
-  subject(:drs_rule) { described_class.new('fake-rule-name', client, cloud_searcher, datacenter_cluster) }
+  subject(:drs_rule) do
+    described_class.new(
+      'fake-rule-name',
+      client,
+      cloud_searcher,
+      datacenter_cluster,
+      logger
+    )
+  end
   let(:client) { instance_double('VSphereCloud::Client') }
   before do
     allow(client).to receive(:service_content).and_return(service_content)
@@ -21,8 +29,8 @@ describe VSphereCloud::DrsRule do
       and_return(tagged_vms)
   end
   let(:tagged_vms) { [existing_vm_1, existing_vm_2] }
-  let(:existing_vm_1) { double(:existing_vm_1) }
-  let(:existing_vm_2) { double(:existing_vm_2) }
+  let(:existing_vm_1) { double(:existing_vm_1, name: 'vm-1') }
+  let(:existing_vm_2) { double(:existing_vm_2, name: 'vm-2') }
 
   let(:task) { double(:task) }
 
@@ -43,6 +51,8 @@ describe VSphereCloud::DrsRule do
   let(:drs_lock) { instance_double('VSphereCloud::DrsLock') }
   before { allow(VSphereCloud::DrsLock).to receive(:new).and_return(drs_lock) }
 
+  let(:logger) { instance_double('Logger', debug: nil) }
+
   def with_lock
     expect(drs_lock).to receive(:with_drs_lock).and_yield.ordered
 
@@ -52,7 +62,7 @@ describe VSphereCloud::DrsRule do
   describe '#add_vm' do
     subject { drs_rule.add_vm(vm) }
 
-    let(:vm) { instance_double('VimSdk::Vim::VirtualMachine')}
+    let(:vm) { instance_double('VimSdk::Vim::VirtualMachine', name: 'fake-vm') }
     before do
       allow(vm).to receive(:set_custom_value).with('drs_rule', 'fake-rule-name') do
         tagged_vms << vm

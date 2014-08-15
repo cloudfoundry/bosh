@@ -191,7 +191,7 @@ describe VSphereCloud::VmCreator do
           it 'adds VM to specified drs rules' do
             drs_rule_1 = instance_double('VSphereCloud::DrsRule')
             expect(VSphereCloud::DrsRule).to receive(:new).
-              with('fake-drs-rule-1', vsphere_client, cloud_searcher, cluster_mob).
+              with('fake-drs-rule-1', vsphere_client, cloud_searcher, cluster_mob, logger).
               and_return(drs_rule_1)
             expect(drs_rule_1).to receive(:add_vm).with(vm_double)
 

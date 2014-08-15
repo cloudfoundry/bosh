@@ -261,7 +261,11 @@ module VSphereCloud
           end
         end
 
-        DrsRuleCleaner.new(@cloud_searcher, @client.service_content.custom_fields_manager).clean
+        DrsRuleCleaner.new(
+          @cloud_searcher,
+          @client.service_content.custom_fields_manager,
+          @logger
+        ).clean
       end
     end
 

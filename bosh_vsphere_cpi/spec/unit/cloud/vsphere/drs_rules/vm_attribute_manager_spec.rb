@@ -1,7 +1,7 @@
 require 'cloud/vsphere/drs_rules/vm_attribute_manager'
 
 describe VSphereCloud::VMAttributeManager do
-  subject(:vm_attribute_manager) { described_class.new(custom_fields_manager) }
+  subject(:vm_attribute_manager) { described_class.new(custom_fields_manager, logger) }
   let(:custom_fields_manager) { instance_double('VimSdk::Vim::CustomFieldsManager') }
   before do
     allow(custom_fields_manager).to receive(:field).and_return(
@@ -13,6 +13,8 @@ describe VSphereCloud::VMAttributeManager do
   end
 
   let(:field_matching_field) { double(:field_matching_field, name: 'fake-matching-field', key: 42) }
+
+  let(:logger) { instance_double('Logger', debug: nil) }
 
   describe 'find_by_name' do
     it 'returns the field with the specified name' do

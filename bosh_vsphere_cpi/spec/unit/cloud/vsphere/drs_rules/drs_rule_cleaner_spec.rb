@@ -1,7 +1,7 @@
 require 'cloud/vsphere/drs_rules/drs_rule_cleaner'
 
 describe VSphereCloud::DrsRuleCleaner do
-  subject(:drs_rule_cleaner) { described_class.new(cloud_searcher, custom_fields_manager) }
+  subject(:drs_rule_cleaner) { described_class.new(cloud_searcher, custom_fields_manager, logger) }
   let(:cloud_searcher) { instance_double('VSphereCloud::CloudSearcher') }
   before do
     allow(cloud_searcher).to receive(:has_managed_object_with_attribute?).
@@ -12,7 +12,8 @@ describe VSphereCloud::DrsRuleCleaner do
 
   let(:custom_fields_manager) { instance_double('VimSdk::Vim::CustomFieldsManager') }
   before do
-    allow(VSphereCloud::VMAttributeManager).to receive(:new).with(custom_fields_manager).
+    allow(VSphereCloud::VMAttributeManager).to receive(:new).
+      with(custom_fields_manager, logger).
       and_return(vm_attribute_manager)
   end
 
@@ -26,6 +27,8 @@ describe VSphereCloud::DrsRuleCleaner do
   before do
     allow(VSphereCloud::DrsLock).to receive(:new).and_return(drs_lock)
   end
+
+  let(:logger) { instance_double('Logger', info: nil) }
 
   describe '#clean' do
     context 'when there are tagged vms' do

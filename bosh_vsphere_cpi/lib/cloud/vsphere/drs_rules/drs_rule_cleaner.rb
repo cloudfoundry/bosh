@@ -5,16 +5,23 @@ module VSphereCloud
   class DrsRuleCleaner
     CUSTOM_ATTRIBUTE_NAME = 'drs_rule'
 
-    def initialize(cloud_searcher, custom_fields_manager)
+    def initialize(cloud_searcher, custom_fields_manager, logger)
       @cloud_searcher = cloud_searcher
       @custom_fields_manager = custom_fields_manager
+      @logger = logger
 
-      @vm_attribute_manager = VMAttributeManager.new(@custom_fields_manager)
+      @vm_attribute_manager = VMAttributeManager.new(
+        @custom_fields_manager,
+        @logger
+      )
     end
 
     def clean
-      DrsLock.new(@vm_attribute_manager).with_drs_lock do
-        @vm_attribute_manager.delete(CUSTOM_ATTRIBUTE_NAME) unless has_tagged_vms?
+      DrsLock.new(@vm_attribute_manager, @logger).with_drs_lock do
+        unless has_tagged_vms?
+          @logger.info('Cleaning drs rule attribute')
+          @vm_attribute_manager.delete(CUSTOM_ATTRIBUTE_NAME)
+        end
       end
     end
 

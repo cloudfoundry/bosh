@@ -863,7 +863,8 @@ module VSphereCloud
       let(:drs_rule_cleaner) { instance_double('VSphereCloud::DrsRuleCleaner', clean: nil) }
       before do
         allow(DrsRuleCleaner).to receive(:new).
-          with(cloud_searcher, custom_fields_manager).and_return(drs_rule_cleaner)
+          with(cloud_searcher, custom_fields_manager, logger).
+          and_return(drs_rule_cleaner)
       end
 
       before { allow(client).to receive(:delete_vm).with(vm) }
