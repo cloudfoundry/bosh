@@ -14,5 +14,6 @@ docker run \
   -v $(pwd):/opt/bosh \
   -e RUBY_VERSION \
   -e DB \
+  -e CODECLIMATE_REPO_TOKEN \
   $DOCKER_REGISTRY/$IMAGE_TAG \
   $1

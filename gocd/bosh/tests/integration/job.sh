@@ -5,6 +5,9 @@ if [ "$RUBY_VERSION" == "" ]; then
   exit 1
 fi
 echo "Ruby Version: $RUBY_VERSION"
+
+source /usr/local/etc/profile.d/chruby.sh
+
 chruby $RUBY_VERSION
 
 bundle install --local --without development
