@@ -144,7 +144,7 @@ module Bosh
         s3_object = get_object_from_s3(oid)
         raise BlobstoreError, "object id #{oid} is already in use" if s3_object.exists?
         File.open(path, 'r') do |temp_file|
-          s3_object.write(temp_file)
+          s3_object.write(temp_file, content_type: "application/octet-stream")
         end
       end
 

@@ -221,6 +221,26 @@ module Bosh::Blobstore
           }.to raise_error(BlobstoreError, 'unsupported action')
         end
       end
+
+      context 'with non existing blob' do
+        let(:blob) { instance_double('AWS::S3::S3Object', exists?: false) }
+        let(:options) do
+          {
+            bucket_name: 'test',
+            access_key_id: 'KEY',
+            secret_access_key: 'SECRET',
+          }
+        end
+
+        before do
+          allow(client).to receive(:get_object_from_s3).and_return(blob)          
+        end
+
+        it 'uses a proper content-type' do
+          expect(blob).to receive(:write).with(File, content_type: "application/octet-stream")
+          client.create('foobar', 'foobar')
+        end
+      end
     end
 
     describe '#get' do
