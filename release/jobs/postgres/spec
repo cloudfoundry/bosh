@@ -3,7 +3,7 @@ name: postgres
 
 templates:
   postgres_ctl.erb:  bin/postgres_ctl
-  postgres.conf.erb: config/postgres.conf
+  postgresql.conf.erb: config/postgresql.conf
 
 packages:
   - postgres
