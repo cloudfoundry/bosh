@@ -585,12 +585,17 @@ module VSphereCloud
         @logger.info("Deleting disk: #{disk_cid}")
         disk = Models::Disk.first(uuid: disk_cid)
         if disk
-          if disk.path
-            datacenter = client.find_by_inventory_path(disk.datacenter)
-            raise Bosh::Clouds::DiskNotFound.new(true), "disk #{disk_cid} not found" if datacenter.nil?
-
-            client.delete_disk(datacenter, disk.path)
+          unless has_disk?(disk_cid)
+            raise Bosh::Clouds::DiskNotFound.new(true), "disk #{disk_cid} not found"
           end
+
+          datacenter = client.find_by_inventory_path(disk.datacenter)
+          if datacenter.nil?
+            raise Bosh::Clouds::DiskNotFound.new(true), "datacenter for disk #{disk_cid} not found"
+          end
+
+          client.delete_disk(datacenter, disk.path)
+
           disk.destroy
           @logger.info('Finished deleting disk')
         else

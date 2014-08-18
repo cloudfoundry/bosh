@@ -1155,5 +1155,73 @@ module VSphereCloud
         vsphere_cloud.configure_networks('fake-vm-id', networks)
       end
     end
+
+    describe '#delete_disk' do
+      context 'when disk is in database' do
+        before do
+          Models::Disk.create(
+            uuid: 'fake-disk-uuid',
+            size: 100,
+            datacenter: 'fake-datacenter',
+            path: 'test-path'
+          )
+        end
+
+        after do
+          disk = Models::Disk.find(uuid: 'fake-disk-uuid')
+          disk.destroy if disk
+        end
+
+        context 'when disk is not in the cloud' do
+          before do
+            allow(vsphere_cloud).to receive(:has_disk?).with('fake-disk-uuid').and_return(false)
+          end
+
+          it 'raises DiskNotFound' do
+            expect {
+              vsphere_cloud.delete_disk('fake-disk-uuid')
+            }.to raise_error(Bosh::Clouds::DiskNotFound)
+          end
+        end
+
+        context 'when disk is in the cloud' do
+          before do
+            allow(vsphere_cloud).to receive(:has_disk?).with('fake-disk-uuid').and_return(true)
+          end
+
+          context 'when disk datacenter cannot be found' do
+            before do
+              allow(client).to receive(:find_by_inventory_path).with('fake-datacenter').and_return(nil)
+            end
+
+            it 'raises DiskNotFound' do
+              expect {
+                vsphere_cloud.delete_disk('fake-disk-uuid')
+              }.to raise_error(Bosh::Clouds::DiskNotFound)
+            end
+          end
+
+          context 'when disk datacenter is found' do
+            before do
+              allow(client).to receive(:find_by_inventory_path).with('fake-datacenter').and_return(datacenter)
+            end
+            let(:datacenter) { double(:datacenter) }
+
+            it 'deletes disk' do
+              expect(client).to receive(:delete_disk).with(datacenter, 'test-path')
+              vsphere_cloud.delete_disk('fake-disk-uuid')
+            end
+          end
+        end
+      end
+
+      context 'when disk is not in database' do
+        it 'raises an error' do
+          expect {
+            vsphere_cloud.delete_disk('fake-disk-uuid')
+          }.to raise_error
+        end
+      end
+    end
   end
 end
