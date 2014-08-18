@@ -45,28 +45,45 @@ module Bosh::Director
           @disk.update(active: false)
         end
 
-        agent_client = agent_client(@vm)
-        disk_list = []
+        # If VM is present we try to unmount and detach disk from VM
+        if @vm.cid && cloud.has_vm?(@vm.cid)
+          agent_client = agent_client(@vm)
+          disk_list = []
 
-        begin
-          disk_list = agent_client.list_disk
-          if disk_list.include?(@disk.disk_cid)
-            agent_client.unmount_disk(@disk.disk_cid)
+          begin
+            disk_list = agent_client.list_disk
+            if disk_list.include?(@disk.disk_cid)
+              @logger.debug('Trying to unmount disk')
+              agent_client.unmount_disk(@disk.disk_cid)
+            end
+
+          rescue Bosh::Director::RpcTimeout
+            # When agent is not responding it probably is failing to
+            # access missing disk. We continue with sending detach_disk
+            # which should update agent settings.json and it should be
+            # restarted successfully.
+            @logger.debug('Agent is not responding, skipping unmount')
+          rescue Bosh::Director::RpcRemoteException => e
+            handler_error("Cannot unmount disk, #{e.message}")
           end
 
-        rescue Bosh::Director::RpcTimeout
-          handler_error('Cannot unmount disk, agent is not responding')
-        rescue Bosh::Director::RpcRemoteException => e
-          handler_error("Cannot unmount disk, #{e.message}")
+          begin
+            @logger.debug('Sending cpi request: detach_disk')
+            cloud.detach_disk(@vm.cid, @disk.disk_cid) if @vm.cid
+          rescue Bosh::Clouds::DiskNotAttached
+          end
         end
 
-        begin
-          cloud.detach_disk(@vm.cid, @disk.disk_cid) if @vm.cid
-        rescue Bosh::Clouds::DiskNotAttached
-        end
-
+        @logger.debug('Deleting disk snapshots')
         Api::SnapshotManager.delete_snapshots(@disk.snapshots)
 
+        begin
+          @logger.debug('Sending cpi request: delete_disk')
+          cloud.delete_disk(@disk.disk_cid)
+        rescue Bosh::Clouds::DiskNotFound
+        end
+
+        @logger.debug('Removing disk reference from database')
         @disk.destroy
       end
     end
