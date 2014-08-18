@@ -1,4 +1,5 @@
 require 'cloud/vsphere/soap_stub'
+require 'tempfile'
 
 describe VSphereCloud::SoapStub do
   let(:soap_stub) { described_class.new('https://some-host/sdk/vimService', soap_log) }
@@ -53,13 +54,13 @@ describe VSphereCloud::SoapStub do
     end
 
     context 'when soap log is a file path' do
-      let(:soap_log) { '/fake-log-file' }
-      before { FileUtils.touch('/fake-log-file') }
+      let(:soap_log) { Tempfile.new('fake-log-file').path }
+      after { FileUtils.rm_rf(soap_log) }
 
       it 'creates a file IO for http_client logging' do
         expect(http_client).to receive(:debug_dev=) do |log_file|
           expect(log_file).to be_instance_of(File)
-          expect(log_file.path).to eq('/fake-log-file')
+          expect(log_file.path).to eq(soap_log)
         end
 
         expect(VimSdk::Soap::StubAdapter).to receive(:new).with('https://some-host/sdk/vimService', 'vim.version.version6', http_client)
