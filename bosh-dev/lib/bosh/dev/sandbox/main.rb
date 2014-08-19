@@ -88,7 +88,7 @@ module Bosh::Dev::Sandbox
       FileUtils.mkdir_p(@logs_path)
 
       @nats_process = Service.new(
-        %W[nats-server -p #{nats_port} -D -T -l #{@nats_log_path}],
+        %W[nats-server -p #{nats_port} -D -V -T -l #{@nats_log_path}],
         { stdout: $stdout, stderr: $stderr },
         @logger
       )
