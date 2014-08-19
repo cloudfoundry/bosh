@@ -19,6 +19,7 @@ docker run \
   -e RUBY_VERSION \
   -e DB \
   -e CODECLIMATE_REPO_TOKEN \
+  -e COVERAGE \
   $DOCKER_REGISTRY/$IMAGE_TAG \
   $@ \
   &
