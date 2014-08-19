@@ -20,4 +20,4 @@ docker run \
   -e DB \
   -e CODECLIMATE_REPO_TOKEN \
   $DOCKER_REGISTRY/$IMAGE_TAG \
-  $@
+  sudo chown ubuntu:ubuntu /opt/bosh && $@
