@@ -37,13 +37,3 @@ for version in "${RUBY_VERSIONS[@]}"; do
   echo "Installing ruby $version..."
   ruby-install ruby $version
 done
-
-source /etc/profile.d/chruby.sh
-
-for version in "${RUBY_VERSIONS[@]}"; do
-  echo "Switching to ruby $version..."
-  chruby "ruby-$version"
-  ruby -v
-  echo "Installing bundler..."
-  gem install bundler
-done

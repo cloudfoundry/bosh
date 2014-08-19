@@ -1,3 +1,5 @@
+require 'bosh/dev/go_installer'
+
 namespace :go do
   task :all => [
     'go:install',
