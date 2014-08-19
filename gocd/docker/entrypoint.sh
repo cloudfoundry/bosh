@@ -10,9 +10,12 @@ sudo /etc/init.d/mysql start
 echo "Starting PostgreSQL..."
 pg_ctl start -l /var/log/postgresql/server.log
 
+[ -d /opt/bosh ] && sudo chown -R ubuntu:ubuntu /opt/bosh
+
 set +e
 
-exitcode=$($@)
+$@
+exitcode=$?
 
 echo "Stopping PostgreSQL..."
 pg_ctl stop

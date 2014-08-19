@@ -20,4 +20,17 @@ docker run \
   -e DB \
   -e CODECLIMATE_REPO_TOKEN \
   $DOCKER_REGISTRY/$IMAGE_TAG \
-  sudo chown ubuntu:ubuntu /opt/bosh && $@
+  $@ \
+  &
+
+SUBPROC="$!"
+
+trap "
+  echo '--------------------- KILLING PROCESS'
+  kill $SUBPROC
+
+  echo '--------------------- KILLING CONTAINERS'
+  docker ps -q | xargs docker kill
+" SIGTERM SIGINT # gocd sends TERM; INT just nicer for testing with Ctrl+C
+
+wait $SUBPROC
