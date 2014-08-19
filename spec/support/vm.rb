@@ -1,6 +1,6 @@
 module Bosh::Spec
   class Vm
-    attr_reader :job_name_index, :last_known_state, :cid
+    attr_reader :job_name_index, :last_known_state, :cid, :agent_id
 
     def initialize(
       waiter,
