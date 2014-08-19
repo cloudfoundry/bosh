@@ -131,7 +131,7 @@ module Bosh::Dev::Sandbox
         @logger,
       )
 
-      if db_opts[:name] == 'mysql'
+      if db_opts[:type] == 'mysql'
         @database = Mysql.new(@name, @logger, db_opts[:user], db_opts[:password])
       else
         @database = Postgresql.new(@name, @logger)
