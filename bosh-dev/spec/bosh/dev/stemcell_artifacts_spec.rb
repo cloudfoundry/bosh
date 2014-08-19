@@ -18,8 +18,6 @@ module Bosh::Dev
             %w(aws ubuntu lucid go),
             %w(aws ubuntu trusty go),
             ['aws', 'centos', nil, 'go'],
-            %w(openstack ubuntu trusty go),
-            ['openstack', 'centos', nil, 'go'],
           ])
 
           artifacts
