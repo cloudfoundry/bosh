@@ -79,7 +79,12 @@ module VSphereCloud
       disk = VSphereCloud::Models::Disk.find(uuid: disk_id)
 
       return false unless disk
-      return false unless disk.path
+      # Disk path is only being set when disk is created in vSphere.
+      # If the path is not set it means that disk was only created in
+      # CPI database and attach disk was not called or failed.
+      # We consider that disk is missing only if CPI desired state
+      # is to be present but it actually missing in infrastructure.
+      return true unless disk.path
       return false unless disk.datacenter
 
       @client.has_disk?(disk.path, disk.datacenter)
@@ -594,7 +599,7 @@ module VSphereCloud
             raise Bosh::Clouds::DiskNotFound.new(true), "datacenter for disk #{disk_cid} not found"
           end
 
-          client.delete_disk(datacenter, disk.path)
+          client.delete_disk(datacenter, disk.path) if disk.path
 
           disk.destroy
           @logger.info('Finished deleting disk')

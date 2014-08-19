@@ -180,7 +180,7 @@ module VSphereCloud
           let(:disk_path) { nil }
 
           it 'returns false' do
-            expect(vsphere_cloud.has_disk?(disk_cid)).to be(false)
+            expect(vsphere_cloud.has_disk?(disk_cid)).to be(true)
           end
         end
 
