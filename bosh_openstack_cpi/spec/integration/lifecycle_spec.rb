@@ -188,8 +188,8 @@ describe Bosh::OpenStackCloud::Cloud do
 
       if network_spec['default']['type'] == 'manual'
         # Wait for manual IP to be released by the infrastructure
-        # We have seen Piston take around a minute to release an IP address
-        sleep 60
+        # We have seen Piston take a couple minutes to release an IP address
+        sleep 120
       end
     else
       logger.info('No VM to delete')
