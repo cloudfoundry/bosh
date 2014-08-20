@@ -19,7 +19,7 @@ module Bosh::Dev
     def download_file(uri, write_path)
       proxy = ENV['http_proxy'] ? URI.parse(ENV['http_proxy']) : NullUri.new
 
-      Net::HTTP.start(uri.host, uri.port, proxy.host, proxy.port) do |http|
+      Net::HTTP.start(uri.host, uri.port, proxy.host, proxy.port, proxy.user, proxy.password) do |http|
         http.request_get(uri.request_uri) do |response|
           raise "remote file '#{uri}' not found" if response.kind_of? Net::HTTPNotFound
           write_response(response, write_path)
@@ -35,6 +35,6 @@ module Bosh::Dev
       end
     end
 
-    NullUri = Struct.new(:host, :port)
+    NullUri = Struct.new(:host, :port, :user, :password)
   end
 end

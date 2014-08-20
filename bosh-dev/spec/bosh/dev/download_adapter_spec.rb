@@ -67,7 +67,17 @@ module Bosh::Dev
 
         it 'uses the proxy' do
           net_http_mock = class_double('Net::HTTP').as_stubbed_const
-          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234)
+          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234, nil, nil)
+          subject.download(uri, write_path)
+        end
+      end
+
+      context 'when a proxy is available and contains the user and password' do
+        before { stub_const('ENV', 'http_proxy' => 'http://user:password@proxy.example.com:1234') }
+
+        it 'uses the proxy' do
+          net_http_mock = class_double('Net::HTTP').as_stubbed_const
+          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234, 'user', 'password')
           subject.download(uri, write_path)
         end
       end
