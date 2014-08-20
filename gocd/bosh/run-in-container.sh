@@ -19,5 +19,19 @@ docker run \
   -e RUBY_VERSION \
   -e DB \
   -e CODECLIMATE_REPO_TOKEN \
+  -e COVERAGE \
   $DOCKER_REGISTRY/$IMAGE_TAG \
-  $@
+  $@ \
+  &
+
+SUBPROC="$!"
+
+trap "
+  echo '--------------------- KILLING PROCESS'
+  kill $SUBPROC
+
+  echo '--------------------- KILLING CONTAINERS'
+  docker ps -q | xargs docker kill
+" SIGTERM SIGINT # gocd sends TERM; INT just nicer for testing with Ctrl+C
+
+wait $SUBPROC

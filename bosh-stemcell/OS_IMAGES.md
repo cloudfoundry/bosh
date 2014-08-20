@@ -61,6 +61,9 @@ CentOS images have filename `bosh-centos-6_5-os-image.tgz`
 
 Ubuntu 10.04 images have filename `bosh-ubuntu-lucid-os-image.tgz`
 
+* `CK1gpiyNTC7ijICLm_xIKA9o2YHrlCU1`
+  using latest libssl `0.9.8k-7ubuntu8.21`
+
 * `L9pIPNIBLrq7zRcuh.8ufAseBvWfP.1d`
   using latest libssl `0.9.8k-7ubuntu8`
 

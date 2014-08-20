@@ -13,7 +13,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   # mount bosh dir for testing
-  # config.vm.synced_folder '../../', '/opt/bosh'
+  config.vm.synced_folder('../../', '/opt/bosh', owner: 'root', group: 'root')
 
   config.vm.provision('docker')
   config.vm.provision('shell') do |s|

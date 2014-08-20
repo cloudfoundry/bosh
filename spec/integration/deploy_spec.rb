@@ -104,7 +104,15 @@ describe 'deploy', type: :integration do
 
   def expect_running_vms(job_name_index_list)
     vms = director.vms
+    check_for_unknowns(vms)
     expect(vms.map(&:job_name_index)).to match_array(job_name_index_list)
     expect(vms.map(&:last_known_state).uniq).to eq(['running'])
+  end
+
+  def check_for_unknowns(vms)
+    uniq_vm_names = vms.map(&:job_name_index).uniq
+    if uniq_vm_names.size == 1 && uniq_vm_names.first == 'unknown/unknown'
+      bosh_runner.print_agent_debug_logs(vms.first.agent_id)
+    end
   end
 end

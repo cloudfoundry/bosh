@@ -24,5 +24,5 @@ chruby $RUBY_VERSION
 bundle install --local --without development
 
 echo "Installing Go & Running unit tests..."
-bundle exec rake --trace go spec:unit
-#COVERAGE=true bundle exec rake --trace go spec:unit ci:publish_coverage_report
+[[ "$COVERAGE" == "true" ]] && publish_task="ci:publish_coverage_report" || publish_task=""
+bundle exec rake --trace go spec:unit $publish_task

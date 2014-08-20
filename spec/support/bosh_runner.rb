@@ -32,15 +32,19 @@ module Bosh::Spec
         end
 
         if output =~ /Timed out pinging to ([a-z\-\d]+) after \d+ seconds/
-          agent_output = File.read(@agent_log_path_resolver.call($1)) rescue nil
-          output_debug_log("Agent log #{$1}", agent_output)
-          output_debug_log("Nats log #{$1}", File.read(@nats_log_path)) if File.exists?(@nats_log_path)
+          print_agent_debug_logs($1)
         end
 
         raise "ERROR: #{command} failed with output:\n#{output}"
       end
 
       options.fetch(:return_exit_code, false) ? [output, exit_code] : output
+    end
+
+    def print_agent_debug_logs(agent_id)
+      agent_output = File.read(@agent_log_path_resolver.call(agent_id)) rescue nil
+      output_debug_log("Agent log #{agent_id}", agent_output)
+      output_debug_log("Nats log #{agent_id}", File.read(@nats_log_path)) if File.exists?(@nats_log_path)
     end
 
     def run_until_succeeds(cmd, options = {})

@@ -88,7 +88,7 @@ module Bosh::Dev::Sandbox
       FileUtils.mkdir_p(@logs_path)
 
       @nats_process = Service.new(
-        %W[nats-server -p #{nats_port} -D -T -l #{@nats_log_path}],
+        %W[nats-server -p #{nats_port} -D -V -T -l #{@nats_log_path}],
         { stdout: $stdout, stderr: $stderr },
         @logger
       )
@@ -131,7 +131,7 @@ module Bosh::Dev::Sandbox
         @logger,
       )
 
-      if db_opts[:name] == 'mysql'
+      if db_opts[:type] == 'mysql'
         @database = Mysql.new(@name, @logger, db_opts[:user], db_opts[:password])
       else
         @database = Postgresql.new(@name, @logger)
