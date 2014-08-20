@@ -1,6 +1,6 @@
 # This file is included by every sub-project's spec_helper
 
-if ENV['COVERAGE']
+if ENV['COVERAGE'] == 'true'
   require 'simplecov'
   SimpleCov.start do
     root          File.expand_path('../..', __FILE__)
