@@ -1,10 +1,11 @@
 module Bosh::Spec
   class BoshRunner
-    def initialize(bosh_work_dir, bosh_config, agent_log_path_resolver, nats_log_path, logger)
+    def initialize(bosh_work_dir, bosh_config, agent_log_path_resolver, nats_log_path, saved_logs_path, logger)
       @bosh_work_dir = bosh_work_dir
       @bosh_config = bosh_config
       @agent_log_path_resolver = agent_log_path_resolver
       @nats_log_path = nats_log_path
+      @saved_logs_path = saved_logs_path
       @logger = logger
     end
 
@@ -23,12 +24,8 @@ module Bosh::Spec
       exit_code = $?.exitstatus
 
       if exit_code != 0 && !failure_expected
-        if output =~ /bosh (task \d+ --debug)/
-          task_output = run($1, options.merge(failure_expected: true))
-          output_debug_log("Director task #{$1}", task_output) rescue nil
-        elsif output =~ /Task (\d+) error/
-          task_output = run("task #{$1} --debug", options.merge(failure_expected: true))
-          output_debug_log("Director task #{$1}", task_output) rescue nil
+        if output =~ /bosh task (\d+) --debug/ || output =~ /Task (\d+) error/
+          print_director_debug_logs($1, options)
         end
 
         if output =~ /Timed out pinging to ([a-z\-\d]+) after \d+ seconds/
@@ -45,6 +42,11 @@ module Bosh::Spec
       agent_output = File.read(@agent_log_path_resolver.call(agent_id)) rescue nil
       output_debug_log("Agent log #{agent_id}", agent_output)
       output_debug_log("Nats log #{agent_id}", File.read(@nats_log_path)) if File.exists?(@nats_log_path)
+    end
+
+    def print_director_debug_logs(task_id, options)
+      task_output = run("task #{task_id} --debug", options.merge(failure_expected: true, return_exit_code: false))
+      output_debug_log("Director task #{task_id}", task_output) rescue nil
     end
 
     def run_until_succeeds(cmd, options = {})
@@ -65,9 +67,16 @@ module Bosh::Spec
     DEBUG_HEADER = '*' * 20
 
     def output_debug_log(title, output)
-      @logger.info("#{DEBUG_HEADER} start #{title} #{DEBUG_HEADER}")
-      @logger.info(output)
-      @logger.info("#{DEBUG_HEADER} end #{title} #{DEBUG_HEADER}")
+      content = <<-EOF
+        #{DEBUG_HEADER} start #{title} #{DEBUG_HEADER}
+        #{output}
+        #{DEBUG_HEADER} end #{title} #{DEBUG_HEADER}
+      EOF
+
+      FileUtils.mkdir_p(File.dirname(@saved_logs_path))
+      File.open(@saved_logs_path, 'a') { |f| f.write(content) }
+
+      @logger.info(content)
     end
   end
 end

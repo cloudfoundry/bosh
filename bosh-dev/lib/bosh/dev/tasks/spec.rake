@@ -3,6 +3,7 @@ require 'tempfile'
 require 'rspec/core/rake_task'
 require 'bosh/dev/bat_helper'
 require 'bosh/dev/sandbox/nginx'
+require 'bosh/dev/sandbox/debug_logs'
 require 'common/thread_pool'
 require 'parallel_tests/tasks'
 
@@ -21,6 +22,8 @@ namespace :spec do
     end
 
     def run_integration_specs
+      Bosh::Dev::Sandbox::DebugLogs.clean
+
       num_processes   = ENV['NUM_GROUPS']
       num_processes ||= ENV['TRAVIS'] ? 4 : nil
 

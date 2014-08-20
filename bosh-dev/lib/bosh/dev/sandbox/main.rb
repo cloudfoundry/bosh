@@ -7,6 +7,7 @@ require 'bosh/dev/sandbox/database_migrator'
 require 'bosh/dev/sandbox/postgresql'
 require 'bosh/dev/sandbox/mysql'
 require 'bosh/dev/sandbox/nginx'
+require 'bosh/dev/sandbox/debug_logs'
 require 'cloud/dummy'
 
 module Bosh::Dev::Sandbox
@@ -155,6 +156,7 @@ module Bosh::Dev::Sandbox
     end
 
     def start
+      @logger.info("Debug logs are saved to #{saved_logs_path}")
       setup_sandbox_root
 
       FileUtils.mkdir_p(cloud_storage_dir)
@@ -220,6 +222,10 @@ module Bosh::Dev::Sandbox
 
     def cloud_storage_dir
       sandbox_path('bosh_cloud_test')
+    end
+
+    def saved_logs_path
+      File.join(DebugLogs.log_directory, "#{@name}.log")
     end
 
     def save_task_logs(name)
