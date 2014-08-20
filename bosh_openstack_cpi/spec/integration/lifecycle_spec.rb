@@ -110,11 +110,6 @@ describe Bosh::OpenStackCloud::Cloud do
       after { cpi.delete_disk(@existing_volume_id) if @existing_volume_id }
 
       it 'exercises the vm lifecycle' do
-        # Sometimes Quantum is too slow to release an IP address, so when we
-        # spin up a new vm reusing the same IP it fails with a vm state error
-        # but without any clue what the problem is (you should check the nova log).
-        # This should be removed once we figure out how to deal with this situation.
-        sleep(120)
         expect {
           vm_lifecycle(@stemcell_id, network_spec, [@existing_volume_id])
         }.to_not raise_error
