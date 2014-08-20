@@ -43,7 +43,7 @@ describe Bosh::OpenStackCloud::Cloud do
   end
 
   before do
-    delegate = double('delegate', task_checkpoint: nil, logger: logger)
+    delegate = double('delegate', task_checkpoint: nil, logger: logger, cpi_task_log: nil)
     Bosh::Clouds::Config.configure(delegate)
   end
 
