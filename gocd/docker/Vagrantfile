@@ -1,6 +1,4 @@
 VAGRANTFILE_API_VERSION = '2'
-IMAGE_TAG = 'bosh-container'
-DOCKER_REGISTRY = 'docker.gocd.cf-app.com:5000'
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # trusty (latest), virtualbox only
@@ -16,8 +14,4 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.synced_folder('../../', '/opt/bosh', owner: 'root', group: 'root')
 
   config.vm.provision('docker')
-  config.vm.provision('shell') do |s|
-    s.inline = "docker build -t #{DOCKER_REGISTRY}/#{IMAGE_TAG} /vagrant && " +
-               "docker push #{DOCKER_REGISTRY}/#{IMAGE_TAG}"
-  end
 end
