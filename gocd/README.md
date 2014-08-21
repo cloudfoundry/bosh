@@ -16,47 +16,39 @@ This pieline creates and uploads the docker image used by the bosh pipeline.
 To run tests locally, follow these steps...
 
 1. Bring up the VM
-
-```
-vagrant up --provider virtualbox
-```
-
+    
+    ```
+    vagrant up --provider virtualbox
+    ```
 2. SSH into the VM
-
-```
-vagrant ssh
-```
-
+    
+    ```
+    vagrant ssh
+    ```
 3. (Optional) Build the docker image from the Dockerfile
-
-```
-docker build -t docker.gocd.cf-app.com:5000/bosh-container /vagrant
-```
-
+    
+    ```
+    docker build -t docker.gocd.cf-app.com:5000/bosh-container /vagrant
+    ```
 4. (Optional) Push the docker image to the Pivotal GoCD Docker Registry
-
-```
-docker push docker.gocd.cf-app.com:5000/bosh-container
-```
-
+    
+    ```
+    docker push docker.gocd.cf-app.com:5000/bosh-container
+    ```
 5. Run the unit tests in the docker container (downloads the docker image if not built/cached locally)
-
-```
-cd /opt/bosh
-run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
-
-```
-
+    
+    ```
+    cd /opt/bosh
+    run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
+    ```
 6. Run the integration tests in the docker container (downloads the docker image if not built/cached locally)
-
-```
-cd /opt/bosh
-run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
-
-```
-
+    
+    ```
+    cd /opt/bosh
+    run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
+    ```
 7. Destroy the VM
-
-```
-vagrant destroy bosh-docker-builder --force
-```
+    
+    ```
+    vagrant destroy bosh-docker-builder --force
+    ```
