@@ -58,12 +58,12 @@ To run tests locally, follow these steps...
 3. (Optional) Build the docker image from the Dockerfile
     
     ```
-    docker build -t docker.gocd.cf-app.com:5000/bosh-container /vagrant
+    docker build -t bosh/integration /vagrant
     ```
-4. (Optional) Push the docker image to the Pivotal GoCD Docker Registry
+4. (Optional) Push the docker image to Docker Hub (requires login)
     
     ```
-    docker push docker.gocd.cf-app.com:5000/bosh-container
+    docker push bosh/integration
     ```
 5. Run the unit tests in the docker container (downloads the docker image if not built/cached locally)
     
