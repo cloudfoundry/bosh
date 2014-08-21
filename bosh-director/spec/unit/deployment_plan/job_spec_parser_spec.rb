@@ -23,6 +23,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         reserve_capacity: nil,
       )
     end
+    let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool') }
+    before { allow(deployment_plan).to receive(:disk_pool).and_return(disk_pool) }
 
     before { allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new) }
 
@@ -523,14 +525,62 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       it 'parses persistent disk if present' do
         job_spec['persistent_disk'] = 300
         job = parser.parse(job_spec)
-        expect(job.persistent_disk).to eq(300)
+        expect(job.persistent_disk_pool.disk_size).to eq(300)
       end
 
-      it 'uses 0 for persistent disk if not present' do
+      it 'allows persistent disk to be nil' do
         job_spec.delete('persistent_disk')
         job = parser.parse(job_spec)
-        expect(job.persistent_disk).to eq(0)
+        expect(job.persistent_disk_pool).to eq(nil)
       end
+
+      it 'raises an error if the disk size is less than zero' do
+        job_spec['persistent_disk'] = -300
+        expect {
+          parser.parse(job_spec)
+        }.to raise_error(
+          Bosh::Director::JobInvalidPersistentDisk,
+          "Job `fake-job-name' references an invalid peristent disk size `-300'"
+        )
+      end
+    end
+
+    describe 'persistent_disk_pool key' do
+      it 'parses persistent_disk_pool' do
+        job_spec['persistent_disk_pool'] = 'fake-disk-pool-name'
+        expect(deployment_plan).to receive(:disk_pool)
+          .with('fake-disk-pool-name')
+          .and_return(disk_pool)
+
+        job = parser.parse(job_spec)
+        expect(job.persistent_disk_pool).to eq(disk_pool)
+      end
+
+      it 'complains about unknown disk pool' do
+        job_spec['persistent_disk_pool'] = 'unknown-disk-pool'
+        expect(deployment_plan).to receive(:disk_pool)
+          .with('unknown-disk-pool')
+          .and_return(nil)
+
+        expect {
+          parser.parse(job_spec)
+        }.to raise_error(
+          Bosh::Director::JobUnknownDiskPool,
+          "Job `fake-job-name' references an unknown disk pool `unknown-disk-pool'"
+        )
+      end
+    end
+
+    it 'raises an error if persistent_disk and persistent_disk_pool are both present' do
+      job_spec['persistent_disk'] = 300
+      job_spec['persistent_disk_pool'] = 'fake-disk-pool-name'
+
+      expect {
+        parser.parse(job_spec)
+      }.to raise_error(
+        Bosh::Director::JobInvalidPersistentDisk,
+        "Job `fake-job-name' references both a peristent disk size `300' and a peristent disk pool `fake-disk-pool-name'"
+      )
     end
 
     describe 'resource_pool key' do

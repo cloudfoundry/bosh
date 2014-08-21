@@ -66,7 +66,7 @@ module Bosh::Director
         return
       end
 
-      step { update_resource_pool(nil) }
+      step { recreate_vm(nil) }
       step { update_networks }
       step { update_dns }
       step { update_persistent_disk }
@@ -164,8 +164,14 @@ module Bosh::Director
       end
     end
 
-    def delete_disk(disk, vm_cid)
+    def delete_unused_disk(disk)
+      @cloud.delete_disk(disk.disk_cid)
+      disk.destroy
+    end
+
+    def delete_mounted_disk(disk)
       disk_cid = disk.disk_cid
+      vm_cid = @vm.cid
 
       # Unmount the disk only if disk is known by the agent
       if agent && disk_info.include?(disk_cid)
@@ -208,7 +214,7 @@ module Bosh::Director
       end
     end
 
-    def update_resource_pool(new_disk_cid)
+    def recreate_vm(new_disk_cid)
       @vm, @agent = vm_updater.update(new_disk_cid)
     end
 
@@ -237,51 +243,15 @@ module Bosh::Director
       vm_updater.attach_missing_disk
       check_persistent_disk
 
-      disk_cid = nil
       disk = nil
       return unless @instance.persistent_disk_changed?
 
       old_disk = @instance.model.persistent_disk
 
-      if @job.persistent_disk > 0
-        @instance.model.db.transaction do
-          disk_cid = @cloud.create_disk(@job.persistent_disk, @vm.cid)
-          disk =
-              Models::PersistentDisk.create(:disk_cid => disk_cid,
-                                            :active => false,
-                                            :instance_id => @instance.model.id,
-                                            :size => @job.persistent_disk)
-        end
-
-        begin
-          @cloud.attach_disk(@vm.cid, disk_cid)
-        rescue Bosh::Clouds::NoDiskSpace => e
-          if e.ok_to_retry
-            @logger.warn("Retrying attach disk operation " +
-                             "after persistent disk update failed")
-            # Recreate the vm
-            update_resource_pool(disk_cid)
-            begin
-              @cloud.attach_disk(@vm.cid, disk_cid)
-            rescue
-              @cloud.delete_disk(disk_cid)
-              disk.destroy
-              raise
-            end
-          else
-            @cloud.delete_disk(disk_cid)
-            disk.destroy
-            raise
-          end
-        end
-
-        begin
-          agent.mount_disk(disk_cid)
-          agent.migrate_disk(old_disk.disk_cid, disk_cid) if old_disk
-        rescue
-          delete_disk(disk, @vm.cid)
-          raise
-        end
+      if @job.persistent_disk_pool && @job.persistent_disk_pool.disk_size > 0
+        disk = create_disk
+        attach_disk(disk)
+        mount_and_migrate_disk(disk, old_disk)
       end
 
       @instance.model.db.transaction do
@@ -289,7 +259,7 @@ module Bosh::Director
         disk.update(:active => true) if disk
       end
 
-      delete_disk(old_disk, @vm.cid) if old_disk
+      delete_mounted_disk(old_disk) if old_disk
     end
 
     def update_networks
@@ -333,6 +303,52 @@ module Bosh::Director
       # Do not memoize to avoid caching same VM and agent
       # which could be replaced after updating a VM
       VmUpdater.new(@instance, @vm, agent, @job_renderer, @cloud, 3, @logger)
+    end
+
+    private
+
+    def create_disk
+      disk_size = @job.persistent_disk_pool.disk_size
+      #disk_properties = @job.persistent_disk_pool.cloud_properties
+
+      disk = nil
+      @instance.model.db.transaction do
+        # TODO: pass disk_pool cloud_properties to the CPI
+        disk_cid = @cloud.create_disk(disk_size, @vm.cid)
+        disk = Models::PersistentDisk.create(
+          :disk_cid => disk_cid,
+          :active => false,
+          :instance_id => @instance.model.id,
+          :size => disk_size
+        )
+      end
+      disk
+    end
+
+    def attach_disk(disk)
+      @cloud.attach_disk(@vm.cid, disk.disk_cid)
+    rescue Bosh::Clouds::NoDiskSpace => e
+      if e.ok_to_retry
+        @logger.warn('Retrying attach disk operation after persistent disk update failed')
+        recreate_vm(disk.disk_cid)
+        begin
+          @cloud.attach_disk(@vm.cid, disk.disk_cid)
+        rescue
+          delete_unused_disk(disk)
+          raise
+        end
+      else
+        delete_unused_disk(disk)
+        raise
+      end
+    end
+
+    def mount_and_migrate_disk(new_disk, old_disk)
+      agent.mount_disk(new_disk.disk_cid)
+      agent.migrate_disk(old_disk.disk_cid, new_disk.disk_cid) if old_disk
+    rescue
+      delete_mounted_disk(new_disk)
+      raise
     end
   end
 end

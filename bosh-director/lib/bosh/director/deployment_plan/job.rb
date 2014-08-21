@@ -25,8 +25,8 @@ module Bosh::Director
       # @return [String] Job canonical name (mostly for DNS)
       attr_accessor :canonical_name
 
-      # @return [Integer] Persistent disk size (no disk if zero)
-      attr_accessor :persistent_disk
+      # @return [DiskPool] Persistent disk pool (or nil)
+      attr_accessor :persistent_disk_pool
 
       # @return [DeploymentPlan] Current deployment plan
       attr_accessor :deployment
@@ -248,6 +248,13 @@ module Bosh::Director
 
       def can_run_as_errand?
         @lifecycle == 'errand'
+      end
+
+      # reverse compatibility: translate disk size into a disk pool
+      def persistent_disk=(disk_size)
+        disk_pool = DiskPool.new(SecureRandom.uuid)
+        disk_pool.disk_size = disk_size
+        @persistent_disk_pool = disk_pool
       end
 
       private

@@ -5,6 +5,61 @@ module Bosh::Director
     describe Planner do
       subject { described_class.new('fake-dep-name') }
 
+      let(:logger) { Logger.new('/dev/null') }
+      let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
+
+      describe 'parse' do
+        it 'parses disk_pools' do
+          manifest = minimal_manifest
+          manifest['disk_pools'] = [
+            {
+              'name' => 'disk_pool1',
+              'disk_size' => 3000,
+            },
+            {
+              'name' => 'disk_pool2',
+              'disk_size' => 1000,
+            },
+          ]
+          planner = Planner.parse(manifest, {}, event_log, logger)
+          expect(planner.disk_pools.length).to eq(2)
+          expect(planner.disk_pool('disk_pool1').disk_size).to eq(3000)
+          expect(planner.disk_pool('disk_pool2').disk_size).to eq(1000)
+        end
+      end
+
+      def minimal_manifest
+        {
+          'name' => 'minimal',
+          # 'director_uuid'  => 'deadbeef',
+
+          'releases' => [{
+            'name'    => 'appcloud',
+            'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
+          }],
+
+          'networks' => [{
+            'name' => 'a',
+            'subnets' => [],
+          }],
+
+          'compilation' => {
+            'workers' => 1,
+            'network' => 'a',
+            'cloud_properties' => {},
+          },
+
+          'resource_pools' => [],
+
+          'update' => {
+            'canaries'          => 2,
+            'canary_watch_time' => 4000,
+            'max_in_flight'     => 1,
+            'update_watch_time' => 20
+          }
+        }
+      end
+
       describe '#initialize' do
         it 'raises an error if name is not given' do
           expect {

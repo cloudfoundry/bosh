@@ -27,6 +27,7 @@ module Bosh::Director
         parse_compilation
         parse_update
         parse_resource_pools
+        parse_disk_pools
         parse_jobs
 
         @deployment
@@ -108,6 +109,14 @@ module Bosh::Director
 
         # Uncomment when integration test fixed
         # raise "No resource pools specified." if @resource_pools.empty?
+      end
+
+      def parse_disk_pools
+        disk_pools = safe_property(@manifest, 'disk_pools', :class => Array, :optional => true)
+        return if disk_pools.nil?
+        disk_pools.each do |dp_spec|
+          @deployment.add_disk_pool(DiskPool.parse(dp_spec))
+        end
       end
 
       def parse_jobs

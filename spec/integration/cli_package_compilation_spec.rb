@@ -42,15 +42,15 @@ describe 'cli: package compilation', type: :integration do
     expect(event_log).to_not match(/Compiling packages/)
   end
 
-  it 'compiles explicit requirements and dependencies recursively, but only applies explicit requirements to jobs' do
-    deployment_manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    deployment_manifest_hash['jobs'][0]['template'] = ['foobar', 'goobaz']
-    deployment_manifest_hash['jobs'][0]['instances'] = 1
-    deployment_manifest_hash['resource_pools'][0]['size'] = 1
+  it 'flattens transitive job dependancies and sends explicit job dependancies to the agent' do
+    manifest = Bosh::Spec::Deployments.simple_manifest
+    manifest['jobs'][0]['template'] = ['foobar', 'goobaz']
+    manifest['jobs'][0]['instances'] = 1
+    manifest['resource_pools'][0]['size'] = 1
 
-    deployment_manifest_hash['releases'].first['name'] = 'compilation-test'
+    manifest['releases'].first['name'] = 'compilation-test'
 
-    deployment_manifest = yaml_file('whatevs_manifest', deployment_manifest_hash)
+    deployment_manifest = yaml_file('whatevs_manifest', manifest)
 
     target_and_login
     bosh_runner.run("upload release #{spec_asset('release_compilation_test.tgz')}")

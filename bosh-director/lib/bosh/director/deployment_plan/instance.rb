@@ -233,11 +233,27 @@ module Bosh::Director
       # @return [Integer] persistent disk size
       def disk_size
         if @model.nil?
-          current_state['persistent_disk'].to_i
+          disk_pool = current_state['persistent_disk_pool']
+          if disk_pool
+            disk_pool['disk_size'].to_i
+          else
+            current_state['persistent_disk'].to_i
+          end
         elsif @model.persistent_disk
           @model.persistent_disk.size
         else
           0
+        end
+      end
+
+      ##
+      # @return [Hash] persistent disk cloud properties
+      def disk_cloud_properties
+        disk_pool = current_state['persistent_disk_pool']
+        if disk_pool
+          disk_pool['cloud_properties']
+        else
+          {}
         end
       end
 
@@ -326,10 +342,12 @@ module Bosh::Director
       end
 
       ##
-      # @return [Boolean] returns true if the expected persistent disk differs
-      #   from the one currently configured on the VM
+      # @return [Boolean] returns true if the expected persistent disk or cloud_properties differs
+      #   from the state currently configured on the VM
       def persistent_disk_changed?
-        @job.persistent_disk != disk_size
+        new_disk_size = @job.persistent_disk_pool ? @job.persistent_disk_pool.disk_size : 0
+        new_disk_cloud_properties = @job.persistent_disk_pool ? @job.persistent_disk_pool.cloud_properties : {}
+        new_disk_size != disk_size || new_disk_cloud_properties != disk_cloud_properties
       end
 
       ##
@@ -397,11 +415,19 @@ module Bosh::Director
           'networks' => network_settings,
           'resource_pool' => job.resource_pool.spec,
           'packages' => job.package_spec,
-          'persistent_disk' => job.persistent_disk,
           'configuration_hash' => configuration_hash,
           'properties' => job.properties,
           'dns_domain_name' => dns_domain_name
         }
+
+        if job.persistent_disk_pool
+          # supply both for reverse compatibility with old agent
+          spec['persistent_disk'] = job.persistent_disk_pool.disk_size
+          # old agents will ignore this pool
+          spec['persistent_disk_pool'] = job.persistent_disk_pool.spec
+        else
+          spec['persistent_disk'] = 0
+        end
 
         if template_hashes
           spec['template_hashes'] = template_hashes

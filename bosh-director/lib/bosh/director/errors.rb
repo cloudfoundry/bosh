@@ -145,6 +145,8 @@ module Bosh::Director
   JobMissingNetwork = err(140007)
   JobInvalidTemplates = err(140008)
   JobInvalidLifecycle = err(140009)
+  JobUnknownDiskPool = err(140010)
+  JobInvalidPersistentDisk = err(140011)
 
   # Manifest parsing: job networks section
   JobUnknownNetwork = err(150001)
@@ -175,6 +177,9 @@ module Bosh::Director
   DeploymentCanonicalNameTaken = err(190008)
   DeploymentInvalidNetworkType = err(190009)
   DeploymentUnknownTemplate = err(190012)
+  DeploymentDuplicateDiskPoolName = err(190013)
+
+  DiskPoolInvalidDiskSize = err(200001)
 
   CloudDiskNotAttached = err(390001)
   CloudDiskMissing = err(390002)

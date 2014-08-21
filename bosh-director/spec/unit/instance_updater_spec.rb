@@ -7,7 +7,7 @@ module Bosh::Director
     let(:ticker) { double('ticker', advance: nil) }
     let(:job_renderer) { instance_double('Bosh::Director::JobRenderer') }
 
-    before { App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
+    before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
     let(:deployment_model) { Models::Deployment.make }
@@ -81,8 +81,8 @@ module Bosh::Director
     let(:agent_client) { instance_double('Bosh::Director::AgentClient', id: vm_model.agent_id) }
 
     before do
-      AgentClient.stub(:with_defaults).and_return(agent_client)
-      Bosh::Director::Config.stub(:cloud).and_return(cloud)
+      allow(AgentClient).to receive(:with_defaults).and_return(agent_client)
+      allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
     end
 
     describe '#report_progress' do
@@ -90,8 +90,8 @@ module Bosh::Director
       let(:event_log_task) { instance_double('Bosh::Director::EventLog::Task') }
 
       it 'advances the ticker' do
-        subject.stub(update_steps: 200)
-        event_log_task.should_receive(:advance).with(0.5)
+        allow(subject).to receive(:update_steps).and_return(200)
+        expect(event_log_task).to receive(:advance).with(0.5)
         subject.report_progress
       end
     end
@@ -116,8 +116,8 @@ module Bosh::Director
       def self.it_updates_vm_metadata
         it 'updates vm metadata' do
           vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater')
-          Bosh::Director::VmMetadataUpdater.should_receive(:build).and_return(vm_metadata_updater)
-          vm_metadata_updater.should_receive(:update).with(vm_model, {})
+          expect(Bosh::Director::VmMetadataUpdater).to receive(:build).and_return(vm_metadata_updater)
+          expect(vm_metadata_updater).to receive(:update).with(vm_model, {})
           subject.update
         end
       end
@@ -130,16 +130,16 @@ module Bosh::Director
 
       context 'when instance is not detached' do
         before do
-          subject.stub(:stop)
-          subject.stub(:start!)
-          subject.stub(:apply_state)
-          subject.stub(:wait_until_running)
-          subject.stub(current_state: {'job_state' => 'running'})
+          allow(subject).to receive(:stop)
+          allow(subject).to receive(:start!)
+          allow(subject).to receive(:apply_state)
+          allow(subject).to receive(:wait_until_running)
+          allow(subject).to receive(:current_state).and_return({'job_state' => 'running'})
         end
 
         it 'cleans up rendered job templates after apply' do
-          subject.should_receive(:apply_state).ordered
-          templates_cleaner.should_receive(:clean).ordered
+          expect(subject).to receive(:apply_state).ordered
+          expect(templates_cleaner).to receive(:clean).ordered
           subject.update
         end
       end
@@ -148,39 +148,39 @@ module Bosh::Director
         let(:changes) { [:dns].to_set }
 
         it 'should only call update_dns' do
-          subject.should_receive(:update_dns)
-          subject.should_not_receive(:step)
+          expect(subject).to receive(:update_dns)
+          expect(subject).to_not receive(:step)
           subject.update
         end
 
         it 'does not prepare instance' do
-          InstanceUpdater::Preparer.should_not_receive(:new)
+          expect(InstanceUpdater::Preparer).to_not receive(:new)
           subject.update
         end
 
         it 'does not update vm metadata' do
-          Bosh::Director::VmMetadataUpdater.should_not_receive(:new)
+          expect(Bosh::Director::VmMetadataUpdater).to_not receive(:new)
           subject.update
         end
       end
 
       context 'when the job instance needs to be stopped' do
         before do
-          subject.stub(:stop)
-          subject.stub(:start!)
-          subject.stub(:apply_state)
-          subject.stub(:wait_until_running)
-          subject.stub(current_state: {'job_state' => 'running'})
+          allow(subject).to receive(:stop)
+          allow(subject).to receive(:start!)
+          allow(subject).to receive(:apply_state)
+          allow(subject).to receive(:wait_until_running)
+          allow(subject).to receive(:current_state).and_return({'job_state' => 'running'})
         end
 
         it 'prepares the job before stopping it to minimize downtime' do
-          preparer.should_receive(:prepare).ordered
-          subject.should_receive(:stop).ordered
+          expect(preparer).to receive(:prepare).ordered
+          expect(subject).to receive(:stop).ordered
           subject.update
         end
 
         it 'stops the job' do
-          subject.should_receive(:stop)
+          expect(subject).to receive(:stop)
           subject.update
         end
 
@@ -192,15 +192,15 @@ module Bosh::Director
         let(:packages_changed) { true }
 
         before do
-          subject.stub(:stop)
-          subject.stub(:start!)
-          subject.stub(:apply_state)
-          subject.stub(:wait_until_running)
-          subject.stub(current_state: {'job_state' => 'running'})
+          allow(subject).to receive(:stop)
+          allow(subject).to receive(:start!)
+          allow(subject).to receive(:apply_state)
+          allow(subject).to receive(:wait_until_running)
+          allow(subject).to receive(:current_state).and_return({'job_state' => 'running'})
         end
 
         it 'should take snapshot' do
-          subject.should_receive(:take_snapshot)
+          expect(subject).to receive(:take_snapshot)
           subject.update
         end
 
@@ -211,23 +211,23 @@ module Bosh::Director
         let(:networks_changed) { true }
 
         before do
-          cloud.stub(:configure_networks)
-          agent_client.stub(:prepare_configure_networks)
-          agent_client.stub(:configure_networks)
-          agent_client.stub(:wait_until_ready)
-          subject.stub(:stop)
-          subject.stub(:update_resource_pool)
-          subject.stub(:start!)
-          subject.stub(:apply_state)
-          subject.stub(:wait_until_running)
-          subject.stub(current_state: {'job_state' => 'running'})
+          allow(cloud).to receive(:configure_networks)
+          allow(agent_client).to receive(:prepare_configure_networks)
+          allow(agent_client).to receive(:configure_networks)
+          allow(agent_client).to receive(:wait_until_ready)
+          allow(subject).to receive(:stop)
+          allow(subject).to receive(:update_resource_pool)
+          allow(subject).to receive(:start!)
+          allow(subject).to receive(:apply_state)
+          allow(subject).to receive(:wait_until_running)
+          allow(subject).to receive(:current_state).and_return({'job_state' => 'running'})
         end
 
         context 'when a vm does not need to be recreated' do
           it 'should prepare network change' do
-            cloud.should_receive(:configure_networks)
-            agent_client.should_receive(:configure_networks)
-            agent_client.should_receive(:wait_until_ready)
+            expect(cloud).to receive(:configure_networks)
+            expect(agent_client).to receive(:configure_networks)
+            expect(agent_client).to receive(:wait_until_ready)
 
             subject.update
           end
@@ -238,9 +238,9 @@ module Bosh::Director
             let(:persistent_disk_changed) { false }
 
             it 'should recreate vm' do
-              agent_client.should_not_receive(:configure_networks)
-              cloud.should_receive(:configure_networks).and_raise(Bosh::Clouds::NotSupported)
-              instance.should_receive(:recreate=)
+              expect(agent_client).to_not receive(:configure_networks)
+              expect(cloud).to receive(:configure_networks).and_raise(Bosh::Clouds::NotSupported)
+              expect(instance).to receive(:recreate=)
 
               subject.update
             end
@@ -248,22 +248,22 @@ module Bosh::Director
 
           context 'without persistent disk' do
             let(:persistent_disk_changed) { true }
+            let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', disk_size: 1024) }
 
             before do
-              job.stub(persistent_disk: 1)
-              cloud.stub(create_disk: 'disk-cid')
-              cloud.stub(:attach_disk)
-              agent_client.stub(:mount_disk)
+              allow(job).to receive(:persistent_disk_pool).and_return(disk_pool)
+              allow(cloud).to receive(:create_disk).and_return('disk-cid')
+              allow(cloud).to receive(:attach_disk)
+              allow(agent_client).to receive(:mount_disk)
             end
 
             it 'should recreate vm and attach disk' do
-              agent_client.should_not_receive(:configure_networks)
-              cloud.should_receive(:configure_networks).and_raise(Bosh::Clouds::NotSupported)
-              instance.should_receive(:recreate=)
-              job.should_receive(:persistent_disk).exactly(3).times.and_return(1024)
-              cloud.should_receive(:create_disk).and_return('disk-cid')
-              cloud.should_receive(:attach_disk)
-              agent_client.should_receive(:mount_disk)
+              expect(agent_client).to_not receive(:configure_networks)
+              expect(cloud).to receive(:configure_networks).and_raise(Bosh::Clouds::NotSupported)
+              expect(instance).to receive(:recreate=)
+              expect(cloud).to receive(:create_disk).and_return('disk-cid')
+              expect(cloud).to receive(:attach_disk)
+              expect(agent_client).to receive(:mount_disk)
 
               subject.update
             end
@@ -275,11 +275,11 @@ module Bosh::Director
 
       describe 'canary' do
         before do
-          subject.stub(:stop)
-          subject.stub(:start!)
-          subject.stub(:apply_state)
-          subject.stub(:wait_until_running)
-          subject.stub(current_state: {'job_state' => 'running'})
+          allow(subject).to receive(:stop)
+          allow(subject).to receive(:start!)
+          allow(subject).to receive(:apply_state)
+          allow(subject).to receive(:wait_until_running)
+          allow(subject).to receive(:current_state).and_return({'job_state' => 'running'})
         end
 
         context 'when canary is set to true' do
@@ -307,28 +307,28 @@ module Bosh::Director
       let(:agent_state) { {'job_state' => 'stopped'} }
 
       before do
-        subject.stub(:watch_schedule) { intervals }
-        subject.stub(:sleep)
-        agent_client.stub(:get_state) { agent_state }
+        allow(subject).to receive(:watch_schedule) { intervals }
+        allow(subject).to receive(:sleep)
+        allow(agent_client).to receive(:get_state) { agent_state }
       end
 
       it 'sleeps for the correct amount of time' do
         intervals.map { |i| i.to_f/1000 }.each do |wait|
-          subject.should_receive(:sleep).with(wait).ordered
+          expect(subject).to receive(:sleep).with(wait).ordered
         end
         subject.wait_until_running
       end
 
       context 'when the VM is being started' do
         it 'stops waiting when the VM is running' do
-          agent_client.stub(:get_state).and_return(
+          allow(agent_client).to receive(:get_state).and_return(
             {'job_state' => 'stopped'},
             {'job_state' => 'running'}
           )
-          subject.should_receive(:sleep).with(1.0).once
-          subject.should_receive(:sleep).with(2.0).once
-          subject.should_not_receive(:sleep).with(3.0)
-          subject.should_not_receive(:sleep).with(4.0)
+          expect(subject).to receive(:sleep).with(1.0).once
+          expect(subject).to receive(:sleep).with(2.0).once
+          expect(subject).to_not receive(:sleep).with(3.0)
+          expect(subject).to_not receive(:sleep).with(4.0)
 
           subject.wait_until_running
         end
@@ -338,15 +338,15 @@ module Bosh::Director
         let(:state) { 'stopped' }
 
         it 'stop waiting when the VM is not running' do
-          agent_client.stub(:get_state).and_return(
+          allow(agent_client).to receive(:get_state).and_return(
             {'job_state' => 'running'},
             {'job_state' => 'running'},
             {'job_state' => 'stopped'}
           )
-          subject.should_receive(:sleep).with(1.0).once
-          subject.should_receive(:sleep).with(2.0).once
-          subject.should_receive(:sleep).with(3.0).once
-          subject.should_not_receive(:sleep).with(4.0)
+          expect(subject).to receive(:sleep).with(1.0).once
+          expect(subject).to receive(:sleep).with(2.0).once
+          expect(subject).to receive(:sleep).with(3.0).once
+          expect(subject).to_not receive(:sleep).with(4.0)
 
           subject.wait_until_running
         end
@@ -354,13 +354,13 @@ module Bosh::Director
 
       context 'when the VM never gets to the right state' do
         it 'stops waiting after all the intervals' do
-          agent_client.stub(:get_state).and_return(
+          allow(agent_client).to receive(:get_state).and_return(
             {'job_state' => 'stopped'}
           )
-          subject.should_receive(:sleep).with(1.0).once
-          subject.should_receive(:sleep).with(2.0).once
-          subject.should_receive(:sleep).with(3.0).once
-          subject.should_receive(:sleep).with(4.0).once
+          expect(subject).to receive(:sleep).with(1.0).once
+          expect(subject).to receive(:sleep).with(2.0).once
+          expect(subject).to receive(:sleep).with(3.0).once
+          expect(subject).to receive(:sleep).with(4.0).once
 
           subject.wait_until_running
         end
@@ -369,13 +369,13 @@ module Bosh::Director
 
     describe '#start!' do
       it 'tells the agent to start' do
-        agent_client.should_receive(:start)
+        expect(agent_client).to receive(:start)
         subject.start!
       end
 
       it 'logs errors' do
-        agent_client.stub(:start).and_raise('error')
-        Config.logger.should_receive(:warn).
+        allow(agent_client).to receive(:start).and_raise('error')
+        expect(Config.logger).to receive(:warn).
           with('Agent start raised an exception: #<RuntimeError: error>, ignoring for compatibility')
         subject.start!
       end
@@ -425,7 +425,7 @@ module Bosh::Director
 
     describe '#take_snapshot' do
       it 'tells the snapshot manager to take a snapshot' do
-        Api::SnapshotManager.should_receive(:take_snapshot).with(instance_model, clean: true)
+        expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance_model, clean: true)
         subject.take_snapshot
       end
     end
@@ -440,15 +440,15 @@ module Bosh::Director
       let(:disk) { instance_double('Bosh::Director::Models::PersistentDisk', snapshots: snapshots) }
 
       it 'tells the snapshot manager to delete a snapshot' do
-        Api::SnapshotManager.should_receive(:delete_snapshots).with(snapshots)
+        expect(Api::SnapshotManager).to receive(:delete_snapshots).with(snapshots)
         subject.delete_snapshots(disk)
       end
     end
 
     describe '#apply_state' do
       it 'updates the vm' do
-        instance.model.vm.should_receive(:update).with(apply_spec: 'newstate')
-        agent_client.should_receive(:apply).with('newstate')
+        expect(instance.model.vm).to receive(:update).with(apply_spec: 'newstate')
+        expect(agent_client).to receive(:apply).with('newstate')
         subject.apply_state('newstate')
       end
     end
@@ -456,7 +456,7 @@ module Bosh::Director
     describe '#disk_info' do
       context 'when there is a disk list' do
         it 'caches the disk list' do
-          agent_client.stub(:list_disk).once.and_return []
+          allow(agent_client).to receive(:list_disk).once.and_return []
           expect(subject.disk_info).to eq []
           expect(subject.disk_info).to eq []
         end
@@ -464,111 +464,122 @@ module Bosh::Director
 
       context 'when there is no disk list' do
         it 'gets the list of disks from the agent' do
-          agent_client.should_receive(:list_disk).and_return []
+          expect(agent_client).to receive(:list_disk).and_return []
           expect(subject.disk_info).to eq []
         end
       end
 
-      context "when the agent doesn't support list_disk" do
-        it "returns the instance's persistent disk cid" do
-          agent_client.stub(:list_disk).and_raise RuntimeError
-          instance.should_receive(:persistent_disk_cid).and_return('disk_cid')
+      context 'when the agent does not support list_disk' do
+        it 'returns the persistent disk cid of the instance' do
+          allow(agent_client).to receive(:list_disk).and_raise RuntimeError
+          expect(instance).to receive(:persistent_disk_cid).and_return('disk_cid')
           expect(subject.disk_info).to eq ['disk_cid']
         end
       end
     end
 
-    describe '#delete_disk' do
+    describe '#delete_mounted_disk' do
       let(:disk) { instance_double('Bosh::Director::Models::PersistentDisk', disk_cid: 'disk_cid') }
-      let(:vm_cid) { 'vm_cid' }
+
+      it 'deletes the disk and destroys the disk model' do
+        expect(cloud).to receive(:delete_disk).with(disk.disk_cid)
+        expect(disk).to receive(:destroy)
+
+        subject.delete_unused_disk(disk)
+      end
+    end
+
+    describe '#delete_mounted_disk' do
+      let(:disk) { instance_double('Bosh::Director::Models::PersistentDisk', disk_cid: 'disk_cid') }
+      let(:vm_model) { Models::Vm.make(deployment: deployment_model, cid: 'vm_cid') }
 
       before do
-        subject.stub(:disk_info).and_return [disk.disk_cid]
-        agent_client.stub(:unmount_disk)
-        subject.stub(:delete_snapshots)
-        cloud.stub(:detach_disk)
-        cloud.stub(:delete_disk)
-        disk.stub(:destroy)
-        disk.stub(active: true)
+        allow(subject).to receive(:disk_info).and_return([disk.disk_cid])
+        allow(agent_client).to receive(:unmount_disk)
+        allow(subject).to receive(:delete_snapshots)
+        allow(cloud).to receive(:detach_disk)
+        allow(cloud).to receive(:delete_disk)
+        allow(disk).to receive(:destroy)
+        allow(disk).to receive(:active).and_return(true)
       end
 
       context 'when the disk is known by the agent' do
         it 'umounts the disk' do
-          agent_client.should_receive(:unmount_disk).with(disk.disk_cid)
+          expect(agent_client).to receive(:unmount_disk).with(disk.disk_cid)
 
-          subject.delete_disk(disk, vm_cid)
+          subject.delete_mounted_disk(disk)
         end
       end
 
       context 'when the disk is attached' do
         it 'detaches the disk' do
-          cloud.should_receive(:detach_disk).with(vm_cid, disk.disk_cid)
+          expect(cloud).to receive(:detach_disk).with(vm_model.cid, disk.disk_cid)
 
-          subject.delete_disk(disk, vm_cid)
+          subject.delete_mounted_disk(disk)
         end
       end
 
       context 'when the disk is not attached' do
         it 'raises an exception' do
-          cloud.stub(:detach_disk).with(vm_cid, disk.disk_cid).and_raise(CloudDiskNotAttached)
+          allow(cloud).to receive(:detach_disk).with(vm_model.cid, disk.disk_cid).and_raise(CloudDiskNotAttached)
 
-          expect { subject.delete_disk(disk, vm_cid) }.to raise_exception(CloudDiskNotAttached)
+          expect { subject.delete_mounted_disk(disk) }.to raise_exception(CloudDiskNotAttached)
         end
       end
 
       it 'deletes the snapshots' do
-        subject.should_receive(:delete_snapshots).with(disk)
+        expect(subject).to receive(:delete_snapshots).with(disk)
 
-        subject.delete_disk(disk, vm_cid)
+        subject.delete_mounted_disk(disk)
       end
 
       it 'deletes the disk' do
-        cloud.should_receive(:delete_disk).with(disk.disk_cid)
+        expect(cloud).to receive(:delete_disk).with(disk.disk_cid)
 
-        subject.delete_disk(disk, vm_cid)
+        subject.delete_mounted_disk(disk)
       end
 
       context 'when the disk is not found' do
         it 'raises an exception' do
-          cloud.should_receive(:delete_disk).with(disk.disk_cid).and_raise(Bosh::Clouds::DiskNotFound.new(false))
+          expect(cloud).to receive(:delete_disk).with(disk.disk_cid).and_raise(Bosh::Clouds::DiskNotFound.new(false))
 
-          expect { subject.delete_disk(disk, vm_cid) }.to raise_exception(CloudDiskMissing)
+          expect { subject.delete_mounted_disk(disk) }.to raise_exception(CloudDiskMissing)
         end
       end
 
       it 'destroys the disk' do
-        disk.should_receive(:destroy)
+        expect(disk).to receive(:destroy)
 
-        subject.delete_disk(disk, vm_cid)
+        subject.delete_mounted_disk(disk)
       end
     end
 
     describe '#update_dns' do
       context 'when DNS is not being changed' do
-        it { should_not_receive(:update_dns_a_record) }
-        it { should_not_receive(:update_dns_ptr_record) }
+        it { expect(subject).to_not receive(:update_dns_a_record) }
+        it { expect(subject).to_not receive(:update_dns_ptr_record) }
       end
 
       context 'when DNS is being changed' do
         let(:dns_changed) { true }
 
         it 'updates the A and PTR records' do
-          instance.stub(:dns_record_info).and_return([
+          allow(instance).to receive(:dns_record_info).and_return([
                                                        ['record 1', '1.1.1.1'],
                                                        ['record 2', '2.2.2.2'],
                                                      ])
 
-          subject.should_receive(:update_dns_a_record).with(domain, 'record 1', '1.1.1.1')
-          subject.should_receive(:update_dns_ptr_record).with('record 1', '1.1.1.1')
-          subject.should_receive(:update_dns_a_record).with(domain, 'record 2', '2.2.2.2')
-          subject.should_receive(:update_dns_ptr_record).with('record 2', '2.2.2.2')
+          expect(subject).to receive(:update_dns_a_record).with(domain, 'record 1', '1.1.1.1')
+          expect(subject).to receive(:update_dns_ptr_record).with('record 1', '1.1.1.1')
+          expect(subject).to receive(:update_dns_a_record).with(domain, 'record 2', '2.2.2.2')
+          expect(subject).to receive(:update_dns_ptr_record).with('record 2', '2.2.2.2')
 
           subject.update_dns
         end
       end
     end
 
-    describe '#update_resource_pool' do
+    describe '#recreate_vm' do
       it 'updates the VM' do
         vm_updater = instance_double('Bosh::Director::InstanceUpdater::VmUpdater')
         expect(InstanceUpdater::VmUpdater).to receive(:new).
@@ -577,7 +588,7 @@ module Bosh::Director
 
         expect(vm_updater).to receive(:update).with('new-disk-cid')
 
-        subject.update_resource_pool('new-disk-cid')
+        subject.recreate_vm('new-disk-cid')
       end
     end
 
@@ -616,14 +627,14 @@ module Bosh::Director
     describe '#min_watch_time' do
       context 'with a canary' do
         it 'should return min_canary_watch_time' do
-          subject.stub(canary?: true)
+          allow(subject).to receive(:canary?).and_return(true)
           expect(subject.min_watch_time).to eq 0.03
         end
       end
 
       context 'without a canary' do
         it 'should return min_update_watch_time' do
-          subject.stub(canary?: false)
+          allow(subject).to receive(:canary?).and_return(false)
           expect(subject.min_watch_time).to eq 0.01
         end
       end
@@ -632,14 +643,14 @@ module Bosh::Director
     describe '#max_watch_time' do
       context 'with a canary' do
         it 'should return max_canary_watch_time' do
-          subject.stub(canary?: true)
+          allow(subject).to receive(:canary?).and_return(true)
           expect(subject.max_watch_time).to eq 0.04
         end
       end
 
       context 'without a canary' do
         it 'should return max_update_watch_time' do
-          subject.stub(canary?: false)
+          allow(subject).to receive(:canary?).and_return(false)
           expect(subject.max_watch_time).to eq 0.02
         end
       end

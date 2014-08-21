@@ -146,7 +146,33 @@ module Bosh::Director
       end
 
       def parse_disk
-        @job.persistent_disk = safe_property(@job_spec, "persistent_disk", :class => Integer, :default => 0)
+        disk_size = safe_property(@job_spec, 'persistent_disk', :class => Integer, :optional => true)
+        disk_pool_name = safe_property(@job_spec, 'persistent_disk_pool', :class => String, :optional => true)
+
+        if disk_size && disk_pool_name
+          raise JobInvalidPersistentDisk,
+            "Job `#{@job.name}' references both a peristent disk size `#{disk_size}' " +
+              "and a peristent disk pool `#{disk_pool_name}'"
+        end
+
+        if disk_size
+          if disk_size < 0
+            raise JobInvalidPersistentDisk,
+              "Job `#{@job.name}' references an invalid peristent disk size `#{disk_size}'"
+          else
+            @job.persistent_disk = disk_size
+          end
+        end
+
+        if disk_pool_name
+          disk_pool = @deployment.disk_pool(disk_pool_name)
+          if disk_pool.nil?
+            raise JobUnknownDiskPool,
+                  "Job `#{@job.name}' references an unknown disk pool `#{disk_pool_name}'"
+          else
+            @job.persistent_disk_pool = disk_pool
+          end
+        end
       end
 
       def parse_properties

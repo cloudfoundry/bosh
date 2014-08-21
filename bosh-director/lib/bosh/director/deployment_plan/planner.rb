@@ -1,4 +1,5 @@
 require 'bosh/director/deployment_plan/deployment_spec_parser'
+require 'bosh/director/deployment_plan/disk_pool'
 
 module Bosh::Director
   # Encapsulates essential director data structures retrieved
@@ -68,6 +69,7 @@ module Bosh::Director
         @networks_canonical_name_index = Set.new
 
         @resource_pools = {}
+        @disk_pools = {}
 
         @jobs = []
         @jobs_name_index = {}
@@ -167,6 +169,24 @@ module Bosh::Director
       # @return [Bosh::Director::DeploymentPlan::ResourcePool]
       def resource_pool(name)
         @resource_pools[name]
+      end
+
+      # Adds a disk pool by name
+      # @param [Bosh::Director::DeploymentPlan::DiskPool] disk_pool
+      def add_disk_pool(disk_pool)
+        if @disk_pools[disk_pool.name]
+          raise DeploymentDuplicateDiskPoolName,
+            "Duplicate disk pool name `#{disk_pool.name}'"
+        end
+        @disk_pools[disk_pool.name] = disk_pool
+      end
+
+      def disk_pools
+        @disk_pools.values
+      end
+
+      def disk_pool(name)
+        @disk_pools[name]
       end
 
       # Adds a release by name

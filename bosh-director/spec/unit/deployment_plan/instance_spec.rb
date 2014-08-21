@@ -750,10 +750,12 @@ module Bosh::Director::DeploymentPlan
           default_network: {},
           resource_pool: resource_pool,
           package_spec: packages,
-          persistent_disk: 0,
+          persistent_disk_pool: disk_pool,
           starts_on_deploy?: true,
           properties: properties)
       }
+      let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', disk_size: 0, spec: disk_pool_spec) }
+      let(:disk_pool_spec) { {'name' => 'default', 'disk_size' => 300, 'cloud_properties' => {} } }
 
       before do
         allow(plan).to receive(:network).and_return(network)
@@ -780,6 +782,7 @@ module Bosh::Director::DeploymentPlan
         expect(spec['resource_pool']).to eq(resource_pool_spec)
         expect(spec['packages']).to eq(packages)
         expect(spec['persistent_disk']).to eq(0)
+        expect(spec['persistent_disk_pool']).to eq(disk_pool_spec)
         expect(spec['configuration_hash']).to be_nil
         expect(spec['properties']).to eq(properties)
         expect(spec['dns_domain_name']).to eq(domain_name)
@@ -797,6 +800,14 @@ module Bosh::Director::DeploymentPlan
 
       it 'does not include rendered_templates_archive key before rendered templates were archived' do
         expect(instance.spec).to_not have_key('rendered_templates_archive')
+      end
+
+      it 'does not require persistent_disk_pool' do
+        allow(job).to receive(:persistent_disk_pool).and_return(nil)
+
+        spec = instance.spec
+        expect(spec['persistent_disk']).to eq(0)
+        expect(spec['persistent_disk_pool']).to eq(nil)
       end
     end
   end
