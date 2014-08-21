@@ -49,6 +49,9 @@ module Bosh::Dev::Openstack
           # volume.destroy
         end
       end
+
+      # Wait for OpenStack to release any IP addresses we want to use
+      sleep 120
     end
 
     def clean_server(server)
