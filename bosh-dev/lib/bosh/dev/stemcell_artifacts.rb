@@ -12,6 +12,9 @@ module Bosh::Dev
         Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'lucid', 'go'),
         Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'trusty', 'go'),
         Bosh::Stemcell::Definition.for('aws', 'centos', nil, 'go'),
+
+        Bosh::Stemcell::Definition.for('openstack', 'ubuntu', 'trusty', 'go'),
+        Bosh::Stemcell::Definition.for('openstack', 'centos', nil, 'go'),
       ]
 
       new(version, definitions)
