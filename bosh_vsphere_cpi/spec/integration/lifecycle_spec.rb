@@ -24,9 +24,14 @@ describe VSphereCloud::Cloud, external_cpi: false do
     @resource_pool_name           = ENV.fetch('BOSH_VSPHERE_CPI_RESOURCE_POOL', 'ACCEPTANCE_RP')
     @second_cluster               = ENV.fetch('BOSH_VSPHERE_CPI_SECOND_CLUSTER', 'BOSH_CL2')
     @second_resource_pool_name    = ENV.fetch('BOSH_VSPHERE_CPI_SECOND_RESOURCE_POOL', 'ACCEPTANCE_RP')
+    @second_datastore_pattern     = ENV.fetch('BOSH_VSPHERE_CPI_SECOND_DATASTORE_PATTERN', @datastore_pattern)
+    @second_persistent_datastore_pattern = ENV.fetch('BOSH_VSPHERE_CPI_SECOND_PERSISTENT_DATASTORE_PATTERN', @persistent_datastore_pattern)
   end
 
-  def build_cpi
+  def build_cpi(options = {})
+    datastore_pattern = options.fetch(:datastore_pattern, @datastore_pattern)
+    persistent_datastore_pattern = options.fetch(:persistent_datastore_pattern, @persistent_datastore_pattern)
+
     described_class.new(
       'agent' => {
         'ntp' => ['10.80.0.44'],
@@ -40,8 +45,8 @@ describe VSphereCloud::Cloud, external_cpi: false do
           'vm_folder' => @vm_folder,
           'template_folder' => @template_folder,
           'disk_path' => @disk_path,
-          'datastore_pattern' => @datastore_pattern,
-          'persistent_datastore_pattern' => @persistent_datastore_pattern,
+          'datastore_pattern' => datastore_pattern,
+          'persistent_datastore_pattern' => persistent_datastore_pattern,
           'allow_mixed_datastores' => true,
           'clusters' => [{
               @cluster => { 'resource_pool' => @resource_pool_name },
@@ -152,19 +157,28 @@ describe VSphereCloud::Cloud, external_cpi: false do
 
     context 'without existing disks and placer' do
       it 'should exercise the vm lifecycle and select the cluster in the resource pool datacenters' do
-        clusters = [{ @cluster => {}, }, { @second_cluster => {} }]
+        begin
+          resource_pool['datacenters'] = [{ 'name' => @datacenter_name, 'clusters' => [{@cluster => {}}]}]
+          vm_lifecycle(network_spec, [], resource_pool)
 
-        clusters.each do |cluster|
-          begin
-            resource_pool['datacenters'] = [{ 'name' => @datacenter_name, 'clusters' => [cluster]}]
-            vm_lifecycle(network_spec, [], resource_pool)
+          vm = @cpi.get_vm_by_cid(@vm_id)
+          vm_info = @cpi.get_vm_host_info(vm)
+          expect(vm_info['cluster']).to eq(@cluster)
+        ensure
+          clean_up_vm_and_disk
+        end
 
-            vm = @cpi.get_vm_by_cid(@vm_id)
-            vm_info = @cpi.get_vm_host_info(vm)
-            expect(vm_info['cluster']).to eq(cluster.keys.first)
-          ensure
-            clean_up_vm_and_disk
-          end
+        begin
+          @cpi = build_cpi(datastore_pattern: @second_datastore_pattern, persistent_datastore_pattern: @second_persistent_datastore_pattern)
+
+          resource_pool['datacenters'] = [{ 'name' => @datacenter_name, 'clusters' => [{@second_cluster => {}}]}]
+          vm_lifecycle(network_spec, [], resource_pool)
+
+          vm = @cpi.get_vm_by_cid(@vm_id)
+          vm_info = @cpi.get_vm_host_info(vm)
+          expect(vm_info['cluster']).to eq(@second_cluster)
+        ensure
+          clean_up_vm_and_disk
         end
       end
     end
