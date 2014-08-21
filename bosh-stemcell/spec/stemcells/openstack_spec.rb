@@ -6,4 +6,11 @@ describe 'OpenStack Stemcell', stemcell_image: true do
       it { should contain('openstack') }
     end
   end
+
+  context 'installed by bosh_openstack_agent_settings' do
+    describe file('/var/vcap/bosh/agent.json') do
+      it { should be_valid_json_file }
+      it { should contain('"CreatePartitionIfNoEphemeralDisk": true') }
+    end
+  end
 end
