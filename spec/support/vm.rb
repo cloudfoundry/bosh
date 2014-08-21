@@ -58,5 +58,10 @@ module Bosh::Spec
       @logger.info("Killing agent #{@cid}")
       Process.kill('INT', @cid.to_i)
     end
+
+    def get_state
+      spec_path = File.join(@agent_base_dir, 'bosh', 'spec.json')
+      Yajl::Parser.parse(File.read(spec_path))
+    end
   end
 end

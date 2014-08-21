@@ -174,10 +174,16 @@ module Bosh::Cli
       end
 
       nl
+
+      print_summary(diff, :disk_pools)
+      nl
+
       print_summary(diff, :networks)
       nl
+
       print_summary(diff, :jobs)
       nl
+
       print_summary(diff, :properties)
       nl
 

@@ -393,6 +393,70 @@ module Bosh::Director
           end
         end
 
+        describe 'disk_pools key' do
+          context 'when there is at least one disk_pool' do
+            context 'when each resource pool has a unique name' do
+              before do
+                deployment_spec.merge!('disk_pools' => [
+                  {'name' => 'dk1-name'},
+                  {'name' => 'dk2-name'},
+                ])
+              end
+
+              let(:dk1) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', name: 'dk1-name') }
+              let(:dk2) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', name: 'dk2-name') }
+
+              it 'delegates to DiskPool' do
+                expect(DiskPool).to receive(:parse).
+                  with({'name' => 'dk1-name'}).
+                  and_return(dk1)
+
+                expect(DiskPool).to receive(:parse).
+                  with({'name' => 'dk2-name'}).
+                  and_return(dk2)
+
+                deployment = parser.parse(deployment_spec)
+                expect(deployment.disk_pools).to eq([dk1, dk2])
+              end
+
+              it 'allows to look up disk_pool by name' do
+                allow(DiskPool).to receive(:parse).
+                  with({'name' => 'dk1-name'}).
+                  and_return(dk1)
+
+                allow(DiskPool).to receive(:parse).
+                  with({'name' => 'dk2-name'}).
+                  and_return(dk2)
+
+                deployment = parser.parse(deployment_spec)
+                expect(deployment.disk_pool('dk1-name')).to eq(dk1)
+                expect(deployment.disk_pool('dk2-name')).to eq(dk2)
+              end
+            end
+
+            context 'when more than one resource pool have same name' do
+              let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', name: 'same-name') }
+              before do
+                deployment_spec.merge!('disk_pools' => [
+                  { 'name' => 'same-name' },
+                  { 'name' => 'same-name' },
+                ])
+              end
+
+              it 'raises an error' do
+                allow(DiskPool).to receive(:parse).and_return(disk_pool)
+
+                expect {
+                  parser.parse(deployment_spec)
+                }.to raise_error(
+                  DeploymentDuplicateDiskPoolName,
+                  "Duplicate disk pool name `same-name'",
+                )
+              end
+            end
+          end
+        end
+
         describe 'jobs key' do
           context 'when there is at least one job' do
             before { deployment_spec.merge!('jobs' => []) }
