@@ -8,11 +8,13 @@ if [ "$1" == "" ]; then
   exit 1
 fi
 
-IMAGE_TAG=bosh-container
-DOCKER_REGISTRY=docker.gocd.cf-app.com:5000
+# Pushing to Docker Hub requires login
+DOCKER_IMAGE=${DOCKER_IMAGE:-bosh/integration}
 
-docker pull $DOCKER_REGISTRY/$IMAGE_TAG
+# To push to the Pivotal GoCD Docker Registry (behind firewall):
+# DOCKER_IMAGE=docker.gocd.cf-app.com:5000/bosh-container
 
+echo "Running '$@' in docker container '$DOCKER_IMAGE'..."
 docker run \
   -a stderr \
   -v $(pwd):/opt/bosh \
@@ -20,7 +22,7 @@ docker run \
   -e DB \
   -e CODECLIMATE_REPO_TOKEN \
   -e COVERAGE \
-  $DOCKER_REGISTRY/$IMAGE_TAG \
+  $DOCKER_IMAGE \
   $@ \
   &
 
