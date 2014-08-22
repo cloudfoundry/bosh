@@ -68,6 +68,7 @@ module Bosh::Director
                 delete_release
                 delete_snapshot
                 delete_stemcell
+                run_errand
                 snapshot_deployment
                 update_deployment
                 update_release

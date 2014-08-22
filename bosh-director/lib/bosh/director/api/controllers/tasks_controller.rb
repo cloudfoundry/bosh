@@ -30,6 +30,7 @@ module Bosh::Director
           create_snapshot
           delete_snapshot
           snapshot_deployment
+          run_errand
         ])
         end
 
