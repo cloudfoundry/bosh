@@ -9,7 +9,7 @@ module Bosh::Cli
     def normalize
       normalized = Bosh::Common::DeepCopy.copy(manifest_hash)
 
-      %w(releases networks jobs resource_pools).each do |section|
+      %w(releases networks jobs resource_pools disk_pools).each do |section|
         normalized[section] ||= []
 
         unless normalized[section].kind_of?(Array)

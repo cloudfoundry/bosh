@@ -8,6 +8,8 @@ module Bosh::Cli
         err("Cannot find deployment manifest in `#{manifest_filename}'")
       end
 
+      header('Processing deployment manifest')
+
       manifest = load_yaml_file(manifest_filename)
       manifest_yaml = File.read(manifest_filename)
 
@@ -89,11 +91,8 @@ module Bosh::Cli
     # a meaningful return value.
     # @return Boolean Were there any changes in deployment manifest?
     def inspect_deployment_changes(manifest, options = {})
-      show_empty_changeset = true
-
-      if options.has_key?(:show_empty_changeset)
-        show_empty_changeset = options[:show_empty_changeset]
-      end
+      show_empty_changeset = options.fetch(:show_empty_changeset, true)
+      interactive = options.fetch(:interactive, false)
 
       manifest = manifest.dup
       current_deployment = director.get_deployment(manifest['name'])
@@ -106,8 +105,7 @@ module Bosh::Cli
       current_manifest = Psych.load(current_deployment['manifest'])
 
       unless current_manifest.is_a?(Hash)
-        err('Current deployment manifest format is invalid, ' +
-              'check if director works properly')
+        err('Current deployment manifest format is invalid, check if director works properly')
       end
 
       diff = Bosh::Cli::HashChangeset.new
@@ -115,8 +113,7 @@ module Bosh::Cli
       diff.add_hash(normalize_deployment_manifest(current_manifest), :old)
       @_diff_key_visited = { 'name' => 1, 'director_uuid' => 1 }
 
-      say('Detecting changes in deployment...'.make_green)
-      nl
+      header('Detecting deployment changes')
 
       if !diff.changed? && !show_empty_changeset
         return false
@@ -124,14 +121,16 @@ module Bosh::Cli
 
       if diff[:release]
         print_summary(diff, :release)
-        warn_about_release_changes(diff[:release])
+        warn_about_release_changes(diff[:release]) if interactive
         nl
       end
 
       if diff[:releases]
         print_summary(diff, :releases)
-        diff[:releases].each do |release_diff|
-          warn_about_release_changes(release_diff)
+        if interactive
+          diff[:releases].each do |release_diff|
+            warn_about_release_changes(release_diff)
+          end
         end
         nl
       end
@@ -143,36 +142,7 @@ module Bosh::Cli
       nl
 
       print_summary(diff, :resource_pools)
-
-      old_stemcells = Set.new
-      new_stemcells = Set.new
-
-      diff[:resource_pools].each do |pool|
-        old_stemcells << {
-          :name => pool[:stemcell][:name].old,
-          :version => pool[:stemcell][:version].old
-        }
-        new_stemcells << {
-          :name => pool[:stemcell][:name].new,
-          :version => pool[:stemcell][:version].new
-        }
-      end
-
-      if old_stemcells != new_stemcells
-        unless confirmed?('Stemcell update has been detected. ' +
-                            'Are you sure you want to update stemcells?')
-          cancel_deployment
-        end
-      end
-
-      if old_stemcells.size != new_stemcells.size
-        say('Stemcell update seems to be inconsistent with current '.make_red +
-              'deployment. Please carefully review changes above.'.make_red)
-        unless confirmed?('Are you sure this configuration is correct?')
-          cancel_deployment
-        end
-      end
-
+      warn_about_stemcell_changes(diff) if interactive
       nl
 
       print_summary(diff, :disk_pools)
@@ -196,9 +166,38 @@ module Bosh::Cli
 
       diff.changed?
     rescue Bosh::Cli::ResourceNotFound
-      say('Cannot get current deployment information from director, ' +
-            'possibly a new deployment'.make_red)
+      say('Cannot get current deployment information from director, possibly a new deployment'.make_red)
       true
+    end
+
+    def warn_about_stemcell_changes(diff)
+      old_stemcells = Set.new
+      new_stemcells = Set.new
+
+      diff[:resource_pools].each do |pool|
+        old_stemcells << {
+          :name => pool[:stemcell][:name].old,
+          :version => pool[:stemcell][:version].old
+        }
+        new_stemcells << {
+          :name => pool[:stemcell][:name].new,
+          :version => pool[:stemcell][:version].new
+        }
+      end
+
+      if old_stemcells != new_stemcells
+        unless confirmed?('Stemcell update has been detected. Are you sure you want to update stemcells?')
+          cancel_deployment
+        end
+      end
+
+      if old_stemcells.size != new_stemcells.size
+        say('Stemcell update seems to be inconsistent with current '.make_red +
+          'deployment. Please carefully review changes above.'.make_red)
+        unless confirmed?('Are you sure this configuration is correct?')
+          cancel_deployment
+        end
+      end
     end
 
     def latest_release_versions

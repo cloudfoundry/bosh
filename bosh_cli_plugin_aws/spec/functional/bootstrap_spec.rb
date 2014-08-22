@@ -303,6 +303,10 @@ describe 'AWS Bootstrap commands' do
         stub_request(:get, 'http://127.0.0.1:25555/deployments/vpc-bosh-dev102/properties').
             to_return(:status => 200, :body => '[]')
 
+        # Checking for previous deployment manifest
+        stub_request(:get, 'http://127.0.0.1:25555/deployments/vpc-bosh-dev102').
+            to_return(:status => 200, :body => '{}')
+
         @deployment_request = stub_request(:post, 'http://127.0.0.1:25555/deployments').
             to_return(:status => 200, :body => '')
 

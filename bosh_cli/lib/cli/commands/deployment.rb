@@ -88,20 +88,22 @@ module Bosh::Cli::Command
       manifest_yaml = prepare_deployment_manifest(
         :yaml => true, :resolve_properties => true)
 
-      if interactive?
-        inspect_deployment_changes(Psych.load(manifest_yaml))
-        say("Please review all changes carefully".make_yellow)
-      end
+      inspect_deployment_changes(Psych.load(manifest_yaml), interactive: interactive?)
+      say('Please review all changes carefully'.make_yellow) if interactive?
 
-      desc = "`#{File.basename(deployment).make_green}' to `#{target_name.make_green}'"
+      deployment_name = File.basename(deployment)
 
-      unless confirmed?("Deploying #{desc}")
+      header('Deploying')
+      say("Deployment name: `#{deployment_name.make_green}'")
+      say("Director name: `#{target_name.make_green}'")
+
+      unless confirmed?('Are you sure you want to deploy?')
         cancel_deployment
       end
 
       status, task_id = director.deploy(manifest_yaml, :recreate => recreate)
 
-      task_report(status, task_id, "Deployed #{desc}")
+      task_report(status, task_id, "Deployed `#{deployment_name.make_green}' to `#{target_name.make_green}'")
     end
 
     # bosh delete deployment
