@@ -2,45 +2,6 @@
 
 This module is a set of scripts to run the BOSH unit and integration tests in linux containers. It's primarily meant to be run with GoCD, but can also be run locally on linux machines or inside a linux VM.
 
-The Pivotal BOSH team primarily uses Jenkins for its continuous integration. These containers, however, are used for push-triggered testing of the development branch.
-
-There are currently two GoCD pipelines:
-
-## bosh pipeline
-This pipeline runs unit and integration tests inside a docker container.
-
-This pipeline has the following Tasks:
-
-1. Run Unit Tests
-    1. `export RUBY_VERSION=1.9.3`
-    2. `export RUBY_VERSION=2.1.2`
-    
-    ```
-    gocd/bosh/run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
-    ```
-
-2. Run Integration Tests
-    1. `export RUBY_VERSION=1.9.3 && export DB=postgres`
-    2. `export RUBY_VERSION=1.9.3 && export DB=mysql`
-    3. `export RUBY_VERSION=2.1.2 && export DB=postgres`
-    4. `export RUBY_VERSION=2.1.2 && export DB=mysql`
-    
-    ```
-    gocd/bosh/run-in-container.sh /opt/bosh/gocd/bosh/tests/integration/job.sh
-    ```
-
-
-## docker pipeline
-This pieline creates and uploads the docker image used by the bosh pipeline.
-
-This pipeline has the following Tasks:
-
-1. Build & upload docker image (push to Docker Hub requires login)
-    
-    ```
-    gocd/docker/build/image/job.sh
-    ```
-
 ## Usage
 To run tests locally, follow these steps...
 
@@ -76,4 +37,44 @@ To run tests locally, follow these steps...
     
     ```
     vagrant destroy bosh-docker-builder --force
+    ```
+
+## GoCD Pipelines
+The Pivotal BOSH team primarily uses Jenkins for its continuous integration. These containers, however, are used for push-triggered testing of the [develop branch](https://github.com/cloudfoundry/bosh/tree/develop).
+
+There are currently two GoCD pipelines:
+
+### bosh pipeline
+This pipeline runs unit and integration tests inside a docker container.
+
+This pipeline has the following Tasks:
+
+1. Run Unit Tests
+    1. `export RUBY_VERSION=1.9.3`
+    2. `export RUBY_VERSION=2.1.2`
+    
+    ```
+    gocd/bosh/run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
+    ```
+
+2. Run Integration Tests
+    1. `export RUBY_VERSION=1.9.3 && export DB=postgres`
+    2. `export RUBY_VERSION=1.9.3 && export DB=mysql`
+    3. `export RUBY_VERSION=2.1.2 && export DB=postgres`
+    4. `export RUBY_VERSION=2.1.2 && export DB=mysql`
+    
+    ```
+    gocd/bosh/run-in-container.sh /opt/bosh/gocd/bosh/tests/integration/job.sh
+    ```
+
+
+### docker pipeline
+This pieline creates and uploads the docker image used by the bosh pipeline.
+
+This pipeline has the following Tasks:
+
+1. Build & upload docker image (push to Docker Hub requires login)
+    
+    ```
+    gocd/docker/build/image/job.sh
     ```
