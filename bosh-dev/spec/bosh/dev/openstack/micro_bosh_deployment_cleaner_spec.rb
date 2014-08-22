@@ -19,6 +19,11 @@ module Bosh::Dev::Openstack
     end
 
     describe '#clean' do
+      before do
+        # disable the 2 minute sleep in clean
+        allow(subject).to receive(:sleep) { sleep 1 }
+      end
+
       before { Bosh::OpenStackCloud::Cloud.stub(new: cloud) }
       let(:cloud) { instance_double('Bosh::OpenStackCloud::Cloud') }
 
