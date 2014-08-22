@@ -5,13 +5,13 @@ This module is a set of scripts to run the BOSH unit and integration tests in li
 ## Usage
 To run tests locally, follow these steps...
 
-1. Bring up the VM
+1. (Mac OS only) Bring up the VM
     
     ```
     cd gocd/docker
     vagrant up --provider virtualbox
     ```
-2. SSH into the VM
+2. (Mac OS only) SSH into the VM
     
     ```
     vagrant ssh
@@ -33,7 +33,7 @@ To run tests locally, follow these steps...
     cd /opt/bosh
     run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
     ```
-6. Destroy the VM
+6. (Mac OS only) Destroy the VM
     
     ```
     vagrant destroy bosh-docker-builder --force
