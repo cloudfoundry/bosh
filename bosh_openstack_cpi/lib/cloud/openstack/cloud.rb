@@ -382,7 +382,7 @@ module Bosh::OpenStackCloud
     # @param [optional, String] server_id OpenStack server UUID of the VM that
     #   this disk will be attached to
     # @return [String] OpenStack volume UUID
-    def create_disk(size, server_id = nil)
+    def create_disk(size, cloud_properties, server_id = nil)
       with_thread_name("create_disk(#{size}, #{server_id})") do
         raise ArgumentError, 'Disk size needs to be an integer' unless size.kind_of?(Integer)
         cloud_error('Minimum disk size is 1 GiB') if (size < 1024)

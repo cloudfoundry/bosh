@@ -22,7 +22,7 @@ describe Bosh::OpenStackCloud::Cloud do
     cloud.should_receive(:generate_unique_name).and_return(unique_name)
     cloud.should_receive(:wait_resource).with(volume, :available)
 
-    cloud.create_disk(2048).should == "v-foobar"
+    cloud.create_disk(2048, {}).should == "v-foobar"
   end
 
   it "creates an OpenStack boot volume" do
@@ -63,16 +63,16 @@ describe Bosh::OpenStackCloud::Cloud do
     cloud.should_receive(:generate_unique_name).and_return(unique_name)
     cloud.should_receive(:wait_resource).with(volume, :available)
 
-    cloud.create_disk(2049)
+    cloud.create_disk(2049, {})
   end
 
   it "check min and max disk size" do
     expect {
-      mock_cloud.create_disk(100)
+      mock_cloud.create_disk(100, {})
     }.to raise_error(Bosh::Clouds::CloudError, /Minimum disk size is 1 GiB/)
 
     expect {
-      mock_cloud.create_disk(2000 * 1024)
+      mock_cloud.create_disk(2000 * 1024, {})
     }.to raise_error(Bosh::Clouds::CloudError, /Maximum disk size is 1 TiB/)
   end
 
@@ -98,7 +98,7 @@ describe Bosh::OpenStackCloud::Cloud do
     cloud.should_receive(:generate_unique_name).and_return(unique_name)
     cloud.should_receive(:wait_resource).with(volume, :available)
 
-    cloud.create_disk(1024, "i-test")
+    cloud.create_disk(1024, {}, "i-test")
   end
 
 end

@@ -162,7 +162,7 @@ module Bosh::AwsCloud
     # @param [optional, String] instance_id EC2 instance id
     #        of the VM that this disk will be attached to
     # @return [String] created EBS volume id
-    def create_disk(size, instance_id = nil)
+    def create_disk(size, cloud_properties, instance_id = nil)
       with_thread_name("create_disk(#{size}, #{instance_id})") do
         validate_disk_size(size)
 

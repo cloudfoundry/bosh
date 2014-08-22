@@ -160,7 +160,7 @@ module Bosh::WardenCloud
     # @param [String] vm_locality vm id if known of the VM that this disk will
     #                 be attached to
     # @return [String] disk id
-    def create_disk(size, vm_locality = nil)
+    def create_disk(size, cloud_properties, vm_locality = nil)
       not_used(vm_locality)
       with_thread_name("create_disk(#{size}, _)") do
         disk_id = uuid('disk')

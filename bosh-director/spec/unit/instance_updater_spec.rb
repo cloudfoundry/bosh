@@ -248,7 +248,13 @@ module Bosh::Director
 
           context 'without persistent disk' do
             let(:persistent_disk_changed) { true }
-            let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', disk_size: 1024) }
+            let(:disk_pool) do
+              instance_double(
+                'Bosh::Director::DeploymentPlan::DiskPool',
+                disk_size: 1024,
+                cloud_properties: {}
+              )
+            end
 
             before do
               allow(job).to receive(:persistent_disk_pool).and_return(disk_pool)

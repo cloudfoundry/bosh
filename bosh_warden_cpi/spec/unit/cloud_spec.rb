@@ -232,7 +232,7 @@ describe Bosh::WardenCloud::Cloud do
 
     it 'invoke disk_utils to create disk with uuid' do
       expect(@disk_util).to receive(:create_disk).with('disk-uuid-1234', 1024)
-      @cloud.create_disk(1024, nil)
+      @cloud.create_disk(1024, {}, nil)
     end
 
     it 'invoke disk_utils to delete disk with uuid' do

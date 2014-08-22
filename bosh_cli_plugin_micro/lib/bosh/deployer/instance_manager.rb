@@ -279,7 +279,7 @@ module Bosh::Deployer
     def create_disk
       step 'Create disk' do
         size = config.resources['persistent_disk']
-        state.disk_cid = cloud.create_disk(size, state.vm_cid)
+        state.disk_cid = cloud.create_disk(size, {}, state.vm_cid)
         save_state
       end
     end
@@ -354,7 +354,7 @@ module Bosh::Deployer
         old_disk_cid = state.disk_cid
 
         # create a new disk and attach it
-        new_disk_cid = cloud.create_disk(size, state.vm_cid)
+        new_disk_cid = cloud.create_disk(size, {}, state.vm_cid)
         attach_disk(new_disk_cid, true)
 
         # migrate data (which mounts the disks)

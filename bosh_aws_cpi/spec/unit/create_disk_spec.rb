@@ -19,7 +19,7 @@ describe Bosh::AwsCloud::Cloud do
 
     Bosh::AwsCloud::ResourceWait.stub(:for_volume).with(volume: volume, state: :available)
 
-    cloud.create_disk(2048).should == 'v-foobar'
+    cloud.create_disk(2048, {}).should == 'v-foobar'
   end
 
   it 'rounds up disk size' do
@@ -35,16 +35,16 @@ describe Bosh::AwsCloud::Cloud do
 
     Bosh::AwsCloud::ResourceWait.stub(:for_volume).with(volume: volume, state: :available)
 
-    cloud.create_disk(2049)
+    cloud.create_disk(2049, {})
   end
 
   it 'check min and max disk size' do
     expect {
-      mock_cloud.create_disk(100)
+      mock_cloud.create_disk(100, {})
     }.to raise_error(Bosh::Clouds::CloudError, /minimum disk size is 1 GiB/)
 
     expect {
-      mock_cloud.create_disk(2000 * 1024)
+      mock_cloud.create_disk(2000 * 1024, {})
     }.to raise_error(Bosh::Clouds::CloudError, /maximum disk size is 1 TiB/)
   end
 
@@ -65,7 +65,7 @@ describe Bosh::AwsCloud::Cloud do
 
     Bosh::AwsCloud::ResourceWait.stub(:for_volume).with(volume: volume, state: :available)
 
-    cloud.create_disk(1024, 'i-test')
+    cloud.create_disk(1024, {}, 'i-test')
   end
 
   it 'should pick a random availability zone when no instance is given' do
@@ -81,6 +81,6 @@ describe Bosh::AwsCloud::Cloud do
 
     Bosh::AwsCloud::ResourceWait.stub(:for_volume).with(volume: volume, state: :available)
 
-    cloud.create_disk(2048)
+    cloud.create_disk(2048, {})
   end
 end

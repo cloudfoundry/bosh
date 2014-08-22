@@ -309,12 +309,11 @@ module Bosh::Director
 
     def create_disk
       disk_size = @job.persistent_disk_pool.disk_size
-      #disk_properties = @job.persistent_disk_pool.cloud_properties
+      cloud_properties = @job.persistent_disk_pool.cloud_properties
 
       disk = nil
       @instance.model.db.transaction do
-        # TODO: pass disk_pool cloud_properties to the CPI
-        disk_cid = @cloud.create_disk(disk_size, @vm.cid)
+        disk_cid = @cloud.create_disk(disk_size, cloud_properties, @vm.cid)
         disk = Models::PersistentDisk.create(
           :disk_cid => disk_cid,
           :active => false,

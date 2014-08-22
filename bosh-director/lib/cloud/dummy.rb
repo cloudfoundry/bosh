@@ -119,7 +119,7 @@ module Bosh
         write_agent_settings(agent_id, settings)
       end
 
-      def create_disk(size, vm_locality = nil)
+      def create_disk(size, cloud_properties, vm_locality = nil)
         disk_id = SecureRandom.hex
         file = disk_file(disk_id)
         FileUtils.mkdir_p(File.dirname(file))
