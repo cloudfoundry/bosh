@@ -17,6 +17,8 @@ launch=<%= db_module %>
 
 config-dir=/var/vcap/jobs/powerdns/config
 daemon=yes
+distributor-threads=<%= p('dns.distributor_threads') %>
+receiver-threads=<%= p('dns.receiver_threads') %>
 guardian=no
 max-tcp-connections=256
 module-dir=/usr/local/lib
