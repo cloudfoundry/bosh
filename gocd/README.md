@@ -35,7 +35,7 @@ This pieline creates and uploads the docker image used by the bosh pipeline.
 
 This pipeline has the following Tasks:
 
-1. Build & upload docker image
+1. Build & upload docker image (push to Docker Hub requires login)
     
     ```
     gocd/docker/build/image/job.sh
@@ -55,29 +55,24 @@ To run tests locally, follow these steps...
     ```
     vagrant ssh
     ```
-3. (Optional) Build the docker image from the Dockerfile
+3. Pull the docker container from Docker Hub
     
     ```
-    docker build -t bosh/integration /vagrant
+    docker pull bosh/integration
     ```
-4. (Optional) Push the docker image to Docker Hub (requires login)
-    
-    ```
-    docker push bosh/integration
-    ```
-5. Run the unit tests in the docker container (downloads the docker image if not built/cached locally)
+4. Run the unit tests in the docker container
     
     ```
     cd /opt/bosh
     run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
     ```
-6. Run the integration tests in the docker container (downloads the docker image if not built/cached locally)
+5. Run the integration tests in the docker container (downloads the docker image if not built/cached locally)
     
     ```
     cd /opt/bosh
     run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
     ```
-7. Destroy the VM
+6. Destroy the VM
     
     ```
     vagrant destroy bosh-docker-builder --force
