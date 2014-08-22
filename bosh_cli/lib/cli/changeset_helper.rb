@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2012 VMware, Inc.
+# encoding: UTF-8
 
 module Bosh::Cli
   class HashChangeset
@@ -50,7 +50,7 @@ module Bosh::Cli
     end
 
     def summary(level = 0)
-      indent = "  " * level
+      indent = '  ' * level
       out = []
 
       @children.each_pair do |k, v|
@@ -61,11 +61,11 @@ module Bosh::Cli
         elsif v.leaf?
           case v.state
           when :added
-            out << indent + "added #{k}: ".make_yellow + v.new.to_s
+            out << indent + "+ #{k}: ".make_yellow + v.new.to_s
           when :removed
-            out << indent + "removed #{k}: ".make_red + v.old.to_s
+            out << indent + "- #{k}: ".make_red + v.old.to_s
           when :changed
-            out << indent + "changed #{k}: ".make_yellow
+            out << indent + "± #{k}: ".make_yellow
             out << diff(v.old, v.new, indent + "  ")
           end
         else

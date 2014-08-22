@@ -3,14 +3,14 @@
 set +x
 
 # Will be truncated
-head -c 1024 < /dev/zero | tr '\0' '-'
+head -c 1024 < /dev/zero | tr '\0' 'a'
 head -c 1024 < /dev/zero | tr '\0' 'n' >&2
 
 
 # 10Kb won't be truncated
 for i in $(seq 10)
 do
-  head -c 1024 < /dev/zero | tr '\0' '+'
+  head -c 1024 < /dev/zero | tr '\0' 'b'
   head -c 1024 < /dev/zero | tr '\0' 'y' >&2
 done
 

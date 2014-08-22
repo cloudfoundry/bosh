@@ -104,9 +104,9 @@ describe 'cli: package compilation', type: :integration do
 
     deploy_output = deploy_simple(manifest_hash: manifest_hash, failure_expected: true)
 
-    expect(deploy_output).to include('Truncated stdout: ++++++++++')
+    expect(deploy_output).to include('Truncated stdout: bbbbbbbbbb')
     expect(deploy_output).to include('Truncated stderr: yyyyyyyyyy')
-    expect(deploy_output).to_not include('---------')
+    expect(deploy_output).to_not include('aaaaaaaaa')
     expect(deploy_output).to_not include('nnnnnnnnn')
   end
 end
