@@ -56,7 +56,7 @@ PATH
       bosh_common (~> 1.2697.0)
       bosh_cpi (~> 1.2697.0)
       bosh_openstack_cpi (~> 1.2697.0)
-      bosh_vcloud_cpi (~> 0.5.5)
+      bosh_vcloud_cpi (= 0.5.5)
       bosh_vsphere_cpi (~> 1.2697.0)
       bosh_warden_cpi (~> 1.2697.0)
       eventmachine (~> 1.0.0)
