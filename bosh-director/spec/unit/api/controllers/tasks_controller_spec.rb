@@ -59,36 +59,120 @@ module Bosh::Director
       describe 'API calls' do
         before(:each) { login_as_admin }
 
-        describe 'listing tasks' do
-          it 'has API call that returns a list of running tasks' do
-            ['queued', 'processing', 'cancelling', 'done'].each do |state|
-              (1..20).map { |i| Models::Task.make(
-                  :type => :update_deployment,
-                  :state => state,
-                  :timestamp => Time.now.to_i - i) }
-            end
-            get '/?state=processing'
-            last_response.status.should == 200
-            body = Yajl::Parser.parse(last_response.body)
-            body.size.should == 20
+        describe 'GET /' do
+          context "verbose" do
+            let(:concise_task_types) {
+              %w[
+                create_snapshot
+                delete_deployment
+                delete_release
+                delete_snapshot
+                delete_stemcell
+                snapshot_deployment
+                update_deployment
+                update_release
+                update_stemcell
+              ]
+            }
 
-            get '/?state=processing,cancelling,queued'
-            last_response.status.should == 200
-            body = Yajl::Parser.parse(last_response.body)
-            body.size.should == 60
+            let!(:all_tasks) do # one task of every type
+              (
+                Bosh::Director::Jobs.constants.inject([]) { |memo, const|
+                  klass = Bosh::Director::Jobs.const_get(const)
+                  if klass.ancestors.include?(Bosh::Director::Jobs::BaseJob)
+                    memo << klass
+                  end
+                  memo
+                } - [Bosh::Director::Jobs::BaseJob]
+              ).map(&:job_type).map { |job_type|
+                Models::Task.make(type: job_type)
+              }
+            end
+
+            context "when verbose is set to 1" do
+              it "filters all but the expected task types" do
+                get "/?verbose=1"
+                last_response.status.should == 200
+                body = Yajl::Parser.parse(last_response.body)
+                actual_ids = body.map { |attributes| attributes["id"] }
+                actual_tasks = Models::Task.filter(id: actual_ids)
+
+                actual_tasks.should =~ all_tasks.select do |task|
+                  concise_task_types.include?(task.type)
+                end
+              end
+            end
+
+            context "when verbose is set to 2" do
+              it "does not filter tasks by type" do
+                get "/?verbose=2"
+                last_response.status.should == 200
+                body = Yajl::Parser.parse(last_response.body)
+                actual_ids = body.map { |attributes| attributes["id"] }
+                actual_tasks = Models::Task.filter(id: actual_ids)
+                actual_tasks.should =~ all_tasks
+              end
+            end
+
+            context "when verbose is not set" do
+              it "filters all but the expected task types" do
+                get "/"
+                last_response.status.should == 200
+                body = Yajl::Parser.parse(last_response.body)
+                actual_ids = body.map { |attributes| attributes["id"] }
+                actual_tasks = Models::Task.filter(id: actual_ids)
+
+                actual_tasks.should =~ all_tasks.select do |task|
+                  concise_task_types.include?(task.type)
+                end
+              end
+            end
           end
 
-          it 'has API call that returns a list of recent tasks' do
-            ['queued', 'processing'].each do |state|
-              (1..20).map { |i| Models::Task.make(
-                  :type => :update_deployment,
-                  :state => state,
-                  :timestamp => Time.now.to_i - i) }
+          context "when a state is passed" do
+            it "filters all but tasks with that state" do
+              expected_task = Models::Task.make(
+                type: :update_deployment, state: :queued
+              )
+              filtered_task = Models::Task.make(
+                type: :update_deployment, state: :processing
+              )
+              get '/?state=queued'
+              last_response.status.should == 200
+              body = Yajl::Parser.parse(last_response.body)
+              actual_ids = body.map { |attributes| attributes["id"] }
+              actual_tasks = Models::Task.filter(id: actual_ids).to_a
+              actual_tasks.map(&:id).should == [expected_task.id]
             end
-            get '/?limit=20'
-            last_response.status.should == 200
-            body = Yajl::Parser.parse(last_response.body)
-            body.size.should == 20
+          end
+
+          context "when a limit is passed" do
+            before do
+              (1..20).map { |i|
+                Models::Task.make(
+                  :type => :update_deployment,
+                  :state => :queued,
+                )
+              }
+            end
+
+            context "when the limit is less than 1" do
+              it "limits the tasks returned to 1" do
+                get '/?limit=0'
+                last_response.status.should == 200
+                body = Yajl::Parser.parse(last_response.body)
+                body.size.should == 1
+              end
+            end
+
+            context "when the limit is greater than 1" do
+              it "limits the tasks returned to the limit provided" do
+                get '/?limit=10'
+                last_response.status.should == 200
+                body = Yajl::Parser.parse(last_response.body)
+                body.size.should == 10
+              end
+            end
           end
         end
 
