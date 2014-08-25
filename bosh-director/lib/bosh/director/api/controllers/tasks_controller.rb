@@ -5,15 +5,14 @@ module Bosh::Director
     class TasksController < BaseController
       get '/' do
         dataset = Models::Task.dataset
-        limit = params['limit']
-        if limit
+
+        if limit = params['limit']
           limit = limit.to_i
           limit = 1 if limit < 1
           dataset = dataset.limit(limit)
         end
 
         states = params['state'].to_s.split(',')
-
         if states.size > 0
           dataset = dataset.filter(:state => states)
         end
@@ -21,17 +20,17 @@ module Bosh::Director
         verbose = params['verbose'] || '1'
         if verbose == '1'
           dataset = dataset.filter(type: %w[
-          update_deployment
-          delete_deployment
-          update_release
-          delete_release
-          update_stemcell
-          delete_stemcell
-          create_snapshot
-          delete_snapshot
-          snapshot_deployment
-          run_errand
-        ])
+            create_snapshot
+            delete_deployment
+            delete_release
+            delete_snapshot
+            delete_stemcell
+            run_errand
+            snapshot_deployment
+            update_deployment
+            update_release
+            update_stemcell
+          ])
         end
 
         tasks = dataset.order_by(:timestamp.desc).map do |task|
