@@ -5,7 +5,7 @@ The BOSH Acceptance Tests are meant to be used to verify the commonly used funct
 
 It requires a BOSH deployment, either a deployed micro bosh stemcell, or a full bosh-release deployment.
 
-Note! If you don't run BAT via the rake tasks, it is up to you to make sure the environment is setup correctly.
+Note! If you run BAT via the rake tasks you don't need to setup environment variables below.
 
 ## Required Environment Variables
 
@@ -16,6 +16,7 @@ Before you can run BAT, you need to set the following environment variables:
 * **BAT_VCAP_PASSWORD**: password used to ssh to the stemcells
 * **BAT_DNS_HOST**: DNS host or IP where BOSH-controlled PowerDNS server is running, which is required for the DNS tests. For example, if BAT is being run against a MicroBOSH then this value will be the same as BAT_DIRECTOR
 * **BOSH_KEY_PATH**: the full path to the private key for ssh into the bosh instances
+* **BAT_INFRASTRUCTURE**: the name of infrastructure that is used by bosh deployment. Examples: aws, vsphere, openstack, warden.
 
 The 'dns' property MUST NOT be specified in the bat deployment spec properties. At all.
 
