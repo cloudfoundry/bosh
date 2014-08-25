@@ -6,6 +6,7 @@ module Bat
       deployment_spec_path: 'BAT_DEPLOYMENT_SPEC',
       vcap_password:        'BAT_VCAP_PASSWORD',
       dns_host:             'BAT_DNS_HOST',
+      bat_infrastructure:   'BAT_INFRASTRUCTURE',
     }.freeze
 
     def self.from_env

@@ -26,15 +26,15 @@ module Bat
     end
 
     def aws?
-      @bosh_api.info['cpi'] == 'aws'
+      @env.bat_infrastructure == 'aws'
     end
 
     def openstack?
-      @bosh_api.info['cpi'] == 'openstack'
+      @env.bat_infrastructure == 'openstack'
     end
 
     def warden?
-      @bosh_api.info['cpi'] == 'warden'
+      @env.bat_infrastructure == 'warden'
     end
 
     def compiled_package_cache?
