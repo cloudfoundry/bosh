@@ -122,13 +122,7 @@ module Bosh
         end
 
         def list_running_tasks(verbose = 1)
-
-          if Bosh::Common::Version::BoshVersion.parse(get_version) < Bosh::Common::Version::BoshVersion.parse('0.3.5')
-            get_json('/tasks?state=processing')
-          else
-            get_json('/tasks?state=processing,cancelling,queued' +
-                       "&verbose=#{verbose}")
-          end
+          get_json("/tasks?state=processing,cancelling,queued&verbose=#{verbose}")
         end
 
         def list_recent_tasks(count = 30, verbose = 1)

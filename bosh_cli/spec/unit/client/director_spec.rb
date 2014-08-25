@@ -162,19 +162,7 @@ describe Bosh::Cli::Client::Director do
       @director.list_deployments
     end
 
-    it 'lists currently running tasks (director version < 0.3.5)' do
-      expect(@director).to receive(:get).with('/info', 'application/json').
-        and_return([200, JSON.generate({ :version => '0.3.2' })])
-      expect(@director).to receive(:get).
-        with('/tasks?state=processing', 'application/json').
-        and_return([200, JSON.generate([]), {}])
-      @director.list_running_tasks
-    end
-
-    it 'lists currently running tasks (director version >= 0.3.5)' do
-      expect(@director).to receive(:get).
-        with('/info', 'application/json').
-        and_return([200, JSON.generate({ :version => '0.3.5' })])
+    it 'lists currently running tasks' do
       expect(@director).to receive(:get).
         with('/tasks?state=processing,cancelling,queued&verbose=1',
              'application/json').
@@ -782,36 +770,6 @@ describe Bosh::Cli::Client::Director do
       expect(code).to eql(200)
       expect(File.read(filename)).to eql('test body')
       expect(headers).to eql({})
-    end
-  end
-
-  describe 'list_running_tasks' do
-    before do
-      allow(@director).to receive(:get).
-        with('/info', 'application/json').
-        and_return([200, "{\"version\":\"#{director_version}\"}"])
-    end
-
-    context 'when director version is less than 0.3.5' do
-      let(:director_version) { '0.0.1' }
-      it 'sends tasks request in old format' do
-        expect(@director).to receive(:get).
-          with('/tasks?state=processing', 'application/json').
-          and_return([200, '{}'])
-
-        @director.list_running_tasks
-      end
-    end
-
-    context 'when director version is greater than 0.3.5' do
-      let(:director_version) { '1.0000.0 (release:6a18d402 bosh:6a18d402)' }
-      it 'sends tasks request in new format' do
-        expect(@director).to receive(:get).
-          with('/tasks?state=processing,cancelling,queued&verbose=1', 'application/json').
-          and_return([200, '{}'])
-
-        @director.list_running_tasks
-      end
     end
   end
 end
