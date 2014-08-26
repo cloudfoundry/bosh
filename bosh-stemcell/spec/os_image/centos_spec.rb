@@ -38,41 +38,41 @@ describe 'CentOS OS image', os_image: true do
 
   context 'installed by base_centos_packages' do
     %w(
-      upstart
-      openssl-devel
-      lsof
-      quota
-      rsync
-      strace
-      iptables
-      sysstat
-      tcpdump
-      dhclient
-      zip
-      traceroute
-      gdb
+      bison
+      bzip2-devel
+      cmake
       curl
-      readline-devel
+      dhclient
       flex
-      openssh-server
-      wget
+      gdb
+      glibc-static
+      iptables
+      libcap-devel
+      libuuid-devel
       libxml2
       libxml2-devel
       libxslt
       libxslt-devel
+      lsof
+      nc
+      openssh-server
+      openssl-devel
       psmisc
-      unzip
-      bison
-      bzip2-devel
-      libcap-devel
-      cmake
+      quota
+      readline-devel
       rpm-build
       rpmdevtools
-      glibc-static
+      rsync
       runit
+      strace
       sudo
-      libuuid-devel
-      nc
+      sysstat
+      tcpdump
+      traceroute
+      unzip
+      upstart
+      wget
+      zip
     ).each do |pkg|
       describe package(pkg) do
         it { should be_installed }
