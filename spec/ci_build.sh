@@ -28,7 +28,8 @@ echo "--- Starting bundle install @ `date` ---"
 # (Destination directory is created by bundler)
 bundle install --local --clean --path "/mnt/ci-tmp/$JOB_NAME/"
 
-echo "--- Starting rspec @ `date` ---"
+if [ $# -ne 0 ]; then
+  echo "--- Starting rspec @ `date` ---"
 
-# ci_reporter appends to SPEC_OPTS env variable to reconfigure rspec format
-bundle exec rake --trace ci:setup:rspecdoc "$@"
+  bundle exec rake "$@"
+fi

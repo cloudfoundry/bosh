@@ -264,8 +264,6 @@ GEM
       rest-client (~> 1.6.7)
       yajl-ruby (>= 0.8.2)
     builder (3.1.4)
-    ci_reporter (1.8.4)
-      builder (>= 2.1.2)
     codeclimate-test-reporter (0.3.0)
       simplecov (>= 0.7.1, < 1.0.0)
     crack (0.3.2)
@@ -473,7 +471,6 @@ DEPENDENCIES
   bosh_openstack_cpi!
   bosh_vsphere_cpi!
   bosh_warden_cpi!
-  ci_reporter
   codeclimate-test-reporter
   fakefs!
   foodcritic
