@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.email        = "support@cloudfoundry.com"
   s.required_ruby_version = Gem::Requirement.new(">= 1.9.3")
 
-  s.files        = `git ls-files -- lib/* db/*`.split("\n") + %w(README)
+  s.files        = `git ls-files -- lib/* db/*`.split("\n")
   s.test_files   = `git ls-files -- spec/*`.split("\n")
   s.require_path = "lib"
 
