@@ -166,9 +166,19 @@ module Bosh::AwsCloud
       with_thread_name("create_disk(#{size}, #{instance_id})") do
         validate_disk_size(size)
 
+        if cloud_properties.has_key?('type')
+          validate_disk_type(cloud_properties['type'])
+          volume_type = cloud_properties['type']
+        else
+          volume_type = 'standard'
+        end
+
         # if the disk is created for an instance, use the same availability zone as they must match
-        volume = @ec2.volumes.create(:size => (size / 1024.0).ceil,
-                                     :availability_zone => @az_selector.select_availability_zone(instance_id))
+        volume = @ec2.volumes.create(
+          size: (size / 1024.0).ceil,
+          availability_zone: @az_selector.select_availability_zone(instance_id),
+          volume_type: volume_type
+        )
 
         logger.info("Creating volume '#{volume.id}'")
         ResourceWait.for_volume(volume: volume, state: :available)
@@ -178,10 +188,16 @@ module Bosh::AwsCloud
     end
 
     def validate_disk_size(size)
-      raise ArgumentError, "disk size needs to be an integer" unless size.kind_of?(Integer)
+      raise ArgumentError, 'disk size needs to be an integer' unless size.kind_of?(Integer)
 
-      cloud_error("AWS CPI minimum disk size is 1 GiB") if size < 1024
-      cloud_error("AWS CPI maximum disk size is 1 TiB") if size > 1024 * 1000
+      cloud_error('AWS CPI minimum disk size is 1 GiB') if size < 1024
+      cloud_error('AWS CPI maximum disk size is 1 TiB') if size > 1024 * 1000
+    end
+
+    def validate_disk_type(type)
+      unless %w[gp2 standard].include?(type)
+        cloud_error('AWS CPI supports only gp2 or standard disk type')
+      end
     end
 
     ##

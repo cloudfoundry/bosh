@@ -50,17 +50,18 @@ describe Bosh::AwsCloud::Cloud do
 
   it 'puts disk in the same AZ as an instance' do
     disk_params = {
-      :size => 1,
-      :availability_zone => 'foobar-land'
+      size: 1,
+      availability_zone: 'foobar-land',
+      volume_type: 'standard'
     }
 
-    instance = double('instance', :id => 'i-test', :availability_zone => 'foobar-land')
+    instance = double('instance', id: 'i-test', availability_zone: 'foobar-land')
 
-    volume = double('volume', :id => 'v-foobar')
+    volume = double('volume', id: 'v-foobar')
 
     cloud = mock_cloud do |ec2, region|
       ec2.volumes.should_receive(:create).with(disk_params).and_return(volume)
-      region.stub(:instances => double('instances', :[] =>instance))
+      region.stub(instances: double('instances', :[] => instance))
     end
 
     Bosh::AwsCloud::ResourceWait.stub(:for_volume).with(volume: volume, state: :available)
