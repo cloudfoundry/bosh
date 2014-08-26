@@ -29,21 +29,23 @@ module Bosh::Director
         }
       end
 
+      private
+
       class DiskPoolParser
         include ValidationHelper
 
         def parse(dp_spec)
-          name = safe_property(dp_spec, 'name', :class => String)
+          name = safe_property(dp_spec, 'name', class: String)
           disk_pool = DiskPool.new(name)
 
-          disk_size = safe_property(dp_spec, 'disk_size', :class => Integer, :default => 0)
+          disk_size = safe_property(dp_spec, 'disk_size', class: Integer, default: 0)
           if disk_size < 0
             raise DiskPoolInvalidDiskSize,
               "Disk pool `#{name}' references an invalid peristent disk size `#{disk_size}'"
           end
           disk_pool.disk_size = disk_size
 
-          disk_pool.cloud_properties = safe_property(dp_spec, 'cloud_properties', :class => String, :default => {})
+          disk_pool.cloud_properties = safe_property(dp_spec, 'cloud_properties', class: Hash, default: {})
 
           disk_pool
         end
