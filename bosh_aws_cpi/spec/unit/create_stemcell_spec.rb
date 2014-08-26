@@ -57,7 +57,7 @@ describe Bosh::AwsCloud::Cloud do
 
         cloud.should_receive(:current_vm_id).twice.and_return("i-xxxxxxxx")
 
-        cloud.should_receive(:create_disk).with(2048, "i-xxxxxxxx").and_return("vol-xxxxxxxx")
+        cloud.should_receive(:create_disk).with(2048, {}, "i-xxxxxxxx").and_return("vol-xxxxxxxx")
         cloud.should_receive(:attach_ebs_volume).with(instance, volume).and_return("/dev/sdh")
         cloud.should_receive(:find_ebs_device).with("/dev/sdh").and_return("ebs")
 

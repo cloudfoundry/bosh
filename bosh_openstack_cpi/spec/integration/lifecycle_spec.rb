@@ -73,7 +73,7 @@ describe Bosh::OpenStackCloud::Cloud do
     end
 
     context 'with existing disks' do
-      before { @existing_volume_id = cpi.create_disk(2048) }
+      before { @existing_volume_id = cpi.create_disk(2048, {}) }
       after { cpi.delete_disk(@existing_volume_id) if @existing_volume_id }
 
       it 'exercises the vm lifecycle' do
@@ -106,7 +106,7 @@ describe Bosh::OpenStackCloud::Cloud do
     end
 
     context 'with existing disks' do
-      before { @existing_volume_id = cpi.create_disk(2048) }
+      before { @existing_volume_id = cpi.create_disk(2048, {}) }
       after { cpi.delete_disk(@existing_volume_id) if @existing_volume_id }
 
       it 'exercises the vm lifecycle' do
@@ -198,7 +198,7 @@ describe Bosh::OpenStackCloud::Cloud do
 
   def create_disk(vm_id)
     logger.info("Creating disk for VM vm_id=#{vm_id}")
-    disk_id = cpi.create_disk(2048, vm_id)
+    disk_id = cpi.create_disk(2048, {}, vm_id)
     expect(disk_id).to be
 
     logger.info("Attaching disk vm_id=#{vm_id} disk_id=#{disk_id}")

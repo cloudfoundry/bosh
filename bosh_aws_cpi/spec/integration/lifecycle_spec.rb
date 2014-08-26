@@ -114,7 +114,7 @@ describe Bosh::AwsCloud::Cloud do
         vm_metadata = { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' }
         cpi.set_vm_metadata(@instance_id, vm_metadata)
 
-        @volume_id = cpi.create_disk(2048, @instance_id)
+        @volume_id = cpi.create_disk(2048, {}, @instance_id)
         expect(@volume_id).not_to be_nil
 
         cpi.attach_disk(@instance_id, @volume_id)
@@ -149,7 +149,7 @@ describe Bosh::AwsCloud::Cloud do
     end
 
     context 'with existing disks' do
-      before { @existing_volume_id = cpi.create_disk(2048) }
+      before { @existing_volume_id = cpi.create_disk(2048, {}) }
       after  { cpi.delete_disk(@existing_volume_id) if @existing_volume_id }
 
       it 'should exercise the vm lifecycle' do
@@ -189,7 +189,7 @@ describe Bosh::AwsCloud::Cloud do
         metadata = { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' }
         cpi.set_vm_metadata(@instance_id, metadata)
 
-        @volume_id = cpi.create_disk(2048, @instance_id)
+        @volume_id = cpi.create_disk(2048, {}, @instance_id)
         expect(@volume_id).not_to be_nil
 
         cpi.attach_disk(@instance_id, @volume_id)

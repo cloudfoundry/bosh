@@ -403,7 +403,7 @@ module Bosh::AwsCloud
 
           # 1. Create and mount new EBS volume (2GB default)
           disk_size = stemcell_properties["disk"] || 2048
-          volume_id = create_disk(disk_size, current_vm_id)
+          volume_id = create_disk(disk_size, {}, current_vm_id)
           volume = @ec2.volumes[volume_id]
           instance = @ec2.instances[current_vm_id]
 

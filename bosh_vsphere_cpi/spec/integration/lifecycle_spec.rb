@@ -94,7 +94,7 @@ describe VSphereCloud::Cloud, external_cpi: false do
     metadata = {deployment: 'deployment', job: 'cpi_spec', index: '0'}
     @cpi.set_vm_metadata(@vm_id, metadata)
 
-    @disk_id = @cpi.create_disk(2048, @vm_id)
+    @disk_id = @cpi.create_disk(2048, {}, @vm_id)
     expect(@disk_id).to_not be_nil
 
     @cpi.attach_disk(@vm_id, @disk_id)
@@ -185,7 +185,7 @@ describe VSphereCloud::Cloud, external_cpi: false do
     end
 
     context 'with existing disks' do
-      before { @existing_volume_id = @cpi.create_disk(2048) }
+      before { @existing_volume_id = @cpi.create_disk(2048, {}) }
       after { @cpi.delete_disk(@existing_volume_id) if @existing_volume_id }
 
       it 'should exercise the vm lifecycle' do
