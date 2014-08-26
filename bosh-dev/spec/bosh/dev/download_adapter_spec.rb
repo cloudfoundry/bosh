@@ -67,7 +67,7 @@ module Bosh::Dev
 
         it 'uses the proxy' do
           net_http_mock = class_double('Net::HTTP').as_stubbed_const
-          net_http_mock.should_receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234)
+          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234)
           subject.download(uri, write_path)
         end
       end
