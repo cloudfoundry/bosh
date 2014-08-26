@@ -12,5 +12,5 @@ nfs-common flex psmisc apparmor-utils iptables sysstat \
 rsync openssh-server traceroute libncurses5-dev quota \
 libaio1 gdb tripwire libcap2-bin libcap2-dev libbz2-dev \
 cmake uuid-dev libgcrypt-dev ca-certificates \
-scsitools mg htop module-assistant debhelper runit"
+scsitools mg htop module-assistant debhelper runit parted"
 pkg_mgr install $debs

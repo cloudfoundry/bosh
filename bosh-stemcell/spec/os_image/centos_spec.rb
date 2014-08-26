@@ -57,6 +57,7 @@ describe 'CentOS OS image', os_image: true do
       nc
       openssh-server
       openssl-devel
+      parted
       psmisc
       quota
       readline-devel
