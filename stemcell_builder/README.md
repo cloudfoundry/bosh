@@ -1,12 +1,14 @@
-# BOSH stemcell builder
+# BOSH Stemcell Builder
 
 The set of scripts in this directory is responsible for every step in
 the process of building a BOSH stemcell, regardless of target hypervisor
 or virtual machine format.
 
+
 ## Usage
 
 See [bosh-stemcell](/bosh-stemcell/README.md)
+
 
 ## Concepts
 

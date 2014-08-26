@@ -1,8 +1,0 @@
-# BOSH Warden Cloud Provider
-
-# Running with Vagrant up
-
-Now we use bosh-lite to bootstrap the local vm with warden cpi enabled:
-here is howto: 
-
-https://github.com/cloudfoundry/bosh-lite/blob/master/README.md

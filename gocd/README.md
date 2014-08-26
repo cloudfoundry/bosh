@@ -2,7 +2,9 @@
 
 This module is a set of scripts to run the BOSH unit and integration tests in linux containers. It's primarily meant to be run with GoCD, but can also be run locally on linux machines or inside a linux VM.
 
+
 ## Usage
+
 To run tests locally, follow these steps...
 
 1. (Mac OS only) Bring up the VM
@@ -11,40 +13,48 @@ To run tests locally, follow these steps...
     cd gocd/docker
     vagrant up --provider virtualbox
     ```
+
 2. (Mac OS only) SSH into the VM
     
     ```
     vagrant ssh
     ```
+
 3. Pull the docker container from Docker Hub
     
     ```
     docker pull bosh/integration
     ```
+
 4. Run the unit tests in the docker container
     
     ```
     cd /opt/bosh
     run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
     ```
+
 5. Run the integration tests in the docker container (downloads the docker image if not built/cached locally)
     
     ```
     cd /opt/bosh
     run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
     ```
+
 6. (Mac OS only) Destroy the VM
     
     ```
     vagrant destroy bosh-docker-builder --force
     ```
 
+
 ## GoCD Pipelines
+
 The Pivotal BOSH team primarily uses Jenkins for its continuous integration. These containers, however, are used for push-triggered testing of the [develop branch](https://github.com/cloudfoundry/bosh/tree/develop).
 
 There are currently two GoCD pipelines:
 
-### bosh pipeline
+### BOSH Pipeline
+
 This pipeline runs unit and integration tests inside a docker container.
 
 This pipeline has the following Tasks:
@@ -67,8 +77,8 @@ This pipeline has the following Tasks:
     gocd/bosh/run-in-container.sh /opt/bosh/gocd/bosh/tests/integration/job.sh
     ```
 
+### Docker Pipeline
 
-### docker pipeline
 This pieline creates and uploads the docker image used by the bosh pipeline.
 
 This pipeline has the following Tasks:

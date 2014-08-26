@@ -1,8 +1,0 @@
-=== 0.5.1 - 2012-11-29
-* exposed task_checkpoint to Config
-
-=== 0.5.0 - 2012-11-28
-* new CPI call - set_vm_metadata
-
-=== 0.4.4 - 2012-08-08
-* added NotSupported error

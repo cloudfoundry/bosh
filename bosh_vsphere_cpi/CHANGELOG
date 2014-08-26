@@ -1,9 +1,0 @@
-== 0.6.0 - 12/4/12
-* disks now use UUIDs instead of model IDs
-
-== 0.5.1 - 11/28/12
-* added set_vm_metadata which will use vSphere custom fields to display
-  deployment name, job name, index, and the package being compiled when
-  available
-* bumped ruby_vim_sdk dependency which addresses a bug that masked
-  SoapExceptions with "undefined method `close_connections' for nil:NilClass"
