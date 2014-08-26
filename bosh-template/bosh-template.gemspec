@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  s.files        = `git ls-files -- lib/*`.split("\n") + %w(README)
+  s.files        = `git ls-files -- lib/*`.split("\n") + %w(README.md)
   s.test_files   = s.files.grep(%r{^(test|spec|features)/})
   s.require_path = 'lib'
 
