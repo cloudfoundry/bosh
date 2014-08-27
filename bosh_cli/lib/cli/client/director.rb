@@ -694,7 +694,13 @@ module Bosh
             :header => headers,
           }, &block)
 
-        rescue URI::Error, SocketError, Errno::ECONNREFUSED, Timeout::Error, HTTPClient::TimeoutError, HTTPClient::KeepAliveDisconnected => e
+        rescue URI::Error,
+               SocketError,
+               Errno::ECONNREFUSED,
+               Timeout::Error,
+               HTTPClient::TimeoutError,
+               HTTPClient::KeepAliveDisconnected,
+               OpenSSL::SSL::SSLError => e
           raise DirectorInaccessible, "cannot access director (#{e.message})"
 
         rescue HTTPClient::BadResponseError => e
