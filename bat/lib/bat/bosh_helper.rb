@@ -55,10 +55,11 @@ module Bat
     def persistent_disk(host, user, options = {})
       get_disks(host, user, options).each do |disk|
         values = disk.last
-        if disk.last['mountpoint'] == '/var/vcap/store'
-          return values['blocks']
+        if values[:mountpoint] == '/var/vcap/store'
+          return values[:blocks]
         end
       end
+      raise 'Could not find persistent disk size'
     end
 
     def ssh(host, user, command, options = {})
