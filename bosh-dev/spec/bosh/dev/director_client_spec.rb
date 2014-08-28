@@ -127,6 +127,7 @@ EOF
       it 'sets the deployment and then runs a deploy using the cli' do
         bosh_cli_session.should_receive(:run_bosh).with('deployment /path/to/fake-manifest.yml').ordered
         bosh_cli_session.should_receive(:run_bosh).with('deploy', debug_on_fail: true).ordered
+        bosh_cli_session.should_receive(:run_bosh).with('deployments').ordered
 
         director_client.deploy(manifest_path)
       end
@@ -139,6 +140,7 @@ EOF
         bosh_cli_session.should_receive(:run_bosh).with('login fake_username fake_password').ordered
         bosh_cli_session.should_receive(:run_bosh).with(/deployment/).ordered
         bosh_cli_session.should_receive(:run_bosh).with(/deploy/, debug_on_fail: true).ordered
+        bosh_cli_session.should_receive(:run_bosh).with('deployments').ordered
 
         director_client.deploy(manifest_path)
       end

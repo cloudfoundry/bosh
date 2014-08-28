@@ -29,6 +29,7 @@ module Bosh::Dev
       fix_uuid_in_manifest(manifest_path)
       @bosh_cli_session.run_bosh("deployment #{manifest_path}")
       @bosh_cli_session.run_bosh('deploy', debug_on_fail: true)
+      @bosh_cli_session.run_bosh('deployments')
     end
 
     def clean_up
