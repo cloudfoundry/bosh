@@ -8,7 +8,7 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
 * `P9CaP1LYyF6DBXYWEf0G7mf2qY2z_l1D`
-  update kernel to 3.13.0-35.62
+  update kernel to 3.13.0-35.62 and libc6 to 2.19-0ubuntu6.3
 
 * `pGDuX7KzvJI7sXfGDU5obN8qxcD03e57`
   update kernel to 3.13.0-34.60
@@ -63,6 +63,9 @@ CentOS images have filename `bosh-centos-6_5-os-image.tgz`
 ## Ubuntu 10.04
 
 Ubuntu 10.04 images have filename `bosh-ubuntu-lucid-os-image.tgz`
+
+* `6M6P12YoeRKtGB6QkRcAE02Cd1QrTfVN`
+  update libc6 to 2.11.1-0ubuntu7.16
 
 * `CK1gpiyNTC7ijICLm_xIKA9o2YHrlCU1`
   using latest libssl `0.9.8k-7ubuntu8.21`
