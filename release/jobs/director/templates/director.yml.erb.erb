@@ -181,6 +181,13 @@ compiled_package_cache:
     <% end %>
 <% end %>
 
+<% if_p('compiled_package_cache.options.blobstore_path') do |blobstore_path| %>
+compiled_package_cache:
+  provider: local
+  options:
+    blobstore_path: <%= blobstore_path %>
+<% end %>
+
 <% if_p('director.backup_destination') do |backup_destination| %>
 <%= blobstore_options('backup_destination', backup_destination) %>
 <% end %>

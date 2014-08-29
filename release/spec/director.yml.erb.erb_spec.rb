@@ -319,6 +319,23 @@ describe 'director.yml.erb.erb' do
       end
     end
 
+    context 'when the user specifies compiled_package_cache with a blobstore_path option' do
+      before do
+        deployment_manifest_fragment['properties']['compiled_package_cache']['options'] = {
+          'blobstore_path' => '/some/path'
+        }
+      end
+
+      it 'sets the compiled_package_cache fields appropriately' do
+        expect(parsed_yaml['compiled_package_cache']).to eq({
+          'provider' => 'local',
+          'options' => {
+            'blobstore_path' => '/some/path'
+          }
+        })
+      end
+    end
+
     context 'when the user only specifies bucket, access, and secret' do
       before do
         deployment_manifest_fragment['properties']['blobstore'] = {
