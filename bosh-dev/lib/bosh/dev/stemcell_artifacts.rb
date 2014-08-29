@@ -6,7 +6,6 @@ module Bosh::Dev
     def self.all(version)
       definitions = [
         Bosh::Stemcell::Definition.for('vsphere', 'ubuntu', 'trusty', 'go'),
-        Bosh::Stemcell::Definition.for('vsphere', 'centos', nil, 'go'),
       ]
 
       new(version, definitions)

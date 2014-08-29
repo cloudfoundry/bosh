@@ -13,7 +13,6 @@ module Bosh::Dev
           matrix = definitions.map { |d| [d.infrastructure.name, d.operating_system.name, d.operating_system.version, d.agent.name] }
           expect(matrix).to eq([
             %w(vsphere ubuntu trusty go),
-            ['vsphere', 'centos', nil, 'go'],
           ])
 
           artifacts
