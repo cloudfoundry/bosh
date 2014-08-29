@@ -3,21 +3,38 @@ require 'bosh/stemcell/archive_filename'
 
 module Bosh::Dev
   class StemcellArtifacts
-    def self.all(version)
-      definitions = [
-        Bosh::Stemcell::Definition.for('vsphere', 'ubuntu', 'lucid', 'go'),
-        Bosh::Stemcell::Definition.for('vsphere', 'ubuntu', 'trusty', 'go'),
-        Bosh::Stemcell::Definition.for('vsphere', 'centos', nil, 'go'),
+    STEMCELL_DEFINITIONS = {
+      'vsphere-ubuntu-lucid' => %w(vsphere ubuntu lucid go),
+      'vsphere-ubuntu-trusty' => %w(vsphere ubuntu trusty go),
+      'vsphere-ubuntu-centos' => ['vsphere', 'centos', nil, 'go'],
 
-        Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'lucid', 'go'),
-        Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'trusty', 'go'),
-        Bosh::Stemcell::Definition.for('aws', 'centos', nil, 'go'),
+      'aws-ubuntu-lucid' => %w(aws ubuntu lucid go),
+      'aws-ubuntu-trusty' => %w(aws ubuntu trusty go),
+      'aws-ubuntu-centos' => ['aws', 'centos', nil, 'go'],
 
-        Bosh::Stemcell::Definition.for('openstack', 'ubuntu', 'trusty', 'go'),
-        Bosh::Stemcell::Definition.for('openstack', 'centos', nil, 'go'),
-      ]
+      'openstack-ubuntu-trusty' => %w(openstack ubuntu trusty go),
+      'openstack-ubuntu-centos' => ['openstack', 'centos', nil, 'go'],
+    }
 
-      new(version, definitions)
+    class << self
+      def all(version)
+        definitions = []
+        STEMCELL_DEFINITIONS.each do |key, definition_args|
+          if promote_stemcell?(key)
+            definitions << Bosh::Stemcell::Definition.for(*definition_args)
+          end
+        end
+
+        new(version, definitions)
+      end
+
+      private
+
+      def promote_stemcell?(key)
+        return true unless ENV['BOSH_PROMOTE_STEMCELLS']
+        stemcells = ENV['BOSH_PROMOTE_STEMCELLS'].split(',')
+        stemcells.include?(key)
+      end
     end
 
     def initialize(version, matrix)

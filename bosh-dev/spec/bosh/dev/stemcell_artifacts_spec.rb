@@ -4,28 +4,80 @@ require 'bosh/dev/stemcell_artifacts'
 module Bosh::Dev
   describe StemcellArtifacts do
     describe '.all' do
-      it 'returns pipepline artifacts with all infrastructures for ubuntu and vsphere centos' do
-        artifacts = instance_double('Bosh::Dev::StemcellArtifacts')
-
-        described_class.should_receive(:new) do |version, definitions|
-          expect(version).to eq('version')
-
-          matrix = definitions.map { |d| [d.infrastructure.name, d.operating_system.name, d.operating_system.version, d.agent.name] }
-          expect(matrix).to eq([
-            %w(vsphere ubuntu lucid go),
-            %w(vsphere ubuntu trusty go),
-            ['vsphere', 'centos', nil, 'go'],
-            %w(aws ubuntu lucid go),
-            %w(aws ubuntu trusty go),
-            ['aws', 'centos', nil, 'go'],
-            %w(openstack ubuntu trusty go),
-            ['openstack', 'centos', nil, 'go'],
-          ])
-
-          artifacts
+      context 'when BOSH_PROMOTE_STEMCELLS are specified' do
+        before do
+          stub_const('ENV', {
+            'BOSH_PROMOTE_STEMCELLS' => 'vsphere-ubuntu-centos,aws-ubuntu-centos,openstack-ubuntu-centos',
+          })
         end
 
-        described_class.all('version').should == artifacts
+        it 'returns pipeline artifacts with specified stemcells' do
+          artifacts = instance_double('Bosh::Dev::StemcellArtifacts')
+
+          described_class.should_receive(:new) do |version, definitions|
+            expect(version).to eq('version')
+
+            matrix = definitions.map { |d| [d.infrastructure.name, d.operating_system.name, d.operating_system.version, d.agent.name] }
+            expect(matrix).to eq([
+              ['vsphere', 'centos', nil, 'go'],
+              ['aws', 'centos', nil, 'go'],
+              ['openstack', 'centos', nil, 'go'],
+            ])
+
+            artifacts
+          end
+
+          described_class.all('version').should == artifacts
+        end
+      end
+
+      context 'when BOSH_PROMOTE_STEMCELLS is empty' do
+        before do
+          stub_const('ENV', {'BOSH_PROMOTE_STEMCELLS' => ''})
+        end
+
+        it 'returns no pipeline artifacts' do
+          artifacts = instance_double('Bosh::Dev::StemcellArtifacts')
+
+          described_class.should_receive(:new) do |version, definitions|
+            expect(version).to eq('version')
+            expect(definitions).to be_empty
+
+            artifacts
+          end
+
+          described_class.all('version').should == artifacts
+        end
+      end
+
+      context 'when BOSH_PROMOTE_STEMCELLS are not specified' do
+        before do
+          stub_const('ENV', {})
+        end
+
+        it 'returns pipeline artifacts with all infrastructures for ubuntu and vsphere centos' do
+          artifacts = instance_double('Bosh::Dev::StemcellArtifacts')
+
+          described_class.should_receive(:new) do |version, definitions|
+            expect(version).to eq('version')
+
+            matrix = definitions.map { |d| [d.infrastructure.name, d.operating_system.name, d.operating_system.version, d.agent.name] }
+            expect(matrix).to eq([
+              %w(vsphere ubuntu lucid go),
+              %w(vsphere ubuntu trusty go),
+              ['vsphere', 'centos', nil, 'go'],
+              %w(aws ubuntu lucid go),
+              %w(aws ubuntu trusty go),
+              ['aws', 'centos', nil, 'go'],
+              %w(openstack ubuntu trusty go),
+              ['openstack', 'centos', nil, 'go'],
+            ])
+
+            artifacts
+          end
+
+          described_class.all('version').should == artifacts
+        end
       end
     end
 
