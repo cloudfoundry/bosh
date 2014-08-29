@@ -202,7 +202,7 @@ module Bosh::Stemcell
 
         context 'when infrastructure is openstack' do
           let(:infrastructure) { Infrastructure.for('openstack') }
-          let(:default_disk_size) { 10240 }
+          let(:default_disk_size) { 3072 }
 
           it_sets_correct_environment_variables
 

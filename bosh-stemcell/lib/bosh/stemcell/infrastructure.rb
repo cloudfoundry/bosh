@@ -49,7 +49,7 @@ module Bosh::Stemcell
 
     class OpenStack < Base
       def initialize
-        super(name: 'openstack', hypervisor: 'kvm', default_disk_size: 10240)
+        super(name: 'openstack', hypervisor: 'kvm', default_disk_size: 3072)
       end
     end
 

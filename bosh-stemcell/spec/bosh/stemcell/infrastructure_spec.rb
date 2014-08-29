@@ -85,7 +85,7 @@ module Bosh::Stemcell
   describe Infrastructure::OpenStack do
     its(:name)              { should eq('openstack') }
     its(:hypervisor)        { should eq('kvm') }
-    its(:default_disk_size) { should eq(10240) }
+    its(:default_disk_size) { should eq(3072) }
     it { should_not be_light }
 
     it { should eq Infrastructure.for('openstack') }
