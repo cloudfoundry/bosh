@@ -1,3 +1,25 @@
+## 2707
+
+New Features:
+
+  * cpi: aws: allow to specify EBS volume type (supports gp2 and standard) [b79f37e]
+  * cpi: pass in cloud_properties to CPI create_disk method to support
+      custom disk types [675c4c0]
+  * cli: show deployment changes in non-interactive mode [da70f67]
+  * cli: retry director requests on OpenSSL::SSL::SSLError [3e8bee4]
+  * director: control the number of PowerDNS backend db connections [c4e0b28]
+  * director: Added support for disk_pools in the deployment [7499c0b]
+
+Improvements:
+
+  * stemcell: build: allow to set proxy username/password for downloading [4b3c6f0]
+  * spec: remove ci-reporter [beb2709]
+
+Bug Fixes:
+
+  * agent: Make sure dav-blobstore cli performs proper
+      http error checking when uploading blobs from the agent [7dc191a]
+
 ## 2693
 
 New Features:
