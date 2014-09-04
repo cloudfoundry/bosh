@@ -283,30 +283,30 @@ module Bosh::Stemcell
       context 'when the environment has HTTP_PROXY, HTTPS_PROXY and NO_PROXY variables' do
         let(:env) do
           {
-            'HTTP_PROXY' => 'some_proxy',
-            'HTTPS_PROXY' => 'some_proxy',
-            'NO_PROXY' => 'no_proxy',
-            'SOME_PROXY' => 'other_proxy',
+            'HTTP_PROXY' => 'fake-http-proxy',
+            'HTTPS_PROXY' => 'fake-https-proxy',
+            'NO_PROXY' => 'fake-no-proxy',
+            'SOME_PROXY' => 'fake-other-proxy',
           }
         end
 
         it 'includes those variables' do
-          expect(subject.command_env).to eq("env HTTP_PROXY='some_proxy' HTTPS_PROXY='some_proxy' NO_PROXY='no_proxy'")
+          expect(subject.command_env).to eq("env HTTP_PROXY='fake-http-proxy' HTTPS_PROXY='fake-https-proxy' NO_PROXY='fake-no-proxy'")
         end
       end
       
       context 'when the environment has http_proxy, https_proxy and no_proxy variables' do
         let(:env) do
           {
-            'http_proxy' => 'some_proxy',
-            'https_proxy' => 'some_proxy',
-            'no_proxy' => 'no_proxy',
-            'some_proxy' => 'other_proxy',
+            'http_proxy' => 'fake-http-proxy',
+            'https_proxy' => 'fake-https-proxy',
+            'no_proxy' => 'fake-no-proxy',
+            'some_proxy' => 'fake-other-proxy',
           }
         end
 
         it 'includes those variables' do
-          expect(subject.command_env).to eq("env http_proxy='some_proxy' https_proxy='some_proxy' no_proxy='no_proxy'")
+          expect(subject.command_env).to eq("env http_proxy='fake-http-proxy' https_proxy='fake-https-proxy' no_proxy='fake-no-proxy'")
         end
       end
     end
