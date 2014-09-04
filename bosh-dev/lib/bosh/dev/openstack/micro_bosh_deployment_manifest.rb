@@ -71,7 +71,7 @@ module Bosh::Dev::Openstack
           'tenant' => env['BOSH_OPENSTACK_TENANT'],
           'region' => env['BOSH_OPENSTACK_REGION'],
           'endpoint_type' => 'publicURL',
-          'default_key_name' => 'jenkins',
+          'default_key_name' => default_key_name,
           'default_security_groups' => ['default'],
           'private_key' => env['BOSH_OPENSTACK_PRIVATE_KEY'],
           'state_timeout' => state_timeout,
@@ -100,6 +100,11 @@ module Bosh::Dev::Openstack
     def connection_timeout
       timeout = env['BOSH_OPENSTACK_CONNECTION_TIMEOUT']
       timeout.to_s.empty? ? 60.0 : timeout.to_f
+    end
+
+    def default_key_name
+      key_name = env['BOSH_OPENSTACK_DEFAULT_KEY_NAME']
+      key_name.to_s.empty? ? 'jenkins' : key_name
     end
   end
 end
