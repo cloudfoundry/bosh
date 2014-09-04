@@ -60,7 +60,7 @@ resource_pools:
       name: <%= properties.stemcell.name %>
       version: '<%= properties.stemcell.version %>'
     cloud_properties:
-      instance_type: m1.small
+      instance_type: <%= properties.instance_type || 'm1.small' %>
       <% if properties.key_name %>
       key_name: <%= properties.key_name %>
       <% end %>

@@ -7,6 +7,71 @@ describe 'with release and stemcell and two deployments' do
     load_deployment_spec
   end
 
+  context 'with no ephemeral disk' do
+    before(:all) { skip 'only openstack is configurable without ephemeral disk' unless openstack? }
+
+    before(:all) do
+      reload_deployment_spec
+      # using password 'foobar'
+      use_password('$6$tHAu4zCTso$pAQok0MTHP4newel7KMhTzMI4tQrAWwJ.X./fFAKjbWkCb5sAaavygXAspIGWn8qVD8FeT.Z/XN4dvqKzLHhl0')
+      @our_ssh_options = ssh_options.merge(password: 'foobar')
+      use_static_ip
+      use_vip
+      use_job('batlight')
+      use_templates(%w[batlight])
+
+      use_flavor_with_no_ephemeral_disk
+
+      @requirements.requirement(deployment, @spec)
+    end
+
+    after(:all) do
+      @requirements.cleanup(deployment)
+    end
+
+    it 'creates ephemeral and swap partitions on the root device if no ephemeral disk', ssh: true do
+      setting_value = agent_config(public_ip).
+        fetch('Platform', {}).
+        fetch('Linux', {}).
+        fetch('CreatePartitionIfNoEphemeralDisk', false)
+
+      skip 'root disk ephemeral partition requires a stemcell with CreatePartitionIfNoEphemeralDisk enabled' unless setting_value
+
+      # expect ephemeral mount point to be a mounted partition on the root disk
+      expect(mounts(public_ip)).to include(hash_including(path: '/var/vcap/data'))
+
+      # expect swap to be a mounted partition on the root disk
+      expect(swaps(public_ip)).to include(hash_including(type: 'partition'))
+    end
+
+    def agent_config(ip)
+      output = ssh(ip, 'vcap', 'cat /var/vcap/bosh/agent.json', @our_ssh_options)
+      JSON.parse(output)
+    end
+
+    def mounts(ip)
+      output = ssh(ip, 'vcap', 'mount', @our_ssh_options)
+      output.lines.map do |line|
+        matches = /(?<point>.*) on (?<path>.*) type (?<type>.*) \((?<options>.*)\)/.match(line)
+        next if matches.nil?
+        matchdata_to_h(matches)
+      end.compact
+    end
+
+    def swaps(ip)
+      output = ssh(ip, 'vcap', 'swapon -s', @our_ssh_options)
+      output.lines.to_a[1..-1].map do |line|
+        matches = /(?<point>.+)\s+(?<type>.+)\s+(?<size>.+)\s+(?<used>.+)\s+(?<priority>.+)/.match(line)
+        next if matches.nil?
+        matchdata_to_h(matches)
+      end.compact
+    end
+
+    def matchdata_to_h(matchdata)
+      Hash[matchdata.names.zip(matchdata.captures)]
+    end
+  end
+
   context 'first deployment' do
     before(:all) do
       reload_deployment_spec

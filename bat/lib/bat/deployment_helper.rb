@@ -152,6 +152,10 @@ module Bat
       @spec['properties']['batlight']['fail'] = 'control'
     end
 
+    def use_flavor_with_no_ephemeral_disk
+      @spec['properties']['instance_type'] = 'no-ephemeral'
+    end
+
     def dynamic_network?
       network_type == 'dynamic'
     end

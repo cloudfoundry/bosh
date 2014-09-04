@@ -121,7 +121,20 @@ Add TCP port `4567` to the **default** security group.
 Create a **bat** security group in the same VPC the BAT_DIRECTOR is running in. Allow inbound access to TCP ports
  `22` and `4567` to the bat security group.
 
-## OpenStack Networking Config
+## OpenStack Setup
+
+### Flavors
+
+Create the following flavors:
+
+* `m1.small`
+    * ephemeral disk > 6GB
+    * root disk big enough for stemcell root partition (currently 3GB)
+* `no-ephemeral`
+    * ephemeral disk = 0
+    * root disk big enough for stemcell root partition (currently 3GB), plus at least 1GB for ephemeral & swap partitions
+
+### Networking Config
 
 Add TCP ports `22` and `4567` to the **default** security group.
 
