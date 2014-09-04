@@ -291,7 +291,9 @@ module Bosh::Stemcell
         end
 
         it 'includes those variables' do
-          expect(subject.command_env).to eq("env HTTP_PROXY='fake-http-proxy' HTTPS_PROXY='fake-https-proxy' NO_PROXY='fake-no-proxy'")
+          expect(subject.command_env).to eq(
+            "env HTTP_PROXY='fake-http-proxy' HTTPS_PROXY='fake-https-proxy' NO_PROXY='fake-no-proxy'"
+          )
         end
       end
       
@@ -306,7 +308,9 @@ module Bosh::Stemcell
         end
 
         it 'includes those variables' do
-          expect(subject.command_env).to eq("env http_proxy='fake-http-proxy' https_proxy='fake-https-proxy' no_proxy='fake-no-proxy'")
+          expect(subject.command_env).to eq(
+            "env http_proxy='fake-http-proxy' https_proxy='fake-https-proxy' no_proxy='fake-no-proxy'"
+          )
         end
       end
     end
