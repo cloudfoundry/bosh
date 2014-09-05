@@ -48,7 +48,7 @@ module Bosh::Dev
 
         context 'when the directory does not contain a .git subdirectory' do
           it 'clones the repo into "#path"'do
-            shell.should_receive(:run).with('git clone fake_BOSH_JENKINS_DEPLOYMENTS_REPO /tmp/deployments')
+            shell.should_receive(:run).with('git clone --depth=1 fake_BOSH_JENKINS_DEPLOYMENTS_REPO /tmp/deployments')
             subject.clone_or_update!
           end
         end
@@ -56,7 +56,7 @@ module Bosh::Dev
 
       context 'when the directory does NOT exist' do
         it 'clones the repo into "#path"'do
-          shell.should_receive(:run).with('git clone fake_BOSH_JENKINS_DEPLOYMENTS_REPO /tmp/deployments')
+          shell.should_receive(:run).with('git clone --depth=1 fake_BOSH_JENKINS_DEPLOYMENTS_REPO /tmp/deployments')
 
           expect {
             subject.clone_or_update!
