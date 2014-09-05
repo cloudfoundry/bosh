@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `cJItjk12ZCUgOo591c10FLHpAcVIwWDZ`
+  update libgcrypt11 to 1.5.3-2ubuntu4.1
+  update gnupg to 1.4.16-1ubuntu2.1
+
 * `P9CaP1LYyF6DBXYWEf0G7mf2qY2z_l1D`
   update kernel to 3.13.0-35.62 and libc6 to 2.19-0ubuntu6.3
 
@@ -63,6 +67,10 @@ CentOS images have filename `bosh-centos-6_5-os-image.tgz`
 ## Ubuntu 10.04
 
 Ubuntu 10.04 images have filename `bosh-ubuntu-lucid-os-image.tgz`
+
+* `eZWOusvZfqLMPCxoh6ywHqEeVvkv6oRW`
+  update libgcrypt11 to 1.4.4-5ubuntu2.3
+  update gnupg to 1.4.10-2ubuntu1.7
 
 * `6M6P12YoeRKtGB6QkRcAE02Cd1QrTfVN`
   update libc6 to 2.11.1-0ubuntu7.16
