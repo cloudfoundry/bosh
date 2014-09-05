@@ -41,7 +41,7 @@ module Bosh::Dev
 
     def clone_repo
       FileUtils.mkdir_p(path, verbose: true)
-      shell.run("git clone #{env.fetch('BOSH_JENKINS_DEPLOYMENTS_REPO')} #{path}")
+      shell.run("git clone --depth=1 #{env.fetch('BOSH_JENKINS_DEPLOYMENTS_REPO')} #{path}")
     end
 
     def git_repo?(path)
