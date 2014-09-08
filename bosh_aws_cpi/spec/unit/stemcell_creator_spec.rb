@@ -14,9 +14,8 @@ describe Bosh::AwsCloud::StemcellCreator do
   end
 
   before do
-    Bosh::AwsCloud::AKIPicker.stub(:new => double("aki", :pick => "aki-xxxxxxxx"))
+    allow(Bosh::AwsCloud::AKIPicker).to receive(:new).and_return(double("aki", :pick => "aki-xxxxxxxx"))
   end
-
 
   context "real" do
     let(:volume) { double("volume") }
@@ -26,13 +25,13 @@ describe Bosh::AwsCloud::StemcellCreator do
 
     it "should create a real stemcell" do
       creator = described_class.new(region, stemcell_properties)
-      Bosh::AwsCloud::ResourceWait.stub(:for_snapshot).with(snapshot: snapshot, state: :completed)
-      Bosh::AwsCloud::ResourceWait.stub(:for_image).with(image: image, state: :available)
-      region.stub_chain(:images, :create).and_return(image)
+      allow(Bosh::AwsCloud::ResourceWait).to receive(:for_snapshot).with(snapshot: snapshot, state: :completed)
+      allow(Bosh::AwsCloud::ResourceWait).to receive(:for_image).with(image: image, state: :available)
+      allow(region).to receive_message_chain(:images, :create).and_return(image)
 
-      creator.should_receive(:copy_root_image)
-      volume.should_receive(:create_snapshot).and_return(snapshot)
-      Bosh::AwsCloud::TagManager.should_receive(:tag).with(image, "Name", "stemcell-name 0.7.0")
+      expect(creator).to receive(:copy_root_image)
+      expect(volume).to receive(:create_snapshot).and_return(snapshot)
+      expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(image, "Name", "stemcell-name 0.7.0")
 
       stemcell = creator.create(volume, ebs_volume, "/path/to/image")
     end
@@ -46,7 +45,7 @@ describe Bosh::AwsCloud::StemcellCreator do
     it "should create a fake stemcell" do
       creator = described_class.new(region, stemcell_properties)
 
-      Bosh::AwsCloud::StemcellFinder.should_receive(:find_by_region_and_id).with(region, "ami-xxxxxxxx light")
+      expect(Bosh::AwsCloud::StemcellFinder).to receive(:find_by_region_and_id).with(region, "ami-xxxxxxxx light")
       creator.fake
     end
 
@@ -65,59 +64,58 @@ describe Bosh::AwsCloud::StemcellCreator do
     it "should construct correct image params" do
       params = described_class.new(region, stemcell_properties).image_params("id")
 
-      params[:architecture].should == "x86_64"
-      params[:description].should == "stemcell-name 0.7.0"
-      params[:kernel_id].should == "aki-xxxxxxxx"
-      params[:description].should == "stemcell-name 0.7.0"
-      params[:root_device_name].should == "/dev/sda1"
-      params[:block_device_mappings].should == {
+      expect(params[:architecture]).to eq("x86_64")
+      expect(params[:description]).to eq("stemcell-name 0.7.0")
+      expect(params[:kernel_id]).to eq("aki-xxxxxxxx")
+      expect(params[:description]).to eq("stemcell-name 0.7.0")
+      expect(params[:root_device_name]).to eq("/dev/sda1")
+      expect(params[:block_device_mappings]).to eq({
           "/dev/sda"=>{:snapshot_id=>"id"}, "/dev/sdb"=>"ephemeral0"
-      }
+      })
     end
   end
 
   describe "#find_in_path" do
     it "should not find a missing file" do
       creator = described_class.new(region, stemcell_properties)
-      creator.find_in_path("program-that-doesnt-exist").should be_nil
+      expect(creator.find_in_path("program-that-doesnt-exist")).to be_nil
     end
 
     it "should find stemcell-copy" do
       creator = described_class.new(region, stemcell_properties)
       path = ENV["PATH"]
       path += ":#{File.expand_path('../../assets', __FILE__)}"
-      creator.find_in_path("stemcell-copy", path).should_not be_nil
+      expect(creator.find_in_path("stemcell-copy", path)).to_not be_nil
     end
   end
 
   describe '#copy_root_image' do
     let(:creator) do
       creator = described_class.new(region, stemcell_properties)
-      creator.stub(:image_path => '/path/to/image')
-      creator.stub(:ebs_volume => '/dev/volume')
+      allow(creator).to receive(:image_path).and_return('/path/to/image')
+      allow(creator).to receive(:ebs_volume).and_return('/dev/volume')
       creator
     end
 
     it 'should call stemcell-copy found in the PATH' do
-      creator.stub(:find_in_path => '/path/to/stemcell-copy')
+      allow(creator).to receive(:find_in_path).and_return('/path/to/stemcell-copy')
       result = double('result', :output => 'output')
 
       cmd = 'sudo -n /path/to/stemcell-copy /path/to/image /dev/volume 2>&1'
-      creator.should_receive(:sh).with(cmd).and_return(result)
+      expect(creator).to receive(:sh).with(cmd).and_return(result)
 
       creator.copy_root_image
     end
 
     it 'should call the bundled stemcell-copy if not found in the PATH' do
-      creator.stub(:find_in_path => nil)
+      allow(creator).to receive(:find_in_path).and_return(nil)
       result = double('result', :output => 'output')
 
       stemcell_copy = File.expand_path("../../../../bosh_aws_cpi/scripts/stemcell-copy.sh", __FILE__)
       cmd = "sudo -n #{stemcell_copy} /path/to/image /dev/volume 2>&1"
-      creator.should_receive(:sh).with(cmd).and_return(result)
+      expect(creator).to receive(:sh).with(cmd).and_return(result)
 
       creator.copy_root_image
     end
   end
-
 end

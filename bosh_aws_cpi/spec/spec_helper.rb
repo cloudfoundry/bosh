@@ -42,7 +42,7 @@ end
 
 def mock_cloud(options = nil)
   ec2, region = mock_ec2
-  AWS::EC2.stub(:new).and_return(ec2)
+  allow(AWS::EC2).to receive(:new).and_return(ec2)
 
   yield ec2, region if block_given?
 
