@@ -101,12 +101,12 @@ namespace :spec do
 
   namespace :system do
     desc 'Run system (BATs) tests (deploys microbosh)'
-    task :micro, [:infrastructure_name, :operating_system_name, :operating_system_version, :net_type, :agent_name] do |_, args|
+    task :micro, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :net_type, :agent_name, :light] do |_, args|
       Bosh::Dev::BatHelper.for_rake_args(args).deploy_microbosh_and_run_bats
     end
 
     desc 'Run system (BATs) tests (uses existing microbosh)'
-    task :existing_micro, [:infrastructure_name, :operating_system_name, :operating_system_version, :net_type, :agent_name] do |_, args|
+    task :existing_micro, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :net_type, :agent_name, :light] do |_, args|
       Bosh::Dev::BatHelper.for_rake_args(args).run_bats
     end
 

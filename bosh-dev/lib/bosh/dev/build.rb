@@ -81,8 +81,8 @@ module Bosh::Dev
       logger.info("uploaded to s3://#{bucket}/#{s3_path}")
     end
 
-    def download_stemcell(name, definition, light, output_directory)
-      filename = Bosh::Stemcell::ArchiveFilename.new(number.to_s, definition, name, light).to_s
+    def download_stemcell(name, definition, output_directory)
+      filename = Bosh::Stemcell::ArchiveFilename.new(number.to_s, definition, name).to_s
       remote_dir = File.join(number.to_s, name, definition.infrastructure.name)
       download_adapter.download(UriProvider.pipeline_uri(remote_dir, filename), File.join(output_directory, filename))
       filename
@@ -98,8 +98,7 @@ module Bosh::Dev
       File.join(download_dir, Bosh::Stemcell::ArchiveFilename.new(
         number.to_s,
         definition,
-        'bosh-stemcell',
-        definition.infrastructure.light?,
+        'bosh-stemcell'
       ).to_s)
     end
 
@@ -118,9 +117,9 @@ module Bosh::Dev
         release.dev_tarball_path
       end
 
-      def download_stemcell(name, definition, light, output_directory)
+      def download_stemcell(name, definition, output_directory)
         filename = Bosh::Stemcell::ArchiveFilename.new(
-          number.to_s, definition, name, light).to_s
+          number.to_s, definition, name).to_s
         download_adapter.download("tmp/#{filename}", File.join(output_directory, filename))
         filename
       end

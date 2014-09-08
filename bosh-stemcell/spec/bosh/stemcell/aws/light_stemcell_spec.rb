@@ -6,14 +6,28 @@ module Bosh::Stemcell
   module Aws
     describe LightStemcell do
       let(:stemcell) do
-        Bosh::Stemcell::Archive.new(spec_asset('fake-stemcell-aws.tgz'))
+        Bosh::Stemcell::Archive.new(spec_asset('fake-stemcell-aws-xen-ubuntu.tgz'))
       end
+
+      let(:virtualization_type) { "paravirtual" }
 
       subject(:light_stemcell) do
-        LightStemcell.new(stemcell)
+        LightStemcell.new(stemcell, virtualization_type)
       end
 
-      its(:path) { should eq(spec_asset('light-fake-stemcell-aws.tgz')) }
+      describe "#path" do
+        subject { light_stemcell.path }
+
+        context 'when virtualization type is paravirtual' do
+          let(:virtualization_type) { "paravirtual" }
+          it { should eq(spec_asset('light-fake-stemcell-aws-xen-ubuntu.tgz')) }
+        end
+
+        context 'when virtualization type is hvm' do
+          let(:virtualization_type) { "hvm" }
+          it { should eq(spec_asset('light-fake-stemcell-aws-xen-hvm-ubuntu.tgz')) }
+        end
+      end
 
       describe '#write_archive' do
         let(:region) do
@@ -25,16 +39,16 @@ module Bosh::Stemcell
         end
 
         let(:stemcell) do
-          Bosh::Stemcell::Archive.new(spec_asset('fake-stemcell-aws.tgz'))
+          Bosh::Stemcell::Archive.new(spec_asset('fake-stemcell-aws-xen-ubuntu.tgz'))
         end
 
         subject(:light_stemcell) do
-          LightStemcell.new(stemcell)
+          LightStemcell.new(stemcell, virtualization_type)
         end
 
         before do
           allow(Region).to receive(:new).and_return(region)
-          allow(Ami).to receive(:new).with(stemcell, region).and_return(ami)
+          allow(Ami).to receive(:new).with(stemcell, region, virtualization_type).and_return(ami)
           allow(Rake::FileUtilsExt).to receive(:sh)
           allow(FileUtils).to receive(:touch)
         end
@@ -50,7 +64,7 @@ module Bosh::Stemcell
             expect(command).to match(/tar xzf #{stemcell.path} --directory .*/)
           end
 
-          expected_tarfile = File.join(File.dirname(stemcell.path), 'light-fake-stemcell-aws.tgz')
+          expected_tarfile = File.join(File.dirname(stemcell.path), 'light-fake-stemcell-aws-xen-ubuntu.tgz')
 
           expect(Rake::FileUtilsExt).to receive(:sh) do |command|
             expect(command).to match(/sudo tar cvzf #{expected_tarfile} \*/)

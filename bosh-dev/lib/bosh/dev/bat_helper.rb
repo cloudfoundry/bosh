@@ -11,7 +11,7 @@ module Bosh::Dev
     def self.for_rake_args(args)
       new(
         runner_builder_for_infrastructure_name(args.infrastructure_name),
-        Bosh::Stemcell::Definition.for(args.infrastructure_name, args.operating_system_name, args.operating_system_version, args.agent_name),
+        Bosh::Stemcell::Definition.for(args.infrastructure_name, args.hypervisor_name, args.operating_system_name, args.operating_system_version, args.agent_name, args.light),
         Build.candidate,
         args.net_type,
       )
@@ -55,7 +55,6 @@ module Bosh::Dev
       build.download_stemcell(
         'bosh-stemcell',
         artifact_definition,
-        artifact_definition.infrastructure.light?,
         artifacts.path,
       )
 

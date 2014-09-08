@@ -33,7 +33,6 @@ module Bosh::Dev
           build_number: 'fake-build-number',
           definition: definition,
           infrastructure: infrastructure,
-          infrastructure_light?: true,
         )
       end
 
@@ -48,6 +47,7 @@ module Bosh::Dev
         instance_double(
           'Bosh::Stemcell::Definition',
           infrastructure: infrastructure,
+          light?: true
         )
       }
 
@@ -71,7 +71,7 @@ module Bosh::Dev
         returned_path = artifacts_downloader.download_stemcell(build_target, 'fake-output-dir')
 
         expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new)
-                                                   .with('fake-build-number', definition, 'bosh-stemcell', true)
+                                                   .with('fake-build-number', definition, 'bosh-stemcell')
         expect(returned_path).to eq('returned-path')
       end
     end

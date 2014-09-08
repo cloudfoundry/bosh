@@ -77,7 +77,7 @@ module Bosh::Stemcell
     end
 
     def archive_filename
-      ArchiveFilename.new(stemcell_version, definition, 'bosh-stemcell', false)
+      ArchiveFilename.new(stemcell_version, definition, 'bosh-stemcell')
     end
 
     def stemcell_image_name

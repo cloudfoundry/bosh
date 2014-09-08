@@ -51,7 +51,7 @@ module Bosh::Stemcell
         result = stemcell_builder_options.default
         expect(result['stemcell_tgz']).to eq(archive_filename.to_s)
         expect(ArchiveFilename).to have_received(:new)
-          .with('007', definition, 'bosh-stemcell', false)
+          .with('007', definition, 'bosh-stemcell')
       end
 
       it 'sets stemcell_image_name' do

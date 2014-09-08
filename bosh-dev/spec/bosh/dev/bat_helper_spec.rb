@@ -13,7 +13,6 @@ module Bosh::Dev
       instance_double(
         'Bosh::Stemcell::Infrastructure::Base',
         name: 'infrastructure-name',
-        light?: false,
       )
     end
 
@@ -70,14 +69,26 @@ module Bosh::Dev
     end
 
     describe '.for_rake_args' do
+      let(:light) { false }
+
       it 'returns bat helper configured with rake arguments' do
         rake_args = Struct.new(
           :infrastructure_name,
+          :hypervisor_name,
           :operating_system_name,
           :operating_system_version,
           :net_type,
-          :agent_name
-        ).new('infrastructure-name', 'operating-system-name', 'operating-system-version', networking_type, 'agent-name')
+          :agent_name,
+          :light
+        ).new(
+          'infrastructure-name',
+          'hypervisor-name',
+          'operating-system-name',
+          'operating-system-version',
+          networking_type,
+          'agent-name',
+          light
+        )
 
         described_class
           .should_receive(:runner_builder_for_infrastructure_name)
@@ -87,8 +98,14 @@ module Bosh::Dev
         Build.should_receive(:candidate).and_return(build)
 
         expect(Bosh::Stemcell::Definition).to receive(:for)
-                                              .with('infrastructure-name', 'operating-system-name', 'operating-system-version', 'agent-name')
-                                              .and_return(definition)
+          .with(
+            'infrastructure-name',
+            'hypervisor-name',
+            'operating-system-name',
+            'operating-system-version',
+            'agent-name',
+            light
+          ).and_return(definition)
 
         bat_helper = instance_double('Bosh::Dev::BatHelper')
         described_class
@@ -115,7 +132,6 @@ module Bosh::Dev
         expect(build).to receive(:download_stemcell).with(
           'bosh-stemcell',
           definition,
-          false,
           artifacts_path,
         )
         subject.deploy_microbosh_and_run_bats

@@ -15,9 +15,11 @@ module Bosh::Dev
       build_target = BuildTarget.from_names(
         args.build_number,
         args.infrastructure_name,
+        args.hypervisor_name,
         args.operating_system_name,
         args.operating_system_version,
         args.agent_name,
+        args.light,
       )
 
       new(build_target, args.environment_name, args.deployment_name)

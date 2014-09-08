@@ -29,15 +29,10 @@ module Bosh::Stemcell
         @default_disk_size = options.fetch(:default_disk_size)
       end
 
-      def light?
-        @supports_light_stemcell
-      end
-
       def ==(other)
         name == other.name &&
           hypervisor == other.hypervisor &&
-          default_disk_size == other.default_disk_size &&
-          light? == other.light?
+          default_disk_size == other.default_disk_size
       end
     end
 

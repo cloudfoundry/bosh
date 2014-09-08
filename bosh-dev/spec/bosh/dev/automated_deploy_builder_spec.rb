@@ -8,28 +8,34 @@ module Bosh::Dev
         rake_args = Struct.new(
           :build_number,
           :infrastructure_name,
+          :hypervisor_name,
           :operating_system_name,
           :operating_system_version,
           :agent_name,
           :environment_name,
           :deployment_name,
+          :light,
         ).new(
           'fake-build-number',
           'fake-infrastructure-name',
+          'fake-hypervisor-name',
           'fake-operating-system-name',
           'fake-operating-system-version',
           'fake-agent-name',
           'fake-environment-name',
           'fake-deployment-name',
+          'fake-light',
         )
 
         build_target = instance_double('Bosh::Dev::BuildTarget')
         expect(Bosh::Dev::BuildTarget).to receive(:from_names).with(
           'fake-build-number',
           'fake-infrastructure-name',
+          'fake-hypervisor-name',
           'fake-operating-system-name',
           'fake-operating-system-version',
           'fake-agent-name',
+          'fake-light',
         ).and_return(build_target)
 
         builder = instance_double('Bosh::Dev::AutomatedDeployBuilder')

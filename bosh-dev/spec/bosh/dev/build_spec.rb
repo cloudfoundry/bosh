@@ -258,8 +258,8 @@ module Bosh::Dev
     end
 
     describe '#download_stemcell' do
-      def perform(light = false)
-        build.download_stemcell('stemcell-name', definition, light, Dir.pwd)
+      def perform
+        build.download_stemcell('stemcell-name', definition, Dir.pwd)
       end
 
       let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'fake-filename') }
@@ -274,20 +274,12 @@ module Bosh::Dev
       let(:expected_s3_bucket) { 'http://bosh-ci-pipeline.s3.amazonaws.com' }
       let(:expected_s3_folder) { '/123/stemcell-name/infrastructure-name' }
 
-      it 'downloads the specified non-light stemcell version from the pipeline bucket' do
+      it 'downloads the specified stemcell version from the pipeline bucket' do
         expected_uri = URI("#{expected_s3_bucket}#{expected_s3_folder}/#{archive_filename}")
         download_adapter.should_receive(:download).with(expected_uri, "/#{archive_filename}")
         perform
 
-        expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('123', definition, 'stemcell-name', false)
-      end
-
-      it 'downloads the specified light stemcell version from the pipeline bucket' do
-        expected_uri = URI("#{expected_s3_bucket}#{expected_s3_folder}/#{archive_filename}")
-        download_adapter.should_receive(:download).with(expected_uri, "/#{archive_filename}")
-        perform(true)
-
-        expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('123', definition, 'stemcell-name', true)
+        expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('123', definition, 'stemcell-name')
       end
 
       it 'returns the name of the downloaded file' do
@@ -307,7 +299,6 @@ module Bosh::Dev
       let(:infrastructure) do
         instance_double(
           'Bosh::Stemcell::Infrastructure::Base',
-          light?: true,
         )
       end
 
@@ -322,7 +313,7 @@ module Bosh::Dev
         download_directory = '/FAKE/CUSTOM/WORK/DIRECTORY'
         bosh_stemcell_path = subject.bosh_stemcell_path(definition, download_directory)
         expect(bosh_stemcell_path).to eq(File.join(download_directory, archive_filename.to_s))
-        expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('123', definition, 'bosh-stemcell', true)
+        expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('123', definition, 'bosh-stemcell')
       end
     end
   end
@@ -385,7 +376,7 @@ module Bosh::Dev
 
     describe '#download_stemcell' do
       def perform
-        subject.download_stemcell('stemcell-name', definition, false, '/output-directory')
+        subject.download_stemcell('stemcell-name', definition, '/output-directory')
       end
 
       let(:archive_filename) {
@@ -410,7 +401,7 @@ module Bosh::Dev
           filename = perform
 
           expect(filename).to eq(archive_filename.to_s)
-          expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('build-number', definition, 'stemcell-name', false)
+          expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('build-number', definition, 'stemcell-name')
         end
       end
 

@@ -7,7 +7,7 @@ module Bosh::Dev
       context 'when BOSH_PROMOTE_STEMCELLS are specified' do
         before do
           stub_const('ENV', {
-            'BOSH_PROMOTE_STEMCELLS' => 'vsphere-ubuntu-centos,aws-ubuntu-centos,openstack-ubuntu-centos',
+            'BOSH_PROMOTE_STEMCELLS' => 'vsphere-esxi-centos,aws-xen-centos,openstack-kvm-centos',
           })
         end
 
@@ -17,11 +17,11 @@ module Bosh::Dev
           expect(described_class).to receive(:new) do |version, definitions|
             expect(version).to eq('version')
 
-            matrix = definitions.map { |d| [d.infrastructure.name, d.operating_system.name, d.operating_system.version, d.agent.name] }
+            matrix = definitions.map { |d| [d.infrastructure.name, d.hypervisor_name, d.operating_system.name, d.operating_system.version, d.agent.name] }
             expect(matrix).to eq([
-              ['vsphere', 'centos', nil, 'go'],
-              ['aws', 'centos', nil, 'go'],
-              ['openstack', 'centos', nil, 'go'],
+              ['vsphere', 'esxi', 'centos', nil, 'go'],
+              ['aws', 'xen', 'centos', nil, 'go'],
+              ['openstack', 'kvm', 'centos', nil, 'go'],
             ])
 
             artifacts
@@ -61,14 +61,16 @@ module Bosh::Dev
           expect(described_class).to receive(:new) do |version, definitions|
             expect(version).to eq('version')
 
-            matrix = definitions.map { |d| [d.infrastructure.name, d.operating_system.name, d.operating_system.version, d.agent.name] }
+            matrix = definitions.map { |d| [d.infrastructure.name, d.hypervisor_name, d.operating_system.name, d.operating_system.version, d.agent.name, d.light?] }
             expect(matrix).to eq([
-              %w(vsphere ubuntu trusty go),
-              ['vsphere', 'centos', nil, 'go'],
-              %w(aws ubuntu trusty go),
-              ['aws', 'centos', nil, 'go'],
-              %w(openstack ubuntu trusty go),
-              ['openstack', 'centos', nil, 'go'],
+              ['vsphere', 'esxi', 'ubuntu', 'trusty', 'go', false],
+              ['vsphere', 'esxi', 'centos', nil, 'go', false],
+              ['aws', 'xen', 'ubuntu', 'trusty', 'go', false],
+              ['aws', 'xen', 'centos', nil, 'go', false],
+              ['aws', 'xen-hvm', 'ubuntu', 'trusty', 'go', true],
+              ['aws', 'xen-hvm', 'centos', nil, 'go', true],
+              ['openstack', 'kvm', 'ubuntu', 'trusty', 'go', false],
+              ['openstack', 'kvm', 'centos', nil, 'go', false],
             ])
 
             artifacts
@@ -84,26 +86,26 @@ module Bosh::Dev
       let(:version) { 123 }
       let(:definitions) do
         [
-          Bosh::Stemcell::Definition.for('vsphere', 'ubuntu', 'trusty', 'go'),
-          Bosh::Stemcell::Definition.for('openstack', 'centos', nil, 'go'),
+          Bosh::Stemcell::Definition.for('vsphere', 'esxi', 'ubuntu', 'trusty', 'go', false),
+          Bosh::Stemcell::Definition.for('openstack', 'kvm', 'centos', nil, 'go', false),
         ]
       end
 
       it 'returns a complete list of stemcell build artifact names' do
         allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
-          .with('latest', definitions[0], 'bosh-stemcell', false)
+          .with('latest', definitions[0], 'bosh-stemcell')
           .and_return('fake-latest-archive-filename1')
 
         allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
-          .with(version, definitions[0], 'bosh-stemcell', false)
+          .with(version, definitions[0], 'bosh-stemcell')
           .and_return('fake-version-archive-filename1')
 
         allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
-          .with('latest', definitions[1], 'bosh-stemcell', false)
+          .with('latest', definitions[1], 'bosh-stemcell')
           .and_return('fake-latest-archive-filename2')
 
         allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
-          .with(version, definitions[1], 'bosh-stemcell', false)
+          .with(version, definitions[1], 'bosh-stemcell')
           .and_return('fake-version-archive-filename2')
 
         expect(artifacts.list.sort).to eq(%w[
@@ -112,38 +114,6 @@ module Bosh::Dev
           bosh-stemcell/openstack/fake-version-archive-filename2
           bosh-stemcell/openstack/fake-latest-archive-filename2
         ].sort)
-      end
-
-      context 'when definition includes aws' do
-        let(:definitions) do
-          [
-            Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'trusty', 'go')
-          ]
-        end
-
-        it 'returns artifact filenames for both light and regular stemcells' do
-          allow(Bosh::Stemcell::ArchiveFilename).to receive(:new).and_return('unrelated')
-
-          allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
-            .with(version, definitions[0], 'bosh-stemcell', false)
-            .and_return('fake-version-archive-filename')
-          allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
-            .with(version, definitions[0], 'bosh-stemcell', true)
-            .and_return('fake-light-version-archive-filename')
-
-          allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
-            .with('latest', definitions[0], 'bosh-stemcell', false)
-            .and_return('fake-latest-archive-filename')
-          allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
-            .with('latest', definitions[0], 'bosh-stemcell', true)
-            .and_return('fake-light-latest-archive-filename')
-
-          expect(artifacts.list.length).to eq 4
-          expect(artifacts.list).to include('bosh-stemcell/aws/fake-version-archive-filename')
-          expect(artifacts.list).to include('bosh-stemcell/aws/fake-light-version-archive-filename')
-          expect(artifacts.list).to include('bosh-stemcell/aws/fake-latest-archive-filename')
-          expect(artifacts.list).to include('bosh-stemcell/aws/fake-light-latest-archive-filename')
-        end
       end
     end
   end

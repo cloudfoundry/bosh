@@ -22,16 +22,17 @@ module Bosh::Stemcell
         name: 'go'
       )
     end
+    let(:light) { false }
     let(:definition) do
       instance_double(
         'Bosh::Stemcell::Definition',
         stemcell_name: 'fake-stemcell-name',
+        light?: light
       )
     end
-    let(:light) { false }
 
     subject(:archive_filename) do
-      ArchiveFilename.new(version, definition, 'FAKE_NAME', light)
+      ArchiveFilename.new(version, definition, 'FAKE_NAME')
     end
 
     describe '#to_s' do

@@ -82,27 +82,47 @@ module Bosh::AwsCloud
     end
 
     def image_params(snapshot_id)
-      root_device_name = stemcell_properties["root_device_name"]
       architecture = stemcell_properties["architecture"]
+      virtualization_type = stemcell_properties["virtualization_type"]
 
-      aki = AKIPicker.new(region).pick(architecture, root_device_name)
+      params = if virtualization_type == 'hvm'
+                 {
+                   :virtualization_type => virtualization_type,
+                   :root_device_name => "/dev/xvda",
+                   :block_device_mappings => {
+                     "/dev/xvda" => {
+                       :snapshot_id => snapshot_id
+                     }
+                   }
+                 }
+               else
+                 root_device_name = stemcell_properties["root_device_name"]
+                 aki = AKIPicker.new(region).pick(architecture, root_device_name)
 
-      params = {
-          :name => "BOSH-#{SecureRandom.uuid}",
-          :architecture => architecture,
-          :kernel_id => aki,
-          :root_device_name => root_device_name,
-          :block_device_mappings => {
-              "/dev/sda" => {:snapshot_id => snapshot_id},
-              "/dev/sdb" => "ephemeral0"
-          }
-      }
+                 {
+                   :kernel_id => aki,
+                   :root_device_name => root_device_name,
+                   :block_device_mappings => {
+                     "/dev/sda" => {
+                       :snapshot_id => snapshot_id
+                     }
+                   }
+                 }
+               end
 
       # old stemcells doesn't have name & version
       if stemcell_properties["name"] && stemcell_properties["version"]
         name = "#{stemcell_properties['name']} #{stemcell_properties['version']}"
         params[:description] = name
       end
+
+      params.merge!(
+        :name => "BOSH-#{SecureRandom.uuid}",
+        :architecture => architecture,
+        :block_device_mappings => params[:block_device_mappings].merge(
+          "/dev/sdb" => "ephemeral0"
+        )
+      )
 
       params
     end

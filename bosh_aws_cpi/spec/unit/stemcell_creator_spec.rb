@@ -9,9 +9,12 @@ describe Bosh::AwsCloud::StemcellCreator do
         "version" => "0.7.0",
         "infrastructure" => "aws",
         "architecture" =>  "x86_64",
-        "root_device_name" => "/dev/sda1"
+        "root_device_name" => "/dev/sda1",
+        "virtualization_type" => virtualization_type
     }
   end
+
+  let(:virtualization_type) { "paravirtual" }
 
   before do
     allow(Bosh::AwsCloud::AKIPicker).to receive(:new).and_return(double("aki", :pick => "aki-xxxxxxxx"))
@@ -27,6 +30,7 @@ describe Bosh::AwsCloud::StemcellCreator do
       creator = described_class.new(region, stemcell_properties)
       allow(Bosh::AwsCloud::ResourceWait).to receive(:for_snapshot).with(snapshot: snapshot, state: :completed)
       allow(Bosh::AwsCloud::ResourceWait).to receive(:for_image).with(image: image, state: :available)
+      allow(SecureRandom).to receive(:uuid).and_return("fake-uuid")
       allow(region).to receive_message_chain(:images, :create).and_return(image)
 
       expect(creator).to receive(:copy_root_image)
@@ -61,17 +65,39 @@ describe Bosh::AwsCloud::StemcellCreator do
   end
 
   describe "#image_params" do
-    it "should construct correct image params" do
-      params = described_class.new(region, stemcell_properties).image_params("id")
+    context "when the virtualization type is paravirtual" do
+      let(:virtualization_type) { "paravirtual" }
 
-      expect(params[:architecture]).to eq("x86_64")
-      expect(params[:description]).to eq("stemcell-name 0.7.0")
-      expect(params[:kernel_id]).to eq("aki-xxxxxxxx")
-      expect(params[:description]).to eq("stemcell-name 0.7.0")
-      expect(params[:root_device_name]).to eq("/dev/sda1")
-      expect(params[:block_device_mappings]).to eq({
-          "/dev/sda"=>{:snapshot_id=>"id"}, "/dev/sdb"=>"ephemeral0"
-      })
+      it "should construct correct image params" do
+        params = described_class.new(region, stemcell_properties).image_params("id")
+
+        expect(params[:architecture]).to eq("x86_64")
+        expect(params[:description]).to eq("stemcell-name 0.7.0")
+        expect(params[:kernel_id]).to eq("aki-xxxxxxxx")
+        expect(params[:root_device_name]).to eq("/dev/sda1")
+        expect(params[:block_device_mappings]).to eq({
+          "/dev/sda"=>{:snapshot_id=>"id"},
+          "/dev/sdb"=>"ephemeral0",
+        })
+      end
+    end
+
+    context "when the virtualization type is hvm" do
+      let(:virtualization_type) { "hvm" }
+
+      it "should construct correct image params" do
+        params = described_class.new(region, stemcell_properties).image_params("id")
+
+        expect(params[:architecture]).to eq("x86_64")
+        expect(params[:description]).to eq("stemcell-name 0.7.0")
+        expect(params).not_to have_key(:kernel_id)
+        expect(params[:root_device_name]).to eq("/dev/xvda")
+        expect(params[:block_device_mappings]).to eq({
+          "/dev/xvda"=>{:snapshot_id=>"id"},
+          "/dev/sdb"=>"ephemeral0",
+        })
+        expect(params[:virtualization_type]).to eq("hvm")
+      end
     end
   end
 

@@ -9,9 +9,10 @@ module Bosh::Stemcell::Aws
   class Ami
     attr_reader :stemcell
 
-    def initialize(stemcell, region)
+    def initialize(stemcell, region, virtualization_type)
       @stemcell = stemcell
       @region = region
+      @virtualization_type = virtualization_type || 'paravirtual'
     end
 
     def publish
@@ -21,7 +22,10 @@ module Bosh::Stemcell::Aws
       cloud = Bosh::Clouds::Provider.create(options, 'fake-director-uuid')
 
       stemcell.extract do |tmp_dir, stemcell_manifest|
-        ami_id = cloud.create_stemcell("#{tmp_dir}/image", stemcell_manifest['cloud_properties'])
+        cloud_properties = stemcell_manifest['cloud_properties'].merge(
+          'virtualization_type' => virtualization_type
+        )
+        ami_id = cloud.create_stemcell("#{tmp_dir}/image", cloud_properties)
         cloud.ec2.images[ami_id].public = true
         ami_id
       end
@@ -29,7 +33,7 @@ module Bosh::Stemcell::Aws
 
     private
 
-    attr_reader :region
+    attr_reader :region, :virtualization_type
 
     def options
       # just fake the registry struct, as we don't use it

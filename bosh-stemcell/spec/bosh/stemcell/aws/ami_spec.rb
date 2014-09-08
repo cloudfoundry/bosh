@@ -4,7 +4,7 @@ require 'bosh/stemcell/aws/ami'
 
 module Bosh::Stemcell::Aws
   describe Ami do
-    subject(:ami) { Ami.new(stemcell, region) }
+    subject(:ami) { Ami.new(stemcell, region, virtualization_type) }
 
     let(:stemcell) do
       instance_double('Bosh::Stemcell::Archive').tap do |s|
@@ -16,6 +16,7 @@ module Bosh::Stemcell::Aws
 
     let(:region) { instance_double('Bosh::Stemcell::Aws::Region', name: 'fake-region') }
 
+    let(:virtualization_type) { "hvm" }
 
     describe '#publish' do
       let(:image) { instance_double('AWS::EC2::Image', :"public=" => nil) }
@@ -63,14 +64,32 @@ module Bosh::Stemcell::Aws
         expect(ami.publish).to eq('fake-ami-id')
       end
 
-      it 'creates the stemcell with the appropriate arguments' do
-        expect(cpi).to receive(:create_stemcell) do |image_path, cloud_properties|
-          expect(image_path).to eq('/foo/bar/image')
-          expect(cloud_properties).to eq({ 'ami' => '' })
-          'fake-ami-id'
-        end
+      context 'when virtualization type is passed' do
+        let(:virtualization_type) { "hvm" }
 
-        ami.publish
+        it 'creates the stemcell with the appropriate arguments' do
+          expect(cpi).to receive(:create_stemcell) do |image_path, cloud_properties|
+            expect(image_path).to eq('/foo/bar/image')
+            expect(cloud_properties['virtualization_type']).to eq(virtualization_type)
+            'fake-ami-id'
+          end
+
+          ami.publish
+        end
+      end
+
+      context 'when no virtualization type is passed' do
+        let(:virtualization_type) { nil }
+
+        it 'creates the stemcell with the appropriate arguments' do
+          expect(cpi).to receive(:create_stemcell) do |image_path, cloud_properties|
+            expect(image_path).to eq('/foo/bar/image')
+            expect(cloud_properties['virtualization_type']).to eq('paravirtual')
+            'fake-ami-id'
+          end
+
+          ami.publish
+        end
       end
     end
   end

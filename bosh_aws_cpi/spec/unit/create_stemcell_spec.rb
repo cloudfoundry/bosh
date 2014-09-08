@@ -38,7 +38,8 @@ describe Bosh::AwsCloud::Cloud do
           "root_device_name" => "/dev/sda1",
           "architecture" => "x86_64",
           "name" => "stemcell-name",
-          "version" => "1.2.3"
+          "version" => "1.2.3",
+          "virtualization_type" => "paravirtual"
         }
       end
 

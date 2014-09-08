@@ -4,14 +4,17 @@ require 'bosh/stemcell/archive_filename'
 module Bosh::Dev
   class StemcellArtifacts
     STEMCELL_DEFINITIONS = {
-      'vsphere-ubuntu-trusty' => %w(vsphere ubuntu trusty go),
-      'vsphere-ubuntu-centos' => ['vsphere', 'centos', nil, 'go'],
+      'vsphere-esxi-ubuntu-trusty' => ['vsphere', 'esxi', 'ubuntu', 'trusty', 'go', false],
+      'vsphere-esxi-centos' => ['vsphere', 'esxi', 'centos', nil, 'go', false],
 
-      'aws-ubuntu-trusty' => %w(aws ubuntu trusty go),
-      'aws-ubuntu-centos' => ['aws', 'centos', nil, 'go'],
+      'aws-xen-ubuntu-trusty' => ['aws', 'xen', 'ubuntu', 'trusty', 'go', false],
+      'aws-xen-centos' => ['aws', 'xen', 'centos', nil, 'go', false],
 
-      'openstack-ubuntu-trusty' => %w(openstack ubuntu trusty go),
-      'openstack-ubuntu-centos' => ['openstack', 'centos', nil, 'go'],
+      'aws-xen-hvm-ubuntu-trusty' => ['aws', 'xen-hvm', 'ubuntu', 'trusty', 'go', true],
+      'aws-xen-hvm-centos' => ['aws', 'xen-hvm', 'centos', nil, 'go', true],
+
+      'openstack-kvm-ubuntu-trusty' => ['openstack', 'kvm', 'ubuntu', 'trusty', 'go', false],
+      'openstack-kvm-centos' => ['openstack', 'kvm', 'centos', nil, 'go', false],
     }
 
     class << self
@@ -45,13 +48,8 @@ module Bosh::Dev
 
       matrix.each do |definition|
         versions.each do |version|
-          filename = Bosh::Stemcell::ArchiveFilename.new(version, definition, 'bosh-stemcell', false)
+          filename = Bosh::Stemcell::ArchiveFilename.new(version, definition, 'bosh-stemcell')
           artifact_names << archive_path(filename.to_s, definition.infrastructure)
-
-          if definition.infrastructure.light?
-            light_filename = Bosh::Stemcell::ArchiveFilename.new(version, definition, 'bosh-stemcell', true)
-            artifact_names << archive_path(light_filename.to_s, definition.infrastructure)
-          end
         end
       end
 

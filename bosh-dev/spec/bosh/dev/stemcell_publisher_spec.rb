@@ -22,25 +22,36 @@ module Bosh::Dev
 
     describe '#publish' do
       let(:stemcell_path) { '/path/to/fake-stemcell.tgz' }
-      let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', infrastructure: 'aws') }
+      let(:infrastructure) { 'vsphere' }
+      let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', infrastructure: infrastructure) }
       before do
         allow(Bosh::Stemcell::Archive).to receive(:new).with(stemcell_path).and_return(stemcell_archive)
       end
 
-      let(:light_stemcell) do
+      let(:light_pv_stemcell) do
         instance_double(
           'Bosh::Stemcell::Aws::LightStemcell',
           write_archive: nil,
-          path: 'light-stemcell-path',
+          path: 'light-pv-stemcell-path',
+        )
+      end
+      let(:light_hvm_stemcell) do
+        instance_double(
+          'Bosh::Stemcell::Aws::LightStemcell',
+          write_archive: nil,
+          path: 'light-hvm-stemcell-path',
         )
       end
       before do
-        allow(Bosh::Stemcell::Aws::LightStemcell).to receive(:new).with(stemcell_archive).and_return(light_stemcell)
+        allow(Bosh::Stemcell::Aws::LightStemcell).to receive(:new).with(stemcell_archive, "paravirtual").and_return(light_pv_stemcell)
+        allow(Bosh::Stemcell::Aws::LightStemcell).to receive(:new).with(stemcell_archive, "hvm").and_return(light_hvm_stemcell)
       end
 
-      let(:light_stemcell_archive) { instance_double('Bosh::Stemcell::Archive') }
+      let(:light_pv_stemcell_archive) { instance_double('Bosh::Stemcell::Archive') }
+      let(:light_hvm_stemcell_archive) { instance_double('Bosh::Stemcell::Archive') }
       before do
-        allow(Bosh::Stemcell::Archive).to receive(:new).with(light_stemcell.path).and_return(light_stemcell_archive)
+        allow(Bosh::Stemcell::Archive).to receive(:new).with(light_pv_stemcell.path).and_return(light_pv_stemcell_archive)
+        allow(Bosh::Stemcell::Archive).to receive(:new).with(light_hvm_stemcell.path).and_return(light_hvm_stemcell_archive)
       end
 
       it 'publishes the generated stemcell' do
@@ -49,20 +60,23 @@ module Bosh::Dev
       end
 
       context 'when infrastructure is aws' do
-        it 'publishes an aws light stemcell' do
-          expect(light_stemcell).to receive(:write_archive)
-          expect(build).to receive(:upload_stemcell).with(light_stemcell_archive)
+        let(:infrastructure) { 'aws' }
+
+        it 'publishes both paravirtual and hvm light stemcells' do
+          expect(light_pv_stemcell).to receive(:write_archive)
+          expect(light_hvm_stemcell).to receive(:write_archive)
+          expect(build).to receive(:upload_stemcell).with(light_pv_stemcell_archive)
+          expect(build).to receive(:upload_stemcell).with(light_hvm_stemcell_archive)
+
           publisher.publish(stemcell_path)
         end
       end
 
       context 'when infrastructure is not aws' do
-        before do
-          allow(stemcell_archive).to receive(:infrastructure).and_return('vsphere')
-        end
+        let(:infrastructure) { 'vsphere' }
 
         it 'does nothing since other infrastructures do not have light stemcells' do
-          expect(light_stemcell).not_to receive(:write_archive)
+          expect(Bosh::Stemcell::Aws::LightStemcell).not_to receive(:new)
           publisher.publish(stemcell_path)
         end
       end

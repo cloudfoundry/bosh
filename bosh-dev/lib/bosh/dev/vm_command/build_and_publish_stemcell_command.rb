@@ -49,6 +49,7 @@ module Bosh::Dev
       def build_task_args
         [
           options[:infrastructure_name],
+          options[:hypervisor_name],
           options[:operating_system_name],
           options[:operating_system_version],
           options[:agent_name],

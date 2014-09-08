@@ -75,8 +75,8 @@ module Bosh::Aws
 
             expect(s3).to have_received(:copy_remote_file).with('bosh-jenkins-artifacts', 'bosh-stemcell/aws/fake-stemcell-archive-filename', 'bosh_stemcell.tgz')
 
-            expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('latest', definition, 'bosh-stemcell', true)
-            expect(Bosh::Stemcell::Definition).to have_received(:for).with('aws', 'ubuntu', 'trusty', 'go')
+            expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('latest', definition, 'bosh-stemcell')
+            expect(Bosh::Stemcell::Definition).to have_received(:for).with('aws', 'xen', 'ubuntu', 'trusty', 'go', true)
             expect(stemcell_command).to have_received(:upload).with(stemcell_path)
             expect(Bosh::Stemcell::Archive).to have_received(:new).with(stemcell_path)
           end

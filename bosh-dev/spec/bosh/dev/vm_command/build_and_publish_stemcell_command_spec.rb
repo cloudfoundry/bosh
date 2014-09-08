@@ -17,6 +17,7 @@ module Bosh::Dev
     let(:options) do
       {
         infrastructure_name: 'fake-infrastructure_name',
+        hypervisor_name: 'fake-hypervisor_name',
         operating_system_name: 'fake-operating_system_name',
         operating_system_version: 'fake-operating_system_version',
         agent_name: 'fake-agent_name',
@@ -36,7 +37,7 @@ module Bosh::Dev
           export BOSH_AWS_ACCESS_KEY_ID='fake-BOSH_AWS_ACCESS_KEY_ID'
           export BOSH_AWS_SECRET_ACCESS_KEY='fake-BOSH_AWS_SECRET_ACCESS_KEY'
 
-          bundle exec rake stemcell:build[fake-infrastructure_name,fake-operating_system_name,fake-operating_system_version,fake-agent_name,fake-bucket,fake-key]
+          bundle exec rake stemcell:build[fake-infrastructure_name,fake-hypervisor_name,fake-operating_system_name,fake-operating_system_version,fake-agent_name,fake-bucket,fake-key]
           bundle exec rake ci:publish_stemcell[fake-stemcell.tgz]
         BASH
 

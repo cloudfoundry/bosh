@@ -4,7 +4,7 @@ require 'bosh/stemcell/archive'
 module Bosh::Stemcell
   describe Archive do
     subject { described_class.new(stemcell_path) }
-    let(:stemcell_path) { spec_asset('fake-stemcell-aws.tgz') }
+    let(:stemcell_path) { spec_asset('fake-stemcell-aws-xen-ubuntu.tgz') }
 
     describe '#initialize' do
       it 'errors if path does not exist' do
@@ -45,7 +45,7 @@ module Bosh::Stemcell
     end
 
     describe '#sha1' do
-      context 'when sha1 is just a string (from fake-stemcell-aws.tgz)' do
+      context 'when sha1 is just a string (from fake-stemcell-aws-xen-ubuntu.tgz)' do
         it 'returns a sha1 as a string' do
           expect(subject.sha1).to eq('fake-stemcell-sha1')
         end
@@ -77,7 +77,7 @@ module Bosh::Stemcell
         end
 
         context 'when there is an "ami" key in the "cloud_properties" section of the manifest' do
-          let(:stemcell_path) { spec_asset('light-fake-stemcell-aws.tgz') }
+          let(:stemcell_path) { spec_asset('light-fake-stemcell-aws-xen-ubuntu.tgz') }
           it { should be_light }
         end
       end
@@ -95,7 +95,7 @@ module Bosh::Stemcell
         end
 
         context 'when there is an "ami" key in the "cloud_properties" section of the manifest' do
-          let(:stemcell_path) { spec_asset('light-fake-stemcell-aws.tgz') }
+          let(:stemcell_path) { spec_asset('light-fake-stemcell-aws-xen-ubuntu.tgz') }
           its(:ami_id) { should eq('ami-FAKE_AMI_KEY') }
         end
       end
