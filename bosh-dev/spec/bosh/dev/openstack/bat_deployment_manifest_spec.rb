@@ -19,6 +19,22 @@ module Bosh::Dev::Openstack
       expect(subject).to be_a(Bosh::Dev::WritableManifest)
     end
 
+    it 'allows BOSH_OPENSTACK_KEY_NAME to be optional' do
+      expect(subject.to_h['properties']).to_not include('key_name')
+
+      env.merge!(
+        'BOSH_OPENSTACK_KEY_NAME' => 'fake-key-name',
+      )
+
+      expect(subject.to_h['properties']).to include('key_name' => 'fake-key-name')
+
+      env.merge!(
+        'BOSH_OPENSTACK_KEY_NAME' => '',
+      )
+
+      expect(subject.to_h['properties']).to_not include('key_name')
+    end
+
     describe '#to_h' do
       before do
         env.merge!(
@@ -48,7 +64,6 @@ properties:
     name: stemcell-name
     version: 13
   instances: 1
-  key_name:  jenkins
   mbus: nats://nats:0b450ada9f830085e2cdeff6@vip:4222
   network:
     type: manual
@@ -83,7 +98,6 @@ properties:
     name: stemcell-name
     version: 13
   instances: 1
-  key_name:  jenkins
   mbus: nats://nats:0b450ada9f830085e2cdeff6@vip:4222
   network:
     type: dynamic

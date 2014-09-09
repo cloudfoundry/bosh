@@ -29,7 +29,6 @@ module Bosh::Dev::Openstack
             'version' => stemcell_archive.version
           },
           'instances' => 1,
-          'key_name' => 'jenkins',
           'mbus' => "nats://nats:0b450ada9f830085e2cdeff6@#{env['BOSH_OPENSTACK_VIP_BAT_IP']}:4222",
           'network' => {
             'type' => net_type,
@@ -40,6 +39,11 @@ module Bosh::Dev::Openstack
           }
         }
       }
+
+      key_name = env['BOSH_OPENSTACK_KEY_NAME']
+      unless key_name.to_s.empty?
+        manifest_hash['properties']['key_name'] = key_name
+      end
 
       if net_type == 'manual'
         manifest_hash['properties']['network'].merge!(
