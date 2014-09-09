@@ -84,6 +84,13 @@ module Bat
       output
     end
 
+    def ssh_sudo(host, user, command, options)
+      if options[:password].nil?
+        raise 'Need to set sudo :password'
+      end
+      ssh(host, user, "echo #{options[:password]} | sudo -p '' -S #{command}", options)
+    end
+
     def tarfile
       Dir.glob('*.tgz').first
     end

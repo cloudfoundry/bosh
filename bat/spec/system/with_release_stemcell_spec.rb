@@ -38,14 +38,14 @@ describe 'with release and stemcell and two deployments' do
       skip 'root disk ephemeral partition requires a stemcell with CreatePartitionIfNoEphemeralDisk enabled' unless setting_value
 
       # expect ephemeral mount point to be a mounted partition on the root disk
-      expect(mounts(public_ip)).to include(hash_including(path: '/var/vcap/data'))
+      expect(mounts(public_ip)).to include(hash_including('path' => '/var/vcap/data'))
 
       # expect swap to be a mounted partition on the root disk
-      expect(swaps(public_ip)).to include(hash_including(type: 'partition'))
+      expect(swaps(public_ip)).to include(hash_including('type' => 'partition'))
     end
 
     def agent_config(ip)
-      output = ssh(ip, 'vcap', 'cat /var/vcap/bosh/agent.json', @our_ssh_options)
+      output = ssh_sudo(ip, 'vcap', 'cat /var/vcap/bosh/agent.json', @our_ssh_options)
       JSON.parse(output)
     end
 
@@ -97,7 +97,7 @@ describe 'with release and stemcell and two deployments' do
     end
 
     it 'should set vcap password', ssh: true do
-      ssh(public_ip, 'vcap', 'echo foobar | sudo -S whoami', @our_ssh_options).should eq("[sudo] password for vcap: root\n")
+      ssh_sudo(public_ip, 'vcap', 'whoami', @our_ssh_options).should eq("root\n")
     end
 
     it 'should not change the deployment on a noop' do
