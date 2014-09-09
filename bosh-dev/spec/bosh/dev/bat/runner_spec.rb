@@ -54,42 +54,37 @@ module Bosh::Dev::Bat
     let(:microbosh_deployment_cleaner) { double('microbosh-deployment-cleaner', clean: nil) }
     let(:bat_deployment_manifest) { double('bat-deployment-manifest', write: nil) }
 
-    describe '#deploy_microbosh_and_run_bats' do
+    describe '#deploy_bats_microbosh' do
       before { subject.stub(:run_bats) }
 
       it 'generates a micro manifest' do
         microbosh_deployment_manifest.should_receive(:write) do
           FileUtils.touch(File.join(Dir.pwd, 'FAKE_MICROBOSH_MANIFEST'))
         end
-        subject.deploy_microbosh_and_run_bats
+        subject.deploy_bats_microbosh
         expect(Dir.entries(artifacts.micro_bosh_deployment_dir)).to include('FAKE_MICROBOSH_MANIFEST')
       end
 
       it 'cleans any previous deployments out' do
         microbosh_deployment_cleaner.should_receive(:clean)
-        subject.deploy_microbosh_and_run_bats
+        subject.deploy_bats_microbosh
       end
 
       it 'targets the micro' do
         bosh_cli_session.should_receive(:run_bosh).with(
           'micro deployment fake_micro_bosh_deployment_name')
-        subject.deploy_microbosh_and_run_bats
+        subject.deploy_bats_microbosh
       end
 
       it 'deploys the micro' do
         bosh_cli_session.should_receive(:run_bosh).with(
           'micro deploy fake_bosh_stemcell_path')
-        subject.deploy_microbosh_and_run_bats
+        subject.deploy_bats_microbosh
       end
 
       it 'logs in to the micro' do
         bosh_cli_session.should_receive(:run_bosh).with('login admin admin')
-        subject.deploy_microbosh_and_run_bats
-      end
-
-      it 'runs bats' do
-        subject.should_receive(:run_bats)
-        subject.deploy_microbosh_and_run_bats
+        subject.deploy_bats_microbosh
       end
     end
 

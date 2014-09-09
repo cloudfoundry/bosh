@@ -101,18 +101,18 @@ module Bosh::Dev
     end
 
     describe '#deploy_microbosh_and_run_bats' do
-      before { bat_runner_builder.stub(build: bat_runner) }
-      let(:bat_runner) { instance_double('Bosh::Dev::Bat::Runner', deploy_microbosh_and_run_bats: nil) }
+      before { allow(bat_runner_builder).to receive(:build).and_return(bat_runner) }
+      let(:bat_runner) { instance_double('Bosh::Dev::Bat::Runner', deploy_bats_microbosh: nil, run_bats: nil) }
 
       before { allow(artifacts).to receive(:prepare_directories) }
 
       it 'removes the artifacts dir' do
+        expect(artifacts).to receive(:prepare_directories)
         subject.deploy_microbosh_and_run_bats
-        expect(artifacts).to have_received(:prepare_directories)
       end
 
       it 'downloads stemcells for the specified infrastructure' do
-        build.should_receive(:download_stemcell).with(
+        expect(build).to receive(:download_stemcell).with(
           'bosh-stemcell',
           definition,
           false,
@@ -122,13 +122,44 @@ module Bosh::Dev
       end
 
       it 'uses bats runner to deploy microbosh and run bats' do
-        bat_runner_builder
-          .should_receive(:build)
+        expect(bat_runner_builder).to receive(:build)
           .with(artifacts, networking_type)
           .and_return(bat_runner)
 
-        bat_runner.should_receive(:deploy_microbosh_and_run_bats)
+        expect(bat_runner).to receive(:deploy_bats_microbosh)
+        expect(bat_runner).to receive(:run_bats)
         subject.deploy_microbosh_and_run_bats
+      end
+    end
+
+    describe '#deploy_bats_microbosh' do
+      before { allow(bat_runner_builder).to receive(:build).and_return(bat_runner) }
+      let(:bat_runner) { instance_double('Bosh::Dev::Bat::Runner', deploy_bats_microbosh: nil) }
+
+      before { allow(artifacts).to receive(:prepare_directories) }
+
+      it 'removes the artifacts dir' do
+        expect(artifacts).to receive(:prepare_directories)
+        subject.deploy_bats_microbosh
+      end
+
+      it 'downloads stemcells for the specified infrastructure' do
+        expect(build).to receive(:download_stemcell).with(
+          'bosh-stemcell',
+          definition,
+          false,
+          artifacts_path,
+        )
+        subject.deploy_bats_microbosh
+      end
+
+      it 'uses bats runner to deploy microbosh' do
+        expect(bat_runner_builder).to receive(:build)
+        .with(artifacts, networking_type)
+        .and_return(bat_runner)
+
+        expect(bat_runner).to receive(:deploy_bats_microbosh)
+        subject.deploy_bats_microbosh
       end
     end
 
