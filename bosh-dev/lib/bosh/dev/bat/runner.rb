@@ -27,7 +27,7 @@ module Bosh::Dev::Bat
       @logger                        = logger
     end
 
-    def deploy_microbosh_and_run_bats
+    def deploy_bats_microbosh
       @logger.info('Creating microbosh manifest')
       create_microbosh_manifest
 
@@ -36,18 +36,11 @@ module Bosh::Dev::Bat
 
       @logger.info('Deploying microbosh')
       deploy_microbosh
-
-      @logger.info('Running bats')
-      run_bats
-
-      # We are not deleting micro here because
-      # bats environment (vms) is cleaned before each run
-      # by the micro_bosh_deployment_cleaner.
-      # It's useful to keep around micro if tests
-      # failed so we can debug problem(s).
     end
 
     def run_bats
+      @logger.info('Running bats')
+
       @logger.info('Targeting microbosh')
       target_micro
 

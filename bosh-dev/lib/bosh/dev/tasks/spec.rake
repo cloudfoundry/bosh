@@ -109,6 +109,11 @@ namespace :spec do
     task :existing_micro, [:infrastructure_name, :operating_system_name, :operating_system_version, :net_type, :agent_name] do |_, args|
       Bosh::Dev::BatHelper.for_rake_args(args).run_bats
     end
+
+    desc 'Deploy microbosh for system (BATs) tests'
+    task :deploy_micro, [:infrastructure_name, :operating_system_name, :operating_system_version, :net_type, :agent_name] do |_, args|
+      Bosh::Dev::BatHelper.for_rake_args(args).deploy_bats_microbosh
+    end
   end
 end
 

@@ -46,6 +46,11 @@ module Bosh::Dev
     end
 
     def deploy_microbosh_and_run_bats
+      deploy_bats_microbosh
+      run_bats
+    end
+
+    def deploy_bats_microbosh
       artifacts.prepare_directories
       build.download_stemcell(
         'bosh-stemcell',
@@ -54,7 +59,7 @@ module Bosh::Dev
         artifacts.path,
       )
 
-      bats_runner.deploy_microbosh_and_run_bats
+      bats_runner.deploy_bats_microbosh
     end
 
     def run_bats
