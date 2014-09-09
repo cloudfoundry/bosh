@@ -8,7 +8,8 @@ module Bosh::Stemcell
     let(:infrastructure) do
       instance_double(
         'Bosh::Stemcell::Infrastructure::Base',
-        name: 'infrastructure-name'
+        name: 'infrastructure-name',
+        hypervisor: 'hypervisor-name'
       )
     end
 
@@ -18,14 +19,15 @@ module Bosh::Stemcell
       instance_double(
         'Bosh::Stemcell::OperatingSystem::Base',
         name: 'operating-system-name',
-        version: 'operating-system-version',
+        version: operating_system_version,
       )
     end
 
+    let(:agent_name) { "go" }
     let(:agent) do
       instance_double(
         'Bosh::Stemcell::Agent::Go',
-        name: 'go',
+        name: agent_name,
       )
     end
 
@@ -104,18 +106,15 @@ module Bosh::Stemcell
       it { should match(hypervisor) }
       it { should match(operating_system.name) }
 
-        it 'does not include the agent name in the stemcell name' do
-          expect(definition.stemcell_name).to eq(
-            'infrastructure-name-hypervisor-operating-system-name-operating-system-version'
-          )
-        end
+      context 'when the operating system does has a version' do
+        let(:operating_system_version) { 'operating-system-version' }
+        it { should match(operating_system.version) }
       end
 
-      context 'when the agent name is go' do
-        it 'includes go_agent in the stemcell name' do
-          expect(definition.stemcell_name).to eq(
-            'infrastructure-name-hypervisor-operating-system-name-operating-system-version-go_agent'
-          )
+      context 'when the operating system does not have a version' do
+        let(:operating_system_version) { nil }
+        it "should not raise error" do
+          expect { subject }.not_to raise_error
         end
       end
 
@@ -125,8 +124,8 @@ module Bosh::Stemcell
         it { should_not match(/agent$/) }
       end
 
-      context 'when the operating system does not have a version' do
-        before { allow(operating_system).to receive(:version).and_return(nil) }
+      context 'when the agent name is go' do
+        let(:agent_name) { "go" }
 
         it { should match(/#{agent_name}_agent/) }
       end
