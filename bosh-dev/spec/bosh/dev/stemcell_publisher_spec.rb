@@ -6,23 +6,27 @@ module Bosh::Dev
   describe StemcellPublisher do
     include FakeFS::SpecHelpers
 
-    describe '.for_candidate_build' do
-      it 'news the publisher with a build' do
-        build = double('build')
-        Bosh::Dev::Build.stub(candidate: build)
+    subject(:publisher) { described_class.new(build) }
 
-        publisher = instance_double('Bosh::Dev::StemcellPublisher')
-        described_class.should_receive(:new).with(build).and_return(publisher)
-        described_class.for_candidate_build.should == publisher
+    let(:build) { instance_double('Bosh::Dev::Build', upload_stemcell: nil) }
+    before { allow(Bosh::Dev::Build).to receive(:candidate).and_return(build) }
+
+    describe '.for_candidate_build' do
+      let(:publisher) { instance_double('Bosh::Dev::StemcellPublisher') }
+
+      it 'instantiates the publisher with a build' do
+        expect(described_class).to receive(:new).with(build).and_return(publisher)
+        expect(described_class.for_candidate_build).to eq(publisher)
       end
     end
 
     describe '#publish' do
-      subject(:publisher) { described_class.new(build) }
-      let(:build) { instance_double('Bosh::Dev::Build', upload_stemcell: nil) }
+      let(:stemcell_path) { '/path/to/fake-stemcell.tgz' }
+      let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', infrastructure: 'aws') }
+      before do
+        allow(Bosh::Stemcell::Archive).to receive(:new).with(stemcell_path).and_return(stemcell_archive)
+      end
 
-      before { Bosh::Stemcell::Aws::LightStemcell.stub(:new).with(stemcell).and_return(light_stemcell) }
-      let(:stemcell) { instance_double('Bosh::Stemcell::Archive', infrastructure: 'aws') }
       let(:light_stemcell) do
         instance_double(
           'Bosh::Stemcell::Aws::LightStemcell',
@@ -30,31 +34,35 @@ module Bosh::Dev
           path: 'light-stemcell-path',
         )
       end
+      before do
+        allow(Bosh::Stemcell::Aws::LightStemcell).to receive(:new).with(stemcell_archive).and_return(light_stemcell)
+      end
 
-      before { Bosh::Stemcell::Archive.stub(:new).with(light_stemcell.path).and_return(light_stemcell_archive) }
       let(:light_stemcell_archive) { instance_double('Bosh::Stemcell::Archive') }
-
-      before { Bosh::Stemcell::Archive.stub(:new).with(stemcell_path).and_return(stemcell) }
-      let(:stemcell_path) { '/path/to/fake-stemcell.tgz' }
+      before do
+        allow(Bosh::Stemcell::Archive).to receive(:new).with(light_stemcell.path).and_return(light_stemcell_archive)
+      end
 
       it 'publishes the generated stemcell' do
-        build.should_receive(:upload_stemcell).with(stemcell)
+        expect(build).to receive(:upload_stemcell).with(stemcell_archive)
         publisher.publish(stemcell_path)
       end
 
       context 'when infrastructure is aws' do
         it 'publishes an aws light stemcell' do
-          light_stemcell.should_receive(:write_archive)
-          build.should_receive(:upload_stemcell).with(light_stemcell_archive)
+          expect(light_stemcell).to receive(:write_archive)
+          expect(build).to receive(:upload_stemcell).with(light_stemcell_archive)
           publisher.publish(stemcell_path)
         end
       end
 
       context 'when infrastructure is not aws' do
-        before { stemcell.stub(infrastructure: 'vsphere') }
+        before do
+          allow(stemcell_archive).to receive(:infrastructure).and_return('vsphere')
+        end
 
         it 'does nothing since other infrastructures do not have light stemcells' do
-          light_stemcell.should_not_receive(:write_archive)
+          expect(light_stemcell).not_to receive(:write_archive)
           publisher.publish(stemcell_path)
         end
       end

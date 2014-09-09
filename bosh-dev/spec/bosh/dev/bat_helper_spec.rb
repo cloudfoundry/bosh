@@ -147,7 +147,6 @@ module Bosh::Dev
         expect(build).to receive(:download_stemcell).with(
           'bosh-stemcell',
           definition,
-          false,
           artifacts_path,
         )
         subject.deploy_bats_microbosh
