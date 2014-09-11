@@ -4,11 +4,9 @@ require 'bosh/stemcell/archive_filename'
 module Bosh::Dev
   class StemcellArtifacts
     STEMCELL_DEFINITIONS = {
-      'vsphere-ubuntu-lucid' => %w(vsphere ubuntu lucid go),
       'vsphere-ubuntu-trusty' => %w(vsphere ubuntu trusty go),
       'vsphere-ubuntu-centos' => ['vsphere', 'centos', nil, 'go'],
 
-      'aws-ubuntu-lucid' => %w(aws ubuntu lucid go),
       'aws-ubuntu-trusty' => %w(aws ubuntu trusty go),
       'aws-ubuntu-centos' => ['aws', 'centos', nil, 'go'],
 

@@ -63,10 +63,8 @@ module Bosh::Dev
 
             matrix = definitions.map { |d| [d.infrastructure.name, d.operating_system.name, d.operating_system.version, d.agent.name] }
             expect(matrix).to eq([
-              %w(vsphere ubuntu lucid go),
               %w(vsphere ubuntu trusty go),
               ['vsphere', 'centos', nil, 'go'],
-              %w(aws ubuntu lucid go),
               %w(aws ubuntu trusty go),
               ['aws', 'centos', nil, 'go'],
               %w(openstack ubuntu trusty go),
