@@ -269,6 +269,7 @@ GEM
     crack (0.3.2)
     daemons (1.1.9)
     diff-lcs (1.2.5)
+    docile (1.1.5)
     dogapi (1.6.0)
       json (>= 1.5.1)
     em-http-request (0.3.0)
@@ -422,10 +423,11 @@ GEM
       net-ssh
       rspec (>= 2.13.0)
       specinfra (>= 0.7.1)
-    simplecov (0.7.1)
-      multi_json (~> 1.0)
-      simplecov-html (~> 0.7.1)
-    simplecov-html (0.7.1)
+    simplecov (0.9.0)
+      docile (~> 1.1.0)
+      multi_json
+      simplecov-html (~> 0.8.0)
+    simplecov-html (0.8.0)
     sinatra (1.4.3)
       rack (~> 1.4)
       rack-protection (~> 1.4)
@@ -509,7 +511,7 @@ DEPENDENCIES
   rugged
   serverspec
   simple_blobstore_server!
-  simplecov (~> 0.7.1)
+  simplecov (~> 0.9.0)
   specinfra
   sqlite3
   timecop

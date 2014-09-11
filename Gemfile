@@ -54,8 +54,7 @@ group :development, :test do
   gem 'rack-test'
   gem 'webmock'
   gem 'fakefs', git: 'https://github.com/pivotal-cf-experimental/fakefs.git', ref: 'ebde3d6c'
-  # simplecov 0.8.x has an exit code bug: https://github.com/colszowka/simplecov/issues/281
-  gem 'simplecov', '~> 0.7.1'
+  gem 'simplecov', '~> 0.9.0'
   gem 'codeclimate-test-reporter', require: false
   gem 'vcr'
 
