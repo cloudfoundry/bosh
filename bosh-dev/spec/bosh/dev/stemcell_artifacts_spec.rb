@@ -14,7 +14,7 @@ module Bosh::Dev
         it 'returns pipeline artifacts with specified stemcells' do
           artifacts = instance_double('Bosh::Dev::StemcellArtifacts')
 
-          described_class.should_receive(:new) do |version, definitions|
+          expect(described_class).to receive(:new) do |version, definitions|
             expect(version).to eq('version')
 
             matrix = definitions.map { |d| [d.infrastructure.name, d.operating_system.name, d.operating_system.version, d.agent.name] }
@@ -27,7 +27,7 @@ module Bosh::Dev
             artifacts
           end
 
-          described_class.all('version').should == artifacts
+          expect(described_class.all('version')).to eq(artifacts)
         end
       end
 
@@ -39,14 +39,14 @@ module Bosh::Dev
         it 'returns no pipeline artifacts' do
           artifacts = instance_double('Bosh::Dev::StemcellArtifacts')
 
-          described_class.should_receive(:new) do |version, definitions|
+          expect(described_class).to receive(:new) do |version, definitions|
             expect(version).to eq('version')
             expect(definitions).to be_empty
 
             artifacts
           end
 
-          described_class.all('version').should == artifacts
+          expect(described_class.all('version')).to eq(artifacts)
         end
       end
 
@@ -58,7 +58,7 @@ module Bosh::Dev
         it 'returns pipeline artifacts with all infrastructures for ubuntu and vsphere centos' do
           artifacts = instance_double('Bosh::Dev::StemcellArtifacts')
 
-          described_class.should_receive(:new) do |version, definitions|
+          expect(described_class).to receive(:new) do |version, definitions|
             expect(version).to eq('version')
 
             matrix = definitions.map { |d| [d.infrastructure.name, d.operating_system.name, d.operating_system.version, d.agent.name] }
@@ -76,7 +76,7 @@ module Bosh::Dev
             artifacts
           end
 
-          described_class.all('version').should == artifacts
+          expect(described_class.all('version')).to eq(artifacts)
         end
       end
     end
@@ -92,19 +92,19 @@ module Bosh::Dev
       end
 
       it 'returns a complete list of stemcell build artifact names' do
-        Bosh::Stemcell::ArchiveFilename.stub(:new)
+        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
           .with('latest', definitions[0], 'bosh-stemcell', false)
           .and_return('fake-latest-archive-filename1')
 
-        Bosh::Stemcell::ArchiveFilename.stub(:new)
+        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
           .with(version, definitions[0], 'bosh-stemcell', false)
           .and_return('fake-version-archive-filename1')
 
-        Bosh::Stemcell::ArchiveFilename.stub(:new)
+        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
           .with('latest', definitions[1], 'bosh-stemcell', false)
           .and_return('fake-latest-archive-filename2')
 
-        Bosh::Stemcell::ArchiveFilename.stub(:new)
+        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
           .with(version, definitions[1], 'bosh-stemcell', false)
           .and_return('fake-version-archive-filename2')
 
@@ -124,19 +124,19 @@ module Bosh::Dev
         end
 
         it 'returns artifact filenames for both light and regular stemcells' do
-          Bosh::Stemcell::ArchiveFilename.stub(:new).and_return('unrelated')
+          allow(Bosh::Stemcell::ArchiveFilename).to receive(:new).and_return('unrelated')
 
-          Bosh::Stemcell::ArchiveFilename.stub(:new)
+          allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
             .with(version, definitions[0], 'bosh-stemcell', false)
             .and_return('fake-version-archive-filename')
-          Bosh::Stemcell::ArchiveFilename.stub(:new)
+          allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
             .with(version, definitions[0], 'bosh-stemcell', true)
             .and_return('fake-light-version-archive-filename')
 
-          Bosh::Stemcell::ArchiveFilename.stub(:new)
+          allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
             .with('latest', definitions[0], 'bosh-stemcell', false)
             .and_return('fake-latest-archive-filename')
-          Bosh::Stemcell::ArchiveFilename.stub(:new)
+          allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
             .with('latest', definitions[0], 'bosh-stemcell', true)
             .and_return('fake-light-latest-archive-filename')
 
