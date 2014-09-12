@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'CentOS stemcell', stemcell_image: true do
-  context 'installed by image_install_grub' do
+  context 'installed by image_install_grub', exclude_on_warden: true do
     describe file('/etc/fstab') do
       it { should be_file }
       it { should contain 'UUID=' }
