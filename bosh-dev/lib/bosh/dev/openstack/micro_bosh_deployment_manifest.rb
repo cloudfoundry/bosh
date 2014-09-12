@@ -29,7 +29,7 @@ module Bosh::Dev::Openstack
         'resources' => {
           'persistent_disk' => 4096,
           'cloud_properties' => {
-            'instance_type' => 'm1.small'
+            'instance_type' => env.fetch('BOSH_OPENSTACK_FLAVOR', 'm1.small'),
           }
         },
         'cloud' => {

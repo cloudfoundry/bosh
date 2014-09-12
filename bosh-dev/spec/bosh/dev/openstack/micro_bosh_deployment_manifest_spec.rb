@@ -27,6 +27,7 @@ module Bosh::Dev::Openstack
           'BOSH_OPENSTACK_REGION' => 'region',
           'BOSH_OPENSTACK_PRIVATE_KEY' => 'private_key_path',
           'BOSH_OPENSTACK_DEFAULT_KEY_NAME' => 'key_name',
+          'BOSH_OPENSTACK_FLAVOR' => 'flavor',
         )
       end
 
@@ -49,7 +50,7 @@ network:
 resources:
   persistent_disk: 4096
   cloud_properties:
-    instance_type: m1.small
+    instance_type: flavor
 
 cloud:
   plugin: openstack
@@ -107,7 +108,7 @@ network:
 resources:
   persistent_disk: 4096
   cloud_properties:
-    instance_type: m1.small
+    instance_type: flavor
 cloud:
   plugin: openstack
   properties:
@@ -201,6 +202,13 @@ YAML
         it 'uses jenkins as a default key name' do
           env.delete('BOSH_OPENSTACK_DEFAULT_KEY_NAME')
           expect(subject.to_h['cloud']['properties']['openstack']['default_key_name']).to eq('jenkins')
+        end
+      end
+
+      context 'when BOSH_OPENSTACK_FLAVOR is not specified' do
+        it 'uses m1.small as a default flavor' do
+          env.delete('BOSH_OPENSTACK_FLAVOR')
+          expect(subject.to_h['resources']['cloud_properties']['instance_type']).to eq('m1.small')
         end
       end
     end
