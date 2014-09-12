@@ -27,14 +27,15 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
 
   let(:openstack_params) do
     params = {
-      :name => "vm-#{unique_name}",
-      :image_ref => "sc-id",
-      :flavor_ref => "f-test",
-      :key_name => "test_key",
-      :security_groups => security_groups,
-      :nics => nics,
-      :user_data => Yajl::Encoder.encode(user_data(unique_name, nameserver, false)),
-      :availability_zone => "foobar-1a"
+      name: "vm-#{unique_name}",
+      image_ref: "sc-id",
+      flavor_ref: "f-test",
+      key_name: "test_key",
+      security_groups: security_groups,
+      nics: nics,
+      config_drive: use_config_drive,
+      user_data: Yajl::Encoder.encode(user_data(unique_name, nameserver, false)),
+      availability_zone: "foobar-1a"
     }
 
     if volume_id
@@ -71,6 +72,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   let(:security_groups) { %w[default] }
   let(:nameserver) { nil }
   let(:nics) { [] }
+  let(:use_config_drive) { false }
 
   before(:each) do
     @registry = mock_registry
@@ -307,6 +309,38 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
         { "network_a" => network_spec },
         nil, { "test_env" => "value" })
       vm_id.should == "i-test"
+    end
+  end
+
+  context "when use_config_drive option is set" do
+    let(:use_config_drive) { true }
+
+    it "creates an OpenStack server with config drive" do
+      cloud_options = mock_cloud_options
+      cloud_options["properties"]["openstack"]["use_config_drive"] = true
+      address = double("address", id: "a-test", ip: "10.0.0.1", instance_id: nil)
+      network_spec = dynamic_network_spec
+
+      cloud = mock_cloud(cloud_options["properties"]) do |openstack|
+        expect(openstack.servers).to receive(:create).with(openstack_params).and_return(server)
+        expect(openstack.security_groups).to receive(:collect).and_return(%w[default])
+        expect(openstack.images).to receive(:find).and_return(image)
+        expect(openstack.flavors).to receive(:find).and_return(flavor)
+        expect(openstack.key_pairs).to receive(:find).and_return(key_pair)
+        expect(openstack.addresses).to receive(:each).and_yield(address)
+      end
+
+      allow(cloud).to receive(:generate_unique_name).and_return(unique_name)
+      allow(cloud).to receive(:wait_resource).with(server, :active, :state)
+
+      allow(@registry).to receive(:update_settings).with("i-test", agent_settings(unique_name, network_spec))
+
+      vm_id = cloud.create_vm("agent-id", "sc-id",
+        resource_pool_spec,
+        { "network_a" => network_spec },
+        nil, { "test_env" => "value" })
+
+      expect(vm_id).to eq("i-test")
     end
   end
 

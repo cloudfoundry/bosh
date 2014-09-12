@@ -253,6 +253,8 @@ module Bosh::OpenStackCloud
           @logger.debug("Using boot volume: `#{boot_vol_id}'")
         end
 
+        use_config_drive = @openstack_properties.fetch("use_config_drive", false)
+
         server_params = {
           :name => server_name,
           :image_ref => image.id,
@@ -260,6 +262,7 @@ module Bosh::OpenStackCloud
           :key_name => keypair.name,
           :security_groups => security_groups,
           :nics => nics,
+          :config_drive => use_config_drive,
           :user_data => Yajl::Encoder.encode(user_data(server_name, network_spec))
         }
 
