@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `7956UhwNIGtYVKliAcpJFCO7iquWbhQR`
+  install parted
+
 * `cJItjk12ZCUgOo591c10FLHpAcVIwWDZ`
   update libgcrypt11 to 1.5.3-2ubuntu4.1
   update gnupg to 1.4.16-1ubuntu2.1
@@ -48,6 +51,9 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 ## CentOS
 
 CentOS images have filename `bosh-centos-6_5-os-image.tgz`
+
+* `embHpGSvY3DXaOL8MFNA_a28B1yYG4pv`
+  install parted
 
 * `d085u3Knx4KtTOGmFmanfNHH_oY9Hd.n`
   using latest OpenSSL `1.0.1f`
