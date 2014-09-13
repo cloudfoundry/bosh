@@ -7,6 +7,7 @@ module Bosh::Director
         status = {
           'name' => Config.name,
           'uuid' => Config.uuid,
+          'ignores_uuid' => Config.ignores_uuid,
           'version' => "#{VERSION} (#{Config.revision})",
           'user' => @user,
           'cpi' => Config.cloud_type,

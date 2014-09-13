@@ -65,6 +65,7 @@ module Bosh::Director
           'name' => 'Test Director',
           'version' => "#{VERSION} (#{Config.revision})",
           'uuid' => Config.uuid,
+          'ignores_uuid' => true,
           'user' => 'admin',
           'cpi' => 'dummy',
           'features' => {
