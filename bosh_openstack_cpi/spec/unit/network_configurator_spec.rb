@@ -12,13 +12,50 @@ describe Bosh::OpenStackCloud::NetworkConfigurator do
 
   def set_nics(spec, net_id)
     spec["cloud_properties"] ||= {}
-    spec["cloud_properties"]["net_id"] = net_id
+  end
+
+  let(:several_manual_networks) do
+    spec = {}
+    spec["network_a"] = manual_network_spec
+    spec["network_a"]["ip"] = "10.0.0.1"
+    spec["network_b"] = manual_network_spec
+    spec["network_b"]["cloud_properties"]["net_id"] = "bar"
+    spec["network_b"]["ip"] = "10.0.0.2"
+    spec
   end
 
   it "should raise an error if the spec isn't a hash" do
     expect {
       Bosh::OpenStackCloud::NetworkConfigurator.new("foo")
     }.to raise_error ArgumentError, /Invalid spec, Hash expected,/
+  end
+
+  it "should raise a CloudError if no net_id is extracted for manual networks" do
+    spec = {}
+    spec["network_b"] = manual_network_without_netid_spec
+
+    expect {
+      Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
+    }.to raise_error Bosh::Clouds::CloudError, "Manual network must have net_id"
+  end
+
+  it "should raise a CloudError if several manual networks have the same net_id" do
+    spec = several_manual_networks
+    spec["network_b"]["cloud_properties"]["net_id"] = "net"
+
+    expect {
+      Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
+    }.to raise_error Bosh::Clouds::CloudError, "Manual network with id net is already defined"
+  end
+
+  it "should raise a CloudError if several dynamic networks are defined" do
+    spec = {}
+    spec["network_a"] = dynamic_network_spec
+    spec["network_b"] = dynamic_network_spec
+
+    expect {
+      Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
+    }.to raise_error Bosh::Clouds::CloudError, "Only one dynamic network per instance should be defined"
   end
 
   describe "security groups" do
@@ -71,14 +108,14 @@ describe Bosh::OpenStackCloud::NetworkConfigurator do
     end
   end
 
-  describe "private_ip" do
+  describe "private_ips" do
     it "should extract private ip address for manual network" do
       spec = {}
       spec["network_a"] = manual_network_spec
       spec["network_a"]["ip"] = "10.0.0.1"
 
       nc = Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
-      nc.private_ip.should == "10.0.0.1"
+      expect(nc.private_ips).to eq(%w[10.0.0.1])
     end
 
     it "should extract private ip address from manual network when there's also vip network" do
@@ -89,8 +126,13 @@ describe Bosh::OpenStackCloud::NetworkConfigurator do
       spec["network_b"]["ip"] = "10.0.0.2"      
 
       nc = Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
-      nc.private_ip.should == "10.0.0.2"
-    end     
+      expect(nc.private_ips).to eq(%w[10.0.0.2])
+    end
+
+    it "should extract private ip addresses from multiple manual networks" do
+      nc = Bosh::OpenStackCloud::NetworkConfigurator.new(several_manual_networks)
+      expect(nc.private_ips).to eq(%w[10.0.0.1 10.0.0.2])
+    end
     
     it "should not extract private ip address for dynamic network" do
       spec = {}
@@ -98,7 +140,7 @@ describe Bosh::OpenStackCloud::NetworkConfigurator do
       spec["network_a"]["ip"] = "10.0.0.1"
 
       nc = Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
-      nc.private_ip.should be_nil
+      expect(nc.private_ips).to be_empty
     end     
   end
 
@@ -106,40 +148,28 @@ describe Bosh::OpenStackCloud::NetworkConfigurator do
     it "should extract net_id from dynamic network" do
       spec = {}
       spec["network_a"] = dynamic_network_spec
-      set_nics(spec["network_a"], "foo")
+      spec["network_a"]["cloud_properties"]["net_id"] = "foo"
 
       nc = Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
       nc.nics.should == [{ "net_id" => "foo" }]
     end
 
-    it "should extract net_id from manual network" do
-      spec = {}
-      spec["network_b"] = manual_network_spec
-      spec["network_b"]["ip"] = "10.0.0.1"
-      set_nics(spec["network_b"], "bar")
-
-      nc = Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
-      nc.nics.should == [{ "net_id" => "bar", "v4_fixed_ip" => "10.0.0.1" }]
+    it "should extract net_id and IP address from all manual networks" do
+      nc = Bosh::OpenStackCloud::NetworkConfigurator.new(several_manual_networks)
+      expect(nc.nics).to eq([
+        { "net_id" => "net", "v4_fixed_ip" => "10.0.0.1" },
+        { "net_id" => "bar", "v4_fixed_ip" => "10.0.0.2" },
+      ])
     end
 
     it "should not extract ip address for dynamic network" do
       spec = {}
       spec["network_a"] = dynamic_network_spec
       spec["network_a"]["ip"] = "10.0.0.1"
-      set_nics(spec["network_a"], "foo")
+      spec["network_a"]["cloud_properties"]["net_id"] = "foo"
 
       nc = Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
       nc.nics.should == [{ "net_id" => "foo" }]
-    end
-
-    it "should raise a CloudError if no net_id is extracted for manual networks" do
-      spec = {}
-      spec["network_b"] = manual_network_spec
-      spec["network_b"]["cloud_properties"].delete("net_id")
-
-      expect {
-        Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
-      }.to raise_error Bosh::Clouds::CloudError, "Manual network must have net_id"
     end
   end
 end

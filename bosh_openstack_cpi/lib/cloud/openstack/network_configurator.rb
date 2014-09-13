@@ -35,7 +35,6 @@ module Bosh::OpenStackCloud
       cloud_error("At least one dynamic or manual network should be defined") if @networks.empty?
     end
 
-
     ##
     # Setup network configuration for one network spec.
     #
@@ -47,35 +46,26 @@ module Bosh::OpenStackCloud
 
       case network_type
         when "dynamic"
-          net_id = extract_net_id(network_spec)
           cloud_error("Only one dynamic network per instance should be defined") if @dynamic_network
+          net_id = extract_net_id(network_spec)
           cloud_error("Dynamic network with id #{net_id} is already defined") if @net_ids.include?(net_id)
           network = DynamicNetwork.new(name, network_spec)
           @security_groups += extract_security_groups(network_spec)
-          net_info = {}
-          net_info["network"] = network
-          net_info["net_id"] = net_id
-          @networks << net_info
+          @networks << {"network" => network, "net_id" => net_id}
           @net_ids << net_id
           @dynamic_network = network
-
         when "manual"
           net_id = extract_net_id(network_spec)
           cloud_error("Manual network must have net_id") if net_id.nil?
           cloud_error("Manual network with id #{net_id} is already defined") if @net_ids.include?(net_id)
           network = ManualNetwork.new(name, network_spec)
           @security_groups += extract_security_groups(network_spec)
-          net_info = {}
-          net_info["network"] = network
-          net_info["net_id"] = net_id
-          @networks << net_info
+          @networks << {"network" => network, "net_id" => net_id}
           @net_ids << net_id
-
         when "vip"
           cloud_error("Only one VIP network per instance should be defined") if @vip_network
           @vip_network = VipNetwork.new(name, network_spec)
           @security_groups += extract_security_groups(network_spec)
-
         else
           cloud_error("Invalid network type `#{network_type}': OpenStack " \
                       "CPI can only handle `dynamic', 'manual' or `vip' " \
@@ -129,17 +119,15 @@ module Bosh::OpenStackCloud
     end
 
     ##
-    # Returns the private IP address for this network configuration
+    # Returns the private IP addresses for this network configuration
     #
-    # @return [String] private ip address
-    def private_ip
-      @networks.each do |network_info|
+    # @return [Array<String>] private ip addresses
+    def private_ips
+      @networks.inject([]) do |memo, network_info|
         network = network_info["network"]
-        if network.is_a?(ManualNetwork)
-          return network.private_ip
-        end
+        memo << network.private_ip if network.is_a?(ManualNetwork)
+        memo
       end
-      return nil
     end
 
     ##
@@ -147,19 +135,15 @@ module Bosh::OpenStackCloud
     #
     # @return [Array] nics
     def nics
-      nics_all = []
-      @networks.each do |network_info|
-        nic = {}
+      @networks.inject([]) do |memo, network_info|
         net_id = network_info["net_id"]
         network = network_info["network"]
+        nic = {}
         nic["net_id"] = net_id if net_id
-        nic["v4_fixed_ip"] = network.private_ip if network.is_a? ManualNetwork
-        if nic.any?
-          nics_all << nic
-        end
+        nic["v4_fixed_ip"] = network.private_ip if network.is_a?(ManualNetwork)
+        memo << nic if nic.any?
+        memo
       end
-      @logger.info("nics_all `#{nics_all}'")
-      return nics_all
     end
 
     private

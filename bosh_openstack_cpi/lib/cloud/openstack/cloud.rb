@@ -371,7 +371,7 @@ module Bosh::OpenStackCloud
 
         compare_security_groups(server, network_configurator.security_groups(@default_security_groups))
 
-        compare_private_ip_addresses(server, network_configurator.private_ip)
+        compare_private_ip_addresses(server, network_configurator.private_ips)
 
         network_configurator.configure(@openstack, server)
 
@@ -845,17 +845,17 @@ module Bosh::OpenStackCloud
     # Compares actual server private IP addresses with the IP address specified at the network spec
     #
     # @param [Fog::Compute::OpenStack::Server] server OpenStack server
-    # @param [String] specified_ip_address IP address specified at the network spec (if Manual network)
+    # @param [Array] specified_ip_addresses IP addresses specified at the network spec (if Manual network)
     # @return [void]
     # @raise [Bosh::Clouds:NotSupported] If the IP address change, we need to recreate the VM as you can't
     # change the IP address of a running server, so we need to send the InstanceUpdater a request to do it for us
-    def compare_private_ip_addresses(server, specified_ip_address)
+    def compare_private_ip_addresses(server, specified_ip_addresses)
       actual_ip_addresses = with_openstack { server.private_ip_addresses }
 
-      unless specified_ip_address.nil? || actual_ip_addresses.include?(specified_ip_address)
+      unless specified_ip_addresses.empty? || actual_ip_addresses.sort == specified_ip_addresses.sort
         raise Bosh::Clouds::NotSupported,
               'IP address change requires VM recreation: %s to %s' %
-              [actual_ip_addresses.join(', '), specified_ip_address]
+              [actual_ip_addresses.join(', '), specified_ip_addresses.join(', ')]
       end
     end
 
