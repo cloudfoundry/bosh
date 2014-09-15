@@ -52,7 +52,7 @@ module Bosh::Dev::Bat
     # Multiple implementations for the following
     let(:microbosh_deployment_manifest) { double('microbosh-deployment-manifest', write: nil) }
     let(:microbosh_deployment_cleaner) { double('microbosh-deployment-cleaner', clean: nil) }
-    let(:bat_deployment_manifest) { double('bat-deployment-manifest', write: nil) }
+    let(:bat_deployment_manifest) { double('bat-deployment-manifest', net_type: 'net-type', write: nil) }
 
     describe '#deploy_bats_microbosh' do
       before { subject.stub(:run_bats) }

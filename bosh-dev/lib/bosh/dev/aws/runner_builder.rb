@@ -18,11 +18,11 @@ module Bosh::Dev::Aws
       stemcell_archive = Bosh::Stemcell::Archive.new(artifacts.stemcell_path)
 
       microbosh_deployment_manifest =
-        MicroBoshDeploymentManifest.new(env)
+        MicroBoshDeploymentManifest.new(env, net_type)
       microbosh_deployment_cleaner =
         MicroBoshDeploymentCleaner.new(microbosh_deployment_manifest)
       bat_deployment_manifest =
-        BatDeploymentManifest.new(env, bosh_cli_session, stemcell_archive)
+        BatDeploymentManifest.new(env, net_type, bosh_cli_session, stemcell_archive)
 
       # rubocop:disable ParameterLists
       Bosh::Dev::Bat::Runner.new(

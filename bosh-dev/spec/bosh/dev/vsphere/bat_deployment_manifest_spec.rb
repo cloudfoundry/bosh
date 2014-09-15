@@ -6,12 +6,17 @@ require 'psych'
 
 module Bosh::Dev::VSphere
   describe BatDeploymentManifest do
-    subject { described_class.new(env, director_uuid, stemcell_archive) }
+    subject { described_class.new(env, 'manual', director_uuid, stemcell_archive) }
     let(:env) { {} }
     let(:director_uuid) { instance_double('Bosh::Dev::Bat::DirectorUuid', value: 'director-uuid') }
     let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: 13, name: 'bosh-infra-hyper-os') }
 
     its(:filename) { should eq ('bat.yml') }
+
+    it 'requires the net type to be manual' do
+      expect { described_class.new(env, 'dynamic', director_uuid, stemcell_archive) }.to raise_error
+      expect { described_class.new(env, 'manual', director_uuid, stemcell_archive) }.not_to raise_error
+    end
 
     it 'is writable' do
       expect(subject).to be_a(Bosh::Dev::WritableManifest)

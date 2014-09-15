@@ -25,6 +25,10 @@ module Bat
       }
     end
 
+    def manual_networking?
+      @env.bat_networking == 'manual'
+    end
+
     def aws?
       @env.bat_infrastructure == 'aws'
     end

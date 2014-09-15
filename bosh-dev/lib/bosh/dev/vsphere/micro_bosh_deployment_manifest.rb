@@ -7,9 +7,14 @@ module Bosh::Dev::VSphere
 
     attr_reader :filename
 
-    def initialize(env)
+    def initialize(env, net_type)
       @env = env
+      @net_type = net_type
       @filename = 'micro_bosh.yml'
+
+      unless net_type == 'manual'
+        raise "Specified #{net_type} networking but environment requires manual"
+      end
     end
 
     def to_h

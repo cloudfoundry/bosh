@@ -7,11 +7,16 @@ module Bosh::Dev::VSphere
 
     attr_reader :filename
 
-    def initialize(env, director_uuid, stemcell_archive)
+    def initialize(env, net_type, director_uuid, stemcell_archive)
       @env = env
+      @net_type = net_type
       @director_uuid = director_uuid
       @stemcell_archive = stemcell_archive
       @filename = 'bat.yml'
+
+      unless net_type == 'manual'
+        raise "Specified #{net_type} networking but environment requires manual"
+      end
     end
 
     def to_h

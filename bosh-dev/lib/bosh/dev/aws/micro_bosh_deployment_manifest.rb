@@ -4,7 +4,8 @@ require 'bosh_cli_plugin_aws/microbosh_manifest'
 
 module Bosh::Dev::Aws
   class MicroBoshDeploymentManifest
-    def initialize(env)
+    def initialize(env, net_type)
+      @net_type = net_type
       @receipts = Receipts.new(env)
     end
 
@@ -29,12 +30,15 @@ module Bosh::Dev::Aws
     attr_reader :receipts
 
     def manifest
-      @manifest ||= Bosh::Aws::MicroboshManifest.new(
+      return @manifest if @manifest
+      @manifest = Bosh::Aws::MicroboshManifest.new(
         YAML.load_file(receipts.vpc_outfile_path),
         YAML.load_file(receipts.route53_outfile_path),
         hm_director_user: 'admin',
         hm_director_password: 'admin'
       )
+      raise "Specified #{@net_type} network but environment requires #{@manifest.network_type}" unless @manifest.network_type == @net_type
+      @manifest
     end
   end
 end

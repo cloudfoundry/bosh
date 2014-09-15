@@ -34,7 +34,7 @@ module Bosh::Dev::VSphere
         microbosh_deployment_manifest = instance_double('Bosh::Dev::VSphere::MicroBoshDeploymentManifest')
         Bosh::Dev::VSphere::MicroBoshDeploymentManifest
           .should_receive(:new)
-          .with(ENV)
+          .with(ENV, 'net-type')
           .and_return(microbosh_deployment_manifest)
 
         microbosh_deployment_cleaner = instance_double('Bosh::Dev::VSphere::MicroBoshDeploymentCleaner')
@@ -51,7 +51,7 @@ module Bosh::Dev::VSphere
         bat_deployment_manifest = instance_double('Bosh::Dev::VSphere::BatDeploymentManifest')
         Bosh::Dev::VSphere::BatDeploymentManifest
           .should_receive(:new)
-          .with(ENV, director_uuid, stemcell_archive)
+          .with(ENV, 'net-type', director_uuid, stemcell_archive)
           .and_return(bat_deployment_manifest)
 
         runner = instance_double('Bosh::Dev::Bat::Runner')

@@ -4,7 +4,7 @@ require 'psych'
 
 module Bosh::Dev::VSphere
   describe MicroBoshDeploymentManifest do
-    subject { described_class.new(env) }
+    subject { described_class.new(env, 'manual') }
     let(:env) { {} }
 
     it 'is writable' do
@@ -12,6 +12,11 @@ module Bosh::Dev::VSphere
     end
 
     its(:filename) { should eq('micro_bosh.yml') }
+
+    it 'requires the net type to be manual' do
+      expect { described_class.new(env, 'dynamic') }.to raise_error
+      expect { described_class.new(env, 'manual') }.not_to raise_error
+    end
 
     describe '#to_h' do
       let(:expected_yml) { <<YAML }

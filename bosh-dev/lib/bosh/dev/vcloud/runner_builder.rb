@@ -20,9 +20,9 @@ module Bosh::Dev::VCloud
       stemcell_archive = Bosh::Stemcell::Archive.new(artifacts.stemcell_path)
 
       microbosh_deployment_manifest =
-        MicroBoshDeploymentManifest.new(env)
+        MicroBoshDeploymentManifest.new(env, net_type)
       bat_deployment_manifest =
-        BatDeploymentManifest.new(env, director_uuid, stemcell_archive)
+        BatDeploymentManifest.new(env, net_type, director_uuid, stemcell_archive)
 
       microbosh_deployment_cleaner = MicroBoshDeploymentCleaner.new(env, microbosh_deployment_manifest)
 

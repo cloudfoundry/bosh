@@ -3,7 +3,7 @@ require 'bosh/dev/aws/micro_bosh_deployment_manifest'
 
 module Bosh::Dev::Aws
   describe MicroBoshDeploymentManifest do
-    subject { described_class.new(env) }
+    subject { described_class.new(env, 'manual') }
     let(:env) { {} }
 
     before { Receipts.stub(new: receipts) }
@@ -22,6 +22,7 @@ module Bosh::Dev::Aws
         name: 'fake-name',
         access_key_id: 'fake-access-key-id',
         secret_access_key: 'fake-secret-access-key',
+        network_type: 'manual',
       )
     end
 
@@ -30,6 +31,12 @@ module Bosh::Dev::Aws
     its(:director_name) { should == 'micro-fake-name' }
     its(:access_key_id) { should == 'fake-access-key-id' }
     its(:secret_access_key) { should == 'fake-secret-access-key' }
+
+    it 'requires the net type to match the manifest' do
+      allow(manifest).to receive(:network_type).and_return('dynamic')
+      expect { described_class.new(env, 'manual').send(:manifest) }.to raise_error
+      expect { described_class.new(env, 'dynamic').send(:manifest) }.not_to raise_error
+    end
 
     describe '#write' do
       before do

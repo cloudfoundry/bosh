@@ -6,7 +6,7 @@ require 'psych'
 
 module Bosh::Dev::VCloud
   describe BatDeploymentManifest do
-    subject { described_class.new(env, director_uuid, stemcell_archive) }
+    subject { described_class.new(env, 'manual', director_uuid, stemcell_archive) }
     let(:env) { {} }
     let(:director_uuid) { instance_double('Bosh::Dev::Bat::DirectorUuid', value: 'director-uuid') }
     let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: 13, name: 'bosh-infra-hyper-os') }
@@ -15,6 +15,11 @@ module Bosh::Dev::VCloud
 
     it 'is writable' do
       expect(subject).to be_a(Bosh::Dev::WritableManifest)
+    end
+
+    it 'requires the net type to match the manifest' do
+      expect { described_class.new(env, 'manual', director_uuid, stemcell_archive) }.to_not raise_error
+      expect { described_class.new(env, 'dynamic', director_uuid, stemcell_archive) }.to raise_error
     end
 
     describe '#to_h' do
