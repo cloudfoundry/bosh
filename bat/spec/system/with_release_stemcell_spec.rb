@@ -8,9 +8,9 @@ describe 'with release and stemcell and two deployments' do
   end
 
   context 'with no ephemeral disk' do
-    before(:all) { skip 'only openstack is configurable without ephemeral disk' unless openstack? }
+    before do
+      skip 'only openstack is configurable without ephemeral disk' unless openstack?
 
-    before(:all) do
       reload_deployment_spec
       # using password 'foobar'
       use_password('$6$tHAu4zCTso$pAQok0MTHP4newel7KMhTzMI4tQrAWwJ.X./fFAKjbWkCb5sAaavygXAspIGWn8qVD8FeT.Z/XN4dvqKzLHhl0')
@@ -25,7 +25,7 @@ describe 'with release and stemcell and two deployments' do
       @requirements.requirement(deployment, @spec)
     end
 
-    after(:all) do
+    after do
       @requirements.cleanup(deployment)
     end
 
