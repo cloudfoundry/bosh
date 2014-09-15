@@ -27,33 +27,35 @@ networks:
   type: vip
   cloud_properties: {}
 
-- name: default
-<% if p('network.subnet', false) %>
+<% properties.networks.each do |network| %>
+- name: <%= network.name %>
+  <% if network.subnet %>
   type: manual
   subnets:
-  - range: <%= properties.network.cidr %>
+  - range: <%= network.cidr %>
     reserved:
-      <% properties.network.reserved.each do |range| %>
+      <% network.reserved.each do |range| %>
       - <%= range %>
       <% end %>
     static:
-      <% properties.network.static.each do |range| %>
+      <% network.static.each do |range| %>
       - <%= range %>
       <% end %>
-    gateway: <%= properties.network.gateway %>
+    gateway: <%= network.gateway %>
     dns: <%= p('dns').inspect %>
     cloud_properties:
-      security_groups: <%= p('network.security_groups') %>
-      subnet: <%= p('network.subnet') %>
-<% else %>
+      security_groups: <%= network.security_groups %>
+      subnet: <%= network.subnet %>
+  <% else %>
   type: dynamic
   dns: <%= p('dns').inspect %>
-  <% if properties.security_groups %>
+    <% if properties.security_groups %>
   cloud_properties:
     security_groups:
       - <%= properties.security_groups %>
-  <% else %>
+    <% else %>
   cloud_properties: {}
+    <% end %>
   <% end %>
 <% end %>
 
@@ -84,17 +86,19 @@ jobs:
     persistent_disk: <%= properties.persistent_disk %>
     <% end %>
     networks:
-      - name: default
+    <% properties.job_networks.each_with_index do |network, i| %>
+      - name: <%= network.name %>
         default: [dns, gateway]
       <% if properties.use_static_ip %>
         static_ips:
-          - <%= properties.deployment_static_ip %>
+        - <%= network.static_ip %>
       <% end %>
-      <% if properties.use_vip %>
+    <% end %>
+    <% if properties.use_vip %>
       - name: static
         static_ips:
           - <%= properties.vip %>
-      <% end %>
+    <% end %>
 
 properties:
   mbus: <%= properties.mbus %>

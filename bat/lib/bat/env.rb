@@ -7,6 +7,7 @@ module Bat
       vcap_password:        'BAT_VCAP_PASSWORD',
       dns_host:             'BAT_DNS_HOST',
       bat_infrastructure:   'BAT_INFRASTRUCTURE',
+      bat_networking:       'BAT_NETWORKING',
     }.freeze
 
     def self.from_env

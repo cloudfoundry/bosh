@@ -29,7 +29,6 @@ module Bosh::Dev::VCloud
 cpi: vcloud
 properties:
   uuid: director-uuid
-  static_ip: ip
   second_static_ip: fake-second-ip
   pool_size: 1
   stemcell:
@@ -37,7 +36,9 @@ properties:
     version: 13
   instances: 1
   mbus: nats://nats:nats@ip:4222
-  network:
+  networks:
+  - name: default
+    static_ip: ip
     type: manual
     cidr: net_cidr
     reserved:

@@ -85,5 +85,19 @@ describe 'network configuration' do
 
       ssh(public_ip, 'vcap', '/sbin/ifconfig', ssh_options).should include(second_static_ip)
     end
+
+    it 'deploys multiple manual networks' do
+      unless @requirements.stemcell.supports_multiple_manual_networks?
+        skip "multiple manual networks are not supported for #{@requirements.stemcell}"
+      end
+
+      use_multiple_manual_networks
+      deployment = with_deployment
+      bosh("deployment #{deployment.to_path}").should succeed
+      bosh('deploy').should succeed
+
+      ssh(public_ip, 'vcap', '/sbin/ifconfig', ssh_options).should include(static_ips[0])
+      ssh(public_ip, 'vcap', '/sbin/ifconfig', ssh_options).should include(static_ips[1])
+    end
   end
 end

@@ -39,16 +39,20 @@ module Bosh::Dev::Openstack
     describe '#to_h' do
       before do
         env.merge!(
-          'BOSH_OPENSTACK_VIP_BAT_IP'                    => 'vip',
-          'BOSH_OPENSTACK_STATIC_BAT_IP'                 => 'fake-static-ip',
-          'BOSH_OPENSTACK_SECOND_STATIC_BAT_IP'          => 'fake-second-static-ip',
-          'BOSH_OPENSTACK_NET_ID'                        => 'net_id',
-          'BOSH_OPENSTACK_NETWORK_CIDR'                  => 'net_cidr',
-          'BOSH_OPENSTACK_NETWORK_RESERVED'              => 'net_reserved',
-          'BOSH_OPENSTACK_NETWORK_STATIC'                => 'net_static',
-          'BOSH_OPENSTACK_NETWORK_GATEWAY'               => 'net_gateway',
-          'BOSH_OPENSTACK_FLAVOR'                        => 'm1.big',
-          'BOSH_OPENSTACK_FLAVOR_WITH_NO_EPHEMERAL_DISK' => 'no-ephemeral',
+          'BOSH_OPENSTACK_VIP_BAT_IP'           => 'vip',
+          'BOSH_OPENSTACK_STATIC_BAT_IP_0'      => 'fake-static-ip',
+          'BOSH_OPENSTACK_STATIC_BAT_IP_1'      => 'fake-second-network-static-ip',
+          'BOSH_OPENSTACK_SECOND_STATIC_BAT_IP' => 'fake-second-static-ip',
+          'BOSH_OPENSTACK_NET_ID_0'             => 'net_id',
+          'BOSH_OPENSTACK_NETWORK_CIDR_0'       => 'net_cidr',
+          'BOSH_OPENSTACK_NETWORK_RESERVED_0'   => 'net_reserved',
+          'BOSH_OPENSTACK_NETWORK_STATIC_0'     => 'net_static',
+          'BOSH_OPENSTACK_NETWORK_GATEWAY_0'    => 'net_gateway',
+          'BOSH_OPENSTACK_NET_ID_1'             => 'second_net_id',
+          'BOSH_OPENSTACK_NETWORK_CIDR_1'       => 'second_net_cidr',
+          'BOSH_OPENSTACK_NETWORK_RESERVED_1'   => 'second_net_reserved',
+          'BOSH_OPENSTACK_NETWORK_STATIC_1'     => 'second_net_static',
+          'BOSH_OPENSTACK_NETWORK_GATEWAY_1'    => 'second_net_gateway',
         )
       end
 
@@ -59,7 +63,6 @@ module Bosh::Dev::Openstack
 cpi: openstack
 properties:
   vip: vip
-  static_ip: fake-static-ip
   second_static_ip: fake-second-static-ip
   uuid: director-uuid
   pool_size: 1
@@ -70,7 +73,9 @@ properties:
   flavor_with_no_ephemeral_disk: no-ephemeral
   instances: 1
   mbus: nats://nats:0b450ada9f830085e2cdeff6@vip:4222
-  network:
+  networks:
+  - name: default
+    static_ip: fake-static-ip
     type: manual
     cidr: net_cidr
     reserved:
@@ -81,6 +86,18 @@ properties:
     cloud_properties:
       security_groups: [ default ]
       net_id: net_id
+  - name: second
+    static_ip: fake-second-network-static-ip
+    type: manual
+    cidr: second_net_cidr
+    reserved:
+      - second_net_reserved
+    static:
+      - second_net_static
+    gateway: second_net_gateway
+    cloud_properties:
+      security_groups: [ default ]
+      net_id: second_net_id
 YAML
 
         it 'generates the correct YAML' do
@@ -95,7 +112,6 @@ YAML
 cpi: openstack
 properties:
   vip: vip
-  static_ip: fake-static-ip
   second_static_ip: fake-second-static-ip
   uuid: director-uuid
   pool_size: 1
@@ -106,11 +122,19 @@ properties:
   flavor_with_no_ephemeral_disk: no-ephemeral
   instances: 1
   mbus: nats://nats:0b450ada9f830085e2cdeff6@vip:4222
-  network:
+  networks:
+  - name: default
+    static_ip: fake-static-ip
     type: dynamic
     cloud_properties:
       security_groups: [ default ]
       net_id: net_id
+  - name: second
+    static_ip: fake-second-network-static-ip
+    type: dynamic
+    cloud_properties:
+      security_groups: [ default ]
+      net_id: second_net_id
 YAML
 
         it 'generates the correct YAML' do

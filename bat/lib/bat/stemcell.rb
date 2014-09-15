@@ -43,6 +43,10 @@ module Bat
       supports_network_reconfiguration? && !(name =~ /openstack/ && network_type == 'dynamic')
     end
 
+    def supports_multiple_manual_networks?
+      name =~ /openstack/ && name =~ /ubuntu/ && name =~ /go_agent/
+    end
+
     def ==(other)
       to_s == other.to_s
     end

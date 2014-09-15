@@ -22,21 +22,23 @@ update:
   max_in_flight: <%= properties.max_in_flight || 1 %>
 
 networks:
-- name: static
+<% properties.networks.each do |network| %>
+- name: <%= network.name %>
   subnets:
-  - range: <%= properties.network.cidr %>
+  - range: <%= network.cidr %>
     reserved:
-      <% properties.network.reserved.each do |range| %>
+      <% network.reserved.each do |range| %>
       - <%= range %>
       <% end %>
     static:
-      <% properties.network.static.each do |range| %>
+      <% network.static.each do |range| %>
       - <%= range %>
       <% end %>
-    gateway: <%= properties.network.gateway %>
+    gateway: <%= network.gateway %>
     dns: <%= p('dns').inspect %>
     cloud_properties:
-      name: <%= properties.network.vlan %>
+      name: <%= network.vlan %>
+<% end %>
 
 resource_pools:
   - name: common
@@ -64,10 +66,12 @@ jobs:
     persistent_disk: <%= properties.persistent_disk %>
     <% end %>
     networks:
-      - name: static
-      <% if properties.use_static_ip %>
+      <% properties.job_networks.each_with_index do |network, i| %>
+      - name: <%= network.name %>
+        <% if properties.use_static_ip %>
         static_ips:
-          - <%= properties.deployment_static_ip %>
+        - <%= network.static_ip %>
+        <% end %>
       <% end %>
 
 properties:

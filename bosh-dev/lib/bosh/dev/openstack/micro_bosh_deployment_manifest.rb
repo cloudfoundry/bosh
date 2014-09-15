@@ -51,8 +51,8 @@ module Bosh::Dev::Openstack
         },
       }
 
-      if env['BOSH_OPENSTACK_NET_ID']
-        result['network']['cloud_properties']['net_id'] = env['BOSH_OPENSTACK_NET_ID']
+      if env['BOSH_OPENSTACK_MICRO_NET_ID']
+        result['network']['cloud_properties']['net_id'] = env['BOSH_OPENSTACK_MICRO_NET_ID']
       end
 
       result['network']['ip'] = env['BOSH_OPENSTACK_MANUAL_IP'] if net_type == 'manual'

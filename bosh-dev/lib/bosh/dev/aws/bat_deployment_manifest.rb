@@ -4,8 +4,6 @@ require 'bosh/dev/bosh_cli_session'
 
 module Bosh::Dev::Aws
   class BatDeploymentManifest
-    attr_reader :net_type
-
     def initialize(env, net_type, bosh_cli_session, stemcell_archive)
       @receipts = Receipts.new(env)
       @net_type = net_type
@@ -24,6 +22,6 @@ module Bosh::Dev::Aws
 
     private
 
-    attr_reader :bosh_cli_session, :receipts, :stemcell_archive
+    attr_reader :net_type, :bosh_cli_session, :receipts, :stemcell_archive
   end
 end

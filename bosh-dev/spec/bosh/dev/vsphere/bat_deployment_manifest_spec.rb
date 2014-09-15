@@ -29,7 +29,6 @@ module Bosh::Dev::VSphere
 cpi: vsphere
 properties:
   uuid: director-uuid
-  static_ip: ip
   second_static_ip: fake-second-ip
   pool_size: 1
   stemcell:
@@ -37,7 +36,9 @@ properties:
     version: 13
   instances: 1
   mbus: nats://nats:0b450ada9f830085e2cdeff6@ip:4222
-  network:
+  networks:
+  - name: default
+    static_ip: ip
     type: manual
     cidr: net_cidr
     reserved:
