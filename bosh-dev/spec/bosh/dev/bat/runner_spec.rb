@@ -147,6 +147,7 @@ module Bosh::Dev::Bat
         expect(env['BAT_STEMCELL']).to eq(artifacts.stemcell_path)
         expect(env['BAT_VCAP_PASSWORD']).to eq('c1oudc0w')
         expect(env['BAT_INFRASTRUCTURE']).to eq('infrastructure')
+        expect(env['BAT_NETWORKING']).to eq('net-type')
       end
 
       it 'sets BAT_VCAP_PRIVATE_KEY to BOSH_OPENSTACK_PRIVATE_KEY if present' do

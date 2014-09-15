@@ -70,12 +70,14 @@ describe 'network configuration' do
 
   context 'when using manual networking' do
     before do
-      unless @requirements.stemcell.supports_changing_static_ip?(network_type)
-        skip "network reconfiguration does not work for #{@requirements.stemcell}"
-      end
+      skip "not using manual networking" unless manual_networking?
     end
 
     it 'changes static IP address' do
+      unless @requirements.stemcell.supports_changing_static_ip?(network_type)
+        skip "network reconfiguration does not work for #{@requirements.stemcell}"
+      end
+
       use_second_static_ip
       deployment = with_deployment
       bosh("deployment #{deployment.to_path}").should succeed

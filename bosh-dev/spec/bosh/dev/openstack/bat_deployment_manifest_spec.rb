@@ -14,6 +14,7 @@ module Bosh::Dev::Openstack
     let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: 13, name: 'stemcell-name') }
 
     its(:filename) { should eq ('bat.yml') }
+    its(:net_type) { should eq (net_type) }
 
     it 'is writable' do
       expect(subject).to be_a(Bosh::Dev::WritableManifest)

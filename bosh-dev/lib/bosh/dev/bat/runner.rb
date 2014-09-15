@@ -94,6 +94,7 @@ module Bosh::Dev::Bat
       @env['BAT_VCAP_PRIVATE_KEY'] = @env['BOSH_OPENSTACK_PRIVATE_KEY'] || @env['BOSH_KEY_PATH']
       @env['BAT_VCAP_PASSWORD']    = 'c1oudc0w'
       @env['BAT_INFRASTRUCTURE']   = @stemcell_archive.infrastructure
+      @env['BAT_NETWORKING']       = @bat_deployment_manifest.net_type
     end
   end
 end

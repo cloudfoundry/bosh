@@ -19,6 +19,8 @@ module Bosh::Dev::Aws
 
     before { Bosh::Dev::Aws::Receipts.stub(:new).and_return(receipts) }
 
+    its(:net_type) { should eq('manual') }
+
     describe '#write' do
       before do
         allow(bosh_cli_session).to receive(:run_bosh)

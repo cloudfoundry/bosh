@@ -5,7 +5,7 @@ module Bosh::Dev::Openstack
   class BatDeploymentManifest
     include Bosh::Dev::WritableManifest
 
-    attr_reader :filename
+    attr_reader :filename, :net_type
 
     def initialize(env, net_type, director_uuid, stemcell_archive)
       @env = env
@@ -64,6 +64,6 @@ module Bosh::Dev::Openstack
 
     private
 
-    attr_reader :env, :net_type, :stemcell_archive, :director_uuid
+    attr_reader :env, :stemcell_archive, :director_uuid
   end
 end
