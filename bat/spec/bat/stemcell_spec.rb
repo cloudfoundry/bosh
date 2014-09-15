@@ -88,7 +88,7 @@ describe Bat::Stemcell do
       'bosh-custom-xen-ubuntu-go_agent' => true,
       'bosh-custom-xen-centos-go_agent' => true,
       'bosh-vsphere-esxi-ubuntu-go_agent' => true,
-      'bosh-vcloud-esxi-ubuntu-go_agent' => true,
+      'bosh-vcloud-esxi-ubuntu-go_agent' => false,
 
       # Centos currently does not include open-vm-tools
       'bosh-vsphere-esxi-centos-go_agent' => false,
