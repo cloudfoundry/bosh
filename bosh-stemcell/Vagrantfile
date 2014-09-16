@@ -75,8 +75,13 @@ EOS
     shell.inline = <<-BASH
       mkdir -p /mnt/stemcells
       chown -R ubuntu /mnt/stemcells
+
+      if [ ! -d /bosh ]; then
+        (cd / && git clone --depth=1 -b #{env.fetch('BOSH_BRANCH', 'develop')} https://github.com/cloudfoundry/bosh.git)
+      else
+        (cd /bosh && git fetch origin && git checkout origin/#{env.fetch('BOSH_BRANCH', 'develop')})
+      fi
       mkdir -p /bosh/tmp
-      git --git-dir=/bosh/.git --work-tree=/bosh checkout /bosh
       (cd /bosh && git clean -dfx)
       (cd /bosh && git submodule update --init --recursive)
       (cd /bosh && git submodule foreach --recursive git reset --hard)
@@ -97,6 +102,4 @@ EOS
       }
     }
   end
-
-  config.vm.synced_folder '../.git', '/bosh/.git'
 end
