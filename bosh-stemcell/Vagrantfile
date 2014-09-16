@@ -32,7 +32,7 @@ Vagrant.configure('2') do |config|
       aws.tags = { 'Name' => vm_box }
 
       override.ssh.username = 'ubuntu'
-      override.ssh.private_key_path = '~/.ssh/id_rsa_bosh'
+      override.ssh.private_key_path = env.fetch('BOSH_KEY_PATH', '~/.ssh/id_rsa_bosh')
     end
   end
 
