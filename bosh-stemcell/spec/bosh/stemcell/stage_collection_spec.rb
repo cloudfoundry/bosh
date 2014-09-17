@@ -133,6 +133,7 @@ module Bosh::Stemcell
                 :bosh_clean,
                 :bosh_harden,
                 :bosh_harden_ssh,
+                :bosh_openstack_agent_settings,
                 :image_create,
                 :image_install_grub,
                 :image_openstack_qcow2,
