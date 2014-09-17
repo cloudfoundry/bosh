@@ -90,7 +90,7 @@ EOS
     BASH
   end
 
-  config.omnibus.chef_version = :latest
+  config.omnibus.chef_version = "11"
   config.berkshelf.enabled = true
 
   config.vm.provision :chef_solo do |chef|
