@@ -129,7 +129,7 @@ This command should be used for bootstrapping bosh from scratch.
       end
 
       def latest_aws_ubuntu_bosh_stemcell_filename
-        definition = Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'lucid', 'go')
+        definition = Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'trusty', 'go')
         Bosh::Stemcell::ArchiveFilename.new('latest', definition, 'bosh-stemcell', true)
       end
 

@@ -112,7 +112,7 @@ A stemcell with a custom OS image can be built using the stemcell-building VM cr
 
     vagrant ssh -c '
       cd /bosh
-      bundle exec rake stemcell:build_os_image[ubuntu,lucid,/tmp/ubuntu_base_image.tgz]
-      bundle exec rake stemcell:build_with_local_os_image[aws,ubuntu,lucid,ruby,/tmp/ubuntu_base_image.tgz]
+      bundle exec rake stemcell:build_os_image[ubuntu,trusty,/tmp/ubuntu_base_image.tgz]
+      bundle exec rake stemcell:build_with_local_os_image[aws,ubuntu,trusty,go,/tmp/ubuntu_base_image.tgz]
     ' remote
 
