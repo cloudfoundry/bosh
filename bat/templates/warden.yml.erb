@@ -79,7 +79,7 @@ resource_pools:
     size: <%= properties.pool_size %>
     stemcell:
       name: <%= properties.stemcell.name %>
-      version: <%= properties.stemcell.version %>
+      version: '<%= properties.stemcell.version %>'
     cloud_properties:
       name: random
     <% if properties.password %>

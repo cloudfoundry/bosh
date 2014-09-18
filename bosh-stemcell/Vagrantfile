@@ -1,6 +1,24 @@
 env = ENV.to_hash
 vm_box = 'bosh-stemcell-937f30'
 
+TMP_BOSH_DIRECTORY = File.join('/', 'tmp', 'bosh')
+def prepare_bosh_for_rsync(env)
+  require 'fileutils'
+
+  bosh_directory = File.expand_path('../..', __FILE__)
+  branch = 'develop'
+  Dir.chdir(bosh_directory) do
+    branch = `git symbolic-ref --short HEAD`
+  end
+
+  if Dir.exists?(TMP_BOSH_DIRECTORY)
+    system("cd #{TMP_BOSH_DIRECTORY} && git fetch origin && git reset --hard origin/#{branch}")
+  else
+    system("git clone --depth=1 -b '#{branch}' 'file://#{bosh_directory}' '#{TMP_BOSH_DIRECTORY}'")
+  end
+end
+raise "Could not prepare BOSH for rsync" unless prepare_bosh_for_rsync(env)
+
 Vagrant.configure('2') do |config|
   config.vm.box = vm_box
   config.ssh.username = 'ubuntu'
@@ -32,7 +50,7 @@ Vagrant.configure('2') do |config|
       aws.tags = { 'Name' => vm_box }
 
       override.ssh.username = 'ubuntu'
-      override.ssh.private_key_path = '~/.ssh/id_rsa_bosh'
+      override.ssh.private_key_path = env.fetch('BOSH_KEY_PATH', '~/.ssh/id_rsa_bosh')
     end
   end
 
@@ -85,7 +103,7 @@ EOS
     BASH
   end
 
-  config.omnibus.chef_version = :latest
+  config.omnibus.chef_version = "11"
   config.berkshelf.enabled = true
 
   config.vm.provision :chef_solo do |chef|
@@ -98,5 +116,5 @@ EOS
     }
   end
 
-  config.vm.synced_folder '../.git', '/bosh/.git'
+  config.vm.synced_folder File.join(TMP_BOSH_DIRECTORY, '.git'), '/bosh/.git'
 end
