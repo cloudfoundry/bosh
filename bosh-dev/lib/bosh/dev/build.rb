@@ -1,7 +1,6 @@
 require 'peach'
 require 'logger'
 require 'bosh/dev/promotable_artifacts'
-require 'bosh/dev/light_stemcell_pointer'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/local_download_adapter'
 require 'bosh/dev/upload_adapter'
@@ -102,13 +101,6 @@ module Bosh::Dev
         'bosh-stemcell',
         definition.infrastructure.light?,
       ).to_s)
-    end
-
-    def light_stemcell
-      name = 'bosh-stemcell'
-      definition = Bosh::Stemcell::Definition.for('aws', 'ubuntu', 'lucid', 'go')
-      filename = download_stemcell(name, definition, true, Dir.pwd)
-      Bosh::Stemcell::Archive.new(filename)
     end
 
     private

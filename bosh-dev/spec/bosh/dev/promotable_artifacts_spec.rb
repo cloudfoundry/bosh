@@ -5,8 +5,7 @@ require 'bosh/dev/build'
 module Bosh::Dev
   describe PromotableArtifacts do
     subject(:build_artifacts) { PromotableArtifacts.new(build) }
-    let(:light_stemcell) { instance_double('Bosh::Stemcell::Archive') }
-    let(:build) { instance_double('Bosh::Dev::Build', number: 123, light_stemcell: light_stemcell) }
+    let(:build) { instance_double('Bosh::Dev::Build', number: 123) }
 
     its(:release_file) { should eq('bosh-123.tgz') }
 
@@ -33,17 +32,10 @@ module Bosh::Dev
         ]
       end
 
-      let(:light_stemcell_pointer) do
-        instance_double('Bosh::Dev::LightStemcellPointer', promote: nil)
-      end
-
       before do
         gem_artifact_klass = class_double('Bosh::Dev::GemArtifact').as_stubbed_const
         gem_artifact_klass.stub(:new).with(gem_components.components.first, 's3://bosh-ci-pipeline/123/', build.number).and_return(gem_artifacts.first)
         gem_artifact_klass.stub(:new).with(gem_components.components.last, 's3://bosh-ci-pipeline/123/', build.number).and_return(gem_artifacts.last)
-
-        light_stemcell_pointer_klass = class_double('Bosh::Dev::LightStemcellPointer').as_stubbed_const
-        light_stemcell_pointer_klass.stub(:new).with(light_stemcell).and_return(light_stemcell_pointer)
 
         get_component_klass = class_double('Bosh::Dev::GemComponents').as_stubbed_const
         get_component_klass.stub(:new).with(123).and_return(gem_components)
@@ -64,10 +56,6 @@ module Bosh::Dev
 
       it 'lists commands to promote gems' do
         expect(build_artifacts.all).to include(*gem_artifacts)
-      end
-
-      it 'lists commands to update the light stemcell pointer' do
-        expect(build_artifacts.all).to include(*light_stemcell_pointer)
       end
 
       it 'lists commands to promote stemcell pipeline artifacts' do

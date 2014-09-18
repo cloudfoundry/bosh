@@ -11,7 +11,6 @@ module Bosh::Dev
 
     def all
       artifacts = gem_artifacts + release_artifacts + stemcell_artifacts
-      artifacts << light_stemcell_pointer
     end
 
     def release_file
@@ -21,10 +20,6 @@ module Bosh::Dev
     private
 
     attr_reader :build
-
-    def light_stemcell_pointer
-      LightStemcellPointer.new(build.light_stemcell)
-    end
 
     def gem_artifacts
       gem_components = GemComponents.new(build.number)
