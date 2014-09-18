@@ -860,13 +860,6 @@ module VSphereCloud
           and_return('fake-datastore-name')
       end
 
-      let(:drs_rule_cleaner) { instance_double('VSphereCloud::DrsRuleCleaner', clean: nil) }
-      before do
-        allow(DrsRuleCleaner).to receive(:new).
-          with(cloud_searcher, custom_fields_manager, logger).
-          and_return(drs_rule_cleaner)
-      end
-
       before { allow(client).to receive(:delete_vm).with(vm) }
 
       it 'deletes vm' do
@@ -908,11 +901,6 @@ module VSphereCloud
             vsphere_cloud.delete_vm('fake-vm-id')
           end
         end
-      end
-
-      it 'cleans up drs rules' do
-        expect(drs_rule_cleaner).to receive(:clean)
-        vsphere_cloud.delete_vm('fake-vm-id')
       end
     end
 

@@ -9,7 +9,6 @@ require 'cloud/vsphere/file_provider'
 require 'cloud/vsphere/agent_env'
 require 'cloud/vsphere/lease_obtainer'
 require 'cloud/vsphere/lease_updater'
-require 'cloud/vsphere/drs_rules/drs_rule_cleaner'
 require 'cloud/vsphere/resources'
 require 'cloud/vsphere/resources/cluster'
 require 'cloud/vsphere/resources/datacenter'
@@ -265,12 +264,6 @@ module VSphereCloud
             end
           end
         end
-
-        DrsRuleCleaner.new(
-          @cloud_searcher,
-          @client.service_content.custom_fields_manager,
-          @logger
-        ).clean
       end
     end
 
