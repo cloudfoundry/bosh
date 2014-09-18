@@ -76,7 +76,18 @@ describe VSphereCloud::Cloud, external_cpi: false do
   extend Bosh::Cpi::CompatibilityHelpers
   it_can_delete_non_existent_vm
 
-  def vm_lifecycle(network_spec, disk_locality, resource_pool)
+  def vm_lifecycle(disk_locality, resource_pool)
+    network_spec = {
+      'static' => {
+        'ip' => '169.254.1.1',
+        'netmask' => '255.255.254.0',
+        'cloud_properties' => { 'name' => @vlan },
+        'default' => ['dns', 'gateway'],
+        'dns' => ['169.254.1.2'],
+        'gateway' => '169.254.1.3'
+      }
+    }
+
     @vm_id = @cpi.create_vm(
       'agent-007',
       @stemcell_id,
@@ -100,6 +111,10 @@ describe VSphereCloud::Cloud, external_cpi: false do
     @cpi.attach_disk(@vm_id, @disk_id)
     expect(@cpi.has_disk?(@disk_id)).to be(true)
 
+    network_spec['static']['ip'] = '169.254.1.2'
+
+    @cpi.configure_networks(@vm_id, network_spec)
+
     metadata[:bosh_data] = 'bosh data'
     metadata[:instance_id] = 'instance'
     metadata[:agent_id] = 'agent'
@@ -115,19 +130,6 @@ describe VSphereCloud::Cloud, external_cpi: false do
     }.to raise_error Bosh::Clouds::NotImplemented
 
     @cpi.detach_disk(@vm_id, @disk_id)
-  end
-
-  let(:network_spec) do
-    {
-      'static' => {
-        'ip' => '169.254.1.1',
-        'netmask' => '255.255.254.0',
-        'cloud_properties' => { 'name' => @vlan },
-        'default' => ['dns', 'gateway'],
-        'dns' => ['169.254.1.2'],
-        'gateway' => '169.254.1.3'
-      }
-    }
   end
 
   let(:resource_pool) {
@@ -152,7 +154,7 @@ describe VSphereCloud::Cloud, external_cpi: false do
 
     context 'without existing disks' do
       it 'should exercise the vm lifecycle' do
-        vm_lifecycle(network_spec, [], resource_pool)
+        vm_lifecycle([], resource_pool)
       end
     end
 
@@ -160,7 +162,7 @@ describe VSphereCloud::Cloud, external_cpi: false do
       it 'should exercise the vm lifecycle and select the cluster in the resource pool datacenters' do
         begin
           resource_pool['datacenters'] = [{ 'name' => @datacenter_name, 'clusters' => [{@cluster => {}}]}]
-          vm_lifecycle(network_spec, [], resource_pool)
+          vm_lifecycle([], resource_pool)
 
           vm = @cpi.get_vm_by_cid(@vm_id)
           vm_info = @cpi.get_vm_host_info(vm)
@@ -173,7 +175,7 @@ describe VSphereCloud::Cloud, external_cpi: false do
           @cpi = build_cpi(datastore_pattern: @second_datastore_pattern, persistent_datastore_pattern: @second_persistent_datastore_pattern)
 
           resource_pool['datacenters'] = [{ 'name' => @datacenter_name, 'clusters' => [{@second_cluster => {}}]}]
-          vm_lifecycle(network_spec, [], resource_pool)
+          vm_lifecycle([], resource_pool)
 
           vm = @cpi.get_vm_by_cid(@vm_id)
           vm_info = @cpi.get_vm_host_info(vm)
@@ -189,7 +191,7 @@ describe VSphereCloud::Cloud, external_cpi: false do
       after { @cpi.delete_disk(@existing_volume_id) if @existing_volume_id }
 
       it 'should exercise the vm lifecycle' do
-        vm_lifecycle(network_spec, [@existing_volume_id], resource_pool)
+        vm_lifecycle([@existing_volume_id], resource_pool)
       end
     end
   end
@@ -227,7 +229,7 @@ describe VSphereCloud::Cloud, external_cpi: false do
       end
 
       it 'exercises the vm lifecycle' do
-        vm_lifecycle(network_spec, [], resource_pool)
+        vm_lifecycle([], resource_pool)
       end
     end
 
@@ -235,7 +237,7 @@ describe VSphereCloud::Cloud, external_cpi: false do
       after { clean_up_vm_and_disk }
 
       it 'does not lock cd-rom' do
-        vm_lifecycle(network_spec, [], resource_pool)
+        vm_lifecycle([], resource_pool)
         @cpi.attach_disk(@vm_id, @disk_id)
         @cpi.detach_disk(@vm_id, @disk_id)
       end
@@ -255,7 +257,7 @@ describe VSphereCloud::Cloud, external_cpi: false do
       end
 
       it 'should exercise the vm lifecycle' do
-        vm_lifecycle(network_spec, [], resource_pool) do
+        vm_lifecycle([], resource_pool) do
           relocate_vm_to_second_datastore
         end
       end
