@@ -52,6 +52,9 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
 CentOS images have filename `bosh-centos-6_5-os-image.tgz`
 
+* `GwV8gWhNVttyPdapUxh38tnYwZsrNbSc`
+  chmod /home/vcap to 755
+
 * `embHpGSvY3DXaOL8MFNA_a28B1yYG4pv`
   install parted
 
