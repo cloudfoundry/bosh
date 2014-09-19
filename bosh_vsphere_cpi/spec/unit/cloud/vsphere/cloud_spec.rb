@@ -1050,14 +1050,8 @@ module VSphereCloud
         ).and_return(devices)
       end
 
+      before { allow(cloud_config).to receive(:datacenter_name).and_return('fake-datacenter-name') }
       let(:datacenter) { instance_double('VimSdk::Vim::Datacenter') }
-      before do
-        allow(cloud_searcher).to receive(:get_property).with(
-          datacenter,
-          VimSdk::Vim::Datacenter,
-          'name'
-        ).and_return('fake-datacenter-name')
-      end
       before { allow(client).to receive(:find_parent).with(vm, VimSdk::Vim::Datacenter).and_return(datacenter) }
 
       let(:network_mob) { double(:network_mob) }

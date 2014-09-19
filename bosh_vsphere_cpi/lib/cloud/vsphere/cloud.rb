@@ -353,7 +353,7 @@ module VSphereCloud
         vm = get_vm_by_cid(vm_cid)
         devices = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
         datacenter = client.find_parent(vm, Vim::Datacenter)
-        datacenter_name = @cloud_searcher.get_property(datacenter, Vim::Datacenter, 'name')
+        datacenter_name = config.datacenter_name
         pci_controller = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualPCIController) }
 
         config = Vim::Vm::ConfigSpec.new
