@@ -1,24 +1,6 @@
 env = ENV.to_hash
 vm_box = 'bosh-stemcell-937f30'
 
-TMP_BOSH_DIRECTORY = File.join('/', 'tmp', 'bosh')
-def prepare_bosh_for_rsync(env)
-  require 'fileutils'
-
-  bosh_directory = File.expand_path('../..', __FILE__)
-  branch = 'develop'
-  Dir.chdir(bosh_directory) do
-    branch = `git symbolic-ref --short HEAD`
-  end
-
-  if Dir.exists?(TMP_BOSH_DIRECTORY)
-    system("cd #{TMP_BOSH_DIRECTORY} && git fetch origin && git reset --hard origin/#{branch}")
-  else
-    system("git clone --depth=1 -b '#{branch}' 'file://#{bosh_directory}' '#{TMP_BOSH_DIRECTORY}'")
-  end
-end
-raise "Could not prepare BOSH for rsync" unless prepare_bosh_for_rsync(env)
-
 Vagrant.configure('2') do |config|
   config.vm.box = vm_box
   config.ssh.username = 'ubuntu'
@@ -116,5 +98,5 @@ EOS
     }
   end
 
-  config.vm.synced_folder File.join(TMP_BOSH_DIRECTORY, '.git'), '/bosh/.git'
+  config.vm.synced_folder '../.git', '/bosh/.git'
 end
