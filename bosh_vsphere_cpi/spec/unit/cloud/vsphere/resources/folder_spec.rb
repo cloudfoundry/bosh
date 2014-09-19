@@ -13,101 +13,140 @@ describe VSphereCloud::Resources::Folder do
 
   before { allow(Bosh::Clouds::Config).to receive(:uuid).and_return('6666') }
 
-  context 'when the folder is not found in vcenter' do
+  describe '#mob' do
     before do
-      allow(config).to receive(:datacenter_use_sub_folder).and_return(false)
       allow(client).to receive(:find_by_inventory_path).with(
-                         ['fake-datacenter-name', 'vm', 'fake-folder-name']).and_return(nil)
+        ['fake-datacenter-name', 'vm', 'fake-folder-name']
+      ).and_return(folder_mob)
     end
 
-    it 'raises' do
-      expect { folder }.to raise_exception(RuntimeError, 'Missing folder: fake-folder-name')
+    context 'multi-tenancy' do
+      before do
+        allow(config).to receive(:datacenter_use_sub_folder).and_return(true)
+        allow(folder_mob).to receive(:create_folder).with('6666').and_return(uuid_folder_mob)
+      end
+
+      it 'returns the mob of the subfolder' do
+        expect(folder.mob).to eq(uuid_folder_mob)
+      end
+    end
+
+    context 'not multi-tenancy' do
+      before { allow(config).to receive(:datacenter_use_sub_folder).and_return(false) }
+
+      it 'returns the mob of the folder' do
+        expect(folder.mob).to eq(folder_mob)
+      end
     end
   end
 
-  context 'when the folder is found in vcenter' do
+  describe '#name' do
     before do
       allow(client).to receive(:find_by_inventory_path).with(
-                         ['fake-datacenter-name', 'vm', 'fake-folder-name']).and_return(folder_mob)
+        ['fake-datacenter-name', 'vm', 'fake-folder-name']
+      ).and_return(folder_mob)
     end
 
-    describe '#mob' do
+    context 'multi-tenancy' do
+      before do
+        allow(config).to receive(:datacenter_use_sub_folder).and_return(true)
+        allow(folder_mob).to receive(:create_folder).and_return(uuid_folder_mob)
+      end
+
+      it 'uses the director uuid as a namespace' do
+        expect(folder.name).to eq(['fake-folder-name', '6666'])
+      end
+    end
+
+    context 'not multi-tenancy' do
+      before { allow(config).to receive(:datacenter_use_sub_folder).and_return(false) }
+
+      it 'uses the folder name' do
+        expect(folder.name).to eq('fake-folder-name')
+      end
+    end
+  end
+
+  context "initializing" do
+    context 'when the folder is not found in vcenter' do
+      before do
+        allow(client).to receive(:find_by_inventory_path).with(
+          ['fake-datacenter-name', 'vm', 'fake-folder-name']
+        ).and_return(nil)
+      end
+
+      it 'raises' do
+        expect { folder }.to raise_exception(RuntimeError, 'Missing folder: fake-folder-name')
+      end
+    end
+
+    context 'when the folder is found in vcenter' do
+      before do
+        allow(client).to receive(:find_by_inventory_path).with(
+          ['fake-datacenter-name', 'vm', 'fake-folder-name']
+        ).and_return(folder_mob)
+      end
+
       context 'multi-tenancy' do
         before { allow(config).to receive(:datacenter_use_sub_folder).and_return(true) }
 
-        context 'when the director uuid folder exists' do
-          before do
-            allow(client).to receive(:find_by_inventory_path).with(
-                               ['fake-datacenter-name', 'vm', ['fake-folder-name', '6666']]).and_return(uuid_folder_mob)
-          end
-
-          it 'returns the mob of the director uuid folder' do
-            expect(folder.mob).to eq(uuid_folder_mob)
-          end
+        it "should try to create the subfolder" do
+          expect(folder_mob).to receive(:create_folder).with('6666')
+          folder
         end
 
-        context 'when the director uuid folder does not exist' do
+        context "when creating the subfolder fails because it's already been created" do
           before do
+            error = VimSdk::Vim::Fault::DuplicateName.new(msg: 'The name "6666" already exists.')
+            soap_error = VimSdk::SoapError.new(error.msg, error)
+            allow(folder_mob).to receive(:create_folder).with('6666').and_raise(soap_error)
             allow(client).to receive(:find_by_inventory_path).with(
-                               ['fake-datacenter-name', 'vm', ['fake-folder-name', '6666']]).and_return(nil)
+              ['fake-datacenter-name', 'vm', ['fake-folder-name', '6666']]
+            ).and_return(nil)
           end
 
-          it 'creates it' do
-            expect(folder_mob).to receive(:create_folder).with('6666')
-            folder.mob
-          end
-
-          it 'returns the mob of the director uuid folder' do
-            allow(folder_mob).to receive(:create_folder).with('6666').and_return(uuid_folder_mob)
-            expect(folder.mob).to eq(uuid_folder_mob)
+          it "should not raise" do
+            expect { folder }.not_to raise_error
           end
 
           it 'logs correct messages' do
-            allow(folder_mob).to receive(:create_folder).with('6666')
+            expect(logger).to receive(:debug).with('Attempting to create folder fake-folder-name/6666').ordered
+            expect(logger).to receive(:debug).with(%r{Folder fake-folder-name/6666 already exists}).ordered
 
-            expect(logger).to receive(:debug).with('Search for folder fake-folder-name/6666')
-            expect(logger).to receive(:debug).with('Creating folder fake-folder-name/6666')
-            expect(logger).to receive(:debug).with(%r{Found folder fake-folder-name/6666: })
-
-            folder.mob
+            folder
           end
         end
-      end
 
-      context 'not multi-tenancy' do
-        before { allow(config).to receive(:datacenter_use_sub_folder).and_return(false) }
+        context "when creating the subfolder fails for a non-DuplicateName reason" do
+          before do
+            error = VimSdk::Vim::Fault::InvalidName.new(msg: 'The name "6666" already exists.')
+            soap_error = VimSdk::SoapError.new(error.msg, error)
+            allow(folder_mob).to receive(:create_folder).with('6666').and_raise(soap_error)
+          end
 
-        it 'returns the mob of the folder name' do
-          expect(folder.mob).to eq(folder_mob)
+          it "should raise" do
+            expect { folder }.to raise_error
+          end
+
+          it 'logs correct messages' do
+            expect(logger).to receive(:debug).with('Attempting to create folder fake-folder-name/6666')
+
+            begin
+              folder
+            rescue
+            end
+          end
         end
-      end
-    end
 
-    describe '#name' do
-      context 'multi-tenancy' do
-        before do
-          allow(config).to receive(:datacenter_use_sub_folder).and_return(true)
-          allow(client).to receive(:find_by_inventory_path).with(
-                             ['fake-datacenter-name', 'vm', ['fake-folder-name', '6666']]).and_return(uuid_folder_mob)
-        end
+        context "when creating the subfolder succeeds" do
+          before { allow(folder_mob).to receive(:create_folder).and_return(uuid_folder_mob) }
 
-        it 'uses the director uuid as a namespace' do
-          expect(folder.name).to eq(['fake-folder-name', '6666'])
-        end
+          it 'logs correct messages' do
+            expect(logger).to receive(:debug).with('Attempting to create folder fake-folder-name/6666').ordered
+            expect(logger).to receive(:debug).with('Created folder fake-folder-name/6666').ordered
 
-        it 'logs the correct messages' do
-          expect(logger).to receive(:debug).with('Search for folder fake-folder-name/6666')
-          expect(logger).to receive(:debug).with(%r{Found folder fake-folder-name/6666: })
-
-          folder.name
-        end
-      end
-
-      context 'not multi-tenancy' do
-        before { allow(config).to receive(:datacenter_use_sub_folder).and_return(false) }
-
-        it 'uses the folder name' do
-          expect(folder.name).to eq('fake-folder-name')
+            folder
+          end
         end
       end
     end

@@ -40,7 +40,7 @@ module Bosh::Dev::VSphere
     def configure_cpi
       Bosh::Clouds::Config.configure(OpenStruct.new(
         logger: @logger,
-        uuid: nil,
+        uuid: SecureRandom.uuid,
         task_checkpoint: nil,
         db: Sequel.sqlite,
       ))
