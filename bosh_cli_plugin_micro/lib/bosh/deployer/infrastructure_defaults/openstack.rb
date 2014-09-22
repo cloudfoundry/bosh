@@ -34,7 +34,8 @@ module Bosh::Deployer::InfrastructureDefaults
           'default_key_name' => nil,
           'wait_resource_poll_interval' => 5,
           'default_security_groups' => [],
-          'ssh_user' => 'vcap'
+          'ssh_user' => 'vcap',
+          'use_config_drive' => false
         },
         'registry' => {
           'endpoint' => 'http://admin:admin@localhost:25889',

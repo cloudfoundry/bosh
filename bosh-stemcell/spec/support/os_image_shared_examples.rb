@@ -24,6 +24,10 @@ shared_examples_for 'an OS image' do
     describe command("grep -q 'export PATH=/var/vcap/bosh/bin:$PATH\n' /home/vcap/.bashrc") do
       it { should return_exit_status(0) }
     end
+
+    describe command("stat -c %a ~vcap") do
+      it { should return_stdout("755") }
+    end
   end
 
   context 'installed by rsyslog' do

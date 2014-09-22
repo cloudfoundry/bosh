@@ -229,13 +229,14 @@ cloud:
 
 <% if_p('openstack.auth_url', 'openstack.username', 'openstack.api_key',
         'openstack.tenant', 'openstack.default_key_name',
-        'openstack.default_security_groups','openstack.wait_resource_poll_interval', 'registry.address',
-        'registry.http.port', 'registry.http.user',
+        'openstack.default_security_groups','openstack.wait_resource_poll_interval',
+        'openstack.use_config_drive', 'registry.address', 'registry.http.port', 'registry.http.user',
         'registry.http.password') do |auth_url, username, api_key,
-                                                tenant, default_key_name,
-                                                default_security_groups, wait_resource_poll_interval, reg_address,
-                                                reg_port, reg_user,
-                                                reg_password| %>
+                                      tenant, default_key_name,
+                                      default_security_groups, wait_resource_poll_interval,
+                                      use_config_drive, reg_address,
+                                      reg_port, reg_user,
+                                      reg_password| %>
   plugin: openstack <% plugin = "openstack" %>
   properties:
     openstack:
@@ -264,6 +265,7 @@ cloud:
       default_key_name: <%= default_key_name %>
       default_security_groups: <%= default_security_groups %>
       wait_resource_poll_interval: <%= wait_resource_poll_interval %>
+      use_config_drive: <%= use_config_drive %>
     registry:
       endpoint: http://<%= reg_address %>:<%= reg_port %>
       user: <%= reg_user %>

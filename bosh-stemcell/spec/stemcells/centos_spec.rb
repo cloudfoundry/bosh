@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'CentOS stemcell', stemcell_image: true do
-  context 'installed by image_install_grub' do
+  context 'installed by image_install_grub', exclude_on_warden: true do
     describe file('/etc/fstab') do
       it { should be_file }
       it { should contain 'UUID=' }
@@ -70,6 +70,19 @@ describe 'CentOS stemcell', stemcell_image: true do
     describe file('/etc/sysctl.conf') do
       it { should be_file }
       it { should contain 'dev.cdrom.lock=0' }
+    end
+  end
+
+  context 'installed by bosh_openstack_agent_settings', {
+    exclude_on_aws: true,
+    exclude_on_vcloud: true,
+    exclude_on_vsphere: true,
+    exclude_on_warden: true,
+  } do
+    describe file('/var/vcap/bosh/agent.json') do
+      it { should be_valid_json_file }
+      it { should_not contain('"CreatePartitionIfNoEphemeralDisk": true') }
+      it { should contain('"UseConfigDrive": true') }
     end
   end
 end
