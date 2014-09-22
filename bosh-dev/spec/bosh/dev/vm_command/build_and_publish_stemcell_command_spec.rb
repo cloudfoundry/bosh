@@ -22,6 +22,7 @@ module Bosh::Dev
         agent_name: 'fake-agent_name',
         os_image_s3_bucket_name: 'fake-bucket',
         os_image_s3_key: 'fake-key',
+        os_image_s3_version: 'fake-version',
       }
     end
 
@@ -36,7 +37,7 @@ module Bosh::Dev
           export BOSH_AWS_ACCESS_KEY_ID='fake-BOSH_AWS_ACCESS_KEY_ID'
           export BOSH_AWS_SECRET_ACCESS_KEY='fake-BOSH_AWS_SECRET_ACCESS_KEY'
 
-          bundle exec rake stemcell:build[fake-infrastructure_name,fake-operating_system_name,fake-operating_system_version,fake-agent_name,fake-bucket,fake-key]
+          bundle exec rake stemcell:build[fake-infrastructure_name,fake-operating_system_name,fake-operating_system_version,fake-agent_name,fake-bucket,fake-key,fake-version]
           bundle exec rake ci:publish_stemcell[fake-stemcell.tgz]
         BASH
 

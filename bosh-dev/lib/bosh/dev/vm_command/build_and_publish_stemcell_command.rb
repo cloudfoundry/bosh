@@ -54,6 +54,7 @@ module Bosh::Dev
           options[:agent_name],
           options[:os_image_s3_bucket_name],
           options[:os_image_s3_key],
+          options[:os_image_s3_version],
         ].join(',')
       end
     end
