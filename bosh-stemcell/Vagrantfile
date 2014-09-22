@@ -76,12 +76,15 @@ EOS
       mkdir -p /mnt/stemcells
       chown -R ubuntu /mnt/stemcells
       mkdir -p /bosh/tmp
-      git --git-dir=/bosh/.git --work-tree=/bosh checkout /bosh
-      (cd /bosh && git clean -dfx)
-      (cd /bosh && git submodule update --init --recursive)
-      (cd /bosh && git submodule foreach --recursive git reset --hard)
+      (
+        cd /bosh
+        git init
+        git add -A
+        git commit -m "updated rsync"
+        git submodule foreach 'git checkout .'
+      )
       chown -R ubuntu:ubuntu /bosh
-      (cd /bosh && bundle install --local)
+      ( cd /bosh && bundle install --local )
     BASH
   end
 
@@ -98,5 +101,8 @@ EOS
     }
   end
 
-  config.vm.synced_folder '../.git', '/bosh/.git'
+  files_to_ignore = File.readlines(File.expand_path('../../.gitignore', __FILE__)).map(&:chomp).reject(&:empty?)
+  files_to_ignore << '.git/'
+  config.vm.synced_folder '../.', '/bosh', rsync_excludes: files_to_ignore, rsync__exclude: files_to_ignore
+  config.vm.synced_folder '../.git/modules', '/bosh/.git/modules'
 end
