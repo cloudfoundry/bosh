@@ -7,6 +7,11 @@ Improvements:
 
 ## 2717
 
+New Features:
+
+  * agent: Use remaining space on root disk for ephemeral storage and swap
+      if OpenStack flavor does not include separate ephemeral disk [250d15a]
+
 Improvements:
 
   * director: upgraded bosh components to use Ruby 2.1.2p95 [14e4702]
@@ -14,8 +19,6 @@ Improvements:
   * director: Set content-type while creating blobs on s3 [e69beab]
   * stemcell: openstack: Reduce OpenStack root partition to 3 GB [e9681a7]
   * stemcell: lucid: Remove lucid stemcells [2124ed4]
-  * agent: Use remaining space on root disk for ephemeral storage and swap
-      if OpenStack flavor does not include separate ephemeral disk [250d15a]
   * agent: Try running monit stop/unmonitor for longer period of time
       to handle 503 Service Unavailable error from monit [250d15a]
 
