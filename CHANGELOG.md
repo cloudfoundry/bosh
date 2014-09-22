@@ -1,3 +1,31 @@
+## 2719
+
+Improvements:
+
+  * cpi: vsphere: Remove drs rule attribute cleaner [4348d0d]
+  * cpi: vsphere: Use datacenter name from config in configure_networks [f580676]
+
+## 2717
+
+Improvements:
+
+  * director: upgraded bosh components to use Ruby 2.1.2p95 [14e4702]
+  * cpi: openstack: updated fog to 1.23.0 [245e086]
+  * director: Set content-type while creating blobs on s3 [e69beab]
+  * stemcell: openstack: Reduce OpenStack root partition to 3 GB [e9681a7]
+  * stemcell: lucid: Remove lucid stemcells [2124ed4]
+  * agent: Use remaining space on root disk for ephemeral storage and swap
+      if OpenStack flavor does not include separate ephemeral disk [250d15a]
+  * agent: Try running monit stop/unmonitor for longer period of time
+      to handle 503 Service Unavailable error from monit [250d15a]
+
+## 2710
+
+New Features:
+
+  * director: allow to configure compiled packages cache
+      to use local blobstore [9e99ea9]
+
 ## 2707
 
 New Features:
