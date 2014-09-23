@@ -97,7 +97,7 @@ describe 'with release and stemcell and two deployments' do
     end
 
     it 'should set vcap password', ssh: true do
-      ssh_sudo(public_ip, 'vcap', 'whoami', @our_ssh_options).should eq("root\n")
+      expect(ssh_sudo(public_ip, 'vcap', 'whoami', @our_ssh_options)).to eq("root\n")
     end
 
     it 'should not change the deployment on a noop' do
@@ -119,7 +119,7 @@ describe 'with release and stemcell and two deployments' do
       no_vip
       use_deployment_name('bat2')
       with_deployment do
-        @bosh_api.deployments.should include('bat2')
+        expect(@bosh_api.deployments).to include('bat2')
       end
       # Not sure why these are necessary since the before(:all) should call them
       # before setting up future deployments. But without these, the state leaks
@@ -132,7 +132,7 @@ describe 'with release and stemcell and two deployments' do
     it 'should use job colocation', ssh: true do
       @jobs.each do |job|
         grep_cmd = "ps -ef | grep #{job} | grep -v grep"
-        ssh(public_ip, 'vcap', grep_cmd, @our_ssh_options).should match /#{job}/
+        expect(ssh(public_ip, 'vcap', grep_cmd, @our_ssh_options)).to match /#{job}/
       end
     end
 
@@ -140,7 +140,7 @@ describe 'with release and stemcell and two deployments' do
       skip "doesn't work on AWS as the VIP IP isn't visible to the VM" if aws?
       skip "doesn't work on OpenStack as the VIP IP isn't visible to the VM" if openstack?
       skip "doesn't work on Warden as the VIP IP isn't visible to eth0" if warden?
-      ssh(public_ip, 'vcap', '/sbin/ifconfig eth0', @our_ssh_options).should match /#{static_ip}/
+      expect(ssh(public_ip, 'vcap', '/sbin/ifconfig eth0', @our_ssh_options)).to match /#{static_ip}/
     end
 
     context 'second deployment' do
@@ -158,14 +158,14 @@ describe 'with release and stemcell and two deployments' do
       it 'should migrate disk contents', ssh: true do
         # Warden df don't work so skip the persistent disk size check
         unless warden?
-          persistent_disk(public_ip, 'vcap', @our_ssh_options).should_not eq(@size)
+          expect(persistent_disk(public_ip, 'vcap', @our_ssh_options)).to_not eq(@size)
         end
-        ssh(public_ip, 'vcap', "cat #{SAVE_FILE}", @our_ssh_options).should match /foobar/
+        expect(ssh(public_ip, 'vcap', "cat #{SAVE_FILE}", @our_ssh_options)).to match /foobar/
       end
 
       xit 'should rename a job' do
-        bosh('rename job batlight batfoo').should succeed_with /Rename successful/
-        bosh('vms').should succeed_with /batfoo/
+        expect(bosh('rename job batlight batfoo')).to succeed_with /Rename successful/
+        expect(bosh('vms')).to succeed_with /batfoo/
       end
     end
   end

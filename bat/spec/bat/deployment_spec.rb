@@ -7,7 +7,7 @@ describe Bat::Deployment do
 
   # Make sure mktmpdir is always same but unique
   let!(:tmp_dir) { Dir.mktmpdir }
-  before { Dir.stub(:mktmpdir).and_return(tmp_dir) }
+  before { allow(Dir).to receive(:mktmpdir).and_return(tmp_dir) }
 
   before do
     template_dir = File.expand_path(File.join(SPEC_ROOT, '..', 'templates'))
@@ -16,14 +16,14 @@ describe Bat::Deployment do
   end
   after { FileUtils.rm_f(@cpi_template_path) }
 
-  before { Bosh::Template::EvaluationContext.stub(new: template_evaluation_context) }
+  before { allow(Bosh::Template::EvaluationContext).to receive(:new).and_return(template_evaluation_context) }
   let(:template_evaluation_context) { FakeTemplateEvaluationContext.new }
 
-  before { template_evaluation_context.stub_chain(:spec, cpi: 'FAKE_SPEC_CPI') }
+  before { allow(template_evaluation_context).to receive_message_chain(:spec, :cpi).and_return('FAKE_SPEC_CPI') }
 
   describe '#initialize' do
     it 'generates a deployment manifest' do
-      Bosh::Template::EvaluationContext.should_receive(:new).with('FAKE_DEPLOYMENT_SPEC')
+      expect(Bosh::Template::EvaluationContext).to receive(:new).with('FAKE_DEPLOYMENT_SPEC')
       Bat::Deployment.new('FAKE_DEPLOYMENT_SPEC')
       expect(File.read("#{tmp_dir}/deployment")).to eq("---\nname: FAKE_DEPLOYMENT_NAME")
     end
@@ -32,7 +32,7 @@ describe Bat::Deployment do
   describe '#generate_deployment_manifest' do
     it 'generates a deployment manifest' do
       deployment # force load
-      Bosh::Template::EvaluationContext.should_receive(:new).with('FAKE_DEPLOYMENT_SPEC')
+      expect(Bosh::Template::EvaluationContext).to receive(:new).with('FAKE_DEPLOYMENT_SPEC')
       deployment.generate_deployment_manifest('FAKE_DEPLOYMENT_SPEC')
       expect(File.read("#{tmp_dir}/deployment")).to eq("---\nname: FAKE_DEPLOYMENT_NAME")
     end

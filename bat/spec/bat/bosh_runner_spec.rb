@@ -20,8 +20,8 @@ describe Bat::BoshRunner do
         FAKE_ARGS 2>&1
       ).join(' ')
 
-      logger.should_receive(:info).with("Running bosh command --> #{expected_command}")
-      bosh_exec.should_receive(:sh).with(expected_command, {}).and_return(bosh_exec_result)
+      expect(logger).to receive(:info).with("Running bosh command --> #{expected_command}")
+      expect(bosh_exec).to receive(:sh).with(expected_command, {}).and_return(bosh_exec_result)
 
       subject.bosh('FAKE_ARGS')
     end
@@ -34,7 +34,7 @@ describe Bat::BoshRunner do
 
     context 'when options are passed' do
       it 'passes the options to Bosh::Exec' do
-        bosh_exec.should_receive(:sh).with(anything, { foo: :bar }).and_return(bosh_exec_result)
+        expect(bosh_exec).to receive(:sh).with(anything, { foo: :bar }).and_return(bosh_exec_result)
 
         subject.bosh('FAKE_ARGS', { foo: :bar })
       end
@@ -42,7 +42,7 @@ describe Bat::BoshRunner do
 
     context 'when bosh command raises an error' do
       it 'prints Bosh::Exec::Error messages and re-raises' do
-        bosh_exec.stub(:sh).and_raise(Bosh::Exec::Error.new(1, 'fake command', 'fake output'))
+        allow(bosh_exec).to receive(:sh).and_raise(Bosh::Exec::Error.new(1, 'fake command', 'fake output'))
 
         expect {
           subject.bosh('FAKE_ARG')
@@ -51,9 +51,9 @@ describe Bat::BoshRunner do
     end
 
     it 'prints the output from the Bosh::Exec result' do
-      bosh_exec.stub(:sh).and_return(bosh_exec_result)
+      allow(bosh_exec).to receive(:sh).and_return(bosh_exec_result)
 
-      logger.should_receive(:info).with('FAKE_OUTPUT')
+      expect(logger).to receive(:info).with('FAKE_OUTPUT')
 
       subject.bosh('fake arg')
     end

@@ -13,12 +13,12 @@ describe Bat::Stemcell do
 
     before do
       FileUtils.mkdir_p(fake_tmpdir)
-      Dir.stub(:mktmpdir).and_yield(fake_tmpdir)
+      allow(Dir).to receive(:mktmpdir).and_yield(fake_tmpdir)
       FileUtils.mkdir_p(File.dirname(stemcell_file_path))
     end
 
     it 'expands the stemcell file with tar, read its manifest, and return a new stemcell' do
-      Bat::Stemcell.should_receive(:sh).with("tar xzf #{stemcell_file_path} --directory=#{fake_tmpdir} stemcell.MF") do
+      expect(Bat::Stemcell).to receive(:sh).with("tar xzf #{stemcell_file_path} --directory=#{fake_tmpdir} stemcell.MF") do
         File.open(File.join(fake_tmpdir, 'stemcell.MF'), 'w') do |f|
           f.write(YAML.dump(
             'name' => 'cloudy-centos',

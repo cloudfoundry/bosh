@@ -46,15 +46,15 @@ module Bat
       case what
         when Bat::Stemcell
           if @bosh_api.stemcells.include?(what.name)
-            @bosh_runner.bosh_safe("delete stemcell #{what.name} #{what.version}").should succeed
+            expect(@bosh_runner.bosh_safe("delete stemcell #{what.name} #{what.version}")).to succeed
           end
         when Bat::Release
           if @bosh_api.releases.include?(what.name)
-            @bosh_runner.bosh_safe("delete release #{what.name}").should succeed
+            expect(@bosh_runner.bosh_safe("delete release #{what.name}")).to succeed
           end
         when Bat::Deployment
           if @bosh_api.deployments.include?(what.name)
-            @bosh_runner.bosh_safe("delete deployment #{what.name}").should succeed
+            expect(@bosh_runner.bosh_safe("delete deployment #{what.name}")).to succeed
             what.delete
           end
         else
@@ -75,7 +75,7 @@ module Bat
         @logger.info('Stemcell already uploaded')
       else
         @logger.info('stemcell not uploaded')
-        @bosh_runner.bosh_safe("upload stemcell #{what.to_path}").should succeed
+        expect(@bosh_runner.bosh_safe("upload stemcell #{what.to_path}")).to succeed
       end
     end
 
@@ -84,19 +84,19 @@ module Bat
         @logger.info('release already uploaded')
       else
         @logger.info('release not uploaded')
-        @bosh_runner.bosh_safe("upload release #{what.to_path}").should succeed
+        expect(@bosh_runner.bosh_safe("upload release #{what.to_path}")).to succeed
       end
     end
 
     def require_deployment(what, deployment_spec, options)
       if @bosh_api.deployments.include?(what.name) && !options[:force]
-        @logger.info('deployment already deployed')
-        @bosh_runner.bosh_safe("deployment #{what.to_path}").should succeed
+        expect(@logger.info('deployment already deployed, skipping deployment')).to succeed
+        expect(@bosh_runner.bosh_safe("deployment #{what.to_path}")).to succeed
       else
-        @logger.info('deployment not deployed')
+        @logger.info('deployment not already deployed, deploying...')
         what.generate_deployment_manifest(deployment_spec)
-        @bosh_runner.bosh_safe("deployment #{what.to_path}").should succeed
-        @bosh_runner.bosh_safe('deploy').should succeed
+        expect(@bosh_runner.bosh_safe("deployment #{what.to_path}")).to succeed
+        expect(@bosh_runner.bosh_safe('deploy')).to succeed
       end
     end
   end

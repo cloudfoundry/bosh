@@ -22,7 +22,7 @@ describe 'with release, stemcell and deployment' do
       Dir.mktmpdir do |tmpdir|
         ssh(public_ip, 'vcap', "echo #{@env.vcap_password} | sudo -S pkill -9 agent", ssh_options)
         wait_for_vm('batlight/0')
-        bosh_safe("logs batlight 0 --agent --dir #{tmpdir}").should succeed
+        expect(bosh_safe("logs batlight 0 --agent --dir #{tmpdir}")).to succeed
       end
     end
   end
@@ -50,36 +50,36 @@ describe 'with release, stemcell and deployment' do
         end
       end
 
-      bosh_safe("ssh batlight 0 'uname -a' #{bosh_ssh_options}").should succeed_with /Linux/
+      expect(bosh_safe("ssh batlight 0 'uname -a' #{bosh_ssh_options}")).to succeed_with /Linux/
     end
   end
 
   describe 'job' do
     it 'should recreate a job' do
-      bosh_safe('recreate batlight 0').should succeed_with /batlight\/0 has been recreated/
+      expect(bosh_safe('recreate batlight 0')).to succeed_with /batlight\/0 has been recreated/
     end
 
     it 'should stop and start a job' do
-      bosh_safe('stop batlight 0').should succeed_with /batlight\/0 has been stopped/
-      bosh_safe('start batlight 0').should succeed_with /batlight\/0 has been started/
+      expect(bosh_safe('stop batlight 0')).to succeed_with /batlight\/0 has been stopped/
+      expect(bosh_safe('start batlight 0')).to succeed_with /batlight\/0 has been started/
     end
   end
 
   describe 'logs' do
     it 'should get agent log' do
       with_tmpdir do
-        bosh_safe('logs batlight 0 --agent').should succeed_with /Logs saved in/
+        expect(bosh_safe('logs batlight 0 --agent')).to succeed_with /Logs saved in/
         files = tar_contents(tarfile)
-        files.should include './current'
+        expect(files).to include './current'
       end
     end
 
     it 'should get job logs' do
       with_tmpdir do
-        bosh_safe('logs batlight 0').should succeed_with /Logs saved in/
+        expect(bosh_safe('logs batlight 0')).to succeed_with /Logs saved in/
         files = tar_contents(tarfile)
-        files.should include './batlight/batlight.stdout.log'
-        files.should include './batlight/batlight.stderr.log'
+        expect(files).to include './batlight/batlight.stdout.log'
+        expect(files).to include './batlight/batlight.stderr.log'
       end
     end
   end

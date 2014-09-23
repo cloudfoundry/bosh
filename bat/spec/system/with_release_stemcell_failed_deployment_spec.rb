@@ -25,15 +25,15 @@ describe 'with release, stemcell and failed deployment' do
 
   context 'A brand new deployment' do
     it 'should stop the deployment if the canary fails' do
-      bosh_safe("deployment #{deployment_manifest_bad.to_path}").should succeed
+      expect(bosh_safe("deployment #{deployment_manifest_bad.to_path}")).to succeed
       failed_deployment_result = bosh('deploy', on_error: :return)
 
       # possibly check for:
       # Error 400007: `batlight/0' is not running after update
-      failed_deployment_result.should_not succeed
+      expect(failed_deployment_result).to_not succeed
 
       events(get_task_id(failed_deployment_result.output, 'error')).each do |event|
-        event['task'].should_not match(/^batlight\/1/) if event['stage'] == 'Updating job'
+        expect(event['task']).to_not match(/^batlight\/1/) if event['stage'] == 'Updating job'
       end
     end
   end
@@ -41,18 +41,18 @@ describe 'with release, stemcell and failed deployment' do
   context 'A deployment already exists' do
     it 'should stop the deployment if the canary fails' do
       deployment_manifest_good = with_deployment
-      bosh_safe("deployment #{deployment_manifest_good.to_path}").should succeed
-      bosh_safe('deploy').should succeed
+      expect(bosh_safe("deployment #{deployment_manifest_good.to_path}")).to succeed
+      expect(bosh_safe('deploy')).to succeed
 
-      bosh_safe("deployment #{deployment_manifest_bad.to_path}").should succeed
+      expect(bosh_safe("deployment #{deployment_manifest_bad.to_path}")).to succeed
 
       # possibly check for:
       # Error 400007: `batlight/0' is not running after update
       failed_deployment_result = bosh_safe('deploy')
-      failed_deployment_result.should_not succeed
+      expect(failed_deployment_result).to_not succeed
 
       events(get_task_id(failed_deployment_result.output, 'error')).each do |event|
-        event['task'].should_not match(/^batlight\/1/) if event['stage'] == 'Updating job'
+        expect(event['task']).to_not match(/^batlight\/1/) if event['stage'] == 'Updating job'
       end
     end
   end

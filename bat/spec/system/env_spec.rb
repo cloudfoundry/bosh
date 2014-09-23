@@ -3,17 +3,17 @@ require 'system/spec_helper'
 describe 'initialization', :skip_task_check do
   describe 'environment requirements' do
     it 'should have a readable stemcell' do
-      File.exist?(@requirements.stemcell.to_path).should be(true)
+      expect(File.exist?(@requirements.stemcell.to_path)).to be(true)
     end
 
     it 'should have readable releases' do
-      File.exist?(@requirements.release.to_path).should be(true)
+      expect(File.exist?(@requirements.release.to_path)).to be(true)
     end
 
     it 'should have a readable deployment' do
       load_deployment_spec
       with_deployment do |deployment|
-        File.exists?(deployment.to_path).should be(true)
+        expect(File.exists?(deployment.to_path)).to be(true)
       end
     end
 
@@ -26,21 +26,21 @@ describe 'initialization', :skip_task_check do
 
   describe 'director' do
     it 'should be targetable' do
-      @bosh_runner.bosh("target #{@env.director}").should succeed_with /Target \w*\s*set/
+      expect(@bosh_runner.bosh("target #{@env.director}")).to succeed_with /Target \w*\s*set/
     end
 
     it 'should not have bat deployments' do
       deployments = @bosh_api.deployments
-      deployments.should_not have_key('bat')
-      deployments.should_not have_key('bat2')
+      expect(deployments).to_not have_key('bat')
+      expect(deployments).to_not have_key('bat2')
     end
 
     it 'should fetch releases' do
-      @bosh_api.releases.should_not be_nil
+      expect(@bosh_api.releases).to_not be_nil
     end
 
     it 'should fetch stemcells' do
-      @bosh_api.stemcells.each { |s| s.should_not be_nil }
+      @bosh_api.stemcells.each { |s| expect(s).to_not be_nil }
     end
   end
 end

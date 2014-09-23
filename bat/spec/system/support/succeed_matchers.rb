@@ -3,7 +3,7 @@ RSpec::Matchers.define :succeed do |_|
     expect(actual.exit_status).to eq 0
   end
 
-  failure_message_for_should do |actual|
+  failure_message do |actual|
     'expected command to exit with 0 but was ' +
       "#{actual.exit_status}. output was\n#{actual.output}"
   end
@@ -25,7 +25,7 @@ RSpec::Matchers.define :succeed_with do |expected|
     end
   end
 
-  failure_message_for_should do |actual|
+  failure_message do |actual|
     case expected
       when String
         what = 'be'

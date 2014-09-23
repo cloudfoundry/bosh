@@ -34,16 +34,16 @@ module Bat
       if !block_given?
         return deployment
       elsif block.arity == 0
-        @bosh_runner.bosh("deployment #{deployment.to_path}").should succeed
-        @bosh_runner.bosh('deploy').should succeed
+        expect(@bosh_runner.bosh("deployment #{deployment.to_path}")).to succeed
+        expect(@bosh_runner.bosh('deploy')).to succeed
         deployed = true
         yield
       elsif block.arity == 1
         yield deployment
       elsif block.arity == 2
-        @bosh_runner.bosh("deployment #{deployment.to_path}").should succeed
+        expect(@bosh_runner.bosh("deployment #{deployment.to_path}")).to succeed
         result = @bosh_runner.bosh('deploy')
-        result.should succeed
+        expect(result).to succeed
         deployed = true
         yield deployment, result
       else
@@ -53,7 +53,7 @@ module Bat
       if block_given?
         deployment.delete if deployment
         if deployed
-          @bosh_runner.bosh("delete deployment #{deployment.name}").should succeed
+          expect(@bosh_runner.bosh("delete deployment #{deployment.name}")).to succeed
         end
       end
     end
@@ -193,7 +193,7 @@ module Bat
 
     def events(task_id)
       result = @bosh_runner.bosh("task #{task_id} --raw")
-      result.should succeed_with /Task \d+ \w+/
+      expect(result).to succeed_with /Task \d+ \w+/
 
       event_list = []
       result.output.split("\n").each do |line|
