@@ -2,12 +2,15 @@
 
 read INPUT
 
-PATH=/var/vcap/packages/ruby_vsphere_cpi/bin:/var/vcap/packages/genisoimage_vsphere_cpi:$PATH
+BOSH_PACKAGES_DIR=${BOSH_PACKAGES_DIR:-/var/vcap/packages}
+BOSH_JOBS_DIR=${BOSH_JOBS_DIR:-/var/vcap/jobs}
+
+PATH=$BOSH_PACKAGES_DIR/ruby_vsphere_cpi/bin:$BOSH_PACKAGES_DIR/genisoimage_vsphere_cpi:$PATH
 export PATH
 
-export GEM_HOME=/var/vcap/packages/bosh_vsphere_cpi/gem_home
+export GEM_HOME=$BOSH_PACKAGES_DIR/bosh_vsphere_cpi/gem_home
 
-echo $INPUT | /var/vcap/packages/bosh_vsphere_cpi/bin/vsphere_cpi \
-  /var/vcap/jobs/bosh_vsphere_cpi/config/cpi.yml
+echo $INPUT | $BOSH_PACKAGES_DIR/bosh_vsphere_cpi/bin/vsphere_cpi \
+  $BOSH_JOBS_DIR/bosh_vsphere_cpi/config/cpi.yml
 
 exit 0

@@ -11,7 +11,6 @@ cloud:
   plugin: vsphere
   properties:
     mem_overcommit_ratio: 0.7
-    cpi_log: /var/vcap/sys/log/cpi/cpi.log
     vcenters:
       - host: <%= JSON.dump(p('vcenter.address')) %>
         user: <%= JSON.dump(p('vcenter.user')) %>
