@@ -83,11 +83,11 @@ module Bosh::Director
           it 'creates new deployment in DB using name from the manifest' do
             plan = make_plan('mycloud')
 
-            find_deployment('mycloud').should be_nil
+            expect(find_deployment('mycloud')).to be_nil
             plan.bind_model
 
-            plan.model.should == find_deployment('mycloud')
-            Models::Deployment.count.should == 1
+            expect(plan.model).to eq(find_deployment('mycloud'))
+            expect(Models::Deployment.count).to eq(1)
           end
 
           it 'uses an existing deployment model if found in DB' do
@@ -95,8 +95,8 @@ module Bosh::Director
 
             deployment = make_deployment('mycloud')
             plan.bind_model
-            plan.model.should == deployment
-            Models::Deployment.count.should == 1
+            expect(plan.model).to eq(deployment)
+            expect(Models::Deployment.count).to eq(1)
           end
 
           it 'enforces canonical name uniqueness' do
@@ -107,8 +107,8 @@ module Bosh::Director
               plan.bind_model
             }.to raise_error(DeploymentCanonicalNameTaken)
 
-            plan.model.should be_nil
-            Models::Deployment.count.should == 1
+            expect(plan.model).to be_nil
+            expect(Models::Deployment.count).to eq(1)
           end
         end
 
@@ -122,7 +122,7 @@ module Bosh::Director
 
             make_deployment('mycloud')
             plan.bind_model
-            lambda { plan.vms }.should_not raise_error
+            expect { plan.vms }.to_not raise_error
           end
 
           it 'returns a list of VMs in deployment' do
@@ -133,7 +133,7 @@ module Bosh::Director
             vm_model2 = Models::Vm.make(deployment: deployment)
 
             plan.bind_model
-            plan.vms.should =~ [vm_model1, vm_model2]
+            expect(plan.vms).to eq([vm_model1, vm_model2])
           end
         end
 
