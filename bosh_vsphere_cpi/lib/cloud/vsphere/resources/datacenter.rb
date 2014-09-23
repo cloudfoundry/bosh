@@ -16,10 +16,26 @@ module VSphereCloud
       end
 
       def vm_folder
+        if @config.datacenter_use_sub_folder
+          MultiTenantFolder.new(@config.datacenter_vm_folder, Bosh::Clouds::Config.uuid, @config)
+        else
+          master_vm_folder
+        end
+      end
+
+      def master_vm_folder
         Folder.new(@config.datacenter_vm_folder, @config)
       end
 
       def template_folder
+        if @config.datacenter_use_sub_folder
+          MultiTenantFolder.new(@config.datacenter_template_folder, Bosh::Clouds::Config.uuid, @config)
+        else
+          master_template_folder
+        end
+      end
+
+      def master_template_folder
         Folder.new(@config.datacenter_template_folder, @config)
       end
 

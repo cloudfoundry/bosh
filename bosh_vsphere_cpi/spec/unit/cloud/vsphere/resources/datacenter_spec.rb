@@ -13,10 +13,13 @@ describe VSphereCloud::Resources::Datacenter do
                                  datacenter_datastore_pattern: ephemeral_pattern,
                                  datacenter_persistent_datastore_pattern: persistent_pattern,
                                  datacenter_allow_mixed_datastores: allow_mixed,
+                                 datacenter_use_sub_folder: false,
   ) }
   let(:client) { instance_double('VSphereCloud::Client') }
+  let(:multitenant_folder) { instance_double('VSphereCloud::Resources::MultiTenantFolder') }
   let(:vm_folder) { instance_double('VSphereCloud::Resources::Folder') }
   let(:template_folder) { instance_double('VSphereCloud::Resources::Folder') }
+  let(:multitenant_template_folder) { instance_double('VSphereCloud::Resources::MultiTenantFolder') }
   let(:datacenter_mob) { instance_double('VimSdk::Vim::Datacenter') }
   let(:cluster_mob1) { instance_double('VimSdk::Vim::Cluster') }
   let(:cluster_mob2) { instance_double('VimSdk::Vim::Cluster') }
@@ -34,8 +37,12 @@ describe VSphereCloud::Resources::Datacenter do
     allow(client).to receive(:cloud_searcher).and_return(cloud_searcher)
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
                                                 'fake-vm-folder', config).and_return(vm_folder)
+    allow(VSphereCloud::Resources::MultiTenantFolder).to receive(:new).with(
+                                                'fake-vm-folder', 'fake-uuid', config).and_return(multitenant_folder)
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
                                                 'fake-template-folder', config).and_return(template_folder)
+    allow(VSphereCloud::Resources::MultiTenantFolder).to receive(:new).with(
+                                                'fake-template-folder', 'fake-uuid', config).and_return(multitenant_template_folder)
     allow(cloud_searcher).to receive(:get_managed_objects).with(
                        VimSdk::Vim::ClusterComputeResource,
                        root: datacenter_mob, include_name: true).and_return(
@@ -54,6 +61,7 @@ describe VSphereCloud::Resources::Datacenter do
                                                  anything, config, cluster_config1, {}).and_return(resource_cluster1)
     allow(VSphereCloud::Resources::Cluster).to receive(:new).with(
                                                  anything, config, cluster_config2, {}).and_return(resource_cluster2)
+    allow(Bosh::Clouds::Config).to receive(:uuid).and_return('fake-uuid')
   end
 
   describe '#mob' do
@@ -72,14 +80,50 @@ describe VSphereCloud::Resources::Datacenter do
   end
 
   describe '#vm_folder' do
+    context 'when datacenter does not use subfolders' do
+      before { allow(config).to receive(:datacenter_use_sub_folder).and_return(false) }
+
+      it "returns a folder object using the datacenter's vm folder" do
+        expect(datacenter.vm_folder).to eq(vm_folder)
+      end
+    end
+
+    context 'when datacenter uses subfolders' do
+      before { allow(config).to receive(:datacenter_use_sub_folder).and_return(true) }
+
+      it 'returns multi-tenant folder' do
+        expect(datacenter.vm_folder).to eq(multitenant_folder)
+      end
+    end
+  end
+
+  describe '#master_vm_folder' do
     it "returns a folder object using the datacenter's vm folder" do
-      expect(datacenter.vm_folder).to eq(vm_folder)
+      expect(datacenter.master_vm_folder).to eq(vm_folder)
     end
   end
 
   describe '#template_folder' do
+    context 'when datacenter does not use subfolders' do
+      before { allow(config).to receive(:datacenter_use_sub_folder).and_return(false) }
+
+      it "returns a folder object using the datacenter's vm folder" do
+        expect(datacenter.template_folder).to eq(template_folder)
+      end
+    end
+
+    context 'when datacenter uses subfolders' do
+      before { allow(config).to receive(:datacenter_use_sub_folder).and_return(true) }
+
+      it 'returns multi-tenant folder' do
+        expect(datacenter.template_folder).to eq(multitenant_template_folder)
+      end
+    end
+  end
+
+  describe '#master_template_folder' do
     it "returns a folder object using the datacenter's template folder" do
-      expect(datacenter.template_folder).to eq(template_folder)
+      expect(datacenter.master_template_folder).to eq(template_folder)
     end
   end
 
