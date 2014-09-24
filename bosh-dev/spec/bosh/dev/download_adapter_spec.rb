@@ -81,6 +81,26 @@ module Bosh::Dev
           subject.download(uri, write_path)
         end
       end
+
+      context 'when a proxy is available and the URL matches the noproxy list' do
+        before { stub_const('ENV', 'http_proxy' => 'http://proxy.example.com:1234', 'no_proxy' => 'some.domain,sample.uri,someother.domain')}
+
+        it 'does not use the proxy' do
+          net_http_mock = class_double('Net::HTTP').as_stubbed_const
+          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, nil, 1234, nil, nil)
+          subject.download(uri, write_path)
+        end
+      end
+
+      context 'when a proxy is available and the URL matches the noproxy list, even if specified with leading .' do
+        before { stub_const('ENV', 'http_proxy' => 'http://proxy.example.com:1234', 'no_proxy' => 'some.domain,.sample.uri')}
+
+        it 'does not use the proxy' do
+          net_http_mock = class_double('Net::HTTP').as_stubbed_const
+          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, nil, 1234, nil, nil)
+          subject.download(uri, write_path)
+        end
+      end
     end
   end
 end
