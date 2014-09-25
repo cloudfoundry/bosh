@@ -20,7 +20,7 @@ module Bosh::Director
           'title' => 'director - begin update deployment',
           'summary' => "Begin update deployment for #{@planner.canonical_name} against Director #{Bosh::Director::Config.uuid}",
           'created_at' => Time.now.to_i
-          )
+        )
 
         @logger.info('sending update deployment start event')
         Bosh::Director::Config.nats.publish('hm.director.alert', payload)
@@ -33,7 +33,7 @@ module Bosh::Director
           'title' => 'director - finish update deployment',
           'summary' => "Finish update deployment for #{@planner.canonical_name} against Director #{Bosh::Director::Config.uuid}",
           'created_at' => Time.now.to_i
-          )
+        )
 
         @logger.info('sending update deployment end event')
         Bosh::Director::Config.nats.publish('hm.director.alert', payload)
@@ -46,7 +46,7 @@ module Bosh::Director
           'title' => 'director - error during update deployment',
           'summary' => "Error during update deployment for #{@planner.canonical_name} against Director #{Bosh::Director::Config.uuid}: #{exception.inspect}",
           'created_at' => Time.now.to_i
-          )
+        )
 
         @logger.info('sending update deployment error event')
         Bosh::Director::Config.nats.publish('hm.director.alert', payload)

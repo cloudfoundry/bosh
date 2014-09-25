@@ -12,32 +12,34 @@ describe Bosh::Director::Jobs::UpdateDeployment do
   end
 
   describe 'instance methods' do
-    let(:manifest) { double('manifest') }
     let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner') }
-    let(:manifest_file) { Tempfile.new('manifest') }
-
     before do
-      allow(deployment_plan).to receive(:name).and_return('test_deployment')
-
       pool1 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
       pool2 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
+
+      allow(deployment_plan).to receive(:name).and_return('test_deployment')
+      allow(deployment_plan).to receive(:resource_pools).and_return([pool1, pool2])
+
       updater1 = instance_double('Bosh::Director::ResourcePoolUpdater')
       updater2 = instance_double('Bosh::Director::ResourcePoolUpdater')
 
       allow(Bosh::Director::ResourcePoolUpdater).to receive(:new).with(pool1).and_return(updater1)
       allow(Bosh::Director::ResourcePoolUpdater).to receive(:new).with(pool2).and_return(updater2)
 
-      allow(deployment_plan).to receive(:resource_pools).and_return([pool1, pool2])
+      allow(Bosh::Director::DeploymentPlan::Planner).to receive(:parse).and_return(deployment_plan)
+    end
 
-      @tmpdir = Dir.mktmpdir('base_dir')
-
+    let(:manifest) { double('manifest') }
+    let(:manifest_file) { Tempfile.new('manifest') }
+    before do
       File.open(manifest_file.path, 'w') do |f|
         f.write('manifest')
       end
-
       allow(Psych).to receive(:load).with('manifest').and_return(manifest)
+    end
 
-      allow(Bosh::Director::DeploymentPlan::Planner).to receive(:parse).and_return(deployment_plan)
+    before do
+      @tmpdir = Dir.mktmpdir('base_dir')
 
       allow(Bosh::Director::Config).to receive(:base_dir).and_return(@tmpdir)
     end
@@ -177,24 +179,26 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
       let(:foo_release) { Bosh::Director::Models::Release.make(name: 'foo_release') }
       let(:foo_release_version) do
-        Bosh::Director::Models::ReleaseVersion.
-          make(release: foo_release, version: 17)
+        Bosh::Director::Models::ReleaseVersion.make(release: foo_release, version: 17)
       end
 
       let(:bar_release) { Bosh::Director::Models::Release.make(name: 'bar_release') }
       let(:bar_release_version) do
-        Bosh::Director::Models::ReleaseVersion.
-          make(release: bar_release, version: 42)
+        Bosh::Director::Models::ReleaseVersion.make(release: bar_release, version: 42)
       end
 
-      let(:foo_release_spec) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',
-        name: 'foo',
-          model: foo_release_version) }
+      let(:foo_release_spec) do
+        instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',
+          name: 'foo',
+          model: foo_release_version
+        )
+      end
 
       let(:bar_release_spec) do
         instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',
-                        name: 'bar',
-                        model: bar_release_version)
+          name: 'bar',
+          model: bar_release_version
+        )
       end
 
       let(:release_specs) { [foo_release_spec, bar_release_spec] }

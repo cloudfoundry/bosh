@@ -5,19 +5,21 @@ module Bosh::Director
   module DeploymentPlan
     describe Notifier do
       context 'event hooks' do
-        let(:nats) { double('nats') }
-        let(:uuid) { SecureRandom.uuid }
-        let(:director_config) { class_double('Bosh::Director::Config').as_stubbed_const }
         let(:planner) { instance_double('Bosh::Director::DeploymentPlan::Planner', :canonical_name => 'Blorgh') }
         let(:stdout) { StringIO.new }
         let(:logger) { Logger.new(stdout) }
-
         subject { Notifier.new(planner, logger) }
 
+        let(:uuid) { SecureRandom.uuid }
+        before do
+          allow(SecureRandom).to receive(:uuid).and_return(uuid)
+        end
+
+        let(:nats) { double('nats') }
+        let(:director_config) { class_double('Bosh::Director::Config').as_stubbed_const }
         before do
           allow(director_config).to receive(:nats) { nats }
           allow(director_config).to receive(:uuid) { uuid }
-          allow(SecureRandom).to receive(:uuid).and_return(uuid)
         end
 
         describe 'send_start_event' do
@@ -28,7 +30,7 @@ module Bosh::Director
               'title' => 'director - begin update deployment',
               'summary' => "Begin update deployment for #{planner.canonical_name} against Director #{uuid}",
               'created_at' => Time.now.to_i
-              )
+            )
           end
 
           it 'sends an alert via NATS announcing the start of a deployment' do
@@ -51,7 +53,7 @@ module Bosh::Director
               'title'      => 'director - finish update deployment',
               'summary'    => "Finish update deployment for #{planner.canonical_name} against Director #{uuid}",
               'created_at' => Time.now.to_i
-              )
+            )
           end
 
           it 'sends an alert via NATS announcing the end of a deployment' do
@@ -74,7 +76,7 @@ module Bosh::Director
               'title'      => 'director - error during update deployment',
               'summary'    => "Error during update deployment for #{planner.canonical_name} against Director #{uuid}: #<Exception: This is an exception>",
               'created_at' => Time.now.to_i
-              )
+            )
           end
           let(:exception) { Exception.new('This is an exception') }
 

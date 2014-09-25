@@ -55,8 +55,12 @@ describe 'deploy job template', type: :integration do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
       deploy_simple(manifest_hash: manifest_hash)
 
-      waiter.wait(60) { expect(health_monitor.read_log).to match(/\[ALERT\] Alert @ .* Begin update deployment for simple/) }
-      waiter.wait(60) { expect(health_monitor.read_log).to match(/\[ALERT\] Alert @ .* Finish update deployment for simple/) }
+      waiter.wait(60) do
+        expect(health_monitor.read_log).to match(/\[ALERT\] Alert @ .* Begin update deployment for simple/)
+      end
+      waiter.wait(60) do
+        expect(health_monitor.read_log).to match(/\[ALERT\] Alert @ .* Finish update deployment for simple/)
+      end
     end
   end
 end
