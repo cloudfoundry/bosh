@@ -30,14 +30,14 @@ To run tests locally, follow these steps...
     
     ```
     cd /opt/bosh
-    run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
+    RUBY_VERSION=2.1.2 gocd/bosh/run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
     ```
 
 5. Run the integration tests in the docker container (downloads the docker image if not built/cached locally)
     
     ```
     cd /opt/bosh
-    run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
+    RUBY_VERSION=2.1.2 gocd/bosh/run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
     ```
 
 6. (Mac OS only) Destroy the VM
@@ -88,3 +88,10 @@ This pipeline has the following Tasks:
     ```
     gocd/docker/build/image/job.sh
     ```
+
+### Exploring the docker container
+
+To get into an interactive bash shell inside the container:
+```
+docker run -t -i -v $(pwd):/opt/bosh bosh/integration /bin/bash
+```
