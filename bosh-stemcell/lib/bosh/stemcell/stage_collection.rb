@@ -111,6 +111,8 @@ module Bosh::Stemcell
         :rsyslog,
         # Install GRUB/kernel/etc
         :system_grub,
+        # Symlink vim to vim.tiny
+        :vim_tiny,
       ]
     end
 
