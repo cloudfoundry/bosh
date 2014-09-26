@@ -5,19 +5,15 @@ module Bosh::Director
   module Api::Controllers
     class ErrandsController < BaseController
       get '/deployments/:deployment_name/errands' do
-        # Bosh::Director::Models::Deployment
         deployment = @deployment_manager.find_by_name(params[:deployment_name])
 
         manifest = Psych.load(deployment.manifest)
-        # Bosh::Director::DeploymentPlan::Planner
         deployment_plan = DeploymentPlan::Planner.parse(manifest, {}, Config.event_log, Config.logger)
 
-        errands = deployment_plan.jobs.select { |job| job.can_run_as_errand? }
-        # Bosh::Director::DeploymentPlan::Job
-        errand_data = errands.map do |errand|
-          {
-            "name" => errand.name
-          }
+        errands = deployment_plan.jobs.select(&:can_run_as_errand?)
+
+        errand_data = errands.map do |errand| 
+          { "name" => errand.name }
         end
 
         json_encode(errand_data)
