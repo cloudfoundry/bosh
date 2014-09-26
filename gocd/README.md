@@ -26,18 +26,30 @@ To run tests locally, follow these steps...
     docker pull bosh/integration
     ```
 
-4. Run the unit tests in the docker container
+4. Copy the mounted bosh dir (so that it can chown and write to it)
+    ```
+    sudo cp -r /opt/bosh /opt/bosh-copy
+    cd /opt/bosh-copy
+    ```
+
+5. Select which version of ruby to use
+    1. `export RUBY_VERSION=2.1.2`
+    2. `export RUBY_VERSION=1.9.3`
+
+6. (Optional) Select which database to use
+    1. `export DB=postgres` (default)
+    2. `export DB=mysql`
+
+4. Run the unit tests in the docker container (downloads the docker image if not built/cached locally)
     
     ```
-    cd /opt/bosh
-    run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
+    gocd/bosh/run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
     ```
 
 5. Run the integration tests in the docker container (downloads the docker image if not built/cached locally)
     
     ```
-    cd /opt/bosh
-    run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
+    gocd/bosh/run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
     ```
 
 6. (Mac OS only) Destroy the VM
@@ -88,3 +100,10 @@ This pipeline has the following Tasks:
     ```
     gocd/docker/build/image/job.sh
     ```
+
+### Exploring the docker container
+
+To get into an interactive bash shell inside the container:
+```
+docker run -t -i -v $(pwd):/opt/bosh bosh/integration /bin/bash
+```
