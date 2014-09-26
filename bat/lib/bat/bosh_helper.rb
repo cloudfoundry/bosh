@@ -20,7 +20,7 @@ module Bat
 
     def ssh_options
       {
-        private_key: ENV['BAT_VCAP_PRIVATE_KEY'],
+        private_key: @env.vcap_private_key,
         password: @env.vcap_password
       }
     end

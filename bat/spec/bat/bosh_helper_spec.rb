@@ -19,16 +19,17 @@ describe Bat::BoshHelper do
   before { bosh_helper.instance_variable_set('@logger', Logger.new('/dev/null')) }
 
   describe '#ssh_options' do
+    let(:env) { instance_double('Bat::Env') }
     before { bosh_helper.instance_variable_set('@env', env) }
-    let(:env) { instance_double('Bat::Env', vcap_password: 'fake_password') }
+    before { allow(env).to receive(:vcap_password).and_return('fake_password') }
 
     context 'when both env var BAT_VCAP_PRIVATE_KEY is set' do
-      before { stub_const('ENV', 'BAT_VCAP_PRIVATE_KEY' => 'fake_private_key') }
+      before { allow(env).to receive(:vcap_private_key).and_return('fake_private_key') }
       its(:ssh_options) { should eq(private_key: 'fake_private_key', password: 'fake_password') }
     end
 
     context 'when BAT_VCAP_PRIVATE_KEY is not set in env' do
-      before { stub_const('ENV', {}) }
+      before { allow(env).to receive(:vcap_private_key).and_return(nil) }
       its(:ssh_options) { should eq(password: 'fake_password', private_key: nil) }
     end
   end

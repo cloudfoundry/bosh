@@ -26,12 +26,13 @@ module Bat
     end
 
     def generate_deployment_manifest(spec)
+      puts "Generating deployment manifest with input:\n#{spec.to_yaml}"
       @context = Bosh::Template::EvaluationContext.new(spec)
       erb = ERB.new(load_template(@context.spec.cpi))
       result = erb.result(@context.get_binding)
       begin
         @yaml = YAML.load(result)
-        puts "Generated deployment manfiest:\n#{@yaml.to_yaml}"
+        puts "Generated deployment manifest:\n#{@yaml.to_yaml}"
       rescue SyntaxError => e
         puts "Failed to parse deployment manifest:\n#{result}"
         raise e
