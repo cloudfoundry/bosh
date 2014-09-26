@@ -39,6 +39,7 @@ module Bosh::Stemcell
               :bosh_sudoers,
               :rsyslog,
               :system_grub,
+              :vim_tiny,
             ]
           )
         end
