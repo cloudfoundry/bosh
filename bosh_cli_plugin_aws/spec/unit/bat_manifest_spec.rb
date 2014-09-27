@@ -72,7 +72,6 @@ jobs:
 
 properties:
   vip: 50.200.100.2
-  static_ip: 10.10.0.29
   second_static_ip: 10.10.0.30
   uuid: director-uuid
   pool_size: 1
@@ -82,7 +81,9 @@ properties:
   instances: 1
   key_name:  dev102
   mbus: nats://nats:0b450ada9f830085e2cdeff6@micro.cfdev.com:4222
-  network:
+  networks:
+  - name: default
+    static_ip: 10.10.0.29
     type: manual
     cidr: 10.10.0.0/24
     reserved:
