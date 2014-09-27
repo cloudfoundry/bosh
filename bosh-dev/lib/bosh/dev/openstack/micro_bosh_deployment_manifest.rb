@@ -22,9 +22,7 @@ module Bosh::Dev::Openstack
         'network' => {
           'type' => net_type,
           'vip' => env['BOSH_OPENSTACK_VIP_DIRECTOR_IP'],
-          'cloud_properties' => {
-            'net_id' => env['BOSH_OPENSTACK_NET_ID']
-          }
+          'cloud_properties' => {}
         },
         'resources' => {
           'persistent_disk' => 4096,
@@ -52,6 +50,10 @@ module Bosh::Dev::Openstack
           },
         },
       }
+
+      if env['BOSH_OPENSTACK_NET_ID']
+        result['network']['cloud_properties']['net_id'] = env['BOSH_OPENSTACK_NET_ID']
+      end
 
       result['network']['ip'] = env['BOSH_OPENSTACK_MANUAL_IP'] if net_type == 'manual'
 

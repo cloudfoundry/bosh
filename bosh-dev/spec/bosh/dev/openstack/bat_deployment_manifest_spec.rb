@@ -46,6 +46,7 @@ module Bosh::Dev::Openstack
           'BOSH_OPENSTACK_NETWORK_RESERVED' => 'net_reserved',
           'BOSH_OPENSTACK_NETWORK_STATIC'   => 'net_static',
           'BOSH_OPENSTACK_NETWORK_GATEWAY'  => 'net_gateway',
+          'BOSH_OPENSTACK_FLAVOR'           => 'm1.big',
         )
       end
 
@@ -63,6 +64,7 @@ properties:
   stemcell:
     name: stemcell-name
     version: 13
+  instance_type: m1.big
   instances: 1
   mbus: nats://nats:0b450ada9f830085e2cdeff6@vip:4222
   network:
@@ -97,6 +99,7 @@ properties:
   stemcell:
     name: stemcell-name
     version: 13
+  instance_type: m1.big
   instances: 1
   mbus: nats://nats:0b450ada9f830085e2cdeff6@vip:4222
   network:
