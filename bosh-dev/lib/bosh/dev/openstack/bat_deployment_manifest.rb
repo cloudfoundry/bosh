@@ -34,7 +34,6 @@ module Bosh::Dev::Openstack
           'network' => {
             'type' => net_type,
             'cloud_properties' => {
-              'net_id' => env['BOSH_OPENSTACK_NET_ID'],
               'security_groups' => ['default']
             }
           }
@@ -44,6 +43,10 @@ module Bosh::Dev::Openstack
       key_name = env['BOSH_OPENSTACK_KEY_NAME']
       unless key_name.to_s.empty?
         manifest_hash['properties']['key_name'] = key_name
+      end
+
+      if env['BOSH_OPENSTACK_NET_ID']
+        manifest_hash['properties']['network']['cloud_properties']['net_id'] = env['BOSH_OPENSTACK_NET_ID']
       end
 
       if net_type == 'manual'
