@@ -21,8 +21,15 @@ module Bosh::Dev::VSphere
 
       microbosh_deployment_manifest =
         MicroBoshDeploymentManifest.new(env, net_type)
-      bat_deployment_manifest =
-        BatDeploymentManifest.new(env, net_type, director_uuid, stemcell_archive)
+
+      bat_deployment_config_path = env['BOSH_VSPHERE_BAT_DEPLOYMENT_CONFIG_PATH']
+      raise 'Missing env var: BOSH_OPENSTACK_BAT_DEPLOYMENT_CONFIG_PATH' unless bat_deployment_config_path
+
+      bat_deployment_manifest = BatDeploymentManifest.load_from_file(bat_deployment_config_path)
+      bat_deployment_manifest.net_type = net_type
+      bat_deployment_manifest.director_uuid = director_uuid
+      bat_deployment_manifest.stemcell = stemcell_archive
+      bat_deployment_manifest.validate
 
       microbosh_deployment_cleaner = MicroBoshDeploymentCleaner.new(microbosh_deployment_manifest)
 

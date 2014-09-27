@@ -12,14 +12,14 @@ module Bosh::Dev::Openstack
         )
 
         director_address = instance_double('Bosh::Dev::Bat::DirectorAddress')
-        class_double('Bosh::Dev::Bat::DirectorAddress').as_stubbed_const
-          .should_receive(:from_env)
+       expect(Bosh::Dev::Bat::DirectorAddress)
+          .to receive(:from_env)
           .with(ENV, 'BOSH_OPENSTACK_VIP_DIRECTOR_IP')
           .and_return(director_address)
 
         bosh_cli_session = instance_double('Bosh::Dev::BoshCliSession')
-        class_double('Bosh::Dev::BoshCliSession').as_stubbed_const
-          .should_receive(:default)
+       expect(Bosh::Dev::BoshCliSession)
+          .to receive(:default)
           .with(no_args)
           .and_return(bosh_cli_session)
 
@@ -27,38 +27,44 @@ module Bosh::Dev::Openstack
           'Bosh::Stemcell::Archive',
           version: 'stemcell-archive-version',
         )
-        class_double('Bosh::Stemcell::Archive').as_stubbed_const
-          .should_receive(:new)
+        expect(class_double('Bosh::Stemcell::Archive').as_stubbed_const)
+          .to receive(:new)
           .with('stemcell-path')
           .and_return(stemcell_archive)
 
         microbosh_deployment_manifest = instance_double('Bosh::Dev::Openstack::MicroBoshDeploymentManifest')
-        class_double('Bosh::Dev::Openstack::MicroBoshDeploymentManifest').as_stubbed_const
-          .should_receive(:new)
+       expect(Bosh::Dev::Openstack::MicroBoshDeploymentManifest)
+          .to receive(:new)
           .with(ENV, 'net-type')
           .and_return(microbosh_deployment_manifest)
 
         microbosh_deployment_cleaner = instance_double('Bosh::Dev::Openstack::MicroBoshDeploymentCleaner')
-        class_double('Bosh::Dev::Openstack::MicroBoshDeploymentCleaner').as_stubbed_const
-          .should_receive(:new)
+       expect(Bosh::Dev::Openstack::MicroBoshDeploymentCleaner)
+          .to receive(:new)
           .with(microbosh_deployment_manifest)
           .and_return(microbosh_deployment_cleaner)
 
         director_uuid = instance_double('Bosh::Dev::Bat::DirectorUuid')
-        class_double('Bosh::Dev::Bat::DirectorUuid').as_stubbed_const
-          .should_receive(:new)
+       expect(Bosh::Dev::Bat::DirectorUuid)
+          .to receive(:new)
           .with(bosh_cli_session)
           .and_return(director_uuid)
 
+        ENV['BOSH_OPENSTACK_BAT_DEPLOYMENT_CONFIG_PATH'] = '/fake/config/path.yml'
         bat_deployment_manifest = instance_double('Bosh::Dev::Openstack::BatDeploymentManifest')
-        class_double('Bosh::Dev::Openstack::BatDeploymentManifest').as_stubbed_const
-          .should_receive(:new)
-          .with(ENV, 'net-type', director_uuid, stemcell_archive)
+       expect(Bosh::Dev::Openstack::BatDeploymentManifest)
+          .to receive(:load_from_file)
+          .with('/fake/config/path.yml')
           .and_return(bat_deployment_manifest)
 
+        expect(bat_deployment_manifest).to receive(:net_type=).with('net-type')
+        expect(bat_deployment_manifest).to receive(:director_uuid=).with(director_uuid)
+        expect(bat_deployment_manifest).to receive(:stemcell=).with(stemcell_archive)
+        expect(bat_deployment_manifest).to receive(:validate).with(no_args)
+
         runner = instance_double('Bosh::Dev::Bat::Runner')
-        class_double('Bosh::Dev::Bat::Runner').as_stubbed_const
-          .should_receive(:new).with(
+       expect(Bosh::Dev::Bat::Runner)
+          .to receive(:new).with(
             ENV,
             artifacts,
             director_address,

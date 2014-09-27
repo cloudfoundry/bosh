@@ -19,7 +19,7 @@ module Bosh::Dev::Openstack
         env.merge!(
           'BOSH_OPENSTACK_VIP_DIRECTOR_IP' => 'vip',
           'BOSH_OPENSTACK_MANUAL_IP' => 'ip',
-          'BOSH_OPENSTACK_NET_ID' => 'net_id',
+          'BOSH_OPENSTACK_MICRO_NET_ID' => 'net_id',
           'BOSH_OPENSTACK_AUTH_URL' => 'auth_url',
           'BOSH_OPENSTACK_USERNAME' => 'username',
           'BOSH_OPENSTACK_API_KEY' => 'api_key',

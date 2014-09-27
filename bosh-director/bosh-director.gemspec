@@ -47,7 +47,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'sys-filesystem',   '~>1.1.0'
   s.add_dependency 'thin',             '~>1.5.0'
   s.add_dependency 'yajl-ruby',        '~>1.1.0'
-  s.add_dependency 'membrane',         '~>0.0.2'
+  s.add_dependency 'membrane',         '~>1.1.0'
   s.add_dependency 'semi_semantic',    '~>1.1.0'
 
   s.add_development_dependency 'timecop'

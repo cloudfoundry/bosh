@@ -1,146 +1,188 @@
 require 'spec_helper'
 require 'bosh/dev/openstack/bat_deployment_manifest'
 require 'bosh/stemcell/archive'
-require 'psych'
 require 'bosh/dev/bat/director_uuid'
-require 'bosh/stemcell/archive'
 
 module Bosh::Dev::Openstack
   describe BatDeploymentManifest do
-    subject { described_class.new(env, net_type, director_uuid, stemcell_archive) }
-    let(:env) { {} }
-    let(:net_type) { 'dynamic' }
+    let(:input_yaml_manual) do
+      <<-EOF
+---
+cpi: openstack
+properties:
+  vip: vip
+  second_static_ip: fake-second-static-ip
+  pool_size: 1
+  flavor_with_no_ephemeral_disk: no-ephemeral
+  instances: 1
+  mbus: nats://nats:nats@fake-static-ip:4222
+  networks:
+  - name: default
+    static_ip: fake-static-ip
+    type: manual
+    cloud_properties:
+      net_id: net_id
+      security_groups:
+      - default
+    cidr: net_cidr
+    reserved:
+    - net_reserved
+    static:
+    - net_static
+    gateway: net_gateway
+  - name: second
+    static_ip: fake-second-network-static-ip
+    type: manual
+    cloud_properties:
+      net_id: second_net_id
+      security_groups:
+      - default
+    cidr: second_net_cidr
+    reserved:
+    - second_net_reserved
+    static:
+    - second_net_static
+    gateway: second_net_gateway
+EOF
+    end
+    let(:input_yaml_dynamic) do
+      <<-EOF
+---
+cpi: openstack
+properties:
+  vip: vip
+  second_static_ip: fake-second-static-ip
+  pool_size: 1
+  flavor_with_no_ephemeral_disk: no-ephemeral
+  instances: 1
+  mbus: nats://nats:nats@fake-static-ip:4222
+  networks:
+  - name: default
+    static_ip: fake-static-ip
+    type: dynamic
+    cloud_properties:
+      net_id: net_id
+      security_groups:
+      - default
+EOF
+    end
+
+    subject(:manifest) { BatDeploymentManifest.load(input_yaml_dynamic) }
     let(:director_uuid) { instance_double('Bosh::Dev::Bat::DirectorUuid', value: 'director-uuid') }
     let(:stemcell_archive) { instance_double('Bosh::Stemcell::Archive', version: 13, name: 'stemcell-name') }
 
     its(:filename) { should eq ('bat.yml') }
-    its(:net_type) { should eq (net_type) }
 
-    it 'is writable' do
-      expect(subject).to be_a(Bosh::Dev::WritableManifest)
+    it 'is a deployment manifest' do
+      expect(manifest).to be_a(Bosh::Dev::Bat::DeploymentManifest)
+      expect(manifest).to be_a(Bosh::Dev::Openstack::BatDeploymentManifest)
     end
 
-    it 'allows BOSH_OPENSTACK_KEY_NAME to be optional' do
-      expect(subject.to_h['properties']).to_not include('key_name')
-
-      env.merge!(
-        'BOSH_OPENSTACK_KEY_NAME' => 'fake-key-name',
-      )
-
-      expect(subject.to_h['properties']).to include('key_name' => 'fake-key-name')
-
-      env.merge!(
-        'BOSH_OPENSTACK_KEY_NAME' => '',
-      )
-
-      expect(subject.to_h['properties']).to_not include('key_name')
+    describe 'load' do
+      it 'returns a new BatDeploymentManifest with the parsed yaml content' do
+        expect(BatDeploymentManifest.load(input_yaml_dynamic)).to be_an_instance_of(BatDeploymentManifest)
+      end
     end
 
-    describe '#to_h' do
-      before do
-        env.merge!(
-          'BOSH_OPENSTACK_VIP_BAT_IP'           => 'vip',
-          'BOSH_OPENSTACK_STATIC_BAT_IP_0'      => 'fake-static-ip',
-          'BOSH_OPENSTACK_STATIC_BAT_IP_1'      => 'fake-second-network-static-ip',
-          'BOSH_OPENSTACK_SECOND_STATIC_BAT_IP' => 'fake-second-static-ip',
-          'BOSH_OPENSTACK_NET_ID_0'             => 'net_id',
-          'BOSH_OPENSTACK_NETWORK_CIDR_0'       => 'net_cidr',
-          'BOSH_OPENSTACK_NETWORK_RESERVED_0'   => 'net_reserved',
-          'BOSH_OPENSTACK_NETWORK_STATIC_0'     => 'net_static',
-          'BOSH_OPENSTACK_NETWORK_GATEWAY_0'    => 'net_gateway',
-          'BOSH_OPENSTACK_NET_ID_1'             => 'second_net_id',
-          'BOSH_OPENSTACK_NETWORK_CIDR_1'       => 'second_net_cidr',
-          'BOSH_OPENSTACK_NETWORK_RESERVED_1'   => 'second_net_reserved',
-          'BOSH_OPENSTACK_NETWORK_STATIC_1'     => 'second_net_static',
-          'BOSH_OPENSTACK_NETWORK_GATEWAY_1'    => 'second_net_gateway',
+    describe 'load_from_file' do
+      let!(:bat_deployment_config_file) { Tempfile.new(['bat_deployment_config', '.yml']) }
+      before { File.open(bat_deployment_config_file.path, 'w') { |file| file.write(input_yaml_dynamic) } }
+      after { bat_deployment_config_file.delete }
+
+      it 'reads the file from the path and loads it' do
+        expect(
+          BatDeploymentManifest.load_from_file(bat_deployment_config_file.path)
+        ).to eq(
+          BatDeploymentManifest.load(input_yaml_dynamic)
         )
       end
+    end
 
-      context 'manual' do
-        let(:net_type) { 'manual' }
-        let(:expected_yml) { <<YAML }
----
-cpi: openstack
-properties:
-  vip: vip
-  second_static_ip: fake-second-static-ip
-  uuid: director-uuid
-  pool_size: 1
-  stemcell:
-    name: stemcell-name
-    version: 13
-  instance_type: m1.big
-  flavor_with_no_ephemeral_disk: no-ephemeral
-  instances: 1
-  mbus: nats://nats:0b450ada9f830085e2cdeff6@vip:4222
-  networks:
-  - name: default
-    static_ip: fake-static-ip
-    type: manual
-    cidr: net_cidr
-    reserved:
-      - net_reserved
-    static:
-      - net_static
-    gateway: net_gateway
-    cloud_properties:
-      security_groups: [ default ]
-      net_id: net_id
-  - name: second
-    static_ip: fake-second-network-static-ip
-    type: manual
-    cidr: second_net_cidr
-    reserved:
-      - second_net_reserved
-    static:
-      - second_net_static
-    gateway: second_net_gateway
-    cloud_properties:
-      security_groups: [ default ]
-      net_id: second_net_id
-YAML
-
-        it 'generates the correct YAML' do
-          expect(subject.to_h).to eq(Psych.load(expected_yml))
-        end
+    describe 'validate' do
+      it 'does not complain about valid manual network yaml' do
+        manifest = BatDeploymentManifest.load(input_yaml_manual)
+        manifest.net_type = 'manual'
+        expect{ manifest.validate }.to_not raise_error
       end
 
-      context 'dynamic' do
-        let(:net_type) { 'dynamic' }
-        let(:expected_yml) { <<YAML }
----
-cpi: openstack
-properties:
-  vip: vip
-  second_static_ip: fake-second-static-ip
-  uuid: director-uuid
-  pool_size: 1
-  stemcell:
-    name: stemcell-name
-    version: 13
-  instance_type: m1.big
-  flavor_with_no_ephemeral_disk: no-ephemeral
-  instances: 1
-  mbus: nats://nats:0b450ada9f830085e2cdeff6@vip:4222
-  networks:
-  - name: default
-    static_ip: fake-static-ip
-    type: dynamic
-    cloud_properties:
-      security_groups: [ default ]
-      net_id: net_id
-  - name: second
-    static_ip: fake-second-network-static-ip
-    type: dynamic
-    cloud_properties:
-      security_groups: [ default ]
-      net_id: second_net_id
-YAML
-
-        it 'generates the correct YAML' do
-          expect(subject.to_h).to eq(Psych.load(expected_yml))
-        end
+      it 'does not complain about valid dynamic network yaml' do
+        # defaults to dynamic net_type
+        expect{ BatDeploymentManifest.load(input_yaml_dynamic).validate }.to_not raise_error
       end
+
+      it 'optionally allows properties.key_name' do
+        new_yaml = update_yaml(input_yaml_dynamic) do |yaml_hash|
+          yaml_hash['properties'].delete('key_name')
+        end
+        manifest = BatDeploymentManifest.load(new_yaml)
+
+        expect{ manifest.validate }.to_not raise_error
+
+        new_yaml = update_yaml(input_yaml_dynamic) do |yaml_hash|
+          yaml_hash['properties']['key_name'] = 'bosh'
+        end
+        manifest = BatDeploymentManifest.load(new_yaml)
+
+        expect{ manifest.validate }.to_not raise_error
+      end
+
+      it 'requires cpi to be openstack' do
+        new_yaml = update_yaml(input_yaml_dynamic) do |yaml_hash|
+          yaml_hash['cpi'] = 'something-else'
+        end
+        manifest = BatDeploymentManifest.load(new_yaml)
+
+        expect{ manifest.validate }.to raise_error(Membrane::SchemaValidationError)
+      end
+
+      it 'requires properties.vip' do
+        new_yaml = update_yaml(input_yaml_dynamic) do |yaml_hash|
+          yaml_hash['properties'].delete('vip')
+        end
+        manifest = BatDeploymentManifest.load(new_yaml)
+
+        expect{ manifest.validate }.to raise_error(Membrane::SchemaValidationError)
+      end
+
+      it 'requires properties.flavor_with_no_ephemeral_disk' do
+        new_yaml = update_yaml(input_yaml_dynamic) do |yaml_hash|
+          yaml_hash['properties'].delete('flavor_with_no_ephemeral_disk')
+        end
+        manifest = BatDeploymentManifest.load(new_yaml)
+
+        expect{ manifest.validate }.to raise_error(Membrane::SchemaValidationError)
+      end
+
+      it 'optionally allows properties.networks.cloud_properties.net_id' do
+        new_yaml = update_yaml(input_yaml_dynamic) do |yaml_hash|
+          yaml_hash['properties']['networks'][0]['cloud_properties'].delete('net_id')
+        end
+        manifest = BatDeploymentManifest.load(new_yaml)
+
+        expect{ manifest.validate }.to_not raise_error
+
+        new_yaml = update_yaml(input_yaml_dynamic) do |yaml_hash|
+          yaml_hash['properties']['networks'][0]['cloud_properties']['net_id'] = 'net_id'
+        end
+        manifest = BatDeploymentManifest.load(new_yaml)
+
+        expect{ manifest.validate }.to_not raise_error
+      end
+
+      it 'requires properties.networks.cloud_properties.security_groups' do
+        new_yaml = update_yaml(input_yaml_dynamic) do |yaml_hash|
+          yaml_hash['properties']['networks'][0]['cloud_properties'].delete('security_groups')
+        end
+        manifest = BatDeploymentManifest.load(new_yaml)
+
+        expect{ manifest.validate }.to raise_error(Membrane::SchemaValidationError)
+      end
+    end
+
+    def update_yaml(yaml_string)
+      yaml_hash = YAML.load(yaml_string)
+      yield(yaml_hash)
+      YAML.dump(yaml_hash)
     end
   end
 end

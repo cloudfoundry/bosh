@@ -40,6 +40,7 @@ PATH
       bosh_cli_plugin_aws
       bosh_common
       bundler
+      membrane
       peach
       ruby_vcloud_sdk (= 0.7.1)
 
@@ -62,7 +63,7 @@ PATH
       eventmachine (~> 1.0.0)
       fog (~> 1.23.0)
       httpclient (= 2.4.0)
-      membrane (~> 0.0.2)
+      membrane (~> 1.1.0)
       mono_logger (~> 1.1.0)
       nats (= 0.5.0.beta.12)
       netaddr (~> 1.5.0)
@@ -222,7 +223,7 @@ PATH
       bosh_cpi (~> 1.2739.0)
       builder (~> 3.1.4)
       httpclient (= 2.4.0)
-      membrane (~> 0.0.2)
+      membrane (~> 1.1.0)
       mysql2 (~> 0.3.11)
       nokogiri (~> 1.5.10)
       pg (~> 0.15.1)
@@ -333,7 +334,7 @@ GEM
     logging (1.5.2)
       little-plugger (>= 1.1.2)
     machinist (1.0.6)
-    membrane (0.0.5)
+    membrane (1.1.0)
     mime-types (2.3)
     minitar (0.5.4)
     mixlib-shellout (1.1.0)
