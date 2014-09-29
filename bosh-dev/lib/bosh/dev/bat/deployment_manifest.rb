@@ -59,7 +59,6 @@ module Bosh::Dev::Bat
           'second_static_ip' => string_schema,
           'pool_size' => integer_schema,
           'instances' => integer_schema,
-          'mbus' => string_schema,
           'networks' => list_schema(
             strict_record({
               'name' => string_schema,

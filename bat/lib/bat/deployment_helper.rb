@@ -112,7 +112,6 @@ module Bat
 
     def use_static_ip
       @spec['properties']['use_static_ip'] = true
-      @spec['properties']['mbus'] = mbus_url(static_ip)
     end
 
     def no_static_ip
@@ -135,7 +134,6 @@ module Bat
     def use_second_static_ip
       @spec['properties']['use_static_ip'] = true
       @spec['properties']['job_networks'][0]['static_ip'] = second_static_ip
-      @spec['properties']['mbus'] = mbus_url(second_static_ip)
     end
 
     def second_static_ip
@@ -215,10 +213,6 @@ module Bat
     end
 
     private
-
-    def mbus_url(ip)
-      "nats://nats:0b450ada9f830085e2cdeff6@#{ip}:4222"
-    end
 
     def spec
       @spec ||= {}

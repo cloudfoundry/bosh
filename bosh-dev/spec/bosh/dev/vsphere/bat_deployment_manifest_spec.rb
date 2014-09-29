@@ -13,7 +13,6 @@ properties:
   second_static_ip: fake-second-ip
   pool_size: 1
   instances: 1
-  mbus: nats://nats:0b450ada9f830085e2cdeff6@ip:4222
   networks:
   - name: static
     static_ip: ip

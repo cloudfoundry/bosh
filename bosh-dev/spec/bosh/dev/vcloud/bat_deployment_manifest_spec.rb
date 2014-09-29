@@ -35,7 +35,6 @@ properties:
     name: bosh-infra-hyper-os
     version: 13
   instances: 1
-  mbus: nats://nats:nats@ip:4222
   networks:
   - name: default
     static_ip: ip

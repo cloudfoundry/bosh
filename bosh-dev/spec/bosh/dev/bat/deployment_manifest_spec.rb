@@ -15,7 +15,6 @@ properties:
   second_static_ip: fake-second-static-ip
   pool_size: 1
   instances: 1
-  mbus: nats://nats:nats@fake-static-ip:4222
   networks:
   - name: default
     static_ip: fake-static-ip
@@ -37,7 +36,6 @@ properties:
   second_static_ip: fake-second-static-ip
   pool_size: 1
   instances: 1
-  mbus: nats://nats:nats@fake-static-ip:4222
   networks:
   - name: default
     static_ip: fake-static-ip

@@ -29,7 +29,6 @@ module Bosh::Dev::VCloud
               'name' => stemcell_archive.name,
               'version' => stemcell_archive.version },
             'instances' => 1,
-            'mbus' => "nats://nats:nats@#{env['BOSH_VCLOUD_BAT_IP']}:4222",
             'networks' => [
               {
                 'name' => 'default',

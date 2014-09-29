@@ -15,7 +15,6 @@ properties:
   pool_size: 1
   flavor_with_no_ephemeral_disk: no-ephemeral
   instances: 1
-  mbus: nats://nats:nats@fake-static-ip:4222
   networks:
   - name: default
     static_ip: fake-static-ip
@@ -55,7 +54,6 @@ properties:
   pool_size: 1
   flavor_with_no_ephemeral_disk: no-ephemeral
   instances: 1
-  mbus: nats://nats:nats@fake-static-ip:4222
   networks:
   - name: default
     static_ip: fake-static-ip

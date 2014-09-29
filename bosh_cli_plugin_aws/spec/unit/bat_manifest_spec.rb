@@ -80,7 +80,6 @@ properties:
     version: \'stemcell-version\'
   instances: 1
   key_name:  dev102
-  mbus: nats://nats:0b450ada9f830085e2cdeff6@micro.cfdev.com:4222
   networks:
   - name: default
     static_ip: 10.10.0.29
