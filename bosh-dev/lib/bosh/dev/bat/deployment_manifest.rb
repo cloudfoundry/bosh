@@ -27,6 +27,12 @@ module Bosh::Dev::Bat
       @manifest_hash = manifest_hash
       @filename = 'bat.yml'
       @net_type = 'dynamic'
+      load_defaults
+    end
+
+    def load_defaults
+      @manifest_hash['properties']['pool_size'] ||= 1
+      @manifest_hash['properties']['instances'] ||= 1
     end
 
     def stemcell=(stemcell_archive)
@@ -38,7 +44,7 @@ module Bosh::Dev::Bat
     end
 
     def to_h
-      # uuid is lazy-loaded after targetting the director
+      # uuid is lazy-loaded after targeting the director
       @manifest_hash['properties']['uuid'] = director_uuid.value if director_uuid
 
       @manifest_hash
