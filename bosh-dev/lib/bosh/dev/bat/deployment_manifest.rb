@@ -56,7 +56,6 @@ module Bosh::Dev::Bat
       new_schema = strict_record({
         'cpi' => string_schema,
         'properties' => strict_record({
-          'second_static_ip' => string_schema,
           'pool_size' => integer_schema,
           'instances' => integer_schema,
           'networks' => list_schema(
@@ -70,7 +69,12 @@ module Bosh::Dev::Bat
       })
 
       if net_type == 'manual'
-        network_schema = new_schema.schemas['properties'].schemas['networks'].elem_schema.schemas
+        properties = new_schema.schemas['properties'].schemas
+
+        # used for testing network reconfigure
+        properties['second_static_ip'] = string_schema
+
+        network_schema = properties['networks'].elem_schema.schemas
         network_schema['cidr'] = string_schema
         network_schema['reserved'] = list_schema(string_schema)
         network_schema['static'] = list_schema(string_schema)
