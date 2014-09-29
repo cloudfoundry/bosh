@@ -42,7 +42,6 @@ properties:
     version: latest
   instances: 1
   key_name: idora # AWS key name if you're running on AWS
-  mbus: nats://nats:0b450ada9f830085e2cdeff6@10.42.49.80:4222 # Not used now, but don't remove
 ```
 
 On EC2 with VPC networking:
@@ -58,7 +57,6 @@ properties:
     version: latest
   instances: 1
   key_name: bosh
-  mbus: nats://nats:0b450ada9f830085e2cdeff6@10.42.49.80:4222
   network:
     cidr: 10.10.0.0/24
     reserved:
@@ -76,15 +74,18 @@ On OpenStack with DHCP:
 ---
 cpi: openstack
 properties:
-  static_ip: 54.235.115.62 # floating IP to use for the bat-release jobs
-  uuid: 25569986-a7ed-4529-ba84-8a03e2c6c78f # BAT_DIRECTOR UUID
-  pool_size: 1
+  uuid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx # BAT_DIRECTOR UUID
   stemcell:
     name: bosh-openstack-kvm-ubuntu
     version: latest
-  instances: 1
-  key_name: bosh # OpenStack key name
-  mbus: nats://nats:0b450ada9f830085e2cdeff6@10.42.49.80:4222 # Not used now, but don't remove
+  key_name: bosh # (optional) SSH keypair name from one of the specified security_groups, overrides the director's default_key_name setting
+  vip: 0.0.0.43 # Virtual (public) IP assigned to the bat-release job vm ('static' network), for ssh testing
+  networks:
+  - name: default
+    type: dynamic
+    cloud_properties:
+      net_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx # Network ID (uuid)
+      security_groups: ['default'] # security groups that identify SSH keypairs
 ```
 
 On OpenStack with manual networking (requires Quantum):
@@ -92,25 +93,54 @@ On OpenStack with manual networking (requires Quantum):
 ---
 cpi: openstack
 properties:
-  static_ip: 54.235.115.62 # floating IP to use for the bat-release jobs
-  uuid: 25569986-a7ed-4529-ba84-8a03e2c6c78f # BAT_DIRECTOR UUID
-  pool_size: 1
+  uuid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx # BAT_DIRECTOR UUID
   stemcell:
     name: bosh-openstack-kvm-ubuntu
     version: latest
-  instances: 1
-  key_name: bosh # OpenStack key name
-  mbus: nats://nats:0b450ada9f830085e2cdeff6@10.42.49.80:4222
+  key_name: bosh # (optional) SSH keypair name from one of the specified security_groups, overrides the director's default_key_name setting
+  vip: 0.0.0.43 # Virtual (public) IP assigned to the bat-release job vm ('static' network), for ssh testing
+  second_static_ip: 10.253.3.29 # Secondary (private) IP to use for reconfiguring networks, must be in the primary network & different from static_ip
   network:
+  - name: default
+    type: manual
+    static_ip: 10.0.1.30 # Primary (private) IP assigned to the bat-release job vm (primary NIC), must be in the primary static range
+    cloud_properties:
+      net_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx # Primary Network ID (uuid)
+      security_groups: ['default'] # Security groups that specify SSH keypairs
     cidr: 10.0.1.0/24
-    reserved:
-    - 10.0.1.2 - 10.0.1.9
-    static:
-    - 10.0.1.10 - 10.0.1.30
+    reserved: ['10.0.1.2 - 10.0.1.9']
+    static: ['10.0.1.10 - 10.0.1.30']
     gateway: 10.0.1.1
-    net_id: 4ef0b0ec-58c9-4478-8382-2099da773fdd #
-    security_groups:
-    - default
+  - name: second # Secondary network for testing jobs with multiple manual networks
+    type: manual
+    static_ip: 192.168.0.30 # Secondary (private) IP assigned to the bat-release job vm (secondary NIC)
+    cloud_properties:
+      net_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx # Secondary Network ID (uuid)
+      security_groups: ['default'] # Security groups that specify SSH keypairs
+    cidr: 192.168.0.0/24
+    reserved: ['192.168.0.2 - 192.168.0.9']
+    static: ['192.168.0.10 - 192.168.0.30']
+    gateway: 192.168.0.1
+```
+
+On vSphere with manual networking:
+```yaml
+---
+cpi: vsphere
+properties:
+  uuid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx # BAT_DIRECTOR UUID
+  stemcell:
+    name: bosh-vsphere-esxi-ubuntu
+    version: latest
+  second_static_ip: 192.168.79.62 # Secondary (private) IP assigned to the bat-release job vm, used for testing network reconfiguration, must be in the primary network & different from static_ip
+  network:
+  - name: static
+    type: manual
+    static_ip: 192.168.79.61 # Primary (private) IP assigned to the bat-release job vm, must be in the static range
+    cidr: 192.168.79.0/24
+    reserved: ['192.168.79.2 - 192.168.79.50', '192.168.79.128 - 192.168.79.254'] # multiple reserved ranges are allowed but optional
+    static: ['192.168.79.60 - 192.168.79.70']
+    gateway: 192.168.79.1
 ```
 
 ## EC2 Networking Config
