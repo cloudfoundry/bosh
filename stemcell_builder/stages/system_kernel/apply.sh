@@ -19,5 +19,5 @@ if [ "${DISTRIB_CODENAME}" == "lucid" ]; then
 
   rm $chroot/tmp/*.deb
 else
-  pkg_mgr install linux-generic
+  pkg_mgr install linux-generic=3.13.0.36.43
 fi
