@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `qLay8YgGATMjiQZwWv0C26GZ7IUWy.qh`
+  upgrade bash to 4.3-7ubuntu1.4
+
 * `_pB.QMUs1y8oQAvDyjvGI9ccfIOtU0Do`
   upgrade bash to 4.3-7ubuntu1.3
 
