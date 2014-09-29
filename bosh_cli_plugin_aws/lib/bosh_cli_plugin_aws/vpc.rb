@@ -6,7 +6,7 @@ module Bosh
       DEFAULT_ROUTE = "0.0.0.0/0"
       NAT_INSTANCE_DEFAULTS = {
           :image_id => "ami-f619c29f",
-          :instance_type => "m1.small"
+          :instance_type => "m1.medium"
       }
 
       def initialize(ec2, aws_vpc)

@@ -224,7 +224,7 @@ describe Bosh::Aws::EC2 do
                   security_groups: ["sg"],
                   key_name: "bosh",
                   image_id: expected_nat_ami,
-                  instance_type: "m1.small"
+                  instance_type: "m1.medium"
               }
           )
           create_nat_instance_without_key_pair

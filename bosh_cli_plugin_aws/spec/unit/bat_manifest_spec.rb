@@ -27,7 +27,7 @@ resource_pools:
   network: default
   size: 1
   cloud_properties:
-    instance_type: m1.small
+    instance_type: m1.medium
     availability_zone: us-east-1a
 
 compilation:

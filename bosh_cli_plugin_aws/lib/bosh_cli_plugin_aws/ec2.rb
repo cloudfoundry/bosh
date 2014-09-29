@@ -78,7 +78,7 @@ module Bosh
 
         instance_options = {
             image_id: NAT_AMI_ID[aws_provider.region],
-            instance_type: options.fetch("instance_type", "m1.small"),
+            instance_type: options.fetch("instance_type", "m1.medium"),
             subnet: options["subnet_id"],
             private_ip_address: options["ip"],
             security_groups: [options["security_group"]],
