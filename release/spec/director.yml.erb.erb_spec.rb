@@ -176,7 +176,8 @@ describe 'director.yml.erb.erb' do
         'tenant' => 'tenant',
         'default_key_name' => 'default_key_name',
         'default_security_groups' => 'default_security_groups',
-        'wait_resource_poll_interval' => 'wait_resource_poll_interval'
+        'wait_resource_poll_interval' => 'wait_resource_poll_interval',
+        'use_config_drive' => 'use-config-drive-value',
       }
       deployment_manifest_fragment['properties']['registry'] = {
         'address' => 'address',
@@ -198,6 +199,19 @@ describe 'director.yml.erb.erb' do
         expect(parsed_yaml['cloud']['properties']['openstack']['connection_options']).to eq(
           {'option1' => 'true', 'option2' => 'false'})
       end
+    end
+
+    it 'renders openstack properties' do
+      expect(parsed_yaml['cloud']['properties']['openstack']).to eq({
+        'auth_url' => 'auth_url',
+        'username' => 'username',
+        'api_key' => 'api_key',
+        'tenant' => 'tenant',
+        'default_key_name' => 'default_key_name',
+        'default_security_groups' => 'default_security_groups',
+        'wait_resource_poll_interval' => 'wait_resource_poll_interval',
+        'use_config_drive' => 'use-config-drive-value',
+      })
     end
   end
 

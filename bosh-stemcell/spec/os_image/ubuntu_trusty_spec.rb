@@ -195,4 +195,10 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       it { should be_file }
     end
   end
+
+  context 'symlinked by vim_tiny' do
+    describe file('/usr/bin/vim') do
+      it { should be_linked_to '/usr/bin/vim.tiny' }
+    end
+  end
 end

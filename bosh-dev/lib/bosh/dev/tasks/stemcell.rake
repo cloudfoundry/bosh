@@ -60,12 +60,19 @@ namespace :stemcell do
   end
 
   desc 'Build a stemcell with a remote pre-built base OS image'
-  task :build, [:infrastructure_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_s3_bucket_name, :key] do |_, args|
+  task :build, [:infrastructure_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_s3_bucket_name, :os_image_key] do |_, args|
     require 'uri'
     require 'tempfile'
     require 'bosh/dev/download_adapter'
 
-    os_image_uri = URI.join('http://s3.amazonaws.com/', "#{args.os_image_s3_bucket_name}/", args.key)
+    os_image_versions_file = File.expand_path('../../config/os_image_versions.json', __FILE__)
+    os_image_versions = JSON.load(File.open(os_image_versions_file))
+    os_image_version = os_image_versions[args.os_image_key]
+    puts "Using OS image #{args.os_image_key}, version #{os_image_version}"
+
+    os_image_uri = URI.join('http://s3.amazonaws.com/', "#{args.os_image_s3_bucket_name}/", args.os_image_key)
+    os_image_uri.query = URI.encode_www_form([['versionId', os_image_version]])
+
     Dir.mktmpdir('os-image') do |download_path|
       os_image_path = File.join(download_path, 'base_os_image.tgz')
       downloader = Bosh::Dev::DownloadAdapter.new(Logger.new($stdout))

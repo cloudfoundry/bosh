@@ -38,7 +38,8 @@ module Bosh::Director
           name = safe_property(dp_spec, 'name', class: String)
           disk_pool = DiskPool.new(name)
 
-          disk_size = safe_property(dp_spec, 'disk_size', class: Integer, default: 0)
+          disk_size = safe_property(dp_spec, 'disk_size', class: Integer)
+
           if disk_size < 0
             raise DiskPoolInvalidDiskSize,
               "Disk pool `#{name}' references an invalid peristent disk size `#{disk_size}'"

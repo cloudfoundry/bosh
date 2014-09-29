@@ -148,7 +148,9 @@ describe 'with release and stemcell and two deployments' do
 
       before(:all) do
         ssh(public_ip, 'vcap', "echo 'foobar' > #{SAVE_FILE}", @our_ssh_options)
-        @size = persistent_disk(public_ip, 'vcap', @our_ssh_options)
+        unless warden?
+          @size = persistent_disk(public_ip, 'vcap', @our_ssh_options)
+        end
         use_persistent_disk(4096)
         @second_deployment_result = @requirements.requirement(deployment, @spec, force: true)
       end

@@ -19,6 +19,7 @@ describe Bosh::OpenStackCloud::Cloud do
   end
 
   let(:boot_from_volume) { false }
+  let(:use_config_drive) { false }
 
   subject(:cpi) do
     described_class.new(
@@ -33,6 +34,7 @@ describe Bosh::OpenStackCloud::Cloud do
         'default_security_groups' => %w(default),
         'wait_resource_poll_interval' => 5,
         'boot_from_volume' => boot_from_volume,
+        'use_config_drive' => use_config_drive,
       },
       'registry' => {
         'endpoint' => 'fake',
@@ -125,6 +127,27 @@ describe Bosh::OpenStackCloud::Cloud do
         'default' => {
           'type' => 'manual',
           'ip' => @manual_ip,
+          'cloud_properties' => {
+            'net_id' => @net_id
+          }
+        }
+      }
+    end
+
+    it 'exercises the vm lifecycle' do
+      expect {
+        vm_lifecycle(@stemcell_id, network_spec, [])
+      }.to_not raise_error
+    end
+  end
+
+  context 'when using config drive' do
+    let(:use_config_drive) { true }
+
+    let(:network_spec) do
+      {
+        'default' => {
+          'type' => 'dynamic',
           'cloud_properties' => {
             'net_id' => @net_id
           }

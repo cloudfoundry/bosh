@@ -17,9 +17,10 @@ module Bosh::Director
         context 'when size is not set' do
           let(:spec) { {'name' => 'fake-name' } }
 
-          it 'defaults to 0' do
-            disk_pool = described_class.parse(spec)
-            expect(disk_pool.spec['disk_size']).to eq(0)
+          it 'raises an error' do
+            expect {
+              described_class.parse(spec)
+            }.to raise_error(ValidationMissingField)
           end
         end
 

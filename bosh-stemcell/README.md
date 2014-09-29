@@ -13,7 +13,7 @@ Tools for creating stemcells
 
         vagrant plugin install vagrant-berkshelf
         vagrant plugin install vagrant-omnibus
-        vagrant plugin install vagrant-aws       --plugin-version 0.3.0
+        vagrant plugin install vagrant-aws --plugin-version 0.5.0
 
 #### Bring up the vagrant stemcell building VM
 

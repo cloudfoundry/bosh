@@ -353,6 +353,9 @@ properties:
   openstack.wait_resource_poll_interval:
     description: Changes the delay (in seconds) between each status check to OpenStack when creating a resource
     default: 5
+  openstack.use_config_drive:
+    description: Configures openstack to store configuration data on config drive
+    default: false
   vcenter.address:
     description: Address of vCenter server used by vsphere cpi
   vcenter.user:

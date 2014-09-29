@@ -12,6 +12,8 @@ describe Bosh::AwsCloud::Cloud do
     @manual_ip         = ENV['BOSH_AWS_LIFECYCLE_MANUAL_IP'] || raise("Missing BOSH_AWS_LIFECYCLE_MANUAL_IP")
   end
 
+  let(:instance_type) { ENV.fetch('BOSH_AWS_INSTANCE_TYPE', 'm1.small') }
+
   before { Bosh::Registry::Client.stub(new: double('registry').as_null_object) }
 
   # Use subject-bang because AWS SDK needs to be reconfigured
@@ -82,7 +84,7 @@ describe Bosh::AwsCloud::Cloud do
           instance_id = cpi.create_vm(
             nil,
             stemcell_id,
-            { 'instance_type' => 'm1.small' },
+            { 'instance_type' => instance_type },
             network_spec,
             [],
             {}
@@ -100,7 +102,7 @@ describe Bosh::AwsCloud::Cloud do
         @instance_id = cpi.create_vm(
           'agent-007',
           ami,
-          { 'instance_type' => 'm1.small' },
+          { 'instance_type' => instance_type },
           network_spec,
           [],
           { 'key' => 'value' }
@@ -156,7 +158,7 @@ describe Bosh::AwsCloud::Cloud do
         @instance_id = cpi.create_vm(
           'agent-007',
           ami,
-          { 'instance_type' => 'm1.small' },
+          { 'instance_type' => instance_type },
           network_spec,
           [@existing_volume_id],
           { 'key' => 'value' }
@@ -175,7 +177,7 @@ describe Bosh::AwsCloud::Cloud do
         @instance_id = cpi.create_vm(
           'agent-007',
           ami,
-          { 'instance_type' => 'm1.small' },
+          { 'instance_type' => instance_type },
           network_spec,
           [@existing_volume_id],
           { 'key' => 'value' }
@@ -219,7 +221,7 @@ describe Bosh::AwsCloud::Cloud do
         @instance_id = cpi.create_vm(
           'agent-007',
           ami,
-          { 'instance_type' => 'm1.small' },
+          { 'instance_type' => instance_type },
           network_spec,
           [],
           { 'key' => 'value' }

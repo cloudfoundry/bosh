@@ -14,6 +14,7 @@ require 'cloud/vsphere/resources/cluster'
 require 'cloud/vsphere/resources/datacenter'
 require 'cloud/vsphere/resources/datastore'
 require 'cloud/vsphere/resources/folder'
+require 'cloud/vsphere/resources/multi_tenant_folder'
 require 'cloud/vsphere/resources/resource_pool'
 require 'cloud/vsphere/resources/scorer'
 require 'cloud/vsphere/resources/util'
@@ -947,21 +948,16 @@ module VSphereCloud
 
     def get_vms
       subfolders = []
-      vms = []
       with_thread_name("get_vms") do
         @resources.datacenters.each_value do |datacenter|
-          @logger.info("Looking for VMs in: #{datacenter.name} - #{datacenter.vm_folder.name}")
-          subfolders += datacenter.vm_folder.mob.child_entity
-          @logger.info("Looking for Stemcells in: #{datacenter.name} - #{datacenter.template_folder.name}")
-          subfolders += datacenter.template_folder.mob.child_entity
+          @logger.info("Looking for VMs in: #{datacenter.name} - #{datacenter.master_vm_folder.name}")
+          subfolders += datacenter.master_vm_folder.mob.child_entity
+          @logger.info("Looking for Stemcells in: #{datacenter.name} - #{datacenter.master_template_folder.name}")
+          subfolders += datacenter.master_template_folder.mob.child_entity
         end
       end
 
-      subfolders.each do |folder|
-        vms += folder.child_entity
-      end
-
-      vms
+      subfolders.map { |folder| folder.child_entity }.flatten
     end
 
     def ping
