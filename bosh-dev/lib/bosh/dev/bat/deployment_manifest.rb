@@ -9,15 +9,15 @@ module Bosh::Dev::Bat
     attr_reader :filename
     attr_accessor :director_uuid, :net_type, :stemcell
 
-    def self.load_from_file(bat_deployment_config_path, manifest_type=self)
+    def self.load_from_file(bat_deployment_config_path)
       config_contents = File.read(bat_deployment_config_path)
-      self.load(config_contents, manifest_type)
+      load(config_contents)
     end
 
-    def self.load(bat_deployment_config_yaml, manifest_type=self)
+    def self.load(bat_deployment_config_yaml)
       manifest_hash = YAML.load(bat_deployment_config_yaml)
       puts manifest_hash.to_yaml
-      manifest_type.new(manifest_hash)
+      new(manifest_hash)
     rescue SyntaxError => e
       puts "Failed to load BAT deployment config yaml:\n#{bat_deployment_config_yaml}"
       raise e
