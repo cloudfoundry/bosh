@@ -11,7 +11,7 @@ compilation:
   network: default
   reuse_compilation_vms: true
   cloud_properties:
-    instance_type: m1.small
+    instance_type: m1.medium
     <% if properties.key_name %>
     key_name: <%= properties.key_name %>
     <% end %>
@@ -65,7 +65,7 @@ resource_pools:
       name: <%= properties.stemcell.name %>
       version: '<%= properties.stemcell.version %>'
     cloud_properties:
-      instance_type: m1.small
+      instance_type: m1.medium
       <% if properties.key_name %>
       key_name: <%= properties.key_name %>
       <% end %>
