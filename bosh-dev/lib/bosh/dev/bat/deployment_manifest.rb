@@ -68,7 +68,6 @@ module Bosh::Dev::Bat
             strict_record({
               'name' => string_schema,
               'type' => value_schema(net_type),
-              'static_ip' => string_schema,
             })
           )
         })
@@ -81,6 +80,7 @@ module Bosh::Dev::Bat
         properties['second_static_ip'] = string_schema
 
         network_schema = properties['networks'].elem_schema.schemas
+        network_schema['static_ip'] = string_schema
         network_schema['cidr'] = string_schema
         network_schema['reserved'] = list_schema(string_schema)
         network_schema['static'] = list_schema(string_schema)
