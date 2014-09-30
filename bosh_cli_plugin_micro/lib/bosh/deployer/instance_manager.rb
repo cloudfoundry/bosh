@@ -279,7 +279,16 @@ module Bosh::Deployer
     def create_disk
       step 'Create disk' do
         size = config.resources['persistent_disk']
-        state.disk_cid = cloud.create_disk(size, {}, state.vm_cid)
+
+        volume_type = config.resources['persistent_type']
+
+        if volume_type.nil?
+          cloud_properties = {}
+        else
+          cloud_properties = { 'type' => volume_type }
+        end
+
+        state.disk_cid = cloud.create_disk(size, cloud_properties, state.vm_cid)
         save_state
       end
     end
