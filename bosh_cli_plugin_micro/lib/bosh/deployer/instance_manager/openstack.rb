@@ -126,7 +126,7 @@ module Bosh::Deployer
         if instance_manager.state.vm_cid
           server = instance_manager.cloud.openstack.servers.get(instance_manager.state.vm_cid)
 
-          ip = server.private_ip_address
+          ip = server.floating_ip_address || server.private_ip_address
 
           logger.info("discovered bosh ip=#{ip}")
           ip
