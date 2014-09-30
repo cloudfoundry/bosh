@@ -15,8 +15,10 @@ module Bosh::Cli
 
     # Unpacks tarball to @unpack_dir, returns true if succeeded, false if failed
     def unpack
+      #--force-local ensures Windows paths are not misinterpreted as
+      # remote files due to the colon
       return @unpacked unless @unpacked.nil?
-      `tar -C #{@unpack_dir} -xzf #{@tarball_path} 2>&1`
+      `tar --force-local -C #{@unpack_dir} -xzf #{@tarball_path} 2>&1`
       @unpacked = $?.exitstatus == 0
     end
 
@@ -204,7 +206,9 @@ module Bosh::Cli
 
           job_tmp_dir = Dir.mktmpdir
           FileUtils.mkdir_p(job_tmp_dir)
-          `tar -C #{job_tmp_dir} -xzf #{job_file} 2>&1`
+          #--force-local ensures Windows paths are not misinterpreted as
+          # remote files due to the colon
+          `tar --force-local -C #{job_tmp_dir} -xzf #{job_file} 2>&1`
           job_extracted = $?.exitstatus == 0
 
           step("Extract job '#{name}'", "Cannot extract job '#{name}'") do
