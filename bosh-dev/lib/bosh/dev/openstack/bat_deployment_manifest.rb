@@ -29,6 +29,7 @@ module Bosh::Dev::Openstack
             'version' => stemcell_archive.version
           },
           'instance_type' => env['BOSH_OPENSTACK_FLAVOR'],
+          'flavor_with_no_ephemeral_disk' => env['BOSH_OPENSTACK_FLAVOR_WITH_NO_EPHEMERAL_DISK'],
           'instances' => 1,
           'mbus' => "nats://nats:0b450ada9f830085e2cdeff6@#{env['BOSH_OPENSTACK_VIP_BAT_IP']}:4222",
           'network' => {

@@ -38,15 +38,16 @@ module Bosh::Dev::Openstack
     describe '#to_h' do
       before do
         env.merge!(
-          'BOSH_OPENSTACK_VIP_BAT_IP'       => 'vip',
-          'BOSH_OPENSTACK_STATIC_BAT_IP'    => 'fake-static-ip',
-          'BOSH_OPENSTACK_SECOND_STATIC_BAT_IP' => 'fake-second-static-ip',
-          'BOSH_OPENSTACK_NET_ID'           => 'net_id',
-          'BOSH_OPENSTACK_NETWORK_CIDR'     => 'net_cidr',
-          'BOSH_OPENSTACK_NETWORK_RESERVED' => 'net_reserved',
-          'BOSH_OPENSTACK_NETWORK_STATIC'   => 'net_static',
-          'BOSH_OPENSTACK_NETWORK_GATEWAY'  => 'net_gateway',
-          'BOSH_OPENSTACK_FLAVOR'           => 'm1.big',
+          'BOSH_OPENSTACK_VIP_BAT_IP'                    => 'vip',
+          'BOSH_OPENSTACK_STATIC_BAT_IP'                 => 'fake-static-ip',
+          'BOSH_OPENSTACK_SECOND_STATIC_BAT_IP'          => 'fake-second-static-ip',
+          'BOSH_OPENSTACK_NET_ID'                        => 'net_id',
+          'BOSH_OPENSTACK_NETWORK_CIDR'                  => 'net_cidr',
+          'BOSH_OPENSTACK_NETWORK_RESERVED'              => 'net_reserved',
+          'BOSH_OPENSTACK_NETWORK_STATIC'                => 'net_static',
+          'BOSH_OPENSTACK_NETWORK_GATEWAY'               => 'net_gateway',
+          'BOSH_OPENSTACK_FLAVOR'                        => 'm1.big',
+          'BOSH_OPENSTACK_FLAVOR_WITH_NO_EPHEMERAL_DISK' => 'no-ephemeral',
         )
       end
 
@@ -65,6 +66,7 @@ properties:
     name: stemcell-name
     version: 13
   instance_type: m1.big
+  flavor_with_no_ephemeral_disk: no-ephemeral
   instances: 1
   mbus: nats://nats:0b450ada9f830085e2cdeff6@vip:4222
   network:
@@ -100,6 +102,7 @@ properties:
     name: stemcell-name
     version: 13
   instance_type: m1.big
+  flavor_with_no_ephemeral_disk: no-ephemeral
   instances: 1
   mbus: nats://nats:0b450ada9f830085e2cdeff6@vip:4222
   network:
