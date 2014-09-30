@@ -44,12 +44,16 @@ networks:
     dns: <%= p('dns').inspect %>
     cloud_properties:
       security_groups: <%= p('network.cloud_properties.security_groups') %>
-      net_id: <%= p('network.cloud_properties.net_id') %>
+      <% if_p('network.cloud_properties.net_id') do |net_id| %>
+      net_id: <%= net_id %>
+      <% end %>
   <% else %>
   dns: <%= p('dns').inspect %>
   cloud_properties:
     security_groups: <%= p('network.cloud_properties.security_groups') %>
-    net_id: <%= p('network.cloud_properties.net_id') %>
+      <% if_p('network.cloud_properties.net_id') do |net_id| %>
+      net_id: <%= net_id %>
+      <% end %>
   <% end %>
 
 resource_pools:
