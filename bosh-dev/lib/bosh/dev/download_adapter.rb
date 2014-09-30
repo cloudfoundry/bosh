@@ -19,10 +19,7 @@ module Bosh::Dev
     def download_file(uri, write_path)
       proxy = ENV['http_proxy'] ? URI.parse(ENV['http_proxy']) : NullUri.new
 
-      # disable use of proxy when URI domain is in no_proxy
-      if uri_matches_noproxy?(uri)
-        proxy.host = nil
-      end
+      proxy = NullUri.new if bypass_proxy?(uri)
 
       Net::HTTP.start(uri.host, uri.port, proxy.host, proxy.port, proxy.user, proxy.password) do |http|
         http.request_get(uri.request_uri) do |response|
@@ -40,24 +37,27 @@ module Bosh::Dev
       end
     end
 
-    def uri_matches_noproxy?(uri)
-      no_proxy = get_noproxy
-      no_proxy.each do |no_proxy_domain|
-        # remove leading dot if there is one in the no_proxy_domain
-        no_proxy_domain.sub(/^\./,'')
-        if uri.host.end_with?(no_proxy_domain)
+    def bypass_proxy?(uri)
+      uris = bypass_proxy_uris
+      uris.each do |domain|
+        if uri.host.end_with?(clean_uri(domain))
           return true
         end
       end
       false
     end
 
-    def get_noproxy
-      noproxy = ENV['no_proxy']
+    def bypass_proxy_uris
+      uris = ENV['no_proxy']
 
-      return [] unless noproxy
+      return [] unless uris
 
-      noproxy.split(',')
+      uris.split(',')
+    end
+
+    def clean_uri(uri)
+      uri.sub(/^\./,'')
+      uri.gsub(/\s/,'')
     end
 
     NullUri = Struct.new(:host, :port, :user, :password)

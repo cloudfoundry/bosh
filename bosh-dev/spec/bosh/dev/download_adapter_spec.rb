@@ -82,23 +82,37 @@ module Bosh::Dev
         end
       end
 
-      context 'when a proxy is available and the URL matches the noproxy list' do
-        before { stub_const('ENV', 'http_proxy' => 'http://proxy.example.com:1234', 'no_proxy' => 'some.domain,sample.uri,someother.domain')}
+      context 'when some uris are specified to bypass the proxy' do
+        before { stub_const('ENV', 'http_proxy' => 'http://proxy.example.com:1234', 'no_proxy' => bypass_proxy_uris)}
 
-        it 'does not use the proxy' do
-          net_http_mock = class_double('Net::HTTP').as_stubbed_const
-          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, nil, 1234, nil, nil)
-          subject.download(uri, write_path)
+        context 'when the URL does not match the bypass_proxy_uris list' do
+          let(:bypass_proxy_uris) { 'does.not.match,at.all' }
+
+          it 'uses the proxy' do
+            net_http_mock = class_double('Net::HTTP').as_stubbed_const
+            expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234, nil, nil)
+            subject.download(uri, write_path)
+          end
         end
-      end
 
-      context 'when a proxy is available and the URL matches the noproxy list, even if specified with leading .' do
-        before { stub_const('ENV', 'http_proxy' => 'http://proxy.example.com:1234', 'no_proxy' => 'some.domain,.sample.uri')}
+        context 'when the URL matches the bypass_proxy_uris list' do
+          let(:bypass_proxy_uris) { 'some.example,sample.uri,another.example' }
 
-        it 'does not use the proxy' do
-          net_http_mock = class_double('Net::HTTP').as_stubbed_const
-          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, nil, 1234, nil, nil)
-          subject.download(uri, write_path)
+          it 'does not use the proxy' do
+            net_http_mock = class_double('Net::HTTP').as_stubbed_const
+            expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, nil, nil, nil, nil)
+            subject.download(uri, write_path)
+          end
+        end
+
+        context 'when the URL matches the bypass_proxy_uris list, even if specified with leading .' do
+          let(:bypass_proxy_uris) { 'some.domain,.sample.uri' }
+
+          it 'does not use the proxy' do
+            net_http_mock = class_double('Net::HTTP').as_stubbed_const
+            expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, nil, nil, nil, nil)
+            subject.download(uri, write_path)
+          end
         end
       end
     end
