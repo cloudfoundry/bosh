@@ -2,21 +2,28 @@ require 'spec_helper'
 
 describe 'Ubuntu 14.04 stemcell', stemcell_image: true do
   context 'installed by image_install_grub', exclude_on_warden: true do
-    describe file('/boot/grub/grub.conf') do
-      it { should be_file }
-      it { should contain 'default=0' }
-      it { should contain 'timeout=1' }
-      its(:content) { should match %r{^title Ubuntu 14\.04.* LTS \(.*\)$} }
-      it { should contain '  root (hd0,0)' }
-      its(:content) { should match %r{kernel /boot/vmlinuz-\S+-generic ro root=UUID=} }
-      it { should contain ' selinux=0' }
-      it { should contain ' cgroup_enable=memory swapaccount=1' }
-      its(:content) { should match %r{initrd /boot/initrd.img-\S+-generic} }
-    end
+    if (RbConfig::CONFIG['host_cpu'] == "powerpc64le")
+      describe file('/boot/grub/grub.cfg') do
+        it { should be_file }
+        it { should contain 'Linux 3.13.0-36-generic' }
+      end
+    else 
+      describe file('/boot/grub/grub.conf') do
+        it { should be_file }
+        it { should contain 'default=0' }
+        it { should contain 'timeout=1' }
+        its(:content) { should match %r{^title Ubuntu 14\.04.* LTS \(.*\)$} }
+        it { should contain '  root (hd0,0)' }
+        its(:content) { should match %r{kernel /boot/vmlinuz-\S+-generic ro root=UUID=} }
+        it { should contain ' selinux=0' }
+        it { should contain ' cgroup_enable=memory swapaccount=1' }
+        its(:content) { should match %r{initrd /boot/initrd.img-\S+-generic} }
+      end
 
-    describe file('/boot/grub/menu.lst') do
-      before { skip 'until aws/openstack stop clobbering the symlink with "update-grub"' }
-      it { should be_linked_to('./grub.conf') }
+      describe file('/boot/grub/menu.lst') do
+        before { skip 'until aws/openstack stop clobbering the symlink with "update-grub"' }
+        it { should be_linked_to('./grub.conf') }
+      end
     end
   end
 

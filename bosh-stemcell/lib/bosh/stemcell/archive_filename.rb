@@ -23,6 +23,9 @@ module Bosh::Stemcell
 
     def name
       definition.light? ? "light-#{base_name}" : base_name
+      if (RbConfig::CONFIG['host_cpu'] == "powerpc64le")
+        "#{base_name}-ppc64"
+      end
     end
 
     attr_reader(
