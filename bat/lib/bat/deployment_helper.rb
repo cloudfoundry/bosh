@@ -73,10 +73,11 @@ module Bat
 
     def use_job(job)
       @spec['properties']['job'] = job
+      @spec['properties']['templates'] = [job]
     end
 
     def use_templates(templates)
-      @spec['properties']['template'] = templates.map { |item| "\n      - #{item}" }.join
+      @spec['properties']['templates'] = Array(templates)
     end
 
     def use_job_instances(count)
