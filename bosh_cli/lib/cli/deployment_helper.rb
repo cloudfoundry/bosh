@@ -8,8 +8,6 @@ module Bosh::Cli
         err("Cannot find deployment manifest in `#{manifest_filename}'")
       end
 
-      header('Processing deployment manifest')
-
       manifest = load_yaml_file(manifest_filename)
       manifest_yaml = File.read(manifest_filename)
 
