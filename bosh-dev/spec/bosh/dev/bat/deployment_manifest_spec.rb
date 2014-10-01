@@ -33,12 +33,10 @@ EOF
 ---
 cpi: fake-cpi
 properties:
-  second_static_ip: fake-second-static-ip
   pool_size: 1
   instances: 1
   networks:
   - name: default
-    static_ip: fake-static-ip
     type: dynamic
 EOF
     end

@@ -49,7 +49,7 @@ module Bosh::Dev::VSphere
           .with(bosh_cli_session)
           .and_return(director_uuid)
 
-        ENV['BOSH_VSPHERE_BAT_DEPLOYMENT_CONFIG_PATH'] = '/fake/config/path.yml'
+        ENV['BOSH_VSPHERE_BAT_DEPLOYMENT_SPEC'] = '/fake/config/path.yml'
         bat_deployment_manifest = instance_double('Bosh::Dev::VSphere::BatDeploymentManifest')
         expect(Bosh::Dev::VSphere::BatDeploymentManifest)
           .to receive(:load_from_file)

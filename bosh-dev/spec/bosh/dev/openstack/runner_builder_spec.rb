@@ -50,7 +50,7 @@ module Bosh::Dev::Openstack
           .with(bosh_cli_session)
           .and_return(director_uuid)
 
-        ENV['BOSH_OPENSTACK_BAT_DEPLOYMENT_CONFIG_PATH'] = '/fake/config/path.yml'
+        ENV['BOSH_OPENSTACK_BAT_DEPLOYMENT_SPEC'] = '/fake/config/path.yml'
         bat_deployment_manifest = instance_double('Bosh::Dev::Openstack::BatDeploymentManifest')
        expect(Bosh::Dev::Openstack::BatDeploymentManifest)
           .to receive(:load_from_file)

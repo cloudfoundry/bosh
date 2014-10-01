@@ -23,11 +23,14 @@ module Bosh::Dev::Openstack
       properties.optional_keys << 'key_name'
 
       network_schema = new_schema.schemas['properties'].schemas['networks'].elem_schema.schemas
-      network_schema['cloud_properties'] = strict_record({
+      cloud_properties = strict_record({
         'net_id' => string_schema,
-        'security_groups' => list_schema(string_schema)
+        'security_groups' => list_schema(string_schema),
       })
-      network_schema['cloud_properties'].optional_keys << 'net_id'
+      if net_type == 'dynamic'
+        cloud_properties.optional_keys << 'net_id'
+      end
+      network_schema['cloud_properties'] = cloud_properties
 
       new_schema
     end

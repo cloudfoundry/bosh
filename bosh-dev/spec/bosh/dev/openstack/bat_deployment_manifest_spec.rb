@@ -50,13 +50,11 @@ EOF
 cpi: openstack
 properties:
   vip: vip
-  second_static_ip: fake-second-static-ip
   pool_size: 1
   flavor_with_no_ephemeral_disk: no-ephemeral
   instances: 1
   networks:
   - name: default
-    static_ip: fake-static-ip
     type: dynamic
     cloud_properties:
       net_id: net_id
@@ -151,22 +149,6 @@ EOF
         expect{ manifest.validate }.to raise_error(Membrane::SchemaValidationError)
       end
 
-      it 'optionally allows properties.networks.cloud_properties.net_id' do
-        new_yaml = update_yaml(input_yaml_dynamic) do |yaml_hash|
-          yaml_hash['properties']['networks'][0]['cloud_properties'].delete('net_id')
-        end
-        manifest = BatDeploymentManifest.load(new_yaml)
-
-        expect{ manifest.validate }.to_not raise_error
-
-        new_yaml = update_yaml(input_yaml_dynamic) do |yaml_hash|
-          yaml_hash['properties']['networks'][0]['cloud_properties']['net_id'] = 'net_id'
-        end
-        manifest = BatDeploymentManifest.load(new_yaml)
-
-        expect{ manifest.validate }.to_not raise_error
-      end
-
       it 'requires properties.networks.cloud_properties.security_groups' do
         new_yaml = update_yaml(input_yaml_dynamic) do |yaml_hash|
           yaml_hash['properties']['networks'][0]['cloud_properties'].delete('security_groups')
@@ -174,6 +156,35 @@ EOF
         manifest = BatDeploymentManifest.load(new_yaml)
 
         expect{ manifest.validate }.to raise_error(Membrane::SchemaValidationError)
+      end
+
+      context 'when the net_type is manual' do
+        it 'requires properties.networks.cloud_properties.net_id' do
+          new_yaml = update_yaml(input_yaml_manual) do |yaml_hash|
+            yaml_hash['properties']['networks'][0]['cloud_properties'].delete('net_id')
+          end
+          manifest = BatDeploymentManifest.load(new_yaml)
+
+          expect{ manifest.validate }.to raise_error(Membrane::SchemaValidationError)
+        end
+      end
+
+      context 'when the net_type is dynamic' do
+        it 'optionally allows properties.networks.cloud_properties.net_id' do
+          new_yaml = update_yaml(input_yaml_dynamic) do |yaml_hash|
+            yaml_hash['properties']['networks'][0]['cloud_properties'].delete('net_id')
+          end
+          manifest = BatDeploymentManifest.load(new_yaml)
+
+          expect{ manifest.validate }.to_not raise_error
+
+          new_yaml = update_yaml(input_yaml_dynamic) do |yaml_hash|
+            yaml_hash['properties']['networks'][0]['cloud_properties']['net_id'] = 'net_id'
+          end
+          manifest = BatDeploymentManifest.load(new_yaml)
+
+          expect{ manifest.validate }.to_not raise_error
+        end
       end
     end
 
