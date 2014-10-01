@@ -74,7 +74,7 @@ module Bosh::Dev::Openstack
           'region' => env['BOSH_OPENSTACK_REGION'],
           'endpoint_type' => 'publicURL',
           'default_key_name' => default_key_name,
-          'default_security_groups' => ['default'],
+          'default_security_groups' => default_security_groups,
           'private_key' => env['BOSH_OPENSTACK_PRIVATE_KEY'],
           'state_timeout' => state_timeout,
           'wait_resource_poll_interval' => 5,
@@ -107,6 +107,11 @@ module Bosh::Dev::Openstack
     def default_key_name
       key_name = env['BOSH_OPENSTACK_DEFAULT_KEY_NAME']
       key_name.to_s.empty? ? 'jenkins' : key_name
+    end
+
+    def default_security_groups
+      group = env['BOSH_OPENSTACK_DEFAULT_SECURITY_GROUP']
+      group.to_s.empty? ? ['default'] : [group]
     end
   end
 end

@@ -28,6 +28,7 @@ module Bosh::Dev::Openstack
           'BOSH_OPENSTACK_PRIVATE_KEY' => 'private_key_path',
           'BOSH_OPENSTACK_DEFAULT_KEY_NAME' => 'key_name',
           'BOSH_OPENSTACK_FLAVOR' => 'flavor',
+          'BOSH_OPENSTACK_DEFAULT_SECURITY_GROUP' => 'security_group',
         )
       end
 
@@ -64,7 +65,7 @@ cloud:
       endpoint_type: publicURL
       default_key_name: key_name
       default_security_groups:
-      - default
+      - security_group
       private_key: private_key_path
       state_timeout: 300
       wait_resource_poll_interval: 5
@@ -121,7 +122,7 @@ cloud:
       endpoint_type: publicURL
       default_key_name: key_name
       default_security_groups:
-      - default
+      - security_group
       private_key: private_key_path
       state_timeout: 300
       wait_resource_poll_interval: 5
@@ -209,6 +210,13 @@ YAML
         it 'uses m1.small as a default flavor' do
           env.delete('BOSH_OPENSTACK_FLAVOR')
           expect(subject.to_h['resources']['cloud_properties']['instance_type']).to eq('m1.small')
+        end
+      end
+
+      context 'when BOSH_OPENSTACK_SECURITY_GROUP is not specified' do
+        it 'uses default as the default security groups' do
+          env.delete('BOSH_OPENSTACK_DEFAULT_SECURITY_GROUP')
+          expect(subject.to_h['cloud']['properties']['openstack']['default_security_groups']).to eq(['default'])
         end
       end
     end
