@@ -268,7 +268,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     cloud.create_vm("agent-id", "sc-id", resource_pool_spec, combined_network_spec)
   end
 
-  context "when boot_from_value is set" do
+  context "when boot_from_volume is set" do
     let(:volume_id) { "v-foobar" }
     it "creates an OpenStack server with a boot volume" do
       network_spec = dynamic_network_spec
@@ -279,12 +279,60 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       disk_params = {
         :display_name => "volume-#{unique_vol_name}",
         :size => 2,
-        :imageRef => "sc-id"
+        :imageRef => "sc-id",
+        :availability_zone => "foobar-1a"
       }
       boot_volume = double("volume", :id => "v-foobar")
 
       cloud_options = mock_cloud_options
       cloud_options['properties']['openstack']['boot_from_volume'] = true
+
+      cloud = mock_cloud(cloud_options['properties']) do |openstack|
+        openstack.servers.should_receive(:create).with(openstack_params).and_return(server)
+        openstack.security_groups.should_receive(:collect).and_return(%w[default])
+        openstack.images.should_receive(:find).and_return(image)
+        openstack.flavors.should_receive(:find).and_return(flavor)
+        openstack.volumes.should_receive(:create).with(disk_params).and_return(boot_volume)
+        openstack.key_pairs.should_receive(:find).and_return(key_pair)
+        openstack.addresses.should_receive(:each).and_yield(address)
+      end
+
+      cloud.should_receive(:generate_unique_name).exactly(2).times.and_return(unique_name, unique_vol_name)
+      address.should_receive(:server=).with(nil)
+      cloud.should_receive(:wait_resource).with(server, :active, :state)
+      cloud.should_receive(:wait_resource).with(boot_volume, :available)
+
+      @registry.should_receive(:update_settings).
+        with("i-test", agent_settings(unique_name, network_spec))
+
+      vm_id = cloud.create_vm("agent-id", "sc-id",
+        resource_pool_spec,
+        { "network_a" => network_spec },
+        nil, { "test_env" => "value" })
+      vm_id.should == "i-test"
+    end
+  end
+
+  context "when boot_from_volume is set with a volume_type" do
+    let(:volume_id) { "v-foobar" }
+    it "creates an OpenStack server with a boot volume" do
+      network_spec = dynamic_network_spec
+      address = double("address", :id => "a-test", :ip => "10.0.0.1",
+        :instance_id => "i-test")
+
+      unique_vol_name = SecureRandom.uuid
+      disk_params = {
+        :display_name => "volume-#{unique_vol_name}",
+        :size => 2,
+        :imageRef => "sc-id",
+        :availability_zone => "foobar-1a",
+        :volume_type => "foo"
+      }
+      boot_volume = double("volume", :id => "v-foobar")
+
+      cloud_options = mock_cloud_options
+      cloud_options['properties']['openstack']['boot_from_volume'] = true
+      cloud_options['properties']['openstack']['boot_volume_type'] = "foo"
 
       cloud = mock_cloud(cloud_options['properties']) do |openstack|
         openstack.servers.should_receive(:create).with(openstack_params).and_return(server)

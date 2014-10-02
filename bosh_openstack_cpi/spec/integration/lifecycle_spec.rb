@@ -19,6 +19,7 @@ describe Bosh::OpenStackCloud::Cloud do
   end
 
   let(:boot_from_volume) { false }
+  let(:boot_volume_type) { nil }
   let(:use_config_drive) { false }
 
   subject(:cpi) do
@@ -34,6 +35,7 @@ describe Bosh::OpenStackCloud::Cloud do
         'default_security_groups' => %w(default),
         'wait_resource_poll_interval' => 5,
         'boot_from_volume' => boot_from_volume,
+        'boot_volume_type' => boot_volume_type,
         'use_config_drive' => use_config_drive,
       },
       'registry' => {
@@ -141,6 +143,50 @@ describe Bosh::OpenStackCloud::Cloud do
     end
   end
 
+  context 'when booting from volume with a volume_type' do
+    let(:boot_from_volume) { true }
+    let(:boot_volume_type) { "foo" }
+
+    let(:network_spec) do
+      {
+        'default' => {
+          'type' => 'manual',
+          'ip' => @manual_ip,
+          'cloud_properties' => {
+            'net_id' => @net_id
+          }
+        }
+      }
+    end
+
+    it 'exercises the vm lifecycle' do
+      expect {
+        vm_lifecycle(@stemcell_id, network_spec, [])
+      }.to_not raise_error
+    end
+  end
+
+  context 'when using cloud_properties' do
+    let(:cloud_properties) { { 'type' => 'foo' } }
+
+    let(:network_spec) do
+      {
+        'default' => {
+          'type' => 'dynamic',
+          'cloud_properties' => {
+            'net_id' => @net_id
+          }
+        }
+      }
+    end
+
+    it 'exercises the vm lifecycle' do
+      expect {
+        vm_lifecycle(@stemcell_id, network_spec, [], cloud_properties)
+      }.to_not raise_error
+    end
+  end
+
   context 'when using config drive' do
     let(:use_config_drive) { true }
 
@@ -162,9 +208,9 @@ describe Bosh::OpenStackCloud::Cloud do
     end
   end
 
-  def vm_lifecycle(stemcell_id, network_spec, disk_locality)
+  def vm_lifecycle(stemcell_id, network_spec, disk_locality, cloud_properties = {})
     vm_id = create_vm(stemcell_id, network_spec, disk_locality)
-    disk_id = create_disk(vm_id)
+    disk_id = create_disk(vm_id, cloud_properties)
     disk_snapshot_id = create_disk_snapshot(disk_id)
   rescue Exception => create_error
   ensure
@@ -219,9 +265,9 @@ describe Bosh::OpenStackCloud::Cloud do
     end
   end
 
-  def create_disk(vm_id)
+  def create_disk(vm_id, cloud_properties)
     logger.info("Creating disk for VM vm_id=#{vm_id}")
-    disk_id = cpi.create_disk(2048, {}, vm_id)
+    disk_id = cpi.create_disk(2048, cloud_properties, vm_id)
     expect(disk_id).to be
 
     logger.info("Attaching disk vm_id=#{vm_id} disk_id=#{disk_id}")
