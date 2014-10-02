@@ -66,18 +66,30 @@ describe Bosh::OpenStackCloud::Cloud do
         end
       end
 
-      context 'connection_options' do
-        before { options['openstack']['connection_options'] = 'connection_options' }
+      context 'when connection_options are specified' do
+        it 'expects connection_options to be a hash' do
+          options['openstack']['connection_options'] = { 'any-key' => 'any-value' }
+
+          expect { subject }.to_not raise_error
+        end
 
         it 'raises an error if connection_options is not a Hash' do
+          options['openstack']['connection_options'] = 'connection_options'
+
           expect { subject }.to raise_error(ArgumentError, /Invalid OpenStack cloud properties/)
         end
       end
 
-      context 'boot_from_volume' do
-        before { options['openstack']['boot_from_volume'] = 'boot_from_volume' }
+      context 'when boot_from_volume is specified' do
+        it 'expects boot_from_volume to be a boolean' do
+          options['openstack']['boot_from_volume'] = true
+
+          expect { subject }.to_not raise_error
+        end
 
         it 'raises an error if boot_from_volume is not a boolean' do
+          options['openstack']['boot_from_volume'] = 'boot_from_volume'
+
           expect { subject }.to raise_error(ArgumentError, /Invalid OpenStack cloud properties/)
         end
       end

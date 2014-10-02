@@ -7,6 +7,8 @@ module Bosh::OpenStackCloud
   class Cloud < Bosh::Cloud
     include Helpers
 
+    OPTION_KEYS = ['openstack', 'registry', 'agent']
+
     BOSH_APP_DIR = '/var/vcap/bosh'
     FIRST_DEVICE_NAME_LETTER = 'b'
 
@@ -24,7 +26,7 @@ module Bosh::OpenStackCloud
     # @option options [Hash] agent agent options
     # @option options [Hash] registry agent options
     def initialize(options)
-      @options = options.dup
+      @options = normalize_options(options)
 
       validate_options
       initialize_registry
@@ -907,7 +909,7 @@ module Bosh::OpenStackCloud
             'username' => String,
             'api_key' => String,
             'tenant' => String,
-            optional('region') => enum(String, nil),
+            optional('region') => String,
             optional('endpoint_type') => String,
             optional('state_timeout') => Numeric,
             optional('stemcell_public_visibility') => enum(String, bool),
@@ -916,13 +918,14 @@ module Bosh::OpenStackCloud
             optional('default_key_name') => String,
             optional('default_security_groups') => [String],
             optional('wait_resource_poll_interval') => Integer,
-            optional('config_drive') => enum('disk', 'cdrom', nil),
+            optional('config_drive') => enum('disk', 'cdrom'),
           },
           'registry' => {
             'endpoint' => String,
             'user' => String,
             'password' => String,
-          }
+          },
+          optional('agent') => Hash,
         }
       end
       schema.validate(@options)
@@ -939,6 +942,35 @@ module Bosh::OpenStackCloud
       @registry = Bosh::Registry::Client.new(registry_endpoint,
                                              registry_user,
                                              registry_password)
+    end
+
+    def normalize_options(options)
+      unless options.kind_of?(Hash)
+        raise ArgumentError, "Invalid OpenStack cloud properties: Hash expected, received #{options}"
+      end
+      # we only care about two top-level fields
+      options = hash_filter(options.dup) { |key| OPTION_KEYS.include?(key) }
+      # nil values should be treated the same as missing keys (makes validating optional fields easier)
+      delete_entries_with_nil_keys(options)
+    end
+
+    def hash_filter(hash)
+      copy = {}
+      hash.each do |key, value|
+        copy[key] = value if yield(key)
+      end
+      copy
+    end
+
+    def delete_entries_with_nil_keys(options)
+      options.each do |key, value|
+        if value == nil
+          options.delete(key)
+        elsif value.kind_of?(Hash)
+          options[key] = delete_entries_with_nil_keys(value.dup)
+        end
+      end
+      options
     end
 
   end
