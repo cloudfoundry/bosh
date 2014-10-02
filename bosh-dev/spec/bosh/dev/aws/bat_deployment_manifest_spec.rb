@@ -17,14 +17,22 @@ module Bosh::Dev::Aws
       )
     end
 
-    before { Bosh::Dev::Aws::Receipts.stub(:new).and_return(receipts) }
+    before { allow(Bosh::Dev::Aws::Receipts).to receive(:new).and_return(receipts) }
 
     its(:net_type) { should eq('manual') }
 
     describe '#write' do
       before do
         allow(bosh_cli_session).to receive(:run_bosh)
-        allow(YAML).to receive(:load_file).with('bat.yml').and_return({'properties' => {'network' => {'type' => 'manual'}}})
+        allow(YAML).to receive(:load_file).with('bat.yml').and_return({
+          'properties' => {
+            'networks' => [
+              {
+                'type' => 'manual',
+              },
+            ],
+          },
+        })
       end
 
       it 'uses the command line tool to generate the manifest' do
