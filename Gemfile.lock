@@ -210,6 +210,7 @@ PATH
       bosh_cpi (~> 1.2732.0)
       fog (~> 1.23.0)
       httpclient (= 2.4.0)
+      membrane (~> 0.0.2)
       yajl-ruby (>= 0.8.2)
 
 PATH

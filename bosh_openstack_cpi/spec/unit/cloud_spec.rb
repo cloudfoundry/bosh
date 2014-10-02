@@ -32,33 +32,87 @@ describe Bosh::OpenStackCloud::Cloud do
     }
     let(:connection_options) { nil }
     let(:merged_connection_options) { default_connection_options }
-    let(:compute) { instance_double('Fog::Compute') }
-    let(:image) { instance_double('Fog::Image') }
-    let(:volume) { instance_double('Fog::Volume') }
 
-    it 'should create a Fog connection' do
-      allow(Fog::Compute).to receive(:new).and_return(compute)
-      allow(Fog::Image).to receive(:new).and_return(image)
-      allow(Fog::Volume).to receive(:new).and_return(volume)
+    let(:compute) { instance_double('Fog::Compute') }
+    before { allow(Fog::Compute).to receive(:new).and_return(compute) }
+
+    let(:image) { instance_double('Fog::Image') }
+    before { allow(Fog::Image).to receive(:new).and_return(image) }
+
+    let(:volume) { instance_double('Fog::Volume') }
+    before { allow(Fog::Volume).to receive(:new).and_return(volume) }
+
+    describe 'validation' do
+      let(:options) do
+        {
+          'openstack' => {
+            'auth_url' => 'fake-auth-url',
+            'username' => 'fake-username',
+            'api_key' => 'fake-api-key',
+            'tenant' => 'fake-tenant'
+          },
+          'registry' => {
+            'endpoint' => 'fake-registry',
+            'user' => 'fake-user',
+            'password' => 'fake-password',
+          }
+        }
+      end
+      subject(:subject) { Bosh::OpenStackCloud::Cloud.new(options) }
+
+      context 'when all required options are specified' do
+        it 'does not raise an error' do
+          expect { subject }.to_not raise_error
+        end
+      end
+
+      context 'connection_options' do
+        before { options['openstack']['connection_options'] = 'connection_options' }
+
+        it 'raises an error if connection_options is not a Hash' do
+          expect { subject }.to raise_error(ArgumentError, /Invalid OpenStack cloud properties/)
+        end
+      end
+
+      context 'boot_from_volume' do
+        before { options['openstack']['boot_from_volume'] = 'boot_from_volume' }
+
+        it 'raises an error if boot_from_volume is not a boolean' do
+          expect { subject }.to raise_error(ArgumentError, /Invalid OpenStack cloud properties/)
+        end
+      end
+
+      context 'use_config_drive' do
+        before { options['openstack']['use_config_drive'] = 'config-drive' }
+
+        it 'raises an error if use_config_drive is not a boolean' do
+          expect { subject }.to raise_error(ArgumentError, /Invalid OpenStack cloud properties/)
+        end
+      end
+
+      context 'when options are empty' do
+        let(:options) { Hash.new('options') }
+
+        it 'raises ArgumentError' do
+          expect { subject }.to raise_error(ArgumentError, /Invalid OpenStack cloud properties/)
+        end
+      end
+
+      context 'when options are not a Hash' do
+        let(:options) { 'this is a string' }
+
+        it 'raises ArgumentError' do
+          expect { subject }.to raise_error(ArgumentError, /Invalid OpenStack cloud properties/)
+        end
+      end
+    end
+
+    it 'creates a Fog connection' do
       cloud = Bosh::OpenStackCloud::Cloud.new(mock_cloud_options['properties'])
 
       expect(cloud.openstack).to eql(compute)
       expect(cloud.glance).to eql(image)
       expect(cloud.volume).to eql(volume)
-    end
-
-    it 'raises ArgumentError on initializing with blank options' do
-      options = Hash.new('options')
-      expect {
-        Bosh::OpenStackCloud::Cloud.new(options)
-      }.to raise_error(ArgumentError, /Invalid OpenStack configuration/)
-    end
-
-    it 'raises ArgumentError on initializing with non Hash options' do
-      options = 'this is a string'
-      expect {
-        Bosh::OpenStackCloud::Cloud.new(options)
-      }.to raise_error(ArgumentError, /Invalid OpenStack configuration/)
     end
 
     it 'raises a CloudError exception if cannot connect to the OpenStack Compute API' do

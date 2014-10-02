@@ -900,22 +900,34 @@ module Bosh::OpenStackCloud
     # @return [void]
     # @raise [ArgumentError] if options are not valid
     def validate_options
-      unless @options['openstack'].is_a?(Hash) &&
-          @options.has_key?('openstack') &&
-          @options['openstack']['auth_url'] &&
-          @options['openstack']['username'] &&
-          @options['openstack']['api_key'] &&
-          @options['openstack']['tenant']
-        raise ArgumentError, 'Invalid OpenStack configuration parameters'
+      schema = Membrane::SchemaParser.parse do
+        {
+          'openstack' => {
+            'auth_url' => String,
+            'username' => String,
+            'api_key' => String,
+            'tenant' => String,
+            optional('region') => enum(String, nil),
+            optional('endpoint_type') => String,
+            optional('state_timeout') => Numeric,
+            optional('stemcell_public_visibility') => enum(String, bool),
+            optional('connection_options') => Hash,
+            optional('boot_from_volume') => bool,
+            optional('default_key_name') => String,
+            optional('default_security_groups') => [String],
+            optional('wait_resource_poll_interval') => Integer,
+            optional('use_config_drive') => bool,
+          },
+          'registry' => {
+            'endpoint' => String,
+            'user' => String,
+            'password' => String,
+          }
+        }
       end
-
-      unless @options.has_key?('registry') &&
-          @options['registry'].is_a?(Hash) &&
-          @options['registry']['endpoint'] &&
-          @options['registry']['user'] &&
-          @options['registry']['password']
-        raise ArgumentError, 'Invalid registry configuration parameters'
-      end
+      schema.validate(@options)
+    rescue Membrane::SchemaValidationError => e
+      raise ArgumentError, "Invalid OpenStack cloud properties: #{e.inspect}"
     end
 
     def initialize_registry
