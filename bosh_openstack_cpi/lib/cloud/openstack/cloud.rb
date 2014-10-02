@@ -253,7 +253,7 @@ module Bosh::OpenStackCloud
           @logger.debug("Using boot volume: `#{boot_vol_id}'")
         end
 
-        use_config_drive = @openstack_properties.fetch("use_config_drive", false)
+        use_config_drive = !!@openstack_properties.fetch("config_drive", nil)
 
         server_params = {
           :name => server_name,
@@ -916,7 +916,7 @@ module Bosh::OpenStackCloud
             optional('default_key_name') => String,
             optional('default_security_groups') => [String],
             optional('wait_resource_poll_interval') => Integer,
-            optional('use_config_drive') => bool,
+            optional('config_drive') => enum('disk', 'cdrom', nil),
           },
           'registry' => {
             'endpoint' => String,

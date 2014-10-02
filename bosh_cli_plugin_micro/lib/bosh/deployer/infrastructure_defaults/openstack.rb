@@ -35,7 +35,7 @@ module Bosh::Deployer::InfrastructureDefaults
           'wait_resource_poll_interval' => 5,
           'default_security_groups' => [],
           'ssh_user' => 'vcap',
-          'use_config_drive' => false
+          'config_drive' => nil
         },
         'registry' => {
           'endpoint' => 'http://admin:admin@localhost:25889',

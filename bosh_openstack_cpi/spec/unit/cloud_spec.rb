@@ -82,10 +82,24 @@ describe Bosh::OpenStackCloud::Cloud do
         end
       end
 
-      context 'use_config_drive' do
-        before { options['openstack']['use_config_drive'] = 'config-drive' }
+      context 'config_drive' do
+        it 'accepts cdrom as a value' do
+          options['openstack']['config_drive'] = 'cdrom'
+          expect { subject }.to_not raise_error
+        end
 
-        it 'raises an error if use_config_drive is not a boolean' do
+        it 'accepts disk as a value' do
+          options['openstack']['config_drive'] = 'disk'
+          expect { subject }.to_not raise_error
+        end
+
+        it 'accepts nil as a value' do
+          options['openstack']['config_drive'] = nil
+          expect { subject }.to_not raise_error
+        end
+
+        it 'raises an error if config_drive is not cdrom or disk or nil' do
+          options['openstack']['config_drive'] = 'incorrect-value'
           expect { subject }.to raise_error(ArgumentError, /Invalid OpenStack cloud properties/)
         end
       end

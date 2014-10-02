@@ -13,13 +13,14 @@ describe Bosh::OpenStackCloud::Cloud do
     @net_id           = ENV['BOSH_OPENSTACK_NET_ID']      || raise('Missing BOSH_OPENSTACK_NET_ID')
     @manual_ip        = ENV['BOSH_OPENSTACK_MANUAL_IP']   || raise('Missing BOSH_OPENSTACK_MANUAL_IP')
     @default_key_name = ENV.fetch('BOSH_OPENSTACK_DEFAULT_KEY_NAME', 'jenkins')
+    @config_drive     = ENV.fetch('BOSH_OPENSTACK_CONFIG_DRIVE', 'cdrom')
 
     # some environments may not have this set, and it isn't strictly necessary so don't raise if it isn't set
     @region = ENV['BOSH_OPENSTACK_REGION']
   end
 
   let(:boot_from_volume) { false }
-  let(:use_config_drive) { false }
+  let(:config_drive) { nil }
 
   subject(:cpi) do
     described_class.new(
@@ -34,7 +35,7 @@ describe Bosh::OpenStackCloud::Cloud do
         'default_security_groups' => %w(default),
         'wait_resource_poll_interval' => 5,
         'boot_from_volume' => boot_from_volume,
-        'use_config_drive' => use_config_drive,
+        'config_drive' => config_drive,
       },
       'registry' => {
         'endpoint' => 'fake',
@@ -141,8 +142,8 @@ describe Bosh::OpenStackCloud::Cloud do
     end
   end
 
-  context 'when using config drive' do
-    let(:use_config_drive) { true }
+  context 'when using config drive as cdrom' do
+    let(:config_drive) { @config_drive }
 
     let(:network_spec) do
       {

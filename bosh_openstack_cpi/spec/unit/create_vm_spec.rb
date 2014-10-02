@@ -33,7 +33,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       key_name: "test_key",
       security_groups: security_groups,
       nics: nics,
-      config_drive: use_config_drive,
+      config_drive: false,
       user_data: Yajl::Encoder.encode(user_data(unique_name, nameserver, false)),
       availability_zone: "foobar-1a"
     }
@@ -72,7 +72,6 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   let(:security_groups) { %w[default] }
   let(:nameserver) { nil }
   let(:nics) { [] }
-  let(:use_config_drive) { false }
 
   before(:each) do
     @registry = mock_registry
@@ -312,12 +311,12 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     end
   end
 
-  context "when use_config_drive option is set" do
-    let(:use_config_drive) { true }
+  context "when config_drive option is set" do
+    before { openstack_params[:config_drive] = true }
 
     it "creates an OpenStack server with config drive" do
       cloud_options = mock_cloud_options
-      cloud_options["properties"]["openstack"]["use_config_drive"] = true
+      cloud_options["properties"]["openstack"]["config_drive"] = 'cdrom'
       address = double("address", id: "a-test", ip: "10.0.0.1", instance_id: nil)
       network_spec = dynamic_network_spec
 

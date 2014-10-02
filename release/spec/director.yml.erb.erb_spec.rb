@@ -177,7 +177,7 @@ describe 'director.yml.erb.erb' do
         'default_key_name' => 'default_key_name',
         'default_security_groups' => 'default_security_groups',
         'wait_resource_poll_interval' => 'wait_resource_poll_interval',
-        'use_config_drive' => 'use-config-drive-value',
+        'config_drive' => 'config-drive-value',
       }
       deployment_manifest_fragment['properties']['registry'] = {
         'address' => 'address',
@@ -210,7 +210,7 @@ describe 'director.yml.erb.erb' do
         'default_key_name' => 'default_key_name',
         'default_security_groups' => 'default_security_groups',
         'wait_resource_poll_interval' => 'wait_resource_poll_interval',
-        'use_config_drive' => 'use-config-drive-value',
+        'config_drive' => 'config-drive-value',
       })
     end
   end
