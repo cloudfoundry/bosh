@@ -802,6 +802,7 @@ module Bosh::OpenStackCloud
 
       letter.succ! if flavor_has_ephemeral_disk?(flavor)
       letter.succ! if flavor_has_swap_disk?(flavor)
+      letter.succ! if @openstack_properties['config_drive'] == 'disk'
       letter
     end
 

@@ -7,13 +7,14 @@ describe Bosh::OpenStackCloud::Cloud do
   let(:server) { double('server', :id => 'i-test', :name => 'i-test', :flavor =>  { 'id' => 'f-test'} ) }
   let(:volume) { double('volume', :id => 'v-foobar') }
   let(:flavor) { double('flavor', :id => 'f-test', :ephemeral => 10, :swap => '') }
-  let(:cloud)  {
-    mock_cloud do |openstack|
+  let(:cloud) do
+    mock_cloud(cloud_options['properties']) do |openstack|
       openstack.servers.should_receive(:get).with('i-test').and_return(server)
       openstack.volumes.should_receive(:get).with('v-foobar').and_return(volume)
       openstack.flavors.should_receive(:find).and_return(flavor)
     end
-  }
+  end
+  let(:cloud_options) { mock_cloud_options }
 
   before(:each) do
     @registry = mock_registry
@@ -115,14 +116,14 @@ describe Bosh::OpenStackCloud::Cloud do
       cloud.stub(:wait_resource)
       cloud.stub(:update_agent_settings)
     end
+    subject(:attach_disk) { cloud.attach_disk('i-test', 'v-foobar') }
 
-    context 'when there is no ephemeral and swap disk' do
-      let(:flavor) { double('flavor', :id => 'f-test', :ephemeral => 0, :swap => '') }
+    let(:flavor) { double('flavor', :id => 'f-test', :ephemeral => 0, :swap => '') }
 
+    context 'when there is no ephemeral, swap disk and config drive' do
       it 'return letter b' do
         volume.should_receive(:attach).with(server.id, '/dev/sdb')
-
-        cloud.attach_disk('i-test', 'v-foobar')
+        attach_disk
       end
     end
 
@@ -131,8 +132,7 @@ describe Bosh::OpenStackCloud::Cloud do
 
       it 'return letter c' do
         volume.should_receive(:attach).with(server.id, '/dev/sdc')
-
-        cloud.attach_disk('i-test', 'v-foobar')
+        attach_disk
       end
     end
 
@@ -141,8 +141,20 @@ describe Bosh::OpenStackCloud::Cloud do
 
       it 'return letter c' do
         volume.should_receive(:attach).with(server.id, '/dev/sdc')
+        attach_disk
+      end
+    end
 
-        cloud.attach_disk('i-test', 'v-foobar')
+    context 'when config_drive is set as disk' do
+      let(:cloud_options) do
+        cloud_options = mock_cloud_options
+        cloud_options['properties']['openstack']['config_drive'] = 'disk'
+        cloud_options
+      end
+
+      it 'returns letter c' do
+        volume.should_receive(:attach).with(server.id, '/dev/sdc')
+        attach_disk
       end
     end
 
@@ -151,8 +163,21 @@ describe Bosh::OpenStackCloud::Cloud do
 
       it 'returns letter d' do
         volume.should_receive(:attach).with(server.id, '/dev/sdd')
+        attach_disk
+      end
+    end
 
-        cloud.attach_disk('i-test', 'v-foobar')
+    context 'when there is ephemeral, swap disk and config drive is disk' do
+      let(:flavor) { double('flavor', :id => 'f-test', :ephemeral => 1024, :swap => 200) }
+      let(:cloud_options) do
+        cloud_options = mock_cloud_options
+        cloud_options['properties']['openstack']['config_drive'] = 'disk'
+        cloud_options
+      end
+
+      it 'returns letter e' do
+        volume.should_receive(:attach).with(server.id, '/dev/sde')
+        attach_disk
       end
     end
 
@@ -161,8 +186,7 @@ describe Bosh::OpenStackCloud::Cloud do
 
       it 'returns letter b' do
         volume.should_receive(:attach).with(server.id, '/dev/sdb')
-
-        cloud.attach_disk('i-test', 'v-foobar')
+        attach_disk
       end
     end
   end
