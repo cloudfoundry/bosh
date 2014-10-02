@@ -26,6 +26,7 @@ describe Bosh::OpenStackCloud::Cloud do
         :openstack_username => 'admin',
         :openstack_api_key => 'nova',
         :openstack_tenant => 'admin',
+        :openstack_region => 'RegionOne',
         :openstack_endpoint_type => nil,
         :connection_options => merged_connection_options,
       }

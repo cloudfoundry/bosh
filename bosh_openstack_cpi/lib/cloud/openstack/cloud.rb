@@ -42,6 +42,7 @@ module Bosh::OpenStackCloud
       @stemcell_public_visibility = @openstack_properties["stemcell_public_visibility"]
       @wait_resource_poll_interval = @openstack_properties["wait_resource_poll_interval"]
       @boot_from_volume = @openstack_properties["boot_from_volume"]
+      @boot_volume_type = @openstack_properties["boot_volume_type"]
 
       unless @openstack_properties['auth_url'].match(/\/tokens$/)
         @openstack_properties['auth_url'] = @openstack_properties['auth_url'] + '/tokens'
@@ -87,12 +88,12 @@ module Bosh::OpenStackCloud
 
       volume_params = {
         :provider => "OpenStack",
-        :openstack_auth_url => @openstack_properties["auth_url"],
-        :openstack_username => @openstack_properties["username"],
-        :openstack_api_key => @openstack_properties["api_key"],
-        :openstack_tenant => @openstack_properties["tenant"],
+        :openstack_auth_url => @openstack_properties['auth_url'],
+        :openstack_username => @openstack_properties['username'],
+        :openstack_api_key => @openstack_properties['api_key'],
+        :openstack_tenant => @openstack_properties['tenant'],
         :openstack_region => @openstack_properties['region'],
-        :openstack_endpoint_type => @openstack_properties["endpoint_type"],
+        :openstack_endpoint_type => @openstack_properties['endpoint_type'],
         :connection_options => @openstack_properties['connection_options'].merge(extra_connection_options)
       }
       begin
@@ -249,14 +250,6 @@ module Bosh::OpenStackCloud
         cloud_error("Key-pair `#{keyname}' not found") if keypair.nil?
         @logger.debug("Using key-pair: `#{keypair.name}' (#{keypair.fingerprint})")
 
-        if @boot_from_volume
-          boot_vol_size = flavor.disk * 1024
-
-          boot_vol_id = create_boot_disk(boot_vol_size, stemcell_id)
-          cloud_error("Failed to create boot volume.") if boot_vol_id.nil?
-          @logger.debug("Using boot volume: `#{boot_vol_id}'")
-        end
-
         use_config_drive = !!@openstack_properties.fetch("config_drive", nil)
 
         server_params = {
@@ -274,6 +267,12 @@ module Bosh::OpenStackCloud
         server_params[:availability_zone] = availability_zone if availability_zone
 
         if @boot_from_volume
+          boot_vol_size = flavor.disk * 1024
+
+          boot_vol_id = create_boot_disk(boot_vol_size, stemcell_id, availability_zone, @boot_volume_type)
+          cloud_error("Failed to create boot volume.") if boot_vol_id.nil?
+          @logger.debug("Using boot volume: `#{boot_vol_id}'")
+
           server_params[:block_device_mapping] = [{
                                                    :volume_size => "",
                                                    :volume_id => boot_vol_id,
@@ -391,16 +390,20 @@ module Bosh::OpenStackCloud
     #   this disk will be attached to
     # @return [String] OpenStack volume UUID
     def create_disk(size, cloud_properties, server_id = nil)
-      with_thread_name("create_disk(#{size}, #{server_id})") do
+      with_thread_name("create_disk(#{size}, #{cloud_properties}, #{server_id})") do
         raise ArgumentError, 'Disk size needs to be an integer' unless size.kind_of?(Integer)
         cloud_error('Minimum disk size is 1 GiB') if (size < 1024)
         cloud_error('Maximum disk size is 1 TiB') if (size > 1024 * 1000)
 
         volume_params = {
-          :name => "volume-#{generate_unique_name}",
-          :description => '',
+          :display_name => "volume-#{generate_unique_name}",
+          :display_description => '',
           :size => (size / 1024.0).ceil
         }
+
+        if cloud_properties.has_key?('type')
+          volume_params[:volume_type] = cloud_properties['type']
+        end
 
         if server_id
           server = with_openstack { @openstack.servers.get(server_id) }
@@ -410,12 +413,12 @@ module Bosh::OpenStackCloud
         end
 
         @logger.info('Creating new volume...')
-        volume = with_openstack { @openstack.volumes.create(volume_params) }
+        new_volume = with_openstack { @volume.volumes.create(volume_params) }
 
-        @logger.info("Creating new volume `#{volume.id}'...")
-        wait_resource(volume, :available)
+        @logger.info("Creating new volume `#{new_volume.id}'...")
+        wait_resource(new_volume, :available)
 
-        volume.id.to_s
+        new_volume.id.to_s
       end
     end
 
@@ -425,9 +428,11 @@ module Bosh::OpenStackCloud
     # @param [Integer] size disk size in MiB
     # @param [String] stemcell_id OpenStack image UUID that will be used to
     #   populate the boot volume
+    # @param [optional, String] availability_zone to be passed to the volume API
+    # @param [optional, String] volume_type to be passed to the volume API
     # @return [String] OpenStack volume UUID
-    def create_boot_disk(size, stemcell_id)
-      with_thread_name("create_boot_disk(#{size}, #{stemcell_id})") do
+    def create_boot_disk(size, stemcell_id, availability_zone = nil, volume_type = nil)
+      with_thread_name("create_boot_disk(#{size}, #{stemcell_id}, #{availability_zone}, #{volume_type})") do
         raise ArgumentError, "Disk size needs to be an integer" unless size.kind_of?(Integer)
         cloud_error("Minimum disk size is 1 GiB") if (size < 1024)
         cloud_error("Maximum disk size is 1 TiB") if (size > 1024 * 1000)
@@ -437,6 +442,9 @@ module Bosh::OpenStackCloud
           :size => (size / 1024.0).ceil,
           :imageRef => stemcell_id
         }
+
+        volume_params[:availability_zone] = availability_zone if availability_zone
+        volume_params[:volume_type] = volume_type if volume_type
 
         @logger.info("Creating new boot volume...")
         boot_volume = with_openstack { @volume.volumes.create(volume_params) }
