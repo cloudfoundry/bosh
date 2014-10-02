@@ -143,8 +143,8 @@ module Bosh::Monitor
 
         @logger.info "Found deployment `#{deployment_name}'"
 
-        vms = @director.get_deployment_vms(deployment_name)
         @logger.debug "Fetching VMs information for `#{deployment_name}'..."
+        vms = @director.get_deployment_vms(deployment_name)
 
         @agent_manager.sync_agents(deployment_name, vms)
       end

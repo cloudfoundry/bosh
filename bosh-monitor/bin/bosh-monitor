@@ -24,6 +24,10 @@ Signal.trap("INT") do
   runner.stop
 end
 
+Signal.trap("EXIT") do
+  Bhm.logger.info("HealthMonitor exiting!")
+end
+
 runner.run
 
 

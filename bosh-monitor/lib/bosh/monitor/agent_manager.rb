@@ -108,6 +108,7 @@ module Bosh::Monitor
     end
 
     def remove_agent(agent_id)
+      @logger.info("Removing agent #{agent_id} from all deployments...")
       @agents.delete(agent_id)
       @deployments.each_pair do |deployment, agents|
         agents.delete(agent_id)
@@ -122,6 +123,8 @@ module Bosh::Monitor
         @logger.error("Invalid format for VM data: expected Hash, got #{vm_data.class}: #{vm_data}")
         return false
       end
+
+      @logger.info("Adding agent #{vm_data["agent_id"]} (#{vm_data["job"]}/#{vm_data["index"]}) to #{deployment_name}...")
 
       agent_id = vm_data["agent_id"]
       agent_cid = vm_data["cid"]
