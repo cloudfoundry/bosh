@@ -39,7 +39,7 @@ end
 
 def mock_registry(endpoint = 'http://registry:3333')
   registry = double('registry', :endpoint => endpoint)
-  Bosh::Registry::Client.stub(:new).and_return(registry)
+  allow(Bosh::Registry::Client).to receive(:new).and_return(registry)
   registry
 end
 
@@ -54,24 +54,24 @@ def mock_cloud(options = nil)
   security_groups = double('security_groups')
 
   glance = double(Fog::Image)
-  Fog::Image.stub(:new).and_return(glance)
+  allow(Fog::Image).to receive(:new).and_return(glance)
 
   volume = double(Fog::Volume)
-  volume.stub(:volumes).and_return(volumes)
-  Fog::Volume.stub(:new).and_return(volume)
+  allow(volume).to receive(:volumes).and_return(volumes)
+  allow(Fog::Volume).to receive(:new).and_return(volume)
 
   openstack = double(Fog::Compute)
 
-  openstack.stub(:servers).and_return(servers)
-  openstack.stub(:images).and_return(images)
-  openstack.stub(:flavors).and_return(flavors)
-  openstack.stub(:volumes).and_return(volumes)
-  openstack.stub(:addresses).and_return(addresses)
-  openstack.stub(:snapshots).and_return(snapshots)
-  openstack.stub(:key_pairs).and_return(key_pairs)
-  openstack.stub(:security_groups).and_return(security_groups)
+  allow(openstack).to receive(:servers).and_return(servers)
+  allow(openstack).to receive(:images).and_return(images)
+  allow(openstack).to receive(:flavors).and_return(flavors)
+  allow(openstack).to receive(:volumes).and_return(volumes)
+  allow(openstack).to receive(:addresses).and_return(addresses)
+  allow(openstack).to receive(:snapshots).and_return(snapshots)
+  allow(openstack).to receive(:key_pairs).and_return(key_pairs)
+  allow(openstack).to receive(:security_groups).and_return(security_groups)
 
-  Fog::Compute.stub(:new).and_return(openstack)
+  allow(Fog::Compute).to receive(:new).and_return(openstack)
 
   yield openstack if block_given?
 
@@ -82,15 +82,15 @@ def mock_glance(options = nil)
   images = double('images')
 
   openstack = double(Fog::Compute)
-  Fog::Compute.stub(:new).and_return(openstack)
+  allow(Fog::Compute).to receive(:new).and_return(openstack)
 
   volume = double(Fog::Volume)
-  Fog::Volume.stub(:new).and_return(volume)
+  allow(Fog::Volume).to receive(:new).and_return(volume)
 
   glance = double(Fog::Image)
-  glance.stub(:images).and_return(images)
+  allow(glance).to receive(:images).and_return(images)
 
-  Fog::Image.stub(:new).and_return(glance)
+  allow(Fog::Image).to receive(:new).and_return(glance)
 
   yield glance if block_given?
 
@@ -139,5 +139,5 @@ def resource_pool_spec
 end
 
 RSpec.configure do |config|
-  config.before(:each) { Bosh::Clouds::Config.stub(:logger).and_return(double.as_null_object)  }
+  config.before(:each) { allow(Bosh::Clouds::Config).to receive(:logger).and_return(double.as_null_object)  }
 end
