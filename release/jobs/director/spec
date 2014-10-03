@@ -28,7 +28,7 @@ properties:
   director.env.http_proxy:
     description: HTTP proxy that the director, scheduler and workers should use
   director.env.https_proxy:
-    description: HTTPS proxy that the director, scheduler and workers should use 
+    description: HTTPS proxy that the director, scheduler and workers should use
   director.env.no_proxy:
     description: List of comma-separated hosts that should skip connecting to the proxy in the director, scheduler and workers
   director.name:
@@ -339,7 +339,7 @@ properties:
     description: Timeout (in seconds) for OpenStack resources desired state (optional, by default 300)
     default: 300
   openstack.boot_from_volume:
-    description: Boot from volume
+    description: Boot from volume (optional, false by default)
     default: false
   openstack.stemcell_public_visibility:
     description: Set public visibility for stemcells (optional, false by default)
@@ -351,10 +351,10 @@ properties:
   openstack.default_security_groups:
     description: Default OpenStack security groups to use when spinning up new vms
   openstack.wait_resource_poll_interval:
-    description: Changes the delay (in seconds) between each status check to OpenStack when creating a resource
+    description: Changes the delay (in seconds) between each status check to OpenStack when creating a resource (optional, by default 5)
     default: 5
   openstack.config_drive:
-    description: Config drive device used in OpenStack (cdrom, disk or nil for deployments without config drive).
+    description: Config drive device (cdrom or disk) to use as metadata service on OpenStack (optional, nil by default)
     default: nil
   vcenter.address:
     description: Address of vCenter server used by vsphere cpi

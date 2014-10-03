@@ -1,5 +1,9 @@
 #OpenStack CPI Implementation #
-OpenStack CPI is an implementation of BOSH CPI. It allows BOSH to interface with various services in OpenStack like glance, controller and registry. In the sections below we outline the implementation details for each of the method in CPI interface.
+OpenStack CPI is an implementation of BOSH CPI. It allows BOSH to interface with various services in OpenStack like glance, controller and registry. 
+
+The OpenStack CPI is configured in the BOSH deployment manifest. Read the [OpenStack CPI Config docs](bosh_openstack_cpi/cpi_config.md) for more details.
+
+In the sections below we outline the implementation details for each of the method in CPI interface.
 
 ##Initialize ##
 
