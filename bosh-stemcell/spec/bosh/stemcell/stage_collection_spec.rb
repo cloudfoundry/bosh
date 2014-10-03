@@ -68,13 +68,24 @@ module Bosh::Stemcell
     describe '#agent_stages' do
       let(:agent) { Agent.for('go') }
 
-      let(:agent_stages) do
-        [
-          :bosh_ruby,
-          :bosh_go_agent,
-          :bosh_micro_go,
-          :aws_cli,
-        ]
+      if (RbConfig::CONFIG['host_cpu'] == "powerpc64le")
+        let(:agent_stages) do
+          [
+            :bosh_ruby,
+            :bosh_go_agent,
+            #:bosh_micro_go, # not needed now for ppc64le
+            :aws_cli,
+          ]
+        end
+      else
+        let(:agent_stages) do
+          [
+            :bosh_ruby,
+            :bosh_go_agent,
+            :bosh_micro_go,
+            :aws_cli,
+          ]
+        end
       end
 
       it 'returns the correct stages' do
