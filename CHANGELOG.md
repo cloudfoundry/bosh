@@ -1,3 +1,18 @@
+## 2732
+
+New Features:
+
+  * cpi: openstack: Add use_config_drive [6a444ae]
+
+Improvements:
+
+  * stemcell: Lock down os_image_version in code [9de9ed3]
+  * stemcell: openstack: Convert openstack image to qcow2 0.10 compat [679f670]
+  * stemcell: ubuntu: Symlink vim to vim.tiny on Ubuntu [27f0d1a]
+  * director: Require disk_size to be set on a disk_pool in manifest [7b85b28]
+  * cpi: vsphere: Creates VM even when folder already exists [191c889]
+  * cpi: openstack: Added openstack_region property for volumes [73af42c]
+
 ## 2719
 
 Improvements:
