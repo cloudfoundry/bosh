@@ -12,34 +12,31 @@ describe Bosh::Director::Jobs::UpdateDeployment do
   end
 
   describe 'instance methods' do
-    let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner') }
     before do
+      @manifest = double('manifest')
+      @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
+      allow(@deployment_plan).to receive(:name).and_return('test_deployment')
+
       pool1 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
       pool2 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
-
-      allow(deployment_plan).to receive(:name).and_return('test_deployment')
-      allow(deployment_plan).to receive(:resource_pools).and_return([pool1, pool2])
-
       updater1 = instance_double('Bosh::Director::ResourcePoolUpdater')
       updater2 = instance_double('Bosh::Director::ResourcePoolUpdater')
 
       allow(Bosh::Director::ResourcePoolUpdater).to receive(:new).with(pool1).and_return(updater1)
       allow(Bosh::Director::ResourcePoolUpdater).to receive(:new).with(pool2).and_return(updater2)
 
-      allow(Bosh::Director::DeploymentPlan::Planner).to receive(:parse).and_return(deployment_plan)
-    end
+      allow(@deployment_plan).to receive(:resource_pools).and_return([pool1, pool2])
 
-    let(:manifest) { double('manifest') }
-    let(:manifest_file) { Tempfile.new('manifest') }
-    before do
-      File.open(manifest_file.path, 'w') do |f|
+      @tmpdir = Dir.mktmpdir('base_dir')
+
+      @manifest_file = Tempfile.new('manifest')
+      File.open(@manifest_file.path, 'w') do |f|
         f.write('manifest')
       end
-      allow(Psych).to receive(:load).with('manifest').and_return(manifest)
-    end
 
-    before do
-      @tmpdir = Dir.mktmpdir('base_dir')
+      allow(Psych).to receive(:load).with('manifest').and_return(@manifest)
+
+      allow(Bosh::Director::DeploymentPlan::Planner).to receive(:parse).and_return(@deployment_plan)
 
       allow(Bosh::Director::Config).to receive(:base_dir).and_return(@tmpdir)
     end
@@ -52,14 +49,14 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       it 'parses the deployment manifest using the deployment plan, passing it the event log' do
         expect(Bosh::Director::DeploymentPlan::Planner).to receive(:parse).
           with(
-            manifest,
+            @manifest,
             { 'recreate' => false, 'job_states' => { }, 'job_rename' => { } },
             Bosh::Director::Config.event_log,
             Bosh::Director::Config.logger
           ).
-          and_return(deployment_plan)
+          and_return(@deployment_plan)
 
-        described_class.new(manifest_file.path)
+        described_class.new(@manifest_file.path)
       end
     end
 
@@ -69,9 +66,9 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         assembler = instance_double('Bosh::Director::DeploymentPlan::Assembler')
         package_compiler = instance_double('Bosh::Director::PackageCompiler')
 
-        allow(Bosh::Director::DeploymentPlan::Assembler).to receive(:new).with(deployment_plan).and_return(assembler)
-        update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(manifest_file.path)
-        allow(Bosh::Director::PackageCompiler).to receive(:new).with(deployment_plan).and_return(package_compiler)
+        allow(Bosh::Director::DeploymentPlan::Assembler).to receive(:new).with(@deployment_plan).and_return(assembler)
+        update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
+        allow(Bosh::Director::PackageCompiler).to receive(:new).with(@deployment_plan).and_return(package_compiler)
 
         expect(assembler).to receive(:bind_deployment).ordered
         expect(assembler).to receive(:bind_releases).ordered
@@ -117,8 +114,8 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
         allow(job).to receive(:name).and_return('job_name')
 
-        allow(deployment_plan).to receive(:resource_pools).and_return([resource_pool])
-        allow(deployment_plan).to receive(:jobs_starting_on_deploy).and_return([job])
+        allow(@deployment_plan).to receive(:resource_pools).and_return([resource_pool])
+        allow(@deployment_plan).to receive(:jobs_starting_on_deploy).and_return([job])
 
         expect(assembler).to receive(:bind_dns).ordered
 
@@ -137,7 +134,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         expect(resource_pool_updater).to receive(:reserve_networks).ordered
         expect(resource_pool_updater).to receive(:create_missing_vms).ordered
 
-        update_deployment_job = described_class.new(manifest_file.path)
+        update_deployment_job = described_class.new(@manifest_file.path)
         update_deployment_job.instance_eval { @assembler = assembler }
         update_deployment_job.update
 
@@ -159,15 +156,15 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
         deployment.add_stemcell(old_stemcell)
 
-        allow(deployment_plan).to receive(:model).and_return(deployment)
-        allow(deployment_plan).to receive(:resource_pools).and_return([resource_pool_spec])
+        allow(@deployment_plan).to receive(:model).and_return(deployment)
+        allow(@deployment_plan).to receive(:resource_pools).and_return([resource_pool_spec])
 
         allow(Bosh::Director::ResourcePoolUpdater).to receive(:new).with(resource_pool_spec).and_return(double('updater'))
 
         allow(resource_pool_spec).to receive(:stemcell).and_return(stemcell_spec)
         allow(stemcell_spec).to receive(:model).and_return(new_stemcell)
 
-        update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(manifest_file.path)
+        update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
         update_deployment_job.update_stemcell_references
 
         expect(old_stemcell.deployments).to be_empty
@@ -175,81 +172,40 @@ describe Bosh::Director::Jobs::UpdateDeployment do
     end
 
     describe 'perform' do
-      let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'test_deployment') }
-
-      let(:foo_release) { Bosh::Director::Models::Release.make(name: 'foo_release') }
-      let(:foo_release_version) do
-        Bosh::Director::Models::ReleaseVersion.make(release: foo_release, version: 17)
-      end
-
-      let(:bar_release) { Bosh::Director::Models::Release.make(name: 'bar_release') }
-      let(:bar_release_version) do
-        Bosh::Director::Models::ReleaseVersion.make(release: bar_release, version: 42)
-      end
-
-      let(:foo_release_spec) do
-        instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',
-          name: 'foo',
-          model: foo_release_version
-        )
-      end
-
-      let(:bar_release_spec) do
-        instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',
-          name: 'bar',
-          model: bar_release_version
-        )
-      end
-
-      let(:release_specs) { [foo_release_spec, bar_release_spec] }
-
-      let(:notifier) { instance_double('Bosh::Director::DeploymentPlan::Notifier') }
-      before do
-        allow(notifier).to receive(:send_error_event)
-        allow(notifier).to receive(:send_start_event)
-        allow(notifier).to receive(:send_end_event)
-      end
-
-      before do
-        allow(deployment_plan).to receive(:releases).and_return(release_specs)
-        allow(deployment_plan).to receive(:model).and_return(deployment)
-      end
-
-      let(:job) { Bosh::Director::Jobs::UpdateDeployment.new(manifest_file.path) }
-      before do
-        allow(job).to receive(:notifier).and_return(notifier)
-      end
-
-      context 'when an error happens' do
-        before do
-          allow(job).to receive(:with_deployment_lock).and_yield
-          allow(job).to receive(:prepare).and_raise('Expected Error')
-        end
-
-        it 'sends an error event' do
-          expect(notifier).to receive(:send_error_event)
-
-          begin
-            job.perform
-          rescue
-          end
-        end
-
-        it 're-raises the exception' do
-          expect { job.perform }.to raise_error('Expected Error')
-        end
-      end
-
       it 'should do a basic update' do
-        expect(job).to receive(:with_deployment_lock).with(deployment_plan).and_yield.ordered
-        expect(notifier).to receive(:send_start_event).ordered
+        deployment = Bosh::Director::Models::Deployment.
+            make(name: 'test_deployment')
+
+        foo_release = Bosh::Director::Models::Release.make(name: 'foo_release')
+        foo_release_version = Bosh::Director::Models::ReleaseVersion.
+            make(release: foo_release, version: 17)
+
+        bar_release = Bosh::Director::Models::Release.make(name: 'bar_release')
+        bar_release_version = Bosh::Director::Models::ReleaseVersion.
+            make(release: bar_release, version: 42)
+
+        foo_release_spec = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',
+                                name: 'foo',
+                                model: foo_release_version)
+
+        bar_release_spec = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',
+                                name: 'bar',
+                                model: bar_release_version)
+
+        release_specs = [foo_release_spec, bar_release_spec]
+
+        allow(@deployment_plan).to receive(:releases).and_return(release_specs)
+        allow(@deployment_plan).to receive(:model).and_return(deployment)
+
+        job = Bosh::Director::Jobs::UpdateDeployment.new(@manifest_file.path)
+        expect(job).to receive(:with_deployment_lock).with(@deployment_plan).and_yield.ordered
         expect(job).to receive(:prepare).ordered
         expect(job).to receive(:update).ordered
-        expect(job).to receive(:with_release_locks).with(deployment_plan).and_yield.ordered
-        expect(notifier).to receive(:send_end_event).ordered
+        expect(job).to receive(:with_release_locks).with(@deployment_plan).and_yield.ordered
         expect(job).to receive(:update_stemcell_references).ordered
 
         expect(deployment).to receive(:add_release_version).with(foo_release_version)
+
         expect(deployment).to receive(:add_release_version).with(bar_release_version)
 
         expect(job.perform).to eq('/deployments/test_deployment')

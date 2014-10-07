@@ -46,21 +46,4 @@ describe 'deploy job template', type: :integration do
     template = director.vm('foobar/0').read_job_template('foobar', 'bin/foobar_ctl')
     expect(template).to include('a_ip=127.0.0.102')
   end
-
-  context 'health monitor' do
-    before { current_sandbox.health_monitor_process.start }
-    after { current_sandbox.health_monitor_process.stop }
-
-    it 'creates alerts to mark the start and end of an update deployment' do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
-      deploy_simple(manifest_hash: manifest_hash)
-
-      waiter.wait(60) do
-        expect(health_monitor.read_log).to match(/\[ALERT\] Alert @ .* Begin update deployment for simple/)
-      end
-      waiter.wait(60) do
-        expect(health_monitor.read_log).to match(/\[ALERT\] Alert @ .* Finish update deployment for simple/)
-      end
-    end
-  end
 end
