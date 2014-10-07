@@ -11,8 +11,6 @@ require 'tmpdir'
 require 'zlib'
 
 require 'archive/tar/minitar'
-require 'rspec'
-require 'rspec/its'
 require 'machinist/sequel'
 require 'sham'
 

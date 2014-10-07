@@ -1,6 +1,5 @@
 require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
 
-require 'rspec/its'
 require 'rake'
 require 'fakefs/spec_helpers'
 require 'webmock/rspec'
