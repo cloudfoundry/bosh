@@ -29,5 +29,5 @@ Gem::Specification.new do |s|
   s.add_dependency 'bosh-registry', "~>#{version}"
   s.add_dependency 'httpclient',    '=2.4.0'
   s.add_dependency 'yajl-ruby',     '>=0.8.2'
-  s.add_dependency 'membrane',      '~>0.0.2'
+  s.add_dependency 'membrane',      '~>1.1.0'
 end
