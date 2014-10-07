@@ -27,6 +27,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'sequel',      '~>3.43.0'
   s.add_dependency 'pg',          '~>0.15.1'
   s.add_dependency 'mysql2',      '~>0.3.11'
+  s.add_dependency 'sqlite3',     '~>1.3.7'
   s.add_dependency 'builder',     '~>3.1.4'
   s.add_dependency 'nokogiri',    '~>1.5.10'
   s.add_dependency 'httpclient',  '=2.4.0'
