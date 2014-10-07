@@ -176,22 +176,18 @@ module Bosh::Director
           packages_by_name[package["name"]] = package
           package["dependencies"] ||= []
         end
+        logger.info("Resolving package dependencies for #{packages_by_name.keys.inspect}")
+
         dependency_lookup = lambda do |package_name|
           packages_by_name[package_name]["dependencies"]
         end
-        result = CycleHelper.check_for_cycle(packages_by_name.keys,
-                                             :connected_vertices => true,
-                                             &dependency_lookup)
+        result = Bosh::Director::CycleHelper.check_for_cycle(packages_by_name.keys, :connected_vertices => true, &dependency_lookup)
 
         packages.each do |package|
           name = package["name"]
           dependencies = package["dependencies"]
-
-          logger.info("Resolving package dependencies for `#{name}', " +
-                      "found: #{dependencies.pretty_inspect}")
-          package["dependencies"] = result[:connected_vertices][name]
-          logger.info("Resolved package dependencies for `#{name}', " +
-                      "to: #{dependencies.pretty_inspect}")
+          all_dependencies = result[:connected_vertices][name]
+          logger.info("Resolved package dependencies for `#{name}': #{dependencies.pretty_inspect} => #{all_dependencies.pretty_inspect}")
         end
       end
 

@@ -664,12 +664,15 @@ module Bosh::Director
       end
 
       it 'should normalize nil dependencies' do
-        packages = [{'name' => 'A'}, {'name' => 'B', 'dependencies' => ['A']}]
+        packages = [
+          {'name' => 'A'},
+          {'name' => 'B', 'dependencies' => ['A']}
+        ]
         @job.resolve_package_dependencies(packages)
-        packages.should eql([
-                              {'dependencies' => [], 'name' => 'A'},
-                              {'dependencies' => ['A'], 'name' => 'B'}
-                            ])
+        expect(packages).to eql([
+          {'name' => 'A', 'dependencies' => []},
+          {'name' => 'B', 'dependencies' => ['A']}
+        ])
       end
 
       it 'should not allow cycles' do
@@ -677,24 +680,7 @@ module Bosh::Director
           {'name' => 'A', 'dependencies' => ['B']},
           {'name' => 'B', 'dependencies' => ['A']}
         ]
-
-        lambda {
-          @job.resolve_package_dependencies(packages)
-        }.should raise_exception
-      end
-
-      it 'should resolve nested dependencies' do
-        packages = [
-          {'name' => 'A', 'dependencies' => ['B']},
-          {'name' => 'B', 'dependencies' => ['C']}, {'name' => 'C'}
-        ]
-
-        @job.resolve_package_dependencies(packages)
-        packages.should eql([
-                              {'dependencies' => ['B', 'C'], 'name' => 'A'},
-                              {'dependencies' => ['C'], 'name' => 'B'},
-                              {'dependencies' => [], 'name' => 'C'}
-                            ])
+        expect { @job.resolve_package_dependencies(packages) }.to raise_exception
       end
     end
 

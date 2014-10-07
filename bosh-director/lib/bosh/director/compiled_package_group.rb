@@ -7,10 +7,12 @@ module Bosh::Director
 
     def compiled_packages
       @compiled_packages ||= @release_version.packages.map do |package|
+        transitive_dependencies = @release_version.transitive_dependencies(package)
+        package_dependency_key = Bosh::Director::Models::CompiledPackage.create_dependency_key(transitive_dependencies)
         Models::CompiledPackage[
           :package_id => package.id,
           :stemcell_id => @stemcell.id,
-          :dependency_key => @release_version.package_dependency_key(package.name)
+          :dependency_key => package_dependency_key
         ]
       end.compact
     end

@@ -22,10 +22,16 @@ module Bosh::Director::CompiledPackage
     let!(:dep1) { Bosh::Director::Models::Package.make(name: 'dep1', release: release) }
     let!(:dep2) { Bosh::Director::Models::Package.make(name: 'dep2', release: release) }
 
+    let(:transitive_dependencies) { Set.new([dep1, dep2]) }
+    let(:dependency_key) { Yajl::Encoder.encode([[dep1.name, dep1.version], [dep2.name, dep2.version]]) }
+
     before do
       package.add_release_version(release_version)
       dep1.add_release_version(release_version)
       dep2.add_release_version(release_version)
+
+      allow(release_version).to receive(:transitive_dependencies).with(package).and_return(transitive_dependencies)
+      allow(Bosh::Director::Models::CompiledPackage).to receive(:create_dependency_key).with(transitive_dependencies).and_return(dependency_key)
     end
 
     include FakeFS::SpecHelpers
@@ -63,7 +69,7 @@ module Bosh::Director::CompiledPackage
         expect(retrieved_package.package_id).to eq(package.id)
         expect(retrieved_package.stemcell_id).to eq(stemcell.id)
         expect(retrieved_package.sha1).to eq('compiled-package-sha1')
-        expect(retrieved_package.dependency_key).to eq(Yajl::Encoder.encode([[dep1.name, dep1.version], [dep2.name, dep2.version]]))
+        expect(retrieved_package.dependency_key).to eq(dependency_key)
       end
 
       context 'when the database fails after creating the blob' do
@@ -93,7 +99,7 @@ module Bosh::Director::CompiledPackage
         Bosh::Director::Models::CompiledPackage.make(
           package: package,
           stemcell: stemcell,
-          dependency_key: Yajl::Encoder.encode([[dep1.name, dep1.version], [dep2.name, dep2.version]]),
+          dependency_key: dependency_key,
         )
       end
 

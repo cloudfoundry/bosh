@@ -5,7 +5,47 @@ module Bosh::Director::Models
     let(:package) { Package.make }
     let(:stemcell) { Stemcell.make }
 
-    describe '.generate_build_number' do
+    describe 'self.create_dependency_key' do
+      let(:package1) { Package.new(name: 'package1', version: '123') }
+
+      let(:package2) { Package.new(name: 'package2', version: '456') }
+
+      it 'generates serialized JSON of the supplied package names and their fingerprint' do
+        expect(CompiledPackage.create_dependency_key([])).to eq('[]')
+        expect(CompiledPackage.create_dependency_key([package1])).to eq('[["package1","123"]]')
+        expect(CompiledPackage.create_dependency_key([package1, package2])).to eq('[["package1","123"],["package2","456"]]')
+      end
+    end
+
+    describe 'self.create_cache_key' do
+      let(:package1) { Package.new(name: 'package1', fingerprint: '<package1-fingerprint>') }
+
+      let(:package2) { Package.new(name: 'package2', fingerprint: '<package2-fingerprint>') }
+
+      let(:package3) { Package.new(name: 'package3', fingerprint: '<package3-fingerprint>') }
+
+      let(:stemcell) { instance_double('Bosh::Director::Models::Stemcell', sha1: '<stemcell-sha1>') }
+
+      before do
+        allow(Digest::SHA1).to receive(:hexdigest) { |input| "hexdigest for '#{input}'" }
+      end
+
+      it 'generates sha1 that uniquely identifies a package by its dependencies & stemcell' do
+        expect(
+          CompiledPackage.create_cache_key(package1, [], stemcell)
+        ).to eq("hexdigest for '<package1-fingerprint><stemcell-sha1>'")
+
+        expect(
+          CompiledPackage.create_cache_key(package2, [package1, package3], stemcell)
+        ).to eq("hexdigest for '<package2-fingerprint><stemcell-sha1><package1-fingerprint><package3-fingerprint>'")
+
+        expect(
+          CompiledPackage.create_cache_key(package3, [package1], stemcell)
+        ).to eq("hexdigest for '<package3-fingerprint><stemcell-sha1><package1-fingerprint>'")
+      end
+    end
+
+    describe '#generate_build_number' do
       it 'returns 1 if no compiled packages for package and stemcell' do
         expect(CompiledPackage.generate_build_number(package, stemcell)).to eq(1)
       end
@@ -25,7 +65,7 @@ module Bosh::Director::Models
       end
     end
 
-    describe 'dependency_key_sha1' do
+    describe '#dependency_key_sha1' do
       let(:dependency_key) { 'fake-key' }
       let(:dependency_key_sha1) { Digest::SHA1.hexdigest(dependency_key) }
 

@@ -24,19 +24,19 @@ module Bosh::Director
 
       release_version = template.release.model
 
-      task = CompileTask.new(package,
-                             stemcell,
-                             job,
-                             release_version.package_dependency_key(package.name),
-                             release_version.package_cache_key(package.name, stemcell))
+      transitive_dependencies = release_version.transitive_dependencies(package)
+      package_dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
+      package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell)
+
+      task = CompileTask.new(package, stemcell, job, package_dependency_key, package_cache_key)
 
       compiled_package = task.find_compiled_package(@logger, @event_log)
       if compiled_package
         task.use_compiled_package(compiled_package)
       end
 
-        @logger.info("Processing package `#{package.desc}' dependencies")
-      dependencies = release_version.dependencies(package.name)
+      @logger.info("Processing package `#{package.desc}' dependencies")
+      dependencies = release_version.dependencies(package)
       dependencies.each do |dependency|
         @logger.info("Package `#{package.desc}' depends on package `#{dependency.desc}'")
         dependency_task = generate!(compile_tasks, job, template, dependency, stemcell)

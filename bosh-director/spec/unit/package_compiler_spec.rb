@@ -56,14 +56,15 @@ module Bosh::Director
       package
     end
 
-    def make_compiled(package, stemcell, sha1 = 'deadbeef',
-      blobstore_id = 'deadcafe')
-      dep_key = release_version_model.package_dependency_key(package.name)
-      cache_key = release_version_model.package_cache_key(package.name, stemcell)
-      CompileTask.new(package, stemcell, job, dep_key, cache_key)
+    def make_compiled(release_version_model, package, stemcell, sha1 = 'deadbeef', blobstore_id = 'deadcafe')
+      transitive_dependencies = release_version_model.transitive_dependencies(package)
+      package_dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
+      package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell)
+
+      CompileTask.new(package, stemcell, job, package_dependency_key, package_cache_key)
 
       Models::CompiledPackage.make(package: package,
-                                   dependency_key: dep_key,
+                                   dependency_key: package_dependency_key,
                                    stemcell: stemcell,
                                    build: 1,
                                    sha1: sha1,
@@ -71,9 +72,7 @@ module Bosh::Director
     end
 
     def prepare_samples
-      @release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',
-                                 name: 'cf-release',
-                                 model: release_version_model)
+      @release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'cf-release', model: release_version_model)
       @stemcell_a = instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: Models::Stemcell.make)
       @stemcell_b = instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: Models::Stemcell.make)
 
@@ -124,12 +123,12 @@ module Bosh::Director
         @plan.stub(:jobs).and_return([@j_dea, @j_router])
 
         @package_set_a.each do |package|
-          cp1 = make_compiled(package, @stemcell_a.model)
+          cp1 = make_compiled(release_version_model, package, @stemcell_a.model)
           @j_dea.should_receive(:use_compiled_package).with(cp1)
         end
 
         @package_set_b.each do |package|
-          cp2 = make_compiled(package, @stemcell_b.model)
+          cp2 = make_compiled(release_version_model, package, @stemcell_b.model)
           @j_router.should_receive(:use_compiled_package).with(cp2)
         end
 
@@ -269,8 +268,7 @@ module Bosh::Director
         network = double('network', name: 'network_name')
         compilation_config = instance_double('Bosh::Director::DeploymentPlan::CompilationConfig', network: network, cloud_properties: {}, env: {}, workers: 1,
                                     reuse_compilation_vms: true)
-        release_version_model = instance_double('Bosh::Director::Models::ReleaseVersion',
-                                                dependencies: [], package_dependency_key: 'fake-dependency-key', package_cache_key: 'fake-cache-key')
+        release_version_model = instance_double('Bosh::Director::Models::ReleaseVersion', dependencies: Set.new, transitive_dependencies: Set.new)
         release_version = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release_name', model: release_version_model)
         stemcell_model = double('stemcell_model', desc: 'stemcell description', id: 'stemcell_id', sha1: 'beef')
         stemcell = double('stemcell', model: stemcell_model)
