@@ -1,11 +1,25 @@
 db:
-  adapter: <%= p('director.db.adapter') %>
-  user: <%= p('director.db.user') %>
-  password: <%= p('director.db.password') %>
-  host: <%= p('director.db.host') %>
-  port: <%= p('director.db.port') %>
-  database: <%= p('director.db.database') %>
-  connection_options: <%= JSON.generate(p('director.db.connection_options')) %>
+  <% if_p('director.db.adapter') do |adapter| %>
+  adapter: <%= adapter %>
+  <% end %>
+  <% if_p('director.db.user') do |user| %>
+  user: <%= user %>
+  <% end %>
+  <% if_p('director.db.password') do |password| %>
+  password: <%= password %>
+  <% end %>
+  <% if_p('director.db.host') do |host| %>
+  host: <%= host %>
+  <% end %>
+  <% if_p('director.db.port') do |port| %>
+  port: <%= port %>
+  <% end %>
+  <% if_p('director.db.database') do |database| %>
+  database: "<%= database %>"
+  <% end %>
+  <% if_p('director.db.connection_options') do |connection_options| %>
+  connection_options: <%= JSON.generate(connection_options) %>
+  <% end %>
 
 cloud:
   plugin: vsphere
@@ -43,6 +57,7 @@ cloud:
     agent:
       ntp: [<%= p('ntp').join(", ") %>]
 
+    <% if_p('blobstore') do %>
       blobstore:
         provider: <%= p('blobstore.provider') %>
         options:
@@ -50,22 +65,25 @@ cloud:
           bucket_name: <%= p('blobstore.bucket_name') %>
           access_key_id: <%= p(['agent.blobstore.access_key_id', 'blobstore.access_key_id']) %>
           secret_access_key: <%= p(['agent.blobstore.secret_access_key', 'blobstore.secret_access_key']) %>
-      <% if_p('blobstore.use_ssl') do |use_ssl| %>
+        <% if_p('blobstore.use_ssl') do |use_ssl| %>
           use_ssl: <%= use_ssl %>
-      <% end %>
-      <% if_p('blobstore.s3_port') do |port| %>
+        <% end %>
+        <% if_p('blobstore.s3_port') do |port| %>
           port: <%= port %>
-      <% end %>
-      <% if_p('blobstore.host') do |host| %>
+        <% end %>
+        <% if_p('blobstore.host') do |host| %>
           host: <%= host %>
-      <% end %>
-      <% if_p('blobstore.s3_force_path_style') do |s3_force_path_style| %>
+        <% end %>
+        <% if_p('blobstore.s3_force_path_style') do |s3_force_path_style| %>
           s3_force_path_style: <%= s3_force_path_style %>
-      <% end %>
+        <% end %>
       <% else %>
           endpoint: 'http://<%= p(['agent.blobstore.address', 'blobstore.address']) %>:<%= p('blobstore.port') %>'
           user: <%= p('blobstore.agent.user') %>
           password: <%= p('blobstore.agent.password') %>
       <% end %>
+    <% end %>
 
+    <% if_p('nats') do %>
       mbus: nats://<%= p('nats.user') %>:<%= p('nats.password') %>@<%= p(['agent.nats.address', 'nats.address']) %>:<%= p('nats.port') %>
+    <% end %>

@@ -1,5 +1,5 @@
 ---
-name: bosh_vsphere_cpi
+name: cpi
 templates:
   cpi.erb: bin/cpi
   micro_discover_ip.erb: bin/micro_discover_ip
@@ -12,5 +12,4 @@ packages:
 - mysql_vsphere_cpi
 - genisoimage_vsphere_cpi
 
-properties:
-  some_key: some_value
+properties: {}
