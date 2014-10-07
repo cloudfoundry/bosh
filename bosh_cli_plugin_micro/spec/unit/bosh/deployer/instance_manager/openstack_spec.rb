@@ -88,28 +88,10 @@ module Bosh::Deployer
           instance_manager.stub_chain(:state, :vm_cid).and_return('fake-vm-cid')
           instance_manager.stub_chain(:cloud, :openstack, :servers, :get).and_return(instance)
           allow(instance).to receive(:private_ip_address).and_return('fake-private-ip')
-
         end
 
-        context 'when there is a floating ip' do
-          before do
-            allow(instance).to receive(:floating_ip_address).
-                                 and_return('fake-floating-ip')
-          end
-
-          it 'returns the floating ip' do
-            expect(subject.agent_services_ip).to eq('fake-floating-ip')
-          end
-        end
-
-        context 'when there is not a floating ip' do
-          before do
-            allow(instance).to receive(:floating_ip_address).and_return(nil)
-          end
-
-          it 'returns the private ip' do
-            expect(subject.agent_services_ip).to eq('fake-private-ip')
-          end
+        it 'returns the private ip' do
+          expect(subject.agent_services_ip).to eq('fake-private-ip')
         end
       end
 
