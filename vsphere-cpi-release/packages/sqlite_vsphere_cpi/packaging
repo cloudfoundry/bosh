@@ -1,9 +1,0 @@
-set -e -x
-
-tar xzf sqlite_vsphere_cpi/sqlite-autoconf-3070500.tar.gz
-
-cd sqlite-autoconf-3070500
-
-./configure --prefix=${BOSH_INSTALL_TARGET}
-make
-make install

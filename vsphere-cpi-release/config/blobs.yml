@@ -27,8 +27,3 @@ ruby_vsphere_cpi/yaml-0.1.5.tar.gz:
   sha: !binary |-
     OGI3OGNiOWY3NTljN2Q4MGRiOGE3MzI4YzBlYmVjZmUzNGZkZTczNw==
   size: 504897
-sqlite_vsphere_cpi/sqlite-autoconf-3070500.tar.gz:
-  object_id: 8b10dff6-89f6-4ec2-9474-e09fd8f42432
-  sha: !binary |-
-    NGUxMzM4NDk3YjhkYTUwYjg0MzA3MTkxYmIzNDE4ZTllYzU3MTVkNw==
-  size: 1551070

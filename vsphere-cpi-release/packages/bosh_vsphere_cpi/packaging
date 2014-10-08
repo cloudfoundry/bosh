@@ -15,10 +15,8 @@ gem_cmd="$BOSH_PACKAGES_DIR/ruby_vsphere_cpi/bin/gem \
 
 libpq_dir=$BOSH_PACKAGES_DIR/libpq_vsphere_cpi
 mysqlclient_dir=$BOSH_PACKAGES_DIR/mysql_vsphere_cpi
-sqlite_dir=$BOSH_PACKAGES_DIR/sqlite_vsphere_cpi
 
 $gem_cmd pg -- --with-pg-lib=$libpq_dir/lib --with-pg-include=$libpq_dir/include
 $gem_cmd mysql2 -- --with-mysql-dir=$mysqlclient_dir --with-mysql-include=$mysqlclient_dir/include/mysql
-$gem_cmd sqlite3 -- --with-sqlite3-dir=$sqlite_dir
 
 $gem_cmd bosh_vsphere_cpi
