@@ -14,8 +14,6 @@ module Bosh::Deployer::InfrastructureDefaults
         defaults = VCLOUD
       when 'vsphere'
         defaults = VSPHERE
-      else
-        raise "Infrastructure '#{plugin}' not found"
     end
     deep_merge(defaults, config)
   end
