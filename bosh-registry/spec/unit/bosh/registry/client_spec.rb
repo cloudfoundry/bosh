@@ -44,6 +44,16 @@ describe Bosh::Registry::Client do
 
       expect(subject.update_settings('id', settings)).to be(true)
     end
+
+    it 'should return true when it updated successfully' do
+      allow(response).to receive(:status).and_return(200)
+      allow(httpclient).to receive(:put).with(
+        'http://localhost:25001/instances/id/settings',
+        { :body => settings_json, :header => header }
+      ).and_return(response)
+
+      expect(subject.update_settings('id', settings)).to be(true)
+    end
   end
 
   describe '#read_settings' do

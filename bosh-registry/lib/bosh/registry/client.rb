@@ -62,7 +62,7 @@ module Bosh::Registry
 
       response = @client.put(url, {:body => payload, :header => @headers})
 
-      if response.status != 200
+      unless HTTP::Status.successful?(response.status)
         cloud_error("Cannot update settings for '#{instance_id}', got HTTP #{response.status}")
       end
 
