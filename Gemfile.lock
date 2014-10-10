@@ -200,6 +200,7 @@ PATH
   specs:
     bosh_cpi (1.2739.0)
       bosh_common (~> 1.2739.0)
+      membrane (~> 0.0.2)
 
 PATH
   remote: bosh_openstack_cpi
