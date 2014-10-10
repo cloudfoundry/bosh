@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.files        = `git ls-files -- bin/* lib/* scripts/*`.split("\n") + %w(README.md)
   s.require_path = 'lib'
   s.bindir       = 'bin'
-  s.executables  = %w(bosh_aws_console)
+  s.executables  = %w(aws_cpi bosh_aws_console)
 
   s.add_dependency 'aws-sdk',       '1.44.0'
   s.add_dependency 'bosh_common',   "~>#{version}"

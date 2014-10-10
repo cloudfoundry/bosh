@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+
+require 'ostruct'
+require 'bosh_aws_cpi'
+require 'bosh/cpi'
+require 'bosh/cpi/cli'
+
+cpi_config = YAML.load_file(ARGV.shift)
+
+cloud_config = OpenStruct.new(:logger => Logger.new(STDERR))
+
+Bosh::Clouds::Config.configure(cloud_config)
+
+cloud_properties = cpi_config['cloud']['properties']
+
+cpi = Bosh::Clouds::Aws.new(cloud_properties)
+cpi_log = StringIO.new # Empty on AWS
+cli = Bosh::Cpi::Cli.new(cpi, cpi_log, STDOUT)
+
+cli.run(ARGF.read)
