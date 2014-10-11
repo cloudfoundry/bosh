@@ -15,6 +15,10 @@ module Bosh::Dev::Openstack
       # properties.vip is required
       properties.schemas['vip'] = string_schema
 
+      # properties.instance_type is optional (defaults to m1.small)
+      properties.schemas['instance_type'] = string_schema
+      properties.optional_keys << 'instance_type'
+
       # properties.flavor_with_no_ephemeral_disk is required
       properties.schemas['flavor_with_no_ephemeral_disk'] = string_schema
 
