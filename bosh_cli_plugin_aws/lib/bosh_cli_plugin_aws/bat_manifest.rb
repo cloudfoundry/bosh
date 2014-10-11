@@ -20,10 +20,6 @@ module Bosh
         "bat"
       end
 
-      def domain
-        vpc_receipt["vpc"]["domain"] || warning('Missing domain field')
-      end
-
       def vip
         route53_receipt['elastic_ips']['bat']['ips'][0] || warning('Missing vip field')
       end

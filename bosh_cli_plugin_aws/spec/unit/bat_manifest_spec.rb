@@ -129,18 +129,6 @@ properties:
     its(:second_static_ip) { should eq('192.168.0.1') }
   end
 
-  context 'when domain is missing' do
-    before { vpc_receipt['vpc']['domain'] = nil }
-
-    it 'warns' do
-      subject
-        .should_receive(:warning)
-        .with('Missing domain field')
-        .at_least(1).times
-      subject.to_y
-    end
-  end
-
   it 'generates the template' do
     expected_yaml = yaml_manifest.gsub('RESERVED_IP_RANGE', '10.10.0.2 - 10.10.0.9')
     expected_yaml = expected_yaml.gsub('STATIC_IP_RANGE', '10.10.0.10 - 10.10.0.30')
