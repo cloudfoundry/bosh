@@ -229,6 +229,7 @@ module Bosh::Director
       def nats
         @lock.synchronize do
           if @nats.nil?
+            raise 'Failed to connect to NATS, need to be on EM thread' unless EM.reactor_thread?
             @nats = NATS.connect(:uri => @nats_uri, :autostart => false)
           end
         end
