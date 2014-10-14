@@ -60,7 +60,7 @@ namespace :stemcell do
   end
 
   desc 'Build a stemcell with a remote pre-built base OS image'
-  task :build, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_s3_bucket_name, :os_image_key, :os_image_version] do |_, args|
+  task :build, [:infrastructure_name, :hypervisor_name, :operating_system_name, :operating_system_version, :agent_name, :os_image_s3_bucket_name, :os_image_key] do |_, args|
     require 'uri'
     require 'tempfile'
     require 'bosh/dev/download_adapter'
