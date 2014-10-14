@@ -73,6 +73,13 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
       manifest_hash
     end
 
+    it 'can list errands' do
+      deploy_simple(manifest_hash: manifest_hash)
+      output, _ = bosh_runner.run('errands')
+      expect(output).to include('errand1-name')
+      expect(output).to include('errand2-name')
+    end
+
     context 'with a fixed size resource pool size' do
       before { manifest_hash['resource_pools'].first['size'] = 3 }
 

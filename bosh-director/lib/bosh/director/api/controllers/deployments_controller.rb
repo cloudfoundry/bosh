@@ -273,6 +273,21 @@ module Bosh::Director
 
         redirect "/tasks/#{task.id}"
       end
+
+      get '/:deployment_name/errands' do
+        deployment = @deployment_manager.find_by_name(params[:deployment_name])
+
+        manifest = Psych.load(deployment.manifest)
+        deployment_plan = DeploymentPlan::Planner.parse(manifest, {}, Config.event_log, Config.logger)
+
+        errands = deployment_plan.jobs.select(&:can_run_as_errand?)
+
+        errand_data = errands.map do |errand|
+          { "name" => errand.name }
+        end
+
+        json_encode(errand_data)
+      end
     end
   end
 end
