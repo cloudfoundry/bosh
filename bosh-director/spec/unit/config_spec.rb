@@ -88,37 +88,4 @@ describe Bosh::Director::Config do
       expect(described_class.cpi_task_log).to eq('fake-cpi-log')
     end
   end
-
-  describe '#nats' do
-    before do
-      config = described_class.load_hash(test_config)
-      described_class.configure(config.hash)
-    end
-
-    context 'when on reactor thread' do
-      it 'connects to nats' do
-        expect(NATS).to receive(:connect)
-        EM.run do
-          expect {
-            described_class.nats
-          }.to_not raise_error
-          EM.stop
-        end
-      end
-    end
-
-    context 'when not on reactor thread' do
-      before do
-        Thread.new { EM.run }
-      end
-
-      after { EM.stop }
-
-      it 'raises an error' do
-        expect {
-          expect(described_class.nats)
-        }.to raise_error /need to be on EM thread/
-      end
-    end
-  end
 end

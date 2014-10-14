@@ -35,6 +35,7 @@ module Bosh::Director
         :fix_stateful_nodes,
         :enable_snapshots,
         :max_vm_create_tries,
+        :nats_uri,
       ]
 
       CONFIG_OPTIONS.each do |option|
@@ -226,20 +227,13 @@ module Bosh::Director
         end
       end
 
-      def nats
-        @lock.synchronize do
-          if @nats.nil?
-            raise 'Failed to connect to NATS, need to be on EM thread' unless EM.reactor_thread?
-            @nats = NATS.connect(:uri => @nats_uri, :autostart => false)
-          end
-        end
-        @nats
-      end
-
       def nats_rpc
-        @lock.synchronize do
-          if @nats_rpc.nil?
-            @nats_rpc = NatsRpc.new
+        # double-check locking to reduce synchronization
+        if @nats_rpc.nil?
+          @lock.synchronize do
+            if @nats_rpc.nil?
+              @nats_rpc = NatsRpc.new(@nats_uri)
+            end
           end
         end
         @nats_rpc
