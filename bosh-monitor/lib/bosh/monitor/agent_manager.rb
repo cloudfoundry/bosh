@@ -48,16 +48,18 @@ module Bosh::Monitor
         @processor.add_plugin(lookup_plugin(plugin["name"], plugin["options"]), plugin["events"])
       end
 
-      Bhm.nats.subscribe("hm.agent.heartbeat.*") do |message, reply, subject|
-        process_event(:heartbeat, subject, message)
-      end
+      EM.schedule do
+        Bhm.nats.subscribe("hm.agent.heartbeat.*") do |message, reply, subject|
+          process_event(:heartbeat, subject, message)
+        end
 
-      Bhm.nats.subscribe("hm.agent.alert.*") do |message, reply, subject|
-        process_event(:alert, subject, message)
-      end
+        Bhm.nats.subscribe("hm.agent.alert.*") do |message, reply, subject|
+          process_event(:alert, subject, message)
+        end
 
-      Bhm.nats.subscribe("hm.agent.shutdown.*") do |message, reply, subject|
-        process_event(:shutdown, subject, message)
+        Bhm.nats.subscribe("hm.agent.shutdown.*") do |message, reply, subject|
+          process_event(:shutdown, subject, message)
+        end
       end
     end
 
