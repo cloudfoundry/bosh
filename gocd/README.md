@@ -49,7 +49,7 @@ To run tests locally, follow these steps...
 5. Run the integration tests in the docker container (downloads the docker image if not built/cached locally)
     
     ```
-    gocd/bosh/run-in-container.sh /opt/bosh/gocd/bosh/tests/unit/job.sh
+    gocd/bosh/run-in-container.sh /opt/bosh/gocd/bosh/tests/integration/job.sh
     ```
 
 6. (Mac OS only) Destroy the VM
