@@ -35,7 +35,9 @@ module Bosh::Monitor
         end
 
         nats_subject = options["subject"] || SUBJECT
-        @nats.publish(nats_subject, event.to_json)
+        EM.schedule do
+          @nats.publish(nats_subject, event.to_json)
+        end
         true
       end
     end

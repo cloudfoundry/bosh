@@ -7,11 +7,14 @@ module Bosh::Monitor
     end
 
     def subscribe
-      @nats.subscribe('hm.director.alert') do |msg|
-        alert = Yajl::Parser.parse(msg)
+      EM.schedule do
+        @nats.subscribe('hm.director.alert') do |message, _, subject|
+          @logger.debug("RECEIVED: #{subject} #{message}")
+          alert = Yajl::Parser.parse(message)
 
-        if valid_payload?(alert)
-          @event_processor.process(:alert, alert)
+          if valid_payload?(alert)
+            @event_processor.process(:alert, alert)
+          end
         end
       end
     end

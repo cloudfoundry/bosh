@@ -30,7 +30,7 @@ describe 'notifying plugins' do
     start_health_monitor
   end
 
-  after { Thread.kill(@health_monitor_thread) }
+  after { EM.stop }
 
   it 'sends an alert to its plugins' do
     payload = {
@@ -43,15 +43,17 @@ describe 'notifying plugins' do
 
     @nats.alert(JSON.dump(payload))
 
-    dummy_plugin = Bosh::Monitor.event_processor.plugins[:alert].first
-
-    alert = dummy_plugin.events.first
-
-    expect(alert.attributes).to eq(payload)
+    EM.add_timer(30) { EM.stop }
+    EM.add_periodic_timer(0.1) do
+      dummy_plugin = Bosh::Monitor.event_processor.plugins[:alert].first
+      alert = dummy_plugin.events.first
+      EM.stop if alert && alert.attributes == payload
+    end
   end
 
   def start_health_monitor(tries=60)
-    @health_monitor_thread = Thread.new { runner.run }
+    # runner thread will stop when EM.stop is called
+    Thread.new { runner.run }
     while tries > 0
       tries -= 1
       # wait for alert plugin to load
@@ -63,6 +65,6 @@ describe 'notifying plugins' do
 
   def start_fake_nats
     @nats = FakeNATS.new
-    NATS.stub(:connect => @nats)
+    allow(NATS).to receive(:connect).and_return(@nats)
   end
 end
