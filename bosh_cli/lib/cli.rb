@@ -62,6 +62,8 @@ require 'cli/director_task'
 
 require 'cli/line_wrap'
 require 'cli/backup_destination_path'
+require 'cli/semaphore'
+require 'cli/progress_renderer'
 
 require 'cli/source_control/git_ignore'
 
