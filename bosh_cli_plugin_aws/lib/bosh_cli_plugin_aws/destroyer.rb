@@ -57,7 +57,11 @@ module Bosh::Aws
 
     def delete_all_s3
       s3 = Bosh::Aws::S3.new(@credentials)
+
       bucket_names = s3.bucket_names
+      region = @credentials["region"]
+
+      bucket_names.reject! { |b| s3.bucket_location(b) != region } # skip buckets not part of current region
 
       unless bucket_names.empty?
         @ui.say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
