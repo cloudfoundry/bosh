@@ -179,7 +179,6 @@ module Bosh::Cli
       end
 
       def in_release_dir?
-        File.directory?('packages') &&
             File.directory?('jobs') &&
             File.directory?('src')
       end
