@@ -5,7 +5,7 @@ module Bosh
     class RDS
       DEFAULT_RDS_OPTIONS = {
           :allocated_storage => 5,
-          :db_instance_class => "db.t1.micro",
+          :db_instance_class => "db.m1.small",
           :engine => "mysql",
           :multi_az => true,
           :engine_version => "5.5.31"
