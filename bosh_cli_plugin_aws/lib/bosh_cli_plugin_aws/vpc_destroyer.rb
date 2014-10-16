@@ -23,7 +23,8 @@ module Bosh::Aws
         if vpc.instances_count > 0
           raise "#{vpc.instances_count} instance(s) running in #{vpc.vpc_id} - delete them first"
         end
-
+        
+        next unless @ui.confirmed?("Do NOT delete your default VPC.  Are you sure you want to delete #{vpc_id}")
         dhcp_options << vpc.dhcp_options
 
         vpc.delete_network_interfaces
