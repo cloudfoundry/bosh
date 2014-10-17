@@ -17,7 +17,7 @@ describe 'cli: target', type: :integration do
       Target set to `Test Director'
     OUT
 
-    message = "http://localhost:#{current_sandbox.director_port}"
+    message = current_sandbox.director_url
     expect_output('target', message)
     Dir.chdir('/tmp') do
       expect_output('target', message)
