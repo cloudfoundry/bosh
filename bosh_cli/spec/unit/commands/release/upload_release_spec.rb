@@ -111,7 +111,7 @@ module Bosh::Cli::Command::Release
               expect(command).to receive(:upload_manifest)
                 .with(release_manifest, hash_including(:rebase => nil))
                 .and_call_original
-              expect(director).to receive(:upload_release).with(release_archive)
+              expect(director).to receive(:upload_release).with(release_archive, hash_including(:rebase => nil))
               command.upload(release_manifest)
             end
 
@@ -119,7 +119,7 @@ module Bosh::Cli::Command::Release
               expect(command).to receive(:upload_tarball)
                 .with(release_archive, hash_including(:rebase => nil))
                 .and_call_original
-              expect(director).to receive(:upload_release).with(release_archive)
+              expect(director).to receive(:upload_release).with(release_archive, hash_including(:rebase => nil))
               command.upload(release_archive)
             end
           end
@@ -132,7 +132,7 @@ module Bosh::Cli::Command::Release
               expect(command).to receive(:upload_manifest)
                 .with(release_manifest, hash_including(:rebase => true))
                 .and_call_original
-              expect(director).to receive(:upload_release).with(release_archive)
+              expect(director).to receive(:upload_release).with(release_archive, hash_including(:rebase => true))
               command.add_option(:rebase, true)
               command.upload(release_manifest)
             end
@@ -141,7 +141,7 @@ module Bosh::Cli::Command::Release
               expect(command).to receive(:upload_tarball)
                 .with(release_archive, hash_including(:rebase => true))
                 .and_call_original
-              expect(director).to receive(:upload_release).with(release_archive)
+              expect(director).to receive(:upload_release).with(release_archive, hash_including(:rebase => true))
               command.add_option(:rebase, true)
               command.upload(release_archive)
             end
@@ -151,7 +151,7 @@ module Bosh::Cli::Command::Release
             let(:tarball_path) { spec_asset('valid_release.tgz') }
 
             it 'uploads release and returns successfully' do
-              expect(director).to receive(:upload_release).with(tarball_path)
+              expect(director).to receive(:upload_release).with(tarball_path, hash_including(:rebase => nil))
               command.upload(tarball_path)
             end
           end
@@ -244,7 +244,7 @@ module Bosh::Cli::Command::Release
               expect(command).to receive(:upload_remote_release)
                 .with(release_location, hash_including(:rebase => nil))
                 .and_call_original
-              expect(director).to receive(:upload_remote_release).with(release_location)
+              expect(director).to receive(:upload_remote_release).with(release_location, hash_including(:rebase => nil))
 
               command.upload(release_location)
             end
@@ -255,7 +255,7 @@ module Bosh::Cli::Command::Release
               expect(command).to receive(:upload_remote_release)
                 .with(release_location, hash_including(:rebase => true))
                 .and_call_original
-              expect(director).to receive(:rebase_remote_release).with(release_location)
+              expect(director).to receive(:upload_remote_release).with(release_location, hash_including(:rebase => true))
 
               command.add_option(:rebase, true)
               command.upload(release_location)

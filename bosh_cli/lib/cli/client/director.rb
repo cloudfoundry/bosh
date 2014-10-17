@@ -162,13 +162,7 @@ module Bosh
           options                = options.dup
           options[:content_type] = 'application/x-compressed'
 
-          upload_and_track(:post, '/releases', filename, options)
-        end
-
-        def rebase_release(filename, options = {})
-          options                = options.dup
-          options[:content_type] = 'application/x-compressed'
-          upload_and_track(:post, '/releases?rebase=true', filename, options)
+          upload_and_track(:post, releases_path(options), filename, options)
         end
 
         def upload_remote_release(release_location, options = {})
@@ -177,16 +171,7 @@ module Bosh
           options[:payload]      = JSON.generate(payload)
           options[:content_type] = 'application/json'
 
-          request_and_track(:post, '/releases', options)
-        end
-
-        def rebase_remote_release(release_location, options = {})
-          options                = options.dup
-          payload                = { 'location' => release_location }
-          options[:payload]      = JSON.generate(payload)
-          options[:content_type] = 'application/json'
-
-          request_and_track(:post, '/releases?rebase=true', options)
+          request_and_track(:post, releases_path(options), options)
         end
 
         def delete_stemcell(name, version, options = {})
@@ -597,6 +582,12 @@ module Bosh
 
         def director_name
           @director_name ||= get_status['name']
+        end
+
+        def releases_path(options = {})
+          path = '/releases'
+          path << "?rebase=true" if options[:rebase]
+          path
         end
 
         def request(method, uri, content_type = nil, payload = nil, headers = {}, options = {})
