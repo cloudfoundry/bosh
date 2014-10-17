@@ -40,7 +40,7 @@ module Bosh::Monitor
     end
 
     def setup_timers
-      EM.next_tick do
+      EM.schedule do
         poll_director
         EM.add_periodic_timer(@intervals.poll_director) { poll_director }
         EM.add_periodic_timer(@intervals.log_stats) { log_stats }
