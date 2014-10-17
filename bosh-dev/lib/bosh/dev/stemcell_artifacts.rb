@@ -8,7 +8,6 @@ module Bosh::Dev
       'vsphere-esxi-centos' => ['vsphere', 'esxi', 'centos', nil, 'go', false],
 
       'vcloud-esxi-ubuntu-trusty' => ['vcloud', 'esxi', 'ubuntu', 'trusty', 'go', false],
-      'vcloud-esxi-centos' => ['vcloud', 'esxi', 'centos', nil, 'go', false],
 
       'light-aws-xen-ubuntu-trusty' => ['aws', 'xen', 'ubuntu', 'trusty', 'go', true],
       'aws-xen-ubuntu-trusty' => ['aws', 'xen', 'ubuntu', 'trusty', 'go', false],

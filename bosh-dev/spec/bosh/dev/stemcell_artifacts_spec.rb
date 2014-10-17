@@ -66,7 +66,6 @@ module Bosh::Dev
               ['vsphere', 'esxi', 'ubuntu', 'trusty', 'go', false],
               ['vsphere', 'esxi', 'centos', nil, 'go', false],
               ['vcloud', 'esxi', 'ubuntu', 'trusty', 'go', false],
-              ['vcloud', 'esxi', 'centos', nil, 'go', false],
               ['aws', 'xen', 'ubuntu', 'trusty', 'go', true],
               ['aws', 'xen', 'ubuntu', 'trusty', 'go', false],
               ['aws', 'xen', 'centos', nil, 'go', true],
