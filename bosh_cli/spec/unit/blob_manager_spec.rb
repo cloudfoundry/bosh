@@ -2,8 +2,8 @@ require "spec_helper"
 
 describe Bosh::Cli::BlobManager do
 
-  def make_manager(release)
-    Bosh::Cli::BlobManager.new(release)
+  def make_manager(release, max_parallel_downloads=1)
+    Bosh::Cli::BlobManager.new(release, max_parallel_downloads)
   end
 
   before(:each) do
@@ -283,7 +283,8 @@ describe Bosh::Cli::BlobManager do
       bar.write("bar")
       bar.close
 
-      @manager = make_manager(@release)
+      allow(Bosh::Cli::Semaphore).to receive(:new).and_call_original
+      @manager = make_manager(@release, 99)
       expect(@manager).to receive(:download_blob).with("foo").and_return(foo.path)
       expect(@manager).to receive(:download_blob).with("bar").and_return(bar.path)
 
@@ -291,6 +292,7 @@ describe Bosh::Cli::BlobManager do
 
       expect(File.read(File.join(@blobs_dir, "foo"))).to eq("foo")
       expect(File.read(File.join(@blobs_dir, "bar"))).to eq("bar")
+      expect(Bosh::Cli::Semaphore).to have_received(:new).with(99)
     end
   end
 end

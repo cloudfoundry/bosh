@@ -10,8 +10,10 @@ module Bosh::Cli
     attr_reader :new_blobs, :updated_blobs
 
     # @param [Bosh::Cli::Release] release BOSH Release object
-    def initialize(release)
+    def initialize(release, max_parallel_downloads)
       @progress_renderer = ProgressRenderer.new
+      @max_parallel_downloads = max_parallel_downloads
+
       @release = release
       @index_file = File.join(@release.dir, "config", DEFAULT_INDEX_NAME)
 
@@ -230,7 +232,7 @@ module Bosh::Cli
         end
       end
 
-      download_semaphore = Semaphore.new(5)
+      download_semaphore = Semaphore.new(@max_parallel_downloads)
       missing_blobs.map do |blob|
         Thread.new(*blob) do |path, sha|
           download_semaphore.wait

@@ -166,6 +166,13 @@ module Bosh::Cli
       end
     end
 
+    # Read the max parallel downloads configuration.
+    #
+    # @return [Integer] The maximum number of parallel downloads
+    def max_parallel_downloads
+      @config_file.fetch("max_parallel_downloads", 1)
+    end
+
     def read(attr, try_local_first = true)
       attr = attr.to_s
       if try_local_first && @config_file[@work_dir].is_a?(Hash) &&

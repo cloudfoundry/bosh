@@ -333,7 +333,7 @@ describe Bosh::Cli::Command::Base do
 
       expect(@cmd).to receive(:check_if_release_dir)
       allow(Bosh::Cli::Release).to receive(:new).and_return(@release)
-      allow(Bosh::Cli::BlobManager).to receive(:new).with(@release).
+      allow(Bosh::Cli::BlobManager).to receive(:new).with(@release, 1).
           and_return(@blob_manager)
     end
 

@@ -122,4 +122,21 @@ describe Bosh::Cli::Config do
     expect(cfg.password("localhost:8083")).to be_nil
   end
 
+  describe "max_parallel_downloads" do
+    it "is fetched from the config file" do
+      config = {
+        "max_parallel_downloads" => 3
+      }
+
+      add_config(config)
+      cfg = create_config
+
+      cfg.max_parallel_downloads.should == 3
+    end
+
+    it "defaults parallel download limit to 1 if none is set" do
+      cfg = create_config
+      cfg.max_parallel_downloads.should == 1
+    end
+  end
 end
