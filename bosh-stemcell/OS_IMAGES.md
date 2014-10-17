@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `omOTKc0mI6GFkX_HWgPAxfZicfQEvq2B`
+  upgrade bash to 4.3-7ubuntu1.5
+  upgrade libssl to 1.0.1f-1ubuntu2.7
+
 * `qLay8YgGATMjiQZwWv0C26GZ7IUWy.qh`
   upgrade bash to 4.3-7ubuntu1.4
 
@@ -64,11 +68,14 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
 CentOS images have filename `bosh-centos-6_5-os-image.tgz`
 
+* `KVSJwBVkLQ.OKnVpgBiJILrcJr1E8IPK`
+  upgrade openssl to 1.0.1e-30.el6_5.2
+
 * `ORrEQRfUIO59WkVGbkBsv9jgGjU9KzBW`
-  upgrade bash to bash-4.1.2-15.el6_5.2
+  upgrade bash to 4.1.2-15.el6_5.2
 
 * `qHA0KEgGnb7Tf8SAzJVnrKb9OcaXOurv`
-  upgrade bash to bash-4.1.2-15.el6_5.1
+  upgrade bash to 4.1.2-15.el6_5.1
 
 * `GwV8gWhNVttyPdapUxh38tnYwZsrNbSc`
   chmod /home/vcap to 755
