@@ -144,6 +144,16 @@ describe Bosh::Cli::Runner do
     end
   end
 
+  describe '--max-parallel-downloads option' do
+    let(:runner) { described_class.new(['--max-parallel-downloads', '5']) }
+
+    it "sets the max_parallel_downloads config to the number given" do
+      runner.run
+      expect(Bosh::Cli::Config.max_parallel_downloads).to eq 5
+      Bosh::Cli::Config.max_parallel_downloads = nil
+    end
+  end
+
   def capture_stderr
     orig_stderr = $stderr
     new_stderr = StringIO.new
