@@ -364,7 +364,6 @@ properties:
     default: 5
   openstack.config_drive:
     description: Config drive device (cdrom or disk) to use as metadata service on OpenStack (optional, nil by default)
-    default: nil
   vcenter.address:
     description: Address of vCenter server used by vsphere cpi
   vcenter.user:
