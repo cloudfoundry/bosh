@@ -17,15 +17,18 @@ module Bosh::Director
 
       it 'enqueues a task to upload a remote release' do
         rebase = double('bool')
+        skip_if_exists = double('bool')
 
         expect(job_queue).to receive(:enqueue).with(
           username,
           Jobs::UpdateRelease,
           'create release',
-          [release_url, { remote: true, rebase: rebase }],
+          [release_url, { remote: true, rebase: rebase, skip_if_exists: skip_if_exists }],
         ).and_return(task)
 
-        expect(subject.create_release_from_url(username, release_url, rebase)).to eql(task)
+        expect(
+          subject.create_release_from_url(username, release_url, rebase: rebase, skip_if_exists: skip_if_exists),
+        ).to eql(task)
       end
     end
 
@@ -35,7 +38,7 @@ module Bosh::Director
       context 'when release file exists' do
         before { allow(File).to receive(:exists?).with(release_path).and_return(true) }
 
-        it 'enqueues a task to upload a remote release' do
+        it 'enqueues a task to upload a release file' do
           rebase = double('bool')
 
           expect(job_queue).to receive(:enqueue).with(
@@ -45,7 +48,7 @@ module Bosh::Director
             [release_path, { rebase: rebase }],
           ).and_return(task)
 
-          expect(subject.create_release_from_file_path(username, release_path, rebase)).to eql(task)
+          expect(subject.create_release_from_file_path(username, release_path, rebase: rebase)).to eql(task)
         end
       end
 

@@ -153,7 +153,7 @@ module Bosh::Director
             )
           end
 
-          context 'when the rebase is passed' do
+          context 'when rebase is passed' do
             let(:job_options) { { 'rebase' => true } }
 
             context 'when there are package changes' do
@@ -186,6 +186,30 @@ module Bosh::Director
                   Bosh::Director::DirectorError,
                   /Rebase is attempted without any job or package changes/
                 )
+              end
+            end
+          end
+
+          context 'when skip_if_exists is passed' do
+            let(:job_options) { { 'skip_if_exists' => true } }
+
+            it 'does not create a release' do
+              expect(job).not_to receive(:create_packages)
+              expect(job).not_to receive(:create_jobs)
+              job.perform
+            end
+
+            describe 'event_log' do
+              it 'prints that release was not created' do
+                allow(Config.event_log).to receive(:begin_stage).and_call_original
+                expect(Config.event_log).to receive(:begin_stage).with('Release already exists', 1)
+                job.perform
+              end
+
+              it 'prints name and version' do
+                allow(Config.event_log).to receive(:track).and_call_original
+                expect(Config.event_log).to receive(:track).with('appcloud/42+dev.6')
+                job.perform
               end
             end
           end

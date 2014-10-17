@@ -31,6 +31,7 @@ module Bosh::Director
         @release_version_model = nil
 
         @rebase = !!options['rebase']
+        @skip_if_exists = !!options['skip_if_exists']
 
         @manifest = nil
         @name = nil
@@ -138,6 +139,10 @@ module Bosh::Director
           if @release_version_model.errors[:version] == [:format]
             raise ReleaseVersionInvalid,
               "Release version invalid `#{@name}/#{@version}'"
+          elsif @skip_if_exists
+            event_log.begin_stage("Release already exists", 1)
+            event_log.track("#{@name}/#{@version}") {}
+            return
           else
             raise ReleaseAlreadyExists,
               "Release `#{@name}/#{@version}' already exists"
