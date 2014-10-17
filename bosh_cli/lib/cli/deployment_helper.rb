@@ -268,8 +268,7 @@ module Bosh::Cli
     def prompt_for_errand_name
       errands = list_errands
 
-      err("Deployment has no available errands") if errands.size == 0
-      return errands.first if errands.size == 1
+      err('Deployment has no available errands') if errands.size == 0
 
       choose do |menu|
         menu.prompt = 'Choose an errand: '
