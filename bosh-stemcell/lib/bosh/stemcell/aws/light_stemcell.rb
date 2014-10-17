@@ -42,7 +42,10 @@ module Bosh::Stemcell::Aws
       ami = Ami.new(stemcell, region, virtualization_type)
       ami_id = ami.publish
       manifest = Bosh::Common::DeepCopy.copy(stemcell.manifest)
-      manifest['name'] = manifest['name'].gsub("xen", "xen-hvm") if virtualization_type == HVM_VIRTUALIZATION
+      if virtualization_type == HVM_VIRTUALIZATION
+        manifest['name'] = manifest['name'].gsub("xen", "xen-hvm")
+        manifest['cloud_properties']['name'] = manifest['cloud_properties']['name'].gsub("xen", "xen-hvm")
+      end
       manifest['cloud_properties']['ami'] = { region.name => ami_id }
       manifest
     end

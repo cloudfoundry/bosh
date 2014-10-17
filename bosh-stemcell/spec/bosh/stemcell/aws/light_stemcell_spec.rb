@@ -91,10 +91,18 @@ module Bosh::Stemcell
 
         context 'when the virtualization is hvm' do
           let(:virtualization_type) { Bosh::Stemcell::Aws::HVM_VIRTUALIZATION }
-          it 'replace the name in the manifest when it is a hvm virtualization' do
+          it 'replaces the name in the manifest when it is a hvm virtualization' do
             stemcell.manifest['name'] = 'xen-fake-stemcell'
             expect(Psych).to receive(:dump) do |stemcell_properties, _|
               expect(stemcell_properties['name']).to eq('xen-hvm-fake-stemcell')
+            end
+            light_stemcell.write_archive
+          end
+
+          it 'replaces the cloud_properties name in the manifest when it is a hvm virtualization' do
+            stemcell.manifest['cloud_properties']['name'] = 'xen-fake-stemcell'
+            expect(Psych).to receive(:dump) do |stemcell_properties, _|
+              expect(stemcell_properties['cloud_properties']['name']).to eq('xen-hvm-fake-stemcell')
             end
             light_stemcell.write_archive
           end
