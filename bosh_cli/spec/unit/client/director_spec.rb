@@ -201,7 +201,7 @@ describe Bosh::Cli::Client::Director do
       @director.upload_release('/path')
     end
 
-    it 'uploads local release (with rebase)' do
+    it 'uploads local release (with options)' do
       expect(@director).to receive(:upload_and_track).
         with(:post, '/releases?rebase=true', '/path', hash_including(
                :content_type => 'application/x-compressed')).
@@ -218,13 +218,13 @@ describe Bosh::Cli::Client::Director do
       @director.upload_remote_release('release_uri')
     end
 
-    it 'uploads remote release (with rebase)' do
+    it 'uploads remote release (with options)' do
       expect(@director).to receive(:request_and_track).
-        with(:post, '/releases?rebase=true', hash_including(
+        with(:post, '/releases?rebase=true&skip_if_exists=true', hash_including(
                :content_type => 'application/json',
                :payload      => JSON.generate('location' => 'release_uri'))).
         and_return(true)
-      @director.upload_remote_release('release_uri', rebase: true)
+      @director.upload_remote_release('release_uri', rebase: true, skip_if_exists: true)
     end
 
     it 'gets release info' do

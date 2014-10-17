@@ -239,25 +239,32 @@ module Bosh::Cli::Command::Release
         end
 
         context 'remote release' do
-          context 'without rebase' do
+          context 'without options' do
             it 'should upload the release' do
               expect(command).to receive(:upload_remote_release)
-                .with(release_location, hash_including(:rebase => nil))
+                .with(release_location, hash_including(:rebase => nil, :skip_if_exists => nil))
                 .and_call_original
-              expect(director).to receive(:upload_remote_release).with(release_location, hash_including(:rebase => nil))
+              expect(director).to receive(:upload_remote_release).with(
+                release_location,
+                hash_including(:rebase => nil, :skip_if_exists => nil),
+              )
 
               command.upload(release_location)
             end
           end
 
-          context 'with rebase' do
+          context 'with options' do
             it 'should upload the release' do
               expect(command).to receive(:upload_remote_release)
-                .with(release_location, hash_including(:rebase => true))
+                .with(release_location, hash_including(:rebase => true, :skip_if_exists => true))
                 .and_call_original
-              expect(director).to receive(:upload_remote_release).with(release_location, hash_including(:rebase => true))
+              expect(director).to receive(:upload_remote_release).with(
+                release_location,
+                hash_including(:rebase => true, :skip_if_exists => true),
+              )
 
               command.add_option(:rebase, true)
+              command.add_option(:skip_if_exists, true)
               command.upload(release_location)
             end
           end

@@ -150,7 +150,11 @@ module Bosh::Cli::Command
           report = 'Release uploaded'
         end
 
-        status, task_id = director.upload_remote_release(release_location, rebase: upload_options[:rebase])
+        status, task_id = director.upload_remote_release(
+          release_location,
+          rebase: upload_options[:rebase],
+          skip_if_exists: upload_options[:skip_if_exists],
+        )
         task_report(status, task_id, report)
       end
 
