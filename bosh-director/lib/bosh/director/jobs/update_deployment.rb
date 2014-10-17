@@ -34,7 +34,8 @@ module Bosh::Director
         @deployment_plan = DeploymentPlan::Planner.parse(manifest_as_hash, plan_options, event_log, logger)
         logger.info('Created deployment plan')
 
-        @notifier = DeploymentPlan::Notifier.new(@deployment_plan, logger)
+        nats_rpc = Config.nats_rpc
+        @notifier = DeploymentPlan::Notifier.new(@deployment_plan, nats_rpc, logger)
 
         resource_pools = @deployment_plan.resource_pools
         @resource_pool_updaters = resource_pools.map do |resource_pool|
