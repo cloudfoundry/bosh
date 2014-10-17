@@ -418,7 +418,7 @@ GEM
       rest-client (~> 1.6.7)
     rufus-scheduler (2.0.24)
       tzinfo (>= 0.3.22)
-    rugged (0.19.0)
+    rugged (0.21.0)
     semi_semantic (1.1.0)
     sequel (3.43.0)
     serverspec (0.15.4)
