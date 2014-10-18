@@ -232,6 +232,8 @@ module Bosh::Cli
 
         if need_download
           missing_blobs << [path, entry["sha"]]
+        else
+          install_blob(local_path, path, entry["sha"])
         end
       end
 
