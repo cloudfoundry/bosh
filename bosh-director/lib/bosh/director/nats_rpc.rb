@@ -17,10 +17,10 @@ module Bosh::Director
 
     # Publishes a payload (encoded as JSON) without expecting a response
     def send_message(client, payload)
-      message = Yajl::Encoder.encode(request)
+      message = Yajl::Encoder.encode(payload)
       @logger.debug("SENT: #{client} #{message}")
       EM.schedule do
-        nats.publish(client, payload)
+        nats.publish(client, message)
       end
     end
 
