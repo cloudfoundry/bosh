@@ -290,7 +290,8 @@ module Bosh::Cli
 
       blob = @index[path]
       size = blob["size"].to_i
-      tmp_file = File.open(File.join(Dir.mktmpdir, "bosh-blob"), "w")
+      blob_path = path.gsub(File::SEPARATOR, '-')
+      tmp_file = File.open(File.join(Dir.mktmpdir, blob_path), "w")
 
       download_label = "downloading"
       if size > 0
