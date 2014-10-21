@@ -23,6 +23,12 @@ cloud:
     access_key_id: <%= access_key_id %>
     secret_access_key: <%= secret_access_key %>
     region: <%= region %>
+    <% if_p('aws.ec2_endpoint') do |ec2_endpoint| %>
+    ec2_endpoint: <%= ec2_endpoint %>
+    <% end %>
+    <% if_p('aws.elb_endpoint') do |elb_endpoint| %>
+    elb_endpoint: <%= elb_endpoint %>
+    <% end %>
     <% if_p('aws.max_retries') do |max_retries| %>
     max_retries: <%= max_retries %>
     <% end %>

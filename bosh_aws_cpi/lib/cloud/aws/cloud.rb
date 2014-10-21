@@ -516,13 +516,20 @@ module Bosh::AwsCloud
       aws_params = {
           access_key_id:     aws_properties['access_key_id'],
           secret_access_key: aws_properties['secret_access_key'],
+          region:            aws_properties['region'],
           ec2_endpoint:      aws_properties['ec2_endpoint'] || default_ec2_endpoint,
           elb_endpoint:      aws_properties['elb_endpoint'] || default_elb_endpoint,
-          max_retries:       aws_properties['max_retries']  || DEFAULT_MAX_RETRIES ,
+          max_retries:       aws_properties['max_retries']  || DEFAULT_MAX_RETRIES,
           logger:            aws_logger
       }
 
-      aws_params[:proxy_uri] = aws_properties['proxy_uri'] if aws_properties['proxy_uri']
+      %w(
+        http_read_timeout
+        http_wire_trace
+        proxy_uri
+        ).each do |k|
+        aws_params[k.to_sym] = aws_properties[k] if aws_properties[k]
+      end
 
       # AWS Ruby SDK is threadsafe but Ruby autoload isn't,
       # so we need to trigger eager autoload while constructing CPI
