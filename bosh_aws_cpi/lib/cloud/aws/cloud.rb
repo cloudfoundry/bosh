@@ -519,7 +519,6 @@ module Bosh::AwsCloud
         aws_params[k.to_sym] = v
       end
 
-      #put some default values for some properties if not supplied
       aws_params[:ec2_endpoint]      = aws_properties['ec2_endpoint'] || default_ec2_endpoint
       aws_params[:elb_endpoint]      = aws_properties['elb_endpoint'] || default_elb_endpoint
       aws_params[:max_retries]       = aws_properties['max_retries']  || DEFAULT_MAX_RETRIES
