@@ -212,11 +212,9 @@ cloud:
   plugin: aws <% plugin = "aws" %>
   properties:
     aws:
-      access_key_id: <%= access_key_id %>
-      secret_access_key: <%= secret_access_key %>
-      default_key_name: <%= default_key_name %>
-      default_security_groups: <%= default_security_groups %>
-      region: <%= region %>
+      <% p('aws').each do |k,v| %>
+      <%= "#{k.to_s}: #{v}" %>
+      <% end %>
     registry:
       endpoint: http://<%= reg_address %>:<%= reg_port %>
       user: <%= reg_user %>
