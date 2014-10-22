@@ -1,3 +1,20 @@
+## 2749
+
+Improvements:
+
+  * director: Do not run the first errand if there is only one errand [7c37a8a]
+
+## 2748
+
+Improvements:
+
+  * director: Add configurable ssl options for the director nginx [6e497ef]
+  * agent: Bump bosh-agent to disable SSLv3 support (agent's micro server) [9ec67d5]
+
+Bug Fixes:
+
+  * director: Correct invalid default value for config_drive for OpenStack [9e2d9db]
+
 ## 2745
 
 Improvements:
