@@ -69,7 +69,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
 
   describe 'base_apt' do
     describe file('/etc/apt/sources.list') do
-      if (RbConfig::CONFIG['host_cpu'] == "powerpc64le") 
+      if RbConfig::CONFIG['host_cpu'] == "powerpc64le" 
         it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty main restricted' }
         it { should contain 'deb-src http://archive.ubuntu.com/ubuntu trusty main restricted' }
         it { should contain 'deb http://ports.ubuntu.com/ubuntu-ports/ trusty-updates main restricted' }
@@ -169,7 +169,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
   end
 
   context 'installed by system_grub' do
-    if (RbConfig::CONFIG['host_cpu'] == "powerpc64le")
+    if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
       %w(
         grub2
       ).each do |pkg|

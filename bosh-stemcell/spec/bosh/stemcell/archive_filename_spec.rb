@@ -40,7 +40,7 @@ module Bosh::Stemcell
         let(:light) { false }
 
         it 'includes name, version, infrastructure name, infrastructure hypervisor' do
-          if (RbConfig::CONFIG['host_cpu'] == "powerpc64le")
+          if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
             expect(archive_filename.to_s).to eq ('FAKE_NAME-ppc64-007-fake-stemcell-name.tgz')
           else
             expect(archive_filename.to_s).to eq ('FAKE_NAME-007-fake-stemcell-name.tgz')
@@ -52,7 +52,7 @@ module Bosh::Stemcell
         let(:light) { true }
 
         it 'prefixes the name with "light-"' do
-          if (RbConfig::CONFIG['host_cpu'] == "powerpc64le")
+          if RbConfig::CONFIG['host_cpu'] == "powerpc64le"
             expect(archive_filename.to_s).to eq ('FAKE_NAME-ppc64-007-fake-stemcell-name.tgz')
           else
             expect(archive_filename.to_s).to eq ('light-FAKE_NAME-007-fake-stemcell-name.tgz')

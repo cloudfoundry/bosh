@@ -1,6 +1,9 @@
 set -e
 
-if [[ `uname -a` =~ "x86_64" ]] ; then
+if [ `uname -m` == "ppc64le" ] ; then
+  archive="postgres-9.0.3-1.ppc64le.tar.gz"
+  echo "Using ppc64le 64-bit version"
+elif [[ `uname -a` =~ "x86_64" ]] ; then
   archive="postgres-9.0.3-1.amd64.tar.gz"
   echo "Using 64-bit version"
 else

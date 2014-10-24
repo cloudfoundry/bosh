@@ -46,6 +46,10 @@ cat > ${bosh_app_dir}/bosh/dummy-cpi-agent-env.json << EOF
   }
 }
 EOF
+if [ "`uname -m`" == "ppc64le" ]; then
+  export PATH=/var/vcap/bosh/gccgo/bin:$PATH
+  export LD_LIBRARY_PATH=/var/vcap/bosh/gccgo/lib64
+fi
 
 # Start agent
 /var/vcap/bosh/bin/bosh-agent -I dummy -P dummy -M dummy &

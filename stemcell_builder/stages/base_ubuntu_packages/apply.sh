@@ -16,7 +16,7 @@ scsitools mg htop module-assistant debhelper runit parted"
 
 if [ `uname -m` == "ppc64le" ]; then
   debs="$debs \
-libreadline-dev libtool texinfo ppc64-diag \
+libreadline-dev libtool texinfo ppc64-diag libffi-dev \
 libruby bundler libgmp-dev libgmp3-dev libmpfr-dev libmpc-dev"
 fi
 

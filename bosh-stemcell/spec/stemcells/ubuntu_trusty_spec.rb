@@ -5,7 +5,7 @@ describe 'Ubuntu 14.04 stemcell', stemcell_image: true do
     if (RbConfig::CONFIG['host_cpu'] == "powerpc64le")
       describe file('/boot/grub/grub.cfg') do
         it { should be_file }
-        it { should contain 'Linux 3.13.0-36-generic' }
+        it { should contain 'Linux 3.13.0-37-generic' }
       end
     else 
       describe file('/boot/grub/grub.conf') do

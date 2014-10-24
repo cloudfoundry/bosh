@@ -24,24 +24,13 @@ module Bosh::Stemcell
       ]
     end
 
-    if (RbConfig::CONFIG['host_cpu'] == "powerpc64le")
-      def agent_stages
-        [
-          :bosh_ruby,
-          :bosh_go_agent,
-          #:bosh_micro_go, # we don't need micro bosh to run on Power8 VMs
-          :aws_cli,
-        ]
-      end
-    else 
-      def agent_stages
-        [
-          :bosh_ruby,
-          :bosh_go_agent,
-          :bosh_micro_go, 
-          :aws_cli,
-        ]
-      end
+    def agent_stages
+      [
+        :bosh_ruby,
+        :bosh_go_agent,
+        :bosh_micro_go, 
+        :aws_cli,
+      ]
     end
 
     def infrastructure_stages
