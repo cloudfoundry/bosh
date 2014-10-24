@@ -1,8 +1,12 @@
 require 'spec_helper'
 require 'bosh/dev/stemcell_artifacts'
+require 'logger'
 
 module Bosh::Dev
   describe StemcellArtifacts do
+
+    let(:logger) { Logger.new('/dev/null') }
+
     describe '.all' do
       context 'when BOSH_PROMOTE_STEMCELLS are specified' do
         before do
@@ -14,7 +18,7 @@ module Bosh::Dev
         it 'returns pipeline artifacts with specified stemcells' do
           artifacts = instance_double('Bosh::Dev::StemcellArtifacts')
 
-          expect(described_class).to receive(:new) do |version, definitions|
+          expect(described_class).to receive(:new) do |version, definitions, logger|
             expect(version).to eq('version')
 
             matrix = definitions.map { |d| [d.infrastructure.name, d.hypervisor_name, d.operating_system.name, d.operating_system.version, d.agent.name] }
@@ -24,10 +28,12 @@ module Bosh::Dev
               ['openstack', 'kvm', 'centos', nil, 'go'],
             ])
 
+            expect(logger).to eq(logger)
+
             artifacts
           end
 
-          expect(described_class.all('version')).to eq(artifacts)
+          expect(described_class.all('version', logger)).to eq(artifacts)
         end
       end
 
@@ -39,14 +45,15 @@ module Bosh::Dev
         it 'returns no pipeline artifacts' do
           artifacts = instance_double('Bosh::Dev::StemcellArtifacts')
 
-          expect(described_class).to receive(:new) do |version, definitions|
+          expect(described_class).to receive(:new) do |version, definitions, logger|
             expect(version).to eq('version')
             expect(definitions).to be_empty
+            expect(logger).to eq(logger)
 
             artifacts
           end
 
-          expect(described_class.all('version')).to eq(artifacts)
+          expect(described_class.all('version', logger)).to eq(artifacts)
         end
       end
 
@@ -79,13 +86,13 @@ module Bosh::Dev
             artifacts
           end
 
-          expect(described_class.all('version')).to eq(artifacts)
+          expect(described_class.all('version', logger)).to eq(artifacts)
         end
       end
     end
 
     describe '#list' do
-      subject(:artifacts) { described_class.new(version, definitions) }
+      subject(:artifacts) { described_class.new(version, definitions, logger) }
       let(:version) { 123 }
       let(:definitions) do
         [
@@ -95,28 +102,32 @@ module Bosh::Dev
       end
 
       it 'returns a complete list of stemcell build artifact names' do
-        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
-          .with('latest', definitions[0], 'bosh-stemcell')
-          .and_return('fake-latest-archive-filename1')
+        stemcell_artifact1_version = instance_double('Bosh::Dev::StemcellArtifact')
+        expect(StemcellArtifact).to receive(:new)
+          .with(version, definitions[0], logger)
+          .and_return(stemcell_artifact1_version)
 
-        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
-          .with(version, definitions[0], 'bosh-stemcell')
-          .and_return('fake-version-archive-filename1')
+        stemcell_artifact1_latest = instance_double('Bosh::Dev::StemcellArtifact')
+        expect(StemcellArtifact).to receive(:new)
+          .with('latest', definitions[0], logger)
+          .and_return(stemcell_artifact1_latest)
 
-        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
-          .with('latest', definitions[1], 'bosh-stemcell')
-          .and_return('fake-latest-archive-filename2')
+        stemcell_artifact2_version = instance_double('Bosh::Dev::StemcellArtifact')
+        expect(StemcellArtifact).to receive(:new)
+          .with(version, definitions[1], logger)
+          .and_return(stemcell_artifact2_version)
 
-        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
-          .with(version, definitions[1], 'bosh-stemcell')
-          .and_return('fake-version-archive-filename2')
+        stemcell_artifact2_latest = instance_double('Bosh::Dev::StemcellArtifact')
+        expect(StemcellArtifact).to receive(:new)
+          .with('latest', definitions[1], logger)
+          .and_return(stemcell_artifact2_latest)
 
-        expect(artifacts.list.sort).to eq(%w[
-          bosh-stemcell/vsphere/fake-version-archive-filename1
-          bosh-stemcell/vsphere/fake-latest-archive-filename1
-          bosh-stemcell/openstack/fake-version-archive-filename2
-          bosh-stemcell/openstack/fake-latest-archive-filename2
-        ].sort)
+        expect(artifacts.list).to eq([
+          stemcell_artifact1_version,
+          stemcell_artifact1_latest,
+          stemcell_artifact2_version,
+          stemcell_artifact2_latest
+        ])
       end
     end
   end

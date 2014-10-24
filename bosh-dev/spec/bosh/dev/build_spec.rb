@@ -7,9 +7,10 @@ module Bosh::Dev
   describe Build do
     include FakeFS::SpecHelpers
 
+    let(:logger) { Logger.new('/dev/null') }
+
     describe '.candidate' do
       subject { described_class.candidate(logger) }
-      let(:logger) { Logger.new(StringIO.new) }
 
       context 'when CANDIDATE_BUILD_NUMBER is set' do
         before { stub_const('ENV', 'CANDIDATE_BUILD_NUMBER' => 'candidate') }
@@ -27,7 +28,7 @@ module Bosh::Dev
           build = instance_double('Bosh::Dev::Build::Local')
           Bosh::Dev::Build::Candidate
             .should_receive(:new)
-            .with('candidate', download_adapter)
+            .with('candidate', download_adapter, logger)
             .and_return(build)
 
           subject.should == build
@@ -48,7 +49,7 @@ module Bosh::Dev
           build = instance_double('Bosh::Dev::Build::Local')
           Bosh::Dev::Build::Local
             .should_receive(:new)
-            .with('0000', download_adapter)
+            .with('0000', download_adapter, logger)
             .and_return(build)
 
           subject.should == build
@@ -66,7 +67,7 @@ module Bosh::Dev
       )
     end
 
-    subject(:build) { Build::Candidate.new('123', download_adapter) }
+    subject(:build) { Build::Candidate.new('123', download_adapter, logger) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
 
     before(:all) { Fog.mock! }
@@ -116,7 +117,6 @@ module Bosh::Dev
       let(:src) { 'source_dir' }
       let(:dst) { 'dest_dir' }
       let(:files) { %w(foo/bar.txt foo/bar/baz.txt) }
-      let(:logger) { instance_double('Logger').as_null_object }
 
       before { Bosh::Dev::UploadAdapter.stub(:new).and_return(upload_adapter) }
       let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter') }
@@ -129,7 +129,6 @@ module Bosh::Dev
             File.open(path, 'w') { |f| f.write("Contents of #{path}") }
           end
         end
-        Logger.stub(new: logger)
       end
 
       it 'recursively uploads a directory into base_dir' do
@@ -150,32 +149,48 @@ module Bosh::Dev
           end
         end.exactly(2).times.and_return(double('uploaded file', public_url: nil))
 
-        subject.upload_gems(src, dst)
+        build.upload_gems(src, dst)
       end
     end
 
-    describe '#promote_artifacts' do
+    describe '#promote' do
       let(:stemcell) { instance_double('Bosh::Stemcell::Archive', ami_id: 'ami-ID') }
 
       let(:promotable_artifacts) do
         instance_double('Bosh::Dev::PromotableArtifacts', all: [
-          instance_double('Bosh::Dev::GemArtifact', promote: nil),
-          instance_double('Bosh::Dev::PromotableArtifact', promote: nil),
+          instance_double('Bosh::Dev::GemArtifact', promote: nil, name: 'artifact.gem'),
+          instance_double('Bosh::Dev::ReleaseArtifact', promote: nil, name: 'artifact.tgz'),
         ])
       end
 
       before do
-        Rake::FileUtilsExt.stub(:sh)
-        Bosh::Stemcell::Archive.stub(new: stemcell)
-        PromotableArtifacts.stub(new: promotable_artifacts)
+        allow(Rake::FileUtilsExt).to receive(:sh)
+        allow(Bosh::Stemcell::Archive).to receive(:new).and_return(stemcell)
+        allow(PromotableArtifacts).to receive(:new).and_return(promotable_artifacts)
       end
 
       it 'promotes all PromotableArtifacts' do
         promotable_artifacts.all.each do |artifact|
-          artifact.should_receive(:promote)
+          expect(artifact).to receive(:promoted?).and_return(false)
         end
 
-        subject.promote_artifacts
+        promotable_artifacts.all.each do |artifact|
+          expect(artifact).to receive(:promote)
+        end
+
+        build.promote
+      end
+
+      it 'does not promote already promoted artifacts' do
+        promotable_artifacts.all.each do |artifact|
+          expect(artifact).to receive(:promoted?).and_return(true)
+        end
+
+        promotable_artifacts.all.each do |artifact|
+          expect(artifact).to_not receive(:promote)
+        end
+
+        build.promote
       end
     end
 
@@ -187,7 +202,6 @@ module Bosh::Dev
       before do
         FileUtils.mkdir('/tmp')
         File.open(stemcell.path, 'w') { |f| f.write(stemcell_contents) }
-        Logger.stub(new: logger)
         Bosh::Dev::UploadAdapter.stub(:new).and_return(upload_adapter)
       end
 
@@ -207,7 +221,7 @@ module Bosh::Dev
           key = '123/bosh-stemcell/vsphere/bosh-stemcell-123-vsphere-esxi-ubuntu.tgz'
           latest_key = '123/bosh-stemcell/vsphere/bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz'
 
-          logger.should_receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
+          expect(logger).to receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
 
           upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-ci-pipeline',
                                                       key: key,
@@ -240,7 +254,7 @@ module Bosh::Dev
           key = '123/bosh-stemcell/vsphere/light-bosh-stemcell-123-vsphere-esxi-ubuntu.tgz'
           latest_key = '123/bosh-stemcell/vsphere/light-bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz'
 
-          logger.should_receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
+          expect(logger).to receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
 
           upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-ci-pipeline',
                                                       key: key,
@@ -319,7 +333,8 @@ module Bosh::Dev
   end
 
   describe Build::Candidate do
-    subject(:build) { Build::Candidate.new('123', download_adapter) }
+    let(:logger) { Logger.new('/dev/null') }
+    subject(:build) { Build::Candidate.new('123', download_adapter, logger) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
 
     describe '#release_tarball_path' do
@@ -346,7 +361,8 @@ module Bosh::Dev
   end
 
   describe Build::Local do
-    subject { described_class.new('build-number', download_adapter) }
+    let(:logger) { Logger.new('/dev/null') }
+    subject { described_class.new('build-number', download_adapter, logger) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
 
     before(:all) { Fog.mock! }

@@ -4,25 +4,21 @@ require 'bosh/dev/build'
 
 module Bosh::Dev
   describe PromotableArtifacts do
-    subject(:build_artifacts) { PromotableArtifacts.new(build) }
+    let(:logger) { Logger.new('/dev/null') }
+    subject(:build_artifacts) { PromotableArtifacts.new(build, logger) }
     let(:build) { instance_double('Bosh::Dev::Build', number: 123) }
 
     its(:release_file) { should eq('bosh-123.tgz') }
 
     describe '#all' do
-      let(:stemcell_artifacts) { instance_double('Bosh::Dev::StemcellArtifacts', list: archive_filenames) }
-      let(:archive_filenames) do
-        [
-          instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'blue/stemcell-blue.tgz'),
-          instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'red/stemcell-red.tgz'),
-        ]
-      end
-
       let(:gem_components) do
         instance_double('Bosh::Dev::GemComponents', components: [
           'GemComponent 1',
           'GemComponent 2',
         ])
+      end
+      before do
+        allow(Bosh::Dev::GemComponents).to receive(:new).with(123).and_return(gem_components)
       end
 
       let(:gem_artifacts) do
@@ -31,41 +27,41 @@ module Bosh::Dev
           instance_double('Bosh::Dev::GemArtifact', promote: nil),
         ]
       end
-
       before do
-        gem_artifact_klass = class_double('Bosh::Dev::GemArtifact').as_stubbed_const
-        gem_artifact_klass.stub(:new).with(gem_components.components.first, 's3://bosh-ci-pipeline/123/', build.number).and_return(gem_artifacts.first)
-        gem_artifact_klass.stub(:new).with(gem_components.components.last, 's3://bosh-ci-pipeline/123/', build.number).and_return(gem_artifacts.last)
-
-        get_component_klass = class_double('Bosh::Dev::GemComponents').as_stubbed_const
-        get_component_klass.stub(:new).with(123).and_return(gem_components)
-
-        stemcell_artifacts_klass = class_double('Bosh::Dev::StemcellArtifacts').as_stubbed_const
-        stemcell_artifacts_klass.stub(:all).with(build.number).and_return(stemcell_artifacts)
-
-        RakeFileUtils.stub(:sh)
+        allow(Bosh::Dev::GemArtifact).to receive(:new).with(gem_components.components[0], 's3://bosh-ci-pipeline/123/', build.number, logger).and_return(gem_artifacts[0])
+        allow(Bosh::Dev::GemArtifact).to receive(:new).with(gem_components.components[1], 's3://bosh-ci-pipeline/123/', build.number, logger).and_return(gem_artifacts[1])
       end
 
-      it 'lists a command to promote the release' do
-        RakeFileUtils.
-          should_receive(:sh).
-          with('s3cmd --verbose cp s3://bosh-ci-pipeline/123/release/bosh-123.tgz s3://bosh-jenkins-artifacts/release/bosh-123.tgz')
+      let(:release_artifact) { instance_double('Bosh::Dev::ReleaseArtifact', promote: nil) }
+      before do
+        allow(Bosh::Dev::ReleaseArtifact).to receive(:new).with(build.number, logger).and_return(release_artifact)
+      end
+
+      let(:stemcell_artifacts) { instance_double('Bosh::Dev::StemcellArtifacts', list: stemcell_artifact_list) }
+      let(:stemcell_artifact_list) do
+        [
+          instance_double('Bosh::Dev::StemcellArtifact', promote: nil),
+          instance_double('Bosh::Dev::StemcellArtifact', promote: nil),
+        ]
+      end
+      before do
+        allow(Bosh::Dev::StemcellArtifacts).to receive(:all).with(build.number, logger).and_return(stemcell_artifacts)
+      end
+
+      it 'includes promotable release artifacts' do
+        stemcell_artifact_list.each { |artifact| expect(artifact).to receive(:promote) }
 
         build_artifacts.all.each { |artifact| artifact.promote }
       end
 
-      it 'lists commands to promote gems' do
-        expect(build_artifacts.all).to include(*gem_artifacts)
+      it 'includes promotable gem artifacts' do
+        gem_artifacts.each { |artifact| expect(artifact).to receive(:promote) }
+
+        build_artifacts.all.each { |artifact| artifact.promote }
       end
 
-      it 'lists commands to promote stemcell pipeline artifacts' do
-        RakeFileUtils.
-          should_receive(:sh).
-          with('s3cmd --verbose cp s3://bosh-ci-pipeline/123/blue/stemcell-blue.tgz s3://bosh-jenkins-artifacts/blue/stemcell-blue.tgz')
-
-        RakeFileUtils.
-          should_receive(:sh).
-          with('s3cmd --verbose cp s3://bosh-ci-pipeline/123/red/stemcell-red.tgz s3://bosh-jenkins-artifacts/red/stemcell-red.tgz')
+      it 'includes promotable stemcell artifacts' do
+        stemcell_artifact_list.each { |artifact| expect(artifact).to receive(:promote) }
 
         build_artifacts.all.each { |artifact| artifact.promote }
       end

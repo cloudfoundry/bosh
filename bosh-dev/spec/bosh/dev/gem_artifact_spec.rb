@@ -1,28 +1,50 @@
 require 'spec_helper'
 require 'bosh/dev/gem_artifact'
 require 'bosh/dev/gem_component'
+require 'logger'
 
 module Bosh::Dev
   describe GemArtifact do
     include FakeFS::SpecHelpers
 
+    let(:logger) { Logger.new('/dev/null') }
+
+    subject(:gem_artifact) do
+      GemArtifact.new(component, 's3://bosh-ci-pipeline/1234/', '1234', logger)
+    end
+
+    let(:component) { instance_double('Bosh::Dev::GemComponent') }
+    before do
+      allow(component).to receive(:name).and_return('bosh-foo')
+      allow(component).to receive(:version).and_return('1.5.0.pre.789')
+      allow(component).to receive(:dot_gem).and_return('bosh-foo-1.5.0.pre.789.gem')
+    end
+
+    let(:credentials_path) { File.expand_path('~/.gem/credentials') }
+
+    before do
+      FileUtils.mkdir_p(File.dirname(credentials_path))
+      FileUtils.touch(credentials_path)
+      allow(subject).to receive(:puts)
+      allow(subject).to receive(:warn)
+    end
+
     describe '#promote' do
-      let(:component) do
-        instance_double('Bosh::Dev::GemComponent', dot_gem: 'bosh-foo-1.5.0.pre.789.gem')
+      let(:download_cmd) do
+        source = 's3://bosh-ci-pipeline/1234/gems/gems/bosh-foo-1.5.0.pre.789.gem'
+        destination = 'tmp/gems-1234'
+        "s3cmd --verbose get #{source} #{destination}"
       end
 
-      subject(:gem_artifact) do
-        GemArtifact.new(component, 's3://bosh-ci-pipeline/1234/', '1234')
-      end
-
-      let(:credentials_path) { File.expand_path('~/.gem/credentials') }
+      let(:local_gem_path) { "tmp/gems-1234/#{component.dot_gem}" }
+      let(:push_cmd) { "gem push #{local_gem_path}" }
 
       before do
-        RakeFileUtils.stub(:sh)
-        FileUtils.mkdir_p(File.dirname(credentials_path))
-        FileUtils.touch(credentials_path)
-        subject.stub(:puts)
-        subject.stub(:warn)
+        allow(Open3).to receive(:capture3).with(download_cmd).
+          and_return([ nil, nil, instance_double('Process::Status', success?: true) ])
+
+        allow(Open3).to receive(:capture3).with(push_cmd).
+          and_return([ nil, nil, instance_double('Process::Status', success?: true) ])
       end
 
       it 'creates a temporary directory to place downloaded gems' do
@@ -31,26 +53,30 @@ module Bosh::Dev
 
       it 'clears out the temporary directory if it already exists to avoid promoting bad gems' do
         FileUtils.mkdir_p('tmp/gems-1234')
-        FileUtils.touch("tmp/gems-1234/#{component.dot_gem}")
-        expect { gem_artifact.promote }.to change { File.exist?("tmp/gems-1234/#{component.dot_gem}") }.to(false)
+        FileUtils.touch(local_gem_path)
+        expect { gem_artifact.promote }.to change { File.exist?(local_gem_path) }.to(false)
       end
 
       it 'downloads the gem from the pipeline bucket' do
-        RakeFileUtils.should_receive(:sh).with('s3cmd --verbose get s3://bosh-ci-pipeline/1234/gems/gems/bosh-foo-1.5.0.pre.789.gem tmp/gems-1234')
+        expect(Open3).to receive(:capture3).with(download_cmd).
+          and_return([ nil, nil, instance_double('Process::Status', success?: true) ])
 
         gem_artifact.promote
       end
 
       it 'pushes the downloaded gem' do
-        RakeFileUtils.should_receive(:sh).with('gem push tmp/gems-1234/bosh-foo-1.5.0.pre.789.gem 2>&1', verbose: true)
+        expect(Open3).to receive(:capture3).with(push_cmd).
+          and_return([ nil, nil, instance_double('Process::Status', success?: true) ])
 
         gem_artifact.promote
       end
 
       it 'avoids bleeding bundler ENV stuff into the gem push' do
         stub_const('ENV', { 'BUNDLE_STUFF' => '123' })
-        RakeFileUtils.stub(:sh) do |cmd|
-          expect(ENV.keys.grep(/BUNDLE/)).to eq([]) if cmd =~ /gem push/
+
+        expect(Open3).to receive(:capture3).with(push_cmd) do
+          expect(ENV.keys.grep(/BUNDLE/)).to eq([])
+          [ nil, nil, instance_double('Process::Status', success?: true) ]
         end
 
         gem_artifact.promote
@@ -66,10 +92,57 @@ module Bosh::Dev
       it 'expands the path to the .gem dir since File.exists? does not like "~" in the path' do
         expect(File).to receive(:exists?) do |path|
           expect(path).not_to include('~')
-          path != "tmp/gems-1234/#{component.dot_gem}"
+          path != local_gem_path
         end.at_least(1)
 
         gem_artifact.promote
+      end
+    end
+
+    describe '#promoted?' do
+      let(:query_cmd) { "gem query -r -a -n bosh\\-foo" }
+
+      it 'returns true if the gem name & version exist in the remote gem repo' do
+        stdout = <<-EOS
+bosh-foo (1.5.0.pre.789, 1.5.0.pre.788, 1.4.9)
+not-bosh-foo (1.5.0, 1.4.9)
+bosh-foo-plus-plus (1.0.0)
+EOS
+        expect(Open3).to receive(:capture3).with(query_cmd).
+          and_return([ stdout, nil, instance_double('Process::Status', success?: true) ])
+
+        expect(gem_artifact.promoted?).to be(true)
+      end
+
+      it 'returns false if the gem (by name) does not exist in the remote gem repo' do
+        stdout = <<-EOS
+not-bosh-foo (1.5.0.pre.789)
+EOS
+        expect(Open3).to receive(:capture3).with(query_cmd).
+          and_return([ stdout, nil, instance_double('Process::Status', success?: true) ])
+
+        expect(gem_artifact.promoted?).to be(false)
+      end
+
+      it 'returns false if the gem (by version) does not exist in the remote gem repo' do
+        stdout = <<-EOS
+bosh-foo (0.2.3, 0.2.2, 0.2.1, 0.2.0)
+EOS
+        expect(Open3).to receive(:capture3).with(query_cmd).
+          and_return([ stdout, nil, instance_double('Process::Status', success?: true) ])
+
+        expect(gem_artifact.promoted?).to be(false)
+      end
+
+      it 'avoids bleeding bundler ENV stuff into the gem query' do
+        stub_const('ENV', { 'BUNDLE_STUFF' => '123' })
+
+        expect(Open3).to receive(:capture3).with(query_cmd) do
+          expect(ENV.keys.grep(/BUNDLE/)).to eq([])
+          [ '', nil, instance_double('Process::Status', success?: true) ]
+        end
+
+        gem_artifact.promoted?
       end
     end
   end

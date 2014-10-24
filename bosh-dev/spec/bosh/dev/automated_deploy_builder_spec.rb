@@ -3,6 +3,9 @@ require 'bosh/dev/automated_deploy_builder'
 
 module Bosh::Dev
   describe AutomatedDeployBuilder do
+
+    let(:logger) { Logger.new('/dev/null') }
+
     describe '.for_rake_args' do
       it 'returns automated deployer builder for rake arguments' do
         rake_args = Struct.new(
@@ -50,6 +53,8 @@ module Bosh::Dev
     end
 
     describe '#build' do
+      before { allow(Logger).to receive(:new).and_return(logger) }
+
       it 'builds automated deploy' do
         build_target = instance_double('Bosh::Dev::BuildTarget', {
           build_number: 'fake-number',
@@ -57,7 +62,7 @@ module Bosh::Dev
         })
 
         deployments_repository = instance_double('Bosh::Dev::DeploymentsRepository')
-        expect(Bosh::Dev::DeploymentsRepository).to receive(:new).with(ENV).and_return(deployments_repository)
+        expect(Bosh::Dev::DeploymentsRepository).to receive(:new).with(ENV, logger).and_return(deployments_repository)
 
         deployment_account = instance_double('Bosh::Dev::Aws::DeploymentAccount')
         expect(Bosh::Dev::Aws::DeploymentAccount).to receive(:new).with(

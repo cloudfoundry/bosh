@@ -19,7 +19,7 @@ module Bosh::Dev
       number = ENV['CANDIDATE_BUILD_NUMBER']
       if number
         logger.info("CANDIDATE_BUILD_NUMBER is #{number}. Using candidate build.")
-        Candidate.new(number, DownloadAdapter.new(logger))
+        Candidate.new(number, DownloadAdapter.new(logger), logger)
       else
         logger.info('CANDIDATE_BUILD_NUMBER not set. Using local build.')
 
@@ -31,14 +31,14 @@ module Bosh::Dev
           subnum = '0000'
         end
 
-        Local.new(subnum, LocalDownloadAdapter.new(logger))
+        Local.new(subnum, LocalDownloadAdapter.new(logger), logger)
       end
     end
 
-    def initialize(number, download_adapter)
+    def initialize(number, download_adapter, logger)
       @number = number
-      @logger = Logger.new($stdout)
-      @promotable_artifacts = PromotableArtifacts.new(self)
+      @logger = logger
+      @promotable_artifacts = PromotableArtifacts.new(self, logger)
       @bucket = 'bosh-ci-pipeline'
       @upload_adapter = UploadAdapter.new
       @download_adapter = download_adapter
@@ -88,10 +88,19 @@ module Bosh::Dev
       filename
     end
 
-    def promote_artifacts
+    def promote
       promotable_artifacts.all.peach do |artifact|
-        artifact.promote
+        if artifact.promoted?
+          @logger.info("Skipping #{artifact.name} artifact promotion")
+        else
+          @logger.info("Executing #{artifact.name} artifact promotion")
+          artifact.promote
+        end
       end
+    end
+
+    def promoted?
+      promotable_artifacts.all { |artifact| artifact.promoted? }
     end
 
     def bosh_stemcell_path(definition, download_dir)
@@ -118,8 +127,7 @@ module Bosh::Dev
       end
 
       def download_stemcell(name, definition, output_directory)
-        filename = Bosh::Stemcell::ArchiveFilename.new(
-          number.to_s, definition, name).to_s
+        filename = Bosh::Stemcell::ArchiveFilename.new(number.to_s, definition, name).to_s
         download_adapter.download("tmp/#{filename}", File.join(output_directory, filename))
         filename
       end
@@ -129,9 +137,10 @@ module Bosh::Dev
       def release_tarball_path
         remote_dir = File.join(number.to_s, 'release')
         filename = promotable_artifacts.release_file
-        downloaded_release_path = "tmp/#{promotable_artifacts.release_file}"
-        download_adapter.download(UriProvider.pipeline_uri(remote_dir, filename), downloaded_release_path)
-        downloaded_release_path
+        source = UriProvider.pipeline_uri(remote_dir, filename)
+        destination = "tmp/#{filename}"
+        download_adapter.download(source, destination)
+        destination
       end
     end
   end

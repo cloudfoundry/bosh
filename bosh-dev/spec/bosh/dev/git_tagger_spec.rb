@@ -10,24 +10,24 @@ module Bosh::Dev
       let(:sha)            { 'fake-sha' }
       let(:build_number)   { 'fake-build-id' }
 
-      before { Open3.stub(capture3: success) }
+      before { allow(Open3).to receive(:capture3).and_return(success) }
       let(:success) { [nil, nil, instance_double('Process::Status', success?: true)] }
 
       context 'when tagging and pushing succeeds' do
         it 'tags stable_branch with jenkins build number' do
-          Open3.should_receive(:capture3).with(
-            'git', 'tag', '-a', 'stable-fake-build-id', '-m', 'ci-tagged', 'fake-sha').and_return(success)
+          tag_name = 'stable-fake-build-id'
+          expect(Open3).to receive(:capture3).with("git tag -a #{tag_name} -m ci-tagged #{sha}").and_return(success)
           git_tagger.tag_and_push(sha, build_number)
         end
 
         it 'pushes tags' do
-          Open3.should_receive(:capture3).with('git', 'push', 'origin', '--tags').and_return(success)
+          expect(Open3).to receive(:capture3).with('git push origin --tags').and_return(success)
           git_tagger.tag_and_push(sha, build_number)
         end
       end
 
       context 'when tagging fails' do
-        before { Open3.stub(:capture3).and_return(fail) }
+        before { allow(Open3).to receive(:capture3).and_return(fail) }
         let(:fail) { [nil, nil, instance_double('Process::Status', success?: false)] }
 
         it 'raises an error' do
@@ -38,7 +38,7 @@ module Bosh::Dev
       end
 
       context 'when pushing fails' do
-        before { Open3.stub(:capture3).and_return(success, fail) }
+        before { allow(Open3).to receive(:capture3).and_return(success, fail) }
         let(:fail) { [nil, nil, instance_double('Process::Status', success?: false)] }
 
         it 'raises an error' do
@@ -59,7 +59,7 @@ module Bosh::Dev
           end
 
           it 'does not execute any git commands' do
-            Open3.should_not_receive(:capture3)
+            expect(Open3).to_not receive(:capture3)
             expect { git_tagger.tag_and_push(sha, build_number) }.to raise_error
           end
         end
@@ -84,22 +84,55 @@ module Bosh::Dev
     end
 
     describe '#stable_tag_for?' do
-      let(:shell) { instance_double('Bosh::Core::Shell', run: nil) }
-      let(:subject_sha) { 'some-subjected-sha' }
+      let(:commit_sha) { 'some-subjected-sha' }
+
       before do
-        Bosh::Core::Shell.stub(:new).and_return(shell)
+        allow(Open3).to receive(:capture3).with('git fetch --tags').and_return(
+          [ '', nil, instance_double('Process::Status', success?: true) ]
+        )
       end
 
       it 'returns true when there is a stable tag for the given sha' do
-        shell.stub(:run).with("git fetch --tags && git tag --contains #{subject_sha}").and_return('stable-123')
+        expect(Open3).to receive(:capture3).with("git tag --contains #{commit_sha}").and_return(
+          [ 'stable-123', nil, instance_double('Process::Status', success?: true) ]
+        )
 
-        expect(git_tagger.stable_tag_for?(subject_sha)).to eq(true)
+        expect(git_tagger.stable_tag_for?(commit_sha)).to eq(true)
       end
 
       it 'returns false when there is not a stable tag for the given sha' do
-        shell.stub(:run).with("git fetch --tags && git tag --contains #{subject_sha}").and_return('')
+        expect(Open3).to receive(:capture3).with("git tag --contains #{commit_sha}").and_return(
+          [ '', nil, instance_double('Process::Status', success?: true) ]
+        )
 
-        expect(git_tagger.stable_tag_for?(subject_sha)).to eq(false)
+        expect(git_tagger.stable_tag_for?(commit_sha)).to eq(false)
+      end
+    end
+
+    describe '#tag_sha' do
+      let(:tag_name) { 'fake-tag-name' }
+      let(:tag_sha) { 'fake-tag-sha' }
+
+      it 'returns the sha when there is a tag with the given name' do
+        expect(Open3).to receive(:capture3).with("git rev-parse #{tag_name}").and_return(
+          [ tag_sha, nil, instance_double('Process::Status', success?: true) ]
+        )
+
+        expect(git_tagger.tag_sha(tag_name)).to eq(tag_sha)
+      end
+
+      it 'errors when there is not a tag with the given name' do
+        expect(Open3).to receive(:capture3).with("git rev-parse #{tag_name}").and_return(
+          [ 'fake-error', nil, instance_double('Process::Status', success?: false) ]
+        )
+
+        expect{ git_tagger.tag_sha(tag_name) }.to raise_error(/fake-error/)
+      end
+    end
+
+    describe '#stable_tag_name' do
+      it 'prepends stable to the build number' do
+        expect(git_tagger.stable_tag_name('63')).to eq('stable-63')
       end
     end
   end

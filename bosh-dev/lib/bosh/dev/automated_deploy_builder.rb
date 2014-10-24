@@ -32,10 +32,11 @@ module Bosh::Dev
     end
 
     def build
-      deployments_repository = DeploymentsRepository.new(ENV)
+      logger = Logger.new(STDERR)
+
+      deployments_repository = DeploymentsRepository.new(ENV, logger)
       deployment_account = build_deployment_account(deployments_repository)
 
-      logger = Logger.new(STDERR)
       download_adapter = DownloadAdapter.new(logger)
       artifacts_downloader = ArtifactsDownloader.new(download_adapter, logger)
 

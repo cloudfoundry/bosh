@@ -1,5 +1,6 @@
 require 'bosh/stemcell/definition'
 require 'bosh/stemcell/archive_filename'
+require 'bosh/dev/stemcell_artifact'
 
 module Bosh::Dev
   class StemcellArtifacts
@@ -23,7 +24,7 @@ module Bosh::Dev
     }
 
     class << self
-      def all(version)
+      def all(version, logger)
         definitions = []
         STEMCELL_DEFINITIONS.each do |key, definition_args|
           if promote_stemcell?(key)
@@ -31,7 +32,7 @@ module Bosh::Dev
           end
         end
 
-        new(version, definitions)
+        new(version, definitions, logger)
       end
 
       private
@@ -43,34 +44,21 @@ module Bosh::Dev
       end
     end
 
-    def initialize(version, matrix)
+    def initialize(version, matrix, logger)
       @version = version
       @matrix = matrix
+      @logger = logger
     end
 
     def list
-      artifact_names = []
+      artifacts = []
 
-      matrix.each do |definition|
-        versions.each do |version|
-          filename = Bosh::Stemcell::ArchiveFilename.new(version, definition, 'bosh-stemcell')
-          artifact_names << archive_path(filename.to_s, definition.infrastructure)
-        end
+      @matrix.each do |stemcell_definition|
+        artifacts << StemcellArtifact.new(@version, stemcell_definition, @logger)
+        artifacts << StemcellArtifact.new('latest', stemcell_definition, @logger)
       end
 
-      artifact_names
-    end
-
-    private
-
-    attr_reader :version, :matrix
-
-    def versions
-      [version, 'latest']
-    end
-
-    def archive_path(filename, infrastructure)
-      File.join('bosh-stemcell', infrastructure.name, filename)
+      artifacts
     end
   end
 end

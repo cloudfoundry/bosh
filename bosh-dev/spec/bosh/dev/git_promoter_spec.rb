@@ -7,14 +7,16 @@ module Bosh::Dev
     describe '#promote' do
       subject(:git_promoter) { described_class.new(Logger.new(nil)) }
 
-      before { Open3.stub(:capture3) }
+      before { allow(Open3).to receive(:capture3) }
 
       context 'when promoting suceeds' do
-        let(:success) { ['', '', instance_double('Process::Status', success?: true)] }
-
         it 'promotes local dev_branch to remote stable_branch' do
-          Open3.should_receive(:capture3).with('git', 'push', 'origin', 'my_branch:your_branch').and_return(success)
-          git_promoter.promote('my_branch', 'your_branch')
+          dev_branch = 'my_branch'
+          stable_branch = 'your_branch'
+          expect(Open3).to receive(:capture3).with("gem push origin #{dev_branch}:#{stable_branch}").
+            and_return([ nil, nil, instance_double('Process::Status', success?: true) ])
+
+          git_promoter.promote(dev_branch, stable_branch)
         end
       end
 
@@ -22,7 +24,7 @@ module Bosh::Dev
         let(:error) { ['stdout', 'stderr', instance_double('Process::Status', success?: false)] }
 
         it 'raises an error' do
-          Open3.should_receive(:capture3).and_return(error)
+          expect(Open3).to receive(:capture3).and_return(error)
           expect {
             git_promoter.promote('my_branch', 'your_branch')
           }.to raise_error("Failed to git push local my_branch to origin your_branch: stdout: 'stdout', stderr: 'stderr'")
@@ -38,7 +40,7 @@ module Bosh::Dev
           end
 
           it 'does not execute any git commands' do
-            Open3.should_not_receive(:capture3)
+            expect(Open3).to_not receive(:capture3)
             expect { git_promoter.promote(invalid, 'stable') }.to raise_error
           end
         end
@@ -53,7 +55,7 @@ module Bosh::Dev
           end
 
           it 'does not execute any git commands' do
-            Open3.should_not_receive(:capture3)
+            expect(Open3).to_not receive(:capture3)
             expect { git_promoter.promote('unstable', invalid) }.to raise_error
           end
         end

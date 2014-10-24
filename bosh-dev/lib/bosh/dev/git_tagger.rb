@@ -12,18 +12,41 @@ module Bosh::Dev
       raise ArgumentError, 'sha is required' if sha.to_s.empty?
       raise ArgumentError, 'build_number is required' if build_number.to_s.empty?
 
-      tag_name = "stable-#{build_number}"
+      tag_name = stable_tag_name(build_number)
       @logger.info("Tagging and pushing #{sha} as #{tag_name}")
 
-      stdout, stderr, status = Open3.capture3('git', 'tag', '-a', tag_name, '-m', 'ci-tagged', sha)
+      stdout, stderr, status = exec_cmd("git tag -a #{tag_name} -m ci-tagged #{sha}")
       raise "Failed to tag #{sha}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
-      stdout, stderr, status = Open3.capture3('git', 'push', 'origin', '--tags')
+      stdout, stderr, status = exec_cmd('git push origin --tags')
       raise "Failed to push tags: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
     end
 
-    def stable_tag_for?(subject_sha)
-      !!Bosh::Core::Shell.new.run("git fetch --tags && git tag --contains #{subject_sha}").match(/stable-/)
+    def stable_tag_for?(commit_sha)
+      stdout, stderr, status = exec_cmd('git fetch --tags')
+      raise "Failed to fetch tags: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+
+      stdout, stderr, status = exec_cmd("git tag --contains #{commit_sha}")
+      raise "Failed to get tags that contain the commit sha #{commit_sha}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+
+      stdout.include?('stable-')
+    end
+
+    def tag_sha(tag_name)
+      stdout, stderr, status = exec_cmd("git rev-parse #{tag_name}")
+      raise "Failed to get sha of tag #{tag_name}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+      stdout
+    end
+
+    def stable_tag_name(build_number)
+      "stable-#{build_number}"
+    end
+
+    private
+
+    def exec_cmd(cmd)
+      @logger.info("Executing: #{cmd}")
+      Open3.capture3(cmd)
     end
   end
 end

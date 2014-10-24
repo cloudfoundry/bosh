@@ -5,10 +5,12 @@ require 'bosh/dev/git_repo_updater'
 
 module Bosh::Dev
   class DeploymentsRepository
-    def initialize(env, options = {})
+    def initialize(env, logger, options = {})
       @env = env
+      @logger = logger
       @shell = Bosh::Core::Shell.new
       @path_root = options.fetch(:path_root) { env.fetch('WORKSPACE', '/tmp') }
+      @git_repo_updater = Bosh::Dev::GitRepoUpdater.new(logger)
     end
 
     def path
@@ -20,8 +22,7 @@ module Bosh::Dev
     end
 
     def push
-      git_repo_updater = Bosh::Dev::GitRepoUpdater.new
-      git_repo_updater.update_directory(path)
+      @git_repo_updater.update_directory(path)
     end
 
     def update_and_push
