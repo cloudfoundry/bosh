@@ -279,16 +279,13 @@ module Bosh::Deployer
     def create_disk
       step 'Create disk' do
         size = config.resources['persistent_disk']
-
-        if config.resources.has_key?('persistent_disk_cloud_properties')
-          cloud_properties = config.resources['persistent_disk_cloud_properties']
-        else
-          cloud_properties = {}
-        end
-
-        state.disk_cid = cloud.create_disk(size, cloud_properties, state.vm_cid)
+        state.disk_cid = cloud.create_disk(size, persistent_disk_cloud_properties, state.vm_cid)
         save_state
       end
+    end
+
+    def persistent_disk_cloud_properties
+      config.resources.fetch('persistent_disk_cloud_properties', {})
     end
 
     # it is up to the caller to save/update disk state info
@@ -361,7 +358,7 @@ module Bosh::Deployer
         old_disk_cid = state.disk_cid
 
         # create a new disk and attach it
-        new_disk_cid = cloud.create_disk(size, {}, state.vm_cid)
+        new_disk_cid = cloud.create_disk(size, persistent_disk_cloud_properties, state.vm_cid)
         attach_disk(new_disk_cid, true)
 
         # migrate data (which mounts the disks)
