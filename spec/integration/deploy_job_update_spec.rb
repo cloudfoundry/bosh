@@ -12,7 +12,7 @@ describe 'deploy job update', type: :integration do
 
     times = start_and_finish_times_for_job_updates('last')
     expect(times['foobar/1']['started']).to be >= times['foobar/0']['started']
-    expect(times['foobar/1']['started']).to be < times['foobar/0']['finished']
+    expect(times['foobar/1']['started']).to be <= times['foobar/0']['finished']
     expect(times['foobar/2']['started']).to be >= [times['foobar/0']['finished'], times['foobar/1']['finished']].min
   end
 
