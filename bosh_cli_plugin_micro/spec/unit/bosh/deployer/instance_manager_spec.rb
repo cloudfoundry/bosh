@@ -203,5 +203,33 @@ module Bosh::Deployer
         expect(http_client).to have_received(:get).with('https://client-ip:80808/info')
       end
     end
+
+    describe '#create_disk' do
+      before do
+        allow(config).to receive(:cloud).and_return(infrastructure)
+        allow(state).to receive(:vm_cid).and_return('fake-vm-cid')
+        allow(infrastructure).to receive(:create_disk).and_return('fake-disk-cid')
+        allow(state).to receive(:disk_cid=).with('fake-disk-cid')
+
+        allow(config).to receive(:resources).and_return({
+          'persistent_disk' => 'fake-disk-size',
+          'persistent_disk_cloud_properties' => 'fake-cloud-properties',
+        })
+        allow(deployments_state).to receive(:save).with(infrastructure)
+      end
+
+      it 'passes the persistent_disk_cloud_properties to the cloud' do
+        expect(infrastructure).to receive(:create_disk).with('fake-disk-size', 'fake-cloud-properties', 'fake-vm-cid')
+        instance_manager.create_disk
+      end
+
+      it 'falls back if there are no persistent_disk_cloud_properties' do
+        allow(config).to receive(:resources).and_return({
+          'persistent_disk' => 'fake-disk-size',
+        })
+        expect(infrastructure).to receive(:create_disk).with('fake-disk-size', {}, 'fake-vm-cid')
+        instance_manager.create_disk
+      end
+    end
   end
 end
