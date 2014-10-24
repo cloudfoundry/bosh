@@ -102,7 +102,7 @@ module Bosh::Director
 
       begin
         cloud.detach_disk(vm.cid, disk_cid) if disk_cid
-      rescue Bosh::Clouds::DiskNotAttached => e
+      rescue Bosh::Clouds::DiskNotAttached
         @logger.warn("Disk cid '#{disk_cid}' detected, but the disk is already detached")
       end
 
