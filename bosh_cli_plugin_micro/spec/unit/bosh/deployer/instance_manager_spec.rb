@@ -219,7 +219,8 @@ module Bosh::Deployer
       end
 
       it 'passes the persistent_disk_cloud_properties to the cloud' do
-        expect(infrastructure).to receive(:create_disk).with('fake-disk-size', 'fake-cloud-properties', 'fake-vm-cid')
+        expect(infrastructure).to receive(:create_disk).
+          with('fake-disk-size', 'fake-cloud-properties', 'fake-vm-cid')
         instance_manager.create_disk
       end
 
