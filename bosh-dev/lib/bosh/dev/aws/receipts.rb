@@ -3,8 +3,9 @@ require 'bosh/dev/deployments_repository'
 
 module Bosh::Dev::Aws
   class Receipts
-    def initialize(env, logger)
+    def initialize(env)
       @env = env
+      logger = Logger.new(STDERR)
       @deployments_repository = Bosh::Dev::DeploymentsRepository.new(env, logger)
     end
 

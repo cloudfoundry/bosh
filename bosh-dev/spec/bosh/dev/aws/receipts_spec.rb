@@ -4,7 +4,7 @@ require 'logger'
 
 module Bosh::Dev::Aws
   describe Receipts do
-    subject { described_class.new(env, logger) }
+    subject { described_class.new(env) }
     let(:env) { { 'BOSH_VPC_SUBDOMAIN' => 'fake_BOSH_VPC_SUBDOMAIN' } }
     let(:logger) { Logger.new('/dev/null') }
 
