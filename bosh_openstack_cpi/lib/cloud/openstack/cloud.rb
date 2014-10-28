@@ -132,7 +132,9 @@ module Bosh::OpenStackCloud
             }
 
             image_properties = {}
-            vanilla_options = ['name', 'version', 'os_type', 'os_distro', 'architecture', 'auto_disk_config']
+            vanilla_options = ['name', 'version', 'os_type', 'os_distro', 'architecture', 'auto_disk_config',
+                               'hw_vif_model', 'hypervisor_type', 'vmware_adaptertype', 'vmware_disktype',
+                               'vmware_linked_clone', 'vmware_ostype']
             vanilla_options.reject{ |o| cloud_properties[o].nil? }.each do |key|
               image_properties[key.to_sym] = cloud_properties[key]
             end
