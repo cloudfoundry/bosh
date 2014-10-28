@@ -1,3 +1,64 @@
+## 2749
+
+Improvements:
+
+  * director: Do not run the first errand if there is only one errand [7c37a8a]
+
+## 2748
+
+Improvements:
+
+  * director: Add configurable ssl options for the director nginx [6e497ef]
+  * agent: Bump bosh-agent to disable SSLv3 support (agent's micro server) [9ec67d5]
+
+Bug Fixes:
+
+  * director: Correct invalid default value for config_drive for OpenStack [9e2d9db]
+
+## 2745
+
+Improvements:
+
+  * stemcell: aws: Resume producing light stemcells for non hvm virtualization [c10fb93]
+
+## 2744
+
+New Features:
+
+  * cli: Added `bosh errands` command to list for deployment [PR 625]
+
+Improvements:
+
+  * director: update bosh_vcloud_cpi gem version 0.7.1
+       to pull in fixes for missing CPI methods [f32af44]
+  * director: Refactored NatsRpc to handle all director NATS calls
+       to fix occasional worker hangs [870dd6f]
+  * director: Run NATS.connect on EM thread to fix occasional worker hangs [94e7d6a]
+
+## 2743
+
+New Features:
+
+  * cpi: openstack: Add openstack CPI multiple manual networks support
+       for Ubuntu 14.04 using BOSH agent [c239db2]
+
+Improvements:
+
+  * director: Refactored transitive dependency resolution to fix bug
+       with importing releases [80aade1]
+  * cpi: Bosh::Registry#update_settings considers 2xx successful
+       to be compatible with new registry used by bosh-micro cli [01f26f2]
+  * cpi: Add bin/aws_cpi to bosh_aws_cpi as preparation for externalizing AWS CPI [8c31679]
+
+## 2739
+
+New Features:
+
+  * cpi: openstack: Make config drive config optional for open stack [0d77bd4]
+  * cpi: openstack: Allow to configure CPI to use either cdrom or disk
+       for config-drive mechanism [2696cdb]
+  * stemcell: aws: Build hvm light aws stemcell in addition to PV [2754b45]
+
 ## 2732
 
 New Features:
@@ -10,7 +71,7 @@ Improvements:
   * stemcell: openstack: Convert openstack image to qcow2 0.10 compat [679f670]
   * stemcell: ubuntu: Symlink vim to vim.tiny on Ubuntu [27f0d1a]
   * director: Require disk_size to be set on a disk_pool in manifest [7b85b28]
-  * cpi: vsphere: Creates VM even when folder already exists [191c889]
+  * cpi: vsphere: Creates VM even when multi-tenant folder already exists [191c889]
   * cpi: openstack: Added openstack_region property for volumes [73af42c]
 
 ## 2719

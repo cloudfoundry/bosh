@@ -35,7 +35,7 @@ module Bosh::Director
 
       it 'sets the date header' do
         get '/'
-        last_response.headers['Date'].should_not be_nil
+        expect(last_response.headers['Date']).to be
       end
 
       describe 'API calls' do
@@ -47,7 +47,7 @@ module Bosh::Director
 
           it 'only consumes text/yaml' do
             post '/', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/plain' }
-            last_response.status.should == 404
+            expect(last_response.status).to eq(404)
           end
         end
 
@@ -73,23 +73,23 @@ module Bosh::Director
                 create(:deployment => deployment, :job => 'dea',
                        :index => '0', :state => 'started')
             put '/foo/jobs/dea/0/resurrection', Yajl::Encoder.encode('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
-            last_response.status.should == 200
+            expect(last_response.status).to eq(200)
             expect(instance.reload.resurrection_paused).to be(true)
           end
 
           it "doesn't like invalid indices" do
             put '/foo/jobs/dea/zb?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
-            last_response.status.should == 400
+           expect(last_response.status).to eq(400)
           end
 
           it 'can get job information' do
             deployment = Models::Deployment.create(name: 'foo', manifest: Psych.dump({'foo' => 'bar'}))
             instance = Models::Instance.create(deployment: deployment, job: 'nats', index: '0', state: 'started')
-            disk = Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
+            Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
 
             get '/foo/jobs/nats/0', {}
 
-            last_response.status.should == 200
+            expect(last_response.status).to eq(200)
             expected = {
                 'deployment' => 'foo',
                 'job' => 'nats',
@@ -98,36 +98,38 @@ module Bosh::Director
                 'disks' => %w[disk_cid]
             }
 
-            Yajl::Parser.parse(last_response.body).should == expected
+            expect(Yajl::Parser.parse(last_response.body)).to eq(expected)
           end
 
           it 'should return 404 if the instance cannot be found' do
             get '/foo/jobs/nats/0', {}
-            last_response.status.should == 404
+            expect(last_response.status).to eq(404)
           end
         end
 
         describe 'log management' do
           it 'allows fetching logs from a particular instance' do
-            deployment = Models::Deployment.
-                create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
-            instance = Models::Instance.
-                create(:deployment => deployment, :job => 'nats',
-                       :index => '0', :state => 'started')
+            deployment = Models::Deployment.create(:name => 'foo', :manifest => Psych.dump({'foo' => 'bar'}))
+            Models::Instance.create(
+              :deployment => deployment,
+              :job => 'nats',
+              :index => '0',
+              :state => 'started',
+            )
             get '/foo/jobs/nats/0/logs', {}
             expect_redirect_to_queued_task(last_response)
           end
 
           it '404 if no instance' do
             get '/baz/jobs/nats/0/logs', {}
-            last_response.status.should == 404
+            expect(last_response.status).to eq(404)
           end
 
           it '404 if no deployment' do
             deployment = Models::Deployment.
                 create(:name => 'bar', :manifest => Psych.dump({'foo' => 'bar'}))
             get '/bar/jobs/nats/0/logs', {}
-            last_response.status.should == 404
+            expect(last_response.status).to eq(404)
           end
         end
 
@@ -153,11 +155,11 @@ module Bosh::Director
             }
 
             get '/', {}, {}
-            last_response.status.should == 200
+            expect(last_response.status).to eq(200)
 
             body = Yajl::Parser.parse(last_response.body)
-            body.kind_of?(Array).should be(true)
-            body.size.should == num_dummies
+            expect(body.kind_of?(Array)).to be(true)
+            expect(body.size).to eq(num_dummies)
 
             expected_collection = deployments.sort_by { |e| e.name }.map { |e|
               name = e.name
@@ -170,7 +172,7 @@ module Bosh::Director
               Hash['name', name, 'releases', releases, 'stemcells', stemcells]
             }
 
-            body.should == expected_collection
+            expect(body).to eq(expected_collection)
           end
         end
 
@@ -181,9 +183,9 @@ module Bosh::Director
                        :manifest => Psych.dump({'foo' => 'bar'}))
             get '/test_deployment'
 
-            last_response.status.should == 200
+            expect(last_response.status).to eq(200)
             body = Yajl::Parser.parse(last_response.body)
-            Psych.load(body['manifest']).should == {'foo' => 'bar'}
+            expect(Psych.load(body['manifest'])).to eq('foo' => 'bar')
           end
         end
 
@@ -192,7 +194,6 @@ module Bosh::Director
             deployment = Models::Deployment.
                 create(:name => 'test_deployment',
                        :manifest => Psych.dump({'foo' => 'bar'}))
-            vms = []
 
             15.times do |i|
               vm_params = {
@@ -209,23 +210,22 @@ module Bosh::Director
                   'index' => i,
                   'state' => 'started'
               }
-              instance = Models::Instance.create(instance_params)
+              Models::Instance.create(instance_params)
             end
 
             get '/test_deployment/vms'
 
-            last_response.status.should == 200
+            expect(last_response.status).to eq(200)
             body = Yajl::Parser.parse(last_response.body)
-            body.should be_kind_of Array
-            body.size.should == 15
+            expect(body.size).to eq(15)
 
             15.times do |i|
-              body[i].should == {
+              expect(body[i]).to eq(
                   'agent_id' => "agent-#{i}",
                   'job' => "job-#{i}",
                   'index' => i,
-                  'cid' => "cid-#{i}"
-              }
+                  'cid' => "cid-#{i}",
+              )
             end
           end
         end
@@ -247,32 +247,32 @@ module Bosh::Director
             deployment = Models::Deployment.make(:name => 'mycloud')
 
             get '/mycloud/properties/foo'
-            last_response.status.should == 404
+            expect(last_response.status).to eq(404)
 
             get '/othercloud/properties/foo'
-            last_response.status.should == 404
+            expect(last_response.status).to eq(404)
 
             post '/mycloud/properties', Yajl::Encoder.encode('name' => 'foo', 'value' => 'bar'), { 'CONTENT_TYPE' => 'application/json' }
-            last_response.status.should == 204
+            expect(last_response.status).to eq(204)
 
             get '/mycloud/properties/foo'
-            last_response.status.should == 200
-            Yajl::Parser.parse(last_response.body)['value'].should == 'bar'
+            expect(last_response.status).to eq(200)
+            expect(Yajl::Parser.parse(last_response.body)['value']).to eq('bar')
 
             get '/othercloud/properties/foo'
-            last_response.status.should == 404
+            expect(last_response.status).to eq(404)
 
             put '/mycloud/properties/foo', Yajl::Encoder.encode('value' => 'baz'), { 'CONTENT_TYPE' => 'application/json' }
-            last_response.status.should == 204
+            expect(last_response.status).to eq(204)
 
             get '/mycloud/properties/foo'
-            Yajl::Parser.parse(last_response.body)['value'].should == 'baz'
+            expect(Yajl::Parser.parse(last_response.body)['value']).to eq('baz')
 
             delete '/mycloud/properties/foo'
-            last_response.status.should == 204
+            expect(last_response.status).to eq(204)
 
             get '/mycloud/properties/foo'
-            last_response.status.should == 404
+            expect(last_response.status).to eq(404)
           end
         end
 
@@ -281,8 +281,8 @@ module Bosh::Director
 
           it 'exposes problem managent REST API' do
             get '/mycloud/problems'
-            last_response.status.should == 200
-            Yajl::Parser.parse(last_response.body).should == []
+            expect(last_response.status).to eq(200)
+            expect(Yajl::Parser.parse(last_response.body)).to eq([])
 
             post '/mycloud/scans'
             expect_redirect_to_queued_task(last_response)
@@ -344,54 +344,128 @@ module Bosh::Director
             it 'should raise an error if the snapshot belongs to a different deployment' do
               snap = Models::Snapshot.make(snapshot_cid: 'snap2b')
               delete "/#{snap.persistent_disk.instance.deployment.name}/snapshots/snap2a"
-              last_response.status.should == 400
+              expect(last_response.status).to eq(400)
             end
           end
 
           describe 'listing' do
             it 'should list all snapshots for a job' do
               get '/mycloud/jobs/job/0/snapshots'
-              last_response.status.should == 200
+              expect(last_response.status).to eq(200)
             end
 
             it 'should list all snapshots for a deployment' do
               get '/mycloud/snapshots'
-              last_response.status.should == 200
+              expect(last_response.status).to eq(200)
             end
           end
         end
-      end
 
-      describe 'POST', '/:deployment_name/errands/:name/runs' do
-        before { Config.base_dir = Dir.mktmpdir }
-        after { FileUtils.rm_rf(Config.base_dir) }
+        describe 'errands' do
 
-        def perform
-          post(
-            '/fake-dep-name/errands/fake-errand-name/runs',
-            JSON.dump({}),
-            { 'CONTENT_TYPE' => 'application/json' },
-          )
-        end
+          describe 'GET', '/:deployment_name/errands' do
+            before { Config.base_dir = Dir.mktmpdir }
+            after { FileUtils.rm_rf(Config.base_dir) }
 
-        it 'enqueues a RunErrand task' do
-          job_queue = instance_double('Bosh::Director::JobQueue')
-          allow(JobQueue).to receive(:new).and_return(job_queue)
+            def perform
+              get(
+                '/fake-dep-name/errands',
+                { 'CONTENT_TYPE' => 'application/json' },
+              )
+            end
 
-          task = instance_double('Bosh::Director::Models::Task', id: 1)
-          expect(job_queue).to receive(:enqueue).with(
-            'admin',
-            Jobs::RunErrand,
-            'run errand fake-errand-name from deployment fake-dep-name',
-            ['fake-dep-name', 'fake-errand-name'],
-          ).and_return(task)
+            let!(:deployment_model) do
+              Models::Deployment.make(
+                name: 'fake-dep-name',
+                manifest: "---\nmanifest: true",
+              )
+            end
 
-          perform
-        end
+            before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
+            let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
-        it 'returns a task' do
-          perform
-          expect_redirect_to_queued_task(last_response)
+            before { allow(Config).to receive(:logger).with(no_args).and_return(logger) }
+            let(:logger) { Logger.new('/dev/null') }
+
+            before do
+              allow(DeploymentPlan::Planner).to receive(:parse).
+                with({'manifest' => true}, {}, event_log, logger).
+                and_return(deployment)
+            end
+            let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment') }
+
+            before { allow(deployment).to receive(:jobs).and_return(jobs) }
+            let(:jobs) { [
+              instance_double('Bosh::Director::DeploymentPlan::Job', name: 'an-errand', can_run_as_errand?: true),
+              instance_double('Bosh::Director::DeploymentPlan::Job', name: 'a-service', can_run_as_errand?: false),
+              instance_double('Bosh::Director::DeploymentPlan::Job', name: 'another-errand', can_run_as_errand?: true),
+            ]}
+
+            context 'authenticated access' do
+              before { authorize 'admin', 'admin' }
+
+              it 'returns errands in deployment' do
+                response = perform
+                expect(response.body).to eq('[{"name":"an-errand"},{"name":"another-errand"}]')
+                expect(last_response.status).to eq(200)
+              end
+
+            end
+
+            context 'accessing with invalid credentials' do
+              before { authorize 'invalid-user', 'invalid-password' }
+              it 'returns 401' do
+                perform
+                expect(last_response.status).to eq(401)
+              end
+            end
+          end
+
+          describe 'POST', '/:deployment_name/errands/:name/runs' do
+            before { Config.base_dir = Dir.mktmpdir }
+            after { FileUtils.rm_rf(Config.base_dir) }
+
+            def perform
+              post(
+                '/fake-dep-name/errands/fake-errand-name/runs',
+                JSON.dump({}),
+                { 'CONTENT_TYPE' => 'application/json' },
+              )
+            end
+
+            context 'authenticated access' do
+              before { authorize 'admin', 'admin' }
+
+              it 'enqueues a RunErrand task' do
+                job_queue = instance_double('Bosh::Director::JobQueue')
+                allow(JobQueue).to receive(:new).and_return(job_queue)
+
+                task = instance_double('Bosh::Director::Models::Task', id: 1)
+                expect(job_queue).to receive(:enqueue).with(
+                  'admin',
+                  Jobs::RunErrand,
+                  'run errand fake-errand-name from deployment fake-dep-name',
+                  ['fake-dep-name', 'fake-errand-name'],
+                ).and_return(task)
+
+                perform
+              end
+
+              it 'returns a task' do
+                perform
+                expect_redirect_to_queued_task(last_response)
+              end
+            end
+
+            context 'accessing with invalid credentials' do
+              before { authorize 'invalid-user', 'invalid-password' }
+
+              it 'returns 401' do
+                perform
+                expect(last_response.status).to eq(401)
+              end
+            end
+          end
         end
       end
     end

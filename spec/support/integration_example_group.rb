@@ -51,7 +51,7 @@ module IntegrationExampleGroup
   end
 
   def target_and_login
-    bosh_runner.run("target http://localhost:#{current_sandbox.director_port}")
+    bosh_runner.run("target #{current_sandbox.director_url}")
     bosh_runner.run('login admin admin')
   end
 

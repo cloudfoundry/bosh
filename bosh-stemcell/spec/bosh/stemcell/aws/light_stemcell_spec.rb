@@ -24,7 +24,7 @@ module Bosh::Stemcell
         end
 
         context 'when virtualization type is hvm' do
-          let(:virtualization_type) { "hvm" }
+          let(:virtualization_type) { Bosh::Stemcell::Aws::HVM_VIRTUALIZATION }
           it { should eq(spec_asset('light-fake-stemcell-aws-xen-hvm-ubuntu.tgz')) }
         end
       end
@@ -82,11 +82,41 @@ module Bosh::Stemcell
         end
 
         it 'adds the ami to the stemcell manifest' do
-          expect(Psych).to receive(:dump) do |stemcell_properties, out|
+          expect(Psych).to receive(:dump) do |stemcell_properties, _|
             expect(stemcell_properties['cloud_properties']['ami']).to eq({ 'fake-region' => 'fake-ami-id' })
           end
 
           light_stemcell.write_archive
+        end
+
+        context 'when the virtualization is hvm' do
+          let(:virtualization_type) { Bosh::Stemcell::Aws::HVM_VIRTUALIZATION }
+          it 'replaces the name in the manifest when it is a hvm virtualization' do
+            stemcell.manifest['name'] = 'xen-fake-stemcell'
+            expect(Psych).to receive(:dump) do |stemcell_properties, _|
+              expect(stemcell_properties['name']).to eq('xen-hvm-fake-stemcell')
+            end
+            light_stemcell.write_archive
+          end
+
+          it 'replaces the cloud_properties name in the manifest when it is a hvm virtualization' do
+            stemcell.manifest['cloud_properties']['name'] = 'xen-fake-stemcell'
+            expect(Psych).to receive(:dump) do |stemcell_properties, _|
+              expect(stemcell_properties['cloud_properties']['name']).to eq('xen-hvm-fake-stemcell')
+            end
+            light_stemcell.write_archive
+          end
+        end
+
+        context 'when the virtualization is not hvm' do
+          let(:virtualization_type) { 'non-hvm' }
+          it 'does not replace the name in the manifest' do
+            stemcell.manifest['name'] = 'xen-fake-stemcell'
+            expect(Psych).to receive(:dump) do |stemcell_properties, _|
+              expect(stemcell_properties['name']).to eq('xen-fake-stemcell')
+            end
+            light_stemcell.write_archive
+          end
         end
 
         it 'names the stemcell manifest correctly' do

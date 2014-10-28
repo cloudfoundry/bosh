@@ -42,18 +42,14 @@ module Bosh::Director
       ERROR = 3
 
       def send_alert(instance, message)
-        nats = Bosh::Director::Config.nats
-        payload = Yajl::Encoder.encode(
-            {
-                "id"         => 'director',
-                "severity"   => ERROR,
-                "title"      => "director - snapshot failure",
-                "summary"    => "failed to snapshot #{instance.job}/#{instance.index}: #{message}",
-                "created_at" => Time.now.to_i
-            }
-        )
-
-        nats.publish('hm.director.alert', payload)
+        payload = {
+            'id'         => 'director',
+            'severity'   => ERROR,
+            'title'      => 'director - snapshot failure',
+            'summary'    => "failed to snapshot #{instance.job}/#{instance.index}: #{message}",
+            'created_at' => Time.now.to_i
+        }
+        Bosh::Director::Config.nats_rpc.send_message('hm.director.alert', payload)
       end
     end
   end

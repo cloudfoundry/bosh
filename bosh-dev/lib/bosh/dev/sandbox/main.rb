@@ -24,6 +24,9 @@ module Bosh::Dev::Sandbox
     DIRECTOR_NGINX_CONFIG = 'director_nginx.conf'
     DIRECTOR_NGINX_CONF_TEMPLATE = File.join(ASSETS_DIR, 'director_nginx.conf.erb')
 
+    DIRECTOR_NGINX_SSL_CERT = File.join(ASSETS_DIR, 'ca', 'ca.pem')
+    DIRECTOR_NGINX_SSL_CERT_KEY = File.join(ASSETS_DIR, 'ca', 'ca.key')
+
     REDIS_CONFIG = 'redis_test.conf'
     REDIS_CONF_TEMPLATE = File.join(ASSETS_DIR, 'redis_test.conf.erb')
 
@@ -275,6 +278,10 @@ module Bosh::Dev::Sandbox
       @hm_port ||= get_named_port(:hm)
     end
 
+    def director_url
+      @director_url ||= "https://localhost:#{director_port}"
+    end
+
     def director_port
       @director_port ||= get_named_port(:director)
     end
@@ -304,6 +311,14 @@ module Bosh::Dev::Sandbox
         config_path: sandbox_path(DIRECTOR_CONFIG),
         env_path: ENV['PATH']
       }
+    end
+
+    def director_ssl_cert_path
+      DIRECTOR_NGINX_SSL_CERT
+    end
+
+    def director_ssl_cert_key_path
+      DIRECTOR_NGINX_SSL_CERT_KEY
     end
 
     private

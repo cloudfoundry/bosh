@@ -409,8 +409,9 @@ describe Bosh::Cli::Command::Errand do
       }.to raise_error(Bosh::Cli::CliError, 'Deployment has no available errands')
     end
 
-    it 'with 1 errand selects only errand and invokes run_errand(name)' do
+    it 'with 1 errand, prompts and invokes run_errand(name)' do
       expect(command).to receive(:perform_run_errand).with('an-errand')
+      expect(command).to receive(:choose).and_return({'name' => 'an-errand'})
       allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'fake-deployment'})
       expect(director).to receive(:list_errands).and_return([{"name" => "an-errand"}])
 
@@ -418,8 +419,8 @@ describe Bosh::Cli::Command::Errand do
     end
 
     it 'with 2+ errands, prompts and invokes run_errand(name)' do
-      expect(command).to receive(:perform_run_errand).with('an-errand')
-      expect(command).to receive(:choose).and_return({'name' => 'an-errand'})
+      expect(command).to receive(:perform_run_errand).with('another-errand')
+      expect(command).to receive(:choose).and_return({'name' => 'another-errand'})
       allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'fake-deployment'})
       expect(director).to receive(:list_errands).and_return([{"name" => "an-errand"}, {"name" => "another-errand"}])
       perform

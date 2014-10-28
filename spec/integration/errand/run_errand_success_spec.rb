@@ -80,6 +80,8 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
         deploy_simple(manifest_hash: manifest_hash)
         expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
 
+        expect_errands('errand1-name', 'errand2-name')
+
         output, exit_code = bosh_runner.run('run errand errand1-name', return_exit_code: true)
         expect(output).to include('some-errand1-stdout')
         expect(exit_code).to eq(0)
@@ -95,9 +97,11 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
     context 'with a dynamically sized resource pool size' do
       before { manifest_hash['resource_pools'].first.delete('size') }
 
-      it 'allocates and deallocates errand vms for each errand run' do
+      it 'allocates and de-allocates errand vms for each errand run' do
         deploy_simple(manifest_hash: manifest_hash)
         expect_running_vms(%w(foobar/0))
+
+        expect_errands('errand1-name', 'errand2-name')
 
         output, exit_code = bosh_runner.run('run errand errand1-name', return_exit_code: true)
         expect(output).to include('some-errand1-stdout')
@@ -142,6 +146,8 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
 
       deploy_simple(manifest_hash: manifest_hash)
 
+      expect_errands('errand1-name')
+
       @output, @exit_code = bosh_runner.run("run errand errand1-name --download-logs --logs-dir #{@tmp_dir}",
                                             {return_exit_code: true})
     end
@@ -172,5 +178,12 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
     vms = director.vms
     expect(vms.map(&:job_name_index)).to match_array(job_name_index_list)
     expect(vms.map(&:last_known_state).uniq).to eq(['running'])
+  end
+
+  def expect_errands(*expected_errands)
+    output, _ = bosh_runner.run('errands')
+    expected_errands.each do |errand|
+      expect(output).to include(errand)
+    end
   end
 end

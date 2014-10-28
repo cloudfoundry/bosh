@@ -22,7 +22,7 @@ describe 'cli: status', type: :integration do
   end
 
   it 'returns just uuid when `status --uuid` is called' do
-    bosh_runner.run("target http://localhost:#{current_sandbox.director_port}")
+    bosh_runner.run("target #{current_sandbox.director_url}")
     expect_output('status --uuid', <<-OUT)
 #{Bosh::Dev::Sandbox::Main::DIRECTOR_UUID}
     OUT

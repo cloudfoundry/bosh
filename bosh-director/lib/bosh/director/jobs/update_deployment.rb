@@ -3,6 +3,8 @@ module Bosh::Director
     class UpdateDeployment < BaseJob
       include LockHelper
 
+      attr_reader :notifier
+
       @queue = :normal
 
       def self.job_type
@@ -31,6 +33,9 @@ module Bosh::Director
         manifest_as_hash = Psych.load(@manifest)
         @deployment_plan = DeploymentPlan::Planner.parse(manifest_as_hash, plan_options, event_log, logger)
         logger.info('Created deployment plan')
+
+        nats_rpc = Config.nats_rpc
+        @notifier = DeploymentPlan::Notifier.new(@deployment_plan, nats_rpc, logger)
 
         resource_pools = @deployment_plan.resource_pools
         @resource_pool_updaters = resource_pools.map do |resource_pool|
@@ -73,6 +78,7 @@ module Bosh::Director
       def perform
         with_deployment_lock(@deployment_plan) do
           logger.info('Preparing deployment')
+          notifier.send_start_event
           prepare
           begin
             deployment = @deployment_plan.model
@@ -94,12 +100,16 @@ module Bosh::Director
 
             deployment.manifest = @manifest
             deployment.save
+            notifier.send_end_event
             logger.info('Finished updating deployment')
             "/deployments/#{deployment.name}"
           ensure
             update_stemcell_references
           end
         end
+      rescue Exception => e
+        notifier.send_error_event e
+        raise e
       ensure
         FileUtils.rm_rf(@manifest_file)
       end
