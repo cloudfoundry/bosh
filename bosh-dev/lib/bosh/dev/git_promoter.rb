@@ -11,7 +11,7 @@ module Bosh::Dev
       raise ArgumentError, 'dev_branch is required' if dev_branch.to_s.empty?
       raise ArgumentError, 'stable_branch is required' if stable_branch.to_s.empty?
 
-      stdout, stderr, status = exec_cmd("gem push origin #{dev_branch}:#{stable_branch}")
+      stdout, stderr, status = exec_cmd("git push origin #{dev_branch}:#{stable_branch}")
       raise "Failed to git push local #{dev_branch} to origin #{stable_branch}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
     end
 

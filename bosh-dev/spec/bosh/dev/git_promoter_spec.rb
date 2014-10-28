@@ -13,7 +13,7 @@ module Bosh::Dev
         it 'promotes local dev_branch to remote stable_branch' do
           dev_branch = 'my_branch'
           stable_branch = 'your_branch'
-          expect(Open3).to receive(:capture3).with("gem push origin #{dev_branch}:#{stable_branch}").
+          expect(Open3).to receive(:capture3).with("git push origin #{dev_branch}:#{stable_branch}").
             and_return([ nil, nil, instance_double('Process::Status', success?: true) ])
 
           git_promoter.promote(dev_branch, stable_branch)
