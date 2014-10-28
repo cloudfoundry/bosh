@@ -9,9 +9,12 @@ source $base_dir/lib/prelude_config.bash
 cd $assets_dir
 rm -rf s3cli
 
+# Use github token to avoid rate limiting
 if [ -e $GITHUB_OAUTH_TOKEN ]; then
-  AUTHENTICATION="-u ${GITHUB_OAUTH_TOKEN}:x-oauth-basic"
+  authentication="-u ${GITHUB_OAUTH_TOKEN}:x-oauth-basic"
 fi
-curl $AUTHENTICATION -L -o s3cli.tar.gz https://api.github.com/repos/pivotal-golang/s3cli/tarball/2c4a7f0ceef411532bb051e7ca55a490a565cf60
+
+curl $authentication -L -o s3cli.tar.gz https://api.github.com/repos/pivotal-golang/s3cli/tarball/2c4a7f0ceef411532bb051e7ca55a490a565cf60
+
 mkdir s3cli
 tar -xzf s3cli.tar.gz -C s3cli/ --strip-components 1
