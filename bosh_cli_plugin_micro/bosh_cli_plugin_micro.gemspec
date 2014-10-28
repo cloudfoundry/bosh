@@ -18,7 +18,8 @@ Gem::Specification.new do |s|
   s.files         = `git ls-files -- lib/* config/*`.split("\n") + %w(README.rdoc)
   s.require_paths = ['lib', 'config']
 
-  s.add_dependency 'sqlite3', '~>1.3.7'
+  s.add_dependency 'sqlite3',     '~>1.3.7'
+  s.add_dependency 'mono_logger', '~>1.1.0'
 
   s.add_dependency 'bosh_cli',      "~>#{version}"
   s.add_dependency 'bosh-stemcell', "~>#{version}"

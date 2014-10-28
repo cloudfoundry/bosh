@@ -1,5 +1,6 @@
 require 'bosh/deployer/models/instance'
 require 'bosh/deployer/infrastructure_defaults'
+require 'mono_logger'
 
 module Bosh::Deployer
   class Configuration
@@ -23,8 +24,8 @@ module Bosh::Deployer
       @env = config['env']
       @deployment_network = config['deployment_network']
 
-      @logger = Logger.new(config['logging']['file'] || STDOUT)
-      @logger.level = Logger.const_get(config['logging']['level'].upcase)
+      @logger = MonoLogger.new(config['logging']['file'] || STDOUT)
+      @logger.level = MonoLogger.const_get(config['logging']['level'].upcase)
       @logger.formatter = ThreadFormatter.new
 
       apply_spec = config['apply_spec']
