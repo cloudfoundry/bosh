@@ -268,7 +268,10 @@ describe 'director.yml.erb.erb' do
         'secret_access_key' => 'secret',
         'default_key_name' => 'default_key_name',
         'default_security_groups' => 'default_security_groups',
-        'region' => 'region'
+        'region' => 'region',
+        'max_retries' => 2,
+        'http_read_timeout' => 20,
+        'http_wire_trace' => true,
       }
 
       deployment_manifest_fragment['properties']['registry'] = {
