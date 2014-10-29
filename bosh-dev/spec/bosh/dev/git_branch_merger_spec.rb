@@ -34,7 +34,7 @@ module Bosh::Dev
       let(:commit_sha) { 'fake-commit-sha' }
 
       before do
-        allow(Open3).to receive(:capture3).with("git fetch #{branch_name}").and_return(
+        allow(Open3).to receive(:capture3).with("git fetch origin #{branch_name}").and_return(
           [ '', nil, instance_double('Process::Status', success?: true) ]
         )
       end

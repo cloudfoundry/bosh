@@ -20,7 +20,7 @@ module Bosh::Dev
     end
 
     def branch_contains?(branch_name, commit_sha)
-      stdout, stderr, status = exec_cmd("git fetch #{branch_name}")
+      stdout, stderr, status = exec_cmd("git fetch origin #{branch_name}")
       raise "Failed fetching branch #{branch_name}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
       stdout, stderr, status = exec_cmd("'git branch --contains #{commit_sha}")
