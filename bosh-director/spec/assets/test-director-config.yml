@@ -10,6 +10,9 @@ redis:
   port: 63790
   password:
 
+deployment:
+  ignores_uuid: true
+
 dir: /tmp/boshdir
 db:
   adapter: sqlite

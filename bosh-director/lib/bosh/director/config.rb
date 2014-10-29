@@ -30,6 +30,7 @@ module Bosh::Director
         :revision,
         :task_checkpoint_interval,
         :uuid,
+        :ignores_uuid,
         :current_job,
         :encryption,
         :fix_stateful_nodes,
@@ -125,6 +126,7 @@ module Bosh::Director
 
         @uuid = override_uuid || Bosh::Director::Models::DirectorAttribute.find_or_create_uuid(@logger)
         @logger.info("Director UUID: #{@uuid}")
+        @ignores_uuid = config.fetch('deployment', {}).fetch('ignores_uuid', false)
 
         @encryption = config['encryption']
         @fix_stateful_nodes = config.fetch('scan_and_fix', {})

@@ -60,6 +60,9 @@ scheduled_jobs:
     schedule: <%= backup_schedule %>
   <% end %>
 
+deployment:
+  ignores_uuid: <%= p('director.ignores_uuid') %>
+
 scan_and_fix:
   auto_fix_stateful_nodes: <%= p('director.auto_fix_stateful_nodes') %>
 <% if_p('dns.db.adapter', 'dns.db.user', 'dns.db.password', 'dns.db.host',

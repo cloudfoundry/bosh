@@ -90,6 +90,9 @@ properties:
   director.max_vm_create_tries:
     description: Max retries when creating VMs
     default: 5
+  director.ignores_uuid:
+    description: Is this director lenient about the manifests that are deployed to it?
+    default: false
 
   redis.address:
     description: Address of the redis server

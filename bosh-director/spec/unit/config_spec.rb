@@ -88,4 +88,21 @@ describe Bosh::Director::Config do
       expect(described_class.cpi_task_log).to eq('fake-cpi-log')
     end
   end
+
+  describe '#ignores_uuid' do
+    it 'returns whether or not the director cares about the uuid in manifests' do
+      config = described_class.load_hash(test_config)
+      described_class.configure(config.hash)
+
+      expect(described_class.ignores_uuid).to eq(true)
+    end
+
+    it 'returns false if the value is not set' do
+      test_config.fetch('deployment').delete('ignores_uuid')
+      config = described_class.load_hash(test_config)
+      described_class.configure(config.hash)
+
+      expect(described_class.ignores_uuid).to eq(false)
+    end
+  end
 end
