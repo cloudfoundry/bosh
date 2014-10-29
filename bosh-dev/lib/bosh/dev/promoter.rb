@@ -77,7 +77,7 @@ module Bosh::Dev
         candidate_sha = stage_args.fetch(:candidate_sha)
         stable_branch = stage_args.fetch(:stable_branch)
 
-        release_promoter = ReleaseChangePromoter.new(candidate_build_number, candidate_sha, @downloader)
+        release_promoter = ReleaseChangePromoter.new(candidate_build_number, candidate_sha, @downloader, logger)
         final_release_sha = release_promoter.promote
 
         @promoter.promote(final_release_sha, stable_branch)
