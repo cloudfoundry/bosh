@@ -108,6 +108,58 @@ describe Bosh::OpenStackCloud::Cloud do
       sc_id.should == 'i-bar'
     end
 
+    it 'passes through whitelisted glance properties from cloud_properties to glance when making a stemcell' do
+      extra_properties = {
+        'name' => 'stemcell-name',
+        'version' => 'x.y.z',
+        'os_type' => 'linux',
+        'os_distro' => 'ubuntu',
+        'architecture' => 'x86_64',
+        'auto_disk_config' => 'true',
+        'foo' => 'bar',
+        'container_format' => 'bare',
+        'disk_format' => 'qcow2',
+        'hw_vif_model' => 'fake-hw_vif_model',
+        'hypervisor_type' => 'fake-hypervisor_type',
+        'vmware_adaptertype' => 'fake-vmware_adaptertype',
+        'vmware_disktype' => 'fake-vmware_disktype',
+        'vmware_linked_clone' => 'fake-vmware_linked_clone',
+        'vmware_ostype' => 'fake-vmware_ostype',
+      }
+
+      image_params = {
+        :name => "BOSH-#{unique_name}",
+        :disk_format => 'qcow2',
+        :container_format => 'bare',
+        :location => "#{@tmp_dir}/root.img",
+        :is_public => false,
+        :properties => {
+          :name => 'stemcell-name',
+          :version => 'x.y.z',
+          :os_type => 'linux',
+          :os_distro => 'ubuntu',
+          :architecture => 'x86_64',
+          :auto_disk_config => 'true',
+          :hw_vif_model => 'fake-hw_vif_model',
+          :hypervisor_type => 'fake-hypervisor_type',
+          :vmware_adaptertype => 'fake-vmware_adaptertype',
+          :vmware_disktype => 'fake-vmware_disktype',
+          :vmware_linked_clone => 'fake-vmware_linked_clone',
+          :vmware_ostype => 'fake-vmware_ostype',
+        }
+      }
+
+      cloud = mock_glance do |glance|
+        expect(glance.images).to receive(:create).with(image_params).and_return(image)
+      end
+      allow(Dir).to receive(:mktmpdir).and_yield(@tmp_dir)
+      allow(cloud).to receive(:generate_unique_name).and_return(unique_name)
+      allow(cloud).to receive(:unpack_image)
+      allow(cloud).to receive(:wait_resource)
+
+      cloud.create_stemcell('/tmp/foo', extra_properties)
+    end
+
     it 'sets stemcell visibility to public when required' do
       image_params = {
         :name => "BOSH-#{unique_name}",
