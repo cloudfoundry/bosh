@@ -194,6 +194,42 @@ module Bosh::Dev
       end
     end
 
+    describe '#promoted?' do
+      let(:stemcell) { instance_double('Bosh::Stemcell::Archive', ami_id: 'ami-ID') }
+
+      let(:promotable_artifacts) do
+        instance_double('Bosh::Dev::PromotableArtifacts', all: [
+          instance_double('Bosh::Dev::GemArtifact', promote: nil, name: 'artifact.gem'),
+          instance_double('Bosh::Dev::ReleaseArtifact', promote: nil, name: 'artifact.tgz'),
+        ])
+      end
+
+      before do
+        allow(Bosh::Stemcell::Archive).to receive(:new).and_return(stemcell)
+        allow(PromotableArtifacts).to receive(:new).and_return(promotable_artifacts)
+      end
+
+      it 'returns true if all artifacts are promoted' do
+        promotable_artifacts.all.each do |artifact|
+          allow(artifact).to receive(:promoted?).and_return(true)
+        end
+
+        expect(build.promoted?).to be(true)
+      end
+
+      it 'returns false if any artifacts are not promoted' do
+        allow(promotable_artifacts.all[0]).to receive(:promoted?).and_return(false)
+        allow(promotable_artifacts.all[1]).to receive(:promoted?).and_return(true)
+
+        expect(build.promoted?).to be(false)
+
+        allow(promotable_artifacts.all[0]).to receive(:promoted?).and_return(true)
+        allow(promotable_artifacts.all[1]).to receive(:promoted?).and_return(false)
+
+        expect(build.promoted?).to be(false)
+      end
+    end
+
     describe '#upload_stemcell' do
       let(:logger) { instance_double('Logger').as_null_object }
       let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }

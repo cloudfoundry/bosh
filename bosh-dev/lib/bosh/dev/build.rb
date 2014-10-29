@@ -100,7 +100,7 @@ module Bosh::Dev
     end
 
     def promoted?
-      promotable_artifacts.all { |artifact| artifact.promoted? }
+      promotable_artifacts.all.all? { |artifact| artifact.promoted? }
     end
 
     def bosh_stemcell_path(definition, download_dir)
