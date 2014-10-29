@@ -7,24 +7,32 @@ require 'logger'
 module Bosh::Dev
   describe StemcellArtifact do
 
-    subject(:stemcell_artifact) { StemcellArtifact.new(version, stemcell_definition, logger) }
+    subject(:stemcell_artifact) { StemcellArtifact.new(source_version, destination_version, stemcell_definition, logger) }
 
     let(:stemcell_definition) { instance_double('Bosh::Stemcell::Definition', infrastructure: infrastructure) }
     let(:infrastructure) { double('Bosh::Stemcell::Infrastructure::Fake', name: infrastructure_name) }
     let(:infrastructure_name) { 'fake-infrastructure-name' }
-    let(:version) { 'fake-version' }
+    let(:source_version) { 'fake-source-version' }
+    let(:destination_version) { 'fake-destination-version' }
     let(:logger) { Logger.new('/dev/null') }
 
-    let(:archive_filename) { 'fake-archive-filename' }
+    let(:archive_source_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: archive_source_filename_string) }
+    let(:archive_source_filename_string) { 'fake-source-filename.tgz' }
+    let(:archive_destination_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: archive_destination_filename_string) }
+    let(:archive_destination_filename_string) { 'fake-destination-filename.tgz' }
     before do
-      allow(Bosh::Stemcell::ArchiveFilename).to receive(:new)
-          .with(version, stemcell_definition, 'bosh-stemcell')
-          .and_return(archive_filename)
+      allow(Bosh::Stemcell::ArchiveFilename).to receive(:new).
+        with(source_version, stemcell_definition, 'bosh-stemcell').
+        and_return(archive_source_filename)
+
+      allow(Bosh::Stemcell::ArchiveFilename).to receive(:new).
+        with(destination_version, stemcell_definition, 'bosh-stemcell').
+        and_return(archive_destination_filename)
     end
 
     describe '#name' do
       it 'returns the filename for the release' do
-        expect(stemcell_artifact.name).to eq("#{archive_filename}.tgz")
+        expect(stemcell_artifact.name).to eq(archive_destination_filename_string)
       end
     end
 
@@ -34,11 +42,11 @@ module Bosh::Dev
 
       before do
         allow(UriProvider).to receive(:pipeline_s3_path).
-          with("#{version}/bosh-stemcell/#{infrastructure_name}", stemcell_artifact.name).
+          with("#{source_version}/bosh-stemcell/#{infrastructure_name}", archive_source_filename_string).
           and_return(source)
 
         allow(UriProvider).to receive(:artifacts_s3_path).
-          with("bosh-stemcell/#{infrastructure_name}", stemcell_artifact.name).
+          with("bosh-stemcell/#{infrastructure_name}", archive_destination_filename_string).
           and_return(destination)
       end
 

@@ -54,8 +54,8 @@ module Bosh::Dev
       artifacts = []
 
       @matrix.each do |stemcell_definition|
-        artifacts << StemcellArtifact.new(@version, stemcell_definition, @logger)
-        artifacts << StemcellArtifact.new('latest', stemcell_definition, @logger)
+        artifacts << StemcellArtifact.new(@version, @version, stemcell_definition, @logger)
+        artifacts << StemcellArtifact.new(@version, 'latest', stemcell_definition, @logger)
       end
 
       artifacts

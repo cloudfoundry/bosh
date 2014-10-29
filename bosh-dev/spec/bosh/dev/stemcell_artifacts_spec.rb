@@ -104,22 +104,22 @@ module Bosh::Dev
       it 'returns a complete list of stemcell build artifact names' do
         stemcell_artifact1_version = instance_double('Bosh::Dev::StemcellArtifact')
         expect(StemcellArtifact).to receive(:new)
-          .with(version, definitions[0], logger)
+          .with(version, version, definitions[0], logger)
           .and_return(stemcell_artifact1_version)
 
         stemcell_artifact1_latest = instance_double('Bosh::Dev::StemcellArtifact')
         expect(StemcellArtifact).to receive(:new)
-          .with('latest', definitions[0], logger)
+          .with(version, 'latest', definitions[0], logger)
           .and_return(stemcell_artifact1_latest)
 
         stemcell_artifact2_version = instance_double('Bosh::Dev::StemcellArtifact')
         expect(StemcellArtifact).to receive(:new)
-          .with(version, definitions[1], logger)
+          .with(version, version, definitions[1], logger)
           .and_return(stemcell_artifact2_version)
 
         stemcell_artifact2_latest = instance_double('Bosh::Dev::StemcellArtifact')
         expect(StemcellArtifact).to receive(:new)
-          .with('latest', definitions[1], logger)
+          .with(version, 'latest', definitions[1], logger)
           .and_return(stemcell_artifact2_latest)
 
         expect(artifacts.list).to eq([
