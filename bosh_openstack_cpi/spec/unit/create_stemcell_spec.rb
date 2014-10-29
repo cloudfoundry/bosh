@@ -4,16 +4,12 @@
 require 'spec_helper'
 
 describe Bosh::OpenStackCloud::Cloud do
-
   let(:image) { double('image', :id => 'i-bar', :name => 'i-bar') }
   let(:unique_name) { SecureRandom.uuid }
 
-  before :each do
-    @tmp_dir = Dir.mktmpdir
-  end
+  before { @tmp_dir = Dir.mktmpdir }
 
   describe 'Image upload based flow' do
-
     it 'creates stemcell using a stemcell file' do
       image_params = {
         :name => "BOSH-#{unique_name}",
