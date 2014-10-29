@@ -1,5 +1,9 @@
+require 'bosh/dev/command_helper'
+
 module Bosh::Dev
   class GitBranchMerger
+    include CommandHelper
+
     def initialize(logger)
       @logger = logger
     end
@@ -23,13 +27,6 @@ module Bosh::Dev
       raise "Failed finding branches that contain sha #{commit_sha}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
       stdout.lines.map(&:chomp).include?(branch_name)
-    end
-
-    private
-
-    def exec_cmd(cmd)
-      @logger.info("Executing: #{cmd}")
-      Open3.capture3(cmd)
     end
   end
 end

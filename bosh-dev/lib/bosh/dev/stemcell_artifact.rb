@@ -1,8 +1,10 @@
 require 'bosh/dev/uri_provider'
+require 'bosh/dev/command_helper'
 require 'bosh/stemcell/archive_filename'
 
 module Bosh::Dev
   class StemcellArtifact
+    include CommandHelper
 
     def initialize(version, stemcell_definition, logger)
       @version = version
@@ -37,11 +39,6 @@ module Bosh::Dev
 
     def infrastructure_name
       @stemcell_definition.infrastructure.name
-    end
-
-    def exec_cmd(cmd)
-      @logger.info("Executing: #{cmd}")
-      Open3.capture3(cmd)
     end
   end
 end

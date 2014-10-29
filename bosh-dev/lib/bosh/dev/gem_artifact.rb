@@ -1,5 +1,8 @@
+require 'bosh/dev/command_helper'
+
 module Bosh::Dev
   class GemArtifact
+    include CommandHelper
     def initialize(component, pipeline_prefix, build_number, logger)
       @component = component
       @pipeline_prefix = pipeline_prefix
@@ -66,11 +69,6 @@ module Bosh::Dev
       dir = "tmp/gems-#{@build_number}"
       FileUtils.mkdir_p(dir)
       dir
-    end
-
-    def exec_cmd(cmd)
-      @logger.info("Executing: #{cmd}")
-      Open3.capture3(cmd)
     end
   end
 end

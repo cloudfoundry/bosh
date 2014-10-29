@@ -1,8 +1,10 @@
-require 'open3'
 require 'bosh/dev'
+require 'bosh/dev/command_helper'
 
 module Bosh::Dev
   class GitPromoter
+    include CommandHelper
+
     def initialize(logger)
       @logger = logger
     end
@@ -13,13 +15,6 @@ module Bosh::Dev
 
       stdout, stderr, status = exec_cmd("git push origin #{dev_branch}:#{stable_branch}")
       raise "Failed to git push local #{dev_branch} to origin #{stable_branch}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
-    end
-
-    private
-
-    def exec_cmd(cmd)
-      @logger.info("Executing: #{cmd}")
-      Open3.capture3(cmd)
     end
   end
 end

@@ -1,7 +1,9 @@
-require 'open3'
+require 'bosh/dev/command_helper'
 
 module Bosh::Dev
   class GitRepoUpdater
+    include CommandHelper
+
     def initialize(logger)
       @logger = logger
     end
@@ -25,13 +27,6 @@ module Bosh::Dev
         stdout, stderr, status = exec_cmd('git push')
         raise "Failed git pushing from #{dir}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
       end
-    end
-
-    private
-
-    def exec_cmd(cmd)
-      @logger.info("Executing: #{cmd}")
-      Open3.capture3(cmd)
     end
   end
 end

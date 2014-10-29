@@ -1,9 +1,11 @@
-require 'open3'
 require 'bosh/dev'
+require 'bosh/dev/command_helper'
 require 'bosh/core/shell'
 
 module Bosh::Dev
   class GitTagger
+    include CommandHelper
+
     def initialize(logger)
       @logger = logger
     end
@@ -40,13 +42,6 @@ module Bosh::Dev
 
     def stable_tag_name(build_number)
       "stable-#{build_number}"
-    end
-
-    private
-
-    def exec_cmd(cmd)
-      @logger.info("Executing: #{cmd}")
-      Open3.capture3(cmd)
     end
   end
 end
