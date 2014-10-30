@@ -329,6 +329,19 @@ properties:
     description: Default security group used by aws cpi
   aws.region:
     description: AWS Region used by aws cpi
+  aws.ec2_endpoint:
+    description: The service endpoint for Amazon EC2 (optional, if not supplied default region endpoint will be used)
+  aws.elb_endpoint:
+    description: The service endpoint for Amazon Elastic Load Balancing (optional, if not supplied default region endpoint will be used)
+  aws.max_retries:
+    description: Max number of retries to connect to AWS
+    default: 2
+  aws.http_read_timeout:
+    description: The number of seconds before the aws cpi should timeout while waiting for response
+    default: 60
+  aws.http_wire_trace:
+    description: When true aws cpi will log all wire traces
+    default: false
   aws.stemcell.kernel_id:
     description: AWS kernel id used by aws cpi
   openstack.auth_url:

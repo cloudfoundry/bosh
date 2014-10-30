@@ -50,6 +50,10 @@ properties:
     description: AWS IAM Secret Access Key
   aws.region:
     description: AWS EC2 Region
+  aws.ec2_endpoint:
+    description: The service endpoint for Amazon EC2 (optional, if not supplied default region endpoint will be used)
+  aws.elb_endpoint:
+    description: The service endpoint for Amazon Elastic Load Balancing (optional, if not supplied default region endpoint will be used)
   aws.max_retries:
     description: Max number of retries to connect to AWS
     default: 2

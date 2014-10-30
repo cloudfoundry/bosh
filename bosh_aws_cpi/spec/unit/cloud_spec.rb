@@ -8,7 +8,7 @@ describe Bosh::AwsCloud::Cloud do
         'access_key_id' => 'keys to my heart',
         'secret_access_key' => 'open sesame',
         'region' => 'fake-region',
-        'default_key_name' => 'sesame'
+        'default_key_name' => 'sesame',
       },
       'registry' => {
         'user' => 'abuser',
@@ -45,11 +45,59 @@ describe Bosh::AwsCloud::Cloud do
       end
     end
 
-    context 'when all the required configuraitons are present' do
+    context 'when all the required configurations are present' do
       it 'does not raise an error ' do
         expect { cloud }.to_not raise_error
       end
     end
+
+    context 'when optional properties are not provided' do
+      before {cloud}
+
+      it 'default values are used for endpoints' do
+        expect(AWS.config.ec2_endpoint).to eq('ec2.fake-region.amazonaws.com')
+        expect(AWS.config.elb_endpoint).to eq('elasticloadbalancing.fake-region.amazonaws.com')
+      end
+      it 'default value is used for max retries' do
+        expect(AWS.config.max_retries).to be 2
+      end
+      it 'default value is used for http properties' do
+        expect(AWS.config.http_read_timeout).to eq(60)
+        expect(AWS.config.http_wire_trace).to be false
+      end
+    end
+
+    context 'when optional and required properties are provided' do
+      before {cloud}
+      let(:options) do
+        {
+            'aws' => {
+                'access_key_id' => 'keys to my heart',
+                'secret_access_key' => 'open sesame',
+                'region' => 'fake-region',
+                'default_key_name' => 'sesame',
+                'http_read_timeout' => 300,
+                'http_wire_trace' => true
+            },
+            'registry' => {
+                'user' => 'abuser',
+                'password' => 'hard2gess',
+                'endpoint' => 'http://websites.com'
+            }
+        }
+      end
+
+      it 'passes required properties to AWS SDK' do
+        expect(AWS.config.access_key_id).to eq('keys to my heart')
+        expect(AWS.config.secret_access_key).to eq('open sesame')
+        expect(AWS.config.region).to eq('fake-region')
+      end
+      it 'passes optional properties to AWS SDK' do
+        expect(AWS.config.http_read_timeout).to eq(300)
+        expect(AWS.config.http_wire_trace).to be true
+      end
+    end
+
   end
 
   describe '#create_disk' do
