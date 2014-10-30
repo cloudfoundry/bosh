@@ -12,7 +12,7 @@ describe Bosh::AwsCloud::Cloud do
     @manual_ip         = ENV['BOSH_AWS_LIFECYCLE_MANUAL_IP'] || raise("Missing BOSH_AWS_LIFECYCLE_MANUAL_IP")
   end
 
-  let(:instance_type) { ENV.fetch('BOSH_AWS_INSTANCE_TYPE', 'm3.small') }
+  let(:instance_type) { ENV.fetch('BOSH_AWS_INSTANCE_TYPE', 't2.small') }
   let(:ami) { ENV.fetch('BOSH_AWS_IMAGE_ID', 'ami-b66ed3de') }
 
   before { Bosh::Registry::Client.stub(new: double('registry').as_null_object) }
