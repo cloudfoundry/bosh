@@ -527,7 +527,7 @@ module Bosh::AwsCloud
         http_read_timeout
         http_wire_trace
         proxy_uri
-        ).each do |k|
+      ).each do |k|
         aws_params[k.to_sym] = aws_properties[k] if aws_properties[k]
       end
 

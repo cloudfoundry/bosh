@@ -52,15 +52,17 @@ describe Bosh::AwsCloud::Cloud do
     end
 
     context 'when optional properties are not provided' do
-      before {cloud}
+      before { cloud }
 
       it 'default values are used for endpoints' do
         expect(AWS.config.ec2_endpoint).to eq('ec2.fake-region.amazonaws.com')
         expect(AWS.config.elb_endpoint).to eq('elasticloadbalancing.fake-region.amazonaws.com')
       end
+
       it 'default value is used for max retries' do
         expect(AWS.config.max_retries).to be 2
       end
+
       it 'default value is used for http properties' do
         expect(AWS.config.http_read_timeout).to eq(60)
         expect(AWS.config.http_wire_trace).to be false
