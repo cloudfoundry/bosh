@@ -79,7 +79,7 @@ describe Bosh::AwsCloud::Cloud do
     describe 'VM lifecycle with light stemcells' do
       it 'exercises vm lifecycle with light stemcell' do
         expect {
-          stemcell_id = cpi.create_stemcell('/not/a/real/path', { 'ami' => { 'us-east-1' => 'ami-809a48e9' } })
+          stemcell_id = cpi.create_stemcell('/not/a/real/path', { 'ami' => { 'us-east-1' => ami } })
           instance_id = cpi.create_vm(
             nil,
             stemcell_id,
