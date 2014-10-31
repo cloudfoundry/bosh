@@ -16,7 +16,7 @@ module Bosh::Dev
           #{exports.join("\n")}
 
           bundle exec rake stemcell:build[#{build_task_args}]
-          bundle exec rake ci:publish_stemcell[#{build_environment.stemcell_file}]
+          bundle exec rake ci:publish_stemcell[#{build_environment.stemcell_file},#{options[:publish_s3_bucket_name]}]
         BASH
       end
 

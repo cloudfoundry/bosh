@@ -8,15 +8,17 @@ module Bosh::Dev
     include FakeFS::SpecHelpers
 
     let(:logger) { Logger.new('/dev/null') }
+    let(:bucket_name) { 'fake-bucket' }
 
     describe '.candidate' do
-      subject { described_class.candidate(logger) }
+      subject { described_class.candidate(bucket_name, logger) }
 
       context 'when CANDIDATE_BUILD_NUMBER is set' do
         before { stub_const('ENV', 'CANDIDATE_BUILD_NUMBER' => 'candidate') }
 
         it { should be_a(Build::Candidate) }
         its(:number) { should eq('candidate') }
+        its(:bucket) { should eq('fake-bucket') }
 
         it 'uses DownloadAdapater as download adapter' do
           download_adapter = instance_double('Bosh::Dev::DownloadAdapter')
@@ -28,7 +30,7 @@ module Bosh::Dev
           build = instance_double('Bosh::Dev::Build::Local')
           expect(Bosh::Dev::Build::Candidate)
             .to receive(:new)
-            .with('candidate', download_adapter, logger)
+            .with('candidate', 'fake-bucket', download_adapter, logger)
             .and_return(build)
 
           expect(subject).to eq(build)
@@ -38,6 +40,7 @@ module Bosh::Dev
       context 'when CANDIDATE_BUILD_NUMBER is not set' do
         it { should be_a(Build::Local) }
         its(:number) { should eq('0000') }
+        its(:bucket) { should eq('fake-bucket') }
 
         it 'uses LocalDownloadAdapater as download adapter' do
           download_adapter = instance_double('Bosh::Dev::LocalDownloadAdapter')
@@ -49,7 +52,7 @@ module Bosh::Dev
           build = instance_double('Bosh::Dev::Build::Local')
           expect(Bosh::Dev::Build::Local)
             .to receive(:new)
-            .with('0000', download_adapter, logger)
+            .with('0000', 'fake-bucket', download_adapter, logger)
             .and_return(build)
 
           expect(subject).to eq(build)
@@ -60,8 +63,9 @@ module Bosh::Dev
     let(:access_key_id) { 'FAKE_ACCESS_KEY_ID' }
     let(:secret_access_key) { 'FAKE_SECRET_ACCESS_KEY' }
 
-    subject(:build) { Build::Candidate.new('123', download_adapter, logger) }
+    subject(:build) { Build::Candidate.new('123', bucket_name, download_adapter, logger) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
+    let(:bucket_name) { 'fake-bucket' }
 
     describe '#upload_release' do
       let(:release) do
@@ -78,7 +82,7 @@ module Bosh::Dev
         io = double('io')
         allow(File).to receive(:open).with('fake-release-tarball-path') { io }
         expect(upload_adapter).to receive(:upload).with(
-          bucket_name: 'bosh-ci-pipeline',
+          bucket_name: bucket_name,
           key: '123/release/bosh-123.tgz',
           body: io,
           public: true,
@@ -113,10 +117,12 @@ module Bosh::Dev
 
       it 'recursively uploads a directory into base_dir' do
         expect(upload_adapter).to receive(:upload) do |options|
+          bucket = options.fetch(:bucket_name)
           key = options.fetch(:key)
           body = options.fetch(:body)
           public = options.fetch(:public)
 
+          expect(bucket).to be(bucket_name)
           expect(public).to be(true)
 
           case key
@@ -236,14 +242,14 @@ module Bosh::Dev
           key = '123/bosh-stemcell/vsphere/bosh-stemcell-123-vsphere-esxi-ubuntu.tgz'
           latest_key = '123/bosh-stemcell/vsphere/bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz'
 
-          expect(logger).to receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
+          expect(logger).to receive(:info).with("uploaded to s3://#{bucket_name}/#{key}")
 
-          expect(upload_adapter).to receive(:upload).with(bucket_name: 'bosh-ci-pipeline',
+          expect(upload_adapter).to receive(:upload).with(bucket_name: bucket_name,
                                                       key: key,
                                                       body: anything,
                                                       public: true)
 
-          expect(upload_adapter).to receive(:upload).with(bucket_name: 'bosh-ci-pipeline',
+          expect(upload_adapter).to receive(:upload).with(bucket_name: bucket_name,
                                                       key: latest_key,
                                                       body: anything,
                                                       public: true)
@@ -269,14 +275,14 @@ module Bosh::Dev
           key = '123/bosh-stemcell/vsphere/light-bosh-stemcell-123-vsphere-esxi-ubuntu.tgz'
           latest_key = '123/bosh-stemcell/vsphere/light-bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz'
 
-          expect(logger).to receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
+          expect(logger).to receive(:info).with("uploaded to s3://#{bucket_name}/#{key}")
 
-          expect(upload_adapter).to receive(:upload).with(bucket_name: 'bosh-ci-pipeline',
+          expect(upload_adapter).to receive(:upload).with(bucket_name: bucket_name,
                                                       key: key,
                                                       body: anything,
                                                       public: true)
 
-          expect(upload_adapter).to receive(:upload).with(bucket_name: 'bosh-ci-pipeline',
+          expect(upload_adapter).to receive(:upload).with(bucket_name: bucket_name,
                                                       key: latest_key,
                                                       body: anything,
                                                       public: true)
@@ -349,8 +355,9 @@ module Bosh::Dev
 
   describe Build::Candidate do
     let(:logger) { Logger.new('/dev/null') }
-    subject(:build) { Build::Candidate.new('123', download_adapter, logger) }
+    subject(:build) { Build::Candidate.new('123', bucket_name, download_adapter, logger) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
+    let(:bucket_name) { 'fake-bucket' }
 
     describe '#release_tarball_path' do
       context 'when remote file does not exist' do
@@ -377,8 +384,9 @@ module Bosh::Dev
 
   describe Build::Local do
     let(:logger) { Logger.new('/dev/null') }
-    subject { described_class.new('build-number', download_adapter, logger) }
+    subject { described_class.new('build-number', bucket_name, download_adapter, logger) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
+    let(:bucket_name) { 'fake-bucket' }
 
     describe '#release_tarball_path' do
       let(:dev_bosh_release) { instance_double('Bosh::Dev::BoshRelease') }

@@ -23,6 +23,7 @@ module Bosh::Dev
         agent_name: 'fake-agent_name',
         os_image_s3_bucket_name: 'fake-bucket',
         os_image_s3_key: 'fake-key',
+        publish_s3_bucket_name: 'fake-publish-bucket',
       }
     end
 
@@ -38,7 +39,7 @@ module Bosh::Dev
           export BOSH_AWS_SECRET_ACCESS_KEY='fake-BOSH_AWS_SECRET_ACCESS_KEY'
 
           bundle exec rake stemcell:build[fake-infrastructure_name,fake-hypervisor_name,fake-operating_system_name,fake-operating_system_version,fake-agent_name,fake-bucket,fake-key]
-          bundle exec rake ci:publish_stemcell[fake-stemcell.tgz]
+          bundle exec rake ci:publish_stemcell[fake-stemcell.tgz,fake-publish-bucket]
         BASH
 
         expect(strip_heredoc(subject.to_s)).to eq(strip_heredoc(expected_cmd))
