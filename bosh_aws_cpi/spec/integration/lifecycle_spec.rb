@@ -194,7 +194,7 @@ describe Bosh::AwsCloud::Cloud do
         expect(@volume_id).not_to be_nil
 
         cpi.attach_disk(@instance_id, @volume_id)
-        expect(cpi.get_disks(@instance_id)).to eq [@volume_id]
+        expect(cpi.get_disks(@instance_id)).to include(@volume_id)
 
         Bosh::Common.retryable(tries: 20, on: Bosh::Clouds::DiskNotAttached, sleep: lambda { |n, _| [2**(n-1), 30].min }) do
           cpi.detach_disk(@instance_id, @volume_id)
