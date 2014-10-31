@@ -252,19 +252,14 @@ module VSphereCloud
           @logger.info("Detached #{persistent_disks.size} persistent disk(s)")
         end
 
-        retry_block { client.delete_vm(vm) }
-        @logger.info("Deleted vm: #{vm_cid}")
-
         # Delete env.iso and VM specific files managed by the director
         retry_block do
           cdrom = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
-          if cdrom
-            env_iso_folder = @agent_env.env_iso_folder(cdrom)
-            if env_iso_folder
-              client.delete_path(datacenter, env_iso_folder)
-            end
-          end
+          @agent_env.clean_env(vm) if cdrom
         end
+
+        retry_block { client.delete_vm(vm) }
+        @logger.info("Deleted vm: #{vm_cid}")
       end
     end
 

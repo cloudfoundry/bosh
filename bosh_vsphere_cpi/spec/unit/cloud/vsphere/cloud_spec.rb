@@ -882,28 +882,11 @@ module VSphereCloud
 
         before { allow(client).to receive(:get_cdrom_device).and_return(cdrom_device) }
 
-        context 'when the cdrom has ISO folder' do
-          before do
-            allow(agent_env).to receive(:env_iso_folder).
-              and_return('[fake-cdrom-datastore-name] some-vm-uuid')
-          end
+        it 'cleans the agent environment, before deleting the vm' do
+          expect(agent_env).to receive(:clean_env).with(vm).ordered
+          expect(client).to receive(:delete_vm).with(vm).ordered
 
-          it 'does not clean up the ISO folder' do
-            expect(client).to receive(:delete_path).with(datacenter, '[fake-cdrom-datastore-name] some-vm-uuid')
-            vsphere_cloud.delete_vm('fake-vm-id')
-          end
-        end
-
-        context 'when the cdrom does not have ISO folder' do
-          before do
-            allow(agent_env).to receive(:env_iso_folder).
-              and_return(nil)
-          end
-
-          it 'does not clean up the ISO folder' do
-            expect(client).to_not receive(:delete_path)
-            vsphere_cloud.delete_vm('fake-vm-id')
-          end
+          vsphere_cloud.delete_vm('fake-vm-id')
         end
       end
     end

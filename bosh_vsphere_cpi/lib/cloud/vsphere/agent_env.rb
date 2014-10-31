@@ -27,7 +27,7 @@ module VSphereCloud
       env_json = JSON.dump(env)
 
       disconnect_cdrom(vm)
-      clean_up_old_env(vm)
+      clean_env(vm)
       @file_provider.upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.json", env_json)
       @file_provider.upload_file(location[:datacenter], location[:datastore], "#{location[:vm]}/env.iso", generate_env_iso(env_json))
 
@@ -40,6 +40,17 @@ module VSphereCloud
     def env_iso_folder(cdrom_device)
       return unless cdrom_device && cdrom_device.backing.respond_to?(:file_name)
       File.dirname(cdrom_device.backing.file_name)
+    end
+
+    def clean_env(vm)
+      cdrom = @client.get_cdrom_device(vm)
+      env_iso_folder = env_iso_folder(cdrom)
+      return unless env_iso_folder
+
+      datacenter = @client.find_parent(vm, Vim::Datacenter)
+
+      @client.delete_path(datacenter, File.join(env_iso_folder, 'env.json'))
+      @client.delete_path(datacenter, File.join(env_iso_folder, 'env.iso'))
     end
 
     private
@@ -82,17 +93,6 @@ module VSphereCloud
         raise "#{$?.exitstatus} -#{output}" if $?.exitstatus != 0
         File.open(iso_path, 'r') { |f| f.read }
       end
-    end
-
-    def clean_up_old_env(vm)
-      cdrom = @client.get_cdrom_device(vm)
-      env_iso_folder = env_iso_folder(cdrom)
-      return unless env_iso_folder
-
-      datacenter = @client.find_parent(vm, Vim::Datacenter)
-
-      @client.delete_path(datacenter, File.join(env_iso_folder, 'env.json'))
-      @client.delete_path(datacenter, File.join(env_iso_folder, 'env.iso'))
     end
 
     def which(programs)

@@ -70,6 +70,54 @@ module VSphereCloud
       end
     end
 
+    describe '#clean_env' do
+      let(:vm) do
+        instance_double('VimSdk::Vim::VirtualMachine',
+          config: double(:config, hardware: double(:hardware, device: [cdrom]))
+        )
+      end
+
+      let(:cdrom_connectable_connected) { true }
+
+      let(:cdrom) do
+        VimSdk::Vim::Vm::Device::VirtualCdrom.new(
+          connectable: VimSdk::Vim::Vm::Device::VirtualDevice::ConnectInfo.new(
+            connected: cdrom_connectable_connected
+          ),
+          backing: cdrom_backing
+        )
+      end
+
+      let(:cdrom_backing) do
+        VimSdk::Vim::Vm::Device::VirtualCdrom::IsoBackingInfo.new(
+          file_name: '[fake-old-datastore-name 1] fake-vm-name/env.iso'
+        )
+      end
+
+      let(:datacenter) { instance_double('VimSdk::Vim::Datacenter') }
+      before do
+        allow(client).to receive(:get_cdrom_device).with(vm).and_return(cdrom)
+        allow(client).to receive(:find_parent).with(vm, VimSdk::Vim::Datacenter).and_return(datacenter)
+      end
+
+      it 'deletes env.json and env.iso' do
+        expect(client).to receive(:delete_path).with(datacenter, '[fake-old-datastore-name 1] fake-vm-name/env.json')
+        expect(client).to receive(:delete_path).with(datacenter, '[fake-old-datastore-name 1] fake-vm-name/env.iso')
+
+        agent_env.clean_env(vm)
+      end
+
+      context 'when no cdrom exists' do
+        let(:cdrom) { nil }
+
+        it 'does not delete anything' do
+          expect(client).to_not receive(:delete_path)
+
+          agent_env.clean_env(vm)
+        end
+      end
+    end
+
     describe '#set_env' do
       let(:vm) do
         instance_double('VimSdk::Vim::VirtualMachine',
