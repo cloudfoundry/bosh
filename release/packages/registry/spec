@@ -5,4 +5,4 @@ dependencies:
 - mysql
 - ruby
 files:
-- bosh/bosh-registry/*.gem
+- bosh/bosh-registry/**/*.gem
