@@ -57,29 +57,9 @@ module Bosh::Dev
 
     let(:access_key_id) { 'FAKE_ACCESS_KEY_ID' }
     let(:secret_access_key) { 'FAKE_SECRET_ACCESS_KEY' }
-    let(:fog_storage) do
-      Fog::Storage.new(
-        provider: 'AWS',
-        aws_access_key_id: access_key_id,
-        aws_secret_access_key: secret_access_key,
-      )
-    end
 
     subject(:build) { Build::Candidate.new('123', download_adapter, logger) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
-
-    before(:all) { Fog.mock! }
-    after(:all) { Fog.unmock! }
-
-    before do
-      Fog::Mock.reset
-      fog_storage.directories.create(key: 'bosh-ci-pipeline')
-      fog_storage.directories.create(key: 'bosh-jenkins-artifacts')
-      stub_const('ENV', {
-        'AWS_SECRET_ACCESS_KEY_FOR_STEMCELLS_JENKINS_ACCOUNT' => secret_access_key,
-        'AWS_ACCESS_KEY_ID_FOR_STEMCELLS_JENKINS_ACCOUNT' => access_key_id
-      })
-    end
 
     describe '#upload_release' do
       let(:release) do
@@ -229,7 +209,6 @@ module Bosh::Dev
     end
 
     describe '#upload_stemcell' do
-      let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
       let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter', upload: nil) }
 
       before do
@@ -397,9 +376,6 @@ module Bosh::Dev
   describe Build::Local do
     subject { described_class.new('build-number', download_adapter, logger) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
-
-    before(:all) { Fog.mock! }
-    after(:all) { Fog.unmock! }
 
     describe '#release_tarball_path' do
       let(:dev_bosh_release) { instance_double('Bosh::Dev::BoshRelease') }
