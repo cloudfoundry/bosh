@@ -9,14 +9,15 @@ module Bosh::Dev
     subject(:publisher) { described_class.new(build) }
 
     let(:build) { instance_double('Bosh::Dev::Build', upload_stemcell: nil) }
-    before { allow(Bosh::Dev::Build).to receive(:candidate).and_return(build) }
+    let(:bucket_name) { "fake-bucket" }
+    before { allow(Bosh::Dev::Build).to receive(:candidate).with(bucket_name).and_return(build) }
 
     describe '.for_candidate_build' do
       let(:publisher) { instance_double('Bosh::Dev::StemcellPublisher') }
 
       it 'instantiates the publisher with a build' do
         expect(described_class).to receive(:new).with(build).and_return(publisher)
-        expect(described_class.for_candidate_build).to eq(publisher)
+        expect(described_class.for_candidate_build(bucket_name)).to eq(publisher)
       end
     end
 
