@@ -217,6 +217,15 @@ cloud:
       default_key_name: <%= default_key_name %>
       default_security_groups: <%= default_security_groups %>
       region: <%= region %>
+      <% if_p('aws.ec2_endpoint') do |ec2_endpoint| %>
+      ec2_endpoint: <%= ec2_endpoint %>
+      <% end %>
+      <% if_p('aws.elb_endpoint') do |elb_endpoint| %>
+      elb_endpoint: <%= elb_endpoint %>
+      <% end %>
+      max_retries: <%= p('aws.max_retries') %>
+      http_read_timeout: <%= p('aws.http_read_timeout') %>
+      http_wire_trace: <%= p('aws.http_wire_trace') %>
     registry:
       endpoint: http://<%= reg_address %>:<%= reg_port %>
       user: <%= reg_user %>

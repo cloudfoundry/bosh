@@ -215,6 +215,52 @@ describe 'director.yml.erb.erb' do
     end
   end
 
+  context 'aws' do
+    before do
+      deployment_manifest_fragment['properties']['aws'] = {
+          'access_key_id' => 'key',
+          'secret_access_key' => 'secret',
+          'default_key_name' => 'default_key_name',
+          'default_security_groups' => 'default_security_groups',
+          'region' => 'region',
+          'ec2_endpoint' => 'some_ec2_endpoint',
+          'elb_endpoint' => 'some_elb_endpoint',
+          'max_retries' => 3,
+          'http_read_timeout' => 300,
+          'http_wire_trace' => true
+      }
+      deployment_manifest_fragment['properties']['registry'] = {
+          'address' => 'address',
+          'http' => {
+              'port' => 'port',
+              'user' => 'user',
+              'password' => 'password'
+          }
+      }
+    end
+
+    it 'sets plugin to aws' do
+      expect(parsed_yaml['cloud']).to include({
+          'plugin' => 'aws'
+      })
+    end
+
+    it 'renders aws properties' do
+      expect(parsed_yaml['cloud']['properties']['aws']).to eq({
+        'access_key_id' => 'key',
+        'secret_access_key' => 'secret',
+        'default_key_name' => 'default_key_name',
+        'default_security_groups' => 'default_security_groups',
+        'region' => 'region',
+        'ec2_endpoint' => 'some_ec2_endpoint',
+        'elb_endpoint' => 'some_elb_endpoint',
+        'max_retries' => 3,
+        'http_read_timeout' => 300,
+        'http_wire_trace' => true
+      })
+    end
+  end
+
   context 's3' do
     before do
       deployment_manifest_fragment['properties']['aws'] = {
@@ -222,7 +268,10 @@ describe 'director.yml.erb.erb' do
         'secret_access_key' => 'secret',
         'default_key_name' => 'default_key_name',
         'default_security_groups' => 'default_security_groups',
-        'region' => 'region'
+        'region' => 'region',
+        'max_retries' => 2,
+        'http_read_timeout' => 20,
+        'http_wire_trace' => true,
       }
 
       deployment_manifest_fragment['properties']['registry'] = {

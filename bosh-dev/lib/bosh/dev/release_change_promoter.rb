@@ -1,12 +1,16 @@
 require 'bosh/core/shell'
 require 'bosh/dev/uri_provider'
+require 'bosh/dev/command_helper'
 
 module Bosh::Dev
   class ReleaseChangePromoter
-    def initialize(build_number, candidate_sha, downloader)
+    include CommandHelper
+
+    def initialize(build_number, candidate_sha, downloader, logger)
       @build_number = build_number
       @candidate_sha = candidate_sha
       @download_adapter = downloader
+      @logger = logger
     end
 
     def promote
@@ -14,19 +18,29 @@ module Bosh::Dev
       patch_file = Tempfile.new("#{@build_number}-final-release")
       @download_adapter.download(patch_uri, patch_file.path)
 
-      shell = Bosh::Core::Shell.new
-
-      shell.run("git checkout #{@candidate_sha}")
+      stdout, stderr, status = exec_cmd("git checkout #{@candidate_sha}")
+      raise "Failed to git checkout #{@candidate_sha}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
       # Remove any artifacts from Jenkins setup
-      shell.run('git checkout .')
-      shell.run('git clean --force')
+      stdout, stderr, status = exec_cmd('git checkout .')
+      raise "Failed to remove jenkins setup artifacts: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
-      shell.run("git apply #{patch_file.path}")
-      shell.run('git add -A :/')
-      shell.run("git commit -m 'Adding final release for build #{@build_number}'")
+      stdout, stderr, status = exec_cmd('git clean --force')
+      raise "Failed to git clean: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
-      shell.run('git rev-parse HEAD')
+      stdout, stderr, status = exec_cmd("git apply #{patch_file.path}")
+      raise "Failed to apply the release patch: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+
+      stdout, stderr, status = exec_cmd('git add -A :/')
+      raise "Failed to git add all the patched release files: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+
+      stdout, stderr, status = exec_cmd("git commit -m 'Adding final release for build #{@build_number}'")
+      raise "Failed to git commit the patched release files: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+
+      stdout, stderr, status = exec_cmd('git rev-parse HEAD')
+      raise "Failed to get the sha of the release commit: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+
+      stdout
     end
   end
 end

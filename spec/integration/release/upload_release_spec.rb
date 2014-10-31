@@ -165,13 +165,22 @@ describe 'upload release', type: :integration do
 
       before { bosh_runner.run("upload release #{release_url}") }
 
-      it 'tells the user and does exit as a failure' do
-        output, exit_code = bosh_runner.run("upload release #{release_url}", {
-          failure_expected: true,
-          return_exit_code: true,
-        })
-        expect(output).to include("Release `appcloud/0.1' already exists")
-        expect(exit_code).to eq(1)
+      context 'when using the --skip-if-exists flag' do
+        it 'tells the user and does not exit as a failure' do
+          output = bosh_runner.run("upload release #{release_url} --skip-if-exists")
+          expect(output).to include("release already exists > appcloud/0.1")
+        end
+      end
+
+      context 'when NOT using the --skip-if-exists flag' do
+        it 'tells the user and does exit as a failure' do
+          output, exit_code = bosh_runner.run("upload release #{release_url}", {
+            failure_expected: true,
+            return_exit_code: true,
+          })
+          expect(output).to include("Release `appcloud/0.1' already exists")
+          expect(exit_code).to eq(1)
+        end
       end
     end
   end

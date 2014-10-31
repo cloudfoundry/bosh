@@ -6,7 +6,8 @@ PIDFILE=$RUN_DIR/registry.pid
 RUNAS=vcap
 
 export PATH=/var/vcap/packages/ruby/bin:$PATH
-export GEM_HOME=/var/vcap/packages/registry/gem_home
+export BUNDLE_GEMFILE=/var/vcap/packages/registry/Gemfile
+export GEM_HOME=/var/vcap/packages/registry/gem_home/ruby/2.1.0
 
 function pid_exists() {
   ps -p $1 &> /dev/null

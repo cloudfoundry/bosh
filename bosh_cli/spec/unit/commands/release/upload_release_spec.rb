@@ -14,6 +14,12 @@ module Bosh::Cli::Command::Release
     let(:release_manifest) { spec_asset(File.join('release', 'release.MF')) }
     let(:release_location) { 'http://release_location' }
 
+    let(:compiler) { instance_double('Bosh::Cli::ReleaseCompiler') }
+    before { class_double('Bosh::Cli::ReleaseCompiler', new: compiler).as_stubbed_const }
+
+    let(:release) { instance_double('Bosh::Cli::Release', blobstore: nil) }
+    before { allow(command).to receive(:release).and_return(release) }
+
     before do
       allow(command).to receive(:director).and_return(director)
     end
@@ -98,23 +104,35 @@ module Bosh::Cli::Command::Release
           end
 
           context 'without rebase' do
-            it 'should upload the release manifest' do
+            it 'should upload the release archive indicated by a manifest' do
+              allow(compiler).to receive(:exists?).and_return(true)
+              allow(compiler).to receive(:tarball_path).and_return(release_archive)
+
               expect(command).to receive(:upload_manifest)
                 .with(release_manifest, hash_including(:rebase => nil))
+                .and_call_original
+              expect(director).to receive(:upload_release).with(release_archive, hash_including(:rebase => nil))
               command.upload(release_manifest)
             end
 
-            it 'should upload the release archive' do
+            it 'should upload a release archive' do
               expect(command).to receive(:upload_tarball)
                 .with(release_archive, hash_including(:rebase => nil))
+                .and_call_original
+              expect(director).to receive(:upload_release).with(release_archive, hash_including(:rebase => nil))
               command.upload(release_archive)
             end
           end
 
           context 'with rebase' do
-            it 'should upload the release manifest' do
+            it 'should upload the release archive indicated by a manifest' do
+              allow(compiler).to receive(:exists?).and_return(true)
+              allow(compiler).to receive(:tarball_path).and_return(release_archive)
+
               expect(command).to receive(:upload_manifest)
                 .with(release_manifest, hash_including(:rebase => true))
+                .and_call_original
+              expect(director).to receive(:upload_release).with(release_archive, hash_including(:rebase => true))
               command.add_option(:rebase, true)
               command.upload(release_manifest)
             end
@@ -122,6 +140,8 @@ module Bosh::Cli::Command::Release
             it 'should upload the release archive' do
               expect(command).to receive(:upload_tarball)
                 .with(release_archive, hash_including(:rebase => true))
+                .and_call_original
+              expect(director).to receive(:upload_release).with(release_archive, hash_including(:rebase => true))
               command.add_option(:rebase, true)
               command.upload(release_archive)
             end
@@ -131,7 +151,7 @@ module Bosh::Cli::Command::Release
             let(:tarball_path) { spec_asset('valid_release.tgz') }
 
             it 'uploads release and returns successfully' do
-              expect(director).to receive(:upload_release).with(tarball_path)
+              expect(director).to receive(:upload_release).with(tarball_path, hash_including(:rebase => nil))
               command.upload(tarball_path)
             end
           end
@@ -219,25 +239,32 @@ module Bosh::Cli::Command::Release
         end
 
         context 'remote release' do
-          context 'without rebase' do
+          context 'without options' do
             it 'should upload the release' do
               expect(command).to receive(:upload_remote_release)
-                .with(release_location, hash_including(:rebase => nil))
+                .with(release_location, hash_including(:rebase => nil, :skip_if_exists => nil))
                 .and_call_original
-              expect(director).to receive(:upload_remote_release).with(release_location)
+              expect(director).to receive(:upload_remote_release).with(
+                release_location,
+                hash_including(:rebase => nil, :skip_if_exists => nil),
+              )
 
               command.upload(release_location)
             end
           end
 
-          context 'with rebase' do
+          context 'with options' do
             it 'should upload the release' do
               expect(command).to receive(:upload_remote_release)
-                .with(release_location, hash_including(:rebase => true))
+                .with(release_location, hash_including(:rebase => true, :skip_if_exists => true))
                 .and_call_original
-              expect(director).to receive(:rebase_remote_release).with(release_location)
+              expect(director).to receive(:upload_remote_release).with(
+                release_location,
+                hash_including(:rebase => true, :skip_if_exists => true),
+              )
 
               command.add_option(:rebase, true)
+              command.add_option(:skip_if_exists, true)
               command.upload(release_location)
             end
           end

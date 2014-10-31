@@ -1,7 +1,9 @@
 require 'bosh/dev/uri_provider'
+require 'bosh/dev/command_helper'
 
 module Bosh::Dev
   class ReleaseArtifact
+    include CommandHelper
 
     def initialize(build_number, logger)
       @build_number = build_number
@@ -30,11 +32,6 @@ module Bosh::Dev
 
     def destination
       Bosh::Dev::UriProvider.artifacts_s3_path('release', name)
-    end
-
-    def exec_cmd(cmd)
-      @logger.info("Executing: #{cmd}")
-      Open3.capture3(cmd)
     end
   end
 end

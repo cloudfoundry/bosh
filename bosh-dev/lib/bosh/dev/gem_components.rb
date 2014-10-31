@@ -58,7 +58,7 @@ module Bosh::Dev
     end
 
     def uses_bundler?(component_name)
-      %w(bosh-director bosh-monitor).include?(component_name)
+      %w(bosh-director bosh-monitor bosh-registry).include?(component_name)
     end
 
     def root

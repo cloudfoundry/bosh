@@ -57,7 +57,8 @@ module Bosh::Dev
         allow(Bosh::Dev::ReleaseChangePromoter).to receive(:new).with(
           candidate_build_number,
           candidate_sha,
-          download_adapter
+          download_adapter,
+          logger
         ).and_return(release_change_promoter)
 
       end

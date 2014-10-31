@@ -4,8 +4,8 @@ require 'bosh/stemcell/aws/light_stemcell'
 
 module Bosh::Dev
   class StemcellPublisher
-    def self.for_candidate_build
-      new(Build.candidate)
+    def self.for_candidate_build(bucket_name)
+      new(Build.candidate bucket_name)
     end
 
     def initialize(build)

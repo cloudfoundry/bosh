@@ -12,7 +12,8 @@ describe Bosh::AwsCloud::Cloud do
     @manual_ip         = ENV['BOSH_AWS_LIFECYCLE_MANUAL_IP'] || raise("Missing BOSH_AWS_LIFECYCLE_MANUAL_IP")
   end
 
-  let(:instance_type) { ENV.fetch('BOSH_AWS_INSTANCE_TYPE', 'm1.small') }
+  let(:instance_type) { ENV.fetch('BOSH_AWS_INSTANCE_TYPE', 't2.small') }
+  let(:ami) { ENV.fetch('BOSH_AWS_IMAGE_ID', 'ami-b66ed3de') }
 
   before { Bosh::Registry::Client.stub(new: double('registry').as_null_object) }
 
@@ -35,8 +36,6 @@ describe Bosh::AwsCloud::Cloud do
       }
     )
   end
-
-  let(:ami) { 'ami-809a48e9' } # ubuntu-lucid-10.04-i386-server-20120221 on instance store
 
   before do
     AWS::EC2.new(
@@ -80,7 +79,7 @@ describe Bosh::AwsCloud::Cloud do
     describe 'VM lifecycle with light stemcells' do
       it 'exercises vm lifecycle with light stemcell' do
         expect {
-          stemcell_id = cpi.create_stemcell('/not/a/real/path', { 'ami' => { 'us-east-1' => 'ami-809a48e9' } })
+          stemcell_id = cpi.create_stemcell('/not/a/real/path', { 'ami' => { 'us-east-1' => ami } })
           instance_id = cpi.create_vm(
             nil,
             stemcell_id,

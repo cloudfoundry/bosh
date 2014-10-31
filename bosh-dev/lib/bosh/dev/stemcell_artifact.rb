@@ -1,18 +1,20 @@
 require 'bosh/dev/uri_provider'
+require 'bosh/dev/command_helper'
 require 'bosh/stemcell/archive_filename'
 
 module Bosh::Dev
   class StemcellArtifact
+    include CommandHelper
 
-    def initialize(version, stemcell_definition, logger)
-      @version = version
+    def initialize(source_version, destination_version, stemcell_definition, logger)
+      @source_version = source_version
+      @destination_version = destination_version
       @stemcell_definition = stemcell_definition
       @logger = logger
     end
 
     def name
-      filename = Bosh::Stemcell::ArchiveFilename.new(@version, @stemcell_definition, 'bosh-stemcell')
-      "#{filename}.tgz"
+      Bosh::Stemcell::ArchiveFilename.new(@destination_version, @stemcell_definition, 'bosh-stemcell').to_s
     end
 
     def promote
@@ -28,7 +30,8 @@ module Bosh::Dev
     private
 
     def source
-      Bosh::Dev::UriProvider.pipeline_s3_path(File.join(@version, 'bosh-stemcell', infrastructure_name), name)
+      file_name = Bosh::Stemcell::ArchiveFilename.new(@source_version, @stemcell_definition, 'bosh-stemcell').to_s
+      Bosh::Dev::UriProvider.pipeline_s3_path(File.join(@source_version, 'bosh-stemcell', infrastructure_name), file_name)
     end
 
     def destination
@@ -37,11 +40,6 @@ module Bosh::Dev
 
     def infrastructure_name
       @stemcell_definition.infrastructure.name
-    end
-
-    def exec_cmd(cmd)
-      @logger.info("Executing: #{cmd}")
-      Open3.capture3(cmd)
     end
   end
 end
