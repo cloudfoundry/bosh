@@ -223,9 +223,15 @@ cloud:
       <% if_p('aws.elb_endpoint') do |elb_endpoint| %>
       elb_endpoint: <%= elb_endpoint %>
       <% end %>
-      max_retries: <%= p('aws.max_retries') %>
-      http_read_timeout: <%= p('aws.http_read_timeout') %>
-      http_wire_trace: <%= p('aws.http_wire_trace') %>
+      <% if_p('aws.max_retries') do |max_retries| %>
+      max_retries: <%= max_retries %>
+      <% end %>
+      <% if_p('aws.http_read_timeout') do |http_read_timeout| %>
+      http_read_timeout: <%= http_read_timeout %>
+      <% end %>
+      <% if_p('aws.http_wire_trace') do |http_wire_trace| %>
+      http_wire_trace: <%= http_wire_trace %>
+      <% end %>
     registry:
       endpoint: http://<%= reg_address %>:<%= reg_port %>
       user: <%= reg_user %>
