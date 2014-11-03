@@ -40,7 +40,7 @@ module Bosh::Dev
       stdout, stderr, status = exec_cmd('git rev-parse HEAD')
       raise "Failed to get the sha of the release commit: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
-      stdout
+      stdout.chomp
     end
   end
 end
