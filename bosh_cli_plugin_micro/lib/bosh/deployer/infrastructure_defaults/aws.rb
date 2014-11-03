@@ -29,6 +29,8 @@ module Bosh::Deployer::InfrastructureDefaults
           'secret_access_key' => nil,
           'ec2_endpoint' => nil,
           'max_retries' => 2,
+          'http_read_timeout' => 60,
+          'http_wire_trace' => false,
           'default_key_name' => nil,
           'default_security_groups' => [],
           'ssh_user' => 'vcap'
