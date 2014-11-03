@@ -119,7 +119,6 @@ module Bosh::Director
           end
 
           def it_creates_vm_with_persistent_disk
-            expect(fake_cloud).to receive(:detach_disk).with('vm-cid', 'disk-cid').ordered
             expect(fake_cloud).to receive(:delete_vm).with('vm-cid').ordered
             expect(fake_cloud).to receive(:create_vm).
               with('agent-222', 'sc-302', {'foo' => 'bar'}, ['A', 'B', 'C'], ['disk-cid'], {'key1' => 'value1'}).
@@ -171,7 +170,6 @@ module Bosh::Director
 
         context 'when there is no persistent disk' do
           it 'just recreates the VM' do
-            expect(fake_cloud).to_not receive(:detach_disk)
             expect(fake_cloud).to receive(:delete_vm).with('vm-cid').ordered
             expect(fake_cloud).to receive(:create_vm).
                 with('agent-222', 'sc-302', {'foo' => 'bar'}, ['A', 'B', 'C'], [], {'key1' => 'value1'}).

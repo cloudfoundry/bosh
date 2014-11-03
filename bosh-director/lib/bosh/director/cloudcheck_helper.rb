@@ -100,12 +100,6 @@ module Bosh::Director
       instance = vm.instance
       disk_cid = instance ? instance.persistent_disk_cid : nil
 
-      begin
-        cloud.detach_disk(vm.cid, disk_cid) if disk_cid
-      rescue Bosh::Clouds::DiskNotAttached
-        @logger.warn("Disk cid '#{disk_cid}' detected, but the disk is already detached")
-      end
-
       # One situation where this handler is actually useful is when
       # VM has already been deleted but something failed after that
       # and it is still referenced in DB. In that case it makes sense
