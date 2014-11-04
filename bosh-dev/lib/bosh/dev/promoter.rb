@@ -1,4 +1,4 @@
-require 'logger'
+require 'mono_logger'
 require 'bosh/core/shell'
 require 'bosh/dev/build'
 require 'bosh/dev/download_adapter'
@@ -25,7 +25,7 @@ module Bosh::Dev
         args.fetch(:candidate_sha),
         args.fetch(:feature_branch),
         args.fetch(:stable_branch),
-        Logger.new(STDERR),
+        MonoLogger.new(STDERR),
       )
     end
 

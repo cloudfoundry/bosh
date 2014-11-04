@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
 
 require "fileutils"
-require "logger"
+require "mono_logger"
 require "tmpdir"
 require "rack/test"
 
@@ -21,12 +21,12 @@ module SpecHelper
 
     def configure_logging
       if ENV["DEBUG"]
-        @logger = Logger.new(STDOUT)
+        @logger = MonoLogger.new(STDOUT)
       else
         path = File.expand_path("/tmp/spec.log", __FILE__)
         log_file = File.open(path, "w")
         log_file.sync = true
-        @logger = Logger.new(log_file)
+        @logger = MonoLogger.new(log_file)
       end
     end
 
@@ -110,6 +110,6 @@ end
 RSpec.configure do |rspec|
   rspec.before(:each) do
     SpecHelper.reset
-    Bosh::Registry.logger = Logger.new(StringIO.new)
+    Bosh::Registry.logger = MonoLogger.new(StringIO.new)
   end
 end

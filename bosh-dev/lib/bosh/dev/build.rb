@@ -1,5 +1,5 @@
 require 'peach'
-require 'logger'
+require 'mono_logger'
 require 'bosh/dev/promotable_artifacts'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/local_download_adapter'
@@ -15,7 +15,7 @@ module Bosh::Dev
   class Build
     attr_reader :number
 
-    def self.candidate(logger = Logger.new(STDERR))
+    def self.candidate(logger = MonoLogger.new(STDERR))
       number = ENV['CANDIDATE_BUILD_NUMBER']
       if number
         logger.info("CANDIDATE_BUILD_NUMBER is #{number}. Using candidate build.")

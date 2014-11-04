@@ -1,4 +1,4 @@
-require 'logger'
+require 'mono_logger'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/artifacts_downloader'
 require 'bosh/dev/deployments_repository'
@@ -32,7 +32,7 @@ module Bosh::Dev
     end
 
     def build
-      logger = Logger.new(STDERR)
+      logger = MonoLogger.new(STDERR)
 
       deployments_repository = DeploymentsRepository.new(ENV, logger)
       deployment_account = build_deployment_account(deployments_repository)

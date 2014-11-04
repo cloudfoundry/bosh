@@ -2,7 +2,7 @@ module VimSdk
 
   module VmomiSupport
 
-    @logger = Logger.new(STDOUT)
+    @logger = MonoLogger.new(STDOUT)
 
     @type_info = {}
     @wsdl_type_info = {}

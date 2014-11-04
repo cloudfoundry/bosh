@@ -1,4 +1,4 @@
-require 'logger'
+require 'mono_logger'
 require 'benchmark'
 require 'securerandom'
 require 'bosh/dev/sandbox/service'
@@ -66,7 +66,7 @@ module Bosh::Dev::Sandbox
         db_opts,
         ENV['DEBUG'],
         ENV['TEST_ENV_NUMBER'].to_i,
-        Logger.new(STDOUT),
+        MonoLogger.new(STDOUT),
       )
     end
 

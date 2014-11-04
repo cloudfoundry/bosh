@@ -1,5 +1,5 @@
 require 'bosh/dev/vsphere'
-require 'logger'
+require 'mono_logger'
 require 'common/retryable'
 require 'cloud/vsphere'
 require 'sequel'
@@ -10,7 +10,7 @@ module Bosh::Dev::VSphere
   class MicroBoshDeploymentCleaner
     def initialize(manifest)
       @manifest = manifest
-      @logger = Logger.new($stderr)
+      @logger = MonoLogger.new(STDERR)
     end
 
     def clean

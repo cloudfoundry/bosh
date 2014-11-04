@@ -71,7 +71,7 @@ module Bosh::Dev::VSphere
           microbosh_deployment_manifest,
           bat_deployment_manifest,
           microbosh_deployment_cleaner,
-          be_an_instance_of(Logger),
+          be_a_kind_of(Logger),
         ).and_return(runner)
 
         expect(subject.build(artifacts, 'net-type')).to eq(runner)

@@ -1,3 +1,4 @@
+require 'mono_logger'
 require 'bosh/dev/aws'
 require 'bosh/dev/deployments_repository'
 
@@ -5,7 +6,7 @@ module Bosh::Dev::Aws
   class Receipts
     def initialize(env)
       @env = env
-      logger = Logger.new(STDERR)
+      logger = MonoLogger.new(STDERR)
       @deployments_repository = Bosh::Dev::DeploymentsRepository.new(env, logger)
     end
 

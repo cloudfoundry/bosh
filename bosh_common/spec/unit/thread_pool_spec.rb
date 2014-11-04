@@ -1,14 +1,12 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
-require File.expand_path("../../spec_helper", __FILE__)
-
-require "common/thread_pool"
+require 'spec_helper'
+require 'mono_logger'
+require 'common/thread_pool'
 
 describe Bosh::ThreadPool do
 
   before(:all) do
-    @logger = Logger.new(STDOUT)
-    @logger.level = Logger::INFO
+    @logger = MonoLogger.new(STDOUT)
+    @logger.level = MonoLogger::INFO
   end
 
   it "should respect max threads" do

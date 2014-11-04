@@ -1,4 +1,4 @@
-require 'logger'
+require 'mono_logger'
 require 'common/retryable'
 require 'sequel'
 require 'sequel/adapters/sqlite'
@@ -11,7 +11,7 @@ module Bosh::Dev::VCloud
     def initialize(env, manifest)
       @env = env
       @manifest = manifest
-      @logger = Logger.new($stderr)
+      @logger = MonoLogger.new(STDERR)
     end
 
     def clean
