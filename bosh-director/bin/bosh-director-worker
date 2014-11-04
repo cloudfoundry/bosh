@@ -68,13 +68,7 @@ end
 
 Resque.after_fork do
   EM.error_handler { |e| puts "Error raised during event loop: #{e.inspect}, backtrace: #{e.backtrace}" }
-  Thread.new do
-    EM.run do
-      # connect to NATS on EM thread
-      # EM::connect will throw unbound errors if run from a different thread.
-      Bosh::Director::Config.nats
-    end
-  end
+  Thread.new { EM.run }
 end
 
 Resque::Failure.backend = Resque::Failure::Backtrace
