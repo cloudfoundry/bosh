@@ -90,7 +90,7 @@ module Bat
 
     def require_deployment(what, deployment_spec, options)
       if @bosh_api.deployments.include?(what.name) && !options[:force]
-        expect(@logger.info('deployment already deployed, skipping deployment')).to succeed
+        @logger.info('deployment already deployed, skipping deployment')
         expect(@bosh_runner.bosh_safe("deployment #{what.to_path}")).to succeed
       else
         @logger.info('deployment not already deployed, deploying...')
