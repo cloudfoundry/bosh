@@ -35,9 +35,16 @@ module Bosh::Dev
     end
 
     def tag_sha(tag_name)
-      stdout, stderr, status = exec_cmd("git rev-parse #{tag_name}")
+      stdout, stderr, status = exec_cmd('git fetch --tags')
+      raise "Failed to fetch tags: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+
+      stdout, stderr, status = exec_cmd("git rev-parse #{tag_name}^{}")
       raise "Failed to get sha of tag #{tag_name}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
-      stdout
+      stdout.strip
+    end
+
+    def stable_tag_sha(commit_sha)
+      tag_sha(stable_tag_name(commit_sha))
     end
 
     def stable_tag_name(build_number)

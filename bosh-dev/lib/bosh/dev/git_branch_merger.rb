@@ -8,14 +8,17 @@ module Bosh::Dev
       @logger = logger
     end
 
-    def merge(target_branch, commit_message)
+    def merge(source_sha, target_branch, commit_message)
       stdout, stderr, status = exec_cmd("git fetch origin #{target_branch}")
       raise "Failed fetching branch #{target_branch}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
-      stdout, stderr, status = exec_cmd("git merge origin/#{target_branch} -m '#{commit_message}'")
+      stdout, stderr, status = exec_cmd("git checkout #{target_branch}")
+      raise "Failed checking out branch #{target_branch}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+
+      stdout, stderr, status = exec_cmd("git merge #{source_sha} -m '#{commit_message}'")
       raise "Failed merging to branch #{target_branch}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
-      stdout, stderr, status = exec_cmd("git push origin HEAD:#{target_branch}")
+      stdout, stderr, status = exec_cmd("git push origin #{target_branch}")
       raise "Failed pushing to branch #{target_branch}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
     end
 
@@ -23,10 +26,19 @@ module Bosh::Dev
       stdout, stderr, status = exec_cmd("git fetch origin #{branch_name}")
       raise "Failed fetching branch #{branch_name}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
-      stdout, stderr, status = exec_cmd("'git branch --contains #{commit_sha}")
+      stdout, stderr, status = exec_cmd("git checkout #{branch_name}")
+      raise "Failed to git checkout #{branch_name}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+
+      stdout, stderr, status = exec_cmd('git pull')
+      raise "Failed to git pull: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+
+      stdout, stderr, status = exec_cmd("git branch --contains #{commit_sha}")
       raise "Failed finding branches that contain sha #{commit_sha}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
-      stdout.lines.map(&:chomp).include?(branch_name)
+      branches = stdout.strip.lines.map(&:strip)
+      # the currently checked out branch is prefixed with a star
+      branches = branches.map{ |line| line.sub(/^\* /, '') }
+      branches.include?(branch_name)
     end
   end
 end

@@ -10,13 +10,13 @@ module Bosh::Dev
       before { allow(Open3).to receive(:capture3) }
 
       context 'when promoting suceeds' do
-        it 'promotes local dev_branch to remote stable_branch' do
-          dev_branch = 'my_branch'
+        it 'promotes local commit_sha to remote stable_branch' do
+          commit_sha = 'my_branch'
           stable_branch = 'your_branch'
-          expect(Open3).to receive(:capture3).with("git push origin #{dev_branch}:#{stable_branch}").
+          expect(Open3).to receive(:capture3).with("git push origin #{commit_sha}:#{stable_branch}").
             and_return([ nil, nil, instance_double('Process::Status', success?: true) ])
 
-          git_promoter.promote(dev_branch, stable_branch)
+          git_promoter.promote(commit_sha, stable_branch)
         end
       end
 
@@ -32,11 +32,11 @@ module Bosh::Dev
       end
 
       [nil, ''].each do |invalid|
-        context "when dev_branch is #{invalid}" do
+        context "when commit_sha is #{invalid}" do
           it 'raises an error' do
             expect {
               git_promoter.promote(invalid, 'stable')
-            }.to raise_error('dev_branch is required')
+            }.to raise_error('commit_sha is required')
           end
 
           it 'does not execute any git commands' do
