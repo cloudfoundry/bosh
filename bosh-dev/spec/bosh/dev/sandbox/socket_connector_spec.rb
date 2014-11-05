@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'logger'
 require 'bosh/dev/sandbox/socket_connector'
 
 module Bosh::Dev::Sandbox

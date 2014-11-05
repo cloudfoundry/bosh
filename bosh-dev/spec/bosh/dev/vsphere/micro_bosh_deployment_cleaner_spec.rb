@@ -19,9 +19,6 @@ module Bosh::Dev::VSphere
       before { Bosh::Clouds::Config.stub(:db) }
       let(:sequel_klass) { class_double('Sequel::Model').as_stubbed_const }
 
-      before { Logger.stub(new: logger) }
-      let(:logger) { instance_double('Logger', info: nil) }
-
       context 'when get_vms returns vms' do
         before { cloud.stub(get_vms: [vm1, vm2]) }
         let(:vm1) { instance_double('VimSdk::Vim::VirtualMachine', destroy: nil, name: 'fake vm 1') }
@@ -53,8 +50,9 @@ module Bosh::Dev::VSphere
 
         it 'logs a failure but doesn\'t stop' do
           client.stub(:power_off_vm).and_raise
-          logger.should_receive(:info).with("Destruction of #{vm1.inspect} failed, continuing")
           cleaner.clean
+
+          expect(log_string).to include("Destruction of #{vm1.inspect} failed, continuing")
         end
       end
     end

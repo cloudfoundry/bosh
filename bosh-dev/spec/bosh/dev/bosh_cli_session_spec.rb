@@ -100,7 +100,6 @@ module Bosh::Dev
 
   describe S3GemBoshCmd do
     subject { described_class.new('fake-number', logger) }
-    let(:logger) { Logger.new('/dev/null') }
 
     include FakeFS::SpecHelpers
 

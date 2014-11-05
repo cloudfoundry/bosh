@@ -7,8 +7,6 @@ module Bosh::Dev
   describe Build do
     include FakeFS::SpecHelpers
 
-    let(:logger) { Logger.new('/dev/null') }
-
     describe '.candidate' do
       subject { described_class.candidate(logger) }
 
@@ -231,7 +229,6 @@ module Bosh::Dev
     end
 
     describe '#upload_stemcell' do
-      let(:logger) { instance_double('Logger').as_null_object }
       let(:bucket_files) { fog_storage.directories.get('bosh-ci-pipeline').files }
       let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter', upload: nil) }
 
@@ -257,7 +254,6 @@ module Bosh::Dev
           key = '123/bosh-stemcell/vsphere/bosh-stemcell-123-vsphere-esxi-ubuntu.tgz'
           latest_key = '123/bosh-stemcell/vsphere/bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz'
 
-          expect(logger).to receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
 
           upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-ci-pipeline',
                                                       key: key,
@@ -270,6 +266,8 @@ module Bosh::Dev
                                                       public: true)
 
           build.upload_stemcell(stemcell)
+
+          expect(log_string).to include("uploaded to s3://bosh-ci-pipeline/#{key}")
         end
       end
 
@@ -290,7 +288,6 @@ module Bosh::Dev
           key = '123/bosh-stemcell/vsphere/light-bosh-stemcell-123-vsphere-esxi-ubuntu.tgz'
           latest_key = '123/bosh-stemcell/vsphere/light-bosh-stemcell-latest-vsphere-esxi-ubuntu.tgz'
 
-          expect(logger).to receive(:info).with("uploaded to s3://bosh-ci-pipeline/#{key}")
 
           upload_adapter.should_receive(:upload).with(bucket_name: 'bosh-ci-pipeline',
                                                       key: key,
@@ -303,6 +300,8 @@ module Bosh::Dev
                                                       public: true)
 
           build.upload_stemcell(stemcell)
+
+          expect(log_string).to include("uploaded to s3://bosh-ci-pipeline/#{key}")
         end
       end
     end
@@ -369,7 +368,6 @@ module Bosh::Dev
   end
 
   describe Build::Candidate do
-    let(:logger) { Logger.new('/dev/null') }
     subject(:build) { Build::Candidate.new('123', download_adapter, logger) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
 
@@ -397,7 +395,6 @@ module Bosh::Dev
   end
 
   describe Build::Local do
-    let(:logger) { Logger.new('/dev/null') }
     subject { described_class.new('build-number', download_adapter, logger) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter') }
 

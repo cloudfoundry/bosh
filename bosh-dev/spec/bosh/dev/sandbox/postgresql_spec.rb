@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'logger'
 require 'bosh/dev/sandbox/postgresql'
 
 module Bosh::Dev::Sandbox

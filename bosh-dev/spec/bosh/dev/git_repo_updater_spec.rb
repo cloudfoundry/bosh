@@ -1,13 +1,11 @@
 require 'spec_helper'
 require 'bosh/dev/git_repo_updater'
-require 'logger'
 
 module Bosh::Dev
   describe GitRepoUpdater do
     include FakeFS::SpecHelpers
 
     subject(:git_repo_updater) { described_class.new(logger) }
-    let(:logger) { Logger.new('/dev/null') }
 
     let(:dir) { '/some/dir' }
 

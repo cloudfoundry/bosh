@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'mono_logger'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/local_download_adapter'
 require 'bosh/dev/promoter'
@@ -10,15 +9,10 @@ require 'bosh/dev/command_helper'
 
 describe 'promotion', type: :integration do
   def exec_cmd(cmd)
-    @logger.info("Executing: #{cmd}")
+    logger.info("Executing: #{cmd}")
     stdout, stderr, status = Open3.capture3(cmd)
     raise "Failed executing '#{cmd}'\nSTDOUT: '#{stdout}', \nSTDERR: '#{stderr}'" unless status.success?
     [stdout, stderr, status]
-  end
-
-  before do
-    @logger = MonoLogger.new('/dev/null')
-    allow(MonoLogger).to receive(:new).with(STDERR).and_return(@logger)
   end
 
   let!(:origin_repo_path) { Dir.mktmpdir(['promote_test_repo', '.git']) }
@@ -42,7 +36,7 @@ describe 'promotion', type: :integration do
   after { FileUtils.rm_rf(workspace_path) }
 
   before do
-    allow(Bosh::Dev::DownloadAdapter).to(receive(:new).with(@logger)) { Bosh::Dev::LocalDownloadAdapter.new(@logger) }
+    allow(Bosh::Dev::DownloadAdapter).to(receive(:new).with(logger)) { Bosh::Dev::LocalDownloadAdapter.new(logger) }
   end
 
   let!(:release_patch_file) { Tempfile.new(['promote_test_release', '.patch']) }
@@ -84,7 +78,7 @@ describe 'promotion', type: :integration do
 
       # disable promotion of stemcells, gems & the release
       build = instance_double('Bosh::Dev::Build', promote: nil, promoted?: false)
-      allow(Bosh::Dev::Build).to receive(:candidate).with(@logger).and_return(build)
+      allow(Bosh::Dev::Build).to receive(:candidate).with(logger).and_return(build)
 
       rake_input_args = {
         candidate_build_number: '0000',
@@ -96,12 +90,12 @@ describe 'promotion', type: :integration do
       promoter.promote
 
       # expect new tag stable-0000 to exist
-      tagger = Bosh::Dev::GitTagger.new(@logger)
+      tagger = Bosh::Dev::GitTagger.new(logger)
       tag_sha = tagger.tag_sha('stable-0000') # errors if tag does not exist
       expect(tag_sha).to_not be_empty
 
       # expect sha of tag to be in feature_branch and master
-      merger = Bosh::Dev::GitBranchMerger.new(@logger)
+      merger = Bosh::Dev::GitBranchMerger.new(logger)
       expect(merger.branch_contains?('master', tag_sha)).to be(true)
       expect(merger.branch_contains?('feature_branch', tag_sha)).to be(true)
     end

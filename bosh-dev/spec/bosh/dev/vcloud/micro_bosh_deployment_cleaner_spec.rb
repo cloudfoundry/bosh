@@ -43,9 +43,6 @@ module Bosh::Dev::VCloud
         } }
       end
 
-      before { Logger.stub(new: logger) }
-      let(:logger) { instance_double('Logger', info: nil) }
-
       context 'when vapp exists' do
         it 'powers off vapp, deletes independent disks and deletes the vapp' do
           vdc.should_receive(:find_vapp_by_name).with('vapp-name').and_return(vapp)

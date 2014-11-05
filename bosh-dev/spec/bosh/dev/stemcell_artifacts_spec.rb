@@ -1,12 +1,8 @@
 require 'spec_helper'
 require 'bosh/dev/stemcell_artifacts'
-require 'logger'
 
 module Bosh::Dev
   describe StemcellArtifacts do
-
-    let(:logger) { Logger.new('/dev/null') }
-
     describe '.all' do
       context 'when BOSH_PROMOTE_STEMCELLS are specified' do
         before do

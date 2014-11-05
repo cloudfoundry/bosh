@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'logger'
 require 'bosh/dev/sandbox/mysql'
 
 module Bosh::Dev::Sandbox

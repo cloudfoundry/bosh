@@ -1,13 +1,10 @@
 require 'spec_helper'
 require 'bosh/dev/gem_artifact'
 require 'bosh/dev/gem_component'
-require 'logger'
 
 module Bosh::Dev
   describe GemArtifact do
     include FakeFS::SpecHelpers
-
-    let(:logger) { Logger.new('/dev/null') }
 
     subject(:gem_artifact) do
       GemArtifact.new(component, 's3://bosh-ci-pipeline/1234/', '1234', logger)

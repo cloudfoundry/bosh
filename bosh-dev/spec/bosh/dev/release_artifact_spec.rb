@@ -1,11 +1,8 @@
 require 'spec_helper'
 require 'bosh/dev/release_artifact'
-require 'logger'
 
 module Bosh::Dev
   describe ReleaseArtifact do
-
-    let(:logger) { Logger.new('/dev/null') }
     let(:build_number) { 'fake-build-number' }
 
     subject(:release_artifact) { ReleaseArtifact.new(build_number, logger) }

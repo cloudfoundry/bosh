@@ -1,10 +1,9 @@
 require 'spec_helper'
-require 'logger'
 require 'bosh/dev/git_tagger'
 
 module Bosh::Dev
   describe GitTagger do
-    subject(:git_tagger) { described_class.new(Logger.new(nil)) }
+    subject(:git_tagger) { described_class.new(logger) }
 
     describe '#tag_and_push' do
       let(:sha)            { 'fake-sha' }

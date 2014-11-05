@@ -28,9 +28,6 @@ module Bosh::Dev::Aws
         micro_bosh_deployment_cleaner.clean
       end
 
-      before { Logger.stub(new: logger) }
-      let(:logger) { instance_double('Logger', info: nil) }
-
       context 'when matching instances are found' do
         it 'terminates vms that have specific microbosh tag name and are not already terminated' do
           instance_with_non_matching =

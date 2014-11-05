@@ -2,7 +2,6 @@ require 'spec_helper'
 require 'bosh/dev/stemcell_artifact'
 require 'bosh/stemcell/definition'
 require 'bosh/stemcell/infrastructure'
-require 'logger'
 
 module Bosh::Dev
   describe StemcellArtifact do
@@ -14,7 +13,6 @@ module Bosh::Dev
     let(:infrastructure_name) { 'fake-infrastructure-name' }
     let(:source_version) { 'fake-source-version' }
     let(:destination_version) { 'fake-destination-version' }
-    let(:logger) { Logger.new('/dev/null') }
 
     let(:archive_source_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: archive_source_filename_string) }
     let(:archive_source_filename_string) { 'fake-source-filename.tgz' }

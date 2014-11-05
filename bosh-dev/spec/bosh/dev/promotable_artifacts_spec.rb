@@ -4,7 +4,6 @@ require 'bosh/dev/build'
 
 module Bosh::Dev
   describe PromotableArtifacts do
-    let(:logger) { Logger.new('/dev/null') }
     subject(:build_artifacts) { PromotableArtifacts.new(build, logger) }
     let(:build) { instance_double('Bosh::Dev::Build', number: 123) }
 

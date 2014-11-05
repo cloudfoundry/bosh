@@ -1,7 +1,6 @@
 require 'spec_helper'
 require 'bosh/dev/release_change_promoter'
 require 'bosh/dev/download_adapter'
-require 'logger'
 
 module Bosh::Dev
   describe ReleaseChangePromoter do
@@ -13,7 +12,6 @@ module Bosh::Dev
     let(:final_release_sha) { 'final-release-sha' }
     let(:release_changes) { Bosh::Dev::ReleaseChangePromoter.new(build_number, candidate_sha, download_adapter, logger) }
     let(:download_adapter) { instance_double('Bosh::Dev::DownloadAdapter', download: nil) }
-    let(:logger) { Logger.new('/dev/null') }
 
     let(:release_patches_bucket) { Bosh::Dev::UriProvider::RELEASE_PATCHES_BUCKET }
     let(:patch_key) { "#{build_number}-final-release.patch" }

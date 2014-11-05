@@ -3,9 +3,6 @@ require 'bosh/dev/automated_deploy_builder'
 
 module Bosh::Dev
   describe AutomatedDeployBuilder do
-
-    let(:logger) { Logger.new('/dev/null') }
-
     describe '.for_rake_args' do
       it 'returns automated deployer builder for rake arguments' do
         rake_args = Struct.new(
@@ -53,8 +50,6 @@ module Bosh::Dev
     end
 
     describe '#build' do
-      before { allow(Logger).to receive(:new).and_return(logger) }
-
       it 'builds automated deploy' do
         build_target = instance_double('Bosh::Dev::BuildTarget', {
           build_number: 'fake-number',
@@ -74,12 +69,12 @@ module Bosh::Dev
         artifacts_downloader = instance_double('Bosh::Dev::ArtifactsDownloader')
         expect(Bosh::Dev::ArtifactsDownloader).to receive(:new).with(
           be_an_instance_of(Bosh::Dev::DownloadAdapter),
-          be_an_instance_of(::Logger),
+          be_a_kind_of(Logger),
         ).and_return(artifacts_downloader)
 
         s3_gem_bosh_cmd = instance_double('Bosh::Dev::S3GemBoshCmd')
         expect(Bosh::Dev::S3GemBoshCmd).to receive(:new).
-          with('fake-number', be_an_instance_of(::Logger)).
+          with('fake-number', be_a_kind_of(Logger)).
           and_return(s3_gem_bosh_cmd)
 
         bosh_cli_session = instance_double('Bosh::Dev::BoshCliSession')

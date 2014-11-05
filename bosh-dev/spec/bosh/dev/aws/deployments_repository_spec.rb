@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'bosh/dev/deployments_repository'
-require 'logger'
 
 module Bosh::Dev
   describe DeploymentsRepository do
@@ -8,7 +7,6 @@ module Bosh::Dev
 
     subject { described_class.new(env, logger, options) }
     let(:env) { { 'BOSH_JENKINS_DEPLOYMENTS_REPO' => 'fake_BOSH_JENKINS_DEPLOYMENTS_REPO' } }
-    let(:logger) { Logger.new('/dev/null') }
     let(:options) { {} }
 
     before { Bosh::Core::Shell.stub(new: shell) }

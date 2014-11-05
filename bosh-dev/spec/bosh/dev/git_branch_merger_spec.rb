@@ -1,12 +1,10 @@
 require 'spec_helper'
-require 'logger'
 require 'bosh/dev/git_branch_merger'
 require 'bosh/core/shell'
 
 module Bosh::Dev
   describe GitBranchMerger do
     let(:git_branch_merger) { described_class.new(logger) }
-    let(:logger) { Logger.new('/dev/null') }
 
     describe '#merge' do
       let(:source_sha) { 'fake-source-sha' }

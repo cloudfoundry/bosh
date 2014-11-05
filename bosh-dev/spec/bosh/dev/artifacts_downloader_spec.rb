@@ -1,4 +1,3 @@
-require 'logger'
 require 'spec_helper'
 require 'bosh/dev/build'
 require 'bosh/dev/build_target'
@@ -9,7 +8,6 @@ module Bosh::Dev
   describe ArtifactsDownloader do
     subject(:artifacts_downloader) { ArtifactsDownloader.new(download_adapter, logger) }
     let(:download_adapter) { DownloadAdapter.new(logger) }
-    let(:logger) { Logger.new('/dev/null') }
 
     describe '#download_release' do
       it 'downloads a release and returns path' do

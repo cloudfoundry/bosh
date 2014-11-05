@@ -1,11 +1,10 @@
 require 'spec_helper'
 require 'bosh/dev/git_promoter'
-require 'logger'
 
 module Bosh::Dev
   describe GitPromoter do
     describe '#promote' do
-      subject(:git_promoter) { described_class.new(Logger.new(nil)) }
+      subject(:git_promoter) { described_class.new(logger) }
 
       before { allow(Open3).to receive(:capture3) }
 

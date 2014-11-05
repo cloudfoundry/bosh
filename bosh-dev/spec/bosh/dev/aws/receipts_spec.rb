@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'bosh/dev/aws/receipts'
-require 'logger'
 
 module Bosh::Dev::Aws
   describe Receipts do

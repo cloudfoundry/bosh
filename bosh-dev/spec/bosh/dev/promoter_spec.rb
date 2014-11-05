@@ -3,14 +3,9 @@ require 'bosh/dev/promoter'
 
 module Bosh::Dev
   describe Promoter do
-
-    let(:logger) { Logger.new('/dev/null') }
-
     describe '.build' do
       it 'constructs a promoter, injects the logger' do
         promoter = double('promoter')
-        allow(Logger).to receive(:new).with(STDERR).and_return(logger)
-
         expect(Bosh::Dev::Promoter).to receive(:new).with(
           321,
           'deadbeef',
@@ -47,7 +42,6 @@ module Bosh::Dev
       let(:release_change_promoter) { instance_double('Bosh::Dev::ReleaseChangePromoter', promote: nil) }
 
       before do
-        allow(Logger).to receive(:new).with(STDERR).and_return(logger)
         allow(Build).to receive(:candidate).and_return(build)
         allow(GitPromoter).to receive(:new).with(logger).and_return(git_promoter)
         allow(GitTagger).to receive(:new).with(logger).and_return(git_tagger)
@@ -129,10 +123,9 @@ module Bosh::Dev
           expect(git_promoter).to_not receive(:promote)
           expect(git_tagger).to_not receive(:tag_and_push)
 
-          allow(logger).to receive(:info)
-          expect(logger).to receive(:info).with(/Skipping Apply, Promote, Tag & Push promotion stage/)
-
           promoter.promote
+
+          expect(log_string).to include('Skipping Apply, Promote, Tag & Push promotion stage')
         end
 
         it 'still attempts to promote the artifacts' do

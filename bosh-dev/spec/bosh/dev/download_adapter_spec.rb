@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'logger'
 require 'bosh/dev/download_adapter'
 
 module Bosh::Dev
@@ -8,7 +7,6 @@ module Bosh::Dev
       include FakeFS::SpecHelpers
 
       subject { described_class.new(logger) }
-      let(:logger) { Logger.new(StringIO.new) }
 
       before(:each) { FileUtils.mkdir('/tmp') }
 

@@ -33,9 +33,6 @@ module Bosh::Dev::Openstack
       before { compute.stub(servers: servers_collection) }
       let(:servers_collection) { instance_double('Fog::Compute::OpenStack::Servers', all: []) }
 
-      before { Logger.stub(new: logger) }
-      let(:logger) { instance_double('Logger', info: nil) }
-
       before { compute.stub(images: image_collection) }
       let(:image_collection) { instance_double('Fog::Compute::OpenStack::Images', all: []) }
 
