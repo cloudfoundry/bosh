@@ -1,3 +1,37 @@
+## 2765
+
+Improvements:
+
+  * stemcell: ubuntu: Updated Ubuntu Trusty kernel to 3.13.0-39-generic [3cce75e]
+  * director: Honor --skip-if-exists when uploading remote releases [822f67e]
+  * cpi: aws: Support for additional AWS configuration properties [64b1d22]
+  * cpi: openstack: Add support for additional glance properties to the stemcell
+       that can be set when using VMware hypervisor with OpenStack [d32d847]
+  * agent: Bump bosh-agent [9ec67d5]
+       - uploading of compiled package blob is retried
+       - correct capture swap disk sizes returned from gosigar
+
+Bug Fixes:
+
+  * director: Switched bosh-registry to use bundler to install DB gems
+       which should bring back faster compilation times for bosh-registry [34b36a3]
+
+## 2754 (stemcells & release yanked)
+
+Improvements:
+
+  * cli: Adding persistent disk type configuration for Micro BOSH
+       via `persistent_disk_cloud_properties` [828df74]
+
+## 2751
+
+Improvements:
+
+  * director: Re-add director deployment events for operator
+       to be notified about deloyment start/finish/failure [b63c8f7]
+  * agent: Bump bosh-agent [d5218ef]
+       - Add FileRegistry for warden inf. for e2e testing of new bosh-micro-cli
+
 ## 2749
 
 Improvements:
