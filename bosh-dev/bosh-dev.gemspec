@@ -24,6 +24,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh_cli_plugin_aws'
   spec.add_dependency 'bundler'
   spec.add_dependency 'membrane'
+  spec.add_dependency 'logging'
 
   spec.add_dependency('ruby_vcloud_sdk', '=0.7.1')
 

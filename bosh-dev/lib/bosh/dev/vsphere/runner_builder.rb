@@ -1,4 +1,3 @@
-require 'mono_logger'
 require 'bosh/dev/vsphere'
 require 'bosh/dev/bat/director_address'
 require 'bosh/dev/bat/director_uuid'
@@ -8,12 +7,13 @@ require 'bosh/dev/vsphere/micro_bosh_deployment_manifest'
 require 'bosh/dev/vsphere/micro_bosh_deployment_cleaner'
 require 'bosh/dev/vsphere/bat_deployment_manifest'
 require 'bosh/dev/bat/runner'
+require 'logging'
 
 module Bosh::Dev::VSphere
   class RunnerBuilder
     def build(artifacts, net_type)
       env    = ENV
-      logger = MonoLogger.new(STDOUT)
+      logger = Logging.logger(STDOUT)
 
       director_address = Bosh::Dev::Bat::DirectorAddress.from_env(env, 'BOSH_VSPHERE_MICROBOSH_IP')
       bosh_cli_session = Bosh::Dev::BoshCliSession.default

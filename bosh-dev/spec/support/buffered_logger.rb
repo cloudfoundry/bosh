@@ -1,6 +1,6 @@
 require 'rspec'
 require 'logger'
-require 'mono_logger'
+require 'logging'
 
 module BufferedLogger
   # returns the log as a string
@@ -18,8 +18,8 @@ RSpec.configure do |c|
 
   c.before do
     @test_log_buffer = StringIO.new
-    @test_logger = MonoLogger.new(@test_log_buffer)
-    allow(MonoLogger).to receive(:new).and_return(@test_logger)
+    @test_logger = Logging.logger(@test_log_buffer)
+    allow(Logging).to receive(:logger).and_return(@test_logger)
     allow(Logger).to receive(:new).and_return(@test_logger)
   end
 

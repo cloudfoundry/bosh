@@ -60,7 +60,8 @@ namespace :spec do
       puts "Logging spec results in #{spec_logs}"
 
       max_threads = ENV.fetch('BOSH_MAX_THREADS', 10).to_i
-      Bosh::ThreadPool.new(max_threads: max_threads, logger: Logger.new('/dev/null')).wrap do |pool|
+      null_logger = Logging::Logger.new('Ignored')
+      Bosh::ThreadPool.new(max_threads: max_threads, logger: null_logger).wrap do |pool|
         builds.each do |build|
           pool.process do
             log_file    = "#{spec_logs}/#{build}.log"

@@ -73,7 +73,7 @@ module Bosh::Dev::Openstack
             microbosh_deployment_manifest,
             bat_deployment_manifest,
             microbosh_deployment_cleaner,
-            be_a_kind_of(Logger),
+            be_a_kind_of(Logging::Logger),
           ).and_return(runner)
 
         expect(subject.build(artifacts, 'net-type')).to eq(runner)

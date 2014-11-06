@@ -1,13 +1,13 @@
 require 'bosh/dev/aws'
 require 'aws-sdk'
-require 'mono_logger'
 require 'common/retryable'
+require 'logging'
 
 module Bosh::Dev::Aws
   class MicroBoshDeploymentCleaner
     def initialize(manifest)
       @manifest = manifest
-      @logger = MonoLogger.new(STDERR)
+      @logger = Logging.logger(STDERR)
     end
 
     def clean

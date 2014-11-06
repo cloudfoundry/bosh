@@ -4,7 +4,6 @@ require 'bosh/dev/sandbox/mysql'
 module Bosh::Dev::Sandbox
   describe Mysql do
     subject(:mysql) { described_class.new('fake_db_name', logger, runner, 'root', 'password') }
-    let(:logger) { Logger.new(nil) }
     let(:runner) { instance_double('Bosh::Core::Shell') }
 
     describe '#create_db' do

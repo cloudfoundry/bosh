@@ -1,4 +1,3 @@
-require 'mono_logger'
 require 'bosh/dev/openstack'
 require 'bosh/dev/bat/director_address'
 require 'bosh/dev/bat/director_uuid'
@@ -13,7 +12,7 @@ module Bosh::Dev::Openstack
   class RunnerBuilder
     def build(artifacts, net_type)
       env    = ENV
-      logger = MonoLogger.new(STDOUT)
+      logger = Logging.logger(STDOUT)
 
       director_address = Bosh::Dev::Bat::DirectorAddress.from_env(env, 'BOSH_OPENSTACK_VIP_DIRECTOR_IP')
       bosh_cli_session = Bosh::Dev::BoshCliSession.default

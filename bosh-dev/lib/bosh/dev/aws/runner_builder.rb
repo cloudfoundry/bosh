@@ -1,4 +1,3 @@
-require 'mono_logger'
 require 'bosh/dev/aws'
 require 'bosh/dev/bat/director_address'
 require 'bosh/dev/bosh_cli_session'
@@ -7,12 +6,13 @@ require 'bosh/dev/aws/micro_bosh_deployment_manifest'
 require 'bosh/dev/aws/micro_bosh_deployment_cleaner'
 require 'bosh/dev/aws/bat_deployment_manifest'
 require 'bosh/dev/bat/runner'
+require 'logging'
 
 module Bosh::Dev::Aws
   class RunnerBuilder
     def build(artifacts, net_type)
       env    = ENV
-      logger = MonoLogger.new(STDOUT)
+      logger = Logging.logger(STDOUT)
 
       director_address = Bosh::Dev::Bat::DirectorAddress.resolved_from_env(env, 'BOSH_VPC_SUBDOMAIN')
       bosh_cli_session = Bosh::Dev::BoshCliSession.default

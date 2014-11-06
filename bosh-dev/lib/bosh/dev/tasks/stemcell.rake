@@ -75,7 +75,7 @@ namespace :stemcell do
 
     Dir.mktmpdir('os-image') do |download_path|
       os_image_path = File.join(download_path, 'base_os_image.tgz')
-      downloader = Bosh::Dev::DownloadAdapter.new(Logger.new($stdout))
+      downloader = Bosh::Dev::DownloadAdapter.new(Logging.logger($stdout))
       downloader.download(os_image_uri, os_image_path)
 
       Rake::Task['stemcell:build_with_local_os_image'].invoke(args.infrastructure_name, args.hypervisor_name, args.operating_system_name, args.operating_system_version, args.agent_name, os_image_path)

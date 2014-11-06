@@ -1,4 +1,3 @@
-require 'mono_logger'
 require 'sequel'
 require 'sequel/adapters/sqlite'
 require 'cloud/openstack'
@@ -9,7 +8,7 @@ module Bosh::Dev::Openstack
   class MicroBoshDeploymentCleaner
     def initialize(manifest)
       @manifest = manifest
-      @logger = MonoLogger.new(STDERR)
+      @logger = Logging.logger(STDERR)
     end
 
     def clean

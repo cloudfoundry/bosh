@@ -5,7 +5,6 @@ module Bosh::Dev::Aws
   describe Receipts do
     subject { described_class.new(env) }
     let(:env) { { 'BOSH_VPC_SUBDOMAIN' => 'fake_BOSH_VPC_SUBDOMAIN' } }
-    let(:logger) { Logger.new('/dev/null') }
 
     before { allow(Bosh::Dev::DeploymentsRepository).to receive(:new).and_return(deployments_repository) }
     let(:deployments_repository) do

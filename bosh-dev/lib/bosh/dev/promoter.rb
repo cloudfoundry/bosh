@@ -1,4 +1,3 @@
-require 'mono_logger'
 require 'bosh/core/shell'
 require 'bosh/dev/build'
 require 'bosh/dev/download_adapter'
@@ -7,6 +6,7 @@ require 'bosh/dev/git_tagger'
 require 'bosh/dev/git_promoter'
 require 'bosh/dev/git_branch_merger'
 require 'bosh/dev/release_change_promoter'
+require 'logging'
 
 module Bosh::Dev
   class Promoter
@@ -25,7 +25,7 @@ module Bosh::Dev
         args.fetch(:candidate_sha),
         args.fetch(:feature_branch),
         args.fetch(:stable_branch),
-        MonoLogger.new(STDERR),
+        Logging.logger(STDERR),
       )
     end
 

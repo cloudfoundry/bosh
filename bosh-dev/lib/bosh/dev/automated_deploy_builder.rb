@@ -1,4 +1,3 @@
-require 'mono_logger'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/artifacts_downloader'
 require 'bosh/dev/deployments_repository'
@@ -8,6 +7,7 @@ require 'bosh/dev/vcloud/deployment_account'
 require 'bosh/dev/automated_deploy'
 require 'bosh/dev/bosh_cli_session'
 require 'bosh/dev/build_target'
+require 'logging'
 
 module Bosh::Dev
   class AutomatedDeployBuilder
@@ -32,7 +32,7 @@ module Bosh::Dev
     end
 
     def build
-      logger = MonoLogger.new(STDERR)
+      logger = Logging.logger(STDERR)
 
       deployments_repository = DeploymentsRepository.new(ENV, logger)
       deployment_account = build_deployment_account(deployments_repository)
