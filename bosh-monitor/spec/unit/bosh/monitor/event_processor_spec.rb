@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bhm::EventProcessor do
-  before :each do
+  before do
     email_options = {
       "recipients" => [ "dude@example.com" ],
       "smtp" => {
@@ -13,7 +13,7 @@ describe Bhm::EventProcessor do
       "interval" => 0.1
     }
 
-    Bhm.logger = Logging.logger(StringIO.new)
+    Bhm.logger = logger
     @processor = Bhm::EventProcessor.new
 
     @logger_plugin = Bhm::Plugins::Logger.new
@@ -81,10 +81,11 @@ describe Bhm::EventProcessor do
       heartbeat.should be_instance_of Bhm::Events::Heartbeat
     }.and_raise(Bhm::PluginError.new("error2"))
 
-    Bhm.logger.should_receive(:error).with("Plugin Bosh::Monitor::Plugins::Logger failed to process alert: error1")
-    Bhm.logger.should_receive(:error).with("Plugin Bosh::Monitor::Plugins::Logger failed to process heartbeat: error2")
     @processor.process(:alert, alert_payload)
     @processor.process(:heartbeat, heartbeat_payload)
+
+    expect(log_string).to include('Plugin Bosh::Monitor::Plugins::Logger failed to process alert: error1')
+    expect(log_string).to include('Plugin Bosh::Monitor::Plugins::Logger failed to process heartbeat: error2')
   end
 
   it "can prune old events" do

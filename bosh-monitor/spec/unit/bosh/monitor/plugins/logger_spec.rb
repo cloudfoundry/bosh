@@ -2,9 +2,8 @@ require 'spec_helper'
 
 describe Bhm::Plugins::Logger do
 
-  before :each do
-    @logger = Logging.logger(StringIO.new)
-    Bhm.logger = @logger
+  before do
+    Bhm.logger = logger
     @plugin = Bhm::Plugins::Logger.new
   end
 
@@ -16,8 +15,8 @@ describe Bhm::Plugins::Logger do
     heartbeat = Bhm::Events::Base.create!(:heartbeat, heartbeat_payload)
     alert = Bhm::Events::Base.create!(:alert, alert_payload)
 
-    @logger.should_receive(:info).with("[HEARTBEAT] #{heartbeat.to_s}")
-    @logger.should_receive(:info).with("[ALERT] #{alert.to_s}")
+    expect(logger).to receive(:info).with("[HEARTBEAT] #{heartbeat.to_s}")
+    expect(logger).to receive(:info).with("[ALERT] #{alert.to_s}")
 
     @plugin.process(heartbeat)
     @plugin.process(alert)

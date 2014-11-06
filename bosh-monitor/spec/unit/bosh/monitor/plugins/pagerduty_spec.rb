@@ -2,9 +2,7 @@ require 'spec_helper'
 
 describe Bhm::Plugins::Pagerduty do
 
-  before :each do
-    Bhm.logger = Logging.logger(StringIO.new)
-
+  before do
     @options = {
       "service_key" => "zbzb",
       "http_proxy"  => "http://nowhere.com:3128"

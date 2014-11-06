@@ -2,8 +2,7 @@ require 'spec_helper'
 
 describe Bhm::Plugins::Varz do
 
-  before :each do
-    Bhm.logger = Logging.logger(StringIO.new)
+  before do
     @plugin = Bhm::Plugins::Varz.new
   end
 

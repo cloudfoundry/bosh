@@ -1,10 +1,6 @@
 require 'spec_helper'
 
 describe Bhm::Plugins::Resurrector do
-  before(:all) do
-    Bhm.logger = Logging.logger(StringIO.new)
-  end
-
   let(:options) {
     {
         'director' => {

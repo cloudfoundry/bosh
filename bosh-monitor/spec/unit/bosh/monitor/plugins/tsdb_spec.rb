@@ -2,9 +2,7 @@ require 'spec_helper'
 
 describe Bhm::Plugins::Tsdb do
 
-  before :each do
-    Bhm.logger = Logging.logger(StringIO.new)
-
+  before do
     @options = {
       "host" => "localhost",
       "port" => 4242

@@ -2,9 +2,7 @@ require 'spec_helper'
 
 describe Bhm::Plugins::Nats do
 
-  before :each do
-    Bhm.logger = Logging.logger(StringIO.new)
-
+  before do
     @nats_options = {
       "endpoint" => "localhost",
       "user" => "zb",

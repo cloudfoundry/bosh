@@ -8,7 +8,6 @@ describe Bhm::Plugins::DataDog do
 
   before do
     subject.stub(dog_client: dog_client)
-    Bhm.stub(:logger => double.as_null_object)
   end
 
   describe "validating the options" do

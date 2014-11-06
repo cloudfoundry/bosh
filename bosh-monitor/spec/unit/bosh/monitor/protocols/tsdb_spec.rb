@@ -4,12 +4,8 @@ describe Bosh::Monitor::TsdbConnection do
   describe "exponential back off" do
     context "when the initial connection fails" do
       let(:tsdb_connection) { Bosh::Monitor::TsdbConnection.new("signature", "127.0.0.1", 80) }
-      let(:fake_logger) { double("fake_logger").as_null_object }
 
-      before do
-        Bhm.should_receive(:logger).and_return(fake_logger)
-      end
-
+      before { Bhm.logger = logger }
 
       it "tries to reconnect when unbinding" do
         EM.should_receive(:add_timer).with(0)
@@ -18,14 +14,14 @@ describe Bosh::Monitor::TsdbConnection do
 
       it "doesn't log on the first unbind" do
         EM.stub(:add_timer)
-        fake_logger.should_not_receive(:info)
+        expect(logger).to_not receive(:info)
         tsdb_connection.unbind
       end
 
       it "logs on subsequent unbinds" do
         EM.stub(:add_timer)
         tsdb_connection.unbind
-        fake_logger.should_receive(:info).with("Failed to reconnect to TSDB, will try again in 1 seconds...")
+        expect(logger).to receive(:info).with('Failed to reconnect to TSDB, will try again in 1 seconds...')
         tsdb_connection.unbind
       end
 

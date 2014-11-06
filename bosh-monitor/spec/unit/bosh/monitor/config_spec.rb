@@ -22,7 +22,6 @@ describe Bosh::Monitor do
     context 'with a valid configuration' do
       it 'should log to STDOUT when no logfile is provided' do
         valid_config.delete('logfile')
-        Logging.should_receive(:logger).with(STDOUT).and_return(double(Logging::Logger).as_null_object)
         Bosh::Monitor.config = valid_config
       end
 

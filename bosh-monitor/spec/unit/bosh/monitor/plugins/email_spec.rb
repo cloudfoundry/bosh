@@ -2,8 +2,8 @@ require 'spec_helper'
 
 describe Bhm::Plugins::Email do
 
-  before :each do
-    Bhm.logger = Logging.logger(StringIO.new)
+  before do
+    Bhm.logger = logger
 
     @smtp_options = {
       'from' => 'hm@example.com',
@@ -48,7 +48,6 @@ describe Bhm::Plugins::Email do
   end
 
   it 'does not start if event loop is not running' do
-    EM.stop if EM.reactor_running?
     expect(@plugin.run).to eq(false)
   end
 

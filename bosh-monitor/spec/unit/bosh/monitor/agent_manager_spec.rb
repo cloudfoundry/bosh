@@ -12,8 +12,8 @@ describe Bhm::AgentManager do
 
   context "stubbed config" do
 
-    before :each do
-      Bhm.logger = Logging::logger(StringIO.new)
+    before do
+      Bhm.config = {"director" => {}}
 
       # Just use 2 loggers to test multiple agents without having to care
       # about stubbing delivery operations and providing well formed configs
