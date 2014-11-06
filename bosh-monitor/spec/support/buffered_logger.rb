@@ -3,16 +3,20 @@ require 'logger'
 require 'mono_logger'
 require 'logging'
 
-# returns the log as a string
-def log_string
-  @test_log_buffer.string
-end
+module BufferedLogger
+  # returns the log as a string
+  def log_string
+    @test_log_buffer.string
+  end
 
-def logger
-  @test_logger
+  def logger
+    @test_logger
+  end
 end
 
 RSpec.configure do |c|
+  c.include(BufferedLogger)
+
   c.before do
     @test_log_buffer = StringIO.new
     @test_logger = Logging.logger(@test_log_buffer)
