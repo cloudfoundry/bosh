@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.files        = `git ls-files -- bin/* lib/*`.split("\n") + %w(README.md USAGE.md)
   s.require_path = 'lib'
   s.bindir       = 'bin'
-  s.executables  = %w(bosh_openstack_console)
+  s.executables  = %w(bosh_openstack_console openstack_cpi)
 
   s.add_dependency 'fog',           '~>1.23.0'
   s.add_dependency 'bosh_common',   "~>#{version}"
