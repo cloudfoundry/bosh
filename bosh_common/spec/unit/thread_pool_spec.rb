@@ -1,12 +1,13 @@
 require 'spec_helper'
-require 'mono_logger'
+require 'logging'
 require 'common/thread_pool'
 
 describe Bosh::ThreadPool do
 
   before(:all) do
-    @logger = MonoLogger.new(STDOUT)
-    @logger.level = MonoLogger::INFO
+    @logger = Logging::Logger.new('ThreadPool')
+    @logger.add_appenders(Logging.appenders.stdout)
+    @logger.level = :info
   end
 
   it "should respect max threads" do

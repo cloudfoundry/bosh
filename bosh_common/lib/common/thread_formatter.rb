@@ -1,7 +1,10 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 class ThreadFormatter
   FORMAT = "%s, [%s#%d] [%s] %5s -- %s: %s\n"
+
+  # get pattern layout for Logging::Logger
+  def self.layout
+    Logging.layouts.pattern(:pattern => "%.1l, [%d #%p] [%T] %5l -- %c: %m\n")
+  end
 
   attr_accessor :datetime_format
 
