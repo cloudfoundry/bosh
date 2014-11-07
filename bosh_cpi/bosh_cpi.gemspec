@@ -19,5 +19,6 @@ Gem::Specification.new do |s|
   s.require_path = 'lib'
 
   s.add_dependency 'bosh_common', "~>#{version}"
-  s.add_dependency 'membrane',    "~>1.1.0"
+  s.add_dependency 'membrane',    '~>1.1.0'
+  s.add_dependency 'logging',     '~>1.5.0'
 end

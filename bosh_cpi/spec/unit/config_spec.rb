@@ -1,8 +1,9 @@
 require 'spec_helper'
+require 'logging'
 
 describe Bosh::Clouds::Config do
   it 'should configure a logger' do
-    Bosh::Clouds::Config.logger.should be_kind_of(Logger)
+    Bosh::Clouds::Config.logger.should be_kind_of(Logging::Logger)
   end
 
   it 'should configure a uuid' do

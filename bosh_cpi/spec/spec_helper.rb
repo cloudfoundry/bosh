@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
 
 require 'cloud'
-require 'logger'
+require 'logging'
 require 'bosh/cpi'
 
 # add the spec/lib to load path so we can find the dummy provider
@@ -12,8 +12,8 @@ class CloudSpecConfig
 
   def logger
     if @logger.nil?
-      @logger = Logger.new(STDOUT)
-      @logger.level = Logger::ERROR
+      @logger = Logging.logger(STDOUT)
+      @logger.level = :error
     end
     @logger
   end

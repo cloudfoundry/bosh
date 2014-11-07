@@ -135,14 +135,14 @@ module Bosh::Clouds
       begin
         JSON.load(input)
       rescue JSON::ParserError => e
-        raise InvalidResponse, "Received invalid response from cpi with error #{e.message}"
+        raise InvalidResponse, "Invalid CPI response - ParserError - #{e.message}"
       end
     end
 
     def validate_response(response)
       RESPONSE_SCHEMA.validate(response)
     rescue Membrane::SchemaValidationError => e
-      raise InvalidResponse, "Received invalid response from cpi with error #{e.message}"
+      raise InvalidResponse, "Invalid CPI response - SchemaValidationError: #{e.message}"
     end
 
     def constantize(camel_cased_word)
