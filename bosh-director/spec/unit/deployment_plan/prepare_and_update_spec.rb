@@ -8,7 +8,6 @@ module Bosh::Director::DeploymentPlan
     let(:event_log) { Bosh::Director::Config.event_log }
 
     before { allow(Bosh::Director::Config).to receive(:logger).and_return(logger) }
-    let(:logger) { Logger.new('/dev/null') }
 
     context 'the director database contains a VM with a static ip but no job instance assigned (due to deploy failure)' do
       before do

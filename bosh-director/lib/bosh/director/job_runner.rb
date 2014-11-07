@@ -53,19 +53,23 @@ module Bosh::Director
       event_log = File.join(log_dir, 'event')
       result_log = File.join(log_dir, 'result')
 
-      debug_log_device = MonoLogger::LocklessLogDevice.new(debug_log)
-
-      @task_logger = MonoLogger.new(debug_log_device)
+      @task_logger = Logging::Logger.new('DirectorJobRunner')
+      shared_appender = Logging.appenders.file(
+        'DirectorJobRunnerFile',
+        filename: debug_log,
+        layout: ThreadFormatter.layout
+      )
+      @task_logger.add_appenders(shared_appender)
       @task_logger.level = Config.logger.level
-      @task_logger.formatter = ThreadFormatter.new
 
       Config.event_log = EventLog::Log.new(event_log)
       Config.result = TaskResultFile.new(result_log)
       Config.logger = @task_logger
 
-      redis_task_logger = MonoLogger.new(debug_log_device)
+      # use a separate logger with the same appender to avoid multiple file writers
+      redis_task_logger = Logging::Logger.new('DirectorJobRunnerRedis')
+      redis_task_logger.add_appenders(shared_appender)
       redis_task_logger.level = Config.redis_logger_level
-      redis_task_logger.formatter = ThreadFormatter.new
       Config.redis_logger = redis_task_logger
 
       Config.db.logger = @task_logger

@@ -24,7 +24,21 @@ module Bosh::Director
 
     class Log
       def initialize(io = nil)
-        @logger = CustomLogger.new(io || StringIO.new)
+        @logger = Logging::Logger.new('EventLog')
+        if io.is_a?(String)
+          @logger.add_appenders(Logging.appenders.file(
+            'EventFile',
+            filename: io,
+            layout: Logging.layouts.pattern(:pattern => '%m\n')
+          ))
+        else
+          @logger.add_appenders(Logging.appenders.io(
+            'EventIO',
+            io || StringIO.new,
+            layout: Logging.layouts.pattern(:pattern => '%m\n')
+          ))
+        end
+
         @last_stage = Stage.new(self, 'unknown', [], 0)
       end
 
@@ -141,12 +155,6 @@ module Bosh::Director
         }
         task_entry[:data] = data if data.size > 0
         @stage.log_entry(task_entry)
-      end
-    end
-
-    class CustomLogger < ::Logger
-      def format_message(level, time, progname, msg)
-        msg + "\n"
       end
     end
   end

@@ -186,7 +186,6 @@ module Bosh::Director
         let(:resource_pool) { ResourcePool.new(deployment_plan, resource_pool_manifest, logger) }
         let(:vm_model) { Models::Vm.make }
         let(:idle_vm) { Vm.new(resource_pool) }
-        let(:logger) { Logger.new('/dev/null') }
         let(:resource_pool_manifest) do
           {
             'name' => 'fake-resource-pool',

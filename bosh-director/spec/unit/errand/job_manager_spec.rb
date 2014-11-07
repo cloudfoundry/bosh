@@ -7,7 +7,6 @@ module Bosh::Director
     let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'job_name') }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
-    let(:logger) { Logger.new('/dev/null') }
 
     describe '#update' do
       before { allow(job).to receive(:instances).with(no_args).and_return([instance1, instance2]) }

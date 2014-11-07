@@ -20,7 +20,6 @@ module Bosh::Director
         task_remover.stub(:remove)
       end
 
-
       it 'should create the task debug output file' do
         task = described_class.new.create_task(user.username, type, description)
         expect(File.exists?(File.join(tmpdir, 'tasks', task.id.to_s, 'debug'))).to be(true)
@@ -35,10 +34,7 @@ module Bosh::Director
       end
 
       it 'should clean up old tasks' do
-        logger = instance_double('Logger').as_null_object
-        Logger.stub(:new).and_return(logger)
-
-        Api::TaskRemover.should_receive(:new).with(Config.max_tasks, logger).and_return(task_remover)
+        Api::TaskRemover.should_receive(:new).with(Config.max_tasks, a_kind_of(Logging::Logger)).and_return(task_remover)
         task_remover.should_receive(:remove)
 
         described_class.new.create_task(user.username, type, description)

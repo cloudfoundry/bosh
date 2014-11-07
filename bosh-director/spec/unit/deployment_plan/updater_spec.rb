@@ -12,7 +12,7 @@ describe Bosh::Director::DeploymentPlan::Updater do
   let(:jobs) { instance_double('Array') }
   let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater') }
 
-  before { allow(base_job).to receive(:logger).and_return(Logger.new('/dev/null')) }
+  before { allow(base_job).to receive(:logger).and_return(logger) }
   before { allow(base_job).to receive(:track_and_log).and_yield }
   before { allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(true) }
 

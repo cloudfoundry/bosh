@@ -132,13 +132,7 @@ module Bosh::Director
           @j_router.should_receive(:use_compiled_package).with(cp2)
         end
 
-        logger = instance_double('Logger', info: nil, debug: nil)
-        Config.stub(logger: logger)
-
         compiler = PackageCompiler.new(@plan)
-
-        expect(logger).to receive(:info).with("Job templates `cf-release/dea', `cf-release/warden' need to run on stemcell `#{@stemcell_a.model.desc}'")
-        expect(logger).to receive(:info).with("Job templates `cf-release/nginx', `cf-release/router', `cf-release/warden' need to run on stemcell `#{@stemcell_b.model.desc}'")
 
         compiler.compile
         # For @stemcell_a we need to compile:
@@ -148,6 +142,9 @@ module Bosh::Director
         compiler.compile_tasks_count.should == 6 + 5
         # But they are already compiled!
         compiler.compilations_performed.should == 0
+
+        expect(log_string).to include("Job templates `cf-release/dea', `cf-release/warden' need to run on stemcell `#{@stemcell_a.model.desc}'")
+        expect(log_string).to include("Job templates `cf-release/nginx', `cf-release/router', `cf-release/warden' need to run on stemcell `#{@stemcell_b.model.desc}'")
       end
     end
 
@@ -261,7 +258,7 @@ module Bosh::Director
           current_job: director_job,
           cloud: double('cpi'),
           event_log: event_log,
-          logger: double('logger', info: nil, debug: nil),
+          logger: logger,
           use_compiled_package_cache?: false,
         )
 

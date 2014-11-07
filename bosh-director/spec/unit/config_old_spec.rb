@@ -149,10 +149,6 @@ describe Bosh::Director::Config do
     end
 
     context "when logger is available" do
-      before do
-        described_class.stub(:logger).and_return(double('Fake Logger'))
-      end
-
       it "sets the database logger" do
         database_connection.should_receive(:logger=)
         database_connection.should_receive(:sql_log_level=)

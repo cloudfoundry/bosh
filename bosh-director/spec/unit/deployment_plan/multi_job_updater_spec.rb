@@ -12,8 +12,6 @@ describe Bosh::Director::DeploymentPlan::SerialMultiJobUpdater do
     let(:job1) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-job1-name') }
     let(:job2) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-job2-name') }
 
-    let(:logger) { Logger.new('/dev/null') }
-
     context 'with 1+ jobs' do
       it 'updates each job serially' do
         job_updater1 = instance_double('Bosh::Director::JobUpdater')
@@ -63,7 +61,6 @@ describe Bosh::Director::DeploymentPlan::ParallelMultiJobUpdater do
     let(:job2) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-job2-name') }
 
     let(:thread_pool) { instance_double('Bosh::Director::ThreadPool') }
-    let(:logger) { Logger.new('/dev/null') }
 
     before { allow(Bosh::Director::ThreadPool).to receive(:new).and_return(thread_pool) }
 
@@ -127,8 +124,6 @@ describe Bosh::Director::DeploymentPlan::BatchMultiJobUpdater do
   describe '#run' do
     let(:base_job) { instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, logger: logger) }
     let(:deployment_plan) { instance_double('Bosh::Director::Jobs::BaseJob') }
-
-    let(:logger) { Logger.new('/dev/null') }
 
     before do
       allow(Bosh::Director::DeploymentPlan::SerialMultiJobUpdater).to receive(:new).

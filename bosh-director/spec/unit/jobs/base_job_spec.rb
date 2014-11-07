@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 
 module Bosh::Director
@@ -40,7 +38,7 @@ module Bosh::Director
       expect(task.state).to eq('done')
       expect(task.result).to eq('5')
 
-      expect(Config.logger).to be_instance_of(MonoLogger)
+      expect(Config.logger).to be_a_kind_of(Logging::Logger)
     end
 
     it 'should pass on the rest of the arguments to the actual job' do
@@ -96,7 +94,7 @@ module Bosh::Director
       described_class.perform(1)
       task.refresh
       expect(task.state).to eq('cancelled')
-      expect(Config.logger).to be_instance_of(MonoLogger)
+      expect(Config.logger).to be_a_kind_of(Logging::Logger)
     end
 
     it 'should cancel timeout-task' do
@@ -106,7 +104,7 @@ module Bosh::Director
       described_class.perform(task_id)
       task.refresh
       expect(task.state).to eq('cancelled')
-      expect(Config.logger).to be_instance_of(MonoLogger)
+      expect(Config.logger).to be_a_kind_of(Logging::Logger)
     end
 
     describe '#task_checkpoint' do

@@ -5,7 +5,6 @@ module Bosh::Director
     describe Planner do
       subject { described_class.new('fake-dep-name') }
 
-      let(:logger) { Logger.new('/dev/null') }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
       describe 'parse' do

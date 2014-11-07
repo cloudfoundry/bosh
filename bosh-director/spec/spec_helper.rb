@@ -4,7 +4,7 @@ require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
 
 require 'digest/sha1'
 require 'fileutils'
-require 'logger'
+require 'logging'
 require 'pg'
 require 'tempfile'
 require 'tmpdir'
@@ -13,6 +13,7 @@ require 'zlib'
 require 'archive/tar/minitar'
 require 'machinist/sequel'
 require 'sham'
+require 'support/buffered_logger'
 
 Dir[File.expand_path('../support/**/*.rb', __FILE__)].each { |f| require(f) }
 
@@ -22,34 +23,36 @@ end
 
 module SpecHelper
   class << self
-    attr_accessor :logger
+    include BufferedLogger
+
     attr_accessor :temp_dir
 
     def init
       ENV["RACK_ENV"] = "test"
-      configure_logging
+      configure_init_logger
       configure_temp_dir
 
       require "bosh/director"
-      @logger.formatter = ThreadFormatter.new
 
       init_database
 
       require "blueprints"
     end
 
-    def configure_logging
-      if ENV["DEBUG"]
-        @logger = Logger.new(STDOUT)
-      else
-        path = File.expand_path("/tmp/spec.log", __FILE__)
-        log_file = File.open(path, "w")
-        
-        # Unbuffered logging to file is not thread-safe
-        # log_file.sync = true
-        
-        @logger = Logger.new(log_file)
-      end
+    # init_logger is only used before the tests start.
+    # Inside each test BufferedLogger will be used.
+    def configure_init_logger
+      file_path = File.expand_path('/tmp/spec.log', __FILE__)
+
+      @init_logger = Logging::Logger.new('TestLogger')
+      @init_logger.add_appenders(
+        Logging.appenders.file(
+          'TestLogFile',
+          filename: file_path,
+          layout: ThreadFormatter.layout
+        )
+      )
+      @init_logger.level = :debug
     end
 
     def configure_temp_dir
@@ -92,11 +95,11 @@ module SpecHelper
       db_opts = {:max_connections => 32, :pool_timeout => 10}
 
       @db = Sequel.connect(db, db_opts)
-      @db.loggers << @logger
+      @db.loggers << (logger || @init_logger)
       Bosh::Director::Config.db = @db
 
       @dns_db = Sequel.connect(dns_db, db_opts)
-      @dns_db.loggers << @logger
+      @dns_db.loggers << (logger || @init_logger)
       Bosh::Director::Config.dns_db = @dns_db
     end
 
@@ -141,13 +144,13 @@ module SpecHelper
       end
     end
 
-    def reset
+    def reset(logger)
       reset_database
 
       Bosh::Director::Config.clear
       Bosh::Director::Config.db = @db
       Bosh::Director::Config.dns_db = @dns_db
-      Bosh::Director::Config.logger = @logger
+      Bosh::Director::Config.logger = logger
     end
   end
 end
@@ -179,7 +182,7 @@ RSpec.configure do |rspec|
       end
     end
 
-    SpecHelper.reset
+    SpecHelper.reset(logger)
     @event_buffer = StringIO.new
     @event_log = Bosh::Director::EventLog::Log.new(@event_buffer)
     Bosh::Director::Config.event_log = @event_log
@@ -196,16 +199,11 @@ def gzip(string)
 end
 
 def check_event_log
-  pos = @event_buffer.tell
-  @event_buffer.rewind
-
-  events = @event_buffer.read.split("\n").map do |line|
+  events = @event_buffer.string.split("\n").map do |line|
     JSON.parse(line)
   end
 
   yield events
-ensure
-  @event_buffer.seek(pos)
 end
 
 

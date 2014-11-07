@@ -6,7 +6,6 @@ module Bosh::Director
     describe DeploymentSpecParser do
       subject(:parser) { described_class.new(event_log, logger) }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
-      let(:logger) { Logger.new('/dev/null') }
 
       describe '#parse' do
         let(:deployment_spec) do

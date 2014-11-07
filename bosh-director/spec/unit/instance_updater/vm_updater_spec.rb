@@ -9,7 +9,6 @@ module Bosh::Director
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:job_renderer) { instance_double('Bosh::Director::JobRenderer') }
     let(:cloud) { instance_double('Bosh::Cloud') }
-    let(:logger) { Logger.new('/dev/null') }
 
     describe '#update' do
       def self.it_updates_vm(new_disk_cid)
@@ -71,7 +70,7 @@ module Bosh::Director
 
             @disk_attacher2 = instance_double('Bosh::Director::InstanceUpdater::VmUpdater::DiskAttacher')
           end
-          
+
           context 'when creating/deleting/attaching-disk succeeds in given number of retries' do
             it 'stops retrying deleting/creating/attaching-disk vm and raises CloudNotEnoughDiskSpace error' do
               expect(InstanceUpdater::VmUpdater::VmDeleter).to receive(:new).
@@ -81,12 +80,12 @@ module Bosh::Director
               expect(InstanceUpdater::VmUpdater::VmDeleter).to receive(:new).
                 with(instance, @vm_model1, cloud, logger).and_return(@vm_deleter2)
               expect(@vm_deleter2).to receive(:delete).once.with(no_args)
-  
+
               expect(InstanceUpdater::VmUpdater::VmCreator).to receive(:new).
                 with(instance, cloud, logger).and_return(@vm_creator1, @vm_creator2)
               expect(@vm_creator1).to receive(:create).once.with(new_disk_cid).and_return([@vm_model1, @agent_client1])
               expect(@vm_creator2).to receive(:create).once.with(new_disk_cid).and_return([@vm_model2, @agent_client2])
-  
+
               expect(InstanceUpdater::VmUpdater::DiskAttacher).to receive(:new).
                 with(instance, @vm_model1, @agent_client1, cloud, logger).and_return(disk_attacher)
               expect(InstanceUpdater::VmUpdater::DiskAttacher).to receive(:new).
@@ -330,7 +329,6 @@ module Bosh::Director
     let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model) }
     let(:instance_model) { Models::Instance.make(vm: nil) }
     let(:cloud) { instance_double('Bosh::Cloud') }
-    let(:logger) { Logger.new('/dev/null') }
 
     describe '#create' do
       before { allow(instance).to receive(:job).with(no_args).and_return(job) }
@@ -494,7 +492,6 @@ module Bosh::Director
     let(:instance_model) { Models::Instance.make(vm: vm_model) }
     let(:vm_model) { Models::Vm.make }
     let(:cloud) { instance_double('Bosh::Cloud') }
-    let(:logger) { Logger.new('/dev/null') }
 
     describe '#delete' do
       it 'tries to delete VM from the cloud' do
@@ -540,7 +537,6 @@ module Bosh::Director
     let(:vm_model) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-vm-cid') }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:cloud) { instance_double('Bosh::Cloud') }
-    let(:logger) { Logger.new('/dev/null') }
 
     describe '#attach' do
       context 'when disk cid is present' do
@@ -572,7 +568,6 @@ module Bosh::Director
     let(:vm_model) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-vm-cid') }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:cloud) { instance_double('Bosh::Cloud') }
-    let(:logger) { Logger.new('/dev/null') }
 
     describe '#detach' do
       context 'when disk is not currently attached' do

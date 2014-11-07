@@ -7,7 +7,6 @@ module Bosh::Director
       context 'event hooks' do
         let(:planner) { instance_double('Bosh::Director::DeploymentPlan::Planner', :canonical_name => 'Blorgh') }
         let(:nats_rpc) { instance_double('Bosh::Director::NatsRpc') }
-        let(:logger) { Logger.new('/dev/null') }
         subject { Notifier.new(planner, nats_rpc, logger) }
 
         let(:uuid) { SecureRandom.uuid }

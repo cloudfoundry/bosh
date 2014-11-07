@@ -131,7 +131,7 @@ module Bosh::Director
     end
 
     describe '#update_dns_ptr_record' do
-      before { @logger = Logger.new('/dev/null') }
+      before { @logger = logger }
 
       it 'should create new record' do
         update_dns_ptr_record('0.foo.default.bosh', '1.2.3.4')
@@ -166,7 +166,7 @@ module Bosh::Director
     end
 
     describe '#delete_dns_records' do
-      before { @logger = Logger.new('/dev/null') }
+      before { @logger = logger }
 
       it 'only deletes records that match the deployment, job, and index' do
         domain = Models::Dns::Domain.make

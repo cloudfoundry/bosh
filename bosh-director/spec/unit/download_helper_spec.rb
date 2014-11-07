@@ -12,10 +12,6 @@ describe Bosh::Director::DownloadHelper do
   let(:remote_file) { 'http://example.com/file.tgz' }
   let(:local_file) { File.join(Dir.tmpdir, 'resource.tgz') }
 
-  before do
-    @logger = Logger.new("/dev/null")
-  end
-
   describe 'download_remote_file' do
     it 'should download a remote file' do
       Net::HTTP.stub(:start).and_yield(http)

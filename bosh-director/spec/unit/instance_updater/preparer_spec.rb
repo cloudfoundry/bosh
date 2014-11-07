@@ -7,7 +7,6 @@ module Bosh::Director
     subject(:preparer) { described_class.new(instance, agent_client, logger) }
     let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
-    let(:logger) { Logger.new('/dev/null') }
 
     describe '#prepare' do
       def self.it_does_not_send_prepare

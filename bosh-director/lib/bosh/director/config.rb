@@ -1,6 +1,5 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'fileutils'
+require 'logging'
 
 module Bosh::Director
 
@@ -73,16 +72,31 @@ module Bosh::Director
         # checkpoint task progress every 30 secs
         @task_checkpoint_interval = 30
 
-        logging = config.fetch('logging', {})
-        @log_device = MonoLogger::LocklessLogDevice.new(logging.fetch('file', STDOUT))
-        @logger = MonoLogger.new(@log_device)
-        @logger.level = Logger.const_get(logging.fetch('level', 'debug').upcase)
-        @logger.formatter = ThreadFormatter.new
+        logging_config = config.fetch('logging', {})
+        if logging_config.has_key?('file')
+          @log_file_path = logging.fetch('file')
+          shared_appender = Logging.appenders.file(
+            'DirectorLogFile',
+            filename: @log_file_path,
+            layout: ThreadFormatter.layout
+          )
+        else
+          shared_appender = Logging.appenders.io(
+            'DirectorStdOut',
+            STDOUT,
+            layout: ThreadFormatter.layout
+          )
+        end
 
-        # use a separate logger for redis to make it stfu
-        redis_logger = MonoLogger.new(@log_device)
-        logging = config.fetch('redis', {}).fetch('logging', {})
-        @redis_logger_level = Logger.const_get(logging.fetch('level', 'info').upcase)
+        @logger = Logging::Logger.new('Director')
+        @logger.add_appenders(shared_appender)
+        @logger.level = Logging.levelify(logging_config.fetch('level', 'debug'))
+
+        # use a separate logger with the same appender to avoid multiple file writers
+        redis_logger = Logging::Logger.new('DirectorRedis')
+        redis_logger.add_appenders(shared_appender)
+        logging_config = config.fetch('redis', {}).fetch('logging', {})
+        @redis_logger_level = Logging.levelify(logging_config.fetch('level', 'info'))
         redis_logger.level = @redis_logger_level
 
         # Event logger supposed to be overridden per task,
@@ -137,7 +151,7 @@ module Bosh::Director
       end
 
       def log_dir
-        File.dirname(@log_device.filename) if @log_device.filename
+        File.dirname(@log_file_path) if @log_file_path
       end
 
       def use_compiled_package_cache?

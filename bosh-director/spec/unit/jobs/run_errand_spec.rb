@@ -25,7 +25,6 @@ module Bosh::Director
         let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
         before { allow(Config).to receive(:logger).with(no_args).and_return(logger) }
-        let(:logger) { Logger.new('/dev/null') }
 
         before do
           allow(DeploymentPlan::Planner).to receive(:parse).

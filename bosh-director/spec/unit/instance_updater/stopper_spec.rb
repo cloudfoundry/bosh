@@ -17,7 +17,6 @@ module Bosh::Director
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:target_state) { 'fake-target-state' }
     let(:config) { Config }
-    let(:logger) { Logger.new('/dev/null') }
 
     describe '#stop' do
       context 'when shutting down' do

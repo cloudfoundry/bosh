@@ -21,7 +21,6 @@ describe Bosh::Director::VmMetadataUpdater do
     subject(:vm_metadata_updater) { described_class.new(cloud, director_metadata, logger) }
     let(:cloud) { instance_double('Bosh::Cloud') }
     let(:director_metadata) { {} }
-    let(:logger) { Logger.new(nil) }
 
     let(:vm) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-vm-cid', deployment: deployment, instance: nil) }
     let(:deployment) { instance_double('Bosh::Director::Models::Deployment', name: 'deployment-value') }

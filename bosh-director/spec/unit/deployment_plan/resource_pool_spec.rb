@@ -3,7 +3,6 @@ require 'spec_helper'
 module Bosh::Director::DeploymentPlan
   describe ResourcePool do
     subject(:resource_pool) { ResourcePool.new(plan, valid_spec, logger) }
-    let(:logger) { Logger.new('/dev/null') }
     let(:max_size) { 2 }
 
     let(:valid_spec) do

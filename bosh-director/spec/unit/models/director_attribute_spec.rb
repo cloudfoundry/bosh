@@ -5,7 +5,6 @@ require 'bosh/director/models/director_attribute'
 module Bosh::Director::Models
   describe DirectorAttribute do
     describe '.find_or_create_uuid' do
-      let(:logger) { Logger.new('/dev/null') }
 
       context 'when uuid is found' do
         it 'returns uuid value' do
@@ -43,8 +42,6 @@ module Bosh::Director::Models
     end
 
     describe '.update_or_create_uuid' do
-      let(:logger) { Logger.new('/dev/null') }
-
       context 'when uuid is found' do
         context 'when old uuid is same as new' do
           before { described_class.create(name: 'uuid', value: 'fake-uuid') }

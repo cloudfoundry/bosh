@@ -346,7 +346,7 @@ module Bosh::Director
       end
 
       @event_log.begin_stage('Deleting unneeded VMs', unneeded_vms.size)
-      ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
+      ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
         unneeded_vms.each do |vm_model|
           pool.process do
             @event_log.track(vm_model.cid) do

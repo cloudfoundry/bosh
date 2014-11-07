@@ -4,7 +4,6 @@ module Bosh::Director::DeploymentPlan
   describe Instance do
     subject(:instance) { Instance.new(job, index, logger) }
     let(:index) { 0 }
-    let(:logger) { Logger.new('/dev/null') }
 
     before { allow(Bosh::Director::Config).to receive(:dns_domain_name).and_return(domain_name) }
     let(:domain_name) { 'test_domain' }

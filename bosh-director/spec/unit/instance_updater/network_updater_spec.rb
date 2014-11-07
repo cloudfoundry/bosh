@@ -9,7 +9,6 @@ module Bosh::Director
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:vm_updater) { instance_double('Bosh::Director::InstanceUpdater::VmUpdater', update: nil) }
     let(:cloud) { instance_double('Bosh::Cloud') }
-    let(:logger) { Logger.new('/dev/null') }
 
     describe '#update' do
       context 'when instance does not require network changes' do
@@ -178,7 +177,6 @@ module Bosh::Director
     subject(:strategy) { described_class.new(agent_client, network_settings, logger) }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:network_settings) { double('fake-network-settings') }
-    let(:logger) { Logger.new('/dev/null') }
 
     describe '#before_configure_networks' do
       context 'when the prepare_configure_networks is not implemented on agent' do
@@ -223,7 +221,6 @@ module Bosh::Director
     subject(:strategy) { described_class.new(agent_client, network_settings, logger) }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:network_settings) { double('fake-network-settings') }
-    let(:logger) { Logger.new('/dev/null') }
 
     describe '#before_configure_networks' do
       it 'returns true' do

@@ -17,7 +17,6 @@ module Bosh::Director
       let(:package_c) { Bosh::Director::Models::Package.make(name: 'package_c') }
 
       let(:stemcell) { Bosh::Director::Models::Stemcell.make }
-      let(:logger) { instance_double('Logger', info: nil) }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
       let(:compile_tasks) { {} }
@@ -278,6 +277,7 @@ module Bosh::Director
         end
 
         it 'logs at each step of dependency resolution' do
+          allow(logger).to receive(:info)
           expect(logger).to receive(:info).with("Checking whether package `#{package_a.desc}' needs to be compiled for stemcell `#{stemcell.desc}'").ordered
           expect(logger).to receive(:info).with("Processing package `#{package_a.desc}' dependencies").ordered
           expect(logger).to receive(:info).with("Package `#{package_a.desc}' depends on package `#{package_b.desc}'").ordered
