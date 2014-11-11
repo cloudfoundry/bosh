@@ -82,10 +82,12 @@ module VSphereCloud
 
     def delete_path(datacenter, path)
       task = @service_content.file_manager.delete_file(path, datacenter)
-      wait_for_task(task)
-    rescue => e
-      unless e.message =~ /File .* was not found/
-        raise e
+      begin
+        wait_for_task(task)
+      rescue => e
+        unless e.message =~ /File .* was not found/
+          raise e
+        end
       end
     end
 
@@ -94,11 +96,13 @@ module VSphereCloud
       [".vmdk", "-flat.vmdk"].each do |extension|
         tasks << @service_content.file_manager.delete_file("#{path}#{extension}", datacenter)
       end
-      begin
-        tasks.each { |task| wait_for_task(task) }
-      rescue => e
-        unless e.message =~ /File .* was not found/
-          raise e
+      tasks.each do |task|
+        begin
+          wait_for_task(task)
+        rescue => e
+          unless e.message =~ /File .* was not found/
+            raise e
+          end
         end
       end
     end

@@ -224,6 +224,7 @@ module VSphereCloud
         it 'does not raise error' do
           expect(client).to receive(:wait_for_task).with(vmdk_task).
             and_raise(RuntimeError.new('File [some-datastore] some/path.vmdk was not found'))
+          expect(client).to receive(:wait_for_task).with(flat_vmdk_task)
 
           expect(file_manager).to receive(:delete_file).
             with('[some-datastore] some/path.vmdk', datacenter).
