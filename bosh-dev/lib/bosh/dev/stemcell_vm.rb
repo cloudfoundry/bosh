@@ -6,7 +6,7 @@ module Bosh::Dev
 
     def run(cmd)
       run_cmd = <<-BASH
-        set -eu
+        set -e
 
         pushd bosh-stemcell
         vagrant ssh -c "bash -l -c '#{cmd}'" #{vm_name}
@@ -41,7 +41,7 @@ module Bosh::Dev
 
     def vagrant_destroy_cmd
       <<-BASH
-        set -eu
+        set -e
 
         pushd bosh-stemcell
         vagrant destroy #{vm_name} --force

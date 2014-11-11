@@ -35,7 +35,7 @@ module Bosh::Dev
             expect(cmd).to eq('bash')
             expect(opt).to eq('-c')
             expect(strip_heredoc(actual_cmd)).to include(strip_heredoc(<<-BASH))
-              set -eu
+              set -e
 
               pushd bosh-stemcell
               vagrant ssh -c "bash -l -c 'echo hello'" #{vm_name}
@@ -52,7 +52,7 @@ module Bosh::Dev
             expect(cmd).to eq('bash')
             expect(opt).to eq('-c')
             expect(strip_heredoc(actual_cmd)).to include(strip_heredoc(<<-BASH))
-              set -eu
+              set -e
 
               pushd bosh-stemcell
               vagrant destroy remote --force
