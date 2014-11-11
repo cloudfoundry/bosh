@@ -194,6 +194,88 @@ module VSphereCloud
       end
     end
 
+    describe '#delete_disk' do
+      let(:datacenter) { instance_double('VimSdk::Vim::Datacenter') }
+      let(:vmdk_task) { instance_double('VimSdk::Vim::Task') }
+      let(:flat_vmdk_task) { instance_double('VimSdk::Vim::Task') }
+      let(:file_manager) { instance_double('VimSdk::Vim::FileManager') }
+
+      before do
+        allow(fake_service_content).to receive(:file_manager).and_return(file_manager)
+      end
+
+      context 'when the disk exists' do
+        it 'calls delete_file on file manager for each vmdk' do
+          expect(client).to receive(:wait_for_task).with(vmdk_task)
+          expect(client).to receive(:wait_for_task).with(flat_vmdk_task)
+
+          expect(file_manager).to receive(:delete_file).
+            with('[some-datastore] some/path.vmdk', datacenter).
+            and_return(vmdk_task)
+          expect(file_manager).to receive(:delete_file).
+            with('[some-datastore] some/path-flat.vmdk', datacenter).
+            and_return(flat_vmdk_task)
+
+          client.delete_disk(datacenter, '[some-datastore] some/path')
+        end
+      end
+
+      context 'when file manager raises "File not found" error for the .vmdk' do
+        it 'does not raise error' do
+          expect(client).to receive(:wait_for_task).with(vmdk_task).
+            and_raise(RuntimeError.new('File [some-datastore] some/path.vmdk was not found'))
+
+          expect(file_manager).to receive(:delete_file).
+            with('[some-datastore] some/path.vmdk', datacenter).
+            and_return(vmdk_task)
+          expect(file_manager).to receive(:delete_file).
+            with('[some-datastore] some/path-flat.vmdk', datacenter).
+            and_return(flat_vmdk_task)
+
+          expect {
+            client.delete_disk(datacenter, '[some-datastore] some/path')
+          }.to_not raise_error
+        end
+      end
+
+      context 'when file manager raises "File not found" error for the -flat.vmdk' do
+        it 'does not raise error' do
+          expect(client).to receive(:wait_for_task).with(vmdk_task)
+          expect(client).to receive(:wait_for_task).with(flat_vmdk_task).
+            and_raise(RuntimeError.new('File [some-datastore] some/path-flat.vmdk was not found'))
+
+          expect(file_manager).to receive(:delete_file).
+            with('[some-datastore] some/path.vmdk', datacenter).
+            and_return(vmdk_task)
+          expect(file_manager).to receive(:delete_file).
+            with('[some-datastore] some/path-flat.vmdk', datacenter).
+            and_return(flat_vmdk_task)
+
+          expect {
+            client.delete_disk(datacenter, '[some-datastore] some/path')
+          }.to_not raise_error
+        end
+      end
+
+      context 'when file manager raises other error' do
+        it 'raises that error' do
+          error = RuntimeError.new('Invalid datastore path some/path')
+          expect(client).to receive(:wait_for_task).with(vmdk_task).
+            and_raise(error)
+          expect(file_manager).to receive(:delete_file).
+            with('some/path.vmdk', datacenter).
+            and_return(vmdk_task)
+          expect(file_manager).to receive(:delete_file).
+            with('some/path-flat.vmdk', datacenter).
+            and_return(flat_vmdk_task)
+
+          expect {
+            client.delete_disk(datacenter, 'some/path')
+          }.to raise_error
+        end
+      end
+    end
+
     describe '#delete_folder' do
       let(:folder) { instance_double('VimSdk::Vim::Folder') }
 
