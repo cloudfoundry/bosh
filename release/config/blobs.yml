@@ -57,23 +57,19 @@ nats/vendor/cache/yajl-ruby-1.1.0.gem:
   size: 559616
 nginx/headers-more-v0.25.tgz:
   object_id: 62f787d7-b4e2-4530-b105-d0eade4d6728
-  sha: !binary |-
-    NTE0YmMzZGYzMGIyNGViMGEwNjUzM2YxZWJhYTU3OWI4OTg5OTBmNQ==
+  sha: 514bc3df30b24eb0a06533f1ebaa579b898990f5
   size: 27973
 nginx/nginx-1.4.5.tar.gz:
   object_id: 3ccf2492-9a27-4de8-a179-c88bc6f95f30
-  sha: !binary |-
-    OTZjMWFlY2QzMTRmNzNhM2MzMGEwZGI4YzM5YWQxNWRkYWNiMDc0ZQ==
+  sha: 96c1aecd314f73a3c30a0db8c39ad15ddacb074e
   size: 768728
 nginx/nginx-upload-module-2.2.tar.gz:
   object_id: 118f94b0-2738-4019-9aa2-1832b948a5b1
-  sha: !binary |-
-    NzRjY2QxMTY1MjVhMTU1ZGI3NmY5MmExY2Q0ODRkOTUxNmE3MDM5OA==
+  sha: 74ccd116525a155db76f92a1cd484d9516a70398
   size: 28505
 nginx/pcre-8.34.tar.gz:
   object_id: ea6a3dd5-8620-4bed-bd6c-17a7eda02cf5
-  sha: !binary |-
-    ZDQ2ZTUzNzMzN2VlNzBkZjE5MDg0MDAxYTRiNjgxNWIzZDY5ZmU2Yw==
+  sha: d46e537337ee70df19084001a4b6815b3d69fe6c
   size: 1933734
 redis/redis-2.6.9.tar.gz:
   object_id: d24e2fbd-ea3f-4c4b-b4e3-a0ccfd60dafa
@@ -83,11 +79,11 @@ ruby/bundler-1.6.3.gem:
   object_id: 2cbdd2bc-bc00-4b4b-b617-2433cea68a02
   sha: c8a000f75b6a6f60d9fb727f8076ec9171e14c20
   size: 293376
-ruby/ruby-2.1.2.tar.gz:
-  object_id: 571e7798-c372-42b9-81bf-76bb3a3adff1
-  sha: b818d56b4638f1949239038623b761517d4a5686
-  size: 15096114
 ruby/rubygems-2.3.0.tgz:
   object_id: df4ed379-a229-4a7c-b6ea-734e446c4f69
   sha: 6902fff7749fa264b8f9020f33daf92170375f75
   size: 431240
+ruby/ruby-2.1.4.tar.gz:
+  object_id: 00b50c34-f264-4245-9a90-b56c7385694e
+  sha: 29e9cfdd9e989b7621d7696ef3f970262a08dbc3
+  size: 15127418
