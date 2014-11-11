@@ -74,7 +74,7 @@ module Bosh::Director
 
         logging_config = config.fetch('logging', {})
         if logging_config.has_key?('file')
-          @log_file_path = logging.fetch('file')
+          @log_file_path = logging_config.fetch('file')
           shared_appender = Logging.appenders.file(
             'DirectorLogFile',
             filename: @log_file_path,

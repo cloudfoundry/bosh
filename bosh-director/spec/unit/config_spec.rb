@@ -88,4 +88,19 @@ describe Bosh::Director::Config do
       expect(described_class.cpi_task_log).to eq('fake-cpi-log')
     end
   end
+
+  describe "#configure" do
+    context "when the config specifies a file logger" do
+      before { test_config["logging"]["file"] = "fake-file" }
+
+      it "configures the logger with a file appender" do
+        appender = Logging::Appender.new("file")
+        expect(Logging.appenders).to receive(:file).with(
+          'DirectorLogFile',
+          hash_including(filename: 'fake-file')
+        ).and_return(appender)
+        described_class.configure(test_config)
+      end
+    end
+  end
 end
