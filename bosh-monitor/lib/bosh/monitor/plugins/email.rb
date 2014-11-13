@@ -67,13 +67,16 @@ module Bosh::Monitor
       end
 
       def process_queues
+        logger.info("Proccessing queues...")
         @queues.each_pair do |kind, queue|
           next if queue.empty?
+          logger.info("Creating email...")
           email_subject = "%s from BOSH Health Monitor" % [ pluralize(queue_size(kind), kind) ]
           email_body = ""
 
           @lock.synchronize do
             while event = queue.shift
+              logger.info("Dequeueing...")
               email_body << event.to_plain_text << "\n"
             end
           end
@@ -84,7 +87,7 @@ module Bosh::Monitor
 
       def send_email_async(subject, body, date = Time.now)
         started = Time.now
-        logger.debug("Sending email...")
+        logger.info("Sending email...")
 
         headers = {
           "From"         => smtp_options["from"],
