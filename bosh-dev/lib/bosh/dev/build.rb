@@ -15,7 +15,8 @@ module Bosh::Dev
   class Build
     attr_reader :number
 
-    def self.candidate(bucket_name, logger = Logging.new(STDERR))
+    def self.candidate(bucket_name='bosh-ci-pipeline')
+      logger = Logging.logger(STDERR)
       number = ENV['CANDIDATE_BUILD_NUMBER']
       if number
         logger.info("CANDIDATE_BUILD_NUMBER is #{number}. Using candidate build.")
