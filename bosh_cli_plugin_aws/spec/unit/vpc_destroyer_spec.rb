@@ -7,24 +7,24 @@ module Bosh::Aws
     let(:config) { { 'aws' => { fake: 'aws config' } } }
 
     describe '#delete_all' do
-      before { Bosh::Aws::EC2.stub(:new).with(fake: 'aws config').and_return(ec2) }
+      before { allow(Bosh::Aws::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
       let(:ec2) { instance_double('Bosh::Aws::EC2') }
 
       context 'when there is at least one vpc' do
-        before { ec2.stub(vpcs: [aws_vpc]) }
+        before { allow(ec2).to receive(:vpcs).and_return([aws_vpc]) }
         let(:aws_vpc) { instance_double('AWS::EC2::VPC', id: 'fake-vpc-id') }
 
-        before { Bosh::Aws::VPC.stub(:find).with(ec2, 'fake-vpc-id').and_return(vpc) }
+        before { allow(Bosh::Aws::VPC).to receive(:find).with(ec2, 'fake-vpc-id').and_return(vpc) }
         let(:vpc) { instance_double('Bosh::Aws::VPC', vpc_id: 'fake-vpc-id') }
 
-        before { vpc.stub(dhcp_options: aws_dhcp_options) }
+        before { allow(vpc).to receive(:dhcp_options).and_return(aws_dhcp_options) }
         let(:aws_dhcp_options) { instance_double('AWS::EC2::DHCPOptions', id: 'fake-dhcp-options-id') }
 
         context 'when user confirms deletion' do
-          before { ui.stub(confirmed?: true) }
+          before { allow(ui).to receive(:confirmed?).and_return(true) }
 
           context 'when vpc has at least one instance' do
-            before { vpc.stub(instances_count: 1) }
+            before { allow(vpc).to receive(:instances_count).and_return(1) }
 
             it 'raises an error' do
               expect {
@@ -34,34 +34,37 @@ module Bosh::Aws
           end
 
           context 'when vpc does not have any instances' do
-            before { vpc.stub(instances_count: 0) }
+            before { allow(vpc).to receive(:instances_count).and_return(0) }
 
             it 'delete any vps resource' do
-              ec2.stub(internet_gateway_ids: 'fake-gateway-ids')
+              allow(ec2).to receive(:internet_gateway_ids).and_return('fake-gateway-ids')
 
-              vpc.should_receive(:delete_network_interfaces)
-              vpc.should_receive(:delete_security_groups)
-              ec2.should_receive(:delete_internet_gateways).with('fake-gateway-ids')
-              vpc.should_receive(:delete_subnets)
-              vpc.should_receive(:delete_route_tables)
-              vpc.should_receive(:delete_vpc)
-              aws_dhcp_options.should_receive(:delete)
+              expect(vpc).to receive(:delete_network_interfaces)
+              expect(vpc).to receive(:delete_security_groups)
+              expect(ec2).to receive(:delete_internet_gateways).with('fake-gateway-ids')
+              expect(vpc).to receive(:delete_subnets)
+              expect(vpc).to receive(:delete_route_tables)
+              expect(vpc).to receive(:delete_vpc)
+              expect(aws_dhcp_options).to receive(:delete)
+
               vpc_destroyer.delete_all
             end
           end
         end
 
         context 'when user does not confirm deletion' do
-          before { ui.stub(confirmed?: false) }
+          before { allow(ui).to receive(:confirmed?).and_return(false) }
 
           it 'does not delete any vps resource' do
-            vpc.should_not_receive(:delete_network_interfaces)
-            vpc.should_not_receive(:delete_security_groups)
-            ec2.should_not_receive(:delete_internet_gateways)
-            vpc.should_not_receive(:delete_subnets)
-            vpc.should_not_receive(:delete_route_tables)
-            vpc.should_not_receive(:delete_vpc)
-            aws_dhcp_options.should_not_receive(:delete)
+            expect(vpc).not_to receive(:delete_network_interfaces)
+            expect(vpc).not_to receive(:delete_security_groups)
+            expect(vpc).not_to receive(:delete_subnets)
+            expect(vpc).not_to receive(:delete_route_tables)
+            expect(vpc).not_to receive(:delete_vpc)
+
+            expect(ec2).not_to receive(:delete_internet_gateways)
+            expect(aws_dhcp_options).not_to receive(:delete)
+
             vpc_destroyer.delete_all
           end
         end
