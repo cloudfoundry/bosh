@@ -22,7 +22,7 @@ module Bosh::Dev
       },
       '1.2.2' => {
         macosx: {
-          '386' => 'https://storage.googleapis.com/golang/go1.2.2.darwin-386-osx10.8.pkg',
+          '386' => 'https://storage.googleapis.com/golang/go1.2.2.darwin-386-osx10.8.tar.gz',
           'amd64' => 'https://storage.googleapis.com/golang/go1.2.2.darwin-amd64-osx10.8.tar.gz',
         },
         linux: {
@@ -33,10 +33,24 @@ module Bosh::Dev
           '386' => 'https://storage.googleapis.com/golang/go1.2.2.freebsd-386.tar.gz',
           'amd64' => 'https://storage.googleapis.com/golang/go1.2.2.freebsd-amd64.tar.gz',
         },
+      },
+      '1.3.3' => {
+        macosx: {
+          '386' => 'https://storage.googleapis.com/golang/go1.3.3.darwin-386-osx10.8.tar.gz',
+          'amd64' => 'https://storage.googleapis.com/golang/go1.3.3.darwin-amd64-osx10.8.tar.gz',
+        },
+        linux: {
+          '386' => 'https://storage.googleapis.com/golang/go1.3.3.linux-386.tar.gz',
+          'amd64' => 'https://storage.googleapis.com/golang/go1.3.3.linux-amd64.tar.gz',
+        },
+        bsd: {
+          '386' => 'https://storage.googleapis.com/golang/go1.3.3.freebsd-386.tar.gz',
+          'amd64' => 'https://storage.googleapis.com/golang/go1.3.3.freebsd-amd64.tar.gz',
+        },
       }
     }
 
-    def initialize(version='1.2.2', location='tmp')
+    def initialize(version='1.3.3', location='tmp')
       @version = version
       @location = location
     end
