@@ -19,7 +19,7 @@ class CreateMoreUniqueS3Buckets < Bosh::Aws::Migration
 
     buckets.each_key do |bucket|
       say "creating bucket #{bucket}"
-      next if s3.bucket_exists?(bucket) # here the check of existing bucket
+      next if s3.bucket_exists?(bucket)
       s3.create_bucket(bucket)
     end
 
