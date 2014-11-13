@@ -18,7 +18,6 @@ module Bosh::Dev::VSphere
     end
 
     def to_h
-      disk_path = env['BOSH_VSPHERE_VCENTER_DISK_PATH'] || "#{env['BOSH_VSPHERE_VCENTER_UBOSH_FOLDER_PREFIX']}_Disks"
       {
         'name' => 'microbosh-vsphere-jenkins',
         'network' =>
@@ -43,7 +42,7 @@ module Bosh::Dev::VSphere
                           'vm_folder' => "#{env['BOSH_VSPHERE_VCENTER_UBOSH_FOLDER_PREFIX']}_VMs",
                           'template_folder' =>
                             "#{env['BOSH_VSPHERE_VCENTER_UBOSH_FOLDER_PREFIX']}_Templates",
-                          'disk_path' => disk_path,
+                          'disk_path' => env['BOSH_VSPHERE_VCENTER_DISK_PATH'] || "#{env['BOSH_VSPHERE_VCENTER_UBOSH_FOLDER_PREFIX']}_Disks",
                           'datastore_pattern' =>
                             env['BOSH_VSPHERE_VCENTER_UBOSH_DATASTORE_PATTERN'],
                           'persistent_datastore_pattern' =>
@@ -66,7 +65,7 @@ module Bosh::Dev::VSphere
                          'vm_folder' => "#{env['BOSH_VSPHERE_VCENTER_FOLDER_PREFIX']}_VMs",
                          'template_folder' =>
                            "#{env['BOSH_VSPHERE_VCENTER_FOLDER_PREFIX']}_Templates",
-                         'disk_path' => disk_path,
+                         'disk_path' => env['BOSH_VSPHERE_VCENTER_DISK_PATH'] || "#{env['BOSH_VSPHERE_VCENTER_FOLDER_PREFIX']}_Disks",
                          'datastore_pattern' => env['BOSH_VSPHERE_VCENTER_DATASTORE_PATTERN'],
                          'persistent_datastore_pattern' =>
                            env['BOSH_VSPHERE_VCENTER_DATASTORE_PATTERN'],
