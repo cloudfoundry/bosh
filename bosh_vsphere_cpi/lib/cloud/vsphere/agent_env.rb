@@ -15,7 +15,10 @@ module VSphereCloud
       return unless env_iso_folder
 
       datastore_name = cdrom.backing.datastore.name
-      env_path = env_iso_folder.match(/\[#{Regexp.escape(datastore_name)}\] (.*)/)[1]
+      datastore_pattern = Regexp.escape(datastore_name)
+      result = env_iso_folder.match(/\[#{datastore_pattern}\] (.*)/)
+      raise Bosh::Clouds::CloudError.new('Could not find matching datastore name') unless result
+      env_path = result[1]
 
       contents = @file_provider.fetch_file(datacenter_name, datastore_name, "#{env_path}/env.json")
       raise Bosh::Clouds::CloudError.new('Unable to load env.json') unless contents
