@@ -16,7 +16,11 @@ describe 'promotion', type: :integration do
   end
 
   let!(:origin_repo_path) { Dir.mktmpdir(['promote_test_repo', '.git']) }
+  after { FileUtils.rm_rf(origin_repo_path) }
+
   let!(:workspace_path) { Dir.mktmpdir('promote_test_workspace') }
+  after { FileUtils.rm_rf(workspace_path) }
+
   before do
     Dir.chdir(origin_repo_path) do
       exec_cmd('git init --bare .')
@@ -25,6 +29,8 @@ describe 'promotion', type: :integration do
       exec_cmd("git clone #{origin_repo_path} .")
       File.write('initial-file.go', 'initial-code')
       exec_cmd('git add -A')
+      exec_cmd('git config user.email "rboshman@pivotal.io"')
+      exec_cmd('git config user.name "Robert Boshman"')
       exec_cmd("git commit -m 'initial commit'")
       exec_cmd('git push origin master')
     end
@@ -32,8 +38,6 @@ describe 'promotion', type: :integration do
     FileUtils.rm_rf(workspace_path)
     Dir.mkdir(workspace_path)
   end
-  after { FileUtils.rm_rf(origin_repo_path) }
-  after { FileUtils.rm_rf(workspace_path) }
 
   before do
     allow(Bosh::Dev::DownloadAdapter).to(receive(:new).with(logger)) { Bosh::Dev::LocalDownloadAdapter.new(logger) }
