@@ -73,3 +73,5 @@ ENV HOME /home/ubuntu
 # postgres must be run as non-root
 # postgres user: ubuntu/<no-password>
 RUN pg_ctl init && pg_ctl start -l /var/log/postgresql/server.log && sleep 4 && createuser -U ubuntu --superuser postgres && createdb -U ubuntu && pg_ctl stop
+RUN git config --global user.email "cf-bosh-eng@pivotal.io"
+RUN git config --global user.name "BOSH GOCD"

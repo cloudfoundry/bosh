@@ -8,9 +8,9 @@ require 'open3'
 require 'bosh/dev/command_helper'
 
 describe 'promotion', type: :integration do
-  def exec_cmd(cmd, env={"GIT_AUTHOR_NAME"=>"Robert T. Boshman", "GIT_AUTHOR_EMAIL" => "rtboshman@gmail.com"})
+  def exec_cmd(cmd)
     logger.info("Executing: #{cmd}")
-    stdout, stderr, status = Open3.capture3(env, cmd)
+    stdout, stderr, status = Open3.capture3(cmd)
     raise "Failed executing '#{cmd}'\nSTDOUT: '#{stdout}', \nSTDERR: '#{stderr}'" unless status.success?
     [stdout, stderr, status]
   end
