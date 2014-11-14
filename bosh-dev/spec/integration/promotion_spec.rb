@@ -8,9 +8,9 @@ require 'open3'
 require 'bosh/dev/command_helper'
 
 describe 'promotion', type: :integration do
-  def exec_cmd(cmd)
+  def exec_cmd(cmd, env={"GIT_AUTHOR_NAME"=>"Robert T. Boshman", "GIT_AUTHOR_EMAIL" => "rtboshman@gmail.com"})
     logger.info("Executing: #{cmd}")
-    stdout, stderr, status = Open3.capture3(cmd)
+    stdout, stderr, status = Open3.capture3(env, cmd)
     raise "Failed executing '#{cmd}'\nSTDOUT: '#{stdout}', \nSTDERR: '#{stderr}'" unless status.success?
     [stdout, stderr, status]
   end
@@ -29,8 +29,6 @@ describe 'promotion', type: :integration do
       exec_cmd("git clone #{origin_repo_path} .")
       File.write('initial-file.go', 'initial-code')
       exec_cmd('git add -A')
-      exec_cmd('git config user.email "rboshman@pivotal.io"')
-      exec_cmd('git config user.name "Robert Boshman"')
       exec_cmd("git commit -m 'initial commit'")
       exec_cmd('git push origin master')
     end
@@ -48,7 +46,6 @@ describe 'promotion', type: :integration do
 
   it 'commits the release patch to a stable tag and then merges to the master and feature branches' do
     candidate_sha = nil
-
     Dir.chdir(workspace_path) do
       # feature development
       exec_cmd("git clone #{origin_repo_path} .")
