@@ -91,7 +91,7 @@ describe Bhm::Plugins::Email do
   it 'processes queue asynchronously when running' do
     allow(@plugin).to receive(:send_email_async)
 
-    2.times do |i|
+    20.times do |i|
       @plugin.process(Bhm::Events::Base.create!(:heartbeat, heartbeat_payload))
       @plugin.process(Bhm::Events::Base.create!(:alert, alert_payload))
     end
