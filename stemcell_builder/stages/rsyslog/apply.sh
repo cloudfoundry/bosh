@@ -113,6 +113,11 @@ run_in_bosh_chroot $chroot "
 
 # Add configuration files
 cp $assets_dir/rsyslog.conf $chroot/etc/rsyslog.conf
+
+if [ -f $chroot/etc/debian_version ]; then
+  cp $assets_dir/enable-kernel-logging.conf $chroot/etc/rsyslog.d/enable-kernel-logging.conf
+fi
+
 cp $assets_dir/rsyslog_upstart.conf $chroot/etc/init/rsyslog.conf
 cp $assets_dir/rsyslog_logrotate.conf $chroot/etc/logrotate.d/rsyslog
 

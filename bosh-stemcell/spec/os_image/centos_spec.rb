@@ -111,4 +111,12 @@ describe 'CentOS OS image', os_image: true do
       it { should contain 'READAHEAD_COLLECT_ON_RPM="no"' }
     end
   end
+
+  context 'rsyslog' do
+    describe file('/etc/rsyslog.d/enable-kernel-logging.conf') do
+      # Make sure imklog module is not loaded in rsyslog
+      # to avoid CentOS stemcell pegging CPU on AWS
+      it { should_not be_file } # (do not add $ in front of ModLoad because it will break the serverspec regex match)
+    end
+  end
 end

@@ -201,4 +201,11 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       it { should be_linked_to '/usr/bin/vim.tiny' }
     end
   end
+
+  context 'installed by rsyslog' do
+    describe file('/etc/rsyslog.d/enable-kernel-logging.conf') do
+      it { should be_file }
+      it { should contain('ModLoad imklog') }
+    end
+  end
 end
