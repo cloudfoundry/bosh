@@ -94,7 +94,7 @@ module Bosh::Dev
     class BuildCandidateArtifactPromotionStage < Stage
       def initialize(logger)
         super('Build Candidate Artifacts', logger)
-        @build_candidate = Build.candidate
+        @build_candidate = Build.candidate(logger)
       end
 
       def promote(stage_args)
