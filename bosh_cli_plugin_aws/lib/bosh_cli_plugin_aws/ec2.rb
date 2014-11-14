@@ -3,14 +3,14 @@ module Bosh
     class EC2
 
       NAT_AMI_ID = {
-        'us-east-1' => 'ami-f619c29f',      # ami-vpc-nat-1.1.0-beta
-        'us-west-1' => 'ami-3bcc9e7e',      # ami-vpc-nat-1.0.0-beta
-        'us-west-2' => 'ami-52ff7262',      # ami-vpc-nat-1.0.0-beta
-        'eu-west-1' => 'ami-e5e2d991',      # ami-vpc-nat-1.1.0-beta
-        'ap-southeast-1' => 'ami-02eb9350', # ami-vpc-nat-1.0.0-beta
-        'ap-northeast-1' => 'ami-14d86d15', # ami-vpc-nat-1.0.0-beta
-        'ap-southeast-2' => 'ami-ab990e91', # ami-vpc-nat-1.0.0-beta
-        'sa-east-1' => 'ami-0039e61d',      # ami-vpc-nat-1.0.0-beta
+        "us-east-1"=>"ami-4f9fee26",
+        "us-west-1"=>"ami-7850793d",
+        "us-west-2"=>"ami-6d29b85d",
+        "eu-west-1"=>"ami-ed352799",
+        "ap-southeast-1"=>"ami-780a432a",
+        "ap-northeast-1"=>"ami-5f840e5e",
+        "ap-southeast-2"=>"ami-0154c73b",
+        "sa-east-1"=>"ami-7660c56b"
       }
 
       attr_reader :elastic_ips

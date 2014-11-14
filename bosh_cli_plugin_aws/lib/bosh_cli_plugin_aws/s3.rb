@@ -3,6 +3,7 @@ module Bosh
     class S3
       def initialize(credentials)
         @aws_provider = AwsProvider.new(credentials)
+        @region = credentials["region"]
       end
 
       def create_bucket(bucket_name)
@@ -26,7 +27,7 @@ module Bosh
       def empty
         aws_s3.buckets.each do |bucket|
           begin
-            bucket.delete!
+            bucket.delete! if bucket.location_constraint == @region # only delete bucket if in correct region
           rescue AWS::S3::Errors::NoSuchBucket
             # when the bucket goes away while going through the list
           end
@@ -35,6 +36,11 @@ module Bosh
 
       def bucket_names
         aws_s3.buckets.map &:name
+      end
+
+      def bucket_location(bucket_name)
+        bucket = fetch_bucket(bucket_name)
+        bucket.location_constraint || "us-east-1"
       end
 
       def bucket_exists?(bucket_name)
