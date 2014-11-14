@@ -153,7 +153,7 @@ describe Bosh::Aws::RDS do
         options[:db_name].should == "mydb"
         options[:vpc_security_group_ids].should == ["sg-5678"]
         options[:allocated_storage].should == 5
-        options[:db_instance_class].should == "db.t1.micro"
+        options[:db_instance_class].should == "db.m1.small"
         options[:engine].should == "mysql"
         options[:engine_version].should == "5.5.31"
         options[:db_parameter_group_name].should == "utf8"
@@ -181,7 +181,7 @@ describe Bosh::Aws::RDS do
         options[:db_name].should == "mydb"
         options[:vpc_security_group_ids].should == ["sg-5678"]
         options[:allocated_storage].should == 16
-        options[:db_instance_class].should == "db.t1.micro"
+        options[:db_instance_class].should == "db.m1.small"
         options[:engine].should == "mysql"
         options[:engine_version].should == "5.5.31"
         options[:master_username].should be_kind_of(String)
@@ -204,7 +204,7 @@ describe Bosh::Aws::RDS do
           options[:db_name].should == "mydb"
           options[:vpc_security_group_ids].should == ["sg-5678"]
           options[:allocated_storage].should == 16
-          options[:db_instance_class].should == "db.t1.micro"
+          options[:db_instance_class].should == "db.m1.small"
           options[:engine].should == "mysql"
           options[:master_username].should be_kind_of(String)
           options[:master_username].length.should be >= 8
@@ -234,7 +234,7 @@ describe Bosh::Aws::RDS do
           options[:db_name].should == "mydb"
           options[:vpc_security_group_ids].should == ["sg-5678"]
           options[:allocated_storage].should == 16
-          options[:db_instance_class].should == "db.t1.micro"
+          options[:db_instance_class].should == "db.m1.small"
           options[:engine].should == "mysql"
           options[:master_username].should be_kind_of(String)
           options[:master_username].length.should be >= 8
