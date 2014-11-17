@@ -108,7 +108,7 @@ describe Bosh::OpenStackCloud::Cloud do
     cloud.should_receive(:generate_unique_name).and_return(unique_name)
     cloud.should_receive(:wait_resource).with(boot_volume, :available)
 
-    cloud.create_boot_disk(2048, stemcell_id, nil, "foo").should == "v-foobar"
+    cloud.create_boot_disk(2048, stemcell_id, nil, {"type" => "foo"}).should == "v-foobar"
   end
 
   it "rounds up disk size" do

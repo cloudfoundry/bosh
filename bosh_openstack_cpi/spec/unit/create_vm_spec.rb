@@ -314,6 +314,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
 
   context "when boot_from_volume is set with a volume_type" do
     let(:volume_id) { "v-foobar" }
+
     it "creates an OpenStack server with a boot volume" do
       network_spec = dynamic_network_spec
       address = double("address", :id => "a-test", :ip => "10.0.0.1",
@@ -331,7 +332,9 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
 
       cloud_options = mock_cloud_options
       cloud_options['properties']['openstack']['boot_from_volume'] = true
-      cloud_options['properties']['openstack']['boot_volume_type'] = "foo"
+      cloud_options['properties']['openstack']['boot_volume_cloud_properties'] = {
+        "type" => "foo"
+      }
 
       cloud = mock_cloud(cloud_options['properties']) do |openstack|
         openstack.servers.should_receive(:create).with(openstack_params).and_return(server)

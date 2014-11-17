@@ -11,6 +11,7 @@ describe Bosh::OpenStackCloud::Cloud do
     @tenant           = ENV['BOSH_OPENSTACK_TENANT']      || raise('Missing BOSH_OPENSTACK_TENANT')
     @stemcell_id      = ENV['BOSH_OPENSTACK_STEMCELL_ID'] || raise('Missing BOSH_OPENSTACK_STEMCELL_ID')
     @net_id           = ENV['BOSH_OPENSTACK_NET_ID']      || raise('Missing BOSH_OPENSTACK_NET_ID')
+    @boot_volume_type = ENV['BOSH_OPENSTACK_VOLUME_TYPE'] || raise('Missing BOSH_OPENSTACK_VOLUME_TYPE')
     @manual_ip        = ENV['BOSH_OPENSTACK_MANUAL_IP']   || raise('Missing BOSH_OPENSTACK_MANUAL_IP')
     @default_key_name = ENV.fetch('BOSH_OPENSTACK_DEFAULT_KEY_NAME', 'jenkins')
     @config_drive     = ENV.fetch('BOSH_OPENSTACK_CONFIG_DRIVE', 'cdrom')
@@ -36,7 +37,9 @@ describe Bosh::OpenStackCloud::Cloud do
         'default_security_groups' => %w(default),
         'wait_resource_poll_interval' => 5,
         'boot_from_volume' => boot_from_volume,
-        'boot_volume_type' => boot_volume_type,
+        'boot_volume_cloud_properties' => {
+          'type' => boot_volume_type
+        },
         'config_drive' => config_drive,
       },
       'registry' => {
@@ -144,9 +147,9 @@ describe Bosh::OpenStackCloud::Cloud do
     end
   end
 
-  context 'when booting from volume with a volume_type' do
+  context 'when booting from volume with a boot_volume_type' do
     let(:boot_from_volume) { true }
-    let(:boot_volume_type) { "foo" }
+    let(:boot_volume_type) { @boot_volume_type }
 
     let(:network_spec) do
       {
@@ -168,7 +171,7 @@ describe Bosh::OpenStackCloud::Cloud do
   end
 
   context 'when using cloud_properties' do
-    let(:cloud_properties) { { 'type' => 'foo' } }
+    let(:cloud_properties) { { 'type' => @boot_volume_type } }
 
     let(:network_spec) do
       {
