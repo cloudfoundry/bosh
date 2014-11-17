@@ -30,7 +30,9 @@ describe 'notifying plugins' do
     start_health_monitor
   end
 
-  after { EM.stop }
+  after do
+    @local_thread.kill
+  end
 
   it 'sends an alert to its plugins' do
     payload = {
@@ -53,7 +55,7 @@ describe 'notifying plugins' do
 
   def start_health_monitor(tries=60)
     # runner thread will stop when EM.stop is called
-    Thread.new { runner.run }
+    @local_thread = Thread.new { runner.run }
     while tries > 0
       tries -= 1
       # wait for alert plugin to load

@@ -100,13 +100,19 @@ describe Bhm::Plugins::Email do
     expect(@plugin.queue_size(:heartbeat)).to eq(20)
 
     EM.run do
-      EM.add_timer(300) { EM.stop }
+      puts("Inside EM.run block")
+      @plugin.run
+      EM.add_timer(30) do
+        # By this time the test is failing
+        puts("Timeout canceling the event machine")
+        EM.stop
+      end
+
       EM.add_periodic_timer(0.5) do
         if @plugin.queue_size(:alert) == 0 && @plugin.queue_size(:heartbeat) == 0
           EM.stop
         end
       end
-      @plugin.run
     end
 
     expect(@plugin.queue_size(:alert)).to eq(0)
