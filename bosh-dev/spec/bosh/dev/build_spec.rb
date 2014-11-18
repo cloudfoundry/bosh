@@ -10,7 +10,7 @@ module Bosh::Dev
     let(:bucket_name) { 'fake-bucket' }
 
     describe '.candidate' do
-      subject { described_class.candidate(bucket_name, logger) }
+      subject { described_class.candidate(bucket_name) }
 
       context 'when CANDIDATE_BUILD_NUMBER is set' do
         before { stub_const('ENV', 'CANDIDATE_BUILD_NUMBER' => 'candidate') }

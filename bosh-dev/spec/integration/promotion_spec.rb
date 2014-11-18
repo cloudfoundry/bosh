@@ -79,7 +79,7 @@ describe 'promotion', type: :integration do
 
       # disable promotion of stemcells, gems & the release
       build = instance_double('Bosh::Dev::Build', promote: nil, promoted?: false)
-      allow(Bosh::Dev::Build).to receive(:candidate).with(logger).and_return(build)
+      allow(Bosh::Dev::Build).to receive(:candidate).and_return(build)
 
       rake_input_args = {
         candidate_build_number: '0000',
