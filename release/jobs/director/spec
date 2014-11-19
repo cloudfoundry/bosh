@@ -344,6 +344,12 @@ properties:
   aws.http_wire_trace:
     description: When true aws cpi will log all wire traces
     default: false
+  aws.ssl_ca_file:
+    description: The path to a CA cert bundle in PEM format
+  aws.ssl_ca_path:
+    description: The path the a CA cert directory
+  aws.ssl_verify_peer:
+    description: When true the HTTP handler validate server certificates for HTTPS requests
   aws.stemcell.kernel_id:
     description: AWS kernel id used by aws cpi
   openstack.auth_url:

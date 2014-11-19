@@ -232,6 +232,15 @@ cloud:
       <% if_p('aws.http_wire_trace') do |http_wire_trace| %>
       http_wire_trace: <%= http_wire_trace %>
       <% end %>
+      <% if_p('aws.ssl_ca_file') do |ssl_ca_file| %>
+      ssl_ca_file: <%= ssl_ca_file %>
+      <% end %>
+      <% if_p('aws.ssl_ca_path') do |ssl_ca_path| %>
+      ssl_ca_path: <%= ssl_ca_path %>
+      <% end %>
+      <% if_p('aws.ssl_verify_peer') do |ssl_verify_peer| %>
+      ssl_verify_peer: <%= ssl_verify_peer %>
+      <% end %>
     registry:
       endpoint: http://<%= reg_address %>:<%= reg_port %>
       user: <%= reg_user %>

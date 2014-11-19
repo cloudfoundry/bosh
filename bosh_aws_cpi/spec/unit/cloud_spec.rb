@@ -66,6 +66,7 @@ describe Bosh::AwsCloud::Cloud do
       it 'default value is used for http properties' do
         expect(AWS.config.http_read_timeout).to eq(60)
         expect(AWS.config.http_wire_trace).to be false
+        expect(AWS.config.ssl_verify_peer).to be true
       end
     end
 
@@ -79,7 +80,10 @@ describe Bosh::AwsCloud::Cloud do
                 'region' => 'fake-region',
                 'default_key_name' => 'sesame',
                 'http_read_timeout' => 300,
-                'http_wire_trace' => true
+                'http_wire_trace' => true,
+                'ssl_verify_peer' => false,
+                'ssl_ca_file' => '/custom/cert/ca-certificates',
+                'ssl_ca_path' => '/custom/cert/'
             },
             'registry' => {
                 'user' => 'abuser',
@@ -97,6 +101,9 @@ describe Bosh::AwsCloud::Cloud do
       it 'passes optional properties to AWS SDK' do
         expect(AWS.config.http_read_timeout).to eq(300)
         expect(AWS.config.http_wire_trace).to be true
+        expect(AWS.config.ssl_verify_peer).to be false
+        expect(AWS.config.ssl_ca_file).to eq('/custom/cert/ca-certificates')
+        expect(AWS.config.ssl_ca_path).to eq('/custom/cert/')
       end
     end
 
