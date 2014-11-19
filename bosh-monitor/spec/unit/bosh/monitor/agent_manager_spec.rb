@@ -171,6 +171,7 @@ describe Bhm::AgentManager do
       Bhm::config=Psych.load_file(sample_config)
       mock_nats.stub(:subscribe)
       Bhm.stub(:nats).and_return(mock_nats)
+      EM.stub(:schedule).and_yield
     end
 
     it "has the cloudwatch plugin" do
