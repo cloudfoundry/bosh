@@ -67,9 +67,16 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
   (e448b0e8b0967288488c929fbbf953b22a046d1d)
 
 
-## CentOS
+## CentOS 6.6
 
-CentOS images have filename `bosh-centos-6_5-os-image.tgz`
+CentOS 6.6 images have filename `bosh-centos-6_6-os-image.tgz`
+
+ * `6mBEQ5Gt5O6NJIFZxlyrf_05i.6s0OWF`
+  CentOS 6.6
+
+## CentOS 6.5
+
+CentOS 6.5 images have filename `bosh-centos-6_5-os-image.tgz`
 
 * `KVSJwBVkLQ.OKnVpgBiJILrcJr1E8IPK`
   upgrade openssl to 1.0.1e-30.el6_5.2
