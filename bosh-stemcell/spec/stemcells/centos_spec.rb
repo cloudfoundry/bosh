@@ -12,7 +12,7 @@ describe 'CentOS stemcell', stemcell_image: true do
       it { should be_file }
       it { should contain 'default=0' }
       it { should contain 'timeout=1' }
-      it { should contain 'title CentOS release 6.5 (Final) ' }
+      it { should contain 'title CentOS release 6.6 (Final) ' }
       it { should contain '  root (hd0,0)' }
       it { should contain ' xen_blkfront.sda_is_xvda=1 ro root=UUID=' }
       it { should contain ' selinux=0' }
