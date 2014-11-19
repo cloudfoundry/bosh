@@ -43,7 +43,10 @@ describe 'registry.yml.erb' do
         'region' => 'region',
         'ec2_endpoint' => 'some_ec2_endpoint',
         'elb_endpoint' => 'some_elb_endpoint',
-        'max_retries' => 10
+        'max_retries' => 10,
+        'ssl_verify_peer' => false,
+        'ssl_ca_file' => '/custom/cert/ca-certificates',
+        'ssl_ca_path' => '/custom/cert/'
       }
     end
 
@@ -60,7 +63,10 @@ describe 'registry.yml.erb' do
         'region' => 'region',
         'ec2_endpoint' => 'some_ec2_endpoint',
         'elb_endpoint' => 'some_elb_endpoint',
-        'max_retries' => 10
+        'max_retries' => 10,
+        'ssl_verify_peer' => false,
+        'ssl_ca_file' => '/custom/cert/ca-certificates',
+        'ssl_ca_path' => '/custom/cert/'
       })
     end
   end

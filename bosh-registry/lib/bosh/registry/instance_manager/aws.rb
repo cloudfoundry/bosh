@@ -21,6 +21,15 @@ module Bosh::Registry
           :ec2_endpoint => "ec2.#{@aws_properties['region']}.amazonaws.com",
           :logger => @logger
         }
+        # configure optional parameters
+        %w(
+          ssl_verify_peer
+          ssl_ca_file
+          ssl_ca_path
+        ).each do |k|
+          @aws_options[k.to_sym] = @aws_properties[k] unless @aws_properties[k].nil?
+        end
+
         @ec2 = AWS::EC2.new(@aws_options)
       end
 
