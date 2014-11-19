@@ -7,7 +7,7 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
-* `c05681f48bc5daf316430eb38906e3ac`
+* `VSHa.AirKTKl2thd3d.Ld0LZirE7kK8Z`
   enable rsyslog kernel logging
 
 * `9_XaaM0qR6ReYHJvyJstqf52IL_1zJOQ`
