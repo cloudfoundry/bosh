@@ -178,6 +178,9 @@ describe 'director.yml.erb.erb' do
         'default_security_groups' => 'default_security_groups',
         'wait_resource_poll_interval' => 'wait_resource_poll_interval',
         'config_drive' => 'config-drive-value',
+        'boot_volume_cloud_properties' => {
+          'type' => 'SSD'
+        },
       }
       deployment_manifest_fragment['properties']['registry'] = {
         'address' => 'address',
@@ -211,6 +214,9 @@ describe 'director.yml.erb.erb' do
         'default_security_groups' => 'default_security_groups',
         'wait_resource_poll_interval' => 'wait_resource_poll_interval',
         'config_drive' => 'config-drive-value',
+        'boot_volume_cloud_properties' => {
+          'type' => 'SSD'
+        },
       })
     end
   end

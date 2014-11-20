@@ -275,8 +275,11 @@ cloud:
       <% if_p("openstack.boot_from_volume") do |boot_from_volume| %>
       boot_from_volume: <%= boot_from_volume %>
       <% end %>
-      <% if_p("openstack.boot_volume_type") do |boot_volume_type| %>
-      boot_volume_type: <%= boot_volume_type %>
+      <% if_p("openstack.boot_volume_cloud_properties") do |boot_volume_cloud_properties| %>
+      boot_volume_cloud_properties:
+        <% if_p("openstack.boot_volume_cloud_properties.type") do |boot_volume_type| %>
+        type: <%= boot_volume_type %>
+        <% end %>
       <% end %>
       default_key_name: <%= default_key_name %>
       default_security_groups: <%= default_security_groups %>

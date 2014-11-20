@@ -363,7 +363,7 @@ properties:
   openstack.boot_from_volume:
     description: Boot from volume (optional, false by default)
     default: false
-  openstack.boot_volume_type:
+  openstack.boot_volume_cloud_properties.type:
     description: Volume type for the boot volume (optional)
   openstack.stemcell_public_visibility:
     description: Set public visibility for stemcells (optional, false by default)
