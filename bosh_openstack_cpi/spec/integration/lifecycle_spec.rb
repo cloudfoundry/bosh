@@ -5,16 +5,17 @@ require 'logger'
 
 describe Bosh::OpenStackCloud::Cloud do
   before(:all) do
-    @auth_url         = ENV['BOSH_OPENSTACK_AUTH_URL']    || raise('Missing BOSH_OPENSTACK_AUTH_URL')
-    @username         = ENV['BOSH_OPENSTACK_USERNAME']    || raise('Missing BOSH_OPENSTACK_USERNAME')
-    @api_key          = ENV['BOSH_OPENSTACK_API_KEY']     || raise('Missing BOSH_OPENSTACK_API_KEY')
-    @tenant           = ENV['BOSH_OPENSTACK_TENANT']      || raise('Missing BOSH_OPENSTACK_TENANT')
-    @stemcell_id      = ENV['BOSH_OPENSTACK_STEMCELL_ID'] || raise('Missing BOSH_OPENSTACK_STEMCELL_ID')
-    @net_id           = ENV['BOSH_OPENSTACK_NET_ID']      || raise('Missing BOSH_OPENSTACK_NET_ID')
-    @boot_volume_type = ENV['BOSH_OPENSTACK_VOLUME_TYPE'] || raise('Missing BOSH_OPENSTACK_VOLUME_TYPE')
-    @manual_ip        = ENV['BOSH_OPENSTACK_MANUAL_IP']   || raise('Missing BOSH_OPENSTACK_MANUAL_IP')
-    @default_key_name = ENV.fetch('BOSH_OPENSTACK_DEFAULT_KEY_NAME', 'jenkins')
-    @config_drive     = ENV.fetch('BOSH_OPENSTACK_CONFIG_DRIVE', 'cdrom')
+    @auth_url          = ENV['BOSH_OPENSTACK_AUTH_URL']    || raise('Missing BOSH_OPENSTACK_AUTH_URL')
+    @username          = ENV['BOSH_OPENSTACK_USERNAME']    || raise('Missing BOSH_OPENSTACK_USERNAME')
+    @api_key           = ENV['BOSH_OPENSTACK_API_KEY']     || raise('Missing BOSH_OPENSTACK_API_KEY')
+    @tenant            = ENV['BOSH_OPENSTACK_TENANT']      || raise('Missing BOSH_OPENSTACK_TENANT')
+    @stemcell_id       = ENV['BOSH_OPENSTACK_STEMCELL_ID'] || raise('Missing BOSH_OPENSTACK_STEMCELL_ID')
+    @net_id            = ENV['BOSH_OPENSTACK_NET_ID']      || raise('Missing BOSH_OPENSTACK_NET_ID')
+    @boot_volume_type  = ENV['BOSH_OPENSTACK_VOLUME_TYPE'] || raise('Missing BOSH_OPENSTACK_VOLUME_TYPE')
+    @manual_ip         = ENV['BOSH_OPENSTACK_MANUAL_IP']   || raise('Missing BOSH_OPENSTACK_MANUAL_IP')
+    @disable_snapshots = ENV.fetch('BOSH_OPENSTACK_DISABLE_SNAPSHOTS', false)
+    @default_key_name  = ENV.fetch('BOSH_OPENSTACK_DEFAULT_KEY_NAME', 'jenkins')
+    @config_drive      = ENV.fetch('BOSH_OPENSTACK_CONFIG_DRIVE', 'cdrom')
 
     # some environments may not have this set, and it isn't strictly necessary so don't raise if it isn't set
     @region = ENV['BOSH_OPENSTACK_REGION']
@@ -215,15 +216,16 @@ describe Bosh::OpenStackCloud::Cloud do
   def vm_lifecycle(stemcell_id, network_spec, disk_locality, cloud_properties = {})
     vm_id = create_vm(stemcell_id, network_spec, disk_locality)
     disk_id = create_disk(vm_id, cloud_properties)
-    disk_snapshot_id = create_disk_snapshot(disk_id)
+    disk_snapshot_id = create_disk_snapshot(disk_id) unless @disable_snapshots
   rescue Exception => create_error
   ensure
     # create_error is in scope and possibly populated!
-    run_all_and_raise_any_errors(create_error, [
-      lambda { clean_up_disk_snapshot(disk_snapshot_id) },
+    funcs = [
       lambda { clean_up_disk(disk_id) },
       lambda { clean_up_vm(vm_id, network_spec) },
-    ])
+    ]
+    funcs.unshift(lambda { clean_up_disk_snapshot(disk_snapshot_id) }) unless @disable_snapshots
+    run_all_and_raise_any_errors(create_error, funcs)
   end
 
   def create_vm(stemcell_id, network_spec, disk_locality)
