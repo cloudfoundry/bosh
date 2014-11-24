@@ -61,6 +61,8 @@ cloud:
             wait_max: 900
 env:
   vapp: vcloud_vapp_name
+logging:
+  level: debug
 YAML
 
       before do

@@ -13,6 +13,7 @@ module Bosh::Dev::VCloud
     def build(artifacts, net_type)
       env    = ENV
       logger = Logging.logger(STDOUT)
+      logger.level = :debug
 
       director_address = Bosh::Dev::Bat::DirectorAddress.from_env(env, 'BOSH_VCLOUD_MICROBOSH_IP')
       bosh_cli_session = Bosh::Dev::BoshCliSession.default
