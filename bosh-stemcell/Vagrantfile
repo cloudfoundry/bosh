@@ -5,6 +5,7 @@ Vagrant.configure('2') do |config|
   config.vm.box = vm_box
   config.ssh.username = 'ubuntu'
 
+  config.berkshelf.berksfile_path = "./Berksfile"
   config.vm.define :local do |local|
     local.vm.box_url = "https://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-vagrant-boxes/#{vm_box}-virtualbox.box"
     local.vm.provider :virtualbox do |virtualbox|
