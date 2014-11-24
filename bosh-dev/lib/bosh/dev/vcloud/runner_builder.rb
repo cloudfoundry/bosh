@@ -20,8 +20,7 @@ module Bosh::Dev::VCloud
       director_uuid    = Bosh::Dev::Bat::DirectorUuid.new(bosh_cli_session)
       stemcell_archive = Bosh::Stemcell::Archive.new(artifacts.stemcell_path)
 
-      microbosh_deployment_manifest =
-        MicroBoshDeploymentManifest.new(env, net_type)
+      microbosh_deployment_manifest = MicroBoshDeploymentManifest.new(env)
       bat_deployment_manifest =
         BatDeploymentManifest.new(env, net_type, director_uuid, stemcell_archive)
 

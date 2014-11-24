@@ -20,7 +20,7 @@ module Bosh::Dev::VCloud
 
       before { client.stub(:find_vdc_by_name).with('fake-vdc').and_return(vdc) }
       let(:vdc) { instance_double('VCloudSdk::VDC', find_vapp_by_name: vapp) }
-      let(:vapp) { instance_double('VCloudSdk::VApp', power_off: nil, delete: nil, vms: []) }
+      let(:vapp) { instance_double('VCloudSdk::VApp', power_off: nil, delete: nil, vms: [], status: 'POWERED_ON') }
       let(:vm1) { instance_double('VCloudSdk::VM') }
       let(:vm2) { instance_double('VCloudSdk::VM') }
       let(:disk) { instance_double('VCloudSdk::Disk', name: 'fake-disk-name') }
@@ -56,6 +56,17 @@ module Bosh::Dev::VCloud
           vapp.should_receive(:delete).once.ordered
 
           subject.clean
+        end
+
+        context 'when app is powered off' do
+          before do
+            allow(vapp).to receive(:status).and_return('POWERED_OFF')
+          end
+
+          it 'does not power off' do
+            expect(vapp).to_not receive(:power_off)
+            subject.clean
+          end
         end
       end
 
