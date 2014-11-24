@@ -36,7 +36,7 @@ properties:
     version: 13
   instances: 1
   networks:
-  - name: default
+  - name: static
     static_ip: ip
     type: manual
     cidr: net_cidr
