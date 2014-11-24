@@ -48,6 +48,10 @@ properties:
     gateway: net_gateway
     vlan: net_id
   vapp_name: vapp
+  vcds:
+  - control:
+      time_limit_sec:
+        default: 360
 YAML
 
       before do
