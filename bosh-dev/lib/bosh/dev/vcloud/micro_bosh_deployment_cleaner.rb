@@ -11,6 +11,7 @@ module Bosh::Dev::VCloud
       @env = env
       @manifest = manifest
       @logger = Logging.logger(STDERR)
+      @logger.instance_variable_set(:@logdev, OpenStruct.new(dev: 'fake-dev'))
     end
 
     def clean
