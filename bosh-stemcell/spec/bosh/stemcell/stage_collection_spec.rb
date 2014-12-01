@@ -38,6 +38,7 @@ module Bosh::Stemcell
               :bosh_ntpdate,
               :bosh_sudoers,
               :rsyslog,
+              :delay_monit_start,
               :system_grub,
               :vim_tiny,
             ]
@@ -58,6 +59,7 @@ module Bosh::Stemcell
               :bosh_ntpdate,
               :bosh_sudoers,
               :rsyslog,
+              :delay_monit_start,
               :system_grub,
             ]
           )
