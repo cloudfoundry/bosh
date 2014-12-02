@@ -252,12 +252,17 @@ module Bosh::OpenStackCloud
 
         use_config_drive = !!@openstack_properties.fetch("config_drive", nil)
 
+        if resource_pool['scheduler_hints']
+          @logger.debug("Using scheduler hints: `#{resource_pool['scheduler_hints']}'")
+        end
+
         server_params = {
           :name => server_name,
           :image_ref => image.id,
           :flavor_ref => flavor.id,
           :key_name => keypair.name,
           :security_groups => security_groups,
+          :os_scheduler_hints => resource_pool['scheduler_hints'],
           :nics => nics,
           :config_drive => use_config_drive,
           :user_data => Yajl::Encoder.encode(user_data(server_name, network_spec))

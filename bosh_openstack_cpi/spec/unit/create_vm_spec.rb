@@ -32,6 +32,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       flavor_ref: "f-test",
       key_name: "test_key",
       security_groups: security_groups,
+      os_scheduler_hints: scheduler_hints,
       nics: nics,
       config_drive: false,
       user_data: Yajl::Encoder.encode(user_data(unique_name, nameserver, false)),
@@ -72,6 +73,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   let(:security_groups) { %w[default] }
   let(:nameserver) { nil }
   let(:nics) { [] }
+  let(:scheduler_hints) { nil }
 
   before(:each) do
     @registry = mock_registry
@@ -265,6 +267,36 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     @registry.should_receive(:update_settings)
 
     cloud.create_vm("agent-id", "sc-id", resource_pool_spec, combined_network_spec)
+  end
+
+  context "with scheduler hints" do
+    let(:scheduler_hints) do
+      {group: 'abcd-foo-bar'}
+    end
+
+    it "creates an OpenStack server with scheduler hints" do
+      address = double("address", :id => "a-test", :ip => "10.0.0.1",
+                      :instance_id => "i-test")
+
+      cloud = mock_cloud do |openstack|
+        openstack.servers.should_receive(:create).with(openstack_params).and_return(server)
+        openstack.security_groups.should_receive(:collect).and_return(%w[default])
+        openstack.images.should_receive(:find).and_return(image)
+        openstack.flavors.should_receive(:find).and_return(flavor)
+        openstack.key_pairs.should_receive(:find).and_return(key_pair)
+        openstack.addresses.should_receive(:find).and_return(address)
+      end
+
+      cloud.should_receive(:generate_unique_name).and_return(openstack_params[:name].gsub(/^vm-/,''))
+      cloud.should_receive(:wait_resource).with(server, :active, :state)
+      address.should_receive(:server=).exactly(2).times
+
+      @registry.should_receive(:update_settings)
+
+      cloud.create_vm("agent-id", "sc-id",
+                      resource_pool_spec.merge('scheduler_hints' => scheduler_hints),
+                      combined_network_spec)
+    end
   end
 
   context "when boot_from_volume is set" do
