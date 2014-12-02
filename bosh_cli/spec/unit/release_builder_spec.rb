@@ -11,7 +11,7 @@ module Bosh::Cli
     end
 
     def new_builder(options = {})
-      ReleaseBuilder.new(@release, [], [], release_name, options)
+      ReleaseBuilder.new(@release, [], [], [], release_name, options)
     end
 
     context 'when there is a final release' do
@@ -131,7 +131,11 @@ module Bosh::Cli
       packages << double(:package, :name => 'baz', :new_version? => false)
       packages << double(:package, :name => 'zb', :new_version? => true)
 
-      builder = ReleaseBuilder.new(@release, packages, jobs, release_name)
+      licenses = []
+      licenses << double(:license, :name => 'license1', :new_version? => true)
+      licenses << double(:license, :name => 'license2', :new_version? => false)
+
+      builder = ReleaseBuilder.new(@release, packages, jobs,licenses, release_name)
 
       expect(builder.affected_jobs).to eq(jobs[0...-1]) # exclude last job
     end
@@ -157,9 +161,21 @@ module Bosh::Cli
         :dependencies => []
       )
 
-      builder = ReleaseBuilder.new(@release, [package], [job], release_name)
+      license = double(
+        LicenseBuilder,
+        :name => 'license',
+        :version => '1.0',
+        :new_version? => true,
+        :fingerprint => 'dabbadoo',
+        :checksum => 'badfood'
+      )
+
+
+      builder = ReleaseBuilder.new(@release, [package], [job], [license], release_name)
       expect(builder).to receive(:copy_jobs)
       expect(builder).to receive(:copy_packages)
+      expect(builder).to receive(:copy_licenses)
+
 
       builder.build
 
@@ -167,6 +183,7 @@ module Bosh::Cli
 
       expect(manifest['jobs'][0]['fingerprint']).to eq('deadbeef')
       expect(manifest['packages'][0]['fingerprint']).to eq('deadcafe')
+      expect(manifest['license'][0]['fingerprint']).to eq('dabbadoo')
     end
 
     context 'when version options is passed into initializer' do

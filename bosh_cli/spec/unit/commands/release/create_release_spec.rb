@@ -29,6 +29,7 @@ module Bosh::Cli::Command::Release
         allow(command).to receive(:dirty_state?).and_return(false)
         allow(command).to receive(:build_packages).and_return([])
         allow(command).to receive(:build_jobs)
+        allow(command).to receive(:build_licenses)
 
         allow(Bosh::Cli::ReleaseBuilder).to receive(:new).and_return(release_builder)
         allow(release_builder).to receive(:build)
@@ -60,6 +61,7 @@ module Bosh::Cli::Command::Release
         expect(command).to receive(:header).with('Building DEV release').once.ordered
         expect(command).to receive(:header).with('Building packages').once.ordered
         expect(command).to receive(:header).with('Building jobs').once.ordered
+        expect(command).to receive(:header).with('Building license').once.ordered
         expect(command).to receive(:header).with('Building release').once.ordered
         expect(command).to receive(:header).with('Release summary').once.ordered
 
@@ -121,7 +123,7 @@ module Bosh::Cli::Command::Release
         let(:provided_name) { 'c-release' }
 
         it 'builds release with the specified name' do
-          expect(command).to receive(:build_release).with(true, nil, nil, true, [], provided_name, nil)
+          expect(command).to receive(:build_release).with(true, nil, nil, true, [], nil, provided_name, nil)
 
           command.create
         end
@@ -136,7 +138,7 @@ module Bosh::Cli::Command::Release
 
       context 'when a version is provided with --version' do
         it 'builds release with the specified version' do
-          expect(command).to receive(:build_release).with(true, nil, nil, true, [], configured_dev_name, '1.0.1')
+          expect(command).to receive(:build_release).with(true, nil, nil, true, [], nil, configured_dev_name, '1.0.1')
           command.options[:version] = '1.0.1'
           command.create
         end
