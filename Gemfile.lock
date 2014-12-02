@@ -58,7 +58,7 @@ PATH
       bosh_common (~> 1.2778.0)
       bosh_cpi (~> 1.2778.0)
       bosh_openstack_cpi (~> 1.2778.0)
-      bosh_vcloud_cpi (~> 0.7.1)
+      bosh_vcloud_cpi (~> 0.7.2)
       bosh_vsphere_cpi (~> 1.2778.0)
       bosh_warden_cpi (~> 1.2778.0)
       eventmachine (~> 1.0.0)
@@ -187,7 +187,7 @@ PATH
       bosh_cli (~> 1.2778.0)
       bosh_cpi (~> 1.2778.0)
       bosh_openstack_cpi (~> 1.2778.0)
-      bosh_vcloud_cpi (= 0.7.1)
+      bosh_vcloud_cpi (~> 0.7.2)
       bosh_vsphere_cpi (~> 1.2778.0)
       mono_logger (~> 1.1.0)
       sqlite3 (~> 1.3.7)
@@ -261,7 +261,7 @@ GEM
       nokogiri (>= 1.4.4)
     bcrypt-ruby (3.0.1)
     beefcake (0.3.7)
-    bosh_vcloud_cpi (0.7.1)
+    bosh_vcloud_cpi (0.7.2)
       bosh_common
       bosh_cpi
       builder (~> 3.1.4)
@@ -287,7 +287,7 @@ GEM
     escape_utils (1.0.1)
     eventmachine (1.0.3)
     excon (0.39.5)
-    ffi (1.9.3)
+    ffi (1.9.6)
     fog (1.23.0)
       fog-brightbox
       fog-core (~> 1.23)
@@ -442,7 +442,7 @@ GEM
     slop (3.5.0)
     specinfra (1.15.0)
     sqlite3 (1.3.7)
-    sys-filesystem (1.1.2)
+    sys-filesystem (1.1.3)
       ffi
     terminal-table (1.4.5)
     thin (1.5.1)
