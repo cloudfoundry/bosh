@@ -43,7 +43,16 @@ module Bosh::Dev::VCloud
               'vlan' => env['BOSH_VCLOUD_NET_ID']
             },
           ],
-          'vapp_name' => env['BOSH_VCLOUD_VAPP_NAME']
+          'vapp_name' => env['BOSH_VCLOUD_VAPP_NAME'],
+          'vcds' => [
+            {
+              'control' => {
+                'time_limit_sec' => {
+                  'default' => 360
+                }
+              }
+            }
+          ]
         }
       }
     end
