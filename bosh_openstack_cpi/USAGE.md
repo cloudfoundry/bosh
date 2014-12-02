@@ -123,7 +123,7 @@ This is a sample of how OpenStack specific properties are used in a BOSH deploym
           instance_type: m1.small
           availability_zone:
           scheduler_hints:
-            server_group_anti_affinity_filter: database_group
+            group: af09abf2-2283-47d6-f2bd-2932a9ae949c
 
     ...
 
