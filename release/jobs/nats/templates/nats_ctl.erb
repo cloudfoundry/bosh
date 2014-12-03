@@ -3,7 +3,6 @@
 # Avoid Neighbour table overflow
 sysctl -w net.ipv4.neigh.default.gc_thresh3=4096
 sysctl -w net.ipv4.neigh.default.gc_thresh2=2048
-sysctl -w net.ipv4.neigh.default.gc_thresh1=1024
 
 export PATH=/var/vcap/packages/ruby/bin:$PATH
 export BUNDLE_GEMFILE=/var/vcap/packages/nats/Gemfile
