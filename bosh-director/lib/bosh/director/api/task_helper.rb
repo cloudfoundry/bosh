@@ -11,18 +11,17 @@ module Bosh::Director
                                    :state => :queued,
                                    :timestamp => Time.now,
                                    :checkpoint_time => Time.now)
-        log_dir = File.join(Config.base_dir, "tasks", task.id.to_s)
-        task_status_file = File.join(log_dir, "debug")
+        log_dir = File.join(Config.base_dir, 'tasks', task.id.to_s)
+        task_status_file = File.join(log_dir, 'debug')
         FileUtils.mkdir_p(log_dir)
 
-        logger = Logging::Logger.new('DirectorTask')
-        logger.add_appenders(Logging.appenders.file('DirectorTaskFile', filename: task_status_file))
-        logger.level = Config.logger.level
-        logger.info("Director Version : #{Bosh::Director::VERSION}")
-        logger.info("Enqueuing task: #{task.id}")
+        File.open(task_status_file, 'a') do |f|
+          f << "Director Version: #{Bosh::Director::VERSION}"
+          f << "Enqueuing task: #{task.id}"
+        end
 
         # remove old tasks
-        TaskRemover.new(Config.max_tasks, logger).remove
+        TaskRemover.new(Config.max_tasks).remove
 
         task.output = log_dir
         task.save

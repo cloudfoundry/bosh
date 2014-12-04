@@ -14,7 +14,7 @@ module Bosh::Director::Api
         end
       end
 
-      subject(:remover) { described_class.new(3, double('logger')) }
+      subject(:remover) { described_class.new(3) }
 
       context 'when there are fewer than max_tasks in the database' do
         before { make_n_tasks(2) }
