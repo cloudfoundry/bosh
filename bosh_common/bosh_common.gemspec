@@ -17,5 +17,5 @@ Gem::Specification.new do |s|
   s.require_path = 'lib'
 
   s.add_dependency 'semi_semantic', '~>1.1.0'
-  s.add_dependency 'logging',       '~>1.5.0'
+  s.add_dependency 'logging',       '~>1.8.2'
 end

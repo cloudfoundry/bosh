@@ -64,7 +64,7 @@ PATH
       eventmachine (~> 1.0.0)
       fog (~> 1.23.0)
       httpclient (= 2.4.0)
-      logging (~> 1.5.0)
+      logging (~> 1.8.2)
       membrane (~> 1.1.0)
       nats (= 0.5.0.beta.12)
       netaddr (~> 1.5.0)
@@ -96,7 +96,7 @@ PATH
       dogapi (~> 1.6.0)
       em-http-request (~> 0.3.0)
       eventmachine (~> 1.0.0)
-      logging (~> 1.5.0)
+      logging (~> 1.8.2)
       nats (= 0.5.0.beta.12)
       sinatra (~> 1.4.2)
       thin (~> 1.5.0)
@@ -196,7 +196,7 @@ PATH
   remote: bosh_common
   specs:
     bosh_common (1.2778.0)
-      logging (~> 1.5.0)
+      logging (~> 1.8.2)
       semi_semantic (~> 1.1.0)
 
 PATH
@@ -204,7 +204,7 @@ PATH
   specs:
     bosh_cpi (1.2778.0)
       bosh_common (~> 1.2778.0)
-      logging (~> 1.5.0)
+      logging (~> 1.8.2)
       membrane (~> 1.1.0)
 
 PATH
@@ -335,8 +335,9 @@ GEM
     json_pure (1.8.1)
     little-plugger (1.1.3)
     log4r (1.1.10)
-    logging (1.5.2)
-      little-plugger (>= 1.1.2)
+    logging (1.8.2)
+      little-plugger (>= 1.1.3)
+      multi_json (>= 1.8.4)
     machinist (1.0.6)
     membrane (1.1.0)
     mime-types (2.3)
