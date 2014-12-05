@@ -62,6 +62,22 @@ describe Bhm::Plugins::DataDog do
   end
 
   context "processing metrics" do
+
+    it "didn't freak out once timeout sendidng datadog metric" do
+      EM.should_receive(:defer).and_yield
+      heartbeat = make_heartbeat
+      dog_client.stub(:emit_points).and_raise(Timeout::Error)
+      expect { subject.process(heartbeat) }.to_not raise_error
+    end
+
+    it "didn't freak out with exceptions while sendidng datadog event" do
+      EM.should_receive(:defer).and_yield
+      heartbeat = make_heartbeat
+      dog_client.stub(:emit_points).and_raise
+      expect { subject.process(heartbeat) }.to_not raise_error
+    end
+
+
     it "sends datadog metrics" do
       tags = %w[
           job:mysql_node
@@ -98,6 +114,23 @@ describe Bhm::Plugins::DataDog do
   end
 
   context "processing alerts" do
+
+    it "didn't freak out once timeout sendidng datadog event" do
+      EM.should_receive(:defer).and_yield
+      heartbeat = make_heartbeat
+      dog_client.stub(:emit_event).and_raise(Timeout::Error)
+      alert = make_alert
+      expect { subject.process(alert) }.to_not raise_error
+    end
+
+    it "didn't freak out with exceptions while sendidng datadog event" do
+      EM.should_receive(:defer).and_yield
+      heartbeat = make_heartbeat
+      dog_client.stub(:emit_event).and_raise
+      alert = make_alert
+      expect { subject.process(alert) }.to_not raise_error
+    end
+
     it "sends datadog alerts" do
       EM.should_receive(:defer).and_yield
 
