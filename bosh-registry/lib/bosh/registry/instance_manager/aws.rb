@@ -18,7 +18,7 @@ module Bosh::Registry
           :access_key_id => @aws_properties["access_key_id"],
           :secret_access_key => @aws_properties["secret_access_key"],
           :max_retries => @aws_properties["max_retries"] || AWS_MAX_RETRIES,
-          :ec2_endpoint => "ec2.#{@aws_properties['region']}.amazonaws.com",
+          :ec2_endpoint => @aws_properties['ec2_endpoint'] || "ec2.#{@aws_properties['region']}.amazonaws.com",
           :logger => @logger
         }
         # configure optional parameters

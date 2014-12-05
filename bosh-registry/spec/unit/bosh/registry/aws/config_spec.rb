@@ -68,6 +68,21 @@ describe Bosh::Registry::InstanceManager do
       Bosh::Registry.configure(@config)
     end
 
-  end
+    it "uses default ec2_endpoint if none specified" do
+      instance_double('AWS::EC2')
+      expect(AWS::EC2).to receive(:new) do |config|
+        config[:ec2_endpoint].should eq("ec2.#{@config['cloud']['aws']['region']}.amazonaws.com")
+      end
+      Bosh::Registry.configure(@config)
+    end
 
+    it "uses specified ec2_endpoint" do
+      @config["cloud"]["aws"]["ec2_endpoint"] = "ec2endpoint.websites.com"
+      instance_double('AWS::EC2')
+      expect(AWS::EC2).to receive(:new) do |config|
+        config[:ec2_endpoint].should eq("ec2endpoint.websites.com")
+      end
+      Bosh::Registry.configure(@config)
+    end
+  end
 end
