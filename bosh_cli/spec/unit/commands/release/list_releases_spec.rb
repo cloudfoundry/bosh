@@ -40,7 +40,7 @@ module Bosh::Cli::Command::Release
             ],
           }
         ]
-      end      
+      end
 
       before do
         allow(command).to receive(:logged_in?).and_return(true)
@@ -157,8 +157,6 @@ module Bosh::Cli::Command::Release
         end
       end      
     end
-
-
 
     def expect_output(expected_output)
       actual = Bosh::Cli::Config.output.string
