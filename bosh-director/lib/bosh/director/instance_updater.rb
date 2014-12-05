@@ -315,10 +315,11 @@ module Bosh::Director
       @instance.model.db.transaction do
         disk_cid = @cloud.create_disk(disk_size, cloud_properties, @vm.cid)
         disk = Models::PersistentDisk.create(
-          :disk_cid => disk_cid,
-          :active => false,
-          :instance_id => @instance.model.id,
-          :size => disk_size
+          disk_cid: disk_cid,
+          active: false,
+          instance_id: @instance.model.id,
+          size: disk_size,
+          cloud_properties: cloud_properties,
         )
       end
       disk
