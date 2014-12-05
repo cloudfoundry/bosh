@@ -28,7 +28,7 @@ module Bosh::Monitor
     end
 
     get "/healthz" do
-      200
+      EM.schedule { 200 }
     end
   end
 

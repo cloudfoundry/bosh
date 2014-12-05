@@ -37,6 +37,7 @@ describe Bosh::Monitor::ApiController do
 
   describe "/healthz" do
     it 'returns 200 OK' do
+      EM.should_receive(:schedule).and_yield
       get '/healthz'
       last_response.status.should == 200
     end
