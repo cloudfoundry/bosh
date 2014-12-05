@@ -55,7 +55,7 @@ module Bosh::Cli::Command
           t.headings = 'Name', 'Versions', 'Commit Hash'
           t.headings << 'Jobs' if show_jobs
           releases.each do |release|
-            versions, commit_hashes = formatted_versions(release).transpose
+            versions, commit_hashes = formatted_versions(release['release_versions']).transpose
             row = [release['name'], versions.join("\n"), commit_hashes.join("\n")]
             if show_jobs
               jobs = formatted_jobs(release).transpose
@@ -66,8 +66,12 @@ module Bosh::Cli::Command
         end
       end
 
-      def formatted_versions(release)
-        sort_versions(release['release_versions']).map { |v| formatted_version_and_commit_hash(v) }
+      def formatted_versions(release_versions)
+        if release_versions.empty?
+          [["unknown", "unknown"]]
+        else
+          sort_versions(release_versions).map { |v| formatted_version_and_commit_hash(v) }
+        end
       end
 
       def sort_versions(versions)

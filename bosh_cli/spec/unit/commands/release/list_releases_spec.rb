@@ -40,7 +40,7 @@ module Bosh::Cli::Command::Release
             ],
           }
         ]
-      end
+      end      
 
       before do
         allow(command).to receive(:logged_in?).and_return(true)
@@ -131,7 +131,34 @@ module Bosh::Cli::Command::Release
           OUT
         end
       end
+
+      context 'when there are releases with unknown version' do
+        let(:releases) do
+          [
+            {
+              'name' => 'bosh-release',
+              'release_versions' => []
+            }
+          ]
+        end
+
+        it 'prints Uncommited changes' do
+          command.list
+          expect_output(<<-OUT)
+
+          +--------------+----------+-------------+
+          | Name         | Versions | Commit Hash |
+          +--------------+----------+-------------+
+          | bosh-release | unknown  | unknown     |
+          +--------------+----------+-------------+
+
+          Releases total: 1
+          OUT
+        end
+      end      
     end
+
+
 
     def expect_output(expected_output)
       actual = Bosh::Cli::Config.output.string
