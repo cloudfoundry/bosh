@@ -277,10 +277,10 @@ properties:
     description: Rackspace Cloud Files Region (optional, dfw or ord)
 
   ntp:
-    description: List of ntp server IPs. Defaults to North American NTP servers. Edit for your region.
+    description: List of ntp server IPs. pool.ntp.org attempts to return IPs closest to your location, but you can still specify if needed.
     default:
-      - 0.north-america.pool.ntp.org
-      - 1.north-america.pool.ntp.org
+      - 0.pool.ntp.org
+      - 1.pool.ntp.org
 
   # Cpi
   external_cpi.enabled:
