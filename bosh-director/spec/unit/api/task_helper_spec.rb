@@ -39,6 +39,13 @@ module Bosh::Director
 
         described_class.new.create_task(user.username, type, description)
       end
+
+      it 'logs director version' do
+        task = described_class.new.create_task(user.username, type, description)
+        director_version_line, enqueuing_task_line = File.read(File.join(tmpdir, 'tasks', task.id.to_s, 'debug')).split(/\n/)
+        expect(director_version_line).to match(/INFO .* Director Version: #{Bosh::Director::VERSION}/)
+        expect(enqueuing_task_line).to match(/INFO .* Enqueuing task: #{task.id}/)
+      end
     end
   end
 end

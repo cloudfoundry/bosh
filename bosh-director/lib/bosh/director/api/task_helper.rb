@@ -16,8 +16,8 @@ module Bosh::Director
         FileUtils.mkdir_p(log_dir)
 
         File.open(task_status_file, 'a') do |f|
-          f << "Director Version: #{Bosh::Director::VERSION}"
-          f << "Enqueuing task: #{task.id}"
+          f << format_log_message("Director Version: #{Bosh::Director::VERSION}")
+          f << format_log_message("Enqueuing task: #{task.id}")
         end
 
         # remove old tasks
@@ -26,6 +26,12 @@ module Bosh::Director
         task.output = log_dir
         task.save
         task
+      end
+
+      private
+
+      def format_log_message(message)
+        ThreadFormatter.new.call('INFO', Time.now, 'TaskHelper', message)
       end
     end
   end
