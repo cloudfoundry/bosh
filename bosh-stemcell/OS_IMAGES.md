@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `shN71hxWcKt1xy54u8H6vcTJX3whZZ1y`
+  disable reverse DNS resolution for sshd
+
 * `VSHa.AirKTKl2thd3d.Ld0LZirE7kK8Z`
   enable rsyslog kernel logging
 
@@ -73,6 +76,9 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 ## CentOS 6.6
 
 CentOS 6.6 images have filename `bosh-centos-6_6-os-image.tgz`
+
+ * `PB2C5YnPG.zZ5MgjBR96Y40UDpqVQb_D`
+  disable reverse DNS resolution for sshd
 
  * `6mBEQ5Gt5O6NJIFZxlyrf_05i.6s0OWF`
   CentOS 6.6
