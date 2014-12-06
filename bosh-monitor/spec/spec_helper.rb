@@ -64,6 +64,15 @@ def make_heartbeat(attrs = {})
   Bhm::Events::Heartbeat.new(defaults.merge(attrs))
 end
 
+def find_free_tcp_port
+  begin
+    server = TCPServer.new('127.0.0.1', 0)
+    server.addr[1]
+  ensure
+    server.close
+  end
+end
+
 RSpec.configure do |c|
   c.color = true
 

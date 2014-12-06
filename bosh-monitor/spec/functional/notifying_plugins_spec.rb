@@ -26,6 +26,9 @@ describe 'notifying plugins' do
   let(:runner) { Bosh::Monitor::Runner.new(spec_asset("dummy_plugin_config.yml")) }
 
   before do
+    free_port = find_free_tcp_port
+    allow(Bhm).to receive(:http_port).and_return(free_port)
+
     start_fake_nats
     start_health_monitor
   end
