@@ -5,7 +5,7 @@ describe Bhm::Plugins::CloudWatch do
   subject { described_class.new }
 
   before do
-    subject.stub(aws_cloud_watch: aws_cloud_watch)
+    allow(subject).to receive_messages(aws_cloud_watch: aws_cloud_watch)
   end
 
   context "processing metrics" do
@@ -19,16 +19,16 @@ describe Bhm::Plugins::CloudWatch do
           {name: "agent_id", value: "deadbeef"}
       ]
 
-      aws_cloud_watch.should_receive(:put_metric_data) do |data|
-        data[:namespace].should == "BOSH/HealthMonitor"
-        data[:metric_data].should include({
+      expect(aws_cloud_watch).to receive(:put_metric_data) do |data|
+        expect(data[:namespace]).to eq("BOSH/HealthMonitor")
+        expect(data[:metric_data]).to include({
                                               metric_name: "system.load.1m",
                                               value: "0.2",
                                               timestamp: time.utc.iso8601,
                                               dimensions: expected_dimensions
                                           })
 
-        data[:metric_data].should include({
+        expect(data[:metric_data]).to include({
                                               metric_name: "system.cpu.user",
                                               value: "22.3",
                                               timestamp: time.utc.iso8601,
@@ -36,7 +36,7 @@ describe Bhm::Plugins::CloudWatch do
                                           })
 
         metrics = data[:metric_data].map { |data| data[:metric_name] }
-        metrics.should =~ [
+        expect(metrics).to match_array([
             "system.load.1m",
             "system.cpu.user",
             "system.cpu.sys",
@@ -52,7 +52,7 @@ describe Bhm::Plugins::CloudWatch do
             "system.disk.persistent.percent",
             "system.disk.persistent.inode_percent",
             "system.healthy"
-        ]
+        ])
       end
 
       heartbeat = make_heartbeat(timestamp: time)
@@ -62,7 +62,7 @@ describe Bhm::Plugins::CloudWatch do
 
   context "processing alarms" do
     it "does nothing" do
-      aws_cloud_watch.should_not_receive(:put_metric_data)
+      expect(aws_cloud_watch).not_to receive(:put_metric_data)
       alert = make_alert
       subject.process(alert)
     end

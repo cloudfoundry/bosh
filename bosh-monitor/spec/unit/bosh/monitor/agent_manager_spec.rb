@@ -5,9 +5,9 @@ describe Bhm::AgentManager do
   let(:manager) { described_class.new(event_processor) }
 
   before do
-    event_processor.stub(:process)
-    event_processor.stub(:enable_pruning)
-    event_processor.stub(:add_plugin)
+    allow(event_processor).to receive(:process)
+    allow(event_processor).to receive(:enable_pruning)
+    allow(event_processor).to receive(:add_plugin)
   end
 
   context "stubbed config" do
@@ -22,12 +22,12 @@ describe Bhm::AgentManager do
     end
 
     it "can process heartbeats" do
-      manager.agents_count.should == 0
+      expect(manager.agents_count).to eq(0)
       manager.process_event(:heartbeat, "hm.agent.heartbeat.agent007")
       manager.process_event(:heartbeat, "hm.agent.heartbeat.agent007")
       manager.process_event(:heartbeat, "hm.agent.heartbeat.agent008")
 
-      manager.agents_count.should == 2
+      expect(manager.agents_count).to eq(2)
     end
 
     it "increments alerts_processed on good alerts" do
@@ -40,7 +40,7 @@ describe Bhm::AgentManager do
     end
 
     it "does not increment alerts_processed on bad alerts" do
-      event_processor.should_receive(:process).at_least(:once).and_raise(Bosh::Monitor::InvalidEvent)
+      expect(event_processor).to receive(:process).at_least(:once).and_raise(Bosh::Monitor::InvalidEvent)
       alert = Yajl::Encoder.encode({"id" => "778", "severity" => -2, "title" => nil, "summary" => "zbb", "created_at" => Time.now.utc.to_i})
 
       expect {
@@ -54,16 +54,16 @@ describe Bhm::AgentManager do
       manager.add_agent("mycloud", {"agent_id" => "008", "index" => "0", "job" => "nats"})
       manager.add_agent("mycloud", {"agent_id" => "009", "index" => "28", "job" => "mysql_node"})
 
-      manager.agents_count.should == 3
-      manager.analyze_agents.should == 3
+      expect(manager.agents_count).to eq(3)
+      expect(manager.analyze_agents).to eq(3)
       manager.process_event(:shutdown, "hm.agent.shutdown.008")
-      manager.agents_count.should == 2
-      manager.analyze_agents.should == 2
+      expect(manager.agents_count).to eq(2)
+      expect(manager.analyze_agents).to eq(2)
     end
 
     it "can start managing agent" do
-      manager.add_agent("mycloud", {"agent_id" => "007", "job" => "zb", "index" => "0"}).should be(true)
-      manager.agents_count.should == 1
+      expect(manager.add_agent("mycloud", {"agent_id" => "007", "job" => "zb", "index" => "0"})).to be(true)
+      expect(manager.agents_count).to eq(1)
     end
 
     it "can sync deployments" do
@@ -77,11 +77,11 @@ describe Bhm::AgentManager do
       manager.sync_agents("mycloud", cloud1)
       manager.sync_agents("othercloud", cloud2)
 
-      manager.deployments_count.should == 2
-      manager.agents_count.should == 4
+      expect(manager.deployments_count).to eq(2)
+      expect(manager.agents_count).to eq(4)
 
       manager.sync_deployments([{"name" => "mycloud"}]) # othercloud is gone
-      manager.agents_count.should == 2
+      expect(manager.agents_count).to eq(2)
     end
 
     it "can sync agents" do
@@ -91,13 +91,13 @@ describe Bhm::AgentManager do
 
       vms = [vm1, vm2]
       manager.sync_agents("mycloud", vms)
-      manager.agents_count.should == 2
+      expect(manager.agents_count).to eq(2)
 
       manager.sync_agents("mycloud", vms - [vm1])
-      manager.agents_count.should == 1
+      expect(manager.agents_count).to eq(1)
 
       manager.sync_agents("mycloud", [vm1, vm3])
-      manager.agents_count.should == 2
+      expect(manager.agents_count).to eq(2)
     end
 
     it "can provide agent information for a deployment" do
@@ -106,61 +106,61 @@ describe Bhm::AgentManager do
       manager.add_agent("mycloud", {"agent_id" => "009", "index" => "28", "job" => "mysql_node"})
 
       agents = manager.get_agents_for_deployment("mycloud")
-      agents.size.should == 3
+      expect(agents.size).to eq(3)
       agents["007"].deployment == "mycloud"
       agents["007"].job == "mutator"
       agents["007"].index == "0"
     end
 
     it "refuses to register agents with malformed director vm data" do
-      manager.add_agent("mycloud", {"job" => "zb", "index" => "0"}).should be(false) # no agent_id
-      manager.add_agent("mycloud", ["zb"]).should be(false) # not a Hash
+      expect(manager.add_agent("mycloud", {"job" => "zb", "index" => "0"})).to be(false) # no agent_id
+      expect(manager.add_agent("mycloud", ["zb"])).to be(false) # not a Hash
     end
 
     it "can analyze agent" do
-      manager.analyze_agent("007").should be(false) # No such agent yet
+      expect(manager.analyze_agent("007")).to be(false) # No such agent yet
       manager.add_agent("mycloud", {"agent_id" => "007", "index" => "0", "job" => "mutator"})
-      manager.analyze_agent("007").should be(true)
+      expect(manager.analyze_agent("007")).to be(true)
     end
 
     it "can analyze all agents" do
-      manager.analyze_agents.should == 0
+      expect(manager.analyze_agents).to eq(0)
 
       # 3 regular agents
       manager.add_agent("mycloud", {"agent_id" => "007", "index" => "0", "job" => "mutator"})
       manager.add_agent("mycloud", {"agent_id" => "008", "index" => "0", "job" => "nats"})
       manager.add_agent("mycloud", {"agent_id" => "009", "index" => "28", "job" => "mysql_node"})
-      manager.analyze_agents.should == 3
+      expect(manager.analyze_agents).to eq(3)
 
       alert = Yajl::Encoder.encode({"id" => "778", "severity" => 2, "title" => "zb", "summary" => "zbb", "created_at" => Time.now.utc.to_i})
 
       # Alert for already managed agent
       manager.process_event(:alert, "hm.agent.alert.007", alert)
-      manager.analyze_agents.should == 3
+      expect(manager.analyze_agents).to eq(3)
 
       # Alert for non managed agent
       manager.process_event(:alert, "hm.agent.alert.256", alert)
-      manager.analyze_agents.should == 4
+      expect(manager.analyze_agents).to eq(4)
 
       manager.process_event(:heartbeat, "256", nil) # Heartbeat from managed agent
       manager.process_event(:heartbeat, "512", nil) # Heartbeat from unmanaged agent
 
-      manager.analyze_agents.should == 5
+      expect(manager.analyze_agents).to eq(5)
 
       ts = Time.now
-      Time.stub(:now).and_return(ts + [Bhm.intervals.agent_timeout, Bhm.intervals.rogue_agent_alert].max + 10)
+      allow(Time).to receive(:now).and_return(ts + [Bhm.intervals.agent_timeout, Bhm.intervals.rogue_agent_alert].max + 10)
 
       manager.process_event(:heartbeat, "512", nil)
       # 5 agents total:  2 timed out, 1 rogue, 1 rogue AND timeout, expecting 4 alerts
-      event_processor.should_receive(:process).with(:alert, anything).exactly(4).times
-      manager.analyze_agents.should == 5
-      manager.agents_count.should == 4
+      expect(event_processor).to receive(:process).with(:alert, anything).exactly(4).times
+      expect(manager.analyze_agents).to eq(5)
+      expect(manager.agents_count).to eq(4)
 
       # Now previously removed "256" gets reported as a good citizen
       # 5 agents total, 3 timed out, 1 rogue
       manager.add_agent("mycloud", {"agent_id" => "256", "index" => "0", "job" => "redis_node"})
-      event_processor.should_receive(:process).with(:alert, anything).exactly(4).times
-      manager.analyze_agents.should == 5
+      expect(event_processor).to receive(:process).with(:alert, anything).exactly(4).times
+      expect(manager.analyze_agents).to eq(5)
     end
   end
 
@@ -169,13 +169,13 @@ describe Bhm::AgentManager do
 
     before do
       Bhm::config=Psych.load_file(sample_config)
-      mock_nats.stub(:subscribe)
-      Bhm.stub(:nats).and_return(mock_nats)
-      EM.stub(:schedule).and_yield
+      allow(mock_nats).to receive(:subscribe)
+      allow(Bhm).to receive(:nats).and_return(mock_nats)
+      allow(EM).to receive(:schedule).and_yield
     end
 
     it "has the cloudwatch plugin" do
-      Bhm::Plugins::CloudWatch.should_receive(:new).with(
+      expect(Bhm::Plugins::CloudWatch).to receive(:new).with(
           {
               'access_key_id' => 'access_key',
               'secret_access_key' => 'secret_access_key'

@@ -7,13 +7,13 @@ describe Bhm::Plugins::DataDog do
   let(:dog_client) { double("DataDog Client") }
 
   before do
-    subject.stub(dog_client: dog_client)
+    allow(subject).to receive_messages(dog_client: dog_client)
   end
 
   describe "validating the options" do
     context "when we specify both the api keu and the application key" do
       it "is valid" do
-        subject.validate_options.should == true
+        expect(subject.validate_options).to eq(true)
       end
     end
 
@@ -21,7 +21,7 @@ describe Bhm::Plugins::DataDog do
       let(:options) { { "api_key" => "api_key" } }
 
       it "is not valid" do
-        subject.validate_options.should == false
+        expect(subject.validate_options).to eq(false)
       end
     end
 
@@ -29,7 +29,7 @@ describe Bhm::Plugins::DataDog do
       let(:options) { { "application_key" => "application_key" } }
 
       it "is not valid" do
-        subject.validate_options.should == false
+        expect(subject.validate_options).to eq(false)
       end
     end
   end
@@ -46,17 +46,17 @@ describe Bhm::Plugins::DataDog do
       let(:options) { { "api_key" => "api_key", "application_key" => "application_key", "pagerduty_service_name" => "pdsn" } }
 
       it "creates a paging client" do
-        client.should be_a PagingDatadogClient
+        expect(client).to be_a PagingDatadogClient
       end
 
       it "has the correct pager duty service name" do
-        client.datadog_recipient.should == "pdsn"
+        expect(client.datadog_recipient).to eq("pdsn")
       end
     end
 
     context "when we do not specify the pager duty service name" do
       it "creates a regular client" do
-        client.should be_a Dogapi::Client
+        expect(client).to be_a Dogapi::Client
       end
     end
   end
@@ -64,16 +64,16 @@ describe Bhm::Plugins::DataDog do
   context "processing metrics" do
 
     it "didn't freak out once timeout sendidng datadog metric" do
-      EM.should_receive(:defer).and_yield
+      expect(EM).to receive(:defer).and_yield
       heartbeat = make_heartbeat
-      dog_client.stub(:emit_points).and_raise(Timeout::Error)
+      allow(dog_client).to receive(:emit_points).and_raise(Timeout::Error)
       expect { subject.process(heartbeat) }.to_not raise_error
     end
 
     it "didn't freak out with exceptions while sendidng datadog event" do
-      EM.should_receive(:defer).and_yield
+      expect(EM).to receive(:defer).and_yield
       heartbeat = make_heartbeat
-      dog_client.stub(:emit_points).and_raise
+      allow(dog_client).to receive(:emit_points).and_raise
       expect { subject.process(heartbeat) }.to_not raise_error
     end
 
@@ -86,9 +86,9 @@ describe Bhm::Plugins::DataDog do
           agent:deadbeef
       ]
       time = Time.now
-      dog_client.should_receive(:emit_points).with("bosh.healthmonitor.system.load.1m", [[Time.at(time.to_i) ,0.2]], tags: tags)
+      expect(dog_client).to receive(:emit_points).with("bosh.healthmonitor.system.load.1m", [[Time.at(time.to_i) ,0.2]], tags: tags)
 
-      EM.should_receive(:defer).and_yield
+      expect(EM).to receive(:defer).and_yield
       %w[
         cpu.user
         cpu.sys
@@ -105,7 +105,7 @@ describe Bhm::Plugins::DataDog do
         disk.persistent.inode_percent
         healthy
       ].each do |metric|
-        dog_client.should_receive(:emit_points).with("bosh.healthmonitor.system.#{metric}", anything, anything)
+        expect(dog_client).to receive(:emit_points).with("bosh.healthmonitor.system.#{metric}", anything, anything)
       end
 
       heartbeat = make_heartbeat(timestamp: time.to_i)
@@ -116,48 +116,48 @@ describe Bhm::Plugins::DataDog do
   context "processing alerts" do
 
     it "didn't freak out once timeout sendidng datadog event" do
-      EM.should_receive(:defer).and_yield
+      expect(EM).to receive(:defer).and_yield
       heartbeat = make_heartbeat
-      dog_client.stub(:emit_event).and_raise(Timeout::Error)
+      allow(dog_client).to receive(:emit_event).and_raise(Timeout::Error)
       alert = make_alert
       expect { subject.process(alert) }.to_not raise_error
     end
 
     it "didn't freak out with exceptions while sendidng datadog event" do
-      EM.should_receive(:defer).and_yield
+      expect(EM).to receive(:defer).and_yield
       heartbeat = make_heartbeat
-      dog_client.stub(:emit_event).and_raise
+      allow(dog_client).to receive(:emit_event).and_raise
       alert = make_alert
       expect { subject.process(alert) }.to_not raise_error
     end
 
     it "sends datadog alerts" do
-      EM.should_receive(:defer).and_yield
+      expect(EM).to receive(:defer).and_yield
 
       time = Time.now.to_i - 10
       fake_event = double("Datadog Event")
-      Dogapi::Event.should_receive(:new) do |msg, options|
-        msg.should == "Everything is down"
-        options[:msg_title].should == "Test Alert"
-        options[:date_happened].should == time
-        options[:tags].should =~ ["source:mysql_node/0"]
-        options[:priority].should == "normal"
-      end.and_return(fake_event)
+      expect(Dogapi::Event).to receive(:new) { |msg, options|
+        expect(msg).to eq("Everything is down")
+        expect(options[:msg_title]).to eq("Test Alert")
+        expect(options[:date_happened]).to eq(time)
+        expect(options[:tags]).to match_array(["source:mysql_node/0"])
+        expect(options[:priority]).to eq("normal")
+      }.and_return(fake_event)
 
-      dog_client.should_receive(:emit_event).with(fake_event)
+      expect(dog_client).to receive(:emit_event).with(fake_event)
 
       alert = make_alert(created_at: time)
       subject.process(alert)
     end
 
     it "sends datadog a low priority event for warning alerts" do
-      EM.should_receive(:defer).and_yield
+      expect(EM).to receive(:defer).and_yield
 
-      Dogapi::Event.should_receive(:new) do |_, options|
-        options[:priority].should == "low"
+      expect(Dogapi::Event).to receive(:new) do |_, options|
+        expect(options[:priority]).to eq("low")
       end
 
-      dog_client.stub(:emit_event)
+      allow(dog_client).to receive(:emit_event)
 
       alert = make_alert(severity: 4)
       subject.process(alert)

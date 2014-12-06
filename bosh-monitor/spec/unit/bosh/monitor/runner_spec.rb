@@ -8,18 +8,18 @@ describe Bhm::Runner do
   it 'reads provided configuration file and sets Bhm singletons' do
     subject
 
-    Bhm.logger.should be_kind_of(Logging::Logger)
-    Bhm.director.should be_kind_of(Bhm::Director)
+    expect(Bhm.logger).to be_kind_of(Logging::Logger)
+    expect(Bhm.director).to be_kind_of(Bhm::Director)
 
-    Bhm.intervals.poll_director.should be_kind_of Integer
-    Bhm.intervals.log_stats.should be_kind_of Integer
-    Bhm.intervals.agent_timeout.should be_kind_of Integer
+    expect(Bhm.intervals.poll_director).to be_kind_of Integer
+    expect(Bhm.intervals.log_stats).to be_kind_of Integer
+    expect(Bhm.intervals.agent_timeout).to be_kind_of Integer
 
-    Bhm.mbus.endpoint.should == 'nats://127.0.0.1:4222'
-    Bhm.mbus.user.should be_nil
-    Bhm.mbus.password.should be_nil
+    expect(Bhm.mbus.endpoint).to eq('nats://127.0.0.1:4222')
+    expect(Bhm.mbus.user).to be_nil
+    expect(Bhm.mbus.password).to be_nil
 
-    Bhm.plugins.size.should == 8
+    expect(Bhm.plugins.size).to eq(8)
   end
 
   describe 'stop' do

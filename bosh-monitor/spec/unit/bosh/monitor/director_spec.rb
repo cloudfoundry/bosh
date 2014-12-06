@@ -14,25 +14,25 @@ describe Bhm::Director do
     deployments_json = Yajl::Encoder.encode([{ "name" => "a" }, { "name" => "b" }])
 
     mock_response = double(:response => deployments_json, :response_header => double(:http_status => "200"))
-    @director.stub(:perform_request).with(:get, "/deployments").and_return(mock_response)
+    allow(@director).to receive(:perform_request).with(:get, "/deployments").and_return(mock_response)
 
-    @director.get_deployments.should == Yajl::Parser.parse(deployments_json)
+    expect(@director.get_deployments).to eq(Yajl::Parser.parse(deployments_json))
   end
 
   it "raises an error if deployments cannot be fetched" do
     mock_response = double(:response => "foo", :response_header => double(:http_status => "500"), :uri => "deployments_uri")
-    @director.stub(:perform_request).with(:get, "/deployments").and_return(mock_response)
+    allow(@director).to receive(:perform_request).with(:get, "/deployments").and_return(mock_response)
 
-    lambda {
+    expect {
       @director.get_deployments
-    }.should raise_error(Bhm::DirectorError, "Cannot get deployments from director at deployments_uri: 500 foo")
+    }.to raise_error(Bhm::DirectorError, "Cannot get deployments from director at deployments_uri: 500 foo")
   end
 
   it "can fetch deployment by name from BOSH director" do
     deployment_json = Yajl::Encoder.encode(["a" => 1, "b" => 2], ["a" => 3, "b" => 4])
     mock_response = double(:response => deployment_json,  :response_header => double(:http_status => "200"))
-    @director.stub(:perform_request).with(:get, "/deployments/foo/vms").and_return(mock_response)
+    allow(@director).to receive(:perform_request).with(:get, "/deployments/foo/vms").and_return(mock_response)
 
-    @director.get_deployment_vms("foo").should == Yajl::Parser.parse(deployment_json)
+    expect(@director.get_deployment_vms("foo")).to eq(Yajl::Parser.parse(deployment_json))
   end
 end

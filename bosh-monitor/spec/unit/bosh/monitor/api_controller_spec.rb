@@ -22,7 +22,7 @@ describe Bosh::Monitor::ApiController do
 
       it 'returns Bhm.varz in JSON format' do
         get '/varz'
-        last_response.body.should == Yajl::Encoder.encode(varz, :terminator => "\n")
+        expect(last_response.body).to eq(Yajl::Encoder.encode(varz, :terminator => "\n"))
       end
     end
 
@@ -31,7 +31,7 @@ describe Bosh::Monitor::ApiController do
 
       it 'returns 401' do
         get '/varz'
-        last_response.status.should == 401
+        expect(last_response.status).to eq(401)
       end
     end
   end

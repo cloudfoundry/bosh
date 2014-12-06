@@ -21,12 +21,12 @@ describe Bhm::Plugins::Tsdb do
       "host" => "localhost"
     }
 
-    Bhm::Plugins::Tsdb.new(valid_options).validate_options.should be(true)
-    Bhm::Plugins::Tsdb.new(invalid_options).validate_options.should be(false)
+    expect(Bhm::Plugins::Tsdb.new(valid_options).validate_options).to be(true)
+    expect(Bhm::Plugins::Tsdb.new(invalid_options).validate_options).to be(false)
   end
 
   it "doesn't start if event loop isn't running" do
-    @plugin.run.should be(false)
+    expect(@plugin.run).to be(false)
   end
 
   it "does not send metrics for Alerts" do
@@ -35,10 +35,10 @@ describe Bhm::Plugins::Tsdb do
     alert = make_alert(timestamp: Time.now.to_i)
 
     EM.run do
-      EM.stub(:connect) { tsdb }
+      allow(EM).to receive(:connect) { tsdb }
       @plugin.run
 
-      tsdb.should_not_receive(:send_metric)
+      expect(tsdb).not_to receive(:send_metric)
 
       @plugin.process(alert)
 
@@ -53,13 +53,13 @@ describe Bhm::Plugins::Tsdb do
     heartbeat = make_heartbeat(timestamp: Time.now.to_i)
 
     EM.run do
-      EM.should_receive(:connect).with("localhost", 4242, Bhm::TsdbConnection, "localhost", 4242).once.and_return(tsdb)
+      expect(EM).to receive(:connect).with("localhost", 4242, Bhm::TsdbConnection, "localhost", 4242).once.and_return(tsdb)
       @plugin.run
 
       heartbeat.metrics.each do |metric|
         expected_tags = metric.tags.merge({deployment: "oleg-cloud"})
 
-        tsdb.should_receive(:send_metric).with(metric.name, metric.timestamp, metric.value, expected_tags)
+        expect(tsdb).to receive(:send_metric).with(metric.name, metric.timestamp, metric.value, expected_tags)
       end
 
       @plugin.process(heartbeat)
