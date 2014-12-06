@@ -50,9 +50,9 @@ module Bosh::Monitor
             point = [Time.at(metric.timestamp), metric.value]
             dog_client.emit_points("bosh.healthmonitor.#{metric.name}", [point], tags: tags)
           rescue Timeout::Error => e
-            logger.warn('Could not sumbit to Datadog, request timed out.')
+            logger.warn('Could not emit points to Datadog, request timed out.')
           rescue => e
-            logger.info("Could not submit to Datadog: #{e.inspect}")
+            logger.info("Could not emit points to Datadog: #{e.inspect}")
           end
         end
       end
@@ -76,9 +76,9 @@ module Bosh::Monitor
                              )
           )
         rescue Timeout::Error => e
-          logger.warn('Could not sumbit to Datadog, request timed out.')
+          logger.warn('Could not emit event to Datadog, request timed out.')
         rescue => e
-          logger.warn("Could not submit to Datadog: #{e.inspect}")
+          logger.warn("Could not emit event to Datadog: #{e.inspect}")
         end
       end
 
