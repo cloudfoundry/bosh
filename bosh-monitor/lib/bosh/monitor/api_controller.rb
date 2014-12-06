@@ -1,6 +1,16 @@
 module Bosh::Monitor
-
   class ApiController < Sinatra::Base
+    PULSE_TIMEOUT = 180
+
+    def initialize
+      @heartbeat = Time.now
+
+      EM.add_periodic_timer(1) do
+        EM.defer { @heartbeat = Time.now }
+      end
+
+      super
+    end
 
     configure do
       set(:show_exceptions, false)
@@ -28,8 +38,13 @@ module Bosh::Monitor
     end
 
     get "/healthz" do
-      200
+      body "Last pulse was #{Time.now - @heartbeat} seconds ago"
+
+      if Time.now - @heartbeat > PULSE_TIMEOUT
+        status(500)
+      else
+        status(200)
+      end
     end
   end
-
 end
