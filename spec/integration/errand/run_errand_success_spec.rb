@@ -92,6 +92,27 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
         expect(exit_code).to eq(0)
         expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
       end
+
+      context 'with the keep-alive option set' do
+        it 'does not delete/create the errand vm' do
+          deploy_simple(manifest_hash: manifest_hash)
+
+          output, exit_code = bosh_runner.run('run errand errand1-name --keep-alive', return_exit_code: true)
+          expect(output).to include('some-errand1-stdout')
+          expect(exit_code).to eq(0)
+          expect_running_vms(%w(errand1-name/0 foobar/0 unknown/unknown))
+
+          output, exit_code = bosh_runner.run('run errand errand1-name --keep-alive', return_exit_code: true)
+          expect(output).to include('some-errand1-stdout')
+          expect(exit_code).to eq(0)
+          expect_running_vms(%w(errand1-name/0 foobar/0 unknown/unknown))
+
+          output, exit_code = bosh_runner.run('run errand errand1-name', return_exit_code: true)
+          expect(output).to include('some-errand1-stdout')
+          expect(exit_code).to eq(0)
+          expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
+        end
+      end
     end
 
     context 'with a dynamically sized resource pool size' do
@@ -112,6 +133,27 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
         expect(output).to include('some-errand2-stdout')
         expect(exit_code).to eq(0)
         expect_running_vms(%w(foobar/0))
+      end
+
+      context 'with the keep-alive option set' do
+        it 'does not delete/create the errand vm' do
+          deploy_simple(manifest_hash: manifest_hash)
+
+          output, exit_code = bosh_runner.run('run errand errand1-name --keep-alive', return_exit_code: true)
+          expect(output).to include('some-errand1-stdout')
+          expect(exit_code).to eq(0)
+          expect_running_vms(%w(errand1-name/0 foobar/0))
+
+          output, exit_code = bosh_runner.run('run errand errand1-name --keep-alive', return_exit_code: true)
+          expect(output).to include('some-errand1-stdout')
+          expect(exit_code).to eq(0)
+          expect_running_vms(%w(errand1-name/0 foobar/0))
+
+          output, exit_code = bosh_runner.run('run errand errand1-name', return_exit_code: true)
+          expect(output).to include('some-errand1-stdout')
+          expect(exit_code).to eq(0)
+          expect_running_vms(%w(foobar/0))
+        end
       end
     end
   end
@@ -172,12 +214,6 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
       expect(@output).to include('Errand `errand1-name\' completed successfully (exit code 0)')
       expect(@exit_code).to eq(0)
     end
-  end
-
-  def expect_running_vms(job_name_index_list)
-    vms = director.vms
-    expect(vms.map(&:job_name_index)).to match_array(job_name_index_list)
-    expect(vms.map(&:last_known_state).uniq).to eq(['running'])
   end
 
   def expect_errands(*expected_errands)

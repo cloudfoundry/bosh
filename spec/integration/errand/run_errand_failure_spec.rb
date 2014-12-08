@@ -32,25 +32,49 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
 
       deploy_simple(manifest_hash: manifest_hash)
 
-      @output, @exit_code = bosh_runner.run("run errand errand1-name --download-logs --logs-dir #{@tmp_dir}",
-                                            {failure_expected: true, return_exit_code: true})
     end
 
-    it 'shows errand\'s stdout and stderr' do
-      expect(@output).to include("[stdout]\nNone")
-      expect(@output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
+    context 'with the keep-alive option set' do
+      before(:all) do
+        @output, @exit_code = bosh_runner.run("run errand errand1-name --download-logs --logs-dir #{@tmp_dir} --keep-alive",
+          {failure_expected: true, return_exit_code: true})
+      end
+
+      it 'does not delete/create the errand vm' do
+        expect(@output).to include("[stdout]\nNone")
+        expect(@output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
+        expect(@exit_code).to_not eq(0)
+        expect_running_vms(%w(errand1-name/0 foobar/0 unknown/unknown))
+      end
     end
 
-    it 'downloads errand logs and shows downloaded location' do
-      expect(@output =~ /Logs saved in `(.*errand1-name\.0\..*\.tgz)'/).to_not(be_nil, @output)
-      logs_file = Bosh::Spec::TarFileInspector.new($1)
-      expect(logs_file.file_names).to match_array(%w(./errand1/stdout.log ./custom.log))
-      expect(logs_file.smallest_file_size).to be > 0
-    end
+    context 'without keep-alive option set' do
+      before(:all) do
+        @output, @exit_code = bosh_runner.run("run errand errand1-name --download-logs --logs-dir #{@tmp_dir}",
+          {failure_expected: true, return_exit_code: true})
+      end
 
-    it 'returns 1 as exit code from the cli and indicates that errand completed with error' do
-      expect(@output).to include('Errand `errand1-name\' completed with error (exit code 23)')
-      expect(@exit_code).to eq(1)
+      it 'shows errand\'s stdout and stderr' do
+        expect(@output).to include("[stdout]\nNone")
+        expect(@output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
+      end
+
+      it 'deletes the errand vm' do
+        expect(@exit_code).to_not eq(0)
+        expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
+      end
+
+      it 'downloads errand logs and shows downloaded location' do
+        expect(@output =~ /Logs saved in `(.*errand1-name\.0\..*\.tgz)'/).to_not(be_nil, @output)
+        logs_file = Bosh::Spec::TarFileInspector.new($1)
+        expect(logs_file.file_names).to match_array(%w(./errand1/stdout.log ./custom.log))
+        expect(logs_file.smallest_file_size).to be > 0
+      end
+
+      it 'returns 1 as exit code from the cli and indicates that errand completed with error' do
+        expect(@output).to include('Errand `errand1-name\' completed with error (exit code 23)')
+        expect(@exit_code).to eq(1)
+      end
     end
   end
 

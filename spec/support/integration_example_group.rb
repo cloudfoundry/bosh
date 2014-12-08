@@ -122,6 +122,12 @@ module IntegrationExampleGroup
     expect(format_output(bosh_runner.run(cmd, :failure_expected => true))).
       to eq(format_output(expected_output))
   end
+
+  def expect_running_vms(job_name_index_list)
+    vms = director.vms
+    expect(vms.map(&:job_name_index)).to match_array(job_name_index_list)
+    expect(vms.map(&:last_known_state).uniq).to eq(['running'])
+  end
 end
 
 module IntegrationSandboxHelpers
