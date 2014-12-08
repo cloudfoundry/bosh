@@ -1,3 +1,5 @@
+require 'multi_json'
+
 module Bosh::Cli::Client
   class ErrandsClient
     class ErrandResult
@@ -25,9 +27,10 @@ module Bosh::Cli::Client
       @director = director
     end
 
-    def run_errand(deployment_name, errand_name)
+    def run_errand(deployment_name, errand_name, keep_alive)
       url = "/deployments/#{deployment_name}/errands/#{errand_name}/runs"
-      options = { content_type: 'application/json', payload: '{}' }
+      payload = MultiJson.encode({'keep-alive' => (keep_alive || FALSE)})
+      options = { content_type: 'application/json', payload: payload }
 
       status, task_id = @director.request_and_track(:post, url, options)
 

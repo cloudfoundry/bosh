@@ -24,6 +24,7 @@ module Bosh::Cli::Command
     desc 'Run specified errand'
     option '--download-logs', 'download logs'
     option '--logs-dir destination_directory', String, 'logs download directory'
+    option '--keep-alive', 'prevent deletion/creation of vm after running errand'
     def run_errand(errand_name=nil)
       auth_required
       deployment_required
@@ -40,7 +41,7 @@ module Bosh::Cli::Command
       deployment_name = prepare_deployment_manifest['name']
 
       errands_client = Bosh::Cli::Client::ErrandsClient.new(director)
-      status, task_id, errand_result = errands_client.run_errand(deployment_name, errand_name)
+      status, task_id, errand_result = errands_client.run_errand(deployment_name, errand_name, options[:keep_alive] || FALSE)
 
       unless errand_result
         task_report(status, task_id, nil, "Errand `#{errand_name}' did not complete")

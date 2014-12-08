@@ -73,9 +73,20 @@ describe Bosh::Cli::Command::Errand do
 
           it 'tells director to start running errand with given name on given instance' do
             expect(errands_client).to receive(:run_errand).
-              with('fake-dep-name', 'fake-errand-name').
+              with('fake-dep-name', 'fake-errand-name', FALSE).
               and_return([:done, 'fake-task-id', errand_result])
             perform
+          end
+
+          context 'when errand is run with keep-alive option' do
+            before { command.options[:keep_alive] = true }
+
+            it 'tells the director to not delete/stop the instance' do
+              expect(errands_client).to receive(:run_errand).
+                with('fake-dep-name', 'fake-errand-name', TRUE).
+                and_return([:done, 'fake-task-id', errand_result])
+              perform
+            end
           end
 
           context 'when errand director task finishes successfully' do

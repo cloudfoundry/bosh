@@ -10,13 +10,13 @@ module Bosh::Director
       :run_errand
     end
 
-    def initialize(deployment_name, errand_name)
+    def initialize(deployment_name, errand_name, keep_alive)
       @deployment_name = deployment_name
       @errand_name = errand_name
       @deployment_manager = Api::DeploymentManager.new
       @instance_manager = Api::InstanceManager.new
       @blobstore = App.instance.blobstores.blobstore
-
+      @keep_alive = keep_alive
       log_bundles_cleaner = LogBundlesCleaner.new(@blobstore, 60 * 60 * 24 * 10, logger) # 10 days
       @logs_fetcher = LogsFetcher.new(event_log, @instance_manager, log_bundles_cleaner, logger)
     end
@@ -78,7 +78,12 @@ module Bosh::Director
         update_instances(deployment_preparer, resource_pools, job_manager)
         blk.call
       ensure
-        delete_instances(resource_pools, job_manager)
+        if @keep_alive
+          logger.info('Skipping instances deletion, keep-alive is set')
+        else
+          logger.info('Deleting instances')
+          delete_instances(resource_pools, job_manager)
+        end
       end
     end
 

@@ -424,10 +424,10 @@ module Bosh::Director
             before { Config.base_dir = Dir.mktmpdir }
             after { FileUtils.rm_rf(Config.base_dir) }
 
-            def perform
+            def perform(post_body)
               post(
                 '/fake-dep-name/errands/fake-errand-name/runs',
-                JSON.dump({}),
+                JSON.dump(post_body),
                 { 'CONTENT_TYPE' => 'application/json' },
               )
             end
@@ -435,24 +435,37 @@ module Bosh::Director
             context 'authenticated access' do
               before { authorize 'admin', 'admin' }
 
-              it 'enqueues a RunErrand task' do
-                job_queue = instance_double('Bosh::Director::JobQueue')
-                allow(JobQueue).to receive(:new).and_return(job_queue)
-
-                task = instance_double('Bosh::Director::Models::Task', id: 1)
-                expect(job_queue).to receive(:enqueue).with(
-                  'admin',
-                  Jobs::RunErrand,
-                  'run errand fake-errand-name from deployment fake-dep-name',
-                  ['fake-dep-name', 'fake-errand-name'],
-                ).and_return(task)
-
-                perform
+              it 'returns a task' do
+                perform({})
+                expect_redirect_to_queued_task(last_response)
               end
 
-              it 'returns a task' do
-                perform
-                expect_redirect_to_queued_task(last_response)
+              context 'running the errand' do
+                let(:task) { instance_double('Bosh::Director::Models::Task', id: 1) }
+                let(:job_queue) { instance_double('Bosh::Director::JobQueue', enqueue: task) }
+                before { allow(JobQueue).to receive(:new).and_return(job_queue) }
+
+                it 'enqueues a RunErrand task' do
+                  expect(job_queue).to receive(:enqueue).with(
+                    'admin',
+                    Jobs::RunErrand,
+                    'run errand fake-errand-name from deployment fake-dep-name',
+                    ['fake-dep-name', 'fake-errand-name', false],
+                  ).and_return(task)
+
+                  perform({})
+                end
+
+                it 'enqueues a keep-alive task' do
+                  expect(job_queue).to receive(:enqueue).with(
+                    'admin',
+                    Jobs::RunErrand,
+                    'run errand fake-errand-name from deployment fake-dep-name',
+                    ['fake-dep-name', 'fake-errand-name', true],
+                  ).and_return(task)
+
+                  perform({'keep-alive' => true})
+                end
               end
             end
 
@@ -460,7 +473,7 @@ module Bosh::Director
               before { authorize 'invalid-user', 'invalid-password' }
 
               it 'returns 401' do
-                perform
+                perform({})
                 expect(last_response.status).to eq(401)
               end
             end
