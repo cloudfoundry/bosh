@@ -263,7 +263,7 @@ module Bosh::Director
       post '/:deployment_name/errands/:errand_name/runs' do
         deployment_name = params[:deployment_name]
         errand_name = params[:errand_name]
-        keep_alive = json_decode(request.body)['keep-alive']
+        keep_alive = json_decode(request.body)['keep-alive'] || FALSE
 
         task = JobQueue.new.enqueue(
           @user,
