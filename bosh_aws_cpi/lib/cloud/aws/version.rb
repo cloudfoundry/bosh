@@ -1,5 +1,5 @@
 module Bosh
   module AwsCloud
-    VERSION = '1.2781.0'
+    VERSION = '1.2785.0'
   end
 end
