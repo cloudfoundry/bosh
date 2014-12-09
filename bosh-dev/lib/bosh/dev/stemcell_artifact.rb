@@ -23,6 +23,7 @@ module Bosh::Dev
     end
 
     def promoted?
+      return false if @destination_version == 'latest'
       _, _, status = exec_cmd("s3cmd info #{destination}")
       status.success?
     end

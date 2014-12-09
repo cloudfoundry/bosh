@@ -58,28 +58,39 @@ module Bosh::Dev
     end
 
     describe '#promoted?' do
-      let(:destination) { 'fake-stemcell-destination' }
+      context 'when destination version is not latest' do
+        let(:destination) { 'fake-stemcell-destination' }
 
-      before do
-        allow(UriProvider).to receive(:artifacts_s3_path).
-          with("bosh-stemcell/#{infrastructure_name}", stemcell_artifact.name).
-          and_return(destination)
+        before do
+          allow(UriProvider).to receive(:artifacts_s3_path).
+            with("bosh-stemcell/#{infrastructure_name}", stemcell_artifact.name).
+            and_return(destination)
+        end
+
+        it 'returns true if the release file exists in the s3 bucket' do
+          expect(Open3).to receive(:capture3).
+            with("s3cmd info #{destination}").
+            and_return([nil, nil, instance_double('Process::Status', success?: true)])
+
+          expect(stemcell_artifact.promoted?).to be(true)
+        end
+
+        it 'returns false if the release file does not exists in the s3 bucket' do
+          expect(Open3).to receive(:capture3).
+            with("s3cmd info #{destination}").
+            and_return([nil, 'fake-error', instance_double('Process::Status', success?: false)])
+
+          expect(stemcell_artifact.promoted?).to be(false)
+        end
       end
 
-      it 'returns true if the release file exists in the s3 bucket' do
-        expect(Open3).to receive(:capture3).
-          with("s3cmd info #{destination}").
-          and_return([ nil, nil, instance_double('Process::Status', success?: true) ])
+      context 'when destination version is latest' do
+        let(:destination_version) { 'latest' }
 
-        expect(stemcell_artifact.promoted?).to be(true)
-      end
-
-      it 'returns false if the release file does not exists in the s3 bucket' do
-        expect(Open3).to receive(:capture3).
-          with("s3cmd info #{destination}").
-          and_return([ nil, 'fake-error', instance_double('Process::Status', success?: false) ])
-
-        expect(stemcell_artifact.promoted?).to be(false)
+        it 'returns false' do
+          expect(Open3).to_not receive(:capture3)
+          expect(stemcell_artifact.promoted?).to be(false)
+        end
       end
     end
   end
