@@ -25,14 +25,17 @@ module Bosh::Monitor
             raise PluginError, "Invalid event metrics: Enumerable expected, #{metrics.class} given"
           end
 
-          metric_prefix = get_metric_prefix(event)
           metrics.each do |metric|
-            metric_name = [metric_prefix, metric.name.to_s.gsub('.', '_')].join '.'
+            metric_name = get_metric_name(event, metric)
             metric_timestamp = get_metric_timestamp(metric.timestamp)
             metric_value = metric.value
             @graphite_connection.send_metric(metric_name, metric_value, metric_timestamp)
           end
         end
+      end
+
+      def get_metric_name heartbeat, metric
+        [get_metric_prefix(heartbeat), metric.name.to_s.gsub('.', '_')].join '.'
       end
 
       def get_metric_prefix(heartbeat)
