@@ -48,7 +48,8 @@ require 'bosh/monitor/event_processor'
 require 'bosh/monitor/api_controller'
 
 # Protocols
-require 'bosh/monitor/protocols/tsdb'
+require 'bosh/monitor/protocols/tcp_connection'
+require 'bosh/monitor/protocols/tsdb_connection'
 require 'bosh/monitor/protocols/graphite_connection'
 
 
