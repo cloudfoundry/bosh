@@ -528,10 +528,9 @@ module VSphereCloud
         end
 
         devices = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
-        vmdk_path = "#{disk.path}.vmdk"
         virtual_disk =
           devices.find do |device|
-            device.kind_of?(Vim::Vm::Device::VirtualDisk) && device.backing.file_name == vmdk_path
+            device.kind_of?(Vim::Vm::Device::VirtualDisk) && device.backing.file_name.include?(disk_cid)
           end
         raise Bosh::Clouds::DiskNotAttached.new(true), "Disk (#{disk_cid}) is not attached to VM (#{vm_cid})" if virtual_disk.nil?
 
@@ -551,7 +550,7 @@ module VSphereCloud
           virtual_disk =
             devices.find do |device|
               device.kind_of?(Vim::Vm::Device::VirtualDisk) &&
-                device.backing.file_name == vmdk_path
+                device.backing.file_name.include?(disk_cid)
             end
           break if virtual_disk.nil?
           sleep(1.0)
