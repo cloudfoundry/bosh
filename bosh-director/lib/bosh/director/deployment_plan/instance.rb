@@ -48,7 +48,6 @@ module Bosh::Director
         @index = index
         @logger = logger
 
-        @model = nil
         @configuration_hash = nil
         @template_hashes = nil
         @vm = nil
@@ -72,18 +71,12 @@ module Bosh::Director
         "#{@job.name}/#{@index}"
       end
 
-      # Looks up a DB model for this instance, creates one if doesn't exist yet.
-      # @return [void]
-      def bind_model
-        @model ||= find_or_create_model
-      end
-
       # Looks up instance model in DB and binds it to this instance spec.
       # Instance model is created if it's not found in DB. New VM is
       # allocated if instance DB record doesn't reference one.
       # @return [void]
       def bind_unallocated_vm
-        bind_model
+        @model ||= find_or_create_model
         if @model.vm.nil?
           allocate_vm
         end
@@ -92,7 +85,8 @@ module Bosh::Director
       ##
       # Updates this domain object to reflect an existing instance running on an existing vm
       def bind_existing_instance(instance_model, state, reservations)
-        raise DirectorError, "Instance `#{self}' model is already bound" if @model
+        check_model_not_bound
+
         @model = instance_model
         @current_state = state
 
@@ -156,9 +150,7 @@ module Bosh::Director
       # stopped or detached).
       # @return [void]
       def sync_state_with_db
-        if @model.nil?
-          raise DirectorError, "Instance `#{self}' model is not bound"
-        end
+        check_model_bound
 
         if @state
           # Deployment plan explicitly sets state for this instance
@@ -232,14 +224,9 @@ module Bosh::Director
       ##
       # @return [Integer] persistent disk size
       def disk_size
-        if @model.nil?
-          disk_pool = current_state['persistent_disk_pool']
-          if disk_pool
-            disk_pool['disk_size'].to_i
-          else
-            current_state['persistent_disk'].to_i
-          end
-        elsif @model.persistent_disk
+        check_model_bound
+
+        if @model.persistent_disk
           @model.persistent_disk.size
         else
           0
@@ -249,9 +236,10 @@ module Bosh::Director
       ##
       # @return [Hash] persistent disk cloud properties
       def disk_cloud_properties
-        disk_pool = current_state['persistent_disk_pool']
-        if disk_pool
-          disk_pool['cloud_properties']
+        check_model_bound
+
+        if @model.persistent_disk
+          @model.persistent_disk.cloud_properties
         else
           {}
         end
@@ -489,6 +477,16 @@ module Bosh::Director
       end
 
       private
+
+      def check_model_bound
+        if @model.nil?
+          raise DirectorError, "Instance `#{self}' model is not bound"
+        end
+      end
+
+      def check_model_not_bound
+        raise DirectorError, "Instance `#{self}' model is already bound" if @model
+      end
 
       ##
       # Take any existing valid network reservations

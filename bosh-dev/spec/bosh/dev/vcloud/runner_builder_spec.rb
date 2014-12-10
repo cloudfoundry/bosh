@@ -33,8 +33,7 @@ module Bosh::Dev::VCloud
 
         microbosh_deployment_manifest = instance_double('Bosh::Dev::VCloud::MicroBoshDeploymentManifest')
         Bosh::Dev::VCloud::MicroBoshDeploymentManifest
-          .should_receive(:new)
-          .with(ENV, 'net-type')
+          .should_receive(:new).with(ENV)
           .and_return(microbosh_deployment_manifest)
 
         microbosh_deployment_cleaner = instance_double('Bosh::Dev::VCloud::MicroBoshDeploymentCleaner')

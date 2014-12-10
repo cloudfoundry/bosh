@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.require_path = 'lib'
 
   s.add_dependency 'eventmachine',    '~>1.0.0'
-  s.add_dependency 'logging',         '~>1.5.0'
+  s.add_dependency 'logging',         '~>1.8.2'
   s.add_dependency 'em-http-request', '~>0.3.0'
   s.add_dependency 'nats',      '=0.5.0.beta.12'
   s.add_dependency 'yajl-ruby', '~>1.1.0'

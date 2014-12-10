@@ -57,6 +57,12 @@ properties:
   aws.max_retries:
     description: Max number of retries to connect to AWS
     default: 2
+  aws.ssl_ca_file:
+    description: The path to a CA cert bundle in PEM format
+  aws.ssl_ca_path:
+    description: The path the a CA cert directory
+  aws.ssl_verify_peer:
+    description: When true the HTTP handler validate server certificates for HTTPS requests
 
   # For OpenStack
   openstack.auth_url:

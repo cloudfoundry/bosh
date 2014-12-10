@@ -10,32 +10,32 @@ describe Bhm::Events::Heartbeat do
 
   context "validations" do
     it "requires id" do
-      make_heartbeat(:id => nil).should_not be_valid
+      expect(make_heartbeat(:id => nil)).not_to be_valid
     end
 
     it "requires timestamp" do
-      make_heartbeat(:timestamp => nil).should_not be_valid
+      expect(make_heartbeat(:timestamp => nil)).not_to be_valid
     end
 
     it "supports attributes validation" do
       bad_heartbeat = make_heartbeat(:id => nil, :timestamp => nil)
-      bad_heartbeat.should_not be_valid
-      bad_heartbeat.error_message.should == "id is missing, timestamp is missing"
+      expect(bad_heartbeat).not_to be_valid
+      expect(bad_heartbeat.error_message).to eq("id is missing, timestamp is missing")
     end
 
     it "should be valid" do
-      heartbeat.should be_valid
-      heartbeat.kind.should == :heartbeat
+      expect(heartbeat).to be_valid
+      expect(heartbeat.kind).to eq(:heartbeat)
     end
   end
 
 
   it "has short description" do
-    heartbeat.short_description.should == "Heartbeat from mysql_node/0 (deadbeef) @ 2011-11-02 01:08:19 UTC"
+    expect(heartbeat.short_description).to eq("Heartbeat from mysql_node/0 (deadbeef) @ 2011-11-02 01:08:19 UTC")
   end
 
   it "has hash representation" do
-    heartbeat.to_hash.should == {
+    expect(heartbeat.to_hash).to eq({
       :kind => "heartbeat",
       :id => 1,
       :timestamp => @ts,
@@ -55,47 +55,47 @@ describe Bhm::Events::Heartbeat do
           "persistent" => { "percent" => 97, "inode_percent" => 10 },
         }
       }
-    }
+    })
   end
 
   it "has plain text representation" do
     hb = heartbeat
-    hb.to_plain_text.should == hb.short_description
+    expect(hb.to_plain_text).to eq(hb.short_description)
   end
 
   it "has json representation" do
     hb = heartbeat
-    hb.to_json.should == Yajl::Encoder.encode(hb.to_hash)
+    expect(hb.to_json).to eq(Yajl::Encoder.encode(hb.to_hash))
   end
 
   it "has string representation" do
     hb = heartbeat
-    hb.to_s.should == hb.short_description
+    expect(hb.to_s).to eq(hb.short_description)
   end
 
   it "has metrics" do
     hb = heartbeat
     metrics = hb.metrics.inject({}) do |h, m|
-      m.should be_kind_of(Bhm::Metric)
-      m.tags.should == { "job" => "mysql_node", "index" => "0", "role" => "service" }
+      expect(m).to be_kind_of(Bhm::Metric)
+      expect(m.tags).to eq({ "job" => "mysql_node", "index" => "0", "role" => "service" })
       h[m.name] = m.value; h
     end
 
-    metrics["system.load.1m"].should == 0.2
-    metrics["system.cpu.user"].should == 22.3
-    metrics["system.cpu.sys"].should == 23.4
-    metrics["system.cpu.wait"].should == 33.22
-    metrics["system.mem.percent"].should == 32.2
-    metrics["system.mem.kb"].should == 512031
-    metrics["system.swap.percent"].should == 32.6
-    metrics["system.swap.kb"].should == 231312
-    metrics["system.disk.system.percent"].should == 74
-    metrics["system.disk.system.inode_percent"].should == 68
-    metrics["system.disk.ephemeral.percent"].should == 33
-    metrics["system.disk.ephemeral.inode_percent"].should == 74
-    metrics["system.disk.persistent.percent"].should == 97
-    metrics["system.disk.persistent.inode_percent"].should == 10
-    metrics["system.healthy"].should == 1
+    expect(metrics["system.load.1m"]).to eq(0.2)
+    expect(metrics["system.cpu.user"]).to eq(22.3)
+    expect(metrics["system.cpu.sys"]).to eq(23.4)
+    expect(metrics["system.cpu.wait"]).to eq(33.22)
+    expect(metrics["system.mem.percent"]).to eq(32.2)
+    expect(metrics["system.mem.kb"]).to eq(512031)
+    expect(metrics["system.swap.percent"]).to eq(32.6)
+    expect(metrics["system.swap.kb"]).to eq(231312)
+    expect(metrics["system.disk.system.percent"]).to eq(74)
+    expect(metrics["system.disk.system.inode_percent"]).to eq(68)
+    expect(metrics["system.disk.ephemeral.percent"]).to eq(33)
+    expect(metrics["system.disk.ephemeral.inode_percent"]).to eq(74)
+    expect(metrics["system.disk.persistent.percent"]).to eq(97)
+    expect(metrics["system.disk.persistent.inode_percent"]).to eq(10)
+    expect(metrics["system.healthy"]).to eq(1)
   end
 
 end

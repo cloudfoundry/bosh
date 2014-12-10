@@ -4,7 +4,7 @@ require 'psych'
 
 module Bosh::Dev::VCloud
   describe MicroBoshDeploymentManifest do
-    subject { described_class.new(env, 'manual') }
+    subject { described_class.new(env) }
     let(:env) { {} }
 
     it 'is writable' do
@@ -13,18 +13,15 @@ module Bosh::Dev::VCloud
 
     its(:filename) { should eq('micro_bosh.yml') }
 
-    it 'requires the net type to be manual' do
-      expect { described_class.new(env, 'dynamic') }.to raise_error
-      expect { described_class.new(env, 'manual') }.not_to raise_error
-    end
-
     describe '#to_h' do
       let(:expected_yml) { <<YAML }
 ---
 name: microbosh-vcloud-jenkins
 
 network:
+  name: micro-network
   ip: ip
+  vip: vip
   netmask: netmask
   gateway: gateway
   dns:
@@ -61,11 +58,14 @@ cloud:
             wait_max: 900
 env:
   vapp: vcloud_vapp_name
+logging:
+  level: debug
 YAML
 
       before do
         env.merge!(
           'BOSH_VCLOUD_MICROBOSH_IP' => 'ip',
+          'BOSH_VCLOUD_MICROBOSH_VIP' => 'vip',
           'BOSH_VCLOUD_NETMASK' => 'netmask',
           'BOSH_VCLOUD_GATEWAY' => 'gateway',
           'BOSH_VCLOUD_DNS' => 'dns',

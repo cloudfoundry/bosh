@@ -9,5 +9,14 @@ module Bosh::Director::Models
       validates_presence [:instance_id, :disk_cid]
       validates_unique [:disk_cid]
     end
+
+    def cloud_properties
+      result = self.cloud_properties_json
+      result ? Yajl::Parser.parse(result) : {}
+    end
+
+    def cloud_properties=(cloud_properties)
+      self.cloud_properties_json = Yajl::Encoder.encode(cloud_properties)
+    end
   end
 end

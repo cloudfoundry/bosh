@@ -7,7 +7,7 @@ describe Bhm::Plugins::Varz do
   end
 
   it "validates options" do
-    @plugin.validate_options.should be(true)
+    expect(@plugin.validate_options).to be(true)
   end
 
   it "sends event metrics to varz" do
@@ -18,9 +18,9 @@ describe Bhm::Plugins::Varz do
 
     @plugin.run
 
-    Bhm.should_receive(:set_varz).with("last_agents_alert",
+    expect(Bhm).to receive(:set_varz).with("last_agents_alert",
                                        {"a-id" => alert.to_hash})
-    Bhm.should_receive(:set_varz).with("last_agents_heartbeat",
+    expect(Bhm).to receive(:set_varz).with("last_agents_heartbeat",
                                        {"a-id" => heartbeat.to_hash})
 
     @plugin.process(alert)
@@ -33,9 +33,9 @@ describe Bhm::Plugins::Varz do
 
     @plugin.run
 
-    Bhm.should_receive(:set_varz).with("last_agents_alert",
+    expect(Bhm).to receive(:set_varz).with("last_agents_alert",
                                        {"unknown" => alert.to_hash})
-    Bhm.should_receive(:set_varz).with("last_agents_heartbeat",
+    expect(Bhm).to receive(:set_varz).with("last_agents_heartbeat",
                                        {"unknown" => heartbeat.to_hash})
 
     @plugin.process(alert)

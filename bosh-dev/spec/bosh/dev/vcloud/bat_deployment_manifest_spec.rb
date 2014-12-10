@@ -36,7 +36,7 @@ properties:
     version: 13
   instances: 1
   networks:
-  - name: default
+  - name: static
     static_ip: ip
     type: manual
     cidr: net_cidr
@@ -48,6 +48,10 @@ properties:
     gateway: net_gateway
     vlan: net_id
   vapp_name: vapp
+  vcds:
+  - control:
+      time_limit_sec:
+        default: 360
 YAML
 
       before do

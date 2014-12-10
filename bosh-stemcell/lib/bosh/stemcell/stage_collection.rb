@@ -80,6 +80,7 @@ module Bosh::Stemcell
       [
         :base_centos,
         :base_centos_packages,
+        :base_ssh,
         # Bosh steps
         :bosh_users,
         :bosh_monit,
@@ -98,11 +99,11 @@ module Bosh::Stemcell
         :base_apt,
         :base_ubuntu_build_essential,
         :base_ubuntu_packages,
+        :base_ssh,
         :bosh_dpkg_list,
         :bosh_sysstat,
         :bosh_sysctl,
         :system_kernel,
-        :system_rescan_scsi_bus,
         # Bosh steps
         :bosh_users,
         :bosh_monit,

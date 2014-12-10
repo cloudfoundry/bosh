@@ -233,7 +233,10 @@ describe 'director.yml.erb.erb' do
           'elb_endpoint' => 'some_elb_endpoint',
           'max_retries' => 3,
           'http_read_timeout' => 300,
-          'http_wire_trace' => true
+          'http_wire_trace' => true,
+          'ssl_verify_peer' => false,
+          'ssl_ca_file' => '/custom/cert/ca-certificates',
+          'ssl_ca_path' => '/custom/cert/'
       }
       deployment_manifest_fragment['properties']['registry'] = {
           'address' => 'address',
@@ -262,7 +265,10 @@ describe 'director.yml.erb.erb' do
         'elb_endpoint' => 'some_elb_endpoint',
         'max_retries' => 3,
         'http_read_timeout' => 300,
-        'http_wire_trace' => true
+        'http_wire_trace' => true,
+        'ssl_verify_peer' => false,
+        'ssl_ca_file' => '/custom/cert/ca-certificates',
+        'ssl_ca_path' => '/custom/cert/'
       })
     end
   end

@@ -89,7 +89,15 @@ module Bosh::Deployer
           networks['bosh'][key].should eq(configuration_hash['network'][key])
         end
 
-        vip_hash = { 'vip' => { 'ip' => '192.168.1.1', 'type' => 'vip', 'cloud_properties' => {} } }
+        vip_hash = {
+          'vip' => {
+            'ip' => '192.168.1.1',
+            'type' => 'vip',
+            'cloud_properties' => {
+              'name' => 'VLAN2194'
+            }
+          }
+        }
         expect(networks).to include(vip_hash)
       end
     end

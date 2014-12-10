@@ -46,8 +46,14 @@ module Bosh::Monitor
         ]
 
         heartbeat.metrics.each do |metric|
-          point = [Time.at(metric.timestamp), metric.value]
-          dog_client.emit_points("bosh.healthmonitor.#{metric.name}", [point], tags: tags)
+          begin
+            point = [Time.at(metric.timestamp), metric.value]
+            dog_client.emit_points("bosh.healthmonitor.#{metric.name}", [point], tags: tags)
+          rescue Timeout::Error => e
+            logger.warn('Could not emit points to Datadog, request timed out.')
+          rescue => e
+            logger.info("Could not emit points to Datadog: #{e.inspect}")
+          end
         end
       end
 
@@ -59,15 +65,21 @@ module Bosh::Monitor
 
 
         # DataDog only supports "low" and "normal" priority
-        priority = normal_priority?(alert.severity) ? "normal" : "low"
-        dog_client.emit_event(
-          Dogapi::Event.new(msg,
-            msg_title: title,
-            date_happened: timestamp,
-            tags: ["source:#{source}"],
-            priority: priority
+        begin
+          priority = normal_priority?(alert.severity) ? "normal" : "low"
+          dog_client.emit_event(
+            Dogapi::Event.new(msg,
+                              msg_title: title,
+                              date_happened: timestamp,
+                              tags: ["source:#{source}"],
+                              priority: priority
+                             )
           )
-        )
+        rescue Timeout::Error => e
+          logger.warn('Could not emit event to Datadog, request timed out.')
+        rescue => e
+          logger.warn("Could not emit event to Datadog: #{e.inspect}")
+        end
       end
 
       def normal_priority?(severity)

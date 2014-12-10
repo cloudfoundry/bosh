@@ -138,11 +138,6 @@ describe 'Ubuntu 10.04 OS image', os_image: true do
         it { should be_installed }
       end
     end
-
-    describe file('/sbin/rescan-scsi-bus') do
-      it { should be_file }
-      it { should be_executable }
-    end
   end
 
   context 'installed by system_grub' do

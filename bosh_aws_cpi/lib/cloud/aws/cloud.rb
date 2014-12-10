@@ -527,8 +527,11 @@ module Bosh::AwsCloud
         http_read_timeout
         http_wire_trace
         proxy_uri
+        ssl_verify_peer
+        ssl_ca_file
+        ssl_ca_path
       ).each do |k|
-        aws_params[k.to_sym] = aws_properties[k] if aws_properties[k]
+        aws_params[k.to_sym] = aws_properties[k] unless aws_properties[k].nil?
       end
 
       # AWS Ruby SDK is threadsafe but Ruby autoload isn't,

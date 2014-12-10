@@ -54,6 +54,35 @@ describe Bosh::Registry::InstanceManager do
       }.to raise_error(Bosh::Registry::ConfigError, /Invalid AWS configuration parameters/)
     end
 
-  end
+    it "passes optional parameters to EC2" do
+      @config["cloud"]["aws"]["ssl_verify_peer"] = false
+      @config["cloud"]["aws"]["ssl_ca_file"] = '/custom/cert/ca-certificates'
+      @config["cloud"]["aws"]["ssl_ca_path"] = '/custom/cert/'
 
+      instance_double('AWS::EC2')
+      expect(AWS::EC2).to receive(:new) do |config|
+        config[:ssl_verify_peer].should be false
+        config[:ssl_ca_file].should eq('/custom/cert/ca-certificates')
+        config[:ssl_ca_path].should eq('/custom/cert/')
+      end
+      Bosh::Registry.configure(@config)
+    end
+
+    it "uses default ec2_endpoint if none specified" do
+      instance_double('AWS::EC2')
+      expect(AWS::EC2).to receive(:new) do |config|
+        config[:ec2_endpoint].should eq("ec2.#{@config['cloud']['aws']['region']}.amazonaws.com")
+      end
+      Bosh::Registry.configure(@config)
+    end
+
+    it "uses specified ec2_endpoint" do
+      @config["cloud"]["aws"]["ec2_endpoint"] = "ec2endpoint.websites.com"
+      instance_double('AWS::EC2')
+      expect(AWS::EC2).to receive(:new) do |config|
+        config[:ec2_endpoint].should eq("ec2endpoint.websites.com")
+      end
+      Bosh::Registry.configure(@config)
+    end
+  end
 end

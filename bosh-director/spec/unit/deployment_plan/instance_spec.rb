@@ -13,8 +13,17 @@ module Bosh::Director::DeploymentPlan
       instance_double('Bosh::Director::DeploymentPlan::Planner', {
         name: 'fake-deployment',
         canonical_name: 'mycloud',
-        model: deployment
+        model: deployment,
+        network: net,
       })
+    end
+    let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', resource_pool: resource_pool, deployment: plan, name: 'fake-job') }
+    let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', network: net) }
+    let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
+    let(:vm) { Vm.new(resource_pool) }
+    before do
+      allow(resource_pool).to receive(:allocate_vm).and_return(vm)
+      allow(job).to receive(:instance_state).with(0).and_return('started')
     end
 
     describe '#network_settings' do
@@ -170,6 +179,70 @@ module Bosh::Director::DeploymentPlan
           it 'does not include dns_record_name' do
             instance.add_network_reservation(network_name, reservation)
             expect(instance.network_settings['net_a']).to_not have_key('dns_record_name')
+          end
+        end
+      end
+    end
+
+    describe '#disk_size' do
+      context 'when instance does not have bound model' do
+        it 'raises an error' do
+          expect {
+            instance.disk_size
+          }.to raise_error Bosh::Director::DirectorError
+        end
+      end
+
+      context 'when instance has bound model' do
+        before { instance.bind_unallocated_vm }
+
+        context 'when model has persistent disk' do
+          before do
+            persistent_disk = Bosh::Director::Models::PersistentDisk.make(size: 1024)
+            instance.model.persistent_disks << persistent_disk
+          end
+
+          it 'returns its size' do
+            expect(instance.disk_size).to eq(1024)
+          end
+        end
+
+        context 'when model has no persistent disk' do
+          it 'returns 0' do
+            expect(instance.disk_size).to eq(0)
+          end
+        end
+      end
+    end
+
+    describe '#disk_cloud_properties' do
+      context 'when instance does not have bound model' do
+        it 'raises an error' do
+          expect {
+            instance.disk_cloud_properties
+          }.to raise_error Bosh::Director::DirectorError
+        end
+      end
+
+      context 'when instance has bound model' do
+        before { instance.bind_unallocated_vm }
+
+        context 'when model has persistent disk' do
+          let(:disk_cloud_properties) { { 'fake-disk-key' => 'fake-disk-value' } }
+
+          before do
+            persistent_disk = Bosh::Director::Models::PersistentDisk.make(size: 1024, cloud_properties: disk_cloud_properties)
+            instance.model.persistent_disks << persistent_disk
+          end
+
+          it 'returns its cloud properties' do
+            expect(instance.disk_cloud_properties).to eq(disk_cloud_properties)
+          end
+        end
+
+        context 'when model has no persistent disk' do
+          it 'returns empty hash' do
+            expect(instance.disk_cloud_properties).to eq({})
           end
         end
       end
@@ -541,7 +614,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#sync_state_with_db' do
-      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', deployment: plan, name: 'dea') }
+      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', deployment: plan, name: 'dea', resource_pool: resource_pool) }
       let(:index) { 3 }
 
       it 'deployment plan -> DB' do
@@ -551,7 +624,7 @@ module Bosh::Director::DeploymentPlan
           instance.sync_state_with_db
         }.to raise_error(Bosh::Director::DirectorError, /model is not bound/)
 
-        instance.bind_model
+        instance.bind_unallocated_vm
         expect(instance.model.state).to eq('started')
         instance.sync_state_with_db
         expect(instance.state).to eq('stopped')
@@ -561,7 +634,7 @@ module Bosh::Director::DeploymentPlan
       it 'DB -> deployment plan' do
         allow(job).to receive(:instance_state).with(3).and_return(nil)
 
-        instance.bind_model
+        instance.bind_unallocated_vm
         instance.model.update(:state => 'stopped')
 
         instance.sync_state_with_db
@@ -572,7 +645,7 @@ module Bosh::Director::DeploymentPlan
       it 'needs to find state in order to sync it' do
         allow(job).to receive(:instance_state).with(3).and_return(nil)
 
-        instance.bind_model
+        instance.bind_unallocated_vm
         expect(instance.model).to receive(:state).and_return(nil)
 
         expect {

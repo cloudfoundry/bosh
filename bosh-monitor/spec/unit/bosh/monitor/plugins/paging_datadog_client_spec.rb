@@ -27,7 +27,7 @@ describe PagingDatadogClient do
     describe "unmodified calls" do
       it "doesn't modify the #emit_points calls and passes them through" do
         paging_client.emit_points("fake.metric", [Time.now.to_i, 25], {})
-        wrapped_client.emit_points_called?.should be(true)
+        expect(wrapped_client.emit_points_called?).to be(true)
       end
     end
 
@@ -47,7 +47,7 @@ describe PagingDatadogClient do
 
         it "adds the datadog recipient to the end of the message" do
           paging_client.emit_event(alert)
-          wrapped_client.last_event.msg_text.should == "message @#{datadog_recipient}"
+          expect(wrapped_client.last_event.msg_text).to eq("message @#{datadog_recipient}")
         end
       end
 
@@ -56,7 +56,7 @@ describe PagingDatadogClient do
 
         it "does not add the datadog recipient to the end of the message" do
           paging_client.emit_event(alert)
-          wrapped_client.last_event.msg_text.should_not include("@#{datadog_recipient}")
+          expect(wrapped_client.last_event.msg_text).not_to include("@#{datadog_recipient}")
         end
       end
 
@@ -67,7 +67,7 @@ describe PagingDatadogClient do
 
         last_hash = wrapped_client.last_event.to_hash
         last_hash.delete(:msg_text)
-        last_hash.should == alert_hash
+        expect(last_hash).to eq(alert_hash)
       end
     end
   end

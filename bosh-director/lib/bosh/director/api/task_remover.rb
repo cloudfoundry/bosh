@@ -1,8 +1,7 @@
 module Bosh::Director::Api
   class TaskRemover
-    def initialize(max_tasks, logger)
+    def initialize(max_tasks)
       @max_tasks = max_tasks
-      #@logger = logger
     end
 
     def remove

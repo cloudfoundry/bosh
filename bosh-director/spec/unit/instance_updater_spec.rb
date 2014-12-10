@@ -246,13 +246,19 @@ module Bosh::Director
             end
           end
 
-          context 'without persistent disk' do
+          context 'with persistent disk' do
             let(:persistent_disk_changed) { true }
+            let(:disk_cloud_properties) do
+              {
+                'fake-disk-key' => 'fake-disk-value',
+              }
+            end
+
             let(:disk_pool) do
               instance_double(
                 'Bosh::Director::DeploymentPlan::DiskPool',
                 disk_size: 1024,
-                cloud_properties: {}
+                cloud_properties: disk_cloud_properties,
               )
             end
 
@@ -261,6 +267,15 @@ module Bosh::Director
               allow(cloud).to receive(:create_disk).and_return('disk-cid')
               allow(cloud).to receive(:attach_disk)
               allow(agent_client).to receive(:mount_disk)
+            end
+
+            it 'creates new disk record' do
+              subject.update
+              persistent_disk = Bosh::Director::Models::PersistentDisk.first
+              expect(persistent_disk.size).to eq(1024)
+              expect(persistent_disk.instance_id).to eq(instance_model.id)
+              expect(persistent_disk.active).to eq(true)
+              expect(persistent_disk.cloud_properties).to eq(disk_cloud_properties)
             end
 
             it 'should recreate vm and attach disk' do

@@ -13,7 +13,7 @@ describe Bhm::Plugins::Nats do
   end
 
   it "doesn't start if event loop isn't running" do
-    @plugin.run.should be(false)
+    expect(@plugin.run).to be(false)
   end
 
   it "publishes events to NATS" do
@@ -22,11 +22,11 @@ describe Bhm::Plugins::Nats do
     nats = double("nats")
 
     EM.run do
-      NATS.should_receive(:connect).and_return(nats)
+      expect(NATS).to receive(:connect).and_return(nats)
       @plugin.run
 
-      nats.should_receive(:publish).with("bosh.hm.events", alert.to_json)
-      nats.should_receive(:publish).with("bosh.hm.events", heartbeat.to_json)
+      expect(nats).to receive(:publish).with("bosh.hm.events", alert.to_json)
+      expect(nats).to receive(:publish).with("bosh.hm.events", heartbeat.to_json)
 
       @plugin.process(alert)
       @plugin.process(heartbeat)
@@ -43,11 +43,11 @@ describe Bhm::Plugins::Nats do
     nats = double("nats")
 
     EM.run do
-      NATS.should_receive(:connect).and_return(nats)
+      expect(NATS).to receive(:connect).and_return(nats)
       @plugin.run
 
-      nats.should_receive(:publish).with("test.hm.events", alert.to_json)
-      nats.should_receive(:publish).with("test.hm.events", heartbeat.to_json)
+      expect(nats).to receive(:publish).with("test.hm.events", alert.to_json)
+      expect(nats).to receive(:publish).with("test.hm.events", heartbeat.to_json)
 
       @plugin.process(alert)
       @plugin.process(heartbeat)

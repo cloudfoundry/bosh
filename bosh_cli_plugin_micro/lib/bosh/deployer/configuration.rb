@@ -127,7 +127,7 @@ module Bosh::Deployer
         'vip' => {
           'ip' => @net_conf['vip'],
           'type' => 'vip',
-          'cloud_properties' => {}
+          'cloud_properties' => @net_conf['cloud_properties']
         }
       }
     end

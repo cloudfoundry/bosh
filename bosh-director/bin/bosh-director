@@ -57,10 +57,6 @@ thin_server = Thin::Server.new('127.0.0.1', config.hash['port'], signals: false)
     run Bosh::Director::Api::Controllers::StemcellsController.new
   end
 
-  map '/tasks' do
-    run Bosh::Director::Api::Controllers::TasksController.new
-  end
-
   map '/task' do
     run Bosh::Director::Api::Controllers::TaskController.new
   end

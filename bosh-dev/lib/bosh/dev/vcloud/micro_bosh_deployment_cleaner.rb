@@ -11,6 +11,7 @@ module Bosh::Dev::VCloud
       @env = env
       @manifest = manifest
       @logger = Logging.logger(STDERR)
+      @logger.instance_variable_set(:@logdev, OpenStruct.new(dev: 'fake-dev'))
     end
 
     def clean
@@ -40,7 +41,9 @@ module Bosh::Dev::VCloud
 
     def delete_vapp
       vapp = @vdc.find_vapp_by_name(@env['BOSH_VCLOUD_VAPP_NAME'])
-      vapp.power_off
+      if vapp.status == 'POWERED_ON'
+        vapp.power_off
+      end
       delete_independent_disks(vapp)
       vapp.delete
       @logger.info("Vapp '#{@env['BOSH_VCLOUD_VAPP_NAME']}' was deleted during clean up.")

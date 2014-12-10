@@ -277,8 +277,10 @@ properties:
     description: Rackspace Cloud Files Region (optional, dfw or ord)
 
   ntp:
-    description: List of ntp server IPs
-    default: []
+    description: List of ntp server IPs. pool.ntp.org attempts to return IPs closest to your location, but you can still specify if needed.
+    default:
+      - 0.pool.ntp.org
+      - 1.pool.ntp.org
 
   # Cpi
   external_cpi.enabled:
@@ -342,6 +344,12 @@ properties:
   aws.http_wire_trace:
     description: When true aws cpi will log all wire traces
     default: false
+  aws.ssl_ca_file:
+    description: The path to a CA cert bundle in PEM format
+  aws.ssl_ca_path:
+    description: The path the a CA cert directory
+  aws.ssl_verify_peer:
+    description: When true the HTTP handler validate server certificates for HTTPS requests
   aws.stemcell.kernel_id:
     description: AWS kernel id used by aws cpi
   openstack.auth_url:

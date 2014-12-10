@@ -13,14 +13,14 @@ module Bosh::Dev::VCloud
     def build(artifacts, net_type)
       env    = ENV
       logger = Logging.logger(STDOUT)
+      logger.level = :debug
 
       director_address = Bosh::Dev::Bat::DirectorAddress.from_env(env, 'BOSH_VCLOUD_MICROBOSH_IP')
       bosh_cli_session = Bosh::Dev::BoshCliSession.default
       director_uuid    = Bosh::Dev::Bat::DirectorUuid.new(bosh_cli_session)
       stemcell_archive = Bosh::Stemcell::Archive.new(artifacts.stemcell_path)
 
-      microbosh_deployment_manifest =
-        MicroBoshDeploymentManifest.new(env, net_type)
+      microbosh_deployment_manifest = MicroBoshDeploymentManifest.new(env)
       bat_deployment_manifest =
         BatDeploymentManifest.new(env, net_type, director_uuid, stemcell_archive)
 

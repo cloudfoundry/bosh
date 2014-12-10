@@ -32,6 +32,15 @@ cloud:
     <% if_p('aws.max_retries') do |max_retries| %>
     max_retries: <%= max_retries %>
     <% end %>
+    <% if_p('aws.ssl_ca_file') do |ssl_ca_file| %>
+    ssl_ca_file: <%= ssl_ca_file %>
+    <% end %>
+    <% if_p('aws.ssl_ca_path') do |ssl_ca_path| %>
+    ssl_ca_path: <%= ssl_ca_path %>
+    <% end %>
+    <% if_p('aws.ssl_verify_peer') do |ssl_verify_peer| %>
+    ssl_verify_peer: <%= ssl_verify_peer %>
+    <% end %>
 <% end %>
 <% if_p('openstack.auth_url', 'openstack.username', 'openstack.api_key', 'openstack.tenant') do |auth_url, username, api_key, tenant| %>
   plugin: openstack <% plugin = 'openstack' %>
