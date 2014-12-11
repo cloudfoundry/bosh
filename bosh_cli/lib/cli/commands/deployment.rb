@@ -81,14 +81,17 @@ module Bosh::Cli::Command
     usage "deploy"
     desc "Deploy according to the currently selected deployment manifest"
     option "--recreate", "recreate all VMs in deployment"
+    option "--redact-diff", "redact manifest value changes in deployment"
     def perform
       auth_required
       recreate = !!options[:recreate]
+      redact_diff = !!options[:redact_diff]
 
       manifest_yaml = prepare_deployment_manifest(
         :yaml => true, :resolve_properties => true)
 
-      inspect_deployment_changes(Psych.load(manifest_yaml), interactive: interactive?)
+      inspect_deployment_changes(Psych.load(manifest_yaml),
+        interactive: interactive?, redact_diff: redact_diff)
       say('Please review all changes carefully'.make_yellow) if interactive?
 
       deployment_name = File.basename(deployment)

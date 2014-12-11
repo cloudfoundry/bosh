@@ -77,7 +77,8 @@ module IntegrationExampleGroup
 
   def deploy(options)
     no_track = options.fetch(:no_track, false)
-    bosh_runner.run("#{no_track ? '--no-track ' : ''}deploy", options)
+    redact_diff = options.fetch(:redact_diff, false)
+    bosh_runner.run("#{no_track ? '--no-track ' : ''}deploy#{redact_diff ? ' --redact-diff' : ''}", options)
   end
 
   def deploy_simple(options={})

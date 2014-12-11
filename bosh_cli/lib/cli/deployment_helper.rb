@@ -76,7 +76,7 @@ module Bosh::Cli
         @_diff_key_visited = {}
         diff.keys.each do |key|
           unless @_diff_key_visited[key]
-            print_summary(diff, key)
+            print_summary(diff, key, false)
             nl
           end
         end
@@ -93,6 +93,7 @@ module Bosh::Cli
     def inspect_deployment_changes(manifest, options = {})
       show_empty_changeset = options.fetch(:show_empty_changeset, true)
       interactive = options.fetch(:interactive, false)
+      redact_diff = options.fetch(:redact_diff, false)
 
       manifest = manifest.dup
       current_deployment = director.get_deployment(manifest['name'])
@@ -120,13 +121,13 @@ module Bosh::Cli
       end
 
       if diff[:release]
-        print_summary(diff, :release)
+        print_summary(diff, :release, redact_diff)
         warn_about_release_changes(diff[:release]) if interactive
         nl
       end
 
       if diff[:releases]
-        print_summary(diff, :releases)
+        print_summary(diff, :releases, redact_diff)
         if interactive
           diff[:releases].each do |release_diff|
             warn_about_release_changes(release_diff)
@@ -135,31 +136,31 @@ module Bosh::Cli
         nl
       end
 
-      print_summary(diff, :compilation)
+      print_summary(diff, :compilation, redact_diff)
       nl
 
-      print_summary(diff, :update)
+      print_summary(diff, :update, redact_diff)
       nl
 
-      print_summary(diff, :resource_pools)
+      print_summary(diff, :resource_pools, redact_diff)
       warn_about_stemcell_changes(diff) if interactive
       nl
 
-      print_summary(diff, :disk_pools)
+      print_summary(diff, :disk_pools, redact_diff)
       nl
 
-      print_summary(diff, :networks)
+      print_summary(diff, :networks, redact_diff)
       nl
 
-      print_summary(diff, :jobs)
+      print_summary(diff, :jobs, redact_diff)
       nl
 
-      print_summary(diff, :properties)
+      print_summary(diff, :properties, redact_diff)
       nl
 
       diff.keys.each do |key|
         unless @_diff_key_visited[key]
-          print_summary(diff, key)
+          print_summary(diff, key, redact_diff)
           nl
         end
       end
@@ -323,7 +324,7 @@ module Bosh::Cli
       EOS
     end
 
-    def print_summary(diff, key, title = nil)
+    def print_summary(diff, key, redact, title = nil)
       title ||= key.to_s.gsub(/[-_]/, ' ').capitalize
 
       say(title.make_green)
@@ -332,7 +333,11 @@ module Bosh::Cli
       if !summary || summary.empty?
         say('No changes')
       else
-        say(summary.join("\n"))
+        if redact
+          say("Changes found - Redacted")
+        else
+          say(summary.join("\n"))
+        end
       end
 
       @_diff_key_visited[key.to_s] = 1

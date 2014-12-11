@@ -16,6 +16,23 @@ describe 'deploy job update', type: :integration do
     expect(times['foobar/2']['started']).to be >= [times['foobar/0']['finished'], times['foobar/1']['finished']].min
   end
 
+  it 'redacts manifest diff values when requested' do
+    deploy_simple
+
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['update']['canary_watch_time'] = 0
+    manifest_hash['jobs'][0]['instances'] = 2
+    manifest_hash['resource_pools'][0]['size'] = 2
+
+    set_deployment(manifest_hash: manifest_hash)
+    deploy_output = deploy(failure_expected: true, redact_diff: true)
+    puts deploy_output
+    expect(deploy_output).to match(/Update\nChanges found - Redacted/m)
+    expect(deploy_output).to match(/Resource pools\nChanges found - Redacted/m)
+    expect(deploy_output).to match(/Disk pools\nNo changes/m)
+    expect(deploy_output).to match(/Jobs\nChanges found - Redacted/m)
+  end
+
   it 'stops deployment when a job update fails' do
     deploy_simple
 
