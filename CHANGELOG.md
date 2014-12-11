@@ -1,3 +1,60 @@
+## 2786
+
+New Features:
+
+  * director: Add `--keep-alive` flag for `bosh run errand` command.
+        With this flag errand VM is not deleted after errand completes.
+        Could be used for debugging or to avoid spinning up and
+        spinning down errand VM periodically. [59be4fe]
+
+## 2785
+
+Improvements:
+
+  * monitor: Change /healthz to return 500 if worker pool
+        has been have been occupied for 3 minutes so that health monitor
+        is restarted when it cannot process any more events [03e116e]
+  * director: Merge #698 Use ec2_endpoint from krumts [a4547a5]
+  * director: Default NTP servers to pool.ntp.org [2c7888e]
+
+## 2781
+
+Improvements:
+
+  * stemcell: Disable reverse DNS resolution for sshd to speed up ssh access [f4f5319]
+  * stemcell: vcloud: Start producing vcloud stemcells on regular schedule
+
+Bug Fixes:
+
+  * director: Remember persistent disk cloud properties
+        to avoid unnecessarily migrating data persistent disk [ccb2ca5]
+  * director: Fix leaking debug logs fds [e000906]
+  * director: Use gc_thresh1 set in stemcell in nats job
+        to fix interemittent connectivity issues [be690e4]
+  * director: Bump bosh_vcloud_cpi gem to 0.7.2
+        to support persistent disk pools [9a73928]
+
+## 2780
+
+Improvements:
+
+  * agent: Bump bosh-agent to include root device partition fixes such that
+        partitioning of root disk works on more configurations  [436154f]
+
+## 2778
+
+New Features:
+
+  * cpi: openstack: Support specifying volume type for persistent disks [43aba09]
+  * cpi: openstack: Support specifying AZ and volume type for boot volume [43aba09]
+
+## 2776
+
+Improvements:
+
+  * stemcell: centos: Bump CentOS to 6.6 [e9d8776]
+  * stemcell: ubuntu: Turn on rsyslog.d kernel logging for trusty [7060389]
+
 ## 2765
 
 Improvements:
