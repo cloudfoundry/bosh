@@ -100,7 +100,6 @@ describe Bhm::Plugins::Email do
     expect(@plugin.queue_size(:heartbeat)).to eq(20)
 
     EM.run do
-      puts("Inside EM.run block")
       @plugin.run
       EM.add_timer(30) do
         # By this time the test is failing

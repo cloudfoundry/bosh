@@ -41,6 +41,7 @@ module Bosh::Monitor
       body "Last pulse was #{Time.now - @heartbeat} seconds ago"
 
       if Time.now - @heartbeat > PULSE_TIMEOUT
+        @logger.error("PULSE TIMEOUT REACHED: Eventmachine not processing queued jobs in a timely fashion")
         status(500)
       else
         status(200)
