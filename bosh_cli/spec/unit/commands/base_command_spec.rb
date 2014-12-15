@@ -91,6 +91,19 @@ describe Bosh::Cli::Command::Base do
     cmd.logged_in?.should be(true)
   end
 
+  it "gives the max_parallel_downloads options to the blob manager" do
+    allow(Bosh::Cli::BlobManager).to receive(:new)
+    max_parallel_downloads = double(:max_parallel_downloads)
+    release = double(:release)
+    Bosh::Cli::Config.max_parallel_downloads = max_parallel_downloads
+    cmd = make
+    allow(cmd).to receive(:release).and_return(release)
+
+    cmd.blob_manager
+    expect(Bosh::Cli::BlobManager).to have_received(:new).with(release, max_parallel_downloads)
+    Bosh::Cli::Config.max_parallel_downloads = nil
+  end
+
   context 'target' do
     context 'when port 443 is specified' do
       it 'persists the port within the target' do

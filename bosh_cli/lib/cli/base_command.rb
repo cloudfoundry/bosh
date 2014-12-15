@@ -52,7 +52,7 @@ module Bosh::Cli
       end
 
       def blob_manager
-        @blob_manager ||= Bosh::Cli::BlobManager.new(release)
+        @blob_manager ||= Bosh::Cli::BlobManager.new(release, config.max_parallel_downloads)
       end
 
       def blobstore

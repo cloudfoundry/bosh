@@ -333,7 +333,7 @@ describe Bosh::Cli::Command::Base do
 
       @cmd.should_receive(:check_if_release_dir)
       Bosh::Cli::Release.stub(:new).and_return(@release)
-      Bosh::Cli::BlobManager.stub(:new).with(@release).
+      Bosh::Cli::BlobManager.stub(:new).with(@release, kind_of(Integer)).
           and_return(@blob_manager)
     end
 

@@ -10,7 +10,10 @@ module Bosh::Cli
     attr_reader :new_blobs, :updated_blobs
 
     # @param [Bosh::Cli::Release] release BOSH Release object
-    def initialize(release)
+    def initialize(release, max_parallel_downloads)
+      @progress_renderer = ProgressRenderer.new
+      @max_parallel_downloads = max_parallel_downloads
+
       @release = release
       @index_file = File.join(@release.dir, "config", DEFAULT_INDEX_NAME)
 
@@ -208,6 +211,7 @@ module Bosh::Cli
     # establishes symlinks in blobs directory to any files present in index.
     # @return [void]
     def process_index
+      missing_blobs = []
       @index.each_pair do |path, entry|
         if File.exists?(File.join(@src_dir, path))
           err("File `#{path}' is in both blob index and src directory.\n" +
@@ -227,11 +231,21 @@ module Bosh::Cli
         end
 
         if need_download
-          local_path = download_blob(path)
+          missing_blobs << [path, entry["sha"]]
+        else
+          install_blob(local_path, path, entry["sha"])
         end
-
-        install_blob(local_path, path, entry["sha"])
       end
+
+      download_semaphore = Semaphore.new(@max_parallel_downloads)
+      missing_blobs.map do |blob|
+        Thread.new(*blob) do |path, sha|
+          download_semaphore.wait
+          local_path = download_blob(path)
+          install_blob(local_path, path, sha)
+          download_semaphore.signal
+        end
+      end.each(&:join)
     end
 
     # Uploads blob to a blobstore, updates blobs index.
@@ -273,7 +287,8 @@ module Bosh::Cli
 
       blob = @index[path]
       size = blob["size"].to_i
-      tmp_file = File.open(File.join(Dir.mktmpdir, "bosh-blob"), "w")
+      blob_path = path.gsub(File::SEPARATOR, '-')
+      tmp_file = File.open(File.join(Dir.mktmpdir, blob_path), "w")
 
       download_label = "downloading"
       if size > 0
@@ -310,9 +325,7 @@ module Bosh::Cli
     # @param [String] path Blob path relative to blobs dir
     # @param [String] label Operation happening to a blob
     def progress(path, label)
-      say("\r", " " * 80)
-      say("\r#{path.truncate(40).make_yellow} #{label}", "")
-      Bosh::Cli::Config.output.flush # Ruby 1.8 compatibility
+      @progress_renderer.render(path, label)
     end
 
     # @param [String] src Path to a file containing the blob
@@ -374,3 +387,4 @@ module Bosh::Cli
     end
   end
 end
+

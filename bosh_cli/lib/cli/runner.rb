@@ -114,6 +114,10 @@ module Bosh::Cli
         @options[:config] = file
       end
 
+      opts.on("-M", "--max-parallel-downloads MAX", "Sets the max number of parallel downloads to create") do |max|
+        Config.max_parallel_downloads = Integer(max)
+      end
+
       opts.on("--[no-]color", "Toggle colorized output") do |v|
         Config.colorize = v
       end
