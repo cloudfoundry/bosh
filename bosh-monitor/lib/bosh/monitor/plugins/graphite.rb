@@ -13,7 +13,7 @@ module Bosh::Monitor
 
         host = options["host"]
         port = options["port"]
-        @graphite_connection = EM.connect(host, port, Bhm::GraphiteConnection, host, port)
+        @connection = EM.connect(host, port, Bhm::GraphiteConnection, host, port)
       end
 
       def process(event)
@@ -29,10 +29,12 @@ module Bosh::Monitor
             metric_name = get_metric_name(event, metric)
             metric_timestamp = get_metric_timestamp(metric.timestamp)
             metric_value = metric.value
-            @graphite_connection.send_metric(metric_name, metric_value, metric_timestamp)
+            @connection.send_metric(metric_name, metric_value, metric_timestamp)
           end
         end
       end
+
+      private
 
       def get_metric_name heartbeat, metric
         [get_metric_prefix(heartbeat), metric.name.to_s.gsub('.', '_')].join '.'

@@ -1,55 +1,54 @@
 require 'spec_helper'
 
 describe Bhm::Plugins::Graphite do
+  subject(:plugin) { Bhm::Plugins::Graphite.new(options) }
 
-  before do
-    @options = {
-        "host" => "graphite-host",
-        "port" => 2003
+  let(:options) do
+    {
+      "host" => "fake-graphite-host",
+      "port" => 2003
     }
-
-    @plugin = Bhm::Plugins::Graphite.new(@options)
   end
 
-  describe "options validation" do
+  describe "validates options" do
     context "when we specify both host abd port" do
       it "is valid" do
-        valid_options = @options
-        expect(Bhm::Plugins::Graphite.new(valid_options).validate_options).to be(true)
+        expect(plugin.validate_options).to be(true)
       end
     end
 
     context "when we omit port or host" do
-      it "is not valid" do
-        invalid_options = {
-            "host" => "localhost"
+      let(:options) do
+        {
+          "host" => "localhost"
         }
-        expect(Bhm::Plugins::Graphite.new(invalid_options).validate_options).to be(false)
+      end
+
+      it "is not valid" do
+        expect(plugin.validate_options).to be(false)
       end
     end
   end
 
   describe "process metrics" do
+    let(:connection) { instance_double("Bosh::Monitor::GraphiteConnection") }
+    before { allow(EM).to receive(:connect).with("fake-graphite-host", 2003, Bhm::GraphiteConnection, "fake-graphite-host", 2003).and_return(connection) }
 
     context "when event loop isn't running" do
       it "doesn't start" do
-        expect(@plugin.run).to be(false)
+        expect(plugin.run).to be(false)
       end
     end
 
     context "when event is of type Alert" do
+      let(:event) { make_alert(timestamp: Time.now.to_i) }
+
       it "does not send metrics" do
-        graphite = double("graphite connection")
-
-        alert = make_alert(timestamp: Time.now.to_i)
-
         EM.run do
-          allow(EM).to_receive(:connect).and_return(graphite)
-          @plugin.run
+          plugin.run
+          expect(connection).to_not receive(:send_metric)
 
-          expect(graphite).to_not receive(:send_metric)
-
-          @plugin.process(alert)
+          plugin.process(event)
 
           EM.stop
         end
@@ -57,22 +56,18 @@ describe Bhm::Plugins::Graphite do
     end
 
     context "when event is of type Heartbeat" do
+      let(:event) { make_heartbeat(timestamp: Time.now.to_i) }
 
       it "sends metrics to Graphite" do
-        graphite = double("graphite connection")
-
-        heartbeat = make_heartbeat(timestamp: Time.now.to_i)
-
         EM.run do
-          expect(EM).to receive(:connect).with(@options["host"], @options["port"], Bhm::GraphiteConnection, @options["host"], @options["port"]).once.and_return(graphite)
-          @plugin.run
+          plugin.run
 
-          heartbeat.metrics.each do |metric|
-            metric_name = "#{heartbeat.deployment_name}.#{heartbeat.job}.#{heartbeat.index}.#{heartbeat.agent_id}.#{metric.name}"
-            graphite.should_receive(:send_metric).with(metric.name, metric.value, metric.timestamp)
+          event.metrics.each do |metric|
+            metric_name = "#{event.deployment}.#{event.job}.#{event.index}.#{event.agent_id}.#{metric.name.gsub('.', '_')}"
+            expect(connection).to receive(:send_metric).with(metric_name, metric.value, metric.timestamp)
           end
 
-          @plugin.process(heartbeat)
+          plugin.process(event)
 
           EM.stop
         end

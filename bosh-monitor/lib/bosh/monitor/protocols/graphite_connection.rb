@@ -9,6 +9,8 @@ module Bosh::Monitor
         command = "#{name} #{value} #{timestamp}\n"
         @logger.debug("[Graphite] >> #{command.chomp}")
         send_data(command)
+      else
+        @logger.warn("Missing graphite metrics (name: '#{name}', value: '#{value}', timestamp: '#{timestamp}')")
       end
     end
   end
