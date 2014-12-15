@@ -48,7 +48,10 @@ require 'bosh/monitor/event_processor'
 require 'bosh/monitor/api_controller'
 
 # Protocols
-require 'bosh/monitor/protocols/tsdb'
+require 'bosh/monitor/protocols/tcp_connection'
+require 'bosh/monitor/protocols/tsdb_connection'
+require 'bosh/monitor/protocols/graphite_connection'
+
 
 # Events
 require 'bosh/monitor/events/base'
@@ -64,6 +67,7 @@ require 'bosh/monitor/plugins/cloud_watch'
 require 'bosh/monitor/plugins/datadog'
 require 'bosh/monitor/plugins/paging_datadog_client'
 require 'bosh/monitor/plugins/email'
+require 'bosh/monitor/plugins/graphite'
 require 'bosh/monitor/plugins/logger'
 require 'bosh/monitor/plugins/nats'
 require 'bosh/monitor/plugins/pagerduty'

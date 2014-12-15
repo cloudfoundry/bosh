@@ -133,3 +133,16 @@ plugins:
       <% end %>
 
   <% end %>
+    
+  <% if p("hm.graphite_enabled") %>
+  - name: graphite
+    events:
+      - heartbeat
+    options:
+      host: <%= p("hm.graphite.address") %>
+      port: <%= p("hm.graphite.port") %>
+      <% if_p("hm.graphite.prefix") do |prefix| %>
+      prefix: <%= prefix %>
+      <% end %>
+  <% end %>
+
