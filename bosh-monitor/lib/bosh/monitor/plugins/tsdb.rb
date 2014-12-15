@@ -23,6 +23,8 @@ module Bosh::Monitor
           return false
         end
 
+        return false if event.is_a? Bosh::Monitor::Events::Alert
+
         metrics = event.metrics
 
         if !metrics.kind_of?(Enumerable)

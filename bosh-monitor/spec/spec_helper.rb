@@ -12,6 +12,14 @@ def sample_config
   spec_asset("sample_config.yml")
 end
 
+def default_config
+  {
+    'logfile' => STDOUT,
+    'loglevel' => 'off',
+    'director' => {}
+  }
+end
+
 def alert_payload(attrs = {})
   {
     :id => "foo",
@@ -79,6 +87,8 @@ RSpec.configure do |c|
   # Could not use after hook because the tests can start EM in an around block
   # which causes EM.reactor_running? to always return true.
   c.around do |example|
+    Bhm::config = default_config
+
     example.call
     if EM.reactor_running?
       EM.stop

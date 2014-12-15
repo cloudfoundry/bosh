@@ -1,15 +1,17 @@
 require 'spec_helper'
 
 describe Bhm::Plugins::Tsdb do
+  subject(:plugin) { Bhm::Plugins::Tsdb.new(options) }
 
-  before do
-    @options = {
-      "host" => "localhost",
+  let(:options) do
+    {
+      "host" => "fake-host",
       "port" => 4242
     }
-
-    @plugin = Bhm::Plugins::Tsdb.new(@options)
   end
+
+  let(:connection) { instance_double("Bosh::Monitor::TsdbConnection") }
+  before { allow(EM).to receive(:connect).with("fake-host", 4242, Bhm::TsdbConnection, "fake-host", 4242).and_return(connection) }
 
   it "validates options" do
     valid_options = {
@@ -26,46 +28,38 @@ describe Bhm::Plugins::Tsdb do
   end
 
   it "doesn't start if event loop isn't running" do
-    expect(@plugin.run).to be(false)
+    expect(plugin.run).to be(false)
   end
 
-  it "does not send metrics for Alerts" do
-    tsdb = double("tsdb connection")
-
+  it "does not send metrics for alerts" do
     alert = make_alert(timestamp: Time.now.to_i)
 
     EM.run do
-      allow(EM).to receive(:connect) { tsdb }
-      @plugin.run
+      plugin.run
 
-      expect(tsdb).not_to receive(:send_metric)
+      expect(connection).not_to receive(:send_metric)
 
-      @plugin.process(alert)
+      plugin.process(alert)
 
       EM.stop
     end
-
   end
 
-  it "sends Heartbeat metrics to TSDB" do
-    tsdb = double("tsdb connection")
-
+  it "sends heartbeat metrics to TSDB" do
     heartbeat = make_heartbeat(timestamp: Time.now.to_i)
 
     EM.run do
-      expect(EM).to receive(:connect).with("localhost", 4242, Bhm::TsdbConnection, "localhost", 4242).once.and_return(tsdb)
-      @plugin.run
+      plugin.run
 
       heartbeat.metrics.each do |metric|
         expected_tags = metric.tags.merge({deployment: "oleg-cloud"})
 
-        expect(tsdb).to receive(:send_metric).with(metric.name, metric.timestamp, metric.value, expected_tags)
+        expect(connection).to receive(:send_metric).with(metric.name, metric.timestamp, metric.value, expected_tags)
       end
 
-      @plugin.process(heartbeat)
+      plugin.process(heartbeat)
 
       EM.stop
     end
   end
-
 end
