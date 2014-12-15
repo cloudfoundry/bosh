@@ -9,15 +9,15 @@ describe Bosh::Cli::Command::JobManagement do
   let(:director) { double(Bosh::Cli::Client::Director) }
 
   before(:each) do
-    director.stub(:change_job_state)
-    command.stub(target: 'http://bosh.example.com')
-    command.stub(logged_in?: true)
-    command.stub(inspect_deployment_changes: false)
-    command.stub(:nl)
-    command.stub(confirmed?: true)
-    command.stub(:director).and_return(director)
-    command.stub(:prepare_deployment_manifest).and_return(deployment_manifest)
-    command.stub(:prepare_deployment_manifest).with(yaml: true).and_return(manifest_yaml)
+    allow(director).to receive(:change_job_state)
+    allow(command).to receive_messages(target: 'http://bosh.example.com')
+    allow(command).to receive_messages(logged_in?: true)
+    allow(command).to receive_messages(inspect_deployment_changes: false)
+    allow(command).to receive(:nl)
+    allow(command).to receive_messages(confirmed?: true)
+    allow(command).to receive(:director).and_return(director)
+    allow(command).to receive(:prepare_deployment_manifest).and_return(deployment_manifest)
+    allow(command).to receive(:prepare_deployment_manifest).with(yaml: true).and_return(manifest_yaml)
   end
 
   let(:deployment_manifest) do
@@ -73,8 +73,8 @@ describe Bosh::Cli::Command::JobManagement do
 
     context 'if an index is supplied' do
       it 'tells the user what it is about to do' do
-        command.should_receive(:say).with("You are about to #{verb} dea/0#{operation_description_extra}")
-        command.should_receive(:say).with("Performing `#{verb} dea/0#{operation_description_extra}'...")
+        expect(command).to receive(:say).with("You are about to #{verb} dea/0#{operation_description_extra}")
+        expect(command).to receive(:say).with("Performing `#{verb} dea/0#{operation_description_extra}'...")
 
         command.public_send(method_name, 'dea', '0')
       end
@@ -84,8 +84,8 @@ describe Bosh::Cli::Command::JobManagement do
       it 'tells the user what it is about to do' do
 
         if instance_count == 1
-          command.should_receive(:say).with("You are about to #{verb} dea/0#{operation_description_extra}")
-          command.should_receive(:say).with("Performing `#{verb} dea/0#{operation_description_extra}'...")
+          expect(command).to receive(:say).with("You are about to #{verb} dea/0#{operation_description_extra}")
+          expect(command).to receive(:say).with("Performing `#{verb} dea/0#{operation_description_extra}'...")
           command.public_send(method_name, 'dea')
         else
           expect {
@@ -102,7 +102,7 @@ describe Bosh::Cli::Command::JobManagement do
 
       context 'when there has been a change in the manifest locally' do
         before do
-          command.stub(inspect_deployment_changes: true)
+          allow(command).to receive_messages(inspect_deployment_changes: true)
         end
 
         context 'when we do not force the command' do
@@ -117,13 +117,13 @@ describe Bosh::Cli::Command::JobManagement do
 
       context 'when there has not been a change in the manifest locally' do
         before do
-          command.stub(inspect_deployment_changes: false)
+          allow(command).to receive_messages(inspect_deployment_changes: false)
         end
 
         context 'if we do not confirm the command' do
           before do
-            command.stub(:say)
-            command.stub(confirmed?: false)
+            allow(command).to receive(:say)
+            allow(command).to receive_messages(confirmed?: false)
           end
 
           it 'cancels the deployment' do
@@ -135,13 +135,13 @@ describe Bosh::Cli::Command::JobManagement do
 
         context 'if an index is supplied' do
           it 'changes the job state' do
-            director.should_receive(:change_job_state).with(deployment, manifest_yaml, 'dea', '0', new_state)
+            expect(director).to receive(:change_job_state).with(deployment, manifest_yaml, 'dea', '0', new_state)
             command.public_send(method_name, 'dea', '0')
           end
 
           it 'reports back on the task report' do
-            director.stub(change_job_state: %w(done 23))
-            command.should_receive(:task_report).with('done', '23', "dea/0 has been #{past_verb}#{extra_task_report_info}")
+            allow(director).to receive_messages(change_job_state: %w(done 23))
+            expect(command).to receive(:task_report).with('done', '23', "dea/0 has been #{past_verb}#{extra_task_report_info}")
             command.public_send(method_name, 'dea', '0')
           end
         end
@@ -149,7 +149,7 @@ describe Bosh::Cli::Command::JobManagement do
         context 'if an index is not supplied' do
           it 'changes the job state' do
             if instance_count == 1
-              director.should_receive(:change_job_state).with(deployment, manifest_yaml, 'dea', '0', new_state)
+              expect(director).to receive(:change_job_state).with(deployment, manifest_yaml, 'dea', '0', new_state)
               command.public_send(method_name, 'dea')
             else
               expect {
@@ -160,8 +160,8 @@ describe Bosh::Cli::Command::JobManagement do
 
           it 'reports back on the task report' do
             if instance_count == 1
-              director.stub(change_job_state: %w(done 23))
-              command.should_receive(:task_report).with('done', '23', "dea/0 has been #{past_verb}#{extra_task_report_info}")
+              allow(director).to receive_messages(change_job_state: %w(done 23))
+              expect(command).to receive(:task_report).with('done', '23', "dea/0 has been #{past_verb}#{extra_task_report_info}")
               command.public_send(method_name, 'dea')
             else
               expect {

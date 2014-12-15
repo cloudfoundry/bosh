@@ -20,19 +20,19 @@ describe Bosh::Cli::Command::LogManagement do
   end
 
   before do
-    command.stub(target: 'http://bosh.example.com')
-    command.stub(logged_in?: true)
-    command.stub(director: director)
-    command.stub(prepare_deployment_manifest: manifest)
-    command.stub(:say)
-    director.stub(fetch_logs: 'resource-id', download_resource: '/tmp/resource')
+    allow(command).to receive_messages(target: 'http://bosh.example.com')
+    allow(command).to receive_messages(logged_in?: true)
+    allow(command).to receive_messages(director: director)
+    allow(command).to receive_messages(prepare_deployment_manifest: manifest)
+    allow(command).to receive(:say)
+    allow(director).to receive_messages(fetch_logs: 'resource-id', download_resource: '/tmp/resource')
   end
 
-  before { FileUtils.stub(:mv) }
+  before { allow(FileUtils).to receive(:mv) }
 
   describe 'fetching logs' do
     it 'requires that a bosh deployment is targeted' do
-      command.stub(:target => nil)
+      allow(command).to receive_messages(:target => nil)
 
       expect {
         command.fetch_logs(job, index)
@@ -42,17 +42,17 @@ describe Bosh::Cli::Command::LogManagement do
     it 'tells the user that --no-track is unsupported' do
       command.options[:no_track] = true
 
-      command.should_receive(:say).with("Ignoring `--no-track' option")
+      expect(command).to receive(:say).with("Ignoring `--no-track' option")
       command.fetch_logs(job, index)
     end
 
     context 'when a deployment is targeted' do
-      before { command.stub(target: 'http://bosh.example.com:25555') }
+      before { allow(command).to receive_messages(target: 'http://bosh.example.com:25555') }
 
       it_requires_logged_in_user ->(command) { command.fetch_logs('dea', '6') }
 
       context 'when logged in' do
-        before { command.stub(:logged_in? => true) }
+        before { allow(command).to receive_messages(:logged_in? => true) }
 
         it 'does not allow --only and --all together' do
           command.options[:only] = %w(cloud_controller uaa)
@@ -83,14 +83,14 @@ describe Bosh::Cli::Command::LogManagement do
           end
 
           it 'successfully retrieves the log resource id' do
-            director.should_receive(:fetch_logs).with(deployment, job, index, 'agent', nil).and_return('resource_id')
+            expect(director).to receive(:fetch_logs).with(deployment, job, index, 'agent', nil).and_return('resource_id')
             command.fetch_logs(job, index)
           end
 
           it 'successfully retrieves the log resource id with filters' do
             command.options[:all] = true
 
-            director.should_receive(:fetch_logs).with(deployment, job, index, 'agent', 'all').and_return('resource_id')
+            expect(director).to receive(:fetch_logs).with(deployment, job, index, 'agent', 'all').and_return('resource_id')
             command.fetch_logs(job, index)
           end
         end
@@ -99,26 +99,26 @@ describe Bosh::Cli::Command::LogManagement do
           before { command.options[:job] = true }
 
           it 'successfully retrieves the log resource id' do
-            director.should_receive(:fetch_logs).with(deployment, job, index, 'job', nil).and_return('resource_id')
+            expect(director).to receive(:fetch_logs).with(deployment, job, index, 'job', nil).and_return('resource_id')
             command.fetch_logs(job, index)
           end
 
           it 'successfully retrieves the log resource id with all filters' do
             command.options[:all] = true
 
-            director.should_receive(:fetch_logs).with(deployment, job, index, 'job', 'all').and_return('resource_id')
+            expect(director).to receive(:fetch_logs).with(deployment, job, index, 'job', 'all').and_return('resource_id')
             command.fetch_logs(job, index)
           end
 
           it 'successfully retrieves the log resource id with only filters' do
             command.options[:only] = %w(cloud_controller uaa)
 
-            director.should_receive(:fetch_logs).with(deployment, job, index, 'job', 'cloud_controller,uaa').and_return('resource_id')
+            expect(director).to receive(:fetch_logs).with(deployment, job, index, 'job', 'cloud_controller,uaa').and_return('resource_id')
             command.fetch_logs(job, index)
           end
 
           it 'errors if the resource id returned is nil' do
-            director.stub(fetch_logs: nil)
+            allow(director).to receive_messages(fetch_logs: nil)
 
             expect {
               command.fetch_logs(job, index)
@@ -126,9 +126,9 @@ describe Bosh::Cli::Command::LogManagement do
           end
 
           it 'tells the user about the log bundle it found' do
-            director.stub(fetch_logs: 'bundle-id')
+            allow(director).to receive_messages(fetch_logs: 'bundle-id')
 
-            command.should_receive(:say).with('Downloading log bundle (bundle-id)...')
+            expect(command).to receive(:say).with('Downloading log bundle (bundle-id)...')
             command.fetch_logs(job, index)
           end
 
@@ -136,9 +136,9 @@ describe Bosh::Cli::Command::LogManagement do
             Timecop.freeze do
               time = Time.now.strftime('%Y-%m-%d-%H-%M-%S')
 
-              director.stub(fetch_logs: 'resource-id')
-              director.should_receive(:download_resource).with('resource-id').and_return('/wonderful/path')
-              FileUtils.should_receive(:mv).with('/wonderful/path', "#{Dir.pwd}/#{job}.#{index}.#{time}.tgz")
+              allow(director).to receive_messages(fetch_logs: 'resource-id')
+              expect(director).to receive(:download_resource).with('resource-id').and_return('/wonderful/path')
+              expect(FileUtils).to receive(:mv).with('/wonderful/path', "#{Dir.pwd}/#{job}.#{index}.#{time}.tgz")
               command.fetch_logs(job, index)
             end
           end
@@ -148,15 +148,15 @@ describe Bosh::Cli::Command::LogManagement do
               command.options[:dir] = '/woah-now'
               time = Time.now.strftime('%Y-%m-%d-%H-%M-%S')
 
-              director.stub(fetch_logs: 'resource-id')
-              director.should_receive(:download_resource).with('resource-id').and_return('/wonderful/path')
-              FileUtils.should_receive(:mv).with('/wonderful/path', "/woah-now/#{job}.#{index}.#{time}.tgz")
+              allow(director).to receive_messages(fetch_logs: 'resource-id')
+              expect(director).to receive(:download_resource).with('resource-id').and_return('/wonderful/path')
+              expect(FileUtils).to receive(:mv).with('/wonderful/path', "/woah-now/#{job}.#{index}.#{time}.tgz")
               command.fetch_logs(job, index)
             end
           end
 
           it 'tells the user if the logs could not be downloaded' do
-            director.should_receive(:download_resource).and_raise(Bosh::Cli::DirectorError.new)
+            expect(director).to receive(:download_resource).and_raise(Bosh::Cli::DirectorError.new)
 
             expect {
               command.fetch_logs(job, index)
@@ -178,9 +178,9 @@ describe Bosh::Cli::Command::LogManagement do
             it 'does all the same things' do
               Timecop.freeze do
                 time = Time.now.strftime('%Y-%m-%d-%H-%M-%S')
-                director.stub(fetch_logs: 'resource-id')
-                director.should_receive(:download_resource).with('resource-id').and_return('/wonderful/path')
-                FileUtils.should_receive(:mv).with('/wonderful/path', "#{Dir.pwd}/#{job}.0.#{time}.tgz")
+                allow(director).to receive_messages(fetch_logs: 'resource-id')
+                expect(director).to receive(:download_resource).with('resource-id').and_return('/wonderful/path')
+                expect(FileUtils).to receive(:mv).with('/wonderful/path', "#{Dir.pwd}/#{job}.0.#{time}.tgz")
                 command.fetch_logs(job)
               end
             end

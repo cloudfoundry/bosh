@@ -7,14 +7,14 @@ describe Bosh::Cli::Command::Backup do
   let(:director_name) { 'mini-bosh' }
 
   before do
-    command.stub(:director).and_return(director)
-    command.director.stub(:get_status).and_return({ 'name' => director_name })
+    allow(command).to receive(:director).and_return(director)
+    allow(command.director).to receive(:get_status).and_return({ 'name' => director_name })
   end
 
   describe 'backup' do
     context 'when user is not logged in' do
       before do
-        command.stub(:logged_in? => false)
+        allow(command).to receive_messages(:logged_in? => false)
         command.options[:target] = 'http://bosh-target.example.com'
       end
 
@@ -25,8 +25,8 @@ describe Bosh::Cli::Command::Backup do
 
     context 'when nothing is targetted' do
       before do
-        command.stub(:target => nil)
-        command.stub(:logged_in? => true)
+        allow(command).to receive_messages(:target => nil)
+        allow(command).to receive_messages(:logged_in? => true)
       end
 
       it 'fails' do
@@ -43,9 +43,9 @@ describe Bosh::Cli::Command::Backup do
         command.options[:password] = 'b05h'
         command.options[:target] = 'http://bosh-target.example.com'
 
-        Bosh::Cli::BackupDestinationPath.stub_chain(:new, :create_from_path) { dest }
+        allow(Bosh::Cli::BackupDestinationPath).to receive_message_chain(:new, :create_from_path) { dest }
 
-        FileUtils.stub(:mv)
+        allow(FileUtils).to receive(:mv)
       end
 
       after do
@@ -53,25 +53,25 @@ describe Bosh::Cli::Command::Backup do
       end
 
       it 'logs the path where the backup was put' do
-        command.director.should_receive(:create_backup).and_return [:done, 42]
-        command.director.should_receive(:fetch_backup).and_return download_path
+        expect(command.director).to receive(:create_backup).and_return [:done, 42]
+        expect(command.director).to receive(:fetch_backup).and_return download_path
 
-        command.should_receive(:say).with("Backup of BOSH director was put in `#{dest}'.")
+        expect(command).to receive(:say).with("Backup of BOSH director was put in `#{dest}'.")
         command.backup(dest)
       end
 
       it 'moves the backup to the computed path' do
-        command.director.should_receive(:create_backup).and_return [:done, 42]
-        command.director.should_receive(:fetch_backup).and_return download_path
+        expect(command.director).to receive(:create_backup).and_return [:done, 42]
+        expect(command.director).to receive(:fetch_backup).and_return download_path
 
-        FileUtils.should_receive(:mv).with(download_path, dest).and_return(true)
+        expect(FileUtils).to receive(:mv).with(download_path, dest).and_return(true)
         command.backup(dest)
       end
 
       context 'when the file already exists' do
         before do
-          File.stub(:exists?).with(anything).and_call_original
-          File.stub(:exists?).with(dest).and_return(true)
+          allow(File).to receive(:exists?).with(anything).and_call_original
+          allow(File).to receive(:exists?).with(dest).and_return(true)
         end
 
         context 'when the --force option is true' do
@@ -80,10 +80,10 @@ describe Bosh::Cli::Command::Backup do
           end
 
           it 'overwrites the file' do
-            command.director.should_receive(:create_backup).and_return [:done, 42]
-            command.director.should_receive(:fetch_backup).and_return download_path
+            expect(command.director).to receive(:create_backup).and_return [:done, 42]
+            expect(command.director).to receive(:fetch_backup).and_return download_path
 
-            FileUtils.should_receive(:mv).with(download_path, dest).and_return(true)
+            expect(FileUtils).to receive(:mv).with(download_path, dest).and_return(true)
             command.backup(dest)
           end
         end
@@ -94,7 +94,7 @@ describe Bosh::Cli::Command::Backup do
           end
 
           it 'does not overwrite the file and tells the user about the --force option' do
-            FileUtils.should_not_receive(:mv).with(download_path, dest)
+            expect(FileUtils).not_to receive(:mv).with(download_path, dest)
 
             expect {
               command.backup(dest)

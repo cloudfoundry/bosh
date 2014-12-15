@@ -24,12 +24,12 @@ describe Bosh::Cli::Config do
 
     cfg = create_config
     yaml_file = load_yaml_file(@config, nil)
-    yaml_file["deployment"].should == "test"
+    expect(yaml_file["deployment"]).to eq("test")
     cfg.set_deployment("test2")
     cfg.save
     yaml_file = load_yaml_file(@config, nil)
-    yaml_file["deployment"].has_key?("localhost:8080").should be(true)
-    yaml_file["deployment"]["localhost:8080"].should == "test2"
+    expect(yaml_file["deployment"].has_key?("localhost:8080")).to be(true)
+    expect(yaml_file["deployment"]["localhost:8080"]).to eq("test2")
   end
 
   it "should convert old deployment configs to the new config " +
@@ -38,11 +38,11 @@ describe Bosh::Cli::Config do
 
     cfg = create_config
     yaml_file = load_yaml_file(@config, nil)
-    yaml_file["deployment"].should == "test"
-    cfg.deployment.should == "test"
+    expect(yaml_file["deployment"]).to eq("test")
+    expect(cfg.deployment).to eq("test")
     yaml_file = load_yaml_file(@config, nil)
-    yaml_file["deployment"].has_key?("localhost:8080").should be(true)
-    yaml_file["deployment"]["localhost:8080"].should == "test"
+    expect(yaml_file["deployment"].has_key?("localhost:8080")).to be(true)
+    expect(yaml_file["deployment"]["localhost:8080"]).to eq("test")
   end
 
   it "should save a deployment for each target" do
@@ -57,15 +57,15 @@ describe Bosh::Cli::Config do
 
     # Test that the file is written correctly.
     yaml_file = load_yaml_file(@config, nil)
-    yaml_file["deployment"].has_key?("localhost:1").should be(true)
-    yaml_file["deployment"].has_key?("localhost:2").should be(true)
-    yaml_file["deployment"]["localhost:1"].should == "/path/to/deploy/1"
-    yaml_file["deployment"]["localhost:2"].should == "/path/to/deploy/2"
+    expect(yaml_file["deployment"].has_key?("localhost:1")).to be(true)
+    expect(yaml_file["deployment"].has_key?("localhost:2")).to be(true)
+    expect(yaml_file["deployment"]["localhost:1"]).to eq("/path/to/deploy/1")
+    expect(yaml_file["deployment"]["localhost:2"]).to eq("/path/to/deploy/2")
 
     # Test that switching targets gives you the new deployment.
-    cfg.deployment.should == "/path/to/deploy/2"
+    expect(cfg.deployment).to eq("/path/to/deploy/2")
     cfg.target = "localhost:1"
-    cfg.deployment.should == "/path/to/deploy/1"
+    expect(cfg.deployment).to eq("/path/to/deploy/1")
   end
 
   it "returns nil when the deployments key exists but has no value" do
@@ -73,8 +73,8 @@ describe Bosh::Cli::Config do
 
     cfg = create_config
     yaml_file = load_yaml_file(@config, nil)
-    yaml_file["deployment"].should == nil
-    cfg.deployment.should == nil
+    expect(yaml_file["deployment"]).to eq(nil)
+    expect(cfg.deployment).to eq(nil)
   end
 
   it "should throw MissingTarget when getting deployment without target set" do
@@ -85,10 +85,10 @@ describe Bosh::Cli::Config do
   end
 
   it "whines on missing config file" do
-    lambda {
-      File.should_receive(:open).with(@config, "w").and_raise(Errno::EACCES)
+    expect {
+      expect(File).to receive(:open).with(@config, "w").and_raise(Errno::EACCES)
       create_config
-    }.should raise_error(Bosh::Cli::ConfigError)
+    }.to raise_error(Bosh::Cli::ConfigError)
   end
 
 
@@ -96,7 +96,7 @@ describe Bosh::Cli::Config do
     add_config([1, 2, 3])
     cfg = create_config
 
-    cfg.target.should == nil
+    expect(cfg.target).to eq(nil)
   end
 
   it "fetches auth information from the config file" do
@@ -112,14 +112,14 @@ describe Bosh::Cli::Config do
     add_config(config)
     cfg = create_config
 
-    cfg.username("localhost:8080").should == "a"
-    cfg.password("localhost:8080").should == "b"
+    expect(cfg.username("localhost:8080")).to eq("a")
+    expect(cfg.password("localhost:8080")).to eq("b")
 
-    cfg.username("localhost:8081").should == "c"
-    cfg.password("localhost:8081").should == "d"
+    expect(cfg.username("localhost:8081")).to eq("c")
+    expect(cfg.password("localhost:8081")).to eq("d")
 
-    cfg.username("localhost:8083").should be_nil
-    cfg.password("localhost:8083").should be_nil
+    expect(cfg.username("localhost:8083")).to be_nil
+    expect(cfg.password("localhost:8083")).to be_nil
   end
 
 end

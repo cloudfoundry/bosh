@@ -12,8 +12,8 @@ module Bosh::Cli
     end
 
     before do
-      command.stub(:director).and_return(director)
-      Bosh::Cli::Stemcell.stub(:new).and_return(stemcell)
+      allow(command).to receive(:director).and_return(director)
+      allow(Bosh::Cli::Stemcell).to receive(:new).and_return(stemcell)
     end
 
     describe 'upload stemcell' do
@@ -21,25 +21,25 @@ module Bosh::Cli
 
       context 'when the user is logged in' do
         before do
-          command.stub(:logged_in? => true)
+          allow(command).to receive_messages(:logged_in? => true)
           command.options[:target] = 'http://bosh-target.example.com'
         end
 
         context 'local stemcell' do
           it 'should upload the stemcell' do
-            stemcell.should_receive(:validate)
-            stemcell.should_receive(:valid?).and_return(true)
-            director.should_receive(:list_stemcells).and_return([])
-            stemcell.should_receive(:stemcell_file).and_return(stemcell_archive)
-            director.should_receive(:upload_stemcell).with(stemcell_archive)
+            expect(stemcell).to receive(:validate)
+            expect(stemcell).to receive(:valid?).and_return(true)
+            expect(director).to receive(:list_stemcells).and_return([])
+            expect(stemcell).to receive(:stemcell_file).and_return(stemcell_archive)
+            expect(director).to receive(:upload_stemcell).with(stemcell_archive)
 
             command.upload(stemcell_archive)
           end
 
           it 'should not upload the stemcell if is invalid' do
-            stemcell.should_receive(:validate)
-            stemcell.should_receive(:valid?).and_return(false)
-            director.should_not_receive(:upload_stemcell)
+            expect(stemcell).to receive(:validate)
+            expect(stemcell).to receive(:valid?).and_return(false)
+            expect(director).not_to receive(:upload_stemcell)
 
             expect {
               command.upload(stemcell_archive)
@@ -47,10 +47,10 @@ module Bosh::Cli
           end
 
           it 'should not upload the stemcell if already exist' do
-            stemcell.should_receive(:validate)
-            stemcell.should_receive(:valid?).and_return(true)
-            director.should_receive(:list_stemcells).and_return([stemcell_manifest])
-            director.should_not_receive(:upload_stemcell)
+            expect(stemcell).to receive(:validate)
+            expect(stemcell).to receive(:valid?).and_return(true)
+            expect(director).to receive(:list_stemcells).and_return([stemcell_manifest])
+            expect(director).not_to receive(:upload_stemcell)
 
             expect {
               command.upload(stemcell_archive)
@@ -60,7 +60,7 @@ module Bosh::Cli
 
         context 'remote stemcell' do
           it 'should upload the stemcell' do
-            director.should_receive(:upload_remote_stemcell).with('http://stemcell_location')
+            expect(director).to receive(:upload_remote_stemcell).with('http://stemcell_location')
 
             command.upload('http://stemcell_location')
           end
@@ -78,8 +78,8 @@ module Bosh::Cli
       end
 
       before do
-        PublicStemcells.stub(:new).and_return(public_stemcells)
-        PublicStemcellPresenter.stub(:new).and_return(public_stemcell_presenter)
+        allow(PublicStemcells).to receive(:new).and_return(public_stemcells)
+        allow(PublicStemcellPresenter).to receive(:new).and_return(public_stemcell_presenter)
       end
 
       it 'lists public stemcells in the index' do
@@ -107,8 +107,8 @@ module Bosh::Cli
       end
 
       before do
-        PublicStemcells.stub(:new).and_return(public_stemcells)
-        PublicStemcellPresenter.stub(:new).and_return(public_stemcell_presenter)
+        allow(PublicStemcells).to receive(:new).and_return(public_stemcells)
+        allow(PublicStemcellPresenter).to receive(:new).and_return(public_stemcell_presenter)
       end
 
       it 'lists public stemcells in the index' do
@@ -131,16 +131,16 @@ module Bosh::Cli
       let(:buffer) { StringIO.new }
 
       before do
-        command.stub(:logged_in? => true)
+        allow(command).to receive_messages(:logged_in? => true)
         command.options[:target] = 'http://bosh-target.example.com'
 
-        director.stub(:list_stemcells).and_return(stemcells)
+        allow(director).to receive(:list_stemcells).and_return(stemcells)
         Bosh::Cli::Config.output = buffer
       end
       
-      before { stemcell.stub(:validate) }
-      before { stemcell.stub(valid?: true) }
-      before { stemcell.stub(stemcell_file: stemcell_archive) }
+      before { allow(stemcell).to receive(:validate) }
+      before { allow(stemcell).to receive_messages(valid?: true) }
+      before { allow(stemcell).to receive_messages(stemcell_file: stemcell_archive) }
 
       it_requires_logged_in_user ->(command) { command.list }
 
@@ -181,23 +181,23 @@ module Bosh::Cli
         end
 
         context 'when stemcell does not exist' do
-          before { director.stub(list_stemcells: []) }
+          before { allow(director).to receive_messages(list_stemcells: []) }
 
           it 'uploads stemcell and returns successfully' do
-            director.should_receive(:upload_stemcell).with(stemcell_archive)
+            expect(director).to receive(:upload_stemcell).with(stemcell_archive)
             command.upload(stemcell_archive)
           end
         end
 
         context 'when stemcell already exists' do
           context 'when the stemcell is local' do
-            before { director.stub(list_stemcells: [{'name' => 'ubuntu-stemcell', 'version' => 1}]) }
+            before { allow(director).to receive_messages(list_stemcells: [{'name' => 'ubuntu-stemcell', 'version' => 1}]) }
 
             context 'when --skip-if-exists flag is given' do
               before { command.add_option(:skip_if_exists, true) }
 
               it 'does not upload stemcell' do
-                director.should_not_receive(:upload_stemcell)
+                expect(director).not_to receive(:upload_stemcell)
                 command.upload(stemcell_archive)
               end
 
@@ -210,7 +210,7 @@ module Bosh::Cli
 
             context 'when --skip-if-exists flag is not given' do
               it 'does not upload stemcell' do
-                director.should_not_receive(:upload_stemcell)
+                expect(director).not_to receive(:upload_stemcell)
                 command.upload(stemcell_archive) rescue nil
               end
 
@@ -226,15 +226,15 @@ module Bosh::Cli
             let(:remote_stemcell_location) { 'http://location/stemcell.tgz' }
             let(:task_events_json) { '{"error":{"code":50002}}' }
             before do
-              director.stub(:upload_remote_stemcell).with(remote_stemcell_location).and_return([:error, 1])
-              director.stub(:get_task_output).with(1, 0, 'event').and_return [task_events_json, nil]
+              allow(director).to receive(:upload_remote_stemcell).with(remote_stemcell_location).and_return([:error, 1])
+              allow(director).to receive(:get_task_output).with(1, 0, 'event').and_return [task_events_json, nil]
             end
 
             context 'when --skip-if-exists flag is given' do
               before { command.add_option(:skip_if_exists, true) }
 
               it 'still uploads stemcell' do
-                director.should_receive(:upload_remote_stemcell)
+                expect(director).to receive(:upload_remote_stemcell)
                 command.upload(remote_stemcell_location)
               end
 
@@ -246,13 +246,13 @@ module Bosh::Cli
 
               it 'has an exit code of 0' do
                 command.upload(remote_stemcell_location)
-                command.exit_code.should == 0
+                expect(command.exit_code).to eq(0)
               end
             end
 
             context 'when --skip-if-exists flag is not given' do
               it 'still uploads stemcell' do
-                director.should_receive(:upload_remote_stemcell)
+                expect(director).to receive(:upload_remote_stemcell)
                 command.upload(remote_stemcell_location) rescue nil
               end
 
@@ -264,7 +264,7 @@ module Bosh::Cli
 
               it 'has an exit code of 1' do
                 command.upload(remote_stemcell_location)
-                command.exit_code.should == 1
+                expect(command.exit_code).to eq(1)
               end
             end
           end

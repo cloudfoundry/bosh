@@ -22,13 +22,13 @@ describe Bosh::Cli::Command::Base do
     add_config('target' => 'localhost:8080', 'target_name' => 'microbosh', 'deployment' => 'test')
 
     cmd = make
-    cmd.config.should be_a(Bosh::Cli::Config)
+    expect(cmd.config).to be_a(Bosh::Cli::Config)
 
-    cmd.target.should == 'https://localhost:8080'
-    cmd.target_name.should == 'microbosh'
-    cmd.deployment.should == 'test'
-    cmd.username.should be_nil
-    cmd.password.should be_nil
+    expect(cmd.target).to eq('https://localhost:8080')
+    expect(cmd.target_name).to eq('microbosh')
+    expect(cmd.deployment).to eq('test')
+    expect(cmd.username).to be_nil
+    expect(cmd.password).to be_nil
   end
 
   it 'respects target option' do
@@ -37,29 +37,29 @@ describe Bosh::Cli::Command::Base do
     cmd = make
     cmd.add_option(:target, 'new-target')
 
-    cmd.target.should == 'https://new-target:25555'
-    cmd.target_name.should == 'new-target'
+    expect(cmd.target).to eq('https://new-target:25555')
+    expect(cmd.target_name).to eq('new-target')
   end
 
   it 'looks up target, deployment and credentials in the right order' do
     cmd = make
 
-    cmd.username.should be_nil
-    cmd.password.should be_nil
+    expect(cmd.username).to be_nil
+    expect(cmd.password).to be_nil
     old_user = ENV['BOSH_USER']
     old_password = ENV['BOSH_PASSWORD']
 
     begin
       ENV['BOSH_USER'] = 'foo'
       ENV['BOSH_PASSWORD'] = 'bar'
-      cmd.username.should == 'foo'
-      cmd.password.should == 'bar'
+      expect(cmd.username).to eq('foo')
+      expect(cmd.password).to eq('bar')
       other_cmd = make
       other_cmd.add_option(:username, 'new')
       other_cmd.add_option(:password, 'baz')
 
-      other_cmd.username.should == 'new'
-      other_cmd.password.should == 'baz'
+      expect(other_cmd.username).to eq('new')
+      expect(other_cmd.password).to eq('baz')
     ensure
       ENV['BOSH_USER'] = old_user
       ENV['BOSH_PASSWORD'] = old_password
@@ -70,25 +70,25 @@ describe Bosh::Cli::Command::Base do
     cmd2 = make
     cmd2.add_option(:target, 'foo')
     cmd2.add_option(:deployment, 'bar')
-    cmd2.target.should == 'https://foo:25555'
-    cmd2.deployment.should == 'bar'
+    expect(cmd2.target).to eq('https://foo:25555')
+    expect(cmd2.deployment).to eq('bar')
   end
 
   it 'instantiates director when needed' do
     add_config('target' => 'localhost:8080', 'deployment' => 'test')
 
     cmd = make
-    cmd.director.should be_kind_of(Bosh::Cli::Client::Director)
-    cmd.director.director_uri.should == URI.parse('https://localhost:8080')
+    expect(cmd.director).to be_kind_of(Bosh::Cli::Client::Director)
+    expect(cmd.director.director_uri).to eq(URI.parse('https://localhost:8080'))
   end
 
   it 'has logged_in? helper' do
     cmd = make
-    cmd.logged_in?.should be(false)
+    expect(cmd.logged_in?).to be(false)
     cmd.add_option(:username, 'foo')
-    cmd.logged_in?.should be(false)
+    expect(cmd.logged_in?).to be(false)
     cmd.add_option(:password, 'bar')
-    cmd.logged_in?.should be(true)
+    expect(cmd.logged_in?).to be(true)
   end
 
   context 'target' do
@@ -96,7 +96,7 @@ describe Bosh::Cli::Command::Base do
       it 'persists the port within the target' do
         cmd = make
         cmd.add_option(:target, 'https://foo:443')
-        cmd.target.should == 'https://foo:443'
+        expect(cmd.target).to eq('https://foo:443')
       end
     end
 
@@ -104,7 +104,7 @@ describe Bosh::Cli::Command::Base do
       it 'persists the port within the target' do
         cmd = make
         cmd.add_option(:target, 'https://foo:25555')
-        cmd.target.should == 'https://foo:25555'
+        expect(cmd.target).to eq('https://foo:25555')
       end
     end
 
@@ -112,7 +112,7 @@ describe Bosh::Cli::Command::Base do
       it 'strips the trailing slash' do
         cmd = make
         cmd.add_option(:target, 'https://foo/')
-        cmd.target.should == 'https://foo:25555'
+        expect(cmd.target).to eq('https://foo:25555')
       end
     end
 
@@ -120,7 +120,7 @@ describe Bosh::Cli::Command::Base do
       it 'adds https as the default scheme' do
         cmd = make
         cmd.add_option(:target, 'foo')
-        cmd.target.should == 'https://foo:25555'
+        expect(cmd.target).to eq('https://foo:25555')
       end
     end
   end

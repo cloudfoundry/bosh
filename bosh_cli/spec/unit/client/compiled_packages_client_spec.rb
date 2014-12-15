@@ -27,7 +27,7 @@ describe Bosh::Cli::Client::CompiledPackagesClient do
 
   describe '#import' do
     it 'delegates to the cli director to post the file' do
-      director.stub(:upload_and_track)
+      allow(director).to receive(:upload_and_track)
       client.import('/exported/compiled/packages.tgz')
 
       expect(director).to have_received(:upload_and_track).with(

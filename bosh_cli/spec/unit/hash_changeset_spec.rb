@@ -46,28 +46,28 @@ describe Bosh::Cli::HashChangeset do
 
     mc = changeset(m1, m2)
 
-    mc[:foo][:bar].changed?.should be(true)
-    mc[:foo][:bar].old.should == 1
-    mc[:foo][:bar].new.should == 2
+    expect(mc[:foo][:bar].changed?).to be(true)
+    expect(mc[:foo][:bar].old).to eq(1)
+    expect(mc[:foo][:bar].new).to eq(2)
 
-    mc[:foo][:baz].changed?.should be(true)
-    mc[:foo][:baz].old.should == "purr"
-    mc[:foo][:baz].new.should == "meow"
+    expect(mc[:foo][:baz].changed?).to be(true)
+    expect(mc[:foo][:baz].old).to eq("purr")
+    expect(mc[:foo][:baz].new).to eq("meow")
 
-    mc[:foo][:nc].changed?.should be(false)
-    mc[:foo][:nc].same?.should be(true)
-    mc[:foo][:nc].old.should == "nc"
-    mc[:foo][:nc].new.should == "nc"
+    expect(mc[:foo][:nc].changed?).to be(false)
+    expect(mc[:foo][:nc].same?).to be(true)
+    expect(mc[:foo][:nc].old).to eq("nc")
+    expect(mc[:foo][:nc].new).to eq("nc")
 
-    mc[:foo][:properties][:a].changed?.should be(true)
-    mc[:foo][:properties][:b].removed?.should be(true)
-    mc[:foo][:properties][:c].mismatch?.should be(true)
-    mc[:foo][:properties][:d].added?.should be(true)
+    expect(mc[:foo][:properties][:a].changed?).to be(true)
+    expect(mc[:foo][:properties][:b].removed?).to be(true)
+    expect(mc[:foo][:properties][:c].mismatch?).to be(true)
+    expect(mc[:foo][:properties][:d].added?).to be(true)
 
-    mc[:foo][:arr].changed?.should be(true)
-    mc[:arr].same?.should be(true)
+    expect(mc[:foo][:arr].changed?).to be(true)
+    expect(mc[:arr].same?).to be(true)
 
-    mc[:zb].mismatch?.should be(true)
+    expect(mc[:zb].mismatch?).to be(true)
   end
 
 end

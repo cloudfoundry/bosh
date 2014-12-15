@@ -7,7 +7,7 @@ describe Bosh::Cli::Command::Snapshot do
   let(:director) { double(Bosh::Cli::Client::Director) }
 
   before do
-    command.stub(:director).and_return(director)
+    allow(command).to receive(:director).and_return(director)
   end
 
   describe 'listing snapshot' do
@@ -15,7 +15,7 @@ describe Bosh::Cli::Command::Snapshot do
 
     context 'when the user is logged in' do
       before do
-        command.stub(:logged_in? => true)
+        allow(command).to receive_messages(:logged_in? => true)
         command.options[:target] = 'http://bosh-target.example.com'
       end
 
@@ -25,17 +25,17 @@ describe Bosh::Cli::Command::Snapshot do
         ]}
 
         it 'list all snapshots for the deployment' do
-          command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
+          allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
 
-          director.should_receive(:list_snapshots).with('bosh', nil, nil).and_return(snapshots)
+          expect(director).to receive(:list_snapshots).with('bosh', nil, nil).and_return(snapshots)
 
           command.list
         end
 
         it 'list all snapshots for a job and index' do
-          command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
+          allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
 
-          director.should_receive(:list_snapshots).with('bosh', 'foo', '0').and_return(snapshots)
+          expect(director).to receive(:list_snapshots).with('bosh', 'foo', '0').and_return(snapshots)
 
           command.list('foo', '0')
         end
@@ -45,9 +45,9 @@ describe Bosh::Cli::Command::Snapshot do
         let(:snapshots) { [] }
 
         it 'should not fail' do
-          command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
+          allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
 
-          director.should_receive(:list_snapshots).with('bosh', nil, nil).and_return(snapshots)
+          expect(director).to receive(:list_snapshots).with('bosh', nil, nil).and_return(snapshots)
 
           command.list
         end
@@ -60,7 +60,7 @@ describe Bosh::Cli::Command::Snapshot do
 
     context 'when the user is logged in' do
       before do
-        command.stub(:logged_in? => true)
+        allow(command).to receive_messages(:logged_in? => true)
         command.options[:target] = 'http://bosh-target.example.com'
       end
 
@@ -72,10 +72,10 @@ describe Bosh::Cli::Command::Snapshot do
 
           context 'when the user confirms taking the snapshot' do
             it 'deletes the snapshot' do
-              command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
-              command.should_receive(:confirmed?).with("Are you sure you want to take a snapshot of all deployment `bosh'?").and_return(true)
+              allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
+              expect(command).to receive(:confirmed?).with("Are you sure you want to take a snapshot of all deployment `bosh'?").and_return(true)
 
-              director.should_receive(:take_snapshot).with('bosh', nil, nil)
+              expect(director).to receive(:take_snapshot).with('bosh', nil, nil)
 
               command.take()
             end
@@ -83,10 +83,10 @@ describe Bosh::Cli::Command::Snapshot do
 
           context 'when the user does not confirms taking the snapshot' do
             it 'does not delete the snapshot' do
-              command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
-              command.should_receive(:confirmed?).with("Are you sure you want to take a snapshot of all deployment `bosh'?").and_return(false)
+              allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
+              expect(command).to receive(:confirmed?).with("Are you sure you want to take a snapshot of all deployment `bosh'?").and_return(false)
 
-              director.should_not_receive(:take_snapshot)
+              expect(director).not_to receive(:take_snapshot)
 
               command.take()
             end
@@ -99,9 +99,9 @@ describe Bosh::Cli::Command::Snapshot do
           end
 
           it 'takes the snapshot' do
-            command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
+            allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
 
-            director.should_receive(:take_snapshot).with('bosh', nil, nil)
+            expect(director).to receive(:take_snapshot).with('bosh', nil, nil)
 
             command.take()
           end
@@ -110,9 +110,9 @@ describe Bosh::Cli::Command::Snapshot do
 
       context 'for a job and index' do
         it 'takes the snapshot' do
-          command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
+          allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
 
-          director.should_receive(:take_snapshot).with('bosh', 'foo', '0')
+          expect(director).to receive(:take_snapshot).with('bosh', 'foo', '0')
 
           command.take('foo', '0')
         end
@@ -125,7 +125,7 @@ describe Bosh::Cli::Command::Snapshot do
 
     context 'when the user is logged in' do
       before do
-        command.stub(:logged_in? => true)
+        allow(command).to receive_messages(:logged_in? => true)
         command.options[:target] = 'http://bosh-target.example.com'
       end
 
@@ -136,10 +136,10 @@ describe Bosh::Cli::Command::Snapshot do
 
         context 'when the user confirms the snapshot deletion' do
           it 'deletes the snapshot' do
-            command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
-            command.should_receive(:confirmed?).with("Are you sure you want to delete snapshot `snap0a'?").and_return(true)
+            allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
+            expect(command).to receive(:confirmed?).with("Are you sure you want to delete snapshot `snap0a'?").and_return(true)
 
-            director.should_receive(:delete_snapshot).with('bosh', 'snap0a')
+            expect(director).to receive(:delete_snapshot).with('bosh', 'snap0a')
 
             command.delete('snap0a')
           end
@@ -147,10 +147,10 @@ describe Bosh::Cli::Command::Snapshot do
 
         context 'when the user does not confirms the snapshot deletion' do
           it 'does not delete the snapshot' do
-            command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
-            command.should_receive(:confirmed?).with("Are you sure you want to delete snapshot `snap0a'?").and_return(false)
+            allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
+            expect(command).to receive(:confirmed?).with("Are you sure you want to delete snapshot `snap0a'?").and_return(false)
 
-            director.should_not_receive(:delete_snapshot)
+            expect(director).not_to receive(:delete_snapshot)
 
             command.delete('snap0a')
           end
@@ -163,9 +163,9 @@ describe Bosh::Cli::Command::Snapshot do
         end
 
         it 'deletes the snapshot' do
-          command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
+          allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
 
-          director.should_receive(:delete_snapshot).with('bosh', 'snap0a')
+          expect(director).to receive(:delete_snapshot).with('bosh', 'snap0a')
 
           command.delete('snap0a')
         end
@@ -178,7 +178,7 @@ describe Bosh::Cli::Command::Snapshot do
 
     context 'when the user is logged in' do
       before do
-        command.stub(:logged_in? => true)
+        allow(command).to receive_messages(:logged_in? => true)
         command.options[:target] = 'http://bosh-target.example.com'
       end
 
@@ -189,11 +189,11 @@ describe Bosh::Cli::Command::Snapshot do
 
         context 'when the user confirms the snapshot deletion' do
           it 'deletes all snapshots' do
-            command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
-            command.should_receive(:confirmed?)
+            allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
+            expect(command).to receive(:confirmed?)
                 .with("Are you sure you want to delete all snapshots of deployment `bosh'?").and_return(true)
 
-            director.should_receive(:delete_all_snapshots).with('bosh')
+            expect(director).to receive(:delete_all_snapshots).with('bosh')
 
             command.delete_all
           end
@@ -201,11 +201,11 @@ describe Bosh::Cli::Command::Snapshot do
 
         context 'when the user does not confirms the snapshot deletion' do
           it 'does not delete snapshots' do
-            command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
-            command.should_receive(:confirmed?)
+            allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
+            expect(command).to receive(:confirmed?)
                 .with("Are you sure you want to delete all snapshots of deployment `bosh'?").and_return(false)
 
-            director.should_not_receive(:delete_all_snapshots)
+            expect(director).not_to receive(:delete_all_snapshots)
 
             command.delete_all
           end
@@ -218,9 +218,9 @@ describe Bosh::Cli::Command::Snapshot do
         end
 
         it 'deletes all snapshots' do
-          command.stub(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
+          allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'bosh'})
 
-          director.should_receive(:delete_all_snapshots).with('bosh')
+          expect(director).to receive(:delete_all_snapshots).with('bosh')
 
           command.delete_all
         end

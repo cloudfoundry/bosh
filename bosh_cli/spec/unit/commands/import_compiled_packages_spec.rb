@@ -37,7 +37,7 @@ describe Bosh::Cli::Command::ImportCompiledPackages do
             let(:some_task_id) { '1' }
 
             context 'when the task status is :error' do
-              before { client.stub(:import).and_return([:error, some_task_id]) }
+              before { allow(client).to receive(:import).and_return([:error, some_task_id]) }
 
               it 'changes the exit status to 1' do
                 expect {
@@ -47,7 +47,7 @@ describe Bosh::Cli::Command::ImportCompiledPackages do
             end
 
             context 'when the task status is :failed' do
-              before { client.stub(:import).and_return([:failed, some_task_id]) }
+              before { allow(client).to receive(:import).and_return([:failed, some_task_id]) }
 
               it 'changes the exit status to 1' do
                 expect {
@@ -62,7 +62,7 @@ describe Bosh::Cli::Command::ImportCompiledPackages do
 
             context 'when the task status is :done' do
               it 'returns exit status 0' do
-                client.stub(:import).and_return([:done, some_task_id])
+                allow(client).to receive(:import).and_return([:done, some_task_id])
 
                 command.perform('/some-real-archive.tgz')
                 expect(command.exit_code).to eq(0)

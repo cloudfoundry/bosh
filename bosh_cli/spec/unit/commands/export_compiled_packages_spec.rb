@@ -27,10 +27,10 @@ describe Bosh::Cli::Command::ExportCompiledPackages do
             tmp_file.flush
 
             client = instance_double('Bosh::Cli::Client::CompiledPackagesClient')
-            client.should_receive(:export).with('release', '1', 'stemcell', '1').and_return(tmp_file.path)
-            Bosh::Cli::Client::CompiledPackagesClient.stub(:new).with(director).and_return(client)
+            expect(client).to receive(:export).with('release', '1', 'stemcell', '1').and_return(tmp_file.path)
+            allow(Bosh::Cli::Client::CompiledPackagesClient).to receive(:new).with(director).and_return(client)
 
-            command.should_receive(:say).with(
+            expect(command).to receive(:say).with(
               "Exported compiled packages to `#{download_dir}/release-1-stemcell-1.tgz'.")
 
             perform

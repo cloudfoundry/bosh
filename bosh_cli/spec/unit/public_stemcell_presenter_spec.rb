@@ -6,7 +6,7 @@ module Bosh::Cli
   describe PublicStemcellPresenter do
     let(:ui) do
       ui = instance_double('Bosh::Cli::Command::Base', say: nil, confirmed?: true)
-      ui.stub(:err) { raise 'err would have normally raised interrupting control flow' }
+      allow(ui).to receive(:err) { raise 'err would have normally raised interrupting control flow' }
       ui
     end
 
@@ -24,7 +24,7 @@ module Bosh::Cli
 
     let(:public_stemcell_index) do
       stemcells = PublicStemcells.new
-      stemcells.stub(all: [recent_stemcell, older_stemcell])
+      allow(stemcells).to receive_messages(all: [recent_stemcell, older_stemcell])
       stemcells
     end
 
@@ -33,7 +33,7 @@ module Bosh::Cli
     end
 
     before do
-      DownloadWithProgress.stub(:new).and_return(download_with_progress)
+      allow(DownloadWithProgress).to receive(:new).and_return(download_with_progress)
     end
 
     describe '#list' do
@@ -113,7 +113,7 @@ module Bosh::Cli
 
       context 'when the specified stemcell has been previously downloaded' do
         before do
-          File.stub(:exists?).with('foobar-456.tgz').and_return(true)
+          allow(File).to receive(:exists?).with('foobar-456.tgz').and_return(true)
         end
 
         it 'confirms the user wishes to overwrite the existing file' do

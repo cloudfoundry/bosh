@@ -9,11 +9,11 @@ module Bosh::Cli
     let(:deployment_manifest) { { 'name' => deployment } }
 
     before do
-      command.stub(:director).and_return(director)
-      command.stub(:nl)
-      command.stub(:logged_in? => true)
+      allow(command).to receive(:director).and_return(director)
+      allow(command).to receive(:nl)
+      allow(command).to receive_messages(:logged_in? => true)
       command.options[:target] = target
-      command.stub(:prepare_deployment_manifest).and_return(deployment_manifest)
+      allow(command).to receive(:prepare_deployment_manifest).and_return(deployment_manifest)
     end
 
     describe 'usage' do
@@ -24,7 +24,7 @@ module Bosh::Cli
 
     context 'when "job & index" are not specified' do
       it 'changes the state of all jobs' do
-        director.should_receive(:change_vm_resurrection_for_all).with(false)
+        expect(director).to receive(:change_vm_resurrection_for_all).with(false)
         command.resurrection_state('on')
       end
     end
@@ -59,7 +59,7 @@ module Bosh::Cli
         end
 
         it 'allows the user to omit the index' do
-          director.should_receive(:change_vm_resurrection).with(deployment, 'job1', 0, false)
+          expect(director).to receive(:change_vm_resurrection).with(deployment, 'job1', 0, false)
           command.resurrection_state('job1', 'on')
         end
       end
@@ -85,7 +85,7 @@ module Bosh::Cli
 
         describe 'changing the state' do
           it 'should toggle the resurrection state to true' do
-            director.should_receive(:change_vm_resurrection).with(deployment, 'dea', 1, false).exactly(4).times
+            expect(director).to receive(:change_vm_resurrection).with(deployment, 'dea', 1, false).exactly(4).times
             command.resurrection_state('dea', '1', 'on')
             command.resurrection_state('dea/1', 'enable')
             command.resurrection_state('dea', '1', 'yes')
@@ -93,7 +93,7 @@ module Bosh::Cli
           end
 
           it 'should toggle the resurrection state to false' do
-            director.should_receive(:change_vm_resurrection).with(deployment, 'dea', 3, true).exactly(4).times
+            expect(director).to receive(:change_vm_resurrection).with(deployment, 'dea', 3, true).exactly(4).times
             command.resurrection_state('dea', '3', 'disable')
             command.resurrection_state('dea/3', 'off')
             command.resurrection_state('dea', '3', 'no')

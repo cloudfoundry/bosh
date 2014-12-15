@@ -5,15 +5,15 @@ module Bosh::Cli
     subject(:resurrection) { Resurrection.new(state) }
 
     shared_examples_for 'enabled resurrection' do
-      it { should be_enabled }
-      it { should_not be_disabled }
-      it { should_not be_paused }
+      it { is_expected.to be_enabled }
+      it { is_expected.not_to be_disabled }
+      it { is_expected.not_to be_paused }
     end
 
     shared_examples_for 'disabled resurrection' do
-      it { should_not be_enabled }
-      it { should be_disabled }
-      it { should be_paused }
+      it { is_expected.not_to be_enabled }
+      it { is_expected.to be_disabled }
+      it { is_expected.to be_paused }
     end
 
     context 'when its state is "on"', shared: true do

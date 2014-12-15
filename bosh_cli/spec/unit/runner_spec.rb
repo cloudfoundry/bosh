@@ -5,7 +5,7 @@ require 'cli/base_command'
 describe Bosh::Cli::Runner do
   let(:runner) { described_class.new([]) }
 
-  before { runner.stub(:exit) }
+  before { allow(runner).to receive(:exit) }
 
   describe 'command that raises cli error' do
     let(:runner) { described_class.new(['cli-error']) }
@@ -96,7 +96,7 @@ describe Bosh::Cli::Runner do
     describe 'loading local plugins' do
       context 'when there are no local plugins' do
         it 'should not require any files' do
-          runner.should_not_receive(:require_plugin)
+          expect(runner).not_to receive(:require_plugin)
           runner.load_local_plugins
         end
       end
@@ -111,8 +111,8 @@ describe Bosh::Cli::Runner do
         after { FileUtils.rm_rf('lib') }
 
         it 'should require all the plugins' do
-          runner.should_receive(:require_plugin).with(@plugin_1).once
-          runner.should_receive(:require_plugin).with(@plugin_2).once
+          expect(runner).to receive(:require_plugin).with(@plugin_1).once
+          expect(runner).to receive(:require_plugin).with(@plugin_2).once
           runner.load_local_plugins
         end
       end
@@ -128,17 +128,17 @@ describe Bosh::Cli::Runner do
         @unique_plugin_2 = FileUtils.touch('gems/bosh/cli/commands/unique_plugin_2.rb').first
         @common_plugin = FileUtils.touch('gems/bosh/cli/commands/common.rb').first
 
-        Gem::Specification.stub(:latest_specs).with(true) { [spec_1, spec_2] }
-        spec_1.stub(:matches_for_glob).with('bosh/cli/commands/*.rb') { [@unique_plugin_1, @common_plugin] }
-        spec_2.stub(:matches_for_glob).with('bosh/cli/commands/*.rb') { [@unique_plugin_2, @common_plugin] }
+        allow(Gem::Specification).to receive(:latest_specs).with(true) { [spec_1, spec_2] }
+        allow(spec_1).to receive(:matches_for_glob).with('bosh/cli/commands/*.rb') { [@unique_plugin_1, @common_plugin] }
+        allow(spec_2).to receive(:matches_for_glob).with('bosh/cli/commands/*.rb') { [@unique_plugin_2, @common_plugin] }
       end
 
       after { FileUtils.rm_rf('gems') }
 
       it 'requires all the plugins' do
-        runner.should_receive(:require_plugin).with(@unique_plugin_1).once
-        runner.should_receive(:require_plugin).with(@unique_plugin_2).once
-        runner.should_receive(:require_plugin).with(@common_plugin).once
+        expect(runner).to receive(:require_plugin).with(@unique_plugin_1).once
+        expect(runner).to receive(:require_plugin).with(@unique_plugin_2).once
+        expect(runner).to receive(:require_plugin).with(@common_plugin).once
         runner.load_gem_plugins
       end
     end

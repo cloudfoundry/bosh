@@ -23,10 +23,10 @@ module Bosh::Cli
       end
 
       before do
-        ProgressBar.stub(:new).and_return(progess_bar)
-        HTTPClient.stub(:new).and_return(http_client)
-        http_client.stub(:get).and_yield(chunk)
-        File.stub(:open).and_yield(file)
+        allow(ProgressBar).to receive(:new).and_return(progess_bar)
+        allow(HTTPClient).to receive(:new).and_return(http_client)
+        allow(http_client).to receive(:get).and_yield(chunk)
+        allow(File).to receive(:open).and_yield(file)
       end
 
       it 'downloads the file from the specified url' do
@@ -59,19 +59,19 @@ module Bosh::Cli
       let(:sha1_digest) { instance_double('Digest::SHA1', hexdigest: 'bar-sha1') }
 
       before do
-        Digest::SHA1.stub(:file).with('bar.tgz').and_return(sha1_digest)
+        allow(Digest::SHA1).to receive(:file).with('bar.tgz').and_return(sha1_digest)
       end
 
       context 'when the sha1 matches the downloaded file' do
         let(:expected_sha1) { 'bar-sha1' }
 
-        it { should be(true) }
+        it { is_expected.to be(true) }
       end
 
       context 'when the sha1 does not match the downloaded file' do
         let(:expected_sha1) { 'baaaar-sha1' }
 
-        it { should be(false) }
+        it { is_expected.to be(false) }
       end
     end
   end

@@ -14,9 +14,9 @@ describe Bosh::Cli::Command::Misc do
   let(:uuid) { SecureRandom.uuid }
 
   before do
-    Bosh::Cli::Client::Director.stub(:new).and_return(director)
-    Bosh::Cli::Versions::VersionsIndex.stub(:new).and_return(versions_index)
-    Bosh::Cli::Release.stub(:new).and_return(release)
+    allow(Bosh::Cli::Client::Director).to receive(:new).and_return(director)
+    allow(Bosh::Cli::Versions::VersionsIndex).to receive(:new).and_return(versions_index)
+    allow(Bosh::Cli::Release).to receive(:new).and_return(release)
   end
 
   before do
@@ -38,78 +38,78 @@ describe Bosh::Cli::Command::Misc do
         'cpi' => 'dummy'
       })
 
-      command.should_receive(:say).with('Config')
-      command.should_receive(:say).with(/#{@config_file}/)
+      expect(command).to receive(:say).with('Config')
+      expect(command).to receive(:say).with(/#{@config_file}/)
 
-      command.should_receive(:say).with("\n")
-      command.should_receive(:say).with('Director')
-      command.should_receive(:say).with(/#{target_name}/)
-      command.should_receive(:say).with(/#{target}/)
-      command.should_receive(:say).with(/v\.m \(release:rrrrrrrr bosh:bbbbbbbb\)/)
-      command.should_receive(:say).with(/User/)
-      command.should_receive(:say).with(/#{uuid}/)
-      command.should_receive(:say).with(/dummy/)
+      expect(command).to receive(:say).with("\n")
+      expect(command).to receive(:say).with('Director')
+      expect(command).to receive(:say).with(/#{target_name}/)
+      expect(command).to receive(:say).with(/#{target}/)
+      expect(command).to receive(:say).with(/v\.m \(release:rrrrrrrr bosh:bbbbbbbb\)/)
+      expect(command).to receive(:say).with(/User/)
+      expect(command).to receive(:say).with(/#{uuid}/)
+      expect(command).to receive(:say).with(/dummy/)
 
-      command.should_receive(:say).with("\n")
-      command.should_receive(:say).with('Deployment')
-      command.should_receive(:say).with(/deployment-file/)
+      expect(command).to receive(:say).with("\n")
+      expect(command).to receive(:say).with('Deployment')
+      expect(command).to receive(:say).with(/deployment-file/)
 
       command.status
     end
 
     it 'should not show director data when target is not set' do
       command.add_option(:config, @config_file)
-      command.stub(:target).and_return(nil)
-      director.should_not_receive(:get_status)
+      allow(command).to receive(:target).and_return(nil)
+      expect(director).not_to receive(:get_status)
 
-      command.should_receive(:say).with('Config')
-      command.should_receive(:say).with(/#{@config_file}/)
+      expect(command).to receive(:say).with('Config')
+      expect(command).to receive(:say).with(/#{@config_file}/)
 
-      command.should_receive(:say).with("\n")
-      command.should_receive(:say).with('Director')
-      command.should_receive(:say).with(/not set/)
+      expect(command).to receive(:say).with("\n")
+      expect(command).to receive(:say).with('Director')
+      expect(command).to receive(:say).with(/not set/)
 
-      command.should_receive(:say).with("\n")
-      command.should_receive(:say).with('Deployment')
-      command.should_receive(:say).with(/not set/)
+      expect(command).to receive(:say).with("\n")
+      expect(command).to receive(:say).with('Deployment')
+      expect(command).to receive(:say).with(/not set/)
 
       command.status
     end
 
     it 'should not show director data when fetching director status timeouts' do
       command.add_option(:config, @config_file)
-      command.stub(:target).and_return(target)
-      director.should_receive(:get_status).and_raise(Timeout::Error)
+      allow(command).to receive(:target).and_return(target)
+      expect(director).to receive(:get_status).and_raise(Timeout::Error)
 
-      command.should_receive(:say).with('Config')
-      command.should_receive(:say).with(/#{@config_file}/)
+      expect(command).to receive(:say).with('Config')
+      expect(command).to receive(:say).with(/#{@config_file}/)
 
-      command.should_receive(:say).with("\n")
-      command.should_receive(:say).with('Director')
-      command.should_receive(:say).with(/timed out fetching director status/)
+      expect(command).to receive(:say).with("\n")
+      expect(command).to receive(:say).with('Director')
+      expect(command).to receive(:say).with(/timed out fetching director status/)
 
-      command.should_receive(:say).with("\n")
-      command.should_receive(:say).with('Deployment')
-      command.should_receive(:say).with(/not set/)
+      expect(command).to receive(:say).with("\n")
+      expect(command).to receive(:say).with('Deployment')
+      expect(command).to receive(:say).with(/not set/)
 
       command.status
     end
 
     it 'should not show director data when director raises and exception' do
       command.add_option(:config, @config_file)
-      command.stub(:target).and_return(target)
-      director.should_receive(:get_status).and_raise(Bosh::Cli::DirectorError)
+      allow(command).to receive(:target).and_return(target)
+      expect(director).to receive(:get_status).and_raise(Bosh::Cli::DirectorError)
 
-      command.should_receive(:say).with('Config')
-      command.should_receive(:say).with(/#{@config_file}/)
+      expect(command).to receive(:say).with('Config')
+      expect(command).to receive(:say).with(/#{@config_file}/)
 
-      command.should_receive(:say).with("\n")
-      command.should_receive(:say).with('Director')
-      command.should_receive(:say).with(/error fetching director status:/)
+      expect(command).to receive(:say).with("\n")
+      expect(command).to receive(:say).with('Director')
+      expect(command).to receive(:say).with(/error fetching director status:/)
 
-      command.should_receive(:say).with("\n")
-      command.should_receive(:say).with('Deployment')
-      command.should_receive(:say).with(/not set/)
+      expect(command).to receive(:say).with("\n")
+      expect(command).to receive(:say).with('Deployment')
+      expect(command).to receive(:say).with(/not set/)
 
       command.status
     end
@@ -119,11 +119,11 @@ describe Bosh::Cli::Command::Misc do
         it 'prints only the director uuid' do
           command.add_option(:config, @config_file)
           command.add_option(:uuid, true)
-          command.stub(:target).and_return(target)
+          allow(command).to receive(:target).and_return(target)
 
-          director.stub(:get_status).and_return({ 'uuid' => uuid })
+          allow(director).to receive(:get_status).and_return({ 'uuid' => uuid })
 
-          command.should_receive(:say).with(/#{uuid}/)
+          expect(command).to receive(:say).with(/#{uuid}/)
 
           command.status
         end
@@ -133,11 +133,11 @@ describe Bosh::Cli::Command::Misc do
         it 'returns non-zero status' do
           command.add_option(:config, @config_file)
           command.add_option(:uuid, true)
-          command.stub(:target).and_return(target)
+          allow(command).to receive(:target).and_return(target)
 
-          director.stub(:get_status).and_raise(Timeout::Error)
+          allow(director).to receive(:get_status).and_raise(Timeout::Error)
 
-          command.should_receive(:err).with(/Error fetching director status:/)
+          expect(command).to receive(:err).with(/Error fetching director status:/)
 
           command.status
         end
@@ -162,7 +162,7 @@ EOS
         context 'target name is set' do
           it 'decorates target with target name' do
             command.add_option(:config, @config_file)
-            command.should_receive(:say).with("Current target is #{target} (#{target_name})")
+            expect(command).to receive(:say).with("Current target is #{target} (#{target_name})")
             command.set_target
           end
         end
@@ -172,7 +172,7 @@ EOS
 
           it 'decorates target' do
             command.add_option(:config, @config_file)
-            command.should_receive(:say).with("Current target is #{target}")
+            expect(command).to receive(:say).with("Current target is #{target}")
             command.set_target
           end
         end
@@ -182,7 +182,7 @@ EOS
         it 'does not decorates target' do
           command.add_option(:config, @config_file)
           command.add_option(:non_interactive, true)
-          command.should_receive(:say).with("#{target}")
+          expect(command).to receive(:say).with("#{target}")
           command.set_target
         end
       end
@@ -191,7 +191,7 @@ EOS
     context 'target is not set' do
       it 'errors' do
         command.add_option(:config, @config_file)
-        command.should_receive(:err).with('Target not set')
+        expect(command).to receive(:err).with('Target not set')
         command.set_target
       end
     end

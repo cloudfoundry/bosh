@@ -6,16 +6,16 @@ module Bosh::Cli
     subject(:public_stemcells) { PublicStemcells.new }
 
     describe '#has_stemcell?' do
-      it { should have_stemcell('bosh-stemcell-1001-aws-xen-ubuntu.tgz') }
-      it { should_not have_stemcell('bosh-stemcell-1001-aws-xen-solaris.tgz') }
+      it { is_expected.to have_stemcell('bosh-stemcell-1001-aws-xen-ubuntu.tgz') }
+      it { is_expected.not_to have_stemcell('bosh-stemcell-1001-aws-xen-solaris.tgz') }
     end
 
     describe '#find' do
       subject(:find) { public_stemcells.find('bosh-stemcell-1001-aws-xen-ubuntu.tgz') }
 
-      it { should be_a(PublicStemcell) }
-      its(:name) { should eq('bosh-stemcell-1001-aws-xen-ubuntu.tgz') }
-      its(:size) { should eq(384139128) }
+      it { is_expected.to be_a(PublicStemcell) }
+      its(:name) { is_expected.to eq('bosh-stemcell-1001-aws-xen-ubuntu.tgz') }
+      its(:size) { is_expected.to eq(384139128) }
     end
 
     describe '#all' do

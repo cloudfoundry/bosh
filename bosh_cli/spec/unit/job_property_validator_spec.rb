@@ -4,9 +4,9 @@ require "spec_helper"
 
 describe Bosh::Cli::JobPropertyValidator do
   before do
-    File.stub(:read).with('/jobs/director/templates/director.yml.erb.erb').and_return('---\nname: <%= p("director.name") %>')
-    File.stub(:read).with('/jobs/blobstore/templates/blobstore.yml.erb').and_return('---\nprovider: <%= p("blobstore.provider") %>')
-    File.stub(:read).with('/jobs/blobstore/templates/test.yml.erb').and_return('---\nhost: <%= spec.networks.send("foo").ip %>')
+    allow(File).to receive(:read).with('/jobs/director/templates/director.yml.erb.erb').and_return('---\nname: <%= p("director.name") %>')
+    allow(File).to receive(:read).with('/jobs/blobstore/templates/blobstore.yml.erb').and_return('---\nprovider: <%= p("blobstore.provider") %>')
+    allow(File).to receive(:read).with('/jobs/blobstore/templates/test.yml.erb').and_return('---\nhost: <%= spec.networks.send("foo").ip %>')
   end
 
   let(:director_job) do
@@ -104,7 +104,7 @@ describe Bosh::Cli::JobPropertyValidator do
 
     context 'with index' do
       before do
-        File.stub(:read).with('/jobs/blobstore/templates/blobstore.yml.erb').and_return("---\nprovider: <%= index %>")
+        allow(File).to receive(:read).with('/jobs/blobstore/templates/blobstore.yml.erb').and_return("---\nprovider: <%= index %>")
       end
 
       it 'should not have template errors' do

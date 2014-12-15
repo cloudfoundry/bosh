@@ -21,7 +21,7 @@ describe Bosh::Cli::DeploymentManifestCompiler do
 
     compiler = make_compiler(raw_manifest, { "dea.max_memory" => 8192 })
 
-    compiler.result.should == <<-MANIFEST.gsub(/^\s*/, "")
+    expect(compiler.result).to eq <<-MANIFEST.gsub(/^\s*/, "")
       ---
       name: mycloud
       properties:
@@ -42,9 +42,9 @@ describe Bosh::Cli::DeploymentManifestCompiler do
     compiler = make_compiler(raw_manifest, { "dea.max_memory" => 8192 })
     error_msg = "Cannot resolve deployment property `missing.property'"
 
-    lambda {
+    expect {
       compiler.result
-    }.should raise_error(Bosh::Cli::UndefinedProperty, error_msg)
+    }.to raise_error(Bosh::Cli::UndefinedProperty, error_msg)
   end
 
   it "whines if manifest has syntax error (from ERB's point of view)" do
@@ -56,8 +56,8 @@ describe Bosh::Cli::DeploymentManifestCompiler do
 
     compiler = make_compiler(raw_manifest, { "dea.max_memory" => 8192 })
 
-    lambda {
+    expect {
       compiler.result
-    }.should raise_error(Bosh::Cli::MalformedManifest)
+    }.to raise_error(Bosh::Cli::MalformedManifest)
   end
 end

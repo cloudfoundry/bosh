@@ -4,7 +4,7 @@ require 'cli'
 describe Bosh::Cli::Command::Vms do
   subject(:command) { described_class.new }
 
-  before { command.stub(director: director, logged_in?: true, nl: nil, say: nil) }
+  before { allow(command).to receive_messages(director: director, logged_in?: true, nl: nil, say: nil) }
   let(:director) { double(Bosh::Cli::Client::Director) }
 
   describe 'list' do
@@ -15,17 +15,17 @@ describe Bosh::Cli::Command::Vms do
       def perform; command.list; end
 
       context 'when there are multiple deployments' do
-        before { director.stub(:list_deployments) { [{ 'name' => 'dep1' }, { 'name' => 'dep2' }] } }
+        before { allow(director).to receive(:list_deployments) { [{ 'name' => 'dep1' }, { 'name' => 'dep2' }] } }
 
         it 'lists vms in all deployments' do
-          command.should_receive(:show_deployment).with('dep1', target: target)
-          command.should_receive(:show_deployment).with('dep2', target: target)
+          expect(command).to receive(:show_deployment).with('dep1', target: target)
+          expect(command).to receive(:show_deployment).with('dep2', target: target)
           perform
         end
       end
 
       context 'when there no deployments' do
-        before { director.stub(:list_deployments) { [] } }
+        before { allow(director).to receive(:list_deployments) { [] } }
 
         it 'raises an error' do
           expect { perform }.to raise_error(Bosh::Cli::CliError, 'No deployments')
@@ -40,7 +40,7 @@ describe Bosh::Cli::Command::Vms do
 
       context 'when deployment with given name can be found' do
         it 'lists vms in the deployment' do
-          command.should_receive(:show_deployment).with('dep1', target: target)
+          expect(command).to receive(:show_deployment).with('dep1', target: target)
           command.list('dep1')
         end
       end
@@ -56,7 +56,7 @@ describe Bosh::Cli::Command::Vms do
     let(:options)    { {details: false, dns: false, vitals: false} }
 
     context 'when deployment has vms' do
-      before { director.stub(:fetch_vm_state).with(deployment) { [vm_state] } }
+      before { allow(director).to receive(:fetch_vm_state).with(deployment) { [vm_state] } }
 
       let(:vm_state) {
         {
@@ -96,15 +96,15 @@ describe Bosh::Cli::Command::Vms do
 
       context 'default' do
         it 'show basic vms information' do
-          command.should_receive(:say).with("Deployment `#{deployment}'")
-          command.should_receive(:say) do |s|
+          expect(command).to receive(:say).with("Deployment `#{deployment}'")
+          expect(command).to receive(:say) do |s|
             expect(s.to_s).to include 'job1/0'
             expect(s.to_s).to include 'awesome'
             expect(s.to_s).to include 'rp1'
             expect(s.to_s).to include '| 192.168.0.1'
             expect(s.to_s).to include '| 192.168.0.2'
           end
-          command.should_receive(:say).with('VMs total: 1')
+          expect(command).to receive(:say).with('VMs total: 1')
           perform
         end
       end
@@ -113,8 +113,8 @@ describe Bosh::Cli::Command::Vms do
         before { options[:details] = true }
 
         it 'shows vm details' do
-          command.should_receive(:say).with("Deployment `#{deployment}'")
-          command.should_receive(:say) do |s|
+          expect(command).to receive(:say).with("Deployment `#{deployment}'")
+          expect(command).to receive(:say) do |s|
             expect(s.to_s).to include 'job1/0'
             expect(s.to_s).to include 'awesome'
             expect(s.to_s).to include 'rp1'
@@ -124,7 +124,7 @@ describe Bosh::Cli::Command::Vms do
             expect(s.to_s).to include 'agent1'
             expect(s.to_s).to include 'paused'
           end
-          command.should_receive(:say).with('VMs total: 1')
+          expect(command).to receive(:say).with('VMs total: 1')
           perform
         end
       end
@@ -133,8 +133,8 @@ describe Bosh::Cli::Command::Vms do
         before { options[:dns] = true }
 
         it 'shows DNS A records' do
-          command.should_receive(:say).with("Deployment `#{deployment}'")
-          command.should_receive(:say) do |s|
+          expect(command).to receive(:say).with("Deployment `#{deployment}'")
+          expect(command).to receive(:say) do |s|
             expect(s.to_s).to include 'job1/0'
             expect(s.to_s).to include 'awesome'
             expect(s.to_s).to include 'rp1'
@@ -143,7 +143,7 @@ describe Bosh::Cli::Command::Vms do
             expect(s.to_s).to include '| index.job.network.deployment.microbosh'
             expect(s.to_s).to include '| index.job.network2.deployment.microbosh'
           end
-          command.should_receive(:say).with('VMs total: 1')
+          expect(command).to receive(:say).with('VMs total: 1')
           perform
         end
       end
@@ -152,8 +152,8 @@ describe Bosh::Cli::Command::Vms do
         before { options[:vitals] = true }
 
         it 'shows the vm vitals' do
-          command.should_receive(:say).with("Deployment `#{deployment}'")
-          command.should_receive(:say) do |s|
+          expect(command).to receive(:say).with("Deployment `#{deployment}'")
+          expect(command).to receive(:say) do |s|
             expect(s.to_s).to include 'job1/0'
             expect(s.to_s).to include 'awesome'
             expect(s.to_s).to include 'rp1'
@@ -169,7 +169,7 @@ describe Bosh::Cli::Command::Vms do
             expect(s.to_s).to include '12%'
             expect(s.to_s).to include '13%'
           end
-          command.should_receive(:say).with('VMs total: 1')
+          expect(command).to receive(:say).with('VMs total: 1')
           perform
         end
 
@@ -177,24 +177,24 @@ describe Bosh::Cli::Command::Vms do
           new_vm_state = vm_state
           new_vm_state['vitals']['disk'].delete('ephemeral')
           new_vm_state['vitals']['disk'].delete('persistent')
-          director.stub(:fetch_vm_state).with(deployment) { [new_vm_state] }
+          allow(director).to receive(:fetch_vm_state).with(deployment) { [new_vm_state] }
 
-          command.should_receive(:say).with("Deployment `#{deployment}'")
-          command.should_receive(:say) do |s|
+          expect(command).to receive(:say).with("Deployment `#{deployment}'")
+          expect(command).to receive(:say) do |s|
             expect(s.to_s).to_not include '12%'
             expect(s.to_s).to_not include '13%'
           end
-          command.should_receive(:say).with('VMs total: 1')
+          expect(command).to receive(:say).with('VMs total: 1')
           perform
         end
       end
     end
 
     context 'when deployment has no vms' do
-      before { director.stub(:fetch_vm_state).with(deployment) { [] } }
+      before { allow(director).to receive(:fetch_vm_state).with(deployment) { [] } }
 
       it 'does not raise an error and says "No VMs"' do
-        command.should_receive(:say).with("No VMs")
+        expect(command).to receive(:say).with("No VMs")
         expect { perform }.to_not raise_error
       end
     end

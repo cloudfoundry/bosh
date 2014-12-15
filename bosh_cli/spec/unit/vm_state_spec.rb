@@ -23,14 +23,14 @@ module Bosh::Cli
     end
 
     before do
-      command.stub(:inspect_deployment_changes) do |manifest, _|
+      allow(command).to receive(:inspect_deployment_changes) do |manifest, _|
         manifest['inspected'] = true
       end
     end
 
     describe '#change' do
       it 'caches the manifest yaml before its mutated during inspection!' do # This is bad, but it's honest.
-        command.director.should_receive(:change_job_state).with('fake deployment',
+        expect(command.director).to receive(:change_job_state).with('fake deployment',
                                                                 "---\nname: fake deployment\ninspected: false\n",
                                                                 'fake job',
                                                                 'fake index',

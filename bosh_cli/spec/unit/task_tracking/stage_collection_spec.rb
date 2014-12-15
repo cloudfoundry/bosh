@@ -438,18 +438,30 @@ module Bosh::Cli::TaskTracking
 
       context 'when data is nil' do
         before { task.update_with_event('data' => nil) }
-        its(:error) { should be(nil) }
+
+        describe '#error' do
+          subject { super().error }
+          it { is_expected.to be(nil) }
+        end
       end
 
       context 'when data is not nil' do
         context 'when there is no error inside data' do
           before { task.update_with_event('data' => {}) }
-          its(:error) { should be(nil) }
+
+          describe '#error' do
+            subject { super().error }
+            it { is_expected.to be(nil) }
+          end
         end
 
         context 'when there is error inside data' do
           before { task.update_with_event('data' => { 'error' => 'fake-error' }) }
-          its(:error) { should eq('fake-error') }
+
+          describe '#error' do
+            subject { super().error }
+            it { is_expected.to eq('fake-error') }
+          end
         end
       end
     end

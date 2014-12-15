@@ -64,7 +64,7 @@ describe Bosh::Cli::DeploymentHelper do
   describe '#latest_release_versions' do
     context 'for director version < 1.5' do
       before do
-        director.stub(list_releases: [
+        allow(director).to receive_messages(list_releases: [
           {
             'name' => 'bat',
             'versions' => ['1', '8.2-dev', '2', '8.1-dev'],
@@ -79,15 +79,15 @@ describe Bosh::Cli::DeploymentHelper do
       end
 
       it 'should have the latest version for each release' do
-        deployment_helper.latest_release_versions.should == {
+        expect(deployment_helper.latest_release_versions).to eq({
           'bat' => '8.2-dev',
           'bosh' => '2'
-        }
+        })
       end
     end
 
     context 'for director version >= 1.5' do
-      before { director.stub(list_releases: [
+      before { allow(director).to receive_messages(list_releases: [
           {
             'name' => 'bat',
             'versions' => ['1', '8.2-dev', '8+dev.3', '2', '8+dev.1'],
@@ -102,10 +102,10 @@ describe Bosh::Cli::DeploymentHelper do
       }
 
       it 'should have the latest version for each release' do
-        deployment_helper.latest_release_versions.should == {
+        expect(deployment_helper.latest_release_versions).to eq({
           'bat' => '8+dev.3',
           'bosh' => '2'
-        }
+        })
       end
     end
   end
@@ -124,7 +124,7 @@ describe Bosh::Cli::DeploymentHelper do
 
         it 'should leave the version as is' do
           deployment_helper.resolve_release_aliases(@manifest)
-          @manifest['release']['version'].should == '3.1-dev'
+          expect(@manifest['release']['version']).to eq('3.1-dev')
         end
       end
 
@@ -140,8 +140,8 @@ describe Bosh::Cli::DeploymentHelper do
 
         it 'should leave the versions as they are' do
           deployment_helper.resolve_release_aliases(@manifest)
-          @manifest['releases'].detect { |release| release['name'] == 'bat' }['version'].should == '3.1-dev'
-          @manifest['releases'].detect { |release| release['name'] == 'bosh' }['version'].should == '1.2-dev'
+          expect(@manifest['releases'].detect { |release| release['name'] == 'bat' }['version']).to eq('3.1-dev')
+          expect(@manifest['releases'].detect { |release| release['name'] == 'bosh' }['version']).to eq('1.2-dev')
         end
       end
     end
@@ -154,13 +154,13 @@ describe Bosh::Cli::DeploymentHelper do
             { 'name' => 'bosh', 'version' => 'latest' },
           ]
         }
-        director.stub(list_releases: release_list)
+        allow(director).to receive_messages(list_releases: release_list)
       end
 
       it 'should resolve the version to the latest for that release' do
         deployment_helper.resolve_release_aliases(@manifest)
-        @manifest['releases'].detect { |release| release['name'] == 'bat' }['version'].should == '3.1-dev'
-        @manifest['releases'].detect { |release| release['name'] == 'bosh' }['version'].should == 2
+        expect(@manifest['releases'].detect { |release| release['name'] == 'bat' }['version']).to eq('3.1-dev')
+        expect(@manifest['releases'].detect { |release| release['name'] == 'bosh' }['version']).to eq(2)
       end
 
       context 'when the release is not found on the director' do
@@ -180,7 +180,7 @@ describe Bosh::Cli::DeploymentHelper do
     it 'casts final release versions to Integer' do
       manifest = { 'release' => { 'name' => 'foo', 'version' => '12321' } }
       deployment_helper.resolve_release_aliases(manifest)
-      manifest['release']['version'].should == 12321
+      expect(manifest['release']['version']).to eq(12321)
     end
   end
 
@@ -211,10 +211,10 @@ describe Bosh::Cli::DeploymentHelper do
       manifest_file.close
       director = instance_double('Bosh::Cli::Client::Director')
 
-      cmd.stub(:deployment).and_return(manifest_file.path)
-      cmd.stub(:director).and_return(director)
+      allow(cmd).to receive(:deployment).and_return(manifest_file.path)
+      allow(cmd).to receive(:director).and_return(director)
 
-      director.should_receive(:uuid).and_return('deadcafe')
+      expect(director).to receive(:uuid).and_return('deadcafe')
 
       expect {
         cmd.prepare_deployment_manifest
@@ -232,8 +232,8 @@ describe Bosh::Cli::DeploymentHelper do
       Psych.dump(manifest, manifest_file)
       manifest_file.close
       director = instance_double('Bosh::Cli::Client::Director', uuid: 'deadbeef')
-      cmd.stub(:deployment).and_return(manifest_file.path)
-      cmd.stub(:director).and_return(director)
+      allow(cmd).to receive(:deployment).and_return(manifest_file.path)
+      allow(cmd).to receive(:director).and_return(director)
 
       cmd.prepare_deployment_manifest
 
@@ -258,8 +258,8 @@ describe Bosh::Cli::DeploymentHelper do
       manifest_file.close
       director = double(Bosh::Cli::Client::Director, :uuid => 'deadbeef')
 
-      cmd.stub(:deployment).and_return(manifest_file.path)
-      cmd.stub(:director).and_return(director)
+      allow(cmd).to receive(:deployment).and_return(manifest_file.path)
+      allow(cmd).to receive(:director).and_return(director)
 
       stemcells = [
         { 'name' => 'foo', 'version' => '22.6.4' },
@@ -268,35 +268,35 @@ describe Bosh::Cli::DeploymentHelper do
         { 'name' => 'bar', 'version' => '4.1' }
       ]
 
-      director.should_receive(:list_stemcells).and_return(stemcells)
+      expect(director).to receive(:list_stemcells).and_return(stemcells)
 
       manifest = cmd.prepare_deployment_manifest
-      manifest['resource_pools'][0]['stemcell']['version'].should == '22.6.4'
-      manifest['resource_pools'][1]['stemcell']['version'].should == 22
-      manifest['resource_pools'][2]['stemcell']['version'].should == 4.1
+      expect(manifest['resource_pools'][0]['stemcell']['version']).to eq('22.6.4')
+      expect(manifest['resource_pools'][1]['stemcell']['version']).to eq(22)
+      expect(manifest['resource_pools'][2]['stemcell']['version']).to eq(4.1)
     end
   end
 
   describe '#job_exists_in_deployment?' do
     before do
-      deployment_helper.stub(prepare_deployment_manifest: {
+      allow(deployment_helper).to receive_messages(prepare_deployment_manifest: {
         'name' => 'mycloud',
         'jobs' => [{ 'name' => 'job1' }]
       })
     end
 
     it 'should return true if job exists in deployment' do
-      deployment_helper.job_exists_in_deployment?('job1').should be(true)
+      expect(deployment_helper.job_exists_in_deployment?('job1')).to be(true)
     end
 
     it 'should return false if job does not exists in deployment' do
-      deployment_helper.job_exists_in_deployment?('job2').should be(false)
+      expect(deployment_helper.job_exists_in_deployment?('job2')).to be(false)
     end
   end
 
   describe '#job_unique_in_deployment?' do
     before do
-      deployment_helper.stub(prepare_deployment_manifest: {
+      allow(deployment_helper).to receive_messages(prepare_deployment_manifest: {
         'name' => 'mycloud',
         'jobs' => [
           { 'name' => 'job1', 'instances' => 1 },
@@ -325,21 +325,21 @@ describe Bosh::Cli::DeploymentHelper do
   describe '#prompt_for_job_and_index' do
     context 'when there is only 1 job instance in total' do
       before do
-        deployment_helper.stub(prepare_deployment_manifest: {
+        allow(deployment_helper).to receive_messages(prepare_deployment_manifest: {
           'name' => 'mycloud',
           'jobs' => [{ 'name' => 'job', 'instances' => 1 }],
         })
       end
 
       it 'does not prompt the user to choose a job' do
-        deployment_helper.should_not_receive(:choose)
+        expect(deployment_helper).not_to receive(:choose)
         deployment_helper.prompt_for_job_and_index
       end
     end
 
     context 'when there is more than 1 job instance' do
       before do
-        deployment_helper.stub(prepare_deployment_manifest: {
+        allow(deployment_helper).to receive_messages(prepare_deployment_manifest: {
           'name' => 'mycloud',
           'jobs' => [{ 'name' => 'job', 'instances' => 2 }],
         })
@@ -347,10 +347,10 @@ describe Bosh::Cli::DeploymentHelper do
 
       it 'prompts the user to choose one' do
         menu = double('menu')
-        deployment_helper.should_receive(:choose).and_yield(menu)
-        menu.should_receive(:prompt=).with('Choose an instance: ')
-        menu.should_receive(:choice).with('job/0')
-        menu.should_receive(:choice).with('job/1')
+        expect(deployment_helper).to receive(:choose).and_yield(menu)
+        expect(menu).to receive(:prompt=).with('Choose an instance: ')
+        expect(menu).to receive(:choice).with('job/0')
+        expect(menu).to receive(:choice).with('job/1')
         deployment_helper.prompt_for_job_and_index
       end
     end
@@ -358,7 +358,7 @@ describe Bosh::Cli::DeploymentHelper do
 
   describe '#jobs_and_indexes' do
     before do
-      deployment_helper.stub(prepare_deployment_manifest: {
+      allow(deployment_helper).to receive_messages(prepare_deployment_manifest: {
         'name' => 'mycloud',
         'jobs' => [
           { 'name' => 'job1', 'instances' => 1 },
@@ -368,7 +368,7 @@ describe Bosh::Cli::DeploymentHelper do
     end
 
     it 'returns array of ["job", index]' do
-      deployment_helper.jobs_and_indexes.should == [['job1', 0], ['job2', 0], ['job2', 1]]
+      expect(deployment_helper.jobs_and_indexes).to eq([['job1', 0], ['job2', 0], ['job2', 1]])
     end
   end
 

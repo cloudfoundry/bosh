@@ -23,24 +23,24 @@ describe Bosh::Cli::Command::Ssh do
   end
 
   before do
-    command.stub(director: director,
+    allow(command).to receive_messages(director: director,
                  public_key: 'PUBKEY',
                  prepare_deployment_manifest: manifest)
 
-    Process.stub(:waitpid)
+    allow(Process).to receive(:waitpid)
 
-    command.stub(:random_ssh_username).and_return('testable_user')
+    allow(command).to receive(:random_ssh_username).and_return('testable_user')
 
   end
 
   context 'shell' do
     before do
-      command.stub(deployment: '/yo/heres/a/path')
+      allow(command).to receive_messages(deployment: '/yo/heres/a/path')
     end
 
     describe 'invalid arguments' do
       it 'should fail if there is no deployment set' do
-        command.stub(deployment: nil)
+        allow(command).to receive_messages(deployment: nil)
 
         expect {
           command.shell('dea/1')
@@ -99,14 +99,14 @@ describe Bosh::Cli::Command::Ssh do
         end
 
         it 'should implicitly chooses the only instance if job index not provided' do
-          command.should_not_receive(:choose)
-          command.should_receive(:setup_interactive_shell).with('dea', 0)
+          expect(command).not_to receive(:choose)
+          expect(command).to receive(:setup_interactive_shell).with('dea', 0)
           command.shell('dea')
         end
 
         it 'should implicitly chooses the only instance if job name not provided' do
-          command.should_not_receive(:choose)
-          command.should_receive(:setup_interactive_shell).with('dea', 0)
+          expect(command).not_to receive(:choose)
+          expect(command).to receive(:setup_interactive_shell).with('dea', 0)
           command.shell
         end
       end
@@ -133,8 +133,8 @@ describe Bosh::Cli::Command::Ssh do
         end
 
         it 'should prompt for an instance if job name not given' do
-          command.should_receive(:choose).and_return(['dea', 3])
-          command.should_receive(:setup_interactive_shell).with('dea', 3)
+          expect(command).to receive(:choose).and_return(['dea', 3])
+          expect(command).to receive(:setup_interactive_shell).with('dea', 3)
           command.shell
         end
       end
@@ -142,7 +142,7 @@ describe Bosh::Cli::Command::Ssh do
 
     describe 'exec' do
       it 'should try to execute given command remotely' do
-        command.should_receive(:perform_operation).with(:exec, 'dea', 0, ['ls -l'])
+        expect(command).to receive(:perform_operation).with(:exec, 'dea', 0, ['ls -l'])
         command.shell('dea/0', 'ls -l')
       end
     end
@@ -153,22 +153,22 @@ describe Bosh::Cli::Command::Ssh do
       end
 
       it 'should try to setup interactive shell when a job index is given' do
-        command.should_receive(:setup_interactive_shell).with('dea', 0)
+        expect(command).to receive(:setup_interactive_shell).with('dea', 0)
         command.shell('dea', '0')
       end
 
       it 'should try to setup interactive shell when a job index is given as part of the job name' do
-        command.should_receive(:setup_interactive_shell).with('dea', 0)
+        expect(command).to receive(:setup_interactive_shell).with('dea', 0)
         command.shell('dea/0')
       end
 
       it 'should setup ssh' do
-        Process.should_receive(:spawn).with('ssh', 'testable_user@127.0.0.1')
+        expect(Process).to receive(:spawn).with('ssh', 'testable_user@127.0.0.1')
 
-        director.should_receive(:setup_ssh).and_return([:done, 42])
-        director.should_receive(:get_task_result_log).with(42).
+        expect(director).to receive(:setup_ssh).and_return([:done, 42])
+        expect(director).to receive(:get_task_result_log).with(42).
             and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
-        director.should_receive(:cleanup_ssh)
+        expect(director).to receive(:cleanup_ssh)
 
         command.shell('dea/0')
       end
@@ -182,17 +182,17 @@ describe Bosh::Cli::Command::Ssh do
         end
 
         it 'should setup ssh with gateway host' do
-          Net::SSH::Gateway.should_receive(:new).with(gateway_host, gateway_user, {}).and_return(net_ssh)
-          net_ssh.should_receive(:open).with(anything, 22).and_return(2345)
-          Process.should_receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345')
+          expect(Net::SSH::Gateway).to receive(:new).with(gateway_host, gateway_user, {}).and_return(net_ssh)
+          expect(net_ssh).to receive(:open).with(anything, 22).and_return(2345)
+          expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345')
 
-          director.should_receive(:setup_ssh).and_return([:done, 42])
-          director.should_receive(:get_task_result_log).with(42).
+          expect(director).to receive(:setup_ssh).and_return([:done, 42])
+          expect(director).to receive(:get_task_result_log).with(42).
               and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
-          director.should_receive(:cleanup_ssh)
+          expect(director).to receive(:cleanup_ssh)
 
-          net_ssh.should_receive(:close)
-          net_ssh.should_receive(:shutdown!)
+          expect(net_ssh).to receive(:close)
+          expect(net_ssh).to receive(:shutdown!)
 
           command.shell('dea/0')
         end
@@ -205,45 +205,45 @@ describe Bosh::Cli::Command::Ssh do
           end
 
           it 'should setup ssh with gateway host and user' do
-            Net::SSH::Gateway.should_receive(:new).with(gateway_host, gateway_user, {}).and_return(net_ssh)
-            net_ssh.should_receive(:open).with(anything, 22).and_return(2345)
-            Process.should_receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345')
+            expect(Net::SSH::Gateway).to receive(:new).with(gateway_host, gateway_user, {}).and_return(net_ssh)
+            expect(net_ssh).to receive(:open).with(anything, 22).and_return(2345)
+            expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345')
 
-            director.should_receive(:setup_ssh).and_return([:done, 42])
-            director.should_receive(:get_task_result_log).with(42).
+            expect(director).to receive(:setup_ssh).and_return([:done, 42])
+            expect(director).to receive(:get_task_result_log).with(42).
                 and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
-            director.should_receive(:cleanup_ssh)
+            expect(director).to receive(:cleanup_ssh)
 
-            net_ssh.should_receive(:close)
-            net_ssh.should_receive(:shutdown!)
+            expect(net_ssh).to receive(:close)
+            expect(net_ssh).to receive(:shutdown!)
 
             command.shell('dea/0')
           end
 
           it 'should setup ssh with gateway host and user and identity file' do
-            Net::SSH::Gateway.should_receive(:new).with(gateway_host, gateway_user, {keys: ['/tmp/private_file']}).and_return(net_ssh)
-            net_ssh.should_receive(:open).with(anything, 22).and_return(2345)
-            Process.should_receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345')
+            expect(Net::SSH::Gateway).to receive(:new).with(gateway_host, gateway_user, {keys: ['/tmp/private_file']}).and_return(net_ssh)
+            expect(net_ssh).to receive(:open).with(anything, 22).and_return(2345)
+            expect(Process).to receive(:spawn).with('ssh', 'testable_user@localhost', '-p', '2345')
 
-            director.should_receive(:setup_ssh).and_return([:done, 42])
-            director.should_receive(:get_task_result_log).with(42).
+            expect(director).to receive(:setup_ssh).and_return([:done, 42])
+            expect(director).to receive(:get_task_result_log).with(42).
                 and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
-            director.should_receive(:cleanup_ssh)
+            expect(director).to receive(:cleanup_ssh)
 
-            net_ssh.should_receive(:close)
-            net_ssh.should_receive(:shutdown!)
+            expect(net_ssh).to receive(:close)
+            expect(net_ssh).to receive(:shutdown!)
 
             command.add_option(:gateway_identity_file, '/tmp/private_file')
             command.shell('dea/0')
           end
 
           it 'should fail to setup ssh with gateway host and user when authentication fails' do
-            Net::SSH::Gateway.should_receive(:new).with(gateway_host, gateway_user, {}).and_raise(Net::SSH::AuthenticationFailed)
+            expect(Net::SSH::Gateway).to receive(:new).with(gateway_host, gateway_user, {}).and_raise(Net::SSH::AuthenticationFailed)
 
-            director.should_receive(:setup_ssh).and_return([:done, 42])
-            director.should_receive(:get_task_result_log).with(42).
+            expect(director).to receive(:setup_ssh).and_return([:done, 42])
+            expect(director).to receive(:get_task_result_log).with(42).
                 and_return(JSON.generate([{'status' => 'success', 'ip' => '127.0.0.1'}]))
-            director.should_receive(:cleanup_ssh)
+            expect(director).to receive(:cleanup_ssh)
 
             expect {
               command.shell('dea/0')
@@ -272,7 +272,7 @@ describe Bosh::Cli::Command::Ssh do
 
       it 'should fail to setup ssh when a job name does not exists in deployment' do
         command.add_option(:upload, true)
-        command.stub(:job_exists_in_deployment?).and_return(false)
+        allow(command).to receive(:job_exists_in_deployment?).and_return(false)
         expect {
           command.scp('dea/0')
         }.to raise_error(Bosh::Cli::CliError, "Job `dea' doesn't exist")
@@ -296,7 +296,7 @@ describe Bosh::Cli::Command::Ssh do
       end
 
       it 'should fail to setup ssh when a job name does not exists in deployment' do
-        command.stub(:job_exists_in_deployment?).and_return(false)
+        allow(command).to receive(:job_exists_in_deployment?).and_return(false)
         expect {
           command.cleanup('dea/0')
         }.to raise_error(Bosh::Cli::CliError, "Job `dea' doesn't exist")

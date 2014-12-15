@@ -62,9 +62,9 @@ describe Bosh::Cli::JobBuilder do
     add_monit('foo')
     builder = new_builder('foo', ['foo', 'bar', 'baz'],
                           ['a.conf', 'b.yml'], ['foo', 'bar', 'baz'])
-    builder.packages.should    == ['foo', 'bar', 'baz']
-    builder.templates.should     =~ ['a.conf', 'b.yml']
-    builder.release_dir.should == @release_dir
+    expect(builder.packages).to    eq(['foo', 'bar', 'baz'])
+    expect(builder.templates).to     match_array(['a.conf', 'b.yml'])
+    expect(builder.release_dir).to eq(@release_dir)
   end
 
   it 'has a fingerprint' do
@@ -72,7 +72,7 @@ describe Bosh::Cli::JobBuilder do
     add_monit('foo')
     builder = new_builder('foo', ['foo', 'bar'],
                           ['a.conf', 'b.yml'], ['foo', 'bar'])
-    builder.fingerprint.should == '962d57a4f8bc4f48fd6282d8c4d94e4a744f155b'
+    expect(builder.fingerprint).to eq('962d57a4f8bc4f48fd6282d8c4d94e4a744f155b')
   end
 
   it 'has a stable portable fingerprint' do
@@ -81,11 +81,11 @@ describe Bosh::Cli::JobBuilder do
     b1 = new_builder('foo', ['foo', 'bar'],
                      ['a.conf', 'b.yml'], ['foo', 'bar'])
     f1 = b1.fingerprint
-    b1.reload.fingerprint.should == f1
+    expect(b1.reload.fingerprint).to eq(f1)
 
     b2 = new_builder('foo', ['foo', 'bar'],
                      ['a.conf', 'b.yml'], ['foo', 'bar'])
-    b2.fingerprint.should == f1
+    expect(b2.fingerprint).to eq(f1)
   end
 
   it 'changes fingerprint when new template file is added' do
@@ -99,7 +99,7 @@ describe Bosh::Cli::JobBuilder do
     add_templates('foo', 'baz')
     b2 = new_builder('foo', ['foo', 'bar'],
                      ['a.conf', 'b.yml', 'baz'], ['foo', 'bar'])
-    b2.fingerprint.should_not == f1
+    expect(b2.fingerprint).not_to eq(f1)
   end
 
   it 'changes fingerprint when template files is changed' do
@@ -111,7 +111,7 @@ describe Bosh::Cli::JobBuilder do
     f1 = b1.fingerprint
 
     add_file('foo', 'templates/a.conf', 'bzz')
-    b1.reload.fingerprint.should_not == f1
+    expect(b1.reload.fingerprint).not_to eq(f1)
   end
 
   it 'changes fingerprint when new monit file is added' do
@@ -125,7 +125,7 @@ describe Bosh::Cli::JobBuilder do
     add_monit('foo', 'bar.monit')
     b2 = new_builder('foo', ['foo', 'bar'],
                      ['a.conf', 'b.yml'], ['foo', 'bar'])
-    b2.fingerprint.should_not == f1
+    expect(b2.fingerprint).not_to eq(f1)
   end
 
   it 'can read template file names from hash' do
@@ -134,28 +134,28 @@ describe Bosh::Cli::JobBuilder do
     builder = new_builder('foo', ['foo', 'bar', 'baz'],
                           { 'a.conf' => 1, 'b.yml' => 2 },
                           ['foo', 'bar', 'baz'])
-    builder.templates.should =~ ['a.conf', 'b.yml']
+    expect(builder.templates).to match_array(['a.conf', 'b.yml'])
   end
 
   it 'whines if name is blank' do
-    lambda {
+    expect {
       new_builder('')
-    }.should raise_error(Bosh::Cli::InvalidJob, 'Job name is missing')
+    }.to raise_error(Bosh::Cli::InvalidJob, 'Job name is missing')
   end
 
   it 'whines on funny characters in name' do
-    lambda {
+    expect {
       new_builder('@#!', [])
-    }.should raise_error(Bosh::Cli::InvalidJob,
+    }.to raise_error(Bosh::Cli::InvalidJob,
                          "`@#!' is not a valid BOSH identifier")
   end
 
   it 'whines if some templates are missing' do
     add_templates('foo', 'a.conf', 'b.conf')
 
-    lambda {
+    expect {
       new_builder('foo', [], ['a.conf', 'b.conf', 'c.conf'])
-    }.should raise_error(Bosh::Cli::InvalidJob,
+    }.to raise_error(Bosh::Cli::InvalidJob,
                          "Some template files required by 'foo' job " +
                            'are missing: c.conf')
   end
@@ -163,42 +163,42 @@ describe Bosh::Cli::JobBuilder do
   it 'whines about extra packages' do
     add_templates('foo', 'a.conf', 'b.conf')
 
-    lambda {
+    expect {
       new_builder('foo', [], ['a.conf'], [])
-    }.should raise_error(Bosh::Cli::InvalidJob,
+    }.to raise_error(Bosh::Cli::InvalidJob,
                          "There are unused template files for job 'foo'" +
                            ': b.conf')
   end
 
   it 'whines if some packages are missing' do
-    lambda {
+    expect {
       new_builder('foo', ['foo', 'bar', 'baz', 'app42'], { }, ['foo', 'bar'])
-    }.should raise_error(Bosh::Cli::InvalidJob,
+    }.to raise_error(Bosh::Cli::InvalidJob,
                          "Some packages required by 'foo' job are missing: " +
                            'baz, app42')
   end
 
   it 'whines if there is no spec file' do
-    lambda {
+    expect {
       new_builder('foo', ['foo', 'bar', 'baz', 'app42'], { },
                   ['foo', 'bar', 'baz', 'app42'], false)
-    }.should raise_error(Bosh::Cli::InvalidJob,
+    }.to raise_error(Bosh::Cli::InvalidJob,
                          "Cannot find spec file for 'foo'")
   end
 
   it 'whines if there is no monit file' do
-    lambda {
+    expect {
       add_templates('foo', 'a.conf', 'b.yml')
       new_builder('foo', ['foo', 'bar', 'baz', 'app42'],
                   ['a.conf', 'b.yml'], ['foo', 'bar', 'baz', 'app42'])
-    }.should raise_error(Bosh::Cli::InvalidJob,
+    }.to raise_error(Bosh::Cli::InvalidJob,
                          "Cannot find monit file for 'foo'")
 
     add_monit('foo')
-    lambda {
+    expect {
       new_builder('foo', ['foo', 'bar', 'baz', 'app42'],
                   ['a.conf', 'b.yml'], ['foo', 'bar', 'baz', 'app42'])
-    }.should_not raise_error
+    }.not_to raise_error
   end
 
   it 'supports preparation script' do
@@ -225,18 +225,18 @@ describe Bosh::Cli::JobBuilder do
 
     builder = new_builder('foo', ['bar', 'baz'], ['a.conf', 'b.yml'],
                           ['foo', 'bar', 'baz', 'app42'], false)
-    builder.copy_files.should == 4
+    expect(builder.copy_files).to eq(4)
 
     Dir.chdir(builder.build_dir) do
-      File.directory?('templates').should be(true)
+      expect(File.directory?('templates')).to be(true)
       ['templates/a.conf', 'templates/b.yml'].each do |file|
-        File.file?(file).should be(true)
+        expect(File.file?(file)).to be(true)
       end
-      File.file?('job.MF').should be(true)
-      File.read('job.MF').should == File.read(
-          File.join(@release_dir, 'jobs', 'foo', 'spec'))
-      File.exists?('monit').should be(true)
-      File.exists?('prepare').should be(false)
+      expect(File.file?('job.MF')).to be(true)
+      expect(File.read('job.MF')).to eq(File.read(
+          File.join(@release_dir, 'jobs', 'foo', 'spec')))
+      expect(File.exists?('monit')).to be(true)
+      expect(File.exists?('prepare')).to be(false)
     end
   end
 
@@ -246,17 +246,17 @@ describe Bosh::Cli::JobBuilder do
     builder = new_builder('foo', ['foo', 'bar', 'baz', 'app42'],
                           ['a.conf', 'b.yml'], ['foo', 'bar', 'baz', 'app42'])
 
-    builder.copy_files.should == 4
+    expect(builder.copy_files).to eq(4)
 
     Dir.chdir(builder.build_dir) do
-      File.directory?('templates').should be(true)
+      expect(File.directory?('templates')).to be(true)
       ['templates/a.conf', 'templates/b.yml'].each do |file|
-        File.file?(file).should be(true)
+        expect(File.file?(file)).to be(true)
       end
-      File.file?('job.MF').should be(true)
-      File.read('job.MF').should == File.read(
-          File.join(@release_dir, 'jobs', 'foo', 'spec'))
-      File.exists?('monit').should be(true)
+      expect(File.file?('job.MF')).to be(true)
+      expect(File.read('job.MF')).to eq(File.read(
+          File.join(@release_dir, 'jobs', 'foo', 'spec')))
+      expect(File.exists?('monit')).to be(true)
     end
   end
 
@@ -265,7 +265,7 @@ describe Bosh::Cli::JobBuilder do
     add_monit('foo')
 
     builder = new_builder('foo', ['p1', 'p2'], ['bar', 'baz'], ['p1', 'p2'])
-    builder.generate_tarball.should be(true)
+    expect(builder.generate_tarball).to be(true)
   end
 
   it 'supports versioning' do
@@ -275,33 +275,33 @@ describe Bosh::Cli::JobBuilder do
     builder = new_builder('foo', [], ['bar', 'baz'], [])
 
     v1_fingerprint = builder.fingerprint
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").
-        should be(false)
+    expect(File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz")).
+        to be(false)
     builder.build
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").
-        should be(true)
+    expect(File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz")).
+        to be(true)
 
     add_templates('foo', 'zb.yml')
     builder = new_builder('foo', [], ['bar', 'baz', 'zb.yml'], [])
     builder.build
     v2_fingerprint = builder.fingerprint
 
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").
-        should be(true)
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v2_fingerprint}.tgz").
-        should be(true)
+    expect(File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz")).
+        to be(true)
+    expect(File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v2_fingerprint}.tgz")).
+        to be(true)
 
     remove_templates('foo', 'zb.yml')
 
     builder = new_builder('foo', [], ['bar', 'baz'], [])
     builder.build
-    builder.version.should == v1_fingerprint
+    expect(builder.version).to eq(v1_fingerprint)
 
-    builder.fingerprint.should == v1_fingerprint
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").
-        should be(true)
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v2_fingerprint}.tgz").
-        should be(true)
+    expect(builder.fingerprint).to eq(v1_fingerprint)
+    expect(File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz")).
+        to be(true)
+    expect(File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v2_fingerprint}.tgz")).
+        to be(true)
   end
 
   def add_version(index, storage, key, build, src_file_path)
@@ -337,17 +337,17 @@ describe Bosh::Cli::JobBuilder do
 
     builder = new_builder(job_name, [], ['bar', 'baz'], [])
 
-    builder.fingerprint.should == fingerprint
+    expect(builder.fingerprint).to eq(fingerprint)
 
     builder.use_final_version
-    builder.version.should == fingerprint
-    builder.tarball_path.should == File.join(
-        @release_dir, '.final_builds', 'jobs', job_name, "#{fingerprint}.tgz")
+    expect(builder.version).to eq(fingerprint)
+    expect(builder.tarball_path).to eq(File.join(
+        @release_dir, '.final_builds', 'jobs', job_name, "#{fingerprint}.tgz"))
 
     builder.use_dev_version
-    builder.version.should == fingerprint
-    builder.tarball_path.should == File.join(
-        @release_dir, '.dev_builds', 'jobs', job_name, "#{fingerprint}.tgz")
+    expect(builder.version).to eq(fingerprint)
+    expect(builder.tarball_path).to eq(File.join(
+        @release_dir, '.dev_builds', 'jobs', job_name, "#{fingerprint}.tgz"))
   end
 
   it 'bumps major dev version in sync with final version' do
@@ -357,20 +357,20 @@ describe Bosh::Cli::JobBuilder do
     builder = new_builder('foo', [], ['bar', 'baz'], [])
     builder.build
 
-    builder.version.should == builder.fingerprint
+    expect(builder.version).to eq(builder.fingerprint)
 
     blobstore = double('blobstore')
-    blobstore.should_receive(:create).and_return('object_id')
+    expect(blobstore).to receive(:create).and_return('object_id')
     final_builder = new_builder('foo', [], ['bar', 'baz'], [],
                                 true, true, blobstore)
     final_builder.build
 
-    final_builder.version.should == final_builder.fingerprint
+    expect(final_builder.version).to eq(final_builder.fingerprint)
 
     add_templates('foo', 'bzz')
     builder2 = new_builder('foo', [], ['bar', 'baz', 'bzz'], [])
     builder2.build
-    builder2.version.should == builder2.fingerprint
+    expect(builder2.version).to eq(builder2.fingerprint)
   end
 
   it 'allows template subdirectories' do
@@ -383,9 +383,9 @@ describe Bosh::Cli::JobBuilder do
     builder.build
 
     Dir.chdir(builder.build_dir) do
-      File.directory?('templates').should be(true)
+      expect(File.directory?('templates')).to be(true)
       ['templates/foo/bar', 'templates/bar/baz'].each do |file|
-        File.file?(file).should be(true)
+        expect(File.file?(file)).to be(true)
       end
     end
   end
@@ -399,35 +399,35 @@ describe Bosh::Cli::JobBuilder do
     builder.build
     v1_fingerprint = builder.fingerprint
 
-    builder.version.should == v1_fingerprint
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").
-        should be(false)
+    expect(builder.version).to eq(v1_fingerprint)
+    expect(File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz")).
+        to be(false)
 
     builder.dry_run = false
     builder.reload.build
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").
-        should be(true)
+    expect(File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz")).
+        to be(true)
 
     blobstore = double('blobstore')
-    blobstore.should_not_receive(:create)
+    expect(blobstore).not_to receive(:create)
     final_builder = new_builder('foo', [], ['bar', 'baz'], [],
                                 true, true, blobstore)
     final_builder.dry_run = true
     final_builder.build
 
     # Shouldn't be promoted during dry run:
-    final_builder.version.should == v1_fingerprint
-    File.exists?(@release_dir + "/.final_builds/jobs/foo/#{v1_fingerprint}.tgz").should be(false)
+    expect(final_builder.version).to eq(v1_fingerprint)
+    expect(File.exists?(@release_dir + "/.final_builds/jobs/foo/#{v1_fingerprint}.tgz")).to be(false)
 
     add_templates('foo', 'bzz')
     builder2 = new_builder('foo', [], ['bar', 'baz', 'bzz'], [])
     builder2.dry_run = true
     builder2.build
     v2_fingerprint = builder2.fingerprint
-    builder2.version.should == v2_fingerprint
+    expect(builder2.version).to eq(v2_fingerprint)
 
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz").should be(true)
-    File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v2_fingerprint}.tgz").should be(false)
+    expect(File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v1_fingerprint}.tgz")).to be(true)
+    expect(File.exists?(@release_dir + "/.dev_builds/jobs/foo/#{v2_fingerprint}.tgz")).to be(false)
   end
 
 end
