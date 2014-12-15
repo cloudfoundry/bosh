@@ -7,8 +7,10 @@ module Bosh::Cli
   class Release
     attr_reader :dir
 
-    def initialize(dir)
+    def initialize(dir, final = false)
       @dir = dir
+      @final = final
+
       config_dir = File.join(dir, "config")
       @final_config_file = File.join(config_dir, "final.yml")
       @dev_config_file = File.join(config_dir, "dev.yml")
@@ -62,6 +64,8 @@ module Bosh::Cli
     def has_blobstore_secret?
       bs = @private_config["blobstore"]
 
+      return false unless @final_config['blobstore']
+
       # Add special handling for local blobstore which should not need need credentials
       provider = @final_config['blobstore']['provider']
       return true if provider == 'local'
@@ -99,7 +103,12 @@ module Bosh::Cli
       blobstore_config = Marshal.load(Marshal.dump(@final_config["blobstore"]))
 
       if blobstore_config.nil?
-        err("Missing blobstore configuration, please update your release")
+        err("Missing blobstore configuration, please update config/final.yml") if @final
+        unless @user_warned
+          warning("Missing blobstore configuration, please update config/final.yml before making a final release")
+          @user_warned = true
+        end
+        return nil
       end
 
       provider = blobstore_config["provider"]
@@ -134,6 +143,8 @@ module Bosh::Cli
     # Extracts private blobstore data from final.yml (i.e. secrets)
     # and merges it into the blobstore options.
     def merge_private_data(provider, options)
+      err("Missing blobstore secret configuration, please update config/private.yml") if @final && !has_blobstore_secret?
+
       bs = @private_config["blobstore"]
       return options unless bs
 

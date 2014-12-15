@@ -165,7 +165,7 @@ module Bosh::Cli::Command
           dir = File.expand_path('../..', manifest_path)
           Dir.chdir(dir)
           if in_release_dir?
-            @release = Bosh::Cli::Release.new(dir)
+            @release = Bosh::Cli::Release.new(dir, options[:final])
           end
         end
 

@@ -13,9 +13,9 @@ describe Bosh::Cli::Release do
   it "persists release attributes" do
     r = new_release(@dir)
 
-    r.dev_name.should be_nil
-    r.final_name.should be_nil
-    r.latest_release_filename.should be_nil
+    expect(r.dev_name).to be_nil
+    expect(r.final_name).to be_nil
+    expect(r.latest_release_filename).to be_nil
 
     r.dev_name = "dev-release"
     r.final_name = "prod-release"
@@ -23,9 +23,9 @@ describe Bosh::Cli::Release do
     r.save_config
 
     r2 = new_release(@release_dir)
-    r.dev_name.should == "dev-release"
-    r.final_name.should == "prod-release"
-    r.latest_release_filename.should == "foobar"
+    expect(r2.dev_name).to eq("dev-release")
+    expect(r2.final_name).to eq("prod-release")
+    expect(r2.latest_release_filename).to eq("foobar")
   end
 
   it "has attributes persisted in bosh user config" do
@@ -37,8 +37,8 @@ describe Bosh::Cli::Release do
     FileUtils.rm_rf(File.join(@release_dir, "config", "dev.yml"))
 
     r = new_release(@release_dir)
-    r.dev_name.should be_nil
-    r.final_name.should == "prod-release"
+    expect(r.dev_name).to be_nil
+    expect(r.final_name).to eq("prod-release")
   end
 
   it "has attributes persisted in public release config" do
@@ -50,8 +50,102 @@ describe Bosh::Cli::Release do
     FileUtils.rm_rf(File.join(@release_dir, "config", "final.yml"))
 
     r = new_release(@release_dir)
-    r.dev_name.should == "dev-release"
-    r.final_name.should be_nil
+    expect(r.dev_name).to eq("dev-release")
+    expect(r.final_name).to be_nil
+  end
+
+  describe "#blobstore" do
+    let(:local_release) { Bosh::Cli::Release.new(spec_asset("config/local")) }
+
+    it "returns a blobstore client" do
+      opts = {
+        :blobstore_path => "/tmp/blobstore"
+      }
+      expect(Bosh::Blobstore::Client).to receive(:safe_create).with("local", opts).and_call_original
+      expect(local_release.blobstore).to be_kind_of(Bosh::Blobstore::BaseClient)
+    end
+
+    it "returns the cached blobstore client if previously constructed" do
+      expect(Bosh::Blobstore::Client).to receive(:safe_create).and_call_original
+      blobstore = local_release.blobstore
+
+      expect(Bosh::Blobstore::Client).to_not receive(:safe_create)
+      new_blobstore = local_release.blobstore
+
+      expect(blobstore).to be(new_blobstore)
+    end
+
+    it "raises an error when an unknown blobstore provider is configured" do
+      r = Bosh::Cli::Release.new(spec_asset("config/unknown-provider"))
+      expect {
+        r.blobstore
+      }.to raise_error(Bosh::Cli::CliError,
+        /Cannot initialize blobstore.*Unknown client provider 'unknown-provider-name'/)
+    end
+
+    context "when creating a final release" do
+      let(:final) { true }
+      let(:config_dir) { nil }
+      let(:release) { Bosh::Cli::Release.new(config_dir, final) }
+
+      context "when a blobstore is not configured" do
+        let(:config_dir) { spec_asset("config/no-blobstore") }
+
+        it "raises an error" do
+          release = Bosh::Cli::Release.new(spec_asset("config/no-blobstore"), final)
+          expect {
+            release.blobstore
+          }.to raise_error(Bosh::Cli::CliError,
+            "Missing blobstore configuration, please update config/final.yml")
+        end
+      end
+
+      context "when a blobstore secret is not configured" do
+        let(:config_dir) { spec_asset("config/no-blobstore-secret") }
+
+        it "raises an error" do
+          expect {
+            release.blobstore
+          }.to raise_error(Bosh::Cli::CliError,
+            "Missing blobstore secret configuration, please update config/private.yml")
+        end
+      end
+
+      context "when a blobstore is configured" do
+        let(:config_dir) { spec_asset("config/local") }
+
+        it "returns the configured blobstore" do
+          expect(Bosh::Blobstore::Client).to receive(:safe_create).with("local", {blobstore_path: "/tmp/blobstore"}).and_call_original
+          expect(release.blobstore).to be_kind_of(Bosh::Blobstore::BaseClient)
+        end
+      end
+    end
+
+    context "when creating a dev release" do
+      let(:final) { false }
+      let(:config_dir) { nil }
+      let(:release) { Bosh::Cli::Release.new(config_dir, final) }
+
+      context "when a blobstore is not configured" do
+        let(:config_dir) { spec_asset("config/no-blobstore") }
+
+        it "prints warning and returns nil" do
+          expect(release).to receive(:warning).
+            with("Missing blobstore configuration, please update config/final.yml before making a final release")
+          expect(Bosh::Blobstore::Client).to_not receive(:safe_create)
+          expect(release.blobstore).to be_nil
+        end
+      end
+
+      context "when a blobstore is configured" do
+        let(:config_dir) { spec_asset("config/local") }
+
+        it "returns the configured blobstore" do
+          expect(Bosh::Blobstore::Client).to receive(:safe_create).with("local", {blobstore_path: "/tmp/blobstore"}).and_call_original
+          expect(release.blobstore).to be_kind_of(Bosh::Blobstore::BaseClient)
+        end
+      end
+    end
   end
 
   describe "merging final.yml with private.yml" do
@@ -61,15 +155,15 @@ describe Bosh::Cli::Release do
         :uid => "bosh",
         :secret => "bar"
       }
-      Bosh::Blobstore::Client.should_receive(:safe_create).with("atmos", opts)
-      r.should_receive(:say)
+      expect(Bosh::Blobstore::Client).to receive(:safe_create).with("atmos", opts)
+      expect(r).to receive(:say)
 
       r.blobstore
     end
 
     it "should detect blobstore secrets for deprecated options" do
       r = Bosh::Cli::Release.new(spec_asset("config/deprecation"))
-      r.has_blobstore_secret?.should be(true)
+      expect(r.has_blobstore_secret?).to eq(true)
     end
 
     it "should merge s3 secrets into options" do
@@ -79,13 +173,13 @@ describe Bosh::Cli::Release do
         :secret_access_key => "foo",
         :access_key_id => "bar"
       }
-      Bosh::Blobstore::Client.should_receive(:safe_create).with("s3", opts)
+      expect(Bosh::Blobstore::Client).to receive(:safe_create).with("s3", opts)
       r.blobstore
     end
 
     it "should detect blobstore secrets for s3 options" do
       r = Bosh::Cli::Release.new(spec_asset("config/s3"))
-      r.has_blobstore_secret?.should be(true)
+      expect(r.has_blobstore_secret?).to eq(true)
     end
 
     it "should merge atmos secrets into options" do
@@ -94,13 +188,13 @@ describe Bosh::Cli::Release do
         :uid => "bosh",
         :secret => "bar"
       }
-      Bosh::Blobstore::Client.should_receive(:safe_create).with("atmos", opts)
+      expect(Bosh::Blobstore::Client).to receive(:safe_create).with("atmos", opts)
       r.blobstore
     end
 
     it "should detect blobstore secrets for atmos options" do
       r = Bosh::Cli::Release.new(spec_asset("config/atmos"))
-      r.has_blobstore_secret?.should be(true)
+      expect(r.has_blobstore_secret?).to eq(true)
     end
 
     it "should merge swift (HP) secrets into options" do
@@ -115,13 +209,13 @@ describe Bosh::Cli::Release do
           :hp_avl_zone => "avl"
         }
       }
-      Bosh::Blobstore::Client.should_receive(:safe_create).with("swift", opts)
+      expect(Bosh::Blobstore::Client).to receive(:safe_create).with("swift", opts)
       r.blobstore
     end
 
     it "should detect blobstore secrets for swift (HP) options" do
       r = Bosh::Cli::Release.new(spec_asset("config/swift-hp"))
-      r.has_blobstore_secret?.should be(true)
+      expect(r.has_blobstore_secret?).to eq(true)
     end
 
     it "should merge swift (OpenStack) secrets into options" do
@@ -137,13 +231,13 @@ describe Bosh::Cli::Release do
           :openstack_region => "reg"
         }
       }
-      Bosh::Blobstore::Client.should_receive(:safe_create).with("swift", opts)
+      expect(Bosh::Blobstore::Client).to receive(:safe_create).with("swift", opts)
       r.blobstore
     end
 
     it "should detect blobstore secrets for swift (OpenStack) options" do
       r = Bosh::Cli::Release.new(spec_asset("config/swift-openstack"))
-      r.has_blobstore_secret?.should be(true)
+      expect(r.has_blobstore_secret?).to eq(true)
     end
 
     it "should merge swift (Rackspace) secrets into options" do
@@ -157,13 +251,13 @@ describe Bosh::Cli::Release do
           :rackspace_region => "reg"
         }
       }
-      Bosh::Blobstore::Client.should_receive(:safe_create).with("swift", opts)
+      expect(Bosh::Blobstore::Client).to receive(:safe_create).with("swift", opts)
       r.blobstore
     end
 
     it "should detect blobstore secrets for swift (Rackspace) options" do
       r = Bosh::Cli::Release.new(spec_asset("config/swift-rackspace"))
-      r.has_blobstore_secret?.should be(true)
+      expect(r.has_blobstore_secret?).to eq(true)
     end
 
     it 'should not use credentials for a local blobstore' do
@@ -176,7 +270,7 @@ describe Bosh::Cli::Release do
       opts = {
         :blobstore_path => "/tmp/blobstore"
       }
-      Bosh::Blobstore::Client.should_receive(:safe_create).with("local", opts)
+      expect(Bosh::Blobstore::Client).to receive(:safe_create).with("local", opts)
       r.blobstore
     end
 

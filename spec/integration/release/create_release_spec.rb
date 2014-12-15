@@ -5,16 +5,25 @@ describe 'create release', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
 
-  # <9s
-  it 'cannot create a final release without the blobstore secret', no_reset: true do
+  it 'cannot create a final release without the blobstore configured', no_reset: true do
     Dir.chdir(TEST_RELEASE_DIR) do
       FileUtils.rm_rf('dev_releases')
 
-      # We switched to using a local provider in the template, so move in a config from elsewhere
+      FileUtils.cp(spec_asset('empty_blobstore_config.yml'), 'config/final.yml')
+
+      out = bosh_runner.run_in_current_dir('create release --final', failure_expected: true)
+      expect(out).to match(/Missing blobstore configuration, please update config\/final\.yml/)
+    end
+  end
+
+  it 'cannot create a final release without the blobstore secret configured', no_reset: true do
+    Dir.chdir(TEST_RELEASE_DIR) do
+      FileUtils.rm_rf('dev_releases')
+
       FileUtils.cp(spec_asset('blobstore_config_requiring_credentials.yml'), 'config/final.yml')
 
       out = bosh_runner.run_in_current_dir('create release --final', failure_expected: true)
-      expect(out).to match(/Can't create final release without blobstore secret/)
+      expect(out).to match(/Missing blobstore secret configuration, please update config\/private\.yml/)
     end
   end
 

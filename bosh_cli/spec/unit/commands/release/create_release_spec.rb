@@ -10,7 +10,8 @@ module Bosh::Cli::Command::Release
         instance_double(
           'Bosh::Cli::Release',
           dev_name: configured_dev_name,
-          final_name: configured_final_name
+          final_name: configured_final_name,
+          blobstore: nil
         )
       end
       let(:question) { instance_double('HighLine::Question') }

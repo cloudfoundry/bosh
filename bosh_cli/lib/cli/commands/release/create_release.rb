@@ -63,7 +63,7 @@ module Bosh::Cli::Command
         manifest_only = !options[:with_tarball]
         dry_run = options[:dry_run]
 
-        err("Can't create final release without blobstore secret") if final && !release.has_blobstore_secret?
+        release.blobstore # prime & validate blobstore config
 
         dirty_blob_check(force)
 

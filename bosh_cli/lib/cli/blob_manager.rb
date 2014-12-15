@@ -45,9 +45,6 @@ module Bosh::Cli
       end
 
       @blobstore = @release.blobstore
-      if @blobstore.nil?
-        err("Blobstore is not configured")
-      end
 
       @new_blobs = []
       @updated_blobs = []
@@ -237,6 +234,10 @@ module Bosh::Cli
     # Uploads blob to a blobstore, updates blobs index.
     # @param [String] path Blob path relative to blobs dir
     def upload_blob(path)
+      if @blobstore.nil?
+        err("Failed to upload blobs: blobstore not configured")
+      end
+
       blob_path = File.join(@blobs_dir, path)
 
       unless File.exists?(blob_path)
@@ -267,6 +268,10 @@ module Bosh::Cli
     # Downloads blob from a blobstore
     # @param [String] path Downloaded blob file path
     def download_blob(path)
+      if @blobstore.nil?
+        err("Failed to download blobs: blobstore not configured")
+      end
+
       unless @index.has_key?(path)
         err("Unknown blob path `#{path}'")
       end

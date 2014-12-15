@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require "spec_helper"
 
 describe Bosh::Cli::BlobManager do
@@ -24,13 +22,6 @@ describe Bosh::Cli::BlobManager do
       expect {
         make_manager(@release)
       }.to raise_error("`src' directory is missing")
-    end
-
-    it "fails if blobstore is not configured" do
-      @release.stub(:blobstore).and_return(nil)
-      expect {
-        make_manager(@release)
-      }.to raise_error("Blobstore is not configured")
     end
 
     it "creates necessary directories in release dir" do
@@ -146,6 +137,14 @@ describe Bosh::Cli::BlobManager do
   end
 
   describe "downloading a blob" do
+    it 'fails if blobstore is not configured' do
+      @release.stub(:blobstore).and_return(nil)
+
+      expect {
+        make_manager(@release).download_blob('foo')
+      }.to raise_error('Failed to download blobs: blobstore not configured')
+    end
+
     it "cannot download blob if path is not in index" do
       @manager = make_manager(@release)
 
@@ -180,6 +179,14 @@ describe Bosh::Cli::BlobManager do
   describe "uploading a blob" do
     before(:each) do
       @manager = make_manager(@release)
+    end
+
+    it "fails if blobstore is not configured" do
+      @release.stub(:blobstore).and_return(nil)
+
+      expect {
+        make_manager(@release).upload_blob("foo")
+      }.to raise_error("Failed to upload blobs: blobstore not configured")
     end
 
     it "needs blob path to exist" do
