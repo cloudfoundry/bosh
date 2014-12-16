@@ -22,6 +22,7 @@ module Bosh::Dev
       proxy = NullUri.new if bypass_proxy?(uri)
 
       Net::HTTP.start(uri.host, uri.port, proxy.host, proxy.port, proxy.user, proxy.password) do |http|
+        http.read_timeout = 300
         http.request_get(uri.request_uri) do |response|
           raise "remote file '#{uri}' not found" if response.kind_of? Net::HTTPNotFound
           write_response(response, write_path)
