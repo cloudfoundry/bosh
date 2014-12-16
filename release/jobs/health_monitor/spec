@@ -171,3 +171,14 @@ properties:
     description: Health Monitor Application Key for DataDog
   hm.datadog.pagerduty_service_name:
     description: Service name to alert in PagerDuty upon HM events
+
+  # Send metrics to Graphite
+  hm.graphite_enabled:
+    description: Enable Graphite plugin
+    default: false
+  hm.graphite.address:
+    description: Graphite address
+  hm.graphite.port:
+    description: Graphite port
+  hm.graphite.prefix:
+    description: Prefix that will be added to all metrics sent to Graphite
