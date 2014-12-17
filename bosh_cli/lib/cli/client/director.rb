@@ -694,6 +694,7 @@ module Bosh
                SocketError,
                Errno::ECONNREFUSED,
                Timeout::Error,
+               Errno::ETIMEDOUT,
                HTTPClient::TimeoutError,
                HTTPClient::KeepAliveDisconnected,
                OpenSSL::SSL::SSLError => e
