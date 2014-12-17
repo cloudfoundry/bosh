@@ -729,6 +729,8 @@ describe Bosh::Cli::Client::Director do
         URI::Error.new('fake-error'),
         SocketError.new('fake-error'),
         Errno::ECONNREFUSED.new,
+        Errno::ECONNRESET.new,
+        Errno::ETIMEDOUT.new,
         Timeout::Error.new('fake-error'),
         HTTPClient::TimeoutError.new('fake-error'),
         HTTPClient::KeepAliveDisconnected.new('fake-error'),
