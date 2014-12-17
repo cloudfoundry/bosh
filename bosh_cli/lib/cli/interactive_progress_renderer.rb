@@ -1,9 +1,27 @@
 module Bosh::Cli
-  class ProgressRenderer
+  class InteractiveProgressRenderer
     def initialize
       @mutex = Mutex.new
       @indices = {}
     end
+
+    def start(path, label)
+      render(path, label)
+    end
+
+    def progress(path, label, percent)
+      render(path, "#{label} (#{percent}%)")
+    end
+
+    def error(path, message)
+      render(path, message.make_red)
+    end
+
+    def finish(path, label)
+      render(path, label.make_green)
+    end
+
+    private
 
     def render(path, label)
       @mutex.synchronize do
@@ -28,8 +46,6 @@ module Bosh::Cli
         Bosh::Cli::Config.output.flush # Ruby 1.8 compatibility
       end
     end
-
-    private
 
     def save_cursor_position
       say("\033[s", "")

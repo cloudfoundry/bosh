@@ -10,8 +10,8 @@ module Bosh::Cli
     attr_reader :new_blobs, :updated_blobs
 
     # @param [Bosh::Cli::Release] release BOSH Release object
-    def initialize(release, max_parallel_downloads)
-      @progress_renderer = ProgressRenderer.new
+    def initialize(release, max_parallel_downloads, progress_renderer)
+      @progress_renderer = progress_renderer
       @max_parallel_downloads = max_parallel_downloads
 
       @release = release
@@ -223,7 +223,7 @@ module Bosh::Cli
           if checksum == entry["sha"]
             need_download = false
           else
-            progress(path, "checksum mismatch, re-downloading...\n".make_red)
+            @progress_renderer.error(path, "checksum mismatch, re-downloading...")
           end
         end
 
@@ -264,9 +264,9 @@ module Bosh::Cli
 
       checksum = file_checksum(blob_path)
 
-      progress(path, "uploading...")
+      @progress_renderer.start(path, "uploading...")
       object_id = @blobstore.create(File.open(blob_path, "r"))
-      progress(path, "uploaded\n".make_green)
+      @progress_renderer.finish(path, "uploaded")
 
       @index[path] = {
         "object_id" => object_id,
@@ -301,21 +301,22 @@ module Bosh::Cli
       end
 
       progress_bar = Thread.new do
+        @progress_renderer.start(path, "#{download_label}")
         loop do
           break unless size > 0
           if File.exists?(tmp_file.path)
             pct = 100 * File.size(tmp_file.path).to_f / size
-            progress(path, "#{download_label} (#{pct.to_i}%)...")
+            @progress_renderer.progress(path, "#{download_label}", pct.to_i)
           end
           sleep(0.2)
         end
       end
 
-      progress(path, "#{download_label}...")
+      @progress_renderer.progress(path, "#{download_label}", 100)
       @blobstore.get(blob["object_id"], tmp_file)
       tmp_file.close
       progress_bar.kill
-      progress(path, "downloaded\n".make_green)
+      @progress_renderer.finish(path, "downloaded")
 
       if file_checksum(tmp_file.path) != blob["sha"]
         err("Checksum mismatch for downloaded blob `#{path}'")
@@ -325,13 +326,6 @@ module Bosh::Cli
     end
 
     private
-
-    # Renders blob operation progress
-    # @param [String] path Blob path relative to blobs dir
-    # @param [String] label Operation happening to a blob
-    def progress(path, label)
-      @progress_renderer.render(path, label)
-    end
 
     # @param [String] src Path to a file containing the blob
     # @param [String] dst Resulting blob path relative to blobs dir

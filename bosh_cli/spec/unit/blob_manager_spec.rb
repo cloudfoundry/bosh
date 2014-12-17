@@ -2,8 +2,9 @@ require "spec_helper"
 
 describe Bosh::Cli::BlobManager do
 
-  def make_manager(release, max_parallel_downloads=1)
-    Bosh::Cli::BlobManager.new(release, max_parallel_downloads)
+  def make_manager(release, max_parallel_downloads=1, renderer=nil)
+    renderer ||= Bosh::Cli::InteractiveProgressRenderer.new
+    Bosh::Cli::BlobManager.new(release, max_parallel_downloads, renderer)
   end
 
   before(:each) do
@@ -166,7 +167,11 @@ describe Bosh::Cli::BlobManager do
         Psych.dump(index, f)
       end
 
-      @manager = make_manager(@release)
+      renderer = Bosh::Cli::InteractiveProgressRenderer.new
+      expect(renderer).to receive(:progress).at_least(1).times
+      expect(renderer).to receive(:finish).once
+
+      @manager = make_manager(@release, 1, renderer)
       expect(@blobstore)
         .to receive(:get)
         .with("deadbeef", an_instance_of(File)) { |_, f | f.write("blob contents") }
@@ -206,6 +211,12 @@ describe Bosh::Cli::BlobManager do
     it "uploads file to a blobstore, updates index and symlinks blob" do
       new_blob = File.join(@dir, "blob")
       File.open(new_blob, "w") { |f| f.write("test blob") }
+
+      renderer = Bosh::Cli::InteractiveProgressRenderer.new
+      expect(renderer).to receive(:start).once
+      expect(renderer).to receive(:finish).once
+      @manager = make_manager(@release, 1, renderer)
+
       @manager.add_blob(new_blob, "foo")
 
       expect(@blobstore).to receive(:create).and_return("deadbeef")
@@ -284,6 +295,7 @@ describe Bosh::Cli::BlobManager do
       bar.close
 
       allow(Bosh::Cli::Semaphore).to receive(:new).and_call_original
+
       @manager = make_manager(@release, 99)
       expect(@manager).to receive(:download_blob).with("foo").and_return(foo.path)
       expect(@manager).to receive(:download_blob).with("bar").and_return(bar.path)

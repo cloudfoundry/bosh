@@ -100,7 +100,7 @@ describe Bosh::Cli::Command::Base do
     allow(cmd).to receive(:release).and_return(release)
 
     cmd.blob_manager
-    expect(Bosh::Cli::BlobManager).to have_received(:new).with(release, max_parallel_downloads)
+    expect(Bosh::Cli::BlobManager).to have_received(:new).with(release, max_parallel_downloads, anything)
     Bosh::Cli::Config.max_parallel_downloads = nil
   end
 

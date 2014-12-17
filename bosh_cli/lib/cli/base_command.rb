@@ -51,8 +51,12 @@ module Bosh::Cli
         @release = Bosh::Cli::Release.new(@work_dir, options[:final])
       end
 
+      def progress_renderer
+        interactive? ? Bosh::Cli::InteractiveProgressRenderer.new : Bosh::Cli::NonInteractiveProgressRenderer.new
+      end
+
       def blob_manager
-        @blob_manager ||= Bosh::Cli::BlobManager.new(release, config.max_parallel_downloads)
+        @blob_manager ||= Bosh::Cli::BlobManager.new(release, config.max_parallel_downloads, progress_renderer)
       end
 
       def blobstore

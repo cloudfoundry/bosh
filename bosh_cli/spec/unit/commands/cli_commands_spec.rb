@@ -17,97 +17,117 @@ describe Bosh::Cli::Command::Base do
     before :each do
       @cmd = Bosh::Cli::Command::Misc.new
       @cmd.add_option(:config, @config)
-      @cmd.add_option(:non_interactive, true)
     end
+    context 'in non_interactive mode' do
+      before :each do
+        @cmd.add_option(:non_interactive, true)
+      end
 
-    it 'sets the target' do
-      expect(@cmd.target).to be_nil
-      @cmd.set_target('http://example.com:232')
-      expect(@cmd.target).to eq('http://example.com:232')
-    end
+      it 'uses NonInteractiveProgressRenderer' do
+        expect(@cmd.progress_renderer).to be_a(Bosh::Cli::NonInteractiveProgressRenderer)
+      end
 
-    it 'normalizes target' do
-      expect(@cmd.target).to be_nil
-      @cmd.set_target('test')
-      expect(@cmd.target).to eq('https://test:25555')
-    end
+      it 'sets the target' do
+        expect(@cmd.target).to be_nil
+        @cmd.set_target('http://example.com:232')
+        expect(@cmd.target).to eq('http://example.com:232')
+      end
 
-    it 'handles director errors when setting target' do
-      expect(@director).to receive(:get_status).and_raise(Bosh::Cli::DirectorError)
-
-      expect {
+      it 'normalizes target' do
+        expect(@cmd.target).to be_nil
         @cmd.set_target('test')
-      }.to raise_error(Bosh::Cli::CliError, /cannot talk to director/i)
+        expect(@cmd.target).to eq('https://test:25555')
+      end
 
-      expect(@cmd.target).to be_nil
+      it 'handles director errors when setting target' do
+        expect(@director).to receive(:get_status).and_raise(Bosh::Cli::DirectorError)
+
+        expect {
+          @cmd.set_target('test')
+        }.to raise_error(Bosh::Cli::CliError, /cannot talk to director/i)
+
+        expect(@cmd.target).to be_nil
+      end
+
+      it 'sets target' do
+        @cmd.set_target('test')
+        expect(@cmd.target).to eq('https://test:25555')
+      end
+
+      it 'supports named targets' do
+        @cmd.set_target('test', 'mytarget')
+        expect(@cmd.target).to eq('https://test:25555')
+
+        @cmd.set_target('mytarget')
+        expect(@cmd.target).to eq('https://test:25555')
+
+        @cmd.set_target('foo', 'myfoo')
+        expect(@cmd.target).to eq('https://foo:25555')
+
+        @cmd.set_target('myfoo')
+        expect(@cmd.target).to eq('https://foo:25555')
+      end
+
+      it 'logs user in' do
+        expect(@director).to receive(:authenticated?).and_return(true)
+        expect(@director).to receive(:user=).with('user')
+        expect(@director).to receive(:password=).with('pass')
+        @cmd.set_target('test')
+        @cmd.login('user', 'pass')
+        expect(@cmd.logged_in?).to be(true)
+        expect(@cmd.username).to eq('user')
+        expect(@cmd.password).to eq('pass')
+      end
+
+      it 'logs user in with highline' do
+        expect(@director).to receive(:authenticated?).and_return(true)
+        expect(@director).to receive(:user=).with('user')
+        expect(@director).to receive(:password=).with('pass')
+        @cmd.set_target('test')
+        @cmd.login(HighLine::String.new('user'), HighLine::String.new('pass'))
+        expect(@cmd.logged_in?).to be(true)
+        expect(@cmd.username).to eq('user')
+        expect(@cmd.password).to eq('pass')
+        config_file = File.read(File.expand_path(@config))
+        expect(config_file).not_to match /HighLine::String/
+        expect(config_file).to include('username: user')
+        expect(config_file).to include('password: pass')
+      end
+
+      it 'logs user out' do
+        @cmd.set_target('test')
+        expect(@director).to receive(:authenticated?).and_return(true)
+        expect(@director).to receive(:user=).with('user')
+        expect(@director).to receive(:password=).with('pass')
+        @cmd.login('user', 'pass')
+        @cmd.logout
+        expect(@cmd.logged_in?).to be(false)
+      end
+
+      it 'respects director checks option when logging in' do
+        allow(@director).to receive(:get_status).
+            and_return({'user' => 'user', 'name' => 'ZB'})
+        allow(@director).to receive(:authenticated?).and_return(true)
+
+        @cmd.set_target('test')
+        expect(@director).to receive(:user=).with('user')
+        expect(@director).to receive(:password=).with('pass')
+        @cmd.login('user', 'pass')
+        expect(@cmd.logged_in?).to be(true)
+        expect(@cmd.username).to eq('user')
+        expect(@cmd.password).to eq('pass')
+      end
     end
 
-    it 'sets target' do
-      @cmd.set_target('test')
-      expect(@cmd.target).to eq('https://test:25555')
-    end
+    context 'in interactive mode' do
+      before :each do
+        @cmd.add_option(:non_interactive, false)
+      end
 
-    it 'supports named targets' do
-      @cmd.set_target('test', 'mytarget')
-      expect(@cmd.target).to eq('https://test:25555')
-
-      @cmd.set_target('foo', 'myfoo')
-
-      @cmd.set_target('mytarget')
-      expect(@cmd.target).to eq('https://test:25555')
-
-      @cmd.set_target('myfoo')
-      expect(@cmd.target).to eq('https://foo:25555')
-    end
-
-    it 'logs user in' do
-      expect(@director).to receive(:authenticated?).and_return(true)
-      expect(@director).to receive(:user=).with('user')
-      expect(@director).to receive(:password=).with('pass')
-      @cmd.set_target('test')
-      @cmd.login('user', 'pass')
-      expect(@cmd.logged_in?).to be(true)
-      expect(@cmd.username).to eq('user')
-      expect(@cmd.password).to eq('pass')
-    end
-
-    it 'logs user in with highline' do
-      expect(@director).to receive(:authenticated?).and_return(true)
-      expect(@director).to receive(:user=).with('user')
-      expect(@director).to receive(:password=).with('pass')
-      @cmd.set_target('test')
-      @cmd.login(HighLine::String.new('user'), HighLine::String.new('pass'))
-      expect(@cmd.logged_in?).to be(true)
-      expect(@cmd.username).to eq('user')
-      expect(@cmd.password).to eq('pass')
-      config_file = File.read(File.expand_path(@config))
-      expect(config_file).not_to match /HighLine::String/
-      expect(config_file).to include('username: user')
-      expect(config_file).to include('password: pass')
-    end
-
-    it 'logs user out' do
-      @cmd.set_target('test')
-      expect(@director).to receive(:authenticated?).and_return(true)
-      expect(@director).to receive(:user=).with('user')
-      expect(@director).to receive(:password=).with('pass')
-      @cmd.login('user', 'pass')
-      @cmd.logout
-      expect(@cmd.logged_in?).to be(false)
-    end
-
-    it 'respects director checks option when logging in' do
-      allow(@director).to receive(:get_status).
-          and_return({'user' => 'user', 'name' => 'ZB'})
-      allow(@director).to receive(:authenticated?).and_return(true)
-
-      @cmd.set_target('test')
-      expect(@director).to receive(:user=).with('user')
-      expect(@director).to receive(:password=).with('pass')
-      @cmd.login('user', 'pass')
-      expect(@cmd.logged_in?).to be(true)
-      expect(@cmd.username).to eq('user')
-      expect(@cmd.password).to eq('pass')
+      it 'uses InteractiveProgressRenderer' do
+        @cmd.add_option(:non_interactive, false)
+        expect(@cmd.progress_renderer).to be_a(Bosh::Cli::InteractiveProgressRenderer)
+      end
     end
   end
 
@@ -333,7 +353,7 @@ describe Bosh::Cli::Command::Base do
 
       expect(@cmd).to receive(:check_if_release_dir)
       allow(Bosh::Cli::Release).to receive(:new).and_return(@release)
-      allow(Bosh::Cli::BlobManager).to receive(:new).with(@release, kind_of(Integer)).
+      allow(Bosh::Cli::BlobManager).to receive(:new).with(@release, kind_of(Integer), kind_of(Bosh::Cli::NonInteractiveProgressRenderer)).
           and_return(@blob_manager)
     end
 

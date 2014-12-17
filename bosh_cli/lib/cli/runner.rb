@@ -114,7 +114,7 @@ module Bosh::Cli
         @options[:config] = file
       end
 
-      opts.on("-M", "--max-parallel-downloads MAX", "Sets the max number of parallel downloads to create") do |max|
+      opts.on("--parallel MAX", "Sets the max number of parallel downloads") do |max|
         Config.max_parallel_downloads = Integer(max)
       end
 
