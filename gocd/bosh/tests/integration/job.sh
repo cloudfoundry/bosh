@@ -23,6 +23,6 @@ chruby $RUBY_VERSION
 
 bundle install --local --without development
 
-echo `echo "DB: ${DB:?'<default>'}"`
+echo "DB: ${DB:-'<default>'}"
 echo "Installing Go & Running integration tests..."
 bundle exec rake --trace go spec:integration
