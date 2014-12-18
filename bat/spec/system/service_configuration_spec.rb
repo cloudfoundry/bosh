@@ -188,9 +188,6 @@ fdescribe 'service configuration', :type => 'os'  do
         agent_running_on_instance(public_ip)
         monit_running_on_instance(public_ip)
 
-        p "GO CHECK"
-        sleep 300
-
         # compare pids pre- and post runsvdir kill
         # make sure runsvdir does not delete /etc/service/monit
         cmd = <<-EOF
