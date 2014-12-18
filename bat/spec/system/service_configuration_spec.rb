@@ -54,7 +54,7 @@ def batlight_running_on_instance(ip)
   process_running_on_instance(ip, "batlight")
 end
 
-fdescribe 'service configuration', :type => 'os'  do
+describe 'service configuration', :type => 'os'  do
   before(:all) do
     @requirements.requirement(@requirements.stemcell)
     @requirements.requirement(@requirements.release)
@@ -300,7 +300,7 @@ fdescribe 'service configuration', :type => 'os'  do
           fi
           for i in `seq 1 30`; do
             monit=$(#{sudo} PATH=$PATH:/var/vcap/bosh/bin monit status | grep '^\s*pid' | awk '{ print \$2 }')
-            if [ -n "${monit}" ]; then break; fi
+            if [ -n "${monit}" ] && [ "x${monit}" != "x0" ]; then break; fi
             sleep 1
           done
           if [ "${monit}" != "${pgrep}" ]; then
@@ -329,7 +329,7 @@ fdescribe 'service configuration', :type => 'os'  do
           fi
           for i in `seq 1 30`; do
             monit=$(#{sudo} PATH=$PATH:/var/vcap/bosh/bin monit status | grep '^\s*pid' | awk '{ print \$2 }')
-            if [ -n "${monit}" ]; then break; fi
+            if [ -n "${monit}" ] && [ "x${monit}" != "x0" ]; then break; fi
             sleep 1
           done
           if [ "${monit}" != "${pgrep}" ]; then
