@@ -37,7 +37,7 @@ namespace :spec do
     def run_in_parallel(test_path, options={})
       count = " -n #{options[:count]}" unless options[:count].to_s.empty?
       group = " --only-group #{options[:group]}" unless options[:group].to_s.empty?
-      command = "bundle exec parallel_test '#{test_path}'#{count}#{group} --group-by filesize --type rspec"
+      command = "https_proxy= http_proxy= bundle exec parallel_test '#{test_path}'#{count}#{group} --group-by filesize --type rspec"
       puts command
       abort unless system(command)
     end
