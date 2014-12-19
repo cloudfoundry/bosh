@@ -24,6 +24,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'blobstore_client', "~>#{version}"
   s.add_dependency 'bosh_common',      "~>#{version}"
   s.add_dependency 'bosh-template',    "~>#{version}"
-  s.add_dependency 'yajl-ruby', '~>1.2.0'
+  s.add_dependency 'json_pure'
   s.add_dependency 'trollop',   '~>1.16'
 end

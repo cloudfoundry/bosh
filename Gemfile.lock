@@ -10,7 +10,7 @@ PATH
   specs:
     agent_client (1.2792.0)
       httpclient (= 2.4.0)
-      yajl-ruby (~> 1.2.0)
+      json_pure
 
 PATH
   remote: blobstore_client
@@ -96,11 +96,11 @@ PATH
       dogapi (~> 1.6.0)
       em-http-request (~> 0.3.0)
       eventmachine (~> 1.0.0)
+      json_pure
       logging (~> 1.8.2)
       nats (= 0.5.0.beta.12)
       sinatra (~> 1.4.2)
       thin (~> 1.5.0)
-      yajl-ruby (~> 1.2.0)
 
 PATH
   remote: bosh-registry
@@ -108,10 +108,10 @@ PATH
     bosh-registry (1.2792.0)
       aws-sdk (= 1.44.0)
       fog (~> 1.23.0)
+      json_pure
       sequel (~> 3.43.0)
       sinatra (~> 1.4.2)
       thin (~> 1.5.0)
-      yajl-ruby (~> 1.2.0)
 
 PATH
   remote: bosh-release
@@ -121,8 +121,8 @@ PATH
       blobstore_client (~> 1.2792.0)
       bosh-template (~> 1.2792.0)
       bosh_common (~> 1.2792.0)
+      json_pure
       trollop (~> 1.16)
-      yajl-ruby (~> 1.2.0)
 
 PATH
   remote: bosh-stemcell
