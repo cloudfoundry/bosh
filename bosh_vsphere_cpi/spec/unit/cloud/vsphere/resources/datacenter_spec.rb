@@ -16,10 +16,12 @@ describe VSphereCloud::Resources::Datacenter do
                                  datacenter_use_sub_folder: false,
   ) }
   let(:client) { instance_double('VSphereCloud::Client') }
-  let(:multitenant_folder) { instance_double('VSphereCloud::Resources::MultiTenantFolder') }
+
   let(:vm_folder) { instance_double('VSphereCloud::Resources::Folder') }
+  let(:vm_subfolder) { instance_double('VSphereCloud::Resources::Folder') }
+
   let(:template_folder) { instance_double('VSphereCloud::Resources::Folder') }
-  let(:multitenant_template_folder) { instance_double('VSphereCloud::Resources::MultiTenantFolder') }
+  let(:template_subfolder) { instance_double('VSphereCloud::Resources::Folder') }
   let(:datacenter_mob) { instance_double('VimSdk::Vim::Datacenter') }
   let(:cluster_mob1) { instance_double('VimSdk::Vim::Cluster') }
   let(:cluster_mob2) { instance_double('VimSdk::Vim::Cluster') }
@@ -35,14 +37,17 @@ describe VSphereCloud::Resources::Datacenter do
   before do
     allow(client).to receive(:find_by_inventory_path).with('fake-datacenter-name').and_return(datacenter_mob)
     allow(client).to receive(:cloud_searcher).and_return(cloud_searcher)
+
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
-                                                'fake-vm-folder', config).and_return(vm_folder)
-    allow(VSphereCloud::Resources::MultiTenantFolder).to receive(:new).with(
-                                                'fake-vm-folder', 'fake-uuid', config).and_return(multitenant_folder)
+      ['fake-vm-folder'], config).and_return(vm_folder)
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
-                                                'fake-template-folder', config).and_return(template_folder)
-    allow(VSphereCloud::Resources::MultiTenantFolder).to receive(:new).with(
-                                                'fake-template-folder', 'fake-uuid', config).and_return(multitenant_template_folder)
+      ['fake-vm-folder', 'fake-uuid'], config).and_return(vm_subfolder)
+
+    allow(VSphereCloud::Resources::Folder).to receive(:new).with(
+      ['fake-template-folder'], config).and_return(template_folder)
+    allow(VSphereCloud::Resources::Folder).to receive(:new).with(
+      ['fake-template-folder', 'fake-uuid'], config).and_return(template_subfolder)
+
     allow(cloud_searcher).to receive(:get_managed_objects).with(
                        VimSdk::Vim::ClusterComputeResource,
                        root: datacenter_mob, include_name: true).and_return(
@@ -92,7 +97,7 @@ describe VSphereCloud::Resources::Datacenter do
       before { allow(config).to receive(:datacenter_use_sub_folder).and_return(true) }
 
       it 'returns multi-tenant folder' do
-        expect(datacenter.vm_folder).to eq(multitenant_folder)
+        expect(datacenter.vm_folder).to eq(vm_subfolder)
       end
     end
   end
@@ -115,8 +120,8 @@ describe VSphereCloud::Resources::Datacenter do
     context 'when datacenter uses subfolders' do
       before { allow(config).to receive(:datacenter_use_sub_folder).and_return(true) }
 
-      it 'returns multi-tenant folder' do
-        expect(datacenter.template_folder).to eq(multitenant_template_folder)
+      it 'returns subfolder' do
+        expect(datacenter.template_folder).to eq(template_subfolder)
       end
     end
   end

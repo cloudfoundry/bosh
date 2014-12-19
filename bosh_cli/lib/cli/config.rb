@@ -19,6 +19,9 @@ module Bosh::Cli
 
       # @return [Integer] CLI polling interval
       attr_accessor :poll_interval
+
+      # @return [Integer] CLI max parallel downloads
+      attr_accessor :max_parallel_downloads
     end
 
     @commands = {}
@@ -164,6 +167,13 @@ module Bosh::Cli
       define_method "#{attr}=" do |value|
         write_global(attr, value)
       end
+    end
+
+    # Read the max parallel downloads configuration.
+    #
+    # @return [Integer] The maximum number of parallel downloads
+    def max_parallel_downloads
+      self.class.max_parallel_downloads || @config_file.fetch("max_parallel_downloads", 1)
     end
 
     def read(attr, try_local_first = true)

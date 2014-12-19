@@ -1,6 +1,10 @@
 script: 'bundle exec rake --trace go $TASKS'
 
-before_install: 'sudo apt-get update'
+before_install:
+  - 'sudo apt-get update'
+  - 'git config --global user.email "cf-bosh-eng+bosh-ci-push-pull@pivotallabs.com"'
+  - 'git config --global user.name "BOSH CI Push Pull"'
+
 install:
   - 'sudo apt-get install dnsutils'
   - 'bundle install --local --without development'
@@ -12,10 +16,10 @@ env:
   # limit unit test threads to 1 to avoid SimpleCov race conditions:
   # https://github.com/colszowka/simplecov/issues/305
   - COVERAGE=true BOSH_MAX_THREADS=1 TASKS="spec:unit ci:publish_coverage_report"
-  - DB=postgres NUM_GROUPS=4 GROUP=1 TASKS="spec:integration"
-  - DB=postgres NUM_GROUPS=4 GROUP=2 TASKS="spec:integration"
-  - DB=postgres NUM_GROUPS=4 GROUP=3 TASKS="spec:integration"
-  - DB=postgres NUM_GROUPS=4 GROUP=4 TASKS="spec:integration"
+  #- DB=postgres NUM_GROUPS=4 GROUP=1 TASKS="spec:integration"
+  #- DB=postgres NUM_GROUPS=4 GROUP=2 TASKS="spec:integration"
+  #- DB=postgres NUM_GROUPS=4 GROUP=3 TASKS="spec:integration"
+  #- DB=postgres NUM_GROUPS=4 GROUP=4 TASKS="spec:integration"
 
 addons:
   code_climate:

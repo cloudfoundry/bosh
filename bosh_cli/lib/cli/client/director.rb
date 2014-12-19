@@ -693,6 +693,8 @@ module Bosh
         rescue URI::Error,
                SocketError,
                Errno::ECONNREFUSED,
+               Errno::ETIMEDOUT,
+               Errno::ECONNRESET,
                Timeout::Error,
                HTTPClient::TimeoutError,
                HTTPClient::KeepAliveDisconnected,

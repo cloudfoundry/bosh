@@ -87,6 +87,7 @@ module Bosh::Stemcell
         :bosh_ntpdate,
         :bosh_sudoers,
         :rsyslog,
+        :delay_monit_start,
         # Install GRUB/kernel/etc
         :system_grub,
       ]
@@ -110,6 +111,7 @@ module Bosh::Stemcell
         :bosh_ntpdate,
         :bosh_sudoers,
         :rsyslog,
+        :delay_monit_start,
         # Install GRUB/kernel/etc
         :system_grub,
         # Symlink vim to vim.tiny

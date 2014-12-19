@@ -214,7 +214,7 @@ module VSphereCloud
 
       let(:template_folder) do
         double(:template_folder,
-          name: 'fake_template_folder',
+          path: ['fake_template_folder'],
           mob: 'fake_template_folder_mob'
         )
       end
@@ -247,7 +247,7 @@ module VSphereCloud
             [
               cluster.datacenter.name,
               'vm',
-              cluster.datacenter.template_folder.name,
+              cluster.datacenter.template_folder.path,
               stemcell_id,
             ]
           ).and_return(stemcell_vm)
@@ -260,7 +260,7 @@ module VSphereCloud
             [
               cluster.datacenter.name,
               'vm',
-              cluster.datacenter.template_folder.name,
+              cluster.datacenter.template_folder.path,
               "#{stemcell_id} %2f #{datastore.mob.__mo_id__}",
             ]
           ).and_return(double('fake stemcell vm'))
@@ -278,7 +278,7 @@ module VSphereCloud
               [
                 cluster.datacenter.name,
                 'vm',
-                cluster.datacenter.template_folder.name,
+                cluster.datacenter.template_folder.path,
                 "#{stemcell_id} %2f #{datastore.mob.__mo_id__}",
               ]
             )
@@ -709,7 +709,7 @@ module VSphereCloud
         )
       end
       before { allow(disk_model).to receive(:first).with(uuid: disk_cid).and_return(disk) }
-      let(:vm_folder) { instance_double('VSphereCloud::Resources::Folder', name: 'vm') }
+      let(:vm_folder) { instance_double('VSphereCloud::Resources::Folder', path: ['vm']) }
 
       before { allow(cloud_config).to receive(:datacenter_name).with(no_args).and_return('fake-folder/fake-datacenter-name') }
 
