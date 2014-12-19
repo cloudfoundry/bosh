@@ -294,7 +294,7 @@ describe Bosh::Cli::BlobManager do
       bar.write("bar")
       bar.close
 
-      allow(Bosh::Cli::Semaphore).to receive(:new).and_call_original
+      allow(Bosh::ThreadPool).to receive(:new).and_call_original
 
       @manager = make_manager(@release, 99)
       expect(@manager).to receive(:download_blob).with("foo").and_return(foo.path)
@@ -304,7 +304,8 @@ describe Bosh::Cli::BlobManager do
 
       expect(File.read(File.join(@blobs_dir, "foo"))).to eq("foo")
       expect(File.read(File.join(@blobs_dir, "bar"))).to eq("bar")
-      expect(Bosh::Cli::Semaphore).to have_received(:new).with(99)
+
+      expect(Bosh::ThreadPool).to have_received(:new).with(:max_threads => 99, :logger => kind_of(Logging::Logger))
     end
   end
 end

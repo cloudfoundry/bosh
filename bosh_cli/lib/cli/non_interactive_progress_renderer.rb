@@ -2,7 +2,6 @@ module Bosh::Cli
   class NonInteractiveProgressRenderer
     def initialize
       @mutex = Mutex.new
-      puts "Non-interactive progress initialized"
     end
 
     def start(path, label)
@@ -10,7 +9,6 @@ module Bosh::Cli
     end
 
     def progress(path, label, percent)
-
     end
 
     def error(path, message)

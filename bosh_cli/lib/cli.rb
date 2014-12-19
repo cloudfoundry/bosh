@@ -46,6 +46,7 @@ require 'common/version/release_version_list'
 require 'common/version/bosh_version'
 require 'common/version/stemcell_version'
 require 'common/version/stemcell_version_list'
+require 'common/thread_pool'
 
 require 'cli/config'
 require 'cli/core_ext'
@@ -62,7 +63,6 @@ require 'cli/director_task'
 
 require 'cli/line_wrap'
 require 'cli/backup_destination_path'
-require 'cli/semaphore'
 require 'cli/interactive_progress_renderer'
 require 'cli/non_interactive_progress_renderer'
 

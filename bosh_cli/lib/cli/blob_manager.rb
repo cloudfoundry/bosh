@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require 'logging'
 
 module Bosh::Cli
   # In order to avoid storing large objects in git repo,
@@ -12,6 +13,7 @@ module Bosh::Cli
     # @param [Bosh::Cli::Release] release BOSH Release object
     def initialize(release, max_parallel_downloads, progress_renderer)
       @progress_renderer = progress_renderer
+      max_parallel_downloads = 1 if max_parallel_downloads.nil? || max_parallel_downloads < 1
       @max_parallel_downloads = max_parallel_downloads
 
       @release = release
@@ -234,15 +236,14 @@ module Bosh::Cli
         end
       end
 
-      download_semaphore = Semaphore.new(@max_parallel_downloads)
-      missing_blobs.map do |blob|
-        Thread.new(*blob) do |path, sha|
-          download_semaphore.wait
-          local_path = download_blob(path)
-          install_blob(local_path, path, sha)
-          download_semaphore.signal
+      Bosh::ThreadPool.new(:max_threads => @max_parallel_downloads, :logger => Logging::Logger.new(nil)).wrap do |pool|
+        missing_blobs.each do |path, sha|
+          pool.process do
+            local_path = download_blob(path)
+            install_blob(local_path, path, sha)
+          end
         end
-      end.each(&:join)
+      end
     end
 
     # Uploads blob to a blobstore, updates blobs index.
