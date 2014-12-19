@@ -301,8 +301,8 @@ module Bosh::Cli
         download_label += " " + pretty_size(size)
       end
 
+      @progress_renderer.start(path, "#{download_label}")
       progress_bar = Thread.new do
-        @progress_renderer.start(path, "#{download_label}")
         loop do
           break unless size > 0
           if File.exists?(tmp_file.path)
@@ -313,10 +313,10 @@ module Bosh::Cli
         end
       end
 
-      @progress_renderer.progress(path, "#{download_label}", 100)
       @blobstore.get(blob["object_id"], tmp_file)
       tmp_file.close
       progress_bar.kill
+      @progress_renderer.progress(path, "#{download_label}", 100)
       @progress_renderer.finish(path, "downloaded")
 
       if file_checksum(tmp_file.path) != blob["sha"]

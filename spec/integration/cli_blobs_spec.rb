@@ -47,14 +47,11 @@ describe 'sync blobs', type: :integration do
       let(:parallel) { '' }
 
       it 'properly outputs progress' do
-        expected_sequential_output = ''
-
         blobs.each do |blob_name|
-          expected_sequential_output << "#{blob_name} downloading 11B\n"
+          expected_sequential_output = "#{blob_name} downloading 11B\n"
           expected_sequential_output << "#{blob_name} downloaded\n"
+          expect(sync_blobs_output).to include(expected_sequential_output)
         end
-
-        expect(sync_blobs_output).to include(expected_sequential_output)
       end
     end
   end
