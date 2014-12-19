@@ -4,21 +4,21 @@ require 'cloud'
 require 'logger'
 
 describe Bosh::OpenStackCloud::Cloud do
-  before(:all) do
-    @auth_url          = ENV['BOSH_OPENSTACK_AUTH_URL']    || raise('Missing BOSH_OPENSTACK_AUTH_URL')
-    @username          = ENV['BOSH_OPENSTACK_USERNAME']    || raise('Missing BOSH_OPENSTACK_USERNAME')
-    @api_key           = ENV['BOSH_OPENSTACK_API_KEY']     || raise('Missing BOSH_OPENSTACK_API_KEY')
-    @tenant            = ENV['BOSH_OPENSTACK_TENANT']      || raise('Missing BOSH_OPENSTACK_TENANT')
-    @stemcell_id       = ENV['BOSH_OPENSTACK_STEMCELL_ID'] || raise('Missing BOSH_OPENSTACK_STEMCELL_ID')
-    @net_id            = ENV['BOSH_OPENSTACK_NET_ID']      || raise('Missing BOSH_OPENSTACK_NET_ID')
-    @boot_volume_type  = ENV['BOSH_OPENSTACK_VOLUME_TYPE'] || raise('Missing BOSH_OPENSTACK_VOLUME_TYPE')
-    @manual_ip         = ENV['BOSH_OPENSTACK_MANUAL_IP']   || raise('Missing BOSH_OPENSTACK_MANUAL_IP')
-    @disable_snapshots = ENV.fetch('BOSH_OPENSTACK_DISABLE_SNAPSHOTS', false)
-    @default_key_name  = ENV.fetch('BOSH_OPENSTACK_DEFAULT_KEY_NAME', 'jenkins')
-    @config_drive      = ENV.fetch('BOSH_OPENSTACK_CONFIG_DRIVE', 'cdrom')
+  before do
+    @auth_url          = get_config(:auth_url, 'BOSH_OPENSTACK_AUTH_URL')
+    @username          = get_config(:username, 'BOSH_OPENSTACK_USERNAME')
+    @api_key           = get_config(:api_key, 'BOSH_OPENSTACK_API_KEY')
+    @tenant            = get_config(:tenant, 'BOSH_OPENSTACK_TENANT')
+    @stemcell_id       = get_config(:stemcell_id, 'BOSH_OPENSTACK_STEMCELL_ID')
+    @net_id            = get_config(:net_id, 'BOSH_OPENSTACK_NET_ID')
+    @boot_volume_type  = get_config(:volume_type, 'BOSH_OPENSTACK_VOLUME_TYPE')
+    @manual_ip         = get_config(:manual_ip, 'BOSH_OPENSTACK_MANUAL_IP')
+    @disable_snapshots = get_config(:disable_snapshots, 'BOSH_OPENSTACK_DISABLE_SNAPSHOTS', false)
+    @default_key_name  = get_config(:default_key_name, 'BOSH_OPENSTACK_DEFAULT_KEY_NAME', 'jenkins')
+    @config_drive      = get_config(:config_drive, 'BOSH_OPENSTACK_CONFIG_DRIVE', 'cdrom')
 
     # some environments may not have this set, and it isn't strictly necessary so don't raise if it isn't set
-    @region = ENV['BOSH_OPENSTACK_REGION']
+    @region             = get_config(:region, 'BOSH_OPENSTACK_REGION', nil)
   end
 
   let(:boot_from_volume) { false }
@@ -332,5 +332,27 @@ describe Bosh::OpenStackCloud::Cloud do
     # Prints all exceptions but raises original exception
     exceptions.each { |e| logger.info("Failed with: #{e.inspect}\n#{e.backtrace.join("\n")}\n") }
     raise exceptions.first if exceptions.any?
+  end
+
+  def get_config(key, env_key, default=:none)
+    env_file = ENV['LIFECYCLE_ENV_FILE']
+    env_name = ENV['LIFECYCLE_ENV_NAME']
+
+    if env_file && env_name
+      @configs ||= YAML.load_file(env_file)
+      config = @configs[env_name]
+      raise "no such env #{env_name} in #{env_file} (available: #{@configs.keys.sort.join(", ")})" unless config
+
+      value = config[key.to_s]
+      present = config.has_key?(key.to_s)
+    else
+      value = ENV[env_key]
+      present = ENV.has_key?(env_key)
+    end
+
+    if !present && default == :none
+      raise("Missing #{key}/#{env_key}; use LIFECYCLE_ENV_FILE=file.yml and LIFECYCLE_ENV_NAME=xxx or set in ENV")
+    end
+    present ? value : default
   end
 end
