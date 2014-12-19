@@ -15,9 +15,10 @@ module Bosh::Spec
 
     def run_in_current_dir(cmd, options = {})
       failure_expected = options.fetch(:failure_expected, false)
+      interactive_mode = options.fetch(:interactive, false) ? '' : '-n'
 
-      @logger.info("Running ... bosh -n #{cmd}")
-      command   = "bosh -n -c #{@bosh_config} #{cmd}"
+      @logger.info("Running ... bosh #{interactive_mode} #{cmd}")
+      command   = "bosh #{interactive_mode} -c #{@bosh_config} #{cmd}"
       output    = nil
       time      = Benchmark.realtime { output = `#{command} 2>&1` }
       @logger.info("Command took #{time} seconds")
