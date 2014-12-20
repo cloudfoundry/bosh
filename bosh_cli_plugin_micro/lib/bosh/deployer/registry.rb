@@ -30,7 +30,9 @@ module Bosh::Deployer
 
       cmd = "bosh-registry -c #{@registry_config.path}"
 
-      @registry_pid = Process.spawn(cmd)
+      Bundler.with_clean_env {
+        @registry_pid = Process.spawn(cmd)
+      }
 
       watch_for_crash(cmd)
       wait_for_listen
