@@ -64,14 +64,14 @@ describe VSphereCloud::Cloud, external_cpi: false do
   subject(:cpi) { @cpi }
 
   before(:all) do
-    Dir.mktmpdir do |temp_dir|
-      output = `tar -C #{temp_dir} -xzf #{@stemcell_path} 2>&1`
-      raise "Corrupt image, tar exit status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
-      @stemcell_id = @cpi.create_stemcell("#{temp_dir}/image", nil)
-    end
+    # Dir.mktmpdir do |temp_dir|
+    #   output = `tar -C #{temp_dir} -xzf #{@stemcell_path} 2>&1`
+    #   raise "Corrupt image, tar exit status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
+      @stemcell_id = 'sc-6c0de301-cd50-4381-9824-556195f84cd7'#@cpi.create_stemcell("#{temp_dir}/image", nil)
+    # end
   end
 
-  after(:all) { @cpi.delete_stemcell(@stemcell_id) if @stemcell_id }
+  # after(:all) { @cpi.delete_stemcell(@stemcell_id) if @stemcell_id }
 
   extend Bosh::Cpi::CompatibilityHelpers
   it_can_delete_non_existent_vm

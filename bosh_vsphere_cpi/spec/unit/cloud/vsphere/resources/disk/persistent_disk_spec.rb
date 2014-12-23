@@ -10,14 +10,16 @@ module VSphereCloud
         datacenters: {
           'fake-folder/fake-datacenter-name' => datacenter,
           'fake-incorrect-datacenter-name' => incorrect_datacenter,
-        },
+        }
       )
     end
-    let(:client) { instance_double('VSphereCloud::Client') }
+    let(:client) { instance_double('VSphereCloud::Client', create_datastore_folder: nil) }
     let(:logger) { instance_double('Logger', info: nil, debug: nil) }
 
-    let(:datacenter) { instance_double('VSphereCloud::Resources::Datacenter', disk_path: 'fake-disk-path', name: 'fake-datacenter-name') }
-    let(:incorrect_datacenter) { instance_double('VSphereCloud::Resources::Datacenter', disk_path: 'fake-disk-path') }
+    let(:datacenter) { instance_double('VSphereCloud::Resources::Datacenter', disk_path: 'fake-disk-path', name: 'fake-folder/fake-datacenter-name', mob: 'datacenter-mob') }
+    before { allow(client).to receive(:find_by_inventory_path).with('fake-folder/fake-datacenter-name').and_return(datacenter) }
+
+    let(:incorrect_datacenter) { instance_double('VSphereCloud::Resources::Datacenter', disk_path: 'fake-disk-path', mob: 'incorrect-datacenter-mob') }
 
     after do
       disk = Models::Disk.find(uuid: 'fake-disk-cid')
@@ -62,6 +64,11 @@ module VSphereCloud
             expect(disk.datastore).to eq('fake-datastore-name')
             expect(disk.path).to eq('[fake-datastore-name] fake-disk-path/fake-disk-cid')
           end
+
+          it 'creates disk folder in datastore' do
+            expect(client).to receive(:create_datastore_folder).with('[fake-datastore-name] fake-disk-path', datacenter.mob)
+            persistent_disk.create_spec('fake-folder/fake-datacenter-name', host_info, controller_key, true)
+          end
         end
 
         context 'when disk already exists (path is set)' do
@@ -93,6 +100,12 @@ module VSphereCloud
                 spec = persistent_disk.create_spec('fake-folder/fake-datacenter-name', host_info, controller_key, copy_disks)
                 expect(spec.file_operation).to be_nil
               end
+
+              it 'creates disk folder in datastore' do
+                expect(client).to receive(:copy_disk)
+                expect(client).to receive(:create_datastore_folder).with('[fake-datastore-name] fake-disk-path', datacenter.mob)
+                persistent_disk.create_spec('fake-folder/fake-datacenter-name', host_info, controller_key, copy_disks)
+              end
             end
 
             context 'when it is configured to move disk' do
@@ -108,6 +121,12 @@ module VSphereCloud
 
                 spec = persistent_disk.create_spec('fake-folder/fake-datacenter-name', host_info, controller_key, copy_disks)
                 expect(spec.file_operation).to be_nil
+              end
+
+              it 'creates disk folder in datastore' do
+                expect(client).to receive(:move_disk)
+                expect(client).to receive(:create_datastore_folder).with('[fake-datastore-name] fake-disk-path', datacenter.mob)
+                persistent_disk.create_spec('fake-folder/fake-datacenter-name', host_info, controller_key, copy_disks)
               end
             end
           end

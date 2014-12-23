@@ -129,6 +129,10 @@ module VSphereCloud
       tasks.each { |task| wait_for_task(task) }
     end
 
+    def create_datastore_folder(folder_path, datacenter)
+      @service_content.file_manager.make_directory(folder_path, datacenter, true)
+    end
+
     def create_folder(name)
       @service_content.root_folder.create_folder(name)
     end

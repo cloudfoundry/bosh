@@ -288,5 +288,16 @@ module VSphereCloud
         client.delete_folder(folder)
       end
     end
+
+    describe '#create_datastore_folder' do
+      let(:datacenter) { instance_double('VimSdk::Vim::Datacenter') }
+      let(:file_manager) { instance_double('VimSdk::Vim::FileManager') }
+      before { allow(fake_service_content).to receive(:file_manager).and_return(file_manager) }
+
+      it 'creates a folder in datastore' do
+        expect(file_manager).to receive(:make_directory).with('[fake-datastore-name] fake-folder-name', datacenter, true)
+        client.create_datastore_folder('[fake-datastore-name] fake-folder-name', datacenter)
+      end
+    end
   end
 end
