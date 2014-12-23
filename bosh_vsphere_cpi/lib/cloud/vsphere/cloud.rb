@@ -14,6 +14,7 @@ require 'cloud/vsphere/resources/cluster'
 require 'cloud/vsphere/resources/datacenter'
 require 'cloud/vsphere/resources/datastore'
 require 'cloud/vsphere/resources/folder'
+require 'cloud/vsphere/resources/disk/persistent_disk'
 require 'cloud/vsphere/resources/resource_pool'
 require 'cloud/vsphere/resources/scorer'
 require 'cloud/vsphere/resources/util'
@@ -380,8 +381,8 @@ module VSphereCloud
     end
 
     def get_vm_host_info(vm_ref)
-      vm = @cloud_searcher.get_properties(vm_ref, Vim::VirtualMachine, 'runtime')
-      vm_runtime = vm['runtime']
+      vm_properties = @cloud_searcher.get_properties(vm_ref, Vim::VirtualMachine, 'runtime')
+      vm_runtime = vm_properties['runtime']
 
       properties = @cloud_searcher.get_properties(vm_runtime.host, Vim::HostSystem, ['datastore', 'parent'], ensure_all: true)
 
@@ -398,112 +399,37 @@ module VSphereCloud
       { 'cluster' => cluster['name'], 'datastores' => datastores_accessible }
     end
 
-    def find_persistent_datastore(datacenter_name, host_info, disk_size)
-      # Find datastore
-      datastore = @resources.place_persistent_datastore(datacenter_name, host_info['cluster'], disk_size)
-
-      if datastore.nil?
-        raise Bosh::Clouds::NoDiskSpace.new(true), "Not enough persistent space on cluster #{host_info['cluster']}, #{disk_size}"
-      end
-
-      # Sanity check, verify that the vm's host can access this datastore
-      unless host_info['datastores'].include?(datastore.name)
-        raise "Datastore not accessible to host, #{datastore.name}, #{host_info['datastores']}"
-      end
-      datastore
-    end
-
     def attach_disk(vm_cid, disk_cid)
       with_thread_name("attach_disk(#{vm_cid}, #{disk_cid})") do
         @logger.info("Attaching disk: #{disk_cid} on vm: #{vm_cid}")
-        disk = Models::Disk.first(uuid: disk_cid)
-        raise "Disk not found: #{disk_cid}" if disk.nil?
 
         vm = get_vm_by_cid(vm_cid)
 
-        datacenter = client.find_parent(vm, Vim::Datacenter)
         datacenter_name = config.datacenter_name
 
         vm_properties = @cloud_searcher.get_properties(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
         host_info = get_vm_host_info(vm)
 
-        create_disk = false
-        if disk.path
-
-          disk_in_correct_datacenter =
-            (disk.datacenter == datacenter_name &&
-              @resources.validate_persistent_datastore(datacenter_name, disk.datastore) &&
-              host_info['datastores'].include?(disk.datastore))
-
-          if disk_in_correct_datacenter
-            @logger.info("Disk already in the right datastore #{datacenter_name} #{disk.datastore}")
-            persistent_datastore =
-              @resources.persistent_datastore(datacenter_name, host_info['cluster'], disk.datastore)
-            @logger.debug("Datastore: #{persistent_datastore}")
-          else
-            @logger.info("Disk needs to move from #{datacenter_name} #{disk.datastore}")
-            # Find the destination datastore
-            persistent_datastore = find_persistent_datastore(datacenter_name, host_info, disk.size)
-
-            # Need to move disk to right datastore
-            source_datacenter = client.find_by_inventory_path(disk.datacenter)
-            source_path = disk.path
-            datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
-
-            destination_path = "[#{persistent_datastore.name}] #{datacenter_disk_path}/#{disk.uuid}"
-            @logger.info("Moving #{disk.datacenter}/#{source_path} to #{datacenter_name}/#{destination_path}")
-
-            if config.copy_disks
-              client.copy_disk(source_datacenter, source_path, datacenter, destination_path)
-              @logger.info('Copied disk successfully')
-            else
-              client.move_disk(source_datacenter, source_path, datacenter, destination_path)
-              @logger.info('Moved disk successfully')
-            end
-
-            disk.datacenter = datacenter_name
-            disk.datastore = persistent_datastore.name
-            disk.path = destination_path
-            disk.save
-          end
-        else
-          @logger.info('Need to create disk')
-
-          # Find the destination datastore
-          persistent_datastore = find_persistent_datastore(datacenter_name, host_info, disk.size)
-
-          # Need to create disk
-          disk.datacenter = datacenter_name
-          disk.datastore = persistent_datastore.name
-          datacenter_disk_path = @resources.datacenters[disk.datacenter].disk_path
-          disk.path = "[#{disk.datastore}] #{datacenter_disk_path}/#{disk.uuid}"
-          disk.save
-          create_disk = true
-        end
-
         devices = vm_properties['config.hardware.device']
         system_disk = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) }
 
-        vmdk_path = "#{disk.path}.vmdk"
-        attached_disk_config = create_disk_config_spec(persistent_datastore.mob,
-                                                       vmdk_path,
-                                                       system_disk.controller_key,
-                                                       disk.size.to_i,
-                                                       create: create_disk, independent: true)
-        config = Vim::Vm::ConfigSpec.new
-        config.device_change = []
-        config.device_change << attached_disk_config
-        fix_device_unit_numbers(devices, config.device_change)
+        disk = PersistentDisk.new(disk_cid, @cloud_searcher, @resources, @client, @logger)
+        disk_config_spec = disk.create_spec(datacenter_name, host_info, system_disk.controller_key, @config.copy_disks)
+
+        vm_config = Vim::Vm::ConfigSpec.new
+        vm_config.device_change = []
+        vm_config.device_change << disk_config_spec
+        fix_device_unit_numbers(devices, vm_config.device_change)
 
         env = @agent_env.get_current_env(vm, datacenter_name)
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
-        env['disks']['persistent'][disk.uuid] = attached_disk_config.device.unit_number.to_s
+        env['disks']['persistent'][disk_cid] = disk_config_spec.device.unit_number.to_s
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
 
         location = get_vm_location(vm, datacenter: datacenter_name)
         @agent_env.set_env(vm, location, env)
         @logger.info('Attaching disk')
-        client.reconfig_vm(vm, config)
+        client.reconfig_vm(vm, vm_config)
         @logger.info('Finished attaching disk')
       end
     end
@@ -774,28 +700,7 @@ module VSphereCloud
     end
 
     def create_disk_config_spec(datastore, file_name, controller_key, space, options = {})
-      backing_info = Vim::Vm::Device::VirtualDisk::FlatVer2BackingInfo.new
-      backing_info.datastore = datastore
-      if options[:independent]
-        backing_info.disk_mode = Vim::Vm::Device::VirtualDiskOption::DiskMode::INDEPENDENT_PERSISTENT
-      else
-        backing_info.disk_mode = Vim::Vm::Device::VirtualDiskOption::DiskMode::PERSISTENT
-      end
-      backing_info.file_name = file_name
 
-      virtual_disk = Vim::Vm::Device::VirtualDisk.new
-      virtual_disk.key = -1
-      virtual_disk.controller_key = controller_key
-      virtual_disk.backing = backing_info
-      virtual_disk.capacity_in_kb = space * 1024
-
-      device_config_spec = Vim::Vm::Device::VirtualDeviceSpec.new
-      device_config_spec.device = virtual_disk
-      device_config_spec.operation = Vim::Vm::Device::VirtualDeviceSpec::Operation::ADD
-      if options[:create]
-        device_config_spec.file_operation = Vim::Vm::Device::VirtualDeviceSpec::FileOperation::CREATE
-      end
-      device_config_spec
     end
 
     def create_nic_config_spec(v_network_name, network, controller_key, dvs_index)

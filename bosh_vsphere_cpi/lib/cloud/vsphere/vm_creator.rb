@@ -1,16 +1,17 @@
 require 'ruby_vim_sdk'
 require 'cloud/vsphere/drs_rules/drs_rule'
+require 'cloud/vsphere/resources/disk/ephemeral_disk'
 
 module VSphereCloud
   class VmCreator
-    def initialize(memory, disk, cpu, placer, client, cloud_searcher, logger, cpi, agent_env, file_provider)
+    def initialize(memory, disk_size, cpu, placer, client, cloud_searcher, logger, cpi, agent_env, file_provider)
       @placer = placer
       @client = client
       @cloud_searcher = cloud_searcher
       @logger = logger
       @cpi = cpi
       @memory = memory
-      @disk = disk
+      @disk_size = disk_size
       @cpu = cpu
       @agent_env = agent_env
       @file_provider = file_provider
@@ -28,7 +29,7 @@ module VSphereCloud
 
       disks = @cpi.disk_spec(disk_cids)
       # need to include swap and linked clone log
-      ephemeral = @disk + @memory + stemcell_size
+      ephemeral = @disk_size + @memory + stemcell_size
       cluster, datastore = @placer.place(@memory, ephemeral, disks)
 
       name = "vm-#{@cpi.generate_unique_name}"
@@ -48,9 +49,8 @@ module VSphereCloud
       system_disk = devices.find { |device| device.kind_of?(VimSdk::Vim::Vm::Device::VirtualDisk) }
       pci_controller = devices.find { |device| device.kind_of?(VimSdk::Vim::Vm::Device::VirtualPCIController) }
 
-      file_name = "[#{datastore.name}] #{name}/ephemeral_disk.vmdk"
-      ephemeral_disk_config =
-        @cpi.create_disk_config_spec(datastore.mob, file_name, system_disk.controller_key, @disk, create: true)
+      ephemeral_disk = VSphereCloud::EphemeralDisk.new(@disk_size, name, datastore)
+      ephemeral_disk_config = ephemeral_disk.create_spec(system_disk.controller_key)
       config.device_change << ephemeral_disk_config
 
       dvs_index = {}

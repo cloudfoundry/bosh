@@ -41,6 +41,8 @@ describe VSphereCloud::VmCreator do
 
     let(:vm_double) { double('cloned vm') }
 
+    let(:ephemeral_disk) { instance_double('VSphereCloud::EphemeralDisk') }
+
     before do
       stemcell_vm = double('stemcell vm')
       allow(cpi).to receive(:stemcell_vm).with('stemcell_cid').and_return(stemcell_vm)
@@ -98,13 +100,12 @@ describe VSphereCloud::VmCreator do
       allow(cpi).to receive(:generate_disk_env).with(system_disk, disk_device).and_return(disk_env)
       datastore_mob = double('datastore mob')
       allow(datastore).to receive(:mob).with(no_args).and_return(datastore_mob)
-      allow(cpi).to receive(:create_disk_config_spec).with(
-        datastore_mob,
-        '[datastore name] vm-vm_unique_name/ephemeral_disk.vmdk',
-        vdisk_controller_key,
+      allow(VSphereCloud::EphemeralDisk).to receive(:new).with(
         1024,
-        :create => true,
-      ).and_return(ephemeral_disk_config)
+        'vm-vm_unique_name',
+        datastore,
+      ).and_return(ephemeral_disk)
+      allow(ephemeral_disk).to receive(:create_spec).with(vdisk_controller_key).and_return(ephemeral_disk_config)
       allow(logger).to receive(:info)
 
       clone_vm_task = double('cloned vm task')
