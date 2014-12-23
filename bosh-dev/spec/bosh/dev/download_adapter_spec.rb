@@ -48,6 +48,46 @@ module Bosh::Dev
             expect(File.read(write_path)).to eq(content)
           end
         end
+
+        context 'when a download times out' do
+          let(:bytes_to_return) { 4 }
+          let(:fail_on_requests) { [0] }
+          before do
+            request_count = -1
+
+            allow_any_instance_of(Net::HTTP).to receive(:request_get) do |http, uri, headers, &block|
+              response = double(:response)
+              allow(response).to receive(:read_body) do |&read_body_block|
+                request_count += 1
+
+                if headers['Range'] && headers['Range'] =~ /^bytes=(\d+)-$/
+                  offset = $1.to_i
+                else
+                  offset = 0
+                end
+
+                read_body_block.call(content[offset..(offset+bytes_to_return-1)])
+                raise Timeout::Error if fail_on_requests.include?(request_count)
+              end
+              block.call(response)
+            end
+          end
+
+          it 'resumes the download' do
+            subject.download(string_uri, write_path)
+            expect(File.read(write_path)).to eq("content")
+          end
+
+          context 'when the third try times out' do
+            let(:bytes_to_return) { 1 }
+            let(:fail_on_requests) { [0, 1, 2, 3] }
+
+            it 'bails' do
+              expect { subject.download(string_uri, write_path) }.to raise_exception(Timeout::Error)
+              expect(File.exist?(write_path)).to eq(false)
+            end
+          end
+        end
       end
 
       context 'when the remote file does not exist' do

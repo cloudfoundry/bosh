@@ -23,17 +23,33 @@ module Bosh::Dev
 
       Net::HTTP.start(uri.host, uri.port, proxy.host, proxy.port, proxy.user, proxy.password) do |http|
         http.read_timeout = 300
-        http.request_get(uri.request_uri) do |response|
-          raise "remote file '#{uri}' not found" if response.kind_of? Net::HTTPNotFound
-          write_response(response, write_path)
-        end
-      end
-    end
 
-    def write_response(response, write_path)
-      File.open(write_path, 'wb') do |file|
-        response.read_body do |chunk|
-          file.write(chunk)
+        begin
+          File.open(write_path, 'wb') do |file|
+            tries = 0
+            begin
+              headers = {}
+              headers['Range'] = "bytes=#{file.tell}-" if tries > 0
+              http.request_get(uri.request_uri, headers) do |response|
+                raise "remote file '#{uri}' not found" if response.kind_of? Net::HTTPNotFound
+
+                response.read_body do |chunk|
+                  file.write(chunk)
+                end
+              end
+            rescue Timeout::Error => e
+              @logger.info("Download of #{uri} timed out.")
+
+              raise e unless tries < 3
+              tries += 1
+
+              @logger.debug("Retrying ...")
+              retry
+            end
+          end
+        rescue Exception => e
+          File.delete(write_path) if File.exist?(write_path)
+          raise e
         end
       end
     end
