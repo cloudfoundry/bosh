@@ -50,25 +50,35 @@ module Bosh::Dev
         end
 
         context 'when a download times out' do
+          let(:partial_downloads) { true }
           let(:bytes_to_return) { 4 }
           let(:fail_on_requests) { [0] }
+          let(:send_entire_file_on_requests) { [] }
           before do
             request_count = -1
 
             allow_any_instance_of(Net::HTTP).to receive(:request_get) do |http, uri, headers, &block|
-              response = double(:response)
-              allow(response).to receive(:read_body) do |&read_body_block|
-                request_count += 1
+              request_count += 1
+              response = partial_downloads ?
+                Net::HTTPPartialContent.new(nil, "206", "ok") :
+                Net::HTTPOK.new(nil, "200", "ok")
 
-                if headers['Range'] && headers['Range'] =~ /^bytes=(\d+)-$/
-                  offset = $1.to_i
-                else
-                  offset = 0
-                end
-
-                read_body_block.call(content[offset..(offset+bytes_to_return-1)])
-                raise Timeout::Error if fail_on_requests.include?(request_count)
+              offset = 0
+              if partial_downloads && headers['Range'] && headers['Range'] =~ /^bytes=(\d+)-$/
+                offset = $1.to_i
+                content_range = "bytes #{offset}-#{offset+bytes_to_return-1}/#{content.length}"
+                response['Content-Range'] = content_range
               end
+
+              allow(response).to receive(:read_body) do |&read_body_block|
+                if send_entire_file_on_requests.include?(request_count)
+                  read_body_block.call(content)
+                else
+                  read_body_block.call(content[offset..(offset+bytes_to_return-1)])
+                  raise Timeout::Error if fail_on_requests.include?(request_count)
+                end
+              end
+
               block.call(response)
             end
           end
@@ -76,6 +86,16 @@ module Bosh::Dev
           it 'resumes the download' do
             subject.download(string_uri, write_path)
             expect(File.read(write_path)).to eq("content")
+          end
+
+          context 'if a server does not honor the range header' do
+            let(:partial_downloads) { false }
+            let(:send_entire_file_on_requests) { [1] }
+
+            it 'resumes the download but overwrites the bits that were already downloaded' do
+              subject.download(string_uri, write_path)
+              expect(File.read(write_path)).to eq("content")
+            end
           end
 
           context 'when the third try times out' do
@@ -90,13 +110,13 @@ module Bosh::Dev
         end
       end
 
-      context 'when the remote file does not exist' do
-        before { stub_request(:get, string_uri).to_return(status: 404) }
+      context 'when some error occurs' do
+        before { stub_request(:get, string_uri).to_return(status: 500) }
 
-        it 'raises an error if the file does not exist' do
+        it 'raises an error' do
           expect {
             subject.download(uri, write_path)
-          }.to raise_error(%r{remote file 'http://a.sample.uri/requesting/a/test.yml' not found})
+          }.to raise_error(%r{error 500 while downloading 'http://a.sample.uri/requesting/a/test.yml'})
         end
       end
 

@@ -31,7 +31,17 @@ module Bosh::Dev
               headers = {}
               headers['Range'] = "bytes=#{file.tell}-" if tries > 0
               http.request_get(uri.request_uri, headers) do |response|
-                raise "remote file '#{uri}' not found" if response.kind_of? Net::HTTPNotFound
+                unless response.kind_of? Net::HTTPSuccess
+                  raise "error #{response.code} while downloading '#{uri}'"
+                end
+
+                starting_byte = 0
+                starting_byte = response.content_range.first if response['Content-Range']
+                file.seek(starting_byte)
+                file.truncate(starting_byte)
+                if tries > 0
+                  @logger.info("Resuming download of #{uri} from #{starting_byte} bytes")
+                end
 
                 response.read_body do |chunk|
                   file.write(chunk)
