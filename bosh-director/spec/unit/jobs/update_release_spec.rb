@@ -787,6 +787,28 @@ module Bosh::Director
 
         lambda { @job.create_job(@job_attrs, release_dir) }.should raise_error(JobMissingTemplateFile)
       end
+
+      it 'does not whine when no packages are specified' do
+        blobstore.stub(:create).and_return('fake-blobstore-id')
+        @job_no_monit =
+          create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}},
+            manifest: { 'name' => 'foo', 'templates' => {} })
+        File.open(@tarball, 'w') { |f| f.write(@job_no_monit) }
+
+        job = nil
+        expect { job = @job.create_job(@job_attrs, release_dir) }.to_not raise_error
+        expect(job.package_names).to eq([])
+      end
+
+      it 'whines when packages is not an array' do
+        blobstore.stub(:create).and_return('fake-blobstore-id')
+        @job_no_monit =
+          create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}},
+            manifest: { 'name' => 'foo', 'templates' => {}, 'packages' => 'my-awesome-package' })
+        File.open(@tarball, 'w') { |f| f.write(@job_no_monit) }
+
+        expect { @job.create_job(@job_attrs, release_dir) }.to raise_error(JobInvalidPackageSpec)
+      end
     end
 
     def create_job(name, monit, configuration_files, options = { })
@@ -803,6 +825,7 @@ module Bosh::Director
       end
 
       Archive::Tar::Minitar::Writer.open(io) do |tar|
+        manifest = options[:manifest] if options[:manifest]
         unless options[:skip_manifest]
           tar.add_file("job.MF", {:mode => "0644", :mtime => 0}) { |os, _| os.write(manifest.to_yaml) }
         end

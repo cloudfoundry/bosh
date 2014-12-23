@@ -111,6 +111,7 @@ module Bosh::Director
   JobInvalidPropertyMapping = err(80009)
   JobIncompatibleSpecs = err(80010)
   JobPackageCollision = err(80011)
+  JobInvalidPackageSpec = err(80012)
 
   ResourceError = err(100001)
   ResourceNotFound = err(100002, NOT_FOUND)

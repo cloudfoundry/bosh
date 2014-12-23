@@ -438,14 +438,21 @@ module Bosh::Director
         template.blobstore_id = BlobUtil.create_blob(job_tgz)
 
         package_names = []
-        job_manifest["packages"].each do |package_name|
-          package = @packages[package_name]
-          if package.nil?
-            raise JobMissingPackage,
-                  "Job `#{template.name}' is referencing " +
-                  "a missing package `#{package_name}'"
+        if job_manifest["packages"]
+          unless job_manifest["packages"].is_a?(Array)
+            raise JobInvalidPackageSpec,
+                  "Job `#{template.name}' has invalid package spec format"
           end
-          package_names << package.name
+
+          job_manifest["packages"].each do |package_name|
+            package = @packages[package_name]
+            if package.nil?
+              raise JobMissingPackage,
+                "Job `#{template.name}' is referencing " +
+                  "a missing package `#{package_name}'"
+            end
+            package_names << package.name
+          end
         end
         template.package_names = package_names
 
