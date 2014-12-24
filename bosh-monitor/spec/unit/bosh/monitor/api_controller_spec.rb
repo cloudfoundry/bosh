@@ -69,19 +69,20 @@ describe Bosh::Monitor::ApiController do
     end
 
     context 'when the EM thread pool has been occupied for a while' do
-      it 'returns 500' do
-        now += Bosh::Monitor::ApiController::PULSE_TIMEOUT + 1
+      let(:last_pulse) { Bosh::Monitor::ApiController::PULSE_TIMEOUT + 1 }
 
+      before { now += last_pulse }
+
+      it 'returns 500' do
         get '/healthz'
         expect(last_response.status).to eq(500)
+        expect(last_response.body).to eq("Last pulse was #{last_pulse} seconds ago")
       end
 
       it 'can recover from poor health' do
-        now += Bosh::Monitor::ApiController::PULSE_TIMEOUT + 1
-
         get '/healthz'
         expect(last_response.status).to eq(500)
-
+        expect(last_response.body).to eq("Last pulse was #{last_pulse} seconds ago")
         run_em_timers
 
         get '/healthz'
