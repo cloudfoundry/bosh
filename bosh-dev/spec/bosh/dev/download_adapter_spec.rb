@@ -59,10 +59,7 @@ module Bosh::Dev
 
             allow_any_instance_of(Net::HTTP).to receive(:request_get) do |http, uri, headers, &block|
               request_count += 1
-              response = partial_downloads ?
-                Net::HTTPPartialContent.new(nil, "206", "ok") :
-                Net::HTTPOK.new(nil, "200", "ok")
-
+              response = Net::HTTPPartialContent.new(nil, "206", "ok")
               offset = 0
               if partial_downloads && headers['Range'] && headers['Range'] =~ /^bytes=(\d+)-$/
                 offset = $1.to_i
