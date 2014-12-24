@@ -228,7 +228,7 @@ module Bosh::Dev::Sandbox
     end
 
     def saved_logs_path
-      File.join(DebugLogs.log_directory, "#{@name}.log")
+      File.join(DebugLogs.logs_dir, "#{@name}.log")
     end
 
     def save_task_logs(name)
@@ -301,7 +301,7 @@ module Bosh::Dev::Sandbox
     end
 
     def sandbox_root
-      File.join(BASE_TMP_DIR, "sandbox")
+      File.join(DebugLogs.logs_dir, 'sandbox')
     end
 
     def external_cpi_config
