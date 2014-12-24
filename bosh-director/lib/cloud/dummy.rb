@@ -18,6 +18,8 @@ module Bosh
         end
 
         @running_vms_dir = File.join(@base_dir, 'running_vms')
+        @tmp_dir = File.join(@base_dir, 'tmp')
+        FileUtils.mkdir_p(@tmp_dir)
 
         @logger = Logging::Logger.new('DummyCPI')
         @logger.add_appenders(Logging.appenders.io(
@@ -184,11 +186,15 @@ module Bosh
         agent_cmd = agent_cmd(agent_id)
         agent_log = agent_log_path(agent_id)
 
-        agent_pid = Process.spawn(*agent_cmd, {
-          chdir: agent_base_dir(agent_id),
-          out: agent_log,
-          err: agent_log,
-        })
+        agent_pid = Process.spawn(
+          { 'TMPDIR' => @tmp_dir },
+          *agent_cmd,
+          {
+            chdir: agent_base_dir(agent_id),
+            out: agent_log,
+            err: agent_log,
+          }
+        )
 
         Process.detach(agent_pid)
 
