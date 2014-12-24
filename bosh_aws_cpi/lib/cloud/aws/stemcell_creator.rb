@@ -120,7 +120,7 @@ module Bosh::AwsCloud
         :name => "BOSH-#{SecureRandom.uuid}",
         :architecture => architecture,
         :block_device_mappings => params[:block_device_mappings].merge(
-          "/dev/sdb" => "ephemeral0"
+          default_ephemeral_disk_mapping
         )
       )
 

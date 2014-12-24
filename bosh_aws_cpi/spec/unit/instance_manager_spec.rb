@@ -23,7 +23,8 @@ describe Bosh::AwsCloud::InstanceManager do
         security_groups: ['baz'],
         subnet: fake_aws_subnet,
         private_ip_address: '1.2.3.4',
-        availability_zone: 'us-east-1a'
+        availability_zone: 'us-east-1a',
+        block_device_mappings: { '/dev/sdb' => 'ephemeral0' }
       }
     end
 

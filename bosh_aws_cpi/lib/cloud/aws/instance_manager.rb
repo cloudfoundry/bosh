@@ -18,6 +18,9 @@ module Bosh::AwsCloud
       instance_params[:image_id] = stemcell_id
       instance_params[:instance_type] = resource_pool["instance_type"]
 
+      # m3 instances require that instance storage mappings be specified when the instance is created... [#84893804]
+      instance_params[:block_device_mappings] = default_ephemeral_disk_mapping
+
       set_user_data_parameter(instance_params, networks_spec)
       set_key_name_parameter(instance_params, resource_pool["key_name"], options["aws"]["default_key_name"])
       set_security_groups_parameter(instance_params, networks_spec, options["aws"]["default_security_groups"])
