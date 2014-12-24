@@ -20,7 +20,7 @@ describe 'upload release', type: :integration do
 
   # ~33s
   it 'uploads the latest generated release if no release path given' do
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
 
       bosh_runner.run_in_current_dir('create release')
@@ -34,7 +34,7 @@ describe 'upload release', type: :integration do
 
   # ~41s
   it 'sparsely uploads the release' do
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
 
       out = bosh_runner.run_in_current_dir('create release --with-tarball')
@@ -95,7 +95,7 @@ describe 'upload release', type: :integration do
   it 'marks releases that have uncommitted changes' do
     commit_hash = ''
 
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       commit_hash = `git show-ref --head --hash=8 2> /dev/null`.split.first
 
       new_file = File.join('src', 'bar', 'bla')

@@ -10,7 +10,7 @@ describe 'release lifecycle', type: :integration do
 
     commit_hash = ''
 
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       File.open('config/final.yml', 'w') do |final|
         final.puts YAML.dump(
           'blobstore' => {
@@ -86,7 +86,7 @@ describe 'release lifecycle', type: :integration do
   it 'release lifecycle: create, upload, update (w/sparse upload), delete' do
     commit_hash = ''
 
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       commit_hash = `git show-ref --head --hash=8 2> /dev/null`.split.first
 
       out = bosh_runner.run_in_current_dir('create release')

@@ -6,7 +6,7 @@ describe 'create release', type: :integration do
   with_reset_sandbox_before_each
 
   it 'cannot create a final release without the blobstore configured', no_reset: true do
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
 
       FileUtils.cp(spec_asset('empty_blobstore_config.yml'), 'config/final.yml')
@@ -17,7 +17,7 @@ describe 'create release', type: :integration do
   end
 
   it 'cannot create a final release without the blobstore secret configured', no_reset: true do
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
 
       FileUtils.cp(spec_asset('blobstore_config_requiring_credentials.yml'), 'config/final.yml')
@@ -28,7 +28,7 @@ describe 'create release', type: :integration do
   end
 
   it 'allows creation of new final releases with the same content as the latest final release' do
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       out = bosh_runner.run_in_current_dir('create release --final')
       expect(parse_release_version(out)).to eq('1')
 
@@ -41,7 +41,7 @@ describe 'create release', type: :integration do
   end
 
   it 'allows creation of new dev releases with the same content as the latest dev release' do
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       out = bosh_runner.run_in_current_dir('create release')
       expect(parse_release_version(out)).to eq('0+dev.1')
 
@@ -54,7 +54,7 @@ describe 'create release', type: :integration do
   end
 
   it 'allows creation of new final releases with the same content as a previous final release' do
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       out = bosh_runner.run_in_current_dir('create release --final')
       expect(parse_release_version(out)).to eq('1')
 
@@ -69,7 +69,7 @@ describe 'create release', type: :integration do
   end
 
   it 'allows creation of new dev releases with the same content as a previous dev release' do
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       out = bosh_runner.run_in_current_dir('create release')
       expect(parse_release_version(out)).to eq('0+dev.1')
 
@@ -84,7 +84,7 @@ describe 'create release', type: :integration do
   end
 
   it 'allows creation of a final release without an existing dev release' do
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       expect(File).to_not exist('releases/bosh-release/bosh-release-1.yml')
 
       out = bosh_runner.run_in_current_dir('create release --final')
@@ -96,7 +96,7 @@ describe 'create release', type: :integration do
   end
 
   it 'allows creation of new final release without .gitignore files' do
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       out = bosh_runner.run_in_current_dir('create release --final')
       expect(out).to match(/Release version: 1/)
 
@@ -111,7 +111,7 @@ describe 'create release', type: :integration do
 
   context 'when no previous releases have been made' do
     it 'final release uploads the job & package blobs' do
-      Dir.chdir(TEST_RELEASE_DIR) do
+      Dir.chdir(ClientSandbox.test_release_dir) do
         expect(File).to_not exist('releases/bosh-release/bosh-release-1.yml')
 
         out = bosh_runner.run_in_current_dir('create release --final')
@@ -121,7 +121,7 @@ describe 'create release', type: :integration do
     end
 
     it 'uses a provided --name' do
-      Dir.chdir(TEST_RELEASE_DIR) do
+      Dir.chdir(ClientSandbox.test_release_dir) do
         out = bosh_runner.run_in_current_dir('create release --name "bosh-fork"')
         expect(parse_release_name(out)).to eq('bosh-fork')
         expect(parse_release_version(out)).to eq('0+dev.1')
@@ -131,7 +131,7 @@ describe 'create release', type: :integration do
 
   context 'when previous release have been made' do
     it 'allows creation of a new dev release with a new name' do
-      Dir.chdir(TEST_RELEASE_DIR) do
+      Dir.chdir(ClientSandbox.test_release_dir) do
         out = bosh_runner.run_in_current_dir('create release')
         expect(parse_release_name(out)).to eq('bosh-release')
         expect(parse_release_version(out)).to eq('0+dev.1')
@@ -143,7 +143,7 @@ describe 'create release', type: :integration do
     end
 
     it 'allows creation of a new final release with a new name' do
-      Dir.chdir(TEST_RELEASE_DIR) do
+      Dir.chdir(ClientSandbox.test_release_dir) do
         out = bosh_runner.run_in_current_dir('create release --final')
         expect(parse_release_name(out)).to eq('bosh-release')
         expect(parse_release_version(out)).to eq('1')
@@ -160,7 +160,7 @@ describe 'create release', type: :integration do
     end
 
     it 'allows creation of a new final release with a custom name & version' do
-      Dir.chdir(TEST_RELEASE_DIR) do
+      Dir.chdir(ClientSandbox.test_release_dir) do
         out = bosh_runner.run_in_current_dir('create release --final --name fake-release --version 2.0.1')
         expect(parse_release_name(out)).to eq('fake-release')
         expect(parse_release_version(out)).to eq('2.0.1')
@@ -169,7 +169,7 @@ describe 'create release', type: :integration do
   end
 
   it 'creates a new final release with a default version' do
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       File.open('config/final.yml', 'w') do |final|
         final.puts YAML.dump(
           'blobstore' => {
@@ -199,7 +199,7 @@ describe 'create release', type: :integration do
       expect(File).to exist(manifest_1)
 
       # modify a release file to force a new version
-      `echo ' ' >> #{File.join(TEST_RELEASE_DIR, 'jobs', 'foobar', 'templates', 'foobar_ctl')}`
+      `echo ' ' >> #{File.join(ClientSandbox.test_release_dir, 'jobs', 'foobar', 'templates', 'foobar_ctl')}`
       bosh_runner.run_in_current_dir('create release --force')
 
       out = bosh_runner.run_in_current_dir('create release --final --force')
@@ -213,7 +213,7 @@ describe 'create release', type: :integration do
   end
 
   it 'release tarball does not include excluded files' do
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
 
       out = bosh_runner.run_in_current_dir('create release --with-tarball')

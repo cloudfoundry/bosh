@@ -32,11 +32,11 @@ describe 'delete release', type: :integration do
   it 'fails to delete release in use but deletes a different release' do
     target_and_login
 
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       bosh_runner.run_in_current_dir('create release')
       bosh_runner.run_in_current_dir('upload release')
 
-      # change something in TEST_RELEASE_DIR
+      # change something in ClientSandbox.test_release_dir
       FileUtils.touch(File.join('src', 'bar', 'pretend_something_changed'))
 
       bosh_runner.run_in_current_dir('create release --force')

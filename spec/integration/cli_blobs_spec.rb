@@ -5,10 +5,10 @@ describe 'sync blobs', type: :integration do
 
   subject(:sync_blobs_output) do
     output = ''
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
 
-      blobs_dir = File.join(TEST_RELEASE_DIR, 'blobs')
+      blobs_dir = File.join(ClientSandbox.test_release_dir, 'blobs')
       FileUtils.mkdir_p(blobs_dir)
 
       blobs.each do |blob_name|
@@ -19,7 +19,7 @@ describe 'sync blobs', type: :integration do
       blobs.each { |b| expect(out).to include("#{b} uploaded") }
 
       FileUtils.rm_rf(blobs_dir)
-      FileUtils.rm_rf(File.join(TEST_RELEASE_DIR, '.blobs'))
+      FileUtils.rm_rf(File.join(ClientSandbox.test_release_dir, '.blobs'))
 
       output = bosh_runner.run_in_current_dir("#{parallel} sync blobs", :interactive => interactive_mode)
     end

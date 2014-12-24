@@ -21,7 +21,7 @@ describe 'package dependencies', type: :integration do
   end
 
   it 'recompiles packages when a transitive dependency changes' do
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       output = deploy_simple(manifest_hash: manifest_hash)
       expect(output).to include('Started compiling packages > c')
       expect(output).to include('Started compiling packages > b')
@@ -44,7 +44,7 @@ describe 'package dependencies', type: :integration do
     after { FileUtils.rm_r(tmpdir) }
 
     let(:temp_release_dir) { File.join(tmpdir, 'workspace') }
-    before { FileUtils.cp_r(TEST_RELEASE_DIR, temp_release_dir) }
+    before { FileUtils.cp_r(ClientSandbox.test_release_dir, temp_release_dir) }
 
     it 'survives removal of a transitive dependency' do
       Dir.chdir(temp_release_dir) do

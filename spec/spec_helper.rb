@@ -14,11 +14,6 @@ require 'bosh/director'
 SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
 Dir.glob("#{SPEC_ROOT}/support/**/*.rb") { |f| require(f) }
 
-SANDBOX_DIR = Dir.mktmpdir
-TEST_RELEASE_DIR = File.join(SANDBOX_DIR, 'test_release')
-BOSH_WORK_DIR    = File.join(SANDBOX_DIR, 'bosh_work_dir')
-BOSH_CONFIG      = File.join(SANDBOX_DIR, 'bosh_config.yml')
-
 ASSETS_DIR = File.join(SPEC_ROOT, 'assets')
 TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'test_release_template')
 BOSH_WORK_TEMPLATE    = File.join(ASSETS_DIR, 'bosh_work_dir')

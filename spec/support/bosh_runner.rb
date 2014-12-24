@@ -26,7 +26,7 @@ module Bosh::Spec
 
       if exit_code != 0 && !failure_expected
         if output =~ /bosh task (\d+) --debug/ || output =~ /Task (\d+) error/
-          print_director_debug_logs($1, options)
+          print_task_debug_logs($1, options)
         end
 
         if output =~ /Timed out pinging to ([a-z\-\d]+) after \d+ seconds/
@@ -45,7 +45,7 @@ module Bosh::Spec
       output_debug_log("Nats log #{agent_id}", File.read(@nats_log_path)) if File.exists?(@nats_log_path)
     end
 
-    def print_director_debug_logs(task_id, options)
+    def print_task_debug_logs(task_id, options)
       task_output = run("task #{task_id} --debug", options.merge(failure_expected: true, return_exit_code: false))
       output_debug_log("Director task #{task_id}", task_output) rescue nil
     end

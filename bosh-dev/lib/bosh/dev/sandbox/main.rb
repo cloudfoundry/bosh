@@ -301,7 +301,7 @@ module Bosh::Dev::Sandbox
     end
 
     def sandbox_root
-      @sandbox_root ||= Dir.mktmpdir.tap { |p| @logger.info("sandbox=#{p}") }
+      File.join(BASE_TMP_DIR, "sandbox")
     end
 
     def external_cpi_config

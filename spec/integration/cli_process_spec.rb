@@ -52,7 +52,7 @@ describe 'cli: deployment process', type: :integration do
     # Test release created with bosh (see spec/assets/test_release_template)
     stemcell_filename = spec_asset('valid_stemcell.tgz') # Dummy stemcell (ubuntu-stemcell 1)
 
-    release_filename = Dir.chdir(TEST_RELEASE_DIR) do
+    release_filename = Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
       output = bosh_runner.run_in_current_dir('create release --with-tarball')
       parse_release_tarball_path(output)

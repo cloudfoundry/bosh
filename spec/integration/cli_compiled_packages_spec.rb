@@ -6,7 +6,7 @@ describe 'cli: compiled_packages', type: :integration do
   with_reset_sandbox_before_each
 
   context 'when a release has been created' do
-    let(:runner) { bosh_runner_in_work_dir(TEST_RELEASE_DIR) }
+    let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
     let(:release_tarball_path) do
       target_and_login
       output = runner.run('create release --with-tarball')
@@ -73,7 +73,7 @@ describe 'cli: compiled_packages', type: :integration do
   end
 
   def create_release
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
       output = bosh_runner.run_in_current_dir('create release --with-tarball')
       parse_release_tarball_path(output)

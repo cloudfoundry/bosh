@@ -3,7 +3,7 @@ require 'spec_helper'
 describe 'cli: cloudcheck', type: :integration do
   with_reset_sandbox_before_each
 
-  let(:runner) { bosh_runner_in_work_dir(TEST_RELEASE_DIR) }
+  let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
 
   before do
     target_and_login
@@ -62,7 +62,7 @@ describe 'cli: cloudcheck', type: :integration do
 
   def bosh_run_cck_with_resolution(num_errors, option=1)
     resolution_selections = "#{option}\n"*num_errors + "yes"
-    output = `echo "#{resolution_selections}" | bosh -c #{BOSH_CONFIG} cloudcheck`
+    output = `echo "#{resolution_selections}" | bosh -c #{ClientSandbox.bosh_config} cloudcheck`
     if $?.exitstatus != 0
       puts output
     end

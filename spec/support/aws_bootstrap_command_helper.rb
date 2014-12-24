@@ -15,8 +15,8 @@ module Bosh::Spec
     end
 
     def run_bosh(cmd, work_dir = nil)
-      Dir.chdir(work_dir || BOSH_WORK_DIR) do
-        run "bosh -v -n --config '#{BOSH_CONFIG}' #{cmd}"
+      Dir.chdir(work_dir || ClientSandbox.bosh_work_dir) do
+        run "bosh -v -n --config '#{ClientSandbox.bosh_config}' #{cmd}"
       end
     end
   end

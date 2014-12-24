@@ -9,7 +9,7 @@ describe 'cli: package compilation', type: :integration do
 
     simple_blob_store_path = current_sandbox.blobstore_storage_dir
 
-    release_filename = Dir.chdir(TEST_RELEASE_DIR) do
+    release_filename = Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
       output = bosh_runner.run_in_current_dir('create release --with-tarball')
       parse_release_tarball_path(output)

@@ -26,8 +26,8 @@ module IntegrationExampleGroup
 
   def bosh_runner
     @bosh_runner ||= Bosh::Spec::BoshRunner.new(
-      BOSH_WORK_DIR,
-      BOSH_CONFIG,
+      ClientSandbox.bosh_work_dir,
+      ClientSandbox.bosh_config,
       current_sandbox.cpi.method(:agent_log_path),
       @current_sandbox.nats_log_path,
       @current_sandbox.saved_logs_path,
@@ -38,7 +38,7 @@ module IntegrationExampleGroup
   def bosh_runner_in_work_dir(work_dir)
     Bosh::Spec::BoshRunner.new(
       work_dir,
-      BOSH_CONFIG,
+      ClientSandbox.bosh_config,
       current_sandbox.cpi.method(:agent_log_path),
       @current_sandbox.nats_log_path,
       @current_sandbox.saved_logs_path,
@@ -56,7 +56,7 @@ module IntegrationExampleGroup
   end
 
   def create_and_upload_test_release
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       bosh_runner.run_in_current_dir('create release')
       bosh_runner.run_in_current_dir('upload release')
     end
@@ -173,14 +173,15 @@ module IntegrationSandboxHelpers
   private
 
   def setup_test_release_dir
-    FileUtils.cp_r(TEST_RELEASE_TEMPLATE, TEST_RELEASE_DIR, :preserve => true)
+    FileUtils.rm_rf(ClientSandbox.test_release_dir)
+    FileUtils.cp_r(TEST_RELEASE_TEMPLATE, ClientSandbox.test_release_dir, :preserve => true)
 
-    final_config_path = File.join(TEST_RELEASE_DIR, 'config', 'final.yml')
+    final_config_path = File.join(ClientSandbox.test_release_dir, 'config', 'final.yml')
     final_config = YAML.load_file(final_config_path)
-    final_config['blobstore']['options']['blobstore_path'] = File.join(SANDBOX_DIR, 'release_blobstore')
+    final_config['blobstore']['options']['blobstore_path'] = File.join(ClientSandbox.base_dir, 'release_blobstore')
     File.open(final_config_path, 'w') { |file| file.write(YAML.dump(final_config)) }
 
-    Dir.chdir(TEST_RELEASE_DIR) do
+    Dir.chdir(ClientSandbox.test_release_dir) do
       ignore = %w(
         blobs
         dev-releases
@@ -208,12 +209,12 @@ module IntegrationSandboxHelpers
   end
 
   def setup_bosh_work_dir
-    FileUtils.cp_r(BOSH_WORK_TEMPLATE, BOSH_WORK_DIR, :preserve => true)
+    FileUtils.cp_r(BOSH_WORK_TEMPLATE, ClientSandbox.bosh_work_dir, :preserve => true)
   end
 
   def cleanup_sandbox_dir
-    FileUtils.rm_rf(SANDBOX_DIR)
-    FileUtils.mkdir_p(SANDBOX_DIR)
+    FileUtils.rm_rf(ClientSandbox.base_dir)
+    FileUtils.mkdir_p(ClientSandbox.base_dir)
   end
 end
 
