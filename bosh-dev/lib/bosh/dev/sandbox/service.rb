@@ -14,14 +14,6 @@ module Bosh::Dev::Sandbox
 
       # Add unique identifier to avoid confusing log information
       @description = "#{@cmd_array.first} (#{SecureRandom.hex(4)})"
-
-      if @cmd_options[:output]
-        @stdout = @cmd_options[:output]
-        @stderr = "#{@stdout}.err"
-      else
-        @stdout = @cmd_options[:stdout]
-        @stderr = @cmd_options[:stderr]
-      end
     end
 
     def start
@@ -34,12 +26,14 @@ module Bosh::Dev::Sandbox
           raise "Cannot find #{@description} in the $PATH"
         end
 
+        @log_id = SecureRandom.hex(4)
+
         @pid = Process.spawn(env, *@cmd_array, {
-          out: @stdout || :close,
-          err: @stderr || :close,
+          out: stdout || :close,
+          err: stderr || :close,
           in: :close,
         })
-        @logger.info("Started #{@description} with PID #{@pid}")
+        @logger.info("Started #{@description} with PID #{@pid}, log-id: #{@log_id}")
 
         Process.detach(@pid)
 
@@ -78,11 +72,11 @@ module Bosh::Dev::Sandbox
     end
 
     def stdout_contents
-      @stdout ? File.read(@stdout) : ''
+      stdout ? File.read(stdout) : ''
     end
 
     def stderr_contents
-      @stderr ? File.read(@stderr) : ''
+      stderr ? File.read(stderr) : ''
     end
 
     private
@@ -109,6 +103,22 @@ module Bosh::Dev::Sandbox
     rescue Errno::EPERM # Owned by some other user/process
       @logger.info("Process other than #{@description} is running with PID=#{pid} so this service is stopped.")
       @logger.debug(`ps #{pid}`)
+    end
+
+    def stdout
+      if @cmd_options[:output]
+        "#{@cmd_options[:output]}-#{@log_id}"
+      else
+        @cmd_options[:stdout]
+      end
+    end
+
+    def stderr
+      if @cmd_options[:output]
+        "#{@cmd_options[:output]}-#{@log_id}.err"
+      else
+        @cmd_options[:stderr]
+      end
     end
   end
 end
