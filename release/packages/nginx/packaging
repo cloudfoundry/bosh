@@ -15,6 +15,7 @@ tar xzvf nginx/nginx-1.4.5.tar.gz
 echo "Building nginx..."
 pushd nginx-1.4.5
   ./configure \
+    --with-debug \
     --prefix=${BOSH_INSTALL_TARGET} \
     --with-pcre=../pcre-8.34 \
     --add-module=../headers-more-nginx-module-0.25 \
