@@ -1,6 +1,7 @@
 require 'timeout'
 require 'bosh/dev'
 require 'securerandom'
+require 'thread'
 
 module Bosh::Dev::Sandbox
   class Service
@@ -14,12 +15,13 @@ module Bosh::Dev::Sandbox
 
       # Add unique identifier to avoid confusing log information
       @description = "#{@cmd_array.first} (#{SecureRandom.hex(4)})"
+      @pid_mutex = Mutex.new
     end
 
     def start
       env = ENV.to_hash.merge(@cmd_options.fetch(:env, {}))
 
-      if running?
+      if running?(@pid)
         @logger.info("Already started #{@description} with PID #{@pid}")
       else
         unless system("which #{@cmd_array.first} > /dev/null")
@@ -28,17 +30,20 @@ module Bosh::Dev::Sandbox
 
         @log_id = SecureRandom.hex(4)
 
-        @pid = Process.spawn(env, *@cmd_array, {
-          out: stdout || :close,
-          err: stderr || :close,
-          in: :close,
-        })
+        @pid_mutex.synchronize do
+          @pid = Process.spawn(env, *@cmd_array, {
+            out: stdout || :close,
+            err: stderr || :close,
+            in: :close,
+          })
+        end
+
         @logger.info("Started #{@description} with PID #{@pid}, log-id: #{@log_id}")
 
         Process.detach(@pid)
 
         tries = 0
-        until running?
+        until running?(@pid)
           tries += 1
           raise RuntimeError, "Cannot run #{@cmd_array} with #{env.inspect}" if tries > 20
           sleep(0.1)
@@ -47,28 +52,17 @@ module Bosh::Dev::Sandbox
     end
 
     def stop(signal = 'TERM')
-      if running?
-        kill_process(signal, @pid)
+      pid_to_stop = @pid
+      @pid = nil
+
+      if running?(pid_to_stop)
+        kill_process(signal, pid_to_stop)
 
         # Block until process exits to avoid race conditions in the caller
         # (e.g. director process is killed but we don't wait and then we
         # try to delete db which is in use by director)
-        wait_for_process_to_exit_or_be_killed
+        wait_for_process_to_exit_or_be_killed(pid_to_stop)
       end
-
-      # Reset pid so that we do not think that service is still running
-      # when pid is given to some other unrelated process
-      @pid = nil
-    end
-
-    def running?
-      @pid && Process.kill(0, @pid)
-    rescue Errno::ESRCH # No such process
-      false
-    rescue Errno::EPERM # Owned by some other user/process
-      @logger.info("Process other than #{@description} is running with PID=#{@pid} so this service is not running.")
-      @logger.debug(`ps #{@pid}`)
-      false
     end
 
     def stdout_contents
@@ -81,14 +75,24 @@ module Bosh::Dev::Sandbox
 
     private
 
-    def wait_for_process_to_exit_or_be_killed(remaining_attempts = 60)
-      while running?
+    def running?(pid)
+      pid && Process.kill(0, pid)
+    rescue Errno::ESRCH # No such process
+      false
+    rescue Errno::EPERM # Owned by some other user/process
+      @logger.info("Process other than #{@description} is running with PID=#{pid} so this service is not running.")
+      @logger.debug(`ps #{pid}`)
+      false
+    end
+
+    def wait_for_process_to_exit_or_be_killed(pid, remaining_attempts = 60)
+      while running?(pid)
         remaining_attempts -= 1
         if remaining_attempts == 35
-          @logger.info("Killing #{@description} with PID=#{@pid}")
-          kill_process('KILL', @pid)
+          @logger.info("Killing #{@description} with PID=#{pid}")
+          kill_process('KILL', pid)
         elsif remaining_attempts == 0
-          raise "KILL signal ignored by #{@description} with PID=#{@pid}"
+          raise "KILL signal ignored by #{@description} with PID=#{pid}"
         end
 
         sleep(0.2)
