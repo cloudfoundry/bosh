@@ -62,6 +62,8 @@ module Bosh::Dev::Sandbox
         # (e.g. director process is killed but we don't wait and then we
         # try to delete db which is in use by director)
         wait_for_process_to_exit_or_be_killed(pid_to_stop)
+      else
+        @logger.debug("Process #{@description} with PID=#{pid_to_stop} is not running.")
       end
     end
 
