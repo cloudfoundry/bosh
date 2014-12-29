@@ -13,6 +13,10 @@ module Bosh::Spec
       Dir.chdir(@bosh_work_dir) { run_in_current_dir(cmd, options) }
     end
 
+    def reset
+      FileUtils.rm_rf(@bosh_config)
+    end
+
     def run_in_current_dir(cmd, options = {})
       failure_expected = options.fetch(:failure_expected, false)
       interactive_mode = options.fetch(:interactive, false) ? '' : '-n'

@@ -3,6 +3,8 @@ require 'spec_helper'
 describe 'cli: target', type: :integration do
   with_reset_sandbox_before_each
 
+  before { bosh_runner.reset }
+
   it 'whines on inaccessible target', no_reset: true do
     out = bosh_runner.run('target https://localhost', failure_expected: true)
     expect(out).to match(/cannot access director/i)
@@ -37,7 +39,7 @@ describe 'cli: target', type: :integration do
       Target already set to `Test Director'
     OUT
 
-    expect_output("target https://127.0.0.1:#{current_sandbox.director_port}", <<-OUT)
+    expect_output("target https://0.0.0.0:#{current_sandbox.director_port}", <<-OUT)
       Target set to `Test Director'
     OUT
 
@@ -51,7 +53,7 @@ describe 'cli: target', type: :integration do
     bosh_runner.run("target #{current_sandbox.director_url} foo")
     bosh_runner.run('login admin admin')
 
-    bosh_runner.run("target https://127.0.0.1:#{current_sandbox.director_port} bar")
+    bosh_runner.run("target https://0.0.0.0:#{current_sandbox.director_port} bar")
 
     bosh_runner.run('login admin admin')
     expect(bosh_runner.run('status')).to match(/user\s+admin/i)
