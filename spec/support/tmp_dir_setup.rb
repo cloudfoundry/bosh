@@ -15,7 +15,8 @@ RSpec.configure do |config|
 
   config.after do |example|
     if example.exception
-      example.exception.message << "\nTest directory: #{Bosh::Dev::Sandbox::DebugLogs.logs_dir}"
+      example.exception.message << "\nTest directory: #{tmp_dir}"
+      example.exception.message << "\nSandbox directory: #{Bosh::Dev::Sandbox::DebugLogs.logs_dir}"
     else
       FileUtils.rm_rf(tmp_dir)
     end
