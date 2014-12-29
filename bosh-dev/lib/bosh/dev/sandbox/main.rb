@@ -279,7 +279,7 @@ module Bosh::Dev::Sandbox
     end
 
     def director_url
-      @director_url ||= "https://localhost:#{director_port}"
+      @director_url ||= "https://127.0.0.1:#{director_port}"
     end
 
     def director_port
