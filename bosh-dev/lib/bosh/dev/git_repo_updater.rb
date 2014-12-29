@@ -8,7 +8,7 @@ module Bosh::Dev
       @logger = logger
     end
 
-    def update_directory(dir)
+    def update_directory(dir, commit_message)
       Dir.chdir(dir) do
         stdout, stderr, status = exec_cmd('git add .')
         raise "Failed adding untracked files in #{dir}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
@@ -20,7 +20,6 @@ module Bosh::Dev
 
         return if stdout.match(/^nothing to commit.*working directory clean.*$/)
 
-        commit_message = 'Autodeployer receipt file update'
         stdout, stderr, status = exec_cmd("git commit -a -m '#{commit_message}'")
         raise "Failed committing modified files in #{dir}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 

@@ -70,7 +70,7 @@ module Bosh::Dev
 
     describe '#push' do
       it 'commit and pushes the current state of the directory' do
-        git_repo_updater.should_receive(:update_directory).with('/tmp/deployments')
+        git_repo_updater.should_receive(:update_directory).with('/tmp/deployments', kind_of(String))
         subject.push
       end
     end
@@ -83,7 +83,7 @@ module Bosh::Dev
 
       it 'updates repo by pulling in new changes, commits and pushes the current state of the directory' do
         shell.should_receive(:run).with('git pull').ordered
-        git_repo_updater.should_receive(:update_directory).with('/tmp/deployments').ordered
+        git_repo_updater.should_receive(:update_directory).with('/tmp/deployments', kind_of(String)).ordered
         subject.update_and_push
       end
 

@@ -11,6 +11,7 @@ module Bosh::Dev
       @shell = Bosh::Core::Shell.new
       @path_root = options.fetch(:path_root) { env.fetch('WORKSPACE', '/tmp') }
       @git_repo_updater = Bosh::Dev::GitRepoUpdater.new(logger)
+      @commit_message = options[:commit_message] || 'DeploymentsRepository: no commit message'
     end
 
     def path
@@ -22,7 +23,7 @@ module Bosh::Dev
     end
 
     def push
-      @git_repo_updater.update_directory(path)
+      @git_repo_updater.update_directory(path, @commit_message)
     end
 
     def update_and_push

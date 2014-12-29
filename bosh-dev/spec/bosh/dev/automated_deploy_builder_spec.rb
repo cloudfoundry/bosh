@@ -57,7 +57,7 @@ module Bosh::Dev
         })
 
         deployments_repository = instance_double('Bosh::Dev::DeploymentsRepository')
-        expect(Bosh::Dev::DeploymentsRepository).to receive(:new).with(ENV, logger).and_return(deployments_repository)
+        expect(Bosh::Dev::DeploymentsRepository).to receive(:new).with(ENV, logger, kind_of(Hash)).and_return(deployments_repository)
 
         deployment_account = instance_double('Bosh::Dev::Aws::DeploymentAccount')
         expect(Bosh::Dev::Aws::DeploymentAccount).to receive(:new).with(
