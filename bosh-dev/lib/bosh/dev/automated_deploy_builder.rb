@@ -34,7 +34,8 @@ module Bosh::Dev
     def build
       logger = Logging.logger(STDERR)
 
-      deployments_repository = DeploymentsRepository.new(ENV, logger)
+      commit_message = 'Autodeployer updating deployment receipt for the next micro update (we use the repo to communicate between test runs)'
+      deployments_repository = DeploymentsRepository.new(ENV, logger, commit_message: commit_message)
       deployment_account = build_deployment_account(deployments_repository)
 
       download_adapter = DownloadAdapter.new(logger)

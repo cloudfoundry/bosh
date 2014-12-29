@@ -19,28 +19,28 @@ module Bosh::Dev
     it 'changes to the directory' do
       expect(Dir).to receive(:chdir).with(dir)
 
-      subject.update_directory(dir)
+      subject.update_directory(dir, 'message')
     end
 
     it 'adds untracked files' do
       expect(Open3).to receive(:capture3).with('git add .').
           and_return([ '', nil, instance_double('Process::Status', success?: true) ])
 
-      subject.update_directory(dir)
+      subject.update_directory(dir, 'message')
     end
 
     it 'adds modified files' do
-      expect(Open3).to receive(:capture3).with("git commit -a -m 'Autodeployer receipt file update'").
+      expect(Open3).to receive(:capture3).with("git commit -a -m 'message'").
           and_return([ '', nil, instance_double('Process::Status', success?: true) ])
 
-      subject.update_directory(dir)
+      subject.update_directory(dir, 'message')
     end
 
     it 'git pushes' do
       expect(Open3).to receive(:capture3).with('git push').
           and_return([ '', nil, instance_double('Process::Status', success?: true) ])
 
-      subject.update_directory(dir)
+      subject.update_directory(dir, 'message')
     end
 
     context 'when there are no modified files to commit' do
@@ -53,15 +53,15 @@ module Bosh::Dev
         let(:no_modified_files_message) { 'nothing to commit (working directory clean)' }
 
         it 'does not commit' do
-          expect(Open3).to_not receive(:capture3).with("git commit -a -m 'Autodeployer receipt file update'")
+          expect(Open3).to_not receive(:capture3).with("git commit -a -m 'message'")
 
-          subject.update_directory(dir)
+          subject.update_directory(dir, 'message')
         end
 
         it 'does not push' do
           expect(Open3).to_not receive(:capture3).with('git push')
 
-          subject.update_directory(dir)
+          subject.update_directory(dir, 'message')
         end
       end
 
@@ -71,13 +71,13 @@ module Bosh::Dev
         it 'does not commit' do
           expect(Open3).to_not receive(:capture3).with("git commit -a -m 'Autodeployer receipt file update'")
 
-          subject.update_directory(dir)
+          subject.update_directory(dir, 'message')
         end
 
         it 'does not push' do
           expect(Open3).to_not receive(:capture3).with('git push')
 
-          subject.update_directory(dir)
+          subject.update_directory(dir, 'message')
         end
       end
     end
