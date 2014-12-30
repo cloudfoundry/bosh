@@ -160,7 +160,7 @@ describe 'AWS Bootstrap commands' do
 
     context 'when the target already has a release, possibly a stemcell' do
       before do
-        aws.config.target = aws.options[:target] = 'http://localhost:25555'
+        aws.config.target = aws.options[:target] = 'http://127.0.0.1:25555'
 
         releases = [
             {
@@ -230,7 +230,7 @@ describe 'AWS Bootstrap commands' do
       let(:deployment_name) { 'vpc-bosh-dev102' }
 
       before do
-        aws.options[:target] = 'http://localhost:25555'
+        aws.options[:target] = 'http://127.0.0.1:25555'
 
         stub_request(:get, 'http://127.0.0.1:25555/releases').
             with(:headers => {'Content-Type' => 'application/json'}).
