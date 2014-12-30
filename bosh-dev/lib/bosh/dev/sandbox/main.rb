@@ -1,5 +1,6 @@
 require 'benchmark'
 require 'securerandom'
+require 'bosh/director/config'
 require 'bosh/dev/sandbox/service'
 require 'bosh/dev/sandbox/socket_connector'
 require 'bosh/dev/sandbox/database_migrator'
@@ -82,72 +83,20 @@ module Bosh::Dev::Sandbox
       @director_tmp_path = sandbox_path('boshdir')
       @blobstore_storage_dir = sandbox_path('bosh_test_blobstore')
 
-      base_log_path = File.join(logs_path, @name)
-
-      @redis_process = Service.new(%W[redis-server #{sandbox_path(REDIS_CONFIG)}], {}, @logger)
-
-      @redis_socket_connector = SocketConnector.new('redis', 'localhost', redis_port, @logger)
-
-      @nats_log_path = File.join(@logs_path, 'nats.log')
       FileUtils.mkdir_p(@logs_path)
 
-      @nats_process = Service.new(
-        %W[nats-server -p #{nats_port} -D -V -T -l #{@nats_log_path}],
-        { stdout: $stdout, stderr: $stderr },
-        @logger
-      )
-
-      @nats_socket_connector = SocketConnector.new('nats', 'localhost', nats_port, @logger)
-
-      @nginx = Nginx.new
-
-      @director_nginx_process = Service.new(
-        %W[#{@nginx.executable_path} -c #{sandbox_path(DIRECTOR_NGINX_CONFIG)}], {}, @logger)
-
-      director_config = sandbox_path(DIRECTOR_CONFIG)
-      @director_process = Service.new(
-        %W[bosh-director -c #{director_config}],
-        { output: "#{base_log_path}.director.out" },
-        @logger,
-      )
-
-      @director_nginx_socket_connector = SocketConnector.new('director_nginx', 'localhost', director_port, @logger)
-
-      @director_socket_connector = SocketConnector.new('director', 'localhost', director_ruby_port, @logger)
-
-      @worker_processes = 3.times.map do |index|
-        Service.new(
-          %W[bosh-director-worker -c #{director_config}],
-          { output: "#{base_log_path}.worker_#{index}.out", env: { 'QUEUE' => '*' } },
-          @logger,
-        )
-      end
-
-      @health_monitor_process = Service.new(
-        %W[bosh-monitor -c #{sandbox_path(HM_CONFIG)}],
-        { output: "#{logs_path}/health_monitor.out" },
-        @logger,
-      )
-
-      @scheduler_process = Service.new(
-        %W[bosh-director-scheduler -c #{director_config}],
-        { output: "#{base_log_path}.scheduler.out" },
-        @logger,
-      )
-
-      if db_opts[:type] == 'mysql'
-        @database = Mysql.new(@name, @logger, db_opts[:user], db_opts[:password])
-      else
-        @database = Postgresql.new(@name, @logger)
-      end
+      setup_redis
+      setup_nats
+      setup_nginx
+      setup_director
+      setup_heath_monitor
+      setup_database(db_opts)
 
       # Note that this is not the same object
       # as dummy cpi used inside bosh-director process
       @cpi = Bosh::Clouds::Dummy.new(
         'dir' => cloud_storage_dir
       )
-
-      @database_migrator = DatabaseMigrator.new(DIRECTOR_PATH, director_config, @logger)
     end
 
     def agent_tmp_path
@@ -326,6 +275,11 @@ module Bosh::Dev::Sandbox
     def do_reset(name)
       @cpi.kill_agents
 
+      until resque_is_done?
+        @logger.debug('Waiting for Resque queue to drain')
+        sleep 0.1
+      end
+
       Redis.new(host: 'localhost', port: redis_port).flushdb
 
       @database.truncate_db
@@ -336,6 +290,11 @@ module Bosh::Dev::Sandbox
       FileUtils.mkdir_p(director_tmp_path)
 
       reconfigure_director if director_configuration_changed?
+    end
+
+    def resque_is_done?
+      info = Resque.info
+      info[:pending] == 0 && info[:working] == 0
     end
 
     def setup_sandbox_root
@@ -383,6 +342,80 @@ module Bosh::Dev::Sandbox
       @logger.error("#{DEBUG_HEADER} start #{service.description} stderr #{DEBUG_HEADER}")
       @logger.error(service.stderr_contents)
       @logger.error("#{DEBUG_HEADER} end #{service.description} stderr #{DEBUG_HEADER}")
+    end
+
+
+    def setup_database(db_opts)
+      if db_opts[:type] == 'mysql'
+        @database = Mysql.new(@name, @logger, db_opts[:user], db_opts[:password])
+      else
+        @database = Postgresql.new(@name, @logger)
+      end
+
+      director_config = sandbox_path(DIRECTOR_CONFIG)
+      @database_migrator = DatabaseMigrator.new(DIRECTOR_PATH, director_config, @logger)
+    end
+
+    def setup_heath_monitor
+      @health_monitor_process = Service.new(
+        %W[bosh-monitor -c #{sandbox_path(HM_CONFIG)}],
+        {output: "#{logs_path}/health_monitor.out"},
+        @logger,
+      )
+    end
+
+    def setup_director
+      base_log_path = File.join(logs_path, @name)
+
+      director_config = sandbox_path(DIRECTOR_CONFIG)
+      @director_process = Service.new(
+        %W[bosh-director -c #{director_config}],
+        {output: "#{base_log_path}.director.out"},
+        @logger,
+      )
+
+      @director_nginx_socket_connector = SocketConnector.new('director_nginx', 'localhost', director_port, @logger)
+
+      @director_socket_connector = SocketConnector.new('director', 'localhost', director_ruby_port, @logger)
+
+      @worker_processes = 3.times.map do |index|
+        Service.new(
+          %W[bosh-director-worker -c #{director_config}],
+          {output: "#{base_log_path}.worker_#{index}.out", env: {'QUEUE' => '*'}},
+          @logger,
+        )
+      end
+
+      @scheduler_process = Service.new(
+        %W[bosh-director-scheduler -c #{director_config}],
+        {output: "#{base_log_path}.scheduler.out"},
+        @logger,
+      )
+    end
+
+    def setup_nginx
+      @nginx = Nginx.new
+
+      @director_nginx_process = Service.new(
+        %W[#{@nginx.executable_path} -c #{sandbox_path(DIRECTOR_NGINX_CONFIG)}], {}, @logger)
+    end
+
+    def setup_nats
+      @nats_log_path = File.join(@logs_path, 'nats.log')
+
+      @nats_process = Service.new(
+        %W[nats-server -p #{nats_port} -D -V -T -l #{@nats_log_path}],
+        {stdout: $stdout, stderr: $stderr},
+        @logger
+      )
+
+      @nats_socket_connector = SocketConnector.new('nats', 'localhost', nats_port, @logger)
+    end
+
+    def setup_redis
+      @redis_process = Service.new(%W[redis-server #{sandbox_path(REDIS_CONFIG)}], {}, @logger)
+      @redis_socket_connector = SocketConnector.new('redis', 'localhost', redis_port, @logger)
+      Bosh::Director::Config.redis_options = {host: 'localhost', port: redis_port}
     end
 
     attr_reader :director_tmp_path, :dns_db_path, :task_logs_dir
