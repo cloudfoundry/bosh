@@ -14,6 +14,9 @@ describe Bosh::AwsCloud::Cloud do
 
   let(:instance_type) { ENV.fetch('BOSH_AWS_INSTANCE_TYPE', 't2.small') }
   let(:ami) { ENV.fetch('BOSH_AWS_IMAGE_ID', 'ami-b66ed3de') }
+  let(:vm_metadata) { { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' } }
+  let(:disks) { [] }
+  let(:network_spec) { {} }
 
   before { Bosh::Registry::Client.stub(new: double('registry').as_null_object) }
 
@@ -79,126 +82,70 @@ describe Bosh::AwsCloud::Cloud do
     describe 'VM lifecycle with light stemcells' do
       it 'exercises vm lifecycle with light stemcell' do
         expect {
-          stemcell_id = cpi.create_stemcell('/not/a/real/path', { 'ami' => { 'us-east-1' => ami } })
-          instance_id = cpi.create_vm(
-            nil,
-            stemcell_id,
-            { 'instance_type' => instance_type },
-            network_spec,
-            [],
-            {}
-          )
-          vm_metadata = { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' }
-          cpi.set_vm_metadata(instance_id, vm_metadata)
-          cpi.delete_vm(instance_id)
-          cpi.delete_stemcell(stemcell_id)
+          vm_lifecycle
         }.not_to raise_error
       end
     end
 
     context 'without existing disks' do
       it 'should exercise the vm lifecycle' do
-        @instance_id = cpi.create_vm(
-          'agent-007',
-          ami,
-          { 'instance_type' => instance_type },
-          network_spec,
-          [],
-          { 'key' => 'value' }
-        )
+        vm_lifecycle do |instance_id|
+          volume_id = cpi.create_disk(2048, {}, instance_id)
+          expect(volume_id).not_to be_nil
 
-        expect(@instance_id).not_to be_nil
+          cpi.attach_disk(instance_id, volume_id)
 
-        # possible race condition here
-        expect(cpi.has_vm?(@instance_id)).to be(true)
+          snapshot_metadata = vm_metadata.merge(
+            bosh_data: 'bosh data',
+            instance_id: 'instance',
+            agent_id: 'agent',
+            director_name: 'Director',
+            director_uuid: '6d06b0cc-2c08-43c5-95be-f1b2dd247e18',
+          )
 
-        vm_metadata = { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' }
-        cpi.set_vm_metadata(@instance_id, vm_metadata)
+          snapshot_id = cpi.snapshot_disk(volume_id, snapshot_metadata)
+          expect(snapshot_id).not_to be_nil
 
-        @volume_id = cpi.create_disk(2048, {}, @instance_id)
-        expect(@volume_id).not_to be_nil
+          snapshot = cpi.ec2.snapshots[snapshot_id]
+          expect(snapshot.tags.device).to eq '/dev/sdf'
+          expect(snapshot.tags.agent_id).to eq 'agent'
+          expect(snapshot.tags.instance_id).to eq 'instance'
+          expect(snapshot.tags.director_name).to eq 'Director'
+          expect(snapshot.tags.director_uuid).to eq '6d06b0cc-2c08-43c5-95be-f1b2dd247e18'
 
-        cpi.attach_disk(@instance_id, @volume_id)
+          expect(snapshot.tags[:Name]).to eq 'deployment/cpi_spec/0/sdf'
 
-        snapshot_metadata = vm_metadata.merge(
-          bosh_data: 'bosh data',
-          instance_id: 'instance',
-          agent_id: 'agent',
-          director_name: 'Director',
-          director_uuid: '6d06b0cc-2c08-43c5-95be-f1b2dd247e18',
-        )
+          cpi.delete_snapshot(snapshot_id)
 
-        snapshot_id = cpi.snapshot_disk(@volume_id, snapshot_metadata)
-        expect(snapshot_id).not_to be_nil
-
-        snapshot = cpi.ec2.snapshots[snapshot_id]
-        expect(snapshot.tags.device).to eq '/dev/sdf'
-        expect(snapshot.tags.agent_id).to eq 'agent'
-        expect(snapshot.tags.instance_id).to eq 'instance'
-        expect(snapshot.tags.director_name).to eq 'Director'
-        expect(snapshot.tags.director_uuid).to eq '6d06b0cc-2c08-43c5-95be-f1b2dd247e18'
-
-        expect(snapshot.tags[:Name]).to eq 'deployment/cpi_spec/0/sdf'
-
-        cpi.delete_snapshot(snapshot_id)
-
-        Bosh::Common.retryable(tries: 20, on: Bosh::Clouds::DiskNotAttached, sleep: lambda { |n, _| [2**(n-1), 30].min }) do
-          cpi.detach_disk(@instance_id, @volume_id)
-          true
+          Bosh::Common.retryable(tries: 20, on: Bosh::Clouds::DiskNotAttached, sleep: lambda { |n, _| [2**(n-1), 30].min }) do
+            cpi.detach_disk(instance_id, volume_id)
+            true
+          end
         end
       end
     end
 
     context 'with existing disks' do
-      before { @existing_volume_id = cpi.create_disk(2048, {}) }
-      after  { cpi.delete_disk(@existing_volume_id) if @existing_volume_id }
+      let!(:existing_volume_id) { cpi.create_disk(2048, {}) }
+      let(:disks) { [existing_volume_id] }
+      after  { cpi.delete_disk(existing_volume_id) if existing_volume_id }
 
       it 'should exercise the vm lifecycle' do
-        @instance_id = cpi.create_vm(
-          'agent-007',
-          ami,
-          { 'instance_type' => instance_type },
-          network_spec,
-          [@existing_volume_id],
-          { 'key' => 'value' }
-        )
-
-        expect(@instance_id).not_to be_nil
-
-        # possible race condition here
-        expect(cpi.has_vm?(@instance_id)).to be(true)
-
-        metadata = { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' }
-        cpi.set_vm_metadata(@instance_id, metadata)
+        vm_lifecycle
       end
 
       it 'should list the disks' do
-        @instance_id = cpi.create_vm(
-          'agent-007',
-          ami,
-          { 'instance_type' => instance_type },
-          network_spec,
-          [@existing_volume_id],
-          { 'key' => 'value' }
-        )
+        vm_lifecycle do |instance_id|
+          volume_id = cpi.create_disk(2048, {}, instance_id)
+          expect(volume_id).not_to be_nil
 
-        expect(@instance_id).not_to be_nil
+          cpi.attach_disk(instance_id, volume_id)
+          expect(cpi.get_disks(instance_id)).to include(volume_id)
 
-        # possible race condition here
-        expect(cpi.has_vm?(@instance_id)).to be(true)
-
-        metadata = { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' }
-        cpi.set_vm_metadata(@instance_id, metadata)
-
-        @volume_id = cpi.create_disk(2048, {}, @instance_id)
-        expect(@volume_id).not_to be_nil
-
-        cpi.attach_disk(@instance_id, @volume_id)
-        expect(cpi.get_disks(@instance_id)).to include(@volume_id)
-
-        Bosh::Common.retryable(tries: 20, on: Bosh::Clouds::DiskNotAttached, sleep: lambda { |n, _| [2**(n-1), 30].min }) do
-          cpi.detach_disk(@instance_id, @volume_id)
-          true
+          Bosh::Common.retryable(tries: 20, on: Bosh::Clouds::DiskNotAttached, sleep: lambda { |n, _| [2**(n-1), 30].min }) do
+            cpi.detach_disk(instance_id, volume_id)
+            true
+          end
         end
       end
     end
@@ -217,23 +164,30 @@ describe Bosh::AwsCloud::Cloud do
 
     context 'without existing disks' do
       it 'should exercise the vm lifecycle' do
-        @instance_id = cpi.create_vm(
-          'agent-007',
-          ami,
-          { 'instance_type' => instance_type },
-          network_spec,
-          [],
-          { 'key' => 'value' }
-        )
-
-        expect(@instance_id).not_to be_nil
-
-        # possible race condition here
-        expect(cpi.has_vm?(@instance_id)).to be(true)
-
-        metadata = { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' }
-        cpi.set_vm_metadata(@instance_id, metadata)
+        vm_lifecycle
       end
     end
+  end
+
+  def vm_lifecycle
+    stemcell_id = cpi.create_stemcell('/not/a/real/path', { 'ami' => { 'us-east-1' => ami } })
+    instance_id = cpi.create_vm(
+      nil,
+      stemcell_id,
+      { 'instance_type' => instance_type },
+      network_spec,
+      disks,
+      {}
+    )
+    expect(instance_id).not_to be_nil
+
+    expect(cpi.has_vm?(instance_id)).to be(true)
+
+    cpi.set_vm_metadata(instance_id, vm_metadata)
+
+    yield(instance_id) if block_given?
+  ensure
+    cpi.delete_vm(instance_id) if instance_id
+    cpi.delete_stemcell(stemcell_id) if stemcell_id
   end
 end
