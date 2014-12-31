@@ -34,100 +34,90 @@ describe Bosh::AwsCloud::InstanceManager do
     let(:aws_instance) { instance_double('AWS::EC2::Instance', id: 'i-12345678') }
     let(:aws_client) { double(AWS::EC2::Client) }
 
+    let(:agent_id) { 'agent-id' }
+    let(:stemcell_id) { 'stemcell-id' }
+    let(:resource_pool) { {'instance_type' => 'm1.small', 'key_name' => 'bar'} }
+    let(:networks_spec) do
+      {
+        'default' => {
+        'type' => 'dynamic',
+        'dns' => 'foo',
+        'cloud_properties' => {'security_groups' => 'baz'}
+      },
+        'other' => {
+          'type' => 'manual',
+          'cloud_properties' => {'subnet' => 'sub-123456'},
+          'ip' => '1.2.3.4'
+        }
+      }
+    end
+    let(:disk_locality) { nil }
+    let(:environment) { nil }
+    let(:instance_options) { {'aws' => {'region' => 'us-east-1'}} }
+
     it 'should ask AWS to create an instance in the given region, with parameters built up from the given arguments' do
       expect(aws_instances).to receive(:create).with(aws_instance_params).and_return(aws_instance)
       allow(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: aws_instance, state: :running)
 
-      agent_id = 'agent-id'
-      stemcell_id = 'stemcell-id'
-      resource_pool = {'instance_type' => 'm1.small', 'key_name' => 'bar'}
-      networks_spec = {
-        'default' => {
-          'type' => 'dynamic',
-          'dns' => 'foo',
-          'cloud_properties' => {'security_groups' => 'baz'}
-        },
-        'other' => {
-          'type' => 'manual',
-          'cloud_properties' => {'subnet' => 'sub-123456'},
-          'ip' => '1.2.3.4'
-        }
-      }
-      disk_locality = nil
-      environment = nil
-      options = {'aws' => {'region' => 'us-east-1'}}
-      instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, options)
+      instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, instance_options)
     end
 
-    it 'should ask AWS to create a SPOT instance in the given region, when resource_pool includes spot_bid_price' do
-      allow(region).to receive(:client).and_return(aws_client)
-      allow(region).to receive(:subnets).and_return('sub-123456' => fake_aws_subnet)
-      allow(region).to receive(:instances).and_return('i-12345678' => aws_instance)
-
-      # need to translate security group names to security group ids
-      sg1 = instance_double('AWS::EC2::SecurityGroup', security_group_id:'sg-baz-1234')
-      allow(sg1).to receive(:name).and_return('baz')
-      allow(region).to receive(:security_groups).and_return([sg1])
-
-      agent_id = 'agent-id'
-      stemcell_id = 'stemcell-id'
-      networks_spec = {
-        'default' => {
-          'type' => 'dynamic',
-          'dns' => 'foo',
-          'cloud_properties' => {'security_groups' => 'baz'}
-        },
-        'other' => {
-          'type' => 'manual',
-          'cloud_properties' => {'subnet' => 'sub-123456'},
-          'ip' => '1.2.3.4'
-        }
-      }
-      disk_locality = nil
-      environment = nil
-      options = {'aws' => {'region' => 'us-east-1'}}
-
-      # NB: The spot_bid_price param should trigger spot instance creation
-      resource_pool = {'spot_bid_price'=>0.15, 'instance_type' => 'm1.small', 'key_name' => 'bar'}
-
-      # Should not recieve an ondemand instance create call
-      expect(aws_instances).to_not receive(:create).with(aws_instance_params)
-
-      #Should rather recieve a spot instance request
-      expect(aws_client).to receive(:request_spot_instances) do |spot_request|
-        expect(spot_request[:spot_price]).to eq('0.15')
-        expect(spot_request[:instance_count]).to eq(1)
-        expect(spot_request[:launch_specification]).to eq({
-          :image_id=>'stemcell-id',
-          :key_name=>'bar',
-          :instance_type=>'m1.small',
-          :user_data=>Base64.encode64('{"registry":{"endpoint":"http://..."},"dns":{"nameserver":"foo"}}'),
-          :placement=> { :availability_zone=>'us-east-1a' },
-          :network_interfaces=>[ {
-            :subnet_id=>fake_aws_subnet,
-            :groups=>['sg-baz-1234'],
-            :device_index=>0,
-            :private_ip_address=>'1.2.3.4'
-          }]
-        })
-
-        # return
-        {
-          :spot_instance_request_set => [ { :spot_instance_request_id=>'sir-12345c', :other_params_here => 'which are not used' }],
-          :request_id => 'request-id-12345'
-        }
+    context 'when spot_bid_price is specified' do
+      let(:resource_pool) do
+        # NB: The spot_bid_price param should trigger spot instance creation
+        {'spot_bid_price'=>0.15, 'instance_type' => 'm1.small', 'key_name' => 'bar'}
       end
 
-      # Should poll the spot instance request until state is active
-      expect(aws_client).to receive(:describe_spot_instance_requests).
-        with(:spot_instance_request_ids=>['sir-12345c']).
-        and_return(:spot_instance_request_set => [{:state => 'active', :instance_id=>'i-12345678'}])
+      it 'should ask AWS to create a SPOT instance in the given region, when resource_pool includes spot_bid_price' do
+        allow(region).to receive(:client).and_return(aws_client)
+        allow(region).to receive(:subnets).and_return('sub-123456' => fake_aws_subnet)
+        allow(region).to receive(:instances).and_return('i-12345678' => aws_instance)
 
-      # Should then wait for instance to be running, just like in the case of on deman
-      expect(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: aws_instance, state: :running)
+        # need to translate security group names to security group ids
+        sg1 = instance_double('AWS::EC2::SecurityGroup', security_group_id:'sg-baz-1234')
+        allow(sg1).to receive(:name).and_return('baz')
+        allow(region).to receive(:security_groups).and_return([sg1])
 
-      # Trigger spot instance request
-      instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, options)
+
+        # Should not recieve an ondemand instance create call
+        expect(aws_instances).to_not receive(:create).with(aws_instance_params)
+
+        #Should rather recieve a spot instance request
+        expect(aws_client).to receive(:request_spot_instances) do |spot_request|
+          expect(spot_request[:spot_price]).to eq('0.15')
+          expect(spot_request[:instance_count]).to eq(1)
+          expect(spot_request[:launch_specification]).to eq({
+            :image_id=>'stemcell-id',
+            :key_name=>'bar',
+            :instance_type=>'m1.small',
+            :user_data=>Base64.encode64('{"registry":{"endpoint":"http://..."},"dns":{"nameserver":"foo"}}'),
+            :placement=> { :availability_zone=>'us-east-1a' },
+            :network_interfaces=>[ {
+              :subnet_id=>fake_aws_subnet,
+              :groups=>['sg-baz-1234'],
+              :device_index=>0,
+              :private_ip_address=>'1.2.3.4'
+            }]
+          })
+
+          # return
+          {
+            :spot_instance_request_set => [ { :spot_instance_request_id=>'sir-12345c', :other_params_here => 'which are not used' }],
+            :request_id => 'request-id-12345'
+          }
+        end
+
+        # Should poll the spot instance request until state is active
+        expect(aws_client).to receive(:describe_spot_instance_requests).
+          with(:spot_instance_request_ids=>['sir-12345c']).
+          and_return(:spot_instance_request_set => [{:state => 'active', :instance_id=>'i-12345678'}])
+
+        # Should then wait for instance to be running, just like in the case of on deman
+        expect(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: aws_instance, state: :running)
+
+        # Trigger spot instance request
+        instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, instance_options)
+      end
     end
 
     it 'should retry creating the VM when AWS::EC2::Errors::InvalidIPAddress::InUse raised' do
@@ -139,25 +129,7 @@ describe Bosh::AwsCloud::InstanceManager do
 
       allow(instance_manager).to receive(:instance_create_wait_time).and_return(0)
 
-      agent_id = 'agent-id'
-      stemcell_id = 'stemcell-id'
-      resource_pool = {'instance_type' => 'm1.small', 'key_name' => 'bar'}
-      networks_spec = {
-        'default' => {
-          'type' => 'dynamic',
-          'dns' => 'foo',
-          'cloud_properties' => {'security_groups' => 'baz'}
-        },
-        'other' => {
-          'type' => 'manual',
-          'cloud_properties' => {'subnet' => 'sub-123456'},
-          'ip' => '1.2.3.4'
-        }
-      }
-      disk_locality = nil
-      environment = nil
-      options = {'aws' => {'region' => 'us-east-1'}}
-      instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, options)
+      instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, instance_options)
     end
 
     context 'when waiting it to become running fails' do
@@ -173,7 +145,7 @@ describe Bosh::AwsCloud::InstanceManager do
         expect(instance).to receive(:terminate).with(no_args)
 
         expect {
-          instance_manager.create('fake-agent-id', 'fake-stemcell-id', {}, {}, nil, nil, {'aws' => {}})
+          instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, instance_options)
         }.to raise_error(create_err)
       end
 
@@ -182,7 +154,7 @@ describe Bosh::AwsCloud::InstanceManager do
 
         it 're-raises creation error' do
           expect {
-            instance_manager.create('fake-agent-id', 'fake-stemcell-id', {}, {}, nil, nil, {'aws' => {}})
+            instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, instance_options)
           }.to raise_error(create_err)
         end
       end
@@ -201,7 +173,7 @@ describe Bosh::AwsCloud::InstanceManager do
         expect(instance).to receive(:terminate).with(no_args)
 
         expect {
-          instance_manager.create('fake-agent-id', 'fake-stemcell-id', {}, {}, nil, nil, {'aws' => {}})
+          instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, instance_options)
         }.to raise_error(lb_err)
       end
 
@@ -210,7 +182,7 @@ describe Bosh::AwsCloud::InstanceManager do
 
         it 're-raises creation error' do
           expect {
-            instance_manager.create('fake-agent-id', 'fake-stemcell-id', {}, {}, nil, nil, {'aws' => {}})
+            instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, instance_options)
           }.to raise_error(lb_err)
         end
       end
