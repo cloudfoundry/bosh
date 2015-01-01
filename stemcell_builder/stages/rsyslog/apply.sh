@@ -13,13 +13,18 @@ gmp_archive=$gmp_basename.tar.gz
 mkdir -p $chroot/$bosh_dir/src
 cp -r $dir/assets/$gmp_archive $chroot/$bosh_dir/src
 
-run_in_bosh_chroot $chroot "
-  cd src
-  tar zxvf $gmp_archive
-  cd $gmp_basename
-  ./configure
-  make && make install
-"
+if [ `uname -m` == "ppc64le" ]; then
+  # gmp is not compiling on ppc64le pkg_mgr install works fine
+  pkg_mgr install libgmp-dev gnutls-bin
+else
+  run_in_bosh_chroot $chroot "
+    cd src
+    tar zxvf $gmp_archive
+    cd $gmp_basename
+    ./configure
+    make && make install
+  "
+fi
 
 # nettle
 nettle_basename=nettle-2.7.1
@@ -36,20 +41,24 @@ run_in_bosh_chroot $chroot "
   make && make install
 "
 
-# gnutls
-gnutls_basename=gnutls-3.2.6
-gnutls_archive=$gnutls_basename.tar.gz
+if [ `uname -m` == "ppc64le" ]; then
+  pkg_mgr install libgnutls-dev
+else
+  # gnutls
+  gnutls_basename=gnutls-3.2.6
+  gnutls_archive=$gnutls_basename.tar.gz
 
-mkdir -p $chroot/$bosh_dir/src
-cp -r $dir/assets/$gnutls_archive $chroot/$bosh_dir/src
+  mkdir -p $chroot/$bosh_dir/src
+  cp -r $dir/assets/$gnutls_archive $chroot/$bosh_dir/src
 
-run_in_bosh_chroot $chroot "
-  cd src
-  tar zxvf $gnutls_archive
-  cd $gnutls_basename
-  PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig ./configure --disable-doc
-  make && make install
-"
+  run_in_bosh_chroot $chroot "
+    cd src
+    tar zxvf $gnutls_archive
+    cd $gnutls_basename
+    PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig ./configure --disable-doc
+    make && make install
+  "
+fi
 
 # libestr
 libestr_basename=libestr-0.1.9

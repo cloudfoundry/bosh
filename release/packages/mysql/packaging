@@ -1,7 +1,11 @@
 # abort script on any command that exit with a non zero value
 set -e
 
+if [ "`uname -m`" == "ppc64le" ]; then
+VERSION=5.1.62-rel13.3-435-Linux-ppc64le
+else
 VERSION=5.1.62-rel13.3-435-Linux-x86_64
+fi
 # Percona binary Linux build
 tar zxvf mysql/server-$VERSION.tar.gz
 (

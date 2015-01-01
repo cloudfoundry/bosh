@@ -28,7 +28,7 @@ module Bosh::Stemcell
       [
         :bosh_ruby,
         :bosh_go_agent,
-        :bosh_micro_go,
+        :bosh_micro_go, 
         :aws_cli,
       ]
     end

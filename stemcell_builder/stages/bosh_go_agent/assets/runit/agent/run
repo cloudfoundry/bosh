@@ -2,6 +2,9 @@
 set -e
 
 export PATH=/var/vcap/bosh/bin:$PATH
+if [ `uname -m` == "ppc64le" ]; then
+  export LD_LIBRARY_PATH=/var/vcap/bosh/gccgo/lib64
+fi
 exec 2>&1
 
 cd /var/vcap/bosh

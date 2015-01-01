@@ -8,12 +8,21 @@ base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
 # Install grub
-pkg_mgr install grub
+if [ `uname -m` == "ppc64le" ]; then 
+  # ppc64le uses grub2
+  pkg_mgr install grub2
+else
+  pkg_mgr install grub
+fi
 
 if [ -f $chroot/etc/debian_version ] # Ubuntu
 then
 
-  rsync -a $chroot/usr/lib/grub/x86*/ $chroot/boot/grub/
+  if [ `uname -m` == "ppc64le" ]; then 
+    rsync -a $chroot/usr/lib/grub/powerpc*/ $chroot/boot/grub/
+  else
+    rsync -a $chroot/usr/lib/grub/x86*/ $chroot/boot/grub/
+  fi
 
 elif [ -f $chroot/etc/centos-release ] # CentOS
 then

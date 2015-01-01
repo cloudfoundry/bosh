@@ -20,6 +20,10 @@ then
 fi
 
 base_debootstrap_arch=amd64
+if [ `uname -m` == "ppc64le" ]; then
+  base_debootstrap_arch=ppc64el
+fi
+
 
 if [ -z "${base_debootstrap_suite:-}" ]
 then
