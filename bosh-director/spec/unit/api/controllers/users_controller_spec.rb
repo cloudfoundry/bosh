@@ -41,18 +41,18 @@ module Bosh::Director
 
       it 'requires auth' do
         get '/'
-        last_response.status.should == 401
+        expect(last_response.status).to eq(401)
       end
 
       it 'sets the date header' do
         get '/'
-        last_response.headers['Date'].should_not be_nil
+        expect(last_response.headers['Date']).not_to be_nil
       end
 
       it "allows Basic HTTP Auth with admin/admin credentials for test purposes (even though user doesn't exist)" do
         basic_authorize 'admin', 'admin'
         get '/'
-        last_response.status.should == 404
+        expect(last_response.status).to eq(404)
       end
 
       describe 'API calls' do
@@ -64,13 +64,13 @@ module Bosh::Director
           let (:user_data) { {'username' => 'john', 'password' => '123'} }
 
           it 'creates a user' do
-            Models::User.all.size.should == 0
+            expect(Models::User.all.size).to eq(0)
 
             post '/', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
             new_user = Models::User[:username => username]
-            new_user.should_not be_nil
-            BCrypt::Password.new(new_user.password).should == password
+            expect(new_user).not_to be_nil
+            expect(BCrypt::Password.new(new_user.password)).to eq(password)
           end
 
           it "doesn't create a user with existing username" do
@@ -79,8 +79,8 @@ module Bosh::Director
             login_as(username, password)
             post '/', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
-            last_response.status.should == 400
-            Models::User.all.size.should == 1
+            expect(last_response.status).to eq(400)
+            expect(Models::User.all.size).to eq(1)
           end
 
           it 'updates user password but not username' do
@@ -90,16 +90,17 @@ module Bosh::Director
             new_data = {'username' => username, 'password' => '456'}
             put "/#{username}", Yajl::Encoder.encode(new_data), { 'CONTENT_TYPE' => 'application/json' }
 
-            last_response.status.should == 204
+            expect(last_response.status).to eq(204)
             user = Models::User[:username => username]
-            BCrypt::Password.new(user.password).should == '456'
+            expect(BCrypt::Password.new(user.password)).to eq('456')
 
             login_as(username, '456')
             change_name = {'username' => 'john2', 'password' => password}
             put "/#{username}", Yajl::Encoder.encode(change_name), { 'CONTENT_TYPE' => 'application/json' }
-            last_response.status.should == 400
-            last_response.body.should ==
+            expect(last_response.status).to eq(400)
+            expect(last_response.body).to eq(
               "{\"code\":20001,\"description\":\"The username is immutable\"}"
+            )
           end
 
           it 'deletes user' do
@@ -108,10 +109,10 @@ module Bosh::Director
             login_as(username, password)
             delete "/#{username}"
 
-            last_response.status.should == 204
+            expect(last_response.status).to eq(204)
 
             user = Models::User[:username => username]
-            user.should be_nil
+            expect(user).to be_nil
           end
         end
       end

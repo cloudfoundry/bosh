@@ -16,7 +16,7 @@ module Bosh::Director::CompiledPackage
         exec = class_double('Bosh::Exec')
         export = described_class.new(file: exported_tar, exec: exec)
 
-        YAML.stub(:load_file).with("#{tmp_dir}/compiled_packages.MF").and_return('compiled_packages' => [])
+        allow(YAML).to receive(:load_file).with("#{tmp_dir}/compiled_packages.MF").and_return('compiled_packages' => [])
 
         expect(exec).to receive(:sh).with("tar -C #{tmp_dir} -xf #{exported_tar}")
         export.extract {}

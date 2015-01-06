@@ -5,8 +5,8 @@ module Bosh::Director
     before do
       @deployment = Models::Deployment.make
       @result_file = double('result_file')
-      Config.stub(:result).and_return(@result_file)
-      Config.stub(:dns_domain_name).and_return('microbosh')
+      allow(Config).to receive(:result).and_return(@result_file)
+      allow(Config).to receive(:dns_domain_name).and_return('microbosh')
     end
 
     describe 'Resque job class expectations' do
@@ -31,13 +31,13 @@ module Bosh::Director
 
         expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
-          status['ips'].should == ['1.1.1.1']
-          status['dns'].should be_empty
-          status['vm_cid'].should == 'fake-vm-cid'
-          status['agent_id'].should == 'fake-agent-id'
-          status['job_state'].should == 'running'
-          status['resource_pool'].should == 'test_resource_pool'
-          status['vitals'].should be_nil
+          expect(status['ips']).to eq(['1.1.1.1'])
+          expect(status['dns']).to be_empty
+          expect(status['vm_cid']).to eq('fake-vm-cid')
+          expect(status['agent_id']).to eq('fake-agent-id')
+          expect(status['job_state']).to eq('running')
+          expect(status['resource_pool']).to eq('test_resource_pool')
+          expect(status['vitals']).to be_nil
         end
 
         job = Jobs::VmState.new(@deployment.id, 'full')
@@ -64,17 +64,17 @@ module Bosh::Director
 
         expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
-          status['ips'].should == ['1.1.1.1']
-          status['dns'].should be_empty
-          status['vm_cid'].should == 'fake-vm-cid'
-          status['agent_id'].should == 'fake-agent-id'
-          status['job_state'].should == 'running'
-          status['resource_pool'].should == 'test_resource_pool'
-          status['vitals']['load'].should == ['1', '5', '15']
-          status['vitals']['cpu'].should == { 'user' => 'u', 'sys' => 's', 'wait' => 'w' }
-          status['vitals']['mem'].should == { 'percent' => 'p', 'kb' => 'k' }
-          status['vitals']['swap'].should == { 'percent' => 'p', 'kb' => 'k' }
-          status['vitals']['disk'].should == { 'system' => { 'percent' => 'p' }, 'ephemeral' => { 'percent' => 'p' } }
+          expect(status['ips']).to eq(['1.1.1.1'])
+          expect(status['dns']).to be_empty
+          expect(status['vm_cid']).to eq('fake-vm-cid')
+          expect(status['agent_id']).to eq('fake-agent-id')
+          expect(status['job_state']).to eq('running')
+          expect(status['resource_pool']).to eq('test_resource_pool')
+          expect(status['vitals']['load']).to eq(['1', '5', '15'])
+          expect(status['vitals']['cpu']).to eq({ 'user' => 'u', 'sys' => 's', 'wait' => 'w' })
+          expect(status['vitals']['mem']).to eq({ 'percent' => 'p', 'kb' => 'k' })
+          expect(status['vitals']['swap']).to eq({ 'percent' => 'p', 'kb' => 'k' })
+          expect(status['vitals']['disk']).to eq({ 'system' => { 'percent' => 'p' }, 'ephemeral' => { 'percent' => 'p' } })
         end
 
         job = Jobs::VmState.new(@deployment.id, 'full')
@@ -104,13 +104,13 @@ module Bosh::Director
 
         expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
-          status['ips'].should == ['1.1.1.1']
-          status['dns'].should == ['index.job.network.deployment.microbosh']
-          status['vm_cid'].should == 'fake-vm-cid'
-          status['agent_id'].should == 'fake-agent-id'
-          status['job_state'].should == 'running'
-          status['resource_pool'].should == 'test_resource_pool'
-          status['vitals'].should be_nil
+          expect(status['ips']).to eq(['1.1.1.1'])
+          expect(status['dns']).to eq(['index.job.network.deployment.microbosh'])
+          expect(status['vm_cid']).to eq('fake-vm-cid')
+          expect(status['agent_id']).to eq('fake-agent-id')
+          expect(status['job_state']).to eq('running')
+          expect(status['resource_pool']).to eq('test_resource_pool')
+          expect(status['vitals']).to be_nil
         end
 
         job = Jobs::VmState.new(@deployment.id, 'full')
@@ -124,10 +124,10 @@ module Bosh::Director
 
         expect(@result_file).to receive(:write) do |agent_status|
           status = JSON.parse(agent_status)
-          status['vm_cid'].should == 'fake-vm-cid'
-          status['agent_id'].should == 'fake-agent-id'
-          status['job_state'].should == 'unresponsive agent'
-          status['resurrection_paused'].should be_nil
+          expect(status['vm_cid']).to eq('fake-vm-cid')
+          expect(status['agent_id']).to eq('fake-agent-id')
+          expect(status['job_state']).to eq('unresponsive agent')
+          expect(status['resurrection_paused']).to be_nil
         end
 
         job = Jobs::VmState.new(@deployment.id, 'full')

@@ -30,7 +30,7 @@ module Bosh::Director
         let(:job) { double('job') }
 
         it 'can create' do
-          task.jobs.should == [job]
+          expect(task.jobs).to eq([job])
         end
       end
     end
@@ -42,12 +42,12 @@ module Bosh::Director
         compiled_package = Models::CompiledPackage.make(:package => package)
 
         task = make(package, stemcell)
-        task.ready_to_compile?.should be(true)
-        task.compiled?.should be(false)
+        expect(task.ready_to_compile?).to be(true)
+        expect(task.compiled?).to be(false)
 
         task.use_compiled_package(compiled_package)
-        task.compiled?.should be(true)
-        task.ready_to_compile?.should be(false) # Already compiled!
+        expect(task.compiled?).to be(true)
+        expect(task.ready_to_compile?).to be(false) # Already compiled!
       end
 
       it 'is ready to compile when all dependencies are compiled' do
@@ -65,12 +65,12 @@ module Bosh::Director
         task.add_dependency(dep1_task)
         task.add_dependency(dep2_task)
 
-        task.all_dependencies_compiled?.should be(false)
+        expect(task.all_dependencies_compiled?).to be(false)
         dep1_task.use_compiled_package(compiled_package)
-        task.all_dependencies_compiled?.should be(false)
+        expect(task.all_dependencies_compiled?).to be(false)
         dep2_task.use_compiled_package(compiled_package)
-        task.all_dependencies_compiled?.should be(true)
-        task.ready_to_compile?.should be(true)
+        expect(task.all_dependencies_compiled?).to be(true)
+        expect(task.ready_to_compile?).to be(true)
       end
     end
 
@@ -85,16 +85,16 @@ module Bosh::Director
         bar_task = make(bar, stemcell)
         baz_task = make(baz, stemcell)
 
-        foo_task.dependencies.should == []
-        bar_task.dependent_tasks.should == []
+        expect(foo_task.dependencies).to eq([])
+        expect(bar_task.dependent_tasks).to eq([])
 
         foo_task.add_dependency(bar_task)
-        foo_task.dependencies.should == [bar_task]
-        bar_task.dependent_tasks.should == [foo_task]
+        expect(foo_task.dependencies).to eq([bar_task])
+        expect(bar_task.dependent_tasks).to eq([foo_task])
 
         baz_task.add_dependent_task(foo_task)
-        baz_task.dependent_tasks.should == [foo_task]
-        foo_task.dependencies.should == [bar_task, baz_task]
+        expect(baz_task.dependent_tasks).to eq([foo_task])
+        expect(foo_task.dependencies).to eq([bar_task, baz_task])
       end
     end
 
@@ -113,17 +113,17 @@ module Bosh::Director
         job_a = job
         job_b = instance_double('Bosh::Director::DeploymentPlan::Job')
 
-        job_a.should_receive(:use_compiled_package).with(cp)
-        job_b.should_receive(:use_compiled_package).with(cp)
+        expect(job_a).to receive(:use_compiled_package).with(cp)
+        expect(job_b).to receive(:use_compiled_package).with(cp)
 
         task.use_compiled_package(cp)
         task.add_job(job_a)
         task.add_job(job_b)
 
-        task.jobs.should == [job_a, job_b]
+        expect(task.jobs).to eq([job_a, job_b])
 
-        job_a.should_receive(:use_compiled_package).with(cp2)
-        job_b.should_receive(:use_compiled_package).with(cp2)
+        expect(job_a).to receive(:use_compiled_package).with(cp2)
+        expect(job_b).to receive(:use_compiled_package).with(cp2)
         task.use_compiled_package(cp2)
       end
     end
@@ -146,14 +146,14 @@ module Bosh::Director
 
         bar_task.use_compiled_package(cp)
 
-        foo_task.dependency_spec.should == {
+        expect(foo_task.dependency_spec).to eq({
             'bar' => {
                 'name' => 'bar',
                 'version' => '42.152',
                 'sha1' => 'deadbeef',
                 'blobstore_id' => 'deadcafe'
             }
-        }
+        })
       end
 
       it "doesn't include nested dependencies" do
@@ -173,19 +173,19 @@ module Bosh::Director
         foo_task.add_dependency(bar_task)
         bar_task.add_dependency(baz_task)
 
-        foo_task.dependencies.should == [bar_task] # only includes immediate deps!
-        bar_task.dependencies.should == [baz_task]
+        expect(foo_task.dependencies).to eq([bar_task]) # only includes immediate deps!
+        expect(bar_task.dependencies).to eq([baz_task])
 
         bar_task.use_compiled_package(cp_bar)
 
-        foo_task.dependency_spec.should == {
+        expect(foo_task.dependency_spec).to eq({
             'bar' => {
                 'name' => 'bar',
                 'version' => '42.152',
                 'sha1' => 'deadbeef',
                 'blobstore_id' => 'deadcafe'
             }
-        }
+        })
       end
     end
 
@@ -200,42 +200,42 @@ module Bosh::Director
       subject(:task) { CompileTask.new(package, stemcell, job, dependency_key, cache_key) }
 
       context 'when global package cache is not used' do
-        before { Config.stub(:use_compiled_package_cache?).and_return(false) }
+        before { allow(Config).to receive(:use_compiled_package_cache?).and_return(false) }
         context 'when compiled package is found in local blobstore' do
           it 'returns it' do
             compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell, dependency_key: dependency_key)
-            BlobUtil.should_not_receive(:fetch_from_global_cache)
-            task.find_compiled_package(logger, event_log).should == compiled_package
+            expect(BlobUtil).not_to receive(:fetch_from_global_cache)
+            expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
           end
         end
 
         context 'when compiled package is not found in local blobstore' do
           it 'returns nil' do
-            BlobUtil.should_not_receive(:fetch_from_global_cache)
-            task.find_compiled_package(logger, event_log).should == nil
+            expect(BlobUtil).not_to receive(:fetch_from_global_cache)
+            expect(task.find_compiled_package(logger, event_log)).to eq(nil)
           end
         end
       end
 
       context 'when using global package cache' do
-        before { Config.stub(:use_compiled_package_cache?).and_return(true) }
+        before { allow(Config).to receive(:use_compiled_package_cache?).and_return(true) }
 
         context 'when compiled package is not found in local blobstore' do
           context 'nor was it found in the global one' do
             it 'returns nil' do
-              BlobUtil.stub(:exists_in_global_cache?).with(package, task.cache_key).and_return(false)
-              task.find_compiled_package(logger, event_log).should == nil
+              allow(BlobUtil).to receive(:exists_in_global_cache?).with(package, task.cache_key).and_return(false)
+              expect(task.find_compiled_package(logger, event_log)).to eq(nil)
             end
           end
 
           context 'but it was found in the global blobstore' do
             it 'returns the compiled package' do
-              event_log.stub(:track).with(anything).and_yield
+              allow(event_log).to receive(:track).with(anything).and_yield
 
               compiled_package = double('compiled package', package: package, stemcell: stemcell, dependency_key: dependency_key)
-              BlobUtil.stub(:exists_in_global_cache?).with(package, task.cache_key).and_return(true)
-              BlobUtil.should_receive(:fetch_from_global_cache).with(package, stemcell, task.cache_key, task.dependency_key).and_return(compiled_package)
-              task.find_compiled_package(logger, event_log).should == compiled_package
+              allow(BlobUtil).to receive(:exists_in_global_cache?).with(package, task.cache_key).and_return(true)
+              expect(BlobUtil).to receive(:fetch_from_global_cache).with(package, stemcell, task.cache_key, task.dependency_key).and_return(compiled_package)
+              expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
             end
           end
         end
@@ -243,8 +243,8 @@ module Bosh::Director
         context 'when compiled package is found in local blobstore' do
           it 'returns it' do
             compiled_package = Models::CompiledPackage.make(package: package, stemcell: stemcell, dependency_key: dependency_key)
-            BlobUtil.should_not_receive(:fetch_from_global_cache)
-            task.find_compiled_package(logger, event_log).should == compiled_package
+            expect(BlobUtil).not_to receive(:fetch_from_global_cache)
+            expect(task.find_compiled_package(logger, event_log)).to eq(compiled_package)
           end
         end
       end

@@ -10,32 +10,32 @@ module Bosh::Director
     describe '#export' do
       let(:download_dir) { '/tmp/path/to/download_dir' }
 
-      before { Core::TarGzipper.stub(new: archiver) }
+      before { allow(Core::TarGzipper).to receive_messages(new: archiver) }
       let(:archiver) { instance_double('Bosh::Director::Core::TarGzipper') }
 
-      before { CompiledPackageDownloader.stub(:new).with(group, blobstore_client).and_return(downloader) }
+      before { allow(CompiledPackageDownloader).to receive(:new).with(group, blobstore_client).and_return(downloader) }
       let(:downloader) { instance_double('Bosh::Director::CompiledPackageDownloader', cleanup: nil) }
 
-      before { CompiledPackageManifest.stub(:new).with(group).and_return(manifest) }
+      before { allow(CompiledPackageManifest).to receive(:new).with(group).and_return(manifest) }
       let(:manifest) { instance_double('Bosh::Director::CompiledPackageManifest') }
 
       context 'when none of the steps fail' do
         it 'exports archived compiled packages that were downloaded from blobstore' do
-          downloader.should_receive(:download).with(no_args).and_return(download_dir)
+          expect(downloader).to receive(:download).with(no_args).and_return(download_dir)
 
-          manifest.should_receive(:write).with("#{download_dir}/compiled_packages.MF")
+          expect(manifest).to receive(:write).with("#{download_dir}/compiled_packages.MF")
 
           output_path = '/path/to/output.tar.gz'
-          archiver.should_receive(:compress).with(
+          expect(archiver).to receive(:compress).with(
             download_dir, ['compiled_packages', 'compiled_packages.MF'], output_path)
 
           exporter.export(output_path)
         end
 
         it 'cleans up the downloaded artifacts' do
-          downloader.stub(download: download_dir)
-          manifest.stub(write: nil)
-          archiver.stub(compress: nil)
+          allow(downloader).to receive_messages(download: download_dir)
+          allow(manifest).to receive_messages(write: nil)
+          allow(archiver).to receive_messages(compress: nil)
 
           expect(downloader).to receive(:cleanup).with(no_args)
           exporter.export('/path/to/output.tar.gz')
@@ -43,12 +43,12 @@ module Bosh::Director
       end
 
       context 'when download fails' do
-        before { downloader.stub(:download).and_raise(error) }
+        before { allow(downloader).to receive(:download).and_raise(error) }
         let(:error) { Exception.new('error') }
 
         it 'cleans up the downloaded artifacts' do
-          manifest.stub(write: nil)
-          archiver.stub(compress: nil)
+          allow(manifest).to receive_messages(write: nil)
+          allow(archiver).to receive_messages(compress: nil)
 
           expect(downloader).to receive(:cleanup).with(no_args)
           expect { exporter.export('/path/to/output.tar.gz') }.to raise_error(error)
@@ -56,12 +56,12 @@ module Bosh::Director
       end
 
       context 'when manifest generation fails' do
-        before { manifest.stub(:write).and_raise(error) }
+        before { allow(manifest).to receive(:write).and_raise(error) }
         let(:error) { Exception.new('error') }
 
         it 'cleans up the downloaded artifacts' do
-          downloader.stub(download: download_dir)
-          archiver.stub(compress: nil)
+          allow(downloader).to receive_messages(download: download_dir)
+          allow(archiver).to receive_messages(compress: nil)
 
           expect(downloader).to receive(:cleanup).with(no_args)
           expect { exporter.export('/path/to/output.tar.gz') }.to raise_error(error)
@@ -69,12 +69,12 @@ module Bosh::Director
       end
 
       context 'when archiving fails fails' do
-        before { archiver.stub(:compress).and_raise(error) }
+        before { allow(archiver).to receive(:compress).and_raise(error) }
         let(:error) { Exception.new('error') }
 
         it 'cleans up the downloaded artifacts' do
-          downloader.stub(download: download_dir)
-          manifest.stub(write: nil)
+          allow(downloader).to receive_messages(download: download_dir)
+          allow(manifest).to receive_messages(write: nil)
 
           expect(downloader).to receive(:cleanup).with(no_args)
           expect { exporter.export('/path/to/output.tar.gz') }.to raise_error(error)

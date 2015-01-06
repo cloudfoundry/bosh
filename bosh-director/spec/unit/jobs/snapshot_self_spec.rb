@@ -33,15 +33,15 @@ describe Bosh::Director::Jobs::SnapshotSelf do
     end
 
     it 'should snapshot all of my disks' do
-      cloud.should_receive(:current_vm_id).and_return(vm_id)
-      cloud.should_receive(:get_disks).with(vm_id).and_return(disks)
-      cloud.should_receive(:snapshot_disk).with(disks[0], metadata)
-      cloud.should_receive(:snapshot_disk).with(disks[1], metadata)
+      expect(cloud).to receive(:current_vm_id).and_return(vm_id)
+      expect(cloud).to receive(:get_disks).with(vm_id).and_return(disks)
+      expect(cloud).to receive(:snapshot_disk).with(disks[0], metadata)
+      expect(cloud).to receive(:snapshot_disk).with(disks[1], metadata)
       subject.perform
     end
 
     it 'returns a message containing the volume ids snapshotted' do
-      cloud.stub(current_vm_id: vm_id, get_disks: disks, snapshot_disk: nil)
+      allow(cloud).to receive_messages(current_vm_id: vm_id, get_disks: disks, snapshot_disk: nil)
       expect(subject.perform).to include('vol-id1, vol-id2')
     end
 
@@ -49,16 +49,16 @@ describe Bosh::Director::Jobs::SnapshotSelf do
       let(:enable_snapshots) { false }
 
       it 'does nothing' do
-        cloud.should_not_receive(:current_vm_id)
-        cloud.should_not_receive(:get_disks)
-        cloud.should_not_receive(:snapshot_disk)
+        expect(cloud).not_to receive(:current_vm_id)
+        expect(cloud).not_to receive(:get_disks)
+        expect(cloud).not_to receive(:snapshot_disk)
         subject.perform
       end
     end
 
     context 'with a CPI that does not support snapshots' do
       it 'does nothing' do
-        cloud.should_receive(:current_vm_id).and_raise(Bosh::Clouds::NotImplemented)
+        expect(cloud).to receive(:current_vm_id).and_raise(Bosh::Clouds::NotImplemented)
 
         expect { subject.perform }.to_not raise_error
       end

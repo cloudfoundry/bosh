@@ -23,7 +23,7 @@ describe Bosh::Director::DbBackup::Adapter::Mysql2 do
     }
 
     it 'exports the database to a file' do
-      Open3.should_receive(:capture3).with(
+      expect(Open3).to receive(:capture3).with(
             {'MYSQL_PWD' => password},
             'mysqldump',
             '--user', user,
@@ -36,7 +36,7 @@ describe Bosh::Director::DbBackup::Adapter::Mysql2 do
     end
 
     it 'raises if it fails to export' do
-      Open3.stub(:capture3).and_return(['stdout string', 'a stderr message', errored_status])
+      allow(Open3).to receive(:capture3).and_return(['stdout string', 'a stderr message', errored_status])
       expect{subject.export(path)}.to raise_error(RuntimeError, "mysqldump exited 5, output: 'stdout string', error: 'a stderr message'")
     end
   end

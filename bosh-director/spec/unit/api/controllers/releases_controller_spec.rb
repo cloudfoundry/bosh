@@ -41,19 +41,19 @@ module Bosh::Director
 
       it 'requires auth' do
         get '/'
-        last_response.status.should == 401
+        expect(last_response.status).to eq(401)
       end
 
       it 'sets the date header' do
         get '/'
-        last_response.headers['Date'].should_not be_nil
+        expect(last_response.headers['Date']).not_to be_nil
       end
 
       it 'allows Basic HTTP Auth with admin/admin credentials for ' +
              "test purposes (even though user doesn't exist)" do
         basic_authorize 'admin', 'admin'
         get '/'
-        last_response.status.should == 200
+        expect(last_response.status).to eq(200)
       end
 
       describe 'POST', '/' do
@@ -91,7 +91,7 @@ module Bosh::Director
               create(release: release2, version: 2, commit_hash: '0b2c3d', uncommitted_changes: true)
 
           get '/', {}, {}
-          last_response.status.should == 200
+          expect(last_response.status).to eq(200)
           body = last_response.body
 
           expected_collection = [
@@ -101,15 +101,15 @@ module Bosh::Director
                'release_versions' => [Hash['version', '2', 'commit_hash', '0b2c3d', 'uncommitted_changes', true, 'currently_deployed', false, 'job_names', []]]}
           ]
 
-          body.should == Yajl::Encoder.encode(expected_collection)
+          expect(body).to eq(Yajl::Encoder.encode(expected_collection))
         end
 
         it 'returns empty collection if there are no releases' do
           get '/', {}, {}
-          last_response.status.should == 200
+          expect(last_response.status).to eq(200)
 
           body = Yajl::Parser.parse(last_response.body)
-          body.should == []
+          expect(body).to eq([])
         end
       end
 
@@ -146,10 +146,10 @@ module Bosh::Director
           release.save
 
           get '/test_release'
-          last_response.status.should == 200
+          expect(last_response.status).to eq(200)
           body = Yajl::Parser.parse(last_response.body)
 
-          body['versions'].sort.should == (1..10).map { |i| i.to_s }.sort
+          expect(body['versions'].sort).to eq((1..10).map { |i| i.to_s }.sort)
         end
       end
     end

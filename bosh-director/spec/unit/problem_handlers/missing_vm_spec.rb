@@ -9,11 +9,11 @@ module Bosh::Director
     let(:handler) { ProblemHandlers::Base.create_by_type(:missing_vm, vm.id, {}) }
 
     it 'registers under missing_vm type' do
-      handler.should be_kind_of(described_class)
+      expect(handler).to be_kind_of(described_class)
     end
 
     it 'has description' do
-      handler.description.should =~ /VM with cloud ID `vm-cid' missing./
+      expect(handler.description).to match(/VM with cloud ID `vm-cid' missing./)
     end
 
     describe 'Resolutions:' do
@@ -34,7 +34,7 @@ module Bosh::Director
 
       def fake_job_context
         handler.job = instance_double('Bosh::Director::Jobs::BaseJob')
-        Config.stub(cloud: fake_cloud)
+        allow(Config).to receive_messages(cloud: fake_cloud)
       end
 
       it 'recreates a VM' do
@@ -42,16 +42,16 @@ module Bosh::Director
         Models::Instance.make(job: 'mysql_node', index: 0, vm_id: vm.id)
         Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
 
-        SecureRandom.stub(uuid: 'agent-222')
-        AgentClient.stub(:with_defaults).with('agent-222', anything).and_return(fake_new_agent)
+        allow(SecureRandom).to receive_messages(uuid: 'agent-222')
+        allow(AgentClient).to receive(:with_defaults).with('agent-222', anything).and_return(fake_new_agent)
 
-        fake_new_agent.should_receive(:wait_until_ready).ordered
-        fake_new_agent.should_receive(:apply).with(spec).ordered
-        fake_new_agent.should_receive(:start).ordered
+        expect(fake_new_agent).to receive(:wait_until_ready).ordered
+        expect(fake_new_agent).to receive(:apply).with(spec).ordered
+        expect(fake_new_agent).to receive(:start).ordered
 
-        fake_cloud.should_receive(:delete_vm).with('vm-cid')
-        fake_cloud.
-          should_receive(:create_vm).
+        expect(fake_cloud).to receive(:delete_vm).with('vm-cid')
+        expect(fake_cloud).
+          to receive(:create_vm).
           with('agent-222', 'sc-302', { 'foo' => 'bar' }, ['A', 'B', 'C'], [], { 'key1' => 'value1' })
 
         fake_job_context
@@ -63,7 +63,7 @@ module Bosh::Director
 
       it 'deletes VM reference' do
         handler.apply_resolution(:delete_vm_reference)
-        Models::Vm[vm.id].should be_nil
+        expect(Models::Vm[vm.id]).to be_nil
       end
     end
   end

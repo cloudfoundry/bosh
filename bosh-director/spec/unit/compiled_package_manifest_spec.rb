@@ -14,17 +14,17 @@ describe Bosh::Director::CompiledPackageManifest do
   end
 
   before do
-    group.stub(compiled_packages: compiled_packages, stemcell_sha1: 'fake-stemcell-sha1',
+    allow(group).to receive_messages(compiled_packages: compiled_packages, stemcell_sha1: 'fake-stemcell-sha1',
                release_version: release_version)
   end
   let(:group) { instance_double('Bosh::Director::CompiledPackageGroup') }
 
-  before { compiled_package.stub(package: package, sha1: 'fake-compiled-package-sha1',
+  before { allow(compiled_package).to receive_messages(package: package, sha1: 'fake-compiled-package-sha1',
                                  blobstore_id: 'fake-compiled-package-blobstore-id') }
   let(:compiled_packages) { [compiled_package] }
   let(:compiled_package) { instance_double('Bosh::Director::Models::CompiledPackage') }
 
-  before { package.stub(name: 'fake-package-name', fingerprint: 'fake-package-fingerprint') }
+  before { allow(package).to receive_messages(name: 'fake-package-name', fingerprint: 'fake-package-fingerprint') }
   let(:package) { instance_double('Bosh::Director::Models::Package') }
 
   describe '#to_h' do

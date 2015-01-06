@@ -33,8 +33,8 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       resource_pool = make_resource_pool(make_plan)
 
       sc = make(resource_pool, valid_spec)
-      sc.name.should == "stemcell-name"
-      sc.version.should == "0.5.2"
+      expect(sc.name).to eq("stemcell-name")
+      expect(sc.version).to eq("0.5.2")
     end
 
     it "requires name and version" do
@@ -53,7 +53,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
   it "returns stemcell spec as Hash" do
     resource_pool = make_resource_pool(make_plan)
     sc = make(resource_pool, valid_spec)
-    sc.spec.should == valid_spec
+    expect(sc.spec).to eq(valid_spec)
   end
 
   describe "binding stemcell model" do
@@ -66,8 +66,8 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       sc = make(resource_pool, valid_spec)
       sc.bind_model
 
-      sc.model.should == stemcell
-      stemcell.deployments.should == [deployment]
+      expect(sc.model).to eq(stemcell)
+      expect(stemcell.deployments).to eq([deployment])
     end
 
     it "should fail if stemcell doesn't exist" do
@@ -95,7 +95,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       make(resource_pool, spec1).bind_model
       make(resource_pool, spec2).bind_model
 
-      deployment.stemcells.should =~ [sc1, sc2]
+      expect(deployment.stemcells).to match_array([sc1, sc2])
     end
 
     it "doesn't bind model if deployment plan has unbound deployment" do

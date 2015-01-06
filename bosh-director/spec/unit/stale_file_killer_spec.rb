@@ -19,12 +19,12 @@ describe Bosh::Director::StaleFileKiller do
 
     it 'removes all file last modified over 1 hour ago' do
       killer.kill
-      File.should_not exist(old_file_path)
+      expect(File).not_to exist(old_file_path)
     end
 
     it 'keeps files that were modified within an hour' do
       killer.kill
-      File.should exist(young_file_path)
+      expect(File).to exist(young_file_path)
     end
   end
 end

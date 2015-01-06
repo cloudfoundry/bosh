@@ -406,7 +406,7 @@ describe Bosh::Director::DeploymentPlan::Job do
     let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'network-name') }
 
     before do
-      instance.stub(:network_reservations).
+      allow(instance).to receive(:network_reservations).
         with(no_args).
         and_return('network-name' => network_reservation)
     end

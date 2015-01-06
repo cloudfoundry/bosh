@@ -13,15 +13,15 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
               "foz" => "baz"
           }
       })
-      network.cloud_properties.should == {"foz" => "baz"}
+      expect(network.cloud_properties).to eq({"foz" => "baz"})
     end
 
     it "should require cloud properties" do
-      lambda {
+      expect {
         BD::DeploymentPlan::DynamicNetwork.new(@deployment_plan, {
             "name" => "foo"
         })
-      }.should raise_error(BD::ValidationMissingField)
+      }.to raise_error(BD::ValidationMissingField)
     end
 
     it "should parse dns servers" do
@@ -32,7 +32,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
               "foz" => "baz"
           }
       })
-      network.dns.should == %w[1.2.3.4 5.6.7.8]
+      expect(network.dns).to eq(%w[1.2.3.4 5.6.7.8])
     end
   end
 
@@ -50,16 +50,16 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       reservation = BD::NetworkReservation.new(
           :ip => "0.0.0.1", :type => BD::NetworkReservation::DYNAMIC)
       @network.reserve(reservation)
-      reservation.reserved?.should == true
-      reservation.ip.should == 4294967295
+      expect(reservation.reserved?).to eq(true)
+      expect(reservation.ip).to eq(4294967295)
     end
 
     it "should not let you reserve a static IP" do
       reservation = BD::NetworkReservation.new(
           :ip => "0.0.0.1", :type => BD::NetworkReservation::STATIC)
       @network.reserve(reservation)
-      reservation.reserved?.should == false
-      reservation.error.should == BD::NetworkReservation::WRONG_TYPE
+      expect(reservation.reserved?).to eq(false)
+      expect(reservation.error).to eq(BD::NetworkReservation::WRONG_TYPE)
     end
   end
 
@@ -84,9 +84,9 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       reservation = BD::NetworkReservation.new(
           :ip => 1, :type => BD::NetworkReservation::DYNAMIC)
 
-      lambda {
+      expect {
         @network.release(reservation)
-      }.should raise_error(/magic DYNAMIC IP/)
+      }.to raise_error(/magic DYNAMIC IP/)
     end
   end
 
@@ -103,29 +103,29 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     it "should provide dynamic network settings" do
       reservation = BD::NetworkReservation.new(
           :ip => 4294967295, :type => BD::NetworkReservation::DYNAMIC)
-      @network.network_settings(reservation, []).should == {
+      expect(@network.network_settings(reservation, [])).to eq({
           "type" => "dynamic",
           "cloud_properties" => {"foz" => "baz"},
           "default" => []
-      }
+      })
     end
 
     it "should set the defaults" do
       reservation = BD::NetworkReservation.new(
           :ip => 4294967295, :type => BD::NetworkReservation::DYNAMIC)
-      @network.network_settings(reservation).should == {
+      expect(@network.network_settings(reservation)).to eq({
           "type" => "dynamic",
           "cloud_properties" => {"foz" => "baz"},
           "default" => ["dns", "gateway"]
-      }
+      })
     end
 
     it "should fail when the IP doesn't match the magic dynamic IP" do
       reservation = BD::NetworkReservation.new(
           :ip => 1, :type => BD::NetworkReservation::DYNAMIC)
-      lambda {
+      expect {
         @network.network_settings(reservation)
-      }.should raise_error(/magic DYNAMIC IP/)
+      }.to raise_error(/magic DYNAMIC IP/)
     end
   end
 end

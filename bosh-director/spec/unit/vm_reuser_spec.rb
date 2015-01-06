@@ -10,20 +10,20 @@ module Bosh::Director
 
     describe '#add_vm' do
       it 'should add a vm to the VmReuser' do
-        reuser.get_num_vms(stemcell).should == 0
+        expect(reuser.get_num_vms(stemcell)).to eq(0)
 
         reuser.add_vm(reservation, vm, stemcell, network_settings)
 
-        reuser.get_num_vms(stemcell).should == 1
+        expect(reuser.get_num_vms(stemcell)).to eq(1)
       end
     end
 
     describe '#remove_vm' do
       it 'should remove a vm from the VmReuser' do
         reuser.add_vm(reservation, vm, stemcell, network_settings)
-        reuser.get_num_vms(stemcell).should == 1
+        expect(reuser.get_num_vms(stemcell)).to eq(1)
         reuser.remove_vm(vm)
-        reuser.get_num_vms(stemcell).should == 0
+        expect(reuser.get_num_vms(stemcell)).to eq(0)
       end
     end
   end

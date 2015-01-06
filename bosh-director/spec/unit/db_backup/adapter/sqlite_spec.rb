@@ -8,7 +8,7 @@ describe Bosh::Director::DbBackup::Adapter::Sqlite do
     subject { described_class.new('database' => database) }
 
     it 'exports the database to a file' do
-      FileUtils.should_receive(:cp).with(database, path)
+      expect(FileUtils).to receive(:cp).with(database, path)
 
       subject.export(path)
     end

@@ -3,7 +3,7 @@ require 'support/release_helper'
 
 module Bosh::Director
   describe Jobs::UpdateRelease do
-    before { App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
+    before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
     describe 'Resque job class expectations' do
@@ -38,10 +38,10 @@ module Bosh::Director
         let(:job_options) { {} }
 
         it 'with a local release' do
-          job.should_not_receive(:download_remote_release)
-          job.should_receive(:extract_release)
-          job.should_receive(:verify_manifest)
-          job.should_receive(:process_release)
+          expect(job).not_to receive(:download_remote_release)
+          expect(job).to receive(:extract_release)
+          expect(job).to receive(:verify_manifest)
+          expect(job).to receive(:process_release)
           job.perform
         end
       end
@@ -50,10 +50,10 @@ module Bosh::Director
         let(:job_options) { {'remote' => true, 'location' => 'release_location'} }
 
         it 'with a remote release' do
-          job.should_receive(:download_remote_release)
-          job.should_receive(:extract_release)
-          job.should_receive(:verify_manifest)
-          job.should_receive(:process_release)
+          expect(job).to receive(:download_remote_release)
+          expect(job).to receive(:extract_release)
+          expect(job).to receive(:verify_manifest)
+          expect(job).to receive(:process_release)
           job.perform
         end
       end
@@ -74,9 +74,9 @@ module Bosh::Director
           job.perform
 
           rv = Models::ReleaseVersion.filter(version: '42+dev.6').first
-          rv.should_not be_nil
-          rv.commit_hash.should == '12345678'
-          rv.uncommitted_changes.should be(true)
+          expect(rv).not_to be_nil
+          expect(rv.commit_hash).to eq('12345678')
+          expect(rv.uncommitted_changes).to be(true)
         end
       end
 
@@ -94,16 +94,16 @@ module Bosh::Director
           job.perform
 
           rv = Models::ReleaseVersion.filter(version: '42+dev.6').first
-          rv.should_not be_nil
-          rv.commit_hash.should == 'unknown'
-          rv.uncommitted_changes.should be(false)
+          expect(rv).not_to be_nil
+          expect(rv.commit_hash).to eq('unknown')
+          expect(rv.uncommitted_changes).to be(false)
         end
       end
 
       context 'when extracting release fails' do
         before do
           result = Bosh::Exec::Result.new('cmd', 'output', 1)
-          Bosh::Exec.should_receive(:sh).and_return(result)
+          expect(Bosh::Exec).to receive(:sh).and_return(result)
         end
 
         it 'raises an error' do
@@ -436,22 +436,22 @@ module Bosh::Director
           @job.perform
 
           zbbs = Models::Package.filter(release_id: @release.id, name: 'zbb').all
-          zbbs.map(&:version).should =~ %w(25 333)
+          expect(zbbs.map(&:version)).to match_array(%w(25 333))
 
           # Fingerprints are the same because package contents did not change
-          zbbs.map(&:fingerprint).should =~ %w(package-fingerprint-3 package-fingerprint-3)
+          expect(zbbs.map(&:fingerprint)).to match_array(%w(package-fingerprint-3 package-fingerprint-3))
 
           # SHA1s are the same because first blob was copied
-          zbbs.map(&:sha1).should =~ %w(package-sha1-old package-sha1-old)
+          expect(zbbs.map(&:sha1)).to match_array(%w(package-sha1-old package-sha1-old))
         end
 
         it 'associates newly created packages to the release version' do
           @job.perform
 
           rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
-          rv.packages.map(&:version).should =~ %w(2.33-dev 3.14-dev 333)
-          rv.packages.map(&:fingerprint).should =~ %w(package-fingerprint-1 package-fingerprint-2 package-fingerprint-3)
-          rv.packages.map(&:sha1).should =~ %w(package-sha1-1 package-sha1-2 package-sha1-old)
+          expect(rv.packages.map(&:version)).to match_array(%w(2.33-dev 3.14-dev 333))
+          expect(rv.packages.map(&:fingerprint)).to match_array(%w(package-fingerprint-1 package-fingerprint-2 package-fingerprint-3))
+          expect(rv.packages.map(&:sha1)).to match_array(%w(package-sha1-1 package-sha1-2 package-sha1-old))
         end
       end
 
@@ -467,22 +467,22 @@ module Bosh::Director
           @job.perform
 
           zbbs = Models::Package.filter(release_id: @release.id, name: 'zbb').all
-          zbbs.map(&:version).should =~ %w(26 25 333)
+          expect(zbbs.map(&:version)).to match_array(%w(26 25 333))
 
           # Fingerprints are the same because package contents did not change
-          zbbs.map(&:fingerprint).should =~ %w(package-fingerprint-3 package-fingerprint-3 package-fingerprint-3)
+          expect(zbbs.map(&:fingerprint)).to match_array(%w(package-fingerprint-3 package-fingerprint-3 package-fingerprint-3))
 
           # SHA1s are the same because first blob was copied
-          zbbs.map(&:sha1).should =~ %w(package-sha1-25 package-sha1-25 package-sha1-26)
+          expect(zbbs.map(&:sha1)).to match_array(%w(package-sha1-25 package-sha1-25 package-sha1-26))
         end
 
         it 'associates newly created packages to the release version' do
           @job.perform
 
           rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
-          rv.packages.map(&:version).should =~ %w(2.33-dev 3.14-dev 333)
-          rv.packages.map(&:fingerprint).should =~ %w(package-fingerprint-1 package-fingerprint-2 package-fingerprint-3)
-          rv.packages.map(&:sha1).should =~ %w(package-sha1-1 package-sha1-2 package-sha1-25)
+          expect(rv.packages.map(&:version)).to match_array(%w(2.33-dev 3.14-dev 333))
+          expect(rv.packages.map(&:fingerprint)).to match_array(%w(package-fingerprint-1 package-fingerprint-2 package-fingerprint-3))
+          expect(rv.packages.map(&:sha1)).to match_array(%w(package-sha1-1 package-sha1-2 package-sha1-25))
         end
       end
 
@@ -497,22 +497,22 @@ module Bosh::Director
           @job.perform
 
           zbbs = Models::Package.filter(release_id: @release.id, name: 'zbb').all
-          zbbs.map(&:version).should =~ %w(25 333)
+          expect(zbbs.map(&:version)).to match_array(%w(25 333))
 
           # Fingerprints are different because package contents are different
-          zbbs.map(&:fingerprint).should =~ %w(package-fingerprint-old package-fingerprint-3)
+          expect(zbbs.map(&:fingerprint)).to match_array(%w(package-fingerprint-old package-fingerprint-3))
 
           # SHA1s are different because package tars are different
-          zbbs.map(&:sha1).should =~ %w(package-sha1-25 package-sha1-3)
+          expect(zbbs.map(&:sha1)).to match_array(%w(package-sha1-25 package-sha1-3))
         end
 
         it 'associates newly created packages to the release version' do
           @job.perform
 
           rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
-          rv.packages.map(&:version).should =~ %w(2.33-dev 3.14-dev 333)
-          rv.packages.map(&:fingerprint).should =~ %w(package-fingerprint-1 package-fingerprint-2 package-fingerprint-3)
-          rv.packages.map(&:sha1).should =~ %w(package-sha1-1 package-sha1-2 package-sha1-3)
+          expect(rv.packages.map(&:version)).to match_array(%w(2.33-dev 3.14-dev 333))
+          expect(rv.packages.map(&:fingerprint)).to match_array(%w(package-fingerprint-1 package-fingerprint-2 package-fingerprint-3))
+          expect(rv.packages.map(&:sha1)).to match_array(%w(package-sha1-1 package-sha1-2 package-sha1-3))
         end
       end
 
@@ -527,11 +527,11 @@ module Bosh::Director
           @job.perform
 
           zbzs = Models::Template.filter(release_id: @release.id, name: 'zbz').all
-          zbzs.map(&:version).should =~ %w(28 666)
-          zbzs.map(&:fingerprint).should =~ %w(job-fingerprint-3 job-fingerprint-3)
+          expect(zbzs.map(&:version)).to match_array(%w(28 666))
+          expect(zbzs.map(&:fingerprint)).to match_array(%w(job-fingerprint-3 job-fingerprint-3))
 
           rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
-          rv.templates.map(&:fingerprint).should =~ %w(job-fingerprint-1 job-fingerprint-2 job-fingerprint-3)
+          expect(rv.templates.map(&:fingerprint)).to match_array(%w(job-fingerprint-1 job-fingerprint-2 job-fingerprint-3))
         end
       end
 
@@ -546,11 +546,11 @@ module Bosh::Director
           @job.perform
 
           zbzs = Models::Template.filter(release_id: @release.id, name: 'zbz').all
-          zbzs.map(&:version).should =~ %w(28 666)
-          zbzs.map(&:fingerprint).should =~ %w(job-fingerprint-old job-fingerprint-3)
+          expect(zbzs.map(&:version)).to match_array(%w(28 666))
+          expect(zbzs.map(&:fingerprint)).to match_array(%w(job-fingerprint-old job-fingerprint-3))
 
           rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
-          rv.templates.map(&:fingerprint).should =~ %w(job-fingerprint-1 job-fingerprint-2 job-fingerprint-3)
+          expect(rv.templates.map(&:fingerprint)).to match_array(%w(job-fingerprint-1 job-fingerprint-2 job-fingerprint-3))
         end
       end
 
@@ -564,19 +564,19 @@ module Bosh::Director
         foos = Models::Package.filter(release_id: @release.id, name: 'foo').all
         bars = Models::Package.filter(release_id: @release.id, name: 'bar').all
 
-        foos.map { |foo| foo.version }.should =~ %w(2.33-dev)
-        bars.map { |bar| bar.version }.should =~ %w(3.14-dev)
+        expect(foos.map { |foo| foo.version }).to match_array(%w(2.33-dev))
+        expect(bars.map { |bar| bar.version }).to match_array(%w(3.14-dev))
 
         bazs = Models::Template.filter(release_id: @release.id, name: 'baz').all
         zazs = Models::Template.filter(release_id: @release.id, name: 'zaz').all
 
-        bazs.map { |baz| baz.version }.should =~ %w(33)
-        zazs.map { |zaz| zaz.version }.should =~ %w(0.2-dev)
+        expect(bazs.map { |baz| baz.version }).to match_array(%w(33))
+        expect(zazs.map { |zaz| zaz.version }).to match_array(%w(0.2-dev))
 
         rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
 
-        rv.packages.map { |p| p.version }.should =~ %w(2.33-dev 3.14-dev 333)
-        rv.templates.map { |t| t.version }.should =~ %w(0.2-dev 33 666)
+        expect(rv.packages.map { |p| p.version }).to match_array(%w(2.33-dev 3.14-dev 333))
+        expect(rv.templates.map { |t| t.version }).to match_array(%w(0.2-dev 33 666))
       end
 
       it 'performs no rebase if same release is being rebased twice' do
@@ -610,7 +610,7 @@ module Bosh::Director
           f.write(create_package('test' => 'test contents'))
         end
 
-        blobstore.should_receive(:create).
+        expect(blobstore).to receive(:create).
           with(satisfy { |obj| obj.path == package_path }).
           and_return('blob_id')
 
@@ -622,16 +622,16 @@ module Bosh::Director
         }, release_dir)
 
         package = Models::Package[name: 'test_package', version: '1.0']
-        package.should_not be_nil
-        package.name.should == 'test_package'
-        package.version.should == '1.0'
-        package.release.should == @release
-        package.sha1.should == 'some-sha'
-        package.blobstore_id.should == 'blob_id'
+        expect(package).not_to be_nil
+        expect(package.name).to eq('test_package')
+        expect(package.version).to eq('1.0')
+        expect(package.release).to eq(@release)
+        expect(package.sha1).to eq('some-sha')
+        expect(package.blobstore_id).to eq('blob_id')
       end
 
       it 'should copy package blob' do
-        BlobUtil.should_receive(:copy_blob).and_return('blob_id')
+        expect(BlobUtil).to receive(:copy_blob).and_return('blob_id')
         FileUtils.mkdir_p(File.join(release_dir, 'packages'))
         package_path = File.join(release_dir, 'packages', 'test_package.tgz')
         File.open(package_path, 'w') do |f|
@@ -646,17 +646,17 @@ module Bosh::Director
         }, release_dir)
 
         package = Models::Package[name: 'test_package', version: '1.0']
-        package.should_not be_nil
-        package.name.should == 'test_package'
-        package.version.should == '1.0'
-        package.release.should == @release
-        package.sha1.should == 'some-sha'
-        package.blobstore_id.should == 'blob_id'
+        expect(package).not_to be_nil
+        expect(package.name).to eq('test_package')
+        expect(package.version).to eq('1.0')
+        expect(package.release).to eq(@release)
+        expect(package.sha1).to eq('some-sha')
+        expect(package.blobstore_id).to eq('blob_id')
       end
 
       it 'should fail if cannot extract package archive' do
         result = Bosh::Exec::Result.new('cmd', 'output', 1)
-        Bosh::Exec.should_receive(:sh).and_return(result)
+        expect(Bosh::Exec).to receive(:sh).and_return(result)
 
         expect {
           @job.create_package({
@@ -728,26 +728,26 @@ module Bosh::Director
       it 'should create a proper template and upload job bits to blobstore' do
         File.open(@tarball, 'w') { |f| f.write(@job_bits) }
 
-        blobstore.should_receive(:create) do |f|
+        expect(blobstore).to receive(:create) do |f|
           f.rewind
-          Digest::SHA1.hexdigest(f.read).should == Digest::SHA1.hexdigest(@job_bits)
+          expect(Digest::SHA1.hexdigest(f.read)).to eq(Digest::SHA1.hexdigest(@job_bits))
 
           Digest::SHA1.hexdigest(f.read)
         end
 
-        Models::Template.count.should == 0
+        expect(Models::Template.count).to eq(0)
         @job.create_job(@job_attrs, release_dir)
 
         template = Models::Template.first
-        template.name.should == 'foo'
-        template.version.should == '1'
-        template.release.should == @release
-        template.sha1.should == 'deadbeef'
+        expect(template.name).to eq('foo')
+        expect(template.version).to eq('1')
+        expect(template.release).to eq(@release)
+        expect(template.sha1).to eq('deadbeef')
       end
 
       it 'should fail if cannot extract job archive' do
         result = Bosh::Exec::Result.new('cmd', 'output', 1)
-        Bosh::Exec.should_receive(:sh).and_return(result)
+        expect(Bosh::Exec).to receive(:sh).and_return(result)
 
         expect { @job.create_job(@job_attrs, release_dir) }.to raise_error(JobInvalidArchive)
       end
@@ -758,7 +758,7 @@ module Bosh::Director
 
         File.open(@tarball, 'w') { |f| f.write(@job_no_mf) }
 
-        lambda { @job.create_job(@job_attrs, release_dir) }.should raise_error(JobMissingManifest)
+        expect { @job.create_job(@job_attrs, release_dir) }.to raise_error(JobMissingManifest)
       end
 
       it 'whines on missing monit file' do
@@ -766,11 +766,11 @@ module Bosh::Director
           create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}}, skip_monit: true)
         File.open(@tarball, 'w') { |f| f.write(@job_no_monit) }
 
-        lambda { @job.create_job(@job_attrs, release_dir) }.should raise_error(JobMissingMonit)
+        expect { @job.create_job(@job_attrs, release_dir) }.to raise_error(JobMissingMonit)
       end
 
       it 'does not whine when it has a foo.monit file' do
-        blobstore.stub(:create).and_return('fake-blobstore-id')
+        allow(blobstore).to receive(:create).and_return('fake-blobstore-id')
         @job_no_monit =
           create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}}, monit_file: 'foo.monit')
 
@@ -785,11 +785,11 @@ module Bosh::Director
 
         File.open(@tarball, 'w') { |f| f.write(@job_no_monit) }
 
-        lambda { @job.create_job(@job_attrs, release_dir) }.should raise_error(JobMissingTemplateFile)
+        expect { @job.create_job(@job_attrs, release_dir) }.to raise_error(JobMissingTemplateFile)
       end
 
       it 'does not whine when no packages are specified' do
-        blobstore.stub(:create).and_return('fake-blobstore-id')
+        allow(blobstore).to receive(:create).and_return('fake-blobstore-id')
         @job_no_monit =
           create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}},
             manifest: { 'name' => 'foo', 'templates' => {} })
@@ -801,7 +801,7 @@ module Bosh::Director
       end
 
       it 'whines when packages is not an array' do
-        blobstore.stub(:create).and_return('fake-blobstore-id')
+        allow(blobstore).to receive(:create).and_return('fake-blobstore-id')
         @job_no_monit =
           create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}},
             manifest: { 'name' => 'foo', 'templates' => {}, 'packages' => 'my-awesome-package' })

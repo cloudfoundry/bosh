@@ -6,14 +6,14 @@ describe Bosh::Director::VmMetadataUpdater do
     it 'returns metadata updater' do
       cloud = instance_double('Bosh::Cloud')
       logger = double('logger')
-      Bosh::Director::Config.stub(
+      allow(Bosh::Director::Config).to receive_messages(
         cloud: cloud, name: 'fake-director-name', logger: logger)
 
       updater = instance_double('Bosh::Director::VmMetadataUpdater')
-      described_class.should_receive(:new).with(
+      expect(described_class).to receive(:new).with(
         cloud, {director: 'fake-director-name'}, logger).and_return(updater)
 
-      described_class.build.should == updater
+      expect(described_class.build).to eq(updater)
     end
   end
 
@@ -28,29 +28,29 @@ describe Bosh::Director::VmMetadataUpdater do
     context 'when CPI supports setting vm metadata' do
       it 'updates vm metadata with provided metadata' do
         expected_vm_metadata = { 'fake-custom-key1' => 'fake-custom-value1' }
-        cloud.should_receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
+        expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
         vm_metadata_updater.update(vm, expected_vm_metadata)
       end
 
       it 'updates vm metadata with director metadata' do
         expected_vm_metadata = { 'fake-director-key1' => 'fake-director-value1' }
         director_metadata.merge!(expected_vm_metadata)
-        cloud.should_receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
+        expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
         vm_metadata_updater.update(vm, {})
       end
 
       it 'does not mutate passed metadata' do
         passed_in_metadata = {}
         vm_metadata_updater.update(vm, passed_in_metadata)
-        passed_in_metadata.should == {}
+        expect(passed_in_metadata).to eq({})
       end
 
       context 'when vm has an instance' do
-        before { vm.stub(instance: instance) }
+        before { allow(vm).to receive_messages(instance: instance) }
         let(:instance) { instance_double('Bosh::Director::Models::Instance', job: 'job-value', index: 'index-value') }
 
         it 'updates vm metadata with deployment specific metadata' do
-          cloud.should_receive(:set_vm_metadata)
+          expect(cloud).to receive(:set_vm_metadata)
             .with('fake-vm-cid', hash_including(deployment: 'deployment-value'))
           vm_metadata_updater.update(vm, {})
         end
@@ -60,44 +60,44 @@ describe Bosh::Director::VmMetadataUpdater do
             job: 'job-value',
             index: 'index-value',
           }
-          cloud.should_receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
+          expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
           vm_metadata_updater.update(vm, {})
         end
 
         it 'turns job index metadata into a string' do
-          instance.stub(index: 12345)
-          cloud.should_receive(:set_vm_metadata).with('fake-vm-cid', hash_including(index: '12345'))
+          allow(instance).to receive_messages(index: 12345)
+          expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(index: '12345'))
           vm_metadata_updater.update(vm, {})
         end
       end
 
       context 'when the vm does not have an instance' do
-        before { vm.stub(instance: nil) }
+        before { allow(vm).to receive_messages(instance: nil) }
 
         it 'updates vm metadata with deployment specific metadata' do
-          cloud.should_receive(:set_vm_metadata)
+          expect(cloud).to receive(:set_vm_metadata)
             .with('fake-vm-cid', hash_including(deployment: 'deployment-value'))
           vm_metadata_updater.update(vm, {})
         end
 
         it 'updates vm metadata without including instance specific metadata' do
-          cloud.should_receive(:set_vm_metadata).with('fake-vm-cid', hash_excluding(:job, :index))
+          expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_excluding(:job, :index))
           vm_metadata_updater.update(vm, {})
         end
       end
     end
 
     context 'when set_vm_metadata is not part of CPI' do
-      before { cloud.stub(:respond_to?).with(:set_vm_metadata).and_return(false) }
+      before { allow(cloud).to receive(:respond_to?).with(:set_vm_metadata).and_return(false) }
 
       it 'does not set vm metadata' do
-        cloud.should_not_receive(:set_vm_metadata)
+        expect(cloud).not_to receive(:set_vm_metadata)
         vm_metadata_updater.update(vm, {})
       end
     end
 
     context 'when set_vm_metadata raises not implemented error' do
-      before { cloud.stub(:set_vm_metadata).and_raise(Bosh::Clouds::NotImplemented) }
+      before { allow(cloud).to receive(:set_vm_metadata).and_raise(Bosh::Clouds::NotImplemented) }
 
       it 'does not propagate raised error' do
         expect { vm_metadata_updater.update(vm, {}) }.to_not raise_error

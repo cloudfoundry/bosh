@@ -22,48 +22,48 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
            :size => 300, :active => false)
 
     @handler = make_handler(@disk.id, "owner_vms" => []) # Not mounted
-    @handler.stub(:cloud).and_return(@cloud)
-    @handler.stub(:agent_client).with(@instance.vm).and_return(@agent)
+    allow(@handler).to receive(:cloud).and_return(@cloud)
+    allow(@handler).to receive(:agent_client).with(@instance.vm).and_return(@agent)
   end
 
   it "registers under inactive_disk type" do
     handler = Bosh::Director::ProblemHandlers::Base.create_by_type(:mount_info_mismatch, @disk.id, {})
-    handler.should be_kind_of(Bosh::Director::ProblemHandlers::MountInfoMismatch)
+    expect(handler).to be_kind_of(Bosh::Director::ProblemHandlers::MountInfoMismatch)
   end
 
   it "has description" do
-    @handler.description.should =~ /Inconsistent mount information/
-    @handler.description.should =~ /Not mounted in any VM/
+    expect(@handler.description).to match(/Inconsistent mount information/)
+    expect(@handler.description).to match(/Not mounted in any VM/)
   end
 
   describe "invalid states" do
     it "is invalid if disk is gone" do
       @disk.destroy
-      lambda {
+      expect {
         make_handler(@disk.id)
-      }.should raise_error("Disk `#{@disk.id}' is no longer in the database")
+      }.to raise_error("Disk `#{@disk.id}' is no longer in the database")
     end
 
     it "is invalid if disk no longer has associated instance" do
       @instance.update(:vm => nil)
-      lambda {
+      expect {
         make_handler(@disk.id)
-      }.should raise_error("Can't find corresponding vm-cid for disk `disk-cid'")
+      }.to raise_error("Can't find corresponding vm-cid for disk `disk-cid'")
     end
 
     describe "reattach_disk" do
       it "attaches disk" do
-        @cloud.should_receive(:attach_disk).with(@vm.cid, @disk.disk_cid)
-        @cloud.should_not_receive(:reboot_vm)        
-        @agent.should_receive(:mount_disk).with(@disk.disk_cid)
+        expect(@cloud).to receive(:attach_disk).with(@vm.cid, @disk.disk_cid)
+        expect(@cloud).not_to receive(:reboot_vm)        
+        expect(@agent).to receive(:mount_disk).with(@disk.disk_cid)
         @handler.apply_resolution(:reattach_disk)
       end
 
       it "attaches disk and reboots the vm" do
-        @cloud.should_receive(:attach_disk).with(@vm.cid, @disk.disk_cid)
-        @cloud.should_receive(:reboot_vm).with(@vm.cid)
-        @agent.should_receive(:wait_until_ready)
-        @agent.should_not_receive(:mount_disk)
+        expect(@cloud).to receive(:attach_disk).with(@vm.cid, @disk.disk_cid)
+        expect(@cloud).to receive(:reboot_vm).with(@vm.cid)
+        expect(@agent).to receive(:wait_until_ready)
+        expect(@agent).not_to receive(:mount_disk)
         @handler.apply_resolution(:reattach_disk_and_reboot)
       end
     end

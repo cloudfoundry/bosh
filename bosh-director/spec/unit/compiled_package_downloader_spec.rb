@@ -33,7 +33,7 @@ module Bosh::Director
     end
 
     describe '#download' do
-      before { blobstore_client.stub(:get) }
+      before { allow(blobstore_client).to receive(:get) }
 
       after { downloader.cleanup }
 
@@ -44,9 +44,9 @@ module Bosh::Director
       end
 
       it 'downloads blobs using blobstore client' do
-        blobstore_client.should_receive(:get).with(
+        expect(blobstore_client).to receive(:get).with(
           'fake-compiled-package1-blobstore-id', be_a(File), sha1: 'fake-compiled-package1-sha1')
-        blobstore_client.should_receive(:get).with(
+        expect(blobstore_client).to receive(:get).with(
           'fake-compiled-package2-blobstore-id', be_a(File), sha1: 'fake-compiled-package2-sha1')
         downloader.download
       end
@@ -59,7 +59,7 @@ module Bosh::Director
     end
 
     describe '#cleanup' do
-      before { blobstore_client.stub(:get) }
+      before { allow(blobstore_client).to receive(:get) }
 
       # rm_f from FakeFS deletes directories unlike real rm_f;
       # hence, FakeFS is not being used in this spec

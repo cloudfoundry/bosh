@@ -5,7 +5,7 @@ module Bosh::Director
     describe :initialize do
       it 'should store the IP as an int' do
         reservation = NetworkReservation.new(ip: '0.0.0.1')
-        reservation.ip.should == 1
+        expect(reservation.ip).to eq(1)
       end
     end
 
@@ -15,8 +15,8 @@ module Bosh::Director
         other = NetworkReservation.new(ip: '0.0.0.1', type: NetworkReservation::DYNAMIC)
         other.reserved = true
         reservation.take(other)
-        reservation.reserved?.should == true
-        reservation.ip.should == 1
+        expect(reservation.reserved?).to eq(true)
+        expect(reservation.ip).to eq(1)
       end
 
       it "should take the static reservation if it's valid" do
@@ -24,8 +24,8 @@ module Bosh::Director
         other = NetworkReservation.new(ip: '0.0.0.1', type: NetworkReservation::STATIC)
         other.reserved = true
         reservation.take(other)
-        reservation.reserved?.should == true
-        reservation.ip.should == 1
+        expect(reservation.reserved?).to eq(true)
+        expect(reservation.ip).to eq(1)
       end
 
       it 'should not take the reservation if the type differs' do
@@ -33,7 +33,7 @@ module Bosh::Director
         other = NetworkReservation.new(ip: '0.0.0.1', type: NetworkReservation::DYNAMIC)
         other.reserved = true
         reservation.take(other)
-        reservation.reserved?.should == false
+        expect(reservation.reserved?).to eq(false)
       end
 
       it 'should not take the static reservation if the IP differs' do
@@ -41,16 +41,16 @@ module Bosh::Director
         other = NetworkReservation.new(ip: '0.0.0.2', type: NetworkReservation::STATIC)
         other.reserved = true
         reservation.take(other)
-        reservation.reserved?.should == false
-        reservation.ip.should == 1
+        expect(reservation.reserved?).to eq(false)
+        expect(reservation.ip).to eq(1)
       end
 
       it "should not take the reservation if it wasn't fulfilled" do
         reservation = NetworkReservation.new(type: NetworkReservation::DYNAMIC)
         other = NetworkReservation.new(ip: '0.0.0.1', type: NetworkReservation::DYNAMIC)
         reservation.take(other)
-        reservation.reserved?.should == false
-        reservation.ip.should == nil
+        expect(reservation.reserved?).to eq(false)
+        expect(reservation.ip).to eq(nil)
       end
     end
 

@@ -10,11 +10,11 @@ describe Bosh::Director::Api::TaskManager do
         src = File.join(dir, 'foobar.gz')
         dst = File.join(dir, 'foobar')
 
-        File.exists?(dst).should be(false)
+        expect(File.exists?(dst)).to be(false)
 
         manager.decompress(src, dst)
 
-        File.exists?(dst).should be(true)
+        expect(File.exists?(dst)).to be(true)
       end
     end
 
@@ -25,7 +25,7 @@ describe Bosh::Director::Api::TaskManager do
         FileUtils.touch(file)
         FileUtils.touch(file_gz)
 
-        File.should_not_receive(:open)
+        expect(File).not_to receive(:open)
 
         manager.decompress(file_gz, file)
       end
@@ -38,36 +38,36 @@ describe Bosh::Director::Api::TaskManager do
 
     context 'backward compatibility' do
       it 'should return the task output contents if the task output contents is not a directory' do
-        task.stub(output: 'task output')
+        allow(task).to receive_messages(output: 'task output')
 
-        manager.log_file(task, 'type').should == 'task output'
+        expect(manager.log_file(task, 'type')).to eq('task output')
       end
 
       it 'should return the cpi log when the soap log does not exist' do
-        manager.stub(:decompress)
-        task.stub(output: task_dir)
-        File.should_receive(:directory?).with(task_dir).and_return(true)
-        File.should_receive(:file?).with(File.join(task_dir, 'soap')).and_return(false)
+        allow(manager).to receive(:decompress)
+        allow(task).to receive_messages(output: task_dir)
+        expect(File).to receive(:directory?).with(task_dir).and_return(true)
+        expect(File).to receive(:file?).with(File.join(task_dir, 'soap')).and_return(false)
 
-        manager.log_file(task, 'soap').should match(%{/cpi})
+        expect(manager.log_file(task, 'soap')).to match(%{/cpi})
       end
 
       it 'should return the soap log if it exist' do
-        manager.stub(:decompress)
-        task.stub(output: task_dir)
-        File.should_receive(:directory?).with(task_dir).and_return(true)
-        File.should_receive(:file?).with(File.join(task_dir, 'soap')).and_return(true)
+        allow(manager).to receive(:decompress)
+        allow(task).to receive_messages(output: task_dir)
+        expect(File).to receive(:directory?).with(task_dir).and_return(true)
+        expect(File).to receive(:file?).with(File.join(task_dir, 'soap')).and_return(true)
 
-        manager.log_file(task, 'cpi').should match(%{/soap})
+        expect(manager.log_file(task, 'cpi')).to match(%{/soap})
       end
     end
 
     it 'should return the task log path' do
-      task.stub(output: task_dir)
-      manager.stub(:decompress)
+      allow(task).to receive_messages(output: task_dir)
+      allow(manager).to receive(:decompress)
 
-      File.should_receive(:directory?).with(task_dir).and_return(true)
-      File.should_receive(:file?).with(File.join(task_dir, 'soap')).and_return(false)
+      expect(File).to receive(:directory?).with(task_dir).and_return(true)
+      expect(File).to receive(:file?).with(File.join(task_dir, 'soap')).and_return(false)
 
       manager.log_file(task, 'cpi')
     end

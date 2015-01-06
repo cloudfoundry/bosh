@@ -14,7 +14,7 @@ module Bosh::Director
       subject(:resurrection_manager) { ResurrectorManager.new }
 
       before do
-        InstanceLookup.stub(new: instance_lookup)
+        allow(InstanceLookup).to receive_messages(new: instance_lookup)
       end
 
       describe 'set_pause_for_instance' do
@@ -24,16 +24,16 @@ module Bosh::Director
 
         context 'setting pause to true' do
           it 'configures the instance to pause resurrection functionality' do
-            instance.should_receive(:resurrection_paused=).with(true).ordered
-            instance.should_receive(:save).ordered
+            expect(instance).to receive(:resurrection_paused=).with(true).ordered
+            expect(instance).to receive(:save).ordered
             resurrection_manager.set_pause_for_instance(deployment_name, job_name, job_index, true)
           end
         end
 
         context 'setting pause to false' do
           it 'configures the instance to (re)start resurrection functionality' do
-            instance.should_receive(:resurrection_paused=).with(false).ordered
-            instance.should_receive(:save).ordered
+            expect(instance).to receive(:resurrection_paused=).with(false).ordered
+            expect(instance).to receive(:save).ordered
             resurrection_manager.set_pause_for_instance(deployment_name, job_name, job_index, false)
           end
         end
@@ -42,14 +42,14 @@ module Bosh::Director
       describe 'set_pause_for_all' do
         context 'setting pause to true' do
           it 'configures all instances to pause resurrection functionality' do
-            Models::Instance.should_receive(:update).with(resurrection_paused: true)
+            expect(Models::Instance).to receive(:update).with(resurrection_paused: true)
             resurrection_manager.set_pause_for_all(true)
           end
         end
 
         context 'setting pause to false' do
           it 'configures all instances to (re)start resurrection functionality' do
-            Models::Instance.should_receive(:update).with(resurrection_paused: false)
+            expect(Models::Instance).to receive(:update).with(resurrection_paused: false)
             resurrection_manager.set_pause_for_all(false)
           end
         end

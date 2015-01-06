@@ -42,7 +42,7 @@ module Bosh::Director
       end
 
       it 'only queries database once' do
-        Models::CompiledPackage.stub(:[]).and_call_original
+        allow(Models::CompiledPackage).to receive(:[]).and_call_original
         package_group.compiled_packages
         package_group.compiled_packages
         expect(Models::CompiledPackage).to have_received(:[]).once

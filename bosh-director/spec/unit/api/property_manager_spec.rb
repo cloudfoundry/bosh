@@ -13,40 +13,40 @@ module Bosh::Director
     it 'creates/reads properties' do
       make_deployment
       property_manager.create_property('mycloud', 'foo', 'bar')
-      property_manager.get_property('mycloud', 'foo').value.should == 'bar'
+      expect(property_manager.get_property('mycloud', 'foo').value).to eq('bar')
     end
 
     it "doesn't allow duplicate property names" do
       make_deployment
       property_manager.create_property('mycloud', 'foo', 'bar')
 
-      lambda {
+      expect {
         property_manager.create_property('mycloud', 'foo', 'baz')
-      }.should raise_error(PropertyAlreadyExists, "Property `foo' already exists for deployment `mycloud'")
+      }.to raise_error(PropertyAlreadyExists, "Property `foo' already exists for deployment `mycloud'")
     end
 
     it "doesn't allow invalid properties" do
-      lambda {
+      expect {
         property_manager.create_property('mycloud', 'foo', 'bar')
-      }.should raise_error(DeploymentNotFound, "Deployment `mycloud' doesn't exist")
+      }.to raise_error(DeploymentNotFound, "Deployment `mycloud' doesn't exist")
 
       make_deployment
 
-      lambda {
+      expect {
         property_manager.create_property('mycloud', 'foo$', 'bar')
-      }.should raise_error(PropertyInvalid, 'Property is invalid: name format')
+      }.to raise_error(PropertyInvalid, 'Property is invalid: name format')
 
-      lambda {
+      expect {
         property_manager.create_property('mycloud', '', 'bar')
-      }.should raise_error(PropertyInvalid, 'Property is invalid: name presence')
+      }.to raise_error(PropertyInvalid, 'Property is invalid: name presence')
 
-      lambda {
+      expect {
         property_manager.create_property('mycloud', 'foo', '')
-      }.should raise_error(PropertyInvalid, 'Property is invalid: value presence')
+      }.to raise_error(PropertyInvalid, 'Property is invalid: value presence')
 
-      lambda {
+      expect {
         property_manager.create_property('mycloud', 'foo$', '')
-      }.should raise_error(PropertyInvalid, 'Property is invalid: name format, value presence')
+      }.to raise_error(PropertyInvalid, 'Property is invalid: name format, value presence')
     end
 
     it 'updates properties' do
@@ -54,25 +54,25 @@ module Bosh::Director
 
       property_manager.create_property('mycloud', 'foo', 'bar')
       property_manager.update_property('mycloud', 'foo', 'baz')
-      property_manager.get_property('mycloud', 'foo').value.should == 'baz'
+      expect(property_manager.get_property('mycloud', 'foo').value).to eq('baz')
     end
 
     it "doesn't allow invalid updates" do
-      lambda {
+      expect {
         property_manager.update_property('mycloud', 'foo', 'bar')
-      }.should raise_error(DeploymentNotFound, "Deployment `mycloud' doesn't exist")
+      }.to raise_error(DeploymentNotFound, "Deployment `mycloud' doesn't exist")
 
       make_deployment
 
-      lambda {
+      expect {
         property_manager.update_property('mycloud', 'foo', 'baz')
-      }.should raise_error(PropertyNotFound, "Property `foo' not found for deployment `mycloud'")
+      }.to raise_error(PropertyNotFound, "Property `foo' not found for deployment `mycloud'")
 
       property_manager.create_property('mycloud', 'foo', 'bar')
 
-      lambda {
+      expect {
         property_manager.update_property('mycloud', 'foo', '')
-      }.should raise_error(PropertyInvalid, 'Property is invalid: value presence')
+      }.to raise_error(PropertyInvalid, 'Property is invalid: value presence')
     end
 
     it 'allows deleting properties' do
@@ -81,35 +81,35 @@ module Bosh::Director
       property_manager.create_property('mycloud', 'foo', 'bar')
       property_manager.delete_property('mycloud', 'foo')
 
-      lambda {
+      expect {
         property_manager.get_property('mycloud', 'foo')
-      }.should raise_error(PropertyNotFound)
+      }.to raise_error(PropertyNotFound)
     end
 
     it "doesn't allow invalid deletes" do
-      lambda {
+      expect {
         property_manager.delete_property('mycloud', 'foo')
-      }.should raise_error(DeploymentNotFound, "Deployment `mycloud' doesn't exist")
+      }.to raise_error(DeploymentNotFound, "Deployment `mycloud' doesn't exist")
 
       make_deployment
 
-      lambda {
+      expect {
         property_manager.delete_property('mycloud', 'foo')
-      }.should raise_error(PropertyNotFound, "Property `foo' not found for deployment `mycloud'")
+      }.to raise_error(PropertyNotFound, "Property `foo' not found for deployment `mycloud'")
     end
 
     it 'lists all properties' do
       make_deployment
 
-      property_manager.get_properties('mycloud').should == []
+      expect(property_manager.get_properties('mycloud')).to eq([])
 
       property_manager.create_property('mycloud', 'foo', 'bar')
       property_manager.create_property('mycloud', 'password', 'secret')
 
       properties = property_manager.get_properties('mycloud')
-      properties.size.should == 2
+      expect(properties.size).to eq(2)
 
-      [properties[0].value, properties[1].value].sort.should == %W(bar secret)
+      expect([properties[0].value, properties[1].value].sort).to eq(%W(bar secret))
     end
   end
 end

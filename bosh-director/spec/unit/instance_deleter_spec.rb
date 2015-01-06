@@ -2,12 +2,12 @@ require 'spec_helper'
 
 module Bosh::Director
   describe InstanceDeleter do
-    before { App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
+    before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
     before do
       @cloud = instance_double('Bosh::Cloud')
-      Config.stub(:cloud).and_return(@cloud)
+      allow(Config).to receive(:cloud).and_return(@cloud)
       @deployment_plan = double('deployment_plan')
       @deleter = InstanceDeleter.new(@deployment_plan)
     end
@@ -19,13 +19,13 @@ module Bosh::Director
         instances = []
         5.times { instances << double('instance') }
 
-        Config.stub(:max_threads).and_return(5)
+        allow(Config).to receive(:max_threads).and_return(5)
         pool = double('pool')
-        ThreadPool.stub(:new).with(max_threads: 5).and_return(pool)
-        pool.stub(:wrap).and_yield(pool)
-        pool.stub(:process).and_yield
+        allow(ThreadPool).to receive(:new).with(max_threads: 5).and_return(pool)
+        allow(pool).to receive(:wrap).and_yield(pool)
+        allow(pool).to receive(:process).and_yield
 
-        5.times { |index| @deleter.should_receive(:delete_instance).with(instances[index], event_log_stage) }
+        5.times { |index| expect(@deleter).to receive(:delete_instance).with(instances[index], event_log_stage) }
         @deleter.delete_instances(instances, event_log_stage)
       end
 
@@ -34,11 +34,11 @@ module Bosh::Director
         5.times { instances << double('instance') }
 
         pool = double('pool')
-        ThreadPool.stub(:new).with(max_threads: 2).and_return(pool)
-        pool.stub(:wrap).and_yield(pool)
-        pool.stub(:process).and_yield
+        allow(ThreadPool).to receive(:new).with(max_threads: 2).and_return(pool)
+        allow(pool).to receive(:wrap).and_yield(pool)
+        allow(pool).to receive(:process).and_yield
 
-        5.times { |index| @deleter.should_receive(:delete_instance).with(instances[index], event_log_stage) }
+        5.times { |index| expect(@deleter).to receive(:delete_instance).with(instances[index], event_log_stage) }
         @deleter.delete_instances(instances, event_log_stage, max_threads: 2)
       end
     end
@@ -56,15 +56,15 @@ module Bosh::Director
         persistent_disks = [Models::PersistentDisk.make, disk]
         persistent_disks.each { |disk| instance.persistent_disks << disk }
 
-        @deleter.should_receive(:drain).with(vm.agent_id)
-        @deleter.should_receive(:delete_snapshots).with(instance)
-        @deleter.should_receive(:delete_persistent_disks).with(persistent_disks)
-        Config.stub(:dns_domain_name).and_return('bosh')
-        @deleter.should_receive(:delete_dns_records).with('5.test.%.foo.bosh', 0)
-        @deployment_plan.should_receive(:canonical_name).and_return('foo')
+        expect(@deleter).to receive(:drain).with(vm.agent_id)
+        expect(@deleter).to receive(:delete_snapshots).with(instance)
+        expect(@deleter).to receive(:delete_persistent_disks).with(persistent_disks)
+        allow(Config).to receive(:dns_domain_name).and_return('bosh')
+        expect(@deleter).to receive(:delete_dns_records).with('5.test.%.foo.bosh', 0)
+        expect(@deployment_plan).to receive(:canonical_name).and_return('foo')
         domain = double('domain', id:  0)
-        @deployment_plan.should_receive(:dns_domain).and_return(domain)
-        @cloud.should_receive(:delete_vm).with(vm.cid)
+        expect(@deployment_plan).to receive(:dns_domain).and_return(domain)
+        expect(@cloud).to receive(:delete_vm).with(vm.cid)
 
         job_templates_cleaner = instance_double('Bosh::Director::RenderedJobTemplatesCleaner')
         allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance, blobstore).and_return(job_templates_cleaner)
@@ -72,12 +72,12 @@ module Bosh::Director
 
         @deleter.delete_instance(instance, event_log_stage)
 
-        Models::Vm[vm.id].should == nil
-        Models::Instance[instance.id].should == nil
+        expect(Models::Vm[vm.id]).to eq(nil)
+        expect(Models::Instance[instance.id]).to eq(nil)
       end
 
       it 'advances event log stage to track deletion of given instance' do
-        event_log_stage.should_receive(:advance_and_track).with(vm.cid)
+        expect(event_log_stage).to receive(:advance_and_track).with(vm.cid)
         @deleter.delete_instance(instance, event_log_stage)
       end
     end
@@ -85,85 +85,85 @@ module Bosh::Director
     describe :drain do
       it 'should drain the VM' do
         agent = double('agent')
-        AgentClient.stub(:with_defaults).with('some_agent_id').and_return(agent)
+        allow(AgentClient).to receive(:with_defaults).with('some_agent_id').and_return(agent)
 
-        agent.should_receive(:drain).with('shutdown').and_return(2)
-        agent.should_receive(:stop)
-        @deleter.should_receive(:sleep).with(2)
+        expect(agent).to receive(:drain).with('shutdown').and_return(2)
+        expect(agent).to receive(:stop)
+        expect(@deleter).to receive(:sleep).with(2)
 
         @deleter.drain('some_agent_id')
       end
 
       it 'should dynamically drain the VM' do
         agent = double('agent')
-        AgentClient.stub(:with_defaults).with('some_agent_id').and_return(agent)
-        Config.stub(:job_cancelled?).and_return(nil)
+        allow(AgentClient).to receive(:with_defaults).with('some_agent_id').and_return(agent)
+        allow(Config).to receive(:job_cancelled?).and_return(nil)
 
-        agent.should_receive(:drain).with('shutdown').and_return(-2)
-        agent.should_receive(:drain).with('status').and_return(-3, 1)
+        expect(agent).to receive(:drain).with('shutdown').and_return(-2)
+        expect(agent).to receive(:drain).with('status').and_return(-3, 1)
 
-        @deleter.should_receive(:sleep).with(2)
-        @deleter.should_receive(:sleep).with(3)
-        @deleter.should_receive(:sleep).with(1)
+        expect(@deleter).to receive(:sleep).with(2)
+        expect(@deleter).to receive(:sleep).with(3)
+        expect(@deleter).to receive(:sleep).with(1)
 
-        agent.should_receive(:stop)
+        expect(agent).to receive(:stop)
         @deleter.drain('some_agent_id')
       end
 
       it 'should dynamically drain the VM when drain script returns 0 eventually' do
         agent = double('agent')
-        AgentClient.stub(:with_defaults).with('some_agent_id').and_return(agent)
-        Config.stub(:job_cancelled?).and_return(nil)
+        allow(AgentClient).to receive(:with_defaults).with('some_agent_id').and_return(agent)
+        allow(Config).to receive(:job_cancelled?).and_return(nil)
 
-        agent.should_receive(:drain).with('shutdown').and_return(-2)
-        agent.should_receive(:drain).with('status').and_return(-3, 0)
+        expect(agent).to receive(:drain).with('shutdown').and_return(-2)
+        expect(agent).to receive(:drain).with('status').and_return(-3, 0)
 
-        @deleter.should_receive(:sleep).with(2)
-        @deleter.should_receive(:sleep).with(3)
-        @deleter.should_receive(:sleep).with(0)
+        expect(@deleter).to receive(:sleep).with(2)
+        expect(@deleter).to receive(:sleep).with(3)
+        expect(@deleter).to receive(:sleep).with(0)
 
-        agent.should_receive(:stop)
+        expect(agent).to receive(:stop)
         @deleter.drain('some_agent_id')
       end
 
       it 'should stop vm-drain if task is cancelled' do
         agent = double('agent')
-        AgentClient.stub(:with_defaults).with('some_agent_id').and_return(agent)
-        Config.stub(:job_cancelled?).and_raise(TaskCancelled.new(1))
-        agent.should_receive(:drain).with('shutdown').and_return(-2)
-        lambda { @deleter.drain('some_agent_id') }.should raise_error(TaskCancelled)
+        allow(AgentClient).to receive(:with_defaults).with('some_agent_id').and_return(agent)
+        allow(Config).to receive(:job_cancelled?).and_raise(TaskCancelled.new(1))
+        expect(agent).to receive(:drain).with('shutdown').and_return(-2)
+        expect { @deleter.drain('some_agent_id') }.to raise_error(TaskCancelled)
       end
     end
 
     describe :delete_persistent_disks do
       it 'should delete the persistent disks' do
         persistent_disks = [Models::PersistentDisk.make(active:  true), Models::PersistentDisk.make(active:  false)]
-        persistent_disks.each { |disk| @cloud.should_receive(:delete_disk).with(disk.disk_cid) }
+        persistent_disks.each { |disk| expect(@cloud).to receive(:delete_disk).with(disk.disk_cid) }
         @deleter.delete_persistent_disks(persistent_disks)
-        persistent_disks.each { |disk| Models::PersistentDisk[disk.id].should == nil }
+        persistent_disks.each { |disk| expect(Models::PersistentDisk[disk.id]).to eq(nil) }
       end
 
       it 'should ignore errors to inactive persistent disks' do
         disk = Models::PersistentDisk.make(active:  false)
-        @cloud.should_receive(:delete_disk).with(disk.disk_cid).and_raise(Bosh::Clouds::DiskNotFound.new(true))
+        expect(@cloud).to receive(:delete_disk).with(disk.disk_cid).and_raise(Bosh::Clouds::DiskNotFound.new(true))
         @deleter.delete_persistent_disks([disk])
       end
 
       it 'should not ignore errors to active persistent disks' do
         disk = Models::PersistentDisk.make(active:  true)
-        @cloud.should_receive(:delete_disk).with(disk.disk_cid).and_raise(Bosh::Clouds::DiskNotFound.new(true))
-        lambda { @deleter.delete_persistent_disks([disk]) }.should raise_error(Bosh::Clouds::DiskNotFound)
+        expect(@cloud).to receive(:delete_disk).with(disk.disk_cid).and_raise(Bosh::Clouds::DiskNotFound.new(true))
+        expect { @deleter.delete_persistent_disks([disk]) }.to raise_error(Bosh::Clouds::DiskNotFound)
       end
     end
 
     describe :delete_dns do
       it 'should generate a correct SQL query string' do
         domain = Models::Dns::Domain.make
-        @deployment_plan.stub(:canonical_name).and_return('dep')
-        @deployment_plan.stub(:dns_domain).and_return(domain)
+        allow(@deployment_plan).to receive(:canonical_name).and_return('dep')
+        allow(@deployment_plan).to receive(:dns_domain).and_return(domain)
         pattern = '0.foo.%.dep.bosh'
-        Config.stub(:dns_domain_name).and_return('bosh')
-        @deleter.should_receive(:delete_dns_records).with(pattern, domain.id)
+        allow(Config).to receive(:dns_domain_name).and_return('bosh')
+        expect(@deleter).to receive(:delete_dns_records).with(pattern, domain.id)
         @deleter.delete_dns('foo', 0)
       end
     end
@@ -178,7 +178,7 @@ module Bosh::Director
       context 'with one disk' do
         it 'should delete all snapshots for an instance' do
           snapshots = [snapshot1, snapshot2]
-          Api::SnapshotManager.should_receive(:delete_snapshots).with(snapshots)
+          expect(Api::SnapshotManager).to receive(:delete_snapshots).with(snapshots)
           @deleter.delete_snapshots(instance)
         end
       end
@@ -190,7 +190,7 @@ module Bosh::Director
 
         it 'should delete all snapshots for an instance' do
           snapshots = [snapshot1, snapshot2, snapshot3]
-          Api::SnapshotManager.should_receive(:delete_snapshots).with(snapshots)
+          expect(Api::SnapshotManager).to receive(:delete_snapshots).with(snapshots)
           @deleter.delete_snapshots(instance)
         end
       end

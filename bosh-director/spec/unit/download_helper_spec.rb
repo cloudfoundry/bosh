@@ -14,16 +14,16 @@ describe Bosh::Director::DownloadHelper do
 
   describe 'download_remote_file' do
     it 'should download a remote file' do
-      Net::HTTP.stub(:start).and_yield(http)
-      http.should_receive(:request_get).and_yield(http_200)
-      http_200.should_receive(:read_body)
+      allow(Net::HTTP).to receive(:start).and_yield(http)
+      expect(http).to receive(:request_get).and_yield(http_200)
+      expect(http_200).to receive(:read_body)
 
       download_remote_file('resource', remote_file, local_file)
     end
 
     it 'should return a ResourceNotFound exception if remote server returns a NotFound error' do
-      Net::HTTP.stub(:start).and_yield(http)
-      http.should_receive(:request_get).and_yield(http_404)
+      allow(Net::HTTP).to receive(:start).and_yield(http)
+      expect(http).to receive(:request_get).and_yield(http_404)
 
       expect {
         download_remote_file('resource', remote_file, local_file)
@@ -31,8 +31,8 @@ describe Bosh::Director::DownloadHelper do
     end
 
     it 'should return a ResourceError exception if remote server returns an error code' do
-      Net::HTTP.stub(:start).and_yield(http)
-      http.should_receive(:request_get).and_yield(http_500)
+      allow(Net::HTTP).to receive(:start).and_yield(http)
+      expect(http).to receive(:request_get).and_yield(http_500)
 
       expect {
         download_remote_file('resource', remote_file, local_file)
@@ -40,7 +40,7 @@ describe Bosh::Director::DownloadHelper do
     end
 
     it 'should return a ResourceError exception if there is a connection error' do
-      Net::HTTP.stub(:start).and_raise(Timeout::Error)
+      allow(Net::HTTP).to receive(:start).and_raise(Timeout::Error)
 
       expect {
         download_remote_file('resource', remote_file, local_file)

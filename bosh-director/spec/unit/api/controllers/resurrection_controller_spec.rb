@@ -35,7 +35,7 @@ module Bosh::Director
 
       it 'sets the date header' do
         get '/'
-        last_response.headers['Date'].should_not be_nil
+        expect(last_response.headers['Date']).not_to be_nil
       end
 
       describe 'API calls' do
@@ -48,7 +48,7 @@ module Bosh::Director
               Models::Instance.create(deployment: deployment, job: 'dea', index: '2', state: 'started'),
             ]
             put '/', Yajl::Encoder.encode('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
-            last_response.status.should == 200
+            expect(last_response.status).to eq(200)
             instances.each do |instance|
               expect(instance.reload.resurrection_paused).to be(true)
             end

@@ -11,7 +11,7 @@ module Bosh::Director
     let(:options) { { foo: 'bar' } }
 
     before do
-      Config.stub(cloud: cloud)
+      allow(Config).to receive_messages(cloud: cloud)
 
       # instance 1: one disk with two snapshots
       vm = Models::Vm.make(cid: 'vm-cid0', agent_id: 'agent0', deployment: deployment)
@@ -35,14 +35,14 @@ module Bosh::Director
       # snapshot from another deployment
       Models::Snapshot.make
 
-      JobQueue.stub(:new).and_return(job_queue)
+      allow(JobQueue).to receive(:new).and_return(job_queue)
     end
 
     let(:task) { instance_double('Bosh::Director::Models::Task', id: 'task_id') }
 
     describe '#create_deployment_snapshot_task' do
       it 'enqueues a SnapshotDeployment job' do
-        job_queue.should_receive(:enqueue).with(
+        expect(job_queue).to receive(:enqueue).with(
           username, Jobs::SnapshotDeployment, 'snapshot deployment', [deployment.name, options]
         ).and_return(task)
 
@@ -54,7 +54,7 @@ module Bosh::Director
       let(:instance) { instance_double('Bosh::Director::Models::Instance', id: 0) }
 
       it 'should enqueue a CreateSnapshot job' do
-        job_queue.should_receive(:enqueue).with(
+        expect(job_queue).to receive(:enqueue).with(
           username, Jobs::CreateSnapshot, 'create snapshot', [instance.id, options]
         ).and_return(task)
 
@@ -64,7 +64,7 @@ module Bosh::Director
 
     describe '#delete_deployment_snapshots_task' do
       it 'enqueues a DeleteDeploymentSnapshots job' do
-        job_queue.should_receive(:enqueue).with(
+        expect(job_queue).to receive(:enqueue).with(
           username, Jobs::DeleteDeploymentSnapshots, 'delete deployment snapshots', [deployment.name]
         ).and_return(task)
 
@@ -76,7 +76,7 @@ module Bosh::Director
       let(:snapshot_cids) { %w[snap0 snap1] }
 
       it 'enqueues a DeleteSnapshots job' do
-        job_queue.should_receive(:enqueue).with(
+        expect(job_queue).to receive(:enqueue).with(
           username, Jobs::DeleteSnapshots, 'delete snapshot', [snapshot_cids]).and_return(task)
 
         expect(subject.delete_snapshots_task(username, snapshot_cids)).to eq(task)
@@ -113,13 +113,13 @@ module Bosh::Director
 
       before do
         Config.configure(config)
-        Config.stub(:enable_snapshots).and_return(true)
+        allow(Config).to receive(:enable_snapshots).and_return(true)
       end
 
       describe '#delete_snapshots' do
         it 'deletes the snapshots' do
-          Config.cloud.should_receive(:delete_snapshot).with('snap0a')
-          Config.cloud.should_receive(:delete_snapshot).with('snap0b')
+          expect(Config.cloud).to receive(:delete_snapshot).with('snap0a')
+          expect(Config.cloud).to receive(:delete_snapshot).with('snap0b')
 
           expect {
             described_class.delete_snapshots(@disk.snapshots)
@@ -142,7 +142,7 @@ module Bosh::Director
 
         context 'when there is no persistent disk' do
           it 'does not take a snapshot' do
-            Config.cloud.should_not_receive(:snapshot_disk)
+            expect(Config.cloud).not_to receive(:snapshot_disk)
 
             expect {
               described_class.take_snapshot(@instance2, {})
@@ -151,7 +151,7 @@ module Bosh::Director
         end
 
         it 'takes the snapshot' do
-          Config.cloud.should_receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
+          expect(Config.cloud).to receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
 
           expect {
             expect(described_class.take_snapshot(@instance, {})).to eq %w[snap0c]
@@ -160,7 +160,7 @@ module Bosh::Director
 
         context 'with the clean option' do
           it 'it sets the clean column to true in the db' do
-            Config.cloud.should_receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
+            expect(Config.cloud).to receive(:snapshot_disk).with('disk0', metadata).and_return('snap0c')
             expect(described_class.take_snapshot(@instance, { :clean => true })).to eq %w[snap0c]
 
             snapshot = Models::Snapshot.find(snapshot_cid: 'snap0c')
@@ -170,7 +170,7 @@ module Bosh::Director
 
         context 'when snapshotting is disabled' do
           it 'does nothing' do
-            Config.stub(:enable_snapshots).and_return(false)
+            allow(Config).to receive(:enable_snapshots).and_return(false)
 
             expect(described_class.take_snapshot(@instance)).to be_empty
           end
@@ -178,7 +178,7 @@ module Bosh::Director
 
         context 'with a CPI that does not support snapshots' do
           it 'does nothing' do
-            Config.cloud.stub(:snapshot_disk).and_raise(Bosh::Clouds::NotImplemented)
+            allow(Config.cloud).to receive(:snapshot_disk).and_raise(Bosh::Clouds::NotImplemented)
 
             expect(described_class.take_snapshot(@instance)).to be_empty
           end

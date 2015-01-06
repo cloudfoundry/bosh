@@ -15,41 +15,41 @@ describe Bosh::Director::IpUtil do
     it "should handle single ip" do
       counter = 0
       @obj.each_ip("1.2.3.4") do |ip|
-        ip.should eql(NetAddr::CIDR.create("1.2.3.4").to_i)
+        expect(ip).to eql(NetAddr::CIDR.create("1.2.3.4").to_i)
         counter += 1
       end
-      counter.should == 1
+      expect(counter).to eq(1)
     end
 
     it "should handle a range" do
       counter = 0
       @obj.each_ip("1.0.0.0/24") do |ip|
-        ip.should eql(NetAddr::CIDR.create("1.0.0.0").to_i + counter)
+        expect(ip).to eql(NetAddr::CIDR.create("1.0.0.0").to_i + counter)
         counter += 1
       end
-      counter.should == 256
+      expect(counter).to eq(256)
     end
 
     it "should handle an differently formatted range" do
       counter = 0
       @obj.each_ip("1.0.0.0 - 1.0.1.0") do |ip|
-        ip.should eql(NetAddr::CIDR.create("1.0.0.0").to_i + counter)
+        expect(ip).to eql(NetAddr::CIDR.create("1.0.0.0").to_i + counter)
         counter += 1
       end
-      counter.should == 257
+      expect(counter).to eq(257)
     end
 
     it "should not accept invalid input" do
-      lambda {@obj.each_ip("1.2.4") {}}.should raise_error
+      expect {@obj.each_ip("1.2.4") {}}.to raise_error
     end
 
     it "should ignore nil values" do
       counter = 0
       @obj.each_ip(nil) do |ip|
-        ip.should eql(NetAddr::CIDR.create("1.2.3.4").to_i)
+        expect(ip).to eql(NetAddr::CIDR.create("1.2.3.4").to_i)
         counter += 1
       end
-      counter.should == 0
+      expect(counter).to eq(0)
     end
 
   end

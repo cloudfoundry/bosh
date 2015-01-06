@@ -98,17 +98,28 @@ module Bosh::Director
 
     describe '#update_steps' do
       context 'when neither the job nor the packages have changed' do
-        its(:update_steps) { should == described_class::UPDATE_STEPS }
+        describe '#update_steps' do
+          subject { super().update_steps }
+          it { is_expected.to eq(described_class::UPDATE_STEPS) }
+        end
       end
 
       context 'when the job has changed' do
         let(:job_changed) { true }
-        its(:update_steps) { should == described_class::UPDATE_STEPS + 1 }
+
+        describe '#update_steps' do
+          subject { super().update_steps }
+          it { is_expected.to eq(described_class::UPDATE_STEPS + 1) }
+        end
       end
 
       context 'when the packages have changed' do
         let(:packages_changed) { true }
-        its(:update_steps) { should == described_class::UPDATE_STEPS + 1 }
+
+        describe '#update_steps' do
+          subject { super().update_steps }
+          it { is_expected.to eq(described_class::UPDATE_STEPS + 1) }
+        end
       end
     end
 
@@ -404,28 +415,28 @@ module Bosh::Director
 
     describe '#need_start?' do
       context 'when target state is "started"' do
-        it { should be_need_start }
+        it { is_expected.to be_need_start }
       end
 
       context 'when target state is not "started"' do
         let(:state) { 'stopped' }
-        it { should_not be_need_start }
+        it { is_expected.not_to be_need_start }
       end
     end
 
     describe '#dns_change_only?' do
       context 'when there is no DNS change' do
-        it { should_not be_dns_change_only }
+        it { is_expected.not_to be_dns_change_only }
       end
 
       context 'when there is only a DNS change' do
         let(:changes) { [:dns].to_set }
-        it { should be_dns_change_only }
+        it { is_expected.to be_dns_change_only }
       end
 
       context 'when there is a DNS change plus other stuff' do
         let(:changes) { [:dns, :other_stuff].to_set }
-        it { should_not be_dns_change_only }
+        it { is_expected.not_to be_dns_change_only }
       end
     end
 

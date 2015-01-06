@@ -12,7 +12,7 @@ module Bosh::Director
     end
 
     it 'tells the snapshot manager to delete the snapshots' do
-      Api::SnapshotManager.should_receive(:delete_snapshots).with(snapshots)
+      expect(Api::SnapshotManager).to receive(:delete_snapshots).with(snapshots)
 
       expect(job.perform).to eq 'snapshot(s) snap0, snap1 deleted'
     end

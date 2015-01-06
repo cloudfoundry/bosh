@@ -41,19 +41,19 @@ module Bosh::Director
 
       it 'requires auth' do
         get '/'
-        last_response.status.should == 401
+        expect(last_response.status).to eq(401)
       end
 
       it 'sets the date header' do
         get '/'
-        last_response.headers['Date'].should_not be_nil
+        expect(last_response.headers['Date']).not_to be_nil
       end
 
       it 'allows Basic HTTP Auth with admin/admin credentials for ' +
              "test purposes (even though user doesn't exist)" do
         basic_authorize 'admin', 'admin'
         get '/'
-        last_response.status.should == 200
+        expect(last_response.status).to eq(200)
       end
 
       it 'responds with expected json' do
@@ -82,7 +82,7 @@ module Bosh::Director
           }
         }
 
-        Yajl::Parser.parse(last_response.body).should == expected
+        expect(Yajl::Parser.parse(last_response.body)).to eq(expected)
       end
     end
   end

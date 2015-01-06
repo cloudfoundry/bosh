@@ -273,7 +273,7 @@ module Bosh::Director::DeploymentPlan
         instance.add_network_reservation('net_a', old_reservation)
         instance.bind_unallocated_vm
 
-        instance.model.should_not be_nil
+        expect(instance.model).not_to be_nil
         expect(instance.vm).to eq(vm)
         expect(vm.bound_instance).to be_nil
         expect(vm.network_reservation.ip).to eq(vm_ip)
@@ -288,7 +288,7 @@ module Bosh::Director::DeploymentPlan
         instance.add_network_reservation('net_a', old_reservation)
         instance.bind_unallocated_vm
 
-        instance.model.should_not be_nil
+        expect(instance.model).not_to be_nil
         expect(instance.vm).to eq(vm)
         expect(vm.bound_instance).to eq(instance)
         expect(vm.network_reservation).to be_nil

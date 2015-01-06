@@ -10,7 +10,7 @@ describe Bosh::Director::CycleHelper do
       :B => [:A]
     }
 
-    lambda { Bosh::Director::CycleHelper.check_for_cycle([:A, :B, :C]) { |vertex| graph[vertex] } }.should raise_exception
+    expect { Bosh::Director::CycleHelper.check_for_cycle([:A, :B, :C]) { |vertex| graph[vertex] } }.to raise_exception
   end
 
   it "should detect more complicated cycles" do
@@ -21,7 +21,7 @@ describe Bosh::Director::CycleHelper do
       :D => [:B]
     }
 
-    lambda { Bosh::Director::CycleHelper.check_for_cycle([:A, :B, :C]) { |vertex| graph[vertex] } }.should raise_exception
+    expect { Bosh::Director::CycleHelper.check_for_cycle([:A, :B, :C]) { |vertex| graph[vertex] } }.to raise_exception
   end
 
   it "should not detect cycles when it's acyclic" do
@@ -43,7 +43,7 @@ describe Bosh::Director::CycleHelper do
         [:A, :B, :C], :connected_vertices => true) { |vertex| graph[vertex] }
 
     result[:connected_vertices].each { |key, value| result[:connected_vertices][key] = Set.new(value) }
-    result.should eql({:connected_vertices => {:C => Set.new([]), :A => Set.new([:C, :B]), :B => Set.new([:C])}})
+    expect(result).to eql({:connected_vertices => {:C => Set.new([]), :A => Set.new([:C, :B]), :B => Set.new([:C])}})
   end
 
   it "should raise an exception when an referenced edge is not found" do
@@ -52,7 +52,7 @@ describe Bosh::Director::CycleHelper do
       :B => [:D]
     }
 
-    lambda { Bosh::Director::CycleHelper.check_for_cycle([:A, :B, :C]) { |vertex| graph[vertex] } }.should raise_exception
+    expect { Bosh::Director::CycleHelper.check_for_cycle([:A, :B, :C]) { |vertex| graph[vertex] } }.to raise_exception
   end
 
 end

@@ -60,8 +60,8 @@ module Bosh::Director
       event_log = double('event log')
       result_file = double('result file')
 
-      EventLog::Log
-        .stub(:new)
+      allow(EventLog::Log)
+        .to receive(:new)
         .with(File.join(task_dir, 'event'))
         .and_return(event_log)
 

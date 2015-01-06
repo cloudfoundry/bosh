@@ -41,19 +41,19 @@ module Bosh::Director
 
       it 'requires auth' do
         get '/'
-        last_response.status.should == 401
+        expect(last_response.status).to eq(401)
       end
 
       it 'sets the date header' do
         get '/'
-        last_response.headers['Date'].should_not be_nil
+        expect(last_response.headers['Date']).not_to be_nil
       end
 
       it 'allows Basic HTTP Auth with admin/admin credentials for ' +
              "test purposes (even though user doesn't exist)" do
         basic_authorize 'admin', 'admin'
         get '/'
-        last_response.status.should == 404
+        expect(last_response.status).to eq(404)
       end
 
       context 'when serving resources from temp' do
@@ -77,10 +77,10 @@ module Bosh::Director
           login_as_admin
           expect(resouce_manager).to receive(:get_resource_path).with('deadbeef').and_return(tmp_file)
 
-          File.exists?(tmp_file).should be(true)
+          expect(File.exists?(tmp_file)).to be(true)
           get '/deadbeef'
-          last_response.body.should == 'some data'
-          File.exists?(tmp_file).should be(false)
+          expect(last_response.body).to eq('some data')
+          expect(File.exists?(tmp_file)).to be(false)
         end
       end
 
@@ -90,14 +90,14 @@ module Bosh::Director
         describe 'resources' do
           it '404 on missing resource' do
             get '/missing_resource'
-            last_response.status.should == 404
+            expect(last_response.status).to eq(404)
           end
 
           it 'can fetch resources from blobstore' do
             id = @director_app.blobstores.blobstore.create('some data')
             get "/#{id}"
-            last_response.status.should == 200
-            last_response.body.should == 'some data'
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq('some data')
           end
         end
       end

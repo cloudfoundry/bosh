@@ -10,26 +10,26 @@ module Bosh::Director
 
     let(:thread_pool) do
       thread_pool = instance_double('Bosh::Director::ThreadPool')
-      thread_pool.stub(:wrap).and_yield(thread_pool)
-      thread_pool.stub(:process).and_yield
-      thread_pool.stub(:working?).and_return(false)
+      allow(thread_pool).to receive(:wrap).and_yield(thread_pool)
+      allow(thread_pool).to receive(:process).and_yield
+      allow(thread_pool).to receive(:working?).and_return(false)
       thread_pool
     end
 
     before do
-      ThreadPool.stub(new: thread_pool) # Using threads for real, even accidentally makes debugging a nightmare
+      allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally makes debugging a nightmare
 
-      Config.stub(redis: double('fake-redis'))
+      allow(Config).to receive_messages(redis: double('fake-redis'))
 
       @cloud = double(:cpi)
-      Config.stub(:cloud).and_return(@cloud)
+      allow(Config).to receive(:cloud).and_return(@cloud)
 
       @blobstore = double(:blobstore)
-      Config.stub(:blobstore).and_return(@blobstore)
+      allow(Config).to receive(:blobstore).and_return(@blobstore)
 
       @director_job = instance_double('Bosh::Director::Jobs::BaseJob')
-      Config.stub(:current_job).and_return(@director_job)
-      @director_job.stub(:task_cancelled?).and_return(false)
+      allow(Config).to receive(:current_job).and_return(@director_job)
+      allow(@director_job).to receive(:task_cancelled?).and_return(false)
 
       @deployment = Models::Deployment.make(name: 'mycloud')
       @config = instance_double('Bosh::Director::DeploymentPlan::CompilationConfig')
@@ -37,14 +37,14 @@ module Bosh::Director
       @network = instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default')
 
       @n_workers = 3
-      @config.stub(deployment: @plan,
+      allow(@config).to receive_messages(deployment: @plan,
                    network: @network,
                    env: {},
                    cloud_properties: {},
                    workers: @n_workers,
                    reuse_compilation_vms: false)
 
-      Config.stub(:use_compiled_package_cache?).and_return(false)
+      allow(Config).to receive(:use_compiled_package_cache?).and_return(false)
       @all_packages = []
     end
 
@@ -120,16 +120,16 @@ module Bosh::Director
       it "doesn't perform any compilation" do
         prepare_samples
 
-        @plan.stub(:jobs).and_return([@j_dea, @j_router])
+        allow(@plan).to receive(:jobs).and_return([@j_dea, @j_router])
 
         @package_set_a.each do |package|
           cp1 = make_compiled(release_version_model, package, @stemcell_a.model)
-          @j_dea.should_receive(:use_compiled_package).with(cp1)
+          expect(@j_dea).to receive(:use_compiled_package).with(cp1)
         end
 
         @package_set_b.each do |package|
           cp2 = make_compiled(release_version_model, package, @stemcell_b.model)
-          @j_router.should_receive(:use_compiled_package).with(cp2)
+          expect(@j_router).to receive(:use_compiled_package).with(cp2)
         end
 
         compiler = PackageCompiler.new(@plan)
@@ -139,9 +139,9 @@ module Bosh::Director
         # [p_dea, p_nginx, p_syslog, p_warden, p_common, p_ruby] = 6
         # For @stemcell_b:
         # [p_nginx, p_common, p_router, p_ruby, p_warden] = 5
-        compiler.compile_tasks_count.should == 6 + 5
+        expect(compiler.compile_tasks_count).to eq(6 + 5)
         # But they are already compiled!
-        compiler.compilations_performed.should == 0
+        expect(compiler.compilations_performed).to eq(0)
 
         expect(log_string).to include("Job templates `cf-release/dea', `cf-release/warden' need to run on stemcell `#{@stemcell_a.model.desc}'")
         expect(log_string).to include("Job templates `cf-release/nginx', `cf-release/router', `cf-release/warden' need to run on stemcell `#{@stemcell_b.model.desc}'")
@@ -152,35 +152,35 @@ module Bosh::Director
       it 'compiles all packages' do
         prepare_samples
 
-        @plan.stub(:jobs).and_return([@j_dea, @j_router])
+        allow(@plan).to receive(:jobs).and_return([@j_dea, @j_router])
         compiler = PackageCompiler.new(@plan)
 
-        @network.should_receive(:reserve).at_least(@n_workers).times do |reservation|
-          reservation.should be_an_instance_of(NetworkReservation)
+        expect(@network).to receive(:reserve).at_least(@n_workers).times do |reservation|
+          expect(reservation).to be_an_instance_of(NetworkReservation)
           reservation.reserved = true
         end
 
-        @network.should_receive(:network_settings).
+        expect(@network).to receive(:network_settings).
             exactly(11).times.and_return('network settings')
 
         net = {'default' => 'network settings'}
         vm_cids = (0..10).map { |i| "vm-cid-#{i}" }
         agents = (0..10).map { instance_double('Bosh::Director::AgentClient') }
 
-        @cloud.should_receive(:create_vm).exactly(6).times.
+        expect(@cloud).to receive(:create_vm).exactly(6).times.
             with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
             and_return(*vm_cids[0..5])
 
-        @cloud.should_receive(:create_vm).exactly(5).times.
+        expect(@cloud).to receive(:create_vm).exactly(5).times.
             with(instance_of(String), @stemcell_b.model.cid, {}, net, nil, {}).
             and_return(*vm_cids[6..10])
 
-        AgentClient.should_receive(:with_defaults).exactly(11).times.and_return(*agents)
+        expect(AgentClient).to receive(:with_defaults).exactly(11).times.and_return(*agents)
 
         vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
-        Bosh::Director::VmMetadataUpdater.stub(build: vm_metadata_updater)
-        vm_metadata_updater.should_receive(:update).with(anything, { compiling: 'common'})
-        vm_metadata_updater.should_receive(:update).with(anything, hash_including(:compiling)).exactly(10).times
+        allow(Bosh::Director::VmMetadataUpdater).to receive_messages(build: vm_metadata_updater)
+        expect(vm_metadata_updater).to receive(:update).with(anything, { compiling: 'common'})
+        expect(vm_metadata_updater).to receive(:update).with(anything, hash_including(:compiling)).exactly(10).times
 
         agents.each do |agent|
           initial_state = {
@@ -189,18 +189,18 @@ module Bosh::Director
               'networks' => net
           }
 
-          agent.should_receive(:wait_until_ready)
-          agent.should_receive(:apply).with(initial_state)
-          agent.should_receive(:compile_package) do |*args|
+          expect(agent).to receive(:wait_until_ready)
+          expect(agent).to receive(:apply).with(initial_state)
+          expect(agent).to receive(:compile_package) do |*args|
             name = args[2]
             dot = args[3].rindex('.')
             version, build = args[3][0..dot-1], args[3][dot+1..-1]
 
             package = Models::Package.find(name: name, version: version)
-            args[0].should == package.blobstore_id
-            args[1].should == package.sha1
+            expect(args[0]).to eq(package.blobstore_id)
+            expect(args[1]).to eq(package.sha1)
 
-            args[4].should be_a(Hash)
+            expect(args[4]).to be_a(Hash)
 
             {
                 'result' => {
@@ -212,32 +212,32 @@ module Bosh::Director
         end
 
         @package_set_a.each do |package|
-          compiler.should_receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
+          expect(compiler).to receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
         end
 
         @package_set_b.each do |package|
-          compiler.should_receive(:with_compile_lock).with(package.id, @stemcell_b.model.id).and_yield
+          expect(compiler).to receive(:with_compile_lock).with(package.id, @stemcell_b.model.id).and_yield
         end
 
-        @j_dea.should_receive(:use_compiled_package).exactly(6).times
-        @j_router.should_receive(:use_compiled_package).exactly(5).times
+        expect(@j_dea).to receive(:use_compiled_package).exactly(6).times
+        expect(@j_router).to receive(:use_compiled_package).exactly(5).times
 
         vm_cids.each do |vm_cid|
-          @cloud.should_receive(:delete_vm).with(vm_cid)
+          expect(@cloud).to receive(:delete_vm).with(vm_cid)
         end
 
-        @network.should_receive(:release).at_least(@n_workers).times
-        @director_job.should_receive(:task_checkpoint).once
+        expect(@network).to receive(:release).at_least(@n_workers).times
+        expect(@director_job).to receive(:task_checkpoint).once
 
         compiler.compile
-        compiler.compilations_performed.should == 11
+        expect(compiler.compilations_performed).to eq(11)
 
         @package_set_a.each do |package|
-          package.compiled_packages.size.should >= 1
+          expect(package.compiled_packages.size).to be >= 1
         end
 
         @package_set_b.each do |package|
-          package.compiled_packages.size.should >= 1
+          expect(package.compiled_packages.size).to be >= 1
         end
       end
     end
@@ -251,10 +251,10 @@ module Bosh::Director
       it 'cancels the compilation' do
         director_job = instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, task_cancelled?: true)
         event_log = instance_double('Bosh::Director::EventLog::Log', begin_stage: nil)
-        event_log.stub(:track).with(anything).and_yield
+        allow(event_log).to receive(:track).with(anything).and_yield
 
         config = class_double('Bosh::Director::Config').as_stubbed_const
-        config.stub(
+        allow(config).to receive_messages(
           current_job: director_job,
           cloud: double('cpi'),
           event_log: event_log,
@@ -274,10 +274,10 @@ module Bosh::Director
         package_model = instance_double('Bosh::Director::Models::Package', name: 'foobarbaz', desc: 'package description', id: 'package_id', dependency_set: [],
                                fingerprint: 'deadbeef')
         template = instance_double('Bosh::Director::DeploymentPlan::Template', release: release_version, package_models: [ package_model ], name: 'fake_template')
-        job.stub(templates: [template])
+        allow(job).to receive_messages(templates: [template])
         planner = instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: compilation_config, name: 'mycloud')
 
-        planner.stub(:jobs).and_return([job])
+        allow(planner).to receive(:jobs).and_return([job])
 
         compiler = PackageCompiler.new(planner)
 
@@ -299,40 +299,40 @@ module Bosh::Director
 
       it 'reuses compilation VMs' do
         prepare_samples
-        @plan.stub(:jobs).and_return([@j_dea])
+        allow(@plan).to receive(:jobs).and_return([@j_dea])
 
-        @config.stub(reuse_compilation_vms: true)
+        allow(@config).to receive_messages(reuse_compilation_vms: true)
 
-        @network.should_receive(:reserve).at_most(@n_workers).times do |reservation|
-          reservation.should be_an_instance_of(NetworkReservation)
+        expect(@network).to receive(:reserve).at_most(@n_workers).times do |reservation|
+          expect(reservation).to be_an_instance_of(NetworkReservation)
           reservation.reserved = true
         end
 
-        @network.should_receive(:network_settings).
+        expect(@network).to receive(:network_settings).
           at_most(3).times.and_return('network settings')
 
         vm_cids = (0..2).map { |i| "vm-cid-#{i}" }
         agents = (0..2).map { instance_double('Bosh::Director::AgentClient') }
 
-        @cloud.should_receive(:create_vm).at_most(3).times.
+        expect(@cloud).to receive(:create_vm).at_most(3).times.
           with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
           and_return(*vm_cids)
 
-        AgentClient.should_receive(:with_defaults).at_most(3).times.and_return(*agents)
+        expect(AgentClient).to receive(:with_defaults).at_most(3).times.and_return(*agents)
 
         agents.each do |agent|
-          agent.should_receive(:wait_until_ready).at_most(6).times
-          agent.should_receive(:apply).with(initial_state).at_most(6).times
-          agent.should_receive(:compile_package).at_most(6).times do |*args|
+          expect(agent).to receive(:wait_until_ready).at_most(6).times
+          expect(agent).to receive(:apply).with(initial_state).at_most(6).times
+          expect(agent).to receive(:compile_package).at_most(6).times do |*args|
             name = args[2]
             dot = args[3].rindex('.')
             version, build = args[3][0..dot-1], args[3][dot+1..-1]
 
             package = Models::Package.find(name: name, version: version)
-            args[0].should == package.blobstore_id
-            args[1].should == package.sha1
+            expect(args[0]).to eq(package.blobstore_id)
+            expect(args[1]).to eq(package.sha1)
 
-            args[4].should be_a(Hash)
+            expect(args[4]).to be_a(Hash)
 
             {
               'result' => {
@@ -343,62 +343,62 @@ module Bosh::Director
           end
         end
 
-        @j_dea.should_receive(:use_compiled_package).exactly(6).times
+        expect(@j_dea).to receive(:use_compiled_package).exactly(6).times
 
         vm_cids.each do |vm_cid|
-          @cloud.should_receive(:delete_vm).at_most(1).times.with(vm_cid)
+          expect(@cloud).to receive(:delete_vm).at_most(1).times.with(vm_cid)
         end
 
-        @network.should_receive(:release).at_most(@n_workers).times
-        @director_job.should_receive(:task_checkpoint).once
+        expect(@network).to receive(:release).at_most(@n_workers).times
+        expect(@director_job).to receive(:task_checkpoint).once
 
         compiler = PackageCompiler.new(@plan)
 
         @package_set_a.each do |package|
-          compiler.should_receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
+          expect(compiler).to receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
         end
 
         compiler.compile
-        compiler.compilations_performed.should == 6
+        expect(compiler.compilations_performed).to eq(6)
 
         @package_set_a.each do |package|
-          package.compiled_packages.size.should >= 1
+          expect(package.compiled_packages.size).to be >= 1
         end
       end
 
       it 'cleans up compilation vms if there is a failing compilation' do
         prepare_samples
-        @plan.stub(:jobs).and_return([@j_dea])
+        allow(@plan).to receive(:jobs).and_return([@j_dea])
 
-        @config.stub(reuse_compilation_vms: true)
-        @config.stub(workers: 1)
+        allow(@config).to receive_messages(reuse_compilation_vms: true)
+        allow(@config).to receive_messages(workers: 1)
 
-        @network.should_receive(:reserve) do |reservation|
-          reservation.should be_an_instance_of(NetworkReservation)
+        expect(@network).to receive(:reserve) do |reservation|
+          expect(reservation).to be_an_instance_of(NetworkReservation)
           reservation.reserved = true
         end
 
-        @network.should_receive(:network_settings).and_return('network settings')
+        expect(@network).to receive(:network_settings).and_return('network settings')
 
         vm_cid = 'vm-cid-1'
         agent = instance_double('Bosh::Director::AgentClient')
 
-        @cloud.should_receive(:create_vm).
+        expect(@cloud).to receive(:create_vm).
           with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
           and_return(vm_cid)
 
-        AgentClient.should_receive(:with_defaults).and_return(agent)
+        expect(AgentClient).to receive(:with_defaults).and_return(agent)
 
-        agent.should_receive(:wait_until_ready)
-        agent.should_receive(:apply).with(initial_state)
-        agent.should_receive(:compile_package).and_raise(RuntimeError)
+        expect(agent).to receive(:wait_until_ready)
+        expect(agent).to receive(:apply).with(initial_state)
+        expect(agent).to receive(:compile_package).and_raise(RuntimeError)
 
-        @cloud.should_receive(:delete_vm).with(vm_cid)
+        expect(@cloud).to receive(:delete_vm).with(vm_cid)
 
-        @network.should_receive(:release)
+        expect(@network).to receive(:release)
 
         compiler = PackageCompiler.new(@plan)
-        compiler.stub(:with_compile_lock).and_yield
+        allow(compiler).to receive(:with_compile_lock).and_yield
 
         expect {
           compiler.compile
@@ -424,39 +424,39 @@ module Bosh::Director
           resource_pool: resource_pool,
         )
 
-        @plan.stub(jobs: [job])
+        allow(@plan).to receive_messages(jobs: [job])
       end
 
       before do # create vm
-        @network.stub(:reserve) { |reservation| reservation.reserved = true }
-        @network.stub(:network_settings)
-        @cloud.stub(:create_vm).and_return('vm-cid-1')
+        allow(@network).to receive(:reserve) { |reservation| reservation.reserved = true }
+        allow(@network).to receive(:network_settings)
+        allow(@cloud).to receive(:create_vm).and_return('vm-cid-1')
       end
 
       def self.it_tears_down_vm_exactly_once
         it 'tears down VMs exactly once when RpcTimeout error occurs' do
           # agent raises error
           agent = instance_double('Bosh::Director::AgentClient', apply: nil)
-          agent.should_receive(:wait_until_ready).and_raise(RpcTimeout)
-          AgentClient.should_receive(:with_defaults).and_return(agent)
+          expect(agent).to receive(:wait_until_ready).and_raise(RpcTimeout)
+          expect(AgentClient).to receive(:with_defaults).and_return(agent)
 
           # vm is destroyed
-          @cloud.should_receive(:delete_vm)
-          @network.should_receive(:release)
+          expect(@cloud).to receive(:delete_vm)
+          expect(@network).to receive(:release)
 
           compiler = PackageCompiler.new(@plan)
-          compiler.stub(:with_compile_lock).and_yield
+          allow(compiler).to receive(:with_compile_lock).and_yield
           expect { compiler.compile }.to raise_error(RpcTimeout)
         end
       end
 
       context 'reuse_compilation_vms is true' do
-        before { @config.stub(reuse_compilation_vms: true) }
+        before { allow(@config).to receive_messages(reuse_compilation_vms: true) }
         it_tears_down_vm_exactly_once
       end
 
       context 'reuse_compilation_vms is false' do
-        before { @config.stub(reuse_compilation_vms: false) }
+        before { allow(@config).to receive_messages(reuse_compilation_vms: false) }
         it_tears_down_vm_exactly_once
       end
     end
@@ -469,12 +469,12 @@ module Bosh::Director
 
       compiler = PackageCompiler.new(@plan)
       fake_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
-      task.stub(:find_compiled_package).and_return(fake_compiled_package)
+      allow(task).to receive(:find_compiled_package).and_return(fake_compiled_package)
 
-      compiler.stub(:with_compile_lock).with(package.id, stemcell.id).and_yield
+      allow(compiler).to receive(:with_compile_lock).with(package.id, stemcell.id).and_yield
       compiler.compile_package(task)
 
-      task.compiled_package.should == fake_compiled_package
+      expect(task.compiled_package).to eq(fake_compiled_package)
     end
 
     describe 'the global blobstore' do
@@ -485,18 +485,18 @@ module Bosh::Director
       let(:cache_key) { 'cache key' }
 
       before do
-        task.stub(:cache_key).and_return(cache_key)
+        allow(task).to receive(:cache_key).and_return(cache_key)
 
-        Config.stub(:use_compiled_package_cache?).and_return(true)
+        allow(Config).to receive(:use_compiled_package_cache?).and_return(true)
       end
 
       it 'should check if compiled package is in global blobstore' do
-        compiler.stub(:with_compile_lock).with(package.id, stemcell.id).and_yield
+        allow(compiler).to receive(:with_compile_lock).with(package.id, stemcell.id).and_yield
 
-        BlobUtil.should_receive(:exists_in_global_cache?).with(package, cache_key).and_return(true)
-        task.stub(:find_compiled_package)
-        BlobUtil.should_not_receive(:save_to_global_cache)
-        compiler.stub(:prepare_vm)
+        expect(BlobUtil).to receive(:exists_in_global_cache?).with(package, cache_key).and_return(true)
+        allow(task).to receive(:find_compiled_package)
+        expect(BlobUtil).not_to receive(:save_to_global_cache)
+        allow(compiler).to receive(:prepare_vm)
         compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
         allow(Models::CompiledPackage).to receive(:create).and_return(compiled_package)
 
@@ -504,29 +504,29 @@ module Bosh::Director
       end
 
       it 'should save compiled package to global cache if not exists' do
-        compiler.should_receive(:with_compile_lock).with(package.id, stemcell.id).and_yield
+        expect(compiler).to receive(:with_compile_lock).with(package.id, stemcell.id).and_yield
 
-        task.stub(:find_compiled_package)
+        allow(task).to receive(:find_compiled_package)
         compiled_package = instance_double(
           'Bosh::Director::Models::CompiledPackage',
           name: 'fake-package-name', package: package,
           stemcell: stemcell, blobstore_id: 'some blobstore id')
-        BlobUtil.should_receive(:exists_in_global_cache?).with(package, cache_key).and_return(false)
-        BlobUtil.should_receive(:save_to_global_cache).with(compiled_package, cache_key)
-        compiler.stub(:prepare_vm)
+        expect(BlobUtil).to receive(:exists_in_global_cache?).with(package, cache_key).and_return(false)
+        expect(BlobUtil).to receive(:save_to_global_cache).with(compiled_package, cache_key)
+        allow(compiler).to receive(:prepare_vm)
         allow(Models::CompiledPackage).to receive(:create).and_return(compiled_package)
 
         compiler.compile_package(task)
       end
 
       it 'only checks the global cache if Config.use_compiled_package_cache? is set' do
-        Config.stub(:use_compiled_package_cache?).and_return(false)
+        allow(Config).to receive(:use_compiled_package_cache?).and_return(false)
 
-        compiler.stub(:with_compile_lock).with(package.id, stemcell.id).and_yield
+        allow(compiler).to receive(:with_compile_lock).with(package.id, stemcell.id).and_yield
 
-        BlobUtil.should_not_receive(:exists_in_global_cache?)
-        BlobUtil.should_not_receive(:save_to_global_cache)
-        compiler.stub(:prepare_vm)
+        expect(BlobUtil).not_to receive(:exists_in_global_cache?)
+        expect(BlobUtil).not_to receive(:save_to_global_cache)
+        allow(compiler).to receive(:prepare_vm)
         compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
         allow(Models::CompiledPackage).to receive(:create).and_return(compiled_package)
 
@@ -538,10 +538,10 @@ module Bosh::Director
       let(:network) { double('network', name: 'name', network_settings: nil) }
       let(:compilation) do
         config = double('compilation_config')
-        config.stub(network: network)
-        config.stub(cloud_properties: double('cloud_properties'))
-        config.stub(env: double('env'))
-        config.stub(workers: 2)
+        allow(config).to receive_messages(network: network)
+        allow(config).to receive_messages(cloud_properties: double('cloud_properties'))
+        allow(config).to receive_messages(env: double('env'))
+        allow(config).to receive_messages(workers: 2)
         config
       end
       let(:deployment_plan) { double('Bosh::Director::DeploymentPlan', compilation: compilation, model: 'model') }
@@ -552,27 +552,27 @@ module Bosh::Director
 
       context 'with reuse_compilation_vms' do
         before do
-          compilation.stub(reuse_compilation_vms: true)
-          VmCreator.stub(create: vm)
-          VmReuser.stub(new: reuser)
+          allow(compilation).to receive_messages(reuse_compilation_vms: true)
+          allow(VmCreator).to receive_messages(create: vm)
+          allow(VmReuser).to receive_messages(new: reuser)
         end
 
         it 'should clean up the compilation vm if it failed' do
           compiler = described_class.new(deployment_plan)
 
-          compiler.stub(reserve_network: double('network_reservation'))
+          allow(compiler).to receive_messages(reserve_network: double('network_reservation'))
           client = instance_double('Bosh::Director::AgentClient')
-          client.stub(:wait_until_ready).and_raise(RpcTimeout)
-          AgentClient.stub(with_defaults: client)
+          allow(client).to receive(:wait_until_ready).and_raise(RpcTimeout)
+          allow(AgentClient).to receive_messages(with_defaults: client)
 
-          reuser.stub(get_vm: nil)
-          reuser.stub(get_num_vms: 0)
-          reuser.stub(add_vm: vm_data)
+          allow(reuser).to receive_messages(get_vm: nil)
+          allow(reuser).to receive_messages(get_num_vms: 0)
+          allow(reuser).to receive_messages(add_vm: vm_data)
 
-          reuser.should_receive(:remove_vm).with(vm_data)
-          vm_data.should_receive(:release)
+          expect(reuser).to receive(:remove_vm).with(vm_data)
+          expect(vm_data).to receive(:release)
 
-          compiler.should_receive(:tear_down_vm).with(vm_data)
+          expect(compiler).to receive(:tear_down_vm).with(vm_data)
 
           expect {
             compiler.prepare_vm(stemcell) do

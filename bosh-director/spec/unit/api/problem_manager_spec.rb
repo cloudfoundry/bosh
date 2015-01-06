@@ -11,12 +11,12 @@ module Bosh::Director
     subject { described_class.new(deployment_manager) }
 
     before do
-      JobQueue.stub(:new).and_return(job_queue)
+      allow(JobQueue).to receive(:new).and_return(job_queue)
     end
 
     describe '#perform_scan' do
       it 'enqueues a task' do
-        job_queue.should_receive(:enqueue).with(
+        expect(job_queue).to receive(:enqueue).with(
           username, Jobs::CloudCheck::Scan, 'scan cloud', [deployment.name]).and_return(task)
         expect(subject.perform_scan(username, deployment.name)).to eq(task)
       end
@@ -26,7 +26,7 @@ module Bosh::Director
       let(:resolutions) { double('Resolutions') }
 
       it 'enqueues a task' do
-        job_queue.should_receive(:enqueue).with(
+        expect(job_queue).to receive(:enqueue).with(
           username, Jobs::CloudCheck::ApplyResolutions, 'apply resolutions',
           [deployment.name, resolutions]).and_return(task)
         expect(subject.apply_resolutions(username, deployment.name, resolutions)).to eq(task)
@@ -42,7 +42,7 @@ module Bosh::Director
         end
 
         it 'enqueues a task' do
-          job_queue.should_receive(:enqueue).with(
+          expect(job_queue).to receive(:enqueue).with(
             username, Jobs::CloudCheck::ScanAndFix, 'scan and fix',
             [deployment.name, jobs, true]).and_return(task)
           expect(subject.scan_and_fix(username, deployment.name, jobs)).to eq(task)
@@ -55,7 +55,7 @@ module Bosh::Director
         end
 
         it 'enqueues a task' do
-          job_queue.should_receive(:enqueue).with(
+          expect(job_queue).to receive(:enqueue).with(
             username, Jobs::CloudCheck::ScanAndFix, 'scan and fix',
             [deployment.name, jobs, false]).and_return(task)
           expect(subject.scan_and_fix(username, deployment.name, jobs)).to eq(task)

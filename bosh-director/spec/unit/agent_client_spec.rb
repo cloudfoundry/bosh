@@ -13,13 +13,13 @@ module Bosh::Director
         end
 
         before do
-          client.stub(send_message: task)
-          client.stub(:get_task) do
+          allow(client).to receive_messages(send_message: task)
+          allow(client).to receive(:get_task) do
             task['state'] = 'no longer running'
             task
           end
 
-          client.stub(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL)
+          allow(client).to receive(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL)
         end
 
         it 'explicitly defines methods for long running messages (to poll)' do
@@ -51,12 +51,12 @@ module Bosh::Director
     describe 'long running messages' do
       subject(:client) { AgentClient.with_defaults('fake-agent_id') }
 
-      before { Models::Vm.stub(:find).with(agent_id: 'fake-agent_id').and_return(vm_model) }
+      before { allow(Models::Vm).to receive(:find).with(agent_id: 'fake-agent_id').and_return(vm_model) }
       let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil) }
 
       before do
-        Config.stub(:nats_rpc)
-        Api::ResourceManager.stub(:new)
+        allow(Config).to receive(:nats_rpc)
+        allow(Api::ResourceManager).to receive(:new)
       end
 
       it_acts_as_a_long_running_message :prepare
@@ -82,11 +82,11 @@ module Bosh::Director
 
       let(:vm_model) do
         cloud = instance_double('Bosh::Cloud')
-        Config.stub(:cloud).and_return(cloud)
+        allow(Config).to receive(:cloud).and_return(cloud)
         env = {}
         deployment = Models::Deployment.make
         cloud_properties = { 'ram' => '2gb' }
-        cloud.stub(:create_vm).with(kind_of(String), 'stemcell-id',
+        allow(cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id',
                                     { 'ram' => '2gb' }, network_settings, [99],
                                     { 'bosh' =>
                                         { 'credentials' =>
@@ -105,13 +105,13 @@ module Bosh::Director
       it 'should use vm credentials' do
         nats_rpc = double('nats_rpc')
 
-        Config.stub(:nats_rpc).and_return(nats_rpc)
+        allow(Config).to receive(:nats_rpc).and_return(nats_rpc)
         Config.encryption = true
 
-        App.stub(instance: double('App Instance').as_null_object)
+        allow(App).to receive_messages(instance: double('App Instance').as_null_object)
 
         handler = Bosh::Core::EncryptionHandler.new(vm_model.agent_id, vm_model.credentials)
-        nats_rpc.should_receive(:send_request) do |*args, &blk|
+        expect(nats_rpc).to receive(:send_request) do |*args, &blk|
           data = args[1]['encrypted_data']
           handler.decrypt(data) # decrypt to initiate session
           blk.call('encrypted_data' => handler.encrypt('value' => 'pong'))
@@ -122,9 +122,9 @@ module Bosh::Director
     end
 
     before do
-      Api::ResourceManager.stub(:new)
+      allow(Api::ResourceManager).to receive(:new)
       @nats_rpc = instance_double('Bosh::Director::NatsRpc')
-      Bosh::Director::Config.stub(:nats_rpc).and_return(@nats_rpc)
+      allow(Bosh::Director::Config).to receive(:nats_rpc).and_return(@nats_rpc)
     end
 
     let(:test_args) do
@@ -138,11 +138,11 @@ module Bosh::Director
     it 'should send messages and return values' do
       response = { 'value' => 5 }
 
-      @nats_rpc.should_receive(:send_request).
+      expect(@nats_rpc).to receive(:send_request).
         with('foo.bar', test_rpc_args).and_yield(response)
 
       client = AgentClient.new('foo', 'bar')
-      client.baz(*test_args).should == 5
+      expect(client.baz(*test_args)).to eq(5)
     end
 
     it 'should handle exceptions' do
@@ -154,33 +154,33 @@ module Bosh::Director
         }
       }
 
-      @nats_rpc.should_receive(:send_request).
+      expect(@nats_rpc).to receive(:send_request).
         with('foo.bar', test_rpc_args).and_yield(response)
 
       rm = double(Bosh::Director::Api::ResourceManager)
-      rm.should_receive(:get_resource).with('deadbeef').and_return('an exception')
-      rm.should_receive(:delete_resource).with('deadbeef')
-      Bosh::Director::Api::ResourceManager.should_receive(:new).and_return(rm)
+      expect(rm).to receive(:get_resource).with('deadbeef').and_return('an exception')
+      expect(rm).to receive(:delete_resource).with('deadbeef')
+      expect(Bosh::Director::Api::ResourceManager).to receive(:new).and_return(rm)
 
       client = AgentClient.new('foo', 'bar')
       expected_error_message = "test\na\nb\nc\nan exception"
 
-      lambda {
+      expect {
         client.baz(*test_args)
-      }.should raise_exception(Bosh::Director::RpcRemoteException, expected_error_message)
+      }.to raise_exception(Bosh::Director::RpcRemoteException, expected_error_message)
     end
 
     describe 'timeouts/retries' do
       it 'should handle timeouts' do
-        @nats_rpc.should_receive(:send_request).
+        expect(@nats_rpc).to receive(:send_request).
           with('foo.bar', test_rpc_args).and_return('req_id')
-        @nats_rpc.should_receive(:cancel_request).with('req_id')
+        expect(@nats_rpc).to receive(:cancel_request).with('req_id')
 
         client = AgentClient.new('foo', 'bar', timeout: 0.1)
 
-        lambda {
+        expect {
           client.baz(*test_args)
-        }.should raise_exception(Bosh::Director::RpcTimeout)
+        }.to raise_exception(Bosh::Director::RpcTimeout)
       end
 
       it 'should retry only methods in the options list' do
@@ -191,20 +191,20 @@ module Bosh::Director
 
         args = { method: :baz, arguments: [] }
 
-        @nats_rpc.should_receive(:send_request).
+        expect(@nats_rpc).to receive(:send_request).
           with('foo.bar', args).once.and_raise(Bosh::Director::RpcTimeout)
 
         client = AgentClient.new('foo', 'bar', client_opts)
 
-        lambda {
+        expect {
           client.baz
-        }.should raise_exception(Bosh::Director::RpcTimeout)
+        }.to raise_exception(Bosh::Director::RpcTimeout)
       end
 
       it 'should retry methods' do
         args = { method: :baz, arguments: [] }
 
-        @nats_rpc.should_receive(:send_request).
+        expect(@nats_rpc).to receive(:send_request).
           with('foo.bar', args).exactly(2).times.and_raise(Bosh::Director::RpcTimeout)
 
         client_opts = {
@@ -214,15 +214,15 @@ module Bosh::Director
 
         client = AgentClient.new('foo', 'bar', client_opts)
 
-        lambda {
+        expect {
           client.baz
-        }.should raise_exception(Bosh::Director::RpcTimeout)
+        }.to raise_exception(Bosh::Director::RpcTimeout)
       end
 
       it 'should retry only timeout errors' do
         args = { method: :baz, arguments: [] }
 
-        @nats_rpc.should_receive(:send_request).
+        expect(@nats_rpc).to receive(:send_request).
           with('foo.bar', args).once.and_raise(RuntimeError.new('foo'))
 
         client_opts = {
@@ -232,33 +232,33 @@ module Bosh::Director
 
         client = AgentClient.new('foo', 'bar', client_opts)
 
-        lambda {
+        expect {
           client.baz
-        }.should raise_exception(RuntimeError, 'foo')
+        }.to raise_exception(RuntimeError, 'foo')
       end
 
       describe :wait_until_ready do
         let(:client) { AgentClient.new('foo', 'bar', timeout: 0.1) }
 
         it 'should wait for the agent to be ready' do
-          client.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
-          client.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
-          client.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
-          client.should_receive(:ping).and_return(true)
+          expect(client).to receive(:ping).and_raise(Bosh::Director::RpcTimeout)
+          expect(client).to receive(:ping).and_raise(Bosh::Director::RpcTimeout)
+          expect(client).to receive(:ping).and_raise(Bosh::Director::RpcTimeout)
+          expect(client).to receive(:ping).and_return(true)
 
           client.wait_until_ready
         end
 
         it 'should wait for the agent if it is restarting' do
-          client.should_receive(:ping).and_raise(Bosh::Director::RpcRemoteException, 'restarting agent')
-          client.should_receive(:ping).and_raise(Bosh::Director::RpcTimeout)
-          client.should_receive(:ping).and_return(true)
+          expect(client).to receive(:ping).and_raise(Bosh::Director::RpcRemoteException, 'restarting agent')
+          expect(client).to receive(:ping).and_raise(Bosh::Director::RpcTimeout)
+          expect(client).to receive(:ping).and_return(true)
 
           client.wait_until_ready
         end
 
         it 'should raise an exception if there is a remote exception' do
-          client.should_receive(:ping).and_raise(Bosh::Director::RpcRemoteException, 'remote exception')
+          expect(client).to receive(:ping).and_raise(Bosh::Director::RpcRemoteException, 'remote exception')
 
           expect { client.wait_until_ready }.to raise_error(Bosh::Director::RpcRemoteException)
         end
@@ -271,24 +271,24 @@ module Bosh::Director
         client_opts = { timeout: 0.1, :credentials => credentials }
         response = { 'value' => 5 }
 
-        @nats_rpc.should_receive(:send_request) { |*args, &blk|
-          args[0].should == 'foo.bar'
+        expect(@nats_rpc).to receive(:send_request) { |*args, &blk|
+          expect(args[0]).to eq('foo.bar')
           request = args[1]
           data = request['encrypted_data']
 
           handler = Bosh::Core::EncryptionHandler.new('bar', credentials)
 
           message = handler.decrypt(data)
-          message['method'].should == 'baz'
-          message['arguments'].should == [1, 2, 3]
-          message['sequence_number'].to_i.should > Time.now.to_i
-          message['client_id'].should == 'bar'
+          expect(message['method']).to eq('baz')
+          expect(message['arguments']).to eq([1, 2, 3])
+          expect(message['sequence_number'].to_i).to be > Time.now.to_i
+          expect(message['client_id']).to eq('bar')
 
           blk.call('encrypted_data' => handler.encrypt(response))
         }
 
         client = AgentClient.new('foo', 'bar', client_opts)
-        client.baz(1, 2, 3).should == 5
+        expect(client.baz(1, 2, 3)).to eq(5)
       end
     end
 
@@ -302,24 +302,24 @@ module Bosh::Director
           }
         }
 
-        @nats_rpc.should_receive(:send_request).
+        expect(@nats_rpc).to receive(:send_request).
           with('foo.bar', test_rpc_args).and_yield(response)
 
         rm = instance_double('Bosh::Director::Api::ResourceManager')
-        rm.should_receive(:get_resource).with('cafe').and_return('blob')
-        rm.should_receive(:delete_resource).with('cafe')
-        Bosh::Director::Api::ResourceManager.should_receive(:new).and_return(rm)
+        expect(rm).to receive(:get_resource).with('cafe').and_return('blob')
+        expect(rm).to receive(:delete_resource).with('cafe')
+        expect(Bosh::Director::Api::ResourceManager).to receive(:new).and_return(rm)
 
         client = AgentClient.new('foo', 'bar')
         value = client.baz(*test_args)
-        value['result']['compile_log'].should == 'blob'
+        expect(value['result']['compile_log']).to eq('blob')
       end
     end
 
     describe 'formatting RPC remote exceptions' do
       it 'supports old style (String)' do
         client = AgentClient.new('foo', 'bar')
-        client.format_exception('message string').should == 'message string'
+        expect(client.format_exception('message string')).to eq('message string')
       end
 
       it 'supports new style (Hash)' do
@@ -330,15 +330,15 @@ module Bosh::Director
         }
 
         rm = instance_double('Bosh::Director::Api::ResourceManager')
-        Bosh::Director::Api::ResourceManager.stub(:new).and_return(rm)
-        rm.should_receive(:get_resource).with('deadbeef').
+        allow(Bosh::Director::Api::ResourceManager).to receive(:new).and_return(rm)
+        expect(rm).to receive(:get_resource).with('deadbeef').
           and_return("Failed to compile: no such file 'zbb'")
-        rm.should_receive(:delete_resource).with('deadbeef')
+        expect(rm).to receive(:delete_resource).with('deadbeef')
 
         expected_error = "something happened\nin zbb.rb:35\nin zbb.rb:26\nFailed to compile: no such file 'zbb'"
 
         client = AgentClient.new('foo', 'bar')
-        client.format_exception(exception).should == expected_error
+        expect(client.format_exception(exception)).to eq(expected_error)
       end
     end
 

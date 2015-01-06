@@ -8,7 +8,7 @@ module Bosh::Director
 
     subject(:app) { described_class } # "app" is a Rack::Test hook
 
-    before { Api::ResourceManager.stub(:new) }
+    before { allow(Api::ResourceManager).to receive(:new) }
 
     let(:redis) { double('Redis') }
 
