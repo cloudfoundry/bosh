@@ -57,6 +57,7 @@ group :development, :test do
   gem 'simplecov', '~> 0.9.0'
   gem 'codeclimate-test-reporter', require: false
   gem 'vcr'
+  gem 'pry'
 
   # Explicitly do not require serverspec dependency
   # so that it could be monkey patched in a deterministic way
