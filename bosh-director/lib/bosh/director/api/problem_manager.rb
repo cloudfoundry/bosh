@@ -6,10 +6,10 @@ module Bosh::Director
         @deployment_manager = deployment_manager
       end
 
-      def perform_scan(user, deployment_name)
+      def perform_scan(username, deployment_name)
         deployment = @deployment_manager.find_by_name(deployment_name)
 
-        JobQueue.new.enqueue(user, Jobs::CloudCheck::Scan, 'scan cloud', [deployment.name])
+        JobQueue.new.enqueue(username, Jobs::CloudCheck::Scan, 'scan cloud', [deployment.name])
       end
 
       def get_problems(deployment_name)
@@ -23,15 +23,15 @@ module Bosh::Director
         Models::DeploymentProblem.filter(filters).order(:created_at).all
       end
 
-      def apply_resolutions(user, deployment_name, resolutions)
+      def apply_resolutions(username, deployment_name, resolutions)
         deployment = @deployment_manager.find_by_name(deployment_name)
-        JobQueue.new.enqueue(user, Jobs::CloudCheck::ApplyResolutions, 'apply resolutions', [deployment.name, resolutions])
+        JobQueue.new.enqueue(username, Jobs::CloudCheck::ApplyResolutions, 'apply resolutions', [deployment.name, resolutions])
       end
 
-      def scan_and_fix(user, deployment_name, jobs)
+      def scan_and_fix(username, deployment_name, jobs)
         deployment = @deployment_manager.find_by_name(deployment_name)
 
-        JobQueue.new.enqueue(user, Jobs::CloudCheck::ScanAndFix, 'scan and fix', [deployment.name, jobs, Bosh::Director::Config.fix_stateful_nodes])
+        JobQueue.new.enqueue(username, Jobs::CloudCheck::ScanAndFix, 'scan and fix', [deployment.name, jobs, Bosh::Director::Config.fix_stateful_nodes])
       end
     end
   end

@@ -39,7 +39,7 @@ module Bosh::Director
         AgentClient.with_defaults(vm.agent_id)
       end
 
-      def fetch_logs(user, deployment_name, job, index, options = {})
+      def fetch_logs(username, deployment_name, job, index, options = {})
         if deployment_name.nil? || job.nil? || index.nil?
           raise DirectorError,
                 'deployment, job and index parameters are required'
@@ -47,14 +47,14 @@ module Bosh::Director
 
         instance = find_by_name(deployment_name, job, index)
 
-        JobQueue.new.enqueue(user, Jobs::FetchLogs, 'fetch logs', [instance.id, options])
+        JobQueue.new.enqueue(username, Jobs::FetchLogs, 'fetch logs', [instance.id, options])
       end
 
-      def ssh(user, options)
+      def ssh(username, options)
         description = "ssh: #{options['command']}:#{options['target']}"
         deployment = DeploymentLookup.new.by_name(options['deployment_name'])
 
-        JobQueue.new.enqueue(user, Jobs::Ssh, description, [deployment.id, options])
+        JobQueue.new.enqueue(username, Jobs::Ssh, description, [deployment.id, options])
       end
     end
   end
