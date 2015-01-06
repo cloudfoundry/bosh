@@ -3,10 +3,6 @@
 module Bosh::AwsCloud
 
   module Helpers
-    def default_ephemeral_disk_mapping
-      { '/dev/sdb' => 'ephemeral0' }
-    end
-
     ##
     # Raises CloudError exception
     #

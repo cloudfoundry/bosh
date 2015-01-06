@@ -3,13 +3,28 @@ require 'bosh/registry/client'
 
 describe Bosh::AwsCloud::InstanceManager do
   subject(:instance_manager) { described_class.new(region, registry, elb, az_selector, logger) }
-  let(:region) { mock_ec2 }
+  let(:region) do
+    _, region = mock_ec2
+    region
+  end
   let(:registry) { double('Bosh::Registry::Client', :endpoint => 'http://...', :update_settings => nil) }
-  let(:elb) { double('AWS::ELB') }
+  let(:elb) { double('AWS::ELB', load_balancers: nil) }
   let(:az_selector) { instance_double('Bosh::AwsCloud::AvailabilityZoneSelector', common_availability_zone: 'us-east-1a') }
   let(:logger) { Logger.new('/dev/null') }
 
   describe '#create' do
+    subject(:create_instance) do
+      instance_manager.create(
+        agent_id,
+        stemcell_id,
+        resource_pool,
+        networks_spec,
+        disk_locality,
+        environment,
+        instance_options
+      )
+    end
+
     before { allow(region).to receive(:subnets).and_return('sub-123456' => fake_aws_subnet) }
     let(:fake_aws_subnet) { instance_double('AWS::EC2::Subnet').as_null_object }
 
@@ -55,11 +70,32 @@ describe Bosh::AwsCloud::InstanceManager do
     let(:environment) { nil }
     let(:instance_options) { {'aws' => {'region' => 'us-east-1'}} }
 
-    it 'should ask AWS to create an instance in the given region, with parameters built up from the given arguments' do
-      expect(aws_instances).to receive(:create).with(aws_instance_params).and_return(aws_instance)
+    before do
       allow(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: aws_instance, state: :running)
 
-      instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, instance_options)
+      block_devices = [
+        {
+          device_name: 'fake-image-root-device',
+          ebs: {
+            volume_size: 17
+          }
+        }
+      ]
+
+      allow(region).to receive(:images).and_return(
+        {
+          stemcell_id => instance_double('AWS::EC2::Image',
+            block_devices: block_devices,
+            root_device_name: 'fake-image-root-device'
+          )
+        }
+      )
+    end
+
+    it 'should ask AWS to create an instance in the given region, with parameters built up from the given arguments' do
+      expect(aws_instances).to receive(:create).with(aws_instance_params).and_return(aws_instance)
+
+      create_instance
     end
 
     context 'when spot_bid_price is specified' do
@@ -116,7 +152,7 @@ describe Bosh::AwsCloud::InstanceManager do
         expect(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: aws_instance, state: :running)
 
         # Trigger spot instance request
-        instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, instance_options)
+        create_instance
       end
     end
 
@@ -129,7 +165,7 @@ describe Bosh::AwsCloud::InstanceManager do
 
       allow(instance_manager).to receive(:instance_create_wait_time).and_return(0)
 
-      instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, instance_options)
+      create_instance
     end
 
     context 'when waiting it to become running fails' do
@@ -145,7 +181,7 @@ describe Bosh::AwsCloud::InstanceManager do
         expect(instance).to receive(:terminate).with(no_args)
 
         expect {
-          instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, instance_options)
+          create_instance
         }.to raise_error(create_err)
       end
 
@@ -154,7 +190,7 @@ describe Bosh::AwsCloud::InstanceManager do
 
         it 're-raises creation error' do
           expect {
-            instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, instance_options)
+            create_instance
           }.to raise_error(create_err)
         end
       end
@@ -173,7 +209,7 @@ describe Bosh::AwsCloud::InstanceManager do
         expect(instance).to receive(:terminate).with(no_args)
 
         expect {
-          instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, instance_options)
+          create_instance
         }.to raise_error(lb_err)
       end
 
@@ -182,8 +218,58 @@ describe Bosh::AwsCloud::InstanceManager do
 
         it 're-raises creation error' do
           expect {
-            instance_manager.create(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, instance_options)
+            create_instance
           }.to raise_error(lb_err)
+        end
+      end
+    end
+
+    describe 'block_device_mappings' do
+      context 'when ephemeral disk size is specified' do
+        let(:resource_pool) do
+          {
+            'instance_type' => 'm1.small',
+            'key_name' => 'bar',
+            'ephemeral_disk' => {
+              'size' => 5.4,
+              'type' => 'gp2'
+            }
+          }
+        end
+
+        it 'requests ephemeral device of the requested size and type' do
+          allow(aws_instances).to receive(:create) { aws_instance }
+
+          create_instance
+
+          expect(aws_instances).to have_received(:create) do |instance_params|
+            expect(instance_params[:block_device_mappings]).to eq(
+              [
+                {
+                  device_name: '/dev/sdb',
+                  ebs: {
+                    volume_size: 5.4,
+                    volume_type: 'gp2',
+                    delete_on_termination: true,
+                  }
+                }
+              ]
+            )
+          end
+        end
+      end
+
+      context 'when ephemeral disk size is not specified' do
+        it 'requests ephemeral disk slot' do
+          allow(aws_instances).to receive(:create) { aws_instance }
+
+          create_instance
+
+          expect(aws_instances).to have_received(:create) do |instance_params|
+            expect(instance_params[:block_device_mappings]).to eq(
+              { '/dev/sdb' => 'ephemeral0' }
+            )
+          end
         end
       end
     end

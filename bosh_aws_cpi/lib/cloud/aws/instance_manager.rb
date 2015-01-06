@@ -18,8 +18,8 @@ module Bosh::AwsCloud
       instance_params[:image_id] = stemcell_id
       instance_params[:instance_type] = resource_pool["instance_type"]
 
-      # m3 instances require that instance storage mappings be specified when the instance is created... [#84893804]
-      instance_params[:block_device_mappings] = default_ephemeral_disk_mapping
+      ephemeral_disk_options = resource_pool.fetch("ephemeral_disk", {})
+      instance_params[:block_device_mappings] = block_device_mapping(ephemeral_disk_options)
 
       set_user_data_parameter(instance_params, networks_spec)
       set_key_name_parameter(instance_params, resource_pool["key_name"], options["aws"]["default_key_name"])
@@ -124,5 +124,26 @@ module Bosh::AwsCloud
     private
 
     def instance_create_wait_time; 30; end
+
+    def block_device_mapping(ephemeral_disk_options)
+      ephemeral_volume_size = ephemeral_disk_options.fetch('size', 0)
+      ephemeral_volume_type = ephemeral_disk_options.fetch('type', 'standard')
+
+      if ephemeral_volume_size > 0
+        [
+          {
+            device_name: '/dev/sdb',
+            ebs: {
+              volume_size: ephemeral_volume_size,
+              volume_type: ephemeral_volume_type,
+              delete_on_termination: true,
+            },
+          },
+        ]
+      else
+        # m3 instances require that instance storage mappings be specified when the instance is created... [#84893804]
+        { '/dev/sdb' => 'ephemeral0' }
+      end
+    end
   end
 end

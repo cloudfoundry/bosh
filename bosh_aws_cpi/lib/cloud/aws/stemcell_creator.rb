@@ -118,10 +118,7 @@ module Bosh::AwsCloud
 
       params.merge!(
         :name => "BOSH-#{SecureRandom.uuid}",
-        :architecture => architecture,
-        :block_device_mappings => params[:block_device_mappings].merge(
-          default_ephemeral_disk_mapping
-        )
+        :architecture => architecture
       )
 
       params
