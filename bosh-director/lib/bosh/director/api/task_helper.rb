@@ -4,8 +4,7 @@ module Bosh::Director
   module Api
     class TaskHelper
       def create_task(username, type, description)
-        user = Models::User[:username => username]
-        task = Models::Task.create(:user => user,
+        task = Models::Task.create(:username => username,
                                    :type => type,
                                    :description => description,
                                    :state => :queued,
