@@ -104,7 +104,7 @@ module Bosh::Director
           end
 
           context 'when deployments use stemcells' do
-            before { stemcells.each { |s| s.stub(:deployments).and_return([]) } }
+            before { stemcells.each { |s| allow(s).to receive(:deployments).and_return([]) } }
 
             it 'returns a list of stemcells in JSON with no existing deployments' do
               perform

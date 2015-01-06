@@ -27,10 +27,10 @@ module Bosh::Director
 
       context 'when snapshotting succeeds' do
         it 'should snapshot all instances in the deployment' do
-          Api::SnapshotManager.should_receive(:take_snapshot).with(instance1, {})
-          Api::SnapshotManager.should_receive(:take_snapshot).with(instance2, {})
-          Api::SnapshotManager.should_receive(:take_snapshot).with(instance3, {})
-          Api::SnapshotManager.should_not_receive(:take_snapshot).with(instance4, {})
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance1, {})
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance2, {})
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance3, {})
+          expect(Api::SnapshotManager).not_to receive(:take_snapshot).with(instance4, {})
 
           expect(subject.perform).to eq "snapshots of deployment 'deployment' created"
         end
@@ -44,9 +44,9 @@ module Bosh::Director
         end
 
         it 'should be shown in the status message' do
-          Api::SnapshotManager.should_receive(:take_snapshot).with(instance1, {}).and_raise(Bosh::Clouds::CloudError)
-          Api::SnapshotManager.should_receive(:take_snapshot).with(instance2, {})
-          Api::SnapshotManager.should_receive(:take_snapshot).with(instance3, {}).and_raise(Bosh::Clouds::CloudError)
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance1, {}).and_raise(Bosh::Clouds::CloudError)
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance2, {})
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance3, {}).and_raise(Bosh::Clouds::CloudError)
 
           expect(subject.perform).to eq "snapshots of deployment 'deployment' created, with 2 failure(s)"
         end
@@ -60,20 +60,20 @@ module Bosh::Director
             expect(payload['summary']).to include 'CloudError'
           end
 
-          Api::SnapshotManager.should_receive(:take_snapshot).with(instance1, {}).and_raise(exception)
-          Api::SnapshotManager.should_receive(:take_snapshot).with(instance2, {})
-          Api::SnapshotManager.should_receive(:take_snapshot).with(instance3, {})
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance1, {}).and_raise(exception)
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance2, {})
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance3, {})
 
           subject.perform
         end
 
         it 'logs the cause of failure' do
           exception = Bosh::Clouds::CloudError.new('a helpful message')
-          Api::SnapshotManager.should_receive(:take_snapshot).with(instance1, {}).and_raise(exception)
-          Api::SnapshotManager.should_receive(:take_snapshot).with(instance2, {})
-          Api::SnapshotManager.should_receive(:take_snapshot).with(instance3, {})
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance1, {}).and_raise(exception)
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance2, {})
+          expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance3, {})
 
-          Bosh::Director::Config.logger.should_receive(:error) do |message|
+          expect(Bosh::Director::Config.logger).to receive(:error) do |message|
             expect(message).to include("#{instance1.job}/#{instance1.index}")
             expect(message).to include(instance1.vm.cid)
             expect(message).to include('a helpful message')

@@ -37,12 +37,12 @@ module Bosh::Director
     end
 
     before do
-      fake_scheduler.stub(:start)
-      fake_scheduler.stub(:join)
+      allow(fake_scheduler).to receive(:start)
+      allow(fake_scheduler).to receive(:join)
 
-      Config.stub(:uuid).and_return(uuid)
-      Config.stub(:name).and_return(director_name)
-      Config.stub(:enable_snapshots).and_return(true)
+      allow(Config).to receive(:uuid).and_return(uuid)
+      allow(Config).to receive(:name).and_return(director_name)
+      allow(Config).to receive(:enable_snapshots).and_return(true)
     end
 
     module Jobs
@@ -53,23 +53,23 @@ module Bosh::Director
     describe 'scheduling jobs' do
       it 'schedules jobs at the appropriate time' do
         subject = make_subject
-        fake_scheduler.should_receive(:cron).with('0 1 * * *').
+        expect(fake_scheduler).to receive(:cron).with('0 1 * * *').
           and_yield(double('Job', next_time: 'tomorrow'))
 
-        queue.should_receive(:enqueue).with('scheduler', Jobs::FakeJob, 'scheduled FakeJob', params)
+        expect(queue).to receive(:enqueue).with('scheduler', Jobs::FakeJob, 'scheduled FakeJob', params)
 
         subject.start!
       end
 
       it 'do not schedule jobs if scheduled_jobs is nil' do
         subject = make_subject(nil)
-        fake_scheduler.should_not_receive(:cron)
+        expect(fake_scheduler).not_to receive(:cron)
         subject.start!
       end
 
       it 'do not schedule jobs if scheduled_jobs is empty' do
         subject = make_subject([])
-        fake_scheduler.should_not_receive(:cron)
+        expect(fake_scheduler).not_to receive(:cron)
         subject.start!
       end
 

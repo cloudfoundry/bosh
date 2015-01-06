@@ -12,11 +12,11 @@ describe Bosh::Director::EventLog::Log do
     end
 
     events = sent_events
-    events.size.should == 4
-    events.map { |e| e['total'] }.uniq.should == [2]
-    events.map { |e| e['index'] }.should == [1,2,2,1]
-    events.map { |e| e['stage'] }.uniq.should == ['stage1']
-    events.map { |e| e['state'] }.should == ['started', 'started', 'finished', 'finished']
+    expect(events.size).to eq(4)
+    expect(events.map { |e| e['total'] }.uniq).to eq([2])
+    expect(events.map { |e| e['index'] }).to eq([1,2,2,1])
+    expect(events.map { |e| e['stage'] }.uniq).to eq(['stage1'])
+    expect(events.map { |e| e['state'] }).to eq(['started', 'started', 'finished', 'finished'])
   end
 
   it 'supports tracking parallel events without being thread safe' +
@@ -34,11 +34,11 @@ describe Bosh::Director::EventLog::Log do
     threads.each(&:join)
 
     events = sent_events
-    events.size.should == 10
-    events.map { |e| e['total'] }.uniq.should == [5]
-    events.map { |e| e['index'] }.sort.should == [1,1,2,2,3,3,4,4,5,5]
-    events.map { |e| e['stage'] }.uniq.should == ['prepare']
-    events.map { |e| e['state'] }.sort.should == [['finished']*5, ['started']*5].flatten
+    expect(events.size).to eq(10)
+    expect(events.map { |e| e['total'] }.uniq).to eq([5])
+    expect(events.map { |e| e['index'] }.sort).to eq([1,1,2,2,3,3,4,4,5,5])
+    expect(events.map { |e| e['stage'] }.uniq).to eq(['prepare'])
+    expect(events.map { |e| e['state'] }.sort).to eq([['finished']*5, ['started']*5].flatten)
   end
 
   it 'supports tracking parallel events while being thread safe' +
@@ -53,11 +53,11 @@ describe Bosh::Director::EventLog::Log do
     stage2.advance_and_track(:stage2_task2)
 
     events = sent_events
-    events.size.should == 8
-    events.map { |e| e['total'] }.uniq.should == [2]
-    events.map { |e| e['index'] }.should == [1,1,1,1,2,2,2,2]
-    events.map { |e| e['stage'] }.should == ['stage1', 'stage1', 'stage2', 'stage2', 'stage1', 'stage1', 'stage2', 'stage2']
-    events.map { |e| e['state'] }.should == ['started', 'finished', 'started', 'finished', 'started', 'finished', 'started', 'finished']
+    expect(events.size).to eq(8)
+    expect(events.map { |e| e['total'] }.uniq).to eq([2])
+    expect(events.map { |e| e['index'] }).to eq([1,1,1,1,2,2,2,2])
+    expect(events.map { |e| e['stage'] }).to eq(['stage1', 'stage1', 'stage2', 'stage2', 'stage1', 'stage1', 'stage2', 'stage2'])
+    expect(events.map { |e| e['state'] }).to eq(['started', 'finished', 'started', 'finished', 'started', 'finished', 'started', 'finished'])
   end
 
   it 'does not enforce current task index consistency for a stage' do
@@ -67,7 +67,7 @@ describe Bosh::Director::EventLog::Log do
     stage1.advance_and_track(:stage1_task3) # over the total # of stages
 
     events = sent_events
-    events.size.should == 6
+    expect(events.size).to eq(6)
   end
 
   it 'has a default stage of unknown' do

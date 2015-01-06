@@ -8,14 +8,14 @@ module Bosh::Director
     let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
 
     before do
-      JobQueue.stub(:new).and_return(job_queue)
+      allow(JobQueue).to receive(:new).and_return(job_queue)
     end
 
     describe '#fetch_vm_state' do
       it 'enqueues a resque job' do
-        Dir.stub(mktmpdir: 'FAKE_TMPDIR')
+        allow(Dir).to receive_messages(mktmpdir: 'FAKE_TMPDIR')
 
-        job_queue.should_receive(:enqueue).with(
+        expect(job_queue).to receive(:enqueue).with(
           username, Jobs::VmState, 'retrieve vm-stats', [deployment.id, 'FAKE_FORMAT']).and_return(task)
 
         expect(subject.fetch_vm_state(username, deployment, 'FAKE_FORMAT')).to eq(task)

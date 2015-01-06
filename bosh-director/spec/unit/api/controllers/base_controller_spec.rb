@@ -33,7 +33,7 @@ module Bosh::Director
 
       it 'sets the date header' do
         get '/'
-        last_response.headers['Date'].should_not be_nil
+        expect(last_response.headers['Date']).not_to be_nil
       end
     end
   end

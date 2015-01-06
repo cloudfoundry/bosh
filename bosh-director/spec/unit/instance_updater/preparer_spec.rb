@@ -11,7 +11,7 @@ module Bosh::Director
     describe '#prepare' do
       def self.it_does_not_send_prepare
         it 'does not send prepare message to the instance' do
-          agent_client.should_not_receive(:prepare)
+          expect(agent_client).not_to receive(:prepare)
           preparer.prepare
         end
       end
@@ -21,15 +21,15 @@ module Bosh::Director
 
         context "when state of the instance is not 'detached'" do
           before { allow(instance).to receive(:state).with(no_args).and_return('not-detached') }
-          before { instance.stub(spec: 'fake-spec') }
+          before { allow(instance).to receive_messages(spec: 'fake-spec') }
 
           it 'sends prepare message to the instance' do
-            agent_client.should_receive(:prepare).with('fake-spec')
+            expect(agent_client).to receive(:prepare).with('fake-spec')
             preparer.prepare
           end
 
           context "and agent responds to 'prepare' message successfully" do
-            before { agent_client.stub(:prepare).and_return(valid_response_for_prepare) }
+            before { allow(agent_client).to receive(:prepare).and_return(valid_response_for_prepare) }
             let(:valid_response_for_prepare) { {} }
 
             it 'does not raise an error' do
@@ -37,7 +37,7 @@ module Bosh::Director
             end
 
             context 'and agent responds with an error' do
-              before { agent_client.stub(:prepare).and_raise(error) }
+              before { allow(agent_client).to receive(:prepare).and_raise(error) }
               let(:error) { RpcRemoteException.new('fake-agent-error') }
 
               it 'does not propagate the error because all errors from prepare are ignored' do
@@ -47,7 +47,7 @@ module Bosh::Director
           end
 
           context "when agent does not know how to respond to 'prepare'" do
-            before { agent_client.stub(:prepare).and_raise(error) }
+            before { allow(agent_client).to receive(:prepare).and_raise(error) }
             let(:error) { RpcRemoteException.new('unknown message {"method"=>"prepare", "blah"=>"blah"}') }
 
             it 'tolerates the error since prepare message is an optimization and old agents might not know it' do

@@ -41,19 +41,19 @@ module Bosh::Director
 
       it 'requires auth' do
         get '/'
-        last_response.status.should == 401
+        expect(last_response.status).to eq(401)
       end
 
       it 'sets the date header' do
         get '/'
-        last_response.headers['Date'].should_not be_nil
+        expect(last_response.headers['Date']).not_to be_nil
       end
 
       it 'allows Basic HTTP Auth with admin/admin credentials for ' +
            "test purposes (even though user doesn't exist)" do
         basic_authorize 'admin', 'admin'
         get '/'
-        last_response.status.should == 404
+        expect(last_response.status).to eq(404)
       end
 
       describe 'API calls' do
@@ -87,7 +87,7 @@ module Bosh::Director
                 Dir.mktmpdir do |temp|
                   backup_file = File.join(temp, 'backup.tgz')
                   FileUtils.touch(backup_file)
-                  BackupManager.any_instance.stub(destination_path: backup_file)
+                  allow_any_instance_of(BackupManager).to receive_messages(destination_path: backup_file)
 
                   get '/'
                   expect(last_response.status).to eq 200

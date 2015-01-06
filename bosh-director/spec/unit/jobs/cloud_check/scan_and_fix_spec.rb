@@ -35,19 +35,19 @@ module Bosh::Director
       let(:jobs) { [['job1', 0], ['job1', 1], ['job2', 1]] }
 
       it 'filters out jobs with persistent disks' do
-        scan_and_fix.filtered_jobs.should == [['job1', 0], ['job1', 1]]
+        expect(scan_and_fix.filtered_jobs).to eq([['job1', 0], ['job1', 1]])
       end
 
       it 'should call the problem scanner with the filtered list of jobs' do
         filtered_jobs = [['job1', 0], ['job1', 1]]
         resolver = instance_double('Bosh::Director::ProblemResolver').as_null_object
-        ProblemResolver.should_receive(:new).with(deployment).and_return(resolver)
-        scan_and_fix.stub(:with_deployment_lock).and_yield
+        expect(ProblemResolver).to receive(:new).with(deployment).and_return(resolver)
+        allow(scan_and_fix).to receive(:with_deployment_lock).and_yield
 
         scanner = instance_double('Bosh::Director::ProblemScanner::Scanner')
-        ProblemScanner::Scanner.should_receive(:new).and_return(scanner)
-        scanner.should_receive(:reset).with(filtered_jobs)
-        scanner.should_receive(:scan_vms).with(filtered_jobs)
+        expect(ProblemScanner::Scanner).to receive(:new).and_return(scanner)
+        expect(scanner).to receive(:reset).with(filtered_jobs)
+        expect(scanner).to receive(:scan_vms).with(filtered_jobs)
 
         scan_and_fix.perform
       end
@@ -57,18 +57,18 @@ module Bosh::Director
       let(:fix_stateful_jobs) { true }
 
       it 'filters out nothing' do
-        scan_and_fix.filtered_jobs.should == jobs
+        expect(scan_and_fix.filtered_jobs).to eq(jobs)
       end
 
       it 'should call the problem scanner with all of the jobs' do
         resolver = instance_double('Bosh::Director::ProblemResolver').as_null_object
-        ProblemResolver.should_receive(:new).with(deployment).and_return(resolver)
-        scan_and_fix.stub(:with_deployment_lock).and_yield
+        expect(ProblemResolver).to receive(:new).with(deployment).and_return(resolver)
+        allow(scan_and_fix).to receive(:with_deployment_lock).and_yield
 
         scanner = instance_double('Bosh::Director::ProblemScanner::Scanner')
-        ProblemScanner::Scanner.should_receive(:new).and_return(scanner)
-        scanner.should_receive(:reset).with(jobs)
-        scanner.should_receive(:scan_vms).with(jobs)
+        expect(ProblemScanner::Scanner).to receive(:new).and_return(scanner)
+        expect(scanner).to receive(:reset).with(jobs)
+        expect(scanner).to receive(:scan_vms).with(jobs)
 
         scan_and_fix.perform
       end
@@ -76,18 +76,18 @@ module Bosh::Director
 
     it 'should call the problem resolver' do
       scanner = instance_double('Bosh::Director::ProblemScanner::Scanner').as_null_object
-      ProblemScanner::Scanner.stub(new: scanner)
-      scan_and_fix.stub(:with_deployment_lock).and_yield
+      allow(ProblemScanner::Scanner).to receive_messages(new: scanner)
+      allow(scan_and_fix).to receive(:with_deployment_lock).and_yield
 
       resolver = instance_double('Bosh::Director::ProblemResolver')
-      ProblemResolver.should_receive(:new).and_return(resolver)
-      resolver.should_receive(:apply_resolutions).with(resolutions)
+      expect(ProblemResolver).to receive(:new).and_return(resolver)
+      expect(resolver).to receive(:apply_resolutions).with(resolutions)
 
       scan_and_fix.perform
     end
 
     it 'should create a list of resolutions' do
-      scan_and_fix.resolutions(jobs).should == resolutions
+      expect(scan_and_fix.resolutions(jobs)).to eq(resolutions)
     end
 
     it 'should not recreate vms with resurrection_paused turned on' do
@@ -99,7 +99,7 @@ module Bosh::Director
       missing_vm_instance.resurrection_paused = true
       missing_vm_instance.save
 
-      scan_and_fix.resolutions(jobs).should be_empty
+      expect(scan_and_fix.resolutions(jobs)).to be_empty
     end
   end
 end

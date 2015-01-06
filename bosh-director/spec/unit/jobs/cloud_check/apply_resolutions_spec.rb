@@ -6,7 +6,7 @@ module Bosh::Director
   describe Jobs::CloudCheck::ApplyResolutions do
     before do
       Models::Deployment.make(name: 'deployment')
-      ProblemResolver.stub(new: resolver)
+      allow(ProblemResolver).to receive_messages(new: resolver)
     end
 
     describe 'Resque job class expectations' do
@@ -21,27 +21,27 @@ module Bosh::Director
     let(:deployment) { Models::Deployment[1] }
 
     it 'should normalize the problem ids' do
-      job.stub(:with_deployment_lock).and_yield
+      allow(job).to receive(:with_deployment_lock).and_yield
 
-      resolver.should_receive(:apply_resolutions).with(normalized_resolutions)
+      expect(resolver).to receive(:apply_resolutions).with(normalized_resolutions)
 
       job.perform
     end
 
     it 'obtains a deployment lock' do
-      job.should_receive(:with_deployment_lock).with(deployment).and_yield
+      expect(job).to receive(:with_deployment_lock).with(deployment).and_yield
 
-      resolver.stub(:apply_resolutions)
+      allow(resolver).to receive(:apply_resolutions)
 
       job.perform
     end
 
     it 'applies the resolutions' do
-      job.stub(:with_deployment_lock).and_yield
+      allow(job).to receive(:with_deployment_lock).and_yield
 
-      resolver.should_receive(:apply_resolutions).and_return(1)
+      expect(resolver).to receive(:apply_resolutions).and_return(1)
 
-      job.perform.should == '1 resolved'
+      expect(job.perform).to eq('1 resolved')
     end
   end
 end

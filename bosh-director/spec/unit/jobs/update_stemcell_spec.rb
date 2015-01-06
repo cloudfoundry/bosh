@@ -13,7 +13,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     after { FileUtils.rm_rf(tmp_dir) }
 
     let(:cloud) { instance_double('Bosh::Cloud') }
-    before { Bosh::Director::Config.stub(:cloud).and_return(cloud) }
+    before { allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud) }
     # Bosh::Director::Config.stub(:base_dir).and_return(tmp_dir)
 
     before do
@@ -24,7 +24,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     after { FileUtils.rm_rf(@stemcell_file.path) }
 
     it "should upload a local stemcell" do
-      cloud.should_receive(:create_stemcell).with(anything, {"ram" => "2gb"}) do |image, _|
+      expect(cloud).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}) do |image, _|
         contents = File.open(image) { |f| f.read }
         expect(contents).to eq("image contents")
         "stemcell-cid"
@@ -34,15 +34,15 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       update_stemcell_job.perform
 
       stemcell = Bosh::Director::Models::Stemcell.find(:name => "jeos", :version => "5")
-      stemcell.should_not be_nil
-      stemcell.cid.should == "stemcell-cid"
-      stemcell.sha1.should == "shawone"
+      expect(stemcell).not_to be_nil
+      expect(stemcell.cid).to eq("stemcell-cid")
+      expect(stemcell.sha1).to eq("shawone")
     end
 
     it "should upload a remote stemcell" do
-      cloud.should_receive(:create_stemcell).with(anything, {"ram" => "2gb"}) do |image, _|
+      expect(cloud).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}) do |image, _|
         contents = File.open(image) { |f| f.read }
-        contents.should eql("image contents")
+        expect(contents).to eql("image contents")
         "stemcell-cid"
       end
 
@@ -55,22 +55,22 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       update_stemcell_job.perform
 
       stemcell = Bosh::Director::Models::Stemcell.find(:name => "jeos", :version => "5")
-      stemcell.should_not be_nil
-      stemcell.cid.should == "stemcell-cid"
-      stemcell.sha1.should == "shawone"
+      expect(stemcell).not_to be_nil
+      expect(stemcell.cid).to eq("stemcell-cid")
+      expect(stemcell.sha1).to eq("shawone")
     end
 
     it "should cleanup the stemcell file" do
-      cloud.should_receive(:create_stemcell).with(anything, {"ram" => "2gb"}) do |image, _|
+      expect(cloud).to receive(:create_stemcell).with(anything, {"ram" => "2gb"}) do |image, _|
         contents = File.open(image) { |f| f.read }
-        contents.should eql("image contents")
+        expect(contents).to eql("image contents")
         "stemcell-cid"
       end
 
       update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
       update_stemcell_job.perform
 
-      File.exist?(@stemcell_file.path).should be(false)
+      expect(File.exist?(@stemcell_file.path)).to be(false)
     end
 
     it "should fail if the stemcell exists" do
@@ -78,12 +78,12 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
       update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
 
-      lambda { update_stemcell_job.perform }.should raise_exception(Bosh::Director::StemcellAlreadyExists)
+      expect { update_stemcell_job.perform }.to raise_exception(Bosh::Director::StemcellAlreadyExists)
     end
 
     it "should fail if cannot extract stemcell" do
       result = Bosh::Exec::Result.new("cmd", "output", 1)
-      Bosh::Exec.should_receive(:sh).and_return(result)
+      expect(Bosh::Exec).to receive(:sh).and_return(result)
 
       update_stemcell_job = Bosh::Director::Jobs::UpdateStemcell.new(@stemcell_file.path)
 

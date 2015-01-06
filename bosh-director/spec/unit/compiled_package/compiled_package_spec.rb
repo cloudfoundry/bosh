@@ -17,12 +17,35 @@ module Bosh::Director::CompiledPackage
 
     let(:sha1) { 'bbb84ce3e4aff2fd0ad5b7b5175e63f0ae64aa27' }
 
-    its(:package_name) { should eq 'test-package1' }
-    its(:package_fingerprint) { should eq 'test-package-fingerprint' }
-    its(:sha1) { should eq 'bbb84ce3e4aff2fd0ad5b7b5175e63f0ae64aa27' }
-    its(:stemcell_sha1) { should eq 'test-stemcell-sha1' }
-    its(:blobstore_id) { should eq 'test-blobstore-id' }
-    its(:blob_path) { should eq asset('foobar.gz') }
+    describe '#package_name' do
+      subject { super().package_name }
+      it { is_expected.to eq 'test-package1' }
+    end
+
+    describe '#package_fingerprint' do
+      subject { super().package_fingerprint }
+      it { is_expected.to eq 'test-package-fingerprint' }
+    end
+
+    describe '#sha1' do
+      subject { super().sha1 }
+      it { is_expected.to eq 'bbb84ce3e4aff2fd0ad5b7b5175e63f0ae64aa27' }
+    end
+
+    describe '#stemcell_sha1' do
+      subject { super().stemcell_sha1 }
+      it { is_expected.to eq 'test-stemcell-sha1' }
+    end
+
+    describe '#blobstore_id' do
+      subject { super().blobstore_id }
+      it { is_expected.to eq 'test-blobstore-id' }
+    end
+
+    describe '#blob_path' do
+      subject { super().blob_path }
+      it { is_expected.to eq asset('foobar.gz') }
+    end
 
     describe '#check_blob_sha' do
       context 'SHA1 of blob_path does NOT match the SHA1 in compiled_package' do

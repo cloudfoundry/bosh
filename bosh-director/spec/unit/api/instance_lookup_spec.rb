@@ -9,14 +9,14 @@ module Bosh::Director
       subject(:instance_lookup) { InstanceLookup.new }
 
       before do
-        DeploymentLookup.stub(new: deployment_lookup)
+        allow(DeploymentLookup).to receive_messages(new: deployment_lookup)
       end
 
       describe '.by_id' do
         let(:instance_id) { 5 }
 
         before do
-          Models::Instance.stub(:[]).and_return(instance)
+          allow(Models::Instance).to receive(:[]).and_return(instance)
         end
 
         it 'finds instance for id' do
@@ -41,8 +41,8 @@ module Bosh::Director
         let(:filter_attributes) { { deployment_id: deployment.id, job: job_name, index: job_index } }
 
         before do
-          Models::Instance.stub(:find).with(filter_attributes).and_return(instance)
-          deployment_lookup.stub(:by_name).with(deployment.name).and_return(deployment)
+          allow(Models::Instance).to receive(:find).with(filter_attributes).and_return(instance)
+          allow(deployment_lookup).to receive(:by_name).with(deployment.name).and_return(deployment)
         end
 
         it 'finds instance based on attribute vector' do
@@ -62,10 +62,10 @@ module Bosh::Director
         context 'when attributes are are empty strings' do
           let(:filter_attributes) { { deployment_id: anything, job: '', index: '' } }
           before do
-            Models::Instance.stub(:find).and_return(instance)
-            Models::Instance.stub(:find).with(filter_attributes).and_raise(PG::Error, 'ERROR: invalid input syntax for integer: ""')
+            allow(Models::Instance).to receive(:find).and_return(instance)
+            allow(Models::Instance).to receive(:find).with(filter_attributes).and_raise(PG::Error, 'ERROR: invalid input syntax for integer: ""')
 
-            deployment_lookup.stub(:by_name).with('').and_return(deployment)
+            allow(deployment_lookup).to receive(:by_name).with('').and_return(deployment)
           end
 
           it 'does not raise' do
@@ -79,7 +79,7 @@ module Bosh::Director
         let(:filter) { { id: 5 } }
 
         before do
-          Models::Instance.stub(:filter).with(filter).and_return(double('Dataset', all: instances))
+          allow(Models::Instance).to receive(:filter).with(filter).and_return(double('Dataset', all: instances))
         end
 
         it 'finds only instances that match sql filter' do
@@ -101,7 +101,7 @@ module Bosh::Director
         let(:instances) { [instance] }
 
         before do
-          Models::Instance.stub(all: instances)
+          allow(Models::Instance).to receive_messages(all: instances)
         end
 
         it 'pulls all instances' do

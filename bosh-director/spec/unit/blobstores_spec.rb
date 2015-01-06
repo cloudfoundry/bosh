@@ -5,13 +5,13 @@ module Bosh::Director
     subject(:blobstores) { described_class.new(config) }
     let(:config) { Config.load_file(asset('test-director-config.yml')) }
 
-    before { Bosh::Blobstore::Client.stub(:safe_create) }
+    before { allow(Bosh::Blobstore::Client).to receive(:safe_create) }
 
     describe '#blobstore' do
       it 'provides the blobstore client' do
         blobstore_client = double('fake-blobstore-client')
-        Bosh::Blobstore::Client
-          .should_receive(:safe_create)
+        expect(Bosh::Blobstore::Client)
+          .to receive(:safe_create)
           .with('simple', {
             'endpoint' => 'http://127.0.0.1',
             'user'     => 'admin',
@@ -25,8 +25,8 @@ module Bosh::Director
     describe '#backup_destination' do
       it 'provides the blobstore client' do
         blobstore_client = double('fake-blobstore-client')
-        Bosh::Blobstore::Client
-          .should_receive(:safe_create)
+        expect(Bosh::Blobstore::Client)
+          .to receive(:safe_create)
           .with('s3', {
             'bucket_name' => 'foo',
             'access_key_id' => 'asdf',

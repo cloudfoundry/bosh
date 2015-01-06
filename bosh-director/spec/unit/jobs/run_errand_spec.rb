@@ -5,7 +5,7 @@ module Bosh::Director
     subject(:job) { described_class.new('fake-dep-name', 'fake-errand-name', keep_alive) }
     let(:keep_alive) { false }
 
-    before { App.stub_chain(:instance, :blobstores, :blobstore).with(no_args).and_return(blobstore) }
+    before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
     describe 'Resque job class expectations' do

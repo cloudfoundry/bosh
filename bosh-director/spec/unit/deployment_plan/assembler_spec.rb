@@ -342,19 +342,19 @@ module Bosh::Director
 
           foo_reservation = nil
           expect(foo_network).to receive(:reserve) do |reservation|
-            reservation.ip.should == NetAddr::CIDR.create('1.2.3.4').to_i
+            expect(reservation.ip).to eq(NetAddr::CIDR.create('1.2.3.4').to_i)
             reservation.reserved = true
             foo_reservation = reservation
             true
           end
 
           expect(bar_network).to receive(:reserve) do |reservation|
-            reservation.ip.should == NetAddr::CIDR.create('10.20.30.40').to_i
+            expect(reservation.ip).to eq(NetAddr::CIDR.create('10.20.30.40').to_i)
             reservation.reserved = false
             false
           end
 
-          assembler.get_network_reservations(
+          expect(assembler.get_network_reservations(
             'networks' => {
               'foo' => {
                 'ip' => '1.2.3.4'
@@ -363,7 +363,7 @@ module Bosh::Director
                 'ip' => '10.20.30.40'
               }
             }
-          ).should == { 'foo' => foo_reservation }
+          )).to eq({ 'foo' => foo_reservation })
         end
       end
 
@@ -380,7 +380,7 @@ module Bosh::Director
           expect(assembler).to receive(:migrate_legacy_state).
             with(vm_model, state)
 
-          assembler.get_state(vm_model).should eq(state)
+          expect(assembler.get_state(vm_model)).to eq(state)
         end
 
         context 'when the returned state contains top level "release" key' do
@@ -396,7 +396,7 @@ module Bosh::Director
             allow(assembler).to receive(:verify_state).with(vm_model, legacy_state)
             allow(assembler).to receive(:migrate_legacy_state).with(vm_model, legacy_state)
 
-            assembler.get_state(vm_model).should eq(final_state)
+            expect(assembler.get_state(vm_model)).to eq(final_state)
           end
 
           context 'and the returned state contains a job level release' do
@@ -420,7 +420,7 @@ module Bosh::Director
               allow(assembler).to receive(:verify_state).with(vm_model, legacy_state)
               allow(assembler).to receive(:migrate_legacy_state).with(vm_model, legacy_state)
 
-              assembler.get_state(vm_model).should eq(final_state)
+              expect(assembler.get_state(vm_model)).to eq(final_state)
             end
           end
 
@@ -444,7 +444,7 @@ module Bosh::Director
               allow(assembler).to receive(:verify_state).with(vm_model, legacy_state)
               allow(assembler).to receive(:migrate_legacy_state).with(vm_model, legacy_state)
 
-              assembler.get_state(vm_model).should eq(final_state)
+              expect(assembler.get_state(vm_model)).to eq(final_state)
             end
           end
         end
@@ -476,7 +476,7 @@ module Bosh::Director
               allow(assembler).to receive(:verify_state).with(vm_model, legacy_state)
               allow(assembler).to receive(:migrate_legacy_state).with(vm_model, legacy_state)
 
-              assembler.get_state(vm_model).should eq(final_state)
+              expect(assembler.get_state(vm_model)).to eq(final_state)
             end
           end
 
@@ -500,7 +500,7 @@ module Bosh::Director
               allow(assembler).to receive(:verify_state).with(vm_model, legacy_state)
               allow(assembler).to receive(:migrate_legacy_state).with(vm_model, legacy_state)
 
-              assembler.get_state(vm_model).should eq(final_state)
+              expect(assembler.get_state(vm_model)).to eq(final_state)
             end
           end
         end
@@ -535,46 +535,46 @@ module Bosh::Director
           Models::Instance.make(
             :deployment => other_deployment, :vm => @vm_model, :job => 'bar',
             :index => 11)
-          lambda {
+          expect {
             assembler.verify_state(@vm_model, {
               'deployment' => 'foo',
               'job' => { 'name' => 'bar' },
               'index' => 11
             })
-          }.should raise_error(VmInstanceOutOfSync,
+          }.to raise_error(VmInstanceOutOfSync,
                                "VM `foo' and instance `bar/11' " +
                                  "don't belong to the same deployment")
         end
 
         it 'should make sure the state is a Hash' do
-          lambda {
+          expect {
             assembler.verify_state(@vm_model, 'state')
-          }.should raise_error(AgentInvalidStateFormat, /expected Hash/)
+          }.to raise_error(AgentInvalidStateFormat, /expected Hash/)
         end
 
         it 'should make sure the deployment name is correct' do
-          lambda {
+          expect {
             assembler.verify_state(@vm_model, { 'deployment' => 'foz' })
-          }.should raise_error(AgentWrongDeployment,
+          }.to raise_error(AgentWrongDeployment,
                                "VM `foo' is out of sync: expected to be a part " +
                                  "of deployment `foo' but is actually a part " +
                                  "of deployment `foz'")
         end
 
         it 'should make sure the job and index exist' do
-          lambda {
+          expect {
             assembler.verify_state(@vm_model, {
               'deployment' => 'foo',
               'job' => { 'name' => 'bar' },
               'index' => 11
             })
-          }.should raise_error(AgentUnexpectedJob,
+          }.to raise_error(AgentUnexpectedJob,
                                "VM `foo' is out of sync: it reports itself as " +
                                  "`bar/11' but there is no instance reference in DB")
         end
 
         it 'should make sure the job and index are correct' do
-          lambda {
+          expect {
             allow(deployment_plan).to receive(:job_rename).and_return({})
             allow(deployment_plan).to receive(:rename_in_progress?).and_return(false)
             Models::Instance.make(
@@ -584,7 +584,7 @@ module Bosh::Director
               'job' => { 'name' => 'bar' },
               'index' => 22
             })
-          }.should raise_error(AgentJobMismatch,
+          }.to raise_error(AgentJobMismatch,
                                "VM `foo' is out of sync: it reports itself as " +
                                  "`bar/22' but according to DB it is `bar/11'")
         end
@@ -662,12 +662,12 @@ module Bosh::Director
           expect(cloud).to receive(:delete_vm).with('vm-cid')
           assembler.delete_unneeded_vms
 
-          Models::Vm[vm_model.id].should be_nil
+          expect(Models::Vm[vm_model.id]).to be_nil
           check_event_log do |events|
-            events.size.should == 2
-            events.map { |e| e['stage'] }.uniq.should == ['Deleting unneeded VMs']
-            events.map { |e| e['total'] }.uniq.should == [1]
-            events.map { |e| e['task'] }.uniq.should == %w(vm-cid)
+            expect(events.size).to eq(2)
+            expect(events.map { |e| e['stage'] }.uniq).to eq(['Deleting unneeded VMs'])
+            expect(events.map { |e| e['total'] }.uniq).to eq([1])
+            expect(events.map { |e| e['task'] }.uniq).to eq(%w(vm-cid))
           end
         end
       end

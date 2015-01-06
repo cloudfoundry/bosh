@@ -7,7 +7,7 @@ module Bosh::Director
       @other_deployment = Models::Deployment.make(name: 'othercloud')
 
       @cloud = instance_double('Bosh::Cloud')
-      Config.stub(:cloud).and_return(@cloud)
+      allow(Config).to receive(:cloud).and_return(@cloud)
     end
 
     def make_job(deployment)
@@ -26,12 +26,12 @@ module Bosh::Director
       problems = []
 
       agent = double('agent')
-      agent.should_receive(:list_disk).and_return([])
+      expect(agent).to receive(:list_disk).and_return([])
 
-      @cloud.should_receive(:detach_disk).exactly(1).times
-      @cloud.should_receive(:delete_disk).exactly(1).times
+      expect(@cloud).to receive(:detach_disk).exactly(1).times
+      expect(@cloud).to receive(:delete_disk).exactly(1).times
 
-      AgentClient.stub(:with_defaults).and_return(agent)
+      allow(AgentClient).to receive(:with_defaults).and_return(agent)
 
       2.times do
         disk = Models::PersistentDisk.make(:active => false)
@@ -41,12 +41,12 @@ module Bosh::Director
 
       job = make_job(@deployment)
 
-      job.apply_resolutions({ problems[0].id.to_s => 'delete_disk', problems[1].id.to_s => 'ignore' }).should == 2
+      expect(job.apply_resolutions({ problems[0].id.to_s => 'delete_disk', problems[1].id.to_s => 'ignore' })).to eq(2)
 
-      Models::PersistentDisk.find(id: disks[0].id).should be_nil
-      Models::PersistentDisk.find(id: disks[1].id).should_not be_nil
+      expect(Models::PersistentDisk.find(id: disks[0].id)).to be_nil
+      expect(Models::PersistentDisk.find(id: disks[1].id)).not_to be_nil
 
-      Models::DeploymentProblem.filter(state: 'open').count.should == 0
+      expect(Models::DeploymentProblem.filter(state: 'open').count).to eq(0)
     end
 
     it 'notices and logs extra resolutions' do
@@ -59,12 +59,12 @@ module Bosh::Director
       ]
 
       job1 = make_job(@deployment)
-      job1.apply_resolutions({ problems[0].id.to_s => 'ignore', problems[1].id.to_s => 'ignore' }).should == 2
+      expect(job1.apply_resolutions({ problems[0].id.to_s => 'ignore', problems[1].id.to_s => 'ignore' })).to eq(2)
 
       job2 = make_job(@deployment)
 
       messages = []
-      job2.should_receive(:track_and_log).exactly(3).times { |message| messages << message }
+      expect(job2).to receive(:track_and_log).exactly(3).times { |message| messages << message }
       job2.apply_resolutions({
                                problems[0].id.to_s => 'ignore',
                                problems[1].id.to_s => 'ignore',
@@ -73,11 +73,11 @@ module Bosh::Director
                                '318' => 'do_stuff'
                              })
 
-      messages.should =~ [
+      expect(messages).to match_array([
         "Ignoring problem #{problems[0].id} (state is 'resolved')",
         "Ignoring problem #{problems[1].id} (state is 'resolved')",
         "Ignoring problem #{problems[2].id} (not a part of this deployment)",
-      ]
+      ])
     end
   end
 end

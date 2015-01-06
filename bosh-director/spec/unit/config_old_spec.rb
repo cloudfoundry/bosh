@@ -13,13 +13,13 @@ describe Bosh::Director::Config do
       test_config["max_tasks"] = 10
       described_class.configure(test_config)
 
-      described_class.max_tasks.should == 10
+      expect(described_class.max_tasks).to eq(10)
     end
 
     it "sets a default" do
       described_class.configure(test_config)
 
-      described_class.max_tasks.should == 500
+      expect(described_class.max_tasks).to eq(500)
     end
   end
 
@@ -28,13 +28,13 @@ describe Bosh::Director::Config do
       test_config["max_threads"] = 10
       described_class.configure(test_config)
 
-      described_class.max_threads.should == 10
+      expect(described_class.max_threads).to eq(10)
     end
 
     it "sets a default" do
       described_class.configure(test_config)
 
-      described_class.max_threads.should == 32
+      expect(described_class.max_threads).to eq(32)
     end
   end
 
@@ -43,18 +43,18 @@ describe Bosh::Director::Config do
       test_config["scan_and_fix"]["auto_fix_stateful_nodes"] = true
       described_class.configure(test_config)
 
-      described_class.fix_stateful_nodes.should == true
+      expect(described_class.fix_stateful_nodes).to eq(true)
     end
 
     it "sets a default" do
       test_config["scan_and_fix"].delete("auto_fix_stateful_nodes")
 
       described_class.configure(test_config)
-      described_class.fix_stateful_nodes.should == false
+      expect(described_class.fix_stateful_nodes).to eq(false)
 
       test_config.delete("scan_and_fix")
       described_class.configure(test_config)
-      described_class.fix_stateful_nodes.should == false
+      expect(described_class.fix_stateful_nodes).to eq(false)
     end
   end
 
@@ -63,13 +63,13 @@ describe Bosh::Director::Config do
       test_config["snapshots"]["enabled"] = true
       described_class.configure(test_config)
 
-      described_class.enable_snapshots.should == true
+      expect(described_class.enable_snapshots).to eq(true)
     end
 
     it "sets a default" do
       described_class.configure(test_config)
 
-      described_class.enable_snapshots.should == false
+      expect(described_class.enable_snapshots).to eq(false)
     end
   end
 
@@ -80,12 +80,12 @@ describe Bosh::Director::Config do
       end
 
       it "uses package cache" do
-        described_class.use_compiled_package_cache?.should be(true)
+        expect(described_class.use_compiled_package_cache?).to be(true)
       end
 
       it "returns a compiled package cache blobstore" do
-        Bosh::Blobstore::Client
-          .should_receive(:safe_create)
+        expect(Bosh::Blobstore::Client)
+          .to receive(:safe_create)
           .with('local', 'blobstore_path' => '/path/to/some/bucket')
         described_class.compiled_package_cache_blobstore
       end
@@ -96,12 +96,12 @@ describe Bosh::Director::Config do
 
       it "returns false for use_compiled_package_cache?" do
         described_class.configure(test_config)
-        described_class.use_compiled_package_cache?.should be(false)
+        expect(described_class.use_compiled_package_cache?).to be(false)
       end
 
       it "returns nil for compiled_package_cache" do
         described_class.configure(test_config)
-        described_class.compiled_package_cache_blobstore.should be_nil
+        expect(described_class.compiled_package_cache_blobstore).to be_nil
       end
     end
   end
@@ -119,7 +119,7 @@ describe Bosh::Director::Config do
     let(:database_connection) { double('Database Connection').as_null_object }
 
     before do
-      Sequel.stub(:connect).and_return(database_connection)
+      allow(Sequel).to receive(:connect).and_return(database_connection)
     end
 
     it "configures a new database connection" do
@@ -127,10 +127,10 @@ describe Bosh::Director::Config do
     end
 
     it "patches sequel for the sqlite adapter" do
-      described_class.should_receive(:patch_sqlite)
+      expect(described_class).to receive(:patch_sqlite)
       described_class.configure_db(database_options)
 
-      described_class.should_not_receive(:patch_sqlite)
+      expect(described_class).not_to receive(:patch_sqlite)
       described_class.configure_db(database_options.merge('adapter' => 'postgres'))
     end
 
@@ -139,31 +139,31 @@ describe Bosh::Director::Config do
           'adapter' => 'sqlite',
           'max_connections' => 32
       }
-      Sequel.should_receive(:connect).with(expected_options).and_return(database_connection)
+      expect(Sequel).to receive(:connect).with(expected_options).and_return(database_connection)
       described_class.configure_db(database_options)
     end
 
     it "ignores empty and nil options" do
-      Sequel.should_receive(:connect).with('baz' => 'baz').and_return(database_connection)
+      expect(Sequel).to receive(:connect).with('baz' => 'baz').and_return(database_connection)
       described_class.configure_db('foo' => nil, 'bar' => '', 'baz' => 'baz')
     end
 
     context "when logger is available" do
       it "sets the database logger" do
-        database_connection.should_receive(:logger=)
-        database_connection.should_receive(:sql_log_level=)
+        expect(database_connection).to receive(:logger=)
+        expect(database_connection).to receive(:sql_log_level=)
         described_class.configure_db(database_options)
       end
     end
 
     context "when logger is unavailable" do
       before do
-        described_class.stub(:logger).and_return(nil)
+        allow(described_class).to receive(:logger).and_return(nil)
       end
 
       it "does not sets the database logger" do
-        database_connection.should_not_receive(:logger=)
-        database_connection.should_not_receive(:sql_log_level=)
+        expect(database_connection).not_to receive(:logger=)
+        expect(database_connection).not_to receive(:sql_log_level=)
         described_class.configure_db(database_options)
       end
     end

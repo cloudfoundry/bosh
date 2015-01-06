@@ -16,15 +16,15 @@ module Bosh::Director
       let(:task2) { instance_double('Bosh::Director::Models::Task', id: 44) }
 
       it 'creates snapshot tasks for each deployment' do
-        snapshot_manager.should_receive(:create_deployment_snapshot_task).with('scheduler', deployments[0]).and_return(task1)
-        snapshot_manager.should_receive(:create_deployment_snapshot_task).with('scheduler', deployments[1]).and_return(task2)
+        expect(snapshot_manager).to receive(:create_deployment_snapshot_task).with('scheduler', deployments[0]).and_return(task1)
+        expect(snapshot_manager).to receive(:create_deployment_snapshot_task).with('scheduler', deployments[1]).and_return(task2)
 
         subject.perform
       end
 
       it 'returns a message containing the snapshot task ids' do
-        snapshot_manager.stub(:create_deployment_snapshot_task).with('scheduler', deployments[0]).and_return(task1)
-        snapshot_manager.stub(:create_deployment_snapshot_task).with('scheduler', deployments[1]).and_return(task2)
+        allow(snapshot_manager).to receive(:create_deployment_snapshot_task).with('scheduler', deployments[0]).and_return(task1)
+        allow(snapshot_manager).to receive(:create_deployment_snapshot_task).with('scheduler', deployments[1]).and_return(task2)
         expect(subject.perform).to include('43, 44')
       end
     end

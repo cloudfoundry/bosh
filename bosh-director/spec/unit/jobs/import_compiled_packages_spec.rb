@@ -12,7 +12,7 @@ module Bosh::Director
       subject(:import_job) { described_class.new(compiled_packages_path) }
       let(:compiled_packages_path) { '/tmp/fake-export.tgz' }
 
-      before { Bosh::Director::App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client) }
+      before { allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client) }
       let(:blobstore_client) { instance_double('Bosh::Blobstore::BaseClient') }
 
       let(:export) { instance_double('Bosh::Director::CompiledPackage::CompiledPackagesExport') }
@@ -96,8 +96,8 @@ module Bosh::Director
           end
 
           it 'checks the blob integrity' do
-            package1.should_receive(:check_blob_sha)
-            package2.should_receive(:check_blob_sha)
+            expect(package1).to receive(:check_blob_sha)
+            expect(package2).to receive(:check_blob_sha)
             import_job.perform
           end
 

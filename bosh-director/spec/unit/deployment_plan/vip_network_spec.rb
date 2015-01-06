@@ -5,11 +5,11 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
 
   describe :initialize do
     it "should require cloud properties" do
-      lambda {
+      expect {
         BD::DeploymentPlan::VipNetwork.new(@deployment_plan, {
             "name" => "foo"
         })
-      }.should raise_error(BD::ValidationMissingField)
+      }.to raise_error(BD::ValidationMissingField)
     end
   end
 
@@ -27,26 +27,26 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
       reservation = BD::NetworkReservation.new(
           :ip => "0.0.0.1")
       @network.reserve(reservation)
-      reservation.type.should == BD::NetworkReservation::STATIC
-      reservation.reserved?.should == true
+      expect(reservation.type).to eq(BD::NetworkReservation::STATIC)
+      expect(reservation.reserved?).to eq(true)
     end
 
     it "should fail to reserve dynamic IPs" do
       reservation = BD::NetworkReservation.new(
           :ip => "0.0.0.1", :type => BD::NetworkReservation::DYNAMIC)
       @network.reserve(reservation)
-      reservation.reserved?.should == false
-      reservation.error.should == BD::NetworkReservation::WRONG_TYPE
+      expect(reservation.reserved?).to eq(false)
+      expect(reservation.error).to eq(BD::NetworkReservation::WRONG_TYPE)
     end
 
     it "should not let you reserve a used IP" do
       reservation = BD::NetworkReservation.new(
           :ip => "0.0.0.1", :type => BD::NetworkReservation::STATIC)
       @network.reserve(reservation)
-      reservation.reserved?.should == true
+      expect(reservation.reserved?).to eq(true)
       @network.reserve(reservation)
-      reservation.reserved?.should == false
-      reservation.error.should == BD::NetworkReservation::USED
+      expect(reservation.reserved?).to eq(false)
+      expect(reservation.error).to eq(BD::NetworkReservation::USED)
     end
   end
 
@@ -71,9 +71,9 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
       reservation = BD::NetworkReservation.new(
           :type => BD::NetworkReservation::DYNAMIC)
 
-      lambda {
+      expect {
         @network.release(reservation)
-      }.should raise_error(/without an IP/)
+      }.to raise_error(/without an IP/)
     end
   end
 
@@ -91,26 +91,26 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
       reservation = BD::NetworkReservation.new(
           :ip => "0.0.0.1", :type => BD::NetworkReservation::STATIC)
 
-      @network.network_settings(reservation, []).should == {
+      expect(@network.network_settings(reservation, [])).to eq({
           "type" => "vip",
           "ip" => "0.0.0.1",
           "cloud_properties" => {
               "foz" => "baz"
           }
-      }
+      })
     end
 
     it "should fail if there are any defaults" do
       reservation = BD::NetworkReservation.new(
           :ip => "0.0.0.1", :type => BD::NetworkReservation::STATIC)
 
-      lambda {
+      expect {
         @network.network_settings(reservation)
-      }.should raise_error(/Can't provide any defaults/)
+      }.to raise_error(/Can't provide any defaults/)
 
-      lambda {
+      expect {
         @network.network_settings(reservation, nil)
-      }.should_not raise_error
+      }.not_to raise_error
     end
 
 

@@ -10,7 +10,7 @@ module Bosh::Director
 
     subject(:app) { described_class } # "app" is a Rack::Test hook
 
-    before { Api::ResourceManager.stub(:new) }
+    before { allow(Api::ResourceManager).to receive(:new) }
 
     describe 'POST', 'export' do
       def perform
@@ -37,19 +37,19 @@ module Bosh::Director
 
           let(:exporter) do
             instance_double('Bosh::Director::CompiledPackagesExporter').tap do |cpe|
-              cpe.stub(:export) { |path| FileUtils.touch(path) }
+              allow(cpe).to receive(:export) { |path| FileUtils.touch(path) }
             end
           end
 
-          before { StaleFileKiller.stub(new: killer) }
+          before { allow(StaleFileKiller).to receive_messages(new: killer) }
           let(:killer) { instance_double('Bosh::Director::StaleFileKiller', kill: nil) }
 
           before do
-            CompiledPackageGroup.stub(:new).and_return(package_group)
+            allow(CompiledPackageGroup).to receive(:new).and_return(package_group)
             blobstore_client = double('blobstore client')
-            App.stub_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
+            allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
 
-            CompiledPackagesExporter.stub(:new).with(package_group, blobstore_client).and_return(exporter)
+            allow(CompiledPackagesExporter).to receive(:new).with(package_group, blobstore_client).and_return(exporter)
           end
 
           it 'sets the mime type to application/x-compressed' do
@@ -66,7 +66,7 @@ module Bosh::Director
 
           it 'creates the output directory' do
             perform
-            File.should be_directory(File.join(Dir.tmpdir, 'compiled_packages'))
+            expect(File).to be_directory(File.join(Dir.tmpdir, 'compiled_packages'))
           end
 
           it 'passes the output directory to the exporter' do
@@ -80,7 +80,7 @@ module Bosh::Director
 
           it 'cleans up the stale exported packages with a StaleFileKiller' do
             output_dir = File.join(Dir.tmpdir, 'compiled_packages')
-            StaleFileKiller.should_receive(:new).with(output_dir).and_return(killer)
+            expect(StaleFileKiller).to receive(:new).with(output_dir).and_return(killer)
 
             perform
             expect(killer).to have_received(:kill)

@@ -65,25 +65,26 @@ describe Bosh::Director::ProblemHandlers::Base do
     foo_handler = make_by_type(:foo, 1, { "message" => "hello" })
     bar_handler = make_by_type(:bar, 2, { "message" => "goodbye" })
 
-    foo_handler.resolution_plan(:baz).should == "foo baz hello"
-    bar_handler.resolution_plan(:baz).should == "bar baz goodbye"
-    bar_handler.resolution_plan(:zb).should == "bar zb goodbye"
+    expect(foo_handler.resolution_plan(:baz)).to eq("foo baz hello")
+    expect(bar_handler.resolution_plan(:baz)).to eq("bar baz goodbye")
+    expect(bar_handler.resolution_plan(:zb)).to eq("bar zb goodbye")
 
-    foo_handler.resolutions.should == [ { :name => "baz", :plan => "foo baz hello" } ]
+    expect(foo_handler.resolutions).to eq([ { :name => "baz", :plan => "foo baz hello" } ])
 
-    bar_handler.resolutions.should ==
+    expect(bar_handler.resolutions).to eq(
       [
        { :name => "baz", :plan => "bar baz goodbye" },
        { :name => "zb", :plan => "bar zb goodbye"}
       ]
+    )
 
-    foo_handler.message.should == "hello"
+    expect(foo_handler.message).to eq("hello")
     foo_handler.apply_resolution(:baz)
-    foo_handler.message.should == "foo baz action complete"
+    expect(foo_handler.message).to eq("foo baz action complete")
 
-    bar_handler.message.should == "goodbye"
+    expect(bar_handler.message).to eq("goodbye")
     bar_handler.apply_resolution(:baz)
-    bar_handler.message.should == "bar baz action complete"
+    expect(bar_handler.message).to eq("bar baz action complete")
   end
 
   it "supports auto-resolving" do
@@ -91,18 +92,18 @@ describe Bosh::Director::ProblemHandlers::Base do
     bar_handler = make_by_type(:bar, 2, { "message" => "goodbye" })
 
     bar_handler.auto_resolve
-    bar_handler.message.should == "bar zb action complete"
+    expect(bar_handler.message).to eq("bar zb action complete")
 
     foo_handler.auto_resolve
-    foo_handler.message.should == "foo baz action complete"
+    expect(foo_handler.message).to eq("foo baz action complete")
   end
 
   it "can be queried from the model" do
     problem = Bosh::Director::Models::DeploymentProblem.
       make(:type => "foo", :resource_id => 1, :data_json => Yajl::Encoder.encode("message" => "hello"))
 
-    problem.description.should =="hello"
-    problem.resolutions.should == [ { :name => "baz", :plan => "foo baz hello" } ]
+    expect(problem.description).to eq("hello")
+    expect(problem.resolutions).to eq([ { :name => "baz", :plan => "foo baz hello" } ])
   end
 
 end

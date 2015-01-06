@@ -15,7 +15,7 @@ module Bosh::Director
     end
 
     it 'tells the snapshot manager to create a snapshot' do
-      Api::SnapshotManager.should_receive(:take_snapshot).with(instance, options).and_return(cids)
+      expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance, options).and_return(cids)
 
       expect(subject.perform).to eq 'snapshot(s) snap0, snap1 created'
     end

@@ -23,7 +23,7 @@ describe Bosh::Director::DbBackup::Adapter::Postgres do
         before { db_config['password'] = 'fake-password' }
 
         it 'exports the database to a file' do
-          Open3.should_receive(:capture3).with(
+          expect(Open3).to receive(:capture3).with(
             {'PGPASSWORD' => 'fake-password'},
             'pg_dump',
             '--host',     'host.com',
@@ -41,7 +41,7 @@ describe Bosh::Director::DbBackup::Adapter::Postgres do
         before { db_config.delete('password') }
 
         it 'exports the database to a file without using password with pg_dump' do
-          Open3.should_receive(:capture3).with(
+          expect(Open3).to receive(:capture3).with(
             {},
             'pg_dump',
             '--host',     'host.com',
@@ -60,7 +60,7 @@ describe Bosh::Director::DbBackup::Adapter::Postgres do
       let(:status) { instance_double('Process::Status', success?: false, exitstatus: 5) }
 
       it 'raises if it fails to export' do
-        Open3.stub(:capture3).and_return(['stdout', 'stderr', status])
+        allow(Open3).to receive(:capture3).and_return(['stdout', 'stderr', status])
         expect { subject.export(export_path) }.to raise_error(
           RuntimeError, "pg_dump exited 5, output: 'stdout', error: 'stderr'")
       end

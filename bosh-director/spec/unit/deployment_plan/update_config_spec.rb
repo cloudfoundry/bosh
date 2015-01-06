@@ -11,12 +11,12 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
         'serial' => true,
       )
 
-      config.canaries.should == 2
-      config.max_in_flight.should == 4
-      config.min_canary_watch_time.should == 60000
-      config.max_canary_watch_time.should == 60000
-      config.min_update_watch_time.should == 30000
-      config.max_update_watch_time.should == 30000
+      expect(config.canaries).to eq(2)
+      expect(config.max_in_flight).to eq(4)
+      expect(config.min_canary_watch_time).to eq(60000)
+      expect(config.max_canary_watch_time).to eq(60000)
+      expect(config.min_update_watch_time).to eq(30000)
+      expect(config.max_update_watch_time).to eq(30000)
       expect(config).to be_serial
     end
 
@@ -27,8 +27,8 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
         'canary_watch_time' => '60000-120000',
         'update_watch_time' => 30000,
       )
-      config.min_canary_watch_time.should == 60000
-      config.max_canary_watch_time.should == 120000
+      expect(config.min_canary_watch_time).to eq(60000)
+      expect(config.max_canary_watch_time).to eq(120000)
     end
 
     it 'should allow ranges for canary watch time' do
@@ -38,8 +38,8 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
         'canary_watch_time' => 60000,
         'update_watch_time' => '5000-30000',
       )
-      config.min_update_watch_time.should == 5000
-      config.max_update_watch_time.should == 30000
+      expect(config.min_update_watch_time).to eq(5000)
+      expect(config.max_update_watch_time).to eq(30000)
     end
 
     it 'should require canaries when there is no default config' do
@@ -175,22 +175,22 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
           'update_watch_time' => 30000,
         }, default_config)
 
-        config.canaries.should == 2
-        config.max_in_flight.should == 4
-        config.min_canary_watch_time.should == 60000
-        config.max_canary_watch_time.should == 60000
-        config.min_update_watch_time.should == 30000
-        config.max_update_watch_time.should == 30000
+        expect(config.canaries).to eq(2)
+        expect(config.max_in_flight).to eq(4)
+        expect(config.min_canary_watch_time).to eq(60000)
+        expect(config.max_canary_watch_time).to eq(60000)
+        expect(config.min_update_watch_time).to eq(30000)
+        expect(config.max_update_watch_time).to eq(30000)
       end
 
       it 'should inherit settings from default config' do
         config = BD::DeploymentPlan::UpdateConfig.new({}, default_config)
-        config.canaries.should == 1
-        config.max_in_flight.should == 2
-        config.min_canary_watch_time.should == 10000
-        config.max_canary_watch_time.should == 10000
-        config.min_update_watch_time.should == 5000
-        config.max_update_watch_time.should == 5000
+        expect(config.canaries).to eq(1)
+        expect(config.max_in_flight).to eq(2)
+        expect(config.min_canary_watch_time).to eq(10000)
+        expect(config.max_canary_watch_time).to eq(10000)
+        expect(config.min_update_watch_time).to eq(5000)
+        expect(config.max_update_watch_time).to eq(5000)
       end
     end
   end
@@ -205,8 +205,8 @@ describe Bosh::Director::DeploymentPlan::UpdateConfig do
        )
     end
 
-    it('should parse literals') { basic_config.parse_watch_times(1000).should == [1000, 1000] }
-    it('should parse ranges') { basic_config.parse_watch_times('100 - 1000').should == [100, 1000] }
+    it('should parse literals') { expect(basic_config.parse_watch_times(1000)).to eq([1000, 1000]) }
+    it('should parse ranges') { expect(basic_config.parse_watch_times('100 - 1000')).to eq([100, 1000]) }
 
     it 'should fail parsing garbage' do
       expect {

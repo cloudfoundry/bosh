@@ -10,8 +10,8 @@ module Bosh::Director
     let(:options) { { foo: 'bar' } }
 
     before do
-      Api::InstanceLookup.stub(new: instance_lookup)
-      JobQueue.stub(:new).and_return(job_queue)
+      allow(Api::InstanceLookup).to receive_messages(new: instance_lookup)
+      allow(JobQueue).to receive(:new).and_return(job_queue)
     end
 
     describe '#fetch_logs' do
@@ -20,11 +20,11 @@ module Bosh::Director
       let(:index) { 'FAKE_INDEX' }
 
       before do
-        instance_lookup.stub(:by_attributes).with(deployment_name, job, index).and_return(instance)
+        allow(instance_lookup).to receive(:by_attributes).with(deployment_name, job, index).and_return(instance)
       end
 
       it 'enqueues a resque job' do
-        job_queue.should_receive(:enqueue).with(
+        expect(job_queue).to receive(:enqueue).with(
           username, Jobs::FetchLogs, 'fetch logs', [instance.id, options]).and_return(task)
 
         expect(subject.fetch_logs(username, deployment_name, job, index, options)).to eq(task)
@@ -43,12 +43,12 @@ module Bosh::Director
       end
 
       before do
-        Bosh::Director::Api::DeploymentLookup.stub(new: deployment_lookup)
-        deployment_lookup.stub(by_name: deployment)
+        allow(Bosh::Director::Api::DeploymentLookup).to receive_messages(new: deployment_lookup)
+        allow(deployment_lookup).to receive_messages(by_name: deployment)
       end
 
       it 'enqueues a resque job' do
-        job_queue.should_receive(:enqueue).with(
+        expect(job_queue).to receive(:enqueue).with(
           username, Jobs::Ssh, 'ssh: COMMAND:TARGET', [deployment.id, options]).and_return(task)
 
         expect(subject.ssh(username, options)).to eq(task)
@@ -57,7 +57,7 @@ module Bosh::Director
 
     describe '#find_instance' do
       it 'delegates to instance lookup' do
-        instance_lookup.should_receive(:by_id).with(instance.id).and_return(instance)
+        expect(instance_lookup).to receive(:by_id).with(instance.id).and_return(instance)
         expect(subject.find_instance(instance.id)).to eq instance
       end
     end
@@ -68,14 +68,14 @@ module Bosh::Director
       let(:index) { 'FAKE_INDEX' }
 
       it 'delegates to instance lookup' do
-        instance_lookup.should_receive(:by_attributes).with(deployment_name, job, index).and_return(instance)
+        expect(instance_lookup).to receive(:by_attributes).with(deployment_name, job, index).and_return(instance)
         expect(subject.find_by_name(deployment_name, job, index)).to eq instance
       end
     end
 
     describe '#filter_by' do
       it 'delegates to instance lookup' do
-        instance_lookup.should_receive(:by_filter).with(id: 5).and_return(instance)
+        expect(instance_lookup).to receive(:by_filter).with(id: 5).and_return(instance)
         expect(subject.filter_by(id: 5)).to eq instance
       end
     end

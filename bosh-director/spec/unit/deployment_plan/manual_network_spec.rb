@@ -8,9 +8,9 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   describe :initialize do
     it 'should parse subnets' do
       received_network = nil
-      BD::DeploymentPlan::NetworkSubnet.stub(:new) do |network, spec|
+      allow(BD::DeploymentPlan::NetworkSubnet).to receive(:new) do |network, spec|
         received_network = network
-        spec.should == {'foz' => 'baz'}
+        expect(spec).to eq({'foz' => 'baz'})
       end
 
       network = BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
@@ -21,18 +21,18 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
             }
           ]
       })
-      received_network.should == network
+      expect(received_network).to eq(network)
     end
 
     it 'should not allow overlapping subnets' do
       subnet_a = instance_double('Bosh::Director::DeploymentPlan::NetworkSubnet')
       subnet_b = instance_double('Bosh::Director::DeploymentPlan::NetworkSubnet')
-      BD::DeploymentPlan::NetworkSubnet.stub(:new).
+      allow(BD::DeploymentPlan::NetworkSubnet).to receive(:new).
           and_return(subnet_a, subnet_b)
 
-      subnet_a.should_receive(:overlaps?).with(subnet_b).and_return(true)
+      expect(subnet_a).to receive(:overlaps?).with(subnet_b).and_return(true)
 
-      lambda {
+      expect {
         BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
             'name' => 'foo',
             'subnets' => [
@@ -44,15 +44,15 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
                 }
             ]
         })
-      }.should raise_error(Bosh::Director::NetworkOverlappingSubnets)
+      }.to raise_error(Bosh::Director::NetworkOverlappingSubnets)
     end
   end
 
   describe :reserve do
     before(:each) do
       @subnet = instance_double('Bosh::Director::DeploymentPlan::NetworkSubnet')
-      @subnet.stub(:range).and_return(NetAddr::CIDR.create('0.0.0.1/24'))
-      BD::DeploymentPlan::NetworkSubnet.stub(:new).and_return(@subnet)
+      allow(@subnet).to receive(:range).and_return(NetAddr::CIDR.create('0.0.0.1/24'))
+      allow(BD::DeploymentPlan::NetworkSubnet).to receive(:new).and_return(@subnet)
 
       @network = BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
           'name' => 'foo',
@@ -69,21 +69,21 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
           :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
       reservation.reserved = true
 
-      @subnet.should_receive(:reserve_ip).with(1).and_return(:dynamic)
+      expect(@subnet).to receive(:reserve_ip).with(1).and_return(:dynamic)
       @network.reserve(reservation)
 
-      reservation.reserved.should == true
+      expect(reservation.reserved).to eq(true)
     end
 
     it 'should allocated dynamic IP' do
       reservation = BD::NetworkReservation.new(
           :type => BD::NetworkReservation::DYNAMIC)
 
-      @subnet.should_receive(:allocate_dynamic_ip).and_return(2)
+      expect(@subnet).to receive(:allocate_dynamic_ip).and_return(2)
       @network.reserve(reservation)
 
-      reservation.reserved.should == true
-      reservation.ip.should == 2
+      expect(reservation.reserved).to eq(true)
+      expect(reservation.ip).to eq(2)
     end
 
     it 'should not let you reserve a used IP' do
@@ -91,11 +91,11 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
           :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
       reservation.reserved = true
 
-      @subnet.should_receive(:reserve_ip).with(1).and_return(nil)
+      expect(@subnet).to receive(:reserve_ip).with(1).and_return(nil)
       @network.reserve(reservation)
 
-      reservation.reserved.should == false
-      reservation.error.should == BD::NetworkReservation::USED
+      expect(reservation.reserved).to eq(false)
+      expect(reservation.error).to eq(BD::NetworkReservation::USED)
     end
 
     it 'should not let you reserve an IP in the wrong pool' do
@@ -103,30 +103,30 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
           :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
       reservation.reserved = true
 
-      @subnet.should_receive(:reserve_ip).with(1).and_return(:static)
+      expect(@subnet).to receive(:reserve_ip).with(1).and_return(:static)
       @network.reserve(reservation)
 
-      reservation.reserved.should == false
-      reservation.error.should == BD::NetworkReservation::WRONG_TYPE
+      expect(reservation.reserved).to eq(false)
+      expect(reservation.error).to eq(BD::NetworkReservation::WRONG_TYPE)
     end
 
     it "should raise an error when it's out of capacity" do
       reservation = BD::NetworkReservation.new(
           :type => BD::NetworkReservation::DYNAMIC)
 
-      @subnet.should_receive(:allocate_dynamic_ip).and_return(nil)
+      expect(@subnet).to receive(:allocate_dynamic_ip).and_return(nil)
       @network.reserve(reservation)
 
-      reservation.reserved.should == false
-      reservation.error.should == BD::NetworkReservation::CAPACITY
+      expect(reservation.reserved).to eq(false)
+      expect(reservation.error).to eq(BD::NetworkReservation::CAPACITY)
     end
   end
 
   describe :release do
     before(:each) do
       @subnet = instance_double('Bosh::Director::DeploymentPlan::NetworkSubnet')
-      @subnet.stub(:range).and_return(NetAddr::CIDR.create('0.0.0.1/24'))
-      BD::DeploymentPlan::NetworkSubnet.stub(:new).and_return(@subnet)
+      allow(@subnet).to receive(:range).and_return(NetAddr::CIDR.create('0.0.0.1/24'))
+      allow(BD::DeploymentPlan::NetworkSubnet).to receive(:new).and_return(@subnet)
 
       @network = BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
           'name' => 'foo',
@@ -142,7 +142,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       reservation = BD::NetworkReservation.new(
           :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
 
-      @subnet.should_receive(:release_ip).with(1)
+      expect(@subnet).to receive(:release_ip).with(1)
       @network.release(reservation)
     end
 
@@ -150,21 +150,21 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       reservation = BD::NetworkReservation.new(
           :type => BD::NetworkReservation::DYNAMIC)
 
-      lambda {
+      expect {
         @network.release(reservation)
-      }.should raise_error(/without an IP/)
+      }.to raise_error(/without an IP/)
     end
   end
 
   describe :network_settings do
     before(:each) do
       @subnet = instance_double('Bosh::Director::DeploymentPlan::NetworkSubnet')
-      @subnet.stub(:range).and_return(NetAddr::CIDR.create('0.0.0.1/24'))
-      @subnet.stub(:netmask).and_return('255.255.255.0')
-      @subnet.stub(:cloud_properties).and_return({'VLAN' => 'a'})
-      @subnet.stub(:dns).and_return(nil)
-      @subnet.stub(:gateway).and_return(nil)
-      BD::DeploymentPlan::NetworkSubnet.stub(:new).and_return(@subnet)
+      allow(@subnet).to receive(:range).and_return(NetAddr::CIDR.create('0.0.0.1/24'))
+      allow(@subnet).to receive(:netmask).and_return('255.255.255.0')
+      allow(@subnet).to receive(:cloud_properties).and_return({'VLAN' => 'a'})
+      allow(@subnet).to receive(:dns).and_return(nil)
+      allow(@subnet).to receive(:gateway).and_return(nil)
+      allow(BD::DeploymentPlan::NetworkSubnet).to receive(:new).and_return(@subnet)
 
       @network = BD::DeploymentPlan::ManualNetwork.new(@deployment_plan, {
           'name' => 'foo',
@@ -180,62 +180,62 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       reservation = BD::NetworkReservation.new(
           :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
 
-      @network.network_settings(reservation, []).should == {
+      expect(@network.network_settings(reservation, [])).to eq({
           'ip' => '0.0.0.1',
           'netmask' => '255.255.255.0',
           'cloud_properties' => {'VLAN' => 'a'},
           'default' => []
-      }
+      })
     end
 
     it 'should set the defaults' do
       reservation = BD::NetworkReservation.new(
           :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
 
-      @network.network_settings(reservation).should == {
+      expect(@network.network_settings(reservation)).to eq({
           'ip' => '0.0.0.1',
           'netmask' => '255.255.255.0',
           'cloud_properties' => {'VLAN' => 'a'},
           'default' => ['dns', 'gateway']
-      }
+      })
     end
 
     it 'should provide the DNS if available' do
-      @subnet.stub(:dns).and_return(['1.2.3.4', '5.6.7.8'])
+      allow(@subnet).to receive(:dns).and_return(['1.2.3.4', '5.6.7.8'])
       reservation = BD::NetworkReservation.new(
           :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
 
-      @network.network_settings(reservation, []).should == {
+      expect(@network.network_settings(reservation, [])).to eq({
           'ip' => '0.0.0.1',
           'netmask' => '255.255.255.0',
           'cloud_properties' => {'VLAN' => 'a'},
           'dns' => ['1.2.3.4', '5.6.7.8'],
           'default' => []
-      }
+      })
     end
 
     it 'should provide the gateway if available' do
-      @subnet.stub(:gateway).and_return(NetAddr::CIDR.create('0.0.0.254'))
+      allow(@subnet).to receive(:gateway).and_return(NetAddr::CIDR.create('0.0.0.254'))
       reservation = BD::NetworkReservation.new(
           :ip => '0.0.0.1', :type => BD::NetworkReservation::DYNAMIC)
 
-      @network.network_settings(reservation, []).should == {
+      expect(@network.network_settings(reservation, [])).to eq({
           'ip' => '0.0.0.1',
           'netmask' => '255.255.255.0',
           'cloud_properties' => {'VLAN' => 'a'},
           'gateway' => '0.0.0.254',
           'default' => []
-      }
+      })
     end
 
     it 'should fail when there is no IP' do
-      @subnet.stub(:dns).and_return(['1.2.3.4', '5.6.7.8'])
+      allow(@subnet).to receive(:dns).and_return(['1.2.3.4', '5.6.7.8'])
       reservation = BD::NetworkReservation.new(
           :type => BD::NetworkReservation::DYNAMIC)
 
-      lambda {
+      expect {
         @network.network_settings(reservation)
-      }.should raise_error(/without an IP/)
+      }.to raise_error(/without an IP/)
     end
   end
 end

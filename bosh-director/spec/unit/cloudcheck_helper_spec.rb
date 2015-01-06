@@ -176,7 +176,7 @@ module Bosh::Director
                 ordered.and_return('new-vm-cid')
 
             vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
-            Bosh::Director::VmMetadataUpdater.stub(build: vm_metadata_updater)
+            allow(Bosh::Director::VmMetadataUpdater).to receive_messages(build: vm_metadata_updater)
             expect(vm_metadata_updater).to receive(:update) do |vm, metadata|
               expect(vm.cid).to eq('new-vm-cid')
               expect(metadata).to eq({})

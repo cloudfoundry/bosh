@@ -7,7 +7,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
     before(:each) do
       @deployment = instance_double('Bosh::Director::DeploymentPlan::Planner')
       @network = instance_double('Bosh::Director::DeploymentPlan::Network')
-      @deployment.stub(:network).with("foo").and_return(@network)
+      allow(@deployment).to receive(:network).with("foo").and_return(@network)
     end
 
     it "should parse the basic properties" do
@@ -19,25 +19,25 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
           }
       })
 
-      config.workers.should == 2
-      config.network.should == @network
-      config.cloud_properties.should == {"foo" => "bar"}
-      config.env.should == {}
+      expect(config.workers).to eq(2)
+      expect(config.network).to eq(@network)
+      expect(config.cloud_properties).to eq({"foo" => "bar"})
+      expect(config.env).to eq({})
     end
 
     it "should require workers to be specified" do
-      lambda {
+      expect {
         BD::DeploymentPlan::CompilationConfig.new(@deployment, {
             "network" => "foo",
             "cloud_properties" => {
                 "foo" => "bar"
             }
         })
-      }.should raise_error(BD::ValidationMissingField)
+      }.to raise_error(BD::ValidationMissingField)
     end
 
     it "should require there to be at least 1 worker" do
-      lambda {
+      expect {
         BD::DeploymentPlan::CompilationConfig.new(@deployment, {
             "workers" => 0,
             "network" => "foo",
@@ -45,23 +45,23 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
                 "foo" => "bar"
             }
         })
-      }.should raise_error(BD::ValidationViolatedMin)
+      }.to raise_error(BD::ValidationViolatedMin)
     end
 
     it "should require a network to be specified" do
-      lambda {
+      expect {
         BD::DeploymentPlan::CompilationConfig.new(@deployment, {
             "workers" => 1,
             "cloud_properties" => {
                 "foo" => "bar"
             }
         })
-      }.should raise_error(BD::ValidationMissingField)
+      }.to raise_error(BD::ValidationMissingField)
     end
 
     it "should require the specified network to exist" do
-      @deployment.stub(:network).with("bar").and_return(nil)
-      lambda {
+      allow(@deployment).to receive(:network).with("bar").and_return(nil)
+      expect {
         BD::DeploymentPlan::CompilationConfig.new(@deployment, {
             "workers" => 1,
             "network" => "bar",
@@ -69,16 +69,16 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
                 "foo" => "bar"
             }
         })
-      }.should raise_error(/unknown network `bar'/)
+      }.to raise_error(/unknown network `bar'/)
     end
 
     it "should require resource pool cloud properties" do
-      lambda {
+      expect {
         BD::DeploymentPlan::CompilationConfig.new(@deployment, {
             "workers" => 1,
             "network" => "foo"
         })
-      }.should raise_error(BD::ValidationMissingField)
+      }.to raise_error(BD::ValidationMissingField)
     end
 
     it "should allow an optional environment to be set" do
@@ -92,7 +92,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
               "password" => "password1"
           }
       })
-      config.env.should == {"password" => "password1"}
+      expect(config.env).to eq({"password" => "password1"})
     end
 
     it "should allow reuse_compilation_vms to be set" do
@@ -104,11 +104,11 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
           },
           "reuse_compilation_vms" => true
       })
-      config.reuse_compilation_vms.should == true
+      expect(config.reuse_compilation_vms).to eq(true)
     end
 
     it "should throw an error when a boolean property isnt boolean" do
-      lambda {
+      expect {
         config = BD::DeploymentPlan::CompilationConfig.new(@deployment, {
             "workers" => 1,
             "network" => "foo",
@@ -118,7 +118,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
             # the non-boolean boolean
             "reuse_compilation_vms" => 1
         })
-      }.should raise_error(Bosh::Director::ValidationInvalidType)
+      }.to raise_error(Bosh::Director::ValidationInvalidType)
     end
 
   end

@@ -41,19 +41,19 @@ module Bosh::Director
 
       it 'requires auth' do
         get '/'
-        last_response.status.should == 401
+        expect(last_response.status).to eq(401)
       end
 
       it 'sets the date header' do
         get '/'
-        last_response.headers['Date'].should_not be_nil
+        expect(last_response.headers['Date']).not_to be_nil
       end
 
       it 'allows Basic HTTP Auth with admin/admin credentials for ' +
              "test purposes (even though user doesn't exist)" do
         basic_authorize 'admin', 'admin'
         get '/'
-        last_response.status.should == 200
+        expect(last_response.status).to eq(200)
       end
 
       describe 'API calls' do
@@ -93,39 +93,35 @@ module Bosh::Director
             context "when verbose is set to 1" do
               it "filters all but the expected task types" do
                 get "/?verbose=1"
-                last_response.status.should == 200
+                expect(last_response.status).to eq(200)
                 body = Yajl::Parser.parse(last_response.body)
                 actual_ids = body.map { |attributes| attributes["id"] }
                 actual_tasks = Models::Task.filter(id: actual_ids)
 
-                actual_tasks.should =~ all_tasks.select do |task|
-                  concise_task_types.include?(task.type)
-                end
+                expect(actual_tasks).to match(all_tasks.select { |task| concise_task_types.include?(task.type) })
               end
             end
 
             context "when verbose is set to 2" do
               it "does not filter tasks by type" do
                 get "/?verbose=2"
-                last_response.status.should == 200
+                expect(last_response.status).to eq(200)
                 body = Yajl::Parser.parse(last_response.body)
                 actual_ids = body.map { |attributes| attributes["id"] }
                 actual_tasks = Models::Task.filter(id: actual_ids)
-                actual_tasks.should =~ all_tasks
+                expect(actual_tasks).to match(all_tasks)
               end
             end
 
             context "when verbose is not set" do
               it "filters all but the expected task types" do
                 get "/"
-                last_response.status.should == 200
+                expect(last_response.status).to eq(200)
                 body = Yajl::Parser.parse(last_response.body)
                 actual_ids = body.map { |attributes| attributes["id"] }
                 actual_tasks = Models::Task.filter(id: actual_ids)
 
-                actual_tasks.should =~ all_tasks.select do |task|
-                  concise_task_types.include?(task.type)
-                end
+                expect(actual_tasks).to match(all_tasks.select { |task| concise_task_types.include?(task.type) })
               end
             end
           end
@@ -139,11 +135,11 @@ module Bosh::Director
                 type: :update_deployment, state: :processing
               )
               get '/?state=queued'
-              last_response.status.should == 200
+              expect(last_response.status).to eq(200)
               body = Yajl::Parser.parse(last_response.body)
               actual_ids = body.map { |attributes| attributes["id"] }
               actual_tasks = Models::Task.filter(id: actual_ids).to_a
-              actual_tasks.map(&:id).should == [expected_task.id]
+              expect(actual_tasks.map(&:id)).to eq([expected_task.id])
             end
           end
 
@@ -160,18 +156,18 @@ module Bosh::Director
             context "when the limit is less than 1" do
               it "limits the tasks returned to 1" do
                 get '/?limit=0'
-                last_response.status.should == 200
+                expect(last_response.status).to eq(200)
                 body = Yajl::Parser.parse(last_response.body)
-                body.size.should == 1
+                expect(body.size).to eq(1)
               end
             end
 
             context "when the limit is greater than 1" do
               it "limits the tasks returned to the limit provided" do
                 get '/?limit=10'
-                last_response.status.should == 200
+                expect(last_response.status).to eq(200)
                 body = Yajl::Parser.parse(last_response.body)
-                body.size.should == 10
+                expect(body.size).to eq(10)
               end
             end
           end
@@ -182,21 +178,21 @@ module Bosh::Director
             task = Models::Task.make(state: 'queued', description: 'fake-description')
 
             get "/#{task.id}"
-            last_response.status.should == 200
+            expect(last_response.status).to eq(200)
             task_json = Yajl::Parser.parse(last_response.body)
-            task_json['id'].should == task.id
-            task_json['state'].should == 'queued'
-            task_json['description'].should == 'fake-description'
+            expect(task_json['id']).to eq(task.id)
+            expect(task_json['state']).to eq('queued')
+            expect(task_json['description']).to eq('fake-description')
 
             task.state = 'processed'
             task.save
 
             get "/#{task.id}"
-            last_response.status.should == 200
+            expect(last_response.status).to eq(200)
             task_json = Yajl::Parser.parse(last_response.body)
-            task_json['id'].should == 1
-            task_json['state'].should == 'processed'
-            task_json['description'].should == 'fake-description'
+            expect(task_json['id']).to eq(1)
+            expect(task_json['state']).to eq('processed')
+            expect(task_json['description']).to eq('fake-description')
           end
 
           it 'has API call that return task output and task output with ranges' do
@@ -207,8 +203,8 @@ module Bosh::Director
             task = Models::Task.make(output: temp_dir)
 
             get "/#{task.id}/output"
-            last_response.status.should == 200
-            last_response.body.should == 'Test output'
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq('Test output')
           end
 
           it 'has API call that return task output with ranges' do
@@ -220,17 +216,17 @@ module Bosh::Director
 
             # Range test
             get "/#{task.id}/output", {}, {'HTTP_RANGE' => 'bytes=0-3'}
-            last_response.status.should == 206
-            last_response.body.should == 'Test'
-            last_response.headers['Content-Length'].should == '4'
-            last_response.headers['Content-Range'].should == 'bytes 0-3/11'
+            expect(last_response.status).to eq(206)
+            expect(last_response.body).to eq('Test')
+            expect(last_response.headers['Content-Length']).to eq('4')
+            expect(last_response.headers['Content-Range']).to eq('bytes 0-3/11')
 
             # Range test
             get "/#{task.id}/output", {}, {'HTTP_RANGE' => 'bytes=5-'}
-            last_response.status.should == 206
-            last_response.body.should == 'output'
-            last_response.headers['Content-Length'].should == '6'
-            last_response.headers['Content-Range'].should == 'bytes 5-10/11'
+            expect(last_response.status).to eq(206)
+            expect(last_response.body).to eq('output')
+            expect(last_response.headers['Content-Length']).to eq('6')
+            expect(last_response.headers['Content-Range']).to eq('bytes 5-10/11')
           end
 
           it 'supports returning different types of output (debug, cpi, event)' do
@@ -250,19 +246,19 @@ module Bosh::Director
 
             %w(debug event cpi).each do |log_type|
               get "/#{task.id}/output?type=#{log_type}"
-              last_response.status.should == 200
-              last_response.body.should == "Test output #{log_type}"
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq("Test output #{log_type}")
             end
 
             # Backward compatibility: when log_type=soap return cpi log
             get "/#{task.id}/output?type=soap"
-            last_response.status.should == 200
-            last_response.body.should == 'Test output cpi'
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq('Test output cpi')
 
             # Default output is debug
             get "/#{task.id}/output"
-            last_response.status.should == 200
-            last_response.body.should == 'Test output debug'
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq('Test output debug')
           end
 
           it 'supports returning old soap logs when type = (cpi || soap)' do
@@ -280,8 +276,8 @@ module Bosh::Director
 
             %w(soap cpi).each do |log_type|
               get "/#{task.id}/output?type=#{log_type}"
-              last_response.status.should == 200
-              last_response.body.should == 'Test output soap'
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('Test output soap')
             end
           end
         end

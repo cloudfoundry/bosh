@@ -71,7 +71,7 @@ module Bosh::Director
       let(:release) { double('Release', name: 'FAKE RELEASE') }
 
       it 'enqueues a resque job' do
-        job_queue.should_receive(:enqueue).with(
+        expect(job_queue).to receive(:enqueue).with(
           username, Jobs::DeleteRelease, "delete release: #{release.name}", [release.name, options]).and_return(task)
 
         expect(subject.delete_release(username, release, options)).to eq(task)

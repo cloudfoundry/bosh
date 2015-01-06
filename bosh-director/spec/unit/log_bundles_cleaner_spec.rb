@@ -13,7 +13,7 @@ module Bosh::Director
         expect {
           log_bundles_cleaner.register_blobstore_id('fake-blobstore-id')
         }.to change { Models::LogBundle.count }
-        Models::LogBundle.filter(blobstore_id: 'fake-blobstore-id').count.should == 1
+        expect(Models::LogBundle.filter(blobstore_id: 'fake-blobstore-id').count).to eq(1)
       end
     end
 

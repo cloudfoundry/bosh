@@ -11,7 +11,7 @@ module Bosh::Director
         let(:deployment_name) { 'bob' }
 
         before do
-          Models::Deployment.stub(:[]).with(name: deployment_name).and_return(deployment)
+          allow(Models::Deployment).to receive(:[]).with(name: deployment_name).and_return(deployment)
         end
 
         it 'finds deployment for name' do

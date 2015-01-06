@@ -52,14 +52,14 @@ module Bosh::Director::CompiledPackage
 
       it 'creates a blob in the blobstore' do
         f = double('blob file')
-        File.stub(:open).with('/path_to_extracted_blob').and_yield(f)
-        blobstore_client.should_receive(:create).with(f).and_return('id_from_blobstore')
+        allow(File).to receive(:open).with('/path_to_extracted_blob').and_yield(f)
+        expect(blobstore_client).to receive(:create).with(f).and_return('id_from_blobstore')
 
         inserter.insert(compiled_package, release_version)
       end
 
       it 'inserts a compiled package in the database recording the blobstore_id' do
-        blobstore_client.stub(:create).and_return('id_from_blobstore')
+        allow(blobstore_client).to receive(:create).and_return('id_from_blobstore')
         inserter.insert(compiled_package, release_version)
 
         # pull the last package added to the DB in order to exercise save()
@@ -74,11 +74,11 @@ module Bosh::Director::CompiledPackage
 
       context 'when the database fails after creating the blob' do
         before do
-          blobstore_client.stub(
+          allow(blobstore_client).to receive_messages(
             create: 'object_id_from_blobstore_client',
             delete: nil,
           )
-          Bosh::Director::Models::CompiledPackage.stub(:create).and_raise 'database error'
+          allow(Bosh::Director::Models::CompiledPackage).to receive(:create).and_raise 'database error'
         end
 
         it 'should delete the blob if ' do

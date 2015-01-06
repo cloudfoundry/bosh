@@ -12,7 +12,7 @@ module Bosh::Director
         and_return(event_log) }
 
     let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
-    before { TaskResultFile.stub(:new).with("#{task_dir}/result").
+    before { allow(TaskResultFile).to receive(:new).with("#{task_dir}/result").
         and_return(result_file) }
 
     before { allow(Config).to receive(:cloud_options).and_return({}) }

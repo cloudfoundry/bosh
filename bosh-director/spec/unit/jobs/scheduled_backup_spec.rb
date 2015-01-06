@@ -10,8 +10,8 @@ describe Bosh::Director::Jobs::ScheduledBackup do
   let(:task) { described_class.new(backup_job: backup_job, backup_destination: backup_destination) }
 
   before do
-    backup_job.stub(:perform) { FileUtils.touch 'backup_dest' }
-    Time.stub(now: Time.parse('2013-07-02T09:55:40Z'))
+    allow(backup_job).to receive(:perform) { FileUtils.touch 'backup_dest' }
+    allow(Time).to receive_messages(now: Time.parse('2013-07-02T09:55:40Z'))
   end
 
   describe 'Resque job class expectations' do
@@ -21,12 +21,12 @@ describe Bosh::Director::Jobs::ScheduledBackup do
 
   describe 'perform' do
     it 'creates a backup' do
-      backup_job.should_receive(:perform)
+      expect(backup_job).to receive(:perform)
       task.perform
     end
 
     it 'pushes a backup to the destination blobstore' do
-      backup_destination.should_receive(:create) do |backup_file, file_name|
+      expect(backup_destination).to receive(:create) do |backup_file, file_name|
         expect(backup_file.path).to eq 'backup_dest'
         expect(file_name).to eq 'backup-2013-07-02T09:55:40Z.tgz'
       end
@@ -45,9 +45,9 @@ describe Bosh::Director::Jobs::ScheduledBackup do
     let!(:app_class) { class_double('Bosh::Director::App', instance: app_instance).as_stubbed_const }
 
     it 'injects defaults' do
-      backup_job_class.should_receive(:new)
+      expect(backup_job_class).to receive(:new)
 
-      blobstores.should_receive(:backup_destination)
+      expect(blobstores).to receive(:backup_destination)
 
       described_class.new
     end

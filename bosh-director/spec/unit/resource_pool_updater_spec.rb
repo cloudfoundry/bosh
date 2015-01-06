@@ -17,7 +17,7 @@ module Bosh::Director
       it 'should do nothing when everything is created' do
         allow(resource_pool).to receive(:vms).and_return([])
 
-        resource_pool_updater.should_not_receive(:create_missing_vm)
+        expect(resource_pool_updater).not_to receive(:create_missing_vm)
         resource_pool_updater.create_missing_vms(thread_pool)
       end
 
@@ -27,7 +27,7 @@ module Bosh::Director
 
         allow(resource_pool).to receive(:vms).and_return([vm])
 
-        thread_pool.should_receive(:process).and_yield
+        expect(thread_pool).to receive(:process).and_yield
 
         expect(resource_pool_updater).to receive(:create_missing_vm).with(vm)
         resource_pool_updater.create_missing_vms(thread_pool)
@@ -44,11 +44,11 @@ module Bosh::Director
         called = false
         expect(resource_pool_updater).to receive(:create_missing_vms) do |&block|
           called = true
-          block.call(bound_vm).should == true
-          block.call(unbound_vm).should == false
+          expect(block.call(bound_vm)).to eq(true)
+          expect(block.call(unbound_vm)).to eq(false)
         end
         resource_pool_updater.create_bound_missing_vms(thread_pool)
-        called.should == true
+        expect(called).to eq(true)
       end
     end
 
@@ -98,11 +98,11 @@ module Bosh::Director
 
         expect(cloud).to receive(:delete_vm).with('vm-1')
 
-        lambda {
+        expect {
           resource_pool_updater.create_missing_vm(@vm)
-        }.should raise_error('timeout')
+        }.to raise_error('timeout')
 
-        Models::Vm.count.should == 0
+        expect(Models::Vm.count).to eq(0)
       end
     end
 

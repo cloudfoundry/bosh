@@ -20,7 +20,7 @@ module Bosh::Director
 
     describe '#stop' do
       context 'when shutting down' do
-        before { subject.stub(shutting_down?: true) }
+        before { allow(subject).to receive_messages(shutting_down?: true) }
 
         context 'with static drain' do
           it 'sends shutdown with next apply spec and then stops services' do
@@ -42,7 +42,7 @@ module Bosh::Director
       end
 
       context 'when updating' do
-        before { subject.stub(shutting_down?: false) }
+        before { allow(subject).to receive_messages(shutting_down?: false) }
 
         context 'with static drain' do
           it 'sends update with next apply spec and then stops services' do
@@ -65,27 +65,27 @@ module Bosh::Director
     end
 
     describe '#wait_for_dynamic_drain' do
-      before { subject.stub(:sleep) }
+      before { allow(subject).to receive(:sleep) }
 
       it 'can be canceled' do
-        Config.should_receive(:task_checkpoint).and_raise(TaskCancelled)
+        expect(Config).to receive(:task_checkpoint).and_raise(TaskCancelled)
         expect {
           subject.send(:wait_for_dynamic_drain, -1)
         }.to raise_error TaskCancelled
       end
 
       it 'should wait until the agent says it is done draining' do
-        agent_client.stub(:drain).with("status").and_return(-2, 0)
-        subject.should_receive(:sleep).with(1).ordered
-        subject.should_receive(:sleep).with(2).ordered
+        allow(agent_client).to receive(:drain).with("status").and_return(-2, 0)
+        expect(subject).to receive(:sleep).with(1).ordered
+        expect(subject).to receive(:sleep).with(2).ordered
         subject.send(:wait_for_dynamic_drain, -1)
       end
 
       it 'should wait until the agent says it is done draining' do
-        agent_client.stub(:drain).with("status").and_return(-2, 3)
-        subject.should_receive(:sleep).with(1).ordered
-        subject.should_receive(:sleep).with(2).ordered
-        subject.should_receive(:sleep).with(3).ordered
+        allow(agent_client).to receive(:drain).with("status").and_return(-2, 3)
+        expect(subject).to receive(:sleep).with(1).ordered
+        expect(subject).to receive(:sleep).with(2).ordered
+        expect(subject).to receive(:sleep).with(3).ordered
         subject.send(:wait_for_dynamic_drain, -1)
       end
     end

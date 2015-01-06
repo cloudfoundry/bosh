@@ -14,7 +14,7 @@ module Bosh::Director
     describe 'perform' do
       it 'should fail for unknown releases' do
         job = Jobs::DeleteRelease.new('test_release', blobstore: blobstore)
-        job.should_receive(:with_release_lock).with('test_release', timeout: 10).and_yield
+        expect(job).to receive(:with_release_lock).with('test_release', timeout: 10).and_yield
 
         expect { job.perform }.to raise_exception(ReleaseNotFound)
       end
@@ -27,7 +27,7 @@ module Bosh::Director
         deployment.add_release_version(version)
 
         job = Jobs::DeleteRelease.new('test', blobstore: blobstore)
-        job.should_receive(:with_release_lock).
+        expect(job).to receive(:with_release_lock).
           with('test', timeout: 10).and_yield
         expect { job.perform }.to raise_exception(ReleaseInUse)
       end
@@ -36,9 +36,9 @@ module Bosh::Director
         release = Models::Release.make(name: 'test_release')
 
         job = Jobs::DeleteRelease.new('test_release', blobstore: blobstore)
-        job.should_receive(:with_release_lock).
+        expect(job).to receive(:with_release_lock).
           with('test_release', timeout: 10).and_yield
-        job.should_receive(:delete_release).with(release)
+        expect(job).to receive(:delete_release).with(release)
         job.perform
       end
 
@@ -46,11 +46,11 @@ module Bosh::Director
         release = Models::Release.make(name: 'test_release')
 
         job = Jobs::DeleteRelease.new('test_release', blobstore: blobstore)
-        job.should_receive(:delete_release).with(release)
-        job.should_receive(:with_release_lock).
+        expect(job).to receive(:delete_release).with(release)
+        expect(job).to receive(:with_release_lock).
           with('test_release', timeout: 10).and_yield
         job.instance_eval { @errors << 'bad' }
-        lambda { job.perform }.should raise_exception
+        expect { job.perform }.to raise_exception
       end
 
       it 'should support deleting a particular release version' do
@@ -59,8 +59,8 @@ module Bosh::Director
         Models::ReleaseVersion.make(release: release, version: '2')
 
         job = Jobs::DeleteRelease.new('test_release', 'version' => rv1.version, blobstore: blobstore)
-        job.should_receive(:delete_release_version).with(rv1)
-        job.should_receive(:with_release_lock).
+        expect(job).to receive(:delete_release_version).with(rv1)
+        expect(job).to receive(:with_release_lock).
           with('test_release', timeout: 10).and_yield
         job.perform
       end
@@ -77,15 +77,15 @@ module Bosh::Director
         deployment.add_release_version(rv2)
 
         job1 = Jobs::DeleteRelease.new('test_release', 'version' => '2', blobstore: blobstore)
-        job1.should_receive(:with_release_lock).
+        expect(job1).to receive(:with_release_lock).
           with('test_release', timeout: 10).and_yield
 
         expect { job1.perform }.to raise_exception(ReleaseVersionInUse)
 
         job2 = Jobs::DeleteRelease.new('test_release', 'version' => '1', blobstore: blobstore)
-        job2.should_receive(:with_release_lock).
+        expect(job2).to receive(:with_release_lock).
           with('test_release', timeout: 10).and_yield
-        job2.should_receive(:delete_release_version).with(rv1)
+        expect(job2).to receive(:delete_release_version).with(rv1)
         job2.perform
       end
 
@@ -106,58 +106,58 @@ module Bosh::Director
       end
 
       it 'should delete release and associated objects/meta' do
-        blobstore.should_receive(:delete).with('template-blb')
-        blobstore.should_receive(:delete).with('package-blb')
-        blobstore.should_receive(:delete).with('compiled-package-blb')
+        expect(blobstore).to receive(:delete).with('template-blb')
+        expect(blobstore).to receive(:delete).with('package-blb')
+        expect(blobstore).to receive(:delete).with('compiled-package-blb')
 
         job = Jobs::DeleteRelease.new('test_release', blobstore: blobstore)
         job.delete_release(@release)
 
-        job.instance_eval { @errors }.should be_empty
+        expect(job.instance_eval { @errors }).to be_empty
 
-        Models::Release[@release.id].should be_nil
-        Models::ReleaseVersion[@release_version.id].should be_nil
-        Models::Package[@package.id].should be_nil
-        Models::Template[@template.id].should be_nil
-        Models::CompiledPackage[@compiled_package.id].should be_nil
+        expect(Models::Release[@release.id]).to be_nil
+        expect(Models::ReleaseVersion[@release_version.id]).to be_nil
+        expect(Models::Package[@package.id]).to be_nil
+        expect(Models::Template[@template.id]).to be_nil
+        expect(Models::CompiledPackage[@compiled_package.id]).to be_nil
       end
 
       it 'should fail to delete the release if there is a blobstore error' do
-        blobstore.should_receive(:delete).with('template-blb').and_raise('bad')
-        blobstore.should_receive(:delete).with('package-blb')
-        blobstore.should_receive(:delete).with('compiled-package-blb')
+        expect(blobstore).to receive(:delete).with('template-blb').and_raise('bad')
+        expect(blobstore).to receive(:delete).with('package-blb')
+        expect(blobstore).to receive(:delete).with('compiled-package-blb')
 
         job = Jobs::DeleteRelease.new('test_release', blobstore: blobstore)
         job.delete_release(@release)
 
         errors = job.instance_eval { @errors }
-        errors.length.should eql(1)
-        errors.first.to_s.should eql('bad')
+        expect(errors.length).to eql(1)
+        expect(errors.first.to_s).to eql('bad')
 
-        Models::Release[@release.id].should_not be_nil
-        Models::ReleaseVersion[@release_version.id].should_not be_nil
-        Models::Package[@package.id].should be_nil
-        Models::Template[@template.id].should_not be_nil
-        Models::CompiledPackage[@compiled_package.id].should be_nil
+        expect(Models::Release[@release.id]).not_to be_nil
+        expect(Models::ReleaseVersion[@release_version.id]).not_to be_nil
+        expect(Models::Package[@package.id]).to be_nil
+        expect(Models::Template[@template.id]).not_to be_nil
+        expect(Models::CompiledPackage[@compiled_package.id]).to be_nil
       end
 
       it 'should forcefully delete the release when requested even if there is a blobstore error' do
-        blobstore.should_receive(:delete).with('template-blb').and_raise('bad')
-        blobstore.should_receive(:delete).with('package-blb')
-        blobstore.should_receive(:delete).with('compiled-package-blb')
+        expect(blobstore).to receive(:delete).with('template-blb').and_raise('bad')
+        expect(blobstore).to receive(:delete).with('package-blb')
+        expect(blobstore).to receive(:delete).with('compiled-package-blb')
 
         job = Jobs::DeleteRelease.new('test_release', 'force' => true, blobstore: blobstore)
         job.delete_release(@release)
 
         errors = job.instance_eval { @errors }
-        errors.length.should eql(1)
-        errors.first.to_s.should eql('bad')
+        expect(errors.length).to eql(1)
+        expect(errors.first.to_s).to eql('bad')
 
-        Models::Release[@release.id].should be_nil
-        Models::ReleaseVersion[@release_version.id].should be_nil
-        Models::Package[@package.id].should be_nil
-        Models::Template[@template.id].should be_nil
-        Models::CompiledPackage[@compiled_package.id].should be_nil
+        expect(Models::Release[@release.id]).to be_nil
+        expect(Models::ReleaseVersion[@release_version.id]).to be_nil
+        expect(Models::Package[@package.id]).to be_nil
+        expect(Models::Template[@template.id]).to be_nil
+        expect(Models::CompiledPackage[@compiled_package.id]).to be_nil
       end
 
     end
@@ -201,26 +201,26 @@ module Bosh::Director
       it 'should delete release version without touching any shared packages/templates' do
         job = Jobs::DeleteRelease.new('test_release', 'version' => @rv1.version, blobstore: blobstore)
 
-        blobstore.should_receive(:delete).with('pkg3')
-        blobstore.should_receive(:delete).with('template3')
-        blobstore.should_receive(:delete).with('feeddead')
+        expect(blobstore).to receive(:delete).with('pkg3')
+        expect(blobstore).to receive(:delete).with('template3')
+        expect(blobstore).to receive(:delete).with('feeddead')
 
         job.delete_release_version(@rv1)
 
-        Models::ReleaseVersion[@rv1.id].should be_nil
-        Models::ReleaseVersion[@rv2.id].should_not be_nil
+        expect(Models::ReleaseVersion[@rv1.id]).to be_nil
+        expect(Models::ReleaseVersion[@rv2.id]).not_to be_nil
 
-        Models::Package[@pkg1.id].should == @pkg1
-        Models::Package[@pkg2.id].should == @pkg2
-        Models::Package[@pkg3.id].should be_nil
+        expect(Models::Package[@pkg1.id]).to eq(@pkg1)
+        expect(Models::Package[@pkg2.id]).to eq(@pkg2)
+        expect(Models::Package[@pkg3.id]).to be_nil
 
-        Models::Template[@tmpl1.id].should == @tmpl1
-        Models::Template[@tmpl2.id].should == @tmpl2
-        Models::Template[@tmpl3.id].should be_nil
+        expect(Models::Template[@tmpl1.id]).to eq(@tmpl1)
+        expect(Models::Template[@tmpl2.id]).to eq(@tmpl2)
+        expect(Models::Template[@tmpl3.id]).to be_nil
 
-        Models::CompiledPackage[@cpkg1.id].should == @cpkg1
-        Models::CompiledPackage[@cpkg2.id].should == @cpkg2
-        Models::CompiledPackage[@cpkg3.id].should be_nil
+        expect(Models::CompiledPackage[@cpkg1.id]).to eq(@cpkg1)
+        expect(Models::CompiledPackage[@cpkg2.id]).to eq(@cpkg2)
+        expect(Models::CompiledPackage[@cpkg3.id]).to be_nil
       end
 
       it 'should not leave any release/package/templates artifacts after all ' +
@@ -228,28 +228,28 @@ module Bosh::Director
         job1 = Jobs::DeleteRelease.new('test_release', 'version' => @rv1.version, blobstore: blobstore)
         job2 = Jobs::DeleteRelease.new('test_release', 'version' => @rv2.version, blobstore: blobstore)
 
-        blobstore.stub(:delete)
+        allow(blobstore).to receive(:delete)
 
-        job1.should_receive(:with_release_lock).
+        expect(job1).to receive(:with_release_lock).
           with('test_release', timeout: 10).and_yield
         job1.perform
 
-        Models::Release.count.should == 1
+        expect(Models::Release.count).to eq(1)
 
         # This assertion is very important as SQLite doesn't check integrity
         # but Postgres does and it can fail on postgres if there are any hanging
         # references to release version in packages_release_versions
-        Models::Package.db[:packages_release_versions].count.should == 2
+        expect(Models::Package.db[:packages_release_versions].count).to eq(2)
 
-        job2.should_receive(:with_release_lock).
+        expect(job2).to receive(:with_release_lock).
           with('test_release', timeout: 10).and_yield
         job2.perform
 
-        Models::ReleaseVersion.count.should == 0
-        Models::Package.count.should == 0
-        Models::Template.count.should == 0
-        Models::CompiledPackage.count.should == 0
-        Models::Release.count.should == 0
+        expect(Models::ReleaseVersion.count).to eq(0)
+        expect(Models::Package.count).to eq(0)
+        expect(Models::Template.count).to eq(0)
+        expect(Models::CompiledPackage.count).to eq(0)
+        expect(Models::Release.count).to eq(0)
       end
     end
   end

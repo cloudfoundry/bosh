@@ -75,7 +75,7 @@ module Bosh::Director
           end
 
           it 'writes run_errand response with exit_code, stdout, stderr and logs result to task result file' do
-            result_file.should_receive(:write) do |text|
+            expect(result_file).to receive(:write) do |text|
               expect(JSON.parse(text)).to eq(
                 'exit_code' => 123,
                 'stdout' => 'fake-stdout',
@@ -115,7 +115,7 @@ module Bosh::Director
           end
 
           it 'writes run_errand response with nil fetched lobs blobstore id if fetching logs fails' do
-            result_file.should_receive(:write) do |text|
+            expect(result_file).to receive(:write) do |text|
               expect(JSON.parse(text)).to eq(
                 'exit_code' => 123,
                 'stdout' => 'fake-stdout',
@@ -148,7 +148,7 @@ module Bosh::Director
             end
 
             it 'writes the errand result received from the agent\'s cancellation' do
-              result_file.should_receive(:write) do |text|
+              expect(result_file).to receive(:write) do |text|
                 expect(JSON.parse(text)).to eq(
                   'exit_code' => 123,
                   'stdout' => 'fake-stdout',
@@ -167,7 +167,7 @@ module Bosh::Director
             end
 
             it 'writes run_errand response with nil blobstore_id if fetching logs fails' do
-              result_file.should_receive(:write) do |text|
+              expect(result_file).to receive(:write) do |text|
                 expect(JSON.parse(text)).to eq(
                   'exit_code' => 123,
                   'stdout' => 'fake-stdout',

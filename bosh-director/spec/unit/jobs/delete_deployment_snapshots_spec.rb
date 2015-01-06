@@ -28,13 +28,13 @@ module Bosh::Director
     end
 
     it 'tells the snapshot manager to delete all snapshots of a deployment' do
-      Api::DeploymentManager.should_receive(:new).and_return(deployment_manager)
-      deployment_manager.should_receive(:find_by_name).with(deployment_name).and_return(deployment)
+      expect(Api::DeploymentManager).to receive(:new).and_return(deployment_manager)
+      expect(deployment_manager).to receive(:find_by_name).with(deployment_name).and_return(deployment)
 
-      Api::SnapshotManager.should_receive(:delete_snapshots).with([snap1a, snap1b])
-      Api::SnapshotManager.should_receive(:delete_snapshots).with([snap2a])
-      Api::SnapshotManager.should_not_receive(:delete_snapshots).with([])
-      Api::SnapshotManager.should_not_receive(:delete_snapshots).with([snap4a])
+      expect(Api::SnapshotManager).to receive(:delete_snapshots).with([snap1a, snap1b])
+      expect(Api::SnapshotManager).to receive(:delete_snapshots).with([snap2a])
+      expect(Api::SnapshotManager).not_to receive(:delete_snapshots).with([])
+      expect(Api::SnapshotManager).not_to receive(:delete_snapshots).with([snap4a])
 
       expect(subject.perform).to eq "snapshots of deployment `deployment' deleted"
     end

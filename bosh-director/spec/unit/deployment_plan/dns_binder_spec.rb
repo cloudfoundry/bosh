@@ -10,38 +10,38 @@ module Bosh::Director
         before { allow(Config).to receive(:dns_enabled?).and_return(true) }
 
         before do
-          Config.stub(:dns).and_return({ 'address' => '1.2.3.4' })
-          Config.stub(:dns_domain_name).and_return('bosh')
+          allow(Config).to receive(:dns).and_return({ 'address' => '1.2.3.4' })
+          allow(Config).to receive(:dns_domain_name).and_return('bosh')
         end
 
         it "should create the domain if it doesn't exist" do
           domain = nil
-          deployment.should_receive(:dns_domain=) { |*args| domain = args.first }
+          expect(deployment).to receive(:dns_domain=) { |*args| domain = args.first }
           subject.bind_deployment
 
-          Models::Dns::Domain.count.should == 1
-          Models::Dns::Domain.first.should == domain
-          domain.name.should == 'bosh'
-          domain.type.should == 'NATIVE'
+          expect(Models::Dns::Domain.count).to eq(1)
+          expect(Models::Dns::Domain.first).to eq(domain)
+          expect(domain.name).to eq('bosh')
+          expect(domain.type).to eq('NATIVE')
         end
 
         it 'should reuse the domain if it exists' do
           domain = Models::Dns::Domain.make(:name => 'bosh', :type => 'NATIVE')
-          deployment.should_receive(:dns_domain=).with(domain)
+          expect(deployment).to receive(:dns_domain=).with(domain)
           subject.bind_deployment
 
-          Models::Dns::Domain.count.should == 1
+          expect(Models::Dns::Domain.count).to eq(1)
         end
 
         it "should create the SOA, NS & A record if they doesn't exist" do
           domain = Models::Dns::Domain.make(:name => 'bosh', :type => 'NATIVE')
-          deployment.should_receive(:dns_domain=)
+          expect(deployment).to receive(:dns_domain=)
           subject.bind_deployment
 
-          Models::Dns::Record.count.should == 3
+          expect(Models::Dns::Record.count).to eq(3)
           records = Models::Dns::Record
           types = records.map { |r| r.type }
-          types.should == %w[SOA NS A]
+          expect(types).to eq(%w[SOA NS A])
         end
 
         it 'should reuse the SOA record if it exists' do
@@ -54,15 +54,15 @@ module Bosh::Director
           a = Models::Dns::Record.make(:domain => domain, :name => 'ns.bosh',
             :type => 'A', :content => '1.2.3.4',
             :ttl => 14400) # 4h
-          deployment.should_receive(:dns_domain=)
+          expect(deployment).to receive(:dns_domain=)
           subject.bind_deployment
 
           soa.refresh
           ns.refresh
           a.refresh
 
-          Models::Dns::Record.count.should == 3
-          Models::Dns::Record.all.should == [soa, ns, a]
+          expect(Models::Dns::Record.count).to eq(3)
+          expect(Models::Dns::Record.all).to eq([soa, ns, a])
         end
       end
 
