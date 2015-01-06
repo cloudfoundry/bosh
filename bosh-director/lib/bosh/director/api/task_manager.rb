@@ -25,7 +25,7 @@ module Bosh::Director
           "description" => task.description,
           "timestamp" => task.timestamp.to_i,
           "result" => task.result,
-          "user" => task.user ? task.user.username : "admin"
+          "user" => task.username || "admin"
         }
       end
 

@@ -73,7 +73,7 @@ module Bosh::Director
             BCrypt::Password.new(new_user.password).should == password
           end
 
-          it "doesn't create a user with exising username" do
+          it "doesn't create a user with existing username" do
             post '/', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
             login_as(username, password)

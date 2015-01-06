@@ -40,6 +40,18 @@ module Bosh::Director
           @user_manager.delete_user('foo')
         }.should raise_error(UserNotFound)
       end
+
+      context 'when the user is associated to a task' do
+        it 'should delete the user' do
+          darth = Models::User.make(username: 'darth')
+          task = Models::Task.make(username: darth.username)
+
+          @user_manager.delete_user('darth')
+
+          Models::User.find(username: 'darth').should be_nil
+          Models::Task.find(id: task.id).username.should == 'darth'
+        end
+      end
     end
 
     describe :create_user do
