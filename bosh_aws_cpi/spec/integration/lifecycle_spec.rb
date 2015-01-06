@@ -12,11 +12,14 @@ describe Bosh::AwsCloud::Cloud do
     @manual_ip         = ENV['BOSH_AWS_LIFECYCLE_MANUAL_IP'] || raise("Missing BOSH_AWS_LIFECYCLE_MANUAL_IP")
   end
 
-  let(:instance_type) { ENV.fetch('BOSH_AWS_INSTANCE_TYPE', 't2.small') }
+  let(:instance_type_with_ephemeral) { ENV.fetch('BOSH_AWS_INSTANCE_TYPE', 'm3.medium') }
+  let(:instance_type_without_ephemeral) { ENV.fetch('BOSH_AWS_INSTANCE_TYPE_WITHOUT_EPHEMERAL', 't2.small') }
+  let(:instance_type) { instance_type_with_ephemeral }
   let(:ami) { ENV.fetch('BOSH_AWS_IMAGE_ID', 'ami-b66ed3de') }
   let(:vm_metadata) { { deployment: 'deployment', job: 'cpi_spec', index: '0', delete_me: 'please' } }
   let(:disks) { [] }
   let(:network_spec) { {} }
+  let(:resource_pool) { { 'instance_type' => instance_type } }
 
   before { Bosh::Registry::Client.stub(new: double('registry').as_null_object) }
 
@@ -167,6 +170,31 @@ describe Bosh::AwsCloud::Cloud do
         vm_lifecycle
       end
     end
+
+    context 'when ephemeral_disk properties are specified' do
+      let(:resource_pool) do
+        {
+          'instance_type' => instance_type,
+          'ephemeral_disk' => {
+            'size' => requested_ephemeral_disk_size,
+            'type' => 'gp2'
+          }
+        }
+      end
+      let(:requested_ephemeral_disk_size) { 4 }
+
+      let(:instance_type) { instance_type_without_ephemeral }
+
+      it 'requests ephemeral disk with the specified size' do
+        vm_lifecycle do |instance_id|
+          disks = cpi.get_disks(instance_id)
+          expect(disks.size).to eq(2)
+
+          ephemeral_volume = cpi.ec2.volumes[disks[1]]
+          expect(ephemeral_volume.size).to eq(requested_ephemeral_disk_size)
+        end
+      end
+    end
   end
 
   def vm_lifecycle
@@ -174,10 +202,10 @@ describe Bosh::AwsCloud::Cloud do
     instance_id = cpi.create_vm(
       nil,
       stemcell_id,
-      { 'instance_type' => instance_type },
+      resource_pool,
       network_spec,
       disks,
-      {}
+      nil,
     )
     expect(instance_id).not_to be_nil
 
