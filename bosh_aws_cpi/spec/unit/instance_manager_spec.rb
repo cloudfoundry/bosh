@@ -231,7 +231,7 @@ describe Bosh::AwsCloud::InstanceManager do
             'instance_type' => 'm1.small',
             'key_name' => 'bar',
             'ephemeral_disk' => {
-              'size' => 5.4,
+              'size' => 5529,
               'type' => 'gp2'
             }
           }
@@ -248,7 +248,7 @@ describe Bosh::AwsCloud::InstanceManager do
                 {
                   device_name: '/dev/sdb',
                   ebs: {
-                    volume_size: 5.4,
+                    volume_size: 6,
                     volume_type: 'gp2',
                     delete_on_termination: true,
                   }

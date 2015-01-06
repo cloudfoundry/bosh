@@ -126,15 +126,16 @@ module Bosh::AwsCloud
     def instance_create_wait_time; 30; end
 
     def block_device_mapping(ephemeral_disk_options)
-      ephemeral_volume_size = ephemeral_disk_options.fetch('size', 0)
+      ephemeral_volume_size_in_mb = ephemeral_disk_options.fetch('size', 0)
+      ephemeral_volume_size_in_gb = (ephemeral_volume_size_in_mb / 1024.0).ceil
       ephemeral_volume_type = ephemeral_disk_options.fetch('type', 'standard')
 
-      if ephemeral_volume_size > 0
+      if ephemeral_volume_size_in_mb > 0
         [
           {
             device_name: '/dev/sdb',
             ebs: {
-              volume_size: ephemeral_volume_size,
+              volume_size: ephemeral_volume_size_in_gb,
               volume_type: ephemeral_volume_type,
               delete_on_termination: true,
             },

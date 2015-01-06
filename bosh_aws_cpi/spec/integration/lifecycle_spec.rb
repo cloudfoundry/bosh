@@ -176,13 +176,11 @@ describe Bosh::AwsCloud::Cloud do
         {
           'instance_type' => instance_type,
           'ephemeral_disk' => {
-            'size' => requested_ephemeral_disk_size,
+            'size' => 4 * 1024,
             'type' => 'gp2'
           }
         }
       end
-      let(:requested_ephemeral_disk_size) { 4 }
-
       let(:instance_type) { instance_type_without_ephemeral }
 
       it 'requests ephemeral disk with the specified size' do
@@ -191,7 +189,7 @@ describe Bosh::AwsCloud::Cloud do
           expect(disks.size).to eq(2)
 
           ephemeral_volume = cpi.ec2.volumes[disks[1]]
-          expect(ephemeral_volume.size).to eq(requested_ephemeral_disk_size)
+          expect(ephemeral_volume.size).to eq(4)
         end
       end
     end
