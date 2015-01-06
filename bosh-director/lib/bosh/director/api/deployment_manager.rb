@@ -11,7 +11,7 @@ module Bosh::Director
         DeploymentLookup.new.by_name(name)
       end
 
-      def create_deployment(user, deployment_manifest, options = {})
+      def create_deployment(username, deployment_manifest, options = {})
         random_name = "deployment-#{SecureRandom.uuid}"
         deployment_manifest_dir = Dir::tmpdir
         deployment_manifest_file = File.join(deployment_manifest_dir, random_name)
@@ -22,11 +22,11 @@ module Bosh::Director
 
         write_file(deployment_manifest_file, deployment_manifest)
 
-        JobQueue.new.enqueue(user, Jobs::UpdateDeployment, 'create deployment', [deployment_manifest_file, options])
+        JobQueue.new.enqueue(username, Jobs::UpdateDeployment, 'create deployment', [deployment_manifest_file, options])
       end
 
-      def delete_deployment(user, deployment, options = {})
-        JobQueue.new.enqueue(user, Jobs::DeleteDeployment, "delete deployment #{deployment.name}", [deployment.name, options])
+      def delete_deployment(username, deployment, options = {})
+        JobQueue.new.enqueue(username, Jobs::DeleteDeployment, "delete deployment #{deployment.name}", [deployment.name, options])
       end
 
       def deployment_to_json(deployment)

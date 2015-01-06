@@ -5,12 +5,12 @@ module Bosh::Director
     class CompiledPackageGroupManager
       include ApiHelper
 
-      def create_from_file_path(user, path)
+      def create_from_file_path(username, path)
         unless File.exists?(path)
           raise DirectorError, "Failed to import compiled packages: file not found - #{path}"
         end
 
-        JobQueue.new.enqueue(user, Jobs::ImportCompiledPackages, 'import compiled packages', [path])
+        JobQueue.new.enqueue(username, Jobs::ImportCompiledPackages, 'import compiled packages', [path])
       end
     end
   end

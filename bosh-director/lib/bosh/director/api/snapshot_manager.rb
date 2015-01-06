@@ -1,20 +1,20 @@
 module Bosh::Director
   module Api
     class SnapshotManager
-      def create_deployment_snapshot_task(user, deployment, options = {})
-        JobQueue.new.enqueue(user, Jobs::SnapshotDeployment, 'snapshot deployment', [deployment.name, options])
+      def create_deployment_snapshot_task(username, deployment, options = {})
+        JobQueue.new.enqueue(username, Jobs::SnapshotDeployment, 'snapshot deployment', [deployment.name, options])
       end
 
-      def create_snapshot_task(user, instance, options)
-        JobQueue.new.enqueue(user, Jobs::CreateSnapshot, 'create snapshot', [instance.id, options])
+      def create_snapshot_task(username, instance, options)
+        JobQueue.new.enqueue(username, Jobs::CreateSnapshot, 'create snapshot', [instance.id, options])
       end
 
-      def delete_deployment_snapshots_task(user, deployment)
-        JobQueue.new.enqueue(user, Jobs::DeleteDeploymentSnapshots, 'delete deployment snapshots', [deployment.name])
+      def delete_deployment_snapshots_task(username, deployment)
+        JobQueue.new.enqueue(username, Jobs::DeleteDeploymentSnapshots, 'delete deployment snapshots', [deployment.name])
       end
 
-      def delete_snapshots_task(user, snapshot_cids)
-        JobQueue.new.enqueue(user, Jobs::DeleteSnapshots, 'delete snapshot', [snapshot_cids])
+      def delete_snapshots_task(username, snapshot_cids)
+        JobQueue.new.enqueue(username, Jobs::DeleteSnapshots, 'delete snapshot', [snapshot_cids])
       end
 
       def find_by_cid(deployment, snapshot_cid)
