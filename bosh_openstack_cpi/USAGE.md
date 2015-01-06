@@ -34,6 +34,8 @@ The registry options are passed to the Openstack CPI by the BOSH director based 
   default OpenStack ssh key name to assign to created virtual machines
 * `default_security_group` (required)
   default OpenStack security group to assign to created virtual machines
+* `ignore_server_availability_zone` (optional)
+  When creating a disk, do not use the availability zone of the server, fall back to Openstacks default. Commonly used if Ceph is used for block storage. Defaults to false.
 
 ### Registry options
 

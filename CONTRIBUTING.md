@@ -156,6 +156,7 @@ bundle exec rake spec:system:micro[openstack,kvm,ubuntu,trusty,manual,go]
 * `BOSH_OPENSTACK_REGISTRY_PORT` - (Optional) Local port on which to serve the microBOSH registry service
 * `BOSH_OPENSTACK_CONNECTION_TIMEOUT` - (Optional) HTTP connection timeout (in seconds) for talking to the OpenStack API
 * `BOSH_OPENSTACK_STATE_TIMEOUT` - (Optional) Timeout (in seconds) to wait for OpenStack resources to reach the desired state
+* `BOSH_OPENSTACK_IGNORE_SERVER_AZ` - (Optional) Ignore the servers availability zone when creating disks. Commonly used with storage systems like Ceph.
 * `BOSH_OPENSTACK_BAT_DEPLOYMENT_SPEC` Path to the BAT deployment spec YAML (input to the BATs deployment manifest erb template)
     * See [the `bat` README](bat/README.md#bat_deployment_spec) for BAT deployment spec examples.
       The director uuid and stemcell properties will be auto-populated by the rake task.

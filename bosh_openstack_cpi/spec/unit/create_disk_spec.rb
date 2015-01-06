@@ -89,6 +89,29 @@ describe Bosh::OpenStackCloud::Cloud do
     cloud.create_boot_disk(2048, stemcell_id, "foobar-land").should == "v-foobar"
   end
 
+  it "creates an OpenStack boot volume ignoring the server availability zone" do
+    unique_name = SecureRandom.uuid
+    stemcell_id = SecureRandom.uuid
+    disk_params = {
+        :display_name => "volume-#{unique_name}",
+        :size => 2,
+        :imageRef => stemcell_id
+    }
+    boot_volume = double("volume", :id => "v-foobar")
+
+    cloud_options = mock_cloud_options
+    cloud_options['properties']['openstack']['ignore_server_availability_zone'] = true
+
+    cloud = mock_cloud(cloud_options['properties']) do |openstack|
+      openstack.volumes.should_receive(:create).with(disk_params).and_return(boot_volume)
+    end
+
+    cloud.should_receive(:generate_unique_name).and_return(unique_name)
+    cloud.should_receive(:wait_resource).with(boot_volume, :available)
+
+    cloud.create_boot_disk(2048, stemcell_id, nil).should == "v-foobar"
+  end
+
   it "creates an OpenStack boot volume with a volume_type" do
     unique_name = SecureRandom.uuid
     stemcell_id = SecureRandom.uuid
@@ -158,6 +181,31 @@ describe Bosh::OpenStackCloud::Cloud do
         with("i-test").and_return(server)
       openstack.volumes.should_receive(:create).
         with(disk_params).and_return(volume)
+    end
+
+    cloud.should_receive(:generate_unique_name).and_return(unique_name)
+    cloud.should_receive(:wait_resource).with(volume, :available)
+
+    cloud.create_disk(1024, {}, "i-test")
+  end
+
+  it "does not put disk in the same AZ as a server if asked not to" do
+    unique_name = SecureRandom.uuid
+    disk_params = {
+        :display_name => "volume-#{unique_name}",
+        :display_description => "",
+        :size => 1
+    }
+    server = double("server", :id => "i-test",
+                    :availability_zone => "foobar-land")
+    volume = double("volume", :id => "v-foobar")
+
+    cloud_options = mock_cloud_options
+    cloud_options['properties']['openstack']['ignore_server_availability_zone'] = true
+
+    cloud = mock_cloud(cloud_options['properties']) do |openstack|
+      openstack.volumes.should_receive(:create).
+          with(disk_params).and_return(volume)
     end
 
     cloud.should_receive(:generate_unique_name).and_return(unique_name)
