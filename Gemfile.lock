@@ -273,6 +273,7 @@ GEM
     builder (3.1.4)
     codeclimate-test-reporter (0.3.0)
       simplecov (>= 0.7.1, < 1.0.0)
+    coderay (1.1.0)
     crack (0.3.2)
     daemons (1.1.9)
     diff-lcs (1.2.5)
@@ -342,6 +343,7 @@ GEM
       multi_json (>= 1.8.4)
     machinist (1.0.6)
     membrane (1.1.0)
+    method_source (0.8.2)
     mime-types (2.3)
     minitar (0.5.4)
     mixlib-shellout (1.1.0)
@@ -371,6 +373,10 @@ GEM
     polyglot (0.3.5)
     powerpack (0.0.9)
     progressbar (0.9.2)
+    pry (0.10.1)
+      coderay (~> 1.1.0)
+      method_source (~> 0.8.1)
+      slop (~> 3.4)
     rack (1.5.2)
     rack-protection (1.5.3)
       rack
@@ -511,6 +517,7 @@ DEPENDENCIES
   net-ssh
   parallel_tests
   pg
+  pry
   rack-test
   rake (~> 10.0)
   redis
