@@ -30,6 +30,7 @@ module Bosh::Stemcell
         :bosh_go_agent,
         :bosh_micro_go,
         :aws_cli,
+        :logrotate_config,
       ]
     end
 
