@@ -20,6 +20,7 @@ docker run \
   -v $(pwd):/opt/bosh \
   -e RUBY_VERSION \
   -e DB \
+  -e NUM_GROUPS \
   -e CODECLIMATE_REPO_TOKEN \
   -e COVERAGE \
   -e http_proxy=$http_proxy \
