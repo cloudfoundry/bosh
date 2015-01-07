@@ -21,7 +21,7 @@ describe 'health_monitor: 2', type: :integration do
   # ~2m
   it 'resurrects stateful nodes if fix_stateful_nodes director option is set' do
     current_sandbox.director_fix_stateful_nodes = true
-    current_sandbox.reconfigure_director
+    current_sandbox.restart_director
 
     deployment_hash = Bosh::Spec::Deployments.simple_manifest
     deployment_hash['jobs'][0]['instances'] = 1
