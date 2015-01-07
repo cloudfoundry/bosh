@@ -38,7 +38,7 @@ module Bosh::Dev
     attr_reader :env, :shell, :path_root
 
     def update_repo
-      Dir.chdir(path) { shell.run('git pull') }
+      Dir.chdir(path) { shell.run('git clean -fd && git pull') }
     end
 
     def clone_repo

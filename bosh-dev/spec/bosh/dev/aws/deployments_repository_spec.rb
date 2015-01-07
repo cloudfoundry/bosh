@@ -44,7 +44,7 @@ module Bosh::Dev
           before { FileUtils.mkdir_p(File.join(subject.path, '.git')) }
 
           it 'updates the repo at "#path"' do
-            shell.should_receive(:run).with('git pull')
+            shell.should_receive(:run).with('git clean -fd && git pull')
             subject.clone_or_update!
           end
         end
@@ -82,14 +82,14 @@ module Bosh::Dev
       before { FileUtils.mkdir_p(subject.path) }
 
       it 'updates repo by pulling in new changes, commits and pushes the current state of the directory' do
-        shell.should_receive(:run).with('git pull').ordered
+        shell.should_receive(:run).with('git clean -fd && git pull').ordered
         git_repo_updater.should_receive(:update_directory).with('/tmp/deployments', kind_of(String)).ordered
         subject.update_and_push
       end
 
       it 'does not commit and push if pulling in new changes fails due to merge conflicts' do
         error = Exception.new('fake-pull-exception')
-        shell.should_receive(:run).with('git pull').and_raise(error)
+        shell.should_receive(:run).with('git clean -fd && git pull').and_raise(error)
         git_repo_updater.should_not_receive(:update_directory)
 
         expect {
