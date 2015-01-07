@@ -4,6 +4,21 @@ describe Bosh::OpenStackCloud::Cloud do
   let(:default_connection_options) {
     { "instrumentor" => Bosh::OpenStackCloud::ExconLoggingInstrumentor }
   }
+  let(:options) do
+    {
+      'openstack' => {
+        'auth_url' => 'fake-auth-url',
+        'username' => 'fake-username',
+        'api_key' => 'fake-api-key',
+        'tenant' => 'fake-tenant'
+      },
+      'registry' => {
+        'endpoint' => 'fake-registry',
+        'user' => 'fake-user',
+        'password' => 'fake-password',
+      }
+    }
+  end
 
   describe :new do
     let(:cloud_options) { mock_cloud_options }
@@ -44,21 +59,6 @@ describe Bosh::OpenStackCloud::Cloud do
     before { allow(Fog::Volume).to receive(:new).and_return(volume) }
 
     describe 'validation' do
-      let(:options) do
-        {
-          'openstack' => {
-            'auth_url' => 'fake-auth-url',
-            'username' => 'fake-username',
-            'api_key' => 'fake-api-key',
-            'tenant' => 'fake-tenant'
-          },
-          'registry' => {
-            'endpoint' => 'fake-registry',
-            'user' => 'fake-user',
-            'password' => 'fake-password',
-          }
-        }
-      end
       subject(:subject) { Bosh::OpenStackCloud::Cloud.new(options) }
 
       context 'when all required options are specified' do
@@ -193,11 +193,9 @@ describe Bosh::OpenStackCloud::Cloud do
   end
 
   describe 'detaching a disk' do
-    let(:cloud) { Bosh::OpenStackCloud::Cloud.new({
-        'openstack' => { 'auth_url' => 'url', 'username' => 'user', 'api_key' => 'api_key', 'tenant' => 'tenant', 'wait_resource_poll_interval' => 0 },
-        'registry' => { 'endpoint' => 'endpoint', 'user' => 'user', 'password' => 'password' }
-      }) }
-    let(:compute_mock) { Fog::Compute.new({ :provider => 'OpenStack', :openstack_auth_url => 'url', :openstack_username => 'user', :openstack_tenant => 'tenant' }) }
+    subject(:cloud) { Bosh::OpenStackCloud::Cloud.new(options) }
+
+    let(:compute_mock) { Fog::Compute.new({ :provider => 'OpenStack', :openstack_auth_url => 'url', :openstack_username => 'fake-username', :openstack_tenant => 'fake-tenant' }) }
     let(:server_id) { compute_mock.create_server('server1', 'img', 'flav')[:body]["server"]["id"] }
     let(:volume_id) { compute_mock.create_volume('disk1', 'desc', 1)[:body]["volume"]["id"] }
     let(:attachment_id) { compute_mock.attach_volume(volume_id, server_id, '/dev/sda')[:body]["volumeAttachment"]["id"] }
