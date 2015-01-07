@@ -107,6 +107,9 @@ jobs:
 
 
 properties:
+  openstack:
+    connection_options:
+      idempotent: true
   batlight:
     <% if properties.batlight.fail %>
     fail: <%= properties.batlight.fail %>
