@@ -830,8 +830,9 @@ module Bosh::OpenStackCloud
     def detach_volume(server, volume)
       @logger.info("Detaching volume `#{volume.id}' from `#{server.id}'...")
       volume_attachments = with_openstack { server.volume_attachments }
-      if volume_attachments.find { |a| a['volumeId'] == volume.id }
-        with_openstack { volume.detach(server.id, volume.id) }
+      attachment = volume_attachments.find { |a| a['volumeId'] == volume.id }
+      if attachment
+        with_openstack { volume.detach(server.id, attachment['id']) }
         wait_resource(volume, :available)
       else
         @logger.info("Disk `#{volume.id}' is not attached to server `#{server.id}'. Skipping.")

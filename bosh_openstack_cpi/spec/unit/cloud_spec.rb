@@ -191,4 +191,36 @@ describe Bosh::OpenStackCloud::Cloud do
       end
     end
   end
+
+  describe 'detaching a disk' do
+    let(:cloud) { Bosh::OpenStackCloud::Cloud.new({
+        'openstack' => { 'auth_url' => 'url', 'username' => 'user', 'api_key' => 'api_key', 'tenant' => 'tenant', 'wait_resource_poll_interval' => 0 },
+        'registry' => { 'endpoint' => 'endpoint', 'user' => 'user', 'password' => 'password' }
+      }) }
+    let(:compute_mock) { Fog::Compute.new({ :provider => 'OpenStack', :openstack_auth_url => 'url', :openstack_username => 'user', :openstack_tenant => 'tenant' }) }
+    let(:server_id) { compute_mock.create_server('server1', 'img', 'flav')[:body]["server"]["id"] }
+    let(:volume_id) { compute_mock.create_volume('disk1', 'desc', 1)[:body]["volume"]["id"] }
+    let(:attachment_id) { compute_mock.attach_volume(volume_id, server_id, '/dev/sda')[:body]["volumeAttachment"]["id"] }
+
+    before do
+      Fog.mock!
+      Bosh::Clouds::Config.configure(double('config', task_checkpoint: true))
+    end
+
+    after { Fog.unmock! }
+
+    it 'sends the right magic to fog' do
+      expect_any_instance_of(Fog::Compute::OpenStack::Mock).to receive(:detach_volume).with(server_id, attachment_id) do
+        compute_mock.get_volume_details(volume_id)[:body]["volume"]["status"] = "available"
+      end
+
+      expect_any_instance_of(Bosh::Registry::Client).to receive(:read_settings).with('server1').and_return({
+            'disks' => { 'persistent' => { volume_id => '/dev/sda', 'other' => '/dev/sdb' } } })
+
+      expect_any_instance_of(Bosh::Registry::Client).to receive(:update_settings).with('server1', {
+            'disks' => { 'persistent' => { 'other' => '/dev/sdb' } } })
+
+      cloud.detach_disk(server_id, volume_id)
+    end
+  end
 end
