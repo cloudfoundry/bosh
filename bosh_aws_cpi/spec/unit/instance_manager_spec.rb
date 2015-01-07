@@ -34,9 +34,8 @@ describe Bosh::AwsCloud::InstanceManager do
         image_id: 'stemcell-id',
         instance_type: 'm1.small',
         user_data: '{"registry":{"endpoint":"http://..."},"dns":{"nameserver":"foo"}}',
-        key_name: 'bar',
-        security_groups: ['baz'],
         subnet: fake_aws_subnet,
+        security_groups: ['baz'],
         private_ip_address: '1.2.3.4',
         availability_zone: 'us-east-1a',
         block_device_mappings: { '/dev/sdb' => 'ephemeral0' }
@@ -51,7 +50,7 @@ describe Bosh::AwsCloud::InstanceManager do
 
     let(:agent_id) { 'agent-id' }
     let(:stemcell_id) { 'stemcell-id' }
-    let(:resource_pool) { {'instance_type' => 'm1.small', 'key_name' => 'bar'} }
+    let(:resource_pool) { {'instance_type' => 'm1.small'} }
     let(:networks_spec) do
       {
         'default' => {
@@ -224,55 +223,425 @@ describe Bosh::AwsCloud::InstanceManager do
       end
     end
 
-    describe 'block_device_mappings' do
-      context 'when ephemeral disk size is specified' do
-        let(:resource_pool) do
-          {
-            'instance_type' => 'm1.small',
-            'key_name' => 'bar',
-            'ephemeral_disk' => {
-              'size' => 5529,
-              'type' => 'gp2'
+    describe 'instance parameters' do
+      describe 'block_device_mappings' do
+        context 'when ephemeral disk size is specified' do
+          let(:resource_pool) do
+            {
+              'instance_type' => 'm1.small',
+              'key_name' => 'bar',
+              'ephemeral_disk' => {
+                'size' => 5529,
+                'type' => 'gp2'
+              }
             }
-          }
+          end
+
+          it 'requests ephemeral device of the requested size and type' do
+            allow(aws_instances).to receive(:create) { aws_instance }
+
+            create_instance
+
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:block_device_mappings]).to eq(
+                [
+                  {
+                    device_name: '/dev/sdb',
+                    ebs: {
+                      volume_size: 6,
+                      volume_type: 'gp2',
+                      delete_on_termination: true,
+                    }
+                  }
+                ]
+              )
+            end
+          end
         end
 
-        it 'requests ephemeral device of the requested size and type' do
-          allow(aws_instances).to receive(:create) { aws_instance }
+        context 'when ephemeral disk size is not specified' do
+          it 'requests ephemeral disk slot' do
+            allow(aws_instances).to receive(:create) { aws_instance }
 
-          create_instance
+            create_instance
 
-          expect(aws_instances).to have_received(:create) do |instance_params|
-            expect(instance_params[:block_device_mappings]).to eq(
-              [
-                {
-                  device_name: '/dev/sdb',
-                  ebs: {
-                    volume_size: 6,
-                    volume_type: 'gp2',
-                    delete_on_termination: true,
-                  }
-                }
-              ]
-            )
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:block_device_mappings]).to eq(
+                { '/dev/sdb' => 'ephemeral0' }
+              )
+            end
           end
         end
       end
 
-      context 'when ephemeral disk size is not specified' do
-        it 'requests ephemeral disk slot' do
+      describe 'key_name' do
+        context 'when resource pool has key name' do
+          let(:resource_pool) do
+            {
+              'key_name' => 'foo',
+            }
+          end
+
+          let(:instance_options) do
+            {
+              'aws' => {
+                'default_key_name' => 'bar',
+              }
+            }
+          end
+
+          it 'should set the key name' do
+            allow(aws_instances).to receive(:create) { aws_instance }
+
+            create_instance
+
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:key_name]).to eq('foo')
+            end
+          end
+        end
+
+        context 'when aws options have default key name' do
+          let(:instance_options) do
+            {
+              'aws' => {
+                'default_key_name' => 'bar',
+              }
+            }
+          end
+
+          it 'should set the key name' do
+            allow(aws_instances).to receive(:create) { aws_instance }
+
+            create_instance
+
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:key_name]).to eq('bar')
+            end
+          end
+        end
+
+        it 'should not have a key name instance parameter by default' do
           allow(aws_instances).to receive(:create) { aws_instance }
 
           create_instance
 
           expect(aws_instances).to have_received(:create) do |instance_params|
-            expect(instance_params[:block_device_mappings]).to eq(
-              { '/dev/sdb' => 'ephemeral0' }
-            )
+            expect(instance_params[:key_name]).to be_nil
+          end
+        end
+      end
+
+      describe 'security_groups_parameter' do
+        context 'when the networks specs have security groups' do
+          let(:networks_spec) do
+            {
+              'network' => {'cloud_properties' => {'security_groups' => 'yay'}},
+              'artwork' => {'cloud_properties' => {'security_groups' => ['yay', 'aya']}}
+            }
+          end
+
+          it 'returns a unique list of the specified group names' do
+            allow(aws_instances).to receive(:create) { aws_instance }
+
+            create_instance
+
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:security_groups]).to match_array(['yay', 'aya'])
+            end
+          end
+        end
+
+        context 'when aws options have default_security_groups' do
+          let(:instance_options) do
+            {
+              'aws' => {
+                'default_security_groups' => ['default_1', 'default_2'],
+              }
+            }
+          end
+
+          let(:networks_spec) do
+            {
+              'default' => {
+                'type' => 'dynamic',
+                'dns' => 'foo'
+              }
+            }
+          end
+
+          it 'returns the list of default AWS group names' do
+            allow(aws_instances).to receive(:create) { aws_instance }
+
+            create_instance
+
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:security_groups]).to match_array(['default_1', 'default_2'])
+            end
+          end
+        end
+      end
+
+      describe 'vpc_parameters' do
+        context 'when there is not a manual network in the specs' do
+          let(:networks_spec) do
+            {
+              'network' => {
+                'type' => 'designed by robots',
+                'ip' => '1.2.3.4',
+              }
+            }
+          end
+
+          it 'should not set the private IP address parameters' do
+            allow(aws_instances).to receive(:create) { aws_instance }
+
+            create_instance
+
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:private_ip_address]).to be_nil
+            end
+          end
+        end
+
+        context 'when there is a manual network in the specs' do
+          let(:networks_spec) do
+            {
+              'network' => {
+                'type' => 'manual',
+                'ip' => '1.2.3.4',
+              }
+            }
+          end
+
+          it 'should set the private IP address parameters' do
+            allow(aws_instances).to receive(:create) { aws_instance }
+
+            create_instance
+
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:private_ip_address]).to eq('1.2.3.4')
+            end
+          end
+        end
+
+        context 'when there is a network in the specs with unspecified type' do
+          let(:networks_spec) do
+            {
+              'network' => {
+                'ip' => '1.2.3.4',
+                'cloud_properties' => {'subnet' => 'sub-123456'},
+              }
+            }
+          end
+
+          it 'should set the private IP address parameters for that network (treat it as manual)' do
+            allow(aws_instances).to receive(:create) { aws_instance }
+
+            create_instance
+
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:private_ip_address]).to eq('1.2.3.4')
+            end
+          end
+        end
+
+        context 'when there is a subnet in the cloud_properties in the specs' do
+          let(:networks_spec) do
+            {
+              'network' => {
+                'ip' => '1.2.3.4',
+                'cloud_properties' => {'subnet' => 'sub-123456'},
+              }
+            }
+          end
+
+          it 'should set the subnet parameter' do
+            allow(aws_instances).to receive(:create) { aws_instance }
+
+            create_instance
+
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:subnet]).to eq(fake_aws_subnet)
+            end
+          end
+
+          context 'and network type is dynamic' do
+            let(:networks_spec) do
+              {
+                'network' => {
+                  'type' => 'dynamic',
+                  'cloud_properties' => {'subnet' => 'sub-123456'},
+                }
+              }
+            end
+
+            it 'should set the subnet parameter' do
+              allow(aws_instances).to receive(:create) { aws_instance }
+
+              create_instance
+
+              expect(aws_instances).to have_received(:create) do |instance_params|
+                expect(instance_params[:subnet]).to eq(fake_aws_subnet)
+              end
+            end
+          end
+
+          context 'and network type is manual' do
+            let(:networks_spec) do
+              {
+                'network' => {
+                  'type' => 'manual',
+                  'cloud_properties' => {'subnet' => 'sub-123456'},
+                }
+              }
+            end
+
+            it 'should set the subnet parameter' do
+              allow(aws_instances).to receive(:create) { aws_instance }
+
+              create_instance
+
+              expect(aws_instances).to have_received(:create) do |instance_params|
+                expect(instance_params[:subnet]).to eq(fake_aws_subnet)
+              end
+            end
+          end
+
+          context 'and network type is not set' do
+            let(:networks_spec) do
+              {
+                'network' => {
+                  'cloud_properties' => {'subnet' => 'sub-123456'},
+                }
+              }
+            end
+
+            it 'should set the subnet parameter' do
+              allow(aws_instances).to receive(:create) { aws_instance }
+
+              create_instance
+
+              expect(aws_instances).to have_received(:create) do |instance_params|
+                expect(instance_params[:subnet]).to eq(fake_aws_subnet)
+              end
+            end
+          end
+
+          context 'and network type is vip' do
+            let(:networks_spec) do
+              {
+                'network' => {
+                  'type' => 'vip',
+                  'cloud_properties' => {'subnet' => 'sub-123456'},
+                }
+              }
+            end
+
+            it 'should not set the subnet parameter' do
+              allow(aws_instances).to receive(:create) { aws_instance }
+
+              create_instance
+
+              expect(aws_instances).to have_received(:create) do |instance_params|
+                expect(instance_params[:subnet]).to be_nil
+              end
+            end
+          end
+        end
+
+        context 'when there is no subnet in the cloud_properties in the specs' do
+          let(:networks_spec) do
+            {
+              'network' => { 'type' => 'dynamic' }
+            }
+          end
+
+          it 'should not set the subnet parameter' do
+            allow(aws_instances).to receive(:create) { aws_instance }
+
+            create_instance
+
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:subnet]).to be_nil
+            end
+          end
+        end
+      end
+
+      describe 'availability_zone_parameter' do
+        let(:az_selector) { instance_double('Bosh::AwsCloud::AvailabilityZoneSelector') }
+
+        context 'if there is a common availability zone specified' do
+          before { allow(az_selector).to receive(:common_availability_zone).and_return('fake-zone') }
+
+          it 'sets the availability zone parameter appropriately' do
+            allow(aws_instances).to receive(:create) { aws_instance }
+
+            create_instance
+
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:availability_zone]).to eq('fake-zone')
+            end
+          end
+        end
+
+        context 'if there is no common availability zone' do
+          before { allow(az_selector).to receive(:common_availability_zone).and_return(nil) }
+
+          it 'does not set the availability zone parameter' do
+            allow(aws_instances).to receive(:create) { aws_instance }
+
+            create_instance
+
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:availability_zone]).to be_nil
+            end
+          end
+        end
+      end
+
+      describe 'user_data_parameter' do
+        context 'when a dns configuration is provided' do
+          let(:networks_spec) do
+            {
+              'foo' => {'dns' => 'bar'}
+            }
+          end
+
+          it 'populates the user data parameter with registry and dns data' do
+            allow(aws_instances).to receive(:create) { aws_instance }
+
+            create_instance
+
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:user_data]).
+                to eq('{"registry":{"endpoint":"http://..."},"dns":{"nameserver":"bar"}}')
+            end
+          end
+        end
+
+        context 'when a dns configuration is not provided' do
+          let(:networks_spec) do
+            {
+              'foo' => {'no-dns' => true}
+            }
+          end
+
+          it 'populates the user data parameter with only the registry data' do
+            allow(aws_instances).to receive(:create) { aws_instance }
+
+            create_instance
+
+            expect(aws_instances).to have_received(:create) do |instance_params|
+              expect(instance_params[:user_data]).
+                to eq('{"registry":{"endpoint":"http://..."}}')
+            end
           end
         end
       end
     end
+
   end
 
   describe '#find' do
@@ -288,208 +657,6 @@ describe Bosh::AwsCloud::InstanceManager do
         and_return(instance)
 
       expect(instance_manager.find(instance_id)).to eq(instance)
-    end
-  end
-
-  describe 'setting instance parameters' do
-    let(:instance_params) { {} }
-
-    describe '#set_key_name_parameter' do
-      it 'should set the key name instance parameter to the first non-null argument' do
-        instance_manager.set_key_name_parameter(instance_params, 'foo', nil)
-        expect(instance_params[:key_name]).to eq('foo')
-
-        instance_manager.set_key_name_parameter(instance_params, nil, 'bar')
-        expect(instance_params[:key_name]).to eq('bar')
-      end
-
-      it 'should not have a key name instance parameter if it receives only null arguments' do
-        instance_manager.set_key_name_parameter(instance_params, nil, nil)
-        expect(instance_params.keys).to_not include(:key_name)
-      end
-    end
-
-    describe '#set_security_groups_parameter' do
-      context 'when the networks specs have security groups' do
-        it 'returns a unique list of the specified group names' do
-          instance_manager.set_security_groups_parameter(
-            instance_params,
-            {
-              'network' => {'cloud_properties' => {'security_groups' => 'yay'}},
-              'artwork' => {'cloud_properties' => {'security_groups' => ['yay', 'aya']}}
-            },
-            ['default_1', 'default_2']
-          )
-
-          expect(instance_params[:security_groups].size).to eq(2)
-          expect(instance_params[:security_groups]).to include('yay', 'aya')
-        end
-      end
-
-      context 'when the networks specs have no security groups specified' do
-        it 'returns the list of default AWS group names' do
-          instance_manager.set_security_groups_parameter(
-            instance_params,
-            {'network' => {'cloud_properties' => {'foo' => 'bar'}}},
-            ['default_1', 'default_2'],
-          )
-
-          expect(instance_params[:security_groups].size).to eq(2)
-          expect(instance_params[:security_groups]).to include('default_1', 'default_2')
-        end
-      end
-    end
-
-    describe '#set_vpc_parameters' do
-      let(:fake_aws_subnet) { instance_double('AWS::EC2::Subnet') }
-
-      before { allow(region).to receive(:subnets).and_return('sub-123456' => fake_aws_subnet) }
-
-      context 'when there is not a manual network in the specs' do
-        it 'should not set the private IP address parameters' do
-          instance_manager.set_vpc_parameters(
-            instance_params,
-            'network' => {
-              'type' => 'designed by robots',
-              'ip' => '1.2.3.4',
-            },
-          )
-
-          expect(instance_params.keys).to_not include(:private_ip_address)
-        end
-      end
-
-      context 'when there is a manual network in the specs' do
-        it 'should set the private IP address parameters' do
-          instance_manager.set_vpc_parameters(
-            instance_params,
-            'network' => {
-              'type' => 'manual',
-              'ip' => '1.2.3.4',
-            },
-          )
-
-          expect(instance_params[:private_ip_address]).to eq('1.2.3.4')
-        end
-      end
-
-      context 'when there is a network in the specs with unspecified type' do
-        it 'should set the private IP address parameters for that network (treat it as manual)' do
-          instance_manager.set_vpc_parameters(
-            instance_params,
-            'network' => {
-              'ip' => '1.2.3.4',
-              'cloud_properties' => {'subnet' => 'sub-123456'},
-            },
-          )
-
-          expect(instance_params[:private_ip_address]).to eq('1.2.3.4')
-        end
-      end
-
-      context 'when there is a subnet in the cloud_properties in the specs' do
-        context 'and network type is dynamic' do
-          it 'should set the subnet parameter' do
-            instance_manager.set_vpc_parameters(
-              instance_params,
-              'network' => {
-                'type' => 'dynamic',
-                'cloud_properties' => {'subnet' => 'sub-123456'},
-              },
-            )
-
-            expect(instance_params.keys).to include(:subnet)
-          end
-        end
-
-        context 'and network type is manual' do
-          it 'should set the subnet parameter' do
-            instance_manager.set_vpc_parameters(
-              instance_params,
-              'network' => {
-                'type' => 'manual',
-                'cloud_properties' => {'subnet' => 'sub-123456'},
-              },
-            )
-
-            expect(instance_params.keys).to include(:subnet)
-          end
-        end
-
-        context 'and network type is not set' do
-          it 'should set the subnet parameter' do
-            instance_manager.set_vpc_parameters(
-              instance_params,
-              'network' => {
-                'cloud_properties' => {'subnet' => 'sub-123456'},
-              },
-            )
-
-            expect(instance_params.keys).to include(:subnet)
-          end
-        end
-
-        context 'and network type is vip' do
-          it 'should not set the subnet parameter' do
-            instance_manager.set_vpc_parameters(
-              instance_params,
-              'network' => {
-                'type' => 'vip',
-                'cloud_properties' => {'subnet' => 'sub-123456'},
-              },
-            )
-
-            expect(instance_params.keys).to_not include(:subnet)
-          end
-        end
-      end
-
-      context 'when there is no subnet in the cloud_properties in the specs' do
-        it 'should not set the subnet parameter' do
-          instance_manager.set_vpc_parameters(instance_params, 'network' => { 'type' => 'dynamic' })
-          expect(instance_params.keys).to_not include(:subnet)
-        end
-      end
-    end
-
-    describe '#set_availability_zone_parameter' do
-      let(:az_selector) { instance_double('Bosh::AwsCloud::AvailabilityZoneSelector') }
-
-      context 'if there is a common availability zone specified' do
-        before { allow(az_selector).to receive(:common_availability_zone).and_return('fake-zone') }
-
-        it 'sets the availability zone parameter appropriately' do
-          instance_manager.set_availability_zone_parameter(instance_params, ['fake-zone'], nil, 'fake-zone')
-          expect(instance_params[:availability_zone]).to eq('fake-zone')
-        end
-      end
-
-      context 'if there is no common availability zone' do
-        before { allow(az_selector).to receive(:common_availability_zone).and_return(nil) }
-
-        it 'does not set the availability zone parameter' do
-          instance_manager.set_availability_zone_parameter(instance_params, [], nil, nil)
-          expect(instance_params.keys).to_not include(:availability_zone)
-        end
-      end
-    end
-
-    describe '#set_user_data_parameter' do
-      context 'when a dns configuration is provided' do
-        it 'populates the user data parameter with registry and dns data' do
-          instance_manager.set_user_data_parameter(instance_params, 'foo' => {'dns' => 'bar'})
-          expect(instance_params[:user_data]).
-             to eq('{"registry":{"endpoint":"http://..."},"dns":{"nameserver":"bar"}}')
-        end
-      end
-
-      context 'when a dns configuration is not provided' do
-        it 'populates the user data parameter with only the registry data' do
-          instance_manager.set_user_data_parameter(instance_params, 'foo' => {'no_dns' => 'bar'})
-          expect(instance_params[:user_data]).
-            to eq('{"registry":{"endpoint":"http://..."}}')
-        end
-      end
     end
   end
 end
