@@ -12,7 +12,7 @@ describe Bosh::OpenStackCloud::Cloud do
   it "detaches an OpenStack volume from a server" do
     server = double("server", :id => "i-test", :name => "i-test")
     volume = double("volume", :id => "v-foobar")
-    volume_attachments = [{"volumeId" => "v-foobar"}, {"volumeId" => "v-barfoo"}]
+    volume_attachments = [{"id" => "a1", "volumeId" => "v-foobar"}, {"id" => "a2", "volumeId" => "v-barfoo"}]
 
     cloud = mock_cloud do |openstack|
       openstack.servers.should_receive(:get).with("i-test").and_return(server)
@@ -20,7 +20,7 @@ describe Bosh::OpenStackCloud::Cloud do
     end
 
     server.should_receive(:volume_attachments).and_return(volume_attachments)
-    volume.should_receive(:detach).with(server.id, "v-foobar").and_return(true)
+    volume.should_receive(:detach).with(server.id, "a1").and_return(true)
     cloud.should_receive(:wait_resource).with(volume, :available)
 
     old_settings = {

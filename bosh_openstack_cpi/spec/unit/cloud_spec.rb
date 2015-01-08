@@ -4,21 +4,6 @@ describe Bosh::OpenStackCloud::Cloud do
   let(:default_connection_options) {
     { "instrumentor" => Bosh::OpenStackCloud::ExconLoggingInstrumentor }
   }
-  let(:options) do
-    {
-      'openstack' => {
-        'auth_url' => 'fake-auth-url',
-        'username' => 'fake-username',
-        'api_key' => 'fake-api-key',
-        'tenant' => 'fake-tenant'
-      },
-      'registry' => {
-        'endpoint' => 'fake-registry',
-        'user' => 'fake-user',
-        'password' => 'fake-password',
-      }
-    }
-  end
 
   describe :new do
     let(:cloud_options) { mock_cloud_options }
@@ -59,6 +44,21 @@ describe Bosh::OpenStackCloud::Cloud do
     before { allow(Fog::Volume).to receive(:new).and_return(volume) }
 
     describe 'validation' do
+      let(:options) do
+        {
+          'openstack' => {
+            'auth_url' => 'fake-auth-url',
+            'username' => 'fake-username',
+            'api_key' => 'fake-api-key',
+            'tenant' => 'fake-tenant'
+          },
+          'registry' => {
+            'endpoint' => 'fake-registry',
+            'user' => 'fake-user',
+            'password' => 'fake-password',
+          }
+        }
+      end
       subject(:subject) { Bosh::OpenStackCloud::Cloud.new(options) }
 
       context 'when all required options are specified' do
@@ -189,36 +189,6 @@ describe Bosh::OpenStackCloud::Cloud do
         expect(Fog::Image).to have_received(:new).with(hash_including(connection_options: merged_connection_options))
         expect(Fog::Volume).to have_received(:new).with(hash_including(connection_options: merged_connection_options))
       end
-    end
-  end
-
-  describe 'detaching a disk' do
-    subject(:cloud) { Bosh::OpenStackCloud::Cloud.new(options) }
-
-    let(:compute_mock) { Fog::Compute.new({ :provider => 'OpenStack', :openstack_auth_url => 'url', :openstack_username => 'fake-username', :openstack_tenant => 'fake-tenant' }) }
-    let(:server_id) { compute_mock.create_server('server1', 'img', 'flav')[:body]["server"]["id"] }
-    let(:volume_id) { compute_mock.create_volume('disk1', 'desc', 1)[:body]["volume"]["id"] }
-    let(:attachment_id) { compute_mock.attach_volume(volume_id, server_id, '/dev/sda')[:body]["volumeAttachment"]["id"] }
-
-    before do
-      Fog.mock!
-      Bosh::Clouds::Config.configure(double('config', task_checkpoint: true))
-    end
-
-    after { Fog.unmock! }
-
-    it 'sends the right magic to fog' do
-      expect_any_instance_of(Fog::Compute::OpenStack::Mock).to receive(:detach_volume).with(server_id, attachment_id) do
-        compute_mock.get_volume_details(volume_id)[:body]["volume"]["status"] = "available"
-      end
-
-      expect_any_instance_of(Bosh::Registry::Client).to receive(:read_settings).with('server1').and_return({
-            'disks' => { 'persistent' => { volume_id => '/dev/sda', 'other' => '/dev/sdb' } } })
-
-      expect_any_instance_of(Bosh::Registry::Client).to receive(:update_settings).with('server1', {
-            'disks' => { 'persistent' => { 'other' => '/dev/sdb' } } })
-
-      cloud.detach_disk(server_id, volume_id)
     end
   end
 end
