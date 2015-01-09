@@ -128,6 +128,17 @@ describe Bosh::AwsCloud::Cloud do
       end
     end
 
+    describe 'disk encryption' do
+      it 'should create encrypted disks' do
+        vm_lifecycle do |instance_id|
+          volume_id = cpi.create_disk(2048, {'encrypted' => true}, instance_id)
+          expect(volume_id).not_to be_nil
+          encrypted_volume = cpi.ec2.volumes[volume_id]
+          expect(encrypted_volume.encrypted?).to be(true)
+        end
+      end
+    end
+
     context 'with existing disks' do
       let!(:existing_volume_id) { cpi.create_disk(2048, {}) }
       let(:disks) { [existing_volume_id] }

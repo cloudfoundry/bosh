@@ -165,8 +165,10 @@ describe Bosh::AwsCloud::Cloud do
             expect(ec2.volumes).to receive(:create).with(
               size: 2,
               availability_zone: 'fake-availability-zone',
-              volume_type: 'gp2'
+              volume_type: 'gp2',
+              encrypted: false
             ).and_return(volume)
+
             cloud.create_disk(disk_size, cloud_properties, 42)
           end
         end
@@ -178,7 +180,8 @@ describe Bosh::AwsCloud::Cloud do
             expect(ec2.volumes).to receive(:create).with(
               size: 2,
               availability_zone: 'fake-availability-zone',
-              volume_type: 'standard'
+              volume_type: 'standard',
+              encrypted: false
             ).and_return(volume)
             cloud.create_disk(disk_size, cloud_properties, 42)
           end
@@ -190,7 +193,8 @@ describe Bosh::AwsCloud::Cloud do
           expect(ec2.volumes).to receive(:create).with(
             size: 2,
             availability_zone: 'fake-availability-zone',
-            volume_type: 'standard'
+            volume_type: 'standard',
+            encrypted: false
           ).and_return(volume)
           cloud.create_disk(disk_size, cloud_properties, 42)
         end
