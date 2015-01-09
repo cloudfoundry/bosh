@@ -1,3 +1,91 @@
+## 2810
+
+New Features:
+
+  * cpi: aws: allow to request EBS backed ephemeral disk for any instance type
+        by specifying `ephemeral_disk` on the resource_pool's cloud_properties. [e7ae973]
+
+Improvements:
+
+  * stemcell: Run logrotate hourly instead of daily [5e841be]
+  * stemcell: Rotate /var/log files based on size [5e841be]
+
+Bug Fixes:
+
+  * cpi: openstack: Use volume attachment id instead of just volume id
+        when detaching volumes [41e69dc]
+
+## 2809
+
+Bug Fixes:
+
+  * director: Denormalize Task => User association so Tasks have username
+        so that operator can delete Director users even if there are tasks
+        associated with that user [11a8c7a]
+
+## 2807
+
+New Features:
+
+  * cpi: vsphere: Automatically create Datastore folders
+        if they are not found when persistent disks are created [c2b5a51]
+
+Improvements:
+
+  * cpi: aws: Explicitly request ephemeral disk for m3 instances on AWS
+        because sometimes AWS fails to honor the AMI's block_device_mappings [83c6aef]
+
+## 2798
+
+Improvements:
+
+  * agent: Bump bosh-agent so that it can look up persistent disks
+        by their OpenStack UUID instead of a device path [7d6c56c]
+
+## 2797
+
+New Features:
+
+  * cpi: openstack: Add support for OpenStack Nova scheduler hints.
+        scheduler_hints can be now specified on the resource_pool's
+        cloud_properties. [a32e62e]
+  * cpi: vsphere: Automatically create VMs/Templates folders
+        if they are not found when VMs are created [9221ece]
+  * cli: added `--parallel X` option so that `bosh sync blobs`
+        can download blobs in parallel [458180b]
+
+Improvements:
+
+  * cli: fix issue with having empty release_versions array in release parameters
+        so that `bosh releases` command still shows other uploaded releases [f3c9662]
+  * stemcell: monit should be started by the agent to make sure agent
+        has time to mount `/var/vcap/sys/run` on tmpfs [ed7b8e1]
+
+## 2792
+
+New Features:
+
+  * monitor: adding graphite plugin to bosh-monitor [91c1836]
+
+Improvements:
+
+  * cli: Blobstore config is no longer required to create a dev release [d0aa917]
+
+## 2789
+
+New Features:
+
+  * cli: add `--redact-diff` option to `bosh deploy` cli command [3b22d7a]
+
+## 2788
+
+Improvements:
+
+  * cpi: vsphere: Check for attached disk by disk_cid instead of full path
+        because vCenter sometimes returns internal vSAN path
+        instead of pretty UI path [ff3cedf]
+  * monitor: Log when health monitor is returning 500 from /healthz [bcc9dec]
+
 ## 2786
 
 New Features:
