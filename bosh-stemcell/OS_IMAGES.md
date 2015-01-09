@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `Wxp0XbijOQyo_pYgs3ctYQ0Dc6uPaO.I`
+  switch logrotate to rotate based on size
+
 * `QB8K.uFpJXHYJ4Nm.Of.CALZ_8Vh7sF2`
   start monit during agent bootstrap
 
@@ -79,6 +82,9 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 ## CentOS 6.6
 
 CentOS 6.6 images have filename `bosh-centos-6_6-os-image.tgz`
+
+ * `Hb884_xVvhoIhdTEmMtaTHKC.s7b9AmN`
+  switch logrotate to rotate based on size
 
  * `xbBfE2GA7AgmCGA6MfNfhHX67vkJlIze`
   start monit during agent bootstrap
