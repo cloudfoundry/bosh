@@ -108,7 +108,7 @@ module Bosh::AwsCloud
         ]
       else
         # m3 instances require that instance storage mappings be specified when the instance is created... [#84893804]
-        { '/dev/sdb' => 'ephemeral0' }
+        default_ephemeral_disk_mapping
       end
     end
 
