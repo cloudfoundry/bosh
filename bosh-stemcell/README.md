@@ -23,7 +23,7 @@ From a fresh copy of the bosh repo:
     export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
     cd bosh-stemcell
     vagrant up remote --provider=aws
-    
+
 ## Updating source code on stemcell building VM
 
 With existing stemcell building VM run:
@@ -31,7 +31,7 @@ With existing stemcell building VM run:
     export BOSH_AWS_ACCESS_KEY_ID=YOUR-AWS-ACCESS-KEY
     export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
     cd bosh-stemcell
-    vagrant provision remote --provider=aws
+    vagrant provision remote
 
 
 ## Build an OS image
@@ -42,7 +42,7 @@ If you have changes that will require new OS image you need to build one. A stem
       cd /bosh
       bundle exec rake stemcell:build_os_image[ubuntu,trusty,/tmp/ubuntu_base_image.tgz]
     ' remote
-    
+
 See below [Building the stemcell with local OS image](#building-the-stemcell-with-local-os-image) on how to build stemcell with the new OS image.
 
 ## Building a stemcell
@@ -57,14 +57,14 @@ The final two arguments are the S3 bucket and key for the OS image to use, which
       CANDIDATE_BUILD_NUMBER=<current_build> http_proxy=http://localhost:3142/ bundle exec rake stemcell:build[vsphere,esxi,centos,nil,go,bosh-os-images,bosh-centos-6_5-os-image.tgz]
     ' remote
 
-    
+
 ### Building the stemcell with local OS image
 
     vagrant ssh -c '
       cd /bosh
       bundle exec rake stemcell:build_with_local_os_image[aws,xen,ubuntu,trusty,go,/tmp/ubuntu_base_image.tgz]
     ' remote
-    
+
 ### Building light stemcell
 
 AWS stemcells can be shipped in light format which includes a reference to a public AMI. This speeds up the process of uploading the stemcell to AWS. To build a light stemcell:
