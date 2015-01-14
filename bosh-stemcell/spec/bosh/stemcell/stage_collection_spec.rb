@@ -86,11 +86,20 @@ module Bosh::Stemcell
       end
     end
 
-    describe '#infrastructure_stages' do
+    describe '#build_stemcell_image_stages' do
+      let(:vmware_package_stemcell_steps) {
+        [
+          :image_ovf_vmx,
+          :image_ovf_generate,
+          :image_ovf_prepare_stemcell,
+          :stemcell
+        ]
+      }
+
       context 'when using AWS' do
         let(:infrastructure) { Infrastructure.for('aws') }
 
-        let(:aws_infrastructure_stages) {
+        let(:aws_build_stemcell_image_stages) {
           [
             :system_aws_network,
             :system_aws_modules,
@@ -101,6 +110,11 @@ module Bosh::Stemcell
             :image_create,
             :image_install_grub,
             :image_aws_update_grub,
+          ]
+        }
+
+        let(:aws_package_stemcell_stages) {
+          [
             :image_aws_prepare_stemcell,
             :stemcell
           ]
@@ -110,7 +124,8 @@ module Bosh::Stemcell
           let(:operating_system) { OperatingSystem.for('centos') }
 
           it 'returns the correct stages' do
-            expect(stage_collection.infrastructure_stages).to eq(aws_infrastructure_stages)
+            expect(stage_collection.build_stemcell_image_stages).to eq(aws_build_stemcell_image_stages)
+            expect(stage_collection.package_stemcell_stages).to eq(aws_package_stemcell_stages)
           end
         end
 
@@ -118,7 +133,8 @@ module Bosh::Stemcell
           let(:operating_system) { OperatingSystem.for('ubuntu') }
 
           it 'returns the correct stages' do
-            expect(stage_collection.infrastructure_stages).to eq(aws_infrastructure_stages)
+            expect(stage_collection.build_stemcell_image_stages).to eq(aws_build_stemcell_image_stages)
+            expect(stage_collection.package_stemcell_stages).to eq(aws_package_stemcell_stages)
           end
 
         end
@@ -131,7 +147,7 @@ module Bosh::Stemcell
           let(:operating_system) { OperatingSystem.for('centos') }
 
           it 'has the correct stages' do
-            expect(stage_collection.infrastructure_stages).to eq(
+            expect(stage_collection.build_stemcell_image_stages).to eq(
               [
                 :system_openstack_network_centos,
                 :system_parameters,
@@ -141,6 +157,10 @@ module Bosh::Stemcell
                 :bosh_openstack_agent_settings,
                 :image_create,
                 :image_install_grub,
+              ]
+            )
+            expect(stage_collection.package_stemcell_stages).to eq(
+                [
                 :image_openstack_qcow2,
                 :image_openstack_prepare_stemcell,
                 :stemcell_openstack
@@ -153,7 +173,7 @@ module Bosh::Stemcell
           let(:operating_system) { OperatingSystem.for('ubuntu') }
 
           it 'has the correct stages' do
-            expect(stage_collection.infrastructure_stages).to eq(
+            expect(stage_collection.build_stemcell_image_stages).to eq(
               [
                 :system_openstack_network,
                 :system_openstack_clock,
@@ -165,10 +185,14 @@ module Bosh::Stemcell
                 :bosh_openstack_agent_settings,
                 :image_create,
                 :image_install_grub,
-                :image_openstack_qcow2,
-                :image_openstack_prepare_stemcell,
-                :stemcell_openstack
               ]
+            )
+            expect(stage_collection.package_stemcell_stages).to eq(
+                [
+                  :image_openstack_qcow2,
+                  :image_openstack_prepare_stemcell,
+                  :stemcell_openstack
+                ]
             )
           end
         end
@@ -181,7 +205,7 @@ module Bosh::Stemcell
           let(:operating_system) { OperatingSystem.for('centos') }
 
           it 'has the correct stages' do
-            expect(stage_collection.infrastructure_stages).to eq(
+            expect(stage_collection.build_stemcell_image_stages).to eq(
               [
                 #:system_open_vm_tools,
                 :system_vsphere_cdrom,
@@ -190,12 +214,9 @@ module Bosh::Stemcell
                 :bosh_harden,
                 :image_create,
                 :image_install_grub,
-                :image_ovf_vmx,
-                :image_ovf_generate,
-                :image_ovf_prepare_stemcell,
-                :stemcell
               ]
             )
+            expect(stage_collection.package_stemcell_stages).to eq(vmware_package_stemcell_steps)
           end
         end
 
@@ -203,7 +224,7 @@ module Bosh::Stemcell
           let(:operating_system) { OperatingSystem.for('ubuntu') }
 
           it 'has the correct stages' do
-            expect(stage_collection.infrastructure_stages).to eq(
+            expect(stage_collection.build_stemcell_image_stages).to eq(
               [
                 :system_open_vm_tools,
                 :system_vsphere_cdrom,
@@ -212,12 +233,9 @@ module Bosh::Stemcell
                 :bosh_harden,
                 :image_create,
                 :image_install_grub,
-                :image_ovf_vmx,
-                :image_ovf_generate,
-                :image_ovf_prepare_stemcell,
-                :stemcell
               ]
             )
+            expect(stage_collection.package_stemcell_stages).to eq(vmware_package_stemcell_steps)
           end
         end
       end
@@ -229,7 +247,7 @@ module Bosh::Stemcell
           let(:operating_system) { OperatingSystem.for('ubuntu') }
 
           it 'has the correct stages' do
-            expect(stage_collection.infrastructure_stages).to eq(
+            expect(stage_collection.build_stemcell_image_stages).to eq(
               [
                 :system_open_vm_tools,
                 :system_vsphere_cdrom,
@@ -238,12 +256,9 @@ module Bosh::Stemcell
                 :bosh_harden,
                 :image_create,
                 :image_install_grub,
-                :image_ovf_vmx,
-                :image_ovf_generate,
-                :image_ovf_prepare_stemcell,
-                :stemcell
               ]
             )
+            expect(stage_collection.package_stemcell_stages).to eq(vmware_package_stemcell_steps)
           end
         end
 
@@ -251,7 +266,7 @@ module Bosh::Stemcell
           let(:operating_system) { OperatingSystem.for('centos') }
 
           it 'has the correct stages' do
-            expect(stage_collection.infrastructure_stages).to eq(
+            expect(stage_collection.build_stemcell_image_stages).to eq(
               [
                 #:system_open_vm_tools,
                 :system_vsphere_cdrom,
@@ -260,12 +275,9 @@ module Bosh::Stemcell
                 :bosh_harden,
                 :image_create,
                 :image_install_grub,
-                :image_ovf_vmx,
-                :image_ovf_generate,
-                :image_ovf_prepare_stemcell,
-                :stemcell
               ]
             )
+            expect(stage_collection.package_stemcell_stages).to eq(vmware_package_stemcell_steps)
           end
         end
       end

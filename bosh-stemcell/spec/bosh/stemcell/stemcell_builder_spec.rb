@@ -21,7 +21,8 @@ describe Bosh::Stemcell::StemcellBuilder do
     instance_double(
       'Bosh::Stemcell::StageCollection',
       extract_operating_system_stages: [],
-      infrastructure_stages: [],
+      build_stemcell_image_stages: [],
+      package_stemcell_stages: [],
       agent_stages: [],
     )
   end
@@ -41,8 +42,11 @@ describe Bosh::Stemcell::StemcellBuilder do
     it 'runs the extract OS, agent, and infrastructure stages' do
       allow(collection).to receive(:extract_operating_system_stages).and_return([:extract_stage])
       allow(collection).to receive(:agent_stages).and_return([:agent_stage])
-      allow(collection).to receive(:infrastructure_stages).and_return([:infrastructure_stage])
-      expect(runner).to receive(:configure_and_apply).with([:extract_stage, :agent_stage, :infrastructure_stage])
+      allow(collection).to receive(:build_stemcell_image_stages).and_return([:infrastructure_stage])
+      allow(collection).to receive(:package_stemcell_stages).and_return([:package_stage])
+      expect(runner).to receive(:configure_and_apply).with([
+            :extract_stage, :agent_stage, :infrastructure_stage, :package_stage
+          ])
 
       builder.build
     end

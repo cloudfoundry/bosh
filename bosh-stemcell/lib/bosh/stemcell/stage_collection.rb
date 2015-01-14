@@ -34,7 +34,7 @@ module Bosh::Stemcell
       ]
     end
 
-    def infrastructure_stages
+    def build_stemcell_image_stages
       case infrastructure
       when Infrastructure::Aws then
         aws_stages
@@ -46,6 +46,21 @@ module Bosh::Stemcell
         vcloud_stages
       when Infrastructure::Warden then
         warden_stages
+      end
+    end
+
+    def package_stemcell_stages
+      case infrastructure
+        when Infrastructure::Aws then
+          aws_package_stages
+        when Infrastructure::OpenStack then
+          openstack_package_stages
+        when Infrastructure::Vsphere then
+          vmware_package_stages
+        when Infrastructure::Vcloud then
+          vmware_package_stages
+        when Infrastructure::Warden then
+          warden_package_stages
       end
     end
 
@@ -129,10 +144,6 @@ module Bosh::Stemcell
         :bosh_harden,
         :image_create,
         :image_install_grub,
-        :image_ovf_vmx,
-        :image_ovf_generate,
-        :image_ovf_prepare_stemcell,
-        :stemcell,
       ]
     end
 
@@ -145,10 +156,6 @@ module Bosh::Stemcell
         :bosh_harden,
         :image_create,
         :image_install_grub,
-        :image_ovf_vmx,
-        :image_ovf_generate,
-        :image_ovf_prepare_stemcell,
-        :stemcell
       ]
     end
 
@@ -164,10 +171,6 @@ module Bosh::Stemcell
         :bosh_openstack_agent_settings,
         :image_create,
         :image_install_grub,
-        :image_openstack_qcow2,
-        :image_openstack_prepare_stemcell,
-        # Final stemcell
-        :stemcell_openstack,
       ]
     end
 
@@ -185,9 +188,6 @@ module Bosh::Stemcell
         :image_create,
         :image_install_grub,
         :image_aws_update_grub,
-        :image_aws_prepare_stemcell,
-        # Final stemcell
-        :stemcell,
       ]
     end
 
@@ -206,10 +206,6 @@ module Bosh::Stemcell
         # Image/bootloader
         :image_create,
         :image_install_grub,
-        :image_openstack_qcow2,
-        :image_openstack_prepare_stemcell,
-        # Final stemcell
-        :stemcell_openstack,
       ]
     end
 
@@ -225,11 +221,6 @@ module Bosh::Stemcell
         # Image/bootloader
         :image_create,
         :image_install_grub,
-        :image_ovf_vmx,
-        :image_ovf_generate,
-        :image_ovf_prepare_stemcell,
-        # Final stemcell
-        :stemcell,
       ]
     end
 
@@ -245,11 +236,6 @@ module Bosh::Stemcell
         # Image/bootloader
         :image_create,
         :image_install_grub,
-        :image_ovf_vmx,
-        :image_ovf_generate,
-        :image_ovf_prepare_stemcell,
-        # Final stemcell
-        :stemcell
       ]
     end
 
@@ -264,9 +250,41 @@ module Bosh::Stemcell
         :bosh_copy_root,
         # only used for spec test
         :image_create,
+      ]
+    end
+
+    def aws_package_stages
+      [
+        :image_aws_prepare_stemcell,
         # Final stemcell
         :stemcell,
       ]
     end
+
+    def openstack_package_stages
+      [
+        :image_openstack_qcow2,
+        :image_openstack_prepare_stemcell,
+        # Final stemcell
+        :stemcell_openstack,
+      ]
+    end
+
+    def vmware_package_stages
+      [
+        :image_ovf_vmx,
+        :image_ovf_generate,
+        :image_ovf_prepare_stemcell,
+        :stemcell,
+      ]
+    end
+
+    def warden_package_stages
+      [
+        # Final stemcell
+        :stemcell,
+      ]
+    end
+
   end
 end
