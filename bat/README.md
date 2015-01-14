@@ -66,6 +66,8 @@ properties:
   stemcell:
     name: bosh-openstack-kvm-ubuntu
     version: latest
+  pool_size: 1
+  instances: 1
   flavor_with_no_ephemeral_disk: no-ephemeral
   vip: 0.0.0.43 # Virtual (public/floating) IP assigned to the bat-release job vm ('static' network), for ssh testing
   networks:
@@ -87,6 +89,8 @@ properties:
   stemcell:
     name: bosh-openstack-kvm-ubuntu
     version: latest
+  pool_size: 1
+  instances: 1
   flavor_with_no_ephemeral_disk: no-ephemeral
   vip: 0.0.0.43 # Virtual (public/floating) IP assigned to the bat-release job vm ('static' network), for ssh testing
   second_static_ip: 10.253.3.29 # Secondary (private) IP to use for reconfiguring networks, must be in the primary network & different from static_ip
@@ -124,6 +128,8 @@ properties:
   stemcell:
     name: bosh-vsphere-esxi-ubuntu
     version: latest
+  pool_size: 1
+  instances: 1
   second_static_ip: 192.168.79.62 # Secondary (private) IP assigned to the bat-release job vm, used for testing network reconfiguration, must be in the primary network & different from static_ip
   network:
   - name: static
