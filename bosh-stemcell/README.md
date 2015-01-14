@@ -36,13 +36,21 @@ With existing stemcell building VM run:
 
 ## Build an OS image
 
-If you have changes that will require new OS image you need to build one. A stemcell with a custom OS image can be built using the stemcell-building VM created earlier.
+An OS image is a tarball that contains a snapshot of an entire OS filesystem that contains all the libraries and system utilities that the BOSH agent depends on. It does not contain the BOSH agent or the virtualization tools: there is [a separate Rake task](#building-the-stemcell-with-local-os-image) that adds the BOSH agent and a chosen set of virtualization tools to any base OS image, thereby producing a stemcell.
+
+If you have changes that will require new OS image you need to build one. A stemcell with a custom OS image can be built using the stemcell-building VM described above.
 
     vagrant ssh -c '
       cd /bosh
       bundle exec rake stemcell:build_os_image[ubuntu,trusty,/tmp/ubuntu_base_image.tgz]
     ' remote
-    
+
+The arguments to `stemcell:build_os_image` are:
+
+1. *`operating_system_name`* identifies which type of OS to fetch. Determines which package repository and packaging tool will be used to download and assemble the files. Must match a value recognized by the  [OperatingSystem](lib/bosh/stemcell/operating_system.rb) module. Currently, only `ubuntu` and `centos` are recognized.
+2. *`operating_system_version`* an identifier that the system may use to decide which release of the OS to download. Acceptable values depend on the operating system. For `ubuntu`, use `trusty`. For `centos`, the value is currently ignored.
+3. *`os_image_path`* the path to write the finished OS image tarball to. If a file exists at this path already, it will be overwritten without warning.
+
 See below [Building the stemcell with local OS image](#building-the-stemcell-with-local-os-image) on how to build stemcell with the new OS image.
 
 ## Building a stemcell
