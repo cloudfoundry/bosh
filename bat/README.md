@@ -5,7 +5,7 @@ The BOSH Acceptance Tests are meant to be used to verify the commonly used funct
 
 It requires a BOSH deployment, either a deployed micro bosh stemcell, or a full bosh-release deployment.
 
-Note! If you run BAT via the rake tasks you don't need to setup environment variables below.
+Note! If you run BAT via the rake tasks you don't need to setup environment variables below. See [docs](../docs) on how to run BATs using rake tasks.
 
 ## Required Environment Variables
 
@@ -13,7 +13,7 @@ Before you can run BAT, you need to set the following environment variables:
 
 * `BAT_DIRECTOR` - DNS name or IP address of the bosh director used for testing
 * `BAT_STEMCELL` - path to the stemcell you want to use for testing
-* `BAT_DEPLOYMENT_SPEC` - path to the bat yaml file which is used to generate the deployment manifest (see bat/templates)
+* `BAT_DEPLOYMENT_SPEC` - path to the bat yaml file which is used to generate the deployment manifest (see below `bat.yml`)
 * `BAT_VCAP_PASSWORD` - password used to ssh to the stemcells
 * `BAT_DNS_HOST` - DNS host or IP where BOSH-controlled PowerDNS server is running, which is required for the DNS tests. For example, if BAT is being run against a MicroBOSH then this value will be the same as BAT_DIRECTOR
 * `BOSH_KEY_PATH` - the full path to the private key for ssh into the bosh instances
@@ -22,15 +22,13 @@ Before you can run BAT, you need to set the following environment variables:
 
 The 'dns' property MUST NOT be specified in the bat deployment spec properties. At all.
 
-## Optional Environment Variables
+## bat.yml
 
-If you want the tests to use a specifc bosh cli (versus the default picked up in the shell PATH), set BAT_BOSH_BIN to the `bosh` path.
+Create bat.yml that is used by BATs to generate manifest. Set `BAT_DEPLOYMENT_SPEC` to point to bat.yml file path.
 
-## BAT_DEPLOYMENT_SPEC
+### AWS
 
-Example yaml files are below.
-
-On EC2 with AWS-provided DHCP:
+#### manual networking
 
 ```yaml
 ---
@@ -42,37 +40,23 @@ properties:
     version: latest
   pool_size: 1
   instances: 1
-  networks:
-  - static_ip: 10.10.0.30 # static/elastic IP to use for the bat-release jobs
-  key_name: bosh # (optional) SSH keypair name, overrides the director's default_key_name setting
-  security_groups: ['bat'] # (optional) EC2 security groups
-```
-
-On EC2 with VPC networking:
-
-```yaml
----
-cpi: aws
-properties:
-  uuid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx # BAT_DIRECTOR UUID
-  stemcell:
-    name: bosh-aws-xen-ubuntu
-    version: latest
-  pool_size: 1
-  instances: 1
+  vip: 54.54.54.54 # elastic ip for bat deployed VM
+  second_static_ip: 10.10.0.31 # Secondary (private) IP to use for reconfiguring networks, must be in the primary network & different from static_ip
   networks:
   - name: default
     static_ip: 10.10.0.30
     cidr: 10.10.0.0/24
     reserved: ['10.10.0.2 - 10.10.0.9']
-    static: ['10.10.0.10 - 10.10.0.30']
+    static: ['10.10.0.10 - 10.10.0.31']
     gateway: 10.10.0.1
-    subnet: subnet-xxxxxxxx
-    security_groups: ['bat'] # VPC security groups
+    subnet: subnet-xxxxxxxx # VPC subnet
+    security_groups: 'bat' # VPC security groups
   key_name: bosh # (optional) SSH keypair name, overrides the director's default_key_name setting
 ```
 
-On OpenStack with Dynamic (DHCP) Networking:
+### Openstack
+
+#### dynamic networking
 
 ```yaml
 ---
@@ -93,7 +77,7 @@ properties:
   key_name: bosh # (optional) SSH keypair name, overrides the director's default_key_name setting
 ```
 
-On OpenStack with Manual (VLAN) Networking:
+#### manual networking
 
 ```yaml
 ---
@@ -130,7 +114,7 @@ properties:
   key_name: bosh # (optional) SSH keypair name, overrides the director's default_key_name setting
 ```
 
-On vSphere with manual networking:
+### vSphere
 
 ```yaml
 ---
@@ -149,6 +133,7 @@ properties:
     reserved: ['192.168.79.2 - 192.168.79.50', '192.168.79.128 - 192.168.79.254'] # multiple reserved ranges are allowed but optional
     static: ['192.168.79.60 - 192.168.79.70']
     gateway: 192.168.79.1
+    vlan: Network_Name # vSphere network name
 ```
 
 ## EC2 Networking Config
