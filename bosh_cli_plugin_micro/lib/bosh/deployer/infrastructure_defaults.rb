@@ -3,6 +3,9 @@ require 'bosh/deployer/infrastructure_defaults/openstack'
 require 'bosh/deployer/infrastructure_defaults/vcloud'
 require 'bosh/deployer/infrastructure_defaults/vsphere'
 
+# TODO: need to make this more generic
+require 'bosh/deployer/infrastructure_defaults/azure'
+
 module Bosh::Deployer::InfrastructureDefaults
   def self.merge_for(plugin, config)
     case plugin
@@ -14,8 +17,10 @@ module Bosh::Deployer::InfrastructureDefaults
         defaults = VCLOUD
       when 'vsphere'
         defaults = VSPHERE
-      else
-        raise "Infrastructure '#{plugin}' not found"
+
+      # TODO: need to make this more generic
+      when 'azure'
+        defaults = AZURE
     end
     deep_merge(defaults, config)
   end
