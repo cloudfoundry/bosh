@@ -8,7 +8,14 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_config.bash
 
-if [ ${bosh_micro_enabled:-no} == "yes" ]
+if [ -z "${bosh_micro_enabled:-}" ]
+then
+  bosh_micro_enabled=yes
+fi
+
+persist_value bosh_micro_enabled
+
+if [ ${bosh_micro_enabled} == "yes" ]
 then
   persist_dir bosh_micro_package_compiler_path
   persist_file bosh_micro_manifest_yml_path
@@ -19,7 +26,7 @@ fi
 
 if [ -z "${agent_gem_src_url:-}" ]; then
   mkdir -p $assets_dir/gems
-  cp -rvH $bosh_release_src_dir/bosh-release/* $assets_dir/gems
+  cp -rH $bosh_release_src_dir/bosh-release/* $assets_dir/gems
 else
   persist_value agent_gem_src_url
 fi
