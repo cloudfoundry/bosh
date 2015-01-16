@@ -158,6 +158,49 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
     end
   end
 
+  describe 'network update is required for the job vm' do
+    with_reset_sandbox_before_each
+
+    context 'when running an errand will require to recreate vm' do
+      let(:manifest_hash) do
+        # This test setup depends on questionable bosh behavior.
+        # The vm for the errand will be created at deploy time,
+        # but it will not have the requested static ip.
+        # When the errand is run, a network update will be required.
+        # The network update will fail, by default dummy CPI will
+        # raise NotSupported, like the aws cpi.
+        manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
+
+        # get rid of the non-errand job, it's not important
+        manifest_hash['jobs'].delete(manifest_hash['jobs'][0])
+
+        # set the errand job to have a static ip to trigger the network update
+        # at errand run time.
+        subnet = manifest_hash['networks'][0]['subnets'][0]
+        subnet['reserved'] =  [
+          '192.168.1.2 - 192.168.1.10',
+          '192.168.1.14 - 192.168.1.254']
+        subnet['static'] = ['192.168.1.13']
+        manifest_hash['jobs'][0]['networks'][0]['static_ips'] = ['192.168.1.13']
+
+        # setting the size of the pool causes the empty vm to be created
+        # at deploy time, and this vm will not have the static IP the job has requested
+        # When the errand runs it will try to reuse this unassigned vm and it will
+        # require network update since it has static IP.
+        manifest_hash['resource_pools'][0]['size'] = 1
+
+        manifest_hash
+      end
+
+      it 'should tear down the VM successfully after running the errand' do
+        deploy_simple(manifest_hash: manifest_hash)
+
+        _, exit_code = bosh_runner.run('run errand fake-errand-name', return_exit_code: true)
+        expect(exit_code).to eq(0)
+      end
+    end
+  end
+
   context 'when errand script exits with 0 exit code' do
     with_reset_sandbox_before_all
     with_tmp_dir_before_all

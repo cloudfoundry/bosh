@@ -111,6 +111,8 @@ module Bosh::Director
           raise e
         end
 
+        @instance.vm.model = vm_model
+
         [vm_model, agent_client]
       end
     end

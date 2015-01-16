@@ -326,13 +326,19 @@ module Bosh::Director
 
   describe InstanceUpdater::VmUpdater::VmCreator do
     subject!(:vm_creator) { described_class.new(instance, cloud, logger) }
-    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance_model) }
+    let(:deployment_vm) { instance_double('Bosh::Director::DeploymentPlan::Vm')}
+    let(:instance) {
+      instance_double('Bosh::Director::DeploymentPlan::Instance',
+        model: instance_model,
+        vm: deployment_vm) }
     let(:instance_model) { Models::Instance.make(vm: nil) }
     let(:cloud) { instance_double('Bosh::Cloud') }
 
     describe '#create' do
       before { allow(instance).to receive(:job).with(no_args).and_return(job) }
       let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job') }
+
+      before { allow(deployment_vm).to receive('model=').with(vm_model)}
 
       before { allow(job).to receive(:deployment).with(no_args).and_return(deployment_plan) }
       let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', model: deployment_model) }
@@ -421,6 +427,11 @@ module Bosh::Director
           expect {
             vm_creator.create(nil)
           }.to change { instance_model.refresh.vm }.from(nil).to(vm_model)
+        end
+
+        it 'associates the instances deployment vms model with the created vm' do
+          expect(deployment_vm).to receive('model=').with(vm_model)
+          vm_creator.create(nil)
         end
 
         it 'waits for new VM agent to respond' do
