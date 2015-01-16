@@ -42,6 +42,7 @@ module Bosh::Stemcell
         "OS_IMAGE=#{os_image_tarball_path}",
         'bundle exec rspec -fd',
         "spec/os_image/common_spec.rb",
+        "spec/os_image/#{operating_system.name}_common_spec.rb",
         "spec/os_image/#{operating_system_spec_name}_spec.rb",
       ].join(' ')
     end

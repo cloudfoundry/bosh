@@ -1,4 +1,4 @@
-shared_examples_for 'an OS image' do
+shared_examples_for 'every OS image' do
   context 'installed by base_<os>' do
     describe command('dig -v') do # required by agent
       it { should return_exit_status(0) }
@@ -30,11 +30,7 @@ shared_examples_for 'an OS image' do
     end
   end
 
-  context 'installed by rsyslog' do
-    describe file('/etc/init/rsyslog.conf') do
-      it { should contain('/usr/local/sbin/rsyslogd') }
-    end
-
+  context 'installed by rsyslog_config' do
     describe file('/etc/rsyslog.conf') do
       it { should be_file }
     end
@@ -45,23 +41,6 @@ shared_examples_for 'an OS image' do
 
     describe group('adm') do
       it { should exist }
-    end
-
-    describe command('rsyslogd -v') do
-      it { should return_stdout /7\.4\.6/ }
-    end
-
-    # Make sure that rsyslog starts with the machine
-    describe file('/etc/init.d/rsyslog') do
-      it { should be_file }
-      it { should be_executable }
-    end
-
-    describe service('rsyslog') do
-      it { should be_enabled.with_level(2) }
-      it { should be_enabled.with_level(3) }
-      it { should be_enabled.with_level(4) }
-      it { should be_enabled.with_level(5) }
     end
   end
 end

@@ -7,22 +7,35 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-# Install grub
-pkg_mgr install grub
+# Install grub or grub2 (check existence of classic grub package first because Ubuntu Trusty has a transitional grub2 dummy package)
 
-if [ -f $chroot/etc/debian_version ] # Ubuntu
+if pkg_exists grub; then
+  pkg_mgr install grub
+elif pkg_exists grub2; then
+  pkg_mgr install grub2
+else
+  echo "Can't find grub or grub2 package to install"
+  exit 2
+fi
+
+if [ -d $chroot/usr/lib/grub/x86* ] # classic GRUB on Ubuntu
 then
 
   rsync -a $chroot/usr/lib/grub/x86*/ $chroot/boot/grub/
 
-elif [ -f $chroot/etc/centos-release ] # CentOS
+elif [ -d $chroot/usr/share/grub/x86* ] # classic GRUB on CentOS 6.5
 then
 
   rsync -a $chroot/usr/share/grub/x86*/ $chroot/boot/grub/
 
+elif [ -d $chroot/etc/grub.d ] # GRUB 2 on CentOS 7 or Ubuntu
+then
+
+  echo "Found grub2; leaving config files where they are"
+
 else
 
-  echo "Unknown OS, exiting"
+  echo "Can't find GRUB or GRUB 2 config files, exiting"
   exit 2
 
 fi

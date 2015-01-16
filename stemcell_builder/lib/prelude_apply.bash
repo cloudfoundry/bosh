@@ -51,3 +51,31 @@ function pkg_mgr {
     exit 2
   fi
 }
+
+# checks if an OS package with the given name exists in the current database of available packages.
+# returns 0 if package exists (whether or not is is installed); 1 otherwise
+function pkg_exists {
+  os_type=$(get_os_type)
+
+  if [ "${os_type}" == 'ubuntu' ]
+  then
+    run_in_chroot $chroot "apt-get update"
+    result=`run_in_chroot $chroot "if apt-cache show $1 2>/dev/null >/dev/null; then echo exists; else echo does not exist; fi"`
+    if [ "$result" == 'exists' ]; then
+      return 0
+    else
+      return 1
+    fi
+  elif [ "${os_type}" == 'centos' ]
+  then
+    result=`run_in_chroot $chroot "if yum list $1 2>/dev/null >/dev/null; then echo exists; else echo does not exist; fi"`
+    if [ "$result" == 'exists' ]; then
+      return 0
+    else
+      return 1
+    fi
+  else
+    echo "Unknown OS, exiting"
+    exit 2
+  fi
+}

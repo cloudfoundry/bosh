@@ -2,7 +2,7 @@ module Bosh::Stemcell
   module OperatingSystem
     def self.for(operating_system_name, operating_system_version = nil)
       case operating_system_name
-        when 'centos' then Centos.new
+        when 'centos' then Centos.new(operating_system_version)
         when 'ubuntu' then Ubuntu.new(operating_system_version)
         else raise ArgumentError.new("invalid operating system: #{operating_system_name}")
       end
@@ -22,8 +22,8 @@ module Bosh::Stemcell
     end
 
     class Centos < Base
-      def initialize
-        super(name: 'centos')
+      def initialize(version)
+        super(name: 'centos', version: version)
       end
     end
 
