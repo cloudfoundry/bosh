@@ -29,6 +29,8 @@ describe 'promotion', type: :integration do
       exec_cmd("git clone #{origin_repo_path} .")
       File.write('initial-file.go', 'initial-code')
       exec_cmd('git add -A')
+      exec_cmd('git config --local user.email "fake@example.com"')
+      exec_cmd('git config --local user.name "Fake User"')
       exec_cmd("git commit -m 'initial commit'")
       exec_cmd('git push origin master')
     end
