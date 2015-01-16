@@ -7,6 +7,13 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
+if [ ! -f ${work}/chroot/usr/sbin/grub -a ! -f ${work}/chroot/sbin/grub ]
+then
+  # this is temporary to allow the non-bootable CentOS 7 stemcell to build
+  echo "Grub not installed; skipping grub config"
+  exit 0
+fi
+
 disk_image=${work}/${stemcell_image_name}
 
 # unmap the loop device in case it's already mapped

@@ -111,55 +111,6 @@ run_in_bosh_chroot $chroot "
   make && make install
 "
 
-# Add configuration files
-cp $assets_dir/rsyslog.conf $chroot/etc/rsyslog.conf
-
-if [ -f $chroot/etc/debian_version ]; then
-  cp $assets_dir/enable-kernel-logging.conf $chroot/etc/rsyslog.d/enable-kernel-logging.conf
-fi
-
-cp $assets_dir/rsyslog_upstart.conf $chroot/etc/init/rsyslog.conf
-cp $assets_dir/rsyslog_logrotate.conf $chroot/etc/logrotate.d/rsyslog
-
-mkdir -p $chroot/etc/rsyslog.d
-cp -f $assets_dir/rsyslog_50-default.conf $chroot/etc/rsyslog.d/50-default.conf
-
-# Add user/group
-run_in_bosh_chroot $chroot "
-  useradd --system --user-group --no-create-home syslog || true
-"
-
-# Configure /var/log directory
-filenames=( auth.log daemon.log debug kern.log lpr.log mail.err mail.info \
-              mail.log mail.warn messages syslog user.log )
-
-for filename in ${filenames[@]}
-do
-  fullpath=/var/log/$filename
-  run_in_bosh_chroot $chroot "
-    touch ${fullpath} && chown syslog:adm ${fullpath} && chmod 640 ${fullpath}
-  "
-done
-
-# init.d configuration is different for each OS
-if [ -f $chroot/etc/debian_version ] # Ubuntu
-then
-  run_in_bosh_chroot $chroot "
-    ln -sf /lib/init/upstart-job /etc/init.d/rsyslog
-    update-rc.d rsyslog defaults
-  "
-elif [ -f $chroot/etc/centos-release ] # Centos
-then
-  cp $assets_dir/centos_init_d $chroot/etc/init.d/rsyslog
-  run_in_bosh_chroot $chroot "
-    chmod 0755 /etc/init.d/rsyslog
-    chkconfig --add rsyslog
-  "
-else
-  echo "Unknown OS, exiting"
-  exit 2
-fi
-
 # Point system installed rsyslog to custom installed one
 run_in_bosh_chroot $chroot "
   if [ -f /sbin/rsyslogd ]; then

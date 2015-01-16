@@ -91,20 +91,21 @@ module Bosh::Stemcell
     end
 
     def centos_os_stages
-      [
-        :base_centos,
-        :base_centos_packages,
-        :base_ssh,
-        # Bosh steps
-        :bosh_users,
-        :bosh_monit,
-        :bosh_ntpdate,
-        :bosh_sudoers,
-        :rsyslog,
-        :delay_monit_start,
-        # Install GRUB/kernel/etc
-        :system_grub,
-      ]
+      os_stages = [
+          :base_centos,
+          :base_centos_packages,
+          :base_ssh,
+          bosh_steps,
+          :rsyslog_config,
+          :delay_monit_start,
+          :system_grub,
+      ].flatten
+
+      if operating_system.version.to_f < 7
+        os_stages.insert(os_stages.index(:rsyslog_config),:rsyslog_build)
+      end
+
+      os_stages
     end
 
     def ubuntu_os_stages
@@ -119,17 +120,21 @@ module Bosh::Stemcell
         :bosh_sysstat,
         :bosh_sysctl,
         :system_kernel,
-        # Bosh steps
-        :bosh_users,
-        :bosh_monit,
-        :bosh_ntpdate,
-        :bosh_sudoers,
-        :rsyslog,
+        bosh_steps,
+        :rsyslog_build,
+        :rsyslog_config,
         :delay_monit_start,
-        # Install GRUB/kernel/etc
         :system_grub,
-        # Symlink vim to vim.tiny
         :vim_tiny,
+      ].flatten
+    end
+
+    def bosh_steps
+      [
+          :bosh_users,
+          :bosh_monit,
+          :bosh_ntpdate,
+          :bosh_sudoers,
       ]
     end
 
