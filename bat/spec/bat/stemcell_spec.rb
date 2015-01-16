@@ -72,36 +72,38 @@ describe Bat::Stemcell do
 
   describe '#supports_network_reconfiguration?' do
     {
-      # Ruby agent (default)
-      'bosh-custom-xen-ubuntu' => true,
-      'bosh-custom-xen-centos' => true,
-
-      # Ruby agent does not support prepare_configure_networks/configure_networks
-      'bosh-vsphere-esxi-ubuntu' => false,
-      'bosh-vcloud-esxi-ubuntu' => false,
-
-      # Centos currently does not include open-vm-tools
-      'bosh-vsphere-esxi-centos' => false,
-      'bosh-vcloud-esxi-centos' => false,
-
       # Go agent
-      'bosh-custom-xen-ubuntu-go_agent' => true,
+      'bosh-custom-xen-ubuntu-trusty-go_agent' => true,
       'bosh-custom-xen-centos-go_agent' => true,
-      'bosh-vsphere-esxi-ubuntu-go_agent' => true,
-      'bosh-vcloud-esxi-ubuntu-go_agent' => false,
+      'bosh-vsphere-esxi-ubuntu-trusty-go_agent' => true,
+      'bosh-vcloud-esxi-ubuntu-trusty-go_agent' => false,
 
       # Centos currently does not include open-vm-tools
       'bosh-vsphere-esxi-centos-go_agent' => false,
       'bosh-vcloud-esxi-centos-go_agent' => false,
 
       # Warden CPI does not support network reconfig
-      'bosh-warden-boshlite-ubuntu-go_agent' => false,
+      'bosh-warden-boshlite-ubuntu-trusty-go_agent' => false,
       'bosh-warden-boshlite-centos-go_agent' => false,
 
     }.each do |stemcell_name, expected|
       it "returns #{expected} for #{stemcell_name}" do
         stemcell = Bat::Stemcell.new(stemcell_name, nil)
         expect(stemcell.supports_network_reconfiguration?).to be(expected)
+      end
+    end
+  end
+
+  describe '#supports_root_partition?' do
+    {
+      'bosh-openstack-kvm-centos-go_agent' => false,
+      'bosh-openstack-kvm-ubuntu-trusty-go_agent' => true,
+      'bosh-vsphere-esxi-ubuntu-trusty-go_agent' => false,
+      'bosh-vcloud-esxi-ubuntu-trusty-go_agent' => false,
+    }.each do |stemcell_name, expected|
+      it "returns #{expected} for #{stemcell_name}" do
+        stemcell = Bat::Stemcell.new(stemcell_name, nil)
+        expect(stemcell.supports_root_partition?).to be(expected)
       end
     end
   end

@@ -38,6 +38,10 @@ module Bat
       !(name =~ /vsphere/ && (name =~ /centos/ || name !~ /go_agent/)) && name !~ /vcloud/ && name !~ /warden/
     end
 
+    def supports_root_partition?
+      !!(name =~ /openstack/ && name !~ /centos/)
+    end
+
     def supports_changing_static_ip?(network_type)
       # Does not support for openstack dynamic
       supports_network_reconfiguration? && !(name =~ /openstack/ && network_type == 'dynamic')

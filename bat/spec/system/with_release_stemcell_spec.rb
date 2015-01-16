@@ -9,7 +9,7 @@ describe 'with release and stemcell and two deployments' do
 
   context 'with no ephemeral disk' do
     before do
-      skip 'only openstack is configurable without ephemeral disk' unless openstack?
+      skip 'only openstack is configurable without ephemeral disk' unless @requirements.stemcell.supports_root_partition?
 
       reload_deployment_spec
       # using password 'foobar'
