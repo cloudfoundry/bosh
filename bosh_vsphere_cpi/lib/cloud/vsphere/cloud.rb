@@ -185,7 +185,7 @@ module VSphereCloud
 
     def stemcell_vm(name)
       dc = @resources.datacenters.values.first
-      client.find_by_inventory_path([dc.name, 'vm', dc.template_folder.path, name])
+      client.find_by_inventory_path([dc.name, 'vm', dc.template_folder.path_components, name])
     end
 
     def create_vm(agent_id, stemcell, cloud_properties, networks, disk_locality = nil, environment = nil)
@@ -524,7 +524,7 @@ module VSphereCloud
 
     def get_vm_by_cid(vm_cid)
       @resources.datacenters.each_value do |datacenter|
-        vm = client.find_by_inventory_path([datacenter.name, 'vm', datacenter.vm_folder.path, vm_cid])
+        vm = client.find_by_inventory_path([datacenter.name, 'vm', datacenter.vm_folder.path_components, vm_cid])
         return vm unless vm.nil?
       end
       raise Bosh::Clouds::VMNotFound, "VM `#{vm_cid}' not found"
@@ -532,7 +532,7 @@ module VSphereCloud
 
     def replicate_stemcell(cluster, datastore, stemcell)
       stemcell_vm = client.find_by_inventory_path([cluster.datacenter.name, 'vm',
-                                                   cluster.datacenter.template_folder.path, stemcell])
+                                                   cluster.datacenter.template_folder.path_components, stemcell])
       raise "Could not find stemcell: #{stemcell}" if stemcell_vm.nil?
       stemcell_datastore = @cloud_searcher.get_property(stemcell_vm, Vim::VirtualMachine, 'datastore', ensure_all: true)
 
@@ -540,7 +540,7 @@ module VSphereCloud
         @logger.info("Stemcell lives on a different datastore, looking for a local copy of: #{stemcell}.")
         local_stemcell_name = "#{stemcell} %2f #{datastore.mob.__mo_id__}"
         local_stemcell_path =
-          [cluster.datacenter.name, 'vm', cluster.datacenter.template_folder.path, local_stemcell_name]
+          [cluster.datacenter.name, 'vm', cluster.datacenter.template_folder.path_components, local_stemcell_name]
         replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
 
         if replicated_stemcell_vm.nil?

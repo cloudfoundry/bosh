@@ -214,7 +214,7 @@ module VSphereCloud
 
       let(:template_folder) do
         double(:template_folder,
-          path: ['fake_template_folder'],
+          path_components: ['fake_template_folder'],
           mob: 'fake_template_folder_mob'
         )
       end
@@ -247,7 +247,7 @@ module VSphereCloud
             [
               cluster.datacenter.name,
               'vm',
-              cluster.datacenter.template_folder.path,
+              ['fake_template_folder'],
               stemcell_id,
             ]
           ).and_return(stemcell_vm)
@@ -260,7 +260,7 @@ module VSphereCloud
             [
               cluster.datacenter.name,
               'vm',
-              cluster.datacenter.template_folder.path,
+              ['fake_template_folder'],
               "#{stemcell_id} %2f #{datastore.mob.__mo_id__}",
             ]
           ).and_return(double('fake stemcell vm'))
@@ -278,7 +278,7 @@ module VSphereCloud
               [
                 cluster.datacenter.name,
                 'vm',
-                cluster.datacenter.template_folder.path,
+                ['fake_template_folder'],
                 "#{stemcell_id} %2f #{datastore.mob.__mo_id__}",
               ]
             )

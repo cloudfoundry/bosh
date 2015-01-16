@@ -39,14 +39,14 @@ describe VSphereCloud::Resources::Datacenter do
     allow(client).to receive(:cloud_searcher).and_return(cloud_searcher)
 
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
-      ['fake-vm-folder'], config).and_return(vm_folder)
+      'fake-vm-folder', config).and_return(vm_folder)
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
-      ['fake-vm-folder', 'fake-uuid'], config).and_return(vm_subfolder)
+      'fake-vm-folder/fake-uuid', config).and_return(vm_subfolder)
 
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
-      ['fake-template-folder'], config).and_return(template_folder)
+      'fake-template-folder', config).and_return(template_folder)
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
-      ['fake-template-folder', 'fake-uuid'], config).and_return(template_subfolder)
+      'fake-template-folder/fake-uuid', config).and_return(template_subfolder)
 
     allow(cloud_searcher).to receive(:get_managed_objects).with(
                        VimSdk::Vim::ClusterComputeResource,

@@ -1,48 +1,47 @@
 module VSphereCloud
   class Resources
     class Folder
-      attr_reader :mob, :path, :name
+      attr_reader :mob, :path, :path_components
 
-      # path - an array of names starting from parent down to child folders
       def initialize(path, config)
         @path = path
         @config = config
 
-        @name = path.join('/')
+        @path_components = path.split('/')
 
-        @mob = find_or_create_folder
+        @mob = find_or_create_folder(@path_components)
       end
 
       private
 
-      def find_or_create_folder
-        folder = find_folder
+      def find_or_create_folder(path_components)
+        return root_vm_folder if path_components.empty?
 
+        folder = find_folder(path_components)
         if folder.nil?
+          last_component = path_components.last
+          parent_folder = find_or_create_folder(path_components[0..-2])
+
           begin
-            @config.logger.debug("Creating folder #{@name}")
-            folder = parent_folder.create_folder(@path.last)
+            @config.logger.debug("Creating folder #{last_component}")
+            folder = parent_folder.create_folder(last_component)
           rescue VimSdk::SoapError => e
             raise e unless VimSdk::Vim::Fault::DuplicateName === e.fault
 
-            @config.logger.debug("Folder already exists #{@name}")
-            folder = find_folder
+            @config.logger.debug("Folder already exists #{last_component}")
+            folder = find_folder(path_components)
           end
         end
 
         folder
       end
 
-      def find_folder
-        @config.client.find_by_inventory_path([@config.datacenter_name, 'vm', @path].flatten)
+      def find_folder(path_components)
+        @config.client.find_by_inventory_path([@config.datacenter_name, 'vm', path_components].flatten)
       end
 
-      def parent_folder
-        if @path.size > 1
-          Folder.new(@path[0..-2], @config).mob
-        else
-          @config.client.find_by_inventory_path([@config.datacenter_name, 'vm'])
-        end
+      def root_vm_folder
+        @config.client.find_by_inventory_path([@config.datacenter_name, 'vm'])
       end
     end
   end
