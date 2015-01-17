@@ -16,6 +16,7 @@ describe Bosh::OpenStackCloud::Cloud do
     @disable_snapshots = get_config(:disable_snapshots, 'BOSH_OPENSTACK_DISABLE_SNAPSHOTS', false)
     @default_key_name  = get_config(:default_key_name, 'BOSH_OPENSTACK_DEFAULT_KEY_NAME', 'jenkins')
     @config_drive      = get_config(:config_drive, 'BOSH_OPENSTACK_CONFIG_DRIVE', 'cdrom')
+    @instance_type     = get_config(:instance_type, 'BOSH_OPENSTACK_INSTANCE_TYPE', 'm1.small')
 
     # some environments may not have this set, and it isn't strictly necessary so don't raise if it isn't set
     @region             = get_config(:region, 'BOSH_OPENSTACK_REGION', nil)
@@ -233,7 +234,7 @@ describe Bosh::OpenStackCloud::Cloud do
     vm_id = cpi.create_vm(
       'agent-007',
       stemcell_id,
-      { 'instance_type' => 'm1.small'},
+      { 'instance_type' => @instance_type },
       network_spec,
       disk_locality,
       { 'key' => 'value'}
