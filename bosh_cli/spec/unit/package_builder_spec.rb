@@ -204,13 +204,6 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     expect(builder.generate_tarball).to eql(true)
   end
 
-  def add_version(index, storage, key, build, src_file_path)
-    index.add_version(key, build)
-    file_path = storage.put_file(key, src_file_path)
-    build['sha1'] = Digest::SHA1.file(file_path).hexdigest
-    index.update_version(key, build)
-  end
-
   it 'can point to either dev or a final version of a package' do
     fingerprint = 'fake-fingerprint'
     allow(Digest::SHA1).to receive(:hexdigest).and_return(fingerprint)

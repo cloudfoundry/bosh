@@ -32,6 +32,14 @@ module Support
         names.each { |name| add_file(dir, name) }
       end
 
+      # NOTE: Does this imply a different name for this set of helpers?
+      def add_version(index, storage, key, build, src_file_path)
+        index.add_version(key, build)
+        file_path = storage.put_file(key, src_file_path)
+        build['sha1'] = Digest::SHA1.file(file_path).hexdigest
+        index.update_version(key, build)
+      end
+
       def remove_file(dir, path)
         FileUtils.rm(File.join(@release_dir, dir, path))
       end
