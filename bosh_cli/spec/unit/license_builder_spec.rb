@@ -8,14 +8,9 @@ describe Bosh::Cli::LicenseBuilder, 'dev build' do
     FileUtils.mkdir(File.join(@release_dir, 'src_alt'))
   end
 
-  def make_builder(final = false, blobstore = double('blobstore'))
+  def make_builder(final = false)
+    blobstore = double('blobstore')
     Bosh::Cli::LicenseBuilder.new(@release_dir, final, blobstore)
-  end
-
-  it 'creates a new builder' do
-    builder = make_builder()
-    builder.name.should  == 'license'
-    builder.release_dir.should == @release_dir
   end
 
   it 'whines when there is no license file named LICENSE/NOTICE in the release root repo' do
