@@ -30,13 +30,13 @@ From a fresh copy of the bosh repo:
     
 For Azure, run:
 
-    BOSH_AZURE_MGMT_CERT_PATH=/Users/nicholasterry/Documents/azure/azure.pem 
-    BOSH_AZURE_SUB_ID=e6621b72-cdf5-4557-a471-1102ddd62c06 
-    BOSH_AZURE_STORAGE_NAME=boshtest 
+    BOSH_AZURE_MGMT_CERT_PATH=
+    BOSH_AZURE_SUB_ID= 
+    BOSH_AZURE_STORAGE_NAME= 
     BOSH_AZURE_IMAGE=b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_10-amd64-server-20140625-alpha1-en-us-30GB 
-    BOSH_AZURE_VM_NAME=stemcell-builder01 
-    BOSH_AZURE_CLOUD_SERVICE_NAME=stemcell-builder01 
-    BOSH_AZURE_PRIV_KEY_PATH=/Users/nicholasterry/Documents/azure/server.key 
+    BOSH_AZURE_VM_NAME=
+    BOSH_AZURE_CLOUD_SERVICE_NAME=
+    BOSH_AZURE_PRIV_KEY_PATH=
     vagrant up remote_azure
     
 ## Updating source code on stemcell building VM
@@ -50,13 +50,13 @@ With existing stemcell building VM run:
     
 For Azure run:
 
-    BOSH_AZURE_MGMT_CERT_PATH=/Users/nicholasterry/Documents/azure/azure.pem 
-    BOSH_AZURE_SUB_ID=e6621b72-cdf5-4557-a471-1102ddd62c06 
-    BOSH_AZURE_STORAGE_NAME=boshtest 
+    BOSH_AZURE_MGMT_CERT_PATH=
+    BOSH_AZURE_SUB_ID=
+    BOSH_AZURE_STORAGE_NAME=
     BOSH_AZURE_IMAGE=b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_10-amd64-server-20140625-alpha1-en-us-30GB 
-    BOSH_AZURE_VM_NAME=stemcell-builder01 
-    BOSH_AZURE_CLOUD_SERVICE_NAME=stemcell-builder01 
-    BOSH_AZURE_PRIV_KEY_PATH=/Users/nicholasterry/Documents/azure/server.key 
+    BOSH_AZURE_VM_NAME=
+    BOSH_AZURE_CLOUD_SERVICE_NAME=
+    BOSH_AZURE_PRIV_KEY_PATH=
     vagrant provision remote_azure
 
 
