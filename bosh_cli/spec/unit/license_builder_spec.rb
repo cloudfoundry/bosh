@@ -12,33 +12,6 @@ describe Bosh::Cli::LicenseBuilder, 'dev build' do
     Bosh::Cli::LicenseBuilder.new(@release_dir, final, blobstore)
   end
 
-  def add_file(dir, path, contents = nil)
-    if dir.nil?
-      full_path = File.join(@release_dir, path)
-    else
-      full_path = File.join(@release_dir, dir, path)
-    end
-    FileUtils.mkdir_p(File.dirname(full_path))
-    if contents
-      File.open(full_path, 'w') { |f| f.write(contents) }
-    else
-      FileUtils.touch(full_path)
-    end
-  end
-
-  def remove_file(dir, path)
-    FileUtils.rm(File.join(@release_dir, dir, path))
-  end
-
-  def add_files(dir, names)
-    names.each { |name| add_file(dir, name) }
-  end
-
-  def remove_files(dir, names)
-    names.each { |name| remove_file(dir, name) }
-  end
-
-
   it 'creates a new builder' do
     builder = make_builder()
     builder.name.should  == 'license'
@@ -81,8 +54,6 @@ describe Bosh::Cli::LicenseBuilder, 'dev build' do
     expect(builder.reload.fingerprint).to eql(s1)
   end
 
-
-
   it 'copies files to build directory' do
     add_file(nil, 'LICENSE')
     add_file(nil, 'NOTICE')
@@ -90,7 +61,6 @@ describe Bosh::Cli::LicenseBuilder, 'dev build' do
     builder = make_builder()
     expect(builder.copy_files).to eql(2)
   end
-
 
   it 'generates tarball' do
     add_file(nil, 'LICENSE')

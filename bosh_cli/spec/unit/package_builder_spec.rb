@@ -8,28 +8,6 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     FileUtils.mkdir(File.join(@release_dir, 'src_alt'))
   end
 
-  def add_file(dir, path, contents = nil)
-    full_path = File.join(@release_dir, dir, path)
-    FileUtils.mkdir_p(File.dirname(full_path))
-    if contents
-      File.open(full_path, 'w') { |f| f.write(contents) }
-    else
-      FileUtils.touch(full_path)
-    end
-  end
-
-  def remove_file(dir, path)
-    FileUtils.rm(File.join(@release_dir, dir, path))
-  end
-
-  def add_files(dir, names)
-    names.each { |name| add_file(dir, name) }
-  end
-
-  def remove_files(dir, names)
-    names.each { |name| remove_file(dir, name) }
-  end
-
   def make_builder(name, files, dependencies = [], sources_dir = nil, excluded_files=[])
     blobstore = double('blobstore')
     spec = {
