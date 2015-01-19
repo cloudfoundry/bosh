@@ -6,6 +6,7 @@ Vagrant.configure('2') do |config|
   config.ssh.username = 'ubuntu'
 
   config.berkshelf.berksfile_path = "./Berksfile"
+
   config.vm.define :local do |local|
     local.vm.box_url = "https://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-vagrant-boxes/#{vm_box}-virtualbox.box"
     local.vm.provider :virtualbox do |virtualbox|
@@ -37,6 +38,30 @@ Vagrant.configure('2') do |config|
       override.ssh.private_key_path = env.fetch('BOSH_KEY_PATH', '~/.ssh/id_rsa_bosh')
     end
   end
+
+  config.vm.define :remote_azure do |remote|
+    remote.vm.box_url = "https://github.com/msopentech/vagrant-azure/raw/master/dummy.box"
+    remote.vm.provider :azure do |azure, override|
+      azure.mgmt_certificate = env.fetch('BOSH_AZURE_MGMT_CERT_PATH')
+      azure.mgmt_endpoint = 'https://management.core.windows.net'
+      azure.subscription_id = env.fetch('BOSH_AZURE_SUB_ID')
+      azure.storage_acct_name = env.fetch('BOSH_AZURE_STORAGE_NAME')
+      azure.vm_image = env.fetch('BOSH_AZURE_IMAGE')
+      azure.vm_user = 'ubuntu'
+      azure.vm_name = env.fetch('BOSH_AZURE_VM_NAME')
+      azure.cloud_service_name = env.fetch('BOSH_AZURE_CLOUD_SERVICE_NAME')
+      azure.vm_location = "East US"
+      azure.ssh_private_key_file = env.fetch('BOSH_AZURE_PRIV_KEY_PATH')
+      azure.ssh_certificate_file = env.fetch('BOSH_AZURE_MGMT_CERT_PATH')
+      azure.ssh_port = 22
+
+      override.ssh.username = 'ubuntu'
+      override.ssh.private_key_path = env.fetch('BOSH_AZURE_PRIV_KEY_PATH')
+
+      #azure.tcp_endpoints = env.fetch('BOSH_AZURE_TCP_ENDPOINTS') 80:80,443:440 is the format
+    end
+  end
+
 
   config.vm.provision :shell do |shell|
     shell.inline = <<-BASH
@@ -70,6 +95,10 @@ EOS
       rm -rf /etc/apt/sources.list.d/multiverse-trusty*
 
       apt-get -y update
+
+      # This is for Azure as base ubuntu 14.04 does not have them installed
+      apt-get -y install git ruby1.9.1 ruby1.9.1-dev bundler libxml2 libxml2-dev libxml2-dev libxslt-dev
+      apt-get -y install libpq-dev libmysqlclient-dev libmysqlclient18 libsqlite3-dev build-essential
     BASH
   end
 
@@ -97,9 +126,9 @@ EOS
     chef.run_list = %w(recipe[golang] recipe[stemcell-golang])
 
     chef.json = {
-      go: {
-        version: '1.3.3',
-      }
+        go: {
+            version: '1.3.3',
+        }
     }
   end
 

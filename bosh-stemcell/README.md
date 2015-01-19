@@ -15,6 +15,10 @@ Tools for creating stemcells
         vagrant plugin install vagrant-omnibus
         vagrant plugin install vagrant-aws --plugin-version 0.5.0
 
+For Microsoft Azure support, use:
+        
+    vagrant plugin install vagrant-azure
+
 ### Bring up the vagrant stemcell building VM
 
 From a fresh copy of the bosh repo:
@@ -24,6 +28,17 @@ From a fresh copy of the bosh repo:
     cd bosh-stemcell
     vagrant up remote --provider=aws
     
+For Azure, run:
+
+    BOSH_AZURE_MGMT_CERT_PATH=/Users/nicholasterry/Documents/azure/azure.pem 
+    BOSH_AZURE_SUB_ID=e6621b72-cdf5-4557-a471-1102ddd62c06 
+    BOSH_AZURE_STORAGE_NAME=boshtest 
+    BOSH_AZURE_IMAGE=b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_10-amd64-server-20140625-alpha1-en-us-30GB 
+    BOSH_AZURE_VM_NAME=stemcell-builder01 
+    BOSH_AZURE_CLOUD_SERVICE_NAME=stemcell-builder01 
+    BOSH_AZURE_PRIV_KEY_PATH=/Users/nicholasterry/Documents/azure/server.key 
+    vagrant up remote_azure
+    
 ## Updating source code on stemcell building VM
 
 With existing stemcell building VM run:
@@ -32,6 +47,17 @@ With existing stemcell building VM run:
     export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
     cd bosh-stemcell
     vagrant provision remote --provider=aws
+    
+For Azure run:
+
+    BOSH_AZURE_MGMT_CERT_PATH=/Users/nicholasterry/Documents/azure/azure.pem 
+    BOSH_AZURE_SUB_ID=e6621b72-cdf5-4557-a471-1102ddd62c06 
+    BOSH_AZURE_STORAGE_NAME=boshtest 
+    BOSH_AZURE_IMAGE=b39f27a8b8c64d52b05eac6a62ebad85__Ubuntu-14_10-amd64-server-20140625-alpha1-en-us-30GB 
+    BOSH_AZURE_VM_NAME=stemcell-builder01 
+    BOSH_AZURE_CLOUD_SERVICE_NAME=stemcell-builder01 
+    BOSH_AZURE_PRIV_KEY_PATH=/Users/nicholasterry/Documents/azure/server.key 
+    vagrant provision remote_azure
 
 
 ## Build an OS image
@@ -42,6 +68,13 @@ If you have changes that will require new OS image you need to build one. A stem
       cd /bosh
       bundle exec rake stemcell:build_os_image[ubuntu,trusty,/tmp/ubuntu_base_image.tgz]
     ' remote
+    
+For Azure:
+
+    vagrant ssh -c '
+      cd /bosh
+      bundle exec rake stemcell:build_os_image[ubuntu,trusty,/tmp/ubuntu_base_image.tgz]
+    ' remote_azure
     
 See below [Building the stemcell with local OS image](#building-the-stemcell-with-local-os-image) on how to build stemcell with the new OS image.
 
