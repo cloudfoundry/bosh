@@ -4,21 +4,21 @@ module Support
   module FileHelpers
     class << self
       def included(base)
-        base.send(:extend, ClassMethods)
-        base.send(:include, InstanceMethods)
+        base.let(:spec_package) { SpecPackage.new }
       end
     end
 
-    module ClassMethods
+    class SpecPackage < String
+      def initialize(s = nil)
+        super File.join([Dir.mktmpdir, s].compact)
+      end
 
-    end
+      def add_dir(path)
+        FileUtils.mkdir_p(File.join(self.to_s, path))
+      end
 
-    # NOTE: Implies existence of `@release_dir`, which at the moment is created
-    # in the `before` blocks within relevant specs. This instance is not being
-    # cleaned up, and the whole thing should move to some sort of wrapper.
-    module InstanceMethods
       def add_file(dir, path, contents = nil)
-        full_path = File.join([@release_dir, dir, path].compact)
+        full_path = File.join([self.to_s, dir, path].compact)
         FileUtils.mkdir_p(File.dirname(full_path))
 
         if contents
@@ -28,11 +28,10 @@ module Support
         end
       end
 
-      def add_files(dir, names)
-        names.each { |name| add_file(dir, name) }
+      def add_files(dir, paths)
+        paths.each { |path| add_file(dir, path) }
       end
 
-      # NOTE: Does this imply a different name for this set of helpers?
       def add_version(index, storage, key, build, src_file_path)
         index.add_version(key, build)
         file_path = storage.put_file(key, src_file_path)
@@ -40,12 +39,16 @@ module Support
         index.update_version(key, build)
       end
 
-      def remove_file(dir, path)
-        FileUtils.rm(File.join(@release_dir, dir, path))
+      def remove_dir(path)
+        FileUtils.rm_rf(File.join(self.to_s, path))
       end
 
-      def remove_files(dir, names)
-        names.each { |name| remove_file(dir, name) }
+      def remove_file(dir, path)
+        FileUtils.rm(File.join(self.to_s, dir, path))
+      end
+
+      def remove_files(dir, paths)
+        paths.each { |path| remove_file(dir, path) }
       end
     end
   end
