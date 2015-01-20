@@ -13,7 +13,9 @@ module Support
         dir = ReleaseDirectory.new
         yield dir
 
-        after { FileUtils.remove_entry dir.path }
+        after do
+          FileUtils.remove_entry dir.path if File.exists?(dir.path)
+        end
       end
     end
 
@@ -23,18 +25,6 @@ module Support
 
       def initialize
         @path = Dir.mktmpdir
-      end
-
-      def to_s
-        path
-      end
-
-      def to_str
-        to_s
-      end
-
-      def +(s)
-        path + s
       end
 
       def add_dir(subdir)

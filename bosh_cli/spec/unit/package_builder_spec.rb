@@ -19,7 +19,7 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
         'excluded_files' => excluded_files,
       }
 
-      Bosh::Cli::PackageBuilder.new(spec, release_dir,
+      Bosh::Cli::PackageBuilder.new(spec, release_dir.path,
                                     false, blobstore, sources_dir)
     end
 

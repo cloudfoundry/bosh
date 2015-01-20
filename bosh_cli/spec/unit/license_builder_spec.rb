@@ -38,7 +38,7 @@ describe Bosh::Cli::LicenseBuilder, 'dev build' do
         release_dir.remove_file(basedir, 'LICENSE')
 
         expect(builder).to receive(:warn)
-          .with(['Does not contain LICENSE within', release_dir].join(' '))
+          .with("Does not contain LICENSE within #{release_dir.path}")
         builder.copy_files
       end
 
@@ -46,7 +46,7 @@ describe Bosh::Cli::LicenseBuilder, 'dev build' do
         release_dir.remove_file(basedir, 'NOTICE')
 
         expect(builder).to receive(:warn)
-          .with(['Does not contain NOTICE within', release_dir].join(' '))
+          .with("Does not contain NOTICE within #{release_dir.path}")
         builder.copy_files
       end
     end
