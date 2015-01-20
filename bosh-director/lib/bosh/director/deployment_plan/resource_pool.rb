@@ -135,15 +135,11 @@ module Bosh::Director
           raise ResourcePoolNotEnoughCapacity, "Resource pool `#{@name}' has no more VMs to allocate" if vm.nil?
         end
 
-        add_allocated_vm(vm)
+        register_allocated_vm(vm)
       end
 
-      # Adds an existing VM to allocated_vms
-      def add_allocated_vm(vm=nil)
-        vm ||= Vm.new(self)
-        @logger.info("ResourcePool `#{name}' - Adding allocated VM (index=#{@allocated_vms.size})")
-        @allocated_vms << vm
-        vm
+      def add_allocated_vm
+        register_allocated_vm(Vm.new(self))
       end
 
       def deallocate_vm(vm_cid)
@@ -198,6 +194,12 @@ module Bosh::Director
       end
 
       private
+      # Adds an existing VM to allocated_vms
+      def register_allocated_vm(vm)
+        @logger.info("ResourcePool `#{name}' - Adding allocated VM (index=#{@allocated_vms.size})")
+        @allocated_vms << vm
+        vm
+      end
 
       def dynamically_sized?
         @size.nil?
