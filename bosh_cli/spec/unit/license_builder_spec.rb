@@ -7,7 +7,7 @@ describe Bosh::Cli::LicenseBuilder, 'dev build' do
 
     def make_builder(final = false)
       blobstore = double('blobstore')
-      Bosh::Cli::LicenseBuilder.new(release_dir, final, blobstore)
+      Bosh::Cli::LicenseBuilder.new(release_dir.path, final, blobstore)
     end
 
     describe 'copying package files' do
@@ -98,8 +98,7 @@ describe Bosh::Cli::LicenseBuilder, 'dev build' do
 
       it 'includes the fingerprint in the archive filename' do
         builder.generate_tarball
-        expect(File).to exist(File.join(release_dir, ".dev_builds/license/#{builder.fingerprint}.tgz"))
-        expect(File).to exist(release_dir.join(".dev_builds/license/#{builder.fingerprint}.tgz"))
+        expect(release_dir).to have_file(".dev_builds/license/#{builder.fingerprint}.tgz")
       end
     end
 
@@ -113,35 +112,35 @@ describe Bosh::Cli::LicenseBuilder, 'dev build' do
 
       it 'includes the fingerprint in the archive filename' do
         builder.build
-        expect(File).to exist(release_dir.join(".dev_builds/license/#{builder.fingerprint}.tgz"))
+        expect(release_dir).to have_file(".dev_builds/license/#{builder.fingerprint}.tgz")
       end
 
       it 'creates a new version when the LICENSE is updated' do
         builder.build
         v1_fingerprint = builder.fingerprint
 
-        expect(File.exists?(release_dir + "/.dev_builds/license/#{v1_fingerprint}.tgz")).to eql(true)
+        expect(release_dir).to have_file(".dev_builds/license/#{v1_fingerprint}.tgz")
 
         release_dir.add_file(basedir, 'LICENSE', '2')
         builder = make_builder()
         builder.build
 
         expect(builder.fingerprint).to_not eq(v1_fingerprint)
-        expect(File.exists?(release_dir + "/.dev_builds/license/#{builder.fingerprint}.tgz")).to eql(true)
+        expect(release_dir).to have_file(".dev_builds/license/#{builder.fingerprint}.tgz")
       end
 
       it 'creates a new version when the NOTICE is updated' do
         builder.build
         v1_fingerprint = builder.fingerprint
 
-        expect(File.exists?(release_dir + "/.dev_builds/license/#{v1_fingerprint}.tgz")).to eql(true)
+        expect(release_dir).to have_file(".dev_builds/license/#{v1_fingerprint}.tgz")
 
         release_dir.add_file(basedir, 'NOTICE', '2')
         builder = make_builder()
         builder.build
 
         expect(builder.fingerprint).to_not eq(v1_fingerprint)
-        expect(File.exists?(release_dir + "/.dev_builds/license/#{builder.fingerprint}.tgz")).to eql(true)
+        expect(release_dir).to have_file(".dev_builds/license/#{builder.fingerprint}.tgz")
       end
 
       context 'building dev and final versions' do

@@ -226,12 +226,10 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
       builder = make_builder(package_name, globs)
 
       builder.use_final_version
-      expect(builder.tarball_path).to eql(File.join(
-          release_dir, '.final_builds', 'packages', package_name, "#{fingerprint}.tgz"))
+      expect(builder.tarball_path).to eql(release_dir.join('.final_builds', 'packages', package_name, "#{fingerprint}.tgz"))
 
       builder.use_dev_version
-      expect(builder.tarball_path).to eql(File.join(
-          release_dir, '.dev_builds', 'packages', package_name, "#{fingerprint}.tgz"))
+      expect(builder.tarball_path).to eql(release_dir.join('.dev_builds', 'packages', package_name, "#{fingerprint}.tgz"))
     end
 
     it 'creates a new version tarball' do
@@ -241,15 +239,15 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
 
       v1_fingerprint = builder.fingerprint
 
-      expect(File.exists?(release_dir + "/.dev_builds/packages/bar/#{v1_fingerprint}.tgz")).to eql(false)
+      expect(release_dir).to_not have_file(".dev_builds/packages/bar/#{v1_fingerprint}.tgz")
       builder.build
-      expect(File.exists?(release_dir + "/.dev_builds/packages/bar/#{v1_fingerprint}.tgz")).to eql(true)
+      expect(release_dir).to have_file(".dev_builds/packages/bar/#{v1_fingerprint}.tgz")
 
       builder = make_builder('bar', globs)
       builder.build
 
-      expect(File.exists?(release_dir + "/.dev_builds/packages/bar/#{v1_fingerprint}.tgz")).to eql(true)
-      expect(File.exists?(release_dir + '/.dev_builds/packages/bar/other-fingerprint.tgz')).to eql(false)
+      expect(release_dir).to have_file(".dev_builds/packages/bar/#{v1_fingerprint}.tgz")
+      expect(release_dir).to_not have_file(".dev_builds/packages/bar/other-fingerprint.tgz")
 
       release_dir.add_file('src', 'foo/3.rb')
       builder = make_builder('bar', globs)
@@ -257,8 +255,8 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
 
       v2_fingerprint = builder.fingerprint
 
-      expect(File.exists?(release_dir + "/.dev_builds/packages/bar/#{v1_fingerprint}.tgz")).to eql(true)
-      expect(File.exists?(release_dir + "/.dev_builds/packages/bar/#{v2_fingerprint}.tgz")).to eql(true)
+      expect(release_dir).to have_file(".dev_builds/packages/bar/#{v1_fingerprint}.tgz")
+      expect(release_dir).to have_file(".dev_builds/packages/bar/#{v2_fingerprint}.tgz")
 
       release_dir.remove_file('src', 'foo/3.rb')
       builder = make_builder('bar', globs)
@@ -267,8 +265,8 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
 
       expect(builder.fingerprint).to eql(v1_fingerprint)
 
-      expect(File.exists?(release_dir + "/.dev_builds/packages/bar/#{v1_fingerprint}.tgz")).to eql(true)
-      expect(File.exists?(release_dir + "/.dev_builds/packages/bar/#{v2_fingerprint}.tgz")).to eql(true)
+      expect(release_dir).to have_file(".dev_builds/packages/bar/#{v1_fingerprint}.tgz")
+      expect(release_dir).to have_file(".dev_builds/packages/bar/#{v2_fingerprint}.tgz")
 
       # Now add packaging
       release_dir.add_file('packages', 'bar/packaging', 'make install')
@@ -284,7 +282,7 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
 
       builder.build
 
-      expect(File.exists?(release_dir + "/.dev_builds/packages/bar/#{v4_fingerprint}.tgz")).to eql(true)
+      expect(release_dir).to have_file(".dev_builds/packages/bar/#{v4_fingerprint}.tgz")
     end
 
     it 'stops if pre_packaging fails' do
@@ -301,8 +299,7 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     end
 
     it 'bumps major dev version in sync with final version' do
-      FileUtils.rm_rf(File.join(release_dir, 'src_alt'))
-
+      release_dir.remove_dir('src_alt')
       release_dir.add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
       globs = %w(foo/**/* baz)
       builder = make_builder('bar', globs)
@@ -314,7 +311,7 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
       expect(blobstore).to receive(:create).and_return('object_id')
       final_builder = Bosh::Cli::PackageBuilder.new({ 'name' => 'bar',
                                                       'files' => globs },
-                                                    release_dir,
+                                                    release_dir.path,
                                                     true, blobstore)
       final_builder.build
       expect(final_builder.version).to eql(builder.fingerprint)
@@ -349,7 +346,7 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     end
 
     it 'supports dry run' do
-      FileUtils.rm_rf(File.join(release_dir, 'src_alt'))
+      release_dir.remove_dir('src_alt')
 
       release_dir.add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
       globs = %w(foo/**/* baz)
@@ -358,17 +355,17 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
       builder.build
 
       expect(builder.version).to eql(builder.fingerprint)
-      expect(File.exists?(release_dir + "/.dev_builds/packages/bar/#{builder.fingerprint}.tgz")).to eql(false)
+      expect(release_dir).to_not have_file(".dev_builds/packages/bar/#{builder.fingerprint}.tgz")
 
       builder.dry_run = false
       builder.reload.build
       expect(builder.version).to eql(builder.fingerprint)
-      expect(File.exists?(release_dir + "/.dev_builds/packages/bar/#{builder.fingerprint}.tgz")).to eql(true)
+      expect(release_dir).to have_file(".dev_builds/packages/bar/#{builder.fingerprint}.tgz")
 
       blobstore = double('blobstore')
       expect(blobstore).to_not receive(:create)
       final_builder = Bosh::Cli::PackageBuilder.new(
-        { 'name' => 'bar', 'files' => globs }, release_dir, true, blobstore)
+        { 'name' => 'bar', 'files' => globs }, release_dir.path, true, blobstore)
       final_builder.dry_run = true
       final_builder.build
 
@@ -380,8 +377,8 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
       builder2.dry_run = true
       builder2.build
       expect(builder2.version).to eql(builder2.fingerprint)
-      expect(File.exists?(release_dir + "/.dev_builds/packages/bar/#{builder.fingerprint}.tgz")).to eql(true)
-      expect(File.exists?(release_dir + "/.dev_builds/packages/bar/#{builder2.fingerprint}.tgz")).to eql(false)
+      expect(release_dir).to have_file(".dev_builds/packages/bar/#{builder.fingerprint}.tgz")
+      expect(release_dir).to_not have_file(".dev_builds/packages/bar/#{builder2.fingerprint}.tgz")
     end
 
     it 'uses blobs directory to look up files as well' do
@@ -402,10 +399,10 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
       builder = make_builder('A', %w(lib/*.rb README.*))
       s1 = builder.fingerprint
 
-      FileUtils.mkdir_p(File.join(release_dir, 'blobs', 'lib'))
+      release_dir.add_dir('blobs/lib')
 
-      FileUtils.mv(File.join(release_dir, 'src', 'lib', '1.rb'),
-                   File.join(release_dir, 'blobs', 'lib', '1.rb'))
+      FileUtils.mv(release_dir.join('src', 'lib', '1.rb'),
+                   release_dir.join('blobs', 'lib', '1.rb'))
 
       s2 = builder.reload.fingerprint
       expect(s2).to eql(s1)
@@ -419,7 +416,7 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
       release_dir.remove_file('src', 'test/foo/NOTICE.txt')                   # src has test/foo
       release_dir.add_file('blobs', 'test/foo/NOTICE.txt', 'NOTICE contents') # blobs has test/foo
 
-      expect(File.directory?(File.join(release_dir, 'src', 'test', 'foo'))).to eql(true)
+      expect(release_dir).to have_file("src/test/foo")
 
       fp2 = make_builder('A', %w(test/**/*)).fingerprint
       expect(fp1).to eql(fp2)
@@ -470,7 +467,7 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
 
       it "checks if glob top-level-dir is present in src_alt but doesn't match" do
         release_dir.add_file('src', 'dir1/file1', 'original1')
-        FileUtils.mkdir(File.join(release_dir, 'src_alt', 'dir1'))
+        release_dir.add_dir('src_alt/dir1')
 
         builder = make_builder('A', %w(dir1/*))
 
@@ -496,7 +493,7 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
           Bosh::Cli::PackageBuilder.new({
             'name' => 'bar',
             'files' => 'foo/**/*'
-          }, release_dir, true, double('blobstore'))
+          }, release_dir.path, true, double('blobstore'))
         }.to raise_error(/Please remove `src_alt' first/)
       end
     end

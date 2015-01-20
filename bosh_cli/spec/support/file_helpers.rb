@@ -69,6 +69,10 @@ module Support
         version_index.update_version(key, build)
       end
 
+      def has_file?(filepath)
+        File.exists?(join(filepath))
+      end
+
       def join(*args)
         File.join(*([path] + args))
       end
