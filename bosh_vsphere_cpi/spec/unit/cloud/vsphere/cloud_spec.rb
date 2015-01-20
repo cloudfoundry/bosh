@@ -502,19 +502,24 @@ module VSphereCloud
       let(:datacenter) { double('fake datacenter', name: 'fake datacenter',
                                                    master_vm_folder: master_vm_folder,
                                                    master_template_folder: master_template_folder) }
-      let(:master_vm_folder) { double('fake vm folder', name: 'fake vm folder name', mob: vm_folder_mob) }
+      let(:master_vm_folder) do
+        instance_double('VSphereCloud::Resources::Folder',
+          path: 'fake-vm-folder-path',
+          mob: vm_folder_mob
+        )
+      end
       let(:vm_folder_mob) { double('fake folder mob', child_entity: [subfolder]) }
       let(:subfolder) { double('fake subfolder', child_entity: vms) }
       let(:vms) { ['fake vm 1', 'fake vm 2'] }
 
       let(:master_template_folder) do
-        double('fake template template folder',
-          name: 'fake template folder name',
+        instance_double('VSphereCloud::Resources::Folder',
+          path: 'fake-template-folder-path',
           mob: template_folder_mob
         )
       end
-      let(:template_folder_mob) { double('fake template folder mob', child_entity: [template_subfolder]) }
-      let(:template_subfolder) { double('fake template subfolder', child_entity: stemcells) }
+      let(:template_folder_mob) { double('fake template folder mob', child_entity: [template_subfolder_mob]) }
+      let(:template_subfolder_mob) { double('fake template subfolder', child_entity: stemcells) }
       let(:stemcells) { ['fake stemcell 1', 'fake stemcell 2'] }
 
       before { allow(Resources).to receive(:new).and_return(resources) }
@@ -529,13 +534,22 @@ module VSphereCloud
         let(:datacenter2) { double('another fake datacenter', name: 'fake datacenter 2',
                                                               master_vm_folder: master_vm_folder2,
                                                               master_template_folder: master_template_folder2) }
-        let(:master_vm_folder2) { double('another fake vm folder', name: 'another fake vm folder name', mob: vm_folder2_mob) }
+        let(:master_vm_folder2) do
+          instance_double('VSphereCloud::Resources::Folder',
+            path: 'another-fake-vm-folder-path',
+            mob: vm_folder2_mob
+          )
+        end
         let(:vm_folder2_mob) { double('another fake folder mob', child_entity: [subfolder2]) }
         let(:subfolder2) { double('another fake subfolder', child_entity: vms2) }
         let(:vms2) { ['fake vm 3', 'fake vm 4'] }
 
-        let(:master_template_folder2) { double('another fake template folder', name: 'another fake template folder name',
-                                                                        mob: template_folder2_mob) }
+        let(:master_template_folder2) do
+          instance_double('VSphereCloud::Resources::Folder',
+            path: 'another-fake-template-folder-path',
+            mob: template_folder2_mob
+          )
+        end
         let(:template_folder2_mob) { double('another fake template folder mob', child_entity: [template_subfolder2]) }
         let(:template_subfolder2) { double('another fake subfolder', child_entity: stemcells2) }
         let(:stemcells2) { ['fake stemcell 3', 'fake stemcell 4'] }

@@ -848,9 +848,9 @@ module VSphereCloud
       subfolders = []
       with_thread_name("get_vms") do
         @resources.datacenters.each_value do |datacenter|
-          @logger.info("Looking for VMs in: #{datacenter.name} - #{datacenter.master_vm_folder.name}")
+          @logger.info("Looking for VMs in: #{datacenter.name} - #{datacenter.master_vm_folder.path}")
           subfolders += datacenter.master_vm_folder.mob.child_entity
-          @logger.info("Looking for Stemcells in: #{datacenter.name} - #{datacenter.master_template_folder.name}")
+          @logger.info("Looking for Stemcells in: #{datacenter.name} - #{datacenter.master_template_folder.path}")
           subfolders += datacenter.master_template_folder.mob.child_entity
         end
       end
