@@ -4,11 +4,11 @@ module Support
   module FileHelpers
     class << self
       def included(base)
-        base.let(:spec_package) { SpecPackage.new }
+        base.let(:release_dir) { ReleaseDirectory.new }
       end
     end
 
-    class SpecPackage < String
+    class ReleaseDirectory < String
       def initialize(s = nil)
         super File.join([Dir.mktmpdir, s].compact)
       end
