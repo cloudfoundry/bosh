@@ -26,6 +26,9 @@ module Bosh::Director::DeploymentPlan
       allow(job).to receive(:instance_state).with(0).and_return('started')
     end
 
+    let(:instance_model) { Bosh::Director::Models::Instance.make }
+    let(:vm_model) { Bosh::Director::Models::Vm.make }
+
     describe '#network_settings' do
       let(:job) do
         instance_double('Bosh::Director::DeploymentPlan::Job', {
@@ -353,7 +356,6 @@ module Bosh::Director::DeploymentPlan
       end
 
       it "adds the existing VM as allocated on the job's resource pool" do
-        vm_model = Bosh::Director::Models::Vm.make
         instance_model.vm = vm_model
 
         state = {}
@@ -403,7 +405,6 @@ module Bosh::Director::DeploymentPlan
       before { allow(agent_client).to receive(:apply) }
 
       before { allow(Bosh::Director::AgentClient).to receive(:with_defaults).with(vm_model.agent_id).and_return(agent_client) }
-      let(:vm_model) { Bosh::Director::Models::Vm.make }
 
       before do
         # Create a new VM
@@ -540,7 +541,6 @@ module Bosh::Director::DeploymentPlan
       before { allow(agent_client).to receive(:apply) }
 
       before { allow(Bosh::Director::AgentClient).to receive(:with_defaults).with(vm_model.agent_id).and_return(agent_client) }
-      let(:vm_model) { Bosh::Director::Models::Vm.make }
 
       before { allow(plan).to receive(:network).with('fake-network').and_return(network) }
 
@@ -722,7 +722,6 @@ module Bosh::Director::DeploymentPlan
           allow(Bosh::Director::AgentClient).to receive(:with_defaults).with(vm_model.agent_id).and_return(agent_client)
           allow(agent_client).to receive(:apply)
         end
-        let(:vm_model) { Bosh::Director::Models::Vm.make }
 
         before do
           # Create a new VM
@@ -880,6 +879,19 @@ module Bosh::Director::DeploymentPlan
         spec = instance.spec
         expect(spec['persistent_disk']).to eq(0)
         expect(spec['persistent_disk_pool']).to eq(nil)
+      end
+    end
+
+    describe '#bind_to_vm_model' do
+      before do
+        instance.bind_unallocated_vm
+        instance.bind_to_vm_model(vm_model)
+      end
+
+      it 'updates instance model with new vm model' do
+        expect(instance.model.refresh.vm).to eq(vm_model)
+        expect(instance.vm.model).to eq(vm_model)
+        expect(instance.vm.bound_instance).to eq(instance)
       end
     end
   end

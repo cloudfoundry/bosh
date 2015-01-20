@@ -431,6 +431,12 @@ module Bosh::Director
         spec
       end
 
+      def bind_to_vm_model(vm_model)
+        @model.update(vm: vm_model)
+        @vm.model = vm_model
+        @vm.bound_instance = self
+      end
+
       # Looks up instance model in DB
       # @return [Models::Instance]
       def find_or_create_model

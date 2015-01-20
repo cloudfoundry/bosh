@@ -330,6 +330,7 @@ module Bosh::Director
     let(:instance) {
       instance_double('Bosh::Director::DeploymentPlan::Instance',
         model: instance_model,
+        bind_to_vm_model: nil,
         vm: deployment_vm) }
     let(:instance_model) { Models::Instance.make(vm: nil) }
     let(:cloud) { instance_double('Bosh::Cloud') }
@@ -423,14 +424,9 @@ module Bosh::Director
       context 'when vm creation succeeds' do
         before { allow(Bosh::Director::VmCreator).to receive(:create).and_return(vm_model) }
 
-        it 'saves association between instance and the vm model' do
-          expect {
-            vm_creator.create(nil)
-          }.to change { instance_model.refresh.vm }.from(nil).to(vm_model)
-        end
+        it 'binds vm model to the instance' do
+          expect(instance).to receive(:bind_to_vm_model).with(vm_model)
 
-        it 'associates the instances deployment vms model with the created vm' do
-          expect(deployment_vm).to receive('model=').with(vm_model)
           vm_creator.create(nil)
         end
 
@@ -445,7 +441,7 @@ module Bosh::Director
         end
 
         context 'when saving association between instance and the vm model fails' do
-          before { allow(instance_model).to receive(:save).and_raise(error) }
+          before { allow(instance).to receive(:bind_to_vm_model).and_raise(error) }
           let(:error) { Exception.new }
 
           it 'raises association error after deleting created vm from the cloud and the database' do
