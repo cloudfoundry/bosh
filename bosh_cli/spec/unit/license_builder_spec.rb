@@ -1,6 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Cli::LicenseBuilder, 'dev build' do
+  let(:basedir) { nil }
+
   before do
     spec_package.add_dir('blobs')
     spec_package.add_dir('src')
@@ -12,57 +14,133 @@ describe Bosh::Cli::LicenseBuilder, 'dev build' do
     Bosh::Cli::LicenseBuilder.new(spec_package, final, blobstore)
   end
 
-  it 'whines when there is no license file named LICENSE/NOTICE in the release root repo' do
-    builder = make_builder()
-    spec_package.add_file('license', 'LICENSE1')
+  # TODO: Review warn conditions with Dimitriy
+  describe 'copying package files' do
+    let(:builder) { make_builder }
 
-    builder.copy_files
-    expect(builder.copy_files).to eql(0)
+    before do
+      spec_package.add_file(basedir, 'LICENSE')
+      spec_package.add_file(basedir, 'NOTICE')
+    end
+
+    it 'copies the LICENSE file' do
+      builder.copy_files
+      expect(File).to exist(File.join(builder.build_dir, 'LICENSE'))
+    end
+
+    it 'copies the NOTICE file' do
+      builder.copy_files
+      expect(File).to exist(File.join(builder.build_dir, 'NOTICE'))
+    end
+
+    it 'does not copy non-relevant files' do
+      spec_package.add_file(basedir, 'AUTHORS')
+      builder.copy_files
+      expect(File).to_not exist(File.join(builder.build_dir, 'AUTHORS'))
+    end
+
+    it 'warns when there is no LICENSE file' do
+      spec_package.remove_file(basedir, 'LICENSE')
+
+      expect(builder).to receive(:warn)
+        .with(['Does not contain LICENSE within', spec_package].join(' '))
+      builder.copy_files
+    end
+
+    it 'warns when there is no NOTICE file' do
+      spec_package.remove_file(basedir, 'NOTICE')
+
+      expect(builder).to receive(:warn)
+        .with(['Does not contain NOTICE within', spec_package].join(' '))
+      builder.copy_files
+    end
   end
 
+  describe 'the checksum' do
+    let(:builder) { make_builder }
 
-  it 'has no way to calculate checksum for not yet generated license' do
-    expect {
+    before do
+      spec_package.add_file(basedir, 'LICENSE')
+      spec_package.add_file(basedir, 'NOTICE')
+    end
+
+    it 'exists when the builder has built' do
+      builder.build
+      expect(builder.checksum).to match(/[0-9a-f]+/)
+    end
+
+    it 'raises an exception if not yet built' do
+      expect {
+        builder.checksum
+      }.to raise_error(RuntimeError,
+        'cannot read checksum for not yet ' +
+          'generated package/job/license')
+    end
+  end
+
+  describe 'the fingerprint' do
+    let(:builder) { make_builder }
+
+    before do
+      spec_package.add_file(basedir, 'LICENSE')
+      spec_package.add_file(basedir, 'NOTICE')
+    end
+
+    it 'is stable' do
+      expect {
+        builder.reload
+      }.to_not change { builder.fingerprint }
+    end
+  end
+
+  describe 'generating a tarball' do
+    let(:builder) { make_builder }
+
+    before do
+      spec_package.add_file(basedir, 'LICENSE', '1')
+      spec_package.add_file(basedir, 'NOTICE', '1')
+    end
+
+    it 'succeeds when calling #generate_tarball' do
+      builder.generate_tarball
+      expect(File).to exist(File.join(spec_package, ".dev_builds/license/#{builder.fingerprint}.tgz"))
+    end
+
+    it 'succeeds when calling #build' do
+      builder.build
+      expect(File).to exist(File.join(spec_package, ".dev_builds/license/#{builder.fingerprint}.tgz"))
+    end
+
+    it 'creates a new version when the LICENSE is updated' do
+      builder.build
+      v1_fingerprint = builder.fingerprint
+
+      expect(File.exists?(spec_package + "/.dev_builds/license/#{v1_fingerprint}.tgz")).to eql(true)
+
+      spec_package.add_file(basedir, 'LICENSE', '2')
       builder = make_builder()
-      spec_package.add_file('license', 'LICENSE')
-      builder.checksum
-    }.to raise_error(RuntimeError,
-                         'cannot read checksum for not yet ' +
-                           'generated package/job/license')
+      builder.build
+
+      expect(builder.fingerprint).to_not eq(v1_fingerprint)
+      expect(File.exists?(spec_package + "/.dev_builds/license/#{builder.fingerprint}.tgz")).to eql(true)
+    end
+
+    it 'creates a new version when the NOTICE is updated' do
+      builder.build
+      v1_fingerprint = builder.fingerprint
+
+      expect(File.exists?(spec_package + "/.dev_builds/license/#{v1_fingerprint}.tgz")).to eql(true)
+
+      spec_package.add_file(basedir, 'NOTICE', '2')
+      builder = make_builder()
+      builder.build
+
+      expect(builder.fingerprint).to_not eq(v1_fingerprint)
+      expect(File.exists?(spec_package + "/.dev_builds/license/#{builder.fingerprint}.tgz")).to eql(true)
+    end
   end
 
-  it 'has a checksum for a generated license' do
-    builder = make_builder()
-    spec_package.add_file(nil, 'LICENSE', '1')
-    spec_package.add_file(nil, 'NOTICE', '2')
-    builder.build
-    expect(builder.checksum).to match(/[0-9a-f]+/)
-  end
-
-  it 'has stable fingerprint' do
-    spec_package.add_file(nil, 'LICENSE')
-    spec_package.add_file(nil, 'NOTICE')
-    builder = make_builder()
-    s1 = builder.fingerprint
-
-    expect(builder.reload.fingerprint).to eql(s1)
-  end
-
-  it 'copies files to build directory' do
-    spec_package.add_file(nil, 'LICENSE')
-    spec_package.add_file(nil, 'NOTICE')
-
-    builder = make_builder()
-    expect(builder.copy_files).to eql(2)
-  end
-
-  it 'generates tarball' do
-    spec_package.add_file(nil, 'LICENSE')
-    spec_package.add_file(nil, 'NOTICE')
-    builder = make_builder()
-    expect(builder.generate_tarball).to eql(true)
-  end
-
+  # TODO...
   it 'can point to either dev or a final version of a package' do
     fingerprint = 'fake-fingerprint'
     allow(Digest::SHA1).to receive(:hexdigest).and_return(fingerprint)
@@ -102,34 +180,4 @@ describe Bosh::Cli::LicenseBuilder, 'dev build' do
       spec_package, '.final_builds', 'license', "#{fingerprint}.tgz"))
 
  end
-
-  it 'creates a new version tarball' do
-    spec_package.add_file(nil,'LICENSE', '1')
-    spec_package.add_file(nil,'NOTICE', '1')
-    builder = make_builder()
-
-    v1_fingerprint = builder.fingerprint
-    expect(File.exists?(spec_package + "/.dev_builds/license/#{v1_fingerprint}.tgz")).to eql(false)
-
-    builder.build
-    expect(File.exists?(spec_package + "/.dev_builds/license/#{v1_fingerprint}.tgz")).to eql(true)
-
-    builder = make_builder()
-    builder.build
-
-    expect(File.exists?(spec_package + "/.dev_builds/license/#{v1_fingerprint}.tgz")).to eql(true)
-    expect(File.exists?(spec_package + '/.dev_builds/license/other-fingerprint.tgz')).to eql(false)
-
-    spec_package.add_file(nil, 'LICENSE', '2')
-    spec_package.add_file(nil, 'NOTICE', '2')
-    builder = make_builder()
-    builder.build
-
-    v2_fingerprint = builder.fingerprint
-
-    expect(File.exists?(spec_package + "/.dev_builds/license/#{v1_fingerprint}.tgz")).to eql(true)
-    expect(File.exists?(spec_package + "/.dev_builds/license/#{v2_fingerprint}.tgz")).to eql(true)
-
-  end
-
 end

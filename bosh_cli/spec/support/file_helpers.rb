@@ -44,7 +44,7 @@ module Support
       end
 
       def remove_file(dir, path)
-        FileUtils.rm(File.join(self.to_s, dir, path))
+        FileUtils.rm(File.join(self.to_s, [dir, path].compact))
       end
 
       def remove_files(dir, paths)

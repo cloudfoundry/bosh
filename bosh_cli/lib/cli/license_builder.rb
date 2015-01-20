@@ -68,26 +68,34 @@ module Bosh::Cli
       self
     end
 
-
     def copy_files
-      copied = 0
-      Dir.glob("#{@release_dir}/[a-zA-Z0-9]*").each do |license_file|
-        next unless File.file?(license_file)
-        license_src = File.join(license_file)
-        basename = File.basename(license_src)
-        license_dst = File.join(build_dir, basename)
+      expected = ['LICENSE', 'NOTICE']
+      actual = []
 
-        if File.exists?(license_dst)
-          say("Already contains LICENSE/NOTICE. It will be overwritten.")
-        end
+      # TODO: use 'expected'
+      Dir.glob(["#{@release_dir}/LICENSE", "#{@release_dir}/NOTICE"]).each do |path|
+        next unless File.file?(path)
+        name = File.split(path).last
+        base = File.basename(path)
+        destination = File.join(build_dir, base)
 
-        FileUtils.cp(license_src, license_dst, :preserve => true)
-        copied += 1
+        # if File.exists?(destination)
+        #   say("Already contains #{name}. It will be overwritten.")
+        # end
+
+        FileUtils.cp(path, destination, :preserve => true)
+        actual << name
       end
 
-      warn("Does not contain LICENSE/NOTICE under #{@release_dir}")  unless copied != 0
+      expected.each do |file|
+        warn("Does not contain #{file} within #{@release_dir}") unless actual.include?(file)
+      end
 
-      copied
+      actual.length
+    end
+
+    def build_dir
+      @build_dir ||= Dir.mktmpdir
     end
 
     private
@@ -109,10 +117,6 @@ module Bosh::Cli
       end
 
       Digest::SHA1.hexdigest(contents)
-    end
-
-    def build_dir
-      @build_dir ||= Dir.mktmpdir
     end
 
     def in_build_dir(&block)
