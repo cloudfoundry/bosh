@@ -4,21 +4,45 @@ module Support
   module FileHelpers
     class << self
       def included(base)
-        base.let(:release_dir) { ReleaseDirectory.new }
+        base.extend(ClassMethods)
       end
     end
 
-    class ReleaseDirectory < String
-      def initialize(s = nil)
-        super File.join([Dir.mktmpdir, s].compact)
+    module ClassMethods
+      def with_release_directory
+        dir = ReleaseDirectory.new
+        yield dir
+
+        after { FileUtils.remove_entry dir.path }
+      end
+    end
+
+    # TODO: compose around String, rather than subclassing.
+    class ReleaseDirectory
+      attr_reader :path
+
+      def initialize
+        @path = Dir.mktmpdir
       end
 
-      def add_dir(path)
-        FileUtils.mkdir_p(File.join(self.to_s, path))
+      def to_s
+        path
       end
 
-      def add_file(dir, path, contents = nil)
-        full_path = File.join([self.to_s, dir, path].compact)
+      def to_str
+        to_s
+      end
+
+      def +(s)
+        path + s
+      end
+
+      def add_dir(subdir)
+        FileUtils.mkdir_p(File.join(path, subdir))
+      end
+
+      def add_file(subdir, filepath, contents = nil)
+        full_path = File.join([path, subdir, filepath].compact)
         FileUtils.mkdir_p(File.dirname(full_path))
 
         if contents
@@ -28,8 +52,8 @@ module Support
         end
       end
 
-      def add_files(dir, paths)
-        paths.each { |path| add_file(dir, path) }
+      def add_files(subdir, filepaths)
+        filepaths.each { |filepath| add_file(subdir, filepath) }
       end
 
       def add_version(key, storage_dir, payload, build)
@@ -46,19 +70,19 @@ module Support
       end
 
       def join(*args)
-        File.join(*([self.to_s] + args))
+        File.join(*([path] + args))
       end
 
-      def remove_dir(path)
-        FileUtils.rm_rf(File.join(self.to_s, path))
+      def remove_dir(subdir)
+        FileUtils.rm_rf(File.join(path, subdir))
       end
 
-      def remove_file(dir, path)
-        FileUtils.rm(File.join(self.to_s, [dir, path].compact))
+      def remove_file(subdir, filepath)
+        FileUtils.rm(File.join(path, [subdir, filepath].compact))
       end
 
-      def remove_files(dir, paths)
-        paths.each { |path| remove_file(dir, path) }
+      def remove_files(subdir, filepaths)
+        filepaths.each { |filepath| remove_file(subdir, filepath) }
       end
     end
   end
