@@ -26,7 +26,7 @@ describe Bosh::Cli::LicenseBuilder, 'dev build' do
       expect(File).to exist(File.join(builder.build_dir, 'NOTICE'))
     end
 
-    it 'does not copy non-relevant files' do
+    it 'does not copy undesired files' do
       release_dir.add_file(basedir, 'AUTHORS')
       builder.copy_files
       expect(File).to_not exist(File.join(builder.build_dir, 'AUTHORS'))

@@ -7,37 +7,14 @@ module Bosh::Cli
     # @param [String] directory Release directory
     # @param [Hash] options Build options
     def self.discover(directory, options = {})
-      builders = []
-
-      unless File.exists?(File.join(directory, "LICENSE"))
-        if File.exist?(File.join(directory, "..", "LICENSE"))
-          say("copy LICENSE from root repo".make_green)
-          FileUtils.copy(File.join(directory, "..", "LICENSE"), directory)
-        else
-          warn("Cannot find LICENSE in root of release.")
-        end
-      end
-
-      unless File.exists?(File.join(directory, "NOTICE"))
-        if File.exist?(File.join(directory, "..", "NOTICE"))
-          say("copy NOTICE from root repo".make_green)
-          FileUtils.copy(File.join(directory, "..", "NOTICE"), directory)
-        else
-          warn("Cannot find NOTICE in root of release.")
-        end
-      end
-
       final = options[:final]
-      dry_run = options[:dry_run]
       blobstore = options[:blobstore]
       builder = new(directory, final, blobstore)
 
-      builders << builder
-      builders
+      [builder]
     end
 
     def initialize(release_dir, final = false, blobstore)
-
       @name = "license"
       @version = nil
       @tarball_path = nil
@@ -51,9 +28,6 @@ module Bosh::Cli
 
       FileUtils.mkdir_p(@dev_builds_dir)
       FileUtils.mkdir_p(@final_builds_dir)
-
-#      FileUtils.copy(File.join(@license_dir, "LICENSE"), @dev_builds_dir)
-#      FileUtils.copy(File.join(@license_dir, "LICENSE"), @final_builds_dir)
 
       init_indices
     end
@@ -69,25 +43,21 @@ module Bosh::Cli
     end
 
     def copy_files
-      expected = ['LICENSE', 'NOTICE']
+      expected_files = ['LICENSE', 'NOTICE']
+      expected_paths = expected_files.map { |name| File.join(@release_dir, name) }
       actual = []
 
-      # TODO: use 'expected'
-      Dir.glob(["#{@release_dir}/LICENSE", "#{@release_dir}/NOTICE"]).each do |path|
+      expected_paths.each do |path|
         next unless File.file?(path)
         name = File.split(path).last
         base = File.basename(path)
         destination = File.join(build_dir, base)
 
-        # if File.exists?(destination)
-        #   say("Already contains #{name}. It will be overwritten.")
-        # end
-
         FileUtils.cp(path, destination, :preserve => true)
         actual << name
       end
 
-      expected.each do |file|
+      expected_files.each do |file|
         warn("Does not contain #{file} within #{@release_dir}") unless actual.include?(file)
       end
 
