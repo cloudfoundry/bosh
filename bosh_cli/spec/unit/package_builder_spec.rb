@@ -211,23 +211,14 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
     globs = %w(foo/**/* baz)
 
     package_name = 'bar'
-    final_storage_dir = File.join(release_dir, '.final_builds', 'packages', package_name)
-    final_versions = Bosh::Cli::Versions::VersionsIndex.new(final_storage_dir)
-    final_storage = Bosh::Cli::Versions::LocalVersionStorage.new(final_storage_dir)
+    final_storage_dir = ".final_builds/packages/#{package_name}"
+    dev_storage_dir = ".dev_builds/packages/#{package_name}"
 
-    dev_storage_dir = File.join(release_dir, '.dev_builds', 'packages', package_name)
-    dev_versions   = Bosh::Cli::Versions::VersionsIndex.new(dev_storage_dir)
-    dev_storage = Bosh::Cli::Versions::LocalVersionStorage.new(dev_storage_dir)
+    release_dir.add_version(fingerprint, final_storage_dir, 'payload',
+      { 'version' => fingerprint, 'blobstore_id' => '12321' })
 
-    release_dir.add_version(final_versions, final_storage,
-      fingerprint,
-      { 'version' => fingerprint, 'blobstore_id' => '12321' },
-      get_tmp_file_path('payload'))
-
-    release_dir.add_version(dev_versions, dev_storage,
-      fingerprint,
-      { 'version' => fingerprint },
-      get_tmp_file_path('dev_payload'))
+    release_dir.add_version(fingerprint, dev_storage_dir, 'dev_payload',
+      { 'version' => fingerprint })
 
     builder = make_builder(package_name, globs)
 

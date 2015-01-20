@@ -32,11 +32,17 @@ module Support
         paths.each { |path| add_file(dir, path) }
       end
 
-      def add_version(index, storage, key, build, src_file_path)
-        index.add_version(key, build)
-        file_path = storage.put_file(key, src_file_path)
-        build['sha1'] = Digest::SHA1.file(file_path).hexdigest
-        index.update_version(key, build)
+      def add_version(key, storage_dir, payload, build)
+        storage_path  = self.join(storage_dir)
+        version_index = Bosh::Cli::Versions::VersionsIndex.new(storage_path)
+        version_store = Bosh::Cli::Versions::LocalVersionStorage.new(storage_path)
+        src_path = get_tmp_file_path(payload)
+
+        version_index.add_version(key, build)
+        file = version_store.put_file(key, src_path)
+
+        build['sha1'] = Digest::SHA1.file(file).hexdigest
+        version_index.update_version(key, build)
       end
 
       def join(*args)

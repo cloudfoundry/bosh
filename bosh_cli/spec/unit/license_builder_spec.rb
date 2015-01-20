@@ -152,31 +152,27 @@ describe Bosh::Cli::LicenseBuilder, 'dev build' do
       end
 
       it 'successfully builds a dev version' do
-        storage_dir = release_dir.join('.dev_builds/license')
-        version_index = Bosh::Cli::Versions::VersionsIndex.new(storage_dir)
-        version_store = Bosh::Cli::Versions::LocalVersionStorage.new(storage_dir)
+        storage_dir = '.dev_builds/license'
 
-        release_dir.add_version(version_index, version_store, fingerprint,
-          { 'version' => fingerprint }, get_tmp_file_path('dev_payload'))
+        release_dir.add_version(fingerprint, storage_dir, 'payload',
+          { 'version' => fingerprint })
 
         builder = make_builder
         builder.use_dev_version
 
-        expect(builder.tarball_path).to eql(release_dir.join(".dev_builds/license/#{fingerprint}.tgz"))
+        expect(builder.tarball_path).to eql(release_dir.join(storage_dir, "#{fingerprint}.tgz"))
       end
 
       it 'successfully builds a final version' do
-        storage_dir = release_dir.join('.final_builds/license')
-        version_index = Bosh::Cli::Versions::VersionsIndex.new(storage_dir)
-        version_store = Bosh::Cli::Versions::LocalVersionStorage.new(storage_dir)
+        storage_dir = '.final_builds/license'
 
-        release_dir.add_version(version_index, version_store, fingerprint,
-          { 'version' => fingerprint, 'blobstore_id' => '12321' }, get_tmp_file_path('payload'))
+        release_dir.add_version(fingerprint, storage_dir, 'payload',
+          { 'version' => fingerprint, 'blobstore_id' => '12321' })
 
         builder = make_builder(true)
         builder.use_final_version
 
-        expect(builder.tarball_path).to eql(release_dir.join(".final_builds/license/#{fingerprint}.tgz"))
+        expect(builder.tarball_path).to eql(release_dir.join(storage_dir, "#{fingerprint}.tgz"))
       end
     end
   end
