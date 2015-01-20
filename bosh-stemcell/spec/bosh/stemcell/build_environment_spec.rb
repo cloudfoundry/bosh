@@ -215,6 +215,40 @@ module Bosh::Stemcell
       end
     end
 
+    describe '#stemcell_tgz_rspec_command' do
+      context 'when operation system has version' do
+        before { allow(operating_system).to receive(:version).and_return('fake-version') }
+
+        it 'returns the correct command' do
+          expected_rspec_command = [
+            "cd #{stemcell_specs_dir};",
+            "STEMCELL_TGZ=#{File.join(work_path, 'fake-stemcell.tgz')}",
+            'STEMCELL_TGZ_WORKDIR=/tmp/fakeworkdir',
+            'bundle exec rspec -fd',
+            "spec/stemcell_tgz/#{operating_system.name}_#{operating_system.version}_spec.rb",
+          ].join(' ')
+
+          expect(subject.stemcell_tgz_rspec_command('/tmp/fakeworkdir')).to eq(expected_rspec_command)
+        end
+      end
+
+      context 'when operation system does not have version' do
+        before { allow(operating_system).to receive(:version).and_return(nil) }
+
+        it 'returns the correct command' do
+          expected_rspec_command = [
+            "cd #{stemcell_specs_dir};",
+            "STEMCELL_TGZ=#{File.join(work_path, 'fake-stemcell.tgz')}",
+            'STEMCELL_TGZ_WORKDIR=/tmp/fakeworkdir',
+            'bundle exec rspec -fd',
+            "spec/stemcell_tgz/#{operating_system.name}_spec.rb",
+          ].join(' ')
+
+          expect(subject.stemcell_tgz_rspec_command('/tmp/fakeworkdir')).to eq(expected_rspec_command)
+        end
+      end
+    end
+
     describe '#build_path' do
       it 'returns the build path' do
         expect(subject.build_path).to eq(build_path)

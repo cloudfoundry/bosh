@@ -124,6 +124,9 @@ namespace :stemcell do
 
     sh(environment.stemcell_rspec_command)
 
+    stemcell_tgz_workdir = Dir.mktmpdir('stemcell_tgz')
+    sh(environment.stemcell_tgz_rspec_command(stemcell_tgz_workdir))
+
     mkdir_p('tmp')
     cp(environment.stemcell_file, 'tmp')
   end
