@@ -3,12 +3,6 @@ require 'spec_helper'
 describe Bosh::Cli::LicenseBuilder, 'dev build' do
   let(:basedir) { nil }
 
-  before do
-    release_dir.add_dir('blobs')
-    release_dir.add_dir('src')
-    release_dir.add_dir('src_alt')
-  end
-
   def make_builder(final = false)
     blobstore = double('blobstore')
     Bosh::Cli::LicenseBuilder.new(release_dir, final, blobstore)
@@ -100,14 +94,24 @@ describe Bosh::Cli::LicenseBuilder, 'dev build' do
       release_dir.add_file(basedir, 'NOTICE', '1')
     end
 
-    it 'succeeds when calling #generate_tarball' do
+    it 'includes the fingerprint in the archive filename' do
       builder.generate_tarball
       expect(File).to exist(File.join(release_dir, ".dev_builds/license/#{builder.fingerprint}.tgz"))
+      expect(File).to exist(release_dir.join(".dev_builds/license/#{builder.fingerprint}.tgz"))
+    end
+  end
+
+  describe 'building the license archive' do
+    let(:builder) { make_builder }
+
+    before do
+      release_dir.add_file(basedir, 'LICENSE', '1')
+      release_dir.add_file(basedir, 'NOTICE', '1')
     end
 
-    it 'succeeds when calling #build' do
+    it 'includes the fingerprint in the archive filename' do
       builder.build
-      expect(File).to exist(File.join(release_dir, ".dev_builds/license/#{builder.fingerprint}.tgz"))
+      expect(File).to exist(release_dir.join(".dev_builds/license/#{builder.fingerprint}.tgz"))
     end
 
     it 'creates a new version when the LICENSE is updated' do
@@ -137,46 +141,43 @@ describe Bosh::Cli::LicenseBuilder, 'dev build' do
       expect(builder.fingerprint).to_not eq(v1_fingerprint)
       expect(File.exists?(release_dir + "/.dev_builds/license/#{builder.fingerprint}.tgz")).to eql(true)
     end
+
+    context 'building dev and final versions' do
+      let(:fingerprint) { 'fake-digest' }
+
+      before do
+        allow(Digest::SHA1).to receive(:hexdigest).and_return(fingerprint)
+        release_dir.add_file(basedir, 'LICENSE', '1')
+        release_dir.add_file(basedir, 'NOTICE', '1')
+      end
+
+      it 'successfully builds a dev version' do
+        storage_dir = release_dir.join('.dev_builds/license')
+        version_index = Bosh::Cli::Versions::VersionsIndex.new(storage_dir)
+        version_store = Bosh::Cli::Versions::LocalVersionStorage.new(storage_dir)
+
+        release_dir.add_version(version_index, version_store, fingerprint,
+          { 'version' => fingerprint }, get_tmp_file_path('dev_payload'))
+
+        builder = make_builder
+        builder.use_dev_version
+
+        expect(builder.tarball_path).to eql(release_dir.join(".dev_builds/license/#{fingerprint}.tgz"))
+      end
+
+      it 'successfully builds a final version' do
+        storage_dir = release_dir.join('.final_builds/license')
+        version_index = Bosh::Cli::Versions::VersionsIndex.new(storage_dir)
+        version_store = Bosh::Cli::Versions::LocalVersionStorage.new(storage_dir)
+
+        release_dir.add_version(version_index, version_store, fingerprint,
+          { 'version' => fingerprint, 'blobstore_id' => '12321' }, get_tmp_file_path('payload'))
+
+        builder = make_builder(true)
+        builder.use_final_version
+
+        expect(builder.tarball_path).to eql(release_dir.join(".final_builds/license/#{fingerprint}.tgz"))
+      end
+    end
   end
-
-  # TODO...
-  it 'can point to either dev or a final version of a package' do
-    fingerprint = 'fake-fingerprint'
-    allow(Digest::SHA1).to receive(:hexdigest).and_return(fingerprint)
-
-    release_dir.add_file(nil, 'LICENSE')
-    release_dir.add_file(nil, 'NOTICE')
-
-    license_name = 'LICENSE'
-    final_storage_dir = File.join(release_dir, '.final_builds', 'license', license_name)
-    final_versions = Bosh::Cli::Versions::VersionsIndex.new(final_storage_dir)
-    final_storage = Bosh::Cli::Versions::LocalVersionStorage.new(final_storage_dir)
-
-    dev_storage_dir = File.join(release_dir, '.dev_builds', 'license', license_name)
-    dev_versions   = Bosh::Cli::Versions::VersionsIndex.new(dev_storage_dir)
-    dev_storage = Bosh::Cli::Versions::LocalVersionStorage.new(dev_storage_dir)
-
-    release_dir.add_version(final_versions, final_storage,
-      fingerprint,
-      { 'version' => fingerprint, 'blobstore_id' => '12321' },
-      get_tmp_file_path('payload'))
-
-    release_dir.add_version(dev_versions, dev_storage,
-      fingerprint,
-      { 'version' => fingerprint },
-      get_tmp_file_path('dev_payload'))
-
-    builder = make_builder()
-    builder.use_dev_version || builder.generate_tarball
-
-    expect(builder.tarball_path).to eql(File.join(
-      release_dir, '.dev_builds', 'license', "#{fingerprint}.tgz"))
-
-
-    builder = make_builder(true)
-    builder.use_final_version || builder.generate_tarball
-    expect(builder.tarball_path).to eql(File.join(
-      release_dir, '.final_builds', 'license', "#{fingerprint}.tgz"))
-
- end
 end

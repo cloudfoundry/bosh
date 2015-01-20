@@ -39,6 +39,10 @@ module Support
         index.update_version(key, build)
       end
 
+      def join(*args)
+        File.join(*([self.to_s] + args))
+      end
+
       def remove_dir(path)
         FileUtils.rm_rf(File.join(self.to_s, path))
       end
