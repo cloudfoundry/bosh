@@ -145,6 +145,12 @@ module Bosh::Stemcell
           subject.prepare_build
         }.to change { Dir.exists?(work_root) }.from(false).to(true)
       end
+
+      it 'creates the stemcell path' do
+        expect {
+          subject.prepare_build
+        }.to change { Dir.exists?(File.join(root_dir, 'work/work/stemcell')) }.from(false).to(true)
+      end
     end
 
     describe '#os_image_rspec_command' do

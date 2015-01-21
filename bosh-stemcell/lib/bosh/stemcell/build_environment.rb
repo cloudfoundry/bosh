@@ -31,6 +31,7 @@ module Bosh::Stemcell
       prepare_build_path
       copy_stemcell_builder_to_build_path
       prepare_work_root
+      prepare_stemcell_path
       persist_settings_for_bash
     end
 
@@ -121,6 +122,10 @@ module Bosh::Stemcell
     def prepare_build_path
       FileUtils.rm_rf(build_path, verbose: true) if File.exist?(build_path)
       FileUtils.mkdir_p(build_path, verbose: true)
+    end
+
+    def prepare_stemcell_path
+      FileUtils.mkdir_p(File.join(work_path, 'stemcell'))
     end
 
     def copy_stemcell_builder_to_build_path

@@ -12,5 +12,4 @@ source $base_dir/lib/prelude_bosh.bash
 run_in_bosh_chroot $chroot "dpkg -l > stemcell_dpkg_l.out"
 
 # Export list in stemcell tarball
-mkdir -p $work/stemcell
 cp $chroot/$bosh_dir/stemcell_dpkg_l.out $work/stemcell/stemcell_dpkg_l.txt
