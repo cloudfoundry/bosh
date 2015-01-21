@@ -13,3 +13,4 @@ Bosh::Blobstore.autoload(:SwiftBlobstoreClient, 'blobstore_client/swift_blobstor
 Bosh::Blobstore.autoload(:AtmosBlobstoreClient, 'blobstore_client/atmos_blobstore_client')
 Bosh::Blobstore.autoload(:LocalClient, 'blobstore_client/local_client')
 Bosh::Blobstore.autoload(:DavBlobstoreClient, 'blobstore_client/dav_blobstore_client')
+Bosh::Blobstore.autoload(:AzureBlobstoreClient, 'blobstore_client/azure_blobstore_client')

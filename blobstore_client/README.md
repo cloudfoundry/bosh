@@ -125,3 +125,14 @@ These are the options for the Blobstore client when `swift_provider` is `rackspa
   Rackspace Cloud Files API Key
 * `rackspace_region` (optional)
   Rackspace Cloud Files Region (`dfw` or `ord`)
+
+### Azure Blob Storage
+
+These are the options for the Blobstore client when provider is `azure`:
+
+* `container_name` (required)
+  Name of the Azure storage container
+* `storage_account_name` (required)
+  Azure Storage Account Name
+* `storage_account_key` (required)
+  Azure Storage Account Key
