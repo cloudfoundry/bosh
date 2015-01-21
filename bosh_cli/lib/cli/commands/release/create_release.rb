@@ -261,8 +261,8 @@ module Bosh::Cli::Command
 
         licenses_table = table do |t|
           t.headings = %w(Name Version Notes)
-          builder.licenses.each do |job|
-            t << artifact_summary(job)
+          builder.licenses.each do |license|
+            t << artifact_summary(license)
           end
         end
 

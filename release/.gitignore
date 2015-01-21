@@ -9,6 +9,7 @@ blobs
 .idea
 .DS_Store
 .final_builds/jobs/**/*.tgz
+.final_builds/license/**/*.tgz
 .final_builds/packages/**/*.tgz
 *.swp
 *~
