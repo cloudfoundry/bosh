@@ -1,0 +1,8 @@
+---
+name: errand_without_package
+templates:
+  run: bin/run
+
+packages: []
+
+properties: {}

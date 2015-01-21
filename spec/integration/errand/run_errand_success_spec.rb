@@ -199,6 +199,54 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
         expect(exit_code).to eq(0)
       end
     end
+
+    context 'when the number of dynamic IPs is equal to the total number of vms' do
+      let(:manifest_hash) do
+        manifest_hash = Bosh::Spec::Deployments.test_release_manifest.merge({
+          'compilation' => {
+            'workers' => 1,
+            'network' => 'fake-network',
+            'cloud_properties' => {},
+          },
+          'networks' => [{
+            'name' => 'fake-network',
+            'subnets' => [{
+              'range' => '192.168.1.0/24',
+              'gateway' => '192.168.1.1',
+              'dns' => ['192.168.1.1', '192.168.1.2'],
+              'reserved' =>
+                ['192.168.1.2 - 192.168.1.12',
+                 '192.168.1.14 - 192.168.1.254'],
+              'cloud_properties' => {}
+            }]}],
+          'resource_pools' => [{
+            'name' => 'fake-resource-pool',
+            'size' => 1,
+            'cloud_properties' => {},
+            'network' => 'fake-network',
+            'stemcell' => {
+              'name' => 'ubuntu-stemcell',
+              'version' => '1',
+            },
+          }],
+          'jobs' => [{
+            'name' => 'fake-errand-name',
+            'template' => 'errand_without_package',
+            'resource_pool' => 'fake-resource-pool',
+            'instances' => 1,
+            'lifecycle' => 'errand',
+            'networks' => [{'name' => 'fake-network'}],
+          }]
+        })
+      end
+
+      before { deploy_simple(manifest_hash: manifest_hash) }
+
+      it 'should have enough IPs to recreate the vm' do
+        _, exit_code = bosh_runner.run('run errand fake-errand-name', return_exit_code: true)
+        expect(exit_code).to eq(0)
+      end
+    end
   end
 
   context 'when errand script exits with 0 exit code' do

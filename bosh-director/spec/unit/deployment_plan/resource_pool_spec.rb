@@ -400,6 +400,15 @@ module Bosh::Director::DeploymentPlan
             expect(resource_pool.idle_vms[0]).to_not eq(@allocated_vm)
             expect(resource_pool.idle_vms[0]).to be_an_instance_of(Vm)
           end
+
+          it 'releases network reservation of deallocated vm' do
+            expect(resource_pool.network).to receive(:release)
+            @allocated_vm.use_reservation(instance_double('Bosh::Director::NetworkReservation'))
+
+            resource_pool.deallocate_vm(vm_model.cid)
+
+            expect(@allocated_vm.network_reservation).to be_nil
+          end
         end
 
         context 'when the pool does not contain any allocated vms' do
