@@ -411,7 +411,7 @@ module Bosh::OpenStackCloud
           volume_params[:volume_type] = cloud_properties['type']
         end
 
-        if server_id  && @az_provider.use_server_availability_zone?
+        if server_id  && @az_provider.constrain_to_server_availability_zone?
           server = with_openstack { @openstack.servers.get(server_id) }
           if server && server.availability_zone
             volume_params[:availability_zone] = server.availability_zone
@@ -449,7 +449,7 @@ module Bosh::OpenStackCloud
           :imageRef => stemcell_id
         }
 
-        if availability_zone && @az_provider.use_server_availability_zone?
+        if availability_zone && @az_provider.constrain_to_server_availability_zone?
           volume_params[:availability_zone] = availability_zone
         end
         volume_params[:volume_type] = boot_volume_cloud_properties["type"] if boot_volume_cloud_properties["type"]
@@ -989,7 +989,7 @@ module Bosh::OpenStackCloud
       # @return [String] availability zone to use or nil
       # @note this is a private method that is public to make it easier to test
       def select(volumes, resource_pool_az)
-        if volumes && !volumes.empty? && !@ignore_server_availability_zone
+        if volumes && !volumes.empty? && constrain_to_server_availability_zone?
           disks = volumes.map { |vid| with_openstack { @openstack.volumes.get(vid) } }
           ensure_same_availability_zone(disks, resource_pool_az)
           disks.first.availability_zone
@@ -998,7 +998,7 @@ module Bosh::OpenStackCloud
         end
       end
 
-      def use_server_availability_zone?
+      def constrain_to_server_availability_zone?
         !@ignore_server_availability_zone
       end
     end
