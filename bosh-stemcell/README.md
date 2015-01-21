@@ -19,10 +19,23 @@ Tools for creating stemcells
 
 From a fresh copy of the bosh repo:
 
+If you use AWS EC2-Classic environment, run:
+
     export BOSH_AWS_ACCESS_KEY_ID=YOUR-AWS-ACCESS-KEY
     export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
     cd bosh-stemcell
     vagrant up remote --provider=aws
+
+If you use AWS VPC environment, run:
+
+    export BOSH_AWS_ACCESS_KEY_ID=YOUR-AWS-ACCESS-KEY
+    export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
+    export BOSH_AWS_SECURITY_GROUP=YOUR-AWS-SECURITY-GROUP-ID
+    export BOSH_AWS_SUBNET_ID=YOUR-AWS-SUBNET-ID
+    cd bosh-stemcell
+    vagrant up remote --provider=aws
+
+(Note: BOSH\_AWS\_SECURITY\_GROUP should be security group id, instead of name "bosh-stemcell")
 
 ## Updating source code on stemcell building VM
 
