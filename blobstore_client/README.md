@@ -134,5 +134,5 @@ These are the options for the Blobstore client when provider is `azure`:
   Name of the Azure storage container
 * `storage_account_name` (required)
   Azure Storage Account Name
-* `storage_account_key` (required)
-  Azure Storage Account Key
+* `storage_access_key` (required)
+  Azure Storage Access Key
