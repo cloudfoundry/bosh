@@ -40,11 +40,12 @@ cp -r $dir/assets/$ruby_archive $chroot/$bosh_dir/src
 
 run_in_bosh_chroot $chroot "
 cd src
-tar zxvf $ruby_archive
+tar zxf $ruby_archive
 cd $ruby_basename
 sed -i 's/\\(OSSL_SSL_METHOD_ENTRY(SSLv2[^3]\\)/\\/\\/\\1/g' ./ext/openssl/ossl_ssl.c
-./configure --prefix=$bosh_dir --disable-install-doc
-make -j4 && make install
+echo Building Ruby $ruby_basename...
+./configure --prefix=$bosh_dir --disable-install-doc > /dev/null
+make -j4 > /dev/null && make install > /dev/null
 "
 
 # RubyGems
@@ -56,7 +57,7 @@ cp -r $dir/assets/$rubygems_archive $chroot/$bosh_dir/src
 
 run_in_bosh_chroot $chroot "
 cd src
-tar zxvf $rubygems_archive
+tar zxf $rubygems_archive
 cd $rubygems_basename
 
 # This fails, but apparently does work for 1.3.7
