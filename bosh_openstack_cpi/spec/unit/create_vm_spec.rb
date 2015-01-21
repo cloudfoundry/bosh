@@ -503,6 +503,17 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       cloud.select_availability_zone(nil, "foobar-1a").should == "foobar-1a"
     end
 
+    it "should select the resource pool availability_zone when we are ignoring the disks zone" do
+      cloud_options = mock_cloud_options
+      cloud_options['properties']['openstack']['boot_from_volume'] = true
+      cloud_options['properties']['openstack']['ignore_server_availability_zone'] = true
+
+      cloud = mock_cloud(cloud_options["properties"]) do |openstack|
+        openstack.volumes.stub(:get).and_return(volume("foo"), volume("foo"))
+      end
+      cloud.select_availability_zone(%w[cid1 cid2], "foobar-1a").should == "foobar-1a"
+    end
+
     it "should select the zone from a list of disks" do
       cloud = mock_cloud do |openstack|
         openstack.volumes.stub(:get).and_return(volume("foo"), volume("foo"))

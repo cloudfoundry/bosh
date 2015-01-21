@@ -43,6 +43,7 @@ module Bosh::OpenStackCloud
       @wait_resource_poll_interval = @openstack_properties["wait_resource_poll_interval"]
       @boot_from_volume = @openstack_properties["boot_from_volume"]
       @boot_volume_cloud_properties = @openstack_properties["boot_volume_cloud_properties"] || {}
+      @ignore_server_availability_zone = @openstack_properties["ignore_server_availability_zone"]
 
       unless @openstack_properties['auth_url'].match(/\/tokens$/)
         @openstack_properties['auth_url'] = @openstack_properties['auth_url'] + '/tokens'
@@ -410,7 +411,7 @@ module Bosh::OpenStackCloud
           volume_params[:volume_type] = cloud_properties['type']
         end
 
-        if server_id
+        if server_id  && !@ignore_server_availability_zone
           server = with_openstack { @openstack.servers.get(server_id) }
           if server && server.availability_zone
             volume_params[:availability_zone] = server.availability_zone
@@ -448,7 +449,9 @@ module Bosh::OpenStackCloud
           :imageRef => stemcell_id
         }
 
-        volume_params[:availability_zone] = availability_zone if availability_zone
+        if !@ignore_server_availability_zone
+          volume_params[:availability_zone] = availability_zone if availability_zone
+        end
         volume_params[:volume_type] = boot_volume_cloud_properties["type"] if boot_volume_cloud_properties["type"]
 
         @logger.info("Creating new boot volume...")
@@ -621,7 +624,7 @@ module Bosh::OpenStackCloud
     # @return [String] availability zone to use or nil
     # @note this is a private method that is public to make it easier to test
     def select_availability_zone(volumes, resource_pool_az)
-      if volumes && !volumes.empty?
+      if volumes && !volumes.empty? && !@ignore_server_availability_zone
         disks = volumes.map { |vid| with_openstack { @openstack.volumes.get(vid) } }
         ensure_same_availability_zone(disks, resource_pool_az)
         disks.first.availability_zone

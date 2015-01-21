@@ -387,6 +387,9 @@ properties:
     default: 5
   openstack.config_drive:
     description: Config drive device (cdrom or disk) to use as metadata service on OpenStack (optional, nil by default)
+  openstack.ignore_server_availability_zone:
+    description: When creating disks do not use the servers AZ, default to openstack default
+    default: false
   vcenter.address:
     description: Address of vCenter server used by vsphere cpi
   vcenter.user:
