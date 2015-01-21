@@ -5,7 +5,10 @@ Vagrant.configure('2') do |config|
   config.vm.box = vm_box
   config.ssh.username = 'ubuntu'
 
+  config.berkshelf.enabled = true
   config.berkshelf.berksfile_path = "./Berksfile"
+  config.omnibus.chef_version = "11"
+
   config.vm.define :local do |local|
     local.vm.box_url = "https://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-vagrant-boxes/#{vm_box}-virtualbox.box"
     local.vm.provider :virtualbox do |virtualbox|
@@ -14,31 +17,29 @@ Vagrant.configure('2') do |config|
     end
   end
 
-  config.vm.define :local2 do |local|
-    local.vm.box_url = "https://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-vagrant-boxes/#{vm_box}-virtualbox.box"
-    local.vm.provider :virtualbox do |virtualbox|
-      virtualbox.customize ['modifyvm', :id, '--cpus', '2']
-      virtualbox.customize ['modifyvm', :id, '--memory', '2048']
-    end
-  end
+  config.vm.define :remote do |remote|
+    remote.vm.box_url = "https://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-vagrant-boxes/#{vm_box}-aws.box"
+    remote.vm.provider :aws do |aws, override|
+      aws.instance_type = 'm3.xlarge'
+      aws.instance_ready_timeout = 600
+      aws.ami = 'placeholder to keep vagrant_aws_plugin happy'
 
-  [:remote, :remote2, :remote3].each do |name|
-    config.vm.define name do |remote|
-      remote.vm.box_url = "https://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-vagrant-boxes/#{vm_box}-aws.box"
-      remote.vm.provider :aws do |aws, override|
-        aws.instance_type = 'm3.xlarge'
-        aws.instance_ready_timeout = 600
-        aws.access_key_id = env.fetch('BOSH_AWS_ACCESS_KEY_ID')
-        aws.secret_access_key = env.fetch('BOSH_AWS_SECRET_ACCESS_KEY')
-        aws.keypair_name = 'bosh'
+      aws.access_key_id = env.fetch('BOSH_AWS_ACCESS_KEY_ID')
+      aws.secret_access_key = env.fetch('BOSH_AWS_SECRET_ACCESS_KEY')
+
+      aws.tags = { 'Name' => vm_box }
+      aws.keypair_name = 'bosh'
+
+      if env['BOSH_AWS_SUBNET_ID']
+        aws.associate_public_ip = true
+        aws.subnet_id = env.fetch('BOSH_AWS_SUBNET_ID')
+        aws.security_groups = [env.fetch('BOSH_AWS_SECURITY_GROUP')]
+      else
         aws.security_groups = ['bosh-stemcell']
-        aws.tags = { 'Name' => vm_box }
-
-        aws.ami = 'placeholder to keep vagrant_aws_plugin happy'
-
-        override.ssh.username = 'ubuntu'
-        override.ssh.private_key_path = env.fetch('BOSH_KEY_PATH', '~/.ssh/id_rsa_bosh')
       end
+
+      override.ssh.username = 'ubuntu'
+      override.ssh.private_key_path = env.fetch('BOSH_KEY_PATH', '~/.ssh/id_rsa_bosh')
     end
   end
 
@@ -98,17 +99,10 @@ EOS
     BASH
   end
 
-  config.omnibus.chef_version = "11"
-  config.berkshelf.enabled = true
-
+  # todo can we install golang with a shell provisioner?
   config.vm.provision :chef_solo do |chef|
     chef.run_list = %w(recipe[golang] recipe[stemcell-golang])
-
-    chef.json = {
-      go: {
-        version: '1.3.3',
-      }
-    }
+    chef.json = { go: { version: '1.3.3' } }
   end
 
   files_to_ignore = File.readlines(File.expand_path('../../.gitignore', __FILE__)).map(&:chomp).reject(&:empty?)
