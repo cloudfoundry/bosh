@@ -7,7 +7,7 @@ describe 'OpenStack Stemcell', stemcell_image: true do
     end
   end
 
-  context 'installed by image_openstack_qcow2 stage' do
+  context 'installed by package_qcow2_image stage' do
     describe 'converts to qcow2 0.10 compat' do
       # environment is cleaned up inside rspec context
       stemcell_image = ENV['STEMCELL_IMAGE']

@@ -13,6 +13,7 @@ module Bosh::Stemcell
       @environment = env
       @definition = definition
       @os_image_tarball_path = os_image_tarball_path
+      @version = version
       @stemcell_builder_options = BuilderOptions.new(
         env: env,
         definition: definition,
@@ -22,6 +23,8 @@ module Bosh::Stemcell
       )
       @shell = Bosh::Core::Shell.new
     end
+
+    attr_reader :version
 
     def prepare_build
       sanitize
@@ -69,6 +72,10 @@ module Bosh::Stemcell
 
     def work_path
       File.join(work_root, 'work')
+    end
+
+    def stemcell_tarball_path
+      work_root
     end
 
     def command_env

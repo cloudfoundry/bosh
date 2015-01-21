@@ -49,48 +49,46 @@ module Bosh::Stemcell
       end
     end
 
-    def package_stemcell_stages
-      case infrastructure
-        when Infrastructure::Aws then
-          aws_package_stages
-        when Infrastructure::OpenStack then
-          openstack_package_stages
-        when Infrastructure::Vsphere then
-          vmware_package_stages
-        when Infrastructure::Vcloud then
-          vmware_package_stages
-        when Infrastructure::Warden then
-          warden_package_stages
-      end
-    end
-
-    def openstack_stages
-      if operating_system.instance_of?(OperatingSystem::Centos)
-        centos_openstack_stages
-      else
-        default_openstack_stages
-      end
-    end
-
-    def vsphere_stages
-      if operating_system.instance_of?(OperatingSystem::Centos)
-        centos_vsphere_stages
-      else
-        default_vsphere_stages
-      end
-    end
-
-    def vcloud_stages
-      if operating_system.instance_of?(OperatingSystem::Centos)
-        centos_vcloud_stages
-      else
-        default_vcloud_stages
+    def package_stemcell_stages(disk_format)
+      case disk_format
+        when 'raw' then
+          raw_package_stages
+        when 'qcow2' then
+          qcow2_package_stages
+        when 'ovf' then
+          ovf_package_stages
+        when 'files' then
+          files_package_stages
       end
     end
 
     private
 
     def_delegators :@definition, :infrastructure, :operating_system, :agent
+
+    def openstack_stages
+      if operating_system.instance_of?(OperatingSystem::Centos)
+        centos_openstack_stages
+      else
+        ubuntu_openstack_stages
+      end
+    end
+
+    def vsphere_stages
+      if operating_system.instance_of?(OperatingSystem::Centos)
+        centos_vmware_stages
+      else
+        ubuntu_vmware_stages
+      end
+    end
+
+    def vcloud_stages
+      if operating_system.instance_of?(OperatingSystem::Centos)
+        centos_vmware_stages
+      else
+        ubuntu_vmware_stages
+      end
+    end
 
     def centos_os_stages
       [
@@ -135,19 +133,7 @@ module Bosh::Stemcell
       ]
     end
 
-    def centos_vsphere_stages
-      [
-        #:system_open_vm_tools,
-        :system_vsphere_cdrom,
-        :system_parameters,
-        :bosh_clean,
-        :bosh_harden,
-        :image_create,
-        :image_install_grub,
-      ]
-    end
-
-    def centos_vcloud_stages
+    def centos_vmware_stages
       [
         #:system_open_vm_tools,
         :system_vsphere_cdrom,
@@ -191,7 +177,7 @@ module Bosh::Stemcell
       ]
     end
 
-    def default_openstack_stages
+    def ubuntu_openstack_stages
       [
         # Misc
         :system_openstack_network,
@@ -209,22 +195,7 @@ module Bosh::Stemcell
       ]
     end
 
-    def default_vsphere_stages
-      [
-        :system_open_vm_tools,
-        :system_vsphere_cdrom,
-        # Misc
-        :system_parameters,
-        # Finalisation
-        :bosh_clean,
-        :bosh_harden,
-        # Image/bootloader
-        :image_create,
-        :image_install_grub,
-      ]
-    end
-
-    def default_vcloud_stages
+    def ubuntu_vmware_stages
       [
         :system_open_vm_tools,
         :system_vsphere_cdrom,
@@ -246,43 +217,34 @@ module Bosh::Stemcell
         # Finalisation
         :bosh_clean,
         :bosh_harden,
-        # Image copy
-        :bosh_copy_root,
         # only used for spec test
         :image_create,
       ]
     end
 
-    def aws_package_stages
+    def raw_package_stages
       [
-        :image_aws_prepare_stemcell,
-        # Final stemcell
-        :stemcell,
+        :prepare_raw_image_stemcell,
       ]
     end
 
-    def openstack_package_stages
+    def qcow2_package_stages
       [
-        :image_openstack_qcow2,
-        :image_openstack_prepare_stemcell,
-        # Final stemcell
-        :stemcell_openstack,
+        :prepare_qcow2_image_stemcell,
       ]
     end
 
-    def vmware_package_stages
+    def ovf_package_stages
       [
         :image_ovf_vmx,
         :image_ovf_generate,
-        :image_ovf_prepare_stemcell,
-        :stemcell,
+        :prepare_ovf_image_stemcell,
       ]
     end
 
-    def warden_package_stages
+    def files_package_stages
       [
-        # Final stemcell
-        :stemcell,
+        :prepare_files_image_stemcell,
       ]
     end
 

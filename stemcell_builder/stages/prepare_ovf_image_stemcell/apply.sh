@@ -7,6 +7,6 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
-pushd $work
-tar zcf stemcell/image root.img
+pushd $work/ovf
+tar zcf ../stemcell/image image*
 popd

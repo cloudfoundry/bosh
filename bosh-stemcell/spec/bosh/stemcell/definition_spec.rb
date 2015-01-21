@@ -130,5 +130,13 @@ module Bosh::Stemcell
         it { should match(/#{agent_name}_agent/) }
       end
     end
+
+    describe 'disk_formats' do
+      it 'delegates to infrastructure#disk_formats' do
+        expect(infrastructure).to receive(:disk_formats).and_return(['format1', 'format2'])
+
+        expect(definition.disk_formats).to eq(['format1', 'format2'])
+      end
+    end
   end
 end

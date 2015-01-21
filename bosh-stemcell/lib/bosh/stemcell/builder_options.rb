@@ -34,6 +34,10 @@ module Bosh::Stemcell
       }.merge(bosh_micro_options).merge(environment_variables).merge(ovf_options)
     end
 
+    attr_reader(
+      :stemcell_version,
+    )
+
     private
 
     def_delegators(
@@ -45,7 +49,6 @@ module Bosh::Stemcell
 
     attr_reader(
       :environment,
-      :stemcell_version,
       :definition,
       :image_create_disk_size,
       :bosh_micro_release_tgz_path,

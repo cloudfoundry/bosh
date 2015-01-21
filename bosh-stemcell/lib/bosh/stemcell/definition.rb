@@ -42,6 +42,10 @@ module Bosh::Stemcell
       stemcell_name_parts.join('-')
     end
 
+    def disk_formats
+      infrastructure.disk_formats
+    end
+
     def ==(other)
       infrastructure == other.infrastructure &&
         operating_system == other.operating_system &&

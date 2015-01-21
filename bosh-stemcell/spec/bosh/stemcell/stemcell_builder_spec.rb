@@ -4,31 +4,56 @@ require 'bosh/dev/gem_components'
 require 'bosh/stemcell/build_environment'
 require 'bosh/stemcell/stage_collection'
 require 'bosh/stemcell/stage_runner'
+require 'bosh/stemcell/stemcell_packager'
+require 'yaml'
 
 describe Bosh::Stemcell::StemcellBuilder do
   subject(:builder) do
     described_class.new(
       gem_components: gem_components,
       environment: environment,
-      collection: collection,
       runner: runner,
+      collection: collection
     )
   end
 
+  let(:packager) { instance_double('Bosh::Stemcell::StemcellPackager') }
+  let(:env) { {} }
+  let(:infrastructure) do
+    Bosh::Stemcell::Infrastructure::Base.new(
+      name: 'fake_infra',
+      hypervisor: 'fake_hypervisor',
+      default_disk_size: -1,
+      disk_formats: ['qcow2', 'raw'],
+    )
+  end
+  let(:operating_system) { Bosh::Stemcell::OperatingSystem.for('centos') }
+  let(:definition) { Bosh::Stemcell::Definition.new(infrastructure, 'fake_hypervisor', operating_system, Bosh::Stemcell::Agent.for('go'), false) }
+  let(:version) { 1234 }
+  let(:release_tarball_path) { '/path/to/release.tgz' }
+  let(:os_image_tarball_path) { '/path/to/os-img.tgz' }
   let(:gem_components) { instance_double('Bosh::Dev::GemComponents', build_release_gems: nil) }
-  let(:environment) { instance_double('Bosh::Stemcell::BuildEnvironment', prepare_build: nil) }
+  let(:environment) { Bosh::Stemcell::BuildEnvironment.new(env, definition, version, release_tarball_path, os_image_tarball_path) }
   let(:collection) do
     instance_double(
       'Bosh::Stemcell::StageCollection',
-      extract_operating_system_stages: [],
-      build_stemcell_image_stages: [],
-      package_stemcell_stages: [],
-      agent_stages: [],
+      extract_operating_system_stages: [:extract_stage],
+      build_stemcell_image_stages: [:build_stage],
+      package_stemcell_stages: [:package_stage],
+      agent_stages: [:agent_stage],
     )
   end
   let(:runner) { instance_double('Bosh::Stemcell::StageRunner', configure_and_apply: nil) }
+  let(:tmp_dir) { Dir.mktmpdir }
+  before do
+    allow(environment).to receive(:prepare_build)
+    allow(environment).to receive(:base_directory).and_return(tmp_dir)
+  end
+  after { FileUtils.rm_rf(tmp_dir) }
 
   describe '#build' do
+    before { allow(packager).to receive(:package) }
+
     it 'builds the gem components' do
       expect(gem_components).to receive(:build_release_gems)
       builder.build
@@ -40,13 +65,7 @@ describe Bosh::Stemcell::StemcellBuilder do
     end
 
     it 'runs the extract OS, agent, and infrastructure stages' do
-      allow(collection).to receive(:extract_operating_system_stages).and_return([:extract_stage])
-      allow(collection).to receive(:agent_stages).and_return([:agent_stage])
-      allow(collection).to receive(:build_stemcell_image_stages).and_return([:infrastructure_stage])
-      allow(collection).to receive(:package_stemcell_stages).and_return([:package_stage])
-      expect(runner).to receive(:configure_and_apply).with([
-            :extract_stage, :agent_stage, :infrastructure_stage, :package_stage
-          ])
+      expect(runner).to receive(:configure_and_apply).with([:extract_stage, :agent_stage, :build_stage])
 
       builder.build
     end
