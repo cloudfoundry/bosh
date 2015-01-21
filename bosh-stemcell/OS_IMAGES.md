@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `LNYTMCODzn39poV8I4yUg1RxmAfTZPth`
+  upgrade libssl to 1.0.1f-1ubuntu2.8
+
 * `Wxp0XbijOQyo_pYgs3ctYQ0Dc6uPaO.I`
   switch logrotate to rotate based on size
 
@@ -82,6 +85,9 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 ## CentOS 6.6
 
 CentOS 6.6 images have filename `bosh-centos-6_6-os-image.tgz`
+
+ * `aoUtngdallpd2f6HhMxCveFvk6t6B2Ru`
+  upgrade openssl to 1.0.1e-30.el6_6.5
 
  * `Hb884_xVvhoIhdTEmMtaTHKC.s7b9AmN`
   switch logrotate to rotate based on size
