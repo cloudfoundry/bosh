@@ -290,6 +290,9 @@ cloud:
         type: <%= boot_volume_type %>
         <% end %>
       <% end %>
+      <% if_p("openstack.ignore_server_availability_zone") do |ignore_server_availability_zone| %>
+      ignore_server_availability_zone: <%= ignore_server_availability_zone %>
+      <% end %>
       default_key_name: <%= default_key_name %>
       default_security_groups: <%= default_security_groups %>
       wait_resource_poll_interval: <%= wait_resource_poll_interval %>
