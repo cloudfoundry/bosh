@@ -76,18 +76,13 @@ describe Bosh::Stemcell::StemcellPackager do
         'name' => 'fake_infra-fake_hypervisor-centos-go_agent',
         'version' => '1234',
         'bosh_protocol' => 1,
-        'infrastructure' => 'fake_infra',
-        'hypervisor' => 'fake_hypervisor',
-        'operating_system' => 'centos',
-        'operating_system_version' => nil,
-        'agent' => 'go',
-        'disk_format' => 'raw',
         'sha1' => 'c1ebdefc3f8282a9d7d47803fb5030b61ffc793d', # SHA-1 of image above
 
         'cloud_properties' => {
           'name' => 'fake_infra-fake_hypervisor-centos-go_agent',
           'version' => '1234',
           'infrastructure' => 'fake_infra',
+          'hypervisor' => 'fake_hypervisor',
           'disk_format' => 'raw',
           'container_format' => 'bare',
           'os_type' => 'linux',
