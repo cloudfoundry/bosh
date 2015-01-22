@@ -15,12 +15,8 @@ module Bosh::Stemcell
       stemcell_filename_parts = [
         name,
         version,
-        definition.stemcell_name
+        definition.stemcell_name(disk_format)
       ]
-
-      unless disk_format == definition.infrastructure.default_disk_format
-        stemcell_filename_parts << @disk_format
-      end
 
       "#{stemcell_filename_parts.join('-')}.tgz"
     end

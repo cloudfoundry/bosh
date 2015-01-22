@@ -18,8 +18,6 @@ module Bosh::Stemcell
 
     def default
       {
-        'stemcell_name' => "bosh-#{@definition.stemcell_name}",
-        'stemcell_tgz' => archive_filename.to_s,
         'stemcell_image_name' => stemcell_image_name,
         'stemcell_version' => stemcell_version,
         'stemcell_hypervisor' => infrastructure.hypervisor,
@@ -77,10 +75,6 @@ module Bosh::Stemcell
         'bosh_micro_manifest_yml_path' => File.join(source_root, 'release', 'micro', "#{infrastructure.name}.yml"),
         'bosh_micro_release_tgz_path' => bosh_micro_release_tgz_path,
       }
-    end
-
-    def archive_filename
-      ArchiveFilename.new(stemcell_version, definition, 'bosh-stemcell')
     end
 
     def stemcell_image_name

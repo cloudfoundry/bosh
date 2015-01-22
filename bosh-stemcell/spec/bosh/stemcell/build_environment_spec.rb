@@ -237,8 +237,8 @@ module Bosh::Stemcell
       it 'returns the right file path' do
         allow(definition).to receive(:disk_formats) { ['disk-format-1', 'disk-format-2'] }
         allow(definition).to receive(:light?) { true }
-        allow(definition).to receive(:stemcell_name) { 'infra-hypervisor-os-version' }
-        allow(infrastructure).to receive(:default_disk_format) { 'disk-format-1' }
+        allow(definition).to receive(:stemcell_name).with('disk-format-1') { 'infra-hypervisor-os-version' }
+        allow(definition).to receive(:stemcell_name).with('disk-format-2') { 'infra-hypervisor-os-version-disk-format-2' }
 
         expect(subject.stemcell_files).to eq([
           File.join(work_path, 'light-bosh-stemcell-007-infra-hypervisor-os-version.tgz'),

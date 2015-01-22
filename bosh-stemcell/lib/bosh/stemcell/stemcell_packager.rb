@@ -27,12 +27,12 @@ module Bosh
         infrastructure = definition.infrastructure
 
         manifest = {
-          'name' => definition.stemcell_name,
+          'name' => definition.stemcell_name(disk_format),
           'version' => version.to_s,
           'bosh_protocol' => 1,
           'sha1' => image_checksum,
           'cloud_properties' => {
-            'name' => definition.stemcell_name,
+            'name' => definition.stemcell_name(disk_format),
             'version' => version.to_s,
             'infrastructure' => infrastructure.name,
             'hypervisor' => infrastructure.hypervisor,

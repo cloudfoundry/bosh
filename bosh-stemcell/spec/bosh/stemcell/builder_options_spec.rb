@@ -22,7 +22,6 @@ module Bosh::Stemcell
         'Bosh::Stemcell::Definition',
         infrastructure: infrastructure,
         operating_system: operating_system,
-        stemcell_name: 'fake-stemcell-name',
       )
     }
 
@@ -39,20 +38,6 @@ module Bosh::Stemcell
     describe '#default' do
       let(:default_disk_size) { 2048 }
       let(:rake_args) { {} }
-
-      describe 'stemcell_name' do
-        it 'prepends bosh' do
-          result = stemcell_builder_options.default
-          expect(result['stemcell_name']).to eq('bosh-fake-stemcell-name')
-        end
-      end
-
-      it 'sets stemcell_tgz' do
-        result = stemcell_builder_options.default
-        expect(result['stemcell_tgz']).to eq(archive_filename.to_s)
-        expect(ArchiveFilename).to have_received(:new)
-          .with('007', definition, 'bosh-stemcell')
-      end
 
       it 'sets stemcell_image_name' do
         result = stemcell_builder_options.default
@@ -87,7 +72,6 @@ module Bosh::Stemcell
 
             result = stemcell_builder_options.default
 
-            expect(result['stemcell_name']).to eq('bosh-fake-stemcell-name')
             expect(result['stemcell_operating_system']).to eq(operating_system.name)
             expect(result['stemcell_infrastructure']).to eq(infrastructure.name)
             expect(result['stemcell_hypervisor']).to eq(infrastructure.hypervisor)

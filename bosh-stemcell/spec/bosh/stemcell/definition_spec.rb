@@ -9,7 +9,8 @@ module Bosh::Stemcell
       instance_double(
         'Bosh::Stemcell::Infrastructure::Base',
         name: 'infrastructure-name',
-        hypervisor: 'hypervisor-name'
+        hypervisor: 'hypervisor-name',
+        default_disk_format: 'default-disk-format'
       )
     end
 
@@ -38,25 +39,25 @@ module Bosh::Stemcell
     describe '.for' do
       it 'sets the infrastructure, hypervisor, os, os version, and agent' do
         expect(Bosh::Stemcell::Infrastructure)
-          .to receive(:for)
-          .with('infrastructure-name')
-          .and_return(infrastructure)
+        .to receive(:for)
+        .with('infrastructure-name')
+        .and_return(infrastructure)
 
         expect(Bosh::Stemcell::OperatingSystem)
-          .to receive(:for)
-          .with('operating-system-name', 'operating-system-version')
-          .and_return(operating_system)
+        .to receive(:for)
+        .with('operating-system-name', 'operating-system-version')
+        .and_return(operating_system)
 
         expect(Bosh::Stemcell::Agent)
-          .to receive(:for)
-          .with('agent-name')
-          .and_return(agent)
+        .to receive(:for)
+        .with('agent-name')
+        .and_return(agent)
 
         definition = instance_double('Bosh::Stemcell::Definition')
         expect(Bosh::Stemcell::Definition)
-          .to receive(:new)
-          .with(infrastructure, hypervisor, operating_system, agent, light)
-          .and_return(definition)
+        .to receive(:new)
+        .with(infrastructure, hypervisor, operating_system, agent, light)
+        .and_return(definition)
 
         Bosh::Stemcell::Definition.for(
           'infrastructure-name',
@@ -70,11 +71,11 @@ module Bosh::Stemcell
     end
 
     describe '#initialize' do
-      its(:infrastructure)             { should == infrastructure }
-      its(:operating_system)           { should == operating_system }
-      its(:agent)                      { should == agent }
-      its(:hypervisor_name)            { should == hypervisor }
-      its(:light?)                     { should == light }
+      its(:infrastructure) { should == infrastructure }
+      its(:operating_system) { should == operating_system }
+      its(:agent) { should == agent }
+      its(:hypervisor_name) { should == hypervisor }
+      its(:light?) { should == light }
     end
 
     describe '#==' do
@@ -100,34 +101,30 @@ module Bosh::Stemcell
     end
 
     describe '#stemcell_name' do
-      subject { definition.stemcell_name }
-
-      it { should match(infrastructure.name) }
-      it { should match(hypervisor) }
-      it { should match(operating_system.name) }
-
-      context 'when the operating system does has a version' do
-        let(:operating_system_version) { 'operating-system-version' }
-        it { should match(operating_system.version) }
+      it 'builds a name from the infrastructure, hypervisor, os, agent, and disk format' do
+        expect(definition.stemcell_name('disk-format')).to eq('infrastructure-name-hypervisor-operating-system-name-operating_system_version-go_agent-disk-format')
       end
 
-      context 'when the operating system does not have a version' do
+      context 'the os doesnt have a version' do
         let(:operating_system_version) { nil }
-        it "should not raise error" do
-          expect { subject }.not_to raise_error
+
+        it 'leaves off the os version' do
+          expect(definition.stemcell_name('disk-format')).to eq('infrastructure-name-hypervisor-operating-system-name-go_agent-disk-format')
         end
       end
 
-      context 'when the agent name is ruby' do
+      context 'the agent name is ruby' do
         let(:agent_name) { 'ruby' }
 
-        it { should_not match(/agent$/) }
+        it 'leaves it off' do
+          expect(definition.stemcell_name('disk-format')).to eq('infrastructure-name-hypervisor-operating-system-name-operating_system_version-disk-format')
+        end
       end
 
-      context 'when the agent name is go' do
-        let(:agent_name) { "go" }
-
-        it { should match(/#{agent_name}_agent/) }
+      context 'the disk format is the default' do
+        it 'leaves it off' do
+          expect(definition.stemcell_name('default-disk-format')).to eq('infrastructure-name-hypervisor-operating-system-name-operating_system_version-go_agent')
+        end
       end
     end
 

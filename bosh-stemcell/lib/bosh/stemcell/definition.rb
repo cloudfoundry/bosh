@@ -31,7 +31,7 @@ module Bosh::Stemcell
       @light = light
     end
 
-    def stemcell_name
+    def stemcell_name(disk_format)
       stemcell_name_parts = [
         infrastructure.name,
         hypervisor_name,
@@ -39,6 +39,8 @@ module Bosh::Stemcell
       ]
       stemcell_name_parts << operating_system.version if operating_system.version
       stemcell_name_parts << "#{agent.name}_agent" unless agent.name == 'ruby'
+      stemcell_name_parts << disk_format unless disk_format == infrastructure.default_disk_format
+
       stemcell_name_parts.join('-')
     end
 

@@ -47,7 +47,7 @@ module Bosh::Dev
           'Bosh::Stemcell::Definition',
           infrastructure: infrastructure,
           light?: true,
-          stemcell_name: 'fake-stemcell-name'
+          stemcell_name: 'fake-stemcell-name-fake-disk-format'
         )
       }
 
