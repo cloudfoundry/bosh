@@ -1,11 +1,12 @@
 require 'bosh/stemcell/archive'
 require 'bosh/dev/director_client'
 require 'bosh/dev/micro_client'
+require 'bosh/stemcell/stemcell'
 
 module Bosh::Dev
   class AutomatedDeploy
-    def initialize(build_target, deployment_account, artifacts_downloader, bosh_cli_session)
-      @build_target = build_target
+    def initialize(stemcell, deployment_account, artifacts_downloader, bosh_cli_session)
+      @stemcell = stemcell
       @deployment_account = deployment_account
       @artifacts_downloader = artifacts_downloader
       @bosh_cli_session = bosh_cli_session
@@ -24,7 +25,7 @@ module Bosh::Dev
       stemcell_archive = download_stemcell_archive
       director_client.upload_stemcell(stemcell_archive)
 
-      release_path = @artifacts_downloader.download_release(@build_target.build_number, Dir.pwd)
+      release_path = @artifacts_downloader.download_release(@stemcell.version, Dir.pwd)
       director_client.upload_release(release_path)
 
       manifest_path = @deployment_account.manifest_path
@@ -55,7 +56,7 @@ module Bosh::Dev
     private
 
     def download_stemcell_archive
-      stemcell_path = @artifacts_downloader.download_stemcell(@build_target, Dir.pwd)
+      stemcell_path = @artifacts_downloader.download_stemcell(@stemcell, Dir.pwd)
       Bosh::Stemcell::Archive.new(stemcell_path)
     end
   end

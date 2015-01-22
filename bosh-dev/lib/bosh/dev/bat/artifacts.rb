@@ -1,15 +1,16 @@
 require 'bosh/dev'
 require 'bosh/dev/build'
 require 'fileutils'
+require 'bosh/stemcell/stemcell'
 
 module Bosh::Dev::Bat
   class Artifacts
     attr_reader :path
 
-    def initialize(path, build, artifact_definition)
+    def initialize(path, build, stemcell)
       @path = path
       @build = build
-      @artifact_definition = artifact_definition
+      @stemcell = stemcell
     end
 
     def micro_bosh_deployment_name
@@ -21,7 +22,7 @@ module Bosh::Dev::Bat
     end
 
     def stemcell_path
-      build.bosh_stemcell_path(artifact_definition, path)
+      File.join(path, stemcell.name)
     end
 
     def prepare_directories
@@ -31,6 +32,6 @@ module Bosh::Dev::Bat
 
     private
 
-    attr_reader :build, :artifact_definition
+    attr_reader :build, :stemcell
   end
 end

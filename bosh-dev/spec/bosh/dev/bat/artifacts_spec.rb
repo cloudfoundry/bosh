@@ -3,21 +3,17 @@ require 'bosh/dev/bat/artifacts'
 
 module Bosh::Dev::Bat
   describe Artifacts do
-    subject { Artifacts.new(path, build, definition) }
+    subject { Artifacts.new(path, build, stemcell) }
     let(:path) { '/fake/artifacts/path' }
     let(:build) { instance_double('Bosh::Dev::Build') }
-    let(:definition) { instance_double('Bosh::Stemcell::Definition') }
+    let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', name: 'fake-stemcell-name') }
 
     its(:micro_bosh_deployment_name) { should == 'microbosh' }
     its(:micro_bosh_deployment_dir)  { should eq("#{path}/microbosh") }
 
     describe '#stemcell_path' do
-      it 'delegates to the build' do
-        build
-          .should_receive(:bosh_stemcell_path)
-          .with(definition, path)
-          .and_return('bosh-stemcell-path')
-        expect(subject.stemcell_path).to eq('bosh-stemcell-path')
+      it 'returns the stemcell name at the path' do
+        expect(subject.stemcell_path).to eq('/fake/artifacts/path/fake-stemcell-name')
       end
     end
 

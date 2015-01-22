@@ -6,14 +6,13 @@ require 'bosh/dev/vsphere/deployment_account'
 require 'bosh/dev/vcloud/deployment_account'
 require 'bosh/dev/automated_deploy'
 require 'bosh/dev/bosh_cli_session'
-require 'bosh/dev/build_target'
+require 'bosh/stemcell/stemcell'
 require 'logging'
 
 module Bosh::Dev
   class AutomatedDeployBuilder
     def self.for_rake_args(args)
-      build_target = BuildTarget.from_names(
-        args.build_number,
+      definition = Bosh::Stemcell::Definition.for(
         args.infrastructure_name,
         args.hypervisor_name,
         args.operating_system_name,
@@ -21,12 +20,13 @@ module Bosh::Dev
         args.agent_name,
         args.light,
       )
+      stemcell = Bosh::Stemcell::Stemcell.new(definition, 'bosh-stemcell', args.build_number, args.disk_format)
 
-      new(build_target, args.environment_name, args.deployment_name)
+      new(stemcell, args.environment_name, args.deployment_name)
     end
 
-    def initialize(build_target, environment_name, deployment_name)
-      @build_target = build_target
+    def initialize(stemcell, environment_name, deployment_name)
+      @stemcell = stemcell
       @environment_name = environment_name
       @deployment_name = deployment_name
     end
@@ -43,11 +43,11 @@ module Bosh::Dev
 
       # Configure to use real gems (not bundle exec)
       # to make sure bosh_cli/bosh_cli_plugin_micro actually work.
-      bosh_cmd = Bosh::Dev::S3GemBoshCmd.new(@build_target.build_number, logger)
+      bosh_cmd = Bosh::Dev::S3GemBoshCmd.new(@stemcell.version, logger)
       bosh_cli_session = Bosh::Dev::BoshCliSession.new(bosh_cmd)
 
       AutomatedDeploy.new(
-        @build_target,
+        @stemcell,
         deployment_account,
         artifacts_downloader,
         bosh_cli_session,
@@ -61,7 +61,7 @@ module Bosh::Dev
         'aws'     => Bosh::Dev::Aws,
         'vsphere' => Bosh::Dev::VSphere,
         'vcloud'  => Bosh::Dev::VCloud,
-      }[@build_target.infrastructure_name]
+      }[@stemcell.infrastructure.name]
 
       ns::DeploymentAccount.new(@environment_name, @deployment_name, deployments_repository)
     end

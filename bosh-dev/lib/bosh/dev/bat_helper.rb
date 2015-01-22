@@ -1,5 +1,6 @@
 require 'bosh/dev/build'
 require 'bosh/stemcell/definition'
+require 'bosh/stemcell/stemcell'
 require 'bosh/dev/aws/runner_builder'
 require 'bosh/dev/openstack/runner_builder'
 require 'bosh/dev/vsphere/runner_builder'
@@ -9,11 +10,28 @@ require 'bosh/dev/bat/artifacts'
 module Bosh::Dev
   class BatHelper
     def self.for_rake_args(args)
+      definition = Bosh::Stemcell::Definition.for(args.infrastructure_name, args.hypervisor_name, args.operating_system_name, args.operating_system_version, args.agent_name, args.light)
+      build = Build.candidate
+      stemcell = Bosh::Stemcell::Stemcell.new(definition, 'bosh-stemcell', build.number, args.disk_format)
+
+      artifacts_path = File.join(
+        ENV.fetch('WORKSPACE', '/tmp'),
+        'ci-artifacts',
+        definition.infrastructure.name,
+        args.net_type,
+        definition.operating_system.name,
+        definition.operating_system.version.to_s,
+        definition.agent.name,
+        'deployments'
+      )
+      artifacts = Bosh::Dev::Bat::Artifacts.new(artifacts_path, build, stemcell)
+
       new(
         runner_builder_for_infrastructure_name(args.infrastructure_name),
-        Bosh::Stemcell::Definition.for(args.infrastructure_name, args.hypervisor_name, args.operating_system_name, args.operating_system_version, args.agent_name, args.light),
-        Build.candidate,
+        artifacts,
+        build,
         args.net_type,
+        stemcell
       )
     end
 
@@ -25,24 +43,12 @@ module Bosh::Dev
       }[name]
     end
 
-    def initialize(runner_builder, artifact_definition, build, net_type)
+    def initialize(runner_builder, artifacts, build, net_type, stemcell)
       @runner_builder   = runner_builder
-      @artifact_definition = artifact_definition
       @build    = build
       @net_type = net_type
-
-      artifacts_path = File.join(
-        ENV.fetch('WORKSPACE', '/tmp'),
-        'ci-artifacts',
-        artifact_definition.infrastructure.name,
-        net_type,
-        artifact_definition.operating_system.name,
-        artifact_definition.operating_system.version.to_s,
-        artifact_definition.agent.name,
-        'deployments'
-      )
-
-      @artifacts = Bosh::Dev::Bat::Artifacts.new(artifacts_path, build, artifact_definition)
+      @stemcell = stemcell
+      @artifacts = artifacts
     end
 
     def deploy_microbosh_and_run_bats
@@ -53,8 +59,7 @@ module Bosh::Dev
     def deploy_bats_microbosh
       artifacts.prepare_directories
       build.download_stemcell(
-        'bosh-stemcell',
-        artifact_definition,
+        stemcell,
         artifacts.path,
       )
 
@@ -66,7 +71,7 @@ module Bosh::Dev
     end
 
     private
-    attr_reader :build, :net_type, :artifact_definition, :artifacts
+    attr_reader :build, :net_type, :artifacts, :stemcell
 
     def bats_runner
       @runner_builder.build(artifacts, net_type)

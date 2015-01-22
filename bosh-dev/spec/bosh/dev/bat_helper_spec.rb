@@ -5,7 +5,7 @@ module Bosh::Dev
   describe BatHelper do
     include FakeFS::SpecHelpers
 
-    subject { described_class.new(bat_runner_builder, definition, build, networking_type) }
+    subject { described_class.new(bat_runner_builder, artifacts, build, networking_type, stemcell) }
 
     let(:bat_runner_builder) { instance_double('Bosh::Dev::Aws::RunnerBuilder') }
 
@@ -36,50 +36,28 @@ module Bosh::Dev
     end
 
     let(:networking_type) { 'networking-type' }
-    let(:build) { instance_double('Bosh::Dev::Build', download_stemcell: nil) }
+    let(:build) { instance_double('Bosh::Dev::Build', download_stemcell: nil, number: 'build-number') }
 
     let(:artifacts) { instance_double('Bosh::Dev::Bat::Artifacts', prepare_directories: nil, path: artifacts_path) }
-    before { allow(Bosh::Dev::Bat::Artifacts).to receive(:new).and_return(artifacts) }
 
     let(:artifacts_path) do
       '/tmp/ci-artifacts/infrastructure-name/networking-type/operating-system-name/operating-system-version/agent-name/deployments'
     end
 
-    describe '#initialize' do
-      it 'builds an artifacts object' do
-        subject
-
-        expect(Bosh::Dev::Bat::Artifacts).to have_received(:new)
-                                             .with(artifacts_path, build, definition)
-      end
-
-      context 'when WORKSPACE is set' do
-        before { stub_const('ENV', {'WORKSPACE' => '/fake-workspace'}) }
-
-        it 'builds artifacts inside of workspace' do
-          artifacts_path = '/fake-workspace/ci-artifacts/infrastructure-name' +
-            '/networking-type/operating-system-name/operating-system-version/agent-name/deployments'
-
-          subject
-
-          expect(Bosh::Dev::Bat::Artifacts).to have_received(:new)
-                                               .with(artifacts_path, build, definition)
-        end
-      end
-    end
+    let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell') }
 
     describe '.for_rake_args' do
       let(:light) { false }
-
-      it 'returns bat helper configured with rake arguments' do
-        rake_args = Struct.new(
+      let(:rake_args) do
+        Struct.new(
           :infrastructure_name,
           :hypervisor_name,
           :operating_system_name,
           :operating_system_version,
           :net_type,
           :agent_name,
-          :light
+          :light,
+          :disk_format,
         ).new(
           'infrastructure-name',
           'hypervisor-name',
@@ -87,14 +65,19 @@ module Bosh::Dev
           'operating-system-version',
           networking_type,
           'agent-name',
-          light
+          light,
+          'disk-format'
         )
+      end
 
+      before do
         described_class
-          .should_receive(:runner_builder_for_infrastructure_name)
-          .with('infrastructure-name')
-          .and_return(bat_runner_builder)
+        .should_receive(:runner_builder_for_infrastructure_name)
+        .with('infrastructure-name')
+        .and_return(bat_runner_builder)
+      end
 
+      it 'returns bat helper configured with rake arguments' do
         Build.should_receive(:candidate).and_return(build)
 
         expect(Bosh::Stemcell::Definition).to receive(:for)
@@ -107,13 +90,37 @@ module Bosh::Dev
             light
           ).and_return(definition)
 
+        expect(Bosh::Stemcell::Stemcell).to receive(:new).and_return(stemcell)
+
         bat_helper = instance_double('Bosh::Dev::BatHelper')
         described_class
           .should_receive(:new)
-          .with(bat_runner_builder, definition, build, networking_type)
+          .with(bat_runner_builder, instance_of(Bosh::Dev::Bat::Artifacts), build, networking_type, stemcell)
           .and_return(bat_helper)
 
         expect(described_class.for_rake_args(rake_args)).to eq bat_helper
+      end
+
+      context 'when WORKSPACE is set' do
+        before { stub_const('ENV', {'WORKSPACE' => '/fake-workspace'}) }
+
+        it 'builds artifacts inside of workspace' do
+          expect(Bosh::Stemcell::Definition).to receive(:for)
+          .with(
+            'infrastructure-name',
+            'hypervisor-name',
+            'operating-system-name',
+            'operating-system-version',
+            'agent-name',
+            light
+          ).and_return(definition)
+
+          expect(Bosh::Dev::Bat::Artifacts).to receive(:new) do |artifacts_path, _, _|
+            expect(artifacts_path).to match %r{^/fake-workspace}
+          end
+
+          described_class.for_rake_args(rake_args)
+        end
       end
     end
 
@@ -130,8 +137,7 @@ module Bosh::Dev
 
       it 'downloads stemcells for the specified infrastructure' do
         expect(build).to receive(:download_stemcell).with(
-          'bosh-stemcell',
-          definition,
+          stemcell,
           artifacts_path,
         )
         subject.deploy_microbosh_and_run_bats
@@ -161,8 +167,7 @@ module Bosh::Dev
 
       it 'downloads stemcells for the specified infrastructure' do
         expect(build).to receive(:download_stemcell).with(
-          'bosh-stemcell',
-          definition,
+          stemcell,
           artifacts_path,
         )
         subject.deploy_bats_microbosh

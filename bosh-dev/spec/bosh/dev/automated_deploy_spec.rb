@@ -1,25 +1,26 @@
 require 'spec_helper'
-require 'bosh/dev/build_target'
 require 'bosh/dev/artifacts_downloader'
 require 'bosh/dev/aws/deployment_account'
 require 'bosh/dev/automated_deploy'
 
 module Bosh::Dev
   describe AutomatedDeploy do
+    let(:stemcell) do
+      instance_double(
+        'Bosh::Stemcell::Stemcell',
+        infrastructure: double(:infrastructure, name: 'aws'),
+        version: 'fake-build-number',
+      )
+    end
+
     describe '#deploy' do
       subject(:deployer) do
         described_class.new(
-          build_target,
+          stemcell,
           deployment_account,
           artifacts_downloader,
           bosh_cli_session,
         )
-      end
-
-      let(:build_target) do
-        instance_double('Bosh::Dev::BuildTarget', {
-          build_number: 'fake-build-number',
-        })
       end
 
       let(:bosh_target) { 'https://bosh.target.example.com:25555' }
@@ -58,7 +59,7 @@ module Bosh::Dev
         expect(deployment_account).to receive(:prepare).with(no_args).ordered
 
         expect(artifacts_downloader).to receive(:download_stemcell).
-          with(build_target, Dir.pwd).ordered.
+          with(stemcell, Dir.pwd).ordered.
           and_return('/tmp/stemcell.tgz')
 
         stemcell_archive = instance_double('Bosh::Stemcell::Archive')
@@ -87,17 +88,11 @@ module Bosh::Dev
     describe '#deploy_micro' do
       subject(:deployer) do
         described_class.new(
-          build_target,
+          stemcell,
           deployment_account,
           artifacts_downloader,
           bosh_cli_session,
         )
-      end
-
-      let(:build_target) do
-        instance_double('Bosh::Dev::BuildTarget', {
-          build_number: 'fake-build-number',
-        })
       end
 
       let(:deployment_account) do
@@ -124,7 +119,7 @@ module Bosh::Dev
         expect(deployment_account).to receive(:prepare).with(no_args).ordered
 
         expect(artifacts_downloader).to receive(:download_stemcell)
-          .with(build_target, Dir.pwd)
+          .with(stemcell, Dir.pwd)
           .and_return('/tmp/stemcell.tgz')
 
         stemcell_archive = instance_double('Bosh::Stemcell::Archive')

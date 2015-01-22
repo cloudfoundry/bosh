@@ -10,6 +10,7 @@ namespace :cd do
     :environment_name,
     :deployment_name,
     :light,
+    :disk_format,
   ] do |_, args|
     require 'bosh/dev/automated_deploy_builder'
     builder = Bosh::Dev::AutomatedDeployBuilder.for_rake_args(args)
@@ -28,6 +29,7 @@ namespace :cd do
     :environment_name,
     :deployment_name,
     :light,
+    :disk_format,
   ] do |_, args|
     require 'bosh/dev/automated_deploy_builder'
     builder = Bosh::Dev::AutomatedDeployBuilder.for_rake_args(args)

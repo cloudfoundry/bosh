@@ -1,8 +1,8 @@
 require 'spec_helper'
 require 'bosh/dev/build'
-require 'bosh/dev/build_target'
 require 'bosh/dev/download_adapter'
 require 'bosh/dev/artifacts_downloader'
+require 'bosh/stemcell/stemcell'
 
 module Bosh::Dev
   describe ArtifactsDownloader do
@@ -38,6 +38,7 @@ module Bosh::Dev
         instance_double(
           'Bosh::Stemcell::Infrastructure::Base',
           name: 'fake-infrastructure-name',
+          default_disk_format: 'default-disk-format'
         )
       end
 
@@ -45,31 +46,24 @@ module Bosh::Dev
         instance_double(
           'Bosh::Stemcell::Definition',
           infrastructure: infrastructure,
-          light?: true
+          light?: true,
+          stemcell_name: 'fake-stemcell-name'
         )
       }
 
-      let(:archive_filename) {
-        instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'fake-stemcell-filename')
-      }
-
-      before do
-        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new).and_return(archive_filename)
-      end
+      let(:stemcell) { Bosh::Stemcell::Stemcell.new(definition, 'bosh-stemcell', 'fake-build-number', 'fake-disk-format')}
 
       it 'downloads a stemcell and returns path' do
-        expected_remote_uri = URI("http://bosh-ci-pipeline.s3.amazonaws.com/fake-build-number/bosh-stemcell/fake-infrastructure-name/#{archive_filename}")
-        expected_local_path = "fake-output-dir/#{archive_filename}"
+        expected_remote_uri = URI('http://bosh-ci-pipeline.s3.amazonaws.com/fake-build-number/bosh-stemcell/fake-infrastructure-name/light-bosh-stemcell-fake-build-number-fake-stemcell-name-fake-disk-format.tgz')
+        expected_local_path = "fake-output-dir/#{stemcell.name}"
 
         download_adapter
           .should_receive(:download)
           .with(expected_remote_uri, expected_local_path)
           .and_return('returned-path')
 
-        returned_path = artifacts_downloader.download_stemcell(build_target, 'fake-output-dir')
+        returned_path = artifacts_downloader.download_stemcell(stemcell, 'fake-output-dir')
 
-        expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new)
-                                                   .with('fake-build-number', definition, 'bosh-stemcell')
         expect(returned_path).to eq('returned-path')
       end
     end

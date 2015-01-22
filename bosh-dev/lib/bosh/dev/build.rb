@@ -8,7 +8,7 @@ require 'bosh/dev/uri_provider'
 require 'bosh/dev/gem_components'
 require 'bosh/stemcell/archive'
 require 'bosh/stemcell/archive_filename'
-require 'bosh/stemcell/definition'
+require 'bosh/stemcell/stemcell'
 require 'logging'
 
 module Bosh::Dev
@@ -66,26 +66,25 @@ module Bosh::Dev
       )
     end
 
-    def upload_stemcell(stemcell)
-      normal_filename = File.basename(stemcell.path)
+    def upload_stemcell(archive)
+      normal_filename = File.basename(archive.path)
       latest_filename = normal_filename.gsub(/#{@number}/, 'latest')
 
-      s3_path = File.join(number.to_s, 'bosh-stemcell', stemcell.infrastructure, normal_filename)
-      s3_latest_path = File.join(number.to_s, 'bosh-stemcell', stemcell.infrastructure, latest_filename)
+      s3_path = File.join(number.to_s, 'bosh-stemcell', archive.infrastructure, normal_filename)
+      s3_latest_path = File.join(number.to_s, 'bosh-stemcell', archive.infrastructure, latest_filename)
 
       upload_adapter = Bosh::Dev::UploadAdapter.new
 
-      upload_adapter.upload(bucket_name: bucket, key: s3_latest_path, body: File.open(stemcell.path), public: true)
+      upload_adapter.upload(bucket_name: bucket, key: s3_latest_path, body: File.open(archive.path), public: true)
       logger.info("uploaded to s3://#{bucket}/#{s3_latest_path}")
-      upload_adapter.upload(bucket_name: bucket, key: s3_path, body: File.open(stemcell.path), public: true)
+      upload_adapter.upload(bucket_name: bucket, key: s3_path, body: File.open(archive.path), public: true)
       logger.info("uploaded to s3://#{bucket}/#{s3_path}")
     end
 
-    def download_stemcell(name, definition, output_directory)
-      filename = Bosh::Stemcell::ArchiveFilename.new(number.to_s, definition, name).to_s
-      remote_dir = File.join(number.to_s, name, definition.infrastructure.name)
-      download_adapter.download(UriProvider.pipeline_uri(remote_dir, filename), File.join(output_directory, filename))
-      filename
+    def download_stemcell(stemcell, output_directory)
+      remote_dir = File.join(number.to_s, stemcell.name, stemcell.infrastructure.name)
+      download_adapter.download(UriProvider.pipeline_uri(remote_dir, stemcell.name), File.join(output_directory, stemcell.name))
+      stemcell.name
     end
 
     def promote
@@ -103,14 +102,6 @@ module Bosh::Dev
       promotable_artifacts.all.all? { |artifact| artifact.promoted? }
     end
 
-    def bosh_stemcell_path(definition, download_dir)
-      File.join(download_dir, Bosh::Stemcell::ArchiveFilename.new(
-        number.to_s,
-        definition,
-        'bosh-stemcell'
-      ).to_s)
-    end
-
     private
 
     attr_reader :logger, :promotable_artifacts, :download_adapter, :upload_adapter, :bucket
@@ -126,10 +117,9 @@ module Bosh::Dev
         release.dev_tarball_path
       end
 
-      def download_stemcell(name, definition, output_directory)
-        filename = Bosh::Stemcell::ArchiveFilename.new(number.to_s, definition, name).to_s
-        download_adapter.download("tmp/#{filename}", File.join(output_directory, filename))
-        filename
+      def download_stemcell(stemcell, output_directory)
+        download_adapter.download("tmp/#{stemcell.name}", File.join(output_directory, stemcell.name))
+        stemcell.name
       end
     end
 

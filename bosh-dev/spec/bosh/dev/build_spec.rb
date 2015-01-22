@@ -220,12 +220,12 @@ module Bosh::Dev
 
       before do
         FileUtils.mkdir('/tmp')
-        File.open(stemcell.path, 'w') { |f| f.write(stemcell_contents) }
+        File.open(stemcell_archive.path, 'w') { |f| f.write(stemcell_contents) }
         allow(Bosh::Dev::UploadAdapter).to receive(:new).and_return(upload_adapter)
       end
 
       describe 'when publishing a full stemcell' do
-        let(:stemcell) do
+        let(:stemcell_archive) do
           instance_double(
             'Bosh::Stemcell::Archive',
             light?: false,
@@ -250,14 +250,14 @@ module Bosh::Dev
                                                       body: anything,
                                                       public: true)
 
-          build.upload_stemcell(stemcell)
+          build.upload_stemcell(stemcell_archive)
 
           expect(log_string).to include("uploaded to s3://#{bucket_name}/#{key}")
         end
       end
 
       describe 'when publishing a light stemcell' do
-        let(:stemcell) do
+        let(:stemcell_archive) do
           instance_double(
             'Bosh::Stemcell::Archive',
             light?: true,
@@ -283,7 +283,7 @@ module Bosh::Dev
                                                       body: anything,
                                                       public: true)
 
-          build.upload_stemcell(stemcell)
+          build.upload_stemcell(stemcell_archive)
 
           expect(log_string).to include("uploaded to s3://#{bucket_name}/#{key}")
         end
@@ -292,61 +292,27 @@ module Bosh::Dev
 
     describe '#download_stemcell' do
       def perform
-        build.download_stemcell('stemcell-name', definition, Dir.pwd)
+        build.download_stemcell(stemcell, Dir.pwd)
       end
 
-      let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'fake-filename') }
-
-      before do
-        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new).and_return(archive_filename)
+      let(:stemcell) do
+        instance_double('Bosh::Stemcell::Stemcell', name: 'fake-stemcell-name', infrastructure: infrastructure)
       end
 
       let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'infrastructure-name') }
-      let(:definition) { instance_double('Bosh::Stemcell::Definition', infrastructure: infrastructure) }
 
       let(:expected_s3_bucket) { 'http://bosh-ci-pipeline.s3.amazonaws.com' }
-      let(:expected_s3_folder) { '/123/stemcell-name/infrastructure-name' }
+      let(:expected_s3_folder) { '/123/fake-stemcell-name/infrastructure-name' }
 
       it 'downloads the specified stemcell version from the pipeline bucket' do
-        expected_uri = URI("#{expected_s3_bucket}#{expected_s3_folder}/#{archive_filename}")
-        expect(download_adapter).to receive(:download).with(expected_uri, "/#{archive_filename}")
+        expected_uri = URI("#{expected_s3_bucket}#{expected_s3_folder}/fake-stemcell-name")
+        expect(download_adapter).to receive(:download).with(expected_uri, "/fake-stemcell-name")
         perform
-
-        expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('123', definition, 'stemcell-name')
       end
 
       it 'returns the name of the downloaded file' do
         expect(download_adapter).to receive(:download)
-        expect(perform).to eq(archive_filename.to_s)
-      end
-    end
-
-    describe '#bosh_stemcell_path' do
-
-      let(:archive_filename) { instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'fake-filename') }
-
-      before do
-        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new).and_return(archive_filename)
-      end
-
-      let(:infrastructure) do
-        instance_double(
-          'Bosh::Stemcell::Infrastructure::Base',
-        )
-      end
-
-      let(:definition) {
-        instance_double(
-          'Bosh::Stemcell::Definition',
-          infrastructure: infrastructure,
-        )
-      }
-
-      it 'returns the bosh stemcell path for given definition' do
-        download_directory = '/FAKE/CUSTOM/WORK/DIRECTORY'
-        bosh_stemcell_path = subject.bosh_stemcell_path(definition, download_directory)
-        expect(bosh_stemcell_path).to eq(File.join(download_directory, archive_filename.to_s))
-        expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('123', definition, 'bosh-stemcell')
+        expect(perform).to eq('fake-stemcell-name')
       end
     end
   end
@@ -408,32 +374,21 @@ module Bosh::Dev
 
     describe '#download_stemcell' do
       def perform
-        subject.download_stemcell('stemcell-name', definition, '/output-directory')
+        subject.download_stemcell(stemcell, '/output-directory')
       end
 
-      let(:archive_filename) {
-        instance_double('Bosh::Stemcell::ArchiveFilename', to_s: 'fake-filename')
-      }
-
-      let(:definition) {
-        instance_double(
-          'Bosh::Stemcell::Definition',
-        )
-      }
-
-      before do
-        allow(Bosh::Stemcell::ArchiveFilename).to receive(:new).and_return(archive_filename)
+      let(:stemcell) do
+        instance_double('Bosh::Stemcell::Stemcell', name: 'fake-stemcell-name')
       end
 
       context 'when downloading does not result in an error' do
         it 'uses download adapter to move stemcell to given location' do
           expect(download_adapter)
             .to receive(:download)
-            .with("tmp/#{archive_filename}", "/output-directory/#{archive_filename}")
+            .with('tmp/fake-stemcell-name', '/output-directory/fake-stemcell-name')
           filename = perform
 
-          expect(filename).to eq(archive_filename.to_s)
-          expect(Bosh::Stemcell::ArchiveFilename).to have_received(:new).with('build-number', definition, 'stemcell-name')
+          expect(filename).to eq('fake-stemcell-name')
         end
       end
 
