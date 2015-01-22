@@ -3,9 +3,8 @@ require 'bosh/dev/bat/artifacts'
 
 module Bosh::Dev::Bat
   describe Artifacts do
-    subject { Artifacts.new(path, build, stemcell) }
+    subject { Artifacts.new(path, stemcell) }
     let(:path) { '/fake/artifacts/path' }
-    let(:build) { instance_double('Bosh::Dev::Build') }
     let(:stemcell) { instance_double('Bosh::Stemcell::Stemcell', name: 'fake-stemcell-name') }
 
     its(:micro_bosh_deployment_name) { should == 'microbosh' }

@@ -7,9 +7,8 @@ module Bosh::Dev::Bat
   class Artifacts
     attr_reader :path
 
-    def initialize(path, build, stemcell)
+    def initialize(path, stemcell)
       @path = path
-      @build = build
       @stemcell = stemcell
     end
 
@@ -32,6 +31,6 @@ module Bosh::Dev::Bat
 
     private
 
-    attr_reader :build, :stemcell
+    attr_reader :stemcell
   end
 end

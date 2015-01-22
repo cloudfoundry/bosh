@@ -24,7 +24,7 @@ module Bosh::Dev
         definition.agent.name,
         'deployments'
       )
-      artifacts = Bosh::Dev::Bat::Artifacts.new(artifacts_path, build, stemcell)
+      artifacts = Bosh::Dev::Bat::Artifacts.new(artifacts_path, stemcell)
 
       new(
         runner_builder_for_infrastructure_name(args.infrastructure_name),
