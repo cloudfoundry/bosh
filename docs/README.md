@@ -21,3 +21,5 @@ The contents of docs include:
 			* [BATs rake task setup for vSphere](running_bats_rake_task_against_vsphere.md)
 			
 		* [Running BATs manually](running_bats_manually.md)
+		
+	* [Running OpenStack CPI lifecycle tests](running_cpi_lifecycle_openstack.md)
