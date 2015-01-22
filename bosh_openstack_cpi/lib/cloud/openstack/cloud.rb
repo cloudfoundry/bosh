@@ -239,7 +239,7 @@ module Bosh::OpenStackCloud
           if flavor.ram
             # Ephemeral disk size should be at least the double of the vm total memory size, as agent will need:
             # - vm total memory size for swapon,
-            # - the rest for /vcar/vcap/data
+            # - the rest for /var/vcap/data
             min_ephemeral_size = (flavor.ram / 1024) * 2
             if flavor.ephemeral < min_ephemeral_size
               cloud_error("Flavor `#{resource_pool['instance_type']}' should have at least #{min_ephemeral_size}Gb " +
