@@ -100,29 +100,41 @@ module Bosh::Dev
       it 'returns a complete list of stemcell build artifact names' do
         stemcell_artifact1_version = instance_double('Bosh::Dev::StemcellArtifact')
         expect(StemcellArtifact).to receive(:new)
-          .with(version, version, definitions[0], logger)
+          .with(version, version, definitions[0], logger, 'ovf')
           .and_return(stemcell_artifact1_version)
 
         stemcell_artifact1_latest = instance_double('Bosh::Dev::StemcellArtifact')
         expect(StemcellArtifact).to receive(:new)
-          .with(version, 'latest', definitions[0], logger)
+          .with(version, 'latest', definitions[0], logger, 'ovf')
           .and_return(stemcell_artifact1_latest)
 
-        stemcell_artifact2_version = instance_double('Bosh::Dev::StemcellArtifact')
+        stemcell_artifact2_version_qcow = instance_double('Bosh::Dev::StemcellArtifact')
         expect(StemcellArtifact).to receive(:new)
-          .with(version, version, definitions[1], logger)
-          .and_return(stemcell_artifact2_version)
+          .with(version, version, definitions[1], logger, 'qcow2')
+          .and_return(stemcell_artifact2_version_qcow)
 
-        stemcell_artifact2_latest = instance_double('Bosh::Dev::StemcellArtifact')
+        stemcell_artifact2_latest_qcow = instance_double('Bosh::Dev::StemcellArtifact')
         expect(StemcellArtifact).to receive(:new)
-          .with(version, 'latest', definitions[1], logger)
-          .and_return(stemcell_artifact2_latest)
+          .with(version, 'latest', definitions[1], logger, 'qcow2')
+          .and_return(stemcell_artifact2_latest_qcow)
+
+        stemcell_artifact2_version_raw = instance_double('Bosh::Dev::StemcellArtifact')
+        expect(StemcellArtifact).to receive(:new)
+          .with(version, version, definitions[1], logger, 'raw')
+          .and_return(stemcell_artifact2_version_raw)
+
+        stemcell_artifact2_latest_raw = instance_double('Bosh::Dev::StemcellArtifact')
+        expect(StemcellArtifact).to receive(:new)
+          .with(version, 'latest', definitions[1], logger, 'raw')
+          .and_return(stemcell_artifact2_latest_raw)
 
         expect(artifacts.list).to eq([
           stemcell_artifact1_version,
           stemcell_artifact1_latest,
-          stemcell_artifact2_version,
-          stemcell_artifact2_latest
+          stemcell_artifact2_version_qcow,
+          stemcell_artifact2_latest_qcow,
+          stemcell_artifact2_version_raw,
+          stemcell_artifact2_latest_raw,
         ])
       end
     end

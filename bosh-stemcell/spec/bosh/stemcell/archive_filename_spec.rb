@@ -45,14 +45,6 @@ module Bosh::Stemcell
           expect(archive_filename.to_s).to eq ('FAKE_NAME-007-fake-stemcell-name.tgz')
         end
 
-        context "when disk format is not specified" do
-          let(:disk_format) { nil }
-
-          it 'includes name, version, infrastructure name, infrastructure hypervisor' do
-            expect(archive_filename.to_s).to eq ('FAKE_NAME-007-fake-stemcell-name.tgz')
-          end
-        end
-
         context "when disk format is not the infrastructure's default" do
           let(:disk_format) { 'raw' }
 

@@ -89,9 +89,9 @@ module Bosh::Stemcell
         end
 
         expect_not_equal = [
-          [%w(aws xen ubuntu penguin null false), %w(aws xen centos 6.5 null false)],
-          [%w(aws xen ubuntu penguin null false), %w(aws xen ubuntu penguin null true)],
-          [%w(vsphere esxi ubuntu penguin go false), %w(vsphere esxi ubuntu penguin null false)],
+          [['aws', 'xen', 'ubuntu', 'penguin', 'null', false], ['aws', 'xen', 'centos', '6.5', 'null', false]],
+          [['aws', 'xen', 'ubuntu', 'penguin', 'null', false], ['aws', 'xen', 'ubuntu', 'penguin', 'null', true]],
+          [['vsphere', 'esxi', 'ubuntu', 'penguin', 'go', false], ['vsphere', 'esxi', 'ubuntu', 'penguin', 'null', false]],
         ]
         expect_not_equal.each do |left, right|
           expect(Definition.for(*left)).to_not eq(Definition.for(*right))

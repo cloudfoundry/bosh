@@ -51,14 +51,14 @@ module Bosh::Dev
     end
 
     def list
-      artifacts = []
-
-      @matrix.each do |stemcell_definition|
-        artifacts << StemcellArtifact.new(@version, @version, stemcell_definition, @logger)
-        artifacts << StemcellArtifact.new(@version, 'latest', stemcell_definition, @logger)
+      @matrix.flat_map do |stemcell_definition|
+        stemcell_definition.disk_formats.flat_map do |disk_format|
+          [
+            StemcellArtifact.new(@version, @version, stemcell_definition, @logger, disk_format),
+            StemcellArtifact.new(@version, 'latest', stemcell_definition, @logger, disk_format)
+          ]
+        end
       end
-
-      artifacts
     end
   end
 end

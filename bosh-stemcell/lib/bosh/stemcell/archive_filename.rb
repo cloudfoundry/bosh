@@ -4,7 +4,7 @@ module Bosh::Stemcell
   class ArchiveFilename
     extend Forwardable
 
-    def initialize(version, definition, base_name, disk_format = nil)
+    def initialize(version, definition, base_name, disk_format)
       @version = version
       @definition = definition
       @base_name = base_name
@@ -18,7 +18,7 @@ module Bosh::Stemcell
         definition.stemcell_name
       ]
 
-      unless disk_format.nil? || disk_format == definition.infrastructure.default_disk_format
+      unless disk_format == definition.infrastructure.default_disk_format
         stemcell_filename_parts << @disk_format
       end
 

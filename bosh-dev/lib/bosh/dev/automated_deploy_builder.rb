@@ -18,7 +18,7 @@ module Bosh::Dev
         args.operating_system_name,
         args.operating_system_version,
         args.agent_name,
-        args.light,
+        args.light == 'true',
       )
       stemcell = Bosh::Stemcell::Stemcell.new(definition, 'bosh-stemcell', args.build_number, args.disk_format)
 

@@ -6,15 +6,16 @@ module Bosh::Dev
   class StemcellArtifact
     include CommandHelper
 
-    def initialize(source_version, destination_version, stemcell_definition, logger)
+    def initialize(source_version, destination_version, stemcell_definition, logger, disk_format)
       @source_version = source_version
       @destination_version = destination_version
       @stemcell_definition = stemcell_definition
       @logger = logger
+      @disk_format = disk_format
     end
 
     def name
-      Bosh::Stemcell::ArchiveFilename.new(@destination_version, @stemcell_definition, 'bosh-stemcell').to_s
+      Bosh::Stemcell::ArchiveFilename.new(@destination_version, @stemcell_definition, 'bosh-stemcell', @disk_format).to_s
     end
 
     def promote
@@ -31,7 +32,7 @@ module Bosh::Dev
     private
 
     def source
-      file_name = Bosh::Stemcell::ArchiveFilename.new(@source_version, @stemcell_definition, 'bosh-stemcell').to_s
+      file_name = Bosh::Stemcell::ArchiveFilename.new(@source_version, @stemcell_definition, 'bosh-stemcell', @disk_format).to_s
       Bosh::Dev::UriProvider.pipeline_s3_path(File.join(@source_version, 'bosh-stemcell', infrastructure_name), file_name)
     end
 

@@ -10,7 +10,7 @@ require 'bosh/dev/bat/artifacts'
 module Bosh::Dev
   class BatHelper
     def self.for_rake_args(args)
-      definition = Bosh::Stemcell::Definition.for(args.infrastructure_name, args.hypervisor_name, args.operating_system_name, args.operating_system_version, args.agent_name, args.light)
+      definition = Bosh::Stemcell::Definition.for(args.infrastructure_name, args.hypervisor_name, args.operating_system_name, args.operating_system_version, args.agent_name, args.light == 'true')
       build = Build.candidate
       stemcell = Bosh::Stemcell::Stemcell.new(definition, 'bosh-stemcell', build.number, args.disk_format)
 

@@ -19,7 +19,7 @@ module Bosh::Stemcell
         hypervisor_name,
         Bosh::Stemcell::OperatingSystem.for(operating_system_name, operating_system_version),
         Bosh::Stemcell::Agent.for(agent_name),
-        light
+        light,
       )
     end
 

@@ -6,7 +6,7 @@ require 'bosh/stemcell/infrastructure'
 module Bosh::Dev
   describe StemcellArtifact do
 
-    subject(:stemcell_artifact) { StemcellArtifact.new(source_version, destination_version, stemcell_definition, logger) }
+    subject(:stemcell_artifact) { StemcellArtifact.new(source_version, destination_version, stemcell_definition, logger, 'fake-disk-format') }
 
     let(:stemcell_definition) { instance_double('Bosh::Stemcell::Definition', infrastructure: infrastructure) }
     let(:infrastructure) { double('Bosh::Stemcell::Infrastructure::Fake', name: infrastructure_name) }
@@ -20,11 +20,11 @@ module Bosh::Dev
     let(:archive_destination_filename_string) { 'fake-destination-filename.tgz' }
     before do
       allow(Bosh::Stemcell::ArchiveFilename).to receive(:new).
-        with(source_version, stemcell_definition, 'bosh-stemcell').
+        with(source_version, stemcell_definition, 'bosh-stemcell', 'fake-disk-format').
         and_return(archive_source_filename)
 
       allow(Bosh::Stemcell::ArchiveFilename).to receive(:new).
-        with(destination_version, stemcell_definition, 'bosh-stemcell').
+        with(destination_version, stemcell_definition, 'bosh-stemcell', 'fake-disk-format').
         and_return(archive_destination_filename)
     end
 
