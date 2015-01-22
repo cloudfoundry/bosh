@@ -44,7 +44,7 @@ describe Bosh::OpenStackCloud::Cloud do
           'type' => boot_volume_type
         },
         'config_drive' => config_drive,
-        'ignore_server_availability_zone' => ignore_server_az,
+        'ignore_server_availability_zone' => @ignore_server_az,
       },
       'registry' => {
         'endpoint' => 'fake',

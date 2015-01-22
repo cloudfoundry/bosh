@@ -43,7 +43,6 @@ module Bosh::OpenStackCloud
       @wait_resource_poll_interval = @openstack_properties["wait_resource_poll_interval"]
       @boot_from_volume = @openstack_properties["boot_from_volume"]
       @boot_volume_cloud_properties = @openstack_properties["boot_volume_cloud_properties"] || {}
-      @az_provider = AvailabilityZoneProvider.new(@openstack_properties["ignore_server_availability_zone"])
 
       unless @openstack_properties['auth_url'].match(/\/tokens$/)
         @openstack_properties['auth_url'] = @openstack_properties['auth_url'] + '/tokens'
@@ -69,6 +68,10 @@ module Bosh::OpenStackCloud
         @logger.error(e)
         cloud_error('Unable to connect to the OpenStack Compute API. Check task debug log for details.')
       end
+
+      @az_provider = Bosh::OpenStackCloud::AvailabilityZoneProvider.new(
+        @openstack,
+        @openstack_properties["ignore_server_availability_zone"])
 
       glance_params = {
         :provider => 'OpenStack',
@@ -614,19 +617,17 @@ module Bosh::OpenStackCloud
     end
 
     ##
-    # Ensure all supplied availability zones are the same
+    # Selects the availability zone to use from a list of disk volumes,
+    # resource pool availability zone (if any) and the default availability
+    # zone.
     #
-    # @param [Array] disks OpenStack volumes
-    # @param [String] default availability zone specified in
+    # @param [Array] volumes OpenStack volume UUIDs to attach to the vm
+    # @param [String] resource_pool_az availability zone specified in
     #   the resource pool (may be nil)
     # @return [String] availability zone to use or nil
     # @note this is a private method that is public to make it easier to test
-    def ensure_same_availability_zone(disks, default)
-      zones = disks.map { |disk| disk.availability_zone }
-      zones << default if default
-      zones.uniq!
-      cloud_error "can't use multiple availability zones: %s" %
-        zones.join(', ') unless zones.size == 1 || zones.empty?
+    def select_availability_zone(volumes, resource_pool_az)
+      @az_provider.select(volumes, resource_pool_az)
     end
 
     private
@@ -972,35 +973,6 @@ module Bosh::OpenStackCloud
       end
       options
     end
-
-    class AvailabilityZoneProvider
-      def initialize(ignore_server_availability_zone)
-        @ignore_server_availability_zone = ignore_server_availability_zone
-      end
-
-      ##
-      # Selects the availability zone to use from a list of disk volumes,
-      # resource pool availability zone (if any) and the default availability
-      # zone.
-      #
-      # @param [Array] volumes OpenStack volume UUIDs to attach to the vm
-      # @param [String] resource_pool_az availability zone specified in
-      #   the resource pool (may be nil)
-      # @return [String] availability zone to use or nil
-      # @note this is a private method that is public to make it easier to test
-      def select(volumes, resource_pool_az)
-        if volumes && !volumes.empty? && constrain_to_server_availability_zone?
-          disks = volumes.map { |vid| with_openstack { @openstack.volumes.get(vid) } }
-          ensure_same_availability_zone(disks, resource_pool_az)
-          disks.first.availability_zone
-        else
-          resource_pool_az
-        end
-      end
-
-      def constrain_to_server_availability_zone?
-        !@ignore_server_availability_zone
-      end
-    end
   end
 end
+

@@ -383,14 +383,15 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       cloud.should_receive(:wait_resource).with(server, :active, :state)
       cloud.should_receive(:wait_resource).with(boot_volume, :available)
 
-      @registry.should_receive(:update_settings).
+      expect(@registry).to receive(:update_settings).
         with("i-test", agent_settings(unique_name, network_spec))
 
       vm_id = cloud.create_vm("agent-id", "sc-id",
         resource_pool_spec,
         { "network_a" => network_spec },
         nil, { "test_env" => "value" })
-      vm_id.should == "i-test"
+
+      expect(vm_id).to eq("i-test")
     end
   end
 
@@ -488,7 +489,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
 
   def volume(zone)
     vol = double("volume")
-    vol.stub(:availability_zone).and_return(zone)
+    allow(vol).to receive(:availability_zone).and_return(zone)
     vol
   end
 
@@ -511,48 +512,50 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       cloud = mock_cloud(cloud_options["properties"]) do |openstack|
         openstack.volumes.stub(:get).and_return(volume("foo"), volume("foo"))
       end
-      cloud.select_availability_zone(%w[cid1 cid2], "foobar-1a").should == "foobar-1a"
+      expect(cloud.select_availability_zone(%w[cid1 cid2], "foobar-1a")).to eq("foobar-1a")
     end
 
     it "should select the zone from a list of disks" do
       cloud = mock_cloud do |openstack|
         openstack.volumes.stub(:get).and_return(volume("foo"), volume("foo"))
       end
-      cloud.select_availability_zone(%w[cid1 cid2], nil).should == "foo"
+      expect(cloud.select_availability_zone(%w[cid1 cid2], nil)).to eq("foo")
     end
 
     it "should select the zone from a list of disks and a default" do
       cloud = mock_cloud do |openstack|
         openstack.volumes.stub(:get).and_return(volume("foo"), volume("foo"))
       end
-      cloud.select_availability_zone(%w[cid1 cid2], "foo").should == "foo"
+      expect(cloud.select_availability_zone(%w[cid1 cid2], "foo")).to eq("foo")
     end
   end
 
-  describe "#ensure_same_availability_zone" do
-    it "should raise an error when the zones differ" do
-      cloud = mock_cloud
+  describe 'failing to select an AZ' do
+    it 'should raise an error when the disks are from different zones' do
+      cloud = mock_cloud do |openstack|
+        expect(openstack.volumes).to receive(:get).and_return(volume("foo"), volume("bar"))
+      end
       expect {
-        cloud.ensure_same_availability_zone([volume("foo"), volume("bar")],
-                                            nil)
+        cloud.select_availability_zone(%w[cid1 cid2], "bar")
+      }.to raise_error Bosh::Clouds::CloudError
+    end
+
+    it "should raise an error when the disk zones are the same and the resource pool AZ is nil" do
+      cloud = mock_cloud do |openstack|
+        expect(openstack.volumes).to receive(:get).and_return(volume("foo"), volume("bar"))
+      end
+      expect {
+        cloud.select_availability_zone(%w[cid1 cid2], nil)
       }.to raise_error Bosh::Clouds::CloudError
     end
 
     it "should raise an error when the zones differ" do
-      cloud = mock_cloud
+      cloud = mock_cloud do |openstack|
+        expect(openstack.volumes).to receive(:get).and_return(volume("foo"), volume("foo"))
+      end
       expect {
-        cloud.ensure_same_availability_zone([volume("foo"), volume("bar")],
-                                            "foo")
-      }.to raise_error Bosh::Clouds::CloudError
-    end
-
-    it "should raise an error when the zones differ" do
-      cloud = mock_cloud
-      expect {
-        cloud.ensure_same_availability_zone([volume("foo"), volume("foo")],
-                                            "bar")
+        cloud.select_availability_zone(%w[cid1 cid2], "baz")
       }.to raise_error Bosh::Clouds::CloudError
     end
   end
-
 end
