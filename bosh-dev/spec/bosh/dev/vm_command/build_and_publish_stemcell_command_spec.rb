@@ -13,7 +13,12 @@ module Bosh::Dev
       }
     end
 
-    let(:build_environment) { double('Bosh::Stemcell::BuildEnvironment', stemcell_file: 'fake-stemcell.tgz') }
+    let(:build_environment) do
+      double('Bosh::Stemcell::BuildEnvironment',
+        stemcell_files: ['fake-stemcell-1.tgz', 'fake-stemcell-2.tgz']
+      )
+    end
+
     let(:options) do
       {
         infrastructure_name: 'fake-infrastructure_name',
@@ -39,7 +44,8 @@ module Bosh::Dev
           export BOSH_AWS_SECRET_ACCESS_KEY='fake-BOSH_AWS_SECRET_ACCESS_KEY'
 
           bundle exec rake stemcell:build[fake-infrastructure_name,fake-hypervisor_name,fake-operating_system_name,fake-operating_system_version,fake-agent_name,fake-bucket,fake-key]
-          bundle exec rake ci:publish_stemcell[fake-stemcell.tgz,fake-publish-bucket]
+          bundle exec rake ci:publish_stemcell[fake-stemcell-1.tgz,fake-publish-bucket]
+          bundle exec rake ci:publish_stemcell[fake-stemcell-2.tgz,fake-publish-bucket]
         BASH
 
         expect(strip_heredoc(subject.to_s)).to eq(strip_heredoc(expected_cmd))
@@ -56,7 +62,7 @@ module Bosh::Dev
     end
 
     def strip_heredoc(str)
-      str.gsub(/^\s+/, '')
+      str.gsub(/^\s+/, '').chomp
     end
   end
 end

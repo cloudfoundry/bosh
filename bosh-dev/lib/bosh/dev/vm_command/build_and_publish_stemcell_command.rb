@@ -8,16 +8,15 @@ module Bosh::Dev
       end
 
       def to_s
-        <<-BASH
-          set -eu
-
-          cd /bosh
-
-          #{exports.join("\n")}
-
-          bundle exec rake stemcell:build[#{build_task_args}]
-          bundle exec rake ci:publish_stemcell[#{build_environment.stemcell_file},#{options[:publish_s3_bucket_name]}]
-        BASH
+        [
+          'set -eu',
+          'cd /bosh',
+          exports,
+          "bundle exec rake stemcell:build[#{build_task_args}]",
+          @build_environment.stemcell_files.map do |stemcell_file|
+            "bundle exec rake ci:publish_stemcell[#{stemcell_file},#{options[:publish_s3_bucket_name]}]"
+          end
+        ].flatten.join("\n")
       end
 
       private

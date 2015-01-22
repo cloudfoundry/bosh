@@ -233,9 +233,17 @@ module Bosh::Stemcell
       end
     end
 
-    describe '#stemcell_file' do
+    describe '#stemcell_files' do
       it 'returns the right file path' do
-        expect(subject.stemcell_file).to eq(File.join(work_path, 'fake-stemcell.tgz'))
+        allow(definition).to receive(:disk_formats) { ['disk-format-1', 'disk-format-2'] }
+        allow(definition).to receive(:light?) { true }
+        allow(definition).to receive(:stemcell_name) { 'infra-hypervisor-os-version' }
+        allow(infrastructure).to receive(:default_disk_format) { 'disk-format-1' }
+
+        expect(subject.stemcell_files).to eq([
+          File.join(work_path, 'light-bosh-stemcell-007-infra-hypervisor-os-version.tgz'),
+          File.join(work_path, 'light-bosh-stemcell-007-infra-hypervisor-os-version-disk-format-2.tgz'),
+        ])
       end
     end
 
@@ -302,7 +310,7 @@ module Bosh::Stemcell
           )
         end
       end
-      
+
       context 'when the environment has http_proxy, https_proxy and no_proxy variables' do
         let(:env) do
           {

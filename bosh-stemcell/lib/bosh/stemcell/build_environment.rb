@@ -1,5 +1,6 @@
 require 'bosh/core/shell'
 require 'bosh/stemcell/builder_options'
+require 'bosh/stemcell/stemcell'
 require 'forwardable'
 
 module Bosh::Stemcell
@@ -59,8 +60,11 @@ module Bosh::Stemcell
       File.join(build_root, 'build')
     end
 
-    def stemcell_file
-      File.join(work_path, settings['stemcell_tgz'])
+    def stemcell_files
+      definition.disk_formats.map do |disk_format|
+        stemcell_filename = Stemcell.new(@definition, 'bosh-stemcell', @version, disk_format)
+        File.join(work_path, stemcell_filename.name)
+      end
     end
 
     def chroot_dir
