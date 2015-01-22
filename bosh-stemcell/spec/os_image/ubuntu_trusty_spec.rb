@@ -161,11 +161,13 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
   end
 
   context 'installed by system_kernel' do
-    %w(
-      linux-headers-3.13.0-43
-      linux-headers-3.13.0-43-generic
-      linux-image-3.13.0-43-generic
-      linux-image-extra-3.13.0-43-generic
+    kernel_version = "3.13.0-44"
+
+    %W(
+      linux-headers-#{kernel_version}
+      linux-headers-#{kernel_version}-generic
+      linux-image-#{kernel_version}-generic
+      linux-image-extra-#{kernel_version}-generic
     ).each do |pkg|
       describe package(pkg) do
         it { should be_installed }
