@@ -138,5 +138,27 @@ module Bosh::Stemcell
         expect(definition.disk_formats).to eq(['format1', 'format2'])
       end
     end
+
+    describe '#light?' do
+      context 'when it is true' do
+        let(:light) { true }
+        its(:light?) { should eq(true) }
+      end
+
+      context 'when not provided' do
+        let(:light) { nil }
+        its(:light?) { should eq(false) }
+      end
+
+      context 'when it is empty' do
+        let(:light) { '' }
+        its(:light?) { should eq(false) }
+      end
+
+      context 'when it is false' do
+        let(:light) { false }
+        its(:light?) { should eq(false) }
+      end
+    end
   end
 end

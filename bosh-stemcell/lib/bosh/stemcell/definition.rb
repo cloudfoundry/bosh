@@ -54,7 +54,7 @@ module Bosh::Stemcell
     end
 
     def light?
-      @light
+      @light == true
     end
   end
 end
