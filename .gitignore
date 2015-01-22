@@ -36,6 +36,23 @@ micro/tmp
 
 pkg/
 
+/release/.blobs
+/release/.dev_builds
+/release/.final_builds/jobs/**/*.tgz
+/release/.final_builds/packages/**/*.tgz
+/release/.idea
+/release/blobs
+/release/blobs
+/release/config/dev.yml
+/release/config/private.yml
+/release/dev-releases
+/release/dev_releases
+/release/jobs/micro_*/monit
+/release/jobs/micro_*/spec
+/release/jobs/micro_*/templates/
+/release/releases/*.tgz
+/release/src/bosh/*
+
 /vsphere-cpi-release/.blobs
 /vsphere-cpi-release/.dev_builds
 /vsphere-cpi-release/.final_builds/jobs/**/*.tgz

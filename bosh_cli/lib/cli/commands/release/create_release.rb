@@ -1,5 +1,3 @@
-require 'cli/license_builder'
-
 module Bosh::Cli::Command
   module Release
     class CreateRelease < Base
@@ -92,11 +90,8 @@ module Bosh::Cli::Command
         header('Building jobs')
         jobs = build_jobs(packages.map(&:name), dry_run, final)
 
-        header('Building license')
-        license_builders = build_licenses(dry_run, final)
-
         header('Building release')
-        release_builder = build_release(dry_run, final, jobs, manifest_only, packages, license_builders, name, version)
+        release_builder = build_release(dry_run, final, jobs, manifest_only, packages, name, version)
 
         header('Release summary')
         show_summary(release_builder)
@@ -138,23 +133,6 @@ module Bosh::Cli::Command
         end
       end
 
-      def build_licenses(dry_run, final)
-        licenses = Bosh::Cli::LicenseBuilder.discover(
-            work_dir,
-            :final => final,
-            :blobstore => release.blobstore,
-            :dry_run => dry_run
-        )
-
-        licenses.each do |license|
-          say("Building #{license.name.make_green}...")
-          license.build
-          nl
-        end
-
-        licenses
-      end
-
       def build_packages(dry_run, final)
         packages = Bosh::Cli::PackageBuilder.discover(
           work_dir,
@@ -186,8 +164,8 @@ module Bosh::Cli::Command
         packages
       end
 
-      def build_release(dry_run, final, jobs, manifest_only, packages, license_builders, name, version)
-        release_builder = Bosh::Cli::ReleaseBuilder.new(release, packages, jobs, license_builders, name,
+      def build_release(dry_run, final, jobs, manifest_only, packages, name, version)
+        release_builder = Bosh::Cli::ReleaseBuilder.new(release, packages, jobs, name,
           final: final,
           commit_hash: commit_hash,
           version: version,
@@ -259,21 +237,11 @@ module Bosh::Cli::Command
           end
         end
 
-        licenses_table = table do |t|
-          t.headings = %w(Name Version Notes)
-          builder.licenses.each do |license|
-            t << artifact_summary(license)
-          end
-        end
-
         say('Packages')
         say(packages_table)
         nl
         say('Jobs')
         say(jobs_table)
-        nl
-        say('Licenses')
-        say(licenses_table)
 
         affected_jobs = builder.affected_jobs
 

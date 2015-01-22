@@ -194,7 +194,7 @@ module Bosh::Cli
         file_checksum(@tarball_path)
       else
         raise RuntimeError,
-          'cannot read checksum for not yet generated package/job/license'
+          'cannot read checksum for not yet generated package/job'
       end
     end
 
