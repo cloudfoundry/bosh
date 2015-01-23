@@ -51,6 +51,16 @@ module Bosh::Stemcell
       ].join(' ')
     end
 
+    def stemcell_tgz_rspec_command(workdir)
+      [
+        "cd #{STEMCELL_SPECS_DIR};",
+        "STEMCELL_TGZ=#{stemcell_file}",
+        "STEMCELL_TGZ_WORKDIR=#{workdir}",
+        'bundle exec rspec -fd',
+        "spec/stemcell_tgz/#{operating_system_spec_name}_spec.rb",
+      ].join(' ')
+    end
+
     def build_path
       File.join(build_root, 'build')
     end
