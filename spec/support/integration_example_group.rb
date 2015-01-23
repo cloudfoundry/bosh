@@ -133,21 +133,25 @@ end
 
 module IntegrationSandboxHelpers
   def start_sandbox
+    unless sandbox_started?
+      at_exit do
+        begin
+          status = $! ? ($!.is_a?(::SystemExit) ? $!.status : 1) : 0
+          logger.info("\n  Stopping sandboxed environment for BOSH tests...")
+          current_sandbox.stop
+          cleanup_sandbox_dir
+        rescue => e
+          logger.error "Failed to stop sandbox! #{e.message}\n#{e.backtrace.join("\n")}"
+        ensure
+          exit(status)
+        end
+      end
+    end
+
     $sandbox_started = true
 
     logger.info('Starting sandboxed environment for BOSH tests...')
     current_sandbox.start
-
-    at_exit do
-      begin
-        status = $! ? ($!.is_a?(::SystemExit) ? $!.status : 1) : 0
-        logger.info("\n  Stopping sandboxed environment for BOSH tests...")
-        current_sandbox.stop
-        cleanup_sandbox_dir
-      ensure
-        exit(status)
-      end
-    end
   end
 
   def sandbox_started?

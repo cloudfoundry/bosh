@@ -3,6 +3,8 @@ require 'spec_helper'
 describe 'cli: stemcell', type: :integration do
   with_reset_sandbox_before_each
 
+  let(:expected_id) { Digest::SHA1.hexdigest("STEMCELL\n") } # this is the contents of image file
+
   it 'verifies a sample valid stemcell', no_reset: true do
     stemcell_filename = spec_asset('valid_stemcell.tgz')
     success = regexp("#{stemcell_filename}' is a valid stemcell")
@@ -18,8 +20,6 @@ describe 'cli: stemcell', type: :integration do
   # ~65s (possibly includes sandbox start)
   it 'can upload a stemcell' do
     stemcell_filename = spec_asset('valid_stemcell.tgz')
-    # That's the contents of image file:
-    expected_id = Digest::SHA1.hexdigest("STEMCELL\n")
 
     target_and_login
     out = bosh_runner.run("upload stemcell #{stemcell_filename}")
@@ -37,8 +37,6 @@ describe 'cli: stemcell', type: :integration do
   # ~40s
   it 'can delete a stemcell' do
     stemcell_filename = spec_asset('valid_stemcell.tgz')
-    # That's the contents of image file:
-    expected_id = Digest::SHA1.hexdigest("STEMCELL\n")
 
     target_and_login
     out = bosh_runner.run("upload stemcell #{stemcell_filename}")
@@ -95,22 +93,49 @@ describe 'cli: stemcell', type: :integration do
 
       let(:stemcell_url) { file_server.http_url("valid_stemcell.tgz") }
 
-      before { bosh_runner.run("upload stemcell #{stemcell_url}") }
+      it 'downloads the file' do
+        out = bosh_runner.run("upload stemcell #{stemcell_url}")
+        expect(out).to match /Stemcell uploaded and created/
 
-      context 'when using the --skip-if-exists flag' do
-        it 'tells the user and does not exit as a failure' do
-          output = bosh_runner.run("upload stemcell #{stemcell_url} --skip-if-exists")
-          expect(output).to include("Stemcell at #{stemcell_url} already exists")
+        out = bosh_runner.run('stemcells')
+        expect(out).to match /stemcells total: 1/i
+        expect(out).to match /ubuntu-stemcell.+1/
+        expect(out).to match regexp(expected_id.to_s)
+
+        stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+        expect(File).to be_exists(stemcell_path)
+      end
+
+      context 'when the URL is being redirected' do
+        let(:redirect_url) { file_server.http_url("/redirect/to?/valid_stemcell.tgz") }
+
+        it 'follows the redirect' do
+          out = bosh_runner.run("upload stemcell #{redirect_url}")
+          expect(out).to match /Stemcell uploaded and created/
+
+          stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
+          expect(File).to be_exists(stemcell_path)
         end
       end
 
-      context 'when NOT using the --skip-if-exists flag' do
-        it 'tells the user and does exit as a failure' do
-          _, exit_code = bosh_runner.run("upload stemcell #{stemcell_url}", {
-            failure_expected: true,
-            return_exit_code: true,
-          })
-          expect(exit_code).to eq(1)
+      context 'when the stemcell has already been uploaded' do
+        before { bosh_runner.run("upload stemcell #{stemcell_url}") }
+
+        context 'when using the --skip-if-exists flag' do
+          it 'tells the user and does not exit as a failure' do
+            output = bosh_runner.run("upload stemcell #{stemcell_url} --skip-if-exists")
+            expect(output).to include("Stemcell at #{stemcell_url} already exists")
+          end
+        end
+
+        context 'when NOT using the --skip-if-exists flag' do
+          it 'tells the user and does exit as a failure' do
+            _, exit_code = bosh_runner.run("upload stemcell #{stemcell_url}", {
+              failure_expected: true,
+              return_exit_code: true,
+            })
+            expect(exit_code).to eq(1)
+          end
         end
       end
     end

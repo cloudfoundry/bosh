@@ -15,7 +15,6 @@ module Bosh::Dev::Sandbox
 
       # Add unique identifier to avoid confusing log information
       @description = "#{@cmd_array.first} (#{SecureRandom.hex(4)})"
-      @pid_mutex = Mutex.new
     end
 
     def start
@@ -30,24 +29,13 @@ module Bosh::Dev::Sandbox
 
         @log_id = SecureRandom.hex(4)
 
-        @pid_mutex.synchronize do
-          @pid = Process.spawn(env, *@cmd_array, {
-            out: stdout || :close,
-            err: stderr || :close,
-            in: :close,
-          })
-        end
+        @pid = Process.spawn(env, *@cmd_array, {
+          out: stdout || :close,
+          err: stderr || :close,
+          in: :close,
+        })
 
         @logger.info("Started #{@description} with PID #{@pid}, log-id: #{@log_id}")
-
-        Process.detach(@pid)
-
-        tries = 0
-        until running?(@pid)
-          tries += 1
-          raise RuntimeError, "Cannot run #{@cmd_array} with #{env.inspect}" if tries > 20
-          sleep(0.1)
-        end
       end
     end
 
@@ -87,22 +75,16 @@ module Bosh::Dev::Sandbox
       false
     end
 
-    def wait_for_process_to_exit_or_be_killed(pid, remaining_attempts = 60)
-      while running?(pid)
-        remaining_attempts -= 1
-        if remaining_attempts == 35
-          @logger.info("Killing #{@description} with PID=#{pid}")
-          kill_process('KILL', pid)
-        elsif remaining_attempts == 0
-          raise "KILL signal ignored by #{@description} with PID=#{pid}"
-        end
-
-        sleep(0.2)
+    def wait_for_process_to_exit_or_be_killed(pid)
+      Timeout::timeout(20) do
+        Process.wait(pid)
       end
+    rescue Timeout::Error => e
+      raise "KILL signal ignored by #{@description} with PID=#{pid}"
     end
 
     def kill_process(signal, pid)
-      @logger.info("Terminating #{@description} with PID=#{pid}")
+      @logger.info("Killing #{@description} (pid: #{pid}) with SIG#{signal}.")
       Process.kill(signal, pid)
     rescue Errno::ESRCH # No such process
       @logger.info("Process #{@description} with PID=#{pid} not found")

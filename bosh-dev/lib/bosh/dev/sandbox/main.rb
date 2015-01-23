@@ -296,7 +296,8 @@ module Bosh::Dev::Sandbox
 
       Redis.new(host: 'localhost', port: redis_port).flushdb
 
-      @worker_processes.each(&:stop)
+      # wait for resque workers in parallel for fastness
+      @worker_processes.map { |worker_process| Thread.new { worker_process.stop } }.each(&:join)
     end
 
     def stop_director

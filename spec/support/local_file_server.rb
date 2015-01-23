@@ -5,12 +5,25 @@ module Bosh::Spec
   class LocalFileServer
     def initialize(directory, port, logger)
       @port = port
+      @logger = logger
 
-      @service = Bosh::Dev::Sandbox::Service.new(
-        %W(rackup -p #{port} -b run(Rack::Directory.new('#{directory}'))),
-        {},
-        logger,
-      )
+      builder = Rack::Builder.new do
+        use Rack::CommonLogger
+        use Rack::ShowExceptions
+        run Rack::Directory.new(directory)
+
+        map '/redirect/to' do
+          run Proc.new { |env| [302, {'Location' => env['QUERY_STRING']}, []] }
+        end
+      end
+
+      @server_thread = Thread.new do
+        begin
+          Rack::Handler::Thin.run builder, :Port => port
+        rescue Interrupt
+          # that's ok, the spec is done with us...
+        end
+      end
 
       @socket_connector = Bosh::Dev::Sandbox::SocketConnector.new(
         'local-file-server',
@@ -21,12 +34,13 @@ module Bosh::Spec
     end
 
     def start
-      @service.start
       @socket_connector.try_to_connect
     end
 
     def stop
-      @service.stop
+      @logger.info "Stopping file server..."
+      @server_thread.raise Interrupt
+      @server_thread.join
     end
 
     def http_url(path)
