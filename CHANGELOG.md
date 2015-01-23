@@ -1,3 +1,28 @@
+## 2820
+
+Improvements:
+
+  * cpi: vsphere: Automatically create VMs/Templates folders
+        _of any depth_ if they are not found when VMs are created [c752e39]
+
+## 2818
+
+New Features:
+
+  * cpi: aws: Support encryption of persistent disks that are EBS volumes [1f8b6fc]
+
+Improvements:
+
+  * agent: Bump agent so that it fails if it cannot find ephemeral disk or cannot
+        paritition root disk to add ephemeral data partition [f3e86a8]
+
+## 2811
+
+Bug Fixes:
+
+  * stemcell: aws: Define block device mapping on aws stemcells
+        so that older versions of the Director can still deploy them [a3d0ca1]
+
 ## 2810
 
 New Features:
