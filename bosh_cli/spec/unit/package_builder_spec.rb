@@ -1,539 +1,412 @@
 require 'spec_helper'
 
 describe Bosh::Cli::PackageBuilder, 'dev build' do
+  subject(:builder) { make_builder }
+
+  let(:release_dir) { Support::FileHelpers::ReleaseDirectory.new }
+  let(:basedir) { nil } # meh!
+  let(:package_name) { 'pkg' }
+  let(:package_file_patterns) { ['*.rb'] }
+  let(:package_deps) { ['foo', 'bar'] }
+  let(:excluded_file_patterns) { [] }
+  let(:final) { false }
+  let(:blobstore) { double('blobstore') }
+
   before do
-    @release_dir = Dir.mktmpdir
-    FileUtils.mkdir(File.join(@release_dir, 'src'))
-    FileUtils.mkdir(File.join(@release_dir, 'blobs'))
-    FileUtils.mkdir(File.join(@release_dir, 'src_alt'))
+    release_dir.add_dir('blobs')
+    release_dir.add_dir('src')
   end
 
-  def add_file(dir, path, contents = nil)
-    full_path = File.join(@release_dir, dir, path)
-    FileUtils.mkdir_p(File.dirname(full_path))
-    if contents
-      File.open(full_path, 'w') { |f| f.write(contents) }
-    else
-      FileUtils.touch(full_path)
-    end
-  end
+  after { release_dir.cleanup }
 
-  def remove_file(dir, path)
-    FileUtils.rm(File.join(@release_dir, dir, path))
-  end
-
-  def add_files(dir, names)
-    names.each { |name| add_file(dir, name) }
-  end
-
-  def remove_files(dir, names)
-    names.each { |name| remove_file(dir, name) }
-  end
-
-  def make_builder(name, files, dependencies = [], sources_dir = nil, excluded_files=[])
-    blobstore = double('blobstore')
+  def make_builder
     spec = {
-      'name' => name,
-      'files' => files,
-      'dependencies' => dependencies,
-      'excluded_files' => excluded_files,
+      'name' => package_name,
+      'files' => package_file_patterns,
+      'dependencies' => package_deps,
+      'excluded_files' => excluded_file_patterns,
     }
 
-    Bosh::Cli::PackageBuilder.new(spec, @release_dir,
-                                  false, blobstore, sources_dir)
+    Bosh::Cli::PackageBuilder.new(spec, release_dir.path, final, blobstore)
   end
 
-  it 'whines on missing name' do
-    expect {
-      make_builder(' ', [])
-    }.to raise_error(Bosh::Cli::InvalidPackage, 'Package name is missing')
+  describe 'initialization of a new builder' do
+    it 'sets the builder name' do
+      expect(builder.name).to eql(package_name)
+    end
+
+    it 'sets the builder name' do
+      expect(builder.globs).to eql(package_file_patterns)
+    end
+
+    context 'when name is missing' do
+      let(:package_name) { ' ' }
+
+      it 'raises' do
+        expect { make_builder }.to raise_error(Bosh::Cli::InvalidPackage, 'Package name is missing')
+      end
+    end
+
+    context 'when name has funny characters' do
+      let(:package_name) { '@#!' }
+
+      it 'raises' do
+        expect { make_builder }.to raise_error(Bosh::Cli::InvalidPackage, 'Package name should be a valid BOSH identifier')
+      end
+    end
+
+    context 'when no package files are specified' do
+      let(:package_file_patterns) { [] }
+
+      it 'raises' do
+        expect { make_builder }.to raise_error(Bosh::Cli::InvalidPackage, "Package '#{package_name}' doesn't include any files")
+      end
+    end
   end
 
-  it 'whines on funny characters in name' do
-    expect {
-      make_builder('@#!', [])
-    }.to raise_error(Bosh::Cli::InvalidPackage,
-      'Package name should be a valid BOSH identifier')
-  end
+  describe 'generating the package checksum' do
+    before { release_dir.add_file('src', '1.rb') }
 
-  it 'whines on empty files' do
-    expect {
-      make_builder('aa', [])
-    }.to raise_error(Bosh::Cli::InvalidPackage, "Package 'aa' doesn't include any files")
-  end
-
-  it 'whines on metadata file having the same name as one of package files' do
-    expect {
-      builder = make_builder('aa', %w(*.rb packaging))
-
-      add_files('src', %w(1.rb packaging))
-
-      expect(builder.glob_matches.size).to eql(2)
-      add_file('packages', 'aa/packaging', 'make install')
-
-      builder.copy_files
-    }.to raise_error(Bosh::Cli::InvalidPackage,
-                         "Package 'aa' has 'packaging' file which " +
-                           'conflicts with BOSH packaging')
-  end
-
-  it 'whines on globs not yielding any file names' do
-    add_files('src',  %w(lib/1.rb lib/2.rb baz))
-    builder = make_builder('foo', %w(lib/*.rb baz bar))
-
-    expect {
+    it 'has a checksum for a generated package' do
       builder.build
-    }.to raise_error(Bosh::Cli::InvalidPackage,
-                         "Package `foo' has a glob that resolves " +
-                           'to an empty file list: bar')
+      expect(builder.checksum).to match(/^[0-9a-f]{40}$/)
+    end
+
+    it 'does not attempt to calculate checksum for as yet ungenerated package' do
+      expect {
+        builder.checksum
+      }.to raise_error(RuntimeError, 'cannot read checksum for not yet generated package')
+    end
   end
 
-  it 'has no way to calculate checksum for not yet generated package' do
-    expect {
-      builder = make_builder('aa', %w(*.rb packaging))
-      add_files('src', %w(1.rb packaging))
-      builder.checksum
-    }.to raise_error(RuntimeError,
-                         'cannot read checksum for not yet ' +
-                           'generated package/job')
-  end
+  describe 'building the package' do
+    let(:package_file_patterns) { ['lib/*.rb', 'README.*'] }
+    let(:matched_files) { ['lib/1.rb', 'lib/2.rb', 'README.2', 'README.md'] }
 
-  it 'has a checksum for a generated package' do
-    builder = make_builder('aa', %w(*.rb))
-    add_files('src', %w(1.rb 2.rb))
-    builder.build
-    expect(builder.checksum).to match(/[0-9a-f]+/)
-  end
+    before do
+      matched_files.each { |f| release_dir.add_file('src', f, "contents of #{f}") }
+      release_dir.add_file('src', 'unmatched.txt')
+    end
 
-  it 'is created with name and globs' do
-    builder = make_builder('aa', %w(1 */*))
-    expect(builder.name).to eql('aa')
-    expect(builder.globs).to eql(%w(1 */*))
-  end
-
-  it 'resolves globs and generates fingerprint' do
-    add_files('src', %w(lib/1.rb lib/2.rb lib/README.txt README.2 README.md))
-
-    builder = make_builder('A', %w(lib/*.rb README.*))
-    expect(builder.glob_matches.size).to eql(4)
-    expect(builder.fingerprint).to eql('167bd0b339d78606cf00a8740791b54b1cf619a6')
-  end
-
-  it 'has stable fingerprint' do
-    add_files('src', %w(lib/1.rb lib/2.rb lib/README.txt README.2 README.md))
-    builder = make_builder('A', %w(lib/*.rb README.*))
-    s1 = builder.fingerprint
-
-    expect(builder.reload.fingerprint).to eql(s1)
-  end
-
-  it 'changes fingerprint when new file that matches glob is added' do
-    add_files('src', %w(lib/1.rb lib/2.rb lib/README.txt README.2 README.md))
-
-    builder = make_builder('A', %w(lib/*.rb README.*))
-    s1 = builder.fingerprint
-    add_files('src', %w(lib/3.rb))
-    expect(builder.reload.fingerprint).to_not eql(s1)
-
-    remove_files('src', %w(lib/3.rb))
-    expect(builder.reload.fingerprint).to eql(s1)
-  end
-
-  it 'changes fingerprint when one of the matched files changes' do
-    add_files('src', %w(lib/2.rb lib/README.txt README.2 README.md))
-    add_file('src', 'lib/1.rb', '1')
-
-    builder = make_builder('A', %w(lib/*.rb README.*))
-    s1 = builder.fingerprint
-
-    add_file('src', 'lib/1.rb', '2')
-    expect(builder.reload.fingerprint).to_not eql(s1)
-
-    add_file('src', 'lib/1.rb', '1')
-    expect(builder.reload.fingerprint).to eql(s1)
-  end
-
-  it 'changes fingerprint when empty directory added/removed' do
-    add_files('src', %w(lib/1.rb lib/2.rb baz))
-    builder = make_builder('foo', %w(lib/*.rb baz bar/*))
-    FileUtils.mkdir_p(File.join(@release_dir, 'src', 'bar', 'zb'))
-
-    s1 = builder.fingerprint
-
-    FileUtils.mkdir_p(File.join(@release_dir, 'src', 'bar', 'zb2'))
-    s2 = builder.reload.fingerprint
-    expect(s2).to_not eql(s1)
-
-    FileUtils.rm_rf(File.join(@release_dir, 'src', 'bar', 'zb2'))
-    expect(builder.reload.fingerprint).to eql(s1)
-  end
-
-  it "doesn't change fingerprint when files that doesn't match glob is added" do
-    add_files('src', %w(lib/1.rb lib/2.rb lib/README.txt README.2 README.md))
-    builder = make_builder('A', %w(lib/*.rb README.*))
-    s1 = builder.fingerprint
-
-    add_file('src', 'lib/a.out')
-    expect(builder.reload.fingerprint).to eql(s1)
-  end
-
-  it 'changes fingerprint when dependencies change' do
-    add_files('src', %w(lib/1.rb lib/2.rb lib/README.txt README.2 README.md))
-
-    builder1 = make_builder('A', %w(lib/*.rb README.*), %w(foo bar))
-    s1 = builder1.fingerprint
-    builder2 = make_builder('A', %w(lib/*.rb README.*), %w(bar foo))
-    s2 = builder2.fingerprint
-    expect(s1).to eql(s2) # Order doesn't matter
-
-    builder3 = make_builder('A', %w(lib/*.rb README.*), %w(bar foo baz))
-    s3 = builder3.fingerprint
-    expect(s3).to_not eql(s1) # Set does matter
-  end
-
-  it 'copies files to build directory' do
-    add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
-    globs = %w(foo/**/* baz)
-
-    builder = make_builder('bar', globs)
-    expect(builder.copy_files).to eql(5)
-
-    builder2 = make_builder('bar', globs, [], builder.build_dir)
-
-    # Also turned out to be a nice test for directory portability
-    expect(builder.fingerprint).to eql(builder2.fingerprint)
-  end
-
-  it 'excludes excluded_files from build directory' do
-    add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README foo/.git baz))
-    add_files('blobs', %w(bar/bar.tgz bar/fake.tgz))
-    globs = %w(foo/**/* baz bar/**)
-    excluded_globs = %w(foo/.git bar/fake.tgz)
-
-    builder = make_builder('bar', globs, [], nil, excluded_globs)
-
-    expect(builder.copy_files).to eq(6)
-    excluded_file = File.join(builder.build_dir, 'foo', '.git')
-    expect(File).to_not exist(excluded_file)
-
-    excluded_blob_file = File.join(builder.build_dir, 'blobs', 'bar.tgz')
-    expect(File).to_not exist(excluded_blob_file)
-  end
-
-  it 'generates tarball' do
-    add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
-    builder = make_builder('bar', %w(foo/**/* baz))
-    expect(builder.generate_tarball).to eql(true)
-  end
-
-  def add_version(index, storage, key, build, src_file_path)
-    index.add_version(key, build)
-    file_path = storage.put_file(key, src_file_path)
-    build['sha1'] = Digest::SHA1.file(file_path).hexdigest
-    index.update_version(key, build)
-  end
-
-  it 'can point to either dev or a final version of a package' do
-    fingerprint = 'fake-fingerprint'
-    allow(Digest::SHA1).to receive(:hexdigest).and_return(fingerprint)
-
-    add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
-    globs = %w(foo/**/* baz)
-
-    package_name = 'bar'
-    final_storage_dir = File.join(@release_dir, '.final_builds', 'packages', package_name)
-    final_versions = Bosh::Cli::Versions::VersionsIndex.new(final_storage_dir)
-    final_storage = Bosh::Cli::Versions::LocalVersionStorage.new(final_storage_dir)
-
-    dev_storage_dir = File.join(@release_dir, '.dev_builds', 'packages', package_name)
-    dev_versions   = Bosh::Cli::Versions::VersionsIndex.new(dev_storage_dir)
-    dev_storage = Bosh::Cli::Versions::LocalVersionStorage.new(dev_storage_dir)
-
-    add_version(final_versions, final_storage,
-      fingerprint,
-      { 'version' => fingerprint, 'blobstore_id' => '12321' },
-      get_tmp_file_path('payload'))
-
-    add_version(dev_versions, dev_storage,
-      fingerprint,
-      { 'version' => fingerprint },
-      get_tmp_file_path('dev_payload'))
-
-    builder = make_builder(package_name, globs)
-
-    builder.use_final_version
-    expect(builder.tarball_path).to eql(File.join(
-        @release_dir, '.final_builds', 'packages', package_name, "#{fingerprint}.tgz"))
-
-    builder.use_dev_version
-    expect(builder.tarball_path).to eql(File.join(
-        @release_dir, '.dev_builds', 'packages', package_name, "#{fingerprint}.tgz"))
-  end
-
-  it 'creates a new version tarball' do
-    add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
-    globs = %w(foo/**/* baz)
-    builder = make_builder('bar', globs)
-
-    v1_fingerprint = builder.fingerprint
-
-    expect(File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v1_fingerprint}.tgz")).to eql(false)
-    builder.build
-    expect(File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v1_fingerprint}.tgz")).to eql(true)
-
-    builder = make_builder('bar', globs)
-    builder.build
-
-    expect(File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v1_fingerprint}.tgz")).to eql(true)
-    expect(File.exists?(@release_dir + '/.dev_builds/packages/bar/other-fingerprint.tgz')).to eql(false)
-
-    add_file('src', 'foo/3.rb')
-    builder = make_builder('bar', globs)
-    builder.build
-
-    v2_fingerprint = builder.fingerprint
-
-    expect(File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v1_fingerprint}.tgz")).to eql(true)
-    expect(File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v2_fingerprint}.tgz")).to eql(true)
-
-    remove_file('src', 'foo/3.rb')
-    builder = make_builder('bar', globs)
-    builder.build
-    expect(builder.version).to eql(v1_fingerprint)
-
-    expect(builder.fingerprint).to eql(v1_fingerprint)
-
-    expect(File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v1_fingerprint}.tgz")).to eql(true)
-    expect(File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v2_fingerprint}.tgz")).to eql(true)
-
-    # Now add packaging
-    add_file('packages', 'bar/packaging', 'make install')
-    builder = make_builder('bar', globs)
-    builder.build
-    v3_fingerprint = builder.fingerprint
-    expect(builder.version).to eql(v3_fingerprint)
-
-    # Add prepackaging
-    add_file('packages', 'bar/pre_packaging', 'echo 0; exit 0')
-    builder = make_builder('bar', globs)
-    v4_fingerprint = builder.fingerprint
-
-    builder.build
-
-    expect(File.exists?(@release_dir + "/.dev_builds/packages/bar/#{v4_fingerprint}.tgz")).to eql(true)
-  end
-
-  it 'stops if pre_packaging fails' do
-    add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
-    globs = %w(foo/**/* baz)
-
-    builder = make_builder('bar', globs)
-    add_file('packages', 'bar/pre_packaging', 'exit 1')
-
-    expect {
+    it 'copies files to build directory' do
       builder.build
-    }.to raise_error(Bosh::Cli::InvalidPackage,
-                         "`bar' pre-packaging failed")
-  end
 
-  it 'bumps major dev version in sync with final version' do
-    FileUtils.rm_rf(File.join(@release_dir, 'src_alt'))
-
-    add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
-    globs = %w(foo/**/* baz)
-    builder = make_builder('bar', globs)
-    builder.build
-
-    expect(builder.version).to eql(builder.fingerprint)
-
-    blobstore = double('blobstore')
-    expect(blobstore).to receive(:create).and_return('object_id')
-    final_builder = Bosh::Cli::PackageBuilder.new({ 'name' => 'bar',
-                                                    'files' => globs },
-                                                  @release_dir,
-                                                  true, blobstore)
-    final_builder.build
-    expect(final_builder.version).to eql(builder.fingerprint)
-
-    add_file('src', 'foo/foo15.rb')
-
-    builder2 = make_builder('bar', globs)
-    builder2.build
-    expect(builder2.version).to eql(builder2.fingerprint)
-
-    expect(builder2.version).to_not eq(builder.version)
-  end
-
-  it 'includes dotfiles in a fingerprint' do
-    add_files('src', %w(lib/1.rb lib/2.rb lib/README.txt README.2 README.md))
-
-    builder = make_builder('A', %w(lib/*.rb README.*))
-    expect(builder.glob_matches.size).to eql(4)
-    expect(builder.fingerprint).to eql('167bd0b339d78606cf00a8740791b54b1cf619a6')
-
-    add_file('src', 'lib/.zb.rb')
-    builder.reload
-
-    expect(builder.glob_matches.size).to eql(5)
-    expect(builder.fingerprint).to eql('8e07f3d3176170c0e17baa9e2ad4e9b8b38d024a')
-
-    remove_file('src', 'lib/.zb.rb')
-    builder.reload
-
-    expect(builder.glob_matches.size).to eql(4)
-    expect(builder.fingerprint).to eql('167bd0b339d78606cf00a8740791b54b1cf619a6')
-  end
-
-  it 'supports dry run' do
-    FileUtils.rm_rf(File.join(@release_dir, 'src_alt'))
-
-    add_files('src', %w(foo/foo.rb foo/lib/1.rb foo/lib/2.rb foo/README baz))
-    globs = %w(foo/**/* baz)
-    builder = make_builder('bar', globs)
-    builder.dry_run = true
-    builder.build
-
-    expect(builder.version).to eql(builder.fingerprint)
-    expect(File.exists?(@release_dir + "/.dev_builds/packages/bar/#{builder.fingerprint}.tgz")).to eql(false)
-
-    builder.dry_run = false
-    builder.reload.build
-    expect(builder.version).to eql(builder.fingerprint)
-    expect(File.exists?(@release_dir + "/.dev_builds/packages/bar/#{builder.fingerprint}.tgz")).to eql(true)
-
-    blobstore = double('blobstore')
-    expect(blobstore).to_not receive(:create)
-    final_builder = Bosh::Cli::PackageBuilder.new(
-      { 'name' => 'bar', 'files' => globs }, @release_dir, true, blobstore)
-    final_builder.dry_run = true
-    final_builder.build
-
-    # Hasn't been promoted b/c of dry run
-    expect(final_builder.version).to eql(builder.version)
-
-    add_file('src', 'foo/foo15.rb')
-    builder2 = make_builder('bar', globs)
-    builder2.dry_run = true
-    builder2.build
-    expect(builder2.version).to eql(builder2.fingerprint)
-    expect(File.exists?(@release_dir + "/.dev_builds/packages/bar/#{builder.fingerprint}.tgz")).to eql(true)
-    expect(File.exists?(@release_dir + "/.dev_builds/packages/bar/#{builder2.fingerprint}.tgz")).to eql(false)
-  end
-
-  it 'uses blobs directory to look up files as well' do
-    add_files('src', %w(lib/1.rb lib/2.rb))
-    add_files('blobs', %w(lib/README.txt README.2 README.md))
-
-    builder = make_builder('A', %w(lib/*.rb README.*))
-    expect(builder.glob_matches.size).to eql(4)
-    expect(builder.fingerprint).to eql('167bd0b339d78606cf00a8740791b54b1cf619a6')
-  end
-
-  it "moving files to blobs directory doesn't change fingerprint" do
-    add_file('src', 'README.txt', 'README contents')
-    add_file('src', 'README.md', 'README contents 2')
-    add_file('src', 'lib/1.rb', "puts 'Hello world'")
-    add_file('src', 'lib/2.rb', "puts 'Bye world'")
-
-    builder = make_builder('A', %w(lib/*.rb README.*))
-    s1 = builder.fingerprint
-
-    FileUtils.mkdir_p(File.join(@release_dir, 'blobs', 'lib'))
-
-    FileUtils.mv(File.join(@release_dir, 'src', 'lib', '1.rb'),
-                 File.join(@release_dir, 'blobs', 'lib', '1.rb'))
-
-    s2 = builder.reload.fingerprint
-    expect(s2).to eql(s1)
-  end
-
-  it "doesn't include the same path twice" do
-    add_file('src', 'test/foo/README.txt', 'README contents')
-    add_file('src', 'test/foo/NOTICE.txt', 'NOTICE contents')
-    fp1 = make_builder('A', %w(test/**/*)).fingerprint
-
-    remove_file('src', 'test/foo/NOTICE.txt')                   # src has test/foo
-    add_file('blobs', 'test/foo/NOTICE.txt', 'NOTICE contents') # blobs has test/foo
-
-    expect(File.directory?(File.join(@release_dir, 'src', 'test', 'foo'))).to eql(true)
-
-    fp2 = make_builder('A', %w(test/**/*)).fingerprint
-    expect(fp1).to eql(fp2)
-  end
-
-  describe 'file overriding via src_alt' do
-    it 'includes top-level files from src_alt instead of src' do
-      add_file('src', 'file1', 'original')
-
-      builder = make_builder('A', %w(file*))
-      s1 = builder.fingerprint
-
-      add_file('src', 'file1', 'altered')
-      add_file('src_alt', 'file1', 'original')
-      expect(builder.reload.fingerprint).to eql(s1)
+      expect(directory_listing(builder.build_dir)).to contain_exactly(*matched_files)
+      matched_files.each do |f|
+        expect(File.read(File.join(builder.build_dir, f))).to eq("contents of #{f}")
+      end
     end
 
-    it 'includes top-level files from src if not present in src_alt' do
-      add_file('src', 'file1', 'original1')
-      add_file('src', 'file2', 'original2')
-      builder = make_builder('A', %w(file*))
-      s1 = builder.fingerprint
-
-      add_file('src', 'file1', 'altered1')
-      add_file('src_alt', 'file1', 'original1')
-      expect(builder.reload.fingerprint).to eql(s1)
+    it 'generates a tarball' do
+      builder.build
+      expect(release_dir).to have_file(".dev_builds/packages/#{package_name}/#{builder.fingerprint}.tgz")
     end
 
-    it 'includes top-level-dir files from src_alt instead of src' do
-      add_file('src', 'dir1/file1', 'original1')
-      builder = make_builder('A', %w(dir1/*))
-      s1 = builder.fingerprint
+    context 'when in dry run mode' do
+      before { builder.dry_run = true }
 
-      add_file('src', 'dir1/file1', 'altered1')
-      add_file('src_alt', 'dir1/file1', 'original1')
-      expect(builder.reload.fingerprint).to eql(s1)
+      it 'writes no tarballs' do
+        expect { builder.build }.not_to change { directory_listing(release_dir.path) }
+      end
     end
 
-    it 'does not include top-level-dir files from src if not present in src_alt' do
-      add_file('src', 'dir1/file1', 'original1')
-      builder = make_builder('A', %w(dir1/*))
-      s1 = builder.fingerprint
+    context 'when building final release' do
+      let(:storage_dir) { ".final_builds/packages/#{package_name}" }
+      let(:final) { true }
 
-      add_file('src', 'dir1/file2', 'new2')
-      add_file('src_alt', 'dir1/file1', 'original1')
-      expect(builder.reload.fingerprint).to eql(s1)
+      before { allow(blobstore).to receive(:create).and_return('object_id') }
+
+      it 'generates a tarball' do
+        builder.build
+        expect(release_dir).to have_file("#{storage_dir}/#{builder.fingerprint}.tgz")
+        tarball_file = release_dir.join("#{storage_dir}/#{builder.fingerprint}.tgz")
+        expect(`tar tfz #{tarball_file}`.split(/\n/)).to contain_exactly(
+            "./", "./README.2", "./README.md", "./lib/", "./lib/1.rb", "./lib/2.rb")
+      end
+
+      context 'when a src_alt exists' do
+        before { release_dir.add_dir('src_alt') }
+
+        it 'prevents building final version' do
+          expect {
+            Bosh::Cli::PackageBuilder.new({
+                'name' => 'bar',
+                'files' => 'foo/**/*'
+              }, release_dir.path, true, blobstore)
+          }.to raise_error(/Please remove 'src_alt' first/)
+        end
+      end
     end
 
-    it "checks if glob top-level-dir is present in src_alt but doesn't match" do
-      add_file('src', 'dir1/file1', 'original1')
-      FileUtils.mkdir(File.join(@release_dir, 'src_alt', 'dir1'))
+    context 'when metadata file has the same name as one of the package files' do
+      let(:package_file_patterns) { ['*.rb', 'packaging'] }
 
-      builder = make_builder('A', %w(dir1/*))
+      before do
+        release_dir.add_files('src', ['1.rb', 'packaging'])
+        release_dir.add_file('packages', "#{package_name}/packaging")
+      end
 
-      expect {
-        builder.fingerprint
-      }.to raise_error(
-        "Package `A' has a glob that doesn't match " +
-        "in `src_alt' but matches in `src'. However " +
-        "`src_alt/dir1' exists, so this might be an error."
-       )
+      it 'raises' do
+        expect {
+          builder.build
+        }.to raise_error(Bosh::Cli::InvalidPackage,
+            "Package '#{package_name}' has 'packaging' file which conflicts with BOSH packaging")
+      end
     end
 
-    it 'raises an error if glob does not match any files in src or src_alt' do
-      builder = make_builder('A', %w(dir1/*))
+    context 'when a glob matches no files' do
+      let(:package_file_patterns) { ['lib/*.rb', 'baz', 'bar'] }
 
-      expect {
-        builder.reload.fingerprint
-      }.to raise_error("Package `A' has a glob that resolves to an empty file list: dir1/*")
+      before do
+        release_dir.add_files('src', ['lib/1.rb', 'lib/2.rb', 'baz'])
+      end
+
+      it 'raises' do
+        expect {
+          builder.build
+        }.to raise_error(Bosh::Cli::InvalidPackage,
+            "Package '#{package_name}' has a glob that resolves to an empty file list: bar")
+      end
     end
 
-    it 'prevents building final version with src_alt' do
-      expect {
-        Bosh::Cli::PackageBuilder.new({
-          'name' => 'bar',
-          'files' => 'foo/**/*'
-        }, @release_dir, true, double('blobstore'))
-      }.to raise_error(/Please remove `src_alt' first/)
+    context 'when the package contains blobs' do
+      let(:package_file_patterns) { ['lib/*.rb', 'README.*', '**/*.tgz'] }
+      let(:matched_blobs) { ['matched.tgz'] }
+
+      before { release_dir.add_files('blobs', matched_blobs) }
+
+      it 'includes the blobs in the build' do
+        builder.build
+        expect(directory_listing(builder.build_dir)).to contain_exactly(*(matched_files + matched_blobs))
+      end
+
+      context 'when blobs have the same name as files in src' do
+        before do
+          release_dir.add_file('src', 'README.txt', 'README from src')
+          release_dir.add_file('blobs', 'README.txt', 'README from blobs')
+        end
+
+        it 'picks the content from src' do
+          builder.build
+          expect(File.read(File.join(builder.build_dir, 'README.txt'))).to eq('README from src')
+        end
+      end
+    end
+
+    context 'when the package contains a src_alt dir' do
+      before { release_dir.add_dir('src_alt') }
+
+      it 'includes top-level files from src_alt instead of src' do
+        release_dir.add_file('src_alt', 'README.md', 'README.md from src_alt')
+        builder.build
+        expect(File.read(File.join(builder.build_dir, 'README.md'))).to eq('README.md from src_alt')
+      end
+
+      context 'when src_alt contains a top-level dir matching a dir in src' do
+        it 'the contents from src_alt are used and the contents from src are ignored' do
+          release_dir.add_file('src_alt', 'lib/2.rb', 'lib/2.rb from src_alt')
+          release_dir.add_file('src_alt', 'lib/3.rb', 'lib/3.rb from src_alt')
+          builder.build
+          expect(directory_listing(builder.build_dir)).to contain_exactly('lib/2.rb', 'lib/3.rb', 'README.2', 'README.md')
+          expect(File.read(File.join(builder.build_dir, 'lib/2.rb'))).to eq('lib/2.rb from src_alt')
+        end
+      end
+
+      it "checks if glob top-level-dir is present in src_alt but doesn't match" do
+        release_dir.add_dir('src_alt/lib')
+
+        expect {
+          builder.build
+        }.to raise_error("Package '#{package_name}' has a glob that doesn't match in 'src_alt' but matches in 'src'. However 'src_alt/lib' exists, so this might be an error.")
+      end
+
+      context 'when a package file pattern does not match any files in src or src_alt' do
+        let(:package_file_patterns) { ['lib2/*'] }
+
+        it 'raises an error' do
+          expect {
+            builder.build
+          }.to raise_error("Package '#{package_name}' has a glob that resolves to an empty file list: lib2/*")
+        end
+      end
+    end
+
+    context 'when specifying files to exclude' do
+      let(:package_file_patterns) { ['**/*'] }
+      let(:matched_blobs) { ['matched.tgz'] }
+      let(:excluded_blobs) { ['excluded.tgz'] }
+      let(:excluded_src) { ['.git'] }
+      let(:excluded_file_patterns) { ['.git', 'excluded.tgz', 'unmatched.txt'] }
+
+      before do
+        release_dir.add_files('src', matched_files + excluded_src)
+        release_dir.add_files('blobs', matched_blobs + excluded_blobs)
+      end
+
+      it 'the exclusions are not found in the build directory' do
+        builder.build
+        expect(directory_listing(builder.build_dir)).to contain_exactly(*(matched_files + matched_blobs))
+      end
+    end
+  end
+
+  describe 'the generated package fingerprint' do
+    let(:package_file_patterns) { ['lib/*.rb', 'README.*'] }
+    let(:matched_files) { ['lib/1.rb', 'lib/2.rb', 'README.2', 'README.md'] }
+    let(:reference_fingerprint) { 'f0b1b81bd6b8093f2627eaa13952a1aab8b125d1' }
+
+    before { matched_files.each { |f| release_dir.add_file('src', f, "contents of #{f}") } }
+
+    it 'is used as the version' do
+      builder.build
+      expect(builder.version).to eq(reference_fingerprint)
+    end
+
+    it 'resolves globs to matched files' do
+      expect(builder.glob_matches.map(&:path)).to contain_exactly(*matched_files)
+    end
+
+    it 'is based on the matched files, ignoring unmatched files' do
+      release_dir.add_file('src', 'an-unmatched-file.txt')
+      expect(builder.fingerprint).to eq(reference_fingerprint)
+    end
+
+    it 'varies with the set of matched files' do
+      release_dir.add_file('src', 'lib/a_matched_file.rb')
+      expect(builder.fingerprint).to_not eq(reference_fingerprint)
+    end
+
+    it 'varies with the content of matched files' do
+      release_dir.add_file('src', 'lib/1.rb', 'varied contents')
+      expect(builder.fingerprint).to_not eq(reference_fingerprint)
+    end
+
+    context 'when a file pattern matches empty directories' do
+      let(:package_file_patterns) { ['lib/*.rb', 'README.*', 'tmp'] }
+
+      it 'varies' do
+        release_dir.add_dir('src/tmp')
+        expect(builder.fingerprint).to_not eq(reference_fingerprint)
+      end
+    end
+
+    context 'when a file pattern matches a dotfile' do
+      before { release_dir.add_file('src', 'lib/.zb.rb') }
+
+      it 'the dotfile is included in the fingerprint' do
+        expect(builder.fingerprint).to_not eq(reference_fingerprint)
+      end
+    end
+
+    context 'when dependencies vary in order' do
+      let(:package_deps) { ['bar', 'foo'] }
+
+      it 'does not vary' do
+        expect(builder.fingerprint).to eq(reference_fingerprint)
+      end
+    end
+
+    context 'when dependencies vary' do
+      let(:package_deps) { ['foo', 'bar', 'baz'] }
+
+      it 'varies' do
+        expect(builder.fingerprint).to_not eq(reference_fingerprint)
+      end
+    end
+
+    context 'when blobs are present' do
+      let(:package_file_patterns) { ['lib/*.rb', 'README.*', '*.tgz'] }
+      before { release_dir.add_file('blobs', 'matched.tgz') }
+
+      it 'varies' do
+        expect(builder.fingerprint).to_not eq(reference_fingerprint)
+      end
+    end
+
+    context 'when a file comes from blobs instead of src' do
+      before { FileUtils.mv(release_dir.join('src', 'README.md'), release_dir.join('blobs', 'README.md')) }
+
+      it 'does not vary' do
+        expect(builder.fingerprint).to eq(reference_fingerprint)
+      end
+    end
+
+    context 'when the package contains a src_alt dir' do
+      it 'includes top-level files from src_alt instead of src' do
+        release_dir.add_file('src_alt', 'README.md', 'README.md from src_alt')
+        builder.build
+        expect(builder.fingerprint).not_to eq(reference_fingerprint)
+      end
+    end
+  end
+
+  describe 'pre_packaging script' do
+    let(:temp_file) { Tempfile.new('pre_packaging.out') }
+    before { release_dir.add_file('src', '2.rb') }
+    after { temp_file.unlink }
+
+    it 'is executed as part of the build' do
+      release_dir.add_file('packages', "#{package_name}/pre_packaging",
+        "echo 'Luke I am your father.' > #{temp_file.path}; exit 0")
+
+      builder.build
+      expect(temp_file.read).to eq("Luke I am your father.\n")
+    end
+
+    context 'if the script exits with non-zero' do
+      it 'causes the builder to raise' do
+        release_dir.add_file('packages', "#{package_name}/pre_packaging", 'exit 1')
+
+        expect {
+          builder.build
+        }.to raise_error(Bosh::Cli::InvalidPackage, "'#{package_name}' pre-packaging failed")
+      end
+    end
+  end
+
+  describe 'using pre-built versions' do
+    let(:package_file_patterns) { ['foo/**/*', 'baz'] }
+    let(:fingerprint) { 'fake-fingerprint' }
+    let(:final_storage_dir) { ".final_builds/packages/#{package_name}" }
+    let(:dev_storage_dir) { ".dev_builds/packages/#{package_name}" }
+
+    before do
+      allow(Digest::SHA1).to receive(:hexdigest).and_return(fingerprint)
+      release_dir.add_files('src', ['foo/foo.rb', 'foo/lib/1.rb', 'foo/lib/2.rb', 'foo/README', 'baz'])
+    end
+
+    context 'when a final version is available locally' do
+      before { release_dir.add_version(fingerprint, final_storage_dir, 'payload', {'version' => fingerprint, 'blobstore_id' => '12321'}) }
+
+      it 'should use the final version' do
+        builder.build
+        expect(builder.tarball_path).to eq(release_dir.join('.final_builds', 'packages', package_name, "#{fingerprint}.tgz"))
+      end
+    end
+
+    context 'when a dev version is available locally' do
+      before { release_dir.add_version(fingerprint, dev_storage_dir, 'dev_payload', {'version' => fingerprint}) }
+
+      it 'should use the final version' do
+        builder.build
+        expect(builder.tarball_path).to eq(release_dir.join('.dev_builds', 'packages', package_name, "#{fingerprint}.tgz"))
+      end
+
+      context 'and a final version is also available locally' do
+        before { release_dir.add_version(fingerprint, final_storage_dir, 'payload', {'version' => fingerprint, 'blobstore_id' => '12321'}) }
+
+        it 'should use the final version' do
+          builder.build
+          expect(builder.tarball_path).to eq(release_dir.join('.final_builds', 'packages', package_name, "#{fingerprint}.tgz"))
+        end
+      end
+    end
+
+    context 'when a final or dev version is not available locally' do
+      it 'generates a tarball and saves it as a dev build' do
+        builder.build
+        expect(builder.tarball_path).to eq(release_dir.join('.dev_builds', 'packages', package_name, "#{fingerprint}.tgz"))
+      end
     end
   end
 end

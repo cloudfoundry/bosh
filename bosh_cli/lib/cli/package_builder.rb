@@ -53,8 +53,8 @@ module Bosh::Cli
 
         if package_spec["name"] != package_dirname
           raise InvalidPackage,
-                "Found `#{package_spec["name"]}' package in " +
-                  "`#{package_dirname}' directory, please fix it"
+                "Found '#{package_spec["name"]}' package in " +
+                  "'#{package_dirname}' directory, please fix it"
         end
 
         is_final = options[:final]
@@ -86,12 +86,11 @@ module Bosh::Cli
 
       @final = final
       @blobstore = blobstore
-      @artefact_type = "package"
 
       @metadata_files = %w(packaging pre_packaging)
 
       if @final && File.exists?(@alt_sources_dir)
-        err("Please remove `#{File.basename(@alt_sources_dir)}' first")
+        err("Please remove '#{File.basename(@alt_sources_dir)}' first")
       end
 
       if @name.blank?
@@ -116,6 +115,10 @@ module Bosh::Cli
       FileUtils.mkdir_p(@final_builds_dir)
 
       init_indices
+    end
+
+    def artifact_type
+      "package"
     end
 
     def reload # Mostly for tests
@@ -196,7 +199,7 @@ module Bosh::Cli
               pre_packaging_out.split("\n").each do |line|
                 say("> #{line}")
               end
-              raise InvalidPackage, "`#{name}' pre-packaging failed"
+              raise InvalidPackage, "'#{name}' pre-packaging failed"
             end
           end
 
@@ -255,16 +258,16 @@ module Bosh::Cli
         end
 
         # Glob like core/dea/**/* might not yield anything in alt source even
-        # when `src_alt/core' exists. That's error prone, so we don't lookup
-        # in `src' if `src_alt' contains any part of the glob hierarchy.
+        # when 'src_alt/core' exists. That's error prone, so we don't lookup
+        # in 'src' if 'src_alt' contains any part of the glob hierarchy.
         top_dir = glob.split(File::SEPARATOR)[0]
         top_dir_in_src_alt_exists = top_dir && File.exists?(File.join(@alt_sources_dir, top_dir))
 
         if top_dir_in_src_alt_exists && src_alt_matches.empty? && src_matches.any?
-          raise InvalidPackage, "Package `#{name}' has a glob that " +
-            "doesn't match in `#{File.basename(@alt_sources_dir)}' " +
-            "but matches in `#{File.basename(@sources_dir)}'. " +
-            "However `#{File.basename(@alt_sources_dir)}/#{top_dir}' " +
+          raise InvalidPackage, "Package '#{name}' has a glob that " +
+            "doesn't match in '#{File.basename(@alt_sources_dir)}' " +
+            "but matches in '#{File.basename(@sources_dir)}'. " +
+            "However '#{File.basename(@alt_sources_dir)}/#{top_dir}' " +
             "exists, so this might be an error."
         end
 
@@ -284,7 +287,7 @@ module Bosh::Cli
         end
 
         if matches.empty?
-          raise InvalidPackage, "Package `#{name}' has a glob that resolves to an empty file list: #{glob}"
+          raise InvalidPackage, "Package '#{name}' has a glob that resolves to an empty file list: #{glob}"
         end
 
         all_matches += matches

@@ -91,7 +91,6 @@ module Bosh::Cli
       @tarballs_dir = File.join(release_dir, "tmp", "jobs")
       @final = final
       @blobstore = blobstore
-      @artefact_type = "job"
 
       case spec["templates"]
       when Hash
@@ -157,6 +156,10 @@ module Bosh::Cli
       FileUtils.mkdir_p(@final_builds_dir)
 
       init_indices
+    end
+
+    def artifact_type
+      "job"
     end
 
     def copy_files

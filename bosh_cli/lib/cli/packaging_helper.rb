@@ -1,10 +1,14 @@
 # This relies on having the following instance variables in a host class:
 # @dev_builds_dir, @final_builds_dir, @blobstore,
-# @name, @version, @tarball_path, @final, @artefact_type
+# @name, @version, @tarball_path, @final
 
 module Bosh::Cli
   module PackagingHelper
     attr_accessor :dry_run
+
+    def artifact_type
+      raise NotImplementedError
+    end
 
     def init_indices
       @dev_index   = Versions::VersionsIndex.new(@dev_builds_dir)
@@ -47,6 +51,7 @@ module Bosh::Cli
       end
       upload_tarball(@tarball_path) if final? && !dry_run?
       @will_be_promoted = true if final? && dry_run? && @used_dev_version
+      self
     end
 
     def use_final_version
@@ -193,8 +198,7 @@ module Bosh::Cli
       if @tarball_path && File.exists?(@tarball_path)
         file_checksum(@tarball_path)
       else
-        raise RuntimeError,
-          'cannot read checksum for not yet generated package/job'
+        raise RuntimeError, "cannot read checksum for not yet generated #{artifact_type}"
       end
     end
 
