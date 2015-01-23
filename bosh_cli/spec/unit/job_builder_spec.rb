@@ -181,7 +181,7 @@ describe Bosh::Cli::JobBuilder do
     FileUtils.chmod(0755, script_path)
     Bosh::Cli::JobBuilder.run_prepare_script(script_path)
 
-    expect(builder.copy_files).to eq(4)
+    builder.build
 
     Dir.chdir(builder.build_dir) do
       expect(File.directory?('templates')).to be(true)
@@ -197,7 +197,7 @@ describe Bosh::Cli::JobBuilder do
   end
 
   it 'copies job files' do
-    expect(builder.copy_files).to eq(4)
+    builder.build
 
     Dir.chdir(builder.build_dir) do
       expect(File.directory?('templates')).to be(true)

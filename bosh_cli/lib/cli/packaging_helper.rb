@@ -4,6 +4,8 @@
 
 module Bosh::Cli
   module PackagingHelper
+    BUILD_HOOK_FILES = ['packaging', 'pre_packaging']
+
     attr_accessor :dry_run
 
     def artifact_type
@@ -52,6 +54,34 @@ module Bosh::Cli
       upload_tarball(@tarball_path) if final? && !dry_run?
       @will_be_promoted = true if final? && dry_run? && @used_dev_version
       self
+    end
+
+    def copy_files
+      files.each do |src, dest|
+        dest_path = Pathname(build_dir).join(dest)
+        if File.directory?(src)
+          FileUtils.mkdir_p(dest_path)
+        else
+          FileUtils.mkdir_p(dest_path.parent)
+          FileUtils.cp(src, dest_path, :preserve => true)
+        end
+      end
+    end
+
+    def make_fingerprint
+      versioning_scheme = 2
+      contents = "v#{versioning_scheme}"
+
+      files.each do |filename, name|
+        contents << do_fingerprint(digest_file(filename), filename, name)
+      end
+
+      contents << additional_fingerprints.join(",")
+      Digest::SHA1.hexdigest(contents)
+    end
+
+    def digest_file(filename)
+      File.file?(filename) ? Digest::SHA1.file(filename).hexdigest : ''
     end
 
     def use_final_version

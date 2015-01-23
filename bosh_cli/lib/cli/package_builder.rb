@@ -70,6 +70,7 @@ module Bosh::Cli
       builders
     end
 
+
     def initialize(spec, release_dir, final, blobstore,
                    sources_dir = nil, blobs_dir = nil, alt_src_dir = nil)
       spec = load_yaml_file(spec) if spec.is_a?(String) && File.file?(spec)
@@ -86,8 +87,6 @@ module Bosh::Cli
 
       @final = final
       @blobstore = blobstore
-
-      @metadata_files = %w(packaging pre_packaging)
 
       if @final && File.exists?(@alt_sources_dir)
         err("Please remove '#{File.basename(@alt_sources_dir)}' first")
@@ -144,36 +143,33 @@ module Bosh::Cli
       File.join(@release_dir, "packages", name)
     end
 
-    def copy_files
-      copied = 0
+    def files
+      known_files = {}
 
-      glob_matches.each do |match|
-        destination = File.join(build_dir, match.path)
-
-        if File.directory?(match.full_path)
-          FileUtils.mkdir_p(destination)
-        else
-          FileUtils.mkdir_p(File.dirname(destination))
-          FileUtils.cp(match.full_path, destination, :preserve => true)
-          copied += 1
-        end
+      files = []
+      files += glob_matches.map do |match|
+        known_files[match.path] = true
+        [match.full_path, match.path]
       end
 
-      in_package_dir do
-        @metadata_files.each do |filename|
-          destination = File.join(build_dir, filename)
-          next unless File.exists?(filename)
-          if File.exists?(destination)
-            raise InvalidPackage, "Package '#{name}' has '#{filename}' file " +
-              "which conflicts with BOSH packaging"
+      BUILD_HOOK_FILES.each do |build_hook_file|
+        source_file = Pathname(package_dir).join(build_hook_file)
+        if source_file.exist?
+          if known_files.has_key?(build_hook_file)
+            raise InvalidPackage, "Package '#{name}' has '#{build_hook_file}' file " +
+                "which conflicts with BOSH packaging"
           end
-          FileUtils.cp(filename, destination, :preserve => true)
-          copied += 1
+
+          files << [source_file.to_s, build_hook_file]
         end
       end
 
+      files
+    end
+
+    def copy_files
+      super
       pre_package
-      copied
     end
 
     def pre_package
@@ -214,34 +210,14 @@ module Bosh::Cli
 
     private
 
-    def make_fingerprint
-      versioning_scheme = 2
-      contents = "v#{versioning_scheme}"
+    def do_fingerprint(digest, filename, name)
+      is_hook = BUILD_HOOK_FILES.include?(name)
 
-      signatures = glob_matches.map do |match|
-        file_digest = nil
+      "%s%s%s" % [name, digest, is_hook ? '' : tracked_permissions(filename)]
+    end
 
-        unless File.directory?(match.full_path)
-          file_digest = Digest::SHA1.file(match.full_path).hexdigest
-        end
-
-        "%s%s%s" % [match.path, file_digest,
-                    tracked_permissions(match.full_path)]
-      end
-      contents << signatures.join("")
-
-      in_package_dir do
-        @metadata_files.each do |file|
-          if File.file?(file)
-            file_digest = Digest::SHA1.file(file).hexdigest
-            contents << "%s%s" % [file, file_digest]
-          end
-        end
-      end
-
-      contents << @dependencies.sort.join(",")
-
-      Digest::SHA1.hexdigest(contents)
+    def additional_fingerprints
+      @dependencies.sort
     end
 
     # @return Array<GlobMatch>

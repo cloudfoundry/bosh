@@ -124,6 +124,19 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
             "./", "./README.2", "./README.md", "./lib/", "./lib/1.rb", "./lib/2.rb")
       end
 
+      context 'with empty directories are matched' do
+        let(:package_file_patterns) { ['lib/*.rb', 'README.*', 'include_me'] }
+        before { release_dir.add_dir('src/include_me')}
+
+        it 'generates a tarball which includes them' do
+          builder.build
+          expect(release_dir).to have_file("#{storage_dir}/#{builder.fingerprint}.tgz")
+          tarball_file = release_dir.join("#{storage_dir}/#{builder.fingerprint}.tgz")
+          expect(`tar tfz #{tarball_file}`.split(/\n/)).to contain_exactly(
+              "./", "./README.2", "./README.md", "./include_me/", "./lib/", "./lib/1.rb", "./lib/2.rb")
+        end
+      end
+
       context 'when a src_alt exists' do
         before { release_dir.add_dir('src_alt') }
 

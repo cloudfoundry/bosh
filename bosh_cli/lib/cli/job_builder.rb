@@ -162,28 +162,12 @@ module Bosh::Cli
       "job"
     end
 
-    def copy_files
-      FileUtils.mkdir_p(File.join(build_dir, "templates"))
-      copied = 0
-
-      templates.each do |template|
-        src = File.join(@templates_dir, template)
-        dst = File.join(build_dir, "templates", template)
-        FileUtils.mkdir_p(File.dirname(dst))
-
-        FileUtils.cp(src, dst, :preserve => true)
-        copied += 1
-      end
-
-      monit_files.each do |file|
-        FileUtils.cp(file, build_dir, :preserve => true)
-        copied += 1
-      end
-
-      FileUtils.cp(File.join(job_dir, "spec"), File.join(build_dir, "job.MF"),
-                   :preserve => true)
-      copied += 1
-      copied
+    def files
+      files = []
+      files += templates.map { |f| [File.join(@templates_dir, f), "templates/#{f}"] }
+      files += monit_files.map { |f| [f, File.split(f).last] }
+      files << [File.join(job_dir, 'spec'), 'job.MF']
+      files
     end
 
     def prepare_files
@@ -236,20 +220,12 @@ module Bosh::Cli
 
     private
 
-    def make_fingerprint
-      versioning_scheme = 2
-      contents = "v#{versioning_scheme}"
+    def do_fingerprint(digest, filename, name)
+      "%s%s%s" % [File.basename(filename), digest, tracked_permissions(filename)]
+    end
 
-      files = all_templates
-      files << File.join(job_dir, "spec")
-
-      files.each do |filename|
-        path = File.basename(filename)
-        digest = Digest::SHA1.file(filename).hexdigest
-        contents << "%s%s%s" % [path, digest, tracked_permissions(filename)]
-      end
-
-      Digest::SHA1.hexdigest(contents)
+    def additional_fingerprints
+      []
     end
 
     def missing_packages
