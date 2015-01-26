@@ -155,7 +155,7 @@ describe Bosh::Aws::RDS do
         options[:allocated_storage].should == 5
         options[:db_instance_class].should == "db.m1.small"
         options[:engine].should == "mysql"
-        options[:engine_version].should == "5.5.31"
+        options[:engine_version].should == "5.5.40a"
         options[:db_parameter_group_name].should == "utf8"
         options[:master_username].should be_kind_of(String)
         options[:master_username].length.should be >= 8
@@ -183,7 +183,7 @@ describe Bosh::Aws::RDS do
         options[:allocated_storage].should == 16
         options[:db_instance_class].should == "db.m1.small"
         options[:engine].should == "mysql"
-        options[:engine_version].should == "5.5.31"
+        options[:engine_version].should == "5.5.40a"
         options[:master_username].should be_kind_of(String)
         options[:master_username].length.should be >= 8
         options[:master_user_password].should == "swordfish"
