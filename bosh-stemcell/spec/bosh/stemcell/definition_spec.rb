@@ -92,7 +92,10 @@ module Bosh::Stemcell
         expect_not_equal = [
           [['aws', 'xen', 'ubuntu', 'penguin', 'null', false], ['aws', 'xen', 'centos', '6.5', 'null', false]],
           [['aws', 'xen', 'ubuntu', 'penguin', 'null', false], ['aws', 'xen', 'ubuntu', 'penguin', 'null', true]],
-          [['vsphere', 'esxi', 'ubuntu', 'penguin', 'go', false], ['vsphere', 'esxi', 'ubuntu', 'penguin', 'null', false]],
+          [
+            ['vsphere', 'esxi', 'ubuntu', 'penguin', 'go', false],
+            ['vsphere', 'esxi', 'ubuntu', 'penguin', 'null', false]
+          ],
         ]
         expect_not_equal.each do |left, right|
           expect(Definition.for(*left)).to_not eq(Definition.for(*right))
@@ -102,14 +105,18 @@ module Bosh::Stemcell
 
     describe '#stemcell_name' do
       it 'builds a name from the infrastructure, hypervisor, os, agent, and disk format' do
-        expect(definition.stemcell_name('disk-format')).to eq('infrastructure-name-hypervisor-operating-system-name-operating_system_version-go_agent-disk-format')
+        expect(definition.stemcell_name('disk-format')).to eq(
+          'infrastructure-name-hypervisor-operating-system-name-operating_system_version-go_agent-disk-format'
+        )
       end
 
       context 'the os doesnt have a version' do
         let(:operating_system_version) { nil }
 
         it 'leaves off the os version' do
-          expect(definition.stemcell_name('disk-format')).to eq('infrastructure-name-hypervisor-operating-system-name-go_agent-disk-format')
+          expect(definition.stemcell_name('disk-format')).to eq(
+            'infrastructure-name-hypervisor-operating-system-name-go_agent-disk-format'
+          )
         end
       end
 
@@ -117,13 +124,17 @@ module Bosh::Stemcell
         let(:agent_name) { 'ruby' }
 
         it 'leaves it off' do
-          expect(definition.stemcell_name('disk-format')).to eq('infrastructure-name-hypervisor-operating-system-name-operating_system_version-disk-format')
+          expect(definition.stemcell_name('disk-format')).to eq(
+            'infrastructure-name-hypervisor-operating-system-name-operating_system_version-disk-format'
+          )
         end
       end
 
       context 'the disk format is the default' do
         it 'leaves it off' do
-          expect(definition.stemcell_name('default-disk-format')).to eq('infrastructure-name-hypervisor-operating-system-name-operating_system_version-go_agent')
+          expect(definition.stemcell_name('default-disk-format')).to eq(
+            'infrastructure-name-hypervisor-operating-system-name-operating_system_version-go_agent'
+          )
         end
       end
     end

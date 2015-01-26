@@ -41,7 +41,12 @@ module Bosh::Stemcell
     end
 
     it 'defaults to no additional cloud properties' do
-      infrastructure = Infrastructure::Base.new(name: 'foo', hypervisor: 'xen', default_disk_size: 1024, disk_formats: [])
+      infrastructure = Infrastructure::Base.new(
+        name: 'foo',
+        hypervisor: 'xen',
+        default_disk_size: 1024,
+        disk_formats: []
+      )
       expect(infrastructure.additional_cloud_properties).to eq({})
     end
   end
@@ -68,7 +73,12 @@ module Bosh::Stemcell
     end
 
     it 'defaults to no additional cloud properties' do
-      infrastructure = Infrastructure::Base.new(name: 'foo', hypervisor: 'xen', default_disk_size: 1024, disk_formats: [])
+      infrastructure = Infrastructure::Base.new(
+        name: 'foo',
+        hypervisor: 'xen',
+        default_disk_size: 1024,
+        disk_formats: []
+      )
       expect(infrastructure.additional_cloud_properties).to eq({})
     end
   end

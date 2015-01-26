@@ -28,12 +28,31 @@ describe Bosh::Stemcell::StemcellBuilder do
     )
   end
   let(:operating_system) { Bosh::Stemcell::OperatingSystem.for('centos') }
-  let(:definition) { Bosh::Stemcell::Definition.new(infrastructure, 'fake_hypervisor', operating_system, Bosh::Stemcell::Agent.for('go'), false) }
+
+  let(:definition) do
+    Bosh::Stemcell::Definition.new(
+      infrastructure,
+      'fake_hypervisor',
+      operating_system,
+      Bosh::Stemcell::Agent.for('go'),
+      false
+    )
+  end
+
   let(:version) { 1234 }
   let(:release_tarball_path) { '/path/to/release.tgz' }
   let(:os_image_tarball_path) { '/path/to/os-img.tgz' }
   let(:gem_components) { instance_double('Bosh::Dev::GemComponents', build_release_gems: nil) }
-  let(:environment) { Bosh::Stemcell::BuildEnvironment.new(env, definition, version, release_tarball_path, os_image_tarball_path) }
+  let(:environment) do
+    Bosh::Stemcell::BuildEnvironment.new(
+      env,
+      definition,
+      version,
+      release_tarball_path,
+      os_image_tarball_path
+    )
+  end
+
   let(:collection) do
     instance_double(
       'Bosh::Stemcell::StageCollection',

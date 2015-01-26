@@ -24,9 +24,16 @@ module Bosh
       attr_reader :definition, :version, :stemcell_build_path, :tarball_path, :runner, :collection
 
       def write_manifest(disk_format)
+        manifest_filename = File.join(stemcell_build_path, "stemcell.MF")
+        File.open(manifest_filename, "w") do |f|
+          f.write(Psych.dump(manifest(disk_format)))
+        end
+      end
+
+      def manifest(disk_format)
         infrastructure = definition.infrastructure
 
-        manifest = {
+        {
           'name' => definition.stemcell_name(disk_format),
           'version' => version.to_s,
           'bosh_protocol' => 1,
@@ -43,11 +50,6 @@ module Bosh
             'architecture' => 'x86_64',
           }.merge(infrastructure.additional_cloud_properties)
         }
-
-        manifest_filename = File.join(stemcell_build_path, "stemcell.MF")
-        File.open(manifest_filename, "w") do |f|
-          f.write(Psych.dump(manifest))
-        end
       end
 
       def create_tarball(disk_format)

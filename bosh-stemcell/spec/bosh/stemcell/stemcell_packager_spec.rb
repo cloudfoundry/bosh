@@ -30,7 +30,17 @@ describe Bosh::Stemcell::StemcellPackager do
     )
   end
   let(:operating_system) { Bosh::Stemcell::OperatingSystem.for('centos') }
-  let(:definition) { Bosh::Stemcell::Definition.new(infrastructure, 'fake_hypervisor', operating_system, Bosh::Stemcell::Agent.for('go'), false) }
+
+  let(:definition) do
+    Bosh::Stemcell::Definition.new(
+      infrastructure,
+      'fake_hypervisor',
+      operating_system,
+      Bosh::Stemcell::Agent.for('go'),
+      false
+    )
+  end
+
   let(:version) { 1234 }
   let(:release_tarball_path) { '/path/to/release.tgz' }
   let(:os_image_tarball_path) { '/path/to/os-img.tgz' }
@@ -94,7 +104,9 @@ describe Bosh::Stemcell::StemcellPackager do
     end
 
     it 'returns the path of the created tarball' do
-      expect(packager.package(disk_format)).to eq(File.join(tarball_dir, 'bosh-stemcell-1234-fake_infra-fake_hypervisor-centos-go_agent.tgz'))
+      expect(packager.package(disk_format)).to eq(
+        File.join(tarball_dir, 'bosh-stemcell-1234-fake_infra-fake_hypervisor-centos-go_agent.tgz')
+      )
     end
 
     context 'if an image already exist in the stemcell dir' do

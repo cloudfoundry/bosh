@@ -83,7 +83,13 @@ module Bosh::Stemcell
 
     class Aws < Base
       def initialize
-        super(name: 'aws', hypervisor: 'xen', supports_light_stemcell: true, default_disk_size: 2048, disk_formats: ['raw'])
+        super(
+          name: 'aws',
+          hypervisor: 'xen',
+          supports_light_stemcell: true,
+          default_disk_size: 2048,
+          disk_formats: ['raw']
+        )
       end
 
       def additional_cloud_properties
