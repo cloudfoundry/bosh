@@ -2,8 +2,16 @@ require 'spec_helper'
 
 module Support
   module FileHelpers
-    def directory_listing(dir)
-      Dir.chdir(dir) { Dir['**/*'].reject { |f| File.directory?(f) } }
+    def directory_listing(dir, include_dirs = false)
+      Dir.chdir(dir) do
+        all_files_and_dirs = Dir['**/*']
+
+        if include_dirs
+          all_files_and_dirs
+        else
+          all_files_and_dirs.reject! { |f| File.directory?(f) }
+        end
+      end
     end
 
     class ReleaseDirectory

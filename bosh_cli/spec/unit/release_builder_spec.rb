@@ -148,7 +148,7 @@ module Bosh::Cli
       )
 
       package = double(
-        PackageBuilder,
+        Resources::Package,
         :name => 'foo',
         :version => '42',
         :new_version? => true,

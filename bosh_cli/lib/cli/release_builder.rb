@@ -5,7 +5,7 @@ module Bosh::Cli
     attr_reader :release, :packages, :jobs, :name, :version, :build_dir, :commit_hash, :uncommitted_changes
 
     # @param [Bosh::Cli::Release] release Current release
-    # @param [Array<Bosh::Cli::PackageBuilder>] packages Built packages
+    # @param [Array<Bosh::Cli::Resources::Package>] packages Built packages
     # @param [Array<Bosh::Cli::JobBuilder>] jobs Built jobs
     # @param [Hash] options Release build options
     def initialize(release, packages, jobs, name, options = { })

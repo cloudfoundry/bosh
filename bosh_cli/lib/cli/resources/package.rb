@@ -1,7 +1,5 @@
-module Bosh::Cli
-  class PackageBuilder
-    include PackagingHelper
-
+module Bosh::Cli::Resources
+  class Package
     class GlobMatch
       # Helper class encapsulating the data we know about the glob. We need
       # both directory and file path, as we match the same path in several
@@ -33,7 +31,13 @@ module Bosh::Cli
       end
     end
 
-    attr_reader :name, :globs, :version, :dependencies, :tarball_path
+    BUILD_HOOK_FILES = ['packaging', 'pre_packaging']
+
+
+    # TEMP: backwards compatibility while refactoring archive building, etc.
+    attr_accessor :fingerprint, :version, :checksum, :notes, :new_version, :tarball_path
+
+    attr_reader :name, :globs, :dependencies
     # We have two ways of getting/storing a package:
     # development versions of packages, kept in release directory
     # final versions of packages, kept in blobstore
@@ -44,15 +48,15 @@ module Bosh::Cli
     # @param [String] directory Release directory
     # @param [Hash] options Package build options
     def self.discover(directory, options = {})
-      builders = []
+      packages = []
 
-      Dir[File.join(directory, "packages", "*")].each do |package_dir|
-        next unless File.directory?(package_dir)
-        package_dirname = File.basename(package_dir)
-        package_spec = load_yaml_file(File.join(package_dir, "spec"))
+      Dir[File.join(directory, "packages", "*")].each do |package_source|
+        next unless File.directory?(package_source)
+        package_dirname = File.basename(package_source)
+        package_spec = load_yaml_file(File.join(package_source, "spec"))
 
         if package_spec["name"] != package_dirname
-          raise InvalidPackage,
+          raise Bosh::Cli::InvalidPackage,
                 "Found '#{package_spec["name"]}' package in " +
                   "'#{package_dirname}' directory, please fix it"
         end
@@ -61,17 +65,17 @@ module Bosh::Cli
         blobstore = options[:blobstore]
         dry_run = options[:dry_run]
 
-        builder = new(package_spec, directory, is_final, blobstore)
-        builder.dry_run = true if dry_run
+        package = new(package_spec, directory, is_final, blobstore)
+        package.dry_run = true if dry_run
 
-        builders << builder
+        packages << package
       end
 
-      builders
+      packages
     end
 
 
-    def initialize(spec, release_dir, final, blobstore,
+    def initialize(spec, release_source, final, blobstore,
                    sources_dir = nil, blobs_dir = nil, alt_src_dir = nil)
       spec = load_yaml_file(spec) if spec.is_a?(String) && File.file?(spec)
 
@@ -80,10 +84,10 @@ module Bosh::Cli
       @excluded_globs = spec["excluded_files"] || []
       @dependencies = Array(spec["dependencies"])
 
-      @release_dir = release_dir
-      @sources_dir = sources_dir || File.join(@release_dir, "src")
-      @alt_sources_dir = alt_src_dir || File.join(@release_dir, "src_alt")
-      @blobs_dir = blobs_dir || File.join(@release_dir, "blobs")
+      @release_source = release_source
+      @sources_dir = sources_dir || File.join(@release_source, "src")
+      @alt_sources_dir = alt_src_dir || File.join(@release_source, "src_alt")
+      @blobs_dir = blobs_dir || File.join(@release_source, "blobs")
 
       @final = final
       @blobstore = blobstore
@@ -93,55 +97,35 @@ module Bosh::Cli
       end
 
       if @name.blank?
-        raise InvalidPackage, "Package name is missing"
+        raise Bosh::Cli::InvalidPackage, "Package name is missing"
       end
 
       unless @name.bosh_valid_id?
-        raise InvalidPackage, "Package name should be a valid BOSH identifier"
+        raise Bosh::Cli::InvalidPackage, "Package name, '#{@name}', should be a valid BOSH identifier"
       end
 
       unless @globs.is_a?(Array) && @globs.size > 0
-        raise InvalidPackage, "Package '#{@name}' doesn't include any files"
+        raise Bosh::Cli::InvalidPackage, "Package '#{@name}' doesn't include any files"
       end
+    end
 
-      @dev_builds_dir = File.join(@release_dir, ".dev_builds",
-                                  "packages", @name)
-      @final_builds_dir = File.join(@release_dir, ".final_builds",
-                                    "packages", @name)
+    def final?
+      @final
+    end
 
-      FileUtils.mkdir_p(package_dir)
-      FileUtils.mkdir_p(@dev_builds_dir)
-      FileUtils.mkdir_p(@final_builds_dir)
-
-      init_indices
+    def new_version?
+      @new_version
     end
 
     def artifact_type
       "package"
     end
 
-    def reload # Mostly for tests
-      @fingerprint = nil
-      @resolved_globs = nil
-      init_indices
-      self
+    def format_fingerprint(digest, filename, name, file_mode)
+      is_hook = BUILD_HOOK_FILES.include?(name)
+      "%s%s%s" % [name, digest, is_hook ? '' : file_mode]
     end
 
-    def fingerprint
-      @fingerprint ||= make_fingerprint
-    end
-
-    def glob_matches
-      @resolved_globs ||= resolve_globs
-    end
-
-    def build_dir
-      @build_dir ||= Dir.mktmpdir
-    end
-
-    def package_dir
-      File.join(@release_dir, "packages", name)
-    end
 
     def files
       known_files = {}
@@ -153,10 +137,10 @@ module Bosh::Cli
       end
 
       BUILD_HOOK_FILES.each do |build_hook_file|
-        source_file = Pathname(package_dir).join(build_hook_file)
+        source_file = Pathname(package_source).join(build_hook_file)
         if source_file.exist?
           if known_files.has_key?(build_hook_file)
-            raise InvalidPackage, "Package '#{name}' has '#{build_hook_file}' file " +
+            raise Bosh::Cli::InvalidPackage, "Package '#{name}' has '#{build_hook_file}' file " +
                 "which conflicts with BOSH packaging"
           end
 
@@ -167,18 +151,16 @@ module Bosh::Cli
       files
     end
 
-    def copy_files
-      super
-      pre_package
+    def dependencies
+      @dependencies.sort
     end
 
-    def pre_package
-      pre_packaging_script = File.join(package_dir, "pre_packaging")
+    def pre_package(staging_dir)
+      pre_packaging_script = File.join(package_source, "pre_packaging")
 
       if File.exists?(pre_packaging_script)
-
         say("Pre-packaging...")
-        FileUtils.cp(pre_packaging_script, build_dir, :preserve => true)
+        FileUtils.cp(pre_packaging_script, staging_dir, :preserve => true)
 
         old_env = ENV
 
@@ -187,15 +169,16 @@ module Bosh::Cli
           if ENV["RUBYOPT"]
             ENV["RUBYOPT"] = ENV["RUBYOPT"].sub("-rbundler/setup", "")
           end
-          ENV["BUILD_DIR"] = build_dir
-          ENV["RELEASE_DIR"] = @release_dir
-          in_build_dir do
+          # todo: test these
+          ENV["BUILD_DIR"] = staging_dir
+          ENV["RELEASE_DIR"] = @release_source
+          Dir.chdir(staging_dir) do
             pre_packaging_out = `bash -x pre_packaging 2>&1`
             unless $?.exitstatus == 0
               pre_packaging_out.split("\n").each do |line|
                 say("> #{line}")
               end
-              raise InvalidPackage, "'#{name}' pre-packaging failed"
+              raise Bosh::Cli::InvalidPackage, "'#{name}' pre-packaging failed"
             end
           end
 
@@ -204,20 +187,15 @@ module Bosh::Cli
           old_env.each { |k, v| ENV[k] = old_env[k] }
         end
 
-        FileUtils.rm(File.join(build_dir, "pre_packaging"))
+        FileUtils.rm(File.join(staging_dir, "pre_packaging"))
       end
     end
 
     private
 
-    def do_fingerprint(digest, filename, name)
-      is_hook = BUILD_HOOK_FILES.include?(name)
 
-      "%s%s%s" % [name, digest, is_hook ? '' : tracked_permissions(filename)]
-    end
-
-    def additional_fingerprints
-      @dependencies.sort
+    def glob_matches
+      @resolved_globs ||= resolve_globs
     end
 
     # @return Array<GlobMatch>
@@ -240,7 +218,7 @@ module Bosh::Cli
         top_dir_in_src_alt_exists = top_dir && File.exists?(File.join(@alt_sources_dir, top_dir))
 
         if top_dir_in_src_alt_exists && src_alt_matches.empty? && src_matches.any?
-          raise InvalidPackage, "Package '#{name}' has a glob that " +
+          raise Bosh::Cli::InvalidPackage, "Package '#{name}' has a glob that " +
             "doesn't match in '#{File.basename(@alt_sources_dir)}' " +
             "but matches in '#{File.basename(@sources_dir)}'. " +
             "However '#{File.basename(@alt_sources_dir)}/#{top_dir}' " +
@@ -263,7 +241,7 @@ module Bosh::Cli
         end
 
         if matches.empty?
-          raise InvalidPackage, "Package '#{name}' has a glob that resolves to an empty file list: #{glob}"
+          raise Bosh::Cli::InvalidPackage, "Package '#{name}' has a glob that resolves to an empty file list: #{glob}"
         end
 
         all_matches += matches
@@ -283,13 +261,8 @@ module Bosh::Cli
       end
     end
 
-    def in_build_dir(&block)
-      Dir.chdir(build_dir) { yield }
+    def package_source
+      File.join(@release_source, 'packages', name)
     end
-
-    def in_package_dir(&block)
-      Dir.chdir(package_dir) { yield }
-    end
-
   end
 end

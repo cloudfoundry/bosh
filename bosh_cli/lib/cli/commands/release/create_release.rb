@@ -134,7 +134,7 @@ module Bosh::Cli::Command
       end
 
       def build_packages(dry_run, final)
-        packages = Bosh::Cli::PackageBuilder.discover(
+        packages = Bosh::Cli::Resources::Package.discover(
           work_dir,
           :final => final,
           :blobstore => release.blobstore,
@@ -143,7 +143,7 @@ module Bosh::Cli::Command
 
         packages.each do |package|
           say("Building #{package.name.make_green}...")
-          package.build
+          Bosh::Cli::ArchiveBuilder.new(package, work_dir, release.blobstore).build
           nl
         end
 

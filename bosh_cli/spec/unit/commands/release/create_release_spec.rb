@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Cli::Command::Release
   describe CreateRelease do
-    subject(:command) { described_class.new }
+    subject(:command) { CreateRelease.new }
 
     describe '#create' do
       let(:interactive) { true }
@@ -23,12 +23,37 @@ module Bosh::Cli::Command::Release
       let(:next_manifest_path) { '/fake/manifest/path.yml' }
       let(:next_tarball_path) { '/fake/manifest/path.yml' }
 
+      let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
+      let(:blobstore) { double('blobstore') }
+      let(:package) {
+        spec = {
+          'name' => 'package_name',
+          'files' => ['lib/*.rb', 'README.*'],
+          'dependencies' => [],
+          'excluded_files' => [],
+        }
+        Bosh::Cli::Resources::Package.new(spec, release_source.path, false, blobstore)
+      }
+      let(:matched_files) { ['lib/1.rb', 'lib/2.rb', 'README.2', 'README.md'] }
+      let(:archive_builder) { instance_double(Bosh::Cli::ArchiveBuilder) }
+
+      after do
+        release_source.cleanup
+      end
+
       before do
+        release_source.add_dir('src')
+        matched_files.each { |f| release_source.add_file('src', f, "contents of #{f}") }
+
         allow(command).to receive(:interactive?).and_return(interactive)
         allow(command).to receive(:check_if_release_dir)
         allow(command).to receive(:dirty_blob_check)
         allow(command).to receive(:dirty_state?).and_return(false)
-        allow(command).to receive(:build_packages).and_return([])
+
+        allow(Bosh::Cli::Resources::Package).to receive(:discover).and_return([package])
+        allow(Bosh::Cli::ArchiveBuilder).to receive(:new).and_return(archive_builder)
+        allow(archive_builder).to receive(:build)
+
         allow(command).to receive(:build_jobs)
 
         allow(Bosh::Cli::ReleaseBuilder).to receive(:new).and_return(release_builder)
@@ -60,6 +85,7 @@ module Bosh::Cli::Command::Release
       it 'prints status headers' do
         expect(command).to receive(:header).with('Building DEV release').once.ordered
         expect(command).to receive(:header).with('Building packages').once.ordered
+        expect(command).to receive(:header).with('Resolving dependencies').once.ordered
         expect(command).to receive(:header).with('Building jobs').once.ordered
         expect(command).to receive(:header).with('Building release').once.ordered
         expect(command).to receive(:header).with('Release summary').once.ordered
@@ -118,11 +144,18 @@ module Bosh::Cli::Command::Release
       end
 
       context 'when a name is provided with --name' do
-        before { command.options[:name] = provided_name }
+        let(:work_dir) { Dir.pwd }
         let(:provided_name) { 'c-release' }
 
+        before do
+          command.options[:name] = provided_name
+          expect(Bosh::Cli::Resources::Package).to receive(:discover).with(work_dir, {:final=>nil, :blobstore=>nil, :dry_run=>true}).and_return([package])
+          expect(Bosh::Cli::ArchiveBuilder).to receive(:new).with(package, work_dir, nil).and_return(archive_builder)
+          expect(archive_builder).to receive(:build)
+        end
+
         it 'builds release with the specified name' do
-          expect(command).to receive(:build_release).with(true, nil, nil, true, [], provided_name, nil)
+          expect(command).to receive(:build_release).with(true, nil, nil, true, [package], provided_name, nil)
 
           command.create
         end
@@ -137,7 +170,7 @@ module Bosh::Cli::Command::Release
 
       context 'when a version is provided with --version' do
         it 'builds release with the specified version' do
-          expect(command).to receive(:build_release).with(true, nil, nil, true, [], configured_dev_name, '1.0.1')
+          expect(command).to receive(:build_release).with(true, nil, nil, true, [package], configured_dev_name, '1.0.1')
           command.options[:version] = '1.0.1'
           command.create
         end

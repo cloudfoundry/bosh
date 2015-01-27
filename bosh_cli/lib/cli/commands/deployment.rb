@@ -154,7 +154,7 @@ module Bosh::Cli::Command
       end
 
       say(" - discovering packages")
-      packages = Bosh::Cli::PackageBuilder.discover(
+      packages = Bosh::Cli::Resources::Package.discover(
         work_dir,
         :dry_run => true,
         :final => false

@@ -255,7 +255,7 @@ describe 'AWS Bootstrap commands' do
       let(:password) { 'bosh_password' }
 
       before do
-        Bosh::Cli::PackageBuilder.any_instance.stub(:resolve_globs).and_return([])
+        Bosh::Cli::Resources::Package.any_instance.stub(:resolve_globs).and_return([])
         mock_s3.should_receive(:copy_remote_file).with('bosh-jenkins-artifacts','bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen-ubuntu-trusty-go_agent.tgz','bosh_stemcell.tgz').and_return(stemcell_stub)
         mock_s3.should_receive(:copy_remote_file).with('bosh-jenkins-artifacts', /release\/bosh-(.+)\.tgz/,'bosh_release.tgz').and_return('bosh_release.tgz')
 
