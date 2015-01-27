@@ -80,7 +80,7 @@ module Bosh::Stemcell
     end
 
     def stemcell_tarball_path
-      work_root
+      work_path
     end
 
     def command_env
