@@ -18,7 +18,7 @@ PATH
     blobstore_client (1.2824.0)
       aws-sdk (= 1.60.2)
       bosh_common (~> 1.2824.0)
-      fog (~> 1.23.0)
+      fog (~> 1.27.0)
       httpclient (= 2.4.0)
       multi_json (~> 1.1)
       ruby-atmos-pure (~> 1.0.5)
@@ -62,7 +62,7 @@ PATH
       bosh_vsphere_cpi (~> 1.2824.0)
       bosh_warden_cpi (~> 1.2824.0)
       eventmachine (~> 1.0.0)
-      fog (~> 1.23.0)
+      fog (~> 1.27.0)
       httpclient (= 2.4.0)
       logging (~> 1.8.2)
       membrane (~> 1.1.0)
@@ -107,7 +107,7 @@ PATH
   specs:
     bosh-registry (1.2824.0)
       aws-sdk (= 1.60.2)
-      fog (~> 1.23.0)
+      fog (~> 1.27.0)
       sequel (~> 3.43.0)
       sinatra (~> 1.4.2)
       thin (~> 1.5.0)
@@ -214,7 +214,7 @@ PATH
       bosh-registry (~> 1.2824.0)
       bosh_common (~> 1.2824.0)
       bosh_cpi (~> 1.2824.0)
-      fog (~> 1.23.0)
+      fog (~> 1.27.0)
       httpclient (= 2.4.0)
       membrane (~> 1.1.0)
       yajl-ruby (>= 0.8.2)
@@ -254,6 +254,7 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
+    CFPropertyList (2.3.0)
     addressable (2.3.4)
     ast (2.0.0)
     aws-sdk (1.60.2)
@@ -289,31 +290,85 @@ GEM
     erubis (2.7.0)
     escape_utils (1.0.1)
     eventmachine (1.0.3)
-    excon (0.39.5)
+    excon (0.43.0)
     ffi (1.9.6)
-    fog (1.23.0)
-      fog-brightbox
-      fog-core (~> 1.23)
+    fission (0.5.0)
+      CFPropertyList (~> 2.2)
+    fog (1.27.0)
+      fog-atmos
+      fog-aws (~> 0.0)
+      fog-brightbox (~> 0.4)
+      fog-core (~> 1.27, >= 1.27.3)
+      fog-ecloud
       fog-json
+      fog-profitbricks
+      fog-radosgw (>= 0.0.2)
+      fog-sakuracloud (>= 0.0.4)
+      fog-serverlove
       fog-softlayer
+      fog-storm_on_demand
+      fog-terremark
+      fog-vmfusion
+      fog-voxel
+      fog-xml (~> 0.1.1)
       ipaddress (~> 0.5)
       nokogiri (~> 1.5, >= 1.5.11)
-    fog-brightbox (0.5.0)
+    fog-atmos (0.1.0)
+      fog-core
+      fog-xml
+    fog-aws (0.0.7)
+      fog-core (~> 1.27)
+      fog-json (~> 1.0)
+      fog-xml (~> 0.1)
+      ipaddress (~> 0.8)
+    fog-brightbox (0.7.1)
       fog-core (~> 1.22)
       fog-json
-      inflecto
-    fog-core (1.24.0)
+      inflecto (~> 0.0.2)
+    fog-core (1.27.4)
       builder
       excon (~> 0.38)
       formatador (~> 0.2)
       mime-types
       net-scp (~> 1.1)
       net-ssh (>= 2.1.3)
+    fog-ecloud (0.0.2)
+      fog-core
+      fog-xml
     fog-json (1.0.0)
       multi_json (~> 1.0)
-    fog-softlayer (0.3.16)
+    fog-profitbricks (0.0.1)
+      fog-core
+      fog-xml
+      nokogiri
+    fog-radosgw (0.0.3)
+      fog-core (>= 1.21.0)
+      fog-json
+      fog-xml (>= 0.0.1)
+    fog-sakuracloud (1.0.0)
       fog-core
       fog-json
+    fog-serverlove (0.1.1)
+      fog-core
+      fog-json
+    fog-softlayer (0.3.30)
+      fog-core
+      fog-json
+    fog-storm_on_demand (0.1.0)
+      fog-core
+      fog-json
+    fog-terremark (0.0.3)
+      fog-core
+      fog-xml
+    fog-vmfusion (0.0.1)
+      fission
+      fog-core
+    fog-voxel (0.0.2)
+      fog-core
+      fog-xml
+    fog-xml (0.1.1)
+      fog-core
+      nokogiri (~> 1.5, >= 1.5.11)
     foodcritic (4.0.0)
       erubis
       gherkin (~> 2.11)
