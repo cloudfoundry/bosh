@@ -82,7 +82,7 @@ module Bosh::Dev
     end
 
     def download_stemcell(stemcell, output_directory)
-      remote_dir = File.join(number.to_s, stemcell.name, stemcell.infrastructure.name)
+      remote_dir = File.join(number.to_s, 'bosh-stemcell', stemcell.infrastructure.name)
       download_adapter.download(UriProvider.pipeline_uri(remote_dir, stemcell.name), File.join(output_directory, stemcell.name))
       stemcell.name
     end

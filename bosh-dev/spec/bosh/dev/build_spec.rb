@@ -302,7 +302,7 @@ module Bosh::Dev
       let(:infrastructure) { instance_double('Bosh::Stemcell::Infrastructure::Base', name: 'infrastructure-name') }
 
       let(:expected_s3_bucket) { 'http://bosh-ci-pipeline.s3.amazonaws.com' }
-      let(:expected_s3_folder) { '/123/fake-stemcell-name/infrastructure-name' }
+      let(:expected_s3_folder) { '/123/bosh-stemcell/infrastructure-name' }
 
       it 'downloads the specified stemcell version from the pipeline bucket' do
         expected_uri = URI("#{expected_s3_bucket}#{expected_s3_folder}/fake-stemcell-name")
