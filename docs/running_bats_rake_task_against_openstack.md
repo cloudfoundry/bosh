@@ -101,7 +101,8 @@ properties:
 ### Rake command
 
 ```
-bundle exec rake spec:system:micro[openstack,ubuntu,trusty,dynamic,go]
+bundle exec rake spec:system:micro[openstack,ubuntu,trusty,dynamic,go,false,<disk_format>]
 ```
 
+* <disk_format> can be either `raw` or `qcow2`
 

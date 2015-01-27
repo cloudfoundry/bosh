@@ -49,5 +49,5 @@ The following environment variables are required by rake task that runs BATs aga
 ## Rake command
 
 ```
-bundle exec rake spec:system:micro[aws,xen,ubuntu,trusty,manual,go,true]
+bundle exec rake spec:system:micro[aws,xen,ubuntu,trusty,manual,go,true,raw]
 ```

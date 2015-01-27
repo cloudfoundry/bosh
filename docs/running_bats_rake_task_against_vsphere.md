@@ -50,5 +50,5 @@ where
 ## Rake command
 
 ```
-bundle exec rake spec:system:micro[vsphere,ubuntu,trusty,manual,go]
+bundle exec rake spec:system:micro[vsphere,ubuntu,trusty,manual,go,false,ovf]
 ```

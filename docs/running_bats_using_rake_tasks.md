@@ -8,7 +8,7 @@ The following command should be used to run BATs against running director.
 
 ```
 $ cd bosh
-$ bundle exec rake spec:system:existing_micro[<infrastructure>,<hypervisor>,<os_name>,<os_version>,<network_type>,<agent_type>,<light_stemcell_flag>]
+$ bundle exec rake spec:system:existing_micro[<infrastructure>,<hypervisor>,<os_name>,<os_version>,<network_type>,<agent_type>,<light_stemcell_flag>,<disk_format>]
 ```
 
 * <infrastructure> - the type of infrastructure director is running on. (e.g. `aws`, `openstack`, `vsphere`, `vcloud`, `warden`)
@@ -18,6 +18,7 @@ $ bundle exec rake spec:system:existing_micro[<infrastructure>,<hypervisor>,<os_
 * <network_type> - the type of network being tested (`manual` or `dynamic`).
 * <agent_type> - the agent type that is running on stemcell (e.g. `go`). There used to be `ruby` agent, which is no longer supported by BOSH, so this argument probably will go away soon from rake task.
 * <light_stemcell_flag> - the boolean flag that indicates if stemcell type is light (for `aws` stemcells).
+* <disk_format> - the disk format that stemcell is using (e.g. raw, qcow2, ovf, files)
 
 There are some infrastructure specific BATs and BATs that depend on network type.
 
@@ -27,7 +28,7 @@ The following command will deploy the micro BOSH using tested stemcell first and
 
 ```
 $ cd bosh
-$ bundle exec rake spec:system:micro[<infrastructure>,<hypervisor>,<os_name>,<os_version>,<network_type>,<agent_type>,<light_stemcell_flag>]
+$ bundle exec rake spec:system:micro[<infrastructure>,<hypervisor>,<os_name>,<os_version>,<network_type>,<agent_type>,<light_stemcell_flag>,<disk_format>]
 ```
 
 See previos section for arguments meaning.
