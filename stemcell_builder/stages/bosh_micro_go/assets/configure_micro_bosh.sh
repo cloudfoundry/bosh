@@ -93,3 +93,6 @@ cd /var/tmp
 rm -fr ${bosh_app_dir}/bosh/src
 rm ${bosh_app_dir}/bosh/dummy-cpi-agent-env.json
 rm ${bosh_app_dir}/bosh/settings.json
+
+# Clear all compilation artifacts, agent is responsible for setting up data directory
+rm -vrf ${bosh_app_dir}/data

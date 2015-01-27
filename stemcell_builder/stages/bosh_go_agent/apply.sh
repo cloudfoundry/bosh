@@ -50,8 +50,6 @@ chown root:vcap /etc/cron.allow
 
 chmod 0640 /etc/at.allow
 chown root:vcap /etc/at.allow
-
-ln -nsf data/sys /var/vcap/sys
 "
 
 # Since go agent is always specified with -C provide empty conf.

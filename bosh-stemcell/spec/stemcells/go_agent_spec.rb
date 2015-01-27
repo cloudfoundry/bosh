@@ -52,8 +52,8 @@ describe 'Stemcell with Go Agent', stemcell_image: true do
       end
     end
 
-    describe file('/var/vcap/sys') do
-      it { should be_linked_to('data/sys') }
+    describe file('/var/vcap/data') do
+      it { should_not be_directory }
     end
 
     describe file('/var/vcap/monit/alerts.monitrc') do
