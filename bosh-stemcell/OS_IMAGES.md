@@ -86,6 +86,9 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
 CentOS 6.6 images have filename `bosh-centos-6_6-os-image.tgz`
 
+ * `ISA4tKjaoq4koVay5rAzNZlzX7X0KafH`
+  patch GNU libc to resolve CVE-2015-0235, "GHOST"
+
  * `aoUtngdallpd2f6HhMxCveFvk6t6B2Ru`
   upgrade openssl to 1.0.1e-30.el6_6.5
 
