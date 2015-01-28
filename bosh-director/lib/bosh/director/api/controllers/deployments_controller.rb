@@ -67,7 +67,7 @@ module Bosh::Director
         }
 
         deployment = @deployment_manager.find_by_name(params[:deployment])
-        manifest = request.content_length.nil? ? StringIO.new(deployment.manifest) : request.body
+        manifest = request.content_length.nil? || request.content_length == 0 ? StringIO.new(deployment.manifest) : request.body
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
         task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, options)
         redirect "/tasks/#{task.id}"
