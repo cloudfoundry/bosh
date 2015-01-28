@@ -3,7 +3,7 @@ module Bosh::Cli
     include PackagingHelper
 
     attr_reader :name, :version, :packages, :templates,
-                :release_dir, :built_packages, :tarball_path
+                :release_source, :built_packages, :tarball_path
 
     # @return [Hash] Properties defined in this job
     attr_reader :properties
@@ -78,7 +78,7 @@ module Bosh::Cli
       builders
     end
 
-    def initialize(spec, release_dir, final, blobstore, built_packages = [])
+    def initialize(spec, release_source, final, blobstore, built_packages = [])
       spec = load_yaml_file(spec) if spec.is_a?(String) && File.file?(spec)
 
       @name = spec["name"]
@@ -86,9 +86,9 @@ module Bosh::Cli
       @tarball_path = nil
       @packages = spec["packages"].to_a
       @built_packages = built_packages.to_a
-      @release_dir = release_dir
+      @release_source = release_source
       @templates_dir = File.join(job_dir, "templates")
-      @tarballs_dir = File.join(release_dir, "tmp", "jobs")
+      @tarballs_dir = File.join(release_source, "tmp", "jobs")
       @final = final
       @blobstore = blobstore
 
@@ -147,8 +147,8 @@ module Bosh::Cli
         raise InvalidJob, "Cannot find monit file for '#{name}'"
       end
 
-      @dev_builds_dir = File.join(@release_dir, ".dev_builds", "jobs", @name)
-      @final_builds_dir = File.join(@release_dir, ".final_builds",
+      @dev_builds_dir = File.join(@release_source, ".dev_builds", "jobs", @name)
+      @final_builds_dir = File.join(@release_source, ".final_builds",
                                     "jobs", @name)
 
       FileUtils.mkdir_p(job_dir)
@@ -179,15 +179,15 @@ module Bosh::Cli
     end
 
     def job_dir
-      File.join(@release_dir, "jobs", @name)
+      File.join(@release_source, "jobs", @name)
     end
 
     def dev_builds_dir
-      File.join(@release_dir, ".dev_builds", "jobs", name)
+      File.join(@release_source, ".dev_builds", "jobs", name)
     end
 
     def final_builds_dir
-      File.join(@release_dir, ".final_builds", "jobs", name)
+      File.join(@release_source, ".final_builds", "jobs", name)
     end
 
     def fingerprint

@@ -5,9 +5,9 @@ module Bosh::Cli
     let(:release_name) { 'bosh-release' }
 
     before do
-      @release_dir = Dir.mktmpdir
-      FileUtils.mkdir_p(File.join(@release_dir, 'config'))
-      @release = Bosh::Cli::Release.new(@release_dir)
+      @release_source = Dir.mktmpdir
+      FileUtils.mkdir_p(File.join(@release_source, 'config'))
+      @release = Bosh::Cli::Release.new(@release_source)
     end
 
     def new_builder(options = {})
@@ -16,7 +16,7 @@ module Bosh::Cli
 
     context 'when there is a final release' do
       it 'bumps the least significant segment for the next version' do
-        final_storage_dir = File.join(@release_dir, 'releases', release_name)
+        final_storage_dir = File.join(@release_source, 'releases', release_name)
         final_index = Versions::VersionsIndex.new(final_storage_dir)
 
         final_index.add_version('deadbeef', { 'version' => '7.4.1' })
@@ -28,7 +28,7 @@ module Bosh::Cli
       end
 
       it 'creates a dev version in sync with latest final version' do
-        final_storage_dir = File.join(@release_dir, 'releases', release_name)
+        final_storage_dir = File.join(@release_source, 'releases', release_name)
         final_index = Versions::VersionsIndex.new(final_storage_dir)
 
         final_index.add_version('deadbeef', { 'version' => '7.4' })
@@ -40,13 +40,13 @@ module Bosh::Cli
       end
 
       it 'bumps the dev version matching the latest final release' do
-        final_storage_dir = File.join(@release_dir, 'releases', release_name)
+        final_storage_dir = File.join(@release_source, 'releases', release_name)
         final_index = Versions::VersionsIndex.new(final_storage_dir)
 
         final_index.add_version('deadbeef', { 'version' => '7.3' })
         final_index.add_version('deadcafe', { 'version' => '7.2' })
 
-        dev_storage_dir = File.join(@release_dir, 'dev_releases', release_name)
+        dev_storage_dir = File.join(@release_source, 'dev_releases', release_name)
         dev_index = Versions::VersionsIndex.new(dev_storage_dir)
 
         dev_index.add_version('deadabcd', { 'version' => '7.4.1-dev' })
@@ -66,7 +66,7 @@ module Bosh::Cli
       end
 
       it 'increments the dev version' do
-        dev_storage_dir = File.join(@release_dir, 'dev_releases', release_name)
+        dev_storage_dir = File.join(@release_source, 'dev_releases', release_name)
         dev_index = Versions::VersionsIndex.new(dev_storage_dir)
 
         dev_index.add_version('deadbeef', { 'version' => '0.1-dev' })
@@ -79,7 +79,7 @@ module Bosh::Cli
       builder = new_builder
       builder.build
 
-      expected_tarball_path = File.join(@release_dir,
+      expected_tarball_path = File.join(@release_source,
         'dev_releases',
         release_name,
         "#{release_name}-0+dev.1.tgz")
@@ -98,7 +98,7 @@ module Bosh::Cli
     end
 
     it 'allows building a new release when no content has changed' do
-      release_path = File.join(@release_dir, 'dev_releases', release_name)
+      release_path = File.join(@release_source, 'dev_releases', release_name)
       expect(File).to_not exist(File.join(release_path, "#{release_name}-0+dev.1.tgz"))
 
       new_builder.build
@@ -111,7 +111,7 @@ module Bosh::Cli
 
     it 'errors when trying to re-create the same final version' do
       new_builder({:version => '1', :final => true}).build
-      expect(File).to exist(File.join(@release_dir, 'releases', release_name, "#{release_name}-1.tgz"))
+      expect(File).to exist(File.join(@release_source, 'releases', release_name, "#{release_name}-1.tgz"))
 
       expect{
         new_builder({:version => '1', :final => true}).build
@@ -173,7 +173,7 @@ module Bosh::Cli
       context 'when creating final release' do
         context 'when given release version already exists' do
           it 'raises error' do
-            final_storage_dir = File.join(@release_dir, 'releases', release_name)
+            final_storage_dir = File.join(@release_source, 'releases', release_name)
             final_index = Versions::VersionsIndex.new(final_storage_dir)
 
             final_index.add_version('deadbeef', { 'version' => '7.3' })

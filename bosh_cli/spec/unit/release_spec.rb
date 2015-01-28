@@ -2,12 +2,12 @@ require "spec_helper"
 
 describe Bosh::Cli::Release do
   before do
-    @release_dir = Dir.mktmpdir
-    FileUtils.mkdir_p(File.join(@release_dir, "config"))
+    @release_source = Dir.mktmpdir
+    FileUtils.mkdir_p(File.join(@release_source, "config"))
   end
 
   def new_release(dir)
-    Bosh::Cli::Release.new(@release_dir)
+    Bosh::Cli::Release.new(@release_source)
   end
 
   it "persists release attributes" do
@@ -22,34 +22,34 @@ describe Bosh::Cli::Release do
     r.latest_release_filename = "foobar"
     r.save_config
 
-    r2 = new_release(@release_dir)
+    r2 = new_release(@release_source)
     expect(r2.dev_name).to eq("dev-release")
     expect(r2.final_name).to eq("prod-release")
     expect(r2.latest_release_filename).to eq("foobar")
   end
 
   it "has attributes persisted in bosh user config" do
-    r = new_release(@release_dir)
+    r = new_release(@release_source)
     r.dev_name = "dev-release"
     r.final_name = "prod-release"
     r.save_config
 
-    FileUtils.rm_rf(File.join(@release_dir, "config", "dev.yml"))
+    FileUtils.rm_rf(File.join(@release_source, "config", "dev.yml"))
 
-    r = new_release(@release_dir)
+    r = new_release(@release_source)
     expect(r.dev_name).to be_nil
     expect(r.final_name).to eq("prod-release")
   end
 
   it "has attributes persisted in public release config" do
-    r = new_release(@release_dir)
+    r = new_release(@release_source)
     r.dev_name = "dev-release"
     r.final_name = "prod-release"
     r.save_config
 
-    FileUtils.rm_rf(File.join(@release_dir, "config", "final.yml"))
+    FileUtils.rm_rf(File.join(@release_source, "config", "final.yml"))
 
-    r = new_release(@release_dir)
+    r = new_release(@release_source)
     expect(r.dev_name).to eq("dev-release")
     expect(r.final_name).to be_nil
   end

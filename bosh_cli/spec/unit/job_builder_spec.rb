@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Bosh::Cli::JobBuilder do
   subject(:builder) { make_builder(job_name, packages, templates, built_packages) }
 
-  let(:release_dir) { Support::FileHelpers::ReleaseDirectory.new }
+  let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
   let(:job_name) { 'foo-job' }
   let(:packages) { ['foo', 'bar'] }
   let(:templates) { ['a.conf', 'b.yml'] }
@@ -21,7 +21,7 @@ describe Bosh::Cli::JobBuilder do
     add_monit(job_name)
   end
 
-  after { release_dir.cleanup }
+  after { release_source.cleanup }
 
   def make_builder(name, packages = [], template_names = [], built_packages = [], create_spec = true, final = false)
     spec = {
@@ -32,16 +32,16 @@ describe Bosh::Cli::JobBuilder do
 
     add_job_file(name, 'spec') if create_spec
 
-    Bosh::Cli::JobBuilder.new(spec, release_dir.path,
+    Bosh::Cli::JobBuilder.new(spec, release_source.path,
                               final, blobstore, built_packages)
   end
 
   def add_job_file(job_name, file, contents = nil)
-    release_dir.add_file("jobs/#{job_name}", file, contents)
+    release_source.add_file("jobs/#{job_name}", file, contents)
   end
 
   def remove_job_file(job_name, file)
-    release_dir.remove_file("jobs/#{job_name}", file)
+    release_source.remove_file("jobs/#{job_name}", file)
   end
 
   def add_monit(job_name, file = 'monit')
@@ -49,7 +49,7 @@ describe Bosh::Cli::JobBuilder do
   end
 
   def add_templates(job_name, *files)
-    job_template_path = release_dir.join('jobs', job_name, 'templates')
+    job_template_path = release_source.join('jobs', job_name, 'templates')
     FileUtils.mkdir_p(job_template_path)
 
     files.each do |file|
@@ -58,15 +58,16 @@ describe Bosh::Cli::JobBuilder do
   end
 
   def remove_templates(job_name, *files)
-    release_dir.remove_files("jobs/#{job_name}/templates", files)
+    release_source.remove_files("jobs/#{job_name}/templates", files)
   end
 
   it 'creates a new builder' do
     expect(builder.packages).to eq(packages)
     expect(builder.templates).to match_array(templates)
-    expect(builder.release_dir).to eq(release_dir.path)
+    expect(builder.release_source).to eq(release_source.path)
   end
 
+  # Can all fingerprint stuff move to archive_builder_spec
   describe 'the fingerprint' do
     subject(:fingerprint) { builder.fingerprint }
 
@@ -177,7 +178,7 @@ describe Bosh::Cli::JobBuilder do
     SCRIPT
 
     add_job_file(job_name, 'prepare', script)
-    script_path = release_dir.join('jobs', job_name, 'prepare')
+    script_path = release_source.join('jobs', job_name, 'prepare')
     FileUtils.chmod(0755, script_path)
     Bosh::Cli::JobBuilder.run_prepare_script(script_path)
 
@@ -190,7 +191,7 @@ describe Bosh::Cli::JobBuilder do
       end
       expect(File.file?('job.MF')).to be(true)
       expect(File.read('job.MF')).to eq(File.read(
-        release_dir.join('jobs', job_name, 'spec')))
+        release_source.join('jobs', job_name, 'spec')))
       expect(File.exists?('monit')).to be(true)
       expect(File.exists?('prepare')).to be(false)
     end
@@ -206,7 +207,7 @@ describe Bosh::Cli::JobBuilder do
       end
       expect(File.file?('job.MF')).to be(true)
       expect(File.read('job.MF')).to eq(File.read(
-        release_dir.join('jobs', job_name, 'spec')))
+        release_source.join('jobs', job_name, 'spec')))
       expect(File.exists?('monit')).to be(true)
     end
   end
@@ -228,12 +229,12 @@ describe Bosh::Cli::JobBuilder do
 
     it 'supports versioning' do
       v1_fingerprint = make_builder(job_name, [], templates, []).build.fingerprint
-      expect(release_dir).to have_file("/.dev_builds/jobs/#{job_name}/#{v1_fingerprint}.tgz")
+      expect(release_source).to have_file("/.dev_builds/jobs/#{job_name}/#{v1_fingerprint}.tgz")
 
       add_templates(job_name, 'zb.yml')
       v2_fingerprint = make_builder(job_name, [], templates + ['zb.yml'], []).build.fingerprint
-      expect(release_dir).to have_file("/.dev_builds/jobs/#{job_name}/#{v1_fingerprint}.tgz")
-      expect(release_dir).to have_file("/.dev_builds/jobs/#{job_name}/#{v2_fingerprint}.tgz")
+      expect(release_source).to have_file("/.dev_builds/jobs/#{job_name}/#{v1_fingerprint}.tgz")
+      expect(release_source).to have_file("/.dev_builds/jobs/#{job_name}/#{v2_fingerprint}.tgz")
 
       remove_templates(job_name, 'zb.yml')
       builder3 = make_builder(job_name, [], templates, []).build
@@ -245,19 +246,19 @@ describe Bosh::Cli::JobBuilder do
       builder1 = make_builder(job_name, [], templates, [])
 
       v1_fingerprint = builder1.fingerprint
-      expect(release_dir).to_not have_file("/.dev_builds/jobs/#{job_name}/#{v1_fingerprint}.tgz")
+      expect(release_source).to_not have_file("/.dev_builds/jobs/#{job_name}/#{v1_fingerprint}.tgz")
       builder1.build
-      expect(release_dir).to have_file("/.dev_builds/jobs/#{job_name}/#{v1_fingerprint}.tgz")
+      expect(release_source).to have_file("/.dev_builds/jobs/#{job_name}/#{v1_fingerprint}.tgz")
     end
   end
 
   it 'can point to either dev or a final version of a job' do
     fingerprint = '962d57a4f8bc4f48fd6282d8c4d94e4a744f155b'
 
-    release_dir.add_version(fingerprint, ".final_builds/jobs/#{job_name}", 'payload',
+    release_source.add_version(fingerprint, ".final_builds/jobs/#{job_name}", 'payload',
       { 'version' => fingerprint, 'blobstore_id' => '12321' })
 
-    release_dir.add_version(fingerprint, ".dev_builds/jobs/#{job_name}", 'dev_payload',
+    release_source.add_version(fingerprint, ".dev_builds/jobs/#{job_name}", 'dev_payload',
       { 'version' => fingerprint })
 
     builder = make_builder(job_name, [], templates, [])
@@ -266,12 +267,12 @@ describe Bosh::Cli::JobBuilder do
 
     builder.use_final_version
     expect(builder.version).to eq(fingerprint)
-    expect(builder.tarball_path).to eq(release_dir.join(
+    expect(builder.tarball_path).to eq(release_source.join(
       '.final_builds', 'jobs', job_name, "#{fingerprint}.tgz"))
 
     builder.use_dev_version
     expect(builder.version).to eq(fingerprint)
-    expect(builder.tarball_path).to eq(release_dir.join(
+    expect(builder.tarball_path).to eq(release_source.join(
       '.dev_builds', 'jobs', job_name, "#{fingerprint}.tgz"))
   end
 
@@ -320,7 +321,7 @@ describe Bosh::Cli::JobBuilder do
 
       it 'does not create an output archive' do
         builder.build
-        expect(release_dir).to_not have_file("/.dev_builds/jobs/#{job_name}/#{builder.fingerprint}.tgz")
+        expect(release_source).to_not have_file("/.dev_builds/jobs/#{job_name}/#{builder.fingerprint}.tgz")
       end
 
       it 'does not affect the fingerprint' do
@@ -343,7 +344,7 @@ describe Bosh::Cli::JobBuilder do
 
       it 'creates an output archive' do
         builder.build
-        expect(release_dir).to have_file("/.dev_builds/jobs/#{job_name}/#{builder.fingerprint}.tgz")
+        expect(release_source).to have_file("/.dev_builds/jobs/#{job_name}/#{builder.fingerprint}.tgz")
       end
 
       it 'does not affect the fingerprint' do

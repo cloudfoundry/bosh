@@ -14,13 +14,13 @@ module Bosh::Cli
     # @param [Bosh::Blobstore::Client] blobstore Blobstore client
     # @param [Array] package_matches List of package checksums that director
     #   can match
-    # @param [String] release_dir Release directory
+    # @param [String] release_source Release directory
     def initialize(manifest_file, blobstore,
-                   package_matches = [], release_dir = nil)
+                   package_matches = [], release_source = nil)
 
       @blobstore = blobstore
-      @release_dir = release_dir || Dir.pwd
-      @manifest_file = File.expand_path(manifest_file, @release_dir)
+      @release_source = release_source || Dir.pwd
+      @manifest_file = File.expand_path(manifest_file, @release_source)
       @tarball_path = nil
 
       @build_dir = Dir.mktmpdir
@@ -95,18 +95,18 @@ module Bosh::Cli
 
     def find_package(package)
       name = package.name
-      final_package_dir = File.join(@release_dir, '.final_builds', 'packages', name)
+      final_package_dir = File.join(@release_source, '.final_builds', 'packages', name)
       final_index = Versions::VersionsIndex.new(final_package_dir)
-      dev_package_dir = File.join(@release_dir, '.dev_builds', 'packages', name)
+      dev_package_dir = File.join(@release_source, '.dev_builds', 'packages', name)
       dev_index = Versions::VersionsIndex.new(dev_package_dir)
       find_in_indices(final_index, dev_index, package, 'package')
     end
 
     def find_job(job)
       name = job.name
-      final_jobs_dir = File.join(@release_dir, '.final_builds', 'jobs', name)
+      final_jobs_dir = File.join(@release_source, '.final_builds', 'jobs', name)
       final_index = Versions::VersionsIndex.new(final_jobs_dir)
-      dev_jobs_dir = File.join(@release_dir, '.dev_builds', 'jobs', name)
+      dev_jobs_dir = File.join(@release_source, '.dev_builds', 'jobs', name)
       dev_index = Versions::VersionsIndex.new(dev_jobs_dir)
       find_in_indices(final_index, dev_index, job, 'job')
     end
