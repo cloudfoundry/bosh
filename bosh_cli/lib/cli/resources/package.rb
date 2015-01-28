@@ -1,36 +1,5 @@
 module Bosh::Cli::Resources
   class Package
-    class GlobMatch
-      # Helper class encapsulating the data we know about the glob. We need
-      # both directory and file path, as we match the same path in several
-      # directories (src, src_alt, blobs)
-      attr_reader :dir
-      attr_reader :path
-
-      def initialize(dir, path)
-        @dir = dir
-        @path = path
-      end
-
-      def full_path
-        File.join(dir, path)
-      end
-
-      def <=>(other)
-        @path <=> other.path
-      end
-
-      # GlobMatch will be used as Hash key (as implied by using Set),
-      # hence we need to define both eql? and hash
-      def eql?(other)
-        @path == other.path
-      end
-
-      def hash
-        @path.hash
-      end
-    end
-
     BUILD_HOOK_FILES = ['packaging', 'pre_packaging']
 
 
@@ -195,7 +164,7 @@ module Bosh::Cli::Resources
       @resolved_globs ||= resolve_globs
     end
 
-    # @return Array<GlobMatch>
+    # @return Array<Bosh::Cli::GlobMatch>
     def resolve_globs
       all_matches = Set.new
 
@@ -223,18 +192,18 @@ module Bosh::Cli::Resources
         end
 
         # First add src_alt matches since src_alt takes priority over src matches
-        matches += src_alt_matches.map { |path| GlobMatch.new(@alt_sources_dir, path) }
+        matches += src_alt_matches.map { |path| Bosh::Cli::GlobMatch.new(@alt_sources_dir, path) }
 
         # Only add if top-level-dir does not exist in src_alt. No partial matches.
         if !top_dir_in_src_alt_exists
-          matches += src_matches.map { |path| GlobMatch.new(@sources_dir, path) }
+          matches += src_matches.map { |path| Bosh::Cli::GlobMatch.new(@sources_dir, path) }
         end
 
         # Blobs directory is a little bit different: whatever matches a blob
         # will complement already found matches, unless this particular path
         # has already been matched.
         if File.directory?(File.join(@blobs_dir))
-          resolve_glob_in_dir(glob, @blobs_dir).each { |path| matches << GlobMatch.new(@blobs_dir, path) }
+          resolve_glob_in_dir(glob, @blobs_dir).each { |path| matches << Bosh::Cli::GlobMatch.new(@blobs_dir, path) }
         end
 
         if matches.empty?
