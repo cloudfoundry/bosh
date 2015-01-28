@@ -137,7 +137,6 @@ module Bosh::Cli::Command
         packages = Bosh::Cli::Resources::Package.discover(
           work_dir,
           :final => final,
-          :blobstore => release.blobstore,
           :dry_run => dry_run
         )
 

@@ -149,7 +149,7 @@ module Bosh::Cli::Command::Release
 
         before do
           command.options[:name] = provided_name
-          expect(Bosh::Cli::Resources::Package).to receive(:discover).with(work_dir, {:final=>nil, :blobstore=>nil, :dry_run=>true}).and_return([package])
+          expect(Bosh::Cli::Resources::Package).to receive(:discover).with(work_dir, {:final=>nil, :dry_run=>true}).and_return([package])
           expect(Bosh::Cli::ArchiveBuilder).to receive(:new).with(package, work_dir, nil).and_return(archive_builder)
           expect(archive_builder).to receive(:build)
         end

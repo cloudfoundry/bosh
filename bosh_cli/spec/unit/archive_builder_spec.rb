@@ -11,7 +11,7 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
       'excluded_files' => excluded_file_patterns,
     }
 
-    Bosh::Cli::Resources::Package.new(spec, release_source.path, final, blobstore)
+    Bosh::Cli::Resources::Package.new(spec, release_source.path, final)
   end
 
   let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
@@ -193,7 +193,7 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
             Bosh::Cli::Resources::Package.new({
                 'name' => 'bar',
                 'files' => 'foo/**/*'
-              }, release_source.path, true, blobstore)
+              }, release_source.path, true)
           }.to raise_error(/Please remove 'src_alt' first/)
         end
       end

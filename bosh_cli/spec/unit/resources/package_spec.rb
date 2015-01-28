@@ -9,7 +9,7 @@ describe Bosh::Cli::Resources::Package, 'dev build' do
       'excluded_files' => excluded_file_patterns,
     }
 
-    Bosh::Cli::Resources::Package.new(spec, release_source.path, final, blobstore)
+    Bosh::Cli::Resources::Package.new(spec, release_source.path, final)
   end
   let(:package_name) { 'pkg' }
   let(:file_patterns) { ['*.rb'] }
@@ -19,7 +19,6 @@ describe Bosh::Cli::Resources::Package, 'dev build' do
   # ???
   let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
   let(:final) { false }
-  let(:blobstore) { double('blobstore') }
 
   after do
     release_source.cleanup

@@ -62,10 +62,9 @@ module Bosh::Cli::Resources
         end
 
         is_final = options[:final]
-        blobstore = options[:blobstore]
         dry_run = options[:dry_run]
 
-        package = new(package_spec, directory, is_final, blobstore)
+        package = new(package_spec, directory, is_final)
         package.dry_run = true if dry_run
 
         packages << package
@@ -75,8 +74,7 @@ module Bosh::Cli::Resources
     end
 
 
-    def initialize(spec, release_source, final, blobstore,
-                   sources_dir = nil, blobs_dir = nil, alt_src_dir = nil)
+    def initialize(spec, release_source, final, sources_dir = nil, blobs_dir = nil, alt_src_dir = nil)
       spec = load_yaml_file(spec) if spec.is_a?(String) && File.file?(spec)
 
       @name = spec["name"]
@@ -90,7 +88,6 @@ module Bosh::Cli::Resources
       @blobs_dir = blobs_dir || File.join(@release_source, "blobs")
 
       @final = final
-      @blobstore = blobstore
 
       if @final && File.exists?(@alt_sources_dir)
         err("Please remove '#{File.basename(@alt_sources_dir)}' first")
