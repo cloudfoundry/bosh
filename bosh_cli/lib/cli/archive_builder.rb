@@ -4,20 +4,22 @@
 
 module Bosh::Cli
   class ArchiveBuilder
-    attr_accessor :dry_run, :tarball_path, :resource
+    attr_accessor :tarball_path, :resource
+    attr_reader :options
 
-    def initialize(resource, archive_dir, blobstore)
+    def initialize(resource, archive_dir, blobstore, options = {})
       @resource = resource
       @archive_dir = archive_dir
       @blobstore = blobstore
+      @options = options
     end
 
     def final?
-      @resource.final?
+      @final ||= !!options[:final]
     end
 
     def dry_run?
-      @dry_run
+      @dry_run || !!options[:dry_run]
     end
 
     def new_version?
@@ -53,7 +55,7 @@ module Bosh::Cli
       # for backwards compatibility while refactoring archive building, etc.
       resource.fingerprint = fingerprint
       resource.version = resource_version
-      resource.checksum = checksum unless dry_run
+      resource.checksum = checksum unless dry_run?
       resource.notes = notes
       resource.new_version = new_version?
       resource.tarball_path = @tarball_path

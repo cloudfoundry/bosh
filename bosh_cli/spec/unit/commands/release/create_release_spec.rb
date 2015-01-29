@@ -26,14 +26,16 @@ module Bosh::Cli::Command::Release
       let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
       let(:blobstore) { double('blobstore') }
       let(:package) {
-        spec = {
+        Bosh::Cli::Resources::Package.new(release_source.join('packages/package_name'), release_source.path)
+      }
+      let(:package_spec) do
+        {
           'name' => 'package_name',
           'files' => ['lib/*.rb', 'README.*'],
           'dependencies' => [],
           'excluded_files' => [],
         }
-        Bosh::Cli::Resources::Package.new(spec, release_source.path, false, blobstore)
-      }
+      end
       let(:matched_files) { ['lib/1.rb', 'lib/2.rb', 'README.2', 'README.md'] }
       let(:archive_builder) { instance_double(Bosh::Cli::ArchiveBuilder) }
 
@@ -43,6 +45,8 @@ module Bosh::Cli::Command::Release
 
       before do
         release_source.add_dir('src')
+        release_source.add_file('packages/package_name', 'spec', package_spec.to_yaml)
+
         matched_files.each { |f| release_source.add_file('src', f, "contents of #{f}") }
 
         allow(command).to receive(:interactive?).and_return(interactive)
@@ -149,8 +153,8 @@ module Bosh::Cli::Command::Release
 
         before do
           command.options[:name] = provided_name
-          expect(Bosh::Cli::Resources::Package).to receive(:discover).with(work_dir, {:final=>nil, :dry_run=>true}).and_return([package])
-          expect(Bosh::Cli::ArchiveBuilder).to receive(:new).with(package, work_dir, nil).and_return(archive_builder)
+          expect(Bosh::Cli::Resources::Package).to receive(:discover).with(work_dir).and_return([package])
+          expect(Bosh::Cli::ArchiveBuilder).to receive(:new).with(package, work_dir, nil, { dry_run: true, final: nil }).and_return(archive_builder)
           expect(archive_builder).to receive(:build)
         end
 

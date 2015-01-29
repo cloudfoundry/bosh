@@ -48,7 +48,7 @@ module Bosh::Cli
       def release
         return @release if @release
         check_if_release_dir
-        @release = Bosh::Cli::Release.new(@work_dir, options[:final])
+        @release = Bosh::Cli::Release.new(work_dir, options[:final])
       end
 
       def progress_renderer

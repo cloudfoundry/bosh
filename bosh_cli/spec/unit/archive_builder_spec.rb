@@ -1,32 +1,44 @@
 require 'spec_helper'
 
 describe Bosh::Cli::ArchiveBuilder, 'dev build' do
-  subject(:builder) { Bosh::Cli::ArchiveBuilder.new(resource, archive_dir, blobstore) }
+  subject(:builder) { Bosh::Cli::ArchiveBuilder.new(resource, archive_dir, blobstore, release_options) }
 
   let(:resource) do
-    spec = {
+    Bosh::Cli::Resources::Package.new(release_source.join(resource_base), release_source.path)
+  end
+
+  let(:resource_spec) do
+    {
       'name' => resource_name,
       'files' => resource_file_patterns,
       'dependencies' => resource_deps,
       'excluded_files' => excluded_file_patterns,
     }
-
-    Bosh::Cli::Resources::Package.new(spec, release_source.path, final)
   end
 
   let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
+  let(:release_options) do
+    {
+      dry_run: dry_run,
+      final: final
+    }
+  end
+  let(:dry_run) { false }
+  let(:final) { false }
+
   let(:archive_dir) { release_source.path }
   let(:basedir) { nil } # meh!
   let(:tmp_dirs) { [] }
 
   let(:resource_name) { 'pkg' }
+  let(:resource_base) { "packages/#{resource_name}" }
   let(:resource_file_patterns) { ['*.rb'] }
   let(:resource_deps) { ['foo', 'bar'] }
   let(:excluded_file_patterns) { [] }
-  let(:final) { false }
   let(:blobstore) { double('blobstore') }
 
   before do
+    release_source.add_file(resource_base, 'spec', resource_spec.to_yaml)
     release_source.add_dir('blobs')
     release_source.add_dir('src')
   end
@@ -85,54 +97,8 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
       end
     end
 
-    xcontext 'when the resource is a Job' do
-      let(:resource_name) { 'job-name' }
-      let(:packages) { ['foo', 'bar'] }
-      let(:templates) { ['a.conf', 'b.yml'] }
-      let(:built_packages) { ['foo', 'bar'] }
-
-      let(:resource) do
-        spec = {
-          'name' => resource_name,
-          'packages' => packages,
-          'templates' => templates.inject({}) { |h, e| h[e] = e; h }
-        }
-
-        Bosh::Cli::Resources::Job.new(spec, release_source.path,
-          final, blobstore, built_packages)
-      end
-
-      before do
-        add_templates(resource_name, *templates)
-        add_monit(resource_name)
-        add_job_file(resource_name, 'spec')
-      end
-
-      def add_monit(name, file = 'monit')
-        add_job_file(name, file)
-      end
-
-      def add_job_file(name, file, contents = nil)
-        release_source.add_file("jobs/#{name}", file, contents)
-      end
-
-      def add_templates(name, *files)
-        job_template_path = release_source.join('jobs', name, 'templates')
-        FileUtils.mkdir_p(job_template_path)
-
-        files.each do |file|
-          add_job_file(name, "templates/#{file}")
-        end
-      end
-
-      it 'generates a tarball' do
-        builder.build
-        expect(release_source).to have_file(".dev_builds/jobs/#{resource_name}/#{builder.fingerprint}.tgz")
-      end
-    end
-
     context 'when in dry run mode' do
-      before { builder.dry_run = true }
+      let(:dry_run) { true }
 
       it 'writes no tarballs' do
         expect { builder.build }.not_to change { directory_listing(release_source.path) }
@@ -144,7 +110,7 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
       end
 
       context 'when final' do
-        let(:final) {true}
+        let(:final) { true }
 
         it 'does not upload the tarball' do
           expect(blobstore).to_not receive(:create)
@@ -182,19 +148,6 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
           explosion = open_archive(tarball_file)
 
           expect(directory_listing(explosion, true)).to contain_exactly("README.2", "README.md", "include_me", "lib", "lib/1.rb", "lib/2.rb")
-        end
-      end
-
-      context 'when a src_alt exists' do
-        before { release_source.add_dir('src_alt') }
-
-        it 'prevents building final version' do
-          expect {
-            Bosh::Cli::Resources::Package.new({
-                'name' => 'bar',
-                'files' => 'foo/**/*'
-              }, release_source.path, true)
-          }.to raise_error(/Please remove 'src_alt' first/)
         end
       end
     end
@@ -254,48 +207,6 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
 
           explosion = open_archive(builder.tarball_path)
           expect(File.read(File.join(explosion, 'README.txt'))).to eq('README from src')
-        end
-      end
-    end
-
-    context 'when the resource contains a src_alt dir' do
-      before { release_source.add_dir('src_alt') }
-
-      it 'includes top-level files from src_alt instead of src' do
-        release_source.add_file('src_alt', 'README.md', 'README.md from src_alt')
-        builder.build
-
-        explosion = open_archive(builder.tarball_path)
-        expect(File.read(File.join(explosion, 'README.md'))).to eq('README.md from src_alt')
-      end
-
-      context 'when src_alt contains a top-level dir matching a dir in src' do
-        it 'the contents from src_alt are used and the contents from src are ignored' do
-          release_source.add_file('src_alt', 'lib/2.rb', 'lib/2.rb from src_alt')
-          release_source.add_file('src_alt', 'lib/3.rb', 'lib/3.rb from src_alt')
-          builder.build
-
-          explosion = open_archive(builder.tarball_path)
-          expect(directory_listing(explosion)).to contain_exactly('lib/2.rb', 'lib/3.rb', 'README.2', 'README.md')
-          expect(File.read(File.join(explosion, 'lib/2.rb'))).to eq('lib/2.rb from src_alt')
-        end
-      end
-
-      it "checks if glob top-level-dir is present in src_alt but doesn't match" do
-        release_source.add_dir('src_alt/lib')
-
-        expect {
-          builder.build
-        }.to raise_error("Package '#{resource_name}' has a glob that doesn't match in 'src_alt' but matches in 'src'. However 'src_alt/lib' exists, so this might be an error.")
-      end
-
-      context 'when a resource file pattern does not match any files in src or src_alt' do
-        let(:resource_file_patterns) { ['lib2/*'] }
-
-        it 'raises an error' do
-          expect {
-            builder.build
-          }.to raise_error("Package '#{resource_name}' has a glob that resolves to an empty file list: lib2/*")
         end
       end
     end
@@ -394,14 +305,6 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
 
       it 'does not vary' do
         expect(builder.fingerprint).to eq(reference_fingerprint)
-      end
-    end
-
-    context 'when the resource contains a src_alt dir' do
-      it 'includes top-level files from src_alt instead of src' do
-        release_source.add_file('src_alt', 'README.md', 'README.md from src_alt')
-        builder.build
-        expect(builder.fingerprint).not_to eq(reference_fingerprint)
       end
     end
   end
