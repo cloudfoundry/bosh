@@ -49,14 +49,14 @@ module Bosh::Cli
 
       header("Copying packages")
       @packages.each do |package|
-        say("#{package.name} (#{package.version})".ljust(30), " ")
+        say("#{package['name']} (#{package['version']})".ljust(30), " ")
         if remote_package_exists?(package)
           say("SKIP".make_yellow)
           next
         end
         package_file_path = find_package(package)
         FileUtils.cp(package_file_path,
-                     File.join(@packages_dir, "#{package.name}.tgz"),
+                     File.join(@packages_dir, "#{package['name']}.tgz"),
                      :preserve => true)
       end
 
@@ -94,7 +94,7 @@ module Bosh::Cli
     end
 
     def find_package(package)
-      name = package.name
+      name = package['name']
       final_package_dir = File.join(@release_source, '.final_builds', 'packages', name)
       final_index = Versions::VersionsIndex.new(final_package_dir)
       dev_package_dir = File.join(@release_source, '.dev_builds', 'packages', name)
@@ -148,9 +148,9 @@ module Bosh::Cli
     # @return [Boolean]
     def remote_package_exists?(local_package)
       # If checksum is known to director we can always match it
-      @package_matches.include?(local_package.sha1) ||
-        (local_package.fingerprint &&
-         @package_matches.include?(local_package.fingerprint))
+      @package_matches.include?(local_package['sha1']) ||                     # !!! Needs test coverage
+        (local_package['fingerprint'] &&                                      # !!! Needs test coverage
+         @package_matches.include?(local_package['fingerprint']))             # !!! Needs test coverage
     end
 
     # Checks if local job is already known remotely

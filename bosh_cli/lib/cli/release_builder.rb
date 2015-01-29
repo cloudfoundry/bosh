@@ -5,7 +5,7 @@ module Bosh::Cli
     attr_reader :release, :packages, :jobs, :name, :version, :build_dir, :commit_hash, :uncommitted_changes
 
     # @param [Bosh::Cli::Release] release Current release
-    # @param [Array<Bosh::Cli::Resources::Package>] packages Built packages
+    # @param [Array<Hash>] packages Metadata for Built packages
     # @param [Array<Bosh::Cli::JobBuilder>] jobs Built jobs
     # @param [Hash] options Release build options
     def initialize(release, packages, jobs, name, options = { })
@@ -56,7 +56,7 @@ module Bosh::Cli
       return result if @packages.empty?
 
       new_package_names = @packages.inject([]) do |list, package|
-        list << package.name if package.new_version?
+        list << package['name'] if package['new_version']
         list
       end
 
@@ -84,10 +84,10 @@ module Bosh::Cli
     # Copies packages into release
     def copy_packages
       packages.each do |package|
-        say("%-40s %s" % [package.name.make_green,
-                           pretty_size(package.tarball_path)])
-        FileUtils.cp(package.tarball_path,
-                     File.join(build_dir, "packages", "#{package.name}.tgz"),
+        say("%-40s %s" % [package['name'].make_green,
+                           pretty_size(package['tarball_path'])])
+        FileUtils.cp(package['tarball_path'],
+                     File.join(build_dir, "packages", "#{package['name']}.tgz"),
                      :preserve => true)
       end
       @packages_copied = true
@@ -107,18 +107,9 @@ module Bosh::Cli
     # Generates release manifest
     def generate_manifest
       manifest = {}
-      manifest["packages"] = []
+      manifest["packages"] = packages
 
-      manifest["packages"] = packages.map do |package|
-        {
-          "name" => package.name,
-          "version" => package.version,
-          "sha1" => package.checksum,
-          "fingerprint" => package.fingerprint,
-          "dependencies" => package.dependencies
-        }
-      end
-
+      # TODO: manifest["jobs"] = jobs, where jobs are metadata of the built artifacts
       manifest["jobs"] = jobs.map do |job|
         {
           "name" => job.name,

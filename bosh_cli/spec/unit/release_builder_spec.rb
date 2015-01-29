@@ -126,10 +126,10 @@ module Bosh::Cli
       jobs << double(:job, :new_version? => false, :packages => %w(bar baz), :name => 'job4')
 
       packages = []
-      packages << double(:package, :name => 'foo', :new_version? => true)
-      packages << double(:package, :name => 'bar', :new_version? => false)
-      packages << double(:package, :name => 'baz', :new_version? => false)
-      packages << double(:package, :name => 'zb', :new_version? => true)
+      packages << { 'name' => 'foo', 'new_version' => true }
+      packages << { 'name' => 'bar', 'new_version' => false }
+      packages << { 'name' => 'baz', 'new_version' => false }
+      packages << { 'name' => 'zb', 'new_version' => true }
 
       builder = ReleaseBuilder.new(@release, packages, jobs, release_name)
 
@@ -147,15 +147,14 @@ module Bosh::Cli
         :checksum => 'cafebad'
       )
 
-      package = double(
-        Resources::Package,
-        :name => 'foo',
-        :version => '42',
-        :new_version? => true,
-        :fingerprint => 'deadcafe',
-        :checksum => 'baddeed',
-        :dependencies => []
-      )
+      package = {
+        'name' => 'foo',
+        'version' => '42',
+        'new_version' => true,
+        'fingerprint' => 'deadcafe',
+        'checksum' => 'baddeed',
+        'dependencies' => []
+      }
 
       builder = ReleaseBuilder.new(@release, [package], [job], release_name)
       expect(builder).to receive(:copy_jobs)

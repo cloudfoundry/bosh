@@ -17,9 +17,7 @@ module Bosh::Cli::Resources
       end
     end
 
-    # TEMP: backwards compatibility while refactoring archive building, etc.
-    attr_accessor :fingerprint, :version, :checksum, :notes, :new_version, :tarball_path
-    attr_reader :package_base, :release_base, :globs, :dependencies
+    attr_reader :package_base, :release_base
 
     def initialize(package_base, release_base)
       @release_base = Pathname.new(release_base)
@@ -84,22 +82,16 @@ module Bosh::Cli::Resources
       'package'
     end
 
-    def dependencies
-      @dependencies ||= Array(spec['dependencies']).sort
-    end
-
     def format_fingerprint(digest, filename, name, file_mode)
       is_hook = BUILD_HOOK_FILES.include?(name)
       "%s%s%s" % [name, digest, is_hook ? '' : file_mode]
     end
 
+    def metadata
+      { 'name' => name, 'dependencies' => dependencies }
+    end
 
     # ---
-
-
-    def new_version?
-      @new_version
-    end
 
     def pre_package(staging_dir)
       pre_packaging_script = package_base.join('pre_packaging')
@@ -139,8 +131,16 @@ module Bosh::Cli::Resources
 
     private
 
+    def dependencies
+      @dependencies ||= Array(spec['dependencies']).sort
+    end
+
     def excluded_files
       @excluded_files ||= Array(spec['excluded_files']).sort
+    end
+
+    def new_version?
+      @new_version
     end
 
     # @return Array<Bosh::Cli::GlobMatch>

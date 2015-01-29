@@ -161,7 +161,7 @@ module Bosh::Cli::Command
         work_dir,
         :dry_run => true,
         :final => false,
-        :package_names => packages.map {|package| package.name}
+        :package_names => packages.map {|package| package['name']}
       )
 
       say(" - validating properties")

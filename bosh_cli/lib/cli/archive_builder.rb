@@ -4,8 +4,10 @@
 
 module Bosh::Cli
   class ArchiveBuilder
-    attr_accessor :tarball_path, :resource
-    attr_reader :options
+    # TODO: remove all usage of these attr_accessors
+    attr_accessor :tarball_path
+
+    attr_reader :options, :resource
 
     def initialize(resource, archive_dir, blobstore, options = {})
       @resource = resource
@@ -51,18 +53,18 @@ module Bosh::Cli
         use_final_version || use_dev_version || generate_tarball
       end
 
-      # TEMP: package specific properties are set back on the package object
-      # for backwards compatibility while refactoring archive building, etc.
-      resource.fingerprint = fingerprint
-      resource.version = resource_version
-      resource.checksum = checksum unless dry_run?
-      resource.notes = notes
-      resource.new_version = new_version?
-      resource.tarball_path = @tarball_path
+      metadata = resource.metadata
+      metadata['version'] = version
+      metadata['fingerprint'] = fingerprint
+      metadata['sha1'] = checksum unless dry_run?
+      metadata['new_version'] = new_version?
+      metadata['notes'] = notes
+      metadata['tarball_path'] = @tarball_path
 
       upload_tarball(@tarball_path) if final? && !dry_run?
       @will_be_promoted = true if final? && dry_run? && @used_dev_version
-      self
+
+      metadata
     end
 
     def checksum
@@ -73,18 +75,20 @@ module Bosh::Cli
       end
     end
 
+    # TODO: remove this... it should only be on the build metadata, not on the builder.
     def fingerprint
       @fingerprint ||= make_fingerprint
     end
 
-    def resource_version
+    # TODO: remove this... it should only be on the build metadata, not on the builder.
+    def version
       @version
     end
 
     private
 
     def additional_fingerprints
-      @resource.dependencies.sort
+      (@resource.spec['dependencies'] || []).sort
     end
 
     def copy_files
@@ -246,7 +250,7 @@ module Bosh::Cli
         return
       end
 
-      say("Uploading final version `#{resource_version}'...")
+      say("Uploading final version `#{version}'...")
 
       blobstore_id = nil
       File.open(path, 'r') do |f|

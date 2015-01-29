@@ -67,6 +67,25 @@ describe Bosh::Cli::Resources::Package, 'dev build' do
     end
   end
 
+  describe '#metadata' do
+    let(:spec) do
+      spec = {
+        'name' => name,
+        'files' => spec_files,
+        'dependencies' => dependencies,
+      }
+    end
+    let(:dependencies) { ['dependency_one', 'dependency_two'] }
+
+    it 'includes name' do
+      expect(package.metadata['name']).to eq(name)
+    end
+
+    it 'includes dependencies' do
+      expect(package.metadata['dependencies']).to eq(dependencies)
+    end
+  end
+
   describe '#validate!' do
     context 'when the Package name does not match the Package directory name' do
       let(:name) { 'mismatch' }
@@ -174,36 +193,6 @@ describe Bosh::Cli::Resources::Package, 'dev build' do
 
       it 'does not include the exclusions' do
         expect(package.files.map { |entry| entry[1] }).to contain_exactly(*(src_files - spec_excluded_files))
-      end
-    end
-  end
-
-  describe '#dependencies' do
-    context 'when dependencies are specified' do
-      let(:spec) do
-        spec = {
-          'name' => name,
-          'files' => spec_files,
-          'dependencies' => dependencies,
-        }
-      end
-      let(:dependencies) { ['dependency_one', 'dependency_two'] }
-
-      it 'returns an Array of the dependencies' do
-        expect(package.dependencies).to eq(dependencies)
-      end
-    end
-
-    context 'when dependencies are not specified' do
-      let(:spec) do
-        spec = {
-          'name' => name,
-          'files' => spec_files,
-        }
-      end
-
-      it 'returns an empty Array' do
-        expect(package.dependencies).to eq([])
       end
     end
   end

@@ -24,6 +24,13 @@ module Bosh::Cli::Command::Release
       let(:next_tarball_path) { '/fake/manifest/path.yml' }
 
       let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
+      let(:release_options) do
+        {
+          dry_run: false,
+          final: false
+        }
+      end
+      let(:archive_dir) { release_source.path }
       let(:blobstore) { double('blobstore') }
       let(:package) {
         Bosh::Cli::Resources::Package.new(release_source.join('packages/package_name'), release_source.path)
@@ -37,7 +44,7 @@ module Bosh::Cli::Command::Release
         }
       end
       let(:matched_files) { ['lib/1.rb', 'lib/2.rb', 'README.2', 'README.md'] }
-      let(:archive_builder) { instance_double(Bosh::Cli::ArchiveBuilder) }
+      let(:archive_builder) { Bosh::Cli::ArchiveBuilder.new(package, archive_dir, blobstore, release_options) }
 
       after do
         release_source.cleanup
@@ -56,7 +63,7 @@ module Bosh::Cli::Command::Release
 
         allow(Bosh::Cli::Resources::Package).to receive(:discover).and_return([package])
         allow(Bosh::Cli::ArchiveBuilder).to receive(:new).and_return(archive_builder)
-        allow(archive_builder).to receive(:build)
+        # allow(archive_builder).to receive(:build)
 
         allow(command).to receive(:build_jobs)
 
@@ -155,11 +162,11 @@ module Bosh::Cli::Command::Release
           command.options[:name] = provided_name
           expect(Bosh::Cli::Resources::Package).to receive(:discover).with(work_dir).and_return([package])
           expect(Bosh::Cli::ArchiveBuilder).to receive(:new).with(package, work_dir, nil, { dry_run: true, final: nil }).and_return(archive_builder)
-          expect(archive_builder).to receive(:build)
         end
 
         it 'builds release with the specified name' do
-          expect(command).to receive(:build_release).with(true, nil, nil, true, [package], provided_name, nil)
+          package_metadata = archive_builder.build
+          expect(command).to receive(:build_release).with(true, nil, nil, true, [package_metadata], provided_name, nil)
 
           command.create
         end
@@ -174,7 +181,8 @@ module Bosh::Cli::Command::Release
 
       context 'when a version is provided with --version' do
         it 'builds release with the specified version' do
-          expect(command).to receive(:build_release).with(true, nil, nil, true, [package], configured_dev_name, '1.0.1')
+          package_metadata = archive_builder.build
+          expect(command).to receive(:build_release).with(true, nil, nil, true, [package_metadata], configured_dev_name, '1.0.1')
           command.options[:version] = '1.0.1'
           command.create
         end
