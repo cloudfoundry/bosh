@@ -142,5 +142,15 @@ describe Bosh::AwsCloud::Instance do
         instance.remove_from_load_balancers
       }.to_not raise_error
     end
+
+    it 'retries if the deregistration is rate limited' do
+      expect(lb1_instances).to receive(:deregister).and_raise(AWS::ELB::Errors::Throttling)
+      expect(lb1_instances).to receive(:deregister).and_return(nil)
+      allow(lb2_instances).to receive(:deregister)
+
+      expect {
+        instance.remove_from_load_balancers
+      }.to_not raise_error
+    end
   end
 end
