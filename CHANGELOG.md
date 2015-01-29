@@ -1,3 +1,28 @@
+## 2827
+
+New Features:
+
+  * stemcell: openstack: Publish raw stemcells in addition to qcow2 [382e448]
+
+Improvements:
+
+  * director: Follow redirects when downloading remote stemcells/releases [5d2bb05]
+  * stemcell: Agent is responsible for creating /var/vcap/sys symlink [7563294]
+
+## 2824
+
+New Features:
+
+  * cpi: openstack: Permit volumes to default to the default availability zone,
+        ignoring the AZ of the server. This allows multiple compute AZs with a
+        single storage AZ configuration backed by Ceph to operate [e1b6e14]
+  * stemcell: upgrade libssl to 1.0.1f-1ubuntu2.8 for USN-2459-1 [35799c7]
+        [story](https://www.pivotaltracker.com/story/show/86540636)
+
+Improvements:
+
+  * cli: Don't confirm release upload [c1e4886]
+
 ## 2820
 
 Improvements:
