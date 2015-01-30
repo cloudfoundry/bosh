@@ -165,8 +165,8 @@ module Bosh::Cli::Command::Release
         end
 
         it 'builds release with the specified name' do
-          package_metadata = archive_builder.build
-          expect(command).to receive(:build_release).with(true, nil, nil, true, [package_metadata], provided_name, nil)
+          package_artifact = archive_builder.build
+          expect(command).to receive(:build_release).with(true, nil, nil, true, [package_artifact], provided_name, nil)
 
           command.create
         end
@@ -181,8 +181,8 @@ module Bosh::Cli::Command::Release
 
       context 'when a version is provided with --version' do
         it 'builds release with the specified version' do
-          package_metadata = archive_builder.build
-          expect(command).to receive(:build_release).with(true, nil, nil, true, [package_metadata], configured_dev_name, '1.0.1')
+          package_artifact = archive_builder.build
+          expect(command).to receive(:build_release).with(true, nil, nil, true, [package_artifact], configured_dev_name, '1.0.1')
           command.options[:version] = '1.0.1'
           command.create
         end

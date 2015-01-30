@@ -7,13 +7,17 @@ module Bosh::Cli
     # TODO: remove all usage of these attr_accessors
     attr_accessor :tarball_path
 
-    attr_reader :options, :resource
+    attr_reader :options
 
     def initialize(resource, archive_dir, blobstore, options = {})
       @resource = resource
       @archive_dir = archive_dir
       @blobstore = blobstore
       @options = options
+    end
+
+    def artifact
+      @artifact ||= BuildArtifact.new(@resource)
     end
 
     def final?
@@ -42,29 +46,22 @@ module Bosh::Cli
     end
 
     def build
-      @dev_builds_dir = File.join(@archive_dir, ".dev_builds", "#{resource.artifact_type}s", resource.name)
-      @final_builds_dir = File.join(@archive_dir, ".final_builds", "#{resource.artifact_type}s", resource.name)
-
-      FileUtils.mkdir_p(@dev_builds_dir)
-      FileUtils.mkdir_p(@final_builds_dir)
+      init_directories
       init_indices
 
       with_indent('  ') do
         use_final_version || use_dev_version || generate_tarball
       end
 
-      metadata = resource.metadata
-      metadata['version'] = version
-      metadata['fingerprint'] = fingerprint
-      metadata['sha1'] = checksum unless dry_run?
-      metadata['new_version'] = new_version?
-      metadata['notes'] = notes
-      metadata['tarball_path'] = @tarball_path
+      artifact.checksum = checksum unless dry_run?
+      artifact.notes = notes
+      artifact.tarball_path = @tarball_path
+      artifact.new_version = new_version?
 
       upload_tarball(@tarball_path) if final? && !dry_run?
       @will_be_promoted = true if final? && dry_run? && @used_dev_version
 
-      metadata
+      artifact.metadata
     end
 
     def checksum
@@ -77,7 +74,8 @@ module Bosh::Cli
 
     # TODO: remove this... it should only be on the build metadata, not on the builder.
     def fingerprint
-      @fingerprint ||= make_fingerprint
+      # @fingerprint ||= make_fingerprint
+      artifact.fingerprint
     end
 
     # TODO: remove this... it should only be on the build metadata, not on the builder.
@@ -107,6 +105,14 @@ module Bosh::Cli
       File.file?(filename) ? Digest::SHA1.file(filename).hexdigest : ''
     end
 
+    def init_directories
+      @dev_builds_dir = File.join(@archive_dir, ".dev_builds", "#{@resource.artifact_type}s", @resource.name)
+      @final_builds_dir = File.join(@archive_dir, ".final_builds", "#{@resource.artifact_type}s", @resource.name)
+
+      FileUtils.mkdir_p(@dev_builds_dir)
+      FileUtils.mkdir_p(@final_builds_dir)
+    end
+
     def init_indices
       @dev_index   = Versions::VersionsIndex.new(@dev_builds_dir)
       @dev_storage = Versions::LocalVersionStorage.new(@dev_builds_dir)
@@ -117,22 +123,10 @@ module Bosh::Cli
       @final_resolver = Versions::VersionFileResolver.new(@final_storage, @blobstore)
     end
 
-    def make_fingerprint
-      versioning_scheme = 2
-      contents = "v#{versioning_scheme}"
-
-      @resource.files.each do |filename, name|
-        contents << @resource.format_fingerprint(digest_file(filename), filename, name, file_mode(filename))
-      end
-
-      contents << additional_fingerprints.join(",")
-      Digest::SHA1.hexdigest(contents)
-    end
-
     def use_final_version
       say('Final version:', ' ')
 
-      item = @final_index[fingerprint]
+      item = @final_index[artifact.fingerprint]
 
       if item.nil?
         say('NOT FOUND'.make_red)
@@ -140,7 +134,7 @@ module Bosh::Cli
       end
 
       blobstore_id = item['blobstore_id']
-      version      = item['version'] || fingerprint
+      version      = item['version'] || artifact.fingerprint
       sha1         = item['sha1']
 
       if blobstore_id.nil?
@@ -163,14 +157,14 @@ module Bosh::Cli
 
     def use_dev_version
       say('Dev version:', '   ')
-      item = @dev_index[fingerprint]
+      item = @dev_index[artifact.fingerprint]
 
       if item.nil?
         say('NOT FOUND'.make_red)
         return nil
       end
 
-      version = @dev_index['version'] || fingerprint
+      version = @dev_index['version'] || artifact.fingerprint
 
       if !@dev_storage.has_file?(version)
         say('TARBALL MISSING'.make_red)
@@ -187,10 +181,10 @@ module Bosh::Cli
 
       if final? && !dry_run?
         # copy from dev index/storage to final index/storage
-        @final_index.add_version(fingerprint, item)
+        @final_index.add_version(artifact.fingerprint, item)
         @tarball_path = @final_storage.put_file(version, @tarball_path)
         item['sha1'] = Digest::SHA1.file(@tarball_path).hexdigest
-        @final_index.update_version(fingerprint, item)
+        @final_index.update_version(artifact.fingerprint, item)
       end
 
       @version = version
@@ -198,7 +192,7 @@ module Bosh::Cli
     end
 
     def generate_tarball
-      version = fingerprint
+      version = artifact.fingerprint
       tmp_file = Tempfile.new(@resource.name)
 
       say('Generating...')
@@ -219,17 +213,17 @@ module Bosh::Cli
 
       if final?
         # add version (with its validation) before adding sha1
-        @final_index.add_version(fingerprint, item)
-        @tarball_path = @final_storage.put_file(fingerprint, tmp_file.path)
+        @final_index.add_version(artifact.fingerprint, item)
+        @tarball_path = @final_storage.put_file(artifact.fingerprint, tmp_file.path)
         item['sha1'] = file_checksum(@tarball_path)
-        @final_index.update_version(fingerprint, item)
+        @final_index.update_version(artifact.fingerprint, item)
       elsif dry_run?
       else
         # add version (with its validation) before adding sha1
-        @dev_index.add_version(fingerprint, item)
-        @tarball_path = @dev_storage.put_file(fingerprint, tmp_file.path)
+        @dev_index.add_version(artifact.fingerprint, item)
+        @tarball_path = @dev_storage.put_file(artifact.fingerprint, tmp_file.path)
         item['sha1'] = file_checksum(@tarball_path)
-        @dev_index.update_version(fingerprint, item)
+        @dev_index.update_version(artifact.fingerprint, item)
       end
 
       @version = version
@@ -239,10 +233,10 @@ module Bosh::Cli
     end
 
     def upload_tarball(path)
-      item = @final_index[fingerprint]
+      item = @final_index[artifact.fingerprint]
 
       unless item
-        say("Failed to find entry `#{fingerprint}' in index, check local storage")
+        say("Failed to find entry `#{artifact.fingerprint}' in index, check local storage")
         return
       end
 
@@ -259,7 +253,7 @@ module Bosh::Cli
 
       say("Uploaded, blobstore id `#{blobstore_id}'")
       item['blobstore_id'] = blobstore_id
-      @final_index.update_version(fingerprint, item)
+      @final_index.update_version(artifact.fingerprint, item)
       @promoted = true
       true
     rescue Bosh::Blobstore::BlobstoreError => e
@@ -268,22 +262,6 @@ module Bosh::Cli
 
     def file_checksum(path)
       Digest::SHA1.file(path).hexdigest
-    end
-
-    # Git doesn't really track file permissions, it just looks at executable
-    # bit and uses 0755 if it's set or 0644 if not. We have to mimic that
-    # behavior in the fingerprint calculation to avoid the situation where
-    # seemingly clean working copy would trigger new fingerprints for
-    # artifacts with changed permissions. Also we don't want current
-    # fingerprints to change, hence the exact values below.
-    def file_mode(path)
-      if File.directory?(path)
-        '40755'
-      elsif File.executable?(path)
-        '100755'
-      else
-        '100644'
-      end
     end
 
     def staging_dir

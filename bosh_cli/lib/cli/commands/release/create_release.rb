@@ -85,13 +85,13 @@ module Bosh::Cli::Command
         end
 
         header('Building packages')
-        package_metadata = build_packages(dry_run, final) # packages will be metadata.
+        package_artifacts = build_packages(dry_run, final)
 
         header('Building jobs')
-        jobs = build_jobs(package_metadata.map { |package| package['name'] }, dry_run, final)
+        jobs = build_jobs(package_artifacts.map { |package| package['name'] }, dry_run, final)
 
         header('Building release')
-        release_builder = build_release(dry_run, final, jobs, manifest_only, package_metadata, name, version)
+        release_builder = build_release(dry_run, final, jobs, manifest_only, package_artifacts, name, version)
 
         header('Release summary')
         show_summary(release_builder)
@@ -139,16 +139,16 @@ module Bosh::Cli::Command
           final: final
         }
         packages = Bosh::Cli::Resources::Package.discover(work_dir)
-        all_metadata = packages.map do |package|
+        artifacts = packages.map do |package|
           say("Building #{package.name.make_green}...")
-          result = Bosh::Cli::ArchiveBuilder.new(package, work_dir, release.blobstore, options).build
+          artifact = Bosh::Cli::ArchiveBuilder.new(package, work_dir, release.blobstore, options).build
           nl
-          result
+          artifact
         end
 
         if packages.size > 0
-          package_index = all_metadata.inject({}) do |index, pkg_metadata|
-            index[pkg_metadata['name']] = pkg_metadata['dependencies']
+          package_index = artifacts.inject({}) do |index, artifact|
+            index[artifact['name']] = artifact['dependencies']
             index
           end
           sorted_packages = tsort_packages(package_index)
@@ -160,7 +160,7 @@ module Bosh::Cli::Command
           nl
         end
 
-        all_metadata
+        artifacts
       end
 
       def build_release(dry_run, final, jobs, manifest_only, packages, name, version)

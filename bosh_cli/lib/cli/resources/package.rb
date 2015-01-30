@@ -186,7 +186,7 @@ module Bosh::Cli::Resources
     end
 
     def resolved_globs
-      @resolved_globs # ||= resolve_globs
+      @resolved_globs
     end
 
     def release_src
