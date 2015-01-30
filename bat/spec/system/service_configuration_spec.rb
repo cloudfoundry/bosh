@@ -26,6 +26,12 @@ def instance_reboot(ip)
   bosh('vm resurrection on')
 end
 
+def dump_log(ip, log_path)
+  @logger.info("Dumping log file '#{log_path}'")
+  @logger.info("================================================================================")
+  ssh(ip, 'vcap', "([ -f '#{log_path}' ] && cat #{log_path})", ssh_options)
+end
+
 def process_running_on_instance(ip, process_name)
   # make sure process is up and running
   tries = 0
@@ -35,7 +41,14 @@ def process_running_on_instance(ip, process_name)
     pid = ssh(ip, 'vcap', "pgrep #{process_name}", ssh_options)
     break unless (tries += 1) < 30 && (pid =~ /^\d+\n$/).nil?
   end
-  expect(pid =~ /^\d+\n$/).to eq(0), "Expected process '#{process_name}' to be running after 30 seconds, but it was not"
+
+  matched = pid.match(/^\d+\n$/)
+  if matched.nil?
+    dump_log(ip, "/var/vcap/bosh/log/current")
+    dump_log(ip, "/var/vcap/monit/svlog/current")
+    dump_log(ip, "/var/vcap/monit/monit.log")
+  end
+  expect(matched).to_not be_nil, "Expected process '#{process_name}' to be running after 30 seconds, but it was not"
 end
 
 def runit_running_on_instance(ip)
