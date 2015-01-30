@@ -33,9 +33,9 @@ def process_running_on_instance(ip, process_name)
   loop do
     sleep 1
     pid = ssh(ip, 'vcap', "pgrep #{process_name}", ssh_options)
-    break unless tries < 30 && (pid =~ /^\d+\n$/).nil?
+    break unless (tries += 1) < 30 && (pid =~ /^\d+\n$/).nil?
   end
-  expect(pid =~ /^\d+\n$/).to eq(0)
+  expect(pid =~ /^\d+\n$/).to eq(0), "Expected process '#{process_name}' to be running after 30 seconds, but it was not"
 end
 
 def runit_running_on_instance(ip)
