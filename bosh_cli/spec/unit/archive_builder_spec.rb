@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Cli::ArchiveBuilder, 'dev build' do
-  subject(:builder) { Bosh::Cli::ArchiveBuilder.new(resource, archive_dir, blobstore, release_options) }
+  subject(:builder) { Bosh::Cli::ArchiveBuilder.new(archive_dir, blobstore, release_options) }
 
   let(:resource) do
     Bosh::Cli::Resources::Package.new(release_source.join(resource_base), release_source.path)
@@ -10,7 +10,7 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
   let(:resource_spec) do
     {
       'name' => resource_name,
-      'files' => resource_file_patterns,
+      'files' => file_patterns,
       'dependencies' => resource_deps,
       'excluded_files' => excluded_file_patterns,
     }
@@ -32,7 +32,7 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
 
   let(:resource_name) { 'pkg' }
   let(:resource_base) { "packages/#{resource_name}" }
-  let(:resource_file_patterns) { ['*.rb'] }
+  let(:file_patterns) { ['*.rb'] }
   let(:resource_deps) { ['foo', 'bar'] }
   let(:excluded_file_patterns) { [] }
   let(:blobstore) { double('blobstore') }
@@ -58,19 +58,13 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
     before { release_source.add_file('src', '1.rb') }
 
     it 'has a checksum for a generated resource' do
-      builder.build
-      expect(builder.checksum).to match(/^[0-9a-f]{40}$/)
-    end
-
-    it 'does not attempt to calculate checksum for as yet ungenerated resource' do
-      expect {
-        builder.checksum
-      }.to raise_error(RuntimeError, 'cannot read checksum for not yet generated package')
+      artifact = builder.build(resource)
+      expect(artifact.checksum).to match(/^[0-9a-f]{40}$/)
     end
   end
 
-  describe 'building the resource' do
-    let(:resource_file_patterns) { ['lib/*.rb', 'README.*'] }
+  describe '#build' do
+    let(:file_patterns) { ['lib/*.rb', 'README.*'] }
     let(:matched_files) { ['lib/1.rb', 'lib/2.rb', 'README.2', 'README.md'] }
 
     before do
@@ -78,60 +72,25 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
       release_source.add_file('src', 'unmatched.txt')
     end
 
+    it 'returns a BuildArtifact' do
+      expect(builder.build(resource)).to be_a(Bosh::Cli::BuildArtifact)
+    end
+
     it 'copies the Resource files to build directory' do
-      builder.build
+      artifact = builder.build(resource)
+      explosion = open_archive(artifact.tarball_path)
 
-      explosion = open_archive(builder.tarball_path)
       expect(directory_listing(explosion)).to contain_exactly(*matched_files)
-
       resource.files.each do |tuple|
         path = tuple[1]
         expect(File.read(File.join(explosion, path))).to eq("contents of #{path}")
       end
     end
 
-    it 'returns metadata for the built Resource' do
-      expect(builder.build).to be_a(Hash)
-    end
-
-    describe 'the metadata' do
-      let(:metadata) { builder.build }
-
-      it 'includes metadata provided by the Resource' do
-        resource.metadata.each do |key, value|
-          expect(metadata[key]).to eq(value)
-        end
-      end
-
-      it 'includes fingerprint, provided by the build process' do
-        expect(metadata['fingerprint']).to eq(builder.fingerprint)
-      end
-
-      it 'includes checksum, provided by the build process' do
-        expect(metadata['sha1']).to eq(builder.checksum)
-      end
-
-      it 'includes version, provided by the build process' do
-        expect(metadata['version']).to eq(builder.version)
-      end
-
-      it 'includes new_version, provided by the build process' do
-        expect(metadata['new_version']).to eq(builder.new_version?)
-      end
-
-      it 'includes notes, provided by the build process' do
-        expect(metadata['notes']).to eq(builder.notes)
-      end
-
-      it 'includes tarball_path, provided by the build process' do
-        expect(metadata['tarball_path']).to eq(builder.tarball_path)
-      end
-    end
-
     context 'when the Resource is a Package' do
       it 'generates a tarball' do
-        builder.build
-        expect(release_source).to have_file(".dev_builds/packages/#{resource_name}/#{builder.fingerprint}.tgz")
+        artifact = builder.build(resource)
+        expect(release_source).to have_file(".dev_builds/packages/#{artifact.name}/#{artifact.fingerprint}.tgz")
       end
     end
 
@@ -139,12 +98,12 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
       let(:dry_run) { true }
 
       it 'writes no tarballs' do
-        expect { builder.build }.not_to change { directory_listing(release_source.path) }
+        expect { builder.build(resource) }.not_to change { directory_listing(release_source.path) }
       end
 
       it 'does not upload the tarball' do
         expect(blobstore).to_not receive(:create)
-        builder.build
+        builder.build(resource)
       end
 
       context 'when final' do
@@ -152,7 +111,7 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
 
         it 'does not upload the tarball' do
           expect(blobstore).to_not receive(:create)
-          builder.build
+          builder.build(resource)
         end
       end
     end
@@ -160,30 +119,32 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
     context 'when building final release' do
       let(:storage_dir) { ".final_builds/packages/#{resource_name}" }
       let(:final) { true }
+      let(:tarball_path) { '.final_builds/packages/pkg/f0b1b81bd6b8093f2627eaa13952a1aab8b125d1.tgz' }
 
       before { allow(blobstore).to receive(:create).and_return('object_id') }
 
       it 'generates a tarball' do
-        builder.build
-        tarball_file = release_source.join("#{storage_dir}/#{builder.fingerprint}.tgz")
-        explosion = open_archive(tarball_file)
+        artifact = builder.build(resource)
+        explosion = open_archive(artifact.tarball_path)
 
         expect(directory_listing(explosion)).to contain_exactly("README.2", "README.md", "lib/1.rb", "lib/2.rb")
       end
 
       it 'uploads the tarball' do
-        expect(blobstore).to receive(:create)
-        builder.build
+        expect(blobstore).to receive(:create) do |file|
+          expect(file).to be_a(File)
+          expect(file.path).to end_with(tarball_path)
+        end
+        builder.build(resource)
       end
 
       context 'with empty directories are matched' do
-        let(:resource_file_patterns) { ['lib/*.rb', 'README.*', 'include_me'] }
+        let(:file_patterns) { ['lib/*.rb', 'README.*', 'include_me'] }
         before { release_source.add_dir('src/include_me')}
 
         it 'generates a tarball which includes them' do
-          builder.build
-          tarball_file = release_source.join("#{storage_dir}/#{builder.fingerprint}.tgz")
-          explosion = open_archive(tarball_file)
+          artifact = builder.build(resource)
+          explosion = open_archive(artifact.tarball_path)
 
           expect(directory_listing(explosion, true)).to contain_exactly("README.2", "README.md", "include_me", "lib", "lib/1.rb", "lib/2.rb")
         end
@@ -191,7 +152,7 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
     end
 
     context 'when the Resource specifies a file that collides specific to BOSH packaging' do
-      let(:resource_file_patterns) { ['*.rb', 'packaging'] }
+      let(:file_patterns) { ['*.rb', 'packaging'] }
 
       before do
         release_source.add_files('src', ['1.rb', 'packaging'])
@@ -200,14 +161,14 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
 
       it 'raises' do
         expect {
-          builder.build
+          builder.build(resource)
         }.to raise_error(Bosh::Cli::InvalidPackage,
             "Package '#{resource_name}' has 'packaging' file which conflicts with BOSH packaging")
       end
     end
 
     context 'when a glob matches no files' do
-      let(:resource_file_patterns) { ['lib/*.rb', 'baz', 'bar'] }
+      let(:file_patterns) { ['lib/*.rb', 'baz', 'bar'] }
 
       before do
         release_source.add_files('src', ['lib/1.rb', 'lib/2.rb', 'baz'])
@@ -215,22 +176,22 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
 
       it 'raises' do
         expect {
-          builder.build
+          builder.build(resource)
         }.to raise_error(Bosh::Cli::InvalidPackage,
             "Package '#{resource_name}' has a glob that resolves to an empty file list: bar")
       end
     end
 
     context 'when the resource contains blobs' do
-      let(:resource_file_patterns) { ['lib/*.rb', 'README.*', '**/*.tgz'] }
+      let(:file_patterns) { ['lib/*.rb', 'README.*', '**/*.tgz'] }
       let(:matched_blobs) { ['matched.tgz'] }
 
       before { release_source.add_files('blobs', matched_blobs) }
 
       it 'includes the blobs in the build' do
-        builder.build
+        artifact = builder.build(resource)
+        explosion = open_archive(artifact.tarball_path)
 
-        explosion = open_archive(builder.tarball_path)
         expect(directory_listing(explosion)).to contain_exactly(*(matched_files + matched_blobs))
       end
 
@@ -241,16 +202,16 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
         end
 
         it 'picks the content from src' do
-          builder.build
+          artifact = builder.build(resource)
+          explosion = open_archive(artifact.tarball_path)
 
-          explosion = open_archive(builder.tarball_path)
           expect(File.read(File.join(explosion, 'README.txt'))).to eq('README from src')
         end
       end
     end
 
     context 'when specifying files to exclude' do
-      let(:resource_file_patterns) { ['**/*'] }
+      let(:file_patterns) { ['**/*'] }
       let(:matched_blobs) { ['matched.tgz'] }
       let(:excluded_blobs) { ['excluded.tgz'] }
       let(:excluded_src) { ['.git'] }
@@ -262,46 +223,51 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
       end
 
       it 'the exclusions are not found in the build directory' do
-        builder.build
-        explosion = open_archive(builder.tarball_path)
+        artifact = builder.build(resource)
+        explosion = open_archive(artifact.tarball_path)
+
         expect(directory_listing(explosion)).to contain_exactly(*(matched_files + matched_blobs))
       end
     end
   end
 
   describe 'the generated resource fingerprint' do
-    let(:resource_file_patterns) { ['lib/*.rb', 'README.*'] }
+    let(:file_patterns) { ['lib/*.rb', 'README.*'] }
     let(:matched_files) { ['lib/1.rb', 'lib/2.rb', 'README.2', 'README.md'] }
     let(:reference_fingerprint) { 'f0b1b81bd6b8093f2627eaa13952a1aab8b125d1' }
 
     before { matched_files.each { |f| release_source.add_file('src', f, "contents of #{f}") } }
 
     it 'is used as the version' do
-      builder.build
-      expect(builder.version).to eq(reference_fingerprint)
+      artifact = builder.build(resource)
+      expect(artifact.version).to eq(reference_fingerprint)
     end
 
     it 'is based on the matched files, ignoring unmatched files' do
       release_source.add_file('src', 'an-unmatched-file.txt')
-      expect(builder.fingerprint).to eq(reference_fingerprint)
+      artifact = builder.build(resource)
+      expect(artifact.fingerprint).to eq(reference_fingerprint)
     end
 
     it 'varies with the set of matched files' do
       release_source.add_file('src', 'lib/a_matched_file.rb')
-      expect(builder.fingerprint).to_not eq(reference_fingerprint)
+      artifact = builder.build(resource)
+      expect(artifact.fingerprint).to_not eq(reference_fingerprint)
     end
 
     it 'varies with the content of matched files' do
       release_source.add_file('src', 'lib/1.rb', 'varied contents')
-      expect(builder.fingerprint).to_not eq(reference_fingerprint)
+      artifact = builder.build(resource)
+      expect(artifact.fingerprint).to_not eq(reference_fingerprint)
     end
 
     context 'when a file pattern matches empty directories' do
-      let(:resource_file_patterns) { ['lib/*.rb', 'README.*', 'tmp'] }
+      let(:file_patterns) { ['lib/*.rb', 'README.*', 'tmp'] }
 
       it 'varies' do
         release_source.add_dir('src/tmp')
-        expect(builder.fingerprint).to_not eq(reference_fingerprint)
+        artifact = builder.build(resource)
+        expect(artifact.fingerprint).to_not eq(reference_fingerprint)
       end
     end
 
@@ -309,7 +275,8 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
       before { release_source.add_file('src', 'lib/.zb.rb') }
 
       it 'the dotfile is included in the fingerprint' do
-        expect(builder.fingerprint).to_not eq(reference_fingerprint)
+        artifact = builder.build(resource)
+        expect(artifact.fingerprint).to_not eq(reference_fingerprint)
       end
     end
 
@@ -317,7 +284,8 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
       let(:resource_deps) { ['bar', 'foo'] }
 
       it 'does not vary' do
-        expect(builder.fingerprint).to eq(reference_fingerprint)
+        artifact = builder.build(resource)
+        expect(artifact.fingerprint).to eq(reference_fingerprint)
       end
     end
 
@@ -325,28 +293,27 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
       let(:resource_deps) { ['foo', 'bar', 'baz'] }
 
       it 'varies' do
-        expect(builder.fingerprint).to_not eq(reference_fingerprint)
+        artifact = builder.build(resource)
+        expect(artifact.fingerprint).to_not eq(reference_fingerprint)
       end
     end
 
     context 'when dependencies are not defined' do
       let(:resource_deps) { nil }
 
-      before do
-        allow(resource).to receive(:dependencies).and_return(nil)
-      end
-
       it 'varies' do
-        expect(builder.fingerprint).to_not eq(reference_fingerprint)
+        artifact = builder.build(resource)
+        expect(artifact.fingerprint).to_not eq(reference_fingerprint)
       end
     end
 
     context 'when blobs are present' do
-      let(:resource_file_patterns) { ['lib/*.rb', 'README.*', '*.tgz'] }
+      let(:file_patterns) { ['lib/*.rb', 'README.*', '*.tgz'] }
       before { release_source.add_file('blobs', 'matched.tgz') }
 
       it 'varies' do
-        expect(builder.fingerprint).to_not eq(reference_fingerprint)
+        artifact = builder.build(resource)
+        expect(artifact.fingerprint).to_not eq(reference_fingerprint)
       end
     end
 
@@ -354,7 +321,8 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
       before { FileUtils.mv(release_source.join('src', 'README.md'), release_source.join('blobs', 'README.md')) }
 
       it 'does not vary' do
-        expect(builder.fingerprint).to eq(reference_fingerprint)
+        artifact = builder.build(resource)
+        expect(artifact.fingerprint).to eq(reference_fingerprint)
       end
     end
   end
@@ -368,7 +336,7 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
       release_source.add_file('packages', "#{resource_name}/pre_packaging",
         "echo 'Luke I am your father.' > #{temp_file.path}; exit 0")
 
-      builder.build
+      builder.build(resource)
       expect(temp_file.read).to eq("Luke I am your father.\n")
     end
 
@@ -377,14 +345,14 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
         release_source.add_file('packages', "#{resource_name}/pre_packaging", 'exit 1')
 
         expect {
-          builder.build
+          builder.build(resource)
         }.to raise_error(Bosh::Cli::InvalidPackage, "'#{resource_name}' pre-packaging failed")
       end
     end
   end
 
   describe 'using pre-built versions' do
-    let(:resource_file_patterns) { ['foo/**/*', 'baz'] }
+    let(:file_patterns) { ['foo/**/*', 'baz'] }
     let(:fingerprint) { 'fake-fingerprint' }
     let(:final_storage_dir) { ".final_builds/packages/#{resource_name}" }
     let(:dev_storage_dir) { ".dev_builds/packages/#{resource_name}" }
@@ -398,8 +366,8 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
       before { release_source.add_version(fingerprint, final_storage_dir, 'payload', {'version' => fingerprint, 'blobstore_id' => '12321'}) }
 
       it 'should use the final version' do
-        builder.build
-        expect(builder.tarball_path).to eq(release_source.join('.final_builds', 'packages', resource_name, "#{fingerprint}.tgz"))
+        artifact = builder.build(resource)
+        expect(artifact.tarball_path).to eq(release_source.join('.final_builds', 'packages', resource_name, "#{fingerprint}.tgz"))
       end
     end
 
@@ -407,24 +375,24 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
       before { release_source.add_version(fingerprint, dev_storage_dir, 'dev_payload', {'version' => fingerprint}) }
 
       it 'should use the final version' do
-        builder.build
-        expect(builder.tarball_path).to eq(release_source.join('.dev_builds', 'packages', resource_name, "#{fingerprint}.tgz"))
+        artifact = builder.build(resource)
+        expect(artifact.tarball_path).to eq(release_source.join('.dev_builds', 'packages', resource_name, "#{fingerprint}.tgz"))
       end
 
       context 'and a final version is also available locally' do
         before { release_source.add_version(fingerprint, final_storage_dir, 'payload', {'version' => fingerprint, 'blobstore_id' => '12321'}) }
 
         it 'should use the final version' do
-          builder.build
-          expect(builder.tarball_path).to eq(release_source.join('.final_builds', 'packages', resource_name, "#{fingerprint}.tgz"))
+          artifact = builder.build(resource)
+          expect(artifact.tarball_path).to eq(release_source.join('.final_builds', 'packages', resource_name, "#{fingerprint}.tgz"))
         end
       end
     end
 
     context 'when a final or dev version is not available locally' do
       it 'generates a tarball and saves it as a dev build' do
-        builder.build
-        expect(builder.tarball_path).to eq(release_source.join('.dev_builds', 'packages', resource_name, "#{fingerprint}.tgz"))
+        artifact = builder.build(resource)
+        expect(artifact.tarball_path).to eq(release_source.join('.dev_builds', 'packages', resource_name, "#{fingerprint}.tgz"))
       end
     end
   end

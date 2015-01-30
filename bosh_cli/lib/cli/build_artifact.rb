@@ -64,11 +64,6 @@ module Bosh::Cli
 
     private
 
-    # TODO: consider how to move this to the Resource
-    def additional_fingerprints
-      (resource.spec['dependencies'] || []).sort
-    end
-
     def digest_file(filename)
       File.file?(filename) ? Digest::SHA1.file(filename).hexdigest : ''
     end
@@ -97,7 +92,7 @@ module Bosh::Cli
         contents << resource.format_fingerprint(digest_file(filename), filename, name, file_mode(filename))
       end
 
-      contents << additional_fingerprints.join(",")
+      contents << resource.additional_fingerprints.join(",")
       Digest::SHA1.hexdigest(contents)
     end
 

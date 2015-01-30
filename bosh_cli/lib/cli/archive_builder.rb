@@ -1,23 +1,11 @@
-# This relies on having the following instance variables in a host class:
-# @dev_builds_dir, @final_builds_dir, @blobstore,
-# @name, @version, @tarball_path, @final
-
 module Bosh::Cli
   class ArchiveBuilder
-    # TODO: remove all usage of these attr_accessors
-    attr_accessor :tarball_path
-
     attr_reader :options
 
-    def initialize(resource, archive_dir, blobstore, options = {})
-      @resource = resource
+    def initialize(archive_dir, blobstore, options = {})
       @archive_dir = archive_dir
       @blobstore = blobstore
       @options = options
-    end
-
-    def artifact
-      @artifact ||= BuildArtifact.new(@resource)
     end
 
     def final?
@@ -45,25 +33,29 @@ module Bosh::Cli
       notes
     end
 
-    def build
-      init_directories
+    def build(resource)
+      artifact = BuildArtifact.new(resource)
+
+      init_directories(resource)
       init_indices
 
       with_indent('  ') do
-        use_final_version || use_dev_version || generate_tarball
+        artifact.tarball_path = locate_tarball(resource, artifact) || generate_tarball(resource, artifact)
       end
 
       artifact.checksum = checksum unless dry_run?
       artifact.notes = notes
-      artifact.tarball_path = @tarball_path
       artifact.new_version = new_version?
 
-      upload_tarball(@tarball_path) if final? && !dry_run?
+      upload_tarball(artifact) if final? && !dry_run?
       @will_be_promoted = true if final? && dry_run? && @used_dev_version
 
-      artifact.metadata
+      artifact
     end
 
+    private
+
+    # TODO: Remove this it should only be on the artifact, not on the builder.
     def checksum
       if @tarball_path && File.exists?(@tarball_path)
         file_checksum(@tarball_path)
@@ -72,25 +64,8 @@ module Bosh::Cli
       end
     end
 
-    # TODO: remove this... it should only be on the build metadata, not on the builder.
-    def fingerprint
-      # @fingerprint ||= make_fingerprint
-      artifact.fingerprint
-    end
-
-    # TODO: remove this... it should only be on the build metadata, not on the builder.
-    def version
-      @version
-    end
-
-    private
-
-    def additional_fingerprints
-      (@resource.spec['dependencies'] || []).sort
-    end
-
-    def copy_files
-      @resource.files.each do |src, dest|
+    def copy_files(resource)
+      resource.files.each do |src, dest|
         dest_path = Pathname(staging_dir).join(dest)
         if File.directory?(src)
           FileUtils.mkdir_p(dest_path)
@@ -101,13 +76,9 @@ module Bosh::Cli
       end
     end
 
-    def digest_file(filename)
-      File.file?(filename) ? Digest::SHA1.file(filename).hexdigest : ''
-    end
-
-    def init_directories
-      @dev_builds_dir = File.join(@archive_dir, ".dev_builds", "#{@resource.artifact_type}s", @resource.name)
-      @final_builds_dir = File.join(@archive_dir, ".final_builds", "#{@resource.artifact_type}s", @resource.name)
+    def init_directories(resource)
+      @dev_builds_dir = File.join(@archive_dir, ".dev_builds", "#{resource.artifact_type}s", resource.name)
+      @final_builds_dir = File.join(@archive_dir, ".final_builds", "#{resource.artifact_type}s", resource.name)
 
       FileUtils.mkdir_p(@dev_builds_dir)
       FileUtils.mkdir_p(@final_builds_dir)
@@ -123,7 +94,12 @@ module Bosh::Cli
       @final_resolver = Versions::VersionFileResolver.new(@final_storage, @blobstore)
     end
 
-    def use_final_version
+    def locate_tarball(resource, artifact)
+      use_final_version(resource, artifact) || use_dev_version(resource, artifact)
+      @tarball_path
+    end
+
+    def use_final_version(resource, artifact)
       say('Final version:', ' ')
 
       item = @final_index[artifact.fingerprint]
@@ -142,7 +118,7 @@ module Bosh::Cli
         return nil
       end
 
-      desc = "#{@resource.name} (#{version})"
+      desc = "#{resource.name} (#{version})"
 
       @tarball_path = @final_resolver.find_file(blobstore_id, sha1, version, "package #{desc}")
 
@@ -150,12 +126,12 @@ module Bosh::Cli
       @used_final_version = true
       true
     rescue Bosh::Blobstore::NotFound
-      raise BlobstoreError, "Final version of `#{name}' not found in blobstore"
+      raise BlobstoreError, "Final version of '#{name}' not found in blobstore"
     rescue Bosh::Blobstore::BlobstoreError => e
       raise BlobstoreError, "Blobstore error: #{e}"
     end
 
-    def use_dev_version
+    def use_dev_version(resource, artifact)
       say('Dev version:', '   ')
       item = @dev_index[artifact.fingerprint]
 
@@ -174,8 +150,9 @@ module Bosh::Cli
       say('FOUND LOCAL'.make_green)
       @tarball_path = @dev_storage.get_file(version)
 
+      # TODO: move everything below here, as it's not actually about finding and using.
       if file_checksum(@tarball_path) != item['sha1']
-        say("`#{name} (#{version})' tarball corrupted".make_red)
+        say("'#{name} (#{version})' tarball corrupted".make_red)
         return nil
       end
 
@@ -191,14 +168,14 @@ module Bosh::Cli
       @used_dev_version = true
     end
 
-    def generate_tarball
+    def generate_tarball(resource, artifact)
       version = artifact.fingerprint
-      tmp_file = Tempfile.new(@resource.name)
+      tmp_file = Tempfile.new(artifact.name)
 
       say('Generating...')
 
-      copy_files
-      @resource.pre_package(staging_dir)
+      copy_files(resource)
+      resource.pre_package(staging_dir)
 
       in_staging_dir do
         tar_out = `tar -chzf #{tmp_file.path} . 2>&1`
@@ -207,6 +184,7 @@ module Bosh::Cli
         end
       end
 
+      # TODO: move everything below here, as it's not actually about generating a tarball.
       item = {
         'version' => version
       }
@@ -229,14 +207,16 @@ module Bosh::Cli
       @version = version
       @tarball_generated = true
       say("Generated version #{version}".make_green)
-      true
+
+      @tarball_path
     end
 
-    def upload_tarball(path)
+    # TODO: move out of builder
+    def upload_tarball(artifact)
       item = @final_index[artifact.fingerprint]
 
       unless item
-        say("Failed to find entry `#{artifact.fingerprint}' in index, check local storage")
+        say("Failed to find entry '#{artifact.fingerprint}' in index, check local storage")
         return
       end
 
@@ -244,14 +224,14 @@ module Bosh::Cli
         return
       end
 
-      say("Uploading final version `#{version}'...")
+      say("Uploading final version '#{artifact.version}'...")
 
       blobstore_id = nil
-      File.open(path, 'r') do |f|
+      File.open(artifact.tarball_path, 'r') do |f|
         blobstore_id = @blobstore.create(f)
       end
 
-      say("Uploaded, blobstore id `#{blobstore_id}'")
+      say("Uploaded, blobstore id '#{blobstore_id}'")
       item['blobstore_id'] = blobstore_id
       @final_index.update_version(artifact.fingerprint, item)
       @promoted = true

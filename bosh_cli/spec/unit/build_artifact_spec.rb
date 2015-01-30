@@ -165,10 +165,6 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
         }
       end
 
-      before do
-        allow(resource).to receive(:dependencies).and_return(nil)
-      end
-
       it 'varies' do
         expect(artifact.fingerprint).to_not eq(reference_fingerprint)
       end

@@ -44,7 +44,7 @@ module Bosh::Cli::Command::Release
         }
       end
       let(:matched_files) { ['lib/1.rb', 'lib/2.rb', 'README.2', 'README.md'] }
-      let(:archive_builder) { Bosh::Cli::ArchiveBuilder.new(package, archive_dir, blobstore, release_options) }
+      let(:archive_builder) { Bosh::Cli::ArchiveBuilder.new(archive_dir, blobstore, release_options) }
 
       after do
         release_source.cleanup
@@ -161,12 +161,12 @@ module Bosh::Cli::Command::Release
         before do
           command.options[:name] = provided_name
           expect(Bosh::Cli::Resources::Package).to receive(:discover).with(work_dir).and_return([package])
-          expect(Bosh::Cli::ArchiveBuilder).to receive(:new).with(package, work_dir, nil, { dry_run: true, final: nil }).and_return(archive_builder)
+          expect(Bosh::Cli::ArchiveBuilder).to receive(:new).with(work_dir, nil, { dry_run: true, final: nil }).and_return(archive_builder)
         end
 
         it 'builds release with the specified name' do
-          package_artifact = archive_builder.build
-          expect(command).to receive(:build_release).with(true, nil, nil, true, [package_artifact], provided_name, nil)
+          artifact = archive_builder.build(package)
+          expect(command).to receive(:build_release).with(true, nil, nil, true, [artifact.metadata], provided_name, nil)
 
           command.create
         end
@@ -181,8 +181,8 @@ module Bosh::Cli::Command::Release
 
       context 'when a version is provided with --version' do
         it 'builds release with the specified version' do
-          package_artifact = archive_builder.build
-          expect(command).to receive(:build_release).with(true, nil, nil, true, [package_artifact], configured_dev_name, '1.0.1')
+          artifact = archive_builder.build(package)
+          expect(command).to receive(:build_release).with(true, nil, nil, true, [artifact.metadata], configured_dev_name, '1.0.1')
           command.options[:version] = '1.0.1'
           command.create
         end

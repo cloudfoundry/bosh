@@ -82,6 +82,10 @@ module Bosh::Cli::Resources
       'package'
     end
 
+    def additional_fingerprints
+      dependencies
+    end
+
     def format_fingerprint(digest, filename, name, file_mode)
       is_hook = BUILD_HOOK_FILES.include?(name)
       "%s%s%s" % [name, digest, is_hook ? '' : file_mode]
