@@ -33,13 +33,14 @@ module Bosh
       def manifest(disk_format)
         infrastructure = definition.infrastructure
 
+        stemcell_name = "bosh-#{definition.stemcell_name(disk_format)}"
         {
-          'name' => definition.stemcell_name(disk_format),
+          'name' => stemcell_name,
           'version' => version.to_s,
           'bosh_protocol' => 1,
           'sha1' => image_checksum,
           'cloud_properties' => {
-            'name' => definition.stemcell_name(disk_format),
+            'name' => stemcell_name,
             'version' => version.to_s,
             'infrastructure' => infrastructure.name,
             'hypervisor' => infrastructure.hypervisor,
