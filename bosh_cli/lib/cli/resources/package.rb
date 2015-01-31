@@ -143,10 +143,6 @@ module Bosh::Cli::Resources
       @excluded_files ||= Array(spec['excluded_files']).sort
     end
 
-    def new_version?
-      @new_version
-    end
-
     # @return Array<Bosh::Cli::GlobMatch>
     def resolve_globs
       @resolved_globs ||= begin

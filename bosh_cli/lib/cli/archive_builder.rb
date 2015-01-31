@@ -16,23 +16,6 @@ module Bosh::Cli
       @dry_run || !!options[:dry_run]
     end
 
-    def new_version?
-      @tarball_generated || @promoted || @will_be_promoted
-    end
-
-    def notes
-      notes = []
-
-      if @will_be_promoted
-        new_final_version = @version
-        notes << "new final version #{new_final_version}"
-      elsif new_version?
-        notes << 'new version'
-      end
-
-      notes
-    end
-
     def build(resource)
       artifact = BuildArtifact.new(resource)
 
@@ -86,6 +69,23 @@ module Bosh::Cli
 
     def locate_tarball(resource, artifact)
       use_final_version(resource, artifact) || use_dev_version(resource, artifact)
+    end
+
+    def new_version?
+      @tarball_generated || @promoted || @will_be_promoted
+    end
+
+    def notes
+      notes = []
+
+      if @will_be_promoted
+        new_final_version = @version
+        notes << "new final version #{new_final_version}"
+      elsif new_version?
+        notes << 'new version'
+      end
+
+      notes
     end
 
     def use_final_version(resource, artifact)
