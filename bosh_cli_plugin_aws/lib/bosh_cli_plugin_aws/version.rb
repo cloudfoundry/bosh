@@ -1,5 +1,5 @@
 module Bosh
   module Aws
-    VERSION = '1.2829.0'
+    VERSION = '1.2830.0'
   end
 end
