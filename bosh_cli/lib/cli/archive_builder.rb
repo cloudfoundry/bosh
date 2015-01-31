@@ -43,7 +43,6 @@ module Bosh::Cli
         artifact.tarball_path = locate_tarball(resource, artifact) || generate_tarball(resource, artifact)
       end
 
-      artifact.checksum = checksum unless dry_run?
       artifact.notes = notes
       artifact.new_version = new_version?
 
@@ -54,15 +53,6 @@ module Bosh::Cli
     end
 
     private
-
-    # TODO: Remove this it should only be on the artifact, not on the builder.
-    def checksum
-      if @tarball_path && File.exists?(@tarball_path)
-        file_checksum(@tarball_path)
-      else
-        raise RuntimeError, "cannot read checksum for not yet generated #{@resource.artifact_type}"
-      end
-    end
 
     def copy_files(resource)
       resource.files.each do |src, dest|
@@ -96,7 +86,6 @@ module Bosh::Cli
 
     def locate_tarball(resource, artifact)
       use_final_version(resource, artifact) || use_dev_version(resource, artifact)
-      @tarball_path
     end
 
     def use_final_version(resource, artifact)
@@ -120,11 +109,11 @@ module Bosh::Cli
 
       desc = "#{resource.name} (#{version})"
 
-      @tarball_path = @final_resolver.find_file(blobstore_id, sha1, version, "package #{desc}")
+      tarball_path = @final_resolver.find_file(blobstore_id, sha1, version, "package #{desc}")
 
       @version = version
       @used_final_version = true
-      true
+      tarball_path
     rescue Bosh::Blobstore::NotFound
       raise BlobstoreError, "Final version of '#{name}' not found in blobstore"
     rescue Bosh::Blobstore::BlobstoreError => e
@@ -148,10 +137,10 @@ module Bosh::Cli
       end
 
       say('FOUND LOCAL'.make_green)
-      @tarball_path = @dev_storage.get_file(version)
+      tarball_path = @dev_storage.get_file(version)
 
       # TODO: move everything below here, as it's not actually about finding and using.
-      if file_checksum(@tarball_path) != item['sha1']
+      if file_checksum(tarball_path) != item['sha1']
         say("'#{name} (#{version})' tarball corrupted".make_red)
         return nil
       end
@@ -159,13 +148,14 @@ module Bosh::Cli
       if final? && !dry_run?
         # copy from dev index/storage to final index/storage
         @final_index.add_version(artifact.fingerprint, item)
-        @tarball_path = @final_storage.put_file(version, @tarball_path)
-        item['sha1'] = Digest::SHA1.file(@tarball_path).hexdigest
+        tarball_path = @final_storage.put_file(version, tarball_path)
+        item['sha1'] = Digest::SHA1.file(tarball_path).hexdigest
         @final_index.update_version(artifact.fingerprint, item)
       end
 
       @version = version
       @used_dev_version = true
+      tarball_path
     end
 
     def generate_tarball(resource, artifact)
@@ -192,15 +182,15 @@ module Bosh::Cli
       if final?
         # add version (with its validation) before adding sha1
         @final_index.add_version(artifact.fingerprint, item)
-        @tarball_path = @final_storage.put_file(artifact.fingerprint, tmp_file.path)
-        item['sha1'] = file_checksum(@tarball_path)
+        tarball_path = @final_storage.put_file(artifact.fingerprint, tmp_file.path)
+        item['sha1'] = file_checksum(tarball_path)
         @final_index.update_version(artifact.fingerprint, item)
       elsif dry_run?
       else
         # add version (with its validation) before adding sha1
         @dev_index.add_version(artifact.fingerprint, item)
-        @tarball_path = @dev_storage.put_file(artifact.fingerprint, tmp_file.path)
-        item['sha1'] = file_checksum(@tarball_path)
+        tarball_path = @dev_storage.put_file(artifact.fingerprint, tmp_file.path)
+        item['sha1'] = file_checksum(tarball_path)
         @dev_index.update_version(artifact.fingerprint, item)
       end
 
@@ -208,7 +198,7 @@ module Bosh::Cli
       @tarball_generated = true
       say("Generated version #{version}".make_green)
 
-      @tarball_path
+      tarball_path
     end
 
     # TODO: move out of builder

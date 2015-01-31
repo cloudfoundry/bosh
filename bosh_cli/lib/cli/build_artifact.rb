@@ -1,11 +1,13 @@
 module Bosh::Cli
   class BuildArtifact
+    attr_accessor :tarball_path
+
     def initialize(resource)
       @resource = resource
     end
 
     def name
-      metadata['name']
+      resource.name
     end
 
     def metadata
@@ -30,14 +32,6 @@ module Bosh::Cli
 
     # ---
 
-    def checksum=(value)
-      @checksum = value
-    end
-
-    def checksum
-      @checksum
-    end
-
     def new_version=(value)
       @new_version = value
     end
@@ -54,15 +48,15 @@ module Bosh::Cli
       @notes
     end
 
-    def tarball_path=(value)
-      @tarball_path = value
-    end
-
-    def tarball_path
-      @tarball_path
-    end
-
     private
+
+    def checksum
+      if tarball_path && File.exists?(tarball_path)
+        digest_file(tarball_path)
+      else
+        nil
+      end
+    end
 
     def digest_file(filename)
       File.file?(filename) ? Digest::SHA1.file(filename).hexdigest : ''

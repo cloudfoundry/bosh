@@ -15,6 +15,7 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
       'files' => ['**/*.rb'],
     }
   end
+  let(:tarball_path) { 'path/to/archive.tgz' }
   let(:matched_files) { ['lib/1.rb', 'lib/2.rb'] }
 
   before do
@@ -46,9 +47,7 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
     end
 
     it 'includes checksum' do
-      value = 'checksum'
-      artifact.checksum = value
-      expect(metadata['sha1']).to eq(value)
+      expect(metadata['sha1']).to eq(nil)
     end
 
     it 'includes version' do
@@ -68,9 +67,8 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
     end
 
     it 'includes tarball_path' do
-      value = 'path/to/archive.tgz'
-      artifact.tarball_path = value
-      expect(metadata['tarball_path']).to eq(value)
+      artifact.tarball_path = tarball_path
+      expect(metadata['tarball_path']).to eq(tarball_path)
     end
   end
 

@@ -59,7 +59,7 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
 
     it 'has a checksum for a generated resource' do
       artifact = builder.build(resource)
-      expect(artifact.checksum).to match(/^[0-9a-f]{40}$/)
+      expect(artifact.metadata['sha1']).to match(/^[0-9a-f]{40}$/)
     end
   end
 
