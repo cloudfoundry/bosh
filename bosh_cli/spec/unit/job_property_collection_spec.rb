@@ -5,12 +5,11 @@ require "spec_helper"
 describe Bosh::Cli::JobPropertyCollection do
 
   def make_job(properties)
-    double(Bosh::Cli::JobBuilder, :properties => properties)
+    double(Bosh::Cli::Resources::Job, :properties => properties) #stop using a double?
   end
 
-  def make(job_builder, global_properties, job_properties = {}, mappings = {})
-    Bosh::Cli::JobPropertyCollection.new(
-      job_builder, global_properties, job_properties, mappings)
+  def make(job, global_properties, job_properties = {}, mappings = {})
+    Bosh::Cli::JobPropertyCollection.new(job, global_properties, job_properties, mappings)
   end
 
   it "copies all properties from the manifest if no properties are defined" do

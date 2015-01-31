@@ -119,44 +119,30 @@ module Bosh::Cli
     end
 
     it 'has a list of jobs affected by building this release' do
-      jobs = []
-      jobs << double(:job, :new_version? => true, :packages => %w(bar baz), :name => 'job1')
-      jobs << double(:job, :new_version? => false, :packages => %w(foo baz), :name => 'job2')
-      jobs << double(:job, :new_version? => false, :packages => %w(baz zb), :name => 'job3')
-      jobs << double(:job, :new_version? => false, :packages => %w(bar baz), :name => 'job4')
+      job_artifacts = [
+        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'new_version' => true, 'packages' => %w(bar baz), 'name' => 'job1' }),
+        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'new_version' => false, 'packages' => %w(foo baz), 'name' => 'job2' }),
+        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'new_version' => false, 'packages' => %w(baz zb), 'name' => 'job3' }),
+        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'new_version' => false, 'packages' => %w(bar baz), 'name' => 'job4' }),
+      ]
 
-      packages = []
-      packages << { 'name' => 'foo', 'new_version' => true }
-      packages << { 'name' => 'bar', 'new_version' => false }
-      packages << { 'name' => 'baz', 'new_version' => false }
-      packages << { 'name' => 'zb', 'new_version' => true }
+      package_artifacts = [
+        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'name' => 'foo', 'new_version' => true }),
+        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'name' => 'bar', 'new_version' => false }),
+        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'name' => 'baz', 'new_version' => false }),
+        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'name' => 'zb', 'new_version' => true }),
+      ]
 
-      builder = ReleaseBuilder.new(@release, packages, jobs, release_name)
+      builder = ReleaseBuilder.new(@release, package_artifacts, job_artifacts, release_name)
 
-      expect(builder.affected_jobs).to eq(jobs[0...-1]) # exclude last job
+      expect(builder.affected_jobs).to eq(job_artifacts[0...-1]) # exclude last job
     end
 
     it 'has packages and jobs fingerprints in spec' do
-      job = double(
-        JobBuilder,
-        :name => 'job1',
-        :version => '1.1',
-        :new_version? => true,
-        :packages => %w(foo),
-        :fingerprint => 'deadbeef',
-        :checksum => 'cafebad'
-      )
+      job_artifact = double(BuildArtifact, :metadata => {'a' => 'b'})
+      package_artifact = double(BuildArtifact, :metadata => {'c' => 'd'})
 
-      package = {
-        'name' => 'foo',
-        'version' => '42',
-        'new_version' => true,
-        'fingerprint' => 'deadcafe',
-        'checksum' => 'baddeed',
-        'dependencies' => []
-      }
-
-      builder = ReleaseBuilder.new(@release, [package], [job], release_name)
+      builder = ReleaseBuilder.new(@release, [package_artifact], [job_artifact], release_name)
       expect(builder).to receive(:copy_jobs)
       expect(builder).to receive(:copy_packages)
 
@@ -164,8 +150,8 @@ module Bosh::Cli
 
       manifest = Psych.load_file(builder.manifest_path)
 
-      expect(manifest['jobs'][0]['fingerprint']).to eq('deadbeef')
-      expect(manifest['packages'][0]['fingerprint']).to eq('deadcafe')
+      expect(manifest['jobs'][0]).to eq({'a' => 'b'})
+      expect(manifest['packages'][0]).to eq({'c' => 'd'})
     end
 
     context 'when version options is passed into initializer' do

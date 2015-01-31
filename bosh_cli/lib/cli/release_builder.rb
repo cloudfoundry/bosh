@@ -5,16 +5,16 @@ module Bosh::Cli
     attr_reader :release, :packages, :jobs, :name, :version, :build_dir, :commit_hash, :uncommitted_changes
 
     # @param [Bosh::Cli::Release] release Current release
-    # @param [Array<Hash>] packages Metadata for Built packages
-    # @param [Array<Bosh::Cli::JobBuilder>] jobs Built jobs
+    # @param [Array<Bosh::Cli::BuildArtifact>] package_artifacts Built packages
+    # @param [Array<Bosh::Cli::BuildArtifact>] job_artifacts Built jobs
     # @param [Hash] options Release build options
-    def initialize(release, packages, jobs, name, options = { })
+    def initialize(release, package_artifacts, job_artifacts, name, options = { })
       @release = release
       @final = options.has_key?(:final) ? !!options[:final] : false
       @commit_hash = options.fetch(:commit_hash, '00000000')
       @uncommitted_changes = options.fetch(:uncommitted_changes, true)
-      @packages = packages
-      @jobs = jobs
+      @packages = package_artifacts # todo
+      @jobs = job_artifacts # todo
       @name = name
       raise 'Release name is blank' if name.blank?
 
@@ -49,19 +49,18 @@ module Bosh::Cli
       @final
     end
 
-    # @return [Array] List of jobs affected by this release compared
-    #   to the previous one.
+    # @return [Array<Bosh::Cli::BuildArtifact>] List of job artifacts
+    #   affected by this release compared to the previous one.
     def affected_jobs
-      result = Set.new(@jobs.select { |job| job.new_version? })
-      return result if @packages.empty?
+      result = Set.new(@jobs.select { |job_artifact| job_artifact.metadata['new_version'] })
+      return result.to_a if @packages.empty?
 
-      new_package_names = @packages.inject([]) do |list, package|
-        list << package['name'] if package['new_version']
-        list
-      end
+      new_package_names = @packages.map do |package_artifact|
+        package_artifact.metadata['name'] if package_artifact.metadata['new_version']
+      end.compact
 
       @jobs.each do |job|
-        result << job if (new_package_names & job.packages).size > 0
+        result << job if (new_package_names & job.metadata['packages']).size > 0
       end
 
       result.to_a
@@ -83,22 +82,25 @@ module Bosh::Cli
 
     # Copies packages into release
     def copy_packages
-      packages.each do |package|
-        say("%-40s %s" % [package['name'].make_green,
-                           pretty_size(package['tarball_path'])])
-        FileUtils.cp(package['tarball_path'],
-                     File.join(build_dir, "packages", "#{package['name']}.tgz"),
+      packages.each do |package_artifact|
+        name = package_artifact.metadata['name']
+        tarball_path = package_artifact.metadata['tarball_path']
+        say("%-40s %s" % [name.make_green, pretty_size(tarball_path)])
+        FileUtils.cp(tarball_path,
+                     File.join(build_dir, "packages", "#{name}.tgz"),
                      :preserve => true)
       end
       @packages_copied = true
     end
 
-    # Copies jobs into release
+    # Copies jobs into release todo DRY vs copy_packages
     def copy_jobs
-      jobs.each do |job|
-        say("%-40s %s" % [job.name.make_green, pretty_size(job.tarball_path)])
-        FileUtils.cp(job.tarball_path,
-                     File.join(build_dir, "jobs", "#{job.name}.tgz"),
+      jobs.each do |job_artifact|
+        name = job_artifact.metadata['name']
+        tarball_path = job_artifact.metadata['tarball_path']
+        say("%-40s %s" % [name.make_green, pretty_size(tarball_path)])
+        FileUtils.cp(tarball_path,
+                     File.join(build_dir, "jobs", "#{name}.tgz"),
                      :preserve => true)
       end
       @jobs_copied = true
@@ -107,31 +109,22 @@ module Bosh::Cli
     # Generates release manifest
     def generate_manifest
       manifest = {}
-      manifest["packages"] = packages
+      manifest['packages'] = packages.map(&:metadata)
+      manifest['jobs'] = jobs.map(&:metadata)
 
-      # TODO: manifest["jobs"] = jobs, where jobs are metadata of the built artifacts
-      manifest["jobs"] = jobs.map do |job|
-        {
-          "name" => job.name,
-          "version" => job.version,
-          "fingerprint" => job.fingerprint,
-          "sha1" => job.checksum,
-        }
-      end
-
-      manifest["commit_hash"] = commit_hash
-      manifest["uncommitted_changes"] = uncommitted_changes
+      manifest['commit_hash'] = commit_hash
+      manifest['uncommitted_changes'] = uncommitted_changes
 
       unless @name.bosh_valid_id?
-        raise InvalidRelease, "Release name `#{@name}' is not a valid BOSH identifier"
+        raise InvalidRelease, "Release name '#{@name}' is not a valid BOSH identifier"
       end
-      manifest["name"] = @name
+      manifest['name'] = @name
 
       # New release versions are allowed to have the same fingerprint as old versions.
       # For reverse compatibility, random uuids are stored instead.
-      @index.add_version(SecureRandom.uuid, { "version" => version })
+      @index.add_version(SecureRandom.uuid, { 'version' => version })
 
-      manifest["version"] = version
+      manifest['version'] = version
       manifest_yaml = Psych.dump(manifest)
 
       say("Writing manifest...")

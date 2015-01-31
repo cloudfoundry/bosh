@@ -47,7 +47,7 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
     end
 
     it 'includes checksum' do
-      expect(metadata['sha1']).to eq(nil)
+      expect(metadata).to have_key('sha1')
     end
 
     it 'includes version' do

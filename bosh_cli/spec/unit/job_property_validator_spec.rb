@@ -10,21 +10,21 @@ describe Bosh::Cli::JobPropertyValidator do
   end
 
   let(:director_job) do
-    double(Bosh::Cli::JobBuilder,
+    instance_double(Bosh::Cli::Resources::Job,
            name: 'director',
            properties: {'director.name' =>
                             {'description' => 'Name of director'},
                         'director.port' =>
                             {'description' => 'Port that the director nginx listens on', 'default' => 25555}},
-           all_templates: %w[/jobs/director/templates/director.yml.erb.erb])
+          files: [['/jobs/director/templates/director.yml.erb.erb', :whatever]])
   end
 
   let(:blobstore_job) do
-    double(Bosh::Cli::JobBuilder,
+    instance_double(Bosh::Cli::Resources::Job,
            name: 'blobstore',
            properties: {'blobstore.provider' =>
                             {'description' => 'Type of blobstore'}},
-           all_templates: %w[/jobs/blobstore/templates/blobstore.yml.erb /jobs/blobstore/templates/test.yml.erb])
+           files: [['/jobs/blobstore/templates/blobstore.yml.erb', :whatever], ['/jobs/blobstore/templates/test.yml.erb', :whatever]])
   end
 
   let(:built_jobs) { [director_job, blobstore_job] }
@@ -117,10 +117,10 @@ describe Bosh::Cli::JobPropertyValidator do
 
   context 'legacy job template with no properties' do
     let(:no_props_job) do
-      double(Bosh::Cli::JobBuilder,
+      instance_double(Bosh::Cli::Resources::Job,
              name: 'noprops',
              properties: {},
-             all_templates: [])
+             files: [])
     end
 
     let(:built_jobs) { [director_job, no_props_job] }

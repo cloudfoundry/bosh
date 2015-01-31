@@ -157,11 +157,10 @@ module Bosh::Cli::Command
       packages = Bosh::Cli::Resources::Package.discover(work_dir)
 
       say(" - discovering jobs")
-      jobs = Bosh::Cli::JobBuilder.discover(
+      jobs = Bosh::Cli::Resources::Job.discover(
         work_dir,
-        :dry_run => true,
-        :final => false,
-        :package_names => packages.map {|package| package['name']}
+        # TODO: be sure this is covered in integration
+        packages.map {|package| package['name']}
       )
 
       say(" - validating properties")

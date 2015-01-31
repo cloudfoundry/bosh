@@ -7,7 +7,7 @@ module Bosh::Cli
     attr_reader :template_errors
     attr_reader :jobs_without_properties
 
-    # @param [Array<JobBuilder>] built_jobs Built job templates
+    # @param [Array<Bosh::Cli::Resources::Job>] built_jobs Built job templates
     # @param [Hash] manifest Deployment manifest
     def initialize(built_jobs, manifest)
       @built_jobs = {}
@@ -44,7 +44,7 @@ module Bosh::Cli
         end
 
         if job["template"].nil?
-          bad_manifest("Job `#{job_name}' doesn't have a template")
+          bad_manifest("Job '#{job_name}' doesn't have a template")
         end
       end
 
@@ -68,7 +68,7 @@ module Bosh::Cli
       built_job = @built_jobs[job_spec["template"]]
 
       if built_job.nil?
-        raise CliError, "Job `#{job_spec["template"]}' has not been built"
+        raise CliError, "Job '#{job_spec["template"]}' has not been built"
       end
 
       collection = JobPropertyCollection.new(
@@ -86,8 +86,8 @@ module Bosh::Cli
         'properties' => collection.to_hash
       }
 
-      built_job.all_templates.each do |template_path|
-        evaluate_template(built_job, template_path, spec)
+      built_job.files.each do |file_tuple|
+        evaluate_template(built_job, file_tuple.first, spec)
       end
     end
 
@@ -104,7 +104,7 @@ module Bosh::Cli
 
     private
 
-    # @param [JobBuilder] job Job builder
+    # @param [Bosh::Cli::Resources::Job] job Job builder
     # @param [String] template_path Template path
     # @param [Hash] spec Fake instance spec
     def evaluate_template(job, template_path, spec)
@@ -127,7 +127,7 @@ module Bosh::Cli
       attr_reader :exception
       attr_reader :line
 
-      # @param [JobBuilder] job
+      # @param [Bosh::Cli::Resources::Job] job
       # @param [String] template_path
       # @param [Exception] exception
       def initialize(job, template_path, exception)

@@ -8,17 +8,10 @@ module Bosh::Cli
       @options = options
     end
 
-    def final?
-      @final ||= !!options[:final]
-    end
-
-    def dry_run?
-      @dry_run || !!options[:dry_run]
-    end
-
     def build(resource)
-      artifact = BuildArtifact.new(resource)
+      resource.run_script(:prepare)
 
+      artifact = BuildArtifact.new(resource)
       init_directories(resource)
       init_indices
 
@@ -35,7 +28,25 @@ module Bosh::Cli
       artifact
     end
 
+    def dry_run?
+      @dry_run || !!options[:dry_run]
+    end
+
+    def final?
+      @final ||= !!options[:final]
+    end
+
     private
+
+    def artifact_type(resource, plural = false)
+      result = resource.class.name.split('::').last.downcase
+      result += 's' if plural
+      result
+    end
+
+    def build_directory(resource, mode)
+      File.join(@archive_dir, ".#{mode}_builds", "#{artifact_type(resource, true)}", resource.name)
+    end
 
     def copy_files(resource)
       resource.files.each do |src, dest|
@@ -50,8 +61,8 @@ module Bosh::Cli
     end
 
     def init_directories(resource)
-      @dev_builds_dir = File.join(@archive_dir, ".dev_builds", "#{resource.artifact_type}s", resource.name)
-      @final_builds_dir = File.join(@archive_dir, ".final_builds", "#{resource.artifact_type}s", resource.name)
+      @dev_builds_dir = build_directory(resource, 'dev')
+      @final_builds_dir = build_directory(resource, 'final')
 
       FileUtils.mkdir_p(@dev_builds_dir)
       FileUtils.mkdir_p(@final_builds_dir)
@@ -68,7 +79,7 @@ module Bosh::Cli
     end
 
     def locate_tarball(resource, artifact)
-      use_final_version(resource, artifact) || use_dev_version(resource, artifact)
+      use_final_version(resource, artifact) || use_dev_version(artifact)
     end
 
     def new_version?
@@ -76,16 +87,13 @@ module Bosh::Cli
     end
 
     def notes
-      notes = []
-
       if @will_be_promoted
-        new_final_version = @version
-        notes << "new final version #{new_final_version}"
+        ["new final version #{@version}"]
       elsif new_version?
-        notes << 'new version'
+        ['new version']
+      else
+        []
       end
-
-      notes
     end
 
     def use_final_version(resource, artifact)
@@ -120,7 +128,7 @@ module Bosh::Cli
       raise BlobstoreError, "Blobstore error: #{e}"
     end
 
-    def use_dev_version(resource, artifact)
+    def use_dev_version(artifact)
       say('Dev version:', '   ')
       item = @dev_index[artifact.fingerprint]
 
@@ -165,7 +173,7 @@ module Bosh::Cli
       say('Generating...')
 
       copy_files(resource)
-      resource.pre_package(staging_dir)
+      resource.run_script(:pre_packaging, staging_dir)
 
       in_staging_dir do
         tar_out = `tar -chzf #{tmp_file.path} . 2>&1`

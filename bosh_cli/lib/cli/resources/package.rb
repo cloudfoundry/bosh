@@ -36,7 +36,6 @@ module Bosh::Cli::Resources
 
     def files
       validate!
-
       known_files = {}
 
       files = []
@@ -60,6 +59,10 @@ module Bosh::Cli::Resources
       files
     end
 
+    def metadata
+      { 'name' => name, 'dependencies' => dependencies }
+    end
+
     def validate!
       basename = File.basename(package_base.to_s)
 
@@ -78,10 +81,6 @@ module Bosh::Cli::Resources
       resolve_globs
     end
 
-    def artifact_type
-      'package'
-    end
-
     def additional_fingerprints
       dependencies
     end
@@ -91,47 +90,13 @@ module Bosh::Cli::Resources
       "%s%s%s" % [name, digest, is_hook ? '' : file_mode]
     end
 
-    def metadata
-      { 'name' => name, 'dependencies' => dependencies }
+    def run_script(script_name, *args)
+      if BUILD_HOOK_FILES.include?(script_name.to_s)
+        send(:"run_script_#{script_name}", *args)
+      end
     end
 
     # ---
-
-    def pre_package(staging_dir)
-      pre_packaging_script = package_base.join('pre_packaging')
-
-      if File.exists?(pre_packaging_script)
-        say("Pre-packaging...")
-        FileUtils.cp(pre_packaging_script, staging_dir, :preserve => true)
-
-        old_env = ENV
-
-        begin
-          ENV.delete_if { |key, _| key[0, 7] == "BUNDLE_" }
-          if ENV["RUBYOPT"]
-            ENV["RUBYOPT"] = ENV["RUBYOPT"].sub("-rbundler/setup", "")
-          end
-          # todo: test these
-          ENV["BUILD_DIR"] = staging_dir
-          ENV["RELEASE_DIR"] = @release_source
-          Dir.chdir(staging_dir) do
-            pre_packaging_out = `bash -x pre_packaging 2>&1`
-            unless $?.exitstatus == 0
-              pre_packaging_out.split("\n").each do |line|
-                say("> #{line}")
-              end
-              raise Bosh::Cli::InvalidPackage, "'#{name}' pre-packaging failed"
-            end
-          end
-
-        ensure
-          ENV.delete("BUILD_DIR")
-          old_env.each { |k, v| ENV[k] = old_env[k] }
-        end
-
-        FileUtils.rm(File.join(staging_dir, "pre_packaging"))
-      end
-    end
 
     private
 
@@ -199,6 +164,43 @@ module Bosh::Cli::Resources
 
     def release_blobs
       release_base.join('blobs')
+    end
+
+    def run_script_pre_packaging(staging_dir)
+      pre_packaging_script = package_base.join('pre_packaging')
+
+      if File.exists?(pre_packaging_script)
+        say('Pre-packaging...')
+        FileUtils.cp(pre_packaging_script, staging_dir, :preserve => true)
+
+        old_env = ENV
+
+        begin
+          ENV.delete_if { |key, _| key[0, 7] == 'BUNDLE_' }
+          if ENV['RUBYOPT']
+            ENV['RUBYOPT'] = ENV['RUBYOPT'].sub('-rbundler/setup', '')
+          end
+          # todo: test these
+          ENV['BUILD_DIR'] = staging_dir
+          ENV['RELEASE_DIR'] = release_base
+          Dir.chdir(staging_dir) do
+            output = `bash -x pre_packaging 2>&1`
+
+            unless $?.exitstatus == 0
+              output.split("\n").each do |line|
+                say("> #{line}")
+              end
+              raise Bosh::Cli::InvalidPackage, "'#{name}' pre-packaging failed"
+            end
+          end
+
+        ensure
+          ENV.delete('BUILD_DIR')
+          old_env.each { |k, v| ENV[k] = old_env[k] }
+        end
+
+        FileUtils.rm(File.join(staging_dir, 'pre_packaging'))
+      end
     end
   end
 end

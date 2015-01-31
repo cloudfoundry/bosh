@@ -8,12 +8,12 @@ module Bosh::Cli
     include Enumerable
     include Bosh::Template::PropertyHelper
 
-    # @param [JobBuilder] job_builder Which job this property collection is for
+    # @param [Bosh::Cli::Resources::Job] job Which job this property collection is for
     # @param [Hash] global_properties Globally defined properties
     # @param [Hash] job_properties Properties defined for this job only
     # @param [Hash] mappings Property mappings for this job
-    def initialize(job_builder, global_properties, job_properties, mappings)
-      @job_builder = job_builder
+    def initialize(job, global_properties, job_properties, mappings)
+      @job = job
 
       @job_properties = Bosh::Common::DeepCopy.copy(job_properties || {})
       merge(@job_properties, Bosh::Common::DeepCopy.copy(global_properties))
@@ -52,7 +52,7 @@ module Bosh::Cli
 
     # @return [void] Modifies @properties
     def filter_properties
-      if @job_builder.properties.empty?
+      if @job.properties.empty?
         # If at least one template doesn't have properties defined, we
         # need all properties to be available to job (backward-compatibility)
         @properties = @job_properties
@@ -61,7 +61,7 @@ module Bosh::Cli
 
       @properties = {}
 
-      @job_builder.properties.each_pair do |name, definition|
+      @job.properties.each_pair do |name, definition|
         copy_property(
           @properties, @job_properties, name, definition["default"])
       end

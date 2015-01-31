@@ -94,14 +94,37 @@ module Bosh::Cli::Command::Release
       end
 
       it 'prints status headers' do
-        expect(command).to receive(:header).with('Building DEV release').once.ordered
-        expect(command).to receive(:header).with('Building packages').once.ordered
-        expect(command).to receive(:header).with('Resolving dependencies').once.ordered
-        expect(command).to receive(:header).with('Building jobs').once.ordered
-        expect(command).to receive(:header).with('Building release').once.ordered
-        expect(command).to receive(:header).with('Release summary').once.ordered
-
         command.create
+        output = strip_heredoc(<<-OUTPUT)
+          Building DEV release
+          --------------------
+
+          Building packages
+          -----------------
+          Building package_name...
+            Final version:   NOT FOUND
+            Dev version:     NOT FOUND
+            Generating...
+            Generated version 431818cc23fc69b0b1f0e267f24bb5450f012295
+
+
+          Resolving dependencies
+          ----------------------
+          Dependencies resolved, correct build order is:
+          - package_name
+
+
+          Building jobs
+          -------------
+
+          Building release
+          ----------------
+
+          Release summary
+          ---------------
+        OUTPUT
+
+        expect(Bosh::Cli::Config.output.string.strip).to eq(output.strip)
       end
 
       it 'prints the release name, version & manifest path if not a dry-run' do
@@ -166,7 +189,8 @@ module Bosh::Cli::Command::Release
 
         it 'builds release with the specified name' do
           artifact = archive_builder.build(package)
-          expect(command).to receive(:build_release).with(true, nil, nil, true, [artifact.metadata], provided_name, nil)
+          expect(archive_builder).to receive(:build).and_return(artifact)
+          expect(command).to receive(:build_release).with(true, nil, nil, true, [artifact], provided_name, nil)
 
           command.create
         end
@@ -182,7 +206,8 @@ module Bosh::Cli::Command::Release
       context 'when a version is provided with --version' do
         it 'builds release with the specified version' do
           artifact = archive_builder.build(package)
-          expect(command).to receive(:build_release).with(true, nil, nil, true, [artifact.metadata], configured_dev_name, '1.0.1')
+          expect(archive_builder).to receive(:build).and_return(artifact)
+          expect(command).to receive(:build_release).with(true, nil, nil, true, [artifact], configured_dev_name, '1.0.1')
           command.options[:version] = '1.0.1'
           command.create
         end
