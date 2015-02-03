@@ -4,7 +4,9 @@ module Support
   module FileHelpers
     def directory_listing(dir, include_dirs = false)
       Dir.chdir(dir) do
-        all_files_and_dirs = Dir['**/*']
+        all_files_and_dirs = Dir.glob('**/*', File::FNM_DOTMATCH).reject do |f|
+          f =~ /(\/|^)\.\.?$/ # Kill . and .. directories (recursively)
+        end
 
         if include_dirs
           all_files_and_dirs

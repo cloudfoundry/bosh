@@ -187,19 +187,20 @@ module Bosh::Cli
         'version' => version
       }
 
-      if final?
-        # add version (with its validation) before adding sha1
-        @final_index.add_version(artifact.fingerprint, item)
-        tarball_path = @final_storage.put_file(artifact.fingerprint, tmp_file.path)
-        item['sha1'] = file_checksum(tarball_path)
-        @final_index.update_version(artifact.fingerprint, item)
-      elsif dry_run?
-      else
-        # add version (with its validation) before adding sha1
-        @dev_index.add_version(artifact.fingerprint, item)
-        tarball_path = @dev_storage.put_file(artifact.fingerprint, tmp_file.path)
-        item['sha1'] = file_checksum(tarball_path)
-        @dev_index.update_version(artifact.fingerprint, item)
+      unless dry_run?
+        if final?
+          # add version (with its validation) before adding sha1
+          @final_index.add_version(artifact.fingerprint, item)
+          tarball_path = @final_storage.put_file(artifact.fingerprint, tmp_file.path)
+          item['sha1'] = file_checksum(tarball_path)
+          @final_index.update_version(artifact.fingerprint, item)
+        else
+          # add version (with its validation) before adding sha1
+          @dev_index.add_version(artifact.fingerprint, item)
+          tarball_path = @dev_storage.put_file(artifact.fingerprint, tmp_file.path)
+          item['sha1'] = file_checksum(tarball_path)
+          @dev_index.update_version(artifact.fingerprint, item)
+        end
       end
 
       @version = version
