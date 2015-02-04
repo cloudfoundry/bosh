@@ -11,6 +11,7 @@ describe 'Ubuntu 14.04 stemcell', stemcell_image: true do
       its(:content) { should match %r{kernel /boot/vmlinuz-\S+-generic ro root=UUID=} }
       it { should contain ' selinux=0' }
       it { should contain ' cgroup_enable=memory swapaccount=1' }
+      it { should contain ' console=tty0 console=ttyS0,115200n8' }
       its(:content) { should match %r{initrd /boot/initrd.img-\S+-generic} }
     end
 
