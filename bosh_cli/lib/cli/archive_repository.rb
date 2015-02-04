@@ -56,29 +56,22 @@ module Bosh::Cli
       origin_file = tmp_file.path
       metadata = {'version' => artifact.fingerprint}
 
-      if final
-        tarball_path = install_into_final(artifact, metadata, origin_file)
-      else
-        tarball_path = install_into_dev(artifact, metadata, origin_file)
-      end
-      tarball_path
+      install(artifact, metadata, origin_file,
+        final ? @final_index : @dev_index,
+        final ? @final_storage : @dev_storage)
     end
 
-    def install_into_dev(artifact, metadata, origin_file)
-      # add version (with its validation) before adding sha1
-      @dev_index.add_version(artifact.fingerprint, metadata)
-      tarball_path = @dev_storage.put_file(artifact.fingerprint, origin_file)
-      metadata['sha1'] = file_checksum(tarball_path)
-      @dev_index.update_version(artifact.fingerprint, metadata)
-      tarball_path
+    def copy_from_dev_to_final(artifact)
+      metadata = lookup_dev(artifact)
+      install(artifact, metadata, artifact.tarball_path, @final_index, @final_storage)
     end
 
-    def install_into_final(artifact, metadata, origin_file)
+    def install(artifact, metadata, origin_file, index, storage)
       # add version (with its validation) before adding sha1
-      @final_index.add_version(artifact.fingerprint, metadata)
-      tarball_path = @final_storage.put_file(artifact.fingerprint, origin_file)
+      index.add_version(artifact.fingerprint, metadata)
+      tarball_path = storage.put_file(artifact.fingerprint, origin_file)
       metadata['sha1'] = file_checksum(tarball_path)
-      @final_index.update_version(artifact.fingerprint, metadata)
+      index.update_version(artifact.fingerprint, metadata)
       tarball_path
     end
 

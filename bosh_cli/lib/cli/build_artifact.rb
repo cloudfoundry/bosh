@@ -4,6 +4,7 @@ module Bosh::Cli
 
     def initialize(resource)
       @resource = resource
+      @notes = []
     end
 
     def name
