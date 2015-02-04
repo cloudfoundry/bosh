@@ -7,7 +7,7 @@ module Bosh::Cli
 
       dev_builds_dir = build_directory('dev')
       FileUtils.mkdir_p(dev_builds_dir)
-      @dev_index   = Versions::VersionsIndex.new(dev_builds_dir)
+      @dev_index = Versions::VersionsIndex.new(dev_builds_dir)
       @dev_storage = Versions::LocalVersionStorage.new(dev_builds_dir)
 
       final_builds_dir = build_directory('final')
@@ -20,58 +20,66 @@ module Bosh::Cli
 
     attr_reader :resource
 
-    def build_directory(mode)
-      Pathname(@archive_dir).join(".#{mode}_builds", "#{artifact_type(resource, true)}", resource.name).to_s
-    end
+    def lookup(resource)
+      fingerprint = BuildArtifact.make_fingerprint(resource)
 
-    def find_file(blobstore_id, sha1, version, desc)
-      @final_resolver.find_file(blobstore_id, sha1, version, desc)
-    end
+      metadata = @final_index[fingerprint]
+      if metadata && metadata['blobstore_id']
+        blobstore_id = metadata['blobstore_id']
+        version = metadata['version'] || fingerprint
+        sha1 = metadata['sha1']
 
-    def lookup_final(artifact)
-      @final_index[artifact.fingerprint]
-    end
+        tarball_path = @final_resolver.find_file(blobstore_id, sha1, version, "#{artifact_type(resource)} #{resource.name} (#{version})") # todo: 'package' vs 'job'
+        BuildArtifact.new(resource.name, metadata, fingerprint, tarball_path, false)
+      else
+        metadata = @dev_index[fingerprint]
+        if metadata
+          version = metadata['version'] || fingerprint
+          if @dev_storage.has_file?(version)
+            tarball_path = @dev_storage.get_file(version)
+            if file_checksum(tarball_path) != metadata['sha1']
+              raise CorruptedArchive, "#{artifact_type(resource)} #{resource.name} (#{version}) archive at #{tarball_path} corrupted"
+            end
 
-    def lookup_dev(artifact)
-      @dev_index[artifact.fingerprint]
-    end
+            BuildArtifact.new(resource.name, metadata, fingerprint, tarball_path, true)
+          end
+        end
+      end
 
-    def has_dev?(version)
-      @dev_storage.has_file?(version)
-    end
-
-    def get_dev(version)
-      @dev_storage.get_file(version)
+    rescue Bosh::Blobstore::NotFound
+      raise BlobstoreError, "Final version of '#{name}' not found in blobstore"
+    rescue Bosh::Blobstore::BlobstoreError => e
+      raise BlobstoreError, "Blobstore error: #{e}"
     end
 
     def upload_to_blobstore(f)
       @blobstore.create(f)
     end
 
-    def update_final_version(artifact, item)
-      @final_index.update_version(artifact.fingerprint, item)
+    def update_final_version(fingerprint, metadata)
+      @final_index.update_version(fingerprint, metadata)
     end
 
-    def put(artifact, tmp_file, final)
+    def put(fingerprint, tmp_file, final)
       origin_file = tmp_file.path
-      metadata = {'version' => artifact.fingerprint}
+      metadata = {'version' => fingerprint}
 
-      install(artifact, metadata, origin_file,
+      install(fingerprint, metadata, origin_file,
         final ? @final_index : @dev_index,
         final ? @final_storage : @dev_storage)
     end
 
     def copy_from_dev_to_final(artifact)
-      metadata = lookup_dev(artifact)
-      install(artifact, metadata, artifact.tarball_path, @final_index, @final_storage)
+      final_tarball_path = install(artifact, artifact.metadata, artifact.tarball_path, @final_index, @final_storage)
+      BuildArtifact.new(artifact.name, artifact.metadata, artifact.fingerprint, final_tarball_path, false)
     end
 
-    def install(artifact, metadata, origin_file, index, storage)
+    def install(fingerprint, metadata, origin_file, index, storage)
       # add version (with its validation) before adding sha1
-      index.add_version(artifact.fingerprint, metadata)
-      tarball_path = storage.put_file(artifact.fingerprint, origin_file)
+      index.add_version(fingerprint, metadata)
+      tarball_path = storage.put_file(fingerprint, origin_file)
       metadata['sha1'] = file_checksum(tarball_path)
-      index.update_version(artifact.fingerprint, metadata)
+      index.update_version(fingerprint, metadata)
       tarball_path
     end
 
@@ -84,5 +92,14 @@ module Bosh::Cli
       result += 's' if plural
       result
     end
+
+    private
+
+    def build_directory(mode)
+      Pathname(@archive_dir).join(".#{mode}_builds", "#{artifact_type(resource, true)}", resource.name).to_s
+    end
+  end
+
+  class CorruptedArchive < StandardError
   end
 end

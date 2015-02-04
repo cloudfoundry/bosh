@@ -103,8 +103,7 @@ module Bosh::Cli::Command::Release
           Building packages
           -----------------
           Building package_name...
-            Final version:   NOT FOUND
-            Dev version:     NOT FOUND
+            No artifact found for package_name
             Generating...
             Generated version 431818cc23fc69b0b1f0e267f24bb5450f012295
 

@@ -1,7 +1,13 @@
 require 'spec_helper'
 
 describe Bosh::Cli::BuildArtifact, 'dev build' do
-  subject(:artifact) { Bosh::Cli::BuildArtifact.new(resource) }
+  subject(:artifact) { Bosh::Cli::BuildArtifact.new('package_one', artifact_metadata, 'fingerprint', tarball_path, true) }
+
+  let(:artifact_metadata) do
+    {
+      'name' => 'package_one',
+    }
+  end
 
   let(:release_dir) { Support::FileHelpers::ReleaseDirectory.new }
   # let(:storage_dir) { Support::FileHelpers::ReleaseDirectory.new }
@@ -33,46 +39,7 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
     end
   end
 
-  describe '#metadata' do
-    let(:metadata) { artifact.metadata }
-
-    it 'includes metadata provided by the Resource' do
-      resource.metadata.each do |key, value|
-        expect(metadata[key]).to eq(value)
-      end
-    end
-
-    it 'includes fingerprint' do
-      expect(metadata['fingerprint']).to eq(artifact.fingerprint)
-    end
-
-    it 'includes checksum' do
-      expect(metadata).to have_key('sha1')
-    end
-
-    it 'includes version' do
-      expect(metadata['version']).to eq(artifact.version)
-    end
-
-    it 'includes new_version' do
-      value = true
-      artifact.new_version = value
-      expect(metadata['new_version']).to eq(value)
-    end
-
-    it 'includes notes' do
-      value = 'some notes'
-      artifact.notes = value
-      expect(metadata['notes']).to eq(value)
-    end
-
-    it 'includes tarball_path' do
-      artifact.tarball_path = tarball_path
-      expect(metadata['tarball_path']).to eq(tarball_path)
-    end
-  end
-
-  describe '#fingerprint' do
+  describe '.make_fingerprint' do
     let(:resource_spec) do
       {
         'name' => 'package_one',
@@ -80,27 +47,28 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
         'dependencies' => ['foo', 'bar'],
       }
     end
+    subject(:fingerprint) { Bosh::Cli::BuildArtifact.make_fingerprint(resource) }
 
     let(:matched_files) { ['lib/1.rb', 'lib/2.rb', 'README.2', 'README.md'] }
     let(:reference_fingerprint) { 'f0b1b81bd6b8093f2627eaa13952a1aab8b125d1' }
 
     it 'is based on the matched files' do
-      expect(artifact.fingerprint).to eq(reference_fingerprint)
+      expect(fingerprint).to eq(reference_fingerprint)
     end
 
     it 'ignores unmatched files' do
       release_dir.add_file('src', 'an-unmatched-file.txt')
-      expect(artifact.fingerprint).to eq(reference_fingerprint)
+      expect(fingerprint).to eq(reference_fingerprint)
     end
 
     it 'varies with the set of matched files' do
       release_dir.add_file('src', 'lib/a_matched_file.rb')
-      expect(artifact.fingerprint).to_not eq(reference_fingerprint)
+      expect(fingerprint).to_not eq(reference_fingerprint)
     end
 
     it 'varies with the content of matched files' do
       release_dir.add_file('src', 'lib/1.rb', 'varied contents')
-      expect(artifact.fingerprint).to_not eq(reference_fingerprint)
+      expect(fingerprint).to_not eq(reference_fingerprint)
     end
 
     context 'when a file pattern matches empty directories' do
@@ -114,7 +82,7 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
 
       it 'varies' do
         release_dir.add_dir('src/tmp')
-        expect(artifact.fingerprint).to_not eq(reference_fingerprint)
+        expect(fingerprint).to_not eq(reference_fingerprint)
       end
     end
 
@@ -122,7 +90,7 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
       before { release_dir.add_file('src', 'lib/.zb.rb') }
 
       it 'the dotfile is included in the fingerprint' do
-        expect(artifact.fingerprint).to_not eq(reference_fingerprint)
+        expect(fingerprint).to_not eq(reference_fingerprint)
       end
     end
 
@@ -136,7 +104,7 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
       end
 
       it 'does not vary' do
-        expect(artifact.fingerprint).to eq(reference_fingerprint)
+        expect(fingerprint).to eq(reference_fingerprint)
       end
     end
 
@@ -150,7 +118,7 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
       end
 
       it 'varies' do
-        expect(artifact.fingerprint).to_not eq(reference_fingerprint)
+        expect(fingerprint).to_not eq(reference_fingerprint)
       end
     end
 
@@ -164,7 +132,7 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
       end
 
       it 'varies' do
-        expect(artifact.fingerprint).to_not eq(reference_fingerprint)
+        expect(fingerprint).to_not eq(reference_fingerprint)
       end
     end
 
@@ -180,7 +148,7 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
       before { release_dir.add_file('blobs', 'matched.tgz') }
 
       it 'varies' do
-        expect(artifact.fingerprint).to_not eq(reference_fingerprint)
+        expect(fingerprint).to_not eq(reference_fingerprint)
       end
     end
 
@@ -191,7 +159,7 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
       end
 
       it 'does not vary' do
-        expect(artifact.fingerprint).to eq(reference_fingerprint)
+        expect(fingerprint).to eq(reference_fingerprint)
       end
     end
   end

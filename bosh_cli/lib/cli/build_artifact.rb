@@ -1,57 +1,27 @@
 module Bosh::Cli
   class BuildArtifact
-    attr_accessor :tarball_path
+    attr_reader :name, :metadata, :fingerprint, :tarball_path
 
-    def initialize(resource)
-      @resource = resource
+    def initialize(name, metadata, fingerprint, tarball_path, is_dev_artifact)
+      @name = name
+      @metadata = metadata
+      @fingerprint = fingerprint
+      @tarball_path = tarball_path
+      @is_dev_artifact = is_dev_artifact
       @notes = []
-    end
-
-    def name
-      resource.name
-    end
-
-    def metadata
-      resource.metadata.merge({
-        'fingerprint' => fingerprint,
-        'version' => version,
-        'tarball_path' => tarball_path,
-        'sha1' => checksum,
-        'new_version' => new_version,
-        'notes' => notes
-      })
-    end
-
-    # TODO: be sure we are handling the case in which there was an index, with a pre-defined fingerprint
-    def fingerprint
-      @fingerprint ||= make_fingerprint
     end
 
     def version
       fingerprint
     end
 
-    # ---
-
-    def new_version=(value)
-      @new_version = value
-    end
-
-    def new_version
-      @new_version
-    end
-
-    def notes=(value)
-      @notes = value
-    end
-
-    def notes
-      @notes
+    def dev_artifact?
+      @is_dev_artifact
     end
 
     private
 
-    def checksum
+    def self.checksum(tarball_path)
       if tarball_path && File.exists?(tarball_path)
         digest_file(tarball_path)
       else
@@ -59,7 +29,7 @@ module Bosh::Cli
       end
     end
 
-    def digest_file(filename)
+    def self.digest_file(filename)
       File.file?(filename) ? Digest::SHA1.file(filename).hexdigest : ''
     end
 
@@ -69,7 +39,7 @@ module Bosh::Cli
     # seemingly clean working copy would trigger new fingerprints for
     # artifacts with changed permissions. Also we don't want current
     # fingerprints to change, hence the exact values below.
-    def file_mode(path)
+    def self.file_mode(path)
       if File.directory?(path)
         '40755'
       elsif File.executable?(path)
@@ -79,7 +49,8 @@ module Bosh::Cli
       end
     end
 
-    def make_fingerprint
+    # TODO: be sure we are handling the case in which there was an index, with a pre-defined fingerprint
+    def self.make_fingerprint(resource)
       scheme = 2
       contents = "v#{scheme}"
 
@@ -92,7 +63,7 @@ module Bosh::Cli
     end
 
     def resource
-      @resource
+      raise
     end
   end
 end

@@ -43,80 +43,27 @@ module Bosh::Cli
     end
 
     def locate_artifact(resource)
-      artifact = locate_in_final(resource)
+      artifact = @archive_repository.lookup(resource)
+
       if artifact.nil?
-        artifact = locate_in_dev(resource)
-        if artifact && final? && !dry_run?
-          @archive_repository.copy_from_dev_to_final(artifact)
-        end
+        say("No artifact found for #{resource.name}".make_red)
+        return nil
       end
+
+      say("Found #{artifact.dev_artifact? ? 'dev' : 'final'} artifact for #{artifact.name}")
+
+      if artifact.dev_artifact? && final? && !dry_run?
+        artifact = @archive_repository.copy_from_dev_to_final(artifact)
+      end
+
       artifact
-    end
-
-    def locate_in_final(resource)
-      artifact = BuildArtifact.new(resource)
-      say('Final version:', ' ')
-
-      metadata = @archive_repository.lookup_final(artifact)
-
-      if metadata.nil?
-        say('NOT FOUND'.make_red)
-        return nil
-      end
-
-      blobstore_id = metadata['blobstore_id']
-      version      = metadata['version'] || artifact.fingerprint
-      sha1         = metadata['sha1']
-
-      if blobstore_id.nil?
-        say('No blobstore id'.make_red)
-        return nil
-      end
-
-      tarball_path = @archive_repository.find_file(blobstore_id, sha1, version, "package #{resource.name} (#{version})")
-
-      artifact.tarball_path = tarball_path
-      artifact
-    rescue Bosh::Blobstore::NotFound
-      raise BlobstoreError, "Final version of '#{name}' not found in blobstore"
-    rescue Bosh::Blobstore::BlobstoreError => e
-      raise BlobstoreError, "Blobstore error: #{e}"
-    end
-
-    def locate_in_dev(resource)
-      artifact = BuildArtifact.new(resource)
-      say('Dev version:', '   ')
-      metadata = @archive_repository.lookup_dev(artifact)
-
-      if metadata.nil?
-        say('NOT FOUND'.make_red)
-        return nil
-      end
-
-      version = metadata['version'] || artifact.fingerprint
-
-      unless @archive_repository.has_dev?(version)
-        say('TARBALL MISSING'.make_red)
-        return nil
-      end
-
-      say('FOUND LOCAL'.make_green)
-      tarball_path = @archive_repository.get_dev(version)
-
-      # TODO: move everything below here, as it's not actually about finding and using.
-      if file_checksum(tarball_path) != metadata['sha1']
-        say("'#{name} (#{version})' tarball corrupted".make_red)
-        return nil
-      end
-
-      artifact.tarball_path = tarball_path
-      artifact
+    rescue Bosh::Cli::CorruptedArchive => e
+      say "#{"Warning".make_red}: #{e.message}"
+      nil
     end
 
     def generate_tarball(resource)
-      artifact = BuildArtifact.new(resource)
-      version = artifact.fingerprint
-      tmp_file = Tempfile.new(artifact.name)
+      tmp_file = Tempfile.new(resource.name)
 
       say('Generating...')
 
@@ -130,23 +77,30 @@ module Bosh::Cli
         end
       end
 
+      fingerprint = BuildArtifact.make_fingerprint(resource)
+
       # TODO: move everything below here, as it's not actually about generating a tarball.
       tarball_path = nil
       unless dry_run?
-        tarball_path = @archive_repository.put(artifact, tmp_file, final?)
+        tarball_path = @archive_repository.put(fingerprint, tmp_file, final?)
       end
 
-      artifact.notes = ['new version']
-      artifact.new_version = true
-      say("Generated version #{version}".make_green)
+      metadata = resource.metadata.merge({
+          'fingerprint' => fingerprint,
+          'version' => fingerprint,
+          'tarball_path' => tarball_path,
+          'sha1' => BuildArtifact.checksum(tarball_path),
+          'notes' => ['new version'],
+          'new_version' => true,
+        })
 
-      artifact.tarball_path = tarball_path
-      artifact
+      say("Generated version #{fingerprint}".make_green)
+      BuildArtifact.new(resource.name, metadata, fingerprint, tarball_path, !final?)
     end
 
     # TODO: move out of builder
     def upload_tarball(artifact)
-      metadata = @archive_repository.lookup_final(artifact)
+      metadata = artifact.metadata
 
       unless metadata
         say("Failed to find entry '#{artifact.fingerprint}' in index, check local storage")
@@ -166,10 +120,8 @@ module Bosh::Cli
 
       say("Uploaded, blobstore id '#{blobstore_id}'")
       metadata['blobstore_id'] = blobstore_id
-      @archive_repository.update_final_version(artifact, metadata)
+      @archive_repository.update_final_version(artifact.fingerprint, metadata)
 
-      artifact.notes = ['new version']
-      artifact.new_version = true
       true
     rescue Bosh::Blobstore::BlobstoreError => e
       raise BlobstoreError, "Blobstore error: #{e}"
