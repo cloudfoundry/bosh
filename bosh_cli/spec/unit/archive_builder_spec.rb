@@ -1,7 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Cli::ArchiveBuilder, 'dev build' do
-  subject(:builder) { Bosh::Cli::ArchiveBuilder.new(archive_dir, blobstore, release_options) }
+  let(:archive_repository_provider) { Bosh::Cli::ArchiveRepositoryProvider.new(archive_dir, blobstore) }
+  subject(:builder) { Bosh::Cli::ArchiveBuilder.new(archive_repository_provider, release_options) }
 
   let(:resource) do
     Bosh::Cli::Resources::Package.new(release_source.join(resource_base), release_source.path)

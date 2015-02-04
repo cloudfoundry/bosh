@@ -10,12 +10,12 @@ module Bosh::Cli::Versions
       @name_prefix = name_prefix
     end
 
-    def put_file(version, src_file_path)
+    def put_file(version, origin_file_path)
       destination = file_path(version)
-      unless File.exist?(src_file_path)
-        raise "Trying to store non-existant file `#{src_file_path}' for version `#{version}'"
+      unless File.exist?(origin_file_path)
+        raise "Trying to store non-existant file `#{origin_file_path}' for version `#{version}'"
       end
-      FileUtils.cp(src_file_path, destination, :preserve => true)
+      FileUtils.cp(origin_file_path, destination, :preserve => true)
 
       File.expand_path(destination)
     end

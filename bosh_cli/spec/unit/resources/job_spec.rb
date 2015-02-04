@@ -207,13 +207,7 @@ describe Bosh::Cli::Resources::Job, 'dev build' do
   describe '#files' do
     let(:archive_dir) { release_source.path }
     let(:blobstore) { double('blobstore') }
-    let(:release_options) do
-      {
-        dry_run: false,
-        final: false
-      }
-    end
-    let(:builder) { Bosh::Cli::ArchiveBuilder.new(archive_dir, blobstore, release_options) }
+    let(:release_options) { {dry_run: false, final: false } }
 
     it 'includes a spec entry' do
       expect(job.files).to include([release_source.join(base, 'spec'), 'job.MF'])

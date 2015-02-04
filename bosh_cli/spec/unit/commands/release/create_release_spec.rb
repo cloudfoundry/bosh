@@ -44,7 +44,8 @@ module Bosh::Cli::Command::Release
         }
       end
       let(:matched_files) { ['lib/1.rb', 'lib/2.rb', 'README.2', 'README.md'] }
-      let(:archive_builder) { Bosh::Cli::ArchiveBuilder.new(archive_dir, blobstore, release_options) }
+      let(:archive_repository_provider) { Bosh::Cli::ArchiveRepositoryProvider.new(archive_dir, blobstore) }
+      let(:archive_builder) { Bosh::Cli::ArchiveBuilder.new(archive_repository_provider, release_options) }
 
       after do
         release_source.cleanup
@@ -62,7 +63,7 @@ module Bosh::Cli::Command::Release
         allow(command).to receive(:dirty_state?).and_return(false)
 
         allow(Bosh::Cli::Resources::Package).to receive(:discover).and_return([package])
-        allow(Bosh::Cli::ArchiveBuilder).to receive(:new).and_return(archive_builder)
+        allow(Bosh::Cli::ArchiveBuilder).to receive(:new).and_return(archive_builder) # todo wtf? removing this causes source tree to change
         # allow(archive_builder).to receive(:build)
 
         allow(command).to receive(:build_jobs)
@@ -184,7 +185,6 @@ module Bosh::Cli::Command::Release
         before do
           command.options[:name] = provided_name
           expect(Bosh::Cli::Resources::Package).to receive(:discover).with(work_dir).and_return([package])
-          expect(Bosh::Cli::ArchiveBuilder).to receive(:new).with(work_dir, nil, { dry_run: true, final: nil }).and_return(archive_builder)
         end
 
         it 'builds release with the specified name' do

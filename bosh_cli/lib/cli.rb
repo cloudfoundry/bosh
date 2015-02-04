@@ -77,6 +77,8 @@ require 'cli/versions/version_file_resolver'
 require 'cli/versions/multi_release_support'
 
 require 'cli/archive_builder'
+require 'cli/archive_repository_provider'
+require 'cli/archive_repository'
 require 'cli/build_artifact'
 require 'cli/resources/job'
 require 'cli/resources/package'

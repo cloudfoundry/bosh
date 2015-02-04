@@ -134,14 +134,12 @@ module Bosh::Cli::Command
       end
 
       def build_packages(dry_run, final)
-        options = {
-          dry_run: dry_run,
-          final: final
-        }
+        archive_builder = Bosh::Cli::ArchiveBuilder.new(archive_repository_provider,
+          dry_run: dry_run, final: final)
         packages = Bosh::Cli::Resources::Package.discover(work_dir)
         artifacts = packages.map do |package|
           say("Building #{package.name.make_green}...")
-          artifact = Bosh::Cli::ArchiveBuilder.new(work_dir, release.blobstore, options).build(package)
+          artifact = archive_builder.build(package)
           nl
           artifact
         end
@@ -161,6 +159,10 @@ module Bosh::Cli::Command
         end
 
         artifacts
+      end
+
+      def archive_repository_provider
+        @archive_repository_provider ||= Bosh::Cli::ArchiveRepositoryProvider.new(work_dir, release.blobstore)
       end
 
       def build_release(dry_run, final, job_artifacts, manifest_only, package_artifacts, name, version)
@@ -183,12 +185,9 @@ module Bosh::Cli::Command
       end
 
       def build_jobs(packages, dry_run, final)
-        options = {
-          :final => final,
-          :dry_run => dry_run,
-        }
+        archive_builder = Bosh::Cli::ArchiveBuilder.new(archive_repository_provider,
+          :final => final, :dry_run => dry_run)
         jobs = Bosh::Cli::Resources::Job.discover(work_dir, packages)
-        archive_builder = Bosh::Cli::ArchiveBuilder.new(work_dir, release.blobstore, options)
         artifacts = jobs.map do |job|
           say("Building #{job.name.make_green}...")
           artifact = archive_builder.build(job)
