@@ -38,7 +38,6 @@ module Bosh::Dev
         bosh_openstack_cpi
         bosh-registry
         bosh_vsphere_cpi
-        bosh_warden_cpi
         bosh-director
         bosh-director-core
         bosh-monitor
