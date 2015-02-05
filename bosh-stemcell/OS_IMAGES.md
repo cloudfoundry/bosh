@@ -7,6 +7,10 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `xIk.jCEzC5CrI.VrogNsyKRnHBtNIJ1w`
+  Adds kernel flags to enable console output in openstack environments
+  upgrade linux kernel to 3.13.0-45
+
 * `LNYTMCODzn39poV8I4yUg1RxmAfTZPth`
   upgrade libssl to 1.0.1f-1ubuntu2.8
 
@@ -86,22 +90,26 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
 CentOS 6.6 images have filename `bosh-centos-6_6-os-image.tgz`
 
- * `ISA4tKjaoq4koVay5rAzNZlzX7X0KafH`
+* `.EqtRtHJyHTr3hg4nFPq5QmJ4UxQ2WU.`
+  Adds kernel flags to enable console output in openstack environments
+  upgrade linux kernel to 3.13.0-45
+
+* `ISA4tKjaoq4koVay5rAzNZlzX7X0KafH`
   patch GNU libc to resolve CVE-2015-0235, "GHOST"
 
- * `aoUtngdallpd2f6HhMxCveFvk6t6B2Ru`
+* `aoUtngdallpd2f6HhMxCveFvk6t6B2Ru`
   upgrade openssl to 1.0.1e-30.el6_6.5
 
- * `Hb884_xVvhoIhdTEmMtaTHKC.s7b9AmN`
+* `Hb884_xVvhoIhdTEmMtaTHKC.s7b9AmN`
   switch logrotate to rotate based on size
 
- * `xbBfE2GA7AgmCGA6MfNfhHX67vkJlIze`
+* `xbBfE2GA7AgmCGA6MfNfhHX67vkJlIze`
   start monit during agent bootstrap
 
- * `PB2C5YnPG.zZ5MgjBR96Y40UDpqVQb_D`
+* `PB2C5YnPG.zZ5MgjBR96Y40UDpqVQb_D`
   disable reverse DNS resolution for sshd
 
- * `6mBEQ5Gt5O6NJIFZxlyrf_05i.6s0OWF`
+* `6mBEQ5Gt5O6NJIFZxlyrf_05i.6s0OWF`
   CentOS 6.6
 
 ## CentOS 6.5
