@@ -135,6 +135,7 @@ properties:
     default:
       max_connections: 32
       pool_timeout: 10
+      connection_validation_timeout: 3600
 
   # DNS
   dns.address:
@@ -163,6 +164,7 @@ properties:
     default:
       max_connections: 32
       pool_timeout: 10
+      connection_validation_timeout: 3600
 
   # Blobstore
   blobstore.provider:
