@@ -5,6 +5,80 @@ describe 'create release', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
 
+  describe 'release creation' do
+    before do
+      Dir.chdir(ClientSandbox.test_release_dir) do
+        bosh_runner.run_in_current_dir('create release --final --with-tarball')
+      end
+    end
+
+    it 'creates a release manifest' do
+      Dir.chdir(ClientSandbox.test_release_dir) do
+        expect(YAML.load_file('releases/bosh-release/bosh-release-1.yml')).to match(
+            'packages' => [
+              package_desc('a', ['b']),
+              package_desc('b', ['c']),
+              package_desc('bar', ['foo']),
+              package_desc('blocking_package', []),
+              package_desc('c', []),
+              package_desc('errand1', []),
+              package_desc('fails_with_too_much_output', []),
+              package_desc('foo', []),
+            ],
+            'jobs' => [
+              job_desc('errand1'),
+              job_desc('errand_without_package'),
+              job_desc('fails_with_too_much_output'),
+              job_desc('foobar'),
+              job_desc('job_with_blocking_compilation'),
+              job_desc('transitive_deps'),
+            ],
+
+            'commit_hash' => /[0-9a-f]{8}/,
+            'uncommitted_changes' => true,
+            'name' => 'bosh-release',
+            'version' => '1',
+          )
+      end
+    end
+
+    it 'updates the index' do
+      Dir.chdir(ClientSandbox.test_release_dir) do
+        index = YAML.load_file('releases/bosh-release/index.yml')
+        build_keys = index['builds'].keys
+        expect(build_keys.count).to eq(1)
+        expect(index['build'][build_keys.first]).to eq('version' => '1')
+
+        expect(index['builds'].count).to eq(1)
+        _uuid, build = index['builds'].first
+        expect(build).to eq('version' => '1')
+      end
+    end
+
+    it 'stashes stuff in a tarball' do
+      Dir.chdir(ClientSandbox.test_release_dir) do
+        files = `tar tzf releases/bosh-release/bosh-release-1.tgz`.chomp.split(/\n/)
+        expect(files.reject {|f| f =~ /\/$/ }).to contain_exactly(
+            './jobs/errand1.tgz',
+            './jobs/errand_without_package.tgz',
+            './jobs/fails_with_too_much_output.tgz',
+            './jobs/foobar.tgz',
+            './jobs/job_with_blocking_compilation.tgz', 
+            './jobs/transitive_deps.tgz',
+            './packages/a.tgz',
+            './packages/b.tgz',
+            './packages/bar.tgz',
+            './packages/blocking_package.tgz',
+            './packages/c.tgz', 
+            './packages/errand1.tgz',
+            './packages/fails_with_too_much_output.tgz',
+            './packages/foo.tgz',
+            './release.MF'
+          )
+      end
+    end
+  end
+
   it 'cannot create a final release without the blobstore configured', no_reset: true do
     Dir.chdir(ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
@@ -237,5 +311,15 @@ describe 'create release', type: :integration do
     ensure
       FileUtils.rm_rf(new_file)
     end
+  end
+
+  def package_desc(name, dependencies)
+    sha = /^[0-9a-f]{40}$/
+    {'name' => name, 'version' => sha, 'fingerprint' => sha, 'dependencies' => dependencies, 'sha1' => sha, }
+  end
+
+  def job_desc(name)
+    sha = /^[0-9a-f]{40}$/
+    {'name' => name, 'version' => sha, 'fingerprint' => sha, 'sha1' => sha, }
   end
 end
