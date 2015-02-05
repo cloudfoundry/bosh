@@ -1,3 +1,30 @@
+## 2839
+
+Improvements:
+
+  * stemcell: Enable console output for openstack in kernel [f4f1cdd/c89b61e]
+  * stemcell: ubuntu: Upgrade ubuntu unzip version [9481cd4]
+
+## 2831
+
+Improvements:
+
+  * agent: Bump agent so that it waits for monit
+        to start up during bootstrapping [4cf37f4]
+
+## 2830
+
+Bug Fixes:
+
+  * stemcell: Stemcell names include bosh prefix once again [fbb2016]
+
+## 2829
+
+Improvements:
+
+  * director: Update fog to 1.27 [08e9edc]
+  * stemcell: centos: Bump CentOS to resolve CVE-2015-0235 (ghost) [b7ebec5]
+
 ## 2827
 
 New Features:
