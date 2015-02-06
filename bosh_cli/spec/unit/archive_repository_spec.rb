@@ -15,7 +15,7 @@ describe Bosh::Cli::ArchiveRepository do
   end
 
   describe '#install' do
-    let(:artifact) { Bosh::Cli::BuildArtifact.new('artifact-name', {'version' => fingerprint}, fingerprint, tarball.path, sha1, nil, true, !final) }
+    let(:artifact) { Bosh::Cli::BuildArtifact.new('artifact-name', fingerprint, tarball.path, sha1, nil, true, !final) }
     let(:final_artifact_path) { archive_dir_path.join('.final_builds', 'packages', 'package-name') }
     let(:final_version_index) { Bosh::Cli::Versions::VersionsIndex.new(final_artifact_path.to_s) }
     let(:dev_artifact_path) { archive_dir_path.join('.dev_builds', 'packages', 'package-name') }

@@ -27,7 +27,7 @@ module Bosh::Cli
         sha1 = artifact_info['sha1']
 
         tarball_path = @final_resolver.find_file(blobstore_id, sha1, version, "#{resource.singular_type} #{resource.name} (#{version})") # todo: 'package' vs 'job'
-        BuildArtifact.new(resource.name, {}, fingerprint, tarball_path, sha1, resource.dependencies, false, false)
+        BuildArtifact.new(resource.name, fingerprint, tarball_path, sha1, resource.dependencies, false, false)
       else
         artifact_info = @dev_index[fingerprint]
         if artifact_info
@@ -38,7 +38,7 @@ module Bosh::Cli
               raise CorruptedArchive, "#{resource.singular_type} #{resource.name} (#{version}) archive at #{tarball_path} corrupted"
             end
 
-            BuildArtifact.new(resource.name, {}, fingerprint, tarball_path, artifact_info['sha1'], resource.dependencies, false, true)
+            BuildArtifact.new(resource.name, fingerprint, tarball_path, artifact_info['sha1'], resource.dependencies, false, true)
           end
         end
       end
@@ -64,7 +64,7 @@ module Bosh::Cli
           'sha1' => artifact.sha1,
           'blobstore_id' => blobstore_id
         })
-      artifact = BuildArtifact.new(artifact.name, artifact.metadata, artifact.fingerprint, artifact.tarball_path, artifact.sha1, artifact.dependencies, artifact.new_version?, false)
+      artifact = BuildArtifact.new(artifact.name, artifact.fingerprint, artifact.tarball_path, artifact.sha1, artifact.dependencies, artifact.new_version?, false)
       return artifact, blobstore_id
     end
 
@@ -75,12 +75,12 @@ module Bosh::Cli
         artifact.dev_artifact? ? @dev_index : @final_index,
         artifact.dev_artifact? ? @dev_storage : @final_storage)
 
-      BuildArtifact.new(artifact.name, artifact.metadata, artifact.fingerprint, new_tarball_path, artifact.sha1, artifact.dependencies, artifact.new_version?, artifact.dev_artifact?)
+      BuildArtifact.new(artifact.name, artifact.fingerprint, new_tarball_path, artifact.sha1, artifact.dependencies, artifact.new_version?, artifact.dev_artifact?)
     end
 
     def copy_from_dev_to_final(artifact)
       final_tarball_path = place_file_and_update_index(artifact.fingerprint, artifact.tarball_path, @final_index, @final_storage)
-      BuildArtifact.new(artifact.name, artifact.metadata, artifact.fingerprint, final_tarball_path, artifact.sha1, artifact.dependencies, artifact.new_version?, false)
+      BuildArtifact.new(artifact.name, artifact.fingerprint, final_tarball_path, artifact.sha1, artifact.dependencies, artifact.new_version?, false)
     end
 
     private

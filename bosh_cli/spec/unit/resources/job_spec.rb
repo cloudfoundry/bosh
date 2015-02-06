@@ -71,12 +71,6 @@ describe Bosh::Cli::Resources::Job, 'dev build' do
     end
   end
 
-  describe '#metadata' do
-    it 'includes name' do
-      expect(job.metadata['name']).to eq(name)
-    end
-  end
-
   describe '#validate!' do
     context 'when the Job name is nil' do
       let(:name) { nil }

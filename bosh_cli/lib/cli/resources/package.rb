@@ -71,10 +71,6 @@ module Bosh::Cli::Resources
       files
     end
 
-    def metadata
-      { 'name' => name, 'dependencies' => dependencies }
-    end
-
     def validate!
       basename = File.basename(package_base.to_s)
 

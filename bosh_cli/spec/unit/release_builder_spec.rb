@@ -5,11 +5,11 @@ module Bosh::Cli
     let(:release_name) { 'bosh-release' }
 
     let(:package_tarball) { Tempfile.new(['package-tarball', 'tgz']) }
-    let(:package_artifact) { Bosh::Cli::BuildArtifact.new('package-name', {}, 'the-pkg-fingerprint', package_tarball, 'pkg-sha', ['other-package'], false, false) }
+    let(:package_artifact) { Bosh::Cli::BuildArtifact.new('package-name', 'the-pkg-fingerprint', package_tarball, 'pkg-sha', ['other-package'], false, false) }
     let(:package_artifacts) { [package_artifact] }
 
     let(:job_tarball) { Tempfile.new(['job-tarball', 'tgz']) }
-    let(:job_artifact) { Bosh::Cli::BuildArtifact.new('job-name', {}, 'the-job-fingerprint', job_tarball, 'job-sha', nil, false, false) }
+    let(:job_artifact) { Bosh::Cli::BuildArtifact.new('job-name', 'the-job-fingerprint', job_tarball, 'job-sha', nil, false, false) }
     let(:job_artifacts) { [job_artifact] }
     let(:release_source) { Dir.mktmpdir }
 
@@ -135,17 +135,17 @@ module Bosh::Cli
 
     it 'has a list of jobs affected by building this release' do
       job_artifacts = [
-        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'new_version' => true, 'packages' => %w(bar baz), 'name' => 'job1' }),
-        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'new_version' => false, 'packages' => %w(foo baz), 'name' => 'job2' }),
-        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'new_version' => false, 'packages' => %w(baz zb), 'name' => 'job3' }),
-        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'new_version' => false, 'packages' => %w(bar baz), 'name' => 'job4' }),
+        instance_double(Bosh::Cli::BuildArtifact, name: 'job1', new_version?: true, dependencies: ['bar', 'baz']),
+        instance_double(Bosh::Cli::BuildArtifact, name: 'job2', new_version?: false, dependencies: ['foo', 'baz']),
+        instance_double(Bosh::Cli::BuildArtifact, name: 'job3', new_version?: false, dependencies: ['baz', 'zb']),
+        instance_double(Bosh::Cli::BuildArtifact, name: 'job4', new_version?: false, dependencies: ['bar', 'baz']),
       ]
 
       package_artifacts = [
-        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'name' => 'foo', 'new_version' => true }),
-        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'name' => 'bar', 'new_version' => false }),
-        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'name' => 'baz', 'new_version' => false }),
-        instance_double(Bosh::Cli::BuildArtifact, :metadata => { 'name' => 'zb', 'new_version' => true }),
+        instance_double(Bosh::Cli::BuildArtifact, name: 'foo', new_version?: true),
+        instance_double(Bosh::Cli::BuildArtifact, name: 'bar', new_version?: false),
+        instance_double(Bosh::Cli::BuildArtifact, name: 'baz', new_version?: false),
+        instance_double(Bosh::Cli::BuildArtifact, name: 'zb', new_version?: true),
       ]
 
       builder = ReleaseBuilder.new(@release, package_artifacts, job_artifacts, release_name)

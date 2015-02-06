@@ -29,7 +29,7 @@ module Bosh::Cli::Resources
     end
 
     def dependencies
-      packages
+      package_dependencies #TODO: should this be packages or package_dependencies?
     end
 
     def singular_type
@@ -46,10 +46,6 @@ module Bosh::Cli::Resources
       files = (templates_files + monit_files).map { |absolute_path| [absolute_path, relative_path(absolute_path)] }
       files << [File.join(job_base, 'spec'), 'job.MF']
       files
-    end
-
-    def metadata
-      { 'name' => name, 'packages' => package_dependencies }
     end
 
     # TODO: check dependency packages

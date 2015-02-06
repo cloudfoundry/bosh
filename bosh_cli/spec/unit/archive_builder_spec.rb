@@ -135,24 +135,6 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
         expect(directory_listing(explosion)).to contain_exactly("README.2", "README.md", "lib/1.rb", "lib/2.rb")
       end
 
-      describe '#metadata' do
-        let(:metadata) { builder.build(resource).metadata }
-
-        it 'includes metadata provided by the Resource' do
-          resource.metadata.each do |key, value|
-            expect(metadata[key]).to eq(value)
-          end
-        end
-
-        it 'includes new_version' do
-          expect(metadata['new_version']).to eq(true)
-        end
-
-        it 'includes notes' do
-          expect(metadata['notes']).to eq(['new version'])
-        end
-      end
-
       it 'uploads the tarball' do
         expect(blobstore).to receive(:create) do |file|
           expect(file).to be_a(File)

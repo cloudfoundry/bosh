@@ -94,13 +94,8 @@ module Bosh::Cli
 
       fingerprint = BuildArtifact.make_fingerprint(resource)
 
-      metadata = resource.metadata.merge(
-        'notes' => ['new version'],
-        'new_version' => true,
-      )
-
       sha1 = BuildArtifact.checksum(tarball_path)
-      BuildArtifact.new(resource.name, metadata, fingerprint, tarball_path, sha1, resource.dependencies, true, !final?)
+      BuildArtifact.new(resource.name, fingerprint, tarball_path, sha1, resource.dependencies, true, !final?)
     end
 
     def file_checksum(path)
