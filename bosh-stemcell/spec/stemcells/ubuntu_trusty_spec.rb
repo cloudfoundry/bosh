@@ -117,6 +117,18 @@ HERE
     end
   end
 
+  context 'installed by bosh_vsphere_agent_settings', {
+    exclude_on_aws: true,
+    exclude_on_vcloud: true,
+    exclude_on_openstack: true,
+    exclude_on_warden: true,
+  } do
+    describe file('/var/vcap/bosh/agent.json') do
+      it { should be_valid_json_file }
+      it { should contain('"Type": "CDROM"') }
+    end
+  end
+
   context 'default packages removed' do
     describe package('postfix') do
       it { should_not be_installed }

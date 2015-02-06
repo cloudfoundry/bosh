@@ -226,6 +226,7 @@ module Bosh::Stemcell
                 :system_parameters,
                 :bosh_clean,
                 :bosh_harden,
+                :bosh_vsphere_agent_settings,
                 :image_create,
                 :image_install_grub,
               ]
@@ -249,6 +250,7 @@ module Bosh::Stemcell
                 :system_parameters,
                 :bosh_clean,
                 :bosh_harden,
+                :bosh_vsphere_agent_settings,
                 :image_create,
                 :image_install_grub,
               ]

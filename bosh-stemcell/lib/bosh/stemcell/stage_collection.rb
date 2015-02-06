@@ -205,6 +205,7 @@ module Bosh::Stemcell
         # Finalisation
         :bosh_clean,
         :bosh_harden,
+        :bosh_vsphere_agent_settings,
         # Image/bootloader
         :image_create,
         :image_install_grub,
