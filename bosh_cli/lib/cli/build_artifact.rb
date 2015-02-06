@@ -2,7 +2,7 @@ module Bosh::Cli
   class BuildArtifact
     attr_reader :name, :metadata, :fingerprint, :tarball_path, :sha1, :dependencies
 
-    def initialize(name, metadata, fingerprint, tarball_path, sha1, dependencies, is_dev_artifact)
+    def initialize(name, metadata, fingerprint, tarball_path, sha1, dependencies, is_new_version, is_dev_artifact)
       @name = name
       @metadata = metadata
       @fingerprint = fingerprint
@@ -11,6 +11,7 @@ module Bosh::Cli
       @dependencies = dependencies
       @is_dev_artifact = is_dev_artifact
       @notes = []
+      @is_new_version = is_new_version
     end
 
     def version
@@ -19,6 +20,10 @@ module Bosh::Cli
 
     def dev_artifact?
       @is_dev_artifact
+    end
+
+    def new_version?
+      @is_new_version
     end
 
     private

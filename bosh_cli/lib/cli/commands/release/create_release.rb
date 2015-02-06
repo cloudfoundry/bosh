@@ -146,7 +146,7 @@ module Bosh::Cli::Command
 
         if packages.size > 0
           package_index = artifacts.inject({}) do |index, artifact|
-            index[artifact.name] = artifact.metadata['dependencies']
+            index[artifact.name] = artifact.dependencies
             index
           end
           sorted_packages = tsort_packages(package_index)
@@ -259,9 +259,9 @@ module Bosh::Cli::Command
 
       def artifact_summary(artifact)
         [
-          artifact.metadata['name'],
-          artifact.metadata['version'],
-          artifact.metadata['notes'].join(', '),
+          artifact.name,
+          artifact.version,
+          artifact.new_version? ? 'new version' : '',
         ]
       end
 

@@ -29,7 +29,7 @@ module Bosh::Cli::Resources
     end
 
     def dependencies
-      nil
+      packages
     end
 
     def singular_type

@@ -5,11 +5,11 @@ module Bosh::Cli
     let(:release_name) { 'bosh-release' }
 
     let(:package_tarball) { Tempfile.new(['package-tarball', 'tgz']) }
-    let(:package_artifact) { Bosh::Cli::BuildArtifact.new('package-name', {}, 'the-pkg-fingerprint', package_tarball, 'pkg-sha', ['other-package'], false) }
+    let(:package_artifact) { Bosh::Cli::BuildArtifact.new('package-name', {}, 'the-pkg-fingerprint', package_tarball, 'pkg-sha', ['other-package'], false, false) }
     let(:package_artifacts) { [package_artifact] }
 
     let(:job_tarball) { Tempfile.new(['job-tarball', 'tgz']) }
-    let(:job_artifact) { Bosh::Cli::BuildArtifact.new('job-name', {}, 'the-job-fingerprint', job_tarball, 'job-sha', nil, false) }
+    let(:job_artifact) { Bosh::Cli::BuildArtifact.new('job-name', {}, 'the-job-fingerprint', job_tarball, 'job-sha', nil, false, false) }
     let(:job_artifacts) { [job_artifact] }
     let(:release_source) { Dir.mktmpdir }
 

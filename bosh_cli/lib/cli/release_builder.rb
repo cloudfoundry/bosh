@@ -52,15 +52,15 @@ module Bosh::Cli
     # @return [Array<Bosh::Cli::BuildArtifact>] List of job artifacts
     #   affected by this release compared to the previous one.
     def affected_jobs
-      result = Set.new(@jobs.select { |job_artifact| job_artifact.metadata['new_version'] })
+      result = Set.new(@jobs.select { |job_artifact| job_artifact.new_version? })
       return result.to_a if @packages.empty?
 
       new_package_names = @packages.map do |package_artifact|
-        package_artifact.metadata['name'] if package_artifact.metadata['new_version']
+        package_artifact.name if package_artifact.new_version?
       end.compact
 
       @jobs.each do |job|
-        result << job if (new_package_names & job.metadata['packages']).size > 0
+        result << job if (new_package_names & job.dependencies).size > 0
       end
 
       result.to_a

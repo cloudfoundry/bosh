@@ -25,8 +25,8 @@ module Bosh::Cli
 
         if final? && !dry_run?
           say("Uploading final version '#{artifact.version}'...")
-          artifact = @archive_repository.upload_to_blobstore(artifact)
-          say("Uploaded, blobstore id '#{artifact.metadata['blobstore_id']}'")
+          artifact, blobstore_id = @archive_repository.upload_to_blobstore(artifact)
+          say("Uploaded, blobstore id '#{blobstore_id}'")
         end
       end
 
@@ -100,7 +100,7 @@ module Bosh::Cli
       )
 
       sha1 = BuildArtifact.checksum(tarball_path)
-      BuildArtifact.new(resource.name, metadata, fingerprint, tarball_path, sha1, resource.dependencies, !final?)
+      BuildArtifact.new(resource.name, metadata, fingerprint, tarball_path, sha1, resource.dependencies, true, !final?)
     end
 
     def file_checksum(path)
