@@ -182,7 +182,7 @@ module IntegrationSandboxHelpers
 
     final_config_path = File.join(ClientSandbox.test_release_dir, 'config', 'final.yml')
     final_config = YAML.load_file(final_config_path)
-    final_config['blobstore']['options']['blobstore_path'] = File.join(ClientSandbox.base_dir, 'release_blobstore')
+    final_config['blobstore']['options']['blobstore_path'] = ClientSandbox.blobstore_dir
     File.open(final_config_path, 'w') { |file| file.write(YAML.dump(final_config)) }
 
     Dir.chdir(ClientSandbox.test_release_dir) do

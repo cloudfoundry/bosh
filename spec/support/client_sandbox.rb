@@ -17,5 +17,9 @@ class ClientSandbox
     def bosh_config
       File.join(base_dir, 'bosh_config.yml')
     end
+
+    def blobstore_dir
+      File.join(base_dir, 'release_blobstore')
+    end
   end
 end

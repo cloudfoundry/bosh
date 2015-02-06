@@ -4,11 +4,54 @@ require 'spec_helper'
 describe 'create release', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
+  SHA1_REGEXP = /^[0-9a-f]{40}$/
 
   describe 'release creation' do
     before do
       Dir.chdir(ClientSandbox.test_release_dir) do
         bosh_runner.run_in_current_dir('create release --final --with-tarball')
+      end
+    end
+
+    it 'updates the .final_builds index for each job and package' do
+      Dir.chdir(ClientSandbox.test_release_dir) do
+        ['a', 'b', 'bar', 'blocking_package', 'c', 'errand1', 'fails_with_too_much_output', 'foo'].each do |package_name|
+          index = YAML.load_file(".final_builds/packages/#{package_name}/index.yml")
+          fingerprint = index['builds'].keys.first
+          expect(index).to match(
+              'builds' => {
+                fingerprint => {
+                  'version' => fingerprint,
+                  'sha1' => SHA1_REGEXP,
+                  'blobstore_id' => kind_of(String),
+                }
+              },
+              'format-version' => '2'
+            )
+
+          blob_file = File.join(ClientSandbox.blobstore_dir, index['builds'][fingerprint]['blobstore_id'])
+          expect(File.exist?(blob_file)).to eq(true)
+          expect(Digest::SHA1.file(blob_file)).to eq(index['builds'][fingerprint]['sha1'])
+        end
+
+        ['errand1', 'errand_without_package', 'fails_with_too_much_output', 'foobar', 'job_with_blocking_compilation', 'transitive_deps',].each do |job_name|
+          index = YAML.load_file(".final_builds/jobs/#{job_name}/index.yml")
+          fingerprint = index['builds'].keys.first
+          expect(index).to match(
+              'builds' => {
+                fingerprint => {
+                  'version' => fingerprint,
+                  'sha1' => SHA1_REGEXP,
+                  'blobstore_id' => kind_of(String),
+                }
+              },
+              'format-version' => '2'
+            )
+
+          tarblob = File.join(ClientSandbox.blobstore_dir, index['builds'][fingerprint]['blobstore_id'])
+          expect(File.exist?(tarblob)).to eq(true)
+          expect(Digest::SHA1.file(tarblob)).to eq(index['builds'][fingerprint]['sha1'])
+        end
       end
     end
 
@@ -45,13 +88,14 @@ describe 'create release', type: :integration do
     it 'updates the index' do
       Dir.chdir(ClientSandbox.test_release_dir) do
         index = YAML.load_file('releases/bosh-release/index.yml')
-        build_keys = index['builds'].keys
-        expect(build_keys.count).to eq(1)
-        expect(index['build'][build_keys.first]).to eq('version' => '1')
-
-        expect(index['builds'].count).to eq(1)
-        _uuid, build = index['builds'].first
-        expect(build).to eq('version' => '1')
+        builds = index['builds']
+        uuid, _ = builds.first
+        expect(index).to eq(
+            'builds' => {
+              uuid => {'version' => '1'}
+            },
+            'format-version' => '2',
+          )
       end
     end
 
@@ -314,12 +358,12 @@ describe 'create release', type: :integration do
   end
 
   def package_desc(name, dependencies)
-    sha = /^[0-9a-f]{40}$/
+    sha = SHA1_REGEXP
     {'name' => name, 'version' => sha, 'fingerprint' => sha, 'dependencies' => dependencies, 'sha1' => sha, }
   end
 
   def job_desc(name)
-    sha = /^[0-9a-f]{40}$/
+    sha = SHA1_REGEXP
     {'name' => name, 'version' => sha, 'fingerprint' => sha, 'sha1' => sha, }
   end
 end
