@@ -8,16 +8,31 @@ module Bosh::Cli
     end
 
     def build(resource)
-      @archive_repository = @archive_repository_provider.provide(resource)
+      @archive_repository = @archive_repository_provider.get(resource)
       resource.run_script(:prepare)
 
-      artifact = with_indent('  ') do
-        locate_artifact(resource) || generate_tarball(resource)
+      artifact = nil
+      with_indent('  ') do
+        artifact = locate_artifact(resource)
+        if artifact.nil?
+          artifact = create_artifact(resource)
+          say("Generated version #{artifact.fingerprint}".make_green)
+
+          unless dry_run?
+            artifact = @archive_repository.install(artifact)
+          end
+        end
+
+        if final? && !dry_run?
+          say("Uploading final version '#{artifact.version}'...")
+          artifact = @archive_repository.upload_to_blobstore(artifact)
+          say("Uploaded, blobstore id '#{artifact.metadata['blobstore_id']}'")
+        end
       end
 
-      upload_tarball(artifact) if final? && !dry_run?
-
       artifact
+    rescue Bosh::Blobstore::BlobstoreError => e
+      raise BlobstoreError, "Blobstore error: #{e}"
     end
 
     def dry_run?
@@ -62,8 +77,8 @@ module Bosh::Cli
       nil
     end
 
-    def generate_tarball(resource)
-      tmp_file = Tempfile.new(resource.name)
+    def create_artifact(resource)
+      tarball_path = safe_temp_file(resource.name, '.tgz')
 
       say('Generating...')
 
@@ -71,7 +86,7 @@ module Bosh::Cli
       resource.run_script(:pre_packaging, staging_dir)
 
       in_staging_dir do
-        tar_out = `tar -chzf #{tmp_file.path} . 2>&1`
+        tar_out = `tar -chzf #{tarball_path} . 2>&1`
         unless $?.exitstatus == 0
           raise PackagingError, "Cannot create tarball: #{tar_out}"
         end
@@ -79,52 +94,13 @@ module Bosh::Cli
 
       fingerprint = BuildArtifact.make_fingerprint(resource)
 
-      # TODO: move everything below here, as it's not actually about generating a tarball.
-      tarball_path = nil
-      unless dry_run?
-        tarball_path = @archive_repository.put(fingerprint, tmp_file, final?)
-      end
+      metadata = resource.metadata.merge(
+        'notes' => ['new version'],
+        'new_version' => true,
+      )
 
-      metadata = resource.metadata.merge({
-          'fingerprint' => fingerprint,
-          'version' => fingerprint,
-          'tarball_path' => tarball_path,
-          'sha1' => BuildArtifact.checksum(tarball_path),
-          'notes' => ['new version'],
-          'new_version' => true,
-        })
-
-      say("Generated version #{fingerprint}".make_green)
-      BuildArtifact.new(resource.name, metadata, fingerprint, tarball_path, !final?)
-    end
-
-    # TODO: move out of builder
-    def upload_tarball(artifact)
-      metadata = artifact.metadata
-
-      unless metadata
-        say("Failed to find entry '#{artifact.fingerprint}' in index, check local storage")
-        return
-      end
-
-      if metadata['blobstore_id']
-        return
-      end
-
-      say("Uploading final version '#{artifact.version}'...")
-
-      blobstore_id = nil
-      File.open(artifact.tarball_path, 'r') do |f|
-        blobstore_id = @archive_repository.upload_to_blobstore(f)
-      end
-
-      say("Uploaded, blobstore id '#{blobstore_id}'")
-      metadata['blobstore_id'] = blobstore_id
-      @archive_repository.update_final_version(artifact.fingerprint, metadata)
-
-      true
-    rescue Bosh::Blobstore::BlobstoreError => e
-      raise BlobstoreError, "Blobstore error: #{e}"
+      sha1 = BuildArtifact.checksum(tarball_path)
+      BuildArtifact.new(resource.name, metadata, fingerprint, tarball_path, sha1, resource.dependencies, !final?)
     end
 
     def file_checksum(path)
@@ -137,6 +113,14 @@ module Bosh::Cli
 
     def in_staging_dir
       Dir.chdir(staging_dir) { yield }
+    end
+
+    private
+
+    def safe_temp_file(prefix, suffix, dir = Dir.tmpdir)
+      Dir::Tmpname.create([prefix, suffix], dir) do |tmpname, _, _|
+        File.open(tmpname, File::RDWR|File::CREAT|File::EXCL).close
+      end
     end
   end
 end

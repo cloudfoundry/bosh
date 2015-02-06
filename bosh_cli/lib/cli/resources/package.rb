@@ -34,6 +34,18 @@ module Bosh::Cli::Resources
       spec['name']
     end
 
+    def dependencies
+      @dependencies ||= Array(spec['dependencies']).sort
+    end
+
+    def singular_type
+      'package'
+    end
+
+    def plural_type
+      'packages'
+    end
+
     def files
       validate!
       known_files = {}
@@ -99,10 +111,6 @@ module Bosh::Cli::Resources
     # ---
 
     private
-
-    def dependencies
-      @dependencies ||= Array(spec['dependencies']).sort
-    end
 
     def excluded_files
       @excluded_files ||= Array(spec['excluded_files']).sort

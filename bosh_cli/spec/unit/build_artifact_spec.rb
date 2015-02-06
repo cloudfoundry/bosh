@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Cli::BuildArtifact, 'dev build' do
-  subject(:artifact) { Bosh::Cli::BuildArtifact.new('package_one', artifact_metadata, 'fingerprint', tarball_path, true) }
+  subject(:artifact) { Bosh::Cli::BuildArtifact.new('package_one', artifact_metadata, 'fingerprint', tarball_path, 'sha1', nil, true) }
 
   let(:artifact_metadata) do
     {

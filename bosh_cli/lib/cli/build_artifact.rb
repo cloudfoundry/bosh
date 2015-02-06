@@ -1,12 +1,14 @@
 module Bosh::Cli
   class BuildArtifact
-    attr_reader :name, :metadata, :fingerprint, :tarball_path
+    attr_reader :name, :metadata, :fingerprint, :tarball_path, :sha1, :dependencies
 
-    def initialize(name, metadata, fingerprint, tarball_path, is_dev_artifact)
+    def initialize(name, metadata, fingerprint, tarball_path, sha1, dependencies, is_dev_artifact)
       @name = name
       @metadata = metadata
       @fingerprint = fingerprint
       @tarball_path = tarball_path
+      @sha1 = sha1
+      @dependencies = dependencies
       @is_dev_artifact = is_dev_artifact
       @notes = []
     end

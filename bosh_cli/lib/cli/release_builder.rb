@@ -83,8 +83,8 @@ module Bosh::Cli
     # Copies packages into release
     def copy_packages
       packages.each do |package_artifact|
-        name = package_artifact.metadata['name']
-        tarball_path = package_artifact.metadata['tarball_path']
+        name = package_artifact.name
+        tarball_path = package_artifact.tarball_path
         say("%-40s %s" % [name.make_green, pretty_size(tarball_path)])
         FileUtils.cp(tarball_path,
                      File.join(build_dir, "packages", "#{name}.tgz"),
@@ -96,8 +96,8 @@ module Bosh::Cli
     # Copies jobs into release todo DRY vs copy_packages
     def copy_jobs
       jobs.each do |job_artifact|
-        name = job_artifact.metadata['name']
-        tarball_path = job_artifact.metadata['tarball_path']
+        name = job_artifact.name
+        tarball_path = job_artifact.tarball_path
         say("%-40s %s" % [name.make_green, pretty_size(tarball_path)])
         FileUtils.cp(tarball_path,
                      File.join(build_dir, "jobs", "#{name}.tgz"),
@@ -109,8 +109,23 @@ module Bosh::Cli
     # Generates release manifest
     def generate_manifest
       manifest = {}
-      manifest['packages'] = packages.map(&:metadata)
-      manifest['jobs'] = jobs.map(&:metadata)
+      manifest['packages'] = packages.map do |build_artifact|
+        {
+          'name' => build_artifact.name,
+          'version' => build_artifact.version,
+          'fingerprint' => build_artifact.fingerprint,
+          'sha1' => build_artifact.sha1,
+          'dependencies' => build_artifact.dependencies,
+        }
+      end
+      manifest['jobs'] = jobs.map do |build_artifact|
+        {
+          'name' => build_artifact.name,
+          'version' => build_artifact.version,
+          'fingerprint' => build_artifact.fingerprint,
+          'sha1' => build_artifact.sha1,
+        }
+      end
 
       manifest['commit_hash'] = commit_hash
       manifest['uncommitted_changes'] = uncommitted_changes

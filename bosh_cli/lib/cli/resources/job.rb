@@ -28,6 +28,18 @@ module Bosh::Cli::Resources
       spec['name']
     end
 
+    def dependencies
+      nil
+    end
+
+    def singular_type
+      'job'
+    end
+
+    def plural_type
+      'jobs'
+    end
+
     def files
       validate!
 

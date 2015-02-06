@@ -4,19 +4,27 @@ module Bosh::Cli
   describe ReleaseBuilder do
     let(:release_name) { 'bosh-release' }
 
+    let(:package_tarball) { Tempfile.new(['package-tarball', 'tgz']) }
+    let(:package_artifact) { Bosh::Cli::BuildArtifact.new('package-name', {}, 'the-pkg-fingerprint', package_tarball, 'pkg-sha', ['other-package'], false) }
+    let(:package_artifacts) { [package_artifact] }
+
+    let(:job_tarball) { Tempfile.new(['job-tarball', 'tgz']) }
+    let(:job_artifact) { Bosh::Cli::BuildArtifact.new('job-name', {}, 'the-job-fingerprint', job_tarball, 'job-sha', nil, false) }
+    let(:job_artifacts) { [job_artifact] }
+    let(:release_source) { Dir.mktmpdir }
+
     before do
-      @release_source = Dir.mktmpdir
-      FileUtils.mkdir_p(File.join(@release_source, 'config'))
-      @release = Bosh::Cli::Release.new(@release_source)
+      FileUtils.mkdir_p(File.join(release_source, 'config'))
+      @release = Bosh::Cli::Release.new(release_source)
     end
 
     def new_builder(options = {})
-      ReleaseBuilder.new(@release, [], [], release_name, options)
+      ReleaseBuilder.new(@release, package_artifacts, job_artifacts, release_name, options)
     end
 
     context 'when there is a final release' do
       it 'bumps the least significant segment for the next version' do
-        final_storage_dir = File.join(@release_source, 'releases', release_name)
+        final_storage_dir = File.join(release_source, 'releases', release_name)
         final_index = Versions::VersionsIndex.new(final_storage_dir)
 
         final_index.add_version('deadbeef', { 'version' => '7.4.1' })
@@ -28,7 +36,7 @@ module Bosh::Cli
       end
 
       it 'creates a dev version in sync with latest final version' do
-        final_storage_dir = File.join(@release_source, 'releases', release_name)
+        final_storage_dir = File.join(release_source, 'releases', release_name)
         final_index = Versions::VersionsIndex.new(final_storage_dir)
 
         final_index.add_version('deadbeef', { 'version' => '7.4' })
@@ -40,13 +48,13 @@ module Bosh::Cli
       end
 
       it 'bumps the dev version matching the latest final release' do
-        final_storage_dir = File.join(@release_source, 'releases', release_name)
+        final_storage_dir = File.join(release_source, 'releases', release_name)
         final_index = Versions::VersionsIndex.new(final_storage_dir)
 
         final_index.add_version('deadbeef', { 'version' => '7.3' })
         final_index.add_version('deadcafe', { 'version' => '7.2' })
 
-        dev_storage_dir = File.join(@release_source, 'dev_releases', release_name)
+        dev_storage_dir = File.join(release_source, 'dev_releases', release_name)
         dev_index = Versions::VersionsIndex.new(dev_storage_dir)
 
         dev_index.add_version('deadabcd', { 'version' => '7.4.1-dev' })
@@ -66,7 +74,7 @@ module Bosh::Cli
       end
 
       it 'increments the dev version' do
-        dev_storage_dir = File.join(@release_source, 'dev_releases', release_name)
+        dev_storage_dir = File.join(release_source, 'dev_releases', release_name)
         dev_index = Versions::VersionsIndex.new(dev_storage_dir)
 
         dev_index.add_version('deadbeef', { 'version' => '0.1-dev' })
@@ -79,13 +87,20 @@ module Bosh::Cli
       builder = new_builder
       builder.build
 
-      expected_tarball_path = File.join(@release_source,
+      expected_tarball_path = File.join(release_source,
         'dev_releases',
         release_name,
         "#{release_name}-0+dev.1.tgz")
 
       expect(builder.tarball_path).to eq(expected_tarball_path)
       expect(File).to exist(expected_tarball_path)
+    end
+
+    it 'includes job and package tarballs in release' do
+      builder = new_builder
+      builder.build
+      tarball_files = `tar tzf #{builder.tarball_path}`.chomp.split(/\n/)
+      expect(tarball_files).to include('./jobs/job-name.tgz', './packages/package-name.tgz')
     end
 
     it 'should include git hash and uncommitted change state in manifest' do
@@ -98,7 +113,7 @@ module Bosh::Cli
     end
 
     it 'allows building a new release when no content has changed' do
-      release_path = File.join(@release_source, 'dev_releases', release_name)
+      release_path = File.join(release_source, 'dev_releases', release_name)
       expect(File).to_not exist(File.join(release_path, "#{release_name}-0+dev.1.tgz"))
 
       new_builder.build
@@ -111,7 +126,7 @@ module Bosh::Cli
 
     it 'errors when trying to re-create the same final version' do
       new_builder({:version => '1', :final => true}).build
-      expect(File).to exist(File.join(@release_source, 'releases', release_name, "#{release_name}-1.tgz"))
+      expect(File).to exist(File.join(release_source, 'releases', release_name, "#{release_name}-1.tgz"))
 
       expect{
         new_builder({:version => '1', :final => true}).build
@@ -139,26 +154,32 @@ module Bosh::Cli
     end
 
     it 'has packages and jobs fingerprints in spec' do
-      job_artifact = double(BuildArtifact, :metadata => {'a' => 'b'})
-      package_artifact = double(BuildArtifact, :metadata => {'c' => 'd'})
-
-      builder = ReleaseBuilder.new(@release, [package_artifact], [job_artifact], release_name)
-      expect(builder).to receive(:copy_jobs)
-      expect(builder).to receive(:copy_packages)
+      builder = new_builder
 
       builder.build
 
       manifest = Psych.load_file(builder.manifest_path)
 
-      expect(manifest['jobs'][0]).to eq({'a' => 'b'})
-      expect(manifest['packages'][0]).to eq({'c' => 'd'})
+      expect(manifest['packages']).to eq([{
+              'name' => 'package-name',
+              'version' => 'the-pkg-fingerprint',
+              'sha1' => 'pkg-sha',
+              'fingerprint' => 'the-pkg-fingerprint',
+              'dependencies' => ['other-package'],
+            }])
+      expect(manifest['jobs']).to eq([{
+              'name' => 'job-name',
+              'version' => 'the-job-fingerprint',
+              'sha1' => 'job-sha',
+              'fingerprint' => 'the-job-fingerprint',
+            }])
     end
 
     context 'when version options is passed into initializer' do
       context 'when creating final release' do
         context 'when given release version already exists' do
           it 'raises error' do
-            final_storage_dir = File.join(@release_source, 'releases', release_name)
+            final_storage_dir = File.join(release_source, 'releases', release_name)
             final_index = Versions::VersionsIndex.new(final_storage_dir)
 
             final_index.add_version('deadbeef', { 'version' => '7.3' })

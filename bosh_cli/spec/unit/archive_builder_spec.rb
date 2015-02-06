@@ -60,7 +60,7 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
 
     it 'has a checksum for a generated resource' do
       artifact = builder.build(resource)
-      expect(artifact.metadata['sha1']).to match(/^[0-9a-f]{40}$/)
+      expect(artifact.sha1).to match(/^[0-9a-f]{40}$/)
     end
   end
 
@@ -144,28 +144,12 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
           end
         end
 
-        it 'includes fingerprint' do
-          expect(metadata['fingerprint']).to eq(Bosh::Cli::BuildArtifact.make_fingerprint(resource))
-        end
-
-        it 'includes checksum' do
-          expect(metadata).to have_key('sha1')
-        end
-
-        it 'includes version' do
-          expect(metadata['version']).to eq(Bosh::Cli::BuildArtifact.make_fingerprint(resource))
-        end
-
         it 'includes new_version' do
           expect(metadata['new_version']).to eq(true)
         end
 
         it 'includes notes' do
           expect(metadata['notes']).to eq(['new version'])
-        end
-
-        it 'includes tarball_path' do
-          expect(metadata['tarball_path']).to end_with(tarball_path)
         end
       end
 

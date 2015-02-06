@@ -5,7 +5,7 @@ module Bosh::Cli
       @blobstore = blobstore
     end
 
-    def provide(resource)
+    def get(resource)
       ArchiveRepository.new(@archive_dir, @blobstore, resource)
     end
   end

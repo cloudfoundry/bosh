@@ -3,14 +3,13 @@ module Bosh::Cli
     def initialize(archive_dir, blobstore, resource)
       @archive_dir = archive_dir
       @blobstore = blobstore
-      @resource = resource
 
-      dev_builds_dir = build_directory('dev')
+      dev_builds_dir = Pathname(@archive_dir).join(".dev_builds", resource.plural_type, resource.name).to_s
       FileUtils.mkdir_p(dev_builds_dir)
       @dev_index = Versions::VersionsIndex.new(dev_builds_dir)
       @dev_storage = Versions::LocalVersionStorage.new(dev_builds_dir)
 
-      final_builds_dir = build_directory('final')
+      final_builds_dir = Pathname(@archive_dir).join(".final_builds", resource.plural_type, resource.name).to_s
       FileUtils.mkdir_p(final_builds_dir)
       @final_index = Versions::VersionsIndex.new(final_builds_dir)
       @final_storage = Versions::LocalVersionStorage.new(final_builds_dir)
@@ -18,30 +17,28 @@ module Bosh::Cli
       @final_resolver = Versions::VersionFileResolver.new(@final_storage, @blobstore)
     end
 
-    attr_reader :resource
-
     def lookup(resource)
       fingerprint = BuildArtifact.make_fingerprint(resource)
 
-      metadata = @final_index[fingerprint]
-      if metadata && metadata['blobstore_id']
-        blobstore_id = metadata['blobstore_id']
-        version = metadata['version'] || fingerprint
-        sha1 = metadata['sha1']
+      artifact_info = @final_index[fingerprint]
+      if artifact_info && artifact_info['blobstore_id']
+        blobstore_id = artifact_info['blobstore_id']
+        version = artifact_info['version'] || fingerprint
+        sha1 = artifact_info['sha1']
 
-        tarball_path = @final_resolver.find_file(blobstore_id, sha1, version, "#{artifact_type(resource)} #{resource.name} (#{version})") # todo: 'package' vs 'job'
-        BuildArtifact.new(resource.name, metadata, fingerprint, tarball_path, false)
+        tarball_path = @final_resolver.find_file(blobstore_id, sha1, version, "#{resource.singular_type} #{resource.name} (#{version})") # todo: 'package' vs 'job'
+        BuildArtifact.new(resource.name, {}, fingerprint, tarball_path, sha1, artifact_info['dependencies'], false)
       else
-        metadata = @dev_index[fingerprint]
-        if metadata
-          version = metadata['version'] || fingerprint
+        artifact_info = @dev_index[fingerprint]
+        if artifact_info
+          version = artifact_info['version'] || fingerprint
           if @dev_storage.has_file?(version)
             tarball_path = @dev_storage.get_file(version)
-            if file_checksum(tarball_path) != metadata['sha1']
-              raise CorruptedArchive, "#{artifact_type(resource)} #{resource.name} (#{version}) archive at #{tarball_path} corrupted"
+            if file_checksum(tarball_path) != artifact_info['sha1']
+              raise CorruptedArchive, "#{resource.singular_type} #{resource.name} (#{version}) archive at #{tarball_path} corrupted"
             end
 
-            BuildArtifact.new(resource.name, metadata, fingerprint, tarball_path, true)
+            BuildArtifact.new(resource.name, {}, fingerprint, tarball_path, artifact_info['sha1'], artifact_info['dependencies'], true)
           end
         end
       end
@@ -52,51 +49,54 @@ module Bosh::Cli
       raise BlobstoreError, "Blobstore error: #{e}"
     end
 
-    def upload_to_blobstore(f)
-      @blobstore.create(f)
+    def upload_to_blobstore(artifact)
+      # todo raise if artifact.dev_artifact?
+      return artifact if artifact.metadata['blobstore_id']
+
+      blobstore_id = nil
+      File.open(artifact.tarball_path, 'r') do |f|
+        blobstore_id = @blobstore.create(f)
+      end
+
+      puts "uploaded #{artifact.name} (#{artifact.fingerprint}) to the blobstore. artifact in dev index? #{!@dev_index[artifact.fingerprint].nil?}. artifact in final index? #{!@final_index[artifact.fingerprint].nil?}"
+      @final_index.dump
+
+      @final_index.update_version(artifact.fingerprint, {
+          'version' => artifact.version,
+          'sha1' => artifact.sha1,
+          'blobstore_id' => blobstore_id
+        })
+      BuildArtifact.new(artifact.name, artifact.metadata, artifact.fingerprint, artifact.tarball_path, artifact.sha1, artifact.dependencies, false)
     end
 
-    def update_final_version(fingerprint, metadata)
-      @final_index.update_version(fingerprint, metadata)
-    end
+    def install(artifact)
+      fingerprint = artifact.fingerprint
+      origin_file = artifact.tarball_path
+      new_tarball_path = place_file_and_update_index(fingerprint, origin_file,
+        artifact.dev_artifact? ? @dev_index : @final_index,
+        artifact.dev_artifact? ? @dev_storage : @final_storage)
 
-    def put(fingerprint, tmp_file, final)
-      origin_file = tmp_file.path
-      metadata = {'version' => fingerprint}
-
-      install(fingerprint, metadata, origin_file,
-        final ? @final_index : @dev_index,
-        final ? @final_storage : @dev_storage)
+      BuildArtifact.new(artifact.name, artifact.metadata, artifact.fingerprint, new_tarball_path, artifact.sha1, artifact.dependencies, artifact.dev_artifact?)
     end
 
     def copy_from_dev_to_final(artifact)
-      final_tarball_path = install(artifact, artifact.metadata, artifact.tarball_path, @final_index, @final_storage)
-      BuildArtifact.new(artifact.name, artifact.metadata, artifact.fingerprint, final_tarball_path, false)
+      final_tarball_path = place_file_and_update_index(artifact.fingerprint, artifact.tarball_path, @final_index, @final_storage)
+      BuildArtifact.new(artifact.name, artifact.metadata, artifact.fingerprint, final_tarball_path, artifact.sha1, artifact.dependencies, false)
     end
 
-    def install(fingerprint, metadata, origin_file, index, storage)
+    private
+
+    def place_file_and_update_index(fingerprint, origin_file, index, storage)
       # add version (with its validation) before adding sha1
-      index.add_version(fingerprint, metadata)
+      index.add_version(fingerprint, {'version' => fingerprint} )
       tarball_path = storage.put_file(fingerprint, origin_file)
-      metadata['sha1'] = file_checksum(tarball_path)
-      index.update_version(fingerprint, metadata)
+      sha1 = file_checksum(tarball_path)
+      index.update_version(fingerprint, {'version' => fingerprint, 'sha1' => sha1})
       tarball_path
     end
 
     def file_checksum(path)
       Digest::SHA1.file(path).hexdigest
-    end
-
-    def artifact_type(resource, plural = false)
-      result = resource.class.name.split('::').last.downcase
-      result += 's' if plural
-      result
-    end
-
-    private
-
-    def build_directory(mode)
-      Pathname(@archive_dir).join(".#{mode}_builds", "#{artifact_type(resource, true)}", resource.name).to_s
     end
   end
 
