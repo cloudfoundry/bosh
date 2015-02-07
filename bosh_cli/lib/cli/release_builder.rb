@@ -2,19 +2,21 @@ module Bosh::Cli
   class ReleaseBuilder
     include Bosh::Cli::DependencyHelper
 
-    attr_reader :release, :packages, :jobs, :name, :version, :build_dir, :commit_hash, :uncommitted_changes
+    attr_reader :release, :packages, :jobs, :licenses, :name, :version, :build_dir, :commit_hash, :uncommitted_changes
 
     # @param [Bosh::Cli::Release] release Current release
     # @param [Array<Bosh::Cli::PackageBuilder>] packages Built packages
     # @param [Array<Bosh::Cli::JobBuilder>] jobs Built jobs
+    # @param [Array<Bosh::Cli::LicenseBuilder>] licenses Built licenses
     # @param [Hash] options Release build options
-    def initialize(release, packages, jobs, name, options = { })
+    def initialize(release, packages, jobs, licenses, name, options = { })
       @release = release
       @final = options.has_key?(:final) ? !!options[:final] : false
       @commit_hash = options.fetch(:commit_hash, '00000000')
       @uncommitted_changes = options.fetch(:uncommitted_changes, true)
       @packages = packages
       @jobs = jobs
+      @licenses = licenses
       @name = name
       raise 'Release name is blank' if name.blank?
 
@@ -27,6 +29,7 @@ module Bosh::Cli
       @index = @final ? @final_index : @dev_index
       @release_storage = Versions::LocalVersionStorage.new(@index.storage_dir, @name)
 
+      release_dir = @release.dir
       if @version && @release_storage.has_file?(@version)
         raise ReleaseVersionError.new('Release version already exists')
       end
@@ -93,6 +96,17 @@ module Bosh::Cli
       @packages_copied = true
     end
 
+    # Copies licenses into release (LICENSE on the root repo only now)
+    def copy_licenses
+      licenses.each do |license|
+        say("%-40s %s" % [license.name.make_green,
+                          pretty_size(license.tarball_path)])
+	`tar -xvf #{license.tarball_path} -C #{build_dir} `
+
+      end
+      @licenses_copied = true
+    end
+
     # Copies jobs into release
     def copy_jobs
       jobs.each do |job|
@@ -125,6 +139,14 @@ module Bosh::Cli
           "version" => job.version,
           "fingerprint" => job.fingerprint,
           "sha1" => job.checksum,
+        }
+      end
+
+      manifest["license"] = licenses.map do |license|
+        {
+          "version" => license.version,
+          "fingerprint" => license.fingerprint,
+          "sha1" => license.checksum
         }
       end
 
@@ -169,6 +191,13 @@ module Bosh::Cli
         copy_packages
         nl
       end
+
+      unless @licenses_copied
+        header("Copying licenses...")
+        copy_licenses
+        nl
+      end
+
 
       FileUtils.mkdir_p(File.dirname(tarball_path))
 

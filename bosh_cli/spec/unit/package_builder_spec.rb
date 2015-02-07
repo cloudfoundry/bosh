@@ -95,7 +95,7 @@ describe Bosh::Cli::PackageBuilder, 'dev build' do
       builder.checksum
     }.to raise_error(RuntimeError,
                          'cannot read checksum for not yet ' +
-                           'generated package/job')
+                           'generated package/job/license')
   end
 
   it 'has a checksum for a generated package' do
