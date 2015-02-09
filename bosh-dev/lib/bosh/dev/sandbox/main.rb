@@ -7,7 +7,7 @@ require 'bosh/dev/sandbox/database_migrator'
 require 'bosh/dev/sandbox/postgresql'
 require 'bosh/dev/sandbox/mysql'
 require 'bosh/dev/sandbox/nginx'
-require 'bosh/dev/sandbox/debug_logs'
+require 'bosh/dev/sandbox/workspace'
 require 'cloud/dummy'
 require 'logging'
 
@@ -158,7 +158,7 @@ module Bosh::Dev::Sandbox
     end
 
     def saved_logs_path
-      File.join(DebugLogs.logs_dir, "#{@name}.log")
+      File.join(Workspace.dir, "#{@name}.log")
     end
 
     def save_task_logs(name)
@@ -231,7 +231,7 @@ module Bosh::Dev::Sandbox
     end
 
     def sandbox_root
-      File.join(DebugLogs.logs_dir, 'sandbox')
+      File.join(Workspace.dir, 'sandbox')
     end
 
     def external_cpi_config
