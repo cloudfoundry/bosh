@@ -16,6 +16,7 @@ describe 'CentOS stemcell', stemcell_image: true do
       it { should contain '  root (hd0,0)' }
       it { should contain ' xen_blkfront.sda_is_xvda=1 ro root=UUID=' }
       it { should contain ' selinux=0' }
+      it { should contain ' console=tty0 console=ttyS0,115200n8' }
     end
 
     describe file('/boot/grub/menu.lst') do
