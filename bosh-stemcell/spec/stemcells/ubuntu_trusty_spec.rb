@@ -113,7 +113,8 @@ HERE
     describe file('/var/vcap/bosh/agent.json') do
       it { should be_valid_json_file }
       it { should contain('"CreatePartitionIfNoEphemeralDisk": true') }
-      it { should contain('"UseConfigDrive": true') }
+      it { should contain('"Type": "ConfigDrive"') }
+      it { should contain('"Type": "HTTP"') }
     end
   end
 

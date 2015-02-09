@@ -17,10 +17,6 @@ if [ "${stemcell_operating_system}" == "centos" ]; then
 
       "Sources": [
         {
-          "Type": "HTTP",
-          "URI": "http://169.254.169.254"
-        },
-        {
           "Type": "ConfigDrive",
           "Paths": [
             "/dev/disk/by-label/CONFIG-2",
@@ -28,6 +24,10 @@ if [ "${stemcell_operating_system}" == "centos" ]; then
           ],
           "MetaDataPath": "ec2/latest/meta-data.json",
           "UserDataPath": "ec2/latest/user-data.json"
+        },
+        {
+          "Type": "HTTP",
+          "URI": "http://169.254.169.254"
         }
       ],
 
@@ -54,10 +54,6 @@ else
 
       "Sources": [
         {
-          "Type": "HTTP",
-          "URI": "http://169.254.169.254"
-        },
-        {
           "Type": "ConfigDrive",
           "Paths": [
             "/dev/disk/by-label/CONFIG-2",
@@ -65,6 +61,10 @@ else
           ],
           "MetaDataPath": "ec2/latest/meta-data.json",
           "UserDataPath": "ec2/latest/user-data.json"
+        },
+        {
+          "Type": "HTTP",
+          "URI": "http://169.254.169.254"
         }
       ],
 
