@@ -9,7 +9,6 @@ module Bosh::Cli::Versions
 
     def find_file(blobstore_id, sha1, version, desc)
       if @storage.has_file?(version)
-        say('FOUND LOCAL'.make_green)
         file_path = @storage.get_file(version)
         file_sha1 = Digest::SHA1.file(file_path).hexdigest
         if file_sha1 == sha1
@@ -22,8 +21,7 @@ module Bosh::Cli::Versions
         err("Cannot find #{desc}")
       end
 
-      say('FOUND REMOTE'.make_yellow)
-      say("Downloading #{desc} from blobstore (id=#{blobstore_id})...".make_green)
+      say("Downloading from blobstore (id=#{blobstore_id})...".make_green)
 
       tmp_file_path = File.join(@tmpdir, "bosh-tmp-file-#{SecureRandom.uuid}")
       begin

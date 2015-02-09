@@ -65,8 +65,6 @@ module Bosh::Cli
         return nil
       end
 
-      say("Found #{artifact.dev_artifact? ? 'dev' : 'final'} artifact for #{artifact.name}")
-
       if artifact.dev_artifact? && final? && !dry_run?
         artifact = @archive_repository.copy_from_dev_to_final(artifact)
       end
