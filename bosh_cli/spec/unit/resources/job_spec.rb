@@ -226,6 +226,8 @@ describe Bosh::Cli::Resources::Job, 'dev build' do
   end
 
   def self_zip(*keys)
-    [keys].flatten.zip(keys).to_h
+    keys.inject({}) do |map, key|
+      map.merge({key => key})
+    end
   end
 end
