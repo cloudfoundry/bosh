@@ -57,7 +57,7 @@ describe 'create release', type: :integration do
 
     it 'creates a release manifest' do
       Dir.chdir(ClientSandbox.test_release_dir) do
-        expect(YAML.load_file('releases/bosh-release/bosh-release-1.yml')).to match(
+        expect(YAML.load_file(latest_release_manifest)).to match(
             'packages' => [
               package_desc('a', ['b']),
               package_desc('b', ['c']),
@@ -365,5 +365,9 @@ describe 'create release', type: :integration do
   def job_desc(name)
     sha = SHA1_REGEXP
     {'name' => name, 'version' => sha, 'fingerprint' => sha, 'sha1' => sha, }
+  end
+
+  def latest_release_manifest
+    Dir['releases/bosh-release/bosh-release-*.yml'].sort_by { |x| File.mtime(x) }.last
   end
 end
