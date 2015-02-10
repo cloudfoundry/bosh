@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* 'TjC3SnsvaIhROEa1J1L77Mj21TRikCW0'
+  upgrade unzip to 6.0-9ubuntu1.2
+
 * `xIk.jCEzC5CrI.VrogNsyKRnHBtNIJ1w`
   Adds kernel flags to enable console output in openstack environments
   upgrade linux kernel to 3.13.0-45
