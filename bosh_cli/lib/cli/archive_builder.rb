@@ -16,7 +16,7 @@ module Bosh::Cli
         artifact = locate_artifact(resource)
         if artifact.nil?
           artifact = create_artifact(resource)
-          say("Generated version #{artifact.fingerprint}".make_green)
+          say("Generated version '#{artifact.fingerprint}'".make_green)
 
           unless dry_run?
             artifact = @archive_repository.install(artifact)

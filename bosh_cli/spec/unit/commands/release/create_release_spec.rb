@@ -105,7 +105,7 @@ module Bosh::Cli::Command::Release
           Building package_name...
             No artifact found for package_name
             Generating...
-            Generated version 431818cc23fc69b0b1f0e267f24bb5450f012295
+            Generated version '431818cc23fc69b0b1f0e267f24bb5450f012295'
 
 
           Resolving dependencies
