@@ -23,13 +23,13 @@ module Bosh
         @azure_blob_service = Azure::BlobService.new
 
         begin
-          container = @azure_blob_service.get_container_properties(container_name)
+          @azure_blob_service.get_container_properties(container_name)
         rescue Azure::Core::Error => e
           # container does not exist
           @azure_blob_service.create_container(container_name)
         end
       rescue Azure::Core::Error => e
-        raise BlobstoreError, "Failed to initialize Azure blobstore: #{e.description}"
+        raise BlobstoreError, "Failed to initialize Azure blobstore: #{e.message}"
       end
 
       def create_file(id, file)
@@ -42,7 +42,7 @@ module Bosh
 
         id
       rescue Azure::Core::Error => e
-        raise BlobstoreError, "Failed to create object, Azure response error: #{e.description}"
+        raise BlobstoreError, "Failed to create object, Azure response error: #{e.message}"
       end
 
       def get_file(id, file)
@@ -50,18 +50,21 @@ module Bosh
         file.write(content)
 
       rescue Azure::Core::Error => e
-        raise BlobstoreError, "Failed to find object '#{id}', Azure response error: #{e.description}"
+        raise BlobstoreError, "Failed to find object '#{id}', Azure response error: #{e.message}"
       end
 
       def delete_object(id)
         @azure_blob_service.delete_blob(container_name, id)
 
       rescue Azure::Core::Error => e
-        raise BlobstoreError, "Failed to delete object '#{id}', Azure response error: #{e.description}"
+        raise BlobstoreError, "Failed to delete object '#{id}', Azure response error: #{e.message}"
       end
+      
+      
+      private
 
       def object_exists?(id)
-        result = @azure_blob_service.get_blob_properties(container_name, id)
+        @azure_blob_service.get_blob_properties(container_name, id)
         true
 
       rescue Azure::Core::Error => e
