@@ -59,8 +59,9 @@ describe 'create release', type: :integration do
 
     it 'creates a release manifest' do
       Dir.chdir(ClientSandbox.test_release_dir) do
-        expect(YAML.load_file(latest_release_manifest)).to match(
-            'packages' => [
+        release_manifest = YAML.load_file(latest_release_manifest)
+        expect(release_manifest).to match(
+            'packages' => a_collection_containing_exactly(
               package_desc('a', ['b']),
               package_desc('b', ['c']),
               package_desc('bar', ['foo']),
@@ -68,16 +69,16 @@ describe 'create release', type: :integration do
               package_desc('c', []),
               package_desc('errand1', []),
               package_desc('fails_with_too_much_output', []),
-              package_desc('foo', []),
-            ],
-            'jobs' => [
+              package_desc('foo', [])
+            ),
+            'jobs' => a_collection_containing_exactly(
               job_desc('errand1'),
               job_desc('errand_without_package'),
               job_desc('fails_with_too_much_output'),
               job_desc('foobar'),
               job_desc('job_with_blocking_compilation'),
-              job_desc('transitive_deps'),
-            ],
+              job_desc('transitive_deps')
+            ),
 
             'commit_hash' => /[0-9a-f]{8}/,
             'uncommitted_changes' => true,
@@ -361,12 +362,12 @@ describe 'create release', type: :integration do
 
   def package_desc(name, dependencies)
     sha = SHA1_REGEXP
-    {'name' => name, 'version' => sha, 'fingerprint' => sha, 'dependencies' => dependencies, 'sha1' => sha, }
+    match({ 'name' => name, 'version' => sha, 'fingerprint' => sha, 'dependencies' => dependencies, 'sha1' => sha })
   end
 
   def job_desc(name)
     sha = SHA1_REGEXP
-    {'name' => name, 'version' => sha, 'fingerprint' => sha, 'sha1' => sha, }
+    match({ 'name' => name, 'version' => sha, 'fingerprint' => sha, 'sha1' => sha })
   end
 
   def latest_release_manifest
