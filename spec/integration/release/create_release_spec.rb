@@ -6,6 +6,8 @@ describe 'create release', type: :integration do
   with_reset_sandbox_before_each
   SHA1_REGEXP = /^[0-9a-f]{40}$/
 
+  before { setup_test_release_dir }
+
   describe 'release creation' do
     before do
       Dir.chdir(ClientSandbox.test_release_dir) do
