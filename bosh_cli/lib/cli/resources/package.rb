@@ -186,7 +186,7 @@ module Bosh::Cli::Resources
           end
           # todo: test these
           ENV['BUILD_DIR'] = staging_dir
-          ENV['RELEASE_DIR'] = release_base
+          ENV['RELEASE_DIR'] = release_base.to_s
           Dir.chdir(staging_dir) do
             output = `bash -x pre_packaging 2>&1`
 
