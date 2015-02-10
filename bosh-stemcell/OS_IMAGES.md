@@ -93,8 +93,10 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
 CentOS 6.6 images have filename `bosh-centos-6_6-os-image.tgz`
 
-* `.EqtRtHJyHTr3hg4nFPq5QmJ4UxQ2WU.`
+* `lUG9hrPUDugWx4Sv5vuKiN1X2Z1.lN.8`
   Adds kernel flags to enable console output in openstack environments
+
+* `.EqtRtHJyHTr3hg4nFPq5QmJ4UxQ2WU.`
   upgrade linux kernel to 3.13.0-45
 
 * `ISA4tKjaoq4koVay5rAzNZlzX7X0KafH`
