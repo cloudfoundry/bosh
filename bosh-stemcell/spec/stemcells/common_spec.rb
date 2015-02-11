@@ -5,7 +5,7 @@ describe 'All OSes and Infrastructures', stemcell_image: true do
     subject(:sshd_config) { file('/etc/ssh/sshd_config') }
 
     it 'is secure' do
-      expect(sshd_config).to have_mode('600')
+      expect(sshd_config).to be_mode('600')
     end
 
     it 'shows a banner' do
