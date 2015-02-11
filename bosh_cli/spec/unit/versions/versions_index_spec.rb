@@ -298,5 +298,21 @@ module Bosh::Cli::Versions
       end
     end
 
+    context 'when old build has blobstore_id' do
+      before do
+        versions_index.add_version('fake-key-with-blobstore-id', {
+            'blobstore_id' => 'fake-blobstore-id',
+            'version' => 4
+          })
+      end
+
+      it 'errors to update_version' do
+        expect{
+          versions_index.update_version('fake-key-with-blobstore-id', versions_index['fake-key-with-blobstore-id'])
+        }.to raise_error(
+            %q{Cannot update entry `{"blobstore_id"=>"fake-blobstore-id", "version"=>4}' with a blobstore id}
+          )
+      end
+    end
   end
 end
