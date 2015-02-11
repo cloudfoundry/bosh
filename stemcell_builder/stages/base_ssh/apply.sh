@@ -15,6 +15,11 @@ echo 'UseDNS no' >> $chroot/etc/ssh/sshd_config
 sed "/^ *PermitRootLogin/d" -i $chroot/etc/ssh/sshd_config
 echo 'PermitRootLogin no' >> $chroot/etc/ssh/sshd_config
 
+# No X11 forwarding
+sed "/^ *X11Forwarding/d" -i $chroot/etc/ssh/sshd_config
+sed "/^ *X11DisplayOffset/d" -i $chroot/etc/ssh/sshd_config
+echo 'X11Forwarding no' >> $chroot/etc/ssh/sshd_config
+
 if [ "${stemcell_operating_system}" == "centos" ]; then
   # Disallow CBC Ciphers
   sed "/^ *Ciphers/d" -i $chroot/etc/ssh/sshd_config

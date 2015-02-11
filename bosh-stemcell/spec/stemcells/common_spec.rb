@@ -11,5 +11,10 @@ describe 'All OSes and Infrastructures', stemcell_image: true do
     it 'disallows root login' do
       expect(sshd_config).to contain(/^PermitRootLogin no$/)
     end
+
+    it 'disallows X11 forwarding' do
+      expect(sshd_config).to contain(/^X11Forwarding no$/)
+      expect(sshd_config).to_not contain(/^X11DisplayOffset/)
+    end
   end
 end
