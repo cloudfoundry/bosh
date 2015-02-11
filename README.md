@@ -11,7 +11,7 @@ Cloud Foundry BOSH is an open source tool chain for release engineering,
 deployment and lifecycle management of large scale distributed services.
 
 
-## Install
+## Install CLI  [![(gem version)](https://badge.fury.io/rb/bosh_cli.png)](https://rubygems.org/gems/bosh_cli) 
 
 To install the latest BOSH CLI:
 
