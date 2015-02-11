@@ -104,4 +104,10 @@ HERE
       it { should contain('"UseConfigDrive": true') }
     end
   end
+
+  context 'default packages removed' do
+    describe package('postfix') do
+      it { should_not be_installed }
+    end
+  end
 end

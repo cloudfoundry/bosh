@@ -14,3 +14,6 @@ libaio1 gdb tripwire libcap2-bin libcap2-dev libbz2-dev \
 cmake uuid-dev libgcrypt-dev ca-certificates \
 scsitools mg htop module-assistant debhelper runit parted"
 pkg_mgr install $debs
+
+exclusions="postfix"
+pkg_mgr purge --auto-remove $exclusions
