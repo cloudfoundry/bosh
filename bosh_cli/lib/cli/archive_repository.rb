@@ -27,8 +27,8 @@ module Bosh::Cli
         version = artifact_info['version'] || fingerprint
         sha1 = artifact_info['sha1']
 
-        say('Using final version')
-        tarball_path = @final_resolver.find_file(blobstore_id, sha1, version, "#{resource.singular_type} #{resource.name} (#{version})") # todo: 'package' vs 'job'
+        say("Using final version '#{version}'")
+        tarball_path = @final_resolver.find_file(blobstore_id, sha1, version, "#{resource.singular_type} #{resource.name} (#{version})")
 
         BuildArtifact.new(resource.name, fingerprint, tarball_path, sha1, resource.dependencies, false, false)
       else
@@ -36,7 +36,7 @@ module Bosh::Cli
         if artifact_info
           version = artifact_info['version'] || fingerprint
           if @storage.has_file?(version)
-            say('Using dev version')
+            say("Using dev version '#{version}'")
 
             tarball_path = @storage.get_file(version)
             if file_checksum(tarball_path) != artifact_info['sha1']
