@@ -16,5 +16,9 @@ describe 'All OSes and Infrastructures', stemcell_image: true do
       expect(sshd_config).to contain(/^X11Forwarding no$/)
       expect(sshd_config).to_not contain(/^X11DisplayOffset/)
     end
+
+    it 'sets MaxAuthTries to 3' do
+      expect(sshd_config).to contain(/^MaxAuthTries 3$/)
+    end
   end
 end

@@ -7,19 +7,20 @@ source $base_dir/lib/prelude_apply.bash
 
 chmod 0600 $chroot/etc/ssh/sshd_config
 
-# Turn-off reverse DNS resolution in sshd
 sed "/^ *UseDNS/d" -i $chroot/etc/ssh/sshd_config
 echo 'UseDNS no' >> $chroot/etc/ssh/sshd_config
 
-# No root ssh
 sed "/^ *PermitRootLogin/d" -i $chroot/etc/ssh/sshd_config
 echo 'PermitRootLogin no' >> $chroot/etc/ssh/sshd_config
 
-# No X11 forwarding
 sed "/^ *X11Forwarding/d" -i $chroot/etc/ssh/sshd_config
 sed "/^ *X11DisplayOffset/d" -i $chroot/etc/ssh/sshd_config
 echo 'X11Forwarding no' >> $chroot/etc/ssh/sshd_config
 
+sed "/^ *MaxAuthTries/d" -i $chroot/etc/ssh/sshd_config
+echo 'MaxAuthTries 3' >> $chroot/etc/ssh/sshd_config
+
+# OS Specifics
 if [ "${stemcell_operating_system}" == "centos" ]; then
   # Disallow CBC Ciphers
   sed "/^ *Ciphers/d" -i $chroot/etc/ssh/sshd_config
