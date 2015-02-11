@@ -7,6 +7,9 @@ source $base_dir/lib/prelude_apply.bash
 
 chmod 0600 $chroot/etc/ssh/sshd_config
 
+sed "/^ *Banner/d" -i $chroot/etc/ssh/sshd_config
+echo 'Banner /etc/issue.net' >> $chroot/etc/ssh/sshd_config
+
 sed "/^ *UseDNS/d" -i $chroot/etc/ssh/sshd_config
 echo 'UseDNS no' >> $chroot/etc/ssh/sshd_config
 

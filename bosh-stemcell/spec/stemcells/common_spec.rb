@@ -8,6 +8,10 @@ describe 'All OSes and Infrastructures', stemcell_image: true do
       expect(sshd_config).to have_mode('600')
     end
 
+    it 'shows a banner' do
+      expect(sshd_config).to contain(%r{^Banner /etc/issue.net$/})
+    end
+
     it 'disallows root login' do
       expect(sshd_config).to contain(/^PermitRootLogin no$/)
     end
