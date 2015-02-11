@@ -48,10 +48,10 @@ else
     }
   },
   "Infrastructure": {
-    "Settings": {
-      "DevicePathResolutionType": "virtio",
-      "NetworkingType": "dhcp",
+    "DevicePathResolutionType": "virtio",
+    "NetworkingType": "dhcp",
 
+    "Settings": {
       "Sources": [
         {
           "Type": "ConfigDrive",
