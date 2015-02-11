@@ -6,4 +6,12 @@ describe 'vSphere Stemcell', stemcell_image: true do
       it { should contain('vsphere') }
     end
   end
+
+  describe 'ssh authentication' do
+    describe 'allows password authentication' do
+      subject { file('/etc/ssh/sshd_config') }
+
+      it { should_not contain /^PasswordAuthentication no$/ }
+    end
+  end
 end

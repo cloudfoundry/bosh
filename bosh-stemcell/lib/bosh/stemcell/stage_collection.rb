@@ -153,7 +153,7 @@ module Bosh::Stemcell
         # Finalisation,
         :bosh_clean,
         :bosh_harden,
-        :bosh_harden_ssh,
+        :bosh_disable_password_authentication,
         :bosh_openstack_agent_settings,
         :image_create,
         :image_install_grub,
@@ -169,7 +169,7 @@ module Bosh::Stemcell
         # Finalisation
         :bosh_clean,
         :bosh_harden,
-        :bosh_harden_ssh,
+        :bosh_disable_password_authentication,
         # Image/bootloader
         :image_create,
         :image_install_grub,
@@ -187,7 +187,7 @@ module Bosh::Stemcell
         # Finalisation,
         :bosh_clean,
         :bosh_harden,
-        :bosh_harden_ssh,
+        :bosh_disable_password_authentication,
         :bosh_openstack_agent_settings,
         # Image/bootloader
         :image_create,

@@ -33,12 +33,6 @@ describe 'Ubuntu 14.04 stemcell', stemcell_image: true do
 
       it { should match_array(%w(/bin/su /usr/bin/sudo /usr/bin/sudoedit)) }
     end
-
-    describe 'disallow root login' do
-      subject { file('/etc/ssh/sshd_config') }
-
-      it { should contain /^PermitRootLogin no$/ }
-    end
   end
 
   context 'installed by system-aws-network', {

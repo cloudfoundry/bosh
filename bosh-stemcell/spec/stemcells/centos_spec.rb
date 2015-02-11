@@ -36,12 +36,6 @@ describe 'CentOS stemcell', stemcell_image: true do
 
       it { should match_array(%w(/bin/su /usr/bin/sudo)) }
     end
-
-    describe 'disallow root login' do
-      subject { file('/etc/ssh/sshd_config') }
-
-      it { should contain /^PermitRootLogin no$/ }
-    end
   end
 
   context 'with system-aws-network', exclude_on_vsphere: true, exclude_on_vcloud: true, exclude_on_warden: true do
