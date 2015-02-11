@@ -18,7 +18,7 @@ if [ "${stemcell_operating_system}" == "centos" ]; then
       "Sources": [
         {
           "Type": "ConfigDrive",
-          "Paths": [
+          "DiskPaths": [
             "/dev/disk/by-label/CONFIG-2",
             "/dev/disk/by-label/config-2"
           ],
@@ -55,7 +55,7 @@ else
       "Sources": [
         {
           "Type": "ConfigDrive",
-          "Paths": [
+          "DiskPaths": [
             "/dev/disk/by-label/CONFIG-2",
             "/dev/disk/by-label/config-2"
           ],
