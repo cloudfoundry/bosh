@@ -17,14 +17,16 @@ module Support
     end
 
     class ReleaseDirectory
-      attr_reader :path
+      attr_reader :path, :artifacts_dir
 
       def initialize
-        @path = Dir.mktmpdir
+        @path = Dir.mktmpdir('bosh-release-path')
+        @artifacts_dir = Dir.mktmpdir('bosh-release-artifacts-path')
       end
 
       def cleanup
         FileUtils.remove_entry path if File.exists?(path)
+        FileUtils.remove_entry artifacts_dir if File.exists?(artifacts_dir)
       end
 
       def add_dir(subdir)
@@ -48,21 +50,29 @@ module Support
         filepaths.each { |filepath| add_file(subdir, filepath) }
       end
 
-      def add_version(key, storage_dir, payload, build)
-        storage_path  = self.join(storage_dir)
-        version_index = Bosh::Cli::Versions::VersionsIndex.new(storage_path)
-        version_store = Bosh::Cli::Versions::LocalVersionStorage.new(storage_path)
+      def add_version(key, index_dir, payload, build)
+        index_storage_path  = self.join(index_dir)
+        version_index = Bosh::Cli::Versions::VersionsIndex.new(index_storage_path)
+        artifacts_store = Bosh::Cli::Versions::LocalVersionStorage.new(artifacts_dir)
         src_path = get_tmp_file_path(payload)
 
         version_index.add_version(key, build)
-        file = version_store.put_file(key, src_path)
+        file = artifacts_store.put_file(key, src_path)
 
         build['sha1'] = Digest::SHA1.file(file).hexdigest
         version_index.update_version(key, build)
       end
 
-      def has_file?(filepath)
+      def has_index_file?(filepath)
         File.exists?(join(filepath))
+      end
+
+      def has_artifact?(fingerprint)
+        File.exists?(artifact_path(fingerprint))
+      end
+
+      def artifact_path(fingerprint)
+        File.join(artifacts_dir, "#{fingerprint}.tgz")
       end
 
       def join(*args)

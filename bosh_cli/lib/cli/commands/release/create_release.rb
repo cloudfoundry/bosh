@@ -26,7 +26,7 @@ module Bosh::Cli::Command
           end
 
           say('Recreating release from the manifest')
-          Bosh::Cli::ReleaseCompiler.compile(manifest_file, release.blobstore)
+          Bosh::Cli::ReleaseCompiler.compile(manifest_file, cache_dir, release.blobstore)
           release_filename = manifest_file
         else
           version = options[:version]
@@ -162,7 +162,7 @@ module Bosh::Cli::Command
       end
 
       def archive_repository_provider
-        @archive_repository_provider ||= Bosh::Cli::ArchiveRepositoryProvider.new(work_dir, release.blobstore)
+        @archive_repository_provider ||= Bosh::Cli::ArchiveRepositoryProvider.new(work_dir, cache_dir, release.blobstore)
       end
 
       def build_release(dry_run, final, job_artifacts, manifest_only, package_artifacts, name, version)

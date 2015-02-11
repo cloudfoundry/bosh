@@ -1,12 +1,12 @@
 require 'spec_helper'
 
 describe Bosh::Cli::BuildArtifact, 'dev build' do
-  subject(:artifact) { Bosh::Cli::BuildArtifact.new('package_one', 'fingerprint', tarball_path, 'sha1', nil, false, true) }
+  subject(:artifact) do
+    Bosh::Cli::BuildArtifact.new('package_one', 'fingerprint', tarball_path, 'sha1', nil, false, is_dev_artifact)
+  end
 
+  let(:is_dev_artifact) { true }
   let(:release_dir) { Support::FileHelpers::ReleaseDirectory.new }
-  # let(:storage_dir) { Support::FileHelpers::ReleaseDirectory.new }
-  # let(:staging_dir) { Support::FileHelpers::ReleaseDirectory.new }
-
   let(:resource) { Bosh::Cli::Resources::Package.new(release_dir.join(resource_path), release_dir.path) }
   let(:resource_path) { 'packages/package_one' }
   let(:resource_spec) do
@@ -161,6 +161,16 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
   describe '#version' do
     it 'matches the fingerprint' do
       expect(artifact.version).to eq(artifact.fingerprint)
+    end
+  end
+
+  describe '#promote_to_final' do
+    let(:is_dev_artifact) { true }
+
+    it 'marks artifact as final' do
+      expect(artifact.dev_artifact?).to eq(true)
+      artifact.promote_to_final
+      expect(artifact.dev_artifact?).to eq(false)
     end
   end
 end

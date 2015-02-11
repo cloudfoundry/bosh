@@ -167,6 +167,7 @@ module IntegrationSandboxHelpers
     cleanup_sandbox_dir
     setup_test_release_dir
     setup_bosh_work_dir
+    setup_home_dir
   end
 
   def reset_sandbox(desc)
@@ -214,6 +215,11 @@ module IntegrationSandboxHelpers
 
   def setup_bosh_work_dir
     FileUtils.cp_r(BOSH_WORK_TEMPLATE, ClientSandbox.bosh_work_dir, :preserve => true)
+  end
+
+  def setup_home_dir
+    FileUtils.mkdir_p(ClientSandbox.home_dir)
+    ENV['HOME'] = ClientSandbox.home_dir
   end
 
   def cleanup_sandbox_dir

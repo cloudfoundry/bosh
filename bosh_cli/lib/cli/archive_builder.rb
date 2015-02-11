@@ -66,7 +66,7 @@ module Bosh::Cli
       end
 
       if artifact.dev_artifact? && final? && !dry_run?
-        artifact = @archive_repository.copy_from_dev_to_final(artifact)
+        @archive_repository.promote_from_dev_to_final(artifact)
       end
 
       artifact

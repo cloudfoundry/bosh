@@ -6,8 +6,8 @@ module Bosh::Cli
 
     attr_writer :tarball_path
 
-    def self.compile(manifest_file, blobstore)
-      new(manifest_file, blobstore).compile
+    def self.compile(manifest_file, artifacts_dir, blobstore)
+      new(manifest_file, artifacts_dir, blobstore).compile
     end
 
     # @param [String] manifest_file Release manifest path
@@ -15,7 +15,7 @@ module Bosh::Cli
     # @param [Array] package_matches List of package checksums that director
     #   can match
     # @param [String] release_source Release directory
-    def initialize(manifest_file, blobstore,
+    def initialize(manifest_file, artifacts_dir, blobstore,
                    package_matches = [], release_source = nil)
 
       @blobstore = blobstore
@@ -23,6 +23,7 @@ module Bosh::Cli
       @manifest_file = File.expand_path(manifest_file, @release_source)
       @tarball_path = nil
 
+      @artifacts_dir = artifacts_dir
       @build_dir = Dir.mktmpdir
       @jobs_dir = File.join(@build_dir, "jobs")
       @packages_dir = File.join(@build_dir, "packages")
@@ -135,7 +136,7 @@ module Bosh::Cli
       sha1 = found_build["sha1"]
       blobstore_id = found_build["blobstore_id"]
 
-      storage = Versions::LocalVersionStorage.new(index.storage_dir)
+      storage = Versions::LocalVersionStorage.new(@artifacts_dir)
 
       resolver = Versions::VersionFileResolver.new(storage, @blobstore)
       resolver.find_file(blobstore_id, sha1, version, "#{build_type} #{desc}")

@@ -115,6 +115,10 @@ module Bosh::Cli
         options[:target] || config.target_name || target_url
       end
 
+      def cache_dir
+        File.join(Dir.home, '.bosh', 'cache')
+      end
+
       protected
 
       # Prints director task completion report. Note that event log usually

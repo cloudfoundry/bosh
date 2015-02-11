@@ -53,7 +53,7 @@ module Bosh::Cli::Command
         blobstore = release.blobstore
         tmpdir = Dir.mktmpdir
 
-        compiler = Bosh::Cli::ReleaseCompiler.new(manifest_path, blobstore, package_matches)
+        compiler = Bosh::Cli::ReleaseCompiler.new(manifest_path, cache_dir, blobstore, package_matches)
         need_repack = true
 
         unless compiler.exists?

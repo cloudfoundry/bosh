@@ -6,6 +6,10 @@ class ClientSandbox
       File.join(Bosh::Dev::Sandbox::Workspace.dir, 'client-sandbox')
     end
 
+    def home_dir
+      File.join(base_dir, 'home')
+    end
+
     def test_release_dir
       File.join(base_dir, 'test_release')
     end

@@ -31,6 +31,7 @@ module Bosh::Cli::Command::Release
         }
       end
       let(:archive_dir) { release_source.path }
+      let(:cache_dir) { release_source.artifacts_dir }
       let(:blobstore) { double('blobstore') }
       let(:package) {
         Bosh::Cli::Resources::Package.new(release_source.join('packages/package_name'), release_source.path)
@@ -44,7 +45,7 @@ module Bosh::Cli::Command::Release
         }
       end
       let(:matched_files) { ['lib/1.rb', 'lib/2.rb', 'README.2', 'README.md'] }
-      let(:archive_repository_provider) { Bosh::Cli::ArchiveRepositoryProvider.new(archive_dir, blobstore) }
+      let(:archive_repository_provider) { Bosh::Cli::ArchiveRepositoryProvider.new(archive_dir, cache_dir, blobstore) }
       let(:archive_builder) { Bosh::Cli::ArchiveBuilder.new(archive_repository_provider, release_options) }
 
       after do
@@ -63,8 +64,7 @@ module Bosh::Cli::Command::Release
         allow(command).to receive(:dirty_state?).and_return(false)
 
         allow(Bosh::Cli::Resources::Package).to receive(:discover).and_return([package])
-        allow(Bosh::Cli::ArchiveBuilder).to receive(:new).and_return(archive_builder) # todo wtf? removing this causes source tree to change
-        # allow(archive_builder).to receive(:build)
+        allow(Bosh::Cli::ArchiveBuilder).to receive(:new).and_return(archive_builder)
 
         allow(command).to receive(:build_jobs)
 
@@ -314,7 +314,7 @@ module Bosh::Cli::Command::Release
             allow(File).to receive(:file?).with(manifest_file).and_return(true)
             allow(release).to receive(:blobstore).and_return('fake-blobstore')
 
-            expect(Bosh::Cli::ReleaseCompiler).to receive(:compile).with(manifest_file, 'fake-blobstore')
+            expect(Bosh::Cli::ReleaseCompiler).to receive(:compile).with(manifest_file, end_with('.bosh/cache'), 'fake-blobstore')
             expect(release).to receive(:latest_release_filename=).with(manifest_file)
             expect(release).to receive(:save_config)
 

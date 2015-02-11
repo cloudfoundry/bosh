@@ -31,6 +31,9 @@ describe 'create release', type: :integration do
               'format-version' => '2'
             )
 
+          artifact_tarball = File.join(ClientSandbox.home_dir, '.bosh', 'cache', "#{fingerprint}.tgz")
+          expect(File.exist?(artifact_tarball)).to eq(true)
+
           blob_file = File.join(ClientSandbox.blobstore_dir, index['builds'][fingerprint]['blobstore_id'])
           expect(File.exist?(blob_file)).to eq(true)
           expect(Digest::SHA1.file(blob_file)).to eq(index['builds'][fingerprint]['sha1'])
@@ -49,6 +52,9 @@ describe 'create release', type: :integration do
               },
               'format-version' => '2'
             )
+
+          artifact_tarball = File.join(ClientSandbox.home_dir, '.bosh', 'cache', "#{fingerprint}.tgz")
+          expect(File.exist?(artifact_tarball)).to eq(true)
 
           tarblob = File.join(ClientSandbox.blobstore_dir, index['builds'][fingerprint]['blobstore_id'])
           expect(File.exist?(tarblob)).to eq(true)

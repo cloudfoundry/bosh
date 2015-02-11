@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Cli::ArchiveBuilder, 'dev build' do
-  let(:archive_repository_provider) { Bosh::Cli::ArchiveRepositoryProvider.new(archive_dir, blobstore) }
+  let(:archive_repository_provider) { Bosh::Cli::ArchiveRepositoryProvider.new(archive_dir, artifacts_dir, blobstore) }
   subject(:builder) { Bosh::Cli::ArchiveBuilder.new(archive_repository_provider, release_options) }
 
   let(:resource) do
@@ -28,7 +28,8 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
   let(:final) { false }
 
   let(:archive_dir) { release_source.path }
-  let(:basedir) { nil } # meh!
+  let(:artifacts_dir) { release_source.artifacts_dir }
+  let(:basedir) { nil }
   let(:tmp_dirs) { [] }
 
   let(:resource_name) { 'pkg' }
@@ -91,7 +92,7 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
     context 'when the Resource is a Package' do
       it 'generates a tarball' do
         artifact = builder.build(resource)
-        expect(release_source).to have_file(".dev_builds/packages/#{artifact.name}/#{artifact.fingerprint}.tgz")
+        expect(release_source).to have_artifact(artifact.fingerprint)
       end
     end
 
@@ -124,7 +125,7 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
     context 'when building final release' do
       let(:storage_dir) { ".final_builds/packages/#{resource_name}" }
       let(:final) { true }
-      let(:tarball_path) { '.final_builds/packages/pkg/f0b1b81bd6b8093f2627eaa13952a1aab8b125d1.tgz' }
+      let(:tarball_path) { File.join(artifacts_dir, 'f0b1b81bd6b8093f2627eaa13952a1aab8b125d1.tgz') }
 
       before { allow(blobstore).to receive(:create).and_return('object_id') }
 
@@ -138,7 +139,7 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
       it 'uploads the tarball' do
         expect(blobstore).to receive(:create) do |file|
           expect(file).to be_a(File)
-          expect(file.path).to end_with(tarball_path)
+          expect(file.path).to eq(tarball_path)
         end
         builder.build(resource)
       end
@@ -370,34 +371,34 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
     context 'when a final version is available locally' do
       before { release_source.add_version(fingerprint, final_storage_dir, 'payload', {'version' => fingerprint, 'blobstore_id' => '12321'}) }
 
-      it 'should use the final version' do
+      it 'should use the cached version' do
         artifact = builder.build(resource)
-        expect(artifact.tarball_path).to eq(release_source.join('.final_builds', 'packages', resource_name, "#{fingerprint}.tgz"))
+        expect(artifact.tarball_path).to eq(release_source.artifact_path(fingerprint))
       end
     end
 
     context 'when a dev version is available locally' do
       before { release_source.add_version(fingerprint, dev_storage_dir, 'dev_payload', {'version' => fingerprint}) }
 
-      it 'should use the final version' do
+      it 'should use the cached version' do
         artifact = builder.build(resource)
-        expect(artifact.tarball_path).to eq(release_source.join('.dev_builds', 'packages', resource_name, "#{fingerprint}.tgz"))
+        expect(artifact.tarball_path).to eq(release_source.artifact_path(fingerprint))
       end
 
       context 'and a final version is also available locally' do
         before { release_source.add_version(fingerprint, final_storage_dir, 'payload', {'version' => fingerprint, 'blobstore_id' => '12321'}) }
 
-        it 'should use the final version' do
+        it 'should use the cached version' do
           artifact = builder.build(resource)
-          expect(artifact.tarball_path).to eq(release_source.join('.final_builds', 'packages', resource_name, "#{fingerprint}.tgz"))
+          expect(artifact.tarball_path).to eq(release_source.artifact_path(fingerprint))
         end
       end
     end
 
     context 'when a final or dev version is not available locally' do
-      it 'generates a tarball and saves it as a dev build' do
+      it 'generates a tarball and saves it in artifacts path' do
         artifact = builder.build(resource)
-        expect(artifact.tarball_path).to eq(release_source.join('.dev_builds', 'packages', resource_name, "#{fingerprint}.tgz"))
+        expect(artifact.tarball_path).to eq(release_source.artifact_path(fingerprint))
       end
     end
   end

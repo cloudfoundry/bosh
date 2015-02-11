@@ -137,4 +137,11 @@ describe Bosh::Cli::Command::Base do
       end
     end
   end
+
+  describe 'cache_dir' do
+    it 'defaults to $HOME/.bosh/cache' do
+      allow(Dir).to receive(:home).and_return('/fake/home/dir')
+      expect(make.cache_dir).to eq('/fake/home/dir/.bosh/cache')
+    end
+  end
 end

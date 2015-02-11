@@ -13,6 +13,10 @@ module Bosh::Cli
       @is_new_version = is_new_version
     end
 
+    def promote_to_final
+      @is_dev_artifact = false
+    end
+
     def version
       fingerprint
     end
