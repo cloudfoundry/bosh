@@ -55,3 +55,6 @@ run_in_chroot $chroot "
   ./build.sh
   rpm -i /rpmbuild/RPMS/${runit_version}.rpm
 "
+
+# uninstall firewall so iptables are clear of any reject rules
+run_in_chroot ${chroot} "yum erase -y firewalld"

@@ -20,6 +20,14 @@ describe 'All CentOS versions', os_image: true do
       end
     end
 
+    %w(
+      firewalld
+    ).each do |pkg|
+      describe package(pkg) do
+        it { should_not be_installed }
+      end
+    end
+
     describe file('/etc/sysconfig/network') do
       it { should be_file }
     end
