@@ -276,7 +276,7 @@ module Bosh::OpenStackCloud
         server_params[:availability_zone] = availability_zone if availability_zone
 
         if @boot_from_volume
-          boot_vol_size = flavor.disk * 1024
+          boot_vol_size = resource_pool['boot_volume_size'] || (flavor.disk * 1024)
 
           boot_vol_id = create_boot_disk(boot_vol_size, stemcell_id, availability_zone, @boot_volume_cloud_properties)
           cloud_error("Failed to create boot volume.") if boot_vol_id.nil?
