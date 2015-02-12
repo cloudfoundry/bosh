@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 module Bosh::Cli::Versions
-  describe LocalVersionStorage do
-    let(:storage) { LocalVersionStorage.new(storage_dir) }
+  describe LocalArtifactStorage do
+    let(:storage) { LocalArtifactStorage.new(storage_dir) }
     let(:storage_dir) { Dir.mktmpdir }
     let(:index_file) { File.join(storage_dir, 'index.yml') }
 
@@ -74,7 +74,7 @@ module Bosh::Cli::Versions
 
     describe '#file_path' do
       context 'when a name prefix exists' do
-        let(:storage) { LocalVersionStorage.new(storage_dir, 'fake-prefix') }
+        let(:storage) { LocalArtifactStorage.new(storage_dir, 'fake-prefix') }
 
         it 'returns the path to the payload in the storage dir, with the prefix in the file name' do
           expect(storage.file_path('fake-version')).to eq(File.join(storage_dir, 'fake-prefix-fake-version.tgz'))
@@ -82,7 +82,7 @@ module Bosh::Cli::Versions
       end
 
       context 'when no name prefix exists' do
-        let(:storage) { LocalVersionStorage.new(storage_dir) }
+        let(:storage) { LocalArtifactStorage.new(storage_dir) }
 
         it 'returns the path to the payload in the storage dir' do
           expect(storage.file_path('fake-version')).to eq(File.join(storage_dir, 'fake-version.tgz'))

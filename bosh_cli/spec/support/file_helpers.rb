@@ -53,7 +53,7 @@ module Support
       def add_version(key, index_dir, payload, build)
         index_storage_path  = self.join(index_dir)
         version_index = Bosh::Cli::Versions::VersionsIndex.new(index_storage_path)
-        artifacts_store = Bosh::Cli::Versions::LocalVersionStorage.new(artifacts_dir)
+        artifacts_store = Bosh::Cli::Versions::LocalArtifactStorage.new(artifacts_dir)
         src_path = get_tmp_file_path(payload)
 
         version_index.add_version(key, build)

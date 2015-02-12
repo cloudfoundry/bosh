@@ -25,7 +25,7 @@ module Bosh::Cli
       @final_index = Versions::VersionsIndex.new(final_releases_dir)
       @dev_index = Versions::VersionsIndex.new(dev_releases_dir)
       @index = @final ? @final_index : @dev_index
-      @release_storage = Versions::LocalVersionStorage.new(@index.storage_dir, @name)
+      @release_storage = Versions::LocalArtifactStorage.new(@index.storage_dir, @name)
 
       if @version && @release_storage.has_file?(@version)
         raise ReleaseVersionError.new('Release version already exists')

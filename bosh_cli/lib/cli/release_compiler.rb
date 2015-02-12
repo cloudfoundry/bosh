@@ -136,7 +136,7 @@ module Bosh::Cli
       sha1 = found_build["sha1"]
       blobstore_id = found_build["blobstore_id"]
 
-      storage = Versions::LocalVersionStorage.new(@artifacts_dir)
+      storage = Versions::LocalArtifactStorage.new(@artifacts_dir)
 
       resolver = Versions::VersionFileResolver.new(storage, @blobstore)
       resolver.find_file(blobstore_id, sha1, version, "#{build_type} #{desc}")

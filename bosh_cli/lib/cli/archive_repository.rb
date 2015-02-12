@@ -12,7 +12,7 @@ module Bosh::Cli
       FileUtils.mkdir_p(final_builds_dir)
       @final_index = Versions::VersionsIndex.new(final_builds_dir)
 
-      @storage = Versions::LocalVersionStorage.new(artifacts_dir)
+      @storage = Versions::LocalArtifactStorage.new(artifacts_dir)
       FileUtils.mkdir_p(artifacts_dir)
 
       @final_resolver = Versions::VersionFileResolver.new(@storage, @blobstore)

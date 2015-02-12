@@ -70,7 +70,7 @@ require 'cli/non_interactive_progress_renderer'
 require 'cli/source_control/git_ignore'
 
 require 'cli/versions/versions_index'
-require 'cli/versions/local_version_storage'
+require 'cli/versions/local_artifact_storage'
 require 'cli/versions/release_versions_index'
 require 'cli/versions/releases_dir_migrator'
 require 'cli/versions/version_file_resolver'

@@ -1,5 +1,5 @@
 module Bosh::Cli::Versions
-  class LocalVersionStorage
+  class LocalArtifactStorage
 
     class Sha1MismatchError < StandardError; end
 
