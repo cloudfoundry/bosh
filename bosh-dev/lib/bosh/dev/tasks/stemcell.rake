@@ -50,13 +50,13 @@ namespace :stemcell do
     require 'bosh/dev/upload_adapter'
 
     adapter = Bosh::Dev::UploadAdapter.new
-    adapter.upload(
+    file = adapter.upload(
       bucket_name: args.s3_bucket_name,
       key: args.s3_bucket_key,
       body: File.open(args.os_image_path),
       public: true,
     )
-    puts "OS image #{args.os_image_path} uploaded to S3 in bucket #{args.s3_bucket_name} with key #{args.s3_bucket_key}."
+    puts "OS image #{args.os_image_path} version '#{file.version}' uploaded to S3 in bucket '#{args.s3_bucket_name}' with key '#{args.s3_bucket_key}'."
   end
 
   desc 'Build a stemcell with a remote pre-built base OS image'

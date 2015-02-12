@@ -49,6 +49,12 @@ module Bosh::Dev
 
           expect(fog_storage.directories.get(bucket_name).files.get(key).body).to eq(body)
         end
+
+        it 'returns the created file object, used by the stemcell:upload_os_image Rake task' do
+          fog_storage.directories.create(key: bucket_name)
+          result = adapter.upload(bucket_name: bucket_name, key: key, body: body, public: public)
+          expect(result).to be_a(Fog::Storage::AWS::File)
+        end
       end
 
       it 'raises an error if the bucket does not exist' do
