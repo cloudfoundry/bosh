@@ -24,7 +24,7 @@ sed "/^ *MaxAuthTries/d" -i $chroot/etc/ssh/sshd_config
 echo 'MaxAuthTries 3' >> $chroot/etc/ssh/sshd_config
 
 # OS Specifics
-if [ "${stemcell_operating_system}" == "centos" ]; then
+if [ "$(get_os_type)" == "centos" ]; then
   # Disallow CBC Ciphers
   sed "/^ *Ciphers/d" -i $chroot/etc/ssh/sshd_config
   echo 'Ciphers aes256-ctr,aes192-ctr,aes128-ctr' >> $chroot/etc/ssh/sshd_config
