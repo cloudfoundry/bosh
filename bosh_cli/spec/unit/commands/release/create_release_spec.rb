@@ -95,10 +95,14 @@ module Bosh::Cli::Command::Release
       end
 
       it 'prints status headers' do
+        allow(command).to receive(:cache_dir).and_return('fake-cache-dir')
+
         command.create
+
         output = strip_heredoc(<<-OUTPUT)
           Building DEV release
           --------------------
+          Release artifact cache: fake-cache-dir
 
           Building packages
           -----------------

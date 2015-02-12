@@ -84,6 +84,8 @@ module Bosh::Cli::Command
           header('Building DEV release'.make_green)
         end
 
+        say("Release artifact cache: #{cache_dir}")
+
         header('Building packages')
         package_artifacts = build_packages(dry_run, final)
 
