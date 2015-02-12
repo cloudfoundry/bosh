@@ -25,9 +25,9 @@ module Bosh::Cli
       @final_index = Versions::VersionsIndex.new(final_releases_dir)
       @dev_index = Versions::VersionsIndex.new(dev_releases_dir)
       @index = @final ? @final_index : @dev_index
-      @release_storage = Versions::LocalArtifactStorage.new(@index.storage_dir, @name)
+      @release_storage = Versions::LocalArtifactStorage.new(@index.storage_dir)
 
-      if @version && @release_storage.has_file?(@version)
+      if @version && @release_storage.has_file?(release_filename)
         raise ReleaseVersionError.new('Release version already exists')
       end
 
@@ -47,6 +47,10 @@ module Bosh::Cli
     # @return [Boolean] Is release final?
     def final?
       @final
+    end
+
+    def release_filename
+      "#{@name}-#{@version}.tgz"
     end
 
     # @return [Array<Bosh::Cli::BuildArtifact>] List of job artifacts
@@ -156,7 +160,7 @@ module Bosh::Cli
 
     def generate_tarball
       generate_manifest unless @manifest_generated
-      return if @release_storage.has_file?(@version)
+      return if @release_storage.has_file?(release_filename)
 
       unless @jobs_copied
         header("Copying jobs...")

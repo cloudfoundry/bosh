@@ -132,14 +132,13 @@ module Bosh::Cli
         err("Cannot find #{build_type} with checksum `#{build.sha1}'")
       end
 
-      version = found_build["version"]
       sha1 = found_build["sha1"]
       blobstore_id = found_build["blobstore_id"]
 
       storage = Versions::LocalArtifactStorage.new(@artifacts_dir)
 
       resolver = Versions::VersionFileResolver.new(storage, @blobstore)
-      resolver.find_file(blobstore_id, sha1, version, "#{build_type} #{desc}")
+      resolver.find_file(blobstore_id, sha1, "#{build_type} #{desc}")
     rescue Bosh::Blobstore::BlobstoreError => e
       raise BlobstoreError, "Blobstore error: #{e}"
     end

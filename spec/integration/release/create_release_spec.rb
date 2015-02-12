@@ -31,12 +31,13 @@ describe 'create release', type: :integration do
               'format-version' => '2'
             )
 
-          artifact_tarball = File.join(ClientSandbox.home_dir, '.bosh', 'cache', "#{fingerprint}.tgz")
+          sha1 = index['builds'][fingerprint]['sha1']
+          artifact_tarball = File.join(ENV['HOME'], '.bosh', 'cache', sha1)
           expect(File.exist?(artifact_tarball)).to eq(true)
 
           blob_file = File.join(ClientSandbox.blobstore_dir, index['builds'][fingerprint]['blobstore_id'])
           expect(File.exist?(blob_file)).to eq(true)
-          expect(Digest::SHA1.file(blob_file)).to eq(index['builds'][fingerprint]['sha1'])
+          expect(Digest::SHA1.file(blob_file)).to eq(sha1)
         end
 
         ['errand1', 'errand_without_package', 'fails_with_too_much_output', 'foobar', 'job_with_blocking_compilation', 'transitive_deps',].each do |job_name|
@@ -53,12 +54,13 @@ describe 'create release', type: :integration do
               'format-version' => '2'
             )
 
-          artifact_tarball = File.join(ClientSandbox.home_dir, '.bosh', 'cache', "#{fingerprint}.tgz")
+          sha1 = index['builds'][fingerprint]['sha1']
+          artifact_tarball = File.join(ENV['HOME'], '.bosh', 'cache', sha1)
           expect(File.exist?(artifact_tarball)).to eq(true)
 
           tarblob = File.join(ClientSandbox.blobstore_dir, index['builds'][fingerprint]['blobstore_id'])
           expect(File.exist?(tarblob)).to eq(true)
-          expect(Digest::SHA1.file(tarblob)).to eq(index['builds'][fingerprint]['sha1'])
+          expect(Digest::SHA1.file(tarblob)).to eq(sha1)
         end
       end
     end
@@ -352,6 +354,29 @@ describe 'create release', type: :integration do
         release_file_list = `tar -tzf #{foo_package}`
         expect(release_file_list).to_not include('excluded_file')
         expect(release_file_list).to include('foo')
+      end
+    end
+  end
+
+  describe 'release cache' do
+    let!(:second_test_release_dir) { Dir.mktmpdir('second-test-release-dir') }
+    after { FileUtils.rm_rf(second_test_release_dir) }
+
+    it 'creates releases from different folder using the shared cache' do
+      setup_test_release_dir(second_test_release_dir)
+
+      Dir.chdir(ClientSandbox.test_release_dir) do
+        bosh_runner.run_in_current_dir('create release')
+      end
+
+      Dir.chdir(second_test_release_dir) do
+        bosh_runner.run_in_current_dir('create release')
+      end
+
+      target_and_login
+
+      Dir.chdir(ClientSandbox.test_release_dir) do
+        bosh_runner.run_in_current_dir('upload release')
       end
     end
   end

@@ -28,17 +28,17 @@ module Bosh::Cli
         sha1 = artifact_info['sha1']
 
         say("Using final version '#{version}'")
-        tarball_path = @final_resolver.find_file(blobstore_id, sha1, version, "#{resource.singular_type} #{resource.name} (#{version})")
+        tarball_path = @final_resolver.find_file(blobstore_id, sha1, "#{resource.singular_type} #{resource.name} (#{version})")
 
         BuildArtifact.new(resource.name, fingerprint, tarball_path, sha1, resource.dependencies, false, false)
       else
         artifact_info = @dev_index[fingerprint]
         if artifact_info
-          version = artifact_info['version'] || fingerprint
-          if @storage.has_file?(version)
+          if @storage.has_file?(artifact_info['sha1'])
+            version = artifact_info['version'] || fingerprint
             say("Using dev version '#{version}'")
 
-            tarball_path = @storage.get_file(version)
+            tarball_path = @storage.get_file(artifact_info['sha1'])
             if file_checksum(tarball_path) != artifact_info['sha1']
               raise CorruptedArchive, "#{resource.singular_type} #{resource.name} (#{version}) archive at #{tarball_path} corrupted"
             end
@@ -77,7 +77,7 @@ module Bosh::Cli
       fingerprint = artifact.fingerprint
       origin_file = artifact.tarball_path
 
-      tarball_path = @storage.put_file(fingerprint, origin_file)
+      tarball_path = @storage.put_file(artifact.sha1, origin_file)
 
       update_index(
         tarball_path,

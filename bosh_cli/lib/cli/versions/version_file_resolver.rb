@@ -7,9 +7,9 @@ module Bosh::Cli::Versions
       @tmpdir = tmpdir
     end
 
-    def find_file(blobstore_id, sha1, version, desc)
-      if @storage.has_file?(version)
-        file_path = @storage.get_file(version)
+    def find_file(blobstore_id, sha1, desc)
+      if @storage.has_file?(sha1)
+        file_path = @storage.get_file(sha1)
         file_sha1 = Digest::SHA1.file(file_path).hexdigest
         if file_sha1 == sha1
           return file_path
@@ -29,7 +29,7 @@ module Bosh::Cli::Versions
           @blobstore.get(blobstore_id, tmp_file, sha1: sha1)
         end
 
-        @storage.put_file(version, tmp_file_path)
+        @storage.put_file(sha1, tmp_file_path)
       ensure
         FileUtils.rm(tmp_file_path, :force => true)
       end

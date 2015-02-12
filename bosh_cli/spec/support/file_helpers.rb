@@ -56,23 +56,23 @@ module Support
         artifacts_store = Bosh::Cli::Versions::LocalArtifactStorage.new(artifacts_dir)
         src_path = get_tmp_file_path(payload)
 
+        build['sha1'] = Digest::SHA1.file(src_path).hexdigest
         version_index.add_version(key, build)
-        file = artifacts_store.put_file(key, src_path)
+        artifacts_store.put_file(build['sha1'], src_path)
 
-        build['sha1'] = Digest::SHA1.file(file).hexdigest
-        version_index.update_version(key, build)
+        build
       end
 
       def has_index_file?(filepath)
         File.exists?(join(filepath))
       end
 
-      def has_artifact?(fingerprint)
-        File.exists?(artifact_path(fingerprint))
+      def has_artifact?(name)
+        File.exists?(artifact_path(name))
       end
 
-      def artifact_path(fingerprint)
-        File.join(artifacts_dir, "#{fingerprint}.tgz")
+      def artifact_path(name)
+        File.join(artifacts_dir, name)
       end
 
       def join(*args)

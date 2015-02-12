@@ -92,7 +92,7 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
     context 'when the Resource is a Package' do
       it 'generates a tarball' do
         artifact = builder.build(resource)
-        expect(release_source).to have_artifact(artifact.fingerprint)
+        expect(release_source).to have_artifact(artifact.sha1)
       end
     end
 
@@ -125,7 +125,6 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
     context 'when building final release' do
       let(:storage_dir) { ".final_builds/packages/#{resource_name}" }
       let(:final) { true }
-      let(:tarball_path) { File.join(artifacts_dir, 'f0b1b81bd6b8093f2627eaa13952a1aab8b125d1.tgz') }
 
       before { allow(blobstore).to receive(:create).and_return('object_id') }
 
@@ -139,7 +138,8 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
       it 'uploads the tarball' do
         expect(blobstore).to receive(:create) do |file|
           expect(file).to be_a(File)
-          expect(file.path).to eq(tarball_path)
+          sha1 = Digest::SHA1.file(file.path).hexdigest
+          expect(file.path).to eq(File.join(artifacts_dir, sha1))
         end
         builder.build(resource)
       end
@@ -364,41 +364,51 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
     let(:dev_storage_dir) { ".dev_builds/packages/#{resource_name}" }
 
     before do
-      allow(Digest::SHA1).to receive(:hexdigest).and_return(fingerprint)
       release_source.add_files('src', ['foo/foo.rb', 'foo/lib/1.rb', 'foo/lib/2.rb', 'foo/README', 'baz'])
     end
 
+    before { allow(Bosh::Cli::BuildArtifact).to receive(:checksum).and_return(build['sha1']) }
+    let(:build) { {} }
+
     context 'when a final version is available locally' do
-      before { release_source.add_version(fingerprint, final_storage_dir, 'payload', {'version' => fingerprint, 'blobstore_id' => '12321'}) }
+      let(:build) do
+        release_source.add_version(fingerprint, final_storage_dir, 'payload', {'version' => fingerprint, 'blobstore_id' => '12321'})
+      end
 
       it 'should use the cached version' do
         artifact = builder.build(resource)
-        expect(artifact.tarball_path).to eq(release_source.artifact_path(fingerprint))
+        expect(artifact.tarball_path).to eq(release_source.artifact_path(build['sha1']))
       end
     end
 
     context 'when a dev version is available locally' do
-      before { release_source.add_version(fingerprint, dev_storage_dir, 'dev_payload', {'version' => fingerprint}) }
+      let(:build) do
+        release_source.add_version(fingerprint, dev_storage_dir, 'dev_payload', {'version' => fingerprint})
+      end
 
       it 'should use the cached version' do
         artifact = builder.build(resource)
-        expect(artifact.tarball_path).to eq(release_source.artifact_path(fingerprint))
+        expect(artifact.tarball_path).to eq(release_source.artifact_path(build['sha1']))
       end
 
       context 'and a final version is also available locally' do
-        before { release_source.add_version(fingerprint, final_storage_dir, 'payload', {'version' => fingerprint, 'blobstore_id' => '12321'}) }
+        let(:build) do
+          release_source.add_version(fingerprint, final_storage_dir, 'payload', {'version' => fingerprint, 'blobstore_id' => '12321'})
+        end
 
         it 'should use the cached version' do
           artifact = builder.build(resource)
-          expect(artifact.tarball_path).to eq(release_source.artifact_path(fingerprint))
+          expect(artifact.tarball_path).to eq(release_source.artifact_path(build['sha1']))
         end
       end
     end
 
     context 'when a final or dev version is not available locally' do
+      before { allow(Bosh::Cli::BuildArtifact).to receive(:checksum).and_return('fake-sha1') }
+
       it 'generates a tarball and saves it in artifacts path' do
         artifact = builder.build(resource)
-        expect(artifact.tarball_path).to eq(release_source.artifact_path(fingerprint))
+        expect(artifact.tarball_path).to eq(release_source.artifact_path('fake-sha1'))
       end
     end
   end

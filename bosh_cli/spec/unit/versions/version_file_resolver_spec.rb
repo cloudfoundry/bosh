@@ -11,28 +11,24 @@ module Bosh::Cli::Versions
     after { FileUtils.rm_rf(tmp_dir) }
 
     describe '#find_file' do
-      let(:version) { 'fake-version' }
-
       def self.it_attempts_to_download_from_blobstore
         context 'when the provided blobstore id is not nil' do
           let(:blobstore_id) { 'fake-blobstore-id' }
+          let(:blobstore_file_sha1) { Digest::SHA1.hexdigest(blobstore_file_content) }
+          let(:blobstore_file_content) { 'fake-blobstore-file-contents' }
 
           context 'when the file is in the blobstore' do
-            let(:blobstore_file_sha1) { Digest::SHA1.hexdigest(blobstore_file_content) }
-
             before do
               allow(blobstore).to receive(:get).with(blobstore_id, anything, sha1: blobstore_file_sha1) do |blobstore_id, dest_file|
                 dest_file.write(blobstore_file_content)
               end
             end
-            let(:blobstore_file_content) { 'fake-blobstore-file-contents' }
 
             context 'when the sha1 of the blobstore file matches the requested sha1' do
-
               it 'downloads the file form the blobstore and puts it in the storage' do
-                expect(storage).to receive(:put_file).with(version, anything).and_return('fake/storage/path')
+                expect(storage).to receive(:put_file).with(blobstore_file_sha1, anything).and_return('fake/storage/path')
 
-                file_path = resolver.find_file(blobstore_id, blobstore_file_sha1, version, desc)
+                file_path = resolver.find_file(blobstore_id, blobstore_file_sha1, desc)
                 expect(file_path).to eq('fake/storage/path')
               end
             end
@@ -48,7 +44,7 @@ module Bosh::Cli::Versions
 
               it 'propagates that error' do
                 expect {
-                  resolver.find_file(blobstore_id, blobstore_file_sha1, version, desc)
+                  resolver.find_file(blobstore_id, blobstore_file_sha1,desc)
                 }.to raise_error(blobstore_error)
               end
             end
@@ -61,7 +57,7 @@ module Bosh::Cli::Versions
               end
 
               expect {
-                resolver.find_file(blobstore_id, 'fake-non-matching-sha1', version, desc)
+                resolver.find_file(blobstore_id, 'fake-non-matching-sha1', desc)
               }.to raise_error('file not in blobstore')
             end
           end
@@ -72,7 +68,7 @@ module Bosh::Cli::Versions
 
           it 'raises an error' do
             expect {
-              resolver.find_file(blobstore_id, 'ignored-sha1', version, desc)
+              resolver.find_file(blobstore_id, 'ignored-sha1', desc)
             }.to raise_error(
               "Cannot find #{desc}"
             )
@@ -84,17 +80,18 @@ module Bosh::Cli::Versions
         before do
           allow(storage).to receive(:has_file?).and_return(true)
           File.open(stored_file_path, 'w') { |f| f.write(storage_file_content) }
-          allow(storage).to receive(:get_file).with(version).and_return(stored_file_path)
+          allow(storage).to receive(:get_file).and_return(stored_file_path)
         end
+
         let(:stored_file_path) { File.join(tmp_dir, SecureRandom.uuid) }
         let(:storage_file_content) { 'fake-storage-file-contents' }
+        let(:sha1) { Digest::SHA1.hexdigest(storage_file_content) }
 
         context 'when the sha1 of the stored file matches the requested sha1' do
           let(:blobstore_id) { nil }
-          let(:sha1) { Digest::SHA1.hexdigest(storage_file_content) }
 
           it 'returns the stored file path' do
-            file_path = resolver.find_file(blobstore_id, sha1, version, desc)
+            file_path = resolver.find_file(blobstore_id, sha1, desc)
             expect(file_path).to eq(stored_file_path)
           end
         end

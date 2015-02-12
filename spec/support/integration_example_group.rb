@@ -175,18 +175,16 @@ module IntegrationSandboxHelpers
     FileUtils.rm_rf(current_sandbox.cloud_storage_dir)
   end
 
-  private
+  def setup_test_release_dir(destination_dir = ClientSandbox.test_release_dir)
+    FileUtils.rm_rf(destination_dir)
+    FileUtils.cp_r(TEST_RELEASE_TEMPLATE, destination_dir, :preserve => true)
 
-  def setup_test_release_dir
-    FileUtils.rm_rf(ClientSandbox.test_release_dir)
-    FileUtils.cp_r(TEST_RELEASE_TEMPLATE, ClientSandbox.test_release_dir, :preserve => true)
-
-    final_config_path = File.join(ClientSandbox.test_release_dir, 'config', 'final.yml')
+    final_config_path = File.join(destination_dir, 'config', 'final.yml')
     final_config = YAML.load_file(final_config_path)
     final_config['blobstore']['options']['blobstore_path'] = ClientSandbox.blobstore_dir
     File.open(final_config_path, 'w') { |file| file.write(YAML.dump(final_config)) }
 
-    Dir.chdir(ClientSandbox.test_release_dir) do
+    Dir.chdir(destination_dir) do
       ignore = %w(
         blobs
         dev-releases
@@ -212,6 +210,8 @@ module IntegrationSandboxHelpers
        git commit -m "Initial Test Commit"`
     end
   end
+
+  private
 
   def setup_bosh_work_dir
     FileUtils.cp_r(BOSH_WORK_TEMPLATE, ClientSandbox.bosh_work_dir, :preserve => true)

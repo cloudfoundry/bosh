@@ -8,14 +8,14 @@ describe Bosh::Cli::ArchiveRepository do
 
   let(:blobstore) { instance_double(Bosh::Blobstore::SimpleBlobstoreClient) }
   let(:resource) { instance_double(Bosh::Cli::Resources::Package, :name => 'package-name', :plural_type => 'packages') }
-  let(:sha1) { 'sha1 for tarball' }
+  let(:sha1) { 'fake-sha1' }
 
   subject(:archive_repository) do
     Bosh::Cli::ArchiveRepository.new(archive_dir_path.to_s, cache_dir_path.to_s, blobstore, resource)
   end
 
   let(:artifact) { Bosh::Cli::BuildArtifact.new('artifact-name', fingerprint, tarball.path, sha1, nil, true, !final) }
-  let(:artifact_path) { cache_dir_path.join("#{fingerprint}.tgz") }
+  let(:artifact_path) { cache_dir_path.join(sha1) }
 
   let(:final_version_index) do
     Bosh::Cli::Versions::VersionsIndex.new(
@@ -54,7 +54,7 @@ describe Bosh::Cli::ArchiveRepository do
 
       it 'places file in cache storage' do
         archive_repository.install(artifact)
-        expect(cache_dir_path.join("#{fingerprint}.tgz")).to exist
+        expect(artifact_path).to exist
       end
 
       it 'adds file to dev index' do
@@ -107,7 +107,7 @@ describe Bosh::Cli::ArchiveRepository do
 
       it 'places file in cache storage' do
         archive_repository.install(artifact)
-        expect(cache_dir_path.join("#{fingerprint}.tgz")).to exist
+        expect(artifact_path).to exist
       end
 
       it 'adds file to final index' do
