@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'On all OSes and Infrastructures', stemcell_image: true do
-  describe 'the sshd_config, as set up by bosh_harden' do
+  describe 'the sshd_config, as set up by base_ssh' do
     subject(:sshd_config) { file('/etc/ssh/sshd_config') }
 
     it 'is secure' do
