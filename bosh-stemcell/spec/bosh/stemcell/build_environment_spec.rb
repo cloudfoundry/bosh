@@ -162,6 +162,7 @@ module Bosh::Stemcell
             "cd #{stemcell_specs_dir};",
             'OS_IMAGE=/some/os_image.tgz',
             'bundle exec rspec -fd',
+            "spec/os_image/common_spec.rb",
             "spec/os_image/#{operating_system.name}_#{operating_system.version}_spec.rb",
           ].join(' ')
 
@@ -177,6 +178,7 @@ module Bosh::Stemcell
             "cd #{stemcell_specs_dir};",
             'OS_IMAGE=/some/os_image.tgz',
             'bundle exec rspec -fd',
+            "spec/os_image/common_spec.rb",
             "spec/os_image/#{operating_system.name}_spec.rb",
           ].join(' ')
 
@@ -194,7 +196,6 @@ module Bosh::Stemcell
             "cd #{stemcell_specs_dir};",
             "STEMCELL_IMAGE=#{File.join(work_path, 'fake-root-disk-image.raw')}",
             'bundle exec rspec -fd',
-            "spec/stemcells/common_spec.rb",
             "spec/stemcells/#{operating_system.name}_#{operating_system.version}_spec.rb",
             "spec/stemcells/#{agent.name}_agent_spec.rb",
             "spec/stemcells/#{infrastructure.name}_spec.rb",
@@ -212,7 +213,6 @@ module Bosh::Stemcell
             "cd #{stemcell_specs_dir};",
             "STEMCELL_IMAGE=#{File.join(work_path, 'fake-root-disk-image.raw')}",
             'bundle exec rspec -fd',
-            "spec/stemcells/common_spec.rb",
             "spec/stemcells/#{operating_system.name}_spec.rb",
             "spec/stemcells/#{agent.name}_agent_spec.rb",
             "spec/stemcells/#{infrastructure.name}_spec.rb",
