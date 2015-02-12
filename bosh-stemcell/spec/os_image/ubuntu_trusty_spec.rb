@@ -118,7 +118,6 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       quota
       libaio1
       gdb
-      tripwire
       libcap2-bin
       libcap-dev
       libbz2-dev
