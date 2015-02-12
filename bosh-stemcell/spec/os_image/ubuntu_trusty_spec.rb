@@ -143,6 +143,35 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
     end
   end
 
+  context 'installed by base_ssh' do
+    subject(:sshd_config) { file('/etc/ssh/sshd_config') }
+
+    it 'disallows CBC ciphers' do
+      ciphers = %w(
+        chacha20-poly1305@openssh.com
+        aes256-gcm@openssh.com
+        aes128-gcm@openssh.com
+        aes256-ctr
+        aes192-ctr
+        aes128-ctr
+      ).join(',')
+      expect(sshd_config).to contain(/^Ciphers #{ciphers}$/)
+    end
+
+    it 'disallows insecure HMACs' do
+      macs = %w(
+        hmac-sha2-512-etm@openssh.com
+        hmac-sha2-256-etm@openssh.com
+        hmac-ripemd160-etm@openssh.com
+        umac-128-etm@openssh.com
+        hmac-sha2-512
+        hmac-sha2-256
+        hmac-ripemd160
+      ).join(',')
+      expect(sshd_config).to contain(/^MACs #{macs}$/)
+    end
+  end
+
   context 'installed by system_grub' do
     %w(
       grub
