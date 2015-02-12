@@ -7,6 +7,12 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* 'yacqn9ooY2Idc6Fb65QE25zl2MSvPX52'
+  lock down sshd_config permissions
+  disable weak ssh ciphers
+  disable weak ssh MACs
+  remove postfix
+
 * 'TjC3SnsvaIhROEa1J1L77Mj21TRikCW0'
   upgrade unzip to 6.0-9ubuntu1.2
 
@@ -92,6 +98,11 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 ## CentOS 6.6
 
 CentOS 6.6 images have filename `bosh-centos-6_6-os-image.tgz`
+
+* '3Yu.JSS0rB0oV6Gt3QnFfxaxvRju71bQ'
+  lock down sshd_config permissions
+  disable weak ssh ciphers
+  disable weak ssh MACs
 
 * `lUG9hrPUDugWx4Sv5vuKiN1X2Z1.lN.8`
   Adds kernel flags to enable console output in openstack environments
