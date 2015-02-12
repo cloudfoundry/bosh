@@ -31,7 +31,7 @@ module Bosh::Cli::Versions
       @index_file  = File.join(@storage_dir, 'index.yml')
 
       if File.file?(@index_file)
-        init_index(VersionsIndex.load_index_yaml(@index_file))
+        reload
       else
         init_index({})
       end
@@ -130,6 +130,10 @@ module Bosh::Cli::Versions
 
     def save
       VersionsIndex.write_index_yaml(@index_file, @data)
+    end
+
+    def reload
+      init_index(VersionsIndex.load_index_yaml(@index_file))
     end
 
     private

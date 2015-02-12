@@ -24,7 +24,7 @@ describe Bosh::Cli::ArchiveRepository do
   end
   let(:dev_version_index) do
     Bosh::Cli::Versions::VersionsIndex.new(
-      archive_dir_path.join('.dev_builds', 'packages', 'package-name').to_s
+      archive_dir_path.join('.dev_builds', 'packages', 'package-name')
     )
   end
 
@@ -60,14 +60,45 @@ describe Bosh::Cli::ArchiveRepository do
       it 'adds file to dev index' do
         archive_repository.install(artifact)
         expect(dev_version_index[fingerprint]).to eq(
-            "version" => "fake-fingerprint",
-            "sha1" => "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+            'version' => 'fake-fingerprint',
+            'sha1' => 'da39a3ee5e6b4b0d3255bfef95601890afd80709',
           )
       end
 
       it 'returns a BuildArtifact with the new tarball path' do
         new_artifact = archive_repository.install(artifact)
         expect(new_artifact.tarball_path).to eq(artifact_path.to_s)
+      end
+
+      context 'when file is in dev index' do
+        before do
+          dev_version_index.add_version('fake-fingerprint', {
+              'version' => 'fake-fingerprint',
+              'sha1' => '289ecbf3fa7359e84d84e5d7c5edd22689ad81d4',
+            })
+        end
+
+        it 'updates version with new sha' do
+          archive_repository.install(artifact)
+          dev_version_index.reload
+          expect(dev_version_index[fingerprint]).to eq(
+              'version' => 'fake-fingerprint',
+              'sha1' => 'da39a3ee5e6b4b0d3255bfef95601890afd80709',
+            )
+        end
+      end
+
+      context 'when file has blobstore_id' do
+        before do
+          dev_version_index.add_version('fake-fingerprint', {
+              'version' => 'fake-fingerprint',
+              'blobstore_id' => 'fake-blobstore-id',
+            })
+        end
+
+        it 'raises an error' do
+          expect { archive_repository.install(artifact) }.to raise_error /blobstore id/
+        end
       end
     end
 
@@ -82,14 +113,45 @@ describe Bosh::Cli::ArchiveRepository do
       it 'adds file to final index' do
         archive_repository.install(artifact)
         expect(final_version_index[fingerprint]).to eq(
-            "version" => "fake-fingerprint",
-            "sha1" => "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+            'version' => 'fake-fingerprint',
+            'sha1' => 'da39a3ee5e6b4b0d3255bfef95601890afd80709',
           )
       end
 
       it 'returns a BuildArtifact with the new tarball path' do
         new_artifact = archive_repository.install(artifact)
         expect(new_artifact.tarball_path).to eq(artifact_path.to_s)
+      end
+
+      context 'when file is in final index' do
+        before do
+          final_version_index.add_version('fake-fingerprint', {
+              'version' => 'fake-fingerprint',
+              'sha1' => '289ecbf3fa7359e84d84e5d7c5edd22689ad81d4',
+            })
+        end
+
+        it 'updates version with new sha' do
+          archive_repository.install(artifact)
+          final_version_index.reload
+          expect(final_version_index[fingerprint]).to eq(
+              'version' => 'fake-fingerprint',
+              'sha1' => 'da39a3ee5e6b4b0d3255bfef95601890afd80709',
+            )
+        end
+      end
+
+      context 'when file has blobstore_id' do
+        before do
+          final_version_index.add_version('fake-fingerprint', {
+              'version' => 'fake-fingerprint',
+              'blobstore_id' => 'fake-blobstore-id',
+            })
+        end
+
+        it 'raises an error' do
+          expect { archive_repository.install(artifact) }.to raise_error /blobstore id/
+        end
       end
     end
   end

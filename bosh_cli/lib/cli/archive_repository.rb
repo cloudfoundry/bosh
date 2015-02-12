@@ -95,8 +95,12 @@ module Bosh::Cli
     private
 
     def update_index(tarball_path, fingerprint, index)
-      # add version (with its validation) before adding sha1
-      index.add_version(fingerprint, {'version' => fingerprint} )
+      # In case of corrupted file the new file will be downloaded/re-generated
+      # so sha1 needs to be updated to fix the index
+      unless index[fingerprint]
+        index.add_version(fingerprint, {'version' => fingerprint} )
+      end
+
       sha1 = file_checksum(tarball_path)
       index.update_version(fingerprint, {'version' => fingerprint, 'sha1' => sha1})
     end
