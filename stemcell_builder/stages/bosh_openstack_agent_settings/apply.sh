@@ -11,10 +11,10 @@ if [ "${stemcell_operating_system}" == "centos" ]; then
   cat > $agent_settings_file <<JSON
 {
   "Infrastructure": {
-    "Settings": {
-      "DevicePathResolutionType": "virtio",
-      "NetworkingType": "dhcp",
+    "DevicePathResolutionType": "virtio",
+    "NetworkingType": "dhcp",
 
+    "Settings": {
       "Sources": [
         {
           "Type": "ConfigDrive",
