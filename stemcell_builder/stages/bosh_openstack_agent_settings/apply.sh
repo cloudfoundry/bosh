@@ -23,7 +23,7 @@ if [ "${stemcell_operating_system}" == "centos" ]; then
             "/dev/disk/by-label/config-2"
           ],
           "MetaDataPath": "ec2/latest/meta-data.json",
-          "UserDataPath": "ec2/latest/user-data.json"
+          "UserDataPath": "ec2/latest/user-data"
         },
         {
           "Type": "HTTP",
@@ -60,7 +60,7 @@ else
             "/dev/disk/by-label/config-2"
           ],
           "MetaDataPath": "ec2/latest/meta-data.json",
-          "UserDataPath": "ec2/latest/user-data.json"
+          "UserDataPath": "ec2/latest/user-data"
         },
         {
           "Type": "HTTP",
