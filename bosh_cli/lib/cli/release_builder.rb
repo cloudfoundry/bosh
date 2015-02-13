@@ -84,32 +84,6 @@ module Bosh::Cli
       @build_complete = true
     end
 
-    # Copies packages into release
-    def copy_packages
-      packages.each do |package_artifact|
-        name = package_artifact.name
-        tarball_path = package_artifact.tarball_path
-        say("%-40s %s" % [name.make_green, pretty_size(tarball_path)])
-        FileUtils.cp(tarball_path,
-                     File.join(build_dir, "packages", "#{name}.tgz"),
-                     :preserve => true)
-      end
-      @packages_copied = true
-    end
-
-    # Copies jobs into release todo DRY vs copy_packages
-    def copy_jobs
-      jobs.each do |job_artifact|
-        name = job_artifact.name
-        tarball_path = job_artifact.tarball_path
-        say("%-40s %s" % [name.make_green, pretty_size(tarball_path)])
-        FileUtils.cp(tarball_path,
-                     File.join(build_dir, "jobs", "#{name}.tgz"),
-                     :preserve => true)
-      end
-      @jobs_copied = true
-    end
-
     # Generates release manifest
     def generate_manifest
       manifest = {}
@@ -162,16 +136,13 @@ module Bosh::Cli
       generate_manifest unless @manifest_generated
       return if @release_storage.has_file?(release_filename)
 
-      unless @jobs_copied
-        header("Copying jobs...")
-        copy_jobs
-        nl
-      end
-      unless @packages_copied
-        header("Copying packages...")
-        copy_packages
-        nl
-      end
+      header("Copying jobs...")
+      copy_jobs
+      nl
+
+      header("Copying packages...")
+      copy_packages
+      nl
 
       FileUtils.mkdir_p(File.dirname(tarball_path))
 
@@ -183,6 +154,7 @@ module Bosh::Cli
         say("Generated #{tarball_path}")
       end
     end
+
 
     def releases_dir
       @final ? final_releases_dir : dev_releases_dir
@@ -205,6 +177,30 @@ module Bosh::Cli
     end
 
     private
+
+    # Copies packages into release
+    def copy_packages
+      packages.each do |package_artifact|
+        name = package_artifact.name
+        tarball_path = package_artifact.tarball_path
+        say("%-40s %s" % [name.make_green, pretty_size(tarball_path)])
+        FileUtils.cp(tarball_path,
+          File.join(build_dir, "packages", "#{name}.tgz"),
+          :preserve => true)
+      end
+    end
+
+    # Copies jobs into release todo DRY vs copy_packages
+    def copy_jobs
+      jobs.each do |job_artifact|
+        name = job_artifact.name
+        tarball_path = job_artifact.tarball_path
+        say("%-40s %s" % [name.make_green, pretty_size(tarball_path)])
+        FileUtils.cp(tarball_path,
+          File.join(build_dir, "jobs", "#{name}.tgz"),
+          :preserve => true)
+      end
+    end
 
     def assign_version
       latest_final_version = Versions::ReleaseVersionsIndex.new(@final_index).latest_version
