@@ -50,7 +50,29 @@ module Bosh::Director
           end
         end
 
-        helpers ControllerHelpers
+        def task_timeout?(task)
+          # Some of the old task entries might not have the checkpoint_time
+          unless task.checkpoint_time
+            task.checkpoint_time = Time.now
+            task.save
+          end
+
+          # If no checkpoint update in 3 cycles --> timeout
+          (task.state == 'processing' || task.state == 'cancelling') &&
+            (Time.now - task.checkpoint_time > Config.task_checkpoint_interval * 3)
+        end
+
+        def protected!
+          unless authorized?
+            response['WWW-Authenticate'] = 'Basic realm="BOSH Director"'
+            throw(:halt, [401, "Not authorized\n"])
+          end
+        end
+
+        def authorized?
+          @auth ||=  Rack::Auth::Basic::Request.new(request.env)
+          @auth.provided? && @auth.basic? && @auth.credentials && authenticate(*@auth.credentials)
+        end
 
         before do
           auth_provided = %w(HTTP_AUTHORIZATION X-HTTP_AUTHORIZATION X_HTTP_AUTHORIZATION).detect do |key|

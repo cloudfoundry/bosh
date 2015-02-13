@@ -299,7 +299,14 @@ module Bosh::Director
           end
 
           it 'scans and fixes problems' do
-            put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => { 'job' => [0] }), { 'CONTENT_TYPE' => 'application/json' }
+            expect(Resque).to receive(:enqueue).with(
+                Jobs::CloudCheck::ScanAndFix,
+                kind_of(Numeric),
+                'mycloud',
+                [['job', 0], ['job', 1], ['job', 6]],
+                false
+              )
+            put '/mycloud/scan_and_fix', Yajl::Encoder.encode('jobs' => {'job' => [0, 1, 6]}), {'CONTENT_TYPE' => 'application/json'}
             expect_redirect_to_queued_task(last_response)
           end
         end

@@ -238,7 +238,6 @@ module Bosh::Director
         json_encode(problems)
       end
 
-      # Try to resolve a set of problems
       put '/:deployment/problems', :consumes => [:json] do
         payload = json_decode(request.body)
         start_task { @problem_manager.apply_resolutions(@user, params[:deployment], payload['resolutions']) }
@@ -246,7 +245,6 @@ module Bosh::Director
 
       put '/:deployment/scan_and_fix', :consumes => :json do
         jobs_json = json_decode(request.body)['jobs']
-        # payload: [['j1', 'i1'], ['j1', 'i2'], ['j2', 'i1'], ...]
         payload = convert_job_instance_hash(jobs_json)
 
         start_task { @problem_manager.scan_and_fix(@user, params[:deployment], payload) }
@@ -288,6 +286,14 @@ module Bosh::Director
         end
 
         json_encode(errand_data)
+      end
+
+      private
+      def convert_job_instance_hash(hash)
+        hash.reduce([]) do |jobs, kv|
+          job, indicies = kv
+          jobs + indicies.map { |index| [job, index] }
+        end
       end
     end
   end

@@ -138,7 +138,6 @@ module Bosh::Director
 end
 
 require 'bosh/director/thread_pool'
-require 'bosh/director/api/controller_helpers'
 require 'bosh/director/api/controllers/backups_controller'
 require 'bosh/director/api/controllers/deployments_controller'
 require 'bosh/director/api/controllers/packages_controller'
