@@ -652,6 +652,7 @@ module Bosh::OpenStackCloud
       data['registry'] = { 'endpoint' => @registry.endpoint }
       data['server'] = { 'name' => server_name }
       data['openssh'] = { 'public_key' => public_key } if public_key
+      data['networks'] = network_spec
 
       with_dns(network_spec) do |servers|
         data['dns'] = { 'nameserver' => servers }
