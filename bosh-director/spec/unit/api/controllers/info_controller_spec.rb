@@ -39,14 +39,28 @@ module Bosh::Director
         basic_authorize username, password
       end
 
-      it 'requires auth' do
-        get '/'
-        expect(last_response.status).to eq(401)
-      end
-
       it 'sets the date header' do
         get '/'
         expect(last_response.headers['Date']).not_to be_nil
+      end
+
+      it 'allows unauthenticated access' do
+        get '/'
+        expect(last_response.status).to eq(200)
+      end
+
+      context 'when HTTP auth is provided' do
+        it 'allows valid credentials' do
+          basic_authorize 'admin', 'admin'
+          get '/'
+          expect(last_response.status).to eq(200)
+        end
+
+        it 'denies invalid credentials' do
+          basic_authorize 'notadmin', 'admin'
+          get '/'
+          expect(last_response.status).to eq(401)
+        end
       end
 
       it 'allows Basic HTTP Auth with admin/admin credentials for ' +

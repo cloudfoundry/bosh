@@ -2,8 +2,6 @@ module Bosh::Director
   module Api
     module Controllers
       class BaseController < Sinatra::Base
-        PUBLIC_URLS = %w(/info)
-
         include ApiHelper
         include Http
         include DnsHelper
@@ -69,6 +67,10 @@ module Bosh::Director
           end
         end
 
+        def always_authenticated?
+          true
+        end
+
         def authorized?
           @auth ||=  Rack::Auth::Basic::Request.new(request.env)
           @auth.provided? && @auth.basic? && @auth.credentials && authenticate(*@auth.credentials)
@@ -79,7 +81,7 @@ module Bosh::Director
             request.env.has_key?(key)
           end
 
-          protected! if auth_provided || !PUBLIC_URLS.include?(request.path)
+          protected! if auth_provided || always_authenticated?
         end
 
         after { headers('Date' => Time.now.rfc822) } # As thin doesn't inject date

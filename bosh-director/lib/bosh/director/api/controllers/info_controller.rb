@@ -3,6 +3,10 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class InfoController < BaseController
+      def always_authenticated?
+        false
+      end
+
       get '/' do
         status = {
           'name' => Config.name,
