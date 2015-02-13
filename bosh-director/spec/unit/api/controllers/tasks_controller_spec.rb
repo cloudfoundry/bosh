@@ -33,10 +33,6 @@ module Bosh::Director
         basic_authorize 'admin', 'admin'
       end
 
-      def login_as(username, password)
-        basic_authorize username, password
-      end
-
       it 'requires auth' do
         get '/'
         expect(last_response.status).to eq(401)
