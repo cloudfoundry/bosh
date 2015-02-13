@@ -6,26 +6,26 @@ module Bosh::Director
     describe Controllers::ResourcesController do
       include Rack::Test::Methods
 
-      let!(:temp_dir) { Dir.mktmpdir}
-
-      before do
+      let(:temp_dir) { Dir.mktmpdir}
+      let(:test_config) do
         blobstore_dir = File.join(temp_dir, 'blobstore')
         FileUtils.mkdir_p(blobstore_dir)
 
-        test_config = Psych.load(spec_asset('test-director-config.yml'))
-        test_config['dir'] = temp_dir
-        test_config['blobstore'] = {
-            'provider' => 'local',
-            'options' => {'blobstore_path' => blobstore_dir}
+        config = Psych.load(spec_asset('test-director-config.yml'))
+        config['dir'] = temp_dir
+        config['blobstore'] = {
+          'provider' => 'local',
+          'options' => {'blobstore_path' => blobstore_dir}
         }
-        test_config['snapshots']['enabled'] = true
-        Config.configure(test_config)
-        @director_app = App.new(Config.load_hash(test_config))
+        config['snapshots']['enabled'] = true
+        config
       end
 
-      after do
-        FileUtils.rm_rf(temp_dir)
-      end
+      let(:director_app) { App.new(Config.load_hash(test_config)) }
+
+      before { director_app }
+
+      after { FileUtils.rm_rf(temp_dir) }
 
       def app
         described_class.new
@@ -94,7 +94,7 @@ module Bosh::Director
           end
 
           it 'can fetch resources from blobstore' do
-            id = @director_app.blobstores.blobstore.create('some data')
+            id = director_app.blobstores.blobstore.create('some data')
             get "/#{id}"
             expect(last_response.status).to eq(200)
             expect(last_response.body).to eq('some data')

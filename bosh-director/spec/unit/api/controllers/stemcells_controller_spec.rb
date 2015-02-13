@@ -7,17 +7,18 @@ module Bosh::Director
 
     subject(:app) { described_class } # "app" is a Rack::Test hook
 
-    let!(:temp_dir) { Dir.mktmpdir}
-
-    before do
+    let(:temp_dir) { Dir.mktmpdir}
+    let(:test_config) do
       config = Psych.load(spec_asset('test-director-config.yml'))
       config['dir'] = temp_dir
       config['blobstore'] = {
         'provider' => 'local',
         'options' => {'blobstore_path' => File.join(temp_dir, 'blobstore')}
       }
-      App.new(Config.load_hash(config))
+      config
     end
+
+    before { App.new(Config.load_hash(test_config)) }
 
     after { FileUtils.rm_rf(temp_dir) }
 

@@ -55,13 +55,13 @@ module Bosh::Director
           end
         end
 
-        def always_authenticated?
-          true
-        end
-
         def authorized?
           @auth ||=  Rack::Auth::Basic::Request.new(request.env)
           @auth.provided? && @auth.basic? && @auth.credentials && authenticate(*@auth.credentials)
+        end
+
+        def always_authenticated?
+          true
         end
 
         before do
