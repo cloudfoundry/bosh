@@ -27,9 +27,7 @@ module Bosh::Director
         FileUtils.rm_rf(temp_dir)
       end
 
-      def app
-        @rack_app ||= described_class.new
-      end
+      let(:app) { described_class }
 
       it 'requires auth' do
         delete '/'

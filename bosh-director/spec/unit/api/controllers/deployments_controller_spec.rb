@@ -29,9 +29,7 @@ module Bosh::Director
         FileUtils.rm_rf(temp_dir)
       end
 
-      def app
-        @rack_app ||= described_class
-      end
+      let(:app) { described_class }
 
       it 'sets the date header' do
         get '/'
