@@ -41,6 +41,12 @@ module Bosh::Cli::Versions
           expect(File.exist?(dest_path_1)).to be(true)
           expect(File.exist?(dest_path_2)).to be(true)
         end
+
+        it 'creates artifacts directory' do
+          FileUtils.rm_rf(storage_dir)
+          dest_path = storage.put_file('fake-sha-1', src_files[0])
+          expect(dest_path).to eq(File.join(storage_dir, 'fake-sha-1'))
+        end
       end
 
       context 'when source file does not exist' do

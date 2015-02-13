@@ -14,6 +14,7 @@ module Bosh::Cli::Versions
       unless File.exist?(origin_file_path)
         raise "Trying to store non-existant file `#{origin_file_path}' with sha `#{sha}'"
       end
+      FileUtils.mkdir_p(File.dirname(destination))
       FileUtils.cp(origin_file_path, destination, :preserve => true)
 
       File.expand_path(destination)
