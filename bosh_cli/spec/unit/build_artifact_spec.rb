@@ -173,4 +173,37 @@ describe Bosh::Cli::BuildArtifact, 'dev build' do
       expect(artifact.dev_artifact?).to eq(false)
     end
   end
+
+  context 'when the resource is a Job' do
+    let(:resource) { Bosh::Cli::Resources::Job.new(release_dir.join(base), release_dir.path, made_packages) }
+    let(:reference_fingerprint) { '3d8c0d4265ec501bed0398c0dc231b3b74a64ad4' }
+    let(:base) { 'jobs/foo-job' }
+    let(:spec) do
+      {
+        'name' => 'foo-job',
+        'packages' => spec_packages,
+        'templates' => spec_templates,
+      }
+    end
+    let(:made_packages) { ['foo', 'bar'] }
+    let(:file_templates) { ['a.conf', 'b.yml'] }
+    let(:spec_packages) { ['foo', 'bar'] }
+    let(:spec_templates) { self_zip('a.conf', 'b.yml') }
+
+    before do
+      release_dir.add_file(base, 'spec', spec.to_yaml)
+      release_dir.add_file(base, 'monit')
+      release_dir.add_files("#{base}/templates", file_templates)
+    end
+
+    it 'does something' do
+      expect(Bosh::Cli::BuildArtifact.make_fingerprint(resource)).to eq(reference_fingerprint)
+    end
+  end
+
+  def self_zip(*keys)
+    keys.inject({}) do |map, key|
+      map.merge({key => key})
+    end
+  end
 end

@@ -5,13 +5,13 @@ module Bosh::Cli::Command::Release
     subject(:command) { CreateRelease.new }
 
     describe '#create' do
-      let(:interactive) { true }
       let(:release) do
         instance_double(
           'Bosh::Cli::Release',
           dev_name: configured_dev_name,
           final_name: configured_final_name,
-          blobstore: nil
+          blobstore: nil,
+          dir: release_source.path,
         )
       end
       let(:question) { instance_double('HighLine::Question') }
@@ -20,8 +20,21 @@ module Bosh::Cli::Command::Release
       let(:release_builder) { instance_double('Bosh::Cli::ReleaseBuilder') }
       let(:next_dev_version) { '0+dev.1' }
       let(:previous_manifest_path) { nil }
-      let(:next_manifest_path) { '/fake/manifest/path.yml' }
-      let(:next_tarball_path) { '/fake/manifest/path.yml' }
+      let(:next_manifest_path) do
+        release_source.join(
+          'dev_releases',
+          configured_dev_name,
+          "#{configured_dev_name}-#{next_dev_version}.yml"
+        )
+      end
+
+      let(:next_tarball_path) do
+        release_source.join(
+          'dev_releases',
+          configured_dev_name,
+          "#{configured_dev_name}-#{next_dev_version}.tgz"
+        )
+      end
 
       let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
       let(:release_options) do
@@ -36,6 +49,12 @@ module Bosh::Cli::Command::Release
       let(:package) {
         Bosh::Cli::Resources::Package.new(release_source.join('packages/package_name'), release_source.path)
       }
+      let(:license) {
+        Bosh::Cli::Resources::License.new(release_source.path)
+      }
+      let(:job) {
+        Bosh::Cli::Resources::Job.new(release_source.join('jobs/job_name'), release_source.path, [package.name])
+      }
       let(:package_spec) do
         {
           'name' => 'package_name',
@@ -47,6 +66,20 @@ module Bosh::Cli::Command::Release
       let(:matched_files) { ['lib/1.rb', 'lib/2.rb', 'README.2', 'README.md'] }
       let(:archive_repository_provider) { Bosh::Cli::ArchiveRepositoryProvider.new(archive_dir, cache_dir, blobstore) }
       let(:archive_builder) { Bosh::Cli::ArchiveBuilder.new(archive_repository_provider, release_options) }
+      let(:job_spec) do
+        {
+          'name' => 'job_name',
+          'packages' => ['package_name'],
+          'templates' => { 'a.conf' => 'a.conf' },
+        }
+      end
+      let(:job_templates) { ['a.conf'] }
+
+      before do
+        release_source.add_file('jobs/job_name', 'spec', job_spec.to_yaml)
+        release_source.add_file('jobs/job_name', 'monit')
+        release_source.add_files('jobs/job_name/templates', job_templates)
+      end
 
       after do
         release_source.cleanup
@@ -58,23 +91,15 @@ module Bosh::Cli::Command::Release
 
         matched_files.each { |f| release_source.add_file('src', f, "contents of #{f}") }
 
-        allow(command).to receive(:interactive?).and_return(interactive)
         allow(command).to receive(:check_if_release_dir)
         allow(command).to receive(:dirty_blob_check)
         allow(command).to receive(:dirty_state?).and_return(false)
 
         allow(Bosh::Cli::Resources::Package).to receive(:discover).and_return([package])
+        allow(Bosh::Cli::Resources::License).to receive(:discover).and_return([license])
+        allow(Bosh::Cli::Resources::Job).to receive(:discover).and_return([job])
         allow(Bosh::Cli::ArchiveBuilder).to receive(:new).and_return(archive_builder)
 
-        allow(command).to receive(:build_jobs)
-
-        allow(Bosh::Cli::ReleaseBuilder).to receive(:new).and_return(release_builder)
-        allow(release_builder).to receive(:build)
-        allow(release_builder).to receive(:version).and_return(next_dev_version)
-        allow(release_builder).to receive(:manifest_path).and_return(next_manifest_path)
-        allow(release_builder).to receive(:tarball_path).and_return(next_tarball_path)
-
-        allow(command).to receive(:show_summary)
         allow(command).to receive(:release).and_return(release)
         allow(release).to receive(:latest_release_filename=)
         allow(release).to receive(:save_config)
@@ -120,13 +145,41 @@ module Bosh::Cli::Command::Release
 
           Building jobs
           -------------
+          Building job_name...
+            No artifact found for job_name
+            Generating...
+            Generated version '648d287ab9cc50f39e24dd9a4f747e2dc7567fee'
+
+
+          Building license
+          ----------------
 
           Building release
           ----------------
 
           Release summary
           ---------------
-        OUTPUT
+          Packages
+          +--------------+------------------------------------------+-------------+
+          | Name         | Version                                  | Notes       |
+          +--------------+------------------------------------------+-------------+
+          | package_name | 431818cc23fc69b0b1f0e267f24bb5450f012295 | new version |
+          +--------------+------------------------------------------+-------------+
+
+          Jobs
+          +----------+------------------------------------------+-------------+
+          | Name     | Version                                  | Notes       |
+          +----------+------------------------------------------+-------------+
+          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee | new version |
+          +----------+------------------------------------------+-------------+
+
+          Jobs affected by changes in this release
+          +----------+------------------------------------------+
+          | Name     | Version                                  |
+          +----------+------------------------------------------+
+          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee |
+          +----------+------------------------------------------+
+          OUTPUT
 
         expect(Bosh::Cli::Config.output.string.strip).to eq(output.strip)
       end
@@ -155,6 +208,94 @@ module Bosh::Cli::Command::Release
         expect(command).to receive(:say).with("Release tarball (#{pretty_size}): #{next_tarball_path}").once.ordered
 
         command.create
+      end
+
+      context 'when release has license' do
+        before { release_source.add_file(nil, 'LICENSE') }
+
+        it 'prints status headers' do
+          allow(command).to receive(:cache_dir).and_return('fake-cache-dir')
+
+          command.create
+
+          output = strip_heredoc(<<-OUTPUT)
+          Building DEV release
+          --------------------
+          Release artifact cache: fake-cache-dir
+
+          Building packages
+          -----------------
+          Building package_name...
+            No artifact found for package_name
+            Generating...
+            Generated version '431818cc23fc69b0b1f0e267f24bb5450f012295'
+
+
+          Resolving dependencies
+          ----------------------
+          Dependencies resolved, correct build order is:
+          - package_name
+
+
+          Building jobs
+          -------------
+          Building job_name...
+            No artifact found for job_name
+            Generating...
+            Generated version '648d287ab9cc50f39e24dd9a4f747e2dc7567fee'
+
+
+          Building license
+          ----------------
+          Building license...
+            No artifact found for license
+            Generating...
+            Generated version 'c2de71833de42885de9b5fc113b43876c8316a8f'
+
+
+          Building release
+          ----------------
+
+          Release summary
+          ---------------
+          License
+          +---------+------------------------------------------+-------------+
+          | Name    | Version                                  | Notes       |
+          +---------+------------------------------------------+-------------+
+          | license | c2de71833de42885de9b5fc113b43876c8316a8f | new version |
+          +---------+------------------------------------------+-------------+
+
+          Packages
+          +--------------+------------------------------------------+-------------+
+          | Name         | Version                                  | Notes       |
+          +--------------+------------------------------------------+-------------+
+          | package_name | 431818cc23fc69b0b1f0e267f24bb5450f012295 | new version |
+          +--------------+------------------------------------------+-------------+
+
+          Jobs
+          +----------+------------------------------------------+-------------+
+          | Name     | Version                                  | Notes       |
+          +----------+------------------------------------------+-------------+
+          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee | new version |
+          +----------+------------------------------------------+-------------+
+
+          Jobs affected by changes in this release
+          +----------+------------------------------------------+
+          | Name     | Version                                  |
+          +----------+------------------------------------------+
+          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee |
+          +----------+------------------------------------------+
+          OUTPUT
+
+          expect(Bosh::Cli::Config.output.string.strip).to eq(output.strip)
+        end
+
+        it 'builds release with the license' do
+          command.create
+          license_version_index = Bosh::Cli::Versions::VersionsIndex.new(release_source.join('.dev_builds', 'license'))
+          license_sha1 = license_version_index['c2de71833de42885de9b5fc113b43876c8316a8f']['sha1']
+          expect(release_source).to have_artifact(license_sha1)
+        end
       end
 
       context 'when a final name is configured' do
@@ -191,9 +332,12 @@ module Bosh::Cli::Command::Release
         end
 
         it 'builds release with the specified name' do
-          artifact = archive_builder.build(package)
-          expect(archive_builder).to receive(:build).and_return(artifact)
-          expect(command).to receive(:build_release).with(true, nil, nil, true, [artifact], provided_name, nil)
+          package_artifact = archive_builder.build(package)
+          job_artifact = archive_builder.build(job)
+          expect(archive_builder).to receive(:build).and_return(package_artifact, job_artifact)
+          expect(command).to receive(:build_release)
+            .with([job_artifact], true, [package_artifact], [], provided_name, nil)
+            .and_call_original
 
           command.create
         end
@@ -208,17 +352,23 @@ module Bosh::Cli::Command::Release
 
       context 'when a version is provided with --version' do
         it 'builds release with the specified version' do
-          artifact = archive_builder.build(package)
-          expect(archive_builder).to receive(:build).and_return(artifact)
-          expect(command).to receive(:build_release).with(true, nil, nil, true, [artifact], configured_dev_name, '1.0.1')
+          package_artifact = archive_builder.build(package)
+          job_artifact = archive_builder.build(job)
+          expect(archive_builder).to receive(:build).and_return(package_artifact, job_artifact)
+          expect(command).to receive(:build_release)
+            .with([job_artifact], true, [package_artifact], [], configured_final_name, '1.0.1')
+            .and_call_original
+
           command.options[:version] = '1.0.1'
+          command.options[:final] = true
+          command.options[:non_interactive] = true
           command.create
         end
       end
 
       context 'dev release' do
         context 'interactive' do
-          let(:interactive) { true }
+          before { command.options[:non_interactive] = false }
 
           context 'when final release name is not set' do
             it 'development release name prompt should not have any default' do
@@ -258,7 +408,7 @@ module Bosh::Cli::Command::Release
         end
 
         context 'non-interactive' do
-          let(:interactive) { false }
+          before { command.options[:non_interactive] = true }
 
           context 'when final config does not include a final release name' do
             it 'development release name should default to bosh-release' do
@@ -282,30 +432,33 @@ module Bosh::Cli::Command::Release
         end
       end
 
-      context 'when a release version is provided' do
-        context 'and is valid' do
-          before do
-            command.options[:version] = '1'
-          end
-
-          it 'does not print error message' do
-            expect(command).to_not receive(:err)
-
-            command.create
-          end
+      context 'final release' do
+        before do
+          command.options[:final] = true
+          command.options[:non_interactive] = true
         end
 
-        context 'and is not valid' do
-          before do
-            command.options[:version] = '1+1+1+1'
+        context 'when a release version is provided' do
+          context 'and is valid' do
+            before { command.options[:version] = '1' }
+
+            it 'does not print error message' do
+              expect(command).to_not receive(:err)
+
+              command.create
+            end
           end
 
-          it 'prints the error message' do
-            expected_error = 'Invalid version: `1+1+1+1\'. ' +
-              'Please specify a valid version (ex: 1.0.0 or 1.0-beta.2+dev.10).'
-            expect(command).to receive(:err).with(expected_error)
+          context 'and is not valid' do
+            before { command.options[:version] = '1+1+1+1' }
 
-            command.create
+            it 'prints the error message' do
+              expected_error = "Invalid version: '1+1+1+1'. " +
+                'Please specify a valid version (ex: 1.0.0 or 1.0-beta.2+dev.10).'
+              expect(command).to receive(:err).with(expected_error)
+
+              command.create
+            end
           end
         end
       end

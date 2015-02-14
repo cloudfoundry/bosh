@@ -2,19 +2,30 @@ module Bosh::Cli
   class ReleaseBuilder
     include Bosh::Cli::DependencyHelper
 
-    attr_reader :release, :packages, :jobs, :name, :version, :build_dir, :commit_hash, :uncommitted_changes
+    attr_reader(
+      :release,
+      :license_artifact,
+      :packages,
+      :jobs,
+      :name,
+      :version,
+      :build_dir,
+      :commit_hash,
+      :uncommitted_changes
+    )
 
     # @param [Bosh::Cli::Release] release Current release
     # @param [Array<Bosh::Cli::BuildArtifact>] package_artifacts Built packages
     # @param [Array<Bosh::Cli::BuildArtifact>] job_artifacts Built jobs
     # @param [Hash] options Release build options
-    def initialize(release, package_artifacts, job_artifacts, name, options = { })
+    def initialize(release, package_artifacts, job_artifacts, license_artifact, name, options = { })
       @release = release
       @final = options.has_key?(:final) ? !!options[:final] : false
       @commit_hash = options.fetch(:commit_hash, '00000000')
       @uncommitted_changes = options.fetch(:uncommitted_changes, true)
       @packages = package_artifacts # todo
       @jobs = job_artifacts # todo
+      @license_artifact = license_artifact
       @name = name
       raise 'Release name is blank' if name.blank?
 
@@ -96,12 +107,21 @@ module Bosh::Cli
           'dependencies' => build_artifact.dependencies,
         }
       end
+
       manifest['jobs'] = jobs.map do |build_artifact|
         {
           'name' => build_artifact.name,
           'version' => build_artifact.version,
           'fingerprint' => build_artifact.fingerprint,
           'sha1' => build_artifact.sha1,
+        }
+      end
+
+      unless @license_artifact.nil?
+        manifest['license'] = {
+          'version' => @license_artifact.version,
+          'fingerprint' => @license_artifact.fingerprint,
+          'sha1' => @license_artifact.sha1,
         }
       end
 
@@ -136,13 +156,9 @@ module Bosh::Cli
       generate_manifest unless @manifest_generated
       return if @release_storage.has_file?(release_filename)
 
-      header("Copying jobs...")
       copy_jobs
-      nl
-
-      header("Copying packages...")
       copy_packages
-      nl
+      copy_license
 
       FileUtils.mkdir_p(File.dirname(tarball_path))
 
@@ -180,26 +196,37 @@ module Bosh::Cli
 
     # Copies packages into release
     def copy_packages
+      header("Copying packages...")
       packages.each do |package_artifact|
-        name = package_artifact.name
-        tarball_path = package_artifact.tarball_path
-        say("%-40s %s" % [name.make_green, pretty_size(tarball_path)])
-        FileUtils.cp(tarball_path,
-          File.join(build_dir, "packages", "#{name}.tgz"),
-          :preserve => true)
+        copy_artifact(package_artifact, 'packages')
       end
+      nl
     end
 
     # Copies jobs into release todo DRY vs copy_packages
     def copy_jobs
+      header("Copying jobs...")
       jobs.each do |job_artifact|
-        name = job_artifact.name
-        tarball_path = job_artifact.tarball_path
-        say("%-40s %s" % [name.make_green, pretty_size(tarball_path)])
-        FileUtils.cp(tarball_path,
-          File.join(build_dir, "jobs", "#{name}.tgz"),
-          :preserve => true)
+        copy_artifact(job_artifact, 'jobs')
       end
+      nl
+    end
+
+    def copy_license
+      return if @license_artifact.nil?
+
+      header("Copying license...")
+      copy_artifact(@license_artifact)
+      nl
+    end
+
+    def copy_artifact(artifact, dest = nil)
+      name = artifact.name
+      tarball_path = artifact.tarball_path
+      say("%-40s %s" % [name.make_green, pretty_size(tarball_path)])
+      FileUtils.cp(tarball_path,
+        File.join([build_dir, dest, "#{name}.tgz"].compact),
+        :preserve => true)
     end
 
     def assign_version

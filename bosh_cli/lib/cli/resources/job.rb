@@ -28,6 +28,10 @@ module Bosh::Cli::Resources
       spec['name']
     end
 
+    def additional_fingerprints
+      []
+    end
+
     def dependencies
       package_dependencies #TODO: should this be packages or package_dependencies?
     end
@@ -83,10 +87,6 @@ module Bosh::Cli::Resources
       unless monit_files.size > 0
         raise Bosh::Cli::InvalidJob, "Cannot find monit file for '#{name}'"
       end
-    end
-
-    def additional_fingerprints
-      []
     end
 
     def format_fingerprint(digest, filename, name, file_mode)

@@ -11,6 +11,10 @@ module Bosh::Cli
     let(:job_tarball) { Tempfile.new(['job-tarball', 'tgz']) }
     let(:job_artifact) { Bosh::Cli::BuildArtifact.new('job-name', 'the-job-fingerprint', job_tarball, 'job-sha', nil, false, false) }
     let(:job_artifacts) { [job_artifact] }
+
+    let(:license_tarball) { Tempfile.new(['license-tarball', 'tgz']) }
+    let(:license_artifact) { Bosh::Cli::BuildArtifact.new('license', 'the-license-fingerprint', license_tarball, 'license-sha', nil, false, false) }
+
     let(:release_source) { Dir.mktmpdir }
 
     before do
@@ -19,7 +23,7 @@ module Bosh::Cli
     end
 
     def new_builder(options = {})
-      ReleaseBuilder.new(@release, package_artifacts, job_artifacts, release_name, options)
+      ReleaseBuilder.new(@release, package_artifacts, job_artifacts, license_artifact, release_name, options)
     end
 
     context 'when there is a final release' do
@@ -100,7 +104,7 @@ module Bosh::Cli
       builder = new_builder
       builder.build
       tarball_files = `tar tzf #{builder.tarball_path}`.chomp.split(/\n/)
-      expect(tarball_files).to include('./jobs/job-name.tgz', './packages/package-name.tgz')
+      expect(tarball_files).to include('./jobs/job-name.tgz', './packages/package-name.tgz', './license.tgz')
     end
 
     it 'should include git hash and uncommitted change state in manifest' do
@@ -148,7 +152,7 @@ module Bosh::Cli
         instance_double(Bosh::Cli::BuildArtifact, name: 'zb', new_version?: true),
       ]
 
-      builder = ReleaseBuilder.new(@release, package_artifacts, job_artifacts, release_name)
+      builder = ReleaseBuilder.new(@release, package_artifacts, job_artifacts, license_artifact, release_name)
 
       expect(builder.affected_jobs).to eq(job_artifacts[0...-1]) # exclude last job
     end
@@ -173,6 +177,11 @@ module Bosh::Cli
               'sha1' => 'job-sha',
               'fingerprint' => 'the-job-fingerprint',
             }])
+      expect(manifest['license']).to eq({
+              'version' => 'the-license-fingerprint',
+              'sha1' => 'license-sha',
+              'fingerprint' => 'the-license-fingerprint',
+      })
     end
 
     context 'when version options is passed into initializer' do

@@ -94,6 +94,8 @@ module Bosh::Cli
 
       sha1 = BuildArtifact.checksum(tarball_path)
       BuildArtifact.new(resource.name, fingerprint, tarball_path, sha1, resource.dependencies, true, !final?)
+    ensure
+      cleanup
     end
 
     def file_checksum(path)
@@ -114,6 +116,10 @@ module Bosh::Cli
       Dir::Tmpname.create([prefix, suffix], dir) do |tmpname, _, _|
         File.open(tmpname, File::RDWR|File::CREAT|File::EXCL).close
       end
+    end
+
+    def cleanup
+      FileUtils.rm_rf(staging_dir)
     end
   end
 end

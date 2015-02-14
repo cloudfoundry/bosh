@@ -135,6 +135,19 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
         expect(directory_listing(explosion)).to contain_exactly("README.2", "README.md", "lib/1.rb", "lib/2.rb")
       end
 
+      it 'cleans staging directory' do
+        builder.build(resource)
+        release_source.remove_file('src', 'lib/1.rb')
+        second_resource = Bosh::Cli::Resources::Package.new(
+          release_source.join(resource_base),
+          release_source.path
+        )
+
+        artifact = builder.build(second_resource)
+        explosion = open_archive(artifact.tarball_path)
+        expect(directory_listing(explosion)).to_not include('lib/1.rb')
+      end
+
       it 'uploads the tarball' do
         expect(blobstore).to receive(:create) do |file|
           expect(file).to be_a(File)
