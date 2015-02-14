@@ -45,8 +45,6 @@ module Bosh::Cli::Resources
     end
 
     def files
-      validate!
-
       files = (templates_files + monit_files).map { |absolute_path| [absolute_path, relative_path(absolute_path)] }
       files << [File.join(job_base, 'spec'), 'job.MF']
       files

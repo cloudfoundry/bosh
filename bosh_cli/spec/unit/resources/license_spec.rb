@@ -64,7 +64,7 @@ describe Bosh::Cli::Resources::License, 'dev build' do
   
       it 'raises an exception' do
         expect { license.validate! }.to raise_error(Bosh::Cli::MissingLicense,
-          "Does not contain a LICENSE or NOTICE under #{release_source.path}")
+          "Missing LICENSE or NOTICE in #{release_source.path}")
       end
     end
   end

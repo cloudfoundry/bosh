@@ -176,13 +176,5 @@ describe Bosh::Cli::Resources::Package, 'dev build' do
         expect(package.files.map { |entry| entry[1] }).to contain_exactly(*(src_files - spec_excluded_files))
       end
     end
-
-    context 'when the Package is invalid' do
-      let(:name) { 'mismatch' }
-
-      it 'raises' do
-        expect { package.files }.to raise_error(Bosh::Cli::InvalidPackage)
-      end
-    end
   end
 end

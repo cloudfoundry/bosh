@@ -129,6 +129,12 @@ module Bosh::Cli::Command::Release
           --------------------
           Release artifact cache: fake-cache-dir
 
+          Building license
+          ----------------
+          Building license...
+            Warning: Missing LICENSE or NOTICE in #{release_source.path}
+
+
           Building packages
           -----------------
           Building package_name...
@@ -150,9 +156,6 @@ module Bosh::Cli::Command::Release
             Generating...
             Generated version '648d287ab9cc50f39e24dd9a4f747e2dc7567fee'
 
-
-          Building license
-          ----------------
 
           Building release
           ----------------
@@ -211,7 +214,7 @@ module Bosh::Cli::Command::Release
       end
 
       context 'when release has license' do
-        before { release_source.add_file(nil, 'LICENSE') }
+        before { release_source.add_file(nil, 'LICENSE', 'fake-license') }
 
         it 'prints status headers' do
           allow(command).to receive(:cache_dir).and_return('fake-cache-dir')
@@ -222,6 +225,14 @@ module Bosh::Cli::Command::Release
           Building DEV release
           --------------------
           Release artifact cache: fake-cache-dir
+
+          Building license
+          ----------------
+          Building license...
+            No artifact found for license
+            Generating...
+            Generated version 'f47faccb943d1df02c4ed75fb4fd488add35b003'
+
 
           Building packages
           -----------------
@@ -245,14 +256,6 @@ module Bosh::Cli::Command::Release
             Generated version '648d287ab9cc50f39e24dd9a4f747e2dc7567fee'
 
 
-          Building license
-          ----------------
-          Building license...
-            No artifact found for license
-            Generating...
-            Generated version 'c2de71833de42885de9b5fc113b43876c8316a8f'
-
-
           Building release
           ----------------
 
@@ -262,7 +265,7 @@ module Bosh::Cli::Command::Release
           +---------+------------------------------------------+-------------+
           | Name    | Version                                  | Notes       |
           +---------+------------------------------------------+-------------+
-          | license | c2de71833de42885de9b5fc113b43876c8316a8f | new version |
+          | license | f47faccb943d1df02c4ed75fb4fd488add35b003 | new version |
           +---------+------------------------------------------+-------------+
 
           Packages
@@ -293,7 +296,7 @@ module Bosh::Cli::Command::Release
         it 'builds release with the license' do
           command.create
           license_version_index = Bosh::Cli::Versions::VersionsIndex.new(release_source.join('.dev_builds', 'license'))
-          license_sha1 = license_version_index['c2de71833de42885de9b5fc113b43876c8316a8f']['sha1']
+          license_sha1 = license_version_index['f47faccb943d1df02c4ed75fb4fd488add35b003']['sha1']
           expect(release_source).to have_artifact(license_sha1)
         end
       end
@@ -334,7 +337,7 @@ module Bosh::Cli::Command::Release
         it 'builds release with the specified name' do
           package_artifact = archive_builder.build(package)
           job_artifact = archive_builder.build(job)
-          expect(archive_builder).to receive(:build).and_return(package_artifact, job_artifact)
+          expect(archive_builder).to receive(:build).and_return(nil, package_artifact, job_artifact)
           expect(command).to receive(:build_release)
             .with([job_artifact], true, [package_artifact], [], provided_name, nil)
             .and_call_original
@@ -354,7 +357,7 @@ module Bosh::Cli::Command::Release
         it 'builds release with the specified version' do
           package_artifact = archive_builder.build(package)
           job_artifact = archive_builder.build(job)
-          expect(archive_builder).to receive(:build).and_return(package_artifact, job_artifact)
+          expect(archive_builder).to receive(:build).and_return(nil, package_artifact, job_artifact)
           expect(command).to receive(:build_release)
             .with([job_artifact], true, [package_artifact], [], configured_final_name, '1.0.1')
             .and_call_original

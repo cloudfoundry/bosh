@@ -29,7 +29,7 @@ module Bosh::Cli::Resources
 
     def validate!
       if files.empty?
-        raise Bosh::Cli::MissingLicense, "Does not contain a LICENSE or NOTICE under #{release_base.to_s}"
+        raise Bosh::Cli::MissingLicense, "Missing LICENSE or NOTICE in #{release_base.to_s}"
       end
     end
 

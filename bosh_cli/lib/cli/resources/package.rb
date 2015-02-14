@@ -47,7 +47,7 @@ module Bosh::Cli::Resources
     end
 
     def files
-      validate!
+      resolve_globs
       known_files = {}
 
       files = []

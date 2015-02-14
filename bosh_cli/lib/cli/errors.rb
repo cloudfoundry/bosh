@@ -34,6 +34,7 @@ module Bosh::Cli
 
   class InvalidPackage         < CliError; error_code(500); end
   class InvalidJob             < CliError; error_code(501); end
+  class MissingLicense         < CliError; error_code(502); end
   class InvalidRelease         < CliError; error_code(503); end
   class MissingDependency      < CliError; error_code(504); end
   class CircularDependency     < CliError; error_code(505); end

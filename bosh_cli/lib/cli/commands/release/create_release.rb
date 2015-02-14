@@ -84,14 +84,14 @@ module Bosh::Cli::Command
 
         say("Release artifact cache: #{cache_dir}")
 
+        header('Building license')
+        license_artifacts = build_licenses
+
         header('Building packages')
         package_artifacts = build_packages
 
         header('Building jobs')
         job_artifacts = build_jobs(package_artifacts.map { |artifact| artifact.name })
-
-        header('Building license')
-        license_artifacts = build_licenses
 
         header('Building release')
         release_builder = build_release(job_artifacts, manifest_only, package_artifacts, license_artifacts, name, version)
@@ -201,12 +201,10 @@ module Bosh::Cli::Command
       def build_licenses
         licenses = Bosh::Cli::Resources::License.discover(work_dir)
         artifacts = licenses.map do |license|
-          if license.files.length > 0
-            say("Building #{'license'.make_green}...")
-            artifact = archive_builder.build(license)
-            nl
-            artifact
-          end
+          say("Building #{'license'.make_green}...")
+          artifact = archive_builder.build(license)
+          nl
+          artifact
         end.compact
 
         artifacts

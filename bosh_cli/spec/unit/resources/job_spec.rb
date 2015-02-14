@@ -215,14 +215,6 @@ describe Bosh::Cli::Resources::Job, 'dev build' do
     it 'includes monit file entries' do
       expect(job.files).to include([release_source.join(base, 'monit'), 'monit'])
     end
-
-    context 'when the Job is invalid' do
-      let(:name) { nil }
-
-      it 'raises' do
-        expect { job.files }.to raise_error(Bosh::Cli::InvalidJob)
-      end
-    end
   end
 
   def self_zip(*keys)
