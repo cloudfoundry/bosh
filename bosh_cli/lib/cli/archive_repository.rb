@@ -49,7 +49,7 @@ module Bosh::Cli
       end
 
     rescue Bosh::Blobstore::NotFound
-      raise BlobstoreError, "Final version of '#{name}' not found in blobstore"
+      raise BlobstoreError, "Final version of '#{resource.name}' not found in blobstore: #{e}"
     rescue Bosh::Blobstore::BlobstoreError => e
       raise BlobstoreError, "Blobstore error: #{e}"
     end
