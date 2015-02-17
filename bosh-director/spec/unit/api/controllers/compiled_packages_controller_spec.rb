@@ -8,7 +8,8 @@ module Bosh::Director
   describe Api::Controllers::CompiledPackagesController do
     include Rack::Test::Methods
 
-    subject(:app) { described_class } # "app" is a Rack::Test hook
+    let(:identity_provider) { Api::LocalIdentityProvider.new(Api::UserManager.new) }
+    subject(:app) { described_class.new(identity_provider, Api::CompiledPackageGroupManager.new) }
 
     before { allow(Api::ResourceManager).to receive(:new) }
 

@@ -6,8 +6,9 @@ module Bosh::Director
     describe Controllers::ReleasesController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class }
+      subject(:app) { described_class.new(identity_provider) }
 
+      let(:identity_provider) { Bosh::Director::Api::LocalIdentityProvider.new(Bosh::Director::Api::UserManager.new) }
       let(:temp_dir) { Dir.mktmpdir}
       let(:test_config) do
         blobstore_dir = File.join(temp_dir, 'blobstore')
@@ -26,14 +27,6 @@ module Bosh::Director
       before { App.new(Config.load_hash(test_config)) }
 
       after { FileUtils.rm_rf(temp_dir) }
-
-      def login_as_admin
-        basic_authorize 'admin', 'admin'
-      end
-
-      def login_as(username, password)
-        basic_authorize username, password
-      end
 
       it 'requires auth' do
         get '/'

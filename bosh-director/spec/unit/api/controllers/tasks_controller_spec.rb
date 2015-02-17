@@ -6,8 +6,9 @@ module Bosh::Director
     describe Controllers::TasksController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class }
+      subject(:app) { described_class.new(identity_provider) }
 
+      let(:identity_provider) { Bosh::Director::Api::LocalIdentityProvider.new(Bosh::Director::Api::UserManager.new) }
       let(:temp_dir) { Dir.mktmpdir}
       let(:test_config) do
         blobstore_dir = File.join(temp_dir, 'blobstore')
@@ -27,11 +28,6 @@ module Bosh::Director
 
       after { FileUtils.rm_rf(temp_dir) }
 
-
-      def login_as_admin
-        basic_authorize 'admin', 'admin'
-      end
-
       it 'requires auth' do
         get '/'
         expect(last_response.status).to eq(401)
@@ -50,7 +46,7 @@ module Bosh::Director
       end
 
       describe 'API calls' do
-        before(:each) { login_as_admin }
+        before(:each) { basic_authorize 'admin', 'admin' }
 
         describe 'GET /' do
           context "verbose" do

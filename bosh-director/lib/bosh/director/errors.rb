@@ -4,6 +4,7 @@ module Bosh::Director
   include Api::Http
 
   class ProblemHandlerError < StandardError; end
+  class AuthenticationError < StandardError; end
 
   # DirectorError is a generic exception for most of the errors originated
   # in BOSH Director.

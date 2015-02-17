@@ -23,81 +23,58 @@ module Bosh::Director
 
       let(:director_app) { App.new(Config.load_hash(test_config)) }
 
-      before { director_app }
-
       after { FileUtils.rm_rf(temp_dir) }
 
-      def app
-        described_class.new
-      end
+      let(:existing_resource_id) { director_app.blobstores.blobstore.create('some data') }
+      let(:resource_manager) { ResourceManager.new(director_app.blobstores.blobstore) }
+      let(:identity_provider) { LocalIdentityProvider.new(UserManager.new) }
 
-      def login_as_admin
-        basic_authorize 'admin', 'admin'
-      end
-
-      def login_as(username, password)
-        basic_authorize username, password
-      end
+      subject(:app) { described_class.new(identity_provider, resource_manager) }
 
       it 'requires auth' do
-        get '/'
+        get "/#{existing_resource_id}"
         expect(last_response.status).to eq(401)
       end
 
       it 'sets the date header' do
-        get '/'
+        get "/#{existing_resource_id}"
         expect(last_response.headers['Date']).not_to be_nil
       end
 
-      it 'allows Basic HTTP Auth with admin/admin credentials for ' +
-             "test purposes (even though user doesn't exist)" do
-        basic_authorize 'admin', 'admin'
-        get '/'
-        expect(last_response.status).to eq(404)
-      end
+      context 'when authorized' do
+        before(:each) { basic_authorize 'admin', 'admin' }
 
-      context 'when serving resources from temp' do
-        let(:resouce_manager) { instance_double('Bosh::Director::Api::ResourceManager') }
-        let(:tmp_file) { File.join(Dir.tmpdir, "resource-#{SecureRandom.uuid}") }
-
-        def app
-          allow(ResourceManager).to receive(:new).and_return(resouce_manager)
-          described_class.new
+        it '404 on missing resource' do
+          get '/missing_resource'
+          expect(last_response.status).to eq(404)
         end
 
-        before do
-          File.open(tmp_file, 'w') do |f|
-            f.write('some data')
-          end
-
-          FileUtils.touch(tmp_file)
-        end
-
-        it 'cleans up temp file after serving it' do
-          login_as_admin
-          expect(resouce_manager).to receive(:get_resource_path).with('deadbeef').and_return(tmp_file)
-
-          expect(File.exists?(tmp_file)).to be(true)
-          get '/deadbeef'
+        it 'can fetch resources from blobstore' do
+          get "/#{existing_resource_id}"
+          expect(last_response.status).to eq(200)
           expect(last_response.body).to eq('some data')
-          expect(File.exists?(tmp_file)).to be(false)
         end
-      end
 
-      describe 'API calls' do
-        before(:each) { login_as_admin }
+        context 'when serving resources from temp' do
+          let(:resource_manager) { instance_double('Bosh::Director::Api::ResourceManager') }
+          let(:tmp_file) { File.join(Dir.tmpdir, "resource-#{SecureRandom.uuid}") }
 
-        describe 'resources' do
-          it '404 on missing resource' do
-            get '/missing_resource'
-            expect(last_response.status).to eq(404)
+          before do
+            File.open(tmp_file, 'w') do |f|
+              f.write('some data')
+            end
+
+            FileUtils.touch(tmp_file)
           end
 
-          it 'can fetch resources from blobstore' do
-            id = director_app.blobstores.blobstore.create('some data')
-            get "/#{id}"
-            expect(last_response.status).to eq(200)
+          it 'cleans up temp file after serving it' do
+            basic_authorize 'admin', 'admin'
+            expect(resource_manager).to receive(:get_resource_path).with('deadbeef').and_return(tmp_file)
+
+            expect(File.exists?(tmp_file)).to be(true)
+            get '/deadbeef'
             expect(last_response.body).to eq('some data')
+            expect(File.exists?(tmp_file)).to be(false)
           end
         end
       end

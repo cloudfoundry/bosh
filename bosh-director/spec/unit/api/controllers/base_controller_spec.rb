@@ -1,82 +1,90 @@
 require 'spec_helper'
 require 'rack/test'
 
-module Bosh::Director
-  module Api
-    module Controllers
-      class TestController < BaseController
-        get '/test_route' do
-          return 'Success'
+module Bosh
+  module Director
+    module Api
+      module Controllers
+        class TestController < BaseController
+          def initialize(identity_provider, always_authenticated=nil)
+            super(identity_provider)
+            @always_authenticated_override = always_authenticated
+          end
+          get '/test_route' do
+            "Success with: #{@user || 'No user'}"
+          end
+
+          def always_authenticated?
+            @always_authenticated_override.nil? ? super : @always_authenticated_override
+          end
         end
-      end
 
-      class TestNeverAuthenticatingController < TestController
-        def always_authenticated?
-          false
-        end
-      end
+        describe BaseController do
+          include Rack::Test::Methods
 
-      describe BaseController do
-        include Rack::Test::Methods
+          subject(:app) { TestController.new(identity_provider, always_authenticated) }
 
-        subject(:app) { TestController }
+          let(:always_authenticated) { nil }
+          let(:identity_provider) { LocalIdentityProvider.new(UserManager.new) }
 
-        let(:temp_dir) { Dir.mktmpdir}
-        let(:test_config) { base_config }
-        let(:base_config) {
-          blobstore_dir = File.join(temp_dir, 'blobstore')
-          FileUtils.mkdir_p(blobstore_dir)
+          let(:temp_dir) { Dir.mktmpdir }
+          let(:test_config) { base_config }
+          let(:base_config) {
+            blobstore_dir = File.join(temp_dir, 'blobstore')
+            FileUtils.mkdir_p(blobstore_dir)
 
-          config = Psych.load(spec_asset('test-director-config.yml'))
-          config['dir'] = temp_dir
-          config['blobstore'] = {
-            'provider' => 'local',
-            'options' => {'blobstore_path' => blobstore_dir}
+            config = Psych.load(spec_asset('test-director-config.yml'))
+            config['dir'] = temp_dir
+            config['blobstore'] = {
+              'provider' => 'local',
+              'options' => {'blobstore_path' => blobstore_dir}
+            }
+            config['snapshots']['enabled'] = true
+            config
           }
-          config['snapshots']['enabled'] = true
-          config
-        }
 
-        before { App.new(Config.load_hash(test_config)) }
+          before { App.new(Config.load_hash(test_config)) }
 
-        after { FileUtils.rm_rf(temp_dir) }
+          after { FileUtils.rm_rf(temp_dir) }
 
-        it 'sets the date header' do
-          get '/'
-          expect(last_response.headers['Date']).not_to be_nil
-        end
-
-        it 'requires authentication' do
-          get '/test_route'
-          expect(last_response.status).to eq(401)
-        end
-
-        context 'given valid credentials' do
-          before { basic_authorize 'admin', 'admin' }
-
-          it 'succeeds' do
+          it 'sets the date header' do
             get '/test_route'
-            expect(last_response.status).to eq(200)
-            expect(last_response.body).to eq('Success')
+            expect(last_response.headers['Date']).not_to be_nil
           end
-        end
-
-        context 'given valid credentials' do
-          before { basic_authorize 'luke', 'ImYourFather' }
-
-          it 'succeeds' do
-            get '/test_route'
-            expect(last_response.status).to eq(401)
-          end
-        end
-
-        context 'when accessing controllers that dont require authorization default' do
-          subject(:app) { TestNeverAuthenticatingController }
 
           it 'requires authentication' do
             get '/test_route'
-            expect(last_response.status).to eq(200)
-            expect(last_response.body).to eq('Success')
+            expect(last_response.status).to eq(401)
+          end
+
+          it 'requires authentication even for invalid routes' do
+            get '/invalid_route'
+            expect(last_response.status).to eq(401)
+          end
+
+          context 'when authenticated' do
+            before { basic_authorize 'admin', 'admin' }
+
+            it 'succeeds' do
+              get '/test_route'
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('Success with: admin')
+            end
+          end
+
+          context 'when the controller overrides the default auth requirements' do
+            let(:always_authenticated) { false }
+
+            it 'skips authorization' do
+              get '/test_route'
+              expect(last_response.status).to eq(200)
+              expect(last_response.body).to eq('Success with: No user')
+            end
+
+            it 'skips authorization for invalid routes' do
+              get '/invalid_route'
+              expect(last_response.status).to eq(404)
+            end
           end
         end
       end

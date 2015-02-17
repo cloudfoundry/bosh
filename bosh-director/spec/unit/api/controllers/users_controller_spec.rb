@@ -6,8 +6,9 @@ module Bosh::Director
     describe Controllers::UsersController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class }
+      subject(:app) { described_class.new(identity_provider) }
 
+      let(:identity_provider) { Bosh::Director::Api::LocalIdentityProvider.new(Bosh::Director::Api::UserManager.new) }
       let(:temp_dir) { Dir.mktmpdir}
       let(:test_config)  do
         blobstore_dir = File.join(temp_dir, 'blobstore')
@@ -27,14 +28,6 @@ module Bosh::Director
 
       after { FileUtils.rm_rf(temp_dir) }
 
-      def login_as_admin
-        basic_authorize 'admin', 'admin'
-      end
-
-      def login_as(username, password)
-        basic_authorize username, password
-      end
-
       it 'requires auth' do
         get '/'
         expect(last_response.status).to eq(401)
@@ -52,7 +45,7 @@ module Bosh::Director
       end
 
       describe 'API calls' do
-        before(:each) { login_as_admin }
+        before(:each) { basic_authorize 'admin', 'admin' }
 
         describe 'users' do
           let (:username) { 'john' }
@@ -72,7 +65,7 @@ module Bosh::Director
           it "doesn't create a user with existing username" do
             post '/', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
-            login_as(username, password)
+            basic_authorize(username, password)
             post '/', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
             expect(last_response.status).to eq(400)
@@ -82,7 +75,7 @@ module Bosh::Director
           it 'updates user password but not username' do
             post '/', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
-            login_as(username, password)
+            basic_authorize(username, password)
             new_data = {'username' => username, 'password' => '456'}
             put "/#{username}", Yajl::Encoder.encode(new_data), { 'CONTENT_TYPE' => 'application/json' }
 
@@ -90,7 +83,7 @@ module Bosh::Director
             user = Models::User[:username => username]
             expect(BCrypt::Password.new(user.password)).to eq('456')
 
-            login_as(username, '456')
+            basic_authorize(username, '456')
             change_name = {'username' => 'john2', 'password' => password}
             put "/#{username}", Yajl::Encoder.encode(change_name), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(400)
@@ -102,7 +95,7 @@ module Bosh::Director
           it 'deletes user' do
             post '/', Yajl::Encoder.encode(user_data), { 'CONTENT_TYPE' => 'application/json' }
 
-            login_as(username, password)
+            basic_authorize(username, password)
             delete "/#{username}"
 
             expect(last_response.status).to eq(204)

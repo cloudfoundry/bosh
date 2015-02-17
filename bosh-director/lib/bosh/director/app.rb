@@ -29,7 +29,5 @@ module Bosh::Director
 
       @blobstores = Blobstores.new(config)
     end
-
-
   end
 end

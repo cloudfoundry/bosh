@@ -5,8 +5,9 @@ module Bosh::Director
   describe Api::Controllers::StemcellsController do
     include Rack::Test::Methods
 
-    subject(:app) { described_class } # "app" is a Rack::Test hook
+    subject(:app) { described_class.new(identity_provider) }
 
+    let(:identity_provider) { Bosh::Director::Api::LocalIdentityProvider.new(Bosh::Director::Api::UserManager.new) }
     let(:temp_dir) { Dir.mktmpdir}
     let(:test_config) do
       config = Psych.load(spec_asset('test-director-config.yml'))

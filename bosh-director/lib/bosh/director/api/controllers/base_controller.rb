@@ -6,15 +6,15 @@ module Bosh::Director
         include Http
         include DnsHelper
 
-        def initialize(*_)
-          super
+        def initialize(identity_provider)
+          super()
+          @identity_provider = identity_provider
           @deployment_manager = DeploymentManager.new
           @backup_manager = BackupManager.new
           @instance_manager = InstanceManager.new
           @resurrector_manager = ResurrectorManager.new
           @problem_manager = ProblemManager.new
           @property_manager = PropertyManager.new
-          @resource_manager = ResourceManager.new
           @release_manager = ReleaseManager.new
           @snapshot_manager = SnapshotManager.new
           @stemcell_manager = StemcellManager.new
@@ -39,27 +39,6 @@ module Bosh::Director
           end
         end
 
-        def authenticate(user, password)
-          if @user_manager.authenticate(user, password)
-            @user = user
-            true
-          else
-            false
-          end
-        end
-
-        def protected!
-          unless authorized?
-            response['WWW-Authenticate'] = 'Basic realm="BOSH Director"'
-            throw(:halt, [401, "Not authorized\n"])
-          end
-        end
-
-        def authorized?
-          @auth ||=  Rack::Auth::Basic::Request.new(request.env)
-          @auth.provided? && @auth.basic? && @auth.credentials && authenticate(*@auth.credentials)
-        end
-
         def always_authenticated?
           true
         end
@@ -69,7 +48,14 @@ module Bosh::Director
             request.env.has_key?(key)
           end
 
-          protected! if auth_provided || always_authenticated?
+          if auth_provided || always_authenticated?
+            begin
+              @user = @identity_provider.corroborate_user(request.env)
+            rescue AuthenticationError => e
+              response['WWW-Authenticate'] = 'Basic realm="BOSH Director"'
+              throw(:halt, [401, "Not authorized\n"])
+            end
+          end
         end
 
         after { headers('Date' => Time.now.rfc822) } # As thin doesn't inject date
