@@ -15,53 +15,37 @@ describe 'create release', type: :integration do
       end
     end
 
-    it 'updates the .final_builds index for each job and package' do
+    it 'updates the .final_builds index for each job, package and license' do
       Dir.chdir(ClientSandbox.test_release_dir) do
-        ['a', 'b', 'bar', 'blocking_package', 'c', 'errand1', 'fails_with_too_much_output', 'foo'].each do |package_name|
-          index = YAML.load_file(".final_builds/packages/#{package_name}/index.yml")
-          fingerprint = index['builds'].keys.first
-          expect(index).to match(
-              'builds' => {
-                fingerprint => {
-                  'version' => fingerprint,
-                  'sha1' => SHA1_REGEXP,
-                  'blobstore_id' => kind_of(String),
-                }
-              },
-              'format-version' => '2'
-            )
+        package_files = {
+          'a' => ['./packaging', './a/run.sh'],
+          'b' => ['./packaging', './b/run.sh'],
+          'bar' => ['./packaging', './bar/run.sh'],
+          'blocking_package' => ['./packaging', './foo'],
+          'c' => ['./packaging', './c/run.sh'],
+          'errand1' => ['./packaging', './errand1/file.sh'],
+          'fails_with_too_much_output' => ['./packaging', './foo'],
+          'foo' => ['./packaging', './foo']
+        }
 
-          sha1 = index['builds'][fingerprint]['sha1']
-          artifact_tarball = File.join(ENV['HOME'], '.bosh', 'cache', sha1)
-          expect(File.exist?(artifact_tarball)).to eq(true)
-
-          blob_file = File.join(ClientSandbox.blobstore_dir, index['builds'][fingerprint]['blobstore_id'])
-          expect(File.exist?(blob_file)).to eq(true)
-          expect(Digest::SHA1.file(blob_file)).to eq(sha1)
+        package_files.each do |package_name, files|
+          it_creates_artifact("packages/#{package_name}", files)
         end
 
-        ['errand1', 'errand_without_package', 'fails_with_too_much_output', 'foobar', 'job_with_blocking_compilation', 'transitive_deps',].each do |job_name|
-          index = YAML.load_file(".final_builds/jobs/#{job_name}/index.yml")
-          fingerprint = index['builds'].keys.first
-          expect(index).to match(
-              'builds' => {
-                fingerprint => {
-                  'version' => fingerprint,
-                  'sha1' => SHA1_REGEXP,
-                  'blobstore_id' => kind_of(String),
-                }
-              },
-              'format-version' => '2'
-            )
+        job_files = {
+          'errand1' => ['./templates/ctl', './templates/run', './monit', './job.MF'],
+          'errand_without_package' => ['./templates/run', './monit', './job.MF'],
+          'fails_with_too_much_output' => ['./monit', './job.MF'],
+          'foobar' => ['./templates/drain.erb', './templates/foobar_ctl', './monit', './job.MF'],
+          'job_with_blocking_compilation' => ['./monit', './job.MF'],
+          'transitive_deps' => ['./monit', './job.MF'],
+        }
 
-          sha1 = index['builds'][fingerprint]['sha1']
-          artifact_tarball = File.join(ENV['HOME'], '.bosh', 'cache', sha1)
-          expect(File.exist?(artifact_tarball)).to eq(true)
-
-          tarblob = File.join(ClientSandbox.blobstore_dir, index['builds'][fingerprint]['blobstore_id'])
-          expect(File.exist?(tarblob)).to eq(true)
-          expect(Digest::SHA1.file(tarblob)).to eq(sha1)
+        job_files.each do |job_name, files|
+          it_creates_artifact("jobs/#{job_name}", files)
         end
+
+        it_creates_artifact('license', ['./LICENSE'])
       end
     end
 
@@ -87,6 +71,7 @@ describe 'create release', type: :integration do
               job_desc('job_with_blocking_compilation'),
               job_desc('transitive_deps')
             ),
+            'license' => license_desc,
 
             'commit_hash' => /[0-9a-f]{8}/,
             'uncommitted_changes' => true,
@@ -112,8 +97,8 @@ describe 'create release', type: :integration do
 
     it 'stashes stuff in a tarball' do
       Dir.chdir(ClientSandbox.test_release_dir) do
-        files = `tar tzf releases/bosh-release/bosh-release-1.tgz`.chomp.split(/\n/)
-        expect(files.reject {|f| f =~ /\/$/ }).to contain_exactly(
+        files = list_tar_files('releases/bosh-release/bosh-release-1.tgz')
+        expect(files).to contain_exactly(
             './jobs/errand1.tgz',
             './jobs/errand_without_package.tgz',
             './jobs/fails_with_too_much_output.tgz',
@@ -128,6 +113,7 @@ describe 'create release', type: :integration do
             './packages/errand1.tgz',
             './packages/fails_with_too_much_output.tgz',
             './packages/foo.tgz',
+            './license.tgz',
             './release.MF'
           )
       end
@@ -401,7 +387,43 @@ describe 'create release', type: :integration do
     match({ 'name' => name, 'version' => sha, 'fingerprint' => sha, 'sha1' => sha })
   end
 
+  def license_desc
+    sha = SHA1_REGEXP
+    match({ 'version' => sha, 'fingerprint' => sha, 'sha1' => sha })
+  end
+
   def latest_release_manifest
     Dir['releases/bosh-release/bosh-release-*.yml'].sort_by { |x| File.mtime(x) }.last
+  end
+
+  def it_creates_artifact(artifact_path, expected_files=[])
+    index = YAML.load_file(".final_builds/#{artifact_path}/index.yml")
+    fingerprint = index['builds'].keys.first
+    expect(index).to match(
+      'builds' => {
+        fingerprint => {
+          'version' => fingerprint,
+          'sha1' => SHA1_REGEXP,
+          'blobstore_id' => kind_of(String),
+        }
+      },
+      'format-version' => '2'
+    )
+
+    sha1 = index['builds'][fingerprint]['sha1']
+    artifact_tarball = File.join(ENV['HOME'], '.bosh', 'cache', sha1)
+    expect(File.exist?(artifact_tarball)).to eq(true)
+
+    tarblob = File.join(ClientSandbox.blobstore_dir, index['builds'][fingerprint]['blobstore_id'])
+    expect(File.exist?(tarblob)).to eq(true)
+    expect(Digest::SHA1.file(tarblob)).to eq(sha1)
+
+    unless expected_files.empty?
+      expect(list_tar_files(tarblob)).to match_array(expected_files)
+    end
+  end
+
+  def list_tar_files(tarball_path)
+    `tar -ztf #{tarball_path}`.chomp.split(/\n/).reject {|f| f =~ /\/$/ }
   end
 end
