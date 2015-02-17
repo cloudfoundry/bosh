@@ -55,6 +55,7 @@ module Bosh::Cli
           say("SKIP".make_yellow)
           next
         end
+        nl
         package_file_path = find_package(package)
         FileUtils.cp(package_file_path,
                      File.join(@packages_dir, "#{package.name}.tgz"),
@@ -68,6 +69,7 @@ module Bosh::Cli
           say("SKIP".make_yellow)
           next
         end
+        nl
         job_file_path = find_job(job)
         FileUtils.cp(job_file_path,
                      File.join(@jobs_dir, "#{job.name}.tgz"),

@@ -171,7 +171,6 @@ module Bosh::Cli
       end
     end
 
-
     def releases_dir
       @final ? final_releases_dir : dev_releases_dir
     end
