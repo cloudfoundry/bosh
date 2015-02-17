@@ -119,10 +119,10 @@ if [ -f ${image_mount_point}/etc/debian_version ] # Ubuntu
 then
   initrd_file="initrd.img-${kernel_version}"
   os_name=$(source ${image_mount_point}/etc/lsb-release ; echo -n ${DISTRIB_DESCRIPTION})
-elif [ -f ${image_mount_point}/etc/centos-release ] # Centos
+elif [ -f ${image_mount_point}/etc/redhat-release ] # Centos or RHEL
 then
   initrd_file="initramfs-${kernel_version}.img"
-  os_name=$(cat ${image_mount_point}/etc/centos-release)
+  os_name=$(cat ${image_mount_point}/etc/redhat-release)
   cat > ${image_mount_point}/etc/fstab <<FSTAB
 # /etc/fstab Created by BOSH Stemcell Builder
 UUID=${uuid} / ext4 defaults 1 1
@@ -142,7 +142,7 @@ title ${os_name} (${kernel_version})
   kernel /boot/vmlinuz-${kernel_version} ro root=UUID=${uuid} selinux=0 cgroup_enable=memory swapaccount=1 console=tty0 console=ttyS0,115200n8
   initrd /boot/${initrd_file}
 GRUB_CONF
-elif [ -f ${image_mount_point}/etc/centos-release ] # Centos
+elif [ -f ${image_mount_point}/etc/redhat-release ] # Centos or RHEL
 then
 
 # For CentOS 6 (Linux 2.x), we need to set xen_blkfront.sda_is_xvda=1 to force CentOS to have device mapping consistent

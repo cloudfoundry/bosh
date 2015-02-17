@@ -10,16 +10,7 @@ describe 'All CentOS versions', os_image: true do
     it { should be_installed }
   end
 
-  context 'installed by base_centos' do
-    %w(
-      centos-release
-      epel-release
-    ).each do |pkg|
-      describe package(pkg) do
-        it { should be_installed }
-      end
-    end
-
+  context 'installed by base_centos or base_rhel' do
     %w(
       firewalld
     ).each do |pkg|
@@ -35,11 +26,6 @@ describe 'All CentOS versions', os_image: true do
     describe file('/etc/localtime') do
       it { should be_file }
       it { should contain 'UTC' }
-    end
-
-    describe file('/etc/sysconfig/i18n') do
-      it { should be_file }
-      it { should contain 'en_US.UTF-8' }
     end
   end
 

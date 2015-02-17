@@ -10,6 +10,22 @@ describe 'CentOS 6.x OS image', os_image: true do
     end
   end
 
+  context 'installed by base_centos' do
+    describe file('/etc/sysconfig/i18n') do
+      it { should be_file }
+      it { should contain 'en_US.UTF-8' }
+    end
+
+    %w(
+      centos-release
+      epel-release
+    ).each do |pkg|
+      describe package(pkg) do
+        it { should be_installed }
+      end
+    end
+  end
+
   context 'installed by base_centos_packages' do
     %w(
       bison

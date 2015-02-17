@@ -19,6 +19,7 @@ fi
 
 function get_os_type {
   centos_file=$chroot/etc/centos-release
+  rhel_file=$chroot/etc/redhat-release
   ubuntu_file=$chroot/etc/lsb-release
 
   os_type=''
@@ -28,6 +29,9 @@ function get_os_type {
   elif [ -f $centos_file ]
   then
     os_type='centos'
+  elif [ -f $rhel_file ]
+  then
+    os_type='rhel'
   fi
 
   echo $os_type
@@ -41,7 +45,7 @@ function pkg_mgr {
     run_in_chroot $chroot "apt-get update"
     run_in_chroot $chroot "apt-get -f -y --force-yes --no-install-recommends $*"
     run_in_chroot $chroot "apt-get clean"
-  elif [ "${os_type}" == 'centos' ]
+  elif [ "${os_type}" == 'centos' -o "${os_type}" == 'rhel' ]
   then
     run_in_chroot $chroot "yum update --assumeyes"
     run_in_chroot $chroot "yum --verbose --assumeyes $*"
@@ -66,7 +70,7 @@ function pkg_exists {
     else
       return 1
     fi
-  elif [ "${os_type}" == 'centos' ]
+  elif [ "${os_type}" == 'centos' -o "${os_type}" == 'rhel' ]
   then
     result=`run_in_chroot $chroot "if yum list $1 2>/dev/null >/dev/null; then echo exists; else echo does not exist; fi"`
     if [ "$result" == 'exists' ]; then

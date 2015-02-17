@@ -57,4 +57,17 @@ echo 'READAHEAD_COLLECT_ON_RPM="no"' >> ${chroot}/etc/sysconfig/readahead
 cp ${chroot}/usr/share/zoneinfo/UTC ${chroot}/etc/localtime
 
 # Setting locale
-echo "LANG=\"en_US.UTF-8\"" >> ${chroot}/etc/sysconfig/i18n
+case "${stemcell_operating_system_version}" in
+  "6")
+    locale_file=/etc/sysconfig/i18n
+    ;;
+  "7")
+    locale_file=/etc/locale.conf
+    ;;
+  *)
+    echo "Unknown CentOS release: ${stemcell_operating_system_version}"
+    exit 1
+    ;;
+esac
+
+echo "LANG=\"en_US.UTF-8\"" >> ${chroot}/${locale_file}

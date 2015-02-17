@@ -1,22 +1,22 @@
 require 'spec_helper'
 
-describe 'CentOS 7 OS image', os_image: true do
+describe 'RHEL OS image', os_image: true do
   it_behaves_like 'every OS image'
   it_behaves_like 'a systemd-based OS image'
 
-  context 'installed by base_centos' do
-    describe file('/etc/locale.conf') do
-      it { should be_file }
-      it { should contain 'en_US.UTF-8' }
-    end
-
+  context 'installed by base_rhel' do
     %w(
-      centos-release
+      redhat-release-server
       epel-release
     ).each do |pkg|
       describe package(pkg) do
         it { should be_installed }
       end
+    end
+
+    describe file('/etc/locale.conf') do
+      it { should be_file }
+      it { should contain 'en_US.UTF-8' }
     end
   end
 
@@ -27,7 +27,6 @@ describe 'CentOS 7 OS image', os_image: true do
       cmake
       curl
       dhclient
-      e2fsprogs
       flex
       gdb
       glibc-static
@@ -39,7 +38,6 @@ describe 'CentOS 7 OS image', os_image: true do
       libxslt
       libxslt-devel
       lsof
-      NetworkManager
       nmap-ncat
       openssh-server
       openssl-devel
@@ -50,10 +48,6 @@ describe 'CentOS 7 OS image', os_image: true do
       rpm-build
       rpmdevtools
       rsync
-      rsyslog
-      rsyslog-relp
-      rsyslog-gnutls
-      rsyslog-mmjsonparse
       runit
       strace
       sudo
@@ -77,13 +71,11 @@ describe 'CentOS 7 OS image', os_image: true do
     end
   end
 
-  context 'installed by bosh_sysctl' do
-    describe file('/etc/sysctl.d/60-bosh-sysctl.conf') do
-      it { should be_file }
-    end
-
-    describe file('/etc/sysctl.d/60-bosh-sysctl-neigh-fix.conf') do
-      it { should be_file }
+  context 'rsyslog_build' do
+    describe file('/etc/rsyslog_build.d/enable-kernel-logging.conf') do
+      # Make sure imklog module is not loaded in rsyslog_build
+      # to avoid CentOS stemcell pegging CPU on AWS
+      it { should_not be_file } # (do not add $ in front of ModLoad because it will break the serverspec regex match)
     end
   end
 end

@@ -55,7 +55,7 @@ then
     ln -sf /lib/init/upstart-job /etc/init.d/rsyslog
     update-rc.d rsyslog defaults
   "
-elif [ -f $chroot/etc/centos-release ] # Centos
+elif [ -f $chroot/etc/redhat-release ] # Centos or RHEL
 then
   cp $assets_dir/centos_init_d $chroot/etc/init.d/rsyslog
   run_in_bosh_chroot $chroot "

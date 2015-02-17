@@ -65,6 +65,8 @@ module Bosh::Stemcell
       {
         'UBUNTU_ISO' => environment['UBUNTU_ISO'],
         'UBUNTU_MIRROR' => environment['UBUNTU_MIRROR'],
+        'RHN_USERNAME' => environment['RHN_USERNAME'],
+        'RHN_PASSWORD' => environment['RHN_PASSWORD'],
       }
     end
 

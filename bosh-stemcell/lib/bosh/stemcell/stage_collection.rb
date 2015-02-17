@@ -11,10 +11,12 @@ module Bosh::Stemcell
 
     def operating_system_stages
       case operating_system
-      when OperatingSystem::Centos then
-        centos_os_stages
-      when OperatingSystem::Ubuntu then
-        ubuntu_os_stages
+        when OperatingSystem::Centos then
+          centos_os_stages
+        when OperatingSystem::Rhel then
+          rhel_os_stages
+        when OperatingSystem::Ubuntu then
+          ubuntu_os_stages
       end
     end
 
@@ -95,7 +97,6 @@ module Bosh::Stemcell
           :base_centos,
           :base_centos_packages,
           :base_ssh,
-          :bosh_sysctl,
           bosh_steps,
           :rsyslog_config,
           :delay_monit_start,
@@ -109,6 +110,19 @@ module Bosh::Stemcell
       os_stages
     end
 
+    def rhel_os_stages
+      [
+        :base_rhel,
+        :base_centos_packages,
+        :base_ssh,
+        bosh_steps,
+        :rsyslog_config,
+        :delay_monit_start,
+        # Install GRUB/kernel/etc
+        :system_grub,
+      ].flatten
+    end
+
     def ubuntu_os_stages
       [
         :base_debootstrap,
@@ -119,7 +133,6 @@ module Bosh::Stemcell
         :base_ssh,
         :bosh_dpkg_list,
         :bosh_sysstat,
-        :bosh_sysctl,
         :system_kernel,
         bosh_steps,
         :rsyslog_build,
@@ -132,6 +145,7 @@ module Bosh::Stemcell
 
     def bosh_steps
       [
+          :bosh_sysctl,
           :bosh_users,
           :bosh_monit,
           :bosh_ntpdate,

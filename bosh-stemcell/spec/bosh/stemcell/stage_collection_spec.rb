@@ -31,8 +31,8 @@ module Bosh::Stemcell
               :base_ssh,
               :bosh_dpkg_list,
               :bosh_sysstat,
-              :bosh_sysctl,
               :system_kernel,
+              :bosh_sysctl,
               :bosh_users,
               :bosh_monit,
               :bosh_ntpdate,
@@ -47,8 +47,8 @@ module Bosh::Stemcell
         end
       end
 
-      context 'when CentOS' do
-        let(:operating_system) { OperatingSystem.for('centos') }
+      context 'when CentOS 6' do
+        let(:operating_system) { OperatingSystem.for('centos', '6') }
 
         it 'has the correct stages' do
           expect(stage_collection.operating_system_stages).to eq(
@@ -62,6 +62,50 @@ module Bosh::Stemcell
               :bosh_ntpdate,
               :bosh_sudoers,
               :rsyslog_build,
+              :rsyslog_config,
+              :delay_monit_start,
+              :system_grub,
+            ]
+          )
+        end
+      end
+
+      context 'when CentOS 7' do
+        let(:operating_system) { OperatingSystem.for('centos', '7') }
+
+        it 'has the correct stages' do
+          expect(stage_collection.operating_system_stages).to eq(
+            [
+              :base_centos,
+              :base_centos_packages,
+              :base_ssh,
+              :bosh_sysctl,
+              :bosh_users,
+              :bosh_monit,
+              :bosh_ntpdate,
+              :bosh_sudoers,
+              :rsyslog_config,
+              :delay_monit_start,
+              :system_grub,
+            ]
+          )
+        end
+      end
+
+      context 'when RHEL 7' do
+        let(:operating_system) { OperatingSystem.for('rhel', '7') }
+
+        it 'has the correct stages' do
+          expect(stage_collection.operating_system_stages).to eq(
+            [
+              :base_rhel,
+              :base_centos_packages,
+              :base_ssh,
+              :bosh_sysctl,
+              :bosh_users,
+              :bosh_monit,
+              :bosh_ntpdate,
+              :bosh_sudoers,
               :rsyslog_config,
               :delay_monit_start,
               :system_grub,
