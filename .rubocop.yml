@@ -22,6 +22,7 @@ AllCops:
     - stemcell_builder/**/*
     - vendor/**/*
     - tmp/**/*
+    - go/**/*
 
 CollectionMethods:
   Enabled: false # Enabling this doesn't like "inject"
