@@ -37,9 +37,9 @@ module Bosh::Cli
 
       @name = @manifest["name"]
       @version = @manifest["version"]
-      @packages = @manifest["packages"].map { |pkg| OpenStruct.new(pkg) }
-      @jobs = @manifest["jobs"].map { |job| OpenStruct.new(job) }
-      @license = OpenStruct.new(@manifest["license"])
+      @packages = @manifest.fetch("packages", []).map { |pkg| OpenStruct.new(pkg) }
+      @jobs = @manifest.fetch("jobs", []).map { |job| OpenStruct.new(job) }
+      @license = @manifest["license"] ? OpenStruct.new(@manifest["license"]) : nil
     end
 
     def compile
@@ -78,10 +78,12 @@ module Bosh::Cli
       end
 
       header("Copying license")
-      say("license (#{@license.version})".ljust(30), " ")
-      nl
-      license_file_path = find_license(@license)
-      FileUtils.cp(license_file_path, File.join(@build_dir, 'license.tgz'), preserve: true)
+      if @license
+        say("license (#{@license.version})".ljust(30), " ")
+        nl
+        license_file_path = find_license(@license)
+        FileUtils.cp(license_file_path, File.join(@build_dir, 'license.tgz'), preserve: true)
+      end
 
       header("Building tarball")
       Dir.chdir(@build_dir) do
