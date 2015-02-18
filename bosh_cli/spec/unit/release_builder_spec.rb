@@ -103,7 +103,7 @@ module Bosh::Cli
     it 'includes job and package tarballs in release' do
       builder = new_builder
       builder.build
-      tarball_files = `tar tzf #{builder.tarball_path}`.chomp.split(/\n/)
+      tarball_files = list_tar_files(builder.tarball_path)
       expect(tarball_files).to include('./jobs/job-name.tgz', './packages/package-name.tgz', './license.tgz')
     end
 

@@ -16,6 +16,10 @@ module Support
       end
     end
 
+    def list_tar_files(tarball_path)
+      `tar -ztf #{tarball_path}`.chomp.split(/\n/).reject {|f| f =~ /\/$/ }
+    end
+
     class ReleaseDirectory
       attr_reader :path, :artifacts_dir
 

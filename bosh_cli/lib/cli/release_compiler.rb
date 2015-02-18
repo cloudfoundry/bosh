@@ -39,6 +39,7 @@ module Bosh::Cli
       @version = @manifest["version"]
       @packages = @manifest["packages"].map { |pkg| OpenStruct.new(pkg) }
       @jobs = @manifest["jobs"].map { |job| OpenStruct.new(job) }
+      @license = OpenStruct.new(@manifest["license"])
     end
 
     def compile
@@ -76,6 +77,12 @@ module Bosh::Cli
                      :preserve => true)
       end
 
+      header("Copying license")
+      say("license (#{@license.version})".ljust(30), " ")
+      nl
+      license_file_path = find_license(@license)
+      FileUtils.cp(license_file_path, File.join(@build_dir, 'license.tgz'), preserve: true)
+
       header("Building tarball")
       Dir.chdir(@build_dir) do
         tar_out = `tar -czf #{tarball_path} . 2>&1`
@@ -112,6 +119,14 @@ module Bosh::Cli
       dev_jobs_dir = File.join(@release_source, '.dev_builds', 'jobs', name)
       dev_index = Versions::VersionsIndex.new(dev_jobs_dir)
       find_in_indices(final_index, dev_index, job, 'job')
+    end
+
+    def find_license(license)
+      final_dir = File.join(@release_source, '.final_builds', 'license')
+      final_index = Versions::VersionsIndex.new(final_dir)
+      dev_dir = File.join(@release_source, '.dev_builds', 'license')
+      dev_index = Versions::VersionsIndex.new(dev_dir)
+      find_in_indices(final_index, dev_index, license, 'license')
     end
 
     def find_version_by_sha1(index, sha1)

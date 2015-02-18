@@ -8,12 +8,40 @@ describe 'create release', type: :integration do
 
   before { setup_test_release_dir }
 
+  shared_examples :generates_tarball do
+    it 'stashes release artifacts in a tarball' do
+      Dir.chdir(ClientSandbox.test_release_dir) do
+        files = list_tar_files('releases/bosh-release/bosh-release-1.tgz')
+        expect(files).to contain_exactly(
+          './jobs/errand1.tgz',
+          './jobs/errand_without_package.tgz',
+          './jobs/fails_with_too_much_output.tgz',
+          './jobs/foobar.tgz',
+          './jobs/job_with_blocking_compilation.tgz',
+          './jobs/transitive_deps.tgz',
+          './packages/a.tgz',
+          './packages/b.tgz',
+          './packages/bar.tgz',
+          './packages/blocking_package.tgz',
+          './packages/c.tgz',
+          './packages/errand1.tgz',
+          './packages/fails_with_too_much_output.tgz',
+          './packages/foo.tgz',
+          './license.tgz',
+          './release.MF'
+        )
+      end
+    end
+  end
+
   describe 'release creation' do
     before do
       Dir.chdir(ClientSandbox.test_release_dir) do
         bosh_runner.run_in_current_dir('create release --final --with-tarball')
       end
     end
+
+    it_behaves_like :generates_tarball
 
     it 'updates the .final_builds index for each job, package and license' do
       Dir.chdir(ClientSandbox.test_release_dir) do
@@ -94,30 +122,18 @@ describe 'create release', type: :integration do
           )
       end
     end
+  end
 
-    it 'stashes stuff in a tarball' do
+  describe 'release creation from manifest' do
+    before do
       Dir.chdir(ClientSandbox.test_release_dir) do
-        files = list_tar_files('releases/bosh-release/bosh-release-1.tgz')
-        expect(files).to contain_exactly(
-            './jobs/errand1.tgz',
-            './jobs/errand_without_package.tgz',
-            './jobs/fails_with_too_much_output.tgz',
-            './jobs/foobar.tgz',
-            './jobs/job_with_blocking_compilation.tgz', 
-            './jobs/transitive_deps.tgz',
-            './packages/a.tgz',
-            './packages/b.tgz',
-            './packages/bar.tgz',
-            './packages/blocking_package.tgz',
-            './packages/c.tgz', 
-            './packages/errand1.tgz',
-            './packages/fails_with_too_much_output.tgz',
-            './packages/foo.tgz',
-            './license.tgz',
-            './release.MF'
-          )
+        bosh_runner.run_in_current_dir('create release --final')
+
+        bosh_runner.run_in_current_dir("create release #{latest_release_manifest} --with-tarball")
       end
     end
+
+    it_behaves_like :generates_tarball
   end
 
   it 'cannot create a final release without the blobstore configured', no_reset: true do
