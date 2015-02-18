@@ -8,7 +8,6 @@ module Bosh
 
         def controllers
           director_app = Bosh::Director::App.new(@config)
-          identity_provider = Bosh::Director::Api::LocalIdentityProvider.new Bosh::Director::Api::UserManager.new
           controllers = {}
           controllers['/info'] = Bosh::Director::Api::Controllers::InfoController.new identity_provider
           controllers['/tasks'] = Bosh::Director::Api::Controllers::TasksController.new identity_provider
@@ -31,7 +30,23 @@ module Bosh
           controllers['/locks'] = Bosh::Director::Api::Controllers::LocksController.new identity_provider
           controllers
         end
+
+        private
+
+        def identity_provider
+          @identity_provider ||= begin
+            user_management = @config.hash['user_management']
+
+            if user_management && user_management['provider'] == 'uaa'
+              Bosh::Director::Api::UAAIdentityProvider.new
+            else
+              Bosh::Director::Api::LocalIdentityProvider.new Bosh::Director::Api::UserManager.new
+            end
+          end
+        end
       end
     end
   end
 end
+
+

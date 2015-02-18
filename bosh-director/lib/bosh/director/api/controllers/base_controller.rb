@@ -27,6 +27,8 @@ module Bosh::Director
         mime_type :tgz,       'application/x-compressed'
         mime_type :multipart, 'multipart/form-data'
 
+        attr_reader :identity_provider
+
         def self.consumes(*types)
           types = Set.new(types)
           types.map! { |t| mime_type(t) }
