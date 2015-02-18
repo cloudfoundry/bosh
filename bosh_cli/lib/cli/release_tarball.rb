@@ -281,8 +281,14 @@ module Bosh::Cli
       for job in manifest["jobs"]
         say("  - #{job["name"]} (#{job["version"]})")
       end
-    end
 
+      say("\nLicense")
+      if manifest["license"].nil? || manifest["license"].empty?
+        say("  - none")
+      else
+        say("  - license (#{manifest["license"]["version"]})")
+      end
+    end
   end
 end
 
