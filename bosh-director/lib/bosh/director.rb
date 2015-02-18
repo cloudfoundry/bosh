@@ -132,6 +132,7 @@ require 'bosh/director/models/helpers/model_helper'
 require 'bosh/director/db_backup'
 require 'bosh/director/blobstores'
 require 'bosh/director/api/local_identity_provider'
+require 'bosh/director/api/uaa_identity_provider'
 require 'bosh/director/app'
 
 module Bosh::Director

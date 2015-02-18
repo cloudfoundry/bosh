@@ -5,27 +5,28 @@ module Bosh
   module Director
     module Api
       module Controllers
-        class TestController < BaseController
-          def initialize(identity_provider, always_authenticated=nil)
-            super(identity_provider)
-            @always_authenticated_override = always_authenticated
-          end
-          get '/test_route' do
-            "Success with: #{@user || 'No user'}"
+        class TestIdentityProvider
+          attr_reader :request_env
+
+          def initialize(authenticates)
+            @authenticates = authenticates
           end
 
-          def always_authenticated?
-            @always_authenticated_override.nil? ? super : @always_authenticated_override
+          def corroborate_user(request_env)
+            @request_env = request_env
+            raise AuthenticationError unless @authenticates
+            "luke"
           end
         end
 
         describe BaseController do
           include Rack::Test::Methods
 
-          subject(:app) { TestController.new(identity_provider, always_authenticated) }
+          subject(:app) { Support::TestController.new(identity_provider, requires_authentication) }
 
-          let(:always_authenticated) { nil }
-          let(:identity_provider) { LocalIdentityProvider.new(UserManager.new) }
+          let(:requires_authentication) { nil }
+          let(:authenticates_successfully) { false }
+          let(:identity_provider) { TestIdentityProvider.new(authenticates_successfully) }
 
           let(:temp_dir) { Dir.mktmpdir }
           let(:test_config) { base_config }
@@ -62,18 +63,33 @@ module Bosh
             expect(last_response.status).to eq(401)
           end
 
-          context 'when authenticated' do
-            before { basic_authorize 'admin', 'admin' }
+          it 'passes the request env to the identity provider' do
+            header('X-Test-Header', 'Value')
+            get '/test_route'
+            expect(identity_provider.request_env['HTTP_X_TEST_HEADER']).to eq('Value')
+          end
+
+          context 'when authenticating successfully' do
+            let(:authenticates_successfully) { true }
 
             it 'succeeds' do
               get '/test_route'
               expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('Success with: admin')
+              expect(last_response.body).to eq('Success with: luke')
+            end
+          end
+
+          context 'when failing to authenticate successfully' do
+            let(:authenticates_successfully) { false }
+
+            it 'rejects the request' do
+              get '/test_route'
+              expect(last_response.status).to eq(401)
             end
           end
 
           context 'when the controller overrides the default auth requirements' do
-            let(:always_authenticated) { false }
+            let(:requires_authentication) { false }
 
             it 'skips authorization' do
               get '/test_route'

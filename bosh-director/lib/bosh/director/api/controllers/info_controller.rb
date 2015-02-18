@@ -3,7 +3,7 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class InfoController < BaseController
-      def always_authenticated?
+      def requires_authentication?
         false
       end
 

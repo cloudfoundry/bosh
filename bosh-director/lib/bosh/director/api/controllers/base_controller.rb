@@ -39,7 +39,7 @@ module Bosh::Director
           end
         end
 
-        def always_authenticated?
+        def requires_authentication?
           true
         end
 
@@ -48,7 +48,7 @@ module Bosh::Director
             request.env.has_key?(key)
           end
 
-          if auth_provided || always_authenticated?
+          if auth_provided || requires_authentication?
             begin
               @user = @identity_provider.corroborate_user(request.env)
             rescue AuthenticationError => e
