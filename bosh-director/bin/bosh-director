@@ -16,70 +16,13 @@ opts.parse!(ARGV.dup)
 config_file ||= ::File.expand_path('../../config/bosh-director.yml', __FILE__)
 config = Bosh::Director::Config.load_file(config_file)
 
-director_app = Bosh::Director::App.new(config)
-
-compiled_package_group_manager = Bosh::Director::Api::CompiledPackageGroupManager.new
-resource_manager = Bosh::Director::Api::ResourceManager.new(director_app.blobstores.blobstore)
-# user_management_hash = config.hash['user_management']
-identity_provider = #if user_management_hash && user_management_hash['provider'] == 'uaa'
-  # Bosh::Director::Api::UaaIdentityProvider.new
-# else
-  Bosh::Director::Api::LocalIdentityProvider.new Bosh::Director::Api::UserManager.new
-# end
+route_configuration = Bosh::Director::Api::RouteConfiguration.new(config)
 
 thin_server = Thin::Server.new('127.0.0.1', config.hash['port'], signals: false) do
   use Rack::CommonLogger
 
-  map '/info' do
-    run Bosh::Director::Api::Controllers::InfoController.new identity_provider
-  end
-
-  map '/tasks' do
-    run Bosh::Director::Api::Controllers::TasksController.new identity_provider
-  end
-
-  map '/backups' do
-    run Bosh::Director::Api::Controllers::BackupsController.new identity_provider
-  end
-
-  map '/deployments' do
-    run Bosh::Director::Api::Controllers::DeploymentsController.new identity_provider
-  end
-
-  map '/packages' do
-    run Bosh::Director::Api::Controllers::PackagesController.new identity_provider
-  end
-
-  map '/releases' do
-    run Bosh::Director::Api::Controllers::ReleasesController.new identity_provider
-  end
-
-  map '/resources' do
-    run Bosh::Director::Api::Controllers::ResourcesController.new identity_provider, resource_manager
-  end
-
-  map '/resurrection' do
-    run Bosh::Director::Api::Controllers::ResurrectionController.new identity_provider
-  end
-
-  map '/stemcells' do
-    run Bosh::Director::Api::Controllers::StemcellsController.new identity_provider
-  end
-
-  map '/task' do
-    run Bosh::Director::Api::Controllers::TaskController.new identity_provider
-  end
-
-  map '/users' do
-    run Bosh::Director::Api::Controllers::UsersController.new identity_provider
-  end
-
-  map '/compiled_package_groups' do
-    run Bosh::Director::Api::Controllers::CompiledPackagesController.new identity_provider, compiled_package_group_manager
-  end
-
-  map '/locks' do
-    run Bosh::Director::Api::Controllers::LocksController.new identity_provider
+  route_configuration.controllers.each do |route, controller|
+    map(route) { run controller }
   end
 end
 
