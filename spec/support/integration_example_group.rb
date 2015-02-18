@@ -197,6 +197,7 @@ module IntegrationSandboxHelpers
         .final_builds/packages/**/*.tgz
         blobs
         .blobs
+        .DS_Store
       )
 
       File.open('.gitignore', 'w+') do |f|
