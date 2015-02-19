@@ -151,6 +151,37 @@ module Bosh::Stemcell
           subject.prepare_build
         }.to change { Dir.exists?(File.join(root_dir, 'work/work/stemcell')) }.from(false).to(true)
       end
+
+      context 'when resume_from is set' do
+        before do
+          ENV['resume_from'] = 'stage_1'
+
+          FileUtils.mkdir_p(build_path)
+        end
+
+        it 'does not run sanitize' do
+          expect(shell).to_not receive(:run)
+
+          subject.prepare_build
+
+          expect(Dir.exists?(build_path)).to be(true)
+        end
+
+        it 'does not run prepare_build_path' do
+          leftover_file = File.join(build_path, 'some_file')
+          FileUtils.touch(leftover_file)
+
+          subject.prepare_build
+          expect(File.exists?(leftover_file)).to be(true)
+        end
+
+        it 'still updates the settings file' do
+          subject.prepare_build
+
+          expect(File.read(settings_file)).to match(/some=var/)
+          expect(File.read(settings_file)).to match(/hello=world/)
+        end
+      end
     end
 
     describe '#os_image_rspec_command' do

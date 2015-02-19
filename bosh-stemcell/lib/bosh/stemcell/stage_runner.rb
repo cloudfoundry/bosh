@@ -10,6 +10,7 @@ module Bosh::Stemcell
     end
 
     def configure_and_apply(stages)
+      stages = resume_from(stages, ENV['resume_from'])
       configure(stages)
       apply(stages)
     end
@@ -33,15 +34,34 @@ module Bosh::Stemcell
         puts "=== Applying '#{stage}' stage ==="
         puts "== Started #{Time.now.strftime('%a %b %e %H:%M:%S %Z %Y')} =="
 
-        stage_apply_script = File.join(build_path, 'stages', stage.to_s, 'apply.sh')
+        begin
+          stage_apply_script = File.join(build_path, 'stages', stage.to_s, 'apply.sh')
 
-        run_sudo_with_command_env("#{stage_apply_script} #{work_path}")
+          run_sudo_with_command_env("#{stage_apply_script} #{work_path}")
+
+        rescue => _
+          puts "=== You can resume_from the '#{stage}' stage by using resume_from=#{stage} ==="
+          raise
+        end
+
       end
     end
 
     private
 
     attr_reader :stages, :build_path, :command_env, :settings_file, :work_path
+
+    def resume_from(all_stages, resume_from_stage)
+      if resume_from_stage != NIL
+        stage_index = all_stages.index(resume_from_stage.to_sym)
+        if stage_index == NIL
+          raise "Can't find stage '#{resume_from_stage}' to resume from. Aborting."
+        end
+        all_stages.drop(stage_index)
+      else
+        all_stages
+      end
+    end
 
     def run_sudo_with_command_env(command)
       shell = Bosh::Core::Shell.new
