@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `O6Co_wDMuso7prheiIRVc_Q7_T1sC0EP`
+  upgrade unzip to 6.0-9ubuntu1.3
+
 * 'yacqn9ooY2Idc6Fb65QE25zl2MSvPX52'
   lock down sshd_config permissions
   disable weak ssh ciphers
