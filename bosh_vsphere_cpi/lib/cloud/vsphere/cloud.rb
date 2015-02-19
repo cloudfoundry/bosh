@@ -21,6 +21,7 @@ require 'cloud/vsphere/resources/util'
 require 'cloud/vsphere/models/disk'
 require 'cloud/vsphere/path_finder'
 require 'cloud/vsphere/vm_creator_builder'
+require 'cloud/vsphere/disk_provider'
 require 'cloud/vsphere/fixed_cluster_placer'
 
 module VSphereCloud
