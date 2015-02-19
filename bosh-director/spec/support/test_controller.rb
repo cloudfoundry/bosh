@@ -1,3 +1,5 @@
+require 'bosh/director'
+
 module Support
   class TestController < Bosh::Director::Api::Controllers::BaseController
     def initialize(identity_provider, requires_authentication=nil)
