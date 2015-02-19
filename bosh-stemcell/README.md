@@ -73,6 +73,12 @@ The final two arguments are the S3 bucket and key for the OS image to use, which
       bundle exec rake stemcell:build_with_local_os_image[aws,xen,ubuntu,trusty,go,/tmp/ubuntu_base_image.tgz]
     ' remote
 
+
+Public OS images can be obtained here:
+
+* latest Ubuntu - https://s3.amazonaws.com/bosh-os-images/bosh-ubuntu-trusty-os-image.tgz
+* latest Centos - https://s3.amazonaws.com/bosh-os-images/bosh-centos-6_6-os-image.tgz
+
 ### Building light stemcell
 
 AWS stemcells can be shipped in light format which includes a reference to a public AMI. This speeds up the process of uploading the stemcell to AWS. To build a light stemcell:
