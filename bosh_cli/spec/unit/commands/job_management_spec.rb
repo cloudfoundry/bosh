@@ -6,10 +6,10 @@ describe Bosh::Cli::Command::JobManagement do
   let(:command) { described_class.new }
   let(:deployment) { 'dep1' }
   let(:manifest_yaml) { Psych.dump(deployment_manifest) }
-  let(:director) { double(Bosh::Cli::Client::Director) }
+  let(:director) { instance_double('Bosh::Cli::Client::Director') }
 
   before(:each) do
-    allow(director).to receive(:change_job_state)
+    allow(director).to receive(:change_job_state).and_return(:done, nil, '')
     allow(command).to receive_messages(target: 'http://bosh.example.com')
     allow(command).to receive_messages(logged_in?: true)
     allow(command).to receive_messages(inspect_deployment_changes: false)
@@ -75,6 +75,7 @@ describe Bosh::Cli::Command::JobManagement do
       it 'tells the user what it is about to do' do
         expect(command).to receive(:say).with("You are about to #{verb} dea/0#{operation_description_extra}")
         expect(command).to receive(:say).with("Performing `#{verb} dea/0#{operation_description_extra}'...")
+        expect(command).to receive(:say).with %r{\ndea/0 has been #{past_verb}}
 
         command.public_send(method_name, 'dea', '0')
       end
@@ -82,10 +83,10 @@ describe Bosh::Cli::Command::JobManagement do
 
     context 'if an index is not supplied' do
       it 'tells the user what it is about to do' do
-
         if instance_count == 1
           expect(command).to receive(:say).with("You are about to #{verb} dea/0#{operation_description_extra}")
           expect(command).to receive(:say).with("Performing `#{verb} dea/0#{operation_description_extra}'...")
+          expect(command).to receive(:say).with %r{\ndea/0 has been #{past_verb}}
           command.public_send(method_name, 'dea')
         else
           expect {

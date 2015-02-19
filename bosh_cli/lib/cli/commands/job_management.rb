@@ -52,7 +52,7 @@ module Bosh::Cli
         index = valid_index_for(job, index)
         vm_state = VmState.new(self, force?)
         job_state = JobState.new(self, vm_state)
-        status, task_id, completion_desc =job_state.change(state, job, index)
+        status, task_id, completion_desc = job_state.change(state, job, index)
         task_report(status, task_id, completion_desc)
       end
 
