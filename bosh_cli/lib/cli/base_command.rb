@@ -139,7 +139,7 @@ module Bosh::Cli
           when :done
             report = success_msg
           else
-            report = nil
+            report = "Task exited with status #{status}"
         end
 
         unless [:running, :done].include?(status)
