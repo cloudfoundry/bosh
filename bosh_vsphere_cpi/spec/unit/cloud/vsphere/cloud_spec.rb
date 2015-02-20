@@ -763,12 +763,6 @@ module VSphereCloud
         allow(cloud_searcher).to receive(:get_properties).and_return({'config.hardware.device' => [device], 'name' => 'fake-vm-name'})
       end
 
-      let(:persistent_disk) { instance_double('VSphereCloud::PersistentDisk') }
-      before do
-        allow(VSphereCloud::PersistentDisk).to receive(:new).with(disk_cid, cloud_searcher, resources, client, logger).
-          and_return(persistent_disk)
-      end
-
       before { allow(cloud_config).to receive(:copy_disks).and_return(true) }
 
       let(:disk_spec) { double(:disk_spec, device: double(:device, unit_number: 'fake-unit-number')) }
@@ -776,7 +770,7 @@ module VSphereCloud
       before { allow(datacenter).to receive(:clusters).and_return({'fake-cluster-name' => cluster}) }
       let(:datastore) { instance_double('VSphereCloud::Resources::Datastore', name: 'fake-datastore')}
       let(:cluster) { instance_double('VSphereCloud::Resources::Cluster') }
-      let(:disk) { VSphereCloud::Disk.new('fake-disk-cid', 1024, datastore, 'fake-disk-path') }
+      let(:disk) { VSphereCloud::Resources::Disk.new('fake-disk-cid', 1024, datastore, 'fake-disk-path') }
 
       it 'updates persistent disk' do
         expect(disk_provider).to receive(:find).with('fake-disk-cid', cluster).and_return(disk)
@@ -1219,7 +1213,7 @@ module VSphereCloud
     end
 
     describe '#create_disk' do
-      let(:disk) { instance_double('VSphereCloud::Disk', uuid: 'fake-disk-uuid') }
+      let(:disk) { instance_double('VSphereCloud::Resources::Disk', uuid: 'fake-disk-uuid') }
       before do
         Models::Disk.delete
         allow(disk_provider).to receive(:create).with(1048576).and_return(disk)

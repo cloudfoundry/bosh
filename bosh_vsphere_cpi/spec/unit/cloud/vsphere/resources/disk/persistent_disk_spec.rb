@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'cloud/vsphere/resources/disk/persistent_disk'
 
 module VSphereCloud
   describe PersistentDisk do

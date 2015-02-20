@@ -1,4 +1,5 @@
 require 'ostruct'
+require 'cloud/vsphere/resources/disk'
 
 module VSphereCloud
   class DiskProvider
@@ -30,7 +31,7 @@ module VSphereCloud
       )
       @client.wait_for_task(task)
 
-      Disk.new(disk_uuid, disk_size_in_kb, datastore, disk_path)
+      Resources::Disk.new(disk_uuid, disk_size_in_kb, datastore, disk_path)
     end
 
     def find(disk_uuid, cluster)
@@ -38,7 +39,7 @@ module VSphereCloud
         disk_path = path(datastore, disk_uuid)
         disk_size_in_kb = get_disk_size_in_kb(disk_path)
         if disk_size_in_kb != nil
-          return Disk.new(disk_uuid, disk_size_in_kb, datastore, disk_path)
+          return Resources::Disk.new(disk_uuid, disk_size_in_kb, datastore, disk_path)
         end
       end
 
@@ -75,13 +76,6 @@ module VSphereCloud
     def create_parent_folder(disk_path)
       destination_folder = File.dirname(disk_path)
       @client.create_datastore_folder(destination_folder, @datacenter.mob)
-    end
-  end
-
-  class Disk < Struct.new(:uuid, :size_in_kb, :datastore, :path)
-    def attach_spec(controller_key)
-      DiskConfig.new(datastore.name, path, controller_key, size_in_kb).
-        spec(independent: true)
     end
   end
 end
