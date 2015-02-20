@@ -26,6 +26,8 @@ module VSphereCloud
         allow(resources).to receive(:pick_persistent_datastore).
           with(24).
           and_return(datastore)
+        allow(virtual_disk_manager).to receive(:create_virtual_disk)
+        allow(client).to receive(:create_datastore_folder)
       end
 
       let(:datastore) { instance_double('VSphereCloud::Resources::Datastore', name: 'fake-datastore-name') }
@@ -44,6 +46,11 @@ module VSphereCloud
         expect(disk.size_in_kb).to eq(24576)
         expect(disk.path).to eq('[fake-datastore-name] fake-disk-path/disk-uuid.vmdk')
         expect(disk.datastore).to eq(datastore)
+      end
+
+      it 'creates parent folder' do
+        expect(client).to receive(:create_datastore_folder).with('[fake-datastore-name] fake-disk-path', datacenter_mob)
+        disk_provider.create(24576)
       end
 
       context 'when there are no datastores on host cluster that can fit disk size' do

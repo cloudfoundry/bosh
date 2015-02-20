@@ -21,6 +21,7 @@ module VSphereCloud
       disk_spec.adapter_type = 'lsiLogic'
 
       disk_path = path(datastore, disk_uuid)
+      create_parent_folder(disk_path)
 
       task = @virtual_disk_manager.create_virtual_disk(
         disk_path,
@@ -69,6 +70,11 @@ module VSphereCloud
       disk_geometry.cylinder * disk_geometry.head * disk_geometry.sector / 512
     rescue VimSdk::SoapError
       nil
+    end
+
+    def create_parent_folder(disk_path)
+      destination_folder = File.dirname(disk_path)
+      @client.create_datastore_folder(destination_folder, @datacenter.mob)
     end
   end
 
