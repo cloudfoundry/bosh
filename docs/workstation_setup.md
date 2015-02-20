@@ -1,21 +1,60 @@
-# Set up a workstation for development
+# Set up a Mac workstation for development
 
-We assume you can install packages (brew, apt-get, or equivalent). We include Mac examples here, replace with your package manager of choice.
+## Assumptions
+* We include examples using Homebrew here. Replace with your package manager of choice.
+* You have cloned the project to $HOME/workspace/bosh
 
-Bring homebrew index up-to-date:
-* `brew update`
+1. Bring homebrew index up-to-date
 
-Get mysql libraries (needed by the mysql2 gem):
-* `brew install mysql`
+    `brew update`
 
-Get postgresql libraries (needed by the pg gem):
-* `brew install postgresql`
+2. Install mysql (needed by the mysql2 gem)
 
-Install pg gem manually by specifying your architecture:
-* `(sudo) env ARCHFLAGS="-arch x86_64" gem install pg -v '0.15.1'`
+  `brew install mysql`
+
+3. Setup & Start mysql (required for running integration tests with mysql)
+    - start mysql as root
+    - create mysql user: root/password
+
+4. Install postgresql (needed by the pg gem)
+
+    `brew install postgresql`
+
+5. Setup and Start postgresql (required for running integration tests with postgresql (default))
+    * start postgres
+
+        ```
+        ln -sfv /usr/local/opt/postgresql/*.plist ~/Library/LaunchAgents
+        launchctl load ~/Library/LaunchAgents/homebrew.mxcl.postgresql.plist
+        ```
+
+    * create postgres user: $USER/\<no-password\>
+
+        `createuser -U $USER --superuser postgres`
+    * create postgres database
+
+        `createdb -U $USER`
  
-Get redis:
-* `brew install redis`
+6. Get redis
 
-Get Golang:
-* `brew install go`
+    `brew install redis`
+
+7. Get Golang
+
+    `brew install go`
+
+8. Install Bundler gem
+
+    `gem install bundler`
+
+9. Bundle BOSH
+
+    ```
+    cd ~/workspace/bosh
+    bundle install
+    ```
+
+## Issues
+
+If you have trouble bundling, you may have to install pg gem manually by specifying your architecture:
+* `(sudo) env ARCHFLAGS="-arch x86_64" gem install pg -v '0.15.1'`
