@@ -26,13 +26,13 @@ module Bosh::Cli
 
       Config.colorize = true
       Config.output ||= STDOUT
+
+      parse_global_options
     end
 
     # Find and run CLI command
     # @return [void]
     def run
-      parse_global_options
-
       Config.interactive = !@options[:non_interactive]
       Config.poll_interval = @options[:poll_interval]
 
