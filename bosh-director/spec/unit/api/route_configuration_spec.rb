@@ -34,6 +34,14 @@ module Bosh::Director
       end
     end
 
+    context 'when a bogus authentication configuration is supplied' do
+      let(:test_config) { base_config.merge({ 'user_management' => { 'provider' => 'wrong' }})}
+
+      it 'should raise an error' do
+        expect { route_configuration.controllers }.to raise_error(ArgumentError)
+      end
+    end
+
     context 'when uaa configuration is supplied' do
       let(:test_config) { base_config.merge({ 'user_management' => { 'provider' => 'uaa' }}) }
 

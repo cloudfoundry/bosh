@@ -246,12 +246,19 @@ describe 'director.yml.erb.erb' do
               'password' => 'password'
           }
       }
+      deployment_manifest_fragment['properties']['director']['user_management'] = {
+        'provider' => 'uaa'
+      }
     end
 
     it 'sets plugin to aws' do
       expect(parsed_yaml['cloud']).to include({
           'plugin' => 'aws'
       })
+    end
+
+    it 'sets the user_management provider' do
+      expect(parsed_yaml['user_management']['provider']).to eq('uaa')
     end
 
     it 'renders aws properties' do

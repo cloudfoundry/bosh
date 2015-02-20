@@ -91,6 +91,11 @@ properties:
     description: Max retries when creating VMs
     default: 5
 
+  #Director User Management
+  director.user_management.provider:
+    description: "User management implementation (local|uaa)"
+    default: local
+
   redis.address:
     description: Address of the redis server
   redis.port:
