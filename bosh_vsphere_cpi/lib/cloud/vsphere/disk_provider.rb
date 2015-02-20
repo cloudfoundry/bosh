@@ -10,8 +10,9 @@ module VSphereCloud
       @client = client
     end
 
-    def create(disk_size_in_kb, host_info)
-      datastore = find_datastore(disk_size_in_kb, host_info)
+    def create(disk_size_in_kb)
+      disk_size_in_mb = disk_size_in_kb / 1024
+      datastore = find_datastore(disk_size_in_mb)
       disk_uuid = "disk-#{SecureRandom.uuid}"
 
       disk_spec = VimSdk::Vim::VirtualDiskManager::FileBackedVirtualDiskSpec.new
@@ -23,7 +24,7 @@ module VSphereCloud
 
       task = @virtual_disk_manager.create_virtual_disk(
         disk_path,
-        @datacenter,
+        @datacenter.mob,
         disk_spec
       )
       @client.wait_for_task(task)
@@ -49,16 +50,11 @@ module VSphereCloud
       "[#{datastore.name}] #{@disk_path}/#{disk_uuid}.vmdk"
     end
 
-    def find_datastore(disk_size, host_info)
-      datastore = @resources.place_persistent_datastore(@datacenter.name, host_info['cluster'], disk_size)
+    def find_datastore(disk_size_in_mb)
+      datastore = @resources.pick_persistent_datastore(disk_size_in_mb)
 
       if datastore.nil?
-        raise Bosh::Clouds::NoDiskSpace.new(true), "Not enough persistent space on cluster #{host_info['cluster']}, #{@disk_size}"
-      end
-
-      # Sanity check, verify that the vm's host can access this datastore
-      unless host_info['datastores'].include?(datastore.name)
-        raise "Datastore not accessible to host, #{datastore.name}, #{host_info['datastores']}"
+        raise Bosh::Clouds::NoDiskSpace.new(true), "Not enough persistent space #{disk_size_in_mb}"
       end
 
       datastore
@@ -67,7 +63,7 @@ module VSphereCloud
     def get_disk_size_in_kb(disk_path)
       disk_geometry = @virtual_disk_manager.query_virtual_disk_geometry(
         disk_path,
-        @datacenter
+        @datacenter.mob
       )
 
       disk_geometry.cylinder * disk_geometry.head * disk_geometry.sector / 512

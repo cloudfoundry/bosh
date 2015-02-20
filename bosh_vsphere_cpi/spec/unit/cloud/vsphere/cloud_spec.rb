@@ -10,10 +10,12 @@ module VSphereCloud
     let(:client) { instance_double('VSphereCloud::Client', service_content: service_content) }
     let(:service_content) do
       instance_double('VimSdk::Vim::ServiceInstanceContent',
-        custom_fields_manager: custom_fields_manager
+        custom_fields_manager: custom_fields_manager,
+        virtual_disk_manager: virtual_disk_manager,
       )
     end
     let(:custom_fields_manager) { instance_double('VimSdk::Vim::CustomFieldsManager') }
+    let(:virtual_disk_manager) { instance_double('VimSdk::Vim::VirtualDiskManager') }
     let(:agent_env) { instance_double('VSphereCloud::AgentEnv') }
     before { allow(VSphereCloud::AgentEnv).to receive(:new).and_return(agent_env) }
 
@@ -1198,6 +1200,28 @@ module VSphereCloud
             vsphere_cloud.delete_disk('fake-disk-uuid')
           }.to raise_error
         end
+      end
+    end
+
+    describe '#create_disk' do
+      let(:disk) { instance_double('VSphereCloud::Disk', uuid: 'fake-disk-uuid') }
+      let(:disk_provider) { instance_double('VSphereCloud::DiskProvider') }
+      before do
+        Models::Disk.delete
+        allow(VSphereCloud::DiskProvider).to receive(:new).and_return(disk_provider)
+        allow(disk_provider).to receive(:create).with(1048576).and_return(disk)
+      end
+
+      it 'creates disk with disk provider' do
+        expect(disk_provider).to receive(:create).with(1048576).and_return(disk)
+        vsphere_cloud.create_disk(1024, {})
+      end
+
+      it 'creates disk in database' do
+        vsphere_cloud.create_disk(1024, {})
+        created_disk = Models::Disk.first
+        expect(created_disk.size).to eq(1024)
+        expect(created_disk.uuid).to eq('fake-disk-uuid')
       end
     end
   end

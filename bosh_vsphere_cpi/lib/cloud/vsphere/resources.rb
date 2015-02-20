@@ -81,6 +81,39 @@ module VSphereCloud
       end
     end
 
+    # Validate that the persistent datastore is still valid so we don't have to
+    # move the disk.
+    #
+    # @param [String] dc_name datacenter name.
+    # @param [String] datastore_name datastore name.
+    # @return [true, false] true iff the datastore still exists and is in the
+    #   persistent pool.
+    def validate_persistent_datastore(dc_name, datastore_name)
+      datacenter = datacenters[dc_name]
+      if datacenter.nil?
+        raise "Invalid datacenter #{dc_name} #{datacenters.inspect}"
+      end
+      datacenter.clusters.each_value do |cluster|
+        return true unless cluster.persistent(datastore_name).nil?
+      end
+      false
+    end
+
+    # Picks the persistent datastore with the requested disk space.
+    #
+    # @param [Integer] disk_space disk space.
+    # @return [Datastore?] datastore if it was placed succesfuly.
+    def pick_persistent_datastore(disk_size_in_mb)
+      @lock.synchronize do
+        cluster = pick_cluster(0, disk_size_in_mb, [])
+        return nil if cluster.nil?
+        datastore = cluster.pick_persistent(disk_size_in_mb)
+        return nil if datastore.nil?
+        datastore.allocate(disk_size_in_mb)
+        return datastore
+      end
+    end
+
     # Find a place for the requested resources.
     #
     # @param [Integer] memory requested memory.
@@ -116,19 +149,7 @@ module VSphereCloud
                           "any resources near disks: #{persistent.inspect}")
         end
 
-        weighted_clusters = []
-        datacenter = datacenters.first.last
-        datacenter.clusters.each_value do |cluster|
-          persistent_sizes = persistent_sizes_for_cluster(cluster, persistent)
-          scorer = Scorer.new(@config, cluster, memory, ephemeral, persistent_sizes)
-          score = scorer.score
-          @logger.debug("Score: #{cluster.name}: #{score}")
-          weighted_clusters << [cluster, score] if score > 0
-        end
-
-        raise "No available resources" if weighted_clusters.empty?
-
-        cluster = Util.weighted_random(weighted_clusters)
+        cluster = pick_cluster(memory, ephemeral, persistent)
 
         datastore = cluster.pick_ephemeral(ephemeral)
 
@@ -138,8 +159,25 @@ module VSphereCloud
           return [cluster, datastore]
         end
 
-        raise "No available resources"
+        raise 'No available resources'
       end
+    end
+
+    def pick_cluster(memory, disk_size_in_mb, existing_persistent_disk_cids)
+      weighted_clusters = []
+
+      datacenter = datacenters.first.last
+      datacenter.clusters.each_value do |cluster|
+        persistent_sizes = persistent_sizes_for_cluster(cluster, existing_persistent_disk_cids)
+        scorer = Scorer.new(@config, cluster, memory, disk_size_in_mb, persistent_sizes)
+        score = scorer.score
+        @logger.debug("Score: #{cluster.name}: #{score}")
+        weighted_clusters << [cluster, score] if score > 0
+      end
+
+      raise 'No available resources' if weighted_clusters.empty?
+
+      Util.weighted_random(weighted_clusters)
     end
 
     private

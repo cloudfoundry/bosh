@@ -41,6 +41,7 @@ module VSphereCloud
       @logger = config.logger
       @client = config.client
       @cloud_searcher = CloudSearcher.new(@client.service_content, @logger)
+      @datacenter = Resources::Datacenter.new(config)
 
       @resources = Resources.new(config)
       @file_provider = FileProvider.new(config.rest_client, config.vcenter_host)
@@ -487,15 +488,18 @@ module VSphereCloud
       end
     end
 
-    def create_disk(size, cloud_properties, _ = nil)
-      with_thread_name("create_disk(#{size}, _)") do
-        @logger.info("Creating disk with size: #{size}")
-        disk = Models::Disk.new
-        disk.uuid = "disk-#{generate_unique_name}"
-        disk.size = size
-        disk.save
-        @logger.info("Created disk: #{disk.inspect}")
-        disk.uuid
+    def create_disk(size_in_mb, cloud_properties, _ = nil)
+      with_thread_name("create_disk(#{size_in_mb}, _)") do
+        @logger.info("Creating disk with size: #{size_in_mb}")
+        size_in_kb = size_in_mb * 1024
+        disk = disk_provider.create(size_in_kb)
+
+        model_disk = Models::Disk.new
+        model_disk.uuid = disk.uuid
+        model_disk.size = size_in_mb
+        model_disk.save
+        @logger.info("Created disk: #{model_disk.inspect}")
+        model_disk.uuid
       end
     end
 
@@ -881,8 +885,17 @@ module VSphereCloud
     end
 
     def find_cluster(cluster_name)
-      datacenter = Resources::Datacenter.new(config)
-      datacenter.clusters[cluster_name]
+      @datacenter.clusters[cluster_name]
+    end
+
+    def disk_provider
+      DiskProvider.new(
+        @client.service_content.virtual_disk_manager,
+        @datacenter,
+        @resources,
+        @config.datacenter_disk_path,
+        @client
+      )
     end
 
     attr_reader :config

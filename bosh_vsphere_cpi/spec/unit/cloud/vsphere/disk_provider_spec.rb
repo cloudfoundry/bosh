@@ -15,24 +15,17 @@ module VSphereCloud
     let(:virtual_disk_manager) { instance_double('VimSdk::Vim::VirtualDiskManager') }
     let(:datacenter) { instance_double('VimSdk::Vim::Datacenter', name: 'fake-datacenter-name') }
     let(:resources) { instance_double('VSphereCloud::Resources') }
-    let(:client) { instance_double('VSphereCloud::Client') }
+    let(:client) { instance_double('VSphereCloud::Client', wait_for_task: nil) }
 
     describe '#create' do
       before do
-        allow(SecureRandom).to receive(:uuid).and_return('disk-uuid')
-        allow(resources).to receive(:place_persistent_datastore).
-          with('fake-datacenter-name', 'fake-cluster-name', 24576).
+        allow(SecureRandom).to receive(:uuid).and_return('uuid')
+        allow(resources).to receive(:pick_persistent_datastore).
+          with(24).
           and_return(datastore)
       end
 
       let(:datastore) { instance_double('VSphereCloud::Resources::Datastore', name: 'fake-datastore-name') }
-
-      let(:host_info) do
-        {
-          'datastores' => ['fake-datastore-name'],
-          'cluster' => 'fake-cluster-name',
-        }
-      end
 
       it 'creates disk using VirtualDiskManager' do
         expect(virtual_disk_manager).to receive(:create_virtual_disk) do |path, dc, spec|
@@ -43,35 +36,23 @@ module VSphereCloud
           expect(spec.adapter_type).to eq('lsiLogic')
         end
 
-        disk = disk_provider.create(24576, host_info)
+        disk = disk_provider.create(24576)
         expect(disk.uuid).to eq('disk-uuid')
         expect(disk.size_in_kb).to eq(24576)
         expect(disk.path).to eq('[fake-datastore-name] fake-disk-path/disk-uuid.vmdk')
         expect(disk.datastore).to eq(datastore)
       end
 
-      context 'when host info does not include found persistent datastore' do
-        before do
-          host_info['datastores'] = ['fake-another-datastore-name']
-        end
-
-        it 'raises an error' do
-          expect {
-            disk_provider.create(24576, host_info)
-          }.to raise_error /Datastore not accessible to host/
-        end
-      end
-
       context 'when there are no datastores on host cluster that can fit disk size' do
         before do
-          allow(resources).to receive(:place_persistent_datastore).
-            with('fake-datacenter-name', 'fake-cluster-name', 24576).
+          allow(resources).to receive(:pick_persistent_datastore).
+            with(24).
             and_return(nil)
         end
 
         it 'raises an error' do
           expect {
-            disk_provider.create(24576, host_info)
+            disk_provider.create(24576)
           }.to raise_error Bosh::Clouds::NoDiskSpace
         end
       end
@@ -134,6 +115,8 @@ module VSphereCloud
 
       context 'when disk does not exist' do
         before do
+          allow(cluster).to receive(:persistent_datastores).and_return({})
+          allow(cluster).to receive(:shared_datastores).and_return({})
           allow(virtual_disk_manager).to receive(:query_virtual_disk_geometry).
             with('[fake-datastore-name] fake-disk-path/disk-uuid.vmdk', datacenter).
             and_raise(VimSdk::SoapError.new('fake-message', 'fake-fault'))
