@@ -28,6 +28,11 @@ module VSphereCloud
       allow_any_instance_of(Cloud).to receive(:at_exit)
     end
 
+    let(:datacenter) { instance_double('VSphereCloud::Resources::Datacenter', name: 'fake-datacenter') }
+    before { allow(Resources::Datacenter).to receive(:new).and_return(datacenter) }
+    let(:disk_provider) { instance_double('VSphereCloud::DiskProvider') }
+    before { allow(VSphereCloud::DiskProvider).to receive(:new).and_return(disk_provider) }
+
     describe '#fix_device_unit_numbers' do
       let(:device_class) { Struct.new(:unit_number, :controller_key) }
       let(:device_change_class) { Struct.new(:device) }
@@ -740,12 +745,15 @@ module VSphereCloud
         allow(vsphere_cloud).to receive(:get_vm_location).and_return(vm_location)
       end
 
-      let(:host_info) { double(:host_info) }
+      let(:host_info) { {'cluster' => 'fake-cluster-name'} }
       before { allow(vsphere_cloud).to receive(:get_vm_host_info).with(vm).and_return(host_info)}
 
       let(:controller_key) { double(:controller_key) }
       let(:device) { instance_double('VimSdk::Vim::Vm::Device::VirtualDisk', controller_key: controller_key) }
-      before { allow(device).to receive(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualDisk).and_return(true) }
+      before do
+        allow(device).to receive(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualDisk).and_return(true)
+        allow(device).to receive(:unit_number).and_return(nil)
+      end
 
       let(:config_spec) { instance_double('VimSdk::Vim::Vm::ConfigSpec', :device_change= => nil, :device_change => []) }
       before { allow(VimSdk::Vim::Vm::ConfigSpec).to receive(:new).and_return(config_spec) }
@@ -765,21 +773,28 @@ module VSphereCloud
 
       let(:disk_spec) { double(:disk_spec, device: double(:device, unit_number: 'fake-unit-number')) }
 
+      before { allow(datacenter).to receive(:clusters).and_return({'fake-cluster-name' => cluster}) }
+      let(:datastore) { instance_double('VSphereCloud::Resources::Datastore', name: 'fake-datastore')}
+      let(:cluster) { instance_double('VSphereCloud::Resources::Cluster') }
+      let(:disk) { VSphereCloud::Disk.new('fake-disk-cid', 1024, datastore, 'fake-disk-path') }
+
       it 'updates persistent disk' do
-        expect(persistent_disk).to receive(:create_spec).
-          with('fake-folder/fake-datacenter-name', host_info, controller_key, true).and_return(disk_spec)
+        expect(disk_provider).to receive(:find).with('fake-disk-cid', cluster).and_return(disk)
 
         expect(client).to receive(:reconfig_vm) do |reconfig_vm, vm_config|
           expect(reconfig_vm).to eq(vm)
-          expect(vm_config.device_change).to include(disk_spec)
+          expect(vm_config.device_change.size).to eq(1)
+          disk_spec = vm_config.device_change.first
+          expect(disk_spec.device.capacity_in_kb).to eq(1024)
+          expect(disk_spec.device.backing.datastore).to eq(datastore.name)
         end
 
-        expect(vsphere_cloud).to receive(:fix_device_unit_numbers)
+        expect(vsphere_cloud).to receive(:fix_device_unit_numbers).and_call_original
 
         expect(agent_env).to receive(:set_env) do|env_vm, env_location, env|
           expect(env_vm).to eq(vm)
           expect(env_location).to eq(vm_location)
-          expect(env['disks']['persistent']['fake-disk-cid']).to eq('fake-unit-number')
+          expect(env['disks']['persistent']['fake-disk-cid']).to eq('0')
         end
 
         vsphere_cloud.attach_disk('fake-image', disk_cid)
@@ -1205,10 +1220,8 @@ module VSphereCloud
 
     describe '#create_disk' do
       let(:disk) { instance_double('VSphereCloud::Disk', uuid: 'fake-disk-uuid') }
-      let(:disk_provider) { instance_double('VSphereCloud::DiskProvider') }
       before do
         Models::Disk.delete
-        allow(VSphereCloud::DiskProvider).to receive(:new).and_return(disk_provider)
         allow(disk_provider).to receive(:create).with(1048576).and_return(disk)
       end
 

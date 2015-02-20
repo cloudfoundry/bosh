@@ -407,28 +407,27 @@ module VSphereCloud
 
         vm = get_vm_by_cid(vm_cid)
 
-        datacenter_name = config.datacenter_name
-
         vm_properties = @cloud_searcher.get_properties(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
         host_info = get_vm_host_info(vm)
 
         devices = vm_properties['config.hardware.device']
         system_disk = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) }
 
-        disk = PersistentDisk.new(disk_cid, @cloud_searcher, @resources, @client, @logger)
-        disk_config_spec = disk.create_spec(datacenter_name, host_info, system_disk.controller_key, @config.copy_disks)
+        cluster = @datacenter.clusters[host_info['cluster']]
+        disk = disk_provider.find(disk_cid, cluster)
+        disk_config_spec = disk.attach_spec(system_disk.controller_key)
 
         vm_config = Vim::Vm::ConfigSpec.new
         vm_config.device_change = []
         vm_config.device_change << disk_config_spec
         fix_device_unit_numbers(devices, vm_config.device_change)
 
-        env = @agent_env.get_current_env(vm, datacenter_name)
+        env = @agent_env.get_current_env(vm, @datacenter.name)
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
         env['disks']['persistent'][disk_cid] = disk_config_spec.device.unit_number.to_s
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
 
-        location = get_vm_location(vm, datacenter: datacenter_name)
+        location = get_vm_location(vm, datacenter: @datacenter.name)
         @agent_env.set_env(vm, location, env)
         @logger.info('Attaching disk')
         client.reconfig_vm(vm, vm_config)

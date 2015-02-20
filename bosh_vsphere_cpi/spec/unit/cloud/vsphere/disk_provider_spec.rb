@@ -13,7 +13,10 @@ module VSphereCloud
     end
 
     let(:virtual_disk_manager) { instance_double('VimSdk::Vim::VirtualDiskManager') }
-    let(:datacenter) { instance_double('VimSdk::Vim::Datacenter', name: 'fake-datacenter-name') }
+    let(:datacenter) do
+      instance_double('VSphereCloud::Resources::Datacenter', name: 'fake-datacenter-name', mob: datacenter_mob)
+    end
+    let(:datacenter_mob) { instance_double('VimSdk::Vim::Datacenter') }
     let(:resources) { instance_double('VSphereCloud::Resources') }
     let(:client) { instance_double('VSphereCloud::Client', wait_for_task: nil) }
 
@@ -30,7 +33,7 @@ module VSphereCloud
       it 'creates disk using VirtualDiskManager' do
         expect(virtual_disk_manager).to receive(:create_virtual_disk) do |path, dc, spec|
           expect(path).to eq('[fake-datastore-name] fake-disk-path/disk-uuid.vmdk')
-          expect(dc).to eq(datacenter)
+          expect(dc).to eq(datacenter_mob)
           expect(spec.disk_type).to eq('preallocated')
           expect(spec.capacity_kb).to eq(24576)
           expect(spec.adapter_type).to eq('lsiLogic')
@@ -72,7 +75,7 @@ module VSphereCloud
       context 'when disk exists' do
         before do
           allow(virtual_disk_manager).to receive(:query_virtual_disk_geometry).
-            with('[fake-datastore-name] fake-disk-path/disk-uuid.vmdk', datacenter).
+            with('[fake-datastore-name] fake-disk-path/disk-uuid.vmdk', datacenter_mob).
             and_return(
               double(:host_disk_dimensions_chs, cylinder: 2048, head: 4, sector: 8)
             )

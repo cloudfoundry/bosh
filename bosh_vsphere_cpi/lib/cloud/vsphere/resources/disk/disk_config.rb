@@ -1,15 +1,15 @@
 module VSphereCloud
   class DiskConfig
-    def initialize(datastore, filename, controller_key, size)
-      @datastore = datastore
+    def initialize(datastore_name, filename, controller_key, size_in_kb)
+      @datastore_name = datastore_name
       @filename = filename
       @controller_key = controller_key
-      @size = size
+      @size_in_kb = size_in_kb
     end
 
     def spec(options)
       backing_info = VimSdk::Vim::Vm::Device::VirtualDisk::FlatVer2BackingInfo.new
-      backing_info.datastore = @datastore
+      backing_info.datastore = @datastore_name
       if options[:independent]
         backing_info.disk_mode = VimSdk::Vim::Vm::Device::VirtualDiskOption::DiskMode::INDEPENDENT_PERSISTENT
       else
@@ -21,7 +21,7 @@ module VSphereCloud
       virtual_disk.key = -1
       virtual_disk.controller_key = @controller_key
       virtual_disk.backing = backing_info
-      virtual_disk.capacity_in_kb = @size * 1024
+      virtual_disk.capacity_in_kb = @size_in_kb
 
       device_config_spec = VimSdk::Vim::Vm::Device::VirtualDeviceSpec.new
       device_config_spec.device = virtual_disk
