@@ -5,7 +5,7 @@ describe Bosh::AwsCloud::Stemcell do
     it "should return an AMI if given an id for an existing one" do
       fake_aws_ami = double("image", exists?: true)
       region = double("region", images: {'ami-exists' => fake_aws_ami})
-      described_class.find(region, "ami-exists").ami.should == fake_aws_ami
+      expect(described_class.find(region, "ami-exists").ami).to eq(fake_aws_ami)
     end
 
     it "should raise an error if no AMI exists with the given id" do
@@ -23,7 +23,7 @@ describe Bosh::AwsCloud::Stemcell do
 
     it "returns the id of the ami object" do
       stemcell = described_class.new(region, fake_aws_ami)
-      stemcell.image_id.should eq('my-id')
+      expect(stemcell.image_id).to eq('my-id')
     end
   end
 
@@ -35,10 +35,10 @@ describe Bosh::AwsCloud::Stemcell do
       it "should deregister the ami" do
         stemcell = described_class.new(region, fake_aws_ami)
 
-        stemcell.should_receive(:memoize_snapshots).ordered
-        fake_aws_ami.should_receive(:deregister).ordered
-        Bosh::AwsCloud::ResourceWait.stub(:for_image).with(image: fake_aws_ami, state: :deleted)
-        stemcell.should_receive(:delete_snapshots).ordered
+        expect(stemcell).to receive(:memoize_snapshots).ordered
+        expect(fake_aws_ami).to receive(:deregister).ordered
+        allow(Bosh::AwsCloud::ResourceWait).to receive(:for_image).with(image: fake_aws_ami, state: :deleted)
+        expect(stemcell).to receive(:delete_snapshots).ordered
 
         stemcell.delete
       end
@@ -48,9 +48,9 @@ describe Bosh::AwsCloud::Stemcell do
       it "should fake ami deregistration" do
         stemcell = described_class.new(region, fake_aws_ami)
 
-        stemcell.stub(:memoize_snapshots)
-        fake_aws_ami.should_receive(:deregister).and_raise(AWS::EC2::Errors::AuthFailure)
-        Bosh::AwsCloud::ResourceWait.should_not_receive(:for_image)
+        allow(stemcell).to receive(:memoize_snapshots)
+        expect(fake_aws_ami).to receive(:deregister).and_raise(AWS::EC2::Errors::AuthFailure)
+        expect(Bosh::AwsCloud::ResourceWait).not_to receive(:for_image)
 
         stemcell.delete
       end
@@ -61,14 +61,14 @@ describe Bosh::AwsCloud::Stemcell do
       it 'should not propagate a AWS::Core::Resource::NotFound error' do
         stemcell = described_class.new(region, fake_aws_ami)
 
-        stemcell.should_receive(:memoize_snapshots).ordered
-        fake_aws_ami.should_receive(:deregister).ordered
+        expect(stemcell).to receive(:memoize_snapshots).ordered
+        expect(fake_aws_ami).to receive(:deregister).ordered
         resource_wait = double('Bosh::AwsCloud::ResourceWait')
-        Bosh::AwsCloud::ResourceWait.stub(new: resource_wait)
-        resource_wait.stub(:for_resource).with(
+        allow(Bosh::AwsCloud::ResourceWait).to receive_messages(new: resource_wait)
+        allow(resource_wait).to receive(:for_resource).with(
           resource: fake_aws_ami, errors: [], target_state: :deleted, state_method: :state).and_raise(
           AWS::Core::Resource::NotFound)
-        stemcell.should_receive(:delete_snapshots).ordered
+        expect(stemcell).to receive(:delete_snapshots).ordered
 
         stemcell.delete
       end
@@ -81,7 +81,7 @@ describe Bosh::AwsCloud::Stemcell do
     })}
     let(:fake_aws_ami) do
       image = double("image", exists?: true, id: "ami-xxxxxxxx")
-      image.should_receive(:block_device_mappings).and_return(fake_aws_object)
+      expect(image).to receive(:block_device_mappings).and_return(fake_aws_object)
       image
     end
     let(:region) { double("region", images: {'ami-exists' => fake_aws_ami}) }
@@ -91,7 +91,7 @@ describe Bosh::AwsCloud::Stemcell do
 
       stemcell.memoize_snapshots
 
-      stemcell.snapshots.should == %w[snap-xxxxxxxx]
+      expect(stemcell.snapshots).to eq(%w[snap-xxxxxxxx])
     end
   end
 
@@ -100,16 +100,16 @@ describe Bosh::AwsCloud::Stemcell do
     let(:snapshot) { double('snapshot') }
     let(:region) do
       region = double("region")
-      region.stub(:images => {'ami-exists' => fake_aws_ami})
-      region.stub_chain(:snapshots, :[]).and_return(snapshot)
+      allow(region).to receive_messages(:images => {'ami-exists' => fake_aws_ami})
+      allow(region).to receive_message_chain(:snapshots, :[]).and_return(snapshot)
       region
     end
 
     it "should delete all memoized snapshots" do
       stemcell = described_class.new(region, fake_aws_ami)
-      stemcell.stub(:snapshots).and_return(%w[snap-xxxxxxxx])
+      allow(stemcell).to receive(:snapshots).and_return(%w[snap-xxxxxxxx])
 
-      snapshot.should_receive(:delete)
+      expect(snapshot).to receive(:delete)
 
       stemcell.delete_snapshots
     end

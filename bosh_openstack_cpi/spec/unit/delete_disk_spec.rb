@@ -9,13 +9,13 @@ describe Bosh::OpenStackCloud::Cloud do
     volume = double("volume", :id => "v-foobar")
 
     cloud = mock_cloud do |openstack|
-      openstack.volumes.should_receive(:get).
+      expect(openstack.volumes).to receive(:get).
         with("v-foobar").and_return(volume)
     end
 
-    volume.should_receive(:status).and_return(:available)
-    volume.should_receive(:destroy).and_return(true)
-    cloud.should_receive(:wait_resource).with(volume, :deleted, :status, true)
+    expect(volume).to receive(:status).and_return(:available)
+    expect(volume).to receive(:destroy).and_return(true)
+    expect(cloud).to receive(:wait_resource).with(volume, :deleted, :status, true)
 
     cloud.delete_disk("v-foobar")
   end
@@ -24,10 +24,10 @@ describe Bosh::OpenStackCloud::Cloud do
     volume = double("volume", :id => "v-foobar")
 
     cloud = mock_cloud do |openstack|
-      openstack.volumes.should_receive(:get).with("v-foobar").and_return(volume)
+      expect(openstack.volumes).to receive(:get).with("v-foobar").and_return(volume)
     end
 
-    volume.should_receive(:status).and_return(:busy)
+    expect(volume).to receive(:status).and_return(:busy)
 
     expect {
       cloud.delete_disk("v-foobar")

@@ -15,28 +15,28 @@ describe "S3 buckets integration test", s3_credentials: true do
 
   context "buckets" do
     it "creates, lists, copies, and deletes buckets" do
-      s3.bucket_exists?(bucket_name).should be(false)
+      expect(s3.bucket_exists?(bucket_name)).to be(false)
       s3.create_bucket(bucket_name)
       s3.create_bucket(another_bucket_name)
 
-      s3.bucket_exists?(bucket_name).should be(true)
-      s3.bucket_names.should include(bucket_name)
+      expect(s3.bucket_exists?(bucket_name)).to be(true)
+      expect(s3.bucket_names).to include(bucket_name)
 
-      s3.fetch_object_contents(bucket_name, "file.txt").should be_nil
+      expect(s3.fetch_object_contents(bucket_name, "file.txt")).to be_nil
 
       s3.upload_to_bucket(bucket_name, "file.txt", file)
 
-      s3.objects_in_bucket(bucket_name).should include("file.txt")
-      s3.fetch_object_contents(bucket_name, "file.txt").should == "hello friends"
+      expect(s3.objects_in_bucket(bucket_name)).to include("file.txt")
+      expect(s3.fetch_object_contents(bucket_name, "file.txt")).to eq("hello friends")
 
       s3.move_bucket(bucket_name, another_bucket_name)
-      s3.objects_in_bucket(another_bucket_name).should include("file.txt")
-      s3.fetch_object_contents(another_bucket_name, "file.txt").should == "hello friends"
-      s3.objects_in_bucket(bucket_name).should_not include("file.txt")
+      expect(s3.objects_in_bucket(another_bucket_name)).to include("file.txt")
+      expect(s3.fetch_object_contents(another_bucket_name, "file.txt")).to eq("hello friends")
+      expect(s3.objects_in_bucket(bucket_name)).not_to include("file.txt")
 
       Dir.mktmpdir do |dir|
         file = s3.copy_remote_file(another_bucket_name, "file.txt", File.join(dir, "new_file.txt"))
-        file.read.should == "hello friends"
+        expect(file.read).to eq("hello friends")
       end
 
       expect { s3.copy_remote_file(another_bucket_name, "bad_file_name.txt", "new_file.txt")}.to raise_error(Exception, "Can't find bad_file_name.txt in bucket #{another_bucket_name}")
@@ -53,9 +53,9 @@ describe "S3 buckets integration test", s3_credentials: true do
         sleep 0.5
       end
 
-      bucket_exists.should be(false)
+      expect(bucket_exists).to be(false)
 
-      s3.bucket_names.should_not include(bucket_name)
+      expect(s3.bucket_names).not_to include(bucket_name)
     end
   end
 

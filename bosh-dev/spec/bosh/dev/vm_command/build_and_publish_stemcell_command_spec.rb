@@ -55,8 +55,8 @@ module Bosh::Dev
         before { env['UBUNTU_ISO'] = 'fake-UBUNTU_ISO' }
 
         it 'includes the UBUNTU_ISO export' do
-          subject.to_s.should_not match(/bundle.*(?=export)/m)
-          subject.to_s.should match(/export UBUNTU_ISO='fake-UBUNTU_ISO'/)
+          expect(subject.to_s).not_to match(/bundle.*(?=export)/m)
+          expect(subject.to_s).to match(/export UBUNTU_ISO='fake-UBUNTU_ISO'/)
         end
       end
     end

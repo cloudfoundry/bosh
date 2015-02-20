@@ -75,7 +75,7 @@ module Bosh::Dev
           end
 
           it 'does not execute any git commands' do
-            Open3.should_not_receive(:capture3)
+            expect(Open3).not_to receive(:capture3)
             expect { git_tagger.tag_and_push(sha, build_number) }.to raise_error
           end
         end

@@ -37,7 +37,7 @@ describe VimSdk::Soap::SoapDeserializer do
       :bool_test => true,
       :string_test => 'test value'
     }.each do |key, value|
-      result.send(key).should == value
+      expect(result.send(key)).to eq(value)
     end
   end
 
@@ -60,7 +60,7 @@ describe VimSdk::Soap::SoapDeserializer do
     {
       :time_test => Time.at(1301174932)
     }.each do |key, value|
-      result.send(key).should == value
+      expect(result.send(key)).to eq(value)
     end
   end
 
@@ -83,7 +83,7 @@ describe VimSdk::Soap::SoapDeserializer do
     {
       :binary_test => 'some binary string'
     }.each do |key, value|
-      result.send(key).should == value
+      expect(result.send(key)).to eq(value)
     end
   end
 
@@ -106,7 +106,7 @@ describe VimSdk::Soap::SoapDeserializer do
     {
       :array_test => ['foo', 'bar']
     }.each do |key, value|
-      result.send(key).should == value
+      expect(result.send(key)).to eq(value)
     end
   end
 
@@ -132,7 +132,7 @@ describe VimSdk::Soap::SoapDeserializer do
       :class_test => String,
       :type_name_test => VimSdk::Vmodl::DataObject
     }.each do |key, value|
-      result.send(key).should == value
+      expect(result.send(key)).to eq(value)
     end
   end
 
@@ -150,7 +150,7 @@ describe VimSdk::Soap::SoapDeserializer do
       ])
     end
     test_class2.finalize
-    VimSdk::VmomiSupport.stub(:loaded_wsdl_type).with('urn:test', 'Test2').and_return(test_class2)
+    allow(VimSdk::VmomiSupport).to receive(:loaded_wsdl_type).with('urn:test', 'Test2').and_return(test_class2)
 
     stub = double('stub')
     deserializer = VimSdk::Soap::SoapDeserializer.new(stub, 'test_version')
@@ -164,7 +164,7 @@ describe VimSdk::Soap::SoapDeserializer do
       :test => 'foo',
       :test2 => 'bar'
     }.each do |key, value|
-      result.send(key).should == value
+      expect(result.send(key)).to eq(value)
     end
   end
 
@@ -189,8 +189,8 @@ RESPONSE
 
     result = deserializer.result
     value = result.val
-    value.class.should == VimSdk::Vmodl::Fault::SystemError
-    value.msg.should == 'A general system error occurred: Error deleting disk Device or resource busy'
-    value.reason.should == 'Error deleting disk Device or resource busy'
+    expect(value.class).to eq(VimSdk::Vmodl::Fault::SystemError)
+    expect(value.msg).to eq('A general system error occurred: Error deleting disk Device or resource busy')
+    expect(value.reason).to eq('Error deleting disk Device or resource busy')
   end
 end

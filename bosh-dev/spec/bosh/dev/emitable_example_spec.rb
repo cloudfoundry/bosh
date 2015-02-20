@@ -4,7 +4,7 @@ require 'bosh/dev/emitable_example'
 module Bosh::Dev
   describe EmitableExample do
     subject do
-      ENV.stub(:fetch).with('BAT_INFRASTRUCTURE').and_return('openstack')
+      allow(ENV).to receive(:fetch).with('BAT_INFRASTRUCTURE').and_return('openstack')
       EmitableExample.new(example)
     end
 

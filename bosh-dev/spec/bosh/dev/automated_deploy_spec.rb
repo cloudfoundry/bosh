@@ -38,7 +38,7 @@ module Bosh::Dev
       let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession') }
 
       before do
-        Bosh::Dev::DirectorClient.stub(:new).with(
+        allow(Bosh::Dev::DirectorClient).to receive(:new).with(
           bosh_target,
           'fake-username',
           'fake-password',

@@ -25,18 +25,18 @@ describe Bosh::AwsCloud::Cloud, "reboot_vm" do
 
   it 'deletes an EC2 instance' do
     registry = double("registry")
-    Bosh::Registry::Client.stub(:new).and_return(registry)
+    allow(Bosh::Registry::Client).to receive(:new).and_return(registry)
 
     region = double("region")
-    AWS::EC2.stub(:new).and_return(double("ec2", regions: {"bar" => region}))
+    allow(AWS::EC2).to receive(:new).and_return(double("ec2", regions: {"bar" => region}))
 
     az_selector = double("availability zone selector")
-    Bosh::AwsCloud::AvailabilityZoneSelector.stub(:new).
+    allow(Bosh::AwsCloud::AvailabilityZoneSelector).to receive(:new).
       with(region, "foo").
       and_return(az_selector)
 
     instance_manager = instance_double('Bosh::AwsCloud::InstanceManager')
-    Bosh::AwsCloud::InstanceManager.stub(:new).
+    allow(Bosh::AwsCloud::InstanceManager).to receive(:new).
       with(region, registry, be_an_instance_of(AWS::ELB), az_selector, be_an_instance_of(Logger)).
       and_return(instance_manager)
 

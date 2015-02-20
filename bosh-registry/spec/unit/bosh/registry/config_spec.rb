@@ -58,25 +58,25 @@ describe Bosh::Registry do
 
       logger = Bosh::Registry.logger
 
-      logger.should be_kind_of(Logger)
-      logger.level.should == Logger::DEBUG
+      expect(logger).to be_kind_of(Logger)
+      expect(logger.level).to eq(Logger::DEBUG)
 
-      Bosh::Registry.http_port.should == 25777
-      Bosh::Registry.http_user.should == "admin"
-      Bosh::Registry.http_password.should == "admin"
+      expect(Bosh::Registry.http_port).to eq(25777)
+      expect(Bosh::Registry.http_user).to eq("admin")
+      expect(Bosh::Registry.http_password).to eq("admin")
 
       db = Bosh::Registry.db
-      db.should be_kind_of(Sequel::SQLite::Database)
-      db.opts[:database].should == "/:memory:"
-      db.opts[:max_connections].should == 433
-      db.opts[:pool_timeout].should == 227
+      expect(db).to be_kind_of(Sequel::SQLite::Database)
+      expect(db.opts[:database]).to eq("/:memory:")
+      expect(db.opts[:max_connections]).to eq(433)
+      expect(db.opts[:pool_timeout]).to eq(227)
 
       im = Bosh::Registry.instance_manager
-      im.should be_kind_of(Bosh::Registry::InstanceManager::Aws)
+      expect(im).to be_kind_of(Bosh::Registry::InstanceManager::Aws)
     end
 
     it "reads provided configuration file and sets singletons for OpenStack" do
-      Fog::Compute.stub(:new)
+      allow(Fog::Compute).to receive(:new)
 
       config = valid_config
       config["cloud"] = {
@@ -93,21 +93,21 @@ describe Bosh::Registry do
 
       logger = Bosh::Registry.logger
 
-      logger.should be_kind_of(Logger)
-      logger.level.should == Logger::DEBUG
+      expect(logger).to be_kind_of(Logger)
+      expect(logger.level).to eq(Logger::DEBUG)
 
-      Bosh::Registry.http_port.should == 25777
-      Bosh::Registry.http_user.should == "admin"
-      Bosh::Registry.http_password.should == "admin"
+      expect(Bosh::Registry.http_port).to eq(25777)
+      expect(Bosh::Registry.http_user).to eq("admin")
+      expect(Bosh::Registry.http_password).to eq("admin")
 
       db = Bosh::Registry.db
-      db.should be_kind_of(Sequel::SQLite::Database)
-      db.opts[:database].should == "/:memory:"
-      db.opts[:max_connections].should == 433
-      db.opts[:pool_timeout].should == 227
+      expect(db).to be_kind_of(Sequel::SQLite::Database)
+      expect(db.opts[:database]).to eq("/:memory:")
+      expect(db.opts[:max_connections]).to eq(433)
+      expect(db.opts[:pool_timeout]).to eq(227)
 
       im = Bosh::Registry.instance_manager
-      im.should be_kind_of(Bosh::Registry::InstanceManager::Openstack)
+      expect(im).to be_kind_of(Bosh::Registry::InstanceManager::Openstack)
     end
 
   end
@@ -126,7 +126,7 @@ describe Bosh::Registry do
     let(:database_connection) { double('Database Connection').as_null_object }
 
     before do
-      Sequel.stub(:connect).and_return(database_connection)
+      allow(Sequel).to receive(:connect).and_return(database_connection)
     end
 
     it "configures a new database connection" do
@@ -138,35 +138,35 @@ describe Bosh::Registry do
           'adapter' => 'sqlite',
           'max_connections' => 32
       }
-      Sequel.should_receive(:connect).with(expected_options).and_return(database_connection)
+      expect(Sequel).to receive(:connect).with(expected_options).and_return(database_connection)
       described_class.connect_db(database_options)
     end
 
     it "ignores empty and nil options" do
-      Sequel.should_receive(:connect).with('baz' => 'baz').and_return(database_connection)
+      expect(Sequel).to receive(:connect).with('baz' => 'baz').and_return(database_connection)
       described_class.connect_db('foo' => nil, 'bar' => '', 'baz' => 'baz')
     end
 
     context "when logger is available" do
       before do
-        described_class.stub(:logger).and_return(double('Fake Logger'))
+        allow(described_class).to receive(:logger).and_return(double('Fake Logger'))
       end
 
       it "sets the database logger" do
-        database_connection.should_receive(:logger=)
-        database_connection.should_receive(:sql_log_level=)
+        expect(database_connection).to receive(:logger=)
+        expect(database_connection).to receive(:sql_log_level=)
         described_class.connect_db(database_options)
       end
     end
 
     context "when logger is unavailable" do
       before do
-        described_class.stub(:logger).and_return(nil)
+        allow(described_class).to receive(:logger).and_return(nil)
       end
 
       it "does not sets the database logger" do
-        database_connection.should_not_receive(:logger=)
-        database_connection.should_not_receive(:sql_log_level=)
+        expect(database_connection).not_to receive(:logger=)
+        expect(database_connection).not_to receive(:sql_log_level=)
         described_class.connect_db(database_options)
       end
     end

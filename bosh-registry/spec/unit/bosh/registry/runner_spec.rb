@@ -20,7 +20,7 @@ describe Bosh::Registry::Runner do
       config = { "key" => "value" }
       write_config(config_file.path, config)
 
-      Bosh::Registry.should_receive(:configure).with(config)
+      expect(Bosh::Registry).to receive(:configure).with(config)
       make_runner(config_file.path)
     end
 
@@ -44,7 +44,7 @@ describe Bosh::Registry::Runner do
       config_file = Tempfile.new("config")
       write_config(config_file.path, { "foo" => "bar" })
 
-      Psych.stub(:load_file).and_raise(SystemCallError.new("baz"))
+      allow(Psych).to receive(:load_file).and_raise(SystemCallError.new("baz"))
 
       expect {
         make_runner(config_file.path)
@@ -59,21 +59,21 @@ describe Bosh::Registry::Runner do
     end
 
     it "spins up/shuts down reactor and HTTP server" do
-      Bosh::Registry.stub(:configure)
+      allow(Bosh::Registry).to receive(:configure)
       Bosh::Registry.http_port = 25777
 
       runner = make_runner(@config_file)
       mock_thin = double("thin")
 
-      Thin::Server.should_receive(:new).
+      expect(Thin::Server).to receive(:new).
         with("0.0.0.0", 25777, :signals => false).
         and_return(mock_thin)
 
-      mock_thin.should_receive(:start!)
+      expect(mock_thin).to receive(:start!)
 
       runner.run
 
-      mock_thin.should_receive(:stop!)
+      expect(mock_thin).to receive(:stop!)
 
       runner.stop
     end

@@ -9,8 +9,8 @@ describe Bosh::AwsCloud::Cloud do
 
     cloud = mock_cloud do |ec2, region|
       mock_instance = double("AWS Instance")
-      ec2.instances.should_receive(:[]).with(fake_instance_id).and_return(mock_instance)
-      mock_instance.should_receive(:block_devices).and_return([
+      expect(ec2.instances).to receive(:[]).with(fake_instance_id).and_return(mock_instance)
+      expect(mock_instance).to receive(:block_devices).and_return([
                                                              {
                                                                  :device_name => "/dev/sda2",
                                                                  :ebs => {
@@ -35,7 +35,7 @@ describe Bosh::AwsCloud::Cloud do
                                                          ])
     end
 
-    cloud.get_disks(fake_instance_id).should == ["vol-123", "vol-456"]
+    expect(cloud.get_disks(fake_instance_id)).to eq(["vol-123", "vol-456"])
   end
 
 end

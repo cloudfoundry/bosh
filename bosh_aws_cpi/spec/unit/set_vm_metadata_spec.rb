@@ -5,16 +5,16 @@ describe Bosh::AwsCloud::Cloud, '#set_vm_metadata' do
 
   before :each do
     @cloud = mock_cloud(mock_cloud_options['properties']) do |ec2|
-      ec2.instances.stub(:[]).with('i-foobar').and_return(instance)
+      allow(ec2.instances).to receive(:[]).with('i-foobar').and_return(instance)
     end
   end
 
   it 'should add new tags for regular jobs' do
     metadata = {:job => 'job', :index => 'index'}
 
-    Bosh::AwsCloud::TagManager.should_receive(:tag).with(instance, :job, 'job')
-    Bosh::AwsCloud::TagManager.should_receive(:tag).with(instance, :index, 'index')
-    Bosh::AwsCloud::TagManager.should_receive(:tag).with(instance, 'Name', 'job/index')
+    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, :job, 'job')
+    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, :index, 'index')
+    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, 'Name', 'job/index')
 
     @cloud.set_vm_metadata('i-foobar', metadata)
   end
@@ -22,8 +22,8 @@ describe Bosh::AwsCloud::Cloud, '#set_vm_metadata' do
   it 'should add new tags for compiling jobs' do
     metadata = {:compiling => 'linux'}
 
-    Bosh::AwsCloud::TagManager.should_receive(:tag).with(instance, :compiling, 'linux')
-    Bosh::AwsCloud::TagManager.should_receive(:tag).with(instance, 'Name', 'compiling/linux')
+    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, :compiling, 'linux')
+    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, 'Name', 'compiling/linux')
 
     @cloud.set_vm_metadata('i-foobar', metadata)
   end

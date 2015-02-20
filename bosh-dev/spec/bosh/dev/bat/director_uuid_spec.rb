@@ -9,7 +9,7 @@ module Bosh::Dev::Bat
       let(:cli_session) { instance_double('Bosh::Dev::BoshCliSession') }
 
       context 'when we are able to extract uuid' do
-        before { cli_session.stub(:run_bosh).with('status --uuid').and_return(<<-OUTPUT) }
+        before { allow(cli_session).to receive(:run_bosh).with('status --uuid').and_return(<<-OUTPUT) }
 39be73f2-103a-4968-9645-9cd6406aedce
         OUTPUT
 
@@ -19,7 +19,7 @@ module Bosh::Dev::Bat
       end
 
       context 'when we are not able to obtain a uuid' do
-        before { cli_session.stub(:run_bosh).with('status --uuid') { Bosh::Core::Shell.new.run('false') } }
+        before { allow(cli_session).to receive(:run_bosh).with('status --uuid') { Bosh::Core::Shell.new.run('false') } }
 
         it 'raises an error' do
           expect {

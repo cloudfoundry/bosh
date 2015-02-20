@@ -11,21 +11,21 @@ module Bosh::Dev
 
     describe '#final_tarball_path' do
       it 'return path to created bosh final release' do
-        release_creator
-          .should_receive(:create_final)
+        expect(release_creator)
+          .to receive(:create_final)
           .with(no_args)
           .and_return('fake-final-tarball-path')
-        subject.final_tarball_path.should == 'fake-final-tarball-path'
+        expect(subject.final_tarball_path).to eq('fake-final-tarball-path')
       end
     end
 
     describe '#dev_tarball_path' do
       it 'return path to created bosh dev release' do
-        release_creator
-          .should_receive(:create_dev)
+        expect(release_creator)
+          .to receive(:create_dev)
           .with(no_args)
           .and_return('fake-dev-tarball-path')
-        subject.dev_tarball_path.should == 'fake-dev-tarball-path'
+        expect(subject.dev_tarball_path).to eq('fake-dev-tarball-path')
       end
     end
   end

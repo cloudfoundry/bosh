@@ -18,31 +18,31 @@ module Bosh::Deployer
 
       it 'should default agent properties' do
         properties = config.cloud_options['properties']
-        properties['agent'].should be_kind_of(Hash)
-        properties['agent']['mbus'].start_with?('https://').should be(true)
-        properties['agent']['blobstore'].should be_kind_of(Hash)
+        expect(properties['agent']).to be_kind_of(Hash)
+        expect(properties['agent']['mbus'].start_with?('https://')).to be(true)
+        expect(properties['agent']['blobstore']).to be_kind_of(Hash)
       end
 
       it 'should default vm env properties' do
         env = config.env
-        env.should be_kind_of(Hash)
-        env.should have_key('bosh')
-        env['bosh'].should be_kind_of(Hash)
-        env['bosh']['password'].should be_nil
+        expect(env).to be_kind_of(Hash)
+        expect(env).to have_key('bosh')
+        expect(env['bosh']).to be_kind_of(Hash)
+        expect(env['bosh']['password']).to be_nil
       end
 
       it 'should contain default vm resource properties' do
         resources = config.resources
-        resources.should be_kind_of(Hash)
+        expect(resources).to be_kind_of(Hash)
 
-        resources['persistent_disk'].should be_kind_of(Integer)
+        expect(resources['persistent_disk']).to be_kind_of(Integer)
 
         cloud_properties = resources['cloud_properties']
-        cloud_properties.should be_kind_of(Hash)
+        expect(cloud_properties).to be_kind_of(Hash)
 
         %w(ram disk cpu).each do |key|
-          cloud_properties[key].should_not be_nil
-          cloud_properties[key].should be > 0
+          expect(cloud_properties[key]).not_to be_nil
+          expect(cloud_properties[key]).to be > 0
         end
       end
 
@@ -50,10 +50,10 @@ module Bosh::Deployer
         it 'should map network properties to the bosh network' do
           networks = config.networks
           net = networks['bosh']
-          net.should be_kind_of(Hash)
+          expect(net).to be_kind_of(Hash)
           expect(net['default']).to match_array(%w(dns gateway))
           %w(cloud_properties netmask gateway ip dns type).each do |key|
-            net[key].should eq(configuration_hash['network'][key])
+            expect(net[key]).to eq(configuration_hash['network'][key])
           end
         end
       end
@@ -69,7 +69,7 @@ module Bosh::Deployer
         networks = config.networks
         expect(networks['bosh']['default']).to match_array(%w(dns gateway))
         %w(cloud_properties netmask gateway ip dns type).each do |key|
-          networks['bosh'][key].should eq(configuration_hash['network'][key])
+          expect(networks['bosh'][key]).to eq(configuration_hash['network'][key])
         end
 
         expect(networks).to include('deployment' => 'deployment network')
@@ -86,7 +86,7 @@ module Bosh::Deployer
         networks = config.networks
         expect(networks['bosh']['default']).to match_array(%w(dns gateway))
         %w(cloud_properties netmask gateway ip dns type).each do |key|
-          networks['bosh'][key].should eq(configuration_hash['network'][key])
+          expect(networks['bosh'][key]).to eq(configuration_hash['network'][key])
         end
 
         vip_hash = {

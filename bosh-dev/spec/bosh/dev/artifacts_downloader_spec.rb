@@ -14,8 +14,8 @@ module Bosh::Dev
         expected_remote_uri = URI('http://bosh-ci-pipeline.s3.amazonaws.com/fake-build-number/release/bosh-fake-build-number.tgz')
         expected_local_path = 'fake-output-dir/bosh-fake-build-number.tgz'
 
-        download_adapter
-          .should_receive(:download)
+        expect(download_adapter)
+          .to receive(:download)
           .with(expected_remote_uri, expected_local_path)
           .and_return('returned-path')
 
@@ -57,8 +57,8 @@ module Bosh::Dev
         expected_remote_uri = URI('http://bosh-ci-pipeline.s3.amazonaws.com/fake-build-number/bosh-stemcell/fake-infrastructure-name/light-bosh-stemcell-fake-build-number-fake-stemcell-name-fake-disk-format.tgz')
         expected_local_path = "fake-output-dir/#{stemcell.name}"
 
-        download_adapter
-          .should_receive(:download)
+        expect(download_adapter)
+          .to receive(:download)
           .with(expected_remote_uri, expected_local_path)
           .and_return('returned-path')
 

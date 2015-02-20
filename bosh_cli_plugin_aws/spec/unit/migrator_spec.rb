@@ -20,34 +20,34 @@ describe Bosh::Aws::Migrator do
     @tempdir = Dir.mktmpdir
 
     @time = Time.now
-    Time.stub(:new) { @time }
+    allow(Time).to receive(:new) { @time }
 
-    Bosh::Aws::MigrationHelper.stub(:aws_migration_directory).and_return(@tempdir)
+    allow(Bosh::Aws::MigrationHelper).to receive(:aws_migration_directory).and_return(@tempdir)
 
-    Bosh::Aws::S3.stub(:new).and_return(mock_s3)
-    mock_s3.stub(:fetch_object_contents).and_return(nil)
-    mock_s3.stub(:upload_to_bucket).and_return(nil)
+    allow(Bosh::Aws::S3).to receive(:new).and_return(mock_s3)
+    allow(mock_s3).to receive(:fetch_object_contents).and_return(nil)
+    allow(mock_s3).to receive(:upload_to_bucket).and_return(nil)
   end
 
   it "should not create the old s3 bucket if there is one already" do
-    mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
-    mock_s3.should_not_receive(:create_bucket)
+    expect(mock_s3).to receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
+    expect(mock_s3).not_to receive(:create_bucket)
 
     subject.migrate
   end
 
   it "should not create the new s3 bucket if there is one already" do
-    mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(false)
-    mock_s3.should_receive(:bucket_exists?).with('deployment-name-foo-com-bosh-artifacts').and_return(true)
-    mock_s3.should_not_receive(:create_bucket)
+    expect(mock_s3).to receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(false)
+    expect(mock_s3).to receive(:bucket_exists?).with('deployment-name-foo-com-bosh-artifacts').and_return(true)
+    expect(mock_s3).not_to receive(:create_bucket)
 
     subject.migrate
   end
 
   it "should create an s3 bucket if one isn't there" do
-    mock_s3.should_receive(:bucket_exists?).exactly(3).times.with('deployment-name-bosh-artifacts').and_return(false)
-    mock_s3.should_receive(:bucket_exists?).with('deployment-name-foo-com-bosh-artifacts').and_return(false)
-    mock_s3.should_receive(:create_bucket).with('deployment-name-foo-com-bosh-artifacts')
+    expect(mock_s3).to receive(:bucket_exists?).exactly(3).times.with('deployment-name-bosh-artifacts').and_return(false)
+    expect(mock_s3).to receive(:bucket_exists?).with('deployment-name-foo-com-bosh-artifacts').and_return(false)
+    expect(mock_s3).to receive(:create_bucket).with('deployment-name-foo-com-bosh-artifacts')
 
     subject.migrate
   end
@@ -75,26 +75,26 @@ describe Bosh::Aws::Migrator do
     end
 
     it 'should create a list of known migrations' do
-      subject.migrations.should == @expected_migrations
+      expect(subject.migrations).to eq(@expected_migrations)
     end
 
     context "migrate_version" do
       let(:migration_to_run) { @expected_migrations[4] }
 
       it "should run only the specified version if it has never been run before" do
-        mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
+        expect(mock_s3).to receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
 
-        mock_s3.should_receive(:create_bucket).with("Test4")
+        expect(mock_s3).to receive(:create_bucket).with("Test4")
 
         subject.migrate_version(migration_to_run.version)
       end
 
       it "should only write the specific version to the versions file" do
-        mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
+        expect(mock_s3).to receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
 
-        mock_s3.stub(:create_bucket)
+        allow(mock_s3).to receive(:create_bucket)
 
-        mock_s3.should_receive(:upload_to_bucket)
+        expect(mock_s3).to receive(:upload_to_bucket)
         .with('deployment-name-bosh-artifacts', "aws_migrations/migrations.yaml",
               YAML.dump([migration_to_run.to_hash]))
 
@@ -102,13 +102,13 @@ describe Bosh::Aws::Migrator do
       end
 
       it "should not run if the specified version has been run before" do
-        mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
-        mock_s3.
-            should_receive(:fetch_object_contents).
+        expect(mock_s3).to receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
+        expect(mock_s3).
+            to receive(:fetch_object_contents).
             with('deployment-name-bosh-artifacts', "aws_migrations/migrations.yaml").
             and_return(YAML.dump(@expected_migrations.collect{|m|m.to_hash}))
 
-        mock_s3.should_not_receive(:create_bucket)
+        expect(mock_s3).not_to receive(:create_bucket)
 
         subject.migrate_version(@expected_migrations[4].version)
       end
@@ -116,9 +116,9 @@ describe Bosh::Aws::Migrator do
 
     context "#migrate" do
       it "should run all the migrations if it has never been run before" do
-        mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
+        expect(mock_s3).to receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
 
-        ordered_expectations = mock_s3.should_receive(:create_bucket).ordered
+        ordered_expectations = expect(mock_s3).to receive(:create_bucket).ordered
 
         10.times do |i|
           ordered_expectations.with("Test#{i}")
@@ -128,13 +128,13 @@ describe Bosh::Aws::Migrator do
       end
 
       it "should run the migrations that has never been run before" do
-        mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
-        mock_s3.
-            should_receive(:fetch_object_contents).
+        expect(mock_s3).to receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
+        expect(mock_s3).
+            to receive(:fetch_object_contents).
             with('deployment-name-bosh-artifacts', "aws_migrations/migrations.yaml").
             and_return(YAML.dump(@expected_migrations[0..5].collect{|m|m.to_hash}))
 
-        ordered_expectations = mock_s3.should_receive(:create_bucket).ordered
+        ordered_expectations = expect(mock_s3).to receive(:create_bucket).ordered
         (6..9).each do |i|
           ordered_expectations.with("Test#{i}")
         end
@@ -143,26 +143,26 @@ describe Bosh::Aws::Migrator do
       end
 
       it "should not run migrations that has already been run" do
-        mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
-        mock_s3.
-            should_receive(:fetch_object_contents).
+        expect(mock_s3).to receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
+        expect(mock_s3).
+            to receive(:fetch_object_contents).
             with('deployment-name-bosh-artifacts', "aws_migrations/migrations.yaml").
             and_return(YAML.dump(@expected_migrations.collect{|m|m.to_hash}))
 
-        mock_s3.should_not_receive(:create_bucket)
+        expect(mock_s3).not_to receive(:create_bucket)
 
         subject.migrate
       end
 
       it "should write the migrations in the S3 bucket after each migration" do
-        mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
+        expect(mock_s3).to receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
 
-        mock_s3.stub(:create_bucket)
+        allow(mock_s3).to receive(:create_bucket)
         successful_migrations = []
         @expected_migrations.each do |migration|
 
           successful_migrations << migration
-          mock_s3.should_receive(:upload_to_bucket)
+          expect(mock_s3).to receive(:upload_to_bucket)
              .with('deployment-name-bosh-artifacts', "aws_migrations/migrations.yaml",
                    YAML.dump(successful_migrations.collect{|m|m.to_hash}))
         end
@@ -173,29 +173,29 @@ describe Bosh::Aws::Migrator do
     context "#needs_migration?" do
 
       before do
-        mock_s3.should_receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
+        expect(mock_s3).to receive(:bucket_exists?).with('deployment-name-bosh-artifacts').and_return(true)
       end
 
       it 'should need a migration if S3 file is missing' do
-        subject.needs_migration?.should be(true)
+        expect(subject.needs_migration?).to be(true)
       end
 
       it "should need a migration if S3 file has migrations, but not all" do
-        mock_s3.
-            should_receive(:fetch_object_contents).
+        expect(mock_s3).
+            to receive(:fetch_object_contents).
             with('deployment-name-bosh-artifacts', "aws_migrations/migrations.yaml").
             and_return(YAML.dump(@expected_migrations[0..5].collect{|m|m.to_hash}))
 
-        subject.needs_migration?.should be(true)
+        expect(subject.needs_migration?).to be(true)
       end
 
       it 'should not need a migration if S3 file has all the migrations' do
-        mock_s3.
-            should_receive(:fetch_object_contents).
+        expect(mock_s3).
+            to receive(:fetch_object_contents).
             with('deployment-name-bosh-artifacts', "aws_migrations/migrations.yaml").
             and_return(YAML.dump(@expected_migrations.collect{|m|m.to_hash}))
 
-        subject.needs_migration?.should be(false)
+        expect(subject.needs_migration?).to be(false)
       end
     end
   end

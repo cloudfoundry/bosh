@@ -7,20 +7,20 @@ describe Bosh::AwsCloud::Cloud do
     let(:cloud) {
       mock_cloud do |ec2|
         snapshots = double(AWS::EC2::SnapshotCollection, :[] => snapshot)
-        ec2.stub(snapshots: snapshots)
+        allow(ec2).to receive_messages(snapshots: snapshots)
       end
     }
 
     it 'should delete a snapshot' do
-      snapshot.should_receive(:status).and_return(:available)
-      snapshot.should_receive(:delete)
+      expect(snapshot).to receive(:status).and_return(:available)
+      expect(snapshot).to receive(:delete)
 
       cloud.delete_snapshot('snap-xxxxxxxx')
     end
 
     it 'should raise an error if the snapshot is in use' do
-      snapshot.should_receive(:status).and_return(:in_use)
-      snapshot.should_not_receive(:delete)
+      expect(snapshot).to receive(:status).and_return(:in_use)
+      expect(snapshot).not_to receive(:delete)
 
       expect {
         cloud.delete_snapshot('snap-xxxxxxxx')

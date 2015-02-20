@@ -15,13 +15,13 @@ describe Bosh::AwsCloud::AKIPicker do
   let(:picker) {Bosh::AwsCloud::AKIPicker.new(double("ec2"))}
 
   it "should pick the AKI with the highest version" do
-    picker.should_receive(:logger).and_return(logger)
-    picker.should_receive(:fetch_akis).and_return(akis)
-    picker.pick("x86_64", "/dev/sda1").should == "aki-b4aa75dd"
+    expect(picker).to receive(:logger).and_return(logger)
+    expect(picker).to receive(:fetch_akis).and_return(akis)
+    expect(picker.pick("x86_64", "/dev/sda1")).to eq("aki-b4aa75dd")
   end
 
   it "should raise an error when it can't pick an AKI" do
-    picker.should_receive(:fetch_akis).and_return(akis)
+    expect(picker).to receive(:fetch_akis).and_return(akis)
     expect {
       picker.pick("foo", "bar")
     }.to raise_error Bosh::Clouds::CloudError, "unable to find AKI"

@@ -29,11 +29,11 @@ module Bosh::Director::Core
 
     context 'when copy first feature is enabled' do
       it 'copies the files to a temp directory before archiving' do
-        Dir.stub(:mktmpdir).and_yield('/tempthing')
-        FileUtils.should_receive(:cp_r).with(%w(/foo/baz /foo/bar), '/tempthing/')
-        Pathname.stub(:new).and_return(instance_double('Pathname', exist?: true, absolute?: true))
+        allow(Dir).to receive(:mktmpdir).and_yield('/tempthing')
+        expect(FileUtils).to receive(:cp_r).with(%w(/foo/baz /foo/bar), '/tempthing/')
+        allow(Pathname).to receive(:new).and_return(instance_double('Pathname', exist?: true, absolute?: true))
 
-        Open3.should_receive(:capture3)
+        expect(Open3).to receive(:capture3)
         .with(*%w(tar -C /tempthing -czf /tmp/backup.tgz baz bar))
         .and_return(success_retval)
 
@@ -78,7 +78,7 @@ module Bosh::Director::Core
     end
 
     it 'raises if it fails to tar' do
-      Open3.stub(:capture3).and_return(errored_retval)
+      allow(Open3).to receive(:capture3).and_return(errored_retval)
       expect {
         subject.compress(base_dir, sources, dest)
       }.to raise_error(RuntimeError,

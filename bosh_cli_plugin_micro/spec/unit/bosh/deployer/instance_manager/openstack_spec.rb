@@ -43,8 +43,10 @@ module Bosh::Deployer
         let(:instance) { instance_double('Fog::Compute::OpenStack::Server') }
 
         before do
-          instance_manager.stub_chain(:state, :vm_cid).and_return('fake-vm-cid')
-          instance_manager.stub_chain(:cloud, :openstack, :servers, :get).and_return(instance)
+          allow(instance_manager).to receive_message_chain(:state, :vm_cid)
+                                         .and_return('fake-vm-cid')
+          allow(instance_manager).to receive_message_chain(:cloud, :openstack, :servers, :get)
+                                         .and_return(instance)
         end
 
         context 'when there is a floating ip' do
@@ -71,7 +73,7 @@ module Bosh::Deployer
       end
 
       context 'when there is no bosh VM' do
-        before { instance_manager.stub_chain(:state, :vm_cid).and_return(nil) }
+        before { allow(instance_manager).to receive_message_chain(:state, :vm_cid).and_return(nil) }
 
         it 'returns client services ip according to the configuration' do
           expect(subject.client_services_ip).to eq('fake-client-services-ip')
@@ -85,8 +87,10 @@ module Bosh::Deployer
         let(:instance) { instance_double('Fog::Compute::OpenStack::Server') }
 
         before do
-          instance_manager.stub_chain(:state, :vm_cid).and_return('fake-vm-cid')
-          instance_manager.stub_chain(:cloud, :openstack, :servers, :get).and_return(instance)
+          allow(instance_manager).to receive_message_chain(:state, :vm_cid)
+                                         .and_return('fake-vm-cid')
+          allow(instance_manager).to receive_message_chain(:cloud, :openstack, :servers, :get)
+                                         .and_return(instance)
           allow(instance).to receive(:private_ip_address).and_return('fake-private-ip')
         end
 
@@ -97,7 +101,7 @@ module Bosh::Deployer
 
       context 'when there is no bosh VM' do
         before do
-          instance_manager.stub_chain(:state, :vm_cid).and_return(nil)
+          allow(instance_manager).to receive_message_chain(:state, :vm_cid).and_return(nil)
           allow(config).to receive(:agent_services_ip).
                              and_return('fake-agent-services-ip')
         end

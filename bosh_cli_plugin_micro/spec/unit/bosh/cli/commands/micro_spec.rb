@@ -9,7 +9,7 @@ module Bosh::Cli::Command
     subject(:micro_command) { Micro.new(runner) }
     let(:runner) { double('Runner') }
 
-    before { micro_command.stub(load_yaml_file: manifest_hash) }
+    before { allow(micro_command).to receive_messages(load_yaml_file: manifest_hash) }
     let(:manifest_hash) { { 'network' => 'something' } }
 
     before { FileUtils.mkdir_p(File.expand_path('~')) } # wat!
@@ -26,7 +26,7 @@ module Bosh::Cli::Command
       allow(deployer).to receive(:exists?).and_return(false)
       allow(deployer).to receive(:renderer).and_return(nil)
       allow(deployer).to receive(:create_deployment).and_return(nil)
-      Bosh::Deployer::InstanceManager.stub(create: deployer)
+      allow(Bosh::Deployer::InstanceManager).to receive_messages(create: deployer)
     end
 
     describe 'micro deployment' do
@@ -157,7 +157,7 @@ module Bosh::Cli::Command
                         }, file)
             end
 
-            micro_command.should_receive(:say).with(
+            expect(micro_command).to receive(:say).with(
               "Current deployment is '/tmp/foo/micro_bosh.yml'")
             micro_command.micro_deployment
           end
@@ -165,7 +165,7 @@ module Bosh::Cli::Command
 
         context 'deployment is not set' do
           it 'says deployment is not set' do
-            micro_command.should_receive(:say).with('Deployment not set')
+            expect(micro_command).to receive(:say).with('Deployment not set')
             micro_command.micro_deployment
           end
         end
@@ -181,9 +181,9 @@ module Bosh::Cli::Command
       let(:config) { double('config', target: 'target', resolve_alias: nil, set_deployment: nil) }
 
       before do
-        BoshExtensions.stub(:err)
-        micro_command.stub(:confirmed?).and_return(true)
-        micro_command.stub(:dig_hash).and_return(true)
+        allow(BoshExtensions).to receive(:err)
+        allow(micro_command).to receive(:confirmed?).and_return(true)
+        allow(micro_command).to receive(:dig_hash).and_return(true)
 
         File.open(File.expand_path('~/.bosh_deployer_config'), 'w') do |file|
           YAML.dump({
@@ -204,13 +204,13 @@ module Bosh::Cli::Command
         allow(config).to receive(:save)
         allow(config).to receive(:deployment).and_return('/tmp/foo/micro_bosh.yml')
         allow(config).to receive(:target_name).and_return('fake-name')
-        micro_command.stub(:config).and_return(config)
+        allow(micro_command).to receive(:config).and_return(config)
       end
 
       context 'no `bosh-deployments.yml` file found in current directory' do
         context 'not in directory one level up from `micro_bosh.yml`' do
           it 'confirms that current directory is valid to save state' do
-            micro_command.should_receive(:confirmed?).with(confirmation).and_return(true)
+            expect(micro_command).to receive(:confirmed?).with(confirmation).and_return(true)
             Dir.chdir('/tmp/foo') { micro_command.perform('stemcell') }
           end
         end
@@ -219,7 +219,7 @@ module Bosh::Cli::Command
           before { FileUtils.touch('/tmp/bosh-deployments.yml') }
 
           it 'does not add confirmation that current directory is valid to save state' do
-            micro_command.should_not_receive(:confirmed?).with(confirmation)
+            expect(micro_command).not_to receive(:confirmed?).with(confirmation)
             micro_command.perform('stemcell')
           end
         end
@@ -310,47 +310,47 @@ module Bosh::Cli::Command
 
     it 'allows deploying a micro BOSH instance passing stemcell as argument' do
       stemcell_archive = instance_double('Bosh::Stemcell::Archive')
-      Bosh::Stemcell::Archive.should_receive(:new).and_return(stemcell_archive)
+      expect(Bosh::Stemcell::Archive).to receive(:new).and_return(stemcell_archive)
 
       mock_stemcell = double(Bosh::Cli::Stemcell)
-      mock_stemcell.should_receive(:validate)
-      mock_stemcell.should_receive(:valid?).and_return(true)
-      Bosh::Cli::Stemcell.should_receive(:new).and_return(mock_stemcell)
+      expect(mock_stemcell).to receive(:validate)
+      expect(mock_stemcell).to receive(:valid?).and_return(true)
+      expect(Bosh::Cli::Stemcell).to receive(:new).and_return(mock_stemcell)
 
       mock_deployer = double(Bosh::Deployer::InstanceManager, client_services_ip: '5')
-      mock_deployer.should_receive(:exists?).exactly(2).times
-      mock_deployer.should_receive(:renderer=)
-      mock_deployer.should_receive(:check_dependencies)
-      mock_deployer.should_receive(:create_deployment).with('stemcell.tgz', stemcell_archive)
-      @cmd.stub(:deployer).and_return(mock_deployer)
+      expect(mock_deployer).to receive(:exists?).exactly(2).times
+      expect(mock_deployer).to receive(:renderer=)
+      expect(mock_deployer).to receive(:check_dependencies)
+      expect(mock_deployer).to receive(:create_deployment).with('stemcell.tgz', stemcell_archive)
+      allow(@cmd).to receive(:deployer).and_return(mock_deployer)
 
-      @cmd.stub(:deployment).and_return(@manifest_path)
-      @cmd.stub(:load_yaml_file).and_return(@manifest_yaml)
-      @cmd.stub(:target_name).and_return('micro-test')
+      allow(@cmd).to receive(:deployment).and_return(@manifest_path)
+      allow(@cmd).to receive(:load_yaml_file).and_return(@manifest_yaml)
+      allow(@cmd).to receive(:target_name).and_return('micro-test')
 
       @cmd.perform('stemcell.tgz')
     end
 
     it 'allows deploying a micro BOSH instance passing stemcell in manifest file' do
       mock_deployer = double(Bosh::Deployer::InstanceManager, client_services_ip: '5')
-      mock_deployer.should_receive(:exists?).exactly(2).times
-      mock_deployer.should_receive(:renderer=)
-      mock_deployer.should_receive(:check_dependencies)
-      mock_deployer.should_receive(:create_deployment).with('sc-id', nil)
+      expect(mock_deployer).to receive(:exists?).exactly(2).times
+      expect(mock_deployer).to receive(:renderer=)
+      expect(mock_deployer).to receive(:check_dependencies)
+      expect(mock_deployer).to receive(:create_deployment).with('sc-id', nil)
 
-      @cmd.stub(:deployment).and_return(@manifest_path)
-      @cmd.stub(:target_name).and_return('micro-test')
-      @cmd.stub(:load_yaml_file).and_return(@manifest_yaml)
+      allow(@cmd).to receive(:deployment).and_return(@manifest_path)
+      allow(@cmd).to receive(:target_name).and_return('micro-test')
+      allow(@cmd).to receive(:load_yaml_file).and_return(@manifest_yaml)
       @manifest_yaml['resources']['cloud_properties']['image_id'] = 'sc-id'
-      @cmd.stub(:deployer).and_return(mock_deployer)
+      allow(@cmd).to receive(:deployer).and_return(mock_deployer)
       @cmd.perform
     end
 
     it 'should not allow deploying a micro BOSH instance if no stemcell is provided' do
       expect {
-        @cmd.stub(:deployment).and_return(@manifest_path)
+        allow(@cmd).to receive(:deployment).and_return(@manifest_path)
         @manifest_yaml = { 'name' => 'foo' }
-        @cmd.stub(:load_yaml_file).and_return(@manifest_yaml)
+        allow(@cmd).to receive(:load_yaml_file).and_return(@manifest_yaml)
         @cmd.perform
       }.to raise_error(Bosh::Cli::CliError, 'No stemcell provided')
     end
@@ -360,44 +360,44 @@ module Bosh::Cli::Command
       error_message = "No persistent disk configured in #{file}"
       expect {
         mock_deployer = double(Bosh::Deployer::InstanceManager)
-        mock_deployer.should_receive(:check_dependencies)
-        mock_deployer.should_receive(:exists?).exactly(1).times
+        expect(mock_deployer).to receive(:check_dependencies)
+        expect(mock_deployer).to receive(:exists?).exactly(1).times
 
-        @cmd.stub(:deployment).and_return(@manifest_path)
-        @cmd.stub(:target_name).and_return('micro-test')
-        @cmd.stub(:load_yaml_file).and_return(@manifest_yaml)
+        allow(@cmd).to receive(:deployment).and_return(@manifest_path)
+        allow(@cmd).to receive(:target_name).and_return('micro-test')
+        allow(@cmd).to receive(:load_yaml_file).and_return(@manifest_yaml)
         @manifest_yaml['resources']['cloud_properties']['image_id'] = 'sc-id'
         @manifest_yaml['resources']['persistent_disk'] = nil
-        @cmd.stub(:deployer).and_return(mock_deployer)
+        allow(@cmd).to receive(:deployer).and_return(mock_deployer)
         @cmd.perform
       }.to raise_error(Bosh::Cli::CliExit, error_message)
     end
 
     it 'should clear cached target values when setting a new deployment' do
-      @cmd.stub(:find_deployment).with('foo').and_return(
+      allow(@cmd).to receive(:find_deployment).with('foo').and_return(
         spec_asset('test-bootstrap-config-aws.yml'))
-      @cmd.stub_chain(:deployer, :client_services_ip).and_return('client_ip')
+      allow(@cmd).to receive_message_chain(:deployer, :client_services_ip).and_return('client_ip')
 
       config = double('config', target: 'target', resolve_alias: nil, set_deployment: nil)
-      config.should_receive(:target=).with('https://client_ip:25555')
-      config.should_receive(:target_name=).with(nil)
-      config.should_receive(:target_version=).with(nil)
-      config.should_receive(:target_uuid=).with(nil)
-      config.should_receive(:save)
+      expect(config).to receive(:target=).with('https://client_ip:25555')
+      expect(config).to receive(:target_name=).with(nil)
+      expect(config).to receive(:target_version=).with(nil)
+      expect(config).to receive(:target_uuid=).with(nil)
+      expect(config).to receive(:save)
 
-      @cmd.stub(:config).and_return(config)
+      allow(@cmd).to receive(:config).and_return(config)
 
       @cmd.set_current('foo')
     end
 
     describe 'agent command' do
-      before { @cmd.stub(deployer: deployer) }
+      before { allow(@cmd).to receive_messages(deployer: deployer) }
       let(:deployer) { double(Bosh::Deployer::InstanceManager, agent: agent) }
       let(:agent) { double(Bosh::Agent::HTTPClient) }
 
       it 'sends the command to an agent and shows the returned output' do
-        agent.should_receive(:ping).and_return('pong')
-        @cmd.should_receive(:say) { |response| expect(response).to include('pong') }
+        expect(agent).to receive(:ping).and_return('pong')
+        expect(@cmd).to receive(:say) { |response| expect(response).to include('pong') }
         @cmd.agent('ping')
       end
     end
@@ -412,11 +412,11 @@ module Bosh::Cli::Command
       end
 
       before do
-        deployer.stub(check_dependencies: true)
-        @cmd.stub(deployer: deployer)
-        @cmd.stub(deployment: @manifest_path)
-        @cmd.stub(target_name: 'micro-test')
-        @cmd.stub(load_yaml_file: @manifest_yaml)
+        allow(deployer).to receive_messages(check_dependencies: true)
+        allow(@cmd).to receive_messages(deployer: deployer)
+        allow(@cmd).to receive_messages(deployment: @manifest_path)
+        allow(@cmd).to receive_messages(target_name: 'micro-test')
+        allow(@cmd).to receive_messages(load_yaml_file: @manifest_yaml)
         allow(@cmd.config).to receive(:save)
       end
 
@@ -429,34 +429,34 @@ module Bosh::Cli::Command
           before { @cmd.add_option(:update_if_exists, true) }
 
           it 'creates microbosh and returns successfully' do
-            deployer.should_receive(:create_deployment)
+            expect(deployer).to receive(:create_deployment)
             @cmd.perform(tarball_path)
           end
         end
 
         context 'when --update-if-exists flag is not given' do
           it 'creates microbosh and returns successfully' do
-            deployer.should_receive(:create_deployment)
+            expect(deployer).to receive(:create_deployment)
             @cmd.perform(tarball_path)
           end
         end
       end
 
       context 'when microbosh is already deployed' do
-        before { deployer.stub(exists?: true) }
+        before { allow(deployer).to receive_messages(exists?: true) }
 
         context 'when --update-if-exists flag is given' do
           before { @cmd.add_option(:update_if_exists, true) }
           it 'updates microbosh and returns successfully' do
 
-            deployer.should_receive(:update_deployment)
+            expect(deployer).to receive(:update_deployment)
             @cmd.perform(tarball_path)
           end
         end
 
         context 'when --update-if-exists flag is not given' do
           it 'does not update microbosh' do
-            deployer.should_not_receive(:update_deployment)
+            expect(deployer).not_to receive(:update_deployment)
             expect { @cmd.perform(tarball_path) }.to raise_error
           end
 

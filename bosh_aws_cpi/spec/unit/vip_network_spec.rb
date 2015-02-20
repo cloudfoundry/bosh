@@ -15,11 +15,11 @@ describe Bosh::AwsCloud::VipNetwork do
     vip = described_class.new('vip', {'ip' => '1.2.3.4'})
 
     elastic_ip = double('eip')
-    ec2.stub_chain(:elastic_ips, :[]).and_return(elastic_ip)
-    Bosh::Common.stub(:sleep)
+    allow(ec2).to receive_message_chain(:elastic_ips, :[]).and_return(elastic_ip)
+    allow(Bosh::Common).to receive(:sleep)
 
-    instance.should_receive(:associate_elastic_ip).and_raise(AWS::EC2::Errors::IncorrectInstanceState)
-    instance.should_receive(:associate_elastic_ip).with(elastic_ip).and_return(true)
+    expect(instance).to receive(:associate_elastic_ip).and_raise(AWS::EC2::Errors::IncorrectInstanceState)
+    expect(instance).to receive(:associate_elastic_ip).with(elastic_ip).and_return(true)
 
     vip.configure(ec2, instance)
   end

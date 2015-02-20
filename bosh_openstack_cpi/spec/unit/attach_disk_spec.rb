@@ -9,9 +9,9 @@ describe Bosh::OpenStackCloud::Cloud do
   let(:flavor) { double('flavor', :id => 'f-test', :ephemeral => 10, :swap => '') }
   let(:cloud) do
     mock_cloud(cloud_options['properties']) do |openstack|
-      openstack.servers.should_receive(:get).with('i-test').and_return(server)
-      openstack.volumes.should_receive(:get).with('v-foobar').and_return(volume)
-      openstack.flavors.should_receive(:find).and_return(flavor)
+      expect(openstack.servers).to receive(:get).with('i-test').and_return(server)
+      expect(openstack.volumes).to receive(:get).with('v-foobar').and_return(volume)
+      expect(openstack.flavors).to receive(:find).and_return(flavor)
     end
   end
   let(:cloud_options) { mock_cloud_options }
@@ -24,9 +24,9 @@ describe Bosh::OpenStackCloud::Cloud do
     volume_attachments = []
     attachment = double('attachment', :device => '/dev/sdc')
 
-    server.should_receive(:volume_attachments).and_return(volume_attachments)
-    volume.should_receive(:attach).with(server.id, '/dev/sdc').and_return(attachment)
-    cloud.should_receive(:wait_resource).with(volume, :'in-use')
+    expect(server).to receive(:volume_attachments).and_return(volume_attachments)
+    expect(volume).to receive(:attach).with(server.id, '/dev/sdc').and_return(attachment)
+    expect(cloud).to receive(:wait_resource).with(volume, :'in-use')
 
     old_settings = { 'foo' => 'bar'}
     new_settings = {
@@ -38,8 +38,8 @@ describe Bosh::OpenStackCloud::Cloud do
       }
     }
 
-    @registry.should_receive(:read_settings).with('i-test').and_return(old_settings)
-    @registry.should_receive(:update_settings).with('i-test', new_settings)
+    expect(@registry).to receive(:read_settings).with('i-test').and_return(old_settings)
+    expect(@registry).to receive(:update_settings).with('i-test', new_settings)
 
     cloud.attach_disk('i-test', 'v-foobar')
   end
@@ -49,9 +49,9 @@ describe Bosh::OpenStackCloud::Cloud do
                           {'volumeId' => 'v-d', 'device' => '/dev/xvdd'}]
     attachment = double('attachment', :device => '/dev/sdd')
 
-    server.should_receive(:volume_attachments).and_return(volume_attachments)
-    volume.should_receive(:attach).with(server.id, '/dev/sde').and_return(attachment)
-    cloud.should_receive(:wait_resource).with(volume, :'in-use')
+    expect(server).to receive(:volume_attachments).and_return(volume_attachments)
+    expect(volume).to receive(:attach).with(server.id, '/dev/sde').and_return(attachment)
+    expect(cloud).to receive(:wait_resource).with(volume, :'in-use')
 
     old_settings = { 'foo' => 'bar'}
     new_settings = {
@@ -63,8 +63,8 @@ describe Bosh::OpenStackCloud::Cloud do
       }
     }
 
-    @registry.should_receive(:read_settings).with('i-test').and_return(old_settings)
-    @registry.should_receive(:update_settings).with('i-test', new_settings)
+    expect(@registry).to receive(:read_settings).with('i-test').and_return(old_settings)
+    expect(@registry).to receive(:update_settings).with('i-test', new_settings)
 
     cloud.attach_disk('i-test', 'v-foobar')
   end
@@ -75,7 +75,7 @@ describe Bosh::OpenStackCloud::Cloud do
       array
     end
 
-    server.should_receive(:volume_attachments).and_return(volume_attachments)
+    expect(server).to receive(:volume_attachments).and_return(volume_attachments)
 
     expect {
       cloud.attach_disk('i-test', 'v-foobar')
@@ -87,12 +87,12 @@ describe Bosh::OpenStackCloud::Cloud do
     attachment = double('attachment', :device => '/dev/sdd')
 
     cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with('i-test').and_return(server)
-      openstack.volumes.should_receive(:get).with('v-foobar').and_return(volume)
+      expect(openstack.servers).to receive(:get).with('i-test').and_return(server)
+      expect(openstack.volumes).to receive(:get).with('v-foobar').and_return(volume)
     end
 
-    server.should_receive(:volume_attachments).and_return(volume_attachments)
-    volume.should_not_receive(:attach)
+    expect(server).to receive(:volume_attachments).and_return(volume_attachments)
+    expect(volume).not_to receive(:attach)
 
     old_settings = { 'foo' => 'bar'}
     new_settings = {
@@ -104,17 +104,17 @@ describe Bosh::OpenStackCloud::Cloud do
         }
     }
 
-    @registry.should_receive(:read_settings).with('i-test').and_return(old_settings)
-    @registry.should_receive(:update_settings).with('i-test', new_settings)
+    expect(@registry).to receive(:read_settings).with('i-test').and_return(old_settings)
+    expect(@registry).to receive(:update_settings).with('i-test', new_settings)
 
     cloud.attach_disk('i-test', 'v-foobar')
   end
 
   context 'first device name letter' do
     before do
-      server.stub(:volume_attachments).and_return([])
-      cloud.stub(:wait_resource)
-      cloud.stub(:update_agent_settings)
+      allow(server).to receive(:volume_attachments).and_return([])
+      allow(cloud).to receive(:wait_resource)
+      allow(cloud).to receive(:update_agent_settings)
     end
     subject(:attach_disk) { cloud.attach_disk('i-test', 'v-foobar') }
 
@@ -122,7 +122,7 @@ describe Bosh::OpenStackCloud::Cloud do
 
     context 'when there is no ephemeral, swap disk and config drive' do
       it 'return letter b' do
-        volume.should_receive(:attach).with(server.id, '/dev/sdb')
+        expect(volume).to receive(:attach).with(server.id, '/dev/sdb')
         attach_disk
       end
     end
@@ -131,7 +131,7 @@ describe Bosh::OpenStackCloud::Cloud do
       let(:flavor) { double('flavor', :id => 'f-test', :ephemeral => 1024, :swap => '') }
 
       it 'return letter c' do
-        volume.should_receive(:attach).with(server.id, '/dev/sdc')
+        expect(volume).to receive(:attach).with(server.id, '/dev/sdc')
         attach_disk
       end
     end
@@ -140,7 +140,7 @@ describe Bosh::OpenStackCloud::Cloud do
       let(:flavor) { double('flavor', :id => 'f-test', :ephemeral => 0, :swap => 200) }
 
       it 'return letter c' do
-        volume.should_receive(:attach).with(server.id, '/dev/sdc')
+        expect(volume).to receive(:attach).with(server.id, '/dev/sdc')
         attach_disk
       end
     end
@@ -153,7 +153,7 @@ describe Bosh::OpenStackCloud::Cloud do
       end
 
       it 'returns letter c' do
-        volume.should_receive(:attach).with(server.id, '/dev/sdc')
+        expect(volume).to receive(:attach).with(server.id, '/dev/sdc')
         attach_disk
       end
     end
@@ -162,7 +162,7 @@ describe Bosh::OpenStackCloud::Cloud do
       let(:flavor) { double('flavor', :id => 'f-test', :ephemeral => 1024, :swap => 200) }
 
       it 'returns letter d' do
-        volume.should_receive(:attach).with(server.id, '/dev/sdd')
+        expect(volume).to receive(:attach).with(server.id, '/dev/sdd')
         attach_disk
       end
     end
@@ -176,7 +176,7 @@ describe Bosh::OpenStackCloud::Cloud do
       end
 
       it 'returns letter e' do
-        volume.should_receive(:attach).with(server.id, '/dev/sde')
+        expect(volume).to receive(:attach).with(server.id, '/dev/sde')
         attach_disk
       end
     end
@@ -185,7 +185,7 @@ describe Bosh::OpenStackCloud::Cloud do
       let(:flavor) { nil }
 
       it 'returns letter b' do
-        volume.should_receive(:attach).with(server.id, '/dev/sdb')
+        expect(volume).to receive(:attach).with(server.id, '/dev/sdb')
         attach_disk
       end
     end

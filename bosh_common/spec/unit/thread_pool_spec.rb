@@ -30,11 +30,11 @@ describe Bosh::ThreadPool do
         end
       end
     end
-    max.should be <= 2
+    expect(max).to be <= 2
   end
 
   it "should raise exceptions" do
-    lambda {
+    expect {
       Bosh::ThreadPool.new(:max_threads => 2, :logger => @logger).wrap do |pool|
         5.times do |index|
           pool.process do
@@ -43,14 +43,14 @@ describe Bosh::ThreadPool do
           end
         end
       end
-    }.should raise_exception("bad")
+    }.to raise_exception("bad")
   end
 
   it "should stop processing new work when there was an exception" do
     max = 0
     lock = Mutex.new
 
-    lambda {
+    expect {
       Bosh::ThreadPool.new(:max_threads => 1, :logger => @logger).wrap do |pool|
         10.times do |index|
           pool.process do
@@ -60,9 +60,9 @@ describe Bosh::ThreadPool do
           end
         end
       end
-    }.should raise_exception("bad")
+    }.to raise_exception("bad")
 
-    max.should be == 4
+    expect(max).to eq(4)
   end
 
 end

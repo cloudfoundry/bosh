@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'common/retryable'
 
 describe Bosh::Retryable do
-  before { Kernel.stub(:sleep) }
+  before { allow(Kernel).to receive(:sleep) }
 
   class CustomMatcher
     def initialize(messages)
@@ -28,7 +28,7 @@ describe Bosh::Retryable do
        tries < 3 ? false : true
     end
 
-    count.should == 3
+    expect(count).to eq(3)
   end
 
   it 'should retry the given number of times when given error is raised' do
@@ -41,7 +41,7 @@ describe Bosh::Retryable do
       true
     end
 
-    count.should == 3
+    expect(count).to eq(3)
   end
 
   context 'when sleeper raises retryable error' do
@@ -56,7 +56,7 @@ describe Bosh::Retryable do
           count += 1
           tries == 2 ? true : false
         end
-        count.should == 2
+        expect(count).to eq(2)
       end
     end
 
@@ -67,7 +67,7 @@ describe Bosh::Retryable do
           count += 1
           tries == 2 ? true : raise(block_error_class, 'yield-error')
         end
-        count.should == 2
+        expect(count).to eq(2)
       end
     end
   end
@@ -86,7 +86,7 @@ describe Bosh::Retryable do
             false
           end
         }.to raise_error(sleeper_error_class, 'error-message')
-        count.should == 1
+        expect(count).to eq(1)
       end
     end
 
@@ -99,7 +99,7 @@ describe Bosh::Retryable do
             raise(block_error_class, 'yield-error')
           end
         }.to raise_error(sleeper_error_class, 'error-message')
-        count.should == 1
+        expect(count).to eq(1)
       end
     end
   end
@@ -118,7 +118,7 @@ describe Bosh::Retryable do
       tries == 4
     end
 
-    count.should == 4
+    expect(count).to eq(4)
   end
 
   it 'should retry the given number of times when matcher matches an error raise from the sleeper' do
@@ -136,7 +136,7 @@ describe Bosh::Retryable do
       described_class.new(tries: 10, on: matcher, sleep: sleeper).retryer { false }
     }.to raise_error(RuntimeError, /fake-msg2/)
 
-    count.should == 2
+    expect(count).to eq(2)
   end
 
   it 'should retry when given error is raised and given message matches' do
@@ -149,11 +149,11 @@ describe Bosh::Retryable do
       end
     }.to raise_error StandardError
 
-    count.should == 3
+    expect(count).to eq(3)
   end
 
   it 'should sleep on each retry the given number of seconds' do
-    Kernel.should_receive(:sleep).with(5).twice
+    expect(Kernel).to receive(:sleep).with(5).twice
 
     described_class.new(tries: 3, on: StandardError, sleep: 5).retryer do |tries|
       raise StandardError if tries <= 2
@@ -164,8 +164,8 @@ describe Bosh::Retryable do
   it 'should pass error to sleep callback proc' do
     count = 0
     sleep_cb = lambda { |retries, error|
-      error.is_a?(ArgumentError).should be(true) if retries == 1
-      error.is_a?(RuntimeError).should be(true) if retries == 2
+      expect(error.is_a?(ArgumentError)).to be(true) if retries == 1
+      expect(error.is_a?(RuntimeError)).to be(true) if retries == 2
     }
 
     described_class.new(tries: 3, on: [ArgumentError, RuntimeError], sleep: sleep_cb).retryer do |tries|
@@ -175,7 +175,7 @@ describe Bosh::Retryable do
       true
     end
 
-    count.should == 3
+    expect(count).to eq(3)
   end
 
   it 'should raise an error if that error is raised and is not in the specified list' do
@@ -189,7 +189,7 @@ describe Bosh::Retryable do
       end
     }.to raise_error(ZeroDivisionError)
 
-    count.should == 2
+    expect(count).to eq(2)
   end
 
   it 'should raise a RetryCountExceeded error if retries exceeded and block returns false' do
@@ -202,7 +202,7 @@ describe Bosh::Retryable do
       end
     }.to raise_error(Bosh::Common::RetryCountExceeded)
 
-    count.should == 3
+    expect(count).to eq(3)
   end
 
   it 'should raise the original error if retries exceeded and error is raised in block' do
@@ -215,7 +215,7 @@ describe Bosh::Retryable do
       end
     }.to raise_error(StandardError)
 
-    count.should == 3
+    expect(count).to eq(3)
   end
 end
 

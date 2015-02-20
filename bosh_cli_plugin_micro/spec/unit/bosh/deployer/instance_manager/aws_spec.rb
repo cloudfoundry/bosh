@@ -93,8 +93,10 @@ module Bosh::Deployer
           let(:instance) { instance_double('AWS::EC2::Instance') }
 
           before do
-            instance_manager.stub_chain(:state, :vm_cid).and_return('fake-vm-cid')
-            instance_manager.stub_chain(:cloud, :ec2, :instances, :[]).and_return(instance)
+            allow(instance_manager).to receive_message_chain(:state, :vm_cid)
+                                           .and_return('fake-vm-cid')
+            allow(instance_manager).to receive_message_chain(:cloud, :ec2, :instances, :[])
+                                           .and_return(instance)
           end
 
           context 'when there is a bosh VM with a public ip' do
@@ -120,14 +122,15 @@ module Bosh::Deployer
 
             context 'when elastic public ip is set' do
               it 'returns the elastic public ip' do
-                instance.stub_chain(:elastic_ip, :public_ip).and_return('fake-elastic-ip')
+                allow(instance).to receive_message_chain(:elastic_ip, :public_ip)
+                                       .and_return('fake-elastic-ip')
                 expect(aws.send(method)).to eq('fake-elastic-ip')
               end
             end
 
             context 'when elastic public ip is not set' do
               it 'raises RuntimeError error' do
-                instance.stub_chain(:elastic_ip, :public_ip).and_return(nil)
+                allow(instance).to receive_message_chain(:elastic_ip, :public_ip).and_return(nil)
                 expect { aws.send(method) }.to raise_error(
                   RuntimeError, /Failed to discover elastic public ip address/)
               end
@@ -136,7 +139,8 @@ module Bosh::Deployer
         end
 
         context 'when there is no bosh VM' do
-          before { instance_manager.stub_chain(:state, :vm_cid).and_return(nil) }
+          before { allow(instance_manager).to receive_message_chain(:state, :vm_cid)
+                                                  .and_return(nil) }
 
           it 'returns client services ip according to the configuration' do
             expect(aws.send(method)).to eq('fake-client-services-ip')

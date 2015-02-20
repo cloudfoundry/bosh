@@ -37,11 +37,11 @@ module Bosh::Director::Core::Templates
         let(:expected_rendered_templates) { [double('rendered template')] }
 
         before do
-          job_template_renderer.stub(:render).with(spec).and_return(expected_rendered_templates[0])
+          allow(job_template_renderer).to receive(:render).with(spec).and_return(expected_rendered_templates[0])
         end
 
         it 'returns the rendered template for the given instance' do
-          job_template_loader.stub(:process).with(templates[0]).and_return(job_template_renderer)
+          allow(job_template_loader).to receive(:process).with(templates[0]).and_return(job_template_renderer)
 
           job_instance_renderer.render(spec)
           expect(RenderedJobInstance).to have_received(:new).with(expected_rendered_templates)
@@ -68,11 +68,11 @@ module Bosh::Director::Core::Templates
         let(:job_template_renderer2) { instance_double('Bosh::Director::Core::Templates::JobTemplateRenderer') }
 
         before do
-          job_template_loader.stub(:process).with(templates[0]).and_return(job_template_renderer)
-          job_template_loader.stub(:process).with(templates[1]).and_return(job_template_renderer2)
+          allow(job_template_loader).to receive(:process).with(templates[0]).and_return(job_template_renderer)
+          allow(job_template_loader).to receive(:process).with(templates[1]).and_return(job_template_renderer2)
 
-          job_template_renderer.stub(:render).with(spec).and_return(expected_rendered_templates[0])
-          job_template_renderer2.stub(:render).with(spec).and_return(expected_rendered_templates[1])
+          allow(job_template_renderer).to receive(:render).with(spec).and_return(expected_rendered_templates[0])
+          allow(job_template_renderer2).to receive(:render).with(spec).and_return(expected_rendered_templates[1])
         end
 
         it 'returns the rendered templates for an instance' do

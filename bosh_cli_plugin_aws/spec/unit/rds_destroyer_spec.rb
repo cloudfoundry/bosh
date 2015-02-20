@@ -6,24 +6,24 @@ module Bosh::Aws
     let(:ui) { instance_double('Bosh::Cli::Command::AWS') }
     let(:config) { { 'aws' => { fake: 'aws config' } } }
 
-    before { rds_destroyer.stub(:sleep) }
+    before { allow(rds_destroyer).to receive(:sleep) }
 
     describe '#delete_all' do
-      before { Bosh::Aws::EC2.stub(:new).with(fake: 'aws config').and_return(ec2) }
+      before { allow(Bosh::Aws::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
       let(:ec2) { instance_double('Bosh::Aws::EC2') }
 
-      before { Bosh::Aws::RDS.stub(:new).and_return(rds) }
+      before { allow(Bosh::Aws::RDS).to receive(:new).and_return(rds) }
       let(:rds) { instance_double('Bosh::Aws::RDS') }
 
       context 'when there is at least 1 database' do
-        before { rds.stub(databases: [], database_names: { 'i1' => 'db1-name', 'i2' => 'db2-name' }) }
+        before { allow(rds).to receive_messages(databases: [], database_names: { 'i1' => 'db1-name', 'i2' => 'db2-name' }) }
 
         it 'warns the user that the operation is destructive and list the databases' do
-          ui.should_receive(:say).with(/DESTRUCTIVE OPERATION/)
-          ui.should_receive(:say).with("Database Instances:\n\ti1\t(database_name: db1-name)\n\ti2\t(database_name: db2-name)")
+          expect(ui).to receive(:say).with(/DESTRUCTIVE OPERATION/)
+          expect(ui).to receive(:say).with("Database Instances:\n\ti1\t(database_name: db1-name)\n\ti2\t(database_name: db2-name)")
 
-          ui
-            .should_receive(:confirmed?)
+          expect(ui)
+            .to receive(:confirmed?)
             .with('Are you sure you want to delete all databases?')
             .and_return(false)
 
@@ -31,13 +31,13 @@ module Bosh::Aws
         end
 
         context 'when user confirms deletion' do
-          before { ui.stub(confirmed?: true) }
+          before { allow(ui).to receive_messages(confirmed?: true) }
 
           it 'deletes all databases and associated resources' do
-            rds.should_receive(:delete_databases)
-            rds.should_receive(:delete_subnet_groups)
-            rds.should_receive(:delete_security_groups)
-            rds.should_receive(:delete_db_parameter_group).with('utf8')
+            expect(rds).to receive(:delete_databases)
+            expect(rds).to receive(:delete_subnet_groups)
+            expect(rds).to receive(:delete_security_groups)
+            expect(rds).to receive(:delete_db_parameter_group).with('utf8')
             rds_destroyer.delete_all
           end
 
@@ -48,7 +48,7 @@ module Bosh::Aws
 
             context 'when databases do not go away after few tries' do
               it 'raises an error' do
-                rds.stub(databases: [bosh_rds])
+                allow(rds).to receive_messages(databases: [bosh_rds])
                 expect {
                   rds_destroyer.delete_all
                 }.to raise_error(/not all rds instances could be deleted/)
@@ -57,8 +57,8 @@ module Bosh::Aws
 
             context 'when database goes away while printing status' do
               it 'succeeds eventually' do
-                rds.should_receive(:databases).and_return([bosh_rds], [bosh_rds], [])
-                bosh_rds.should_receive(:db_name).and_raise(::AWS::RDS::Errors::DBInstanceNotFound)
+                expect(rds).to receive(:databases).and_return([bosh_rds], [bosh_rds], [])
+                expect(bosh_rds).to receive(:db_name).and_raise(::AWS::RDS::Errors::DBInstanceNotFound)
                 rds_destroyer.delete_all
               end
             end
@@ -66,61 +66,61 @@ module Bosh::Aws
         end
 
         context 'when does not confirm deletion' do
-          before { ui.stub(confirmed?: false) }
+          before { allow(ui).to receive_messages(confirmed?: false) }
 
           it 'does not terminate any databases' do
-            rds.should_not_receive(:delete_databases)
-            rds.should_not_receive(:delete_subnet_groups)
-            rds.should_not_receive(:delete_security_groups)
-            rds.should_not_receive(:delete_db_parameter_group)
+            expect(rds).not_to receive(:delete_databases)
+            expect(rds).not_to receive(:delete_subnet_groups)
+            expect(rds).not_to receive(:delete_security_groups)
+            expect(rds).not_to receive(:delete_db_parameter_group)
             rds_destroyer.delete_all
           end
         end
       end
 
       context 'when there are no databases' do
-        before { rds.stub(database_names: [], databases: []) }
+        before { allow(rds).to receive_messages(database_names: [], databases: []) }
 
         before { ignore_deletion }
 
         context 'wehn user confirmed deletion' do
-          before { ui.stub(confirmed?: true) }
+          before { allow(ui).to receive_messages(confirmed?: true) }
 
           it 'does not try to delete databases' do
-            rds.should_not_receive(:delete_databases)
+            expect(rds).not_to receive(:delete_databases)
             rds_destroyer.delete_all
           end
 
           it 'deletes db subnets, sec groups, and paramater groups' do
-            rds.should_receive(:delete_subnet_groups)
-            rds.should_receive(:delete_security_groups)
-            rds.should_receive(:delete_db_parameter_group)
+            expect(rds).to receive(:delete_subnet_groups)
+            expect(rds).to receive(:delete_security_groups)
+            expect(rds).to receive(:delete_db_parameter_group)
             rds_destroyer.delete_all
           end
         end
 
         context 'wehn user did not confirme deletion' do
-          before { ui.stub(confirmed?: false) }
+          before { allow(ui).to receive_messages(confirmed?: false) }
 
           it 'does not try to delete databases' do
-            rds.should_not_receive(:delete_databases)
+            expect(rds).not_to receive(:delete_databases)
             rds_destroyer.delete_all
           end
 
           it 'does not delete db subnets, sec groups, and paramater groups' do
-            rds.should_not_receive(:delete_subnet_groups)
-            rds.should_not_receive(:delete_security_groups)
-            rds.should_not_receive(:delete_db_parameter_group)
+            expect(rds).not_to receive(:delete_subnet_groups)
+            expect(rds).not_to receive(:delete_security_groups)
+            expect(rds).not_to receive(:delete_db_parameter_group)
             rds_destroyer.delete_all
           end
         end
       end
 
       def ignore_deletion
-        rds.stub(:delete_databases)
-        rds.stub(:delete_subnet_groups)
-        rds.stub(:delete_security_groups)
-        rds.stub(:delete_db_parameter_group)
+        allow(rds).to receive(:delete_databases)
+        allow(rds).to receive(:delete_subnet_groups)
+        allow(rds).to receive(:delete_security_groups)
+        allow(rds).to receive(:delete_db_parameter_group)
       end
     end
   end

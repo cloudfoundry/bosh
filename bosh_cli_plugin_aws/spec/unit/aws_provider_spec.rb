@@ -21,13 +21,13 @@ module Bosh::Aws
       end
 
       it 'returns a correctly configured AWS::EC2 object' do
-        AWS::EC2.should_receive(:new).with(expected_arguments).and_return(ec2)
+        expect(AWS::EC2).to receive(:new).with(expected_arguments).and_return(ec2)
 
         expect(aws_provider.ec2).to eq(ec2)
       end
 
       it 'memoizes the AWS::EC2 object' do
-        AWS::EC2.should_receive(:new).once.and_return(ec2)
+        expect(AWS::EC2).to receive(:new).once.and_return(ec2)
 
         2.times { aws_provider.ec2 }
       end
@@ -43,13 +43,13 @@ module Bosh::Aws
       end
 
       it 'returns a correctly configured AWS::ELB object' do
-        AWS::ELB.should_receive(:new).with(credentials).and_return(elb)
+        expect(AWS::ELB).to receive(:new).with(credentials).and_return(elb)
 
         expect(aws_provider.elb).to eq(elb)
       end
 
       it 'memoizes the AWS::S3 object' do
-        AWS::ELB.should_receive(:new).once.and_return(elb)
+        expect(AWS::ELB).to receive(:new).once.and_return(elb)
 
         2.times { aws_provider.elb }
       end
@@ -59,12 +59,12 @@ module Bosh::Aws
       let(:iam) { instance_double('AWS::IAM') }
 
       it 'returns a correctly configured AWS::IAM object' do
-        AWS::IAM.should_receive(:new).with(credentials).and_return(iam)
+        expect(AWS::IAM).to receive(:new).with(credentials).and_return(iam)
 
         expect(aws_provider.iam).to eq(iam)
       end
       it 'memoizes the AWS::ELB object' do
-        AWS::IAM.should_receive(:new).once.and_return(iam)
+        expect(AWS::IAM).to receive(:new).once.and_return(iam)
 
         2.times { aws_provider.iam }
       end
@@ -80,13 +80,13 @@ module Bosh::Aws
       end
 
       it 'returns a correctly configured AWS::RDS object' do
-        AWS::RDS.should_receive(:new).with(credentials).and_return(rds)
+        expect(AWS::RDS).to receive(:new).with(credentials).and_return(rds)
 
         expect(aws_provider.rds).to eq(rds)
       end
 
       it 'memoizes the AWS::RDS object' do
-        AWS::RDS.should_receive(:new).once.and_return(rds)
+        expect(AWS::RDS).to receive(:new).once.and_return(rds)
 
         2.times { aws_provider.rds }
       end
@@ -102,13 +102,13 @@ module Bosh::Aws
       end
 
       it 'returns a correctly configured AWS::RDS::Client object' do
-        AWS::RDS::Client.should_receive(:new).with(credentials).and_return(rds_client)
+        expect(AWS::RDS::Client).to receive(:new).with(credentials).and_return(rds_client)
 
         expect(aws_provider.rds_client).to eq(rds_client)
       end
 
       it 'memoizes the AWS::RDS::Client object' do
-        AWS::RDS::Client.should_receive(:new).once.and_return(rds_client)
+        expect(AWS::RDS::Client).to receive(:new).once.and_return(rds_client)
 
         2.times { aws_provider.rds_client }
       end
@@ -118,13 +118,13 @@ module Bosh::Aws
       let(:route53) { instance_double('AWS::Route53') }
 
       it 'returns a correctly configured AWS::Route53 object' do
-        AWS::Route53.should_receive(:new).with(credentials).and_return(route53)
+        expect(AWS::Route53).to receive(:new).with(credentials).and_return(route53)
 
         expect(aws_provider.route53).to eq(route53)
       end
 
       it 'memoizes the AWS::Route53 object' do
-        AWS::Route53.should_receive(:new).once.and_return(route53)
+        expect(AWS::Route53).to receive(:new).once.and_return(route53)
 
         2.times { aws_provider.route53 }
       end
@@ -134,12 +134,12 @@ module Bosh::Aws
       let(:s3) { instance_double('AWS::S3') }
 
       it 'returns a correctly configured AWS::S3 object' do
-        AWS::S3.should_receive(:new).with(credentials).and_return(s3)
+        expect(AWS::S3).to receive(:new).with(credentials).and_return(s3)
 
         expect(aws_provider.s3).to eq(s3)
       end
       it 'memoizes the AWS::S3 object' do
-        AWS::S3.should_receive(:new).once.and_return(s3)
+        expect(AWS::S3).to receive(:new).once.and_return(s3)
 
         2.times { aws_provider.s3 }
       end

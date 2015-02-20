@@ -39,38 +39,38 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
   let(:cloud) { described_class.new(options) }
 
   before do
-    Bosh::Registry::Client.stub(:new).and_return(registry)
+    allow(Bosh::Registry::Client).to receive(:new).and_return(registry)
 
-    AWS::EC2.stub(:new).and_return(double("ec2", regions: {"bar" => region}))
+    allow(AWS::EC2).to receive(:new).and_return(double("ec2", regions: {"bar" => region}))
 
-    Bosh::AwsCloud::AvailabilityZoneSelector.stub(:new).
+    allow(Bosh::AwsCloud::AvailabilityZoneSelector).to receive(:new).
         with(region, "foo").
         and_return(availability_zone_selector)
 
-    Bosh::AwsCloud::Stemcell.stub(:find).with(region, stemcell_id).and_return(stemcell)
+    allow(Bosh::AwsCloud::Stemcell).to receive(:find).with(region, stemcell_id).and_return(stemcell)
 
-    Bosh::AwsCloud::InstanceManager.stub(:new).
+    allow(Bosh::AwsCloud::InstanceManager).to receive(:new).
         with(region, registry, be_an_instance_of(AWS::ELB), availability_zone_selector, be_an_instance_of(Logger)).
         and_return(instance_manager)
 
-    instance_manager.stub(:create).
+    allow(instance_manager).to receive(:create).
         with(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment, options).
         and_return(instance)
 
-    Bosh::AwsCloud::NetworkConfigurator.stub(:new).
+    allow(Bosh::AwsCloud::NetworkConfigurator).to receive(:new).
         with(networks_spec).
         and_return(network_configurator)
 
-    resource_pool.stub(:[]).and_return(false)
-    cloud.stub(:task_checkpoint)
+    allow(resource_pool).to receive(:[]).and_return(false)
+    allow(cloud).to receive(:task_checkpoint)
   end
 
   it 'passes the image_id of the stemcell to an InstanceManager in order to create a VM' do
-    network_configurator.stub(:configure)
-    registry.stub(:update_settings)
+    allow(network_configurator).to receive(:configure)
+    allow(registry).to receive(:update_settings)
 
-    stemcell.should_receive(:image_id).with(no_args).and_return('ami-1234')
-    instance_manager.should_receive(:create).with(
+    expect(stemcell).to receive(:image_id).with(no_args).and_return('ami-1234')
+    expect(instance_manager).to receive(:create).with(
       anything,
       'ami-1234',
       anything,
@@ -79,27 +79,27 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
       anything,
       anything,
     ).and_return(instance)
-    cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment).should == "fake-id"
+    expect(cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)).to eq("fake-id")
   end
 
   it "should create an EC2 instance and return its id" do
-    network_configurator.stub(:configure)
-    registry.stub(:update_settings)
-    Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: instance, state: :running)
-    cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment).should == "fake-id"
+    allow(network_configurator).to receive(:configure)
+    allow(registry).to receive(:update_settings)
+    allow(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: instance, state: :running)
+    expect(cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)).to eq("fake-id")
   end
 
   it "should configure the IP for the created instance according to the network specifications" do
-    registry.stub(:update_settings)
-    Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: instance, state: :running)
-    network_configurator.should_receive(:configure).with(region, instance)
+    allow(registry).to receive(:update_settings)
+    allow(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: instance, state: :running)
+    expect(network_configurator).to receive(:configure).with(region, instance)
     cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)
   end
 
   it "should update the registry settings with the new instance" do
-    network_configurator.stub(:configure)
-    Bosh::AwsCloud::ResourceWait.stub(:for_instance).with(instance: instance, state: :running)
-    SecureRandom.stub(:uuid).and_return("rand0m")
+    allow(network_configurator).to receive(:configure)
+    allow(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: instance, state: :running)
+    allow(SecureRandom).to receive(:uuid).and_return("rand0m")
 
     agent_settings = {
         "vm" => {
@@ -115,7 +115,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
         "env" => environment,
         "baz" => "qux"
     }
-    registry.should_receive(:update_settings).with("fake-id", agent_settings)
+    expect(registry).to receive(:update_settings).with("fake-id", agent_settings)
 
     cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)
   end

@@ -12,9 +12,9 @@ describe Bosh::Aws::ELB do
   let(:fake_aws_iam) { double(AWS::IAM, server_certificates: certificates) }
 
   it 'creates an underlying AWS ELB object with your credentials' do
-    AWS::ELB.should_receive(:new).
+    expect(AWS::ELB).to receive(:new).
       with(creds.merge('elb_endpoint' => 'elasticloadbalancing.FAKE_AWS_REGION.amazonaws.com')).and_call_original
-    elb.send(:aws_elb).should be_kind_of(AWS::ELB)
+    expect(elb.send(:aws_elb)).to be_kind_of(AWS::ELB)
   end
 
   describe 'creation' do
@@ -28,18 +28,18 @@ describe Bosh::Aws::ELB do
     let(:certificates) { double(AWS::IAM::ServerCertificateCollection, map: [cert_name]) }
 
     before do
-      elb.stub(:aws_elb).and_return(fake_aws_elb)
-      elb.stub(:aws_iam).and_return(fake_aws_iam)
+      allow(elb).to receive(:aws_elb).and_return(fake_aws_elb)
+      allow(elb).to receive(:aws_iam).and_return(fake_aws_iam)
 
-      vpc.stub(:subnets).and_return({ 'sub_name1' => 'sub_id1', 'sub_name2' => 'sub_id2' })
-      vpc.stub(:security_group_by_name).with('security_group_name').and_return(fake_aws_security_group)
+      allow(vpc).to receive(:subnets).and_return({ 'sub_name1' => 'sub_id1', 'sub_name2' => 'sub_id2' })
+      allow(vpc).to receive(:security_group_by_name).with('security_group_name').and_return(fake_aws_security_group)
 
-      Bosh::Common.stub(:wait)
+      allow(Bosh::Common).to receive(:wait)
     end
 
     describe 'is successful' do
       before do
-        new_elb.should_receive(:configure_health_check).with({
+        expect(new_elb).to receive(:configure_health_check).with({
                                                                :healthy_threshold => 5,
                                                                :unhealthy_threshold => 2,
                                                                :interval => 5,
@@ -49,17 +49,17 @@ describe Bosh::Aws::ELB do
       end
 
       it 'can create an ELB given a name and a vpc and a CIDR block' do
-        fake_aws_elb.load_balancers.should_receive(:create).with('my elb name', {
+        expect(fake_aws_elb.load_balancers).to receive(:create).with('my elb name', {
           :listeners => [http_listener],
           :subnets => %w[sub_id1 sub_id2],
           :security_groups => %w[sg_id]
         }).and_return(new_elb)
-        elb.create('my elb name', vpc, { 'subnets' => %w(sub_name1 sub_name2), 'security_group' => 'security_group_name' }, certs).should == new_elb
+        expect(elb.create('my elb name', vpc, { 'subnets' => %w(sub_name1 sub_name2), 'security_group' => 'security_group_name' }, certs)).to eq(new_elb)
       end
 
       describe 'creating a new ELB that allows HTTPS' do
         before do
-          fake_aws_elb.load_balancers.should_receive(:create).with('my elb name', {
+          expect(fake_aws_elb.load_balancers).to receive(:create).with('my elb name', {
             listeners: [http_listener, https_listener],
             subnets: ['sub_id1', 'sub_id2'],
             security_groups: ['sg_id'],
@@ -70,30 +70,30 @@ describe Bosh::Aws::ELB do
           let(:cert) { { 'certificate_path' => asset('ca/ca.pem'), 'private_key_path' => asset('ca/ca.key') } }
 
           before do
-            certificates.should_receive(:upload).with(anything) do |args|
-              args[:certificate_body].should match(/BEGIN CERTIFICATE/)
-              args[:private_key].should match(/BEGIN RSA PRIVATE KEY/)
-              args[:name].should == cert_name
-              args.should_not have_key :certificate_chain
-            end.and_return(certificate)
+            expect(certificates).to receive(:upload).with(anything) { |args|
+              expect(args[:certificate_body]).to match(/BEGIN CERTIFICATE/)
+              expect(args[:private_key]).to match(/BEGIN RSA PRIVATE KEY/)
+              expect(args[:name]).to eq(cert_name)
+              expect(args).not_to have_key :certificate_chain
+            }.and_return(certificate)
           end
 
           it 'can create a new ELB that is configured to allow HTTPS' do
-            elb.create('my elb name', vpc, { 'subnets' => %w(sub_name1 sub_name2),
+            expect(elb.create('my elb name', vpc, { 'subnets' => %w(sub_name1 sub_name2),
                                              'security_group' => 'security_group_name',
                                              'https' => true,
                                              'ssl_cert' => cert_name,
                                              'dns_record' => 'myapp',
-                                             'domain' => 'dev102.cf.com' }, certs).should == new_elb
+                                             'domain' => 'dev102.cf.com' }, certs)).to eq(new_elb)
           end
         end
 
         context 'when amazon fails to see that the certificate was uploaded already' do
           it 'tries to upload the certificate again' do
-            fake_aws_iam.should_receive(:server_certificates).and_return(certificates)
+            expect(fake_aws_iam).to receive(:server_certificates).and_return(certificates)
 
-            certificates.stub(:map).and_return([], [cert_name])
-            certificates.should_receive(:upload).twice.and_return(certificate)
+            allow(certificates).to receive(:map).and_return([], [cert_name])
+            expect(certificates).to receive(:upload).twice.and_return(certificate)
 
             elb.create('my elb name', vpc, { 'subnets' => %w(sub_name1 sub_name2),
                                              'security_group' => 'security_group_name',
@@ -106,10 +106,10 @@ describe Bosh::Aws::ELB do
 
         context 'when amazon fails to see the certificate and then complains the certificate was already uploaded' do
           it 'uses the certificate that has been uploaded before' do
-            fake_aws_iam.should_receive(:server_certificates).and_return(certificates)
+            expect(fake_aws_iam).to receive(:server_certificates).and_return(certificates)
 
-            certificates.should_receive(:[]).with(cert_name).and_return(certificate)
-            certificates.should_receive(:upload).and_raise(AWS::IAM::Errors::EntityAlreadyExists)
+            expect(certificates).to receive(:[]).with(cert_name).and_return(certificate)
+            expect(certificates).to receive(:upload).and_raise(AWS::IAM::Errors::EntityAlreadyExists)
 
             elb.create('my elb name', vpc, { 'subnets' => %w(sub_name1 sub_name2),
                                              'security_group' => 'security_group_name',
@@ -122,21 +122,21 @@ describe Bosh::Aws::ELB do
 
         context 'if the certificate comes from a signing authority (has a certificate chain)' do
           before do
-            certificates.should_receive(:upload).with(anything) do |args|
-              args[:certificate_chain].should match(/BEGIN CERTIFICATE/)
-              args[:certificate_body].should match(/BEGIN CERTIFICATE/)
-              args[:private_key].should match(/BEGIN RSA PRIVATE KEY/)
-              args[:name].should == cert_name
-            end.and_return(certificate)
+            expect(certificates).to receive(:upload).with(anything) { |args|
+              expect(args[:certificate_chain]).to match(/BEGIN CERTIFICATE/)
+              expect(args[:certificate_body]).to match(/BEGIN CERTIFICATE/)
+              expect(args[:private_key]).to match(/BEGIN RSA PRIVATE KEY/)
+              expect(args[:name]).to eq(cert_name)
+            }.and_return(certificate)
           end
 
           it 'can create a new ELB that is configured to allow HTTPS' do
-            elb.create('my elb name', vpc, { 'subnets' => %w(sub_name1 sub_name2),
+            expect(elb.create('my elb name', vpc, { 'subnets' => %w(sub_name1 sub_name2),
                                              'security_group' => 'security_group_name',
                                              'https' => true,
                                              'ssl_cert' => cert_name,
                                              'dns_record' => 'myapp',
-                                             'domain' => 'dev102.cf.com' }, certs).should == new_elb
+                                             'domain' => 'dev102.cf.com' }, certs)).to eq(new_elb)
           end
         end
       end
@@ -145,7 +145,7 @@ describe Bosh::Aws::ELB do
     describe 'on failure' do
       context 'when amazon rejects our certificate' do
         it 'throws an error' do
-          fake_aws_iam.should_receive(:server_certificates).and_return(certificates)
+          expect(fake_aws_iam).to receive(:server_certificates).and_return(certificates)
 
           allow(certificates).to receive(:upload).and_raise(AWS::IAM::Errors::MalformedCertificate)
 
@@ -172,15 +172,15 @@ describe Bosh::Aws::ELB do
     let(:server_certificates) { [] }
 
     before do
-      elb.stub(:aws_elb).and_return(fake_aws_elb)
-      elb.stub(:aws_iam).and_return(fake_aws_iam)
+      allow(elb).to receive(:aws_elb).and_return(fake_aws_elb)
+      allow(elb).to receive(:aws_iam).and_return(fake_aws_iam)
 
-      fake_aws_iam.should_receive(:server_certificates).and_return(server_certificates)
+      expect(fake_aws_iam).to receive(:server_certificates).and_return(server_certificates)
     end
 
     describe 'deleting each load balancer' do
       before do
-        fake_aws_elb.should_receive(:load_balancers).and_return(load_balancers)
+        expect(fake_aws_elb).to receive(:load_balancers).and_return(load_balancers)
       end
 
       let(:elb1) { double('elb1') }
@@ -192,11 +192,11 @@ describe Bosh::Aws::ELB do
       let(:server_certificates) { [cert1, cert2] }
 
       it 'should call delete on each ELB and each certificate' do
-        elb1.should_receive(:delete)
-        elb2.should_receive(:delete)
+        expect(elb1).to receive(:delete)
+        expect(elb2).to receive(:delete)
 
-        cert1.should_receive(:delete)
-        cert2.should_receive(:delete)
+        expect(cert1).to receive(:delete)
+        expect(cert2).to receive(:delete)
 
         elb.delete_elbs
       end
@@ -208,8 +208,8 @@ describe Bosh::Aws::ELB do
       let(:server_certificates) { [cert1, cert2] }
 
       it 'deletes all of the uploaded server certificates' do
-        cert1.should_receive(:delete)
-        cert2.should_receive(:delete)
+        expect(cert1).to receive(:delete)
+        expect(cert2).to receive(:delete)
 
         elb.delete_server_certificates
       end
@@ -218,14 +218,14 @@ describe Bosh::Aws::ELB do
 
   describe 'names' do
     before do
-      elb.stub(:aws_elb).and_return(fake_aws_elb)
+      allow(elb).to receive(:aws_elb).and_return(fake_aws_elb)
     end
 
     it 'returns the names of the running ELBs' do
       elb1 = double('elb1', name: 'one')
       elb2 = double('elb2', name: 'two')
-      fake_aws_elb.should_receive(:load_balancers).and_return([elb1, elb2])
-      elb.names.should == %w[one two]
+      expect(fake_aws_elb).to receive(:load_balancers).and_return([elb1, elb2])
+      expect(elb.names).to eq(%w[one two])
     end
   end
 
@@ -233,17 +233,17 @@ describe Bosh::Aws::ELB do
     let(:fake_elb_instance) { double(AWS::ELB::LoadBalancer, name: 'foo') }
 
     before do
-      elb.stub(:aws_elb).and_return(fake_aws_elb)
+      allow(elb).to receive(:aws_elb).and_return(fake_aws_elb)
     end
 
     it 'returns an elb of the given name' do
-      fake_aws_elb.should_receive(:load_balancers).and_return([fake_elb_instance])
+      expect(fake_aws_elb).to receive(:load_balancers).and_return([fake_elb_instance])
 
       expect(elb.find_by_name('foo')).to eq fake_elb_instance
     end
 
     it "returns nil if elb isn't found for given name" do
-      fake_aws_elb.should_receive(:load_balancers).and_return([fake_elb_instance])
+      expect(fake_aws_elb).to receive(:load_balancers).and_return([fake_elb_instance])
 
       expect(elb.find_by_name('bar')).to be_nil
     end
@@ -251,14 +251,14 @@ describe Bosh::Aws::ELB do
 
   describe 'server certificate names' do
     before do
-      elb.stub(:aws_iam).and_return(fake_aws_iam)
+      allow(elb).to receive(:aws_iam).and_return(fake_aws_iam)
     end
 
     it 'returns the names of the uploaded server certificates' do
       cert1 = double('cert1', name: 'one')
       cert2 = double('cert2', name: 'two')
-      fake_aws_iam.should_receive(:server_certificates).and_return([cert1, cert2])
-      elb.server_certificate_names.should == %w[one two]
+      expect(fake_aws_iam).to receive(:server_certificates).and_return([cert1, cert2])
+      expect(elb.server_certificate_names).to eq(%w[one two])
     end
   end
 end

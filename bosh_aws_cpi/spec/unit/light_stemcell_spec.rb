@@ -8,35 +8,35 @@ module Bosh::AwsCloud
 
     describe '#delete' do
       it 'does not delete the light stemcell' do
-        logger.stub(:info)
-        heavy_stemcell.should_not_receive(:delete)
+        allow(logger).to receive(:info)
+        expect(heavy_stemcell).not_to receive(:delete)
         light_stemcell.delete
       end
 
       it 'logs at INFO about the deletion' do
-        logger.should_receive(:info).with("NoOP: Deleting light stemcell 'fake-ami-id'")
+        expect(logger).to receive(:info).with("NoOP: Deleting light stemcell 'fake-ami-id'")
         light_stemcell.delete
       end
     end
 
     describe '#id' do
       it 'appends " light" to the id of heavy stemcell to distinguish the light stemcell from a heavy one' do
-        heavy_stemcell.should_receive(:id).and_return('ami-id')
-        light_stemcell.id.should eq('ami-id light')
+        expect(heavy_stemcell).to receive(:id).and_return('ami-id')
+        expect(light_stemcell.id).to eq('ami-id light')
       end
     end
 
     describe '#root_device_name' do
       it 'delegates the method to heavy stemcell' do
-        heavy_stemcell.should_receive(:root_device_name).and_return('THEROOOOT')
-        light_stemcell.root_device_name.should eq('THEROOOOT')
+        expect(heavy_stemcell).to receive(:root_device_name).and_return('THEROOOOT')
+        expect(light_stemcell.root_device_name).to eq('THEROOOOT')
       end
     end
 
     describe '#image_id' do
       it 'delegates the method to heavy stemcell' do
-        heavy_stemcell.should_receive(:image_id).and_return('ami-id')
-        light_stemcell.image_id.should eq('ami-id')
+        expect(heavy_stemcell).to receive(:image_id).and_return('ami-id')
+        expect(light_stemcell.image_id).to eq('ami-id')
       end
     end
   end

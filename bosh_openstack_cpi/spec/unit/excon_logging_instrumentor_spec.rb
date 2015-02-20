@@ -11,10 +11,10 @@ describe Bosh::OpenStackCloud::ExconLoggingInstrumentor do
     }
 
     before do
-      Bosh::Clouds::Config.stub(:cpi_task_log).and_return(cpi_log)
-      Logger.stub(:new).with(cpi_log).and_return(logger)
-      logger.stub(:debug)
-      logger.stub(:close)
+      allow(Bosh::Clouds::Config).to receive(:cpi_task_log).and_return(cpi_log)
+      allow(Logger).to receive(:new).with(cpi_log).and_return(logger)
+      allow(logger).to receive(:debug)
+      allow(logger).to receive(:close)
     end
 
     it "logs requests" do

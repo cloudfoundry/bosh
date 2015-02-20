@@ -3,7 +3,7 @@ require "spec_helper"
 describe Bosh::Registry::InstanceManager do
   before(:each) do
     @ec2 = double("ec2")
-    AWS::EC2.stub(:new).and_return(@ec2)
+    allow(AWS::EC2).to receive(:new).and_return(@ec2)
   end
 
   let(:manager) do
@@ -30,28 +30,28 @@ describe Bosh::Registry::InstanceManager do
     instance = double("instance")
     if eip
       elastic_ip = double("elastic_ip", :public_ip => eip)
-      instance.should_receive(:has_elastic_ip?).and_return(true)
-      instance.should_receive(:elastic_ip).and_return(elastic_ip)
+      expect(instance).to receive(:has_elastic_ip?).and_return(true)
+      expect(instance).to receive(:elastic_ip).and_return(elastic_ip)
     else
-      instance.should_receive(:has_elastic_ip?).and_return(false)
+      expect(instance).to receive(:has_elastic_ip?).and_return(false)
     end
-    @ec2.should_receive(:instances).and_return(instances)
-    instances.should_receive(:[]).with("foo").and_return(instance)
-    instance.should_receive(:private_ip_address).and_return(public_ip)
-    instance.should_receive(:public_ip_address).and_return(private_ip)
+    expect(@ec2).to receive(:instances).and_return(instances)
+    expect(instances).to receive(:[]).with("foo").and_return(instance)
+    expect(instance).to receive(:private_ip_address).and_return(public_ip)
+    expect(instance).to receive(:public_ip_address).and_return(private_ip)
   end
 
   describe "reading settings" do
     it "returns settings after verifying IP address" do
       create_instance(:instance_id => "foo", :settings => "bar")
       actual_ip_is("10.0.0.1", "10.0.1.1")
-      manager.read_settings("foo", "10.0.0.1").should == "bar"
+      expect(manager.read_settings("foo", "10.0.0.1")).to eq("bar")
     end
 
     it "returns settings after verifying elastic IP address" do
       create_instance(:instance_id => "foo", :settings => "bar")
       actual_ip_is("10.0.0.1", "10.0.1.1", "10.0.3.1")
-      manager.read_settings("foo", "10.0.3.1").should == "bar"
+      expect(manager.read_settings("foo", "10.0.3.1")).to eq("bar")
     end
 
     it "raises an error if IP cannot be verified" do

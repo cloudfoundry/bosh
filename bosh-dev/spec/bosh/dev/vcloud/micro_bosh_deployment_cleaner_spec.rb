@@ -15,10 +15,10 @@ module Bosh::Dev::VCloud
         }
       end
 
-      before { VCloudSdk::Client.stub(:new).with('fake-url', 'user@fake-org', 'password', {}, logger).and_return(client) }
+      before { allow(VCloudSdk::Client).to receive(:new).with('fake-url', 'user@fake-org', 'password', {}, logger).and_return(client) }
       let(:client) { instance_double('VCloudSdk::Client', catalog_exists?: false) }
 
-      before { client.stub(:find_vdc_by_name).with('fake-vdc').and_return(vdc) }
+      before { allow(client).to receive(:find_vdc_by_name).with('fake-vdc').and_return(vdc) }
       let(:vdc) { instance_double('VCloudSdk::VDC', find_vapp_by_name: vapp) }
       let(:vapp) { instance_double('VCloudSdk::VApp', power_off: nil, delete: nil, vms: [], status: 'POWERED_ON') }
       let(:vm1) { instance_double('VCloudSdk::VM') }
@@ -26,7 +26,7 @@ module Bosh::Dev::VCloud
       let(:disk) { instance_double('VCloudSdk::Disk', name: 'fake-disk-name') }
       let(:catalog) { instance_double('VCloudSdk::Catalog') }
 
-      before { manifest.stub(:to_h).and_return(config) }
+      before { allow(manifest).to receive(:to_h).and_return(config) }
       let(:config) do
         { 'cloud' => {
             'properties' => {
@@ -45,15 +45,15 @@ module Bosh::Dev::VCloud
 
       context 'when vapp exists' do
         it 'powers off vapp, deletes independent disks and deletes the vapp' do
-          vdc.should_receive(:find_vapp_by_name).with('vapp-name').and_return(vapp)
+          expect(vdc).to receive(:find_vapp_by_name).with('vapp-name').and_return(vapp)
 
-          vapp.should_receive(:power_off).once.ordered
-          vapp.should_receive(:vms).once.ordered.and_return([vm1, vm2])
-          vm1.should_receive(:independent_disks).once.ordered.and_return([disk])
-          vm1.should_receive(:detach_disk).with(disk).once.ordered
-          vdc.should_receive(:delete_all_disks_by_name).with('fake-disk-name').once.ordered
-          vm2.should_receive(:independent_disks).once.ordered.and_return([])
-          vapp.should_receive(:delete).once.ordered
+          expect(vapp).to receive(:power_off).once.ordered
+          expect(vapp).to receive(:vms).once.ordered.and_return([vm1, vm2])
+          expect(vm1).to receive(:independent_disks).once.ordered.and_return([disk])
+          expect(vm1).to receive(:detach_disk).with(disk).once.ordered
+          expect(vdc).to receive(:delete_all_disks_by_name).with('fake-disk-name').once.ordered
+          expect(vm2).to receive(:independent_disks).once.ordered.and_return([])
+          expect(vapp).to receive(:delete).once.ordered
 
           subject.clean
         end
@@ -72,8 +72,8 @@ module Bosh::Dev::VCloud
 
       context 'when vapp does not exist' do
         it 'does not delete anything' do
-          vdc.should_receive(:find_vapp_by_name).with('vapp-name').and_raise(VCloudSdk::ObjectNotFoundError)
-          logger.should_receive(:info).
+          expect(vdc).to receive(:find_vapp_by_name).with('vapp-name').and_raise(VCloudSdk::ObjectNotFoundError)
+          expect(logger).to receive(:info).
             with('No vapp was deleted during clean up. Details: #<VCloudSdk::ObjectNotFoundError: VCloudSdk::ObjectNotFoundError>')
           subject.clean
         end
@@ -81,13 +81,13 @@ module Bosh::Dev::VCloud
 
       context 'when catalog exists' do
         it 'deletes the vapp catalog and media catalog' do
-          client.should_receive(:catalog_exists?).with('vapp-catalog').ordered.and_return(true)
-          client.should_receive(:find_catalog_by_name).with('vapp-catalog').ordered.and_return(catalog)
-          catalog.should_receive(:delete_all_items).ordered
+          expect(client).to receive(:catalog_exists?).with('vapp-catalog').ordered.and_return(true)
+          expect(client).to receive(:find_catalog_by_name).with('vapp-catalog').ordered.and_return(catalog)
+          expect(catalog).to receive(:delete_all_items).ordered
 
-          client.should_receive(:catalog_exists?).with('media-catalog').ordered.and_return(true)
-          client.should_receive(:find_catalog_by_name).with('media-catalog').ordered.and_return(catalog)
-          catalog.should_receive(:delete_all_items).ordered
+          expect(client).to receive(:catalog_exists?).with('media-catalog').ordered.and_return(true)
+          expect(client).to receive(:find_catalog_by_name).with('media-catalog').ordered.and_return(catalog)
+          expect(catalog).to receive(:delete_all_items).ordered
 
           subject.clean
         end
@@ -95,23 +95,23 @@ module Bosh::Dev::VCloud
 
       context 'when one catalog does not exist' do
         it 'deletes the media catalog only' do
-          client.should_receive(:catalog_exists?).with('vapp-catalog').ordered.and_return(false)
-          client.should_not_receive(:find_catalog_by_name).with('vapp-catalog')
+          expect(client).to receive(:catalog_exists?).with('vapp-catalog').ordered.and_return(false)
+          expect(client).not_to receive(:find_catalog_by_name).with('vapp-catalog')
 
-          client.should_receive(:catalog_exists?).with('media-catalog').ordered.and_return(true)
-          client.should_receive(:find_catalog_by_name).with('media-catalog').ordered.and_return(catalog)
-          catalog.should_receive(:delete_all_items).ordered
+          expect(client).to receive(:catalog_exists?).with('media-catalog').ordered.and_return(true)
+          expect(client).to receive(:find_catalog_by_name).with('media-catalog').ordered.and_return(catalog)
+          expect(catalog).to receive(:delete_all_items).ordered
 
           subject.clean
         end
 
         it 'deletes the vapp catalog only' do
-          client.should_receive(:catalog_exists?).with('vapp-catalog').ordered.and_return(true)
-          client.should_receive(:find_catalog_by_name).with('vapp-catalog').ordered.and_return(catalog)
-          catalog.should_receive(:delete_all_items).ordered
+          expect(client).to receive(:catalog_exists?).with('vapp-catalog').ordered.and_return(true)
+          expect(client).to receive(:find_catalog_by_name).with('vapp-catalog').ordered.and_return(catalog)
+          expect(catalog).to receive(:delete_all_items).ordered
 
-          client.should_receive(:catalog_exists?).with('media-catalog').ordered.and_return(false)
-          client.should_not_receive(:find_catalog_by_name).with('media-catalog')
+          expect(client).to receive(:catalog_exists?).with('media-catalog').ordered.and_return(false)
+          expect(client).not_to receive(:find_catalog_by_name).with('media-catalog')
 
           subject.clean
         end
@@ -119,11 +119,11 @@ module Bosh::Dev::VCloud
 
       context 'when neither vapp nor media catalog exists' do
         it 'deletes the media catalog only' do
-          client.should_receive(:catalog_exists?).with('vapp-catalog').ordered.and_return(false)
-          client.should_not_receive(:find_catalog_by_name).with('vapp-catalog')
+          expect(client).to receive(:catalog_exists?).with('vapp-catalog').ordered.and_return(false)
+          expect(client).not_to receive(:find_catalog_by_name).with('vapp-catalog')
 
-          client.should_receive(:catalog_exists?).with('media-catalog').ordered.and_return(false)
-          client.should_not_receive(:find_catalog_by_name).with('media-catalog')
+          expect(client).to receive(:catalog_exists?).with('media-catalog').ordered.and_return(false)
+          expect(client).not_to receive(:find_catalog_by_name).with('media-catalog')
 
           subject.clean
         end

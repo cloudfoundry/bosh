@@ -57,7 +57,7 @@ end
 
 module CommandDirectorSharedExamples
   def with_director
-    before { command.stub(director: director) }
+    before { allow(command).to receive(:director).and_return(director) }
     let(:director) { instance_double('Bosh::Cli::Client::Director') }
   end
 end

@@ -15,14 +15,14 @@ describe Bosh::OpenStackCloud::Cloud do
     volume = double("volume", :id => "v-foobar")
 
     cloud = mock_cloud do |openstack|
-      openstack.volumes.should_receive(:create).
+      expect(openstack.volumes).to receive(:create).
         with(disk_params).and_return(volume)
     end
 
-    cloud.should_receive(:generate_unique_name).and_return(unique_name)
-    cloud.should_receive(:wait_resource).with(volume, :available)
+    expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
+    expect(cloud).to receive(:wait_resource).with(volume, :available)
 
-    cloud.create_disk(2048, {}).should == "v-foobar"
+    expect(cloud.create_disk(2048, {})).to eq("v-foobar")
   end
 
   it "creates an OpenStack volume with a volume_type" do
@@ -36,14 +36,14 @@ describe Bosh::OpenStackCloud::Cloud do
     volume = double("volume", :id => "v-foobar")
 
     cloud = mock_cloud do |openstack|
-      openstack.volumes.should_receive(:create).
+      expect(openstack.volumes).to receive(:create).
         with(disk_params).and_return(volume)
     end
 
-    cloud.should_receive(:generate_unique_name).and_return(unique_name)
-    cloud.should_receive(:wait_resource).with(volume, :available)
+    expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
+    expect(cloud).to receive(:wait_resource).with(volume, :available)
 
-    cloud.create_disk(2048, {"type" => "foo"}).should == "v-foobar"
+    expect(cloud.create_disk(2048, {"type" => "foo"})).to eq("v-foobar")
   end
 
   it "creates an OpenStack boot volume" do
@@ -57,14 +57,14 @@ describe Bosh::OpenStackCloud::Cloud do
     boot_volume = double("volume", :id => "v-foobar")
 
     cloud = mock_cloud do |openstack|
-      openstack.volumes.should_receive(:create).
+      expect(openstack.volumes).to receive(:create).
         with(disk_params).and_return(boot_volume)
     end
 
-    cloud.should_receive(:generate_unique_name).and_return(unique_name)
-    cloud.should_receive(:wait_resource).with(boot_volume, :available)
+    expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
+    expect(cloud).to receive(:wait_resource).with(boot_volume, :available)
 
-    cloud.create_boot_disk(2048, stemcell_id).should == "v-foobar"
+    expect(cloud.create_boot_disk(2048, stemcell_id)).to eq("v-foobar")
   end
 
   it "creates an OpenStack boot volume with an availability_zone" do
@@ -79,14 +79,14 @@ describe Bosh::OpenStackCloud::Cloud do
     boot_volume = double("volume", :id => "v-foobar")
 
     cloud = mock_cloud do |openstack|
-      openstack.volumes.should_receive(:create).
+      expect(openstack.volumes).to receive(:create).
         with(disk_params).and_return(boot_volume)
     end
 
-    cloud.should_receive(:generate_unique_name).and_return(unique_name)
-    cloud.should_receive(:wait_resource).with(boot_volume, :available)
+    expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
+    expect(cloud).to receive(:wait_resource).with(boot_volume, :available)
 
-    cloud.create_boot_disk(2048, stemcell_id, "foobar-land").should == "v-foobar"
+    expect(cloud.create_boot_disk(2048, stemcell_id, "foobar-land")).to eq("v-foobar")
   end
 
   it "creates an OpenStack boot volume ignoring the server availability zone" do
@@ -103,13 +103,13 @@ describe Bosh::OpenStackCloud::Cloud do
     cloud_options['properties']['openstack']['ignore_server_availability_zone'] = true
 
     cloud = mock_cloud(cloud_options['properties']) do |openstack|
-      openstack.volumes.should_receive(:create).with(disk_params).and_return(boot_volume)
+      expect(openstack.volumes).to receive(:create).with(disk_params).and_return(boot_volume)
     end
 
-    cloud.should_receive(:generate_unique_name).and_return(unique_name)
-    cloud.should_receive(:wait_resource).with(boot_volume, :available)
+    expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
+    expect(cloud).to receive(:wait_resource).with(boot_volume, :available)
 
-    cloud.create_boot_disk(2048, stemcell_id, nil).should == "v-foobar"
+    expect(cloud.create_boot_disk(2048, stemcell_id, nil)).to eq("v-foobar")
   end
 
   it "creates an OpenStack boot volume with a volume_type" do
@@ -124,14 +124,14 @@ describe Bosh::OpenStackCloud::Cloud do
     boot_volume = double("volume", :id => "v-foobar")
 
     cloud = mock_cloud do |openstack|
-      openstack.volumes.should_receive(:create).
+      expect(openstack.volumes).to receive(:create).
         with(disk_params).and_return(boot_volume)
     end
 
-    cloud.should_receive(:generate_unique_name).and_return(unique_name)
-    cloud.should_receive(:wait_resource).with(boot_volume, :available)
+    expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
+    expect(cloud).to receive(:wait_resource).with(boot_volume, :available)
 
-    cloud.create_boot_disk(2048, stemcell_id, nil, {"type" => "foo"}).should == "v-foobar"
+    expect(cloud.create_boot_disk(2048, stemcell_id, nil, {"type" => "foo"})).to eq("v-foobar")
   end
 
   it "rounds up disk size" do
@@ -144,12 +144,12 @@ describe Bosh::OpenStackCloud::Cloud do
     volume = double("volume", :id => "v-foobar")
 
     cloud = mock_cloud do |openstack|
-      openstack.volumes.should_receive(:create).
+      expect(openstack.volumes).to receive(:create).
         with(disk_params).and_return(volume)
     end
 
-    cloud.should_receive(:generate_unique_name).and_return(unique_name)
-    cloud.should_receive(:wait_resource).with(volume, :available)
+    expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
+    expect(cloud).to receive(:wait_resource).with(volume, :available)
 
     cloud.create_disk(2049, {})
   end
@@ -177,14 +177,14 @@ describe Bosh::OpenStackCloud::Cloud do
     volume = double("volume", :id => "v-foobar")
 
     cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).
+      expect(openstack.servers).to receive(:get).
         with("i-test").and_return(server)
-      openstack.volumes.should_receive(:create).
+      expect(openstack.volumes).to receive(:create).
         with(disk_params).and_return(volume)
     end
 
-    cloud.should_receive(:generate_unique_name).and_return(unique_name)
-    cloud.should_receive(:wait_resource).with(volume, :available)
+    expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
+    expect(cloud).to receive(:wait_resource).with(volume, :available)
 
     cloud.create_disk(1024, {}, "i-test")
   end
@@ -204,12 +204,12 @@ describe Bosh::OpenStackCloud::Cloud do
     cloud_options['properties']['openstack']['ignore_server_availability_zone'] = true
 
     cloud = mock_cloud(cloud_options['properties']) do |openstack|
-      openstack.volumes.should_receive(:create).
+      expect(openstack.volumes).to receive(:create).
           with(disk_params).and_return(volume)
     end
 
-    cloud.should_receive(:generate_unique_name).and_return(unique_name)
-    cloud.should_receive(:wait_resource).with(volume, :available)
+    expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
+    expect(cloud).to receive(:wait_resource).with(volume, :available)
 
     cloud.create_disk(1024, {}, "i-test")
   end

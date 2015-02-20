@@ -16,9 +16,9 @@ module Bosh::Dev
     let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: nil) }
 
     before do
-      class_double('Bosh::Cli::Client::Director')
-        .as_stubbed_const
-        .stub(:new)
+      allow(class_double('Bosh::Cli::Client::Director')
+        .as_stubbed_const)
+        .to receive(:new)
         .with('bosh.example.com', 'fake_username', 'fake_password')
         .and_return(director_handle)
     end
@@ -34,30 +34,30 @@ module Bosh::Dev
         })
       end
 
-      before { director_handle.stub(:list_stemcells) { [] } }
+      before { allow(director_handle).to receive(:list_stemcells) { [] } }
 
       it 'uploads the stemcell with the cli' do
-        bosh_cli_session.should_receive(:run_bosh).
+        expect(bosh_cli_session).to receive(:run_bosh).
           with('upload stemcell /path/to/fake-stemcell-008.tgz', debug_on_fail: true)
         director_client.upload_stemcell(stemcell_archive)
       end
 
       it 'always re-targets and logs in first' do
         target_retryable = double('target-retryable')
-        Bosh::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
+        allow(Bosh::Retryable).to receive(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
 
-        bosh_cli_session.should_receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
-        bosh_cli_session.should_receive(:run_bosh).with('login fake_username fake_password').ordered
-        bosh_cli_session.should_receive(:run_bosh).with(/upload stemcell/, debug_on_fail: true).ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with('login fake_username fake_password').ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with(/upload stemcell/, debug_on_fail: true).ordered
 
         director_client.upload_stemcell(stemcell_archive)
       end
 
       context 'when the stemcell being uploaded exists on the director' do
-        before { director_handle.stub(:list_stemcells).and_return([{ 'name' => 'fake-stemcell', 'version' => '008' }]) }
+        before { allow(director_handle).to receive(:list_stemcells).and_return([{ 'name' => 'fake-stemcell', 'version' => '008' }]) }
 
         it 'does not re-upload it' do
-          bosh_cli_session.should_not_receive(:run_bosh).with(/upload stemcell/, debug_on_fail: true)
+          expect(bosh_cli_session).not_to receive(:run_bosh).with(/upload stemcell/, debug_on_fail: true)
           director_client.upload_stemcell(stemcell_archive)
         end
       end
@@ -65,18 +65,18 @@ module Bosh::Dev
 
     describe '#upload_release' do
       it 'uploads the release using the cli, skipping if the release already exists' do
-        bosh_cli_session.should_receive(:run_bosh).
+        expect(bosh_cli_session).to receive(:run_bosh).
           with('upload release /path/to/fake-release.tgz --skip-if-exists', debug_on_fail: true)
         director_client.upload_release('/path/to/fake-release.tgz')
       end
 
       it 'always re-targets and logs in first' do
         target_retryable = double('target-retryable')
-        Bosh::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
+        allow(Bosh::Retryable).to receive(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
 
-        bosh_cli_session.should_receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
-        bosh_cli_session.should_receive(:run_bosh).with('login fake_username fake_password').ordered
-        bosh_cli_session.should_receive(:run_bosh).with(/upload release/, debug_on_fail: true).ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with('login fake_username fake_password').ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with(/upload release/, debug_on_fail: true).ordered
 
         director_client.upload_release('/path/to/fake-release.tgz')
       end
@@ -125,22 +125,22 @@ EOF
       end
 
       it 'sets the deployment and then runs a deploy using the cli' do
-        bosh_cli_session.should_receive(:run_bosh).with('deployment /path/to/fake-manifest.yml').ordered
-        bosh_cli_session.should_receive(:run_bosh).with('deploy', debug_on_fail: true).ordered
-        bosh_cli_session.should_receive(:run_bosh).with('deployments').ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with('deployment /path/to/fake-manifest.yml').ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with('deploy', debug_on_fail: true).ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with('deployments').ordered
 
         director_client.deploy(manifest_path)
       end
 
       it 'always re-targets and logs in first' do
         target_retryable = double('target-retryable')
-        Bosh::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
+        allow(Bosh::Retryable).to receive(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
 
-        bosh_cli_session.should_receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
-        bosh_cli_session.should_receive(:run_bosh).with('login fake_username fake_password').ordered
-        bosh_cli_session.should_receive(:run_bosh).with(/deployment/).ordered
-        bosh_cli_session.should_receive(:run_bosh).with(/deploy/, debug_on_fail: true).ordered
-        bosh_cli_session.should_receive(:run_bosh).with('deployments').ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with('login fake_username fake_password').ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with(/deployment/).ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with(/deploy/, debug_on_fail: true).ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with('deployments').ordered
 
         director_client.deploy(manifest_path)
       end
@@ -148,17 +148,17 @@ EOF
 
     describe '#clean_up' do
       it 'cleans up resources on the director' do
-        bosh_cli_session.should_receive(:run_bosh).with('cleanup', debug_on_fail: true)
+        expect(bosh_cli_session).to receive(:run_bosh).with('cleanup', debug_on_fail: true)
         director_client.clean_up
       end
 
       it 'always re-targets and logs in first' do
         target_retryable = double('target-retryable')
-        Bosh::Retryable.stub(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
+        allow(Bosh::Retryable).to receive(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
 
-        bosh_cli_session.should_receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
-        bosh_cli_session.should_receive(:run_bosh).with('login fake_username fake_password').ordered
-        bosh_cli_session.should_receive(:run_bosh).with(/cleanup/, debug_on_fail: true).ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with('login fake_username fake_password').ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with(/cleanup/, debug_on_fail: true).ordered
 
         director_client.clean_up
       end

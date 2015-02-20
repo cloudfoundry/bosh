@@ -19,11 +19,11 @@ describe Bosh::AwsCloud::AvailabilityZoneSelector do
     end
 
     it 'should select the common availability zone' do
-      subject.common_availability_zone(%w(this_zone), 'this_zone', nil).should == 'this_zone'
+      expect(subject.common_availability_zone(%w(this_zone), 'this_zone', nil)).to eq('this_zone')
     end
 
     it 'should return the default when no availability zone is passed' do
-      subject.common_availability_zone([], nil, nil).should == 'default_zone'
+      expect(subject.common_availability_zone([], nil, nil)).to eq('default_zone')
     end
 
   end
@@ -32,15 +32,15 @@ describe Bosh::AwsCloud::AvailabilityZoneSelector do
     context 'with a default' do
       context 'with a instance id' do
         it 'should return the az of the instance' do
-          instances.stub(:[]).and_return(instance)
+          allow(instances).to receive(:[]).and_return(instance)
 
-          subject.select_availability_zone(instance).should == 'this_zone'
+          expect(subject.select_availability_zone(instance)).to eq('this_zone')
         end
       end
 
       context 'without a instance id' do
         it 'should return the default az' do
-          subject.select_availability_zone(nil).should == 'default_zone'
+          expect(subject.select_availability_zone(nil)).to eq('default_zone')
         end
       end
     end
@@ -50,16 +50,16 @@ describe Bosh::AwsCloud::AvailabilityZoneSelector do
 
       context 'with a instance id' do
         it 'should return the az of the instance' do
-          instances.stub(:[]).and_return(instance)
+          allow(instances).to receive(:[]).and_return(instance)
 
-          subject.select_availability_zone(instance).should == 'this_zone'
+          expect(subject.select_availability_zone(instance)).to eq('this_zone')
         end
       end
 
       context 'without a instance id' do
         it 'should return a random az' do
-          Random.stub(:rand => 0)
-          subject.select_availability_zone(nil).should == 'us-east-1a'
+          allow(Random).to receive_messages(:rand => 0)
+          expect(subject.select_availability_zone(nil)).to eq('us-east-1a')
         end
       end
     end

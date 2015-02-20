@@ -8,14 +8,14 @@ describe Bosh::Aws::BoshManifest do
   let(:stemcell_name) { nil }
 
   it "sets the correct elastic ip" do
-    described_class.new(vpc_receipt, route53_receipt, 'deadbeef', rds_receipt, manifest_options).vip.should == "50.200.100.3"
+    expect(described_class.new(vpc_receipt, route53_receipt, 'deadbeef', rds_receipt, manifest_options).vip).to eq("50.200.100.3")
   end
 
   it "warns when vip is missing" do
     route53_receipt['elastic_ips']['bosh']['ips'] = []
 
     manifest = described_class.new(vpc_receipt, route53_receipt, 'deadbeef', rds_receipt, manifest_options)
-    manifest.should_receive(:warning).with("Missing vip field")
+    expect(manifest).to receive(:warning).with("Missing vip field")
     manifest.to_y
   end
 

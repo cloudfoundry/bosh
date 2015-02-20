@@ -25,21 +25,21 @@ describe Bosh::Aws::Route53 do
 
   it "can create a new hosted zone" do
     unique_name = "xxx-yyy-zzz-111"
-    r53.should_receive(:generate_unique_name).and_return(unique_name)
+    expect(r53).to receive(:generate_unique_name).and_return(unique_name)
     aws_r53 = double("aws_r53")
-    r53.stub_chain(:aws_route53, :client).and_return(aws_r53)
-    aws_r53.should_receive(:create_hosted_zone).with(name: "example.com.", caller_reference: unique_name)
+    allow(r53).to receive_message_chain(:aws_route53, :client).and_return(aws_r53)
+    expect(aws_r53).to receive(:create_hosted_zone).with(name: "example.com.", caller_reference: unique_name)
 
     r53.create_zone("example.com")
   end
 
   it "can create a new A record in that zone" do
     zone_id = "???"
-    r53.stub(:get_zone_id).with("example.com.").and_return(zone_id)
+    allow(r53).to receive(:get_zone_id).with("example.com.").and_return(zone_id)
 
     aws_r53 = double("aws_r53")
-    r53.stub_chain(:aws_route53, :client).and_return(aws_r53)
-    aws_r53.should_receive(:change_resource_record_sets).with(resource_set("CREATE", "\\052", "example.com.", "10.0.22.5"))
+    allow(r53).to receive_message_chain(:aws_route53, :client).and_return(aws_r53)
+    expect(aws_r53).to receive(:change_resource_record_sets).with(resource_set("CREATE", "\\052", "example.com.", "10.0.22.5"))
 
     r53.add_record("*", "example.com", "10.0.22.5")
   end
@@ -47,16 +47,16 @@ describe Bosh::Aws::Route53 do
   context "delete records" do
     it "can delete an A record from a zone" do
       zone_id = "???"
-      r53.stub(:get_zone_id).with("example.com.").and_return(zone_id)
+      allow(r53).to receive(:get_zone_id).with("example.com.").and_return(zone_id)
       fake_aws_response = double("aws_response")
 
       aws_r53 = double("aws_r53")
-      r53.stub_chain(:aws_route53, :client).and_return(aws_r53)
-      aws_r53.should_receive(:change_resource_record_sets).
+      allow(r53).to receive_message_chain(:aws_route53, :client).and_return(aws_r53)
+      expect(aws_r53).to receive(:change_resource_record_sets).
           with(resource_set("DELETE", "\\052", "example.com.", "10.0.22.5"))
-      aws_r53.should_receive(:list_resource_record_sets).
+      expect(aws_r53).to receive(:list_resource_record_sets).
           with(:hosted_zone_id => "???").and_return(fake_aws_response)
-      fake_aws_response.stub(:data).and_return(
+      allow(fake_aws_response).to receive(:data).and_return(
         resource_record_sets: [{
           name: "\\052.example.com.",
           type: "A",
@@ -72,14 +72,14 @@ describe Bosh::Aws::Route53 do
 
     it "throws an error when it can't find the record to delete" do
       zone_id = "???"
-      r53.stub(:get_zone_id).with("example.com.").and_return(zone_id)
+      allow(r53).to receive(:get_zone_id).with("example.com.").and_return(zone_id)
       fake_aws_response = double("aws_response")
 
       aws_r53 = double("aws_r53")
-      r53.stub_chain(:aws_route53, :client).and_return(aws_r53)
-      aws_r53.stub(:list_resource_record_sets).
+      allow(r53).to receive_message_chain(:aws_route53, :client).and_return(aws_r53)
+      allow(aws_r53).to receive(:list_resource_record_sets).
           with(:hosted_zone_id => "???").and_return(fake_aws_response)
-      fake_aws_response.stub(:data).and_return(
+      allow(fake_aws_response).to receive(:data).and_return(
         resource_record_sets: [{
           name: "\\052.foobar.org.",
           type: "A",
@@ -102,25 +102,25 @@ describe Bosh::Aws::Route53 do
       let(:fake_aws_r53) { double(AWS::Route53) }
 
       before do
-        r53.stub(:aws_route53).and_return(fake_aws_r53)
+        allow(r53).to receive(:aws_route53).and_return(fake_aws_r53)
       end
 
       it "can delete all" do
-        fake_aws_r53.should_receive(:hosted_zones).and_return([fake_zone])
-        fake_zone.should_receive(:rrsets)
-        fake_ns_record.should_receive(:delete)
-        fake_soa_record.should_receive(:delete)
-        fake_a_record.should_receive(:delete)
+        expect(fake_aws_r53).to receive(:hosted_zones).and_return([fake_zone])
+        expect(fake_zone).to receive(:rrsets)
+        expect(fake_ns_record).to receive(:delete)
+        expect(fake_soa_record).to receive(:delete)
+        expect(fake_a_record).to receive(:delete)
 
         r53.delete_all_records
       end
 
       it "can delete all except omissions" do
-        fake_aws_r53.should_receive(:hosted_zones).and_return([fake_zone])
-        fake_zone.should_receive(:rrsets)
-        fake_ns_record.should_not_receive(:delete)
-        fake_soa_record.should_not_receive(:delete)
-        fake_a_record.should_receive(:delete)
+        expect(fake_aws_r53).to receive(:hosted_zones).and_return([fake_zone])
+        expect(fake_zone).to receive(:rrsets)
+        expect(fake_ns_record).not_to receive(:delete)
+        expect(fake_soa_record).not_to receive(:delete)
+        expect(fake_a_record).to receive(:delete)
 
         r53.delete_all_records(omit_types: %w[NS SOA])
       end
@@ -129,11 +129,11 @@ describe Bosh::Aws::Route53 do
 
   it "can delete a hosted zone" do
     zone_id = "???"
-    r53.stub(:get_zone_id).with("example.com.").and_return(zone_id)
+    allow(r53).to receive(:get_zone_id).with("example.com.").and_return(zone_id)
 
     aws_r53 = double("aws_r53")
-    r53.stub_chain(:aws_route53, :client).and_return(aws_r53)
-    aws_r53.should_receive(:delete_hosted_zone).with(id: zone_id)
+    allow(r53).to receive_message_chain(:aws_route53, :client).and_return(aws_r53)
+    expect(aws_r53).to receive(:delete_hosted_zone).with(id: zone_id)
 
     r53.delete_zone("example.com")
   end

@@ -23,12 +23,12 @@ describe Bosh::AwsCloud::NetworkConfigurator do
   describe "#vpc?" do
     it "should be true for a manual network" do
       nc = Bosh::AwsCloud::NetworkConfigurator.new("network1" => manual)
-      nc.vpc?.should be(true)
+      expect(nc.vpc?).to be(true)
     end
 
     it "should be false for a dynamic network" do
       nc = Bosh::AwsCloud::NetworkConfigurator.new("network1" => dynamic)
-      nc.vpc?.should be(false)
+      expect(nc.vpc?).to be(false)
     end
 
   end
@@ -40,7 +40,7 @@ describe Bosh::AwsCloud::NetworkConfigurator do
       spec["network_a"]["ip"] = "10.0.0.1"
 
       nc = Bosh::AwsCloud::NetworkConfigurator.new(spec)
-      nc.private_ip.should == "10.0.0.1"
+      expect(nc.private_ip).to eq("10.0.0.1")
     end
 
     it "should extract private ip address from manual network when there's also vip network" do
@@ -51,7 +51,7 @@ describe Bosh::AwsCloud::NetworkConfigurator do
       spec["network_b"]["ip"] = "10.0.0.2"      
 
       nc = Bosh::AwsCloud::NetworkConfigurator.new(spec)
-      nc.private_ip.should == "10.0.0.2"
+      expect(nc.private_ip).to eq("10.0.0.2")
     end     
     
     it "should not extract private ip address for dynamic network" do
@@ -60,7 +60,7 @@ describe Bosh::AwsCloud::NetworkConfigurator do
       spec["network_a"]["ip"] = "10.0.0.1"
 
       nc = Bosh::AwsCloud::NetworkConfigurator.new(spec)
-      nc.private_ip.should be_nil
+      expect(nc.private_ip).to be_nil
     end     
   end
   
@@ -128,7 +128,7 @@ describe Bosh::AwsCloud::NetworkConfigurator do
           network_spec = {"network1" => dynamic, "network2" => vip}
           nc = Bosh::AwsCloud::NetworkConfigurator.new(network_spec)
 
-          nc.vip_network.should_receive(:configure).with(ec2, instance)
+          expect(nc.vip_network).to receive(:configure).with(ec2, instance)
 
           nc.configure(ec2, instance)
         end
@@ -137,7 +137,7 @@ describe Bosh::AwsCloud::NetworkConfigurator do
           network_spec = {"network1" => vip, "network2" => manual}
           nc = Bosh::AwsCloud::NetworkConfigurator.new(network_spec)
 
-          nc.vip_network.should_receive(:configure).with(ec2, instance)
+          expect(nc.vip_network).to receive(:configure).with(ec2, instance)
 
           nc.configure(ec2, instance)
         end
@@ -147,23 +147,23 @@ describe Bosh::AwsCloud::NetworkConfigurator do
       describe "without vip" do
         context "without associated elastic ip" do
           it "should configure dynamic network" do
-            instance.stub(:elastic_ip).and_return(nil)
+            allow(instance).to receive(:elastic_ip).and_return(nil)
 
             network_spec = {"network1" => dynamic}
             nc = Bosh::AwsCloud::NetworkConfigurator.new(network_spec)
 
-            nc.vip_network.should be_nil
+            expect(nc.vip_network).to be_nil
 
             nc.configure(ec2, instance)
           end
 
           it "should configure manual network" do
-            instance.stub(:elastic_ip).and_return(nil)
+            allow(instance).to receive(:elastic_ip).and_return(nil)
 
             network_spec = {"network1" => manual}
             nc = Bosh::AwsCloud::NetworkConfigurator.new(network_spec)
 
-            nc.vip_network.should be_nil
+            expect(nc.vip_network).to be_nil
 
             nc.configure(ec2, instance)
           end
@@ -171,14 +171,14 @@ describe Bosh::AwsCloud::NetworkConfigurator do
 
         context "with previously associated elastic ip" do
           it "should disassociate from the old elastic ip" do
-            instance.should_receive(:elastic_ip).and_return(double("elastic ip"))
-            instance.should_receive(:id).and_return("i-xxxxxxxx")
-            instance.should_receive(:disassociate_elastic_ip)
+            expect(instance).to receive(:elastic_ip).and_return(double("elastic ip"))
+            expect(instance).to receive(:id).and_return("i-xxxxxxxx")
+            expect(instance).to receive(:disassociate_elastic_ip)
 
             network_spec = {"network1" => dynamic}
             nc = Bosh::AwsCloud::NetworkConfigurator.new(network_spec)
 
-            nc.network.stub(:configure)
+            allow(nc.network).to receive(:configure)
 
             nc.configure(ec2, instance)
           end

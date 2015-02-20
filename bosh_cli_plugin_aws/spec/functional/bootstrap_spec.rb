@@ -9,8 +9,8 @@ describe 'AWS Bootstrap commands' do
     aws.options[:non_interactive] = true
 
     WebMock.disable_net_connect!
-    aws.stub(:sleep)
-    aws.stub(:s3).and_return(mock_s3)
+    allow(aws).to receive(:sleep)
+    allow(aws).to receive(:s3).and_return(mock_s3)
   end
 
   around do |example|
@@ -42,51 +42,51 @@ describe 'AWS Bootstrap commands' do
       let(:user_command) { double('Command User') }
 
       before do
-        Bosh::Cli::Command::User.stub(:new).and_return(user_command)
-        Bosh::Cli::Command::Misc.stub(:new).and_return(misc_command)
-        misc_command.stub(:options=)
-        user_command.stub(:options=)
+        allow(Bosh::Cli::Command::User).to receive(:new).and_return(user_command)
+        allow(Bosh::Cli::Command::Misc).to receive(:new).and_return(misc_command)
+        allow(misc_command).to receive(:options=)
+        allow(user_command).to receive(:options=)
       end
 
       it 'should bootstrap microbosh' do
         stemcell_ami_request = stub_request(:get, 'http://bosh-jenkins-artifacts.s3.amazonaws.com/last_successful-bosh-stemcell-aws_ami_us-east-1').
             to_return(:status => 200, :body => 'ami-0e3da467', :headers => {})
 
-        SecureRandom.should_receive(:base64).and_return('hm_password')
-        SecureRandom.should_receive(:base64).and_return('admin_password')
+        expect(SecureRandom).to receive(:base64).and_return('hm_password')
+        expect(SecureRandom).to receive(:base64).and_return('admin_password')
 
-        misc_command.should_receive(:login).with('admin', 'admin')
-        user_command.should_receive(:create).with('admin', 'admin_password').and_return(true)
-        misc_command.should_receive(:login).with('admin', 'admin_password')
-        user_command.should_receive(:create).with('hm', 'hm_password').and_return(true)
-        misc_command.should_receive(:login).with('hm', 'hm_password')
+        expect(misc_command).to receive(:login).with('admin', 'admin')
+        expect(user_command).to receive(:create).with('admin', 'admin_password').and_return(true)
+        expect(misc_command).to receive(:login).with('admin', 'admin_password')
+        expect(user_command).to receive(:create).with('hm', 'hm_password').and_return(true)
+        expect(misc_command).to receive(:login).with('hm', 'hm_password')
 
-        Bosh::Deployer::InstanceManager.any_instance.should_receive(:with_lifecycle)
+        expect_any_instance_of(Bosh::Deployer::InstanceManager).to receive(:with_lifecycle)
 
         aws.bootstrap_micro
 
-        stemcell_ami_request.should have_been_made
+        expect(stemcell_ami_request).to have_been_made
       end
 
       context 'hm user and password' do
         let(:fake_bootstrap) { double('MicroBosh Bootstrap', start: true) }
         before do
-          Bosh::Aws::MicroBoshBootstrap.stub(:new).and_return(fake_bootstrap)
+          allow(Bosh::Aws::MicroBoshBootstrap).to receive(:new).and_return(fake_bootstrap)
         end
 
         it "creates default 'hm' user name for hm" do
-          fake_bootstrap.stub(:create_user)
+          allow(fake_bootstrap).to receive(:create_user)
 
-          fake_bootstrap.should_receive(:create_user).with('hm', anything)
+          expect(fake_bootstrap).to receive(:create_user).with('hm', anything)
           aws.bootstrap_micro
         end
 
         it 'passes the generated hm user to the new microbosh bootstrapper' do
-          SecureRandom.stub(:base64).and_return('some_password')
-          fake_bootstrap.stub(:create_user)
-          Bosh::Aws::MicroBoshBootstrap.should_receive(:new) do |_, options|
-            options[:hm_director_user].should == 'hm'
-            options[:hm_director_password].should == 'some_password'
+          allow(SecureRandom).to receive(:base64).and_return('some_password')
+          allow(fake_bootstrap).to receive(:create_user)
+          expect(Bosh::Aws::MicroBoshBootstrap).to receive(:new) do |_, options|
+            expect(options[:hm_director_user]).to eq('hm')
+            expect(options[:hm_director_password]).to eq('some_password')
             fake_bootstrap
           end
           aws.bootstrap_micro
@@ -94,8 +94,8 @@ describe 'AWS Bootstrap commands' do
 
         it 'creates a hm user with name from options' do
           aws.options[:hm_director_user] = 'hm_guy'
-          fake_bootstrap.stub(:create_user)
-          fake_bootstrap.should_receive(:create_user).with('hm_guy', anything)
+          allow(fake_bootstrap).to receive(:create_user)
+          expect(fake_bootstrap).to receive(:create_user).with('hm_guy', anything)
           aws.bootstrap_micro
         end
       end
@@ -110,12 +110,12 @@ describe 'AWS Bootstrap commands' do
 
       it 'should ask for a new user' do
         fake_bootstrap = double('MicroBosh Bootstrap', start: true)
-        Bosh::Aws::MicroBoshBootstrap.stub(:new).and_return(fake_bootstrap)
+        allow(Bosh::Aws::MicroBoshBootstrap).to receive(:new).and_return(fake_bootstrap)
 
-        aws.should_receive(:ask).with('Enter username: ').and_return('admin')
-        aws.should_receive(:ask).with('Enter password: ').and_return('admin_passwd')
-        fake_bootstrap.should_receive(:create_user).with('admin', 'admin_passwd')
-        fake_bootstrap.should_receive(:create_user).with('hm', anything)
+        expect(aws).to receive(:ask).with('Enter username: ').and_return('admin')
+        expect(aws).to receive(:ask).with('Enter password: ').and_return('admin_passwd')
+        expect(fake_bootstrap).to receive(:create_user).with('admin', 'admin_passwd')
+        expect(fake_bootstrap).to receive(:create_user).with('hm', anything)
 
         aws.bootstrap_micro
       end
@@ -187,17 +187,17 @@ describe 'AWS Bootstrap commands' do
             to_return(:status => 200, :body => '')
 
         # Skip the actual deploy, since we already test it later on
-        Bosh::Aws::BoshBootstrap.any_instance.stub(:deploy)
-        Bosh::Aws::BoshBootstrap.any_instance.stub(:target_bosh_and_log_in)
-        Bosh::Aws::BoshBootstrap.any_instance.stub(:create_user)
-        Bosh::Cli::Command::AWS.any_instance.stub(:ask).and_return('foo')
+        allow_any_instance_of(Bosh::Aws::BoshBootstrap).to receive(:deploy)
+        allow_any_instance_of(Bosh::Aws::BoshBootstrap).to receive(:target_bosh_and_log_in)
+        allow_any_instance_of(Bosh::Aws::BoshBootstrap).to receive(:create_user)
+        allow_any_instance_of(Bosh::Cli::Command::AWS).to receive(:ask).and_return('foo')
 
       end
 
       it 'use the existent release' do
-        mock_s3.should_not_receive(:copy_remote_file)
-        Bosh::Exec.should_not_receive(:sh).with('bundle exec rake release:create_dev_release')
-        Bosh::Cli::Command::Release::UploadRelease.any_instance.should_not_receive(:upload)
+        expect(mock_s3).not_to receive(:copy_remote_file)
+        expect(Bosh::Exec).not_to receive(:sh).with('bundle exec rake release:create_dev_release')
+        expect_any_instance_of(Bosh::Cli::Command::Release::UploadRelease).not_to receive(:upload)
 
         expect do
           aws.bootstrap_bosh
@@ -205,8 +205,8 @@ describe 'AWS Bootstrap commands' do
       end
 
       it 'use the existent stemcell' do
-        mock_s3.should_not_receive(:copy_remote_file)
-        Bosh::Cli::Command::Stemcell.any_instance.should_not_receive(:upload)
+        expect(mock_s3).not_to receive(:copy_remote_file)
+        expect_any_instance_of(Bosh::Cli::Command::Stemcell).not_to receive(:upload)
         expect do
           aws.bootstrap_bosh
         end.to_not raise_error
@@ -217,9 +217,9 @@ describe 'AWS Bootstrap commands' do
         it 'uploads a stemcell' do
           stub_request(:get, 'http://127.0.0.1:25555/stemcells').
             to_return(status: 200, body: '[]')
-          mock_s3.should_receive(:copy_remote_file).and_return '/tmp/bosh_stemcell.tgz'
-          Bosh::Stemcell::Archive.should_receive(:new).with('/tmp/bosh_stemcell.tgz').and_return(stemcell_archive)
-          Bosh::Cli::Command::Stemcell.any_instance.should_receive(:upload)
+          expect(mock_s3).to receive(:copy_remote_file).and_return '/tmp/bosh_stemcell.tgz'
+          expect(Bosh::Stemcell::Archive).to receive(:new).with('/tmp/bosh_stemcell.tgz').and_return(stemcell_archive)
+          expect_any_instance_of(Bosh::Cli::Command::Stemcell).to receive(:upload)
           aws.bootstrap_bosh
         end
       end
@@ -255,9 +255,9 @@ describe 'AWS Bootstrap commands' do
       let(:password) { 'bosh_password' }
 
       before do
-        Bosh::Cli::Resources::Package.any_instance.stub(:resolve_globs).and_return([])
-        mock_s3.should_receive(:copy_remote_file).with('bosh-jenkins-artifacts','bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen-ubuntu-trusty-go_agent.tgz','bosh_stemcell.tgz').and_return(stemcell_stub)
-        mock_s3.should_receive(:copy_remote_file).with('bosh-jenkins-artifacts', /release\/bosh-(.+)\.tgz/,'bosh_release.tgz').and_return('bosh_release.tgz')
+        allow_any_instance_of(Bosh::Cli::Resources::Package).to receive(:resolve_globs).and_return([])
+        expect(mock_s3).to receive(:copy_remote_file).with('bosh-jenkins-artifacts','bosh-stemcell/aws/light-bosh-stemcell-latest-aws-xen-ubuntu-trusty-go_agent.tgz','bosh_stemcell.tgz').and_return(stemcell_stub)
+        expect(mock_s3).to receive(:copy_remote_file).with('bosh-jenkins-artifacts', /release\/bosh-(.+)\.tgz/,'bosh_release.tgz').and_return('bosh_release.tgz')
 
         aws.config.target = aws.options[:target] = 'http://127.0.0.1:25555'
         aws.config.set_alias('target', '1234', 'http://127.0.0.1:25555')
@@ -289,7 +289,7 @@ describe 'AWS Bootstrap commands' do
 
         # Stub out the release creation to make the tests MUCH faster,
         # instead of actually building the tarball.
-        Bosh::Cli::Command::Release::UploadRelease.any_instance.should_receive(:upload)
+        expect_any_instance_of(Bosh::Cli::Command::Release::UploadRelease).to receive(:upload)
 
         stub_request(:get, 'http://127.0.0.1:25555/stemcells').
             to_return(:status => 200, :body => '[]').then.
@@ -322,10 +322,10 @@ describe 'AWS Bootstrap commands' do
             to_return(:status => 200, :body => { 'user' => 'admin' }.to_json).
             to_return(:status => 200, :body => { 'user' => username}.to_json)
 
-        aws.should_receive(:ask).with('Enter username: ').and_return(username)
-        aws.should_receive(:ask).with('Enter password: ').and_return(password)
+        expect(aws).to receive(:ask).with('Enter username: ').and_return(username)
+        expect(aws).to receive(:ask).with('Enter password: ').and_return(password)
 
-        SecureRandom.stub(:base64).and_return('hm_password')
+        allow(SecureRandom).to receive(:base64).and_return('hm_password')
         @create_hm_user_req = stub_request(:post, 'https://50.200.100.3:25555/users').
             with(body: {username: 'hm', password: 'hm_password'}).to_return(status: 204)
 
@@ -335,28 +335,28 @@ describe 'AWS Bootstrap commands' do
       end
 
       it 'generates an updated manifest for bosh' do
-        File.exist?('deployments/bosh/bosh.yml').should be(false)
+        expect(File.exist?('deployments/bosh/bosh.yml')).to be(false)
         aws.bootstrap_bosh
-        File.exist?('deployments/bosh/bosh.yml').should be(true)
+        expect(File.exist?('deployments/bosh/bosh.yml')).to be(true)
       end
 
       it 'runs deployment diff' do
         aws.bootstrap_bosh
 
         generated_manifest = File.read('deployments/bosh/bosh.yml')
-        generated_manifest.should include('# Fake network properties to satisfy bosh diff')
+        expect(generated_manifest).to include('# Fake network properties to satisfy bosh diff')
       end
 
       it 'uploads the latest stemcell' do
         aws.bootstrap_bosh
 
-        @stemcell_upload_request.should have_been_made
+        expect(@stemcell_upload_request).to have_been_made
       end
 
       it 'deploys bosh' do
         aws.bootstrap_bosh
 
-        @deployment_request.should have_been_made
+        expect(@deployment_request).to have_been_made
       end
 
       it 'sets the target to the new bosh' do
@@ -364,32 +364,32 @@ describe 'AWS Bootstrap commands' do
 
         config_file = File.read(@bosh_config.path)
         config = Psych.load(config_file)
-        config['target'].should == 'https://50.200.100.3:25555'
+        expect(config['target']).to eq('https://50.200.100.3:25555')
       end
 
       it 'creates a new user in new bosh' do
         aws.bootstrap_bosh
 
         credentials = encoded_credentials('admin', 'admin')
-        a_request(:get, 'https://50.200.100.3:25555/info').with(
+        expect(a_request(:get, 'https://50.200.100.3:25555/info').with(
             :headers => {
                 'Authorization' => "Basic #{credentials}",
                 'Content-Type'=>'application/json'
-            }).should have_been_made.once
+            })).to have_been_made.once
 
-        @create_user_request.should have_been_made
+        expect(@create_user_request).to have_been_made
 
         credentials = encoded_credentials(username, password)
-        a_request(:get, 'https://50.200.100.3:25555/info').with(
+        expect(a_request(:get, 'https://50.200.100.3:25555/info').with(
             :headers => {
                 'Authorization' => "Basic #{credentials}",
                 'Content-Type'=>'application/json'
-            }).should have_been_made.once
+            })).to have_been_made.once
       end
 
       it 'creates a new hm user in bosh' do
         aws.bootstrap_bosh
-        @create_hm_user_req.should have_been_made.once
+        expect(@create_hm_user_req).to have_been_made.once
       end
     end
   end

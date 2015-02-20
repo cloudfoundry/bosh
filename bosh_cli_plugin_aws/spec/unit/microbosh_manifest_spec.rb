@@ -13,20 +13,20 @@ describe Bosh::Aws::MicroboshManifest do
   its(:network_type) { should eq('manual') }
 
   it 'sets health manager director credentials' do
-    manifest.hm_director_user.should == 'hm'
-    manifest.hm_director_password.should == 'hmpasswd'
+    expect(manifest.hm_director_user).to eq('hm')
+    expect(manifest.hm_director_password).to eq('hmpasswd')
   end
 
   it 'warns when name is missing' do
     vpc_config['name'] = nil
-    manifest.stub(:private_key_path)
-    manifest.should_receive(:warning).with('Missing name field').at_least(1).times
+    allow(manifest).to receive(:private_key_path)
+    expect(manifest).to receive(:warning).with('Missing name field').at_least(1).times
     manifest.to_y
   end
 
   it 'warns when vip is missing' do
     route53_receipt['elastic_ips']['micro']['ips'] = []
-    manifest.should_receive(:warning).with('Missing vip field').at_least(1).times
+    expect(manifest).to receive(:warning).with('Missing vip field').at_least(1).times
     manifest.to_y
   end
 
@@ -34,7 +34,7 @@ describe Bosh::Aws::MicroboshManifest do
     before { vpc_receipt['vpc']['subnets'] = {} }
 
     it 'warns that the subnet is missing' do
-      manifest.should_receive(:warning).with('Missing bosh subnet field').at_least(1).times
+      expect(manifest).to receive(:warning).with('Missing bosh subnet field').at_least(1).times
       manifest.to_y
     end
 
@@ -43,37 +43,37 @@ describe Bosh::Aws::MicroboshManifest do
 
   it 'warns when availability_zone is missing' do
     vpc_config['vpc']['subnets']['bosh1'].delete('availability_zone')
-    manifest.should_receive(:warning).with('Missing availability zone in vpc.subnets.bosh').at_least(1).times
+    expect(manifest).to receive(:warning).with('Missing availability zone in vpc.subnets.bosh').at_least(1).times
     manifest.to_y
   end
 
   it 'warns when access_key_id is missing' do
     vpc_config['aws'].delete('access_key_id')
-    manifest.should_receive(:warning).with("Missing aws access_key_id field").at_least(1).times
+    expect(manifest).to receive(:warning).with("Missing aws access_key_id field").at_least(1).times
     manifest.to_y
   end
 
   it 'warns when secret_access_key is missing' do
     vpc_config['aws'].delete('secret_access_key')
-    manifest.should_receive(:warning).with("Missing aws secret_access_key field").at_least(1).times
+    expect(manifest).to receive(:warning).with("Missing aws secret_access_key field").at_least(1).times
     manifest.to_y
   end
 
   it 'warns when region is missing' do
     vpc_config['aws'].delete('region')
-    manifest.should_receive(:warning).with("Missing aws region field").at_least(1).times
+    expect(manifest).to receive(:warning).with("Missing aws region field").at_least(1).times
     manifest.to_y
   end
 
   it 'warns when private_key is missing' do
     vpc_config['key_pairs'] = {}
-    manifest.should_receive(:warning).with("Missing key_pairs field, must have at least 1 keypair").at_least(1).times
+    expect(manifest).to receive(:warning).with("Missing key_pairs field, must have at least 1 keypair").at_least(1).times
     manifest.to_y
   end
 
   it 'does not warn when name is present' do
     vpc_config['name'] = 'bill'
-    manifest.should_not_receive(:warning).with('Missing name field')
+    expect(manifest).not_to receive(:warning).with('Missing name field')
     manifest.to_y
   end
 
@@ -83,8 +83,8 @@ describe Bosh::Aws::MicroboshManifest do
         vpc_receipt['ssl_certs']['director_cert']['certificate'] = asset('ca/bosh.pem')
         vpc_receipt['ssl_certs']['director_cert']['private_key'] = asset('ca/bosh.key')
 
-        manifest.director_ssl_cert.should match /BEGIN CERTIFICATE/
-        manifest.director_ssl_key.should match /BEGIN RSA PRIVATE KEY/
+        expect(manifest.director_ssl_cert).to match /BEGIN CERTIFICATE/
+        expect(manifest.director_ssl_key).to match /BEGIN RSA PRIVATE KEY/
       end
     end
 
@@ -101,8 +101,8 @@ describe Bosh::Aws::MicroboshManifest do
         vpc_receipt['ssl_certs']['director_cert']['certificate'] = non_existant_cert
         vpc_receipt['ssl_certs']['director_cert']['private_key'] = non_existant_key
 
-        manifest.director_ssl_cert.should match /BEGIN CERTIFICATE/
-        manifest.director_ssl_key.should match /BEGIN RSA PRIVATE KEY/
+        expect(manifest.director_ssl_cert).to match /BEGIN CERTIFICATE/
+        expect(manifest.director_ssl_key).to match /BEGIN RSA PRIVATE KEY/
       end
     end
   end

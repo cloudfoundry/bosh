@@ -24,13 +24,13 @@ module Bosh::Dev
           path: '/path/to/fake-stemcell-008.tgz',
         )
 
-        bosh_cli_session.should_receive(:run_bosh).
+        expect(bosh_cli_session).to receive(:run_bosh).
           with('micro deployment /path/to/fake-manifest.yml').
           ordered
 
         deploy_pwd = nil
 
-        bosh_cli_session.should_receive(:run_bosh).
+        expect(bosh_cli_session).to receive(:run_bosh).
           with('micro deploy /path/to/fake-stemcell-008.tgz --update-if-exists').
           ordered { deploy_pwd = Dir.pwd }
 

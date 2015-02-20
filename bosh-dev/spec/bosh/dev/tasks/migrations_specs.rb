@@ -21,11 +21,11 @@ describe 'migrations:aws:new' do
     Rake.application.rake_require(task_path, [root], loaded_files_excluding_current_rake_file)
 
     Rake::Task.define_task(:environment)
-    Time.stub(:new).and_return(timestamp)
+    allow(Time).to receive(:new).and_return(timestamp)
 
     @tempdir = Dir.mktmpdir
-    Bosh::Aws::MigrationHelper.stub(:aws_migration_directory).and_return(@tempdir)
-    Bosh::Aws::MigrationHelper.stub(:aws_spec_migration_directory).and_return(@tempdir)
+    allow(Bosh::Aws::MigrationHelper).to receive(:aws_migration_directory).and_return(@tempdir)
+    allow(Bosh::Aws::MigrationHelper).to receive(:aws_spec_migration_directory).and_return(@tempdir)
   end
 
   after do
@@ -39,8 +39,8 @@ describe 'migrations:aws:new' do
   it 'generates migration from the template with the correct timestamped filename' do
     subject.invoke(name)
 
-    File.exists?("#{@tempdir}/#{timestamp_string}_#{name}.rb").should be(true)
-    File.read("#{@tempdir}/#{timestamp_string}_#{name}.rb").should == <<-H
+    expect(File.exists?("#{@tempdir}/#{timestamp_string}_#{name}.rb")).to be(true)
+    expect(File.read("#{@tempdir}/#{timestamp_string}_#{name}.rb")).to eq <<-H
 class CoolMigration < Bosh::Aws::Migration
   def execute
 
@@ -52,8 +52,8 @@ end
   it 'generates the spec template for the migration' do
     subject.invoke(name)
 
-    File.exists?("#{@tempdir}/#{timestamp_string}_#{name}_spec.rb").should be(true)
-    File.read("#{@tempdir}/#{timestamp_string}_#{name}_spec.rb").should == <<-H
+    expect(File.exists?("#{@tempdir}/#{timestamp_string}_#{name}_spec.rb")).to be(true)
+    expect(File.read("#{@tempdir}/#{timestamp_string}_#{name}_spec.rb")).to eq <<-H
 require 'spec_helper'
 require '#{timestamp_string}_#{name}'
 

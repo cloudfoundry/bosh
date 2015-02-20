@@ -12,16 +12,16 @@ describe Bosh::AwsCloud::Cloud do
     attachment = double('attachment', :device => '/dev/sdf')
 
     cloud = mock_cloud do |ec2|
-      ec2.instances.should_receive(:[]).with('i-test').and_return(instance)
-      ec2.volumes.should_receive(:[]).with('v-foobar').and_return(volume)
+      expect(ec2.instances).to receive(:[]).with('i-test').and_return(instance)
+      expect(ec2.volumes).to receive(:[]).with('v-foobar').and_return(volume)
     end
 
-    volume.should_receive(:attach_to).
+    expect(volume).to receive(:attach_to).
       with(instance, '/dev/sdf').and_return(attachment)
 
-    instance.should_receive(:block_device_mappings).and_return({})
+    expect(instance).to receive(:block_device_mappings).and_return({})
 
-    Bosh::AwsCloud::ResourceWait.stub(:for_attachment).with(attachment: attachment, state: :attached)
+    allow(Bosh::AwsCloud::ResourceWait).to receive(:for_attachment).with(attachment: attachment, state: :attached)
 
     old_settings = { 'foo' => 'bar'}
     new_settings = {
@@ -33,11 +33,11 @@ describe Bosh::AwsCloud::Cloud do
       }
     }
 
-    @registry.should_receive(:read_settings).
+    expect(@registry).to receive(:read_settings).
       with('i-test').
       and_return(old_settings)
 
-    @registry.should_receive(:update_settings).with('i-test', new_settings)
+    expect(@registry).to receive(:update_settings).with('i-test', new_settings)
 
     cloud.attach_disk('i-test', 'v-foobar')
   end
@@ -48,17 +48,17 @@ describe Bosh::AwsCloud::Cloud do
     attachment = double('attachment', :device => '/dev/sdh')
 
     cloud = mock_cloud do |ec2|
-      ec2.instances.should_receive(:[]).with('i-test').and_return(instance)
-      ec2.volumes.should_receive(:[]).with('v-foobar').and_return(volume)
+      expect(ec2.instances).to receive(:[]).with('i-test').and_return(instance)
+      expect(ec2.volumes).to receive(:[]).with('v-foobar').and_return(volume)
     end
 
-    instance.should_receive(:block_device_mappings).
+    expect(instance).to receive(:block_device_mappings).
       and_return({ '/dev/sdf' => 'foo', '/dev/sdg' => 'bar'})
 
-    volume.should_receive(:attach_to).
+    expect(volume).to receive(:attach_to).
       with(instance, '/dev/sdh').and_return(attachment)
 
-    Bosh::AwsCloud::ResourceWait.stub(:for_attachment).with(attachment: attachment, state: :attached)
+    allow(Bosh::AwsCloud::ResourceWait).to receive(:for_attachment).with(attachment: attachment, state: :attached)
 
     old_settings = { 'foo' => 'bar'}
     new_settings = {
@@ -70,11 +70,11 @@ describe Bosh::AwsCloud::Cloud do
       }
     }
 
-    @registry.should_receive(:read_settings).
+    expect(@registry).to receive(:read_settings).
       with('i-test').
       and_return(old_settings)
 
-    @registry.should_receive(:update_settings).with('i-test', new_settings)
+    expect(@registry).to receive(:update_settings).with('i-test', new_settings)
 
     cloud.attach_disk('i-test', 'v-foobar')
   end
@@ -85,17 +85,17 @@ describe Bosh::AwsCloud::Cloud do
     attachment = double('attachment', :device => '/dev/sdh')
 
     cloud = mock_cloud do |ec2|
-      ec2.instances.should_receive(:[]).with('i-test').and_return(instance)
-      ec2.volumes.should_receive(:[]).with('v-foobar').and_return(volume)
+      expect(ec2.instances).to receive(:[]).with('i-test').and_return(instance)
+      expect(ec2.volumes).to receive(:[]).with('v-foobar').and_return(volume)
     end
 
-    instance.should_receive(:block_device_mappings).
+    expect(instance).to receive(:block_device_mappings).
       and_return({ '/dev/sdf' => 'foo', '/dev/sdg' => 'bar'})
 
-    volume.should_receive(:attach_to).
+    expect(volume).to receive(:attach_to).
       with(instance, '/dev/sdh').and_return(attachment)
 
-    Bosh::AwsCloud::ResourceWait.stub(:for_attachment).with(attachment: attachment, state: :attached)
+    allow(Bosh::AwsCloud::ResourceWait).to receive(:for_attachment).with(attachment: attachment, state: :attached)
 
     old_settings = { 'foo' => 'bar'}
     new_settings = {
@@ -107,11 +107,11 @@ describe Bosh::AwsCloud::Cloud do
       }
     }
 
-    @registry.should_receive(:read_settings).
+    expect(@registry).to receive(:read_settings).
       with('i-test').
       and_return(old_settings)
 
-    @registry.should_receive(:update_settings).with('i-test', new_settings)
+    expect(@registry).to receive(:update_settings).with('i-test', new_settings)
 
     cloud.attach_disk('i-test', 'v-foobar')
   end
@@ -121,8 +121,8 @@ describe Bosh::AwsCloud::Cloud do
     volume = double('volume', :id => 'v-foobar')
 
     cloud = mock_cloud do |ec2|
-      ec2.instances.should_receive(:[]).with('i-test').and_return(instance)
-      ec2.volumes.should_receive(:[]).with('v-foobar').and_return(volume)
+      expect(ec2.instances).to receive(:[]).with('i-test').and_return(instance)
+      expect(ec2.volumes).to receive(:[]).with('v-foobar').and_return(volume)
     end
 
     all_mappings = ('f'..'p').inject({}) do |hash, char|
@@ -130,7 +130,7 @@ describe Bosh::AwsCloud::Cloud do
       hash
     end
 
-    instance.should_receive(:block_device_mappings).
+    expect(instance).to receive(:block_device_mappings).
       and_return(all_mappings)
 
     expect {

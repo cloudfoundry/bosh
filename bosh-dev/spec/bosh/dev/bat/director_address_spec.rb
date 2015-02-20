@@ -13,8 +13,8 @@ module Bosh::Dev::Bat
 
     describe '.resolved_from_env' do
       it 'fetches address from env and resolves it via DNS' do
-        Resolv
-          .should_receive(:getaddress)
+        expect(Resolv)
+          .to receive(:getaddress)
           .with('micro.subdomain-from-env.cf-app.com')
           .and_return('resolved-ip')
 

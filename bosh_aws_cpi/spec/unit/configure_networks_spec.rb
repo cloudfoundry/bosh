@@ -18,14 +18,14 @@ describe Bosh::AwsCloud::Cloud do
                       :security_groups => [sec_grp])
 
     cloud = mock_cloud do |ec2|
-      ec2.instances.stub(:[]).
+      allow(ec2.instances).to receive(:[]).
           with("i-foobar").
           and_return(instance)
     end
 
-    lambda {
+    expect {
       cloud.configure_networks("i-foobar", combined_network_spec)
-    }.should raise_error Bosh::Clouds::NotSupported
+    }.to raise_error Bosh::Clouds::NotSupported
   end
 
   it "forces recreation when IP address differ" do
@@ -36,7 +36,7 @@ describe Bosh::AwsCloud::Cloud do
                       :private_ip_address => "10.10.10.1")
 
     cloud = mock_cloud do |ec2|
-      ec2.instances.stub(:[]).
+      allow(ec2.instances).to receive(:[]).
           with("i-foobar").
           and_return(instance)
     end
@@ -54,26 +54,26 @@ describe Bosh::AwsCloud::Cloud do
                       :id => "i-foobar",
                       :security_groups => [sec_grp],
                       :private_ip_address => "10.10.10.1")
-    Bosh::Clouds::Config.stub(:task_checkpoint)
+    allow(Bosh::Clouds::Config).to receive(:task_checkpoint)
 
     cloud = mock_cloud do |ec2|
-      ec2.instances.stub(:[]).
+      allow(ec2.instances).to receive(:[]).
           with("i-foobar").
           and_return(instance)
-      ec2.stub(:elastic_ips).
+      allow(ec2).to receive(:elastic_ips).
           and_return({"10.0.0.1" => "10.0.0.1"})
     end
 
     old_settings = {"foo" => "bar", "networks" => "baz"}
     new_settings = {"foo" => "bar", "networks" => combined_network_spec}
 
-    @registry.should_receive(:read_settings).
+    expect(@registry).to receive(:read_settings).
         with("i-foobar").
         and_return(old_settings)
 
-    @registry.should_receive(:update_settings).with("i-foobar", new_settings)
+    expect(@registry).to receive(:update_settings).with("i-foobar", new_settings)
 
-    instance.should_receive(:associate_elastic_ip).with("10.0.0.1")
+    expect(instance).to receive(:associate_elastic_ip).with("10.0.0.1")
 
     cloud.configure_networks("i-foobar", combined_network_spec)
   end
@@ -86,13 +86,13 @@ describe Bosh::AwsCloud::Cloud do
                       :private_ip_address => "10.10.10.1")
 
     cloud = mock_cloud do |ec2|
-      ec2.instances.stub(:[]).
+      allow(ec2.instances).to receive(:[]).
           with("i-foobar").
           and_return(instance)
     end
 
-    instance.should_receive(:elastic_ip).and_return("10.0.0.1")
-    instance.should_receive(:disassociate_elastic_ip)
+    expect(instance).to receive(:elastic_ip).and_return("10.0.0.1")
+    expect(instance).to receive(:disassociate_elastic_ip)
 
     old_settings = {"foo" => "bar", "networks" => combined_network_spec}
     new_settings = {
@@ -102,11 +102,11 @@ describe Bosh::AwsCloud::Cloud do
         }
     }
 
-    @registry.should_receive(:read_settings).
+    expect(@registry).to receive(:read_settings).
         with("i-foobar").
         and_return(old_settings)
 
-    @registry.should_receive(:update_settings).with("i-foobar", new_settings)
+    expect(@registry).to receive(:update_settings).with("i-foobar", new_settings)
 
     cloud.configure_networks("i-foobar", "net_a" => dynamic_network_spec)
   end
@@ -120,7 +120,7 @@ describe Bosh::AwsCloud::Cloud do
 
     it "checks that at least one dynamic or manual network is defined" do
       expect {
-        mock_cloud { |ec2| ec2.instances.stub(:[]).with("i-foobar").and_return(instance) }.
+        mock_cloud { |ec2| allow(ec2.instances).to receive(:[]).with("i-foobar").and_return(instance) }.
             configure_networks("i-foobar", "net_a" => vip_network_spec)
       }.to raise_error(Bosh::Clouds::CloudError,
                        "Exactly one dynamic or manual network must be defined")
@@ -128,7 +128,7 @@ describe Bosh::AwsCloud::Cloud do
 
     it "checks that at most one VIP network is defined" do
       expect {
-        mock_cloud { |ec2| ec2.instances.stub(:[]).with("i-foobar").and_return(instance) }.
+        mock_cloud { |ec2| allow(ec2.instances).to receive(:[]).with("i-foobar").and_return(instance) }.
             configure_networks("i-foobar",
                                "net_a" => vip_network_spec,
                                "net_b" => vip_network_spec)
@@ -137,9 +137,9 @@ describe Bosh::AwsCloud::Cloud do
     end
 
     it "checks that at most one dynamic or manual network is defined" do
-      instance.stub(:security_groups).and_return([double("security_group", name: "default")])
+      allow(instance).to receive(:security_groups).and_return([double("security_group", name: "default")])
       expect {
-        mock_cloud { |ec2| ec2.instances.stub(:[]).with("i-foobar").and_return(instance) }.
+        mock_cloud { |ec2| allow(ec2.instances).to receive(:[]).with("i-foobar").and_return(instance) }.
             configure_networks("i-foobar",
                                "net_a" => dynamic_network_spec,
                                "net_b" => dynamic_network_spec
@@ -150,7 +150,7 @@ describe Bosh::AwsCloud::Cloud do
 
     it "checks that the network types are either 'dynamic', 'manual', 'vip', or blank" do
       expect {
-        mock_cloud { |ec2| ec2.instances.stub(:[]).with("i-foobar").and_return(instance) }.
+        mock_cloud { |ec2| allow(ec2.instances).to receive(:[]).with("i-foobar").and_return(instance) }.
             configure_networks("i-foobar",
                                "net_a" => {
                                    "type" => "foo",

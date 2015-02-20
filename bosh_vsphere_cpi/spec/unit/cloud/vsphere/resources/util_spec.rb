@@ -5,31 +5,31 @@ require File.expand_path("../../../../../spec_helper", __FILE__)
 describe VSphereCloud::Resources::Util do
   describe :average_csv do
     it "should compute the average integer value" do
-      VSphereCloud::Resources::Util.average_csv("1,2,3").should == 2
+      expect(VSphereCloud::Resources::Util.average_csv("1,2,3")).to eq(2)
     end
 
     it "should compute the average float value" do
-      VSphereCloud::Resources::Util.average_csv("1.5,2.5,3.5").should == 2.5
+      expect(VSphereCloud::Resources::Util.average_csv("1.5,2.5,3.5")).to eq(2.5)
     end
 
     it "should return 0 when there is no data" do
-      VSphereCloud::Resources::Util.average_csv("").should == 0
+      expect(VSphereCloud::Resources::Util.average_csv("")).to eq(0)
     end
   end
 
   describe :weighted_random do
     it "should calculate the weighted random" do
       util = VSphereCloud::Resources::Util
-      util.should_receive(:rand).with(3).and_return(0)
-      util.should_receive(:rand).with(3).and_return(1)
-      util.should_receive(:rand).with(3).and_return(2)
-      util.weighted_random([[:a, 1], [:b, 2]]).should == :a
-      util.weighted_random([[:a, 1], [:b, 2]]).should == :b
-      util.weighted_random([[:a, 1], [:b, 2]]).should == :b
+      expect(util).to receive(:rand).with(3).and_return(0)
+      expect(util).to receive(:rand).with(3).and_return(1)
+      expect(util).to receive(:rand).with(3).and_return(2)
+      expect(util.weighted_random([[:a, 1], [:b, 2]])).to eq(:a)
+      expect(util.weighted_random([[:a, 1], [:b, 2]])).to eq(:b)
+      expect(util.weighted_random([[:a, 1], [:b, 2]])).to eq(:b)
     end
 
     it "should return nil when there are no elements" do
-      VSphereCloud::Resources::Util.weighted_random([]).should be_nil
+      expect(VSphereCloud::Resources::Util.weighted_random([])).to be_nil
     end
   end
 end

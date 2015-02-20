@@ -7,8 +7,8 @@ describe AddSecondaryAzToVpc do
   subject { described_class.new(config, '') }
 
   before do
-    subject.stub(:load_receipt).and_return(YAML.load_file(asset "test-output.yml"))
-    Bosh::Aws::VPC.should_receive(:find).with(ec2, "vpc-13724979").and_return(vpc)
+    allow(subject).to receive(:load_receipt).and_return(YAML.load_file(asset "test-output.yml"))
+    expect(Bosh::Aws::VPC).to receive(:find).with(ec2, "vpc-13724979").and_return(vpc)
   end
 
   let(:vpc) { double("vpc") }
@@ -23,12 +23,12 @@ describe AddSecondaryAzToVpc do
       "services2" => { "availability_zone" => "us-east-1b", "cidr" => "10.10.96.0/20", "default_route" => "cf_nat_box1" },
     }
 
-    vpc.should_receive(:create_subnets).with(subnets)
-    vpc.should_receive(:create_nat_instances).with(subnets)
-    vpc.should_receive(:setup_subnet_routes).with(subnets)
+    expect(vpc).to receive(:create_subnets).with(subnets)
+    expect(vpc).to receive(:create_nat_instances).with(subnets)
+    expect(vpc).to receive(:setup_subnet_routes).with(subnets)
 
 
-    vpc.should_receive(:subnets).and_return(
+    expect(vpc).to receive(:subnets).and_return(
       {
         "cf1" => "subnet-xxxxxxx1",
       },
@@ -40,20 +40,20 @@ describe AddSecondaryAzToVpc do
       }
     )
 
-    subject.should_receive(:save_receipt) { |filename, contents|
-      filename.should == "aws_vpc_receipt"
-      contents["vpc"]["id"].should == "vpc-13724979" # quickly check we didn't wipe anything out
-      contents["vpc"]["subnets"]["cf1"].should == "subnet-xxxxxxx1" # quickly check other subnets are there
-      contents["vpc"]["subnets"]["cf2"].should == cf2_id
-      contents["vpc"]["subnets"]["services2"].should == services2_id
-      contents["vpc"]["subnets"]["bosh2"].should == bosh2_id
+    expect(subject).to receive(:save_receipt) { |filename, contents|
+      expect(filename).to eq("aws_vpc_receipt")
+      expect(contents["vpc"]["id"]).to eq("vpc-13724979") # quickly check we didn't wipe anything out
+      expect(contents["vpc"]["subnets"]["cf1"]).to eq("subnet-xxxxxxx1") # quickly check other subnets are there
+      expect(contents["vpc"]["subnets"]["cf2"]).to eq(cf2_id)
+      expect(contents["vpc"]["subnets"]["services2"]).to eq(services2_id)
+      expect(contents["vpc"]["subnets"]["bosh2"]).to eq(bosh2_id)
     }
 
     subject.execute
   end
 
   it "does not create the new subnets if they already exist" do
-    vpc.should_receive(:subnets).and_return(
+    expect(vpc).to receive(:subnets).and_return(
       {
         "cf1" => "subnet-xxxxxxx1",
         "cf2" => cf2_id,  # already there, panic!
@@ -69,17 +69,17 @@ describe AddSecondaryAzToVpc do
 
     missing_subnets = { "services2" => { "availability_zone" => "us-east-1b", "cidr" => "10.10.96.0/20", "default_route" => "cf_nat_box1" }, }
 
-    vpc.should_receive(:create_subnets).with(missing_subnets)
-    vpc.should_receive(:create_nat_instances).with(missing_subnets)
-    vpc.should_receive(:setup_subnet_routes).with(missing_subnets)
+    expect(vpc).to receive(:create_subnets).with(missing_subnets)
+    expect(vpc).to receive(:create_nat_instances).with(missing_subnets)
+    expect(vpc).to receive(:setup_subnet_routes).with(missing_subnets)
 
-    subject.should_receive(:save_receipt) { |filename, contents|
-      filename.should == "aws_vpc_receipt"
-      contents["vpc"]["id"].should == "vpc-13724979" # quickly check we didn't wipe anything out
-      contents["vpc"]["subnets"]["cf1"].should == "subnet-xxxxxxx1" # quickly check other subnets are there
-      contents["vpc"]["subnets"]["cf2"].should == cf2_id
-      contents["vpc"]["subnets"]["services2"].should == services2_id
-      contents["vpc"]["subnets"]["bosh2"].should == bosh2_id
+    expect(subject).to receive(:save_receipt) { |filename, contents|
+      expect(filename).to eq("aws_vpc_receipt")
+      expect(contents["vpc"]["id"]).to eq("vpc-13724979") # quickly check we didn't wipe anything out
+      expect(contents["vpc"]["subnets"]["cf1"]).to eq("subnet-xxxxxxx1") # quickly check other subnets are there
+      expect(contents["vpc"]["subnets"]["cf2"]).to eq(cf2_id)
+      expect(contents["vpc"]["subnets"]["services2"]).to eq(services2_id)
+      expect(contents["vpc"]["subnets"]["bosh2"]).to eq(bosh2_id)
     }
 
     subject.execute

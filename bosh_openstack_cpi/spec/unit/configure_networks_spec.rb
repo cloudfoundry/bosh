@@ -13,19 +13,19 @@ describe Bosh::OpenStackCloud::Cloud do
     server = double("server", :id => "i-test", :name => "i-test", :private_ip_addresses => ["10.10.10.1"])
     security_group = double("security_groups", :name => "default")
 
-    server.should_receive(:security_groups).and_return([security_group])
+    expect(server).to receive(:security_groups).and_return([security_group])
 
     cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with("i-test").and_return(server)
-      openstack.addresses.should_receive(:each)
+      expect(openstack.servers).to receive(:get).with("i-test").and_return(server)
+      expect(openstack.addresses).to receive(:each)
     end
 
     network_spec = { "net_a" => dynamic_network_spec }
     old_settings = { "foo" => "bar", "networks" => network_spec }
     new_settings = { "foo" => "bar", "networks" => network_spec }
 
-    @registry.should_receive(:read_settings).with("i-test").and_return(old_settings)
-    @registry.should_receive(:update_settings).with("i-test", new_settings)
+    expect(@registry).to receive(:read_settings).with("i-test").and_return(old_settings)
+    expect(@registry).to receive(:update_settings).with("i-test", new_settings)
 
     cloud.configure_networks("i-test", network_spec)
   end
@@ -34,11 +34,11 @@ describe Bosh::OpenStackCloud::Cloud do
     server = double("server", :id => "i-test", :name => "i-test", :private_ip_addresses => ["10.10.10.1"])
     security_group = double("security_groups", :name => "default")
 
-    server.should_receive(:security_groups).and_return([security_group])
+    expect(server).to receive(:security_groups).and_return([security_group])
 
     cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with("i-test").and_return(server)
-      openstack.addresses.should_receive(:each)
+      expect(openstack.servers).to receive(:get).with("i-test").and_return(server)
+      expect(openstack.addresses).to receive(:each)
     end
 
     network_spec = { "net_a" => manual_network_spec }
@@ -46,8 +46,8 @@ describe Bosh::OpenStackCloud::Cloud do
     old_settings = { "foo" => "bar", "networks" => network_spec }
     new_settings = { "foo" => "bar", "networks" => network_spec }
 
-    @registry.should_receive(:read_settings).with("i-test").and_return(old_settings)
-    @registry.should_receive(:update_settings).with("i-test", new_settings)
+    expect(@registry).to receive(:read_settings).with("i-test").and_return(old_settings)
+    expect(@registry).to receive(:update_settings).with("i-test", new_settings)
 
     cloud.configure_networks("i-test", network_spec)
   end
@@ -56,11 +56,11 @@ describe Bosh::OpenStackCloud::Cloud do
     server = double("server", :id => "i-test", :name => "i-test", :private_ip_addresses => ["10.10.10.1", "10.10.10.2"])
     security_group = double("security_groups", :name => "default")
 
-    server.should_receive(:security_groups).and_return([security_group, security_group])
+    expect(server).to receive(:security_groups).and_return([security_group, security_group])
 
     cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with("i-test").and_return(server)
-      openstack.addresses.should_receive(:each)
+      expect(openstack.servers).to receive(:get).with("i-test").and_return(server)
+      expect(openstack.addresses).to receive(:each)
     end
 
     network_spec = { "net_a" => manual_network_spec, "net_b" => manual_network_spec }
@@ -70,8 +70,8 @@ describe Bosh::OpenStackCloud::Cloud do
     old_settings = { "foo" => "bar", "networks" => network_spec }
     new_settings = { "foo" => "bar", "networks" => network_spec }
 
-    @registry.should_receive(:read_settings).with("i-test").and_return(old_settings)
-    @registry.should_receive(:update_settings).with("i-test", new_settings)
+    expect(@registry).to receive(:read_settings).with("i-test").and_return(old_settings)
+    expect(@registry).to receive(:update_settings).with("i-test", new_settings)
 
     cloud.configure_networks("i-test", network_spec)
   end
@@ -80,10 +80,10 @@ describe Bosh::OpenStackCloud::Cloud do
     server = double("server", :id => "i-test", :name => "i-test")
     security_group = double("security_groups", :name => "newgroups")
 
-    server.should_receive(:security_groups).and_return([security_group])
+    expect(server).to receive(:security_groups).and_return([security_group])
 
     cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with("i-test").and_return(server)
+      expect(openstack.servers).to receive(:get).with("i-test").and_return(server)
     end
 
     expect {
@@ -95,10 +95,10 @@ describe Bosh::OpenStackCloud::Cloud do
     server = double("server", :id => "i-test", :name => "i-test", :private_ip_addresses => ["10.10.10.1"])
     security_group = double("security_groups", :name => "default")
 
-    server.should_receive(:security_groups).and_return([security_group])
+    expect(server).to receive(:security_groups).and_return([security_group])
 
     cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with("i-test").and_return(server)
+      expect(openstack.servers).to receive(:get).with("i-test").and_return(server)
     end
 
     network_spec = { "net_a" => manual_network_spec }
@@ -112,10 +112,10 @@ describe Bosh::OpenStackCloud::Cloud do
     server = double("server", :id => "i-test", :name => "i-test", :private_ip_addresses => ["10.10.10.1", "10.10.10.2"])
     security_group = double("security_groups", :name => "default")
 
-    server.should_receive(:security_groups).and_return([security_group, security_group])
+    expect(server).to receive(:security_groups).and_return([security_group, security_group])
 
     cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with("i-test").and_return(server)
+      expect(openstack.servers).to receive(:get).with("i-test").and_return(server)
     end
 
     network_spec = { "net_a" => manual_network_spec, "net_b" => manual_network_spec }
@@ -132,10 +132,10 @@ describe Bosh::OpenStackCloud::Cloud do
     server = double("server", :id => "i-test", :name => "i-test", :private_ip_addresses => ["10.10.10.1"])
     security_group = double("security_groups", :name => "default")
 
-    server.should_receive(:security_groups).and_return([security_group, security_group])
+    expect(server).to receive(:security_groups).and_return([security_group, security_group])
 
     cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with("i-test").and_return(server)
+      expect(openstack.servers).to receive(:get).with("i-test").and_return(server)
     end
 
     network_spec = { "net_a" => manual_network_spec, "net_b" => manual_network_spec }
@@ -153,21 +153,21 @@ describe Bosh::OpenStackCloud::Cloud do
     address = double("address", :id => "a-test", :ip => "10.0.0.1", :instance_id => nil)
     security_group = double("security_groups", :name => "default")
 
-    server.should_receive(:security_groups).and_return([security_group])
+    expect(server).to receive(:security_groups).and_return([security_group])
 
     cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with("i-test").and_return(server)
-      openstack.addresses.should_receive(:find).and_return(address)
+      expect(openstack.servers).to receive(:get).with("i-test").and_return(server)
+      expect(openstack.addresses).to receive(:find).and_return(address)
     end
 
-    address.should_receive(:server=).with(server)
+    expect(address).to receive(:server=).with(server)
 
     old_settings = { "foo" => "bar", "networks" => "baz" }
     new_settings = { "foo" => "bar", "networks" => combined_network_spec }
 
-    @registry.should_receive(:read_settings).with("i-test").
+    expect(@registry).to receive(:read_settings).with("i-test").
         and_return(old_settings)
-    @registry.should_receive(:update_settings).with("i-test", new_settings)
+    expect(@registry).to receive(:update_settings).with("i-test", new_settings)
 
     cloud.configure_networks("i-test", combined_network_spec)
   end
@@ -178,23 +178,23 @@ describe Bosh::OpenStackCloud::Cloud do
                      :instance_id => "i-test")
     security_group = double("security_groups", :name => "default")
 
-    server.should_receive(:security_groups).and_return([security_group])
+    expect(server).to receive(:security_groups).and_return([security_group])
 
     cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with("i-test").and_return(server)
-      openstack.addresses.should_receive(:each).and_yield(address)
+      expect(openstack.servers).to receive(:get).with("i-test").and_return(server)
+      expect(openstack.addresses).to receive(:each).and_yield(address)
     end
 
-    address.should_receive(:server=).with(nil)
+    expect(address).to receive(:server=).with(nil)
 
     old_settings = { "foo" => "bar",
                      "networks" => combined_network_spec }
     new_settings = { "foo" => "bar",
                      "networks" => { "net_a" => dynamic_network_spec } }
 
-    @registry.should_receive(:read_settings).with("i-test").
+    expect(@registry).to receive(:read_settings).with("i-test").
         and_return(old_settings)
-    @registry.should_receive(:update_settings).with("i-test", new_settings)
+    expect(@registry).to receive(:update_settings).with("i-test", new_settings)
 
     cloud.configure_networks("i-test", "net_a" => dynamic_network_spec)
   end

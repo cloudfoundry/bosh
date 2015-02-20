@@ -7,34 +7,34 @@ describe Bosh::Dev::BoshReleasePublisher do
 
   describe '.setup_for' do
     it 'instantiates a publisher with the given build and upload/download adapters' do
-      Bosh::Dev::UploadAdapter.stub(:new).with(no_args).and_return(upload_adapter)
+      allow(Bosh::Dev::UploadAdapter).to receive(:new).with(no_args).and_return(upload_adapter)
 
       publisher = double
-      described_class.should_receive(:new).with(candidate_build, upload_adapter).and_return(publisher)
-      described_class.setup_for(candidate_build).should eq(publisher)
+      expect(described_class).to receive(:new).with(candidate_build, upload_adapter).and_return(publisher)
+      expect(described_class.setup_for(candidate_build)).to eq(publisher)
     end
   end
 
   describe '#publish' do
     it 'uploads the build and then stages the changes' do
-      Bosh::Dev::Build.stub(candidate: candidate_build)
+      allow(Bosh::Dev::Build).to receive_messages(candidate: candidate_build)
       publisher = described_class.new(candidate_build, upload_adapter)
 
       release = double('bosh release')
-      Bosh::Dev::BoshRelease.stub(:build).with(no_args).and_return(release)
+      allow(Bosh::Dev::BoshRelease).to receive(:build).with(no_args).and_return(release)
       release_changes = instance_double('Bosh::Dev::ReleaseChangeStager')
 
       pwd = double('pwd')
-      Dir.stub(:pwd).with(no_args).and_return(pwd)
+      allow(Dir).to receive(:pwd).with(no_args).and_return(pwd)
 
-      Bosh::Dev::ReleaseChangeStager.should_receive(:new).with(
+      expect(Bosh::Dev::ReleaseChangeStager).to receive(:new).with(
         pwd,
         candidate_build.number,
         upload_adapter,
       ).and_return(release_changes)
 
-      candidate_build.should_receive(:upload_release).ordered.with(release)
-      release_changes.should_receive(:stage).ordered.with(no_args)
+      expect(candidate_build).to receive(:upload_release).ordered.with(release)
+      expect(release_changes).to receive(:stage).ordered.with(no_args)
 
       publisher.publish
     end

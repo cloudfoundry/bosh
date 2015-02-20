@@ -13,7 +13,7 @@ module Bosh::Dev
       let(:build_number) { 1234 }
       let(:upload_adapter) { instance_double('Bosh::Dev::UploadAdapter', upload: nil) }
       let(:shell) { instance_double('Bosh::Core::Shell') }
-      before { Bosh::Core::Shell.stub(new: shell) }
+      before { allow(Bosh::Core::Shell).to receive_messages(new: shell) }
 
       let(:release_patches_bucket) { Bosh::Dev::UriProvider::RELEASE_PATCHES_BUCKET }
       let(:patch_key) { "#{build_number}-final-release.patch" }
@@ -22,18 +22,18 @@ module Bosh::Dev
       subject(:stager) { Bosh::Dev::ReleaseChangeStager.new(work_tree, build_number, upload_adapter) }
 
       it 'creates a patch file from git diff' do
-        shell.should_receive(:run).with("git --work-tree=#{work_tree} --git-dir=#{work_tree}/.git add -A :/").ordered
-        shell.should_receive(:run).with(%r{git --work-tree=#{work_tree} --git-dir=#{work_tree}/.git diff --staged > .*/}).ordered
+        expect(shell).to receive(:run).with("git --work-tree=#{work_tree} --git-dir=#{work_tree}/.git add -A :/").ordered
+        expect(shell).to receive(:run).with(%r{git --work-tree=#{work_tree} --git-dir=#{work_tree}/.git diff --staged > .*/}).ordered
 
         stager.stage
       end
 
       it 'saves the changes on the filesystem to a patch file in the appropriate bucket on s3' do
         patch_file = double('patch_file', path: nil)
-        Tempfile.stub(:new).with('1234-final-release').and_return(patch_file)
+        allow(Tempfile).to receive(:new).with('1234-final-release').and_return(patch_file)
 
-        shell.stub(:run)
-        upload_adapter.should_receive(:upload).with(
+        allow(shell).to receive(:run)
+        expect(upload_adapter).to receive(:upload).with(
           bucket_name: release_patches_bucket,
           key: patch_key,
           body: patch_file,
@@ -62,13 +62,13 @@ module Bosh::Dev
       end
 
       it 'does not commit changes' do
-        upload_adapter.stub(:upload)
+        allow(upload_adapter).to receive(:upload)
 
         expect { stager.stage }.to_not change { `git --git-dir=#{work_tree}/.git rev-parse HEAD` }
       end
 
       it 'generates a patch containing the changes' do
-        upload_adapter.should_receive(:upload).with(
+        expect(upload_adapter).to receive(:upload).with(
           hash_including(
             body: include("+hello\n"),
           )

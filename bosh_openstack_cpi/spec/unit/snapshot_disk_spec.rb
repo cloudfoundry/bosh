@@ -25,19 +25,19 @@ describe Bosh::OpenStackCloud::Cloud do
     }
 
     cloud = mock_cloud do |openstack|
-      openstack.volumes.should_receive(:get).with("v-foobar").and_return(volume)
-      openstack.snapshots.should_receive(:new).with(snapshot_params).and_return(snapshot)
+      expect(openstack.volumes).to receive(:get).with("v-foobar").and_return(volume)
+      expect(openstack.snapshots).to receive(:new).with(snapshot_params).and_return(snapshot)
     end
 
-    cloud.should_receive(:generate_unique_name).and_return(unique_name)
+    expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
     
-    volume.should_receive(:attachments).and_return([attachment])
+    expect(volume).to receive(:attachments).and_return([attachment])
     
-    snapshot.should_receive(:save).with(true)
+    expect(snapshot).to receive(:save).with(true)
 
-    cloud.should_receive(:wait_resource).with(snapshot, :available)
+    expect(cloud).to receive(:wait_resource).with(snapshot, :available)
 
-    cloud.snapshot_disk("v-foobar", metadata).should == "snap-foobar"
+    expect(cloud.snapshot_disk("v-foobar", metadata)).to eq("snap-foobar")
   end
 
   it "creates an OpenStack snapshot when volume doesn't have any attachment" do
@@ -60,24 +60,24 @@ describe Bosh::OpenStackCloud::Cloud do
     }
 
     cloud = mock_cloud do |openstack|
-      openstack.volumes.should_receive(:get).with("v-foobar").and_return(volume)
-      openstack.snapshots.should_receive(:new).with(snapshot_params).and_return(snapshot)
+      expect(openstack.volumes).to receive(:get).with("v-foobar").and_return(volume)
+      expect(openstack.snapshots).to receive(:new).with(snapshot_params).and_return(snapshot)
     end
 
-    cloud.should_receive(:generate_unique_name).and_return(unique_name)
+    expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
     
-    volume.should_receive(:attachments).and_return([{}])
+    expect(volume).to receive(:attachments).and_return([{}])
     
-    snapshot.should_receive(:save).with(true)
+    expect(snapshot).to receive(:save).with(true)
 
-    cloud.should_receive(:wait_resource).with(snapshot, :available)
+    expect(cloud).to receive(:wait_resource).with(snapshot, :available)
 
-    cloud.snapshot_disk("v-foobar", metadata).should == "snap-foobar"
+    expect(cloud.snapshot_disk("v-foobar", metadata)).to eq("snap-foobar")
   end
   
   it "should raise an Exception if OpenStack volume is not found" do
     cloud = mock_cloud do |openstack|
-      openstack.volumes.should_receive(:get).with("v-foobar").and_return(nil)
+      expect(openstack.volumes).to receive(:get).with("v-foobar").and_return(nil)
     end
 
     expect {

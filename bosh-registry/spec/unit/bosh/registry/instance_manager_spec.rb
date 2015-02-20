@@ -14,7 +14,7 @@ describe Bosh::Registry::InstanceManager do
   describe "reading settings" do
     it "doesn't check remote IP if it's not provided" do
       create_instance(:instance_id => "foo", :settings => "bar")
-      manager.read_settings("foo").should == "bar"
+      expect(manager.read_settings("foo")).to eq("bar")
     end
 
     it "raises an error if instance not found" do
@@ -28,14 +28,14 @@ describe Bosh::Registry::InstanceManager do
   describe "updating settings" do
     it "updates settings (new instance)" do
       manager.update_settings("foo", "baz")
-      manager.read_settings("foo").should == "baz"
+      expect(manager.read_settings("foo")).to eq("baz")
     end
 
     it "updates settings (existing instance)" do
       create_instance(:instance_id => "foo", :settings => "bar")
-      manager.read_settings("foo").should == "bar"
+      expect(manager.read_settings("foo")).to eq("bar")
       manager.update_settings("foo", "baz")
-      manager.read_settings("foo").should == "baz"
+      expect(manager.read_settings("foo")).to eq("baz")
     end
   end
 

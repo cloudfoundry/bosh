@@ -15,17 +15,17 @@ describe Bosh::Aws::MicroBoshBootstrap do
       end
 
       it "uses the given AMI" do
-        bootstrap.micro_ami.should == 'ami-tgupta'
+        expect(bootstrap.micro_ami).to eq('ami-tgupta')
       end
     end
 
     context "when the environment does not provide an override AMI" do
       before do
-        Net::HTTP.should_receive(:get).with("bosh-jenkins-artifacts.s3.amazonaws.com", "/last_successful-bosh-stemcell-aws_ami_us-east-1").and_return("ami-david")
+        expect(Net::HTTP).to receive(:get).with("bosh-jenkins-artifacts.s3.amazonaws.com", "/last_successful-bosh-stemcell-aws_ami_us-east-1").and_return("ami-david")
       end
 
       it "returns the content from S3" do
-        bootstrap.micro_ami.should == "ami-david"
+        expect(bootstrap.micro_ami).to eq("ami-david")
       end
     end
   end
@@ -34,11 +34,11 @@ describe Bosh::Aws::MicroBoshBootstrap do
     let(:microbosh_bootstrap) { described_class.new(nil, hm_director_account_options.merge(non_interactive: true)) }
 
     before do
-      Bosh::Cli::Command::Micro.any_instance.stub(:micro_deployment)
-      Bosh::Cli::Command::Micro.any_instance.stub(:perform)
-      Bosh::Cli::Command::User.any_instance.stub(:create)
-      Bosh::Cli::Command::Misc.any_instance.stub(:login)
-      Bosh::Aws::MicroBoshBootstrap.any_instance.stub(:micro_ami).and_return("ami-123456")
+      allow_any_instance_of(Bosh::Cli::Command::Micro).to receive(:micro_deployment)
+      allow_any_instance_of(Bosh::Cli::Command::Micro).to receive(:perform)
+      allow_any_instance_of(Bosh::Cli::Command::User).to receive(:create)
+      allow_any_instance_of(Bosh::Cli::Command::Misc).to receive(:login)
+      allow_any_instance_of(Bosh::Aws::MicroBoshBootstrap).to receive(:micro_ami).and_return("ami-123456")
     end
 
     around do |example|
@@ -52,34 +52,34 @@ describe Bosh::Aws::MicroBoshBootstrap do
     end
 
     it "should generate a microbosh.yml in the right location" do
-      ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-      File.exist?("deployments/micro/micro_bosh.yml").should == false
+      allow_any_instance_of(::Bosh::Cli::Command::Base).to receive(:non_interactive?).and_return(true)
+      expect(File.exist?("deployments/micro/micro_bosh.yml")).to eq(false)
       microbosh_bootstrap.start
-      File.exist?("deployments/micro/micro_bosh.yml").should == true
+      expect(File.exist?("deployments/micro/micro_bosh.yml")).to eq(true)
     end
 
     it "should remove any existing deployment artifacts first" do
-      ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
+      allow_any_instance_of(::Bosh::Cli::Command::Base).to receive(:non_interactive?).and_return(true)
       FileUtils.mkdir_p("deployments/micro")
       File.open("deployments/bosh-registry.log", "w") { |f| f.write("old stuff!") }
       File.open("deployments/micro/leftover.yml", "w") { |f| f.write("old stuff!") }
-      File.exist?("deployments/bosh-registry.log").should == true
-      File.exist?("deployments/micro/leftover.yml").should == true
+      expect(File.exist?("deployments/bosh-registry.log")).to eq(true)
+      expect(File.exist?("deployments/micro/leftover.yml")).to eq(true)
       microbosh_bootstrap.start
-      File.exist?("deployments/bosh-registry.log").should == false
-      File.exist?("deployments/micro/leftover.yml").should == false
+      expect(File.exist?("deployments/bosh-registry.log")).to eq(false)
+      expect(File.exist?("deployments/micro/leftover.yml")).to eq(false)
     end
 
     it "should deploy a micro bosh" do
-      ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-      Bosh::Cli::Command::Micro.any_instance.should_receive(:micro_deployment).with("micro")
-      Bosh::Cli::Command::Micro.any_instance.should_receive(:perform).with("ami-123456")
+      allow_any_instance_of(::Bosh::Cli::Command::Base).to receive(:non_interactive?).and_return(true)
+      expect_any_instance_of(Bosh::Cli::Command::Micro).to receive(:micro_deployment).with("micro")
+      expect_any_instance_of(Bosh::Cli::Command::Micro).to receive(:perform).with("ami-123456")
       microbosh_bootstrap.start
     end
 
     it "should login with admin/admin with non-interactive mode" do
-      ::Bosh::Cli::Command::Base.any_instance.stub(:non_interactive?).and_return(true)
-      Bosh::Cli::Command::Misc.any_instance.should_receive(:login).with("admin", "admin")
+      allow_any_instance_of(::Bosh::Cli::Command::Base).to receive(:non_interactive?).and_return(true)
+      expect_any_instance_of(Bosh::Cli::Command::Misc).to receive(:login).with("admin", "admin")
       microbosh_bootstrap.start
     end
 
@@ -87,13 +87,13 @@ describe Bosh::Aws::MicroBoshBootstrap do
       misc_admin = double('Misc command for admin', :options= => nil)
       misc_foo = double('Misc command for foo', :options= => nil)
 
-      misc_admin.should_receive(:login).with('admin', 'admin')
-      misc_foo.should_receive(:login).with('foo', 'foo')
+      expect(misc_admin).to receive(:login).with('admin', 'admin')
+      expect(misc_foo).to receive(:login).with('foo', 'foo')
 
-      Bosh::Cli::Command::User.any_instance.should_receive(:create).with("foo", "foo")
-      Bosh::Cli::Command::Misc.should_receive(:new).and_return(misc_admin, misc_foo)
+      expect_any_instance_of(Bosh::Cli::Command::User).to receive(:create).with("foo", "foo")
+      expect(Bosh::Cli::Command::Misc).to receive(:new).and_return(misc_admin, misc_foo)
 
-      microbosh_bootstrap.stub(:ask).and_return("foo")
+      allow(microbosh_bootstrap).to receive(:ask).and_return("foo")
       microbosh_bootstrap.start
       microbosh_bootstrap.create_user("foo", "foo")
     end

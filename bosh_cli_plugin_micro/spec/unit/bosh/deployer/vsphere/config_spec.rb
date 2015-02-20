@@ -10,9 +10,9 @@ describe Bosh::Deployer::Config do
     Bosh::Deployer::Config.configure(config)
 
     properties = Bosh::Deployer::Config.cloud_options['properties']
-    properties['agent'].should be_kind_of(Hash)
-    properties['agent']['mbus'].start_with?('https://').should be(true)
-    properties['agent']['blobstore'].should be_kind_of(Hash)
+    expect(properties['agent']).to be_kind_of(Hash)
+    expect(properties['agent']['mbus'].start_with?('https://')).to be(true)
+    expect(properties['agent']['blobstore']).to be_kind_of(Hash)
   end
 
   it 'should map network properties' do
@@ -21,36 +21,36 @@ describe Bosh::Deployer::Config do
     Bosh::Deployer::Config.configure(config)
 
     networks = Bosh::Deployer::Config.networks
-    networks.should be_kind_of(Hash)
+    expect(networks).to be_kind_of(Hash)
 
     net = networks['bosh']
-    net.should be_kind_of(Hash)
+    expect(net).to be_kind_of(Hash)
     %w(cloud_properties netmask gateway ip dns default).each do |key|
-      net[key].should_not be_nil
+      expect(net[key]).not_to be_nil
     end
   end
 
   it 'should default vm env properties' do
     env = Bosh::Deployer::Config.env
-    env.should be_kind_of(Hash)
-    env.should have_key('bosh')
-    env['bosh'].should be_kind_of(Hash)
-    env['bosh']['password'].should be_nil
+    expect(env).to be_kind_of(Hash)
+    expect(env).to have_key('bosh')
+    expect(env['bosh']).to be_kind_of(Hash)
+    expect(env['bosh']['password']).to be_nil
   end
 
   it 'should contain default vm resource properties' do
     Bosh::Deployer::Config.configure('dir' => @dir, 'cloud' => { 'plugin' => 'vsphere' })
     resources = Bosh::Deployer::Config.resources
-    resources.should be_kind_of(Hash)
+    expect(resources).to be_kind_of(Hash)
 
-    resources['persistent_disk'].should be_kind_of(Integer)
+    expect(resources['persistent_disk']).to be_kind_of(Integer)
 
     cloud_properties = resources['cloud_properties']
-    cloud_properties.should be_kind_of(Hash)
+    expect(cloud_properties).to be_kind_of(Hash)
 
     %w(ram disk cpu).each do |key|
-      cloud_properties[key].should_not be_nil
-      cloud_properties[key].should be > 0
+      expect(cloud_properties[key]).not_to be_nil
+      expect(cloud_properties[key]).to be > 0
     end
   end
 end

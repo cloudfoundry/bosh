@@ -14,12 +14,12 @@ module Bosh::Dev
     end
 
     before do
-      ENV.stub(:fetch).with('BAT_INFRASTRUCTURE').and_return('vsphere')
-      subject.stub(:puts)
+      allow(ENV).to receive(:fetch).with('BAT_INFRASTRUCTURE').and_return('vsphere')
+      allow(subject).to receive(:puts)
     end
 
     it 'should send a message to DataDog when an example passes' do
-      data_dog_client.should_receive(:emit_point).with('ci.bosh.bat.duration', 3.14, tags: %w[infrastructure:vsphere example:foo-bar-baz])
+      expect(data_dog_client).to receive(:emit_point).with('ci.bosh.bat.duration', 3.14, tags: %w[infrastructure:vsphere example:foo-bar-baz])
       sender.report_on(example)
     end
   end

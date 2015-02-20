@@ -15,6 +15,6 @@ describe Bosh::AwsCloud::ManualNetwork do
                     "mac"=>"00:50:56:ae:90:ab"}
     sn = Bosh::AwsCloud::ManualNetwork.new("default", network_spec)
 
-    sn.private_ip.should == "172.20.214.10"
+    expect(sn.private_ip).to eq("172.20.214.10")
   end
 end

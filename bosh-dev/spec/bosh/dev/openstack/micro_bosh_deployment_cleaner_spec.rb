@@ -24,19 +24,19 @@ module Bosh::Dev::Openstack
         allow(subject).to receive(:sleep) { sleep 1 }
       end
 
-      before { Bosh::OpenStackCloud::Cloud.stub(new: cloud) }
+      before { allow(Bosh::OpenStackCloud::Cloud).to receive_messages(new: cloud) }
       let(:cloud) { instance_double('Bosh::OpenStackCloud::Cloud') }
 
-      before { cloud.stub(openstack: compute) }
+      before { allow(cloud).to receive_messages(openstack: compute) }
       let(:compute) { double('Fog::Compute::OpenStack::Real') }
 
-      before { compute.stub(servers: servers_collection) }
+      before { allow(compute).to receive_messages(servers: servers_collection) }
       let(:servers_collection) { instance_double('Fog::Compute::OpenStack::Servers', all: []) }
 
-      before { compute.stub(images: image_collection) }
+      before { allow(compute).to receive_messages(images: image_collection) }
       let(:image_collection) { instance_double('Fog::Compute::OpenStack::Images', all: []) }
 
-      before { compute.stub(volumes: volume_collection) }
+      before { allow(compute).to receive_messages(volumes: volume_collection) }
       let(:volume_collection) { instance_double('Fog::Compute::OpenStack::Volumes', all: []) }
 
       it 'uses openstack cloud with cpi options from the manifest' do
@@ -48,7 +48,7 @@ module Bosh::Dev::Openstack
       end
 
       context 'when matching servers are found' do
-        before { Bosh::Retryable.stub(new: retryable) }
+        before { allow(Bosh::Retryable).to receive_messages(new: retryable) }
         let(:retryable) { instance_double('Bosh::Retryable') }
 
         it 'terminates servers that have specific microbosh tag name' do
@@ -73,9 +73,9 @@ module Bosh::Dev::Openstack
           )
           expect(cleaner).to receive(:clean_server).with(microbosh_server)
 
-          retryable.stub(:retryer).and_yield
+          allow(retryable).to receive(:retryer).and_yield
 
-          servers_collection.stub(all: [
+          allow(servers_collection).to receive_messages(all: [
             server_with_non_matching,
             server_with_matching,
             microbosh_server,
@@ -105,14 +105,14 @@ module Bosh::Dev::Openstack
           )
 
           allow(retryable).to receive(:retryer) do |&blk|
-            servers_collection.stub(all: [server1, server2])
-            blk.call.should be(false)
+            allow(servers_collection).to receive_messages(all: [server1, server2])
+            expect(blk.call).to be(false)
 
-            servers_collection.stub(all: [server2])
-            blk.call.should be(false)
+            allow(servers_collection).to receive_messages(all: [server2])
+            expect(blk.call).to be(false)
 
-            servers_collection.stub(all: [])
-            blk.call.should be(true)
+            allow(servers_collection).to receive_messages(all: [])
+            expect(blk.call).to be(true)
           end
 
           cleaner.clean
@@ -125,7 +125,7 @@ module Bosh::Dev::Openstack
 
       context 'when matching servers are not found' do
         it 'finishes without waiting for anything' do
-          servers_collection.stub(all: [])
+          allow(servers_collection).to receive_messages(all: [])
           cleaner.clean
         end
       end
@@ -143,7 +143,7 @@ module Bosh::Dev::Openstack
           instance_double('Fog::Compute::OpenStack::Image', name: 'some-other-fake-image', destroy: nil)
         end
 
-        before { image_collection.stub(all: [image_to_be_deleted_1, image_to_be_deleted_2, image_to_be_ignored]) }
+        before { allow(image_collection).to receive_messages(all: [image_to_be_deleted_1, image_to_be_deleted_2, image_to_be_ignored]) }
 
         it 'deletes all images' do
           skip
@@ -181,7 +181,7 @@ module Bosh::Dev::Openstack
                           ])
         end
 
-        before { volume_collection.stub(all: [volume1, volume2]) }
+        before { allow(volume_collection).to receive_messages(all: [volume1, volume2]) }
 
         it 'deletes all unattached volumes' do
           skip
@@ -228,11 +228,11 @@ module Bosh::Dev::Openstack
         })
       end
 
-      before { Bosh::Retryable.stub(new: retryable) }
+      before { allow(Bosh::Retryable).to receive_messages(new: retryable) }
       let(:retryable) { instance_double('Bosh::Retryable') }
 
       it 'detaches and destroys any volumes attached to it and then it destroys the server' do
-        retryable.stub(:retryer).and_yield
+        allow(retryable).to receive(:retryer).and_yield
 
         expect(volume1).to receive(:detach).with('fake-server-id1', 'fake-attachment-id1').ordered
         expect(volume1).to receive(:detach).with('fake-server-id2', 'fake-attachment-id2').ordered

@@ -21,7 +21,7 @@ describe Bosh::AwsCloud::Cloud do
   let(:network_spec) { {} }
   let(:resource_pool) { { 'instance_type' => instance_type } }
 
-  before { Bosh::Registry::Client.stub(new: double('registry').as_null_object) }
+  before { allow(Bosh::Registry::Client).to receive_messages(new: double('registry').as_null_object) }
 
   # Use subject-bang because AWS SDK needs to be reconfigured
   # with a current test's logger before new AWS::EC2 object is created.
@@ -55,7 +55,7 @@ describe Bosh::AwsCloud::Cloud do
       double('delegate', task_checkpoint: nil, logger: Logger.new(STDOUT)))
   end
 
-  before { Bosh::Clouds::Config.stub(logger: logger) }
+  before { allow(Bosh::Clouds::Config).to receive_messages(logger: logger) }
   let(:logger) { Logger.new(STDERR) }
 
   before { @instance_id = nil }

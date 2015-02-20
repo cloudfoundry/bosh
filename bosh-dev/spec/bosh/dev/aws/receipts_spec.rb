@@ -19,7 +19,7 @@ module Bosh::Dev::Aws
       its(:vpc_outfile_path) { should eq('/fake/deployments/path/fake_BOSH_VPC_SUBDOMAIN/aws_vpc_receipt.yml') }
 
       it 'clones or updates the aws deployments repository' do
-        deployments_repository.should_receive(:clone_or_update!)
+        expect(deployments_repository).to receive(:clone_or_update!)
         subject.vpc_outfile_path
       end
     end
@@ -28,7 +28,7 @@ module Bosh::Dev::Aws
       its(:route53_outfile_path) { should eq('/fake/deployments/path/fake_BOSH_VPC_SUBDOMAIN/aws_route53_receipt.yml') }
 
       it 'clones or updates the aws deployments repository' do
-        deployments_repository.should_receive(:clone_or_update!)
+        expect(deployments_repository).to receive(:clone_or_update!)
         subject.route53_outfile_path
       end
     end

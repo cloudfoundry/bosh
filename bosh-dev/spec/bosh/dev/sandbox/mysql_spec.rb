@@ -8,7 +8,7 @@ module Bosh::Dev::Sandbox
 
     describe '#create_db' do
       it 'creates a database' do
-        runner.should_receive(:run).with(
+        expect(runner).to receive(:run).with(
           %Q{mysql --user=root --password=password -e 'create database `fake_db_name`;' > /dev/null 2>&1})
         mysql.create_db
       end
@@ -16,7 +16,7 @@ module Bosh::Dev::Sandbox
 
     describe '#drop_db' do
       it 'drops a database' do
-        runner.should_receive(:run).with(
+        expect(runner).to receive(:run).with(
           %Q{mysql --user=root --password=password -e 'drop database `fake_db_name`;' > /dev/null 2>&1})
         mysql.drop_db
       end

@@ -7,10 +7,10 @@ describe Bosh::AwsCloud::Cloud do
     stemcell = double(Bosh::AwsCloud::Stemcell)
 
     cloud = mock_cloud do |_, region|
-      Bosh::AwsCloud::StemcellFinder.stub(:find_by_region_and_id).with(region, 'ami-xxxxxxxx').and_return(stemcell)
+      allow(Bosh::AwsCloud::StemcellFinder).to receive(:find_by_region_and_id).with(region, 'ami-xxxxxxxx').and_return(stemcell)
     end
 
-    stemcell.should_receive(:delete)
+    expect(stemcell).to receive(:delete)
 
     cloud.delete_stemcell('ami-xxxxxxxx')
   end

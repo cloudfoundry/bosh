@@ -9,17 +9,17 @@ describe Bosh::AwsCloud::Cloud do
   let(:instance) { double('instance', id: 'i-test', availability_zone: 'foobar-land') }
 
   before do
-    Bosh::AwsCloud::ResourceWait.stub(:for_volume).with(volume: volume, state: :available)
+    allow(Bosh::AwsCloud::ResourceWait).to receive(:for_volume).with(volume: volume, state: :available)
     @cloud = mock_cloud do |_ec2, region|
       @ec2 = _ec2
-      @ec2.volumes.stub(:create) { volume }
-      region.stub(:availability_zones => zones)
-      region.stub(instances: double('instances', :[] => instance))
+      allow(@ec2.volumes).to receive(:create) { volume }
+      allow(region).to receive_messages(:availability_zones => zones)
+      allow(region).to receive_messages(instances: double('instances', :[] => instance))
     end
   end
 
   it 'creates an EC2 volume' do
-    @cloud.create_disk(2048, {}).should == 'v-foobar'
+    expect(@cloud.create_disk(2048, {})).to eq('v-foobar')
     expect(@ec2.volumes).to have_received(:create) do |params|
       expect(params[:size]).to eq(2)
     end

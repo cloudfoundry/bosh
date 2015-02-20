@@ -71,14 +71,14 @@ module Bosh::Dev
       end
 
       before do
-        described_class
-        .should_receive(:runner_builder_for_infrastructure_name)
+        expect(described_class)
+        .to receive(:runner_builder_for_infrastructure_name)
         .with('infrastructure-name')
         .and_return(bat_runner_builder)
       end
 
       it 'returns bat helper configured with rake arguments' do
-        Build.should_receive(:candidate).and_return(build)
+        expect(Build).to receive(:candidate).and_return(build)
 
         expect(Bosh::Stemcell::Definition).to receive(:for)
           .with(
@@ -93,8 +93,8 @@ module Bosh::Dev
         expect(Bosh::Stemcell::Stemcell).to receive(:new).and_return(stemcell)
 
         bat_helper = instance_double('Bosh::Dev::BatHelper')
-        described_class
-          .should_receive(:new)
+        expect(described_class)
+          .to receive(:new)
           .with(bat_runner_builder, instance_of(Bosh::Dev::Bat::Artifacts), build, networking_type, stemcell)
           .and_return(bat_helper)
 
@@ -187,12 +187,12 @@ module Bosh::Dev
       it 'uses bats runner to run bats without deploying microbosh ' +
          '(assumption is user already has microbosh)' do
         bat_runner = instance_double('Bosh::Dev::Bat::Runner')
-        bat_runner_builder
-          .should_receive(:build)
+        expect(bat_runner_builder)
+          .to receive(:build)
           .with(artifacts, networking_type)
           .and_return(bat_runner)
 
-        bat_runner.should_receive(:run_bats)
+        expect(bat_runner).to receive(:run_bats)
         subject.run_bats
       end
     end

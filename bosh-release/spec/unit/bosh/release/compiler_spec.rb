@@ -34,22 +34,22 @@ describe Bosh::Release::Compiler do
 
     let(:test_agent) do
       agent = double(:agent)
-      agent.stub(:ping)
-      agent.stub(:run_task).and_return(result)
+      allow(agent).to receive(:ping)
+      allow(agent).to receive(:run_task).and_return(result)
       agent
     end
 
     let(:result) { {'result' => {'blobstore_id' => 'blah', 'sha1' => 'blah'}} }
 
     before do
-      Bosh::Agent::Client.should_receive(:create).and_return(test_agent)
+      expect(Bosh::Agent::Client).to receive(:create).and_return(test_agent)
     end
 
     it 'should compile packages according to the manifest' do
-      test_agent.stub(:run_task).with(:compile_package, kind_of(String), 'sha1',
+      allow(test_agent).to receive(:run_task).with(:compile_package, kind_of(String), 'sha1',
                                       /(ruby|nats|redis|libpq|postgres|blobstore|nginx|director|health_monitor)/,
                                       kind_of(String), kind_of(Hash)).and_return(result)
-      compiler.compile.should include('director')
+      expect(compiler.compile).to include('director')
     end
 
     it 'writes the apply spec as json if the json option is set' do
@@ -60,8 +60,8 @@ describe Bosh::Release::Compiler do
       contents = file.read
 
       apply_spec_hash = JSON.parse(contents)
-      apply_spec_hash["deployment"].should eq("micro")
-      compiler.apply_spec_json.should match(/json\z/)
+      expect(apply_spec_hash["deployment"]).to eq("micro")
+      expect(compiler.apply_spec_json).to match(/json\z/)
     end
 
     context 'when job uses job collocation' do
@@ -73,10 +73,10 @@ describe Bosh::Release::Compiler do
         spec = Psych.load_file(compiler.apply_spec)
 
         spec_jobs = spec['job']['templates']
-        spec_jobs.size.should eq(3)
-        spec_jobs[0]['name'].should eq('nats')
-        spec_jobs[1]['name'].should eq('redis')
-        spec_jobs[2]['name'].should eq('postgres')
+        expect(spec_jobs.size).to eq(3)
+        expect(spec_jobs[0]['name']).to eq('nats')
+        expect(spec_jobs[1]['name']).to eq('redis')
+        expect(spec_jobs[2]['name']).to eq('postgres')
       end
     end
 
@@ -84,20 +84,20 @@ describe Bosh::Release::Compiler do
       it 'should put only this job in apply spec' do
         compiler.compile
         spec =Psych.load_file(compiler.apply_spec)
-        spec['job']['templates'].size.should eq(1)
+        expect(spec['job']['templates'].size).to eq(1)
 
         micro_job_spec = spec['job']['templates'][0]
-        micro_job_spec['name'].should eq('micro')
-        micro_job_spec['version'].should eq('0.9-dev')
-        micro_job_spec['sha1'].should eq('ab62ca83016af6ddd5b24d535e339ee193bc7168')
-        micro_job_spec['blobstore_id'].should match(/[a-z\d-]/)
+        expect(micro_job_spec['name']).to eq('micro')
+        expect(micro_job_spec['version']).to eq('0.9-dev')
+        expect(micro_job_spec['sha1']).to eq('ab62ca83016af6ddd5b24d535e339ee193bc7168')
+        expect(micro_job_spec['blobstore_id']).to match(/[a-z\d-]/)
       end
     end
 
     it 'should call agent start after applying custom properties' do
-      test_agent.should_receive(:run_task).with(:stop)
-      test_agent.should_receive(:run_task).with(:apply, kind_of(Hash))
-      test_agent.should_receive(:run_task).with(:start)
+      expect(test_agent).to receive(:run_task).with(:stop)
+      expect(test_agent).to receive(:run_task).with(:apply, kind_of(Hash))
+      expect(test_agent).to receive(:run_task).with(:start)
       compiler.apply
     end
   end
@@ -106,16 +106,16 @@ describe Bosh::Release::Compiler do
     options[:job] = 'micro_aws'
     @compiler = Bosh::Release::Compiler.new(options)
     test_agent = double(:agent)
-    test_agent.stub(:ping)
+    allow(test_agent).to receive(:ping)
     digester = double('Digest::SHA1')
-    digester.stub(hexdigest: 'fake-sha1')
-    Digest::SHA1.stub(:file).and_return(digester)
+    allow(digester).to receive_messages(hexdigest: 'fake-sha1')
+    allow(Digest::SHA1).to receive(:file).and_return(digester)
     result = {'result' => {'blobstore_id' => 'blah', 'sha1' => 'blah'}}
-    test_agent.stub(:run_task).with(:compile_package, kind_of(String), 'fake-sha1',
+    allow(test_agent).to receive(:run_task).with(:compile_package, kind_of(String), 'fake-sha1',
                                     /(ruby|nats|redis|libpq|postgres|blobstore|nginx|director|health_monitor|aws_registry)/,
                                     kind_of(String), kind_of(Hash)).and_return(result)
-    Bosh::Agent::Client.should_receive(:create).and_return(test_agent)
-    @compiler.compile.should include('aws_registry')
+    expect(Bosh::Agent::Client).to receive(:create).and_return(test_agent)
+    expect(@compiler.compile).to include('aws_registry')
   end
 
   it 'should respect spec properties if job properties are empty' do
@@ -126,7 +126,7 @@ describe Bosh::Release::Compiler do
 
     @compiler = Bosh::Release::Compiler.new(options)
     @compiler.add_default_properties(spec_properties, job_properties)
-    spec_properties.should == spec_properties
+    expect(spec_properties).to eq(spec_properties)
   end
 
   it 'should add default job properties to spec properties' do
@@ -143,11 +143,11 @@ describe Bosh::Release::Compiler do
 
     @compiler = Bosh::Release::Compiler.new(options)
     @compiler.add_default_properties(spec_properties, job_properties)
-    spec_properties.should == {'foo' => {'bar1' => 'original',
+    expect(spec_properties).to eq({'foo' => {'bar1' => 'original',
                                          'bar2' => 'added'},
                                'bar' => {'vtrue' => true,
                                          'vfalse' => false}
-                              }
+                              })
   end
 
 end

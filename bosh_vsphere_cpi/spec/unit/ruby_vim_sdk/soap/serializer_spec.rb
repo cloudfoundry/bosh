@@ -18,8 +18,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
+    allow(VimSdk::VmomiSupport).to receive(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    allow(VimSdk::VmomiSupport).to receive(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -29,9 +29,9 @@ describe VimSdk::Soap::SoapSerializer do
                            :double_test => 2.0, :bool_test => true, :string_test => 'test value')
 
     serializer.serialize(value, property)
-    writer.string.should == "<test xmlns=\"urn:test\"><byte_test>1</byte_test><short_test>2</short_test>" +
+    expect(writer.string).to eq("<test xmlns=\"urn:test\"><byte_test>1</byte_test><short_test>2</short_test>" +
         '<long_test>3</long_test><int_test>4</int_test><float_test>1.0</float_test><double_test>2.0</double_test>' +
-        '<bool_test>true</bool_test><string_test>test value</string_test></test>'
+        '<bool_test>true</bool_test><string_test>test value</string_test></test>')
   end
 
   it 'should serialize time' do
@@ -42,8 +42,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
+    allow(VimSdk::VmomiSupport).to receive(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    allow(VimSdk::VmomiSupport).to receive(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -52,7 +52,7 @@ describe VimSdk::Soap::SoapSerializer do
     value = test_class.new(:time_test => Time.at(1301174932))
 
     serializer.serialize(value, property)
-    writer.string.should == "<test xmlns=\"urn:test\"><time_test>2011-03-26T21:28:52Z</time_test></test>"
+    expect(writer.string).to eq("<test xmlns=\"urn:test\"><time_test>2011-03-26T21:28:52Z</time_test></test>")
   end
 
   it 'should serialize binary' do
@@ -63,8 +63,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
+    allow(VimSdk::VmomiSupport).to receive(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    allow(VimSdk::VmomiSupport).to receive(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -73,7 +73,7 @@ describe VimSdk::Soap::SoapSerializer do
     value = test_class.new(:binary_test => 'some binary string')
 
     serializer.serialize(value, property)
-    writer.string.should == "<test xmlns=\"urn:test\"><binary_test>c29tZSBiaW5hcnkgc3RyaW5n\n</binary_test></test>"
+    expect(writer.string).to eq("<test xmlns=\"urn:test\"><binary_test>c29tZSBiaW5hcnkgc3RyaW5n\n</binary_test></test>")
   end
 
   it 'should serialize classes' do
@@ -85,8 +85,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
+    allow(VimSdk::VmomiSupport).to receive(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    allow(VimSdk::VmomiSupport).to receive(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -95,8 +95,8 @@ describe VimSdk::Soap::SoapSerializer do
     value = test_class.new(:class_test => String, :type_name_test => VimSdk::Vmodl::TypeName.new('DataObject'))
 
     serializer.serialize(value, property)
-    writer.string.should == "<test xmlns=\"urn:test\"><class_test>string</class_test>" +
-        '<type_name_test>DataObject</type_name_test></test>'
+    expect(writer.string).to eq("<test xmlns=\"urn:test\"><class_test>string</class_test>" +
+        '<type_name_test>DataObject</type_name_test></test>')
   end
 
   it 'should serialize arrays' do
@@ -107,8 +107,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
+    allow(VimSdk::VmomiSupport).to receive(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    allow(VimSdk::VmomiSupport).to receive(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -117,7 +117,7 @@ describe VimSdk::Soap::SoapSerializer do
     value = test_class.new(:array_test => ['foo', 'bar'])
 
     serializer.serialize(value, property)
-    writer.string.should == "<test xmlns=\"urn:test\"><array_test>foo</array_test><array_test>bar</array_test></test>"
+    expect(writer.string).to eq("<test xmlns=\"urn:test\"><array_test>foo</array_test><array_test>bar</array_test></test>")
   end
 
   it 'should serialize managed objects' do
@@ -133,8 +133,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
+    allow(VimSdk::VmomiSupport).to receive(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    allow(VimSdk::VmomiSupport).to receive(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -143,7 +143,7 @@ describe VimSdk::Soap::SoapSerializer do
     value = test_class.new(:mob_test => test_managed_class.new('some mob id'))
 
     serializer.serialize(value, property)
-    writer.string.should == "<test xmlns=\"urn:test\"><mob_test type=\"ManagedTest\">some mob id</mob_test></test>"
+    expect(writer.string).to eq("<test xmlns=\"urn:test\"><mob_test type=\"ManagedTest\">some mob id</mob_test></test>")
   end
 
   it 'should serialize any type' do
@@ -169,8 +169,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
+    allow(VimSdk::VmomiSupport).to receive(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    allow(VimSdk::VmomiSupport).to receive(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -184,7 +184,7 @@ describe VimSdk::Soap::SoapSerializer do
                            :mob_test => test_managed_class.new('some mob id'))
 
     serializer.serialize(value, property)
-    writer.string.should == "<test xmlns=\"urn:test\"><byte_test xsi:type=\"xsd:byte\">1</byte_test>" +
+    expect(writer.string).to eq("<test xmlns=\"urn:test\"><byte_test xsi:type=\"xsd:byte\">1</byte_test>" +
         "<short_test xsi:type=\"xsd:short\">2</short_test><long_test xsi:type=\"xsd:long\">3</long_test>" +
         "<int_test xsi:type=\"xsd:int\">4</int_test><float_test xsi:type=\"xsd:float\">1.0</float_test>" +
         "<double_test xsi:type=\"xsd:double\">2.0</double_test><bool_test xsi:type=\"xsd:boolean\">true</bool_test>" +
@@ -192,7 +192,7 @@ describe VimSdk::Soap::SoapSerializer do
         "<time_test xsi:type=\"xsd:dateTime\">2011-03-26T21:28:52Z</time_test>" +
         "<binary_test xsi:type=\"xsd:base64Binary\">c29tZSBiaW5hcnkgc3RyaW5n\n</binary_test>" +
         "<mob_test xmlns:vim25=\"urn:vim25\" xsi:type=\"vim25:ManagedObject\" type=\"ManagedTest\">" +
-        'some mob id</mob_test></test>'
+        'some mob id</mob_test></test>')
   end
 
   it 'should serialize any type array' do
@@ -210,8 +210,8 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class.finalize
 
-    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
+    allow(VimSdk::VmomiSupport).to receive(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    allow(VimSdk::VmomiSupport).to receive(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -221,12 +221,12 @@ describe VimSdk::Soap::SoapSerializer do
                            :mob_test => [test_managed_class.new('some mob id')])
 
     serializer.serialize(value, property)
-    writer.string.should == "<test xmlns=\"urn:test\">" +
+    expect(writer.string).to eq("<test xmlns=\"urn:test\">" +
         "<basic_test xmlns:vim25=\"urn:vim25\" xsi:type=\"vim25:ArrayOfString\"><string>hello</string>" +
         "<string>world</string></basic_test><class_test xmlns:vim25=\"urn:vim25\" xsi:type=\"vim25:ArrayOfString\">" +
         '<string>string</string><string>float</string><string>DataObject</string></class_test>' +
         "<mob_test xmlns:vim25=\"urn:vim25\" xsi:type=\"vim25:ArrayOfManagedObject\">" +
-        "<ManagedObjectReference type=\"ManagedTest\">some mob id</ManagedObjectReference></mob_test></test>"
+        "<ManagedObjectReference type=\"ManagedTest\">some mob id</ManagedObjectReference></mob_test></test>")
   end
 
   it 'should serialize inherited types' do
@@ -244,9 +244,9 @@ describe VimSdk::Soap::SoapSerializer do
     end
     test_class2.finalize
 
-    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class, 'test_version').and_return(test_class)
-    VimSdk::VmomiSupport.stub(:compatible_type).with(test_class2, 'test_version').and_return(test_class2)
-    VimSdk::VmomiSupport.stub(:wsdl_namespace).with('test_version').and_return('urn:test')
+    allow(VimSdk::VmomiSupport).to receive(:compatible_type).with(test_class, 'test_version').and_return(test_class)
+    allow(VimSdk::VmomiSupport).to receive(:compatible_type).with(test_class2, 'test_version').and_return(test_class2)
+    allow(VimSdk::VmomiSupport).to receive(:wsdl_namespace).with('test_version').and_return('urn:test')
 
     writer = StringIO.new
     serializer = VimSdk::Soap::SoapSerializer.new(writer, 'test_version', VimSdk::SOAP_NAMESPACE_MAP.dup)
@@ -254,6 +254,6 @@ describe VimSdk::Soap::SoapSerializer do
     property = VimSdk::Property.new('test', test_class, 'test_version')
     value = test_class2.new(:test => 'foo', :test2 => 'bar')
     serializer.serialize(value, property)
-    writer.string.should == "<test xmlns=\"urn:test\" xsi:type=\"Test2\"><test>foo</test><test2>bar</test2></test>"
+    expect(writer.string).to eq("<test xmlns=\"urn:test\" xsi:type=\"Test2\"><test>foo</test><test2>bar</test2></test>")
   end
 end

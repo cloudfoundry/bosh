@@ -67,7 +67,7 @@ describe Bosh::OpenStackCloud::NetworkConfigurator do
       set_security_groups(spec["network_b"], %w[bar])
 
       nc = Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
-      nc.security_groups(nil).should == %w[bar foo]
+      expect(nc.security_groups(nil)).to eq(%w[bar foo])
     end
 
     it "should be extracted from both manual and vip network" do
@@ -78,7 +78,7 @@ describe Bosh::OpenStackCloud::NetworkConfigurator do
       set_security_groups(spec["network_b"], %w[bar])
 
       nc = Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
-      nc.security_groups(nil).should == %w[bar foo]
+      expect(nc.security_groups(nil)).to eq(%w[bar foo])
     end
 
     it "should return the default groups if none are extracted" do
@@ -86,7 +86,7 @@ describe Bosh::OpenStackCloud::NetworkConfigurator do
       spec["network_a"] = {"type" => "dynamic"}
 
       nc = Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
-      nc.security_groups(%w[foo]).should == %w[foo]
+      expect(nc.security_groups(%w[foo])).to eq(%w[foo])
     end
 
     it "should return an empty list if no default group is set" do
@@ -94,7 +94,7 @@ describe Bosh::OpenStackCloud::NetworkConfigurator do
       spec["network_a"] = {"type" => "dynamic"}
 
       nc = Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
-      nc.security_groups(nil).should == []
+      expect(nc.security_groups(nil)).to eq([])
     end
 
     it "should raise an error when it isn't an array" do
@@ -151,7 +151,7 @@ describe Bosh::OpenStackCloud::NetworkConfigurator do
       spec["network_a"]["cloud_properties"]["net_id"] = "foo"
 
       nc = Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
-      nc.nics.should == [{ "net_id" => "foo" }]
+      expect(nc.nics).to eq([{ "net_id" => "foo" }])
     end
 
     it "should extract net_id and IP address from all manual networks" do
@@ -169,7 +169,7 @@ describe Bosh::OpenStackCloud::NetworkConfigurator do
       spec["network_a"]["cloud_properties"]["net_id"] = "foo"
 
       nc = Bosh::OpenStackCloud::NetworkConfigurator.new(spec)
-      nc.nics.should == [{ "net_id" => "foo" }]
+      expect(nc.nics).to eq([{ "net_id" => "foo" }])
     end
   end
 end

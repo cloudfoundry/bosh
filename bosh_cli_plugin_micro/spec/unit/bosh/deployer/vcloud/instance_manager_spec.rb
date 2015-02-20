@@ -14,9 +14,9 @@ module Bosh::Deployer
       @config['logging'] = { 'file' => "#{@dir}/bmim.log" }
       @deployer = Bosh::Deployer::InstanceManager.create(@config)
       @cloud = double('cloud')
-      Bosh::Deployer::Config.stub(:cloud).and_return(@cloud)
+      allow(Bosh::Deployer::Config).to receive(:cloud).and_return(@cloud)
       @agent = double('agent')
-      @deployer.stub(:agent).and_return(@agent)
+      allow(@deployer).to receive(:agent).and_return(@agent)
 
       allow(MicroboshJobInstance).to receive(:new).and_return(FakeMicroboshJobInstance.new)
     end
@@ -43,31 +43,31 @@ module Bosh::Deployer
     context 'remote_tunnel_check' do
       it 'should successfully deploy when remote_tunnel method is over-ridden ' +
            'to not establish a socket connection' do
-        @deployer.stub(:service_ip).and_return('10.0.0.10')
+        allow(@deployer).to receive(:service_ip).and_return('10.0.0.10')
         @spec = Psych.load_file(spec_asset('apply_spec_vcloud.yml'))
-        Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(@spec)
-        Bosh::Deployer::Config.stub(:agent_properties).and_return({})
+        expect(Bosh::Deployer::Specification).to receive(:load_apply_spec).and_return(@spec)
+        allow(Bosh::Deployer::Config).to receive(:agent_properties).and_return({})
 
         @registry_port = 1234
 
-        @deployer.stub(:run_command)
-        @deployer.stub(:wait_until_ready)
-        @deployer.stub(:wait_until_director_ready)
-        @deployer.stub(:load_apply_spec).and_return(@spec)
-        @deployer.stub(:load_stemcell_manifest).and_return('cloud_properties' => {})
+        allow(@deployer).to receive(:run_command)
+        allow(@deployer).to receive(:wait_until_ready)
+        allow(@deployer).to receive(:wait_until_director_ready)
+        allow(@deployer).to receive(:load_apply_spec).and_return(@spec)
+        allow(@deployer).to receive(:load_stemcell_manifest).and_return('cloud_properties' => {})
 
-        @deployer.state.uuid.should_not be_nil
-        @deployer.state.stemcell_cid.should be_nil
-        @deployer.state.vm_cid.should be_nil
+        expect(@deployer.state.uuid).not_to be_nil
+        expect(@deployer.state.stemcell_cid).to be_nil
+        expect(@deployer.state.vm_cid).to be_nil
 
-        @cloud.should_receive(:create_stemcell).and_return('SC-CID-CREATE')
-        @cloud.should_receive(:create_vm).and_return('VM-CID-CREATE')
-        @cloud.should_receive(:create_disk).and_return('DISK-CID-CREATE')
-        @cloud.should_receive(:attach_disk).with('VM-CID-CREATE', 'DISK-CID-CREATE')
-        @agent.should_receive(:run_task).with(:mount_disk, 'DISK-CID-CREATE').and_return({})
-        @agent.should_receive(:run_task).with(:stop)
-        @agent.should_receive(:run_task).with(:apply, @spec)
-        @agent.should_receive(:run_task).with(:start)
+        expect(@cloud).to receive(:create_stemcell).and_return('SC-CID-CREATE')
+        expect(@cloud).to receive(:create_vm).and_return('VM-CID-CREATE')
+        expect(@cloud).to receive(:create_disk).and_return('DISK-CID-CREATE')
+        expect(@cloud).to receive(:attach_disk).with('VM-CID-CREATE', 'DISK-CID-CREATE')
+        expect(@agent).to receive(:run_task).with(:mount_disk, 'DISK-CID-CREATE').and_return({})
+        expect(@agent).to receive(:run_task).with(:stop)
+        expect(@agent).to receive(:run_task).with(:apply, @spec)
+        expect(@agent).to receive(:run_task).with(:start)
 
         expect {
           Timeout.timeout(5) do
@@ -75,53 +75,53 @@ module Bosh::Deployer
           end
         }.to_not raise_error
 
-        @deployer.state.stemcell_cid.should == 'SC-CID-CREATE'
-        @deployer.state.vm_cid.should == 'VM-CID-CREATE'
-        @deployer.state.disk_cid.should == 'DISK-CID-CREATE'
-        load_deployment.should == @deployer.state.values
-        @deployer.renderer.total.should == @deployer.renderer.index
+        expect(@deployer.state.stemcell_cid).to eq('SC-CID-CREATE')
+        expect(@deployer.state.vm_cid).to eq('VM-CID-CREATE')
+        expect(@deployer.state.disk_cid).to eq('DISK-CID-CREATE')
+        expect(load_deployment).to eq(@deployer.state.values)
+        expect(@deployer.renderer.total).to eq(@deployer.renderer.index)
       end
     end
 
     it 'should not populate disk model' do
       disk_model = @deployer.infrastructure.disk_model
-      disk_model.should == nil
+      expect(disk_model).to eq(nil)
     end
 
     it 'should create a Bosh instance' do
-      @deployer.stub(:service_ip).and_return('10.0.0.10')
+      allow(@deployer).to receive(:service_ip).and_return('10.0.0.10')
       spec = Psych.load_file(spec_asset('apply_spec_vcloud.yml'))
-      Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
-      Bosh::Deployer::Config.stub(:agent_properties).and_return({})
+      expect(Bosh::Deployer::Specification).to receive(:load_apply_spec).and_return(spec)
+      allow(Bosh::Deployer::Config).to receive(:agent_properties).and_return({})
 
-      @deployer.stub(:run_command)
-      @deployer.stub(:wait_until_agent_ready)
-      @deployer.stub(:wait_until_director_ready)
-      @deployer.stub(:load_apply_spec).and_return(spec)
-      @deployer.stub(:load_stemcell_manifest).and_return('cloud_properties' => {})
+      allow(@deployer).to receive(:run_command)
+      allow(@deployer).to receive(:wait_until_agent_ready)
+      allow(@deployer).to receive(:wait_until_director_ready)
+      allow(@deployer).to receive(:load_apply_spec).and_return(spec)
+      allow(@deployer).to receive(:load_stemcell_manifest).and_return('cloud_properties' => {})
 
-      @deployer.state.uuid.should_not be_nil
+      expect(@deployer.state.uuid).not_to be_nil
 
-      @deployer.state.stemcell_cid.should be_nil
-      @deployer.state.vm_cid.should be_nil
+      expect(@deployer.state.stemcell_cid).to be_nil
+      expect(@deployer.state.vm_cid).to be_nil
 
-      @cloud.should_receive(:create_stemcell).and_return('SC-CID-CREATE')
-      @cloud.should_receive(:create_vm).and_return('VM-CID-CREATE')
-      @cloud.should_receive(:create_disk).and_return('DISK-CID-CREATE')
-      @cloud.should_receive(:attach_disk).with('VM-CID-CREATE', 'DISK-CID-CREATE')
-      @agent.should_receive(:run_task).with(:mount_disk, 'DISK-CID-CREATE').and_return({})
-      @agent.should_receive(:run_task).with(:stop)
-      @agent.should_receive(:run_task).with(:apply, spec)
-      @agent.should_receive(:run_task).with(:start)
+      expect(@cloud).to receive(:create_stemcell).and_return('SC-CID-CREATE')
+      expect(@cloud).to receive(:create_vm).and_return('VM-CID-CREATE')
+      expect(@cloud).to receive(:create_disk).and_return('DISK-CID-CREATE')
+      expect(@cloud).to receive(:attach_disk).with('VM-CID-CREATE', 'DISK-CID-CREATE')
+      expect(@agent).to receive(:run_task).with(:mount_disk, 'DISK-CID-CREATE').and_return({})
+      expect(@agent).to receive(:run_task).with(:stop)
+      expect(@agent).to receive(:run_task).with(:apply, spec)
+      expect(@agent).to receive(:run_task).with(:start)
 
       @deployer.create(BOSH_STEMCELL_TGZ, nil)
 
-      @deployer.state.stemcell_cid.should == 'SC-CID-CREATE'
-      @deployer.state.vm_cid.should == 'VM-CID-CREATE'
-      @deployer.state.disk_cid.should == 'DISK-CID-CREATE'
-      load_deployment.should == @deployer.state.values
+      expect(@deployer.state.stemcell_cid).to eq('SC-CID-CREATE')
+      expect(@deployer.state.vm_cid).to eq('VM-CID-CREATE')
+      expect(@deployer.state.disk_cid).to eq('DISK-CID-CREATE')
+      expect(load_deployment).to eq(@deployer.state.values)
 
-      @deployer.renderer.total.should == @deployer.renderer.index
+      expect(@deployer.renderer.total).to eq(@deployer.renderer.index)
     end
 
     it 'should destroy a Bosh instance' do
@@ -132,64 +132,64 @@ module Bosh::Deployer
 
       @deployer.state.vm_cid = 'VM-CID-DESTROY'
 
-      @agent.should_receive(:list_disk).and_return([disk_cid])
-      @agent.should_receive(:run_task).with(:stop)
-      @agent.should_receive(:run_task).with(:unmount_disk, disk_cid).and_return({})
-      @cloud.should_receive(:detach_disk).with('VM-CID-DESTROY', disk_cid)
-      @cloud.should_receive(:delete_disk).with(disk_cid)
-      @cloud.should_receive(:delete_vm).with('VM-CID-DESTROY')
+      expect(@agent).to receive(:list_disk).and_return([disk_cid])
+      expect(@agent).to receive(:run_task).with(:stop)
+      expect(@agent).to receive(:run_task).with(:unmount_disk, disk_cid).and_return({})
+      expect(@cloud).to receive(:detach_disk).with('VM-CID-DESTROY', disk_cid)
+      expect(@cloud).to receive(:delete_disk).with(disk_cid)
+      expect(@cloud).to receive(:delete_vm).with('VM-CID-DESTROY')
 
       @deployer.destroy
 
-      @deployer.state.stemcell_cid.should be_nil
-      @deployer.state.stemcell_name.should be_nil
-      @deployer.state.vm_cid.should be_nil
-      @deployer.state.disk_cid.should be_nil
+      expect(@deployer.state.stemcell_cid).to be_nil
+      expect(@deployer.state.stemcell_name).to be_nil
+      expect(@deployer.state.vm_cid).to be_nil
+      expect(@deployer.state.disk_cid).to be_nil
 
-      load_deployment.should == @deployer.state.values
+      expect(load_deployment).to eq(@deployer.state.values)
 
-      @deployer.renderer.total.should == @deployer.renderer.index
+      expect(@deployer.renderer.total).to eq(@deployer.renderer.index)
     end
 
     it 'should update a Bosh instance' do
-      @deployer.infrastructure.stub(:service_ip).and_return('10.0.0.10')
+      allow(@deployer.infrastructure).to receive(:service_ip).and_return('10.0.0.10')
       spec = Psych.load_file(spec_asset('apply_spec_vcloud.yml'))
       disk_cid = '22'
-      Bosh::Deployer::Specification.should_receive(:load_apply_spec).and_return(spec)
-      Bosh::Deployer::Config.stub(:agent_properties).and_return({})
+      expect(Bosh::Deployer::Specification).to receive(:load_apply_spec).and_return(spec)
+      allow(Bosh::Deployer::Config).to receive(:agent_properties).and_return({})
 
-      @deployer.stub(:run_command)
-      @deployer.stub(:wait_until_agent_ready)
-      @deployer.stub(:wait_until_director_ready)
-      @deployer.stub(:load_apply_spec).and_return(spec)
-      @deployer.stub(:load_stemcell_manifest).and_return('cloud_properties' => {})
-      @deployer.infrastructure.stub(:persistent_disk_changed?).and_return(false)
+      allow(@deployer).to receive(:run_command)
+      allow(@deployer).to receive(:wait_until_agent_ready)
+      allow(@deployer).to receive(:wait_until_director_ready)
+      allow(@deployer).to receive(:load_apply_spec).and_return(spec)
+      allow(@deployer).to receive(:load_stemcell_manifest).and_return('cloud_properties' => {})
+      allow(@deployer.infrastructure).to receive(:persistent_disk_changed?).and_return(false)
 
       @deployer.state.stemcell_cid = 'SC-CID-UPDATE'
       @deployer.state.vm_cid = 'VM-CID-UPDATE'
       @deployer.state.disk_cid = disk_cid
 
-      @agent.should_receive(:run_task).with(:stop)
-      @agent.should_receive(:run_task).with(:unmount_disk, disk_cid).and_return({})
-      @cloud.should_receive(:detach_disk).with('VM-CID-UPDATE', disk_cid)
-      @cloud.should_receive(:delete_vm).with('VM-CID-UPDATE')
-      @cloud.should_receive(:delete_stemcell).with('SC-CID-UPDATE')
-      @cloud.should_receive(:create_stemcell).and_return('SC-CID')
-      @cloud.should_receive(:create_vm).and_return('VM-CID')
-      @cloud.should_receive(:attach_disk).with('VM-CID', disk_cid)
-      @agent.should_receive(:run_task).with(:mount_disk, disk_cid).and_return({})
-      @agent.should_receive(:list_disk).and_return([disk_cid])
-      @agent.should_receive(:run_task).with(:stop)
-      @agent.should_receive(:run_task).with(:apply, spec)
-      @agent.should_receive(:run_task).with(:start)
+      expect(@agent).to receive(:run_task).with(:stop)
+      expect(@agent).to receive(:run_task).with(:unmount_disk, disk_cid).and_return({})
+      expect(@cloud).to receive(:detach_disk).with('VM-CID-UPDATE', disk_cid)
+      expect(@cloud).to receive(:delete_vm).with('VM-CID-UPDATE')
+      expect(@cloud).to receive(:delete_stemcell).with('SC-CID-UPDATE')
+      expect(@cloud).to receive(:create_stemcell).and_return('SC-CID')
+      expect(@cloud).to receive(:create_vm).and_return('VM-CID')
+      expect(@cloud).to receive(:attach_disk).with('VM-CID', disk_cid)
+      expect(@agent).to receive(:run_task).with(:mount_disk, disk_cid).and_return({})
+      expect(@agent).to receive(:list_disk).and_return([disk_cid])
+      expect(@agent).to receive(:run_task).with(:stop)
+      expect(@agent).to receive(:run_task).with(:apply, spec)
+      expect(@agent).to receive(:run_task).with(:start)
 
       @deployer.update(BOSH_STEMCELL_TGZ, nil)
 
-      @deployer.state.stemcell_cid.should == 'SC-CID'
-      @deployer.state.vm_cid.should == 'VM-CID'
-      @deployer.state.disk_cid.should == disk_cid
+      expect(@deployer.state.stemcell_cid).to eq('SC-CID')
+      expect(@deployer.state.vm_cid).to eq('VM-CID')
+      expect(@deployer.state.disk_cid).to eq(disk_cid)
 
-      load_deployment.should == @deployer.state.values
+      expect(load_deployment).to eq(@deployer.state.values)
     end
 
     it 'should fail to create a Bosh instance if stemcell CID exists' do
@@ -210,8 +210,8 @@ module Bosh::Deployer
 
     it 'should fail to destroy a Bosh instance unless stemcell CID exists' do
       @deployer.state.vm_cid = 'VM-CID'
-      @agent.should_receive(:run_task).with(:stop)
-      @cloud.should_receive(:delete_vm).with('VM-CID')
+      expect(@agent).to receive(:run_task).with(:stop)
+      expect(@cloud).to receive(:delete_vm).with('VM-CID')
       expect {
         @deployer.destroy
       }.to raise_error(Bosh::Cli::CliError)
@@ -219,7 +219,7 @@ module Bosh::Deployer
 
     it 'should fail to destroy a Bosh instance unless VM CID exists' do
       @deployer.state.stemcell_cid = 'SC-CID'
-      @agent.should_receive(:run_task).with(:stop)
+      expect(@agent).to receive(:run_task).with(:stop)
       expect {
         @deployer.destroy
       }.to raise_error(Bosh::Cli::CliError)

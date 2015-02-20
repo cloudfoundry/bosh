@@ -106,7 +106,7 @@ properties:
     before { route53_receipt['elastic_ips']['bat']['ips'] = [] }
 
     it 'warns' do
-      subject.should_receive(:warning).with('Missing vip field')
+      expect(subject).to receive(:warning).with('Missing vip field')
       subject.to_y
     end
   end

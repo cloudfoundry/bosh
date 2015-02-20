@@ -7,7 +7,7 @@ describe CreateBoshRdsDb do
   subject { described_class.new(config, '')}
 
   before do
-    subject.stub(:load_receipt).and_return(YAML.load_file(asset "test-output.yml"))
+    allow(subject).to receive(:load_receipt).and_return(YAML.load_file(asset "test-output.yml"))
   end
 
   after do
@@ -15,10 +15,10 @@ describe CreateBoshRdsDb do
   end
 
   it "creates the bosh rds if it does not exist" do
-    rds.should_receive(:database_exists?).with("bosh").and_return(false)
+    expect(rds).to receive(:database_exists?).with("bosh").and_return(false)
 
     create_database_params = ["bosh", ["subnet-xxxxxxx5", "subnet-xxxxxxx6"], "vpc-13724979"]
-    rds.should_receive(:create_database).with(*create_database_params).and_return(
+    expect(rds).to receive(:create_database).with(*create_database_params).and_return(
         :engine => "mysql",
         :master_username => "bosh_user",
         :master_user_password => "bosh_password"
@@ -34,18 +34,18 @@ describe CreateBoshRdsDb do
                           endpoint_address: '5.6.7.8',
                           endpoint_port: 5678,
                           db_instance_status: :irrelevant)
-    rds.should_receive(:databases).at_least(:once).and_return([fake_bosh_rds, fake_uaadb_rds])
-    rds.should_receive(:database).with('bosh').and_return(fake_bosh_rds)
+    expect(rds).to receive(:databases).at_least(:once).and_return([fake_bosh_rds, fake_uaadb_rds])
+    expect(rds).to receive(:database).with('bosh').and_return(fake_bosh_rds)
 
     expect { subject.execute }.to_not raise_error
   end
 
   it "does not create the bosh rds if it already exists" do
-    rds.should_receive(:database_exists?).with("bosh").and_return(true)
-    Bosh::Aws::MigrationHelper::RdsDb.should_receive(:deployment_properties).and_return({})
+    expect(rds).to receive(:database_exists?).with("bosh").and_return(true)
+    expect(Bosh::Aws::MigrationHelper::RdsDb).to receive(:deployment_properties).and_return({})
 
     create_database_params = ["bosh", ["subnet-xxxxxxx5", "subnet-xxxxxxx6"], "vpc-13724979"]
-    rds.should_not_receive(:create_database).with(*create_database_params)
+    expect(rds).not_to receive(:create_database).with(*create_database_params)
 
     fake_bosh_rds = double("uaadb",
                          db_name: "uaadb",
@@ -57,7 +57,7 @@ describe CreateBoshRdsDb do
                           endpoint_address: '5.6.7.8',
                           endpoint_port: 5678,
                           db_instance_status: :irrelevant)
-    rds.should_receive(:databases).at_least(:once).and_return([fake_bosh_rds, fake_uaadb_rds])
+    expect(rds).to receive(:databases).at_least(:once).and_return([fake_bosh_rds, fake_uaadb_rds])
 
     expect { subject.execute }.to_not raise_error
   end

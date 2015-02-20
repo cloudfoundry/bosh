@@ -131,19 +131,19 @@ describe Bosh::Cli::Config do
       add_config(config)
       cfg = create_config
 
-      cfg.max_parallel_downloads.should == 3
+      expect(cfg.max_parallel_downloads).to eq(3)
     end
 
     it "uses global runtime set if available" do
       cfg = create_config
       Bosh::Cli::Config.max_parallel_downloads = 7
-      cfg.max_parallel_downloads.should == 7
+      expect(cfg.max_parallel_downloads).to eq(7)
       Bosh::Cli::Config.max_parallel_downloads = nil
     end
 
     it "defaults parallel download limit to 1 if none is set" do
       cfg = create_config
-      cfg.max_parallel_downloads.should == 1
+      expect(cfg.max_parallel_downloads).to eq(1)
     end
   end
 end

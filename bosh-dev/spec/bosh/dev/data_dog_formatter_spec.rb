@@ -13,10 +13,10 @@ module Bosh::Dev
         })
     end
 
-    it { DataDogFormatter.should < RSpec::Core::Formatters::BaseFormatter }
+    it { expect(DataDogFormatter).to be < RSpec::Core::Formatters::BaseFormatter }
 
     it 'should reported to DataDog when an example passes' do
-      sender.should_receive(:report_on).with(example)
+      expect(sender).to receive(:report_on).with(example)
       formatter.example_passed(example)
     end
   end

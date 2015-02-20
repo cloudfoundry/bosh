@@ -17,7 +17,7 @@ module Bosh::Dev
       it 'writes it to disk as yaml' do
         expect { manifest.write }.to change { File.exist?('foo.yml') }.to(true)
 
-        File.read('foo.yml').should eq("---\nfoo: bar\n")
+        expect(File.read('foo.yml')).to eq("---\nfoo: bar\n")
       end
     end
   end

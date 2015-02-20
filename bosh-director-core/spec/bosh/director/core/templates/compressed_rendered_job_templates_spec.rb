@@ -19,10 +19,10 @@ module Bosh::Director::Core::Templates
 
       before { allow(Dir).to receive(:mktmpdir).and_yield('/tmp/path/for/non-compressed/templates') }
 
-      before { RenderedTemplatesWriter.stub(new: writer) }
+      before { allow(RenderedTemplatesWriter).to receive_messages(new: writer) }
       let(:writer) { instance_double('Bosh::Director::Core::Templates::RenderedTemplatesWriter') }
 
-      before { Bosh::Director::Core::TarGzipper.stub(new: tar_gzipper) }
+      before { allow(Bosh::Director::Core::TarGzipper).to receive_messages(new: tar_gzipper) }
       let(:tar_gzipper) { instance_double('Bosh::Director::Core::TarGzipper') }
 
       it 'writes rendered templates to disk and then compresses them' do

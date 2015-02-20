@@ -16,12 +16,12 @@ describe Bosh::Registry::ApiController do
   end
 
   def expect_json_response(response, status, body)
-    response.status.should == status
-    Yajl::Parser.parse(response.body).should == body
+    expect(response.status).to eq(status)
+    expect(Yajl::Parser.parse(response.body)).to eq(body)
   end
 
   it "returns settings for given instance (IP check)" do
-    @instance_manager.should_receive(:read_settings).
+    expect(@instance_manager).to receive(:read_settings).
       with("foo", "127.0.0.1").and_return("bar")
 
     @session.get("/instances/foo/settings")
@@ -31,7 +31,7 @@ describe Bosh::Registry::ApiController do
   end
 
   it "returns settings (authorized user, no IP check)" do
-    @instance_manager.should_receive(:read_settings).
+    expect(@instance_manager).to receive(:read_settings).
       with("foo", nil).and_return("bar")
 
     @session.basic_authorize("admin", "admin")
@@ -46,7 +46,7 @@ describe Bosh::Registry::ApiController do
     expect_json_response(@session.last_response, 401,
                          { "status" => "access_denied" })
 
-    @instance_manager.should_receive(:update_settings).
+    expect(@instance_manager).to receive(:update_settings).
       with("foo", "bar").and_return(true)
 
     @session.basic_authorize("admin", "admin")
@@ -62,7 +62,7 @@ describe Bosh::Registry::ApiController do
       expect_json_response(@session.last_response, 401,
                            { "status" => "access_denied" })
 
-      @instance_manager.should_receive(:delete_settings).
+      expect(@instance_manager).to receive(:delete_settings).
         with("foo").and_return(true)
 
       @session.basic_authorize("admin", "admin")
@@ -73,7 +73,7 @@ describe Bosh::Registry::ApiController do
     end
 
     it "doesn't error when an instance isn't found" do
-      @instance_manager.should_receive(:delete_settings).
+      expect(@instance_manager).to receive(:delete_settings).
         with("foo").and_raise Bosh::Registry::InstanceNotFound
 
       @session.basic_authorize("admin", "admin")

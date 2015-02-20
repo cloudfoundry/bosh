@@ -47,7 +47,7 @@ describe Bosh::Ssl::Certificate do
         end
 
         it 'returns self so that it can be appended on to the constructor easily' do
-          server_certificate.load_or_create.should == server_certificate
+          expect(server_certificate.load_or_create).to eq(server_certificate)
         end
 
         it 'creates a new, valid certificate' do
@@ -56,17 +56,17 @@ describe Bosh::Ssl::Certificate do
           key = OpenSSL::PKey::RSA.new(File.read(key_path))
           certificate = OpenSSL::X509::Certificate.new(File.read(certificate_path))
 
-          key.to_s.should include('BEGIN RSA PRIVATE KEY')
-          certificate.to_s.should include('BEGIN CERTIFICATE')
+          expect(key.to_s).to include('BEGIN RSA PRIVATE KEY')
+          expect(certificate.to_s).to include('BEGIN CERTIFICATE')
 
-          certificate.verify(key).should be(true)
+          expect(certificate.verify(key)).to be(true)
         end
 
         it 'sets the subject from the domain we ask for' do
           server_certificate.load_or_create
 
           certificate = OpenSSL::X509::Certificate.new(File.read(certificate_path))
-          certificate.subject.to_s.should == subject_name
+          expect(certificate.subject.to_s).to eq(subject_name)
         end
 
         it 'has a sensible certificate lifetime' do
@@ -76,7 +76,7 @@ describe Bosh::Ssl::Certificate do
           start_time = certificate.not_before
           end_time = certificate.not_after
 
-          (end_time - start_time).should == ((3 * 365) + 1) * 24 * 60 * 60 # 3 Years and 1 Day
+          expect(end_time - start_time).to eq(((3 * 365) + 1) * 24 * 60 * 60) # 3 Years and 1 Day
         end
 
         it 'should start being valid some time in the past' do
@@ -85,7 +85,7 @@ describe Bosh::Ssl::Certificate do
           certificate = OpenSSL::X509::Certificate.new(File.read(certificate_path))
           start_time = certificate.not_before
 
-          start_time.should < (Time.now - 60 * 60 * 12)
+          expect(start_time).to be < (Time.now - 60 * 60 * 12)
         end
       end
     end
@@ -101,12 +101,12 @@ describe Bosh::Ssl::Certificate do
 
         server_certificate.load_or_create
 
-        server_certificate.key.should == key_contents_before
-        server_certificate.certificate.should == certificate_contents_before
+        expect(server_certificate.key).to eq(key_contents_before)
+        expect(server_certificate.certificate).to eq(certificate_contents_before)
       end
 
       it 'does not write to the file unnecessarily' do
-        File.should_not_receive(:write).with(any_args)
+        expect(File).not_to receive(:write).with(any_args)
         server_certificate.load_or_create
       end
 
@@ -117,7 +117,7 @@ describe Bosh::Ssl::Certificate do
         it 'allows the user to read the contents of the chain file' do
           server_certificate.load_or_create
 
-          server_certificate.chain.should include "BEGIN CERTIFICATE"
+          expect(server_certificate.chain).to include "BEGIN CERTIFICATE"
         end
       end
 
@@ -127,7 +127,7 @@ describe Bosh::Ssl::Certificate do
         it 'the certificate chain should be nil' do
           server_certificate.load_or_create
 
-          server_certificate.chain.should be_nil
+          expect(server_certificate.chain).to be_nil
         end
       end
     end

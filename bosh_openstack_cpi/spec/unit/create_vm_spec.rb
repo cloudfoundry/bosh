@@ -84,26 +84,26 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
                      :instance_id => "i-test")
 
     cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:create).with(openstack_params).and_return(server)
-      openstack.security_groups.should_receive(:collect).and_return(%w[default])
-      openstack.images.should_receive(:find).and_return(image)
-      openstack.flavors.should_receive(:find).and_return(flavor)
-      openstack.key_pairs.should_receive(:find).and_return(key_pair)
-      openstack.addresses.should_receive(:each).and_yield(address)
+      expect(openstack.servers).to receive(:create).with(openstack_params).and_return(server)
+      expect(openstack.security_groups).to receive(:collect).and_return(%w[default])
+      expect(openstack.images).to receive(:find).and_return(image)
+      expect(openstack.flavors).to receive(:find).and_return(flavor)
+      expect(openstack.key_pairs).to receive(:find).and_return(key_pair)
+      expect(openstack.addresses).to receive(:each).and_yield(address)
     end
 
-    cloud.should_receive(:generate_unique_name).and_return(unique_name)
-    address.should_receive(:server=).with(nil)
-    cloud.should_receive(:wait_resource).with(server, :active, :state)
+    expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
+    expect(address).to receive(:server=).with(nil)
+    expect(cloud).to receive(:wait_resource).with(server, :active, :state)
 
-    @registry.should_receive(:update_settings).
+    expect(@registry).to receive(:update_settings).
         with("i-test", agent_settings(unique_name))
 
     vm_id = cloud.create_vm("agent-id", "sc-id",
                             resource_pool_spec,
                             { "network_a" => dynamic_network_spec },
                             nil, { "test_env" => "value" })
-    vm_id.should == "i-test"
+    expect(vm_id).to eq("i-test")
   end
 
   context "with nameserver" do
@@ -116,26 +116,26 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
         :instance_id => "i-test")
 
       cloud = mock_cloud do |openstack|
-        openstack.servers.should_receive(:create).with(openstack_params).and_return(server)
-        openstack.security_groups.should_receive(:collect).and_return(%w[default])
-        openstack.images.should_receive(:find).and_return(image)
-        openstack.flavors.should_receive(:find).and_return(flavor)
-        openstack.key_pairs.should_receive(:find).and_return(key_pair)
-        openstack.addresses.should_receive(:each).and_yield(address)
+        expect(openstack.servers).to receive(:create).with(openstack_params).and_return(server)
+        expect(openstack.security_groups).to receive(:collect).and_return(%w[default])
+        expect(openstack.images).to receive(:find).and_return(image)
+        expect(openstack.flavors).to receive(:find).and_return(flavor)
+        expect(openstack.key_pairs).to receive(:find).and_return(key_pair)
+        expect(openstack.addresses).to receive(:each).and_yield(address)
       end
 
-      cloud.should_receive(:generate_unique_name).and_return(unique_name)
-      address.should_receive(:server=).with(nil)
-      cloud.should_receive(:wait_resource).with(server, :active, :state)
+      expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
+      expect(address).to receive(:server=).with(nil)
+      expect(cloud).to receive(:wait_resource).with(server, :active, :state)
 
-      @registry.should_receive(:update_settings).
+      expect(@registry).to receive(:update_settings).
         with("i-test", agent_settings(unique_name, network_spec))
 
       vm_id = cloud.create_vm("agent-id", "sc-id",
         resource_pool_spec,
         { "network_a" => network_spec },
         nil, { "test_env" => "value" })
-      vm_id.should == "i-test"
+      expect(vm_id).to eq("i-test")
     end
   end
 
@@ -150,25 +150,25 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
         :instance_id => nil)
 
       cloud = mock_cloud do |openstack|
-        openstack.servers.should_receive(:create).with(openstack_params).and_return(server)
-        openstack.security_groups.should_receive(:collect).and_return(security_groups)
-        openstack.images.should_receive(:find).and_return(image)
-        openstack.flavors.should_receive(:find).and_return(flavor)
-        openstack.key_pairs.should_receive(:find).and_return(key_pair)
-        openstack.addresses.should_receive(:each).and_yield(address)
+        expect(openstack.servers).to receive(:create).with(openstack_params).and_return(server)
+        expect(openstack.security_groups).to receive(:collect).and_return(security_groups)
+        expect(openstack.images).to receive(:find).and_return(image)
+        expect(openstack.flavors).to receive(:find).and_return(flavor)
+        expect(openstack.key_pairs).to receive(:find).and_return(key_pair)
+        expect(openstack.addresses).to receive(:each).and_yield(address)
       end
 
-      cloud.should_receive(:generate_unique_name).and_return(unique_name)
-      cloud.should_receive(:wait_resource).with(server, :active, :state)
+      expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
+      expect(cloud).to receive(:wait_resource).with(server, :active, :state)
 
-      @registry.should_receive(:update_settings).
+      expect(@registry).to receive(:update_settings).
         with("i-test", agent_settings(unique_name, network_spec))
 
       vm_id = cloud.create_vm("agent-id", "sc-id",
         resource_pool_spec,
         { "network_a" => network_spec },
         nil, { "test_env" => "value" })
-      vm_id.should == "i-test"
+      expect(vm_id).to eq("i-test")
     end
   end
 
@@ -187,25 +187,25 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       network_spec["cloud_properties"]["net_id"] = nics[0]["net_id"]
 
       cloud = mock_cloud do |openstack|
-        openstack.servers.should_receive(:create).with(openstack_params).and_return(server)
-        openstack.security_groups.should_receive(:collect).and_return(%w[default])
-        openstack.images.should_receive(:find).and_return(image)
-        openstack.flavors.should_receive(:find).and_return(flavor)
-        openstack.key_pairs.should_receive(:find).and_return(key_pair)
-        openstack.addresses.should_receive(:each).and_yield(address)
+        expect(openstack.servers).to receive(:create).with(openstack_params).and_return(server)
+        expect(openstack.security_groups).to receive(:collect).and_return(%w[default])
+        expect(openstack.images).to receive(:find).and_return(image)
+        expect(openstack.flavors).to receive(:find).and_return(flavor)
+        expect(openstack.key_pairs).to receive(:find).and_return(key_pair)
+        expect(openstack.addresses).to receive(:each).and_yield(address)
       end
 
-      cloud.should_receive(:generate_unique_name).and_return(unique_name)
-      cloud.should_receive(:wait_resource).with(server, :active, :state)
+      expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
+      expect(cloud).to receive(:wait_resource).with(server, :active, :state)
 
-      @registry.should_receive(:update_settings).
+      expect(@registry).to receive(:update_settings).
         with("i-test", agent_settings(unique_name, network_spec))
 
       vm_id = cloud.create_vm("agent-id", "sc-id",
         resource_pool_spec,
         { "network_a" => network_spec },
         nil, { "test_env" => "value" })
-      vm_id.should == "i-test"
+      expect(vm_id).to eq("i-test")
     end
   end
 
@@ -225,25 +225,25 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       network_spec["cloud_properties"]["net_id"] = nics[0]["net_id"]
 
       cloud = mock_cloud do |openstack|
-        openstack.servers.should_receive(:create).with(openstack_params).and_return(server)
-        openstack.security_groups.should_receive(:collect).and_return(%w[default])
-        openstack.images.should_receive(:find).and_return(image)
-        openstack.flavors.should_receive(:find).and_return(flavor)
-        openstack.key_pairs.should_receive(:find).and_return(key_pair)
-        openstack.addresses.should_receive(:each).and_yield(address)
+        expect(openstack.servers).to receive(:create).with(openstack_params).and_return(server)
+        expect(openstack.security_groups).to receive(:collect).and_return(%w[default])
+        expect(openstack.images).to receive(:find).and_return(image)
+        expect(openstack.flavors).to receive(:find).and_return(flavor)
+        expect(openstack.key_pairs).to receive(:find).and_return(key_pair)
+        expect(openstack.addresses).to receive(:each).and_yield(address)
       end
 
-      cloud.should_receive(:generate_unique_name).and_return(unique_name)
-      cloud.should_receive(:wait_resource).with(server, :active, :state)
+      expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
+      expect(cloud).to receive(:wait_resource).with(server, :active, :state)
 
-      @registry.should_receive(:update_settings).
+      expect(@registry).to receive(:update_settings).
         with("i-test", agent_settings(unique_name, network_spec))
 
       vm_id = cloud.create_vm("agent-id", "sc-id",
         resource_pool_spec,
         { "network_a" => network_spec },
         nil, { "test_env" => "value" })
-      vm_id.should == "i-test"
+      expect(vm_id).to eq("i-test")
     end
   end
 
@@ -252,19 +252,19 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
                      :instance_id => "i-test")
 
     cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:create).and_return(server)
-      openstack.security_groups.should_receive(:collect).and_return(%w[default])
-      openstack.images.should_receive(:find).and_return(image)
-      openstack.flavors.should_receive(:find).and_return(flavor)
-      openstack.key_pairs.should_receive(:find).and_return(key_pair)
-      openstack.addresses.should_receive(:find).and_return(address)
+      expect(openstack.servers).to receive(:create).and_return(server)
+      expect(openstack.security_groups).to receive(:collect).and_return(%w[default])
+      expect(openstack.images).to receive(:find).and_return(image)
+      expect(openstack.flavors).to receive(:find).and_return(flavor)
+      expect(openstack.key_pairs).to receive(:find).and_return(key_pair)
+      expect(openstack.addresses).to receive(:find).and_return(address)
     end
 
-    address.should_receive(:server=).with(nil)
-    address.should_receive(:server=).with(server)
-    cloud.should_receive(:wait_resource).with(server, :active, :state)
+    expect(address).to receive(:server=).with(nil)
+    expect(address).to receive(:server=).with(server)
+    expect(cloud).to receive(:wait_resource).with(server, :active, :state)
 
-    @registry.should_receive(:update_settings)
+    expect(@registry).to receive(:update_settings)
 
     cloud.create_vm("agent-id", "sc-id", resource_pool_spec, combined_network_spec)
   end
@@ -279,19 +279,19 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
                       :instance_id => "i-test")
 
       cloud = mock_cloud do |openstack|
-        openstack.servers.should_receive(:create).with(openstack_params).and_return(server)
-        openstack.security_groups.should_receive(:collect).and_return(%w[default])
-        openstack.images.should_receive(:find).and_return(image)
-        openstack.flavors.should_receive(:find).and_return(flavor)
-        openstack.key_pairs.should_receive(:find).and_return(key_pair)
-        openstack.addresses.should_receive(:find).and_return(address)
+        expect(openstack.servers).to receive(:create).with(openstack_params).and_return(server)
+        expect(openstack.security_groups).to receive(:collect).and_return(%w[default])
+        expect(openstack.images).to receive(:find).and_return(image)
+        expect(openstack.flavors).to receive(:find).and_return(flavor)
+        expect(openstack.key_pairs).to receive(:find).and_return(key_pair)
+        expect(openstack.addresses).to receive(:find).and_return(address)
       end
 
-      cloud.should_receive(:generate_unique_name).and_return(openstack_params[:name].gsub(/^vm-/,''))
-      cloud.should_receive(:wait_resource).with(server, :active, :state)
-      address.should_receive(:server=).exactly(2).times
+      expect(cloud).to receive(:generate_unique_name).and_return(openstack_params[:name].gsub(/^vm-/,''))
+      expect(cloud).to receive(:wait_resource).with(server, :active, :state)
+      expect(address).to receive(:server=).exactly(2).times
 
-      @registry.should_receive(:update_settings)
+      expect(@registry).to receive(:update_settings)
 
       cloud.create_vm("agent-id", "sc-id",
                       resource_pool_spec.merge('scheduler_hints' => scheduler_hints),
@@ -319,28 +319,28 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       cloud_options['properties']['openstack']['boot_from_volume'] = true
 
       cloud = mock_cloud(cloud_options['properties']) do |openstack|
-        openstack.servers.should_receive(:create).with(openstack_params).and_return(server)
-        openstack.security_groups.should_receive(:collect).and_return(%w[default])
-        openstack.images.should_receive(:find).and_return(image)
-        openstack.flavors.should_receive(:find).and_return(flavor)
-        openstack.volumes.should_receive(:create).with(disk_params).and_return(boot_volume)
-        openstack.key_pairs.should_receive(:find).and_return(key_pair)
-        openstack.addresses.should_receive(:each).and_yield(address)
+        expect(openstack.servers).to receive(:create).with(openstack_params).and_return(server)
+        expect(openstack.security_groups).to receive(:collect).and_return(%w[default])
+        expect(openstack.images).to receive(:find).and_return(image)
+        expect(openstack.flavors).to receive(:find).and_return(flavor)
+        expect(openstack.volumes).to receive(:create).with(disk_params).and_return(boot_volume)
+        expect(openstack.key_pairs).to receive(:find).and_return(key_pair)
+        expect(openstack.addresses).to receive(:each).and_yield(address)
       end
 
-      cloud.should_receive(:generate_unique_name).exactly(2).times.and_return(unique_name, unique_vol_name)
-      address.should_receive(:server=).with(nil)
-      cloud.should_receive(:wait_resource).with(server, :active, :state)
-      cloud.should_receive(:wait_resource).with(boot_volume, :available)
+      expect(cloud).to receive(:generate_unique_name).exactly(2).times.and_return(unique_name, unique_vol_name)
+      expect(address).to receive(:server=).with(nil)
+      expect(cloud).to receive(:wait_resource).with(server, :active, :state)
+      expect(cloud).to receive(:wait_resource).with(boot_volume, :available)
 
-      @registry.should_receive(:update_settings).
+      expect(@registry).to receive(:update_settings).
         with("i-test", agent_settings(unique_name, network_spec))
 
       vm_id = cloud.create_vm("agent-id", "sc-id",
         resource_pool_spec,
         { "network_a" => network_spec },
         nil, { "test_env" => "value" })
-      vm_id.should == "i-test"
+      expect(vm_id).to eq("i-test")
     end
   end
 
@@ -369,19 +369,19 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       }
 
       cloud = mock_cloud(cloud_options['properties']) do |openstack|
-        openstack.servers.should_receive(:create).with(openstack_params).and_return(server)
-        openstack.security_groups.should_receive(:collect).and_return(%w[default])
-        openstack.images.should_receive(:find).and_return(image)
-        openstack.flavors.should_receive(:find).and_return(flavor)
-        openstack.volumes.should_receive(:create).with(disk_params).and_return(boot_volume)
-        openstack.key_pairs.should_receive(:find).and_return(key_pair)
-        openstack.addresses.should_receive(:each).and_yield(address)
+        expect(openstack.servers).to receive(:create).with(openstack_params).and_return(server)
+        expect(openstack.security_groups).to receive(:collect).and_return(%w[default])
+        expect(openstack.images).to receive(:find).and_return(image)
+        expect(openstack.flavors).to receive(:find).and_return(flavor)
+        expect(openstack.volumes).to receive(:create).with(disk_params).and_return(boot_volume)
+        expect(openstack.key_pairs).to receive(:find).and_return(key_pair)
+        expect(openstack.addresses).to receive(:each).and_yield(address)
       end
 
-      cloud.should_receive(:generate_unique_name).exactly(2).times.and_return(unique_name, unique_vol_name)
-      address.should_receive(:server=).with(nil)
-      cloud.should_receive(:wait_resource).with(server, :active, :state)
-      cloud.should_receive(:wait_resource).with(boot_volume, :available)
+      expect(cloud).to receive(:generate_unique_name).exactly(2).times.and_return(unique_name, unique_vol_name)
+      expect(address).to receive(:server=).with(nil)
+      expect(cloud).to receive(:wait_resource).with(server, :active, :state)
+      expect(cloud).to receive(:wait_resource).with(boot_volume, :available)
 
       expect(@registry).to receive(:update_settings).
         with("i-test", agent_settings(unique_name, network_spec))
@@ -430,11 +430,11 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   context "when cannot create an OpenStack server" do
     let(:cloud) do
       c = mock_cloud do |openstack|
-        openstack.servers.should_receive(:create).and_return(server)
-        openstack.security_groups.should_receive(:collect).and_return(%w[default])
-        openstack.images.should_receive(:find).and_return(image)
-        openstack.flavors.should_receive(:find).and_return(flavor)
-        openstack.key_pairs.should_receive(:find).and_return(key_pair)
+        expect(openstack.servers).to receive(:create).and_return(server)
+        expect(openstack.security_groups).to receive(:collect).and_return(%w[default])
+        expect(openstack.images).to receive(:find).and_return(image)
+        expect(openstack.flavors).to receive(:find).and_return(flavor)
+        expect(openstack.key_pairs).to receive(:find).and_return(key_pair)
       end
 
       allow(c).to receive(:wait_resource).with(server, :active, :state).and_raise(Bosh::Clouds::CloudError)
@@ -464,7 +464,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
 
   it "raises an error when a security group doesn't exist" do
     cloud = mock_cloud do |openstack|
-      openstack.security_groups.should_receive(:collect).and_return(%w[foo])
+      expect(openstack.security_groups).to receive(:collect).and_return(%w[foo])
     end
 
     expect {
@@ -476,9 +476,9 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   it "raises an error when flavor doesn't have enough ephemeral disk capacity" do
     flavor = double("flavor", :id => "f-test", :name => "m1.tiny", :ram => 1024, :ephemeral => 1)
     cloud = mock_cloud do |openstack|
-      openstack.security_groups.should_receive(:collect).and_return(%w[default])
-      openstack.images.should_receive(:find).and_return(image)
-      openstack.flavors.should_receive(:find).and_return(flavor)
+      expect(openstack.security_groups).to receive(:collect).and_return(%w[default])
+      expect(openstack.images).to receive(:find).and_return(image)
+      expect(openstack.flavors).to receive(:find).and_return(flavor)
     end
 
     expect {
@@ -496,12 +496,12 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   describe "#select_availability_zone" do
     it "should return nil when all values are nil" do
       cloud = mock_cloud
-      cloud.select_availability_zone(nil, nil).should == nil
+      expect(cloud.select_availability_zone(nil, nil)).to eq(nil)
     end
 
     it "should select the resource pool availability_zone when disks are nil" do
       cloud = mock_cloud
-      cloud.select_availability_zone(nil, "foobar-1a").should == "foobar-1a"
+      expect(cloud.select_availability_zone(nil, "foobar-1a")).to eq("foobar-1a")
     end
 
     it "should select the resource pool availability_zone when we are ignoring the disks zone" do
@@ -510,21 +510,21 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       cloud_options['properties']['openstack']['ignore_server_availability_zone'] = true
 
       cloud = mock_cloud(cloud_options["properties"]) do |openstack|
-        openstack.volumes.stub(:get).and_return(volume("foo"), volume("foo"))
+        allow(openstack.volumes).to receive(:get).and_return(volume("foo"), volume("foo"))
       end
       expect(cloud.select_availability_zone(%w[cid1 cid2], "foobar-1a")).to eq("foobar-1a")
     end
 
     it "should select the zone from a list of disks" do
       cloud = mock_cloud do |openstack|
-        openstack.volumes.stub(:get).and_return(volume("foo"), volume("foo"))
+        allow(openstack.volumes).to receive(:get).and_return(volume("foo"), volume("foo"))
       end
       expect(cloud.select_availability_zone(%w[cid1 cid2], nil)).to eq("foo")
     end
 
     it "should select the zone from a list of disks and a default" do
       cloud = mock_cloud do |openstack|
-        openstack.volumes.stub(:get).and_return(volume("foo"), volume("foo"))
+        allow(openstack.volumes).to receive(:get).and_return(volume("foo"), volume("foo"))
       end
       expect(cloud.select_availability_zone(%w[cid1 cid2], "foo")).to eq("foo")
     end

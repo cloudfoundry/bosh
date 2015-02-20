@@ -22,7 +22,7 @@ module Bosh::Director::Core::Templates
 
       it 'caculates the sha1 of the rendered erb content and returns hexdigest' do
         fake_digester = double('digester')
-        Digest::SHA1.stub(new: fake_digester)
+        allow(Digest::SHA1).to receive_messages(new: fake_digester)
         expect(fake_digester).to receive(:<<).with('monit file').ordered
         expect(fake_digester).to receive(:<<).with('rendered bar erb').ordered
         expect(fake_digester).to receive(:<<).with('rendered foo erb').ordered

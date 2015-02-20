@@ -15,13 +15,13 @@ describe Bosh::OpenStackCloud::Cloud do
     volume_attachments = [{"id" => "a1", "volumeId" => "v-foobar"}, {"id" => "a2", "volumeId" => "v-barfoo"}]
 
     cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with("i-test").and_return(server)
-      openstack.volumes.should_receive(:get).with("v-foobar").and_return(volume)
+      expect(openstack.servers).to receive(:get).with("i-test").and_return(server)
+      expect(openstack.volumes).to receive(:get).with("v-foobar").and_return(volume)
     end
 
-    server.should_receive(:volume_attachments).and_return(volume_attachments)
-    volume.should_receive(:detach).with(server.id, "a1").and_return(true)
-    cloud.should_receive(:wait_resource).with(volume, :available)
+    expect(server).to receive(:volume_attachments).and_return(volume_attachments)
+    expect(volume).to receive(:detach).with(server.id, "a1").and_return(true)
+    expect(cloud).to receive(:wait_resource).with(volume, :available)
 
     old_settings = {
       "foo" => "bar",
@@ -42,8 +42,8 @@ describe Bosh::OpenStackCloud::Cloud do
       }
     }
 
-    @registry.should_receive(:read_settings).with("i-test").and_return(old_settings)
-    @registry.should_receive(:update_settings).with("i-test", new_settings)
+    expect(@registry).to receive(:read_settings).with("i-test").and_return(old_settings)
+    expect(@registry).to receive(:update_settings).with("i-test", new_settings)
 
     cloud.detach_disk("i-test", "v-foobar")
   end
@@ -54,12 +54,12 @@ describe Bosh::OpenStackCloud::Cloud do
     volume_attachments = [{"volumeId" => "v-foobar"}]
 
     cloud = mock_cloud do |openstack|
-      openstack.servers.should_receive(:get).with("i-test").and_return(server)
-      openstack.volumes.should_receive(:get).with("v-barfoo").and_return(volume)
+      expect(openstack.servers).to receive(:get).with("i-test").and_return(server)
+      expect(openstack.volumes).to receive(:get).with("v-barfoo").and_return(volume)
     end
 
-    server.should_receive(:volume_attachments).and_return(volume_attachments)
-    volume.should_not_receive(:detach)
+    expect(server).to receive(:volume_attachments).and_return(volume_attachments)
+    expect(volume).not_to receive(:detach)
 
     old_settings = {
       "foo" => "bar",
@@ -80,8 +80,8 @@ describe Bosh::OpenStackCloud::Cloud do
       }
     }
 
-    @registry.should_receive(:read_settings).with("i-test").and_return(old_settings)
-    @registry.should_receive(:update_settings).with("i-test", new_settings)
+    expect(@registry).to receive(:read_settings).with("i-test").and_return(old_settings)
+    expect(@registry).to receive(:update_settings).with("i-test", new_settings)
 
     cloud.detach_disk("i-test", "v-barfoo")
   end

@@ -139,7 +139,7 @@ describe Bosh::Cli::BlobManager do
 
   describe "downloading a blob" do
     it 'fails if blobstore is not configured' do
-      @release.stub(:blobstore).and_return(nil)
+      allow(@release).to receive(:blobstore).and_return(nil)
 
       expect {
         make_manager(@release).download_blob('foo')
@@ -187,7 +187,7 @@ describe Bosh::Cli::BlobManager do
     end
 
     it "fails if blobstore is not configured" do
-      @release.stub(:blobstore).and_return(nil)
+      allow(@release).to receive(:blobstore).and_return(nil)
 
       expect {
         make_manager(@release).upload_blob("foo")

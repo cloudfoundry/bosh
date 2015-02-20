@@ -61,9 +61,9 @@ describe Bosh::Registry::InstanceManager do
 
       instance_double('AWS::EC2')
       expect(AWS::EC2).to receive(:new) do |config|
-        config[:ssl_verify_peer].should be false
-        config[:ssl_ca_file].should eq('/custom/cert/ca-certificates')
-        config[:ssl_ca_path].should eq('/custom/cert/')
+        expect(config[:ssl_verify_peer]).to be false
+        expect(config[:ssl_ca_file]).to eq('/custom/cert/ca-certificates')
+        expect(config[:ssl_ca_path]).to eq('/custom/cert/')
       end
       Bosh::Registry.configure(@config)
     end
@@ -71,7 +71,7 @@ describe Bosh::Registry::InstanceManager do
     it "uses default ec2_endpoint if none specified" do
       instance_double('AWS::EC2')
       expect(AWS::EC2).to receive(:new) do |config|
-        config[:ec2_endpoint].should eq("ec2.#{@config['cloud']['aws']['region']}.amazonaws.com")
+        expect(config[:ec2_endpoint]).to eq("ec2.#{@config['cloud']['aws']['region']}.amazonaws.com")
       end
       Bosh::Registry.configure(@config)
     end
@@ -80,7 +80,7 @@ describe Bosh::Registry::InstanceManager do
       @config["cloud"]["aws"]["ec2_endpoint"] = "ec2endpoint.websites.com"
       instance_double('AWS::EC2')
       expect(AWS::EC2).to receive(:new) do |config|
-        config[:ec2_endpoint].should eq("ec2endpoint.websites.com")
+        expect(config[:ec2_endpoint]).to eq("ec2endpoint.websites.com")
       end
       Bosh::Registry.configure(@config)
     end

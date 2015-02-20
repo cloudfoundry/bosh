@@ -71,42 +71,42 @@ describe Bosh::Aws::AwsConfig do
       end
 
       it "loads secret access key" do
-        configuration['aws']['secret_access_key'].should == "secret_access_key"
+        expect(configuration['aws']['secret_access_key']).to eq("secret_access_key")
       end
 
       it "loads access key id" do
-        configuration['aws']['access_key_id'].should == "access_key_id"
+        expect(configuration['aws']['access_key_id']).to eq("access_key_id")
       end
 
       it "loads vpc domains" do
-        configuration['name'].should == "burritos"
-        configuration['vpc']['domain'].should == "burritos.cf-app.com"
+        expect(configuration['name']).to eq("burritos")
+        expect(configuration['vpc']['domain']).to eq("burritos.cf-app.com")
       end
 
       it "loads the primary availability zone" do
-        configuration['vpc']['subnets']['bosh1']['availability_zone'].should == "primary_az"
-        configuration['vpc']['subnets']['cf1']['availability_zone'].should == "primary_az"
-        configuration['vpc']['subnets']['services1']['availability_zone'].should == "primary_az"
-        configuration['vpc']['subnets']['cf_rds1']['availability_zone'].should == "primary_az"
+        expect(configuration['vpc']['subnets']['bosh1']['availability_zone']).to eq("primary_az")
+        expect(configuration['vpc']['subnets']['cf1']['availability_zone']).to eq("primary_az")
+        expect(configuration['vpc']['subnets']['services1']['availability_zone']).to eq("primary_az")
+        expect(configuration['vpc']['subnets']['cf_rds1']['availability_zone']).to eq("primary_az")
       end
 
       it "loads the secondary availability zone" do
-        configuration['vpc']['subnets']['cf_rds2']['availability_zone'].should == "secondary_az"
+        expect(configuration['vpc']['subnets']['cf_rds2']['availability_zone']).to eq("secondary_az")
       end
 
       context "when the key pair name is set" do
         it "loads the key pair name" do
           environment["BOSH_KEY_PAIR_NAME"] = "key name"
 
-          configuration['vpc']['subnets']['bosh1']['nat_instance']['key_name'].should == "key name"
-          configuration['key_pairs'].should have_key "key name"
+          expect(configuration['vpc']['subnets']['bosh1']['nat_instance']['key_name']).to eq("key name")
+          expect(configuration['key_pairs']).to have_key "key name"
         end
       end
 
       context "when the key pair name is not set" do
         it "loads the default key pair name" do
-          configuration['vpc']['subnets']['bosh1']['nat_instance']['key_name'].should == "bosh"
-          configuration['key_pairs'].should have_key "bosh"
+          expect(configuration['vpc']['subnets']['bosh1']['nat_instance']['key_name']).to eq("bosh")
+          expect(configuration['key_pairs']).to have_key "bosh"
         end
       end
 
@@ -114,7 +114,7 @@ describe Bosh::Aws::AwsConfig do
         it "loads the key path" do
           environment["BOSH_KEY_PATH"] = "key path"
 
-          configuration['key_pairs']["bosh"].should == "key path"
+          expect(configuration['key_pairs']["bosh"]).to eq("key path")
         end
       end
 
@@ -122,7 +122,7 @@ describe Bosh::Aws::AwsConfig do
         it "loads the default key path" do
           environment["HOME"] = "/home/bosh"
 
-          configuration['key_pairs']["bosh"].should == "/home/bosh/.ssh/id_rsa_bosh"
+          expect(configuration['key_pairs']["bosh"]).to eq("/home/bosh/.ssh/id_rsa_bosh")
         end
       end
 
@@ -130,13 +130,13 @@ describe Bosh::Aws::AwsConfig do
         it "loads the ssh key file name" do
           environment["BOSH_AWS_ELB_SSL_KEY"] = "ssl_key"
 
-          configuration['ssl_certs']['cfrouter_cert']['private_key_path'].should == "ssl_key"
+          expect(configuration['ssl_certs']['cfrouter_cert']['private_key_path']).to eq("ssl_key")
         end
       end
 
       context "when the ssl key file name is not set" do
         it "loads the default ssl key file name" do
-          configuration['ssl_certs']['cfrouter_cert']['private_key_path'].should == "elb-cfrouter.key"
+          expect(configuration['ssl_certs']['cfrouter_cert']['private_key_path']).to eq("elb-cfrouter.key")
         end
       end
 
@@ -144,13 +144,13 @@ describe Bosh::Aws::AwsConfig do
         it "loads the ssh key file name" do
           environment["BOSH_DIRECTOR_SSL_KEY"] = "ssl_key"
 
-          configuration['ssl_certs']['director_cert']['private_key_path'].should == "ssl_key"
+          expect(configuration['ssl_certs']['director_cert']['private_key_path']).to eq("ssl_key")
         end
       end
 
       context "when the director ssl key file name is not set" do
         it "loads the default ssl key file name" do
-          configuration['ssl_certs']['director_cert']['private_key_path'].should == "director.key"
+          expect(configuration['ssl_certs']['director_cert']['private_key_path']).to eq("director.key")
         end
       end
 
@@ -158,13 +158,13 @@ describe Bosh::Aws::AwsConfig do
         it "loads the domain name" do
           environment["BOSH_VPC_DOMAIN"] = "domain"
 
-          configuration['vpc']['domain'].should == "burritos.domain"
+          expect(configuration['vpc']['domain']).to eq("burritos.domain")
         end
       end
 
       context "when the domain name is not set" do
         it "loads the default domain name" do
-          configuration['vpc']['domain'].should == "burritos.cf-app.com"
+          expect(configuration['vpc']['domain']).to eq("burritos.cf-app.com")
         end
       end
 
@@ -172,13 +172,13 @@ describe Bosh::Aws::AwsConfig do
         it "loads the ssh cert file name" do
           environment["BOSH_AWS_ELB_SSL_CERT"] = "ssl_cert"
 
-          configuration['ssl_certs']['cfrouter_cert']['certificate_path'].should == "ssl_cert"
+          expect(configuration['ssl_certs']['cfrouter_cert']['certificate_path']).to eq("ssl_cert")
         end
       end
 
       context "when the ssl cert file name is not set" do
         it "loads the default ssl cert file name" do
-          configuration['ssl_certs']['cfrouter_cert']['certificate_path'].should == "elb-cfrouter.pem"
+          expect(configuration['ssl_certs']['cfrouter_cert']['certificate_path']).to eq("elb-cfrouter.pem")
         end
       end
 
@@ -186,23 +186,23 @@ describe Bosh::Aws::AwsConfig do
         it "loads the ssh cert file name" do
           environment["BOSH_DIRECTOR_SSL_CERT"] = "ssl_cert"
 
-          configuration['ssl_certs']['director_cert']['certificate_path'].should == "ssl_cert"
+          expect(configuration['ssl_certs']['director_cert']['certificate_path']).to eq("ssl_cert")
         end
       end
 
       context "when the director ssl cert file name is not set" do
         it "loads the default ssl cert file name" do
-          configuration['ssl_certs']['director_cert']['certificate_path'].should == "director.pem"
+          expect(configuration['ssl_certs']['director_cert']['certificate_path']).to eq("director.pem")
         end
       end
 
       it "loads the bosh ssl chain zone" do
         environment["BOSH_AWS_ELB_SSL_CHAIN"] = "ssl_chain"
-        configuration['ssl_certs']['cfrouter_cert']['certificate_chain_path'].should == "ssl_chain"
+        expect(configuration['ssl_certs']['cfrouter_cert']['certificate_chain_path']).to eq("ssl_chain")
       end
 
       it "should not use a larger database size by default" do
-        configuration["rds"][0]["aws_creation_options"]["db_instance_class"].should == "db.t1.micro"
+        expect(configuration["rds"][0]["aws_creation_options"]["db_instance_class"]).to eq("db.t1.micro")
       end
 
       context "when the cache credentials are not set" do
@@ -211,11 +211,11 @@ describe Bosh::Aws::AwsConfig do
         end
 
         it "should not set the package cache keys" do
-          configuration.should_not have_key("compiled_package_cache")
+          expect(configuration).not_to have_key("compiled_package_cache")
         end
 
         it "should not have package cache configured" do
-          config.should_not have_package_cache_configuration
+          expect(config).not_to have_package_cache_configuration
         end
       end
 
@@ -230,19 +230,19 @@ describe Bosh::Aws::AwsConfig do
           it "loads the default value for the bucket name" do
             environment.delete("BOSH_CACHE_BUCKET_NAME")
 
-            configuration["compiled_package_cache"]["bucket_name"].should == "bosh-global-package-cache"
+            expect(configuration["compiled_package_cache"]["bucket_name"]).to eq("bosh-global-package-cache")
           end
         end
 
         it "should have package cache configured" do
-          config.should have_package_cache_configuration
+          expect(config).to have_package_cache_configuration
         end
 
         it "loads the cache access key id" do
-          configuration.should have_key("compiled_package_cache")
-          configuration["compiled_package_cache"]["access_key_id"].should == "cache_access_key_id"
-          configuration["compiled_package_cache"]["secret_access_key"].should == "cache_secret_access_key"
-          configuration["compiled_package_cache"]["bucket_name"].should == "gimme_mah_bukkit"
+          expect(configuration).to have_key("compiled_package_cache")
+          expect(configuration["compiled_package_cache"]["access_key_id"]).to eq("cache_access_key_id")
+          expect(configuration["compiled_package_cache"]["secret_access_key"]).to eq("cache_secret_access_key")
+          expect(configuration["compiled_package_cache"]["bucket_name"]).to eq("gimme_mah_bukkit")
         end
       end
 
@@ -252,7 +252,7 @@ describe Bosh::Aws::AwsConfig do
         end
 
         it "should use a larger database size" do
-          configuration["rds"][0]["aws_creation_options"]["db_instance_class"].should == "db.m1.large"
+          expect(configuration["rds"][0]["aws_creation_options"]["db_instance_class"]).to eq("db.m1.large")
         end
       end
     end
@@ -281,8 +281,8 @@ describe Bosh::Aws::AwsConfig do
     end
 
     it "loads vpc domains" do
-      configuration['name'].should == "example-com"
-      configuration['vpc']['domain'].should == "example.com"
+      expect(configuration['name']).to eq("example-com")
+      expect(configuration['vpc']['domain']).to eq("example.com")
     end
   end
 end

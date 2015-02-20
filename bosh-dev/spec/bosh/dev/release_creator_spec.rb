@@ -21,7 +21,7 @@ module Bosh::Dev
 
       it 'is inside release directory when creating final release' do
         old_current_dir = Dir.pwd
-        cli_session.stub(:run_bosh).with(/create release/) do
+        allow(cli_session).to receive(:run_bosh).with(/create release/) do
           @current_dir = Dir.pwd
           create_release_output
         end
@@ -30,13 +30,13 @@ module Bosh::Dev
       end
 
       it 'creates a dev release then creates a new final release tarball' do
-        cli_session
-          .should_receive(:run_bosh)
+        expect(cli_session)
+          .to receive(:run_bosh)
           .with('create release --force')
           .ordered
 
-        cli_session
-          .should_receive(:run_bosh)
+        expect(cli_session)
+          .to receive(:run_bosh)
           .with('create release --force --final --with-tarball')
           .ordered
           .and_return(create_release_output)
@@ -57,7 +57,7 @@ module Bosh::Dev
 
       it 'is inside release directory when creating final release' do
         old_current_dir = Dir.pwd
-        cli_session.stub(:run_bosh).with(/create release/) do
+        allow(cli_session).to receive(:run_bosh).with(/create release/) do
           @current_dir = Dir.pwd
           create_release_output
         end
@@ -66,8 +66,8 @@ module Bosh::Dev
       end
 
       it 'creates a dev release then creates a new final release tarball' do
-        cli_session
-          .should_receive(:run_bosh)
+        expect(cli_session)
+          .to receive(:run_bosh)
           .with('create release --force --with-tarball')
           .and_return(create_release_output)
 

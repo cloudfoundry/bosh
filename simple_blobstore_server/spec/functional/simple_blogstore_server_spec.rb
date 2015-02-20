@@ -32,27 +32,27 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
 
     it "should accept valid users" do
       get "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-      last_response.status.should == 404
+      expect(last_response.status).to eq(404)
     end
 
     it "should reject invalid password" do
       get "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "bad_password")}
-      last_response.status.should == 401
+      expect(last_response.status).to eq(401)
     end
 
     it "should reject invalid user" do
       get "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("bad_user", "doe")}
-      last_response.status.should == 401
+      expect(last_response.status).to eq(401)
     end
 
     it "should reject invalid user and password" do
       get "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("bad_user", "bad_password")}
-      last_response.status.should == 401
+      expect(last_response.status).to eq(401)
     end
 
     it "should reject unauthenticated users" do
       get "/resources/foo"
-      last_response.status.should == 401
+      expect(last_response.status).to eq(401)
     end
 
   end
@@ -72,35 +72,35 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
     it "should create a token for a new resource" do
       post "/resources", {"content" => Rack::Test::UploadedFile.new(@resource_file.path, "plain/text") },
            {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-      last_response.status.should == 200
+      expect(last_response.status).to eq(200)
       object_id = last_response.body
 
       get "/resources/#{object_id}", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-      last_response.status.should == 200
-      last_response.body.should == "test contents"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to eq("test contents")
     end
 
     it 'should accept object id suggestion' do
       post "/resources/foobar", {"content" => Rack::Test::UploadedFile.new(@resource_file.path, "plain/text") },
            {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-      last_response.status.should == 200
+      expect(last_response.status).to eq(200)
       object_id = last_response.body
 
-      object_id.should == "foobar"
+      expect(object_id).to eq("foobar")
 
       get "/resources/#{object_id}", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-      last_response.status.should == 200
-      last_response.body.should == "test contents"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to eq("test contents")
     end
 
     it 'should return a 409 error if the suggested id is taken' do
       post "/resources/foobar", {"content" => Rack::Test::UploadedFile.new(@resource_file.path, "plain/text") },
            {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-      last_response.status.should == 200
+      expect(last_response.status).to eq(200)
 
       post "/resources/foobar", {"content" => Rack::Test::UploadedFile.new(@resource_file.path, "plain/text") },
            {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-      last_response.status.should == 409
+      expect(last_response.status).to eq(409)
     end
   end
 
@@ -108,7 +108,7 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
 
     it "should return an error if the resource is not found" do
       get "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-      last_response.status.should == 404
+      expect(last_response.status).to eq(404)
     end
 
     it "should set Nginx header when Nginx support is enabled" do
@@ -127,13 +127,14 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
         resource_file.close
         post "/resources", {"content" => Rack::Test::UploadedFile.new(resource_file.path, "plain/text") },
              {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-        last_response.status.should == 200
+        expect(last_response.status).to eq(200)
         object_id = last_response.body
         get "/resources/#{object_id}", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-        last_response.status.should == 200
-        last_response.body.should == ""
-        last_response.headers["X-Accel-Redirect"].should ==
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to eq("")
+        expect(last_response.headers["X-Accel-Redirect"]).to eq(
             "/protected/#{Digest::SHA1.hexdigest(object_id)[0, 2]}/#{object_id}"
+        )
       ensure
         resource_file.delete
       end
@@ -149,18 +150,18 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
         resource_file.close
         post "/resources/foo", {"content" => Rack::Test::UploadedFile.new(resource_file.path, "plain/text") },
              {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-        last_response.status.should == 200
+        expect(last_response.status).to eq(200)
       ensure
         resource_file.delete
       end
 
       head "/resources/foo", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-      last_response.status.should == 200
+      expect(last_response.status).to eq(200)
     end
 
     it 'should return 404 if it does not exist' do
       head "/resources/foo", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-      last_response.status.should == 404
+      expect(last_response.status).to eq(404)
     end
   end
 
@@ -173,18 +174,18 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
         resource_file.close
         post "/resources", {"content" => Rack::Test::UploadedFile.new(resource_file.path, "plain/text") },
              {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-        last_response.status.should == 200
+        expect(last_response.status).to eq(200)
         object_id = last_response.body
 
         get "/resources/#{object_id}", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-        last_response.status.should == 200
-        last_response.body.should == "test contents"
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to eq("test contents")
 
         delete "/resources/#{object_id}", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-        last_response.status.should == 204
+        expect(last_response.status).to eq(204)
 
         get "/resources/#{object_id}", {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-        last_response.status.should == 404
+        expect(last_response.status).to eq(404)
       ensure
         resource_file.delete
       end
@@ -192,7 +193,7 @@ describe Bosh::Blobstore::SimpleBlobstoreServer do
 
     it "should return an error if the resource is not found" do
       delete "/resources/foo" , {}, {"HTTP_AUTHORIZATION" => encode_credentials("john", "doe")}
-      last_response.status.should == 404
+      expect(last_response.status).to eq(404)
     end
 
   end

@@ -30,36 +30,36 @@ module Bosh
       end
 
       it 'unrolls properties into OpenStruct' do
-        eval_template('<%= properties.foo %>', @context).should == 'bar'
+        expect(eval_template('<%= properties.foo %>', @context)).to eq('bar')
       end
 
       it 'retains raw_properties' do
-        eval_template("<%= raw_properties['router']['token'] %>", @context).should == 'zbb'
+        expect(eval_template("<%= raw_properties['router']['token'] %>", @context)).to eq('zbb')
       end
 
       it 'supports looking up template index' do
-        eval_template('<%= spec.index %>', @context).should == '0'
+        expect(eval_template('<%= spec.index %>', @context)).to eq('0')
       end
 
       describe 'p' do
         it 'looks up properties' do
-          eval_template("<%= p('router.token') %>", @context).should == 'zbb'
-          eval_template("<%= p('vtrue') %>", @context).should == 'true'
-          eval_template("<%= p('vfalse') %>", @context).should == 'false'
+          expect(eval_template("<%= p('router.token') %>", @context)).to eq('zbb')
+          expect(eval_template("<%= p('vtrue') %>", @context)).to eq('true')
+          expect(eval_template("<%= p('vfalse') %>", @context)).to eq('false')
           expect {
             eval_template("<%= p('bar.baz') %>", @context)
           }.to raise_error(UnknownProperty, "Can't find property `[\"bar.baz\"]'")
-          eval_template("<%= p('bar.baz', 22) %>", @context).should == '22'
+          expect(eval_template("<%= p('bar.baz', 22) %>", @context)).to eq('22')
         end
 
         it 'supports hash properties' do
-          eval_template(<<-TMPL, @context).strip.should == 'zbb'
+          expect(eval_template(<<-TMPL, @context).strip).to eq('zbb')
         <%= p(%w(a b router c))['token'] %>
           TMPL
         end
 
         it 'chains property lookups' do
-          eval_template(<<-TMPL, @context).strip.should == 'zbb'
+          expect(eval_template(<<-TMPL, @context).strip).to eq('zbb')
         <%= p(%w(a b router.token c)) %>
           TMPL
 
@@ -70,18 +70,18 @@ module Bosh
           }.to raise_error(UnknownProperty,
                            "Can't find property `[\"a\", \"b\", \"c\"]'")
 
-          eval_template(<<-TMPL, @context).strip.should == '22'
+          expect(eval_template(<<-TMPL, @context).strip).to eq('22')
         <%= p(%w(a b c), 22) %>
           TMPL
         end
       end
 
       it "allows 'false' and 'nil' defaults for 'p' helper" do
-        eval_template(<<-TMPL, @context).strip.should == 'false'
+        expect(eval_template(<<-TMPL, @context).strip).to eq('false')
       <%= p(%w(a b c), false) %>
         TMPL
 
-        eval_template(<<-TMPL, @context).strip.should == ''
+        expect(eval_template(<<-TMPL, @context).strip).to eq('')
       <%= p(%w(a b c), nil) %>
         TMPL
       end
@@ -94,7 +94,7 @@ module Bosh
         <% end %>
           TMPL
 
-          eval_template(template, @context).strip.should == 'zbb'
+          expect(eval_template(template, @context).strip).to eq('zbb')
         end
 
         it 'works with two properties' do
@@ -104,7 +104,7 @@ module Bosh
         <% end %>
           TMPL
 
-          eval_template(template, @context).strip.should == 'zbb, bar'
+          expect(eval_template(template, @context).strip).to eq('zbb, bar')
         end
 
         it "does not call the block if a property can't be found" do
@@ -114,7 +114,7 @@ module Bosh
         <% end %>
           TMPL
 
-          eval_template(template, @context).strip.should == ''
+          expect(eval_template(template, @context).strip).to eq('')
         end
 
         describe '.else' do
@@ -127,7 +127,7 @@ module Bosh
           <% end %>
             TMPL
 
-            eval_template(template, @context).strip.should == 'zbb, bar'
+            expect(eval_template(template, @context).strip).to eq('zbb, bar')
           end
 
           it 'calls the else block if any of the properties are missing' do
@@ -139,7 +139,7 @@ module Bosh
           <% end %>
             TMPL
 
-            eval_template(template, @context).strip.should == 'visible text'
+            expect(eval_template(template, @context).strip).to eq('visible text')
           end
         end
 
@@ -155,7 +155,7 @@ module Bosh
           <% end %>
             TMPL
 
-            eval_template(template, @context).strip.should == 'zbb, bar'
+            expect(eval_template(template, @context).strip).to eq('zbb, bar')
           end
 
           it 'is called when if_p does not match' do
@@ -169,7 +169,7 @@ module Bosh
           <% end %>
             TMPL
 
-            eval_template(template, @context).strip.should == 'true'
+            expect(eval_template(template, @context).strip).to eq('true')
           end
 
           it "calls else when its conditions aren't met" do
@@ -183,7 +183,7 @@ module Bosh
           <% end %>
             TMPL
 
-            eval_template(template, @context).strip.should == 'totally going to get here'
+            expect(eval_template(template, @context).strip).to eq('totally going to get here')
           end
         end
       end

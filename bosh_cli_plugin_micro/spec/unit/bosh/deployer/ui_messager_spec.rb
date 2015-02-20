@@ -10,7 +10,7 @@ describe Bosh::Deployer::UiMessager do
     context 'when the message is known' do
       context 'when silent option is not set' do
         it 'shows the message to the user' do
-          ui_messenger.should_receive(:say).with('known-message-text')
+          expect(ui_messenger).to receive(:say).with('known-message-text')
           ui_messenger.info(:known)
         end
       end
@@ -19,7 +19,7 @@ describe Bosh::Deployer::UiMessager do
         before { options[:silent] = true }
 
         it 'does not show message to the user' do
-          ui_messenger.should_not_receive(:say)
+          expect(ui_messenger).not_to receive(:say)
           ui_messenger.info(:known)
         end
       end
@@ -33,7 +33,7 @@ describe Bosh::Deployer::UiMessager do
         end
 
         it 'does show any message to the user' do
-          ui_messenger.should_not_receive(:say)
+          expect(ui_messenger).not_to receive(:say)
           expect { ui_messenger.info(:unknown) }.to raise_error # expect to silent
         end
       end
@@ -58,7 +58,7 @@ describe Bosh::Deployer::UiMessager do
         end
 
         it 'does show any message to the user' do
-          ui_messenger.should_not_receive(:say)
+          expect(ui_messenger).not_to receive(:say)
           expect { ui_messenger.info(invalid_value) }.to raise_error # expect to silent
         end
       end

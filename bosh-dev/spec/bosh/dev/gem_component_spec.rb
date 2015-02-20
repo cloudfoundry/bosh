@@ -14,7 +14,7 @@ module Bosh::Dev
     before do
       stub_const('Bosh::Dev::GemComponent::ROOT', root)
 
-      Rake::FileUtilsExt.stub(:sh)
+      allow(Rake::FileUtilsExt).to receive(:sh)
     end
 
     after do
@@ -27,12 +27,12 @@ module Bosh::Dev
       include FakeFS::SpecHelpers
 
       before do
-        File.stub(read: '1.5.0.pre.3') # old version
-        File.stub(:open)
+        allow(File).to receive_messages(read: '1.5.0.pre.3') # old version
+        allow(File).to receive(:open)
       end
 
       it 'shells out to build the gem' do
-        Rake::FileUtilsExt.should_receive(:sh).with('cd fake-component && ' +
+        expect(Rake::FileUtilsExt).to receive(:sh).with('cd fake-component && ' +
                                                     'gem build fake-component.gemspec && ' +
                                                     'mv fake-component-1.1234.0.gem fake-destination-dir')
 

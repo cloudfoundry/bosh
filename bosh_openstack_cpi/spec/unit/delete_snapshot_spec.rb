@@ -8,12 +8,12 @@ describe Bosh::OpenStackCloud::Cloud do
     snapshot = double("snapshot", :id => "snap-foobar")
 
     cloud = mock_cloud do |openstack|
-      openstack.snapshots.should_receive(:get).with("snap-foobar").and_return(snapshot)
+      expect(openstack.snapshots).to receive(:get).with("snap-foobar").and_return(snapshot)
     end
 
-    snapshot.should_receive(:status).and_return(:available)
-    snapshot.should_receive(:destroy).and_return(true)
-    cloud.should_receive(:wait_resource).with(snapshot, :deleted, :status, true)
+    expect(snapshot).to receive(:status).and_return(:available)
+    expect(snapshot).to receive(:destroy).and_return(true)
+    expect(cloud).to receive(:wait_resource).with(snapshot, :deleted, :status, true)
 
     cloud.delete_snapshot("snap-foobar")
   end
@@ -22,10 +22,10 @@ describe Bosh::OpenStackCloud::Cloud do
     snapshot = double("snapshot", :id => "snap-foobar")
 
     cloud = mock_cloud do |openstack|
-      openstack.snapshots.should_receive(:get).with("snap-foobar").and_return(snapshot)
+      expect(openstack.snapshots).to receive(:get).with("snap-foobar").and_return(snapshot)
     end
 
-    snapshot.should_receive(:status).and_return(:busy)
+    expect(snapshot).to receive(:status).and_return(:busy)
 
     expect {
       cloud.delete_snapshot("snap-foobar")

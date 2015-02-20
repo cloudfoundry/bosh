@@ -96,7 +96,7 @@ module Bosh::Director::Core::Templates
 
       before { allow(blobstore).to receive(:create).and_return('fake-blobstore-id') }
 
-      before { Tempfile.stub(:new).and_return(temp_file) }
+      before { allow(Tempfile).to receive(:new).and_return(temp_file) }
       let(:temp_file) { instance_double('Tempfile', path: '/temp/archive/path.tgz', close!: nil) }
 
       it 'compresses the provided RenderedJobTemplate objects' do

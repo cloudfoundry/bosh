@@ -9,10 +9,10 @@ describe Bosh::OpenStackCloud::Cloud do
     image = double("image", :id => "i-foo", :name => "i-foo", :properties => {})
 
     cloud = mock_glance do |glance|
-      glance.images.stub(:find_by_id).with("i-foo").and_return(image)
+      allow(glance.images).to receive(:find_by_id).with("i-foo").and_return(image)
     end
 
-    image.should_receive(:destroy)
+    expect(image).to receive(:destroy)
 
     cloud.delete_stemcell("i-foo")
   end

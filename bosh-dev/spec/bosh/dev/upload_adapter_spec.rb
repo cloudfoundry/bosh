@@ -17,7 +17,7 @@ module Bosh::Dev
     before do
       Fog.mock!
       Fog::Mock.reset
-      ENV.stub(to_hash: {
+      allow(ENV).to receive_messages(to_hash: {
         'BOSH_AWS_ACCESS_KEY_ID' => aws_access_key_id,
         'BOSH_AWS_SECRET_ACCESS_KEY' => aws_secret_access_key,
       })

@@ -9,29 +9,29 @@ module Bosh::Dev::VSphere
       subject(:cleaner) { described_class.new(manifest) }
       let(:manifest) { instance_double('Bosh::Dev::VSphere::MicroBoshDeploymentManifest') }
 
-      before { VSphereCloud::Cloud.stub(:new).with('fake config').and_return(cloud) }
+      before { allow(VSphereCloud::Cloud).to receive(:new).with('fake config').and_return(cloud) }
       let(:cloud) { instance_double('VSphereCloud::Cloud', client: client) }
       let(:client) { double('fake client') }
 
-      before { manifest.stub(:to_h).and_return(config) }
+      before { allow(manifest).to receive(:to_h).and_return(config) }
       let(:config) { { 'cloud' => { 'properties' => 'fake config' } } }
 
-      before { Bosh::Clouds::Config.stub(:db) }
+      before { allow(Bosh::Clouds::Config).to receive(:db) }
       let(:sequel_klass) { class_double('Sequel::Model').as_stubbed_const }
 
       context 'when get_vms returns vms' do
-        before { cloud.stub(get_vms: [vm1, vm2]) }
+        before { allow(cloud).to receive_messages(get_vms: [vm1, vm2]) }
         let(:vm1) { instance_double('VimSdk::Vim::VirtualMachine', destroy: nil, name: 'fake vm 1') }
         let(:vm2) { instance_double('VimSdk::Vim::VirtualMachine', destroy: nil, name: 'fake vm 2') }
 
         it 'kills vms that are in subfolders of that folder' do
-          client.should_receive(:power_off_vm).with(vm1).ordered
-          cloud.should_receive(:wait_until_off).with(vm1, 15).ordered
-          vm1.should_receive(:destroy).ordered
+          expect(client).to receive(:power_off_vm).with(vm1).ordered
+          expect(cloud).to receive(:wait_until_off).with(vm1, 15).ordered
+          expect(vm1).to receive(:destroy).ordered
 
-          client.should_receive(:power_off_vm).with(vm2).ordered
-          cloud.should_receive(:wait_until_off).with(vm2, 15).ordered
-          vm2.should_receive(:destroy).ordered
+          expect(client).to receive(:power_off_vm).with(vm2).ordered
+          expect(cloud).to receive(:wait_until_off).with(vm2, 15).ordered
+          expect(vm2).to receive(:destroy).ordered
 
           cleaner.clean
         end
@@ -39,17 +39,17 @@ module Bosh::Dev::VSphere
 
       context 'when no vms are found in the folder' do
         it 'finishes without complaining' do
-          cloud.stub(get_vms: [])
+          allow(cloud).to receive_messages(get_vms: [])
           cleaner.clean
         end
       end
 
       context 'when destruction fails' do
-        before { cloud.stub(get_vms: [vm1]) }
+        before { allow(cloud).to receive_messages(get_vms: [vm1]) }
         let(:vm1) { instance_double('VimSdk::Vim::VirtualMachine', destroy: nil, name: 'fake vm 1') }
 
         it 'logs a failure but doesn\'t stop' do
-          client.stub(:power_off_vm).and_raise
+          allow(client).to receive(:power_off_vm).and_raise
           cleaner.clean
 
           expect(log_string).to include("Destruction of #{vm1.inspect} failed, continuing")

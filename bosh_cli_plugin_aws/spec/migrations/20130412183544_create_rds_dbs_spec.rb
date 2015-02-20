@@ -7,26 +7,26 @@ describe CreateRdsDbs do
   subject { described_class.new(config, '') }
 
   before do
-    subject.stub(:load_receipt).and_return(YAML.load_file(asset "test-output.yml"))
-    Kernel.stub(:sleep)
+    allow(subject).to receive(:load_receipt).and_return(YAML.load_file(asset "test-output.yml"))
+    allow(Kernel).to receive(:sleep)
   end
 
   def make_rds!(opts = {})
     retries_needed = opts[:retries_needed] || 0
     creation_options = opts[:aws_creation_options]
 
-    rds.should_receive(:database_exists?).with("ccdb").and_return(false)
+    expect(rds).to receive(:database_exists?).with("ccdb").and_return(false)
 
     create_database_params = ["ccdb", ["subnet-xxxxxxx3", "subnet-xxxxxxx4"], "vpc-13724979"]
     create_database_params << creation_options if creation_options
-    rds.should_receive(:create_database).with(*create_database_params).and_return(
+    expect(rds).to receive(:create_database).with(*create_database_params).and_return(
         :engine => "mysql",
         :master_username => "ccdb_user",
         :master_user_password => "ccdb_password"
     )
 
-    rds.should_receive(:database_exists?).with("uaadb").and_return(false)
-    rds.should_receive(:create_database).
+    expect(rds).to receive(:database_exists?).with("uaadb").and_return(false)
+    expect(rds).to receive(:create_database).
         with("uaadb", ["subnet-xxxxxxx3", "subnet-xxxxxxx4"], "vpc-13724979").and_return(
         :engine => "mysql",
         :master_username => "uaa_user",
@@ -34,16 +34,16 @@ describe CreateRdsDbs do
 
     fake_ccdb_rds = double("ccdb", db_name: "ccdb", endpoint_port: 1234, db_instance_status: :irrelevant)
     fake_uaadb_rds = double("uaadb", db_name: "uaadb", endpoint_port: 5678, db_instance_status: :irrelevant)
-    rds.should_receive(:databases).at_least(:once).and_return([fake_ccdb_rds, fake_uaadb_rds])
+    expect(rds).to receive(:databases).at_least(:once).and_return([fake_ccdb_rds, fake_uaadb_rds])
 
     ccdb_endpoint_address_response = ([nil] * retries_needed) << "1.2.3.4"
-    fake_ccdb_rds.stub(:endpoint_address).and_return(*ccdb_endpoint_address_response)
+    allow(fake_ccdb_rds).to receive(:endpoint_address).and_return(*ccdb_endpoint_address_response)
 
     uaadb_endpoint_address_response = ([nil] * retries_needed) << "5.6.7.8"
-    fake_uaadb_rds.stub(:endpoint_address).and_return(*uaadb_endpoint_address_response)
+    allow(fake_uaadb_rds).to receive(:endpoint_address).and_return(*uaadb_endpoint_address_response)
 
-    rds.stub(:database).with("ccdb").and_return(fake_ccdb_rds)
-    rds.stub(:database).with("uaadb").and_return(fake_uaadb_rds)
+    allow(rds).to receive(:database).with("ccdb").and_return(fake_ccdb_rds)
+    allow(rds).to receive(:database).with("uaadb").and_return(fake_uaadb_rds)
 
     rds
   end
@@ -67,11 +67,11 @@ describe CreateRdsDbs do
     make_rds!
 
 
-    subject.should_receive(:save_receipt) do |receipt_name, receipt|
-      receipt_name.should == 'aws_rds_receipt'
+    expect(subject).to receive(:save_receipt) do |receipt_name, receipt|
+      expect(receipt_name).to eq('aws_rds_receipt')
       deployment_manifest_properties = receipt["deployment_manifest"]["properties"]
 
-      deployment_manifest_properties["ccdb"].should == {
+      expect(deployment_manifest_properties["ccdb"]).to eq({
           "db_scheme" => "mysql",
           "address" => "1.2.3.4",
           "port" => 1234,
@@ -88,9 +88,9 @@ describe CreateRdsDbs do
                   "name" => "ccdb"
               }
           ]
-      }
+      })
 
-      deployment_manifest_properties["uaadb"].should == {
+      expect(deployment_manifest_properties["uaadb"]).to eq({
           "db_scheme" => "mysql",
           "address" => "5.6.7.8",
           "port" => 5678,
@@ -107,7 +107,7 @@ describe CreateRdsDbs do
                   "name" => "uaadb"
               }
           ]
-      }
+      })
     end
 
     subject.execute

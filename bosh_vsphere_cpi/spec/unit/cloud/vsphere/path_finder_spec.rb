@@ -11,7 +11,7 @@ describe VSphereCloud::PathFinder do
     subject(:path_finder) { VSphereCloud::PathFinder.new }
 
     it 'returns path for managed object' do
-      datacenter.stub(:instance_of?).with(VimSdk::Vim::Datacenter).and_return(true)
+      allow(datacenter).to receive(:instance_of?).with(VimSdk::Vim::Datacenter).and_return(true)
 
       expect(path_finder.path(managed_object)).to eq('parent_folder/fake_managed_object')
     end

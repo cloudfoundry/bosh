@@ -8,6 +8,6 @@ describe Bosh::OpenStackCloud::ManualNetwork do
     network_spec["ip"] = "172.20.214.10"
     mn = Bosh::OpenStackCloud::ManualNetwork.new("default", network_spec)
 
-    mn.private_ip.should == "172.20.214.10"
+    expect(mn.private_ip).to eq("172.20.214.10")
   end
 end

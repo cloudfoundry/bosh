@@ -20,7 +20,7 @@ describe Bosh::AwsCloud::Helpers do
       end
 
       helpers_tester = HelpersTester.new
-      helpers_tester.extract_security_group_names(networks_spec).should =~ ["numero uno", "two to tango"]
+      expect(helpers_tester.extract_security_group_names(networks_spec)).to match_array(["numero uno", "two to tango"])
     end
   end
 end
