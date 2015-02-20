@@ -1,5 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
-require 'logging'
+autoload :Logging, 'logging'
 
 module Bosh::Cli
   # In order to avoid storing large objects in git repo,
