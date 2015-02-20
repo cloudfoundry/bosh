@@ -14,6 +14,7 @@ require 'cloud/vsphere/resources/cluster'
 require 'cloud/vsphere/resources/datacenter'
 require 'cloud/vsphere/resources/datastore'
 require 'cloud/vsphere/resources/folder'
+require 'cloud/vsphere/resources/vm'
 require 'cloud/vsphere/resources/resource_pool'
 require 'cloud/vsphere/resources/scorer'
 require 'cloud/vsphere/resources/util'
@@ -21,16 +22,13 @@ require 'cloud/vsphere/models/disk'
 require 'cloud/vsphere/path_finder'
 require 'cloud/vsphere/vm_creator_builder'
 require 'cloud/vsphere/disk_provider'
+require 'cloud/vsphere/vm_provider'
 require 'cloud/vsphere/fixed_cluster_placer'
 
 module VSphereCloud
-
   class Cloud < Bosh::Cloud
     include VimSdk
     include RetryBlock
-
-    class TimeoutException < StandardError;
-    end
 
     attr_accessor :client
 
@@ -209,7 +207,6 @@ module VSphereCloud
         @logger.info("Deleting vm: #{vm_cid}")
 
         vm = get_vm_by_cid(vm_cid)
-        datacenter = client.find_parent(vm, Vim::Datacenter)
         properties =
           @cloud_searcher.get_properties(
             vm,
@@ -323,33 +320,16 @@ module VSphereCloud
 
     def configure_networks(vm_cid, networks)
       with_thread_name("configure_networks(#{vm_cid}, ...)") do
-        vm = get_vm_by_cid(vm_cid)
-
-        @logger.debug('Waiting for the VM to shutdown')
-        begin
-          begin
-            vm.shutdown_guest
-          rescue => e
-            @logger.debug("Ignoring possible race condition when a VM has powered off by the time we ask it to shutdown: #{e.inspect}")
-          end
-
-          wait_until_off(vm, 60)
-        rescue TimeoutException
-          @logger.debug('The guest did not shutdown in time, requesting it to power off')
-          client.power_off_vm(vm)
-        end
+        vm = vm_provider.find(vm_cid)
+        vm.shutdown
 
         @logger.info("Configuring: #{vm_cid} to use the following network settings: #{networks.pretty_inspect}")
-        vm = get_vm_by_cid(vm_cid)
-        devices = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
-        datacenter = client.find_parent(vm, Vim::Datacenter)
+        datacenter = client.find_parent(vm.mob, Vim::Datacenter)
         datacenter_name = config.datacenter_name
-        pci_controller = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualPCIController) }
 
         config = Vim::Vm::ConfigSpec.new
         config.device_change = []
-        nics = devices.select { |device| device.kind_of?(Vim::Vm::Device::VirtualEthernetCard) }
-        nics.each do |nic|
+        vm.nics.each do |nic|
           nic_config = create_delete_device_spec(nic)
           config.device_change << nic_config
         end
@@ -358,78 +338,53 @@ module VSphereCloud
         networks.each_value do |network|
           v_network_name = network['cloud_properties']['name']
           network_mob = client.find_by_inventory_path([datacenter_name, 'network', v_network_name])
-          nic_config = create_nic_config_spec(v_network_name, network_mob, pci_controller.key, dvs_index)
+          nic_config = create_nic_config_spec(v_network_name, network_mob, vm.pci_controller.key, dvs_index)
           config.device_change << nic_config
         end
 
-        fix_device_unit_numbers(devices, config.device_change)
+        vm.fix_device_unit_numbers(config.device_change)
         @logger.debug('Reconfiguring the networks')
-        @client.reconfig_vm(vm, config)
+        @client.reconfig_vm(vm.mob, config)
 
-        env = @agent_env.get_current_env(vm, datacenter_name)
+        env = @agent_env.get_current_env(vm.mob, datacenter_name)
         @logger.debug("Reading current agent env: #{env.pretty_inspect}")
 
-        devices = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
+        devices = @cloud_searcher.get_property(vm.mob, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
         env['networks'] = generate_network_env(devices, networks, dvs_index)
 
         @logger.debug("Updating agent env to: #{env.pretty_inspect}")
-        location = get_vm_location(vm, datacenter: datacenter_name)
-        @agent_env.set_env(vm, location, env)
+        location = get_vm_location(vm.mob, datacenter: datacenter_name)
+        @agent_env.set_env(vm.mob, location, env)
 
         @logger.debug('Powering the VM back on')
-        client.power_on_vm(datacenter, vm)
+        client.power_on_vm(datacenter, vm.mob)
       end
-    end
-
-    def get_vm_host_info(vm_ref)
-      vm_properties = @cloud_searcher.get_properties(vm_ref, Vim::VirtualMachine, 'runtime')
-      vm_runtime = vm_properties['runtime']
-
-      properties = @cloud_searcher.get_properties(vm_runtime.host, Vim::HostSystem, ['datastore', 'parent'], ensure_all: true)
-
-      # Get the cluster that the vm's host belongs to.
-      cluster = @cloud_searcher.get_properties(properties['parent'], Vim::ClusterComputeResource, 'name')
-
-      # Get the datastores that are accessible to the vm's host.
-      datastores_accessible = []
-      properties['datastore'].each do |store|
-        ds = @cloud_searcher.get_properties(store, Vim::Datastore, 'info', ensure_all: true)
-        datastores_accessible << ds['info'].name
-      end
-
-      { 'cluster' => cluster['name'], 'datastores' => datastores_accessible }
     end
 
     def attach_disk(vm_cid, disk_cid)
       with_thread_name("attach_disk(#{vm_cid}, #{disk_cid})") do
         @logger.info("Attaching disk: #{disk_cid} on vm: #{vm_cid}")
 
-        vm = get_vm_by_cid(vm_cid)
+        vm = vm_provider.find(vm_cid)
 
-        vm_properties = @cloud_searcher.get_properties(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
-        host_info = get_vm_host_info(vm)
-
-        devices = vm_properties['config.hardware.device']
-        system_disk = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) }
-
-        cluster = @datacenter.clusters[host_info['cluster']]
+        cluster = @datacenter.clusters[vm.cluster]
         disk = disk_provider.find(disk_cid, cluster)
-        disk_config_spec = disk.attach_spec(system_disk.controller_key)
+        disk_config_spec = disk.attach_spec(vm.system_disk.controller_key)
 
         vm_config = Vim::Vm::ConfigSpec.new
         vm_config.device_change = []
         vm_config.device_change << disk_config_spec
-        fix_device_unit_numbers(devices, vm_config.device_change)
+        vm.fix_device_unit_numbers(vm_config.device_change)
 
-        env = @agent_env.get_current_env(vm, @datacenter.name)
+        env = @agent_env.get_current_env(vm.mob, @datacenter.name)
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
         env['disks']['persistent'][disk_cid] = disk_config_spec.device.unit_number.to_s
         @logger.info("Updating agent env to: #{env.pretty_inspect}")
 
-        location = get_vm_location(vm, datacenter: @datacenter.name)
-        @agent_env.set_env(vm, location, env)
+        location = get_vm_location(vm.mob, datacenter: @datacenter.name)
+        @agent_env.set_env(vm.mob, location, env)
         @logger.info('Attaching disk')
-        client.reconfig_vm(vm, vm_config)
+        client.reconfig_vm(vm.mob, vm_config)
         @logger.info('Finished attaching disk')
       end
     end
@@ -526,11 +481,7 @@ module VSphereCloud
     end
 
     def get_vm_by_cid(vm_cid)
-      @resources.datacenters.each_value do |datacenter|
-        vm = client.find_by_inventory_path([datacenter.name, 'vm', datacenter.vm_folder.path_components, vm_cid])
-        return vm unless vm.nil?
-      end
-      raise Bosh::Clouds::VMNotFound, "VM `#{vm_cid}' not found"
+      vm_provider.find(vm_cid).mob
     end
 
     def replicate_stemcell(cluster, datastore, stemcell)
@@ -752,25 +703,6 @@ module VSphereCloud
       device_config_spec
     end
 
-    def fix_device_unit_numbers(devices, device_changes)
-      controllers_available_unit_numbers = Hash.new { |h,k| h[k] = (0..15).to_a }
-      devices.each do |device|
-        if device.controller_key
-          available_unit_numbers = controllers_available_unit_numbers[device.controller_key]
-          available_unit_numbers.delete(device.unit_number)
-        end
-      end
-
-      device_changes.each do |device_change|
-        device = device_change.device
-        if device.controller_key && device.unit_number.nil?
-          available_unit_numbers = controllers_available_unit_numbers[device.controller_key]
-          raise "No available unit numbers for device: #{device.inspect}" if available_unit_numbers.empty?
-          device.unit_number = available_unit_numbers.shift
-        end
-      end
-    end
-
     def import_ovf(name, ovf, resource_pool, datastore)
       import_spec_params = Vim::OvfManager::CreateImportSpecParams.new
       import_spec_params.entity_name = name
@@ -837,16 +769,6 @@ module VSphereCloud
       info.entity
     end
 
-    def wait_until_off(vm, timeout)
-      started = Time.now
-      loop do
-        power_state = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'runtime.powerState')
-        break if power_state == Vim::VirtualMachine::PowerState::POWERED_OFF
-        raise TimeoutException if Time.now - started > timeout
-        sleep(1.0)
-      end
-    end
-
     def get_vms
       subfolders = []
       with_thread_name("get_vms") do
@@ -893,6 +815,14 @@ module VSphereCloud
         @resources,
         @config.datacenter_disk_path,
         @client
+      )
+    end
+
+    def vm_provider
+      VMProvider.new(
+        @resources,
+        @client,
+        @logger
       )
     end
 
