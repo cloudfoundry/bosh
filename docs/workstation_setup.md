@@ -1,8 +1,11 @@
-# Set up a Mac workstation for development
+# Development Mac workstation setup
 
 ## Assumptions
+
 * We include examples using Homebrew here. Replace with your package manager of choice.
 * You have cloned the project to $HOME/workspace/bosh
+
+## Steps
 
 1. Bring homebrew index up-to-date
 
