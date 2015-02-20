@@ -69,7 +69,7 @@ module Bosh::Stemcell
     def_delegators :@definition, :infrastructure, :operating_system, :agent
 
     def openstack_stages
-      if operating_system.instance_of?(OperatingSystem::Centos)
+      if operating_system.instance_of?(OperatingSystem::Centos) || operating_system.instance_of?(OperatingSystem::Rhel)
         centos_openstack_stages
       else
         ubuntu_openstack_stages
