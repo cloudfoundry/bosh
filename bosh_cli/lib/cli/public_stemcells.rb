@@ -1,5 +1,6 @@
 require 'httpclient'
-require 'rexml/document'
+require 'rexml/rexml'
+REXML.autoload :Document, 'rexml/document'
 
 require 'cli/public_stemcell'
 
