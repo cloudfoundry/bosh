@@ -17,5 +17,14 @@ Install pg gem manually by specifying your architecture:
 Get redis:
 * `brew install redis`
 
-Get Golang:
+Get Golang 1.3.3:
+As homebrew has a golang version >1.3.3 as current version, we need to install the `homebrew versions` command to check the correct git revision of golang 1.3.3
+* `brew tap homebrew/boneyard`
+* `brew versions go` and get the revision for version 1.3.3
+* `cd /usr/local/Library/Formula/`
+* `git checkout <revision> go.rb`
 * `brew install go`
+ 
+Install vet and golint
+* `go get code.google.com/p/go.tools/cmd/vet`
+* `go get -u github.com/golang/lint/golint`
