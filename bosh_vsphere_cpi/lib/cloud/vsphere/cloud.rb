@@ -30,6 +30,8 @@ module VSphereCloud
     include VimSdk
     include RetryBlock
 
+    class TimeoutException < StandardError; end
+
     attr_accessor :client
 
     def initialize(options)
@@ -68,7 +70,7 @@ module VSphereCloud
     end
 
     def has_vm?(vm_cid)
-      get_vm_by_cid(vm_cid)
+      vm_provider.find(vm_cid)
       true
     rescue Bosh::Clouds::VMNotFound
       false
@@ -206,38 +208,10 @@ module VSphereCloud
       with_thread_name("delete_vm(#{vm_cid})") do
         @logger.info("Deleting vm: #{vm_cid}")
 
-        vm = get_vm_by_cid(vm_cid)
-        properties =
-          @cloud_searcher.get_properties(
-            vm,
-            Vim::VirtualMachine,
-            ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name'],
-            ensure: ['config.hardware.device']
-          )
+        vm = vm_provider.find(vm_cid)
+        vm.power_off
 
-        retry_block do
-          question = properties['runtime.question']
-          if question
-            choices = question.choice
-            @logger.info("VM is blocked on a question: #{question.text}, " +
-                           "providing default answer: #{choices.choice_info[choices.default_index].label}")
-            client.answer_vm(vm, question.id, choices.choice_info[choices.default_index].key)
-            power_state = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'runtime.powerState')
-          else
-            power_state = properties['runtime.powerState']
-          end
-
-          if power_state != Vim::VirtualMachine::PowerState::POWERED_OFF
-            @logger.info("Powering off vm: #{vm_cid}")
-            client.power_off_vm(vm)
-          end
-        end
-
-        # Detach any persistent disks in case they were not detached from the instance
-        devices = properties['config.hardware.device']
-        persistent_disks = devices.select { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) &&
-          device.backing.disk_mode == Vim::Vm::Device::VirtualDiskOption::DiskMode::INDEPENDENT_PERSISTENT }
-
+        persistent_disks = vm.persistent_disks
         unless persistent_disks.empty?
           @logger.info("Found #{persistent_disks.size} persistent disk(s)")
           config = Vim::Vm::ConfigSpec.new
@@ -246,41 +220,38 @@ module VSphereCloud
             @logger.info("Detaching: #{virtual_disk.backing.file_name}")
             config.device_change << create_delete_device_spec(virtual_disk)
           end
-          retry_block { client.reconfig_vm(vm, config) }
+          retry_block { client.reconfig_vm(vm.mob, config) }
           @logger.info("Detached #{persistent_disks.size} persistent disk(s)")
         end
 
         # Delete env.iso and VM specific files managed by the director
-        retry_block do
-          cdrom = devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
-          @agent_env.clean_env(vm) if cdrom
-        end
+        retry_block { @agent_env.clean_env(vm.mob) } if vm.cdrom
 
-        retry_block { client.delete_vm(vm) }
+        vm.delete
         @logger.info("Deleted vm: #{vm_cid}")
       end
     end
 
     def reboot_vm(vm_cid)
       with_thread_name("reboot_vm(#{vm_cid})") do
-        vm = get_vm_by_cid(vm_cid)
-        datacenter = client.find_parent(vm, Vim::Datacenter)
-        power_state = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'runtime.powerState')
+        vm = vm_provider.find(vm_cid)
 
         @logger.info("Reboot vm = #{vm_cid}")
-        if power_state != Vim::VirtualMachine::PowerState::POWERED_ON
-          @logger.info("VM not in POWERED_ON state. Current state : #{power_state}")
+
+        unless vm.powered_on?
+          @logger.info("VM not in POWERED_ON state. Current state : #{vm.power_state}")
         end
+
         begin
-          vm.reboot_guest
+          vm.reboot
         rescue => e
           @logger.error("Soft reboot failed #{e} -#{e.backtrace.join("\n")}")
           @logger.info('Try hard reboot')
+
           # if we fail to perform a soft-reboot we force a hard-reboot
-          if power_state == Vim::VirtualMachine::PowerState::POWERED_ON
-            retry_block { client.power_off_vm(vm) }
-          end
-          retry_block { client.power_on_vm(datacenter, vm) }
+          retry_block { vm.power_off } if vm.powered_on?
+
+          retry_block { vm.power_on }
         end
       end
     end
@@ -301,11 +272,11 @@ module VSphereCloud
             name_to_key_id[name] = field.key
           end
 
-          vm = get_vm_by_cid(vm_cid)
+          vm = vm_provider.find(vm_cid)
 
           metadata.each do |name, value|
             value = '' if value.nil? # value is required
-            fields_manager.set_field(vm, name_to_key_id[name], value)
+            fields_manager.set_field(vm.mob, name_to_key_id[name], value)
           end
         rescue SoapError => e
           if e.fault.kind_of?(Vim::Fault::NoPermission)
@@ -324,9 +295,6 @@ module VSphereCloud
         vm.shutdown
 
         @logger.info("Configuring: #{vm_cid} to use the following network settings: #{networks.pretty_inspect}")
-        datacenter = client.find_parent(vm.mob, Vim::Datacenter)
-        datacenter_name = config.datacenter_name
-
         config = Vim::Vm::ConfigSpec.new
         config.device_change = []
         vm.nics.each do |nic|
@@ -337,7 +305,7 @@ module VSphereCloud
         dvs_index = {}
         networks.each_value do |network|
           v_network_name = network['cloud_properties']['name']
-          network_mob = client.find_by_inventory_path([datacenter_name, 'network', v_network_name])
+          network_mob = client.find_by_inventory_path([@datacenter.name, 'network', v_network_name])
           nic_config = create_nic_config_spec(v_network_name, network_mob, vm.pci_controller.key, dvs_index)
           config.device_change << nic_config
         end
@@ -346,18 +314,18 @@ module VSphereCloud
         @logger.debug('Reconfiguring the networks')
         @client.reconfig_vm(vm.mob, config)
 
-        env = @agent_env.get_current_env(vm.mob, datacenter_name)
+        env = @agent_env.get_current_env(vm.mob, @datacenter.name)
         @logger.debug("Reading current agent env: #{env.pretty_inspect}")
 
         devices = @cloud_searcher.get_property(vm.mob, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
         env['networks'] = generate_network_env(devices, networks, dvs_index)
 
         @logger.debug("Updating agent env to: #{env.pretty_inspect}")
-        location = get_vm_location(vm.mob, datacenter: datacenter_name)
+        location = get_vm_location(vm.mob, datacenter: @datacenter.name)
         @agent_env.set_env(vm.mob, location, env)
 
         @logger.debug('Powering the VM back on')
-        client.power_on_vm(datacenter, vm.mob)
+        vm.power_on
       end
     end
 
@@ -395,23 +363,21 @@ module VSphereCloud
         disk = Models::Disk.first(uuid: disk_cid)
         raise "Disk not found: #{disk_cid}" if disk.nil?
 
-        vm = get_vm_by_cid(vm_cid)
+        vm = vm_provider.find(vm_cid)
+        vm_mob = vm.mob
 
-        location = get_vm_location(vm)
-        env = @agent_env.get_current_env(vm, location[:datacenter])
+        location = get_vm_location(vm_mob)
+        env = @agent_env.get_current_env(vm_mob, location[:datacenter])
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
         if env['disks']['persistent'][disk.uuid]
           env['disks']['persistent'].delete(disk.uuid)
           @logger.info("Updating agent env to: #{env.pretty_inspect}")
 
-          @agent_env.set_env(vm, location, env)
+          @agent_env.set_env(vm_mob, location, env)
         end
 
-        devices = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
-        virtual_disk =
-          devices.find do |device|
-            device.kind_of?(Vim::Vm::Device::VirtualDisk) && device.backing.file_name.end_with?("/#{disk_cid}.vmdk")
-          end
+        vm.reload
+        virtual_disk = vm.disk_by_cid(disk_cid)
         raise Bosh::Clouds::DiskNotAttached.new(true), "Disk (#{disk_cid}) is not attached to VM (#{vm_cid})" if virtual_disk.nil?
 
         config = Vim::Vm::ConfigSpec.new
@@ -419,19 +385,15 @@ module VSphereCloud
         config.device_change << create_delete_device_spec(virtual_disk)
 
         @logger.info('Detaching disk')
-        client.reconfig_vm(vm, config)
+        client.reconfig_vm(vm_mob, config)
 
         # detach-disk is async and task completion does not necessarily mean
         # that changes have been applied to VC side. Query VC until we confirm
         # that the change has been applied. This is a known issue for vsphere 4.
         # Fixed in vsphere 5.
         5.times do
-          devices = @cloud_searcher.get_property(vm, Vim::VirtualMachine, 'config.hardware.device', ensure_all: true)
-          virtual_disk =
-            devices.find do |device|
-              device.kind_of?(Vim::Vm::Device::VirtualDisk) &&
-                device.backing.file_name.end_with?("/#{disk_cid}.vmdk")
-            end
+          vm.reload
+          virtual_disk = vm.disk_by_cid(disk_cid)
           break if virtual_disk.nil?
           sleep(1.0)
         end
@@ -478,10 +440,6 @@ module VSphereCloud
           raise "Could not find disk: #{disk_cid}"
         end
       end
-    end
-
-    def get_vm_by_cid(vm_cid)
-      vm_provider.find(vm_cid).mob
     end
 
     def replicate_stemcell(cluster, datastore, stemcell)

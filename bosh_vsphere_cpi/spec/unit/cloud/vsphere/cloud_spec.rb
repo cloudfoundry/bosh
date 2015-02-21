@@ -32,113 +32,23 @@ module VSphereCloud
     before { allow(Resources::Datacenter).to receive(:new).and_return(datacenter) }
     let(:disk_provider) { instance_double('VSphereCloud::DiskProvider') }
     before { allow(VSphereCloud::DiskProvider).to receive(:new).and_return(disk_provider) }
-
-    describe '#fix_device_unit_numbers' do
-      let(:device_class) { Struct.new(:unit_number, :controller_key) }
-      let(:device_change_class) { Struct.new(:device) }
-      let(:dnil) { device_class.new(nil, 0) }
-
-      def self.it_assigns_available_unit_numbers_for_devices_in_change_set
-        it 'assigns available unit numbers for devices in change set' do
-          vsphere_cloud.fix_device_unit_numbers(devices, device_changes)
-
-          devices.each do |d|
-            expect((0..15).to_a).to include(d.unit_number) if d.controller_key
-          end
-
-          device_changes.map(&:device).each do |d|
-            expect((0..15).to_a).to include(d.unit_number) if d.controller_key
-          end
-        end
-      end
-
-      context 'when no devices' do
-        let(:device_change) { device_change_class.new(dnil) }
-        let(:devices) { [] }
-        let(:device_changes) { [device_change] }
-        it_assigns_available_unit_numbers_for_devices_in_change_set
-      end
-
-      context 'when a device has unit number 15 and a change has nil for same cont' do
-        let(:d15) { device_class.new(15, 0) }
-        let(:devices) { [d15] }
-        let(:device_change) { device_change_class.new(dnil) }
-        let(:device_changes) { [device_change] }
-        it_assigns_available_unit_numbers_for_devices_in_change_set
-      end
-
-      context 'when all unit number slots in controller are full' do
-        let(:devices) do
-          (0..15).map { |x| device_class.new(x, 0) }
-        end
-
-        let(:device_change) { device_change_class.new(dnil) }
-        let(:device_changes) { [device_change] }
-
-        it 'raises error with the device inspected' do
-          expect {
-            vsphere_cloud.fix_device_unit_numbers(devices, device_changes)
-          }.to raise_error(RuntimeError, /No available unit numbers for device: .*struct unit_number=nil, controller_key=0/)
-        end
-      end
-
-      context 'when there are multiple controller_keys on the devices' do
-        let(:devices) do
-          [
-            device_class.new(1, 0),
-            device_class.new(1, 1),
-            device_class.new(4, 0),
-            device_class.new(5, 1),
-            device_class.new(nil, 0),
-            device_class.new(nil, 1),
-            device_class.new(14, 0),
-            device_class.new(15, 1),
-            device_class.new(1, nil),
-            device_class.new(4, nil),
-            device_class.new(nil, 0),
-            device_class.new(nil, nil),
-          ]
-        end
-
-        let(:device_changes) do
-          devices.values_at(2, 4, 5, 7, 8, 9, 10, 11).map do |device|
-            device_change_class.new(device)
-          end
-        end
-
-        it 'assigns available unit numbers for devices in change set' do
-          vsphere_cloud.fix_device_unit_numbers(devices, device_changes)
-
-          expect(devices[0].to_a).to eq [1, 0]
-          expect(devices[1].to_a).to eq [1, 1]
-          expect(devices[2].to_a).to eq [4, 0]
-          expect(devices[3].to_a).to eq [5, 1]
-          expect(devices[4].to_a).to eq [0, 0]
-          expect(devices[5].to_a).to eq [0, 1]
-          expect(devices[6].to_a).to eq [14, 0]
-          expect(devices[7].to_a).to eq [15, 1]
-          expect(devices[8].to_a).to eq [1, nil]
-          expect(devices[9].to_a).to eq [4, nil]
-          expect(devices[10].to_a).to eq [2, 0]
-          expect(devices[11].to_a).to eq [nil, nil]
-        end
-      end
-    end
+    let(:vm_provider) { instance_double('VSphereCloud::VMProvider') }
+    before { allow(VSphereCloud::VMProvider).to receive(:new).and_return(vm_provider) }
+    let(:vm) { instance_double('VSphereCloud::Resources::VM', mob: vm_mob, reload: nil) }
+    let(:vm_mob) { instance_double('VimSdk::Vim::VirtualMachine') }
+    before { allow(vm_provider).to receive(:find).with('vm-id').and_return(vm) }
 
     describe 'has_vm?' do
-      let(:vm_id) { 'vm_id' }
-
       context 'the vm is found' do
         it 'returns true' do
-          expect(vsphere_cloud).to receive(:get_vm_by_cid).with(vm_id)
-          expect(vsphere_cloud.has_vm?(vm_id)).to be(true)
+          expect(vsphere_cloud.has_vm?('vm-id')).to be(true)
         end
       end
 
       context 'the vm is not found' do
         it 'returns false' do
-          expect(vsphere_cloud).to receive(:get_vm_by_cid).with(vm_id).and_raise(Bosh::Clouds::VMNotFound)
-          expect(vsphere_cloud.has_vm?(vm_id)).to be(false)
+          allow(vm_provider).to receive(:find).with('vm-id').and_raise(Bosh::Clouds::VMNotFound)
+          expect(vsphere_cloud.has_vm?('vm-id')).to be(false)
         end
       end
     end
@@ -712,179 +622,104 @@ module VSphereCloud
     end
 
     describe '#attach_disk' do
-      let(:resources) { double('VSphereCloud::Resources') }
-      before { allow(VSphereCloud::Resources).to receive(:new).and_return(resources) }
-
-      let(:agent_env_hash) { { 'disks' => { 'persistent' => { disk_cid => 'fake-device-number' } } } }
+      let(:agent_env_hash) { { 'disks' => { 'persistent' => { 'disk-cid' => 'fake-device-number' } } } }
       before { allow(agent_env).to receive(:get_current_env).and_return(agent_env_hash) }
 
-      before { allow(vsphere_cloud).to receive(:with_thread_name).and_yield }
-
-      let(:disk_model) { class_double('VSphereCloud::Models::Disk').as_stubbed_const }
-      let(:disk_cid) { 'fake-disk-cid' }
-      let(:disk) do
-        instance_double(
-          'VSphereCloud::Models::Disk',
-          size: 1024,
-          uuid: disk_cid,
-          datacenter: 'fake-folder/fake-datacenter-name',
-          datastore: 'fake-datastore-name',
-          path: nil
-        )
-      end
-      before { allow(disk_model).to receive(:first).with(uuid: disk_cid).and_return(disk) }
-      let(:vm_folder) { instance_double('VSphereCloud::Resources::Folder', path: ['vm']) }
-
-      before { allow(cloud_config).to receive(:datacenter_name).with(no_args).and_return('fake-folder/fake-datacenter-name') }
-
-      let(:vm) { instance_double('VimSdk::Vim::VirtualMachine') }
       let(:vm_location) { double(:vm_location) }
-      before do
-        allow(client).to receive(:find_by_inventory_path).and_return(vm)
-        allow(vsphere_cloud).to receive(:get_vm_by_cid).and_return(vm)
-        allow(vsphere_cloud).to receive(:get_vm_location).and_return(vm_location)
-      end
-
-      let(:host_info) { {'cluster' => 'fake-cluster-name'} }
-      before { allow(vsphere_cloud).to receive(:get_vm_host_info).with(vm).and_return(host_info)}
-
-      let(:controller_key) { double(:controller_key) }
-      let(:device) { instance_double('VimSdk::Vim::Vm::Device::VirtualDisk', controller_key: controller_key) }
-      before do
-        allow(device).to receive(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualDisk).and_return(true)
-        allow(device).to receive(:unit_number).and_return(nil)
-      end
-
-      let(:config_spec) { instance_double('VimSdk::Vim::Vm::ConfigSpec', :device_change= => nil, :device_change => []) }
-      before { allow(VimSdk::Vim::Vm::ConfigSpec).to receive(:new).and_return(config_spec) }
+      before { allow(vsphere_cloud).to receive(:get_vm_location).and_return(vm_location) }
 
       before do
-        allow(client).to receive(:find_parent).and_return(:datacenter)
-        allow(cloud_searcher).to receive(:get_properties).and_return({'config.hardware.device' => [device], 'name' => 'fake-vm-name'})
+        allow(datacenter).to receive(:clusters).and_return({'fake-cluster-name' => cluster})
+        allow(vm).to receive(:cluster).and_return('fake-cluster-name')
+        allow(vm).to receive(:system_disk).and_return(double(:system_disk, controller_key: 'fake-controller-key'))
       end
 
-      before { allow(cloud_config).to receive(:copy_disks).and_return(true) }
-
-      let(:disk_spec) { double(:disk_spec, device: double(:device, unit_number: 'fake-unit-number')) }
-
-      before { allow(datacenter).to receive(:clusters).and_return({'fake-cluster-name' => cluster}) }
       let(:datastore) { instance_double('VSphereCloud::Resources::Datastore', name: 'fake-datastore')}
       let(:cluster) { instance_double('VSphereCloud::Resources::Cluster') }
       let(:disk) { VSphereCloud::Resources::Disk.new('fake-disk-cid', 1024, datastore, 'fake-disk-path') }
 
       it 'updates persistent disk' do
-        expect(disk_provider).to receive(:find).with('fake-disk-cid', cluster).and_return(disk)
+        expect(disk_provider).to receive(:find).with('disk-cid', cluster).and_return(disk)
 
         expect(client).to receive(:reconfig_vm) do |reconfig_vm, vm_config|
-          expect(reconfig_vm).to eq(vm)
+          expect(reconfig_vm).to eq(vm_mob)
           expect(vm_config.device_change.size).to eq(1)
           disk_spec = vm_config.device_change.first
           expect(disk_spec.device.capacity_in_kb).to eq(1024)
           expect(disk_spec.device.backing.datastore).to eq(datastore.name)
+          expect(disk_spec.device.controller_key).to eq('fake-controller-key')
         end
 
-        expect(vsphere_cloud).to receive(:fix_device_unit_numbers).and_call_original
+        expect(vm).to receive(:fix_device_unit_numbers)
 
         expect(agent_env).to receive(:set_env) do|env_vm, env_location, env|
-          expect(env_vm).to eq(vm)
+          expect(env_vm).to eq(vm_mob)
           expect(env_location).to eq(vm_location)
-          expect(env['disks']['persistent']['fake-disk-cid']).to eq('0')
         end
 
-        vsphere_cloud.attach_disk('fake-image', disk_cid)
+        vsphere_cloud.attach_disk('vm-id', 'disk-cid')
       end
     end
 
     describe '#delete_vm' do
-      let(:vm) { instance_double('VimSdk::Vim::VirtualMachine') }
-      before { allow(vsphere_cloud).to receive(:get_vm_by_cid).with('fake-vm-id').and_return(vm) }
-
-      let(:datacenter) { instance_double('VimSdk::Vim::Datacenter') }
-      before { allow(client).to receive(:find_parent).with(vm, VimSdk::Vim::Datacenter).and_return(datacenter) }
-
-      let(:devices) { [virtual_disk_device] }
       before do
-        allow(cloud_searcher).to receive(:get_properties).with(
-          vm,
-          VimSdk::Vim::VirtualMachine,
-          ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name'],
-          ensure: ['config.hardware.device']
-        ).and_return(
-          {
-            'runtime.question' => false,
-            'runtime.powerState' => VimSdk::Vim::VirtualMachine::PowerState::POWERED_OFF,
-            'config.hardware.device' => devices,
-            'name' => 'fake-vm-name'
-          }
-        )
-        allow(client).to receive(:get_cdrom_device).and_return(nil)
+        allow(vm).to receive(:persistent_disks).and_return([])
+        allow(vm).to receive(:cdrom).and_return(nil)
       end
-
-      let(:virtual_disk_device) { instance_double('VimSdk::Vim::Vm::Device::VirtualDisk', backing: virtual_disk_backing) }
-      before do
-        allow(virtual_disk_device).to receive(:kind_of?).and_return(false)
-        allow(virtual_disk_device).to receive(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualDisk).and_return(true)
-      end
-
-      let(:virtual_disk_backing) do
-        instance_double('VimSdk::Vim::Vm::Device::VirtualDisk::FlatVer2BackingInfo',
-          datastore: datastore,
-          disk_mode: VimSdk::Vim::Vm::Device::VirtualDiskOption::DiskMode::INDEPENDENT_NONPERSISTENT
-        )
-      end
-
-      let(:datastore) { instance_double('VimSdk::Vim::Datastore') }
-      before do
-        allow(cloud_searcher).to receive(:get_property).
-          with(datastore, VimSdk::Vim::Datastore, 'name').
-          and_return('fake-datastore-name')
-      end
-
-      before { allow(client).to receive(:delete_vm).with(vm) }
 
       it 'deletes vm' do
-        expect(client).to receive(:delete_vm).with(vm)
-        vsphere_cloud.delete_vm('fake-vm-id')
+        expect(vm).to receive(:power_off)
+        expect(vm).to receive(:delete)
+        vsphere_cloud.delete_vm('vm-id')
+      end
+
+      context 'when vm has persistent disks' do
+        let(:disk) { instance_double('VimSdk::Vim::Vm::Device::VirtualDisk', backing: double(:backing, file_name: 'fake-file_name')) }
+        before { allow(vm).to receive(:persistent_disks).and_return([disk]) }
+
+        it 'detaches persistent disks' do
+          expect(client).to receive(:reconfig_vm) do |mob, spec|
+            expect(mob).to equal(vm_mob)
+            expect(spec.device_change.first.device).to eq(disk)
+            expect(spec.device_change.first.operation).to eq(VimSdk::Vim::Vm::Device::VirtualDeviceSpec::Operation::REMOVE)
+          end
+          expect(vm).to receive(:power_off)
+          expect(vm).to receive(:delete)
+
+          vsphere_cloud.delete_vm('vm-id')
+        end
       end
 
       context 'vm has cdrom' do
-        let(:cdrom_device) { instance_double('VimSdk::Vim::Vm::Device::VirtualCdrom') }
-        let(:devices) { [virtual_disk_device, cdrom_device] }
-
-        before do
-          allow(cdrom_device).to receive(:kind_of?).and_return(false)
-          allow(cdrom_device).to receive(:kind_of?).with(VimSdk::Vim::Vm::Device::VirtualCdrom).and_return(true)
-        end
-
-        before { allow(client).to receive(:get_cdrom_device).and_return(cdrom_device) }
+        let(:cdrom) { instance_double('VimSdk::Vim::Vm::Device::VirtualCdrom') }
+        before { allow(vm).to receive(:cdrom).and_return(cdrom) }
 
         it 'cleans the agent environment, before deleting the vm' do
-          expect(agent_env).to receive(:clean_env).with(vm).ordered
-          expect(client).to receive(:delete_vm).with(vm).ordered
+          expect(agent_env).to receive(:clean_env).with(vm_mob).ordered
 
-          vsphere_cloud.delete_vm('fake-vm-id')
+          expect(vm).to receive(:power_off)
+          expect(vm).to receive(:delete)
+
+          vsphere_cloud.delete_vm('vm-id')
         end
       end
     end
 
     describe '#detach_disk' do
-      let(:vm) { instance_double('VimSdk::Vim::VirtualMachine') }
-
       it 'raises an error if disk is not found in vSphere database' do
         expect {
-          vsphere_cloud.detach_disk('vm-cid', 'non-existent-disk-cid')
+          vsphere_cloud.detach_disk('vm-id', 'non-existent-disk-cid')
         }.to raise_error /Disk not found: non-existent-disk-cid/
       end
 
       context 'when disk exists in database' do
-        let!(:disk) do
-          Models::Disk.create(uuid: 'disk-cid', size: 100, path: 'fake-disk-path')
-        end
+        let!(:disk_model) { Models::Disk.create(uuid: 'disk-cid', size: 100, path: 'fake-disk-path') }
+        after { disk_model.destroy }
 
         before do
           allow(vsphere_cloud).to receive(:get_vm_by_cid).with('vm-cid').and_return(vm)
           allow(cloud_searcher).to receive(:get_property).with(
-            vm,
+            vm_mob,
             VimSdk::Vim::VirtualMachine,
             'config.hardware.device',
             ensure_all: true
@@ -892,15 +727,14 @@ module VSphereCloud
 
           allow(vsphere_cloud).to receive(:get_vm_location).and_return(vm_location)
 
-          allow(agent_env).to receive(:get_current_env).with(vm, 'fake-datacenter-name').
+          allow(agent_env).to receive(:get_current_env).with(vm_mob, 'fake-datacenter-name').
             and_return(env)
           allow(agent_env).to receive(:set_env)
           allow(client).to receive(:reconfig_vm) do
             allow(cloud_searcher).to receive(:get_property).with(vm, VimSdk::Vim::VirtualMachine, 'config.hardware.device', anything).and_return([attached_disk], [])
           end
+          allow(vm).to receive(:disk_by_cid).with('disk-cid').and_return(attached_disk, nil)
         end
-
-        after { disk.destroy }
 
         let(:env) do
           {'disks' => {'persistent' => {'disk-cid' => 'fake-data'}}}
@@ -924,11 +758,11 @@ module VSphereCloud
 
         it 'updates VM with new settings' do
           expect(agent_env).to receive(:set_env).with(
-            vm,
+            vm_mob,
             vm_location,
             {'disks' => {'persistent' => {}}}
           )
-          vsphere_cloud.detach_disk('vm-cid', 'disk-cid')
+          vsphere_cloud.detach_disk('vm-id', 'disk-cid')
         end
 
         context 'when old settings do not contain disk to be detached' do
@@ -938,34 +772,36 @@ module VSphereCloud
 
           it 'does not update VM with new setting' do
             expect(agent_env).to_not receive(:set_env)
-            vsphere_cloud.detach_disk('vm-cid', 'disk-cid')
+            vsphere_cloud.detach_disk('vm-id', 'disk-cid')
           end
         end
 
         context 'when disk is not attached' do
-          let(:devices) { [] }
+          before do
+            allow(vm).to receive(:disk_by_cid).with('disk-cid').and_return(nil)
+          end
 
           it 'updates VM with new settings' do
             expect(agent_env).to receive(:set_env).with(
-              vm,
+              vm_mob,
               vm_location,
               {'disks' => {'persistent' => {}}}
             )
             expect {
-              vsphere_cloud.detach_disk('vm-cid', 'disk-cid')
+              vsphere_cloud.detach_disk('vm-id', 'disk-cid')
             }.to raise_error(Bosh::Clouds::DiskNotAttached)
           end
 
           it 'raises an error if disk is not attached' do
             expect {
-              vsphere_cloud.detach_disk('vm-cid', 'disk-cid')
+              vsphere_cloud.detach_disk('vm-id', 'disk-cid')
             }.to raise_error(Bosh::Clouds::DiskNotAttached)
           end
         end
 
         it 'reconfigures VM with new config' do
           expect(client).to receive(:reconfig_vm) do |config_vm, config|
-            expect(config_vm).to eq(vm)
+            expect(config_vm).to eq(vm_mob)
             expect(config.device_change.first.device).to eq(attached_disk)
             expect(config.device_change.first.operation).to eq(
               VimSdk::Vim::Vm::Device::VirtualDeviceSpec::Operation::REMOVE
@@ -973,7 +809,7 @@ module VSphereCloud
             allow(cloud_searcher).to receive(:get_property).with(vm, VimSdk::Vim::VirtualMachine, 'config.hardware.device', anything).and_return([attached_disk], [])
           end
 
-          vsphere_cloud.detach_disk('vm-cid', 'disk-cid')
+          vsphere_cloud.detach_disk('vm-id', 'disk-cid')
         end
 
         context 'when vm has multiple disks attached' do
@@ -987,7 +823,7 @@ module VSphereCloud
 
           it 'only detaches disk that matches disk id and does not detach other disks' do
             expect(client).to receive(:reconfig_vm) do |config_vm, config|
-              expect(config_vm).to eq(vm)
+              expect(config_vm).to eq(vm_mob)
               expect(config.device_change.first.device).to eq(attached_disk)
               expect(config.device_change.first.operation).to eq(
                 VimSdk::Vim::Vm::Device::VirtualDeviceSpec::Operation::REMOVE
@@ -996,34 +832,26 @@ module VSphereCloud
               allow(cloud_searcher).to receive(:get_property).with(vm, VimSdk::Vim::VirtualMachine, 'config.hardware.device', anything).and_return([attached_disk, second_disk], [second_disk])
             end
 
-            vsphere_cloud.detach_disk('vm-cid', 'disk-cid')
+            vsphere_cloud.detach_disk('vm-id', 'disk-cid')
           end
 
           it 'waits until the expected disk was detached' do
             expect(client).to receive(:reconfig_vm) do |config_vm, config|
-              expect(config_vm).to eq(vm)
+              expect(config_vm).to eq(vm_mob)
               expect(config.device_change.first.device).to eq(attached_disk)
               expect(config.device_change.first.operation).to eq(
                 VimSdk::Vim::Vm::Device::VirtualDeviceSpec::Operation::REMOVE
               )
               expect(config.device_change.length).to eq 1
-              allow(cloud_searcher).to receive(:get_property).with(vm, VimSdk::Vim::VirtualMachine, 'config.hardware.device', anything).and_return(
-                [second_disk, attached_disk],
-                [second_disk, attached_disk],
-                [second_disk, attached_disk],
-                [second_disk, attached_disk],
-                [second_disk]).exactly(5).times
             end
 
-            vsphere_cloud.detach_disk('vm-cid', 'disk-cid')
+            vsphere_cloud.detach_disk('vm-id', 'disk-cid')
           end
         end
       end
     end
 
     describe '#configure_networks' do
-      let(:vm) { instance_double('VimSdk::Vim::VirtualMachine') }
-      before { allow(vsphere_cloud).to receive(:get_vm_by_cid).with('fake-vm-id').and_return(vm) }
       let(:networks) do
         {
           'default' => {
@@ -1034,19 +862,13 @@ module VSphereCloud
         }
       end
 
-      let(:devices) { [VimSdk::Vim::Vm::Device::VirtualPCIController.new(key: 'fake-pci-key')] }
       before do
-        allow(cloud_searcher).to receive(:get_property).with(
-          vm,
-          VimSdk::Vim::VirtualMachine,
-          'config.hardware.device',
-          ensure_all: true
-        ).and_return(devices)
+        allow(vm).to receive(:nics).and_return([])
+        allow(vm).to receive(:devices).and_return([])
+        allow(vm).to receive(:pci_controller).and_return(double(:pci_controller, key: 'fake-pci-key'))
       end
 
-      before { allow(cloud_config).to receive(:datacenter_name).and_return('fake-datacenter-name') }
-      let(:datacenter) { instance_double('VimSdk::Vim::Datacenter') }
-      before { allow(client).to receive(:find_parent).with(vm, VimSdk::Vim::Datacenter).and_return(datacenter) }
+      let(:datacenter) { instance_double('VimSdk::Vim::Datacenter', name: 'fake-datacenter-name') }
 
       let(:network_mob) { double(:network_mob) }
       before do
@@ -1065,11 +887,6 @@ module VSphereCloud
           'fake-pci-key',
           {}
         ).and_return(nic_config)
-
-        allow(vsphere_cloud).to receive(:fix_device_unit_numbers).with(
-          devices,
-          [nic_config]
-        )
       end
 
       before do
@@ -1079,68 +896,36 @@ module VSphereCloud
 
         allow(vsphere_cloud).to receive(:generate_network_env).and_return('fake-network-env')
         allow(vsphere_cloud).to receive(:get_vm_location).and_return('fake-vm-location')
+
+        allow(cloud_searcher).to receive(:get_property).with(
+          vm_mob,
+          VimSdk::Vim::VirtualMachine,
+          'config.hardware.device',
+          ensure_all: true
+        ).and_return([])
       end
 
-      it 'sends shutdown command to vm' do
-        allow(cloud_searcher).to receive(:get_property).with(
-          vm,
-          VimSdk::Vim::VirtualMachine,
-          'runtime.powerState'
-        ).and_return(VimSdk::Vim::VirtualMachine::PowerState::POWERED_OFF)
-
-        expect(vm).to receive(:shutdown_guest)
+      it 'shuts down and reconfigures vm' do
+        expect(vm).to receive(:shutdown).ordered
+        expect(vm).to receive(:fix_device_unit_numbers).ordered
 
         expect(client).to receive(:reconfig_vm) do |reconfig_vm, vm_config|
-          expect(reconfig_vm).to eq(vm)
+          expect(reconfig_vm).to eq(vm_mob)
           expect(vm_config.device_change).to eq([nic_config])
-        end
+        end.ordered
 
         expect(agent_env).to receive(:set_env).with(
-          vm,
+          vm_mob,
           'fake-vm-location',
           {
             'old-key' => 'old-value',
             'networks' => 'fake-network-env'
           }
-        )
+        ).ordered
 
-        expect(client).to receive(:power_on_vm).with(datacenter, vm)
+        expect(vm).to receive(:power_on).ordered
 
-        vsphere_cloud.configure_networks('fake-vm-id', networks)
-      end
-
-      it 'waits for vm to shutdown for 60 seconds' do
-        expect(cloud_searcher).to receive(:get_property).with(
-          vm,
-          VimSdk::Vim::VirtualMachine,
-          'runtime.powerState'
-        ).and_return(
-          VimSdk::Vim::VirtualMachine::PowerState::POWERED_ON,
-          VimSdk::Vim::VirtualMachine::PowerState::POWERED_ON,
-          VimSdk::Vim::VirtualMachine::PowerState::POWERED_OFF
-        ).exactly(3).times
-
-        expect(vsphere_cloud).to receive(:wait_until_off).with(vm, 60).and_call_original
-
-        expect(vm).to receive(:shutdown_guest).ordered
-        expect(client).to receive(:reconfig_vm).ordered
-        expect(agent_env).to receive(:set_env).ordered
-        expect(client).to receive(:power_on_vm).with(datacenter, vm)
-
-        vsphere_cloud.configure_networks('fake-vm-id', networks)
-      end
-
-      it 'sends poweroff to vm if did not shutdown' do
-        expect(vsphere_cloud).to receive(:wait_until_off).with(vm, 60).
-          and_raise(VSphereCloud::Cloud::TimeoutException)
-        expect(client).to receive(:power_off_vm).with(vm)
-
-        expect(vm).to receive(:shutdown_guest).ordered
-        expect(client).to receive(:reconfig_vm).ordered
-        expect(agent_env).to receive(:set_env).ordered
-        expect(client).to receive(:power_on_vm).with(datacenter, vm)
-
-        vsphere_cloud.configure_networks('fake-vm-id', networks)
+        vsphere_cloud.configure_networks('vm-id', networks)
       end
     end
 

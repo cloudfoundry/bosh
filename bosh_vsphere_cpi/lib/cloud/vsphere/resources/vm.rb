@@ -2,8 +2,7 @@ module VSphereCloud
   class Resources
     class VM
       include VimSdk
-
-      class TimeoutException < StandardError; end
+      include RetryBlock
 
       attr_reader :mob, :cid
 
@@ -20,7 +19,7 @@ module VSphereCloud
       end
 
       def cluster
-        cluster = @cloud_searcher.get_properties(host_properties['parent'], Vim::ClusterComputeResource, 'name')
+        cluster = @cloud_searcher.get_properties(host_properties['parent'], Vim::ClusterComputeResource, 'name', ensure_all: true)
         cluster['name']
       end
 
@@ -31,16 +30,35 @@ module VSphereCloud
         end
       end
 
+      def datacenter
+        @client.find_parent(@mob, Vim::Datacenter)
+      end
+
+      def powered_on?
+        power_state == Vim::VirtualMachine::PowerState::POWERED_ON
+      end
+
       def devices
-        @devices ||= @cloud_searcher.get_properties(@mob, Vim::VirtualMachine, ['config.hardware.device'])['config.hardware.device']
+        properties['config.hardware.device']
       end
 
       def nics
         devices.select { |device| device.kind_of?(Vim::Vm::Device::VirtualEthernetCard) }
       end
 
+      def cdrom
+        devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualCdrom) }
+      end
+
       def system_disk
         devices.find { |device| device.kind_of?(Vim::Vm::Device::VirtualDisk) }
+      end
+
+      def persistent_disks
+       devices.select do |device|
+          device.kind_of?(Vim::Vm::Device::VirtualDisk) &&
+            device.backing.disk_mode == Vim::Vm::Device::VirtualDiskOption::DiskMode::INDEPENDENT_PERSISTENT
+        end
       end
 
       def pci_controller
@@ -76,20 +94,78 @@ module VSphereCloud
           end
 
           wait_until_off(60)
-        rescue TimeoutException
+        rescue VSphereCloud::Cloud::TimeoutException
           @logger.debug('The guest did not shutdown in time, requesting it to power off')
           @client.power_off_vm(@mob)
         end
       end
 
-      private
+      def power_off
+        retry_block do
+          question = properties['runtime.question']
+          if question
+            choices = question.choice
+            @logger.info("VM is blocked on a question: #{question.text}, " +
+              "providing default answer: #{choices.choice_info[choices.default_index].label}")
+            @client.answer_vm(@mob, question.id, choices.choice_info[choices.default_index].key)
+            power_state = @cloud_searcher.get_property(@mob, Vim::VirtualMachine, 'runtime.powerState')
+          else
+            power_state = properties['runtime.powerState']
+          end
 
-      def host_properties
-        @host_properties ||= @cloud_searcher.get_properties(vm_runtime.host, Vim::HostSystem, ['datastore', 'parent'], ensure_all: true)
+          if power_state != Vim::VirtualMachine::PowerState::POWERED_OFF
+            @logger.info("Powering off vm: #{@cid}")
+            @client.power_off_vm(@mob)
+          end
+        end
       end
 
-      def vm_runtime
-        @vm_runtime ||= @cloud_searcher.get_properties(@mob, Vim::VirtualMachine, ['runtime'])['runtime']
+      def disk_by_cid(disk_cid)
+        devices.find do |d|
+          d.kind_of?(Vim::Vm::Device::VirtualDisk) &&
+            d.backing.file_name.end_with?("/#{disk_cid}.vmdk")
+        end
+      end
+
+      def reboot
+        @mob.reboot_guest
+      end
+
+      def power_on
+        @client.power_on_vm(datacenter, @mob)
+      end
+
+      def delete
+        retry_block { @client.delete_vm(@mob) }
+      end
+
+      def reload
+        @properties = nil
+        @host_properties = nil
+      end
+
+      private
+
+      def power_state
+        properties['runtime.powerState']
+      end
+
+      def properties
+        @properties ||= @cloud_searcher.get_properties(
+          @mob,
+          Vim::VirtualMachine,
+          ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name', 'runtime'],
+          ensure: ['config.hardware.device', 'runtime']
+        )
+      end
+
+      def host_properties
+        @host_properties ||= @cloud_searcher.get_properties(
+          properties['runtime'].host,
+          Vim::HostSystem,
+          ['datastore', 'parent'],
+          ensure_all: true
+        )
       end
 
       def wait_until_off(timeout)
