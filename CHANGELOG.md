@@ -1,3 +1,18 @@
+## 2849
+
+New Features:
+
+  * cli: Include license in release [c63287a]
+
+## 2847
+
+Improvements:
+
+  * stemcell: harden sshd config, and remove postfix and tripwire [1f4dd4a]
+  * stemcell: remove all traces of lucid stemcell [4559a69]
+  * agent: Bump agent to clean after compiling bits [cd3fcb9]
+  * cli: Store release jobs/packages tarballs in ~/.bosh/cache [c2f7ac1]
+
 ## 2839
 
 Improvements:
