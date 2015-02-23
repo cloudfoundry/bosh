@@ -10,10 +10,13 @@ if [ "${stemcell_operating_system}" == "centos" ]; then
   # CreatePartitionIfNoEphemeralDisk option is not supported on CentOS
   cat > $agent_settings_file <<JSON
 {
+  "Platform": {
+    "Linux": {
+      "DevicePathResolutionType": "virtio"
+    }
+  },
   "Infrastructure": {
-    "DevicePathResolutionType": "virtio",
     "NetworkingType": "dhcp",
-
     "Settings": {
       "Sources": [
         {
@@ -44,11 +47,11 @@ else
 {
   "Platform": {
     "Linux": {
-      "CreatePartitionIfNoEphemeralDisk": true
+      "CreatePartitionIfNoEphemeralDisk": true,
+      "DevicePathResolutionType": "virtio"
     }
   },
   "Infrastructure": {
-    "DevicePathResolutionType": "virtio",
     "NetworkingType": "dhcp",
 
     "Settings": {

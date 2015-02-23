@@ -5,8 +5,12 @@ source $base_dir/lib/prelude_apply.bash
 
 cat > $chroot/var/vcap/bosh/agent.json <<JSON
 {
+  "Platform": {
+    "Linux": {
+      "DevicePathResolutionType": "scsi"
+    }
+  },
   "Infrastructure": {
-    "DevicePathResolutionType": "scsi",
     "NetworkingType": "manual",
 
     "Settings": {

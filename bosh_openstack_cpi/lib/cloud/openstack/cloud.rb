@@ -203,7 +203,7 @@ module Bosh::OpenStackCloud
     #   power on new server
     # @param [Hash] resource_pool cloud specific properties describing the
     #   resources needed for this VM
-    # @param [Hash] networks list of networks and their settings needed for
+    # @param [Hash] network_spec list of networks and their settings needed for
     #   this VM
     # @param [optional, Array] disk_locality List of disks that might be
     #   attached to this server in the future, can be used as a placement
