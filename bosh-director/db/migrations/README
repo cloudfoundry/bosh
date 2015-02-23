@@ -1,1 +1,1 @@
-Generate migrations using rake new_migration[<type>,<name>]
+Generate migrations using rake migrations:bosh_director:new[name,namespace]
