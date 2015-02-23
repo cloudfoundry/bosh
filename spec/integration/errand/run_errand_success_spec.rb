@@ -254,31 +254,7 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
     with_tmp_dir_before_all
 
     before(:all) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
-
-      # Include other jobs in the deployment
-      manifest_hash['jobs'].first['instances'] = 1
-
-      # Currently errands are represented via jobs
-      manifest_hash['jobs'] << {
-        'name'          => 'errand1-name',
-        'template'      => 'errand1',
-        'lifecycle'     => 'errand',
-        'resource_pool' => 'a',
-        'instances'     => 1,
-        'networks'      => [{ 'name' => 'a' }],
-        'properties' => {
-          'errand1' => {
-            'exit_code' => 0,
-            'stdout'    => 'some-stdout',
-            'stderr'    => 'some-stderr',
-            'run_package_file' => true,
-          },
-        },
-      }
-
-      deploy_simple(manifest_hash: manifest_hash)
-
+      deploy_simple(manifest_hash: manifest_with_errand)
       expect_errands('errand1-name')
 
       @output, @exit_code = bosh_runner.run("run errand errand1-name --download-logs --logs-dir #{@tmp_dir}",
@@ -305,6 +281,47 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
       expect(@output).to include('Errand `errand1-name\' completed successfully (exit code 0)')
       expect(@exit_code).to eq(0)
     end
+  end
+
+  context 'when manifest file is greater than 64Kb' do
+    with_reset_sandbox_before_each
+
+    let(:manifest_hash) do
+      large_property = 64.times.inject('') { |p| p << 'a'*1024 } # generates 64Kb string
+      manifest = {'large_property' => large_property }
+      manifest.merge(manifest_with_errand)
+    end
+
+    it 'deploys successfully' do
+      deploy_simple(manifest_hash: manifest_hash)
+
+      _, exit_code = bosh_runner.run('run errand errand1-name', { return_exit_code: true })
+      expect(exit_code).to eq(0)
+    end
+  end
+
+  def manifest_with_errand
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+
+    manifest_hash['jobs'].first['instances'] = 1
+    manifest_hash['jobs'] << {
+      'name'          => 'errand1-name',
+      'template'      => 'errand1',
+      'lifecycle'     => 'errand',
+      'resource_pool' => 'a',
+      'instances'     => 1,
+      'networks'      => [{ 'name' => 'a' }],
+      'properties' => {
+        'errand1' => {
+          'exit_code' => 0,
+          'stdout'    => 'some-stdout',
+          'stderr'    => 'some-stderr',
+          'run_package_file' => true,
+        },
+      },
+    }
+
+    manifest_hash
   end
 
   def expect_errands(*expected_errands)
