@@ -336,7 +336,7 @@ module VSphereCloud
         vm = vm_provider.find(vm_cid)
 
         cluster = @datacenter.clusters[vm.cluster]
-        disk = disk_provider.find(disk_cid, cluster)
+        disk = disk_provider.find_and_move(disk_cid, cluster, @datacenter.name, vm.accessible_datastores)
         disk_config_spec = disk.attach_spec(vm.system_disk.controller_key)
 
         vm_config = Vim::Vm::ConfigSpec.new
@@ -772,7 +772,8 @@ module VSphereCloud
         @datacenter,
         @resources,
         @config.datacenter_disk_path,
-        @client
+        @client,
+        @logger
       )
     end
 

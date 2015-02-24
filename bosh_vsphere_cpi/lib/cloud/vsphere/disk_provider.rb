@@ -3,12 +3,13 @@ require 'cloud/vsphere/resources/disk'
 
 module VSphereCloud
   class DiskProvider
-    def initialize(virtual_disk_manager, datacenter, resources, disk_path, client)
+    def initialize(virtual_disk_manager, datacenter, resources, disk_path, client, logger)
       @virtual_disk_manager = virtual_disk_manager
       @datacenter = datacenter
       @resources = resources
       @disk_path = disk_path
       @client = client
+      @logger = logger
     end
 
     def create(disk_size_in_kb)
@@ -34,6 +35,24 @@ module VSphereCloud
       Resources::Disk.new(disk_uuid, disk_size_in_kb, datastore, disk_path)
     end
 
+    def find_and_move(disk_uuid, cluster, datacenter_name, accessible_datastores)
+      disk = find(disk_uuid, cluster)
+      return disk if accessible_datastores.include?(disk.datastore.name)
+
+      destination_datastore =  @resources.place_persistent_datastore(datacenter_name, cluster, disk.size_in_mb)
+      unless accessible_datastores.include?(destination_datastore.name)
+        raise "Datastore '#{destination_datastore.name}' is not accessible to cluster '#{cluster.name}'"
+      end
+
+      destination_path = path(destination_datastore, disk_uuid)
+      @logger.info("Moving #{disk.path} to #{destination_path}")
+      @client.move_disk(datacenter_name, disk.path, datacenter_name, destination_path)
+      @logger.info('Moved disk successfully')
+      Resources::Disk.new(disk_uuid, disk.size_in_kb, destination_datastore, destination_path)
+    end
+
+    private
+
     def find(disk_uuid, cluster)
       cluster.persistent_datastores.merge(cluster.shared_datastores).each do |_, datastore|
         disk_path = path(datastore, disk_uuid)
@@ -45,8 +64,6 @@ module VSphereCloud
 
       raise Bosh::Clouds::DiskNotFound, "Could not find disk with id #{disk_uuid}"
     end
-
-    private
 
     def path(datastore, disk_uuid)
       "[#{datastore.name}] #{@disk_path}/#{disk_uuid}.vmdk"

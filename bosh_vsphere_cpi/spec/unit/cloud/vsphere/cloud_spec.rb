@@ -631,6 +631,7 @@ module VSphereCloud
       before do
         allow(datacenter).to receive(:clusters).and_return({'fake-cluster-name' => cluster})
         allow(vm).to receive(:cluster).and_return('fake-cluster-name')
+        allow(vm).to receive(:accessible_datastores).and_return(['fake-datastore-name'])
         allow(vm).to receive(:system_disk).and_return(double(:system_disk, controller_key: 'fake-controller-key'))
       end
 
@@ -639,7 +640,9 @@ module VSphereCloud
       let(:disk) { VSphereCloud::Resources::Disk.new('fake-disk-cid', 1024, datastore, 'fake-disk-path') }
 
       it 'updates persistent disk' do
-        expect(disk_provider).to receive(:find).with('disk-cid', cluster).and_return(disk)
+        expect(disk_provider).to receive(:find_and_move).
+          with('disk-cid', cluster, 'fake-datacenter', ['fake-datastore-name']).
+          and_return(disk)
 
         expect(client).to receive(:reconfig_vm) do |reconfig_vm, vm_config|
           expect(reconfig_vm).to eq(vm_mob)
