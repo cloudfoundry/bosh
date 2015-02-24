@@ -38,6 +38,11 @@ describe Bosh::Cli::Resources::Package, 'dev build' do
       expect(packages[0]).to be_a(Bosh::Cli::Resources::Package)
       expect(packages[1]).to be_a(Bosh::Cli::Resources::Package)
     end
+
+    it 'ignores non-directories' do
+      release_source.add_file('packages', 'ignore-me')
+      expect { Bosh::Cli::Resources::Package.discover(release_source.path) }.to_not raise_error
+    end
   end
 
   describe '#initialize' do

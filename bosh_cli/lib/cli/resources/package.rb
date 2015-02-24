@@ -12,8 +12,10 @@ module Bosh::Cli::Resources
     # @param [String] directory base Release directory
     def self.discover(release_base)
       Dir[File.join(release_base, 'packages', '*')].inject([]) do |packages, package_base|
-        next unless File.directory?(package_base)
-        packages << new(package_base, release_base)
+        if File.directory?(package_base)
+          packages << new(package_base, release_base)
+        end
+        packages
       end
     end
 
