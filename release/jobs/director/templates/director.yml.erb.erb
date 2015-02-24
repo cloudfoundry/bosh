@@ -198,22 +198,21 @@ compiled_package_cache:
 <% end %>
 
 cloud:
-<% if_p('external_cpi.enabled', 'external_cpi.name') do |external_cpi_enabled, external_cpi_name| %>
-  external_cpi:
-    enabled: <%= external_cpi_enabled %>
-    cpi_path: /var/vcap/jobs/<%= external_cpi_name %>/bin/cpi
-<% end %>
+<% if_p('director.cpi_job') do |cpi_job_name| %>
+  cpi_executable: /var/vcap/jobs/<%= cpi_job_name %>/bin/cpi
+  properties:
+<% end.else do %>
 
-<% plugin = nil %>
-<% if_p('aws.access_key_id', 'aws.secret_access_key',
-        'aws.default_key_name', 'aws.default_security_groups',
-        'aws.region', 'registry.address',
-        'registry.http.port', 'registry.http.user',
-        'registry.http.password') do |access_key_id, secret_access_key,
-                                          default_key_name, default_security_groups,
-                                          region, reg_address,
-                                          reg_port, reg_user,
-                                          reg_password| %>
+  <% plugin = nil %>
+  <% if_p('aws.access_key_id', 'aws.secret_access_key',
+          'aws.default_key_name', 'aws.default_security_groups',
+          'aws.region', 'registry.address',
+          'registry.http.port', 'registry.http.user',
+          'registry.http.password') do |access_key_id, secret_access_key,
+                                            default_key_name, default_security_groups,
+                                            region, reg_address,
+                                            reg_port, reg_user,
+                                            reg_password| %>
   plugin: aws <% plugin = "aws" %>
   properties:
     aws:
@@ -254,16 +253,16 @@ cloud:
     stemcell:
       kernel_id: <%= kernel_id %>
     <% end %>
-<% end %>
+  <% end %>
 
-<% if_p('openstack.auth_url', 'openstack.username', 'openstack.api_key',
-        'openstack.tenant', 'openstack.default_key_name',
-        'openstack.default_security_groups','openstack.wait_resource_poll_interval',
-        'registry.address', 'registry.http.port', 'registry.http.user',
-        'registry.http.password') do |auth_url, username, api_key,
-                                      tenant, default_key_name,
-                                      default_security_groups, wait_resource_poll_interval,
-                                      reg_address, reg_port, reg_user, reg_password| %>
+  <% if_p('openstack.auth_url', 'openstack.username', 'openstack.api_key',
+          'openstack.tenant', 'openstack.default_key_name',
+          'openstack.default_security_groups','openstack.wait_resource_poll_interval',
+          'registry.address', 'registry.http.port', 'registry.http.user',
+          'registry.http.password') do |auth_url, username, api_key,
+                                        tenant, default_key_name,
+                                        default_security_groups, wait_resource_poll_interval,
+                                        reg_address, reg_port, reg_user, reg_password| %>
   plugin: openstack <% plugin = "openstack" %>
   properties:
     openstack:
@@ -308,9 +307,9 @@ cloud:
       endpoint: http://<%= reg_address %>:<%= reg_port %>
       user: <%= reg_user %>
       password: <%= reg_password %>
-<% end %>
+  <% end %>
 
-<% if_p('vcenter.address', 'vcenter.user', 'vcenter.password', 'vcenter.datacenters') do |address, user, password, datacenters| %>
+  <% if_p('vcenter.address', 'vcenter.user', 'vcenter.password', 'vcenter.datacenters') do |address, user, password, datacenters| %>
   plugin: vsphere <% plugin = "vsphere" %>
   properties:
     mem_overcommit_ratio: 0.7
@@ -343,15 +342,15 @@ cloud:
                 <% end %>
               <% end %>
           <% end %>
-<% end %>
+  <% end %>
 
-<% if_p('vcd.url', 'vcd.user', 'vcd.password',
-        'vcd.entities.organization', 'vcd.entities.virtual_datacenter',
-        'vcd.entities.vapp_catalog', 'vcd.entities.media_catalog',
-        'vcd.entities.vm_metadata_key', 'vcd.entities.description') do |url, user, password,
-                                                                        organization, datacenter,
-                                                                        vapp_catalog, media_catalog,
-                                                                        vm_metadata_key, description| %>
+  <% if_p('vcd.url', 'vcd.user', 'vcd.password',
+          'vcd.entities.organization', 'vcd.entities.virtual_datacenter',
+          'vcd.entities.vapp_catalog', 'vcd.entities.media_catalog',
+          'vcd.entities.vm_metadata_key', 'vcd.entities.description') do |url, user, password,
+                                                                          organization, datacenter,
+                                                                          vapp_catalog, media_catalog,
+                                                                          vm_metadata_key, description| %>
   plugin: vcloud <% plugin = "vcloud" %>
   properties:
     vcds:
@@ -384,10 +383,11 @@ cloud:
             <% end %>
           <% end %>
 
+  <% end %>
+
+  <% raise "Could not find cloud plugin" if plugin.nil? %>
+
 <% end %>
-
-<% raise "Could not find cloud plugin" if plugin.nil? && p('external_cpi.enabled', false) == false %>
-
     agent:
       ntp: [<%= p('ntp').join(", ") %>]
 

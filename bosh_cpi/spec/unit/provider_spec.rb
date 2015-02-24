@@ -7,10 +7,7 @@ describe Bosh::Clouds::Provider do
   context 'when external cpi is enabled' do
     let(:config) do
       {
-        'external_cpi' => {
-          'enabled' => true,
-          'cpi_path' => '/path/to/fake-external-cpi'
-        }
+        'cpi_executable' => '/path/to/fake-external-cpi'
       }
     end
 

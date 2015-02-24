@@ -47,11 +47,14 @@ if config['dns'] && config['dns']['db']
 end
 
 cpi = config['cloud']['plugin']
-require_path = File.join('cloud', cpi)
-cpi_path = $LOAD_PATH.find { |p| File.exist?(File.join(p, require_path)) }
-migrations = File.expand_path('../db/migrations', cpi_path)
 
-if File.directory?(migrations)
-  migrate(db, "#{cpi}_cpi_schema", migrations)
+if cpi
+  require_path = File.join('cloud', cpi)
+  cpi_path = $LOAD_PATH.find { |p| File.exist?(File.join(p, require_path)) }
+  migrations = File.expand_path('../db/migrations', cpi_path)
+
+  if File.directory?(migrations)
+    migrate(db, "#{cpi}_cpi_schema", migrations)
+  end
 end
 
