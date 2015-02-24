@@ -220,22 +220,6 @@ module VSphereCloud
       end
     end
 
-    describe '#copy disks' do
-      context 'when set in config' do
-        before { config_hash.merge!({ 'copy_disks' => true }) }
-
-        it 'returns true' do
-          expect(config.copy_disks).to be(true)
-        end
-      end
-
-      context 'when not set in config' do
-        it 'false' do
-          expect(config.copy_disks).to be(false)
-        end
-      end
-    end
-
     describe '#agent' do
       it 'returns configuration values from config' do
         expect(config.agent).to eq(agent_config)

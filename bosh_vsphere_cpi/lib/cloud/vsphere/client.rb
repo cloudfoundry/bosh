@@ -119,16 +119,6 @@ module VSphereCloud
       tasks.each { |task| wait_for_task(task) }
     end
 
-    def copy_disk(source_datacenter, source_path, dest_datacenter, dest_path)
-      tasks = []
-      [".vmdk", "-flat.vmdk"].each do |extension|
-        tasks << @service_content.file_manager.copy_file("#{source_path}#{extension}", source_datacenter,
-                                                         "#{dest_path}#{extension}", dest_datacenter, false)
-      end
-
-      tasks.each { |task| wait_for_task(task) }
-    end
-
     def create_datastore_folder(folder_path, datacenter)
       @service_content.file_manager.make_directory(folder_path, datacenter, true)
     end

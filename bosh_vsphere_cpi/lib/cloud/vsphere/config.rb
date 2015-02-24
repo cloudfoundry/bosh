@@ -74,10 +74,6 @@ module VSphereCloud
       config.fetch('mem_overcommit_ratio', @default_overcommit_ratio)
     end
 
-    def copy_disks
-      !!config['copy_disks']
-    end
-
     def agent
       config['agent']
     end
@@ -155,7 +151,6 @@ module VSphereCloud
           optional('cpi_log') => enum(String, Object),
           optional('soap_log') => enum(String, Object),
           optional('mem_overcommit_ratio') => Numeric,
-          optional('copy_disks') => bool,
           'vcenters' => [{
             'host' => String,
             'user' => String,
