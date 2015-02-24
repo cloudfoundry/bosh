@@ -111,10 +111,8 @@ blobstore:
     password: <%= p('blobstore.director.password') %>
 <% end %>
 
-<% if_p('director.user_management.provider') do |user_management_provider| %>
 user_management:
-  provider: <%= user_management_provider %>
-<% end %>
+  provider: <%= p('director.user_management.provider') %>
 
 <% if_p('compiled_package_cache.options.bucket_name',
         'compiled_package_cache.options.access_key_id',

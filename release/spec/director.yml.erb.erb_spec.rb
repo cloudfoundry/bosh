@@ -50,6 +50,7 @@ describe 'director.yml.erb.erb' do
           },
           'auto_fix_stateful_nodes' => true,
           'max_vm_create_tries' => 5,
+          'user_management' => { 'provider' => 'local' },
         }
       }
     }

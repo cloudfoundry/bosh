@@ -39,7 +39,7 @@ module Bosh
         def identity_provider
           @identity_provider ||= begin
             # no fetching w defaults?
-            user_management_provider = @config.hash.fetch('user_management', {}).fetch('provider', 'local')
+            user_management_provider = @config.hash['user_management']['provider']
 
             unless USER_MANAGEMENT_PROVIDERS.include?(user_management_provider)
               raise ArgumentError,

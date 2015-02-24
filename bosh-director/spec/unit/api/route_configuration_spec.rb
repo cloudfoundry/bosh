@@ -23,32 +23,36 @@ module Bosh::Director
 
     after { FileUtils.rm_rf(temp_dir) }
 
-    context 'when no authentication configuration is supplied' do
-      let(:test_config) { base_config }
+    describe 'authentication configuration' do
+      let(:test_config) { base_config.merge({ 'user_management' => { 'provider' => provider}}) }
 
-      it 'defaults to LocalIdentityProvider' do
-        route_configuration.controllers.each do |route, controller|
-          identity_provider = controller.instance_variable_get(:"@instance").identity_provider
-          expect(identity_provider).to be_a(Api::LocalIdentityProvider)
+      context 'when local provider is supplied' do
+        let(:provider) { 'local' }
+
+        it 'defaults to LocalIdentityProvider' do
+          route_configuration.controllers.each do |route, controller|
+            identity_provider = controller.instance_variable_get(:"@instance").identity_provider
+            expect(identity_provider).to be_a(Api::LocalIdentityProvider)
+          end
         end
       end
-    end
 
-    context 'when a bogus authentication configuration is supplied' do
-      let(:test_config) { base_config.merge({ 'user_management' => { 'provider' => 'wrong' }})}
+      context 'when a bogus provider is supplied' do
+        let(:provider) { 'wrong' }
 
-      it 'should raise an error' do
-        expect { route_configuration.controllers }.to raise_error(ArgumentError)
+        it 'should raise an error' do
+          expect { route_configuration.controllers }.to raise_error(ArgumentError)
+        end
       end
-    end
 
-    context 'when uaa configuration is supplied' do
-      let(:test_config) { base_config.merge({ 'user_management' => { 'provider' => 'uaa' }}) }
+      context 'when uaa provider is supplied' do
+        let(:provider) { 'uaa' }
 
-      it 'creates controllers with a UAAIdentityProvider' do
-        route_configuration.controllers.each do |route, controller|
-          identity_provider = controller.instance_variable_get(:"@instance").identity_provider
-          expect(identity_provider).to be_a(Api::UAAIdentityProvider)
+        it 'creates controllers with a UAAIdentityProvider' do
+          route_configuration.controllers.each do |route, controller|
+            identity_provider = controller.instance_variable_get(:"@instance").identity_provider
+            expect(identity_provider).to be_a(Api::UAAIdentityProvider)
+          end
         end
       end
     end
