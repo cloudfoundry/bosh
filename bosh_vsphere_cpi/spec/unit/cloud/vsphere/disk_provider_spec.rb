@@ -140,6 +140,7 @@ module VSphereCloud
               'fake-host-datacenter',
               '[fake-host-datastore] fake-disk-path/disk-uuid.vmdk'
             )
+            expect(client).to receive(:create_datastore_folder).with('[fake-host-datastore] fake-disk-path', datacenter_mob)
             disk = disk_provider.find_and_move('disk-uuid', cluster, 'fake-host-datacenter', accessible_datastores)
             expect(disk.uuid).to eq('disk-uuid')
             expect(disk.size_in_kb).to eq(128)

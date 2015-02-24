@@ -46,6 +46,7 @@ module VSphereCloud
 
       destination_path = path(destination_datastore, disk_uuid)
       @logger.info("Moving #{disk.path} to #{destination_path}")
+      create_parent_folder(destination_path)
       @client.move_disk(datacenter_name, disk.path, datacenter_name, destination_path)
       @logger.info('Moved disk successfully')
       Resources::Disk.new(disk_uuid, disk.size_in_kb, destination_datastore, destination_path)
