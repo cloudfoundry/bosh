@@ -464,12 +464,12 @@ describe 'director.yml.erb.erb' do
     end
   end
 
-  context 'when using an external cpi' do
+  context 'when configured to use a cpi_job' do
     before do
       deployment_manifest_fragment['properties']['director']['cpi_job'] = 'fake-external-cpi'
     end
 
-    it 'sets external_cpi' do
+    it 'configures the cpi executable path correctly' do
       expect(parsed_yaml['cloud']['cpi_executable']).to eq('/var/vcap/jobs/fake-external-cpi/bin/cpi')
     end
   end
