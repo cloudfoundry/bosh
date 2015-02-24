@@ -16,7 +16,6 @@ module Bosh::Dev::Bat
 
     def self.load(bat_deployment_spec_yaml)
       manifest_hash = YAML.load(bat_deployment_spec_yaml)
-      puts manifest_hash.to_yaml
       new(manifest_hash)
     rescue SyntaxError => e
       puts "Failed to load BAT deployment config yaml:\n#{bat_deployment_spec_yaml}"
