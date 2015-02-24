@@ -411,7 +411,10 @@ module VSphereCloud
 
         model_disk = Models::Disk.new
         model_disk.uuid = disk.uuid
-        model_disk.size = size_in_mb
+        model_disk.size = disk.size_in_mb
+        model_disk.path = disk.path
+        model_disk.datacenter = @datacenter.name
+        model_disk.datastore = disk.datastore.name
         model_disk.save
         @logger.info("Created disk: #{model_disk.inspect}")
         model_disk.uuid

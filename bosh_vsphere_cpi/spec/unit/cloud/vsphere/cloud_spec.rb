@@ -1001,7 +1001,15 @@ module VSphereCloud
     end
 
     describe '#create_disk' do
-      let(:disk) { instance_double('VSphereCloud::Resources::Disk', uuid: 'fake-disk-uuid') }
+      let(:disk) do
+        VSphereCloud::Resources::Disk.new(
+          'fake-disk-uuid',
+          1024*1024,
+          double(:datastore, name: 'fake-datastore'),
+          'fake-path'
+        )
+      end
+
       before do
         Models::Disk.delete
         allow(disk_provider).to receive(:create).with(1048576).and_return(disk)
@@ -1017,6 +1025,8 @@ module VSphereCloud
         created_disk = Models::Disk.first
         expect(created_disk.size).to eq(1024)
         expect(created_disk.uuid).to eq('fake-disk-uuid')
+        expect(created_disk.datastore).to eq('fake-datastore')
+        expect(created_disk.path).to eq('fake-path')
       end
     end
   end
