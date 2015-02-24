@@ -173,7 +173,7 @@ module VSphereCloud
         loop do
           power_state = @cloud_searcher.get_property(@mob, Vim::VirtualMachine, 'runtime.powerState')
           break if power_state == Vim::VirtualMachine::PowerState::POWERED_OFF
-          raise TimeoutException if Time.now - started > timeout
+          raise VSphereCloud::Cloud::TimeoutException if Time.now - started > timeout
           sleep(1.0)
         end
       end
