@@ -3,7 +3,7 @@ require 'bosh/director/log_bundles_cleaner'
 
 module Bosh::Director
   describe Jobs::FetchLogs do
-    subject(:fetch_logs) { Jobs::FetchLogs.new(instance.id, blobstore: blobstore) }
+    subject(:fetch_logs) { Jobs::FetchLogs.new(instance.id, blobstore: blobstore, 'filters' => 'filter1,filter2') }
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
     before { allow(LogBundlesCleaner).to receive(:new).and_return(log_bundles_cleaner) }
@@ -40,7 +40,7 @@ module Bosh::Director
         context 'when agent returns blobstore id in its response to fetch_logs' do
           it 'asks agent to fetch logs and returns blobstore id' do
             expect(agent).to receive(:fetch_logs).
-              with('job', nil).
+              with('job', 'filter1,filter2').
               and_return('blobstore_id' => 'fake-blobstore-id')
 
             expect(fetch_logs.perform).to eq('fake-blobstore-id')

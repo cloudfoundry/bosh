@@ -31,7 +31,7 @@ module Bosh::Director
         end
 
         with_deployment_lock(deployment) do
-          @logs_fetcher.fetch(instance, @log_type, @filter)
+          @logs_fetcher.fetch(instance, @log_type, @filters)
         end
       end
     end
