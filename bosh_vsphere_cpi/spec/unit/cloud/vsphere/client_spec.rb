@@ -260,18 +260,15 @@ module VSphereCloud
 
       context 'when file manager raises other error' do
         it 'raises that error' do
-          error = RuntimeError.new('Invalid datastore path some/path')
+          error = RuntimeError.new('Invalid datastore path some/path.vmdk')
           expect(client).to receive(:wait_for_task).with(vmdk_task).
             and_raise(error)
           expect(file_manager).to receive(:delete_file).
             with('some/path.vmdk', datacenter).
             and_return(vmdk_task)
-          expect(file_manager).to receive(:delete_file).
-            with('some/path-flat.vmdk', datacenter).
-            and_return(flat_vmdk_task)
 
           expect {
-            client.delete_disk(datacenter, 'some/path')
+            client.delete_disk(datacenter, 'some/path.vmdk')
           }.to raise_error
         end
       end

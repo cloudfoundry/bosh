@@ -92,27 +92,20 @@ module VSphereCloud
     end
 
     def delete_disk(datacenter, path)
-      tasks = []
+      base_path = path.chomp(File.extname(path))
       [".vmdk", "-flat.vmdk"].each do |extension|
-        tasks << @service_content.file_manager.delete_file("#{path}#{extension}", datacenter)
-      end
-      tasks.each do |task|
-        begin
-          wait_for_task(task)
-        rescue => e
-          unless e.message =~ /File .* was not found/
-            raise e
-          end
-        end
+        delete_path(datacenter, "#{base_path}#{extension}")
       end
     end
 
     def move_disk(source_datacenter, source_path, dest_datacenter, dest_path)
       tasks = []
+      base_source_path = source_path.chomp(File.extname(source_path))
+      base_dest_path = source_path.chomp(File.extname(dest_path))
       [".vmdk", "-flat.vmdk"].each do |extension|
         tasks << @service_content.file_manager.move_file(
-          "#{source_path}#{extension}", source_datacenter,
-          "#{dest_path}#{extension}", dest_datacenter, false
+          "#{base_source_path}#{extension}", source_datacenter,
+          "#{base_dest_path}#{extension}", dest_datacenter, false
         )
       end
 
