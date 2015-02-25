@@ -933,69 +933,31 @@ module VSphereCloud
     end
 
     describe '#delete_disk' do
-      context 'when disk is in database' do
+      before { allow(datacenter).to receive(:persistent_datastores).and_return('fake-persistent-datastores') }
+
+      context 'when disk is found' do
+        let(:disk) { instance_double('VSphereCloud::Resources::Disk', path: 'disk-path') }
         before do
-          Models::Disk.create(
-            uuid: 'fake-disk-uuid',
-            size: 100,
-            datacenter: 'fake-datacenter',
-            path: 'test-path'
-          )
+          allow(disk_provider).to receive(:find).with('fake-disk-uuid', 'fake-persistent-datastores').and_return(disk)
         end
 
-        after do
-          disk = Models::Disk.find(uuid: 'fake-disk-uuid')
-          disk.destroy if disk
-        end
-
-        context 'when disk is not in the cloud' do
-          before do
-            allow(vsphere_cloud).to receive(:has_disk?).with('fake-disk-uuid').and_return(false)
-          end
-
-          it 'raises DiskNotFound' do
-            expect {
-              vsphere_cloud.delete_disk('fake-disk-uuid')
-            }.to raise_error(Bosh::Clouds::DiskNotFound)
-          end
-        end
-
-        context 'when disk is in the cloud' do
-          before do
-            allow(vsphere_cloud).to receive(:has_disk?).with('fake-disk-uuid').and_return(true)
-          end
-
-          context 'when disk datacenter cannot be found' do
-            before do
-              allow(client).to receive(:find_by_inventory_path).with('fake-datacenter').and_return(nil)
-            end
-
-            it 'raises DiskNotFound' do
-              expect {
-                vsphere_cloud.delete_disk('fake-disk-uuid')
-              }.to raise_error(Bosh::Clouds::DiskNotFound)
-            end
-          end
-
-          context 'when disk datacenter is found' do
-            before do
-              allow(client).to receive(:find_by_inventory_path).with('fake-datacenter').and_return(datacenter)
-            end
-            let(:datacenter) { double(:datacenter) }
-
-            it 'deletes disk' do
-              expect(client).to receive(:delete_disk).with(datacenter, 'test-path')
-              vsphere_cloud.delete_disk('fake-disk-uuid')
-            end
-          end
+        it 'deletes disk' do
+          expect(client).to receive(:delete_disk).with(datacenter, 'disk-path')
+          vsphere_cloud.delete_disk('fake-disk-uuid')
         end
       end
 
-      context 'when disk is not in database' do
+      context 'when disk is not found' do
+        before do
+          allow(disk_provider).to receive(:find).
+            with('fake-disk-uuid', 'fake-persistent-datastores').
+            and_raise Bosh::Clouds::DiskNotFound.new(false)
+        end
+
         it 'raises an error' do
           expect {
             vsphere_cloud.delete_disk('fake-disk-uuid')
-          }.to raise_error
+          }.to raise_error Bosh::Clouds::DiskNotFound
         end
       end
     end
