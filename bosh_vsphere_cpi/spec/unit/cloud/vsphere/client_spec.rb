@@ -29,47 +29,6 @@ module VSphereCloud
       end
     end
 
-    describe '#has_disk?' do
-      let(:virtual_disk_manager) { double(:virtual_disk_manager) }
-      let(:datacenter) { double(:datacenter) }
-      before do
-        allow(fake_service_content).to receive(:virtual_disk_manager).
-          and_return(virtual_disk_manager)
-
-        allow(fake_search_index).to receive(:find_by_inventory_path).with('fake-datacenter').
-          and_return(datacenter)
-      end
-
-      it 'finds vmdk disk' do
-        allow(virtual_disk_manager).to receive(:query_virtual_disk_uuid).
-          with('fake-path.vmdk', datacenter).
-          and_return('fake-uuid')
-
-        expect(client.has_disk?('fake-path', 'fake-datacenter')).to be(true)
-      end
-
-      it 'finds -flat.vmdk disk' do
-        allow(virtual_disk_manager).to receive(:query_virtual_disk_uuid).
-          with('fake-path.vmdk', datacenter).
-          and_raise(
-            VimSdk::SoapError.new('File was not found', double(:error_object))
-          )
-        allow(virtual_disk_manager).to receive(:query_virtual_disk_uuid).
-          with('fake-path-flat.vmdk', datacenter).
-          and_return('fake-uuid')
-
-        expect(client.has_disk?('fake-path', 'fake-datacenter')).to be(true)
-      end
-
-      it 'raises DiskNotFound if nor .vmdk nor -flat.vmdk disk exist' do
-        allow(virtual_disk_manager).to receive(:query_virtual_disk_uuid).and_raise(
-          VimSdk::SoapError.new('File was not found', double(:error_object))
-        )
-
-        expect(client.has_disk?('fake-path', 'fake-datacenter')).to be(false)
-      end
-    end
-
     describe '#find_by_inventory_path' do
       context 'given a string' do
         it 'passes the path to a SearchIndex object when path contains no slashes' do

@@ -76,19 +76,11 @@ module VSphereCloud
       false
     end
 
-    def has_disk?(disk_id)
-      disk = VSphereCloud::Models::Disk.find(uuid: disk_id)
-
-      return false unless disk
-      # Disk path is only being set when disk is created in vSphere.
-      # If the path is not set it means that disk was only created in
-      # CPI database and attach disk was not called or failed.
-      # We consider that disk is missing only if CPI desired state
-      # is to be present but it actually missing in infrastructure.
-      return true unless disk.path
-      return false unless disk.datacenter
-
-      @client.has_disk?(disk.path, disk.datacenter)
+    def has_disk?(disk_cid)
+      disk_provider.find(disk_cid, @datacenter.persistent_datastores)
+      true
+    rescue Bosh::Clouds::DiskNotFound
+      false
     end
 
     def create_stemcell(image, _)

@@ -135,22 +135,6 @@ module VSphereCloud
       wait_for_task(task)
     end
 
-    def has_disk?(disk_path, disk_datacenter)
-      datacenter = find_by_inventory_path(disk_datacenter)
-
-      [".vmdk", "-flat.vmdk"].each do |extension|
-        begin
-          uuid = @service_content.virtual_disk_manager.query_virtual_disk_uuid(
-            "#{disk_path}#{extension}", datacenter
-          )
-          return true if uuid
-        rescue VimSdk::SoapError
-        end
-      end
-
-      false
-    end
-
     def find_by_inventory_path(path)
       full_path = Array(path).join("/")
       @service_content.search_index.find_by_inventory_path(full_path)
