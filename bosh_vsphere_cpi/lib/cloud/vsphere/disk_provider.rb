@@ -40,7 +40,7 @@ module VSphereCloud
       disk = find(disk_uuid, datastores_to_look)
       return disk if accessible_datastores.include?(disk.datastore.name)
 
-      destination_datastore =  @resources.place_persistent_datastore(datacenter_name, cluster, disk.size_in_mb)
+      destination_datastore =  @resources.pick_persistent_datastore_in_cluster(cluster, disk.size_in_mb)
       if destination_datastore.nil?
         raise Bosh::Clouds::NoDiskSpace.new(true),
           "Not enough persistent space on cluster '#{cluster.name}', requested disk size: #{disk.size_in_mb}Mb"

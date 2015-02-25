@@ -9,7 +9,8 @@ module VSphereCloud
 
     attr_reader :drs_rules
 
-    def initialize(config)
+    def initialize(datacenter, config)
+      @datacenter = datacenter
       @config = config
       @logger = config.logger
       @last_update = 0
@@ -17,64 +18,31 @@ module VSphereCloud
       @drs_rules = []
     end
 
-    # Returns the list of datacenters available for placement.
-    #
-    # Will lazily load them and reload the data when it's stale.
-    #
-    # @return [List<Resources::Datacenter>] datacenters.
-    def datacenters
-      @lock.synchronize do
-        update if Time.now.to_i - @last_update > STALE_TIMEOUT
-      end
-      @datacenters
-    end
-
-    # Returns the persistent datastore for the requested context.
-    #
-    # @param [String] dc_name datacenter name.
-    # @param [String] cluster_name cluster name.
-    # @param [String] datastore_name datastore name.
-    # @return [Resources::Datastore] persistent datastore.
-    def persistent_datastore(dc_name, cluster_name, datastore_name)
-      datacenter = datacenters[dc_name]
-      return nil if datacenter.nil?
-      cluster = datacenter.clusters[cluster_name]
-      return nil if cluster.nil?
-      cluster.persistent(datastore_name)
-    end
-
     # Place the persistent datastore in the given datacenter and cluster with
     # the requested disk space.
     #
-    # @param [String] dc_name datacenter name.
     # @param [String] cluster_name cluster name.
-    # @param [Integer] disk_space disk space.
+    # @param [Integer] disk_size_in_mb disk size in mb.
     # @return [Datastore?] datastore if it was placed succesfuly.
-    def place_persistent_datastore(dc_name, cluster_name, disk_space)
+    def pick_persistent_datastore_in_cluster(cluster_name, disk_size_in_mb)
       @lock.synchronize do
-        datacenter = datacenters[dc_name]
-        return nil if datacenter.nil?
-        cluster = datacenter.clusters[cluster_name]
+        cluster = @datacenter.clusters[cluster_name]
         return nil if cluster.nil?
-        datastore = cluster.pick_persistent(disk_space)
-        return nil if datastore.nil?
-        datastore.allocate(disk_space)
-        return datastore
+
+        pick_datastore(cluster, disk_size_in_mb)
       end
     end
 
     # Picks the persistent datastore with the requested disk space.
     #
-    # @param [Integer] disk_space disk space.
+    # @param [Integer] disk_size_in_mb disk size in mb.
     # @return [Datastore?] datastore if it was placed succesfuly.
     def pick_persistent_datastore(disk_size_in_mb)
       @lock.synchronize do
         cluster = pick_cluster(0, disk_size_in_mb, [])
         return nil if cluster.nil?
-        datastore = cluster.pick_persistent(disk_size_in_mb)
-        return nil if datastore.nil?
-        datastore.allocate(disk_size_in_mb)
-        return datastore
+
+        pick_datastore(cluster, disk_size_in_mb)
       end
     end
 
@@ -130,8 +98,7 @@ module VSphereCloud
     def pick_cluster(memory, disk_size_in_mb, existing_persistent_disk_cids)
       weighted_clusters = []
 
-      datacenter = datacenters.first.last
-      datacenter.clusters.each_value do |cluster|
+      @datacenter.clusters.each_value do |cluster|
         persistent_sizes = persistent_sizes_for_cluster(cluster, existing_persistent_disk_cids)
         scorer = Scorer.new(@config, cluster, memory, disk_size_in_mb, persistent_sizes)
         score = scorer.score
@@ -148,13 +115,11 @@ module VSphereCloud
 
     attr_reader :config
 
-    # Updates the resource models from vSphere.
-    # @return [void]
-    def update
-      #datacenter_config = config.vcenter_datacenter
-      datacenter = Datacenter.new(config)
-      @datacenters = { datacenter.name => datacenter }
-      @last_update = Time.now.to_i
+    def pick_datastore(cluster, disk_space)
+      datastore = cluster.pick_persistent(disk_space)
+      return nil if datastore.nil?
+      datastore.allocate(disk_space)
+      datastore
     end
 
     # Calculates the cluster locality for the provided persistent disks.
@@ -180,10 +145,9 @@ module VSphereCloud
     def populate_resources(disks)
       disks.each do |disk|
         unless disk[:ds_name].nil?
-          resources = persistent_datastore_resources(disk[:dc_name],
-                                                     disk[:ds_name])
+          resources = persistent_datastore_resources(disk[:ds_name])
           if resources
-            disk[:datacenter], disk[:cluster], disk[:datastore] = resources
+            disk[:cluster], disk[:datastore] = resources
           end
         end
       end
@@ -194,15 +158,12 @@ module VSphereCloud
     # Has to traverse the resource hierarchy to find the cluster, then returns
     # all of the resources.
     #
-    # @param [String] dc_name datacenter name.
     # @param [String] ds_name datastore name.
     # @return [Array] array/tuple of Datacenter, Cluster, and Datastore.
-    def persistent_datastore_resources(dc_name, ds_name)
-      datacenter = datacenters[dc_name]
-      return nil if datacenter.nil?
-      datacenter.clusters.each_value do |cluster|
+    def persistent_datastore_resources(ds_name)
+      @datacenter.clusters.each_value do |cluster|
         datastore = cluster.persistent(ds_name)
-        return [datacenter, cluster, datastore] unless datastore.nil?
+        return [cluster, datastore] unless datastore.nil?
       end
       nil
     end

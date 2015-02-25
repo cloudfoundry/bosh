@@ -131,7 +131,7 @@ module VSphereCloud
 
           let(:destination_datastore) { Resources::Datastore.new('name' => destination_datastore_name) }
           let(:destination_datastore_name) { 'fake-host-datastore' }
-          before { allow(resources).to receive(:place_persistent_datastore).and_return(destination_datastore) }
+          before { allow(resources).to receive(:pick_persistent_datastore_in_cluster).and_return(destination_datastore) }
 
           it 'moves disk' do
             expect(client).to receive(:move_disk).with(
@@ -149,7 +149,7 @@ module VSphereCloud
           end
 
           context 'when datastore that fits disk cannot be found' do
-            before { allow(resources).to receive(:place_persistent_datastore).and_return(nil) }
+            before { allow(resources).to receive(:pick_persistent_datastore_in_cluster).and_return(nil) }
 
             it 'raises an error' do
               expect {

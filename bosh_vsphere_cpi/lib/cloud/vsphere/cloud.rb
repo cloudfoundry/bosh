@@ -42,7 +42,7 @@ module VSphereCloud
       @cloud_searcher = CloudSearcher.new(@client.service_content, @logger)
       @datacenter = Resources::Datacenter.new(config)
 
-      @resources = Resources.new(config)
+      @resources = Resources.new(@datacenter, config)
       @file_provider = FileProvider.new(config.rest_client, config.vcenter_host)
       @agent_env = AgentEnv.new(client, @file_provider, @cloud_searcher)
 
