@@ -89,6 +89,19 @@ module VSphereCloud
         end
         clusters
       end
+
+      def persistent_datastores
+        datastores = {}
+        clusters.each do |_, cluster|
+          cluster.persistent_datastores.each do |_, datastore|
+            datastores[datastore.name] = datastore
+          end
+          cluster.shared_datastores.each do |_, datastore|
+            datastores[datastore.name] = datastore
+          end
+        end
+        datastores.values
+      end
     end
   end
 end
