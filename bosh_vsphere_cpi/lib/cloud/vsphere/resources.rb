@@ -43,24 +43,6 @@ module VSphereCloud
       cluster.persistent(datastore_name)
     end
 
-    # Validate that the persistent datastore is still valid so we don't have to
-    # move the disk.
-    #
-    # @param [String] dc_name datacenter name.
-    # @param [String] datastore_name datastore name.
-    # @return [true, false] true iff the datastore still exists and is in the
-    #   persistent pool.
-    def validate_persistent_datastore(dc_name, datastore_name)
-      datacenter = datacenters[dc_name]
-      if datacenter.nil?
-        raise "Invalid datacenter #{dc_name} #{datacenters.inspect}"
-      end
-      datacenter.clusters.each_value do |cluster|
-        return true unless cluster.persistent(datastore_name).nil?
-      end
-      false
-    end
-
     # Place the persistent datastore in the given datacenter and cluster with
     # the requested disk space.
     #
@@ -79,24 +61,6 @@ module VSphereCloud
         datastore.allocate(disk_space)
         return datastore
       end
-    end
-
-    # Validate that the persistent datastore is still valid so we don't have to
-    # move the disk.
-    #
-    # @param [String] dc_name datacenter name.
-    # @param [String] datastore_name datastore name.
-    # @return [true, false] true iff the datastore still exists and is in the
-    #   persistent pool.
-    def validate_persistent_datastore(dc_name, datastore_name)
-      datacenter = datacenters[dc_name]
-      if datacenter.nil?
-        raise "Invalid datacenter #{dc_name} #{datacenters.inspect}"
-      end
-      datacenter.clusters.each_value do |cluster|
-        return true unless cluster.persistent(datastore_name).nil?
-      end
-      false
     end
 
     # Picks the persistent datastore with the requested disk space.

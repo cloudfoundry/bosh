@@ -58,29 +58,6 @@ module VSphereCloud
       end
     end
 
-    describe :validate_persistent_datastore do
-      it "should return true if the provided datastore is still persistent" do
-        dc = double(:dc)
-        cluster = double(:cluster)
-        allow(dc).to receive(:clusters).and_return({ "bar" => cluster })
-        datastore = double(:datastore)
-        allow(cluster).to receive(:persistent).with("baz").and_return(datastore)
-        resources = VSphereCloud::Resources.new(config)
-        allow(resources).to receive(:datacenters).and_return({ "foo" => dc })
-        expect(resources.validate_persistent_datastore("foo", "baz")).to be(true)
-      end
-
-      it "should return false if the provided datastore is not persistent" do
-        dc = double(:dc)
-        cluster = double(:cluster)
-        allow(dc).to receive(:clusters).and_return({ "bar" => cluster })
-        allow(cluster).to receive(:persistent).with("baz").and_return(nil)
-        resources = VSphereCloud::Resources.new(config)
-        allow(resources).to receive(:datacenters).and_return({ "foo" => dc })
-        expect(resources.validate_persistent_datastore("foo", "baz")).to be(false)
-      end
-    end
-
     describe :place_persistent_datastore do
       it "should return the datastore when it was placed successfully" do
         dc = double(:dc)
