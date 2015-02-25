@@ -196,7 +196,9 @@ compiled_package_cache:
 
 cloud:
 <% if_p('director.cpi_job') do |cpi_job_name| %>
-  cpi_executable: /var/vcap/jobs/<%= cpi_job_name %>/bin/cpi
+  provider:
+    name: <%= cpi_job_name %>
+    path: /var/vcap/jobs/<%= cpi_job_name %>/bin/cpi
   properties:
 <% end.else do %>
 

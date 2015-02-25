@@ -236,8 +236,9 @@ module Bosh::Dev::Sandbox
 
     def external_cpi_config
       {
+        name: 'test-cpi',
         exec_path: File.join(REPO_ROOT, 'bosh-director', 'bin', 'dummy_cpi'),
-        director_path: sandbox_path(EXTERNAL_CPI),
+        job_path: sandbox_path(EXTERNAL_CPI),
         config_path: sandbox_path(DIRECTOR_CONFIG),
         env_path: ENV['PATH']
       }

@@ -1,8 +1,8 @@
 module Bosh::Clouds
   class Provider
     def self.create(cloud_config, director_uuid)
-      if cloud_config.has_key?('cpi_executable')
-        ExternalCpiProvider.create(cloud_config['cpi_executable'], director_uuid)
+      if cloud_config.has_key?('provider')
+        ExternalCpiProvider.create(cloud_config['provider']['path'], director_uuid)
       else
         PluginCloudProvider.create(cloud_config['plugin'], cloud_config['properties'])
       end
@@ -24,8 +24,8 @@ module Bosh::Clouds
   end
 
   class ExternalCpiProvider
-    def self.create(cpi_executable, director_uuid)
-      ExternalCpi.new(cpi_executable, director_uuid)
+    def self.create(cpi_job_path, director_uuid)
+      ExternalCpi.new(cpi_job_path, director_uuid)
     end
   end
 end

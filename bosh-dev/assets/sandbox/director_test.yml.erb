@@ -61,7 +61,9 @@ snapshots:
 
 cloud:
   <% if external_cpi_enabled %>
-  cpi_executable: <%= external_cpi_config[:director_path] %>
+  provider:
+    name: <%= external_cpi_config[:name] %>
+    path: <%= external_cpi_config[:job_path] %>
   <% else %>
   plugin: dummy
   <% end %>

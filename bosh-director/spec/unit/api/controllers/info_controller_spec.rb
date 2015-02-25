@@ -10,7 +10,7 @@ module Bosh::Director
 
       let(:identity_provider) { Bosh::Director::Api::LocalIdentityProvider.new(Bosh::Director::Api::UserManager.new) }
       let(:temp_dir) { Dir.mktmpdir}
-      let(:test_config) do
+      let(:base_config) do
         blobstore_dir = File.join(temp_dir, 'blobstore')
         FileUtils.mkdir_p(blobstore_dir)
 
@@ -23,6 +23,7 @@ module Bosh::Director
         config['snapshots']['enabled'] = true
         config
       end
+      let(:test_config) { base_config }
 
       before { App.new(Config.load_hash(test_config)) }
 
@@ -86,6 +87,23 @@ module Bosh::Director
         }
 
         expect(Yajl::Parser.parse(last_response.body)).to eq(expected)
+      end
+
+      context 'when configured with an external CPI' do
+        let(:test_config) do
+          cfg = base_config
+          cfg['cloud'].delete('plugin')
+          cfg['cloud']['provider'] = {
+            'name' => 'test-cpi',
+            'path' => '/path/to/test-cpi/bin/cpi'
+          }
+          cfg
+        end
+
+        it 'reports the cpi to be the external cpi executable path' do
+          get '/'
+          expect(Yajl::Parser.parse(last_response.body)['cpi']).to eq('test-cpi')
+        end
       end
     end
   end

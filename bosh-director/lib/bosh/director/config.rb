@@ -200,7 +200,7 @@ module Bosh::Director
 
       def cloud_type
         if @cloud_options
-          @cloud_options['plugin']
+          @cloud_options['plugin'] || @cloud_options['provider']['name']
         end
       end
 

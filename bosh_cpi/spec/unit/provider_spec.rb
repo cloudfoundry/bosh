@@ -7,13 +7,16 @@ describe Bosh::Clouds::Provider do
   context 'when external cpi is enabled' do
     let(:config) do
       {
-        'cpi_executable' => '/path/to/fake-external-cpi'
+        'provider' => {
+          'name' => 'test-cpi',
+          'path' => '/path/to/test-cpi/bin/cpi'
+        }
       }
     end
 
     it 'provides external cpi cloud' do
       provider = instance_double('Bosh::Clouds::ExternalCpi')
-      expect(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/fake-external-cpi', director_uuid).and_return(provider)
+      expect(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/test-cpi/bin/cpi', director_uuid).and_return(provider)
       expect(Bosh::Clouds::Provider.create(config, director_uuid)).to equal(provider)
     end
   end
