@@ -22,6 +22,14 @@ module VSphereCloud
     let(:client) { instance_double('VSphereCloud::Client', wait_for_task: nil) }
     let(:logger) { double(:logger, info: nil) }
 
+    let(:datastore) do
+      Resources::Datastore.new(
+        'name' => 'fake-datastore',
+        'summary.freeSpace' => 1024,
+        'summary.capacity' => 2048,
+      )
+    end
+
     describe '#create' do
       before do
         allow(SecureRandom).to receive(:uuid).and_return('uuid')
@@ -72,14 +80,6 @@ module VSphereCloud
 
     describe '#find_and_move' do
       let(:cluster) { instance_double('VSphereCloud::Resources::Cluster', name: 'fake-cluster-name') }
-
-      let(:datastore) do
-        Resources::Datastore.new(
-          'name' => 'fake-datastore',
-          'summary.freeSpace' => 1024,
-          'summary.capacity' => 2048,
-        )
-      end
 
       context 'when disk exists' do
         before do
@@ -175,13 +175,47 @@ module VSphereCloud
           allow(cluster).to receive(:persistent_datastores).and_return({})
           allow(cluster).to receive(:shared_datastores).and_return({})
           allow(virtual_disk_manager).to receive(:query_virtual_disk_geometry).
-            with('[fake-datastore] fake-disk-path/disk-uuid.vmdk', datacenter).
+            with('[fake-datastore] fake-disk-path/disk-uuid.vmdk', datacenter_mob).
             and_raise(VimSdk::SoapError.new('fake-message', 'fake-fault'))
         end
 
         it 'raises DiskNotFound' do
           expect {
             disk_provider.find_and_move('disk-uuid', cluster, 'fake-datacenter', ['fake-datastore'])
+          }.to raise_error Bosh::Clouds::DiskNotFound
+        end
+      end
+    end
+
+    describe '#find' do
+      context 'when disk exists' do
+        before do
+          allow(virtual_disk_manager).to receive(:query_virtual_disk_geometry).
+            with('[fake-datastore] fake-disk-path/disk-uuid.vmdk', datacenter_mob).
+            and_return(
+            double(:host_disk_dimensions_chs, cylinder: 2048, head: 4, sector: 8)
+          )
+        end
+
+        it 'returns disk' do
+          disk = disk_provider.find('disk-uuid', {'fake-datastore' => datastore})
+          expect(disk.uuid).to eq('disk-uuid')
+          expect(disk.size_in_kb).to eq(128)
+          expect(disk.datastore).to eq(datastore)
+          expect(disk.path).to eq('[fake-datastore] fake-disk-path/disk-uuid.vmdk')
+        end
+      end
+
+      context 'when disk does not exist' do
+        before do
+          allow(virtual_disk_manager).to receive(:query_virtual_disk_geometry).
+            with('[fake-datastore] fake-disk-path/disk-uuid.vmdk', datacenter_mob).
+            and_raise(VimSdk::SoapError.new('fake-message', 'fake-fault'))
+        end
+
+        it 'raises DiskNotFound' do
+          expect {
+            disk_provider.find('disk-uuid', {'fake-datastore' => datastore})
           }.to raise_error Bosh::Clouds::DiskNotFound
         end
       end

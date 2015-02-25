@@ -36,7 +36,8 @@ module VSphereCloud
     end
 
     def find_and_move(disk_uuid, cluster, datacenter_name, accessible_datastores)
-      disk = find(disk_uuid, cluster)
+      datastores_to_look = cluster.persistent_datastores.merge(cluster.shared_datastores)
+      disk = find(disk_uuid, datastores_to_look)
       return disk if accessible_datastores.include?(disk.datastore.name)
 
       destination_datastore =  @resources.place_persistent_datastore(datacenter_name, cluster, disk.size_in_mb)
@@ -57,10 +58,8 @@ module VSphereCloud
       Resources::Disk.new(disk_uuid, disk.size_in_kb, destination_datastore, destination_path)
     end
 
-    private
-
-    def find(disk_uuid, cluster)
-      cluster.persistent_datastores.merge(cluster.shared_datastores).each do |_, datastore|
+    def find(disk_uuid, datastores)
+      datastores.each do |_, datastore|
         disk_path = path(datastore, disk_uuid)
         disk_size_in_kb = get_disk_size_in_kb(disk_path)
         if disk_size_in_kb != nil
@@ -70,6 +69,8 @@ module VSphereCloud
 
       raise Bosh::Clouds::DiskNotFound, "Could not find disk with id #{disk_uuid}"
     end
+
+    private
 
     def path(datastore, disk_uuid)
       "[#{datastore.name}] #{@disk_path}/#{disk_uuid}.vmdk"
