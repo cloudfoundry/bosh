@@ -681,7 +681,6 @@ module VSphereCloud
         after { disk_model.destroy }
 
         before do
-          allow(vsphere_cloud).to receive(:get_vm_by_cid).with('vm-cid').and_return(vm)
           allow(cloud_searcher).to receive(:get_property).with(
             vm_mob,
             VimSdk::Vim::VirtualMachine,

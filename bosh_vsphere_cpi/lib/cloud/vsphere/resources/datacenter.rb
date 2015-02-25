@@ -24,6 +24,10 @@ module VSphereCloud
         end
       end
 
+      def vm_path(vm_cid)
+        [name, 'vm', vm_folder.path_components, vm_cid].join('/')
+      end
+
       def master_vm_folder
         Folder.new(@config.datacenter_vm_folder, @config)
       end

@@ -8,7 +8,6 @@ module VSphereCloud
 
       def initialize(cid, mob, client, logger)
         @client = client
-        @cloud_searcher = client.cloud_searcher
         @mob = mob
         @cid = cid
         @logger = logger
@@ -19,13 +18,13 @@ module VSphereCloud
       end
 
       def cluster
-        cluster = @cloud_searcher.get_properties(host_properties['parent'], Vim::ClusterComputeResource, 'name', ensure_all: true)
+        cluster = cloud_searcher.get_properties(host_properties['parent'], Vim::ClusterComputeResource, 'name', ensure_all: true)
         cluster['name']
       end
 
       def accessible_datastores
         host_properties['datastore'].map do |store|
-          ds = @cloud_searcher.get_properties(store, Vim::Datastore, 'info', ensure_all: true)
+          ds = cloud_searcher.get_properties(store, Vim::Datastore, 'info', ensure_all: true)
           ds['info'].name
         end
       end
@@ -108,7 +107,7 @@ module VSphereCloud
             @logger.info("VM is blocked on a question: #{question.text}, " +
               "providing default answer: #{choices.choice_info[choices.default_index].label}")
             @client.answer_vm(@mob, question.id, choices.choice_info[choices.default_index].key)
-            power_state = @cloud_searcher.get_property(@mob, Vim::VirtualMachine, 'runtime.powerState')
+            power_state = cloud_searcher.get_property(@mob, Vim::VirtualMachine, 'runtime.powerState')
           else
             power_state = properties['runtime.powerState']
           end
@@ -151,7 +150,7 @@ module VSphereCloud
       end
 
       def properties
-        @properties ||= @cloud_searcher.get_properties(
+        @properties ||= cloud_searcher.get_properties(
           @mob,
           Vim::VirtualMachine,
           ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name', 'runtime'],
@@ -160,7 +159,7 @@ module VSphereCloud
       end
 
       def host_properties
-        @host_properties ||= @cloud_searcher.get_properties(
+        @host_properties ||= cloud_searcher.get_properties(
           properties['runtime'].host,
           Vim::HostSystem,
           ['datastore', 'parent'],
@@ -171,11 +170,15 @@ module VSphereCloud
       def wait_until_off(timeout)
         started = Time.now
         loop do
-          power_state = @cloud_searcher.get_property(@mob, Vim::VirtualMachine, 'runtime.powerState')
+          power_state = cloud_searcher.get_property(@mob, Vim::VirtualMachine, 'runtime.powerState')
           break if power_state == Vim::VirtualMachine::PowerState::POWERED_OFF
           raise VSphereCloud::Cloud::TimeoutException if Time.now - started > timeout
           sleep(1.0)
         end
+      end
+
+      def cloud_searcher
+        @client.cloud_searcher
       end
     end
   end

@@ -726,6 +726,14 @@ module VSphereCloud
       "pong"
     end
 
+    def vm_provider
+      VMProvider.new(
+        @datacenter,
+        @client,
+        @logger
+      )
+    end
+
     private
 
     def choose_placer(cloud_properties)
@@ -753,14 +761,6 @@ module VSphereCloud
         @datacenter,
         @resources,
         @config.datacenter_disk_path,
-        @client,
-        @logger
-      )
-    end
-
-    def vm_provider
-      VMProvider.new(
-        @resources,
         @client,
         @logger
       )

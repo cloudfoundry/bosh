@@ -249,4 +249,11 @@ describe VSphereCloud::Resources::Datacenter do
       })
     end
   end
+
+  describe '#vm_path' do
+    it 'builds the vm path' do
+      allow(vm_folder).to receive(:path_components) { ['vm-folder', 'path-components'] }
+      expect(datacenter.vm_path('fake-vm-cid')).to eq('fake-datacenter-name/vm/vm-folder/path-components/fake-vm-cid')
+    end
+  end
 end

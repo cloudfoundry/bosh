@@ -1,17 +1,16 @@
 module VSphereCloud
   class VMProvider
-    def initialize(resources, client, logger)
-      @resources = resources
+    def initialize(datacenter, client, logger)
+      @datacenter = datacenter
       @client = client
       @logger = logger
     end
 
     def find(vm_cid)
-      @resources.datacenters.each_value do |datacenter|
-        vm_mob = @client.find_by_inventory_path([datacenter.name, 'vm', datacenter.vm_folder.path_components, vm_cid])
-        return Resources::VM.new(vm_cid, vm_mob, @client, @logger)
-      end
-      raise Bosh::Clouds::VMNotFound, "VM `#{vm_cid}' not found"
+      vm_mob = @client.find_by_inventory_path(@datacenter.vm_path(vm_cid))
+      raise Bosh::Clouds::VMNotFound, "VM `#{vm_cid}' not found" if vm_mob.nil?
+
+      Resources::VM.new(vm_cid, vm_mob, @client, @logger)
     end
   end
 end

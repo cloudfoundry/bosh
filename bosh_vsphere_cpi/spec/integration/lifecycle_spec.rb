@@ -164,9 +164,8 @@ describe VSphereCloud::Cloud, external_cpi: false do
           resource_pool['datacenters'] = [{ 'name' => @datacenter_name, 'clusters' => [{@cluster => {}}]}]
           vm_lifecycle([], resource_pool)
 
-          vm = @cpi.get_vm_by_cid(@vm_id)
-          vm_info = @cpi.get_vm_host_info(vm)
-          expect(vm_info['cluster']).to eq(@cluster)
+          vm = @cpi.vm_provider.find(@vm_id)
+          expect(vm.cluster).to eq(@cluster)
         ensure
           clean_up_vm_and_disk
         end
@@ -177,9 +176,8 @@ describe VSphereCloud::Cloud, external_cpi: false do
           resource_pool['datacenters'] = [{ 'name' => @datacenter_name, 'clusters' => [{@second_cluster => {}}]}]
           vm_lifecycle([], resource_pool)
 
-          vm = @cpi.get_vm_by_cid(@vm_id)
-          vm_info = @cpi.get_vm_host_info(vm)
-          expect(vm_info['cluster']).to eq(@second_cluster)
+          vm = @cpi.vm_provider.find(@vm_id)
+          expect(vm.cluster).to eq(@second_cluster)
         ensure
           clean_up_vm_and_disk
         end
@@ -247,12 +245,12 @@ describe VSphereCloud::Cloud, external_cpi: false do
       after { clean_up_vm_and_disk }
 
       def relocate_vm_to_second_datastore
-        vm = @cpi.get_vm_by_cid(@vm_id)
+        vm = @cpi.vm_provider.find(@vm_id)
 
         datastore = @cpi.client.cloud_searcher.get_managed_object(VimSdk::Vim::Datastore, name: @second_datastore)
         relocate_spec = VimSdk::Vim::Vm::RelocateSpec.new(datastore: datastore)
 
-        task = vm.relocate(relocate_spec, 'defaultPriority')
+        task = vm.mob.relocate(relocate_spec, 'defaultPriority')
         @cpi.client.wait_for_task(task)
       end
 
