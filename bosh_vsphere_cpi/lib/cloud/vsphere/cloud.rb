@@ -417,7 +417,7 @@ module VSphereCloud
       with_thread_name("delete_disk(#{disk_cid})") do
         @logger.info("Deleting disk: #{disk_cid}")
         disk = disk_provider.find(disk_cid, @datacenter.persistent_datastores)
-        client.delete_disk(@datacenter, disk.path)
+        client.delete_disk(@datacenter.mob, disk.path)
 
         @logger.info('Finished deleting disk')
       end

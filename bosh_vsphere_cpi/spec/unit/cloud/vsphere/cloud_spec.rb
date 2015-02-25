@@ -895,6 +895,7 @@ module VSphereCloud
 
     describe '#delete_disk' do
       before { allow(datacenter).to receive(:persistent_datastores).and_return('fake-persistent-datastores') }
+      before { allow(datacenter).to receive(:mob).and_return('datacenter-mob') }
 
       context 'when disk is found' do
         let(:disk) { instance_double('VSphereCloud::Resources::Disk', path: 'disk-path') }
@@ -903,7 +904,7 @@ module VSphereCloud
         end
 
         it 'deletes disk' do
-          expect(client).to receive(:delete_disk).with(datacenter, 'disk-path')
+          expect(client).to receive(:delete_disk).with('datacenter-mob', 'disk-path')
           vsphere_cloud.delete_disk('fake-disk-uuid')
         end
       end
