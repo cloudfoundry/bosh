@@ -100,7 +100,7 @@ module VSphereCloud
             datastores[datastore.name] = datastore
           end
         end
-        datastores.values
+        datastores
       end
     end
   end

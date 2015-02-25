@@ -243,10 +243,10 @@ describe VSphereCloud::Resources::Datacenter do
     end
 
     it 'returns persistent datastores in all clusters' do
-      expect(datacenter.persistent_datastores).to contain_exactly(
-        first_datastore,
-        second_datastore
-      )
+      expect(datacenter.persistent_datastores).to eq({
+        'first-datastore' => first_datastore,
+        'second-datastore' => second_datastore
+      })
     end
   end
 end
