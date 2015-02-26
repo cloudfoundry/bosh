@@ -13,27 +13,28 @@ module VSphereCloud
       # @param [Array<Integer>] ephemeral list of required ephemeral disk sizes.
       # @param [Array<Integer>] persistent list of required persistent disk
       #   sizes.
-      def initialize(config, cluster, memory, ephemeral, persistent)
+      def initialize(config, cluster_with_disks, memory, ephemeral)
+        @cluster = cluster_with_disks.cluster
+        @persistent = cluster_with_disks.disks.map(&:size_in_mb)
+
         @logger = config.logger
-        @cluster = cluster
         @memory = memory
         @ephemeral = ephemeral
-        @persistent = persistent
 
-        @free_memory = cluster.free_memory
+        @free_memory = @cluster.free_memory
 
         @free_ephemeral = []
-        cluster.ephemeral_datastores.each_value do |datastore|
+        @cluster.ephemeral_datastores.each_value do |datastore|
           @free_ephemeral << datastore.free_space
         end
 
         @free_persistent = []
-        cluster.persistent_datastores.each_value do |datastore|
+        @cluster.persistent_datastores.each_value do |datastore|
           @free_persistent << datastore.free_space
         end
 
         @free_shared = []
-        cluster.shared_datastores.each_value do |datastore|
+        @cluster.shared_datastores.each_value do |datastore|
           @free_shared << datastore.free_space
         end
       end

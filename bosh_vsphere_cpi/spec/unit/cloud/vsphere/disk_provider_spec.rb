@@ -31,10 +31,11 @@ module VSphereCloud
     end
 
     describe '#create' do
+      let(:disk_without_datastore) { Resources::DiskWithoutDatastore.new(24576) }
       before do
         allow(SecureRandom).to receive(:uuid).and_return('uuid')
         allow(resources).to receive(:pick_persistent_datastore).
-          with(24).
+          with(disk_without_datastore).
           and_return(datastore)
         allow(virtual_disk_manager).to receive(:create_virtual_disk)
         allow(client).to receive(:create_datastore_folder)
@@ -51,7 +52,7 @@ module VSphereCloud
           expect(spec.adapter_type).to eq('lsiLogic')
         end
 
-        disk = disk_provider.create(24576)
+        disk = disk_provider.create(disk_without_datastore)
         expect(disk.uuid).to eq('disk-uuid')
         expect(disk.size_in_kb).to eq(24576)
         expect(disk.path).to eq('[fake-datastore-name] fake-disk-path/disk-uuid.vmdk')
@@ -60,19 +61,19 @@ module VSphereCloud
 
       it 'creates parent folder' do
         expect(client).to receive(:create_datastore_folder).with('[fake-datastore-name] fake-disk-path', datacenter_mob)
-        disk_provider.create(24576)
+        disk_provider.create(disk_without_datastore)
       end
 
       context 'when there are no datastores on host cluster that can fit disk size' do
         before do
           allow(resources).to receive(:pick_persistent_datastore).
-            with(24).
+            with(disk_without_datastore).
             and_return(nil)
         end
 
         it 'raises an error' do
           expect {
-            disk_provider.create(24576)
+            disk_provider.create(disk_without_datastore)
           }.to raise_error Bosh::Clouds::NoDiskSpace
         end
       end

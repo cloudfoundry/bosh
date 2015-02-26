@@ -20,7 +20,7 @@ module VSphereCloud
       @logger.debug("VM creator initialized with memory: #{@memory}, disk: #{@disk}, cpu: #{@cpu}, placer: #{@placer}")
     end
 
-    def create(agent_id, stemcell_cid, networks, disk_cids, environment)
+    def create(agent_id, stemcell_cid, networks, persistent_disk_cids, environment)
       stemcell_vm = @cpi.stemcell_vm(stemcell_cid)
       raise "Could not find stemcell: #{stemcell_cid}" if stemcell_vm.nil?
 
@@ -28,10 +28,11 @@ module VSphereCloud
         @cloud_searcher.get_property(stemcell_vm, VimSdk::Vim::VirtualMachine, 'summary.storage.committed', ensure_all: true)
       stemcell_size /= 1024 * 1024
 
-      disks = @cpi.disk_spec(disk_cids)
+      persistent_disks = @cpi.disk_spec(persistent_disk_cids)
+
       # need to include swap and linked clone log
-      ephemeral = @disk_size + @memory + stemcell_size
-      cluster, datastore = @placer.place(@memory, ephemeral, disks)
+      ephemeral_disk_size = @disk_size + @memory + stemcell_size
+      cluster, datastore = @placer.place(@memory, ephemeral_disk_size, persistent_disks)
 
       vm_cid = "vm-#{@cpi.generate_unique_name}"
       @logger.info("Creating vm: #{vm_cid} on #{cluster.mob} stored in #{datastore.mob}")

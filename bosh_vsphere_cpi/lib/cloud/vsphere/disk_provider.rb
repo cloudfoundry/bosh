@@ -12,14 +12,13 @@ module VSphereCloud
       @logger = logger
     end
 
-    def create(disk_size_in_kb)
-      disk_size_in_mb = disk_size_in_kb / 1024
-      datastore = find_datastore(disk_size_in_mb)
+    def create(disk_without_datastore)
+      datastore = find_datastore(disk_without_datastore)
       disk_uuid = "disk-#{SecureRandom.uuid}"
 
       disk_spec = VimSdk::Vim::VirtualDiskManager::FileBackedVirtualDiskSpec.new
       disk_spec.disk_type = 'preallocated'
-      disk_spec.capacity_kb = disk_size_in_kb
+      disk_spec.capacity_kb = disk_without_datastore.size_in_kb
       disk_spec.adapter_type = 'lsiLogic'
 
       disk_path = path(datastore, disk_uuid)
@@ -32,7 +31,7 @@ module VSphereCloud
       )
       @client.wait_for_task(task)
 
-      Resources::Disk.new(disk_uuid, disk_size_in_kb, datastore, disk_path)
+      Resources::Disk.new(disk_uuid, disk_without_datastore.size_in_kb, datastore, disk_path)
     end
 
     def find_and_move(disk_uuid, cluster, datacenter_name, accessible_datastores)
@@ -76,11 +75,12 @@ module VSphereCloud
       "[#{datastore.name}] #{@disk_path}/#{disk_uuid}.vmdk"
     end
 
-    def find_datastore(disk_size_in_mb)
-      datastore = @resources.pick_persistent_datastore(disk_size_in_mb)
+    def find_datastore(disk_without_datastore)
+      datastore = @resources.pick_persistent_datastore(disk_without_datastore)
 
       if datastore.nil?
-        raise Bosh::Clouds::NoDiskSpace.new(true), "Not enough persistent space #{disk_size_in_mb}"
+        raise Bosh::Clouds::NoDiskSpace.new(true),
+          "Not enough persistent space #{disk_without_datastore.size_in_mb}"
       end
 
       datastore

@@ -2,16 +2,17 @@ require 'spec_helper'
 
 module VSphereCloud
   describe Resources do
-    subject(:resources) { VSphereCloud::Resources.new(datacenter, config) }
+    subject(:resources) { VSphereCloud::Resources.new(datacenter, cluster_locality, config) }
+    let(:cluster_locality) { instance_double(VSphereCloud::ClusterLocality) }
     let(:config) { instance_double('VSphereCloud::Config', client: client, logger: logger) }
     let(:client) { instance_double('VSphereCloud::Client') }
-    let(:datacenter) { instance_double('VSphereCloud::Resources::Datacenter') }
+    let(:datacenter) { instance_double('VSphereCloud::Resources::Datacenter', name: 'datacenter_name') }
     let(:logger) { instance_double('Logger', info: nil, debug: nil) }
 
-    let(:cluster) { double(:cluster) }
-    before { allow(datacenter).to receive(:clusters).and_return({ "bar" => cluster }) }
-
     describe :pick_persistent_datastore_in_cluster do
+      let(:cluster) { double(:cluster) }
+      before { allow(datacenter).to receive(:clusters).and_return({ "bar" => cluster }) }
+
       it "should return the datastore when it was placed successfully" do
         datastore = double(:datastore)
         expect(datastore).to receive(:allocate).with(1024)
@@ -28,187 +29,101 @@ module VSphereCloud
     end
 
     describe '#place' do
-      it "should allocate memory and ephemeral disk space" do
-        datastore = double(:datastore)
-        allow(cluster).to receive(:name).and_return("bar")
-        allow(cluster).to receive(:persistent).with("baz").and_return(datastore)
+      def make_cluster_with_disks(options)
+        cluster = instance_double(VSphereCloud::Resources::Cluster)
+        cluster_with_disks = instance_double(VSphereCloud::Resources::ClusterWithDisks,
+          cluster: cluster,
+          disks: options[:disks])
 
-        scorer = double(:scorer)
-        expect(scorer).to receive(:score).and_return(4)
-        expect(VSphereCloud::Resources::Scorer).to receive(:new).
-          with(config, cluster, 512, 1024, []).and_return(scorer)
+        allow(cluster).to receive(:pick_ephemeral).with(1024).and_return(options[:datastore])
+        allow(cluster).to receive(:allocate).with(512)
 
-        expect(cluster).to receive(:allocate).with(512)
-        expect(cluster).to receive(:pick_ephemeral).with(1024).and_return(datastore)
-        expect(datastore).to receive(:allocate).with(1024)
+        scorer = instance_double(VSphereCloud::Resources::Scorer)
+        allow(scorer).to receive(:score).and_return(options[:score])
+        allow(VSphereCloud::Resources::Scorer).to receive(:new).
+          with(config, cluster_with_disks, 512, 1024).and_return(scorer)
 
-        expect(resources.place(512, 1024, [])).to eq([cluster, datastore])
+        cluster_with_disks
       end
 
-      it "should prioritize persistent locality" do
-        cluster_a = double(:cluster_a)
-        cluster_b = double(:cluster_b)
-        allow(datacenter).to receive(:clusters).and_return({ "a" => cluster_a, "b" => cluster_b })
+      context 'when there is a cluster that has persistent disks with non-0 score' do
+        it 'chooses the cluster with the largest disk size and score > 0' do
+          disk_a = instance_double(VSphereCloud::Resources::Disk)
+          disk_b = instance_double(VSphereCloud::Resources::Disk)
+          disks = [disk_a, disk_b]
 
-        datastore_a = double(:datastore_a)
-        allow(cluster_a).to receive(:name).and_return("ds_a")
-        allow(cluster_a).to receive(:persistent).with("ds_a").and_return(datastore_a)
-        allow(cluster_a).to receive(:persistent).with("ds_b").and_return(nil)
+          cluster_with_the_most_disks_but_no_space_with_disks = make_cluster_with_disks(
+            disks: [disk_a],
+            score: 0,
+            datastore: instance_double(VSphereCloud::Resources::Datastore)
+          )
 
-        datastore_b = double(:datastore_b)
-        allow(cluster_b).to receive(:name).and_return("ds_b")
-        allow(cluster_b).to receive(:persistent).with("ds_a").and_return(nil)
-        allow(cluster_b).to receive(:persistent).with("ds_b").and_return(datastore_b)
+          datastore = instance_double(VSphereCloud::Resources::Datastore)
+          cluster_with_fewer_disks_but_enough_space_with_disks = make_cluster_with_disks(
+            disks: [disk_b],
+            score: 4,
+            datastore: datastore
+          )
 
-        scorer_b = double(:scorer_a)
-        expect(scorer_b).to receive(:score).and_return(4)
-        expect(VSphereCloud::Resources::Scorer).to receive(:new).
-          with(config, cluster_b, 512, 1024, [2048]).and_return(scorer_b)
+          allow(cluster_locality).to receive(:clusters_ordered_by_disk_size).with(disks).
+            and_return([cluster_with_the_most_disks_but_no_space_with_disks, cluster_with_fewer_disks_but_enough_space_with_disks])
 
-        expect(cluster_b).to receive(:allocate).with(512)
-        expect(cluster_b).to receive(:pick_ephemeral).with(1024).
-          and_return(datastore_b)
-        expect(datastore_b).to receive(:allocate).with(1024)
+          expect(cluster_with_fewer_disks_but_enough_space_with_disks.cluster).to receive(:allocate).with(512)
+          expect(datastore).to receive(:allocate).with(1024)
 
-        expect(resources.place(512, 1024,
-                        [{ :size => 2048, :dc_name => "foo", :ds_name => "ds_a" },
-                         { :size => 4096, :dc_name => "foo", :ds_name => "ds_b" }])).
-          to eq([cluster_b, datastore_b])
+          expect(resources.place(512, 1024, disks)).to eq([cluster_with_fewer_disks_but_enough_space_with_disks.cluster, datastore])
+        end
       end
 
-      it "should ignore locality when there is no space" do
-        cluster_a = double(:cluster_a)
-        cluster_b = double(:cluster_b)
-        allow(datacenter).to receive(:clusters).and_return({ "a" => cluster_a, "b" => cluster_b })
+      context 'when there are no clusters with non-0 score that have disks' do
+        it 'chooses the random cluster weighted by score' do
+          cluster_without_disks_with_disks = make_cluster_with_disks(
+            disks: [],
+            score: 1,
+            datastore: instance_double(VSphereCloud::Resources::Datastore)
+          )
 
-        datastore_a = double(:datastore_a)
-        allow(cluster_a).to receive(:name).and_return("ds_a")
-        allow(cluster_a).to receive(:persistent).with("ds_a").and_return(datastore_a)
-        allow(cluster_a).to receive(:persistent).with("ds_b").and_return(nil)
+          datastore = instance_double(VSphereCloud::Resources::Datastore)
+          cluster_without_disks_with_bigger_score_with_disks = make_cluster_with_disks(
+            disks: [],
+            score: 4,
+            datastore: datastore
+          )
 
-        datastore_b = double(:datastore_b)
-        allow(cluster_b).to receive(:name).and_return("ds_b")
-        allow(cluster_b).to receive(:persistent).with("ds_a").and_return(nil)
-        allow(cluster_b).to receive(:persistent).with("ds_b").and_return(datastore_b)
+          allow(cluster_locality).to receive(:clusters_ordered_by_disk_size).with([]).
+            and_return([cluster_without_disks_with_disks, cluster_without_disks_with_bigger_score_with_disks])
 
-        scorer_a = double(:scorer_a)
-        expect(scorer_a).to receive(:score).twice.and_return(0)
-        expect(VSphereCloud::Resources::Scorer).to receive(:new).
-          with(config, cluster_a, 512, 1024, []).twice.and_return(scorer_a)
+          allow(Resources::Util).to receive(:weighted_random).
+            with([[cluster_without_disks_with_disks, 1], [cluster_without_disks_with_bigger_score_with_disks, 4]]).
+            and_return( cluster_without_disks_with_bigger_score_with_disks)
 
-        scorer_b = double(:scorer_b)
-        expect(scorer_b).to receive(:score).and_return(4)
-        expect(VSphereCloud::Resources::Scorer).to receive(:new).
-          with(config, cluster_b, 512, 1024, [2048]).and_return(scorer_b)
+          expect(cluster_without_disks_with_bigger_score_with_disks.cluster).to receive(:allocate).with(512)
+          expect(datastore).to receive(:allocate).with(1024)
 
-        expect(cluster_b).to receive(:allocate).with(512)
-        expect(cluster_b).to receive(:pick_ephemeral).with(1024).
-          and_return(datastore_b)
-        expect(datastore_b).to receive(:allocate).with(1024)
-
-        expect(resources.place(512, 1024,
-                        [{ :size => 2048, :dc_name => "foo", :ds_name => "ds_a" }])).
-          to eq([cluster_b, datastore_b])
+          expect(resources.place(512, 1024, [])).to eq([cluster_without_disks_with_bigger_score_with_disks.cluster, datastore])
+        end
       end
 
-      context 'when clusters have not been manually specified' do
-        let(:cloud_properties) do
-          {
-            ram: 2048,
-            disk: 5000,
-            cpu: 1,
-          }
-        end
-        let(:cluster_a) { instance_double('VSphereCloud::Resources::Cluster', name: 'cluster_a') }
-        let(:cluster_b) { instance_double('VSphereCloud::Resources::Cluster', name: 'cluster_b') }
+      context 'when all clusters score as 0' do
+        it 'raises an error' do
+          cluster_a = make_cluster_with_disks(
+            disks: [],
+            score: 0,
+            datastore: instance_double(VSphereCloud::Resources::Datastore)
+          )
 
-        it 'should allocate memory and ephemeral disk space' do
-          allow(datacenter).to receive(:name).and_return('datacenter_name')
+          cluster_b = make_cluster_with_disks(
+            disks: [],
+            score: 0,
+            datastore: instance_double(VSphereCloud::Resources::Datastore)
+          )
 
-          datastore_a = double('VSphereCloud::Resources::Datastore')
-          allow(datacenter).to receive(:clusters).and_return({ "bar" => cluster_a })
+          allow(cluster_locality).to receive(:clusters_ordered_by_disk_size).with([]).
+            and_return([cluster_a, cluster_b])
 
-          allow(config).to receive(:datacenter_name).and_return('fake_data_center')
-          allow(cluster_a).to receive(:name).and_return("bar")
-          allow(cluster_a).to receive(:persistent).with("baz").and_return(datastore_a)
-
-          scorer = instance_double('VSphereCloud::Resources::Scorer')
-          allow(scorer).to receive(:score).and_return(4)
-          allow(VSphereCloud::Resources::Scorer).to receive(:new).
-                                                      with(config, cluster_a, 512, 1024, []).and_return(scorer)
-
-          allow(cluster_a).to receive(:allocate).with(512)
-          allow(cluster_a).to receive(:pick_ephemeral).with(1024).and_return(datastore_a)
-          allow(datastore_a).to receive(:allocate).with(1024)
-
-          expect(resources.place(512, 1024, [])).to eq([cluster_a, datastore_a])
-        end
-
-        it 'should prioritize persistent locality' do
-          allow(datacenter).to receive(:name).and_return('foo')
-
-          datastore_a = instance_double('VSphereCloud::Resources::Datastore')
-          datastore_b = instance_double('VSphereCloud::Resources::Datastore')
-
-          allow(datacenter).to receive(:clusters).and_return({ "a" => cluster_a, "b" => cluster_b })
-
-          allow(cluster_a).to receive(:persistent).with('ds_a').and_return(datastore_a)
-          allow(cluster_a).to receive(:persistent).with('ds_b').and_return(nil)
-          allow(cluster_b).to receive(:persistent).with('ds_a').and_return(nil)
-          allow(cluster_b).to receive(:persistent).with('ds_b').and_return(datastore_b)
-
-          scorer_a = instance_double('VSphereCloud::Resources::Scorer')
-          allow(scorer_a).to receive(:score).and_return(5)
-
-          allow(VSphereCloud::Resources::Scorer).to receive(:new).
-                                                      with(config, cluster_a, 512, 1024, [2048]).and_return(scorer_a)
-
-          scorer_b = instance_double('VSphereCloud::Resources::Scorer')
-          expect(scorer_b).to receive(:score).and_return(4)
-          allow(VSphereCloud::Resources::Scorer).to receive(:new).
-                                                      with(config, cluster_b, 512, 1024, [2048]).and_return(scorer_b)
-
-          allow(cluster_b).to receive(:allocate).with(512)
-          allow(cluster_b).to receive(:pick_ephemeral).with(1024).
-                                and_return(datastore_b)
-          allow(datastore_b).to receive(:allocate).with(1024)
-
-          expect(resources.place(512, 1024,
-                                 [{ :size => 2048, :dc_name => "foo", :ds_name => "ds_a" },
-                                  { :size => 4096, :dc_name => "foo", :ds_name => "ds_b" },
-                                 ])).to eq([cluster_b, datastore_b])
-        end
-
-        it 'should ignore locality when there is no space' do
-          allow(datacenter).to receive(:name).and_return('foo')
-          allow(datacenter).to receive(:clusters).and_return({ "a" => cluster_a, "b" => cluster_b })
-
-          scorer_a = instance_double('VSphereCloud::Resources::Scorer')
-          allow(scorer_a).to receive(:score).twice.and_return(0)
-          allow(VSphereCloud::Resources::Scorer).to receive(:new).
-                                                      with(config, cluster_a, 512, 1024, []).twice.and_return(scorer_a)
-
-          datastore_a = instance_double('VSphereCloud::Resources::Datastore')
-          allow(cluster_a).to receive(:persistent).with('ds_a').and_return(datastore_a)
-          allow(cluster_b).to receive(:persistent).with('ds_a').and_return(nil)
-
-
-          scorer_b = instance_double('VSphereCloud::Resources::Scorer')
-          allow(scorer_b).to receive(:score).and_return(4)
-          allow(VSphereCloud::Resources::Scorer).to receive(:new).
-                                                      with(config, cluster_b, 512, 1024, [2048]).and_return(scorer_b)
-
-          allow(cluster_b).to receive(:allocate).with(512)
-
-
-          datastore_b = instance_double('VSphereCloud::Resources::Datastore')
-          allow(cluster_b).to receive(:pick_ephemeral).with(1024).
-                                and_return(datastore_b)
-          allow(datastore_b).to receive(:allocate).with(1024)
-
-          expect(resources.place(512, 1024,
-                                 [{ :size => 2048, :dc_name => "foo", :ds_name => "ds_a" }])).
-            to eq([cluster_b, datastore_b])
+          expect {
+            resources.place(512, 1024, [])
+          }.to raise_error /No available resources/
         end
       end
     end

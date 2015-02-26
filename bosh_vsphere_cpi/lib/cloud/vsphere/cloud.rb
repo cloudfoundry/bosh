@@ -11,6 +11,7 @@ require 'cloud/vsphere/lease_obtainer'
 require 'cloud/vsphere/lease_updater'
 require 'cloud/vsphere/resources'
 require 'cloud/vsphere/resources/cluster'
+require 'cloud/vsphere/resources/cluster_with_disks'
 require 'cloud/vsphere/resources/datacenter'
 require 'cloud/vsphere/resources/datastore'
 require 'cloud/vsphere/resources/folder'
@@ -24,6 +25,7 @@ require 'cloud/vsphere/vm_creator_builder'
 require 'cloud/vsphere/disk_provider'
 require 'cloud/vsphere/vm_provider'
 require 'cloud/vsphere/fixed_cluster_placer'
+require 'cloud/vsphere/cluster_locality'
 
 module VSphereCloud
   class Cloud < Bosh::Cloud
@@ -42,7 +44,8 @@ module VSphereCloud
       @cloud_searcher = CloudSearcher.new(@client.service_content, @logger)
       @datacenter = Resources::Datacenter.new(config)
 
-      @resources = Resources.new(@datacenter, config)
+      cluster_locality = ClusterLocality.new(@datacenter.clusters)
+      @resources = Resources.new(@datacenter, cluster_locality, config)
       @file_provider = FileProvider.new(config.rest_client, config.vcenter_host)
       @agent_env = AgentEnv.new(client, @file_provider, @cloud_searcher)
 
@@ -399,7 +402,8 @@ module VSphereCloud
       with_thread_name("create_disk(#{size_in_mb}, _)") do
         @logger.info("Creating disk with size: #{size_in_mb}")
         size_in_kb = size_in_mb * 1024
-        disk = disk_provider.create(size_in_kb)
+        disk_without_datastore = Resources::DiskWithoutDatastore.new(size_in_kb)
+        disk = disk_provider.create(disk_without_datastore)
 
         model_disk = Models::Disk.new
         model_disk.uuid = disk.uuid

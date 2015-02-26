@@ -28,7 +28,7 @@ module VSphereCloud
       allow_any_instance_of(Cloud).to receive(:at_exit)
     end
 
-    let(:datacenter) { instance_double('VSphereCloud::Resources::Datacenter', name: 'fake-datacenter') }
+    let(:datacenter) { instance_double('VSphereCloud::Resources::Datacenter', name: 'fake-datacenter', clusters: []) }
     before { allow(Resources::Datacenter).to receive(:new).and_return(datacenter) }
     let(:disk_provider) { instance_double('VSphereCloud::DiskProvider') }
     before { allow(VSphereCloud::DiskProvider).to receive(:new).and_return(disk_provider) }
@@ -100,7 +100,8 @@ module VSphereCloud
       let(:datacenter) do
         double('fake datacenter',
           name: 'fake_datacenter',
-          template_folder: template_folder
+          template_folder: template_folder,
+          clusters: []
         )
       end
 
@@ -377,9 +378,14 @@ module VSphereCloud
     describe '#get_vms' do
       let(:resources) { double('fake resources', datacenters: { key: datacenter }) }
 
-      let(:datacenter) { double('fake datacenter', name: 'fake datacenter',
-                                                   master_vm_folder: master_vm_folder,
-                                                   master_template_folder: master_template_folder) }
+      let(:datacenter) do
+        double('fake datacenter',
+          name: 'fake datacenter',
+          master_vm_folder: master_vm_folder,
+          master_template_folder: master_template_folder,
+          clusters: []
+        )
+      end
       let(:master_vm_folder) do
         instance_double('VSphereCloud::Resources::Folder',
           path: 'fake-vm-folder-path',
@@ -831,12 +837,10 @@ module VSphereCloud
         allow(vm).to receive(:pci_controller).and_return(double(:pci_controller, key: 'fake-pci-key'))
       end
 
-      let(:datacenter) { instance_double('VimSdk::Vim::Datacenter', name: 'fake-datacenter-name') }
-
       let(:network_mob) { double(:network_mob) }
       before do
         allow(client).to receive(:find_by_inventory_path).with([
-          'fake-datacenter-name',
+          'fake-datacenter',
           'network',
           'fake-network-name'
         ]).and_return(network_mob)
@@ -935,11 +939,15 @@ module VSphereCloud
 
       before do
         Models::Disk.delete
-        allow(disk_provider).to receive(:create).with(1048576).and_return(disk)
+        allow(disk_provider).to receive(:create) do |disk_without_datastore|
+          expect(disk_without_datastore.size_in_kb).to eq(1048576)
+        end.and_return(disk)
       end
 
       it 'creates disk with disk provider' do
-        expect(disk_provider).to receive(:create).with(1048576).and_return(disk)
+        expect(disk_provider).to receive(:create) do |disk_without_datastore|
+          expect(disk_without_datastore.size_in_kb).to eq(1048576)
+        end.and_return(disk)
         vsphere_cloud.create_disk(1024, {})
       end
 
