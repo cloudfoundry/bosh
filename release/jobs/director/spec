@@ -95,6 +95,9 @@ properties:
   director.user_management.provider:
     description: "User management implementation (local|uaa)"
     default: local
+  director.user_management.options:
+    description: "Options for the user management provider. For 'uaa', 'key' is the secret shared with UAA for token validation."
+    default: ~
 
   redis.address:
     description: Address of the redis server

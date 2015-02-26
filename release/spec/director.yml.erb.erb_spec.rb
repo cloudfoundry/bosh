@@ -290,7 +290,8 @@ describe 'director.yml.erb.erb' do
         }
       }
       deployment_manifest_fragment['properties']['director']['user_management'] = {
-        'provider' => 'uaa'
+        'provider' => 'uaa',
+        'options' => { 'a' => 'b' },
       }
     end
 
@@ -301,7 +302,7 @@ describe 'director.yml.erb.erb' do
     end
 
     it 'sets the user_management provider' do
-      expect(parsed_yaml['user_management']['provider']).to eq('uaa')
+      expect(parsed_yaml['user_management']).to eq('provider' => 'uaa', 'options' => {'a' => 'b'})
     end
 
     it 'renders aws properties' do

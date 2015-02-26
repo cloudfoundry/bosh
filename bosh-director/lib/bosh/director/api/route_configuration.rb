@@ -39,7 +39,8 @@ module Bosh
         def identity_provider
           @identity_provider ||= begin
             # no fetching w defaults?
-            user_management_provider = @config.hash['user_management']['provider']
+            user_management = @config.hash['user_management']
+            user_management_provider = user_management['provider']
 
             unless USER_MANAGEMENT_PROVIDERS.include?(user_management_provider)
               raise ArgumentError,
@@ -48,7 +49,11 @@ module Bosh
             end
             if user_management_provider == 'uaa'
               Config.logger.debug("Director configured with 'uaa' user management provider")
-              Bosh::Director::Api::UAAIdentityProvider.new
+              unless user_management['options'] && user_management['options']['key']
+                raise ArgumentError, "Missing UAA secret key in user_management.options.key"
+              end
+
+              Bosh::Director::Api::UAAIdentityProvider.new(user_management['options']['key'])
             else
               Config.logger.debug("Director configured with 'local' user management provider")
               Bosh::Director::Api::LocalIdentityProvider.new(Bosh::Director::Api::UserManager.new)

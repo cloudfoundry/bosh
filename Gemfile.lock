@@ -60,6 +60,7 @@ PATH
       bosh_openstack_cpi (~> 1.2858.0)
       bosh_vcloud_cpi (~> 0.7.2)
       bosh_vsphere_cpi (~> 1.2858.0)
+      cf-uaa-lib (~> 3.1.0)
       eventmachine (~> 1.0.0)
       fog (~> 1.27.0)
       httpclient (= 2.4.0)
@@ -261,6 +262,8 @@ GEM
       rest-client (~> 1.6.7)
       yajl-ruby (>= 0.8.2)
     builder (3.1.4)
+    cf-uaa-lib (3.1.0)
+      multi_json
     codeclimate-test-reporter (0.3.0)
       simplecov (>= 0.7.1, < 1.0.0)
     coderay (1.1.0)

@@ -1,5 +1,5 @@
 <%
-  def blobstore_options(name, options)
+  def dump_yaml(name, options)
     YAML.dump(name => options).sub(/\A---\n/, '')
   end
 %>
@@ -111,8 +111,7 @@ blobstore:
     password: <%= p('blobstore.director.password') %>
 <% end %>
 
-user_management:
-  provider: <%= p('director.user_management.provider') %>
+<%= dump_yaml('user_management', p('director.user_management')) %>
 
 <% if_p('compiled_package_cache.options.bucket_name',
         'compiled_package_cache.options.access_key_id',
@@ -192,7 +191,7 @@ compiled_package_cache:
 <% end %>
 
 <% if_p('director.backup_destination') do |backup_destination| %>
-<%= blobstore_options('backup_destination', backup_destination) %>
+<%= dump_yaml('backup_destination', backup_destination) %>
 <% end %>
 
 cloud:

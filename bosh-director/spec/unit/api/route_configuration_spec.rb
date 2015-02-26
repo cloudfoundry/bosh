@@ -20,11 +20,12 @@ module Bosh::Director
       config['snapshots']['enabled'] = true
       config
     end
+    let(:provider_options) { {'blobstore_path' => blobstore_dir} }
 
     after { FileUtils.rm_rf(temp_dir) }
 
     describe 'authentication configuration' do
-      let(:test_config) { base_config.merge({ 'user_management' => { 'provider' => provider}}) }
+      let(:test_config) { base_config.merge({'user_management' => {'provider' => provider}}) }
 
       context 'when local provider is supplied' do
         let(:provider) { 'local' }
@@ -47,11 +48,23 @@ module Bosh::Director
 
       context 'when uaa provider is supplied' do
         let(:provider) { 'uaa' }
+        let(:provider_options) { {'key' => 'some-key'} }
+        let(:token) { CF::UAA::TokenCoder.new(skey: 'some-key').encode(payload) }
+        let(:payload) { {'user_id' => 'larry', 'aud' => ['bosh']} }
+        before { test_config['user_management']['options'] = provider_options }
 
         it 'creates controllers with a UAAIdentityProvider' do
           route_configuration.controllers.each do |route, controller|
             identity_provider = controller.instance_variable_get(:"@instance").identity_provider
             expect(identity_provider).to be_a(Api::UAAIdentityProvider)
+          end
+        end
+
+        it 'creates the UAAIdentityProvider with the configured key' do
+          route_configuration.controllers.each do |route, controller|
+            identity_provider = controller.instance_variable_get(:"@instance").identity_provider
+            request_env = {'HTTP_AUTHORIZATION' => "bearer #{token}"}
+            expect(identity_provider.corroborate_user(request_env)).to eq('larry')
           end
         end
       end
