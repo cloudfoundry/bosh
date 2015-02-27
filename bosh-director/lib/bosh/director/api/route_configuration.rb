@@ -40,6 +40,7 @@ module Bosh
           @identity_provider ||= begin
             # no fetching w defaults?
             user_management = @config.hash['user_management']
+            user_management ||= { 'provider' => 'local' }
             user_management_provider = user_management['provider']
 
             unless USER_MANAGEMENT_PROVIDERS.include?(user_management_provider)

@@ -27,10 +27,21 @@ module Bosh::Director
     describe 'authentication configuration' do
       let(:test_config) { base_config.merge({'user_management' => {'provider' => provider}}) }
 
+      context 'when no user_management config is specified' do
+        let(:test_config) { base_config }
+
+        it 'uses LocalIdentityProvider' do
+          route_configuration.controllers.each do |route, controller|
+            identity_provider = controller.instance_variable_get(:"@instance").identity_provider
+            expect(identity_provider).to be_a(Api::LocalIdentityProvider)
+          end
+        end
+      end
+
       context 'when local provider is supplied' do
         let(:provider) { 'local' }
 
-        it 'defaults to LocalIdentityProvider' do
+        it 'uses LocalIdentityProvider' do
           route_configuration.controllers.each do |route, controller|
             identity_provider = controller.instance_variable_get(:"@instance").identity_provider
             expect(identity_provider).to be_a(Api::LocalIdentityProvider)
