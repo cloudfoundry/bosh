@@ -448,7 +448,6 @@ module VSphereCloud
     describe '#create_vm' do
       let(:resources) { double('resources') }
       before { allow(Resources).to receive(:new).and_return(resources) }
-      it 'sets the thread name to create_vm followed by the agent id'
 
       describe 'delegating to the VmCreator class to create the VM' do
         let(:creator_builder) { instance_double('VSphereCloud::VmCreatorBuilder') }
