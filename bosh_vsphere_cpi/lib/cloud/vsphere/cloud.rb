@@ -44,7 +44,7 @@ module VSphereCloud
       @cloud_searcher = CloudSearcher.new(@client.service_content, @logger)
       @datacenter = Resources::Datacenter.new(config)
 
-      cluster_locality = ClusterLocality.new(@datacenter.clusters)
+      cluster_locality = ClusterLocality.new(@datacenter.clusters.values)
       @resources = Resources.new(@datacenter, cluster_locality, config)
       @file_provider = FileProvider.new(config.rest_client, config.vcenter_host)
       @agent_env = AgentEnv.new(client, @file_provider, @cloud_searcher)
@@ -80,7 +80,7 @@ module VSphereCloud
     end
 
     def has_disk?(disk_cid)
-      disk_provider.find(disk_cid, @datacenter.persistent_datastores)
+      disk_provider.find(disk_cid)
       true
     rescue Bosh::Clouds::DiskNotFound
       false
@@ -98,11 +98,12 @@ module VSphereCloud
           raise 'Missing OVF' if ovf_file.nil?
           ovf_file = File.join(temp_dir, ovf_file)
 
-          name = "sc-#{generate_unique_name}"
+          name = "sc-#{SecureRandom.uuid}"
           @logger.info("Generated name: #{name}")
 
           stemcell_size = File.size(image) / (1024 * 1024)
-          cluster, datastore = @resources.place(0, stemcell_size, [])
+          cluster = @resources.pick_cluster(0, stemcell_size, [])
+          datastore = @resources.pick_ephemeral_datastore(cluster, stemcell_size)
           @logger.info("Deploying to: #{cluster.mob} / #{datastore.mob}")
 
           import_spec_result = import_ovf(name, ovf_file, cluster.resource_pool.mob, datastore.mob)
@@ -164,24 +165,8 @@ module VSphereCloud
       end
     end
 
-    def disk_spec(persistent_disks)
-      disks = []
-      if persistent_disks
-        persistent_disks.each do |disk_cid|
-          disk = Models::Disk.first(uuid: disk_cid)
-          disks << {
-            size: disk.size,
-            dc_name: disk.datacenter,
-            ds_name: disk.datastore
-          }
-        end
-      end
-      disks
-    end
-
     def stemcell_vm(name)
-      dc = @resources.datacenters.values.first
-      client.find_by_inventory_path([dc.name, 'vm', dc.template_folder.path_components, name])
+      client.find_by_inventory_path([@datacenter.name, 'vm', @datacenter.template_folder.path_components, name])
     end
 
     def create_vm(agent_id, stemcell, cloud_properties, networks, disk_locality = nil, environment = nil)
@@ -194,7 +179,8 @@ module VSphereCloud
           @logger,
           self,
           @agent_env,
-          @file_provider
+          @file_provider,
+          disk_provider
         ).create(agent_id, stemcell, networks, disk_locality, environment)
       end
     end
@@ -401,9 +387,7 @@ module VSphereCloud
     def create_disk(size_in_mb, cloud_properties, _ = nil)
       with_thread_name("create_disk(#{size_in_mb}, _)") do
         @logger.info("Creating disk with size: #{size_in_mb}")
-        size_in_kb = size_in_mb * 1024
-        disk_without_datastore = Resources::DiskWithoutDatastore.new(size_in_kb)
-        disk = disk_provider.create(disk_without_datastore)
+        disk = disk_provider.create(size_in_mb)
 
         model_disk = Models::Disk.new
         model_disk.uuid = disk.uuid
@@ -420,7 +404,7 @@ module VSphereCloud
     def delete_disk(disk_cid)
       with_thread_name("delete_disk(#{disk_cid})") do
         @logger.info("Deleting disk: #{disk_cid}")
-        disk = disk_provider.find(disk_cid, @datacenter.persistent_datastores)
+        disk = disk_provider.find(disk_cid)
         client.delete_disk(@datacenter.mob, disk.path)
 
         @logger.info('Finished deleting disk')
@@ -590,14 +574,6 @@ module VSphereCloud
       clone_spec.template = false
 
       vm.clone(folder, name, clone_spec)
-    end
-
-    def generate_unique_name
-      SecureRandom.uuid
-    end
-
-    def create_disk_config_spec(datastore, file_name, controller_key, space, options = {})
-
     end
 
     def create_nic_config_spec(v_network_name, network, controller_key, dvs_index)

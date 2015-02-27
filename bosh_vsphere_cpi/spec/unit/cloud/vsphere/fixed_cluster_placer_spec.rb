@@ -1,41 +1,50 @@
-require 'cloud/vsphere/fixed_cluster_placer'
+require 'spec_helper'
 
 module VSphereCloud
   describe FixedClusterPlacer do
-    describe "#place" do
-      subject(:fixed_cluster_placer) { described_class.new(cluster, drs_rules) }
-      let(:drs_rules) { [] }
-      let(:memory) { 2 * 1024 }
-      let(:ephemeral) { 2 * 1024 * 1024 }
-      let(:persistent) { Hash.new }
-      let(:cluster) { double(:cluster) }
-      let(:datastore) { double(:datastore) }
+    let(:cluster) { instance_double(VSphereCloud::Resources::Cluster, name: 'awesome cluster', allocate: nil) }
+    let(:datastore) { instance_double(VSphereCloud::Resources::Datastore, allocate: nil) }
+    let(:drs_rules) { [] }
 
-      context "when the VM fits into the specified cluster" do
-        before {
-          allow(cluster).to receive(:pick_ephemeral).with(ephemeral).and_return(datastore)
-          allow(cluster).to receive(:allocate).with(memory)
-          allow(datastore).to receive(:allocate).with(ephemeral)
-        }
 
-        it "returns the cluster that was passed in" do
-          expect(cluster).to receive(:allocate).with(memory)
-          expect(fixed_cluster_placer.place(memory, ephemeral, persistent)[0]).to eq(cluster)
-        end
+    subject(:fixed_cluster_placer) { described_class.new(cluster, drs_rules) }
 
-        it "returns the selected datastore" do
-          expect(datastore).to receive(:allocate).with(ephemeral)
-          expect(fixed_cluster_placer.place(memory, ephemeral, persistent)[1]).to eq(datastore)
-        end
+    describe "#pick_cluster" do
+      it "returns the fixed cluster" do
+        expect(fixed_cluster_placer.pick_cluster(128, 256, [])).to eq(cluster)
       end
 
-      context "when the VM does not fit into the specified cluster" do
-        it "raises 'No available resources'" do
-          allow(cluster).to receive(:pick_ephemeral).and_return(nil)
+      it "allocates the memory" do
+        fixed_cluster_placer.pick_cluster(128, 256, [])
+        expect(cluster).to have_received(:allocate).with(128)
+      end
+    end
 
-          expect { fixed_cluster_placer.place(memory, ephemeral, persistent) }.
-            to raise_error(RuntimeError, "No available resources")
-        end
+    describe "#pick_ephemeral_datastore" do
+      before { allow(cluster).to receive(:pick_ephemeral).with(128).and_return(datastore) }
+
+      it "returns the ephemeral datastore" do
+        expect(fixed_cluster_placer.pick_ephemeral_datastore(cluster, 128)).to eq(datastore)
+      end
+
+      it "allocates the disk space" do
+        fixed_cluster_placer.pick_ephemeral_datastore(cluster, 128)
+        expect(datastore).to have_received(:allocate).with(128)
+      end
+
+      it "raises if there isn't enough space" do
+        allow(cluster).to receive(:pick_ephemeral).with(128).and_return(nil)
+        expect {
+          fixed_cluster_placer.pick_ephemeral_datastore(cluster, 128)
+        }.to raise_error Bosh::Clouds::NoDiskSpace
+      end
+    end
+
+    describe "#pick_persistent_datastore" do
+      it "raises if there isn't enough space" do
+        expect {
+          fixed_cluster_placer.pick_persistent_datastore(cluster, 128)
+        }.to raise_error NotImplementedError
       end
     end
   end

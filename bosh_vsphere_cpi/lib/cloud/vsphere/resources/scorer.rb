@@ -75,18 +75,19 @@ module VSphereCloud
           end
 
           unless @persistent.empty?
-            consumed_all = true
+            consumed_all = false
             @persistent.each do |size|
               consumed = consume_disk(@free_persistent, size, min_persistent)
               unless consumed
-                unless consume_disk(@free_shared, size, min_shared)
-                  consumed_all = false
+                consumed = consume_disk(@free_shared, size, min_shared)
+                unless consumed
+                  consumed_all = true
                   @logger.debug("#{@cluster.name} persistent disk bound")
                   break
                 end
               end
             end
-            break unless consumed_all
+            break if consumed_all
           end
 
           count += 1

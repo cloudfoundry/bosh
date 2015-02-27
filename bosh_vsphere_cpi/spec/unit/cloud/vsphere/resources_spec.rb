@@ -28,9 +28,9 @@ module VSphereCloud
       end
     end
 
-    describe '#place' do
+    describe '#pick_cluster' do
       def make_cluster_with_disks(options)
-        cluster = instance_double(VSphereCloud::Resources::Cluster)
+        cluster = instance_double(VSphereCloud::Resources::Cluster, name: 'fake-cluster')
         cluster_with_disks = instance_double(VSphereCloud::Resources::ClusterWithDisks,
           cluster: cluster,
           disks: options[:disks])
@@ -69,9 +69,7 @@ module VSphereCloud
             and_return([cluster_with_the_most_disks_but_no_space_with_disks, cluster_with_fewer_disks_but_enough_space_with_disks])
 
           expect(cluster_with_fewer_disks_but_enough_space_with_disks.cluster).to receive(:allocate).with(512)
-          expect(datastore).to receive(:allocate).with(1024)
-
-          expect(resources.place(512, 1024, disks)).to eq([cluster_with_fewer_disks_but_enough_space_with_disks.cluster, datastore])
+          expect(resources.pick_cluster(512, 1024, disks)).to eq(cluster_with_fewer_disks_but_enough_space_with_disks.cluster)
         end
       end
 
@@ -98,9 +96,8 @@ module VSphereCloud
             and_return( cluster_without_disks_with_bigger_score_with_disks)
 
           expect(cluster_without_disks_with_bigger_score_with_disks.cluster).to receive(:allocate).with(512)
-          expect(datastore).to receive(:allocate).with(1024)
 
-          expect(resources.place(512, 1024, [])).to eq([cluster_without_disks_with_bigger_score_with_disks.cluster, datastore])
+          expect(resources.pick_cluster(512, 1024, [])).to eq(cluster_without_disks_with_bigger_score_with_disks.cluster)
         end
       end
 
@@ -122,8 +119,58 @@ module VSphereCloud
             and_return([cluster_a, cluster_b])
 
           expect {
-            resources.place(512, 1024, [])
+            resources.pick_cluster(512, 1024, [])
           }.to raise_error /No available resources/
+        end
+      end
+    end
+
+    describe 'pick_ephemeral_datastore' do
+      let(:cluster) { instance_double(VSphereCloud::Resources::Cluster, name: 'awesome cluster') }
+      let(:datastore) { instance_double(VSphereCloud::Resources::Datastore, allocate: nil) }
+
+      before { allow(cluster).to receive(:pick_ephemeral).with(1024).and_return(datastore) }
+
+      it 'picks ephemeral datastore in cluster' do
+        expect(resources.pick_ephemeral_datastore(cluster, 1024)).to eq(datastore)
+      end
+
+      it 'allocates disk size in datastore' do
+        resources.pick_ephemeral_datastore(cluster, 1024)
+        expect(datastore).to have_received(:allocate).with(1024)
+      end
+
+      context 'when cluster does not have datastore to satisfy disk size requirement' do
+        before { allow(cluster).to receive(:pick_ephemeral).with(1024).and_return(nil) }
+        it 'raises Bosh::Clouds::NoDiskSpace' do
+          expect {
+            resources.pick_ephemeral_datastore(cluster, 1024)
+          }.to raise_error Bosh::Clouds::NoDiskSpace
+        end
+      end
+    end
+
+    describe 'pick_persistent_datastore' do
+      let(:cluster) { instance_double(VSphereCloud::Resources::Cluster, name: 'awesome cluster') }
+      let(:datastore) { instance_double(VSphereCloud::Resources::Datastore, allocate: nil) }
+
+      before { allow(cluster).to receive(:pick_persistent).with(1024).and_return(datastore) }
+
+      it 'picks persistent datastore in cluster' do
+        expect(resources.pick_persistent_datastore(cluster, 1024)).to eq(datastore)
+      end
+
+      it 'allocates disk size in datastore' do
+        resources.pick_persistent_datastore(cluster, 1024)
+        expect(datastore).to have_received(:allocate).with(1024)
+      end
+
+      context 'when cluster does not have datastore to satisfy disk size requirement' do
+        before { allow(cluster).to receive(:pick_persistent).with(1024).and_return(nil) }
+        it 'raises Bosh::Clouds::NoDiskSpace' do
+          expect {
+            resources.pick_persistent_datastore(cluster, 1024)
+          }.to raise_error Bosh::Clouds::NoDiskSpace
         end
       end
     end

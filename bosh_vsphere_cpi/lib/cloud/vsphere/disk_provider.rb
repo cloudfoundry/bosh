@@ -12,13 +12,15 @@ module VSphereCloud
       @logger = logger
     end
 
-    def create(disk_without_datastore)
-      datastore = find_datastore(disk_without_datastore)
+    def create(disk_size_in_mb)
+      datastore = find_datastore(disk_size_in_mb)
       disk_uuid = "disk-#{SecureRandom.uuid}"
+      @logger.debug("Creating disk '#{disk_uuid}' in datastore '#{datastore.name}'")
 
+      disk_size_in_kb = disk_size_in_mb * 1024
       disk_spec = VimSdk::Vim::VirtualDiskManager::FileBackedVirtualDiskSpec.new
       disk_spec.disk_type = 'preallocated'
-      disk_spec.capacity_kb = disk_without_datastore.size_in_kb
+      disk_spec.capacity_kb = disk_size_in_kb
       disk_spec.adapter_type = 'lsiLogic'
 
       disk_path = path(datastore, disk_uuid)
@@ -31,12 +33,12 @@ module VSphereCloud
       )
       @client.wait_for_task(task)
 
-      Resources::Disk.new(disk_uuid, disk_without_datastore.size_in_kb, datastore, disk_path)
+
+      Resources::Disk.new(disk_uuid, disk_size_in_kb, datastore, disk_path)
     end
 
     def find_and_move(disk_uuid, cluster, datacenter_name, accessible_datastores)
-      datastores_to_look = cluster.persistent_datastores.merge(cluster.shared_datastores)
-      disk = find(disk_uuid, datastores_to_look)
+      disk = find(disk_uuid)
       return disk if accessible_datastores.include?(disk.datastore.name)
 
       destination_datastore =  @resources.pick_persistent_datastore_in_cluster(cluster, disk.size_in_mb)
@@ -57,8 +59,8 @@ module VSphereCloud
       Resources::Disk.new(disk_uuid, disk.size_in_kb, destination_datastore, destination_path)
     end
 
-    def find(disk_uuid, datastores)
-      datastores.each do |_, datastore|
+    def find(disk_uuid)
+      @datacenter.persistent_datastores.each do |_, datastore|
         disk_path = path(datastore, disk_uuid)
         disk_size_in_kb = get_disk_size_in_kb(disk_path)
         if disk_size_in_kb != nil
@@ -75,12 +77,13 @@ module VSphereCloud
       "[#{datastore.name}] #{@disk_path}/#{disk_uuid}.vmdk"
     end
 
-    def find_datastore(disk_without_datastore)
-      datastore = @resources.pick_persistent_datastore(disk_without_datastore)
+    def find_datastore(disk_size_in_mb)
+      cluster = @resources.pick_cluster(0, disk_size_in_mb, [])
+      datastore = @resources.pick_persistent_datastore(cluster, disk_size_in_mb)
 
       if datastore.nil?
         raise Bosh::Clouds::NoDiskSpace.new(true),
-          "Not enough persistent space #{disk_without_datastore.size_in_mb}"
+          "Not enough persistent space #{disk_size_in_mb}"
       end
 
       datastore

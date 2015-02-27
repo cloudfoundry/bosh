@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe VSphereCloud::Resources::Scorer do
-  let(:config) { instance_double('VSphereCloud::Config', logger: instance_double('Logger', debug:nil ))}
+  let(:config) { instance_double('VSphereCloud::Config', logger: instance_double('Logger', debug: nil, info: nil ))}
 
   def create_datastores(sizes)
     datastores = {}

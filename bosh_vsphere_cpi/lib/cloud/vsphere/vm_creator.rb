@@ -5,7 +5,7 @@ require 'cloud/vsphere/resources/vm'
 
 module VSphereCloud
   class VmCreator
-    def initialize(memory, disk_size, cpu, placer, client, cloud_searcher, logger, cpi, agent_env, file_provider)
+    def initialize(memory, disk_size, cpu, placer, client, cloud_searcher, logger, cpi, agent_env, file_provider, disk_provider)
       @placer = placer
       @client = client
       @cloud_searcher = cloud_searcher
@@ -16,6 +16,7 @@ module VSphereCloud
       @cpu = cpu
       @agent_env = agent_env
       @file_provider = file_provider
+      @disk_provider = disk_provider
 
       @logger.debug("VM creator initialized with memory: #{@memory}, disk: #{@disk}, cpu: #{@cpu}, placer: #{@placer}")
     end
@@ -28,13 +29,14 @@ module VSphereCloud
         @cloud_searcher.get_property(stemcell_vm, VimSdk::Vim::VirtualMachine, 'summary.storage.committed', ensure_all: true)
       stemcell_size /= 1024 * 1024
 
-      persistent_disks = @cpi.disk_spec(persistent_disk_cids)
+      persistent_disks = persistent_disk_cids.map { |cid| @disk_provider.find(cid) }
 
       # need to include swap and linked clone log
       ephemeral_disk_size = @disk_size + @memory + stemcell_size
-      cluster, datastore = @placer.place(@memory, ephemeral_disk_size, persistent_disks)
+      cluster = @placer.pick_cluster(@memory, ephemeral_disk_size, persistent_disks)
+      datastore = @placer.pick_ephemeral_datastore(cluster, ephemeral_disk_size)
 
-      vm_cid = "vm-#{@cpi.generate_unique_name}"
+      vm_cid = "vm-#{SecureRandom.uuid}"
       @logger.info("Creating vm: #{vm_cid} on #{cluster.mob} stored in #{datastore.mob}")
 
       replicated_stemcell_vm_mob = @cpi.replicate_stemcell(cluster, datastore, stemcell_cid)

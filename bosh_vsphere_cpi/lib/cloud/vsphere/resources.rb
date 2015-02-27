@@ -34,16 +34,6 @@ module VSphereCloud
       end
     end
 
-    # Picks the persistent datastore with the requested disk space.
-    #
-    # @param [Disk] disk_size_in_mb disk size in mb.
-    # @return [Datastore] datastore if it was placed succesfuly.
-    def pick_persistent_datastore(disk)
-      @lock.synchronize do
-        place(0, 0, [disk])
-      end
-    end
-
     # Find a place for the requested resources.
     #
     # @param [Integer] memory requested memory.
@@ -51,36 +41,58 @@ module VSphereCloud
     # @param [Array<Resources::Disk>] persistent requested persistent storage.
     # @return [Array] an array/tuple of Cluster and Datastore if the resources
     #   were placed successfully, otherwise exception.
-    def place(memory, ephemeral_size, persistent_disks)
+    def pick_cluster(memory, required_disk_size, persistent_disks)
       # calculate locality to prioritizing clusters that contain the most
       # persistent data.
       clusters_with_disks = @cluster_locality.clusters_ordered_by_disk_size(persistent_disks)
 
       scored_clusters = clusters_with_disks.map do |cluster|
-        score = Scorer.new(@config, cluster, memory, ephemeral_size).score
+        score = Scorer.new(@config, cluster, memory, required_disk_size).score
         [cluster, score]
       end
 
       acceptable_clusters = scored_clusters.select { |_, score| score > 0 }
 
-      raise "No available resources" if acceptable_clusters.empty?
+      @logger.debug("Acceptable clusters: #{acceptable_clusters.inspect}")
+
+      raise 'No available resources' if acceptable_clusters.empty?
 
       if acceptable_clusters.any? { |cluster, _| cluster.disks.any? }
+        @logger.debug('Choosing cluster with the most disk size')
         selected_cluster_with_disks, _ = acceptable_clusters.first
       else
-        @logger.debug("Ignoring datastore locality as we could not find " +
-          "any resources near disks: #{persistent_disks.inspect}")
+        @logger.debug('Choosing cluster by weighted random')
         selected_cluster_with_disks = Util.weighted_random(acceptable_clusters)
       end
 
+      @logger.debug("Selected cluster '#{selected_cluster_with_disks.cluster.name}'")
+
       selected_cluster = selected_cluster_with_disks.cluster
-      datastore = selected_cluster.pick_ephemeral(ephemeral_size)
-      # if datastore
       selected_cluster.allocate(memory)
-      datastore.allocate(ephemeral_size)
-      return [selected_cluster, datastore]
-      # end
-  end
+      selected_cluster
+    end
+
+    def pick_ephemeral_datastore(cluster, disk_size_in_mb)
+      datastore = cluster.pick_ephemeral(disk_size_in_mb)
+      if datastore.nil?
+        raise Bosh::Clouds::NoDiskSpace.new(
+          "Not enough ephemeral disk space (#{disk_size_in_mb}MB) in cluster #{cluster.name}")
+      end
+
+      datastore.allocate(disk_size_in_mb)
+      datastore
+    end
+
+    def pick_persistent_datastore(cluster, disk_size_in_mb)
+      datastore = cluster.pick_persistent(disk_size_in_mb)
+      if datastore.nil?
+        raise Bosh::Clouds::NoDiskSpace.new(
+          "Not enough persistent disk space (#{disk_size_in_mb}MB) in cluster #{cluster.name}")
+      end
+
+      datastore.allocate(disk_size_in_mb)
+      datastore
+    end
 
     private
 

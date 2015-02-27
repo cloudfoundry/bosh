@@ -28,7 +28,7 @@ module VSphereCloud
       allow_any_instance_of(Cloud).to receive(:at_exit)
     end
 
-    let(:datacenter) { instance_double('VSphereCloud::Resources::Datacenter', name: 'fake-datacenter', clusters: []) }
+    let(:datacenter) { instance_double('VSphereCloud::Resources::Datacenter', name: 'fake-datacenter', clusters: {}) }
     before { allow(Resources::Datacenter).to receive(:new).and_return(datacenter) }
     let(:disk_provider) { instance_double('VSphereCloud::DiskProvider') }
     before { allow(VSphereCloud::DiskProvider).to receive(:new).and_return(disk_provider) }
@@ -59,7 +59,7 @@ module VSphereCloud
       context 'when disk is found' do
         let(:disk) { instance_double('VSphereCloud::Resources::Disk', path: 'disk-path') }
         before do
-          allow(disk_provider).to receive(:find).with('fake-disk-uuid', 'fake-persistent-datastores').and_return(disk)
+          allow(disk_provider).to receive(:find).with('fake-disk-uuid').and_return(disk)
         end
 
         it 'returns true' do
@@ -70,7 +70,7 @@ module VSphereCloud
       context 'when disk is not found' do
         before do
           allow(disk_provider).to receive(:find).
-            with('fake-disk-uuid', 'fake-persistent-datastores').
+            with('fake-disk-uuid').
             and_raise Bosh::Clouds::DiskNotFound.new(false)
         end
 
@@ -101,7 +101,7 @@ module VSphereCloud
         double('fake datacenter',
           name: 'fake_datacenter',
           template_folder: template_folder,
-          clusters: []
+          clusters: {}
         )
       end
 
@@ -383,7 +383,7 @@ module VSphereCloud
           name: 'fake datacenter',
           master_vm_folder: master_vm_folder,
           master_template_folder: master_template_folder,
-          clusters: []
+          clusters: {}
         )
       end
       let(:master_vm_folder) do
@@ -506,7 +506,7 @@ module VSphereCloud
                                           nil,
                                         ).and_return(vm)
             expect(creator_builder).to receive(:build).with(
-              placer, cloud_properties, client, cloud_searcher, logger, vsphere_cloud, agent_env, file_provider
+              placer, cloud_properties, client, cloud_searcher, logger, vsphere_cloud, agent_env, file_provider, disk_provider
             ).and_return(creator_instance)
 
             expect(
@@ -528,7 +528,7 @@ module VSphereCloud
               nil,
             ).and_return(vm)
             expect(creator_builder).to receive(:build).with(
-              resources, cloud_properties, client, cloud_searcher, logger, vsphere_cloud, agent_env, file_provider
+              resources, cloud_properties, client, cloud_searcher, logger, vsphere_cloud, agent_env, file_provider, disk_provider
             ).and_return(creator_instance)
 
             expect(
@@ -551,7 +551,7 @@ module VSphereCloud
               nil,
             ).and_return(vm)
             expect(creator_builder).to receive(:build).with(
-              resources, cloud_properties, client, cloud_searcher, logger, vsphere_cloud, agent_env, file_provider
+              resources, cloud_properties, client, cloud_searcher, logger, vsphere_cloud, agent_env, file_provider, disk_provider
             ).and_return(creator_instance)
 
             expect(
@@ -575,7 +575,7 @@ module VSphereCloud
               environment,
             ).and_return(vm)
             expect(creator_builder).to receive(:build).with(
-              resources, cloud_properties, client, cloud_searcher, logger, vsphere_cloud, agent_env, file_provider
+              resources, cloud_properties, client, cloud_searcher, logger, vsphere_cloud, agent_env, file_provider, disk_provider
             ).and_return(creator_instance)
 
             expect(
@@ -903,7 +903,7 @@ module VSphereCloud
       context 'when disk is found' do
         let(:disk) { instance_double('VSphereCloud::Resources::Disk', path: 'disk-path') }
         before do
-          allow(disk_provider).to receive(:find).with('fake-disk-uuid', 'fake-persistent-datastores').and_return(disk)
+          allow(disk_provider).to receive(:find).with('fake-disk-uuid').and_return(disk)
         end
 
         it 'deletes disk' do
@@ -915,7 +915,7 @@ module VSphereCloud
       context 'when disk is not found' do
         before do
           allow(disk_provider).to receive(:find).
-            with('fake-disk-uuid', 'fake-persistent-datastores').
+            with('fake-disk-uuid').
             and_raise Bosh::Clouds::DiskNotFound.new(false)
         end
 
@@ -939,15 +939,11 @@ module VSphereCloud
 
       before do
         Models::Disk.delete
-        allow(disk_provider).to receive(:create) do |disk_without_datastore|
-          expect(disk_without_datastore.size_in_kb).to eq(1048576)
-        end.and_return(disk)
+        allow(disk_provider).to receive(:create).with(1024).and_return(disk)
       end
 
       it 'creates disk with disk provider' do
-        expect(disk_provider).to receive(:create) do |disk_without_datastore|
-          expect(disk_without_datastore.size_in_kb).to eq(1048576)
-        end.and_return(disk)
+        expect(disk_provider).to receive(:create).with(1024).and_return(disk)
         vsphere_cloud.create_disk(1024, {})
       end
 
