@@ -51,15 +51,7 @@ end
 
 Bosh::Director::App.new(config)
 
-logger = Logging::Logger.new('DirectorWorker')
-resque_logging = config.hash.fetch('resque', {}).fetch('logging', {})
-if resque_logging.has_key?('file')
-  logger.add_appenders(Logging.appenders.file('DirectorWorkerFile', filename: resque_logging.fetch('file'), layout: ThreadFormatter.layout))
-else
-  logger.add_appenders(Logging.appenders.stdout('DirectorWorkerIO', layout: ThreadFormatter.layout))
-end
-logger.level = Logging.levelify(resque_logging.fetch('level', 'info'))
-Resque.logger = logger
+Resque.logger = config.resque_logger
 
 worker = nil
 queues = (ENV['QUEUES'] || ENV['QUEUE']).to_s.split(',')

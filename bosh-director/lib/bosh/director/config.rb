@@ -355,6 +355,18 @@ module Bosh::Director
 
     attr_reader :hash
 
+    def name
+      hash['name']
+    end
+
+    def port
+      hash['port']
+    end
+
+    def scheduled_jobs
+      hash['scheduled_jobs'] || []
+    end
+
     def identity_provider
       @identity_provider ||= begin
         # no fetching w defaults?
@@ -377,6 +389,26 @@ module Bosh::Director
         Config.logger.debug("Director configured with '#{provider_name}' user management provider")
         provider_class.new(user_management['options'] || {})
       end
+    end
+
+    def resque_logger
+      logger = Logging::Logger.new('DirectorWorker')
+      resque_logging = hash.fetch('resque', {}).fetch('logging', {})
+      if resque_logging.has_key?('file')
+        logger.add_appenders(Logging.appenders.file('DirectorWorkerFile', filename: resque_logging.fetch('file'), layout: ThreadFormatter.layout))
+      else
+        logger.add_appenders(Logging.appenders.stdout('DirectorWorkerIO', layout: ThreadFormatter.layout))
+      end
+      logger.level = Logging.levelify(resque_logging.fetch('level', 'info'))
+      logger
+    end
+
+    def blobstore_config
+      hash.fetch('blobstore')
+    end
+
+    def backup_blobstore_config
+      hash['backup_destination']
     end
 
     private

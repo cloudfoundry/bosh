@@ -18,7 +18,7 @@ config = Bosh::Director::Config.load_file(config_file)
 
 route_configuration = Bosh::Director::Api::RouteConfiguration.new(config)
 
-thin_server = Thin::Server.new('127.0.0.1', config.hash['port'], signals: false) do
+thin_server = Thin::Server.new('127.0.0.1', config.port, signals: false) do
   use Rack::CommonLogger
 
   route_configuration.controllers.each do |route, controller|
@@ -33,5 +33,5 @@ end
   end
 end
 
-Bosh::Director::Config.logger.info("Listening on port #{config.hash['port']}")
+Bosh::Director::Config.logger.info("Listening on port #{config.port}")
 thin_server.start!

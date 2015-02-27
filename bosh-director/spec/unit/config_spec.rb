@@ -11,12 +11,12 @@ describe Bosh::Director::Config do
   describe 'initialization' do
     it 'loads config from a yaml file' do
       config = described_class.load_file(asset("test-director-config.yml"))
-      expect(config.hash).to include('name' => 'Test Director')
+      expect(config.name).to eq('Test Director')
     end
 
     it 'loads config from a hash' do
       config = described_class.load_hash(test_config)
-      expect(config.hash).to include('name' => 'Test Director')
+      expect(config.name).to eq('Test Director')
     end
   end
 

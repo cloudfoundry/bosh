@@ -16,7 +16,7 @@ opts.parse!(ARGV.dup)
 config = Bosh::Director::Config.load_file(config_file)
 Bosh::Director::App.new(config)
 
-scheduler = Bosh::Director::Scheduler.new(config.hash.fetch('scheduled_jobs', []))
+scheduler = Bosh::Director::Scheduler.new(config.scheduled_jobs)
 
 %w(TERM INT QUIT).each do |signal|
   trap(signal) do
