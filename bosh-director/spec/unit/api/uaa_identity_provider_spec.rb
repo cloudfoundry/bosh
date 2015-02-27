@@ -3,14 +3,20 @@ require 'rack/test'
 
 module Bosh::Director
   describe Api::UAAIdentityProvider do
-    subject(:identity_provider) { Api::UAAIdentityProvider.new(key) }
+    subject(:identity_provider) { Api::UAAIdentityProvider.new(provider_options) }
+    let(:provider_options) { {'url' => 'http://localhost:8080/uaa', 'key' => key} }
     let(:key) { 'tokenkey' }
     let(:app) { Support::TestController.new(identity_provider) }
-    let(:credentials) do
-      {
-        :admin => 'Basic YWRtaW46YWRtaW4=',
-        :bogus => 'Basic YWRtaW46Ym9ndXM='
-      }
+
+    describe 'client info' do
+      it 'contains type and options, but not secret key' do
+        expect(identity_provider.client_info).to eq(
+            'type' => 'uaa',
+            'options' => {
+              'url' => 'http://localhost:8080/uaa'
+            }
+          )
+      end
     end
 
     context 'given an OAuth token' do
@@ -28,7 +34,7 @@ module Bosh::Director
           'user_id' => 'faf835ea-c582-4a28-b500-6e6ac1515690',
           'user_name' => 'marissa',
           'email' => 'marissa@test.org',
-          'iat' => 1424914647,
+          'iat' => Time.now.to_i,
           'exp' => token_expiry_time,
           'iss' => 'http://localhost:8080/uaa/oauth/token',
           'aud' => audiences
@@ -67,15 +73,15 @@ module Bosh::Director
     end
 
     context 'given valid HTTP basic authentication credentials' do
-      let(:request_env) { {'HTTP_AUTHORIZATION' => credentials[:admin]} }
+      let(:request_env) { {'HTTP_AUTHORIZATION' => 'Basic YWRtaW46YWRtaW4='} }
 
       it 'raises' do
         expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
       end
     end
 
-    context 'given bogus HTTP basic authentication credentials' do
-      let(:request_env) { {'HTTP_AUTHORIZATION' => credentials[:bogus]} }
+    context 'given missing HTTP authentication credentials' do
+      let(:request_env) { { } }
 
       it 'raises' do
         expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)

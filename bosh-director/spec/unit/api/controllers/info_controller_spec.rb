@@ -6,9 +6,8 @@ module Bosh::Director
     describe Controllers::InfoController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(identity_provider) }
+      subject(:app) { described_class.new(Config.new(test_config)) }
 
-      let(:identity_provider) { Bosh::Director::Api::LocalIdentityProvider.new(Bosh::Director::Api::UserManager.new) }
       let(:temp_dir) { Dir.mktmpdir}
       let(:base_config) do
         blobstore_dir = File.join(temp_dir, 'blobstore')
@@ -71,6 +70,10 @@ module Bosh::Director
           'uuid' => Config.uuid,
           'user' => 'admin',
           'cpi' => 'dummy',
+          'user_authentication' => {
+            'type' => 'basic',
+            'options' => {},
+          },
           'features' => {
             'dns' => {
               'status' => true,
@@ -103,6 +106,24 @@ module Bosh::Director
         it 'reports the cpi to be the external cpi executable path' do
           get '/'
           expect(Yajl::Parser.parse(last_response.body)['cpi']).to eq('test-cpi')
+        end
+      end
+
+      context 'when configured to use UAA for user management' do
+        let(:test_config) { base_config.merge(
+          'user_management' => {'provider' => 'uaa', 'options' => {
+            'url' => 'http://localhost:8080/uaa',
+            'key' => 'super secret!',
+          }}
+        ) }
+
+        it 'reports that uaa is the authentication method and excludes the secret key' do
+          get '/'
+          response_hash = Yajl::Parser.parse(last_response.body)
+          expect(response_hash['user_authentication']).to eq(
+              'type' => 'uaa',
+              'options' => {'url' => 'http://localhost:8080/uaa'}
+            )
         end
       end
     end

@@ -2,8 +2,12 @@ module Bosh
   module Director
     module Api
       class LocalIdentityProvider
-        def initialize(user_manager)
-          @user_manager = user_manager
+        def initialize(_)
+          @user_manager = Bosh::Director::Api::UserManager.new
+        end
+
+        def client_info
+          {'type' => 'basic', 'options' => {}}
         end
 
         def corroborate_user(request_env)

@@ -3,13 +3,22 @@ require 'rack/test'
 
 module Bosh::Director
   describe Api::LocalIdentityProvider do
-    subject(:identity_provider) { Api::LocalIdentityProvider.new(Api::UserManager.new) }
+    subject(:identity_provider) { Api::LocalIdentityProvider.new({}) }
     let(:app) { Support::TestController.new(identity_provider) }
     let(:credentials) do
       {
         :admin => 'Basic YWRtaW46YWRtaW4=',
         :bogus => 'Basic YWRtaW46Ym9ndXM='
       }
+    end
+
+    describe 'client info' do
+      it 'contains type and options, ' do
+        expect(identity_provider.client_info).to eq(
+            'type' => 'basic',
+            'options' => {}
+          )
+      end
     end
 
     context 'given valid HTTP basic authentication credentials' do

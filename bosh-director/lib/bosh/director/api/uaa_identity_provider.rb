@@ -4,8 +4,18 @@ module Bosh
   module Director
     module Api
       class UAAIdentityProvider
-        def initialize(key)
-          @token_coder = CF::UAA::TokenCoder.new(skey: key, audience_ids: ['bosh'])
+        def initialize(options)
+          @token_coder = CF::UAA::TokenCoder.new(skey: options.fetch('key'), audience_ids: ['bosh'])
+          @url = options.fetch('url')
+        end
+
+        def client_info
+          {
+            'type' => 'uaa',
+            'options' => {
+              'url' => @url
+            }
+          }
         end
 
         def corroborate_user(request_env)
