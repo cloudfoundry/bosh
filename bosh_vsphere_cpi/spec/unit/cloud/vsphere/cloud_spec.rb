@@ -34,7 +34,7 @@ module VSphereCloud
     before { allow(VSphereCloud::DiskProvider).to receive(:new).and_return(disk_provider) }
     let(:vm_provider) { instance_double('VSphereCloud::VMProvider') }
     before { allow(VSphereCloud::VMProvider).to receive(:new).and_return(vm_provider) }
-    let(:vm) { instance_double('VSphereCloud::Resources::VM', mob: vm_mob, reload: nil) }
+    let(:vm) { instance_double('VSphereCloud::Resources::VM', mob: vm_mob, reload: nil, cid: 'vm-id') }
     let(:vm_mob) { instance_double('VimSdk::Vim::VirtualMachine') }
     before { allow(vm_provider).to receive(:find).with('vm-id').and_return(vm) }
 
@@ -676,17 +676,18 @@ module VSphereCloud
     end
 
     describe '#detach_disk' do
-      it 'raises an error if disk is not found in vSphere database' do
+      it 'raises an error if disk is not found' do
+        allow(disk_provider).to receive(:find).with('non-existent-disk-cid').
+          and_raise(Bosh::Clouds::DiskNotFound.new(false))
         expect {
           vsphere_cloud.detach_disk('vm-id', 'non-existent-disk-cid')
-        }.to raise_error /Disk not found: non-existent-disk-cid/
+        }.to raise_error Bosh::Clouds::DiskNotFound
       end
 
-      context 'when disk exists in database' do
-        let!(:disk_model) { Models::Disk.create(uuid: 'disk-cid', size: 100, path: 'fake-disk-path') }
-        after { disk_model.destroy }
-
+      context 'when disk exists' do
         before do
+          found_disk = instance_double(VSphereCloud::Resources::Disk, uuid: 'disk-cid')
+          allow(disk_provider).to receive(:find).with('disk-cid').and_return(found_disk)
           allow(cloud_searcher).to receive(:get_property).with(
             vm_mob,
             VimSdk::Vim::VirtualMachine,
@@ -938,22 +939,12 @@ module VSphereCloud
       end
 
       before do
-        Models::Disk.delete
         allow(disk_provider).to receive(:create).with(1024).and_return(disk)
       end
 
       it 'creates disk with disk provider' do
         expect(disk_provider).to receive(:create).with(1024).and_return(disk)
         vsphere_cloud.create_disk(1024, {})
-      end
-
-      it 'creates disk in database' do
-        vsphere_cloud.create_disk(1024, {})
-        created_disk = Models::Disk.first
-        expect(created_disk.size).to eq(1024)
-        expect(created_disk.uuid).to eq('fake-disk-uuid')
-        expect(created_disk.datastore).to eq('fake-datastore')
-        expect(created_disk.path).to eq('fake-path')
       end
     end
   end

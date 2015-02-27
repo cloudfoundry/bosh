@@ -8,17 +8,10 @@ end
 require 'yaml'
 
 require 'pry'
-require 'sequel'
-require 'sequel/adapters/sqlite'
 require 'cloud'
 require 'cloud/vsphere'
 
-db = Sequel.sqlite
-Sequel.extension :migration
-
-Sequel::TimestampMigrator.new(db, File.expand_path('../../db/migrations', __FILE__), {}).run
-
-bosh_director_config = OpenStruct.new(logger: Logger.new(STDOUT), uuid: 'uuid', task_checkpoint: nil, db: Sequel.sqlite)
+bosh_director_config = OpenStruct.new(logger: Logger.new(STDOUT), uuid: 'uuid', task_checkpoint: nil)
 
 Bosh::Clouds::Config.configure(bosh_director_config)
 

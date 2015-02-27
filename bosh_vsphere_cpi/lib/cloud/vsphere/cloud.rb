@@ -19,7 +19,6 @@ require 'cloud/vsphere/resources/vm'
 require 'cloud/vsphere/resources/resource_pool'
 require 'cloud/vsphere/resources/scorer'
 require 'cloud/vsphere/resources/util'
-require 'cloud/vsphere/models/disk'
 require 'cloud/vsphere/path_finder'
 require 'cloud/vsphere/vm_creator_builder'
 require 'cloud/vsphere/disk_provider'
@@ -341,9 +340,7 @@ module VSphereCloud
     def detach_disk(vm_cid, disk_cid)
       with_thread_name("detach_disk(#{vm_cid}, #{disk_cid})") do
         @logger.info("Detaching disk: #{disk_cid} from vm: #{vm_cid}")
-        disk = Models::Disk.first(uuid: disk_cid)
-        raise "Disk not found: #{disk_cid}" if disk.nil?
-
+        disk = disk_provider.find(disk_cid)
         vm = vm_provider.find(vm_cid)
         vm_mob = vm.mob
 
@@ -358,8 +355,8 @@ module VSphereCloud
         end
 
         vm.reload
-        virtual_disk = vm.disk_by_cid(disk_cid)
-        raise Bosh::Clouds::DiskNotAttached.new(true), "Disk (#{disk_cid}) is not attached to VM (#{vm_cid})" if virtual_disk.nil?
+        virtual_disk = vm.disk_by_cid(disk.uuid)
+        raise Bosh::Clouds::DiskNotAttached.new(true), "Disk (#{disk.uuid}) is not attached to VM (#{vm.cid})" if virtual_disk.nil?
 
         config = Vim::Vm::ConfigSpec.new
         config.device_change = []
@@ -374,11 +371,11 @@ module VSphereCloud
         # Fixed in vsphere 5.
         5.times do
           vm.reload
-          virtual_disk = vm.disk_by_cid(disk_cid)
+          virtual_disk = vm.disk_by_cid(disk.uuid)
           break if virtual_disk.nil?
           sleep(1.0)
         end
-        raise "Failed to detach disk: #{disk_cid} from vm: #{vm_cid}" unless virtual_disk.nil?
+        raise "Failed to detach disk: #{disk.uuid} from vm: #{vm.cid}" unless virtual_disk.nil?
 
         @logger.info('Finished detaching disk')
       end
@@ -388,16 +385,8 @@ module VSphereCloud
       with_thread_name("create_disk(#{size_in_mb}, _)") do
         @logger.info("Creating disk with size: #{size_in_mb}")
         disk = disk_provider.create(size_in_mb)
-
-        model_disk = Models::Disk.new
-        model_disk.uuid = disk.uuid
-        model_disk.size = disk.size_in_mb
-        model_disk.path = disk.path
-        model_disk.datacenter = @datacenter.name
-        model_disk.datastore = disk.datastore.name
-        model_disk.save
-        @logger.info("Created disk: #{model_disk.inspect}")
-        model_disk.uuid
+        @logger.info("Created disk: #{disk.inspect}")
+        disk.uuid
       end
     end
 

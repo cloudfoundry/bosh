@@ -234,10 +234,7 @@ PATH
       httpclient (= 2.4.0)
       membrane (~> 1.1.0)
       mono_logger
-      mysql2 (~> 0.3.11)
       nokogiri (~> 1.5.10)
-      pg (~> 0.15.1)
-      sequel (~> 3.43.0)
 
 PATH
   remote: simple_blobstore_server
