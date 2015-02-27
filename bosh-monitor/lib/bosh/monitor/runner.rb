@@ -133,6 +133,17 @@ module Bosh::Monitor
       end
     end
 
+    def alert_director_error(message)
+      Bhm.event_processor.process(:alert, {
+        id: SecureRandom.uuid,
+        severity: 3,
+        title: 'Health monitor failed to connect to director',
+        summary: message,
+        created_at: Time.now.to_i,
+        source: 'hm'
+      })
+    end
+
     def fetch_deployments
       deployments = @director.get_deployments
 
@@ -151,7 +162,7 @@ module Bosh::Monitor
 
     rescue Bhm::DirectorError => e
       log_exception(e)
+      alert_director_error(e.message)
     end
-
   end
 end
