@@ -29,7 +29,7 @@ describe Bosh::Clouds::ExternalCpi do
       expected_cmd = '/path/to/fake-cpi/bin/cpi'
       expected_stdin = %({"method":"#{cpi_method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid"}})
 
-      expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin)
+      expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
       call_cpi_method
     end
 
