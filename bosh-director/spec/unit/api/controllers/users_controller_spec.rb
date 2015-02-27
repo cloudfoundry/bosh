@@ -6,7 +6,7 @@ module Bosh::Director
     describe Controllers::UsersController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(identity_provider) }
+      subject(:app) { described_class.new(Config.new({})) }
 
       let(:identity_provider) { Bosh::Director::Api::LocalIdentityProvider.new(Bosh::Director::Api::UserManager.new) }
       let(:temp_dir) { Dir.mktmpdir}

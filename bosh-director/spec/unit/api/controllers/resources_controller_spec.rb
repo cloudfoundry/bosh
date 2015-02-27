@@ -27,9 +27,7 @@ module Bosh::Director
 
       let(:existing_resource_id) { director_app.blobstores.blobstore.create('some data') }
       let(:resource_manager) { ResourceManager.new(director_app.blobstores.blobstore) }
-      let(:identity_provider) { LocalIdentityProvider.new(UserManager.new) }
-
-      subject(:app) { described_class.new(identity_provider, resource_manager) }
+      subject(:app) { described_class.new(Config.new({}), resource_manager) }
 
       it 'requires auth' do
         get "/#{existing_resource_id}"

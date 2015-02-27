@@ -6,9 +6,7 @@ module Bosh::Director
     describe Controllers::PackagesController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(identity_provider) }
-
-      let(:identity_provider) { Bosh::Director::Api::LocalIdentityProvider.new(Bosh::Director::Api::UserManager.new) }
+      subject(:app) { described_class.new(Config.new({})) }
       before { allow(Api::ResourceManager).to receive(:new) }
 
       describe 'POST', '/matches' do

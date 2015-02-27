@@ -9,28 +9,26 @@ module Bosh
 
         def controllers
           director_app = Bosh::Director::App.new(@config)
-          identity_provider = @config.identity_provider
-
           controllers = {}
           controllers['/info'] = Bosh::Director::Api::Controllers::InfoController.new(@config)
-          controllers['/tasks'] = Bosh::Director::Api::Controllers::TasksController.new(identity_provider)
-          controllers['/backups'] = Bosh::Director::Api::Controllers::BackupsController.new(identity_provider)
-          controllers['/deployments'] = Bosh::Director::Api::Controllers::DeploymentsController.new(identity_provider)
-          controllers['/packages'] = Bosh::Director::Api::Controllers::PackagesController.new(identity_provider)
-          controllers['/releases'] = Bosh::Director::Api::Controllers::ReleasesController.new(identity_provider)
+          controllers['/tasks'] = Bosh::Director::Api::Controllers::TasksController.new(@config)
+          controllers['/backups'] = Bosh::Director::Api::Controllers::BackupsController.new(@config)
+          controllers['/deployments'] = Bosh::Director::Api::Controllers::DeploymentsController.new(@config)
+          controllers['/packages'] = Bosh::Director::Api::Controllers::PackagesController.new(@config)
+          controllers['/releases'] = Bosh::Director::Api::Controllers::ReleasesController.new(@config)
           controllers['/resources'] = Bosh::Director::Api::Controllers::ResourcesController.new(
-            identity_provider,
+            @config,
             Bosh::Director::Api::ResourceManager.new(director_app.blobstores.blobstore)
           )
-          controllers['/resurrection'] = Bosh::Director::Api::Controllers::ResurrectionController.new(identity_provider)
-          controllers['/stemcells'] = Bosh::Director::Api::Controllers::StemcellsController.new(identity_provider)
-          controllers['/task'] = Bosh::Director::Api::Controllers::TaskController.new(identity_provider)
-          controllers['/users'] = Bosh::Director::Api::Controllers::UsersController.new(identity_provider)
+          controllers['/resurrection'] = Bosh::Director::Api::Controllers::ResurrectionController.new(@config)
+          controllers['/stemcells'] = Bosh::Director::Api::Controllers::StemcellsController.new(@config)
+          controllers['/task'] = Bosh::Director::Api::Controllers::TaskController.new(@config)
+          controllers['/users'] = Bosh::Director::Api::Controllers::UsersController.new(@config)
           controllers['/compiled_package_groups'] = Bosh::Director::Api::Controllers::CompiledPackagesController.new(
-            identity_provider,
+            @config,
             Bosh::Director::Api::CompiledPackageGroupManager.new
           )
-          controllers['/locks'] = Bosh::Director::Api::Controllers::LocksController.new(identity_provider)
+          controllers['/locks'] = Bosh::Director::Api::Controllers::LocksController.new(@config)
           controllers
         end
       end

@@ -2,7 +2,7 @@ module Bosh
   module Director
     module Api
       class LocalIdentityProvider
-        def initialize(_)
+        def initialize(*_)
           @user_manager = Bosh::Director::Api::UserManager.new
         end
 

@@ -4,8 +4,8 @@ module Bosh::Director
   module Api::Controllers
     class ResourcesController < BaseController
 
-      def initialize(identity_provider, resource_manager)
-        super(identity_provider)
+      def initialize(config, resource_manager)
+        super(config)
         @resource_manager = resource_manager
       end
 

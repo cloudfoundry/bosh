@@ -22,7 +22,8 @@ module Bosh
         describe BaseController do
           include Rack::Test::Methods
 
-          subject(:app) { Support::TestController.new(identity_provider, requires_authentication) }
+          let(:config) { Config.new(test_config) }
+          subject(:app) { Support::TestController.new(config, requires_authentication) }
 
           let(:requires_authentication) { nil }
           let(:authenticates_successfully) { false }
@@ -43,9 +44,7 @@ module Bosh
             config['snapshots']['enabled'] = true
             config
           }
-
-          before { App.new(Config.load_hash(test_config)) }
-
+          before { allow(config).to receive(:identity_provider).and_return(identity_provider) }
           after { FileUtils.rm_rf(temp_dir) }
 
           it 'sets the date header' do

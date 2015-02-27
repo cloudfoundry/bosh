@@ -6,7 +6,7 @@ module Bosh::Director
     subject(:identity_provider) { Api::UAAIdentityProvider.new(provider_options) }
     let(:provider_options) { {'url' => 'http://localhost:8080/uaa', 'key' => key} }
     let(:key) { 'tokenkey' }
-    let(:app) { Support::TestController.new(identity_provider) }
+    let(:app) { Support::TestController.new(double(:config, identity_provider: identity_provider)) }
 
     describe 'client info' do
       it 'contains type and options, but not secret key' do

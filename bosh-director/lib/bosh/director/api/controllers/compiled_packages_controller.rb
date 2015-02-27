@@ -11,8 +11,8 @@ require 'bosh/director/jobs/import_compiled_packages'
 module Bosh::Director
   module Api::Controllers
     class CompiledPackagesController < BaseController
-      def initialize(identity_provider, compiled_package_group_manager)
-        super(identity_provider)
+      def initialize(config, compiled_package_group_manager)
+        super(config)
         @compiled_package_group_manager = compiled_package_group_manager
       end
 

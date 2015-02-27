@@ -6,9 +6,10 @@ module Bosh::Director
         include Http
         include DnsHelper
 
-        def initialize(identity_provider)
+        def initialize(config)
           super()
-          @identity_provider = identity_provider
+          @config = config
+          @identity_provider = config.identity_provider
           @deployment_manager = DeploymentManager.new
           @backup_manager = BackupManager.new
           @instance_manager = InstanceManager.new

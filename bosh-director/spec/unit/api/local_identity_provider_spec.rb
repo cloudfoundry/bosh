@@ -3,8 +3,7 @@ require 'rack/test'
 
 module Bosh::Director
   describe Api::LocalIdentityProvider do
-    subject(:identity_provider) { Api::LocalIdentityProvider.new({}) }
-    let(:app) { Support::TestController.new(identity_provider) }
+    subject(:identity_provider) { Api::LocalIdentityProvider.new }
     let(:credentials) do
       {
         :admin => 'Basic YWRtaW46YWRtaW4=',
@@ -41,6 +40,8 @@ module Bosh::Director
 
     describe 'a request (controller integration)' do
       include Rack::Test::Methods
+
+      let(:app) { Support::TestController.new(double(:config, identity_provider: identity_provider)) }
 
       context 'given valid HTTP basic authentication credentials' do
         it 'is successful' do

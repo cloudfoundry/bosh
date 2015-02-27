@@ -3,11 +3,6 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class InfoController < BaseController
-      def initialize(config)
-        super(config.identity_provider)
-        @config = config
-      end
-
       def requires_authentication?
         false
       end

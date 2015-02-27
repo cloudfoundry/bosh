@@ -8,9 +8,7 @@ module Bosh::Director
   describe Api::Controllers::CompiledPackagesController do
     include Rack::Test::Methods
 
-    let(:identity_provider) { Api::LocalIdentityProvider.new(Api::UserManager.new) }
-    subject(:app) { described_class.new(identity_provider, Api::CompiledPackageGroupManager.new) }
-
+    subject(:app) { described_class.new(Config.new({}), Api::CompiledPackageGroupManager.new) }
     before { allow(Api::ResourceManager).to receive(:new) }
 
     describe 'POST', 'export' do
