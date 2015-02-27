@@ -24,10 +24,7 @@ describe Bosh::Director::Config do
     context 'when hash has value set' do
       it 'returns the configuration value' do
         test_config['max_vm_create_tries'] = 3
-
-        config = described_class.load_hash(test_config)
-        described_class.configure(config.hash)
-
+        described_class.configure(test_config)
         expect(described_class.max_vm_create_tries).to eq(3)
       end
     end
@@ -37,10 +34,7 @@ describe Bosh::Director::Config do
         # our fixture does not have this set so this is a no-op
         # i'm doing this because i want to be more explicit
         test_config.delete('max_vm_create_tries')
-
-        config = described_class.load_hash(test_config)
-        described_class.configure(config.hash)
-
+        described_class.configure(test_config)
         expect(described_class.max_vm_create_tries).to eq(5)
       end
     end
@@ -48,20 +42,15 @@ describe Bosh::Director::Config do
     context 'when hash contains a non integral value' do
       it 'raises an error' do
         test_config['max_vm_create_tries'] = 'bad number'
-
-        config = described_class.load_hash(test_config)
         expect{
-          described_class.configure(config.hash)
+          described_class.configure(test_config)
         }.to raise_error(ArgumentError)
       end
     end
   end
 
   describe '#cloud' do
-    before do
-      config = described_class.load_hash(test_config)
-      described_class.configure(config.hash)
-    end
+    before { described_class.configure(test_config) }
 
     it 'creates the cloud from the provider' do
       cloud = double('cloud')
@@ -79,8 +68,7 @@ describe Bosh::Director::Config do
 
   describe '#cpi_task_log' do
     before do
-      config = described_class.load_hash(test_config)
-      described_class.configure(config.hash)
+      described_class.configure(test_config)
       described_class.cloud_options['properties']['cpi_log'] = 'fake-cpi-log'
     end
 

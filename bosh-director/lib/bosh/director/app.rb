@@ -23,9 +23,7 @@ module Bosh::Director
       # it becomes the authoritative official version across the whole app.
       @@instance = self
 
-      # This is the legacy config system that we are trying to get rid of by
-      # decomposing and moving all the dependent components into this App
-      Bosh::Director::Config.configure(config.hash)
+      config.configure_evil_config_singleton!
 
       @blobstores = Blobstores.new(config)
     end

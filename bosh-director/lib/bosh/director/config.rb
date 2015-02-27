@@ -4,10 +4,7 @@ require 'bosh/director/dns_helper'
 
 module Bosh::Director
 
-  # We are in the slow painful process of extracting all of this class-level
-  # behavior into instance behavior, much of it on the App class. When this
-  # process is complete, the Config will be responsible only for maintaining
-  # configuration information - not holding the state of the world.
+  # We want to shift from class methods to instance methods here.
 
   class Config
     class << self
@@ -353,8 +350,6 @@ module Bosh::Director
       end
     end
 
-    attr_reader :hash
-
     def name
       hash['name']
     end
@@ -411,7 +406,13 @@ module Bosh::Director
       hash['backup_destination']
     end
 
+    def configure_evil_config_singleton!
+      Config.configure(hash)
+    end
+
     private
+
+    attr_reader :hash
 
     def initialize(hash)
       @hash = hash

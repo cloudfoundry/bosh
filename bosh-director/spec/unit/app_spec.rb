@@ -16,7 +16,7 @@ module Bosh::Director
       end
 
       it 'configures the legacy Config system' do # This will go away when the legacy Config.configure() goes away
-        expect(Config).to receive(:configure).with(config.hash)
+        expect(config).to receive(:configure_evil_config_singleton!)
 
         described_class.new(config)
       end
