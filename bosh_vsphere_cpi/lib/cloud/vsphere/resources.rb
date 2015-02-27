@@ -42,56 +42,62 @@ module VSphereCloud
     # @return [Array] an array/tuple of Cluster and Datastore if the resources
     #   were placed successfully, otherwise exception.
     def pick_cluster(memory, required_disk_size, persistent_disks)
-      # calculate locality to prioritizing clusters that contain the most
-      # persistent data.
-      clusters_with_disks = @cluster_locality.clusters_ordered_by_disk_size(persistent_disks)
+      @lock.synchronize do
+        # calculate locality to prioritizing clusters that contain the most
+        # persistent data.
+        clusters_with_disks = @cluster_locality.clusters_ordered_by_disk_size(persistent_disks)
 
-      scored_clusters = clusters_with_disks.map do |cluster|
-        score = Scorer.new(@config, cluster, memory, required_disk_size).score
-        [cluster, score]
+        scored_clusters = clusters_with_disks.map do |cluster|
+          score = Scorer.new(@config, cluster, memory, required_disk_size).score
+          [cluster, score]
+        end
+
+        acceptable_clusters = scored_clusters.select { |_, score| score > 0 }
+
+        @logger.debug("Acceptable clusters: #{acceptable_clusters.inspect}")
+
+        raise 'No available resources' if acceptable_clusters.empty?
+
+        if acceptable_clusters.any? { |cluster, _| cluster.disks.any? }
+          @logger.debug('Choosing cluster with the most disk size')
+          selected_cluster_with_disks, _ = acceptable_clusters.first
+        else
+          @logger.debug('Choosing cluster by weighted random')
+          selected_cluster_with_disks = Util.weighted_random(acceptable_clusters)
+        end
+
+        @logger.debug("Selected cluster '#{selected_cluster_with_disks.cluster.name}'")
+
+        selected_cluster = selected_cluster_with_disks.cluster
+        selected_cluster.allocate(memory)
+        selected_cluster
       end
-
-      acceptable_clusters = scored_clusters.select { |_, score| score > 0 }
-
-      @logger.debug("Acceptable clusters: #{acceptable_clusters.inspect}")
-
-      raise 'No available resources' if acceptable_clusters.empty?
-
-      if acceptable_clusters.any? { |cluster, _| cluster.disks.any? }
-        @logger.debug('Choosing cluster with the most disk size')
-        selected_cluster_with_disks, _ = acceptable_clusters.first
-      else
-        @logger.debug('Choosing cluster by weighted random')
-        selected_cluster_with_disks = Util.weighted_random(acceptable_clusters)
-      end
-
-      @logger.debug("Selected cluster '#{selected_cluster_with_disks.cluster.name}'")
-
-      selected_cluster = selected_cluster_with_disks.cluster
-      selected_cluster.allocate(memory)
-      selected_cluster
     end
 
     def pick_ephemeral_datastore(cluster, disk_size_in_mb)
-      datastore = cluster.pick_ephemeral(disk_size_in_mb)
-      if datastore.nil?
-        raise Bosh::Clouds::NoDiskSpace.new(
-          "Not enough ephemeral disk space (#{disk_size_in_mb}MB) in cluster #{cluster.name}")
-      end
+      @lock.synchronize do
+        datastore = cluster.pick_ephemeral(disk_size_in_mb)
+        if datastore.nil?
+          raise Bosh::Clouds::NoDiskSpace.new(
+            "Not enough ephemeral disk space (#{disk_size_in_mb}MB) in cluster #{cluster.name}")
+        end
 
-      datastore.allocate(disk_size_in_mb)
-      datastore
+        datastore.allocate(disk_size_in_mb)
+        datastore
+      end
     end
 
     def pick_persistent_datastore(cluster, disk_size_in_mb)
-      datastore = cluster.pick_persistent(disk_size_in_mb)
-      if datastore.nil?
-        raise Bosh::Clouds::NoDiskSpace.new(
-          "Not enough persistent disk space (#{disk_size_in_mb}MB) in cluster #{cluster.name}")
-      end
+      @lock.synchronize do
+        datastore = cluster.pick_persistent(disk_size_in_mb)
+        if datastore.nil?
+          raise Bosh::Clouds::NoDiskSpace.new(
+            "Not enough persistent disk space (#{disk_size_in_mb}MB) in cluster #{cluster.name}")
+        end
 
-      datastore.allocate(disk_size_in_mb)
-      datastore
+        datastore.allocate(disk_size_in_mb)
+        datastore
+      end
     end
 
     private
