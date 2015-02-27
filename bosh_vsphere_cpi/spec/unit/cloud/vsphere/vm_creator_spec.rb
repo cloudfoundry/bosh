@@ -56,7 +56,7 @@ describe VSphereCloud::VmCreator do
         ensure_all: true
       ).and_return(1024*1024)
       persistent_disks.each do |disk|
-        allow(disk_provider).to receive(:find).with(disk.uuid) { disk }
+        allow(disk_provider).to receive(:find).with(disk.cid) { disk }
       end
 
       replicated_stemcell_mob = instance_double('VimSdk::Vim::VirtualMachine')

@@ -32,7 +32,7 @@ module VSphereCloud
 
     describe '#create' do
       before do
-        allow(SecureRandom).to receive(:uuid).and_return('uuid')
+        allow(SecureRandom).to receive(:uuid).and_return('cid')
         cluster = instance_double(VSphereCloud::Resources::Cluster)
         allow(resources).to receive(:pick_cluster).with(0, 24, []).and_return(cluster)
         allow(resources).to receive(:pick_persistent_datastore).with(cluster, 24).and_return(datastore)
@@ -44,7 +44,7 @@ module VSphereCloud
 
       it 'creates disk using VirtualDiskManager' do
         expect(virtual_disk_manager).to receive(:create_virtual_disk) do |path, dc, spec|
-          expect(path).to eq('[fake-datastore-name] fake-disk-path/disk-uuid.vmdk')
+          expect(path).to eq('[fake-datastore-name] fake-disk-path/disk-cid.vmdk')
           expect(dc).to eq(datacenter_mob)
           expect(spec.disk_type).to eq('preallocated')
           expect(spec.capacity_kb).to eq(24576)
@@ -52,9 +52,9 @@ module VSphereCloud
         end
 
         disk = disk_provider.create(24)
-        expect(disk.uuid).to eq('disk-uuid')
+        expect(disk.cid).to eq('disk-cid')
         expect(disk.size_in_kb).to eq(24576)
-        expect(disk.path).to eq('[fake-datastore-name] fake-disk-path/disk-uuid.vmdk')
+        expect(disk.path).to eq('[fake-datastore-name] fake-disk-path/disk-cid.vmdk')
         expect(disk.datastore).to eq(datastore)
       end
 
@@ -84,7 +84,7 @@ module VSphereCloud
       context 'when disk exists' do
         before do
           allow(virtual_disk_manager).to receive(:query_virtual_disk_geometry).
-            with('[fake-datastore] fake-disk-path/disk-uuid.vmdk', datacenter_mob).
+            with('[fake-datastore] fake-disk-path/disk-cid.vmdk', datacenter_mob).
             and_return(
               double(:host_disk_dimensions_chs, cylinder: 2048, head: 4, sector: 8)
             )
@@ -99,11 +99,11 @@ module VSphereCloud
 
           context 'when disk is in persistent datastores' do
             it 'returns disk' do
-              disk = disk_provider.find_and_move('disk-uuid', cluster, 'fake-datacenter', accessible_datastores)
-              expect(disk.uuid).to eq('disk-uuid')
+              disk = disk_provider.find_and_move('disk-cid', cluster, 'fake-datacenter', accessible_datastores)
+              expect(disk.cid).to eq('disk-cid')
               expect(disk.size_in_kb).to eq(128)
               expect(disk.datastore).to eq(datastore)
-              expect(disk.path).to eq('[fake-datastore] fake-disk-path/disk-uuid.vmdk')
+              expect(disk.path).to eq('[fake-datastore] fake-disk-path/disk-cid.vmdk')
             end
           end
         end
@@ -118,16 +118,16 @@ module VSphereCloud
           it 'moves disk' do
             expect(client).to receive(:move_disk).with(
               'fake-host-datacenter',
-              '[fake-datastore] fake-disk-path/disk-uuid.vmdk',
+              '[fake-datastore] fake-disk-path/disk-cid.vmdk',
               'fake-host-datacenter',
-              '[fake-host-datastore] fake-disk-path/disk-uuid.vmdk'
+              '[fake-host-datastore] fake-disk-path/disk-cid.vmdk'
             )
             expect(client).to receive(:create_datastore_folder).with('[fake-host-datastore] fake-disk-path', datacenter_mob)
-            disk = disk_provider.find_and_move('disk-uuid', cluster, 'fake-host-datacenter', accessible_datastores)
-            expect(disk.uuid).to eq('disk-uuid')
+            disk = disk_provider.find_and_move('disk-cid', cluster, 'fake-host-datacenter', accessible_datastores)
+            expect(disk.cid).to eq('disk-cid')
             expect(disk.size_in_kb).to eq(128)
             expect(disk.datastore).to eq(destination_datastore)
-            expect(disk.path).to eq('[fake-host-datastore] fake-disk-path/disk-uuid.vmdk')
+            expect(disk.path).to eq('[fake-host-datastore] fake-disk-path/disk-cid.vmdk')
           end
 
           context 'when datastore that fits disk cannot be found' do
@@ -135,7 +135,7 @@ module VSphereCloud
 
             it 'raises an error' do
               expect {
-                disk_provider.find_and_move('disk-uuid', cluster, 'fake-host-datacenter', accessible_datastores)
+                disk_provider.find_and_move('disk-cid', cluster, 'fake-host-datacenter', accessible_datastores)
               }.to raise_error Bosh::Clouds::NoDiskSpace
             end
           end
@@ -145,7 +145,7 @@ module VSphereCloud
 
             it 'raises an error' do
               expect {
-                disk_provider.find_and_move('disk-uuid', cluster, 'fake-host-datacenter', accessible_datastores)
+                disk_provider.find_and_move('disk-cid', cluster, 'fake-host-datacenter', accessible_datastores)
               }.to raise_error "Datastore 'non-accessible-datastore' is not accessible to cluster 'fake-cluster-name'"
             end
           end
@@ -156,13 +156,13 @@ module VSphereCloud
         before do
           allow(datacenter).to receive(:persistent_datastores).and_return({})
           allow(virtual_disk_manager).to receive(:query_virtual_disk_geometry).
-            with('[fake-datastore] fake-disk-path/disk-uuid.vmdk', datacenter_mob).
+            with('[fake-datastore] fake-disk-path/disk-cid.vmdk', datacenter_mob).
             and_raise(VimSdk::SoapError.new('fake-message', 'fake-fault'))
         end
 
         it 'raises DiskNotFound' do
           expect {
-            disk_provider.find_and_move('disk-uuid', cluster, 'fake-datacenter', ['fake-datastore'])
+            disk_provider.find_and_move('disk-cid', cluster, 'fake-datacenter', ['fake-datastore'])
           }.to raise_error Bosh::Clouds::DiskNotFound
         end
       end
@@ -176,31 +176,31 @@ module VSphereCloud
       context 'when disk exists' do
         before do
           allow(virtual_disk_manager).to receive(:query_virtual_disk_geometry).
-            with('[fake-datastore] fake-disk-path/disk-uuid.vmdk', datacenter_mob).
+            with('[fake-datastore] fake-disk-path/disk-cid.vmdk', datacenter_mob).
             and_return(
             double(:host_disk_dimensions_chs, cylinder: 2048, head: 4, sector: 8)
           )
         end
 
         it 'returns disk' do
-          disk = disk_provider.find('disk-uuid')
-          expect(disk.uuid).to eq('disk-uuid')
+          disk = disk_provider.find('disk-cid')
+          expect(disk.cid).to eq('disk-cid')
           expect(disk.size_in_kb).to eq(128)
           expect(disk.datastore).to eq(datastore)
-          expect(disk.path).to eq('[fake-datastore] fake-disk-path/disk-uuid.vmdk')
+          expect(disk.path).to eq('[fake-datastore] fake-disk-path/disk-cid.vmdk')
         end
       end
 
       context 'when disk does not exist' do
         before do
           allow(virtual_disk_manager).to receive(:query_virtual_disk_geometry).
-            with('[fake-datastore] fake-disk-path/disk-uuid.vmdk', datacenter_mob).
+            with('[fake-datastore] fake-disk-path/disk-cid.vmdk', datacenter_mob).
             and_raise(VimSdk::SoapError.new('fake-message', 'fake-fault'))
         end
 
         it 'raises DiskNotFound' do
           expect {
-            disk_provider.find('disk-uuid')
+            disk_provider.find('disk-cid')
           }.to raise_error Bosh::Clouds::DiskNotFound
         end
       end

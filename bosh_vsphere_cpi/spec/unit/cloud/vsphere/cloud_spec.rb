@@ -686,7 +686,7 @@ module VSphereCloud
 
       context 'when disk exists' do
         before do
-          found_disk = instance_double(VSphereCloud::Resources::Disk, uuid: 'disk-cid')
+          found_disk = instance_double(VSphereCloud::Resources::Disk, cid: 'disk-cid')
           allow(disk_provider).to receive(:find).with('disk-cid').and_return(found_disk)
           allow(cloud_searcher).to receive(:get_property).with(
             vm_mob,

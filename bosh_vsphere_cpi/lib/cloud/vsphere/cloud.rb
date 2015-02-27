@@ -347,16 +347,16 @@ module VSphereCloud
         location = get_vm_location(vm_mob)
         env = @agent_env.get_current_env(vm_mob, location[:datacenter])
         @logger.info("Reading current agent env: #{env.pretty_inspect}")
-        if env['disks']['persistent'][disk.uuid]
-          env['disks']['persistent'].delete(disk.uuid)
+        if env['disks']['persistent'][disk.cid]
+          env['disks']['persistent'].delete(disk.cid)
           @logger.info("Updating agent env to: #{env.pretty_inspect}")
 
           @agent_env.set_env(vm_mob, location, env)
         end
 
         vm.reload
-        virtual_disk = vm.disk_by_cid(disk.uuid)
-        raise Bosh::Clouds::DiskNotAttached.new(true), "Disk (#{disk.uuid}) is not attached to VM (#{vm.cid})" if virtual_disk.nil?
+        virtual_disk = vm.disk_by_cid(disk.cid)
+        raise Bosh::Clouds::DiskNotAttached.new(true), "Disk (#{disk.cid}) is not attached to VM (#{vm.cid})" if virtual_disk.nil?
 
         config = Vim::Vm::ConfigSpec.new
         config.device_change = []
@@ -371,11 +371,11 @@ module VSphereCloud
         # Fixed in vsphere 5.
         5.times do
           vm.reload
-          virtual_disk = vm.disk_by_cid(disk.uuid)
+          virtual_disk = vm.disk_by_cid(disk.cid)
           break if virtual_disk.nil?
           sleep(1.0)
         end
-        raise "Failed to detach disk: #{disk.uuid} from vm: #{vm.cid}" unless virtual_disk.nil?
+        raise "Failed to detach disk: #{disk.cid} from vm: #{vm.cid}" unless virtual_disk.nil?
 
         @logger.info('Finished detaching disk')
       end
@@ -386,7 +386,7 @@ module VSphereCloud
         @logger.info("Creating disk with size: #{size_in_mb}")
         disk = disk_provider.create(size_in_mb)
         @logger.info("Created disk: #{disk.inspect}")
-        disk.uuid
+        disk.cid
       end
     end
 

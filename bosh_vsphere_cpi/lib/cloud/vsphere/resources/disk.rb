@@ -1,10 +1,10 @@
 module VSphereCloud
   class Resources
     class Disk
-      attr_reader :datastore, :size_in_kb, :path, :uuid
+      attr_reader :datastore, :size_in_kb, :path, :cid
 
-      def initialize(uuid, size_in_kb, datastore, path)
-        @uuid = uuid
+      def initialize(cid, size_in_kb, datastore, path)
+        @cid = cid
         @size_in_kb = size_in_kb
         @datastore = datastore
         @path = path

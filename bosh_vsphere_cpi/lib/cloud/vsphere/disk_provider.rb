@@ -14,8 +14,8 @@ module VSphereCloud
 
     def create(disk_size_in_mb)
       datastore = find_datastore(disk_size_in_mb)
-      disk_uuid = "disk-#{SecureRandom.uuid}"
-      @logger.debug("Creating disk '#{disk_uuid}' in datastore '#{datastore.name}'")
+      disk_cid = "disk-#{SecureRandom.uuid}"
+      @logger.debug("Creating disk '#{disk_cid}' in datastore '#{datastore.name}'")
 
       disk_size_in_kb = disk_size_in_mb * 1024
       disk_spec = VimSdk::Vim::VirtualDiskManager::FileBackedVirtualDiskSpec.new
@@ -23,7 +23,7 @@ module VSphereCloud
       disk_spec.capacity_kb = disk_size_in_kb
       disk_spec.adapter_type = 'lsiLogic'
 
-      disk_path = path(datastore, disk_uuid)
+      disk_path = path(datastore, disk_cid)
       create_parent_folder(disk_path)
 
       task = @virtual_disk_manager.create_virtual_disk(
@@ -34,11 +34,11 @@ module VSphereCloud
       @client.wait_for_task(task)
 
 
-      Resources::Disk.new(disk_uuid, disk_size_in_kb, datastore, disk_path)
+      Resources::Disk.new(disk_cid, disk_size_in_kb, datastore, disk_path)
     end
 
-    def find_and_move(disk_uuid, cluster, datacenter_name, accessible_datastores)
-      disk = find(disk_uuid)
+    def find_and_move(disk_cid, cluster, datacenter_name, accessible_datastores)
+      disk = find(disk_cid)
       return disk if accessible_datastores.include?(disk.datastore.name)
 
       destination_datastore =  @resources.pick_persistent_datastore_in_cluster(cluster, disk.size_in_mb)
@@ -51,30 +51,30 @@ module VSphereCloud
         raise "Datastore '#{destination_datastore.name}' is not accessible to cluster '#{cluster.name}'"
       end
 
-      destination_path = path(destination_datastore, disk_uuid)
+      destination_path = path(destination_datastore, disk_cid)
       @logger.info("Moving #{disk.path} to #{destination_path}")
       create_parent_folder(destination_path)
       @client.move_disk(datacenter_name, disk.path, datacenter_name, destination_path)
       @logger.info('Moved disk successfully')
-      Resources::Disk.new(disk_uuid, disk.size_in_kb, destination_datastore, destination_path)
+      Resources::Disk.new(disk_cid, disk.size_in_kb, destination_datastore, destination_path)
     end
 
-    def find(disk_uuid)
+    def find(disk_cid)
       @datacenter.persistent_datastores.each do |_, datastore|
-        disk_path = path(datastore, disk_uuid)
+        disk_path = path(datastore, disk_cid)
         disk_size_in_kb = get_disk_size_in_kb(disk_path)
         if disk_size_in_kb != nil
-          return Resources::Disk.new(disk_uuid, disk_size_in_kb, datastore, disk_path)
+          return Resources::Disk.new(disk_cid, disk_size_in_kb, datastore, disk_path)
         end
       end
 
-      raise Bosh::Clouds::DiskNotFound, "Could not find disk with id #{disk_uuid}"
+      raise Bosh::Clouds::DiskNotFound, "Could not find disk with id #{disk_cid}"
     end
 
     private
 
-    def path(datastore, disk_uuid)
-      "[#{datastore.name}] #{@disk_path}/#{disk_uuid}.vmdk"
+    def path(datastore, disk_cid)
+      "[#{datastore.name}] #{@disk_path}/#{disk_cid}.vmdk"
     end
 
     def find_datastore(disk_size_in_mb)
