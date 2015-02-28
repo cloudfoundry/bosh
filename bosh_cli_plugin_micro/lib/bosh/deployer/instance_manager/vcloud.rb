@@ -16,10 +16,6 @@ module Bosh::Deployer
         # to bosh-registry is required
       end
 
-      def disk_model
-        nil
-      end
-
       def update_spec(spec)
         properties = spec.properties
 

@@ -703,6 +703,17 @@ module VSphereCloud
       )
     end
 
+    def disk_provider
+      DiskProvider.new(
+        @client.service_content.virtual_disk_manager,
+        @datacenter,
+        @resources,
+        @config.datacenter_disk_path,
+        @client,
+        @logger
+      )
+    end
+
     private
 
     def choose_placer(cloud_properties)
@@ -722,17 +733,6 @@ module VSphereCloud
 
     def find_cluster(cluster_name)
       @datacenter.clusters[cluster_name]
-    end
-
-    def disk_provider
-      DiskProvider.new(
-        @client.service_content.virtual_disk_manager,
-        @datacenter,
-        @resources,
-        @config.datacenter_disk_path,
-        @client,
-        @logger
-      )
     end
 
     attr_reader :config

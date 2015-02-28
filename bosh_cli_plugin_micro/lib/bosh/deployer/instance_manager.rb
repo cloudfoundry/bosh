@@ -50,7 +50,7 @@ module Bosh::Deployer
       @infrastructure = plugin_class.new(self, config, logger)
 
       @deployments_state = DeploymentsState.load_from_dir(config.base_dir, logger)
-      deployments_state.load_deployment(config.name, infrastructure)
+      deployments_state.load_deployment(config.name)
 
       config.uuid = state.uuid
 

@@ -24,8 +24,7 @@ module Bosh::Deployer
       @file = file
     end
 
-    def load_deployment(name, infrastructure)
-      infrastructure.disk_model.insert_multiple(deployments['disks']) if infrastructure.disk_model
+    def load_deployment(name)
       models_instance.insert_multiple(deployments['instances'])
 
       @state = models_instance.find(name: name)
@@ -41,9 +40,6 @@ module Bosh::Deployer
     def save(infrastructure)
       state.save
       deployments['instances'] = models_instance.map { |instance| instance.values }
-      if infrastructure.disk_model
-        deployments['disks'] = infrastructure.disk_model.map { |disk| disk.values }
-      end
 
       File.open(file, 'w') do |file|
         file.write(Psych.dump(deployments))

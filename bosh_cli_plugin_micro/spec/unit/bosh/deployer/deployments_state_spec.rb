@@ -65,7 +65,6 @@ module Bosh::Deployer
       let(:infrastructure) do
         instance_double(
           'Bosh::Deployer::InstanceManager::Vsphere',
-          disk_model: nil,
         )
       end
 
@@ -91,32 +90,13 @@ module Bosh::Deployer
         )
       end
 
-      context 'if infrastructure supports disk_models' do
-        before do
-          allow(infrastructure).to receive(:disk_model).and_return(disk_model)
-        end
-        let(:disk_model) { double('VSphereCloud::Models::Disk', insert_multiple: nil) }
-
-        it 'loads the disk_models from deployments' do
-          subject.load_deployment('micro-bar', infrastructure)
-          expect(disk_model).to have_received(:insert_multiple).with(deployments['disks'])
-        end
-      end
-
-      context 'if infrastructure does not support disk_models' do
-        it 'does not load disk_models from deployments' do
-          subject.load_deployment('micro-bar', infrastructure)
-          expect(infrastructure).to have_received(:disk_model).once
-        end
-      end
-
       it 'inserts deployments instances into instance table' do
-        subject.load_deployment('micro-bar', infrastructure)
+        subject.load_deployment('micro-bar')
         expect(models_instance).to have_received(:insert_multiple).with(deployments['instances'])
       end
 
       it 'looks up the instance with the given name' do
-        subject.load_deployment('micro-bar', infrastructure)
+        subject.load_deployment('micro-bar')
         expect(models_instance).to have_received(:find).with(name: 'micro-bar')
       end
 
@@ -127,7 +107,7 @@ module Bosh::Deployer
         let(:instance_state) { double('Bosh::Deployer::Models::Instance') }
 
         it 'sets state to instance model' do
-          subject.load_deployment('micro-bar', infrastructure)
+          subject.load_deployment('micro-bar')
           expect(subject.state).to eq(instance_state)
         end
       end
@@ -143,7 +123,7 @@ module Bosh::Deployer
           expect(instance_state).to receive(:stemcell_sha1=).with(nil).ordered
           expect(instance_state).to receive(:save).ordered
 
-          subject.load_deployment('micro-bar', infrastructure)
+          subject.load_deployment('micro-bar')
           expect(subject.state).to eq(instance_state)
         end
       end

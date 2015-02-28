@@ -51,11 +51,6 @@ module Bosh::Deployer
       allow(server).to receive(:private_ip_address).and_return(ip)
     end
 
-    it 'should not populate disk model' do
-      disk_model = @deployer.infrastructure.disk_model
-      expect(disk_model).to eq(nil)
-    end
-
     it 'should create a Bosh instance' do
       allow(@deployer.infrastructure).to receive(:service_ip).and_return('10.0.0.10')
       spec = Psych.load_file(spec_asset('apply_spec_openstack.yml'))

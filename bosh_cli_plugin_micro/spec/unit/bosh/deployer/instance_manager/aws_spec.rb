@@ -33,8 +33,6 @@ module Bosh::Deployer
 
     before { allow(File).to receive(:exists?).with(/\/fake-private-key$/).and_return(true) }
 
-    its(:disk_model) { should be_nil }
-
     it { should respond_to(:check_dependencies) }
 
     describe '#remote_tunnel' do

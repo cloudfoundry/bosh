@@ -29,10 +29,6 @@ module Bosh::Deployer
         @remote_tunnel.create(instance_manager.client_services_ip, registry.port)
       end
 
-      def disk_model
-        nil
-      end
-
       def update_spec(spec)
         properties = spec.properties
 

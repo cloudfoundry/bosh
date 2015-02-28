@@ -50,11 +50,6 @@ module Bosh::Deployer
       allow(instance).to receive(:has_elastic_ip?).and_return(false)
     end
 
-    it 'should not populate disk model' do
-      disk_model = @deployer.infrastructure.disk_model
-      expect(disk_model).to eq(nil)
-    end
-
     it 'should create a Bosh instance' do
       allow(@deployer.infrastructure).to receive(:service_ip).and_return('10.0.0.10')
       spec = Psych.load_file(spec_asset('apply_spec_aws.yml'))

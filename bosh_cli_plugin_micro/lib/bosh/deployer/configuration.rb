@@ -60,7 +60,6 @@ module Bosh::Deployer
       @cloud_options['properties']['agent']['mbus'] ||=
         'https://vcap:b00tstrap@0.0.0.0:6868'
 
-      @disk_model = nil
       @cloud = nil
       @networks = nil
       @uuid = SecureRandom.uuid

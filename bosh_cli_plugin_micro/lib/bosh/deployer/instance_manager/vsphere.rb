@@ -14,14 +14,6 @@ module Bosh::Deployer
       def remote_tunnel
       end
 
-      def disk_model
-        if @disk_model.nil?
-          require 'cloud/vsphere'
-          @disk_model = VSphereCloud::Models::Disk
-        end
-        @disk_model
-      end
-
       def update_spec(spec)
         properties = spec.properties
 
@@ -53,7 +45,7 @@ module Bosh::Deployer
 
       # @return [Integer] size in MiB
       def disk_size(cid)
-        disk_model.first(uuid: cid).size
+        instance_manager.cloud.disk_provider.find(cid).size_in_mb
       end
 
       def persistent_disk_changed?

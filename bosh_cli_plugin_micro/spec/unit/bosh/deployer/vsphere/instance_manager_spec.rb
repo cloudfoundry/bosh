@@ -18,7 +18,8 @@ module Bosh
       end
 
       let(:dir) { Dir.mktmpdir('bdim_spec') }
-      let(:cloud) { instance_double('Bosh::Cloud') }
+      let(:cloud) { double(:cloud, create_disk: 'fake-disk-cid', disk_provider: disk_provider) }
+      let(:disk_provider) { double(:disk_provider, find: double(:disk, size_in_mb: 4096)) }
       let(:agent) { double('Bosh::Agent::HTTPClient') } # Uses method_missing :(
       let(:stemcell_tgz) { 'bosh-instance-1.0.tgz' }
       let(:logger) { instance_double('Logger', debug: nil, info: nil) }
@@ -61,8 +62,6 @@ module Bosh
         before do # attached disk
           deployer.state.disk_cid = 'fake-disk-cid'
           allow(agent).to receive_messages(list_disk: ['fake-disk-cid'])
-          deployer.infrastructure.disk_model.delete
-          deployer.infrastructure.disk_model.create(uuid: 'fake-disk-cid', size: 4096)
         end
 
         let(:apply_spec) { YAML.load_file(spec_asset('apply_spec.yml')) }
