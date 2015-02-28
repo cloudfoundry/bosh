@@ -29,6 +29,7 @@ module VSphereCloud
         @cloud_searcher.get_property(stemcell_vm, VimSdk::Vim::VirtualMachine, 'summary.storage.committed', ensure_all: true)
       stemcell_size /= 1024 * 1024
 
+      persistent_disk_cids ||= []
       persistent_disks = persistent_disk_cids.map { |cid| @disk_provider.find(cid) }
 
       # need to include swap and linked clone log
