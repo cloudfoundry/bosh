@@ -8,11 +8,10 @@ module VSphereCloud
 
       # Creates a new Scorer given a cluster and requested memory and storage.
       #
-      # @param [Cluster] cluster requested cluster.
+      # @param [Bosh::Clouds::Config] config the config.
       # @param [Integer] memory required memory.
+      # @param [Cluster] cluster_with_disks requested cluster.
       # @param [Array<Integer>] ephemeral list of required ephemeral disk sizes.
-      # @param [Array<Integer>] persistent list of required persistent disk
-      #   sizes.
       def initialize(config, cluster_with_disks, memory, ephemeral)
         @cluster = cluster_with_disks.cluster
         @persistent = cluster_with_disks.disks.map(&:size_in_mb)

@@ -5,14 +5,14 @@ require 'cloud/vsphere/resources/vm'
 
 module VSphereCloud
   class VmCreator
-    def initialize(memory, disk_size, cpu, placer, client, cloud_searcher, logger, cpi, agent_env, file_provider, disk_provider)
+    def initialize(memory, disk_size_in_mb, cpu, placer, client, cloud_searcher, logger, cpi, agent_env, file_provider, disk_provider)
       @placer = placer
       @client = client
       @cloud_searcher = cloud_searcher
       @logger = logger
       @cpi = cpi
       @memory = memory
-      @disk_size = disk_size
+      @disk_size_in_mb = disk_size_in_mb
       @cpu = cpu
       @agent_env = agent_env
       @file_provider = file_provider
@@ -33,9 +33,9 @@ module VSphereCloud
       persistent_disks = persistent_disk_cids.map { |cid| @disk_provider.find(cid) }
 
       # need to include swap and linked clone log
-      ephemeral_disk_size = @disk_size + @memory + stemcell_size
-      cluster = @placer.pick_cluster(@memory, ephemeral_disk_size, persistent_disks)
-      datastore = @placer.pick_ephemeral_datastore(cluster, ephemeral_disk_size)
+      ephemeral_disk_size_in_mb = @disk_size_in_mb + @memory + stemcell_size
+      cluster = @placer.pick_cluster(@memory, ephemeral_disk_size_in_mb, persistent_disks)
+      datastore = @placer.pick_ephemeral_datastore(cluster, ephemeral_disk_size_in_mb)
 
       vm_cid = "vm-#{SecureRandom.uuid}"
       @logger.info("Creating vm: #{vm_cid} on #{cluster.mob} stored in #{datastore.mob}")
@@ -50,7 +50,7 @@ module VSphereCloud
       config = VimSdk::Vim::Vm::ConfigSpec.new(memory_mb: @memory, num_cpus: @cpu)
       config.device_change = []
 
-      ephemeral_disk = VSphereCloud::EphemeralDisk.new(@disk_size, vm_cid, datastore)
+      ephemeral_disk = VSphereCloud::EphemeralDisk.new(@disk_size_in_mb, vm_cid, datastore)
       ephemeral_disk_config = ephemeral_disk.create_spec(replicated_stemcell_vm.system_disk.controller_key)
       config.device_change << ephemeral_disk_config
 

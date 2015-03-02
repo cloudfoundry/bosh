@@ -614,7 +614,7 @@ module VSphereCloud
           expect(reconfig_vm).to eq(vm_mob)
           expect(vm_config.device_change.size).to eq(1)
           disk_spec = vm_config.device_change.first
-          expect(disk_spec.device.capacity_in_kb).to eq(1024)
+          expect(disk_spec.device.capacity_in_kb).to eq(1024 * 1024)
           expect(disk_spec.device.backing.datastore).to eq(datastore.name)
           expect(disk_spec.device.controller_key).to eq('fake-controller-key')
         end

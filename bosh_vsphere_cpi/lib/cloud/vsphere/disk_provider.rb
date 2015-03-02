@@ -17,10 +17,9 @@ module VSphereCloud
       disk_cid = "disk-#{SecureRandom.uuid}"
       @logger.debug("Creating disk '#{disk_cid}' in datastore '#{datastore.name}'")
 
-      disk_size_in_kb = disk_size_in_mb * 1024
       disk_spec = VimSdk::Vim::VirtualDiskManager::FileBackedVirtualDiskSpec.new
       disk_spec.disk_type = 'preallocated'
-      disk_spec.capacity_kb = disk_size_in_kb
+      disk_spec.capacity_kb = disk_size_in_mb * 1024
       disk_spec.adapter_type = 'lsiLogic'
 
       disk_path = path(datastore, disk_cid)
@@ -34,7 +33,7 @@ module VSphereCloud
       @client.wait_for_task(task)
 
 
-      Resources::Disk.new(disk_cid, disk_size_in_kb, datastore, disk_path)
+      Resources::Disk.new(disk_cid, disk_size_in_mb, datastore, disk_path)
     end
 
     def find_and_move(disk_cid, cluster, datacenter_name, accessible_datastores)
@@ -56,15 +55,15 @@ module VSphereCloud
       create_parent_folder(destination_path)
       @client.move_disk(datacenter_name, disk.path, datacenter_name, destination_path)
       @logger.info('Moved disk successfully')
-      Resources::Disk.new(disk_cid, disk.size_in_kb, destination_datastore, destination_path)
+      Resources::Disk.new(disk_cid, disk.size_in_mb, destination_datastore, destination_path)
     end
 
     def find(disk_cid)
       @datacenter.persistent_datastores.each do |_, datastore|
         disk_path = path(datastore, disk_cid)
-        disk_size_in_kb = get_disk_size_in_kb(disk_path)
-        if disk_size_in_kb != nil
-          return Resources::Disk.new(disk_cid, disk_size_in_kb, datastore, disk_path)
+        disk_size_in_mb = get_disk_size_in_mb(disk_path)
+        if disk_size_in_mb != nil
+          return Resources::Disk.new(disk_cid, disk_size_in_mb, datastore, disk_path)
         end
       end
 
@@ -89,13 +88,15 @@ module VSphereCloud
       datastore
     end
 
-    def get_disk_size_in_kb(disk_path)
+    def get_disk_size_in_mb(disk_path)
       disk_geometry = @virtual_disk_manager.query_virtual_disk_geometry(
         disk_path,
         @datacenter.mob
       )
 
-      disk_geometry.cylinder * disk_geometry.head * disk_geometry.sector / 512
+      disk_size_in_blocks = disk_geometry.cylinder * disk_geometry.head * disk_geometry.sector
+      disk_size_in_kb = disk_size_in_blocks / 512
+      (disk_size_in_kb / 1024.0).ceil
     rescue VimSdk::SoapError
       nil
     end

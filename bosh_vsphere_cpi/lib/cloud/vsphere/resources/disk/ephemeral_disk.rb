@@ -2,14 +2,14 @@ require 'cloud/vsphere/resources/disk/disk_config'
 
 module VSphereCloud
   class EphemeralDisk
-    def initialize(size, folder_name, datastore)
+    def initialize(size_in_mb, folder_name, datastore)
       @folder_name = folder_name
       @datastore = datastore
-      @size = size
+      @size_in_mb = size_in_mb
     end
 
     def create_spec(controller_key)
-      DiskConfig.new(@datastore.mob, filename, controller_key, @size).spec(create: true)
+      DiskConfig.new(@datastore.mob, filename, controller_key, @size_in_mb).spec(create: true)
     end
 
     private

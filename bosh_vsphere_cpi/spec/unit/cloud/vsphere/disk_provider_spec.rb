@@ -53,7 +53,7 @@ module VSphereCloud
 
         disk = disk_provider.create(24)
         expect(disk.cid).to eq('disk-cid')
-        expect(disk.size_in_kb).to eq(24576)
+        expect(disk.size_in_mb).to eq(24)
         expect(disk.path).to eq('[fake-datastore-name] fake-disk-path/disk-cid.vmdk')
         expect(disk.datastore).to eq(datastore)
       end
@@ -82,11 +82,12 @@ module VSphereCloud
       let(:cluster) { instance_double('VSphereCloud::Resources::Cluster', name: 'fake-cluster-name') }
 
       context 'when disk exists' do
+        let(:cylinders) { 2097152 }
         before do
           allow(virtual_disk_manager).to receive(:query_virtual_disk_geometry).
             with('[fake-datastore] fake-disk-path/disk-cid.vmdk', datacenter_mob).
             and_return(
-              double(:host_disk_dimensions_chs, cylinder: 2048, head: 4, sector: 8)
+              double(:host_disk_dimensions_chs, cylinder: cylinders, head: 4, sector: 8)
             )
 
           allow(datacenter).to receive(:persistent_datastores).and_return(
@@ -101,9 +102,18 @@ module VSphereCloud
             it 'returns disk' do
               disk = disk_provider.find_and_move('disk-cid', cluster, 'fake-datacenter', accessible_datastores)
               expect(disk.cid).to eq('disk-cid')
-              expect(disk.size_in_kb).to eq(128)
+              expect(disk.size_in_mb).to eq(128)
               expect(disk.datastore).to eq(datastore)
               expect(disk.path).to eq('[fake-datastore] fake-disk-path/disk-cid.vmdk')
+            end
+          end
+
+          context 'when size in kb is not an even number of mb' do
+            let(:cylinders) { 2041000 }
+
+            it 'rounds up to an even number of mb' do
+              disk = disk_provider.find_and_move('disk-cid', cluster, 'fake-datacenter', accessible_datastores)
+              expect(disk.size_in_mb).to eq(125)
             end
           end
         end
@@ -125,7 +135,7 @@ module VSphereCloud
             expect(client).to receive(:create_datastore_folder).with('[fake-host-datastore] fake-disk-path', datacenter_mob)
             disk = disk_provider.find_and_move('disk-cid', cluster, 'fake-host-datacenter', accessible_datastores)
             expect(disk.cid).to eq('disk-cid')
-            expect(disk.size_in_kb).to eq(128)
+            expect(disk.size_in_mb).to eq(128)
             expect(disk.datastore).to eq(destination_datastore)
             expect(disk.path).to eq('[fake-host-datastore] fake-disk-path/disk-cid.vmdk')
           end
@@ -178,14 +188,14 @@ module VSphereCloud
           allow(virtual_disk_manager).to receive(:query_virtual_disk_geometry).
             with('[fake-datastore] fake-disk-path/disk-cid.vmdk', datacenter_mob).
             and_return(
-            double(:host_disk_dimensions_chs, cylinder: 2048, head: 4, sector: 8)
+            double(:host_disk_dimensions_chs, cylinder: 2097152, head: 4, sector: 8)
           )
         end
 
         it 'returns disk' do
           disk = disk_provider.find('disk-cid')
           expect(disk.cid).to eq('disk-cid')
-          expect(disk.size_in_kb).to eq(128)
+          expect(disk.size_in_mb).to eq(128)
           expect(disk.datastore).to eq(datastore)
           expect(disk.path).to eq('[fake-datastore] fake-disk-path/disk-cid.vmdk')
         end
