@@ -34,7 +34,7 @@ module VSphereCloud
       before do
         allow(SecureRandom).to receive(:uuid).and_return('cid')
         cluster = instance_double(VSphereCloud::Resources::Cluster)
-        allow(resources).to receive(:pick_cluster).with(0, 24, []).and_return(cluster)
+        allow(resources).to receive(:pick_cluster_for_vm).with(0, 24, []).and_return(cluster)
         allow(resources).to receive(:pick_persistent_datastore).with(cluster, 24).and_return(datastore)
         allow(virtual_disk_manager).to receive(:create_virtual_disk)
         allow(client).to receive(:create_datastore_folder)
@@ -66,7 +66,7 @@ module VSphereCloud
       context 'when there are no datastores on host cluster that can fit disk size' do
         before do
           cluster = instance_double(VSphereCloud::Resources::Cluster)
-          allow(resources).to receive(:pick_cluster).with(0, 24, []).and_return(cluster)
+          allow(resources).to receive(:pick_cluster_for_vm).with(0, 24, []).and_return(cluster)
           allow(resources).to receive(:pick_persistent_datastore).with(cluster, 24).and_return(nil)
         end
 

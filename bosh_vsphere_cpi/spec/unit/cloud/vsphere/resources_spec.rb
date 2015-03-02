@@ -28,7 +28,7 @@ module VSphereCloud
       end
     end
 
-    describe '#pick_cluster' do
+    describe '#pick_cluster_for_vm' do
       def make_cluster_with_disks(options)
         cluster = instance_double(VSphereCloud::Resources::Cluster, name: 'fake-cluster')
         cluster_with_disks = instance_double(VSphereCloud::Resources::ClusterWithDisks,
@@ -69,7 +69,7 @@ module VSphereCloud
             and_return([cluster_with_more_disks_but_not_enough_space, cluster_with_fewer_disks_but_enough_space])
 
           expect(cluster_with_fewer_disks_but_enough_space.cluster).to receive(:allocate).with(512)
-          expect(resources.pick_cluster(512, 1024, disks)).to eq(cluster_with_fewer_disks_but_enough_space.cluster)
+          expect(resources.pick_cluster_for_vm(512, 1024, disks)).to eq(cluster_with_fewer_disks_but_enough_space.cluster)
         end
       end
 
@@ -97,7 +97,7 @@ module VSphereCloud
 
           expect(cluster_without_disks_with_bigger_score_with_disks.cluster).to receive(:allocate).with(512)
 
-          expect(resources.pick_cluster(512, 1024, [])).to eq(cluster_without_disks_with_bigger_score_with_disks.cluster)
+          expect(resources.pick_cluster_for_vm(512, 1024, [])).to eq(cluster_without_disks_with_bigger_score_with_disks.cluster)
         end
       end
 
@@ -119,7 +119,7 @@ module VSphereCloud
             and_return([cluster_a, cluster_b])
 
           expect {
-            resources.pick_cluster(512, 1024, [])
+            resources.pick_cluster_for_vm(512, 1024, [])
           }.to raise_error /No available resources/
         end
       end

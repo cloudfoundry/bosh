@@ -34,14 +34,14 @@ module VSphereCloud
       end
     end
 
-    # Find a cluster for the requested memory and storage, attempting to allocate it near existing disks.
+    # Find a cluster for a vm with the requested memory and ephemeral storage, attempting
+    # to allocate it near existing persistent disks.
     #
     # @param [Integer] requested_memory_in_mb requested memory.
     # @param [Integer] requested_ephemeral_disk_size_in_mb requested ephemeral storage.
-    # @param [Array<Resources::Disk>] existing_persistent_disks existing persistent disks.
-    # @return [Array] an array/tuple of Cluster and Datastore if the resources
-    #   were placed successfully, otherwise exception.
-    def pick_cluster(requested_memory_in_mb, requested_ephemeral_disk_size_in_mb, existing_persistent_disks)
+    # @param [Array<Resources::Disk>] existing_persistent_disks existing persistent disks, if any.
+    # @return [Cluster] selected cluster if the resources were placed successfully, otherwise raises.
+    def pick_cluster_for_vm(requested_memory_in_mb, requested_ephemeral_disk_size_in_mb, existing_persistent_disks)
       @lock.synchronize do
         # calculate locality to prioritizing clusters that contain the most persistent data.
         clusters_with_disks = @cluster_locality.clusters_ordered_by_disk_size(existing_persistent_disks)

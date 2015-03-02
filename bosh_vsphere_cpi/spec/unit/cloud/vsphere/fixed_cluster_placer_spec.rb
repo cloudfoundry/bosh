@@ -9,13 +9,13 @@ module VSphereCloud
 
     subject(:fixed_cluster_placer) { described_class.new(cluster, drs_rules) }
 
-    describe "#pick_cluster" do
+    describe "#pick_cluster_for_vm" do
       it "returns the fixed cluster" do
-        expect(fixed_cluster_placer.pick_cluster(128, 256, [])).to eq(cluster)
+        expect(fixed_cluster_placer.pick_cluster_for_vm(128, 256, [])).to eq(cluster)
       end
 
       it "allocates the memory" do
-        fixed_cluster_placer.pick_cluster(128, 256, [])
+        fixed_cluster_placer.pick_cluster_for_vm(128, 256, [])
         expect(cluster).to have_received(:allocate).with(128)
       end
     end

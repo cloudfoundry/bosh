@@ -140,7 +140,7 @@ describe VSphereCloud::VmCreator do
 
       allow_any_instance_of(VSphereCloud::Resources::VM).to receive(:power_on)
 
-      allow(placer).to receive(:pick_cluster).with(1024, 2049, persistent_disks).and_return(cluster)
+      allow(placer).to receive(:pick_cluster_for_vm).with(1024, 2049, persistent_disks).and_return(cluster)
       allow(placer).to receive(:pick_ephemeral_datastore).with(cluster, 2049).and_return(datastore)
 
       allow(SecureRandom).to receive(:uuid).and_return('fake-uuid')
@@ -159,7 +159,7 @@ describe VSphereCloud::VmCreator do
     end
 
     it 'chooses the placement based on memory, ephemeral and persistent disks' do
-      expect(placer).to receive(:pick_cluster).with(1024, 2049, persistent_disks).and_return(cluster)
+      expect(placer).to receive(:pick_cluster_for_vm).with(1024, 2049, persistent_disks).and_return(cluster)
       expect(placer).to receive(:pick_ephemeral_datastore).with(cluster, 2049).and_return(datastore)
       creator.create('agent_id', 'stemcell_cid', networks, persistent_disk_cids, {})
     end

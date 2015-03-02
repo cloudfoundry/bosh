@@ -34,7 +34,7 @@ module VSphereCloud
 
       # need to include swap and linked clone log
       ephemeral_disk_size_in_mb = @disk_size_in_mb + @memory + stemcell_size
-      cluster = @placer.pick_cluster(@memory, ephemeral_disk_size_in_mb, persistent_disks)
+      cluster = @placer.pick_cluster_for_vm(@memory, ephemeral_disk_size_in_mb, persistent_disks)
       datastore = @placer.pick_ephemeral_datastore(cluster, ephemeral_disk_size_in_mb)
 
       vm_cid = "vm-#{SecureRandom.uuid}"

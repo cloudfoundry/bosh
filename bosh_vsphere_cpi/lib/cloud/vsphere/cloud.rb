@@ -101,7 +101,7 @@ module VSphereCloud
           @logger.info("Generated name: #{name}")
 
           stemcell_size = File.size(image) / (1024 * 1024)
-          cluster = @resources.pick_cluster(0, stemcell_size, [])
+          cluster = @resources.pick_cluster_for_vm(0, stemcell_size, [])
           datastore = @resources.pick_ephemeral_datastore(cluster, stemcell_size)
           @logger.info("Deploying to: #{cluster.mob} / #{datastore.mob}")
 

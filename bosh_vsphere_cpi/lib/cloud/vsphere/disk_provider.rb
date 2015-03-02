@@ -77,7 +77,7 @@ module VSphereCloud
     end
 
     def find_datastore(disk_size_in_mb)
-      cluster = @resources.pick_cluster(0, disk_size_in_mb, [])
+      cluster = @resources.pick_cluster_for_vm(0, disk_size_in_mb, [])
       datastore = @resources.pick_persistent_datastore(cluster, disk_size_in_mb)
 
       if datastore.nil?

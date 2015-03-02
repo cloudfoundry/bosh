@@ -7,7 +7,7 @@ module VSphereCloud
       @drs_rules = drs_rules
     end
 
-    def pick_cluster(memory, ephemeral, persistent)
+    def pick_cluster_for_vm(memory, ephemeral, persistent)
       @cluster.allocate(memory)
       @cluster
     end
