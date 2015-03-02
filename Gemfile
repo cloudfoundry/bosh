@@ -42,7 +42,7 @@ group :development, :test do
   gem 'bosh-stemcell', path: 'bosh-stemcell'
   gem 'serverspec'
 
-  gem 'rspec', '~> 3.0'
+  gem 'rspec', '~> 3.0.0'
   gem 'rspec-its'
   gem 'rspec-instafail'
 

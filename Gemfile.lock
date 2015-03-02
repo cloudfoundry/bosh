@@ -247,7 +247,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     CFPropertyList (2.3.0)
-    addressable (2.3.4)
+    addressable (2.3.7)
     ast (2.0.0)
     aws-sdk (1.60.2)
       aws-sdk-v1 (= 1.60.2)
@@ -270,7 +270,8 @@ GEM
     codeclimate-test-reporter (0.3.0)
       simplecov (>= 0.7.1, < 1.0.0)
     coderay (1.1.0)
-    crack (0.3.2)
+    crack (0.4.2)
+      safe_yaml (~> 1.0.0)
     daemons (1.1.9)
     diff-lcs (1.2.5)
     docile (1.1.5)
@@ -439,9 +440,9 @@ GEM
       rspec-core (~> 3.0.0)
       rspec-expectations (~> 3.0.0)
       rspec-mocks (~> 3.0.0)
-    rspec-core (3.0.0)
+    rspec-core (3.0.4)
       rspec-support (~> 3.0.0)
-    rspec-expectations (3.0.0)
+    rspec-expectations (3.0.4)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.0.0)
     rspec-instafail (0.2.6)
@@ -449,9 +450,9 @@ GEM
     rspec-its (1.0.1)
       rspec-core (>= 2.99.0.beta1)
       rspec-expectations (>= 2.99.0.beta1)
-    rspec-mocks (3.0.0)
+    rspec-mocks (3.0.4)
       rspec-support (~> 3.0.0)
-    rspec-support (3.0.0)
+    rspec-support (3.0.4)
     rubocop (0.23.0)
       json (>= 1.7.7, < 2)
       parser (~> 2.1.9)
@@ -472,6 +473,7 @@ GEM
     rufus-scheduler (2.0.24)
       tzinfo (>= 0.3.22)
     rugged (0.19.0)
+    safe_yaml (1.0.4)
     semi_semantic (1.1.0)
     sequel (3.43.0)
     serverspec (0.15.4)
@@ -505,11 +507,11 @@ GEM
     trollop (1.16.2)
     tzinfo (1.2.2)
       thread_safe (~> 0.1)
-    vcr (2.7.0)
+    vcr (2.9.3)
     vegas (0.1.11)
       rack (>= 1.0.0)
-    webmock (1.11.0)
-      addressable (>= 2.2.7)
+    webmock (1.20.4)
+      addressable (>= 2.3.6)
       crack (>= 0.3.2)
     yajl-ruby (1.2.1)
 
@@ -553,7 +555,7 @@ DEPENDENCIES
   rake (~> 10.0)
   redis
   rest-client
-  rspec (~> 3.0)
+  rspec (~> 3.0.0)
   rspec-instafail
   rspec-its
   rubocop
