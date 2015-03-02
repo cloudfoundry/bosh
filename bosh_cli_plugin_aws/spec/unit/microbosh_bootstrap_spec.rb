@@ -37,7 +37,7 @@ describe Bosh::Aws::MicroBoshBootstrap do
       allow_any_instance_of(Bosh::Cli::Command::Micro).to receive(:micro_deployment)
       allow_any_instance_of(Bosh::Cli::Command::Micro).to receive(:perform)
       allow_any_instance_of(Bosh::Cli::Command::User).to receive(:create)
-      allow_any_instance_of(Bosh::Cli::Command::Misc).to receive(:login)
+      allow_any_instance_of(Bosh::Cli::Command::Login).to receive(:login)
       allow_any_instance_of(Bosh::Aws::MicroBoshBootstrap).to receive(:micro_ami).and_return("ami-123456")
     end
 
@@ -79,19 +79,19 @@ describe Bosh::Aws::MicroBoshBootstrap do
 
     it "should login with admin/admin with non-interactive mode" do
       allow_any_instance_of(::Bosh::Cli::Command::Base).to receive(:non_interactive?).and_return(true)
-      expect_any_instance_of(Bosh::Cli::Command::Misc).to receive(:login).with("admin", "admin")
+      expect_any_instance_of(Bosh::Cli::Command::Login).to receive(:login).with("admin", "admin")
       microbosh_bootstrap.start
     end
 
     it "should login with created user with interactive mode" do
-      misc_admin = double('Misc command for admin', :options= => nil)
-      misc_foo = double('Misc command for foo', :options= => nil)
+      login_admin = double('Misc command for admin', :options= => nil)
+      login_foo = double('Misc command for foo', :options= => nil)
 
-      expect(misc_admin).to receive(:login).with('admin', 'admin')
-      expect(misc_foo).to receive(:login).with('foo', 'foo')
+      expect(login_admin).to receive(:login).with('admin', 'admin')
+      expect(login_foo).to receive(:login).with('foo', 'foo')
 
       expect_any_instance_of(Bosh::Cli::Command::User).to receive(:create).with("foo", "foo")
-      expect(Bosh::Cli::Command::Misc).to receive(:new).and_return(misc_admin, misc_foo)
+      expect(Bosh::Cli::Command::Login).to receive(:new).and_return(login_admin, login_foo)
 
       allow(microbosh_bootstrap).to receive(:ask).and_return("foo")
       microbosh_bootstrap.start

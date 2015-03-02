@@ -38,14 +38,14 @@ describe 'AWS Bootstrap commands' do
 
   describe 'aws bootstrap micro' do
     context 'when non-interactive' do
-      let(:misc_command) { double('Command Misc') }
       let(:user_command) { double('Command User') }
+      let(:login_command) { double('Command Login') }
 
       before do
         allow(Bosh::Cli::Command::User).to receive(:new).and_return(user_command)
-        allow(Bosh::Cli::Command::Misc).to receive(:new).and_return(misc_command)
-        allow(misc_command).to receive(:options=)
+        allow(Bosh::Cli::Command::Login).to receive(:new).and_return(login_command)
         allow(user_command).to receive(:options=)
+        allow(login_command).to receive(:options=)
       end
 
       it 'should bootstrap microbosh' do
@@ -55,11 +55,11 @@ describe 'AWS Bootstrap commands' do
         expect(SecureRandom).to receive(:base64).and_return('hm_password')
         expect(SecureRandom).to receive(:base64).and_return('admin_password')
 
-        expect(misc_command).to receive(:login).with('admin', 'admin')
+        expect(login_command).to receive(:login).with('admin', 'admin')
         expect(user_command).to receive(:create).with('admin', 'admin_password').and_return(true)
-        expect(misc_command).to receive(:login).with('admin', 'admin_password')
+        expect(login_command).to receive(:login).with('admin', 'admin_password')
         expect(user_command).to receive(:create).with('hm', 'hm_password').and_return(true)
-        expect(misc_command).to receive(:login).with('hm', 'hm_password')
+        expect(login_command).to receive(:login).with('hm', 'hm_password')
 
         expect_any_instance_of(Bosh::Deployer::InstanceManager).to receive(:with_lifecycle)
 

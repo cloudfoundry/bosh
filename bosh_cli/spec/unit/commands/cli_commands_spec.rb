@@ -14,18 +14,21 @@ describe Bosh::Cli::Command::Base do
     allow(@director).to receive(:get_status).and_return('name' => 'ZB')
   end
 
-  describe Bosh::Cli::Command::Misc do
-    def misc_cmd
-      cmd = Bosh::Cli::Command::Misc.new
-      options.each { |k, v| cmd.add_option(k, v) }
-      cmd
-    end
+  def misc_cmd
+    cmd = Bosh::Cli::Command::Misc.new
+    options.each { |k, v| cmd.add_option(k, v) }
+    cmd
+  end
 
+  def login_cmd
+    cmd = Bosh::Cli::Command::Login.new
+    options.each { |k, v| cmd.add_option(k, v) }
+    cmd
+  end
+
+  describe Bosh::Cli::Command::Misc do
     context 'in non_interactive mode' do
-      before :each do
-        options[:non_interactive] = true
-        # misc_cmd.add_option(:non_interactive, true)
-      end
+      before(:each) { options[:non_interactive] = true }
 
       it 'uses NonInteractiveProgressRenderer' do
         expect(misc_cmd.progress_renderer).to be_a(Bosh::Cli::NonInteractiveProgressRenderer)
@@ -71,13 +74,30 @@ describe Bosh::Cli::Command::Base do
         misc_cmd.set_target('myfoo')
         expect(misc_cmd.target).to eq('https://foo:25555')
       end
+    end
+
+    context 'in interactive mode' do
+      before :each do
+        misc_cmd.add_option(:non_interactive, false)
+      end
+
+      it 'uses InteractiveProgressRenderer' do
+        misc_cmd.add_option(:non_interactive, false)
+        expect(misc_cmd.progress_renderer).to be_a(Bosh::Cli::InteractiveProgressRenderer)
+      end
+    end
+  end
+
+  describe Bosh::Cli::Command::Login do
+    context 'in non_interactive mode' do
+      before(:each) { options[:non_interactive] = true }
 
       it 'logs user in' do
         expect(@director).to receive(:authenticated?).and_return(true)
         expect(@director).to receive(:user=).with('user')
         expect(@director).to receive(:password=).with('pass')
         misc_cmd.set_target('test')
-        misc_cmd.login('user', 'pass')
+        login_cmd.login('user', 'pass')
         expect(misc_cmd.logged_in?).to be(true)
         expect(misc_cmd.username).to eq('user')
         expect(misc_cmd.password).to eq('pass')
@@ -88,7 +108,7 @@ describe Bosh::Cli::Command::Base do
         expect(@director).to receive(:user=).with('user')
         expect(@director).to receive(:password=).with('pass')
         misc_cmd.set_target('test')
-        misc_cmd.login(HighLine::String.new('user'), HighLine::String.new('pass'))
+        login_cmd.login(HighLine::String.new('user'), HighLine::String.new('pass'))
         expect(misc_cmd.logged_in?).to be(true)
         expect(misc_cmd.username).to eq('user')
         expect(misc_cmd.password).to eq('pass')
@@ -103,8 +123,8 @@ describe Bosh::Cli::Command::Base do
         expect(@director).to receive(:authenticated?).and_return(true)
         expect(@director).to receive(:user=).with('user')
         expect(@director).to receive(:password=).with('pass')
-        misc_cmd.login('user', 'pass')
-        misc_cmd.logout
+        login_cmd.login('user', 'pass')
+        login_cmd.logout
         expect(misc_cmd.logged_in?).to be(false)
       end
 
@@ -116,21 +136,10 @@ describe Bosh::Cli::Command::Base do
         misc_cmd.set_target('test')
         expect(@director).to receive(:user=).with('user')
         expect(@director).to receive(:password=).with('pass')
-        misc_cmd.login('user', 'pass')
+        login_cmd.login('user', 'pass')
         expect(misc_cmd.logged_in?).to be(true)
         expect(misc_cmd.username).to eq('user')
         expect(misc_cmd.password).to eq('pass')
-      end
-    end
-
-    context 'in interactive mode' do
-      before :each do
-        misc_cmd.add_option(:non_interactive, false)
-      end
-
-      it 'uses InteractiveProgressRenderer' do
-        misc_cmd.add_option(:non_interactive, false)
-        expect(misc_cmd.progress_renderer).to be_a(Bosh::Cli::InteractiveProgressRenderer)
       end
     end
   end

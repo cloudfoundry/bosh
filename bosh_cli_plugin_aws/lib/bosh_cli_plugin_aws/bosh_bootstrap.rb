@@ -94,9 +94,12 @@ This command should be used for bootstrapping bosh from scratch.
         misc_command.options = self.options
         misc_command.set_target(manifest.vip)
         misc_command.options[:target] = manifest.vip
-        misc_command.login('admin', 'admin')
 
-        self.options[:target] = misc_command.config.target
+        login_command = Bosh::Cli::Command::Login.new
+        login_command.options = misc_command.options
+        login_command.login('admin', 'admin')
+
+        self.options[:target] = login_command.config.target
       end
 
       def deploy

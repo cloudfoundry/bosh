@@ -18,9 +18,9 @@ module Bosh
       end
 
       def login(username, password)
-        misc = Bosh::Cli::Command::Misc.new(runner)
-        misc.options = self.options
-        misc.login(username, password)
+        login_command = Bosh::Cli::Command::Login.new(runner)
+        login_command.options = self.options
+        login_command.login(username, password)
       end
 
       def manifest
