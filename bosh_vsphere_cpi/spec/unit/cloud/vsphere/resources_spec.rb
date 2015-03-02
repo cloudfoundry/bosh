@@ -41,35 +41,35 @@ module VSphereCloud
         scorer = instance_double(VSphereCloud::Resources::Scorer)
         allow(scorer).to receive(:score).and_return(options[:score])
         allow(VSphereCloud::Resources::Scorer).to receive(:new).
-          with(config, cluster_with_disks, 512, 1024).and_return(scorer)
+          with(config, cluster, 512, 1024, options[:disks].map(&:size_in_mb)).and_return(scorer)
 
         cluster_with_disks
       end
 
       context 'when there is a cluster that has persistent disks with non-0 score' do
         it 'chooses the cluster with the largest disk size and score > 0' do
-          disk_a = instance_double(VSphereCloud::Resources::Disk)
-          disk_b = instance_double(VSphereCloud::Resources::Disk)
+          disk_a = instance_double(VSphereCloud::Resources::Disk, size_in_mb: 1024)
+          disk_b = instance_double(VSphereCloud::Resources::Disk, size_in_mb: 1024)
           disks = [disk_a, disk_b]
 
-          cluster_with_the_most_disks_but_no_space_with_disks = make_cluster_with_disks(
+          cluster_with_more_disks_but_not_enough_space = make_cluster_with_disks(
             disks: [disk_a],
             score: 0,
             datastore: instance_double(VSphereCloud::Resources::Datastore)
           )
 
           datastore = instance_double(VSphereCloud::Resources::Datastore)
-          cluster_with_fewer_disks_but_enough_space_with_disks = make_cluster_with_disks(
+          cluster_with_fewer_disks_but_enough_space = make_cluster_with_disks(
             disks: [disk_b],
             score: 4,
             datastore: datastore
           )
 
           allow(cluster_locality).to receive(:clusters_ordered_by_disk_size).with(disks).
-            and_return([cluster_with_the_most_disks_but_no_space_with_disks, cluster_with_fewer_disks_but_enough_space_with_disks])
+            and_return([cluster_with_more_disks_but_not_enough_space, cluster_with_fewer_disks_but_enough_space])
 
-          expect(cluster_with_fewer_disks_but_enough_space_with_disks.cluster).to receive(:allocate).with(512)
-          expect(resources.pick_cluster(512, 1024, disks)).to eq(cluster_with_fewer_disks_but_enough_space_with_disks.cluster)
+          expect(cluster_with_fewer_disks_but_enough_space.cluster).to receive(:allocate).with(512)
+          expect(resources.pick_cluster(512, 1024, disks)).to eq(cluster_with_fewer_disks_but_enough_space.cluster)
         end
       end
 

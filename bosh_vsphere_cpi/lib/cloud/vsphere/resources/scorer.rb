@@ -10,11 +10,12 @@ module VSphereCloud
       #
       # @param [Bosh::Clouds::Config] config the config.
       # @param [Integer] memory required memory.
-      # @param [Cluster] cluster_with_disks requested cluster.
-      # @param [Array<Integer>] ephemeral list of required ephemeral disk sizes.
-      def initialize(config, cluster_with_disks, memory, ephemeral)
-        @cluster = cluster_with_disks.cluster
-        @persistent = cluster_with_disks.disks.map(&:size_in_mb)
+      # @param [Cluster] cluster requested cluster.
+      # @param [Integer] ephemeral disk size in mb.
+      # @param [Array<Integer>] persistent_disk_sizes list of requested persistent sizes in mb.
+      def initialize(config, cluster, memory, ephemeral, persistent_disk_sizes)
+        @cluster = cluster
+        @persistent_disk_sizes = persistent_disk_sizes
 
         @logger = config.logger
         @memory = memory
@@ -44,7 +45,7 @@ module VSphereCloud
       # @return [Integer] score.
       def score
         min_ephemeral = @ephemeral
-        min_persistent = @persistent.min
+        min_persistent = @persistent_disk_sizes.min
         min_shared = min_ephemeral
         if !min_persistent.nil? && min_persistent < min_shared
           min_shared = min_persistent
@@ -53,7 +54,7 @@ module VSphereCloud
         # Filter out any datastores that are below the min threshold
         filter(@free_ephemeral, min_ephemeral + DISK_THRESHOLD)
         filter(@free_shared, min_shared + DISK_THRESHOLD)
-        unless @persistent.empty?
+        unless @persistent_disk_sizes.empty?
           filter(@free_persistent, min_persistent + DISK_THRESHOLD)
         end
 
@@ -73,9 +74,9 @@ module VSphereCloud
             end
           end
 
-          unless @persistent.empty?
+          unless @persistent_disk_sizes.empty?
             consumed_all = false
-            @persistent.each do |size|
+            @persistent_disk_sizes.each do |size|
               consumed = consume_disk(@free_persistent, size, min_persistent)
               unless consumed
                 consumed = consume_disk(@free_shared, size, min_shared)

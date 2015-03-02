@@ -37,17 +37,24 @@ module VSphereCloud
     # Find a cluster for the requested memory and storage, attempting to allocate it near existing disks.
     #
     # @param [Integer] requested_memory_in_mb requested memory.
-    # @param [Integer] requested_disk_size_in_mb requested ephemeral storage.
+    # @param [Integer] requested_ephemeral_disk_size_in_mb requested ephemeral storage.
     # @param [Array<Resources::Disk>] existing_persistent_disks existing persistent disks.
     # @return [Array] an array/tuple of Cluster and Datastore if the resources
     #   were placed successfully, otherwise exception.
-    def pick_cluster(requested_memory_in_mb, requested_disk_size_in_mb, existing_persistent_disks)
+    def pick_cluster(requested_memory_in_mb, requested_ephemeral_disk_size_in_mb, existing_persistent_disks)
       @lock.synchronize do
         # calculate locality to prioritizing clusters that contain the most persistent data.
         clusters_with_disks = @cluster_locality.clusters_ordered_by_disk_size(existing_persistent_disks)
 
         scored_clusters = clusters_with_disks.map do |cluster|
-          score = Scorer.new(@config, cluster, requested_memory_in_mb, requested_disk_size_in_mb).score
+          persistent_disk_sizes = cluster.disks.map(&:size_in_mb)
+          score = Scorer.new(
+            @config, cluster.cluster,
+            requested_memory_in_mb,
+            requested_ephemeral_disk_size_in_mb,
+            persistent_disk_sizes
+          ).score
+
           [cluster, score]
         end
 
