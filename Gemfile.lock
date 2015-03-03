@@ -469,6 +469,11 @@ GEM
     rugged (0.19.0)
     semi_semantic (1.1.0)
     sequel (3.43.0)
+    serverspec (0.15.4)
+      highline
+      net-ssh
+      rspec (>= 2.13.0)
+      specinfra (>= 0.7.1)
     simplecov (0.9.0)
       docile (~> 1.1.0)
       multi_json
@@ -547,6 +552,7 @@ DEPENDENCIES
   rspec-its
   rubocop
   rugged
+  serverspec
   simple_blobstore_server!
   simplecov (~> 0.9.0)
   specinfra
