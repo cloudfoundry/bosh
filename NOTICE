@@ -1,12 +1,10 @@
 Bosh Outer SHell
-Copyright (c) 2012 VMware, Inc. All Rights Reserved. 
 
-VMware copyrighted code, with the exception of RabbitMQ Server, is licensed to you under the Apache License, Version 2.0 (the "License").  
+Copyright (c) 2012-2015 GoPivotal, Inc. All Rights Reserved.
 
-In addition to the VMware copyrighted code, the Bosh project includes a number of components with separate copyright notices and license terms. Your use of these components is subject to the terms and conditions of the component's license, as noted in the LICENSE file. 
+This product is licensed to you under the Apache License, Version 2.0 (the "License").
+You may not use this product except in compliance with the License.
 
-This project enables you to download additional packages under different licenses. You are responsible for ensuring compliance with the licenses of the packages you download using this project. 
-
-
-
-
+This product may include a number of subcomponents with separate copyright notices
+and license terms. Your use of these subcomponents is subject to the terms and
+conditions of the subcomponent's license, as noted in the LICENSE file.
