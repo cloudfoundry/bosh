@@ -129,7 +129,7 @@ module Bosh::Dev
         filename = promotable_artifacts.release_file
         source = UriProvider.pipeline_uri(remote_dir, filename)
         destination = "tmp/#{filename}"
-        download_adapter.download(source, destination)
+        download_adapter.download(source, destination) unless File.exists?(destination)
         destination
       end
     end
