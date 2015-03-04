@@ -1,3 +1,36 @@
+## 2859
+
+Improvements:
+
+  * stemcell: ubuntu: Bump to get 3.16 kernel
+        and get libc6 from 2.19-0ubuntu6.6 [5154430]
+        [story](https://www.pivotaltracker.com/story/show/89216658)
+
+## 2858
+
+Bug Fixes:
+
+  * director: Correctly save long manifests with MySQL DB [a091114]
+
+## 2855
+
+New Features:
+
+  * director: Allow UAA as use management provider configuration [8ac86a2]
+
+Improvements:
+
+  * cpi: openstack: Write the networks configuration to the config drive
+        in preparation for allowing to use non-dhcp OpenStack networking [298fe2f]
+  * stemcell: ubuntu: Bump to 14.04.2 [7108831]
+  * cli: Add warning when loading cli takes longer than 5 secs [8aca1d8]
+
+## 2852
+
+Improvements:
+
+  * stemcell: ubuntu: Bump unzip to 6.0-9ubuntu1.3 [bd3182a]
+
 ## 2849
 
 New Features:
