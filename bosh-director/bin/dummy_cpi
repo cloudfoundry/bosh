@@ -1,5 +1,8 @@
 #!/usr/bin/env ruby
 
+require 'pathname'
+$: << Pathname(__FILE__).parent.parent.join('lib')
+
 require 'rubygems'
 require 'yaml'
 require 'logging'

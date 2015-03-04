@@ -3,5 +3,5 @@
 read INPUT
 
 export PATH=<%= external_cpi_config[:env_path] %>:$PATH
-export BUNDLE_GEMFILE=<%= external_cpi_config[:bundle_gemfile] %>
-echo $INPUT | bundle exec <%= external_cpi_config[:exec_path] %> <%= external_cpi_config[:config_path] %>
+
+echo $INPUT | <%= external_cpi_config[:exec_path] %> <%= external_cpi_config[:config_path] %>
