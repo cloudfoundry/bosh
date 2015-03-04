@@ -32,7 +32,6 @@ module VSphereCloud
       )
       @client.wait_for_task(task)
 
-
       Resources::Disk.new(disk_cid, disk_size_in_mb, datastore, disk_path)
     end
 
@@ -77,8 +76,7 @@ module VSphereCloud
     end
 
     def find_datastore(disk_size_in_mb)
-      cluster = @resources.pick_cluster_for_vm(0, disk_size_in_mb, [])
-      datastore = @resources.pick_persistent_datastore(cluster, disk_size_in_mb)
+      datastore = @datacenter.pick_persistent_datastore(disk_size_in_mb)
 
       if datastore.nil?
         raise Bosh::Clouds::NoDiskSpace.new(true),

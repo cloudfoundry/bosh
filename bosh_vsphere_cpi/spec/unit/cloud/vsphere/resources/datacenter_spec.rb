@@ -3,18 +3,21 @@ require 'spec_helper'
 describe VSphereCloud::Resources::Datacenter do
   subject(:datacenter) { described_class.new(config) }
 
-  let(:config) { instance_double('VSphereCloud::Config',
-                                 client: client,
-                                 datacenter_name: 'fake-datacenter-name',
-                                 datacenter_vm_folder: 'fake-vm-folder',
-                                 datacenter_template_folder: 'fake-template-folder',
-                                 datacenter_clusters: { 'cluster1' => cluster_config1, 'cluster2' => cluster_config2 },
-                                 datacenter_disk_path: 'fake-disk-path',
-                                 datacenter_datastore_pattern: ephemeral_pattern,
-                                 datacenter_persistent_datastore_pattern: persistent_pattern,
-                                 datacenter_allow_mixed_datastores: allow_mixed,
-                                 datacenter_use_sub_folder: false,
-  ) }
+  let(:config) do
+    instance_double('VSphereCloud::Config',
+      client: client,
+      datacenter_name: 'fake-datacenter-name',
+      datacenter_vm_folder: 'fake-vm-folder',
+      datacenter_template_folder: 'fake-template-folder',
+      datacenter_clusters: {'cluster1' => cluster_config1, 'cluster2' => cluster_config2},
+      datacenter_disk_path: 'fake-disk-path',
+      datacenter_datastore_pattern: ephemeral_pattern,
+      datacenter_persistent_datastore_pattern: persistent_pattern,
+      datacenter_allow_mixed_datastores: allow_mixed,
+      datacenter_use_sub_folder: false,
+      logger: double(:logger)
+    )
+  end
   let(:client) { instance_double('VSphereCloud::Client') }
 
   let(:vm_folder) { instance_double('VSphereCloud::Resources::Folder') }
@@ -25,14 +28,13 @@ describe VSphereCloud::Resources::Datacenter do
   let(:datacenter_mob) { instance_double('VimSdk::Vim::Datacenter') }
   let(:cluster_mob1) { instance_double('VimSdk::Vim::Cluster') }
   let(:cluster_mob2) { instance_double('VimSdk::Vim::Cluster') }
-  let(:cluster_config1) { instance_double('VSphereCloud::ClusterConfig') }
-  let(:cluster_config2) { instance_double('VSphereCloud::ClusterConfig') }
-  let(:resource_cluster1) { instance_double('VSphereCloud::Resources::Cluster', name: 'cluster1') }
-  let(:resource_cluster2) { instance_double('VSphereCloud::Resources::Cluster', name: 'cluster2') }
+  let(:cluster_config1) { instance_double('VSphereCloud::ClusterConfig', resource_pool: nil, name: 'cluster1') }
+  let(:cluster_config2) { instance_double('VSphereCloud::ClusterConfig', resource_pool: nil, name: 'cluster2') }
   let(:ephemeral_pattern) {instance_double('Regexp')}
   let(:persistent_pattern) {instance_double('Regexp')}
   let(:allow_mixed) { false }
   let(:cloud_searcher) { instance_double('VSphereCloud::CloudSearcher') }
+  let(:datastore_properties) { {} }
 
   before do
     allow(client).to receive(:find_by_inventory_path).with('fake-datacenter-name').and_return(datacenter_mob)
@@ -61,11 +63,9 @@ describe VSphereCloud::Resources::Datacenter do
                        VimSdk::Vim::ClusterComputeResource,
                        VSphereCloud::Resources::Cluster::PROPERTIES,
                        ensure_all: true).and_return({ cluster_mob1 => {}, cluster_mob2 => {} })
-
-    allow(VSphereCloud::Resources::Cluster).to receive(:new).with(
-                                                 anything, config, cluster_config1, {}).and_return(resource_cluster1)
-    allow(VSphereCloud::Resources::Cluster).to receive(:new).with(
-                                                 anything, config, cluster_config2, {}).and_return(resource_cluster2)
+    allow(cloud_searcher).to receive(:get_properties).
+        with(nil, VimSdk::Vim::Datastore, VSphereCloud::Resources::Datastore::PROPERTIES).
+        and_return(datastore_properties)
     allow(Bosh::Clouds::Config).to receive(:uuid).and_return('fake-uuid')
   end
 
@@ -177,15 +177,12 @@ describe VSphereCloud::Resources::Datacenter do
 
   describe '#clusters' do
     it 'returns a hash mapping from cluster name to a configured cluster object' do
-      expect(VSphereCloud::Resources::Cluster).to receive(:new).with(
-                                                   subject, config, cluster_config1, {}).and_return(resource_cluster1)
-      expect(VSphereCloud::Resources::Cluster).to receive(:new).with(
-                                                   subject, config, cluster_config2, {}).and_return(resource_cluster2)
-
       clusters = datacenter.clusters
       expect(clusters.keys).to match_array(['cluster1', 'cluster2'])
-      expect(clusters['cluster1']).to eq(resource_cluster1)
-      expect(clusters['cluster2']).to eq(resource_cluster2)
+      expect(clusters['cluster1'].name).to eq('cluster1')
+      expect(clusters['cluster1'].datacenter).to eq(datacenter)
+      expect(clusters['cluster2'].name).to eq('cluster2')
+      expect(clusters['cluster2'].datacenter).to eq(datacenter)
     end
 
     context 'when a cluster mob cannot be found' do
@@ -218,6 +215,22 @@ describe VSphereCloud::Resources::Datacenter do
                            ensure_all: true).and_return({ cluster_mob2 => {} })
 
         expect { datacenter.clusters }.to raise_error(/Can't find properties for cluster: cluster1/)
+      end
+    end
+
+    context 'when cluster validation fails' do
+      let(:allow_mixed) { false }
+      let(:ephemeral_pattern) { /shared/ }
+      let(:persistent_pattern) { /shared/ }
+      let(:datastore_properties) do
+        {
+          'shared1' => { 'name' => 'shared1' },
+          'shared2' => { 'name' => 'shared2' },
+        }
+      end
+
+      it 'raises an error' do
+        expect { datacenter.clusters }.to raise_error /Datastore patterns are not mutually exclusive/
       end
     end
   end
@@ -254,6 +267,43 @@ describe VSphereCloud::Resources::Datacenter do
     it 'builds the vm path' do
       allow(vm_folder).to receive(:path_components) { ['vm-folder', 'path-components'] }
       expect(datacenter.vm_path('fake-vm-cid')).to eq('fake-datacenter-name/vm/vm-folder/path-components/fake-vm-cid')
+    end
+  end
+
+  describe '#pick_persistent_datastore' do
+    let(:persistent_pattern) { /ds/ }
+    let(:datastore_properties) do
+      bytes_in_mb = VSphereCloud::Resources::BYTES_IN_MB
+      disk_threshold = VSphereCloud::Resources::DISK_THRESHOLD
+      {
+        'ds1' => { 'name' => 'ds1', 'summary.freeSpace' => (1024 + disk_threshold) * bytes_in_mb },
+        'ds2' => { 'name' => 'ds2', 'summary.freeSpace' => (2048 + disk_threshold) * bytes_in_mb },
+        'ds32' => { 'name' => 'ds3', 'summary.freeSpace' => (512 + disk_threshold) * bytes_in_mb },
+      }
+    end
+
+    it 'returns datastore with weighted random from datastores with enough space' do
+      first_datastore = nil
+      expect(VSphereCloud::Resources::Util).to receive(:weighted_random) do |weighted_datastores|
+        expect(weighted_datastores.size).to eq(2)
+        first_datastore, first_weight = weighted_datastores.first
+        expect(first_datastore.name).to eq('ds1')
+        expect(first_weight).to eq(1024 + VSphereCloud::Resources::DISK_THRESHOLD)
+
+        second_datastore, second_weight = weighted_datastores[1]
+        expect(second_datastore.name).to eq('ds2')
+        expect(second_weight).to eq(2048 + VSphereCloud::Resources::DISK_THRESHOLD)
+
+        first_datastore
+      end
+      expect(datacenter.pick_persistent_datastore(1024)).to eq(first_datastore)
+    end
+
+    context 'when no datastores can be found' do
+      let(:datastore_properties) { {} }
+      it 'returns nil' do
+        expect(datacenter.pick_persistent_datastore(1024)).to eq(nil)
+      end
     end
   end
 end

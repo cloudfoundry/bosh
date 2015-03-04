@@ -68,5 +68,11 @@ describe VSphereCloud::Resources::Scorer do
       scorer = VSphereCloud::Resources::Scorer.new(config, cluster, 1, 1024, [512])
       expect(scorer.score).to eq(20)
     end
+
+    it "should calculate score for required disk sizes" do
+      cluster = create_cluster(16 * 1024, [], [], [32 * 1024])
+      scorer = VSphereCloud::Resources::Scorer.new(config, cluster, 1, 1024, [512])
+      expect(scorer.score).to eq(20)
+    end
   end
 end

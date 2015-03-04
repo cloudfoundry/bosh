@@ -7,6 +7,7 @@ module VSphereCloud
 
       def initialize(config)
         @config = config
+        @client = config.client
       end
 
       def mob
@@ -70,13 +71,9 @@ module VSphereCloud
       end
 
       def clusters
-        client = @config.client
-        cluster_mobs = client.cloud_searcher.get_managed_objects(
-          Vim::ClusterComputeResource, root: mob, include_name: true)
-        cluster_mobs.delete_if { |name, _| !config.datacenter_clusters.has_key?(name) }
-        cluster_mobs = Hash[*cluster_mobs.flatten]
+        cluster_mobs = Hash[*cluster_tuples.flatten]
 
-        clusters_properties = client.cloud_searcher.get_properties(
+        clusters_properties = @client.cloud_searcher.get_properties(
           cluster_mobs.values, Vim::ClusterComputeResource,
           Cluster::PROPERTIES, :ensure_all => true)
 
@@ -89,6 +86,8 @@ module VSphereCloud
           raise "Can't find properties for cluster: #{cluster_name}" if cluster_properties.nil?
 
           cluster = Cluster.new(self, @config, cluster_config, cluster_properties)
+          cluster.validate
+
           clusters[cluster.name] = cluster
         end
         clusters
@@ -105,6 +104,26 @@ module VSphereCloud
           end
         end
         datastores
+      end
+
+      def pick_persistent_datastore(disk_size_in_mb)
+        weighted_datastores = []
+        persistent_datastores.each_value do |datastore|
+          if datastore.free_space - disk_size_in_mb >= DISK_THRESHOLD
+            weighted_datastores << [datastore, datastore.free_space]
+          end
+        end
+
+        Util.weighted_random(weighted_datastores)
+      end
+
+      private
+
+      def cluster_tuples
+        cluster_tuples = @client.cloud_searcher.get_managed_objects(
+          Vim::ClusterComputeResource, root: mob, include_name: true)
+        cluster_tuples.delete_if { |name, _| !config.datacenter_clusters.has_key?(name) }
+        cluster_tuples
       end
     end
   end

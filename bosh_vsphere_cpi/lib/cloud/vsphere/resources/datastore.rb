@@ -31,9 +31,9 @@ module VSphereCloud
       #   model.
       def initialize(properties)
         @mob = properties[:obj]
-        @name = properties["name"]
-        @total_space = properties["summary.capacity"].to_i / BYTES_IN_MB
-        @synced_free_space = properties["summary.freeSpace"].to_i / BYTES_IN_MB
+        @name = properties['name']
+        @total_space = properties['summary.capacity'].to_i / BYTES_IN_MB
+        @synced_free_space = properties['summary.freeSpace'].to_i / BYTES_IN_MB
         @allocated_after_sync = 0
       end
 
