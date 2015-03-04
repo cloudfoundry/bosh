@@ -1,3 +1,6 @@
+require 'cli/terminal'
+require 'cli/login_service'
+
 module Bosh::Cli::Command
   class Login < Base
     # bosh login
@@ -9,42 +12,8 @@ module Bosh::Cli::Command
     def login(username = nil, password = nil)
       target_required
 
-      if interactive?
-        username = ask("Your username: ").to_s if username.blank?
-
-        password_retries = 0
-        while password.blank? && password_retries < 3
-          password = ask("Enter password: ") { |q| q.echo = "*" }.to_s
-          password_retries += 1
-        end
-      end
-
-      if username.blank? || password.blank?
-        err("Please provide username and password")
-      end
-      logged_in = false
-
-      #Converts HighLine::String to String
-      username = username.to_s
-      password = password.to_s
-
-      director.user = username
-      director.password = password
-
-      if director.authenticated?
-        say("Logged in as `#{username}'".make_green)
-        logged_in = true
-      elsif non_interactive?
-        err("Cannot log in as `#{username}'".make_red)
-      else
-        say("Cannot log in as `#{username}', please try again".make_red)
-        login(username)
-      end
-
-      if logged_in
-        config.set_credentials(target, username, password)
-        config.save
-      end
+      terminal = Bosh::Cli::Terminal.new(HighLine.new)
+      Bosh::Cli::LoginService.new(terminal, director, config, interactive?).login(target, username.to_s, password.to_s)
     end
 
     # bosh logout

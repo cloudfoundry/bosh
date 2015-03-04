@@ -51,6 +51,75 @@ describe Bosh::Cli::Client::Director do
     end
   end
 
+  describe '#login' do
+    context 'new director versions (have version key)' do
+      it 'assigns the username and password' do
+        allow(@director).to receive(:get).with('/info', 'application/json').
+            and_return([200, JSON.generate('version' => 'newer directors', 'user' => 'new user')])
+
+        @director.login('new user', 'new password')
+        expect(@director.user).to eq('new user')
+        expect(@director.password).to eq('new password')
+      end
+
+      it 'returns true when status has a user key' do
+        allow(@director).to receive(:get).with('/info', 'application/json').
+            and_return([200, JSON.generate('version' => 'newer directors', 'user' => 'new user')])
+
+        expect(@director.login('new user', 'new password')).to eq(true)
+      end
+
+      it 'returns false if theres no user key' do
+        allow(@director).to receive(:get).with('/info', 'application/json').
+            and_return([200, JSON.generate('version' => 'newer directors')])
+        expect(@director.login('new user', 'new password')).to eq(false)
+      end
+
+      it 'returns false if we get a non-200' do
+        expect(@director).to receive(:get).with('/info', 'application/json').
+            and_return([403, 'Forbidden'])
+        expect(@director.login('new user', 'new password')).to eq(false)
+
+        expect(@director).to receive(:get).with('/info', 'application/json').
+            and_return([500, 'Error'])
+        expect(@director.login('new user', 'new password')).to eq(false)
+
+        expect(@director).to receive(:get).with('/info', 'application/json').
+            and_return([404, 'Not Found'])
+        expect(@director.login('new user', 'new password')).to eq(false)
+      end
+    end
+
+    context 'old director versions (no version key)' do
+      it 'returns true even if theres no user key, as long as theres no version key' do
+        allow(@director).to receive(:get).with('/info', 'application/json').
+            and_return([200, JSON.generate({})])
+
+        expect(@director.login('new user', 'new password')).to eq(true)
+      end
+
+      it 'returns false if we get a non-200' do
+        expect(@director).to receive(:get).with('/info', 'application/json').
+            and_return([403, 'Forbidden'])
+        expect(@director.login('new user', 'new password')).to eq(false)
+
+        expect(@director).to receive(:get).with('/info', 'application/json').
+            and_return([500, 'Error'])
+        expect(@director.login('new user', 'new password')).to eq(false)
+
+        expect(@director).to receive(:get).with('/info', 'application/json').
+            and_return([404, 'Not Found'])
+        expect(@director.login('new user', 'new password')).to eq(false)
+      end    end
+
+    it 'returns false when login succeeds on old directors' do
+      allow(@director).to receive(:get).with('/info', 'application/json').
+          and_return([200, JSON.generate('user' => 'new user')])
+
+      expect(@director.login('new user', 'new password')).to eq(true)
+    end
+  end
+
   describe 'interface REST API' do
     it 'has helper methods for HTTP verbs which delegate to generic request' do
       [:get, :put, :post, :delete].each do |verb|

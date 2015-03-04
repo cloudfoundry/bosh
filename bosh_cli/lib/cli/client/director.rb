@@ -64,6 +64,12 @@ module Bosh
           end
         end
 
+        def login(username, password)
+          self.user = username
+          self.password = password
+          authenticated?
+        end
+
         def authenticated?
           status = get_status
           # Backward compatibility: older directors return 200

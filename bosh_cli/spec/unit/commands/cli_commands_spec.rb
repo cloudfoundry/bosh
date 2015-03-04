@@ -93,9 +93,7 @@ describe Bosh::Cli::Command::Base do
       before(:each) { options[:non_interactive] = true }
 
       it 'logs user in' do
-        expect(@director).to receive(:authenticated?).and_return(true)
-        expect(@director).to receive(:user=).with('user')
-        expect(@director).to receive(:password=).with('pass')
+        expect(@director).to receive(:login).with('user', 'pass') { true }
         misc_cmd.set_target('test')
         login_cmd.login('user', 'pass')
         expect(misc_cmd.logged_in?).to be(true)
@@ -103,10 +101,8 @@ describe Bosh::Cli::Command::Base do
         expect(misc_cmd.password).to eq('pass')
       end
 
-      it 'logs user in with highline' do
-        expect(@director).to receive(:authenticated?).and_return(true)
-        expect(@director).to receive(:user=).with('user')
-        expect(@director).to receive(:password=).with('pass')
+      it 'saves strings, not HighLine::String objects in the config' do
+        expect(@director).to receive(:login).with('user', 'pass') { true }
         misc_cmd.set_target('test')
         login_cmd.login(HighLine::String.new('user'), HighLine::String.new('pass'))
         expect(misc_cmd.logged_in?).to be(true)
@@ -120,9 +116,7 @@ describe Bosh::Cli::Command::Base do
 
       it 'logs user out' do
         misc_cmd.set_target('test')
-        expect(@director).to receive(:authenticated?).and_return(true)
-        expect(@director).to receive(:user=).with('user')
-        expect(@director).to receive(:password=).with('pass')
+        expect(@director).to receive(:login).with('user', 'pass') { true }
         login_cmd.login('user', 'pass')
         login_cmd.logout
         expect(misc_cmd.logged_in?).to be(false)
@@ -130,9 +124,7 @@ describe Bosh::Cli::Command::Base do
 
       it 'respects director checks option when logging in' do
         misc_cmd.set_target('test')
-        expect(@director).to receive(:authenticated?).and_return(true)
-        expect(@director).to receive(:user=).with('user')
-        expect(@director).to receive(:password=).with('pass')
+        expect(@director).to receive(:login).with('user', 'pass') { true }
         login_cmd.login('user', 'pass')
         expect(misc_cmd.logged_in?).to be(true)
         expect(misc_cmd.username).to eq('user')
