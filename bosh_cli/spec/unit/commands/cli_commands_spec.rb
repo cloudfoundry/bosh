@@ -129,11 +129,8 @@ describe Bosh::Cli::Command::Base do
       end
 
       it 'respects director checks option when logging in' do
-        allow(@director).to receive(:get_status).
-            and_return({'user' => 'user', 'name' => 'ZB'})
-        allow(@director).to receive(:authenticated?).and_return(true)
-
         misc_cmd.set_target('test')
+        expect(@director).to receive(:authenticated?).and_return(true)
         expect(@director).to receive(:user=).with('user')
         expect(@director).to receive(:password=).with('pass')
         login_cmd.login('user', 'pass')
