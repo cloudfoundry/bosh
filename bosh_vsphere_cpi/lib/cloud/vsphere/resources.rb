@@ -47,7 +47,9 @@ module VSphereCloud
         clusters_with_disks = @cluster_locality.clusters_ordered_by_disk_size(existing_persistent_disks)
 
         scored_clusters = clusters_with_disks.map do |cluster|
-          persistent_disk_sizes = cluster.disks.map(&:size_in_mb)
+          other_clusters = clusters_with_disks.select { |other_cluster| cluster != other_cluster }
+          persistent_disk_sizes = cluster.disk_sizes_in_other_clusters(other_clusters)
+
           score = Scorer.new(
             @config, cluster.cluster,
             requested_memory_in_mb,
@@ -66,15 +68,16 @@ module VSphereCloud
 
         if acceptable_clusters.any? { |cluster, _| cluster.disks.any? }
           @logger.debug('Choosing cluster with the most disk size')
-          selected_cluster_with_disks, _ = acceptable_clusters.first
+          cluster_with_disks, _ = acceptable_clusters.first
+          selected_cluster = cluster_with_disks.cluster
         else
           @logger.debug('Choosing cluster by weighted random')
-          selected_cluster_with_disks = Util.weighted_random(acceptable_clusters)
+          clusters_with_scores = acceptable_clusters.map { |clusters_with_disks, score| [clusters_with_disks.cluster, score] }
+          selected_cluster = Util.weighted_random(clusters_with_scores)
         end
 
-        @logger.debug("Selected cluster '#{selected_cluster_with_disks.cluster.name}'")
+        @logger.debug("Selected cluster '#{selected_cluster.name}'")
 
-        selected_cluster = selected_cluster_with_disks.cluster
         selected_cluster.allocate(requested_memory_in_mb)
         selected_cluster
       end

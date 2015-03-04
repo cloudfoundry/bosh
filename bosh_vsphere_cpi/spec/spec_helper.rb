@@ -3,6 +3,8 @@ require File.expand_path('../../../spec/shared_spec_helper', __FILE__)
 require 'cloud'
 require 'cloud/vsphere'
 
+Dir[Pathname(__FILE__).parent.join('support', '**/*.rb')].each { |file| require file }
+
 class VSphereSpecConfig
   attr_accessor :logger, :uuid
 end

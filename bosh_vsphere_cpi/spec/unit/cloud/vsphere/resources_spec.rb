@@ -29,98 +29,98 @@ module VSphereCloud
     end
 
     describe '#pick_cluster_for_vm' do
-      def make_cluster_with_disks(options)
-        cluster = instance_double(VSphereCloud::Resources::Cluster, name: 'fake-cluster')
-        cluster_with_disks = instance_double(VSphereCloud::Resources::ClusterWithDisks,
-          cluster: cluster,
-          disks: options[:disks])
+      let(:datastore1) { VSphereCloud::Resources::Datastore.new('name' => 'datastore1', 'summary.freeSpace' => (30 + Resources::DISK_THRESHOLD) * Resources::BYTES_IN_MB) }
+      let(:cluster1) { FakeCluster.new('cluster1', [datastore1], 10 + Resources::MEMORY_THRESHOLD) }
+      let(:cluster_locality) { VSphereCloud::ClusterLocality.new([cluster1]) }
+      let(:requested_memory) { 0 }
+      let(:requested_ephemeral_disk) { 5 }
+      let(:existing_persistent_disks) { [] }
 
-        allow(cluster).to receive(:pick_ephemeral).with(1024).and_return(options[:datastore])
-        allow(cluster).to receive(:allocate).with(512)
-
-        scorer = instance_double(VSphereCloud::Resources::Scorer)
-        allow(scorer).to receive(:score).and_return(options[:score])
-        allow(VSphereCloud::Resources::Scorer).to receive(:new).
-          with(config, cluster, 512, 1024, options[:disks].map(&:size_in_mb)).and_return(scorer)
-
-        cluster_with_disks
+      it 'selects clusters that satisfy the requested memory and ephemeral disk size' do
+        cluster = subject.pick_cluster_for_vm(requested_memory, requested_ephemeral_disk, existing_persistent_disks)
+        expect(cluster).to eq(cluster1)
       end
 
-      context 'when there is a cluster that has persistent disks with non-0 score' do
-        it 'chooses the cluster with the largest disk size and score > 0' do
-          disk_a = instance_double(VSphereCloud::Resources::Disk, size_in_mb: 1024)
-          disk_b = instance_double(VSphereCloud::Resources::Disk, size_in_mb: 1024)
-          disks = [disk_a, disk_b]
-
-          cluster_with_more_disks_but_not_enough_space = make_cluster_with_disks(
-            disks: [disk_a],
-            score: 0,
-            datastore: instance_double(VSphereCloud::Resources::Datastore)
-          )
-
-          datastore = instance_double(VSphereCloud::Resources::Datastore)
-          cluster_with_fewer_disks_but_enough_space = make_cluster_with_disks(
-            disks: [disk_b],
-            score: 4,
-            datastore: datastore
-          )
-
-          allow(cluster_locality).to receive(:clusters_ordered_by_disk_size).with(disks).
-            and_return([cluster_with_more_disks_but_not_enough_space, cluster_with_fewer_disks_but_enough_space])
-
-          expect(cluster_with_fewer_disks_but_enough_space.cluster).to receive(:allocate).with(512)
-          expect(resources.pick_cluster_for_vm(512, 1024, disks)).to eq(cluster_with_fewer_disks_but_enough_space.cluster)
+      context 'when no cluster satisfies the requested memory' do
+        let(:requested_memory) { 11 }
+        it 'raises' do
+          expect { subject.pick_cluster_for_vm(requested_memory, requested_ephemeral_disk, existing_persistent_disks) }.to raise_error
         end
       end
 
-      context 'when there are no clusters with non-0 score that have disks' do
-        it 'chooses the random cluster weighted by score' do
-          cluster_without_disks_with_disks = make_cluster_with_disks(
-            disks: [],
-            score: 1,
-            datastore: instance_double(VSphereCloud::Resources::Datastore)
-          )
-
-          datastore = instance_double(VSphereCloud::Resources::Datastore)
-          cluster_without_disks_with_bigger_score_with_disks = make_cluster_with_disks(
-            disks: [],
-            score: 4,
-            datastore: datastore
-          )
-
-          allow(cluster_locality).to receive(:clusters_ordered_by_disk_size).with([]).
-            and_return([cluster_without_disks_with_disks, cluster_without_disks_with_bigger_score_with_disks])
-
-          allow(Resources::Util).to receive(:weighted_random).
-            with([[cluster_without_disks_with_disks, 1], [cluster_without_disks_with_bigger_score_with_disks, 4]]).
-            and_return( cluster_without_disks_with_bigger_score_with_disks)
-
-          expect(cluster_without_disks_with_bigger_score_with_disks.cluster).to receive(:allocate).with(512)
-
-          expect(resources.pick_cluster_for_vm(512, 1024, [])).to eq(cluster_without_disks_with_bigger_score_with_disks.cluster)
+      context 'when no cluster satisfies the requested ephemeral disk' do
+        let(:requested_ephemeral_disk) { 31 }
+        it 'raises' do
+          expect { subject.pick_cluster_for_vm(requested_memory, requested_ephemeral_disk, existing_persistent_disks) }.to raise_error
         end
       end
 
-      context 'when all clusters score as 0' do
-        it 'raises an error' do
-          cluster_a = make_cluster_with_disks(
-            disks: [],
-            score: 0,
-            datastore: instance_double(VSphereCloud::Resources::Datastore)
-          )
+      context 'with an existing persistent disk' do
+        let(:disk) { VSphereCloud::Resources::Disk.new('disk1', 20, datastore1, 'path') }
+        let(:existing_persistent_disks) { [] }
 
-          cluster_b = make_cluster_with_disks(
-            disks: [],
-            score: 0,
-            datastore: instance_double(VSphereCloud::Resources::Datastore)
-          )
+        context 'when disk is in a cluster that satisfies requirements' do
+          it 'returns cluster that has disk' do
+            cluster = subject.pick_cluster_for_vm(requested_memory, requested_ephemeral_disk, existing_persistent_disks)
+            expect(cluster).to eq(cluster1)
+          end
+        end
+      end
 
-          allow(cluster_locality).to receive(:clusters_ordered_by_disk_size).with([]).
-            and_return([cluster_a, cluster_b])
+      context 'with multiple clusters' do
+        let(:datastore2) { VSphereCloud::Resources::Datastore.new('name' => 'datastore2', 'summary.freeSpace' => (datastore2_free_space + Resources::DISK_THRESHOLD) * Resources::BYTES_IN_MB) }
+        let(:datastore2_free_space) { 80 }
+        let(:cluster2) { FakeCluster.new('cluster2', [datastore2], 12 + Resources::MEMORY_THRESHOLD) }
+        let(:cluster_locality) { VSphereCloud::ClusterLocality.new([cluster1, cluster2]) }
 
-          expect {
-            resources.pick_cluster_for_vm(512, 1024, [])
-          }.to raise_error /No available resources/
+        it 'selects randomly from the clusters that satisfy the requested memory and ephemeral disk size' do
+          expect(Resources::Util).to receive(:weighted_random).with([[cluster2, 32], [cluster1, 12]]).and_return(cluster2)
+          cluster = subject.pick_cluster_for_vm(requested_memory, requested_ephemeral_disk, existing_persistent_disks)
+          expect(cluster).to eq(cluster2)
+        end
+
+        context 'with an existing persistent disks' do
+          let(:disk1) { VSphereCloud::Resources::Disk.new('disk1', 10, datastore1, 'path1') }
+          let(:disk2) { VSphereCloud::Resources::Disk.new('disk2', 20, datastore2, 'path2') }
+          let(:existing_persistent_disks) { [disk1, disk2] }
+
+          context 'when all clusters satisfy requirements' do
+            it 'returns cluster that has more persistent disk sizes' do
+              cluster = subject.pick_cluster_for_vm(requested_memory, requested_ephemeral_disk, existing_persistent_disks)
+              expect(cluster).to eq(cluster2)
+            end
+          end
+
+          context 'when cluster with most disks does not satisfy requirements' do
+            let(:requested_memory) { 11 }
+            it 'returns next cluster with most disks that satisfy requirement' do
+              cluster = subject.pick_cluster_for_vm(requested_memory, requested_ephemeral_disk, existing_persistent_disks)
+              expect(cluster).to eq(cluster2)
+            end
+          end
+
+          context 'when disk belongs to two clusters' do
+            let(:datastore3) { VSphereCloud::Resources::Datastore.new('name' => 'datastore3', 'summary.freeSpace' => (50 + Resources::DISK_THRESHOLD) * Resources::BYTES_IN_MB) }
+            let(:cluster3) { FakeCluster.new('cluster3', [datastore1, datastore3], 10 + Resources::MEMORY_THRESHOLD) }
+            let(:cluster_locality) { VSphereCloud::ClusterLocality.new([cluster1, cluster2, cluster3]) }
+
+            let(:disk1) { VSphereCloud::Resources::Disk.new('disk1', 10, datastore1, 'path1') }
+            let(:disk2) { VSphereCloud::Resources::Disk.new('disk2', 50, datastore2, 'path2') }
+            let(:disk3) { VSphereCloud::Resources::Disk.new('disk3', 30, datastore3, 'path3') }
+
+            let(:existing_persistent_disks) { [disk1, disk2, disk3] }
+
+            context 'when cluster with biggest disks size cannot fit other disks' do
+              let(:datastore2_free_space) { 5 }
+
+              context 'when next cluster with most disks can fit the disk that is not in that cluster' do
+                it 'returns next cluster with most disks that satisfy requirement' do
+                  cluster = subject.pick_cluster_for_vm(requested_memory, requested_ephemeral_disk, existing_persistent_disks)
+                  expect(cluster).to eq(cluster3)
+                end
+              end
+            end
+          end
         end
       end
     end

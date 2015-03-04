@@ -3,9 +3,9 @@ require 'spec_helper'
 module VSphereCloud
   describe ClusterLocality do
     subject(:locality) { described_class.new(clusters) }
-    let(:cluster_a) { instance_double(Resources::Cluster, persistent: nil) }
-    let(:cluster_b) { instance_double(Resources::Cluster, persistent: nil) }
-    let(:cluster_c) { instance_double(Resources::Cluster, persistent: nil) }
+    let(:cluster_a) { FakeCluster.new('cluster_a', [datastore_a]) }
+    let(:cluster_b) { FakeCluster.new('cluster_b', [datastore_b]) }
+    let(:cluster_c) { FakeCluster.new('cluster_c', [datastore_a, datastore_c]) }
     let(:clusters) { [cluster_a, cluster_b, cluster_c] }
 
     let(:disk_a) { instance_double(Resources::Disk, size_in_mb: 1200, datastore: datastore_a) }
@@ -16,15 +16,6 @@ module VSphereCloud
     let(:datastore_a) { instance_double(Resources::Datastore, name: 'datastore_a') }
     let(:datastore_b) { instance_double(Resources::Datastore, name: 'datastore_b') }
     let(:datastore_c) { instance_double(Resources::Datastore, name: 'datastore_c') }
-
-    before do
-      allow(cluster_a).to receive(:persistent).with('datastore_a').and_return(datastore_a)
-
-      allow(cluster_b).to receive(:persistent).with('datastore_b').and_return(datastore_b)
-
-      allow(cluster_c).to receive(:persistent).with('datastore_a').and_return(datastore_a)
-      allow(cluster_c).to receive(:persistent).with('datastore_c').and_return(datastore_c)
-    end
 
     describe 'clusters_ordered_by_disk_size' do
       it 'returns clusters in order of their disk sizes' do
