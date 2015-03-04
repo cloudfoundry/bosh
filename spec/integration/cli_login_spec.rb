@@ -3,6 +3,20 @@ require 'spec_helper'
 describe 'cli: login', type: :integration do
   with_reset_sandbox_before_each
 
+  context 'interactively' do
+    it 'can log in' do
+      bosh_runner.run("target #{current_sandbox.director_url}")
+      output = bosh_runner.run_interactively('login') do |terminal|
+        terminal.wait_for_output("username:")
+        terminal.send_input("admin")
+        terminal.wait_for_output("password:")
+        terminal.send_input("admin")
+      end
+
+      expect(output).to include("Logged in")
+    end
+  end
+
   it 'requires login when talking to director' do
     expect(bosh_runner.run('properties', failure_expected: true)).to match(/please choose target first/i)
     bosh_runner.run("target #{current_sandbox.director_url}")
