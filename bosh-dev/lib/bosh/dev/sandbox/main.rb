@@ -291,10 +291,11 @@ module Bosh::Dev::Sandbox
     end
 
     def stop_workers
+      @logger.debug('Waiting for Resque queue to drain...')
       until resque_is_done?
-        @logger.debug('Waiting for Resque queue to drain')
         sleep 0.1
       end
+      @logger.debug('Resque queue drained')
 
       Redis.new(host: 'localhost', port: redis_port).flushdb
 
