@@ -16,6 +16,7 @@ DOCKER_IMAGE=${DOCKER_IMAGE:-bosh/integration}
 
 echo "Running '$@' in docker container '$DOCKER_IMAGE'..."
 docker run \
+  -t \
   -a stderr \
   -v $(pwd):/opt/bosh \
   -e RUBY_VERSION \
