@@ -5,21 +5,41 @@ require 'yaml'
 require_relative '../lib/cloud/dummy'
 
 module Logging
-  def self.appenders; self; end
-  def self.io(_, io); Logger.new(io); end
+  def self.appenders;
+    self;
+  end
+
+  def self.io(_, io)
+    Logger.new(io);
+  end
 
   class Logger
     attr_reader :io
+
     def initialize(io)
       @io = io
       @appenders = self
     end
 
-    def add_appenders(logger); @io = logger.io; end
-    def debug(message); io << "DEBUG - #{message}\n"; end
-    def info(message); io << "INFO - #{message}\n"; end
-    def warn(message); io << "WARN - #{message}\n"; end
-    def error(message); io << "ERROR - #{message}\n"; end
+    def add_appenders(logger)
+      @io = logger.io;
+    end
+
+    def debug(message)
+      io << "DEBUG - #{message}\n";
+    end
+
+    def info(message)
+      io << "INFO - #{message}\n";
+    end
+
+    def warn(message)
+      io << "WARN - #{message}\n";
+    end
+
+    def error(message)
+      io << "ERROR - #{message}\n";
+    end
   end
 end
 
