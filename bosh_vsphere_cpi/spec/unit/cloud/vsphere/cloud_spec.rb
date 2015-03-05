@@ -376,16 +376,11 @@ module VSphereCloud
     end
 
     describe '#get_vms' do
-      let(:resources) { double('fake resources', datacenters: { key: datacenter }) }
-
-      let(:datacenter) do
-        double('fake datacenter',
-          name: 'fake datacenter',
-          master_vm_folder: master_vm_folder,
-          master_template_folder: master_template_folder,
-          clusters: {}
-        )
+      before do
+        allow(datacenter).to receive(:master_vm_folder).and_return(master_vm_folder)
+        allow(datacenter).to receive(:master_template_folder).and_return(master_template_folder)
       end
+
       let(:master_vm_folder) do
         instance_double('VSphereCloud::Resources::Folder',
           path: 'fake-vm-folder-path',
@@ -406,42 +401,8 @@ module VSphereCloud
       let(:template_subfolder_mob) { double('fake template subfolder', child_entity: stemcells) }
       let(:stemcells) { ['fake stemcell 1', 'fake stemcell 2'] }
 
-      before { allow(Resources).to receive(:new).and_return(resources) }
-
       it 'returns all vms in vm_folder of datacenter and all stemcells in template_folder' do
         expect(vsphere_cloud.get_vms).to eq(['fake vm 1', 'fake vm 2', 'fake stemcell 1', 'fake stemcell 2'])
-      end
-
-      context 'when multiple datacenters exist in config' do
-        let(:resources) { double('fake resources', datacenters: { key1: datacenter, key2: datacenter2 }) }
-
-        let(:datacenter2) { double('another fake datacenter', name: 'fake datacenter 2',
-                                                              master_vm_folder: master_vm_folder2,
-                                                              master_template_folder: master_template_folder2) }
-        let(:master_vm_folder2) do
-          instance_double('VSphereCloud::Resources::Folder',
-            path: 'another-fake-vm-folder-path',
-            mob: vm_folder2_mob
-          )
-        end
-        let(:vm_folder2_mob) { double('another fake folder mob', child_entity: [subfolder2]) }
-        let(:subfolder2) { double('another fake subfolder', child_entity: vms2) }
-        let(:vms2) { ['fake vm 3', 'fake vm 4'] }
-
-        let(:master_template_folder2) do
-          instance_double('VSphereCloud::Resources::Folder',
-            path: 'another-fake-template-folder-path',
-            mob: template_folder2_mob
-          )
-        end
-        let(:template_folder2_mob) { double('another fake template folder mob', child_entity: [template_subfolder2]) }
-        let(:template_subfolder2) { double('another fake subfolder', child_entity: stemcells2) }
-        let(:stemcells2) { ['fake stemcell 3', 'fake stemcell 4'] }
-
-        it 'returns all vms in vm_folder and all stemcells in template_folder of all datacenters' do
-          expect(vsphere_cloud.get_vms).to eq(['fake vm 1', 'fake vm 2', 'fake stemcell 1', 'fake stemcell 2',
-                                               'fake vm 3', 'fake vm 4', 'fake stemcell 3', 'fake stemcell 4'])
-        end
       end
     end
 
