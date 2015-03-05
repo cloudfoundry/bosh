@@ -95,7 +95,9 @@ describe Bosh::Cli::Command::Base do
       it 'logs user in' do
         expect(@director).to receive(:login).with('user', 'pass') { true }
         misc_cmd.set_target('test')
+
         login_cmd.login('user', 'pass')
+
         expect(misc_cmd.logged_in?).to be(true)
         expect(misc_cmd.username).to eq('user')
         expect(misc_cmd.password).to eq('pass')
@@ -104,7 +106,9 @@ describe Bosh::Cli::Command::Base do
       it 'saves strings, not HighLine::String objects in the config' do
         expect(@director).to receive(:login).with('user', 'pass') { true }
         misc_cmd.set_target('test')
+
         login_cmd.login(HighLine::String.new('user'), HighLine::String.new('pass'))
+
         expect(misc_cmd.logged_in?).to be(true)
         expect(misc_cmd.username).to eq('user')
         expect(misc_cmd.password).to eq('pass')

@@ -29,8 +29,8 @@ module IntegrationExampleGroup
       ClientSandbox.bosh_work_dir,
       ClientSandbox.bosh_config,
       current_sandbox.cpi.method(:agent_log_path),
-      @current_sandbox.nats_log_path,
-      @current_sandbox.saved_logs_path,
+      current_sandbox.nats_log_path,
+      current_sandbox.saved_logs_path,
       logger
     )
   end
@@ -40,8 +40,8 @@ module IntegrationExampleGroup
       work_dir,
       ClientSandbox.bosh_config,
       current_sandbox.cpi.method(:agent_log_path),
-      @current_sandbox.nats_log_path,
-      @current_sandbox.saved_logs_path,
+      current_sandbox.nats_log_path,
+      current_sandbox.saved_logs_path,
       logger
     )
   end
@@ -159,8 +159,9 @@ module IntegrationSandboxHelpers
   end
 
   def current_sandbox
-    @current_sandbox = Thread.current[:sandbox] || Bosh::Dev::Sandbox::Main.from_env
-    Thread.current[:sandbox] = @current_sandbox
+    sandbox = Thread.current[:sandbox]
+    raise "call prepare_sandbox to set up this thread's sandbox" if sandbox.nil?
+    sandbox
   end
 
   def prepare_sandbox
@@ -168,6 +169,11 @@ module IntegrationSandboxHelpers
     setup_test_release_dir
     setup_bosh_work_dir
     setup_home_dir
+    Thread.current[:sandbox] ||= Bosh::Dev::Sandbox::Main.from_env
+  end
+
+  def set_up_sandbox_user_auth(options)
+    current_sandbox.user_authentication = options.fetch(:user_authentication, 'local')
   end
 
   def reset_sandbox(desc)
@@ -230,9 +236,10 @@ module IntegrationSandboxHelpers
 end
 
 module IntegrationSandboxBeforeHelpers
-  def with_reset_sandbox_before_each
+  def with_reset_sandbox_before_each(options={})
     before do |example|
       prepare_sandbox
+      set_up_sandbox_user_auth(options)
       if !sandbox_started?
         start_sandbox
       elsif !example.metadata[:no_reset]
@@ -245,6 +252,7 @@ module IntegrationSandboxBeforeHelpers
     # `example` is not available in before(:all)
     before(:all) do
       prepare_sandbox
+      set_up_sandbox_user_auth
       if !sandbox_started?
         start_sandbox
       else

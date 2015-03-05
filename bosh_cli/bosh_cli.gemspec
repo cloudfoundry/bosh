@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'bosh_common', "~>#{version}"
   s.add_dependency 'bosh-template', "~>#{version}"
+  s.add_dependency 'cf-uaa-lib',  '~>3.1.0'
   s.add_dependency 'json_pure',   '~>1.7'
   s.add_dependency 'highline',    '~>1.6.2'
   s.add_dependency 'progressbar', '~>0.9.0'

@@ -1,10 +1,9 @@
-require 'highline'
 require 'cli/core_ext'
 require 'cli/errors'
 
 module Bosh
   module Cli
-    class LoginService
+    class BasicLoginService
       def initialize(terminal, director, config, interactive)
         @terminal = terminal
         @director = director

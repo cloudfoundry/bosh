@@ -56,6 +56,8 @@ module Bosh::Dev::Sandbox
 
     attr_reader :nats_log_path
 
+    attr_accessor :user_authentication
+
     def self.from_env
       db_opts = {
         type: ENV['DB'] || 'postgresql',
@@ -444,6 +446,26 @@ module Bosh::Dev::Sandbox
       @redis_process = Service.new(%W[redis-server #{sandbox_path(REDIS_CONFIG)}], {}, @logger)
       @redis_socket_connector = SocketConnector.new('redis', 'localhost', redis_port, @logger)
       Bosh::Director::Config.redis_options = {host: 'localhost', port: redis_port}
+    end
+
+    def user_management_provider
+      if user_authentication == 'uaa'
+        'uaa'
+      else
+        'local'
+      end
+    end
+
+    def user_management_options
+      options = if user_authentication == 'uaa'
+        {
+          key: 'uaa-secret-key',
+          url: 'http://localhost:8080/uaa'
+        }
+      else
+        {}
+      end
+      Yajl::Encoder.encode(options)
     end
 
     attr_reader :director_tmp_path, :dns_db_path, :task_logs_dir

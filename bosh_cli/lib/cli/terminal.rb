@@ -3,8 +3,9 @@ module Bosh
     class Terminal
       extend Forwardable
 
-      def initialize(highline)
+      def initialize(highline, sayer)
         @highline = highline
+        @sayer = sayer
       end
 
       def ask(prompt)
@@ -16,15 +17,15 @@ module Bosh
       end
 
       def say_green(message)
-        highline.say(message.make_green)
+        sayer.say(message.make_green)
       end
 
       def say_red(message)
-        highline.say(message.make_red)
+        sayer.say(message.make_red)
       end
 
       private
-      attr_reader :highline
+      attr_reader :highline, :sayer
     end
   end
 end

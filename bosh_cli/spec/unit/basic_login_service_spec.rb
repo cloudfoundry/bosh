@@ -1,15 +1,15 @@
-require 'cli/login_service'
+require 'cli/basic_login_service'
 require 'cli/client/director'
 require 'cli/config'
 
-describe Bosh::Cli::LoginService do
+describe Bosh::Cli::BasicLoginService do
   context "interactive mode" do
     let(:terminal) { instance_double(Bosh::Cli::Terminal, ask: nil, ask_password: nil, say_green: nil, say_red: nil) }
     let(:director) { instance_double(Bosh::Cli::Client::Director, login: true) }
     let(:config) { instance_double(Bosh::Cli::Config, set_credentials: nil, save: nil) }
     let(:target) { "http://some.director/url" }
 
-    let(:login_service) { Bosh::Cli::LoginService.new(terminal, director, config, true) }
+    let(:login_service) { Bosh::Cli::BasicLoginService.new(terminal, director, config, true) }
 
     it "asks for a username if the username is blank" do
       allow(terminal).to receive(:ask).with("Your username: ") { "user name" }
@@ -105,7 +105,7 @@ describe Bosh::Cli::LoginService do
     let(:config) { instance_double(Bosh::Cli::Config, set_credentials: nil, save: nil) }
     let(:target) { "http://some.director/url" }
 
-    let(:login_service) { Bosh::Cli::LoginService.new(terminal, director, config, false) }
+    let(:login_service) { Bosh::Cli::BasicLoginService.new(terminal, director, config, false) }
 
     it "errors if username is blank" do
       expect {
