@@ -280,30 +280,6 @@ module VSphereCloud
       end
     end
 
-    describe '#datacenter_allow_mixed' do
-      context 'when allow_mixed is not set' do
-        it 'returns false' do
-          expect(config.datacenter_allow_mixed_datastores).to be(false)
-        end
-      end
-
-      context 'when allow_mixed is falsey' do
-        before { datacenters.first['allow_mixed_datastores'] = false }
-
-        it 'returns false' do
-          expect(config.datacenter_allow_mixed_datastores).to be(false)
-        end
-      end
-
-      context 'when allow_mixed is truthy' do
-        before { datacenters.first['allow_mixed_datastores'] = true }
-
-        it 'returns true' do
-          expect(config.datacenter_allow_mixed_datastores).to be(true)
-        end
-      end
-    end
-
     describe '#datacenter_clusters' do
 
       context 'when there is more than one cluster' do

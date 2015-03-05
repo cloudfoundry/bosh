@@ -74,7 +74,7 @@ module VSphereCloud
         let(:cluster_locality) { VSphereCloud::ClusterLocality.new([cluster1, cluster2]) }
 
         it 'selects randomly from the clusters that satisfy the requested memory and ephemeral disk size' do
-          expect(Resources::Util).to receive(:weighted_random).with([[cluster2, 32], [cluster1, 12]]).and_return(cluster2)
+          expect(Resources::Util).to receive(:weighted_random).with([[cluster2, 16], [cluster1, 6]]).and_return(cluster2)
           cluster = subject.pick_cluster_for_vm(requested_memory, requested_ephemeral_disk, existing_persistent_disks)
           expect(cluster).to eq(cluster2)
         end

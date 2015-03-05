@@ -32,11 +32,6 @@ module VSphereCloud
         @cluster.persistent_datastores.each_value do |datastore|
           @free_persistent << datastore.free_space
         end
-
-        @free_shared = []
-        @cluster.shared_datastores.each_value do |datastore|
-          @free_shared << datastore.free_space
-        end
       end
 
       # Run the scoring function and return the placement score for the required
@@ -46,14 +41,9 @@ module VSphereCloud
       def score
         min_ephemeral = @ephemeral
         min_persistent = @persistent_disk_sizes.min
-        min_shared = min_ephemeral
-        if !min_persistent.nil? && min_persistent < min_shared
-          min_shared = min_persistent
-        end
 
         # Filter out any datastores that are below the min threshold
         filter(@free_ephemeral, min_ephemeral + DISK_THRESHOLD)
-        filter(@free_shared, min_shared + DISK_THRESHOLD)
         unless @persistent_disk_sizes.empty?
           filter(@free_persistent, min_persistent + DISK_THRESHOLD)
         end
@@ -68,23 +58,17 @@ module VSphereCloud
 
           consumed = consume_disk(@free_ephemeral, @ephemeral, min_ephemeral)
           unless consumed
-            unless consume_disk(@free_shared, @ephemeral, min_shared)
-              @logger.debug("#{@cluster.name} ephemeral disk bound")
-              break
-            end
+            @logger.debug("#{@cluster.name} ephemeral disk bound")
+            break
           end
 
           unless @persistent_disk_sizes.empty?
             consumed_all = false
             @persistent_disk_sizes.each do |size|
-              consumed = consume_disk(@free_persistent, size, min_persistent)
-              unless consumed
-                consumed = consume_disk(@free_shared, size, min_shared)
-                unless consumed
-                  consumed_all = true
-                  @logger.debug("#{@cluster.name} persistent disk bound")
-                  break
-                end
+              unless consume_disk(@free_persistent, size, min_persistent)
+                @logger.debug("#{@cluster.name} persistent disk bound")
+                consumed_all = true
+                break
               end
             end
             break if consumed_all

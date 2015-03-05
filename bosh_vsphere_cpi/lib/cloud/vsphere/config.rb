@@ -118,10 +118,6 @@ module VSphereCloud
       @cluster_objs ||= cluster_objs
     end
 
-    def datacenter_allow_mixed_datastores
-      !!vcenter_datacenter['allow_mixed_datastores']
-    end
-
     def datacenter_use_sub_folder
       datacenter_clusters.any? { |_, cluster| cluster.resource_pool } ||
         !!vcenter_datacenter['use_sub_folder']

@@ -11,7 +11,6 @@ class VSphereCloud::Resources
         'VSphereCloud::Config',
         datacenter_datastore_pattern: /eph/,
         datacenter_persistent_datastore_pattern: /persist/,
-        datacenter_allow_mixed_datastores: allow_mixed,
         mem_overcommit: 1.0,
         logger: logger,
         client: client,
@@ -20,7 +19,6 @@ class VSphereCloud::Resources
     let(:logger) { instance_double('Logger', debug: nil, warn: nil) }
     let(:client) { instance_double('VSphereCloud::Client', cloud_searcher: cloud_searcher) }
     let(:cloud_searcher) { instance_double('VSphereCloud::CloudSearcher') }
-    let(:allow_mixed) { false }
 
     let(:cluster_config) do
       instance_double(
@@ -111,8 +109,6 @@ class VSphereCloud::Resources
           expect(persistent_datastores.keys).to match_array(['persistent_1', 'persistent_2'])
           expect(persistent_datastores['persistent_1'].name).to eq('persistent_1')
           expect(persistent_datastores['persistent_2'].name).to eq('persistent_2')
-
-          expect(cluster.shared_datastores).to eq({})
         end
 
         context 'when there are no datastores' do
@@ -123,7 +119,6 @@ class VSphereCloud::Resources
 
             expect(cluster.ephemeral_datastores).to eq({})
             expect(cluster.persistent_datastores).to eq({})
-            expect(cluster.shared_datastores).to eq({})
           end
         end
       end
@@ -236,28 +231,6 @@ class VSphereCloud::Resources
             it 'defaults free memory to zero' do
               expect(cluster.free_memory).to eq(0)
             end
-          end
-        end
-      end
-    end
-
-    describe '#validate' do
-      context 'when there is a datastore that matches ephemeral and persistent patterns' do
-        before do
-          fake_datastore_properties[anything] = shared_store_properties
-        end
-
-        context 'and allow mixed is disabled' do
-          it 'raises an exception' do
-            expect { cluster.validate }.to raise_error(/Datastore patterns are not mutually exclusive/)
-          end
-        end
-
-        context 'and allow mixed is enabled' do
-          let(:allow_mixed) { true }
-
-          it 'does not raise and puts them into shared datastores' do
-            expect { cluster.validate }.to_not raise_error
           end
         end
       end

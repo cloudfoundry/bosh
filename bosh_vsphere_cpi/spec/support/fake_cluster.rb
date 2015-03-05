@@ -1,5 +1,5 @@
 class FakeCluster < VSphereCloud::Resources::Cluster
-  attr_reader :name, :config, :free_memory, :persistent_datastores, :ephemeral_datastores, :shared_datastores
+  attr_reader :name, :config, :free_memory, :persistent_datastores, :ephemeral_datastores
 
   def initialize(name, datastores, free_memory = 1024)
     @name = name
@@ -10,12 +10,10 @@ class FakeCluster < VSphereCloud::Resources::Cluster
 
     @ephemeral_datastores = {}
     @persistent_datastores = {}
-    @shared_datastores = {}
 
     datastores.each do |datastore|
       @ephemeral_datastores[datastore.name] = datastore
       @persistent_datastores[datastore.name] = datastore
-      @shared_datastores[datastore.name] = datastore
     end
 
     @allocated_after_sync = 0

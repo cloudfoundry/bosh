@@ -13,7 +13,6 @@ describe VSphereCloud::Resources::Datacenter do
       datacenter_disk_path: 'fake-disk-path',
       datacenter_datastore_pattern: ephemeral_pattern,
       datacenter_persistent_datastore_pattern: persistent_pattern,
-      datacenter_allow_mixed_datastores: allow_mixed,
       datacenter_use_sub_folder: false,
       logger: double(:logger)
     )
@@ -32,7 +31,6 @@ describe VSphereCloud::Resources::Datacenter do
   let(:cluster_config2) { instance_double('VSphereCloud::ClusterConfig', resource_pool: nil, name: 'cluster2') }
   let(:ephemeral_pattern) {instance_double('Regexp')}
   let(:persistent_pattern) {instance_double('Regexp')}
-  let(:allow_mixed) { false }
   let(:cloud_searcher) { instance_double('VSphereCloud::CloudSearcher') }
   let(:datastore_properties) { {} }
 
@@ -156,19 +154,6 @@ describe VSphereCloud::Resources::Datacenter do
     end
   end
 
-  describe '#allow_mixed' do
-    it 'returns the value from the config' do
-      expect(datacenter.allow_mixed).to eq(false)
-    end
-
-    context 'when allow mixed is true' do
-      let(:allow_mixed) { true }
-      it 'returns the value from the config' do
-        expect(datacenter.allow_mixed).to eq(true)
-      end
-    end
-  end
-
   describe '#inspect' do
     it 'includes the mob and the name of the datacenter' do
       expect(datacenter.inspect).to eq("<Datacenter: #{datacenter_mob} / fake-datacenter-name>")
@@ -217,22 +202,6 @@ describe VSphereCloud::Resources::Datacenter do
         expect { datacenter.clusters }.to raise_error(/Can't find properties for cluster: cluster1/)
       end
     end
-
-    context 'when cluster validation fails' do
-      let(:allow_mixed) { false }
-      let(:ephemeral_pattern) { /shared/ }
-      let(:persistent_pattern) { /shared/ }
-      let(:datastore_properties) do
-        {
-          'shared1' => { 'name' => 'shared1' },
-          'shared2' => { 'name' => 'shared2' },
-        }
-      end
-
-      it 'raises an error' do
-        expect { datacenter.clusters }.to raise_error /Datastore patterns are not mutually exclusive/
-      end
-    end
   end
 
   describe '#persistent_datastores' do
@@ -243,11 +212,9 @@ describe VSphereCloud::Resources::Datacenter do
       allow(datacenter).to receive(:clusters).and_return({
        'first-cluster' => instance_double('VSphereCloud::Resources::Cluster',
          persistent_datastores: {'first-datastore' => first_datastore},
-         shared_datastores: {}
        ),
        'second-cluster' => instance_double('VSphereCloud::Resources::Cluster',
-         persistent_datastores: {},
-         shared_datastores: {
+         persistent_datastores: {
            'first-datastore' => first_datastore,
            'second-datastore' => second_datastore
          }

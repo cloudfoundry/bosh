@@ -44,20 +44,13 @@ module VSphereCloud
         @allocated_after_sync = 0
       end
 
-      def validate
-        if !cloud_config.datacenter_allow_mixed_datastores && shared_datastores.any?
-          raise "Datastore patterns are not mutually exclusive: #{shared_datastores.values.map(&:name).join(', ')}"
-        end
-      end
-
       # Returns the persistent datastore by name. This could be either from the
       # exclusive or shared datastore pools.
       #
       # @param [String] datastore_name name of the datastore.
       # @return [Datastore, nil] the requested persistent datastore.
       def persistent(datastore_name)
-        persistent_datastores[datastore_name] ||
-          shared_datastores[datastore_name]
+        persistent_datastores[datastore_name]
       end
 
       # @return [Integer] amount of free memory in the cluster
@@ -110,10 +103,6 @@ module VSphereCloud
         @persistent_datastores ||= select_datastores(cloud_config.datacenter_persistent_datastore_pattern)
       end
 
-      def shared_datastores
-        @shared_datastores ||= ephemeral_datastores.select { |name, _| persistent_datastores.has_key?(name) }
-      end
-
       private
 
       attr_reader :cloud_config, :config, :client, :properties, :logger
@@ -143,13 +132,6 @@ module VSphereCloud
           end
         end
 
-        if weighted_datastores.empty?
-          shared_datastores.each_value do |datastore|
-            if datastore.free_space - size >= DISK_THRESHOLD
-              weighted_datastores << [datastore, datastore.free_space]
-            end
-          end
-        end
         Util.weighted_random(weighted_datastores)
       end
 

@@ -62,10 +62,6 @@ module VSphereCloud
         @config.datacenter_persistent_datastore_pattern
       end
 
-      def allow_mixed
-        @config.datacenter_allow_mixed_datastores
-      end
-
       def inspect
         "<Datacenter: #{mob} / #{name}>"
       end
@@ -86,8 +82,6 @@ module VSphereCloud
           raise "Can't find properties for cluster: #{cluster_name}" if cluster_properties.nil?
 
           cluster = Cluster.new(self, @config, cluster_config, cluster_properties)
-          cluster.validate
-
           clusters[cluster.name] = cluster
         end
         clusters
@@ -97,9 +91,6 @@ module VSphereCloud
         datastores = {}
         clusters.each do |_, cluster|
           cluster.persistent_datastores.each do |_, datastore|
-            datastores[datastore.name] = datastore
-          end
-          cluster.shared_datastores.each do |_, datastore|
             datastores[datastore.name] = datastore
           end
         end
