@@ -1,17 +1,28 @@
 module VSphereCloud
   class Resources
-
-    # Datastore resource.
     class Datastore
+      include VimSdk
       PROPERTIES = %w(summary.freeSpace summary.capacity name)
 
-      # @!attribute mob
-      #   @return [Vim::Datastore] datastore vSphere MOB.
-      attr_accessor :mob
+      def self.build_from_client(client, datastore_properties)
+        ds_properties_map = client.cloud_searcher.get_properties(datastore_properties, Vim::Datastore, Datastore::PROPERTIES)
+        ds_properties_map.values.map do |ds_properties|
+          Datastore.new(
+            ds_properties['name'],
+            ds_properties[:obj],
+            ds_properties['summary.capacity'].to_i / BYTES_IN_MB,
+            ds_properties['summary.freeSpace'].to_i / BYTES_IN_MB,
+          )
+        end
+      end
 
       # @!attribute name
       #   @return [String] datastore name.
       attr_accessor :name
+
+      # @!attribute mob
+      #   @return [Vim::Datastore] datastore vSphere MOB.
+      attr_accessor :mob
 
       # @!attribute total_space
       #   @return [Integer] datastore capacity.
@@ -29,11 +40,11 @@ module VSphereCloud
       #
       # @param [Hash] properties prefetched vSphere properties to build the
       #   model.
-      def initialize(properties)
-        @mob = properties[:obj]
-        @name = properties['name']
-        @total_space = properties['summary.capacity'].to_i / BYTES_IN_MB
-        @synced_free_space = properties['summary.freeSpace'].to_i / BYTES_IN_MB
+      def initialize(name, mob, total_space, synced_free_space)
+        @name = name
+        @mob = mob
+        @total_space = total_space
+        @synced_free_space = synced_free_space
         @allocated_after_sync = 0
       end
 

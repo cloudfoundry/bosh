@@ -29,7 +29,7 @@ module VSphereCloud
     end
 
     describe '#pick_cluster_for_vm' do
-      let(:datastore1) { VSphereCloud::Resources::Datastore.new('name' => 'datastore1', 'summary.freeSpace' => (30 + Resources::DISK_HEADROOM) * Resources::BYTES_IN_MB) }
+      let(:datastore1) { VSphereCloud::Resources::Datastore.new('datastore1', nil, 0, 30 + Resources::DISK_HEADROOM) }
       let(:cluster1) { FakeCluster.new('cluster1', [datastore1], 10 + Resources::MEMORY_HEADROOM) }
       let(:cluster_locality) { VSphereCloud::ClusterLocality.new([cluster1]) }
       let(:requested_memory) { 0 }
@@ -68,7 +68,7 @@ module VSphereCloud
       end
 
       context 'with multiple clusters' do
-        let(:datastore2) { VSphereCloud::Resources::Datastore.new('name' => 'datastore2', 'summary.freeSpace' => (datastore2_free_space + Resources::DISK_HEADROOM) * Resources::BYTES_IN_MB) }
+        let(:datastore2) { VSphereCloud::Resources::Datastore.new('datastore2', nil, 0, datastore2_free_space + Resources::DISK_HEADROOM) }
         let(:datastore2_free_space) { 80 }
         let(:cluster2) { FakeCluster.new('cluster2', [datastore2], 12 + Resources::MEMORY_HEADROOM) }
         let(:cluster_locality) { VSphereCloud::ClusterLocality.new([cluster1, cluster2]) }
@@ -100,7 +100,7 @@ module VSphereCloud
           end
 
           context 'when disk belongs to two clusters' do
-            let(:datastore3) { VSphereCloud::Resources::Datastore.new('name' => 'datastore3', 'summary.freeSpace' => (50 + Resources::DISK_HEADROOM) * Resources::BYTES_IN_MB) }
+            let(:datastore3) { VSphereCloud::Resources::Datastore.new('datastore3', nil, 0, 50 + Resources::DISK_HEADROOM) }
             let(:cluster3) { FakeCluster.new('cluster3', [datastore1, datastore3], 10 + Resources::MEMORY_HEADROOM) }
             let(:cluster_locality) { VSphereCloud::ClusterLocality.new([cluster1, cluster2, cluster3]) }
 

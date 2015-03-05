@@ -2,12 +2,7 @@ require 'spec_helper'
 
 describe VSphereCloud::Resources::Datastore do
   subject(:datastore) {
-    VSphereCloud::Resources::Datastore.new(
-      :obj => datastore_mob,
-      'name' => 'foo_lun',
-      'summary.capacity' => 16 * 1024 * 1024 * 1024,
-      'summary.freeSpace' => 8 * 1024 * 1024 * 1024
-    )
+    VSphereCloud::Resources::Datastore.new('foo_lun', datastore_mob, 16 * 1024, 8 * 1024)
   }
 
   let(:datastore_mob) { instance_double('VimSdk::Vim::Datastore') }

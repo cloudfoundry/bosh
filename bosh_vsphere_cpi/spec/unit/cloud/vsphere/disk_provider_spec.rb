@@ -22,13 +22,7 @@ module VSphereCloud
     let(:client) { instance_double('VSphereCloud::Client', wait_for_task: nil) }
     let(:logger) { double(:logger, info: nil, debug: nil) }
 
-    let(:datastore) do
-      Resources::Datastore.new(
-        'name' => 'fake-datastore',
-        'summary.freeSpace' => 1024,
-        'summary.capacity' => 2048,
-      )
-    end
+    let(:datastore) { Resources::Datastore.new('fake-datastore', 'mob', 2048, 1024) }
 
     describe '#create' do
       before do
@@ -119,7 +113,7 @@ module VSphereCloud
         context 'when disk is not in one of the accessible datastores' do
           let(:accessible_datastores) { ['fake-host-datastore'] }
 
-          let(:destination_datastore) { Resources::Datastore.new('name' => destination_datastore_name) }
+          let(:destination_datastore) { Resources::Datastore.new(destination_datastore_name, nil, 0, 0) }
           let(:destination_datastore_name) { 'fake-host-datastore' }
           before { allow(resources).to receive(:pick_persistent_datastore_in_cluster).and_return(destination_datastore) }
 

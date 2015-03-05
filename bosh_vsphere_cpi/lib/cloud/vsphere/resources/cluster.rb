@@ -108,9 +108,9 @@ module VSphereCloud
       attr_reader :cloud_config, :config, :client, :properties, :logger
 
       def select_datastores(pattern)
-        @datastore_properties ||= @client.cloud_searcher.get_properties(properties['datastore'], Vim::Datastore, Datastore::PROPERTIES)
-        matching_datastores = @datastore_properties.select { |_, properties| properties["name"] =~ pattern }
-        Hash[*matching_datastores.collect { |_, properties| [properties["name"], Datastore.new(properties)] }.flatten]
+        @datastores ||= Datastore.build_from_client(@client, properties['datastore'])
+        matching_datastores = @datastores.select { |datastore| datastore.name =~ pattern }
+        matching_datastores.inject({}) { |h, datastore| h[datastore.name] = datastore; h }
       end
 
       # Picks the best datastore for the specified disk size and type.
