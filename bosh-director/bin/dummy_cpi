@@ -1,33 +1,51 @@
 #!/usr/bin/env ruby
 
-require 'pathname'
-$: << Pathname(__FILE__).parent.parent.join('lib')
-
-require 'rubygems'
+require 'json'
 require 'yaml'
-require 'logging'
-require 'cloud'
-require 'cloud/dummy'
-require 'ostruct'
-require 'bosh/cpi'
-require 'bosh/cpi/cli'
+require_relative '../lib/cloud/dummy'
 
-director_config = YAML.load_file(ARGV.shift)
+module Logging
+  def self.appenders; self; end
+  def self.io(_, io); Logger.new(io); end
 
-logger = Logging::Logger.new('DummyCPI')
-logger.add_appenders(Logging.appenders.stderr)
+  class Logger
+    attr_reader :io
+    def initialize(io)
+      @io = io
+      @appenders = self
+    end
 
-Bosh::Clouds::Config.configure(OpenStruct.new(
-  logger: logger,
-  task_checkpoint: nil,
-))
+    def add_appenders(logger); @io = logger.io; end
+    def debug(message); io << "DEBUG - #{message}\n"; end
+    def info(message); io << "INFO - #{message}\n"; end
+    def warn(message); io << "WARN - #{message}\n"; end
+    def error(message); io << "ERROR - #{message}\n"; end
+  end
+end
 
-cloud_properties = director_config['cloud']['properties']
-log_buffer = StringIO.new
-cloud_properties['log_buffer'] = log_buffer
+result = nil
+error = nil
 
-cpi = Bosh::Clouds::Dummy.new(cloud_properties)
+begin
+  director_config = YAML.load_file(ARGV.shift)
+  cloud_properties = director_config['cloud']['properties']
+  log_buffer = StringIO.new
+  cloud_properties['log_buffer'] = log_buffer
+  dummy = Bosh::Clouds::Dummy.new(cloud_properties)
 
-cli = Bosh::Cpi::Cli.new(cpi, log_buffer, STDOUT)
+  request = JSON.parse($stdin.readline)
 
-cli.run(ARGF.read)
+  command = request['method']
+  arguments = request['arguments']
+
+  result = dummy.send(command, *arguments)
+rescue => e
+  error = {
+    'type' => 'Bosh::Clouds::CpiError',
+    'message' => "#{e.message}\n#{e.backtrace.join("\n")}",
+    'ok_to_retry' => false
+  }
+end
+
+response = { 'result' => result, 'error' => error, 'log' => log_buffer.string }
+print response.to_json
