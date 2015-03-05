@@ -127,7 +127,7 @@ module VSphereCloud
         datastores =
           type == :persistent ? persistent_datastores : ephemeral_datastores
         datastores.each_value do |datastore|
-          if datastore.free_space - size >= DISK_THRESHOLD
+          if datastore.free_space - size >= DISK_HEADROOM
             weighted_datastores << [datastore, datastore.free_space]
           end
         end

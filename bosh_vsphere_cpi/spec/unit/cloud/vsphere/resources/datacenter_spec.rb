@@ -241,7 +241,7 @@ describe VSphereCloud::Resources::Datacenter do
     let(:persistent_pattern) { /ds/ }
     let(:datastore_properties) do
       bytes_in_mb = VSphereCloud::Resources::BYTES_IN_MB
-      disk_threshold = VSphereCloud::Resources::DISK_THRESHOLD
+      disk_threshold = VSphereCloud::Resources::DISK_HEADROOM
       {
         'ds1' => { 'name' => 'ds1', 'summary.freeSpace' => (1024 + disk_threshold) * bytes_in_mb },
         'ds2' => { 'name' => 'ds2', 'summary.freeSpace' => (2048 + disk_threshold) * bytes_in_mb },
@@ -255,11 +255,11 @@ describe VSphereCloud::Resources::Datacenter do
         expect(weighted_datastores.size).to eq(2)
         first_datastore, first_weight = weighted_datastores.first
         expect(first_datastore.name).to eq('ds1')
-        expect(first_weight).to eq(1024 + VSphereCloud::Resources::DISK_THRESHOLD)
+        expect(first_weight).to eq(1024 + VSphereCloud::Resources::DISK_HEADROOM)
 
         second_datastore, second_weight = weighted_datastores[1]
         expect(second_datastore.name).to eq('ds2')
-        expect(second_weight).to eq(2048 + VSphereCloud::Resources::DISK_THRESHOLD)
+        expect(second_weight).to eq(2048 + VSphereCloud::Resources::DISK_HEADROOM)
 
         first_datastore
       end

@@ -29,8 +29,8 @@ module VSphereCloud
     end
 
     describe '#pick_cluster_for_vm' do
-      let(:datastore1) { VSphereCloud::Resources::Datastore.new('name' => 'datastore1', 'summary.freeSpace' => (30 + Resources::DISK_THRESHOLD) * Resources::BYTES_IN_MB) }
-      let(:cluster1) { FakeCluster.new('cluster1', [datastore1], 10 + Resources::MEMORY_THRESHOLD) }
+      let(:datastore1) { VSphereCloud::Resources::Datastore.new('name' => 'datastore1', 'summary.freeSpace' => (30 + Resources::DISK_HEADROOM) * Resources::BYTES_IN_MB) }
+      let(:cluster1) { FakeCluster.new('cluster1', [datastore1], 10 + Resources::MEMORY_HEADROOM) }
       let(:cluster_locality) { VSphereCloud::ClusterLocality.new([cluster1]) }
       let(:requested_memory) { 0 }
       let(:requested_ephemeral_disk) { 5 }
@@ -68,9 +68,9 @@ module VSphereCloud
       end
 
       context 'with multiple clusters' do
-        let(:datastore2) { VSphereCloud::Resources::Datastore.new('name' => 'datastore2', 'summary.freeSpace' => (datastore2_free_space + Resources::DISK_THRESHOLD) * Resources::BYTES_IN_MB) }
+        let(:datastore2) { VSphereCloud::Resources::Datastore.new('name' => 'datastore2', 'summary.freeSpace' => (datastore2_free_space + Resources::DISK_HEADROOM) * Resources::BYTES_IN_MB) }
         let(:datastore2_free_space) { 80 }
-        let(:cluster2) { FakeCluster.new('cluster2', [datastore2], 12 + Resources::MEMORY_THRESHOLD) }
+        let(:cluster2) { FakeCluster.new('cluster2', [datastore2], 12 + Resources::MEMORY_HEADROOM) }
         let(:cluster_locality) { VSphereCloud::ClusterLocality.new([cluster1, cluster2]) }
 
         it 'selects randomly from the clusters that satisfy the requested memory and ephemeral disk size' do
@@ -100,8 +100,8 @@ module VSphereCloud
           end
 
           context 'when disk belongs to two clusters' do
-            let(:datastore3) { VSphereCloud::Resources::Datastore.new('name' => 'datastore3', 'summary.freeSpace' => (50 + Resources::DISK_THRESHOLD) * Resources::BYTES_IN_MB) }
-            let(:cluster3) { FakeCluster.new('cluster3', [datastore1, datastore3], 10 + Resources::MEMORY_THRESHOLD) }
+            let(:datastore3) { VSphereCloud::Resources::Datastore.new('name' => 'datastore3', 'summary.freeSpace' => (50 + Resources::DISK_HEADROOM) * Resources::BYTES_IN_MB) }
+            let(:cluster3) { FakeCluster.new('cluster3', [datastore1, datastore3], 10 + Resources::MEMORY_HEADROOM) }
             let(:cluster_locality) { VSphereCloud::ClusterLocality.new([cluster1, cluster2, cluster3]) }
 
             let(:disk1) { VSphereCloud::Resources::Disk.new('disk1', 10, datastore1, 'path1') }

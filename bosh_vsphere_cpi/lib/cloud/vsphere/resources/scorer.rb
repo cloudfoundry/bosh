@@ -43,15 +43,15 @@ module VSphereCloud
         min_persistent = @persistent_disk_sizes.min
 
         # Filter out any datastores that are below the min threshold
-        filter(@free_ephemeral, min_ephemeral + DISK_THRESHOLD)
+        filter(@free_ephemeral, min_ephemeral + DISK_HEADROOM)
         unless @persistent_disk_sizes.empty?
-          filter(@free_persistent, min_persistent + DISK_THRESHOLD)
+          filter(@free_persistent, min_persistent + DISK_HEADROOM)
         end
 
         count = 0
         loop do
           @free_memory -= @memory
-          if @free_memory < MEMORY_THRESHOLD
+          if @free_memory < MEMORY_HEADROOM
             @logger.debug("#{@cluster.name} memory bound")
             break
           end
@@ -103,9 +103,9 @@ module VSphereCloud
       def consume_disk(pool, size, min)
         unless pool.empty?
           pool.sort! { |a, b| b <=> a }
-          if pool[0] >= size + DISK_THRESHOLD
+          if pool[0] >= size + DISK_HEADROOM
             pool[0] -= size
-            pool.delete_at(0) if pool[0] < min + DISK_THRESHOLD
+            pool.delete_at(0) if pool[0] < min + DISK_HEADROOM
             return true
           end
         end

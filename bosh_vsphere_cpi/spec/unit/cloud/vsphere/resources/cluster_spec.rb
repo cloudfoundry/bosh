@@ -357,14 +357,14 @@ class VSphereCloud::Resources
                   first_datastore
                 end
 
-                picked_datastore = cluster.pick_persistent(20000 - (DISK_THRESHOLD - 1))
+                picked_datastore = cluster.pick_persistent(20000 - (DISK_HEADROOM - 1))
                 expect(picked_datastore).to eq(first_datastore)
               end
             end
 
             context 'and there is less shared free space than the disk threshold' do
               it 'returns nil' do
-                picked_datastore = cluster.pick_persistent(50000 - (DISK_THRESHOLD - 1))
+                picked_datastore = cluster.pick_persistent(50000 - (DISK_HEADROOM - 1))
                 expect(picked_datastore).to be_nil
               end
             end
@@ -423,14 +423,14 @@ class VSphereCloud::Resources
                   first_datastore
                 end
 
-                picked_datastore = cluster.pick_persistent(20000 - (DISK_THRESHOLD - 1))
+                picked_datastore = cluster.pick_persistent(20000 - (DISK_HEADROOM - 1))
                 expect(picked_datastore).to eq(first_datastore)
               end
             end
 
             context 'and there is less shared free space than the disk threshold' do
               it 'returns nil' do
-                picked_datastore = cluster.pick_persistent(50000 - (DISK_THRESHOLD - 1))
+                picked_datastore = cluster.pick_persistent(50000 - (DISK_HEADROOM - 1))
                 expect(picked_datastore).to be_nil
               end
             end
@@ -438,7 +438,7 @@ class VSphereCloud::Resources
 
           context 'when there no shared datastores' do
             it 'returns nil' do
-              picked_datastore = cluster.pick_persistent(20000 - (DISK_THRESHOLD - 1))
+              picked_datastore = cluster.pick_persistent(20000 - (DISK_HEADROOM - 1))
               expect(picked_datastore).to be_nil
             end
           end
@@ -474,14 +474,14 @@ class VSphereCloud::Resources
                 first_datastore
               end
 
-              picked_datastore = cluster.pick_ephemeral(25000 - (DISK_THRESHOLD - 1))
+              picked_datastore = cluster.pick_ephemeral(25000 - (DISK_HEADROOM - 1))
               expect(picked_datastore).to eq(first_datastore)
             end
           end
 
           context 'and there is less shared free space than the disk threshold' do
             it 'returns nil' do
-              picked_datastore = cluster.pick_ephemeral(50000 - (DISK_THRESHOLD - 1))
+              picked_datastore = cluster.pick_ephemeral(50000 - (DISK_HEADROOM - 1))
               expect(picked_datastore).to be_nil
             end
           end
@@ -541,14 +541,14 @@ class VSphereCloud::Resources
                   first_datastore
                 end
 
-                picked_datastore = cluster.pick_ephemeral(25000 - (DISK_THRESHOLD - 1))
+                picked_datastore = cluster.pick_ephemeral(25000 - (DISK_HEADROOM - 1))
                 expect(picked_datastore).to eq(first_datastore)
               end
             end
 
             context 'and there is less shared free space than the disk threshold' do
               it 'returns nil' do
-                picked_datastore = cluster.pick_ephemeral(50000 - (DISK_THRESHOLD - 1))
+                picked_datastore = cluster.pick_ephemeral(50000 - (DISK_HEADROOM - 1))
                 expect(picked_datastore).to be_nil
               end
             end
@@ -556,7 +556,7 @@ class VSphereCloud::Resources
 
           context 'when there no shared datastores' do
             it 'returns nil' do
-              picked_datastore = cluster.pick_ephemeral(25000 - (DISK_THRESHOLD - 1))
+              picked_datastore = cluster.pick_ephemeral(25000 - (DISK_HEADROOM - 1))
               expect(picked_datastore).to be_nil
             end
           end

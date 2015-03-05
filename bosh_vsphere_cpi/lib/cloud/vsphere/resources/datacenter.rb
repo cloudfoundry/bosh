@@ -100,7 +100,7 @@ module VSphereCloud
       def pick_persistent_datastore(disk_size_in_mb)
         weighted_datastores = []
         persistent_datastores.each_value do |datastore|
-          if datastore.free_space - disk_size_in_mb >= DISK_THRESHOLD
+          if datastore.free_space - disk_size_in_mb >= DISK_HEADROOM
             weighted_datastores << [datastore, datastore.free_space]
           end
         end

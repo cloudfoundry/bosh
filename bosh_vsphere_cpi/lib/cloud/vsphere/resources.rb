@@ -2,8 +2,8 @@ require 'cloud/vsphere/resources/datacenter'
 
 module VSphereCloud
   class Resources
-    MEMORY_THRESHOLD = 128
-    DISK_THRESHOLD = 1024
+    MEMORY_HEADROOM = 128
+    DISK_HEADROOM = 1024
     STALE_TIMEOUT = 60
     BYTES_IN_MB = 1024 * 1024
 
