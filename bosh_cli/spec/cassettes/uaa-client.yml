@@ -1,0 +1,45 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: http://localhost:8080/uaa/login
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json;charset=utf-8
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - Apache-Coyote/1.1
+      X-Frame-Options:
+      - DENY
+      Pragma:
+      - no-cache
+      Cache-Control:
+      - no-cache, no-store, max-age=0
+      Expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      Content-Type:
+      - application/json;charset=UTF-8
+      Content-Language:
+      - en-US
+      Transfer-Encoding:
+      - chunked
+      Date:
+      - Thu, 05 Mar 2015 18:58:44 GMT
+    body:
+      encoding: UTF-8
+      string: '{"app":{"version":"2.0.3"},"createAccountLink":"/create_account","forgotPasswordLink":"/forgot_password","links":{"uaa":"http://localhost:8080/uaa","passwd":"/forgot_password","login":"http://localhost:8080/login","loginPost":"http://localhost:8080/uaa/login.do","register":"/create_account"},"entityID":"cloudfoundry-saml-login","commit_id":"620cac2","prompts":{"username":["text","Email"],"password":["password","Password"],"passcode":["password","One
+        Time Code (Get one at http://localhost:8080/uaa/passcode)"]},"idpDefinitions":[],"timestamp":"2015-02-05T15:16:38-0800"}'
+    http_version: 
+  recorded_at: Thu, 05 Mar 2015 18:58:44 GMT
+recorded_with: VCR 2.7.0
