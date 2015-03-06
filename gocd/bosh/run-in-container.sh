@@ -16,7 +16,6 @@ DOCKER_IMAGE=${DOCKER_IMAGE:-bosh/integration}
 
 echo "Running '$@' in docker container '$DOCKER_IMAGE'..."
 docker run \
-  -t \
   -v $(pwd):/opt/bosh \
   -e RUBY_VERSION \
   -e DB \
@@ -26,7 +25,6 @@ docker run \
   -e http_proxy=$http_proxy \
   -e https_proxy=$https_proxy \
   -e no_proxy=$no_proxy \
-  -e COLUMNS=80 \
   $DOCKER_IMAGE \
   $@ \
   &
