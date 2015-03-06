@@ -2,11 +2,12 @@ require 'spec_helper'
 
 module VSphereCloud
   describe Resources do
-    subject(:resources) { VSphereCloud::Resources.new(datacenter, cluster_locality, config) }
-    let(:cluster_locality) { instance_double(VSphereCloud::ClusterLocality) }
+    subject(:resources) { VSphereCloud::Resources.new(datacenter, config) }
+    let(:clusters) { {} }
+    let(:cluster_hash) { clusters.inject({}) { |h, cluster| h[cluster.name] = cluster; h } }
     let(:config) { instance_double('VSphereCloud::Config', client: client, logger: logger) }
     let(:client) { instance_double('VSphereCloud::Client') }
-    let(:datacenter) { instance_double('VSphereCloud::Resources::Datacenter', name: 'datacenter_name') }
+    let(:datacenter) { instance_double('VSphereCloud::Resources::Datacenter', name: 'datacenter_name', clusters: cluster_hash) }
     let(:logger) { instance_double('Logger', info: nil, debug: nil) }
 
     describe :pick_persistent_datastore_in_cluster do
@@ -29,11 +30,11 @@ module VSphereCloud
     end
 
     describe '#pick_cluster_for_vm' do
-      let(:datastore1) { VSphereCloud::Resources::Datastore.new('datastore1', nil, 0, 30 + Resources::DISK_HEADROOM) }
-      let(:cluster1) { FakeCluster.new('cluster1', [datastore1], 10 + Resources::MEMORY_HEADROOM) }
-      let(:cluster_locality) { VSphereCloud::ClusterLocality.new([cluster1]) }
-      let(:requested_memory) { 0 }
-      let(:requested_ephemeral_disk) { 5 }
+      let(:datastore1) { VSphereCloud::Resources::Datastore.new('datastore1', nil, 0, 3000 + Resources::DISK_HEADROOM) }
+      let(:cluster1) { FakeCluster.new('cluster1', [datastore1], 40 + Resources::MEMORY_HEADROOM) }
+      let(:clusters) { [cluster1] }
+      let(:requested_memory) { 35 }
+      let(:requested_ephemeral_disk) { 500 }
       let(:existing_persistent_disks) { [] }
 
       it 'selects clusters that satisfy the requested memory and ephemeral disk size' do
@@ -42,16 +43,18 @@ module VSphereCloud
       end
 
       context 'when no cluster satisfies the requested memory' do
-        let(:requested_memory) { 11 }
+        let(:requested_memory) { 41 }
         it 'raises' do
           expect { subject.pick_cluster_for_vm(requested_memory, requested_ephemeral_disk, existing_persistent_disks) }.to raise_error
         end
       end
 
       context 'when no cluster satisfies the requested ephemeral disk' do
-        let(:requested_ephemeral_disk) { 31 }
+        let(:requested_ephemeral_disk) { 3100 }
         it 'raises' do
-          expect { subject.pick_cluster_for_vm(requested_memory, requested_ephemeral_disk, existing_persistent_disks) }.to raise_error
+          expect {
+            subject.pick_cluster_for_vm(requested_memory, requested_ephemeral_disk, existing_persistent_disks)
+          }.to raise_error("Unable to allocate vm with 35mb RAM, 3gb ephemeral disk, and 0gb persistent disk from any cluster.\ncluster1 has 168mb/3gb/3gb.")
         end
       end
 
@@ -69,12 +72,15 @@ module VSphereCloud
 
       context 'with multiple clusters' do
         let(:datastore2) { VSphereCloud::Resources::Datastore.new('datastore2', nil, 0, datastore2_free_space + Resources::DISK_HEADROOM) }
-        let(:datastore2_free_space) { 80 }
-        let(:cluster2) { FakeCluster.new('cluster2', [datastore2], 12 + Resources::MEMORY_HEADROOM) }
-        let(:cluster_locality) { VSphereCloud::ClusterLocality.new([cluster1, cluster2]) }
+        let(:datastore2_free_space) { 8000 }
+        let(:cluster2) { FakeCluster.new('cluster2', [datastore2], 182 + Resources::MEMORY_HEADROOM) }
+        let(:clusters) { [cluster1, cluster2] }
 
         it 'selects randomly from the clusters that satisfy the requested memory and ephemeral disk size' do
-          expect(Resources::Util).to receive(:weighted_random).with([[cluster2, 16], [cluster1, 6]]).and_return(cluster2)
+          expect(Resources::Util).to receive(:weighted_random).with([
+                [cluster2, 5],
+                [cluster1, 1]
+              ]).and_return(cluster2)
           cluster = subject.pick_cluster_for_vm(requested_memory, requested_ephemeral_disk, existing_persistent_disks)
           expect(cluster).to eq(cluster2)
         end
@@ -100,13 +106,13 @@ module VSphereCloud
           end
 
           context 'when disk belongs to two clusters' do
-            let(:datastore3) { VSphereCloud::Resources::Datastore.new('datastore3', nil, 0, 50 + Resources::DISK_HEADROOM) }
-            let(:cluster3) { FakeCluster.new('cluster3', [datastore1, datastore3], 10 + Resources::MEMORY_HEADROOM) }
-            let(:cluster_locality) { VSphereCloud::ClusterLocality.new([cluster1, cluster2, cluster3]) }
+            let(:datastore3) { VSphereCloud::Resources::Datastore.new('datastore3', nil, 0, 5000 + Resources::DISK_HEADROOM) }
+            let(:cluster3) { FakeCluster.new('cluster3', [datastore1, datastore3], 1000 + Resources::MEMORY_HEADROOM) }
+            let(:clusters) { [cluster1, cluster2, cluster3] }
 
-            let(:disk1) { VSphereCloud::Resources::Disk.new('disk1', 10, datastore1, 'path1') }
-            let(:disk2) { VSphereCloud::Resources::Disk.new('disk2', 50, datastore2, 'path2') }
-            let(:disk3) { VSphereCloud::Resources::Disk.new('disk3', 30, datastore3, 'path3') }
+            let(:disk1) { VSphereCloud::Resources::Disk.new('disk1', 1000, datastore1, 'path1') }
+            let(:disk2) { VSphereCloud::Resources::Disk.new('disk2', 5000, datastore2, 'path2') }
+            let(:disk3) { VSphereCloud::Resources::Disk.new('disk3', 3000, datastore3, 'path3') }
 
             let(:existing_persistent_disks) { [disk1, disk2, disk3] }
 

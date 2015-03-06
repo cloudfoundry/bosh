@@ -11,7 +11,6 @@ require 'cloud/vsphere/lease_obtainer'
 require 'cloud/vsphere/lease_updater'
 require 'cloud/vsphere/resources'
 require 'cloud/vsphere/resources/cluster'
-require 'cloud/vsphere/resources/cluster_with_disks'
 require 'cloud/vsphere/resources/datacenter'
 require 'cloud/vsphere/resources/datastore'
 require 'cloud/vsphere/resources/folder'
@@ -24,7 +23,6 @@ require 'cloud/vsphere/vm_creator_builder'
 require 'cloud/vsphere/disk_provider'
 require 'cloud/vsphere/vm_provider'
 require 'cloud/vsphere/fixed_cluster_placer'
-require 'cloud/vsphere/cluster_locality'
 
 module VSphereCloud
   class Cloud < Bosh::Cloud
@@ -43,8 +41,7 @@ module VSphereCloud
       @cloud_searcher = CloudSearcher.new(@client.service_content, @logger)
       @datacenter = Resources::Datacenter.new(config)
 
-      cluster_locality = ClusterLocality.new(@datacenter.clusters.values)
-      @resources = Resources.new(@datacenter, cluster_locality, config)
+      @resources = Resources.new(@datacenter, config)
       @file_provider = FileProvider.new(config.rest_client, config.vcenter_host)
       @agent_env = AgentEnv.new(client, @file_provider, @cloud_searcher)
 

@@ -59,6 +59,14 @@ module VSphereCloud
           (@allocated_after_sync * cloud_config.mem_overcommit).to_i
       end
 
+      def total_free_ephemeral_disk_in_mb
+        ephemeral_datastores.values.map(&:free_space).inject(0, :+)
+      end
+
+      def total_free_persistent_disk_in_mb
+        persistent_datastores.values.map(&:free_space).inject(0, :+)
+      end
+
       # Marks the memory reservation against the cached utilization data.
       #
       # @param [Integer] memory size of memory reservation.

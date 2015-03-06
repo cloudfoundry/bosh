@@ -9,9 +9,8 @@ module VSphereCloud
 
     attr_reader :drs_rules
 
-    def initialize(datacenter, cluster_locality, config)
+    def initialize(datacenter, config)
       @datacenter = datacenter
-      @cluster_locality = cluster_locality
       @config = config
       @logger = config.logger
       @last_update = 0
@@ -44,18 +43,22 @@ module VSphereCloud
     def pick_cluster_for_vm(requested_memory_in_mb, requested_ephemeral_disk_size_in_mb, existing_persistent_disks)
       @lock.synchronize do
         # calculate locality to prioritizing clusters that contain the most persistent data.
-        clusters_with_disks = @cluster_locality.clusters_ordered_by_disk_size(existing_persistent_disks)
+        clusters = @datacenter.clusters.values
 
-        scored_clusters = clusters_with_disks.map do |cluster|
-          other_clusters = clusters_with_disks.select { |other_cluster| cluster != other_cluster }
-          persistent_disk_sizes = cluster.disk_sizes_in_other_clusters(other_clusters)
+        disks_to_clusters = self.disks_to_clusters(clusters, existing_persistent_disks)
+        clusters_to_disks = self.clusters_to_disks(clusters, existing_persistent_disks)
+
+        scored_clusters = clusters.map do |cluster|
+          persistent_disk_not_in_this_cluster = existing_persistent_disks.reject do |disk|
+            disks_to_clusters[disk].include?(cluster)
+          end
 
           score = Scorer.score(
             @config.logger,
-            cluster.cluster,
+            cluster,
             requested_memory_in_mb,
             requested_ephemeral_disk_size_in_mb,
-            persistent_disk_sizes
+            persistent_disk_not_in_this_cluster.map(&:size_in_mb)
           )
 
           [cluster, score]
@@ -65,16 +68,25 @@ module VSphereCloud
 
         @logger.debug("Acceptable clusters: #{acceptable_clusters.inspect}")
 
-        raise 'No available resources' if acceptable_clusters.empty?
+        if acceptable_clusters.empty?
+          total_persistent_size = existing_persistent_disks.map(&:size_in_mb).inject(0, :+)
+          cluster_infos = clusters.map { |cluster| describe_cluster(cluster) }
 
-        if acceptable_clusters.any? { |cluster, _| cluster.disks.any? }
-          @logger.debug('Choosing cluster with the most disk size')
-          cluster_with_disks, _ = acceptable_clusters.first
-          selected_cluster = cluster_with_disks.cluster
+          raise "Unable to allocate vm with #{requested_memory_in_mb}mb RAM, " +
+              "#{requested_ephemeral_disk_size_in_mb / 1024}gb ephemeral disk, " +
+              "and #{total_persistent_size / 1024}gb persistent disk from any cluster.\n#{cluster_infos.join(", ")}."
+        end
+
+        acceptable_clusters = acceptable_clusters.sort_by do |cluster, _score|
+          clusters_to_disks[cluster].map(&:size_in_mb).inject(0, :+)
+        end.reverse
+
+        if acceptable_clusters.any? { |cluster, _| clusters_to_disks[cluster].any? }
+          @logger.debug('Choosing cluster with the greatest available disk')
+          selected_cluster, _ = acceptable_clusters.first
         else
           @logger.debug('Choosing cluster by weighted random')
-          clusters_with_scores = acceptable_clusters.map { |clusters_with_disks, score| [clusters_with_disks.cluster, score] }
-          selected_cluster = Util.weighted_random(clusters_with_scores)
+          selected_cluster = Util.weighted_random(acceptable_clusters)
         end
 
         @logger.debug("Selected cluster '#{selected_cluster.name}'")
@@ -82,6 +94,25 @@ module VSphereCloud
         selected_cluster.allocate(requested_memory_in_mb)
         selected_cluster
       end
+    end
+
+    def describe_cluster(cluster)
+      "#{cluster.name} has #{cluster.free_memory}mb/" +
+        "#{cluster.total_free_ephemeral_disk_in_mb / 1024}gb/" +
+        "#{cluster.total_free_persistent_disk_in_mb / 1024}gb"
+    end
+
+    # @return [Hash<Cluster, Array<Disk>>]
+    def clusters_to_disks(clusters, existing_persistent_disks)
+      Hash[*clusters.map do |cluster|
+          [cluster, existing_persistent_disks.select { |disk| cluster.persistent(disk.datastore.name) != nil }]
+        end.flatten(1)]
+    end
+
+    def disks_to_clusters(clusters, existing_persistent_disks)
+      Hash[*existing_persistent_disks.map do |disk|
+        [disk, clusters.select { |cluster| cluster.persistent(disk.datastore.name) != nil }]
+      end.flatten(1)]
     end
 
     def pick_ephemeral_datastore(cluster, disk_size_in_mb)
