@@ -1,7 +1,7 @@
 module Bosh
   module Director
     module Core
-      VERSION = '1.2862.0'
+      VERSION = '1.2865.0'
     end
   end
 end
