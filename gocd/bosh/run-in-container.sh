@@ -26,6 +26,7 @@ docker run \
   -e http_proxy=$http_proxy \
   -e https_proxy=$https_proxy \
   -e no_proxy=$no_proxy \
+  -e COLUMNS=80 \
   $DOCKER_IMAGE \
   $@ \
   &
