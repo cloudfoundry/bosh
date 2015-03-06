@@ -151,7 +151,7 @@ Err: #{stderr_output.string}
       end
 
       def wait_for_output(desired_output, options={})
-        timeout = options.fetch(:timeout, 2)
+        timeout = options.fetch(:timeout, 30)
 
         Timeout.timeout(timeout) do
           loop do
