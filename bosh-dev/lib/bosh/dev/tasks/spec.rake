@@ -66,7 +66,7 @@ namespace :spec do
           pool.process do
             log_file    = "#{spec_logs}/#{build}.log"
             rspec_files = cpi_builds.include?(build) ? "spec/unit/" : "spec/"
-            rspec_cmd   = "rspec --tty -c -f p #{rspec_files}"
+            rspec_cmd   = "rspec --tty --backtrace -c -f p #{rspec_files}"
 
             # inject command name so coverage results for each component don't clobber others
             if system({'BOSH_BUILD_NAME' => build}, "cd #{build} && #{rspec_cmd} > #{log_file} 2>&1")
