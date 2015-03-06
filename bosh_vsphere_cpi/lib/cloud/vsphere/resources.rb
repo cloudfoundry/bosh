@@ -50,12 +50,13 @@ module VSphereCloud
           other_clusters = clusters_with_disks.select { |other_cluster| cluster != other_cluster }
           persistent_disk_sizes = cluster.disk_sizes_in_other_clusters(other_clusters)
 
-          score = Scorer.new(
-            @config, cluster.cluster,
+          score = Scorer.score(
+            @config.logger,
+            cluster.cluster,
             requested_memory_in_mb,
             requested_ephemeral_disk_size_in_mb,
             persistent_disk_sizes
-          ).score
+          )
 
           [cluster, score]
         end

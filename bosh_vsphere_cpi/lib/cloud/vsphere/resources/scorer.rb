@@ -2,114 +2,71 @@
 
 module VSphereCloud
   class Resources
-
-    # Resource Scorer.
     class Scorer
-
-      # Creates a new Scorer given a cluster and requested memory and storage.
-      #
-      # @param [Bosh::Clouds::Config] config the config.
-      # @param [Integer] memory required memory.
-      # @param [Cluster] cluster requested cluster.
-      # @param [Integer] ephemeral disk size in mb.
-      # @param [Array<Integer>] persistent_disk_sizes list of requested persistent sizes in mb.
-      def initialize(config, cluster, memory, ephemeral, persistent_disk_sizes)
-        @cluster = cluster
-        @persistent_disk_sizes = persistent_disk_sizes
-
-        @logger = config.logger
-        @memory = memory
-        @ephemeral = ephemeral
-
-        @free_memory = @cluster.free_memory
-
-        @free_ephemeral = []
-        @cluster.ephemeral_datastores.each_value do |datastore|
-          @free_ephemeral << datastore.free_space
-        end
-
-        @free_persistent = []
-        @cluster.persistent_datastores.each_value do |datastore|
-          @free_persistent << datastore.free_space
-        end
-      end
 
       # Run the scoring function and return the placement score for the required
       # resources.
       #
+      # @param [Logging::Logger] logger logger to which to log.
+      # @param [Integer] requested_memory required memory.
+      # @param [Cluster] cluster requested cluster.
+      # @param [Integer] requested_ephemeral_size disk size in mb.
+      # @param [Array<Integer>] requested_persistent_sizes list of requested persistent sizes in mb.
       # @return [Integer] score.
-      def score
-        min_ephemeral = @ephemeral
-        min_persistent = @persistent_disk_sizes.min
+      def self.score(logger, cluster, requested_memory, requested_ephemeral_size, requested_persistent_sizes)
+        free_memory = cluster.free_memory
+        ephemeral_pool = DiskPool.new(cluster.ephemeral_datastores.values.map(&:free_space))
+        persistent_pool = DiskPool.new(cluster.persistent_datastores.values.map(&:free_space))
 
-        # Filter out any datastores that are below the min threshold
-        filter(@free_ephemeral, min_ephemeral + DISK_HEADROOM)
-        unless @persistent_disk_sizes.empty?
-          filter(@free_persistent, min_persistent + DISK_HEADROOM)
-        end
-
-        count = 0
+        successful_allocations = 0
         loop do
-          @free_memory -= @memory
-          if @free_memory < MEMORY_HEADROOM
-            @logger.debug("#{@cluster.name} memory bound")
+          free_memory -= requested_memory
+          if free_memory < MEMORY_HEADROOM
+            logger.debug("#{cluster.name} memory bound")
             break
           end
 
-          consumed = consume_disk(@free_ephemeral, @ephemeral, min_ephemeral)
-          unless consumed
-            @logger.debug("#{@cluster.name} ephemeral disk bound")
+          unless ephemeral_pool.consume_disk(requested_ephemeral_size)
+            logger.debug("#{cluster.name} ephemeral disk bound")
             break
           end
 
-          unless @persistent_disk_sizes.empty?
-            consumed_all = false
-            @persistent_disk_sizes.each do |size|
-              unless consume_disk(@free_persistent, size, min_persistent)
-                @logger.debug("#{@cluster.name} persistent disk bound")
-                consumed_all = true
-                break
-              end
+          unless requested_persistent_sizes.empty?
+            placed = requested_persistent_sizes.select { |size| persistent_pool.consume_disk(size) }
+            unless requested_persistent_sizes == placed
+              logger.debug("#{cluster.name} persistent disk bound")
+              break
             end
-            break if consumed_all
           end
 
-          count += 1
+          successful_allocations += 1
         end
 
-        count
+        successful_allocations
       end
 
       private
 
-      # Filter out datastores from the pool that are below the free space
-      # threshold.
-      #
-      # @param [Array<Integer>] pool datastore pool.
-      # @param [Integer] threshold free space threshold
-      # @return [Array<Integer>] filtered pool.
-      def filter(pool, threshold)
-        pool.delete_if { |size| size < threshold }
-      end
-
-      # Consumes disk space from a datastore pool.
-      #
-      # @param [Array<Integer>] pool datastore pool.
-      # @param [Integer] size requested disk size.
-      # @param [Integer] min requested disk size, so the datastore can be
-      #   removed from the pool if it falls below this threshold.
-      # @return [true, false] boolean indicating that the disk space was
-      #   consumed.
-      def consume_disk(pool, size, min)
-        unless pool.empty?
-          pool.sort! { |a, b| b <=> a }
-          if pool[0] >= size + DISK_HEADROOM
-            pool[0] -= size
-            pool.delete_at(0) if pool[0] < min + DISK_HEADROOM
-            return true
-          end
+      class DiskPool
+        def initialize(sizes)
+          @sizes = sizes
         end
-        false
+
+        # Consumes disk space from a datastore pool.
+        #
+        # @param [Integer] requested_size requested disk size.
+        # @return [true, false] boolean indicating that the disk space was consumed.
+        def consume_disk(requested_size)
+          unless @sizes.empty?
+            @sizes.sort! { |a, b| b <=> a }
+            if @sizes[0] >= requested_size + DISK_HEADROOM
+              @sizes[0] -= requested_size
+              return true
+            end
+          end
+
+          false
+        end
       end
     end
   end
