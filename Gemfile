@@ -58,7 +58,7 @@ group :development, :test do
 
   # Explicitly do not require serverspec dependency
   # so that it could be monkey patched in a deterministic way
-  # in `bosh-stemcell/spec/support/serverspec.rb`
+  # in `bosh-stemcell/spec/support/serverspec_monkeypatch.rb`
   gem 'specinfra', require: nil
 
   # for director

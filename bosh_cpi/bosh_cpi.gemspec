@@ -21,4 +21,8 @@ Gem::Specification.new do |s|
   s.add_dependency 'bosh_common', "~>#{version}"
   s.add_dependency 'membrane',    '~>1.1.0'
   s.add_dependency 'logging',     '~>1.8.2'
+
+  s.add_development_dependency 'rake'
+  s.add_development_dependency 'rspec'
+  s.add_development_dependency 'rspec-its'
 end

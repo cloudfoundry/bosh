@@ -4,7 +4,6 @@ require 'bosh/stemcell/stage_collection'
 require 'bosh/stemcell/stage_runner'
 require 'bosh/stemcell/definition'
 require 'bosh/stemcell/archive_filename'
-require 'bosh/dev/gem_components'
 require 'yaml'
 
 describe Bosh::Stemcell::StemcellPackager do
@@ -44,7 +43,7 @@ describe Bosh::Stemcell::StemcellPackager do
   let(:version) { 1234 }
   let(:release_tarball_path) { '/path/to/release.tgz' }
   let(:os_image_tarball_path) { '/path/to/os-img.tgz' }
-  let(:gem_components) { instance_double('Bosh::Dev::GemComponents', build_release_gems: nil) }
+  let(:gem_components) { double('Bosh::Dev::GemComponents', build_release_gems: nil) }
   let(:collection) do
     instance_double(
       'Bosh::Stemcell::StageCollection',

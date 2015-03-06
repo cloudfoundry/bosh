@@ -26,4 +26,8 @@ Gem::Specification.new do |s|
   s.add_dependency 'bosh-registry', "~>#{version}"
   s.add_dependency 'httpclient',    '=2.4.0'
   s.add_dependency 'yajl-ruby',     '>=0.8.2'
+
+  s.add_development_dependency 'rake'
+  s.add_development_dependency 'rspec'
+  s.add_development_dependency 'rspec-its'
 end

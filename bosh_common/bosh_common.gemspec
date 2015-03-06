@@ -18,4 +18,8 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'semi_semantic', '~>1.1.0'
   s.add_dependency 'logging',       '~>1.8.2'
+
+  s.add_development_dependency 'rake'
+  s.add_development_dependency 'rspec'
+  s.add_development_dependency 'rspec-its'
 end

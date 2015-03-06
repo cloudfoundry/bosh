@@ -30,4 +30,8 @@ Gem::Specification.new do |s|
   s.add_dependency 'httpclient',    '=2.4.0'
   s.add_dependency 'yajl-ruby',     '>=0.8.2'
   s.add_dependency 'membrane',      '~>1.1.0'
+
+  s.add_development_dependency 'rspec'
+  s.add_development_dependency 'rspec-its'
+  s.add_development_dependency 'minitar'
 end

@@ -30,6 +30,12 @@ Gem::Specification.new do |s|
   s.add_dependency 'builder',     '~>3.1.4'
   s.add_dependency 'nokogiri',    '~>1.5.10'
   s.add_dependency 'httpclient',  '=2.4.0'
+  s.add_dependency 'mono_logger'
 
   s.add_development_dependency 'timecop', '~>0.7.1'
+  s.add_development_dependency 'rspec', '~> 3.0'
+  s.add_development_dependency 'rspec-its'
+  s.add_development_dependency 'rspec-instafail'
+  s.add_development_dependency 'sqlite3'
+  s.add_development_dependency 'fakefs'
 end

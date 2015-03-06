@@ -21,6 +21,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'sqlite3',     '~>1.3.7'
   s.add_dependency 'mono_logger', '~>1.1.0'
 
+  s.add_dependency 'bosh-core',      "~>#{version}"
   s.add_dependency 'bosh_cli',      "~>#{version}"
   s.add_dependency 'bosh-stemcell', "~>#{version}"
   s.add_dependency 'bosh-registry', "~>#{version}"
@@ -33,4 +34,10 @@ Gem::Specification.new do |s|
   s.add_dependency 'bosh_vsphere_cpi',   "~>#{version}"
   s.add_dependency 'bosh-director-core', "~>#{version}"
   s.add_dependency 'blobstore_client',   "~>#{version}"
+
+  s.add_development_dependency 'rake'
+  s.add_development_dependency 'rspec'
+  s.add_development_dependency 'rspec-its'
+  s.add_development_dependency 'fakefs'
+  s.add_development_dependency 'timecop'
 end

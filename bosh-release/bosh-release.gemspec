@@ -26,4 +26,8 @@ Gem::Specification.new do |s|
   s.add_dependency 'bosh-template',    "~>#{version}"
   s.add_dependency 'yajl-ruby', '~>1.2.0'
   s.add_dependency 'trollop',   '~>1.16'
+
+  s.add_development_dependency 'rake'
+  s.add_development_dependency 'rspec'
+  s.add_development_dependency 'rspec-its'
 end

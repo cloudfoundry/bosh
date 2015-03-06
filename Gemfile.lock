@@ -35,6 +35,7 @@ PATH
   specs:
     bosh-dev (0.0.1.unpublished)
       bosh-core
+      bosh-director
       bosh-stemcell
       bosh_cli
       bosh_cli_plugin_aws
@@ -107,6 +108,7 @@ PATH
   specs:
     bosh-registry (1.2865.0)
       aws-sdk (= 1.60.2)
+      bosh_cpi (~> 1.2865.0)
       fog (~> 1.27.0)
       sequel (~> 3.43.0)
       sinatra (~> 1.4.2)
@@ -128,6 +130,7 @@ PATH
   remote: bosh-stemcell
   specs:
     bosh-stemcell (1.2865.0)
+      bosh-core (~> 1.2865.0)
       bosh_aws_cpi (~> 1.2865.0)
 
 PATH
@@ -169,6 +172,7 @@ PATH
   remote: bosh_cli_plugin_aws
   specs:
     bosh_cli_plugin_aws (1.2865.0)
+      bosh-core (~> 1.2865.0)
       bosh-stemcell (~> 1.2865.0)
       bosh_aws_cpi (~> 1.2865.0)
       bosh_cli (~> 1.2865.0)
@@ -180,6 +184,7 @@ PATH
     bosh_cli_plugin_micro (1.2865.0)
       agent_client (~> 1.2865.0)
       blobstore_client (~> 1.2865.0)
+      bosh-core (~> 1.2865.0)
       bosh-director-core (~> 1.2865.0)
       bosh-registry (~> 1.2865.0)
       bosh-stemcell (~> 1.2865.0)
@@ -228,6 +233,7 @@ PATH
       builder (~> 3.1.4)
       httpclient (= 2.4.0)
       membrane (~> 1.1.0)
+      mono_logger
       mysql2 (~> 0.3.11)
       nokogiri (~> 1.5.10)
       pg (~> 0.15.1)

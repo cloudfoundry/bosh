@@ -26,6 +26,10 @@ Gem::Specification.new do |s|
   s.add_dependency 'aws-sdk',   '1.60.2'
   s.add_dependency 'dogapi',    '~> 1.6.0'
 
+  s.add_development_dependency 'rake'
+  s.add_development_dependency 'rspec'
+  s.add_development_dependency 'rspec-its'
+
   s.bindir      = 'bin'
   s.executables << 'bosh-monitor-console'
   s.executables << 'bosh-monitor'

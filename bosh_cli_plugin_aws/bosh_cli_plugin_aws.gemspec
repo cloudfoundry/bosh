@@ -18,8 +18,14 @@ Gem::Specification.new do |s|
   s.files         = `git ls-files -- lib/* templates/* migrations/*`.split($/)
   s.require_paths = ['lib', 'migrations']
 
+  s.add_dependency 'bosh-core',             "~>#{version}"
   s.add_dependency 'bosh_cli',              "~>#{version}"
   s.add_dependency 'bosh_aws_cpi',          "~>#{version}"
   s.add_dependency 'bosh_cli_plugin_micro', "~>#{version}"
   s.add_dependency 'bosh-stemcell',         "~>#{version}"
+
+  s.add_development_dependency 'rake'
+  s.add_development_dependency 'rspec'
+  s.add_development_dependency 'rspec-its'
+  s.add_development_dependency 'webmock'
 end

@@ -51,6 +51,13 @@ Gem::Specification.new do |s|
   s.add_dependency 'cf-uaa-lib',       '~>3.1.0'
 
   s.add_development_dependency 'timecop'
+  s.add_development_dependency 'rake'
+  s.add_development_dependency 'rspec'
+  s.add_development_dependency 'rspec-its'
+  s.add_development_dependency 'minitar'
+  s.add_development_dependency 'machinist'
+  s.add_development_dependency 'sqlite3'
+  s.add_development_dependency 'fakefs'
 
   s.bindir      = 'bin'
   s.executables << 'bosh-director'

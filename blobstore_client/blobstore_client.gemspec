@@ -26,4 +26,10 @@ Gem::Specification.new do |s|
   s.add_dependency 'multi_json',      '~> 1.1'
   s.add_dependency 'ruby-atmos-pure', '~> 1.0.5'
   s.add_dependency 'bosh_common',     "~>#{version}"
+
+  s.add_development_dependency 'rspec', '~> 3.0'
+  s.add_development_dependency 'rspec-its'
+  s.add_development_dependency 'rspec-instafail'
+  s.add_development_dependency 'thin'
+  s.add_development_dependency 'simple_blobstore_server'
 end

@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'bosh/stemcell/stemcell_builder'
-require 'bosh/dev/gem_components'
 require 'bosh/stemcell/build_environment'
 require 'bosh/stemcell/stage_collection'
 require 'bosh/stemcell/stage_runner'
@@ -42,7 +41,7 @@ describe Bosh::Stemcell::StemcellBuilder do
   let(:version) { 1234 }
   let(:release_tarball_path) { '/path/to/release.tgz' }
   let(:os_image_tarball_path) { '/path/to/os-img.tgz' }
-  let(:gem_components) { instance_double('Bosh::Dev::GemComponents', build_release_gems: nil) }
+  let(:gem_components) { double('Bosh::Dev::GemComponents', build_release_gems: nil) }
   let(:environment) do
     Bosh::Stemcell::BuildEnvironment.new(
       env,

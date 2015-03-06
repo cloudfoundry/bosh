@@ -21,4 +21,8 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'httpclient', '=2.4.0'
   s.add_dependency 'yajl-ruby', '~>1.2.0'
+
+  s.add_development_dependency 'rspec', '~> 3.0'
+  s.add_development_dependency 'rspec-its'
+  s.add_development_dependency 'rspec-instafail'
 end

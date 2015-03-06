@@ -33,4 +33,12 @@ Gem::Specification.new do |s|
   s.add_dependency 'net-scp', '~>1.1.0'
   s.add_dependency 'netaddr', '~>1.5.0'
   s.add_dependency 'minitar', '~>0.5.4'
+
+  s.add_development_dependency 'rspec', '~> 3.0'
+  s.add_development_dependency 'rspec-its'
+  s.add_development_dependency 'rspec-instafail'
+  s.add_development_dependency 'webmock'
+  s.add_development_dependency 'timecop', '~>0.7.1'
+  s.add_development_dependency 'fakefs'
+  s.add_development_dependency 'vcr'
 end
