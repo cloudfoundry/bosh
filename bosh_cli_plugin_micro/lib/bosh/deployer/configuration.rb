@@ -25,7 +25,9 @@ module Bosh::Deployer
       @deployment_network = config['deployment_network']
 
       log_io = config['logging']['file'] || STDOUT
-      log_io = File.open(log_io, (File::WRONLY | File::APPEND | File::CREAT)) if log_io.is_a?(String)
+      if log_io.is_a?(String)
+        log_io = File.open(log_io, (File::WRONLY | File::APPEND | File::CREAT))
+      end
       @logger = MonoLogger.new(log_io)
       @logger.level = MonoLogger.const_get(config['logging']['level'].upcase)
       @logger.formatter = ThreadFormatter.new

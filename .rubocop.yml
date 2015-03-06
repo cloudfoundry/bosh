@@ -1,6 +1,6 @@
 AllCops:
   Include:
-    - Gemfile
+    - "**/Gemfile"
     - Rakefile
   Exclude:
     - agent_client/docs/**/*
