@@ -40,6 +40,8 @@ module Bosh::Dev::Sandbox
     DIRECTOR_PATH = File.expand_path('bosh-director', REPO_ROOT)
     MIGRATIONS_PATH = File.join(DIRECTOR_PATH, 'db', 'migrations')
 
+    FAKE_UAA_SINATRA_APP_PATH = File.join(ASSETS_DIR, 'fake_uaa.rb')
+
     attr_reader :name
     attr_reader :health_monitor_process
     attr_reader :scheduler_process
@@ -94,6 +96,8 @@ module Bosh::Dev::Sandbox
       setup_heath_monitor
       setup_database(db_opts)
 
+      setup_uaa
+
       # Note that this is not the same object
       # as dummy cpi used inside bosh-director process
       @cpi = Bosh::Clouds::Dummy.new(
@@ -130,8 +134,29 @@ module Bosh::Dev::Sandbox
       @database_created = true
       @database_migrator.migrate
 
+      @uaa_process.start
+
       start_director
       start_workers
+    end
+
+    def director_config
+      attributes = {
+        director_ruby_port: director_ruby_port,
+        nats_port: nats_port,
+        redis_port: redis_port,
+        sandbox_root: sandbox_root,
+        database: @database,
+        blobstore_storage_dir: blobstore_storage_dir,
+        director_fix_stateful_nodes: director_fix_stateful_nodes,
+        external_cpi_enabled: external_cpi_enabled,
+        external_cpi_config: external_cpi_config,
+        cloud_storage_dir: cloud_storage_dir,
+        user_management_provider: user_management_provider,
+        user_management_options: user_management_options,
+        uaa_url: uaa_url
+      }
+      DirectorConfig.new(attributes)
     end
 
     def reset(name)
@@ -182,6 +207,8 @@ module Bosh::Dev::Sandbox
       @nats_process.stop
 
       @health_monitor_process.stop
+      @uaa_process.stop
+
       @database.drop_db
       FileUtils.rm_f(dns_db_path)
       FileUtils.rm_rf(agent_tmp_path)
@@ -216,6 +243,14 @@ module Bosh::Dev::Sandbox
 
     def director_port
       @director_port ||= get_named_port(:director)
+    end
+
+    def uaa_url
+      @uaa_url ||= "https://127.0.0.1:#{uaa_port}/uaa"
+    end
+
+    def uaa_port
+      @uaa_port ||= get_named_port(:uaa)
     end
 
     def director_ruby_port
@@ -258,7 +293,7 @@ module Bosh::Dev::Sandbox
 
     def start_director
       if director_configuration_changed?
-        write_in_sandbox(DIRECTOR_CONFIG, load_config_template(DIRECTOR_CONF_TEMPLATE))
+        write_director_config
       end
 
       reset_director_tmp_path
@@ -328,7 +363,7 @@ module Bosh::Dev::Sandbox
     end
 
     def setup_sandbox_root
-      write_in_sandbox(DIRECTOR_CONFIG, load_config_template(DIRECTOR_CONF_TEMPLATE))
+      write_director_config
       write_in_sandbox(DIRECTOR_NGINX_CONFIG, load_config_template(DIRECTOR_NGINX_CONF_TEMPLATE))
       write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
       write_in_sandbox(REDIS_CONFIG, load_config_template(REDIS_CONF_TEMPLATE))
@@ -338,8 +373,54 @@ module Bosh::Dev::Sandbox
       FileUtils.mkdir_p(blobstore_storage_dir)
     end
 
+    class DirectorConfig
+      attr_reader :redis_port, :director_ruby_port, :user_management_provider, :external_cpi_enabled,
+       :nats_port, :blobstore_storage_dir, :user_management_options, :external_cpi_config, :database,
+       :director_fix_stateful_nodes, :sandbox_root, :cloud_storage_dir
+
+
+      def initialize(attrs)
+        @director_ruby_port = attrs.fetch(:director_ruby_port)
+        @nats_port = attrs.fetch(:nats_port)
+        @redis_port = attrs.fetch(:redis_port)
+        @sandbox_root = attrs.fetch(:sandbox_root)
+        @database = attrs.fetch(:database)
+        @blobstore_storage_dir = attrs.fetch(:blobstore_storage_dir)
+        @director_fix_stateful_nodes = attrs.fetch(:director_fix_stateful_nodes, false)
+        @external_cpi_enabled = attrs.fetch(:external_cpi_enabled, false)
+        @external_cpi_config = attrs.fetch(:external_cpi_config)
+        @cloud_storage_dir = attrs.fetch(:cloud_storage_dir)
+        @user_management_provider = attrs.fetch(:user_management_provider)
+        @uaa_url = attrs.fetch(:uaa_url,'')
+      end
+
+      def render(template_path)
+        template_contents = File.read(template_path)
+        template = ERB.new(template_contents)
+        template.result(binding)
+      end
+
+      private
+
+      def user_management_options
+        options = if @user_management_provider == 'uaa'
+                    {
+                      key: 'uaa-secret-key',
+                      url: @uaa_url
+                    }
+                  else
+                    {}
+                  end
+        Yajl::Encoder.encode(options)
+      end
+    end
+
+    def write_director_config
+      write_in_sandbox(DIRECTOR_CONFIG, director_config.render(DIRECTOR_CONF_TEMPLATE))
+    end
+
     def director_configuration_changed?
-      read_from_sandbox(DIRECTOR_CONFIG) != load_config_template(DIRECTOR_CONF_TEMPLATE)
+      read_from_sandbox(DIRECTOR_CONFIG) != director_config.render(DIRECTOR_CONF_TEMPLATE)
     end
 
     def read_from_sandbox(filename)
@@ -390,6 +471,17 @@ module Bosh::Dev::Sandbox
       @health_monitor_process = Service.new(
         %W[bosh-monitor -c #{sandbox_path(HM_CONFIG)}],
         {output: "#{logs_path}/health_monitor.out"},
+        @logger,
+      )
+    end
+
+    def setup_uaa
+      base_log_path = File.join(logs_path, @name)
+      @uaa_process = Service.new(
+        %W[ruby #{FAKE_UAA_SINATRA_APP_PATH}],
+        {output: "#{base_log_path}.uaa.out",
+         env: {'PORT' => "#{uaa_port}"}
+        },
         @logger,
       )
     end
@@ -458,13 +550,13 @@ module Bosh::Dev::Sandbox
 
     def user_management_options
       options = if user_authentication == 'uaa'
-        {
-          key: 'uaa-secret-key',
-          url: 'http://localhost:8080/uaa'
-        }
-      else
-        {}
-      end
+                  {
+                    key: 'uaa-secret-key',
+                    url: 'http://localhost:8080/uaa'
+                  }
+                else
+                  {}
+                end
       Yajl::Encoder.encode(options)
     end
 

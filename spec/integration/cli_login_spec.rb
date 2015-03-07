@@ -5,7 +5,6 @@ describe 'cli: login', type: :integration do
     with_reset_sandbox_before_each(user_authentication: 'uaa')
 
     it 'shows the right password prompts from UAA' do
-      pending "figuring out how to test UAA integration"
       bosh_runner.run("target #{current_sandbox.director_url}")
 
       output = bosh_runner.run_interactively("login") do |terminal|
@@ -21,9 +20,8 @@ describe 'cli: login', type: :integration do
     end
 
     it 'blows up if run non-interactively' do
-      pending "figuring out how to test UAA integration"
       bosh_runner.run("target #{current_sandbox.director_url}")
-      expect(bosh_runner.run('login'), failure_expected: true).to include("not supported")
+      expect(bosh_runner.run('login', failure_expected: true)).to include("not supported")
     end
   end
 

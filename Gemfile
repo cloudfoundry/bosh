@@ -52,6 +52,8 @@ group :development, :test do
   gem 'webmock'
   gem 'fakefs', git: 'https://github.com/pivotal-cf-experimental/fakefs.git', ref: 'ebde3d6c'
   gem 'simplecov', '~> 0.9.0'
+  gem 'sinatra'
+  gem 'sinatra-contrib'
   gem 'codeclimate-test-reporter', require: false
   gem 'vcr'
   gem 'pry'
