@@ -44,13 +44,11 @@ module VSphereCloud
       @lock.synchronize do
         # calculate locality to prioritizing clusters that contain the most persistent data.
         clusters = @datacenter.clusters.values
-
-        disks_to_clusters = self.disks_to_clusters(clusters, existing_persistent_disks)
-        clusters_to_disks = self.clusters_to_disks(clusters, existing_persistent_disks)
+        persistent_disk_index = PersistentDiskIndex.new(clusters, existing_persistent_disks)
 
         scored_clusters = clusters.map do |cluster|
           persistent_disk_not_in_this_cluster = existing_persistent_disks.reject do |disk|
-            disks_to_clusters[disk].include?(cluster)
+            persistent_disk_index.clusters_connected_to_disk(disk).include?(cluster)
           end
 
           score = Scorer.score(
@@ -78,10 +76,10 @@ module VSphereCloud
         end
 
         acceptable_clusters = acceptable_clusters.sort_by do |cluster, _score|
-          clusters_to_disks[cluster].map(&:size_in_mb).inject(0, :+)
+          persistent_disk_index.disks_connected_to_cluster(cluster).map(&:size_in_mb).inject(0, :+)
         end.reverse
 
-        if acceptable_clusters.any? { |cluster, _| clusters_to_disks[cluster].any? }
+        if acceptable_clusters.any? { |cluster, _| persistent_disk_index.disks_connected_to_cluster(cluster).any? }
           @logger.debug('Choosing cluster with the greatest available disk')
           selected_cluster, _ = acceptable_clusters.first
         else
@@ -102,25 +100,12 @@ module VSphereCloud
         "#{cluster.total_free_persistent_disk_in_mb / 1024}gb"
     end
 
-    # @return [Hash<Cluster, Array<Disk>>]
-    def clusters_to_disks(clusters, existing_persistent_disks)
-      Hash[*clusters.map do |cluster|
-          [cluster, existing_persistent_disks.select { |disk| cluster.persistent(disk.datastore.name) != nil }]
-        end.flatten(1)]
-    end
-
-    def disks_to_clusters(clusters, existing_persistent_disks)
-      Hash[*existing_persistent_disks.map do |disk|
-        [disk, clusters.select { |cluster| cluster.persistent(disk.datastore.name) != nil }]
-      end.flatten(1)]
-    end
-
     def pick_ephemeral_datastore(cluster, disk_size_in_mb)
       @lock.synchronize do
         datastore = cluster.pick_ephemeral(disk_size_in_mb)
         if datastore.nil?
           raise Bosh::Clouds::NoDiskSpace.new(
-            "Not enough ephemeral disk space (#{disk_size_in_mb}MB) in cluster #{cluster.name}")
+              "Not enough ephemeral disk space (#{disk_size_in_mb}MB) in cluster #{cluster.name}")
         end
 
         datastore.allocate(disk_size_in_mb)
@@ -133,7 +118,7 @@ module VSphereCloud
         datastore = cluster.pick_persistent(disk_size_in_mb)
         if datastore.nil?
           raise Bosh::Clouds::NoDiskSpace.new(
-            "Not enough persistent disk space (#{disk_size_in_mb}MB) in cluster #{cluster.name}")
+              "Not enough persistent disk space (#{disk_size_in_mb}MB) in cluster #{cluster.name}")
         end
 
         datastore.allocate(disk_size_in_mb)
@@ -150,6 +135,30 @@ module VSphereCloud
       return nil if datastore.nil?
       datastore.allocate(disk_space)
       datastore
+    end
+
+    class PersistentDiskIndex
+      def initialize(clusters, existing_persistent_disks)
+        @clusters_to_disks = Hash[*clusters.map do |cluster|
+            [cluster, existing_persistent_disks.select { |disk| cluster_includes_datastore?(cluster, disk.datastore) }]
+          end.flatten(1)]
+
+        @disks_to_clusters = Hash[*existing_persistent_disks.map do |disk|
+            [disk, clusters.select { |cluster| cluster_includes_datastore?(cluster, disk.datastore) }]
+          end.flatten(1)]
+      end
+
+      def cluster_includes_datastore?(cluster, datastore)
+        cluster.persistent(datastore.name) != nil
+      end
+
+      def disks_connected_to_cluster(cluster)
+        @clusters_to_disks[cluster]
+      end
+
+      def clusters_connected_to_disk(disk)
+        @disks_to_clusters[disk]
+      end
     end
   end
 end
