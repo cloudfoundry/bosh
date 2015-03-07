@@ -9,7 +9,7 @@ module Bosh
         end
 
         def prompts
-          token_issuer = CF::UAA::TokenIssuer.new(@url, 'bosh_cli')
+          token_issuer = CF::UAA::TokenIssuer.new(@url, 'bosh_cli', nil, {skip_ssl_validation: true})
           token_issuer.prompts.map do |field, (type, display_text)|
             Prompt.new(field, type, display_text)
           end
