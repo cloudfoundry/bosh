@@ -6,6 +6,8 @@ Tools for creating stemcells
 
 ### Once-off manual steps:
 
+Note: Use US East (Northern Virginia) region when using AWS in following steps. AMI (Amazon Machine Image) to be used for the stemcell building VM is in the US East (Northern Virginia) region.
+
 0. Upload a keypair called "bosh" to AWS that you'll use to connect to the remote vm later
 0. Create "bosh-stemcell" security group on AWS to allow SSH access to the stemcell (once per AWS account)
 0. Add instructions to set BOSH_AWS_... environment variables
