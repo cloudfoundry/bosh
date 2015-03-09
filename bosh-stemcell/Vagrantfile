@@ -107,6 +107,6 @@ EOS
 
   files_to_ignore = File.readlines(File.expand_path('../../.gitignore', __FILE__)).map(&:chomp).reject(&:empty?)
   files_to_ignore << '.git/'
-  config.vm.synced_folder '../.', '/bosh', rsync_excludes: files_to_ignore, rsync__exclude: files_to_ignore
+  config.vm.synced_folder '../.', '/bosh', rsync_excludes: files_to_ignore, rsync__exclude: files_to_ignore, rsync__args: ["--verbose", "--archive", "--delete", "-z"]
   config.vm.synced_folder '../.git/modules', '/bosh/.git/modules'
 end
