@@ -78,9 +78,6 @@ module SpecHelper
 
       @dns_migrations = File.expand_path("../../db/migrations/dns", __FILE__)
       @director_migrations = File.expand_path("../../db/migrations/director", __FILE__)
-      vsphere_cpi_path = $LOAD_PATH.find { |p| File.exist?(File.join(p, File.join("cloud", "vsphere"))) }
-      @vsphere_cpi_migrations = File.expand_path("../db/migrations", vsphere_cpi_path)
-
       Sequel.extension :migration
 
       connect_database(@temp_dir)
@@ -118,7 +115,6 @@ module SpecHelper
     def run_migrations
       Sequel::Migrator.apply(@dns_db, @dns_migrations, nil)
       Sequel::Migrator.apply(@db, @director_migrations, nil)
-      Sequel::TimestampMigrator.new(@db, @vsphere_cpi_migrations, :table => "vsphere_cpi_schema").run
     end
 
     def reset_database
