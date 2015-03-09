@@ -21,17 +21,17 @@ module Bosh::Dev::VSphere
 
       context 'when get_vms returns vms' do
         before { allow(cloud).to receive_messages(get_vms: [vm1, vm2]) }
-        let(:vm1) { instance_double('VimSdk::Vim::VirtualMachine', destroy: nil, name: 'fake vm 1') }
-        let(:vm2) { instance_double('VimSdk::Vim::VirtualMachine', destroy: nil, name: 'fake vm 2') }
+        let(:vm1) { instance_double(VSphereCloud::Resources::VM, cid: 'fake-vm-1') }
+        let(:vm2) { instance_double(VSphereCloud::Resources::VM, cid: 'fake-vm-2') }
 
         it 'kills vms that are in subfolders of that folder' do
-          expect(client).to receive(:power_off_vm).with(vm1).ordered
-          expect(cloud).to receive(:wait_until_off).with(vm1, 15).ordered
-          expect(vm1).to receive(:destroy).ordered
+          expect(vm1).to receive(:power_off).ordered
+          expect(vm1).to receive(:wait_until_off).with(15).ordered
+          expect(vm1).to receive(:delete).ordered
 
-          expect(client).to receive(:power_off_vm).with(vm2).ordered
-          expect(cloud).to receive(:wait_until_off).with(vm2, 15).ordered
-          expect(vm2).to receive(:destroy).ordered
+          expect(vm2).to receive(:power_off).ordered
+          expect(vm2).to receive(:wait_until_off).with(15).ordered
+          expect(vm2).to receive(:delete).ordered
 
           cleaner.clean
         end
@@ -46,10 +46,10 @@ module Bosh::Dev::VSphere
 
       context 'when destruction fails' do
         before { allow(cloud).to receive_messages(get_vms: [vm1]) }
-        let(:vm1) { instance_double('VimSdk::Vim::VirtualMachine', destroy: nil, name: 'fake vm 1') }
+        let(:vm1) { instance_double(VSphereCloud::Resources::VM, cid: 'fake-vm-1') }
 
         it 'logs a failure but doesn\'t stop' do
-          allow(client).to receive(:power_off_vm).and_raise
+          allow(vm1).to receive(:power_off).and_raise
           cleaner.clean
 
           expect(log_string).to include("Destruction of #{vm1.inspect} failed, continuing")

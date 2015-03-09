@@ -23,12 +23,12 @@ module Bosh::Dev::VSphere
 
       old_vms.each do |vm|
         begin
-          @logger.info("Powering off #{vm.name}")
-          cloud.client.power_off_vm(vm)
-          cloud.wait_until_off(vm, 15)
+          @logger.info("Powering off #{vm.cid}")
+          vm.power_off
+          vm.wait_until_off(15)
 
-          @logger.info("#{vm.name} powered off, terminating")
-          vm.destroy
+          @logger.info("#{vm.cid} powered off, terminating")
+          vm.delete
         rescue
           @logger.info("Destruction of #{vm.inspect} failed, continuing")
         end

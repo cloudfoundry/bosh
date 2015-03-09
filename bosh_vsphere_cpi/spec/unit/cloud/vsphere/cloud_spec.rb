@@ -388,8 +388,9 @@ module VSphereCloud
         )
       end
       let(:vm_folder_mob) { double('fake folder mob', child_entity: [subfolder]) }
-      let(:subfolder) { double('fake subfolder', child_entity: vms) }
-      let(:vms) { ['fake vm 1', 'fake vm 2'] }
+      let(:subfolder) { double('fake subfolder', child_entity: [vm_mob1, vm_mob2]) }
+      let(:vm_mob1) { instance_double(VimSdk::Vim::VirtualMachine, name: 'fake-vm-1') }
+      let(:vm_mob2) { instance_double(VimSdk::Vim::VirtualMachine, name: 'fake-vm-2') }
 
       let(:master_template_folder) do
         instance_double('VSphereCloud::Resources::Folder',
@@ -398,11 +399,14 @@ module VSphereCloud
         )
       end
       let(:template_folder_mob) { double('fake template folder mob', child_entity: [template_subfolder_mob]) }
-      let(:template_subfolder_mob) { double('fake template subfolder', child_entity: stemcells) }
-      let(:stemcells) { ['fake stemcell 1', 'fake stemcell 2'] }
+      let(:template_subfolder_mob) { double('fake template subfolder', child_entity: [stemcell_mob1, stemcell_mob2]) }
+      let(:stemcell_mob1) { instance_double(VimSdk::Vim::VirtualMachine, name: 'fake-stemcell-1') }
+      let(:stemcell_mob2) { instance_double(VimSdk::Vim::VirtualMachine, name: 'fake-stemcell-2') }
 
       it 'returns all vms in vm_folder of datacenter and all stemcells in template_folder' do
-        expect(vsphere_cloud.get_vms).to eq(['fake vm 1', 'fake vm 2', 'fake stemcell 1', 'fake stemcell 2'])
+        vms = vsphere_cloud.get_vms
+        expect(vms.map(&:cid)).to eq(['fake-vm-1', 'fake-vm-2', 'fake-stemcell-1', 'fake-stemcell-2'])
+        expect(vms.map(&:mob)).to eq([vm_mob1, vm_mob2, stemcell_mob1, stemcell_mob2])
       end
     end
 

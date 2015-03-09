@@ -677,6 +677,7 @@ module VSphereCloud
       info.entity
     end
 
+    # This method is used by micro bosh deployment cleaner
     def get_vms
       subfolders = []
       with_thread_name("get_vms") do
@@ -685,8 +686,10 @@ module VSphereCloud
         @logger.info("Looking for Stemcells in: #{@datacenter.name} - #{@datacenter.master_template_folder.path}")
         subfolders += @datacenter.master_template_folder.mob.child_entity
       end
-
-      subfolders.map { |folder| folder.child_entity }.flatten
+      mobs = subfolders.map { |folder| folder.child_entity }.flatten
+      mobs.map do |mob|
+        VSphereCloud::Resources::VM.new(mob.name, mob, @client, @logger)
+      end
     end
 
     def ping

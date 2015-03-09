@@ -70,8 +70,8 @@ module VSphereCloud
       end
     end
 
-    def power_off_vm(vm)
-      task = vm.power_off
+    def power_off_vm(vm_mob)
+      task = vm_mob.power_off
       wait_for_task(task)
     end
 
