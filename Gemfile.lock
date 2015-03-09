@@ -233,7 +233,7 @@ PATH
       builder (~> 3.1.4)
       httpclient (= 2.4.0)
       membrane (~> 1.1.0)
-      mono_logger
+      mono_logger (~> 1.1.0)
       nokogiri (~> 1.5.10)
 
 PATH
