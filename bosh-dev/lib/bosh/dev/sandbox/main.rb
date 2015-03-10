@@ -17,6 +17,8 @@ module Bosh::Dev::Sandbox
 
     ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
 
+    UAA_ASSETS_DIR = File.expand_path('spec/assets/uaa', REPO_ROOT)
+
     DIRECTOR_UUID = 'deadbeef'
 
     DIRECTOR_CONFIG = 'director_test.yml'
@@ -39,8 +41,6 @@ module Bosh::Dev::Sandbox
 
     DIRECTOR_PATH = File.expand_path('bosh-director', REPO_ROOT)
     MIGRATIONS_PATH = File.join(DIRECTOR_PATH, 'db', 'migrations')
-
-    FAKE_UAA_SINATRA_APP_PATH = File.join(ASSETS_DIR, 'fake_uaa.rb')
 
     attr_reader :name
     attr_reader :health_monitor_process
@@ -134,7 +134,8 @@ module Bosh::Dev::Sandbox
       @database_created = true
       @database_migrator.migrate
 
-      @uaa_process.start
+
+      start_uaa if uaa_user_auth?
 
       start_director
       start_workers
@@ -152,8 +153,7 @@ module Bosh::Dev::Sandbox
         external_cpi_enabled: external_cpi_enabled,
         external_cpi_config: external_cpi_config,
         cloud_storage_dir: cloud_storage_dir,
-        user_management_provider: user_management_provider,
-        user_management_options: user_management_options,
+        uaa_user_auth: uaa_user_auth?,
         uaa_url: uaa_url
       }
       DirectorConfig.new(attributes)
@@ -246,7 +246,7 @@ module Bosh::Dev::Sandbox
     end
 
     def uaa_url
-      @uaa_url ||= "https://127.0.0.1:#{uaa_port}/uaa"
+      @uaa_url ||= "http://localhost:#{uaa_port}/uaa"
     end
 
     def uaa_port
@@ -306,6 +306,17 @@ module Bosh::Dev::Sandbox
         @director_socket_connector.try_to_connect(300)
       rescue
         output_service_log(@director_process)
+        raise
+      end
+    end
+
+    def start_uaa
+      @uaa_process.start
+
+      begin
+        @uaa_socket_connector.try_to_connect(300)
+      rescue
+        output_service_log(@uaa_process)
         raise
       end
     end
@@ -375,7 +386,7 @@ module Bosh::Dev::Sandbox
 
     class DirectorConfig
       attr_reader :redis_port, :director_ruby_port, :user_management_provider, :external_cpi_enabled,
-       :nats_port, :blobstore_storage_dir, :user_management_options, :external_cpi_config, :database,
+       :nats_port, :blobstore_storage_dir, :external_cpi_config, :database,
        :director_fix_stateful_nodes, :sandbox_root, :cloud_storage_dir
 
 
@@ -390,7 +401,7 @@ module Bosh::Dev::Sandbox
         @external_cpi_enabled = attrs.fetch(:external_cpi_enabled, false)
         @external_cpi_config = attrs.fetch(:external_cpi_config)
         @cloud_storage_dir = attrs.fetch(:cloud_storage_dir)
-        @user_management_provider = attrs.fetch(:user_management_provider)
+        @uaa_user_auth = attrs.fetch(:uaa_user_auth)
         @uaa_url = attrs.fetch(:uaa_url,'')
       end
 
@@ -403,7 +414,7 @@ module Bosh::Dev::Sandbox
       private
 
       def user_management_options
-        options = if @user_management_provider == 'uaa'
+        options = if @uaa_user_auth
                     {
                       key: 'uaa-secret-key',
                       url: @uaa_url
@@ -412,6 +423,15 @@ module Bosh::Dev::Sandbox
                     {}
                   end
         Yajl::Encoder.encode(options)
+      end
+
+
+      def user_management_provider
+        if @uaa_user_auth
+          'uaa'
+        else
+          'local'
+        end
       end
     end
 
@@ -478,12 +498,14 @@ module Bosh::Dev::Sandbox
     def setup_uaa
       base_log_path = File.join(logs_path, @name)
       @uaa_process = Service.new(
-        %W[ruby #{FAKE_UAA_SINATRA_APP_PATH}],
+        %W[./gradlew run],
         {output: "#{base_log_path}.uaa.out",
-         env: {'PORT' => "#{uaa_port}"}
+         env: {'CARGO_PORT' => "#{uaa_port}"},
+         working_dir: UAA_ASSETS_DIR
         },
         @logger,
       )
+      @uaa_socket_connector = SocketConnector.new('uaa', 'localhost', uaa_port, @logger)
     end
 
     def setup_director
@@ -540,24 +562,8 @@ module Bosh::Dev::Sandbox
       Bosh::Director::Config.redis_options = {host: 'localhost', port: redis_port}
     end
 
-    def user_management_provider
-      if user_authentication == 'uaa'
-        'uaa'
-      else
-        'local'
-      end
-    end
-
-    def user_management_options
-      options = if user_authentication == 'uaa'
-                  {
-                    key: 'uaa-secret-key',
-                    url: 'http://localhost:8080/uaa'
-                  }
-                else
-                  {}
-                end
-      Yajl::Encoder.encode(options)
+    def uaa_user_auth?
+      user_authentication == 'uaa'
     end
 
     attr_reader :director_tmp_path, :dns_db_path, :task_logs_dir

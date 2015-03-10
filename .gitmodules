@@ -1,3 +1,7 @@
 [submodule "go/src/github.com/cloudfoundry/bosh-agent"]
 	path = go/src/github.com/cloudfoundry/bosh-agent
 	url = https://github.com/cloudfoundry/bosh-agent.git
+[submodule "spec/assets/uaa"]
+	path = spec/assets/uaa
+	url = https://github.com/cobyrne/uaa
+	branch = cargo_port_configuration

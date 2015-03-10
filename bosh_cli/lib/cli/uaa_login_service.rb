@@ -21,7 +21,7 @@ module Bosh
             end
           end
         else
-          raise Bosh::Cli::CliError.new("Non-interactive UAA login is not supported.")
+          err("Non-interactive UAA login is not supported.")
         end
       end
     end

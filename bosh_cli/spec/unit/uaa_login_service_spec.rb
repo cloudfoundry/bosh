@@ -33,7 +33,7 @@ describe Bosh::Cli::UaaLoginService do
       it "raises an error" do
         expect {
           login_service.login(target, '', '')
-        }.to raise_error(Bosh::Cli::CliError, "Non-interactive UAA login is not supported.") #TODO: red
+        }.to raise_error(Bosh::Cli::CliError, "Non-interactive UAA login is not supported.")
       end
     end
   end
