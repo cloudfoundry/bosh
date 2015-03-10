@@ -13,6 +13,7 @@ echo "Extracting nginx..."
 tar xzvf nginx/nginx-1.4.5.tar.gz
 
 echo "Building nginx..."
+
 pushd nginx-1.4.5
   ./configure \
     --with-debug \
@@ -23,6 +24,6 @@ pushd nginx-1.4.5
     --with-http_dav_module \
     --add-module=../nginx-upload-module-2.2
 
-  make
-  make install
+  make -j
+  make -j install
 popd

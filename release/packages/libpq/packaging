@@ -6,5 +6,6 @@ cd postgresql-9.0.3
 ./configure --prefix=$BOSH_INSTALL_TARGET
 cp -R src/include $BOSH_INSTALL_TARGET
 cd src/interfaces/libpq
-make
-make install
+
+make -j
+make -j install

@@ -8,5 +8,6 @@ if [[ $? != 0 ]] ; then
 fi
 
 cd redis-2.6.9
-make
-make PREFIX=$BOSH_INSTALL_TARGET install
+
+make -j
+make -j PREFIX=$BOSH_INSTALL_TARGET install
