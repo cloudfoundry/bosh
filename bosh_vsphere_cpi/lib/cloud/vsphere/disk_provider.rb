@@ -52,18 +52,15 @@ module VSphereCloud
       destination_path = path(destination_datastore, disk_cid)
       @logger.info("Moving #{disk.path} to #{destination_path}")
       create_parent_folder(destination_path)
-      @client.move_disk(datacenter_name, disk.path, datacenter_name, destination_path)
+      @client.move_disk(datacenter_name, disk.path, datacenter_name, destination_path) #TODO: return the new disk
       @logger.info('Moved disk successfully')
       Resources::Disk.new(disk_cid, disk.size_in_mb, destination_datastore, destination_path)
     end
 
     def find(disk_cid)
       @datacenter.persistent_datastores.each do |_, datastore|
-        disk_path = path(datastore, disk_cid)
-        disk_size_in_mb = get_disk_size_in_mb(disk_path)
-        if disk_size_in_mb != nil
-          return Resources::Disk.new(disk_cid, disk_size_in_mb, datastore, disk_path)
-        end
+        disk = @client.find_disk(disk_cid, datastore, @disk_path)
+        return disk unless disk.nil?
       end
 
       raise Bosh::Clouds::DiskNotFound, "Could not find disk with id #{disk_cid}"
@@ -84,19 +81,6 @@ module VSphereCloud
       end
 
       datastore
-    end
-
-    def get_disk_size_in_mb(disk_path)
-      disk_geometry = @virtual_disk_manager.query_virtual_disk_geometry(
-        disk_path,
-        @datacenter.mob
-      )
-
-      disk_size_in_blocks = disk_geometry.cylinder * disk_geometry.head * disk_geometry.sector
-      disk_size_in_kb = disk_size_in_blocks / 512
-      (disk_size_in_kb / 1024.0).ceil
-    rescue VimSdk::SoapError
-      nil
     end
 
     def create_parent_folder(disk_path)

@@ -212,6 +212,26 @@ module VSphereCloud
       result
     end
 
+    def find_disk(disk_cid, datastore, disk_path)
+      details = VimSdk::Vim::Host::DatastoreBrowser::FileInfo::Details.new
+      details.file_size = true
+
+      spec = VimSdk::Vim::Host::DatastoreBrowser::SearchSpec.new
+      spec.match_pattern = ["#{disk_cid}-flat.vmdk"]
+      spec.details = details
+
+      results = wait_for_task(datastore.mob.browser.search("[#{datastore.name}] #{disk_path}", spec)).file
+
+      return nil if results.empty?
+
+      disk_size_in_mb = results.first.file_size / (1024 * 1024)
+      if disk_size_in_mb != nil
+        return Resources::Disk.new(disk_cid, disk_size_in_mb, datastore, "[#{datastore.name}] #{disk_path}/#{disk_cid}.vmdk")
+      end
+    rescue VimSdk::SoapError
+      nil
+    end
+
     private
 
     def find_perf_metric_names(mob, names)

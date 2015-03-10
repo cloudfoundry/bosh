@@ -74,62 +74,49 @@ module VSphereCloud
       let(:cluster) { instance_double('VSphereCloud::Resources::Cluster', name: 'fake-cluster-name') }
 
       context 'when disk exists' do
-        let(:cylinders) { 2097152 }
-        before do
-          allow(virtual_disk_manager).to receive(:query_virtual_disk_geometry).
-            with('[fake-datastore] fake-disk-path/disk-cid.vmdk', datacenter_mob).
-            and_return(
-              double(:host_disk_dimensions_chs, cylinder: cylinders, head: 4, sector: 8)
-            )
-
-          allow(datacenter).to receive(:persistent_datastores).and_return(
-            {'fake-datastore' => datastore}
-          )
-        end
-
         context 'when disk is in one of accessible datastores' do
-          let(:accessible_datastores) { ['fake-datastore'] }
+          let(:datastore) { instance_double('VSphereCloud::Resources::Datastore', name: 'fake-datastore') }
+          let(:accessible_datastores) { [datastore.name] }
+          let(:disk) { Resources::Disk.new('disk-cid',0, datastore, "[data-store-name] fake-disk-path/disk-cid.vmdk") }
+          before do
+            allow(datacenter).to receive(:persistent_datastores).and_return({'fake-datastore' => datastore})
+            allow(client).to receive(:find_disk).with('disk-cid', datastore, 'fake-disk-path') { disk }
+          end
 
           context 'when disk is in persistent datastores' do
             it 'returns disk' do
-              disk = disk_provider.find_and_move('disk-cid', cluster, 'fake-datacenter', accessible_datastores)
-              expect(disk.cid).to eq('disk-cid')
-              expect(disk.size_in_mb).to eq(128)
-              expect(disk.datastore).to eq(datastore)
-              expect(disk.path).to eq('[fake-datastore] fake-disk-path/disk-cid.vmdk')
-            end
-          end
-
-          context 'when size in kb is not an even number of mb' do
-            let(:cylinders) { 2041000 }
-
-            it 'rounds up to an even number of mb' do
-              disk = disk_provider.find_and_move('disk-cid', cluster, 'fake-datacenter', accessible_datastores)
-              expect(disk.size_in_mb).to eq(125)
+              expect(disk_provider.find_and_move('disk-cid', cluster, 'fake-datacenter', accessible_datastores)).
+                to eq(disk)
             end
           end
         end
 
         context 'when disk is not in one of the accessible datastores' do
-          let(:accessible_datastores) { ['fake-host-datastore'] }
+          let(:destination_datastore) { instance_double('VSphereCloud::Resources::Datastore', name: 'destination-datastore') }
+          let(:accessible_datastores) { [destination_datastore.name] }
+          let(:inaccessible_datastore) { instance_double('VSphereCloud::Resources::Datastore', name: 'inaccessible-datastore') }
+          let(:disk) { Resources::Disk.new('disk-cid',0, inaccessible_datastore, "[inaccessible-datastore] fake-disk-path/disk-cid.vmdk") }
 
-          let(:destination_datastore) { Resources::Datastore.new(destination_datastore_name, nil, 0, 0) }
-          let(:destination_datastore_name) { 'fake-host-datastore' }
-          before { allow(resources).to receive(:pick_persistent_datastore_in_cluster).and_return(destination_datastore) }
+          before do
+            allow(datacenter).to receive(:persistent_datastores).and_return({'fake-datastore' => inaccessible_datastore})
+            allow(resources).to receive(:pick_persistent_datastore_in_cluster).and_return(destination_datastore)
+            allow(client).to receive(:find_disk).with('disk-cid', inaccessible_datastore, 'fake-disk-path') { disk }
+          end
 
           it 'moves disk' do
             expect(client).to receive(:move_disk).with(
               'fake-host-datacenter',
-              '[fake-datastore] fake-disk-path/disk-cid.vmdk',
+              '[inaccessible-datastore] fake-disk-path/disk-cid.vmdk',
               'fake-host-datacenter',
-              '[fake-host-datastore] fake-disk-path/disk-cid.vmdk'
+              '[destination-datastore] fake-disk-path/disk-cid.vmdk'
             )
-            expect(client).to receive(:create_datastore_folder).with('[fake-host-datastore] fake-disk-path', datacenter_mob)
+            expect(client).to receive(:create_datastore_folder).with('[destination-datastore] fake-disk-path', datacenter_mob)
+
             disk = disk_provider.find_and_move('disk-cid', cluster, 'fake-host-datacenter', accessible_datastores)
+
             expect(disk.cid).to eq('disk-cid')
-            expect(disk.size_in_mb).to eq(128)
             expect(disk.datastore).to eq(destination_datastore)
-            expect(disk.path).to eq('[fake-host-datastore] fake-disk-path/disk-cid.vmdk')
+            expect(disk.path).to eq('[destination-datastore] fake-disk-path/disk-cid.vmdk')
           end
 
           context 'when datastore that fits disk cannot be found' do
@@ -143,12 +130,12 @@ module VSphereCloud
           end
 
           context 'when picked datastore is not one of the accessible datastores' do
-            let(:destination_datastore_name) { 'non-accessible-datastore' }
+            let(:accessible_datastores) { ['not-the-destination-datastore'] }
 
             it 'raises an error' do
               expect {
                 disk_provider.find_and_move('disk-cid', cluster, 'fake-host-datacenter', accessible_datastores)
-              }.to raise_error "Datastore 'non-accessible-datastore' is not accessible to cluster 'fake-cluster-name'"
+              }.to raise_error "Datastore 'destination-datastore' is not accessible to cluster 'fake-cluster-name'"
             end
           end
         end
@@ -157,9 +144,6 @@ module VSphereCloud
       context 'when disk does not exist' do
         before do
           allow(datacenter).to receive(:persistent_datastores).and_return({})
-          allow(virtual_disk_manager).to receive(:query_virtual_disk_geometry).
-            with('[fake-datastore] fake-disk-path/disk-cid.vmdk', datacenter_mob).
-            and_raise(VimSdk::SoapError.new('fake-message', 'fake-fault'))
         end
 
         it 'raises DiskNotFound' do
@@ -171,33 +155,32 @@ module VSphereCloud
     end
 
     describe '#find' do
+      let(:first_datastore) { instance_double(Resources::Datastore) }
+      let(:second_datastore) { instance_double(Resources::Datastore) }
+
       before do
-        allow(datacenter).to receive(:persistent_datastores).and_return({'fake-datastore' => datastore})
+        allow(datacenter).to receive(:persistent_datastores).and_return({
+              'datastore-without-disk' => first_datastore,
+              'datastore-with-disk' => second_datastore,
+            })
       end
 
       context 'when disk exists' do
+        let(:disk) { Resources::Disk.new('disk-cid', 1024, datastore, "[data-store-name] fake-disk-path/disk-cid.vmdk") }
         before do
-          allow(virtual_disk_manager).to receive(:query_virtual_disk_geometry).
-            with('[fake-datastore] fake-disk-path/disk-cid.vmdk', datacenter_mob).
-            and_return(
-            double(:host_disk_dimensions_chs, cylinder: 2097152, head: 4, sector: 8)
-          )
+          allow(client).to receive(:find_disk).with('disk-cid', first_datastore, 'fake-disk-path') { nil }
+          allow(client).to receive(:find_disk).with('disk-cid', second_datastore, 'fake-disk-path') { disk }
         end
 
         it 'returns disk' do
-          disk = disk_provider.find('disk-cid')
-          expect(disk.cid).to eq('disk-cid')
-          expect(disk.size_in_mb).to eq(128)
-          expect(disk.datastore).to eq(datastore)
-          expect(disk.path).to eq('[fake-datastore] fake-disk-path/disk-cid.vmdk')
+          expect(disk_provider.find('disk-cid')).to eq(disk)
         end
       end
 
       context 'when disk does not exist' do
         before do
-          allow(virtual_disk_manager).to receive(:query_virtual_disk_geometry).
-            with('[fake-datastore] fake-disk-path/disk-cid.vmdk', datacenter_mob).
-            and_raise(VimSdk::SoapError.new('fake-message', 'fake-fault'))
+          allow(client).to receive(:find_disk).with('disk-cid', first_datastore, 'fake-disk-path') { nil }
+          allow(client).to receive(:find_disk).with('disk-cid', second_datastore, 'fake-disk-path') { nil }
         end
 
         it 'raises DiskNotFound' do
