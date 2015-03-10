@@ -36,7 +36,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'nats',             '=0.5.0.beta.12'
   s.add_dependency 'netaddr',          '~>1.5.0'
   s.add_dependency 'rack-test',        '~>0.6.2' # needed for console
-  s.add_dependency 'rake'
+  s.add_dependency 'rake',             '~> 10.0'
   s.add_dependency 'redis',            '~>3.0.2'
   s.add_dependency 'resque',           '~>1.25.0'
   s.add_dependency 'resque-backtrace', '~>0.0.1'
@@ -51,7 +51,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'cf-uaa-lib',       '~>3.1.0'
 
   s.add_development_dependency 'timecop'
-  s.add_development_dependency 'rake'
   s.add_development_dependency 'rspec'
   s.add_development_dependency 'rspec-its'
   s.add_development_dependency 'minitar'
