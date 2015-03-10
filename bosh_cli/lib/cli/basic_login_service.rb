@@ -18,7 +18,7 @@ module Bosh
         end
 
         if username.blank? || password.blank?
-          raise Bosh::Cli::CliError.new("Please provide username and password")
+          err("Please provide username and password")
         end
 
         if @director.login(username, password)
@@ -30,7 +30,7 @@ module Bosh
             @terminal.say_red("Cannot log in as `#{username}', please try again")
             login(target, username, '')
           else
-            raise Bosh::Cli::CliError.new("Cannot log in as `#{username}'")
+            err("Cannot log in as `#{username}'")
           end
         end
       end

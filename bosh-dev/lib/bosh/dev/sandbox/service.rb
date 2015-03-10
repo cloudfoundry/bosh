@@ -23,19 +23,21 @@ module Bosh::Dev::Sandbox
       if running?(@pid)
         @logger.info("Already started #{@description} with PID #{@pid}")
       else
-        unless system("which #{@cmd_array.first} > /dev/null")
-          raise "Cannot find #{@description} in the $PATH"
+        Dir.chdir(@cmd_options.fetch(:working_dir, Dir.pwd)) do
+          unless system("which #{@cmd_array.first} > /dev/null")
+            raise "Cannot find #{@description} in the $PATH"
+          end
+
+          @log_id = SecureRandom.hex(4)
+
+          @pid = Process.spawn(env, *@cmd_array, {
+              out: stdout || :close,
+              err: stderr || :close,
+              in: :close,
+            })
+
+          @logger.info("Started #{@description} with PID #{@pid}, log-id: #{@log_id}")
         end
-
-        @log_id = SecureRandom.hex(4)
-
-        @pid = Process.spawn(env, *@cmd_array, {
-          out: stdout || :close,
-          err: stderr || :close,
-          in: :close,
-        })
-
-        @logger.info("Started #{@description} with PID #{@pid}, log-id: #{@log_id}")
       end
     end
 

@@ -110,13 +110,13 @@ describe Bosh::Cli::BasicLoginService do
     it "errors if username is blank" do
       expect {
         login_service.login(target, '', 'password')
-      }.to raise_error(Bosh::Cli::CliError, "Please provide username and password") #TODO: red
+      }.to raise_error(Bosh::Cli::CliError, "Please provide username and password")
     end
 
     it "errors if password is blank" do
       expect {
         login_service.login(target, 'user name', '')
-      }.to raise_error(Bosh::Cli::CliError, "Please provide username and password") #TODO; red text
+      }.to raise_error(Bosh::Cli::CliError, "Please provide username and password")
     end
 
     it "says you're logged in if all went well" do
@@ -151,7 +151,7 @@ describe Bosh::Cli::BasicLoginService do
 
       expect {
         login_service.login(target, 'user name', 'wrong password')
-      }.to raise_error(Bosh::Cli::CliError, "Cannot log in as `user name'") #TODO: red text
+      }.to raise_error(Bosh::Cli::CliError, "Cannot log in as `user name'")
     end
   end
 end
