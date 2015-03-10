@@ -144,19 +144,17 @@ module VSphereCloud
     def delete_stemcell(stemcell)
       with_thread_name("delete_stemcell(#{stemcell})") do
         Bosh::ThreadPool.new(max_threads: 32, logger: @logger).wrap do |pool|
-          @resources.datacenters.each_value do |datacenter|
-            @logger.info("Looking for stemcell replicas in: #{datacenter.name}")
-            templates = @cloud_searcher.get_property(datacenter.template_folder.mob, Vim::Folder, 'childEntity', ensure_all: true)
-            template_properties = @cloud_searcher.get_properties(templates, Vim::VirtualMachine, ['name'])
-            template_properties.each_value do |properties|
-              template_name = properties['name'].gsub('%2f', '/')
-              if template_name.split('/').first.strip == stemcell
-                @logger.info("Found: #{template_name}")
-                pool.process do
-                  @logger.info("Deleting: #{template_name}")
-                  client.delete_vm(properties[:obj])
-                  @logger.info("Deleted: #{template_name}")
-                end
+          @logger.info("Looking for stemcell replicas in: #{@datacenter.name}")
+          templates = @cloud_searcher.get_property(@datacenter.template_folder.mob, Vim::Folder, 'childEntity', ensure_all: true)
+          template_properties = @cloud_searcher.get_properties(templates, Vim::VirtualMachine, ['name'])
+          template_properties.each_value do |properties|
+            template_name = properties['name'].gsub('%2f', '/')
+            if template_name.split('/').first.strip == stemcell
+              @logger.info("Found: #{template_name}")
+              pool.process do
+                @logger.info("Deleting: #{template_name}")
+                client.delete_vm(properties[:obj])
+                @logger.info("Deleted: #{template_name}")
               end
             end
           end
