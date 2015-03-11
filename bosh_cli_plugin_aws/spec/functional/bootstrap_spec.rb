@@ -375,7 +375,7 @@ describe 'AWS Bootstrap commands' do
             :headers => {
                 'Authorization' => "Basic #{credentials}",
                 'Content-Type'=>'application/json'
-            })).to have_been_made.once
+            })).to have_been_made.times(4)
 
         expect(@create_user_request).to have_been_made
 
