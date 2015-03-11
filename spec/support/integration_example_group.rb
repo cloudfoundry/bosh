@@ -172,8 +172,8 @@ module IntegrationSandboxHelpers
     Thread.current[:sandbox] ||= Bosh::Dev::Sandbox::Main.from_env
   end
 
-  def set_up_sandbox_user_auth(options)
-    current_sandbox.user_authentication = options.fetch(:user_authentication, 'local')
+  def reconfigure_sandbox(options)
+    current_sandbox.reconfigure_sandbox(options)
   end
 
   def reset_sandbox(desc)
@@ -239,7 +239,7 @@ module IntegrationSandboxBeforeHelpers
   def with_reset_sandbox_before_each(options={})
     before do |example|
       prepare_sandbox
-      set_up_sandbox_user_auth(options)
+      reconfigure_sandbox(options)
       if !sandbox_started?
         start_sandbox
       elsif !example.metadata[:no_reset]

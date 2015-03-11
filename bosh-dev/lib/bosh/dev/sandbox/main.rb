@@ -8,6 +8,8 @@ require 'bosh/dev/sandbox/postgresql'
 require 'bosh/dev/sandbox/mysql'
 require 'bosh/dev/sandbox/nginx'
 require 'bosh/dev/sandbox/workspace'
+require 'bosh/dev/sandbox/director_config'
+require 'bosh/dev/sandbox/port_provider'
 require 'cloud/dummy'
 require 'logging'
 
@@ -58,8 +60,6 @@ module Bosh::Dev::Sandbox
 
     attr_reader :nats_log_path
 
-    attr_accessor :user_authentication
-
     def self.from_env
       db_opts = {
         type: ENV['DB'] || 'postgresql',
@@ -77,9 +77,10 @@ module Bosh::Dev::Sandbox
 
     def initialize(db_opts, debug, test_env_number, logger)
       @debug = debug
-      @test_env_number = test_env_number
       @logger = logger
       @name = SecureRandom.uuid.gsub('-', '')
+
+      @port_provider = PortProvider.new(test_env_number)
 
       @logs_path = sandbox_path('logs')
       @dns_db_path = sandbox_path('director-dns.sqlite')
@@ -135,7 +136,7 @@ module Bosh::Dev::Sandbox
       @database_migrator.migrate
 
 
-      start_uaa if uaa_user_auth?
+      start_uaa if @user_authentication == 'uaa'
 
       start_director
       start_workers
@@ -143,9 +144,6 @@ module Bosh::Dev::Sandbox
 
     def director_config
       attributes = {
-        director_ruby_port: director_ruby_port,
-        nats_port: nats_port,
-        redis_port: redis_port,
         sandbox_root: sandbox_root,
         database: @database,
         blobstore_storage_dir: blobstore_storage_dir,
@@ -153,10 +151,9 @@ module Bosh::Dev::Sandbox
         external_cpi_enabled: external_cpi_enabled,
         external_cpi_config: external_cpi_config,
         cloud_storage_dir: cloud_storage_dir,
-        uaa_user_auth: uaa_user_auth?,
-        uaa_url: uaa_url
+        user_authentication: @user_authentication,
       }
-      DirectorConfig.new(attributes)
+      DirectorConfig.new(attributes, @port_provider)
     end
 
     def reset(name)
@@ -230,11 +227,11 @@ module Bosh::Dev::Sandbox
     end
 
     def nats_port
-      @nats_port ||= get_named_port(:nats)
+      @nats_port ||= @port_provider.get_port(:nats)
     end
 
     def hm_port
-      @hm_port ||= get_named_port(:hm)
+      @hm_port ||= @port_provider.get_port(:hm)
     end
 
     def director_url
@@ -242,33 +239,27 @@ module Bosh::Dev::Sandbox
     end
 
     def director_port
-      @director_port ||= get_named_port(:director)
-    end
-
-    def uaa_url
-      @uaa_url ||= "http://localhost:#{uaa_port}/uaa"
+      @director_port ||= @port_provider.get_port(:director)
     end
 
     def uaa_port
-      @uaa_port ||= get_named_port(:uaa)
+      @uaa_port ||= @port_provider.get_port(:uaa)
     end
 
     def director_ruby_port
-      @director_ruby_port ||= get_named_port(:director_ruby)
+      @director_ruby_port ||= @port_provider.get_port(:director_ruby)
     end
 
     def redis_port
-      @redis_port ||= get_named_port(:redis)
-    end
-
-    def get_named_port(name)
-      @port_names ||= []
-      @port_names << name unless @port_names.include?(name)
-      61000 + @test_env_number * 100 + @port_names.index(name)
+      @redis_port ||= @port_provider.get_port(:redis)
     end
 
     def sandbox_root
       File.join(Workspace.dir, 'sandbox')
+    end
+
+    def reconfigure_sandbox(options)
+      @user_authentication = options.fetch(:user_authentication, 'local')
     end
 
     def external_cpi_config
@@ -382,57 +373,6 @@ module Bosh::Dev::Sandbox
       FileUtils.chmod(0755, sandbox_path(EXTERNAL_CPI))
       FileUtils.mkdir_p(sandbox_path('redis'))
       FileUtils.mkdir_p(blobstore_storage_dir)
-    end
-
-    class DirectorConfig
-      attr_reader :redis_port, :director_ruby_port, :user_management_provider, :external_cpi_enabled,
-       :nats_port, :blobstore_storage_dir, :external_cpi_config, :database,
-       :director_fix_stateful_nodes, :sandbox_root, :cloud_storage_dir
-
-
-      def initialize(attrs)
-        @director_ruby_port = attrs.fetch(:director_ruby_port)
-        @nats_port = attrs.fetch(:nats_port)
-        @redis_port = attrs.fetch(:redis_port)
-        @sandbox_root = attrs.fetch(:sandbox_root)
-        @database = attrs.fetch(:database)
-        @blobstore_storage_dir = attrs.fetch(:blobstore_storage_dir)
-        @director_fix_stateful_nodes = attrs.fetch(:director_fix_stateful_nodes, false)
-        @external_cpi_enabled = attrs.fetch(:external_cpi_enabled, false)
-        @external_cpi_config = attrs.fetch(:external_cpi_config)
-        @cloud_storage_dir = attrs.fetch(:cloud_storage_dir)
-        @uaa_user_auth = attrs.fetch(:uaa_user_auth)
-        @uaa_url = attrs.fetch(:uaa_url,'')
-      end
-
-      def render(template_path)
-        template_contents = File.read(template_path)
-        template = ERB.new(template_contents)
-        template.result(binding)
-      end
-
-      private
-
-      def user_management_options
-        options = if @uaa_user_auth
-                    {
-                      key: 'uaa-secret-key',
-                      url: @uaa_url
-                    }
-                  else
-                    {}
-                  end
-        Yajl::Encoder.encode(options)
-      end
-
-
-      def user_management_provider
-        if @uaa_user_auth
-          'uaa'
-        else
-          'local'
-        end
-      end
     end
 
     def write_director_config
@@ -560,10 +500,6 @@ module Bosh::Dev::Sandbox
       @redis_process = Service.new(%W[redis-server #{sandbox_path(REDIS_CONFIG)}], {}, @logger)
       @redis_socket_connector = SocketConnector.new('redis', 'localhost', redis_port, @logger)
       Bosh::Director::Config.redis_options = {host: 'localhost', port: redis_port}
-    end
-
-    def uaa_user_auth?
-      user_authentication == 'uaa'
     end
 
     attr_reader :director_tmp_path, :dns_db_path, :task_logs_dir
