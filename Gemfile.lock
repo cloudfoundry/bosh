@@ -503,7 +503,7 @@ GEM
     thor (0.18.1)
     thread_safe (0.3.4)
     tilt (1.4.1)
-    timecop (0.6.1)
+    timecop (0.7.3)
     trollop (1.16.2)
     tzinfo (1.2.2)
       thread_safe (~> 0.1)
@@ -565,6 +565,6 @@ DEPENDENCIES
   simplecov (~> 0.9.0)
   specinfra
   sqlite3
-  timecop
+  timecop (~> 0.7.1)
   vcr
   webmock

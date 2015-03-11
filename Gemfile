@@ -71,6 +71,6 @@ group :development, :test do
   gem 'rugged'
 
   gem 'sqlite3'
-  gem 'timecop'
+  gem 'timecop', '~>0.7.1'
   gem 'jenkins_api_client'
 end
