@@ -1,5 +1,5 @@
-require 'cli/basic_login_service'
-require 'cli/uaa_login_service'
+require 'cli/basic_login_strategy'
+require 'cli/uaa_login_strategy'
 require 'cli/client/uaa'
 require 'cli/terminal'
 
@@ -14,7 +14,7 @@ module Bosh::Cli::Command
     def login(username = nil, password = nil)
       target_required
 
-      login_service(director_info).login(target, username.to_s, password.to_s)
+      login_strategy(director_info).login(target, username.to_s, password.to_s)
     end
 
     # bosh logout
@@ -35,15 +35,15 @@ module Bosh::Cli::Command
       {}
     end
 
-    def login_service(director_info)
+    def login_strategy(director_info)
       terminal = Bosh::Cli::Terminal.new(HighLine.new, BoshExtensions)
       auth_info = director_info.fetch('user_authentication', {})
 
       if auth_info['type'] == 'uaa'
         uaa = Bosh::Cli::Client::Uaa.new(auth_info['options'])
-        Bosh::Cli::UaaLoginService.new(terminal, uaa, config, interactive?)
+        Bosh::Cli::UaaLoginStrategy.new(terminal, uaa, config, interactive?)
       else
-        Bosh::Cli::BasicLoginService.new(terminal, director, config, interactive?)
+        Bosh::Cli::BasicLoginStrategy.new(terminal, director, config, interactive?)
       end
     end
   end
