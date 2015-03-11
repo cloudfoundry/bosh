@@ -7,21 +7,24 @@ env | sort
 export TMPDIR=/mnt/ci-tmp
 mkdir -p $TMPDIR
 
-# Ensure that any modifications or stray files are removed
-git clean -df
-git checkout .
+(
+  cd "$(git rev-parse --show-toplevel)"
+  # Ensure that any modifications or stray files are removed
+  git clean -df
+  git checkout .
 
-# Cleanup any left over gems and bundler config
-rm -rf .bundle
-
-# BUILD_FLOW_GIT_COMMIT gets set in the bosh_build_flow jenkins jobs.
-# This ensures we check out the same git commit for all jenkins jobs in the flow.
-if [ -n "$BUILD_FLOW_GIT_COMMIT" ]; then
+  # BUILD_FLOW_GIT_COMMIT gets set in the bosh_build_flow jenkins jobs.
+  # This ensures we check out the same git commit for all jenkins jobs in the flow.
+  if [ -n "$BUILD_FLOW_GIT_COMMIT" ]; then
     git checkout $BUILD_FLOW_GIT_COMMIT
     git submodule update --init --recursive
-fi
+  fi
+)
 
 echo "--- Starting bundle install @ `date` ---"
+
+# Cleanup bundler config
+rm -rf .bundle
 
 # Reuse gems directory so that same job does not have to
 # spend so much redownloading and reinstalling same gems.
