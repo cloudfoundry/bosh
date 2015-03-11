@@ -212,27 +212,37 @@ module VSphereCloud
       result
     end
 
-    def find_disk(disk_cid, datastore, disk_path)
-      details = VimSdk::Vim::Host::DatastoreBrowser::FileInfo::Details.new
-      details.file_size = true
-
-      spec = VimSdk::Vim::Host::DatastoreBrowser::SearchSpec.new
-      spec.match_pattern = ["#{disk_cid}-flat.vmdk"]
-      spec.details = details
-
-      results = wait_for_task(datastore.mob.browser.search("[#{datastore.name}] #{disk_path}", spec)).file
-
-      return nil if results.empty?
-
-      disk_size_in_mb = results.first.file_size / (1024 * 1024)
-      if disk_size_in_mb != nil
-        return Resources::Disk.new(disk_cid, disk_size_in_mb, datastore, "[#{datastore.name}] #{disk_path}/#{disk_cid}.vmdk")
-      end
-    rescue VimSdk::SoapError
-      nil
+    def find_disk(disk_cid, datastore, disk_folder)
+      disk_path = "[#{datastore.name}] #{disk_folder}/#{disk_cid}.vmdk"
+      disk_size_in_mb = find_disk_size_using_browser(datastore, disk_cid, disk_folder)
+      disk_size_in_mb.nil? ? nil : Resources::Disk.new(disk_cid, disk_size_in_mb, datastore, disk_path)
     end
 
     private
+
+    def find_disk_size_using_browser(datastore, disk_cid, disk_folder)
+      search_spec_details = VimSdk::Vim::Host::DatastoreBrowser::FileInfo::Details.new
+      search_spec_details.file_type = true # actually return VmDiskInfos not FileInfos
+
+      query_details = VimSdk::Vim::Host::DatastoreBrowser::VmDiskQuery::Details.new
+      query_details.capacity_kb = true
+
+      query = VimSdk::Vim::Host::DatastoreBrowser::VmDiskQuery.new
+      query.details = query_details
+
+      search_spec = VimSdk::Vim::Host::DatastoreBrowser::SearchSpec.new
+      search_spec.details = search_spec_details
+      search_spec.match_pattern = ["#{disk_cid}.vmdk"]
+      search_spec.query = [query]
+
+      vm_disk_infos = wait_for_task(datastore.mob.browser.search("[#{datastore.name}] #{disk_folder}", search_spec)).file
+
+      return nil if vm_disk_infos.empty?
+
+      vm_disk_infos.first.capacity_kb / 1024
+    rescue VimSdk::SoapError
+      nil
+    end
 
     def find_perf_metric_names(mob, names)
       @lock.synchronize do
