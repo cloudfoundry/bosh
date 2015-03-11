@@ -2,5 +2,6 @@ source 'https://rubygems.org'
 
 gem 'bosh-core', path: '../bosh-core'
 gem 'bosh_aws_cpi', path: '../bosh_aws_cpi'
+gem 'fakefs', git: 'https://github.com/pivotal-cf-experimental/fakefs.git', ref: 'ebde3d6c'
 
 gemspec
