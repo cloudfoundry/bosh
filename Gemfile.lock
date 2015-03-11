@@ -257,6 +257,8 @@ GEM
       nokogiri (>= 1.4.4)
     backports (3.6.4)
     bcrypt-ruby (3.0.1)
+    blue-shell (0.3.0)
+      rspec
     bosh_vcloud_cpi (0.7.2)
       bosh_common
       bosh_cpi
@@ -530,6 +532,7 @@ PLATFORMS
 DEPENDENCIES
   agent_client!
   blobstore_client!
+  blue-shell
   bosh-core!
   bosh-dev!
   bosh-director!
