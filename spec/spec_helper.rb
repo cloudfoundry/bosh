@@ -10,6 +10,7 @@ require 'nats/client'
 require 'redis'
 require 'restclient'
 require 'bosh/director'
+require 'blue-shell'
 
 SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
 Dir.glob("#{SPEC_ROOT}/support/**/*.rb") { |f| require(f) }
@@ -26,4 +27,5 @@ end
 
 RSpec.configure do |c|
   c.filter_run :focus => true if ENV['FOCUS']
+  c.include BlueShell::Matchers
 end
