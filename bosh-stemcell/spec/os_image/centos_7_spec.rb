@@ -11,6 +11,7 @@ describe 'CentOS 7 OS image', os_image: true do
       cmake
       curl
       dhclient
+      e2fsprogs
       flex
       gdb
       glibc-static
@@ -22,6 +23,7 @@ describe 'CentOS 7 OS image', os_image: true do
       libxslt
       libxslt-devel
       lsof
+      NetworkManager
       nmap-ncat
       openssh-server
       openssl-devel
