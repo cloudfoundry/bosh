@@ -16,7 +16,6 @@ if [ "${stemcell_operating_system}" == "centos" ]; then
     }
   },
   "Infrastructure": {
-    "NetworkingType": "dhcp",
     "Settings": {
       "Sources": [
         {
@@ -52,8 +51,6 @@ else
     }
   },
   "Infrastructure": {
-    "NetworkingType": "dhcp",
-
     "Settings": {
       "Sources": [
         {
