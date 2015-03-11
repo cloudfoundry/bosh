@@ -3,7 +3,7 @@ require 'cli/errors'
 
 module Bosh
   module Cli
-    class UaaLoginService
+    class UaaLoginStrategy
       def initialize(terminal, uaa, config, interactive)
         @terminal = terminal
         @uaa = uaa
