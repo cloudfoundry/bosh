@@ -79,7 +79,9 @@ cloud:
         password:
 
 user_management:
-  provider: <%= user_management_provider %>
-  <% if user_management_options %>
-  options: <%= user_management_options %>
+  provider: <%= user_authentication %>
+  <% if user_authentication == 'uaa' %>
+  options:
+    key: 'uaa-secret-key'
+    url: <%= uaa_url %>
   <% end %>
