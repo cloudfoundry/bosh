@@ -26,7 +26,7 @@ echo "--- Starting bundle install @ `date` ---"
 # Reuse gems directory so that same job does not have to
 # spend so much redownloading and reinstalling same gems.
 # (Destination directory is created by bundler)
-bundle install --local --clean --path "/mnt/ci-tmp/$JOB_NAME/"
+bundle install --local --no-cache --clean --path "/mnt/ci-tmp/$JOB_NAME/"
 
 if [ $# -ne 0 ]; then
   echo "--- Starting rspec @ `date` ---"
