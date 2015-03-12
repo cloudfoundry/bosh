@@ -35,5 +35,4 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rspec-instafail'
   s.add_development_dependency 'sqlite3'
   s.add_development_dependency 'fakefs'
-  s.add_development_dependency 'pry'
 end
