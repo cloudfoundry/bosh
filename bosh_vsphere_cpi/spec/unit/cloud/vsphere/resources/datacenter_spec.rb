@@ -1,26 +1,28 @@
 require 'spec_helper'
 
 describe VSphereCloud::Resources::Datacenter do
-  subject(:datacenter) { described_class.new(config) }
-
-  let(:config) do
-    instance_double('VSphereCloud::Config',
+  subject(:datacenter) {
+    described_class.new({
       client: client,
-      datacenter_name: 'fake-datacenter-name',
-      datacenter_vm_folder: 'fake-vm-folder',
-      datacenter_template_folder: 'fake-template-folder',
-      datacenter_clusters: {'cluster1' => cluster_config1, 'cluster2' => cluster_config2},
-      datacenter_disk_path: 'fake-disk-path',
-      datacenter_datastore_pattern: ephemeral_pattern,
-      datacenter_persistent_datastore_pattern: persistent_pattern,
-      datacenter_use_sub_folder: false,
-      logger: double(:logger)
-    )
-  end
+      name: datacenter_name,
+      vm_folder: 'fake-vm-folder',
+      template_folder: 'fake-template-folder',
+      clusters: {'cluster1' => cluster_config1, 'cluster2' => cluster_config2},
+      disk_path: 'fake-disk-path',
+      ephemeral_pattern: ephemeral_pattern,
+      persistent_pattern: persistent_pattern,
+      use_sub_folder: datacenter_use_sub_folder,
+      logger: logger,
+      mem_overcommit: 0.5,
+    })
+  }
+  let(:logger) { double(:logger) }
   let(:client) { instance_double('VSphereCloud::Client') }
 
   let(:vm_folder) { instance_double('VSphereCloud::Resources::Folder') }
   let(:vm_subfolder) { instance_double('VSphereCloud::Resources::Folder') }
+
+  let(:datacenter_use_sub_folder) { false }
 
   let(:template_folder) { instance_double('VSphereCloud::Resources::Folder') }
   let(:template_subfolder) { instance_double('VSphereCloud::Resources::Folder') }
@@ -34,19 +36,20 @@ describe VSphereCloud::Resources::Datacenter do
   let(:cloud_searcher) { instance_double('VSphereCloud::CloudSearcher') }
   let(:datastore_properties) { {} }
 
+  let(:datacenter_name) { 'fake-datacenter-name' }
   before do
-    allow(client).to receive(:find_by_inventory_path).with('fake-datacenter-name').and_return(datacenter_mob)
+    allow(client).to receive(:find_by_inventory_path).with(datacenter_name).and_return(datacenter_mob)
     allow(client).to receive(:cloud_searcher).and_return(cloud_searcher)
 
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
-      'fake-vm-folder', config).and_return(vm_folder)
+      'fake-vm-folder', logger, client, datacenter_name).and_return(vm_folder)
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
-      'fake-vm-folder/fake-uuid', config).and_return(vm_subfolder)
+      'fake-vm-folder/fake-uuid', logger, client, datacenter_name).and_return(vm_subfolder)
 
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
-      'fake-template-folder', config).and_return(template_folder)
+      'fake-template-folder', logger, client, datacenter_name).and_return(template_folder)
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
-      'fake-template-folder/fake-uuid', config).and_return(template_subfolder)
+      'fake-template-folder/fake-uuid', logger, client, datacenter_name).and_return(template_subfolder)
 
     allow(cloud_searcher).to receive(:get_managed_objects).with(
                        VimSdk::Vim::ClusterComputeResource,
@@ -84,7 +87,7 @@ describe VSphereCloud::Resources::Datacenter do
 
   describe '#vm_folder' do
     context 'when datacenter does not use subfolders' do
-      before { allow(config).to receive(:datacenter_use_sub_folder).and_return(false) }
+      let(:datacenter_use_sub_folder) { false }
 
       it "returns a folder object using the datacenter's vm folder" do
         expect(datacenter.vm_folder).to eq(vm_folder)
@@ -92,7 +95,7 @@ describe VSphereCloud::Resources::Datacenter do
     end
 
     context 'when datacenter uses subfolders' do
-      before { allow(config).to receive(:datacenter_use_sub_folder).and_return(true) }
+      let(:datacenter_use_sub_folder) { true }
 
       it 'returns multi-tenant folder' do
         expect(datacenter.vm_folder).to eq(vm_subfolder)
@@ -108,7 +111,7 @@ describe VSphereCloud::Resources::Datacenter do
 
   describe '#template_folder' do
     context 'when datacenter does not use subfolders' do
-      before { allow(config).to receive(:datacenter_use_sub_folder).and_return(false) }
+      let(:datacenter_use_sub_folder) { false }
 
       it "returns a folder object using the datacenter's vm folder" do
         expect(datacenter.template_folder).to eq(template_folder)
@@ -116,7 +119,7 @@ describe VSphereCloud::Resources::Datacenter do
     end
 
     context 'when datacenter uses subfolders' do
-      before { allow(config).to receive(:datacenter_use_sub_folder).and_return(true) }
+      let(:datacenter_use_sub_folder) { true }
 
       it 'returns subfolder' do
         expect(datacenter.template_folder).to eq(template_subfolder)

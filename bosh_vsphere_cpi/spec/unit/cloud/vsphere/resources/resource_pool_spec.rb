@@ -1,8 +1,7 @@
 require 'spec_helper'
 
 describe VSphereCloud::Resources::ResourcePool do
-  subject { VSphereCloud::Resources::ResourcePool.new(cloud_config, cluster_config, root_resource_pool_mob) }
-  let(:cloud_config) { instance_double('VSphereCloud::Config', logger: fake_logger, client: fake_client) }
+  subject { VSphereCloud::Resources::ResourcePool.new(fake_client, fake_logger, cluster_config, root_resource_pool_mob) }
   let(:fake_logger) { instance_double('Logger', debug: nil) }
   let(:fake_client) { instance_double('VSphereCloud::Client', cloud_searcher: cloud_searcher) }
   let(:cloud_searcher) { instance_double('VSphereCloud::CloudSearcher') }

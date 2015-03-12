@@ -39,7 +39,19 @@ module VSphereCloud
       @logger = config.logger
       @client = config.client
       @cloud_searcher = CloudSearcher.new(@client.service_content, @logger)
-      @datacenter = Resources::Datacenter.new(config)
+      @datacenter = Resources::Datacenter.new({
+        client: @client,
+        use_sub_folder: @config.datacenter_use_sub_folder,
+        vm_folder: @config.datacenter_vm_folder,
+        template_folder: @config.datacenter_template_folder,
+        name: @config.datacenter_name,
+        disk_path: @config.datacenter_disk_path,
+        ephemeral_pattern: @config.datacenter_datastore_pattern,
+        persistent_pattern: @config.datacenter_persistent_datastore_pattern,
+        clusters: @config.datacenter_clusters,
+        logger: @config.logger,
+        mem_overcommit: @config.mem_overcommit
+      })
 
       @resources = Resources.new(@datacenter, config)
       @file_provider = FileProvider.new(config.rest_client, config.vcenter_host)

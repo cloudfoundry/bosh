@@ -30,17 +30,18 @@ module VSphereCloud
       # @param [ClusterConfig] config cluster configuration as specified by the
       #   operator.
       # @param [Hash] properties prefetched vSphere properties for the cluster.
-      def initialize(datacenter, cloud_config, cluster_config, properties)
+      def initialize(datacenter, datacenter_datastore_pattern, datacenter_persistent_datastore_pattern, mem_overcommit, cluster_config, properties, logger, client)
         @datacenter = datacenter
-        @logger = cloud_config.logger
-        @client = cloud_config.client
+        @logger = logger
+        @client = client
         @properties = properties
 
         @config = cluster_config
-        @cloud_config = cloud_config
         @mob = properties[:obj]
-        @resource_pool = ResourcePool.new(cloud_config, cluster_config, properties["resourcePool"])
-
+        @resource_pool = ResourcePool.new(@client, @logger, cluster_config, properties["resourcePool"])
+        @datacenter_datastore_pattern = datacenter_datastore_pattern
+        @datacenter_persistent_datastore_pattern = datacenter_persistent_datastore_pattern
+        @mem_overcommit = mem_overcommit
         @allocated_after_sync = 0
       end
 
@@ -56,7 +57,7 @@ module VSphereCloud
       # @return [Integer] amount of free memory in the cluster
       def free_memory
         synced_free_memory -
-          (@allocated_after_sync * cloud_config.mem_overcommit).to_i
+          (@allocated_after_sync * @mem_overcommit).to_i
       end
 
       def total_free_ephemeral_disk_in_mb
@@ -104,16 +105,16 @@ module VSphereCloud
       end
 
       def ephemeral_datastores
-        @ephemeral_datastores ||= select_datastores(cloud_config.datacenter_datastore_pattern)
+        @ephemeral_datastores ||= select_datastores(@datacenter_datastore_pattern)
       end
 
       def persistent_datastores
-        @persistent_datastores ||= select_datastores(cloud_config.datacenter_persistent_datastore_pattern)
+        @persistent_datastores ||= select_datastores(@datacenter_persistent_datastore_pattern)
       end
 
       private
 
-      attr_reader :cloud_config, :config, :client, :properties, :logger
+      attr_reader :config, :client, :properties, :logger
 
       def select_datastores(pattern)
         @datastores ||= Datastore.build_from_client(@client, properties['datastore'])

@@ -2,20 +2,18 @@ require 'spec_helper'
 
 class VSphereCloud::Resources
   describe Cluster do
-    subject(:cluster) { described_class.new(datacenter, cloud_config, cluster_config, properties) }
+    subject(:cluster) { VSphereCloud::Resources::Cluster.new(
+      datacenter,
+      /eph/,
+      /persist/,
+      1.0,
+      cluster_config,
+      properties,
+      logger,
+      client) }
 
     let(:datacenter) { instance_double('VSphereCloud::Resources::Datacenter') }
 
-    let(:cloud_config) do
-      instance_double(
-        'VSphereCloud::Config',
-        datacenter_datastore_pattern: /eph/,
-        datacenter_persistent_datastore_pattern: /persist/,
-        mem_overcommit: 1.0,
-        logger: logger,
-        client: client,
-      )
-    end
     let(:logger) { instance_double('Logger', debug: nil, warn: nil) }
     let(:client) { instance_double('VSphereCloud::Client', cloud_searcher: cloud_searcher) }
     let(:cloud_searcher) { instance_double('VSphereCloud::CloudSearcher') }
@@ -75,7 +73,7 @@ class VSphereCloud::Resources
 
     before do
       allow(ResourcePool).to receive(:new)
-                             .with(cloud_config, cluster_config, fake_resource_pool_mob)
+                             .with(client, logger, cluster_config, fake_resource_pool_mob)
                              .and_return(fake_resource_pool)
     end
 
@@ -325,7 +323,7 @@ class VSphereCloud::Resources
     describe '#resource_pool' do
       it 'returns a resource pool object backed by the resource pool in the cloud properties' do
         expect(cluster.resource_pool).to eq(fake_resource_pool)
-        expect(ResourcePool).to have_received(:new).with(cloud_config, cluster_config, fake_resource_pool_mob)
+        expect(ResourcePool).to have_received(:new).with(client, logger, cluster_config, fake_resource_pool_mob)
       end
     end
 
