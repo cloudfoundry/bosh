@@ -71,13 +71,18 @@ module Bosh::Stemcell
     describe '#agent_stages' do
       let(:agent) { Agent.for('go') }
 
+      let(:agent_stages) do
+        [
+          :bosh_ruby,
+          :bosh_go_agent,
+          :bosh_micro_go,
+          :aws_cli,
+          :logrotate_config,
+        ]
+      end
+
       it 'returns the correct stages' do
-        expect(stage_collection.agent_stages).to eq([
-              :bosh_go_agent,
-              :bosh_micro_go,
-              :aws_cli,
-              :logrotate_config,
-            ])
+        expect(stage_collection.agent_stages).to eq(agent_stages)
       end
     end
 
