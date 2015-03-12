@@ -1,2 +1,3 @@
 ---
 BUNDLE_CACHE_PATH: "../vendor/cache"
+BUNDLE_FROZEN: 'true'
