@@ -1,5 +1,6 @@
 module Bosh::Stemcell
   module OperatingSystem
+
     def self.for(operating_system_name, operating_system_version = nil)
       case operating_system_name
         when 'centos' then Centos.new(operating_system_version)
@@ -13,7 +14,7 @@ module Bosh::Stemcell
 
       def initialize(options = {})
         @name = options.fetch(:name)
-        @version = options.fetch(:version, nil)
+        @version = options.fetch(:version)
       end
 
       def ==(other)

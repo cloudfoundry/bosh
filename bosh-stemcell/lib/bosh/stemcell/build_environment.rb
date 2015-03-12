@@ -118,11 +118,7 @@ module Bosh::Stemcell
     end
 
     def operating_system_spec_name
-      spec_name = operating_system.name
-      if operating_system.version
-        spec_name = "#{spec_name}_#{operating_system.version}"
-      end
-      spec_name
+      "#{operating_system.name}_#{operating_system.version}"
     end
 
     def prepare_build_path

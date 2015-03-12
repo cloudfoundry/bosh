@@ -163,23 +163,8 @@ module Bosh::Stemcell
             'OS_IMAGE=/some/os_image.tgz',
             'bundle exec rspec -fd',
             "spec/os_image/common_spec.rb",
+            "spec/os_image/#{operating_system.name}_common_spec.rb",
             "spec/os_image/#{operating_system.name}_#{operating_system.version}_spec.rb",
-          ].join(' ')
-
-          expect(subject.os_image_rspec_command).to eq(expected_rspec_command)
-        end
-      end
-
-      context 'when operating system does not have version' do
-        before { allow(operating_system).to receive(:version).and_return(nil) }
-
-        it 'returns the correct command' do
-          expected_rspec_command = [
-            "cd #{stemcell_specs_dir};",
-            'OS_IMAGE=/some/os_image.tgz',
-            'bundle exec rspec -fd',
-            "spec/os_image/common_spec.rb",
-            "spec/os_image/#{operating_system.name}_spec.rb",
           ].join(' ')
 
           expect(subject.os_image_rspec_command).to eq(expected_rspec_command)
@@ -188,38 +173,19 @@ module Bosh::Stemcell
     end
 
     describe '#stemcell_rspec_command' do
-      context 'when operation system has version' do
-        before { allow(operating_system).to receive(:version).and_return('fake-version') }
+      before { allow(operating_system).to receive(:version).and_return('fake-version') }
 
-        it 'returns the correct command' do
-          expected_rspec_command = [
-            "cd #{stemcell_specs_dir};",
-            "STEMCELL_IMAGE=#{File.join(work_path, 'fake-root-disk-image.raw')}",
-            'bundle exec rspec -fd',
-            "spec/stemcells/#{operating_system.name}_#{operating_system.version}_spec.rb",
-            "spec/stemcells/#{agent.name}_agent_spec.rb",
-            "spec/stemcells/#{infrastructure.name}_spec.rb",
-          ].join(' ')
+      it 'returns the correct command' do
+        expected_rspec_command = [
+          "cd #{stemcell_specs_dir};",
+          "STEMCELL_IMAGE=#{File.join(work_path, 'fake-root-disk-image.raw')}",
+          'bundle exec rspec -fd',
+          "spec/stemcells/#{operating_system.name}_#{operating_system.version}_spec.rb",
+          "spec/stemcells/#{agent.name}_agent_spec.rb",
+          "spec/stemcells/#{infrastructure.name}_spec.rb",
+        ].join(' ')
 
-          expect(subject.stemcell_rspec_command).to eq(expected_rspec_command)
-        end
-      end
-
-      context 'when operation system does not have version' do
-        before { allow(operating_system).to receive(:version).and_return(nil) }
-
-        it 'returns the correct command' do
-          expected_rspec_command = [
-            "cd #{stemcell_specs_dir};",
-            "STEMCELL_IMAGE=#{File.join(work_path, 'fake-root-disk-image.raw')}",
-            'bundle exec rspec -fd',
-            "spec/stemcells/#{operating_system.name}_spec.rb",
-            "spec/stemcells/#{agent.name}_agent_spec.rb",
-            "spec/stemcells/#{infrastructure.name}_spec.rb",
-          ].join(' ')
-
-          expect(subject.stemcell_rspec_command).to eq(expected_rspec_command)
-        end
+        expect(subject.stemcell_rspec_command).to eq(expected_rspec_command)
       end
     end
 
