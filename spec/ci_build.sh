@@ -23,9 +23,6 @@ mkdir -p $TMPDIR
 
 echo "--- Starting bundle install @ `date` ---"
 
-# Cleanup bundler config
-rm -rf .bundle
-
 # Reuse gems directory so that same job does not have to
 # spend so much redownloading and reinstalling same gems.
 # (Destination directory is created by bundler)
