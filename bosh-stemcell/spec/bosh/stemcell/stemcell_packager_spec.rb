@@ -8,7 +8,15 @@ require 'yaml'
 
 describe Bosh::Stemcell::StemcellPackager do
   subject(:packager) do
-    Bosh::Stemcell::StemcellPackager.new(definition, version, work_dir, tarball_dir, runner, collection)
+    Bosh::Stemcell::StemcellPackager.new(
+        definition: definition,
+        version: version,
+        work_path: work_dir,
+        tarball_path: tarball_dir,
+        disk_size: disk_size,
+        runner: runner,
+        collection: collection,
+    )
   end
 
   class FakeInfrastructure < Bosh::Stemcell::Infrastructure::Base
@@ -56,6 +64,7 @@ describe Bosh::Stemcell::StemcellPackager do
   let(:tmp_dir) { Dir.mktmpdir }
   let(:work_dir) { File.join(tmp_dir, 'stemcell-work').tap {|f| FileUtils.mkdir_p(f)} }
   let(:tarball_dir) { File.join(tmp_dir, 'tarballs').tap {|f| FileUtils.mkdir_p(f)} }
+  let(:disk_size) { 4096 }
 
   before do
     FileUtils.mkdir_p(File.join(work_dir, 'stemcell'))
@@ -92,6 +101,7 @@ describe Bosh::Stemcell::StemcellPackager do
           'version' => '1234',
           'infrastructure' => 'fake_infra',
           'hypervisor' => 'fake_hypervisor',
+          'disk' => 4096,
           'disk_format' => 'raw',
           'container_format' => 'bare',
           'os_type' => 'linux',

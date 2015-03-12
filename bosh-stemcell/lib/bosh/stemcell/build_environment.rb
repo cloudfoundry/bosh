@@ -87,6 +87,10 @@ module Bosh::Stemcell
       work_path
     end
 
+    def stemcell_disk_size
+      stemcell_builder_options.image_create_disk_size
+    end
+
     def command_env
       "env #{hash_as_bash_env(proxy_settings_from_environment)}"
     end
