@@ -41,7 +41,7 @@ describe 'cli: compiled_packages', type: :integration do
 
       # reset the sandbox/director to delete previously compiled packages
       prepare_sandbox
-      reset_sandbox('resetting to clear compile packages')
+      reset_sandbox
 
       # re-upload the provided release tarball
       target_and_login

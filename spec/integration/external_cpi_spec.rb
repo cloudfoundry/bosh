@@ -1,19 +1,10 @@
 require 'spec_helper'
 
 describe 'external CPIs', type: :integration do
-  with_reset_sandbox_before_each
+  with_reset_sandbox_before_each(external_cpi_enabled: true)
 
   describe 'director configured to use external dummy CPI' do
-    before do
-      current_sandbox.external_cpi_enabled = true
-      current_sandbox.restart_director
-      deploy_simple
-    end
-
-    after do
-      current_sandbox.external_cpi_enabled = false
-      current_sandbox.restart_director
-    end
+    before { deploy_simple }
 
     it 'deploys using the external CPI' do
       deploy_results = bosh_runner.run('task last --debug')
