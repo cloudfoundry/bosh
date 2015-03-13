@@ -31,6 +31,7 @@ namespace :spec do
       options[:count] = num_processes if num_processes
       options[:group] = ENV['GROUP'] if ENV['GROUP']
 
+      puts 'Launching parallel execution of spec/integration'
       run_in_parallel('spec/integration', options)
     end
 

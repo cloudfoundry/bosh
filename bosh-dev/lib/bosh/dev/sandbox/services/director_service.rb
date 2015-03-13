@@ -13,12 +13,11 @@ module Bosh::Dev::Sandbox
 
     DIRECTOR_PATH = File.expand_path('bosh-director', REPO_ROOT)
 
-    def initialize(port_provider, base_log_path, sandbox_root, logger)
+    def initialize(port_provider, base_log_path, director_tmp_path, director_config, logger)
       @port_provider = port_provider
       @logger = logger
-
-      @director_tmp_path = File.join(sandbox_root, 'boshdir')
-      @director_config = File.join(sandbox_root, DIRECTOR_CONFIG)
+      @director_tmp_path = director_tmp_path
+      @director_config = director_config
 
       @process = Service.new(
         %W[bosh-director -c #{@director_config}],
@@ -36,18 +35,7 @@ module Bosh::Dev::Sandbox
         )
       end
 
-      @scheduler_process = Service.new(
-        %W[bosh-director-scheduler -c #{@director_config}],
-        {output: "#{base_log_path}.scheduler.out"},
-        @logger,
-      )
-
       @database_migrator = DatabaseMigrator.new(DIRECTOR_PATH, @director_config, @logger)
-    end
-
-    def restart
-      @process.stop
-      @process.start
     end
 
     def start(config)
@@ -61,8 +49,6 @@ module Bosh::Dev::Sandbox
 
       start_workers
 
-      start_scheduler_process
-
       begin
         # CI does not have enough time to start bosh-director
         # for some parallel tests; increasing to 60 secs (= 300 tries).
@@ -73,16 +59,7 @@ module Bosh::Dev::Sandbox
       end
     end
 
-    def start_scheduler_process
-      @scheduler_process.start
-    end
-
-    def stop_scheduler_process
-      @scheduler_process.stop
-    end
-
     def stop
-      stop_scheduler_process
       stop_workers
       @process.stop
     end

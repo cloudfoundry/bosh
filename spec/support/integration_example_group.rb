@@ -173,11 +173,11 @@ module IntegrationSandboxHelpers
   end
 
   def reconfigure_sandbox(options)
-    current_sandbox.reconfigure_sandbox(options)
+    current_sandbox.reconfigure(options)
   end
 
-  def reset_sandbox(desc)
-    current_sandbox.reset(desc)
+  def reset_sandbox
+    current_sandbox.reset
     FileUtils.rm_rf(current_sandbox.cloud_storage_dir)
   end
 
@@ -243,7 +243,7 @@ module IntegrationSandboxBeforeHelpers
       if !sandbox_started?
         start_sandbox
       elsif !example.metadata[:no_reset]
-        reset_sandbox(example ? example.metadata[:description] : '')
+        reset_sandbox
       end
     end
   end
@@ -252,11 +252,10 @@ module IntegrationSandboxBeforeHelpers
     # `example` is not available in before(:all)
     before(:all) do
       prepare_sandbox
-      set_up_sandbox_user_auth
       if !sandbox_started?
         start_sandbox
       else
-        reset_sandbox('')
+        reset_sandbox
       end
     end
   end

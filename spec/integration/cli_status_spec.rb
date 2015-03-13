@@ -24,7 +24,7 @@ describe 'cli: status', type: :integration do
   it 'returns just uuid when `status --uuid` is called' do
     bosh_runner.run("target #{current_sandbox.director_url}")
     expect_output('status --uuid', <<-OUT)
-#{Bosh::Dev::Sandbox::Main::DIRECTOR_UUID}
+#{Bosh::Dev::Sandbox::DirectorService::DIRECTOR_UUID}
     OUT
   end
 end
