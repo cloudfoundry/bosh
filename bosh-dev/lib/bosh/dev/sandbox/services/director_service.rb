@@ -13,8 +13,8 @@ module Bosh::Dev::Sandbox
 
     DIRECTOR_PATH = File.expand_path('bosh-director', REPO_ROOT)
 
-    def initialize(port_provider, base_log_path, director_tmp_path, director_config, logger)
-      @port_provider = port_provider
+    def initialize(director_port, redis_port, base_log_path, director_tmp_path, director_config, logger)
+      @redis_port = redis_port
       @logger = logger
       @director_tmp_path = director_tmp_path
       @director_config = director_config
@@ -25,7 +25,7 @@ module Bosh::Dev::Sandbox
         @logger,
       )
 
-      @socket_connector = SocketConnector.new('director', 'localhost', @port_provider.get_port(:director_ruby), @logger)
+      @socket_connector = SocketConnector.new('director', 'localhost', director_port, @logger)
 
       @worker_processes = 3.times.map do |index|
         Service.new(
@@ -87,7 +87,7 @@ module Bosh::Dev::Sandbox
       sleep 0.1 until resque_is_done?
       @logger.debug('Resque queue drained')
 
-      Redis.new(host: 'localhost', port: @port_provider.get_port(:redis)).flushdb
+      Redis.new(host: 'localhost', port: @redis_port).flushdb
 
       # wait for resque workers in parallel for fastness
       @worker_processes.map { |worker_process| Thread.new { worker_process.stop } }.each(&:join)
