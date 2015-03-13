@@ -156,7 +156,7 @@ describe 'upload release', type: :integration do
 
     context 'when the release is remote' do
       let(:file_server) { Bosh::Spec::LocalFileServer.new(spec_asset(''), file_server_port, logger) }
-      let(:file_server_port) { current_sandbox.port_provider.get_port('releases-repo') }
+      let(:file_server_port) { current_sandbox.port_provider.get_port(:releases_repo) }
 
       before { file_server.start }
       after { file_server.stop }

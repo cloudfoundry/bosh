@@ -358,14 +358,21 @@ module Bosh::Dev::Sandbox
     end
 
     def setup_uaa
+      uaa_ports = {
+        'cargo.servlet.port' => uaa_port,
+        'cargo.tomcat.ajp.port' => @port_provider.get_port(:uaa_tomcat),
+      }
+
+      arguments = uaa_ports.map { |pair| "-D#{pair.join('=')}" }
+
       @uaa_process = Service.new(
-        %W[./gradlew run],
+        ['./gradlew', arguments, 'run'].flatten,
         {output: "#{base_log_path}.uaa.out",
-         env: {'CARGO_PORT' => "#{uaa_port}"},
          working_dir: UAA_ASSETS_DIR
         },
         @logger,
       )
+
       @uaa_socket_connector = SocketConnector.new('uaa', 'localhost', uaa_port, @logger)
     end
 
