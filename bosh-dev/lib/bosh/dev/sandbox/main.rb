@@ -87,7 +87,7 @@ module Bosh::Dev::Sandbox
       setup_nginx
       director_config = sandbox_path(DirectorService::DIRECTOR_CONFIG)
       director_tmp_path = sandbox_path('boshdir')
-      @director_service = DirectorService.new(@port_provider, base_log_path, director_tmp_path, director_config, @logger)
+      @director_service = DirectorService.new(director_ruby_port, redis_port, base_log_path, director_tmp_path, director_config, @logger)
       setup_heath_monitor
 
       @scheduler_process = Service.new(
