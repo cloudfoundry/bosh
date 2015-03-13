@@ -86,7 +86,7 @@ describe 'cli: stemcell', type: :integration do
 
     context 'when the stemcell is remote' do
       let(:file_server) { Bosh::Spec::LocalFileServer.new(spec_asset(''), file_server_port, logger) }
-      let(:file_server_port) { current_sandbox.port_provider.get_port('stemcell-repo') }
+      let(:file_server_port) { current_sandbox.port_provider.get_port(:stemcell_repo) }
 
       before { file_server.start }
       after { file_server.stop }
