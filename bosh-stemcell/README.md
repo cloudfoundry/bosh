@@ -91,3 +91,23 @@ AWS stemcells can be shipped in light format which includes a reference to a pub
       export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
       bundle exec rake stemcell:build_light[/tmp/bosh-stemcell.tgz,hvm]
     ' remote
+
+### When things go sideways
+
+If you find yourself debugging any of the above processes, here is what you need to know:
+
+1. Most of the action happens in Bash scripts, which are referred to as _stages_, and can
+   be found in `stemcell_builder/stages/<stage_name>/apply.sh`.
+2. You should make all changes on your local machine, and sync them over to the AWS stemcell
+   building machine using `vagrant provision remote` as explained earlier on this page.
+3. While debugging a particular stage that is failing, you can resume the process from that
+   stage by adding `resume_from=<stage_name>` to the end of your `bundle exec rake` command.
+   When a stage's `apply.sh` fails, you should see a message of the form
+   `Can't find stage '<stage>' to resume from. Aborting.` so you know which stage failed and
+   where you can resume from after fixing the problem.
+
+   For example:
+
+   ```
+   bundle exec rake stemcell:build_os_image[ubuntu,trusty,/tmp/ubuntu_base_image.tgz] resume_from=rsyslog_build
+   ```
