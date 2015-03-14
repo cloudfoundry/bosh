@@ -291,6 +291,7 @@ module Bosh::Dev::Sandbox
       FileUtils.rm_rf(blobstore_storage_dir)
       FileUtils.mkdir_p(blobstore_storage_dir)
 
+      start_uaa if @user_authentication == 'uaa'
       @director_service.start(director_config)
     end
 
