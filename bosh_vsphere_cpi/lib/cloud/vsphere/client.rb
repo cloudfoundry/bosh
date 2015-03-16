@@ -19,7 +19,7 @@ module VSphereCloud
 
       @metrics_cache  = {}
       @lock = Mutex.new
-      @logger = Bosh::Clouds::Config.logger
+      @logger = options.fetch(:logger) { Bosh::Clouds::Config.logger }
 
       @cloud_searcher = CloudSearcher.new(service_content, @logger)
     end
