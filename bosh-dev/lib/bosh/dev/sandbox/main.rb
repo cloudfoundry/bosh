@@ -274,7 +274,7 @@ module Bosh::Dev::Sandbox
       @uaa_process.start
 
       begin
-        @uaa_socket_connector.try_to_connect(300)
+        @uaa_socket_connector.try_to_connect(1000)
       rescue
         output_service_log(@uaa_process)
         raise
