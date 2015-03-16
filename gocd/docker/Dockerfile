@@ -33,6 +33,7 @@ RUN apt-get install -y libsqlite3-dev; apt-get clean
 RUN apt-get install -y redis-server; apt-get clean
 RUN apt-get install -y mercurial; apt-get clean
 RUN apt-get install -y lsof; apt-get clean
+RUN apt-get install -y unzip; apt-get clean
 
 ADD install-ruby.sh /tmp/install-ruby.sh
 RUN chmod a+x /tmp/install-ruby.sh
@@ -41,6 +42,12 @@ RUN cd /tmp; ./install-ruby.sh; rm install-ruby.sh
 ADD install-bundler.sh /tmp/install-bundler.sh
 RUN chmod a+x /tmp/install-bundler.sh
 RUN cd /tmp; ./install-bundler.sh; rm install-bundler.sh
+
+ADD install-java.sh /tmp/install-java.sh
+RUN chmod a+x /tmp/install-java.sh
+RUN cd /tmp; ./install-java.sh; rm install-java.sh
+ENV JAVA_HOME /usr/lib/jvm/zulu1.8.0_25-8.4.0.1-x86lx64
+ENV PATH $JAVA_HOME/bin:$PATH
 
 # create ubuntu user with no password
 RUN useradd -mU ubuntu -s /bin/bash
