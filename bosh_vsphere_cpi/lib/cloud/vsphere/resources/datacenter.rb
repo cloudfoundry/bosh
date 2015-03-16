@@ -1,3 +1,5 @@
+require 'cloud/vsphere/resources/cluster'
+
 module VSphereCloud
   class Resources
     class Datacenter

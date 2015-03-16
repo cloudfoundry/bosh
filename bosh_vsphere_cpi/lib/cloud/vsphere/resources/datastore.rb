@@ -1,3 +1,5 @@
+require 'cloud/vsphere/resources'
+
 module VSphereCloud
   class Resources
     class Datastore

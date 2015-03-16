@@ -1,3 +1,5 @@
+require 'cloud/vsphere/resources/resource_pool'
+
 module VSphereCloud
   class Resources
     class Cluster
