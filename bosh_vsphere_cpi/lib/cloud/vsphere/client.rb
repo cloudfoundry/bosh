@@ -100,6 +100,7 @@ module VSphereCloud
     end
 
     def move_disk(source_datacenter, source_path, dest_datacenter, dest_path)
+      create_parent_folder(dest_datacenter, dest_path)
       tasks = []
       base_source_path = source_path.chomp(File.extname(source_path))
       base_dest_path = source_path.chomp(File.extname(dest_path))
@@ -222,6 +223,8 @@ module VSphereCloud
     def create_disk(datacenter, datastore, disk_cid, disk_folder, disk_size_in_mb)
       disk_path = "[#{datastore.name}] #{disk_folder}/#{disk_cid}.vmdk"
 
+      create_parent_folder(datacenter, disk_path)
+
       disk_spec = VimSdk::Vim::VirtualDiskManager::FileBackedVirtualDiskSpec.new
       disk_spec.disk_type = 'preallocated'
       disk_spec.capacity_kb = disk_size_in_mb * 1024
@@ -238,6 +241,11 @@ module VSphereCloud
     end
 
     private
+
+    def create_parent_folder(datacenter, disk_path)
+      destination_folder = File.dirname(disk_path)
+      create_datastore_folder(destination_folder, datacenter.mob)
+    end
 
     def find_disk_size_using_browser(datastore, disk_cid, disk_folder)
       search_spec_details = VimSdk::Vim::Host::DatastoreBrowser::FileInfo::Details.new

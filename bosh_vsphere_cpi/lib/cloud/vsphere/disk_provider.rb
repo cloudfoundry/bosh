@@ -15,11 +15,8 @@ module VSphereCloud
     def create(disk_size_in_mb)
       datastore = find_datastore(disk_size_in_mb)
       disk_cid = "disk-#{SecureRandom.uuid}"
-      disk_path = path(datastore, disk_cid)
-
       @logger.debug("Creating disk '#{disk_cid}' in datastore '#{datastore.name}'")
 
-      create_parent_folder(disk_path)
       @client.create_disk(@datacenter, datastore, disk_cid, @disk_path, disk_size_in_mb)
     end
 
@@ -39,7 +36,6 @@ module VSphereCloud
 
       destination_path = path(destination_datastore, disk_cid)
       @logger.info("Moving #{disk.path} to #{destination_path}")
-      create_parent_folder(destination_path)
       @client.move_disk(datacenter_name, disk.path, datacenter_name, destination_path) #TODO: return the new disk
       @logger.info('Moved disk successfully')
       Resources::Disk.new(disk_cid, disk.size_in_mb, destination_datastore, destination_path)
@@ -69,11 +65,6 @@ module VSphereCloud
       end
 
       datastore
-    end
-
-    def create_parent_folder(disk_path)
-      destination_folder = File.dirname(disk_path)
-      @client.create_datastore_folder(destination_folder, @datacenter.mob)
     end
   end
 end
