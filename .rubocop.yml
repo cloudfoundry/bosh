@@ -15,7 +15,8 @@ AllCops:
     - bosh_vsphere_cpi/**/*
     - bosh-monitor/**/*
     - bosh-release/**/*
-    - bosh-stemcell/spec/stemcells/centos_spec.rb
+    - bosh-stemcell/spec/stemcells/centos_6.5_spec.rb
+    - bosh-stemcell/spec/stemcells/centos_7_spec.rb
     - release/**/*
     - simple_blobstore_server/**/*
     - spec/**/*

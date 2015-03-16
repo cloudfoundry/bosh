@@ -4,6 +4,12 @@
 
 set -e
 
+if ! which grub
+then
+  echo "Grub not installed; skipping grub config"
+  exit 0
+fi
+
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
