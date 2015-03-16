@@ -24,6 +24,6 @@ pushd nginx-1.4.5
     --with-http_dav_module \
     --add-module=../nginx-upload-module-2.2
 
-  make -j
-  make -j install
+  make
+  make install
 popd
