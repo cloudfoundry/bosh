@@ -1,5 +1,6 @@
 require 'ruby_vim_sdk'
 require 'cloud/vsphere/cloud_searcher'
+require 'cloud/vsphere/resources/disk'
 require 'cloud/vsphere/soap_stub'
 
 module VSphereCloud
@@ -216,6 +217,24 @@ module VSphereCloud
       disk_path = "[#{datastore.name}] #{disk_folder}/#{disk_cid}.vmdk"
       disk_size_in_mb = find_disk_size_using_browser(datastore, disk_cid, disk_folder)
       disk_size_in_mb.nil? ? nil : Resources::Disk.new(disk_cid, disk_size_in_mb, datastore, disk_path)
+    end
+
+    def create_disk(datacenter, datastore, disk_cid, disk_folder, disk_size_in_mb)
+      disk_path = "[#{datastore.name}] #{disk_folder}/#{disk_cid}.vmdk"
+
+      disk_spec = VimSdk::Vim::VirtualDiskManager::FileBackedVirtualDiskSpec.new
+      disk_spec.disk_type = 'preallocated'
+      disk_spec.capacity_kb = disk_size_in_mb * 1024
+      disk_spec.adapter_type = 'lsiLogic'
+
+      task = service_content.virtual_disk_manager.create_virtual_disk(
+        disk_path,
+        datacenter.mob,
+        disk_spec
+      )
+      wait_for_task(task)
+
+      Resources::Disk.new(disk_cid, disk_size_in_mb, datastore, disk_path)
     end
 
     private

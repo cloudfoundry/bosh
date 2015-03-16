@@ -15,24 +15,12 @@ module VSphereCloud
     def create(disk_size_in_mb)
       datastore = find_datastore(disk_size_in_mb)
       disk_cid = "disk-#{SecureRandom.uuid}"
+      disk_path = path(datastore, disk_cid)
+
       @logger.debug("Creating disk '#{disk_cid}' in datastore '#{datastore.name}'")
 
-      disk_spec = VimSdk::Vim::VirtualDiskManager::FileBackedVirtualDiskSpec.new
-      disk_spec.disk_type = 'preallocated'
-      disk_spec.capacity_kb = disk_size_in_mb * 1024
-      disk_spec.adapter_type = 'lsiLogic'
-
-      disk_path = path(datastore, disk_cid)
       create_parent_folder(disk_path)
-
-      task = @virtual_disk_manager.create_virtual_disk(
-        disk_path,
-        @datacenter.mob,
-        disk_spec
-      )
-      @client.wait_for_task(task)
-
-      Resources::Disk.new(disk_cid, disk_size_in_mb, datastore, disk_path)
+      @client.create_disk(@datacenter, datastore, disk_cid, @disk_path, disk_size_in_mb)
     end
 
     def find_and_move(disk_cid, cluster, datacenter_name, accessible_datastores)
