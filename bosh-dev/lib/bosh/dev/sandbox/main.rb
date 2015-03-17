@@ -363,6 +363,7 @@ module Bosh::Dev::Sandbox
       uaa_ports = {
         'cargo.servlet.port' => uaa_port,
         'cargo.tomcat.ajp.port' => @port_provider.get_port(:uaa_tomcat),
+        'cargo.rmi.port' => @port_provider.get_port(:uaa_rmi)
       }
 
       arguments = uaa_ports.map { |pair| "-D#{pair.join('=')}" }
