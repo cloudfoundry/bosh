@@ -23,6 +23,7 @@ module VSphereCloud
     let(:logger) { double(:logger, info: nil, debug: nil) }
 
     let(:datastore) { Resources::Datastore.new('fake-datastore', 'mob', 2048, 1024) }
+    let(:disk) { Resources::Disk.new('disk-cid', 24, datastore, 'fake-disk-path') }
 
     describe '#create' do
       before do
@@ -30,30 +31,15 @@ module VSphereCloud
         cluster = instance_double(VSphereCloud::Resources::Cluster)
         allow(datacenter).to receive(:pick_persistent_datastore).with(24).and_return(datastore)
         allow(virtual_disk_manager).to receive(:create_virtual_disk)
-        allow(client).to receive(:create_datastore_folder)
       end
 
       let(:datastore) { instance_double('VSphereCloud::Resources::Datastore', name: 'fake-datastore-name') }
 
       it 'creates disk using VirtualDiskManager' do
-        expect(virtual_disk_manager).to receive(:create_virtual_disk) do |path, dc, spec|
-          expect(path).to eq('[fake-datastore-name] fake-disk-path/disk-cid.vmdk')
-          expect(dc).to eq(datacenter_mob)
-          expect(spec.disk_type).to eq('preallocated')
-          expect(spec.capacity_kb).to eq(24576)
-          expect(spec.adapter_type).to eq('lsiLogic')
-        end
-
-        disk = disk_provider.create(24)
-        expect(disk.cid).to eq('disk-cid')
-        expect(disk.size_in_mb).to eq(24)
-        expect(disk.path).to eq('[fake-datastore-name] fake-disk-path/disk-cid.vmdk')
-        expect(disk.datastore).to eq(datastore)
-      end
-
-      it 'creates parent folder' do
-        expect(client).to receive(:create_datastore_folder).with('[fake-datastore-name] fake-disk-path', datacenter_mob)
-        disk_provider.create(24)
+        expect(client).to receive(:create_disk)
+                            .with(datacenter, datastore, 'disk-cid', 'fake-disk-path', 24)
+                            .and_return(disk)
+        expect(disk_provider.create(24)).to eq(disk)
       end
 
       context 'when there are no datastores on host cluster that can fit disk size' do
@@ -110,7 +96,6 @@ module VSphereCloud
               'fake-host-datacenter',
               '[destination-datastore] fake-disk-path/disk-cid.vmdk'
             )
-            expect(client).to receive(:create_datastore_folder).with('[destination-datastore] fake-disk-path', datacenter_mob)
 
             disk = disk_provider.find_and_move('disk-cid', cluster, 'fake-host-datacenter', accessible_datastores)
 
