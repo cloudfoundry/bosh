@@ -21,12 +21,16 @@ mkdir -p $TMPDIR
   fi
 )
 
-echo "--- Starting bundle install @ `date` ---"
+echo "--- Starting bundle install in `pwd` @ `date` ---"
+if [ -f .bundle/config ]; then
+  echo ".bundle/config:"
+  cat .bundle/config
+fi
 
 # Reuse gems directory so that same job does not have to
 # spend so much redownloading and reinstalling same gems.
 # (Destination directory is created by bundler)
-bundle install --local --no-cache --clean --path "/mnt/ci-tmp/$JOB_NAME/"
+bundle install --local --no-cache --no-prune --clean --path "/mnt/ci-tmp/$JOB_NAME/"
 
 if [ $# -ne 0 ]; then
   echo "--- Starting rspec @ `date` ---"
