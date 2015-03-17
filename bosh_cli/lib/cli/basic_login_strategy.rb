@@ -23,7 +23,10 @@ module Bosh
 
         if @director.login(username, password)
           @terminal.say_green("Logged in as `#{username}'")
-          @config.set_credentials(target, username, password)
+          @config.set_credentials(target, {
+              "username" => username,
+              "password" => password
+            })
           @config.save
         else
           if @interactive

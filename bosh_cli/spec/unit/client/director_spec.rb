@@ -1,15 +1,15 @@
 require 'spec_helper'
 
 describe Bosh::Cli::Client::Director do
-
   DUMMY_TARGET = 'https://target.example.com:8080'
 
   before do
-    expect(URI).to receive(:parse).with(DUMMY_TARGET).and_call_original
-    expect(Resolv).to receive(:getaddresses).with('target.example.com').and_return(['127.0.0.1'])
-    @director = Bosh::Cli::Client::Director.new(DUMMY_TARGET, 'user', 'pass')
+    allow(Resolv).to receive(:getaddresses).with('target.example.com').and_return(['127.0.0.1'])
+    @director = Bosh::Cli::Client::Director.new(DUMMY_TARGET, credentials)
     allow(@director).to receive(:retry_wait_interval).and_return(0)
   end
+
+  let(:credentials) { Bosh::Cli::Client::BasicCredentials.new('user', 'pass') }
 
   describe 'checking availability' do
     it 'waits until director is ready' do
@@ -52,16 +52,11 @@ describe Bosh::Cli::Client::Director do
   end
 
   describe '#login' do
+    before do
+      @director = Bosh::Cli::Client::Director.new(DUMMY_TARGET)
+    end
+
     context 'new director versions (have version key)' do
-      it 'assigns the username and password' do
-        allow(@director).to receive(:get).with('/info', 'application/json').
-            and_return([200, JSON.generate('version' => 'newer directors', 'user' => 'new user')])
-
-        @director.login('new user', 'new password')
-        expect(@director.user).to eq('new user')
-        expect(@director.password).to eq('new password')
-      end
-
       it 'returns true when status has a user key' do
         allow(@director).to receive(:get).with('/info', 'application/json').
             and_return([200, JSON.generate('version' => 'newer directors', 'user' => 'new user')])
@@ -120,6 +115,43 @@ describe Bosh::Cli::Client::Director do
     end
   end
 
+  describe 'authorization' do
+    context 'using user/password credentials' do
+      let(:request_headers) { { 'Content-Type' => 'application/json', 'Authorization' => 'Basic dXNlcjpwYXNz' } }
+
+      it 'adds authorization header with basic auth' do
+        stub_request(:get, 'https://127.0.0.1:8080/info').
+          with(headers: request_headers).to_return(body: '{}', status: 200)
+
+        @director.get_status
+      end
+    end
+
+    context 'using token credentials' do
+      let(:credentials) { Bosh::Cli::Client::UaaCredentials.new('token') }
+      let(:request_headers) { { 'Content-Type' => 'application/json', 'Authorization' => 'bearer token' } }
+
+      it 'adds authorization header with UAA token' do
+        stub_request(:get, 'https://127.0.0.1:8080/info').
+          with(headers: request_headers).to_return(body: '{}', status: 200)
+
+        @director.get_status
+      end
+    end
+
+    context 'when credentials are not provided' do
+      let(:credentials) { nil }
+      let(:request_headers) { { 'Content-Type' => 'application/json' } }
+
+      it 'adds authorization header with UAA token' do
+        stub_request(:get, 'https://127.0.0.1:8080/info').
+          with(headers: request_headers).to_return(body: '{}', status: 200)
+
+        @director.get_status
+      end
+    end
+  end
+
   describe 'interface REST API' do
     it 'has helper methods for HTTP verbs which delegate to generic request' do
       [:get, :put, :post, :delete].each do |verb|
@@ -133,44 +165,39 @@ describe Bosh::Cli::Client::Director do
     let(:task_number) { 232 }
 
     describe '#list_vms' do
-      let(:http_client) { double('HTTPClient').as_null_object }
-      let(:response) { double('Response', body: response_body, code: 200, headers: {}) }
-      let(:request_headers) { { 'Content-Type' => 'application/json', 'Authorization' => 'Basic dXNlcjpwYXNz' } }
-
-      before do
-        allow(HTTPClient).to receive(:new).and_return(http_client)
-        allow(http_client).to receive(:request).with(:get, "https://127.0.0.1:8080/#{endpoint}", body: request_body, header: request_headers).and_return(response)
-      end
-
       let(:vms) do
         [{
-           'agent_id' => 'agent-id1',
-           'cid'      => 'vm-id1',
-           'job'      => 'dummy',
-           'index'    => 0 },
-         {
-           'agent_id' => 'agent-id2',
-           'cid'      => 'vm-id2',
-           'job'      => 'dummy',
-           'index'    => 1
-         },
-         {
-           'agent_id' => 'agent-id3',
-           'cid'      => 'vm-id3',
-           'job'      => 'dummy',
-           'index'    => 2
-         }]
+            'agent_id' => 'agent-id1',
+            'cid'      => 'vm-id1',
+            'job'      => 'dummy',
+            'index'    => 0 },
+          {
+            'agent_id' => 'agent-id2',
+            'cid'      => 'vm-id2',
+            'job'      => 'dummy',
+            'index'    => 1
+          },
+          {
+            'agent_id' => 'agent-id3',
+            'cid'      => 'vm-id3',
+            'job'      => 'dummy',
+            'index'    => 2
+          }]
       end
 
-      let(:response_body) do
-        JSON.generate(vms)
+      let(:response_body) { JSON.generate(vms) }
+
+      before do
+        stub_request(:get, 'https://127.0.0.1:8080/deployments/foo/vms').
+          with(headers: request_headers).to_return(body: response_body, status: 200)
       end
 
-      let(:request_body) { nil }
-      let(:endpoint) { 'deployments/foo/vms' }
+      context 'using user/password credentials' do
+        let(:request_headers) { { 'Content-Type' => 'application/json', 'Authorization' => 'Basic dXNlcjpwYXNz' } }
 
-      it 'lists vms for a given deployment' do
-        expect(@director.list_vms('foo')).to eq vms
+        it 'lists vms for a given deployment' do
+          expect(@director.list_vms('foo')).to eq vms
+        end
       end
     end
 
@@ -461,26 +488,17 @@ describe Bosh::Cli::Client::Director do
     end
 
     context 'when director returns 404' do
-      let(:http_client) { double('HTTPClient').as_null_object }
-      let(:response) { double('Response', body: 'Not Found', code: 404, headers: {}) }
       let(:request_headers) { { 'Authorization' => 'Basic dXNlcjpwYXNz' } }
-      let(:endpoint) { '/bad_endpoint' }
       before do
-        allow(HTTPClient).to receive(:new).and_return(http_client)
-        allow(http_client).to receive(:request).
-          with(:get, "https://127.0.0.1:8080#{endpoint}", body: anything, header: request_headers).
-          and_return(response)
+        stub_request(:get, 'https://127.0.0.1:8080/bad_endpoint').
+          with(headers: request_headers).to_return(body: 'Not Found', status: 404)
       end
-
       let(:target_name) { 'FAKE-DIRECTOR' }
-      let(:info_response) { double('Response', body: 'info response body', code: 200, headers: {}) }
       before do
-        allow(JSON).to receive(:parse).with('info response body').and_return({'name' => target_name})
-        allow(JSON).to receive(:parse).with('Not Found').and_return({'name' => target_name})
-
-        allow(http_client).to receive(:request).
-          with(:get, "https://127.0.0.1:8080/info", body: anything, header: anything).
-          and_return(info_response)
+        status_response = { name: target_name }
+        stub_request(:get, 'https://127.0.0.1:8080/info').
+          with(headers: request_headers).
+          to_return(body: JSON.generate(status_response), status: 200)
       end
 
       context 'when requesting tasks' do
@@ -497,10 +515,10 @@ describe Bosh::Cli::Client::Director do
       context 'when requesting anything else' do
         it 'should raise error suggesting director upgrade' do
           expect {
-            @director.get(endpoint)
+            @director.get('/bad_endpoint')
           }.to raise_error(Bosh::Cli::ResourceNotFound,
             "The #{target_name} bosh director doesn't understand the following " +
-            "API call: #{endpoint}. The bosh deployment may need to be upgraded."
+            "API call: /bad_endpoint. The bosh deployment may need to be upgraded."
           )
         end
       end
@@ -603,7 +621,7 @@ describe Bosh::Cli::Client::Director do
 
         expect(URI).to receive(:parse).with(DUMMY_TARGET).and_call_original
         expect(Resolv).to receive(:getaddresses).with('target.example.com').and_return(['127.0.0.1'])
-        @director = Bosh::Cli::Client::Director.new(DUMMY_TARGET, 'user', 'pass', :no_track => true)
+        @director = Bosh::Cli::Client::Director.new(DUMMY_TARGET, credentials, :no_track => true)
 
         expect(@director).to receive(:request).
           with(:get, '/stuff', 'text/plain', 'abc').

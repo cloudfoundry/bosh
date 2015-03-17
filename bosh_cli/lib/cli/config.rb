@@ -70,12 +70,9 @@ module Bosh::Cli
       end
     end
 
-    def set_credentials(target, username, password)
+    def set_credentials(target, credentials)
       @config_file["auth"] ||= {}
-      @config_file["auth"][target] = {
-        "username" => username,
-        "password" => password
-      }
+      @config_file["auth"][target] = credentials
     end
 
     def set_alias(category, alias_name, value)

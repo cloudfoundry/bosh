@@ -4,7 +4,8 @@ describe Bosh::Cli::DirectorTask do
   before do
     expect(URI).to receive(:parse).with("http://target.example.com").and_call_original
     expect(Resolv).to receive(:getaddresses).with("target.example.com").and_return(["127.0.0.1"])
-    @director = Bosh::Cli::Client::Director.new("http://target.example.com", "user", "pass")
+    credentials = Bosh::Cli::Client::BasicCredentials.new('user', 'pass')
+    @director = Bosh::Cli::Client::Director.new("http://target.example.com", credentials)
   end
 
   it "tracks partial output responses from director" do

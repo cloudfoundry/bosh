@@ -107,7 +107,8 @@ This command should be used for bootstrapping bosh from scratch.
         deployment_command.options = self.options
         deployment_command.perform
 
-        new_director = Bosh::Cli::Client::Director.new("https://#{manifest.vip}:25555", nil, nil,
+        credentials = Bosh::Cli::Client::BasicCredentials.new(nil, nil)
+        new_director = Bosh::Cli::Client::Director.new("https://#{manifest.vip}:25555", credentials,
                                                num_retries: 12, retry_wait_interval: 5)
         new_director.wait_until_ready
       end

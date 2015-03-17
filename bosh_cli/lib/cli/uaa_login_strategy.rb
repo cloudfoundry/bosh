@@ -11,14 +11,21 @@ module Bosh
         @interactive = interactive
       end
 
-      def login(target, username, password)
+      def login(target, username = nil, password = nil)
         if @interactive
+          credentials = {}
           @uaa.prompts.map do |prompt|
             if prompt.password?
-              @terminal.ask_password("#{prompt.display_text}: ")
+              credentials[prompt.field] = @terminal.ask_password("#{prompt.display_text}: ")
             else
-              @terminal.ask("#{prompt.display_text}: ")
+              credentials[prompt.field] = @terminal.ask("#{prompt.display_text}: ")
             end
+          end
+
+          if results = @uaa.login(credentials)
+            @terminal.say_green("Logged in as `#{results[:username]}'")
+            @config.set_credentials(target, { token: results[:token] })
+            @config.save
           end
         else
           err("Non-interactive UAA login is not supported.")

@@ -19,16 +19,10 @@ module Bosh
 
         attr_reader :director_uri
 
-        # @return [String]
-        attr_accessor :user
-
-        # @return [String]
-        attr_accessor :password
-
         # Options can include:
         # * :no_track => true - do not use +TaskTracker+ for long-running
         #                       +request_and_track+ calls
-        def initialize(director_uri, user = nil, password = nil, options = {})
+        def initialize(director_uri, credentials = nil, options = {})
           if director_uri.nil? || director_uri =~ /^\s*$/
             raise DirectorMissing, 'no director URI given'
           end
@@ -37,8 +31,7 @@ module Bosh
           @director_ip         = Resolv.getaddresses(@director_uri.host).last
           @scheme              = @director_uri.scheme
           @port                = @director_uri.port
-          @user                = user
-          @password            = password
+          @credentials         = credentials
           @track_tasks         = !options.delete(:no_track)
           @num_retries         = options.fetch(:num_retries, 5)
           @retry_wait_interval = options.fetch(:retry_wait_interval, 5)
@@ -65,12 +58,13 @@ module Bosh
         end
 
         def login(username, password)
-          self.user = username
-          self.password = password
+          @credentials = BasicCredentials.new(username, password)
           authenticated?
         end
 
         def authenticated?
+          # getting status verifies credentials
+          # if credentials are wrong it will raise DirectorError
           status = get_status
           # Backward compatibility: older directors return 200
           # only for logged in users
@@ -684,11 +678,8 @@ module Bosh
           http_client.ssl_config.verify_mode     = OpenSSL::SSL::VERIFY_NONE
           http_client.ssl_config.verify_callback = Proc.new {}
 
-          # HTTPClient#set_auth doesn't seem to work properly,
-          # injecting header manually instead.
-          if @user && @password
-            headers['Authorization'] = 'Basic ' +
-              Base64.encode64("#{@user}:#{@password}").strip
+          if @credentials
+            headers['Authorization'] = @credentials.authorization_header
           end
 
           http_client.request(method, uri, {
@@ -712,7 +703,7 @@ module Bosh
 
         # HTTPClient doesn't have a root exception but instead subclasses RuntimeError
         rescue RuntimeError => e
-          puts "Perform request #{method}, #{uri}, #{headers.inspect}, #{payload.inspect}"
+          say("Perform request #{method}, #{uri}, #{headers.inspect}, #{payload.inspect}")
           err("REST API call exception: #{e}")
         end
 

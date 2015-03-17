@@ -22,7 +22,7 @@ module Bosh::Cli::Command
     desc  "Forget saved credentials for targeted director"
     def logout
       target_required
-      config.set_credentials(target, nil, nil)
+      config.set_credentials(target, nil)
       config.save
       say("You are no longer logged in to `#{target}'".make_yellow)
     end

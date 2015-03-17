@@ -61,6 +61,7 @@ require 'cli/deployment_helper'
 require 'cli/validation'
 require 'cli/stemcell'
 require 'cli/client/director'
+require 'cli/client/credentials'
 require 'cli/director_task'
 
 require 'cli/line_wrap'

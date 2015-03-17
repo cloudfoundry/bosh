@@ -1,6 +1,4 @@
-require 'cli/basic_login_strategy'
-require 'cli/client/director'
-require 'cli/config'
+require 'spec_helper'
 
 describe Bosh::Cli::BasicLoginStrategy do
   context "interactive mode" do
@@ -73,7 +71,10 @@ describe Bosh::Cli::BasicLoginStrategy do
 
       login_strategy.login(target, 'user name', 'password')
 
-      expect(config).to have_received(:set_credentials).with(target, 'user name', 'password')
+      expect(config).to have_received(:set_credentials).with(target, {
+            'username' => 'user name',
+            'password' => 'password'
+          })
       expect(config).to have_received(:save)
     end
 
@@ -133,7 +134,10 @@ describe Bosh::Cli::BasicLoginStrategy do
 
       login_strategy.login(target, 'user name', 'password')
 
-      expect(config).to have_received(:set_credentials).with(target, 'user name', 'password')
+      expect(config).to have_received(:set_credentials).with(target, {
+            'username' => 'user name',
+            'password' => 'password'
+          })
       expect(config).to have_received(:save)
     end
 

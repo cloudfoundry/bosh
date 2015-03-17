@@ -41,8 +41,9 @@ module Bosh::Cli
       end
 
       def director
+        credentials = Bosh::Cli::Client::BasicCredentials.new(username, password)
         @director ||= Bosh::Cli::Client::Director.new(
-            target, username, password, @options.select { |k, _| k == :no_track })
+            target, credentials, @options.select { |k, _| k == :no_track })
       end
 
       def release
