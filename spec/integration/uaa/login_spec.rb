@@ -16,4 +16,16 @@ describe 'Logging into a director with UAA authentication', type: :integration d
       expect(runner).to have_output "Logged in as `marissa'"
     end
   end
+
+  it 'fails to log in when incorrect credentials were provided' do
+    bosh_runner.run_interactively('login') do |runner|
+      expect(runner).to have_output 'Email:'
+      runner.send_keys 'fake'
+      expect(runner).to have_output 'Password:'
+      runner.send_keys 'fake'
+      expect(runner).to have_output 'One Time Code'
+      runner.send_keys 'dontcare'
+      expect(runner).to have_output 'Failed to log in'
+    end
+  end
 end

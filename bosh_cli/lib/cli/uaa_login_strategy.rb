@@ -26,9 +26,11 @@ module Bosh
             @terminal.say_green("Logged in as `#{results[:username]}'")
             @config.set_credentials(target, { token: results[:token] })
             @config.save
+          else
+            err('Failed to log in')
           end
         else
-          err("Non-interactive UAA login is not supported.")
+          err('Non-interactive UAA login is not supported.')
         end
       end
     end
