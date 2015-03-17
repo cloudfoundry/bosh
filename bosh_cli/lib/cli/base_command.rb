@@ -41,7 +41,6 @@ module Bosh::Cli
       end
 
       def director
-        credentials = Bosh::Cli::Client::BasicCredentials.new(username, password)
         @director ||= Bosh::Cli::Client::Director.new(
             target, credentials, @options.select { |k, _| k == :no_track })
       end
@@ -102,14 +101,15 @@ module Bosh::Cli
         options[:deployment] || config.deployment
       end
 
-      # @return [String] Director username
-      def username
-        options[:username] || ENV['BOSH_USER'] || config.username(target)
-      end
+      def credentials
+        auth_token = config.token(target)
+        return Bosh::Cli::Client::UaaCredentials.new(auth_token) if auth_token
 
-      # @return [String] Director password
-      def password
-        options[:password] || ENV['BOSH_PASSWORD'] || config.password(target)
+        if username && password
+          return Bosh::Cli::Client::BasicCredentials.new(username, password)
+        end
+
+        nil
       end
 
       def target_name
@@ -121,6 +121,16 @@ module Bosh::Cli
       end
 
       protected
+
+      # @return [String] Director username
+      def username
+        options[:username] || ENV['BOSH_USER'] || config.username(target)
+      end
+
+      # @return [String] Director password
+      def password
+        options[:password] || ENV['BOSH_PASSWORD'] || config.password(target)
+      end
 
       # Prints director task completion report. Note that event log usually
       # contains pretty detailed error report and other UI niceties, so most

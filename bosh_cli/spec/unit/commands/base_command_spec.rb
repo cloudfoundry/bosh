@@ -27,8 +27,7 @@ describe Bosh::Cli::Command::Base do
     expect(cmd.target).to eq('https://localhost:8080')
     expect(cmd.target_name).to eq('microbosh')
     expect(cmd.deployment).to eq('test')
-    expect(cmd.username).to be_nil
-    expect(cmd.password).to be_nil
+    expect(cmd.credentials).to be_nil
   end
 
   it 'respects target option' do
@@ -39,39 +38,6 @@ describe Bosh::Cli::Command::Base do
 
     expect(cmd.target).to eq('https://new-target:25555')
     expect(cmd.target_name).to eq('new-target')
-  end
-
-  it 'looks up target, deployment and credentials in the right order' do
-    cmd = make
-
-    expect(cmd.username).to be_nil
-    expect(cmd.password).to be_nil
-    old_user = ENV['BOSH_USER']
-    old_password = ENV['BOSH_PASSWORD']
-
-    begin
-      ENV['BOSH_USER'] = 'foo'
-      ENV['BOSH_PASSWORD'] = 'bar'
-      expect(cmd.username).to eq('foo')
-      expect(cmd.password).to eq('bar')
-      other_cmd = make
-      other_cmd.add_option(:username, 'new')
-      other_cmd.add_option(:password, 'baz')
-
-      expect(other_cmd.username).to eq('new')
-      expect(other_cmd.password).to eq('baz')
-    ensure
-      ENV['BOSH_USER'] = old_user
-      ENV['BOSH_PASSWORD'] = old_password
-    end
-
-    add_config('target' => 'localhost:8080', 'deployment' => 'test')
-
-    cmd2 = make
-    cmd2.add_option(:target, 'foo')
-    cmd2.add_option(:deployment, 'bar')
-    expect(cmd2.target).to eq('https://foo:25555')
-    expect(cmd2.deployment).to eq('bar')
   end
 
   it 'instantiates director when needed' do
@@ -142,6 +108,86 @@ describe Bosh::Cli::Command::Base do
     it 'defaults to $HOME/.bosh/cache' do
       allow(Dir).to receive(:home).and_return('/fake/home/dir')
       expect(make.cache_dir).to eq('/fake/home/dir/.bosh/cache')
+    end
+  end
+
+  describe 'credentials' do
+    context 'when config contains UAA token' do
+      let(:cmd) do
+        add_config(
+          'target' => 'localhost:8080',
+          'auth' => {
+            'https://localhost:8080' => {
+              'token' => 'config-token',
+            }
+          })
+        make
+      end
+
+      it 'returns UAA credentials' do
+        expect(cmd.credentials.authorization_header).to eq('bearer config-token')
+      end
+    end
+
+    context 'when config does not contain UAA token' do
+      let(:cmd) do
+        add_config(
+          'target' => 'localhost:8080',
+          'auth' => {
+            'https://localhost:8080' => {
+              'username' => 'config-username',
+              'password' => 'config-password',
+            }
+          })
+        make
+      end
+
+      let(:authorization_header) { 'Basic ' + Base64.encode64("#{expected_username}:#{expected_password}").strip }
+      let(:expected_username) { 'config-username' }
+      let(:expected_password) { 'config-password' }
+
+      context 'when user provided username option' do
+        let(:expected_username) { 'option-username' }
+        before { cmd.add_option(:username, expected_username) }
+
+        it 'returns basic credentials with provided username' do
+          expect(cmd.credentials.authorization_header).to eq(authorization_header)
+        end
+      end
+
+      context 'when user provided password option' do
+        let(:expected_password) { 'option-password' }
+        before { cmd.add_option(:password, expected_password) }
+
+        it 'returns basic credentials with provided password' do
+          expect(cmd.credentials.authorization_header).to eq(authorization_header)
+        end
+      end
+
+      context 'when user provided BOSH_USER env variable' do
+        let(:expected_username) { 'env-username' }
+        before { stub_const('ENV', {'BOSH_USER' => 'env-username'}) }
+
+        it 'returns basic credentials with provided username' do
+          expect(cmd.credentials.authorization_header).to eq(authorization_header)
+        end
+      end
+
+      context 'when user provided BOSH_PASSWORD env variable' do
+        let(:expected_password) { 'env-password' }
+        before { stub_const('ENV', {'BOSH_PASSWORD' => expected_password}) }
+
+        it 'returns basic credentials with provided password' do
+          expect(cmd.credentials.authorization_header).to eq(authorization_header)
+        end
+      end
+
+      context 'when credentials are not provided in config' do
+        let(:cmd) { make }
+        it 'returns nil' do
+          expect(cmd.credentials).to be_nil
+        end
+      end
     end
   end
 end

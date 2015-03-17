@@ -9,7 +9,8 @@ module Bosh::Dev
       @username = username
       @password = password
       @bosh_cli_session = bosh_cli_session
-      @director_handle = Bosh::Cli::Client::Director.new(uri, username, password)
+      credentials = Bosh::Cli::Client::BasicCredentials.new(username, password)
+      @director_handle = Bosh::Cli::Client::Director.new(uri, credentials)
     end
 
     def upload_stemcell(stemcell_archive)

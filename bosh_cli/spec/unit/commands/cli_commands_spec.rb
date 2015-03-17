@@ -99,8 +99,7 @@ describe Bosh::Cli::Command::Base do
         login_cmd.login('user', 'pass')
 
         expect(misc_cmd.logged_in?).to be(true)
-        expect(misc_cmd.username).to eq('user')
-        expect(misc_cmd.password).to eq('pass')
+        expect(misc_cmd.credentials.authorization_header).to eq('Basic dXNlcjpwYXNz')
       end
 
       it 'saves strings, not HighLine::String objects in the config' do
@@ -110,8 +109,7 @@ describe Bosh::Cli::Command::Base do
         login_cmd.login(HighLine::String.new('user'), HighLine::String.new('pass'))
 
         expect(misc_cmd.logged_in?).to be(true)
-        expect(misc_cmd.username).to eq('user')
-        expect(misc_cmd.password).to eq('pass')
+        expect(misc_cmd.credentials.authorization_header).to eq('Basic dXNlcjpwYXNz')
         config_file = File.read(File.expand_path(@config))
         expect(config_file).not_to match /HighLine::String/
         expect(config_file).to include('username: user')
@@ -131,8 +129,7 @@ describe Bosh::Cli::Command::Base do
         expect(@director).to receive(:login).with('user', 'pass') { true }
         login_cmd.login('user', 'pass')
         expect(misc_cmd.logged_in?).to be(true)
-        expect(misc_cmd.username).to eq('user')
-        expect(misc_cmd.password).to eq('pass')
+        expect(misc_cmd.credentials.authorization_header).to eq('Basic dXNlcjpwYXNz')
       end
     end
   end

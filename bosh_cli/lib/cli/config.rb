@@ -115,6 +115,12 @@ module Bosh::Cli
       credentials_for(target)["password"]
     end
 
+    # @param [String] target Target director url
+    # @return [String] Token associated with target
+    def token(target)
+      credentials_for(target)["token"]
+    end
+
     # Deployment used to be a string that was only stored for your
     # current target. As soon as you switched targets, the deployment
     # was erased. If the user has the old config we convert it to the

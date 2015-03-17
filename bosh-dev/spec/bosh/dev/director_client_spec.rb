@@ -6,21 +6,20 @@ module Bosh::Dev
   describe DirectorClient do
     subject(:director_client) do
       DirectorClient.new(
-        'bosh.example.com',
+        director_url,
         'fake_username',
         'fake_password',
         bosh_cli_session,
       )
     end
+    let(:director_url) { 'http://bosh.example.com' }
 
     let(:bosh_cli_session) { instance_double('Bosh::Dev::BoshCliSession', run_bosh: nil) }
 
     before do
-      allow(class_double('Bosh::Cli::Client::Director')
-        .as_stubbed_const)
-        .to receive(:new)
-        .with('bosh.example.com', 'fake_username', 'fake_password')
-        .and_return(director_handle)
+      allow(Resolv).to receive(:getaddresses).with('bosh.example.com').and_return(['127.0.0.1'])
+      stub_request(:get, 'http://127.0.0.1/info').
+        to_return(:status => 200, :body => '{"uuid":"uuid_value"}')
     end
 
     let(:director_handle) { instance_double('Bosh::Cli::Client::Director') }
@@ -34,7 +33,10 @@ module Bosh::Dev
         })
       end
 
-      before { allow(director_handle).to receive(:list_stemcells) { [] } }
+      before do
+        stub_request(:get, 'http://127.0.0.1/stemcells').
+          to_return(:status => 200, :body => '{}')
+      end
 
       it 'uploads the stemcell with the cli' do
         expect(bosh_cli_session).to receive(:run_bosh).
@@ -46,7 +48,7 @@ module Bosh::Dev
         target_retryable = double('target-retryable')
         allow(Bosh::Retryable).to receive(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
 
-        expect(bosh_cli_session).to receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with("target #{director_url}", retryable: target_retryable).ordered
         expect(bosh_cli_session).to receive(:run_bosh).with('login fake_username fake_password').ordered
         expect(bosh_cli_session).to receive(:run_bosh).with(/upload stemcell/, debug_on_fail: true).ordered
 
@@ -54,7 +56,11 @@ module Bosh::Dev
       end
 
       context 'when the stemcell being uploaded exists on the director' do
-        before { allow(director_handle).to receive(:list_stemcells).and_return([{ 'name' => 'fake-stemcell', 'version' => '008' }]) }
+        before do
+          stemcells = [{ 'name' => 'fake-stemcell', 'version' => '008' }]
+          stub_request(:get, 'http://127.0.0.1/stemcells').
+            to_return(:status => 200, :body => JSON.generate(stemcells), :headers => {})
+        end
 
         it 'does not re-upload it' do
           expect(bosh_cli_session).not_to receive(:run_bosh).with(/upload stemcell/, debug_on_fail: true)
@@ -74,7 +80,7 @@ module Bosh::Dev
         target_retryable = double('target-retryable')
         allow(Bosh::Retryable).to receive(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
 
-        expect(bosh_cli_session).to receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with("target #{director_url}", retryable: target_retryable).ordered
         expect(bosh_cli_session).to receive(:run_bosh).with('login fake_username fake_password').ordered
         expect(bosh_cli_session).to receive(:run_bosh).with(/upload release/, debug_on_fail: true).ordered
 
@@ -96,8 +102,6 @@ module Bosh::Dev
 
       context 'when directors uuid has changed' do
         it 'updates the uuid in the manifest to the one from the targetted director' do
-          allow(director_handle).to receive('uuid').and_return('uuid_value')
-
           director_client.deploy(manifest_path)
           manifest = YAML.load_file(manifest_path)
           expect(manifest['director_uuid']).to eq('uuid_value')
@@ -136,7 +140,7 @@ EOF
         target_retryable = double('target-retryable')
         allow(Bosh::Retryable).to receive(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
 
-        expect(bosh_cli_session).to receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with("target #{director_url}", retryable: target_retryable).ordered
         expect(bosh_cli_session).to receive(:run_bosh).with('login fake_username fake_password').ordered
         expect(bosh_cli_session).to receive(:run_bosh).with(/deployment/).ordered
         expect(bosh_cli_session).to receive(:run_bosh).with(/deploy/, debug_on_fail: true).ordered
@@ -156,7 +160,7 @@ EOF
         target_retryable = double('target-retryable')
         allow(Bosh::Retryable).to receive(:new).with(tries: 3, on: [RuntimeError]).and_return(target_retryable)
 
-        expect(bosh_cli_session).to receive(:run_bosh).with('target bosh.example.com', retryable: target_retryable).ordered
+        expect(bosh_cli_session).to receive(:run_bosh).with("target #{director_url}", retryable: target_retryable).ordered
         expect(bosh_cli_session).to receive(:run_bosh).with('login fake_username fake_password').ordered
         expect(bosh_cli_session).to receive(:run_bosh).with(/cleanup/, debug_on_fail: true).ordered
 
