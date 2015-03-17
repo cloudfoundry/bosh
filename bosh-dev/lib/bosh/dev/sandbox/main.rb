@@ -20,6 +20,7 @@ module Bosh::Dev::Sandbox
     ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
 
     UAA_ASSETS_DIR = File.expand_path('spec/assets/uaa', REPO_ROOT)
+    UAA_CONFIG_DIR = File.expand_path('spec/assets', REPO_ROOT)
 
     DIRECTOR_CONFIG = 'director_test.yml'
     DIRECTOR_NGINX_CONFIG = 'director_nginx.conf'
@@ -368,8 +369,10 @@ module Bosh::Dev::Sandbox
 
       @uaa_process = Service.new(
         ['./gradlew', arguments, 'run'].flatten,
-        {output: "#{base_log_path}.uaa.out",
-         working_dir: UAA_ASSETS_DIR
+        {
+          output: "#{base_log_path}.uaa.out",
+          working_dir: UAA_ASSETS_DIR,
+          env: { 'UAA_CONFIG_PATH' => UAA_CONFIG_DIR }
         },
         @logger,
       )

@@ -19,7 +19,7 @@ module Bosh
           token = @token_issuer.implicit_grant_with_creds(credentials)
 
           if token
-            decoded = TokenCoder.decode(token.info["access_token"], nil, nil, false) #token signature not verified
+            decoded = CF::UAA::TokenCoder.decode(token.info["access_token"], {}, nil, false) #token signature not verified
             { username: decoded["user_name"], token: token.info["access_token"] }
           end
         end
