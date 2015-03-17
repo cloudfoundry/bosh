@@ -11,8 +11,6 @@ cat > $chroot/var/vcap/bosh/agent.json <<JSON
     }
   },
   "Infrastructure": {
-    "NetworkingType": "manual",
-
     "Settings": {
       "Sources": [
         {
