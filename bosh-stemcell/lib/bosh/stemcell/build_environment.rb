@@ -28,7 +28,7 @@ module Bosh::Stemcell
     attr_reader :version
 
     def prepare_build
-      if(ENV['resume_from'] == NIL)
+      if (ENV['resume_from'] == NIL)
         sanitize
         prepare_build_path
       end
