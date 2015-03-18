@@ -62,19 +62,23 @@ module Bosh
             expect(last_response.status).to eq(401)
           end
 
-          it 'passes the request env to the identity provider' do
-            header('X-Test-Header', 'Value')
-            get '/test_route'
-            expect(identity_provider.request_env['HTTP_X_TEST_HEADER']).to eq('Value')
-          end
+          context 'when authorizaion is provided' do
+            before { header('Authorization', 'Value') }
 
-          context 'when authenticating successfully' do
-            let(:authenticates_successfully) { true }
-
-            it 'succeeds' do
+            it 'passes the request env to the identity provider' do
+              header('X-Test-Header', 'Value')
               get '/test_route'
-              expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('Success with: luke')
+              expect(identity_provider.request_env['HTTP_X_TEST_HEADER']).to eq('Value')
+            end
+
+            context 'when authenticating successfully' do
+              let(:authenticates_successfully) { true }
+
+              it 'succeeds' do
+                get '/test_route'
+                expect(last_response.status).to eq(200)
+                expect(last_response.body).to eq('Success with: luke')
+              end
             end
           end
 
@@ -87,18 +91,44 @@ module Bosh
             end
           end
 
-          context 'when the controller overrides the default auth requirements' do
+          context 'when the controller does not require authentication' do
             let(:requires_authentication) { false }
 
-            it 'skips authorization' do
-              get '/test_route'
-              expect(last_response.status).to eq(200)
-              expect(last_response.body).to eq('Success with: No user')
+            context 'when user provided credentials' do
+              before { header('Authorization', 'Value') }
+
+              context 'when credentials are invalid' do
+                let(:authenticates_successfully) { false }
+
+                it 'returns controller response' do
+                  get '/test_route'
+                  expect(last_response.status).to eq(200)
+                  expect(last_response.body).to eq('Success with: No user')
+                end
+              end
+
+              context 'when credentials are valid' do
+                let(:authenticates_successfully) { true }
+
+                it 'returns controller response' do
+                  get '/test_route'
+                  expect(last_response.status).to eq(200)
+                  expect(last_response.body).to eq('Success with: luke')
+                end
+              end
             end
 
-            it 'skips authorization for invalid routes' do
-              get '/invalid_route'
-              expect(last_response.status).to eq(404)
+            context 'when user did not provide credentials' do
+              it 'skips authorization' do
+                get '/test_route'
+                expect(last_response.status).to eq(200)
+                expect(last_response.body).to eq('Success with: No user')
+              end
+
+              it 'skips authorization for invalid routes' do
+                get '/invalid_route'
+                expect(last_response.status).to eq(404)
+              end
             end
           end
         end

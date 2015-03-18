@@ -51,13 +51,16 @@ module Bosh::Director
             request.env.has_key?(key)
           end
 
-          if auth_provided || requires_authentication?
+          if auth_provided
             begin
               @user = @identity_provider.corroborate_user(request.env)
-            rescue AuthenticationError => e
-              response['WWW-Authenticate'] = 'Basic realm="BOSH Director"'
-              throw(:halt, [401, "Not authorized\n"])
+            rescue AuthenticationError
             end
+          end
+
+          if requires_authentication? && @user.nil?
+            response['WWW-Authenticate'] = 'Basic realm="BOSH Director"'
+            throw(:halt, [401, "Not authorized\n"])
           end
         end
 
