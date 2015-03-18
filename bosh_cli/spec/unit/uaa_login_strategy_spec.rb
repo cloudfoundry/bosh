@@ -50,7 +50,7 @@ describe Bosh::Cli::UaaLoginStrategy do
           login_strategy.login(target)
 
           expect(config).to have_received(:set_credentials).with(target, {
-            token: 'access token'
+            'token' => 'access token'
           })
           expect(config).to have_received(:save)
         end

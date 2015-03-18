@@ -64,7 +64,7 @@ module Bosh::Cli
       end
 
       def logged_in?
-        !!(username && password)
+        !!(credentials)
       end
 
       def non_interactive?
