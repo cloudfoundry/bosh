@@ -3,7 +3,9 @@ require 'securerandom'
 require 'common/thread_pool'
 require 'common/thread_formatter'
 
-autoload :VSphereCloud, 'cloud/vsphere/cloud'
+module VSphereCloud
+  autoload :Cloud, 'cloud/vsphere/cloud'
+end
 
 module Bosh
   module Clouds
