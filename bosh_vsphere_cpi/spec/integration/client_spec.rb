@@ -1,8 +1,4 @@
-require 'cloud/vsphere/client'
-require 'cloud/vsphere/cluster_config'
-require 'cloud/vsphere/resources/datacenter'
-require 'cloud/vsphere/resources/datastore'
-require 'ruby_vim_sdk'
+require 'spec_helper'
 
 describe VSphereCloud::Client do
   describe "#find_disk" do
