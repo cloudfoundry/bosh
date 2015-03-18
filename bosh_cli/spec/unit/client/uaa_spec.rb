@@ -17,6 +17,7 @@ describe Bosh::Cli::Client::Uaa do
           CF::UAA::TokenInfo,
           info: {
             'access_token' => 'fake-token',
+            'token_type' => 'bearer'
           }
         )
         allow(CF::UAA::TokenCoder).to receive(:decode).
@@ -28,7 +29,7 @@ describe Bosh::Cli::Client::Uaa do
       end
 
       it 'returns a token' do
-        expect(uaa.login('fake-credentials')).to eq({username: 'fake-user', token: 'fake-token'})
+        expect(uaa.login('fake-credentials')).to eq({username: 'fake-user', token: 'bearer fake-token'})
       end
     end
 

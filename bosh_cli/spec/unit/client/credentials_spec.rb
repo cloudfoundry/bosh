@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Cli::Client::UaaCredentials do
-  subject(:credentials) { described_class.new('fake-token') }
+  subject(:credentials) { described_class.new('bearer fake-token') }
   its(:authorization_header) { is_expected.to eq('bearer fake-token') }
 end
 

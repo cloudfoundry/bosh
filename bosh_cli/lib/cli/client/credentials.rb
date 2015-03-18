@@ -7,7 +7,7 @@ module Bosh
         end
 
         def authorization_header
-          "bearer #{@token}"
+          @token
         end
       end
 

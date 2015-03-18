@@ -128,7 +128,7 @@ describe Bosh::Cli::Client::Director do
     end
 
     context 'using token credentials' do
-      let(:credentials) { Bosh::Cli::Client::UaaCredentials.new('token') }
+      let(:credentials) { Bosh::Cli::Client::UaaCredentials.new('bearer token') }
       let(:request_headers) { { 'Content-Type' => 'application/json', 'Authorization' => 'bearer token' } }
 
       it 'adds authorization header with UAA token' do

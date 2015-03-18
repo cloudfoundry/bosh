@@ -118,7 +118,7 @@ describe Bosh::Cli::Command::Base do
           'target' => 'localhost:8080',
           'auth' => {
             'https://localhost:8080' => {
-              'token' => 'config-token',
+              'token' => 'bearer config-token',
             }
           })
         make
