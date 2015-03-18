@@ -21,7 +21,7 @@ describe Bosh::Cli::Client::Uaa do
           }
         )
         allow(CF::UAA::TokenCoder).to receive(:decode).
-            with('fake-token', {}, nil, false).
+            with('fake-token', { verify: false }, nil, nil).
             and_return({'user_name' => 'fake-user'})
         allow(token_issuer).to receive(:implicit_grant_with_creds).
             with('fake-credentials').

@@ -18,7 +18,10 @@ module Bosh
         def login(credentials)
           token = @token_issuer.implicit_grant_with_creds(credentials)
           if token
-            decoded = CF::UAA::TokenCoder.decode(token.info['access_token'], {}, nil, false) #token signature not verified
+            decoded = CF::UAA::TokenCoder.decode(
+              token.info['access_token'],
+              { verify: false }, # token signature not verified because CLI doesn't have the secret key
+              nil, nil)
             full_token = "#{token.info['token_type']} #{token.info['access_token']}"
             { username: decoded['user_name'], token: full_token }
           end
