@@ -82,6 +82,6 @@ user_management:
   provider: <%= user_authentication %>
   <% if user_authentication == 'uaa' %>
   options:
-    key: 'uaa-secret-key'
+    key: uaa-secret-key
     url: <%= uaa_url %>
   <% end %>

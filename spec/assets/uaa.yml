@@ -15,5 +15,9 @@ oauth:
       authorized-grant-types: implicit,password,refresh_token
       scope: openid
       authorities: uaa.none
-
+      secret: "uaa-secret-key"
+jwt:
+  token:
+    signing-key: "uaa-secret-key"
+    verification-key: "uaa-secret-key"
 require_https: false
