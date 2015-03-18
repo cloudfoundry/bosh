@@ -5,7 +5,7 @@ module Bosh
     module Api
       class UAAIdentityProvider
         def initialize(options)
-          @token_coder = CF::UAA::TokenCoder.new(skey: options.fetch('key'), audience_ids: ['bosh'])
+          @token_coder = CF::UAA::TokenCoder.new(skey: options.fetch('key'), audience_ids: ['bosh_cli'])
           @url = options.fetch('url')
         end
 
