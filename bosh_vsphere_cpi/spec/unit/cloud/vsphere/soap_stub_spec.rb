@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'tempfile'
 
 describe VSphereCloud::SoapStub do
   let(:soap_stub) { described_class.new('https://some-host/sdk/vimService', soap_log) }
