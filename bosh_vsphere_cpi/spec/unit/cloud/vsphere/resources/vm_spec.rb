@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'timecop'
 
 describe VSphereCloud::Resources::VM do
   subject(:vm) { described_class.new('vm-cid', vm_mob, client, logger) }

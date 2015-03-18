@@ -1,5 +1,3 @@
-require 'cloud/vsphere/retry_block'
-
 module VSphereCloud
   class DrsLock
     include RetryBlock

@@ -1,8 +1,3 @@
-require 'ruby_vim_sdk'
-require 'cloud/vsphere/drs_rules/drs_rule'
-require 'cloud/vsphere/resources/disk/ephemeral_disk'
-require 'cloud/vsphere/resources/vm'
-
 module VSphereCloud
   class VmCreator
     def initialize(memory, disk_size_in_mb, cpu, placer, client, cloud_searcher, logger, cpi, agent_env, file_provider, disk_provider)

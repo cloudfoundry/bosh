@@ -1,7 +1,3 @@
-require 'ruby_vim_sdk'
-require 'cloud/vsphere/drs_rules/drs_lock'
-require 'cloud/vsphere/drs_rules/vm_attribute_manager'
-
 module VSphereCloud
   class DrsRule
     CUSTOM_ATTRIBUTE_NAME = 'drs_rule'

@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'cloud/vsphere/lease_obtainer'
 
 module VSphereCloud
   describe LeaseObtainer do

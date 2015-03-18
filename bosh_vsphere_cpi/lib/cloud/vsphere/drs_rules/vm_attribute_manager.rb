@@ -1,5 +1,3 @@
-require 'ruby_vim_sdk'
-
 module VSphereCloud
   class VMAttributeManager
     def initialize(custom_fields_manager, logger)

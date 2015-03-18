@@ -1,6 +1,5 @@
 require 'spec_helper'
-require 'fakefs/spec_helpers'
-require 'cloud/vsphere/client'
+# require 'cloud/vsphere/client'
 
 module VSphereCloud
   describe Client do

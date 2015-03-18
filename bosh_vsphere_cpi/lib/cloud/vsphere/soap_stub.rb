@@ -1,5 +1,4 @@
 require 'httpclient'
-require 'ruby_vim_sdk'
 
 module VSphereCloud
   class SoapStub

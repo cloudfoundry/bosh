@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'fakefs/spec_helpers'
+# require 'fakefs/spec_helpers'
 
 module VSphereCloud
   describe AgentEnv do

@@ -1,8 +1,3 @@
-require 'ruby_vim_sdk'
-require 'cloud/vsphere/cloud_searcher'
-require 'cloud/vsphere/resources/disk'
-require 'cloud/vsphere/soap_stub'
-
 module VSphereCloud
 
   class Client

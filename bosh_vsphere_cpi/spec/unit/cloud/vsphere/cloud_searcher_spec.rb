@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'cloud/vsphere/cloud_searcher'
+# require 'cloud/vsphere/cloud_searcher'
 
 describe VSphereCloud::CloudSearcher do
   subject(:cloud_searcher) { VSphereCloud::CloudSearcher.new(service_content, logger) }

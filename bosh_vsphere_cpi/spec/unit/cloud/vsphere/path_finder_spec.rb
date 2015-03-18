@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'cloud/vsphere/path_finder'
 
 describe VSphereCloud::PathFinder do
   describe '#build_path_for_network' do

@@ -1,6 +1,3 @@
-require 'ruby_vim_sdk'
-require 'cloud/vsphere/cluster_config'
-
 module VSphereCloud
   class Config
     def self.build(config_hash)

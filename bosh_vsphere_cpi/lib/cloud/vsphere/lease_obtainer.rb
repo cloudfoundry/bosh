@@ -1,5 +1,3 @@
-require 'ruby_vim_sdk'
-
 module VSphereCloud
   class LeaseObtainer
     include VimSdk

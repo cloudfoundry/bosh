@@ -1,7 +1,5 @@
 require 'spec_helper'
 
-require 'cloud/vsphere/cluster_config'
-
 module VSphereCloud
   describe ClusterConfig do
     subject(:cluster_config) { described_class.new(name, config) }

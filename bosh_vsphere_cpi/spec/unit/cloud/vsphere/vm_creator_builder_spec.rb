@@ -1,4 +1,5 @@
-require 'cloud/vsphere/vm_creator_builder'
+require 'spec_helper'
+# require 'cloud/vsphere/vm_creator_builder'
 
 module VSphereCloud
   describe VmCreatorBuilder do
