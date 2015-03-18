@@ -1,3 +1,11 @@
+## 2881
+
+Improvements:
+
+  * cpi: vsphere: Removed CPI specific database to allow greater
+          mobility of persistent disks (e.g. moved to a different datastore)
+          and to prepare for externalizing vSphere CPI
+
 ## 2859
 
 Improvements:
@@ -5,6 +13,7 @@ Improvements:
   * stemcell: ubuntu: Bump to get 3.16 kernel
         and get libc6 from 2.19-0ubuntu6.6 [5154430]
         [story](https://www.pivotaltracker.com/story/show/89216658)
+  * director: Provide better Director job configuration for external CPIs [3634979]
 
 ## 2858
 
@@ -16,6 +25,7 @@ Bug Fixes:
 
 New Features:
 
+  * stemcell: ubuntu: Updated Ubuntu Trusty to 14.04.2 [7108831]
   * director: Allow UAA as use management provider configuration [8ac86a2]
 
 Improvements:
