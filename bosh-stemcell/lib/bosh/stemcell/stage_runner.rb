@@ -9,8 +9,8 @@ module Bosh::Stemcell
       @work_path = options.fetch(:work_path)
     end
 
-    def configure_and_apply(stages)
-      stages = resume_from(stages, ENV['resume_from'])
+    def configure_and_apply(stages, resume_from_stage = nil)
+      stages = resume_from(stages, resume_from_stage)
       configure(stages)
       apply(stages)
     end

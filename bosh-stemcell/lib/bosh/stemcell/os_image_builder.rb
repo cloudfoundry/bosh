@@ -9,7 +9,7 @@ module Bosh::Stemcell
 
     def build(os_image_path)
       environment.prepare_build
-      runner.configure_and_apply(collection.operating_system_stages)
+      runner.configure_and_apply(collection.operating_system_stages, ENV['resume_from'])
       archive_handler.compress(environment.chroot_dir, os_image_path)
     end
 

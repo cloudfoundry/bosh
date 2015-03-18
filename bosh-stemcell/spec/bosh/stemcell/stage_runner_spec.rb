@@ -175,28 +175,20 @@ module Bosh::Stemcell
       end
 
       context 'when resume_from is set' do
-        before do
-          ENV['resume_from'] = 'stage_1'
-        end
-
         it 'skips stages before resume_from ' do
           expect(stage_runner).to_not receive(:puts).with("=== Configuring 'stage_0' stage ===")
           expect(stage_runner).to receive(:puts).with("=== Configuring 'stage_1' stage ===")
           expect(stage_runner).to_not receive(:puts).with("=== Applying 'stage_0' stage ===")
           expect(stage_runner).to receive(:puts).with("=== Applying 'stage_1' stage ===")
 
-          stage_runner.configure_and_apply(stages)
+          stage_runner.configure_and_apply(stages, 'stage_1')
         end
       end
 
       context 'when resume_from is set to an unknown stage name' do
-        before do
-          ENV['resume_from'] = 'this_stage_totally_doesnt_exist'
-        end
-
         it 'raises an error' do
           expect {
-            stage_runner.configure_and_apply(stages)
+            stage_runner.configure_and_apply(stages, 'this_stage_totally_doesnt_exist')
           }.to raise_error("Can't find stage 'this_stage_totally_doesnt_exist' to resume from. Aborting.")
         end
       end

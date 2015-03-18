@@ -17,7 +17,7 @@ module Bosh::Stemcell
       stemcell_stages = collection.extract_operating_system_stages +
         collection.agent_stages +
         collection.build_stemcell_image_stages
-      runner.configure_and_apply(stemcell_stages)
+      runner.configure_and_apply(stemcell_stages, ENV['resume_from'])
     end
 
     private

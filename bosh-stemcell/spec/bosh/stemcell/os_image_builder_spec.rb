@@ -28,7 +28,7 @@ describe Bosh::Stemcell::OsImageBuilder do
 
     it 'runs the operating system stages' do
       allow(collection).to receive(:operating_system_stages).and_return([:some_stage])
-      expect(runner).to receive(:configure_and_apply).with([:some_stage])
+      expect(runner).to receive(:configure_and_apply).with([:some_stage], nil)
 
       builder.build('/some/os_image_path.tgz')
     end

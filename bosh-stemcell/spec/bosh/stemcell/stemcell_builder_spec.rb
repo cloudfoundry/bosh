@@ -83,7 +83,7 @@ describe Bosh::Stemcell::StemcellBuilder do
     end
 
     it 'runs the extract OS, agent, and infrastructure stages' do
-      expect(runner).to receive(:configure_and_apply).with([:extract_stage, :agent_stage, :build_stage])
+      expect(runner).to receive(:configure_and_apply).with([:extract_stage, :agent_stage, :build_stage], nil)
 
       builder.build
     end
