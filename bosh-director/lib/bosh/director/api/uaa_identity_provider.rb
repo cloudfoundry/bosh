@@ -21,7 +21,7 @@ module Bosh
         def corroborate_user(request_env)
           auth_header = request_env['HTTP_AUTHORIZATION']
           token = @token_coder.decode(auth_header)
-          token["user_id"]
+          token['user_name']
         rescue CF::UAA::DecodeError, CF::UAA::AuthError => e
           raise AuthenticationError, e.message
         end

@@ -19,10 +19,8 @@ describe 'Logging into a director with UAA authentication', type: :integration d
       expect(runner).to have_output "Logged in as `marissa'"
     end
 
-    output = bosh_runner.run('deployments',
-      { failure_expected: true } # If you have no deployments, exit status is non-zero
-    )
-    expect(output).to match /No deployments/
+    output = bosh_runner.run('status')
+    expect(output).to match /marissa/
   end
 
   it 'fails to log in when incorrect credentials were provided' do
@@ -36,9 +34,7 @@ describe 'Logging into a director with UAA authentication', type: :integration d
       expect(runner).to have_output 'Failed to log in'
     end
 
-    output = bosh_runner.run('deployments',
-      { failure_expected: true }
-    )
-    expect(output).to match /Please log in first/
+    output = bosh_runner.run('status')
+    expect(output).to match /not logged in/
   end
 end

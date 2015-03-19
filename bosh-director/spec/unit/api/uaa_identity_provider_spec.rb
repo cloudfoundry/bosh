@@ -44,7 +44,7 @@ module Bosh::Director
       let(:audiences) { ['bosh_cli'] }
 
       it 'returns the username of the authenticated user' do
-        expect(identity_provider.corroborate_user(request_env)).to eq('faf835ea-c582-4a28-b500-6e6ac1515690')
+        expect(identity_provider.corroborate_user(request_env)).to eq('marissa')
       end
 
       context 'when the token is encoded with an incorrect key' do

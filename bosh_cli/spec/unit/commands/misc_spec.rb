@@ -21,12 +21,11 @@ describe Bosh::Cli::Command::Misc do
 
   before do
     @config_file = File.join(Dir.mktmpdir, 'bosh_config')
+    command.add_option(:config, @config_file)
   end
 
   describe 'status' do
     it 'should show current status' do
-      command.add_option(:config, @config_file)
-
       allow(command).to receive(:target).and_return(target)
       allow(command).to receive(:target_url).and_return(target)
       allow(command).to receive(:deployment).and_return('deployment-file')
@@ -35,6 +34,7 @@ describe Bosh::Cli::Command::Misc do
         'name' => target_name,
         'version' => 'v.m (release:rrrrrrrr bosh:bbbbbbbb)',
         'uuid' => uuid,
+        'user' => 'fake-user',
         'cpi' => 'dummy'
       })
 
@@ -46,7 +46,7 @@ describe Bosh::Cli::Command::Misc do
       expect(command).to receive(:say).with(/#{target_name}/)
       expect(command).to receive(:say).with(/#{target}/)
       expect(command).to receive(:say).with(/v\.m \(release:rrrrrrrr bosh:bbbbbbbb\)/)
-      expect(command).to receive(:say).with(/User/)
+      expect(command).to receive(:say).with(/User.*fake-user/)
       expect(command).to receive(:say).with(/#{uuid}/)
       expect(command).to receive(:say).with(/dummy/)
 
@@ -57,8 +57,26 @@ describe Bosh::Cli::Command::Misc do
       command.status
     end
 
+    context 'when user is not provided in response' do
+      it 'prints not logged in' do
+        allow(command).to receive(:target).and_return(target)
+        allow(command).to receive(:target_url).and_return(target)
+        allow(command).to receive(:deployment).and_return('deployment-file')
+
+        allow(director).to receive(:get_status).and_return({
+              'name' => target_name,
+              'version' => 'v.m (release:rrrrrrrr bosh:bbbbbbbb)',
+              'uuid' => uuid,
+              'cpi' => 'dummy'
+            })
+
+        allow(command).to receive(:say)
+        expect(command).to receive(:say).with(/User.*not logged in/)
+        command.status
+      end
+    end
+
     it 'should not show director data when target is not set' do
-      command.add_option(:config, @config_file)
       allow(command).to receive(:target).and_return(nil)
       expect(director).not_to receive(:get_status)
 
@@ -77,7 +95,6 @@ describe Bosh::Cli::Command::Misc do
     end
 
     it 'should not show director data when fetching director status timeouts' do
-      command.add_option(:config, @config_file)
       allow(command).to receive(:target).and_return(target)
       expect(director).to receive(:get_status).and_raise(Timeout::Error)
 
@@ -96,7 +113,6 @@ describe Bosh::Cli::Command::Misc do
     end
 
     it 'should not show director data when director raises and exception' do
-      command.add_option(:config, @config_file)
       allow(command).to receive(:target).and_return(target)
       expect(director).to receive(:get_status).and_raise(Bosh::Cli::DirectorError)
 
@@ -117,7 +133,6 @@ describe Bosh::Cli::Command::Misc do
     context '--uuid option is passed' do
       context 'can get status from director' do
         it 'prints only the director uuid' do
-          command.add_option(:config, @config_file)
           command.add_option(:uuid, true)
           allow(command).to receive(:target).and_return(target)
 
@@ -131,7 +146,6 @@ describe Bosh::Cli::Command::Misc do
 
       context 'fails to get director status' do
         it 'returns non-zero status' do
-          command.add_option(:config, @config_file)
           command.add_option(:uuid, true)
           allow(command).to receive(:target).and_return(target)
 
@@ -161,7 +175,6 @@ EOS
       context 'is interactive' do
         context 'target name is set' do
           it 'decorates target with target name' do
-            command.add_option(:config, @config_file)
             expect(command).to receive(:say).with("Current target is #{target} (#{target_name})")
             command.set_target
           end
@@ -171,7 +184,6 @@ EOS
           let(:target_name) { nil }
 
           it 'decorates target' do
-            command.add_option(:config, @config_file)
             expect(command).to receive(:say).with("Current target is #{target}")
             command.set_target
           end
@@ -180,7 +192,6 @@ EOS
 
       context 'is non-interactive' do
         it 'does not decorates target' do
-          command.add_option(:config, @config_file)
           command.add_option(:non_interactive, true)
           expect(command).to receive(:say).with("#{target}")
           command.set_target
@@ -190,7 +201,6 @@ EOS
 
     context 'target is not set' do
       it 'errors' do
-        command.add_option(:config, @config_file)
         expect(command).to receive(:err).with('Target not set')
         command.set_target
       end

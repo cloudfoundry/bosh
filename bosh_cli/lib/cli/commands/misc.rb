@@ -33,7 +33,7 @@ module Bosh::Cli::Command
             print_value("Name", status["name"])
             print_value("URL", target_url)
             print_value("Version", status["version"])
-            print_value("User", username, "not logged in")
+            print_value("User", status["user"], "not logged in")
             print_value("UUID", status["uuid"])
             print_value("CPI", status["cpi"], "n/a")
             print_feature_list(status["features"]) if status["features"]
@@ -234,7 +234,7 @@ module Bosh::Cli::Command
     end
 
     def get_director_status
-      Bosh::Cli::Client::Director.new(target).get_status
+      Bosh::Cli::Client::Director.new(target, credentials).get_status
     end
   end
 end

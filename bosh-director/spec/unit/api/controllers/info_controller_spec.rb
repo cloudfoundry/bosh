@@ -43,12 +43,16 @@ module Bosh::Director
           basic_authorize 'admin', 'admin'
           get '/'
           expect(last_response.status).to eq(200)
+          info_response = Yajl::Parser.parse(last_response.body)
+          expect(info_response['user']).to eq('admin')
         end
 
-        it 'denies invalid credentials' do
+        it 'allows invalid credentials' do
           basic_authorize 'notadmin', 'admin'
           get '/'
-          expect(last_response.status).to eq(401)
+          expect(last_response.status).to eq(200)
+          info_response = Yajl::Parser.parse(last_response.body)
+          expect(info_response['user']).to eq(nil)
         end
       end
 
