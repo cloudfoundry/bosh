@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `Hcp6Wc4bQp9WB0i.y_2Z4qYzsO.7AXht`
+  update libssl to 1.0.1f-1ubuntu2.11
+
 * `jU0u9AnG550hgtZhH4TS30eU0lOJZxWn`
   update libc6 to 2.19-0ubuntu6.6
   update linux-headers to 3.16.0-31
