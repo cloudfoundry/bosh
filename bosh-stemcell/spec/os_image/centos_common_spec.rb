@@ -15,9 +15,7 @@ describe 'All CentOS versions', os_image: true do
       centos-release
       epel-release
     ).each do |pkg|
-      describe package(pkg) do
-        it { should be_installed }
-      end
+      package_should_be_installed(pkg)
     end
 
     describe file('/etc/sysconfig/network') do

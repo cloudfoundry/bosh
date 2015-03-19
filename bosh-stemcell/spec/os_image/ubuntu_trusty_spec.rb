@@ -139,11 +139,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       uuid-dev
       libgcrypt11-dev
     ).each do |pkg|
-      name, version = pkg.split(/:/)
-      describe package(name) do
-        # version might be nil, but with_version doesn't mind...
-        it { should be_installed.with_version(version) }
-      end
+      package_should_be_installed(pkg)
     end
 
     describe file('/sbin/rescan-scsi-bus') do
