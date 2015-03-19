@@ -93,7 +93,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
 
   context 'installed by base_ubuntu_packages' do
     %w(
-      libssl-dev
+      libssl-dev:1.0.1f-1ubuntu2.11
       lsof
       strace
       bind9-host
@@ -139,8 +139,10 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       uuid-dev
       libgcrypt11-dev
     ).each do |pkg|
-      describe package(pkg) do
-        it { should be_installed }
+      name, version = pkg.split(/:/)
+      describe package(name) do
+        # version might be nil, but with_version doesn't mind...
+        it { should be_installed.with_version(version) }
       end
     end
 
