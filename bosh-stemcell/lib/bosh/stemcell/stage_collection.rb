@@ -95,6 +95,7 @@ module Bosh::Stemcell
           :base_centos,
           :base_centos_packages,
           :base_ssh,
+          :bosh_sysctl,
           bosh_steps,
           :rsyslog_config,
           :delay_monit_start,

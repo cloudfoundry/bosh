@@ -60,4 +60,14 @@ describe 'CentOS 7 OS image', os_image: true do
       it { should be_installed }
     end
   end
+
+  context 'installed by bosh_sysctl' do
+    describe file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      it { should be_file }
+    end
+
+    describe file('/etc/sysctl.d/60-bosh-sysctl-neigh-fix.conf') do
+      it { should be_file }
+    end
+  end
 end
