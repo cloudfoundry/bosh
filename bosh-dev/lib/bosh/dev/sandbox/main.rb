@@ -23,11 +23,11 @@ module Bosh::Dev::Sandbox
     UAA_CONFIG_DIR = File.expand_path('spec/assets', REPO_ROOT)
 
     DIRECTOR_CONFIG = 'director_test.yml'
-    DIRECTOR_NGINX_CONFIG = 'director_nginx.conf'
-    DIRECTOR_NGINX_CONF_TEMPLATE = File.join(ASSETS_DIR, 'director_nginx.conf.erb')
+    NGINX_CONFIG = 'nginx.conf'
+    NGINX_CONF_TEMPLATE = File.join(ASSETS_DIR, 'nginx.conf.erb')
 
-    DIRECTOR_NGINX_SSL_CERT = File.join(ASSETS_DIR, 'ca', 'ca.pem')
-    DIRECTOR_NGINX_SSL_CERT_KEY = File.join(ASSETS_DIR, 'ca', 'ca.key')
+    NGINX_SSL_CERT = File.join(ASSETS_DIR, 'ca', 'certs', 'server.crt')
+    NGINX_SSL_CERT_KEY = File.join(ASSETS_DIR, 'ca', 'certs', 'server.key')
 
     REDIS_CONFIG = 'redis_test.conf'
     REDIS_CONF_TEMPLATE = File.join(ASSETS_DIR, 'redis_test.conf.erb')
@@ -227,7 +227,7 @@ module Bosh::Dev::Sandbox
     end
 
     def director_port
-      @director_port ||= @port_provider.get_port(:director)
+      @director_port ||= @port_provider.get_port(:nginx)
     end
 
     def uaa_port
@@ -252,12 +252,16 @@ module Bosh::Dev::Sandbox
       @director_fix_stateful_nodes = options.fetch(:director_fix_stateful_nodes, false)
     end
 
-    def director_ssl_cert_path
-      DIRECTOR_NGINX_SSL_CERT
+    def ssl_cert_path
+      NGINX_SSL_CERT
     end
 
-    def director_ssl_cert_key_path
-      DIRECTOR_NGINX_SSL_CERT_KEY
+    def ssl_cert_key_path
+      NGINX_SSL_CERT_KEY
+    end
+
+    def certificate_path
+      File.join(ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
     end
 
     private
@@ -298,7 +302,7 @@ module Bosh::Dev::Sandbox
     end
 
     def setup_sandbox_root
-      write_in_sandbox(DIRECTOR_NGINX_CONFIG, load_config_template(DIRECTOR_NGINX_CONF_TEMPLATE))
+      write_in_sandbox(NGINX_CONFIG, load_config_template(NGINX_CONF_TEMPLATE))
       write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
       write_in_sandbox(REDIS_CONFIG, load_config_template(REDIS_CONF_TEMPLATE))
       write_in_sandbox(EXTERNAL_CPI, load_config_template(EXTERNAL_CPI_TEMPLATE))
@@ -387,7 +391,7 @@ module Bosh::Dev::Sandbox
       @nginx = Nginx.new
 
       @director_nginx_process = Service.new(
-        %W[#{@nginx.executable_path} -c #{sandbox_path(DIRECTOR_NGINX_CONFIG)}], {}, @logger)
+        %W[#{@nginx.executable_path} -c #{sandbox_path(NGINX_CONFIG)}], {}, @logger)
 
       @director_nginx_socket_connector = SocketConnector.new('director_nginx', 'localhost', director_port, @logger)
     end

@@ -33,7 +33,7 @@ module Bosh::Dev::Sandbox
       @cloud_storage_dir = attrs.fetch(:cloud_storage_dir)
 
       @user_authentication = attrs.fetch(:user_authentication)
-      @uaa_url = "http://localhost:#{port_provider.get_port(:uaa)}/uaa"
+      @uaa_url = "https://127.0.0.1:#{port_provider.get_port(:nginx)}/uaa"
     end
 
     def render(template_path)

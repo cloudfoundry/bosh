@@ -1,10 +1,10 @@
 require 'spec_helper'
 
 describe Bosh::Cli::Client::Uaa do
-  subject(:uaa) { described_class.new({'url' => 'fake-url'}) }
+  subject(:uaa) { described_class.new({'url' => 'fake-url'}, 'fake-ca-cert') }
   before do
     allow(CF::UAA::TokenIssuer).to receive(:new).
-        with('fake-url', 'bosh_cli', nil, {skip_ssl_validation: true}).
+        with('fake-url', 'bosh_cli', nil, { ssl_ca_file: 'fake-ca-cert' }).
         and_return(token_issuer)
   end
 

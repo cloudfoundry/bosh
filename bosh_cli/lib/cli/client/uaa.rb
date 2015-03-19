@@ -4,9 +4,9 @@ module Bosh
   module Cli
     module Client
       class Uaa
-        def initialize(options)
+        def initialize(options, ssl_ca_file)
           url = options.fetch('url')
-          @token_issuer = CF::UAA::TokenIssuer.new(url, 'bosh_cli', nil, {skip_ssl_validation: true})
+          @token_issuer = CF::UAA::TokenIssuer.new(url, 'bosh_cli', nil, { ssl_ca_file: ssl_ca_file })
         end
 
         def prompts

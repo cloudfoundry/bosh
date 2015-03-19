@@ -14,12 +14,16 @@ http {
     server 127.0.0.1:<%= director_ruby_port %>;
   }
 
+  upstream uaa {
+    server 127.0.0.1:<%= uaa_port %>;
+  }
+
   server {
     listen <%= director_port %>;
 
     ssl                 on;
-    ssl_certificate     <%= director_ssl_cert_path %>;
-    ssl_certificate_key <%= director_ssl_cert_key_path %>;
+    ssl_certificate     <%= ssl_cert_path %>;
+    ssl_certificate_key <%= ssl_cert_key_path %>;
     ssl_session_timeout 7200;
     ssl_prefer_server_ciphers On;
     ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
@@ -54,6 +58,10 @@ http {
 
     location @director_upload {
       proxy_pass http://director;
+    }
+
+    location /uaa {
+      proxy_pass http://uaa;
     }
   }
 }

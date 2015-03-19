@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe "UAA client", vcr: { cassette_name: 'uaa-client' } do
   it "can fetch the login prompts from uaa" do
-    uaa_client = Bosh::Cli::Client::Uaa.new({'url' => 'http://localhost:8080/uaa'})
+    uaa_client = Bosh::Cli::Client::Uaa.new({'url' => 'http://localhost:8080/uaa'}, 'fake-cert')
     expect(uaa_client.prompts).to match_array([
           Bosh::Cli::Client::Uaa::Prompt.new('username', 'text', 'Email'),
           Bosh::Cli::Client::Uaa::Prompt.new('password', 'password', 'Password'),

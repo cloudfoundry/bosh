@@ -6,11 +6,12 @@ require 'cli/terminal'
 module Bosh::Cli::Command
   class Login < Base
     # bosh login
-    usage "login"
-    desc  "Log in to currently targeted director. " +
-          "The username and password can also be " +
-          "set in the BOSH_USER and BOSH_PASSWORD " +
-          "environment variables."
+    usage 'login'
+    desc  'Log in to currently targeted director. ' +
+        'The username and password can also be ' +
+        'set in the BOSH_USER and BOSH_PASSWORD ' +
+        'environment variables.'
+    option '--ca-cert FILE', String, 'Path to client certificate provided to UAA server'
     def login(username = nil, password = nil)
       target_required
 
@@ -18,8 +19,8 @@ module Bosh::Cli::Command
     end
 
     # bosh logout
-    usage "logout"
-    desc  "Forget saved credentials for targeted director"
+    usage 'logout'
+    desc 'Forget saved credentials for targeted director'
     def logout
       target_required
       config.set_credentials(target, nil)
@@ -40,7 +41,7 @@ module Bosh::Cli::Command
       auth_info = director_info.fetch('user_authentication', {})
 
       if auth_info['type'] == 'uaa'
-        uaa = Bosh::Cli::Client::Uaa.new(auth_info['options'])
+        uaa = Bosh::Cli::Client::Uaa.new(auth_info['options'], options[:ca_cert])
         Bosh::Cli::UaaLoginStrategy.new(terminal, uaa, config, interactive?)
       else
         Bosh::Cli::BasicLoginStrategy.new(terminal, director, config, interactive?)
