@@ -37,6 +37,12 @@ describe 'Logging into a director with UAA authentication', type: :integration d
       output = bosh_runner.run('status')
       expect(output).to match /not logged in/
     end
+
+    it 'fails to log in when cli fails to validate server' do
+      bosh_runner.run_interactively('login') do |runner|
+        expect(runner).to have_output 'Invalid SSL Cert'
+      end
+    end
   end
 
   context 'when UAA is configured with wrong certificate' do
