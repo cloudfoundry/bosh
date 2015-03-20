@@ -1,14 +1,25 @@
 require 'spec_helper'
 
 describe Bosh::Cli::Client::Uaa do
-  subject(:uaa) { described_class.new({'url' => 'fake-url'}, 'fake-ca-cert') }
+  subject(:uaa) { described_class.new({ 'url' => url }, 'fake-ca-cert') }
+  let(:url) { 'https://example.com' }
   before do
     allow(CF::UAA::TokenIssuer).to receive(:new).
-        with('fake-url', 'bosh_cli', nil, { ssl_ca_file: 'fake-ca-cert' }).
+        with(url, 'bosh_cli', nil, { ssl_ca_file: 'fake-ca-cert' }).
         and_return(token_issuer)
   end
 
   let(:token_issuer) { instance_double(CF::UAA::TokenIssuer) }
+
+  describe '#initialize' do
+    context 'when URL is not HTTPS' do
+      let(:url) { 'http://example.com' }
+
+      it 'fails' do
+        expect { uaa }.to raise_error /HTTPS protocol is required/
+      end
+    end
+  end
 
   describe '#login' do
     context 'when login succeeds' do

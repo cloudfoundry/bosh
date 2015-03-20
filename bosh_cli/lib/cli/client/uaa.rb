@@ -1,4 +1,5 @@
 require 'uaa'
+require 'uri'
 
 module Bosh
   module Cli
@@ -6,6 +7,10 @@ module Bosh
       class Uaa
         def initialize(options, ssl_ca_file)
           url = options.fetch('url')
+          unless URI.parse(url).instance_of?(URI::HTTPS)
+            err('Failed to connect to UAA, HTTPS protocol is required')
+          end
+
           @token_issuer = CF::UAA::TokenIssuer.new(url, 'bosh_cli', nil, { ssl_ca_file: ssl_ca_file })
         end
 

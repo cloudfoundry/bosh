@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: get
-    uri: http://localhost:8080/uaa/login
+    uri: https://localhost:8080/uaa/login
     body:
       encoding: US-ASCII
       string: ''
