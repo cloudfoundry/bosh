@@ -59,7 +59,7 @@ properties:
     default: 900
   director.max_upload_size:
     description: Max allowed file size for upload
-    default: 5000m
+    default: 10000m
   director.ssl.cert:
     description: SSL Certificate for director (PEM encoded)
   director.ssl.key:
