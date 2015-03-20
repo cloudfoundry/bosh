@@ -10,6 +10,7 @@ require 'bosh/dev/sandbox/workspace'
 require 'bosh/dev/sandbox/director_config'
 require 'bosh/dev/sandbox/port_provider'
 require 'bosh/dev/sandbox/services/director_service'
+require 'bosh/dev/sandbox/services/nginx_service'
 require 'cloud/dummy'
 require 'logging'
 
@@ -23,11 +24,6 @@ module Bosh::Dev::Sandbox
     UAA_CONFIG_DIR = File.expand_path('spec/assets', REPO_ROOT)
 
     DIRECTOR_CONFIG = 'director_test.yml'
-    NGINX_CONFIG = 'nginx.conf'
-    NGINX_CONF_TEMPLATE = File.join(ASSETS_DIR, 'nginx.conf.erb')
-
-    NGINX_SSL_CERT = File.join(ASSETS_DIR, 'ca', 'certs', 'server.crt')
-    NGINX_SSL_CERT_KEY = File.join(ASSETS_DIR, 'ca', 'certs', 'server.key')
 
     REDIS_CONFIG = 'redis_test.conf'
     REDIS_CONF_TEMPLATE = File.join(ASSETS_DIR, 'redis_test.conf.erb')
@@ -85,7 +81,9 @@ module Bosh::Dev::Sandbox
 
       setup_redis
       setup_nats
-      setup_nginx
+
+      @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, uaa_port, @logger)
+
       director_config = sandbox_path(DirectorService::DIRECTOR_CONFIG)
       director_tmp_path = sandbox_path('boshdir')
       @director_service = DirectorService.new(director_ruby_port, redis_port, base_log_path, director_tmp_path, director_config, @logger)
@@ -128,8 +126,7 @@ module Bosh::Dev::Sandbox
       @redis_process.start
       @redis_socket_connector.try_to_connect
 
-      @director_nginx_process.start
-      @director_nginx_socket_connector.try_to_connect
+      @nginx_service.start
 
       @nats_process.start
       @nats_socket_connector.try_to_connect
@@ -187,7 +184,7 @@ module Bosh::Dev::Sandbox
 
       @director_service.stop
 
-      @director_nginx_process.stop
+      @nginx_service.stop
       @redis_process.stop
       @nats_process.stop
 
@@ -250,14 +247,7 @@ module Bosh::Dev::Sandbox
       @user_authentication = options.fetch(:user_authentication, 'local')
       @external_cpi_enabled = options.fetch(:external_cpi_enabled, false)
       @director_fix_stateful_nodes = options.fetch(:director_fix_stateful_nodes, false)
-    end
-
-    def ssl_cert_path
-      NGINX_SSL_CERT
-    end
-
-    def ssl_cert_key_path
-      NGINX_SSL_CERT_KEY
+      @nginx_service.reconfigure(options[:ssl_mode])
     end
 
     def certificate_path
@@ -299,10 +289,11 @@ module Bosh::Dev::Sandbox
 
       start_uaa if @user_authentication == 'uaa'
       @director_service.start(director_config)
+
+      @nginx_service.restart_if_needed
     end
 
     def setup_sandbox_root
-      write_in_sandbox(NGINX_CONFIG, load_config_template(NGINX_CONF_TEMPLATE))
       write_in_sandbox(HM_CONFIG, load_config_template(HM_CONF_TEMPLATE))
       write_in_sandbox(REDIS_CONFIG, load_config_template(REDIS_CONF_TEMPLATE))
       write_in_sandbox(EXTERNAL_CPI, load_config_template(EXTERNAL_CPI_TEMPLATE))
@@ -385,15 +376,6 @@ module Bosh::Dev::Sandbox
       )
 
       @uaa_socket_connector = SocketConnector.new('uaa', 'localhost', uaa_port, @logger)
-    end
-
-    def setup_nginx
-      @nginx = Nginx.new
-
-      @director_nginx_process = Service.new(
-        %W[#{@nginx.executable_path} -c #{sandbox_path(NGINX_CONFIG)}], {}, @logger)
-
-      @director_nginx_socket_connector = SocketConnector.new('director_nginx', 'localhost', director_port, @logger)
     end
 
     def setup_nats

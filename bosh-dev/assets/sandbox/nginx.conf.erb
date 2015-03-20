@@ -19,7 +19,7 @@ http {
   }
 
   server {
-    listen <%= director_port %>;
+    listen <%= nginx_port %>;
 
     ssl                 on;
     ssl_certificate     <%= ssl_cert_path %>;

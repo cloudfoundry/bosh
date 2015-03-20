@@ -38,4 +38,18 @@ describe 'Logging into a director with UAA authentication', type: :integration d
       expect(output).to match /not logged in/
     end
   end
+
+  context 'when UAA is configured with wrong certificate' do
+    with_reset_sandbox_before_each(user_authentication: 'uaa', ssl_mode: 'wrong-ca')
+
+    before do
+      bosh_runner.run("target #{current_sandbox.director_url}")
+    end
+
+    it 'fails to log in when incorrect credentials were provided' do
+      bosh_runner.run_interactively("login --ca-cert #{current_sandbox.certificate_path}") do |runner|
+        expect(runner).to have_output 'Invalid SSL Cert'
+      end
+    end
+  end
 end

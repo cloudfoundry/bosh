@@ -4,7 +4,6 @@ module Bosh::Dev::Sandbox
   class DirectorService
 
     REPO_ROOT = File.expand_path('../../../../../../', File.dirname(__FILE__))
-
     ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
     DIRECTOR_UUID = 'deadbeef'
 
