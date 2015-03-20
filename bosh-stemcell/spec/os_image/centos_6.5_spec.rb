@@ -49,7 +49,9 @@ describe 'CentOS 6.x OS image', os_image: true do
       wget
       zip
     ).each do |pkg|
-      package_should_be_installed(pkg)
+      describe package(pkg) do
+        it { should be_installed }
+      end
     end
   end
 
