@@ -9,7 +9,7 @@ RSpec.configure do |config|
     end
 
     config.after(:all) do
-      FileUtils.rm_rf(@os_image_dir)
+      Bosh::Core::Shell.new.run("sudo rm -rf #{@os_image_dir}")
     end
   else
     warning = 'All OS_IMAGE tests are being skipped. ENV["OS_IMAGE"] must be set to test OS images'
