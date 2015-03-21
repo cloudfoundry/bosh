@@ -72,8 +72,21 @@ module Bosh::Director
         first_ip = @range.first(:Objectify => true)
         last_ip = @range.last(:Objectify => true)
 
-        (first_ip.to_i .. last_ip.to_i).each do |ip|
-          @available_dynamic_ips << ip
+        available_ips = safe_property(subnet_spec, "available", :optional => true)
+
+        if !available_ips.nil?
+          each_ip(available_ips) do |ip|
+            if ip < first_ip.to_i || ip > last_ip.to_i
+              raise NetworkAvailableIpOutOfRange,
+                    "Available IP `#{format_ip(ip)}' is out of " +
+                        "network `#{@network.name}' range"
+            end
+            @available_dynamic_ips << ip
+          end
+        else
+          (first_ip.to_i .. last_ip.to_i).each do |ip|
+            @available_dynamic_ips << ip
+          end
         end
 
         @available_dynamic_ips.delete(@gateway.to_i) if @gateway
