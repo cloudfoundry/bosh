@@ -1,0 +1,10 @@
+[Unit]
+Description=runit
+After=network.target
+
+[Service]
+TimeoutStartSec=0
+ExecStart=/sbin/runsvdir-start
+
+[Install]
+WantedBy=multi-user.target

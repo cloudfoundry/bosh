@@ -215,17 +215,29 @@ module Bosh::Cli
       return if @license_artifact.nil?
 
       header("Copying license...")
-      copy_artifact(@license_artifact)
+      copied = copy_artifact(@license_artifact)
+      extract_license(copied)
       nl
     end
 
     def copy_artifact(artifact, dest = nil)
       name = artifact.name
-      tarball_path = artifact.tarball_path
+      source_path = artifact.tarball_path
+      output_path = File.join([build_dir, dest, "#{name}.tgz"].compact)
+
       say("%-40s %s" % [name.make_green, pretty_size(tarball_path)])
-      FileUtils.cp(tarball_path,
-        File.join([build_dir, dest, "#{name}.tgz"].compact),
-        :preserve => true)
+      FileUtils.cp(source_path, output_path, :preserve => true)
+
+      output_path
+    end
+
+    def extract_license(tarball_path)
+      return if @license_artifact.nil?
+
+      in_build_dir do
+        `tar -xzf #{tarball_path} 2>&1`
+        `rm #{tarball_path} 2>&1`
+      end
     end
 
     def assign_version

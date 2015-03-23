@@ -86,7 +86,7 @@ module Bosh::Stemcell
   describe Infrastructure::Aws do
     its(:name)              { should eq('aws') }
     its(:hypervisor)        { should eq('xen') }
-    its(:default_disk_size) { should eq(2048) }
+    its(:default_disk_size) { should eq(3072) }
     its(:disk_formats)      { should eq(['raw']) }
 
     it { should eq Infrastructure.for('aws') }

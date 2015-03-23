@@ -23,7 +23,7 @@ then
 
   rsync -a $chroot/usr/lib/grub/x86*/ $chroot/boot/grub/
 
-elif [ -d $chroot/usr/share/grub/x86* ] # classic GRUB on CentOS 6.5
+elif [ -d $chroot/usr/share/grub/x86* ] # classic GRUB on CentOS 6
 then
 
   rsync -a $chroot/usr/share/grub/x86*/ $chroot/boot/grub/
@@ -31,7 +31,7 @@ then
 elif [ -d $chroot/etc/grub.d ] # GRUB 2 on CentOS 7 or Ubuntu
 then
 
-  echo "Found grub2; not copying bootloader stages"
+  echo "Found grub2; grub-legacy bootloader stages not needed"
 
 else
 

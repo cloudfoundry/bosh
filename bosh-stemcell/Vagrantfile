@@ -22,7 +22,7 @@ Vagrant.configure('2') do |config|
     end
   end
 
-  [:remote, :remote2].each do |name|
+  [:remote, :remote2, :remote3].each do |name|
     config.vm.define name do |remote|
       remote.vm.box_url = "https://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-vagrant-boxes/#{vm_box}-aws.box"
       remote.vm.provider :aws do |aws, override|
@@ -33,6 +33,8 @@ Vagrant.configure('2') do |config|
         aws.keypair_name = 'bosh'
         aws.security_groups = ['bosh-stemcell']
         aws.tags = { 'Name' => vm_box }
+
+        aws.ami = 'placeholder to keep vagrant_aws_plugin happy'
 
         override.ssh.username = 'ubuntu'
         override.ssh.private_key_path = env.fetch('BOSH_KEY_PATH', '~/.ssh/id_rsa_bosh')

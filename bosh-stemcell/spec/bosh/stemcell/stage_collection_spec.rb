@@ -56,6 +56,7 @@ module Bosh::Stemcell
               :base_centos,
               :base_centos_packages,
               :base_ssh,
+              :bosh_sysctl,
               :bosh_users,
               :bosh_monit,
               :bosh_ntpdate,

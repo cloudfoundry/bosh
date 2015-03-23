@@ -93,7 +93,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
 
   context 'installed by base_ubuntu_packages' do
     %w(
-      libssl-dev:1.0.1f-1ubuntu2.11
+      libssl-dev
       lsof
       strace
       bind9-host
@@ -139,7 +139,9 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       uuid-dev
       libgcrypt11-dev
     ).each do |pkg|
-      package_should_be_installed(pkg)
+      describe package(pkg) do
+        it { should be_installed }
+      end
     end
 
     describe file('/sbin/rescan-scsi-bus') do
@@ -195,10 +197,10 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
 
   context 'installed by system_kernel' do
     %w(
-      linux-headers-3.16.0-31
-      linux-headers-3.16.0-31-generic
-      linux-image-3.16.0-31-generic
-      linux-image-extra-3.16.0-31-generic
+      linux-headers-3.16.0-33
+      linux-headers-3.16.0-33-generic
+      linux-image-3.16.0-33-generic
+      linux-image-extra-3.16.0-33-generic
     ).each do |pkg|
       describe package(pkg) do
         it { should be_installed }

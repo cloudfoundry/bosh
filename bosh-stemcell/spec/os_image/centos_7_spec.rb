@@ -11,6 +11,7 @@ describe 'CentOS 7 OS image', os_image: true do
       cmake
       curl
       dhclient
+      e2fsprogs
       flex
       gdb
       glibc-static
@@ -22,6 +23,7 @@ describe 'CentOS 7 OS image', os_image: true do
       libxslt
       libxslt-devel
       lsof
+      NetworkManager
       nmap-ncat
       openssh-server
       openssl-devel
@@ -47,13 +49,25 @@ describe 'CentOS 7 OS image', os_image: true do
       wget
       zip
     ).each do |pkg|
-      package_should_be_installed(pkg)
+      describe package(pkg) do
+        it { should be_installed }
+      end
     end
   end
 
   context 'installed by system_grub' do
     describe package('grub2-tools') do
       it { should be_installed }
+    end
+  end
+
+  context 'installed by bosh_sysctl' do
+    describe file('/etc/sysctl.d/60-bosh-sysctl.conf') do
+      it { should be_file }
+    end
+
+    describe file('/etc/sysctl.d/60-bosh-sysctl-neigh-fix.conf') do
+      it { should be_file }
     end
   end
 end

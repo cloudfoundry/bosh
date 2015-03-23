@@ -9,7 +9,7 @@ source $base_dir/etc/settings.bash
 mkdir -p $chroot/var/lib/rpm
 rpm --root $chroot --initdb
 case "${stemcell_operating_system_version}" in
-  "6.5")
+  "6")
     centos_release_package_url="http://mirror.centos.org/centos/6/os/x86_64/Packages/centos-release-6-6.el6.centos.12.2.x86_64.rpm"
     epel_package_url="http://ftp.osuosl.org/pub/fedora-epel/6/x86_64/epel-release-6-8.noarch.rpm"
     ;;

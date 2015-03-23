@@ -49,7 +49,9 @@ describe 'CentOS 6.x OS image', os_image: true do
       wget
       zip
     ).each do |pkg|
-      package_should_be_installed(pkg)
+      describe package(pkg) do
+        it { should be_installed }
+      end
     end
   end
 
@@ -57,11 +59,11 @@ describe 'CentOS 6.x OS image', os_image: true do
     describe package('grub') do
       it { should be_installed }
     end
-  end
 
-  %w(e2fs_stage1_5 stage1 stage2).each do |grub_stage|
-    describe file("/boot/grub/#{grub_stage}") do
-      it { should be_file }
+    %w(e2fs_stage1_5 stage1 stage2).each do |grub_stage|
+      describe file("/boot/grub/#{grub_stage}") do
+        it { should be_file }
+      end
     end
   end
 

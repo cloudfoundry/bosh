@@ -125,12 +125,13 @@ namespace :stemcell do
     )
 
     packager = Bosh::Stemcell::StemcellPackager.new(
-      definition,
-      environment.version,
-      environment.work_path,
-      environment.stemcell_tarball_path,
-      runner,
-      stemcell_building_stages,
+      definition: definition,
+      version: environment.version,
+      work_path: environment.work_path,
+      tarball_path: environment.stemcell_tarball_path,
+      disk_size: environment.stemcell_disk_size,
+      runner: runner,
+      collection: stemcell_building_stages,
     )
 
     builder.build

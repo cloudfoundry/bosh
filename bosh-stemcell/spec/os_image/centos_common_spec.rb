@@ -15,7 +15,17 @@ describe 'All CentOS versions', os_image: true do
       centos-release
       epel-release
     ).each do |pkg|
-      package_should_be_installed(pkg)
+      describe package(pkg) do
+        it { should be_installed }
+      end
+    end
+
+    %w(
+      firewalld
+    ).each do |pkg|
+      describe package(pkg) do
+        it { should_not be_installed }
+      end
     end
 
     describe file('/etc/sysconfig/network') do
@@ -74,5 +84,4 @@ describe 'All CentOS versions', os_image: true do
       it { should contain 'READAHEAD_COLLECT_ON_RPM="no"' }
     end
   end
-
 end

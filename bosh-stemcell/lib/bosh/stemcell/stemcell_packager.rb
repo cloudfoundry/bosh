@@ -1,13 +1,14 @@
 module Bosh
   module Stemcell
     class StemcellPackager
-      def initialize(definition, version, work_path, tarball_path, runner, collection)
-        @definition = definition
-        @version = version
-        @stemcell_build_path = File.join(work_path, 'stemcell')
-        @tarball_path = tarball_path
-        @runner = runner
-        @collection = collection
+      def initialize(options = {})
+        @definition = options.fetch(:definition)
+        @version = options.fetch(:version)
+        @stemcell_build_path = File.join(options.fetch(:work_path), 'stemcell')
+        @tarball_path = options.fetch(:tarball_path)
+        @disk_size = options.fetch(:disk_size)
+        @runner = options.fetch(:runner)
+        @collection = options.fetch(:collection)
       end
 
       def package(disk_format)
@@ -21,7 +22,7 @@ module Bosh
 
       private
 
-      attr_reader :definition, :version, :stemcell_build_path, :tarball_path, :runner, :collection
+      attr_reader :definition, :version, :stemcell_build_path, :tarball_path, :disk_size, :runner, :collection
 
       def write_manifest(disk_format)
         manifest_filename = File.join(stemcell_build_path, "stemcell.MF")
@@ -44,6 +45,7 @@ module Bosh
             'version' => version.to_s,
             'infrastructure' => infrastructure.name,
             'hypervisor' => infrastructure.hypervisor,
+            'disk' => disk_size,
             'disk_format' => disk_format,
             'container_format' => 'bare',
             'os_type' => 'linux',
