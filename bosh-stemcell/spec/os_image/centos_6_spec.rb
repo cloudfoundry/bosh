@@ -2,6 +2,7 @@ require 'spec_helper'
 
 describe 'CentOS 6.x OS image', os_image: true do
   it_behaves_like 'every OS image'
+  it_behaves_like 'a CentOS or RHEL based OS image'
   it_behaves_like 'an upstart-based OS image'
 
   context 'installed by rsyslog_build' do

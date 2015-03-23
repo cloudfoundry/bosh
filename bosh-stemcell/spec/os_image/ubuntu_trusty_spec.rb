@@ -3,12 +3,7 @@ require 'spec_helper'
 describe 'Ubuntu 14.04 OS image', os_image: true do
   it_behaves_like 'every OS image'
   it_behaves_like 'an upstart-based OS image'
-
-  context 'installed by rsyslog_build' do
-    describe command('rsyslogd -v') do
-      it { should return_stdout /7\.4\.6/ }
-    end
-  end
+  it_behaves_like 'a Linux kernel 3.x based OS image'
 
   describe package('apt') do
     it { should be_installed }
@@ -208,16 +203,6 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
     end
   end
 
-  context 'installed by bosh_sysctl' do
-    describe file('/etc/sysctl.d/60-bosh-sysctl.conf') do
-      it { should be_file }
-    end
-
-    describe file('/etc/sysctl.d/60-bosh-sysctl-neigh-fix.conf') do
-      it { should be_file }
-    end
-  end
-
   context 'symlinked by vim_tiny' do
     describe file('/usr/bin/vim') do
       it { should be_linked_to '/usr/bin/vim.tiny' }
@@ -228,6 +213,10 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
     describe file('/etc/rsyslog.d/enable-kernel-logging.conf') do
       it { should be_file }
       it { should contain('ModLoad imklog') }
+    end
+
+    describe command('rsyslogd -v') do
+      it { should return_stdout /7\.4\.6/ }
     end
   end
 end

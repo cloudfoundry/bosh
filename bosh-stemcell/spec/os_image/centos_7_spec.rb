@@ -2,7 +2,9 @@ require 'spec_helper'
 
 describe 'CentOS 7 OS image', os_image: true do
   it_behaves_like 'every OS image'
+  it_behaves_like 'a CentOS or RHEL based OS image'
   it_behaves_like 'a systemd-based OS image'
+  it_behaves_like 'a Linux kernel 3.x based OS image'
 
   context 'installed by base_centos' do
     describe file('/etc/locale.conf') do
@@ -74,16 +76,6 @@ describe 'CentOS 7 OS image', os_image: true do
   context 'installed by system_grub' do
     describe package('grub2-tools') do
       it { should be_installed }
-    end
-  end
-
-  context 'installed by bosh_sysctl' do
-    describe file('/etc/sysctl.d/60-bosh-sysctl.conf') do
-      it { should be_file }
-    end
-
-    describe file('/etc/sysctl.d/60-bosh-sysctl-neigh-fix.conf') do
-      it { should be_file }
     end
   end
 end

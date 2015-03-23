@@ -193,8 +193,6 @@ module Bosh::Stemcell
             "cd #{stemcell_specs_dir};",
             'OS_IMAGE=/some/os_image.tgz',
             'bundle exec rspec -fd',
-            "spec/os_image/common_spec.rb",
-            "spec/os_image/#{operating_system.name}_common_spec.rb",
             "spec/os_image/#{operating_system.name}_#{operating_system.version}_spec.rb",
           ].join(' ')
 

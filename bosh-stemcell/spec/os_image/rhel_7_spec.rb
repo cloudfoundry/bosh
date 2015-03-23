@@ -1,10 +1,25 @@
 require 'spec_helper'
 
-describe 'RHEL OS image', os_image: true do
+describe 'RHEL 7 OS image', os_image: true do
   it_behaves_like 'every OS image'
+  it_behaves_like 'a CentOS or RHEL based OS image'
   it_behaves_like 'a systemd-based OS image'
+  it_behaves_like 'a Linux kernel 3.x based OS image'
 
   context 'installed by base_rhel' do
+    describe command('rct cat-cert /etc/pki/product/69.pem') do
+      its (:stdout) { should match /rhel-7-server/ }
+    end
+
+    describe file('/etc/centos-release') do
+      it { should_not be_file }
+    end
+
+    describe file('/etc/locale.conf') do
+      it { should be_file }
+      it { should contain 'en_US.UTF-8' }
+    end
+
     %w(
       redhat-release-server
       epel-release
@@ -12,11 +27,6 @@ describe 'RHEL OS image', os_image: true do
       describe package(pkg) do
         it { should be_installed }
       end
-    end
-
-    describe file('/etc/locale.conf') do
-      it { should be_file }
-      it { should contain 'en_US.UTF-8' }
     end
   end
 
@@ -27,6 +37,7 @@ describe 'RHEL OS image', os_image: true do
       cmake
       curl
       dhclient
+      e2fsprogs
       flex
       gdb
       glibc-static
@@ -38,6 +49,7 @@ describe 'RHEL OS image', os_image: true do
       libxslt
       libxslt-devel
       lsof
+      NetworkManager
       nmap-ncat
       openssh-server
       openssl-devel
@@ -48,6 +60,10 @@ describe 'RHEL OS image', os_image: true do
       rpm-build
       rpmdevtools
       rsync
+      rsyslog
+      rsyslog-relp
+      rsyslog-gnutls
+      rsyslog-mmjsonparse
       runit
       strace
       sudo

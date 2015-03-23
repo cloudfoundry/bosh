@@ -1,6 +1,4 @@
-require 'spec_helper'
-
-describe 'All CentOS versions', os_image: true do
+shared_examples_for 'a CentOS or RHEL based OS image' do
 
   describe package('apt') do
     it { should_not be_installed }
@@ -17,6 +15,10 @@ describe 'All CentOS versions', os_image: true do
       describe package(pkg) do
         it { should_not be_installed }
       end
+    end
+
+    describe file('/etc/redhat-release') do
+      it { should be_file }
     end
 
     describe file('/etc/sysconfig/network') do

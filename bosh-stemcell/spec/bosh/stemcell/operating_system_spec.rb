@@ -50,6 +50,7 @@ module Bosh::Stemcell
 
     its(:name) { should eq('centos') }
     it { should eq OperatingSystem.for('centos', '99') }
+    it { should_not eq OperatingSystem.for('rhel', '99') }
     it { should_not eq OperatingSystem.for('ubuntu', 'penguin') }
   end
 
@@ -59,6 +60,16 @@ module Bosh::Stemcell
     its(:name) { should eq('ubuntu') }
     its(:version) { should eq('penguin') }
     it { should eq OperatingSystem.for('ubuntu', 'penguin') }
+    it { should_not eq OperatingSystem.for('rhel', '99') }
     it { should_not eq OperatingSystem.for('centos', '99') }
+  end
+
+  describe OperatingSystem::Rhel do
+    subject { OperatingSystem::Rhel.new('99') }
+
+    its(:name) { should eq('rhel') }
+    it { should eq OperatingSystem.for('rhel', '99') }
+    it { should_not eq OperatingSystem.for('centos', '99') }
+    it { should_not eq OperatingSystem.for('ubuntu', 'penguin') }
   end
 end
