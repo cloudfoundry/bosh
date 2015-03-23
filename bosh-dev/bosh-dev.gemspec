@@ -30,7 +30,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency('ruby_vcloud_sdk', '=0.7.1')
 
   spec.add_development_dependency 'rake'
-  spec.add_development_dependency 'rspec'
+  spec.add_development_dependency 'rspec', '~> 3.0.0'
   spec.add_development_dependency 'rspec-its'
   spec.add_development_dependency 'fakefs'
   spec.add_development_dependency 'rugged'
