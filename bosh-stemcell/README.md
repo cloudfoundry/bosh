@@ -50,7 +50,7 @@ If you have changes that will require new OS image you need to build one. A stem
 The arguments to `stemcell:build_os_image` are:
 
 1. *`operating_system_name`* identifies which type of OS to fetch. Determines which package repository and packaging tool will be used to download and assemble the files. Must match a value recognized by the  [OperatingSystem](lib/bosh/stemcell/operating_system.rb) module. Currently, only `ubuntu` and `centos` are recognized.
-2. *`operating_system_version`* an identifier that the system may use to decide which release of the OS to download. Acceptable values depend on the operating system. For `ubuntu`, use `trusty`. For `centos`, use `6.5` (which builds a CentOS 6.6 OS image) or `7`. No other combinations are presently supported.
+2. *`operating_system_version`* an identifier that the system may use to decide which release of the OS to download. Acceptable values depend on the operating system. For `ubuntu`, use `trusty`. For `centos`, use `6` or `7`. No other combinations are presently supported.
 3. *`os_image_path`* the path to write the finished OS image tarball to. If a file exists at this path already, it will be overwritten without warning.
 
 See below [Building the stemcell with local OS image](#building-the-stemcell-with-local-os-image) on how to build stemcell with the new OS image.

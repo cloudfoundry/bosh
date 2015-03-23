@@ -7,7 +7,7 @@ source $base_dir/lib/prelude_apply.bash
 source $base_dir/etc/settings.bash
 
 case "${stemcell_operating_system_version}" in
-  "6.5")
+  "6")
     init_package_name="upstart"
     version_specific_packages="nc"
     ;;
@@ -21,7 +21,7 @@ case "${stemcell_operating_system_version}" in
     ;;
 esac
 
-# The CentOS 6.5 script upgraded upstart first, "to prevent it from messing up our stubs and starting daemons anyway"
+# The CentOS 6 script upgraded upstart first, "to prevent it from messing up our stubs and starting daemons anyway"
 # so we'll upgrade systemd for possibly the same reason
 pkg_mgr install ${init_package_name}
 

@@ -23,7 +23,7 @@ then
 
   rsync -a $chroot/usr/lib/grub/x86*/ $chroot/boot/grub/
 
-elif [ -d $chroot/usr/share/grub/x86* ] # classic GRUB on CentOS 6.5
+elif [ -d $chroot/usr/share/grub/x86* ] # classic GRUB on CentOS 6
 then
 
   rsync -a $chroot/usr/share/grub/x86*/ $chroot/boot/grub/
