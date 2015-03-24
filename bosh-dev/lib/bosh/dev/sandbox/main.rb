@@ -106,6 +106,7 @@ module Bosh::Dev::Sandbox
       @cpi = Bosh::Clouds::Dummy.new(
         'dir' => cloud_storage_dir
       )
+      reconfigure({})
     end
 
     def agent_tmp_path
