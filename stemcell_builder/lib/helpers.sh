@@ -49,15 +49,21 @@ function on_exit {
   echo "Running ${#on_exit_items[@]} on_exit items..."
   for i in "${on_exit_items[@]}"
   do
-    echo "Running $i"
-    eval $i
+    for try in $(seq 0 9); do
+      sleep $try
+      echo "Running cleanup command $i (try: ${try})"
+        eval $i || continue
+      break
+    done
   done
 }
 
 function add_on_exit {
   local n=${#on_exit_items[@]}
-  on_exit_items[$n]="$*"
   if [[ $n -eq 0 ]]; then
+    on_exit_items=("$*")
     trap on_exit EXIT
+  else
+    on_exit_items=("$*" "${on_exit_items[@]}")
   fi
 }

@@ -22,7 +22,11 @@ kpartx -dv ${disk_image}
 
 # Map partition in image to loopback
 device=$(losetup --show --find ${disk_image})
+add_on_exit "losetup --verbose --detach ${device}"
+
 device_partition=$(kpartx -av ${device} | grep "^add" | cut -d" " -f3)
+add_on_exit "kpartx -dv ${device}"
+
 loopback_dev="/dev/mapper/${device_partition}"
 
 # Format partition
@@ -32,32 +36,7 @@ mkfs.ext4 ${loopback_dev}
 image_mount_point=${work}/mnt
 mkdir -p ${image_mount_point}
 mount ${loopback_dev} ${image_mount_point}
+add_on_exit "umount ${image_mount_point}"
 
 # Copy root
 time rsync -aHA $chroot/ ${image_mount_point}
-
-# Unmount partition
-for try in $(seq 0 9); do
-  sleep $try
-  echo "Unmounting ${image_mount_point} (try: ${try})"
-  umount ${image_mount_point} || continue
-  break
-done
-
-if mountpoint -q ${image_mount_point}; then
-  echo "Could not unmount ${image_mount_point} after 10 tries"
-  exit 1
-fi
-
-# Unmap partition
-for try in $(seq 0 9); do
-  sleep $try
-  echo "Removing device mappings for ${disk_image} (try: ${try})"
-  kpartx -dv ${device} && losetup --verbose --detach ${device} || continue
-  break
-done
-
-if [ -b ${loopback_dev} ]; then
-  echo "Could not remove device mapping at ${loopback_dev}"
-  exit 1
-fi
