@@ -367,6 +367,7 @@ module Bosh::Dev::Sandbox
       }
 
       arguments = uaa_ports.map { |pair| "-D#{pair.join('=')}" }
+      arguments << %W(-P cargo.port=#{uaa_port})
 
       @uaa_process = Service.new(
         ['./gradlew', arguments, 'run'].flatten,
