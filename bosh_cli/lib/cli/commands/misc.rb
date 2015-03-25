@@ -66,6 +66,7 @@ module Bosh::Cli::Command
     usage "target"
     desc  "Choose director to talk to (optionally creating an alias). " +
           "If no arguments given, show currently targeted director"
+    option '--ca-cert FILE', String, 'Path to client certificate provided to UAA server'
     def set_target(director_url = nil, name = nil)
       if director_url.nil?
         show_target
