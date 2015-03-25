@@ -84,5 +84,4 @@ describe 'All CentOS versions', os_image: true do
       it { should contain 'READAHEAD_COLLECT_ON_RPM="no"' }
     end
   end
-
 end

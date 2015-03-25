@@ -14,13 +14,24 @@ describe 'CentOS 6.x stemcell', stemcell_image: true do
       it { should contain 'timeout=1' }
       it { should contain 'title CentOS release 6.6 (Final) ' }
       it { should contain '  root (hd0,0)' }
-      it { should contain ' xen_blkfront.sda_is_xvda=1 ro root=UUID=' }
+      it { should contain ' xen_blkfront.sda_is_xvda=1' }
+      it { should contain ' ro root=UUID=' }
       it { should contain ' selinux=0' }
       it { should contain ' console=tty0 console=ttyS0,115200n8' }
+
+      it { should_not contain 'net.ifnames=0' }
+      it { should_not contain 'plymouth.enable=0' }
     end
 
     describe file('/boot/grub/menu.lst') do
       it { should be_linked_to('./grub.conf') }
+    end
+
+    describe file("/boot/grub/e2fs_stage1_5") do
+      it { should be_file }
+    end
+
+    describe file('/boot/grub/grub.conf') do
     end
   end
 
