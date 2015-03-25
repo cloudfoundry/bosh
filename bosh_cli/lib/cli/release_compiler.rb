@@ -81,8 +81,14 @@ module Bosh::Cli
       if @license
         say("license (#{@license.version})".ljust(30), " ")
         nl
-        license_file_path = find_license(@license)
-        FileUtils.cp(license_file_path, File.join(@build_dir, 'license.tgz'), preserve: true)
+        license_source = find_license(@license)
+        license_target = File.join(@build_dir, 'license.tgz')
+        FileUtils.cp(license_source, license_target, preserve: true)
+
+        Dir.chdir(@build_dir) do
+          `tar -xzf #{license_target} 2>&1`
+          `rm #{license_target} 2>&1`
+        end
       end
 
       header("Building tarball")

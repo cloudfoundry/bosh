@@ -7,16 +7,25 @@ module Bosh::Cli
     end
     let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
     let(:workspace_dir) { Dir.mktmpdir('release-compiler-spec') }
-    let(:artifacts_dir) { File.join(workspace_dir, 'artifacts') }
+    let(:artifacts_dir) { release_source.artifacts_dir }
 
-    after { FileUtils.rm_rf(workspace_dir); release_source.cleanup }
+    after do
+      FileUtils.rm_rf(workspace_dir)
+      release_source.cleanup
+    end
 
     let(:blobstore) { Bosh::Blobstore::Client.create('local', 'blobstore_path' => blobstore_dir) }
     let(:blobstore_dir) { File.join(workspace_dir, 'blobstore') }
 
     let(:job_tarball) { Tempfile.new('job-tarball', workspace_dir) }
     let(:package_tarball) { Tempfile.new('package-tarball', workspace_dir) }
-    let(:license_tarball) { Tempfile.new('license-tarball', workspace_dir) }
+    let(:license_tarball) do
+      release_source.add_tarball('license.tgz') do |tarball|
+        tarball.add_file('LICENSE', 'MIT LICENSE CONTENT')
+        tarball.add_file('NOTICE', 'NOTICE CONTENT')
+      end
+    end
+
     before do
       blobstore.create(File.read(job_tarball), 'fake-job-blobstore_id')
       blobstore.create(File.read(package_tarball), 'fake-package-blobstore_id')
@@ -123,7 +132,9 @@ module Bosh::Cli
 
         it 'copies license' do
           release_compiler.compile
-          expect(list_tar_files(release_tarball_file)).to include('./license.tgz')
+          expect(list_tar_files(release_tarball_file)).to include('./LICENSE')
+          expect(list_tar_files(release_tarball_file)).to include('./NOTICE')
+          expect(list_tar_files(release_tarball_file)).to_not include('./license.tgz')
         end
       end
     end

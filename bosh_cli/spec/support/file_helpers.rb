@@ -20,17 +20,74 @@ module Support
       `tar -ztf #{tarball_path}`.chomp.split(/\n/).reject {|f| f =~ /\/$/ }
     end
 
+    class ReleaseTarball
+      attr_reader :directory
+
+      def initialize(name)
+        @name = name
+        @files = []
+        @directory = Dir.mktmpdir(name)
+      end
+
+      def add_file(name, content)
+        @files << File.write(File.join(directory, name), content)
+      end
+
+      def build
+        Dir.chdir(directory) do
+          `tar zcf #{@name} *` unless @files.empty?
+        end
+
+        self
+      end
+
+      def cleanup
+        file.close
+        FileUtils.remove_entry directory if File.exists?(directory)
+      end
+
+      def file
+        @file ||= File.open(File.join(directory, "#{@name}"))
+      end
+
+      def has_file?(path)
+        list.include?(path)
+      end
+
+      def to_str
+        file.path
+      end
+
+      private
+
+      def list
+        `tar -ztf #{file.path}`.chomp.split(/\n/).reject {|f| f =~ /\/$/ }
+      end
+    end
+
+
     class ReleaseDirectory
-      attr_reader :path, :artifacts_dir
+      attr_reader :path, :artifacts_dir, :tarballs
 
       def initialize
         @path = Dir.mktmpdir('bosh-release-path')
         @artifacts_dir = Dir.mktmpdir('bosh-release-artifacts-path')
+        @tarballs = []
       end
 
       def cleanup
         FileUtils.remove_entry path if File.exists?(path)
         FileUtils.remove_entry artifacts_dir if File.exists?(artifacts_dir)
+        tarballs.each do |tarball|
+          tarball.cleanup
+        end
+      end
+
+      def add_tarball(name)
+        tarball = ReleaseTarball.new(name)
+        yield tarball # if block_given?
+        tarballs << tarball.build
+        tarball
       end
 
       def add_dir(subdir)
