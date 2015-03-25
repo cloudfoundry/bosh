@@ -402,7 +402,6 @@ module Bosh::OpenStackCloud
       with_thread_name("create_disk(#{size}, #{cloud_properties}, #{server_id})") do
         raise ArgumentError, 'Disk size needs to be an integer' unless size.kind_of?(Integer)
         cloud_error('Minimum disk size is 1 GiB') if (size < 1024)
-        cloud_error('Maximum disk size is 1 TiB') if (size > 1024 * 1000)
 
         volume_params = {
           :display_name => "volume-#{generate_unique_name}",
@@ -444,7 +443,6 @@ module Bosh::OpenStackCloud
       with_thread_name("create_boot_disk(#{size}, #{stemcell_id}, #{availability_zone}, #{boot_volume_cloud_properties})") do
         raise ArgumentError, "Disk size needs to be an integer" unless size.kind_of?(Integer)
         cloud_error("Minimum disk size is 1 GiB") if (size < 1024)
-        cloud_error("Maximum disk size is 1 TiB") if (size > 1024 * 1000)
 
         volume_params = {
           :display_name => "volume-#{generate_unique_name}",
@@ -976,4 +974,3 @@ module Bosh::OpenStackCloud
     end
   end
 end
-
