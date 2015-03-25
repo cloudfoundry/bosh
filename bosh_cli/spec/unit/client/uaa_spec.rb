@@ -1,11 +1,12 @@
 require 'spec_helper'
 
 describe Bosh::Cli::Client::Uaa do
-  subject(:uaa) { described_class.new({ 'url' => url }, 'fake-ca-cert') }
+  subject(:uaa) { described_class.new({ 'url' => url }, ca_cert) }
+  let(:ca_cert) { 'fake-ca-cert' }
   let(:url) { 'https://example.com' }
   before do
     allow(CF::UAA::TokenIssuer).to receive(:new).
-        with(url, 'bosh_cli', nil, { ssl_ca_file: 'fake-ca-cert' }).
+        with(url, 'bosh_cli', nil, { ssl_ca_file: ca_cert }).
         and_return(token_issuer)
   end
 
@@ -53,6 +54,31 @@ describe Bosh::Cli::Client::Uaa do
 
       it 'returns nil' do
         expect(uaa.login('fake-credentials')).to be_nil
+      end
+    end
+  end
+
+  describe '#prompts' do
+    context 'when getting prompts fails with ssl error' do
+      before { allow(token_issuer).to receive(:prompts).and_raise(ssl_error) }
+      let(:ssl_error) { CF::UAA::SSLException.new('ssl-error') }
+
+      context 'when ca-cert is not provided' do
+        let(:ca_cert) { nil }
+
+        it 'suggests to specify certificate' do
+          expect {
+            uaa.prompts
+          }.to raise_error /Invalid SSL Cert. Use --ca-cert to specify SSL certificate/
+        end
+      end
+
+      context 'when ca-cert is provided' do
+        it 'raises original error' do
+          expect {
+            uaa.prompts
+          }.to raise_error ssl_error
+        end
       end
     end
   end

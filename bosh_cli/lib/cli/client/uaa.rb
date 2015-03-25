@@ -10,7 +10,7 @@ module Bosh
           unless URI.parse(url).instance_of?(URI::HTTPS)
             err('Failed to connect to UAA, HTTPS protocol is required')
           end
-
+          @ssl_ca_file = ssl_ca_file
           @token_issuer = CF::UAA::TokenIssuer.new(url, 'bosh_cli', nil, { ssl_ca_file: ssl_ca_file })
         end
 
@@ -18,6 +18,9 @@ module Bosh
           @token_issuer.prompts.map do |field, (type, display_text)|
             Prompt.new(field, type, display_text)
           end
+        rescue CF::UAA::SSLException => e
+          raise e unless @ssl_ca_file.nil?
+          err('Invalid SSL Cert. Use --ca-cert to specify SSL certificate')
         end
 
         def login(credentials)
