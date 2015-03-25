@@ -31,7 +31,7 @@ then
 elif [ -d $chroot/etc/grub.d ] # GRUB 2 on CentOS 7 or Ubuntu
 then
 
-  echo "Found grub2; grub-legacy bootloader stages not needed"
+  echo "Found grub2; not copying bootloader stages"
 
 else
 

@@ -1,25 +1,6 @@
 require 'spec_helper'
 
 describe 'CentOS 7 stemcell', stemcell_image: true do
-  context 'installed by image_install_grub', exclude_on_warden: true do
-
-    # GRUB 2 configuration
-    describe file('/boot/grub2/grub.cfg') do
-      it { should contain 'net.ifnames=0' }
-      it { should contain 'selinux=0' }
-      it { should contain 'plymouth.enable=0' }
-      it { should_not contain 'xen_blkfront.sda_is_xvda=1'}
-    end
-
-    # GRUB 0.97 configuration (used only on Amazon PV hosts) must have same kernel params as GRUB 2
-    describe file('/boot/grub/grub.conf') do
-      it { should contain 'net.ifnames=0' }
-      it { should contain 'selinux=0' }
-      it { should contain 'plymouth.enable=0' }
-      it { should_not contain 'xen_blkfront.sda_is_xvda=1'}
-    end
-  end
-
 
   context 'installed by system_parameters' do
     describe file('/var/vcap/bosh/etc/operating_system') do
