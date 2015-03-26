@@ -26,7 +26,7 @@ describe 'RHEL 7 stemcell', stemcell_image: true do
 
   context 'installed by system_parameters' do
     describe file('/var/vcap/bosh/etc/operating_system') do
-      it { should contain('rhel') }
+      it { should contain('centos') }
     end
   end
 
