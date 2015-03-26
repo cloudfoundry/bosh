@@ -1,7 +1,9 @@
 module VSphereCloud
-
   class Client
     include VimSdk
+
+    class TaskException < StandardError; end
+    class FileNotFoundException < TaskException; end
     class AlreadyLoggedInException < StandardError; end
     class NotLoggedInException < StandardError; end
 
@@ -171,7 +173,7 @@ module VSphereCloud
           when Vim::TaskInfo::State::SUCCESS
             return properties["info.result"]
           when Vim::TaskInfo::State::ERROR
-            raise properties["info.error"].msg
+            raise task_exception_for_vim_fault(properties["info.error"])
         end
       end
     end
@@ -258,12 +260,18 @@ module VSphereCloud
       search_spec.query = [query]
 
       vm_disk_infos = wait_for_task(datastore.mob.browser.search("[#{datastore.name}] #{disk_folder}", search_spec)).file
-
       return nil if vm_disk_infos.empty?
 
       vm_disk_infos.first.capacity_kb / 1024
-    rescue VimSdk::SoapError
+    rescue VimSdk::SoapError, FileNotFoundException
       nil
+    end
+
+    def task_exception_for_vim_fault(fault)
+      exceptions_by_fault = {
+        VimSdk::Vim::Fault::FileNotFound => FileNotFoundException,
+      }
+      exceptions_by_fault.fetch(fault.class, TaskException).new(fault.msg)
     end
 
     def find_perf_metric_names(mob, names)

@@ -24,6 +24,17 @@ describe VSphereCloud::Client do
 
       expect(disk).to be_nil
     end
+
+    it "returns nil when the disk folder doesn't exit" do
+      disk_cid = "disk-#{SecureRandom.uuid}"
+
+      client, datacenter, datastore, disk_folder = setup
+
+      client.create_disk(datacenter, datastore, disk_cid, disk_folder, 128)
+      disk = client.find_disk(disk_cid, datastore, "the-wrong-disk-folder")
+
+      expect(disk).to be_nil
+    end
   end
 
   def setup
@@ -34,7 +45,7 @@ describe VSphereCloud::Client do
     datacenter_name = ENV.fetch('BOSH_VSPHERE_CPI_DATACENTER', 'BOSH_DC')
     vm_folder = ENV.fetch('BOSH_VSPHERE_CPI_VM_FOLDER', 'ACCEPTANCE_BOSH_VMs')
     template_folder = ENV.fetch('BOSH_VSPHERE_CPI_TEMPLATE_FOLDER', 'ACCEPTANCE_BOSH_Templates')
-    datastore_pattern = Regexp.new(ENV.fetch('BOSH_VSPHERE_CPI_DATASTORE_PATTERN', 'jalapeno'))
+    ephemeral_datastore_pattern = Regexp.new(ENV.fetch('BOSH_VSPHERE_CPI_DATASTORE_PATTERN', 'jalapeno'))
     persistent_datastore_pattern = Regexp.new(ENV.fetch('BOSH_VSPHERE_CPI_PERSISTENT_DATASTORE_PATTERN', 'jalapeno'))
     cluster_name = ENV.fetch('BOSH_VSPHERE_CPI_CLUSTER', 'BOSH_CL')
     resource_pool_name = ENV.fetch('BOSH_VSPHERE_CPI_RESOURCE_POOL', 'ACCEPTANCE_RP')
@@ -52,13 +63,14 @@ describe VSphereCloud::Client do
       template_folder: template_folder,
       name: datacenter_name,
       disk_path: disk_folder,
-      ephemeral_pattern: datastore_pattern,
+      ephemeral_pattern: ephemeral_datastore_pattern,
       persistent_pattern: persistent_datastore_pattern,
       clusters: cluster_configs,
       logger: logger,
       mem_overcommit: 1.0
     })
-    _, datastore = datacenter.persistent_datastores.first
-    return client, datacenter, datastore, disk_folder
+
+    persistent_datastores = datacenter.persistent_datastores.values
+    return client, datacenter, persistent_datastores.first, disk_folder
   end
 end
