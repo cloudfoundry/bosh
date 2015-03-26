@@ -50,8 +50,6 @@ class VSphereCloud::Resources
     let(:ephemeral_store_2_properties) { {'name' => 'ephemeral_2', 'summary.freeSpace' => 25000 * BYTES_IN_MB} }
     let(:persistent_store_properties) { {'name' => 'persistent_1', 'summary.freeSpace' => 10000 * BYTES_IN_MB} }
     let(:persistent_store_2_properties) { {'name' => 'persistent_2', 'summary.freeSpace' => 20000 * BYTES_IN_MB} }
-    let(:shared_store_properties) { {'name' => 'persistent_and_ephemeral_1', 'summary.freeSpace' => 30000 * BYTES_IN_MB} }
-    let(:shared_store_2_properties) { {'name' => 'persistent_and_ephemeral_2', 'summary.freeSpace' => 50000 * BYTES_IN_MB} }
 
     let(:other_store_properties) { { 'name' => 'other' } }
 
@@ -110,7 +108,7 @@ class VSphereCloud::Resources
         end
 
         context 'when there are no datastores' do
-          it 'initializes ephemeral, persistent and shared to empty hashes' do
+          it 'initializes ephemeral and persistentto empty hashes' do
             allow(cloud_searcher).to receive(:get_properties).with('fake-datastore-name',
                                                            VimSdk::Vim::Datastore,
                                                            Datastore::PROPERTIES).and_return({})
@@ -247,19 +245,7 @@ class VSphereCloud::Resources
         end
       end
 
-      context 'when a matching datastore is in the shared datastore pool' do
-        let(:allow_mixed) { true }
-
-        before do
-          fake_datastore_properties[anything] = shared_store_properties
-        end
-
-        it 'returns the shared datastore' do
-          expect(cluster.persistent('persistent_and_ephemeral_1').name).to eq('persistent_and_ephemeral_1')
-        end
-      end
-
-      context 'when a matching datastore is in neither pool' do
+      context 'when no matching datastore is in the persistent pool' do
         it 'returns nil' do
           expect(cluster.persistent('nonexistent-datastore-name')).to be_nil
         end
@@ -331,49 +317,10 @@ class VSphereCloud::Resources
       context 'when there are no persistent datastores' do
         let(:fake_datastore_properties) { {} }
 
-        context 'when there shared datastores' do
-            let(:allow_mixed) { true }
-
-            before do
-              fake_datastore_properties[instance_double('VimSdk::Vim::Datastore')] = shared_store_properties
-              fake_datastore_properties[instance_double('VimSdk::Vim::Datastore')] = shared_store_2_properties
-            end
-
-            context 'and there is more shared free space than the disk threshold' do
-              it 'picks the shared datastore with preference to those with the most free space' do
-                first_datastore = nil
-                expect(Util).to receive(:weighted_random) do |datastore_weights|
-                  expect(datastore_weights.size).to eq(2)
-                  first_datastore, first_weight = datastore_weights.first
-                  expect(first_datastore.name).to eq('persistent_and_ephemeral_1')
-                  expect(first_weight).to eq(30000)
-
-                  second_datastore, second_weight = datastore_weights[1]
-                  expect(second_datastore.name).to eq('persistent_and_ephemeral_2')
-                  expect(second_weight).to eq(50000)
-
-                  first_datastore
-                end
-
-                picked_datastore = cluster.pick_persistent(20000 - (DISK_HEADROOM - 1))
-                expect(picked_datastore).to eq(first_datastore)
-              end
-            end
-
-            context 'and there is less shared free space than the disk threshold' do
-              it 'returns nil' do
-                picked_datastore = cluster.pick_persistent(50000 - (DISK_HEADROOM - 1))
-                expect(picked_datastore).to be_nil
-              end
-            end
-          end
-
-        context 'when there no shared datastores' do
-          it 'returns nil' do
+        it 'returns nil' do
             picked_datastore = cluster.pick_persistent(1)
             expect(picked_datastore).to be_nil
           end
-        end
       end
 
       context 'when there are persistent datastores' do
@@ -397,49 +344,10 @@ class VSphereCloud::Resources
         end
 
         context 'and there is less persistent free space than the disk threshold' do
-          context 'when there shared datastores' do
-            let(:allow_mixed) { true }
-
-            before do
-              fake_datastore_properties[instance_double('VimSdk::Vim::Datastore')] = shared_store_properties
-              fake_datastore_properties[instance_double('VimSdk::Vim::Datastore')] = shared_store_2_properties
-            end
-
-            context 'and there is more shared free space than the disk threshold' do
-              it 'picks the shared datastore with preference to those with the most free space' do
-                first_datastore = nil
-                expect(Util).to receive(:weighted_random) do |datastore_weights|
-                  expect(datastore_weights.size).to eq(2)
-                  first_datastore, first_weight = datastore_weights.first
-                  expect(first_datastore.name).to eq('persistent_and_ephemeral_1')
-                  expect(first_weight).to eq(30000)
-
-                  second_datastore, second_weight = datastore_weights[1]
-                  expect(second_datastore.name).to eq('persistent_and_ephemeral_2')
-                  expect(second_weight).to eq(50000)
-
-                  first_datastore
-                end
-
-                picked_datastore = cluster.pick_persistent(20000 - (DISK_HEADROOM - 1))
-                expect(picked_datastore).to eq(first_datastore)
-              end
-            end
-
-            context 'and there is less shared free space than the disk threshold' do
-              it 'returns nil' do
-                picked_datastore = cluster.pick_persistent(50000 - (DISK_HEADROOM - 1))
-                expect(picked_datastore).to be_nil
-              end
-            end
-          end
-
-          context 'when there no shared datastores' do
-            it 'returns nil' do
+          it 'returns nil' do
               picked_datastore = cluster.pick_persistent(20000 - (DISK_HEADROOM - 1))
               expect(picked_datastore).to be_nil
             end
-          end
         end
       end
     end
@@ -448,49 +356,10 @@ class VSphereCloud::Resources
       context 'when there are no ephemeral datastores' do
         let(:fake_datastore_properties) { {} }
 
-        context 'when there shared datastores' do
-          let(:allow_mixed) { true }
-
-          before do
-            fake_datastore_properties[instance_double('VimSdk::Vim::Datastore')] = shared_store_properties
-            fake_datastore_properties[instance_double('VimSdk::Vim::Datastore')] = shared_store_2_properties
-          end
-
-          context 'and there is more shared free space than the disk threshold' do
-            it 'picks the shared datastore with preference to those with the most free space' do
-              first_datastore = nil
-              expect(Util).to receive(:weighted_random) do |datastore_weights|
-                expect(datastore_weights.size).to eq(2)
-                first_datastore, first_weight = datastore_weights.first
-                expect(first_datastore.name).to eq('persistent_and_ephemeral_1')
-                expect(first_weight).to eq(30000)
-
-                second_datastore, second_weight = datastore_weights[1]
-                expect(second_datastore.name).to eq('persistent_and_ephemeral_2')
-                expect(second_weight).to eq(50000)
-
-                first_datastore
-              end
-
-              picked_datastore = cluster.pick_ephemeral(25000 - (DISK_HEADROOM - 1))
-              expect(picked_datastore).to eq(first_datastore)
-            end
-          end
-
-          context 'and there is less shared free space than the disk threshold' do
-            it 'returns nil' do
-              picked_datastore = cluster.pick_ephemeral(50000 - (DISK_HEADROOM - 1))
-              expect(picked_datastore).to be_nil
-            end
-          end
-        end
-
-        context 'when there no shared datastores' do
-          it 'returns nil' do
+        it 'returns nil' do
             picked_datastore = cluster.pick_ephemeral(1)
             expect(picked_datastore).to be_nil
           end
-        end
       end
 
       context 'when there are ephemeral datastores' do
@@ -515,49 +384,10 @@ class VSphereCloud::Resources
         end
 
         context 'and there is less ephemeral free space than the disk threshold' do
-          context 'when there shared datastores' do
-            let(:allow_mixed) { true }
-
-            before do
-              fake_datastore_properties[instance_double('VimSdk::Vim::Datastore')] = shared_store_properties
-              fake_datastore_properties[instance_double('VimSdk::Vim::Datastore')] = shared_store_2_properties
-            end
-
-            context 'and there is more shared free space than the disk threshold' do
-              it 'picks the shared datastore with preference to those with the most free space' do
-                first_datastore = nil
-                expect(Util).to receive(:weighted_random) do |datastore_weights|
-                  expect(datastore_weights.size).to eq(2)
-                  first_datastore, first_weight = datastore_weights.first
-                  expect(first_datastore.name).to eq('persistent_and_ephemeral_1')
-                  expect(first_weight).to eq(30000)
-
-                  second_datastore, second_weight = datastore_weights[1]
-                  expect(second_datastore.name).to eq('persistent_and_ephemeral_2')
-                  expect(second_weight).to eq(50000)
-
-                  first_datastore
-                end
-
-                picked_datastore = cluster.pick_ephemeral(25000 - (DISK_HEADROOM - 1))
-                expect(picked_datastore).to eq(first_datastore)
-              end
-            end
-
-            context 'and there is less shared free space than the disk threshold' do
-              it 'returns nil' do
-                picked_datastore = cluster.pick_ephemeral(50000 - (DISK_HEADROOM - 1))
-                expect(picked_datastore).to be_nil
-              end
-            end
-          end
-
-          context 'when there no shared datastores' do
-            it 'returns nil' do
+          it 'returns nil' do
               picked_datastore = cluster.pick_ephemeral(25000 - (DISK_HEADROOM - 1))
               expect(picked_datastore).to be_nil
             end
-          end
         end
       end
     end
