@@ -108,7 +108,6 @@ describe 'release lifecycle', type: :integration do
       expect(File).to exist(release_manifest_2)
 
       out = bosh_runner.run_in_current_dir("upload release #{release_manifest_2}")
-      expect(out).to match regexp('Building tarball')
       expect(out).not_to match regexp('Checking if can repack')
       expect(out).not_to match regexp('Release repacked')
       expect(out).to match /Release uploaded/

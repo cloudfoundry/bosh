@@ -13,6 +13,7 @@ describe 'create release', type: :integration do
       Dir.chdir(ClientSandbox.test_release_dir) do
         actual = list_tar_files('releases/bosh-release/bosh-release-1.tgz')
         expected = [
+          './LICENSE',
           './jobs/errand1.tgz',
           './jobs/errand_without_package.tgz',
           './jobs/fails_with_too_much_output.tgz',
@@ -28,7 +29,7 @@ describe 'create release', type: :integration do
           './packages/fails_with_too_much_output.tgz',
           './packages/foo.tgz',
           './release.MF'
-        ].push(license_artifact)
+        ]
 
         expect(actual).to contain_exactly(*expected)
       end
@@ -36,9 +37,6 @@ describe 'create release', type: :integration do
   end
 
   describe 'release creation' do
-    # with the "--with-tarball" flag we DO extract the license files
-    let(:license_artifact) { './LICENSE' }
-
     before do
       Dir.chdir(ClientSandbox.test_release_dir) do
         bosh_runner.run_in_current_dir('create release --final --with-tarball')
@@ -129,9 +127,6 @@ describe 'create release', type: :integration do
   end
 
   describe 'release creation from manifest' do
-    # without the "--with-tarball" flag we do NOT extract the license files
-    let(:license_artifact) { './license.tgz' }
-
     before do
       Dir.chdir(ClientSandbox.test_release_dir) do
         bosh_runner.run_in_current_dir('create release --final')
