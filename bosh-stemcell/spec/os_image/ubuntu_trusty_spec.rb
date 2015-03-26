@@ -195,19 +195,6 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
     end
   end
 
-  context 'installed by system_kernel' do
-    %w(
-      linux-headers-3.16.0-33
-      linux-headers-3.16.0-33-generic
-      linux-image-3.16.0-33-generic
-      linux-image-extra-3.16.0-33-generic
-    ).each do |pkg|
-      describe package(pkg) do
-        it { should be_installed }
-      end
-    end
-  end
-
   context 'installed by bosh_user' do
     describe file('/etc/passwd') do
       it { should be_file }
