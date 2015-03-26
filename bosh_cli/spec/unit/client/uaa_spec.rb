@@ -71,6 +71,23 @@ describe Bosh::Cli::Client::Uaa do
         expect(uaa.login(credentials)).to be_nil
       end
     end
+
+    context 'when UAA responds with TargetError' do
+      before { allow(token_issuer).to receive(:owner_password_credentials_grant).and_raise(target_error) }
+      let(:target_error) do
+        CF::UAA::TargetError.new({
+          'error' => 'unauthorized',
+          'error_description' => 'Passcode information is missing'
+        })
+      end
+
+
+      it 'returns descriptive error' do
+        expect {
+          uaa.login(credentials)
+        }.to raise_error /Passcode information is missing/
+      end
+    end
   end
 
   describe '#prompts' do

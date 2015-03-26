@@ -34,6 +34,8 @@ module Bosh
             full_token = "#{token.info['token_type']} #{token.info['access_token']}"
             { username: decoded['user_name'], token: full_token }
           end
+        rescue CF::UAA::TargetError => e
+          err("Failed to login: #{e.info['error_description']}")
         rescue CF::UAA::BadResponse
           nil
         end
