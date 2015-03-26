@@ -4,7 +4,7 @@ module Bosh::Cli
 
     attr_reader(
       :release,
-      :license_artifact,
+      :license,
       :packages,
       :jobs,
       :name,
@@ -25,7 +25,7 @@ module Bosh::Cli
       @uncommitted_changes = options.fetch(:uncommitted_changes, true)
       @packages = package_artifacts # todo
       @jobs = job_artifacts # todo
-      @license_artifact = license_artifact
+      @license = license_artifact
       @name = name
       raise 'Release name is blank' if name.blank?
 
@@ -87,10 +87,10 @@ module Bosh::Cli
       options = { :generate_tarball => true }.merge(options)
 
       header("Generating manifest...")
-      generate_manifest
+      manifest_path = generate_manifest
       if options[:generate_tarball]
         header("Generating tarball...")
-        generate_tarball
+        generate_tarball(manifest_path)
       end
       @build_complete = true
     end
@@ -117,11 +117,11 @@ module Bosh::Cli
         }
       end
 
-      unless @license_artifact.nil?
+      unless @license.nil?
         manifest['license'] = {
-          'version' => @license_artifact.version,
-          'fingerprint' => @license_artifact.fingerprint,
-          'sha1' => @license_artifact.sha1,
+          'version' => @license.version,
+          'fingerprint' => @license.fingerprint,
+          'sha1' => @license.sha1,
         }
       end
 
@@ -150,25 +150,16 @@ module Bosh::Cli
       end
 
       @manifest_generated = true
+      manifest_path
     end
 
-    def generate_tarball
-      generate_manifest unless @manifest_generated
+    def generate_tarball(manifest_path = nil)
+      manifest_path ||= generate_manifest
       return if @release_storage.has_file?(release_filename)
 
-      copy_jobs
-      copy_packages
-      copy_license
-
-      FileUtils.mkdir_p(File.dirname(tarball_path))
-
-      in_build_dir do
-        `tar -czf #{tarball_path} . 2>&1`
-        unless $?.exitstatus == 0
-          raise InvalidRelease, "Cannot create release tarball"
-        end
-        say("Generated #{tarball_path}")
-      end
+      archiver = ReleaseArchiver.new(tarball_path, manifest_path, packages, jobs, license)
+      archiver.build
+      say("Generated #{archiver.filepath}")
     end
 
     def releases_dir
@@ -200,44 +191,6 @@ module Bosh::Cli
         copy_artifact(package_artifact, 'packages')
       end
       nl
-    end
-
-    # Copies jobs into release todo DRY vs copy_packages
-    def copy_jobs
-      header("Copying jobs...")
-      jobs.each do |job_artifact|
-        copy_artifact(job_artifact, 'jobs')
-      end
-      nl
-    end
-
-    def copy_license
-      return if @license_artifact.nil?
-
-      header("Copying license...")
-      copied = copy_artifact(@license_artifact)
-      extract_license(copied)
-      nl
-    end
-
-    def copy_artifact(artifact, dest = nil)
-      name = artifact.name
-      source_path = artifact.tarball_path
-      output_path = File.join([build_dir, dest, "#{name}.tgz"].compact)
-
-      say("%-40s %s" % [name.make_green, pretty_size(tarball_path)])
-      FileUtils.cp(source_path, output_path, :preserve => true)
-
-      output_path
-    end
-
-    def extract_license(tarball_path)
-      return if @license_artifact.nil?
-
-      in_build_dir do
-        `tar -xzf #{tarball_path} 2>&1`
-        `rm #{tarball_path} 2>&1`
-      end
     end
 
     def assign_version

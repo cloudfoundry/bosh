@@ -46,15 +46,21 @@ module Support
         FileUtils.remove_entry directory if File.exists?(directory)
       end
 
-      def file
-        @file ||= File.open(File.join(directory, "#{@name}"))
-      end
-
       def has_file?(path)
         list.include?(path)
       end
 
-      def to_str
+      def file
+        @file ||= begin
+          if @files.empty?
+            Tempfile.new(@name, directory)
+          else
+            File.open(File.join(directory, "#{@name}"))
+          end
+        end
+      end
+
+      def path
         file.path
       end
 
@@ -83,9 +89,9 @@ module Support
         end
       end
 
-      def add_tarball(name)
+      def add_tarball(name, &block)
         tarball = ReleaseTarball.new(name)
-        yield tarball # if block_given?
+        yield tarball if block_given?
         tarballs << tarball.build
         tarball
       end

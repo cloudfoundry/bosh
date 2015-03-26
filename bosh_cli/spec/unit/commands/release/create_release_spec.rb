@@ -79,13 +79,7 @@ module Bosh::Cli::Command::Release
         release_source.add_file('jobs/job_name', 'spec', job_spec.to_yaml)
         release_source.add_file('jobs/job_name', 'monit')
         release_source.add_files('jobs/job_name/templates', job_templates)
-      end
 
-      after do
-        release_source.cleanup
-      end
-
-      before do
         release_source.add_dir('src')
         release_source.add_file('packages/package_name', 'spec', package_spec.to_yaml)
 
@@ -106,6 +100,10 @@ module Bosh::Cli::Command::Release
         command.options[:dry_run] = true
       end
 
+      after do
+        release_source.cleanup
+      end
+
       it 'is a command with the correct options' do
         command = Bosh::Cli::Config.commands['create release']
         expect(command).to have_options
@@ -119,12 +117,13 @@ module Bosh::Cli::Command::Release
         ])
       end
 
-      it 'prints status headers' do
-        allow(command).to receive(:cache_dir).and_return('fake-cache-dir')
+      context 'when the release has NO license' do
+        it 'prints status' do
+          allow(command).to receive(:cache_dir).and_return('fake-cache-dir')
 
-        command.create
+          command.create
 
-        output = strip_heredoc(<<-OUTPUT)
+          output = strip_heredoc(<<-OUTPUT)
           Building DEV release
           --------------------
           Release artifact cache: fake-cache-dir
@@ -184,41 +183,112 @@ module Bosh::Cli::Command::Release
           +----------+------------------------------------------+
           OUTPUT
 
-        expect(Bosh::Cli::Config.output.string.strip).to eq(output.strip)
+          expect(Bosh::Cli::Config.output.string.strip).to eq(output.strip)
+        end
+
+        context 'given --with-tarball' do
+          before do
+            command.options[:dry_run] = false
+            command.options[:with_tarball] = true
+          end
+
+          it 'prints status' do
+            allow(command).to receive(:cache_dir).and_return('fake-cache-dir')
+            command.create
+
+            output = strip_heredoc(<<-OUTPUT)
+          Building DEV release
+          --------------------
+          Release artifact cache: fake-cache-dir
+
+          Building license
+          ----------------
+          Building license...
+            Warning: Missing LICENSE or NOTICE in #{release_source.path}
+
+
+          Building packages
+          -----------------
+          Building package_name...
+            No artifact found for package_name
+            Generating...
+            Generated version '431818cc23fc69b0b1f0e267f24bb5450f012295'
+
+
+          Resolving dependencies
+          ----------------------
+          Dependencies resolved, correct build order is:
+          - package_name
+
+
+          Building jobs
+          -------------
+          Building job_name...
+            No artifact found for job_name
+            Generating...
+            Generated version '648d287ab9cc50f39e24dd9a4f747e2dc7567fee'
+
+
+          Building release
+          ----------------
+
+          Generating manifest...
+          ----------------------
+          Writing manifest...
+
+          Generating tarball...
+          ---------------------
+
+          Copying packages
+          ----------------
+          package_name
+
+
+          Copying jobs
+          ------------
+          job_name
+
+          Generated #{next_tarball_path}
+
+          Release summary
+          ---------------
+          Packages
+          +--------------+------------------------------------------+-------------+
+          | Name         | Version                                  | Notes       |
+          +--------------+------------------------------------------+-------------+
+          | package_name | 431818cc23fc69b0b1f0e267f24bb5450f012295 | new version |
+          +--------------+------------------------------------------+-------------+
+
+          Jobs
+          +----------+------------------------------------------+-------------+
+          | Name     | Version                                  | Notes       |
+          +----------+------------------------------------------+-------------+
+          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee | new version |
+          +----------+------------------------------------------+-------------+
+
+          Jobs affected by changes in this release
+          +----------+------------------------------------------+
+          | Name     | Version                                  |
+          +----------+------------------------------------------+
+          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee |
+          +----------+------------------------------------------+
+
+          Release name: a-release
+          Release version: 0+dev.1
+          Release manifest: #{next_manifest_path}
+          Release tarball (1.1K): #{next_tarball_path}
+          OUTPUT
+
+            expect(Bosh::Cli::Config.output.string.strip).to eq(output.strip)
+          end
+        end
       end
 
-      it 'prints the release name, version & manifest path if not a dry-run' do
-        command.options[:dry_run] = false
-
-        allow(command).to receive(:say)
-
-        expect(command).to receive(:say).with("Release name: #{configured_dev_name}").once.ordered
-        expect(command).to receive(:say).with("Release version: #{next_dev_version}").once.ordered
-        expect(command).to receive(:say).with("Release manifest: #{next_manifest_path}").once.ordered
-
-        command.create
-      end
-
-      it 'prints the release tarball size and path if --with-tarball and not --dry-run' do
-        command.options[:dry_run] = false
-        command.options[:with_tarball] = true
-
-        allow(command).to receive(:say)
-
-        pretty_size = '1K'
-        expect(command).to receive(:pretty_size).with(next_tarball_path).and_return(pretty_size)
-
-        expect(command).to receive(:say).with("Release tarball (#{pretty_size}): #{next_tarball_path}").once.ordered
-
-        command.create
-      end
-
-      context 'when release has license' do
+      context 'when the release has license' do
         before { release_source.add_file(nil, 'LICENSE', 'fake-license') }
 
-        it 'prints status headers' do
+        it 'prints status' do
           allow(command).to receive(:cache_dir).and_return('fake-cache-dir')
-
           command.create
 
           output = strip_heredoc(<<-OUTPUT)
@@ -298,6 +368,118 @@ module Bosh::Cli::Command::Release
           license_version_index = Bosh::Cli::Versions::VersionsIndex.new(release_source.join('.dev_builds', 'license'))
           license_sha1 = license_version_index['f47faccb943d1df02c4ed75fb4fd488add35b003']['sha1']
           expect(release_source).to have_artifact(license_sha1)
+        end
+
+        context 'given --with-tarball' do
+          before do
+            command.options[:dry_run] = false
+            command.options[:with_tarball] = true
+            release_source.add_file(nil, 'LICENSE', 'fake-license')
+          end
+
+          it 'prints status' do
+            allow(command).to receive(:cache_dir).and_return('fake-cache-dir')
+            command.create
+
+            output = strip_heredoc(<<-OUTPUT)
+          Building DEV release
+          --------------------
+          Release artifact cache: fake-cache-dir
+
+          Building license
+          ----------------
+          Building license...
+            No artifact found for license
+            Generating...
+            Generated version 'f47faccb943d1df02c4ed75fb4fd488add35b003'
+
+
+          Building packages
+          -----------------
+          Building package_name...
+            No artifact found for package_name
+            Generating...
+            Generated version '431818cc23fc69b0b1f0e267f24bb5450f012295'
+
+
+          Resolving dependencies
+          ----------------------
+          Dependencies resolved, correct build order is:
+          - package_name
+
+
+          Building jobs
+          -------------
+          Building job_name...
+            No artifact found for job_name
+            Generating...
+            Generated version '648d287ab9cc50f39e24dd9a4f747e2dc7567fee'
+
+
+          Building release
+          ----------------
+
+          Generating manifest...
+          ----------------------
+          Writing manifest...
+
+          Generating tarball...
+          ---------------------
+
+          Copying packages
+          ----------------
+          package_name
+
+
+          Copying jobs
+          ------------
+          job_name
+
+
+          Copying license
+          ---------------
+          license
+
+          Generated #{next_tarball_path}
+
+          Release summary
+          ---------------
+          License
+          +---------+------------------------------------------+-------------+
+          | Name    | Version                                  | Notes       |
+          +---------+------------------------------------------+-------------+
+          | license | f47faccb943d1df02c4ed75fb4fd488add35b003 | new version |
+          +---------+------------------------------------------+-------------+
+
+          Packages
+          +--------------+------------------------------------------+-------------+
+          | Name         | Version                                  | Notes       |
+          +--------------+------------------------------------------+-------------+
+          | package_name | 431818cc23fc69b0b1f0e267f24bb5450f012295 | new version |
+          +--------------+------------------------------------------+-------------+
+
+          Jobs
+          +----------+------------------------------------------+-------------+
+          | Name     | Version                                  | Notes       |
+          +----------+------------------------------------------+-------------+
+          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee | new version |
+          +----------+------------------------------------------+-------------+
+
+          Jobs affected by changes in this release
+          +----------+------------------------------------------+
+          | Name     | Version                                  |
+          +----------+------------------------------------------+
+          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee |
+          +----------+------------------------------------------+
+
+          Release name: a-release
+          Release version: 0+dev.1
+          Release manifest: #{next_manifest_path}
+          Release tarball (1.2K): #{next_tarball_path}
+            OUTPUT
+
+            expect(Bosh::Cli::Config.output.string.strip).to eq(output.strip)
+          end
         end
       end
 

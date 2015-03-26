@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Cli
   describe ReleaseCompiler do
     subject(:release_compiler) do
-      described_class.new(release_manifest_file, artifacts_dir, blobstore, [], release_source.path)
+      ReleaseCompiler.new(release_manifest_file, artifacts_dir, blobstore, [], release_source.path)
     end
     let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
     let(:workspace_dir) { Dir.mktmpdir('release-compiler-spec') }
@@ -29,7 +29,7 @@ module Bosh::Cli
     before do
       blobstore.create(File.read(job_tarball), 'fake-job-blobstore_id')
       blobstore.create(File.read(package_tarball), 'fake-package-blobstore_id')
-      blobstore.create(File.read(license_tarball), 'fake-license-blobstore_id')
+      blobstore.create(File.read(license_tarball.path), 'fake-license-blobstore_id')
     end
 
     let(:release_manifest_file) { File.join(workspace_dir, 'release-1.yml') }
@@ -112,7 +112,7 @@ module Bosh::Cli
           release_source.add_version(
             'fake-license-fingerprint',
             '.final_builds/license',
-            File.read(license_tarball),
+            File.read(license_tarball.path),
             {
               'version' => 'fake-license-fingerprint',
               'blobstore_id' => 'fake-license-blobstore_id',
@@ -124,7 +124,7 @@ module Bosh::Cli
           original_release_manifest.merge(
             'license' => {
               'version' => 'fake-license-version',
-              'sha1' => Digest::SHA1.file(license_tarball).hexdigest,
+              'sha1' => Digest::SHA1.file(license_tarball.path).hexdigest,
               'fingerprint' => 'fake-license-fingerprint',
               'blobstore_id' => 'fake-license-blobstore_id'
             })

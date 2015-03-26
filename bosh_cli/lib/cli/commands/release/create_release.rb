@@ -251,10 +251,10 @@ module Bosh::Cli::Command
           end
         end
 
-        if builder.license_artifact
+        if builder.license
           license_table = table do |t|
             t.headings = %w(Name Version Notes)
-            t << artifact_summary(builder.license_artifact)
+            t << artifact_summary(builder.license)
           end
 
           say('License')
