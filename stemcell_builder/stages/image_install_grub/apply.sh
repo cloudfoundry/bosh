@@ -97,9 +97,15 @@ setup (hd0)
 EOF
 "
 
-  # cleanup
-  umount ${image_mount_point}/tmp/grub/${stemcell_image_name}
-  rm -rf ${image_mount_point}/tmp/grub
+# cleanup
+for try in $(seq 0 9); do
+  sleep $try
+  echo "Unmounting ${image_mount_point}/tmp/grub/${stemcell_image_name} (try: ${try})"
+  umount ${image_mount_point}/tmp/grub/${stemcell_image_name} || continue
+  break
+done
+
+rm -rf ${image_mount_point}/tmp/grub
 
 fi # end of GRUB and GRUB 2 bootsector installation
 
