@@ -24,7 +24,8 @@ module Bosh
         end
 
         def login(credentials)
-          token = @token_issuer.implicit_grant_with_creds(credentials)
+          credentials = credentials.select { |_, c| !c.empty? }
+          token = @token_issuer.owner_password_credentials_grant(credentials)
           if token
             decoded = CF::UAA::TokenCoder.decode(
               token.info['access_token'],

@@ -23,37 +23,52 @@ describe Bosh::Cli::Client::Uaa do
   end
 
   describe '#login' do
+    let(:credentials) { { passcode: 'fake-passcode' } }
+    let(:token) do
+      instance_double(
+        CF::UAA::TokenInfo,
+        info: {
+          'access_token' => 'fake-token',
+          'token_type' => 'bearer'
+        }
+      )
+    end
+    before do
+      allow(CF::UAA::TokenCoder).to receive(:decode).
+          with('fake-token', { verify: false }, nil, nil).
+          and_return({'user_name' => 'fake-user'})
+    end
+
+    it 'omits empty credentials' do
+      credentials = { passcode: 'fake-passcode', username: '', password: '' }
+      expect(token_issuer).to receive(:owner_password_credentials_grant).
+          with({ passcode: 'fake-passcode'}).
+          and_return(token)
+
+      expect(uaa.login(credentials)).to eq({username: 'fake-user', token: 'bearer fake-token'})
+    end
+
     context 'when login succeeds' do
       before do
-        token = instance_double(
-          CF::UAA::TokenInfo,
-          info: {
-            'access_token' => 'fake-token',
-            'token_type' => 'bearer'
-          }
-        )
-        allow(CF::UAA::TokenCoder).to receive(:decode).
-            with('fake-token', { verify: false }, nil, nil).
-            and_return({'user_name' => 'fake-user'})
-        allow(token_issuer).to receive(:implicit_grant_with_creds).
-            with('fake-credentials').
+        allow(token_issuer).to receive(:owner_password_credentials_grant).
+            with(credentials).
             and_return(token)
       end
 
       it 'returns a token' do
-        expect(uaa.login('fake-credentials')).to eq({username: 'fake-user', token: 'bearer fake-token'})
+        expect(uaa.login(credentials)).to eq({username: 'fake-user', token: 'bearer fake-token'})
       end
     end
 
     context 'for an invalid login' do
       before do
-        allow(token_issuer).to receive(:implicit_grant_with_creds).
-            with('fake-credentials').
+        allow(token_issuer).to receive(:owner_password_credentials_grant).
+            with(credentials).
             and_raise(CF::UAA::BadResponse)
       end
 
       it 'returns nil' do
-        expect(uaa.login('fake-credentials')).to be_nil
+        expect(uaa.login(credentials)).to be_nil
       end
     end
   end
