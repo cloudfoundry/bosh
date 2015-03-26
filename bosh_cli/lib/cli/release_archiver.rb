@@ -13,13 +13,13 @@ module Bosh::Cli
     end
 
     def build
-      FileUtils.cp(manifest, File.join(build_dir, 'release.MF'))
+      FileUtils.copy(manifest, File.join(build_dir, 'release.MF'), :preserve => true)
 
       packages_dir = FileUtils.mkdir_p(File.join(build_dir, 'packages'))
       header("Copying packages")
       packages.each do |package|
         say(package.name.make_green)
-        FileUtils.copy(package.tarball_path, File.join(packages_dir, "#{package.name}.tgz"))
+        FileUtils.copy(package.tarball_path, File.join(packages_dir, "#{package.name}.tgz"), :preserve => true)
       end
       nl
 
@@ -27,7 +27,7 @@ module Bosh::Cli
       header("Copying jobs")
       jobs.each do |job|
         say(job.name.make_green)
-        FileUtils.copy(job.tarball_path, File.join(jobs_dir, "#{job.name}.tgz"))
+        FileUtils.copy(job.tarball_path, File.join(jobs_dir, "#{job.name}.tgz"), :preserve => true)
       end
       nl
 
@@ -46,6 +46,8 @@ module Bosh::Cli
         unless $?.exitstatus == 0
           raise InvalidRelease, "Cannot create release tarball"
         end
+        say("Generated #{filepath.make_green}")
+        say("Release size: #{pretty_size(filepath).make_green}")
       end
     end
 

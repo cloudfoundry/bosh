@@ -20,7 +20,7 @@ module Bosh::Cli
 
       @blobstore = blobstore
       @release_source = release_source || Dir.pwd
-      @manifest_file = File.expand_path(manifest_file, @release_source)
+      @manifest_path = File.expand_path(manifest_file, @release_source)
       @tarball_path = nil
 
       @artifacts_dir = artifacts_dir
@@ -42,64 +42,26 @@ module Bosh::Cli
       @license = @manifest["license"] ? OpenStruct.new(@manifest["license"]) : nil
     end
 
+    def artifact_from(resource, type)
+      return nil unless resource
+      BuildArtifact.new(resource.name, resource.fingerprint, send(:"find_#{type}", resource), resource.sha1, [], nil, nil)
+    end
+
     def compile
       if exists?
         quit("You already have this version in `#{tarball_path.make_green}'")
       end
 
-      FileUtils.cp(@manifest_file, File.join(@build_dir, "release.MF"), :preserve => true)
+      packages = @packages
+        .reject { |package| remote_package_exists?(package) }
+        .map { |package| artifact_from(package, :package) }
+      jobs = @jobs
+        .reject { |job| remote_job_exists?(job) }
+        .map { |job| artifact_from(job, :job) }
+      license = artifact_from(@license, :license)
 
-      header("Copying packages")
-      @packages.each do |package|
-        say("#{package.name} (#{package.version})".ljust(30), " ")
-        if remote_package_exists?(package)
-          say("SKIP".make_yellow)
-          next
-        end
-        nl
-        package_file_path = find_package(package)
-        FileUtils.cp(package_file_path,
-                     File.join(@packages_dir, "#{package.name}.tgz"),
-                     :preserve => true)
-      end
-
-      header("Copying jobs")
-      @jobs.each do |job|
-        say("#{job.name} (#{job.version})".ljust(30), " ")
-        if remote_job_exists?(job)
-          say("SKIP".make_yellow)
-          next
-        end
-        nl
-        job_file_path = find_job(job)
-        FileUtils.cp(job_file_path,
-                     File.join(@jobs_dir, "#{job.name}.tgz"),
-                     :preserve => true)
-      end
-
-      header("Copying license")
-      if @license
-        say("license (#{@license.version})".ljust(30), " ")
-        nl
-        license_source = find_license(@license)
-        license_target = File.join(@build_dir, 'license.tgz')
-        FileUtils.cp(license_source, license_target, preserve: true)
-
-        Dir.chdir(@build_dir) do
-          `tar -xzf #{license_target} 2>&1`
-          `rm #{license_target} 2>&1`
-        end
-      end
-
-      header("Building tarball")
-      Dir.chdir(@build_dir) do
-        tar_out = `tar -czf #{tarball_path} . 2>&1`
-        unless $?.exitstatus == 0
-          raise InvalidRelease, "Cannot create release tarball: #{tar_out}"
-        end
-        say("Generated #{tarball_path.make_green}")
-        say("Release size: #{pretty_size(tarball_path).make_green}")
-      end
+      archiver = ReleaseArchiver.new(tarball_path, @manifest_path, packages, jobs, license)
+      archiver.build
     end
 
     def exists?
@@ -107,7 +69,7 @@ module Bosh::Cli
     end
 
     def tarball_path
-      @tarball_path || File.join(File.dirname(@manifest_file),
+      @tarball_path || File.join(File.dirname(@manifest_path),
                                  "#{@name}-#{@version}.tgz")
     end
 

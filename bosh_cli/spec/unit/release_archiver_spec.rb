@@ -7,6 +7,7 @@ module Bosh::Cli
     end
     let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
     let(:manifest) { release_source.add_file(nil, 'release.MF', 'contents') }
+    let(:custom_file_mode) { nil }
     let(:packages) do
       [].tap do |result|
         result << artifact('package-one')
@@ -59,7 +60,20 @@ module Bosh::Cli
         expect(listing).to_not include('./license.tgz')
       end
 
-      xit "preserves file modes and ownership" do
+      context "given custom file modes" do
+        let(:custom_file_mode) { 0400 }
+
+        it "preserves those" do
+          archiver.build
+
+          dir = Dir.mktmpdir
+          Dir.chdir(dir) do
+            extract_tar_files(archiver.filepath)
+            listing.reject { |filename| ["./LICENSE", "./NOTICE", "./release.MF"].include?(filename)}.each do |entry|
+              expect(file_mode(File.join(dir, entry))).to eq('0400')
+            end
+          end
+        end
       end
 
       context "when no license is provided" do
@@ -73,6 +87,8 @@ module Bosh::Cli
 
     def artifact(name, &block)
       path = release_source.add_tarball("#{name}.tgz", &block).path
+      File.chmod(custom_file_mode, path) if custom_file_mode
+
       BuildArtifact.new(name, "#{name}-fingerprint", path, "#{name}-sha1", [], false, false)
     end
   end

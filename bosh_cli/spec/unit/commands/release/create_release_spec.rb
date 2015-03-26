@@ -249,6 +249,7 @@ module Bosh::Cli::Command::Release
           job_name
 
           Generated #{next_tarball_path}
+          Release size: 1.1K
 
           Release summary
           ---------------
@@ -441,6 +442,7 @@ module Bosh::Cli::Command::Release
           license
 
           Generated #{next_tarball_path}
+          Release size: 1.2K
 
           Release summary
           ---------------

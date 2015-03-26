@@ -159,7 +159,6 @@ module Bosh::Cli
 
       archiver = ReleaseArchiver.new(tarball_path, manifest_path, packages, jobs, license)
       archiver.build
-      say("Generated #{archiver.filepath}")
     end
 
     def releases_dir

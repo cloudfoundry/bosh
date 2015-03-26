@@ -16,8 +16,16 @@ module Support
       end
     end
 
+    def extract_tar_files(tarball_path)
+      `tar -zxf #{tarball_path} 2>&1`
+    end
+
     def list_tar_files(tarball_path)
       `tar -ztf #{tarball_path}`.chomp.split(/\n/).reject {|f| f =~ /\/$/ }
+    end
+
+    def file_mode(file)
+      File.stat(file).mode.to_s(8)[-4..-1]
     end
 
     class ReleaseTarball
