@@ -109,6 +109,7 @@ module Bosh::Stemcell
               :rsyslog_config,
               :delay_monit_start,
               :system_grub,
+              :rhel_unsubscribe,
             ]
           )
         end

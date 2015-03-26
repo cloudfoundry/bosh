@@ -118,8 +118,8 @@ module Bosh::Stemcell
         bosh_steps,
         :rsyslog_config,
         :delay_monit_start,
-        # Install GRUB/kernel/etc
         :system_grub,
+        :rhel_unsubscribe,
       ].flatten
     end
 
