@@ -1,4 +1,6 @@
 <%
+  require "yaml"
+
   def dump_yaml(name, options)
     YAML.dump(name => options).sub(/\A---\n/, '')
   end
