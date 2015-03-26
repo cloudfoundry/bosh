@@ -123,67 +123,8 @@ module Bosh::Cli::Command::Release
 
           command.create
 
-          output = strip_heredoc(<<-OUTPUT)
-          Building DEV release
-          --------------------
-          Release artifact cache: fake-cache-dir
-
-          Building license
-          ----------------
-          Building license...
-            Warning: Missing LICENSE or NOTICE in #{release_source.path}
-
-
-          Building packages
-          -----------------
-          Building package_name...
-            No artifact found for package_name
-            Generating...
-            Generated version '431818cc23fc69b0b1f0e267f24bb5450f012295'
-
-
-          Resolving dependencies
-          ----------------------
-          Dependencies resolved, correct build order is:
-          - package_name
-
-
-          Building jobs
-          -------------
-          Building job_name...
-            No artifact found for job_name
-            Generating...
-            Generated version '648d287ab9cc50f39e24dd9a4f747e2dc7567fee'
-
-
-          Building release
-          ----------------
-
-          Release summary
-          ---------------
-          Packages
-          +--------------+------------------------------------------+-------------+
-          | Name         | Version                                  | Notes       |
-          +--------------+------------------------------------------+-------------+
-          | package_name | 431818cc23fc69b0b1f0e267f24bb5450f012295 | new version |
-          +--------------+------------------------------------------+-------------+
-
-          Jobs
-          +----------+------------------------------------------+-------------+
-          | Name     | Version                                  | Notes       |
-          +----------+------------------------------------------+-------------+
-          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee | new version |
-          +----------+------------------------------------------+-------------+
-
-          Jobs affected by changes in this release
-          +----------+------------------------------------------+
-          | Name     | Version                                  |
-          +----------+------------------------------------------+
-          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee |
-          +----------+------------------------------------------+
-          OUTPUT
-
-          expect(Bosh::Cli::Config.output.string.strip).to eq(output.strip)
+          output = Bosh::Cli::Config.output.string
+          expect(output).to match(/^\s*Warning: Missing LICENSE or NOTICE in/)
         end
 
         context 'given --with-tarball' do
@@ -196,91 +137,10 @@ module Bosh::Cli::Command::Release
             allow(command).to receive(:cache_dir).and_return('fake-cache-dir')
             command.create
 
-            output = strip_heredoc(<<-OUTPUT)
-          Building DEV release
-          --------------------
-          Release artifact cache: fake-cache-dir
-
-          Building license
-          ----------------
-          Building license...
-            Warning: Missing LICENSE or NOTICE in #{release_source.path}
-
-
-          Building packages
-          -----------------
-          Building package_name...
-            No artifact found for package_name
-            Generating...
-            Generated version '431818cc23fc69b0b1f0e267f24bb5450f012295'
-
-
-          Resolving dependencies
-          ----------------------
-          Dependencies resolved, correct build order is:
-          - package_name
-
-
-          Building jobs
-          -------------
-          Building job_name...
-            No artifact found for job_name
-            Generating...
-            Generated version '648d287ab9cc50f39e24dd9a4f747e2dc7567fee'
-
-
-          Building release
-          ----------------
-
-          Generating manifest...
-          ----------------------
-          Writing manifest...
-
-          Generating tarball...
-          ---------------------
-
-          Copying packages
-          ----------------
-          package_name
-
-
-          Copying jobs
-          ------------
-          job_name
-
-          Generated #{next_tarball_path}
-          Release size: 1.1K
-
-          Release summary
-          ---------------
-          Packages
-          +--------------+------------------------------------------+-------------+
-          | Name         | Version                                  | Notes       |
-          +--------------+------------------------------------------+-------------+
-          | package_name | 431818cc23fc69b0b1f0e267f24bb5450f012295 | new version |
-          +--------------+------------------------------------------+-------------+
-
-          Jobs
-          +----------+------------------------------------------+-------------+
-          | Name     | Version                                  | Notes       |
-          +----------+------------------------------------------+-------------+
-          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee | new version |
-          +----------+------------------------------------------+-------------+
-
-          Jobs affected by changes in this release
-          +----------+------------------------------------------+
-          | Name     | Version                                  |
-          +----------+------------------------------------------+
-          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee |
-          +----------+------------------------------------------+
-
-          Release name: a-release
-          Release version: 0+dev.1
-          Release manifest: #{next_manifest_path}
-          Release tarball (1.1K): #{next_tarball_path}
-          OUTPUT
-
-            expect(Bosh::Cli::Config.output.string.strip).to eq(output.strip)
+            output = Bosh::Cli::Config.output.string
+            expect(output).to match(/^Generated .*\.tgz$/)
+            expect(output).to match(/^Release size: \d/)
+            expect(output).to match(/^Release tarball \(\d.*\): .*\.tgz$/)
           end
         end
       end
@@ -292,76 +152,10 @@ module Bosh::Cli::Command::Release
           allow(command).to receive(:cache_dir).and_return('fake-cache-dir')
           command.create
 
-          output = strip_heredoc(<<-OUTPUT)
-          Building DEV release
-          --------------------
-          Release artifact cache: fake-cache-dir
-
-          Building license
-          ----------------
-          Building license...
-            No artifact found for license
-            Generating...
-            Generated version 'f47faccb943d1df02c4ed75fb4fd488add35b003'
-
-
-          Building packages
-          -----------------
-          Building package_name...
-            No artifact found for package_name
-            Generating...
-            Generated version '431818cc23fc69b0b1f0e267f24bb5450f012295'
-
-
-          Resolving dependencies
-          ----------------------
-          Dependencies resolved, correct build order is:
-          - package_name
-
-
-          Building jobs
-          -------------
-          Building job_name...
-            No artifact found for job_name
-            Generating...
-            Generated version '648d287ab9cc50f39e24dd9a4f747e2dc7567fee'
-
-
-          Building release
-          ----------------
-
-          Release summary
-          ---------------
-          License
-          +---------+------------------------------------------+-------------+
-          | Name    | Version                                  | Notes       |
-          +---------+------------------------------------------+-------------+
-          | license | f47faccb943d1df02c4ed75fb4fd488add35b003 | new version |
-          +---------+------------------------------------------+-------------+
-
-          Packages
-          +--------------+------------------------------------------+-------------+
-          | Name         | Version                                  | Notes       |
-          +--------------+------------------------------------------+-------------+
-          | package_name | 431818cc23fc69b0b1f0e267f24bb5450f012295 | new version |
-          +--------------+------------------------------------------+-------------+
-
-          Jobs
-          +----------+------------------------------------------+-------------+
-          | Name     | Version                                  | Notes       |
-          +----------+------------------------------------------+-------------+
-          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee | new version |
-          +----------+------------------------------------------+-------------+
-
-          Jobs affected by changes in this release
-          +----------+------------------------------------------+
-          | Name     | Version                                  |
-          +----------+------------------------------------------+
-          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee |
-          +----------+------------------------------------------+
-          OUTPUT
-
-          expect(Bosh::Cli::Config.output.string.strip).to eq(output.strip)
+          output = Bosh::Cli::Config.output.string
+          expect(output).to match(/^Building license$/)
+          expect(output).to match(/^\s*No artifact found for license$/)
+          expect(output).to match(/^\s*Generating...$/)
         end
 
         it 'builds release with the license' do
@@ -382,105 +176,11 @@ module Bosh::Cli::Command::Release
             allow(command).to receive(:cache_dir).and_return('fake-cache-dir')
             command.create
 
-            output = strip_heredoc(<<-OUTPUT)
-          Building DEV release
-          --------------------
-          Release artifact cache: fake-cache-dir
 
-          Building license
-          ----------------
-          Building license...
-            No artifact found for license
-            Generating...
-            Generated version 'f47faccb943d1df02c4ed75fb4fd488add35b003'
-
-
-          Building packages
-          -----------------
-          Building package_name...
-            No artifact found for package_name
-            Generating...
-            Generated version '431818cc23fc69b0b1f0e267f24bb5450f012295'
-
-
-          Resolving dependencies
-          ----------------------
-          Dependencies resolved, correct build order is:
-          - package_name
-
-
-          Building jobs
-          -------------
-          Building job_name...
-            No artifact found for job_name
-            Generating...
-            Generated version '648d287ab9cc50f39e24dd9a4f747e2dc7567fee'
-
-
-          Building release
-          ----------------
-
-          Generating manifest...
-          ----------------------
-          Writing manifest...
-
-          Generating tarball...
-          ---------------------
-
-          Copying packages
-          ----------------
-          package_name
-
-
-          Copying jobs
-          ------------
-          job_name
-
-
-          Copying license
-          ---------------
-          license
-
-          Generated #{next_tarball_path}
-          Release size: 1.2K
-
-          Release summary
-          ---------------
-          License
-          +---------+------------------------------------------+-------------+
-          | Name    | Version                                  | Notes       |
-          +---------+------------------------------------------+-------------+
-          | license | f47faccb943d1df02c4ed75fb4fd488add35b003 | new version |
-          +---------+------------------------------------------+-------------+
-
-          Packages
-          +--------------+------------------------------------------+-------------+
-          | Name         | Version                                  | Notes       |
-          +--------------+------------------------------------------+-------------+
-          | package_name | 431818cc23fc69b0b1f0e267f24bb5450f012295 | new version |
-          +--------------+------------------------------------------+-------------+
-
-          Jobs
-          +----------+------------------------------------------+-------------+
-          | Name     | Version                                  | Notes       |
-          +----------+------------------------------------------+-------------+
-          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee | new version |
-          +----------+------------------------------------------+-------------+
-
-          Jobs affected by changes in this release
-          +----------+------------------------------------------+
-          | Name     | Version                                  |
-          +----------+------------------------------------------+
-          | job_name | 648d287ab9cc50f39e24dd9a4f747e2dc7567fee |
-          +----------+------------------------------------------+
-
-          Release name: a-release
-          Release version: 0+dev.1
-          Release manifest: #{next_manifest_path}
-          Release tarball (1.2K): #{next_tarball_path}
-            OUTPUT
-
-            expect(Bosh::Cli::Config.output.string.strip).to eq(output.strip)
+            output = Bosh::Cli::Config.output.string
+            expect(output).to match(/^Generated .*\.tgz$/)
+            expect(output).to match(/^Release size: \d/)
+            expect(output).to match(/^Release tarball \(\d.*\): .*\.tgz$/)
           end
         end
       end

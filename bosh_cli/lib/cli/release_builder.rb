@@ -89,7 +89,6 @@ module Bosh::Cli
       header("Generating manifest...")
       manifest_path = generate_manifest
       if options[:generate_tarball]
-        header("Generating tarball...")
         generate_tarball(manifest_path)
       end
       @build_complete = true
