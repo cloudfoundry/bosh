@@ -1,6 +1,7 @@
 # Copyright (c) 2012 Piston Cloud Computing, Inc.
 
 require 'spec_helper'
+require 'timecop'
 
 describe Bosh::OpenStackCloud::Helpers do
   subject(:cloud) { mock_cloud }
@@ -28,7 +29,14 @@ describe Bosh::OpenStackCloud::Helpers do
 
     context 'when the resource status never changes' do
       it 'times out' do
-        allow(resource).to receive(:status).and_return(:start)
+        start_time = Time.now
+        timeout_time = start_time + cloud.state_timeout + 1
+        Timecop.freeze(start_time)
+
+        allow(resource).to receive(:status) do
+          Timecop.freeze(timeout_time)
+          :start
+        end
 
         expect {
           cloud.wait_resource(resource, :stop, :status, false)

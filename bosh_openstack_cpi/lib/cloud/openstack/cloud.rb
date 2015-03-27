@@ -16,6 +16,7 @@ module Bosh::OpenStackCloud
     attr_reader :registry
     attr_reader :glance
     attr_reader :volume
+    attr_reader :state_timeout
     attr_accessor :logger
 
     ##

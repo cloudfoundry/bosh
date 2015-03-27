@@ -17,7 +17,7 @@ def mock_cloud_options
         'api_key' => 'nova',
         'tenant' => 'admin',
         'region' => 'RegionOne',
-        'state_timeout' => 0.1,
+        'state_timeout' => 1,
         'wait_resource_poll_interval' => 3
       },
       'registry' => {
