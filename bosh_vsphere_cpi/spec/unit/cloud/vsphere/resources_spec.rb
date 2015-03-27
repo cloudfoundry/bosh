@@ -11,7 +11,7 @@ module VSphereCloud
     let(:logger) { instance_double('Logger', info: nil, debug: nil) }
 
     describe :pick_persistent_datastore_in_cluster do
-      let(:cluster) { double(:cluster) }
+      let(:cluster) { instance_double(VSphereCloud::Resources::Cluster, name: "bar") }
       before { allow(datacenter).to receive(:clusters).and_return({ "bar" => cluster }) }
 
       it "should return the datastore when it was placed successfully" do
@@ -22,10 +22,10 @@ module VSphereCloud
           to eq(datastore)
       end
 
-      it "should return nil when it wasn't placed successfully" do
-        expect(cluster).to receive(:pick_persistent).with(1024).and_return(nil)
-        expect(resources.pick_persistent_datastore_in_cluster("bar", 1024)).
-          to be_nil
+      it "raises a Bosh::Clouds::NoDiskSpace when it can't find the cluster" do
+        expect{
+          resources.pick_persistent_datastore_in_cluster("not a real cluster", 1024)
+        }.to raise_error(Bosh::Clouds::NoDiskSpace, /not a real cluster/)
       end
     end
 
@@ -169,15 +169,6 @@ module VSphereCloud
       it 'allocates disk size in datastore' do
         resources.pick_persistent_datastore(cluster, 1024)
         expect(datastore).to have_received(:allocate).with(1024)
-      end
-
-      context 'when cluster does not have datastore to satisfy disk size requirement' do
-        before { allow(cluster).to receive(:pick_persistent).with(1024).and_return(nil) }
-        it 'raises Bosh::Clouds::NoDiskSpace' do
-          expect {
-            resources.pick_persistent_datastore(cluster, 1024)
-          }.to raise_error Bosh::Clouds::NoDiskSpace
-        end
       end
     end
   end

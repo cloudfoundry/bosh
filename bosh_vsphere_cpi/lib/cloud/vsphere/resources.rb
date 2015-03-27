@@ -27,9 +27,13 @@ module VSphereCloud
     def pick_persistent_datastore_in_cluster(cluster_name, disk_size_in_mb)
       @lock.synchronize do
         cluster = @datacenter.clusters[cluster_name]
-        return nil if cluster.nil?
+        if cluster.nil?
+          raise Bosh::Clouds::NoDiskSpace.new(true), "Couldn't find cluster '#{cluster_name}'. Found #{@datacenter.clusters.values.map(&:name).join(", ")}"
+        end
 
-        pick_datastore(cluster, disk_size_in_mb)
+        datastore = cluster.pick_persistent(disk_size_in_mb)
+        datastore.allocate(disk_size_in_mb)
+        datastore
       end
     end
 
@@ -116,11 +120,6 @@ module VSphereCloud
     def pick_persistent_datastore(cluster, disk_size_in_mb)
       @lock.synchronize do
         datastore = cluster.pick_persistent(disk_size_in_mb)
-        if datastore.nil?
-          raise Bosh::Clouds::NoDiskSpace.new(
-              "Not enough persistent disk space (#{disk_size_in_mb}MB) in cluster #{cluster.name}")
-        end
-
         datastore.allocate(disk_size_in_mb)
         datastore
       end
@@ -130,12 +129,6 @@ module VSphereCloud
 
     attr_reader :config
 
-    def pick_datastore(cluster, disk_space)
-      datastore = cluster.pick_persistent(disk_space)
-      return nil if datastore.nil?
-      datastore.allocate(disk_space)
-      datastore
-    end
 
     class PersistentDiskIndex
       def initialize(clusters, existing_persistent_disks)

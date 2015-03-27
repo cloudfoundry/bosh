@@ -14,7 +14,8 @@ class VSphereCloud::Resources
 
     let(:datacenter) { instance_double('VSphereCloud::Resources::Datacenter') }
 
-    let(:logger) { instance_double('Logger', debug: nil, warn: nil) }
+    let(:log_output) { StringIO.new("") }
+    let(:logger) { Logger.new(log_output) }
     let(:client) { instance_double('VSphereCloud::Client', cloud_searcher: cloud_searcher) }
     let(:cloud_searcher) { instance_double('VSphereCloud::CloudSearcher') }
 
@@ -38,7 +39,6 @@ class VSphereCloud::Resources
     let(:cluster_hosts) { [instance_double('VimSdk::Vim::HostSystem')] }
     let(:fake_resource_pool_mob) { instance_double('VimSdk::Vim::ResourcePool') }
 
-
     let(:fake_resource_pool) do
       instance_double('VSphereCloud::Resources::ResourcePool',
                       mob: fake_resource_pool_mob
@@ -48,8 +48,8 @@ class VSphereCloud::Resources
 
     let(:ephemeral_store_properties) { {'name' => 'ephemeral_1', 'summary.freeSpace' => 15000 * BYTES_IN_MB} }
     let(:ephemeral_store_2_properties) { {'name' => 'ephemeral_2', 'summary.freeSpace' => 25000 * BYTES_IN_MB} }
-    let(:persistent_store_properties) { {'name' => 'persistent_1', 'summary.freeSpace' => 10000 * BYTES_IN_MB} }
-    let(:persistent_store_2_properties) { {'name' => 'persistent_2', 'summary.freeSpace' => 20000 * BYTES_IN_MB} }
+    let(:persistent_store_properties) { {'name' => 'persistent_1', 'summary.freeSpace' => 10000 * BYTES_IN_MB, 'summary.capacity' => 20000 * BYTES_IN_MB} }
+    let(:persistent_store_2_properties) { {'name' => 'persistent_2', 'summary.freeSpace' => 20000 * BYTES_IN_MB, 'summary.capacity' => 40000 * BYTES_IN_MB} }
 
     let(:other_store_properties) { { 'name' => 'other' } }
 
@@ -317,13 +317,22 @@ class VSphereCloud::Resources
       context 'when there are no persistent datastores' do
         let(:fake_datastore_properties) { {} }
 
-        it 'returns nil' do
-            picked_datastore = cluster.pick_persistent(1)
-            expect(picked_datastore).to be_nil
-          end
+        it 'raises a Bosh::Clouds::NoDiskSpace' do
+          expect {
+            cluster.pick_persistent(1)
+          }.to raise_error(Bosh::Clouds::NoDiskSpace)
+        end
       end
 
       context 'when there are persistent datastores' do
+        it "logs a bunch of debug info since it's really hard to know what happening otherwise" do
+          cluster.pick_persistent(10001)
+          expect(log_output.string).to include("Looking for a persistent datastore in fake-cluster-name with 10001MB free space in:")
+          expect(log_output.string).to include("persistent_1 (10000MB free of 20000MB capacity)")
+          expect(log_output.string).to include("persistent_2 (20000MB free of 40000MB capacity)")
+          expect(log_output.string).to include("Picking a random datastore (weighted by free space) from: persistent_2")
+        end
+
         context 'and there is more free space than the disk threshold' do
           it 'picks the datastore with preference to those with the most free space' do
             first_datastore = nil
@@ -344,10 +353,18 @@ class VSphereCloud::Resources
         end
 
         context 'and there is less persistent free space than the disk threshold' do
-          it 'returns nil' do
-              picked_datastore = cluster.pick_persistent(20000 - (DISK_HEADROOM - 1))
-              expect(picked_datastore).to be_nil
+          it 'raises a Bosh::Clouds::NoDiskSpace' do
+            expect {
+              cluster.pick_persistent(20000 - (DISK_HEADROOM - 1))
+            }.to raise_error do |error|
+              expect(error).to be_an_instance_of(Bosh::Clouds::NoDiskSpace)
+              expect(error.message).to eq(<<-MSG)
+Couldn't find a persistent datastore with 18977MB of free space in fake-cluster-name. Found:
+ persistent_1 (10000MB free of 20000MB capacity)
+ persistent_2 (20000MB free of 40000MB capacity)
+MSG
             end
+          end
         end
       end
     end
@@ -356,10 +373,11 @@ class VSphereCloud::Resources
       context 'when there are no ephemeral datastores' do
         let(:fake_datastore_properties) { {} }
 
-        it 'returns nil' do
-            picked_datastore = cluster.pick_ephemeral(1)
-            expect(picked_datastore).to be_nil
-          end
+        it 'raises' do
+          expect{
+            cluster.pick_ephemeral(1)
+          }.to raise_error Bosh::Clouds::NoDiskSpace
+        end
       end
 
       context 'when there are ephemeral datastores' do
@@ -384,10 +402,11 @@ class VSphereCloud::Resources
         end
 
         context 'and there is less ephemeral free space than the disk threshold' do
-          it 'returns nil' do
-              picked_datastore = cluster.pick_ephemeral(25000 - (DISK_HEADROOM - 1))
-              expect(picked_datastore).to be_nil
-            end
+          it 'raises' do
+            expect {
+              cluster.pick_ephemeral(25000 - (DISK_HEADROOM - 1))
+            }.to raise_error Bosh::Clouds::NoDiskSpace
+          end
         end
       end
     end

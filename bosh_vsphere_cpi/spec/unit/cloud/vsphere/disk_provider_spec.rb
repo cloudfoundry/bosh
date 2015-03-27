@@ -104,15 +104,7 @@ module VSphereCloud
             expect(disk.path).to eq('[destination-datastore] fake-disk-path/disk-cid.vmdk')
           end
 
-          context 'when datastore that fits disk cannot be found' do
-            before { allow(resources).to receive(:pick_persistent_datastore_in_cluster).and_return(nil) }
 
-            it 'raises an error' do
-              expect {
-                disk_provider.find_and_move('disk-cid', cluster, 'fake-host-datacenter', accessible_datastores)
-              }.to raise_error Bosh::Clouds::NoDiskSpace
-            end
-          end
 
           context 'when picked datastore is not one of the accessible datastores' do
             let(:accessible_datastores) { ['not-the-destination-datastore'] }
