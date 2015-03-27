@@ -32,7 +32,7 @@ module Bosh
         def login(credentials)
           @token_issuer.access_info(credentials)
         rescue CF::UAA::TargetError => e
-          err("Failed to login: #{e.info['error_description']}")
+          err("Failed to log in: #{e.info['error_description']}")
         rescue CF::UAA::BadResponse
           nil
         end
