@@ -9,7 +9,7 @@ describe 'Logging into a director with UAA authentication', type: :integration d
       bosh_runner.run('logout')
     end
 
-    it 'logs in successfully' do
+    it 'logs in successfully using password' do
       bosh_runner.run_interactively("login --ca-cert #{current_sandbox.certificate_path}") do |runner|
         expect(runner).to have_output 'Email:'
         runner.send_keys 'marissa'
@@ -22,6 +22,15 @@ describe 'Logging into a director with UAA authentication', type: :integration d
 
       output = bosh_runner.run('status')
       expect(output).to match /marissa/
+    end
+
+    it 'logs in successfully using client id and client secret' do
+      bosh_runner.run_interactively(
+        "login --ca-cert #{current_sandbox.certificate_path}",
+        { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret' }
+      ) do |runner|
+        expect(runner).to have_output "Logged in as `test'"
+      end
     end
 
     it 'fails to log in when incorrect credentials were provided' do

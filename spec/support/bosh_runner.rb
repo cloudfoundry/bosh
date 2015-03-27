@@ -13,9 +13,9 @@ module Bosh::Spec
       Dir.chdir(@bosh_work_dir) { run_in_current_dir(cmd, options) }
     end
 
-    def run_interactively(cmd)
+    def run_interactively(cmd, env = {})
       Dir.chdir(@bosh_work_dir) do
-        BlueShell::Runner.run "bosh -c #{@bosh_config} #{cmd}" do |runner|
+        BlueShell::Runner.run env, "bosh -c #{@bosh_config} #{cmd}" do |runner|
           yield runner
         end
       end

@@ -16,6 +16,13 @@ oauth:
       scope: openid
       authorities: uaa.none
       secret: ""
+    test:
+      id: test
+      override: true
+      authorized-grant-types: client_credentials
+      scope: openid
+      authorities: uaa.none
+      secret: "secret"
 jwt:
   token:
     signing-key: "uaa-secret-key"
