@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+set -x
 
 if [ $# -lt 1 ]
 then
@@ -24,6 +25,7 @@ export HOME=/root
 if [ -z "${agent_gem_src_url:-}" ]; then
 (
   cd ${bosh_src_dir}/bosh-release/gems
+  gem install bosh_common --no-rdoc --no-ri -l -w
   gem install bosh-release --no-rdoc --no-ri -l -w
 )
 else
