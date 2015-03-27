@@ -5,6 +5,9 @@ set -e
 base_dir=$(readlink -nf $(dirname $0)/../..)
 source $base_dir/lib/prelude_apply.bash
 
+mount --bind /sys $chroot/sys
+add_on_exit "umount $chroot/sys"
+
 cat > $chroot/etc/apt/sources.list <<EOS
 deb http://archive.ubuntu.com/ubuntu $DISTRIB_CODENAME main universe multiverse
 deb http://archive.ubuntu.com/ubuntu $DISTRIB_CODENAME-updates main universe multiverse
