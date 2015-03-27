@@ -22,10 +22,13 @@ module Bosh
             end
           end
 
-          if results = @uaa.login(credentials)
-            @terminal.say_green("Logged in as `#{results[:username]}'")
-            @config.set_credentials(target, { 'token' => results[:token] })
-            @config.save
+          if access_info = @uaa.login(credentials)
+            @terminal.say_green("Logged in as `#{access_info.username}'")
+
+            if access_info.token
+              @config.set_credentials(target, { 'token' => access_info.token })
+              @config.save
+            end
           else
             err('Failed to log in')
           end

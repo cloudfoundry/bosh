@@ -19,11 +19,9 @@ describe Bosh::Cli::UaaLoginStrategy do
 
         allow(uaa).to receive(:login).
           with('username' => 'user', 'password' => 'pass', 'passcode' => '1234').
-          and_return({
-            username: 'user',
-            token: 'access token'
-          })
+          and_return(Bosh::Cli::Client::Uaa::AccessInfo.new('user', access_token))
       end
+      let(:access_token) { 'access token' }
 
       it 'prompts for UAA credentials' do
         expect(terminal).to receive(:ask).with('Email: ') { 'user' }
@@ -53,6 +51,17 @@ describe Bosh::Cli::UaaLoginStrategy do
             'token' => 'access token'
           })
           expect(config).to have_received(:save)
+        end
+
+        context 'when token is not returned' do
+          let(:access_token) { nil }
+
+          it 'does not update config' do
+            login_strategy.login(target)
+
+            expect(config).to_not have_received(:set_credentials)
+            expect(config).to_not have_received(:save)
+          end
         end
       end
 
