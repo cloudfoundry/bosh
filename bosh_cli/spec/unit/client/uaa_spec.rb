@@ -20,6 +20,20 @@ describe Bosh::Cli::Client::Uaa do
         expect { uaa }.to raise_error /HTTPS protocol is required/
       end
     end
+
+    context 'when BOSH_CLIENT and BOSH_CLIENT_SECRET are set' do
+      before do
+        stub_const('ENV', {'BOSH_CLIENT' => 'cf', 'BOSH_CLIENT_SECRET' => 'secret'})
+      end
+
+      it 'sets the client and secret as specified in environment variables' do
+        expect(CF::UAA::TokenIssuer).to receive(:new).
+            with(url, 'cf', 'secret', { ssl_ca_file: ca_cert }).
+            and_return(token_issuer)
+
+        uaa
+      end
+    end
   end
 
   describe '#login' do

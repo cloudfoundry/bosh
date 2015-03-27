@@ -11,7 +11,11 @@ module Bosh
             err('Failed to connect to UAA, HTTPS protocol is required')
           end
           @ssl_ca_file = ssl_ca_file
-          @token_issuer = CF::UAA::TokenIssuer.new(url, 'bosh_cli', nil, { ssl_ca_file: ssl_ca_file })
+
+          client = ENV['BOSH_CLIENT'] || 'bosh_cli'
+          client_secret = ENV['BOSH_CLIENT_SECRET'] || nil
+
+          @token_issuer = CF::UAA::TokenIssuer.new(url, client, client_secret, { ssl_ca_file: ssl_ca_file })
         end
 
         def prompts
