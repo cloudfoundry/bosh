@@ -59,7 +59,9 @@ describe Bosh::Cli::Client::Uaa do
           with({ passcode: 'fake-passcode'}).
           and_return(token)
 
-      expect(uaa.login(credentials)).to eq({username: 'fake-user', token: 'bearer fake-token'})
+      access_info = uaa.login(credentials)
+      expect(access_info.username).to eq('fake-user')
+      expect(access_info.token).to eq('bearer fake-token')
     end
 
     context 'when login succeeds' do
@@ -70,7 +72,9 @@ describe Bosh::Cli::Client::Uaa do
       end
 
       it 'returns a token' do
-        expect(uaa.login(credentials)).to eq({username: 'fake-user', token: 'bearer fake-token'})
+        access_info = uaa.login(credentials)
+        expect(access_info.username).to eq('fake-user')
+        expect(access_info.token).to eq('bearer fake-token')
       end
     end
 
