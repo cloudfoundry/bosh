@@ -16,7 +16,7 @@ describe 'Logging into a director with UAA authentication', type: :integration d
         expect(runner).to have_output 'Password:'
         runner.send_keys 'koala'
         expect(runner).to have_output 'One Time Code'
-        runner.send_keys 'dontcare' # UAA only uses this for SAML, but always prompts for it
+        runner.send_keys '' # UAA only uses this for SAML, but always prompts for it
         expect(runner).to have_output "Logged in as `marissa'"
       end
 
@@ -31,7 +31,7 @@ describe 'Logging into a director with UAA authentication', type: :integration d
         expect(runner).to have_output 'Password:'
         runner.send_keys 'fake'
         expect(runner).to have_output 'One Time Code'
-        runner.send_keys 'dontcare'
+        runner.send_keys ''
         expect(runner).to have_output 'Failed to log in'
       end
       output = bosh_runner.run('status')
