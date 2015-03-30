@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: get
-    uri: https://localhost:8080/uaa/login
+    uri: http://localhost:8080/uaa/login
     body:
       encoding: US-ASCII
       string: ''
@@ -35,11 +35,52 @@ http_interactions:
       Transfer-Encoding:
       - chunked
       Date:
-      - Thu, 05 Mar 2015 18:58:44 GMT
+      - Mon, 30 Mar 2015 21:31:41 GMT
     body:
       encoding: UTF-8
-      string: '{"app":{"version":"2.0.3"},"createAccountLink":"/create_account","forgotPasswordLink":"/forgot_password","links":{"uaa":"http://localhost:8080/uaa","passwd":"/forgot_password","login":"http://localhost:8080/login","loginPost":"http://localhost:8080/uaa/login.do","register":"/create_account"},"entityID":"cloudfoundry-saml-login","commit_id":"620cac2","prompts":{"username":["text","Email"],"password":["password","Password"],"passcode":["password","One
-        Time Code (Get one at http://localhost:8080/uaa/passcode)"]},"idpDefinitions":[],"timestamp":"2015-02-05T15:16:38-0800"}'
+      string: '{"app":{"version":"2.0.3"},"createAccountLink":"/create_account","forgotPasswordLink":"/forgot_password","links":{"uaa":"http://localhost:8080/uaa","passwd":"/forgot_password","login":"http://localhost:8080/login","register":"/create_account"},"entityID":"cloudfoundry-saml-login","commit_id":"6bcaa26","prompts":{"username":["text","Email"],"password":["password","Password"],"passcode":["password","One
+        Time Code (Get one at http://localhost:8080/uaa/passcode)"]},"idpDefinitions":[],"timestamp":"2015-03-06T15:02:20-0800"}'
     http_version: 
-  recorded_at: Thu, 05 Mar 2015 18:58:44 GMT
-recorded_with: VCR 2.7.0
+  recorded_at: Mon, 30 Mar 2015 21:31:41 GMT
+- request:
+    method: post
+    uri: http://bosh_cli:@localhost:8080/uaa/oauth/token
+    body:
+      encoding: US-ASCII
+      string: username=marissa&password=koala&grant_type=password
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json;charset=utf-8
+      User-Agent:
+      - Ruby
+      Content-Type:
+      - application/x-www-form-urlencoded;charset=utf-8
+      Content-Length:
+      - 51
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - Apache-Coyote/1.1
+      X-Frame-Options:
+      - DENY
+      Cache-Control:
+      - no-store
+      Pragma:
+      - no-cache
+      Content-Type:
+      - application/json;charset=utf-8
+      Transfer-Encoding:
+      - chunked
+      Date:
+      - Mon, 30 Mar 2015 21:31:41 GMT
+    body:
+      encoding: UTF-8
+      string: '{"access_token":"eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI5OGU2ZTJkNS02ZmI1LTQwMDItYWI2Yy0wZTY3YjQ2MTA4MzEiLCJzdWIiOiI4Y2IwZWFjZi03YmFjLTRiN2YtYjc4NS1hNWIxMTU2ZTJjNzYiLCJzY29wZSI6WyJvcGVuaWQiXSwiY2xpZW50X2lkIjoiYm9zaF9jbGkiLCJjaWQiOiJib3NoX2NsaSIsImF6cCI6ImJvc2hfY2xpIiwiZ3JhbnRfdHlwZSI6InBhc3N3b3JkIiwidXNlcl9pZCI6IjhjYjBlYWNmLTdiYWMtNGI3Zi1iNzg1LWE1YjExNTZlMmM3NiIsInVzZXJfbmFtZSI6Im1hcmlzc2EiLCJlbWFpbCI6Im1hcmlzc2FAdGVzdC5vcmciLCJpYXQiOjE0Mjc3NTExMDEsImV4cCI6MTQyNzc5NDMwMSwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3VhYS9vYXV0aC90b2tlbiIsImF1ZCI6WyJib3NoX2NsaSIsIm9wZW5pZCJdfQ.UwnLyKH-3ZwFcAiSDG36ZW5EXDyqpmeqjPUW07grIPg","token_type":"bearer","refresh_token":"eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJmNWRiNjBiMC01ZTRiLTQyMmUtODYxNi1kYjA2NzU2NjEzOWYiLCJzdWIiOiI4Y2IwZWFjZi03YmFjLTRiN2YtYjc4NS1hNWIxMTU2ZTJjNzYiLCJzY29wZSI6WyJvcGVuaWQiXSwiaWF0IjoxNDI3NzUxMTAxLCJleHAiOjE0MzAzNDMxMDEsImNpZCI6ImJvc2hfY2xpIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3VhYS9vYXV0aC90b2tlbiIsImdyYW50X3R5cGUiOiJwYXNzd29yZCIsInVzZXJfbmFtZSI6Im1hcmlzc2EiLCJ1c2VyX2lkIjoiOGNiMGVhY2YtN2JhYy00YjdmLWI3ODUtYTViMTE1NmUyYzc2IiwiYXVkIjpbImJvc2hfY2xpIiwib3BlbmlkIl19.JVH7qFaeh2RPgjdaWMpMDswDB5gmSml5971xXIQz3SI","expires_in":43199,"scope":"openid","jti":"98e6e2d5-6fb5-4002-ab6c-0e67b4610831"}'
+    http_version: 
+  recorded_at: Mon, 30 Mar 2015 21:31:41 GMT
+recorded_with: VCR 2.9.3

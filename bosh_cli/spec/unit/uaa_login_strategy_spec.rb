@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Bosh::Cli::UaaLoginStrategy do
   describe '#login' do
     let(:terminal) { instance_double(Bosh::Cli::Terminal, ask: nil, ask_password: nil, say_green: nil) }
-    let(:uaa) { instance_double(Bosh::Cli::Client::Uaa, login: nil) }
+    let(:uaa) { instance_double(Bosh::Cli::Client::Uaa::Client, login: nil) }
     let(:config) { instance_double(Bosh::Cli::Config, set_credentials: nil, save: nil) }
     let(:target) { 'some target' }
 

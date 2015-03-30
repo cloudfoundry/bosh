@@ -1,6 +1,7 @@
 require 'cli/basic_login_strategy'
 require 'cli/uaa_login_strategy'
 require 'cli/client/uaa'
+require 'cli/client/uaa/options'
 require 'cli/terminal'
 
 module Bosh::Cli::Command
@@ -41,7 +42,8 @@ module Bosh::Cli::Command
       auth_info = director_info.fetch('user_authentication', {})
 
       if auth_info['type'] == 'uaa'
-        uaa = Bosh::Cli::Client::Uaa.new(auth_info['options'], options[:ca_cert])
+        client_options = Bosh::Cli::Client::Uaa::Options.parse(options, auth_info['options'], ENV)
+        uaa = Bosh::Cli::Client::Uaa::Client.new(client_options)
         Bosh::Cli::UaaLoginStrategy.new(terminal, uaa, config, interactive?)
       else
         Bosh::Cli::BasicLoginStrategy.new(terminal, director, config, interactive?)
