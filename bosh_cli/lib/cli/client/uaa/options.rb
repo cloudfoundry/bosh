@@ -1,11 +1,12 @@
 require 'cli/errors'
-require 'cli/core_ext' #FIXME: this object shouldn't know about 'err'
 
 module Bosh
   module Cli
     module Client
       module Uaa
         class Options < Struct.new(:url, :ssl_ca_file, :client_id, :client_secret)
+          class ValidationError < Bosh::Cli::CliError; end
+
           def self.parse(cli_options, auth_options, env)
             url = auth_options.fetch('url')
             ssl_ca_file = cli_options[:ca_cert]
@@ -22,7 +23,7 @@ module Bosh
 
           def validate!
             unless URI.parse(url).instance_of?(URI::HTTPS)
-              err('Failed to connect to UAA, HTTPS protocol is required')
+              raise ValidationError.new('HTTPS protocol is required')
             end
           end
         end

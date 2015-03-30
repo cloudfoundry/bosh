@@ -18,7 +18,7 @@ describe Bosh::Cli::Client::Uaa::Options do
     it 'fails when url is not https' do
       expect do
         Bosh::Cli::Client::Uaa::Options.parse({}, { 'url' => 'http://example.com' }, {})
-      end.to raise_error /HTTPS protocol is required/
+      end.to raise_error Bosh::Cli::Client::Uaa::Options::ValidationError, "HTTPS protocol is required"
     end
   end
 

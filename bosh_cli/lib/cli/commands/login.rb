@@ -48,6 +48,9 @@ module Bosh::Cli::Command
       else
         Bosh::Cli::BasicLoginStrategy.new(terminal, director, config, interactive?)
       end
+
+      rescue Bosh::Cli::Client::Uaa::Options::ValidationError => e
+        err("Failed to connect to UAA: #{e.message}")
     end
   end
 end
