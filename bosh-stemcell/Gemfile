@@ -1,6 +1,0 @@
-source 'https://rubygems.org'
-
-gem 'bosh-core', path: '../bosh-core'
-gem 'bosh_aws_cpi', path: '../bosh_aws_cpi'
-
-gemspec
