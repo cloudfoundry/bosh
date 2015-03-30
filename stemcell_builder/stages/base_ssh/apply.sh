@@ -34,13 +34,19 @@ if [ "$(get_os_type)" == "centos" -o "$(get_os_type)" == "rhel" ]; then
 
   # Disallow Weak MACs
   sed "/^ *MACs/d" -i $chroot/etc/ssh/sshd_config
-  echo 'MACs hmac-sha2-512,hmac-sha2-256,hmac-ripemd160' >> $chroot/etc/ssh/sshd_config
-else
+  echo 'MACs hmac-sha2-512,hmac-sha2-256,hmac-ripemd160,hmac-sha1' >> $chroot/etc/ssh/sshd_config
+
+elif [ "$(get_os_type)" == "ubuntu" ]; then
   # Disallow CBC Ciphers
   sed "/^ *Ciphers/d" -i $chroot/etc/ssh/sshd_config
   echo 'Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr' >> $chroot/etc/ssh/sshd_config
 
   # Disallow Weak MACs
   sed "/^ *MACs/d" -i $chroot/etc/ssh/sshd_config
-  echo 'MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-ripemd160-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,hmac-ripemd160' >> $chroot/etc/ssh/sshd_config
+  echo 'MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-ripemd160-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,hmac-ripemd160,hmac-sha1' >> $chroot/etc/ssh/sshd_config
+
+else
+  echo "Unknown OS type $(get_os_type)"
+  exit 1
+
 fi

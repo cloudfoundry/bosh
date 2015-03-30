@@ -160,7 +160,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       expect(sshd_config).to contain(/^Ciphers #{ciphers}$/)
     end
 
-    it 'disallows insecure HMACs' do
+    it 'allows only secure HMACs and the weaker SHA1 HMAC required by golang ssh lib' do
       macs = %w(
         hmac-sha2-512-etm@openssh.com
         hmac-sha2-256-etm@openssh.com
@@ -169,6 +169,7 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
         hmac-sha2-512
         hmac-sha2-256
         hmac-ripemd160
+        hmac-sha1
       ).join(',')
       expect(sshd_config).to contain(/^MACs #{macs}$/)
     end
