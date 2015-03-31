@@ -26,3 +26,5 @@ if [ "${os}" == "rhel" ]; then
 fi
 
 echo -n ${os} > $chroot/var/vcap/bosh/etc/operating_system
+
+echo -n ${stemcell_version} > $chroot/var/vcap/bosh/etc/stemcell_version

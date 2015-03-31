@@ -1,6 +1,9 @@
 require 'spec_helper'
 
 describe 'CentOS 6.x stemcell', stemcell_image: true do
+
+  it_behaves_like 'All Stemcells'
+  
   context 'installed by image_install_grub', exclude_on_warden: true do
     describe file('/etc/fstab') do
       it { should be_file }
