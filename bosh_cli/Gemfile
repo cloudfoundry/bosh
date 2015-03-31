@@ -1,8 +1,0 @@
-source 'https://rubygems.org'
-
-gem 'bosh-template', path: '../bosh-template'
-gem 'bosh_common', path: '../bosh_common'
-gem 'blobstore_client', path: '../blobstore_client'
-gem 'fakefs', git: 'https://github.com/pivotal-cf-experimental/fakefs.git', ref: 'ebde3d6c'
-
-gemspec
