@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh
   module Director
   end
@@ -152,5 +150,6 @@ require 'bosh/director/api/controllers/tasks_controller'
 require 'bosh/director/api/controllers/task_controller'
 require 'bosh/director/api/controllers/users_controller'
 require 'bosh/director/api/controllers/compiled_packages_controller'
+require 'bosh/director/api/controllers/cloud_configs_controller'
 require 'bosh/director/api/controllers/locks_controller'
 require 'bosh/director/api/route_configuration'

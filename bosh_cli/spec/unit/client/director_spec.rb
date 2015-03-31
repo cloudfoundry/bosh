@@ -155,7 +155,7 @@ describe Bosh::Cli::Client::Director do
   describe 'interface REST API' do
     it 'has helper methods for HTTP verbs which delegate to generic request' do
       [:get, :put, :post, :delete].each do |verb|
-        expect(@director).to receive(:request).with(verb, :arg1, :arg2)
+        expect(@director).to receive(:request).with(verb, :arg1, :arg2, nil, {}, {})
         @director.send(verb, :arg1, :arg2)
       end
     end
@@ -393,17 +393,21 @@ describe Bosh::Cli::Client::Director do
 
     it 'changes job instance resurrection state' do
       expect(@director).to receive(:request).with(:put,
-                                              '/deployments/foo/jobs/dea/0/resurrection',
-                                              'application/json',
-                                              '{"resurrection_paused":true}')
+          '/deployments/foo/jobs/dea/0/resurrection',
+          'application/json',
+          '{"resurrection_paused":true}',
+          {},
+          {})
       @director.change_vm_resurrection('foo', 'dea', 0, true)
     end
 
     it 'change resurrection globally' do
       expect(@director).to receive(:request).with(:put,
-                                              '/resurrection',
-                                              'application/json',
-                                              '{"resurrection_paused":false}')
+          '/resurrection',
+          'application/json',
+          '{"resurrection_paused":false}',
+          {},
+          {})
       @director.change_vm_resurrection_for_all(false)
     end
 
