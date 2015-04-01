@@ -131,7 +131,7 @@ describe Bosh::AwsCloud::Cloud do
       expect(volume).to receive(:attach_to).exactly(15).times
       expect {
         cloud.attach_disk('i-test', 'v-foobar')
-      }.to raise_error Bosh::Common::RetryCountExceeded
+      }.to raise_error Bosh::Clouds::CloudError, /AWS::EC2::Errors::IncorrectState/
     end
   end
 
@@ -143,8 +143,9 @@ describe Bosh::AwsCloud::Cloud do
           with(instance, '/dev/sdh').and_raise AWS::EC2::Errors::VolumeInUse
     end
 
-    it 'retries 15 times every 1 sec, and then every 15 sec for 10 min' do
-      expect(volume).to receive(:attach_to).exactly(54).times
+    it 'retries default number of attempts' do
+      expect(volume).to receive(:attach_to).exactly(
+          Bosh::AwsCloud::ResourceWait::DEFAULT_WAIT_ATTEMPTS).times
 
       expect {
         cloud.attach_disk('i-test', 'v-foobar')

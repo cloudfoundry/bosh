@@ -7,7 +7,8 @@ module Bosh::AwsCloud
     # a sane amount of retries on AWS (~25 minutes),
     # as things can take anywhere between a minute and forever
     DEFAULT_TRIES = 54
-    MAX_SLEEP_EXPONENT = 5
+    MAX_SLEEP_TIME = 15
+    DEFAULT_WAIT_ATTEMPTS = 600 / MAX_SLEEP_TIME # 10 minutes
 
     def self.for_instance(args)
       raise ArgumentError, "args should be a Hash, but `#{args.class}' given" unless args.is_a?(Hash)
@@ -134,12 +135,21 @@ module Bosh::AwsCloud
       end
     end
 
-    def self.sleep_callback(description, tries)
+    def self.sleep_callback(description, options)
+      max_sleep_time = options.fetch(:max, MAX_SLEEP_TIME)
       lambda do |num_tries, error|
-        sleep_time = 2**[num_tries, MAX_SLEEP_EXPONENT].min # Exp backoff: 1, 2, 4, 8 ... up to max 32
+        if options[:tries_before_max] && num_tries >= options[:tries_before_max]
+          time = max_sleep_time
+        else
+          if options[:exponential]
+            time = [options[:interval] ** num_tries, max_sleep_time].min
+          else
+            time = [1 + options[:interval] * num_tries, max_sleep_time].min
+          end
+        end
         Bosh::AwsCloud::ResourceWait.logger.debug("#{error.class}: `#{error.message}'") if error
-        Bosh::AwsCloud::ResourceWait.logger.debug("#{description}, retrying in #{sleep_time} seconds (#{num_tries}/#{tries})")
-        sleep_time
+        Bosh::AwsCloud::ResourceWait.logger.debug("#{description}, retrying in #{time} seconds (#{num_tries}/#{options[:total]})")
+        time
       end
     end
 
@@ -163,7 +173,10 @@ module Bosh::AwsCloud
       tries = args.fetch(:tries, DEFAULT_TRIES).to_i
       target_state = args.fetch(:target_state)
 
-      sleep_cb = self.class.sleep_callback("Waiting for #{desc} to be #{target_state}", tries)
+      sleep_cb = self.class.sleep_callback(
+        "Waiting for #{desc} to be #{target_state}",
+        { interval: 2, total: tries, max: 32, exponential: true }
+      )
       errors << AWS::EC2::Errors::RequestLimitExceeded
       ensure_cb = Proc.new do |retries|
         cloud_error("Timed out waiting for #{desc} to be #{target_state}, took #{time_passed}s") if retries == tries

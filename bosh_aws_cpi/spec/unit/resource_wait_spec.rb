@@ -229,11 +229,27 @@ describe Bosh::AwsCloud::ResourceWait do
   end
 
   describe '.sleep_callback' do
-    it 'returns seconds to sleep interval capped at 32 seconds' do
-      scb = described_class.sleep_callback('fake-time-test', 10)
-      expected_times = [1, 2, 4, 8, 16, 32, 32, 32, 32, 32, 32]
-      returned_times = (0..10).map { |try_number| scb.call(try_number, nil) }
+    it 'returns interval until max sleep time is reached' do
+      scb = described_class.sleep_callback('fake-time-test', {interval: 5, total: 8})
+      expected_times = [1, 6, 11, 15, 15, 15, 15, 15]
+      returned_times = (0..7).map { |try_number| scb.call(try_number, nil) }
       expect(returned_times).to eq(expected_times)
+    end
+
+    it 'returns interval until tries_before_max is reached' do
+      scb = described_class.sleep_callback('fake-time-test', {interval: 0, tries_before_max: 4, total: 8})
+      expected_times = [1, 1, 1, 1, 15, 15, 15, 15]
+      returned_times = (0..7).map { |try_number| scb.call(try_number, nil) }
+      expect(returned_times).to eq(expected_times)
+    end
+
+    context 'when exponential sleep time is used' do
+      it 'retries for 1, 2, 4, 8 up to max time' do
+        scb = described_class.sleep_callback('fake-time-test', {interval: 2, total: 8, max: 32, exponential: true})
+        expected_times = [1, 2, 4, 8, 16, 32, 32, 32]
+        returned_times = (0..7).map { |try_number| scb.call(try_number, nil) }
+        expect(returned_times).to eq(expected_times)
+      end
     end
   end
 

@@ -205,12 +205,16 @@ module Bosh::AwsCloud
 
         logger.info("Deleting volume `#{volume.id}'")
 
-        tries = 10
-        sleep_cb = ResourceWait.sleep_callback("Waiting for volume `#{volume.id}' to be deleted", tries)
+        # Retry 1, 6, 11, 15, 15, 15.. seconds. The total time is ~10 min.
+        tries = ResourceWait::DEFAULT_WAIT_ATTEMPTS
+        sleep_cb = ResourceWait.sleep_callback(
+          "Waiting for volume `#{volume.id}' to be deleted",
+          { interval: 5, total: tries }
+        )
         ensure_cb = Proc.new do |retries|
           cloud_error("Timed out waiting to delete volume `#{volume.id}'") if retries == tries
         end
-        error = AWS::EC2::Errors::Client::VolumeInUse
+        error = AWS::EC2::Errors::VolumeInUse
 
         Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: error, ensure: ensure_cb) do
           volume.delete
@@ -573,23 +577,28 @@ module Bosh::AwsCloud
       # we try again just to be really sure it is telling the truth
       attachment = nil
 
-      # Retry every 1 sec for 15 sec, then every 15 sec for 10 min
-      retry_strategy = lambda { |retries, _| (retries < 15) ? 1 : 15 }
-      total_tries = 15 + (600 - 15) / 15
+      logger.debug("Attaching '#{volume.id}' to '#{instance.id}' as '#{device_name}'")
+
+      # Retry every 1 sec for 15 sec, then every 15 sec for ~10 min
+      tries = ResourceWait::DEFAULT_WAIT_ATTEMPTS
+      sleep_cb = ResourceWait.sleep_callback(
+        "Attaching volume `#{volume.id}' to #{instance.id}",
+        { interval: 0, tries_before_max: 15, total: tries }
+      )
 
       Bosh::Common.retryable(
         on: [AWS::EC2::Errors::IncorrectState, AWS::EC2::Errors::VolumeInUse],
-        sleep: retry_strategy,
-        tries: total_tries
+        sleep: sleep_cb,
+        tries: tries
       ) do |retries, error|
+        # Continue to retry after 15 attempts only for VolumeInUse
         if retries > 15 && error.instance_of?(AWS::EC2::Errors::IncorrectState)
-          raise Bosh::Common::RetryCountExceeded.new(error.message)
+          cloud_error("Failed to attach disk: #{error.message}")
         end
 
         attachment = volume.attach_to(instance, device_name)
       end
 
-      logger.info("Attaching '#{volume.id}' to '#{instance.id}' as '#{device_name}'")
       ResourceWait.for_attachment(attachment: attachment, state: :attached)
 
       device_name = attachment.device
