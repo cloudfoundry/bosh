@@ -1,5 +1,6 @@
 require 'cli/core_ext'
 require 'cli/errors'
+require 'cli/cloud_config'
 
 require 'json'
 require 'httpclient'
@@ -570,6 +571,17 @@ module Bosh
           request_and_track(method, uri, options.merge(:payload => file))
         ensure
           file.stop_progress_bar if file
+        end
+
+        def get_cloud_config
+          _, cloud_configs = get_json_with_status('/cloud_configs?limit=1')
+          latest = cloud_configs.first
+
+          if !latest.nil?
+            Bosh::Cli::CloudConfig.new(
+              properties: latest["properties"],
+              created_at: latest["created_at"])
+          end
         end
 
         def update_cloud_config(cloud_config_yaml)

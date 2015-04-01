@@ -66,6 +66,17 @@ module BoshExtensions
   end
 
   def load_yaml_file(path, expected_type = Hash)
+    yaml_str = read_yaml_file(path)
+
+    yaml = Psych::load(yaml_str)
+    if expected_type && !yaml.is_a?(expected_type)
+      err("Incorrect YAML structure in `#{path}': expected #{expected_type} at the root".make_red)
+    end
+
+    yaml
+  end
+
+  def read_yaml_file(path)
     err("Cannot find file `#{path}'".make_red) unless File.exist?(path)
 
     begin
@@ -79,13 +90,7 @@ module BoshExtensions
     rescue => e
       err("Incorrect YAML structure in `#{path}': #{e}".make_red)
     end
-
-    yaml = Psych::load(yaml_str)
-    if expected_type && !yaml.is_a?(expected_type)
-      err("Incorrect YAML structure in `#{path}': expected #{expected_type} at the root".make_red)
-    end
-
-    yaml
+    yaml_str
   end
 
   def write_yaml(manifest, path)

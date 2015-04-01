@@ -13,7 +13,7 @@ describe "cli cloud config", type: :integration do
     end
   end
 
-  it "gives nice errors for common problems", no_reset: true do
+  it "gives nice errors for common problems when uploading", no_reset: true do
     bosh_runner.run("target #{current_sandbox.director_url}")
 
     # not logged in
@@ -27,8 +27,25 @@ describe "cli cloud config", type: :integration do
     # file not yaml
     Dir.mktmpdir do |tmpdir|
       cloud_config_filename = File.join(tmpdir, 'cloud_config.yml')
-      File.write(cloud_config_filename, "i'm not really yaml, hah!")
+      File.write(cloud_config_filename, "---\n}}}i'm not really yaml, hah!")
       expect(bosh_runner.run("update cloud-config #{cloud_config_filename}", failure_expected: true)).to include("Incorrect YAML structure")
+    end
+  end
+
+  it "can download a cloud config" do
+    bosh_runner.run("target #{current_sandbox.director_url}")
+    bosh_runner.run("login admin admin")
+
+    # none present yet
+    expect(bosh_runner.run("cloud-config")).to eq("")
+
+    Dir.mktmpdir do |tmpdir|
+      cloud_config_filename = File.join(tmpdir, 'cloud_config.yml')
+      cloud_config = "---\nfoo: bar"
+      File.write(cloud_config_filename, cloud_config)
+      puts bosh_runner.run("update cloud-config #{cloud_config_filename}")
+
+      expect(bosh_runner.run("cloud-config")).to eq("#{cloud_config}\n")
     end
   end
 end

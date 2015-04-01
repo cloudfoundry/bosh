@@ -8,6 +8,10 @@ module Bosh
           )
           cloud_config.save
         end
+
+        def list(limit)
+          Bosh::Director::Models::CloudConfig.order(Sequel.desc(:created_at)).limit(limit).to_a
+        end
       end
     end
   end
