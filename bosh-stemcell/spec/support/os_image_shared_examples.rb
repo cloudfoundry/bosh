@@ -69,4 +69,13 @@ shared_examples_for 'every OS image' do
       expect(sshd_config).to contain(/^MaxAuthTries 3$/)
     end
   end
+
+  context 'anacron is configured' do
+    describe file('/etc/anacrontab') do
+      it { should be_file }
+      it { should contain /^RANDOM_DELAY=60$/ }
+      it { should_not contain /^RANDOM_DELAY=[0-57-9][0-9]*$/ }
+    end
+  end
+
 end

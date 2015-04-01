@@ -42,6 +42,7 @@ module Bosh::Stemcell
               :delay_monit_start,
               :system_grub,
               :vim_tiny,
+              :cron_config,
             ]
           )
         end
@@ -65,6 +66,7 @@ module Bosh::Stemcell
               :rsyslog_config,
               :delay_monit_start,
               :system_grub,
+              :cron_config,
             ]
           )
         end
@@ -87,6 +89,7 @@ module Bosh::Stemcell
               :rsyslog_config,
               :delay_monit_start,
               :system_grub,
+              :cron_config,
             ]
           )
         end
@@ -110,6 +113,7 @@ module Bosh::Stemcell
               :delay_monit_start,
               :system_grub,
               :rhel_unsubscribe,
+              :cron_config,
             ]
           )
         end
