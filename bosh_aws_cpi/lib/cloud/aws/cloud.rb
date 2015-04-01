@@ -216,9 +216,9 @@ module Bosh::AwsCloud
         ensure_cb = Proc.new do |retries|
           cloud_error("Timed out waiting to delete volume `#{volume.id}'") if retries == tries
         end
-        error = AWS::EC2::Errors::VolumeInUse
+        errors = [AWS::EC2::Errors::VolumeInUse, AWS::EC2::Errors::RequestLimitExceeded]
 
-        Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: error, ensure: ensure_cb) do
+        Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb) do
           volume.delete
           true # return true to only retry on Exceptions
         end
@@ -591,7 +591,11 @@ module Bosh::AwsCloud
       )
 
       Bosh::Common.retryable(
-        on: [AWS::EC2::Errors::IncorrectState, AWS::EC2::Errors::VolumeInUse],
+        on: [
+          AWS::EC2::Errors::IncorrectState,
+          AWS::EC2::Errors::VolumeInUse,
+          AWS::EC2::Errors::RequestLimitExceeded
+        ],
         sleep: sleep_cb,
         tries: tries
       ) do |retries, error|
