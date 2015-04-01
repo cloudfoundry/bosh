@@ -14,8 +14,8 @@ module Bosh::Director
           @backup_manager = BackupManager.new
           @instance_manager = InstanceManager.new
           @resurrector_manager = ResurrectorManager.new
-          @problem_manager = ProblemManager.new
-          @property_manager = PropertyManager.new
+          @problem_manager = ProblemManager.new(@deployment_manager)
+          @property_manager = PropertyManager.new(@deployment_manager)
           @release_manager = ReleaseManager.new
           @snapshot_manager = SnapshotManager.new
           @stemcell_manager = StemcellManager.new

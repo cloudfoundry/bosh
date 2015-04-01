@@ -1,10 +1,8 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 
 module Bosh::Director
   describe Api::PropertyManager do
-    subject(:property_manager) { Api::PropertyManager.new }
+    subject(:property_manager) { Api::PropertyManager.new(Api::DeploymentManager.new) }
 
     def make_deployment
       Models::Deployment.make(name: 'mycloud')

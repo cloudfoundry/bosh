@@ -2,7 +2,7 @@ module Bosh::Director
   module Api
     class ProblemManager
 
-      def initialize(deployment_manager = DeploymentManager.new)
+      def initialize(deployment_manager)
         @deployment_manager = deployment_manager
       end
 

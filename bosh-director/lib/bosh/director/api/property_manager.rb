@@ -4,8 +4,8 @@ module Bosh::Director
   module Api
     class PropertyManager
 
-      def initialize
-        @deployment_manager = DeploymentManager.new
+      def initialize(deployment_manager)
+        @deployment_manager = deployment_manager
       end
 
       def create_property(deployment_name, property_name, value)
