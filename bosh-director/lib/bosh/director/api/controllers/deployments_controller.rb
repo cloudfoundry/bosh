@@ -66,7 +66,7 @@ module Bosh::Director
         }
 
         deployment = @deployment_manager.find_by_name(params[:deployment])
-        manifest = request.content_length.nil? ? StringIO.new(deployment.manifest) : request.body
+        manifest = request.content_length.nil? || request.content_length == 0 ? StringIO.new(deployment.manifest) : request.body
         task = @deployment_manager.create_deployment(@user, manifest, options)
         redirect "/tasks/#{task.id}"
       end
