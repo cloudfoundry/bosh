@@ -9,6 +9,7 @@ module Bosh::Director::Models
     one_to_many  :vms
     one_to_many  :properties, :class => "Bosh::Director::Models::DeploymentProperty"
     one_to_many  :problems, :class => "Bosh::Director::Models::DeploymentProblem"
+    many_to_one   :cloud_config
 
     def validate
       validates_presence :name

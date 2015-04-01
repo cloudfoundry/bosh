@@ -13,7 +13,6 @@ module Bosh::Director
     end
 
     describe '#create_deployment' do
-
       before do
         allow(subject).to receive(:write_file)
       end
@@ -21,17 +20,30 @@ module Bosh::Director
       context 'when sufficient disk space is available' do
         before do
           allow(subject).to receive_messages(check_available_disk_space: true)
+          allow(SecureRandom).to receive_messages(uuid: 'FAKE_UUID')
+          allow(Dir).to receive_messages(tmpdir: 'FAKE_TMPDIR')
         end
 
         it 'enqueues a resque job' do
-          allow(SecureRandom).to receive_messages(uuid: 'FAKE_UUID')
-          allow(Dir).to receive_messages(tmpdir: 'FAKE_TMPDIR')
           expected_manifest_path = File.join('FAKE_TMPDIR', 'deployment-FAKE_UUID')
+          cloud_config = instance_double(Bosh::Director::Models::CloudConfig, id: 123)
+          allow(job_queue).to receive(:enqueue).and_return(task)
 
-          expect(job_queue).to receive(:enqueue).with(
-            username, Jobs::UpdateDeployment, 'create deployment', [expected_manifest_path, options]).and_return(task)
+          create_task = subject.create_deployment(username, 'FAKE_DEPLOYMENT_MANIFEST', cloud_config, options)
 
-          expect(subject.create_deployment(username, 'FAKE_DEPLOYMENT_MANIFEST', options)).to eq(task)
+          expect(create_task).to eq(task)
+          expect(job_queue).to have_received(:enqueue).with(
+              username, Jobs::UpdateDeployment, 'create deployment', [expected_manifest_path, cloud_config.id, options])
+        end
+
+        it 'passes a nil cloud config id if there is no cloud config' do
+          expected_manifest_path = File.join('FAKE_TMPDIR', 'deployment-FAKE_UUID')
+          allow(job_queue).to receive(:enqueue).and_return(task)
+
+          subject.create_deployment(username, 'FAKE_DEPLOYMENT_MANIFEST', nil, options)
+
+          expect(job_queue).to have_received(:enqueue).with(
+              username, Jobs::UpdateDeployment, 'create deployment', [expected_manifest_path, nil, options])
         end
       end
     end

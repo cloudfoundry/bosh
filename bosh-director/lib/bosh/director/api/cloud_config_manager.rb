@@ -12,6 +12,10 @@ module Bosh
         def list(limit)
           Bosh::Director::Models::CloudConfig.order(Sequel.desc(:created_at)).limit(limit).to_a
         end
+
+        def latest
+          list(1).first
+        end
       end
     end
   end

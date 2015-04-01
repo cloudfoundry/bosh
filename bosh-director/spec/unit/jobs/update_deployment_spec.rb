@@ -13,7 +13,12 @@ describe Bosh::Director::Jobs::UpdateDeployment do
 
   describe 'instance methods' do
     let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner') }
+    let(:manifest) { double('manifest') }
+    let(:manifest_file) { Tempfile.new('manifest') }
+
     before do
+      Bosh::Director::Config.configure(Psych.load_file(asset('test-director-config.yml'))) #FIXME: polluting global state
+
       pool1 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
       pool2 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
 
@@ -27,18 +32,12 @@ describe Bosh::Director::Jobs::UpdateDeployment do
       allow(Bosh::Director::ResourcePoolUpdater).to receive(:new).with(pool2).and_return(updater2)
 
       allow(Bosh::Director::DeploymentPlan::Planner).to receive(:parse).and_return(deployment_plan)
-    end
 
-    let(:manifest) { double('manifest') }
-    let(:manifest_file) { Tempfile.new('manifest') }
-    before do
       File.open(manifest_file.path, 'w') do |f|
         f.write('manifest')
       end
       allow(Psych).to receive(:load).with('manifest').and_return(manifest)
-    end
 
-    before do
       @tmpdir = Dir.mktmpdir('base_dir')
 
       allow(Bosh::Director::Config).to receive(:base_dir).and_return(@tmpdir)
@@ -59,7 +58,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
           ).
           and_return(deployment_plan)
 
-        described_class.new(manifest_file.path)
+        described_class.new(manifest_file.path, nil)
       end
     end
 
@@ -70,7 +69,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         package_compiler = instance_double('Bosh::Director::PackageCompiler')
 
         allow(Bosh::Director::DeploymentPlan::Assembler).to receive(:new).with(deployment_plan).and_return(assembler)
-        update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(manifest_file.path)
+        update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(manifest_file.path, nil)
         allow(Bosh::Director::PackageCompiler).to receive(:new).with(deployment_plan).and_return(package_compiler)
 
         expect(assembler).to receive(:bind_deployment).ordered
@@ -137,7 +136,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         expect(resource_pool_updater).to receive(:reserve_networks).ordered
         expect(resource_pool_updater).to receive(:create_missing_vms).ordered
 
-        update_deployment_job = described_class.new(manifest_file.path)
+        update_deployment_job = described_class.new(manifest_file.path, nil)
         update_deployment_job.instance_eval { @assembler = assembler }
         update_deployment_job.update
 
@@ -167,7 +166,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         allow(resource_pool_spec).to receive(:stemcell).and_return(stemcell_spec)
         allow(stemcell_spec).to receive(:model).and_return(new_stemcell)
 
-        update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(manifest_file.path)
+        update_deployment_job = Bosh::Director::Jobs::UpdateDeployment.new(manifest_file.path, nil)
         update_deployment_job.update_stemcell_references
 
         expect(old_stemcell.deployments).to be_empty
@@ -208,14 +207,13 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         allow(notifier).to receive(:send_error_event)
         allow(notifier).to receive(:send_start_event)
         allow(notifier).to receive(:send_end_event)
-      end
 
-      before do
         allow(deployment_plan).to receive(:releases).and_return(release_specs)
         allow(deployment_plan).to receive(:model).and_return(deployment)
       end
 
-      let(:job) { Bosh::Director::Jobs::UpdateDeployment.new(manifest_file.path) }
+      let(:job) { Bosh::Director::Jobs::UpdateDeployment.new(manifest_file.path, nil) }
+
       before do
         allow(job).to receive(:notifier).and_return(notifier)
       end
@@ -240,22 +238,54 @@ describe Bosh::Director::Jobs::UpdateDeployment do
         end
       end
 
-      it 'should do a basic update' do
-        expect(job).to receive(:with_deployment_lock).with(deployment_plan).and_yield.ordered
-        expect(notifier).to receive(:send_start_event).ordered
-        expect(job).to receive(:prepare).ordered
-        expect(job).to receive(:update).ordered
-        expect(job).to receive(:with_release_locks).with(deployment_plan).and_yield.ordered
-        expect(notifier).to receive(:send_end_event).ordered
-        expect(job).to receive(:update_stemcell_references).ordered
+      context 'with a cloud config' do
+        let!(:cloud_config) { Bosh::Director::Models::CloudConfig.create(properties: '--\nfoo: bar') }
+        let(:job) { Bosh::Director::Jobs::UpdateDeployment.new(manifest_file.path, cloud_config.id) }
 
-        expect(deployment).to receive(:add_release_version).with(foo_release_version)
-        expect(deployment).to receive(:add_release_version).with(bar_release_version)
+        it 'should do a basic update' do
+          expect(job).to receive(:with_deployment_lock).with(deployment_plan).and_yield.ordered
+          expect(notifier).to receive(:send_start_event).ordered
+          expect(job).to receive(:prepare).ordered
+          expect(job).to receive(:update).ordered
+          expect(job).to receive(:with_release_locks).with(deployment_plan).and_yield.ordered
+          expect(notifier).to receive(:send_end_event).ordered
+          expect(job).to receive(:update_stemcell_references).ordered
 
-        expect(job.perform).to eq('/deployments/test_deployment')
+          expect(deployment).to receive(:add_release_version).with(foo_release_version)
+          expect(deployment).to receive(:add_release_version).with(bar_release_version)
 
-        deployment.refresh
-        expect(deployment.manifest).to eq('manifest')
+          expect(deployment.cloud_config).to be_nil
+
+          expect(job.perform).to eq('/deployments/test_deployment')
+
+          deployment.refresh
+          expect(deployment.manifest).to eq('manifest')
+          expect(deployment.cloud_config).to eq(cloud_config)
+        end
+      end
+
+      context 'without a cloud config' do
+        let(:job) { Bosh::Director::Jobs::UpdateDeployment.new(manifest_file.path, nil) }
+
+        it 'should do a basic update of everything but the cloud config' do
+          expect(job).to receive(:with_deployment_lock).with(deployment_plan).and_yield.ordered
+          expect(notifier).to receive(:send_start_event).ordered
+          expect(job).to receive(:prepare).ordered
+          expect(job).to receive(:update).ordered
+          expect(job).to receive(:with_release_locks).with(deployment_plan).and_yield.ordered
+          expect(notifier).to receive(:send_end_event).ordered
+          expect(job).to receive(:update_stemcell_references).ordered
+
+          expect(deployment).to receive(:add_release_version).with(foo_release_version)
+          expect(deployment).to receive(:add_release_version).with(bar_release_version)
+
+          expect(job.perform).to eq('/deployments/test_deployment')
+
+          deployment.refresh
+
+          expect(deployment.manifest).to eq('manifest')
+          expect(deployment.cloud_config).to be_nil
+        end
       end
     end
   end

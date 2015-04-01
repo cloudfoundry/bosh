@@ -41,4 +41,33 @@ describe Bosh::Director::Api::CloudConfigManager do
       expect(cloud_configs[1]).to eq(older_cloud_config)
     end
   end
+
+  describe "#latest" do
+    it "returns the latest" do
+      days = 24*60*60
+
+      older_cloud_config = Bosh::Director::Models::CloudConfig.new(
+        properties: "config_from_last_year",
+        created_at: Time.now - 2*days,
+      ).save
+      newer_cloud_config = Bosh::Director::Models::CloudConfig.new(
+        properties: "---\nsuper_shiny: new_config",
+        created_at: Time.now - 1*days,
+      ).save
+
+      manager = Bosh::Director::Api::CloudConfigManager.new
+
+      cloud_config = manager.latest
+
+      expect(cloud_config).to eq(newer_cloud_config)
+    end
+
+    it "returns nil if there are no cloud configs" do
+      manager = Bosh::Director::Api::CloudConfigManager.new
+
+      cloud_config = manager.latest
+
+      expect(cloud_config).to be_nil
+    end
+  end
 end

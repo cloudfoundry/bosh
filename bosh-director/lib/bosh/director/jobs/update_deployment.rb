@@ -13,13 +13,16 @@ module Bosh::Director
 
       # @param [String] manifest_file Path to deployment manifest
       # @param [Hash] options Deployment options
-      def initialize(manifest_file, options = {})
+      def initialize(manifest_file, cloud_config_id, options = {})
         @blobstore = App.instance.blobstores.blobstore
 
         logger.info('Reading deployment manifest')
         @manifest_file = manifest_file
         @manifest = File.read(@manifest_file)
         logger.debug("Manifest:\n#{@manifest}")
+
+        @cloud_config = Bosh::Director::Models::CloudConfig.find(id: cloud_config_id)
+        logger.debug("Cloud Config:\n#{@cloud_config.inspect}")
 
         logger.info('Creating deployment plan')
         logger.info("Deployment plan options: #{options.pretty_inspect}")
@@ -99,6 +102,7 @@ module Bosh::Director
             end
 
             deployment.manifest = @manifest
+            deployment.cloud_config = @cloud_config
             deployment.save
             notifier.send_end_event
             logger.info('Finished updating deployment')
