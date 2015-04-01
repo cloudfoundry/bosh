@@ -206,6 +206,8 @@ module Bosh::AwsCloud
         logger.info("Deleting volume `#{volume.id}'")
 
         # Retry 1, 6, 11, 15, 15, 15.. seconds. The total time is ~10 min.
+        # VolumeInUse can be returned by AWS if disk was attached to VM
+        # that was recently removed.
         tries = ResourceWait::DEFAULT_WAIT_ATTEMPTS
         sleep_cb = ResourceWait.sleep_callback(
           "Waiting for volume `#{volume.id}' to be deleted",
@@ -580,6 +582,8 @@ module Bosh::AwsCloud
       logger.debug("Attaching '#{volume.id}' to '#{instance.id}' as '#{device_name}'")
 
       # Retry every 1 sec for 15 sec, then every 15 sec for ~10 min
+      # VolumeInUse can be returned by AWS if disk was attached to VM
+      # that was recently removed.
       tries = ResourceWait::DEFAULT_WAIT_ATTEMPTS
       sleep_cb = ResourceWait.sleep_callback(
         "Attaching volume `#{volume.id}' to #{instance.id}",
