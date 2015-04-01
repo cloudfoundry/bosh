@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `0YARMwfbXRhCyma2hdTZTd97IlZqW3Qc`
+  Add hmac-sha1 to sshd_config (required by go ssh lib)
+
 * `G.Wzs2o9_mu6qvC2Nq7ZUvvo6jJSHjC8`
   update libgnutls26 to 2.12.23-12ubuntu2.2
 
@@ -114,6 +117,9 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 ## CentOS 6.6
 
 CentOS 6.6 images have filename `bosh-centos-6_6-os-image.tgz`
+
+* `kkUYP.4sM_hdsn3Sfcr6ksahFpPgb2D8`
+  Add hmac-sha1 to sshd_config (required by go ssh lib)
 
 * '3Yu.JSS0rB0oV6Gt3QnFfxaxvRju71bQ'
   lock down sshd_config permissions
