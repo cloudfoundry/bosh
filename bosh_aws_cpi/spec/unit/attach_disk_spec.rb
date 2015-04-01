@@ -6,20 +6,23 @@ describe Bosh::AwsCloud::Cloud do
     @registry = mock_registry
   end
 
-  it 'attaches EC2 volume to an instance' do
-    instance = double('instance', :id => 'i-test')
-    volume = double('volume', :id => 'v-foobar')
-    attachment = double('attachment', :device => '/dev/sdf')
+  let(:instance) { double('instance', :id => 'i-test') }
+  let(:volume) { double('volume', :id => 'v-foobar') }
 
-    cloud = mock_cloud do |ec2|
-      expect(ec2.instances).to receive(:[]).with('i-test').and_return(instance)
-      expect(ec2.volumes).to receive(:[]).with('v-foobar').and_return(volume)
+  let(:cloud) do
+    mock_cloud do |ec2|
+      allow(ec2.instances).to receive(:[]).with('i-test').and_return(instance)
+      allow(ec2.volumes).to receive(:[]).with('v-foobar').and_return(volume)
     end
+  end
+
+  before { allow(instance).to receive(:block_device_mappings).and_return({}) }
+
+  it 'attaches EC2 volume to an instance' do
+    attachment = double('attachment', :device => '/dev/sdf')
 
     expect(volume).to receive(:attach_to).
       with(instance, '/dev/sdf').and_return(attachment)
-
-    expect(instance).to receive(:block_device_mappings).and_return({})
 
     allow(Bosh::AwsCloud::ResourceWait).to receive(:for_attachment).with(attachment: attachment, state: :attached)
 
@@ -43,14 +46,7 @@ describe Bosh::AwsCloud::Cloud do
   end
 
   it 'picks available device name' do
-    instance = double('instance', :id => 'i-test')
-    volume = double('volume', :id => 'v-foobar')
     attachment = double('attachment', :device => '/dev/sdh')
-
-    cloud = mock_cloud do |ec2|
-      expect(ec2.instances).to receive(:[]).with('i-test').and_return(instance)
-      expect(ec2.volumes).to receive(:[]).with('v-foobar').and_return(volume)
-    end
 
     expect(instance).to receive(:block_device_mappings).
       and_return({ '/dev/sdf' => 'foo', '/dev/sdg' => 'bar'})
@@ -80,14 +76,7 @@ describe Bosh::AwsCloud::Cloud do
   end
 
   it 'picks available device name' do
-    instance = double('instance', :id => 'i-test')
-    volume = double('volume', :id => 'v-foobar')
     attachment = double('attachment', :device => '/dev/sdh')
-
-    cloud = mock_cloud do |ec2|
-      expect(ec2.instances).to receive(:[]).with('i-test').and_return(instance)
-      expect(ec2.volumes).to receive(:[]).with('v-foobar').and_return(volume)
-    end
 
     expect(instance).to receive(:block_device_mappings).
       and_return({ '/dev/sdf' => 'foo', '/dev/sdg' => 'bar'})
@@ -117,14 +106,6 @@ describe Bosh::AwsCloud::Cloud do
   end
 
   it 'raises an error when sdf..sdp are all reserved' do
-    instance = double('instance', :id => 'i-test')
-    volume = double('volume', :id => 'v-foobar')
-
-    cloud = mock_cloud do |ec2|
-      expect(ec2.instances).to receive(:[]).with('i-test').and_return(instance)
-      expect(ec2.volumes).to receive(:[]).with('v-foobar').and_return(volume)
-    end
-
     all_mappings = ('f'..'p').inject({}) do |hash, char|
       hash["/dev/sd#{char}"] = 'foo'
       hash
@@ -138,4 +119,36 @@ describe Bosh::AwsCloud::Cloud do
     }.to raise_error(Bosh::Clouds::CloudError, /too many disks attached/)
   end
 
+  context 'when aws returns IncorrectState' do
+    before { allow(Kernel).to receive(:sleep) }
+
+    before do
+      allow(volume).to receive(:attach_to).
+          with(instance, '/dev/sdf').and_raise AWS::EC2::Errors::IncorrectState
+    end
+
+    it 'retries 15 times every 1 sec' do
+      expect(volume).to receive(:attach_to).exactly(15).times
+      expect {
+        cloud.attach_disk('i-test', 'v-foobar')
+      }.to raise_error Bosh::Common::RetryCountExceeded
+    end
+  end
+
+  context 'when aws returns VolumeInUse' do
+    before { allow(Kernel).to receive(:sleep) }
+
+    before do
+      allow(volume).to receive(:attach_to).
+          with(instance, '/dev/sdh').and_raise AWS::EC2::Errors::VolumeInUse
+    end
+
+    it 'retries 15 times every 1 sec, and then every 15 sec for 10 min' do
+      expect(volume).to receive(:attach_to).exactly(54).times
+
+      expect {
+        cloud.attach_disk('i-test', 'v-foobar')
+      }.to raise_error Bosh::Common::RetryCountExceeded
+    end
+  end
 end

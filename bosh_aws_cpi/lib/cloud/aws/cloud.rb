@@ -484,7 +484,6 @@ module Bosh::AwsCloud
       cloud_error("Cannot find EBS volume on current instance")
     end
 
-
     private
 
     attr_reader :az_selector
@@ -573,7 +572,20 @@ module Bosh::AwsCloud
       # AWS might still lie and say that the disk isn't ready yet, so
       # we try again just to be really sure it is telling the truth
       attachment = nil
-      Bosh::Common.retryable(tries: 15, on: AWS::EC2::Errors::IncorrectState) do
+
+      # Retry every 1 sec for 15 sec, then every 15 sec for 10 min
+      retry_strategy = lambda { |retries, _| (retries < 15) ? 1 : 15 }
+      total_tries = 15 + (600 - 15) / 15
+
+      Bosh::Common.retryable(
+        on: [AWS::EC2::Errors::IncorrectState, AWS::EC2::Errors::VolumeInUse],
+        sleep: retry_strategy,
+        tries: total_tries
+      ) do |retries, error|
+        if retries > 15 && error.instance_of?(AWS::EC2::Errors::IncorrectState)
+          raise Bosh::Common::RetryCountExceeded.new(error.message)
+        end
+
         attachment = volume.attach_to(instance, device_name)
       end
 
