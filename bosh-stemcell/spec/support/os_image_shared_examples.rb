@@ -37,6 +37,7 @@ shared_examples_for 'every OS image' do
 
     describe user('syslog') do
       it { should exist }
+      it { should belong_to_group 'vcap' }
     end
 
     describe group('adm') do

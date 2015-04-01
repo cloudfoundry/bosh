@@ -13,7 +13,6 @@ cp $assets_dir/rsyslog.conf $chroot/etc/rsyslog.conf
 if [ -d $chroot/etc/init ]; then
   cp $assets_dir/rsyslog_upstart.conf $chroot/etc/init/rsyslog.conf
 fi
-# TODO: add systemd startup support? (but why upstart or systemd at all if we're using runit to start/monitor rsyslog?)
 
 cp $assets_dir/rsyslog_logrotate.conf $chroot/etc/logrotate.d/rsyslog
 
@@ -32,8 +31,10 @@ fi
 cp -f $assets_dir/rsyslog_50-default.conf $chroot/etc/rsyslog.d/50-default.conf
 
 # Add user/group
+# add syslog to the vcap group in a separate step in case the syslog user already exists
 run_in_bosh_chroot $chroot "
   useradd --system --user-group --no-create-home syslog || true
+  usermod -G vcap syslog
 "
 
 # Configure /var/log directory
