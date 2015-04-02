@@ -203,7 +203,7 @@ module Bosh::Cli::Command
       err("No deployments") if deployments.empty?
 
       deployments_table = table do |t|
-        t.headings = %w(Name Release(s) Stemcell(s))
+        t.headings = ['Name', 'Release(s)', 'Stemcell(s)', 'Cloud Config']
         deployments.each do |d|
           t.add_row(row_for_deployments_table(d))
           t.add_separator unless d == deployments.last
@@ -256,9 +256,9 @@ module Bosh::Cli::Command
       stemcells = names_and_versions_from(deployment["stemcells"])
       releases  = names_and_versions_from(deployment["releases"])
 
-      [deployment["name"], releases.join("\n"), stemcells.join("\n")]
+      [deployment["name"], releases.join("\n"), stemcells.join("\n"), deployment.fetch("cloud_config", "none")]
     end
-
+    
     def names_and_versions_from(arr)
       arr.map { |hash|
         hash.values_at("name", "version").join("/")

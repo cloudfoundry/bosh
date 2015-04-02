@@ -4,17 +4,35 @@ describe 'cli: deployment process', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
 
-  it 'successfully performed with minimal manifest' do
+  it 'can deploy a simple manifest and list information about it' do
     release_filename = spec_asset('valid_release.tgz')
     deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.minimal_manifest)
 
-    target_and_login
-    bosh_runner.run("deployment #{deployment_manifest.path}")
-    bosh_runner.run("upload release #{release_filename}")
+    Dir.mktmpdir do |tmpdir|
+      cloud_config_path = File.join(tmpdir, 'cloud_config.yml')
+      File.write(cloud_config_path, "")
 
-    out = bosh_runner.run('deploy')
-    filename = File.basename(deployment_manifest.path)
-    expect(out).to match /Deployed `#{filename}' to `Test Director'/
+      target_and_login
+      bosh_runner.run("update cloud-config #{cloud_config_path}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("upload release #{release_filename}")
+
+      out = bosh_runner.run('deploy')
+      filename = File.basename(deployment_manifest.path)
+      expect(out).to match /Deployed `#{filename}' to `Test Director'/
+
+      deployments_output = bosh_runner.run('deployments')
+      expect(deployments_output).to eq(<<-OUT)
+
++---------+--------------+-------------+--------------+
+| Name    | Release(s)   | Stemcell(s) | Cloud Config |
++---------+--------------+-------------+--------------+
+| minimal | appcloud/0.1 |             | latest       |
++---------+--------------+-------------+--------------+
+
+Deployments total: 1
+      OUT
+    end
   end
 
   it 'successfully do two deployments from one release' do
@@ -36,13 +54,13 @@ describe 'cli: deployment process', type: :integration do
     filename = File.basename(deployment_manifest.path)
     expect(bosh_runner.run('deploy')).to match /Deployed `#{filename}' to `Test Director'/
     expect_output('deployments', <<-OUT)
-      +----------+--------------+-------------+
-      | Name     | Release(s)   | Stemcell(s) |
-      +----------+--------------+-------------+
-      | minimal  | appcloud/0.1 |             |
-      +----------+--------------+-------------+
-      | minimal2 | appcloud/0.1 |             |
-      +----------+--------------+-------------+
+      +----------+--------------+-------------+--------------+
+      | Name     | Release(s)   | Stemcell(s) | Cloud Config |
+      +----------+--------------+-------------+--------------+
+      | minimal  | appcloud/0.1 |             | none         |
+      +----------+--------------+-------------+--------------+
+      | minimal2 | appcloud/0.1 |             | none         |
+      +----------+--------------+-------------+--------------+
 
       Deployments total: 2
     OUT

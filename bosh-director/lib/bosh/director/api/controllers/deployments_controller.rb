@@ -140,14 +140,13 @@ module Bosh::Director
       get '/' do
         latest_cloud_config = Api::CloudConfigManager.new.latest
         deployments = Models::Deployment.order_by(:name.asc).map do |deployment|
-          cloud_config = if deployment.cloud_config.nil?
-            'none'
-          elsif
-            deployment.cloud_config == latest_cloud_config
-            'latest'
-          else
-            'outdated'
-          end
+        cloud_config = if deployment.cloud_config.nil?
+                         'none'
+                       elsif deployment.cloud_config == latest_cloud_config
+                         'latest'
+                       else
+                         'outdated'
+                       end
 
           {
             'name' => deployment.name,
