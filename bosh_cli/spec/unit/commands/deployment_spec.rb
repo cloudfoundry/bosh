@@ -30,17 +30,9 @@ describe Bosh::Cli::Command::Deployment do
     cmd.delete('foo')
   end
 
-  it "lists deployments and doesn't fetch manifest on new director" do
+  it 'lists deployments' do
     expect(director).to receive(:list_deployments).
       and_return([{ 'name' => 'foo', 'releases' => [], 'stemcells' => [] }])
-    expect(director).not_to receive(:get_deployment)
-
-    cmd.list
-  end
-
-  it 'lists deployments and fetches manifest on old director' do
-    expect(director).to receive(:list_deployments).and_return([{ 'name' => 'foo' }])
-    expect(director).to receive(:get_deployment).with('foo').and_return({})
 
     cmd.list
   end
