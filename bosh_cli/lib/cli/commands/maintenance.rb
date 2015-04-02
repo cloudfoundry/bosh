@@ -9,12 +9,15 @@ module Bosh::Cli::Command
     # bosh cleanup
     usage 'cleanup'
     desc 'Cleanup releases and stemcells'
+    option '--all', 'Remove all unused releases and stemcells'
     def cleanup
       target_required
       auth_required
 
-      releases_to_keep = RELEASES_TO_KEEP
-      stemcells_to_keep = STEMCELLS_TO_KEEP
+      remove_all = !!options[:all]
+
+      releases_to_keep = remove_all ? 0 : RELEASES_TO_KEEP
+      stemcells_to_keep = remove_all ? 0 : STEMCELLS_TO_KEEP
 
       release_wording = pluralize(releases_to_keep, 'latest version')
       stemcell_wording = pluralize(stemcells_to_keep, 'latest version')
@@ -62,7 +65,11 @@ module Bosh::Cli::Command
           Bosh::Common::Version::StemcellVersion.parse(sc1['version']) <=> Bosh::Common::Version::StemcellVersion.parse(sc2['version'])
         end
 
-        delete_list += sorted_stemcells[0...(-n_to_keep)]
+        if n_to_keep > 0
+          delete_list = sorted_stemcells[0...(-n_to_keep)]
+        else
+          delete_list = sorted_stemcells
+        end
       end
 
       if delete_list.size > 0
@@ -103,8 +110,14 @@ module Bosh::Cli::Command
         end
         versions = version_tuples.sort_by { |v| v[:parsed] }.map { |v| v[:provided] }
 
-        versions[0...(-n_to_keep)].each do |version|
-          delete_list << [name, version] unless currently_deployed.include?(version)
+        if n_to_keep > 0
+          versions[0...-n_to_keep].each do |version|
+            delete_list << [name, version] unless currently_deployed.include?(version)
+          end
+        else
+          versions.each do |version|
+            delete_list << [name, version] unless currently_deployed.include?(version)
+          end
         end
       end
 
@@ -148,6 +161,5 @@ module Bosh::Cli::Command
 
       status == :done
     end
-
   end
 end
