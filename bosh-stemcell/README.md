@@ -68,7 +68,7 @@ The arguments to `stemcell:build_os_image` are:
 There are a few extra steps you need to do before building a RHEL OS image:
 
 1. Start up or re-provision the stemcell building machine (run `vagrant up` or `vagrant provision` from this directory)
-2. Download the RHEL 7 install DVD image and use `scp` to copy it to the stemcell building machine
+2. Download the [RHEL 7.0 Binary DVD](https://access.redhat.com/downloads/content/69/ver=/rhel---7/7.0/x86_64/product-downloads) image and use `scp` to copy it to the stemcell building machine. Note that RHEL 7.1 does not yet build correctly.
 3. On the stemcell building machine, mount the RHEL 7 DVD at `/mnt/rhel`:
 
         # mkdir -p /mnt/rhel
