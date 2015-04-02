@@ -138,19 +138,34 @@ module Bosh::Director
       end
 
       get '/' do
-        deployments = Models::Deployment.order_by(:name.asc).map { |deployment|
-          name = deployment.name
+        latest_cloud_config = Api::CloudConfigManager.new.latest
+        deployments = Models::Deployment.order_by(:name.asc).map do |deployment|
+          cloud_config = if deployment.cloud_config.nil?
+            'none'
+          elsif
+            deployment.cloud_config == latest_cloud_config
+            'latest'
+          else
+            'outdated'
+          end
 
-          releases = deployment.release_versions.map { |rv|
-            Hash['name', rv.release.name, 'version', rv.version.to_s]
+          {
+            'name' => deployment.name,
+            'releases' => deployment.release_versions.map do |rv|
+              {
+                'name' => rv.release.name,
+                'version' => rv.version.to_s
+              }
+            end,
+            'stemcells' => deployment.stemcells.map do |sc|
+              {
+                'name' => sc.name,
+                'version' => sc.version
+              }
+            end,
+            'cloud_config' => cloud_config
           }
-
-          stemcells = deployment.stemcells.map { |sc|
-            Hash['name', sc.name, 'version', sc.version]
-          }
-
-          Hash['name', name, 'releases', releases, 'stemcells', stemcells]
-        }
+        end
 
         json_encode(deployments)
       end

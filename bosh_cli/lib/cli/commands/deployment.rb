@@ -1,4 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
 
 module Bosh::Cli::Command
   class Deployment < Base

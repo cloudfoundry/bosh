@@ -131,45 +131,82 @@ module Bosh::Director
         end
 
         describe 'listing deployments' do
-          it 'has API call that returns a list of deployments in JSON' do
-            num_dummies = Random.new.rand(3..7)
-            stemcells = (1..num_dummies).map { |i|
-              Models::Stemcell.create(
-                  :name => "stemcell-#{i}", :version => i, :cid => rand(25000 * i))
-            }
-            releases = (1..num_dummies).map { |i|
-              release = Models::Release.create(:name => "release-#{i}")
-              Models::ReleaseVersion.create(:release => release, :version => i)
-              release
-            }
-            deployments = (1..num_dummies).map { |i|
-              d = Models::Deployment.create(:name => "deployment-#{i}")
-              (0..rand(num_dummies)).each do |v|
-                d.add_stemcell(stemcells[v])
-                d.add_release_version(releases[v].versions.sample)
-              end
-              d
-            }
+          it 'lists deployment info in deployment name order' do
+
+            release_1 = Models::Release.create(:name => "release-1")
+            release_1_1 = Models::ReleaseVersion.create(:release => release_1, :version => 1)
+            release_1_2 = Models::ReleaseVersion.create(:release => release_1, :version => 2)
+            release_2 = Models::Release.create(:name => "release-2")
+            release_2_1 = Models::ReleaseVersion.create(:release => release_2, :version => 1)
+
+            stemcell_1_1 = Models::Stemcell.create(name: "stemcell-1", version: 1, cid: 123)
+            stemcell_1_2 = Models::Stemcell.create(name: "stemcell-1", version: 2, cid: 123)
+            stemcell_2_1 = Models::Stemcell.create(name: "stemcell-2", version: 1, cid: 124)
+
+            old_cloud_config = Models::CloudConfig.create(properties: "", created_at: Time.now - 60)
+            new_cloud_config = Models::CloudConfig.create(properties: "", created_at: Time.now)
+
+
+            deployment_3 = Models::Deployment.create(
+              name: "deployment-3",
+            )
+
+            deployment_2 = Models::Deployment.create(
+              name: "deployment-2",
+              cloud_config: new_cloud_config,
+            ).tap do |deployment|
+              deployment.add_stemcell(stemcell_1_1)
+              deployment.add_stemcell(stemcell_1_2)
+              deployment.add_release_version(release_1_1)
+              deployment.add_release_version(release_2_1)
+            end
+
+            deployment_1 = Models::Deployment.create(
+              name: "deployment-1",
+              cloud_config: old_cloud_config,
+            ).tap do |deployment|
+              deployment.add_stemcell(stemcell_1_1)
+              deployment.add_stemcell(stemcell_2_1)
+              deployment.add_release_version(release_1_1)
+              deployment.add_release_version(release_1_2)
+            end
 
             get '/', {}, {}
             expect(last_response.status).to eq(200)
 
             body = Yajl::Parser.parse(last_response.body)
-            expect(body.kind_of?(Array)).to be(true)
-            expect(body.size).to eq(num_dummies)
-
-            expected_collection = deployments.sort_by { |e| e.name }.map { |e|
-              name = e.name
-              releases = e.release_versions.map { |rv|
-                Hash['name', rv.release.name, 'version', rv.version.to_s]
-              }
-              stemcells = e.stemcells.map { |sc|
-                Hash['name', sc.name, 'version', sc.version]
-              }
-              Hash['name', name, 'releases', releases, 'stemcells', stemcells]
-            }
-
-            expect(body).to eq(expected_collection)
+            expect(body).to eq([
+                  {
+                    'name' => 'deployment-1',
+                    'releases' => [
+                      {'name' => 'release-1', 'version' => '1'},
+                      {'name' => 'release-1', 'version' => '2'}
+                    ],
+                    'stemcells' => [
+                      {'name' => 'stemcell-1', 'version' => '1'},
+                      {'name' => 'stemcell-2', 'version' => '1'},
+                    ],
+                    'cloud_config' => 'outdated',
+                  },
+                  {
+                    'name' => 'deployment-2',
+                    'releases' => [
+                      {'name' => 'release-1', 'version' => '1'},
+                      {'name' => 'release-2', 'version' => '1'}
+                    ],
+                    'stemcells' => [
+                      {'name' => 'stemcell-1', 'version' => '1'},
+                      {'name' => 'stemcell-1', 'version' => '2'},
+                    ],
+                    'cloud_config' => 'latest',
+                  },
+                  {
+                    'name' => 'deployment-3',
+                    'releases' => [],
+                    'stemcells' => [],
+                    'cloud_config' => 'none',
+                  }
+                ])
           end
         end
 
