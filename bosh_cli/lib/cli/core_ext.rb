@@ -87,7 +87,7 @@ module BoshExtensions
 
     begin
       Bosh::Cli::YamlHelper.check_duplicate_keys(yaml_str)
-    rescue => e
+    rescue Exception => e # on ruby 1.9.3 Psych::SyntaxError isn't a StandardError
       err("Incorrect YAML structure in `#{path}': #{e}".make_red)
     end
     yaml_str
