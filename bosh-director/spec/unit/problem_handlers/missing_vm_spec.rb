@@ -12,6 +12,12 @@ module Bosh::Director
       expect(handler).to be_kind_of(described_class)
     end
 
+    it 'should call recreate_vm when set to auto' do 
+      allow(handler).to receive(:recreate_vm)
+      expect(handler).to receive(:recreate_vm).with(vm)
+      handler.auto_resolve
+    end
+
     it 'has description' do
       expect(handler.description).to match(/VM with cloud ID `vm-cid' missing./)
     end
