@@ -239,15 +239,10 @@ module Bosh::Cli
       end
 
       context 'when creating dev release' do
-        it 'does not allow a version to be specified for dev releases' do
-          builder = new_builder({ final: true, version: '3.123' })
-          expect(builder.version).to eq('3.123')
+        it 'allows a version to be specified for dev releases' do
+          builder = new_builder({ final: false, version: '3.123.1-rc.2' })
+          expect(builder.version).to eq('3.123.1-rc.2')
           builder.build
-
-          expect{ new_builder({ version: '3.123.1-dev' }) }.to raise_error(
-            ReleaseVersionError,
-            'Version numbers cannot be specified for dev releases'
-          )
         end
       end
     end
