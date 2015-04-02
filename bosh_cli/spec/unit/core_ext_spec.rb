@@ -39,6 +39,13 @@ describe String do
     expect("string".make_color(:green)).to eq("\e[0m\e[32mstring\e[0m")
 
     allow(Bosh::Cli::Config.output).to receive(:tty?).and_return(false)
+
+    expect("string".make_green).to eq("\e[0m\e[32mstring\e[0m")
+
+    Bosh::Cli::Config.colorize = nil
+    expect("string".make_green).to eq("string")
+
+    Bosh::Cli::Config.colorize = false
     expect("string".make_green).to eq("string")
   end
 

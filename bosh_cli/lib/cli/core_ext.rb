@@ -125,11 +125,17 @@ module BoshStringExtensions
   end
 
   def make_color(color_code)
-    if Bosh::Cli::Config.output &&
-       Bosh::Cli::Config.output.tty? &&
-       Bosh::Cli::Config.colorize &&
-       COLOR_CODES[color_code]
+    # invalid color
+    return self if !COLOR_CODES[color_code]
 
+    # output disabled
+    return self if !Bosh::Cli::Config.output
+
+    # colorization explicitly disabled
+    return self if Bosh::Cli::Config.colorize == false
+
+    # colorization explicitly enabled, or output is tty
+    if Bosh::Cli::Config.colorize || Bosh::Cli::Config.output.tty?
       "#{COLOR_CODES[color_code]}#{self}\e[0m"
     else
       self
