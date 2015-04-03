@@ -62,7 +62,7 @@ describe Bosh::Aws::VPC do
         expect(sub1).to receive(:add_tag).with('Name', :value => 'sub1')
       end
 
-      xit 'can create subnets with the specified CIDRs, tags, and AZs' do
+      it 'can create subnets with the specified CIDRs, tags, and AZs', pending: 'see story: #42828011' do
         subnet_1_specs = {'cidr' => 'cider', 'availability_zone' => 'canada'}
         subnet_2_specs = {'cidr' => 'cedar'}
         sub2 = double('sub2')
