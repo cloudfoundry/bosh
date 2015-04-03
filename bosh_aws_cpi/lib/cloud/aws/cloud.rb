@@ -538,9 +538,7 @@ module Bosh::AwsCloud
       # so we need to trigger eager autoload while constructing CPI
       AWS.eager_autoload!
 
-      AWS.config(aws_params)
-
-      @ec2 = AWS::EC2.new
+      @ec2 = AWS::EC2.new(aws_params)
       @region = @ec2.regions[aws_region]
       @az_selector = AvailabilityZoneSelector.new(@region, aws_properties['default_availability_zone'])
     end
