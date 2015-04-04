@@ -9,12 +9,15 @@ module Bosh::Cli::Command
     # bosh cleanup
     usage 'cleanup'
     desc 'Cleanup releases and stemcells'
+    option '--all', 'Remove all unused releases and stemcells'
     def cleanup
       target_required
       auth_required
 
-      releases_to_keep = RELEASES_TO_KEEP
-      stemcells_to_keep = STEMCELLS_TO_KEEP
+      remove_all = !!options[:all]
+
+      releases_to_keep = remove_all ? 0 : RELEASES_TO_KEEP
+      stemcells_to_keep = remove_all ? 0 : STEMCELLS_TO_KEEP
 
       release_wording = pluralize(releases_to_keep, 'latest version')
       stemcell_wording = pluralize(stemcells_to_keep, 'latest version')
@@ -62,20 +65,18 @@ module Bosh::Cli::Command
           Bosh::Common::Version::StemcellVersion.parse(sc1['version']) <=> Bosh::Common::Version::StemcellVersion.parse(sc2['version'])
         end
 
-        delete_list += sorted_stemcells[0...(-n_to_keep)]
+        delete_list = trim_array(sorted_stemcells, n_to_keep)
       end
 
-      if delete_list.size > 0
-        delete_list.each do |stemcell|
-          name, version = stemcell['name'], stemcell['version']
-          desc = "#{name}/#{version}"
-          perform(desc) do
-            director.delete_stemcell(name, version, :quiet => true)
-          end
+      delete_list.each do |stemcell|
+        name, version = stemcell['name'], stemcell['version']
+        desc = "#{name}/#{version}"
+        perform(desc) do
+          director.delete_stemcell(name, version, :quiet => true)
         end
-      else
-        say('  none found'.make_yellow)
       end
+
+       say('  none found'.make_yellow) if delete_list.size == 0
     end
 
     def cleanup_releases(n_to_keep)
@@ -103,22 +104,24 @@ module Bosh::Cli::Command
         end
         versions = version_tuples.sort_by { |v| v[:parsed] }.map { |v| v[:provided] }
 
-        versions[0...(-n_to_keep)].each do |version|
+        trim_array(versions, n_to_keep).each do |version|
           delete_list << [name, version] unless currently_deployed.include?(version)
         end
       end
 
-      if delete_list.size > 0
-        delete_list.each do |name, version|
-          desc = "#{name}/#{version}"
-          perform(desc) do
-            director.delete_release(name, :force => false,
-                                    :version => version, :quiet => true)
-          end
+      delete_list.each do |name, version|
+        desc = "#{name}/#{version}"
+        perform(desc) do
+          director.delete_release(name, :force => false,
+                                  :version => version, :quiet => true)
         end
-      else
-        say('  none found'.make_yellow)
       end
+
+      say('  none found'.make_yellow) if delete_list.size == 0
+    end
+
+    def trim_array(array, n_to_keep)
+      n_to_keep > 0 ? array[0...(-n_to_keep)] : array
     end
 
     def refresh(message)
@@ -148,6 +151,5 @@ module Bosh::Cli::Command
 
       status == :done
     end
-
   end
 end
