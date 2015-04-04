@@ -24,7 +24,7 @@ module Bosh::Cli
       banner = "Usage: bosh [<options>] <command> [<args>]"
       @option_parser = OptionParser.new(banner)
 
-      Config.colorize = true
+      Config.colorize = nil
       Config.output ||= STDOUT
 
       parse_global_options

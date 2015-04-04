@@ -25,7 +25,7 @@ module Bosh::Cli
     end
 
     @commands = {}
-    @colorize = true
+    @colorize = nil
     @output = nil
     @interactive = false
 
