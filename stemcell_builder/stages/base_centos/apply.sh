@@ -44,7 +44,6 @@ rpm --rebuilddb
 "
 
 pkg_mgr install kernel
-pkg_mgr groupinstall Base
 pkg_mgr groupinstall 'Development Tools'
 
 touch ${chroot}/etc/sysconfig/network # must be present for network to be configured
