@@ -30,7 +30,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'bosh_cpi',           "~>#{version}"
   s.add_dependency 'bosh_aws_cpi',       "~>#{version}"
   s.add_dependency 'bosh_openstack_cpi', "~>#{version}"
-  s.add_dependency 'bosh_vcloud_cpi',    '=0.7.2' #leave bosh_vcloud_cpi pinned to 0.7.2 https://www.pivotaltracker.com/story/show/84406944
+  s.add_dependency 'bosh_vcloud_cpi',    '~>0.7.3'
   s.add_dependency 'bosh_vsphere_cpi',   "~>#{version}"
   s.add_dependency 'bosh-director-core', "~>#{version}"
   s.add_dependency 'blobstore_client',   "~>#{version}"
