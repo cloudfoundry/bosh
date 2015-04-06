@@ -74,6 +74,5 @@ group :development, :test do
 
   gem 'sqlite3'
   gem 'timecop', '~>0.7.1'
-  gem 'jenkins_api_client'
   gem 'blue-shell'
 end
