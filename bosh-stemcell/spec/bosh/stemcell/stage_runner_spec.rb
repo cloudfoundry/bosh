@@ -161,6 +161,10 @@ module Bosh::Stemcell
         end
 
         allow(File).to receive(:executable?).and_return(true) # because FakeFs does not support :executable?
+
+        # stage_runner requires that we're running as uid 1000 (usually 'ubuntu' user in the aws build env)
+        allow(Process).to receive(:euid).and_return(1000)
+
       end
 
       context 'when resume_from is unset' do
@@ -190,6 +194,15 @@ module Bosh::Stemcell
           expect {
             stage_runner.configure_and_apply(stages, 'this_stage_totally_doesnt_exist')
           }.to raise_error("Can't find stage 'this_stage_totally_doesnt_exist' to resume from. Aborting.")
+        end
+      end
+
+      context 'when effective UID is not 1000' do
+        it 'fails with an error message' do
+          allow(Process).to receive(:euid).and_return(999)
+          expect {
+            stage_runner.configure_and_apply(stages)
+          }.to raise_error("You must build stemcells as a user with UID 1000. Your effective UID now is 999.")
         end
       end
     end
