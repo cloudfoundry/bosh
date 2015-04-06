@@ -34,11 +34,7 @@ module Bosh::Stemcell
     end
 
     def light?
-      infrastructure == 'aws' && ami_id
-    end
-
-    def ami_id(region = Aws::Region::DEFAULT)
-      cloud_properties.fetch('ami', {}).fetch(region, nil)
+      infrastructure == 'aws' && has_ami?
     end
 
     def extract(tar_options = {}, &block)
@@ -53,6 +49,10 @@ module Bosh::Stemcell
     end
 
     private
+
+    def has_ami?
+      cloud_properties.has_key? 'ami'
+    end
 
     def cloud_properties
       manifest.fetch('cloud_properties')

@@ -139,7 +139,7 @@ module Bosh::Dev
     end
 
     describe '#promote' do
-      let(:stemcell) { instance_double('Bosh::Stemcell::Archive', ami_id: 'ami-ID') }
+      let(:stemcell) { instance_double('Bosh::Stemcell::Archive') }
 
       let(:promotable_artifacts) do
         instance_double('Bosh::Dev::PromotableArtifacts', all: [
@@ -180,7 +180,7 @@ module Bosh::Dev
     end
 
     describe '#promoted?' do
-      let(:stemcell) { instance_double('Bosh::Stemcell::Archive', ami_id: 'ami-ID') }
+      let(:stemcell) { instance_double('Bosh::Stemcell::Archive') }
 
       let(:promotable_artifacts) do
         instance_double('Bosh::Dev::PromotableArtifacts', all: [

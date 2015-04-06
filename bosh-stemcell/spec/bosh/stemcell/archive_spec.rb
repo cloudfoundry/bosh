@@ -88,24 +88,6 @@ module Bosh::Stemcell
       end
     end
 
-    describe '#ami_id' do
-      context 'when infrastructure is "aws"' do
-        context 'when there is not an "ami" key in the "cloud_properties" section of the manifest' do
-          its(:ami_id) { should be_nil }
-        end
-
-        context 'when there is an "ami" key in the "cloud_properties" section of the manifest' do
-          let(:stemcell_path) { spec_asset('light-fake-stemcell-aws-xen-ubuntu.tgz') }
-          its(:ami_id) { should eq('ami-FAKE_AMI_KEY') }
-        end
-      end
-
-      context 'when infrastructure is anything but "aws"' do
-        let(:stemcell_path) { spec_asset('fake-stemcell-vsphere.tgz') }
-        its(:ami_id) { should be_nil }
-      end
-    end
-
     describe '#extract' do
       it 'extracts stemcell' do
         expect(Rake::FileUtilsExt).to receive(:sh).with(/tar xzf .*#{stemcell_path} --directory/)

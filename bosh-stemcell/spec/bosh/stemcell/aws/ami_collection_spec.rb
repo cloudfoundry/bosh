@@ -1,10 +1,10 @@
 require 'spec_helper'
 require 'bosh/stemcell/archive'
-require 'bosh/stemcell/aws/ami'
+require 'bosh/stemcell/aws/ami_collection'
 
 module Bosh::Stemcell::Aws
-  describe Ami do
-    subject(:ami) { Ami.new(stemcell, region, virtualization_type) }
+  describe AmiCollection, :pending => 'Moving to post-stemcell-build validations rather than CI style unit-tests' do
+    subject(:ami) { AmiCollection.new(stemcell, regions, virtualization_type) }
 
     let(:stemcell) do
       instance_double('Bosh::Stemcell::Archive').tap do |s|
@@ -14,7 +14,7 @@ module Bosh::Stemcell::Aws
       end
     end
 
-    let(:region) { instance_double('Bosh::Stemcell::Aws::Region', name: 'fake-region') }
+    let(:regions) { ['foo', 'bar', 'baz'] }
 
     let(:virtualization_type) { "hvm" }
 
@@ -40,7 +40,7 @@ module Bosh::Stemcell::Aws
           'properties' => {
             'aws' =>       {
               'default_key_name' => 'fake',
-              'region' => region.name,
+              'region' => regions.first,
               'access_key_id' => 'fake-access-key',
               'secret_access_key' => 'fake-secret-access-key'
             },

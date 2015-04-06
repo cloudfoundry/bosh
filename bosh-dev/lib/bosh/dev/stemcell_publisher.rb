@@ -21,13 +21,13 @@ module Bosh::Dev
     private
 
     def publish_light_stemcell(stemcell)
-      %w{ paravirtual hvm }.each { |virtualization_type|
+      %w{ paravirtual hvm }.each do |virtualization_type|
         light_stemcell = Bosh::Stemcell::Aws::LightStemcell.new(stemcell, virtualization_type)
         light_stemcell.write_archive
 
         light_stemcell_stemcell = Bosh::Stemcell::Archive.new(light_stemcell.path)
         @build.upload_stemcell(light_stemcell_stemcell)
-      }
+      end
     end
   end
 end

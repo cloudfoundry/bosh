@@ -18,13 +18,11 @@ describe Bosh::AwsCloud::Cloud do
     }
   end
 
-  let(:ec2) { instance_double('AWS::EC2', volumes: volumes) }
-  before { allow(AWS::EC2).to receive(:new).and_return(ec2) }
-  before { allow(ec2).to receive(:regions).and_return({'fake-region' => double(:region)}) }
-  let(:volumes) { instance_double('AWS::EC2::VolumeCollection') }
-
   let(:az_selector) { instance_double('Bosh::AwsCloud::AvailabilityZoneSelector') }
-  before { allow(Bosh::AwsCloud::AvailabilityZoneSelector).to receive(:new).and_return(az_selector) }
+
+  before do
+    allow(Bosh::AwsCloud::AvailabilityZoneSelector).to receive(:new).and_return(az_selector)
+  end
 
   describe 'validating initialization options' do
     context 'when options are invalid' do
@@ -52,26 +50,23 @@ describe Bosh::AwsCloud::Cloud do
     end
 
     context 'when optional properties are not provided' do
-      before { cloud }
-
       it 'default values are used for endpoints' do
-        expect(AWS.config.ec2_endpoint).to eq('ec2.fake-region.amazonaws.com')
-        expect(AWS.config.elb_endpoint).to eq('elasticloadbalancing.fake-region.amazonaws.com')
+        expect(cloud.ec2.config.ec2_endpoint).to eq('ec2.fake-region.amazonaws.com')
+        expect(cloud.ec2.config.elb_endpoint).to eq('elasticloadbalancing.fake-region.amazonaws.com')
       end
 
       it 'default value is used for max retries' do
-        expect(AWS.config.max_retries).to be 2
+        expect(cloud.ec2.config.max_retries).to be 2
       end
 
       it 'default value is used for http properties' do
-        expect(AWS.config.http_read_timeout).to eq(60)
-        expect(AWS.config.http_wire_trace).to be false
-        expect(AWS.config.ssl_verify_peer).to be true
+        expect(cloud.ec2.config.http_read_timeout).to eq(60)
+        expect(cloud.ec2.config.http_wire_trace).to be false
+        expect(cloud.ec2.config.ssl_verify_peer).to be true
       end
     end
 
     context 'when optional and required properties are provided' do
-      before {cloud}
       let(:options) do
         {
             'aws' => {
@@ -94,16 +89,18 @@ describe Bosh::AwsCloud::Cloud do
       end
 
       it 'passes required properties to AWS SDK' do
-        expect(AWS.config.access_key_id).to eq('keys to my heart')
-        expect(AWS.config.secret_access_key).to eq('open sesame')
-        expect(AWS.config.region).to eq('fake-region')
+        config = cloud.ec2.config
+        expect(config.access_key_id).to eq('keys to my heart')
+        expect(config.secret_access_key).to eq('open sesame')
+        expect(config.region).to eq('fake-region')
       end
       it 'passes optional properties to AWS SDK' do
-        expect(AWS.config.http_read_timeout).to eq(300)
-        expect(AWS.config.http_wire_trace).to be true
-        expect(AWS.config.ssl_verify_peer).to be false
-        expect(AWS.config.ssl_ca_file).to eq('/custom/cert/ca-certificates')
-        expect(AWS.config.ssl_ca_path).to eq('/custom/cert/')
+        config = cloud.ec2.config
+        expect(config.http_read_timeout).to eq(300)
+        expect(config.http_wire_trace).to be true
+        expect(config.ssl_verify_peer).to be false
+        expect(config.ssl_ca_file).to eq('/custom/cert/ca-certificates')
+        expect(config.ssl_ca_path).to eq('/custom/cert/')
       end
     end
 
@@ -111,13 +108,13 @@ describe Bosh::AwsCloud::Cloud do
 
   describe '#create_disk' do
     let(:cloud_properties) { {} }
+    let(:volume) { instance_double('AWS::EC2::Volume', id: 'fake-volume-id') }
 
     before do
       allow(az_selector).to receive(:select_availability_zone).
         with(42).and_return('fake-availability-zone')
     end
 
-    let(:volume) { instance_double('AWS::EC2::Volume', id: 'fake-volume-id') }
     before do
       allow(Bosh::AwsCloud::ResourceWait).to receive(:for_volume).with(volume: volume, state: :available)
     end
@@ -144,6 +141,9 @@ describe Bosh::AwsCloud::Cloud do
 
     context 'when disk size is between 1 GiB and 1 TiB' do
       let(:disk_size) { 1025 }
+      let(:ec2) { instance_double('AWS::EC2', volumes: volumes) }
+      let(:volumes) { instance_double('AWS::EC2::VolumeCollection') }
+      before { cloud.instance_variable_set(:'@ec2', ec2) }
 
       context 'when disk type is provided' do
         let(:cloud_properties) { { 'type' => disk_type } }
@@ -162,13 +162,12 @@ describe Bosh::AwsCloud::Cloud do
           let(:disk_type) { 'gp2' }
 
           it 'creates disk with gp2 type' do
-            expect(ec2.volumes).to receive(:create).with(
+            expect(volumes).to receive(:create).with(
               size: 2,
               availability_zone: 'fake-availability-zone',
               volume_type: 'gp2',
               encrypted: false
             ).and_return(volume)
-
             cloud.create_disk(disk_size, cloud_properties, 42)
           end
         end
@@ -177,7 +176,7 @@ describe Bosh::AwsCloud::Cloud do
           let(:disk_type) { 'standard' }
 
           it 'creates disk with standard type' do
-            expect(ec2.volumes).to receive(:create).with(
+            expect(volumes).to receive(:create).with(
               size: 2,
               availability_zone: 'fake-availability-zone',
               volume_type: 'standard',
@@ -189,8 +188,10 @@ describe Bosh::AwsCloud::Cloud do
       end
 
       context 'when disk type is not provided' do
+        let(:cloud_properties) { {} }
+
         it 'creates disk with standard disk type' do
-          expect(ec2.volumes).to receive(:create).with(
+          expect(volumes).to receive(:create).with(
             size: 2,
             availability_zone: 'fake-availability-zone',
             volume_type: 'standard',
