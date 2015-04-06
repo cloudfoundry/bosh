@@ -31,8 +31,6 @@ module Bosh::Cli
 
       @version = options.fetch(:version, nil)
 
-      raise ReleaseVersionError.new('Version numbers cannot be specified for dev releases') if (@version && !@final)
-
       @final_index = Versions::VersionsIndex.new(final_releases_dir)
       @dev_index = Versions::VersionsIndex.new(dev_releases_dir)
       @index = @final ? @final_index : @dev_index
