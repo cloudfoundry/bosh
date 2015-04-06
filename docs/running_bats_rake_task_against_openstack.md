@@ -44,7 +44,7 @@ properties:
 
 ### Environment variables
 
-* `BOSH_OPENSTACK_NET_ID` - net ID (e.g. `12a345678-1a2c-4a7b-1afb-1234ab5c6789`)
+* `BOSH_OPENSTACK_MICRO_NET_ID` - net ID (e.g. `12a345678-1a2c-4a7b-1afb-1234ab5c6789`)
 * `BOSH_OPENSTACK_MANUAL_IP` - static IP of BAT VM (e.g. 192.168.111.10)
 * `BOSH_OPENSTACK_VIP_DIRECTOR_IP` - director floating IP
 * `BOSH_OPENSTACK_AUTH_URL` - Openstack provider auth URL (e.g. http://132.132.132.132:5000/v2.0)
@@ -80,6 +80,7 @@ properties:
   - name: default
     type: dynamic
     cloud_properties:
+      net_id: <OPENSTACK_NET_ID>
       security_groups: ['<SECURITY_GROUP_NAME>']
 ```
 
@@ -87,7 +88,7 @@ properties:
 
 ### Environment variables
 
-* `BOSH_OPENSTACK_NET_ID` - net ID (e.g. `12a345678-1a2c-4a7b-1afb-1234ab5c6789`). Do not set this if Openstack provider does not use specific network (e.g. nebula Openstack provider)
+* `BOSH_OPENSTACK_MICRO_NET_ID` - net ID (e.g. `12a345678-1a2c-4a7b-1afb-1234ab5c6789`). Do not set this if Openstack provider does not use specific network (e.g. nebula Openstack provider)
 * `BOSH_OPENSTACK_VIP_DIRECTOR_IP` - director floating IP
 * `BOSH_OPENSTACK_AUTH_URL` - Openstack provider auth URL (e.g. http://132.132.132.132:5000/v2.0)
 * `BOSH_OPENSTACK_USERNAME` - Openstack account username
