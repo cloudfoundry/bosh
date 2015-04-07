@@ -148,7 +148,7 @@ module Bosh::Stemcell
 
         let(:aws_build_stemcell_image_stages) {
           [
-            :system_aws_network,
+            :system_network,
             :system_aws_modules,
             :system_parameters,
             :bosh_clean,
@@ -196,7 +196,7 @@ module Bosh::Stemcell
           it 'has the correct stages' do
             expect(stage_collection.build_stemcell_image_stages).to eq(
               [
-                :system_openstack_network_centos,
+                :system_network,
                 :system_parameters,
                 :bosh_clean,
                 :bosh_harden,
@@ -220,7 +220,7 @@ module Bosh::Stemcell
           it 'has the correct stages' do
             expect(stage_collection.build_stemcell_image_stages).to eq(
               [
-                :system_openstack_network,
+                :system_network,
                 :system_openstack_clock,
                 :system_openstack_modules,
                 :system_parameters,
@@ -250,7 +250,7 @@ module Bosh::Stemcell
           it 'has the correct stages' do
             expect(stage_collection.build_stemcell_image_stages).to eq(
               [
-                #:system_open_vm_tools,
+                :system_network,
                 :system_vsphere_cdrom,
                 :system_parameters,
                 :bosh_clean,
@@ -270,6 +270,7 @@ module Bosh::Stemcell
           it 'has the correct stages' do
             expect(stage_collection.build_stemcell_image_stages).to eq(
               [
+                :system_network,
                 :system_open_vm_tools,
                 :system_vsphere_cdrom,
                 :system_parameters,
@@ -294,6 +295,7 @@ module Bosh::Stemcell
           it 'has the correct stages' do
             expect(stage_collection.build_stemcell_image_stages).to eq(
               [
+                :system_network,
                 :system_open_vm_tools,
                 :system_vsphere_cdrom,
                 :system_parameters,
@@ -314,7 +316,7 @@ module Bosh::Stemcell
           it 'has the correct stages' do
             expect(stage_collection.build_stemcell_image_stages).to eq(
               [
-                #:system_open_vm_tools,
+                :system_network,
                 :system_vsphere_cdrom,
                 :system_parameters,
                 :bosh_clean,

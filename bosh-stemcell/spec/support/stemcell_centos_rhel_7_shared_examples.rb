@@ -24,7 +24,6 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
     end
   end
 
-
   context 'installed by bosh_harden' do
     describe 'disallow unsafe setuid binaries' do
       subject { backend.run_command('find / -xdev -perm /6000 -a -type f')[:stdout].split }
@@ -39,7 +38,7 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
     end
   end
 
-  context 'with system-aws-network', exclude_on_vsphere: true, exclude_on_vcloud: true, exclude_on_warden: true do
+  context 'installed by the system_network stage', exclude_on_warden: true do
     describe file('/etc/sysconfig/network') do
       it { should be_file }
       it { should contain 'NETWORKING=yes' }
@@ -48,12 +47,10 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
       it { should contain 'NOZEROCONF=yes' }
     end
 
-    describe file('/etc/sysconfig/network-scripts/ifcfg-eth0') do
+    describe file('/etc/NetworkManager/NetworkManager.conf') do
       it { should be_file }
-      it { should contain 'DEVICE=eth0' }
-      it { should contain 'BOOTPROTO=dhcp' }
-      it { should contain 'ONBOOT=on' }
-      it { should contain 'TYPE="Ethernet"' }
+      it { should contain 'plugins=ifcfg-rh' }
+      it { should contain 'no-auto-default=*' }
     end
   end
 
