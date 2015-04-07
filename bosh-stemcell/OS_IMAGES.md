@@ -116,7 +116,7 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
 ## CentOS 6.6
 
-CentOS 6.6 images have filename `bosh-centos-6_6-os-image.tgz`
+CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 * `kkUYP.4sM_hdsn3Sfcr6ksahFpPgb2D8`
   Add hmac-sha1 to sshd_config (required by go ssh lib)
@@ -149,3 +149,11 @@ CentOS 6.6 images have filename `bosh-centos-6_6-os-image.tgz`
 
 * `6mBEQ5Gt5O6NJIFZxlyrf_05i.6s0OWF`
   CentOS 6.6
+
+
+## CentOS 7
+
+CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `3I9TaTJV5vUkUpGJETzqD8wsWhP2vsFE`
+  CentOS 7
