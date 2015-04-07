@@ -6,21 +6,21 @@ module Bosh::Dev
   class StemcellArtifacts
     STEMCELL_DEFINITIONS = {
       'vsphere-esxi-ubuntu-trusty' => ['vsphere', 'esxi', 'ubuntu', 'trusty', 'go', false],
-      'vsphere-esxi-centos' => ['vsphere', 'esxi', 'centos', '6', 'go', false],
+      'vsphere-esxi-centos' => ['vsphere', 'esxi', 'centos', '7', 'go', false],
 
       'vcloud-esxi-ubuntu-trusty' => ['vcloud', 'esxi', 'ubuntu', 'trusty', 'go', false],
 
       'light-aws-xen-ubuntu-trusty' => ['aws', 'xen', 'ubuntu', 'trusty', 'go', true],
       'aws-xen-ubuntu-trusty' => ['aws', 'xen', 'ubuntu', 'trusty', 'go', false],
 
-      'light-aws-xen-centos' => ['aws', 'xen', 'centos', '6', 'go', true],
-      'aws-xen-centos' => ['aws', 'xen', 'centos', '6', 'go', false],
+      'light-aws-xen-centos' => ['aws', 'xen', 'centos', '7', 'go', true],
+      'aws-xen-centos' => ['aws', 'xen', 'centos', '7', 'go', false],
 
       'light-aws-xen-hvm-ubuntu-trusty' => ['aws', 'xen-hvm', 'ubuntu', 'trusty', 'go', true],
-      'light-aws-xen-hvm-centos' => ['aws', 'xen-hvm', 'centos', '6', 'go', true],
+      'light-aws-xen-hvm-centos' => ['aws', 'xen-hvm', 'centos', '7', 'go', true],
 
       'openstack-kvm-ubuntu-trusty' => ['openstack', 'kvm', 'ubuntu', 'trusty', 'go', false],
-      'openstack-kvm-centos' => ['openstack', 'kvm', 'centos', '6', 'go', false],
+      'openstack-kvm-centos' => ['openstack', 'kvm', 'centos', '7', 'go', false],
     }
 
     class << self

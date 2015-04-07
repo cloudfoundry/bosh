@@ -19,9 +19,9 @@ module Bosh::Dev
 
             matrix = definitions.map { |d| [d.infrastructure.name, d.hypervisor_name, d.operating_system.name, d.operating_system.version, d.agent.name] }
             expect(matrix).to eq([
-              ['vsphere', 'esxi', 'centos', '6', 'go'],
-              ['aws', 'xen', 'centos', '6', 'go'],
-              ['openstack', 'kvm', 'centos', '6', 'go'],
+              ['vsphere', 'esxi', 'centos', '7', 'go'],
+              ['aws', 'xen', 'centos', '7', 'go'],
+              ['openstack', 'kvm', 'centos', '7', 'go'],
             ])
 
             expect(logger).to eq(logger)
@@ -67,16 +67,16 @@ module Bosh::Dev
             matrix = definitions.map { |d| [d.infrastructure.name, d.hypervisor_name, d.operating_system.name, d.operating_system.version, d.agent.name, d.light?] }
             expect(matrix).to eq([
               ['vsphere', 'esxi', 'ubuntu', 'trusty', 'go', false],
-              ['vsphere', 'esxi', 'centos', '6', 'go', false],
+              ['vsphere', 'esxi', 'centos', '7', 'go', false],
               ['vcloud', 'esxi', 'ubuntu', 'trusty', 'go', false],
               ['aws', 'xen', 'ubuntu', 'trusty', 'go', true],
               ['aws', 'xen', 'ubuntu', 'trusty', 'go', false],
-              ['aws', 'xen', 'centos', '6', 'go', true],
-              ['aws', 'xen', 'centos', '6', 'go', false],
+              ['aws', 'xen', 'centos', '7', 'go', true],
+              ['aws', 'xen', 'centos', '7', 'go', false],
               ['aws', 'xen-hvm', 'ubuntu', 'trusty', 'go', true],
-              ['aws', 'xen-hvm', 'centos', '6', 'go', true],
+              ['aws', 'xen-hvm', 'centos', '7', 'go', true],
               ['openstack', 'kvm', 'ubuntu', 'trusty', 'go', false],
-              ['openstack', 'kvm', 'centos', '6', 'go', false],
+              ['openstack', 'kvm', 'centos', '7', 'go', false],
             ])
 
             artifacts
@@ -93,7 +93,7 @@ module Bosh::Dev
       let(:definitions) do
         [
           Bosh::Stemcell::Definition.for('vsphere', 'esxi', 'ubuntu', 'trusty', 'go', false),
-          Bosh::Stemcell::Definition.for('openstack', 'kvm', 'centos', '6', 'go', false),
+          Bosh::Stemcell::Definition.for('openstack', 'kvm', 'centos', '7', 'go', false),
         ]
       end
 
