@@ -11,7 +11,7 @@ CaseIndentation:
   Enabled: false
 
 LineLength:
-  Max: 132
+  Max: 135
 
 MethodLength:
   CountComments: false

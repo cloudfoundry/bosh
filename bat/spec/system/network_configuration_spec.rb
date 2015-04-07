@@ -26,7 +26,7 @@ describe 'network configuration' do
       address = nil
       expect {
         address = dns.getaddress("0.batlight.static.bat.#{bosh_tld}").to_s
-      }.not_to raise_error, "this test tries to resolve to the public IP of director, so you need to have incoming UDP enabled for it"
+      }.not_to raise_error, 'this test tries to resolve to the public IP of director, so you need to have incoming UDP enabled for it'
       expect(address).to eq(public_ip)
     end
 

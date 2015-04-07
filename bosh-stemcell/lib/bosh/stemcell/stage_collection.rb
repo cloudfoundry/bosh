@@ -1,6 +1,7 @@
 require 'bosh/stemcell/definition'
 require 'forwardable'
 
+# rubocop:disable MethodLength
 module Bosh::Stemcell
   class StageCollection
     extend Forwardable
