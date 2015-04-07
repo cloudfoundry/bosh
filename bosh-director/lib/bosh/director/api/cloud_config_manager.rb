@@ -10,7 +10,7 @@ module Bosh
         end
 
         def list(limit)
-          Bosh::Director::Models::CloudConfig.order(Sequel.desc(:created_at)).limit(limit).to_a
+          Bosh::Director::Models::CloudConfig.order(Sequel.desc(:id)).limit(limit).to_a
         end
 
         def latest
