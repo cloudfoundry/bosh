@@ -201,7 +201,6 @@ module Bosh::Stemcell
           :rsyslog_config,
           :delay_monit_start,
           :system_grub,
-          :cron_config,
       ].flatten
 
       if operating_system.version.to_f < 7
@@ -221,7 +220,6 @@ module Bosh::Stemcell
         :delay_monit_start,
         :system_grub,
         :rhel_unsubscribe,
-        :cron_config,
       ].flatten
     end
 
@@ -242,7 +240,6 @@ module Bosh::Stemcell
         :delay_monit_start,
         :system_grub,
         :vim_tiny,
-        :cron_config,
       ].flatten
     end
 

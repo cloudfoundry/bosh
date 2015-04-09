@@ -98,12 +98,12 @@ run_in_chroot $chroot "
   rpm -i /rpmbuild/RPMS/${runit_version}.rpm
 "
 
+# uninstall firewall so iptables are clear of any reject rules
+run_in_chroot ${chroot} "yum erase -y firewalld"
+
 # arrange for runit to start when the system boots
 if [ "${init_package_name}" == "systemd" ]; then
   cp $(dirname $0)/assets/runit.service ${chroot}/usr/lib/systemd/system/
   run_in_chroot ${chroot} "systemctl enable runit"
   run_in_chroot ${chroot} "systemctl enable NetworkManager"
 fi
-
-exclusions="mlocate firewalld"
-pkg_mgr erase $exclusions
