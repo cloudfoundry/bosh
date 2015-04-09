@@ -10,8 +10,8 @@ rm -fr $chroot/etc/udev/rules.d/70-persistent-net.rules
 
 if [ -e "$chroot/etc/network/interfaces" ]; then # ubuntu
   cat >> $chroot/etc/network/interfaces <<EOS
-auto eth0
-iface eth0 inet dhcp
+auto lo
+iface lo inet loopback
 EOS
 
 elif [ -e "$chroot/etc/sysconfig/network" ]; then # centos

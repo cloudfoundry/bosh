@@ -45,8 +45,8 @@ describe 'Ubuntu 14.04 stemcell', stemcell_image: true do
   } do
     describe file('/etc/network/interfaces') do
       it { should be_file }
-      it { should contain 'auto eth0' }
-      it { should contain 'iface eth0 inet dhcp' }
+      it { should contain 'auto lo' }
+      it { should contain 'iface lo inet loopback' }
     end
   end
 
