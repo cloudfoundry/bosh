@@ -230,5 +230,39 @@ module Bosh::Director
         expect(Models::Dns::Record.all).to be_empty
       end
     end
+
+    describe '#flush_dns_cache' do
+      before { @logger = double(:logger) }
+      before { allow(Config).to receive(:dns).and_return({'flush_command' => flush_command}) }
+
+      context 'when flush command is present' do
+        let(:flush_command) { "echo \"7\" && exit 0" }
+
+        it 'logs success' do
+          expect(@logger).to receive(:debug).with("Flushed 7 records from DNS cache")
+          flush_dns_cache
+        end
+      end
+
+      context 'when running flush command fails' do
+        let(:flush_command) { "echo fake failure >&2 && exit 1" }
+
+        it 'logs an error' do
+          expect(@logger).to receive(:warn).with("Failed to flush DNS cache: fake failure")
+          flush_dns_cache
+        end
+      end
+
+      context 'when flush command is not present' do
+        let(:flush_command) { nil }
+
+        it 'does not do anything' do
+          expect(Open3).to_not receive(:capture3)
+          expect {
+            flush_dns_cache
+          }.to_not raise_error
+        end
+      end
+    end
   end
 end

@@ -72,6 +72,7 @@ dns:
   <% if_p('dns.domain_name') do |domain_name| %>
   domain_name: <%= domain_name %>
   <% end %>
+  flush_command: '/var/vcap/jobs/powerdns/bin/powerdns_ctl flush'
   db:
     adapter: <%= adapter %>
     user: <%= user %>

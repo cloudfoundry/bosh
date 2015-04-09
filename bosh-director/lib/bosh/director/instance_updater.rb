@@ -212,6 +212,7 @@ module Bosh::Director
         update_dns_a_record(domain, record_name, ip_address)
         update_dns_ptr_record(record_name, ip_address)
       end
+      flush_dns_cache
     end
 
     def recreate_vm(new_disk_cid)

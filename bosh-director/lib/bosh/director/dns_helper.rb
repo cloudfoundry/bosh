@@ -200,6 +200,19 @@ module Bosh::Director
             "Invalid DNS for network `#{network}': #{reason}"
     end
 
+    # Purge cached DNS records
+    def flush_dns_cache
+      flush_command = Config.dns['flush_command']
+      if flush_command && !flush_command.empty?
+        stdout, stderr, status = Open3.capture3(flush_command)
+        if status == 0
+          @logger.debug("Flushed #{stdout.chomp} records from DNS cache")
+        else
+          @logger.warn("Failed to flush DNS cache: #{stderr.chomp}")
+        end
+      end
+    end
+
     private
 
     def reverse(ip, n)

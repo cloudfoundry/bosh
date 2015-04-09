@@ -24,7 +24,14 @@ stop)
   rm -f $PIDFILE
   ;;
 
+flush)
+  /var/vcap/packages/powerdns/pdns_control \
+    --socket-dir=$RUN_DIR \
+    --config-dir=/var/vcap/jobs/powerdns/config \
+    purge
+  ;;
+
 *)
-  echo "Usage: powerdns_ctl {start|stop}" ;;
+  echo "Usage: powerdns_ctl {start|stop|flush}" ;;
 esac
 exit 0

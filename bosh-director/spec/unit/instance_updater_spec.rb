@@ -590,6 +590,7 @@ module Bosh::Director
       context 'when DNS is not being changed' do
         it { expect(subject).to_not receive(:update_dns_a_record) }
         it { expect(subject).to_not receive(:update_dns_ptr_record) }
+        it { expect(subject).to_not receive(:flush_dns_cache) }
       end
 
       context 'when DNS is being changed' do
@@ -605,7 +606,7 @@ module Bosh::Director
           expect(subject).to receive(:update_dns_ptr_record).with('record 1', '1.1.1.1')
           expect(subject).to receive(:update_dns_a_record).with(domain, 'record 2', '2.2.2.2')
           expect(subject).to receive(:update_dns_ptr_record).with('record 2', '2.2.2.2')
-
+          expect(subject).to receive(:flush_dns_cache).once
           subject.update_dns
         end
       end
