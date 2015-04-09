@@ -125,9 +125,12 @@ module Bosh::Cli::Command
         return
       end
 
-      status, task_id = director.delete_deployment(name, :force => force)
-
-      task_report(status, task_id, "Deleted deployment `#{name}'")
+      begin
+        status, result = director.delete_deployment(name, :force => force)
+        task_report(status, result, "Deleted deployment `#{name}'")
+      rescue Bosh::Cli::ResourceNotFound
+        task_report(:done, nil, "Skipped delete of missing deployment `#{name}'")
+      end
     end
 
     # bosh validate jobs

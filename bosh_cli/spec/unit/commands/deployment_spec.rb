@@ -30,6 +30,15 @@ describe Bosh::Cli::Command::Deployment do
     cmd.delete('foo')
   end
 
+  it 'gracefully handles attempts to delete a non-existent deployment' do
+    expect(director).to receive(:delete_deployment)
+                          .with('foo', force: false)
+                          .and_raise(Bosh::Cli::ResourceNotFound)
+    expect {
+      cmd.delete('foo')
+    }.to_not raise_error
+  end
+
   it 'lists deployments' do
     expect(director).to receive(:list_deployments).
       and_return([{ 'name' => 'foo', 'releases' => [], 'stemcells' => [] }])
