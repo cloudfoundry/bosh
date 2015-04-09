@@ -17,8 +17,10 @@ namespace :spec do
 
     desc 'Install BOSH integration test dependencies (currently Nginx)'
     task :install_dependencies do
-      nginx = Bosh::Dev::Sandbox::Nginx.new
-      nginx.install
+      unless ENV['SKIP_NGINX'] == 'true'
+        nginx = Bosh::Dev::Sandbox::Nginx.new
+        nginx.install
+      end
     end
 
     def run_integration_specs
@@ -36,9 +38,16 @@ namespace :spec do
     end
 
     def run_in_parallel(test_path, options={})
+      spec_path = ENV['SPEC_PATH']
       count = " -n #{options[:count]}" unless options[:count].to_s.empty?
       group = " --only-group #{options[:group]}" unless options[:group].to_s.empty?
-      command = "https_proxy= http_proxy= bundle exec parallel_test '#{test_path}'#{count}#{group} --group-by filesize --type rspec"
+      command = begin
+        if spec_path
+          "https_proxy= http_proxy= bundle exec rspec #{spec_path}"
+        else
+          "https_proxy= http_proxy= bundle exec parallel_test '#{test_path}'#{count}#{group} --group-by filesize --type rspec"
+        end
+      end
       puts command
       abort unless system(command)
     end
