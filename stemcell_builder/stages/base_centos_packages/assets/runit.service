@@ -5,6 +5,7 @@ After=network.target
 [Service]
 TimeoutStartSec=0
 ExecStart=/sbin/runsvdir-start
+Restart=always
 
 [Install]
 WantedBy=multi-user.target

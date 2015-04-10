@@ -29,6 +29,11 @@ shared_examples_for 'a CentOS or RHEL based OS image' do
       it { should be_file }
       it { should contain 'UTC' }
     end
+
+    describe file('/usr/lib/systemd/system/runit.service') do
+      it { should be_file }
+      it { should contain 'Restart=always' }
+    end
   end
 
 
