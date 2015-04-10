@@ -1,11 +1,19 @@
 require 'system/spec_helper'
 
+def sudo
+  "echo 'c1oudc0w' | sudo -S -p '' -i"
+end
+
 def instance_reboot(ip)
   # turn off vm resurrection
   bosh('vm resurrection off')
 
   # shutdown instance
-  expect(ssh(ip, 'vcap', "echo 'c1oudc0w' | sudo -p '' -S reboot && echo 'SUCCESS'", ssh_options)).to eq("SUCCESS\n")
+  begin
+    ssh(ip, 'vcap', "#{sudo} reboot", ssh_options)
+  rescue IOError
+    @logger.debug('Rebooting instance closed the ssh connection')
+  end
 
   # wait for it to come back up (max 2 minutes)
   start = Time.now.to_i
@@ -84,8 +92,6 @@ describe 'service configuration', :type => 'os'  do
     @requirements.cleanup(deployment)
   end
 
-  let(:sudo) { "echo 'c1oudc0w' | sudo -S -p '' -s" }
-
   let(:bash_functions) do
     <<-EOF
       waitForProcess() {
@@ -115,7 +121,7 @@ describe 'service configuration', :type => 'os'  do
         local proc_name="${1}"
 
         local pid="$(waitForProcess ${proc_name})"
-        echo 'c1oudc0w' | sudo -p '' -S kill -9 ${pid}
+        #{sudo} kill -9 ${pid}
         waitForProcess ${proc_name} ${pid}
       }
 
@@ -170,7 +176,7 @@ describe 'service configuration', :type => 'os'  do
           cmd = <<-EOF
             #{bash_functions}
             old_pid="$(waitForProcess monit '')"
-            echo 'c1oudc0w' | sudo -p '' -S kill ${old_pid}
+            #{sudo} kill ${old_pid}
             new_pid="$(waitForProcess monit $old_pid)"
             if [[ "${new_pid}" = "${old_pid}" || -z "${new_pid}" ]]; then echo 'FAILURE'; fi
             echo "SUCCESS"
@@ -185,7 +191,7 @@ describe 'service configuration', :type => 'os'  do
           cmd = <<-EOF
             #{bash_functions}
             old_pid="$(waitForProcess bosh-agent '')"
-            echo 'c1oudc0w' | sudo -p '' -S kill ${old_pid}
+            #{sudo} kill ${old_pid}
             new_pid="$(waitForProcess bosh-agent $old_pid)"
             if [[ "${new_pid}" = "${old_pid}" || -z "${new_pid}" ]]; then echo 'FAILURE'; fi
             echo "SUCCESS"
@@ -285,7 +291,7 @@ describe 'service configuration', :type => 'os'  do
         cmd = <<-EOF
           #{bash_functions}
           #{sudo} PATH=$PATH:/sbin sv down agent
-          echo 'c1oudc0w' | sudo -p '' -S rm -rf /etc/service/monit
+          #{sudo} rm -rf /etc/service/monit
           if [ -f /etc/service/monit ]; then echo 'FAILURE'; fi
           #{sudo} PATH=$PATH:/sbin sv up agent
           link_target=$(waitForSymlink /etc/service/monit)
