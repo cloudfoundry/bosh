@@ -155,5 +155,8 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
+* `x0Y6dVzdBHSAt33zNO.aOu_QvY2pqVlT`
+  Auto-restart runsvdir
+
 * `3I9TaTJV5vUkUpGJETzqD8wsWhP2vsFE`
   CentOS 7
