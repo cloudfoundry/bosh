@@ -28,7 +28,7 @@ module VSphereCloud
       @lock.synchronize do
         cluster = @datacenter.clusters[cluster_name]
         if cluster.nil?
-          raise Bosh::Clouds::NoDiskSpace.new(true), "Couldn't find cluster '#{cluster_name}'. Found #{@datacenter.clusters.values.map(&:name).join(", ")}"
+          raise Bosh::Clouds::CloudError, "Couldn't find cluster '#{cluster_name}'. Found #{@datacenter.clusters.values.map(&:name)}"
         end
 
         datastore = cluster.pick_persistent(disk_size_in_mb)

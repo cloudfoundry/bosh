@@ -27,7 +27,6 @@ module Bosh::Director
         @vm_model, @agent_client = vm_creator.create(new_disk_cid)
 
         begin
-          # Could raise Bosh::Clouds::NoDiskSpace because some CPIs might lazily create disks
           disk_attacher = DiskAttacher.new(@instance, @vm_model, @agent_client, @cloud, @logger)
           disk_attacher.attach
           break

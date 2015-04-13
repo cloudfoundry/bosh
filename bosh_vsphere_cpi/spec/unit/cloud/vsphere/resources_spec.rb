@@ -21,14 +21,13 @@ module VSphereCloud
         expect(resources.pick_persistent_datastore_in_cluster("bar", 1024)).to eq(datastore)
       end
 
-      it "raises a Bosh::Clouds::NoDiskSpace when it can't find the cluster" do
+      it "raises a Bosh::Clouds::CloudError when it can't find the cluster" do
         expect{
           resources.pick_persistent_datastore_in_cluster("not a real cluster", 1024)
         }.to raise_error do |error|
-          expect(error).to be_an_instance_of(Bosh::Clouds::NoDiskSpace)
-          expect(error.ok_to_retry).to be_truthy
+          expect(error).to be_an_instance_of(Bosh::Clouds::CloudError)
           expect(error.message).to match(/not a real cluster/)
-          expect(error.message).to include('Found bar, baz')
+          expect(error.message).to include('Found ["bar", "baz"]')
         end
       end
     end

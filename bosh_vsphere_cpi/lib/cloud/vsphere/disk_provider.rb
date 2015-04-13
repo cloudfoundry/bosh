@@ -24,7 +24,7 @@ module VSphereCloud
       disk = find(disk_cid)
       return disk if accessible_datastores.include?(disk.datastore.name)
 
-      destination_datastore =  @resources.pick_persistent_datastore_in_cluster(cluster, disk.size_in_mb)
+      destination_datastore = @resources.pick_persistent_datastore_in_cluster(cluster, disk.size_in_mb)
 
       unless accessible_datastores.include?(destination_datastore.name)
         raise "Datastore '#{destination_datastore.name}' is not accessible to cluster '#{cluster.name}'"
