@@ -149,20 +149,6 @@ module VSphereCloud
         resources.pick_ephemeral_datastore(cluster, 1024)
         expect(datastore).to have_received(:allocate).with(1024)
       end
-
-      context 'when cluster does not have datastore to satisfy disk size requirement' do
-        before { allow(cluster).to receive(:pick_ephemeral).with(1024).and_return(nil) }
-        it 'raises Bosh::Clouds::NoDiskSpace' do
-          expect {
-            resources.pick_ephemeral_datastore(cluster, 1024)
-          }.to raise_error do |error|
-            expect(error).to be_an_instance_of(Bosh::Clouds::NoDiskSpace)
-            expect(error.ok_to_retry).to be_truthy
-            expect(error.message).to include('1024')
-            expect(error.message).to include('awesome cluster')
-          end
-        end
-      end
     end
 
     describe 'pick_persistent_datastore' do

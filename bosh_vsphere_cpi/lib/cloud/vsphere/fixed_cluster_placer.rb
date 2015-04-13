@@ -14,11 +14,6 @@ module VSphereCloud
 
     def pick_ephemeral_datastore(cluster, disk_size_in_mb)
       datastore = cluster.pick_ephemeral(disk_size_in_mb)
-
-      if datastore.nil?
-        raise Bosh::Clouds::NoDiskSpace.new(true), "Not enough ephemeral disk space (#{disk_size_in_mb}MB) in cluster #{cluster.name}"
-      end
-
       datastore.allocate(disk_size_in_mb)
       datastore
     end
