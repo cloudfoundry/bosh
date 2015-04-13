@@ -33,6 +33,7 @@ shared_examples_for 'a CentOS or RHEL based OS image' do
     describe file('/usr/lib/systemd/system/runit.service') do
       it { should be_file }
       it { should contain 'Restart=always' }
+      it { should contain 'KillMode=process' }
     end
   end
 

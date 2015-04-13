@@ -6,6 +6,7 @@ After=network.target
 TimeoutStartSec=0
 ExecStart=/sbin/runsvdir-start
 Restart=always
+KillMode=process
 
 [Install]
 WantedBy=multi-user.target
