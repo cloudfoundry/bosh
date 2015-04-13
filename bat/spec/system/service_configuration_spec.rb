@@ -1,80 +1,5 @@
 require 'system/spec_helper'
 
-def sudo
-  "echo 'c1oudc0w' | sudo -S -p '' -i"
-end
-
-def instance_reboot(ip)
-  # turn off vm resurrection
-  bosh('vm resurrection off')
-
-  # shutdown instance
-  begin
-    ssh(ip, 'vcap', "#{sudo} reboot", ssh_options)
-  rescue IOError
-    @logger.debug('Rebooting instance closed the ssh connection')
-  end
-
-  # wait for it to come back up (max 2 minutes)
-  start = Time.now.to_i
-  result = ''
-  loop do
-    sleep 10
-    begin
-      result = ssh(ip, 'vcap', "echo 'UP'", ssh_options)
-    rescue Exception => e
-      @logger.info("Failed to run ssh command. Retrying. Message: #{e.message}")
-    end
-    break unless (Time.now.to_i - start) < 120 && result != "UP\n"
-  end
-
-  expect(result).to eq("UP\n")
-
-  # turn on vm resurrection
-  bosh('vm resurrection on')
-end
-
-def dump_log(ip, log_path)
-  @logger.info("Dumping log file '#{log_path}'")
-  @logger.info("================================================================================")
-  ssh(ip, 'vcap', "([ -f '#{log_path}' ] && cat #{log_path})", ssh_options)
-end
-
-def process_running_on_instance(ip, process_name)
-  # make sure process is up and running
-  tries = 0
-  pid = ''
-  loop do
-    sleep 1
-    pid = ssh(ip, 'vcap', "pgrep #{process_name}", ssh_options)
-    break unless (tries += 1) < 30 && (pid =~ /^\d+\n$/).nil?
-  end
-
-  matched = pid.match(/^\d+\n$/)
-  if matched.nil?
-    dump_log(ip, "/var/vcap/bosh/log/current")
-    dump_log(ip, "/var/vcap/monit/svlog/current")
-    dump_log(ip, "/var/vcap/monit/monit.log")
-  end
-  expect(matched).to_not be_nil, "Expected process '#{process_name}' to be running after 30 seconds, but it was not"
-end
-
-def runit_running_on_instance(ip)
-  process_running_on_instance(ip, "runsvdir")
-end
-
-def agent_running_on_instance(ip)
-  process_running_on_instance(ip, "bosh-agent")
-end
-
-def monit_running_on_instance(ip)
-  process_running_on_instance(ip, "monit")
-end
-
-def batlight_running_on_instance(ip)
-  process_running_on_instance(ip, "batlight")
-end
-
 describe 'service configuration', :type => 'os'  do
   before(:all) do
     @requirements.requirement(@requirements.stemcell)
@@ -90,6 +15,77 @@ describe 'service configuration', :type => 'os'  do
 
   after(:all) do
     @requirements.cleanup(deployment)
+  end
+
+  def instance_reboot(ip)
+    # turn off vm resurrection
+    bosh('vm resurrection off')
+
+    # shutdown instance
+    begin
+      ssh(ip, 'vcap', "#{@requirements.stemcell.sudo_command} reboot", ssh_options)
+    rescue IOError
+      @logger.debug('Rebooting instance closed the ssh connection')
+    end
+
+    # wait for it to come back up (max 2 minutes)
+    start = Time.now.to_i
+    result = ''
+    loop do
+      sleep 10
+      begin
+        result = ssh(ip, 'vcap', "echo 'UP'", ssh_options)
+      rescue Exception => e
+        @logger.info("Failed to run ssh command. Retrying. Message: #{e.message}")
+      end
+      break unless (Time.now.to_i - start) < 120 && result != "UP\n"
+    end
+
+    expect(result).to eq("UP\n")
+
+    # turn on vm resurrection
+    bosh('vm resurrection on')
+  end
+
+  def dump_log(ip, log_path)
+    @logger.info("Dumping log file '#{log_path}'")
+    @logger.info("================================================================================")
+    ssh(ip, 'vcap', "([ -f '#{log_path}' ] && cat #{log_path})", ssh_options)
+  end
+
+  def process_running_on_instance(ip, process_name)
+    # make sure process is up and running
+    tries = 0
+    pid = ''
+    loop do
+      sleep 1
+      pid = ssh(ip, 'vcap', "pgrep #{process_name}", ssh_options)
+      break unless (tries += 1) < 30 && (pid =~ /^\d+\n$/).nil?
+    end
+
+    matched = pid.match(/^\d+\n$/)
+    if matched.nil?
+      dump_log(ip, "/var/vcap/bosh/log/current")
+      dump_log(ip, "/var/vcap/monit/svlog/current")
+      dump_log(ip, "/var/vcap/monit/monit.log")
+    end
+    expect(matched).to_not be_nil, "Expected process '#{process_name}' to be running after 30 seconds, but it was not"
+  end
+
+  def runit_running_on_instance(ip)
+    process_running_on_instance(ip, "runsvdir")
+  end
+
+  def agent_running_on_instance(ip)
+    process_running_on_instance(ip, "bosh-agent")
+  end
+
+  def monit_running_on_instance(ip)
+    process_running_on_instance(ip, "monit")
+  end
+
+  def batlight_running_on_instance(ip)
+    process_running_on_instance(ip, "batlight")
   end
 
   let(:bash_functions) do
@@ -121,7 +117,7 @@ describe 'service configuration', :type => 'os'  do
         local proc_name="${1}"
 
         local pid="$(waitForProcess ${proc_name})"
-        #{sudo} kill -9 ${pid}
+        #{@requirements.stemcell.sudo_command} kill -9 ${pid}
         waitForProcess ${proc_name} ${pid}
       }
 
@@ -176,7 +172,7 @@ describe 'service configuration', :type => 'os'  do
           cmd = <<-EOF
             #{bash_functions}
             old_pid="$(waitForProcess monit '')"
-            #{sudo} kill ${old_pid}
+            #{@requirements.stemcell.sudo_command} kill ${old_pid}
             new_pid="$(waitForProcess monit $old_pid)"
             if [[ "${new_pid}" = "${old_pid}" || -z "${new_pid}" ]]; then echo 'FAILURE'; fi
             echo "SUCCESS"
@@ -191,7 +187,7 @@ describe 'service configuration', :type => 'os'  do
           cmd = <<-EOF
             #{bash_functions}
             old_pid="$(waitForProcess bosh-agent '')"
-            #{sudo} kill ${old_pid}
+            #{@requirements.stemcell.sudo_command} kill ${old_pid}
             new_pid="$(waitForProcess bosh-agent $old_pid)"
             if [[ "${new_pid}" = "${old_pid}" || -z "${new_pid}" ]]; then echo 'FAILURE'; fi
             echo "SUCCESS"
@@ -290,10 +286,10 @@ describe 'service configuration', :type => 'os'  do
         # make sure agent recreates /etc/service/monit upon restart
         cmd = <<-EOF
           #{bash_functions}
-          #{sudo} PATH=$PATH:/sbin sv down agent
-          #{sudo} rm -rf /etc/service/monit
+          #{@requirements.stemcell.sudo_command} PATH=$PATH:/sbin sv down agent
+          #{@requirements.stemcell.sudo_command} rm -rf /etc/service/monit
           if [ -f /etc/service/monit ]; then echo 'FAILURE'; fi
-          #{sudo} PATH=$PATH:/sbin sv up agent
+          #{@requirements.stemcell.sudo_command} PATH=$PATH:/sbin sv up agent
           link_target=$(waitForSymlink /etc/service/monit)
           if [ "${link_target}" != "/etc/sv/monit" ]; then
             echo "FAILURE: wrong symlink for /etc/service/monit: expected /etc/sv/monit, got ${link_target}"
@@ -318,7 +314,7 @@ describe 'service configuration', :type => 'os'  do
             echo "FAILURE: actual batlight pid (${pgrep}) different from pid in batlight.pid (${pid})"
           fi
           for i in `seq 1 30`; do
-            monit=$(#{sudo} PATH=$PATH:/var/vcap/bosh/bin monit status | grep '^\s*pid' | awk '{ print \$2 }')
+            monit=$(#{@requirements.stemcell.sudo_command} PATH=$PATH:/var/vcap/bosh/bin monit status | grep '^\s*pid' | awk '{ print \$2 }')
             if [ -n "${monit}" ] && [ "x${monit}" != "x0" ]; then break; fi
             sleep 1
           done
@@ -347,7 +343,7 @@ describe 'service configuration', :type => 'os'  do
             echo "FAILURE: actual batlight pid (${pgrep}) different from pid in batlight.pid (${pid})"
           fi
           for i in `seq 1 30`; do
-            monit=$(#{sudo} PATH=$PATH:/var/vcap/bosh/bin monit status | grep '^\s*pid' | awk '{ print \$2 }')
+            monit=$(#{@requirements.stemcell.sudo_command} PATH=$PATH:/var/vcap/bosh/bin monit status | grep '^\s*pid' | awk '{ print \$2 }')
             if [ -n "${monit}" ] && [ "x${monit}" != "x0" ]; then break; fi
             sleep 1
           done
@@ -370,8 +366,8 @@ describe 'service configuration', :type => 'os'  do
         # make sure file still exists
         cmd = <<-EOF
           touch /var/vcap/data/sys/run/foo
-          #{sudo} PATH=$PATH:/sbin sv down agent
-          #{sudo} PATH=$PATH:/sbin sv up agent
+          #{@requirements.stemcell.sudo_command} PATH=$PATH:/sbin sv down agent
+          #{@requirements.stemcell.sudo_command} PATH=$PATH:/sbin sv up agent
           if [ -f /var/vcap/data/sys/run/foo ]; then
             echo 'SUCCESS';
           else
@@ -388,8 +384,8 @@ describe 'service configuration', :type => 'os'  do
         # compare pids pre and post agent restart
         cmd = <<-EOF
           old_pid=$(cat /var/vcap/data/sys/run/batlight/batlight.pid)
-          #{sudo} PATH=$PATH:/sbin sv down agent
-          #{sudo} PATH=$PATH:/sbin sv up agent
+          #{@requirements.stemcell.sudo_command} PATH=$PATH:/sbin sv down agent
+          #{@requirements.stemcell.sudo_command} PATH=$PATH:/sbin sv up agent
           new_pid=$(cat /var/vcap/data/sys/run/batlight/batlight.pid)
           if [ "${old_pid}" = "${new_pid}" ]; then
             echo 'SUCCESS'
@@ -404,8 +400,8 @@ describe 'service configuration', :type => 'os'  do
         # compare modification times for /etc/service/monit pre and post agent restart
         cmd = <<-EOF
           old_time=$(stat  --print '%Y' /etc/service/monit)
-          #{sudo} PATH=$PATH:/sbin sv down agent
-          #{sudo} PATH=$PATH:/sbin sv up agent
+          #{@requirements.stemcell.sudo_command} PATH=$PATH:/sbin sv down agent
+          #{@requirements.stemcell.sudo_command} PATH=$PATH:/sbin sv up agent
           new_time=$(stat  --print '%Y' /etc/service/monit)
           if [ "${old_time}" = "${new_time}" ]; then
             echo 'SUCCESS'
@@ -423,8 +419,8 @@ describe 'service configuration', :type => 'os'  do
         # compare monit pid and process time pre and post agent restart
         cmd = <<-EOF
           old_pid=$(pgrep ^monit$)
-          #{sudo} PATH=$PATH:/sbin sv down agent
-          #{sudo} PATH=$PATH:/sbin sv up agent
+          #{@requirements.stemcell.sudo_command} PATH=$PATH:/sbin sv down agent
+          #{@requirements.stemcell.sudo_command} PATH=$PATH:/sbin sv up agent
           new_pid=$(pgrep ^monit$)
           if [ "${old_pid}" = "${new_pid}" ]; then
             echo 'SUCCESS'
@@ -450,7 +446,7 @@ describe 'service configuration', :type => 'os'  do
           batlight_running_on_instance(public_ip)
 
           # kill batlight
-          cmd = "#{sudo} pkill batlight && echo 'SUCCESS'"
+          cmd = "#{@requirements.stemcell.sudo_command} pkill batlight && echo 'SUCCESS'"
           expect(ssh(public_ip, 'vcap', cmd, ssh_options)).to eq("SUCCESS\n")
 
           # wait for batlight to come up again
@@ -463,14 +459,14 @@ describe 'service configuration', :type => 'os'  do
       context 'when a monitored process dies' do
         it 'restarts it' do
           # kill monit
-          cmd = "#{sudo} pkill monit && echo 'SUCCESS'"
+          cmd = "#{@requirements.stemcell.sudo_command} pkill monit && echo 'SUCCESS'"
           expect(ssh(public_ip, 'vcap', cmd, ssh_options)).to eq("SUCCESS\n")
 
           # wait for monit to come up again
           monit_running_on_instance(public_ip)
 
           # kill batlight
-          cmd = "#{sudo} pkill batlight && echo 'SUCCESS'"
+          cmd = "#{@requirements.stemcell.sudo_command} pkill batlight && echo 'SUCCESS'"
           expect(ssh(public_ip, 'vcap', cmd, ssh_options)).to eq("SUCCESS\n")
 
           # wait for batlight to come up again
