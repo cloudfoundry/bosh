@@ -39,7 +39,7 @@ module Bat
     end
 
     def sudo_command
-      if (name =~ /centos/)
+      if name =~ /centos/
         "echo #{ENV['BAT_VCAP_PASSWORD']} | sudo -S -p '' -i"
       else
         "echo #{ENV['BAT_VCAP_PASSWORD']} | sudo -S -p '' -s"
