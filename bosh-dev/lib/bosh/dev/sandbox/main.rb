@@ -11,6 +11,7 @@ require 'bosh/dev/sandbox/director_config'
 require 'bosh/dev/sandbox/port_provider'
 require 'bosh/dev/sandbox/services/director_service'
 require 'bosh/dev/sandbox/services/nginx_service'
+require 'bosh/dev/sandbox/uaa'
 require 'cloud/dummy'
 require 'logging'
 
@@ -19,9 +20,6 @@ module Bosh::Dev::Sandbox
     REPO_ROOT = File.expand_path('../../../../../', File.dirname(__FILE__))
 
     ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
-
-    UAA_ASSETS_DIR = File.expand_path('spec/assets/uaa', REPO_ROOT)
-    UAA_CONFIG_DIR = File.expand_path('spec/assets', REPO_ROOT)
 
     DIRECTOR_CONFIG = 'director_test.yml'
 
@@ -97,7 +95,7 @@ module Bosh::Dev::Sandbox
 
       setup_database(db_opts)
 
-      setup_uaa
+      @uaa = Uaa.new(uaa_port, base_log_path, @logger)
 
       # Note that this is not the same object
       # as dummy cpi used inside bosh-director process
@@ -189,7 +187,7 @@ module Bosh::Dev::Sandbox
       @nats_process.stop
 
       @health_monitor_process.stop
-      @uaa_process.stop
+      @uaa.stop
 
       @database.drop_db
       FileUtils.rm_f(dns_db_path)
@@ -267,12 +265,12 @@ module Bosh::Dev::Sandbox
     end
 
     def start_uaa
-      @uaa_process.start
-
       begin
-        @uaa_socket_connector.try_to_connect(1000)
-      rescue
-        output_service_log(@uaa_process)
+        @uaa.start
+        @uaa.await
+      rescue => e
+        puts e.message
+        output_service_log(@uaa.service) if @uaa.service
         raise
       end
     end
@@ -353,29 +351,6 @@ module Bosh::Dev::Sandbox
 
     def base_log_path
       File.join(logs_path, @name)
-    end
-
-    def setup_uaa
-      uaa_ports = {
-        'cargo.servlet.port' => uaa_port,
-        'cargo.tomcat.ajp.port' => @port_provider.get_port(:uaa_tomcat),
-        'cargo.rmi.port' => @port_provider.get_port(:uaa_rmi)
-      }
-
-      arguments = uaa_ports.map { |pair| "-D#{pair.join('=')}" }
-      arguments << %W(-P cargo.port=#{uaa_port})
-
-      @uaa_process = Service.new(
-        ['./gradlew', arguments, 'run'].flatten,
-        {
-          output: "#{base_log_path}.uaa.out",
-          working_dir: UAA_ASSETS_DIR,
-          env: { 'UAA_CONFIG_PATH' => UAA_CONFIG_DIR }
-        },
-        @logger,
-      )
-
-      @uaa_socket_connector = SocketConnector.new('uaa', 'localhost', uaa_port, @logger)
     end
 
     def setup_nats

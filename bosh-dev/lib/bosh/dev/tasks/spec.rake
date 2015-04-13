@@ -3,6 +3,7 @@ require 'tempfile'
 require 'rspec/core/rake_task'
 require 'bosh/dev/bat_helper'
 require 'bosh/dev/sandbox/nginx'
+require 'bosh/dev/sandbox/uaa'
 require 'bosh/dev/sandbox/workspace'
 require 'common/thread_pool'
 require 'parallel_tests/tasks'
@@ -17,9 +18,11 @@ namespace :spec do
 
     desc 'Install BOSH integration test dependencies (currently Nginx)'
     task :install_dependencies do
-      unless ENV['SKIP_NGINX'] == 'true'
+      unless ENV['SKIP_DEPENDENCIES'] == 'true'
         nginx = Bosh::Dev::Sandbox::Nginx.new
         nginx.install
+
+        Bosh::Dev::Sandbox::Uaa.install
       end
     end
 
