@@ -56,8 +56,7 @@ module VSphereCloud
       datastore = @datacenter.pick_persistent_datastore(disk_size_in_mb)
 
       if datastore.nil?
-        raise Bosh::Clouds::NoDiskSpace.new(true),
-          "Not enough persistent space #{disk_size_in_mb}"
+        raise Bosh::Clouds::NoDiskSpace.new(true), "Not enough persistent space #{disk_size_in_mb}"
       end
 
       datastore

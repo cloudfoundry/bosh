@@ -67,6 +67,10 @@ module VSphereCloud
       def inspect
         "<Datastore: #@mob / #@name>"
       end
+
+      def debug_info
+        "#{name} (#{free_space}MB free of #{total_space}MB capacity)"
+      end
     end
   end
 end

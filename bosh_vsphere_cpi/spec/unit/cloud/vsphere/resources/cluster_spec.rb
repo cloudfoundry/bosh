@@ -358,6 +358,7 @@ class VSphereCloud::Resources
               cluster.pick_persistent(20000 - (DISK_HEADROOM - 1))
             }.to raise_error do |error|
               expect(error).to be_an_instance_of(Bosh::Clouds::NoDiskSpace)
+              expect(error.ok_to_retry).to be(true)
               expect(error.message).to eq(<<-MSG)
 Couldn't find a persistent datastore with 18977MB of free space in fake-cluster-name. Found:
  persistent_1 (10000MB free of 20000MB capacity)
