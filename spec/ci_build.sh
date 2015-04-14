@@ -2,6 +2,8 @@
 
 set -e -x
 
+export BOSH_CLI_SILENCE_SLOW_LOAD_WARNING=true
+
 env | sort
 
 export TMPDIR=/mnt/ci-tmp
