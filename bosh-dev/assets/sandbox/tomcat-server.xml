@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<Server>
+<Server port="${uaa.server_port}">
   <Service name="Catalina">
     <Connector class="org.apache.coyote.http11.Http11NioProtocol" port="${uaa.http_port}" protocol="HTTP/1.1" connectionTimeout="20000" address="127.0.0.1"/>
     <Engine name="Catalina" defaultHost="localhost">
