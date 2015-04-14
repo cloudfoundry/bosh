@@ -35,6 +35,7 @@ describe 'RHEL 7 OS image', os_image: true do
       bison
       bzip2-devel
       cmake
+      cronie-anacron
       curl
       dhclient
       e2fsprogs

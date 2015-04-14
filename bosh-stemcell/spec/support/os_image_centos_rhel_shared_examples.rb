@@ -9,14 +9,6 @@ shared_examples_for 'a CentOS or RHEL based OS image' do
   end
 
   context 'installed by base_centos or base_rhel' do
-    %w(
-      firewalld
-    ).each do |pkg|
-      describe package(pkg) do
-        it { should_not be_installed }
-      end
-    end
-
     describe file('/etc/redhat-release') do
       it { should be_file }
     end
@@ -37,6 +29,16 @@ shared_examples_for 'a CentOS or RHEL based OS image' do
     end
   end
 
+  context 'installed or excluded by base_centos_packages' do
+    %w(
+      firewalld
+      mlocate
+    ).each do |pkg|
+      describe package(pkg) do
+        it { should_not be_installed }
+      end
+    end
+  end
 
   context 'installed by base_ssh' do
     subject(:sshd_config) { file('/etc/ssh/sshd_config') }
@@ -77,6 +79,12 @@ shared_examples_for 'a CentOS or RHEL based OS image' do
       it { should be_file }
       it { should contain 'READAHEAD_COLLECT="no"' }
       it { should contain 'READAHEAD_COLLECT_ON_RPM="no"' }
+    end
+  end
+
+  context 'configured by cron_config' do
+    describe file '/etc/cron.daily/man-db.cron' do
+      it { should_not be_file }
     end
   end
 end
