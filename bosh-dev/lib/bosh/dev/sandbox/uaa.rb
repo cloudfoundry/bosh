@@ -29,11 +29,7 @@ module Bosh::Dev::Sandbox
       @log_base = log_base
       @logger = logger
       @runner = runner
-    end
 
-    attr_reader :service
-
-    def start
       server_xml = File.join(UAA_CONFIG_DIR, 'tomcat-server.xml')
       log_path = "#{@log_base}.uaa.out"
       opts = {
@@ -53,7 +49,11 @@ module Bosh::Dev::Sandbox
       )
 
       @uaa_socket_connector = SocketConnector.new('uaa', '127.0.0.1', @http_port, @logger)
+    end
 
+    attr_reader :service
+
+    def start
       @service.start
     end
 
