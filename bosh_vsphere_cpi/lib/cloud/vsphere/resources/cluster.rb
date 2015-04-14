@@ -135,7 +135,7 @@ module VSphereCloud
         selected_datastore = Util.weighted_random(available_datastores.map { |datastore| [datastore, datastore.free_space] })
 
         if selected_datastore.nil?
-          raise Bosh::Clouds::NoDiskSpace.new(true), "Couldn't find a #{type} datastore with #{size}MB of free space in #{self.name}. Found:\n #{datastores.map(&:debug_info).join("\n ")}\n"
+          raise Bosh::Clouds::NoDiskSpace.new(true), "Couldn't find a #{type} datastore with #{size}MB of free space accessible from cluster '#{self.name}'. Found:\n #{datastores.map(&:debug_info).join("\n ")}\n"
         end
         selected_datastore
       end

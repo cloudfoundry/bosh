@@ -13,7 +13,7 @@ module VSphereCloud
     end
 
     def create(disk_size_in_mb)
-      datastore = find_datastore(disk_size_in_mb)
+      datastore = @datacenter.pick_persistent_datastore(disk_size_in_mb)
       disk_cid = "disk-#{SecureRandom.uuid}"
       @logger.debug("Creating disk '#{disk_cid}' in datastore '#{datastore.name}'")
 
@@ -50,16 +50,6 @@ module VSphereCloud
 
     def path(datastore, disk_cid)
       "[#{datastore.name}] #{@disk_path}/#{disk_cid}.vmdk"
-    end
-
-    def find_datastore(disk_size_in_mb)
-      datastore = @datacenter.pick_persistent_datastore(disk_size_in_mb)
-
-      if datastore.nil?
-        raise Bosh::Clouds::NoDiskSpace.new(true), "Not enough persistent space #{disk_size_in_mb}"
-      end
-
-      datastore
     end
   end
 end

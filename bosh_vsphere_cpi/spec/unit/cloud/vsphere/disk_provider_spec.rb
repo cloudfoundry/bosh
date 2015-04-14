@@ -41,19 +41,6 @@ module VSphereCloud
                             .and_return(disk)
         expect(disk_provider.create(24)).to eq(disk)
       end
-
-      context 'when there are no datastores on host cluster that can fit disk size' do
-        before do
-          cluster = instance_double(VSphereCloud::Resources::Cluster)
-          allow(datacenter).to receive(:pick_persistent_datastore).with(24).and_return(nil)
-        end
-
-        it 'raises an error' do
-          expect {
-            disk_provider.create(24)
-          }.to raise_error Bosh::Clouds::NoDiskSpace
-        end
-      end
     end
 
     describe '#find_and_move' do

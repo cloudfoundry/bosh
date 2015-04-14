@@ -321,7 +321,7 @@ class VSphereCloud::Resources
       end
 
       context 'when there are persistent datastores' do
-        it "logs a bunch of debug info since it's really hard to know what happening otherwise" do
+        it 'logs a bunch of debug info since it is really hard to know what happening otherwise' do
           cluster.pick_persistent(10001)
 
           expect(log_output.string).to include 'Looking for a persistent datastore in fake-cluster-name with 10001MB free space.'
@@ -356,7 +356,7 @@ class VSphereCloud::Resources
               expect(error).to be_an_instance_of(Bosh::Clouds::NoDiskSpace)
               expect(error.ok_to_retry).to be(true)
               expect(error.message).to eq(<<-MSG)
-Couldn't find a persistent datastore with 18977MB of free space in fake-cluster-name. Found:
+Couldn't find a persistent datastore with 18977MB of free space accessible from cluster 'fake-cluster-name'. Found:
  persistent_1 (10000MB free of 20000MB capacity)
  persistent_2 (20000MB free of 40000MB capacity)
 MSG

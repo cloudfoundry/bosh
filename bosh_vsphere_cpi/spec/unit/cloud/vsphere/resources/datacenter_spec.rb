@@ -16,7 +16,8 @@ describe VSphereCloud::Resources::Datacenter do
       mem_overcommit: 0.5,
     })
   }
-  let(:logger) { double(:logger) }
+  let(:log_output) { StringIO.new("") }
+  let(:logger) { Logger.new(log_output) }
   let(:client) { instance_double('VSphereCloud::Client') }
 
   let(:vm_folder) { instance_double('VSphereCloud::Resources::Folder') }
@@ -42,31 +43,41 @@ describe VSphereCloud::Resources::Datacenter do
     allow(client).to receive(:cloud_searcher).and_return(cloud_searcher)
 
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
-      'fake-vm-folder', logger, client, datacenter_name).and_return(vm_folder)
-    allow(VSphereCloud::Resources::Folder).to receive(:new).with(
-      'fake-vm-folder/fake-uuid', logger, client, datacenter_name).and_return(vm_subfolder)
+      'fake-vm-folder', logger, client, datacenter_name
+    ).and_return(vm_folder)
 
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
-      'fake-template-folder', logger, client, datacenter_name).and_return(template_folder)
+      'fake-vm-folder/fake-uuid', logger, client, datacenter_name
+    ).and_return(vm_subfolder)
+
     allow(VSphereCloud::Resources::Folder).to receive(:new).with(
-      'fake-template-folder/fake-uuid', logger, client, datacenter_name).and_return(template_subfolder)
+      'fake-template-folder', logger, client, datacenter_name
+    ).and_return(template_folder)
+
+    allow(VSphereCloud::Resources::Folder).to receive(:new).with(
+      'fake-template-folder/fake-uuid', logger, client, datacenter_name
+    ).and_return(template_subfolder)
 
     allow(cloud_searcher).to receive(:get_managed_objects).with(
-                       VimSdk::Vim::ClusterComputeResource,
-                       root: datacenter_mob, include_name: true).and_return(
-                       {
-                         'cluster1' => cluster_mob1,
-                         'cluster2' => cluster_mob2,
-                       }
-                     )
+      VimSdk::Vim::ClusterComputeResource,
+      root: datacenter_mob, include_name: true
+    ).and_return(
+      [
+        ['cluster1', cluster_mob1],
+        ['cluster2', cluster_mob2],
+      ]
+    )
+
     allow(cloud_searcher).to receive(:get_properties).with(
-                       [cluster_mob1, cluster_mob2],
-                       VimSdk::Vim::ClusterComputeResource,
-                       VSphereCloud::Resources::Cluster::PROPERTIES,
-                       ensure_all: true).and_return({ cluster_mob1 => {}, cluster_mob2 => {} })
-    allow(cloud_searcher).to receive(:get_properties).
-        with(nil, VimSdk::Vim::Datastore, VSphereCloud::Resources::Datastore::PROPERTIES).
-        and_return(datastore_properties)
+      [cluster_mob1, cluster_mob2],
+      VimSdk::Vim::ClusterComputeResource,
+      VSphereCloud::Resources::Cluster::PROPERTIES,
+      ensure_all: true
+    ).and_return({ cluster_mob1 => {}, cluster_mob2 => {} })
+
+    allow(cloud_searcher).to receive(:get_properties).with(
+      nil, VimSdk::Vim::Datastore, VSphereCloud::Resources::Datastore::PROPERTIES
+    ).and_return(datastore_properties)
     allow(Bosh::Clouds::Config).to receive(:uuid).and_return('fake-uuid')
   end
 
@@ -246,9 +257,9 @@ describe VSphereCloud::Resources::Datacenter do
       bytes_in_mb = VSphereCloud::Resources::BYTES_IN_MB
       disk_threshold = VSphereCloud::Resources::DISK_HEADROOM
       {
-        'ds1' => { 'name' => 'ds1', 'summary.freeSpace' => (1024 + disk_threshold) * bytes_in_mb },
-        'ds2' => { 'name' => 'ds2', 'summary.freeSpace' => (2048 + disk_threshold) * bytes_in_mb },
-        'ds32' => { 'name' => 'ds3', 'summary.freeSpace' => (512 + disk_threshold) * bytes_in_mb },
+        'ds1' => { 'name' => 'ds1', 'summary.freeSpace' => (1024 + disk_threshold) * bytes_in_mb, 'summary.capacity' => 20000 * bytes_in_mb },
+        'ds2' => { 'name' => 'ds2', 'summary.freeSpace' => (2048 + disk_threshold) * bytes_in_mb, 'summary.capacity' => 20000 * bytes_in_mb  },
+        'ds32' => { 'name' => 'ds3', 'summary.freeSpace' => (512 + disk_threshold) * bytes_in_mb, 'summary.capacity' => 20000 * bytes_in_mb  },
       }
     end
 
@@ -269,10 +280,28 @@ describe VSphereCloud::Resources::Datacenter do
       expect(datacenter.pick_persistent_datastore(1024)).to eq(first_datastore)
     end
 
-    context 'when no datastores can be found' do
-      let(:datastore_properties) { {} }
-      it 'returns nil' do
-        expect(datacenter.pick_persistent_datastore(1024)).to eq(nil)
+    it 'logs a bunch of debug info since it is really hard to know what happening otherwise' do
+      datacenter.pick_persistent_datastore(1024)
+
+      expect(log_output.string).to include 'Looking for a persistent datastore with 1024MB free space.'
+      expect(log_output.string).to include 'All datastores: ["ds1 (2048MB free of 20000MB capacity)", "ds2 (3072MB free of 20000MB capacity)", "ds3 (1536MB free of 20000MB capacity)"]'
+      expect(log_output.string).to include 'Datastores with enough space: ["ds1 (2048MB free of 20000MB capacity)", "ds2 (3072MB free of 20000MB capacity)"]'
+    end
+
+    context 'and there is less persistent free space than the disk threshold' do
+      it 'raises a Bosh::Clouds::NoDiskSpace' do
+        expect {
+          datacenter.pick_persistent_datastore(10000)
+        }.to raise_error do |error|
+          expect(error).to be_an_instance_of(Bosh::Clouds::NoDiskSpace)
+          expect(error.ok_to_retry).to be(true)
+          expect(error.message).to eq(<<-MSG)
+Couldn't find a persistent datastore with 10000MB of free space. Found:
+ ds1 (2048MB free of 20000MB capacity)
+ ds2 (3072MB free of 20000MB capacity)
+ ds3 (1536MB free of 20000MB capacity)
+          MSG
+        end
       end
     end
   end

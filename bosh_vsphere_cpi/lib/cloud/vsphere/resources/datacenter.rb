@@ -64,11 +64,12 @@ module VSphereCloud
       end
 
       def clusters
-        cluster_mobs = Hash[*cluster_tuples.flatten]
+        cluster_mobs = get_cluster_mobs
 
         clusters_properties = @client.cloud_searcher.get_properties(
           cluster_mobs.values, Vim::ClusterComputeResource,
-          Cluster::PROPERTIES, :ensure_all => true)
+          Cluster::PROPERTIES, :ensure_all => true
+        )
 
         clusters = {}
         @clusters.each do |cluster_name, cluster_config|
@@ -94,24 +95,38 @@ module VSphereCloud
         datastores
       end
 
-      def pick_persistent_datastore(disk_size_in_mb)
+      def pick_persistent_datastore(size)
         weighted_datastores = []
         persistent_datastores.each_value do |datastore|
-          if datastore.free_space - disk_size_in_mb >= DISK_HEADROOM
+          if datastore.free_space - size >= DISK_HEADROOM
             weighted_datastores << [datastore, datastore.free_space]
           end
         end
 
-        Util.weighted_random(weighted_datastores)
+        type = :persistent
+        datastores = persistent_datastores.values
+        available_datastores = datastores.reject { |datastore| datastore.free_space - size < DISK_HEADROOM }
+
+        @logger.debug("Looking for a #{type} datastore with #{size}MB free space.")
+        @logger.debug("All datastores: #{datastores.map(&:debug_info)}")
+        @logger.debug("Datastores with enough space: #{available_datastores.map(&:debug_info)}")
+
+        selected_datastore = Util.weighted_random(available_datastores.map { |datastore| [datastore, datastore.free_space] })
+
+        if selected_datastore.nil?
+          raise Bosh::Clouds::NoDiskSpace.new(true), "Couldn't find a #{type} datastore with #{size}MB of free space. Found:\n #{datastores.map(&:debug_info).join("\n ")}\n"
+        end
+        selected_datastore
       end
 
       private
 
-      def cluster_tuples
+      def get_cluster_mobs
         cluster_tuples = @client.cloud_searcher.get_managed_objects(
-          Vim::ClusterComputeResource, root: mob, include_name: true)
-        cluster_tuples.delete_if { |name, _| !@clusters.has_key?(name) }
-        cluster_tuples
+          Vim::ClusterComputeResource, root: mob, include_name: true
+        )
+        non_clusters = cluster_tuples.reject { |name, _| !@clusters.has_key?(name) }
+        Hash[*(non_clusters.flatten)]
       end
     end
   end
