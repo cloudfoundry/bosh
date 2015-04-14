@@ -6,7 +6,7 @@ begin
   runner = Bosh::Cli::Runner.new(ARGV.dup)
 
   load_threshold = 5
-  if require_cli_time > load_threshold
+  if !ENV.has_key?("BOSH_CLI_SILENCE_SLOW_LOAD_WARNING") && require_cli_time > load_threshold
     nl
     warning sprintf("Loading the cli took %.1f seconds, consider cleaning your gem environment", require_cli_time)
     nl
