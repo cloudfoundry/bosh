@@ -60,7 +60,7 @@ module Bosh::Dev::Sandbox
     end
 
     def stop
-      @service.stop if @service
+      @service.stop
     end
 
     private
