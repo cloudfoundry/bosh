@@ -7,6 +7,11 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `hdWMpoRhNlIYrwt61zt9Ix2mYln_hTys`
+  remove unnecessary packages to make OS image smaller
+  reduce daily and weekly cron load
+  randomize remaining cronjob start times to reduce congestion in clustered deployments
+
 * `0YARMwfbXRhCyma2hdTZTd97IlZqW3Qc`
   Add hmac-sha1 to sshd_config (required by go ssh lib)
 
@@ -154,6 +159,11 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `cNakw6wcTjEyWaZBQWTUuoeYKiuLYB3k`
+  remove unnecessary packages to make OS image smaller
+  reduce daily and weekly cron load
+  randomize remaining cronjob start times to reduce congestion in clustered deployments
 
 * `x0Y6dVzdBHSAt33zNO.aOu_QvY2pqVlT`
   Auto-restart runsvdir
