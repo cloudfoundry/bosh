@@ -163,7 +163,7 @@ module Bosh
       def kill_agents
         vm_cids.each do |agent_pid|
           begin
-            Process.kill('INT', agent_pid.to_i)
+            Process.kill('KILL', agent_pid.to_i)
           # rubocop:disable HandleExceptions
           rescue Errno::ESRCH
           # rubocop:enable HandleExceptions
