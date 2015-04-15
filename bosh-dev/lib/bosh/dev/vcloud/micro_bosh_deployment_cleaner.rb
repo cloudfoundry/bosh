@@ -45,8 +45,12 @@ module Bosh::Dev::VCloud
         vapp.power_off
       end
       delete_independent_disks(vapp)
-      vapp.delete
-      @logger.info("Vapp '#{@env['BOSH_VCLOUD_VAPP_NAME']}' was deleted during clean up.")
+      if vapp.send(:entity_xml).remove_url
+        vapp.delete
+        @logger.info("Vapp '#{@env['BOSH_VCLOUD_VAPP_NAME']}' was deleted during clean up.")
+      else
+        @logger.info("Failed to delete the vapp, the remove url was not returned by the sdk.")
+      end
     rescue VCloudSdk::ObjectNotFoundError => e
       @logger.info("No vapp was deleted during clean up. Details: #{e.inspect}")
     end
