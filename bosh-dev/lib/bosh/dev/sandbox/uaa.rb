@@ -23,9 +23,8 @@ module Bosh::Dev::Sandbox
       raise out unless $? == 0
     end
 
-    def initialize(http_port, server_port, log_base, logger, runner = Bosh::Core::Shell.new)
-      @http_port = http_port
-      @server_port = server_port
+    def initialize(port, log_base, logger, runner = Bosh::Core::Shell.new)
+      @port = port
       @log_base = log_base
       @logger = logger
       @runner = runner
@@ -37,8 +36,7 @@ module Bosh::Dev::Sandbox
       server_xml = File.join(UAA_CONFIG_DIR, 'tomcat-server.xml')
       log_path = "#{@log_base}.uaa.out"
       opts = {
-        "uaa.http_port" => @http_port,
-        "uaa.server_port" => @server_port,
+        "uaa.http_port" => @port,
         "uaa.access_log_dir" => File.dirname(log_path),
       }
       @service = Service.new([executable_path, 'run', '-config', server_xml],
@@ -52,7 +50,7 @@ module Bosh::Dev::Sandbox
         @logger,
       )
 
-      @uaa_socket_connector = SocketConnector.new('uaa', '127.0.0.1', @http_port, @logger)
+      @uaa_socket_connector = SocketConnector.new('uaa', '127.0.0.1', @port, @logger)
 
       @service.start
     end

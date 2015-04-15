@@ -70,9 +70,6 @@ module Bosh::Dev::Sandbox
 
       @port_provider = PortProvider.new(test_env_number)
 
-      uaa_http_port = @port_provider.get_port(:uaa_http_port)
-      uaa_server_port = @port_provider.get_port(:uaa_server_port)
-
       @logs_path = sandbox_path('logs')
       @dns_db_path = sandbox_path('director-dns.sqlite')
       @task_logs_dir = sandbox_path('boshdir/tasks')
@@ -83,7 +80,7 @@ module Bosh::Dev::Sandbox
       setup_redis
       setup_nats
 
-      @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, uaa_http_port, @logger)
+      @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, uaa_port, @logger)
 
       director_config = sandbox_path(DirectorService::DIRECTOR_CONFIG)
       director_tmp_path = sandbox_path('boshdir')
@@ -98,7 +95,7 @@ module Bosh::Dev::Sandbox
 
       setup_database(db_opts)
 
-      @uaa = Uaa.new(uaa_http_port, uaa_server_port, base_log_path, @logger)
+      @uaa = Uaa.new(uaa_port, base_log_path, @logger)
 
       # Note that this is not the same object
       # as dummy cpi used inside bosh-director process
@@ -226,6 +223,10 @@ module Bosh::Dev::Sandbox
 
     def director_port
       @director_port ||= @port_provider.get_port(:nginx)
+    end
+
+    def uaa_port
+      @uaa_port ||= @port_provider.get_port(:uaa)
     end
 
     def director_ruby_port
