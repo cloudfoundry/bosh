@@ -45,7 +45,7 @@ module Bosh::Dev::VCloud
         vapp.power_off
       end
       delete_independent_disks(vapp)
-      if vapp.send(:entity_xml).remove_url
+      if vapp.send(:entity_xml).remove_link
         vapp.delete
         @logger.info("Vapp '#{@env['BOSH_VCLOUD_VAPP_NAME']}' was deleted during clean up.")
       else

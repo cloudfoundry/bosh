@@ -20,7 +20,8 @@ module Bosh::Dev::VCloud
 
       before { allow(client).to receive(:find_vdc_by_name).with('fake-vdc').and_return(vdc) }
       let(:vdc) { instance_double('VCloudSdk::VDC', find_vapp_by_name: vapp) }
-      let(:vapp) { instance_double('VCloudSdk::VApp', power_off: nil, delete: nil, vms: [], status: 'POWERED_ON') }
+      let(:entity_xml) {double('entity_xml', remove_link: 'thehref')}
+      let(:vapp) { instance_double('VCloudSdk::VApp', power_off: nil, delete: nil, vms: [], status: 'POWERED_ON', entity_xml: entity_xml) }
       let(:vm1) { instance_double('VCloudSdk::VM') }
       let(:vm2) { instance_double('VCloudSdk::VM') }
       let(:disk) { instance_double('VCloudSdk::Disk', name: 'fake-disk-name') }
