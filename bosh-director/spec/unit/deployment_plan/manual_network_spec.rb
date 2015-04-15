@@ -58,7 +58,8 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
           'name' => 'foo',
           'subnets' => [
               {
-                  'foz' => 'baz'
+                  'foz' => 'baz',
+                  'gateway' => '192.168.0.254',
               }
           ]
       })

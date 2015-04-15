@@ -11,25 +11,41 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
     it "should create a subnet spec" do
       subnet = subnet_spec(
         "range" => "192.168.0.0/24",
+        "gateway" => "192.168.0.254",
         "cloud_properties" => {"foo" => "bar"}
       )
 
       expect(subnet.range.ip).to eq("192.168.0.0")
       subnet.range.ip.size == 255
       expect(subnet.netmask).to eq("255.255.255.0")
-      expect(subnet.gateway).to eq(nil)
+      expect(subnet.gateway).to eq("192.168.0.254")
       expect(subnet.dns).to eq(nil)
     end
 
     it "should require a range" do
       expect {
-        subnet_spec("cloud_properties" => {"foo" => "bar"})
+        subnet_spec(
+          "cloud_properties" => {"foo" => "bar"},
+          "gateway" => "192.168.0.254",
+        )
+      }.to raise_error(BD::ValidationMissingField)
+    end
+
+    it "should require a gateway" do
+      expect {
+        subnet_spec(
+            "range" => "192.168.0.0/24",
+            "cloud_properties" => {"foo" => "bar"},
+        )
       }.to raise_error(BD::ValidationMissingField)
     end
 
     it "should require cloud properties" do
       expect {
-        subnet_spec("range" => "192.168.0.0/24")
+        subnet_spec(
+          "range" => "192.168.0.0/24",
+          "gateway" => "192.168.0.254",
+        )
       }.to raise_error(BD::ValidationMissingField)
     end
 
@@ -91,6 +107,7 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
       subnet = subnet_spec(
         "range" => "192.168.0.0/24",
         "dns" => %w(1.2.3.4 5.6.7.8),
+        "gateway" => "192.168.0.254",
         "cloud_properties" => {"foo" => "bar"}
       )
 
@@ -101,10 +118,11 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
       subnet = subnet_spec(
         "range" => "192.168.0.0/24", # 254 IPs
         "reserved" => "192.168.0.5 - 192.168.0.10", # 6 IPs
+        "gateway" => "192.168.0.254", # 1 IP
         "cloud_properties" => {"foo" => "bar"}
       )
 
-      expect(subnet.dynamic_ips_count).to eq(254 - 6)
+      expect(subnet.dynamic_ips_count).to eq(254 - 6 - 1)
       expect(subnet.static_ips_count).to eq(0)
     end
 
@@ -113,6 +131,7 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
         subnet_spec(
           "range" => "192.168.0.0/24",
           "reserved" => "192.167.0.5 - 192.168.0.10",
+          "gateway" => "192.168.0.254",
           "cloud_properties" => {"foo" => "bar"}
         )
       }.to raise_error(Bosh::Director::NetworkReservedIpOutOfRange,
@@ -124,10 +143,11 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
       subnet = subnet_spec(
         "range" => "192.168.0.0/24", # 254 IPs
         "static" => "192.168.0.5 - 192.168.0.10", # 6 IPs
+        "gateway" => "192.168.0.254", # 1 IP
         "cloud_properties" => {"foo" => "bar"}
       )
 
-      expect(subnet.dynamic_ips_count).to eq(254 - 6)
+      expect(subnet.dynamic_ips_count).to eq(254 - 6 - 1)
       expect(subnet.static_ips_count).to eq(6)
     end
 
@@ -136,6 +156,7 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
         subnet_spec(
           "range" => "192.168.0.0/24",
           "static" => "192.167.0.5 - 192.168.0.10",
+          "gateway" => "192.168.0.254",
           "cloud_properties" => {"foo" => "bar"}
         )
       }.to raise_error(Bosh::Director::NetworkStaticIpOutOfRange,
@@ -148,20 +169,25 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
     before(:each) do
       @subnet = subnet_spec(
         "range" => "192.168.0.0/24",
-        "cloud_properties" => {"foo" => "bar"}
+        "gateway" => "192.168.0.254",
+        "cloud_properties" => {"foo" => "bar"},
       )
     end
 
     it "should return false when the given range does not overlap" do
       other = subnet_spec(
-        {"range" => "192.168.1.0/24", "cloud_properties" => {"foo" => "bar"}}
+        "range" => "192.168.1.0/24",
+        "gateway" => "192.168.1.254",
+        "cloud_properties" => {"foo" => "bar"},
       )
       expect(@subnet.overlaps?(other)).to eq(false)
     end
 
     it "should return true when the given range overlaps" do
       other = subnet_spec(
-        {"range" => "192.168.0.128/28", "cloud_properties" => {"foo" => "bar"}}
+        "range" => "192.168.0.128/28",
+        "gateway" => "192.168.0.142",
+        "cloud_properties" => {"foo" => "bar"},
       )
       expect(@subnet.overlaps?(other)).to eq(true)
     end
@@ -172,6 +198,7 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
       @subnet = subnet_spec(
         "range" => "192.168.0.0/24",
         "static" => "192.168.0.5 - 192.168.0.10",
+        "gateway" => "192.168.0.254",
         "cloud_properties" => {"foo" => "bar"}
       )
     end
@@ -195,6 +222,7 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
       @subnet = subnet_spec(
         "range" => "192.168.0.0/24",
         "static" => "192.168.0.5 - 192.168.0.10",
+        "gateway" => "192.168.0.254",
         "cloud_properties" => {"foo" => "bar"}
       )
     end
@@ -220,6 +248,7 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
     it "should allocate an IP from the dynamic pool" do
       subnet = subnet_spec(
         "range" => "192.168.0.0/29",
+        "gateway" => "192.168.0.6",
         "cloud_properties" => {"foo" => "bar"}
       )
       ip = subnet.allocate_dynamic_ip
@@ -231,6 +260,7 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
     it "should allocate the least recently released IP from the dynamic pool" do
       subnet = subnet_spec(
         "range" => "192.168.0.0/29",
+        "gateway" => "192.168.0.6",
         "cloud_properties" => { "foo" => "bar" },
       )
 
@@ -254,7 +284,8 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
     it "should not allocate from the reserved pool" do
       subnet = subnet_spec(
         "range" => "192.168.0.0/29",
-        "reserved" => ["192.168.0.1 - 192.168.0.6"],
+        "reserved" => ["192.168.0.1 - 192.168.0.5"],
+        "gateway" => "192.168.0.6",
         "cloud_properties" => {"foo" => "bar"}
       )
       expect(subnet.allocate_dynamic_ip).to eq(nil)
@@ -263,7 +294,8 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
     it "should not allocate from the static pool" do
       subnet = subnet_spec(
         "range" => "192.168.0.0/29",
-        "static" => ["192.168.0.1 - 192.168.0.6"],
+        "static" => ["192.168.0.1 - 192.168.0.5"],
+        "gateway" => "192.168.0.6",
         "cloud_properties" => {"foo" => "bar"}
       )
       expect(subnet.allocate_dynamic_ip).to eq(nil)
@@ -272,9 +304,10 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
     it "should return nil if there are no more IPs left to allocate" do
       subnet = subnet_spec(
         "range" => "192.168.0.0/29",
+        "gateway" => "192.168.0.6",
         "cloud_properties" => {"foo" => "bar"}
       )
-      6.times { expect(subnet.allocate_dynamic_ip).not_to eq(nil) }
+      5.times { expect(subnet.allocate_dynamic_ip).not_to eq(nil) }
       expect(subnet.allocate_dynamic_ip).to eq(nil)
     end
   end

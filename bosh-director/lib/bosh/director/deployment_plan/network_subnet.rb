@@ -43,8 +43,7 @@ module Bosh::Director
         network_id = @range.network(:Objectify => true)
         broadcast = @range.broadcast(:Objectify => true)
 
-        gateway_property = safe_property(subnet_spec, "gateway",
-                                         :class => String, :optional => true)
+        gateway_property = safe_property(subnet_spec, "gateway", :class => String)
         if gateway_property
           @gateway = NetAddr::CIDR.create(gateway_property)
           unless @gateway.size == 1

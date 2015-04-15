@@ -106,6 +106,7 @@ module Bosh::Director::DeploymentPlan
                     {
                       'name' => 'fake-subnet',
                       'range' => '127.0.0.0/20',
+                      'gateway' => '127.0.0.2',
                       'cloud_properties' => {},
                       'static' => ['127.0.0.1'],
                     }
