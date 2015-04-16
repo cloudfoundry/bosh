@@ -27,11 +27,37 @@ module Bosh::AwsCloud
       validate_options
 
       @logger = Bosh::Clouds::Config.logger
+      aws_logger = @logger
+
+      @aws_params = {
+        access_key_id:     aws_properties['access_key_id'],
+        secret_access_key: aws_properties['secret_access_key'],
+        region:            aws_properties['region'],
+        ec2_endpoint:      aws_properties['ec2_endpoint'] || default_ec2_endpoint,
+        elb_endpoint:      aws_properties['elb_endpoint'] || default_elb_endpoint,
+        max_retries:       aws_properties['max_retries']  || DEFAULT_MAX_RETRIES,
+        logger:            aws_logger
+      }
+
+      %w(
+        http_read_timeout
+        http_wire_trace
+        proxy_uri
+        ssl_verify_peer
+        ssl_ca_file
+        ssl_ca_path
+      ).each do |k|
+        @aws_params[k.to_sym] = aws_properties[k] unless aws_properties[k].nil?
+      end
+
+      # AWS Ruby SDK is threadsafe but Ruby autoload isn't,
+      # so we need to trigger eager autoload while constructing CPI
+      AWS.eager_autoload!
 
       initialize_aws
       initialize_registry
 
-      elb = AWS::ELB.new
+      elb = AWS::ELB.new(access_key_id: @aws_params[:access_key_id], secret_access_key: @aws_params[:secret_access_key])
 
       @instance_manager = InstanceManager.new(region, registry, elb, az_selector, @logger)
 
@@ -512,33 +538,7 @@ module Bosh::AwsCloud
     end
 
     def initialize_aws
-      aws_logger = logger
-      aws_params = {
-          access_key_id:     aws_properties['access_key_id'],
-          secret_access_key: aws_properties['secret_access_key'],
-          region:            aws_properties['region'],
-          ec2_endpoint:      aws_properties['ec2_endpoint'] || default_ec2_endpoint,
-          elb_endpoint:      aws_properties['elb_endpoint'] || default_elb_endpoint,
-          max_retries:       aws_properties['max_retries']  || DEFAULT_MAX_RETRIES,
-          logger:            aws_logger
-      }
-
-      %w(
-        http_read_timeout
-        http_wire_trace
-        proxy_uri
-        ssl_verify_peer
-        ssl_ca_file
-        ssl_ca_path
-      ).each do |k|
-        aws_params[k.to_sym] = aws_properties[k] unless aws_properties[k].nil?
-      end
-
-      # AWS Ruby SDK is threadsafe but Ruby autoload isn't,
-      # so we need to trigger eager autoload while constructing CPI
-      AWS.eager_autoload!
-
-      @ec2 = AWS::EC2.new(aws_params)
+      @ec2 = AWS::EC2.new(@aws_params)
       @region = @ec2.regions[aws_region]
       @az_selector = AvailabilityZoneSelector.new(@region, aws_properties['default_availability_zone'])
     end
