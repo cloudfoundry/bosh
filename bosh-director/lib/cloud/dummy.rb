@@ -73,7 +73,7 @@ module Bosh
 
       def delete_vm(vm_name)
         agent_pid = vm_name.to_i
-        Process.kill('INT', agent_pid)
+        Process.kill('KILL', agent_pid)
       # rubocop:disable HandleExceptions
       rescue Errno::ESRCH
       # rubocop:enable HandleExceptions
