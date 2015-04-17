@@ -23,8 +23,9 @@ module Bosh::Director
     # Binds release DB record(s) to a plan
     # @return [void]
     def bind_releases
-      with_release_locks(@deployment_plan) do
-        @deployment_plan.releases.each do |release|
+      releases = @deployment_plan.releases
+      with_release_locks(releases.map(&:name)) do
+        releases.each do |release|
           release.bind_model
         end
       end

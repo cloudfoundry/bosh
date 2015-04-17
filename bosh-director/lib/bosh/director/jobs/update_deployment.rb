@@ -89,7 +89,7 @@ module Bosh::Director
             logger.info('Updating deployment')
             update
 
-            with_release_locks(@deployment_plan) do
+            with_release_locks(@deployment_plan.releases.map(&:name)) do
               deployment.db.transaction do
                 deployment.remove_all_release_versions
                 # Now we know that deployment has succeeded and can remove

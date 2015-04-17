@@ -50,11 +50,12 @@ module Bosh::Director
     end
 
     describe :with_release_lock do
-      it 'should support a release name' do
+      it 'creates a lock for the given name' do
         lock = double(:lock)
         allow(Lock).to receive(:new).with('lock:release:bar', { timeout: 5 }).
-          and_return(lock)
-        expect(lock).to receive(:lock).and_yield
+            and_return(lock)
+        expect(lock).to receive(:lock).ordered
+        expect(lock).to receive(:release).ordered
 
         called = false
         @test_instance.with_release_lock('bar', timeout: 5) do
@@ -65,21 +66,12 @@ module Bosh::Director
     end
 
     describe :with_release_locks do
-      it 'should support a deployment plan' do
-        deployment_plan = double(:deployment_plan)
-        release_a = double(:release_a)
-        allow(release_a).to receive(:name).and_return('a')
-        release_b = double(:release_b)
-        allow(release_b).to receive(:name).and_return('b')
-        allow(deployment_plan).to receive(:releases).and_return([release_a, release_b])
-
+      it 'creates locks for each release name in a consistent order' do
         lock_a = double(:lock_a)
-        allow(Lock).to receive(:new).with('lock:release:a', { timeout: 5 }).
-          and_return(lock_a)
+        allow(Lock).to receive(:new).with('lock:release:a', { timeout: 5 }).and_return(lock_a)
 
         lock_b = double(:lock_b)
-        allow(Lock).to receive(:new).with('lock:release:b', { timeout: 5 }).
-          and_return(lock_b)
+        allow(Lock).to receive(:new).with('lock:release:b', { timeout: 5 }).and_return(lock_b)
 
         expect(lock_a).to receive(:lock).ordered
         expect(lock_b).to receive(:lock).ordered
@@ -87,7 +79,7 @@ module Bosh::Director
         expect(lock_a).to receive(:release).ordered
 
         called = false
-        @test_instance.with_release_locks(deployment_plan, timeout: 5) do
+        @test_instance.with_release_locks(['b', 'a'], timeout: 5) do
           called = true
         end
         expect(called).to be(true)

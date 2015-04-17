@@ -247,7 +247,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
           expect(notifier).to receive(:send_start_event).ordered
           expect(job).to receive(:prepare).ordered
           expect(job).to receive(:update).ordered
-          expect(job).to receive(:with_release_locks).with(deployment_plan).and_yield.ordered
+          expect(job).to receive(:with_release_locks).with(%w(foo bar)).and_yield.ordered
           expect(notifier).to receive(:send_end_event).ordered
           expect(job).to receive(:update_stemcell_references).ordered
 
@@ -272,7 +272,7 @@ describe Bosh::Director::Jobs::UpdateDeployment do
           expect(notifier).to receive(:send_start_event).ordered
           expect(job).to receive(:prepare).ordered
           expect(job).to receive(:update).ordered
-          expect(job).to receive(:with_release_locks).with(deployment_plan).and_yield.ordered
+          expect(job).to receive(:with_release_locks).with(%w(foo bar)).and_yield.ordered
           expect(notifier).to receive(:send_end_event).ordered
           expect(job).to receive(:update_stemcell_references).ordered
 
