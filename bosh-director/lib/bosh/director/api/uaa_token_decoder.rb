@@ -1,4 +1,4 @@
-require 'uaa/info'
+require 'uaa'
 
 module Bosh
   module Director
@@ -23,7 +23,10 @@ module Bosh
         end
 
         def decode_token(auth_token)
-          return unless token_format_valid?(auth_token)
+          unless token_format_valid?(auth_token)
+            @logger.warn("Invalid authentication token: #{auth_token}")
+            raise BadToken.new("No bearer token provided")
+          end
 
           if symmetric_key
             decode_token_with_symmetric_key(auth_token)

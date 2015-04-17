@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'uaa'
 
 #
 # This supplants the config_old_spec.rb behavior. We are

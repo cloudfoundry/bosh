@@ -200,5 +200,25 @@ module Bosh::Director
         end
       end
     end
+
+    context 'given valid HTTP basic authentication credentials' do
+      subject { described_class.new(config_hash, 100) }
+
+      it 'raises' do
+        expect {
+          subject.decode_token('Basic YWRtaW46YWRtaW4=')
+        }.to raise_error(Bosh::Director::Api::UAATokenDecoder::BadToken)
+      end
+    end
+
+    context 'given empty token' do
+      subject { described_class.new(config_hash, 100) }
+
+      it 'raises' do
+        expect {
+          subject.decode_token('')
+        }.to raise_error(Bosh::Director::Api::UAATokenDecoder::BadToken)
+      end
+    end
   end
 end
