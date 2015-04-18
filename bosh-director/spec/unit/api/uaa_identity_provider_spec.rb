@@ -25,7 +25,7 @@ module Bosh::Director
       let(:auth_header) { 'bearer encodedtoken' }
       let(:request_env) { {'HTTP_AUTHORIZATION' => auth_header } }
       let(:audiences) { ['bosh_cli'] }
-      let(:token_info) { double(:token_info, ) }
+      let(:token_info) { double(:token_info) }
 
       before do
         expect(Bosh::Director::Api::UAATokenDecoder).to receive(:new).with(
