@@ -4,8 +4,39 @@ module Bosh::Director
   module DeploymentPlan
     describe Planner do
       subject { described_class.new('fake-dep-name') }
-
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
+      def minimal_manifest
+        {
+          'name' => 'minimal',
+          # 'director_uuid'  => 'deadbeef',
+
+          'releases' => [{
+              'name'    => 'appcloud',
+              'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
+            }],
+
+          'networks' => [{
+              'name' => 'a',
+              'subnets' => [],
+            }],
+
+          'compilation' => {
+            'workers' => 1,
+            'network' => 'a',
+            'cloud_properties' => {},
+          },
+
+          'resource_pools' => [],
+
+          'update' => {
+            'canaries'          => 2,
+            'canary_watch_time' => 4000,
+            'max_in_flight'     => 1,
+            'update_watch_time' => 20
+          }
+        }
+      end
+
 
       describe 'parse' do
         it 'parses disk_pools' do
@@ -25,38 +56,6 @@ module Bosh::Director
           expect(planner.disk_pool('disk_pool1').disk_size).to eq(3000)
           expect(planner.disk_pool('disk_pool2').disk_size).to eq(1000)
         end
-      end
-
-      def minimal_manifest
-        {
-          'name' => 'minimal',
-          # 'director_uuid'  => 'deadbeef',
-
-          'releases' => [{
-            'name'    => 'appcloud',
-            'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
-          }],
-
-          'networks' => [{
-            'name' => 'a',
-            'subnets' => [],
-          }],
-
-          'compilation' => {
-            'workers' => 1,
-            'network' => 'a',
-            'cloud_properties' => {},
-          },
-
-          'resource_pools' => [],
-
-          'update' => {
-            'canaries'          => 2,
-            'canary_watch_time' => 4000,
-            'max_in_flight'     => 1,
-            'update_watch_time' => 20
-          }
-        }
       end
 
       describe '#initialize' do
@@ -181,6 +180,97 @@ module Bosh::Director
 
           it 'only returns jobs that start on deploy' do
             expect(subject.jobs_starting_on_deploy).to eq([])
+          end
+        end
+      end
+
+      describe '#persist_updates!' do
+        subject { Planner.parse(manifest, {}, Config.event_log, Config.logger) }
+        let(:manifest) do
+          ManifestHelper.default_legacy_manifest(
+            'releases' => [
+              ManifestHelper.release('name' => 'same', 'version' => '123'),
+              ManifestHelper.release('name' => 'new', 'version' => '123'),
+            ]
+          )
+        end
+        before { Bosh::Director::App.new(Bosh::Director::Config.load_file(asset('test-director-config.yml'))) }
+
+        context 'given prior deployment with old release versions' do
+          let(:stale_release_version) do
+            release = Bosh::Director::Models::Release.create(name: 'stale')
+            Bosh::Director::Models::ReleaseVersion.create(release: release, version: '123')
+          end
+          let(:same_release_version) do
+            release = Bosh::Director::Models::Release.create(name: 'same')
+            Bosh::Director::Models::ReleaseVersion.create(release: release, version: '123')
+          end
+          let(:new_release_version) do
+            release = Bosh::Director::Models::Release.create(name: 'new')
+            Bosh::Director::Models::ReleaseVersion.create(release: release, version: '123')
+          end
+          let(:assembler) { Assembler.new subject }
+
+          before do
+            expect(new_release_version).to exist
+            old_deployment = Bosh::Director::Models::Deployment.create(name: manifest['name'])
+            old_deployment.add_release_version stale_release_version
+            old_deployment.add_release_version same_release_version
+            assembler.bind_deployment
+            assembler.bind_releases
+          end
+
+          it 'updates the release version on the deployment to be the ones from the provided manifest' do
+            deployment = subject.model
+
+            expect(deployment.release_versions).to include(stale_release_version)
+            subject.persist_updates!
+            expect(deployment.release_versions).to_not include(stale_release_version)
+            expect(deployment.release_versions).to include(same_release_version)
+            expect(deployment.release_versions).to include(new_release_version)
+          end
+
+          it 'locks the stale releases when removing them' do
+            expect(subject).to receive(:with_release_locks).with(['stale'])
+            subject.persist_updates!
+          end
+
+          it 'saves the deployment model' do
+            deployment = subject.model
+            deployment.name = 'new-deployment-name'
+            subject.persist_updates!
+            expect(deployment.reload.name).to eq('new-deployment-name')
+          end
+        end
+      end
+
+      describe '#update_stemcell_references!' do
+        subject { Planner.parse(manifest, {}, Config.event_log, Config.logger) }
+        let(:manifest) { ManifestHelper.default_legacy_manifest }
+        before { Bosh::Director::App.new(Bosh::Director::Config.load_file(asset('test-director-config.yml'))) }
+
+        context "when the stemcells associated with the resource pools have diverged from the stemcells associated with the planner" do
+          let(:stemcell_model_1) { Bosh::Director::Models::Stemcell.create(name: 'default', version: '1', cid: 'abc') }
+          let(:stemcell_model_2) { Bosh::Director::Models::Stemcell.create(name: 'stem2', version: '1.0', cid: 'def') }
+
+          before do
+            old_deployment = Bosh::Director::Models::Deployment.create(name: manifest['name'])
+            old_deployment.add_stemcell stemcell_model_1
+            old_deployment.add_stemcell stemcell_model_2
+            assembler = Assembler.new(subject)
+            assembler.bind_deployment
+            assembler.bind_stemcells
+          end
+
+          it 'it removes the given deployment from any stemcell it should not be associated with' do
+            deployment_model = subject.model
+            expect(stemcell_model_1.deployments).to include(deployment_model)
+            expect(stemcell_model_2.deployments).to include(deployment_model)
+
+            subject.update_stemcell_references!
+
+            expect(stemcell_model_1.reload.deployments).to include(deployment_model)
+            expect(stemcell_model_2.reload.deployments).to_not include(deployment_model)
           end
         end
       end
