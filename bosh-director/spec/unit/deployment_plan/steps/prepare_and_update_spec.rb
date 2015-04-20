@@ -54,8 +54,8 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'the new deployment manifest specifies 1 instance of a job with a static ip' do
-          let(:preparer) { Preparer.new(base_job, assembler) }
-          let(:updater) { Updater.new(base_job, event_log, resource_pools, assembler, deployment_plan, multi_job_updater) }
+          let(:prepare_step) { Steps::PrepareStep.new(base_job, assembler) }
+          let(:update_step) { Steps::UpdateStep.new(base_job, event_log, resource_pools, assembler, deployment_plan, multi_job_updater) }
 
           let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
           let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
@@ -151,8 +151,8 @@ module Bosh::Director::DeploymentPlan
             expect(cloud).to receive(:delete_vm).with(vm_model.cid).ordered
             expect(cloud).to receive(:create_vm).with(anything, stemcell.cid, anything, { 'fake-network' => hash_including('ip' => '127.0.0.1') }, anything, anything).ordered
 
-            preparer.prepare
-            updater.update
+            prepare_step.perform
+            update_step.perform
           end
         end
       end

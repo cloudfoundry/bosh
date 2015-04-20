@@ -16,8 +16,7 @@ module Bosh::Director
       def parse(manifest, cloud_config, options = {})
         @manifest = manifest
 
-        @job_states = safe_property(options, 'job_states',
-          :class => Hash, :default => {})
+        @job_states = safe_property(options, 'job_states', :class => Hash, :default => {})
 
         @deployment = Planner.new(parse_name, manifest, cloud_config, options)
 

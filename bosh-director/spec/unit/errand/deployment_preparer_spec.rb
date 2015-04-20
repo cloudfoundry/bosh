@@ -14,19 +14,19 @@ describe Bosh::Director::Errand::DeploymentPreparer do
         with(deployment).
         and_return(assembler)
 
-      preparer = instance_double('Bosh::Director::DeploymentPlan::Preparer')
-      expect(Bosh::Director::DeploymentPlan::Preparer).to receive(:new).
+      preparer = instance_double('Bosh::Director::DeploymentPlan::Steps::PrepareStep')
+      expect(Bosh::Director::DeploymentPlan::Steps::PrepareStep).to receive(:new).
         with(base_job, assembler).
         and_return(preparer)
 
-      expect(preparer).to receive(:prepare).with(no_args)
+      expect(preparer).to receive(:perform).with(no_args)
 
-      compiler = instance_double('Bosh::Director::PackageCompiler')
-      expect(Bosh::Director::PackageCompiler).to receive(:new).
+      compiler = instance_double('Bosh::Director::DeploymentPlan::Steps::PackageCompileStep')
+      expect(Bosh::Director::DeploymentPlan::Steps::PackageCompileStep).to receive(:new).
         with(deployment).
         and_return(compiler)
 
-      expect(compiler).to receive(:compile).with(no_args)
+      expect(compiler).to receive(:perform).with(no_args)
 
       subject.prepare_deployment
     end

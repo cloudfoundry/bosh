@@ -3,8 +3,8 @@ require 'bosh/director/deployment_plan/multi_job_updater'
 require 'bosh/director/job_updater'
 
 module Bosh::Director
-  describe DeploymentPlan::Updater do
-    subject { DeploymentPlan::Updater.new(base_job, event_log, resource_pools, assembler, deployment_plan, multi_job_updater) }
+  describe DeploymentPlan::Steps::UpdateStep do
+    subject { DeploymentPlan::Steps::UpdateStep.new(base_job, event_log, resource_pools, assembler, deployment_plan, multi_job_updater) }
     let(:base_job) { Jobs::BaseJob.new }
     let(:event_log) { instance_double('Bosh::Director::EventLog::Log', begin_stage: nil) }
     let(:resource_pools) { instance_double('Bosh::Director::DeploymentPlan::ResourcePools') }
@@ -21,7 +21,7 @@ module Bosh::Director
       allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(true)
     end
 
-    describe '#update' do
+    describe '#perform' do
 
       it 'runs deployment plan update stages in the correct order' do
         expect(assembler).to receive(:bind_dns).with(no_args).ordered
@@ -36,10 +36,10 @@ module Bosh::Director
         expect(resource_pools).to receive(:refill).with(no_args).ordered
         expect(deployment_plan).to receive(:persist_updates!).ordered
         expect(deployment_plan).to receive(:update_stemcell_references!).ordered
-        subject.update
+        subject.perform
       end
 
-      context 'when update fails' do
+      context 'when perform fails' do
         let(:some_error) { RuntimeError.new('oops') }
         before do
           allow(assembler).to receive(:bind_dns).with(no_args)
@@ -49,7 +49,7 @@ module Bosh::Director
         it 'still updates the stemcell references' do
           expect(deployment_plan).to receive(:update_stemcell_references!)
           expect{
-            subject.update
+            subject.perform
           }.to raise_error(some_error)
         end
       end

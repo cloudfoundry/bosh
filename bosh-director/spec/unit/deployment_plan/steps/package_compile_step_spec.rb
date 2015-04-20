@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe PackageCompiler do
+  describe DeploymentPlan::Steps::PackageCompileStep do
     let(:job) { double('job').as_null_object }
 
     let(:release_version_model) do
@@ -132,9 +132,9 @@ module Bosh::Director
           expect(@j_router).to receive(:use_compiled_package).with(cp2)
         end
 
-        compiler = PackageCompiler.new(@plan)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan)
 
-        compiler.compile
+        compiler.perform
         # For @stemcell_a we need to compile:
         # [p_dea, p_nginx, p_syslog, p_warden, p_common, p_ruby] = 6
         # For @stemcell_b:
@@ -153,7 +153,7 @@ module Bosh::Director
         prepare_samples
 
         allow(@plan).to receive(:jobs).and_return([@j_dea, @j_router])
-        compiler = PackageCompiler.new(@plan)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan)
 
         expect(@network).to receive(:reserve).at_least(@n_workers).times do |reservation|
           expect(reservation).to be_an_instance_of(NetworkReservation)
@@ -229,7 +229,7 @@ module Bosh::Director
         expect(@network).to receive(:release).at_least(@n_workers).times
         expect(@director_job).to receive(:task_checkpoint).once
 
-        compiler.compile
+        compiler.perform
         expect(compiler.compilations_performed).to eq(11)
 
         @package_set_a.each do |package|
@@ -279,10 +279,10 @@ module Bosh::Director
 
         allow(planner).to receive(:jobs).and_return([job])
 
-        compiler = PackageCompiler.new(planner)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(planner)
 
         expect {
-          compiler.compile
+          compiler.perform
         }.not_to raise_error
       end
     end
@@ -352,13 +352,13 @@ module Bosh::Director
         expect(@network).to receive(:release).at_most(@n_workers).times
         expect(@director_job).to receive(:task_checkpoint).once
 
-        compiler = PackageCompiler.new(@plan)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan)
 
         @package_set_a.each do |package|
           expect(compiler).to receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
         end
 
-        compiler.compile
+        compiler.perform
         expect(compiler.compilations_performed).to eq(6)
 
         @package_set_a.each do |package|
@@ -397,11 +397,11 @@ module Bosh::Director
 
         expect(@network).to receive(:release)
 
-        compiler = PackageCompiler.new(@plan)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan)
         allow(compiler).to receive(:with_compile_lock).and_yield
 
         expect {
-          compiler.compile
+          compiler.perform
         }.to raise_error(RuntimeError)
       end
     end
@@ -444,9 +444,9 @@ module Bosh::Director
           expect(@cloud).to receive(:delete_vm)
           expect(@network).to receive(:release)
 
-          compiler = PackageCompiler.new(@plan)
+          compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan)
           allow(compiler).to receive(:with_compile_lock).and_yield
-          expect { compiler.compile }.to raise_error(RpcTimeout)
+          expect { compiler.perform }.to raise_error(RpcTimeout)
         end
       end
 
@@ -467,7 +467,7 @@ module Bosh::Director
 
       task = CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key')
 
-      compiler = PackageCompiler.new(@plan)
+      compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan)
       fake_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
       allow(task).to receive(:find_compiled_package).and_return(fake_compiled_package)
 
@@ -481,7 +481,7 @@ module Bosh::Director
       let(:package) { Models::Package.make }
       let(:stemcell) { Models::Stemcell.make }
       let(:task) { CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key') }
-      let(:compiler) { PackageCompiler.new(@plan) }
+      let(:compiler) { DeploymentPlan::Steps::PackageCompileStep.new(@plan) }
       let(:cache_key) { 'cache key' }
 
       before do
