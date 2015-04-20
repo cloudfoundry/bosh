@@ -11,23 +11,7 @@ module Bosh::Director
         @multi_job_updater = multi_job_updater
       end
 
-
       def update
-        begin
-          @logger.info('Updating deployment')
-          assemble
-          update_jobs
-          @logger.info('Committing updates')
-          @deployment_plan.persist_updates!
-          @logger.info('Finished updating deployment')
-        ensure
-          @deployment_plan.update_stemcell_references!
-        end
-      end
-
-      private
-
-      def assemble
         @event_log.begin_stage('Preparing DNS', 1)
         @base_job.track_and_log('Binding DNS') do
           @assembler.bind_dns
@@ -50,9 +34,7 @@ module Bosh::Director
         @base_job.track_and_log('Binding configuration') do
           @assembler.bind_configuration
         end
-      end
 
-      def update_jobs
         @logger.info('Updating jobs')
         @multi_job_updater.run(
           @base_job,
