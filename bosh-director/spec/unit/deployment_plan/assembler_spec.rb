@@ -18,15 +18,15 @@ module Bosh::Director
       end
 
       it 'should bind releases' do
-        r1 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'r1')
-        r2 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'r2')
+        r1 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
+        r2 = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion')
 
         expect(deployment_plan).to receive(:releases).and_return([r1, r2])
 
         expect(r1).to receive(:bind_model)
         expect(r2).to receive(:bind_model)
 
-        expect(assembler).to receive(:with_release_locks).with(['r1', 'r2']).and_yield
+        expect(assembler).to receive(:with_release_locks).and_yield
         assembler.bind_releases
       end
 
