@@ -4,7 +4,7 @@ module Bosh::Cli
     include DependencyHelper
 
     attr_reader :release_name, :jobs, :packages, :version
-    attr_reader :skipped # Mostly for tests
+    attr_reader :skipped, :unpack_dir # Mostly for tests
 
     def initialize(tarball_path)
       @tarball_path = File.expand_path(tarball_path, Dir.pwd)
@@ -20,6 +20,13 @@ module Bosh::Cli
       @unpacked = $?.exitstatus == 0
     end
 
+    # Creates a new tarball from the current contents of @unpack_dir
+    def create_from_unpacked(target_path)
+      raise "Not unpacked yet!" unless @unpacked
+      `tar -C #{@unpack_dir} -pczf '#{File.expand_path(target_path)}' . 2>&1`
+      $?.exitstatus == 0
+    end
+
     def exists?
       File.exists?(@tarball_path) && File.readable?(@tarball_path)
     end
@@ -28,6 +35,35 @@ module Bosh::Cli
       return nil unless valid?
       unpack
       File.read(File.join(@unpack_dir, "release.MF"))
+    end
+
+    def replace_manifest(hash)
+      return nil unless valid?
+      unpack
+      write_yaml(hash, File.join(@unpack_dir, "release.MF"))
+    end
+
+    def job_tarball_path(name)
+      return nil unless valid?
+      unpack
+      File.join(@unpack_dir, 'jobs', "#{name}.tgz")
+    end
+
+    def package_tarball_path(name)
+      return nil unless valid?
+      unpack
+      File.join(@unpack_dir, 'packages', "#{name}.tgz")
+    end
+
+    def license_tarball_path
+      return nil unless valid?
+      unpack
+      l = Resources::License.new(@unpack_dir)
+      if l.files
+        l.files[0][0]
+      else
+        nil
+      end
     end
 
     def convert_to_old_format
@@ -95,10 +131,8 @@ module Bosh::Cli
     # and packages in place when we do validation. However for jobs and packages
     # that are present we still need to validate checksums
     def perform_validation(options = {})
-      # CLEANUP this syntax
-      allow_sparse = options.has_key?(:allow_sparse) ?
-          !!options[:allow_sparse] :
-          false
+      allow_sparse = options.fetch(:allow_sparse, false)
+      should_print_release_info = options.fetch(:print_release_info, true)
 
       step("File exists and readable",
            "Cannot find release file #{@tarball_path}", :fatal) do
@@ -252,7 +286,44 @@ module Bosh::Cli
         end
       end
 
-      print_info(manifest)
+      print_info(manifest) if should_print_release_info
+    end
+
+    class TarballArtifact
+      def initialize(info)
+        @name = info['name']
+        @version = info['version']
+      end
+
+      attr_reader :name, :version
+
+      def new_version?
+        false
+      end
+    end
+
+    def license
+      m = Psych.load(manifest)
+      license = m['license']
+      return nil if !license
+      license['name'] = 'license'
+      TarballArtifact.new(license)
+    end
+
+    def packages
+      m = Psych.load(manifest)
+      packages = m['packages'] || []
+      packages.map { |pkg| TarballArtifact.new(pkg) }
+    end
+
+    def jobs
+      m = Psych.load(manifest)
+      jobs = m['jobs'] || []
+      jobs.map { |job| TarballArtifact.new(job) }
+    end
+
+    def affected_jobs
+      []
     end
 
     def print_info(manifest)
