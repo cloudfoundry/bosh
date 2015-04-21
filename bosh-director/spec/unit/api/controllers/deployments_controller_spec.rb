@@ -419,8 +419,10 @@ module Bosh::Director
               Models::Deployment.make(
                 name: 'fake-dep-name',
                 manifest: "---\nmanifest: true",
+                cloud_config: cloud_config
               )
             end
+            let(:cloud_config) { Models::CloudConfig.create }
 
             before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
             let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
@@ -429,7 +431,7 @@ module Bosh::Director
 
             before do
               allow(DeploymentPlan::Planner).to receive(:parse).
-                with({'manifest' => true}, {}, event_log, logger).
+                with({'manifest' => true}, cloud_config, {}, event_log, logger).
                 and_return(deployment)
             end
             let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment') }

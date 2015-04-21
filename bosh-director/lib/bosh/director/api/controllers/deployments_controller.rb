@@ -294,7 +294,7 @@ module Bosh::Director
         deployment = @deployment_manager.find_by_name(params[:deployment_name])
 
         manifest = Psych.load(deployment.manifest)
-        deployment_plan = DeploymentPlan::Planner.parse(manifest, {}, Config.event_log, Config.logger)
+        deployment_plan = DeploymentPlan::Planner.parse(manifest, deployment.cloud_config, {}, Config.event_log, Config.logger)
 
         errands = deployment_plan.jobs.select(&:can_run_as_errand?)
 

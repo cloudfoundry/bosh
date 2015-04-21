@@ -52,8 +52,7 @@ module Bosh::Director
     describe :with_release_lock do
       it 'creates a lock for the given name' do
         lock = double(:lock)
-        allow(Lock).to receive(:new).with('lock:release:bar', { timeout: 5 }).
-            and_return(lock)
+        allow(Lock).to receive(:new).with('lock:release:bar', { timeout: 5 }).and_return(lock)
         expect(lock).to receive(:lock).ordered
         expect(lock).to receive(:release).ordered
 

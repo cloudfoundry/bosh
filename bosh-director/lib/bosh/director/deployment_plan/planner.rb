@@ -6,6 +6,7 @@ module Bosh::Director
   # from the deployment manifest and the running environment.
   module DeploymentPlan
     class Planner
+      include LockHelper
       include DnsHelper
       include ValidationHelper
 
@@ -53,16 +54,18 @@ module Bosh::Director
       # @param [Logger]
       #   logger Log for director logging
       # @return [Bosh::Director::DeploymentPlan::Planner]
-      def self.parse(manifest, options, event_log, logger)
+      def self.parse(manifest, cloud_config, options, event_log, logger)
         parser = DeploymentSpecParser.new(event_log, logger)
-        parser.parse(manifest, options)
+        parser.parse(manifest, cloud_config, options)
       end
 
-      def initialize(name, options = {})
+      def initialize(name, manifest_text, cloud_config, options = {})
         raise ArgumentError, 'name must not be nil' unless name
         @name = name
-        @model = nil
+        @manifest_text = manifest_text
+        @cloud_config = cloud_config
 
+        @model = nil
         @properties = {}
         @releases = {}
         @networks = {}
@@ -259,6 +262,29 @@ module Bosh::Director
 
       def rename_in_progress?
         @job_rename['old_name'] && @job_rename['new_name']
+      end
+
+      def persist_updates!
+        #prior updates may have had release versions that we no longer use.
+        #remove the references to these stale releases.
+        stale_release_versions = (model.release_versions - releases.map(&:model))
+        stale_release_names = stale_release_versions.map {|version_model| version_model.release.name}
+        with_release_locks(stale_release_names) do
+          stale_release_versions.each do |release_version|
+            model.remove_release_version(release_version)
+          end
+        end
+
+        model.manifest = Psych.dump(@manifest_text)
+        model.cloud_config = @cloud_config
+        model.save
+      end
+
+      def update_stemcell_references!
+        current_stemcell_models = resource_pools.map { |pool| pool.stemcell.model }
+        model.stemcells.each do |deployment_stemcell|
+          deployment_stemcell.remove_deployment(model) unless current_stemcell_models.include?(deployment_stemcell)
+        end
       end
     end
   end

@@ -24,7 +24,7 @@ module Bosh::Director
     def perform
       deployment_model = @deployment_manager.find_by_name(@deployment_name)
       manifest = Psych.load(deployment_model.manifest)
-      deployment = DeploymentPlan::Planner.parse(manifest, {}, event_log, logger)
+      deployment = DeploymentPlan::Planner.parse(manifest, deployment_model.cloud_config, {}, event_log, logger)
 
       job = deployment.job(@errand_name)
       if job.nil?

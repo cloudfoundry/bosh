@@ -62,8 +62,9 @@ module Bosh::Director::DeploymentPlan
           let(:resource_pools) { ResourcePools.new(event_log, rp_updaters) }
           let(:rp_updaters) { deployment_plan.resource_pools.map { |resource_pool| Bosh::Director::ResourcePoolUpdater.new(resource_pool) } }
           let(:assembler) { Assembler.new(deployment_plan) }
+          let(:cloud_config) { Bosh::Director::Models::CloudConfig.create }
 
-          let(:deployment_plan) { Planner.parse(deployment_manifest, {}, event_log, logger) }
+          let(:deployment_plan) { Planner.parse(deployment_manifest, cloud_config, {}, event_log, logger) }
           let(:deployment_manifest) do
             {
               'name' => 'fake-deployment',

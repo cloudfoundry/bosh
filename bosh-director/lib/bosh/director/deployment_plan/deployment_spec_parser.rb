@@ -13,13 +13,13 @@ module Bosh::Director
 
       # @param [Hash] manifest Raw deployment manifest
       # @return [DeploymentPlan::Planner] Deployment as build from deployment_spec
-      def parse(manifest, options = {})
+      def parse(manifest, cloud_config, options = {})
         @manifest = manifest
 
         @job_states = safe_property(options, 'job_states',
           :class => Hash, :default => {})
 
-        @deployment = Planner.new(parse_name, options)
+        @deployment = Planner.new(parse_name, manifest, cloud_config, options)
 
         parse_properties
         parse_releases

@@ -19,6 +19,7 @@ module Bosh::Director
           Models::Deployment.make(
             name: 'fake-dep-name',
             manifest: "---\nmanifest: true",
+            cloud_config: cloud_config
           )
         end
 
@@ -29,9 +30,10 @@ module Bosh::Director
 
         before do
           allow(DeploymentPlan::Planner).to receive(:parse).
-            with({'manifest' => true}, {}, event_log, logger).
+            with({'manifest' => true}, cloud_config, {}, event_log, logger).
             and_return(deployment)
         end
+        let(:cloud_config) { Models::CloudConfig.create }
         let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment') }
 
         context 'when job representing an errand exists' do
