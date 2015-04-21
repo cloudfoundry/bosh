@@ -39,7 +39,6 @@ module Bosh::Director
         }
       end
 
-
       describe 'parse' do
         it 'parses disk_pools' do
           manifest = minimal_manifest
@@ -196,7 +195,10 @@ module Bosh::Director
             ]
           )
         end
-        before { Bosh::Director::App.new(Bosh::Director::Config.load_file(asset('test-director-config.yml'))) }
+
+        before do
+          setup_global_config_and_stubbing
+        end
 
         context 'given prior deployment with old release versions' do
           let(:stale_release_version) do
@@ -249,7 +251,9 @@ module Bosh::Director
       describe '#update_stemcell_references!' do
         subject { Planner.parse(manifest, cloud_config,  {}, Config.event_log, Config.logger) }
         let(:manifest) { ManifestHelper.default_legacy_manifest }
-        before { Bosh::Director::App.new(Bosh::Director::Config.load_file(asset('test-director-config.yml'))) }
+        before do
+          setup_global_config_and_stubbing
+        end
 
         context "when the stemcells associated with the resource pools have diverged from the stemcells associated with the planner" do
           let(:stemcell_model_1) { Bosh::Director::Models::Stemcell.create(name: 'default', version: '1', cid: 'abc') }
@@ -275,6 +279,11 @@ module Bosh::Director
             expect(stemcell_model_2.reload.deployments).to_not include(deployment_model)
           end
         end
+      end
+
+      def setup_global_config_and_stubbing
+        Bosh::Director::App.new(Bosh::Director::Config.load_file(asset('test-director-config.yml')))
+        allow(Bosh::Director::Config).to receive(:cloud) { instance_double(Bosh::Cloud) }
       end
     end
   end

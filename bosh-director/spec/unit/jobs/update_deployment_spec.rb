@@ -11,6 +11,7 @@ module Bosh::Director::Jobs
     let(:manifest_content) { Psych.dump ManifestHelper.default_legacy_manifest }
 
     before do
+      allow(Bosh::Director::Config).to receive(:cloud) { instance_double(Bosh::Cloud) }
       Bosh::Director::App.new(config)
     end
 
