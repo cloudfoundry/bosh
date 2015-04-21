@@ -721,7 +721,8 @@ describe Bosh::Cli::Client::Director do
 
       expect(@director).to receive(:perform_http_request).
         with(:get, 'https://127.0.0.1:8080/stuff', 'payload', 'h1' => 'a',
-             'h2'                                                  => 'b', 'Content-Type' => 'app/zb').
+             'h2'                                                  => 'b',
+             'Content-Type' => 'app/zb', 'Host'=>'target.example.com').
         and_return(mock_response)
 
       expect(@director.send(:request, :get, '/stuff', 'app/zb', 'payload',
