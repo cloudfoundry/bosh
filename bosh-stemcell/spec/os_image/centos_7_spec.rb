@@ -75,7 +75,7 @@ describe 'CentOS 7 OS image', os_image: true do
     end
 
     describe file('/usr/sbin/ifconfig') do
-    	it { should be_executable }
+      it { should be_executable }
     end
   end
 

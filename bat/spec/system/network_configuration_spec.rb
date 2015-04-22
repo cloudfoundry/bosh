@@ -86,7 +86,7 @@ describe 'network configuration' do
       expect(bosh("deployment #{deployment.to_path}")).to succeed
       expect(bosh('deploy')).to succeed
 
-      expect(ssh(public_ip, 'vcap', '/sbin/ifconfig', ssh_options)).to include(second_static_ip)
+      expect(ssh(public_ip, 'vcap', 'ifconfig', ssh_options)).to include(second_static_ip)
     end
 
     it 'deploys multiple manual networks' do
@@ -99,8 +99,8 @@ describe 'network configuration' do
       expect(bosh("deployment #{deployment.to_path}")).to succeed
       expect(bosh('deploy')).to succeed
 
-      expect(ssh(public_ip, 'vcap', '/sbin/ifconfig', ssh_options)).to include(static_ips[0])
-      expect(ssh(public_ip, 'vcap', '/sbin/ifconfig', ssh_options)).to include(static_ips[1])
+      expect(ssh(public_ip, 'vcap', 'ifconfig', ssh_options)).to include(static_ips[0])
+      expect(ssh(public_ip, 'vcap', 'ifconfig', ssh_options)).to include(static_ips[1])
     end
   end
 end
