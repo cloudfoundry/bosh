@@ -1,3 +1,36 @@
+## 2941
+
+New Features:
+
+  * cpi: aws: Light stemcells can be booted in all regions [8d21386]
+
+Improvements:
+
+  * stemcell: Bump OS images [5b7e612]
+        - reduce daily and weekly cron load
+        - randomize cron start times to reduce congestion
+        - remove unnecessary packages to make OS image smaller
+  * director: Made gateway a mandatory param for manual network subnets [1145448]
+
+## 2922
+
+New Features:
+
+  * cli: Ignore non-existent deployment in `delete deployment` cmd
+        to make CLI automation easier [dd6801e]
+  * cli: Add cloud config into to 'bosh deployments' output
+        to know if deployment is using latest cloud config [bcf1d4d]
+
+Improvements:
+
+  * stemcell: ubuntu: Do not configure eth0 since the Agent
+        should configure networking during its start up [e481b4a]
+  * director: Flush DNS cache after modifying DNS records [2137b55]
+  * stemcell: Change rake tasks to start producting CentOS 7 stemcells [e5bceba]
+  * agent: Bump agent [752ff10]
+        - set permissions on config files
+        - more changes to network bootstrapping
+
 ## 2915
 
 New Features:
