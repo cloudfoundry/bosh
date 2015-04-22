@@ -28,7 +28,7 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
 
       # Include other jobs in the deployment
       manifest_hash['resource_pools'].first['size'] = 3
@@ -202,7 +202,7 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
 
     context 'when the number of dynamic IPs is equal to the total number of vms' do
       let(:manifest_hash) do
-        manifest_hash = Bosh::Spec::Deployments.test_release_manifest.merge({
+        manifest_hash = Bosh::Spec::Deployments.legacy_test_release_manifest.merge({
           'compilation' => {
             'workers' => 1,
             'network' => 'fake-network',
@@ -301,7 +301,7 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
   end
 
   def manifest_with_errand
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
 
     manifest_hash['jobs'].first['instances'] = 1
     manifest_hash['jobs'] << {

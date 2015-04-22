@@ -5,7 +5,7 @@ describe 'package dependencies', type: :integration do
   with_reset_sandbox_before_each
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     manifest_hash['releases'].first['version'] = 'latest'
     manifest_hash['resource_pools'].first.delete('size')
     manifest_hash['jobs'] = [

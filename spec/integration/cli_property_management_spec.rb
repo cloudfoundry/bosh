@@ -4,7 +4,7 @@ describe 'cli: property management', type: :integration do
   with_reset_sandbox_before_each
 
   it 'can get/set/unset deployment properties' do
-    manifest = Bosh::Spec::Deployments.simple_manifest
+    manifest = Bosh::Spec::Deployments.legacy_simple_manifest
     manifest['jobs'] = []
     deploy_simple(manifest_hash: manifest)
 

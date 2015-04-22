@@ -45,7 +45,7 @@ describe 'delete release', type: :integration do
 
     bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
-    deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.simple_manifest)
+    deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.legacy_simple_manifest)
     bosh_runner.run("deployment #{deployment_manifest.path}")
 
     bosh_runner.run('deploy')

@@ -30,7 +30,7 @@ describe 'collocating templates from multiple releases', type: :integration do
       bosh_runner.run("upload release #{spec_asset('dummy2-release.tgz')}")
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest.merge(manifest)
+      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest.merge(manifest)
       deployment_manifest = yaml_file('simple', manifest_hash)
       bosh_runner.run("deployment #{deployment_manifest.path}")
       bosh_runner.run("deploy")
@@ -64,7 +64,7 @@ describe 'collocating templates from multiple releases', type: :integration do
       bosh_runner.run("upload release #{spec_asset('dummy2-release.tgz')}")
       bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest.merge(manifest)
+      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest.merge(manifest)
       deployment_manifest = yaml_file('simple', manifest_hash)
       bosh_runner.run("deployment #{deployment_manifest.path}")
 

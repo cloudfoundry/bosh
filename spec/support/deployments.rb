@@ -2,6 +2,54 @@ module Bosh::Spec
   class Deployments
     # This is a minimal manifest that deploys successfully.
     # It doesn't have any jobs, so it's not very realistic though
+    def self.legacy_minimal_manifest
+      minimal_manifest.merge(minimal_cloud_config)
+    end
+
+    def self.minimal_cloud_config
+      {
+        'networks' => [{
+            'name' => 'a',
+            'subnets' => [],
+          }],
+
+        'compilation' => {
+          'workers' => 1,
+          'network' => 'a',
+          'cloud_properties' => {},
+        },
+
+        'resource_pools' => [],
+      }
+    end
+
+    def self.simple_cloud_config
+      minimal_cloud_config.merge({
+          'networks' => [{
+              'name' => 'a',
+              'subnets' => [{
+                  'range' => '192.168.1.0/24',
+                  'gateway' => '192.168.1.1',
+                  'dns' => ['192.168.1.1', '192.168.1.2'],
+                  'static' => ['192.168.1.10'],
+                  'reserved' => [],
+                  'cloud_properties' => {},
+                }],
+            }],
+
+          'resource_pools' => [{
+              'name' => 'a',
+              'size' => 3,
+              'cloud_properties' => {},
+              'network' => 'a',
+              'stemcell' => {
+                'name' => 'ubuntu-stemcell',
+                'version' => '1',
+              },
+            }]
+        })
+    end
+
     def self.minimal_manifest
       {
         'name' => 'minimal',
@@ -12,19 +60,6 @@ module Bosh::Spec
           'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
         }],
 
-        'networks' => [{
-          'name' => 'a',
-          'subnets' => [],
-        }],
-
-        'compilation' => {
-          'workers' => 1,
-          'network' => 'a',
-          'cloud_properties' => {},
-        },
-
-        'resource_pools' => [],
-
         'update' => {
           'canaries'          => 2,
           'canary_watch_time' => 4000,
@@ -32,6 +67,17 @@ module Bosh::Spec
           'update_watch_time' => 20
         }
       }
+    end
+
+    def self.legacy_test_release_manifest
+      legacy_minimal_manifest.merge(
+        'name' => 'simple',
+
+        'releases' => [{
+          'name'    => 'bosh-release',
+          'version' => '0.1-dev',
+        }]
+      )
     end
 
     def self.test_release_manifest
@@ -45,31 +91,12 @@ module Bosh::Spec
       )
     end
 
+    def self.legacy_simple_manifest
+      simple_manifest.merge(simple_cloud_config)
+    end
+
     def self.simple_manifest
       test_release_manifest.merge({
-        'networks' => [{
-          'name'    => 'a',
-          'subnets' => [{
-            'range'    => '192.168.1.0/24',
-            'gateway'  => '192.168.1.1',
-            'dns'      => ['192.168.1.1', '192.168.1.2'],
-            'static'   => ['192.168.1.10'],
-            'reserved' => [],
-            'cloud_properties' => {},
-          }],
-        }],
-
-        'resource_pools' => [{
-          'name' => 'a',
-          'size' => 3,
-          'cloud_properties' => {},
-          'network'   => 'a',
-          'stemcell'  => {
-            'name'    => 'ubuntu-stemcell',
-            'version' => '1',
-          },
-        }],
-
         'jobs' => [{
           'name'          => 'foobar',
           'template'      => 'foobar',

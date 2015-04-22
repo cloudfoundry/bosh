@@ -16,7 +16,7 @@ describe 'cli: package compilation', type: :integration do
     end
 
     deployment_manifest = yaml_file(
-        'simple_manifest', Bosh::Spec::Deployments.simple_manifest)
+        'simple_manifest', Bosh::Spec::Deployments.legacy_simple_manifest)
 
     target_and_login
     bosh_runner.run("deployment #{deployment_manifest.path}")
@@ -43,7 +43,7 @@ describe 'cli: package compilation', type: :integration do
   end
 
   it 'sends only immediate dependancies to the agent for each package compilation task' do
-    manifest = Bosh::Spec::Deployments.simple_manifest
+    manifest = Bosh::Spec::Deployments.legacy_simple_manifest
     manifest['jobs'][0]['template'] = ['foobar', 'goobaz']
     manifest['jobs'][0]['instances'] = 1
     manifest['resource_pools'][0]['size'] = 1
@@ -100,7 +100,7 @@ describe 'cli: package compilation', type: :integration do
   end
 
   it 'returns truncated output' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     manifest_hash['compilation']['workers'] = 1
     manifest_hash['jobs'][0]['template'] = 'fails_with_too_much_output'
     manifest_hash['jobs'][0]['instances'] = 1

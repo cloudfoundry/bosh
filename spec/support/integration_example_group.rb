@@ -67,7 +67,7 @@ module IntegrationExampleGroup
   end
 
   def set_deployment(options)
-    manifest_hash = options.fetch(:manifest_hash, Bosh::Spec::Deployments.simple_manifest)
+    manifest_hash = options.fetch(:manifest_hash, Bosh::Spec::Deployments.legacy_simple_manifest)
 
     # Hold reference to the tempfile so that it stays around
     # until the end of tests or next deploy.

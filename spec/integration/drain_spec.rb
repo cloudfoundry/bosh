@@ -5,7 +5,7 @@ describe 'drain', type: :integration do
     with_reset_sandbox_before_all
 
     before(:all) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
       manifest_hash['releases'].first['version'] = 'latest'
       manifest_hash['jobs'][0]['instances'] = 1
       manifest_hash['resource_pools'][0]['size'] = 1
@@ -33,7 +33,7 @@ describe 'drain', type: :integration do
     with_reset_sandbox_before_all
 
     before(:all) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
       manifest_hash['releases'].first['version'] = 'latest'
       manifest_hash['jobs'][0]['instances'] = 1
       manifest_hash['resource_pools'][0]['size'] = 1

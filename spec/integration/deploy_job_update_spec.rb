@@ -4,7 +4,7 @@ describe 'deploy job update', type: :integration do
   with_reset_sandbox_before_each
 
   it 'updates a job with multiple instances in parallel and obeys max_in_flight' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     manifest_hash['update']['canaries'] = 0
     manifest_hash['update']['max_in_flight'] = 2
     manifest_hash['properties'] = { 'test_property' => 2 }
@@ -19,7 +19,7 @@ describe 'deploy job update', type: :integration do
   it 'redacts manifest diff values when requested' do
     deploy_simple
 
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     manifest_hash['update']['canary_watch_time'] = 0
     manifest_hash['jobs'][0]['instances'] = 2
     manifest_hash['resource_pools'][0]['size'] = 2
@@ -38,7 +38,7 @@ describe 'deploy job update', type: :integration do
 
     director.vm('foobar/0').fail_job
 
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     manifest_hash['update']['canary_watch_time'] = 0
     manifest_hash['jobs'][0]['instances'] = 2
     manifest_hash['resource_pools'][0]['size'] = 2

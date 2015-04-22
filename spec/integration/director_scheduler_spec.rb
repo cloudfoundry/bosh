@@ -21,7 +21,7 @@ describe 'director_scheduler', type: :integration do
     runner.run('upload release')
     runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
-    deployment_hash = Bosh::Spec::Deployments.simple_manifest
+    deployment_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     deployment_hash['jobs'][0]['persistent_disk'] = 20480
     deployment_manifest = yaml_file('simple', deployment_hash)
     runner.run("deployment #{deployment_manifest.path}")

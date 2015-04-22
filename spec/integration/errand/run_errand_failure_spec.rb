@@ -8,7 +8,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
     with_tmp_dir_before_all
 
     before(:all) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
 
       # Include other jobs in the deployment
       manifest_hash['jobs'].first['instances'] = 1
@@ -115,7 +115,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
 
       # Mark foobar as an errand even though it does not have bin/run
       manifest_hash['jobs'].first['lifecycle'] = 'errand'
@@ -155,7 +155,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
 
       # Errand with sufficient resources
       manifest_hash['jobs'] << {

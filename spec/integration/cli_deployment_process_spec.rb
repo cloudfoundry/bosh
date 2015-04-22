@@ -14,7 +14,7 @@ describe 'cli: deployment process', type: :integration do
       parse_release_tarball_path(output)
     end
 
-    deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.simple_manifest)
+    deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.legacy_simple_manifest)
     expect(File).to exist(release_filename)
     expect(File).to exist(deployment_manifest.path)
 
@@ -32,7 +32,7 @@ describe 'cli: deployment process', type: :integration do
     context 'given two deployments from one release' do
       it 'is successful' do
         release_filename = spec_asset('valid_release.tgz')
-        minimal_manifest = Bosh::Spec::Deployments.minimal_manifest
+        minimal_manifest = Bosh::Spec::Deployments.legacy_minimal_manifest
         deployment_manifest = yaml_file('minimal', minimal_manifest)
 
         target_and_login
@@ -66,7 +66,7 @@ describe 'cli: deployment process', type: :integration do
   describe 'bosh deployments' do
     it 'lists deployment details' do
       release_filename = spec_asset('valid_release.tgz')
-      deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.minimal_manifest)
+      deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.legacy_minimal_manifest)
 
       Dir.mktmpdir do |tmpdir|
         cloud_config_path = File.join(tmpdir, 'cloud_config.yml')
@@ -99,7 +99,7 @@ Deployments total: 1
   describe 'bosh delete deployment' do
     it 'deletes an existing deployment' do
       release_filename = spec_asset('valid_release.tgz')
-      deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.minimal_manifest)
+      deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.legacy_minimal_manifest)
 
       target_and_login
       bosh_runner.run("deployment #{deployment_manifest.path}")

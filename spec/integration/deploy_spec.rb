@@ -4,7 +4,7 @@ describe 'deploy', type: :integration do
   with_reset_sandbox_before_each
 
   it 'allows removing deployed jobs and adding new jobs at the same time' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     manifest_hash['jobs'].first['name'] = 'fake-name1'
     deploy_simple(manifest_hash: manifest_hash)
     expect_running_vms(%w(fake-name1/0 fake-name1/1 fake-name1/2))
@@ -19,7 +19,7 @@ describe 'deploy', type: :integration do
   end
 
   it 'supports scaling down and then scaling up' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
 
     manifest_hash['resource_pools'].first['size'] = 3
     manifest_hash['jobs'].first['instances'] = 3
@@ -40,7 +40,7 @@ describe 'deploy', type: :integration do
   end
 
   it 'supports fixed size resource pools' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
 
     manifest_hash['resource_pools'].first['size'] = 3
     manifest_hash['jobs'].first['instances'] = 3
@@ -65,7 +65,7 @@ describe 'deploy', type: :integration do
   end
 
   it 'supports dynamically sized resource pools' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
 
     manifest_hash['resource_pools'].first.delete('size')
     manifest_hash['jobs'].first['instances'] = 3
@@ -89,7 +89,7 @@ describe 'deploy', type: :integration do
   end
 
   it 'deletes extra vms when switching from fixed-size to dynamically-sized resource pools' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
 
     manifest_hash['resource_pools'].first['size'] = 2
     manifest_hash['jobs'].first['instances'] = 1

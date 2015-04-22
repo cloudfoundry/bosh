@@ -8,7 +8,7 @@ describe 'health_monitor: 1', type: :integration do
 
   # ~50s
   it 'HM can be queried for stats' do
-    deployment_hash = Bosh::Spec::Deployments.simple_manifest
+    deployment_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     deployment_hash['jobs'][0]['instances'] = 1
     deploy_simple(manifest_hash: deployment_hash)
 
@@ -44,7 +44,7 @@ describe 'health_monitor: 1', type: :integration do
   it 'only resurrects stateless nodes that are configured to be resurrected' do
     skip 'The interaction of a resurrected node and a non-resurrected node are important but broken. See #69728124'
 
-    deployment_hash = Bosh::Spec::Deployments.simple_manifest
+    deployment_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     deployment_hash['jobs'][0]['instances'] = 2
     deploy_simple(manifest_hash: deployment_hash)
 
@@ -72,7 +72,7 @@ describe 'health_monitor: 1', type: :integration do
     # Turn resurrector off
     current_sandbox.reconfigure_health_monitor('health_monitor_without_resurrector.yml.erb')
 
-    deployment_hash = Bosh::Spec::Deployments.simple_manifest
+    deployment_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     deployment_hash['jobs'][0]['instances'] = 2
     deploy_simple(manifest_hash: deployment_hash)
 
@@ -91,7 +91,7 @@ describe 'health_monitor: 1', type: :integration do
 
   # ~50s
   it 'notifies health monitor about job failures' do
-    deployment_hash = Bosh::Spec::Deployments.simple_manifest
+    deployment_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     deployment_hash['jobs'][0]['instances'] = 1
     deploy_simple(manifest_hash: deployment_hash)
 

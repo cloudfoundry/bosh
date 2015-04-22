@@ -4,7 +4,7 @@ describe 'deploy job template', type: :integration do
   with_reset_sandbox_before_each
 
   it 're-evaluates job templates with new manifest job properties' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     manifest_hash['properties'] = { 'test_property' => 1 }
     deploy_simple(manifest_hash: manifest_hash)
 
@@ -21,7 +21,7 @@ describe 'deploy job template', type: :integration do
   end
 
   it 're-evaluates job templates with new dynamic network configuration' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     manifest_hash['networks'].first['type'] = 'dynamic'
     manifest_hash['networks'].first['cloud_properties'] = {}
     manifest_hash['networks'].first.delete('subnets')
@@ -52,7 +52,7 @@ describe 'deploy job template', type: :integration do
     after { current_sandbox.health_monitor_process.stop }
 
     it 'creates alerts to mark the start and end of an update deployment' do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
       deploy_simple(manifest_hash: manifest_hash)
 
       waiter.wait(60) do

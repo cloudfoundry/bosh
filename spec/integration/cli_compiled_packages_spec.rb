@@ -59,7 +59,7 @@ describe 'cli: compiled_packages', type: :integration do
   it 'allows the user to import compiled packages after a previously successful import' do
     target_and_login
 
-    deployment_manifest = yaml_file('simple_manifest', Bosh::Spec::Deployments.simple_manifest)
+    deployment_manifest = yaml_file('simple_manifest', Bosh::Spec::Deployments.legacy_simple_manifest)
     bosh_runner.run("deployment #{deployment_manifest.path}")
     bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
     bosh_runner.run("upload release #{create_release}")

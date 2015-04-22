@@ -4,7 +4,7 @@ describe 'network configuration', type: :integration do
   with_reset_sandbox_before_each
 
   it 'reserves first available dynamic ip' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     manifest_hash['networks'].first['subnets'][0] = {
       'range'    => '192.168.1.0/24',
       'gateway'  => '192.168.1.1',
@@ -31,7 +31,7 @@ describe 'network configuration', type: :integration do
   end
 
   it 'creates new VM if existing VM cannot be reconfigured to desired network settings' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     manifest_hash['networks'].first['subnets'].first['static'] = %w(192.168.1.100)
     manifest_hash['resource_pools'].first['size'] = 1
     manifest_hash['jobs'].first['instances'] = 1
@@ -49,7 +49,7 @@ describe 'network configuration', type: :integration do
   end
 
   it 'preserves existing network reservations on a second deployment' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
     # For routed subnets larger than /31 or /32,
     # the number of available host addresses is usually reduced by two,
     # namely the largest address, which is reserved as the broadcast address,
