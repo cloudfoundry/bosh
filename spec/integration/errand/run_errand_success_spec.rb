@@ -27,133 +27,100 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
   context 'when multiple errands exist in the deployment manifest' do
     with_reset_sandbox_before_each
 
-    let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
+    let(:manifest_hash) { Bosh::Spec::Deployments.legacy_manifest_with_errand }
 
-      # Include other jobs in the deployment
-      manifest_hash['resource_pools'].first['size'] = 3
-      manifest_hash['jobs'].first['instances'] = 1
-
-      # First errand
-      manifest_hash['jobs'] << {
-        'name'          => 'errand1-name',
-        'template'      => 'errand1',
-        'lifecycle'     => 'errand',
+    let(:errand_requiring_2_instances) do
+      {
+        'name' => 'second-errand-name',
+        'template' => 'errand1',
+        'lifecycle' => 'errand',
         'resource_pool' => 'a',
-        'instances'     => 1,
-        'networks'      => [{ 'name' => 'a' }],
+        'instances' => 2,
+        'networks' => [{'name' => 'a'}],
         'properties' => {
           'errand1' => {
             'exit_code' => 0,
-            'stdout'    => 'some-errand1-stdout',
-            'stderr'    => 'some-errand1-stderr',
+            'stdout' => 'second-errand-stdout',
+            'stderr' => 'second-errand-stderr',
             'run_package_file' => true,
           },
         },
       }
-
-      # Second errand
-      manifest_hash['jobs'] << {
-        'name'          => 'errand2-name',
-        'template'      => 'errand1',
-        'lifecycle'     => 'errand',
-        'resource_pool' => 'a',
-        'instances'     => 2,
-        'networks'      => [{ 'name' => 'a' }],
-        'properties' => {
-          'errand1' => {
-            'exit_code' => 0,
-            'stdout'    => 'some-errand2-stdout',
-            'stderr'    => 'some-errand2-stderr',
-            'run_package_file' => true,
-          },
-        },
-      }
-
-      manifest_hash
     end
 
     context 'with a fixed size resource pool size' do
-      before { manifest_hash['resource_pools'].first['size'] = 3 }
-
-      it 'allocates enough empty VMs for the largest errand on deploy and reallocates empty VMs after each errand run' do
-        deploy_simple(manifest_hash: manifest_hash)
-        expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
-
-        expect_errands('errand1-name', 'errand2-name')
-
-        output, exit_code = bosh_runner.run('run errand errand1-name', return_exit_code: true)
-        expect(output).to include('some-errand1-stdout')
-        expect(exit_code).to eq(0)
-        expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
-
-        output, exit_code = bosh_runner.run('run errand errand2-name', return_exit_code: true)
-        expect(output).to include('some-errand2-stdout')
-        expect(exit_code).to eq(0)
-        expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
+      let(:manifest_hash) do
+        manifest_hash = Bosh::Spec::Deployments.legacy_manifest_with_errand
+        manifest_hash['resource_pools'].find { |rp| rp['name'] == 'a' }['size'] = 3
+        manifest_hash
       end
 
-      context 'with the keep-alive option set' do
-        it 'does not delete/create the errand vm' do
-          deploy_simple(manifest_hash: manifest_hash)
+      it 'allocates enough empty VMs for the largest errand on deploy and reallocates empty VMs after each errand run' do
+        manifest_with_second_errand = manifest_hash
+        manifest_with_second_errand['jobs'] << errand_requiring_2_instances
+        deploy_simple(manifest_hash: manifest_with_second_errand)
+        expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
 
-          output, exit_code = bosh_runner.run('run errand errand1-name --keep-alive', return_exit_code: true)
-          expect(output).to include('some-errand1-stdout')
-          expect(exit_code).to eq(0)
-          expect_running_vms(%w(errand1-name/0 foobar/0 unknown/unknown))
+        expect_errands('fake-errand-name', 'second-errand-name')
 
-          output, exit_code = bosh_runner.run('run errand errand1-name --keep-alive', return_exit_code: true)
-          expect(output).to include('some-errand1-stdout')
-          expect(exit_code).to eq(0)
-          expect_running_vms(%w(errand1-name/0 foobar/0 unknown/unknown))
+        # with keep alive, does not delete/create errand vms
+        output, exit_code = bosh_runner.run('run errand fake-errand-name --keep-alive', return_exit_code: true)
+        expect(output).to include('fake-errand-stdout')
+        expect(exit_code).to eq(0)
+        expect_running_vms(%w(fake-errand-name/0 foobar/0 unknown/unknown))
 
-          output, exit_code = bosh_runner.run('run errand errand1-name', return_exit_code: true)
-          expect(output).to include('some-errand1-stdout')
-          expect(exit_code).to eq(0)
-          expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
-        end
+        output, exit_code = bosh_runner.run('run errand fake-errand-name --keep-alive', return_exit_code: true)
+        expect(output).to include('fake-errand-stdout')
+        expect(exit_code).to eq(0)
+        expect_running_vms(%w(fake-errand-name/0 foobar/0 unknown/unknown))
+
+        # without keep alive, deletes vm
+        output, exit_code = bosh_runner.run('run errand fake-errand-name', return_exit_code: true)
+        expect(output).to include('fake-errand-stdout')
+        expect(exit_code).to eq(0)
+        expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
+
+        output, exit_code = bosh_runner.run('run errand second-errand-name', return_exit_code: true)
+        expect(output).to include('second-errand-stdout')
+        expect(exit_code).to eq(0)
+        expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
       end
     end
 
     context 'with a dynamically sized resource pool size' do
-      before { manifest_hash['resource_pools'].first.delete('size') }
-
-      it 'allocates and de-allocates errand vms for each errand run' do
-        deploy_simple(manifest_hash: manifest_hash)
-        expect_running_vms(%w(foobar/0))
-
-        expect_errands('errand1-name', 'errand2-name')
-
-        output, exit_code = bosh_runner.run('run errand errand1-name', return_exit_code: true)
-        expect(output).to include('some-errand1-stdout')
-        expect(exit_code).to eq(0)
-        expect_running_vms(%w(foobar/0))
-
-        output, exit_code = bosh_runner.run('run errand errand2-name', return_exit_code: true)
-        expect(output).to include('some-errand2-stdout')
-        expect(exit_code).to eq(0)
-        expect_running_vms(%w(foobar/0))
+      let(:manifest_hash) do
+        manifest_hash = Bosh::Spec::Deployments.legacy_manifest_with_errand
+        manifest_hash['resource_pools'].find { |rp| rp['name'] == 'a' }.delete('size')
+        manifest_hash
       end
 
-      context 'with the keep-alive option set' do
-        it 'does not delete/create the errand vm' do
-          deploy_simple(manifest_hash: manifest_hash)
+      it 'allocates and de-allocates errand vms for each errand run' do
+        manifest_with_second_errand = manifest_hash
+        manifest_with_second_errand['jobs'] << errand_requiring_2_instances
+        deploy_simple(manifest_hash: manifest_with_second_errand)
+        expect_running_vms(%w(foobar/0))
 
-          output, exit_code = bosh_runner.run('run errand errand1-name --keep-alive', return_exit_code: true)
-          expect(output).to include('some-errand1-stdout')
-          expect(exit_code).to eq(0)
-          expect_running_vms(%w(errand1-name/0 foobar/0))
+        expect_errands('fake-errand-name', 'second-errand-name')
 
-          output, exit_code = bosh_runner.run('run errand errand1-name --keep-alive', return_exit_code: true)
-          expect(output).to include('some-errand1-stdout')
-          expect(exit_code).to eq(0)
-          expect_running_vms(%w(errand1-name/0 foobar/0))
+        output, exit_code = bosh_runner.run('run errand fake-errand-name --keep-alive', return_exit_code: true)
+        expect(output).to include('fake-errand-stdout')
+        expect(exit_code).to eq(0)
+        expect_running_vms(%w(fake-errand-name/0 foobar/0))
 
-          output, exit_code = bosh_runner.run('run errand errand1-name', return_exit_code: true)
-          expect(output).to include('some-errand1-stdout')
-          expect(exit_code).to eq(0)
-          expect_running_vms(%w(foobar/0))
-        end
+        output, exit_code = bosh_runner.run('run errand fake-errand-name --keep-alive', return_exit_code: true)
+        expect(output).to include('fake-errand-stdout')
+        expect(exit_code).to eq(0)
+        expect_running_vms(%w(fake-errand-name/0 foobar/0))
+
+        output, exit_code = bosh_runner.run('run errand fake-errand-name', return_exit_code: true)
+        expect(output).to include('fake-errand-stdout')
+        expect(exit_code).to eq(0)
+        expect_running_vms(%w(foobar/0))
+
+        output, exit_code = bosh_runner.run('run errand second-errand-name', return_exit_code: true)
+        expect(output).to include('second-errand-stdout')
+        expect(exit_code).to eq(0)
+        expect_running_vms(%w(foobar/0))
       end
     end
   end
@@ -172,22 +139,27 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
         manifest_hash = Bosh::Spec::Deployments.legacy_manifest_with_errand
 
         # get rid of the non-errand job, it's not important
-        manifest_hash['jobs'].delete(manifest_hash['jobs'][0])
+        manifest_hash['jobs'].delete(manifest_hash['jobs'].find{ |i| i['name'] == 'foobar' })
 
         # set the errand job to have a static ip to trigger the network update
         # at errand run time.
-        subnet = manifest_hash['networks'][0]['subnets'][0]
-        subnet['reserved'] =  [
+        network_a = manifest_hash['networks'].find{ |i| i['name'] == 'a' }
+        network_a_subnet = network_a['subnets'].first
+        network_a_subnet['reserved'] =  [
           '192.168.1.2 - 192.168.1.10',
-          '192.168.1.14 - 192.168.1.254']
-        subnet['static'] = ['192.168.1.13']
-        manifest_hash['jobs'][0]['networks'][0]['static_ips'] = ['192.168.1.13']
+          '192.168.1.14 - 192.168.1.254'
+        ]
+        network_a_subnet['static'] = ['192.168.1.13']
+        errand_job = manifest_hash['jobs'].find{ |i| i['name'] == 'fake-errand-name' }
+        errand_job_network_a = errand_job['networks'].find{ |i| i['name'] == 'a' }
+        errand_job_network_a['static_ips'] = ['192.168.1.13']
 
         # setting the size of the pool causes the empty vm to be created
         # at deploy time, and this vm will not have the static IP the job has requested
         # When the errand runs it will try to reuse this unassigned vm and it will
         # require network update since it has static IP.
-        manifest_hash['resource_pools'][0]['size'] = 1
+        resource_pool_a = manifest_hash['resource_pools'].find { |i| i['name'] == 'a' }
+        resource_pool_a['size'] = 1
 
         manifest_hash
       end

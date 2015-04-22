@@ -8,35 +8,23 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
     with_tmp_dir_before_all
 
     before(:all) do
-      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
+      manifest_hash = Bosh::Spec::Deployments.legacy_manifest_with_errand
+      jobs = manifest_hash['jobs']
 
-      # Include other jobs in the deployment
-      manifest_hash['jobs'].first['instances'] = 1
-
-      # Currently errands are represented via jobs
-      manifest_hash['jobs'] << {
-        'name'          => 'errand1-name',
-        'template'      => 'errand1',
-        'lifecycle'     => 'errand',
-        'resource_pool' => 'a',
-        'instances'     => 1,
-        'networks'      => [{ 'name' => 'a' }],
-        'properties' => {
-          'errand1' => {
-            'exit_code' => 23, # non-0 (and non-1) exit code
-            'stdout'    => '', # No output
-            'stderr'    => "some-stderr1\nsome-stderr2\nsome-stderr3",
-          },
+      jobs.find { |job| job['name'] == 'fake-errand-name'}['properties'] = {
+        'errand1' => {
+          'exit_code' => 23, # non-0 (and non-1) exit code
+          'stdout'    => '', # No output
+          'stderr'    => "some-stderr1\nsome-stderr2\nsome-stderr3",
         },
       }
 
       deploy_simple(manifest_hash: manifest_hash)
-
     end
 
     context 'with the keep-alive option set' do
       before(:all) do
-        @output, @exit_code = bosh_runner.run("run errand errand1-name --download-logs --logs-dir #{@tmp_dir} --keep-alive",
+        @output, @exit_code = bosh_runner.run("run errand fake-errand-name --download-logs --logs-dir #{@tmp_dir} --keep-alive",
           {failure_expected: true, return_exit_code: true})
       end
 
@@ -44,13 +32,13 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
         expect(@output).to include("[stdout]\nNone")
         expect(@output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
         expect(@exit_code).to_not eq(0)
-        expect_running_vms(%w(errand1-name/0 foobar/0 unknown/unknown))
+        expect_running_vms(%w(fake-errand-name/0 foobar/0))
       end
     end
 
     context 'without keep-alive option set' do
       before(:all) do
-        @output, @exit_code = bosh_runner.run("run errand errand1-name --download-logs --logs-dir #{@tmp_dir}",
+        @output, @exit_code = bosh_runner.run("run errand fake-errand-name --download-logs --logs-dir #{@tmp_dir}",
           {failure_expected: true, return_exit_code: true})
       end
 
@@ -61,18 +49,18 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
 
       it 'deletes the errand vm' do
         expect(@exit_code).to_not eq(0)
-        expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
+        expect_running_vms(%w(foobar/0))
       end
 
       it 'downloads errand logs and shows downloaded location' do
-        expect(@output =~ /Logs saved in `(.*errand1-name\.0\..*\.tgz)'/).to_not(be_nil, @output)
+        expect(@output =~ /Logs saved in `(.*fake-errand-name\.0\..*\.tgz)'/).to_not(be_nil, @output)
         logs_file = Bosh::Spec::TarFileInspector.new($1)
         expect(logs_file.file_names).to match_array(%w(./errand1/stdout.log ./custom.log))
         expect(logs_file.smallest_file_size).to be > 0
       end
 
       it 'returns 1 as exit code from the cli and indicates that errand completed with error' do
-        expect(@output).to include('Errand `errand1-name\' completed with error (exit code 23)')
+        expect(@output).to include('Errand `fake-errand-name\' completed with error (exit code 23)')
         expect(@exit_code).to eq(1)
       end
     end
@@ -155,34 +143,10 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
+      manifest_hash = Bosh::Spec::Deployments.legacy_manifest_with_errand
 
-      # Errand with sufficient resources
-      manifest_hash['jobs'] << {
-        'name'          => 'errand1-name',
-        'template'      => 'errand1',
-        'lifecycle'     => 'errand',
-        'resource_pool' => 'a',
-        'instances'     => 1,
-        'networks'      => [{ 'name' => 'a' }],
-        'properties' => {},
-      }
-
-      # Expand resource pool capacity to cover added errand
       total_instance_count = manifest_hash['jobs'].inject(0) { |sum, job| sum + job['instances'] }
-      manifest_hash['resource_pools'].first['size'] = total_instance_count
-
-      # Errand with insufficient resources
-      manifest_hash['jobs'] << {
-        'name'          => 'errand2-name',
-        'template'      => 'errand1',
-        'lifecycle'     => 'errand',
-        'resource_pool' => 'a',
-        'instances'     => 2,
-        'networks'      => [{ 'name' => 'a' }],
-        'properties' => {},
-      }
-
+      manifest_hash['resource_pools'].first['size'] = total_instance_count - 1
       manifest_hash
     end
 

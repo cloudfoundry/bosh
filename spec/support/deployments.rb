@@ -111,6 +111,7 @@ module Bosh::Spec
       manifest = legacy_simple_manifest.merge(
         'name' => 'errand'
       )
+      manifest['jobs'].find { |job| job['name'] == 'foobar'}['instances'] = 1
       manifest['resource_pools'].first.delete('size')
 
       manifest['jobs'] << {
