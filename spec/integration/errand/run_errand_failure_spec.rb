@@ -82,7 +82,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
+      manifest_hash = Bosh::Spec::Deployments.legacy_manifest_with_errand
 
       # Sleep so we have time to cancel it
       manifest_hash['jobs'].last['properties']['errand1']['sleep_duration_in_seconds'] = 5000

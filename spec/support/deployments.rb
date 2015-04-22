@@ -107,8 +107,8 @@ module Bosh::Spec
       })
     end
 
-    def self.manifest_with_errand
-      manifest = simple_manifest.merge(
+    def self.legacy_manifest_with_errand
+      manifest = legacy_simple_manifest.merge(
         'name' => 'errand'
       )
       manifest['resource_pools'].first.delete('size')
