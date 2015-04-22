@@ -5,14 +5,14 @@ module Bosh::Dev::Sandbox
   class Postgresql
     attr_reader :db_name, :username, :password, :adapter, :port
 
-    def initialize(db_name, logger, runner = Bosh::Core::Shell.new)
+    def initialize(db_name, logger, port, runner = Bosh::Core::Shell.new)
       @db_name = db_name
       @logger = logger
       @runner = runner
       @username = 'postgres'
       @password = ''
       @adapter = 'postgres'
-      @port = 5432
+      @port = port
     end
 
     # Assumption is that user running tests can

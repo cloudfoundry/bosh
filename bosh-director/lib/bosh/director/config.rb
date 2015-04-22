@@ -172,6 +172,8 @@ module Bosh::Director
         db_config = db_config.merge(connection_options)
 
         db = Sequel.connect(db_config)
+        db.extension :connection_validator
+        db.pool.connection_validation_timeout = -1
         if logger
           db.logger = logger
           db.sql_log_level = :debug
