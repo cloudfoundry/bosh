@@ -79,8 +79,12 @@ EOS
 
   config.vm.provision :shell do |shell|
     shell.inline = <<-BASH
+      mkdir -p /mnt/tmp
+      chown -R ubuntu:ubuntu /mnt/tmp
+      echo >> /home/ubuntu/.bashrc
+      echo 'export TMPDIR=/mnt/tmp' >> /home/ubuntu/.bashrc
       mkdir -p /mnt/stemcells
-      chown -R ubuntu /mnt/stemcells
+      chown -R ubuntu:ubuntu /mnt/stemcells
       mkdir -p /bosh/tmp
       (
         cd /bosh
