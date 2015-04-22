@@ -57,6 +57,7 @@ packages="
       libxslt-devel
       lsof
       NetworkManager
+      net-tools
       nfs-common
       nmap-ncat
       openssh-server
