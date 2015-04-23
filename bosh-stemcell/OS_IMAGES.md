@@ -160,6 +160,9 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
+* `0_zs2Y2A.QhW00r1tbb7Oa7XcMY3GdkW`
+  install net-tools for stemcell acceptance testing
+
 * `cNakw6wcTjEyWaZBQWTUuoeYKiuLYB3k`
   remove unnecessary packages to make OS image smaller
   reduce daily and weekly cron load
