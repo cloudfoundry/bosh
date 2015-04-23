@@ -74,11 +74,16 @@ module Bosh::Director
       end
 
       it 'should ignore cpi errors if forced' do
+        agent = double('agent')
+        allow(AgentClient).to receive(:with_defaults).and_return(agent)
+
         vm = Models::Vm.make(cid: 'vm-cid')
         instance.update(vm: vm)
 
         Models::PersistentDisk.make(disk_cid: 'disk-cid', instance_id: instance.id)
 
+        expect(agent).to receive(:stop)
+        expect(agent).to receive(:unmount_disk).with('disk-cid')
         expect(cloud).to receive(:detach_disk).with('vm-cid', 'disk-cid').and_raise('ERROR')
         expect(cloud).to receive(:delete_disk).with('disk-cid').and_raise('ERROR')
 
