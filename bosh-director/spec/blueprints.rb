@@ -1,4 +1,5 @@
 # Copyright (c) 2009-2012 VMware, Inc.
+require_relative '../../spec/support/deployments'
 
 Sham.define do
   name          { |index| "name-#{index}" }
@@ -131,27 +132,29 @@ module Bosh::Director::Models
     content_sha1 { Sham.sha1 }
     created_at   { Time.now }
   end
-end
 
-module Bosh::Director::Models::Dns
-
-  Domain.blueprint do
-    name     { Sham.name }
-    type     { "NATIVE" }
+  CloudConfig.blueprint do
+    manifest { Bosh::Spec::Deployments.simple_cloud_config }
   end
 
-  Record.blueprint do
-    domain   { Domain.make }
-    name     { Sham.name }
-    type     { "A" }
-    content  { Sham.ip }
-  end
+  module Dns
+    Domain.blueprint do
+      name     { Sham.name }
+      type     { "NATIVE" }
+    end
 
-  Record.blueprint(:PTR) do
-    domain   { Domain.make }
-    name     { Sham.ptr }
-    type     { "PTR" }
-    content  { Sham.name }
-  end
+    Record.blueprint do
+      domain   { Domain.make }
+      name     { Sham.name }
+      type     { "A" }
+      content  { Sham.ip }
+    end
 
+    Record.blueprint(:PTR) do
+      domain   { Domain.make }
+      name     { Sham.ptr }
+      type     { "PTR" }
+      content  { Sham.name }
+    end
+  end
 end

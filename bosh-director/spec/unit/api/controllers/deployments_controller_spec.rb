@@ -143,9 +143,8 @@ module Bosh::Director
             stemcell_1_2 = Models::Stemcell.create(name: "stemcell-1", version: 2, cid: 123)
             stemcell_2_1 = Models::Stemcell.create(name: "stemcell-2", version: 1, cid: 124)
 
-            old_cloud_config = Models::CloudConfig.create(properties: "", created_at: Time.now - 60)
-            new_cloud_config = Models::CloudConfig.create(properties: "", created_at: Time.now)
-
+            old_cloud_config = Models::CloudConfig.make(manifest: {}, created_at: Time.now - 60)
+            new_cloud_config = Models::CloudConfig.make(manifest: {})
 
             deployment_3 = Models::Deployment.create(
               name: "deployment-3",
@@ -422,7 +421,7 @@ module Bosh::Director
                 cloud_config: cloud_config
               )
             end
-            let(:cloud_config) { Models::CloudConfig.create }
+            let(:cloud_config) { Models::CloudConfig.make }
 
             before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
             let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }

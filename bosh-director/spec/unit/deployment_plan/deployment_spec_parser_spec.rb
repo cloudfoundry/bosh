@@ -8,7 +8,7 @@ module Bosh::Director
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
       describe '#parse' do
-        let(:deployment_spec) do
+        let(:manifest_hash) do
           {
             'name' => 'deployment-name',
             'releases' => [],
@@ -24,40 +24,33 @@ module Bosh::Director
 
         before { allow(UpdateConfig).to receive(:new).and_return(update_config) }
         let(:update_config) { instance_double('Bosh::Director::DeploymentPlan::UpdateConfig') }
-
-        before { allow(ManualNetwork).to receive(:new).and_return(network) }
-        let(:network) do
-          instance_double('Bosh::Director::DeploymentPlan::Network', {
-            name: 'fake-network-name',
-            canonical_name: 'fake-network-name',
-          })
-        end
-        let(:cloud_config) { nil }
+        let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
+        let(:cloud_config) { Models::CloudConfig.make(manifest: cloud_config_hash) }
 
         describe 'name key' do
           it 'parses name' do
-            deployment_spec.merge!('name' => 'Name with spaces')
-            deployment = parser.parse(deployment_spec, cloud_config)
+            manifest_hash.merge!('name' => 'Name with spaces')
+            deployment = parser.parse(manifest_hash, cloud_config)
             expect(deployment.name).to eq('Name with spaces')
           end
 
           it 'sets canonical name' do
-            deployment_spec.merge!('name' => 'Name with spaces')
-            deployment = parser.parse(deployment_spec, cloud_config)
+            manifest_hash.merge!('name' => 'Name with spaces')
+            deployment = parser.parse(manifest_hash, cloud_config)
             expect(deployment.canonical_name).to eq('namewithspaces')
           end
         end
 
         describe 'properties key' do
           it 'parses basic properties' do
-            deployment_spec.merge!('properties' => { 'foo' => 'bar' })
-            deployment = parser.parse(deployment_spec, cloud_config)
+            manifest_hash.merge!('properties' => { 'foo' => 'bar' })
+            deployment = parser.parse(manifest_hash, cloud_config)
             expect(deployment.properties).to eq('foo' => 'bar')
           end
 
           it 'allows to not include properties key' do
-            deployment_spec.delete('properties')
-            deployment = parser.parse(deployment_spec, cloud_config)
+            manifest_hash.delete('properties')
+            deployment = parser.parse(manifest_hash, cloud_config)
             expect(deployment.properties).to eq({})
           end
         end
@@ -71,8 +64,8 @@ module Bosh::Director
           end
 
           context "when 'release' section is specified" do
-            before { deployment_spec.merge!('release' => {'name' => 'rv-name'}) }
-            before { deployment_spec.delete('releases') }
+            before { manifest_hash.merge!('release' => {'name' => 'rv-name'}) }
+            before { manifest_hash.delete('releases') }
 
             let(:rv) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'rv-name') }
 
@@ -81,7 +74,7 @@ module Bosh::Director
                 with(be_a(Planner), 'name' => 'rv-name').
                 and_return(rv)
 
-              deployment = parser.parse(deployment_spec, cloud_config)
+              deployment = parser.parse(manifest_hash, cloud_config)
               expect(deployment.releases).to eq([rv])
             end
 
@@ -90,17 +83,17 @@ module Bosh::Director
                 with(be_a(Planner), 'name' => 'rv-name').
                 and_return(rv)
 
-              deployment = parser.parse(deployment_spec, cloud_config)
+              deployment = parser.parse(manifest_hash, cloud_config)
               expect(deployment.release('rv-name')).to eq(rv)
             end
           end
 
           context "when 'releases' section is specified" do
-            before { deployment_spec.delete('release') }
+            before { manifest_hash.delete('release') }
 
             context 'when non-duplicate releases are included' do
               before do
-                deployment_spec.merge!('releases' => [
+                manifest_hash.merge!('releases' => [
                   {'name' => 'rv1-name'},
                   {'name' => 'rv2-name'},
                 ])
@@ -118,7 +111,7 @@ module Bosh::Director
                   with(be_a(Planner), 'name' => 'rv2-name').
                   and_return(rv2)
 
-                deployment = parser.parse(deployment_spec, cloud_config)
+                deployment = parser.parse(manifest_hash, cloud_config)
                 expect(deployment.releases).to eq([rv1, rv2])
               end
 
@@ -131,7 +124,7 @@ module Bosh::Director
                   with(be_a(Planner), 'name' => 'rv2-name').
                   and_return(rv2)
 
-                deployment = parser.parse(deployment_spec, cloud_config)
+                deployment = parser.parse(manifest_hash, cloud_config)
                 expect(deployment.release('rv1-name')).to eq(rv1)
                 expect(deployment.release('rv2-name')).to eq(rv2)
               end
@@ -139,7 +132,7 @@ module Bosh::Director
 
             context 'when duplicate releases are included' do
               before do
-                deployment_spec.merge!('releases' => [
+                manifest_hash.merge!('releases' => [
                   {'name' => 'same-name'},
                   {'name' => 'same-name'},
                 ])
@@ -153,30 +146,30 @@ module Bosh::Director
                   and_return(rv)
 
                 expect {
-                  parser.parse(deployment_spec, cloud_config)
+                  parser.parse(manifest_hash, cloud_config)
                 }.to raise_error(/duplicate release name/i)
               end
             end
           end
 
           context "when both 'releases' and 'release' sections are specified" do
-            before { deployment_spec.merge!('releases' => []) }
-            before { deployment_spec.merge!('release' => {}) }
+            before { manifest_hash.merge!('releases' => []) }
+            before { manifest_hash.merge!('release' => {}) }
 
             it 'raises an error' do
               expect {
-                parser.parse(deployment_spec, cloud_config)
+                parser.parse(manifest_hash, cloud_config)
               }.to raise_error(/use one of the two/)
             end
           end
 
           context "when neither 'releases' or 'release' section is specified" do
-            before { deployment_spec.delete('releases') }
-            before { deployment_spec.delete('release') }
+            before { manifest_hash.delete('releases') }
+            before { manifest_hash.delete('release') }
 
             it 'raises an error' do
               expect {
-                parser.parse(deployment_spec, cloud_config)
+                parser.parse(manifest_hash, cloud_config)
               }.to raise_error(
                 ValidationMissingField,
                 /Required property `releases' was not specified in object .+/,
@@ -187,7 +180,7 @@ module Bosh::Director
 
         describe 'compilation key' do
           context 'when compilation section is specified' do
-            before { deployment_spec.merge!('compilation' => { 'foo' => 'bar' }) }
+            before { cloud_config_hash.merge!('compilation' => { 'foo' => 'bar' }) }
 
             it 'delegates parsing to CompilationConfig' do
               compilation = instance_double('Bosh::Director::DeploymentPlan::CompilationConfig')
@@ -196,17 +189,17 @@ module Bosh::Director
                 with(be_a(Planner), 'foo' => 'bar').
                 and_return(compilation)
 
-              deployment = parser.parse(deployment_spec, cloud_config)
+              deployment = parser.parse(manifest_hash, cloud_config)
               expect(deployment.compilation).to eq(compilation)
             end
           end
 
           context 'when compilation section is not specified' do
-            before { deployment_spec.delete('compilation') }
+            before { cloud_config_hash.delete('compilation') }
 
             it 'raises an error' do
               expect {
-                parser.parse(deployment_spec, cloud_config)
+                parser.parse(manifest_hash, cloud_config)
               }.to raise_error(
                 ValidationMissingField,
                 /Required property `compilation' was not specified in object .+/,
@@ -217,7 +210,7 @@ module Bosh::Director
 
         describe 'update key' do
           context 'when update section is specified' do
-            before { deployment_spec.merge!('update' => { 'foo' => 'bar' }) }
+            before { manifest_hash.merge!('update' => { 'foo' => 'bar' }) }
 
             it 'delegates parsing to UpdateConfig' do
               update = instance_double('Bosh::Director::DeploymentPlan::UpdateConfig')
@@ -226,17 +219,17 @@ module Bosh::Director
                 with('foo' => 'bar').
                 and_return(update)
 
-              deployment = parser.parse(deployment_spec, cloud_config)
+              deployment = parser.parse(manifest_hash, cloud_config)
               expect(deployment.update).to eq(update)
             end
           end
 
           context 'when update section is not specified' do
-            before { deployment_spec.delete('update') }
+            before { manifest_hash.delete('update') }
 
             it 'raises an error' do
               expect {
-                parser.parse(deployment_spec, cloud_config)
+                parser.parse(manifest_hash, cloud_config)
               }.to raise_error(
                 ValidationMissingField,
                 /Required property `update' was not specified in object .+/,
@@ -248,28 +241,25 @@ module Bosh::Director
         describe 'networks key' do
           context 'when there is at least one network' do
             context 'when network type is not specified' do
-              before { deployment_spec.merge!('networks' => [{ 'foo' => 'bar' }]) }
-
-              let(:network) do
-                instance_double('Bosh::Director::DeploymentPlan::Network').tap do |net|
-                  allow(net).to receive(:name).and_return('fake-net-name')
-                  allow(net).to receive(:canonical_name).and_return('fake-net-cname')
-                end
+              before do
+                cloud_config_hash.merge!(
+                  'networks' => [{
+                      'name' => 'a',
+                      'subnets' => [],
+                    }])
               end
 
               it 'should create manual network by default' do
-                expect(ManualNetwork).to receive(:new).
-                  with(be_a(Planner), 'foo' => 'bar').
-                  and_return(network)
-
-                deployment = parser.parse(deployment_spec, cloud_config)
-                expect(deployment.networks).to eq([network])
+                deployment = parser.parse(manifest_hash, cloud_config)
+                expect(deployment.networks.count).to eq(1)
+                expect(deployment.networks.first).to be_a(ManualNetwork)
+                expect(deployment.networks.first.name).to eq('a')
               end
 
               it 'allows to look up network by name' do
-                allow(ManualNetwork).to receive(:new).and_return(network)
-                deployment = parser.parse(deployment_spec, cloud_config)
-                expect(deployment.network('fake-net-name')).to eq(network)
+                deployment = parser.parse(manifest_hash, cloud_config)
+                expect(deployment.network('a')).to be_a(ManualNetwork)
+                expect(deployment.network('b')).to be_nil
               end
             end
 
@@ -280,22 +270,15 @@ module Bosh::Director
 
             context 'when more than one network have same canonical name' do
               before do
-                deployment_spec.merge!('networks' => [
-                  { 'name' => 'bar' },
-                  { 'name' => 'Bar' },
-                ])
+                cloud_config_hash['networks'] = [
+                  { 'name' => 'bar', 'subnets' => [] },
+                  { 'name' => 'Bar', 'subnets' => [] },
+                ]
               end
 
               it 'raises an error' do
-                allow(ManualNetwork).to receive(:new) do |_, network_spec|
-                  instance_double('Bosh::Director::DeploymentPlan::Network', {
-                    name: network_spec['name'],
-                    canonical_name: 'same-canonical-name',
-                  })
-                end
-
                 expect {
-                  parser.parse(deployment_spec, cloud_config)
+                  parser.parse(manifest_hash, cloud_config)
                 }.to raise_error(
                   DeploymentCanonicalNetworkNameTaken,
                   "Invalid network name `Bar', canonical name already taken",
@@ -305,21 +288,21 @@ module Bosh::Director
           end
 
           context 'when 0 networks are specified' do
-            before { deployment_spec.merge!('networks' => []) }
+            before { cloud_config_hash.merge!('networks' => []) }
 
             it 'raises an error because deployment must have at least one network' do
               expect {
-                parser.parse(deployment_spec, cloud_config)
+                parser.parse(manifest_hash, cloud_config)
               }.to raise_error(DeploymentNoNetworks, 'No networks specified')
             end
           end
 
           context 'when networks key is not specified' do
-            before { deployment_spec.delete('networks') }
+            before { cloud_config_hash.delete('networks') }
 
             it 'raises an error because deployment must have at least one network' do
               expect {
-                parser.parse(deployment_spec, cloud_config)
+                parser.parse(manifest_hash, cloud_config)
               }.to raise_error(
                 ValidationMissingField,
                 /Required property `networks' was not specified in object .+/,
@@ -332,58 +315,36 @@ module Bosh::Director
           context 'when there is at least one resource_pool' do
             context 'when each resource pool has a unique name' do
               before do
-                deployment_spec.merge!('resource_pools' => [
-                  {'name' => 'rp1-name'},
-                  {'name' => 'rp2-name'},
-                ])
+                cloud_config_hash['resource_pools'] = [
+                  Bosh::Spec::Deployments.resource_pool.merge('name' => 'rp1-name'),
+                  Bosh::Spec::Deployments.resource_pool.merge('name' => 'rp2-name')
+                ]
               end
 
-              let(:rp1) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'rp1-name') }
-              let(:rp2) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'rp2-name') }
-
-              it 'delegates to ResourcePool' do
-                expect(ResourcePool).to receive(:new).
-                  with(be_a(Planner), {'name' => 'rp1-name'}, logger).
-                  and_return(rp1)
-
-                expect(ResourcePool).to receive(:new).
-                  with(be_a(Planner), {'name' => 'rp2-name'}, logger).
-                  and_return(rp2)
-
-                deployment = parser.parse(deployment_spec, cloud_config)
-                expect(deployment.resource_pools).to eq([rp1, rp2])
+              it 'creates ResourcePools for each entry' do
+                deployment = parser.parse(manifest_hash, cloud_config)
+                expect(deployment.resource_pools.map(&:class)).to eq([ResourcePool, ResourcePool])
+                expect(deployment.resource_pools.map(&:name)).to eq(['rp1-name', 'rp2-name'])
               end
 
               it 'allows to look up resource_pool by name' do
-                allow(ResourcePool).to receive(:new).
-                  with(be_a(Planner), {'name' => 'rp1-name'}, logger).
-                  and_return(rp1)
-
-                allow(ResourcePool).to receive(:new).
-                  with(be_a(Planner), {'name' => 'rp2-name'}, logger).
-                  and_return(rp2)
-
-                deployment = parser.parse(deployment_spec, cloud_config)
-                expect(deployment.resource_pool('rp1-name')).to eq(rp1)
-                expect(deployment.resource_pool('rp2-name')).to eq(rp2)
+                deployment = parser.parse(manifest_hash, cloud_config)
+                expect(deployment.resource_pool('rp1-name').name).to eq('rp1-name')
+                expect(deployment.resource_pool('rp2-name').name).to eq('rp2-name')
               end
             end
 
             context 'when more than one resource pool have same name' do
               before do
-                deployment_spec.merge!('resource_pools' => [
-                  { 'name' => 'same-name' },
-                  { 'name' => 'same-name' },
-                ])
+                cloud_config_hash['resource_pools'] = [
+                    Bosh::Spec::Deployments.resource_pool.merge({ 'name' => 'same-name' }),
+                    Bosh::Spec::Deployments.resource_pool.merge({ 'name' => 'same-name' })
+                ]
               end
 
               it 'raises an error' do
-                allow(ResourcePool).to receive(:new) do
-                  instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'same-name')
-                end
-
                 expect {
-                  parser.parse(deployment_spec, cloud_config)
+                  parser.parse(manifest_hash, cloud_config)
                 }.to raise_error(
                   DeploymentDuplicateResourcePoolName,
                   "Duplicate resource pool name `same-name'",
@@ -397,57 +358,36 @@ module Bosh::Director
           context 'when there is at least one disk_pool' do
             context 'when each resource pool has a unique name' do
               before do
-                deployment_spec.merge!('disk_pools' => [
-                  {'name' => 'dk1-name'},
-                  {'name' => 'dk2-name'},
-                ])
+                cloud_config_hash['disk_pools'] = [
+                  Bosh::Spec::Deployments.disk_pool.merge({ 'name' => 'dk1-name' }),
+                  Bosh::Spec::Deployments.disk_pool.merge({ 'name' => 'dk2-name' })
+                ]
               end
 
-              let(:dk1) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', name: 'dk1-name') }
-              let(:dk2) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', name: 'dk2-name') }
-
-              it 'delegates to DiskPool' do
-                expect(DiskPool).to receive(:parse).
-                  with({'name' => 'dk1-name'}).
-                  and_return(dk1)
-
-                expect(DiskPool).to receive(:parse).
-                  with({'name' => 'dk2-name'}).
-                  and_return(dk2)
-
-                deployment = parser.parse(deployment_spec, cloud_config)
-                expect(deployment.disk_pools).to eq([dk1, dk2])
+              it 'creates DiskPools for each entry' do
+                deployment = parser.parse(manifest_hash, cloud_config)
+                expect(deployment.disk_pools.map(&:class)).to eq([DiskPool, DiskPool])
+                expect(deployment.disk_pools.map(&:name)).to eq(['dk1-name', 'dk2-name'])
               end
 
               it 'allows to look up disk_pool by name' do
-                allow(DiskPool).to receive(:parse).
-                  with({'name' => 'dk1-name'}).
-                  and_return(dk1)
-
-                allow(DiskPool).to receive(:parse).
-                  with({'name' => 'dk2-name'}).
-                  and_return(dk2)
-
-                deployment = parser.parse(deployment_spec, cloud_config)
-                expect(deployment.disk_pool('dk1-name')).to eq(dk1)
-                expect(deployment.disk_pool('dk2-name')).to eq(dk2)
+                deployment = parser.parse(manifest_hash, cloud_config)
+                expect(deployment.disk_pool('dk1-name').name).to eq('dk1-name')
+                expect(deployment.disk_pool('dk2-name').name).to eq('dk2-name')
               end
             end
 
-            context 'when more than one resource pool have same name' do
-              let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', name: 'same-name') }
+            context 'when more than one disk pool have same name' do
               before do
-                deployment_spec.merge!('disk_pools' => [
-                  { 'name' => 'same-name' },
-                  { 'name' => 'same-name' },
-                ])
+                cloud_config_hash['disk_pools'] = [
+                    Bosh::Spec::Deployments.disk_pool.merge({ 'name' => 'same-name' }),
+                    Bosh::Spec::Deployments.disk_pool.merge({ 'name' => 'same-name' })
+                ]
               end
 
               it 'raises an error' do
-                allow(DiskPool).to receive(:parse).and_return(disk_pool)
-
                 expect {
-                  parser.parse(deployment_spec, cloud_config)
+                  parser.parse(manifest_hash, cloud_config)
                 }.to raise_error(
                   DeploymentDuplicateDiskPoolName,
                   "Duplicate disk pool name `same-name'",
@@ -459,13 +399,13 @@ module Bosh::Director
 
         describe 'jobs key' do
           context 'when there is at least one job' do
-            before { deployment_spec.merge!('jobs' => []) }
+            before { manifest_hash.merge!('jobs' => []) }
 
             let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
             context 'when job names are unique' do
               before do
-                deployment_spec.merge!('jobs' => [
+                manifest_hash.merge!('jobs' => [
                   { 'name' => 'job1-name' },
                   { 'name' => 'job2-name' },
                 ])
@@ -494,7 +434,7 @@ module Bosh::Director
                   with(be_a(Planner), {'name' => 'job2-name'}, event_log, logger).
                   and_return(job2)
 
-                deployment = parser.parse(deployment_spec, cloud_config)
+                deployment = parser.parse(manifest_hash, cloud_config)
                 expect(deployment.jobs).to eq([job1, job2])
               end
 
@@ -507,7 +447,7 @@ module Bosh::Director
                   with(be_a(Planner), {'name' => 'job2-name'}, event_log, logger).
                   and_return(job2)
 
-                deployment = parser.parse(deployment_spec, cloud_config)
+                deployment = parser.parse(manifest_hash, cloud_config)
                 expect(deployment.job('job1-name')).to eq(job1)
                 expect(deployment.job('job2-name')).to eq(job2)
               end
@@ -515,7 +455,7 @@ module Bosh::Director
 
             context 'when more than one job have same canonical name' do
               before do
-                deployment_spec.merge!('jobs' => [
+                manifest_hash.merge!('jobs' => [
                   { 'name' => 'job1-name' },
                   { 'name' => 'job2-name' },
                 ])
@@ -545,7 +485,7 @@ module Bosh::Director
                   and_return(job2)
 
                 expect {
-                  parser.parse(deployment_spec, cloud_config)
+                  parser.parse(manifest_hash, cloud_config)
                 }.to raise_error(
                   DeploymentCanonicalJobNameTaken,
                   "Invalid job name `job2-name', canonical name already taken",
@@ -555,19 +495,19 @@ module Bosh::Director
           end
 
           context 'when there are no jobs' do
-            before { deployment_spec.merge!('jobs' => []) }
+            before { manifest_hash.merge!('jobs' => []) }
 
             it 'parses jobs and return empty array' do
-              deployment = parser.parse(deployment_spec, cloud_config)
+              deployment = parser.parse(manifest_hash, cloud_config)
               expect(deployment.jobs).to eq([])
             end
           end
 
           context 'when jobs key is not specified' do
-            before { deployment_spec.delete('jobs') }
+            before { manifest_hash.delete('jobs') }
 
             it 'parses jobs and return empty array' do
-              deployment = parser.parse(deployment_spec, cloud_config)
+              deployment = parser.parse(manifest_hash, cloud_config)
               expect(deployment.jobs).to eq([])
             end
           end
@@ -575,7 +515,7 @@ module Bosh::Director
 
         describe 'job_rename option' do
           context 'when old_name from job_rename option is referencing a job in jobs section' do
-            before { deployment_spec.merge!('jobs' => [{'name' => 'job-old-name'}]) }
+            before { manifest_hash.merge!('jobs' => [{'name' => 'job-old-name'}]) }
 
             let(:job) do
               instance_double('Bosh::Director::DeploymentPlan::Job', {
@@ -597,7 +537,7 @@ module Bosh::Director
               }
 
               expect {
-                parser.parse(deployment_spec, cloud_config, options)
+                parser.parse(manifest_hash, cloud_config, options)
               }.to raise_error(
                 DeploymentRenamedJobNameStillUsed,
                 "Renamed job `job-old-name' is still referenced in deployment manifest",

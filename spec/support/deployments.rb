@@ -33,17 +33,28 @@ module Bosh::Spec
                 }],
             }],
 
-          'resource_pools' => [{
-              'name' => 'a',
-              'size' => 3,
-              'cloud_properties' => {},
-              'network' => 'a',
-              'stemcell' => {
-                'name' => 'ubuntu-stemcell',
-                'version' => '1',
-              },
-            }]
+          'resource_pools' => [resource_pool]
         })
+    end
+
+    def self.resource_pool
+      {
+        'name' => 'a',
+        'size' => 3,
+        'cloud_properties' => {},
+        'network' => 'a',
+        'stemcell' => {
+          'name' => 'ubuntu-stemcell',
+          'version' => '1',
+        },
+      }
+    end
+
+    def self.disk_pool
+      {
+        'name' => 'disk_a',
+        'disk_size' => 123
+      }
     end
 
     def self.minimal_manifest
