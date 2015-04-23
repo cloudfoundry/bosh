@@ -580,6 +580,7 @@ module Bosh::Director
       end
 
       it 'performs no rebase if same release is being rebased twice' do
+        Config.configure(Psych.load(spec_asset('test-director-config.yml')))
         @job.perform
 
         @release_dir = Test::ReleaseHelper.new.create_release_tarball(manifest)
