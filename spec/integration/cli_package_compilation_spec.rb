@@ -15,10 +15,11 @@ describe 'cli: package compilation', type: :integration do
       parse_release_tarball_path(output)
     end
 
-    deployment_manifest = yaml_file(
-        'simple_manifest', Bosh::Spec::Deployments.legacy_simple_manifest)
+    cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+    deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.simple_manifest)
 
     target_and_login
+    bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
     bosh_runner.run("deployment #{deployment_manifest.path}")
     bosh_runner.run("upload stemcell #{stemcell_filename}")
     bosh_runner.run("upload release #{release_filename}")
@@ -43,18 +44,22 @@ describe 'cli: package compilation', type: :integration do
   end
 
   it 'sends only immediate dependancies to the agent for each package compilation task' do
-    manifest = Bosh::Spec::Deployments.legacy_simple_manifest
-    manifest['jobs'][0]['template'] = ['foobar', 'goobaz']
-    manifest['jobs'][0]['instances'] = 1
-    manifest['resource_pools'][0]['size'] = 1
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash['resource_pools'][0]['size'] = 1
 
-    manifest['releases'].first['name'] = 'compilation-test'
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'][0]['template'] = ['foobar', 'goobaz']
+    manifest_hash['jobs'][0]['instances'] = 1
 
-    deployment_manifest = yaml_file('whatevs_manifest', manifest)
+    manifest_hash['releases'].first['name'] = 'compilation-test'
+
+    cloud_manifest = yaml_file('cloud_manifest', cloud_config_hash)
+    deployment_manifest = yaml_file('whatevs_manifest', manifest_hash)
 
     target_and_login
     bosh_runner.run("upload release #{spec_asset('release_compilation_test.tgz')}")
 
+    bosh_runner.run("update cloud-config #{cloud_manifest.path}")
     bosh_runner.run("deployment #{deployment_manifest.path}")
     bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
     bosh_runner.run('deploy')
@@ -100,12 +105,17 @@ describe 'cli: package compilation', type: :integration do
   end
 
   it 'returns truncated output' do
-    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
-    manifest_hash['compilation']['workers'] = 1
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['jobs'][0]['template'] = 'fails_with_too_much_output'
     manifest_hash['jobs'][0]['instances'] = 1
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash['compilation']['workers'] = 1
 
-    deploy_output = deploy_simple(manifest_hash: manifest_hash, failure_expected: true)
+    deploy_output = deploy_from_scratch(
+      cloud_config_hash: cloud_config_hash,
+      manifest_hash: manifest_hash,
+      failure_expected: true
+    )
 
     expect(deploy_output).to include('Truncated stdout: bbbbbbbbbb')
     expect(deploy_output).to include('Truncated stderr: yyyyyyyyyy')

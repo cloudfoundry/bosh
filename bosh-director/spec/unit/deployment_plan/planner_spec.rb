@@ -5,7 +5,7 @@ module Bosh::Director
     describe Planner do
       subject { described_class.new('fake-dep-name', manifest_text, cloud_config) }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
-      let(:cloud_config) { Bosh::Director::Models::CloudConfig.create }
+      let(:cloud_config) { nil }
       let(:manifest_text) { Psych.dump minimal_manifest }
       def minimal_manifest
         {

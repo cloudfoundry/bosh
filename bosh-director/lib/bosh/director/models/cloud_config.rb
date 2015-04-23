@@ -5,6 +5,10 @@ module Bosh
         def before_create
           self.created_at ||= Time.now
         end
+
+        def manifest
+          Psych.load properties
+        end
       end
     end
   end

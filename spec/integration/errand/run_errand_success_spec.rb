@@ -6,7 +6,7 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::Deployments.legacy_manifest_with_errand
+      manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
       manifest_hash['properties'] = {
         'errand1' => {
           'sleep_duration_in_seconds' => 60,
@@ -16,7 +16,7 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
     end
 
     it 'creates a deployment lock' do
-      deploy_simple(manifest_hash: manifest_hash)
+      deploy_from_scratch(manifest_hash: manifest_hash)
 
       bosh_runner.run('--no-track run errand fake-errand-name')
       output = bosh_runner.run_until_succeeds('locks')
@@ -27,7 +27,7 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
   context 'when multiple errands exist in the deployment manifest' do
     with_reset_sandbox_before_each
 
-    let(:manifest_hash) { Bosh::Spec::Deployments.legacy_manifest_with_errand }
+    let(:manifest_hash) { Bosh::Spec::Deployments.manifest_with_errand }
 
     let(:errand_requiring_2_instances) do
       {
@@ -49,16 +49,16 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
     end
 
     context 'with a fixed size resource pool size' do
-      let(:manifest_hash) do
-        manifest_hash = Bosh::Spec::Deployments.legacy_manifest_with_errand
-        manifest_hash['resource_pools'].find { |rp| rp['name'] == 'a' }['size'] = 3
-        manifest_hash
+      let(:cloud_config_hash) do
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash['resource_pools'].find { |rp| rp['name'] == 'a' }['size'] = 3
+        cloud_config_hash
       end
 
       it 'allocates enough empty VMs for the largest errand on deploy and reallocates empty VMs after each errand run' do
         manifest_with_second_errand = manifest_hash
         manifest_with_second_errand['jobs'] << errand_requiring_2_instances
-        deploy_simple(manifest_hash: manifest_with_second_errand)
+        deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_with_second_errand)
         expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
 
         expect_errands('fake-errand-name', 'second-errand-name')
@@ -88,16 +88,16 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
     end
 
     context 'with a dynamically sized resource pool size' do
-      let(:manifest_hash) do
-        manifest_hash = Bosh::Spec::Deployments.legacy_manifest_with_errand
-        manifest_hash['resource_pools'].find { |rp| rp['name'] == 'a' }.delete('size')
-        manifest_hash
+      let(:cloud_config_hash) do
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash['resource_pools'].find { |rp| rp['name'] == 'a' }.delete('size')
+        cloud_config_hash
       end
 
       it 'allocates and de-allocates errand vms for each errand run' do
         manifest_with_second_errand = manifest_hash
         manifest_with_second_errand['jobs'] << errand_requiring_2_instances
-        deploy_simple(manifest_hash: manifest_with_second_errand)
+        deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_with_second_errand)
         expect_running_vms(%w(foobar/0))
 
         expect_errands('fake-errand-name', 'second-errand-name')
@@ -129,6 +129,7 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     context 'when running an errand will require to recreate vm' do
+      let(:static_ip) { '192.168.1.13' }
       let(:manifest_hash) do
         # This test setup depends on questionable bosh behavior.
         # The vm for the errand will be created at deploy time,
@@ -136,36 +137,40 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
         # When the errand is run, a network update will be required.
         # The network update will fail, by default dummy CPI will
         # raise NotSupported, like the aws cpi.
-        manifest_hash = Bosh::Spec::Deployments.legacy_manifest_with_errand
+        manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
 
         # get rid of the non-errand job, it's not important
         manifest_hash['jobs'].delete(manifest_hash['jobs'].find{ |i| i['name'] == 'foobar' })
+        errand_job = manifest_hash['jobs'].find{ |i| i['name'] == 'fake-errand-name' }
+        errand_job_network_a = errand_job['networks'].find{ |i| i['name'] == 'a' }
+        errand_job_network_a['static_ips'] = [static_ip]
 
+        manifest_hash
+      end
+
+      let(:cloud_config_hash) do
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
         # set the errand job to have a static ip to trigger the network update
         # at errand run time.
-        network_a = manifest_hash['networks'].find{ |i| i['name'] == 'a' }
+        network_a = cloud_config_hash['networks'].find{ |i| i['name'] == 'a' }
         network_a_subnet = network_a['subnets'].first
         network_a_subnet['reserved'] =  [
           '192.168.1.2 - 192.168.1.10',
           '192.168.1.14 - 192.168.1.254'
         ]
-        network_a_subnet['static'] = ['192.168.1.13']
-        errand_job = manifest_hash['jobs'].find{ |i| i['name'] == 'fake-errand-name' }
-        errand_job_network_a = errand_job['networks'].find{ |i| i['name'] == 'a' }
-        errand_job_network_a['static_ips'] = ['192.168.1.13']
+        network_a_subnet['static'] = [static_ip]
 
         # setting the size of the pool causes the empty vm to be created
         # at deploy time, and this vm will not have the static IP the job has requested
         # When the errand runs it will try to reuse this unassigned vm and it will
         # require network update since it has static IP.
-        resource_pool_a = manifest_hash['resource_pools'].find { |i| i['name'] == 'a' }
+        resource_pool_a = cloud_config_hash['resource_pools'].find { |i| i['name'] == 'a' }
         resource_pool_a['size'] = 1
-
-        manifest_hash
+        cloud_config_hash
       end
 
       it 'should tear down the VM successfully after running the errand' do
-        deploy_simple(manifest_hash: manifest_hash)
+        deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
         _, exit_code = bosh_runner.run('run errand fake-errand-name', return_exit_code: true)
         expect(exit_code).to eq(0)
@@ -174,33 +179,7 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
 
     context 'when the number of dynamic IPs is equal to the total number of vms' do
       let(:manifest_hash) do
-        manifest_hash = Bosh::Spec::Deployments.legacy_test_release_manifest.merge({
-          'compilation' => {
-            'workers' => 1,
-            'network' => 'fake-network',
-            'cloud_properties' => {},
-          },
-          'networks' => [{
-            'name' => 'fake-network',
-            'subnets' => [{
-              'range' => '192.168.1.0/24',
-              'gateway' => '192.168.1.1',
-              'dns' => ['192.168.1.1', '192.168.1.2'],
-              'reserved' =>
-                ['192.168.1.2 - 192.168.1.12',
-                 '192.168.1.14 - 192.168.1.254'],
-              'cloud_properties' => {}
-            }]}],
-          'resource_pools' => [{
-            'name' => 'fake-resource-pool',
-            'size' => 1,
-            'cloud_properties' => {},
-            'network' => 'fake-network',
-            'stemcell' => {
-              'name' => 'ubuntu-stemcell',
-              'version' => '1',
-            },
-          }],
+        Bosh::Spec::Deployments.test_release_manifest.merge({
           'jobs' => [{
             'name' => 'fake-errand-name',
             'template' => 'errand_without_package',
@@ -212,7 +191,45 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
         })
       end
 
-      before { deploy_simple(manifest_hash: manifest_hash) }
+      let(:cloud_config_hash) do
+        {
+          'compilation' => {
+            'workers' => 1,
+            'network' => 'fake-network',
+            'cloud_properties' => {},
+          },
+          'networks' => [
+            {
+              'name' => 'fake-network',
+              'subnets' => [
+                {
+                  'range' => '192.168.1.0/24',
+                  'gateway' => '192.168.1.1',
+                  'dns' => ['192.168.1.1', '192.168.1.2'],
+                  'reserved' =>
+                    ['192.168.1.2 - 192.168.1.12',
+                      '192.168.1.14 - 192.168.1.254'],
+                  'cloud_properties' => {}
+                }
+              ]
+            }
+          ],
+          'resource_pools' => [
+            {
+              'name' => 'fake-resource-pool',
+              'size' => 1,
+              'cloud_properties' => {},
+              'network' => 'fake-network',
+              'stemcell' => {
+                'name' => 'ubuntu-stemcell',
+                'version' => '1',
+              },
+            }
+          ]
+        }
+      end
+
+      before { deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash) }
 
       it 'should have enough IPs to recreate the vm' do
         _, exit_code = bosh_runner.run('run errand fake-errand-name', return_exit_code: true)
@@ -226,7 +243,7 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
     with_tmp_dir_before_all
 
     before(:all) do
-      deploy_simple(manifest_hash: Bosh::Spec::Deployments.legacy_manifest_with_errand)
+      deploy_from_scratch(manifest_hash: Bosh::Spec::Deployments.manifest_with_errand)
       expect_errands('fake-errand-name')
 
       @output, @exit_code = bosh_runner.run("run errand fake-errand-name --download-logs --logs-dir #{@tmp_dir}",
@@ -261,11 +278,11 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
     let(:manifest_hash) do
       large_property = 64.times.inject('') { |p| p << 'a'*1024 } # generates 64Kb string
       manifest = {'large_property' => large_property }
-      manifest.merge(Bosh::Spec::Deployments.legacy_manifest_with_errand)
+      manifest.merge(Bosh::Spec::Deployments.manifest_with_errand)
     end
 
     it 'deploys successfully' do
-      deploy_simple(manifest_hash: manifest_hash)
+      deploy_from_scratch(manifest_hash: manifest_hash)
 
       _, exit_code = bosh_runner.run('run errand fake-errand-name', { return_exit_code: true })
       expect(exit_code).to eq(0)

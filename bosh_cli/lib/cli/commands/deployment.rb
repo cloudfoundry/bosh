@@ -86,11 +86,13 @@ module Bosh::Cli::Command
       recreate = !!options[:recreate]
       redact_diff = !!options[:redact_diff]
 
-      manifest_yaml = prepare_deployment_manifest(
-        :yaml => true, :resolve_properties => true)
+      manifest_yaml = prepare_deployment_manifest(:yaml => true, :resolve_properties => true)
 
-      inspect_deployment_changes(Psych.load(manifest_yaml),
-        interactive: interactive?, redact_diff: redact_diff)
+      inspect_deployment_changes(
+        Psych.load(manifest_yaml),
+        interactive: interactive?,
+        redact_diff: redact_diff
+      )
       say('Please review all changes carefully'.make_yellow) if interactive?
 
       deployment_name = File.basename(deployment)

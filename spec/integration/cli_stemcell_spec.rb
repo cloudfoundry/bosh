@@ -52,7 +52,7 @@ describe 'cli: stemcell', type: :integration do
 
   context 'when stemcell is in use by a deployment' do
     it 'refuses to delete it' do
-      deploy_simple
+      deploy_from_scratch
       results = bosh_runner.run('delete stemcell ubuntu-stemcell 1', failure_expected: true)
       expect(results).to include("Stemcell `ubuntu-stemcell/1' is still in use by: simple")
     end

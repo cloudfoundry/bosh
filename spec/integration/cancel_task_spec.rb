@@ -4,12 +4,18 @@ describe 'cancel task', type: :integration do
   with_reset_sandbox_before_each
 
   it 'creates a task and then successfully cancels it' do
-    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
-    manifest_hash['compilation']['workers'] = 1
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['jobs'][0]['template'] = 'job_with_blocking_compilation'
     manifest_hash['jobs'][0]['instances'] = 1
 
-    deploy_result = deploy_simple(manifest_hash: manifest_hash, no_track: true)
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash['compilation']['workers'] = 1
+
+    deploy_result = deploy_from_scratch(
+      cloud_config_hash: cloud_config_hash,
+      manifest_hash: manifest_hash,
+      no_track: true
+    )
     task_id = Bosh::Spec::OutputParser.new(deploy_result).task_id('running')
 
     director.wait_for_first_available_vm

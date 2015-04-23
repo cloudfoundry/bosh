@@ -55,6 +55,12 @@ module IntegrationExampleGroup
     bosh_runner.run('login admin admin')
   end
 
+  def upload_cloud_config(options={})
+    cloud_config_hash = options.fetch(:cloud_config_hash, Bosh::Spec::Deployments.simple_cloud_config)
+    cloud_config_manifest = yaml_file('simple', cloud_config_hash)
+    bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+  end
+
   def create_and_upload_test_release
     Dir.chdir(ClientSandbox.test_release_dir) do
       bosh_runner.run_in_current_dir('create release')
@@ -67,7 +73,7 @@ module IntegrationExampleGroup
   end
 
   def set_deployment(options)
-    manifest_hash = options.fetch(:manifest_hash, Bosh::Spec::Deployments.legacy_simple_manifest)
+    manifest_hash = options.fetch(:manifest_hash, Bosh::Spec::Deployments.simple_manifest)
 
     # Hold reference to the tempfile so that it stays around
     # until the end of tests or next deploy.
@@ -81,10 +87,11 @@ module IntegrationExampleGroup
     bosh_runner.run("#{no_track ? '--no-track ' : ''}deploy#{redact_diff ? ' --redact-diff' : ''}", options)
   end
 
-  def deploy_simple(options={})
+  def deploy_from_scratch(options={})
     target_and_login
     create_and_upload_test_release
     upload_stemcell
+    upload_cloud_config(options)
     deploy_simple_manifest(options)
   end
 

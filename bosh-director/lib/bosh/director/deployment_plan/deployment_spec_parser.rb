@@ -14,7 +14,12 @@ module Bosh::Director
       # @param [Hash] manifest Raw deployment manifest
       # @return [DeploymentPlan::Planner] Deployment as build from deployment_spec
       def parse(manifest, cloud_config, options = {})
-        @manifest = manifest
+        @deployment_manifest = manifest
+        if cloud_config.nil?
+          @cloud_manifest = cloud_manifest_from_deployment_manifest @deployment_manifest 
+        else
+          @cloud_manifest = cloud_config.manifest
+        end
 
         @job_states = safe_property(options, 'job_states', :class => Hash, :default => {})
 
@@ -34,27 +39,36 @@ module Bosh::Director
 
       private
 
+      CLOUD_MANIFEST_KEYS = ['resource_pools','compilation','disk_pools','networks']
+      def cloud_manifest_from_deployment_manifest(deployment_manifest)
+        cloud_manifest = {}
+        CLOUD_MANIFEST_KEYS.each do |key|
+          cloud_manifest[key] = deployment_manifest[key] if deployment_manifest.has_key? key
+        end
+        cloud_manifest
+      end
+
       def parse_name
-        safe_property(@manifest, 'name', :class => String)
+        safe_property(@deployment_manifest, 'name', :class => String)
       end
 
       def parse_properties
-        @deployment.properties = safe_property(@manifest, 'properties',
+        @deployment.properties = safe_property(@deployment_manifest, 'properties',
           :class => Hash, :default => {})
       end
 
       def parse_releases
         release_specs = []
 
-        if @manifest.has_key?('release')
-          if @manifest.has_key?('releases')
+        if @deployment_manifest.has_key?('release')
+          if @deployment_manifest.has_key?('releases')
             raise DeploymentAmbiguousReleaseSpec,
               "Deployment manifest contains both 'release' and 'releases' " +
                 'sections, please use one of the two.'
           end
-          release_specs << @manifest['release']
+          release_specs << @deployment_manifest['release']
         else
-          safe_property(@manifest, 'releases', :class => Array).each do |release|
+          safe_property(@deployment_manifest, 'releases', :class => Array).each do |release|
             release_specs << release
           end
         end
@@ -65,7 +79,7 @@ module Bosh::Director
       end
 
       def parse_networks
-        networks = safe_property(@manifest, 'networks', :class => Array)
+        networks = safe_property(@cloud_manifest, 'networks', :class => Array)
         networks.each do |network_spec|
           type = safe_property(network_spec, 'type', :class => String,
             :default => 'manual')
@@ -91,17 +105,17 @@ module Bosh::Director
       end
 
       def parse_compilation
-        compilation_spec = safe_property(@manifest, 'compilation', :class => Hash)
+        compilation_spec = safe_property(@cloud_manifest, 'compilation', :class => Hash)
         @deployment.compilation = CompilationConfig.new(@deployment, compilation_spec)
       end
 
       def parse_update
-        update_spec = safe_property(@manifest, 'update', :class => Hash)
+        update_spec = safe_property(@deployment_manifest, 'update', :class => Hash)
         @deployment.update = UpdateConfig.new(update_spec)
       end
 
       def parse_resource_pools
-        resource_pools = safe_property(@manifest, 'resource_pools', :class => Array)
+        resource_pools = safe_property(@cloud_manifest, 'resource_pools', :class => Array)
         resource_pools.each do |rp_spec|
           @deployment.add_resource_pool(ResourcePool.new(@deployment, rp_spec, @logger))
         end
@@ -111,7 +125,7 @@ module Bosh::Director
       end
 
       def parse_disk_pools
-        disk_pools = safe_property(@manifest, 'disk_pools', :class => Array, :optional => true)
+        disk_pools = safe_property(@cloud_manifest, 'disk_pools', :class => Array, :optional => true)
         return if disk_pools.nil?
         disk_pools.each do |dp_spec|
           @deployment.add_disk_pool(DiskPool.parse(dp_spec))
@@ -119,7 +133,7 @@ module Bosh::Director
       end
 
       def parse_jobs
-        jobs = safe_property(@manifest, 'jobs', :class => Array, :default => [])
+        jobs = safe_property(@deployment_manifest, 'jobs', :class => Array, :default => [])
         jobs.each do |job_spec|
           state_overrides = @job_states[job_spec['name']]
           if state_overrides

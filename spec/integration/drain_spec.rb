@@ -5,11 +5,14 @@ describe 'drain', type: :integration do
     with_reset_sandbox_before_all
 
     before(:all) do
-      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash['resource_pools'].first['size'] = 1
+
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
       manifest_hash['releases'].first['version'] = 'latest'
       manifest_hash['jobs'][0]['instances'] = 1
-      manifest_hash['resource_pools'][0]['size'] = 1
-      deploy_simple(manifest_hash: manifest_hash)
+
+      deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
       manifest_hash['jobs'][0]['persistent_disk'] = 100
       manifest_hash['properties'] ||= {}
@@ -33,13 +36,16 @@ describe 'drain', type: :integration do
     with_reset_sandbox_before_all
 
     before(:all) do
-      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash['resource_pools'].first['size'] = 1
+
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
       manifest_hash['releases'].first['version'] = 'latest'
       manifest_hash['jobs'][0]['instances'] = 1
-      manifest_hash['resource_pools'][0]['size'] = 1
       manifest_hash['properties'] ||= {}
       manifest_hash['properties']['drain_type'] = 'dynamic'
-      deploy_simple(manifest_hash: manifest_hash)
+
+      deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
       manifest_hash['properties']['test_property'] = 0
       deploy_simple_manifest(manifest_hash: manifest_hash)

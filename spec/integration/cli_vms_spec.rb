@@ -4,9 +4,9 @@ describe 'cli: vms', type: :integration do
   with_reset_sandbox_before_each
 
   it 'should return vms in a deployment' do
-    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['releases'].first['version'] = 'latest'
-    deploy_simple(manifest_hash: manifest_hash)
+    deploy_from_scratch(manifest_hash: manifest_hash)
 
     vms = bosh_runner.run('vms')
     expect(vms).to match /foobar\/0/
@@ -16,7 +16,7 @@ describe 'cli: vms', type: :integration do
   end
 
   it 'should return vm --vitals' do
-    deploy_simple
+    deploy_from_scratch
     vitals = director.vms_vitals[0]
 
     expect(vitals[:cpu_user]).to match /\d+\.?\d*[%]/

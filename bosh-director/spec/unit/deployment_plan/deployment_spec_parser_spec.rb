@@ -32,7 +32,7 @@ module Bosh::Director
             canonical_name: 'fake-network-name',
           })
         end
-        let(:cloud_config) { Models::CloudConfig.create }
+        let(:cloud_config) { nil }
 
         describe 'name key' do
           it 'parses name' do

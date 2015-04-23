@@ -14,11 +14,11 @@ describe 'cli: deployment process', type: :integration do
       parse_release_tarball_path(output)
     end
 
-    deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.legacy_simple_manifest)
-    expect(File).to exist(release_filename)
-    expect(File).to exist(deployment_manifest.path)
+    cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+    deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.simple_manifest)
 
     target_and_login
+    bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
     bosh_runner.run("deployment #{deployment_manifest.path}")
     bosh_runner.run("upload stemcell #{stemcell_filename}")
     bosh_runner.run("upload release #{release_filename}")
@@ -32,12 +32,14 @@ describe 'cli: deployment process', type: :integration do
     context 'given two deployments from one release' do
       it 'is successful' do
         release_filename = spec_asset('valid_release.tgz')
-        minimal_manifest = Bosh::Spec::Deployments.legacy_minimal_manifest
-        deployment_manifest = yaml_file('minimal', minimal_manifest)
+        minimal_manifest = Bosh::Spec::Deployments.minimal_manifest
+        deployment_manifest = yaml_file('minimal_deployment', minimal_manifest)
+        cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.minimal_cloud_config)
 
         target_and_login
         bosh_runner.run("deployment #{deployment_manifest.path}")
         bosh_runner.run("upload release #{release_filename}")
+        bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
 
         filename = File.basename(deployment_manifest.path)
         expect(bosh_runner.run('deploy')).to match /Deployed `#{filename}' to `Test Director'/
@@ -52,9 +54,9 @@ describe 'cli: deployment process', type: :integration do
           +----------+--------------+-------------+--------------+
           | Name     | Release(s)   | Stemcell(s) | Cloud Config |
           +----------+--------------+-------------+--------------+
-          | minimal  | appcloud/0.1 |             | none         |
+          | minimal  | appcloud/0.1 |             | latest       |
           +----------+--------------+-------------+--------------+
-          | minimal2 | appcloud/0.1 |             | none         |
+          | minimal2 | appcloud/0.1 |             | latest       |
           +----------+--------------+-------------+--------------+
 
           Deployments total: 2
@@ -66,23 +68,20 @@ describe 'cli: deployment process', type: :integration do
   describe 'bosh deployments' do
     it 'lists deployment details' do
       release_filename = spec_asset('valid_release.tgz')
-      deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.legacy_minimal_manifest)
+      deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.minimal_manifest)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.minimal_cloud_config)
 
-      Dir.mktmpdir do |tmpdir|
-        cloud_config_path = File.join(tmpdir, 'cloud_config.yml')
-        File.write(cloud_config_path, "")
+      target_and_login
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("deployment #{deployment_manifest.path}")
+      bosh_runner.run("upload release #{release_filename}")
 
-        target_and_login
-        bosh_runner.run("update cloud-config #{cloud_config_path}")
-        bosh_runner.run("deployment #{deployment_manifest.path}")
-        bosh_runner.run("upload release #{release_filename}")
+      out = bosh_runner.run('deploy')
+      filename = File.basename(deployment_manifest.path)
+      expect(out).to match /Deployed `#{filename}' to `Test Director'/
 
-        out = bosh_runner.run('deploy')
-        filename = File.basename(deployment_manifest.path)
-        expect(out).to match /Deployed `#{filename}' to `Test Director'/
-
-        deployments_output = bosh_runner.run('deployments')
-        expect(deployments_output).to eq(<<-OUT)
+      deployments_output = bosh_runner.run('deployments')
+      expect(deployments_output).to eq(<<-OUT)
 
 +---------+--------------+-------------+--------------+
 | Name    | Release(s)   | Stemcell(s) | Cloud Config |
@@ -92,16 +91,17 @@ describe 'cli: deployment process', type: :integration do
 
 Deployments total: 1
         OUT
-      end
     end
   end
 
   describe 'bosh delete deployment' do
     it 'deletes an existing deployment' do
       release_filename = spec_asset('valid_release.tgz')
-      deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.legacy_minimal_manifest)
+      deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.minimal_manifest)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.minimal_cloud_config)
 
       target_and_login
+      bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
       bosh_runner.run("deployment #{deployment_manifest.path}")
       bosh_runner.run("upload release #{release_filename}")
 

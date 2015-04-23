@@ -4,11 +4,11 @@ describe 'deploy job update', type: :integration do
   with_reset_sandbox_before_each
 
   it 'updates a job with multiple instances in parallel and obeys max_in_flight' do
-    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['update']['canaries'] = 0
     manifest_hash['update']['max_in_flight'] = 2
     manifest_hash['properties'] = { 'test_property' => 2 }
-    deploy_simple(manifest_hash: manifest_hash)
+    deploy_from_scratch(manifest_hash: manifest_hash)
 
     times = start_and_finish_times_for_job_updates('last')
     expect(times['foobar/1']['started']).to be >= times['foobar/0']['started']
@@ -16,34 +16,126 @@ describe 'deploy job update', type: :integration do
     expect(times['foobar/2']['started']).to be >= [times['foobar/0']['finished'], times['foobar/1']['finished']].min
   end
 
-  it 'redacts manifest diff values when requested' do
-    deploy_simple
+  describe 'Displaying manifest diffs' do
+    let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
 
-    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
-    manifest_hash['update']['canary_watch_time'] = 0
-    manifest_hash['jobs'][0]['instances'] = 2
-    manifest_hash['resource_pools'][0]['size'] = 2
+    it 'only accurately reports deployment configuration changes and not cloud configuration changes' do
+      deploy_from_scratch
 
-    set_deployment(manifest_hash: manifest_hash)
-    deploy_output = deploy(failure_expected: true, redact_diff: true)
-    puts deploy_output
-    expect(deploy_output).to match(/Update\nChanges found - Redacted/m)
-    expect(deploy_output).to match(/Resource pools\nChanges found - Redacted/m)
-    expect(deploy_output).to match(/Disk pools\nNo changes/m)
-    expect(deploy_output).to match(/Jobs\nChanges found - Redacted/m)
+      cloud_config_hash['resource_pools'][0]['size'] = 2
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      manifest_hash['update']['canary_watch_time'] = 0
+      manifest_hash['jobs'][0]['instances'] = 2
+
+      set_deployment(manifest_hash: manifest_hash)
+
+      deploy_output = deploy(failure_expected: true, redact_diff: true)
+      expect(deploy_output).to match(/Update\nChanges found - Redacted/m)
+      expect(deploy_output).to match(/Jobs\nChanges found - Redacted/m)
+
+      expect(deploy_output).to_not match(/Resource pools\nChanges found - Redacted/m)
+    end
+
+    context 'when using legacy deployment configuration' do
+      let(:legacy_manifest_hash) { manifest_hash.merge(cloud_config_hash) }
+      let(:modified_legacy_manifest_hash) do
+        modified_legacy_manifest_hash = manifest_hash.merge(cloud_config_hash)
+        modified_legacy_manifest_hash['resource_pools'][0]['size'] = 2
+        modified_legacy_manifest_hash['update']['canary_watch_time'] = 0
+        modified_legacy_manifest_hash['jobs'][0]['instances'] = 2
+        modified_legacy_manifest_hash
+      end
+
+      context 'when previous deployment was in the legacy style with a cloud_config already in the system' do
+        before do
+          target_and_login
+          create_and_upload_test_release
+          upload_stemcell
+          upload_cloud_config(cloud_config_hash: cloud_config_hash)
+          deploy_simple_manifest(manifest_hash: legacy_manifest_hash)
+        end
+
+        it 'incorrectly reports cloud configuration changes between the 2 legacy manifests even though the cloud config did not change' do
+          set_deployment(manifest_hash: modified_legacy_manifest_hash)
+
+          deploy_output = deploy(failure_expected: true, redact_diff: true)
+          expect(deploy_output).to_not match(/Resource pools\nNo change/m)
+        end
+      end
+
+      context 'when previous deployment was in the new style' do
+        before do
+          target_and_login
+          create_and_upload_test_release
+          upload_stemcell
+          upload_cloud_config(cloud_config_hash: cloud_config_hash)
+          deploy_simple_manifest(manifest_hash: manifest_hash)
+        end
+
+        it 'incorrectly reports cloud configuration changes since it does not have cloud config info from the previous deploy' do
+          set_deployment(manifest_hash: legacy_manifest_hash)
+
+          deploy_output = deploy(failure_expected: true, redact_diff: true)
+          expect(deploy_output).to_not match(/Resource pools\nNo changes/m)
+        end
+      end
+
+      context 'when previous deployment was in the legacy style and a cloud config is uploaded prior to new deployment' do
+        before do
+          target_and_login
+          create_and_upload_test_release
+          upload_stemcell
+          deploy_simple_manifest(manifest_hash: legacy_manifest_hash)
+
+          upload_cloud_config(cloud_config_hash: cloud_config_hash)
+        end
+
+        it 'incorrectly reports cloud configuration changes even though they have not changed' do
+          set_deployment(manifest_hash: modified_legacy_manifest_hash)
+
+          deploy_output = deploy(failure_expected: true, redact_diff: true)
+          expect(deploy_output).to_not match(/Resource pools\nNo changes/m)
+        end
+      end
+
+      context 'when previous deployment was in the legacy style and there is no cloud config in the system' do
+        before do
+          target_and_login
+          create_and_upload_test_release
+          upload_stemcell
+          deploy_simple_manifest(manifest_hash: legacy_manifest_hash)
+        end
+
+        it 'correctly reports changes between the legacy deployments' do
+          set_deployment(manifest_hash: modified_legacy_manifest_hash)
+
+          deploy_output = deploy(failure_expected: true, redact_diff: true)
+          expect(deploy_output).to match(/Update\nChanges found - Redacted/m)
+          expect(deploy_output).to match(/Resource pools\nChanges found - Redacted/m)
+          expect(deploy_output).to match(/Disk pools\nNo changes/m)
+          expect(deploy_output).to match(/Jobs\nChanges found - Redacted/m)
+        end
+      end
+    end
   end
 
   it 'stops deployment when a job update fails' do
-    deploy_simple
+    deploy_from_scratch
 
     director.vm('foobar/0').fail_job
 
-    manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash['resource_pools'][0]['size'] = 2
+    upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
     manifest_hash['update']['canary_watch_time'] = 0
     manifest_hash['jobs'][0]['instances'] = 2
-    manifest_hash['resource_pools'][0]['size'] = 2
-
     set_deployment(manifest_hash: manifest_hash)
+
     deploy_output, exit_code = deploy(failure_expected: true, return_exit_code: true)
     expect(exit_code).to_not eq(0)
 

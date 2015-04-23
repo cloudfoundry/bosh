@@ -2,10 +2,6 @@ module Bosh::Spec
   class Deployments
     # This is a minimal manifest that deploys successfully.
     # It doesn't have any jobs, so it's not very realistic though
-    def self.legacy_minimal_manifest
-      minimal_manifest.merge(minimal_cloud_config)
-    end
-
     def self.minimal_cloud_config
       {
         'networks' => [{
@@ -69,17 +65,6 @@ module Bosh::Spec
       }
     end
 
-    def self.legacy_test_release_manifest
-      legacy_minimal_manifest.merge(
-        'name' => 'simple',
-
-        'releases' => [{
-          'name'    => 'bosh-release',
-          'version' => '0.1-dev',
-        }]
-      )
-    end
-
     def self.test_release_manifest
       minimal_manifest.merge(
         'name' => 'simple',
@@ -89,10 +74,6 @@ module Bosh::Spec
           'version' => '0.1-dev',
         }]
       )
-    end
-
-    def self.legacy_simple_manifest
-      simple_manifest.merge(simple_cloud_config)
     end
 
     def self.simple_manifest
@@ -107,29 +88,26 @@ module Bosh::Spec
       })
     end
 
-    def self.legacy_manifest_with_errand
-      manifest = legacy_simple_manifest.merge(
-        'name' => 'errand'
-      )
+    def self.manifest_with_errand
+      manifest = simple_manifest.merge('name' => 'errand')
       manifest['jobs'].find { |job| job['name'] == 'foobar'}['instances'] = 1
-      manifest['resource_pools'].first.delete('size')
 
       manifest['jobs'] << {
-          'name' => 'fake-errand-name',
-          'template' => 'errand1',
-          'lifecycle' => 'errand',
-          'resource_pool' => 'a',
-          'instances' => 1,
-          'networks' => [{'name' => 'a'}],
-          'properties' => {
-            'errand1' => {
-              'exit_code' => 0,
-              'stdout' => 'fake-errand-stdout',
-              'stderr' => 'fake-errand-stderr',
-              'run_package_file' => true,
-            },
+        'name' => 'fake-errand-name',
+        'template' => 'errand1',
+        'lifecycle' => 'errand',
+        'resource_pool' => 'a',
+        'instances' => 1,
+        'networks' => [{'name' => 'a'}],
+        'properties' => {
+          'errand1' => {
+            'exit_code' => 0,
+            'stdout' => 'fake-errand-stdout',
+            'stderr' => 'fake-errand-stderr',
+            'run_package_file' => true,
           },
-        }
+        },
+      }
 
       manifest
     end

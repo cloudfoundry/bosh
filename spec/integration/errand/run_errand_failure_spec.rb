@@ -8,7 +8,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
     with_tmp_dir_before_all
 
     before(:all) do
-      manifest_hash = Bosh::Spec::Deployments.legacy_manifest_with_errand
+      manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
       jobs = manifest_hash['jobs']
 
       jobs.find { |job| job['name'] == 'fake-errand-name'}['properties'] = {
@@ -19,7 +19,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
         },
       }
 
-      deploy_simple(manifest_hash: manifest_hash)
+      deploy_from_scratch(manifest_hash: manifest_hash)
     end
 
     context 'with the keep-alive option set' do
@@ -29,7 +29,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
         expect(output).to include("[stdout]\nNone")
         expect(output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
         expect(exit_code).to_not eq(0)
-        expect_running_vms(%w(fake-errand-name/0 foobar/0))
+        expect_running_vms(%w(fake-errand-name/0 foobar/0 unknown/unknown))
       end
     end
 
@@ -40,7 +40,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
       )
       expect(exit_code).to eq(1)
 
-      expect_running_vms(%w(foobar/0))
+      expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
 
       expect(output).to include("[stdout]\nNone")
       expect(output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
@@ -56,7 +56,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::Deployments.legacy_manifest_with_errand
+      manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
 
       # Sleep so we have time to cancel it
       manifest_hash['jobs'].last['properties']['errand1']['sleep_duration_in_seconds'] = 5000
@@ -65,7 +65,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
     end
 
     it 'successfully cancels the errand and returns exit code' do
-      deploy_simple(manifest_hash: manifest_hash)
+      deploy_from_scratch(manifest_hash: manifest_hash)
 
       errand_result = bosh_runner.run('--no-track run errand fake-errand-name')
       task_id = Bosh::Spec::OutputParser.new(errand_result).task_id('running')
@@ -89,7 +89,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
 
       # Mark foobar as an errand even though it does not have bin/run
       manifest_hash['jobs'].first['lifecycle'] = 'errand'
@@ -98,7 +98,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
     end
 
     it 'returns 1 as exit code and mentions absence of bin/run' do
-      deploy_simple(manifest_hash: manifest_hash)
+      deploy_from_scratch(manifest_hash: manifest_hash)
 
       output, exit_code = bosh_runner.run('run errand foobar', {failure_expected: true, return_exit_code: true})
 
@@ -114,7 +114,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     it 'returns 1 as exit code and mentions not found errand' do
-      deploy_simple
+      deploy_from_scratch
 
       output, exit_code = bosh_runner.run('run errand unknown-errand-name',
                                           {failure_expected: true, return_exit_code: true})
@@ -128,18 +128,23 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
   context 'when deploying sized resource pools with insufficient capacity for all errands' do
     with_reset_sandbox_before_each
 
-    let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::Deployments.legacy_manifest_with_errand
-
+    let(:manifest_hash) { Bosh::Spec::Deployments.manifest_with_errand }
+    let(:cloud_config_hash) do
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
       total_instance_count = manifest_hash['jobs'].inject(0) { |sum, job| sum + job['instances'] }
-      manifest_hash['resource_pools'].first['size'] = total_instance_count - 1
-      manifest_hash
+      cloud_config_hash['resource_pools'].first['size'] = total_instance_count - 1
+      cloud_config_hash
     end
 
     it 'returns 1 as exit code and mentions insufficient resources' do
-      output, exit_code = deploy_simple(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
+      output, exit_code = deploy_from_scratch(
+        cloud_config_hash: cloud_config_hash,
+        manifest_hash: manifest_hash,
+        failure_expected: true,
+        return_exit_code: true
+      )
 
-      capacity = manifest_hash['resource_pools'].first['size']
+      capacity = cloud_config_hash['resource_pools'].first['size']
       expect(output).to include("Resource pool `a' is not big enough: #{capacity + 1} VMs needed, capacity is #{capacity}")
       expect(exit_code).to eq(1)
     end

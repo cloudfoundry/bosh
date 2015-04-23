@@ -61,10 +61,13 @@ describe 'release lifecycle', type: :integration do
 
     bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
 
-    manifest = Bosh::Spec::Deployments.legacy_simple_manifest
+    cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+    bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
+
+    manifest = Bosh::Spec::Deployments.simple_manifest
     manifest['releases'].first['version'] = 'latest'
 
-    deployment_manifest = yaml_file('simple', manifest)
+    deployment_manifest = yaml_file('deployment_manifest', manifest)
     bosh_runner.run("deployment #{deployment_manifest.path}")
 
     bosh_runner.run('deploy')

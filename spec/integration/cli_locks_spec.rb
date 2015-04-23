@@ -5,9 +5,9 @@ describe 'cli: locks', type: :integration do
 
   context 'when a deployment is in progress' do
     before do
-      manifest_hash = Bosh::Spec::Deployments.legacy_simple_manifest
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
       manifest_hash['update']['canary_watch_time'] = 6000
-      deploy_simple(manifest_hash: manifest_hash, no_track: true)
+      deploy_from_scratch(manifest_hash: manifest_hash, no_track: true)
     end
 
     it 'lists a deployment lock' do
