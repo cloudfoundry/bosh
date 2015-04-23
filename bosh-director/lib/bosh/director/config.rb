@@ -10,7 +10,7 @@ module Bosh::Director
     class << self
       include DnsHelper
 
-      CONFIG_OPTIONS = [
+      attr_accessor(
         :base_dir,
         :cloud_options,
         :db,
@@ -33,11 +33,7 @@ module Bosh::Director
         :enable_snapshots,
         :max_vm_create_tries,
         :nats_uri,
-      ]
-
-      CONFIG_OPTIONS.each do |option|
-        attr_accessor option
-      end
+      )
 
       attr_reader :db_config, :redis_logger_level
 
