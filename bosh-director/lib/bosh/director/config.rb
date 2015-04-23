@@ -42,8 +42,8 @@ module Bosh::Director
       attr_reader :db_config, :redis_logger_level
 
       def clear
-        CONFIG_OPTIONS.each do |option|
-          self.instance_variable_set("@#{option}".to_sym, nil)
+        self.instance_variables.each do |ivar|
+          self.instance_variable_set(ivar, nil)
         end
 
         Thread.list.each do |thr|
