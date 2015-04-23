@@ -27,7 +27,7 @@ PATH
   remote: bosh-core
   specs:
     bosh-core (1.2941.0)
-      gibberish (~> 1.2.0)
+      gibberish (~> 1.4.0)
       yajl-ruby (~> 1.2.0)
 
 PATH
@@ -367,7 +367,7 @@ GEM
       fog-core
       nokogiri (~> 1.5, >= 1.5.11)
     formatador (0.2.5)
-    gibberish (1.2.2)
+    gibberish (1.4.0)
     highline (1.6.21)
     httpclient (2.4.0)
     inflecto (0.0.2)

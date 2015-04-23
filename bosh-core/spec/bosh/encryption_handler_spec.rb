@@ -125,7 +125,7 @@ module Bosh::Core
       handler = EncryptionHandler.new('client_id', @credentials)
       expect {
         handler.decrypt('f')
-      }.to raise_error(EncryptionHandler::DecryptionError, /TypeError/)
+      }.to raise_error(EncryptionHandler::DecryptionError, /ArgumentError/)
 
       expect {
         handler.decrypt('fddddddddddddddddddddddddddddddddddddddddddddddddd')
