@@ -335,7 +335,9 @@ module Bosh::Director
       def persistent_disk_changed?
         new_disk_size = @job.persistent_disk_pool ? @job.persistent_disk_pool.disk_size : 0
         new_disk_cloud_properties = @job.persistent_disk_pool ? @job.persistent_disk_pool.cloud_properties : {}
-        new_disk_size != disk_size || new_disk_cloud_properties != disk_cloud_properties
+        return true if new_disk_size != disk_size
+
+        new_disk_size != 0 && new_disk_cloud_properties != disk_cloud_properties
       end
 
       ##

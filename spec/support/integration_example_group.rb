@@ -69,7 +69,7 @@ module IntegrationExampleGroup
   end
 
   def upload_stemcell
-    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')}")
+    bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')} --skip-if-exists")
   end
 
   def set_deployment(options)
