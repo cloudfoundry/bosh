@@ -54,9 +54,11 @@ rpm --rebuilddb
 if [ ! -f $chroot/custom_rhel_yum.conf ]; then
   cp /bosh/stemcell_builder/etc/custom_rhel_yum.conf $chroot/
 fi
+run_in_chroot $chroot "yum -c /custom_rhel_yum.conf update --assumeyes"
+run_in_chroot $chroot "yum -c /custom_rhel_yum.conf --verbose --assumeyes groupinstall Base"
+run_in_chroot $chroot "yum -c /custom_rhel_yum.conf --verbose --assumeyes groupinstall 'Development Tools'"
+run_in_chroot $chroot "yum -c /custom_rhel_yum.conf clean all"
 
-pkg_mgr -c /custom_rhel_yum.conf install subscription-manager
-pkg_mgr -c /custom_rhel_yum.conf groupinstall 'Development Tools'
 
 # subscription-manager allows access to the Red Hat update server. It detects which repos
 # it should allow access to based on the contents of 69.pem.
