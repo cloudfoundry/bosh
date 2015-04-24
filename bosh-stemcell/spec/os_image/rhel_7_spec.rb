@@ -53,6 +53,7 @@ describe 'RHEL 7 OS image', os_image: true do
       NetworkManager
       nmap-ncat
       openssh-server
+      openssl
       openssl-devel
       parted
       psmisc
