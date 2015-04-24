@@ -160,6 +160,9 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
+* `uVRZSKujJb4zU2KrtAH.xVLly3agHc7M`
+  reinstall `base` metapackage to enable proper BOSH Director operation 
+
 * `0_zs2Y2A.QhW00r1tbb7Oa7XcMY3GdkW`
   install net-tools for stemcell acceptance testing
 
