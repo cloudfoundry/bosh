@@ -17,12 +17,21 @@ module Bosh::Director::DeploymentPlan
         network: net,
       })
     end
-    let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', resource_pool: resource_pool, deployment: plan, name: 'fake-job') }
-    let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', network: net) }
+    let(:job) do
+      instance_double('Bosh::Director::DeploymentPlan::Job',
+        resource_pool: resource_pool,
+        deployment: plan,
+        name: 'fake-job',
+        persistent_disk_pool: disk_pool,
+      )
+    end
+    let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', network: net, name: 'fake-resource-pool') }
+    let(:disk_pool) { nil }
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
     let(:vm) { Vm.new(resource_pool) }
     before do
       allow(resource_pool).to receive(:allocate_vm).and_return(vm)
+      allow(resource_pool).to receive(:add_allocated_vm).and_return(vm)
       allow(job).to receive(:instance_state).with(0).and_return('started')
     end
 
@@ -72,7 +81,6 @@ module Bosh::Director::DeploymentPlan
           network: network,
         })
       end
-      before { allow(resource_pool).to receive(:add_allocated_vm).and_return(vm) }
 
       let(:vm) do
         instance_double('Bosh::Director::DeploymentPlan::Vm', {
@@ -793,6 +801,28 @@ module Bosh::Director::DeploymentPlan
         # change DB to NOT match real instance/vm
         instance_model.vm.update(env: {'key' => 'value2'})
         expect(instance.resource_pool_changed?).to be(true)
+      end
+    end
+
+    describe 'persistent_disk_changed?' do
+      context 'when disk pool with size 0 is used' do
+        let(:disk_pool) do
+          Bosh::Director::DeploymentPlan::DiskPool.parse(
+            {
+              'name' => 'fake-name',
+              'disk_size' => 0,
+              'cloud_properties' => {'type' => 'fake-type'},
+            }
+          )
+        end
+
+        before { instance.bind_existing_instance(instance_model, {}, {}) }
+
+        context 'when disk_size is still 0' do
+          it 'returns false' do
+            expect(instance.persistent_disk_changed?).to be(false)
+          end
+        end
       end
     end
 
