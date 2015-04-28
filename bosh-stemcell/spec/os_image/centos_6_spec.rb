@@ -5,12 +5,6 @@ describe 'CentOS 6.x OS image', os_image: true do
   it_behaves_like 'a CentOS or RHEL based OS image'
   it_behaves_like 'an upstart-based OS image'
 
-  context 'installed by rsyslog_build' do
-    describe command('rsyslogd -v') do
-      it { should return_stdout /7\.4\.6/ }
-    end
-  end
-
   context 'installed by base_centos' do
     describe file('/etc/sysconfig/i18n') do
       it { should be_file }
@@ -52,6 +46,10 @@ describe 'CentOS 6.x OS image', os_image: true do
       psmisc
       quota
       readline-devel
+      rsyslog
+      rsyslog-relp
+      rsyslog-gnutls
+      rsyslog-mmjsonparse
       rpm-build
       rpmdevtools
       rsync

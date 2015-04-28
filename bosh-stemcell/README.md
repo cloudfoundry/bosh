@@ -140,5 +140,5 @@ If you find yourself debugging any of the above processes, here is what you need
    For example:
 
    ```
-   bundle exec rake stemcell:build_os_image[ubuntu,trusty,/tmp/ubuntu_base_image.tgz] resume_from=rsyslog_build
+   bundle exec rake stemcell:build_os_image[ubuntu,trusty,/tmp/ubuntu_base_image.tgz] resume_from=rsyslog_config
    ```

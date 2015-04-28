@@ -30,9 +30,18 @@ shared_examples_for 'every OS image' do
     end
   end
 
-  context 'installed by rsyslog_config' do
+  context 'installed by rsyslosyg_config' do
+    before do
+      system("sudo mount --bind /dev #{backend.chroot_dir}/dev")
+    end
+
+    after do
+      system("sudo umount #{backend.chroot_dir}/dev")
+    end
+
     describe file('/etc/rsyslog.conf') do
       it { should be_file }
+      it { should contain '\$ModLoad omrelp' }
     end
 
     describe user('syslog') do
@@ -42,6 +51,16 @@ shared_examples_for 'every OS image' do
 
     describe group('adm') do
       it { should exist }
+    end
+
+    describe command('rsyslogd -N 1') do
+      it { should return_stdout /version 8/ }
+      it { should return_exit_status(0) }
+    end
+
+    describe file('/etc/rsyslog.d/enable-kernel-logging.conf') do
+      it { should be_file }
+      it { should contain('ModLoad imklog') }
     end
   end
 

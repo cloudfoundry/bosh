@@ -115,6 +115,10 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
       iptables
       sysstat
       rsync
+      rsyslog
+      rsyslog-relp
+      rsyslog-gnutls
+      rsyslog-mmjsonparse
       openssh-server
       traceroute
       libncurses5-dev
@@ -208,17 +212,6 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
   context 'symlinked by vim_tiny' do
     describe file('/usr/bin/vim') do
       it { should be_linked_to '/usr/bin/vim.tiny' }
-    end
-  end
-
-  context 'installed by rsyslog_build' do
-    describe file('/etc/rsyslog.d/enable-kernel-logging.conf') do
-      it { should be_file }
-      it { should contain('ModLoad imklog') }
-    end
-
-    describe command('rsyslogd -v') do
-      it { should return_stdout /7\.4\.6/ }
     end
   end
 

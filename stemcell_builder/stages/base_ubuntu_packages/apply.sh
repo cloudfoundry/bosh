@@ -13,8 +13,12 @@ rsync openssh-server traceroute libncurses5-dev quota \
 libaio1 gdb libcap2-bin libcap2-dev libbz2-dev \
 cmake uuid-dev libgcrypt-dev ca-certificates \
 scsitools mg htop module-assistant debhelper runit parted \
-anacron"
+anacron software-properties-common"
 pkg_mgr install $debs
+
+# we need newer rsyslog; this comes from the upstream project's own repo
+run_in_chroot $chroot "add-apt-repository ppa:adiscon/v8-stable"
+pkg_mgr install "rsyslog rsyslog-relp rsyslog-mmjsonparse rsyslog-gnutls"
 
 exclusions="postfix"
 pkg_mgr purge --auto-remove $exclusions

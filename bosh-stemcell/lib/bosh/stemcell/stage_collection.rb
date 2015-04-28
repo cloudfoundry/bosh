@@ -204,10 +204,6 @@ module Bosh::Stemcell
           :cron_config,
       ].flatten
 
-      if operating_system.version.to_f < 7
-        os_stages.insert(os_stages.index(:rsyslog_config),:rsyslog_build)
-      end
-
       os_stages
     end
 
@@ -237,7 +233,6 @@ module Bosh::Stemcell
         :bosh_sysstat,
         :system_kernel,
         bosh_steps,
-        :rsyslog_build,
         :rsyslog_config,
         :delay_monit_start,
         :system_grub,

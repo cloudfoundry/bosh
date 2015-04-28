@@ -14,6 +14,10 @@ if [ -d $chroot/etc/init ]; then
   cp $assets_dir/rsyslog_upstart.conf $chroot/etc/init/rsyslog.conf
 fi
 
+if [ -x $chroot/usr/bin/systemctl ]; then
+  run_in_bosh_chroot $chroot "systemctl enable rsyslog.service"
+fi
+
 cp $assets_dir/rsyslog_logrotate.conf $chroot/etc/logrotate.d/rsyslog
 
 # erase default rsyslog.d contents in case it was populated by an OS package;
@@ -24,9 +28,7 @@ else
   mkdir -p $chroot/etc/rsyslog.d
 fi
 
-if [ -f $chroot/etc/debian_version ]; then
-  cp $assets_dir/enable-kernel-logging.conf $chroot/etc/rsyslog.d/enable-kernel-logging.conf
-fi
+cp $assets_dir/enable-kernel-logging.conf $chroot/etc/rsyslog.d/enable-kernel-logging.conf
 
 cp -f $assets_dir/rsyslog_50-default.conf $chroot/etc/rsyslog.d/50-default.conf
 
