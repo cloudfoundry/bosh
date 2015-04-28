@@ -61,5 +61,3 @@ CMD ["echo 'ERROR: No Command Specified!' && exit 1"]
 
 RUN git config --global user.email "cf-bosh-eng@pivotal.io"
 RUN git config --global user.name "BOSH GOCD"
-
-RUN chown root:root /usr/bin/sudo && chmod 4755 /usr/bin/sudo
