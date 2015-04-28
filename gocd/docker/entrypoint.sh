@@ -3,12 +3,11 @@
 set -e
 set -x
 
-# run mysql as root (NOPASSWD recommended)
 echo "Starting MySQL..."
-sudo /etc/init.d/mysql start
+sudo service mysql start
 
 echo "Starting PostgreSQL..."
-pg_ctl start -l /var/log/postgresql/server.log
+sudo service postgresql start
 
 [ -d /opt/bosh ] && sudo chown -R ubuntu:ubuntu /opt/bosh
 
@@ -18,9 +17,9 @@ $@
 exitcode=$?
 
 echo "Stopping PostgreSQL..."
-pg_ctl stop
+sudo service postgresql stop
 
 echo "Stopping MySQL..."
-sudo /etc/init.d/mysql stop
+sudo service mysql stop
 
 exit $exitcode
