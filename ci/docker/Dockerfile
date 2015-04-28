@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu:14.10
 
 RUN locale-gen en_US.UTF-8
 RUN dpkg-reconfigure locales
@@ -49,18 +49,7 @@ RUN cd /tmp; ./install-java.sh; rm install-java.sh
 ENV JAVA_HOME /usr/lib/jvm/zulu1.8.0_25-8.4.0.1-x86lx64
 ENV PATH $JAVA_HOME/bin:$PATH
 
-# create ubuntu user with no password
-RUN useradd -mU ubuntu -s /bin/bash
-RUN echo "ubuntu ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
-RUN apt-get install -y postgresql-9.3 pgadmin3; apt-get clean
-ENV PATH /usr/lib/postgresql/9.3/bin:$PATH
-
-# create postgres data & lock dirs
-ENV PGDATA /var/postgres
-RUN mkdir -p /var/postgres && chown ubuntu:ubuntu /var/postgres
-RUN mkdir -p /var/run/postgresql && chown ubuntu:ubuntu /var/run/postgresql
-RUN mkdir -p /var/log/postgresql && chown ubuntu:ubuntu /var/log/postgresql
+RUN apt-get install -y postgresql; apt-get clean
 
 # mysql must be run as root
 # mysql user: root/password
@@ -68,17 +57,9 @@ RUN echo 'mysql-server mysql-server/root_password password password' | debconf-s
 RUN echo 'mysql-server mysql-server/root_password_again password password' | debconf-set-selections
 RUN apt-get install -y mysql-server
 
-ADD entrypoint.sh /home/ubuntu/entrypoint.sh
-RUN chmod a+x /home/ubuntu/entrypoint.sh
-RUN chown ubuntu:ubuntu /home/ubuntu/entrypoint.sh
-ENTRYPOINT ["/home/ubuntu/entrypoint.sh"]
 CMD ["echo 'ERROR: No Command Specified!' && exit 1"]
 
-USER ubuntu
-ENV HOME /home/ubuntu
-
-# postgres must be run as non-root
-# postgres user: ubuntu/<no-password>
-RUN pg_ctl init && pg_ctl start -l /var/log/postgresql/server.log && sleep 4 && createuser -U ubuntu --superuser postgres && createdb -U ubuntu && pg_ctl stop
 RUN git config --global user.email "cf-bosh-eng@pivotal.io"
 RUN git config --global user.name "BOSH GOCD"
+
+RUN chown root:root /usr/bin/sudo && chmod 4755 /usr/bin/sudo
