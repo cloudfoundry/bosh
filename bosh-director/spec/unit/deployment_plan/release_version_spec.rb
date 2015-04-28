@@ -1,12 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::ReleaseVersion do
-  def make(plan, spec)
-    BD::DeploymentPlan::ReleaseVersion.new(plan, spec)
-  end
-
-  def make_plan(deployment)
-    instance_double('Bosh::Director::DeploymentPlan::Planner', :model => deployment)
+  def make(deployment, spec)
+    BD::DeploymentPlan::ReleaseVersion.new(deployment, spec)
   end
 
   def find_release(name)
@@ -30,10 +26,9 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
     it 'should bind release version model' do
       spec = {'name' => 'foo', 'version' => '42.1-dev'}
       deployment = make_deployment('mycloud')
-      plan = make_plan(deployment)
       rv1 = make_version('foo', '42+dev.1')
 
-      release = make(plan, spec)
+      release = make(deployment, spec)
       release.bind_model
 
       expect(release.model).to eq(rv1)
@@ -42,30 +37,27 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
 
     it "should fail if release doesn't exist" do
       deployment = make_deployment('mycloud')
-      plan = make_plan(deployment)
       spec = {'name' => 'foo', 'version' => '42.1-dev'}
 
       expect {
-        release = make(plan, spec)
+        release = make(deployment, spec)
         release.bind_model
       }.to raise_error(BD::ReleaseNotFound)
     end
 
     it "should fail if release version doesn't exist" do
       deployment = make_deployment('mycloud')
-      plan = make_plan(deployment)
       spec = {'name' => 'foo', 'version' => '42.1-dev'}
       make_version('foo', '55.1-dev')
 
       expect {
-        release = make(plan, spec)
+        release = make(deployment, spec)
         release.bind_model
       }.to raise_error(BD::ReleaseVersionNotFound)
     end
 
     it 'binds release versions to the deployment in DB' do
       deployment = make_deployment('mycloud')
-      plan = make_plan(deployment)
 
       rv1 = make_version('foo', '42.1-dev')
       rv2 = make_version('bar', '55.1-dev')
@@ -73,17 +65,15 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       spec1 = {'name' => 'foo', 'version' => '42.1-dev'}
       spec2 = {'name' => 'bar', 'version' => '55.1-dev'}
 
-      make(plan, spec1).bind_model
-      make(plan, spec2).bind_model
+      make(deployment, spec1).bind_model
+      make(deployment, spec2).bind_model
 
       expect(deployment.release_versions).to match_array([rv1, rv2])
     end
 
     it "doesn't bind model if deployment plan has unbound deployment" do
-      plan = make_plan(nil)
-
       expect {
-        release = make(plan, {'name' => 'foo', 'version' => '42'})
+        release = make(nil, {'name' => 'foo', 'version' => '42'})
         release.bind_model
       }.to raise_error(BD::DirectorError,
                        'Deployment not bound in the deployment plan')
@@ -92,10 +82,9 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
 
   describe 'looking up/adding templates' do
     it 'registers templates used in the release' do
-      plan = make_plan(nil)
       spec = {'name' => 'foo', 'version' => '42.1-dev'}
 
-      release = make(plan, spec)
+      release = make(nil, spec)
       expect(release.templates).to eq([])
       release.use_template_named('foobar')
       expect(release.templates.size).to eq(1)
@@ -108,7 +97,6 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
 
     it 'finds template/package models by name' do
       deployment = make_deployment('mycloud')
-      plan = make_plan(deployment)
       r1 = make_release('foo')
       r2 = make_release('bar')
       rv1 = BD::Models::ReleaseVersion.make(:release => r1, :version => '42')
@@ -126,7 +114,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       rv2.add_package(p2)
       rv2.add_package(p3)
 
-      release = make(plan, {'name' => 'foo', 'version' => '42'})
+      release = make(deployment, {'name' => 'foo', 'version' => '42'})
       release.bind_model
       expect(release.get_template_model_by_name('dea')).to eq(t1)
       expect(release.get_template_model_by_name('stager')).to eq(nil)
@@ -135,7 +123,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       expect { release.get_package_model_by_name('ruby19') }.to raise_error /key not found/
       expect { release.get_package_model_by_name('ruby20') }.to raise_error /key not found/
 
-      release = make(plan, {'name' => 'bar', 'version' => '55'})
+      release = make(deployment, {'name' => 'bar', 'version' => '55'})
       release.bind_model
       expect(release.get_template_model_by_name('dea')).to eq(nil)
       expect(release.get_template_model_by_name('stager')).to eq(t2)
@@ -148,7 +136,6 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
   describe 'binding templates' do
     it 'delegates binding to individual template spec classes' do
       deployment = make_deployment('mycloud')
-      plan = make_plan(deployment)
 
       r_bar = make_release('bar')
       bar_42 =
@@ -165,7 +152,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       bar_42.add_package(p_ruby)
       bar_42.add_package(p_node)
 
-      release = make(plan, {'name' => 'bar', 'version' => '42'})
+      release = make(deployment, {'name' => 'bar', 'version' => '42'})
       release.use_template_named('dea')
 
       release.bind_model
@@ -194,13 +181,12 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
 
       t_dea = BD::Models::Template.make(t_attrs)
 
-      plan = make_plan(make_deployment('mycloud'))
 
       bar_42 =
         BD::Models::ReleaseVersion.make(:release => r_bar, :version => '42')
       bar_42.add_template(t_dea)
 
-      release = make(plan, {'name' => 'bar', 'version' => 42})
+      release = make(make_deployment('mycloud'), {'name' => 'bar', 'version' => 42})
       release.use_template_named('dea')
       template = release.template('dea')
 

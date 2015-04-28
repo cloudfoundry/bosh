@@ -60,7 +60,6 @@ describe 'run errand success', type: :integration, with_tmp_dir: true do
         manifest_with_second_errand['jobs'] << errand_requiring_2_instances
         deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_with_second_errand)
         expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
-
         expect_errands('fake-errand-name', 'second-errand-name')
 
         # with keep alive, does not delete/create errand vms

@@ -132,7 +132,7 @@ module Bosh::Director
           expect(@j_router).to receive(:use_compiled_package).with(cp2)
         end
 
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, nil, logger, Config.event_log, nil)
 
         compiler.perform
         # For @stemcell_a we need to compile:
@@ -153,7 +153,7 @@ module Bosh::Director
         prepare_samples
 
         allow(@plan).to receive(:jobs).and_return([@j_dea, @j_router])
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, @cloud, logger, Config.event_log, @director_job)
 
         expect(@network).to receive(:reserve).at_least(@n_workers).times do |reservation|
           expect(reservation).to be_an_instance_of(NetworkReservation)
@@ -279,7 +279,7 @@ module Bosh::Director
 
         allow(planner).to receive(:jobs).and_return([job])
 
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new(planner)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(planner, @cloud, logger, event_log, director_job)
 
         expect {
           compiler.perform
@@ -352,7 +352,7 @@ module Bosh::Director
         expect(@network).to receive(:release).at_most(@n_workers).times
         expect(@director_job).to receive(:task_checkpoint).once
 
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, @cloud, logger, Config.event_log, @director_job)
 
         @package_set_a.each do |package|
           expect(compiler).to receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
@@ -397,7 +397,7 @@ module Bosh::Director
 
         expect(@network).to receive(:release)
 
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, @cloud, logger, Config.event_log, @director_job)
         allow(compiler).to receive(:with_compile_lock).and_yield
 
         expect {
@@ -444,7 +444,7 @@ module Bosh::Director
           expect(@cloud).to receive(:delete_vm)
           expect(@network).to receive(:release)
 
-          compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan)
+          compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, @cloud, logger, Config.event_log, @director_job)
           allow(compiler).to receive(:with_compile_lock).and_yield
           expect { compiler.perform }.to raise_error(RpcTimeout)
         end
@@ -467,7 +467,7 @@ module Bosh::Director
 
       task = CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key')
 
-      compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan)
+      compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, nil, logger, Config.event_log, nil)
       fake_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
       allow(task).to receive(:find_compiled_package).and_return(fake_compiled_package)
 
@@ -481,7 +481,7 @@ module Bosh::Director
       let(:package) { Models::Package.make }
       let(:stemcell) { Models::Stemcell.make }
       let(:task) { CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key') }
-      let(:compiler) { DeploymentPlan::Steps::PackageCompileStep.new(@plan) }
+      let(:compiler) { DeploymentPlan::Steps::PackageCompileStep.new(@plan, nil, logger, Config.event_log, nil) }
       let(:cache_key) { 'cache key' }
 
       before do
@@ -558,7 +558,7 @@ module Bosh::Director
         end
 
         it 'should clean up the compilation vm if it failed' do
-          compiler = described_class.new(deployment_plan)
+          compiler = described_class.new(deployment_plan, @cloud, logger, Config.event_log, @director_job)
 
           allow(compiler).to receive_messages(reserve_network: double('network_reservation'))
           client = instance_double('Bosh::Director::AgentClient')

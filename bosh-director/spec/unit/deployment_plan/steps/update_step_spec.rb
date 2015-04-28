@@ -24,7 +24,6 @@ module Bosh::Director
     describe '#perform' do
 
       it 'runs deployment plan update stages in the correct order' do
-        expect(assembler).to receive(:bind_dns).with(no_args).ordered
         expect(assembler).to receive(:delete_unneeded_vms).with(no_args).ordered
         expect(assembler).to receive(:delete_unneeded_instances).with(no_args).ordered
         expect(resource_pools).to receive(:update).with(no_args).ordered

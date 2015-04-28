@@ -13,8 +13,8 @@ module Bosh::Director
       # @param [DeploymentPlan] deployment_plan Deployment plan
       # @param [Hash] spec Raw release spec from the deployment
       #   manifest
-      def initialize(deployment_plan, spec)
-        @deployment_plan = deployment_plan
+      def initialize(deployment_model, spec)
+        @deployment_model = deployment_model
 
         @name = safe_property(spec, 'name', :class => String)
         @version = safe_property(spec, 'version', :class => String)
@@ -29,8 +29,7 @@ module Bosh::Director
       # Looks up release version in database and binds it to the deployment
       # @return [void]
       def bind_model
-        deployment = @deployment_plan.model
-        if deployment.nil?
+        if @deployment_model.nil?
           raise DirectorError, 'Deployment not bound in the deployment plan'
         end
 
@@ -38,10 +37,10 @@ module Bosh::Director
         @model = @manager.find_version(release, @version)
         @logger.debug("Found release `#{@name}/#{@version}'")
 
-        unless deployment.release_versions.include?(@model)
+        unless @deployment_model.release_versions.include?(@model)
           @logger.debug("Binding release `#{@name}/#{@version}' " +
-                        "to deployment `#{deployment.name}'")
-          deployment.add_release_version(@model)
+                        "to deployment `#{@deployment_model.name}'")
+          @deployment_model.add_release_version(@model)
         end
       end
 

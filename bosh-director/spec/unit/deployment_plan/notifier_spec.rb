@@ -7,7 +7,7 @@ module Bosh::Director
       context 'event hooks' do
         let(:planner) { instance_double('Bosh::Director::DeploymentPlan::Planner', :canonical_name => 'Blorgh') }
         let(:nats_rpc) { instance_double('Bosh::Director::NatsRpc') }
-        subject { Notifier.new(planner, nats_rpc, logger) }
+        subject { Notifier.new('Blorgh', nats_rpc, logger) }
 
         let(:uuid) { SecureRandom.uuid }
         before do
@@ -25,7 +25,7 @@ module Bosh::Director
               'id' => SecureRandom.uuid,
               'severity' => 4, # corresponds to the `warning` severity level
               'title' => 'director - begin update deployment',
-              'summary' => "Begin update deployment for #{planner.canonical_name} against Director #{uuid}",
+              'summary' => "Begin update deployment for '#{planner.canonical_name}' against Director '#{uuid}'",
               'created_at' => Time.now.to_i
             }
           end
@@ -45,7 +45,7 @@ module Bosh::Director
               'id'         => SecureRandom.uuid,
               'severity'   => 4, # corresponds to the `warning` severity level
               'title'      => 'director - finish update deployment',
-              'summary'    => "Finish update deployment for #{planner.canonical_name} against Director #{uuid}",
+              'summary'    => "Finish update deployment for '#{planner.canonical_name}' against Director '#{uuid}'",
               'created_at' => Time.now.to_i
             }
           end
@@ -65,7 +65,7 @@ module Bosh::Director
               'id'         => SecureRandom.uuid,
               'severity'   => 3, # corresponds to the `error` severity level
               'title'      => 'director - error during update deployment',
-              'summary'    => "Error during update deployment for #{planner.canonical_name} against Director #{uuid}: #<Exception: This is an exception>",
+              'summary'    => "Error during update deployment for '#{planner.canonical_name}' against Director '#{uuid}': #<Exception: This is an exception>",
               'created_at' => Time.now.to_i
             }
           end

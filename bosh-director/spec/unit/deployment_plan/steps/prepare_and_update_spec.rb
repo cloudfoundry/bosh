@@ -7,7 +7,10 @@ module Bosh::Director::DeploymentPlan
 
     let(:event_log) { Bosh::Director::Config.event_log }
 
-    before { allow(Bosh::Director::Config).to receive(:logger).and_return(logger) }
+    before do
+      allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
+      allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
+    end
 
     context 'the director database contains a VM with a static ip but no job instance assigned (due to deploy failure)' do
       before do
@@ -54,17 +57,17 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'the new deployment manifest specifies 1 instance of a job with a static ip' do
-          let(:prepare_step) { Steps::PrepareStep.new(base_job, assembler) }
           let(:update_step) { Steps::UpdateStep.new(base_job, event_log, resource_pools, assembler, deployment_plan, multi_job_updater) }
 
           let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
           let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
           let(:resource_pools) { ResourcePools.new(event_log, rp_updaters) }
           let(:rp_updaters) { deployment_plan.resource_pools.map { |resource_pool| Bosh::Director::ResourcePoolUpdater.new(resource_pool) } }
-          let(:assembler) { Assembler.new(deployment_plan) }
+          let(:assembler) { Assembler.new(deployment_plan, nil, cloud, nil, logger, event_log) }
           let(:cloud_config) { nil }
 
-          let(:deployment_plan) { Planner.parse(deployment_manifest, cloud_config, {}, event_log, logger) }
+          let(:deployment_plan) { deployment_parser.parse({name: 'fake-deployment', properties: {}}, deployment_manifest, cloud_config, deployment) }
+          let(:deployment_parser) { DeploymentSpecParser.new(event_log, logger) }
           let(:deployment_manifest) do
             {
               'name' => 'fake-deployment',
@@ -103,6 +106,8 @@ module Bosh::Director::DeploymentPlan
               'networks' => [
                 {
                   'name' => 'fake-network',
+                  'type' => 'manual',
+                  'cloud_properties' => {},
                   'subnets' => [
                     {
                       'name' => 'fake-subnet',
@@ -134,7 +139,6 @@ module Bosh::Director::DeploymentPlan
             }
           end
 
-          before { allow(Bosh::Director::Config).to receive(:cloud).with(no_args).and_return(cloud) }
           let(:cloud) { instance_double('Bosh::Cloud') }
 
           before { allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(false) }
@@ -143,15 +147,22 @@ module Bosh::Director::DeploymentPlan
           let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
           before do
-            allow(assembler).to receive(:bind_properties)
             allow(assembler).to receive(:bind_configuration)
+
+            stemcell
+            assembler.bind_releases
+            assembler.bind_existing_deployment
+            assembler.bind_resource_pools
+            assembler.bind_stemcells
+            assembler.bind_templates
+            assembler.bind_unallocated_vms
+            assembler.bind_instance_networks
           end
 
           it 'deletes the existing VM, and creates a new VM with the same IP' do
             expect(cloud).to receive(:delete_vm).with(vm_model.cid).ordered
             expect(cloud).to receive(:create_vm).with(anything, stemcell.cid, anything, { 'fake-network' => hash_including('ip' => '127.0.0.1') }, anything, anything).ordered
 
-            prepare_step.perform
             update_step.perform
           end
         end

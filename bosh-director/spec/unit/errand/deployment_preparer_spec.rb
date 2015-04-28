@@ -1,29 +1,18 @@
 require 'spec_helper'
 
 describe Bosh::Director::Errand::DeploymentPreparer do
-  subject { described_class.new(deployment, job, event_log, base_job) }
+  subject { described_class.new(deployment, job, event_log) }
   let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner') }
   let(:job)        { instance_double('Bosh::Director::DeploymentPlan::Job') }
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log') }
-  let(:base_job)   { instance_double('Bosh::Director::Jobs::BaseJob') }
 
   describe '#prepare_deployment' do
     it 'binds deployment with all of its present resources' do
-      assembler = instance_double('Bosh::Director::DeploymentPlan::Assembler')
-      expect(Bosh::Director::DeploymentPlan::Assembler).to receive(:new).
-        with(deployment).
-        and_return(assembler)
-
-      preparer = instance_double('Bosh::Director::DeploymentPlan::Steps::PrepareStep')
-      expect(Bosh::Director::DeploymentPlan::Steps::PrepareStep).to receive(:new).
-        with(base_job, assembler).
-        and_return(preparer)
-
-      expect(preparer).to receive(:perform).with(no_args)
-
+      cloud = double(:cloud)
+      allow(Bosh::Director::Config).to receive(:cloud) { cloud }
       compiler = instance_double('Bosh::Director::DeploymentPlan::Steps::PackageCompileStep')
       expect(Bosh::Director::DeploymentPlan::Steps::PackageCompileStep).to receive(:new).
-        with(deployment).
+        with(deployment, cloud, logger, event_log, job).
         and_return(compiler)
 
       expect(compiler).to receive(:perform).with(no_args)

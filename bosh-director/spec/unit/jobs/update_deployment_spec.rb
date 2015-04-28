@@ -16,14 +16,11 @@ module Bosh::Director::Jobs
     end
 
     describe '#perform' do
-      let(:prepare_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::PrepareStep') }
       let(:compile_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::PackageCompileStep') }
       let(:update_step) { instance_double('Bosh::Director::DeploymentPlan::Steps::UpdateStep') }
       let(:notifier) { instance_double('Bosh::Director::DeploymentPlan::Notifier') }
 
       before do
-        allow(Bosh::Director::DeploymentPlan::Steps::PrepareStep).to receive(:new)
-            .and_return(prepare_step)
         allow(Bosh::Director::DeploymentPlan::Steps::PackageCompileStep).to receive(:new)
             .and_return(compile_step)
         allow(Bosh::Director::DeploymentPlan::Steps::UpdateStep).to receive(:new)
@@ -34,10 +31,23 @@ module Bosh::Director::Jobs
 
       context 'when all steps complete' do
         before do
+          allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:new).
+              and_return(planner_factory)
+        end
+        let(:planner_factory) do
+          instance_double(
+            'Bosh::Director::DeploymentPlan::PlannerFactory',
+            planner: planner,
+          )
+        end
+        let(:planner) do
+          instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment-name', resource_pools: [])
+        end
+
+        before do
           expect(job).to receive(:with_deployment_lock).and_yield.ordered
           expect(notifier).to receive(:send_start_event).ordered
-          expect(prepare_step).to receive(:perform).ordered
-          expect(compile_step).to receive(:perform).ordered
+          expect(planner_factory).to receive(:planner).and_return(planner).ordered
           expect(update_step).to receive(:perform).ordered
           expect(notifier).to receive(:send_end_event).ordered
         end
@@ -63,7 +73,6 @@ module Bosh::Director::Jobs
         before do
           expect(job).to receive(:with_deployment_lock).and_yield.ordered
           expect(notifier).to receive(:send_start_event).ordered
-          expect(prepare_step).to receive(:perform).and_raise(Exception).ordered
         end
 
         it 'does not compile or update' do

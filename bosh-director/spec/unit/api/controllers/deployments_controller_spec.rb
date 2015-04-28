@@ -415,39 +415,35 @@ module Bosh::Director
             end
 
             let!(:deployment_model) do
+
+              manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
+              manifest_hash['jobs'] << {
+                'name' => 'another-errand',
+                'template' => 'errand1',
+                'lifecycle' => 'errand',
+                'resource_pool' => 'a',
+                'instances' => 1,
+                'networks' => [{'name' => 'a'}]
+              }
               Models::Deployment.make(
                 name: 'fake-dep-name',
-                manifest: "---\nmanifest: true",
+                manifest: Psych.dump(manifest_hash),
                 cloud_config: cloud_config
               )
             end
             let(:cloud_config) { Models::CloudConfig.make }
 
             before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
-            let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
+            let(:event_log) { instance_double('Bosh::Director::EventLog::Log', track: nil) }
 
             before { allow(Config).to receive(:logger).with(no_args).and_return(logger) }
-
-            before do
-              allow(DeploymentPlan::Planner).to receive(:parse).
-                with({'manifest' => true}, cloud_config, {}, event_log, logger).
-                and_return(deployment)
-            end
-            let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment') }
-
-            before { allow(deployment).to receive(:jobs).and_return(jobs) }
-            let(:jobs) { [
-              instance_double('Bosh::Director::DeploymentPlan::Job', name: 'an-errand', can_run_as_errand?: true),
-              instance_double('Bosh::Director::DeploymentPlan::Job', name: 'a-service', can_run_as_errand?: false),
-              instance_double('Bosh::Director::DeploymentPlan::Job', name: 'another-errand', can_run_as_errand?: true),
-            ]}
 
             context 'authenticated access' do
               before { authorize 'admin', 'admin' }
 
               it 'returns errands in deployment' do
                 response = perform
-                expect(response.body).to eq('[{"name":"an-errand"},{"name":"another-errand"}]')
+                expect(response.body).to eq('[{"name":"fake-errand-name"},{"name":"another-errand"}]')
                 expect(last_response.status).to eq(200)
               end
 

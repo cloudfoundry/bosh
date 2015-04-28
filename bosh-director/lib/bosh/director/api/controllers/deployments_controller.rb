@@ -291,10 +291,7 @@ module Bosh::Director
       end
 
       get '/:deployment_name/errands' do
-        deployment = @deployment_manager.find_by_name(params[:deployment_name])
-
-        manifest = Psych.load(deployment.manifest)
-        deployment_plan = DeploymentPlan::Planner.parse(manifest, deployment.cloud_config, {}, Config.event_log, Config.logger)
+        deployment_plan = load_deployment_plan_without_binding
 
         errands = deployment_plan.jobs.select(&:can_run_as_errand?)
 
@@ -306,6 +303,33 @@ module Bosh::Director
       end
 
       private
+
+      def load_deployment_plan_without_binding
+        deployment_model = @deployment_manager.find_by_name(params[:deployment_name])
+        manifest_hash = Psych.load(deployment_model.manifest)
+        deployment_manifest_migrator = Bosh::Director::DeploymentPlan::ManifestMigrator.new
+        cloud_config_model = deployment_model.cloud_config
+        canonicalizer = Class.new { include Bosh::Director::DnsHelper }.new
+        deployment_manifest_validator = Bosh::Director::DeploymentPlan::ManifestValidator.new
+        deployment_repo = Bosh::Director::DeploymentPlan::DeploymentRepo.new(canonicalizer)
+        logger = Config.logger
+        event_log = Config.event_log
+
+        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.new(
+          canonicalizer,
+          deployment_manifest_migrator,
+          deployment_manifest_validator,
+          deployment_repo,
+          event_log,
+          logger
+        )
+
+        options = {}
+
+        planner_factory.planner_without_vm_binding(manifest_hash, cloud_config_model, options)
+      end
+
+
       def convert_job_instance_hash(hash)
         hash.reduce([]) do |jobs, kv|
           job, indicies = kv

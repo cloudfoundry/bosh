@@ -9,13 +9,13 @@ module Bosh::Director
         attr_reader :compilations_performed
 
         # @param [DeploymentPlan] deployment_plan Deployment plan
-        def initialize(deployment_plan)
+        def initialize(deployment_plan, cloud, logger, event_log, director_job)
           @deployment_plan = deployment_plan
 
-          @cloud = Config.cloud
-          @event_log = Config.event_log
-          @logger = Config.logger
-          @director_job = Config.current_job
+          @cloud = cloud
+          @event_log = event_log
+          @logger = logger
+          @director_job = director_job
 
           @tasks_mutex = Mutex.new
           @network_mutex = Mutex.new

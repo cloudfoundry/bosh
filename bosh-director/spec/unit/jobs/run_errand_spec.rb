@@ -7,6 +7,11 @@ module Bosh::Director
 
     before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+    let(:manifest_hash) do
+      manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
+      manifest_hash['name'] = 'fake-dep-name'
+      manifest_hash
+    end
 
     describe 'Resque job class expectations' do
       let(:job_type) { :run_errand }
@@ -18,27 +23,36 @@ module Bosh::Director
         let!(:deployment_model) do
           Models::Deployment.make(
             name: 'fake-dep-name',
-            manifest: "---\nmanifest: true",
+            manifest: Psych.dump(manifest_hash),
             cloud_config: cloud_config
           )
         end
 
         before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
-        let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
-
-        before { allow(Config).to receive(:logger).with(no_args).and_return(logger) }
+        let(:event_log) { Bosh::Director::EventLog::Log.new }
 
         before do
-          allow(DeploymentPlan::Planner).to receive(:parse).
-            with({'manifest' => true}, cloud_config, {}, event_log, logger).
-            and_return(deployment)
+          allow(Config).to receive(:logger).with(no_args).and_return(logger)
+          allow(Config).to receive(:cloud) { double('cloud') }
         end
-        let(:cloud_config) { Models::CloudConfig.create }
-        let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'deployment') }
+
+        before do
+          allow(DeploymentPlan::PlannerFactory).to receive(:new).
+              and_return(planner_factory)
+        end
+        let(:planner_factory) do
+          instance_double(
+            'Bosh::Director::DeploymentPlan::PlannerFactory',
+            planner: planner,
+          )
+        end
+        let(:planner) { instance_double('Bosh::Director::DeploymentPlan::Planner') }
+
+        let(:cloud_config) { Models::CloudConfig.make }
 
         context 'when job representing an errand exists' do
-          before { allow(deployment).to receive(:job).with('fake-errand-name').and_return(deployment_job) }
           let(:deployment_job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'fake-errand-name') }
+          before { allow(planner).to receive(:job).with('fake-errand-name').and_return(deployment_job) }
 
           context 'when job can run as an errand (usually means lifecycle: errand)' do
             before { allow(deployment_job).to receive(:can_run_as_errand?).and_return(true) }
@@ -50,7 +64,7 @@ module Bosh::Director
               before { allow(Config).to receive(:result).with(no_args).and_return(result_file) }
               let(:result_file) { instance_double('Bosh::Director::TaskResultFile') }
 
-              before { allow(Lock).to receive(:new).with('lock:deployment:deployment', timeout: 10).and_return(lock) }
+              before { allow(Lock).to receive(:new).with('lock:deployment:fake-dep-name', timeout: 10).and_return(lock) }
               let(:lock) { instance_double('Bosh::Director::Lock') }
 
               before { allow(lock).to receive(:lock).and_yield }
@@ -79,13 +93,12 @@ module Bosh::Director
 
               before do
                 allow(Errand::DeploymentPreparer).to receive(:new).
-                  with(deployment, deployment_job, event_log, subject).
+                  with(planner, deployment_job, event_log).
                   and_return(deployment_preparer)
               end
               let(:deployment_preparer) do
                 instance_double(
                   'Bosh::Director::Errand::DeploymentPreparer',
-                  prepare_deployment: nil,
                   prepare_job: nil,
                 )
               end
@@ -106,7 +119,7 @@ module Bosh::Director
 
               before do
                 allow(Errand::JobManager).to receive(:new).
-                  with(deployment, deployment_job, blobstore, event_log, logger).
+                  with(planner, deployment_job, blobstore, event_log, logger).
                   and_return(job_manager)
               end
               let(:job_manager) do
@@ -136,7 +149,6 @@ module Bosh::Director
                   result
                 end
 
-                expect(deployment_preparer).to receive(:prepare_deployment).with(no_args).ordered
                 expect(deployment_preparer).to receive(:prepare_job).with(no_args).ordered
 
                 expect(rp_manager).to receive(:update).with(no_args).ordered
@@ -234,7 +246,7 @@ module Bosh::Director
             context 'when job representing an errand has 0 instances' do
               before { allow(deployment_job).to receive(:instances).with(no_args).and_return([]) }
 
-              it 'raises an error because errand cannot be run on a job without 0 instances' do
+              it 'raises an error because errand cannot be run on a job with 0 instances' do
                 expect {
                   subject.perform
                 }.to raise_error(InstanceNotFound, %r{fake-errand-name/0.*doesn't exist})
@@ -254,7 +266,7 @@ module Bosh::Director
         end
 
         context 'when job representing an errand does not exist' do
-          before { allow(deployment).to receive(:job).with('fake-errand-name').and_return(nil) }
+          before { allow(planner).to receive(:job).with('fake-errand-name').and_return(nil) }
 
           it 'raises an error because user asked to run an unknown errand' do
             expect {

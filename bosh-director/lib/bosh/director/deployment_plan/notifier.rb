@@ -8,8 +8,8 @@ module Bosh::Director
         WARNING = 4
       end
 
-      def initialize(planner, nats_rpc, logger)
-        @planner = planner
+      def initialize(name, nats_rpc, logger)
+        @name = name
         @logger = logger
         @nats_rpc = nats_rpc
       end
@@ -19,7 +19,7 @@ module Bosh::Director
           'id' => SecureRandom.uuid,
           'severity' => Severity::WARNING,
           'title' => 'director - begin update deployment',
-          'summary' => "Begin update deployment for #{@planner.canonical_name} against Director #{Bosh::Director::Config.uuid}",
+          'summary' => "Begin update deployment for '#{@name}' against Director '#{Bosh::Director::Config.uuid}'",
           'created_at' => Time.now.to_i
         }
 
@@ -32,7 +32,7 @@ module Bosh::Director
           'id' => SecureRandom.uuid,
           'severity' => Severity::WARNING,
           'title' => 'director - finish update deployment',
-          'summary' => "Finish update deployment for #{@planner.canonical_name} against Director #{Bosh::Director::Config.uuid}",
+          'summary' => "Finish update deployment for '#{@name}' against Director '#{Bosh::Director::Config.uuid}'",
           'created_at' => Time.now.to_i
         }
 
@@ -45,7 +45,7 @@ module Bosh::Director
           'id' => SecureRandom.uuid,
           'severity' => Severity::ERROR,
           'title' => 'director - error during update deployment',
-          'summary' => "Error during update deployment for #{@planner.canonical_name} against Director #{Bosh::Director::Config.uuid}: #{exception.inspect}",
+          'summary' => "Error during update deployment for '#{@name}' against Director '#{Bosh::Director::Config.uuid}': #{exception.inspect}",
           'created_at' => Time.now.to_i
         }
 

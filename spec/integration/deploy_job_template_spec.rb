@@ -58,10 +58,10 @@ describe 'deploy job template', type: :integration do
       deploy_from_scratch
 
       waiter.wait(60) do
-        expect(health_monitor.read_log).to match(/\[ALERT\] Alert @ .* Begin update deployment for simple/)
+        expect(health_monitor.read_log).to match(/\[ALERT\] Alert @ .* Begin update deployment for 'simple'/)
       end
       waiter.wait(60) do
-        expect(health_monitor.read_log).to match(/\[ALERT\] Alert @ .* Finish update deployment for simple/)
+        expect(health_monitor.read_log).to match(/\[ALERT\] Alert @ .* Finish update deployment for 'simple'/)
       end
     end
   end

@@ -29,11 +29,6 @@ module Bosh::Director
         private
 
         def assemble
-          @event_log.begin_stage('Preparing DNS', 1)
-          @base_job.track_and_log('Binding DNS') do
-            @assembler.bind_dns
-          end
-
           @logger.info('Deleting no longer needed VMs')
           @assembler.delete_unneeded_vms
 

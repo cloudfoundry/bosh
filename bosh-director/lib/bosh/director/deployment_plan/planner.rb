@@ -46,28 +46,15 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
 
-      # @param [Hash] manifest Raw deployment manifest
-      # @param [Hash] options Additional options for deployment
-      #   (e.g. job_states, job_rename)
-      # @param [Bosh::Director::EventLog::Log]
-      #   event_log Event log for recording deprecations
-      # @param [Logger]
-      #   logger Log for director logging
-      # @return [Bosh::Director::DeploymentPlan::Planner]
-      def self.parse(manifest, cloud_config, options, event_log, logger)
-        parser = DeploymentSpecParser.new(event_log, logger)
-        parser.parse(manifest, cloud_config, options)
-      end
+      def initialize(attrs, manifest_text, cloud_config, deployment_model, options = {})
+        @name = attrs.fetch(:name)
+        @properties = attrs.fetch(:properties)
+        @releases = {}
 
-      def initialize(name, manifest_text, cloud_config, options = {})
-        raise ArgumentError, 'name must not be nil' unless name
-        @name = name
         @manifest_text = manifest_text
         @cloud_config = cloud_config
+        @model = deployment_model
 
-        @model = nil
-        @properties = {}
-        @releases = {}
         @networks = {}
         @networks_canonical_name_index = Set.new
 
@@ -92,36 +79,9 @@ module Bosh::Director
         canonical(@name)
       end
 
-      # Looks up deployment model in DB or creates one if needed
-      # @return [void]
-      def bind_model
-        attrs = {:name => @name}
-
-        Models::Deployment.db.transaction do
-          deployment = Models::Deployment.find(attrs)
-
-          # Canonical uniqueness is not enforced in the DB
-          if deployment.nil?
-            Models::Deployment.each do |other|
-              if canonical(other.name) == canonical_name
-                raise DeploymentCanonicalNameTaken,
-                      "Invalid deployment name `#{@name}', " +
-                        'canonical name already taken'
-              end
-            end
-            deployment = Models::Deployment.create(attrs)
-          end
-
-          @model = deployment
-        end
-      end
-
       # Returns a list of VMs in the deployment (according to DB)
       # @return [Array<Models::Vm>]
       def vms
-        if @model.nil?
-          raise DirectorError, "Can't get VMs list, deployment model is unbound"
-        end
         @model.vms
       end
 

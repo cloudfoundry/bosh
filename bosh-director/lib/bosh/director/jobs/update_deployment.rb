@@ -17,20 +17,46 @@ module Bosh::Director
       end
 
       def perform
-        with_deployment_lock(deployment_plan) do
-          logger.info('Updating deployment')
-          notifier.send_start_event
-          prepare_step.perform
-          compile_step.perform
-          update_step.perform
-          notifier.send_end_event
+        logger.info('Reading deployment manifest')
+        manifest_text = File.read(@manifest_file_path)
+        logger.debug("Manifest:\n#{manifest_text}")
+        deployment_manifest_hash = Psych.load(manifest_text)
+        deployment_name = deployment_manifest_hash['name']
+        with_deployment_lock(deployment_name) do
+          manifest_migrator = Bosh::Director::DeploymentPlan::ManifestMigrator.new
+          cloud_config_model = Bosh::Director::Models::CloudConfig[@cloud_config_id]
+          canonicalizer = Class.new { include Bosh::Director::DnsHelper }.new
+          deployment_manifest_validator = DeploymentPlan::ManifestValidator.new
+          deployment_repo = DeploymentPlan::DeploymentRepo.new(canonicalizer)
+          planner_factory = DeploymentPlan::PlannerFactory.new(canonicalizer, manifest_migrator, deployment_manifest_validator, deployment_repo, event_log, logger)
+          @notifier = DeploymentPlan::Notifier.new(deployment_name, Config.nats_rpc, logger)
+          @notifier.send_start_event
+
+          deployment_plan = planner_factory.planner(deployment_manifest_hash, cloud_config_model, @options)
+
+          assembler = DeploymentPlan::Assembler.new(
+            deployment_plan,
+            Api::StemcellManager.new,
+            Config.cloud,
+            App.instance.blobstores.blobstore,
+            logger,
+            event_log
+          )
+
+          update_step(assembler, deployment_plan).perform
+          @notifier.send_end_event
           logger.info('Finished updating deployment')
 
           "/deployments/#{deployment_plan.name}"
         end
       rescue Exception => e
-        notifier.send_error_event e
-        raise e
+        begin
+          @notifier.send_error_event e
+        rescue Exception => e2
+          # log the second error
+        ensure
+          raise e
+        end
       ensure
         FileUtils.rm_rf(@manifest_file_path)
       end
@@ -39,15 +65,7 @@ module Bosh::Director
 
       # Job tasks
 
-      def prepare_step
-        DeploymentPlan::Steps::PrepareStep.new(self, assembler)
-      end
-
-      def compile_step
-        DeploymentPlan::Steps::PackageCompileStep.new(deployment_plan)
-      end
-
-      def update_step
+      def update_step(assembler, deployment_plan)
         resource_pool_updaters = deployment_plan.resource_pools.map do |resource_pool|
           ResourcePoolUpdater.new(resource_pool)
         end
@@ -56,37 +74,6 @@ module Bosh::Director
       end
 
       # Job dependencies
-
-      def assembler
-        @assembler ||= DeploymentPlan::Assembler.new(deployment_plan)
-      end
-
-      def notifier
-        @notifier ||= DeploymentPlan::Notifier.new(deployment_plan, Config.nats_rpc, logger)
-      end
-
-      def deployment_plan
-        @deployment_plan ||= begin
-          logger.info('Reading deployment manifest')
-          manifest_text = File.read(@manifest_file_path)
-          logger.debug("Manifest:\n#{manifest_text}")
-          deployment_manifest = Psych.load(manifest_text)
-
-          plan_options = {
-            'recreate' => !!@options['recreate'],
-            'job_states' => @options['job_states'] || {},
-            'job_rename' => @options['job_rename'] || {}
-          }
-          logger.info('Creating deployment plan')
-          logger.info("Deployment plan options: #{plan_options.pretty_inspect}")
-
-          cloud_config = Bosh::Director::Models::CloudConfig[@cloud_config_id]
-
-          plan = DeploymentPlan::Planner.parse(deployment_manifest, cloud_config, plan_options, event_log, logger)
-          logger.info('Created deployment plan')
-          plan
-        end
-      end
 
       def multi_job_updater
         @multi_job_updater ||= begin
