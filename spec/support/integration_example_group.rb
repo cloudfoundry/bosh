@@ -95,7 +95,7 @@ module IntegrationExampleGroup
     target_and_login
     create_and_upload_test_release
     upload_stemcell
-    upload_cloud_config(options)
+    upload_cloud_config(options) unless options[:legacy]
     deploy_simple_manifest(options)
   end
 

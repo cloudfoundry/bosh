@@ -76,6 +76,10 @@ module Bosh::Spec
       }
     end
 
+    def self.legacy_manifest
+      simple_cloud_config.merge(simple_manifest)
+    end
+
     def self.test_release_manifest
       minimal_manifest.merge(
         'name' => 'simple',
