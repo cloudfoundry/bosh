@@ -312,59 +312,9 @@ module Bosh::Director
       end
     end
 
-    # Calculates configuration checksums for all jobs in this deployment plan
-    # @return [void]
-    def bind_configuration
-      @deployment_plan.jobs_starting_on_deploy.each do |job|
-        JobRenderer.new(job, @blobstore).render_job_instances
-      end
-    end
-
     def bind_dns
       binder = DeploymentPlan::DnsBinder.new(@deployment_plan)
       binder.bind_deployment
-    end
-
-    def bind_instance_vms
-      jobs = @deployment_plan.jobs_starting_on_deploy
-      instances = jobs.map(&:instances).flatten
-
-      binder = DeploymentPlan::InstanceVmBinder.new(@event_log)
-      binder.bind_instance_vms(instances)
-    end
-
-    def delete_unneeded_vms
-      unneeded_vms = @deployment_plan.unneeded_vms
-      if unneeded_vms.empty?
-        @logger.info('No unneeded vms to delete')
-        return
-      end
-
-      @event_log.begin_stage('Deleting unneeded VMs', unneeded_vms.size)
-      ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
-        unneeded_vms.each do |vm_model|
-          pool.process do
-            @event_log.track(vm_model.cid) do
-              @logger.info("Delete unneeded VM #{vm_model.cid}")
-              @cloud.delete_vm(vm_model.cid)
-              vm_model.destroy
-            end
-          end
-        end
-      end
-    end
-
-    def delete_unneeded_instances
-      unneeded_instances = @deployment_plan.unneeded_instances
-      if unneeded_instances.empty?
-        @logger.info('No unneeded instances to delete')
-        return
-      end
-
-      event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size)
-      instance_deleter = InstanceDeleter.new(@deployment_plan)
-      instance_deleter.delete_instances(unneeded_instances, event_log_stage)
-      @logger.info('Deleted no longer needed instances')
     end
   end
 end

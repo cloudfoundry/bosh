@@ -606,17 +606,6 @@ module Bosh::Director
       end
     end
 
-    describe '#bind_configuration' do
-      before { allow(deployment_plan).to receive(:jobs_starting_on_deploy).and_return([job]) }
-      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job') }
-
-      it 'renders job templates for all instances' do
-        job_renderer = instance_double('Bosh::Director::JobRenderer')
-        allow(JobRenderer).to receive(:new).with(job, blobstore).and_return(job_renderer)
-        expect(job_renderer).to receive(:render_job_instances).with(no_args)
-        assembler.bind_configuration
-      end
-    end
 
     describe '#bind_dns' do
       it 'uses DnsBinder to create dns records for deployment' do
@@ -624,74 +613,6 @@ module Bosh::Director
         allow(DeploymentPlan::DnsBinder).to receive(:new).with(deployment_plan).and_return(binder)
         expect(binder).to receive(:bind_deployment).with(no_args)
         assembler.bind_dns
-      end
-    end
-
-    describe '#bind_instance_vms' do
-      before { allow(deployment_plan).to receive(:jobs_starting_on_deploy).with(no_args).and_return([job1, job2]) }
-      let(:job1) { instance_double('Bosh::Director::DeploymentPlan::Job') }
-      let(:job2) { instance_double('Bosh::Director::DeploymentPlan::Job') }
-
-      before { allow(job1).to receive(:instances).with(no_args).and_return([instance1, instance2]) }
-      let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
-      let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
-
-      before { allow(job2).to receive(:instances).with(no_args).and_return([instance3]) }
-      let(:instance3) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
-
-      before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
-      let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
-
-      before { allow(event_log).to receive(:track).and_yield }
-
-      it 'uses InstanceVmBinder to bind instances from all jobs' do
-        binder = instance_double('Bosh::Director::DeploymentPlan::InstanceVmBinder')
-        allow(DeploymentPlan::InstanceVmBinder).to receive(:new).with(event_log).and_return(binder)
-        expect(binder).to receive(:bind_instance_vms).with([instance1, instance2, instance3])
-        assembler.bind_instance_vms
-      end
-    end
-
-    describe '#delete_unneeded_vms' do
-      it 'should delete unneeded VMs' do
-        vm_model = Models::Vm.make(:cid => 'vm-cid')
-        allow(deployment_plan).to receive(:unneeded_vms).and_return([vm_model])
-
-        expect(cloud).to receive(:delete_vm).with('vm-cid')
-        assembler.delete_unneeded_vms
-
-        expect(Models::Vm[vm_model.id]).to be_nil
-        check_event_log do |events|
-          expect(events.size).to eq(2)
-          expect(events.map { |e| e['stage'] }.uniq).to eq(['Deleting unneeded VMs'])
-          expect(events.map { |e| e['total'] }.uniq).to eq([1])
-          expect(events.map { |e| e['task'] }.uniq).to eq(%w(vm-cid))
-        end
-      end
-    end
-
-    describe '#delete_unneeded_instances' do
-      before { allow(Config).to receive(:event_log).and_return(event_log) }
-      let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
-
-      it 'deletes unneeded instances and records stage progress' do
-        instance = Models::Instance.make
-        allow(deployment_plan).to receive(:unneeded_instances).and_return([instance])
-
-        instance_deleter = instance_double('Bosh::Director::InstanceDeleter')
-        expect(InstanceDeleter).to receive(:new)
-          .with(deployment_plan)
-          .and_return(instance_deleter)
-
-        event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
-        expect(event_log).to receive(:begin_stage)
-          .with('Deleting unneeded instances', 1)
-          .and_return(event_log_stage)
-
-        expect(instance_deleter).to receive(:delete_instances)
-          .with([instance], event_log_stage)
-
-        assembler.delete_unneeded_instances
       end
     end
   end

@@ -4,7 +4,6 @@ module Bosh::Director::DeploymentPlan
   describe 'deployment prepare & update' do
     let(:redis) { double('Redis').as_null_object }
     before { allow(Bosh::Director::Config).to receive(:redis).and_return(redis) }
-
     let(:event_log) { Bosh::Director::Config.event_log }
 
     before do
@@ -57,7 +56,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'the new deployment manifest specifies 1 instance of a job with a static ip' do
-          let(:update_step) { Steps::UpdateStep.new(base_job, event_log, resource_pools, assembler, deployment_plan, multi_job_updater) }
+          let(:update_step) { Steps::UpdateStep.new(base_job, event_log, resource_pools, deployment_plan, multi_job_updater, cloud, blobstore) }
 
           let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
           let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
@@ -66,7 +65,10 @@ module Bosh::Director::DeploymentPlan
           let(:assembler) { Assembler.new(deployment_plan, nil, cloud, nil, logger, event_log) }
           let(:cloud_config) { nil }
 
-          let(:deployment_plan) { deployment_parser.parse({name: 'fake-deployment', properties: {}}, deployment_manifest, cloud_config, deployment) }
+          let(:deployment_plan) do
+            planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(event_log, logger)
+            planner_factory.planner(deployment_manifest, cloud_config, {})
+          end
           let(:deployment_parser) { DeploymentSpecParser.new(event_log, logger) }
           let(:deployment_manifest) do
             {
@@ -146,18 +148,7 @@ module Bosh::Director::DeploymentPlan
           before { allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
           let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
-          before do
-            allow(assembler).to receive(:bind_configuration)
-
-            stemcell
-            assembler.bind_releases
-            assembler.bind_existing_deployment
-            assembler.bind_resource_pools
-            assembler.bind_stemcells
-            assembler.bind_templates
-            assembler.bind_unallocated_vms
-            assembler.bind_instance_networks
-          end
+          before { allow_any_instance_of(Bosh::Director::JobRenderer).to receive(:render_job_instances) }
 
           it 'deletes the existing VM, and creates a new VM with the same IP' do
             expect(cloud).to receive(:delete_vm).with(vm_model.cid).ordered
