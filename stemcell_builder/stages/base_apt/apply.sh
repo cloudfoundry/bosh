@@ -16,4 +16,8 @@ EOS
 
 # Upgrade upstart first, to prevent it from messing up our stubs and starting daemons anyway
 pkg_mgr install upstart
+run_in_chroot $chroot "apt-get download libudev1"
+run_in_chroot $chroot "apt-get download udev"
+run_in_chroot $chroot "dpkg -i --force-confmiss libudev1*.deb"
+run_in_chroot $chroot "dpkg -i --force-confmiss udev_*.deb"
 pkg_mgr dist-upgrade
