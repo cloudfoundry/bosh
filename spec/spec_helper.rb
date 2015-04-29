@@ -35,3 +35,5 @@ RSpec.configure do |c|
     end
   end
 end
+
+BlueShell.timeout = 180 # the cli can be pretty slow
