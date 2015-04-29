@@ -307,26 +307,10 @@ module Bosh::Director
       def load_deployment_plan_without_binding
         deployment_model = @deployment_manager.find_by_name(params[:deployment_name])
         manifest_hash = Psych.load(deployment_model.manifest)
-        deployment_manifest_migrator = Bosh::Director::DeploymentPlan::ManifestMigrator.new
         cloud_config_model = deployment_model.cloud_config
-        canonicalizer = Class.new { include Bosh::Director::DnsHelper }.new
-        deployment_manifest_validator = Bosh::Director::DeploymentPlan::ManifestValidator.new
-        deployment_repo = Bosh::Director::DeploymentPlan::DeploymentRepo.new(canonicalizer)
-        logger = Config.logger
-        event_log = Config.event_log
 
-        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.new(
-          canonicalizer,
-          deployment_manifest_migrator,
-          deployment_manifest_validator,
-          deployment_repo,
-          event_log,
-          logger
-        )
-
-        options = {}
-
-        planner_factory.planner_without_vm_binding(manifest_hash, cloud_config_model, options)
+        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Config.event_log, Config.logger)
+        planner_factory.planner_without_vm_binding(manifest_hash, cloud_config_model, {})
       end
 
 

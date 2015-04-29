@@ -2,6 +2,22 @@ module Bosh
   module Director
     module DeploymentPlan
       class PlannerFactory
+        def self.create(event_log, logger)
+          deployment_manifest_migrator = Bosh::Director::DeploymentPlan::ManifestMigrator.new
+          canonicalizer = Class.new { include Bosh::Director::DnsHelper }.new
+          deployment_manifest_validator = Bosh::Director::DeploymentPlan::ManifestValidator.new
+          deployment_repo = Bosh::Director::DeploymentPlan::DeploymentRepo.new(canonicalizer)
+
+          new(
+            canonicalizer,
+            deployment_manifest_migrator,
+            deployment_manifest_validator,
+            deployment_repo,
+            event_log,
+            logger
+          )
+        end
+
         def initialize(canonicalizer, deployment_manifest_migrator, deployment_manifest_validator, deployment_repo, event_log, logger)
           @canonicalizer = canonicalizer
           @deployment_manifest_migrator = deployment_manifest_migrator

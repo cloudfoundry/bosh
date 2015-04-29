@@ -23,15 +23,11 @@ module Bosh::Director
         deployment_manifest_hash = Psych.load(manifest_text)
         deployment_name = deployment_manifest_hash['name']
         with_deployment_lock(deployment_name) do
-          manifest_migrator = Bosh::Director::DeploymentPlan::ManifestMigrator.new
-          cloud_config_model = Bosh::Director::Models::CloudConfig[@cloud_config_id]
-          canonicalizer = Class.new { include Bosh::Director::DnsHelper }.new
-          deployment_manifest_validator = DeploymentPlan::ManifestValidator.new
-          deployment_repo = DeploymentPlan::DeploymentRepo.new(canonicalizer)
-          planner_factory = DeploymentPlan::PlannerFactory.new(canonicalizer, manifest_migrator, deployment_manifest_validator, deployment_repo, event_log, logger)
           @notifier = DeploymentPlan::Notifier.new(deployment_name, Config.nats_rpc, logger)
           @notifier.send_start_event
 
+          cloud_config_model = Bosh::Director::Models::CloudConfig[@cloud_config_id]
+          planner_factory = DeploymentPlan::PlannerFactory.create(event_log, logger)
           deployment_plan = planner_factory.planner(deployment_manifest_hash, cloud_config_model, @options)
 
           assembler = DeploymentPlan::Assembler.new(

@@ -26,12 +26,9 @@ module Bosh::Director
       deployment_manifest_hash = Psych.load(deployment_model.manifest)
       deployment_name = deployment_manifest_hash['name']
       with_deployment_lock(deployment_name) do
-        manifest_migrator = Bosh::Director::DeploymentPlan::ManifestMigrator.new
         cloud_config_model = deployment_model.cloud_config
-        canonicalizer = Class.new { include Bosh::Director::DnsHelper }.new
-        deployment_manifest_validator = DeploymentPlan::ManifestValidator.new
-        deployment_repo = DeploymentPlan::DeploymentRepo.new(canonicalizer)
-        planner_factory = DeploymentPlan::PlannerFactory.new(canonicalizer, manifest_migrator, deployment_manifest_validator, deployment_repo, event_log, logger)
+
+        planner_factory = DeploymentPlan::PlannerFactory.create(event_log, logger)
         deployment = planner_factory.planner(deployment_manifest_hash, cloud_config_model, {})
 
         job = deployment.job(@errand_name)
