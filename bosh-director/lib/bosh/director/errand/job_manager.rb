@@ -13,6 +13,11 @@ module Bosh::Director
       @logger = logger
     end
 
+    def prepare
+      @job.bind_unallocated_vms
+      @job.bind_instance_networks
+    end
+
     # Creates/updates all errand job instances
     # @return [void]
     def update_instances

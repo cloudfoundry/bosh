@@ -92,18 +92,6 @@ module Bosh::Director
               let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
 
               before do
-                allow(Errand::DeploymentPreparer).to receive(:new).
-                  with(planner, deployment_job, event_log).
-                  and_return(deployment_preparer)
-              end
-              let(:deployment_preparer) do
-                instance_double(
-                  'Bosh::Director::Errand::DeploymentPreparer',
-                  prepare_job: nil,
-                )
-              end
-
-              before do
                 allow(ResourcePoolUpdater).to receive(:new).
                   with(resource_pool).
                   and_return(rp_updater)
@@ -124,6 +112,7 @@ module Bosh::Director
               end
               let(:job_manager) do
                 instance_double('Bosh::Director::Errand::JobManager', {
+                  prepare: nil,
                   update_instances: nil,
                   delete_instances: nil,
                 })
@@ -149,7 +138,7 @@ module Bosh::Director
                   result
                 end
 
-                expect(deployment_preparer).to receive(:prepare_job).with(no_args).ordered
+                expect(job_manager).to receive(:prepare).with(no_args).ordered
 
                 expect(rp_manager).to receive(:update).with(no_args).ordered
                 expect(job_manager).to receive(:update_instances).with(no_args).ordered

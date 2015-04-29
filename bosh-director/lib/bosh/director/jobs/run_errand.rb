@@ -74,15 +74,13 @@ module Bosh::Director
     private
 
     def with_updated_instances(deployment, job, &blk)
-      deployment_preparer = Errand::DeploymentPreparer.new(deployment, job, event_log)
-
       rp_updaters = [ResourcePoolUpdater.new(job.resource_pool)]
       resource_pools = DeploymentPlan::ResourcePools.new(event_log, rp_updaters)
 
       job_manager = Errand::JobManager.new(deployment, job, @blobstore, event_log, logger)
 
       begin
-        update_instances(deployment_preparer, resource_pools, job_manager)
+        update_instances(resource_pools, job_manager)
         blk.call
       ensure
         if @keep_alive
@@ -94,9 +92,9 @@ module Bosh::Director
       end
     end
 
-    def update_instances(deployment_preparer, resource_pools, job_manager)
+    def update_instances(resource_pools, job_manager)
       logger.info('Starting to prepare for deployment')
-      deployment_preparer.prepare_job
+      job_manager.prepare
 
       logger.info('Starting to update resource pool')
       resource_pools.update

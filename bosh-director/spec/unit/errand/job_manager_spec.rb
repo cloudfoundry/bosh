@@ -8,6 +8,15 @@ module Bosh::Director
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
+    describe '#prepare' do
+      it 'binds unallocated vms and instance networks for given job' do
+        expect(job).to receive(:bind_unallocated_vms).with(no_args)
+        expect(job).to receive(:bind_instance_networks).with(no_args)
+
+        subject.prepare
+      end
+    end
+
     describe '#update' do
       before { allow(job).to receive(:instances).with(no_args).and_return([instance1, instance2]) }
       let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
