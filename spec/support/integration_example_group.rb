@@ -72,6 +72,10 @@ module IntegrationExampleGroup
     bosh_runner.run("upload stemcell #{spec_asset('valid_stemcell.tgz')} --skip-if-exists")
   end
 
+  def delete_stemcell
+    bosh_runner.run("delete stemcell ubuntu-stemcell 1")
+  end
+
   def set_deployment(options)
     manifest_hash = options.fetch(:manifest_hash, Bosh::Spec::Deployments.simple_manifest)
 

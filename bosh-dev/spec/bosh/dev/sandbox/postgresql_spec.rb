@@ -3,7 +3,7 @@ require 'bosh/dev/sandbox/postgresql'
 
 module Bosh::Dev::Sandbox
   describe Postgresql do
-    subject(:postgresql) { described_class.new('fake_db_name', logger, runner) }
+    subject(:postgresql) { described_class.new('fake_db_name', logger, 9922, runner) }
     let(:runner) { instance_double('Bosh::Core::Shell') }
 
     describe '#create_db' do
@@ -48,7 +48,7 @@ module Bosh::Dev::Sandbox
 
     describe '#port' do
       it 'has the correct port' do
-        expect(subject.port).to eq(5432)
+        expect(subject.port).to eq(9922)
       end
     end
   end
