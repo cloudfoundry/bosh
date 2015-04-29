@@ -4,15 +4,16 @@ require 'bosh/dev'
 
 module Bosh::Dev::Sandbox
   class SocketConnector
-    def initialize(service_name, host, port, logger)
+    def initialize(service_name, host, port, log_location, logger)
       @service_name = service_name
       @host = host
       @port = port
       @logger = logger
+      @log_location = log_location
     end
 
     def try_to_connect(remaining_attempts = 40)
-      @logger.info("Waiting for #{@service_name} to come up on #{@host}:#{@port}")
+      @logger.info("Waiting for #{@service_name} to come up on #{@host}:#{@port} (logs at #{@log_location}*)")
 
       begin
         remaining_attempts -= 1

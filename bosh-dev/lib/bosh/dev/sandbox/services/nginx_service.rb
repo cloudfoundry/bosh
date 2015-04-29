@@ -10,7 +10,7 @@ module Bosh::Dev::Sandbox
       nginx = Nginx.new
       config_path = File.join(sandbox_root, 'nginx.conf')
       @process = Service.new(%W[#{nginx.executable_path} -c #{config_path}], {}, logger)
-      @socket_connector = SocketConnector.new('director_nginx', 'localhost', port, logger)
+      @socket_connector = SocketConnector.new('director_nginx', 'localhost', port, 'unknown', logger)
 
       default_attrs = {
         ssl_cert_path: File.join(NGINX_CERT_DIR, 'server.crt'),

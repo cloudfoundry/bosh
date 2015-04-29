@@ -18,13 +18,14 @@ module Bosh::Dev::Sandbox
       @director_tmp_path = director_tmp_path
       @director_config = director_config
 
+      log_location = "#{base_log_path}.director.out"
       @process = Service.new(
         %W[bosh-director -c #{@director_config}],
-        {output: "#{base_log_path}.director.out"},
+        {output: log_location},
         @logger,
       )
 
-      @socket_connector = SocketConnector.new('director', 'localhost', director_port, @logger)
+      @socket_connector = SocketConnector.new('director', 'localhost', director_port, log_location, @logger)
 
       @worker_processes = 3.times.map do |index|
         Service.new(

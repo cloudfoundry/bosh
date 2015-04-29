@@ -375,17 +375,18 @@ module Bosh::Dev::Sandbox
       arguments = uaa_ports.map { |pair| "-D#{pair.join('=')}" }
       arguments << %W(-P cargo.port=#{uaa_port})
 
+      log_location = "#{base_log_path}.uaa.out"
       @uaa_process = Service.new(
-        ['./gradlew', arguments, 'run'].flatten,
+        ['./gradlew', arguments, 'run',  '--stacktrace'].flatten,
         {
-          output: "#{base_log_path}.uaa.out",
+          output: log_location,
           working_dir: UAA_ASSETS_DIR,
           env: { 'UAA_CONFIG_PATH' => UAA_CONFIG_DIR }
         },
         @logger,
       )
 
-      @uaa_socket_connector = SocketConnector.new('uaa', 'localhost', uaa_port, @logger)
+      @uaa_socket_connector = SocketConnector.new('uaa', 'localhost', uaa_port, log_location, @logger)
     end
 
     def setup_nats
@@ -397,12 +398,12 @@ module Bosh::Dev::Sandbox
         @logger
       )
 
-      @nats_socket_connector = SocketConnector.new('nats', 'localhost', nats_port, @logger)
+      @nats_socket_connector = SocketConnector.new('nats', 'localhost', nats_port, @nats_log_path, @logger)
     end
 
     def setup_redis
       @redis_process = Service.new(%W[redis-server #{sandbox_path(REDIS_CONFIG)}], {}, @logger)
-      @redis_socket_connector = SocketConnector.new('redis', 'localhost', redis_port, @logger)
+      @redis_socket_connector = SocketConnector.new('redis', 'localhost', redis_port, 'unknown', @logger)
       Bosh::Director::Config.redis_options = {host: 'localhost', port: redis_port}
     end
 

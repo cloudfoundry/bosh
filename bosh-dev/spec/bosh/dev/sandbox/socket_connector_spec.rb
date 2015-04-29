@@ -3,7 +3,7 @@ require 'bosh/dev/sandbox/socket_connector'
 
 module Bosh::Dev::Sandbox
   describe SocketConnector do
-    let(:socket_connector) { SocketConnector.new('fake-name', 'fake-host', 'fake-port', logger) }
+    let(:socket_connector) { SocketConnector.new('fake-name', 'fake-host', 'fake-port', 'fake-log-location', logger) }
 
     describe '#try_to_connect' do
       context 'when connecting fails after some time' do

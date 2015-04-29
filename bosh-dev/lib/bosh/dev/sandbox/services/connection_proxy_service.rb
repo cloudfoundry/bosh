@@ -7,7 +7,7 @@ module Bosh::Dev::Sandbox
     def initialize(forward_to_host, forward_to_port, listen_port, logger)
       @logger = logger
       @process = Service.new(%W[#{TCP_PROXY} #{forward_to_host} #{forward_to_port} #{listen_port}], {}, logger)
-      @socket_connector = SocketConnector.new("proxy #{listen_port} -> #{forward_to_host}:#{forward_to_port}", 'localhost', listen_port, logger)
+      @socket_connector = SocketConnector.new("proxy #{listen_port} -> #{forward_to_host}:#{forward_to_port}", 'localhost', listen_port, 'unknown', logger)
     end
 
     def start
