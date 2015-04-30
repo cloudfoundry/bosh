@@ -33,9 +33,9 @@ module Bosh
         end
 
         def planner_without_vm_binding(manifest_hash, cloud_config, options)
-          manifest_hash = @deployment_manifest_migrator.migrate(manifest_hash)
-          @deployment_manifest_validator.validate!(manifest_hash)
-          name = manifest_hash['name']
+          deployment_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest_hash, cloud_config)
+          @deployment_manifest_validator.validate!(deployment_manifest)
+          name = deployment_manifest['name']
 
           deployment_model = nil
           @event_log.track('Binding deployment') do
@@ -45,9 +45,9 @@ module Bosh
 
           attrs = {
             name: name,
-            properties: manifest_hash.fetch('properties', {}),
+            properties: deployment_manifest.fetch('properties', {}),
           }
-          assemble_without_vm_binding(attrs, manifest_hash, cloud_config, deployment_model, options)
+          assemble_without_vm_binding(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
         end
 
         private
@@ -58,7 +58,7 @@ module Bosh
           @canonicalizer.canonical(name)
         end
 
-        def assemble_without_vm_binding(attrs, manifest_hash, cloud_config, deployment_model, options)
+        def assemble_without_vm_binding(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options)
           plan_options = {
             'recreate' => !!options['recreate'],
             'job_states' => options['job_states'] || {},
@@ -68,7 +68,7 @@ module Bosh
           @logger.info("Deployment plan options: #{plan_options.pretty_inspect}")
 
           parser = DeploymentSpecParser.new(@event_log, @logger)
-          parser.parse(attrs, manifest_hash, cloud_config, deployment_model, plan_options)
+          parser.parse(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, plan_options)
         end
 
         def bind_vms(planner)

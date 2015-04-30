@@ -7,7 +7,7 @@ module Bosh::Director
     let(:event_log) { Config.event_log }
 
     describe '#parse' do
-      let(:deployment) { subject.parse(planner_attributes, manifest_hash, cloud_config, deployment_model) }
+      let(:deployment) { subject.parse(planner_attributes, manifest_hash, cloud_manifest, deployment_model, cloud_config) }
       let(:deployment_model) { Models::Deployment.make }
       let(:manifest_hash) do
         {
@@ -31,8 +31,8 @@ module Bosh::Director
 
       before { allow(DeploymentPlan::UpdateConfig).to receive(:new).and_return(update_config) }
       let(:update_config) { instance_double('Bosh::Director::DeploymentPlan::UpdateConfig') }
-      let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
-      let(:cloud_config) { Models::CloudConfig.make(manifest: cloud_config_hash) }
+      let(:cloud_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
+      let(:cloud_config) { Models::CloudConfig.make(manifest: cloud_manifest) }
 
       describe 'name key' do
         it 'parses name' do
@@ -168,7 +168,7 @@ module Bosh::Director
 
       describe 'compilation key' do
         context 'when compilation section is specified' do
-          before { cloud_config_hash.merge!('compilation' => { 'foo' => 'bar' }) }
+          before { cloud_manifest.merge!('compilation' => { 'foo' => 'bar' }) }
 
           it 'delegates parsing to CompilationConfig' do
             compilation = instance_double('Bosh::Director::DeploymentPlan::CompilationConfig')
@@ -182,7 +182,7 @@ module Bosh::Director
         end
 
         context 'when compilation section is not specified' do
-          before { cloud_config_hash.delete('compilation') }
+          before { cloud_manifest.delete('compilation') }
 
           it 'raises an error' do
             expect {
@@ -228,7 +228,7 @@ module Bosh::Director
         context 'when there is at least one network' do
           context 'when network type is not specified' do
             before do
-              cloud_config_hash.merge!(
+              cloud_manifest.merge!(
                 'networks' => [{
                     'name' => 'a',
                     'subnets' => [],
@@ -254,7 +254,7 @@ module Bosh::Director
 
           context 'when more than one network have same canonical name' do
             before do
-              cloud_config_hash['networks'] = [
+              cloud_manifest['networks'] = [
                 { 'name' => 'bar', 'subnets' => [] },
                 { 'name' => 'Bar', 'subnets' => [] },
               ]
@@ -272,7 +272,7 @@ module Bosh::Director
         end
 
         context 'when 0 networks are specified' do
-          before { cloud_config_hash.merge!('networks' => []) }
+          before { cloud_manifest.merge!('networks' => []) }
 
           it 'raises an error because deployment must have at least one network' do
             expect {
@@ -282,7 +282,7 @@ module Bosh::Director
         end
 
         context 'when networks key is not specified' do
-          before { cloud_config_hash.delete('networks') }
+          before { cloud_manifest.delete('networks') }
 
           it 'raises an error because deployment must have at least one network' do
             expect {
@@ -299,7 +299,7 @@ module Bosh::Director
         context 'when there is at least one resource_pool' do
           context 'when each resource pool has a unique name' do
             before do
-              cloud_config_hash['resource_pools'] = [
+              cloud_manifest['resource_pools'] = [
                 Bosh::Spec::Deployments.resource_pool.merge('name' => 'rp1-name'),
                 Bosh::Spec::Deployments.resource_pool.merge('name' => 'rp2-name')
               ]
@@ -318,7 +318,7 @@ module Bosh::Director
 
           context 'when more than one resource pool have same name' do
             before do
-              cloud_config_hash['resource_pools'] = [
+              cloud_manifest['resource_pools'] = [
                   Bosh::Spec::Deployments.resource_pool.merge({ 'name' => 'same-name' }),
                   Bosh::Spec::Deployments.resource_pool.merge({ 'name' => 'same-name' })
               ]
@@ -340,7 +340,7 @@ module Bosh::Director
         context 'when there is at least one disk_pool' do
           context 'when each resource pool has a unique name' do
             before do
-              cloud_config_hash['disk_pools'] = [
+              cloud_manifest['disk_pools'] = [
                 Bosh::Spec::Deployments.disk_pool.merge({ 'name' => 'dk1-name' }),
                 Bosh::Spec::Deployments.disk_pool.merge({ 'name' => 'dk2-name' })
               ]
@@ -359,7 +359,7 @@ module Bosh::Director
 
           context 'when more than one disk pool have same name' do
             before do
-              cloud_config_hash['disk_pools'] = [
+              cloud_manifest['disk_pools'] = [
                   Bosh::Spec::Deployments.disk_pool.merge({ 'name' => 'same-name' }),
                   Bosh::Spec::Deployments.disk_pool.merge({ 'name' => 'same-name' })
               ]
@@ -513,7 +513,7 @@ module Bosh::Director
             }
 
             expect {
-              subject.parse(planner_attributes, manifest_hash, cloud_config, deployment_model, options)
+              subject.parse(planner_attributes, manifest_hash, cloud_manifest, deployment_model, cloud_config, options)
             }.to raise_error(
               DeploymentRenamedJobNameStillUsed,
               "Renamed job `job-old-name' is still referenced in deployment manifest",

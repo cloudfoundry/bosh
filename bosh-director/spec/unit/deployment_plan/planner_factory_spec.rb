@@ -50,7 +50,7 @@ module Bosh
         end
 
         before do
-          allow(deployment_manifest_migrator).to receive(:migrate) { |hash| hash }
+          allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config.manifest] }
           upload_releases!
           upload_stemcell!
           configure_config
@@ -67,9 +67,9 @@ module Bosh
           end
 
           it 'migrates the deployment manifest to handle legacy structure' do
-            allow(deployment_manifest_migrator).to receive(:migrate) do |hash|
-                hash.merge({'name' => 'migrated_name'})
-              end
+            allow(deployment_manifest_migrator).to receive(:migrate) do |hash, cloud_config|
+              [hash.merge({'name' => 'migrated_name'}), cloud_config.manifest]
+            end
 
             expect(planner.name).to eq('migrated_name')
 

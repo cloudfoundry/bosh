@@ -13,17 +13,13 @@ module Bosh::Director
 
       # @param [Hash] manifest Raw deployment manifest
       # @return [DeploymentPlan::Planner] Deployment as build from deployment_spec
-      def parse(attrs, manifest, cloud_config, deployment_model, options = {})
-        @deployment_manifest = manifest
-        if cloud_config.nil?
-          @cloud_manifest = cloud_manifest_from_deployment_manifest @deployment_manifest
-        else
-          @cloud_manifest = cloud_config.manifest
-        end
+      def parse(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options = {})
+        @deployment_manifest = deployment_manifest
+        @cloud_manifest = cloud_manifest
 
         @job_states = safe_property(options, 'job_states', :class => Hash, :default => {})
 
-        @deployment = Planner.new(attrs, manifest, cloud_config, deployment_model, options)
+        @deployment = Planner.new(attrs, deployment_manifest, cloud_config, deployment_model, options)
 
         parse_properties
         parse_releases
@@ -38,15 +34,6 @@ module Bosh::Director
       end
 
       private
-
-      CLOUD_MANIFEST_KEYS = ['resource_pools','compilation','disk_pools','networks']
-      def cloud_manifest_from_deployment_manifest(deployment_manifest)
-        cloud_manifest = {}
-        CLOUD_MANIFEST_KEYS.each do |key|
-          cloud_manifest[key] = deployment_manifest[key] if deployment_manifest.has_key? key
-        end
-        cloud_manifest
-      end
 
       def parse_name
         safe_property(@deployment_manifest, 'name', :class => String)

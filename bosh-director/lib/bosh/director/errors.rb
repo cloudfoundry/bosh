@@ -180,6 +180,7 @@ module Bosh::Director
   DeploymentInvalidNetworkType = err(190009)
   DeploymentUnknownTemplate = err(190012)
   DeploymentDuplicateDiskPoolName = err(190013)
+  DeploymentInvalidProperty = err(190014)
 
   DiskPoolInvalidDiskSize = err(200001)
 
