@@ -51,7 +51,7 @@ cpi: aws
 properties:
   uuid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx # BAT_DIRECTOR UUID
   stemcell:
-    name: bosh-aws-xen-ubuntu
+    name: bosh-aws-xen-ubuntu-trusty-go_agent
     version: latest
   pool_size: 1
   instances: 1
@@ -79,7 +79,7 @@ cpi: openstack
 properties:
   uuid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx # BAT_DIRECTOR UUID
   stemcell:
-    name: bosh-openstack-kvm-ubuntu
+    name: bosh-openstack-kvm-ubuntu-trusty-go_agent
     version: latest
   pool_size: 1
   instances: 1
@@ -103,7 +103,7 @@ cpi: openstack
 properties:
   uuid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx # BAT_DIRECTOR UUID
   stemcell:
-    name: bosh-openstack-kvm-ubuntu
+    name: bosh-openstack-kvm-ubuntu-trusty-go_agent
     version: latest
   pool_size: 1
   instances: 1
@@ -111,7 +111,7 @@ properties:
   flavor_with_no_ephemeral_disk: no-ephemeral
   vip: 0.0.0.43 # Virtual (public/floating) IP assigned to the bat-release job vm ('static' network), for ssh testing
   second_static_ip: 10.253.3.29 # Secondary (private) IP to use for reconfiguring networks, must be in the primary network & different from static_ip
-  network:
+  networks:
   - name: default
     type: manual
     static_ip: 10.0.1.30 # Primary (private) IP assigned to the bat-release job vm (primary NIC), must be in the primary static range
@@ -143,12 +143,12 @@ cpi: vsphere
 properties:
   uuid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx # BAT_DIRECTOR UUID
   stemcell:
-    name: bosh-vsphere-esxi-ubuntu
+    name: bosh-vsphere-esxi-ubuntu-trusty-go_agent
     version: latest
   pool_size: 1
   instances: 1
   second_static_ip: 192.168.79.62 # Secondary (private) IP assigned to the bat-release job vm, used for testing network reconfiguration, must be in the primary network & different from static_ip
-  network:
+  networks:
   - name: static
     type: manual
     static_ip: 192.168.79.61 # Primary (private) IP assigned to the bat-release job vm, must be in the static range
