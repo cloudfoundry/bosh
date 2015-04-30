@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `4wantbBiSSKve58dnjaR2wSemOAM7Xiy`
+  upgrade rsyslog to version 8.x (latest version in the upstream project's repo)
+
 * `hdWMpoRhNlIYrwt61zt9Ix2mYln_hTys`
   remove unnecessary packages to make OS image smaller
   reduce daily and weekly cron load
@@ -159,6 +162,9 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `1hBkiByEM5v3YhznWLQmmTdhA8eKkb3g`
+  upgrade rsyslog to version 8.x (latest version in the upstream project's repo)
 
 * `uVRZSKujJb4zU2KrtAH.xVLly3agHc7M`
   reinstall `base` metapackage to enable proper BOSH Director operation 
