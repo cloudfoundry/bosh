@@ -32,23 +32,13 @@ describe 'deploy', type: :integration do
     end
 
     context 'when a could config is uploaded' do
-      it 'ignores cloud related configurations in the deployment manifest' do
+      it 'returns an error if deployment manifest contains cloud properties' do
         cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
         cloud_config_hash['resource_pools'].find{ |i| i['name'] == 'a' }['size'] = 4
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
-        deploy_simple_manifest(manifest_hash: legacy_manifest_hash)
-        expect_running_vms(%w(foobar/0 foobar/1 foobar/2 unknown/unknown))
-        expect_output('deployments', <<-OUT)
-          +--------+----------------------+-------------------+--------------+
-          | Name   | Release(s)           | Stemcell(s)       | Cloud Config |
-          +--------+----------------------+-------------------+--------------+
-          | simple | bosh-release/0+dev.1 | ubuntu-stemcell/1 | latest       |
-          +--------+----------------------+-------------------+--------------+
-
-          Deployments total: 1
-        OUT
-
+        output = deploy_simple_manifest(manifest_hash: legacy_manifest_hash, failure_expected: true)
+        expect(output).to include('Deployment manifest should not contain cloud config properties')
       end
     end
 
