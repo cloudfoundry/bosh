@@ -29,6 +29,7 @@ module Bosh::Spec
         'local-file-server',
         'localhost',
         port,
+        'unknown',
         logger,
       )
     end
