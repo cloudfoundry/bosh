@@ -148,13 +148,13 @@ describe Bosh::AwsCloud::Cloud do
       context 'when disk type is provided' do
         let(:cloud_properties) { { 'type' => disk_type } }
 
-        context 'when disk type is not gp2 or standard' do
+        context 'when disk type is not gp2, io1, or standard' do
           let(:disk_type) { 'non-existing-disk-type' }
 
           it 'raises an error' do
             expect {
               cloud.create_disk(disk_size, cloud_properties, 42)
-            }.to raise_error /AWS CPI supports only gp2 or standard disk type/
+            }.to raise_error /AWS CPI supports only gp2, io1, or standard disk type/
           end
         end
 
@@ -166,6 +166,20 @@ describe Bosh::AwsCloud::Cloud do
               size: 2,
               availability_zone: 'fake-availability-zone',
               volume_type: 'gp2',
+              encrypted: false
+            ).and_return(volume)
+            cloud.create_disk(disk_size, cloud_properties, 42)
+          end
+        end
+
+        context 'when disk type is io1' do
+          let(:disk_type) { 'io1' }
+
+          it 'creates disk with io1 type' do
+            expect(volumes).to receive(:create).with(
+              size: 2,
+              availability_zone: 'fake-availability-zone',
+              volume_type: 'io1',
               encrypted: false
             ).and_return(volume)
             cloud.create_disk(disk_size, cloud_properties, 42)

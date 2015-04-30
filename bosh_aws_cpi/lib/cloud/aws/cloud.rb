@@ -215,8 +215,8 @@ module Bosh::AwsCloud
     end
 
     def validate_disk_type(type)
-      unless %w[gp2 standard].include?(type)
-        cloud_error('AWS CPI supports only gp2 or standard disk type')
+      unless %w[gp2 standard io1].include?(type)
+        cloud_error('AWS CPI supports only gp2, io1, or standard disk type')
       end
       type
     end
