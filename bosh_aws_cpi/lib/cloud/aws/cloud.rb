@@ -190,13 +190,14 @@ module Bosh::AwsCloud
     # @return [String] created EBS volume id
     def create_disk(size, cloud_properties, instance_id = nil)
       with_thread_name("create_disk(#{size}, #{instance_id})") do
-        validate_disk_size(size)
+        type = validate_disk_type(cloud_properties.fetch('type', 'standard'))
+        validate_disk_size(type, size)
 
         # if the disk is created for an instance, use the same availability zone as they must match
         volume = @ec2.volumes.create(
           size: (size / 1024.0).ceil,
           availability_zone: @az_selector.select_availability_zone(instance_id),
-          volume_type: validate_disk_type(cloud_properties.fetch('type', 'standard')),
+          volume_type: type,
           encrypted: cloud_properties.fetch('encrypted', false)
         )
 
@@ -207,11 +208,15 @@ module Bosh::AwsCloud
       end
     end
 
-    def validate_disk_size(size)
+    def validate_disk_size(type, size)
       raise ArgumentError, 'disk size needs to be an integer' unless size.kind_of?(Integer)
 
       cloud_error('AWS CPI minimum disk size is 1 GiB') if size < 1024
-      cloud_error('AWS CPI maximum disk size is 1 TiB') if size > 1024 * 1000
+      if type == 'standard'
+        cloud_error('AWS CPI maximum disk size is 1 TiB') if size > 1024 * 1000
+      else
+        cloud_error('AWS CPI maximum disk size is 16 TiB') if size > 1024 * 16000
+      end
     end
 
     def validate_disk_type(type)
