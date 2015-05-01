@@ -7,7 +7,7 @@ require 'bosh/dev/git_branch_merger'
 require 'open3'
 require 'bosh/dev/command_helper'
 
-describe 'promotion', type: :integration do
+describe 'promotion' do
   def exec_cmd(cmd)
     logger.info("Executing: #{cmd}")
     stdout, stderr, status = Open3.capture3(cmd)
@@ -55,6 +55,8 @@ describe 'promotion', type: :integration do
       exec_cmd('git checkout -b feature_branch')
       File.write('feature-file.go', 'feature-code')
       exec_cmd('git add -A')
+      exec_cmd('git config --local user.email "fake@example.com"')
+      exec_cmd('git config --local user.name "Fake User"')
       exec_cmd("git commit -m 'added new file'")
       exec_cmd('git push origin feature_branch')
 

@@ -12,6 +12,8 @@ module Bosh::Dev
         `git init`
         File.write('README.md', 'hiya!')
         `git add .`
+        `git config --local user.email "fake@example.com"`
+        `git config --local user.name "Fake User"`
         `git commit -m 'Initial commit'`
       end
 
@@ -27,7 +29,13 @@ module Bosh::Dev
     end
 
     context 'when there are changes' do
-      before { Dir.chdir(local_dir) { File.write('README.md', 'new contents') } }
+      before do
+        Dir.chdir(local_dir) do
+          `git config --local user.email "fake@example.com"`
+          `git config --local user.name "Fake User"`
+          File.write('README.md', 'new contents')
+        end
+      end
 
       it 'commits and pushes the changes' do
         original_commit = get_head_commit(remote_dir)
