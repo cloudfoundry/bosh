@@ -72,13 +72,12 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
       }.to raise_error(/unknown network `bar'/)
     end
 
-    it "should require resource pool cloud properties" do
-      expect {
-        BD::DeploymentPlan::CompilationConfig.new(@deployment, {
+    it "defaults resource pool cloud properties to empty hash" do
+      config = BD::DeploymentPlan::CompilationConfig.new(@deployment, {
             "workers" => 1,
             "network" => "foo"
         })
-      }.to raise_error(BD::ValidationMissingField)
+      expect(config.cloud_properties).to eq({})
     end
 
     it "should allow an optional environment to be set" do

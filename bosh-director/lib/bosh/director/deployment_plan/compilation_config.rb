@@ -30,24 +30,24 @@ module Bosh::Director
       # @param [Hash] compilation_config parsed compilation config YAML section
       def initialize(deployment, compilation_config)
         @deployment = deployment
-        @workers = safe_property(compilation_config, "workers",
-                                 :class => Integer, :min => 1)
-        network_name = safe_property(compilation_config, "network",
-                                     :class => String)
+        @workers = safe_property(compilation_config, "workers", class: Integer, min: 1)
+
+        network_name = safe_property(compilation_config, "network", class: String)
+
         @reuse_compilation_vms = safe_property(compilation_config,
-                                               "reuse_compilation_vms",
-                                               :class => :boolean,
-                                               :optional => true)
+          "reuse_compilation_vms",
+          class: :boolean,
+          optional: true)
+
         @network = deployment.network(network_name)
         if @network.nil?
           raise CompilationConfigUnknownNetwork,
-                "Compilation config references an unknown " +
-                "network `#{network_name}'"
+            "Compilation config references an unknown " +
+              "network `#{network_name}'"
         end
         @cloud_properties = safe_property(
-            compilation_config, "cloud_properties", :class => Hash)
-        @env = safe_property(compilation_config, "env", :class => Hash,
-                             :optional => true, :default => {})
+          compilation_config, "cloud_properties", class: Hash, default: {})
+        @env = safe_property(compilation_config, "env", class: Hash, optional: true, default: {})
       end
     end
   end
