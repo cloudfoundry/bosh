@@ -16,7 +16,7 @@ module Bosh::Director
       def initialize(deployment, network_spec)
         super
         @cloud_properties = safe_property(network_spec, "cloud_properties",
-                                          :class => Hash)
+          class: Hash, default: {})
         @reserved_ips = Set.new
       end
 

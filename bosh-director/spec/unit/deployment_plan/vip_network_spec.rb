@@ -4,12 +4,11 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
   before { @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner') }
 
   describe :initialize do
-    it "should require cloud properties" do
-      expect {
-        BD::DeploymentPlan::VipNetwork.new(@deployment_plan, {
-            "name" => "foo"
+    it "defaults cloud properties to empty hash" do
+      network = BD::DeploymentPlan::VipNetwork.new(@deployment_plan, {
+          "name" => "foo"
         })
-      }.to raise_error(BD::ValidationMissingField)
+      expect(network.cloud_properties).to eq({})
     end
   end
 

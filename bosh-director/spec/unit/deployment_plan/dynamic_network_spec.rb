@@ -16,12 +16,11 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       expect(network.cloud_properties).to eq({"foz" => "baz"})
     end
 
-    it "should require cloud properties" do
-      expect {
-        BD::DeploymentPlan::DynamicNetwork.new(@deployment_plan, {
-            "name" => "foo"
+    it "defaults cloud properties to empty hash" do
+      network = BD::DeploymentPlan::DynamicNetwork.new(@deployment_plan, {
+          "name" => "foo",
         })
-      }.to raise_error(BD::ValidationMissingField)
+      expect(network.cloud_properties).to eq({})
     end
 
     it "should parse dns servers" do
