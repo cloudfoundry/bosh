@@ -60,8 +60,9 @@ module Bosh::Director
           @deployment.add_resource_pool(ResourcePool.new(@deployment, rp_spec, @logger))
         end
 
-        # Uncomment when integration test fixed
-        # raise "No resource pools specified." if @resource_pools.empty?
+        if @deployment.resource_pools.empty?
+          raise DeploymentNoResourcePools, 'No resource_pools specified'
+        end
       end
 
       def parse_disk_pools

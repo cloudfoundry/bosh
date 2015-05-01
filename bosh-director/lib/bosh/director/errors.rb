@@ -181,6 +181,7 @@ module Bosh::Director
   DeploymentUnknownTemplate = err(190012)
   DeploymentDuplicateDiskPoolName = err(190013)
   DeploymentInvalidProperty = err(190014)
+  DeploymentNoResourcePools = err(190015)
 
   DiskPoolInvalidDiskSize = err(200001)
 

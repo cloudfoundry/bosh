@@ -159,6 +159,21 @@ module Bosh::Director
             end
           end
         end
+
+        context 'when there are no resource pools' do
+          before do
+            cloud_manifest['resource_pools'] = []
+          end
+
+          it 'raises an error' do
+            expect {
+              parsed_deployment
+            }.to raise_error(
+                DeploymentNoResourcePools,
+                "No resource_pools specified",
+              )
+          end
+        end
       end
 
       describe 'disk_pools' do
