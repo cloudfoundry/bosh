@@ -52,13 +52,19 @@ module Bosh::Director::DeploymentPlan
         expect(resource_pool.env).to eq({ 'key' => 'value' })
       end
 
-      %w(name cloud_properties).each do |key|
-        context "when #{key} is missing" do
-          before { valid_spec.delete(key) }
+      context 'when name is missing' do
+        before { valid_spec.delete('name') }
 
-          it 'raises an error' do
-            expect { ResourcePool.new(plan, valid_spec, logger) }.to raise_error(BD::ValidationMissingField)
-          end
+        it 'raises an error' do
+          expect { ResourcePool.new(plan, valid_spec, logger) }.to raise_error(BD::ValidationMissingField)
+        end
+      end
+
+      context 'when cloud_properties is missing' do
+        before { valid_spec.delete('cloud_properties') }
+
+        it 'defaults to empty hash' do
+          expect(resource_pool.cloud_properties).to eq({})
         end
       end
 

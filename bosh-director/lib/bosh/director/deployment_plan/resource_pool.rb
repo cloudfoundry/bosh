@@ -43,16 +43,16 @@ module Bosh::Director
 
         @logger = logger
 
-        @name = safe_property(spec, "name", :class => String)
-        @size = safe_property(spec, "size", :class => Integer, :optional => true)
+        @name = safe_property(spec, "name", class: String)
+        @size = safe_property(spec, "size", class: Integer, optional: true)
 
         @cloud_properties =
-          safe_property(spec, "cloud_properties", :class => Hash)
+          safe_property(spec, "cloud_properties", class: Hash, default: {})
 
-        stemcell_spec = safe_property(spec, "stemcell", :class => Hash)
+        stemcell_spec = safe_property(spec, "stemcell", class: Hash)
         @stemcell = Stemcell.new(self, stemcell_spec)
 
-        network_name = safe_property(spec, "network", :class => String)
+        network_name = safe_property(spec, "network", class: String)
         @network = @deployment_plan.network(network_name)
 
         if @network.nil?
@@ -61,7 +61,7 @@ module Bosh::Director
                 "an unknown network `#{network_name}'"
         end
 
-        @env = safe_property(spec, "env", :class => Hash, :default => {})
+        @env = safe_property(spec, "env", class: Hash, default: {})
 
         @idle_vms = []
         @allocated_vms = []
