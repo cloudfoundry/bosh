@@ -63,8 +63,8 @@ module Bosh
           @logger.info("Deployment plan options: #{plan_options.pretty_inspect}")
 
           deployment = Planner.new(attrs, deployment_manifest, cloud_config, deployment_model, plan_options)
-          parser = DeploymentSpecParser.new(deployment, @event_log, @logger)
-          parser.parse(deployment_manifest, cloud_manifest, plan_options)
+          deployment = CloudManifestParser.new(deployment, @logger).parse(cloud_manifest)
+          DeploymentSpecParser.new(deployment, @event_log, @logger).parse(deployment_manifest, plan_options)
         end
 
         def bind_vms(planner)
