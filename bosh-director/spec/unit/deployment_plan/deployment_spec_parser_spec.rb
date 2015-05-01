@@ -3,11 +3,13 @@ require 'bosh/director/dns_helper'
 
 module Bosh::Director
   describe DeploymentPlan::DeploymentSpecParser do
-    subject(:parser) { described_class.new(event_log, logger) }
+    subject(:parser) { described_class.new(deployment, event_log, logger) }
+    let(:deployment) { DeploymentPlan::Planner.new(planner_attributes, manifest_hash, cloud_manifest, deployment_model, planner_options) }
+    let(:planner_options) { {} }
     let(:event_log) { Config.event_log }
 
     describe '#parse' do
-      let(:deployment) { subject.parse(planner_attributes, manifest_hash, cloud_manifest, deployment_model, cloud_config) }
+      let(:parsed_deployment) { subject.parse(manifest_hash, cloud_manifest) }
       let(:deployment_model) { Models::Deployment.make }
       let(:manifest_hash) do
         {
@@ -37,24 +39,24 @@ module Bosh::Director
       describe 'name key' do
         it 'parses name' do
           manifest_hash.merge!('name' => 'Name with spaces')
-          expect(deployment.name).to eq('Name with spaces')
+          expect(parsed_deployment.name).to eq('Name with spaces')
         end
 
         it 'sets canonical name' do
           manifest_hash.merge!('name' => 'Name with spaces')
-          expect(deployment.canonical_name).to eq('namewithspaces')
+          expect(parsed_deployment.canonical_name).to eq('namewithspaces')
         end
       end
 
       describe 'properties key' do
         it 'parses basic properties' do
           manifest_hash.merge!('properties' => { 'foo' => 'bar' })
-          expect(deployment.properties).to eq('foo' => 'bar')
+          expect(parsed_deployment.properties).to eq('foo' => 'bar')
         end
 
         it 'allows to not include properties key' do
           manifest_hash.delete('properties')
-          expect(deployment.properties).to eq({})
+          expect(parsed_deployment.properties).to eq({})
         end
       end
 
@@ -73,14 +75,14 @@ module Bosh::Director
           end
 
           it 'delegates to ReleaseVersion' do
-            expect(deployment.releases.size).to eq(1)
-            release_version = deployment.releases.first
+            expect(parsed_deployment.releases.size).to eq(1)
+            release_version = parsed_deployment.releases.first
             expect(release_version).to be_a(DeploymentPlan::ReleaseVersion)
             expect(release_version.name).to eq('rv-name')
           end
 
           it 'allows to look up release by name' do
-            release_version = deployment.release('rv-name')
+            release_version = parsed_deployment.release('rv-name')
             expect(release_version).to be_a(DeploymentPlan::ReleaseVersion)
             expect(release_version.name).to eq('rv-name')
           end
@@ -98,26 +100,26 @@ module Bosh::Director
             end
 
             it 'delegates to ReleaseVersion' do
-              expect(deployment.releases.size).to eq(2)
+              expect(parsed_deployment.releases.size).to eq(2)
 
-              rv1 = deployment.releases.first
+              rv1 = parsed_deployment.releases.first
               expect(rv1).to be_a(DeploymentPlan::ReleaseVersion)
               expect(rv1.name).to eq('rv1-name')
               expect(rv1.version).to eq('abc')
 
-              rv2 = deployment.releases.last
+              rv2 = parsed_deployment.releases.last
               expect(rv2).to be_a(DeploymentPlan::ReleaseVersion)
               expect(rv2.name).to eq('rv2-name')
               expect(rv2.version).to eq('def')
             end
 
             it 'allows to look up release by name' do
-              rv1 = deployment.release('rv1-name')
+              rv1 = parsed_deployment.release('rv1-name')
               expect(rv1).to be_a(DeploymentPlan::ReleaseVersion)
               expect(rv1.name).to eq('rv1-name')
               expect(rv1.version).to eq('abc')
 
-              rv2 = deployment.release('rv2-name')
+              rv2 = parsed_deployment.release('rv2-name')
               expect(rv2).to be_a(DeploymentPlan::ReleaseVersion)
               expect(rv2.name).to eq('rv2-name')
               expect(rv2.version).to eq('def')
@@ -134,7 +136,7 @@ module Bosh::Director
 
             it 'raises an error' do
               expect {
-                deployment
+                parsed_deployment
               }.to raise_error(/duplicate release name/i)
             end
           end
@@ -146,7 +148,7 @@ module Bosh::Director
 
           it 'raises an error' do
             expect {
-              deployment
+              parsed_deployment
             }.to raise_error(/use one of the two/)
           end
         end
@@ -157,7 +159,7 @@ module Bosh::Director
 
           it 'raises an error' do
             expect {
-              deployment
+              parsed_deployment
             }.to raise_error(
               ValidationMissingField,
               /Required property `releases' was not specified in object .+/,
@@ -177,7 +179,7 @@ module Bosh::Director
               with(be_a(DeploymentPlan::Planner), 'foo' => 'bar').
               and_return(compilation)
 
-            expect(deployment.compilation).to eq(compilation)
+            expect(parsed_deployment.compilation).to eq(compilation)
           end
         end
 
@@ -186,7 +188,7 @@ module Bosh::Director
 
           it 'raises an error' do
             expect {
-              deployment
+              parsed_deployment
             }.to raise_error(
               ValidationMissingField,
               /Required property `compilation' was not specified in object .+/,
@@ -206,7 +208,7 @@ module Bosh::Director
               with('foo' => 'bar').
               and_return(update)
 
-            expect(deployment.update).to eq(update)
+            expect(parsed_deployment.update).to eq(update)
           end
         end
 
@@ -215,7 +217,7 @@ module Bosh::Director
 
           it 'raises an error' do
             expect {
-              deployment
+              parsed_deployment
             }.to raise_error(
               ValidationMissingField,
               /Required property `update' was not specified in object .+/,
@@ -236,14 +238,14 @@ module Bosh::Director
             end
 
             it 'should create manual network by default' do
-              expect(deployment.networks.count).to eq(1)
-              expect(deployment.networks.first).to be_a(DeploymentPlan::ManualNetwork)
-              expect(deployment.networks.first.name).to eq('a')
+              expect(parsed_deployment.networks.count).to eq(1)
+              expect(parsed_deployment.networks.first).to be_a(DeploymentPlan::ManualNetwork)
+              expect(parsed_deployment.networks.first.name).to eq('a')
             end
 
             it 'allows to look up network by name' do
-              expect(deployment.network('a')).to be_a(DeploymentPlan::ManualNetwork)
-              expect(deployment.network('b')).to be_nil
+              expect(parsed_deployment.network('a')).to be_a(DeploymentPlan::ManualNetwork)
+              expect(parsed_deployment.network('b')).to be_nil
             end
           end
 
@@ -262,7 +264,7 @@ module Bosh::Director
 
             it 'raises an error' do
               expect {
-                deployment
+                parsed_deployment
               }.to raise_error(
                 DeploymentCanonicalNetworkNameTaken,
                 "Invalid network name `Bar', canonical name already taken",
@@ -276,7 +278,7 @@ module Bosh::Director
 
           it 'raises an error because deployment must have at least one network' do
             expect {
-              deployment
+              parsed_deployment
             }.to raise_error(DeploymentNoNetworks, 'No networks specified')
           end
         end
@@ -286,7 +288,7 @@ module Bosh::Director
 
           it 'raises an error because deployment must have at least one network' do
             expect {
-              deployment
+              parsed_deployment
             }.to raise_error(
               ValidationMissingField,
               /Required property `networks' was not specified in object .+/,
@@ -306,13 +308,13 @@ module Bosh::Director
             end
 
             it 'creates ResourcePools for each entry' do
-              expect(deployment.resource_pools.map(&:class)).to eq([DeploymentPlan::ResourcePool, DeploymentPlan::ResourcePool])
-              expect(deployment.resource_pools.map(&:name)).to eq(['rp1-name', 'rp2-name'])
+              expect(parsed_deployment.resource_pools.map(&:class)).to eq([DeploymentPlan::ResourcePool, DeploymentPlan::ResourcePool])
+              expect(parsed_deployment.resource_pools.map(&:name)).to eq(['rp1-name', 'rp2-name'])
             end
 
             it 'allows to look up resource_pool by name' do
-              expect(deployment.resource_pool('rp1-name').name).to eq('rp1-name')
-              expect(deployment.resource_pool('rp2-name').name).to eq('rp2-name')
+              expect(parsed_deployment.resource_pool('rp1-name').name).to eq('rp1-name')
+              expect(parsed_deployment.resource_pool('rp2-name').name).to eq('rp2-name')
             end
           end
 
@@ -326,7 +328,7 @@ module Bosh::Director
 
             it 'raises an error' do
               expect {
-                deployment
+                parsed_deployment
               }.to raise_error(
                 DeploymentDuplicateResourcePoolName,
                 "Duplicate resource pool name `same-name'",
@@ -347,13 +349,13 @@ module Bosh::Director
             end
 
             it 'creates DiskPools for each entry' do
-              expect(deployment.disk_pools.map(&:class)).to eq([DeploymentPlan::DiskPool, DeploymentPlan::DiskPool])
-              expect(deployment.disk_pools.map(&:name)).to eq(['dk1-name', 'dk2-name'])
+              expect(parsed_deployment.disk_pools.map(&:class)).to eq([DeploymentPlan::DiskPool, DeploymentPlan::DiskPool])
+              expect(parsed_deployment.disk_pools.map(&:name)).to eq(['dk1-name', 'dk2-name'])
             end
 
             it 'allows to look up disk_pool by name' do
-              expect(deployment.disk_pool('dk1-name').name).to eq('dk1-name')
-              expect(deployment.disk_pool('dk2-name').name).to eq('dk2-name')
+              expect(parsed_deployment.disk_pool('dk1-name').name).to eq('dk1-name')
+              expect(parsed_deployment.disk_pool('dk2-name').name).to eq('dk2-name')
             end
           end
 
@@ -367,7 +369,7 @@ module Bosh::Director
 
             it 'raises an error' do
               expect {
-                deployment
+                parsed_deployment
               }.to raise_error(
                 DeploymentDuplicateDiskPoolName,
                 "Duplicate disk pool name `same-name'",
@@ -414,7 +416,7 @@ module Bosh::Director
                 with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger).
                 and_return(job2)
 
-              expect(deployment.jobs).to eq([job1, job2])
+              expect(parsed_deployment.jobs).to eq([job1, job2])
             end
 
             it 'allows to look up job by name' do
@@ -426,8 +428,8 @@ module Bosh::Director
                 with(be_a(DeploymentPlan::Planner), {'name' => 'job2-name'}, event_log, logger).
                 and_return(job2)
 
-              expect(deployment.job('job1-name')).to eq(job1)
-              expect(deployment.job('job2-name')).to eq(job2)
+              expect(parsed_deployment.job('job1-name')).to eq(job1)
+              expect(parsed_deployment.job('job2-name')).to eq(job2)
             end
           end
 
@@ -463,7 +465,7 @@ module Bosh::Director
                 and_return(job2)
 
               expect {
-                deployment
+                parsed_deployment
               }.to raise_error(
                 DeploymentCanonicalJobNameTaken,
                 "Invalid job name `job2-name', canonical name already taken",
@@ -476,7 +478,7 @@ module Bosh::Director
           before { manifest_hash.merge!('jobs' => []) }
 
           it 'parses jobs and return empty array' do
-            expect(deployment.jobs).to eq([])
+            expect(parsed_deployment.jobs).to eq([])
           end
         end
 
@@ -484,7 +486,7 @@ module Bosh::Director
           before { manifest_hash.delete('jobs') }
 
           it 'parses jobs and return empty array' do
-            expect(deployment.jobs).to eq([])
+            expect(parsed_deployment.jobs).to eq([])
           end
         end
       end
@@ -500,20 +502,22 @@ module Bosh::Director
             })
           end
 
+          let(:planner_options) do
+            {
+              'job_rename' => {
+                'old_name' => 'job-old-name',
+                'new_name' => 'job-new-name',
+              }
+            }
+          end
+
           it 'raises an error because only new_name should reference a job' do
             allow(DeploymentPlan::Job).to receive(:parse).
               with(be_a(DeploymentPlan::Planner), {'name' => 'job-old-name'}, event_log, logger).
               and_return(job)
 
-            options = {
-              'job_rename' => {
-                'old_name' => 'job-old-name',
-                'new_name' => 'job-new-name',
-              },
-            }
-
             expect {
-              subject.parse(planner_attributes, manifest_hash, cloud_manifest, deployment_model, cloud_config, options)
+              parsed_deployment
             }.to raise_error(
               DeploymentRenamedJobNameStillUsed,
               "Renamed job `job-old-name' is still referenced in deployment manifest",

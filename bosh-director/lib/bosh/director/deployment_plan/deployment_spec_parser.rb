@@ -6,31 +6,34 @@ module Bosh::Director
       include DnsHelper
       include ValidationHelper
 
-      def initialize(event_log, logger)
+      def initialize(deployment, event_log, logger)
         @event_log = event_log
         @logger = logger
+        @deployment = deployment
       end
 
       # @param [Hash] manifest Raw deployment manifest
       # @return [DeploymentPlan::Planner] Deployment as build from deployment_spec
-      def parse(attrs, deployment_manifest, cloud_manifest, deployment_model, cloud_config, options = {})
+      def parse(deployment_manifest, cloud_manifest, options = {})
         @deployment_manifest = deployment_manifest
-        @cloud_manifest = cloud_manifest
-
         @job_states = safe_property(options, 'job_states', :class => Hash, :default => {})
 
-        @deployment = Planner.new(attrs, deployment_manifest, cloud_config, deployment_model, options)
-
+        parse_cloud_manifest(cloud_manifest)
         parse_properties
         parse_releases
-        parse_networks
-        parse_compilation
         parse_update
-        parse_resource_pools
-        parse_disk_pools
         parse_jobs
 
         @deployment
+      end
+
+      def parse_cloud_manifest(cloud_manifest)
+        @cloud_manifest = cloud_manifest
+
+        parse_networks
+        parse_compilation
+        parse_resource_pools
+        parse_disk_pools
       end
 
       private
