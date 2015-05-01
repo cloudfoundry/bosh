@@ -1,6 +1,7 @@
 require 'bosh/director/deployment_plan/deployment_spec_parser'
 require 'bosh/director/deployment_plan/cloud_manifest_parser'
 require 'bosh/director/deployment_plan/disk_pool'
+require 'forwardable'
 
 module Bosh::Director
   # Encapsulates essential director data structures retrieved
@@ -10,6 +11,7 @@ module Bosh::Director
       include LockHelper
       include DnsHelper
       include ValidationHelper
+      extend Forwardable
 
       # @return [String] Deployment name
       attr_reader :name
@@ -21,10 +23,6 @@ module Bosh::Director
       attr_reader :model
 
       attr_accessor :properties
-
-      # @return [Bosh::Director::DeploymentPlan::CompilationConfig]
-      #   Resource pool and other configuration for compilation workers
-      attr_accessor :compilation
 
       # @return [Bosh::Director::DeploymentPlan::UpdateConfig]
       #   Default job update configuration
@@ -54,13 +52,8 @@ module Bosh::Director
 
         @manifest_text = manifest_text
         @cloud_config = cloud_config
+        @cloud_planner = CloudPlanner.new(cloud_config)
         @model = deployment_model
-
-        @networks = {}
-        @networks_canonical_name_index = Set.new
-
-        @resource_pools = {}
-        @disk_pools = {}
 
         @jobs = []
         @jobs_name_index = {}
@@ -76,6 +69,11 @@ module Bosh::Director
         @recreate = !!options['recreate']
       end
 
+      def_delegators :@cloud_planner, :add_network, :networks, :network,
+        :add_resource_pool, :resource_pools, :resource_pool,
+        :add_disk_pool, :disk_pools, :disk_pool,
+        :compilation, :compilation=
+
       def canonical_name
         canonical(@name)
       end
@@ -84,73 +82,6 @@ module Bosh::Director
       # @return [Array<Models::Vm>]
       def vms
         @model.vms
-      end
-
-      # Adds a network by name
-      # @param [Bosh::Director::DeploymentPlan::Network] network
-      def add_network(network)
-        if @networks_canonical_name_index.include?(network.canonical_name)
-          raise DeploymentCanonicalNetworkNameTaken,
-            "Invalid network name `#{network.name}', " +
-              'canonical name already taken'
-        end
-
-        @networks[network.name] = network
-        @networks_canonical_name_index << network.canonical_name
-      end
-
-      # Returns all networks in a deployment plan
-      # @return [Array<Bosh::Director::DeploymentPlan::Network>]
-      def networks
-        @networks.values
-      end
-
-      # Returns a named network
-      # @param [String] name
-      # @return [Bosh::Director::DeploymentPlan::Network]
-      def network(name)
-        @networks[name]
-      end
-
-      # Adds a resource pool by name
-      # @param [Bosh::Director::DeploymentPlan::ResourcePool] resource_pool
-      def add_resource_pool(resource_pool)
-        if @resource_pools[resource_pool.name]
-          raise DeploymentDuplicateResourcePoolName,
-            "Duplicate resource pool name `#{resource_pool.name}'"
-        end
-        @resource_pools[resource_pool.name] = resource_pool
-      end
-
-      # Returns all resource pools in a deployment plan
-      # @return [Array<Bosh::Director::DeploymentPlan::ResourcePool>]
-      def resource_pools
-        @resource_pools.values
-      end
-
-      # Returns a named resource pool spec
-      # @param [String] name Resource pool name
-      # @return [Bosh::Director::DeploymentPlan::ResourcePool]
-      def resource_pool(name)
-        @resource_pools[name]
-      end
-
-      # Adds a disk pool by name
-      # @param [Bosh::Director::DeploymentPlan::DiskPool] disk_pool
-      def add_disk_pool(disk_pool)
-        if @disk_pools[disk_pool.name]
-          raise DeploymentDuplicateDiskPoolName,
-            "Duplicate disk pool name `#{disk_pool.name}'"
-        end
-        @disk_pools[disk_pool.name] = disk_pool
-      end
-
-      def disk_pools
-        @disk_pools.values
-      end
-
-      def disk_pool(name)
-        @disk_pools[name]
       end
 
       # Adds a release by name
@@ -246,6 +177,88 @@ module Bosh::Director
         model.stemcells.each do |deployment_stemcell|
           deployment_stemcell.remove_deployment(model) unless current_stemcell_models.include?(deployment_stemcell)
         end
+      end
+    end
+
+    class CloudPlanner
+      # @return [Bosh::Director::DeploymentPlan::CompilationConfig]
+      #   Resource pool and other configuration for compilation workers
+      attr_accessor :compilation
+
+      def initialize(cloud_config)
+        @cloud_config = cloud_config
+        @networks_canonical_name_index = Set.new
+
+        @networks = {}
+        @resource_pools = {}
+        @disk_pools = {}
+      end
+
+      # Adds a resource pool by name
+      # @param [Bosh::Director::DeploymentPlan::ResourcePool] resource_pool
+      def add_resource_pool(resource_pool)
+        if @resource_pools[resource_pool.name]
+          raise DeploymentDuplicateResourcePoolName,
+            "Duplicate resource pool name `#{resource_pool.name}'"
+        end
+        @resource_pools[resource_pool.name] = resource_pool
+      end
+
+      # Returns all resource pools in a deployment plan
+      # @return [Array<Bosh::Director::DeploymentPlan::ResourcePool>]
+      def resource_pools
+        @resource_pools.values
+      end
+
+      # Returns a named resource pool spec
+      # @param [String] name Resource pool name
+      # @return [Bosh::Director::DeploymentPlan::ResourcePool]
+      def resource_pool(name)
+        @resource_pools[name]
+      end
+
+      # Adds a network by name
+      # @param [Bosh::Director::DeploymentPlan::Network] network
+      def add_network(network)
+        if @networks_canonical_name_index.include?(network.canonical_name)
+          raise DeploymentCanonicalNetworkNameTaken,
+            "Invalid network name `#{network.name}', " +
+              'canonical name already taken'
+        end
+
+        @networks[network.name] = network
+        @networks_canonical_name_index << network.canonical_name
+      end
+
+      # Returns all networks in a deployment plan
+      # @return [Array<Bosh::Director::DeploymentPlan::Network>]
+      def networks
+        @networks.values
+      end
+
+      # Returns a named network
+      # @param [String] name
+      # @return [Bosh::Director::DeploymentPlan::Network]
+      def network(name)
+        @networks[name]
+      end
+
+      # Adds a disk pool by name
+      # @param [Bosh::Director::DeploymentPlan::DiskPool] disk_pool
+      def add_disk_pool(disk_pool)
+        if @disk_pools[disk_pool.name]
+          raise DeploymentDuplicateDiskPoolName,
+            "Duplicate disk pool name `#{disk_pool.name}'"
+        end
+        @disk_pools[disk_pool.name] = disk_pool
+      end
+
+      def disk_pools
+        @disk_pools.values
+      end
+
+      def disk_pool(name)
+        @disk_pools[name]
       end
     end
   end

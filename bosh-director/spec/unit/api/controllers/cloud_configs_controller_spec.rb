@@ -12,7 +12,7 @@ module Bosh::Director
       it 'creates a new cloud config' do
         authorize('admin', 'admin')
 
-        properties = "---\nfoo: bar"
+        properties = Psych.dump(Bosh::Spec::Deployments.simple_cloud_config)
         expect {
           post '/', properties, { 'CONTENT_TYPE' => 'text/yaml' }
         }.to change(Bosh::Director::Models::CloudConfig, :count).from(0).to(1)
