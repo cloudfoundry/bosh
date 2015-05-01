@@ -30,6 +30,18 @@ module Bosh::Spec
       File.read(File.join(@agent_base_dir, file_path))
     end
 
+    def write_job_log(file_path, file_contents)
+      log_path = File.join(jobs_logs_path, file_path)
+      FileUtils.mkdir_p(File.split(log_path).first)
+      File.write(log_path, file_contents)
+    end
+
+    def write_agent_log(file_path, file_contents)
+      log_path = File.join(agent_logs_path, file_path)
+      FileUtils.mkdir_p(File.split(log_path).first)
+      File.write(log_path, file_contents)
+    end
+
     def fail_job
       @logger.info("Failing job #{@cid}")
       NATS.start(uri: "nats://localhost:#{@nats_port}") do
@@ -62,6 +74,16 @@ module Bosh::Spec
     def get_state
       spec_path = File.join(@agent_base_dir, 'bosh', 'spec.json')
       Yajl::Parser.parse(File.read(spec_path))
+    end
+
+    private
+
+    def jobs_logs_path
+      File.join(@agent_base_dir, 'sys', 'log')
+    end
+
+    def agent_logs_path
+      File.join(@agent_base_dir, 'bosh', 'log')
     end
   end
 end
