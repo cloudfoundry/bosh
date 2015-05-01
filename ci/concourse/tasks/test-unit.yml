@@ -1,0 +1,11 @@
+---
+platform: linux
+
+image: docker:///bosh/integration
+
+inputs:
+- name: bosh-src
+
+run:
+  path: bosh-src/ci/concourse/tasks/rake.sh
+  args: ["spec:unit"]

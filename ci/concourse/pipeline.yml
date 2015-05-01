@@ -1,0 +1,24 @@
+---
+jobs:
+  - name: test-unit
+    plan:
+      - get:        bosh-src
+      - aggregate:
+        - task:     test-unit
+          file:     bosh-src/ci/concourse/tasks/test-unit.yml
+          config:
+            params:
+              RUBY_VERSION: 1.9.3
+        - task:     test-unit
+          file:     bosh-src/ci/concourse/tasks/test-unit.yml
+          config:
+            params:
+              RUBY_VERSION: 2.1.2
+
+resources:
+  - name: bosh-src
+    type: git
+    source:
+      uri:          git@github.com:cloudfoundry/bosh.git
+      branch:       develop
+      private_key:  {{concourse_github_private_key}}

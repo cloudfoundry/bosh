@@ -6,6 +6,7 @@
 .\#*
 .bundle
 .idea
+.local
 *.iml
 *.iml.bak
 *.iml.new
@@ -27,6 +28,8 @@ aws_vpc_receipt.yml
 bosh_cli_plugin_aws/director.key
 bosh_cli_plugin_aws/director.pem
 bosh_cli_plugin_aws/spec/assets/private.yml
+
+ci/concourse/config
 
 create-rds-output*.yml
 create-vpc-output*.yml
