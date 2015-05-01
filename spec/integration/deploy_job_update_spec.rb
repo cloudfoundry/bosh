@@ -49,55 +49,36 @@ describe 'deploy job update', type: :integration do
         modified_legacy_manifest_hash
       end
 
-      context 'when previous deployment was in the legacy style with a cloud_config already in the system' do
-        before do
-          target_and_login
-          create_and_upload_test_release
-          upload_stemcell
-          upload_cloud_config(cloud_config_hash: cloud_config_hash)
-          deploy_simple_manifest(manifest_hash: legacy_manifest_hash)
-        end
-
-        it 'incorrectly reports cloud configuration changes between the 2 legacy manifests even though the cloud config did not change' do
-          set_deployment(manifest_hash: modified_legacy_manifest_hash)
-
-          deploy_output = deploy(failure_expected: true, redact_diff: true)
-          expect(deploy_output).to_not match(/Resource pools\nNo change/m)
-        end
-      end
-
-      context 'when previous deployment was in the new style' do
-        before do
-          target_and_login
-          create_and_upload_test_release
-          upload_stemcell
-          upload_cloud_config(cloud_config_hash: cloud_config_hash)
-          deploy_simple_manifest(manifest_hash: manifest_hash)
-        end
-
-        it 'incorrectly reports cloud configuration changes since it does not have cloud config info from the previous deploy' do
-          set_deployment(manifest_hash: legacy_manifest_hash)
-
-          deploy_output = deploy(failure_expected: true, redact_diff: true)
-          expect(deploy_output).to_not match(/Resource pools\nNo changes/m)
-        end
-      end
-
-      context 'when previous deployment was in the legacy style and a cloud config is uploaded prior to new deployment' do
+      context 'when previous deployment was in the legacy style' do
         before do
           target_and_login
           create_and_upload_test_release
           upload_stemcell
           deploy_simple_manifest(manifest_hash: legacy_manifest_hash)
-
-          upload_cloud_config(cloud_config_hash: cloud_config_hash)
         end
 
-        it 'incorrectly reports cloud configuration changes even though they have not changed' do
-          set_deployment(manifest_hash: modified_legacy_manifest_hash)
+        context 'when cloud config was uploaded' do
+          before do
+            upload_cloud_config(cloud_config_hash: cloud_config_hash)
+          end
 
-          deploy_output = deploy(failure_expected: true, redact_diff: true)
-          expect(deploy_output).to_not match(/Resource pools\nNo changes/m)
+          it 'fails to update deployment' do
+            set_deployment(manifest_hash: modified_legacy_manifest_hash)
+
+            deploy_output = deploy(failure_expected: true)
+            expect(deploy_output).to match(/Deployment manifest should not contain cloud config properties/)
+          end
+
+          context 'when new deployment was updated to not contain cloud properties' do
+            it 'succeeds and incorrectly reports changes' do
+              set_deployment(manifest_hash: manifest_hash)
+
+              deploy_output = deploy(redact_diff: true)
+              expect(deploy_output).to match(/Compilation\nChanges found - Redacted/m)
+              expect(deploy_output).to match(/Resource pools\nChanges found - Redacted/m)
+              expect(deploy_output).to match(/Disk pools\nNo changes/m)
+            end
+          end
         end
       end
 

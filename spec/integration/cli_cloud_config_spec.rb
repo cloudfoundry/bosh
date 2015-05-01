@@ -8,7 +8,7 @@ describe "cli cloud config", type: :integration do
     bosh_runner.run("login admin admin")
     Dir.mktmpdir do |tmpdir|
       cloud_config_filename = File.join(tmpdir, 'cloud_config.yml')
-      File.write(cloud_config_filename, "---\nfoo: bar")
+      File.write(cloud_config_filename, Psych.dump(Bosh::Spec::Deployments.simple_cloud_config))
       expect(bosh_runner.run("update cloud-config #{cloud_config_filename}")).to include("Successfully updated cloud config")
     end
   end
@@ -41,11 +41,11 @@ describe "cli cloud config", type: :integration do
 
     Dir.mktmpdir do |tmpdir|
       cloud_config_filename = File.join(tmpdir, 'cloud_config.yml')
-      cloud_config = "---\nfoo: bar"
+      cloud_config = Psych.dump(Bosh::Spec::Deployments.simple_cloud_config)
       File.write(cloud_config_filename, cloud_config)
       puts bosh_runner.run("update cloud-config #{cloud_config_filename}")
 
-      expect(bosh_runner.run("cloud-config")).to eq("#{cloud_config}\n")
+      expect(bosh_runner.run("cloud-config")).to eq(cloud_config)
     end
   end
 end
