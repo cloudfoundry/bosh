@@ -5,23 +5,20 @@ module Bosh
         def self.create(event_log, logger)
           deployment_manifest_migrator = Bosh::Director::DeploymentPlan::ManifestMigrator.new
           canonicalizer = Class.new { include Bosh::Director::DnsHelper }.new
-          deployment_manifest_validator = Bosh::Director::DeploymentPlan::ManifestValidator.new
           deployment_repo = Bosh::Director::DeploymentPlan::DeploymentRepo.new(canonicalizer)
 
           new(
             canonicalizer,
             deployment_manifest_migrator,
-            deployment_manifest_validator,
             deployment_repo,
             event_log,
             logger
           )
         end
 
-        def initialize(canonicalizer, deployment_manifest_migrator, deployment_manifest_validator, deployment_repo, event_log, logger)
+        def initialize(canonicalizer, deployment_manifest_migrator, deployment_repo, event_log, logger)
           @canonicalizer = canonicalizer
           @deployment_manifest_migrator = deployment_manifest_migrator
-          @deployment_manifest_validator = deployment_manifest_validator
           @deployment_repo = deployment_repo
           @event_log = event_log
           @logger = logger
@@ -34,7 +31,6 @@ module Bosh
 
         def planner_without_vm_binding(manifest_hash, cloud_config, options)
           deployment_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest_hash, cloud_config)
-          @deployment_manifest_validator.validate!(deployment_manifest)
           name = deployment_manifest['name']
 
           deployment_model = nil
@@ -53,8 +49,7 @@ module Bosh
         private
 
         def deployment_name(manifest_hash)
-          @deployment_manifest_validator.validate!(manifest_hash)
-          name = manifest_hash['name'] # TODO: error handling, type checking
+          name = manifest_hash['name']
           @canonicalizer.canonical(name)
         end
 

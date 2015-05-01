@@ -4,11 +4,10 @@ module Bosh
   module Director
     module DeploymentPlan
       describe PlannerFactory do
-        subject { PlannerFactory.new(canonicalizer, deployment_manifest_migrator, deployment_manifest_validator, deployment_repo, event_log, logger) }
+        subject { PlannerFactory.new(canonicalizer, deployment_manifest_migrator, deployment_repo, event_log, logger) }
         let(:deployment_repo) { DeploymentRepo.new(canonicalizer) }
         let(:canonicalizer) { Class.new { include Bosh::Director::DnsHelper }.new }
         let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
-        let(:deployment_manifest_validator) { double("Some validator", 'validate!' => nil) }
         let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
         let(:cloud_config_model) { Models::CloudConfig.make(manifest: cloud_config_hash) }
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
@@ -72,18 +71,6 @@ module Bosh
             end
 
             expect(planner.name).to eq('migrated_name')
-
-            expect(deployment_manifest_validator).to have_received(:validate!).with(
-              hash_including({'name' => 'migrated_name'})
-            )
-          end
-
-          context 'given an invalid manifest_hash' do
-            it 'raises validation errors' do
-              my_error = StandardError.new('invalid!')
-              allow(deployment_manifest_validator).to receive(:validate!).and_raise(my_error)
-              expect { planner }.to raise_error(my_error)
-            end
           end
 
           describe 'attributes of the planner' do
