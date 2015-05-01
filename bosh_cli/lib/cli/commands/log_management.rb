@@ -8,8 +8,9 @@ module Bosh::Cli::Command
     option '--only filter1,filter2,...', Array,
            'only fetch logs that satisfy',
            'given filters (defined in job spec)'
-    option '--all', 'fetch all files in the job or agent log directory'
     option '--dir destination_directory', String, 'download directory'
+    option '--all', 'deprecated'
+
     def fetch_logs(job, index = nil)
       index = valid_index_for(job, index)
       check_arguments(index)
@@ -64,7 +65,7 @@ module Bosh::Cli::Command
         err("You can't use --only and --all together") if options[:all]
         filter = options[:only].join(',')
       elsif options[:all]
-        filter = 'all'
+        filter = nil #TODO: deprecation warning (#93650844)
       else
         filter = nil
       end

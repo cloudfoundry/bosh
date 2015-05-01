@@ -87,10 +87,10 @@ describe Bosh::Cli::Command::LogManagement do
             command.fetch_logs(job, index)
           end
 
-          it 'successfully retrieves the log resource id with filters' do
+          it 'ignores the --all option' do
             command.options[:all] = true
 
-            expect(director).to receive(:fetch_logs).with(deployment, job, index, 'agent', 'all').and_return('resource_id')
+            expect(director).to receive(:fetch_logs).with(deployment, job, index, 'agent', nil).and_return('resource_id')
             command.fetch_logs(job, index)
           end
         end
@@ -103,10 +103,10 @@ describe Bosh::Cli::Command::LogManagement do
             command.fetch_logs(job, index)
           end
 
-          it 'successfully retrieves the log resource id with all filters' do
+          it 'ignores the --all option' do
             command.options[:all] = true
 
-            expect(director).to receive(:fetch_logs).with(deployment, job, index, 'job', 'all').and_return('resource_id')
+            expect(director).to receive(:fetch_logs).with(deployment, job, index, 'job', nil).and_return('resource_id')
             command.fetch_logs(job, index)
           end
 
