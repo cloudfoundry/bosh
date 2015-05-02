@@ -572,7 +572,7 @@ module VSphereCloud
 
       it 'updates persistent disk' do
         expect(disk_provider).to receive(:find_and_move).
-          with('disk-cid', cluster, 'fake-datacenter', ['fake-datastore-name']).
+          with('disk-cid', cluster, datacenter, ['fake-datastore-name']).
           and_return(disk)
 
         expect(client).to receive(:reconfig_vm) do |reconfig_vm, vm_config|

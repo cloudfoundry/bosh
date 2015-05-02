@@ -100,11 +100,11 @@ module VSphereCloud
       create_parent_folder(dest_datacenter, dest_path)
       tasks = []
       base_source_path = source_path.chomp(File.extname(source_path))
-      base_dest_path = source_path.chomp(File.extname(dest_path))
+      base_dest_path = dest_path.chomp(File.extname(dest_path))
       [".vmdk", "-flat.vmdk"].each do |extension|
         tasks << @service_content.file_manager.move_file(
-          "#{base_source_path}#{extension}", source_datacenter,
-          "#{base_dest_path}#{extension}", dest_datacenter, false
+          "#{base_source_path}#{extension}", source_datacenter.mob,
+          "#{base_dest_path}#{extension}", dest_datacenter.mob, false
         )
       end
 

@@ -31,6 +31,11 @@ describe VSphereCloud::Cloud, external_cpi: false do
   def build_cpi(options = {})
     datastore_pattern = options.fetch(:datastore_pattern, @datastore_pattern)
     persistent_datastore_pattern = options.fetch(:persistent_datastore_pattern, @persistent_datastore_pattern)
+    default_clusters = [
+      { @cluster => {'resource_pool' => @resource_pool_name} },
+      { @second_cluster => {'resource_pool' => @second_cluster_resource_pool_name } },
+    ]
+    clusters = options.fetch(:clusters, default_clusters)
 
     described_class.new(
       'agent' => {
@@ -48,12 +53,7 @@ describe VSphereCloud::Cloud, external_cpi: false do
               'datastore_pattern' => datastore_pattern,
               'persistent_datastore_pattern' => persistent_datastore_pattern,
               'allow_mixed_datastores' => true,
-              'clusters' => [{
-                  @cluster => {'resource_pool' => @resource_pool_name},
-                },
-                {
-                  @second_cluster => {'resource_pool' => @second_cluster_resource_pool_name}
-                }],
+              'clusters' => clusters,
             }]
         }]
     )
@@ -76,8 +76,8 @@ describe VSphereCloud::Cloud, external_cpi: false do
   extend Bosh::Cpi::CompatibilityHelpers
   it_can_delete_non_existent_vm
 
-  def vm_lifecycle(disk_locality, resource_pool)
-    network_spec = {
+  def network_spec
+    {
       'static' => {
         'ip' => '169.254.1.1',
         'netmask' => '255.255.254.0',
@@ -87,7 +87,9 @@ describe VSphereCloud::Cloud, external_cpi: false do
         'gateway' => '169.254.1.3'
       }
     }
+  end
 
+  def vm_lifecycle(disk_locality, resource_pool)
     @vm_id = @cpi.create_vm(
       'agent-007',
       @stemcell_id,
@@ -258,6 +260,59 @@ describe VSphereCloud::Cloud, external_cpi: false do
         vm_lifecycle([], resource_pool) do
           relocate_vm_to_second_datastore
         end
+      end
+    end
+
+    context 'when disk is in non-accessible datastore' do
+      after { clean_up_vm_and_disk }
+
+      def find_disk_in_datastore(disk_id, datastore_name)
+        datastore_mob = @cpi.client.cloud_searcher.get_managed_object(VimSdk::Vim::Datastore, name: datastore_name)
+        datastore = VSphereCloud::Resources::Datastore.new(datastore_name, datastore_mob, 0, 0)
+        @cpi.client.find_disk(disk_id, datastore, @disk_path)
+      end
+
+      it 'migrates disk to accessible datastore' do
+        # verify second datastore is not accessible to cluster
+        cluster = @cpi.client.cloud_searcher.get_managed_object(VimSdk::Vim::ClusterComputeResource, name: @cluster)
+        expect(cluster.host.size).to eq(1)
+        host = cluster.host.first
+        accessible_datastores = host.datastore.map(&:name)
+        expect(accessible_datastores).to_not include(@second_datastore)
+
+        # create vm in first cluster only
+        cpi_for_vm = build_cpi(clusters: [{ @cluster => {'resource_pool' => @resource_pool_name} }])
+        @vm_id = cpi_for_vm.create_vm(
+          'agent-007',
+          @stemcell_id,
+          resource_pool,
+          network_spec,
+          [],
+          {}
+        )
+        expect(@vm_id).to_not be_nil
+
+        # verify disk is created in second datastore
+        cpi_for_non_accessible_datastore = build_cpi(
+          datastore_pattern: @second_cluster_ephemeral_datastore_pattern,
+          persistent_datastore_pattern: @second_cluster_persistent_datastore_pattern,
+        )
+        @disk_id = cpi_for_non_accessible_datastore.create_disk(128, {}, nil)
+        disk = find_disk_in_datastore(@disk_id, @second_datastore)
+        expect(disk).to_not be_nil
+
+        @cpi.attach_disk(@vm_id, @disk_id)
+
+        # verify disk is in datastore accessible to vm
+        disk_is_in_accessible_datastore = false
+        accessible_datastores.each do |datastore_name|
+          disk = find_disk_in_datastore(@disk_id, datastore_name)
+          unless disk.nil?
+            disk_is_in_accessible_datastore = true
+            break
+          end
+        end
+        expect(disk_is_in_accessible_datastore).to eq(true)
       end
     end
   end

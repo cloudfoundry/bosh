@@ -20,11 +20,11 @@ module VSphereCloud
       @client.create_disk(@datacenter, datastore, disk_cid, @disk_path, disk_size_in_mb)
     end
 
-    def find_and_move(disk_cid, cluster, datacenter_name, accessible_datastores)
+    def find_and_move(disk_cid, cluster, datacenter, accessible_datastores)
       disk = find(disk_cid)
       return disk if accessible_datastores.include?(disk.datastore.name)
 
-      destination_datastore = @resources.pick_persistent_datastore_in_cluster(cluster, disk.size_in_mb)
+      destination_datastore = @resources.pick_persistent_datastore_in_cluster(cluster.name, disk.size_in_mb)
 
       unless accessible_datastores.include?(destination_datastore.name)
         raise "Datastore '#{destination_datastore.name}' is not accessible to cluster '#{cluster.name}'"
@@ -32,7 +32,7 @@ module VSphereCloud
 
       destination_path = path(destination_datastore, disk_cid)
       @logger.info("Moving #{disk.path} to #{destination_path}")
-      @client.move_disk(datacenter_name, disk.path, datacenter_name, destination_path) #TODO: return the new disk
+      @client.move_disk(datacenter, disk.path, datacenter, destination_path)
       @logger.info('Moved disk successfully')
       Resources::Disk.new(disk_cid, disk.size_in_mb, destination_datastore, destination_path)
     end
