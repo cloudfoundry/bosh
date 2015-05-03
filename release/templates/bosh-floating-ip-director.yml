@@ -1,0 +1,22 @@
+meta:
+  director:
+    floating_ip: (( merge ))
+
+networks: 
+  - <<: (( merge ))
+  - name: floating
+    type: vip
+    cloud_properties: {}
+
+resource_pools: (( merge ))
+
+jobs:
+  - <<: (( merge ))
+  - name: director
+    <<: (( merge ))
+    networks:
+      - <<: (( merge ))
+      - name: floating
+        static_ips: (( meta.director.floating_ip ))
+
+properties: (( merge ))

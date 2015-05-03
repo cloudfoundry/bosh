@@ -1,0 +1,101 @@
+meta:
+  nats:
+    user: (( merge || "nats" ))
+    password: (( merge || "nats" ))
+
+  logsearch:
+    logs:
+      server: (( merge || "127.0.0.1:5514" ))
+
+  redis:
+    password: (( merge || "redis" ))
+
+  postgres:
+    user: (( merge || "postgres" ))
+    password: (( merge || "postgres" ))
+    database: (( merge || "bosh" ))
+
+  blobstore:
+    agent:
+      user: (( merge || "agent" ))
+      password: (( merge || "agent" ))
+    director:
+      user: (( merge || "director" ))
+      password: (( merge || "director" ))
+
+  registry:
+    http:
+      user: (( merge || "registry" ))
+      password: (( merge || "registry" ))
+
+  hm:
+    http:
+      user: (( merge || "hm" ))
+      password: (( merge || "hm" ))
+    director_account:
+      user: (( merge || "resurrector" ))
+      password: (( merge || "resurrector" ))
+
+  ntp_defaults:
+    - 0.pool.ntp.org
+    - 1.pool.ntp.org
+    - 2.pool.ntp.org
+    - 3.pool.ntp.org
+  ntp: (( merge || meta.ntp_defaults ))
+
+  compiled_package_cache: (( merge || nil ))
+
+properties:
+  <<: (( merge ))
+  nats:
+    user: (( meta.nats.user ))
+    password: (( meta.nats.password ))
+
+  logsearch:
+    logs:
+      server: (( meta.logsearch.logs.server ))
+
+  redis:
+    password: (( meta.redis.password ))
+
+  postgres: &bosh_db
+    user: (( meta.postgres.user ))
+    password: (( meta.postgres.password ))
+    database: (( meta.postgres.database ))
+
+  blobstore:
+    agent:
+      user: (( meta.blobstore.agent.user ))
+      password: (( meta.blobstore.agent.password ))
+    director:
+      user: (( meta.blobstore.director.user ))
+      password: (( meta.blobstore.director.password ))
+
+  registry:
+    db:
+      user: (( meta.postgres.user ))
+      password: (( meta.postgres.password ))
+      database: (( meta.postgres.database ))
+    http:
+      user: (( meta.registry.http.user ))
+      password: (( meta.registry.http.password ))
+
+  director:
+    name: bosh
+    db:
+      user: (( meta.postgres.user ))
+      password: (( meta.postgres.password ))
+      database: (( meta.postgres.database ))
+
+  hm:
+    http:
+      user: (( meta.hm.http.user ))
+      password: (( meta.hm.http.password ))
+    director_account:
+      user: (( meta.hm.director_account.user ))
+      password: (( meta.hm.director_account.password ))
+    resurrector_enabled: true
+
+  ntp: (( meta.ntp ))
+
+  compiled_package_cache: (( meta.compiled_package_cache ))

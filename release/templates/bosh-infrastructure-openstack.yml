@@ -1,0 +1,34 @@
+meta:
+  releases:
+    - name: bosh
+      version: latest
+
+  compilation:
+    workers: (( merge || 2 ))
+    cloud_properties:
+      instance_type: (( merge || "m1.medium" ))
+
+  resource_pools:
+    cloud_properties:
+      instance_type: (( merge || "m1.medium" ))
+    stemcell: (( merge || meta.stemcell ))
+
+  stemcell: (( merge ))
+
+  openstack: (( merge ))
+
+
+releases: (( merge || meta.releases ))
+
+compilation:
+  workers: (( meta.compilation.workers ))
+  cloud_properties: (( meta.compilation.cloud_properties ))
+
+resource_pools:
+  - name: common
+    cloud_properties: (( meta.resource_pools.cloud_properties ))
+    stemcell: (( meta.resource_pools.stemcell ))
+
+properties:
+  <<: (( merge ))
+  openstack: (( meta.openstack ))

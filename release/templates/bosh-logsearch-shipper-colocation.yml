@@ -1,0 +1,51 @@
+jobs: 
+  - <<: (( merge ))
+
+  - name: nats
+    <<: (( merge ))
+    templates:
+      - <<: (( merge )) 
+      - name: "logsearch-shipper"
+        release: "logsearch-shipper"
+
+  - name: redis
+    <<: (( merge ))
+    templates:
+      - <<: (( merge )) 
+      - name: "logsearch-shipper"
+        release: "logsearch-shipper"
+
+  - name: postgres
+    <<: (( merge ))
+    templates:
+      - <<: (( merge )) 
+      - name: "logsearch-shipper"
+        release: "logsearch-shipper"
+
+  - name: blobstore
+    <<: (( merge ))
+    templates:
+      - <<: (( merge )) 
+      - name: "logsearch-shipper"
+        release: "logsearch-shipper"
+
+  - name: registry
+    <<: (( merge ))
+    templates:
+      - <<: (( merge )) 
+      - name: "logsearch-shipper"
+        release: "logsearch-shipper"
+
+  - name: director
+    <<: (( merge ))
+    templates:
+      - <<: (( merge )) 
+      - name: "logsearch-shipper"
+        release: "logsearch-shipper"
+
+  - name: health_monitor
+    <<: (( merge ))
+    templates:
+      - <<: (( merge )) 
+      - name: "logsearch-shipper"
+        release: "logsearch-shipper"

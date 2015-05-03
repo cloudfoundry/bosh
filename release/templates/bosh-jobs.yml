@@ -1,0 +1,122 @@
+networks: (( merge ))
+
+resource_pools: (( merge ))
+
+jobs:
+  - name: nats
+    templates:
+      - name: nats
+        release: bosh
+    instances: 1
+    resource_pool: common
+    networks:
+      - name: default
+        default: [dns, gateway]
+        static_ips: (( static_ips(0) ))
+
+  - name: redis
+    templates:
+      - name: redis
+        release: bosh
+    instances: 1
+    resource_pool: common
+    networks:
+      - name: default
+        default: [dns, gateway]
+        static_ips: (( static_ips(1) ))
+
+  - name: postgres
+    templates:
+      - name: postgres
+        release: bosh
+    instances: 1
+    resource_pool: common
+    persistent_disk: 16384
+    networks:
+      - name: default
+        default: [dns, gateway]
+        static_ips: (( static_ips(2) ))
+
+  - name: blobstore
+    templates:
+      - name: blobstore
+        release: bosh
+    instances: 1
+    resource_pool: common
+    persistent_disk: 51200
+    networks:
+      - name: default
+        default: [dns, gateway]
+        static_ips: (( static_ips(3) ))
+
+  - name: registry
+    templates:
+      - name: registry
+        release: bosh
+    instances: 1
+    resource_pool: common
+    networks:
+      - name: default
+        default: [dns, gateway]
+        static_ips: (( static_ips(4) ))
+
+  - name: director
+    templates:
+      - name: director
+        release: bosh
+    instances: 1
+    resource_pool: common
+    persistent_disk: 16384
+    networks:
+      - name: default
+        default: [dns, gateway]
+        static_ips: (( static_ips(5) ))
+
+  - name: health_monitor
+    templates:
+      - name: health_monitor
+        release: bosh
+    instances: 1
+    resource_pool: common
+    networks:
+      - name: default
+        default: [dns, gateway]
+        static_ips: (( static_ips(6) ))
+
+properties:
+  <<: (( merge ))
+  nats:
+    address: (( jobs.nats.networks.default.static_ips.[0] ))
+    user: (( merge ))
+    password: (( merge ))
+
+  redis:
+    address: (( jobs.redis.networks.default.static_ips.[0] ))
+    password: (( merge ))
+
+  postgres: &bosh_db
+    host: (( jobs.postgres.networks.default.static_ips.[0] ))
+    user: (( merge ))
+    password: (( merge ))
+    database: (( merge ))
+
+  blobstore:
+    address: (( jobs.blobstore.networks.default.static_ips.[0] ))
+    agent:
+      user: (( merge ))
+      password: (( merge ))
+    director:
+      user: (( merge ))
+      password: (( merge ))
+
+  registry:
+    address: (( jobs.registry.networks.default.static_ips.[0] ))
+    db: *bosh_db
+    http:
+      user: (( merge ))
+      password: (( merge ))
+
+  director:
+    name: bosh
+    address: (( jobs.director.networks.default.static_ips.[0] ))
+    db: *bosh_db

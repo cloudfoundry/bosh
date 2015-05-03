@@ -1,0 +1,26 @@
+meta:
+  networks:
+    default:
+      range: (( merge ))
+      gateway: (( merge ))
+      dns: (( merge || nil ))
+      reserved: (( merge ))
+      static: (( merge ))
+      cloud_properties:
+        net_id: (( merge ))
+        subnet: (( merge ))
+        security_groups: (( merge || [] ))
+
+networks:
+  - name: default
+    type: manual
+    subnets:
+    - name: private
+      range: (( meta.networks.default.range ))
+      gateway: (( meta.networks.default.gateway ))
+      reserved: (( meta.networks.default.reserved ))
+      static: (( meta.networks.default.static ))
+      cloud_properties:
+        net_id: (( meta.networks.default.cloud_properties.net_id ))
+        subnet: (( meta.networks.default.cloud_properties.subnet ))
+        security_groups: (( meta.networks.default.cloud_properties.security_groups ))
