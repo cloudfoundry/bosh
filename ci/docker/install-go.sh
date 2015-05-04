@@ -10,7 +10,6 @@ echo "Downloading go..."
 mkdir -p $(dirname $GOROOT)
 wget -q $GO_ARCHIVE_URL -O $GO_ARCHIVE
 tar xf $GO_ARCHIVE -C $(dirname $GOROOT)
-chmod -R a+w $GOROOT
 
 if [ ! -d $TMPDIR ]; then
   mkdir -p $TMPDIR
