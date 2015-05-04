@@ -4,12 +4,12 @@ jobs:
     plan:
       - get:        bosh-src
       - aggregate:
-        - task:     test-unit
+        - task:     test-unit-ruby-1.9
           file:     bosh-src/ci/concourse/tasks/test-unit.yml
           config:
             params:
               RUBY_VERSION: 1.9.3
-        - task:     test-unit
+        - task:     test-unit-ruby-2.1
           file:     bosh-src/ci/concourse/tasks/test-unit.yml
           config:
             params:
