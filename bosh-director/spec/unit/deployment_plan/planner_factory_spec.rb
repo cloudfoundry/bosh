@@ -27,32 +27,12 @@ module Bosh
           logger
         end
 
-        let(:upload_releases!) do
-          manifest_hash['releases'].each do |release_entry|
-            job = manifest_hash['jobs'].first
-            release = Models::Release.make(name: release_entry['name'])
-            template = Models::Template.make(name: job['template'], release: release)
-            release_version = Models::ReleaseVersion.make(release: release, version: release_entry['version'])
-            release_version.add_template(template)
-          end
-        end
-
-        let(:upload_stemcell!) do
-          stemcell_entry = cloud_config_model.manifest['resource_pools'].first['stemcell']
-          Models::Stemcell.make(name: stemcell_entry['name'], version: stemcell_entry['version'])
-        end
-
-        let(:configure_config) do
-          allow(Config).to receive(:dns_domain_name).and_return('some-dns-domain-name')
-          allow(Config).to receive(:dns).and_return({'address' => 'foo'})
-          allow(Config).to receive(:cloud).and_return(double('cloud'))
-        end
-
         before do
           allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config.manifest] }
-          upload_releases!
-          upload_stemcell!
+          upload_releases
+          upload_stemcell
           configure_config
+          fake_locks
         end
 
         describe '#planner' do
@@ -136,6 +116,34 @@ module Bosh
               end
             end
           end
+        end
+
+        def configure_config
+          allow(Config).to receive(:dns_domain_name).and_return('some-dns-domain-name')
+          allow(Config).to receive(:dns).and_return({'address' => 'foo'})
+          allow(Config).to receive(:cloud).and_return(double('cloud'))
+        end
+
+        def fake_locks
+          lock = instance_double('Bosh::Director::Lock')
+          allow(Lock).to receive(:new).and_return(lock)
+          allow(lock).to receive(:release)
+          allow(lock).to receive(:lock)
+        end
+
+        def upload_releases
+          manifest_hash['releases'].each do |release_entry|
+            job = manifest_hash['jobs'].first
+            release = Models::Release.make(name: release_entry['name'])
+            template = Models::Template.make(name: job['template'], release: release)
+            release_version = Models::ReleaseVersion.make(release: release, version: release_entry['version'])
+            release_version.add_template(template)
+          end
+        end
+
+        def upload_stemcell
+          stemcell_entry = cloud_config_model.manifest['resource_pools'].first['stemcell']
+          Models::Stemcell.make(name: stemcell_entry['name'], version: stemcell_entry['version'])
         end
       end
     end

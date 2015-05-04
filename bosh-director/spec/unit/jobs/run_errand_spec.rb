@@ -236,6 +236,8 @@ module Bosh::Director
               before { allow(deployment_job).to receive(:instances).with(no_args).and_return([]) }
 
               it 'raises an error because errand cannot be run on a job with 0 instances' do
+                allow(subject).to receive(:with_deployment_lock).and_yield
+
                 expect {
                   subject.perform
                 }.to raise_error(InstanceNotFound, %r{fake-errand-name/0.*doesn't exist})
@@ -247,6 +249,8 @@ module Bosh::Director
             before { allow(deployment_job).to receive(:can_run_as_errand?).and_return(false) }
 
             it 'raises an error because non-errand jobs cannot be used with run errand cmd' do
+              allow(subject).to receive(:with_deployment_lock).and_yield
+
               expect {
                 subject.perform
               }.to raise_error(RunErrandError, /Job `fake-errand-name' is not an errand/)
@@ -258,6 +262,8 @@ module Bosh::Director
           before { allow(planner).to receive(:job).with('fake-errand-name').and_return(nil) }
 
           it 'raises an error because user asked to run an unknown errand' do
+            allow(subject).to receive(:with_deployment_lock).and_yield
+
             expect {
               subject.perform
             }.to raise_error(JobNotFound, %r{fake-errand-name.*doesn't exist})
