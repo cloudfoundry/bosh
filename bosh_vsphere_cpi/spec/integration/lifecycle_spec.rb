@@ -173,7 +173,10 @@ describe VSphereCloud::Cloud, external_cpi: false do
         end
 
         begin
-          @cpi = build_cpi(datastore_pattern: @second_cluster_ephemeral_datastore_pattern, persistent_datastore_pattern: @second_cluster_persistent_datastore_pattern)
+          @cpi = build_cpi(
+            datastore_pattern: @second_cluster_ephemeral_datastore_pattern,
+            persistent_datastore_pattern: @second_cluster_persistent_datastore_pattern
+          )
 
           resource_pool['datacenters'] = [{'name' => @datacenter_name, 'clusters' => [{@second_cluster => {}}]}]
           vm_lifecycle([], resource_pool)
@@ -272,17 +275,16 @@ describe VSphereCloud::Cloud, external_cpi: false do
         @cpi.client.find_disk(disk_id, datastore, @disk_path)
       end
 
-      it 'migrates disk to accessible datastore' do
-        # verify second datastore is not accessible to cluster
-        cluster = @cpi.client.cloud_searcher.get_managed_object(VimSdk::Vim::ClusterComputeResource, name: @cluster)
+      def datastores_accessible_from_cluster(cluster_name)
+        cluster = @cpi.client.cloud_searcher.get_managed_object(VimSdk::Vim::ClusterComputeResource, name: cluster_name)
         expect(cluster.host.size).to eq(1)
         host = cluster.host.first
-        accessible_datastores = host.datastore.map(&:name)
-        expect(accessible_datastores).to_not include(@second_datastore)
+        host.datastore.map(&:name)
+      end
 
-        # create vm in first cluster only
-        cpi_for_vm = build_cpi(clusters: [{ @cluster => {'resource_pool' => @resource_pool_name} }])
-        @vm_id = cpi_for_vm.create_vm(
+      def create_vm_in_cluster(cluster_name, resource_pool_name)
+        cpi_for_vm = build_cpi(clusters: [{ cluster_name => {'resource_pool' => resource_pool_name} }])
+        cpi_for_vm.create_vm(
           'agent-007',
           @stemcell_id,
           resource_pool,
@@ -290,9 +292,40 @@ describe VSphereCloud::Cloud, external_cpi: false do
           [],
           {}
         )
+      end
+
+      def verify_disk_is_in_accessible_datastores(disk_id, accessible_datastores)
+        disk_is_in_accessible_datastore = false
+        accessible_datastores.each do |datastore_name|
+          disk = find_disk_in_datastore(disk_id, datastore_name)
+          unless disk.nil?
+            disk_is_in_accessible_datastore = true
+            break
+          end
+        end
+        expect(disk_is_in_accessible_datastore).to eq(true)
+      end
+
+      it 'creates disk in accessible datastore' do
+        accessible_datastores = datastores_accessible_from_cluster(@cluster)
+        expect(accessible_datastores).to_not include(@second_datastore)
+
+        @vm_id = create_vm_in_cluster(@cluster, @resource_pool_name)
         expect(@vm_id).to_not be_nil
 
-        # verify disk is created in second datastore
+        @disk_id = @cpi.create_disk(128, {}, @vm_id)
+
+        verify_disk_is_in_accessible_datastores(@disk_id, accessible_datastores)
+      end
+
+      it 'migrates disk to accessible datastore' do
+        accessible_datastores = datastores_accessible_from_cluster(@cluster)
+        expect(accessible_datastores).to_not include(@second_datastore)
+
+        @vm_id = create_vm_in_cluster(@cluster, @resource_pool_name)
+        expect(@vm_id).to_not be_nil
+
+        # create disk in non-accessible datastore
         cpi_for_non_accessible_datastore = build_cpi(
           datastore_pattern: @second_cluster_ephemeral_datastore_pattern,
           persistent_datastore_pattern: @second_cluster_persistent_datastore_pattern,
@@ -303,16 +336,7 @@ describe VSphereCloud::Cloud, external_cpi: false do
 
         @cpi.attach_disk(@vm_id, @disk_id)
 
-        # verify disk is in datastore accessible to vm
-        disk_is_in_accessible_datastore = false
-        accessible_datastores.each do |datastore_name|
-          disk = find_disk_in_datastore(@disk_id, datastore_name)
-          unless disk.nil?
-            disk_is_in_accessible_datastore = true
-            break
-          end
-        end
-        expect(disk_is_in_accessible_datastore).to eq(true)
+        verify_disk_is_in_accessible_datastores(@disk_id, accessible_datastores)
       end
     end
   end

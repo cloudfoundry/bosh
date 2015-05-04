@@ -902,13 +902,23 @@ module VSphereCloud
         )
       end
 
-      before do
-        allow(disk_provider).to receive(:create).with(1024).and_return(disk)
+      it 'creates disk with disk provider' do
+        expect(disk_provider).to receive(:create).with(1024, nil).and_return(disk)
+        vsphere_cloud.create_disk(1024, {})
       end
 
-      it 'creates disk with disk provider' do
-        expect(disk_provider).to receive(:create).with(1024).and_return(disk)
-        vsphere_cloud.create_disk(1024, {})
+      context 'when vm_cid is provided' do
+        let(:cluster) { instance_double('VSphereCloud::Resources::Cluster') }
+        before do
+          allow(vm).to receive(:cluster).and_return('fake-cluster')
+          allow(datacenter).to receive(:clusters).and_return({'fake-cluster' => cluster})
+        end
+
+        it 'creates disk in vm cluster' do
+          allow(vm_provider).to receive(:find).with('fake-vm-cid').and_return(vm)
+          expect(disk_provider).to receive(:create).with(1024, cluster).and_return(disk)
+          vsphere_cloud.create_disk(1024, {}, 'fake-vm-cid')
+        end
       end
     end
   end

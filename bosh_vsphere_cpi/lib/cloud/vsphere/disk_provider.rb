@@ -12,8 +12,12 @@ module VSphereCloud
       @logger = logger
     end
 
-    def create(disk_size_in_mb)
-      datastore = @datacenter.pick_persistent_datastore(disk_size_in_mb)
+    def create(disk_size_in_mb, cluster)
+      if cluster
+        datastore = @resources.pick_persistent_datastore_in_cluster(cluster.name, disk_size_in_mb)
+      else
+        datastore = @datacenter.pick_persistent_datastore(disk_size_in_mb)
+      end
       disk_cid = "disk-#{SecureRandom.uuid}"
       @logger.debug("Creating disk '#{disk_cid}' in datastore '#{datastore.name}'")
 
@@ -38,7 +42,9 @@ module VSphereCloud
     end
 
     def find(disk_cid)
-      @datacenter.persistent_datastores.each do |_, datastore|
+      persistent_datastores = @datacenter.persistent_datastores
+      @logger.debug("Looking for disk #{disk_cid} in datastores: #{persistent_datastores}")
+      persistent_datastores.each do |_, datastore|
         disk = @client.find_disk(disk_cid, datastore, @disk_path)
         return disk unless disk.nil?
       end

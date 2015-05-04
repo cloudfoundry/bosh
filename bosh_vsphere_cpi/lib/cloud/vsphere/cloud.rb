@@ -299,8 +299,8 @@ module VSphereCloud
         @logger.info("Attaching disk: #{disk_cid} on vm: #{vm_cid}")
 
         vm = vm_provider.find(vm_cid)
-
         cluster = @datacenter.clusters[vm.cluster]
+
         disk = disk_provider.find_and_move(disk_cid, cluster, @datacenter, vm.accessible_datastores)
         disk_config_spec = disk.attach_spec(vm.system_disk.controller_key)
 
@@ -366,10 +366,17 @@ module VSphereCloud
       end
     end
 
-    def create_disk(size_in_mb, cloud_properties, _ = nil)
+    def create_disk(size_in_mb, cloud_properties, vm_cid = nil)
       with_thread_name("create_disk(#{size_in_mb}, _)") do
         @logger.info("Creating disk with size: #{size_in_mb}")
-        disk = disk_provider.create(size_in_mb)
+
+        cluster = nil
+        if vm_cid
+          vm = vm_provider.find(vm_cid)
+          cluster = @datacenter.clusters[vm.cluster]
+        end
+
+        disk = disk_provider.create(size_in_mb, cluster)
         @logger.info("Created disk: #{disk.inspect}")
         disk.cid
       end

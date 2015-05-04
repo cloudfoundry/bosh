@@ -28,18 +28,32 @@ module VSphereCloud
     describe '#create' do
       before do
         allow(SecureRandom).to receive(:uuid).and_return('cid')
-        cluster = instance_double(VSphereCloud::Resources::Cluster)
-        allow(datacenter).to receive(:pick_persistent_datastore).with(24).and_return(datastore)
         allow(virtual_disk_manager).to receive(:create_virtual_disk)
       end
 
       let(:datastore) { instance_double('VSphereCloud::Resources::Datastore', name: 'fake-datastore-name') }
 
-      it 'creates disk using VirtualDiskManager' do
-        expect(client).to receive(:create_disk)
-                            .with(datacenter, datastore, 'disk-cid', 'fake-disk-path', 24)
-                            .and_return(disk)
-        expect(disk_provider.create(24)).to eq(disk)
+      context 'when cluster is nil' do
+        it 'creates disk using VirtualDiskManager' do
+          expect(datacenter).to receive(:pick_persistent_datastore).with(24).and_return(datastore)
+
+          expect(client).to receive(:create_disk)
+                              .with(datacenter, datastore, 'disk-cid', 'fake-disk-path', 24)
+                              .and_return(disk)
+          expect(disk_provider.create(24, nil)).to eq(disk)
+        end
+      end
+
+      context 'when cluster is provided' do
+        it 'creates disk in vm cluster' do
+          cluster = instance_double(VSphereCloud::Resources::Cluster, name: 'fake-cluster-name')
+          expect(resources).to receive(:pick_persistent_datastore_in_cluster).with('fake-cluster-name', 24).and_return(datastore)
+
+          expect(client).to receive(:create_disk)
+                              .with(datacenter, datastore, 'disk-cid', 'fake-disk-path', 24)
+                              .and_return(disk)
+          expect(disk_provider.create(24, cluster)).to eq(disk)
+        end
       end
     end
 
