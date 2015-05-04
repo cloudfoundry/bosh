@@ -216,6 +216,42 @@ describe Bosh::OpenStackCloud::Cloud do
     end
   end
 
+  context 'when vm creation fails' do
+    let(:network_spec_that_fails) do
+      {
+        'default' => {
+          'type' => 'dynamic',
+          'cloud_properties' => {
+            'net_id' => @net_id
+          }
+        },
+        'vip' => {
+          'type' => 'vip',
+          'ip' => '255.255.255.255',
+        }
+      }
+    end
+
+    def active_vms
+      cpi.openstack.servers.reject do |s|
+        if s.os_ext_sts_task_state && s.os_ext_sts_task_state.downcase.to_sym == :deleting
+          true
+        else
+          [:terminated, :deleted].include?(s.state.downcase.to_sym)
+        end
+      end
+    end
+
+    it 'cleans up vm' do
+      vms_size = active_vms.size
+      expect {
+        create_vm(@stemcell_id, network_spec_that_fails, [])
+      }.to raise_error Bosh::Clouds::VMCreationFailed, /Floating IP 255.255.255.255 not allocated/
+
+      expect(active_vms.size).to eq(vms_size)
+    end
+  end
+
   def vm_lifecycle(stemcell_id, network_spec, disk_locality, cloud_properties = {})
     vm_id = create_vm(stemcell_id, network_spec, disk_locality)
     disk_id = create_disk(vm_id, cloud_properties)
