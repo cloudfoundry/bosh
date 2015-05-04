@@ -49,6 +49,12 @@ RUN cd /tmp; ./install-java.sh; rm install-java.sh
 ENV JAVA_HOME /usr/lib/jvm/zulu1.8.0_25-8.4.0.1-x86lx64
 ENV PATH $JAVA_HOME/bin:$PATH
 
+ENV GOROOT /usr/local/go
+ENV PATH $GOROOT/bin:$PATH
+ADD install-go.sh /tmp/install-go.sh
+RUN chmod a+x /tmp/install-go.sh
+RUN cd /tmp; ./install-go.sh; rm install-go.sh
+
 RUN apt-get install -y postgresql; apt-get clean
 
 # mysql must be run as root
