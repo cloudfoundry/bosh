@@ -7,5 +7,5 @@ inputs:
 - name: bosh-src
 
 run:
-  path: bosh-src/ci/concourse/tasks/rake.sh
-  args: ["--trace", "go", "spec:integration"]
+  path: bosh-src/ci/concourse/tasks/integration-wrapper.sh
+  args: ["bosh-src/ci/concourse/tasks/rake.sh", "--trace", "go", "spec:integration"]

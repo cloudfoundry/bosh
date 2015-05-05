@@ -19,25 +19,6 @@ if [ -f .bundle/config ]; then
   cat .bundle/config
 fi
 
-
-echo "Starting MySQL..."
-sudo service mysql start
-
-echo "Starting PostgreSQL..."
-sudo service postgresql start
-
-set +e
-
 bundle install
 echo "--- Starting rake task @ `date` ---"
 bundle exec rake "$@"
-
-exitcode=$?
-
-echo "Stopping PostgreSQL..."
-sudo service postgresql stop
-
-echo "Stopping MySQL..."
-sudo service mysql stop
-
-exit $exitcode

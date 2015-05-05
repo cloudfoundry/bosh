@@ -9,8 +9,6 @@ sudo service mysql start
 echo "Starting PostgreSQL..."
 sudo service postgresql start
 
-[ -d /opt/bosh ] && sudo chown -R ubuntu:ubuntu /opt/bosh
-
 set +e
 
 $@

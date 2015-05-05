@@ -1,0 +1,31 @@
+---
+resources:
+- name: bosh
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/bosh
+    branch: develop
+- name: test-configuration
+  type: s3
+  source:
+    access_key_id: AKIAJW7ISWFY5X27KSNA
+    secret_access_key: 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
+    bucket: embarcadero-concourse-configs
+    regexp: bosh-integration-(.*).yml
+    private: true
+
+jobs:
+- name: bosh-integration
+  plan:
+  - aggregate:
+    - {get: bosh}
+    - {get: test-configuration}
+  - aggregate:
+    - task: integration-2.1.2
+      file: test-configuration/bosh-integration-0.0.1.yml
+      privileged: true
+      config: {params: {RUBY_VERSION: 2.1.2}}
+    - task: integration-1.9.3
+      file: test-configuration/bosh-integration-0.0.1.yml
+      privileged: true
+      config: {params: {RUBY_VERSION: 1.9.3}}

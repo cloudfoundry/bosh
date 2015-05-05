@@ -1,0 +1,15 @@
+---
+platform: linux
+
+image: docker:///calebamiles/bosh-integration
+
+inputs:
+- name: bosh
+
+params:
+  RUBY_VERSION: 2.1.2
+  DB: mysql
+
+run:
+  path: bosh/gocd/docker/entrypoint.sh
+  args: ['bosh/gocd/bosh/tests/integration/job.sh']
