@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'timecop'
 
 describe VSphereCloud::Resources::VM do
   subject(:vm) { described_class.new('vm-cid', vm_mob, client, logger) }
@@ -14,7 +15,7 @@ describe VSphereCloud::Resources::VM do
     allow(cloud_searcher).to receive(:get_properties).with(
       vm_mob,
       VimSdk::Vim::VirtualMachine,
-      ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name', 'runtime'],
+      ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name', 'runtime', 'resourcePool'],
       ensure: ['config.hardware.device', 'runtime']
     ).and_return(vm_properties)
   end
@@ -140,7 +141,7 @@ describe VSphereCloud::Resources::VM do
       allow(cloud_searcher).to receive(:get_property).with(
         vm_mob,
         VimSdk::Vim::VirtualMachine,
-        ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name', 'runtime'],
+        ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name', 'runtime', 'resourcePool'],
         ensure: ['config.hardware.device', 'runtime']
       ).and_return({'runtime.question' => nil})
     end
@@ -153,7 +154,7 @@ describe VSphereCloud::Resources::VM do
         allow(cloud_searcher).to receive(:get_properties).with(
           vm_mob,
           VimSdk::Vim::VirtualMachine,
-          ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name', 'runtime'],
+          ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name', 'runtime', 'resourcePool'],
           ensure: ['config.hardware.device', 'runtime']
         ).and_return({'runtime.question' => question})
         allow(cloud_searcher).to receive(:get_property).with(
@@ -181,7 +182,7 @@ describe VSphereCloud::Resources::VM do
         allow(cloud_searcher).to receive(:get_properties).with(
           vm_mob,
           VimSdk::Vim::VirtualMachine,
-          ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name', 'runtime'],
+          ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name', 'runtime', 'resourcePool'],
           ensure: ['config.hardware.device', 'runtime']
         ).and_return({'runtime.powerState' => powered_off_state})
       end

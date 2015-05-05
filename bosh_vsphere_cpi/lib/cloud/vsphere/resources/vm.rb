@@ -22,6 +22,10 @@ module VSphereCloud
         cluster['name']
       end
 
+      def resource_pool
+        properties['resourcePool'].name
+      end
+
       def accessible_datastores
         host_properties['datastore'].map do |store|
           ds = cloud_searcher.get_properties(store, Vim::Datastore, 'info', ensure_all: true)
@@ -163,7 +167,7 @@ module VSphereCloud
         @properties ||= cloud_searcher.get_properties(
           @mob,
           Vim::VirtualMachine,
-          ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name', 'runtime'],
+          ['runtime.powerState', 'runtime.question', 'config.hardware.device', 'name', 'runtime', 'resourcePool'],
           ensure: ['config.hardware.device', 'runtime']
         )
       end

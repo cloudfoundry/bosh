@@ -12,6 +12,7 @@ describe VSphereCloud::Cloud, external_cpi: false do
     @stemcell_path = ENV.fetch('BOSH_VSPHERE_STEMCELL')
 
     @second_datastore_within_cluster = ENV.fetch('BOSH_VSPHERE_CPI_SECOND_DATASTORE')
+    @second_resource_pool_within_cluster = ENV.fetch('BOSH_VSPHERE_CPI_SECOND_RESOURCE_POOL')
 
     @datacenter_name = ENV.fetch('BOSH_VSPHERE_CPI_DATACENTER')
     @vm_folder = ENV.fetch('BOSH_VSPHERE_CPI_VM_FOLDER')
@@ -23,7 +24,7 @@ describe VSphereCloud::Cloud, external_cpi: false do
     @resource_pool_name = ENV.fetch('BOSH_VSPHERE_CPI_RESOURCE_POOL')
 
     @second_cluster = ENV.fetch('BOSH_VSPHERE_CPI_SECOND_CLUSTER')
-    @second_cluster_resource_pool_name = ENV.fetch('BOSH_VSPHERE_CPI_SECOND_RESOURCE_POOL')
+    @second_cluster_resource_pool_name = ENV.fetch('BOSH_VSPHERE_CPI_SECOND_CLUSTER_RESOURCE_POOL')
     @second_cluster_datastore = ENV.fetch('BOSH_VSPHERE_CPI_SECOND_CLUSTER_DATASTORE')
   end
 
@@ -164,11 +165,31 @@ describe VSphereCloud::Cloud, external_cpi: false do
 
       context 'when resource_pool is set to the first cluster' do
         it 'places vm in first cluster' do
-          resource_pool['datacenters'] = [{'name' => @datacenter_name, 'clusters' => [{@cluster => {}}]}]
-          vm_lifecycle([], resource_pool)
+          resource_pool['datacenters'] = [{'name' => @datacenter_name, 'clusters' => [{@cluster => {'resource_pool' => @resource_pool_name}}]}]
+          @vm_id = cpi.create_vm(
+            'agent-007',
+            @stemcell_id,
+            resource_pool,
+            network_spec
+          )
 
           vm = cpi.vm_provider.find(@vm_id)
           expect(vm.cluster).to eq(@cluster)
+          expect(vm.resource_pool).to eq(@resource_pool_name)
+        end
+
+        it 'places vm in the specified resource pool' do
+          resource_pool['datacenters'] = [{'name' => @datacenter_name, 'clusters' => [{@cluster => {'resource_pool' => @second_resource_pool_within_cluster}}]}]
+          @vm_id = cpi.create_vm(
+            'agent-007',
+            @stemcell_id,
+            resource_pool,
+            network_spec
+          )
+
+          vm = cpi.vm_provider.find(@vm_id)
+          expect(vm.cluster).to eq(@cluster)
+          expect(vm.resource_pool).to eq(@second_resource_pool_within_cluster)
         end
       end
 

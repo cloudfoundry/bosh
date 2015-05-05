@@ -69,11 +69,17 @@ describe VSphereCloud::Resources::Datacenter do
     )
 
     allow(cloud_searcher).to receive(:get_properties).with(
-      [cluster_mob1, cluster_mob2],
+      cluster_mob1,
       VimSdk::Vim::ClusterComputeResource,
       VSphereCloud::Resources::Cluster::PROPERTIES,
       ensure_all: true
-    ).and_return({ cluster_mob1 => {}, cluster_mob2 => {} })
+    ).and_return({ cluster_mob1 => {} })
+    allow(cloud_searcher).to receive(:get_properties).with(
+        cluster_mob2,
+        VimSdk::Vim::ClusterComputeResource,
+        VSphereCloud::Resources::Cluster::PROPERTIES,
+        ensure_all: true
+      ).and_return({ cluster_mob2 => {} })
 
     allow(cloud_searcher).to receive(:get_properties).with(
       nil, VimSdk::Vim::Datastore, VSphereCloud::Resources::Datastore::PROPERTIES
@@ -202,18 +208,6 @@ describe VSphereCloud::Resources::Datacenter do
 
 
         expect { datacenter.clusters }.to raise_error(/Can't find cluster: cluster1/)
-      end
-    end
-
-    context 'when properties for a cluster cannot be found' do
-      it 'raises an exception' do
-        allow(cloud_searcher).to receive(:get_properties).with(
-                           [cluster_mob1, cluster_mob2],
-                           VimSdk::Vim::ClusterComputeResource,
-                           VSphereCloud::Resources::Cluster::PROPERTIES,
-                           ensure_all: true).and_return({ cluster_mob2 => {} })
-
-        expect { datacenter.clusters }.to raise_error(/Can't find properties for cluster: cluster1/)
       end
     end
   end

@@ -454,7 +454,7 @@ module VSphereCloud
             allow(Resources::Datacenter).to receive(:new).with(cloud_config).and_return(datacenter)
             allow(cloud_properties).to receive(:fetch).with('datacenters', []).and_return(datacenters)
             allow(cloud_config).to receive(:datacenter_name).with(no_args).and_return(datacenters.first['name'])
-            allow(datacenter).to receive(:clusters).with(no_args).and_return({'BOSH_CL' => cluster})
+            allow_any_instance_of(Resources::ClusterProvider).to receive(:find).and_return(cluster)
 
             placer_class = class_double('VSphereCloud::FixedClusterPlacer').as_stubbed_const
             allow(placer_class).to receive(:new).with(cluster, 'fake-drs-rules').and_return(placer)

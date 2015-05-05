@@ -715,17 +715,14 @@ module VSphereCloud
 
       unless cluster_spec.nil?
         cluster_name = cluster_spec.keys.first
-        cluster = find_cluster(cluster_name)
-        cluster_config = cluster_spec.values.first
-        drs_rules = cluster_config.fetch('drs_rules', [])
+        spec = cluster_spec.values.first
+        cluster_config = ClusterConfig.new(cluster_name, spec)
+        cluster = Resources::ClusterProvider.new(@datacenter, @client, @logger).find(cluster_name, cluster_config)
+        drs_rules = spec.fetch('drs_rules', [])
         placer = FixedClusterPlacer.new(cluster, drs_rules)
       end
 
       placer.nil? ? @resources : placer
-    end
-
-    def find_cluster(cluster_name)
-      @datacenter.clusters[cluster_name]
     end
 
     attr_reader :config
