@@ -1,6 +1,7 @@
 ---
 jobs:
   - name: test-unit
+    public: true
     plan:
       - get:        bosh-src
       - aggregate:
@@ -16,6 +17,7 @@ jobs:
               RUBY_VERSION: 2.1.2
 
   - name: test-integration
+    public: true
     plan:
       - get:        bosh-src
       - aggregate:
