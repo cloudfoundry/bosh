@@ -67,6 +67,7 @@ foo: bar
 
       new_tar_path = Tempfile.new('newly-packed.tgz').path
       release_tarball.create_from_unpacked(new_tar_path)
+      expect(File.exist?(new_tar_path)).to be(true)
 
       new_tarball = Bosh::Cli::ReleaseTarball.new(new_tar_path)
       new_tarball.perform_validation
