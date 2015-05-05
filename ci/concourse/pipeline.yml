@@ -15,6 +15,35 @@ jobs:
             params:
               RUBY_VERSION: 2.1.2
 
+  - name: test-integration
+    plan:
+      - get:        bosh-src
+      - aggregate:
+        - task:     test-integration-ruby-1.9-mysql
+          file:     bosh-src/ci/concourse/tasks/test-integration.yml
+          config:
+            params:
+              DB:           mysql
+              RUBY_VERSION: 1.9.3
+        - task:     test-integration-ruby-2.1-mysql
+          file:     bosh-src/ci/concourse/tasks/test-integration.yml
+          config:
+            params:
+              DB:           mysql
+              RUBY_VERSION: 2.1.2
+        - task:     test-integration-ruby-1.9-postgres
+          file:     bosh-src/ci/concourse/tasks/test-integration.yml
+          config:
+            params:
+              DB:           postgres
+              RUBY_VERSION: 1.9.3
+        - task:     test-integration-ruby-2.1-postgres
+          file:     bosh-src/ci/concourse/tasks/test-integration.yml
+          config:
+            params:
+              DB:           postgres
+              RUBY_VERSION: 2.1.2
+
 resources:
   - name: bosh-src
     type: git
