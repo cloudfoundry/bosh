@@ -133,7 +133,7 @@ plugins:
       <% end %>
 
   <% end %>
-    
+
   <% if p("hm.graphite_enabled") %>
   - name: graphite
     events:
@@ -146,3 +146,32 @@ plugins:
       <% end %>
   <% end %>
 
+  <% if p("hm.consul_event_forwarder_enabled") %>
+  - name: consul_event_forwarder
+    events:
+      - alert
+      - heartbeat
+    options:
+      host: <%= p("hm.consul_event_forwarder.host") %>
+      <% if_p("hm.consul_event_forwarder.port") do |port| %>
+      port: <%= p("hm.consul_event_forwarder.port") %>
+      <%end%>
+      <% if_p("hm.consul_event_forwarder.protocol") do |protocol| %>
+      protocol: <%= p("hm.consul_event_forwarder.protocol") %>
+      <%end%>
+      <% if_p("hm.consul_event_forwarder.params") do |params| %>
+      params: <%= p("hm.consul_event_forwarder.params") %>
+      <%end%>
+      <% if_p("hm.consul_event_forwarder.ttl") do |ttl| %>
+      ttl: <%= p("hm.consul_event_forwarder.ttl") %>
+      <%end%>
+      <% if_p("hm.consul_event_forwarder.ttl_note") do |ttl| %>
+      events: <%= p("hm.consul_event_forwarder.ttl_note") %>
+      <%end%>
+      <% if_p("hm.consul_event_forwarder.events") do |ttl| %>
+      events: <%= p("hm.consul_event_forwarder.events") %>
+      <%end%>
+      <% if_p("hm.consul_event_forwarder.namespace") do |ttl| %>
+      namespace: <%= p("hm.consul_event_forwarder.namespace") %>
+      <%end%>
+  <% end %>
