@@ -118,6 +118,10 @@ module Bosh::Director
             release = Bosh::Director::Models::Release.create(name: 'stale')
             Bosh::Director::Models::ReleaseVersion.create(release: release, version: '123')
           end
+          let(:another_stale_release_version) do
+            release = Bosh::Director::Models::Release.create(name: 'another_stale')
+            Bosh::Director::Models::ReleaseVersion.create(release: release, version: '123')
+          end
           let(:same_release_version) do
             release = Bosh::Director::Models::Release.create(name: 'same')
             Bosh::Director::Models::ReleaseVersion.create(release: release, version: '123')
@@ -129,6 +133,7 @@ module Bosh::Director
 
           before do
             deployment_model.add_release_version stale_release_version
+            deployment_model.add_release_version another_stale_release_version
             deployment_model.add_release_version same_release_version
 
             planner.add_release(ReleaseVersion.new(deployment_model, {'name' => 'same', 'version' => '123'}))
@@ -145,7 +150,17 @@ module Bosh::Director
           end
 
           it 'locks the stale releases when removing them' do
-            expect(subject).to receive(:with_release_locks).with(['stale'])
+            expect(subject).to receive(:with_release_locks).with(['stale','another_stale'])
+            subject.persist_updates!
+          end
+
+          it 'de-dupes by release name when locking' do
+            stale_release_version_124 = Bosh::Director::Models::ReleaseVersion.create(
+                release: Bosh::Director::Models::Release.find(name: 'stale'),
+                version: '124')
+            deployment_model.add_release_version stale_release_version_124
+
+            expect(subject).to receive(:with_release_locks).with(['stale','another_stale'])
             subject.persist_updates!
           end
         end

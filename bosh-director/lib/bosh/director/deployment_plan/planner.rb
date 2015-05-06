@@ -160,7 +160,7 @@ module Bosh::Director
         #prior updates may have had release versions that we no longer use.
         #remove the references to these stale releases.
         stale_release_versions = (model.release_versions - releases.map(&:model))
-        stale_release_names = stale_release_versions.map {|version_model| version_model.release.name}
+        stale_release_names = stale_release_versions.map {|version_model| version_model.release.name}.uniq
         with_release_locks(stale_release_names) do
           stale_release_versions.each do |release_version|
             model.remove_release_version(release_version)
