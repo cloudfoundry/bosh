@@ -5,13 +5,13 @@ jobs:
     plan:
       - get:        bosh-src
       - aggregate:
-        - task:     test-unit-ruby-1.9
+        - task:     ruby-1.9
           privileged: true
           file:     bosh-src/ci/concourse/tasks/test-unit.yml
           config:
             params:
               RUBY_VERSION: 1.9.3
-        - task:     test-unit-ruby-2.1
+        - task:     ruby-2.1
           privileged: true
           file:     bosh-src/ci/concourse/tasks/test-unit.yml
           config:
@@ -23,33 +23,33 @@ jobs:
     plan:
       - get:        bosh-src
       - aggregate:
-        - task:     test-integration-ruby-1.9-mysql
+        - task:     ruby-1.9-mysql
           privileged: true
           file:     bosh-src/ci/concourse/tasks/test-integration.yml
           config:
             params:
               DB:           mysql
               RUBY_VERSION: 1.9.3
-        - task:     test-integration-ruby-2.1-mysql
+        - task:     ruby-2.1-mysql
           privileged: true
           file:     bosh-src/ci/concourse/tasks/test-integration.yml
           config:
             params:
               DB:           mysql
               RUBY_VERSION: 2.1.2
-        - task:     test-integration-ruby-1.9-postgres
+        - task:     ruby-1.9-postgres
           privileged: true
           file:     bosh-src/ci/concourse/tasks/test-integration.yml
           config:
             params:
-              DB:           postgres
+              DB:           postgresql
               RUBY_VERSION: 1.9.3
-        - task:     test-integration-ruby-2.1-postgres
+        - task:     ruby-2.1-postgres
           privileged: true
           file:     bosh-src/ci/concourse/tasks/test-integration.yml
           config:
             params:
-              DB:           postgres
+              DB:           postgresql
               RUBY_VERSION: 2.1.2
 
 resources:

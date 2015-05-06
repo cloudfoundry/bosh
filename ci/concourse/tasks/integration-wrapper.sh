@@ -3,21 +3,14 @@
 set -e
 set -x
 
-echo "Starting MySQL..."
-sudo service mysql start
-
-echo "Starting PostgreSQL..."
-sudo service postgresql start
+echo "Starting $DB..."
+sudo service $DB start
 
 set +e
-
 $@
 exitcode=$?
 
-echo "Stopping PostgreSQL..."
-sudo service postgresql stop
-
-echo "Stopping MySQL..."
-sudo service mysql stop
+echo "Stopping $DB..."
+sudo service $DB stop
 
 exit $exitcode
