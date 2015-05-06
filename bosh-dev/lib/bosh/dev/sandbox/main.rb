@@ -341,12 +341,8 @@ module Bosh::Dev::Sandbox
       @logger.error("#{DEBUG_HEADER} end #{service.description} stderr #{DEBUG_HEADER}")
     end
 
-    def database_type
-      @database_type ||= db_opts[:type]
-    end
-
     def setup_database(db_opts)
-      if database_type == 'mysql'
+      if db_opts[:type] == 'mysql'
         @database = Mysql.new(@name, @logger, db_opts[:user], db_opts[:password])
       else
         @database = Postgresql.new(@name, @logger, @port_provider.get_port(:postgres))
