@@ -6,6 +6,11 @@ export BOSH_CLI_SILENCE_SLOW_LOAD_WARNING=true
 
 env | sort
 
+echo "DEBUG -------------------------------------------------------------"
+echo "postgres: `ps aux | grep postgres`"
+echo "mysql   : `ps aux | grep mysql`"
+echo "-------------------------------------------------------------------"
+
 source /etc/profile.d/chruby.sh
 chruby $RUBY_VERSION
 cd bosh-src

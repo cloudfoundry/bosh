@@ -26,6 +26,7 @@ RUN apt-get install -y libxml2-dev; apt-get clean
 # BOSH dependencies
 RUN apt-get install -y mysql-client; apt-get clean
 RUN apt-get install -y libmysqlclient-dev; apt-get clean
+RUN apt-get install -y postgresql; apt-get clean
 RUN apt-get install -y postgresql-client; apt-get clean
 RUN apt-get install -y libpq-dev; apt-get clean
 RUN apt-get install -y sqlite3; apt-get clean
@@ -55,15 +56,21 @@ ADD install-go.sh /tmp/install-go.sh
 RUN chmod a+x /tmp/install-go.sh
 RUN cd /tmp; ./install-go.sh; rm install-go.sh
 
-RUN apt-get install -y postgresql; apt-get clean
+# prepare the image with vcap user, so we can set up postgres
+RUN useradd -mU vcap -s /bin/bash
+RUN echo "vcap ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# create postgres data & lock dirs
+ENV PGDATA /var/postgres
+RUN mkdir -p /var/postgres && chown postgres:postgres /var/postgres
+RUN mkdir -p /var/run/postgresql && chown postgres:postgres /var/run/postgresql
+RUN mkdir -p /var/log/postgresql && chown postgres:postgres /var/log/postgresql
 
 # mysql must be run as root
 # mysql user: root/password
 RUN echo 'mysql-server mysql-server/root_password password password' | debconf-set-selections
 RUN echo 'mysql-server mysql-server/root_password_again password password' | debconf-set-selections
 RUN apt-get install -y mysql-server
-
-CMD ["echo 'ERROR: No Command Specified!' && exit 1"]
 
 RUN git config --global user.email "cf-bosh-eng@pivotal.io"
 RUN git config --global user.name "BOSH GOCD"
