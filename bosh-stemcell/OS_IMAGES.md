@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `gXS8tB8AlsACLxca1aOF.A2dJroEW9Wx`
+  update kernel
+
 * `4wantbBiSSKve58dnjaR2wSemOAM7Xiy`
   upgrade rsyslog to version 8.x (latest version in the upstream project's repo)
 
@@ -125,6 +128,9 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 ## CentOS 6.6
 
 CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
+
+* `2wi4CWKxfqSLjKQp0T4IKcAPaNFNhCFG`
+  update kernel
 
 * `kkUYP.4sM_hdsn3Sfcr6ksahFpPgb2D8`
   Add hmac-sha1 to sshd_config (required by go ssh lib)
