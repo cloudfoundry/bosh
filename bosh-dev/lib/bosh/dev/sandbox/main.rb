@@ -42,7 +42,7 @@ module Bosh::Dev::Sandbox
     attr_reader :director_service
     attr_reader :port_provider
 
-    attr_reader :postgres_proxy
+    attr_reader :database_proxy
 
     alias_method :db_name, :name
     attr_reader :blobstore_storage_dir
@@ -87,9 +87,6 @@ module Bosh::Dev::Sandbox
 
       @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, uaa_port, @logger)
 
-      # all postgres connections go through this proxy (for testing automatic reconnect)
-      @postgres_proxy = ConnectionProxyService.new("127.0.0.1", 5432, @port_provider.get_port(:postgres), @logger)
-
       director_config = sandbox_path(DirectorService::DIRECTOR_CONFIG)
       director_tmp_path = sandbox_path('boshdir')
       @director_service = DirectorService.new(director_ruby_port, redis_port, base_log_path, director_tmp_path, director_config, @logger)
@@ -129,7 +126,7 @@ module Bosh::Dev::Sandbox
       FileUtils.rm_rf(logs_path)
       FileUtils.mkdir_p(logs_path)
 
-      @postgres_proxy.start
+      @database_proxy && @database_proxy.start
 
       @redis_process.start
       @redis_socket_connector.try_to_connect
@@ -200,7 +197,7 @@ module Bosh::Dev::Sandbox
       @uaa_process.stop
 
       @database.drop_db
-      @postgres_proxy.stop
+      @database_proxy && @database_proxy.stop
 
       FileUtils.rm_f(dns_db_path)
       FileUtils.rm_rf(agent_tmp_path)
@@ -344,12 +341,17 @@ module Bosh::Dev::Sandbox
       @logger.error("#{DEBUG_HEADER} end #{service.description} stderr #{DEBUG_HEADER}")
     end
 
+    def database_type
+      @database_type ||= db_opts[:type]
+    end
 
     def setup_database(db_opts)
-      if db_opts[:type] == 'mysql'
+      if database_type == 'mysql'
         @database = Mysql.new(@name, @logger, db_opts[:user], db_opts[:password])
       else
         @database = Postgresql.new(@name, @logger, @port_provider.get_port(:postgres))
+        # all postgres connections go through this proxy (for testing automatic reconnect)
+        @database_proxy = ConnectionProxyService.new("127.0.0.1", 5432, @port_provider.get_port(:postgres), @logger)
       end
     end
 
