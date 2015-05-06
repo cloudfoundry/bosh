@@ -16,3 +16,4 @@ wget -O $PACKAGE_TMP --continue --header="Referer: $REFERRER_URL" $PACKAGE_URL
 echo "Extracting Java..."
 mkdir -p $INSTALL_PREFIX
 unzip $PACKAGE_TMP -d $INSTALL_PREFIX
+rm $PACKAGE_TMP
