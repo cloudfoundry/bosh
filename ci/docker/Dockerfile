@@ -56,25 +56,25 @@ ADD install-go.sh /tmp/install-go.sh
 RUN chmod a+x /tmp/install-go.sh
 RUN cd /tmp; ./install-go.sh; rm install-go.sh
 
-# prepare the image with vcap user, so we can set up postgres
-# RUN useradd -mU vcap -s /bin/bash
+RUN useradd -mU bootstrap -s /bin/bash
 RUN echo "vcap ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+RUN echo "bootstrap ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 # create postgres data & lock dirs
 ENV PGDATA /var/postgres
-# RUN mkdir -p /var/postgres && chown vcap:vcap /var/postgres
-# RUN mkdir -p /var/run/postgresql && chown vcap:vcap /var/run/postgresql
-# RUN mkdir -p /var/log/postgresql && chown vcap:vcap /var/log/postgresql
+RUN mkdir -p /var/postgres && chown bootstrap:bootstrap /var/postgres
+RUN mkdir -p /var/run/postgresql && chown bootstrap:bootstrap /var/run/postgresql
+RUN mkdir -p /var/log/postgresql && chown bootstrap:bootstrap /var/log/postgresql
 
-# postgres must be run as non-root
-# postgres user: vcap/<no-password>
-# USER vcap
+USER bootstrap
 ENV PATH /usr/lib/postgresql/9.4/bin:$PATH
-# RUN pg_ctl init && pg_ctl start -l /var/log/postgresql/server.log && sleep 4 && createuser -U vcap --superuser postgres && createdb -U vcap && pg_ctl stop
+RUN pg_ctl init && pg_ctl start -l /var/log/postgresql/server.log && sleep 4 && createuser -U bootstrap --superuser postgres && pg_ctl stop
 
-# mysql must be run as root
-# mysql user: root/password
 USER root
+RUN chown -R 1000:1000 /var/postgres
+RUN chown -R 1000:1000 /var/run/postgresql
+RUN chown -R 1000:1000 /var/log/postgresql
+
 RUN echo 'mysql-server mysql-server/root_password password password' | debconf-set-selections
 RUN echo 'mysql-server mysql-server/root_password_again password password' | debconf-set-selections
 RUN apt-get install -y mysql-server
