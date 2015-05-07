@@ -10,7 +10,13 @@ case "$DB" in
     sudo service mysql start
     ;;
   postgresql)
-    pg_ctl start -l /var/log/postgresql/server.log
+    export PGDATA=/tmp/postgres
+    export PGLOGS=/tmp/log/postgres
+    mkdir -p $PGDATA
+    mkdir -p $PGLOGS
+    initdb -U postgres -D $PGDATA
+
+    pg_ctl start -l $PGLOGS/server.log
     ;;
   *)
     echo $"Usage: $0 {mysql|postgresql}"
