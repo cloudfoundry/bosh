@@ -2,6 +2,7 @@
 jobs:
   - name: test-unit
     public: true
+    serial: true
     plan:
       - get:        bosh-src
       - aggregate:
@@ -18,6 +19,7 @@ jobs:
 
   - name: test-integration
     public: true
+    serial: true
     plan:
       - get:        bosh-src
       - aggregate:
