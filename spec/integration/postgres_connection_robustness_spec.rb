@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'recovering from postgres connection failures', type: :integration do
+describe 'recovering from postgres connection failures', type: :integration, db: :postgresql do
   with_reset_sandbox_before_each
 
   it 'can start a task after the postgres connections are cut and reconnected' do
