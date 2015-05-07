@@ -70,11 +70,11 @@ USER bootstrap
 ENV PATH /usr/lib/postgresql/9.4/bin:$PATH
 RUN pg_ctl init && pg_ctl start -l /var/log/postgresql/server.log && sleep 4 && createuser -U bootstrap --superuser postgres && pg_ctl stop
 
-USER root
-RUN chown -R 1000:1000 /var/postgres
-RUN chown -R 1000:1000 /var/run/postgresql
-RUN chown -R 1000:1000 /var/log/postgresql
+RUN chmod 0777 /var/postgres
+RUN chmod 0777 /var/run/postgresql
+RUN chmod 0777 /var/log/postgresql
 
+USER root
 RUN echo 'mysql-server mysql-server/root_password password password' | debconf-set-selections
 RUN echo 'mysql-server mysql-server/root_password_again password password' | debconf-set-selections
 RUN apt-get install -y mysql-server
