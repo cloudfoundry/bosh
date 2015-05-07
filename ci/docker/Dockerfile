@@ -81,3 +81,5 @@ RUN apt-get install -y mysql-server
 
 RUN git config --global user.email "cf-bosh-eng+bosh-ci@pivotal.io"
 RUN git config --global user.name "BOSH CI"
+
+RUN date > /var/docker-image-timestamp
