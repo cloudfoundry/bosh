@@ -6,13 +6,11 @@ jobs:
       - get:        bosh-src
       - aggregate:
         - task:     ruby-1.9
-          privileged: true
           file:     bosh-src/ci/concourse/tasks/test-unit.yml
           config:
             params:
               RUBY_VERSION: 1.9.3
         - task:     ruby-2.1
-          privileged: true
           file:     bosh-src/ci/concourse/tasks/test-unit.yml
           config:
             params:
@@ -38,14 +36,12 @@ jobs:
               DB:           mysql
               RUBY_VERSION: 2.1.2
         - task:     ruby-1.9-postgres
-          privileged: true
           file:     bosh-src/ci/concourse/tasks/test-integration.yml
           config:
             params:
               DB:           postgresql
               RUBY_VERSION: 1.9.3
         - task:     ruby-2.1-postgres
-          privileged: true
           file:     bosh-src/ci/concourse/tasks/test-integration.yml
           config:
             params:
@@ -57,5 +53,5 @@ resources:
     type: git
     source:
       uri:          git@github.com:cloudfoundry/bosh.git
-      branch:       develop
+      branch:       concourse-main
       private_key:  {{github_private_key}}

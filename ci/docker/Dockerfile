@@ -57,20 +57,20 @@ RUN chmod a+x /tmp/install-go.sh
 RUN cd /tmp; ./install-go.sh; rm install-go.sh
 
 # prepare the image with vcap user, so we can set up postgres
-RUN useradd -mU vcap -s /bin/bash
+# RUN useradd -mU vcap -s /bin/bash
 RUN echo "vcap ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 # create postgres data & lock dirs
 ENV PGDATA /var/postgres
-RUN mkdir -p /var/postgres && chown vcap:vcap /var/postgres
-RUN mkdir -p /var/run/postgresql && chown vcap:vcap /var/run/postgresql
-RUN mkdir -p /var/log/postgresql && chown vcap:vcap /var/log/postgresql
+# RUN mkdir -p /var/postgres && chown vcap:vcap /var/postgres
+# RUN mkdir -p /var/run/postgresql && chown vcap:vcap /var/run/postgresql
+# RUN mkdir -p /var/log/postgresql && chown vcap:vcap /var/log/postgresql
 
 # postgres must be run as non-root
 # postgres user: vcap/<no-password>
-USER vcap
+# USER vcap
 ENV PATH /usr/lib/postgresql/9.4/bin:$PATH
-RUN pg_ctl init && pg_ctl start -l /var/log/postgresql/server.log && sleep 4 && createuser -U vcap --superuser postgres && createdb -U vcap && pg_ctl stop
+# RUN pg_ctl init && pg_ctl start -l /var/log/postgresql/server.log && sleep 4 && createuser -U vcap --superuser postgres && createdb -U vcap && pg_ctl stop
 
 # mysql must be run as root
 # mysql user: root/password
