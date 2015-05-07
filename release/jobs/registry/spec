@@ -40,8 +40,8 @@ properties:
   registry.db.connection_options:
     description: Additional options for the database
     default:
-      max_connections: 32
-      pool_timeout: 10
+      max_connections: 32  #Maximum size of the connection pool
+      pool_timeout: 10     #Number of seconds to wait if a connection cannot be acquired before  raising an error
 
   # For AWS
   aws.access_key_id:
