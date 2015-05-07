@@ -65,7 +65,8 @@ module Bosh::Cli::Command
         err("You can't use --only and --all together") if options[:all]
         filter = options[:only].join(',')
       elsif options[:all]
-        filter = nil #TODO: deprecation warning (#93650844)
+        filter = nil
+        say("Warning: --all flag is deprecated and has no effect.".make_red)
       else
         filter = nil
       end

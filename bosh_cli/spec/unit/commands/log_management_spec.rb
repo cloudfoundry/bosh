@@ -110,6 +110,13 @@ describe Bosh::Cli::Command::LogManagement do
             command.fetch_logs(job, index)
           end
 
+          it 'prints deprecation warning about the --all option' do
+            command.options[:all] = true
+
+            expect(command).to receive(:say).with('Warning: --all flag is deprecated and has no effect.')
+            command.fetch_logs(job, index)
+          end
+
           it 'successfully retrieves the log resource id with only filters' do
             command.options[:only] = %w(cloud_controller uaa)
 
