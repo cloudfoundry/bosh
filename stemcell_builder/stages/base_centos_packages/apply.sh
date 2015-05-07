@@ -7,10 +7,6 @@ source $base_dir/lib/prelude_apply.bash
 source $base_dir/etc/settings.bash
 
 case "${stemcell_operating_system_version}" in
-  "6")
-    init_package_name="upstart"
-    version_specific_packages="nc"
-    ;;
   "7")
     init_package_name="systemd"
     version_specific_packages="nmap-ncat"

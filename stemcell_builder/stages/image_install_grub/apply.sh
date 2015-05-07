@@ -139,26 +139,18 @@ title ${os_name} (${kernel_version})
   kernel /boot/vmlinuz-${kernel_version} ro root=UUID=${uuid} selinux=0 cgroup_enable=memory swapaccount=1 console=tty0 console=ttyS0,115200n8
   initrd /boot/${initrd_file}
 GRUB_CONF
+
 elif [ -f ${image_mount_point}/etc/redhat-release ] # Centos or RHEL
 then
-
-# For CentOS 6 (Linux 2.x), we need to set xen_blkfront.sda_is_xvda=1 to force CentOS to have device mapping consistent
-# with Ubuntu. For CentOS 7 (Linux 3.x), we must not use this parameter because it prevents the system from booting.
-version_specific_params=""
-if [ ${kernel_version:0:1} = 2 ]; then
-  version_specific_params="xen_blkfront.sda_is_xvda=1"
-elif [ ${kernel_version:0:1} = 3 ]; then
-  version_specific_params="net.ifnames=0 plymouth.enable=0"
-fi
-
-cat > ${image_mount_point}/boot/grub/grub.conf <<GRUB_CONF
+  cat > ${image_mount_point}/boot/grub/grub.conf <<GRUB_CONF
 default=0
 timeout=1
 title ${os_name} (${kernel_version})
   root (hd0,0)
-  kernel /boot/vmlinuz-${kernel_version} ro root=UUID=${uuid} ${version_specific_params} selinux=0 console=tty0 console=ttyS0,115200n8
+  kernel /boot/vmlinuz-${kernel_version} ro root=UUID=${uuid} net.ifnames=0 plymouth.enable=0 selinux=0 console=tty0 console=ttyS0,115200n8
   initrd /boot/${initrd_file}
 GRUB_CONF
+
 else
   echo "Unknown OS, exiting"
   exit 2

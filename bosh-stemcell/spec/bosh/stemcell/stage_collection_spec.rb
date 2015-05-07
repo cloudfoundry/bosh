@@ -47,29 +47,6 @@ module Bosh::Stemcell
         end
       end
 
-      context 'when CentOS 6' do
-        let(:operating_system) { OperatingSystem.for('centos', '6') }
-
-        it 'has the correct stages' do
-          expect(stage_collection.operating_system_stages).to eq(
-            [
-              :base_centos,
-              :base_centos_packages,
-              :base_ssh,
-              :bosh_sysctl,
-              :bosh_users,
-              :bosh_monit,
-              :bosh_ntpdate,
-              :bosh_sudoers,
-              :rsyslog_config,
-              :delay_monit_start,
-              :system_grub,
-              :cron_config,
-            ]
-          )
-        end
-      end
-
       context 'when CentOS 7' do
         let(:operating_system) { OperatingSystem.for('centos', '7') }
 

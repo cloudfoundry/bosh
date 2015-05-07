@@ -81,7 +81,7 @@ module Bosh::Stemcell
     describe '#==' do
       it 'compares by value instead of reference' do
         expect_eq = [
-          %w(aws xen centos 6 go true),
+          %w(aws xen centos 7 go true),
           %w(vsphere esxi ubuntu penguin go false),
         ]
 
@@ -90,7 +90,7 @@ module Bosh::Stemcell
         end
 
         expect_not_equal = [
-          [['aws', 'xen', 'ubuntu', 'penguin', 'null', false], ['aws', 'xen', 'centos', '6', 'null', false]],
+          [['aws', 'xen', 'ubuntu', 'penguin', 'null', false], ['aws', 'xen', 'centos', '7', 'null', false]],
           [['aws', 'xen', 'ubuntu', 'penguin', 'null', false], ['aws', 'xen', 'ubuntu', 'penguin', 'null', true]],
           [
             ['vsphere', 'esxi', 'ubuntu', 'penguin', 'go', false],
