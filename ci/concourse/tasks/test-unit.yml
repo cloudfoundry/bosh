@@ -8,4 +8,4 @@ inputs:
 
 run:
   path: bosh-src/ci/concourse/tasks/rake.sh
-  args: ["--trace", "go", "spec:unit", "ci:publish_coverage_report"]
+  args: ["--trace", "go", "spec:unit"]
