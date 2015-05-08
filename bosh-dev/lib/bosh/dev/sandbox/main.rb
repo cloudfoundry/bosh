@@ -60,11 +60,14 @@ module Bosh::Dev::Sandbox
         password: ENV['TRAVIS'] ? '' : 'password',
       }
 
+      logger = Logging.logger(STDOUT)
+      logger.level = ENV.fetch('LOG_LEVEL', 'DEBUG')
+
       new(
         db_opts,
         ENV['DEBUG'],
         ENV['TEST_ENV_NUMBER'].to_i,
-        Logging.logger(STDOUT),
+        logger,
       )
     end
 

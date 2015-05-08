@@ -9,3 +9,7 @@ inputs:
 run:
   path: bosh-src/ci/concourse/tasks/integration-wrapper.sh
   args: ["bosh-src/ci/concourse/tasks/rake.sh", "--trace", "go", "spec:integration"]
+
+params:
+  LOG_LEVEL: INFO
+
