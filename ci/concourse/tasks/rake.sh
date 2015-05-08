@@ -10,9 +10,6 @@ source /etc/profile.d/chruby.sh
 chruby $RUBY_VERSION
 cd bosh-src
 
-#git config --global user.email "cf-bosh-eng+bosh-ci@pivotal.io"
-#git config --global user.name "bosh-ci"
-
 echo "--- Starting bundle install in `pwd` @ `date` ---"
 if [ -f .bundle/config ]; then
   echo ".bundle/config:"
