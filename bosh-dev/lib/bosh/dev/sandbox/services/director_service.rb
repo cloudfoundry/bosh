@@ -76,9 +76,7 @@ module Bosh::Dev::Sandbox
 
     def start_workers
       @worker_processes.each(&:start)
-      until resque_is_ready?
-        sleep 0.5
-      end
+      sleep 0.5 until resque_is_ready?
     end
 
     def stop_workers
