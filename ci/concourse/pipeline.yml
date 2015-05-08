@@ -17,33 +17,42 @@ jobs:
             params:
               RUBY_VERSION: 2.1.2
 
-  - name: test-integration
+  - name: test-integration-mysql
     public: true
     serial: true
     plan:
       - get:        bosh-src
+        passed:     [test-unit]
       - aggregate:
-        - task:     ruby-1.9-mysql
+        - task:     ruby-1.9
           privileged: true
           file:     bosh-src/ci/concourse/tasks/test-integration.yml
           config:
             params:
               DB:           mysql
               RUBY_VERSION: 1.9.3
-        - task:     ruby-2.1-mysql
+        - task:     ruby-2.1
           privileged: true
           file:     bosh-src/ci/concourse/tasks/test-integration.yml
           config:
             params:
               DB:           mysql
               RUBY_VERSION: 2.1.2
-        - task:     ruby-1.9-postgres
+
+  - name: test-integration-postgres
+    public: true
+    serial: true
+    plan:
+      - get:        bosh-src
+        passed:     [test-integration-mysql]
+      - aggregate:
+        - task:     ruby-1.9
           file:     bosh-src/ci/concourse/tasks/test-integration.yml
           config:
             params:
               DB:           postgresql
               RUBY_VERSION: 1.9.3
-        - task:     ruby-2.1-postgres
+        - task:     ruby-2.1
           file:     bosh-src/ci/concourse/tasks/test-integration.yml
           config:
             params:
