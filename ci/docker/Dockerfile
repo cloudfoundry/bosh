@@ -24,7 +24,6 @@ RUN apt-get install -y libxslt-dev; apt-get clean
 RUN apt-get install -y libxml2-dev; apt-get clean
 
 # BOSH dependencies
-RUN apt-get install -y mysql-server; apt-get clean
 RUN apt-get install -y mysql-client; apt-get clean
 RUN apt-get install -y libmysqlclient-dev; apt-get clean
 RUN apt-get install -y postgresql-9.4; apt-get clean
@@ -62,6 +61,12 @@ RUN echo "vcap ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 ENV PATH /usr/lib/postgresql/9.4/bin:$PATH
 RUN chmod 0777 /var/run/postgresql
 RUN chmod 0777 /var/lib/mysql
+
+# mysql must be run as root
+# mysql user: root/password
+RUN echo 'mysql-server mysql-server/root_password password password' | debconf-set-selections
+RUN echo 'mysql-server mysql-server/root_password_again password password' | debconf-set-selections
+RUN apt-get install -y mysql-server; apt-get clean
 
 RUN git config --global user.email "cf-bosh-eng+bosh-ci@pivotal.io"
 RUN git config --global user.name "BOSH CI"

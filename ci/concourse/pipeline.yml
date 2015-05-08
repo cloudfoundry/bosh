@@ -24,12 +24,14 @@ jobs:
       - get:        bosh-src
       - aggregate:
         - task:     ruby-1.9-mysql
+          privileged: true
           file:     bosh-src/ci/concourse/tasks/test-integration.yml
           config:
             params:
               DB:           mysql
               RUBY_VERSION: 1.9.3
         - task:     ruby-2.1-mysql
+          privileged: true
           file:     bosh-src/ci/concourse/tasks/test-integration.yml
           config:
             params:
