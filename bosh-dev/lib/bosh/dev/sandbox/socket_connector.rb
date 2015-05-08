@@ -12,7 +12,7 @@ module Bosh::Dev::Sandbox
       @log_location = log_location
     end
 
-    def try_to_connect(remaining_attempts = 40)
+    def try_to_connect(remaining_attempts = 80)
       @logger.info("Waiting for #{@service_name} to come up on #{@host}:#{@port} (logs at #{@log_location}*)")
 
       begin

@@ -134,7 +134,7 @@ module Bosh::Dev::Sandbox
       @nginx_service.start
 
       @nats_process.start
-      @nats_socket_connector.try_to_connect(60)
+      @nats_socket_connector.try_to_connect
 
       @database.create_db
       @database_created = true
