@@ -64,5 +64,5 @@ resources:
     type: git
     source:
       uri:          git@github.com:cloudfoundry/bosh.git
-      branch:       concourse-main
+      branch:       develop
       private_key:  {{github_private_key}}
