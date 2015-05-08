@@ -60,7 +60,6 @@ RUN echo "vcap ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 ENV PATH /usr/lib/postgresql/9.4/bin:$PATH
 RUN chmod 0777 /var/run/postgresql
-RUN chmod 0777 /var/lib/mysql
 
 # mysql must be run as root
 # mysql user: root/password
