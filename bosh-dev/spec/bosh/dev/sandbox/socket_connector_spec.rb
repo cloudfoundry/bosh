@@ -21,8 +21,8 @@ module Bosh::Dev::Sandbox
         end
 
         it 'defaults to 40 attempts before raising' do
-          expect(Timeout).to receive(:timeout).exactly(40).times
-          expect(socket_connector).to receive(:sleep).exactly(39).times
+          expect(Timeout).to receive(:timeout).exactly(80).times
+          expect(socket_connector).to receive(:sleep).exactly(79).times
 
           expect {
             socket_connector.try_to_connect
