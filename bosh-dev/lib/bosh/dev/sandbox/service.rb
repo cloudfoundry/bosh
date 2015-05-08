@@ -14,11 +14,13 @@ module Bosh::Dev::Sandbox
       @pid = nil
 
       # Add unique identifier to avoid confusing log information
-      @description = "#{@cmd_array.first} (#{SecureRandom.hex(4)})"
+      @log_id = SecureRandom.hex(4)
+      @description = "#{@cmd_array.first} (#{@log_id})"
     end
 
     def start
       env = ENV.to_hash.merge(@cmd_options.fetch(:env, {}))
+      @logger.info("Starting #{@description} with command: #{@cmd_array.inspect}, and options: #{@cmd_options.inspect}")
 
       if running?(@pid)
         @logger.info("Already started #{@description} with PID #{@pid}")
@@ -28,15 +30,13 @@ module Bosh::Dev::Sandbox
             raise "Cannot find #{@description} in the $PATH"
           end
 
-          @log_id = SecureRandom.hex(4)
-
           @pid = Process.spawn(env, *@cmd_array, {
               out: stdout || :close,
               err: stderr || :close,
               in: :close,
             })
 
-          @logger.info("Started #{@description} with PID #{@pid}, log-id: #{@log_id}")
+          @logger.info("Started process for #{@description} with PID #{@pid}, log-id: #{@log_id}")
         end
       end
     end
@@ -44,6 +44,7 @@ module Bosh::Dev::Sandbox
     def stop(signal = 'TERM')
       pid_to_stop = @pid
       @pid = nil
+      @logger.info("Stopping #{@description} with PID=#{pid_to_stop}")
 
       if running?(pid_to_stop)
         kill_process(signal, pid_to_stop)
