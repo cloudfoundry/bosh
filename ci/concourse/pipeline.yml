@@ -16,6 +16,11 @@ jobs:
           config:
             params:
               RUBY_VERSION: 2.1.2
+        - task: coverage
+          file: bosh-src/ci/concourse/tasks/test-coverage.yml
+          config:
+            params:
+              RUBY_VERSION: 2.1.2
               CODECLIMATE_REPO_TOKEN: {{codeclimate_token}}
 
   - name: test-integration-mysql
