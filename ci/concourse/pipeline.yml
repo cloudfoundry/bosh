@@ -12,12 +12,7 @@ jobs:
             params:
               RUBY_VERSION: 1.9.3
         - task:     ruby-2.1
-          file:     bosh-src/ci/concourse/tasks/test-unit.yml
-          config:
-            params:
-              RUBY_VERSION: 2.1.2
-        - task: coverage
-          file: bosh-src/ci/concourse/tasks/test-coverage.yml
+          file: bosh-src/ci/concourse/tasks/test-unit-coverage.yml
           config:
             params:
               RUBY_VERSION: 2.1.2
