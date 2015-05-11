@@ -55,7 +55,7 @@ def mock_ec2
                :instances => double(AWS::EC2::InstanceCollection),
                :volumes => double(AWS::EC2::VolumeCollection),
                :images => double(AWS::EC2::ImageCollection),
-               :regions => double(AWS::EC2::RegionCollection, :[] => region))
+               :regions => double(AWS::EC2::RegionCollection, :select => [ region ]))
 
   yield ec2, region if block_given?
 

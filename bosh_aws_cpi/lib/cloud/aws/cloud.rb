@@ -554,7 +554,10 @@ module Bosh::AwsCloud
 
     def initialize_aws
       @ec2 = AWS::EC2.new(@aws_params)
-      @region = @ec2.regions[aws_region]
+      # @ec2.regions[] does not properly set the endpoint on the region (bug in /aws/ec2/region_collection.rb)
+      # It just returns a Region object with nothing set but the name.
+      # As a workaround use the 'each' method, which is implemented correctly
+      @region = @ec2.regions.select {|r| r.name == aws_region}.first
       @az_selector = AvailabilityZoneSelector.new(@region, aws_properties['default_availability_zone'])
     end
 

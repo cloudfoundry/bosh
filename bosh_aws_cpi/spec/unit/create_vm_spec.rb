@@ -2,7 +2,7 @@ require "spec_helper"
 
 describe Bosh::AwsCloud::Cloud, "create_vm" do
   let(:registry) { double("registry") }
-  let(:region) { double("region") }
+  let(:region) { double("region", name: 'bar') }
   let(:availability_zone_selector) { double("availability zone selector") }
   let(:stemcell) { double("stemcell", root_device_name: "root name", image_id: stemcell_id) }
   let(:instance_manager) { instance_double("Bosh::AwsCloud::InstanceManager") }
@@ -41,7 +41,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
   before do
     allow(Bosh::Registry::Client).to receive(:new).and_return(registry)
 
-    allow(AWS::EC2).to receive(:new).and_return(double("ec2", regions: {"bar" => region}))
+    allow(AWS::EC2).to receive(:new).and_return(double("ec2", regions: [ region ]))
 
     allow(Bosh::AwsCloud::AvailabilityZoneSelector).to receive(:new).
         with(region, "foo").

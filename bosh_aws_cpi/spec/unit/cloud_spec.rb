@@ -22,6 +22,8 @@ describe Bosh::AwsCloud::Cloud do
 
   before do
     allow(Bosh::AwsCloud::AvailabilityZoneSelector).to receive(:new).and_return(az_selector)
+    reg = AWS::EC2::Region.new('some-region', endpoint: 'http://some.endpoint')
+    allow_any_instance_of(AWS::EC2).to receive(:regions).and_return([reg])
   end
 
   describe 'validating initialization options' do

@@ -28,6 +28,12 @@ describe Bosh::AwsCloud::Cloud do
 
     let(:cloud) { described_class.new(options) }
 
+    before do
+      stub_request(:post, "https://ec2.bar.amazonaws.com/").
+          with(:body => /^Action=DescribeRegions.*$/).
+          to_return(:status => 200, :body => "", :headers => {})
+    end
+
     let(:fake_instance_id) {"i-xxxxxxxx"}
 
     it "should make a call to AWS and return the correct vm id" do
