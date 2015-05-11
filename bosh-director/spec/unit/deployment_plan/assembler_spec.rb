@@ -180,7 +180,9 @@ module Bosh::Director
       let(:deployment_model) { Models::Deployment.make(manifest: Psych.dump(manifest_hash)) }
       let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
       let(:state) { { 'state' => 'foo' } }
-      let(:network) { DeploymentPlan::Network.new(deployment_plan, {'name' => resource_pool_manifest['network']}) }
+      let(:network_fake) { DeploymentPlan::Network.new(deployment_plan, {'name' => resource_pool_manifest['network']}) }
+      let(:network_bar) { DeploymentPlan::Network.new(deployment_plan, {'name' => 'bar'}) }
+      let(:network_baz) { DeploymentPlan::Network.new(deployment_plan, {'name' => 'baz'}) }
       let(:resource_pool) { DeploymentPlan::ResourcePool.new(deployment_plan, resource_pool_manifest, logger) }
       let(:vm_model) { Models::Vm.make }
       let(:idle_vm) { DeploymentPlan::Vm.new(resource_pool) }
@@ -199,10 +201,14 @@ module Bosh::Director
 
       before do
         # add mock network
-        deployment_plan.add_network(network)
+        deployment_plan.add_network(network_fake)
+        deployment_plan.add_network(network_bar)
+        deployment_plan.add_network(network_baz)
 
         # release is not implemented in the base Network object
-        allow(network).to receive(:release)
+        allow(network_fake).to receive(:release)
+        allow(network_bar).to receive(:release)
+        allow(network_baz).to receive(:release)
 
         # return mock idle vm
         allow(resource_pool).to receive(:add_idle_vm).and_return(idle_vm)
@@ -225,7 +231,7 @@ module Bosh::Director
 
         it 'releases all network reservations' do
           reservations.each do |network_name, reservation|
-            expect(network).to receive(:release).with(reservation)
+            expect(deployment_plan.network(network_name)).to receive(:release).with(reservation)
           end
 
           assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
@@ -257,13 +263,13 @@ module Bosh::Director
         end
 
         it 'reuses dynamic network reservations' do
-          expect(idle_vm).to receive(:use_reservation).with(reservations[network.name])
+          expect(idle_vm).to receive(:use_reservation).with(reservations[network_fake.name])
 
           assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
         end
 
         it 'does not release any network reservations' do
-          expect(network).not_to receive(:release)
+          expect(network_fake).not_to receive(:release)
 
           assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
         end

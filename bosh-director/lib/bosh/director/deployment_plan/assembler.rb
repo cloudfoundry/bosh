@@ -77,7 +77,7 @@ module Bosh::Director
         @logger.debug("Releasing all network reservations for VM `#{vm_model.cid}'")
         reservations.each do |network_name, reservation|
           @logger.debug("Releasing #{reservation.type} network reservation `#{network_name}' for VM `#{vm_model.cid}'")
-          resource_pool.network.release(reservation)
+          @deployment_plan.network(network_name).release(reservation)
         end
 
         @logger.debug("Deleting VM `#{vm_model.cid}' with static network reservation")
