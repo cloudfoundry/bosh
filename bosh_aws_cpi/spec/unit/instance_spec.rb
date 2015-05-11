@@ -132,7 +132,7 @@ describe Bosh::AwsCloud::Instance do
       instance.remove_from_load_balancers
     end
 
-    it 'ignores deregistration failure if instance is not registered' do
+    it 'ignores deregistration InvalidInstance error if instance is not registered' do
       expect(lb1_instances).to receive(:deregister).with(aws_instance).
         and_raise(AWS::ELB::Errors::InvalidInstance)
 
@@ -147,6 +147,17 @@ describe Bosh::AwsCloud::Instance do
       expect(lb1_instances).to receive(:deregister).and_raise(AWS::ELB::Errors::Throttling)
       expect(lb1_instances).to receive(:deregister).and_return(nil)
       allow(lb2_instances).to receive(:deregister)
+
+      expect {
+        instance.remove_from_load_balancers
+      }.to_not raise_error
+    end
+
+    it 'ignores deregistration Base error if instance is not registered' do
+      expect(lb1_instances).to receive(:deregister).with(aws_instance).
+        and_raise(AWS::ELB::Errors::Base)
+
+      expect(lb2_instances).to receive(:deregister).with(aws_instance)
 
       expect {
         instance.remove_from_load_balancers
