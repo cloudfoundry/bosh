@@ -73,6 +73,7 @@ module Bosh::Cli
       has_legacy_secret? ||
         has_blobstore_secrets?(bs, "atmos", "secret") ||
         has_blobstore_secrets?(bs, "simple", "user", "password") ||
+        has_blobstore_secrets?(bs, "dav", "user", "password") ||
         has_blobstore_secrets?(bs, "swift", "rackspace") ||
         has_blobstore_secrets?(bs, "swift", "hp") ||
         has_blobstore_secrets?(bs, "swift", "openstack") ||

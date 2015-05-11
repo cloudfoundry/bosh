@@ -1,0 +1,5 @@
+---
+blobstore:
+  provider: dav
+  options:
+    endpoint: http://bosh-blobstore.some.url.com:8080

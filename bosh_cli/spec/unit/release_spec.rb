@@ -260,6 +260,23 @@ describe Bosh::Cli::Release do
       expect(r.has_blobstore_secret?).to eq(true)
     end
 
+    it "should merge DAV secrets into options" do
+      r = Bosh::Cli::Release.new(spec_asset("config/dav"))
+      opts = {
+          :endpoint => 'http://bosh-blobstore.some.url.com:8080',
+          :user => 'dav-user',
+          :password => 'dav-password'
+      }
+      expect(Bosh::Blobstore::Client).to receive(:safe_create).with("dav", opts)
+      r.blobstore
+    end
+
+    it "should detect blobstore secrets for DAV options" do
+      r = Bosh::Cli::Release.new(spec_asset("config/dav"))
+      expect(r.has_blobstore_secret?).to eq(true)
+    end
+
+
     it 'should not use credentials for a local blobstore' do
       r = Bosh::Cli::Release.new(spec_asset("config/local"))
       expect(r.has_blobstore_secret?).to eq(true)
