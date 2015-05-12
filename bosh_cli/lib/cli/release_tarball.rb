@@ -55,15 +55,10 @@ module Bosh::Cli
       File.join(@unpack_dir, 'packages', "#{name}.tgz")
     end
 
-    def license_tarball_path
+    def license_resource
       return nil unless valid?
       unpack
-      l = Resources::License.new(@unpack_dir)
-      if l.files
-        l.files[0][0]
-      else
-        nil
-      end
+      return Resources::License.new(@unpack_dir)
     end
 
     def convert_to_old_format

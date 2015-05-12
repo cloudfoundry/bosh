@@ -7,7 +7,8 @@ module Bosh::Cli::Command::Release
           { 'name': 'my-release',
             'version': '#{ORIG_DEV_VERSION}',
             'packages': [],
-            'jobs': []
+            'jobs': [],
+            'license': abc123
           }
   MANIFEST
 
@@ -20,6 +21,7 @@ module Bosh::Cli::Command::Release
       let(:tarball) { instance_double('Bosh::Cli::ReleaseTarball') }
       let(:blob_manager) { instance_double('Bosh::Cli::BlobManager') }
       let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+      let(:archive_builder) { instance_double('Bosh::Cli::ArchiveBuilder') }
       let(:version_index) { instance_double('Bosh::Cli::Versions::VersionsIndex') }
       let(:release_version_index) { instance_double('Bosh::Cli::Versions::ReleaseVersionsIndex') }
       before do
@@ -43,11 +45,15 @@ module Bosh::Cli::Command::Release
         allow(tarball).to receive(:version).and_return(ORIG_DEV_VERSION)
         allow(tarball).to receive(:replace_manifest)
         allow(tarball).to receive(:create_from_unpacked)
+        allow(tarball).to receive(:license_resource).and_return("this is the license resource")
 
         allow(Bosh::Cli::BlobManager).to receive(:new).and_return(blob_manager)
         allow(blob_manager).to receive(:sync)
         allow(blob_manager).to receive(:print_status)
         allow(blob_manager).to receive(:dirty?).and_return(false)
+
+        allow(Bosh::Cli::ArchiveBuilder).to receive(:new).and_return(archive_builder)
+        allow(archive_builder).to receive(:build)
 
         allow(Bosh::Cli::Versions::VersionsIndex).to receive(:new).and_return(version_index)
         allow(version_index).to receive(:version_strings).and_return([])
@@ -139,12 +145,21 @@ module Bosh::Cli::Command::Release
         expect { command.finalize('ignored.tgz') }.to raise_error(Bosh::Cli::CliError, "Please use '--force' or upload new blobs")
      end
 
+      it 'uses ArchiveBuilder to repack license.tgz and upload it to the blobstore' do
+        allow(tarball).to receive(:license_resource).and_return("testing license resource")
+
+        expect(archive_builder).to receive(:build).with("testing license resource")
+
+        command.finalize('ignored.tgz')
+      end
+
       it 'can do a dry run' do
         command.options[:dry_run] = true
         command.finalize('ignored.tgz')
         expect(tarball).to_not have_received(:replace_manifest)
         expect(version_index).to_not have_received(:add_version)
         expect(tarball).to_not have_received(:create_from_unpacked)
+        expect(archive_builder).to_not have_received(:build)
       end
     end
   end

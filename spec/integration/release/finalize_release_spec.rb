@@ -10,7 +10,7 @@ describe 'finalize release', type: :integration do
 
   describe 'release finalization' do
     context 'when finalizing a release that was built elsewhere' do
-      it 'updates the .final_builds index for each job, package and license' do
+      it 'updates the .final_builds index for each job and package' do
         Dir.chdir(ClientSandbox.test_release_dir) do
           bosh_runner.run_in_current_dir("finalize release #{spec_asset('dummy-release.tgz')}")
 
@@ -23,7 +23,6 @@ describe 'finalize release', type: :integration do
           expect(package_index).to include('builds')
           expect(package_index['builds']).to include('a29b3b1174dc200826055732082bf21c7a765669')
           expect(package_index['builds']['a29b3b1174dc200826055732082bf21c7a765669']).to include('version', 'blobstore_id', 'sha1')
-
         end
       end
 
@@ -136,8 +135,11 @@ describe 'finalize release', type: :integration do
           end
           bosh_runner.run_in_current_dir("create release --force --with-tarball --name=test-release")
           out = bosh_runner.run_in_current_dir("finalize release dev_releases/test-release/test-release-0+dev.1.tgz")
-          expect(out).to match(/\| license \| 7a59f7973cddfa0301ca34a29d4cc876247dd7de \|/)
-          expect(out).to match(/Creating final release test-release\/1 from dev release test-release\/0\+dev\.1/)
+
+          expected_license_version = '7a59f7973cddfa0301ca34a29d4cc876247dd7de'
+          expect(out).to match(/\| license \| #{expected_license_version} \|/)
+          expect(blobstore_tarball_listing(expected_license_version)).to eq %w(./ ./LICENSE)
+          expect(actual_sha1_of_license(expected_license_version)).to eq manifest_sha1_of_license(expected_license_version)
         end
       end
 
@@ -149,8 +151,11 @@ describe 'finalize release', type: :integration do
           end
           bosh_runner.run_in_current_dir("create release --force --with-tarball --name=test-release")
           out = bosh_runner.run_in_current_dir("finalize release dev_releases/test-release/test-release-0+dev.1.tgz")
-          expect(out).to match(/\| license \| af23c9afabd1eae2ff49db2545937b0467c61dd3 \|/)
-          expect(out).to match(/Creating final release test-release\/1 from dev release test-release\/0\+dev\.1/)
+
+          expected_license_version = 'af23c9afabd1eae2ff49db2545937b0467c61dd3'
+          expect(out).to match(/\| license \| #{expected_license_version} \|/)
+          expect(blobstore_tarball_listing(expected_license_version)).to eq %w(./ ./NOTICE)
+          expect(actual_sha1_of_license(expected_license_version)).to eq manifest_sha1_of_license(expected_license_version)
         end
       end
 
@@ -161,7 +166,22 @@ describe 'finalize release', type: :integration do
           bosh_runner.run_in_current_dir("create release --force --with-tarball --name=test-release")
           out = bosh_runner.run_in_current_dir("finalize release dev_releases/test-release/test-release-0+dev.1.tgz")
           expect(out).to_not match(/\| license \|/)
-          expect(out).to match(/Creating final release test-release\/1 from dev release test-release\/0\+dev\.1/)
+        end
+      end
+
+      it 'includes both NOTICE and LICENSE files when present' do
+        Dir.chdir(ClientSandbox.test_release_dir) do
+          File.open('NOTICE', 'w') do |f|
+            f.write('This is an example license file called NOTICE')
+          end
+          bosh_runner.run_in_current_dir("create release --force --with-tarball --name=test-release")
+          out = bosh_runner.run_in_current_dir("finalize release dev_releases/test-release/test-release-0+dev.1.tgz")
+
+          # an artifact's version and fingerprint are set identical in recent BOSH versions
+          expected_license_version = '4b31262e2a9d1718eb36f6bb5c6b051df6c41ae1'
+          expect(out).to match(/\| license \| #{expected_license_version} \|/)
+          expect(blobstore_tarball_listing(expected_license_version)).to eq %w(./ ./LICENSE ./NOTICE)
+          expect(actual_sha1_of_license(expected_license_version)).to eq manifest_sha1_of_license(expected_license_version)
         end
       end
     end

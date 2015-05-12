@@ -86,9 +86,9 @@ module Bosh::Cli::Command
         end
 
         if manifest['license']
-          license_metadata = manifest['license'].clone
-          license_metadata['name'] = 'license'
-          upload_to_blobstore(license_metadata, '', tarball.license_tarball_path)
+          # the licence is different from packages and jobs: it has to be rebuilt from the
+          # raw LICENSE and/or NOTICE files in the dev release tarball
+          archive_builder.build(tarball.license_resource)
         end
       end
 
@@ -137,6 +137,15 @@ module Bosh::Cli::Command
             'blobstore_id' => blobstore_id
           })
         @progress_renderer.finish(artifact['name'], "uploaded")
+      end
+
+      def archive_builder
+        @archive_builder ||= Bosh::Cli::ArchiveBuilder.new(archive_repository_provider,
+                                                           :final => true, :dry_run => false)
+      end
+
+      def archive_repository_provider
+        @archive_repository_provider ||= Bosh::Cli::ArchiveRepositoryProvider.new(work_dir, cache_dir, release.blobstore)
       end
     end
   end
