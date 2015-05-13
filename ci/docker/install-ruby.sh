@@ -3,10 +3,10 @@
 set -e
 set -x
 
-RUBY_VERSIONS=( "1.9.3" "2.1.2" )
+RUBY_VERSIONS=( "1.9.3" "2.1.6" )
 CHRUBY_VER="0.3.9"
 CHRUBY_URL=https://github.com/postmodern/chruby/archive/v${CHRUBY_VER}.tar.gz
-RUBY_INSTALL_VER="0.4.3"
+RUBY_INSTALL_VER="0.5.0"
 RUBY_INSTALL_URL=https://github.com/postmodern/ruby-install/archive/v${RUBY_INSTALL_VER}.tar.gz
 
 echo "Installing chruby v${CHRUBY_VER}..."
