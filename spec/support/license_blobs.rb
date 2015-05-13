@@ -11,7 +11,7 @@ end
 
 def blobstore_tarball_listing(version)
   license_tarball_path = blobstore_license_file_path(version)
-  return `tar ztf #{license_tarball_path}`.split("\n")
+  return `tar ztf #{license_tarball_path}`.split("\n").sort
 end
 
 def actual_sha1_of_license(version)
