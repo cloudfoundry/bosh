@@ -547,13 +547,14 @@ module Bosh::OpenStackCloud
     # @raise [Bosh::Clouds::CloudError] if volume is not found
     def snapshot_disk(disk_id, metadata)
       with_thread_name("snapshot_disk(#{disk_id})") do
+        metadata = Hash[metadata.map{|key,value| [key.to_s, value] }]
         volume = with_openstack { @openstack.volumes.get(disk_id) }
         cloud_error("Volume `#{disk_id}' not found") unless volume
 
         devices = []
         volume.attachments.each { |attachment| devices << attachment['device'] unless attachment.empty? }
 
-        description = [:deployment, :job, :index].collect { |key| metadata[key] }
+        description = ['deployment', 'job', 'index'].collect { |key| metadata[key] }
         description << devices.first.split('/').last unless devices.empty?
         snapshot_params = {
           :name => "snapshot-#{generate_unique_name}",

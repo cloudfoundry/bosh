@@ -319,21 +319,23 @@ module Bosh::AwsCloud
     # @param [String] disk_id disk id of the disk to take the snapshot of
     # @return [String] snapshot id
     def snapshot_disk(disk_id, metadata)
+      metadata = Hash[metadata.map{|key,value| [key.to_s, value] }]
+
       with_thread_name("snapshot_disk(#{disk_id})") do
         volume = @ec2.volumes[disk_id]
         devices = []
         volume.attachments.each {|attachment| devices << attachment.device}
 
-        name = [:deployment, :job, :index].collect { |key| metadata[key] }
+        name = ['deployment', 'job', 'index'].collect { |key| metadata[key] }
         name << devices.first.split('/').last unless devices.empty?
 
         snapshot = volume.create_snapshot(name.join('/'))
         logger.info("snapshot '#{snapshot.id}' of volume '#{disk_id}' created")
 
-        [:agent_id, :instance_id, :director_name, :director_uuid].each do |key|
+        ['agent_id', 'instance_id', 'director_name', 'director_uuid'].each do |key|
           TagManager.tag(snapshot, key, metadata[key])
         end
-        TagManager.tag(snapshot, :device, devices.first) unless devices.empty?
+        TagManager.tag(snapshot, 'device', devices.first) unless devices.empty?
         TagManager.tag(snapshot, 'Name', name.join('/'))
 
         ResourceWait.for_snapshot(snapshot: snapshot, state: :completed)
@@ -482,19 +484,21 @@ module Bosh::AwsCloud
     # @param [Hash] metadata metadata key/value pairs
     # @return [void]
     def set_vm_metadata(vm, metadata)
+      metadata = Hash[metadata.map{|key,value| [key.to_s, value] }]
+
       instance = @ec2.instances[vm]
 
       metadata.each_pair do |key, value|
         TagManager.tag(instance, key, value)
       end
 
-      job = metadata[:job]
-      index = metadata[:index]
+      job = metadata['job']
+      index = metadata['index']
 
       if job && index
         name = "#{job}/#{index}"
-      elsif metadata[:compiling]
-        name = "compiling/#{metadata[:compiling]}"
+      elsif metadata['compiling']
+        name = "compiling/#{metadata['compiling']}"
       end
       TagManager.tag(instance, "Name", name) if name
     rescue AWS::EC2::Errors::TagLimitExceeded => e

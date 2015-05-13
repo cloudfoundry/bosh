@@ -10,11 +10,12 @@ describe Bosh::AwsCloud::Cloud, '#set_vm_metadata' do
   end
 
   it 'should add new tags for regular jobs' do
-    metadata = {:job => 'job', :index => 'index'}
+    metadata = {:job => 'fake-job', :index => 'fake-index', :director => 'fake-director'}
 
-    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, :job, 'job')
-    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, :index, 'index')
-    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, 'Name', 'job/index')
+    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, 'job', 'fake-job')
+    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, 'index', 'fake-index')
+    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, 'director', 'fake-director')
+    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, 'Name', 'fake-job/fake-index')
 
     @cloud.set_vm_metadata('i-foobar', metadata)
   end
@@ -22,10 +23,19 @@ describe Bosh::AwsCloud::Cloud, '#set_vm_metadata' do
   it 'should add new tags for compiling jobs' do
     metadata = {:compiling => 'linux'}
 
-    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, :compiling, 'linux')
+    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, 'compiling', 'linux')
     expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, 'Name', 'compiling/linux')
 
     @cloud.set_vm_metadata('i-foobar', metadata)
   end
 
+  it 'handles string keys' do
+    metadata = {'job' => 'fake-job', 'index' => 'fake-index'}
+
+    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, 'job', 'fake-job')
+    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, 'index', 'fake-index')
+    expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(instance, 'Name', 'fake-job/fake-index')
+
+    @cloud.set_vm_metadata('i-foobar', metadata)
+  end
 end
