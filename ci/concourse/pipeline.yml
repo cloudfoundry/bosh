@@ -1,6 +1,6 @@
 ---
 jobs:
-  - name: test-unit-1.9
+  - name: unit-1.9
     public: true
     serial: true
     plan:
@@ -11,11 +11,11 @@ jobs:
           params:
             RUBY_VERSION: 1.9.3
 
-  - name: test-unit-2.1
+  - name: unit-2.1
     public: true
     serial: true
     plan:
-      - get:        bosh-src
+      - get: bosh-src
       - task: unit
         file: bosh-src/ci/concourse/tasks/test-unit-coverage.yml
         config:
@@ -23,55 +23,55 @@ jobs:
             RUBY_VERSION: 2.1.2
             CODECLIMATE_REPO_TOKEN: {{codeclimate_token}}
 
-  - name: test-integration-mysql-1.9
+  - name: integration-mysql-1.9
     public: true
     serial: true
     plan:
-      - get:        bosh-src
-        passed:     [test-unit-1.9, test-unit-2.1]
-      - task:     ruby-1.9
+      - get: bosh-src
+        passed: [unit-1.9, unit-2.1]
+      - task: ruby-1.9
         privileged: true
-        file:     bosh-src/ci/concourse/tasks/test-integration.yml
+        file: bosh-src/ci/concourse/tasks/test-integration.yml
         config:
           params:
             DB:           mysql
             RUBY_VERSION: 1.9.3
 
-  - name: test-integration-mysql-2.1
+  - name: integration-mysql-2.1
     public: true
     serial: true
     plan:
-      - get:        bosh-src
-        passed:     [test-unit-1.9, test-unit-2.1]
-      - task:     ruby-2.1
+      - get: bosh-src
+        passed: [unit-1.9, unit-2.1]
+      - task: ruby-2.1
         privileged: true
-        file:     bosh-src/ci/concourse/tasks/test-integration.yml
+        file: bosh-src/ci/concourse/tasks/test-integration.yml
         config:
           params:
             DB:           mysql
             RUBY_VERSION: 2.1.2
 
-  - name: test-integration-postgres-1.9
+  - name: integration-postgres-1.9
     public: true
     serial: true
     plan:
-      - get:        bosh-src
-        passed:     [test-unit-1.9, test-unit-2.1]
-      - task:     ruby-1.9
-        file:     bosh-src/ci/concourse/tasks/test-integration.yml
+      - get: bosh-src
+        passed: [unit-1.9, unit-2.1]
+      - task: ruby-1.9
+        file:  bosh-src/ci/concourse/tasks/test-integration.yml
         config:
           params:
             DB:           postgresql
             RUBY_VERSION: 1.9.3
 
-  - name: test-integration-postgres-2.1
+  - name: integration-postgres-2.1
     public: true
     serial: true
     plan:
-      - get:        bosh-src
-        passed:     [test-unit-1.9, test-unit-2.1]
-      - task:     ruby-2.1
-        file:     bosh-src/ci/concourse/tasks/test-integration.yml
+      - get: bosh-src
+        passed: [unit-1.9, unit-2.1]
+      - task: ruby-2.1
+        file: bosh-src/ci/concourse/tasks/test-integration.yml
         config:
           params:
             DB:           postgresql
