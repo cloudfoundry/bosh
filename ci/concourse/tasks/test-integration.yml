@@ -11,5 +11,4 @@ run:
   args: ["bosh-src/ci/concourse/tasks/rake.sh", "--trace", "go", "spec:integration"]
 
 params:
-  LOG_LEVEL: INFO
-
+  LOG_LEVEL: WARN
