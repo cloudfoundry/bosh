@@ -129,18 +129,45 @@ describe Bosh::AwsCloud::Cloud do
       end
     end
 
-    context 'when disk size is greater than 1 TiB' do
-      let(:disk_size) { 1025000 }
+    context 'when disk type is standard' do
+      let(:cloud_properties) { { 'type' => 'standard' } }
 
-      it 'raises an error' do
-        expect {
-          cloud.create_disk(disk_size, cloud_properties, 42)
-        }.to raise_error /AWS CPI maximum disk size is 1 TiB/
+      context 'when disk size is greater than 1 TiB' do
+        let(:disk_size) { 1024001 }
+
+        it 'raises an error' do
+          expect {
+            cloud.create_disk(disk_size, cloud_properties, 42)
+          }.to raise_error /AWS CPI maximum disk size is 1 TiB/
+        end
       end
     end
 
-    context 'when disk size is between 1 GiB and 1 TiB' do
-      let(:disk_size) { 1025 }
+    context 'when disk size is greater than 16 TiB' do
+      let(:disk_size) { 1025 * 17 * 1000 }
+
+      context 'when disk type is gp2' do
+        let(:cloud_properties) { { 'type' => 'gp2' } }
+
+        it 'raises an error' do
+          expect {
+            cloud.create_disk(disk_size, cloud_properties, 42)
+          }.to raise_error /AWS CPI maximum disk size is 16 TiB/
+        end
+      end
+
+      context 'when disk type is io1' do
+        let(:cloud_properties) { { 'type' => 'io1' } }
+
+        it 'raises an error' do
+          expect {
+            cloud.create_disk(disk_size, cloud_properties, 42)
+          }.to raise_error /AWS CPI maximum disk size is 16 TiB/
+        end
+      end
+    end
+
+    context 'when volumes are set' do
       let(:ec2) { instance_double('AWS::EC2', volumes: volumes) }
       let(:volumes) { instance_double('AWS::EC2::VolumeCollection') }
       before { cloud.instance_variable_set(:'@ec2', ec2) }
@@ -148,47 +175,71 @@ describe Bosh::AwsCloud::Cloud do
       context 'when disk type is provided' do
         let(:cloud_properties) { { 'type' => disk_type } }
 
-        context 'when disk type is not gp2 or standard' do
-          let(:disk_type) { 'non-existing-disk-type' }
+        context 'when disk size is between 1 GiB and 16 TiB' do
+          let(:disk_size) { 10240000 }
 
-          it 'raises an error' do
-            expect {
+          context 'when disk type is not gp2, io1, or standard' do
+            let(:disk_type) { 'non-existing-disk-type' }
+
+            it 'raises an error' do
+              expect {
+                cloud.create_disk(disk_size, cloud_properties, 42)
+              }.to raise_error /AWS CPI supports only gp2, io1, or standard disk type/
+            end
+          end
+
+          context 'when disk type is gp2' do
+            let(:disk_type) { 'gp2' }
+
+            it 'creates disk with gp2 type' do
+              expect(volumes).to receive(:create).with(
+                size: 10000,
+                availability_zone: 'fake-availability-zone',
+                volume_type: 'gp2',
+                encrypted: false
+              ).and_return(volume)
               cloud.create_disk(disk_size, cloud_properties, 42)
-            }.to raise_error /AWS CPI supports only gp2 or standard disk type/
+            end
+          end
+
+          context 'when disk type is io1' do
+            let(:disk_type) { 'io1' }
+
+            it 'creates disk with io1 type' do
+              expect(volumes).to receive(:create).with(
+                size: 10000,
+                availability_zone: 'fake-availability-zone',
+                volume_type: 'io1',
+                encrypted: false
+              ).and_return(volume)
+              cloud.create_disk(disk_size, cloud_properties, 42)
+            end
           end
         end
 
-        context 'when disk type is gp2' do
-          let(:disk_type) { 'gp2' }
+        context 'when disk size is between 1 GiB and 1 TiB' do
+          let(:disk_size) { 1025 }
 
-          it 'creates disk with gp2 type' do
-            expect(volumes).to receive(:create).with(
-              size: 2,
-              availability_zone: 'fake-availability-zone',
-              volume_type: 'gp2',
-              encrypted: false
-            ).and_return(volume)
-            cloud.create_disk(disk_size, cloud_properties, 42)
-          end
-        end
+          context 'when disk type is standard' do
+            let(:disk_type) { 'standard' }
 
-        context 'when disk type is standard' do
-          let(:disk_type) { 'standard' }
-
-          it 'creates disk with standard type' do
-            expect(volumes).to receive(:create).with(
-              size: 2,
-              availability_zone: 'fake-availability-zone',
-              volume_type: 'standard',
-              encrypted: false
-            ).and_return(volume)
-            cloud.create_disk(disk_size, cloud_properties, 42)
+            it 'creates disk with standard type' do
+              expect(volumes).to receive(:create).with(
+                size: 2,
+                availability_zone: 'fake-availability-zone',
+                volume_type: 'standard',
+                encrypted: false
+              ).and_return(volume)
+              cloud.create_disk(disk_size, cloud_properties, 42)
+            end
           end
         end
       end
 
+
       context 'when disk type is not provided' do
         let(:cloud_properties) { {} }
+        let(:disk_size) { 1025 }
 
         it 'creates disk with standard disk type' do
           expect(volumes).to receive(:create).with(
