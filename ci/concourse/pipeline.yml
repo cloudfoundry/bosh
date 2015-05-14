@@ -49,7 +49,7 @@ jobs:
         config:
           params:
             DB:           mysql
-            RUBY_VERSION: 2.1.2
+            RUBY_VERSION: 2.1.6
 
   - name: integration-postgres-1.9
     public: true
@@ -75,7 +75,7 @@ jobs:
         config:
           params:
             DB:           postgresql
-            RUBY_VERSION: 2.1.2
+            RUBY_VERSION: 2.1.6
 
 resources:
   - name: bosh-src
