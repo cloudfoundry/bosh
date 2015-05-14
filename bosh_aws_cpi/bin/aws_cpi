@@ -5,7 +5,13 @@ require 'bosh_aws_cpi'
 require 'bosh/cpi'
 require 'bosh/cpi/cli'
 
-cpi_config = YAML.load_file(ARGV.shift)
+manifest_path = ARGV.shift
+unless manifest_path && File.exists?(manifest_path)
+  $stderr.puts "USAGE: aws_cpi manifest.yml"
+  exit 1
+end
+
+cpi_config = YAML.load_file(manifest_path)
 
 cloud_config = OpenStruct.new(:logger => Logger.new(STDERR))
 
