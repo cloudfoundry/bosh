@@ -64,11 +64,19 @@ describe Bosh::AwsCloud::Cloud do
 
   extend Bosh::Cpi::CompatibilityHelpers
 
-  # Pass in *real* previously terminated instance id
-  # instead of just a made-up instance id
-  # because AWS returns Malformed error
-  # for instance ids that are not proper AWS hashed values.
-  it_can_delete_non_existent_vm 'i-49f9f169'
+  describe 'deleting things that no longer exist' do
+    it 'raises the appropriate Clouds::Error' do
+      # pass in *real* previously deleted ids instead of made up ones
+      # because AWS returns Malformed/Invalid errors for fake ids
+      expect {
+        cpi.delete_vm('i-49f9f169')
+      }.to raise_error Bosh::Clouds::VMNotFound
+
+      expect {
+        cpi.delete_disk('vol-4c68780b')
+      }.to raise_error Bosh::Clouds::DiskNotFound
+    end
+  end
 
   context 'manual networking' do
     let(:network_spec) do

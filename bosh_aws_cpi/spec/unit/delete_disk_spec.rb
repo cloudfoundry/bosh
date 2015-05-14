@@ -57,4 +57,12 @@ describe Bosh::AwsCloud::Cloud do
 
     cloud.delete_disk('v-foo')
   end
+
+  it 'raises the Clouds::DiskNotFound error when the disk is not found' do
+    expect(volume).to receive(:delete).and_raise(AWS::EC2::Errors::InvalidVolume::NotFound)
+
+    expect {
+      cloud.delete_disk('v-foo')
+    }.to raise_error(Bosh::Clouds::DiskNotFound)
+  end
 end

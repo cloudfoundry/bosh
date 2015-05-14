@@ -245,7 +245,13 @@ module Bosh::AwsCloud
         errors = [AWS::EC2::Errors::VolumeInUse, AWS::EC2::Errors::RequestLimitExceeded]
 
         Bosh::Common.retryable(tries: tries, sleep: sleep_cb, on: errors, ensure: ensure_cb) do
-          volume.delete
+          begin
+            volume.delete
+          rescue AWS::EC2::Errors::InvalidVolume::NotFound => e
+            logger.warn("Failed to delete disk '#{disk_id}' because it was not found: #{e.inspect}")
+            raise Bosh::Clouds::DiskNotFound, "Disk '#{disk_id}' not found"
+          end
+
           true # return true to only retry on Exceptions
         end
 
