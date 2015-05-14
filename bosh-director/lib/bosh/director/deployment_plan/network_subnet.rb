@@ -98,8 +98,6 @@ module Bosh::Director
     class InMemoryIpProvider
       include IpUtil
 
-      attr_reader :range, :available_dynamic_ips, :available_static_ips
-
       def initialize(range, gateway, network_id, broadcast, static_ips, reserved_ips, network_name)
         @range = range
         @gateway = gateway
