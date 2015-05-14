@@ -141,8 +141,8 @@ properties:
   director.db.connection_options:
     description: Additional options for the database
     default:
-      max_connections: 32
-      pool_timeout: 10
+      max_connections: 32  #Maximum size of the connection pool
+      pool_timeout: 10     #Number of seconds to wait if a connection cannot be acquired before  raising an error
 
   # DNS
   dns.address:
@@ -169,8 +169,8 @@ properties:
   dns.db.connection_options:
     description: Additional options for the powerdns database
     default:
-      max_connections: 32
-      pool_timeout: 10
+      max_connections: 32  #Maximum size of the connection pool
+      pool_timeout: 10     #Number of seconds to wait if a connection cannot be acquired before  raising an error
 
   # Blobstore
   blobstore.provider:
@@ -404,22 +404,22 @@ properties:
   vcenter.datacenters:
     description: Datacenters in vCenter to use (value is an array of Hashes representing datacenters and clusters, See director.yml.erb.erb)
   vcd.url:
-    description: TODO
+    description: The endpoint of the target vCloud Director
   vcd.user:
-    description: TODO
+    description: The user name of the target vCloud Director
   vcd.password:
-    description: TODO
+    description: The password of the target vCloud Director
   vcd.entities.organization:
-    description: TODO
+    description: The organization name
   vcd.entities.virtual_datacenter:
-    description: TODO
+    description: The virtual data center name in vCloud Director
   vcd.entities.vapp_catalog:
-    description: TODO
+    description: The name of the calalog for vapp template
   vcd.entities.media_catalog:
-    description: TODO
+    description: The name of the calalog for media files
   vcd.entities.vm_metadata_key:
-    description: TODO
+    description: The key name of VM metadata
     default: vcd-cf
   vcd.entities.description:
-    description: TODO
+    description: Text associated with the VMs
     default: vcd-cf
