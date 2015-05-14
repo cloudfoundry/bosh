@@ -21,7 +21,7 @@ module Bosh::Director
         subnets = safe_property(network_spec, "subnets", :class => Array)
 
         subnets.each do |subnet_spec|
-          new_subnet = NetworkSubnet.new(self, subnet_spec)
+          new_subnet = NetworkSubnet.new(self, subnet_spec, BD::DeploymentPlan::InMemoryIpProvider)
           @subnets.each do |subnet|
             if subnet.overlaps?(new_subnet)
               raise NetworkOverlappingSubnets,
