@@ -621,6 +621,7 @@ module Bosh
         def request(method, uri, content_type = nil, payload = nil, headers = {}, options = {})
           headers = headers.dup
           headers['Content-Type'] = content_type if content_type
+          headers['Host'] = @director_uri.host
 
           tmp_file = nil
           response_reader = nil
