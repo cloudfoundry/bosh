@@ -1,10 +1,7 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Director
   module DeploymentPlan
     class NetworkSubnet
       include DnsHelper
-      include IpUtil
       include ValidationHelper
 
       # @return [DeploymentPlan::Network] Network this subnet belongs to
@@ -64,6 +61,49 @@ module Bosh::Director
 
         @cloud_properties = safe_property(subnet_spec, "cloud_properties", class: Hash, default: {})
 
+        reserved_ips = safe_property(subnet_spec, "reserved", :optional => true)
+        static_ips = safe_property(subnet_spec, "static", :optional => true)
+
+        @ip_provider = InMemoryIpProvider.new(@range, @gateway, network_id, broadcast, static_ips, reserved_ips, @network.name)
+      end
+
+      def overlaps?(subnet)
+        @range == subnet.range ||
+          @range.contains?(subnet.range) ||
+          subnet.range.contains?(@range)
+      end
+
+      def reserve_ip(ip)
+        @ip_provider.reserve_ip(ip)
+      end
+
+      def release_ip(ip)
+        @ip_provider.release_ip(ip)
+      end
+
+      def allocate_dynamic_ip
+        @ip_provider.allocate_dynamic_ip
+      end
+
+      private
+
+      # @param [String] reason
+      # @raise NetworkInvalidGateway
+      def invalid_gateway(reason)
+        raise NetworkInvalidGateway,
+              "Invalid gateway for network `#{@network.name}': #{reason}"
+      end
+    end
+
+    class InMemoryIpProvider
+      include IpUtil
+
+      attr_reader :range, :available_dynamic_ips, :available_static_ips
+
+      def initialize(range, gateway, network_id, broadcast, static_ips, reserved_ips, network_name)
+        @range = range
+        @gateway = gateway
+        @network_name = network_name
         @available_dynamic_ips = Set.new
         @available_static_ips = Set.new
 
@@ -78,22 +118,19 @@ module Bosh::Director
         @available_dynamic_ips.delete(network_id.to_i)
         @available_dynamic_ips.delete(broadcast.to_i)
 
-        reserved_ips = safe_property(subnet_spec, "reserved", :optional => true)
-        static_ips = safe_property(subnet_spec, "static", :optional => true)
-
         each_ip(reserved_ips) do |ip|
           unless @available_dynamic_ips.delete?(ip)
             raise NetworkReservedIpOutOfRange,
-                  "Reserved IP `#{format_ip(ip)}' is out of " +
-                  "network `#{@network.name}' range"
+              "Reserved IP `#{format_ip(ip)}' is out of " +
+                "network `#{@network_name}' range"
           end
         end
 
         each_ip(static_ips) do |ip|
           unless @available_dynamic_ips.delete?(ip)
             raise NetworkStaticIpOutOfRange,
-                  "Static IP `#{format_ip(ip)}' is out of " +
-                  "network `#{@network.name}' range"
+              "Static IP `#{format_ip(ip)}' is out of " +
+                "network `#{@network_name}' range"
           end
           @available_static_ips.add(ip)
         end
@@ -104,10 +141,12 @@ module Bosh::Director
         @static_ip_pool = @available_static_ips.dup
       end
 
-      def overlaps?(subnet)
-        @range == subnet.range ||
-          @range.contains?(subnet.range) ||
-          subnet.range.contains?(@range)
+      def allocate_dynamic_ip
+        ip = @available_dynamic_ips.first
+        if ip
+          @available_dynamic_ips.delete(ip)
+        end
+        ip
       end
 
       def reserve_ip(ip)
@@ -129,37 +168,11 @@ module Bosh::Director
           @available_static_ips.add(ip)
         else
           raise NetworkReservationIpNotOwned,
-                "Can't release IP `#{format_ip(ip)}' " +
-                "back to `#{@network.name}' network: " +
-                "it's' neither in dynamic nor in static pool"
+            "Can't release IP `#{format_ip(ip)}' " +
+              "back to `#{@network_name}' network: " +
+              "it's' neither in dynamic nor in static pool"
         end
       end
-
-      def allocate_dynamic_ip
-        ip = @available_dynamic_ips.first
-        if ip
-          @available_dynamic_ips.delete(ip)
-        end
-        ip
-      end
-
-      def dynamic_ips_count
-        @available_dynamic_ips.size
-      end
-
-      def static_ips_count
-        @available_static_ips.size
-      end
-
-      private
-
-      # @param [String] reason
-      # @raise NetworkInvalidGateway
-      def invalid_gateway(reason)
-        raise NetworkInvalidGateway,
-              "Invalid gateway for network `#{@network.name}': #{reason}"
-      end
-
     end
   end
 end

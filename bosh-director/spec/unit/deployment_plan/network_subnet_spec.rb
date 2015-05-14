@@ -113,7 +113,7 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
       expect(subnet.dns).to eq(%w(1.2.3.4 5.6.7.8))
     end
 
-    it "should allow reserved IPs" do
+    it "should not allow reservation of reserved IPs" do
       subnet = subnet_spec(
         "range" => "192.168.0.0/24", # 254 IPs
         "reserved" => "192.168.0.5 - 192.168.0.10", # 6 IPs
@@ -121,8 +121,12 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
         "cloud_properties" => {"foo" => "bar"}
       )
 
-      expect(subnet.dynamic_ips_count).to eq(254 - 6 - 1)
-      expect(subnet.static_ips_count).to eq(0)
+      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.4'))).to eq(:dynamic)
+      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.5'))).to be_nil
+      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.10'))).to be_nil
+      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.11'))).to eq(:dynamic)
+      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.253'))).to eq(:dynamic)
+      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.254'))).to be_nil
     end
 
     it "should fail when reserved range is not valid" do
@@ -138,7 +142,7 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
                            "network `net_a' range")
     end
 
-    it "should allow static IPs" do
+    it "should allow reservation of static IPs" do
       subnet = subnet_spec(
         "range" => "192.168.0.0/24", # 254 IPs
         "static" => "192.168.0.5 - 192.168.0.10", # 6 IPs
@@ -146,8 +150,12 @@ describe Bosh::Director::DeploymentPlan::NetworkSubnet do
         "cloud_properties" => {"foo" => "bar"}
       )
 
-      expect(subnet.dynamic_ips_count).to eq(254 - 6 - 1)
-      expect(subnet.static_ips_count).to eq(6)
+      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.4'))).to eq(:dynamic)
+      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.5'))).to eq(:static)
+      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.10'))).to eq(:static)
+      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.11'))).to eq(:dynamic)
+      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.253'))).to eq(:dynamic)
+      expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.254'))).to be_nil
     end
 
     it "should fail when the static IP is not valid" do
