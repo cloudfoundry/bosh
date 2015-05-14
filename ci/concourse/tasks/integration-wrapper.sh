@@ -10,7 +10,7 @@ case "$DB" in
     sudo service mysql start
     ;;
   postgresql)
-    su postgres -c "source $(dirname $0)/environment.sh ; initdb -U postgres -D $PGDATA ; pg_ctl start -l $PGLOGS/server.log"
+    su postgres -c "source $(dirname $0)/environment.sh ; initdb -U postgres -D \$PGDATA ; pg_ctl start -l \$PGLOGS/server.log"
     ;;
   *)
     echo $"Usage: DB={mysql|postgresql} $0 {commands}"
