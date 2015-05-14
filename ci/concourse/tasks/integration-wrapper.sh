@@ -10,11 +10,10 @@ case "$DB" in
     sudo service mysql start
     ;;
   postgresql)
-    su - postgres -c "ls -l"
-    su - postgres -c "source $(dirname $0)/environment.sh ; initdb -U postgres -D $PGDATA ; pg_ctl start -l $PGLOGS/server.log"
+    su postgres -c "source $(dirname $0)/environment.sh ; initdb -U postgres -D $PGDATA ; pg_ctl start -l $PGLOGS/server.log"
     ;;
   *)
-    echo $"Usage: $0 {mysql|postgresql}"
+    echo $"Usage: DB={mysql|postgresql} $0 {commands}"
     exit 1
 esac
 
@@ -28,7 +27,7 @@ case "$DB" in
     sudo service mysql stop
     ;;
   postgresql)
-    su - postgres -c "pg_ctl stop"
+    su postgres -c "source $(dirname $0)/environment.sh ; pg_ctl stop"
     ;;
 esac
 
