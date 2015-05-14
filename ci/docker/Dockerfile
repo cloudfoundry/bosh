@@ -56,11 +56,6 @@ ADD install-go.sh /tmp/install-go.sh
 RUN chmod a+x /tmp/install-go.sh
 RUN cd /tmp; ./install-go.sh; rm install-go.sh
 
-RUN echo "vcap ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
-ENV PATH /usr/lib/postgresql/9.4/bin:$PATH
-RUN chmod 0777 /var/run/postgresql
-
 # mysql must be run as root
 # mysql user: root/password
 RUN echo 'mysql-server mysql-server/root_password password password' | debconf-set-selections

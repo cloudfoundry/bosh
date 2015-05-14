@@ -10,6 +10,8 @@ case "$DB" in
     sudo service mysql start
     ;;
   postgresql)
+    su - postgres
+    export PATH=/usr/lib/postgresql/9.4/bin:$PATH
     export PGDATA=/tmp/postgres
     export PGLOGS=/tmp/log/postgres
     mkdir -p $PGDATA
@@ -33,6 +35,7 @@ case "$DB" in
     sudo service mysql stop
     ;;
   postgresql)
+    su - postgres
     pg_ctl stop
     ;;
 esac
