@@ -3,7 +3,7 @@ Sequel.migration do
     create_table :ip_addresses do
       primary_key :id
       String      :network_name
-      Integer     :address
+      Bignum      :address
       TrueClass   :allocated, default: false
       String      :type # 'static', 'dynamic', 'reserved'
 
