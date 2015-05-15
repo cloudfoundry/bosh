@@ -78,6 +78,10 @@ module Bosh::Director
         canonical(@name)
       end
 
+      def using_cloud_config?
+        !@cloud_config.nil?
+      end
+
       # Returns a list of VMs in the deployment (according to DB)
       # @return [Array<Models::Vm>]
       def vms
@@ -259,6 +263,10 @@ module Bosh::Director
 
       def disk_pool(name)
         @disk_pools[name]
+      end
+
+      def using_cloud_config?
+        !@cloud_config.nil?
       end
     end
   end

@@ -25,7 +25,8 @@ module Bosh::Director
 
       # @param [DeploymentPlan::Network] network Network
       # @param [Hash] subnet_spec Raw subnet spec from deployment manifest
-      def initialize(network, subnet_spec, ip_provider_klazz)
+      # @param [Bosh::Director::DeploymentPlan::IpProviderFactory] ip_provider_factory
+      def initialize(network, subnet_spec, ip_provider_factory)
         @network = network
 
         range_property = safe_property(subnet_spec, "range", :class => String)
@@ -89,7 +90,7 @@ module Bosh::Director
           static_ips.add(ip)
         end
 
-        @ip_provider = ip_provider_klazz.new(@range, @network.name, restricted_ips, static_ips)
+        @ip_provider = ip_provider_factory.create(@range, @network.name, restricted_ips, static_ips)
       end
 
       def overlaps?(subnet)

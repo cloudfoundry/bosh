@@ -15,6 +15,7 @@ module Bosh::Director::DeploymentPlan
         canonical_name: 'mycloud',
         model: deployment,
         network: net,
+        using_cloud_config?: true
       })
     end
     let(:job) do

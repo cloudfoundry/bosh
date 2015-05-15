@@ -1,12 +1,14 @@
 require 'spec_helper'
 
-[BD::DeploymentPlan::DatabaseIpProvider, BD::DeploymentPlan::InMemoryIpProvider].each do |ip_provider|
-  describe "Bosh::Director::DeploymentPlan::NetworkSubnet with #{ip_provider}" do
+[true, false].each do |using_cloud_config|
+  describe "Bosh::Director::DeploymentPlan::NetworkSubnet with #{using_cloud_config}" do
     before { @network = instance_double('Bosh::Director::DeploymentPlan::Network', :name => "net_a") }
-    let(:ip_provider) { ip_provider }
+    let(:ip_provider_factory) do
+      BD::DeploymentPlan::IpProviderFactory.new(cloud_config: using_cloud_config)
+    end
 
     def subnet_spec(properties)
-      BD::DeploymentPlan::NetworkSubnet.new(@network, properties, ip_provider)
+      BD::DeploymentPlan::NetworkSubnet.new(@network, properties, ip_provider_factory)
     end
 
     describe :initialize do
@@ -327,7 +329,7 @@ require 'spec_helper'
       # If a pool has many IP addresses, use every IP in the pool rather than
       # rapidly acquiring and releasing the same IP over and over again.
       it "should allocate the least recently released IP from the dynamic pool" do
-        skip 'Only implemented for InMemoryIpProvider' if ip_provider != BD::DeploymentPlan::InMemoryIpProvider
+        skip 'Only implemented for InMemoryIpProvider' if using_cloud_config
 
         subnet = subnet_spec(
           "range" => "192.168.0.0/29",
