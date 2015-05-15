@@ -59,7 +59,7 @@ PATH
       bosh_common (~> 1.2972.0)
       bosh_cpi (~> 1.2972.0)
       bosh_openstack_cpi (~> 1.2972.0)
-      bosh_vcloud_cpi (~> 0.7.3)
+      bosh_vcloud_cpi (~> 0.7.4)
       bosh_vsphere_cpi (~> 1.2972.0)
       cf-uaa-lib (~> 3.2.1)
       eventmachine (~> 1.0.0)
@@ -259,7 +259,7 @@ GEM
     bcrypt-ruby (3.0.1)
     blue-shell (0.3.0)
       rspec
-    bosh_vcloud_cpi (0.7.3)
+    bosh_vcloud_cpi (0.7.4)
       bosh_common
       bosh_cpi
       builder (~> 3.1.4)
