@@ -7,46 +7,48 @@ module Bosh::Director::DeploymentPlan
 
     # @param [NetAddr::CIDR] range
     # @param [String] network_name
-    def initialize(range, network_name)
+    def initialize(range, network_name, restricted_ips, static_ips)
       @range = range
       @network_name = network_name
-      blacklist_ip(@range.network(:Objectify => true))
+      @restricted_ips = restricted_ips
+      @static_ips = static_ips
     end
 
     # @return [Integer] ip
     def allocate_dynamic_ip
       # find address that doesn't have subsequent address
-      address_without_following = Bosh::Director::Models::IpAddress.select(:address).
-        where(network_name: @network_name).
-        exclude(address: Bosh::Director::Models::IpAddress.select(:address - 1)).
-        order(:address).
-        limit(1).
-        first
+      if @restricted_ips.empty? && @static_ips.empty?
+        addr = address_before_candidate
+      else
+        addr = address_before_candidate_excluding(
+          (@restricted_ips + @static_ips).to_a
+        )
+      end
 
-      if address_without_following
-        ip_address = NetAddr::CIDRv4.new(address_without_following.address + 1)
+      if addr
+        ip_address = NetAddr::CIDRv4.new(addr.address + 1)
         return nil unless @range.contains?(ip_address)
       else
         ip_address = @range.first(Objectify: true)
       end
 
-      return nil unless reserve_with_type(ip_address, 'dynamic')
+      return nil unless reserve(ip_address)
 
       ip_address.to_i
     end
 
     # @param [NetAddr::CIDR] ip
     def reserve_ip(ip)
-      if reserve_static(ip)
-        :static
-      else
-        reserve_with_type(ip, 'dynamic') ? :dynamic : nil
-      end
+      return nil if @restricted_ips.include?(ip.to_i)
+
+      return nil unless reserve(ip)
+
+      @static_ips.include?(ip.to_i) ? :static : :dynamic
     end
 
     # @param [NetAddr::CIDR] ip
     def release_ip(ip)
-      ip_address = Bosh::Director::Models::IpAddress.exclude(type: 'reserved').first(
+      ip_address = Bosh::Director::Models::IpAddress.first(
         address: ip.to_i,
         network_name: @network_name,
       )
@@ -61,54 +63,47 @@ module Bosh::Director::DeploymentPlan
       ip_address.destroy
     end
 
-    # @param [NetAddr::CIDR] ip
-    def blacklist_ip(ip)
-      unless @range.contains?(NetAddr::CIDRv4.new(ip.to_i))
-        raise Bosh::Director::NetworkReservedIpOutOfRange,
-          "Reserved IP `#{format_ip(ip)}' is out of " +
-            "network `#{@network_name}' range"
-      end
-      reserve_with_type(ip, 'reserved')
-    end
-
-    # @param [NetAddr::CIDR] ip
-    def add_static_ip(ip)
-      unless @range.contains?(NetAddr::CIDRv4.new(ip.to_i))
-        raise Bosh::Director::NetworkStaticIpOutOfRange,
-          "Static IP `#{format_ip(ip)}' is out of " +
-            "network `#{@network_name}' range"
-      end
-      reserve_with_type(ip, 'static', false)
-    end
-
     private
 
     # @param [NetAddr::CIDR] ip
-    # @param [String] type ['static', 'dynamic' or 'reserved']
-    # @param [Boolean] allocated true if ip is allocated
-    def reserve_with_type(ip, type, allocated = true)
+    def reserve(ip)
       Bosh::Director::Models::IpAddress.new(
         address: ip.to_i,
         network_name: @network_name,
-        type: type,
-        allocated: allocated,
       ).save
     rescue Sequel::DatabaseError
       nil
     end
 
-    # @param [NetAddr::CIDR] ip
-    def reserve_static(ip)
-      ip_address = Bosh::Director::Models::IpAddress.first(
-        address: ip.to_i,
-        network_name: @network_name,
-        type: 'static',
-        allocated: false,
-      )
-      return nil unless ip_address
+    def address_before_candidate
+      Bosh::Director::Models::IpAddress.select(:address)
+        .where(network_name: @network_name)
+        .exclude(address:
+            Bosh::Director::Models::IpAddress.select(:address - 1)
+        ).order(:address).limit(1).first
+    end
 
-      ip_address.allocated = true
-      ip_address.save
+    def address_before_candidate_excluding(restricted_ips)
+      decremented_reserved_ips = restricted_ips.map { |i| i - 1}
+
+      Bosh::Director::Models::IpAddress.select(:address).where(
+          network_name: @network_name
+        ).union(
+          dataset_from(restricted_ips)
+        ).exclude(address:
+            Bosh::Director::Models::IpAddress.select(
+              :address - 1
+            ).union(
+              dataset_from(decremented_reserved_ips)
+            )
+        ).order(:address).limit(1).first
+    end
+
+    def dataset_from(values)
+      return nil if values.empty?
+      # unfortunately there is no sequel method to use values clause inline
+      list = values.join('), (')
+      Bosh::Director::Config.db.fetch("select * from (values (#{list}))")
     end
   end
 end

@@ -5,9 +5,13 @@ module Bosh::Director::DeploymentPlan
     subject(:ip_provider) do
       DatabaseIpProvider.new(
         range,
-        'fake-network'
+        'fake-network',
+        restricted_ips,
+        static_ips
       )
     end
+    let(:restricted_ips) { Set.new }
+    let(:static_ips) { Set.new }
 
     let(:range) { NetAddr::CIDR.create('192.168.0.1/24') }
 
@@ -16,7 +20,7 @@ module Bosh::Director::DeploymentPlan
         it 'returns the first in the range' do
           ip_address = ip_provider.allocate_dynamic_ip
 
-          expected_ip_address = NetAddr::CIDR.create('192.168.0.1').to_i
+          expected_ip_address = NetAddr::CIDR.create('192.168.0.0').to_i
           expect(ip_address).to eq(expected_ip_address)
         end
       end
@@ -25,19 +29,69 @@ module Bosh::Director::DeploymentPlan
         it 'should the next available address' do
           first = ip_provider.allocate_dynamic_ip
           second = ip_provider.allocate_dynamic_ip
-          expect(first).to eq(NetAddr::CIDR.create('192.168.0.1').to_i)
-          expect(second).to eq(NetAddr::CIDR.create('192.168.0.2').to_i)
+          expect(first).to eq(NetAddr::CIDR.create('192.168.0.0').to_i)
+          expect(second).to eq(NetAddr::CIDR.create('192.168.0.1').to_i)
+        end
+      end
+
+      context 'when there are restricted ips' do
+        let(:restricted_ips) do
+          Set.new [
+              NetAddr::CIDR.create('192.168.0.0').to_i,
+              NetAddr::CIDR.create('192.168.0.1').to_i,
+              NetAddr::CIDR.create('192.168.0.3').to_i
+            ]
+        end
+
+        it 'does not reserve them' do
+          expect(ip_provider.allocate_dynamic_ip).to eq(NetAddr::CIDR.create('192.168.0.2').to_i)
+          expect(ip_provider.allocate_dynamic_ip).to eq(NetAddr::CIDR.create('192.168.0.4').to_i)
+        end
+      end
+
+      context 'when there are static and restricted ips' do
+        let(:restricted_ips) do
+          Set.new [
+              NetAddr::CIDR.create('192.168.0.0').to_i,
+              NetAddr::CIDR.create('192.168.0.3').to_i
+            ]
+        end
+
+        let(:static_ips) do
+          Set.new [
+              NetAddr::CIDR.create('192.168.0.1').to_i,
+            ]
+        end
+
+        it 'does not reserve them' do
+          expect(ip_provider.allocate_dynamic_ip).to eq(NetAddr::CIDR.create('192.168.0.2').to_i)
+          expect(ip_provider.allocate_dynamic_ip).to eq(NetAddr::CIDR.create('192.168.0.4').to_i)
         end
       end
 
       context 'when there are available IPs between reserved IPs' do
         before do
+          ip_provider.reserve_ip(NetAddr::CIDR.create('192.168.0.0'))
           ip_provider.reserve_ip(NetAddr::CIDR.create('192.168.0.1'))
-          ip_provider.reserve_ip(NetAddr::CIDR.create('192.168.0.2'))
-          ip_provider.reserve_ip(NetAddr::CIDR.create('192.168.0.4'))
+          ip_provider.reserve_ip(NetAddr::CIDR.create('192.168.0.3'))
         end
 
         it 'returns first non-reserved IP' do
+          ip_address = ip_provider.allocate_dynamic_ip
+
+          expected_ip_address = NetAddr::CIDR.create('192.168.0.2').to_i
+          expect(ip_address).to eq(expected_ip_address)
+        end
+      end
+
+      context 'when all IPs are reserved without holes' do
+        before do
+          ip_provider.reserve_ip(NetAddr::CIDR.create('192.168.0.0'))
+          ip_provider.reserve_ip(NetAddr::CIDR.create('192.168.0.1'))
+          ip_provider.reserve_ip(NetAddr::CIDR.create('192.168.0.2'))
+        end
+
+        it 'returns IP next after reserved' do
           ip_address = ip_provider.allocate_dynamic_ip
 
           expected_ip_address = NetAddr::CIDR.create('192.168.0.3').to_i
@@ -45,23 +99,8 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'when all IPs are reserved without holes' do
-        before do
-          ip_provider.reserve_ip(NetAddr::CIDR.create('192.168.0.1'))
-          ip_provider.reserve_ip(NetAddr::CIDR.create('192.168.0.2'))
-          ip_provider.reserve_ip(NetAddr::CIDR.create('192.168.0.3'))
-        end
-
-        it 'returns IP next after reserved' do
-          ip_address = ip_provider.allocate_dynamic_ip
-
-          expected_ip_address = NetAddr::CIDR.create('192.168.0.4').to_i
-          expect(ip_address).to eq(expected_ip_address)
-        end
-      end
-
       context 'when all IPs in the range are taken' do
-        let(:range) { NetAddr::CIDR.create('192.168.0.0/31') }
+        let(:range) { NetAddr::CIDR.create('192.168.0.0/32') }
 
         it 'returns nil' do
           expect(ip_provider.allocate_dynamic_ip).not_to be_nil
@@ -85,8 +124,32 @@ module Bosh::Director::DeploymentPlan
 
       context 'when attempting to reserve a reserved ip' do
         it 'returns nil' do
-          expect(ip_provider.reserve_ip(ip_address)).not_to be_nil
+          expect(ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
           expect(ip_provider.reserve_ip(ip_address)).to be_nil
+        end
+      end
+
+      context 'when reserving ip from restricted_ips list' do
+        let(:restricted_ips) do
+          Set.new [
+              NetAddr::CIDR.create('192.168.0.2').to_i,
+            ]
+        end
+
+        it 'returns nil' do
+          expect(ip_provider.reserve_ip(ip_address)).to be_nil
+        end
+      end
+
+      context 'when reserving static ip' do
+        let(:static_ips) do
+          Set.new [
+              NetAddr::CIDR.create('192.168.0.2').to_i,
+            ]
+        end
+
+        it 'returns static type' do
+          expect(ip_provider.reserve_ip(ip_address)).to eq(:static)
         end
       end
     end
@@ -113,47 +176,6 @@ module Bosh::Director::DeploymentPlan
           }.to raise_error Bosh::Director::NetworkReservationIpNotOwned,
               "Can't release IP `192.168.0.3' back to `fake-network' network: it's neither in dynamic nor in static pool"
         end
-      end
-    end
-
-    describe 'blacklist_ip' do
-      let(:ip_address) { NetAddr::CIDR.create('192.168.0.3') }
-
-      it 'does not allow reserving that IP' do
-        ip_provider.blacklist_ip(ip_address)
-
-        expect(ip_provider.reserve_ip(ip_address)).to be_nil
-      end
-
-      it 'does not allow releasing that IP' do
-        ip_provider.blacklist_ip(ip_address)
-
-        expect {
-          ip_provider.release_ip(ip_address)
-        }.to raise_error Bosh::Director::NetworkReservationIpNotOwned
-      end
-
-      context 'when ip is outside of range' do
-        it 'raises an error' do
-          ip_address = NetAddr::CIDR.create('193.168.0.3')
-          expect {
-            ip_provider.blacklist_ip(ip_address)
-          }.to raise_error Bosh::Director::NetworkReservedIpOutOfRange,
-              "Reserved IP `193.168.0.3' is out of network `fake-network' range"
-        end
-      end
-    end
-
-    describe 'add_static_ip' do
-      let(:static_address) { NetAddr::CIDR.create('192.168.0.2') }
-
-      before do
-        ip_provider.add_static_ip(static_address)
-      end
-
-      it 'should not allocate it as a dynamic ip' do
-        expect(ip_provider.allocate_dynamic_ip).to eq(NetAddr::CIDR.create('192.168.0.1').to_i)
-        expect(ip_provider.allocate_dynamic_ip).to eq(NetAddr::CIDR.create('192.168.0.3').to_i)
       end
     end
   end

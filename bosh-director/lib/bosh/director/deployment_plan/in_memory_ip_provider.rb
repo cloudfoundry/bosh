@@ -3,7 +3,7 @@ module Bosh::Director
     class InMemoryIpProvider
       include IpUtil
 
-      def initialize(range, network_name)
+      def initialize(range, network_name, reserved_ips, static_ips)
         @range = range
         @network_name = network_name
         @available_dynamic_ips = Set.new
@@ -15,26 +15,20 @@ module Bosh::Director
         (first_ip.to_i .. last_ip.to_i).each do |ip|
           @available_dynamic_ips << ip
         end
+
+        reserved_ips.each do |ip|
+          @available_dynamic_ips.delete(ip)
+        end
+
+        static_ips.each do |ip|
+          @available_dynamic_ips.delete(ip)
+          @available_static_ips.add(ip)
+        end
+
+        # Keeping track of initial pools to understand
+        # where to release no longer needed IPs
         @dynamic_ip_pool = @available_dynamic_ips.dup
-        blacklist_ip(@range.network(:Objectify => true))
-      end
-
-      def blacklist_ip(ip)
-        unless @available_dynamic_ips.delete?(ip.to_i) && @dynamic_ip_pool.delete?(ip.to_i)
-          raise NetworkReservedIpOutOfRange,
-            "Reserved IP `#{format_ip(ip)}' is out of " +
-              "network `#{@network_name}' range"
-        end
-      end
-
-      def add_static_ip(ip)
-        unless @available_dynamic_ips.delete?(ip.to_i) && @dynamic_ip_pool.delete?(ip.to_i)
-          raise NetworkStaticIpOutOfRange,
-            "Static IP `#{format_ip(ip)}' is out of " +
-              "network `#{@network_name}' range"
-        end
-        @static_ip_pool.add(ip.to_i)
-        @available_static_ips.add(ip.to_i)
+        @static_ip_pool = @available_static_ips.dup
       end
 
       def allocate_dynamic_ip

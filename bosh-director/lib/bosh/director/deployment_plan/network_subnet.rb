@@ -62,20 +62,34 @@ module Bosh::Director
 
         @cloud_properties = safe_property(subnet_spec, "cloud_properties", class: Hash, default: {})
 
-        reserved_ips = safe_property(subnet_spec, "reserved", :optional => true)
-        static_ips = safe_property(subnet_spec, "static", :optional => true)
+        reserved_property = safe_property(subnet_spec, "reserved", :optional => true)
+        static_property = safe_property(subnet_spec, "static", :optional => true)
 
-        @ip_provider = ip_provider_klazz.new(@range, @network.name)
-        @ip_provider.blacklist_ip(@gateway) if @gateway
-        @ip_provider.blacklist_ip(broadcast)
+        restricted_ips = Set.new
+        restricted_ips.add(@gateway.to_i) if @gateway
+        restricted_ips.add(network_id.to_i)
+        restricted_ips.add(broadcast.to_i)
 
-        each_ip(reserved_ips) do |ip|
-          @ip_provider.blacklist_ip(ip)
+        each_ip(reserved_property) do |ip|
+          unless @range.contains?(ip)
+            raise NetworkReservedIpOutOfRange,
+              "Reserved IP `#{format_ip(ip)}' is out of " +
+                "network `#{@network.name}' range"
+          end
+          restricted_ips.add(ip)
         end
 
-        each_ip(static_ips) do |ip|
-          @ip_provider.add_static_ip(ip)
+        static_ips = Set.new
+        each_ip(static_property) do |ip|
+          unless @range.contains?(ip)
+            raise NetworkStaticIpOutOfRange,
+              "Static IP `#{format_ip(ip)}' is out of " +
+                "network `#{@network.name}' range"
+          end
+          static_ips.add(ip)
         end
+
+        @ip_provider = ip_provider_klazz.new(@range, @network.name, restricted_ips, static_ips)
       end
 
       def overlaps?(subnet)

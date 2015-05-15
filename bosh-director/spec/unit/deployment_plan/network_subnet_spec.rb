@@ -264,35 +264,6 @@ require 'spec_helper'
         expect(ip).to eq(NetAddr::CIDR.create("192.168.0.1").to_i)
       end
 
-      # If a pool has many IP addresses, use every IP in the pool rather than
-      # rapidly acquiring and releasing the same IP over and over again.
-      #
-      # dk tells us that we do not need to support this anymore...
-      # A story will be added to the backlog to investigate if this really is a problem
-      xit "should allocate the least recently released IP from the dynamic pool" do
-        subnet = subnet_spec(
-          "range" => "192.168.0.0/29",
-          "gateway" => "192.168.0.6",
-          "cloud_properties" => {"foo" => "bar"},
-        )
-
-        allocations = []
-        while ip = subnet.allocate_dynamic_ip
-          allocations << ip
-        end
-
-        # Release allocated IPs in random order
-        allocations.shuffle!
-        allocations.each do |ip|
-          subnet.release_ip(ip)
-        end
-
-        # Verify that re-acquiring the released IPs retains order
-        allocations.each do |ip|
-          expect(subnet.allocate_dynamic_ip).to eq(ip)
-        end
-      end
-
       it "should not allocate from the reserved pool" do
         subnet = subnet_spec(
           "range" => "192.168.0.0/29",
@@ -335,6 +306,36 @@ require 'spec_helper'
         )
         5.times { expect(subnet.allocate_dynamic_ip).not_to eq(nil) }
         expect(subnet.allocate_dynamic_ip).to eq(nil)
+      end
+    end
+
+    context 'when using in memory ip provider' do
+      # If a pool has many IP addresses, use every IP in the pool rather than
+      # rapidly acquiring and releasing the same IP over and over again.
+      it "should allocate the least recently released IP from the dynamic pool" do
+        skip 'Only implemented for InMemoryIpProvider' if ip_provider != BD::DeploymentPlan::InMemoryIpProvider
+
+        subnet = subnet_spec(
+          "range" => "192.168.0.0/29",
+          "gateway" => "192.168.0.6",
+          "cloud_properties" => {"foo" => "bar"},
+        )
+
+        allocations = []
+        while ip = subnet.allocate_dynamic_ip
+          allocations << ip
+        end
+
+        # Release allocated IPs in random order
+        allocations.shuffle!
+        allocations.each do |ip|
+          subnet.release_ip(ip)
+        end
+
+        # Verify that re-acquiring the released IPs retains order
+        allocations.each do |ip|
+          expect(subnet.allocate_dynamic_ip).to eq(ip)
+        end
       end
     end
   end
