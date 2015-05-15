@@ -172,6 +172,20 @@ require 'spec_helper'
             "Static IP `192.167.0.5' is out of " +
               "network `net_a' range")
       end
+
+      it "should fail when the static IP is in reserved range" do
+        expect {
+          subnet_spec(
+            "range" => "192.168.0.0/24",
+            "reserved" => "192.168.0.5 - 192.168.0.10",
+            "static" => "192.168.0.5",
+            "gateway" => "192.168.0.254",
+            "cloud_properties" => {"foo" => "bar"}
+          )
+        }.to raise_error(Bosh::Director::NetworkStaticIpOutOfRange,
+            "Static IP `192.168.0.5' is out of " +
+              "network `net_a' range")
+      end
     end
 
     describe :overlaps? do

@@ -81,7 +81,7 @@ module Bosh::Director
 
         static_ips = Set.new
         each_ip(static_property) do |ip|
-          unless @range.contains?(ip)
+          unless @range.contains?(ip) && !restricted_ips.include?(ip)
             raise NetworkStaticIpOutOfRange,
               "Static IP `#{format_ip(ip)}' is out of " +
                 "network `#{@network.name}' range"
