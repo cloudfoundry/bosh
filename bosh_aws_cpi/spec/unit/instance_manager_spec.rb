@@ -167,6 +167,18 @@ describe Bosh::AwsCloud::InstanceManager do
       create_instance
     end
 
+    it 'retries creating the VM when the request limit is exceeded' do
+      allow(region).to receive(:subnets).and_return('sub-123456' => fake_aws_subnet)
+
+      expect(aws_instances).to receive(:create).with(aws_instance_params).and_raise(AWS::EC2::Errors::RequestLimitExceeded)
+      expect(aws_instances).to receive(:create).with(aws_instance_params).and_return(aws_instance)
+      allow(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: aws_instance, state: :running)
+
+      allow(instance_manager).to receive(:instance_create_wait_time).and_return(0)
+
+      create_instance
+    end
+
     context 'when waiting it to become running fails' do
       before { expect(instance).to receive(:wait_for_running).and_raise(create_err) }
       let(:create_err) { StandardError.new('fake-err') }

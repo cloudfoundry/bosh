@@ -92,7 +92,10 @@ module Bosh::AwsCloud
     def remove_from_load_balancers
       @elb.load_balancers.each do |load_balancer|
         begin
-          load_balancer.instances.deregister(@aws_instance)
+          Bosh::Common.retryable(on: [AWS::ELB::Errors::Throttling], tries: 20) do
+            load_balancer.instances.deregister(@aws_instance)
+            true
+          end
         rescue AWS::ELB::Errors::InvalidInstance
           # ignore this, as it just means it wasn't registered
         end
