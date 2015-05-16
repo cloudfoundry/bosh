@@ -111,10 +111,24 @@ module Bosh::Director::DeploymentPlan
           expect(ip_provider.allocate_dynamic_ip).to be_nil
         end
       end
+
+      context 'when restricted IPs has improper format' do
+        let(:restricted_ips) do
+          Set.new [
+              '; bad idea;',
+            ]
+        end
+
+        it 'properly escapes them' do
+          expect {
+            expect(ip_provider.allocate_dynamic_ip).to eq(nil)
+          }.to_not raise_error
+        end
+      end
     end
 
     describe 'reserve_ip' do
-      let(:ip_address) { NetAddr::CIDR.create('192.168.0.2') }
+      let(:ip_address) { cidr_ip('192.168.0.2') }
 
       it 'creates IP in database' do
         ip_provider

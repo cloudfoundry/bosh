@@ -26,7 +26,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       if addr
-        ip_address = NetAddr::CIDRv4.new(addr.address + 1)
+        ip_address = NetAddr::CIDRv4.new(addr.address.to_i + 1)
         return nil unless @range.contains?(ip_address)
       else
         ip_address = @range.first(Objectify: true)
@@ -84,7 +84,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def address_before_candidate_excluding(restricted_ips)
-      decremented_reserved_ips = restricted_ips.map { |i| i - 1}
+      decremented_reserved_ips = restricted_ips.map { |i| i.to_i - 1}
 
       Bosh::Director::Models::IpAddress.select(:address).where(
           network_name: @network_name
@@ -102,8 +102,9 @@ module Bosh::Director::DeploymentPlan
     def dataset_from(values)
       return nil if values.empty?
       # unfortunately there is no sequel method to use values clause inline
-      list = values.join('), (')
-      Bosh::Director::Config.db.fetch("select * from (values (#{list}))")
+      db = Bosh::Director::Config.db
+      list = values.map{ |v| db.literal(v.to_i) }.join('), (')
+      db.fetch("select * from (values (#{list}))")
     end
   end
 end
