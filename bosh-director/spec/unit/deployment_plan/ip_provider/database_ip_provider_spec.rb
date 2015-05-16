@@ -15,12 +15,16 @@ module Bosh::Director::DeploymentPlan
 
     let(:range) { NetAddr::CIDR.create('192.168.0.1/24') }
 
+    def cidr_ip(ip)
+      NetAddr::CIDR.create(ip).to_i
+    end
+
     describe 'allocate_dynamic_ip' do
       context 'when there are no IPs for that network' do
         it 'returns the first in the range' do
           ip_address = ip_provider.allocate_dynamic_ip
 
-          expected_ip_address = NetAddr::CIDR.create('192.168.0.0').to_i
+          expected_ip_address = cidr_ip('192.168.0.0')
           expect(ip_address).to eq(expected_ip_address)
         end
       end
@@ -29,43 +33,43 @@ module Bosh::Director::DeploymentPlan
         it 'should the next available address' do
           first = ip_provider.allocate_dynamic_ip
           second = ip_provider.allocate_dynamic_ip
-          expect(first).to eq(NetAddr::CIDR.create('192.168.0.0').to_i)
-          expect(second).to eq(NetAddr::CIDR.create('192.168.0.1').to_i)
+          expect(first).to eq(cidr_ip('192.168.0.0'))
+          expect(second).to eq(cidr_ip('192.168.0.1'))
         end
       end
 
       context 'when there are restricted ips' do
         let(:restricted_ips) do
           Set.new [
-              NetAddr::CIDR.create('192.168.0.0').to_i,
-              NetAddr::CIDR.create('192.168.0.1').to_i,
-              NetAddr::CIDR.create('192.168.0.3').to_i
+              cidr_ip('192.168.0.0'),
+              cidr_ip('192.168.0.1'),
+              cidr_ip('192.168.0.3')
             ]
         end
 
         it 'does not reserve them' do
-          expect(ip_provider.allocate_dynamic_ip).to eq(NetAddr::CIDR.create('192.168.0.2').to_i)
-          expect(ip_provider.allocate_dynamic_ip).to eq(NetAddr::CIDR.create('192.168.0.4').to_i)
+          expect(ip_provider.allocate_dynamic_ip).to eq(cidr_ip('192.168.0.2'))
+          expect(ip_provider.allocate_dynamic_ip).to eq(cidr_ip('192.168.0.4'))
         end
       end
 
       context 'when there are static and restricted ips' do
         let(:restricted_ips) do
           Set.new [
-              NetAddr::CIDR.create('192.168.0.0').to_i,
-              NetAddr::CIDR.create('192.168.0.3').to_i
+              cidr_ip('192.168.0.0'),
+              cidr_ip('192.168.0.3')
             ]
         end
 
         let(:static_ips) do
           Set.new [
-              NetAddr::CIDR.create('192.168.0.1').to_i,
+              cidr_ip('192.168.0.1'),
             ]
         end
 
         it 'does not reserve them' do
-          expect(ip_provider.allocate_dynamic_ip).to eq(NetAddr::CIDR.create('192.168.0.2').to_i)
-          expect(ip_provider.allocate_dynamic_ip).to eq(NetAddr::CIDR.create('192.168.0.4').to_i)
+          expect(ip_provider.allocate_dynamic_ip).to eq(cidr_ip('192.168.0.2'))
+          expect(ip_provider.allocate_dynamic_ip).to eq(cidr_ip('192.168.0.4'))
         end
       end
 
@@ -79,7 +83,7 @@ module Bosh::Director::DeploymentPlan
         it 'returns first non-reserved IP' do
           ip_address = ip_provider.allocate_dynamic_ip
 
-          expected_ip_address = NetAddr::CIDR.create('192.168.0.2').to_i
+          expected_ip_address = cidr_ip('192.168.0.2')
           expect(ip_address).to eq(expected_ip_address)
         end
       end
@@ -94,7 +98,7 @@ module Bosh::Director::DeploymentPlan
         it 'returns IP next after reserved' do
           ip_address = ip_provider.allocate_dynamic_ip
 
-          expected_ip_address = NetAddr::CIDR.create('192.168.0.3').to_i
+          expected_ip_address = cidr_ip('192.168.0.3')
           expect(ip_address).to eq(expected_ip_address)
         end
       end
@@ -122,6 +126,24 @@ module Bosh::Director::DeploymentPlan
         expect(saved_address.network_name).to eq('fake-network')
       end
 
+      context 'when reserving dynamic IP' do
+        it 'returns dynamic type' do
+          expect(ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
+        end
+      end
+
+      context 'when reserving static ip' do
+        let(:static_ips) do
+          Set.new [
+              cidr_ip('192.168.0.2'),
+            ]
+        end
+
+        it 'returns static type' do
+          expect(ip_provider.reserve_ip(ip_address)).to eq(:static)
+        end
+      end
+
       context 'when attempting to reserve a reserved ip' do
         it 'returns nil' do
           expect(ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
@@ -132,7 +154,7 @@ module Bosh::Director::DeploymentPlan
       context 'when reserving ip from restricted_ips list' do
         let(:restricted_ips) do
           Set.new [
-              NetAddr::CIDR.create('192.168.0.2').to_i,
+              cidr_ip('192.168.0.2'),
             ]
         end
 
@@ -140,36 +162,27 @@ module Bosh::Director::DeploymentPlan
           expect(ip_provider.reserve_ip(ip_address)).to be_nil
         end
       end
-
-      context 'when reserving static ip' do
-        let(:static_ips) do
-          Set.new [
-              NetAddr::CIDR.create('192.168.0.2').to_i,
-            ]
-        end
-
-        it 'returns static type' do
-          expect(ip_provider.reserve_ip(ip_address)).to eq(:static)
-        end
-      end
     end
 
     describe 'release_ip' do
       let(:ip_address) { NetAddr::CIDR.create('192.168.0.3') }
 
-      context 'when IP exists in DB' do
-        before do
-          ip_provider.reserve_ip(ip_address)
-        end
-
-        it 'deletes the IP' do
-          expect {
-            ip_provider.release_ip(ip_address)
-          }.to change(Bosh::Director::Models::IpAddress, :count).by(-1)
+      context 'when IP was reserved' do
+        it 'releases the IP' do
+          expect(ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
+          expect(ip_provider.reserve_ip(ip_address)).to eq(nil)
+          ip_provider.release_ip(ip_address)
+          expect(ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
         end
       end
 
-      context 'when IP does not exist in DB' do
+      context 'when IP is restricted' do
+        let(:restricted_ips) do
+          Set.new [
+              cidr_ip('192.168.0.3'),
+            ]
+        end
+
         it 'raises an error' do
           expect {
             ip_provider.release_ip(ip_address)
