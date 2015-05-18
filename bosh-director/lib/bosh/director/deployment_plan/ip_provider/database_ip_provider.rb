@@ -2,11 +2,13 @@ module Bosh::Director::DeploymentPlan
   class DatabaseIpProvider
     include Bosh::Director::IpUtil
     class OutsideRangeError < StandardError; end
-    class ReservationError < StandardError; end
+    class IPAlreadyReserved < StandardError; end
+    class IPOwnedByOtherDeployment < StandardError; end
 
     # @param [NetAddr::CIDR] range
     # @param [String] network_name
-    def initialize(range, network_name, restricted_ips, static_ips)
+    def initialize(deployment_model, range, network_name, restricted_ips, static_ips)
+      @deployment_model = deployment_model
       @range = range
       @network_name = network_name
       @restricted_ips = restricted_ips
@@ -19,7 +21,9 @@ module Bosh::Director::DeploymentPlan
         ip_address = try_to_allocate_dynamic_ip
       rescue OutsideRangeError
         return nil
-      rescue ReservationError
+      rescue IPAlreadyReserved
+        # IP can be taken by other deployment that runs in parallel
+        # retry until succeeds or out of range
         retry
       end
 
@@ -30,7 +34,13 @@ module Bosh::Director::DeploymentPlan
     def reserve_ip(ip)
       return nil if @restricted_ips.include?(ip.to_i)
 
-      reserve(ip)
+      begin
+        reserve_with_deployment_validation(ip)
+      rescue IPOwnedByOtherDeployment
+        return nil
+      rescue IPAlreadyReserved
+        # bind_existing_deployment reserves IP again on the same deployment
+      end
 
       @static_ips.include?(ip.to_i) ? :static : :dynamic
     end
@@ -55,13 +65,13 @@ module Bosh::Director::DeploymentPlan
     private
 
     def try_to_allocate_dynamic_ip
-      # find address that doesn't have subsequent address
       addrs = Set.new(network_addresses)
       addrs << @range.first(Objectify: true).to_i - 1 if addrs.empty?
 
       addrs.merge(@restricted_ips.to_a) unless @restricted_ips.empty?
       addrs.merge(@static_ips.to_a) unless @static_ips.empty?
 
+      # find address that doesn't have subsequent address
       addr = addrs.to_a.sort.find { |a| !addrs.include?(a+1) }
       ip_address = NetAddr::CIDRv4.new(addr+1)
 
@@ -69,26 +79,43 @@ module Bosh::Director::DeploymentPlan
         raise OutsideRangeError
       end
 
-      unless reserve(ip_address)
-        raise ReservationError
-      end
+      save_ip(ip_address)
 
       ip_address
-    end
-
-    # @param [NetAddr::CIDR] ip
-    def reserve(ip)
-      Bosh::Director::Models::IpAddress.new(
-        address: ip.to_i,
-        network_name: @network_name,
-      ).save
-    rescue Sequel::DatabaseError
-      nil
     end
 
     def network_addresses
       Bosh::Director::Models::IpAddress.select(:address)
         .where(network_name: @network_name).all.map { |a| a.address }
+    end
+
+    # @param [NetAddr::CIDR] ip
+    def reserve_with_deployment_validation(ip)
+      ip_address = Bosh::Director::Models::IpAddress.first(
+        address: ip.to_i,
+        network_name: @network_name,
+      )
+
+      if ip_address
+        if ip_address.deployment == @deployment_model
+          return ip_address
+        else
+          raise IPOwnedByOtherDeployment
+        end
+      end
+
+      save_ip(ip)
+    end
+
+    # @param [NetAddr::CIDR] ip
+    def save_ip(ip)
+      Bosh::Director::Models::IpAddress.new(
+        address: ip.to_i,
+        network_name: @network_name,
+        deployment: @deployment_model,
+      ).save
+    rescue Sequel::DatabaseError
+      raise IPAlreadyReserved
     end
   end
 end

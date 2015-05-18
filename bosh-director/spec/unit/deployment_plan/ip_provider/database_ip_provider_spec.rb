@@ -4,15 +4,16 @@ module Bosh::Director::DeploymentPlan
   describe DatabaseIpProvider do
     subject(:ip_provider) do
       DatabaseIpProvider.new(
+        deployment_model,
         range,
         'fake-network',
         restricted_ips,
         static_ips
       )
     end
+    let(:deployment_model) { Bosh::Director::Models::Deployment.make }
     let(:restricted_ips) { Set.new }
     let(:static_ips) { Set.new }
-
     let(:range) { NetAddr::CIDR.create('192.168.0.1/24') }
 
     def cidr_ip(ip)
@@ -120,7 +121,8 @@ module Bosh::Director::DeploymentPlan
           ips.each do |ip|
             ip_address = Bosh::Director::Models::IpAddress.new(
               address: ip,
-              network_name: 'fake-network'
+              network_name: 'fake-network',
+              deployment: deployment_model,
             )
             original_save = ip_address.method(:save)
             original_saves[ip] = original_save
@@ -199,9 +201,29 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when attempting to reserve a reserved ip' do
-        it 'returns ip type' do
-          expect(ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
-          expect(ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
+        context 'when IP is reserved by the same deployment' do
+          it 'returns ip type' do
+            expect(ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
+            expect(ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
+          end
+        end
+
+        context 'when IP is reserved by different deployment' do
+          let(:another_deployment_ip_provider) do
+            DatabaseIpProvider.new(
+              another_deployment,
+              range,
+              'fake-network',
+              restricted_ips,
+              static_ips
+            )
+          end
+          let(:another_deployment) { Bosh::Director::Models::Deployment.make }
+
+          it 'returns nil' do
+            expect(another_deployment_ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
+            expect(ip_provider.reserve_ip(ip_address)).to be_nil
+          end
         end
       end
 

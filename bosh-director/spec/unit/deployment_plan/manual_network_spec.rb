@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::ManualNetwork do
   before(:each) do
-    @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner', using_cloud_config?: true)
+    @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner', using_cloud_config?: true, model: nil)
   end
 
   describe :initialize do

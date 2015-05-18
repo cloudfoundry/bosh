@@ -4,6 +4,7 @@ Sequel.migration do
       primary_key :id
       String      :network_name
       Bignum      :address
+      foreign_key :deployment_id, :deployments, :null => false
 
       unique [:address, :network_name]
     end

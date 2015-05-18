@@ -33,4 +33,27 @@ describe 'shared network', type: :integration do
     expect(second_deployment_vms.size).to eq(1)
     expect(second_deployment_vms.first.ips).to eq('192.168.1.3')
   end
+
+  it 'deployments on the same network can not use the same IP' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'].first['instances'] = 1
+    manifest_hash['jobs'].first['networks'].first['static_ips'] = ['192.168.1.10']
+
+    deploy_simple_manifest(manifest_hash: manifest_hash)
+    first_deployment_vms = director.vms
+    expect(first_deployment_vms.size).to eq(1)
+    expect(first_deployment_vms.first.ips).to eq('192.168.1.10')
+
+    second_manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    second_manifest_hash['name'] = 'second_deployment'
+    second_manifest_hash['jobs'].first['instances'] = 1
+    second_manifest_hash['jobs'].first['networks'].first['static_ips'] = ['192.168.1.10']
+
+    _, exit_code = deploy_simple_manifest(
+      manifest_hash: second_manifest_hash,
+      failure_expected: true,
+      return_exit_code: true
+    )
+    expect(exit_code).to_not eq(0)
+  end
 end

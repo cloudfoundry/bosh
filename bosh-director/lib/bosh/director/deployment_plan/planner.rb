@@ -7,7 +7,21 @@ module Bosh::Director
   # Encapsulates essential director data structures retrieved
   # from the deployment manifest and the running environment.
   module DeploymentPlan
-    class Planner
+    class BasePlanner
+      def initialize(cloud_config)
+        @cloud_config = cloud_config
+      end
+
+      def model
+        nil
+      end
+
+      def using_cloud_config?
+        !@cloud_config.nil?
+      end
+    end
+
+    class Planner < BasePlanner
       include LockHelper
       include DnsHelper
       include ValidationHelper
@@ -46,6 +60,8 @@ module Bosh::Director
       attr_reader :recreate
 
       def initialize(attrs, manifest_text, cloud_config, deployment_model, options = {})
+        super(cloud_config)
+
         @name = attrs.fetch(:name)
         @properties = attrs.fetch(:properties)
         @releases = {}
@@ -76,10 +92,6 @@ module Bosh::Director
 
       def canonical_name
         canonical(@name)
-      end
-
-      def using_cloud_config?
-        !@cloud_config.nil?
       end
 
       # Returns a list of VMs in the deployment (according to DB)
@@ -184,12 +196,14 @@ module Bosh::Director
       end
     end
 
-    class CloudPlanner
+    class CloudPlanner < BasePlanner
       # @return [Bosh::Director::DeploymentPlan::CompilationConfig]
       #   Resource pool and other configuration for compilation workers
       attr_accessor :compilation
 
       def initialize(cloud_config)
+        super(cloud_config)
+
         @cloud_config = cloud_config
         @networks_canonical_name_index = Set.new
 
@@ -263,10 +277,6 @@ module Bosh::Director
 
       def disk_pool(name)
         @disk_pools[name]
-      end
-
-      def using_cloud_config?
-        !@cloud_config.nil?
       end
     end
   end

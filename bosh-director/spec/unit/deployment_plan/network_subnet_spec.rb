@@ -3,7 +3,8 @@ require 'spec_helper'
 describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
   before { @network = instance_double('Bosh::Director::DeploymentPlan::Network', :name => 'net_a') }
   let(:ip_provider_factory) do
-    BD::DeploymentPlan::IpProviderFactory.new(cloud_config: true)
+    deployment_model = Bosh::Director::Models::Deployment.make
+    BD::DeploymentPlan::IpProviderFactory.new(deployment_model, cloud_config: true)
   end
 
   def subnet_spec(properties)
