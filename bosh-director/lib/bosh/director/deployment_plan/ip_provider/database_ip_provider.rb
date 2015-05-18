@@ -1,6 +1,3 @@
-require 'bosh/director/deployment_plan/job_spec_parser'
-require 'bosh/template/property_helper'
-
 module Bosh::Director::DeploymentPlan
   class DatabaseIpProvider
     include Bosh::Director::IpUtil
@@ -17,20 +14,16 @@ module Bosh::Director::DeploymentPlan
     # @return [Integer] ip
     def allocate_dynamic_ip
       # find address that doesn't have subsequent address
-      if @restricted_ips.empty? && @static_ips.empty?
-        addr = address_before_candidate
-      else
-        addr = address_before_candidate_excluding(
-          (@restricted_ips + @static_ips).to_a
-        )
-      end
+      addrs = Set.new(network_addresses)
+      addrs << @range.first(Objectify: true).to_i - 1 if addrs.empty?
 
-      if addr
-        ip_address = NetAddr::CIDRv4.new(addr.address.to_i + 1)
-        return nil unless @range.contains?(ip_address)
-      else
-        ip_address = @range.first(Objectify: true)
-      end
+      addrs.merge(@restricted_ips.to_a) unless @restricted_ips.empty?
+      addrs.merge(@static_ips.to_a) unless @static_ips.empty?
+
+      addr = addrs.to_a.sort.find { |a| !addrs.include?(a+1) }
+      ip_address = NetAddr::CIDRv4.new(addr+1)
+
+      return nil unless @range == ip_address || @range.contains?(ip_address)
 
       return nil unless reserve(ip_address)
 
@@ -75,36 +68,9 @@ module Bosh::Director::DeploymentPlan
       nil
     end
 
-    def address_before_candidate
+    def network_addresses
       Bosh::Director::Models::IpAddress.select(:address)
-        .where(network_name: @network_name)
-        .exclude(address:
-            Bosh::Director::Models::IpAddress.select(:address - 1)
-        ).order(:address).limit(1).first
-    end
-
-    def address_before_candidate_excluding(restricted_ips)
-      decremented_reserved_ips = restricted_ips.map { |i| i.to_i - 1}
-
-      Bosh::Director::Models::IpAddress.select(:address).where(
-          network_name: @network_name
-        ).union(
-          dataset_from(restricted_ips)
-        ).exclude(address:
-            Bosh::Director::Models::IpAddress.select(
-              :address - 1
-            ).union(
-              dataset_from(decremented_reserved_ips)
-            )
-        ).order(:address).limit(1).first
-    end
-
-    def dataset_from(values)
-      return nil if values.empty?
-      # unfortunately there is no sequel method to use values clause inline
-      db = Bosh::Director::Config.db
-      list = values.map{ |v| db.literal(v.to_i) }.join('), (')
-      db.fetch("select * from (values (#{list}))")
+        .where(network_name: @network_name).all.map { |a| a.address }
     end
   end
 end
