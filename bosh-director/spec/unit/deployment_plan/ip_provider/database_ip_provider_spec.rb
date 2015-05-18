@@ -145,9 +145,9 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when attempting to reserve a reserved ip' do
-        it 'returns nil' do
+        it 'returns ip type' do
           expect(ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
-          expect(ip_provider.reserve_ip(ip_address)).to be_nil
+          expect(ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
         end
       end
 
@@ -170,9 +170,9 @@ module Bosh::Director::DeploymentPlan
       context 'when IP was reserved' do
         it 'releases the IP' do
           expect(ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
-          expect(ip_provider.reserve_ip(ip_address)).to eq(nil)
+          expect(Bosh::Director::Models::IpAddress.count).to eq(1)
           ip_provider.release_ip(ip_address)
-          expect(ip_provider.reserve_ip(ip_address)).to eq(:dynamic)
+          expect(Bosh::Director::Models::IpAddress.count).to eq(0)
         end
       end
 

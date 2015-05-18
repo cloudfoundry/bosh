@@ -34,7 +34,7 @@ module Bosh::Director::DeploymentPlan
     def reserve_ip(ip)
       return nil if @restricted_ips.include?(ip.to_i)
 
-      return nil unless reserve(ip)
+      reserve(ip)
 
       @static_ips.include?(ip.to_i) ? :static : :dynamic
     end
