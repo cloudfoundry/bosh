@@ -12,14 +12,15 @@ module Bosh::Spec
       @nats_recording = []
     end
 
-    def vms(options={})
-      vms_details(options).map do |vm_data|
+    def vms(deployment_name = '', options={})
+      vms_details(deployment_name, options).map do |vm_data|
         Vm.new(
           @waiter,
           vm_data[:job_index],
           vm_data[:state],
           vm_data[:cid],
           vm_data[:agent_id],
+          vm_data[:ips],
           File.join(@agents_base_dir, "agent-base-dir-#{vm_data[:agent_id]}"),
           @director_nats_port,
           @logger,
@@ -56,10 +57,6 @@ module Bosh::Spec
       parse_table(@runner.run('vms --vitals'))
     end
 
-    def vms_details(options = {})
-      parse_table(@runner.run('vms --details', options))
-    end
-
     def start_recording_nats
       # have to read NATS port on main thread, or the new thread hangs on startup (?!)
       nats_uri = "nats://localhost:#{@director_nats_port}"
@@ -82,6 +79,10 @@ module Bosh::Spec
     end
 
     private
+
+    def vms_details(deployment_name, options = {})
+      parse_table(@runner.run("vms #{deployment_name} --details",options))
+    end
 
     def parse_table(output)
       rows = []

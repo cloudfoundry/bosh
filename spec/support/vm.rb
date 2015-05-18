@@ -1,6 +1,6 @@
 module Bosh::Spec
   class Vm
-    attr_reader :job_name_index, :last_known_state, :cid, :agent_id
+    attr_reader :job_name_index, :last_known_state, :cid, :agent_id, :ips
 
     def initialize(
       waiter,
@@ -8,6 +8,7 @@ module Bosh::Spec
       job_state,
       cid,
       agent_id,
+      ips,
       agent_base_dir,
       nats_port,
       logger
@@ -17,6 +18,7 @@ module Bosh::Spec
       @last_known_state = job_state
       @cid = cid
       @agent_id = agent_id
+      @ips = ips
       @agent_base_dir = agent_base_dir
       @nats_port = nats_port
       @logger = logger
