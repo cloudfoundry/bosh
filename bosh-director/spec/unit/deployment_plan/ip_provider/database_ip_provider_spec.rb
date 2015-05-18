@@ -90,9 +90,9 @@ module Bosh::Director::DeploymentPlan
 
       context 'when all IPs are reserved without holes' do
         before do
-          ip_provider.reserve_ip(NetAddr::CIDR.create('192.168.0.0'))
-          ip_provider.reserve_ip(NetAddr::CIDR.create('192.168.0.1'))
-          ip_provider.reserve_ip(NetAddr::CIDR.create('192.168.0.2'))
+          ip_provider.reserve_ip(cidr_ip('192.168.0.0'))
+          ip_provider.reserve_ip(cidr_ip('192.168.0.1'))
+          ip_provider.reserve_ip(cidr_ip('192.168.0.2'))
         end
 
         it 'returns IP next after reserved' do
@@ -109,6 +109,60 @@ module Bosh::Director::DeploymentPlan
         it 'returns nil' do
           expect(ip_provider.allocate_dynamic_ip).to_not be_nil
           expect(ip_provider.allocate_dynamic_ip).to be_nil
+        end
+      end
+
+      context 'when reserving IP fails' do
+        let(:range) { NetAddr::CIDR.create('192.168.0.0/30') }
+
+        def fail_saving_ips(ips)
+          original_saves = {}
+          ips.each do |ip|
+            ip_address = Bosh::Director::Models::IpAddress.new(
+              address: ip,
+              network_name: 'fake-network'
+            )
+            original_save = ip_address.method(:save)
+            original_saves[ip] = original_save
+          end
+
+          allow_any_instance_of(Bosh::Director::Models::IpAddress).to receive(:save) do |model|
+            if ips.include?(model.address)
+              original_save = original_saves[model.address]
+              original_save.call
+              raise Sequel::DatabaseError
+            end
+            model
+          end
+        end
+
+        context 'when allocating some IPs fails' do
+          before do
+            fail_saving_ips([
+                cidr_ip('192.168.0.0'),
+                cidr_ip('192.168.0.1'),
+                cidr_ip('192.168.0.2'),
+              ])
+          end
+
+          it 'retries until it succeeds' do
+            expect(ip_provider.allocate_dynamic_ip).to eq(cidr_ip('192.168.0.3'))
+          end
+        end
+
+        context 'when allocating any IP fails' do
+          before do
+            fail_saving_ips([
+                cidr_ip('192.168.0.0'),
+                cidr_ip('192.168.0.1'),
+                cidr_ip('192.168.0.2'),
+                cidr_ip('192.168.0.3'),
+              ])
+          end
+
+          it 'retries until there are no more IPs available' do
+            expect(ip_provider.allocate_dynamic_ip).to be_nil
+          end
         end
       end
     end

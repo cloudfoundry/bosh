@@ -1,6 +1,8 @@
 module Bosh::Director::DeploymentPlan
   class DatabaseIpProvider
     include Bosh::Director::IpUtil
+    class OutsideRangeError < StandardError; end
+    class ReservationError < StandardError; end
 
     # @param [NetAddr::CIDR] range
     # @param [String] network_name
@@ -13,19 +15,13 @@ module Bosh::Director::DeploymentPlan
 
     # @return [Integer] ip
     def allocate_dynamic_ip
-      # find address that doesn't have subsequent address
-      addrs = Set.new(network_addresses)
-      addrs << @range.first(Objectify: true).to_i - 1 if addrs.empty?
-
-      addrs.merge(@restricted_ips.to_a) unless @restricted_ips.empty?
-      addrs.merge(@static_ips.to_a) unless @static_ips.empty?
-
-      addr = addrs.to_a.sort.find { |a| !addrs.include?(a+1) }
-      ip_address = NetAddr::CIDRv4.new(addr+1)
-
-      return nil unless @range == ip_address || @range.contains?(ip_address)
-
-      return nil unless reserve(ip_address)
+      begin
+        ip_address = try_to_allocate_dynamic_ip
+      rescue OutsideRangeError
+        return nil
+      rescue ReservationError
+        retry
+      end
 
       ip_address.to_i
     end
@@ -57,6 +53,28 @@ module Bosh::Director::DeploymentPlan
     end
 
     private
+
+    def try_to_allocate_dynamic_ip
+      # find address that doesn't have subsequent address
+      addrs = Set.new(network_addresses)
+      addrs << @range.first(Objectify: true).to_i - 1 if addrs.empty?
+
+      addrs.merge(@restricted_ips.to_a) unless @restricted_ips.empty?
+      addrs.merge(@static_ips.to_a) unless @static_ips.empty?
+
+      addr = addrs.to_a.sort.find { |a| !addrs.include?(a+1) }
+      ip_address = NetAddr::CIDRv4.new(addr+1)
+
+      unless @range == ip_address || @range.contains?(ip_address)
+        raise OutsideRangeError
+      end
+
+      unless reserve(ip_address)
+        raise ReservationError
+      end
+
+      ip_address
+    end
 
     # @param [NetAddr::CIDR] ip
     def reserve(ip)
