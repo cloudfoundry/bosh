@@ -38,8 +38,6 @@ module Bosh::Director::DeploymentPlan
         reserve_with_deployment_validation(ip)
       rescue IPOwnedByOtherDeployment
         return nil
-      rescue IPAlreadyReserved
-        # bind_existing_deployment reserves IP again on the same deployment
       end
 
       @static_ips.include?(ip.to_i) ? :static : :dynamic
@@ -91,6 +89,9 @@ module Bosh::Director::DeploymentPlan
 
     # @param [NetAddr::CIDR] ip
     def reserve_with_deployment_validation(ip)
+      # try to save IP first before validating it's deployment to prevent race conditions
+      save_ip(ip)
+    rescue IPAlreadyReserved
       ip_address = Bosh::Director::Models::IpAddress.first(
         address: ip.to_i,
         network_name: @network_name,
@@ -103,8 +104,6 @@ module Bosh::Director::DeploymentPlan
           raise IPOwnedByOtherDeployment
         end
       end
-
-      save_ip(ip)
     end
 
     # @param [NetAddr::CIDR] ip
