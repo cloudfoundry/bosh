@@ -5,7 +5,7 @@ set -e -x
 export BOSH_CLI_SILENCE_SLOW_LOAD_WARNING=true
 
 set +x
-source deployments-bosh/concourse/$cpi_release_name/lifecycle-exports.sh
+source bosh-concourse-ci/pipelines/$cpi_release_name/lifecycle-exports.sh
 set -x
 
 source /etc/profile.d/chruby.sh
