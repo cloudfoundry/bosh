@@ -15,8 +15,8 @@ module Bosh::Director
         return [@vm_model, @agent_client]
       end
 
-      previous_ips = @instance.current_ip_addresses
       network_settings = @instance.network_settings
+      ips_to_release = @instance.current_ip_addresses - @instance.reserved_ip_addresses
 
       strategies = [
         ConfigureNetworksStrategy.new(@agent_client, network_settings, @logger),
@@ -41,7 +41,7 @@ module Bosh::Director
         @vm_model, @agent_client = @vm_updater.update(nil)
       end
 
-      release_ips(previous_ips)
+      release_ips(ips_to_release)
 
       [@vm_model, @agent_client]
     end
@@ -50,7 +50,9 @@ module Bosh::Director
 
     # @param [NetAddr::CIDR] ips list to release
     def release_ips(ips)
-      Bosh::Director::Models::IpAddress.where(address: ips.map{ |a| a.to_i }).delete
+      Bosh::Director::Models::IpAddress.where(
+        address: ips.map{ |a| NetAddr::CIDR.create(a).to_i }
+      ).delete
     end
 
     # Newer agents support prepare_configure_networks/configure_networks messages

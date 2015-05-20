@@ -4,7 +4,13 @@ require 'logger'
 module Bosh::Director
   describe InstanceUpdater::NetworkUpdater do
     subject(:updater) { described_class.new(instance, vm_model, agent_client, vm_updater, cloud, logger) }
-    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', :recreate= => nil, current_ip_addresses: []) }
+    let(:instance) do
+      instance_double('Bosh::Director::DeploymentPlan::Instance',
+        :recreate= => nil,
+        current_ip_addresses: [],
+        reserved_ip_addresses: []
+      )
+    end
     let(:vm_model) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-vm-cid') }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:vm_updater) { instance_double('Bosh::Director::InstanceUpdater::VmUpdater', update: nil) }
@@ -61,11 +67,14 @@ module Bosh::Director
         end
 
         it 'releases current instance IPs' do
-          ip_address = Models::IpAddress.make
-          allow(instance).to receive(:current_ip_addresses).and_return([ip_address.address])
+          ip_address_1 = Models::IpAddress.make.address
+          ip_address_2 = Models::IpAddress.make.address
+          allow(instance).to receive(:current_ip_addresses).and_return([ip_address_1, ip_address_2])
+          allow(instance).to receive(:reserved_ip_addresses).and_return([ip_address_1])
           expect {
             updater.update
-          }.to change { Models::IpAddress.count }.from(1).to(0)
+          }.to change { Models::IpAddress.count }.from(2).to(1)
+          expect(Models::IpAddress.first.address).to eq(ip_address_1)
         end
 
         context 'when ConfigureNetworksStrategy strategy works' do

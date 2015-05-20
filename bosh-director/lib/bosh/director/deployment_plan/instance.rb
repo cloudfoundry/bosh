@@ -182,7 +182,11 @@ module Bosh::Director
       end
 
       def current_ip_addresses
-        @current_state['networks'].values.map { |n| NetAddr::CIDR.create(n['ip']) }
+        @current_state['networks'].values.map { |n| n['ip'] }
+      end
+
+      def reserved_ip_addresses
+        network_settings.values.map { |n| n['ip'] }
       end
 
       ##

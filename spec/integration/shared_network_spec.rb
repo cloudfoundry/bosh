@@ -8,13 +8,17 @@ describe 'shared network', type: :integration do
     create_and_upload_test_release
     upload_stemcell
 
+    upload_cloud_config(cloud_config_hash: cloud_config_hash)
+  end
+
+  let(:cloud_config_hash) do
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     # remove size from resource pools due to bug #94220432
     # where resource pools with specified size reserve extra IPs
     cloud_config_hash['resource_pools'].first.delete('size')
 
     cloud_config_hash['networks'].first['subnets'].first['static'] =  ['192.168.1.10', '192.168.1.11']
-    upload_cloud_config(cloud_config_hash: cloud_config_hash)
+    cloud_config_hash
   end
 
   let(:simple_manifest) do
@@ -107,5 +111,27 @@ describe 'shared network', type: :integration do
     second_deployment_vms = director.vms('second_deployment')
     expect(second_deployment_vms.size).to eq(1)
     expect(second_deployment_vms.first.ips).to eq('192.168.1.10')
+  end
+
+  it 'IP is still reserved when vm is recreated due to network changes other than IP address' do
+    deploy_with_ip(simple_manifest, '192.168.1.10')
+    first_deployment_vms = director.vms
+    expect(first_deployment_vms.size).to eq(1)
+    expect(first_deployment_vms.first.ips).to eq('192.168.1.10')
+
+    cloud_config_hash['networks'].first['subnets'].first['gateway'] = '192.168.1.15'
+    upload_cloud_config(cloud_config_hash: cloud_config_hash)
+    deploy_with_ip(simple_manifest, '192.168.1.10')
+
+    first_deployment_vms = director.vms
+    expect(first_deployment_vms.size).to eq(1)
+    expect(first_deployment_vms.first.ips).to eq('192.168.1.10')
+
+    _, exit_code = deploy_with_ip(
+      second_deployment_manifest,
+      '192.168.1.10',
+      { failure_expected: true, return_exit_code: true }
+    )
+    expect(exit_code).to_not eq(0)
   end
 end
