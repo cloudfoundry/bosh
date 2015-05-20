@@ -164,7 +164,11 @@ module VSphereCloud
         it 'raises DiskNotFound' do
           expect {
             disk_provider.find('disk-cid')
-          }.to raise_error Bosh::Clouds::DiskNotFound
+          }.to raise_error{ |error|
+              expect(error).to be_a(Bosh::Clouds::DiskNotFound)
+              expect(error.ok_to_retry).to eq(false)
+              expect(error.message).to  match(/Could not find disk with id 'disk-cid'/)
+            }
         end
       end
     end

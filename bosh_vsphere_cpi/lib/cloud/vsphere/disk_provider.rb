@@ -49,7 +49,7 @@ module VSphereCloud
         return disk unless disk.nil?
       end
 
-      raise Bosh::Clouds::DiskNotFound, "Could not find disk with id #{disk_cid}"
+      raise Bosh::Clouds::DiskNotFound.new(false), "Could not find disk with id '#{disk_cid}'"
     end
 
     private

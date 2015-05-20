@@ -254,7 +254,7 @@ module Bosh::AwsCloud
             volume.delete
           rescue AWS::EC2::Errors::InvalidVolume::NotFound => e
             logger.warn("Failed to delete disk '#{disk_id}' because it was not found: #{e.inspect}")
-            raise Bosh::Clouds::DiskNotFound, "Disk '#{disk_id}' not found"
+            raise Bosh::Clouds::DiskNotFound.new(false), "Disk '#{disk_id}' not found"
           end
 
           true # return true to only retry on Exceptions

@@ -159,7 +159,7 @@ module Bosh::Director
 
           context 'and the disk is already detached' do
             before do
-              allow(fake_cloud).to receive(:detach_disk).and_raise(Bosh::Clouds::DiskNotAttached.new('fake-value'))
+              allow(fake_cloud).to receive(:detach_disk).and_raise(Bosh::Clouds::DiskNotAttached.new(false), 'fake-value')
             end
 
             it 'still recreates VM (w/persistent disk)' do
