@@ -102,8 +102,12 @@ module Bosh::Director
             return
           end
 
-          ips = unneeded_reservations.map{|r| r.ip}
-          Bosh::Director::Models::IpAddress.where(address: ips).delete
+          unneeded_reservations.each do |network_name, reservation|
+            Bosh::Director::Models::IpAddress.where(
+              address: reservation.ip,
+              network_name: network_name,
+            ).delete
+          end
         end
 
         def delete_unneeded_instances

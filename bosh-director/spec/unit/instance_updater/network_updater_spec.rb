@@ -67,14 +67,27 @@ module Bosh::Director
         end
 
         it 'releases current instance IPs' do
-          ip_address_1 = Models::IpAddress.make.address
-          ip_address_2 = Models::IpAddress.make.address
-          allow(instance).to receive(:current_ip_addresses).and_return([ip_address_1, ip_address_2])
-          allow(instance).to receive(:reserved_ip_addresses).and_return([ip_address_1])
+          addr_1 = 123
+          addr_2 = 567
+          Models::IpAddress.make(network_name: 'fake-network-1', address: addr_1)
+          Models::IpAddress.make(network_name: 'fake-network-2', address: addr_1)
+          Models::IpAddress.make(network_name: 'fake-network-2', address: addr_2)
+
+          allow(instance).to receive(:current_ip_addresses).and_return({
+            'fake-network-1' => addr_1,
+            'fake-network-2' => addr_1,
+            'fake-network-2' => addr_2
+          })
+
+          allow(instance).to receive(:reserved_ip_addresses).and_return({
+            'fake-network-2' => addr_1,
+          })
+
           expect {
             updater.update
-          }.to change { Models::IpAddress.count }.from(2).to(1)
-          expect(Models::IpAddress.first.address).to eq(ip_address_1)
+          }.to change { Models::IpAddress.count }.from(3).to(1)
+          expect(Models::IpAddress.first.address).to eq(addr_1)
+          expect(Models::IpAddress.first.network_name).to eq('fake-network-2')
         end
 
         context 'when ConfigureNetworksStrategy strategy works' do

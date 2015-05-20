@@ -113,13 +113,18 @@ module Bosh::Director
       end
 
       it 'deletes unneeded network reservations' do
-        ip_address = Models::IpAddress.make
-        reservation = NetworkReservation.new(ip: ip_address.address)
-        allow(deployment_plan).to receive(:unneeded_network_reservations).and_return([reservation])
+        addr = NetAddr::CIDR.create('192.168.0.15').to_i
+
+        Models::IpAddress.make(network_name: 'fake-network-1', address: addr)
+        Models::IpAddress.make(network_name: 'fake-network-2', address: addr)
+
+        reservation = NetworkReservation.new(ip: addr)
+        allow(deployment_plan).to receive(:unneeded_network_reservations).and_return({ 'fake-network-1' => reservation })
 
         expect {
           subject.perform
-        }.to change { Models::IpAddress.count }.from(1).to(0)
+        }.to change { Models::IpAddress.count }.from(2).to(1)
+        expect(Models::IpAddress.first.network_name).to eq('fake-network-2')
       end
 
       context 'when perform fails' do

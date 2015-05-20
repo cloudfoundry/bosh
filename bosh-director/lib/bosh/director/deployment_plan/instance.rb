@@ -182,11 +182,11 @@ module Bosh::Director
       end
 
       def current_ip_addresses
-        @current_state['networks'].values.map { |n| n['ip'] }
+        network_to_ip(@current_state['networks'])
       end
 
       def reserved_ip_addresses
-        network_settings.values.map { |n| n['ip'] }
+        network_to_ip(network_settings)
       end
 
       ##
@@ -504,6 +504,12 @@ module Bosh::Director
       end
 
       private
+
+      # @param [Hash] network_settings map of network name to settings
+      # @return [Hash] map of network name to IP address
+      def network_to_ip(network_settings)
+        Hash[network_settings.map { |network_name, settings| [network_name, settings['ip']] }]
+      end
 
       def check_model_bound
         if @model.nil?

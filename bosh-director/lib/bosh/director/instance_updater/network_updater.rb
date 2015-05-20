@@ -16,7 +16,7 @@ module Bosh::Director
       end
 
       network_settings = @instance.network_settings
-      ips_to_release = @instance.current_ip_addresses - @instance.reserved_ip_addresses
+      ips_to_release = @instance.current_ip_addresses.to_set - @instance.reserved_ip_addresses.to_set
 
       strategies = [
         ConfigureNetworksStrategy.new(@agent_client, network_settings, @logger),
@@ -48,11 +48,14 @@ module Bosh::Director
 
     private
 
-    # @param [NetAddr::CIDR] ips list to release
-    def release_ips(ips)
-      Bosh::Director::Models::IpAddress.where(
-        address: ips.map{ |a| NetAddr::CIDR.create(a).to_i }
-      ).delete
+    # @param <[String, String]> ips_set set of [network_name, ip]
+    def release_ips(ips_set)
+      ips_set.each do |network_name, ip|
+        Bosh::Director::Models::IpAddress.where(
+          address: NetAddr::CIDR.create(ip).to_i,
+          network_name: network_name
+        ).delete
+      end
     end
 
     # Newer agents support prepare_configure_networks/configure_networks messages

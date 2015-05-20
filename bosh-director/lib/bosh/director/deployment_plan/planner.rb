@@ -80,7 +80,7 @@ module Bosh::Director
 
         @unneeded_vms = []
         @unneeded_instances = []
-        @unneeded_network_reservations = []
+        @unneeded_network_reservations = {}
         @dns_domain = nil
 
         @job_rename = safe_property(options, 'job_rename',
@@ -130,7 +130,7 @@ module Bosh::Director
       # @param [Bosh::Director::Models::Vm] vm VM DB model
       def delete_vm(vm, reservations)
         @unneeded_vms << vm
-        @unneeded_network_reservations.concat(reservations.values)
+        @unneeded_network_reservations.merge!(reservations)
       end
 
       # Adds instance to deletion queue
@@ -141,7 +141,7 @@ module Bosh::Director
         else
           @unneeded_instances << instance
         end
-        @unneeded_network_reservations.concat(reservations.values)
+        @unneeded_network_reservations.merge!(reservations)
       end
 
       # Adds a job by name
