@@ -5,6 +5,7 @@ jobs:
     serial: true
     plan:
       - get: bosh-src
+        trigger: true
       - task: test
         file: bosh-src/ci/concourse/tasks/test-unit.yml
         config:
@@ -16,6 +17,7 @@ jobs:
     serial: true
     plan:
       - get: bosh-src
+        trigger: true
       - task: test
         file: bosh-src/ci/concourse/tasks/test-unit-coverage.yml
         config:
@@ -29,6 +31,7 @@ jobs:
     plan:
       - get: bosh-src
         passed: [unit-1.9, unit-2.1]
+        trigger: true
       - task: test
         privileged: true
         file: bosh-src/ci/concourse/tasks/test-integration.yml
@@ -43,6 +46,7 @@ jobs:
     plan:
       - get: bosh-src
         passed: [unit-1.9, unit-2.1]
+        trigger: true
       - task: test
         privileged: true
         file: bosh-src/ci/concourse/tasks/test-integration.yml
@@ -57,6 +61,7 @@ jobs:
     plan:
       - get: bosh-src
         passed: [unit-1.9, unit-2.1]
+        trigger: true
       - task: test
         privileged: true
         file:  bosh-src/ci/concourse/tasks/test-integration.yml
@@ -71,6 +76,7 @@ jobs:
     plan:
       - get: bosh-src
         passed: [unit-1.9, unit-2.1]
+        trigger: true
       - task: test
         privileged: true
         file: bosh-src/ci/concourse/tasks/test-integration.yml
@@ -84,5 +90,5 @@ resources:
     type: git
     source:
       uri:          git@github.com:cloudfoundry/bosh.git
-      branch:       develop
+      branch:       wip/concourse-95088852
       private_key:  {{github_private_key}}
