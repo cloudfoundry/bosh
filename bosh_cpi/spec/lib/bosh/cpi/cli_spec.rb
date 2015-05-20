@@ -355,48 +355,43 @@ describe Bosh::Cpi::Cli do
     context 'when request json cannot be parsed' do
       it 'returns invalid_call error' do
         subject.run('invalid-json')
-        expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"InvalidCall","message":"Request cannot be deserialized","ok_to_retry":false},"log":""}')
+        expect(result_io.string).to include('{"result":null,"error":{"type":"InvalidCall","message":"Request cannot be deserialized, details: 795: unexpected token at \'invalid-json\'","ok_to_retry":false},"log":')
+        expect(result_io.string).to include_the_backtrace
       end
     end
 
     context 'when request json method is not a string' do
       it 'returns invalid_call error' do
         subject.run('{"method":[]}')
-        expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"InvalidCall","message":"Method must be a String","ok_to_retry":false},"log":""}')
+        expect(result_io.string).to include('{"result":null,"error":{"type":"InvalidCall","message":"Method must be a String, got: \'[]\'","ok_to_retry":false},"log":')
       end
     end
 
     context 'when request json includes unknown method' do
       it 'returns invalid_call error' do
         subject.run('{"method":"unknown-method"}')
-        expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"InvalidCall","message":"Method is not known","ok_to_retry":false},"log":""}')
+        expect(result_io.string).to include('{"result":null,"error":{"type":"InvalidCall","message":"Method is not known, got: \'unknown-method\'","ok_to_retry":false},"log":')
       end
     end
 
     context 'when request json does not include arguments' do
       it 'returns invalid_call error' do
         subject.run('{"method":"create_vm"}')
-        expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"InvalidCall","message":"Arguments must be an Array","ok_to_retry":false},"log":""}')
+        expect(result_io.string).to include('{"result":null,"error":{"type":"InvalidCall","message":"Arguments must be an Array, got: \'nil\'","ok_to_retry":false},"log":')
       end
     end
 
     context 'when request json arguments is not an array' do
       it 'returns invalid_call error' do
         subject.run('{"method":"create_vm","arguments":"string"}')
-        expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"InvalidCall","message":"Arguments must be an Array","ok_to_retry":false},"log":""}')
+        expect(result_io.string).to include('{"result":null,"error":{"type":"InvalidCall","message":"Arguments must be an Array, got: \'\"string\"\'","ok_to_retry":false},"log":')
       end
     end
 
     context 'when request json context does not include director uuid' do
       it 'returns invalid_call error' do
         subject.run('{"method":"create_vm","arguments":[]}')
-        expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"InvalidCall","message":"Request should include context with director uuid","ok_to_retry":false},"log":""}')
+        expect(result_io.string).to include('{"result":null,"error":{"type":"InvalidCall","message":"Request should include context with director uuid, got: \'nil\'","ok_to_retry":false},"log":')
       end
     end
 
@@ -405,8 +400,8 @@ describe Bosh::Cpi::Cli do
 
       it 'returns invalid_call error' do
         subject.run('{"method":"create_vm","arguments":["only-one-arg"],"context":{"director_uuid":"abc"}}')
-        expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"InvalidCall","message":"Arguments are not correct","ok_to_retry":false},"log":""}')
+        expect(result_io.string).to include('{"result":null,"error":{"type":"InvalidCall","message":"Arguments are not correct, details: \'wrong number of arguments (1 for 4..6)\'","ok_to_retry":false},"log":')
+        expect(result_io.string).to include_the_backtrace
       end
     end
 
@@ -420,8 +415,8 @@ describe Bosh::Cpi::Cli do
       it 'returns error with camelized name of the class to indicate that cpi failed' do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ErrorClass1, 'fake-error-message')
         subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
-        expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"ErrorClass1","message":"fake-error-message","ok_to_retry":false},"log":""}')
+        expect(result_io.string).to include('{"result":null,"error":{"type":"ErrorClass1","message":"fake-error-message","ok_to_retry":false},"log":')
+        expect(result_io.string).to include('cli.rb:')
       end
     end
 
@@ -431,8 +426,9 @@ describe Bosh::Cpi::Cli do
       it 'returns error with camelized name of the class to indicate that call to cloud/infrastructure failed' do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ErrorClass2, 'fake-error-message')
         subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
-        expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"ErrorClass2","message":"fake-error-message","ok_to_retry":false},"log":""}')
+        expect(result_io.string).to include(
+          '{"result":null,"error":{"type":"ErrorClass2","message":"fake-error-message","ok_to_retry":false},"log"')
+        expect(result_io.string).to include("cli.rb:")
       end
     end
 
@@ -446,20 +442,17 @@ describe Bosh::Cpi::Cli do
            'that call to cloud/infrastructure failed and suggesting it should be retried' do
           expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(exception)
           subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
-          expect(result_io.string).to eq(
-            '{"result":null,"error":{"type":"ErrorClass3","message":"ErrorClass3","ok_to_retry":true},"log":""}')
+          expect(result_io.string).to include('{"result":null,"error":{"type":"ErrorClass3","message":"ErrorClass3","ok_to_retry":true},"log":')
+          expect(result_io.string).to include_the_backtrace
         end
       end
 
       context 'when it is not ok to retry error' do
-        let(:exception) { ErrorClass3.new(false) }
-
-        it 'returns error with camelized name of the class to indicate ' +
-           'that call to cloud/infrastructure failed and suggesting it should not be retried' do
-          expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(exception)
+        it 'returns error with camelized name of the class to indicate that call to cloud/infrastructure failed and suggesting it should not be retried' do
+          expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ErrorClass3.new(false), "Some error message")
           subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
-          expect(result_io.string).to eq(
-            '{"result":null,"error":{"type":"ErrorClass3","message":"ErrorClass3","ok_to_retry":false},"log":""}')
+          expect(result_io.string).to include('{"result":null,"error":{"type":"ErrorClass3","message":"Some error message","ok_to_retry":false},"log":')
+          expect(result_io.string).to include_the_backtrace
         end
       end
     end
@@ -470,8 +463,8 @@ describe Bosh::Cpi::Cli do
       it 'returns unknown error' do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ErrorClass4, 'fake-error-message')
         subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
-        expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"Unknown","message":"fake-error-message","ok_to_retry":false},"log":""}')
+        expect(result_io.string).to include('{"result":null,"error":{"type":"Unknown","message":"fake-error-message","ok_to_retry":false},"log":')
+        expect(result_io.string).to include_the_backtrace
       end
     end
 
@@ -481,9 +474,19 @@ describe Bosh::Cpi::Cli do
       it 'returns error with correctly camelized name' do
         expect(cpi).to receive(:get_disks).with('fake-vm-cid').and_raise(ERRClass5, 'fake-error-message')
         subject.run('{"method":"get_disks","arguments":["fake-vm-cid"],"context":{"director_uuid":"abc"}}')
-        expect(result_io.string).to eq(
-          '{"result":null,"error":{"type":"ERRClass5","message":"fake-error-message","ok_to_retry":false},"log":""}')
+        expect(result_io.string).to include('{"result":null,"error":{"type":"ERRClass5","message":"fake-error-message","ok_to_retry":false},"log":')
+        expect(result_io.string).to include_the_backtrace
       end
+    end
+  end
+
+  matcher :include_the_backtrace do
+    match do |actual_string|
+      expect(actual_string).to include('cli.rb')
+    end
+
+    failure_message do |actual|
+      "Expected '#{actual}' to include the backtrace ('...cli.rb:...')"
     end
   end
 end

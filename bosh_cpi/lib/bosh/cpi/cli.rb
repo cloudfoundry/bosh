@@ -39,27 +39,27 @@ class Bosh::Cpi::Cli
   def run(json)
     begin
       request = JSON.load(json)
-    rescue JSON::ParserError
-      return error_response(INVALID_CALL_ERROR_TYPE, 'Request cannot be deserialized', false)
+    rescue JSON::ParserError => e
+      return error_response(INVALID_CALL_ERROR_TYPE, "Request cannot be deserialized, details: #{e.message}", false, e.backtrace)
     end
 
     method = request['method']
     unless method.is_a?(String)
-      return error_response(INVALID_CALL_ERROR_TYPE, 'Method must be a String', false)
+      return error_response(INVALID_CALL_ERROR_TYPE, "Method must be a String, got: '#{method.inspect}'", false)
     end
 
     unless KNOWN_RPC_METHODS.include?(method)
-      return error_response(INVALID_CALL_ERROR_TYPE, 'Method is not known', false)
+      return error_response(INVALID_CALL_ERROR_TYPE, "Method is not known, got: '#{method}'", false)
     end
 
     arguments = request['arguments']
     unless arguments.is_a?(Array)
-      return error_response(INVALID_CALL_ERROR_TYPE, 'Arguments must be an Array', false)
+      return error_response(INVALID_CALL_ERROR_TYPE, "Arguments must be an Array, got: '#{arguments.inspect}'", false)
     end
 
     context = request['context']
     unless context.is_a?(Hash) && context['director_uuid'].is_a?(String)
-      return error_response(INVALID_CALL_ERROR_TYPE, 'Request should include context with director uuid', false)
+      return error_response(INVALID_CALL_ERROR_TYPE, "Request should include context with director uuid, got: '#{context.inspect}'", false)
     end
 
     configure_director(context['director_uuid'])
@@ -69,13 +69,13 @@ class Bosh::Cpi::Cli
     begin
       result = @cpi.public_send(ruby_method, *arguments)
     rescue Bosh::Clouds::RetriableCloudError => e
-      return error_response(error_name(e), e.message, e.ok_to_retry)
+      return error_response(error_name(e), e.message, e.ok_to_retry, e.backtrace)
     rescue Bosh::Clouds::CloudError, Bosh::Clouds::CpiError => e
-      return error_response(error_name(e), e.message, false)
-    rescue ArgumentError
-      return error_response(INVALID_CALL_ERROR_TYPE, 'Arguments are not correct', false)
+      return error_response(error_name(e), e.message, false, e.backtrace)
+    rescue ArgumentError => e
+      return error_response(INVALID_CALL_ERROR_TYPE, "Arguments are not correct, details: '#{e.message}'", false, e.backtrace)
     rescue Exception => e
-      return error_response(UNKNOWN_ERROR_TYPE, e.message, false)
+      return error_response(UNKNOWN_ERROR_TYPE, e.message, false, e.backtrace)
     end
 
     result_response(result)
@@ -87,7 +87,11 @@ class Bosh::Cpi::Cli
     Bosh::Clouds::Config.uuid = director_uuid
   end
 
-  def error_response(type, message, ok_to_retry)
+  def error_response(type, message, ok_to_retry, bt=[])
+    if !bt.empty?
+      @logs_string_io.print("Rescued #{type}: #{message}. backtrace: #{bt.join("\n")}")
+    end
+
     hash = {
       result: nil,
       error: {
