@@ -3,7 +3,7 @@ platform: linux
 image: docker:///bosh/integration
 inputs:
 - name: bosh-src
-- name: deployments-bosh
+- name: bosh-concourse-ci
 run:
   path: bash
   args: ['-l', 'bosh-src/bosh_aws_cpi/ci/tasks/run-lifecycle.sh']
