@@ -168,7 +168,7 @@ module Bosh::Director
           and_return(state)
         expect(assembler).to receive(:get_network_reservations).
           with(state).and_return(reservations)
-        expect(deployment_plan).to receive(:delete_vm).with(@vm_model)
+        expect(deployment_plan).to receive(:delete_vm).with(@vm_model, reservations)
         assembler.bind_existing_vm(@vm_model, @lock)
       end
     end
@@ -238,7 +238,7 @@ module Bosh::Director
         end
 
         it 'marks VM for deletion' do
-          expect(deployment_plan).to receive(:delete_vm).with(vm_model)
+          expect(deployment_plan).to receive(:delete_vm).with(vm_model, reservations)
 
           assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
         end
@@ -328,7 +328,7 @@ module Bosh::Director
         state = { 'state' => 'baz' }
         reservations = { 'net' => 'reservation' }
         allow(deployment_plan).to receive(:job).with('foo').and_return(nil)
-        expect(deployment_plan).to receive(:delete_instance).with(instance_model)
+        expect(deployment_plan).to receive(:delete_instance).with(instance_model, reservations)
         allow(deployment_plan).to receive(:job_rename).and_return({})
         allow(deployment_plan).to receive(:rename_in_progress?).and_return(false)
 

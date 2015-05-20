@@ -34,6 +34,12 @@ module Bosh::Director
       let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
       let(:instance3) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
 
+      before do
+        allow(deployment_plan).to receive(:unneeded_vms).and_return([])
+        allow(deployment_plan).to receive(:unneeded_instances).and_return([])
+        allow(deployment_plan).to receive(:unneeded_network_reservations).and_return([])
+      end
+
       def it_deletes_unneeded_vms
         vm_model = Models::Vm.make(:cid => 'vm-cid')
         allow(deployment_plan).to receive(:unneeded_vms).and_return([vm_model])
@@ -94,7 +100,6 @@ module Bosh::Director
       it 'deletes unneeded vms from database and writes to event log' do
         vm_model = Models::Vm.make(:cid => 'vm-cid')
         allow(deployment_plan).to receive(:unneeded_vms).and_return([vm_model])
-        allow(deployment_plan).to receive(:unneeded_instances).and_return([])
 
         subject.perform
 
@@ -105,6 +110,16 @@ module Bosh::Director
           expect(events.map { |e| e['total'] }.uniq).to eq([1])
           expect(events.map { |e| e['task'] }.uniq).to eq(%w(vm-cid))
         end
+      end
+
+      it 'deletes unneeded network reservations' do
+        ip_address = Models::IpAddress.make
+        reservation = NetworkReservation.new(ip: ip_address.address)
+        allow(deployment_plan).to receive(:unneeded_network_reservations).and_return([reservation])
+
+        expect {
+          subject.perform
+        }.to change { Models::IpAddress.count }.from(1).to(0)
       end
 
       context 'when perform fails' do

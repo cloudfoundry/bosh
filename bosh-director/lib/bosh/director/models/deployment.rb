@@ -6,6 +6,7 @@ module Bosh::Director::Models
     many_to_many :release_versions
     one_to_many  :job_instances, :class => "Bosh::Director::Models::Instance"
     one_to_many  :vms
+    one_to_many  :ip_addresses
     one_to_many  :properties, :class => "Bosh::Director::Models::DeploymentProperty"
     one_to_many  :problems, :class => "Bosh::Director::Models::DeploymentProblem"
     many_to_one  :cloud_config
@@ -18,5 +19,5 @@ module Bosh::Director::Models
   end
 
   Deployment.plugin :association_dependencies
-  Deployment.add_association_dependencies :stemcells => :nullify, :problems => :destroy
+  Deployment.add_association_dependencies :stemcells => :nullify, :problems => :destroy, :ip_addresses => :destroy
 end

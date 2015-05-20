@@ -15,6 +15,7 @@ module Bosh::Director
         return [@vm_model, @agent_client]
       end
 
+      previous_ips = @instance.current_ip_addresses
       network_settings = @instance.network_settings
 
       strategies = [
@@ -22,27 +23,35 @@ module Bosh::Director
         PrepareNetworkChangeStrategy.new(@agent_client, network_settings, @logger),
       ]
 
-      @logger.info("Planning to reconfigure network with settings: #{network_settings}")
-      selected_strategy = strategies.find { |s| s.before_configure_networks }
+      begin
+        @logger.info("Planning to reconfigure network with settings: #{network_settings}")
+        selected_strategy = strategies.find { |s| s.before_configure_networks }
 
-      @cloud.configure_networks(@vm_model.cid, network_settings)
+        @cloud.configure_networks(@vm_model.cid, network_settings)
 
-      selected_strategy.after_configure_networks
+        selected_strategy.after_configure_networks
+      rescue Bosh::Clouds::NotSupported => e
+        @logger.info("Failed reconfiguring existing VM: #{e.inspect}")
+
+        # If configure_networks CPI method cannot reconfigure VM networking
+        # (e.g. when the security groups change on AWS)
+        # it raises Bosh::Clouds::NotSupported to indicate new VM is needed.
+        @logger.info('Creating VM with new network configurations')
+        @instance.recreate = true
+        @vm_model, @agent_client = @vm_updater.update(nil)
+      end
+
+      release_ips(previous_ips)
 
       [@vm_model, @agent_client]
-
-    rescue Bosh::Clouds::NotSupported => e
-      @logger.info("Failed reconfiguring existing VM: #{e.inspect}")
-
-      # If configure_networks CPI method cannot reconfigure VM networking
-      # (e.g. when the security groups change on AWS)
-      # it raises Bosh::Clouds::NotSupported to indicate new VM is needed.
-      @logger.info('Creating VM with new network configurations')
-      @instance.recreate = true
-      @vm_updater.update(nil)
     end
 
     private
+
+    # @param [NetAddr::CIDR] ips list to release
+    def release_ips(ips)
+      Bosh::Director::Models::IpAddress.where(address: ips.map{ |a| a.to_i }).delete
+    end
 
     # Newer agents support prepare_configure_networks/configure_networks messages
     class ConfigureNetworksStrategy

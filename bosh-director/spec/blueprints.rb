@@ -92,6 +92,11 @@ module Bosh::Director::Models
     state       { "started" }
   end
 
+  IpAddress.blueprint do
+    address { NetAddr::CIDR.create(Sham.ip) }
+    deployment  { Deployment.make }
+  end
+
   Task.blueprint do
     state       { "queued" }
     type        { Sham.type }

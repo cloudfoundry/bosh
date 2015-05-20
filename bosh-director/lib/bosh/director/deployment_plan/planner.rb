@@ -52,6 +52,9 @@ module Bosh::Director
       # VMs from the old manifest that are not in the new manifest
       attr_accessor :unneeded_vms
 
+      # Network reservations that belong to unneeded vms and instances
+      attr_reader :unneeded_network_reservations
+
       attr_accessor :dns_domain
 
       attr_reader :job_rename
@@ -77,6 +80,7 @@ module Bosh::Director
 
         @unneeded_vms = []
         @unneeded_instances = []
+        @unneeded_network_reservations = []
         @dns_domain = nil
 
         @job_rename = safe_property(options, 'job_rename',
@@ -124,18 +128,20 @@ module Bosh::Director
 
       # Adds a VM to deletion queue
       # @param [Bosh::Director::Models::Vm] vm VM DB model
-      def delete_vm(vm)
+      def delete_vm(vm, reservations)
         @unneeded_vms << vm
+        @unneeded_network_reservations.concat(reservations.values)
       end
 
       # Adds instance to deletion queue
       # @param [Bosh::Director::Models::Instance] instance Instance DB model
-      def delete_instance(instance)
+      def delete_instance(instance, reservations)
         if @jobs_name_index.has_key?(instance.job)
           @jobs_name_index[instance.job].unneeded_instances << instance
         else
           @unneeded_instances << instance
         end
+        @unneeded_network_reservations.concat(reservations.values)
       end
 
       # Adds a job by name

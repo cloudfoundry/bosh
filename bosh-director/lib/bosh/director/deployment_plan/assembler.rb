@@ -60,7 +60,7 @@ module Bosh::Director
             bind_idle_vm(vm_model, resource_pool, state, reservations)
           else
             @logger.debug("Resource pool '#{resource_pool_name}' does not exist, marking VM for deletion")
-            @deployment_plan.delete_vm(vm_model)
+            @deployment_plan.delete_vm(vm_model, reservations)
           end
         end
         @logger.debug('Finished processing VM network reservations')
@@ -81,7 +81,7 @@ module Bosh::Director
         end
 
         @logger.debug("Deleting VM `#{vm_model.cid}' with static network reservation")
-        @deployment_plan.delete_vm(vm_model)
+        @deployment_plan.delete_vm(vm_model, reservations)
         return
       end
 
@@ -123,14 +123,14 @@ module Bosh::Director
       job = @deployment_plan.job(instance_model.job)
       unless job
         @logger.debug("Job `#{instance_model.job}' not found, marking for deletion")
-        @deployment_plan.delete_instance(instance_model)
+        @deployment_plan.delete_instance(instance_model, reservations)
         return
       end
 
       instance = job.instance(instance_model.index)
       unless instance
         @logger.debug("Job instance `#{instance_name}' not found, marking for deletion")
-        @deployment_plan.delete_instance(instance_model)
+        @deployment_plan.delete_instance(instance_model, reservations)
         return
       end
 

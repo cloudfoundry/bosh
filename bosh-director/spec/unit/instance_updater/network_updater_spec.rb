@@ -4,7 +4,7 @@ require 'logger'
 module Bosh::Director
   describe InstanceUpdater::NetworkUpdater do
     subject(:updater) { described_class.new(instance, vm_model, agent_client, vm_updater, cloud, logger) }
-    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', :recreate= => nil) }
+    let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', :recreate= => nil, current_ip_addresses: []) }
     let(:vm_model) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-vm-cid') }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:vm_updater) { instance_double('Bosh::Director::InstanceUpdater::VmUpdater', update: nil) }
@@ -54,8 +54,21 @@ module Bosh::Director
           })
         end
 
+        before do
+          allow(configure_networks_strategy).to receive(:before_configure_networks).and_return(true)
+          allow(cloud).to receive(:configure_networks).with('fake-vm-cid', network_settings)
+          allow(configure_networks_strategy).to receive(:after_configure_networks)
+        end
+
+        it 'releases current instance IPs' do
+          ip_address = Models::IpAddress.make
+          allow(instance).to receive(:current_ip_addresses).and_return([ip_address.address])
+          expect {
+            updater.update
+          }.to change { Models::IpAddress.count }.from(1).to(0)
+        end
+
         context 'when ConfigureNetworksStrategy strategy works' do
-          before { allow(configure_networks_strategy).to receive(:before_configure_networks).and_return(true) }
 
           context 'when cloud supports re-configuring vm with network settings' do
             before { allow(cloud).to receive(:configure_networks).and_return(nil) }

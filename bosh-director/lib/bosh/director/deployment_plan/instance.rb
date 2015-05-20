@@ -181,6 +181,10 @@ module Bosh::Director
         @network_reservations[name] = reservation
       end
 
+      def current_ip_addresses
+        @current_state['networks'].values.map { |n| NetAddr::CIDR.create(n['ip']) }
+      end
+
       ##
       # @return [Hash] BOSH network settings used for Agent apply call
       def network_settings

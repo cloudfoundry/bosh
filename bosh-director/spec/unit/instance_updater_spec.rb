@@ -76,6 +76,7 @@ module Bosh::Director
              spec: instance_spec,
              disk_currently_attached?: disk_currently_attached,
              network_settings: double('NetworkSettings'),
+             current_ip_addresses: [],
              disk_size: disk_size)
     end
     let(:cloud) { instance_double('Bosh::Cloud') }

@@ -36,6 +36,9 @@ module Bosh::Director
           @logger.info('Deleting no longer needed instances')
           delete_unneeded_instances
 
+          @logger.info('Deleting no longer needed network reservations')
+          delete_unneeded_network_reservations
+
           @logger.info('Updating resource pools')
           @resource_pools.update
           @base_job.task_checkpoint
@@ -90,6 +93,17 @@ module Bosh::Director
               end
             end
           end
+        end
+
+        def delete_unneeded_network_reservations
+          unneeded_reservations = @deployment_plan.unneeded_network_reservations
+          if unneeded_reservations.empty?
+            @logger.info('No unneeded network reservations to delete')
+            return
+          end
+
+          ips = unneeded_reservations.map{|r| r.ip}
+          Bosh::Director::Models::IpAddress.where(address: ips).delete
         end
 
         def delete_unneeded_instances
