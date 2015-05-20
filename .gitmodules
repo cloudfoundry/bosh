@@ -4,3 +4,6 @@
 [submodule "spec/assets/uaa"]
 	path = spec/assets/uaa
 	url = https://github.com/cloudfoundry/uaa.git
+[submodule "bat"]
+	path = bat
+	url = https://github.com/cloudfoundry/bosh-acceptance-tests.git

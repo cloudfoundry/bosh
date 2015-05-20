@@ -1,3 +1,0 @@
-set -e -x
-
-cp -a batarang/* ${BOSH_INSTALL_TARGET}

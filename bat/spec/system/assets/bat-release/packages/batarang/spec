@@ -1,7 +1,0 @@
----
-name: batarang
-
-dependencies: []
-
-files:
-- batarang/**/*

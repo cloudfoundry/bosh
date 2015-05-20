@@ -1,6 +1,0 @@
-check process batlight
-  with pidfile /var/vcap/sys/run/batlight/batlight.pid
-  start program "/var/vcap/jobs/batlight/bin/batlight_ctl start"
-  stop program "/var/vcap/jobs/batlight/bin/batlight_ctl stop"
-  group vcap
-
