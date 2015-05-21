@@ -90,5 +90,5 @@ resources:
     type: git
     source:
       uri:          git@github.com:cloudfoundry/bosh.git
-      branch:       wip/concourse-95088852
+      branch:       develop
       private_key:  {{github_private_key}}
