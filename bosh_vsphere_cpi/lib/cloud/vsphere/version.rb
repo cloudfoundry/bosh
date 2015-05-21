@@ -1,7 +1,7 @@
 module Bosh
   module Clouds
     class VSphere
-      VERSION = '1.2975.0'
+      VERSION = '1.2976.0'
     end
   end
 end
