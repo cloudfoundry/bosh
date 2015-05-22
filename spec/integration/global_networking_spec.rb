@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'shared network', type: :integration do
+describe 'global networking', type: :integration do
   with_reset_sandbox_before_each
 
   before do

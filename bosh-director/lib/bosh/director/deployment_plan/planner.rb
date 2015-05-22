@@ -197,7 +197,7 @@ module Bosh::Director
         end
       end
 
-      def using_cloud_config?
+      def using_global_networking?
         !@cloud_config.nil?
       end
     end
@@ -281,7 +281,7 @@ module Bosh::Director
         @disk_pools.values
       end
 
-      def using_cloud_config?
+      def using_global_networking?
         false
       end
 

@@ -23,7 +23,7 @@ module Bosh::Director
         @subnets = []
         subnets = safe_property(network_spec, "subnets", :class => Array)
 
-        ip_provider_factory = IpProviderFactory.new(@deployment.model, cloud_config: @deployment.using_cloud_config?)
+        ip_provider_factory = IpProviderFactory.new(@deployment.model, global_networking: @deployment.using_global_networking?)
 
         subnets.each do |subnet_spec|
           new_subnet = NetworkSubnet.new(self, subnet_spec, reserved_ranges, ip_provider_factory)

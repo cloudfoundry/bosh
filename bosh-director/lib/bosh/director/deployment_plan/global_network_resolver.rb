@@ -9,7 +9,7 @@ module Bosh::Director
       end
 
       def reserved_legacy_ranges(network_name)
-        return Set.new unless @current_deployment.using_cloud_config?
+        return Set.new unless @current_deployment.using_global_networking?
         legacy_ranges.fetch(network_name, Set.new)
       end
 

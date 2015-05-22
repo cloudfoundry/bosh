@@ -15,7 +15,7 @@ module Bosh::Director::DeploymentPlan
         canonical_name: 'mycloud',
         model: deployment,
         network: net,
-        using_cloud_config?: true
+        using_global_networking?: true
       })
     end
     let(:network_resolver) { GlobalNetworkResolver.new(plan) }
