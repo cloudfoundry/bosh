@@ -26,22 +26,28 @@ module Bosh::Director
             name: 'other-deployment-1',
             cloud_config: nil,
             manifest: Psych.dump({
-                'networks' => [{
-                    'name' => 'network-a',
-                    'type' => 'manual',
-                    'subnets' => [{
-                        'range' => '192.168.0.1/28',
-                        'reserved' => ['192.168.0.0-192.168.0.5','192.168.0.7', '192.168.0.11-192.168.0.12'],
-                      }],
-                  },
-                  {
-                    'name' => 'network-b',
-                    'type' => 'manual',
-                    'subnets' => [{
-                        'range' => '192.168.1.1/24',
-                      }],
+              'networks' => [
+                {
+                  'name' => 'network-a',
+                  'type' => 'manual',
+                  'subnets' => [{
+                    'range' => '192.168.0.1/28',
+                    'reserved' => [
+                      '192.168.0.0-192.168.0.5',
+                      '192.168.0.7',
+                      '192.168.0.11-192.168.0.12'
+                    ],
                   }],
-              })
+                },
+                {
+                  'name' => 'network-b',
+                  'type' => 'manual',
+                  'subnets' => [{
+                    'range' => '192.168.1.1/24',
+                  }],
+                }
+              ],
+            })
           )
 
           Models::Deployment.make(

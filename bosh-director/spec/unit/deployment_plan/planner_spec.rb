@@ -205,6 +205,37 @@ module Bosh::Director
         end
       end
 
+      describe 'delete_vm' do
+        it 'records vms and their network reservations' do
+          vm_model1 = Models::Vm.make(deployment: deployment_model)
+          ip1 = Bosh::Director::NetworkReservation.new_dynamic
+          ip2 = Bosh::Director::NetworkReservation.new_dynamic
+          reservations1 = {
+            'network-a' => ip1,
+            'network-b' => ip2,
+          }
+
+          vm_model2 = Models::Vm.make(deployment: deployment_model)
+          ip3 = Bosh::Director::NetworkReservation.new_dynamic
+          ip4 = Bosh::Director::NetworkReservation.new_dynamic
+          reservations2 = {
+            'network-a' => ip3,
+            'network-b' => ip4,
+          }
+
+          planner.delete_vm(vm_model1, reservations1)
+          planner.delete_vm(vm_model2, reservations2)
+
+          expect(planner.unneeded_vms).to eq([vm_model1, vm_model2])
+          expect(planner.unneeded_network_reservations).to contain_exactly(
+            ['network-a', ip1],
+            ['network-a', ip3],
+            ['network-b', ip2],
+            ['network-b', ip4],
+          )
+        end
+      end
+
       def setup_global_config_and_stubbing
         Bosh::Director::App.new(Bosh::Director::Config.load_file(asset('test-director-config.yml')))
         allow(Bosh::Director::Config).to receive(:cloud) { instance_double(Bosh::Cloud) }

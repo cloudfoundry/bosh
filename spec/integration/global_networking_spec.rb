@@ -33,7 +33,12 @@ describe 'global networking', type: :integration do
   end
 
   def deploy_with_ip(manifest, ip, options={})
-    manifest['jobs'].first['networks'].first['static_ips'] = [ip]
+    deploy_with_ips(manifest, [ip], options)
+  end
+
+  def deploy_with_ips(manifest, ips, options={})
+    manifest['jobs'].first['networks'].first['static_ips'] = ips
+    manifest['jobs'].first['instances'] = ips.size
     options.merge!(manifest_hash: manifest)
     deploy_simple_manifest(options)
   end
@@ -84,22 +89,26 @@ describe 'global networking', type: :integration do
     end
 
     it 'IPs released by one deployment via scaling down can be used by another deployment' do
-      deploy_with_ip(simple_manifest, '192.168.1.10')
+      deploy_with_ips(simple_manifest, ['192.168.1.10', '192.168.1.11'])
       first_deployment_vms = director.vms
-      expect(first_deployment_vms.size).to eq(1)
+      expect(first_deployment_vms.size).to eq(2)
       expect(first_deployment_vms.first.ips).to eq('192.168.1.10')
+      expect(first_deployment_vms[1].ips).to eq('192.168.1.11')
 
       simple_manifest['jobs'].first['instances'] = 0
       simple_manifest['jobs'].first['networks'].first['static_ips'] = []
-      deploy_simple_manifest(manifest_hash: simple_manifest)
 
-      deploy_with_ip(second_deployment_manifest, '192.168.1.10')
+      deploy_simple_manifest(manifest_hash: simple_manifest)
+      puts bosh_runner.run('task latest --debug')
+
+      deploy_with_ips(second_deployment_manifest, ['192.168.1.10', '192.168.1.11'])
       second_deployment_vms = director.vms('second_deployment')
-      expect(second_deployment_vms.size).to eq(1)
+      expect(second_deployment_vms.size).to eq(2)
       expect(second_deployment_vms.first.ips).to eq('192.168.1.10')
+      expect(second_deployment_vms[1].ips).to eq('192.168.1.11')
     end
 
-    it 'IPs released by one deployment via changin IP can be used by another deployment' do
+    it 'IPs released by one deployment via changing IP can be used by another deployment' do
       deploy_with_ip(simple_manifest, '192.168.1.10')
       first_deployment_vms = director.vms
       expect(first_deployment_vms.size).to eq(1)
