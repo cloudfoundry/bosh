@@ -11,7 +11,7 @@ describe 'cli: locks', type: :integration do
     end
 
     it 'lists a deployment lock' do
-      output = bosh_runner.run_until_succeeds('locks')
+      output = bosh_runner.run_until_succeeds('locks', number_of_retries: 30)
       expect(output).to match(/\s*\|\s*deployment\s*\|\s*simple\s*\|/)
     end
   end
