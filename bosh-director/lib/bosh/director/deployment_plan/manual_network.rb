@@ -9,21 +9,24 @@ module Bosh::Director
       include DnsHelper
       include ValidationHelper
 
+      attr_reader :subnets
+
       ##
       # Creates a new network.
       #
-      # @param [DeploymentPlan] deployment associated deployment plan
+      # @param [DeploymentPlan::Planner] deployment associated deployment plan
       # @param [Hash] network_spec parsed deployment manifest network section
-      def initialize(deployment, network_spec)
-        super
+      def initialize(deployment, network_spec, global_network_resolver)
+        super(deployment, network_spec)
 
+        reserved_ranges = global_network_resolver.reserved_legacy_ranges(@name)
         @subnets = []
         subnets = safe_property(network_spec, "subnets", :class => Array)
 
         ip_provider_factory = IpProviderFactory.new(@deployment.model, cloud_config: @deployment.using_cloud_config?)
 
         subnets.each do |subnet_spec|
-          new_subnet = NetworkSubnet.new(self, subnet_spec, ip_provider_factory)
+          new_subnet = NetworkSubnet.new(self, subnet_spec, reserved_ranges, ip_provider_factory)
           @subnets.each do |subnet|
             if subnet.overlaps?(new_subnet)
               raise NetworkOverlappingSubnets,
@@ -32,9 +35,6 @@ module Bosh::Director
           end
           @subnets << new_subnet
         end
-
-        # Uncomment line below when integration tests is fixed
-        # raise "Must specify at least one subnet" if @subnets.empty?
       end
 
       ##

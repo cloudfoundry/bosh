@@ -18,6 +18,7 @@ module Bosh::Director::DeploymentPlan
         using_cloud_config?: true
       })
     end
+    let(:network_resolver) { GlobalNetworkResolver.new(plan) }
     let(:job) do
       instance_double('Bosh::Director::DeploymentPlan::Job',
         resource_pool: resource_pool,
@@ -132,15 +133,17 @@ module Bosh::Director::DeploymentPlan
         before { allow(plan).to receive(:network).with(network_name).and_return(network) }
         let(:network) do
           ManualNetwork.new(plan, {
-            'name' => network_name,
-            'dns' => dns,
-            'subnets' => [{
-              'range' => subnet_range,
-              'gateway' => gateway,
+              'name' => network_name,
               'dns' => dns,
-              'cloud_properties' => cloud_properties
-            }]
-          })
+              'subnets' => [{
+                  'range' => subnet_range,
+                  'gateway' => gateway,
+                  'dns' => dns,
+                  'cloud_properties' => cloud_properties
+                }]
+            },
+            network_resolver
+          )
         end
 
         before do
@@ -160,15 +163,17 @@ module Bosh::Director::DeploymentPlan
       describe 'temporary errand hack' do
         let(:network) do
           ManualNetwork.new(plan, {
-            'name' => network_name,
-            'dns' => dns,
-            'subnets' => [{
-              'range' => subnet_range,
-              'gateway' => gateway,
+              'name' => network_name,
               'dns' => dns,
-              'cloud_properties' => cloud_properties
-            }]
-          })
+              'subnets' => [{
+                  'range' => subnet_range,
+                  'gateway' => gateway,
+                  'dns' => dns,
+                  'cloud_properties' => cloud_properties
+                }]
+            },
+            network_resolver
+          )
         end
 
         before do

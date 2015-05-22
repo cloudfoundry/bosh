@@ -21,20 +21,28 @@ module Bosh::Spec
 
     def self.simple_cloud_config
       minimal_cloud_config.merge({
-          'networks' => [{
-              'name' => 'a',
-              'subnets' => [{
-                  'range' => '192.168.1.0/24',
-                  'gateway' => '192.168.1.1',
-                  'dns' => ['192.168.1.1', '192.168.1.2'],
-                  'static' => ['192.168.1.10'],
-                  'reserved' => [],
-                  'cloud_properties' => {},
-                }],
-            }],
+          'networks' => [network],
 
           'resource_pools' => [resource_pool]
         })
+    end
+
+    def self.network(options = {})
+      {
+        'name' => 'a',
+        'subnets' => [subnet],
+      }.merge!(options)
+    end
+
+    def self.subnet(options = {})
+      {
+        'range' => '192.168.1.0/24',
+        'gateway' => '192.168.1.1',
+        'dns' => ['192.168.1.1', '192.168.1.2'],
+        'static' => ['192.168.1.10'],
+        'reserved' => [],
+        'cloud_properties' => {},
+      }.merge!(options)
     end
 
     def self.resource_pool

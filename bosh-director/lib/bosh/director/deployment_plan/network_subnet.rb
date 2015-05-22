@@ -25,10 +25,12 @@ module Bosh::Director
 
       # @param [DeploymentPlan::Network] network Network
       # @param [Hash] subnet_spec Raw subnet spec from deployment manifest
+      # @param [NetAddr::CIDR] legacy_reserved_ranges list of restricted ranges from legacy deployments
       # @param [Bosh::Director::DeploymentPlan::IpProviderFactory] ip_provider_factory
-      def initialize(network, subnet_spec, ip_provider_factory)
+      def initialize(network, subnet_spec, legacy_reserved_ranges, ip_provider_factory)
         @network = network
 
+        Config.logger.debug("reserved ranges #{legacy_reserved_ranges.inspect}")
         range_property = safe_property(subnet_spec, "range", :class => String)
         @range = NetAddr::CIDR.create(range_property)
 
@@ -88,6 +90,12 @@ module Bosh::Director
                 "network `#{@network.name}' range"
           end
           static_ips.add(ip)
+        end
+
+        legacy_reserved_ranges.each do |cidr_range|
+          cidr_range.range(0, nil, Objectify: true).each do |ip|
+            restricted_ips.add(ip.to_i) unless static_ips.include?(ip.to_i)
+          end
         end
 
         @ip_provider = ip_provider_factory.create(@range, @network.name, restricted_ips, static_ips)

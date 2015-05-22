@@ -155,28 +155,68 @@ describe 'shared network', type: :integration do
   end
 
   context 'when we have not yet migrated to cloud config' do
-    before { current_sandbox.health_monitor_process.start }
-    after { current_sandbox.health_monitor_process.stop }
-
-    it 'ressurects vms with old deployment ignoring cloud config' do
+    let(:legacy_manifest) do
       legacy_manifest = Bosh::Spec::Deployments.legacy_manifest
       legacy_manifest['jobs'].first['instances'] = 1
       legacy_manifest['resource_pools'].first.delete('size')
-      deploy_simple_manifest(manifest_hash: legacy_manifest)
-      vms = director.vms
-      expect(vms.size).to eq(1)
-      expect(vms.first.ips).to eq('192.168.1.2')
+      legacy_manifest
+    end
 
-      cloud_config_hash['networks'].first['subnets'].first['reserved'] = ['192.168.1.2']
-      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+    context 'with ressurector' do
+      before { current_sandbox.health_monitor_process.start }
+      after { current_sandbox.health_monitor_process.stop }
 
-      original_vm = director.vm('foobar/0')
-      original_vm.kill_agent
-      resurrected_vm = director.wait_for_vm('foobar/0', 300)
-      expect(resurrected_vm.cid).to_not eq(original_vm.cid)
-      vms = director.vms
-      expect(vms.size).to eq(1)
-      expect(vms.first.ips).to eq('192.168.1.2')
+      it 'ressurects vms with old deployment ignoring cloud config' do
+        deploy_simple_manifest(manifest_hash: legacy_manifest)
+        vms = director.vms
+        expect(vms.size).to eq(1)
+        expect(vms.first.ips).to eq('192.168.1.2')
+
+        cloud_config_hash['networks'].first['subnets'].first['reserved'] = ['192.168.1.2']
+        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+        original_vm = director.vm('foobar/0')
+        original_vm.kill_agent
+        resurrected_vm = director.wait_for_vm('foobar/0', 300)
+        expect(resurrected_vm.cid).to_not eq(original_vm.cid)
+        vms = director.vms
+        expect(vms.size).to eq(1)
+        expect(vms.first.ips).to eq('192.168.1.2')
+      end
+    end
+
+    context 'without ressurector' do
+      it 'deployment after cloud config gets IP outside of range reserved by first deployment' do
+        legacy_manifest['networks'].first['subnets'].first['range'] = '192.168.1.0/28'
+        deploy_simple_manifest(manifest_hash: legacy_manifest)
+        vms = director.vms
+        expect(vms.size).to eq(1)
+        expect(vms.first.ips).to eq('192.168.1.2')
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+        deploy_simple_manifest(manifest_hash: second_deployment_manifest)
+        vms = director.vms
+        expect(vms.size).to eq(1)
+        expect(vms.first.ips).to eq('192.168.1.16')
+      end
+
+      it 'deployment after cloud config fails to get static IP in the range reserved by first deployment' do
+        legacy_manifest['networks'].first['subnets'].first['range'] = '192.168.1.0/28'
+        deploy_simple_manifest(manifest_hash: legacy_manifest)
+        vms = director.vms
+        expect(vms.size).to eq(1)
+        expect(vms.first.ips).to eq('192.168.1.2')
+
+        upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+        _, exit_code = deploy_with_ip(
+          second_deployment_manifest,
+          '192.168.1.2',
+          { failure_expected: true, return_exit_code: true }
+        )
+        expect(exit_code).to_not eq(0)
+      end
     end
   end
 end

@@ -25,13 +25,15 @@ module Bosh::Director
 
       def parse_networks
         networks = safe_property(@cloud_manifest, 'networks', :class => Array)
+        global_network_resolver = GlobalNetworkResolver.new(@deployment)
+
         networks.each do |network_spec|
           type = safe_property(network_spec, 'type', :class => String,
             :default => 'manual')
 
           case type
             when 'manual'
-              network = ManualNetwork.new(@deployment, network_spec)
+              network = ManualNetwork.new(@deployment, network_spec, global_network_resolver)
             when 'dynamic'
               network = DynamicNetwork.new(@deployment, network_spec)
             when 'vip'

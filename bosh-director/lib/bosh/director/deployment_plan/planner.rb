@@ -15,10 +15,6 @@ module Bosh::Director
       def model
         nil
       end
-
-      def using_cloud_config?
-        !@cloud_config.nil?
-      end
     end
 
     class Planner < BasePlanner
@@ -200,6 +196,10 @@ module Bosh::Director
           deployment_stemcell.remove_deployment(model) unless current_stemcell_models.include?(deployment_stemcell)
         end
       end
+
+      def using_cloud_config?
+        !@cloud_config.nil?
+      end
     end
 
     class CloudPlanner < BasePlanner
@@ -279,6 +279,10 @@ module Bosh::Director
 
       def disk_pools
         @disk_pools.values
+      end
+
+      def using_cloud_config?
+        false
       end
 
       def disk_pool(name)

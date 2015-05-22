@@ -8,8 +8,10 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
   end
 
   def subnet_spec(properties)
-    BD::DeploymentPlan::NetworkSubnet.new(@network, properties, ip_provider_factory)
+    BD::DeploymentPlan::NetworkSubnet.new(@network, properties, reserved_ranges, ip_provider_factory)
   end
+
+  let(:reserved_ranges) { [] }
 
   describe :initialize do
     it 'should create a subnet spec' do
@@ -122,7 +124,6 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
         'range' => '192.168.0.0/24', # 254 IPs
         'reserved' => '192.168.0.5 - 192.168.0.10', # 6 IPs
         'gateway' => '192.168.0.254', # 1 IP
-        'cloud_properties' => {'foo' => 'bar'}
       )
 
       expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.4'))).to eq(:dynamic)
@@ -131,6 +132,38 @@ describe 'Bosh::Director::DeploymentPlan::NetworkSubnet' do
       expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.11'))).to eq(:dynamic)
       expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.253'))).to eq(:dynamic)
       expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.254'))).to be_nil
+    end
+
+    context 'when there are reserved ranges' do
+      let(:reserved_ranges) { [NetAddr::CIDR.create('192.168.0.0/28')] }
+
+      it 'should not allow reservation of IPs from legacy reserved ranges' do
+        subnet = subnet_spec(
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+        )
+
+        expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.1'))).to be_nil
+      end
+
+      it 'should allocate dynamic IPs outside of those ranges' do
+        subnet = subnet_spec(
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+        )
+
+        expect(subnet.allocate_dynamic_ip).to eq(NetAddr::CIDR.create('192.168.0.16').to_i)
+      end
+
+      it 'allows specifying static IPs that are in legacy reserved ranges' do
+        subnet = subnet_spec(
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+          'static' => ['192.168.0.1']
+        )
+
+        expect(subnet.reserve_ip(NetAddr::CIDR.create('192.168.0.1'))).to eq(:static)
+      end
     end
 
     it 'should fail when reserved range is not valid' do
