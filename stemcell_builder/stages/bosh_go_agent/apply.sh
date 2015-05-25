@@ -13,9 +13,11 @@ mkdir -p $chroot/var/vcap/monit/svlog
 # Set up agent and monit with runit
 run_in_bosh_chroot $chroot "
 chmod +x /etc/sv/agent/run /etc/sv/agent/log/run
+rm -f /etc/service/agent
 ln -s /etc/sv/agent /etc/service/agent
 
 chmod +x /etc/sv/monit/run /etc/sv/monit/log/run
+rm -f /etc/service/monit
 ln -s /etc/sv/monit /etc/service/monit
 "
 
@@ -28,6 +30,7 @@ cd $agent_dir
 bin/build
 mv out/bosh-agent $chroot/var/vcap/bosh/bin/
 cp Tools/bosh-agent-rc $chroot/var/vcap/bosh/bin/
+cp mbus/agent.{cert,key} $chroot/var/vcap/bosh/
 
 cd $assets_dir/go/src/github.com/cloudfoundry/bosh-davcli
 bin/build

@@ -190,6 +190,7 @@ module Bosh::Director
           }
 
           expect(agent).to receive(:wait_until_ready)
+          expect(agent).to receive(:update_settings)
           expect(agent).to receive(:apply).with(initial_state)
           expect(agent).to receive(:compile_package) do |*args|
             name = args[2]
@@ -322,6 +323,7 @@ module Bosh::Director
 
         agents.each do |agent|
           expect(agent).to receive(:wait_until_ready).at_most(6).times
+          expect(agent).to receive(:update_settings).at_most(6).times
           expect(agent).to receive(:apply).with(initial_state).at_most(6).times
           expect(agent).to receive(:compile_package).at_most(6).times do |*args|
             name = args[2]
@@ -390,6 +392,7 @@ module Bosh::Director
         expect(AgentClient).to receive(:with_defaults).and_return(agent)
 
         expect(agent).to receive(:wait_until_ready)
+        expect(agent).to receive(:update_settings)
         expect(agent).to receive(:apply).with(initial_state)
         expect(agent).to receive(:compile_package).and_raise(RuntimeError)
 

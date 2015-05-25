@@ -26,6 +26,7 @@ module Bosh::Director
         :result,
         :revision,
         :task_checkpoint_interval,
+        :trusted_certs,
         :uuid,
         :current_job,
         :encryption,
@@ -138,6 +139,8 @@ module Bosh::Director
         @fix_stateful_nodes = config.fetch('scan_and_fix', {})
           .fetch('auto_fix_stateful_nodes', false)
         @enable_snapshots = config.fetch('snapshots', {}).fetch('enabled', false)
+
+        @trusted_certs = config['trusted_certs'] || ''
 
         Bosh::Clouds::Config.configure(self)
 

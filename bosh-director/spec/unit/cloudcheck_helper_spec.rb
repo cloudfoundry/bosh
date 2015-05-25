@@ -132,6 +132,7 @@ module Bosh::Director
             end
 
             expect(fake_new_agent).to receive(:wait_until_ready).ordered
+            expect(fake_new_agent).to receive(:update_settings).ordered
             expect(fake_cloud).to receive(:attach_disk).with('new-vm-cid', 'disk-cid').ordered
 
             expect(fake_new_agent).to receive(:mount_disk).with('disk-cid').ordered
@@ -183,6 +184,7 @@ module Bosh::Director
             end
 
             expect(fake_new_agent).to receive(:wait_until_ready).ordered
+            expect(fake_new_agent).to receive(:update_settings).ordered
             expect(fake_new_agent).to receive(:apply).with(spec).ordered
             expect(fake_new_agent).to receive(:start).ordered
 

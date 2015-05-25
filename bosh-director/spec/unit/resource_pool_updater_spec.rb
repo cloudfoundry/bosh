@@ -81,6 +81,7 @@ module Bosh::Director
       it 'should create a VM' do
         agent = double(:AgentClient)
         expect(agent).to receive(:wait_until_ready)
+        expect(agent).to receive(:update_settings)
         expect(agent).to receive(:get_state).and_return({'state' => 'foo'})
         allow(AgentClient).to receive(:with_defaults).with('agent-1').and_return(agent)
 

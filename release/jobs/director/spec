@@ -290,6 +290,10 @@ properties:
       - 0.pool.ntp.org
       - 1.pool.ntp.org
 
+  trusted_certs:
+    description: Cerfiticates that VMs created by this director should trust in addition to those packaged with the stemcell (PEM encoded; zero or more certs allowed)
+    DEFAULT: ''
+
   # Cpi
   director.cpi_job:
     description: Name of cpi job (null to use bundled cpi gems)

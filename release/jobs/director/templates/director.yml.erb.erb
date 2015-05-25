@@ -114,6 +114,10 @@ blobstore:
     password: <%= p('blobstore.director.password') %>
 <% end %>
 
+<% if_p('trusted_certs') do |trusted_certs| %>
+<%= dump_yaml('trusted_certs', trusted_certs) %>
+<% end %>
+
 <%= dump_yaml('user_management', p('director.user_management')) %>
 
 <% if_p('compiled_package_cache.options.bucket_name',
