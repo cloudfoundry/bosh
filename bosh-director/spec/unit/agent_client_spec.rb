@@ -71,6 +71,48 @@ module Bosh::Director
       it_acts_as_a_long_running_message :configure_networks
     end
 
+    describe 'update_settings' do
+      subject(:client) { AgentClient.with_defaults('fake-agent_id') }
+      let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil) }
+      let(:task) do
+        {
+            'agent_task_id' => 'fake-agent_task_id',
+            'state' => 'running',
+            'value' => 'task value'
+        }
+      end
+      before do
+        allow(Models::Vm).to receive(:find).with(agent_id: 'fake-agent_id').and_return(vm_model)
+      end
+
+      it 'packages the certificates into a map and sends to the agent' do
+        expect(client).to receive(:send_message).with(:update_settings, "trusted_certs" => "these are the certificates")
+        allow(client).to receive(:get_task)
+        client.update_settings("these are the certificates")
+      end
+
+      it 'periodically polls the update settings task while it is running' do
+        allow(client).to receive(:send_message).and_return task
+        allow(client).to receive(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL)
+        expect(client).to receive(:get_task).with('fake-agent_task_id')
+        client.update_settings("these are the certificates")
+      end
+
+      it 'is only a warning when the remote agent does not implement update_settings' do
+        allow(client).to receive(:handle_method).and_raise(RpcRemoteException, "unknown message update_settings")
+
+        expect(Config.logger).to receive(:warn).with("remote agent does not support update_settings")
+        expect { client.update_settings("no certs") }.to_not raise_error
+      end
+
+      it 'still raises an exception for other RPC failures' do
+        allow(client).to receive(:handle_method).and_raise(RpcRemoteException, "random failure!")
+
+        expect(client).to_not receive(:warning)
+        expect { client.update_settings("no certs") }.to raise_error
+      end
+    end
+
     describe 'ping <=> pong' do
       let(:stemcell) do
         Models::Stemcell.make(:cid => 'stemcell-id')

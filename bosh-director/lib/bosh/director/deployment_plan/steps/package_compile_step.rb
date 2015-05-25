@@ -159,6 +159,7 @@ module Bosh::Director
           begin
             agent = AgentClient.with_defaults(vm.agent_id)
             agent.wait_until_ready
+            agent.update_settings(Bosh::Director::Config.trusted_certs)
 
             configure_vm(vm, agent, network_settings)
             vm_data.agent = agent

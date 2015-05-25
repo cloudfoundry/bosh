@@ -359,7 +359,10 @@ module Bosh::Director
       before { allow(instance_model).to receive(:persistent_disk_cid).with(no_args).and_return(nil) }
 
       before { allow(AgentClient).to receive(:with_defaults).and_return(agent_client) }
-      let(:agent_client) { instance_double('Bosh::Director::AgentClient', wait_until_ready: nil) }
+      let(:agent_client) {
+        instance_double('Bosh::Director::AgentClient',
+          wait_until_ready: nil,
+          update_settings: nil) }
 
       let(:vm_model) { Models::Vm.make }
 

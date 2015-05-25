@@ -121,6 +121,7 @@ module Bosh::Director
             with('agent-222', 'sc-302', { 'foo' => 'bar' }, ['A', 'B', 'C'], [], { 'key1' => 'value1' })
 
           expect(fake_new_agent).to receive(:wait_until_ready).ordered
+          expect(fake_new_agent).to receive(:update_settings).ordered
           expect(fake_new_agent).to receive(:apply).with(spec).ordered
           expect(fake_new_agent).to receive(:start).ordered
 

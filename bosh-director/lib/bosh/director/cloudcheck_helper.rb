@@ -130,6 +130,7 @@ module Bosh::Director
       end
 
       agent_client(new_vm).wait_until_ready
+      agent_client(new_vm).update_settings(Bosh::Director::Config.trusted_certs)
 
       # After this point agent is actually responding to
       # pings, so if the rest of this handler fails

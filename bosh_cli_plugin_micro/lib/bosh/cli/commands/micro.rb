@@ -106,8 +106,11 @@ module Bosh::Cli::Command
       update = !!options[:update]
 
       err 'No deployment set' unless deployment
+      puts "Deployment:\n#{deployment}"
 
       manifest = load_yaml_file(deployment)
+
+      puts "Loaded manifest:\n#{manifest}"
 
       if stemcell.nil?
         unless manifest.is_a?(Hash)

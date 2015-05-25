@@ -35,6 +35,7 @@ module Bosh::Director::DeploymentPlan
           allow(agent_client).to receive(:drain).with('shutdown').and_return(0)
           allow(agent_client).to receive(:stop)
           allow(agent_client).to receive(:wait_until_ready)
+          allow(agent_client).to receive(:update_settings)
         end
 
         let(:agent_client) { instance_double('Bosh::Director::AgentClient') }

@@ -60,6 +60,7 @@ module Bosh
           disks: { persistent: {} },
           networks: networks,
           vm: { name: "vm-#{agent_id}" },
+          cert: '',
           mbus: @options['nats'],
         })
 

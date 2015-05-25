@@ -52,6 +52,7 @@ module Bosh::Director
         allow(AgentClient).to receive(:with_defaults).with('agent-222', anything).and_return(fake_new_agent)
 
         expect(fake_new_agent).to receive(:wait_until_ready).ordered
+        expect(fake_new_agent).to receive(:update_settings).ordered
         expect(fake_new_agent).to receive(:apply).with(spec).ordered
         expect(fake_new_agent).to receive(:start).ordered
 

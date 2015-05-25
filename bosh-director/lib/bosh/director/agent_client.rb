@@ -94,6 +94,15 @@ module Bosh::Director
       send_long_running_message(:unmount_disk, *args)
     end
 
+    def update_settings(certs)
+      begin
+        send_long_running_message(:update_settings, {"trusted_certs" => certs})
+      rescue RpcRemoteException => e
+        raise unless e.message == 'unknown message update_settings'
+        @logger.warn "remote agent does not support update_settings"
+      end
+    end
+
     def stop(*args)
       send_long_running_message(:stop, *args)
     end
