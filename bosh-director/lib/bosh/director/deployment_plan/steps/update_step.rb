@@ -36,9 +36,6 @@ module Bosh::Director
           @logger.info('Deleting no longer needed instances')
           delete_unneeded_instances
 
-          @logger.info('Deleting no longer needed network reservations')
-          delete_unneeded_network_reservations
-
           @logger.info('Updating resource pools')
           @resource_pools.update
           @base_job.task_checkpoint
@@ -83,30 +80,18 @@ module Bosh::Director
 
           @event_log.begin_stage('Deleting unneeded VMs', unneeded_vms.size)
           ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
-            unneeded_vms.each do |vm_model|
+            unneeded_vms.each do |vm_model,reservations_by_network|
               pool.process do
                 @event_log.track(vm_model.cid) do
                   @logger.info("Delete unneeded VM #{vm_model.cid}")
                   @cloud.delete_vm(vm_model.cid)
+                  reservations_by_network.each do |network_name,reservation|
+                      @deployment_plan.network(network_name).release(reservation)
+                  end
                   vm_model.destroy
                 end
               end
             end
-          end
-        end
-
-        def delete_unneeded_network_reservations
-          unneeded_reservations = @deployment_plan.unneeded_network_reservations
-          if unneeded_reservations.empty?
-            @logger.info('No unneeded network reservations to delete')
-            return
-          end
-
-          unneeded_reservations.each do |network_name, reservation|
-            Bosh::Director::Models::IpAddress.where(
-              address: reservation.ip,
-              network_name: network_name,
-            ).delete
           end
         end
 
@@ -116,7 +101,6 @@ module Bosh::Director
             @logger.info('No unneeded instances to delete')
             return
           end
-
           event_log_stage = @event_log.begin_stage('Deleting unneeded instances', unneeded_instances.size)
           instance_deleter = InstanceDeleter.new(@deployment_plan)
           instance_deleter.delete_instances(unneeded_instances, event_log_stage)

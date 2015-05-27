@@ -14,32 +14,32 @@ module Bosh::Director
 
     describe '#delete_instances' do
       let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
+      let(:instances_to_delete) do
+        instances = []
+        network_reservations = {"network-a" => [NetworkReservation.new_dynamic("10.0.0.1")]}
+        5.times { instances << [double('instance'), network_reservations] }
+        instances
+      end
 
       it 'should delete the instances with the config max threads option' do
-        instances = []
-        5.times { instances << double('instance') }
-
         allow(Config).to receive(:max_threads).and_return(5)
         pool = double('pool')
         allow(ThreadPool).to receive(:new).with(max_threads: 5).and_return(pool)
         allow(pool).to receive(:wrap).and_yield(pool)
         allow(pool).to receive(:process).and_yield
 
-        5.times { |index| expect(@deleter).to receive(:delete_instance).with(instances[index], event_log_stage) }
-        @deleter.delete_instances(instances, event_log_stage)
+        5.times { |index| expect(@deleter).to receive(:delete_instance).with(instances_to_delete[index][0], instances_to_delete[index][1], event_log_stage) }
+        @deleter.delete_instances(instances_to_delete, event_log_stage)
       end
 
       it 'should delete the instances with the respected max threads option' do
-        instances = []
-        5.times { instances << double('instance') }
-
         pool = double('pool')
         allow(ThreadPool).to receive(:new).with(max_threads: 2).and_return(pool)
         allow(pool).to receive(:wrap).and_yield(pool)
         allow(pool).to receive(:process).and_yield
 
-        5.times { |index| expect(@deleter).to receive(:delete_instance).with(instances[index], event_log_stage) }
-        @deleter.delete_instances(instances, event_log_stage, max_threads: 2)
+        5.times { |index| expect(@deleter).to receive(:delete_instance).with(instances_to_delete[index][0], instances_to_delete[index][1], event_log_stage) }
+        @deleter.delete_instances(instances_to_delete, event_log_stage, max_threads: 2)
       end
     end
 
@@ -70,7 +70,7 @@ module Bosh::Director
         allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance, blobstore).and_return(job_templates_cleaner)
         expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
-        @deleter.delete_instance(instance, event_log_stage)
+        @deleter.delete_instance(instance, {}, event_log_stage)
 
         expect(Models::Vm[vm.id]).to eq(nil)
         expect(Models::Instance[instance.id]).to eq(nil)
@@ -78,7 +78,7 @@ module Bosh::Director
 
       it 'advances event log stage to track deletion of given instance' do
         expect(event_log_stage).to receive(:advance_and_track).with(vm.cid)
-        @deleter.delete_instance(instance, event_log_stage)
+        @deleter.delete_instance(instance, {}, event_log_stage)
       end
     end
 

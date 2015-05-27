@@ -98,7 +98,20 @@ describe 'global networking', type: :integration do
       simple_manifest['jobs'].first['instances'] = 0
       simple_manifest['jobs'].first['networks'].first['static_ips'] = []
 
-      deploy_simple_manifest(manifest_hash: simple_manifest)
+
+      current_sandbox.cpi.commands.pause_delete_vms
+      deploy_simple_manifest(manifest_hash: simple_manifest, no_track: true)
+
+      current_sandbox.cpi.commands.wait_for_delete_vms
+      _, exit_code = deploy_with_ips(
+        second_deployment_manifest,
+        ['192.168.1.10', '192.168.1.11'],
+        { failure_expected: true, return_exit_code: true }
+      )
+      expect(exit_code).to_not eq(0)
+
+      current_sandbox.cpi.commands.unpause_delete_vms
+
       puts bosh_runner.run('task latest --debug')
 
       deploy_with_ips(second_deployment_manifest, ['192.168.1.10', '192.168.1.11'])

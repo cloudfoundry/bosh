@@ -71,6 +71,10 @@ module Bosh::Director
         "#{@job.name}/#{@index}"
       end
 
+      def to_instance_deleter_info
+        @model.nil? ? nil : [@model, @network_reservations]
+      end
+
       # Looks up instance model in DB and binds it to this instance spec.
       # Instance model is created if it's not found in DB. New VM is
       # allocated if instance DB record doesn't reference one.

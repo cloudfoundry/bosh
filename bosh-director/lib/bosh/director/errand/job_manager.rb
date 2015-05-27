@@ -37,7 +37,7 @@ module Bosh::Director
     # Deletes all errand job instances
     # @return [void]
     def delete_instances
-      instances = @job.instances.map(&:model).compact
+      instances = @job.instances.map(&:to_instance_deleter_info).compact
       if instances.empty?
         @logger.info('No errand instances to delete')
         return

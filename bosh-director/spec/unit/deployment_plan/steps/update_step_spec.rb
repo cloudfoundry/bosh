@@ -42,15 +42,26 @@ module Bosh::Director
 
       def it_deletes_unneeded_vms
         vm_model = Models::Vm.make(:cid => 'vm-cid')
-        allow(deployment_plan).to receive(:unneeded_vms).and_return([vm_model])
+        reservation = NetworkReservation.new_dynamic("10.0.0.1")
+        reservations = { "network-a" => reservation }
+        vm_tuple = [vm_model,reservations]
+
+        allow(deployment_plan).to receive(:unneeded_vms).and_return([vm_tuple])
 
         expect(event_log).to receive(:begin_stage).with('Deleting unneeded VMs', 1)
         expect(cloud).to receive(:delete_vm).with('vm-cid')
+        network = instance_double('Bosh::Director::DeploymentPlan::Network', release: nil)
+        expect(deployment_plan).to receive(:network).with('network-a').and_return(network)
+        expect(network).to receive(:release).with(reservation)
       end
 
       def it_deletes_unneeded_instances
         instance = Models::Instance.make
-        allow(deployment_plan).to receive(:unneeded_instances).and_return([instance])
+        reservation = NetworkReservation.new_dynamic("10.0.0.1")
+        reservations = { "network-a" => reservation }
+        instance_tuple = [instance,reservations]
+
+        allow(deployment_plan).to receive(:unneeded_instances).and_return([instance_tuple])
 
         instance_deleter = instance_double('Bosh::Director::InstanceDeleter')
         expect(InstanceDeleter).to receive(:new)
@@ -63,7 +74,7 @@ module Bosh::Director
                                .and_return(event_log_stage)
 
         expect(instance_deleter).to receive(:delete_instances)
-                                      .with([instance], event_log_stage)
+                                      .with([instance_tuple], event_log_stage)
       end
 
       def it_binds_instance_vms
@@ -93,13 +104,12 @@ module Bosh::Director
         expect(multi_job_updater).to receive(:run).with(base_job, deployment_plan, [job1, job2]).ordered
         expect(resource_pools).to receive(:refill).with(no_args).ordered
         expect(deployment_plan).to receive(:persist_updates!).ordered
-        expect(deployment_plan).to receive(:update_stemcell_references!).ordered
         subject.perform
       end
 
       it 'deletes unneeded vms from database and writes to event log' do
         vm_model = Models::Vm.make(:cid => 'vm-cid')
-        allow(deployment_plan).to receive(:unneeded_vms).and_return([vm_model])
+        allow(deployment_plan).to receive(:unneeded_vms).and_return([[vm_model,{}]])
 
         subject.perform
 
@@ -112,25 +122,10 @@ module Bosh::Director
         end
       end
 
-      it 'deletes unneeded network reservations' do
-        addr = NetAddr::CIDR.create('192.168.0.15').to_i
-
-        Models::IpAddress.make(network_name: 'fake-network-1', address: addr)
-        Models::IpAddress.make(network_name: 'fake-network-2', address: addr)
-
-        reservation = NetworkReservation.new(ip: addr)
-        allow(deployment_plan).to receive(:unneeded_network_reservations).and_return({ 'fake-network-1' => reservation })
-
-        expect {
-          subject.perform
-        }.to change { Models::IpAddress.count }.from(2).to(1)
-        expect(Models::IpAddress.first.network_name).to eq('fake-network-2')
-      end
-
       context 'when perform fails' do
         let(:some_error) { RuntimeError.new('oops') }
         before do
-          allow(deployment_plan).to receive(:unneeded_vms).and_return([double(:vm, cid: 'some-cid')])
+          allow(deployment_plan).to receive(:unneeded_vms).and_return([[double(:vm, cid: 'some-cid'),{}]])
           allow(cloud).to receive(:delete_vm).with('some-cid').and_raise(some_error)
         end
 

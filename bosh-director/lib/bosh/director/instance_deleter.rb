@@ -10,23 +10,16 @@ module Bosh::Director
       @blobstore = App.instance.blobstores.blobstore
     end
 
-    # Deletes a list of instances
-    # @param [Array<Models::Instance>] instances list of instances to delete
-    # @param [Hash] options optional list of options controlling concurrency
-    # @return [void]
     def delete_instances(instances, event_log_stage, options = {})
       max_threads = options[:max_threads] || Config.max_threads
       ThreadPool.new(:max_threads => max_threads).wrap do |pool|
-        instances.each do |instance|
-          pool.process { delete_instance(instance, event_log_stage) }
+        instances.each do |instance, reservations|
+          pool.process { delete_instance(instance, reservations, event_log_stage) }
         end
       end
     end
 
-    # Deletes a single instance and attached persistent disks
-    # @param [Models::Instance] instance instance to delete
-    # @return [void]
-    def delete_instance(instance, event_log_stage)
+    def delete_instance(instance, reservations, event_log_stage)
       vm = instance.vm
       @logger.info("Delete unneeded instance: #{vm.cid}")
 
@@ -40,15 +33,15 @@ module Bosh::Director
         RenderedJobTemplatesCleaner.new(instance, @blobstore).clean_all
 
         vm.db.transaction do
+          reservations.each do |network_name,reservation|
+            @deployment_plan.network(network_name).release(reservation)
+          end
           instance.destroy
           vm.destroy
         end
       end
     end
 
-    # Drain the instance
-    # @param [String] agent_id agent id
-    # @return [void]
     def drain(agent_id)
       agent = AgentClient.with_defaults(agent_id)
 
@@ -76,9 +69,6 @@ module Bosh::Director
       Bosh::Director::Api::SnapshotManager.delete_snapshots(snapshots)
     end
 
-    # Delete persistent disks
-    # @param [Array<Model::PersistentDisk>] persistent_disks disks
-    # @return [void]
     def delete_persistent_disks(persistent_disks)
       persistent_disks.each do |disk|
         @logger.info("Deleting disk: `#{disk.disk_cid}', " +
@@ -93,10 +83,6 @@ module Bosh::Director
       end
     end
 
-    # Deletes the DNS records
-    # @param [String] job job name
-    # @param [Numeric] index job index
-    # @return [void]
     def delete_dns(job, index)
       if Config.dns_enabled?
         record_pattern = [index, canonical(job), "%",

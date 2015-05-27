@@ -73,6 +73,7 @@ module Bosh
       end
 
       def delete_vm(vm_name)
+        commands.wait_for_unpause_delete_vms
         agent_pid = vm_name.to_i
         Process.kill('KILL', agent_pid)
       # rubocop:disable HandleExceptions
@@ -283,6 +284,35 @@ module Bosh
         def initialize(base_dir, logger)
           @cpi_commands = File.join(base_dir, 'cpi_commands')
           @logger = logger
+        end
+
+        def pause_delete_vms
+          @logger.info("Pausing delete_vms")
+          path = File.join(@cpi_commands, 'pause_delete_vms')
+          FileUtils.mkdir_p(File.dirname(path))
+          File.write(path, 'marker')
+        end
+
+        def unpause_delete_vms
+          @logger.info("Unpausing delete_vms")
+          FileUtils.rm_rf File.join(@cpi_commands, 'pause_delete_vms')
+          FileUtils.rm_rf File.join(@cpi_commands, 'wait_for_unpause_delete_vms')
+        end
+
+        def wait_for_delete_vms
+          @logger.info("Wait for delete_vms")
+          path = File.join(@cpi_commands, 'wait_for_unpause_delete_vms')
+          sleep(0.1) until File.exists?(path)
+        end
+
+        def wait_for_unpause_delete_vms
+          @logger.info("Wait for unpausing delete_vms")
+          path = File.join(@cpi_commands, 'wait_for_unpause_delete_vms')
+          FileUtils.mkdir_p(File.dirname(path))
+          File.write(path, 'marker')
+
+          path = File.join(@cpi_commands, 'pause_delete_vms')
+          sleep(0.1) while File.exists?(path)
         end
 
         def make_configure_networks_not_supported(vm_id)

@@ -126,8 +126,7 @@ module Bosh::Director
       # @param [Bosh::Director::Models::Vm] vm VM DB model
       # @param [Hash(String => Bosh::Director::NetworkReservation)] reservations map of network name and reservation
       def delete_vm(vm, reservations)
-        @unneeded_vms << vm
-        register_unneeded_network_reservations(reservations)
+        @unneeded_vms << [vm, reservations]
       end
 
       # Adds instance to deletion queue
@@ -135,11 +134,10 @@ module Bosh::Director
       # @param [Hash(String => Bosh::Director::NetworkReservation)] reservations map of network name and reservation
       def delete_instance(instance, reservations)
         if @jobs_name_index.has_key?(instance.job)
-          @jobs_name_index[instance.job].unneeded_instances << instance
+          @jobs_name_index[instance.job].unneeded_instances << [instance, reservations]
         else
-          @unneeded_instances << instance
+          @unneeded_instances << [instance, reservations]
         end
-        register_unneeded_network_reservations(reservations)
       end
 
       # Adds a job by name
@@ -201,14 +199,6 @@ module Bosh::Director
 
       def using_global_networking?
         !@cloud_config.nil?
-      end
-
-      private
-
-      def register_unneeded_network_reservations(reservations)
-        @unneeded_network_reservations += reservations.map do |network_name, reservation|
-          [network_name, reservation]
-        end
       end
     end
 

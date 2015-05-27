@@ -47,8 +47,8 @@ module Bosh::Director
       let(:instance_deleter) { instance_double('Bosh::Director::InstanceDeleter') }
       let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
 
-      let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance1_model) }
-      let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance2_model) }
+      let(:instance1) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance1_model, to_instance_deleter_info: [instance1_model,{}]) }
+      let(:instance2) { instance_double('Bosh::Director::DeploymentPlan::Instance', model: instance2_model, to_instance_deleter_info: [instance2_model,{}]) }
 
       let(:instance1_model) { instance_double('Bosh::Director::Models::Instance', vm: instance1_vm) }
       let(:instance2_model) { instance_double('Bosh::Director::Models::Instance', vm: instance2_vm) }
@@ -81,7 +81,7 @@ module Bosh::Director
       it 'deletes all job instances' do
         expect(InstanceDeleter).to receive(:new).with(deployment)
         expect(instance_deleter).to receive(:delete_instances).
-          with([instance1_model, instance2_model], event_log_stage)
+          with([[instance1_model,{}], [instance2_model,{}]], event_log_stage)
 
         subject.delete_instances
       end
@@ -95,6 +95,11 @@ module Bosh::Director
       context 'when instances are not bound' do
         let(:instance1_model) { nil }
         let(:instance2_model) { nil }
+
+        before do
+          allow(instance1).to receive(:to_instance_deleter_info).and_return(nil)
+          allow(instance2).to receive(:to_instance_deleter_info).and_return(nil)
+        end
 
         it 'does not create an event log stage' do
           expect(event_log).not_to receive(:begin_stage)
