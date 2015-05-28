@@ -6,7 +6,7 @@ module Bosh::Director::Api
 
     def remove
       removal_candidates_dataset.each do |task|
-        FileUtils.rm_rf(task.output)
+        FileUtils.rm_rf(task.output) if task.output
         task.destroy
       end
     end

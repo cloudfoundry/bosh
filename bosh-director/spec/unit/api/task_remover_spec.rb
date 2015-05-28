@@ -185,6 +185,23 @@ module Bosh::Director::Api
           }.from((1..5).to_a).to((1..5).to_a - [2])
         end
       end
+
+      context 'when task output is nil' do
+        subject(:remover) { described_class.new(0) }
+
+        before do
+          Bosh::Director::Models::Task.make(state: 'done', output: nil)
+          FakeFS.deactivate!
+        end
+
+        after { FakeFS.activate! }
+
+        it 'does not fail' do
+          expect {
+            remover.remove
+          }.to_not raise_error
+        end
+      end
     end
   end
 end
