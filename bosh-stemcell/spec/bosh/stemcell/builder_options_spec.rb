@@ -82,6 +82,9 @@ module Bosh::Stemcell
             expect(result['agent_src_dir']).to eq(
               File.join(expected_source_root, 'go/src/github.com/cloudfoundry/bosh-agent')
             )
+            expect(result['davcli_src_dir']).to eq(
+              File.join(expected_source_root, 'go/src/github.com/cloudfoundry/bosh-davcli')
+            )
             expect(result['image_create_disk_size']).to eq(default_disk_size)
             expect(result['bosh_micro_enabled']).to eq('yes')
             expect(result['bosh_micro_package_compiler_path']).to eq(
