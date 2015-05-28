@@ -68,7 +68,7 @@ module Bosh::AwsCloud
 
       logger.debug("stemcell copy output:\n#{result.output}")
     rescue Bosh::Exec::Error => e
-      raise Bosh::Clouds::CloudError, "Unable to copy stemcell root image: #{e.message}"
+      raise Bosh::Clouds::CloudError, "Unable to copy stemcell root image: #{e.message}\nScript output:\n#{e.output}"
     end
 
     # checks if the stemcell-copy script can be found in
