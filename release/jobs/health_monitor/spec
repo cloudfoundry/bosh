@@ -191,8 +191,10 @@ properties:
     description: Location of Consul Cluster or agent
   hm.consul_event_forwarder.port:
     description: Consul Port
+    default: 8500
   hm.consul_event_forwarder.protocol:
     description: http/https
+    default: http
   hm.consul_event_forwarder.params:
     description: Params for url can be used for passing ACL token
   hm.consul_event_forwarder.namespace:
@@ -201,5 +203,10 @@ properties:
     description: A ttl time for ttl checks, if set ttl checks will be used
   hm.consul_event_forwarder.ttl_note:
     description: A note for ttl checks
+    default: Automatically Registered by Bosh-Monitor
   hm.consul_event_forwarder.events:
     description: Whether or not to use the events api
+    default: false
+  hm.consul_event_forwarder.heartbeats_as_alerts:
+    description: Should we treat all heartbeats as alerts as well?
+    default: false

@@ -5,14 +5,13 @@ module Bosh::Monitor
     class ConsulEventForwarder < Base
       include Bosh::Monitor::Plugins::HttpRequestHelper
 
-      DEFAULT_PORT           = '8500'
-      DEFAULT_PROTOCOL       = 'http'
-      DEFAULT_TTL_NOTE       = "Automatically Registered by BOSH-MONITOR"
       CONSUL_REQUEST_HEADER  = { 'Content-Type' => 'application/javascript' }
       TTL_STATUS_MAP         = { 'running' => :pass, 'failing' => :fail, 'unknown' => :fail, 'default' => :warn }
+      REQUIRED_OPTIONS       = ["host", "port", "protocol" ]
+      CONSUL_MAX_EVENT_BYTESIZE = 512
 
       CONSUL_ENDPOINTS = {
-        event:     "/v1/event/fire/",              #fire and event
+        event:     "/v1/event/fire/",              #fire an event
         register:   "/v1/agent/check/register",    #register a check
         deregister: "/v1/agent/check/deregister/", #deregister a check
         pass:       "/v1/agent/check/pass/",       #mark a check as passing
@@ -22,16 +21,17 @@ module Bosh::Monitor
 
       def run
         @checklist       = []
-        @host            = options['host']            || ""
-        @namespace       = options['namespace']       || ""
-        @port            = options['port']            || DEFAULT_PORT
-        @protocol        = options['protocol']        || DEFAULT_PROTOCOL
+        @host            = options['host']
+        @namespace       = options['namespace']
+        @port            = options['port']
+        @protocol        = options['protocol']
         @params          = options['params']
         @ttl             = options['ttl']
-        @use_events      = options['events']          || false
-        @ttl_note        = options['ttl_note']        || DEFAULT_TTL_NOTE
+        @use_events      = options['events']
+        @ttl_note        = options['ttl_note']
 
-        @use_ttl            = !@ttl.nil?
+        @heartbeats_as_alerts = options['heartbeats_as_alerts']
+        @use_ttl              = !@ttl.nil?
 
         @status_map = Hash.new(:warn)
         @status_map.merge!(TTL_STATUS_MAP)
@@ -40,7 +40,8 @@ module Bosh::Monitor
       end
 
       def validate_options
-        !(options['host'].nil? || options['host'].empty?)
+        valid_array = REQUIRED_OPTIONS.map{ |o| options[o].to_s.empty? }
+        !valid_array.include?(true)
       end
 
       def process(event)
@@ -54,14 +55,27 @@ module Bosh::Monitor
         URI.parse("#{@protocol}://#{@host}:#{@port}#{path}?#{@params}")
       end
 
+      #heartbeats get forwarded as ttl checks and alerts get forwarded as events
+      #if heartbeat_as_alert is true than a heartbeat gets forwarded as events as well
       def forward_event(event)
-        notify_consul(event, :event)  if @use_events
 
-        if event_unregistered?(event)
-          notify_consul(event, :register, registration_payload(event))
-        elsif @use_ttl
-          notify_consul(event, :ttl)
+        if forward_this_event?(event)
+          notify_consul(event, :event)
         end
+
+        if forward_this_ttl?(event)
+          event_unregistered?(event) ? notify_consul(event, :register, registration_payload(event)) : notify_consul(event, :ttl)
+        end
+
+      end
+
+      #should an individual alert or heartbeat be forwarded as a consul event
+      def forward_this_event?(event)
+        @use_events && ( event.is_a?(Bosh::Monitor::Events::Alert) || ( event.is_a?(Bosh::Monitor::Events::Heartbeat) && @heartbeats_as_alerts) )
+      end
+
+      def forward_this_ttl?(event)
+         @use_ttl && event.is_a?(Bosh::Monitor::Events::Heartbeat)
       end
 
       def get_path_for_note_type(event, note_type)
@@ -80,12 +94,13 @@ module Bosh::Monitor
       def label_for_event(event)
         case event
           when Bosh::Monitor::Events::Heartbeat
-            "#{event.job}_heartbeat"
+            "#{@namespace}#{event.job}"
           when Bosh::Monitor::Events::Alert
             event_label = event.title.downcase.gsub(" ","_")
-            "#{event_label}_alert"
+            "#{@namespace}#{event_label}"
           else
-            "event"
+            #Something we haven't encountered yet
+            "#{@namespace}event"
         end
       end
 
@@ -97,9 +112,11 @@ module Bosh::Monitor
       # note_type: the type of notice we are sending (:event, :ttl, :register)
       # message:   an optional body for the message, event.json is used by default
       def notify_consul(event, note_type, message=nil)
-        body    = message.nil? ? event.to_json : message.to_json
+        body    = message.nil? ? right_sized_body_for_consul(event).to_json : message.to_json
         uri     = consul_uri(event, note_type)
+
         request = { :body => body }
+
         send_http_put_request(uri , request)
 
         #if a registration request returns without error we log it
@@ -107,6 +124,34 @@ module Bosh::Monitor
         @checklist << event.job if note_type == :register
       rescue => e
         logger.error("Could not forward event to Consul Cluster @#{@host}: #{e.inspect}")
+      end
+
+      #consul limits event payload to < 512 bytes, unfortunately we have to do some pruning so this limit is not as likely to be reached
+      #this is suboptimal but otherwise the event post will fail, and how do we decide what data isn't important?
+      def right_sized_body_for_consul(event)
+        body = event.to_hash
+        if event.is_a?(Bosh::Monitor::Events::Heartbeat)
+          vitals = body[:vitals]
+          #currently assuming the event hash details are always put together in the same order
+          #this should yield consistent results from the values method
+          {
+            :agent  => body[:agent_id],
+            :name   => "#{body[:job]}/#{body[:index]}",
+            :state  => "#{body[:job_state]}",
+            :data   => {
+                :cpu => vitals['cpu'].values,
+                :dsk => {
+                  :eph => vitals['disk']['ephemeral'].values,
+                  :sys => vitals['disk']['system'].values,
+                },
+                :ld  => vitals['load'],
+                :mem => vitals['mem'].values,
+                :swp => vitals['swap'].values
+            }
+          }
+        else
+          body
+        end
       end
 
       #Has this process not encountered a specific ttl check yet?
@@ -117,8 +162,7 @@ module Bosh::Monitor
       end
 
       def registration_payload(event)
-        name = "#{@namespace}#{event.job}"
-        { "name"  => name, "notes" => @ttl_note, "ttl" => @ttl }
+        { "name"  => label_for_ttl(event), "notes" => @ttl_note, "ttl" => @ttl }
       end
 
     end
