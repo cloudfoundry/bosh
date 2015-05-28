@@ -153,28 +153,18 @@ plugins:
       - heartbeat
     options:
       host: <%= p("hm.consul_event_forwarder.host") %>
-      <% if_p("hm.consul_event_forwarder.port") do |port| %>
-      port: <%= port %>
-      <%end%>
-      <% if_p("hm.consul_event_forwarder.protocol") do |protocol| %>
-      protocol: <%= protocol %>
+      port: <%= p("hm.consul_event_forwarder.port") %>
+      protocol: <%= p("hm.consul_event_forwarder.protocol") %>
+      ttl_note: <%= p("hm.consul_event_forwarder.ttl_note") %>
+      events: <%= p("hm.consul_event_forwarder.events") %>
+      heartbeats_as_alerts: <%= p("hm.consul_event_forwarder.heartbeats_as_alerts") %>
+      <% if_p("hm.consul_event_forwarder.namespace") do |namespace| %>
+      namespace: <%= namespace %>
       <%end%>
       <% if_p("hm.consul_event_forwarder.params") do |params| %>
       params: <%= params %>
       <%end%>
       <% if_p("hm.consul_event_forwarder.ttl") do |ttl| %>
       ttl: <%= ttl %>
-      <%end%>
-      <% if_p("hm.consul_event_forwarder.ttl_note") do |ttl_note| %>
-      events: <%= ttl_note %>
-      <%end%>
-      <% if_p("hm.consul_event_forwarder.events") do |events| %>
-      events: <%= events %>
-      <%end%>
-      <% if_p("hm.consul_event_forwarder.namespace") do |namespace| %>
-      namespace: <%= namespace %>
-      <%end%>
-      <% if_p("hm.consul_event_forwarder.heartbeats_as_alerts") do |haa| %>
-      heartbeats_as_alerts: <%= haa %>
       <%end%>
   <% end %>
