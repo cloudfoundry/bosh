@@ -4,7 +4,7 @@ require 'bosh/dev/sandbox/main'
 
 module IntegrationExampleGroup
   def logger
-    @logger ||= Logger.new(STDOUT)
+    @logger ||= current_sandbox.logger
   end
 
   def director

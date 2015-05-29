@@ -47,7 +47,7 @@ module Bosh::Dev::Sandbox
     alias_method :db_name, :name
     attr_reader :blobstore_storage_dir
 
-    attr_reader :logs_path
+    attr_reader :logger, :logs_path
 
     attr_reader :cpi
 
