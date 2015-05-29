@@ -4,8 +4,9 @@ require 'rack/test'
 module Bosh::Director
   describe Api::UAAIdentityProvider do
     subject(:identity_provider) { Api::UAAIdentityProvider.new(provider_options) }
-    let(:provider_options) { {'url' => 'http://localhost:8080/uaa', 'key' => key} }
-    let(:key) { 'tokenkey' }
+    let(:uaa_url) { 'http://localhost:8080/uaa' }
+    let(:provider_options) { {'url' => uaa_url, 'key' => key} }
+    let(:key) { 'symmetric tokenkey' }
     let(:app) { Support::TestController.new(double(:config, identity_provider: identity_provider)) }
 
     describe 'client info' do
@@ -13,78 +14,59 @@ module Bosh::Director
         expect(identity_provider.client_info).to eq(
             'type' => 'uaa',
             'options' => {
-              'url' => 'http://localhost:8080/uaa'
+              'url' => uaa_url
             }
           )
       end
     end
 
     context 'given an OAuth token' do
-      let(:request_env) { {'HTTP_AUTHORIZATION' => "bearer #{encoded_token}"} }
-      let(:encoded_token) { CF::UAA::TokenCoder.encode(token, skey: encoding_key) }
-      let(:encoding_key) { key }
-      let(:token) do
-        {
-          'jti' => 'd64209e4-d150-45c9-9569-a352f42149b1',
-          'sub' => 'faf835ea-c582-4a28-b500-6e6ac1515690',
-          'scope' => ['scim.userids', 'password.write', 'openid', 'cloud_controller.write', 'cloud_controller.read'],
-          'client_id' => 'cf',
-          'cid' => 'cf',
-          'azp' => 'cf',
-          'user_id' => 'faf835ea-c582-4a28-b500-6e6ac1515690',
-          'user_name' => 'marissa',
-          'email' => 'marissa@test.org',
-          'iat' => Time.now.to_i,
-          'exp' => token_expiry_time,
-          'iss' => 'http://localhost:8080/uaa/oauth/token',
-          'aud' => audiences
-        }
-      end
-      let(:token_expiry_time) { (Time.now + 1000).to_i }
+      let(:token_decoder) { instance_double('Bosh::Director::Api::UAATokenDecoder') }
+      let(:auth_header) { 'bearer encodedtoken' }
+      let(:request_env) { {'HTTP_AUTHORIZATION' => auth_header } }
       let(:audiences) { ['bosh_cli'] }
+      let(:token_info) { double(:token_info) }
 
-      it 'returns the username of the authenticated user' do
-        expect(identity_provider.corroborate_user(request_env)).to eq('marissa')
+      before do
+        expect(Bosh::Director::Api::UAATokenDecoder).to receive(:new).with(
+          url: uaa_url, resource_id: audiences, symmetric_secret: key)
+          .and_return(token_decoder)
       end
 
-      context 'when the token is encoded with an incorrect key' do
-        let(:encoding_key) { "another-key" }
+      context 'when using a valid token' do
+        before do
+          expect(token_decoder).to receive(:decode_token).with(auth_header)
+            .and_return({ 'user_name' => 'marissa' })
+        end
 
-        it 'raises' do
-          expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+        it 'returns the username of the authenticated user' do
+          expect(identity_provider.corroborate_user(request_env)).to eq('marissa')
+        end
+
+        context 'without symmetric key' do
+          let(:key) { nil }
+
+          before do
+            provider_options.delete('key')
+          end
+
+          it 'returns the username of the authenticated user' do
+            expect(identity_provider.corroborate_user(request_env)).to eq('marissa')
+          end
         end
       end
 
-      context 'when the token has expired' do
-        let(:token_expiry_time) { (Time.now - 1000).to_i }
+
+      context 'when using a bad token' do
+        before do
+          expect(token_decoder).to receive(:decode_token)
+            .and_raise(Bosh::Director::Api::UAATokenDecoder::BadToken)
+        end
 
         it 'raises' do
-          expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+          expect { identity_provider.corroborate_user(request_env) }
+            .to raise_error(AuthenticationError)
         end
-      end
-
-      context "when bosh isn't in the token's audience list" do
-        let(:audiences) { ['nonbosh'] }
-
-        it 'raises' do
-          expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
-        end
-      end
-    end
-
-    context 'given valid HTTP basic authentication credentials' do
-      let(:request_env) { {'HTTP_AUTHORIZATION' => 'Basic YWRtaW46YWRtaW4='} }
-
-      it 'raises' do
-        expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
-      end
-    end
-
-    context 'given missing HTTP authentication credentials' do
-      let(:request_env) { { } }
-
-      it 'raises' do
-        expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
       end
     end
 
