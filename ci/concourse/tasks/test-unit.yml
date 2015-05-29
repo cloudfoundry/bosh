@@ -10,3 +10,6 @@ run:
   path: bosh-src/ci/concourse/tasks/rake.sh
   args: ["--trace", "go", "spec:unit"]
 
+params:
+  # defaults for 'fly execute'...
+  RUBY_VERSION: 2.1.6

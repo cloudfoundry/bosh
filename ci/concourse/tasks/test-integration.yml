@@ -12,3 +12,6 @@ run:
 
 params:
   LOG_LEVEL: WARN
+  # defaults for 'fly execute'...
+  DB: postgresql
+  RUBY_VERSION: 2.1.6
