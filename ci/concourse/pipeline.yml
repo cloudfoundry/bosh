@@ -85,10 +85,28 @@ jobs:
             DB:           postgresql
             RUBY_VERSION: 2.1.6
 
+  - name: promote-candidate
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        passed: [integration-mysql-1.9, integration-mysql-2.1, integration-postgres-1.9, integration-postgres-2.1]
+        trigger: true
+      - put: bosh-candidate
+        params:
+          repository: bosh-src
+
 resources:
   - name: bosh-src
     type: git
     source:
-      uri:          git@github.com:cloudfoundry/bosh.git
-      branch:       develop
-      private_key:  {{github_private_key}}
+      uri: git@github.com:cloudfoundry/bosh.git
+      branch: develop
+      private_key: {{github_private_key}}
+
+  - name: bosh-candidate
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/bosh.git
+      branch: candidate
+      private_key: {{github_private_key}}
