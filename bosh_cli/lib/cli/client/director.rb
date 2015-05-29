@@ -723,7 +723,8 @@ module Bosh
                Timeout::Error,
                HTTPClient::TimeoutError,
                HTTPClient::KeepAliveDisconnected,
-               OpenSSL::SSL::SSLError => e
+               OpenSSL::SSL::SSLError,
+               OpenSSL::X509::StoreError => e
           raise DirectorInaccessible, "cannot access director (#{e.message})"
 
         rescue HTTPClient::BadResponseError => e

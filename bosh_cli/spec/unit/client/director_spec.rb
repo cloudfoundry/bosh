@@ -827,6 +827,7 @@ describe Bosh::Cli::Client::Director do
         HTTPClient::TimeoutError.new('fake-error'),
         HTTPClient::KeepAliveDisconnected.new('fake-error'),
         OpenSSL::SSL::SSLError.new('fake-error'),
+        OpenSSL::X509::StoreError.new('fake-error')
       ].each do |error|
         context "when performing request fails with #{error} error" do
           it 'raises DirectorInaccessible error because director could not be reached' do
