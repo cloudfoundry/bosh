@@ -7,7 +7,7 @@ module Bosh
         def initialize(options)
           @url = options.fetch('url')
           Config.logger.debug "Initializing UAA Identity provider with url #{@url}"
-          @token_coder = CF::UAA::TokenCoder.new(skey: options.fetch('key'), audience_ids: ['bosh_cli'])
+          @token_coder = CF::UAA::TokenCoder.new(skey: options.fetch('key'))
         end
 
         def client_info
@@ -22,7 +22,7 @@ module Bosh
         def corroborate_user(request_env)
           auth_header = request_env['HTTP_AUTHORIZATION']
           token = @token_coder.decode(auth_header)
-          token['user_name']
+          token['user_name'] || token['client_id']
         rescue CF::UAA::DecodeError, CF::UAA::AuthError => e
           raise AuthenticationError, e.message
         end

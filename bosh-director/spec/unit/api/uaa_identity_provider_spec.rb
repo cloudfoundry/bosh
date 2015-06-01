@@ -37,14 +37,24 @@ module Bosh::Director
           'iat' => Time.now.to_i,
           'exp' => token_expiry_time,
           'iss' => 'http://localhost:8080/uaa/oauth/token',
-          'aud' => audiences
+          'aud' => ['bosh_cli']
         }
       end
       let(:token_expiry_time) { (Time.now + 1000).to_i }
-      let(:audiences) { ['bosh_cli'] }
 
       it 'returns the username of the authenticated user' do
         expect(identity_provider.corroborate_user(request_env)).to eq('marissa')
+      end
+
+      context 'when token does not have user_name' do
+        before do
+          token.delete('user_name')
+          token['client_id'] = 'fake-client-id'
+        end
+
+        it 'returns client id' do
+          expect(identity_provider.corroborate_user(request_env)).to eq('fake-client-id')
+        end
       end
 
       context 'when the token is encoded with an incorrect key' do
@@ -57,14 +67,6 @@ module Bosh::Director
 
       context 'when the token has expired' do
         let(:token_expiry_time) { (Time.now - 1000).to_i }
-
-        it 'raises' do
-          expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
-        end
-      end
-
-      context "when bosh isn't in the token's audience list" do
-        let(:audiences) { ['nonbosh'] }
 
         it 'raises' do
           expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)

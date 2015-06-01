@@ -24,13 +24,13 @@ module Bosh
             @token_issuer.prompts
           rescue CF::UAA::SSLException => e
             raise e unless @ssl_ca_file.nil?
-            err('Invalid SSL Cert. Use --ca-cert to specify SSL certificate') #FIXME: the uaa client shouldn't know about 'err'
+            err('Invalid SSL Cert. Use --ca-cert to specify SSL certificate')
           end
 
           def login(credentials)
             @token_issuer.access_info(credentials)
           rescue CF::UAA::TargetError => e
-            err("Failed to log in: #{e.info['error_description']}") #FIXME: the uaa client shouldn't know about 'err'
+            err("Failed to log in: #{e.info['error_description']}")
           rescue CF::UAA::BadResponse
             nil
           end

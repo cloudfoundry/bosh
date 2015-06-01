@@ -17,7 +17,9 @@ module Bosh
             decoded = @token_decoder.decode(token)
 
             username = decoded['client_id'] if decoded
-            AccessInfo.new(username, nil)
+
+            access_token = "#{token.info['token_type']} #{token.info['access_token']}"
+            AccessInfo.new(username, access_token)
           end
         end
       end

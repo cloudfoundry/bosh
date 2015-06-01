@@ -22,6 +22,11 @@ describe 'Logging into a director with UAA authentication', type: :integration d
 
       output = bosh_runner.run('status')
       expect(output).to match /marissa/
+
+      # test we are not getting auth error
+      # bosh vms exits with non-0 status if there are no vms
+      output = bosh_runner.run('vms', failure_expected: true)
+      expect(output).to match /No deployments/
     end
 
     it 'logs in successfully using client id and client secret' do
@@ -30,6 +35,11 @@ describe 'Logging into a director with UAA authentication', type: :integration d
         { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret' }
       ) do |runner|
         expect(runner).to have_output "Logged in as `test'"
+
+        # test we are not getting auth error
+        # bosh vms exits with non-0 status if there are no vms
+        output = bosh_runner.run('vms', failure_expected: true)
+        expect(output).to match /No deployments/
       end
     end
 
