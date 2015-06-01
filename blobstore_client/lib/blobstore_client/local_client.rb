@@ -44,7 +44,7 @@ module Bosh
       end
 
       def object_exists?(oid)
-        File.exists?(object_file_path(oid))
+        File.exist?(object_file_path(oid))
       end
 
       private
