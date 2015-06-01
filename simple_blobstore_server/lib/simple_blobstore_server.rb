@@ -19,7 +19,7 @@ module Bosh
         @path = config["path"]
         @nginx_path = config["nginx_path"]
 
-        if File.exists?(@path)
+        if File.exist?(@path)
           raise "Invalid path" unless File.directory?(@path)
         else
           FileUtils.mkdir_p(@path)
@@ -106,7 +106,7 @@ module Bosh
 
       head "/resources/:id" do
         file_name = get_file_name(params[:id])
-        File.exists?(file_name) ? status(200) : status(404)
+        File.exist?(file_name) ? status(200) : status(404)
       end
 
       get "/resources/:id" do
