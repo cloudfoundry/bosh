@@ -5,12 +5,12 @@ describe 'Logging into a director with UAA authentication', type: :integration d
     with_reset_sandbox_before_each(user_authentication: 'uaa')
 
     before do
-      bosh_runner.run("target #{current_sandbox.director_url}")
+      bosh_runner.run("target #{current_sandbox.director_url} --ca-cert #{current_sandbox.certificate_path}")
       bosh_runner.run('logout')
     end
 
     it 'logs in successfully using password' do
-      bosh_runner.run_interactively("login --ca-cert #{current_sandbox.certificate_path}") do |runner|
+      bosh_runner.run_interactively('login') do |runner|
         expect(runner).to have_output 'Email:'
         runner.send_keys 'marissa'
         expect(runner).to have_output 'Password:'
@@ -31,7 +31,7 @@ describe 'Logging into a director with UAA authentication', type: :integration d
 
     it 'logs in successfully using client id and client secret' do
       bosh_runner.run_interactively(
-        "login --ca-cert #{current_sandbox.certificate_path}",
+        'login',
         { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret' }
       ) do |runner|
         expect(runner).to have_output "Logged in as `test'"
@@ -44,7 +44,7 @@ describe 'Logging into a director with UAA authentication', type: :integration d
     end
 
     it 'fails to log in when incorrect credentials were provided' do
-      bosh_runner.run_interactively("login --ca-cert #{current_sandbox.certificate_path}") do |runner|
+      bosh_runner.run_interactively('login') do |runner|
         expect(runner).to have_output 'Email:'
         runner.send_keys 'fake'
         expect(runner).to have_output 'Password:'
@@ -58,8 +58,9 @@ describe 'Logging into a director with UAA authentication', type: :integration d
     end
 
     it 'fails to log in  with a useful message when cli fails to validate server and no cert was specified' do
+      bosh_runner.run("target #{current_sandbox.director_url}")
       bosh_runner.run_interactively('login') do |runner|
-        expect(runner).to have_output 'Invalid SSL Cert. Use --ca-cert to specify SSL certificate'
+        expect(runner).to have_output 'Invalid SSL Cert. Use --ca-cert option when setting target to specify SSL certificate'
       end
     end
 
@@ -88,7 +89,8 @@ CERT
         cert_path = File.join(tmpdir, 'invalid_cert.pem')
         File.write(cert_path, invalid_ca_cert)
 
-        bosh_runner.run_interactively("login --ca-cert #{cert_path}") do |runner|
+        bosh_runner.run("target #{current_sandbox.director_url} --ca-cert #{cert_path}")
+        bosh_runner.run_interactively("login") do |runner|
           expect(runner).to have_output 'Invalid SSL Cert'
         end
       end
@@ -99,11 +101,11 @@ CERT
     with_reset_sandbox_before_each(user_authentication: 'uaa', ssl_mode: 'wrong-ca')
 
     before do
-      bosh_runner.run("target #{current_sandbox.director_url}")
+      bosh_runner.run("target #{current_sandbox.director_url} --ca-cert #{current_sandbox.certificate_path}")
     end
 
     it 'fails to log in when incorrect credentials were provided' do
-      bosh_runner.run_interactively("login --ca-cert #{current_sandbox.certificate_path}") do |runner|
+      bosh_runner.run_interactively('login') do |runner|
         expect(runner).to have_output 'Invalid SSL Cert'
       end
     end

@@ -161,48 +161,84 @@ describe Bosh::Cli::Command::Misc do
 
   describe '#target' do
     context 'target is set' do
-      before do
-        File.open(@config_file, 'w+') do |f|
-          f.write(<<EOS)
+      context 'without arguments' do
+        before do
+          File.open(@config_file, 'w+') do |f|
+            f.write(<<EOS)
 ---
 target: #{target}
 target_name: #{target_name}
 target_uuid: #{uuid}
 EOS
-        end
-      end
-
-      context 'is interactive' do
-        context 'target name is set' do
-          it 'decorates target with target name' do
-            expect(command).to receive(:say).with("Current target is #{target} (#{target_name})")
-            command.set_target
           end
         end
 
-        context 'name is not set' do
-          let(:target_name) { nil }
+        context 'is interactive' do
+          context 'target name is set' do
+            it 'decorates target with target name' do
+              expect(command).to receive(:say).with("Current target is #{target} (#{target_name})")
+              command.set_target
+            end
+          end
 
-          it 'decorates target' do
-            expect(command).to receive(:say).with("Current target is #{target}")
+          context 'name is not set' do
+            let(:target_name) { nil }
+
+            it 'decorates target' do
+              expect(command).to receive(:say).with("Current target is #{target}")
+              command.set_target
+            end
+          end
+        end
+
+        context 'is non-interactive' do
+          it 'does not decorates target' do
+            command.add_option(:non_interactive, true)
+            expect(command).to receive(:say).with("#{target}")
             command.set_target
           end
         end
       end
 
-      context 'is non-interactive' do
-        it 'does not decorates target' do
-          command.add_option(:non_interactive, true)
-          expect(command).to receive(:say).with("#{target}")
+      context 'target is not set' do
+        it 'errors' do
+          expect(command).to receive(:err).with('Target not set')
           command.set_target
         end
       end
     end
 
-    context 'target is not set' do
-      it 'errors' do
-        expect(command).to receive(:err).with('Target not set')
+    context 'when new target is passed in' do
+      before do
+        allow(director).to receive(:get_status).and_return({})
+        command.add_option(:non_interactive, true)
+      end
+
+      it 'sets new target' do
+        command.set_target 'https://fake-target:1234'
+        expect(command).to receive(:say).with('https://fake-target:1234')
         command.set_target
+      end
+
+      it 'saves ca-cert' do
+        command.add_option(:ca_cert, '/fake-ca-cert')
+        command.set_target 'https://fake-target:1234'
+        config = YAML.load(File.read(@config_file))
+        expect(config['ca_cert']).to eq({'https://fake-target:1234' => '/fake-ca-cert'})
+      end
+
+      context 'when new target is the same as old target' do
+        it 'updates ca cert path' do
+          command.add_option(:ca_cert, '/fake-ca-cert')
+          command.set_target 'https://fake-target:1234'
+          config = YAML.load(File.read(@config_file))
+          expect(config['ca_cert']).to eq({'https://fake-target:1234' => '/fake-ca-cert'})
+
+          command.add_option(:ca_cert, '/another-ca-cert')
+          command.set_target 'https://fake-target:1234'
+          config = YAML.load(File.read(@config_file))
+          expect(config['ca_cert']).to eq({'https://fake-target:1234' => '/another-ca-cert'})
+        end
       end
     end
   end

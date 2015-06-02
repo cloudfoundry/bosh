@@ -12,7 +12,6 @@ module Bosh::Cli::Command
         'The username and password can also be ' +
         'set in the BOSH_USER and BOSH_PASSWORD ' +
         'environment variables.'
-    option '--ca-cert FILE', String, 'Path to client certificate provided to UAA server'
     def login(username = nil, password = nil)
       target_required
 
@@ -42,7 +41,7 @@ module Bosh::Cli::Command
       auth_info = director_info.fetch('user_authentication', {})
 
       if auth_info['type'] == 'uaa'
-        client_options = Bosh::Cli::Client::Uaa::Options.parse(options, auth_info['options'], ENV)
+        client_options = Bosh::Cli::Client::Uaa::Options.parse(config.ca_cert, auth_info['options'], ENV)
         uaa = Bosh::Cli::Client::Uaa::Client.new(client_options)
         Bosh::Cli::UaaLoginStrategy.new(terminal, uaa, config, interactive?)
       else

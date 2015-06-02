@@ -4,7 +4,7 @@ describe Bosh::Cli::Client::Uaa::Options do
   describe '#parse' do
     it 'parses url from auth options, cert from cli options, client id and secret from the env' do
       options = Bosh::Cli::Client::Uaa::Options.parse(
-        {ca_cert: 'some-ca-cert-file'},
+        'some-ca-cert-file',
         {'url' => 'https://example.com'},
         {'BOSH_CLIENT' => 'some-client', 'BOSH_CLIENT_SECRET' => 'some-client-secret'})
       expect(options).to eq(Bosh::Cli::Client::Uaa::Options.new(

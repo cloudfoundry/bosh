@@ -24,7 +24,7 @@ module Bosh
             @token_issuer.prompts
           rescue CF::UAA::SSLException => e
             raise e unless @ssl_ca_file.nil?
-            err('Invalid SSL Cert. Use --ca-cert to specify SSL certificate')
+            err('Invalid SSL Cert. Use --ca-cert option when setting target to specify SSL certificate')
           end
 
           def login(credentials)

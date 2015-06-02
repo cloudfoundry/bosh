@@ -201,6 +201,22 @@ module Bosh::Cli
       write_global(:target_uuid, value)
     end
 
+    def ca_cert
+      return nil if target.nil?
+
+      if @config_file['ca_cert'].is_a?(Hash)
+        @config_file['ca_cert'][target]
+      end
+    end
+
+    def save_ca_cert_path(cert_path)
+      expanded_path = cert_path ? File.expand_path(cert_path) : nil
+      @config_file['ca_cert'] ||= {}
+      @config_file['ca_cert'][target] = expanded_path
+
+      expanded_path
+    end
+
     # Read the max parallel downloads configuration.
     #
     # @return [Integer] The maximum number of parallel downloads

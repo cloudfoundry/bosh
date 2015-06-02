@@ -7,9 +7,8 @@ module Bosh
         class Options < Struct.new(:url, :ssl_ca_file, :client_id, :client_secret)
           class ValidationError < Bosh::Cli::CliError; end
 
-          def self.parse(cli_options, auth_options, env)
+          def self.parse(ssl_ca_file, auth_options, env)
             url = auth_options.fetch('url')
-            ssl_ca_file = cli_options[:ca_cert]
             client_id, client_secret = env['BOSH_CLIENT'], env['BOSH_CLIENT_SECRET']
 
             options = new(url, ssl_ca_file, client_id, client_secret)
