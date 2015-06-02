@@ -49,6 +49,8 @@ describe Bosh::Cli::Command::Base do
   end
 
   it 'has logged_in? helper' do
+    add_config('target' => 'localhost:8080', 'deployment' => 'test')
+
     cmd = make
     expect(cmd.logged_in?).to be(false)
     cmd.add_option(:username, 'foo')
@@ -183,9 +185,21 @@ describe Bosh::Cli::Command::Base do
       end
 
       context 'when credentials are not provided in config' do
-        let(:cmd) { make }
+        let(:cmd) do
+          add_config('target' => 'localhost:8080')
+          make
+        end
+
         it 'returns nil' do
           expect(cmd.credentials).to be_nil
+        end
+      end
+
+      context 'when target is not set' do
+        let(:cmd) { make }
+
+        it 'fails' do
+          expect { cmd.credentials }.to raise_error
         end
       end
     end

@@ -1,5 +1,3 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 module Bosh::Cli
   module Command
     class Base
@@ -102,7 +100,9 @@ module Bosh::Cli
       end
 
       def credentials
-        auth_token = config.token(target)
+        director_client = Bosh::Cli::Client::Director.new(target)
+        uaa_token_provider = Bosh::Cli::Client::Uaa::TokenProvider.new(config.ca_cert(target), config.token(target), ENV, director_client)
+        auth_token = uaa_token_provider.token
         return Bosh::Cli::Client::UaaCredentials.new(auth_token) if auth_token
 
         if username && password

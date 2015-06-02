@@ -1,13 +1,15 @@
-# Copyright (c) 2009-2012 VMware, Inc.
-
 require "spec_helper"
 
 describe Bosh::Cli::Command::Base do
   describe Bosh::Cli::Command::JobRename do
+    before do
+      allow(Bosh::Cli::Client::Director).to receive(:new).and_return(director)
+    end
+
+    let(:director) { instance_double('Bosh::Cli::Client::Director') }
+
     it "should rename the job" do
-      mock_director = double(Object)
-      expect(mock_director).to receive(:rename_job).and_return([:done, ""])
-      expect(Bosh::Cli::Client::Director).to receive(:new).and_return(mock_director)
+      expect(director).to receive(:rename_job).and_return([:done, ""])
 
       job_rename = Bosh::Cli::Command::JobRename.new
       allow(job_rename).to receive(:confirmed?).and_return(true)
@@ -18,9 +20,7 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "should raise exception on additional changes to manifest" do
-      mock_director = double(Object)
-      allow(mock_director).to receive(:get_deployment) { { "manifest" => old_manifest_yaml } }
-      expect(Bosh::Cli::Client::Director).to receive(:new).and_return(mock_director)
+      allow(director).to receive(:get_deployment) { { "manifest" => old_manifest_yaml } }
 
       job_rename = Bosh::Cli::Command::JobRename.new
 
@@ -31,9 +31,7 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "should raise exception if new manifest removed some properties" do
-      mock_director = double(Object)
-      allow(mock_director).to receive(:get_deployment) { { "manifest" => old_manifest_yaml } }
-      expect(Bosh::Cli::Client::Director).to receive(:new).and_return(mock_director)
+      allow(director).to receive(:get_deployment) { { "manifest" => old_manifest_yaml } }
 
       job_rename = Bosh::Cli::Command::JobRename.new
 
@@ -51,9 +49,7 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "should raise exception if old job name does not exist in manifest" do
-      mock_director = double(Object)
-      allow(mock_director).to receive(:get_deployment) { { "manifest" => old_manifest_yaml } }
-      expect(Bosh::Cli::Client::Director).to receive(:new).and_return(mock_director)
+      allow(director).to receive(:get_deployment) { { "manifest" => old_manifest_yaml } }
 
       job_rename = Bosh::Cli::Command::JobRename.new
 
@@ -63,9 +59,7 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "should raise exception if 2 jobs are changed in manifest" do
-      mock_director = double(Object)
-      allow(mock_director).to receive(:get_deployment) { { "manifest" => old_manifest_yaml } }
-      expect(Bosh::Cli::Client::Director).to receive(:new).and_return(mock_director)
+      allow(director).to receive(:get_deployment) { { "manifest" => old_manifest_yaml } }
 
       job_rename = Bosh::Cli::Command::JobRename.new
 

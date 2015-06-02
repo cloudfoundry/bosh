@@ -201,13 +201,16 @@ module Bosh::Cli
       write_global(:target_uuid, value)
     end
 
-    def ca_cert
+    def ca_cert(for_target=nil)
+      if for_target
+        return @config_file.fetch('ca_cert', {}).fetch(for_target, nil)
+      end
+
       return nil if target.nil?
 
-      if @config_file['ca_cert'].is_a?(Hash)
-        @config_file['ca_cert'][target]
-      end
+      @config_file.fetch('ca_cert', {}).fetch(target, nil)
     end
+
 
     def save_ca_cert_path(cert_path)
       expanded_path = cert_path ? File.expand_path(cert_path) : nil

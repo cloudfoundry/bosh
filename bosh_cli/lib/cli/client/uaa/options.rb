@@ -1,29 +1,17 @@
-require 'cli/errors'
-
 module Bosh
   module Cli
     module Client
       module Uaa
-        class Options < Struct.new(:url, :ssl_ca_file, :client_id, :client_secret)
-          class ValidationError < Bosh::Cli::CliError; end
+        class Options
+          attr_reader :ssl_ca_file, :client_id, :client_secret
 
-          def self.parse(ssl_ca_file, auth_options, env)
-            url = auth_options.fetch('url')
-            client_id, client_secret = env['BOSH_CLIENT'], env['BOSH_CLIENT_SECRET']
-
-            options = new(url, ssl_ca_file, client_id, client_secret)
-            options.validate!
-            options
+          def initialize(ssl_ca_file, env)
+            @client_id, @client_secret = env['BOSH_CLIENT'], env['BOSH_CLIENT_SECRET']
+            @ssl_ca_file = ssl_ca_file
           end
 
           def client_auth?
-            !client_id.nil? && !client_secret.nil?
-          end
-
-          def validate!
-            unless URI.parse(url).instance_of?(URI::HTTPS)
-              raise ValidationError.new('HTTPS protocol is required')
-            end
+            !@client_id.nil? && !@client_secret.nil?
           end
         end
       end

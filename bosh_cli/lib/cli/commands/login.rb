@@ -15,7 +15,7 @@ module Bosh::Cli::Command
     def login(username = nil, password = nil)
       target_required
 
-      login_strategy(director_info).login(target, username.to_s, password.to_s)
+      login_strategy(director).login(target, username.to_s, password.to_s)
     end
 
     # bosh logout
@@ -30,19 +30,13 @@ module Bosh::Cli::Command
 
     private
 
-    def director_info
-      director.get_status
-    rescue Bosh::Cli::AuthError
-      {}
-    end
-
-    def login_strategy(director_info)
+    def login_strategy(director)
       terminal = Bosh::Cli::Terminal.new(HighLine.new, BoshExtensions)
-      auth_info = director_info.fetch('user_authentication', {})
+      auth_info = Bosh::Cli::Client::Uaa::AuthInfo.new(director)
 
-      if auth_info['type'] == 'uaa'
-        client_options = Bosh::Cli::Client::Uaa::Options.parse(config.ca_cert, auth_info['options'], ENV)
-        uaa = Bosh::Cli::Client::Uaa::Client.new(client_options)
+      if auth_info.uaa?
+        client_options = Bosh::Cli::Client::Uaa::Options.new(config.ca_cert, ENV)
+        uaa = Bosh::Cli::Client::Uaa::Client.new(client_options, auth_info)
         Bosh::Cli::UaaLoginStrategy.new(terminal, uaa, config, interactive?)
       else
         Bosh::Cli::BasicLoginStrategy.new(terminal, director, config, interactive?)

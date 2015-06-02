@@ -9,10 +9,10 @@ module Bosh
     module Client
       module Uaa
         class Client
-          def initialize(options)
+          def initialize(options, auth_info)
             token_decoder = TokenDecoder.new
             if options.client_auth?
-              token_issuer = ClientTokenIssuer.new(options, token_decoder)
+              token_issuer = ClientTokenIssuer.new(options, auth_info, token_decoder)
             else
               token_issuer = PasswordTokenIssuer.new(options, token_decoder)
             end
