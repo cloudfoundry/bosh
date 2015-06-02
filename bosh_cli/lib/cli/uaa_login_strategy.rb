@@ -4,9 +4,9 @@ require 'cli/errors'
 module Bosh
   module Cli
     class UaaLoginStrategy
-      def initialize(terminal, uaa, config, interactive)
+      def initialize(terminal, uaa_client, config, interactive)
         @terminal = terminal
-        @uaa = uaa
+        @uaa_client = uaa_client
         @config = config
         @interactive = interactive
       end
@@ -14,7 +14,7 @@ module Bosh
       def login(target, username = nil, password = nil)
         if @interactive
           credentials = {}
-          @uaa.prompts.map do |prompt|
+          @uaa_client.prompts.map do |prompt|
             if prompt.password?
               credentials[prompt.field] = @terminal.ask_password("#{prompt.display_text}: ")
             else
@@ -22,7 +22,7 @@ module Bosh
             end
           end
 
-          if access_info = @uaa.login(credentials)
+          if access_info = @uaa_client.login(credentials)
             @terminal.say_green("Logged in as `#{access_info.username}'")
 
             if access_info.auth_header

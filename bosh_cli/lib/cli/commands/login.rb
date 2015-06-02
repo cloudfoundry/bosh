@@ -1,6 +1,6 @@
 require 'cli/basic_login_strategy'
 require 'cli/uaa_login_strategy'
-require 'cli/client/uaa'
+require 'cli/client/uaa/client'
 require 'cli/client/uaa/options'
 require 'cli/terminal'
 
