@@ -83,11 +83,6 @@ module Bosh::Cli::Command
       end
 
       director_url = normalize_url(director_url)
-      if target && director_url == normalize_url(target)
-        say("Target already set to `#{target_name.make_green}'")
-        return
-      end
-
       director = Bosh::Cli::Client::Director.new(director_url)
 
       begin
