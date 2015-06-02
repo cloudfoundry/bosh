@@ -1,10 +1,9 @@
 require 'rspec'
-# require 'rspec/core/rake_task'
 
 namespace :fly do
   desc 'Fly unit specs'
   task :unit do
-    system("fly execute -c ci/concourse/tasks/test-unit.yml -i bosh-src=$PWD")
+    sh("fly execute -c ci/concourse/tasks/test-unit.yml -i bosh-src=$PWD")
   end
 
   desc 'Fly integration specs'
