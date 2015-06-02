@@ -18,8 +18,7 @@ module Bosh
 
             username = decoded['client_id'] if decoded
 
-            access_token = "#{token.info['token_type']} #{token.info['access_token']}"
-            AccessInfo.new(username, access_token)
+            AccessInfo.new(username, token.auth_header)
           end
         end
       end
