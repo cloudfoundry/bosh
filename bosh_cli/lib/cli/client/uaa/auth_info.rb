@@ -7,8 +7,16 @@ module Bosh
         class AuthInfo
           class ValidationError < Bosh::Cli::CliError; end
 
-          def initialize(director)
+          attr_reader :ssl_ca_file, :client_id, :client_secret
+
+          def initialize(director, env, ssl_ca_file)
             @director = director
+            @client_id, @client_secret = env['BOSH_CLIENT'], env['BOSH_CLIENT_SECRET']
+            @ssl_ca_file = ssl_ca_file
+          end
+
+          def client_auth?
+            !@client_id.nil? && !@client_secret.nil?
           end
 
           def uaa?

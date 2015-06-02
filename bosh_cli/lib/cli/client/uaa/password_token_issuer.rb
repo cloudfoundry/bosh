@@ -18,8 +18,8 @@ module Bosh
             end
           end
 
-          def access_info(credentials)
-            credentials = credentials.select { |_, c| !c.empty? }
+          def access_info(prompt_responses)
+            credentials = prompt_responses.select { |_, c| !c.empty? }
             token = @token_issuer.owner_password_credentials_grant(credentials)
             decoded = @token_decoder.decode(token)
 

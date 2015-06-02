@@ -1,7 +1,6 @@
 require 'cli/basic_login_strategy'
 require 'cli/uaa_login_strategy'
 require 'cli/client/uaa/client'
-require 'cli/client/uaa/options'
 require 'cli/terminal'
 
 module Bosh::Cli::Command
@@ -32,17 +31,16 @@ module Bosh::Cli::Command
 
     def login_strategy(director)
       terminal = Bosh::Cli::Terminal.new(HighLine.new, BoshExtensions)
-      auth_info = Bosh::Cli::Client::Uaa::AuthInfo.new(director)
+      auth_info = Bosh::Cli::Client::Uaa::AuthInfo.new(director, ENV, config.ca_cert)
 
       if auth_info.uaa?
-        client_options = Bosh::Cli::Client::Uaa::Options.new(config.ca_cert, ENV)
-        uaa = Bosh::Cli::Client::Uaa::Client.new(client_options, auth_info)
-        Bosh::Cli::UaaLoginStrategy.new(terminal, uaa, config, interactive?)
+        uaa_client = Bosh::Cli::Client::Uaa::Client.new(auth_info)
+        Bosh::Cli::UaaLoginStrategy.new(terminal, uaa_client, config, interactive?)
       else
         Bosh::Cli::BasicLoginStrategy.new(terminal, director, config, interactive?)
       end
 
-      rescue Bosh::Cli::Client::Uaa::Options::ValidationError => e
+      rescue Bosh::Cli::Client::Uaa::AuthInfo::ValidationError => e
         err("Failed to connect to UAA: #{e.message}")
     end
   end

@@ -3,22 +3,19 @@ module Bosh
     module Client
       module Uaa
         class TokenProvider
-          def initialize(cert_path, config_token, env, director_client)
-            @cert_path = cert_path
+          def initialize(ssl_ca_file, config_token, env, director_client)
             @config_token = config_token
-            @env = env
-            @auth_info = Bosh::Cli::Client::Uaa::AuthInfo.new(director_client)
+            @auth_info = Bosh::Cli::Client::Uaa::AuthInfo.new(director_client, env, ssl_ca_file)
           end
 
           def token
-            options = Options.new(@cert_path, @env)
-            unless options.client_auth?
+            unless @auth_info.client_auth?
               return @config_token
             end
 
-            token_decoder = TokenDecoder.new
-            access_info = ClientTokenIssuer.new(options, @auth_info, token_decoder).access_info({})
-            access_info.auth_header
+            uaa_client = Bosh::Cli::Client::Uaa::Client.new(@auth_info)
+            access_info = uaa_client.login({})
+            access_info.auth_header if access_info
           end
         end
       end
