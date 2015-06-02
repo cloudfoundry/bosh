@@ -99,9 +99,12 @@ module Bosh::Cli::Command
       config.target_version = status["version"]
       config.target_uuid = status["uuid"]
 
+      old_ca_cert_path = config.ca_cert
       expanded_ca_cert_path = config.save_ca_cert_path(options[:ca_cert])
-      say("Setting certificate file path to `#{expanded_ca_cert_path.to_s.make_green}'")
-      nl
+      if old_ca_cert_path != expanded_ca_cert_path
+        say("Updating certificate file path to `#{expanded_ca_cert_path.to_s.make_green}'")
+        nl
+      end
 
       unless name.blank?
         config.set_alias(:target, name, director_url)
