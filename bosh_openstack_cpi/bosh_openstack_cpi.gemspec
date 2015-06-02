@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
   s.bindir       = 'bin'
   s.executables  = %w(bosh_openstack_console openstack_cpi)
 
+  s.add_dependency 'fog-aws',       '<=0.1.1'
   s.add_dependency 'fog',           '~>1.27.0'
   s.add_dependency 'bosh_common',   "~>#{version}"
   s.add_dependency 'bosh_cpi',      "~>#{version}"
