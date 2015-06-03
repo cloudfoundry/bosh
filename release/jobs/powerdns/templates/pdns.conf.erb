@@ -25,6 +25,12 @@ module-dir=/usr/local/lib
 <% if_p('dns.recursor') do |recursor| %>
 recursor=<%= recursor %>
 <% end %>
+<% if_p('dns.local_address') do |local_address| %>
+local-address=<%= local_address %>
+<% end %>
+<% if_p('dns.query_local_address') do |query_local_address| %>
+query-local-address=<%= query_local_address %>
+<% end %>
 setgid=vcap
 setuid=vcap
 version-string=anonymous
