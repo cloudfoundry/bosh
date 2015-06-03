@@ -100,13 +100,15 @@ module Bosh::Cli
       end
 
       def credentials
-        director_client = Bosh::Cli::Client::Director.new(target)
-        uaa_token_provider = Bosh::Cli::Client::Uaa::TokenProvider.new(config.ca_cert(target), config.token(target), ENV, director_client)
+        director_client = Client::Director.new(target)
+        auth_info = Client::Uaa::AuthInfo.new(director_client, ENV, config.ca_cert(target))
+        token_decoder = Client::Uaa::TokenDecoder.new
+        uaa_token_provider = Client::Uaa::TokenProvider.new(auth_info, config.token(target), token_decoder)
         auth_token = uaa_token_provider.token
-        return Bosh::Cli::Client::UaaCredentials.new(auth_token) if auth_token
+        return Client::UaaCredentials.new(auth_token) if auth_token
 
         if username && password
-          return Bosh::Cli::Client::BasicCredentials.new(username, password)
+          return Client::BasicCredentials.new(username, password)
         end
 
         nil

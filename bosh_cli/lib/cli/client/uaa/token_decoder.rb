@@ -4,8 +4,9 @@ module Bosh
       module Uaa
         class TokenDecoder
           def decode(token)
+            access_token = token.info['access_token'] || token.info[:access_token]
             CF::UAA::TokenCoder.decode(
-              token.info['access_token'],
+              access_token,
               {verify: false}, # token signature not verified because CLI doesn't have the secret key
               nil, nil)
           end
