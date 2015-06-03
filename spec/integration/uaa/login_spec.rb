@@ -29,18 +29,15 @@ describe 'Logging into a director with UAA authentication', type: :integration d
       expect(output).to match /No deployments/
     end
 
-    it 'logs in successfully using client id and client secret' do
-      bosh_runner.run_interactively(
-        'login',
-        { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret' }
-      ) do |runner|
-        expect(runner).to have_output "Logged in as `test'"
+    it 'can access director using client id and client secret' do
+      client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
+      output = bosh_runner.run('status', env: client_env)
+      expect(output).to match /User.*test/
 
-        # test we are not getting auth error
-        # bosh vms exits with non-0 status if there are no vms
-        output = bosh_runner.run('vms', failure_expected: true)
-        expect(output).to match /No deployments/
-      end
+      # test we are not getting auth error
+      # bosh vms exits with non-0 status if there are no vms
+      output = bosh_runner.run('vms', env: client_env, failure_expected: true)
+      expect(output).to match /No deployments/
     end
 
     it 'fails to log in when incorrect credentials were provided' do

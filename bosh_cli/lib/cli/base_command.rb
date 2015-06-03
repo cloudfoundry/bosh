@@ -103,7 +103,7 @@ module Bosh::Cli
         director_client = Client::Director.new(target)
         auth_info = Client::Uaa::AuthInfo.new(director_client, ENV, config.ca_cert(target))
         token_decoder = Client::Uaa::TokenDecoder.new
-        uaa_token_provider = Client::Uaa::TokenProvider.new(auth_info, config.token(target), token_decoder)
+        uaa_token_provider = Client::Uaa::TokenProvider.new(auth_info, config, token_decoder, target)
         auth_token = uaa_token_provider.token
         return Client::UaaCredentials.new(auth_token) if auth_token
 

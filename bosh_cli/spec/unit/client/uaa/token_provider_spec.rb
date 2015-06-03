@@ -1,7 +1,10 @@
 require 'spec_helper'
 
 describe Bosh::Cli::Client::Uaa::TokenProvider do
-  subject(:token_provider) { described_class.new(auth_info, token, token_decoder) }
+  include FakeFS::SpecHelpers
+
+  subject(:token_provider) { described_class.new(auth_info, config, token_decoder, 'fake-target') }
+  let(:config) { Bosh::Cli::Config.new('fake-config') }
   let(:auth_info) { Bosh::Cli::Client::Uaa::AuthInfo.new(director, env, 'fake-cert') }
   let(:env) { {} }
   let(:director) { Bosh::Cli::Client::Director.new('http://127.0.0.1') }
@@ -29,6 +32,10 @@ describe Bosh::Cli::Client::Uaa::TokenProvider do
 'iOiJodHRwczovLzEwLjI0NC4wLjIvb2F1dGgvdG9rZW4iLCJhdWQiOlsiYm9zaF9jbGkiLCJvcGVuaWQiXX0.UM8SBWE'\
 'yT10XVKeuMF9GT1P4iBsFEs-q22xr2vsS1SM'
       )
+  end
+
+  before do
+    config.set_credentials('fake-target', { 'token' => token })
   end
 
   describe '#token' do

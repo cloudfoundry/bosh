@@ -4,10 +4,9 @@ require 'cli/errors'
 module Bosh
   module Cli
     class UaaLoginStrategy
-      def initialize(terminal, uaa_client, config, interactive)
+      def initialize(terminal, uaa_client, interactive)
         @terminal = terminal
         @uaa_client = uaa_client
-        @config = config
         @interactive = interactive
       end
 
@@ -22,13 +21,8 @@ module Bosh
             end
           end
 
-          if access_info = @uaa_client.login(credentials)
+          if access_info = @uaa_client.login(credentials, target)
             @terminal.say_green("Logged in as `#{access_info.username}'")
-
-            if access_info.auth_header
-              @config.set_credentials(target, { 'token' => access_info.auth_header })
-              @config.save
-            end
           else
             err('Failed to log in')
           end

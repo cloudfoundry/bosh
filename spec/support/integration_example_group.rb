@@ -105,7 +105,7 @@ module IntegrationExampleGroup
 
     output, exit_code = deploy(options.merge({return_exit_code: true}))
 
-    expect($?.success?).to_not eq(options.fetch(:failure_expected, false))
+    expect(exit_code == 0).to_not eq(options.fetch(:failure_expected, false))
 
     return_exit_code ? [output, exit_code] : output
   end

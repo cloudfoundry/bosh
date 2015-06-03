@@ -32,9 +32,19 @@ module Bosh::Spec
       @logger.info("Running ... bosh #{interactive_mode} #{cmd}")
       command   = "bosh #{interactive_mode} -c #{@bosh_config} #{cmd}"
       output    = nil
-      time      = Benchmark.realtime { output = `#{command} 2>&1` }
+      env = options.fetch(:env, {})
+      exit_code = 0
+
+      time = Benchmark.realtime do
+        Open3.popen2(env, command, {:err => [:child, :out]}) do |_, stdout, wait_thr|
+          output = stdout.read
+          exit_code = wait_thr.value
+        end
+      end
+
+      @logger.info "Exit code is #{exit_code}"
+
       @logger.info("Command took #{time} seconds")
-      exit_code = $?.exitstatus
 
       if exit_code != 0 && !failure_expected
         if output =~ /bosh task (\d+) --debug/ || output =~ /Task (\d+) error/

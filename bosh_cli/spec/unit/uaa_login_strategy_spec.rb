@@ -8,7 +8,7 @@ describe Bosh::Cli::UaaLoginStrategy do
     let(:target) { 'some target' }
 
     context 'when in interactive mode' do
-      let(:login_strategy) { Bosh::Cli::UaaLoginStrategy.new(terminal, uaa, config, true) }
+      let(:login_strategy) { Bosh::Cli::UaaLoginStrategy.new(terminal, uaa, true) }
 
       before do
         allow(uaa).to receive(:prompts) { [
@@ -18,7 +18,7 @@ describe Bosh::Cli::UaaLoginStrategy do
         ] }
 
         allow(uaa).to receive(:login).
-          with('username' => 'user', 'password' => 'pass', 'passcode' => '1234').
+          with({'username' => 'user', 'password' => 'pass', 'passcode' => '1234'}, target).
           and_return(Bosh::Cli::Client::Uaa::AccessInfo.new('user', access_token))
       end
       let(:access_token) { 'access token' }
@@ -43,26 +43,6 @@ describe Bosh::Cli::UaaLoginStrategy do
 
           expect(terminal).to have_received(:say_green).with("Logged in as `user'")
         end
-
-        it 'updates the config' do
-          login_strategy.login(target)
-
-          expect(config).to have_received(:set_credentials).with(target, {
-            'token' => 'access token'
-          })
-          expect(config).to have_received(:save)
-        end
-
-        context 'when token is not returned' do
-          let(:access_token) { nil }
-
-          it 'does not update config' do
-            login_strategy.login(target)
-
-            expect(config).to_not have_received(:set_credentials)
-            expect(config).to_not have_received(:save)
-          end
-        end
       end
 
       context 'when credentials are invalid' do
@@ -81,7 +61,7 @@ describe Bosh::Cli::UaaLoginStrategy do
     end
 
     context 'non-interactive' do
-      let(:login_strategy) { Bosh::Cli::UaaLoginStrategy.new(terminal, uaa, config, false) }
+      let(:login_strategy) { Bosh::Cli::UaaLoginStrategy.new(terminal, uaa, false) }
       it 'raises an error' do
         expect {
           login_strategy.login(target, '', '')
