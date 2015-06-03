@@ -11,4 +11,10 @@ packages:
 - mysql_vsphere_cpi
 - genisoimage_vsphere_cpi
 
-properties: {}
+properties:
+  env.http_proxy:
+    description: Http proxy to connect to cloud API's
+  env.https_proxy:
+    description: Https proxy to connect to cloud API's
+  env.no_proxy:
+    description: No proxy environment variable
