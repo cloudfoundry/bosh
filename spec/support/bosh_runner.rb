@@ -36,10 +36,8 @@ module Bosh::Spec
       exit_code = 0
 
       time = Benchmark.realtime do
-        Open3.popen2(env, command, {:err => [:child, :out]}) do |_, stdout, wait_thr|
-          output = stdout.read
-          exit_code = wait_thr.value
-        end
+        output, _, process_status = Open3.capture3(env, command, {:err => [:child, :out]})
+        exit_code = process_status.exitstatus
       end
 
       @logger.info "Exit code is #{exit_code}"
