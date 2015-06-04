@@ -36,18 +36,6 @@ module Bosh::Director
       assembler.bind_existing_deployment
     end
 
-    it 'should bind resource pools' do
-      rp1 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
-      rp2 = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
-
-      expect(deployment_plan).to receive(:resource_pools).and_return([rp1, rp2])
-
-      expect(rp1).to receive(:process_idle_vms)
-      expect(rp2).to receive(:process_idle_vms)
-
-      assembler.bind_resource_pools
-    end
-
     it 'should bind stemcells' do
       sc1 = instance_double('Bosh::Director::DeploymentPlan::Stemcell')
       sc2 = instance_double('Bosh::Director::DeploymentPlan::Stemcell')
@@ -595,8 +583,6 @@ module Bosh::Director
     end
 
     describe '#migrate_legacy_state'
-
-    describe '#bind_resource_pools'
 
     describe '#bind_instance_networks' do
       it 'binds unallocated VMs for each job' do

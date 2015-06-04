@@ -25,11 +25,10 @@ describe 'network configuration', type: :integration do
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
     # Available dynamic ips - 192.168.1.15 - 192.168.1.19
-    # First two (192.168.1.15, 192.168.1.16) to compile packages foo and bar
     output = bosh_runner.run('vms')
+    expect(output).to match(/foobar.* 192\.168\.1\.15/)
+    expect(output).to match(/foobar.* 192\.168\.1\.16/)
     expect(output).to match(/foobar.* 192\.168\.1\.17/)
-    expect(output).to match(/foobar.* 192\.168\.1\.18/)
-    expect(output).to match(/foobar.* 192\.168\.1\.19/)
   end
 
   it 'creates new VM if existing VM cannot be reconfigured to desired network settings' do

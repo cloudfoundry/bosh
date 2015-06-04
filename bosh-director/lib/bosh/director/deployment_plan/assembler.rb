@@ -253,17 +253,6 @@ module Bosh::Director
       end
     end
 
-    # Takes a look at the current state of all resource pools in the deployment
-    # and schedules adding any new VMs if needed. VMs are NOT created at this
-    # stage, only data structures are being allocated. {ResourcePoolUpdater}
-    # will later perform actual changes based on this data.
-    # @return [void]
-    def bind_resource_pools
-      @deployment_plan.resource_pools.each do |resource_pool|
-        resource_pool.process_idle_vms
-      end
-    end
-
     # Looks at every job instance in the deployment plan and binds it to the
     # instance database model (idle VM is also created in the appropriate
     # resource pool if necessary)

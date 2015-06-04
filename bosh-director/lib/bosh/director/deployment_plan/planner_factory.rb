@@ -111,10 +111,6 @@ module Bosh
             assembler.bind_existing_deployment
           end
 
-          track_and_log('Binding resource pools') do
-            assembler.bind_resource_pools
-          end
-
           track_and_log('Binding stemcells') do
             assembler.bind_stemcells
           end

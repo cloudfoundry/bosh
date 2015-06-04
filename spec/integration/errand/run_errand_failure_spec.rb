@@ -29,7 +29,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
         expect(output).to include("[stdout]\nNone")
         expect(output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
         expect(exit_code).to_not eq(0)
-        expect_running_vms(%w(fake-errand-name/0 foobar/0 unknown/unknown))
+        expect_running_vms(%w(fake-errand-name/0 foobar/0))
       end
     end
 
@@ -40,7 +40,7 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
       )
       expect(exit_code).to eq(1)
 
-      expect_running_vms(%w(foobar/0 unknown/unknown unknown/unknown))
+      expect_running_vms(%w(foobar/0))
 
       expect(output).to include("[stdout]\nNone")
       expect(output).to include("some-stderr1\nsome-stderr2\nsome-stderr3")
@@ -121,31 +121,6 @@ describe 'run errand failure', type: :integration, with_tmp_dir: true do
 
       expect(output).to include('Errand `unknown-errand-name\' doesn\'t exist')
       expect(output).to include('Errand `unknown-errand-name\' did not complete')
-      expect(exit_code).to eq(1)
-    end
-  end
-
-  context 'when deploying sized resource pools with insufficient capacity for all errands' do
-    with_reset_sandbox_before_each
-
-    let(:manifest_hash) { Bosh::Spec::Deployments.manifest_with_errand }
-    let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-      total_instance_count = manifest_hash['jobs'].inject(0) { |sum, job| sum + job['instances'] }
-      cloud_config_hash['resource_pools'].first['size'] = total_instance_count - 1
-      cloud_config_hash
-    end
-
-    it 'returns 1 as exit code and mentions insufficient resources' do
-      output, exit_code = deploy_from_scratch(
-        cloud_config_hash: cloud_config_hash,
-        manifest_hash: manifest_hash,
-        failure_expected: true,
-        return_exit_code: true
-      )
-
-      capacity = cloud_config_hash['resource_pools'].first['size']
-      expect(output).to include("Resource pool `a' is not big enough: #{capacity + 1} VMs needed, capacity is #{capacity}")
       expect(exit_code).to eq(1)
     end
   end

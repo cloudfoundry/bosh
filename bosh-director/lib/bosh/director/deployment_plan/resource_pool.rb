@@ -8,9 +8,6 @@ module Bosh::Director
       # @return [String] Resource pool name
       attr_reader :name
 
-      # @return [Integer] Expected resource pool size (in VMs)
-      attr_reader :size
-
       # @return [DeploymentPlan] Deployment plan
       attr_reader :deployment_plan
 
@@ -44,7 +41,6 @@ module Bosh::Director
         @logger = logger
 
         @name = safe_property(spec, "name", class: String)
-        @size = safe_property(spec, "size", class: Integer, optional: true)
 
         @cloud_properties =
           safe_property(spec, "cloud_properties", class: Hash, default: {})
@@ -83,21 +79,6 @@ module Bosh::Director
         }
       end
 
-      # Creates idle VMs for any missing resource pool VMs and reserves
-      # dynamic networks for all idle VMs.
-      # @return [void]
-      def process_idle_vms
-        # First, see if we need any data structures to balance the pool size
-        missing_vm_count.times { add_idle_vm }
-
-        # Second, see if some of idle VMs still need network reservations
-        idle_vms.each do |idle_vm|
-          unless idle_vm.has_network_reservation?
-            idle_vm.use_reservation(reserve_dynamic_network)
-          end
-        end
-      end
-
       # Attempts to allocate a dynamic IP addresses for all VMs
       # (unless they already have one).
       def reserve_dynamic_networks
@@ -128,7 +109,7 @@ module Bosh::Director
       end
 
       def allocate_vm
-        if @idle_vms.empty? && dynamically_sized?
+        if @idle_vms.empty?
           vm = Vm.new(self)
         else
           vm = @idle_vms.pop
@@ -153,8 +134,6 @@ module Bosh::Director
 
         deallocated_vm.release_reservation
 
-        add_idle_vm unless dynamically_sized? # don't refill if dynamically sized
-
         nil
       end
 
@@ -163,13 +142,7 @@ module Bosh::Director
       # @raise [ResourcePoolNotEnoughCapacity]
       # @return [void]
       def reserve_capacity(n)
-        needed = @reserved_capacity + n
-        if !dynamically_sized? && needed > @size
-          raise ResourcePoolNotEnoughCapacity,
-                "Resource pool `#{@name}' is not big enough: " +
-                "#{needed} VMs needed, capacity is #{@size}"
-        end
-        @reserved_capacity = needed
+        @reserved_capacity += n
       end
 
       # Checks if there is enough capacity to run _up to_ N VMs,
@@ -191,8 +164,7 @@ module Bosh::Director
       # this resource pool to the desired size
       # @return [Integer]
       def extra_vm_count
-        return @idle_vms.size if dynamically_sized?
-        @idle_vms.size + @allocated_vms.size - @size
+        return @idle_vms.size
       end
 
       private
@@ -201,18 +173,6 @@ module Bosh::Director
         @logger.info("ResourcePool `#{name}' - Adding allocated VM (index=#{@allocated_vms.size})")
         @allocated_vms << vm
         vm
-      end
-
-      def dynamically_sized?
-        @size.nil?
-      end
-
-      # Returns a number of VMs that need to be created in order to bring
-      # this resource pool to the desired size
-      # @return [Integer]
-      def missing_vm_count
-        return 0 if dynamically_sized?
-        @size - @allocated_vms.size - @idle_vms.size
       end
     end
   end

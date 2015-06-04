@@ -43,7 +43,6 @@ module Bosh::Director::DeploymentPlan
     describe 'creating' do
       it 'parses name, size, stemcell spec, cloud properties, env' do
         expect(resource_pool.name).to eq('small')
-        expect(resource_pool.size).to eq(max_size)
         expect(resource_pool.stemcell).to be_kind_of(Stemcell)
         expect(resource_pool.stemcell.name).to eq('stemcell-name')
         expect(resource_pool.stemcell.version).to eq('0.5.2')
@@ -106,114 +105,6 @@ module Bosh::Director::DeploymentPlan
       })
     end
 
-    describe '#process_idle_vms' do
-      before { allow(network).to receive(:reserve!) }
-
-      context 'when resource pool has a fixed size' do
-        it 'adds idle VMs up to the size' do
-          resource_pool.process_idle_vms
-          expect(resource_pool.idle_vms.size).to eq(max_size)
-        end
-
-        context 'when some VMs are already allocated' do
-          before do
-            resource_pool.add_idle_vm
-            resource_pool.allocate_vm
-          end
-
-          it 'creates idle vm objects for missing idle VMs' do
-            resource_pool.process_idle_vms
-            expect(resource_pool.idle_vms.size).to eq(max_size - 1) # 1 is active
-          end
-        end
-
-        context 'when some VMs are already idle' do
-          let(:max_size) { 4 }
-
-          before { resource_pool.add_idle_vm }
-
-          it 'adds idle VMs up to the size' do
-            resource_pool.process_idle_vms
-            expect(resource_pool.idle_vms.size).to eq(max_size)
-          end
-        end
-
-        context 'when some VMs are already idle and others are active' do
-          let(:max_size) { 4 }
-
-          before do
-            resource_pool.add_idle_vm
-            resource_pool.add_idle_vm
-            resource_pool.allocate_vm
-          end
-
-          it 'creates idle vm objects for missing idle VMs' do
-            resource_pool.process_idle_vms
-            expect(resource_pool.idle_vms.size).to eq(max_size - 1) # 1 is active
-          end
-        end
-
-        it 'reserves dynamic networks for idle VMs that do not have reservations' do
-          expect(network).to receive(:reserve!).
-            with(an_instance_of(BD::NetworkReservation), "Resource pool `small'").
-            exactly(max_size).times
-
-          resource_pool.process_idle_vms
-
-          expect(resource_pool.idle_vms.select { |vm| vm.has_network_reservation? }.size).to eq(max_size)
-        end
-
-        it 'does not reserve dynamic networks for idle VMs that already have reservations' do
-          max_size.times do
-            idle_vm = resource_pool.add_idle_vm
-            idle_vm.use_reservation(BD::NetworkReservation.new_dynamic)
-          end
-
-          expect(resource_pool.idle_vms.all? { |vm| vm.has_network_reservation? }).to eq(true)
-
-          expect(network).to_not receive(:reserve!).
-            with(an_instance_of(BD::NetworkReservation), "Resource pool `small'")
-
-          resource_pool.process_idle_vms
-        end
-      end
-
-      context 'when resource pool is dynamically sized' do
-        before { valid_spec.delete('size') }
-
-        it 'does not add any idle VMs' do
-          resource_pool.process_idle_vms
-          expect(resource_pool.idle_vms).to eq([])
-        end
-
-        it 'reserves dynamic networks for idle VMs that do not have reservations' do
-          max_size.times { resource_pool.add_idle_vm }
-
-          expect(network).to receive(:reserve!).
-                               with(an_instance_of(BD::NetworkReservation), "Resource pool `small'").
-                               exactly(max_size).times
-
-          resource_pool.process_idle_vms
-
-          expect(resource_pool.idle_vms.select { |vm| vm.has_network_reservation? }.size).to eq(max_size)
-        end
-
-        it 'does not reserve dynamic networks for idle VMs that already have reservations' do
-          max_size.times do
-            idle_vm = resource_pool.add_idle_vm
-            idle_vm.use_reservation(BD::NetworkReservation.new_dynamic)
-          end
-
-          expect(resource_pool.idle_vms.all? { |vm| vm.has_network_reservation? }).to eq(true)
-
-          expect(network).to_not receive(:reserve!).
-                                   with(an_instance_of(BD::NetworkReservation), "Resource pool `small'")
-
-          resource_pool.process_idle_vms
-        end
-      end
-    end
-
     describe '#reserve_dynamic_networks' do
       let(:network_reservation) { instance_double('Bosh::Director::NetworkReservation') }
       before do
@@ -260,16 +151,6 @@ module Bosh::Director::DeploymentPlan
         expect(resource_pool.reserved_capacity).to eq(1)
       end
 
-      context 'when no additional capacity is availible' do
-        before { resource_pool.reserve_capacity(max_size) }
-
-        it 'raises an error and does not reserve capacity' do
-          expect { resource_pool.reserve_capacity(1) }.to raise_error(BD::ResourcePoolNotEnoughCapacity)
-
-          expect(resource_pool.reserved_capacity).to eq(max_size)
-        end
-      end
-
       context 'when capacity has already been reserved' do
         let(:max_size) { 4 }
         before { resource_pool.reserve_capacity(2) }
@@ -283,47 +164,6 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#reserve_errand_capacity' do
-      context 'when resource pool has a fixed size' do
-        it 'reserves errand capacity from the total capacity' do
-          resource_pool.reserve_errand_capacity(1)
-
-          expect(resource_pool.reserved_capacity).to eq(1)
-        end
-
-        context 'when no additional capacity is availible' do
-          before { resource_pool.reserve_capacity(max_size) }
-
-          it 'raises an error' do
-            expect { resource_pool.reserve_errand_capacity(1) }.to raise_error(BD::ResourcePoolNotEnoughCapacity)
-
-            expect(resource_pool.reserved_capacity).to eq(max_size)
-          end
-        end
-
-        context 'when errand capacity has already been reserved' do
-          let(:max_size) { 4 }
-          before { resource_pool.reserve_errand_capacity(2) }
-
-          it 'reserves more errand capacity, when more is requested' do
-            resource_pool.reserve_errand_capacity(3)
-
-            expect(resource_pool.reserved_capacity).to eq(3)
-          end
-
-          it 'does not reserve more errand capacity, when the same amount is requested' do
-            resource_pool.reserve_errand_capacity(2)
-
-            expect(resource_pool.reserved_capacity).to eq(2)
-          end
-
-          it 'does not reserve more errand capacity, when less is requested' do
-            resource_pool.reserve_errand_capacity(1)
-
-            expect(resource_pool.reserved_capacity).to eq(2)
-          end
-        end
-      end
-
       context 'when resource pool is dynamically sized' do
         before { valid_spec.delete('size') }
 
@@ -336,31 +176,6 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#allocate_vm' do
-      context 'when resource pool has a fixed size' do
-        context 'when the pool contains an idle VM' do
-          before { resource_pool.add_idle_vm }
-
-          it 'moves vm from idle to allocated vms' do
-            allocated_vm = resource_pool.allocate_vm
-            allocated_vm.model = instance_double('Bosh::Director::Models::Vm', cid: 'abc')
-
-            expect(resource_pool.allocated_vms).to eq([allocated_vm])
-            expect(resource_pool.idle_vms).to eq([])
-          end
-        end
-
-        context 'when the pool does not contain any idle VMs' do
-          it 'raises an error' do
-            expect{
-              resource_pool.allocate_vm
-            }.to raise_error(
-              Bosh::Director::ResourcePoolNotEnoughCapacity,
-              /Resource pool `small' has no more VMs to allocate/,
-            )
-          end
-        end
-      end
-
       context 'when resource pool is dynamically sized' do
         before { valid_spec.delete('size') }
 
@@ -389,46 +204,6 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#deallocate_vm' do
-      context 'when resource pool has a fixed size' do
-        context 'when the pool contains an allocated vm' do
-          let(:vm_model) { instance_double('Bosh::Director::Models::Vm', cid: 'abc') }
-
-          before do
-            resource_pool.add_idle_vm
-            @allocated_vm = resource_pool.allocate_vm
-            @allocated_vm.model = vm_model
-          end
-
-          it 'removes vm from allocated list and adds a new idle vm' do
-            resource_pool.deallocate_vm(vm_model.cid)
-            expect(resource_pool.allocated_vms).to be_empty
-            expect(resource_pool.idle_vms.size).to eq(1)
-            expect(resource_pool.idle_vms[0]).to_not eq(@allocated_vm)
-            expect(resource_pool.idle_vms[0]).to be_an_instance_of(Vm)
-          end
-
-          it 'releases network reservation of deallocated vm' do
-            expect(resource_pool.network).to receive(:release)
-            @allocated_vm.use_reservation(instance_double('Bosh::Director::NetworkReservation'))
-
-            resource_pool.deallocate_vm(vm_model.cid)
-
-            expect(@allocated_vm.network_reservation).to be_nil
-          end
-        end
-
-        context 'when the pool does not contain any allocated vms' do
-          it 'raises an error' do
-            expect{
-              resource_pool.deallocate_vm('abc')
-            }.to raise_error(
-              Bosh::Director::DirectorError,
-              /Resource pool `small' does not contain an allocated VM with the cid `abc'/,
-            )
-          end
-        end
-      end
-
       context 'when resource pool is dynamically sized' do
         before { valid_spec.delete('size') }
 
@@ -462,22 +237,6 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#extra_vm_count' do
-      context 'when resource pool has a fixed size' do
-        before { valid_spec['size'] = 2 }
-
-        it 'returns the number of extra vms over the fixed size' do
-          resource_pool.add_idle_vm # from db: job/0
-          resource_pool.allocate_vm # from db: job/0
-          resource_pool.add_idle_vm # from db: unknown/unknown
-
-          expect(resource_pool.extra_vm_count).to eq(0)
-
-          resource_pool.add_idle_vm # from db: unknown/unknown, because previous deployment had more vms
-
-          expect(resource_pool.extra_vm_count).to eq(1)
-        end
-      end
-
       context 'when resource pool is dynamically sized' do
         before { valid_spec.delete('size') }
 
