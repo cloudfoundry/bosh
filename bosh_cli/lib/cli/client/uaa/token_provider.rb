@@ -32,17 +32,16 @@ module Bosh
 
           def client_access_info(config_access_token)
             unless config_access_token
-              return uaa_client.login({})
+              return uaa_client.access_info({})
             end
 
             access_info = ClientAccessInfo.from_config(config_access_token, nil, @token_decoder)
             return nil unless access_info
 
-            unless access_info.was_issued_for?(@auth_info.client_id)
-              return uaa_client.login({})
+            if access_info.was_issued_for?(@auth_info.client_id)
+              return refresh_if_needed(access_info)
             end
-
-            refresh_if_needed(access_info)
+            uaa_client.access_info({})
           end
 
           def password_access_info(config_access_token)

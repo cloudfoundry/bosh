@@ -21,7 +21,7 @@ module Bosh
             end
           end
 
-          if access_info = @uaa_client.login(credentials)
+          if access_info = @uaa_client.access_info(credentials)
             @terminal.say_green("Logged in as `#{access_info.username}'")
           else
             err('Failed to log in')

@@ -43,14 +43,14 @@ describe Bosh::Cli::Client::Uaa::Client do
 
   let(:token_issuer) { instance_double(CF::UAA::TokenIssuer) }
 
-  describe '#login' do
+  describe '#access_info' do
     it 'gets access info from token issuer' do
-      access_info = client.login({})
+      access_info = client.access_info({})
       expect(access_info.auth_header).to eq(password_token.auth_header)
     end
 
     it 'saves token in config' do
-      client.login({})
+      client.access_info({})
       config = YAML.load(File.read('fake-config'))
       expect(config['auth']['fake-target']['access_token']).to eq(password_token.auth_header)
       expect(config['auth']['fake-target']['refresh_token']).to eq('fake-refresh-token')

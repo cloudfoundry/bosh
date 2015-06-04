@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Bosh::Cli::UaaLoginStrategy do
   describe '#login' do
     let(:terminal) { instance_double(Bosh::Cli::Terminal, ask: nil, ask_password: nil, say_green: nil) }
-    let(:uaa) { instance_double(Bosh::Cli::Client::Uaa::Client, login: nil) }
+    let(:uaa) { instance_double(Bosh::Cli::Client::Uaa::Client) }
     let(:config) { instance_double(Bosh::Cli::Config, set_credentials: nil, save: nil) }
     let(:target) { 'some target' }
 
@@ -17,7 +17,7 @@ describe Bosh::Cli::UaaLoginStrategy do
           Bosh::Cli::Client::Uaa::Prompt.new('passcode', 'password', 'Super secure one-time code'),
         ] }
 
-        allow(uaa).to receive(:login).
+        allow(uaa).to receive(:access_info).
           with({'username' => 'user', 'password' => 'pass', 'passcode' => '1234'}).
           and_return(access_info)
       end
@@ -59,6 +59,8 @@ describe Bosh::Cli::UaaLoginStrategy do
         end
 
         it 'prints an error' do
+          expect(uaa).to receive(:access_info).
+              with({'username' => 'bad-user', 'password' => 'bad-pass', 'passcode' => '1234'})
           expect {
             login_strategy.login(target)
           }.to raise_error(Bosh::Cli::CliError, 'Failed to log in')

@@ -49,6 +49,19 @@ describe Bosh::Cli::Client::Uaa::TokenProvider do
           it 'uses token in config' do
             expect(token_provider.token).to eq(token.auth_header)
           end
+
+          context 'when config token expired' do
+            let(:expiration_time) { Time.now.to_i - expiration_deadline - 10 }
+
+            it 'refreshes the token' do
+              refreshed_token = CF::UAA::TokenInfo.new(
+                token_type: 'bearer',
+                access_token: 'refreshed-token'
+              )
+              expect(token_issuer).to receive(:client_credentials_grant).and_return(refreshed_token)
+              expect(token_provider.token).to eq('bearer refreshed-token')
+            end
+          end
         end
 
         context 'when token in config does not match client credentials' do
@@ -57,19 +70,6 @@ describe Bosh::Cli::Client::Uaa::TokenProvider do
           it 'logs in' do
             expect(token_issuer).to receive(:client_credentials_grant).and_return(token)
             expect(token_provider.token).to eq(token.auth_header)
-          end
-        end
-
-        context 'when config token expired' do
-          let(:expiration_time) { Time.now.to_i - expiration_deadline - 10 }
-
-          it 'refreshes the token' do
-            refreshed_token = CF::UAA::TokenInfo.new(
-              token_type: 'bearer',
-              access_token: 'refreshed-token'
-            )
-            expect(token_issuer).to receive(:client_credentials_grant).and_return(refreshed_token)
-            expect(token_provider.token).to eq('bearer refreshed-token')
           end
         end
       end

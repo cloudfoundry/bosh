@@ -29,7 +29,7 @@ module Bosh
             err('Invalid SSL Cert. Use --ca-cert option when setting target to specify SSL certificate')
           end
 
-          def login(prompt_responses)
+          def access_info(prompt_responses)
             with_save { @token_issuer.access_info(prompt_responses) }
           rescue CF::UAA::TargetError => e
             err("Failed to log in: #{e.info['error_description']}")
