@@ -36,7 +36,7 @@ module Bosh::Spec
       exit_code = 0
 
       time = Benchmark.realtime do
-        output, _, process_status = Open3.capture3(env, command, {:err => [:child, :out]})
+        output, process_status = Open3.capture2e(env, command)
         exit_code = process_status.exitstatus
       end
 
