@@ -28,14 +28,14 @@ describe 'UAA client', vcr: {cassette_name: 'uaa-client'} do
   describe 'logging in' do
     it 'can authenticate and return the token' do
       uaa_client = Bosh::Cli::Client::Uaa::Client.new(director_url, auth_info, config)
-      access_info = uaa_client.login({username: 'marissa', password: 'koala'})
+      access_info = uaa_client.access_info({username: 'marissa', password: 'koala'})
       expect(access_info.username).to eq('marissa')
       expect(access_info.auth_header).to match(/bearer \w+/)
     end
 
     it "doesn't send empty fields (like passcode) since UAA will attempt to validate them" do
       uaa_client = Bosh::Cli::Client::Uaa::Client.new(director_url, auth_info, config)
-      access_info = uaa_client.login({username: 'marissa', password: 'koala', passcode: ''})
+      access_info = uaa_client.access_info({username: 'marissa', password: 'koala', passcode: ''})
       expect(access_info.username).to eq('marissa')
       expect(access_info.auth_header).to match(/bearer \w+/)
     end
