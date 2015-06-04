@@ -1,8 +1,0 @@
-# abort script on any command that exit with a non zero value
-set -e
-
-tar xvf genisoimage_vsphere_cpi/cdrkit-1.1.11.tar.gz
-cd cdrkit-1.1.11
-
-make
-cp -a build/genisoimage/genisoimage $BOSH_INSTALL_TARGET

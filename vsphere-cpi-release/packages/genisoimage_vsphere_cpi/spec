@@ -1,4 +1,0 @@
----
-name: genisoimage_vsphere_cpi
-files:
-- genisoimage_vsphere_cpi/cdrkit-1.1.11.tar.gz

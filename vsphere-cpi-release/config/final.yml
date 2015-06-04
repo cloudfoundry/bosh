@@ -1,6 +1,0 @@
---- 
-final_name: bosh
-blobstore:
-  provider: s3
-  options: 
-    bucket_name: blob.cfblob.com

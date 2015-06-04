@@ -1,4 +1,0 @@
----
-name: libpq_vsphere_cpi
-files:
-- postgres_vsphere_cpi/postgresql-9.0.3.tar.gz

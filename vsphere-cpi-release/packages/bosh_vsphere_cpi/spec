@@ -1,9 +1,0 @@
----
-name: bosh_vsphere_cpi
-dependencies:
-- ruby_vsphere_cpi
-- libpq_vsphere_cpi
-- mysql_vsphere_cpi
-- genisoimage_vsphere_cpi
-files:
-- bosh_vsphere_cpi/*.gem

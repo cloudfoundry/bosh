@@ -1,6 +1,0 @@
----
-name: ruby_vsphere_cpi
-files:
-- ruby_vsphere_cpi/yaml-0.1.5.tar.gz
-- ruby_vsphere_cpi/ruby-1.9.3-p545.tar.gz
-- ruby_vsphere_cpi/rubygems-2.1.11.tgz
