@@ -117,8 +117,14 @@ module Bosh::Cli
 
     # @param [String] target Target director url
     # @return [String] Token associated with target
-    def token(target)
-      credentials_for(target)["token"]
+    def access_token(target)
+      credentials_for(target)["access_token"]
+    end
+
+    # @param [String] target Target director url
+    # @return [String] Refresh token associated with target
+    def refresh_token(target)
+      credentials_for(target)["refresh_token"]
     end
 
     # Deployment used to be a string that was only stored for your

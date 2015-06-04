@@ -13,35 +13,52 @@ module Bosh
           end
 
           def token
-            config_token = @config.token(@target)
+            config_access_token = @config.access_token(@target)
 
-            unless @auth_info.client_auth?
-              return config_token
+            if @auth_info.client_auth?
+              access_info = client_access_info(config_access_token)
+            else
+              access_info = password_access_info(config_access_token)
             end
 
-            if config_token
-              uaa_token = parse_uaa_token(config_token)
-              if uaa_token
-                decoded = @token_decoder.decode(uaa_token)
-                if decoded['client_id'] == @auth_info.client_id
-                  return config_token
-                end
-              end
-            end
-
-            access_info = Bosh::Cli::Client::Uaa::Client.new(@auth_info, @config).login({}, @target)
             access_info.auth_header if access_info
           end
 
           private
 
-          def parse_uaa_token(config_token)
-            token_type, access_token = config_token.split(' ')
-            if token_type && access_token
-              CF::UAA::TokenInfo.new({
-                'access_token' => access_token,
-                'token_type' => token_type,
-              })
+          def uaa_client
+            @uaa_client ||= Bosh::Cli::Client::Uaa::Client.new(@target, @auth_info, @config)
+          end
+
+          def client_access_info(config_access_token)
+            unless config_access_token
+              return uaa_client.login({})
+            end
+
+            access_info = ClientAccessInfo.from_config(config_access_token, nil, @token_decoder)
+            return nil unless access_info
+
+            unless access_info.was_issued_for?(@auth_info.client_id)
+              return uaa_client.login({})
+            end
+
+            refresh_if_needed(access_info)
+          end
+
+          def password_access_info(config_access_token)
+            return nil unless config_access_token
+
+            access_info = PasswordAccessInfo.from_config(config_access_token, @config.refresh_token(@target), @token_decoder)
+            return nil unless access_info
+
+            refresh_if_needed(access_info)
+          end
+
+          def refresh_if_needed(access_info)
+            if access_info.expires_soon?
+              uaa_client.refresh(access_info)
+            else
+              access_info
             end
           end
         end

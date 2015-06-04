@@ -1,3 +1,5 @@
+require 'cli/client/uaa/access_info'
+
 module Bosh
   module Cli
     module Client
@@ -15,19 +17,24 @@ module Bosh
           def access_info(_)
             @auth_info.validate!
 
-            token_issuer = CF::UAA::TokenIssuer.new(
+            token = token_issuer.client_credentials_grant
+            ClientAccessInfo.new(token, @token_decoder)
+          end
+
+          def refresh(_)
+            # For client credentials there is no refresh token, so obtain access token again
+            access_info(_)
+          end
+
+          private
+
+          def token_issuer
+            @token_issuer ||= CF::UAA::TokenIssuer.new(
               @auth_info.url,
               @auth_info.client_id,
               @auth_info.client_secret,
               { ssl_ca_file: @auth_info.ssl_ca_file }
             )
-
-            token = token_issuer.client_credentials_grant
-            decoded = @token_decoder.decode(token)
-
-            username = decoded['client_id'] if decoded
-
-            AccessInfo.new(username, token.auth_header)
           end
         end
       end

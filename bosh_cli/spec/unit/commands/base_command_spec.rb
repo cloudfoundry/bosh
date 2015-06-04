@@ -114,20 +114,26 @@ describe Bosh::Cli::Command::Base do
   end
 
   describe 'credentials' do
+    include Support::UaaHelpers
+
     context 'when config contains UAA token' do
       let(:cmd) do
         add_config(
           'target' => 'localhost:8080',
           'auth' => {
             'https://localhost:8080' => {
-              'token' => 'bearer config-token',
+              'access_token' => token_info.auth_header,
             }
           })
         make
       end
 
+      let(:token_info) do
+        uaa_token_info('fake-client-id', Time.now.to_i + 3600)
+      end
+
       it 'returns UAA credentials' do
-        expect(cmd.credentials.authorization_header).to eq('bearer config-token')
+        expect(cmd.credentials.authorization_header).to eq(token_info.auth_header)
       end
     end
 

@@ -21,11 +21,12 @@ module Bosh
           def access_info(prompt_responses)
             credentials = prompt_responses.select { |_, c| !c.empty? }
             token = @token_issuer.owner_password_credentials_grant(credentials)
-            decoded = @token_decoder.decode(token)
+            PasswordAccessInfo.new(token, @token_decoder)
+          end
 
-            username = decoded['user_name'] if decoded
-
-            AccessInfo.new(username, token.auth_header)
+          def refresh(access_info)
+            token = @token_issuer.refresh_token_grant(access_info.refresh_token)
+            PasswordAccessInfo.new(token, @token_decoder)
           end
         end
       end

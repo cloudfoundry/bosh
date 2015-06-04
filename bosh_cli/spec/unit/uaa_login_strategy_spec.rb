@@ -18,10 +18,16 @@ describe Bosh::Cli::UaaLoginStrategy do
         ] }
 
         allow(uaa).to receive(:login).
-          with({'username' => 'user', 'password' => 'pass', 'passcode' => '1234'}, target).
-          and_return(Bosh::Cli::Client::Uaa::AccessInfo.new('user', access_token))
+          with({'username' => 'user', 'password' => 'pass', 'passcode' => '1234'}).
+          and_return(access_info)
       end
-      let(:access_token) { 'access token' }
+
+      let(:access_info) do
+        token_decoder = Bosh::Cli::Client::Uaa::TokenDecoder.new
+        token_info = CF::UAA::TokenInfo.new(access_token: 'access token')
+        allow(token_decoder).to receive(:decode).with(token_info).and_return({'user_name' => 'user'})
+        Bosh::Cli::Client::Uaa::PasswordAccessInfo.new(token_info, token_decoder)
+      end
 
       it 'prompts for UAA credentials' do
         expect(terminal).to receive(:ask).with('Email: ') { 'user' }
@@ -38,7 +44,7 @@ describe Bosh::Cli::UaaLoginStrategy do
           allow(terminal).to receive(:ask_password).with('Super secure one-time code: ') { '1234' }
         end
 
-        it "says you're logged" do
+        it "says you're logged in" do
           login_strategy.login(target)
 
           expect(terminal).to have_received(:say_green).with("Logged in as `user'")

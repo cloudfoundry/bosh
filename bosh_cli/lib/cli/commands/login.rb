@@ -34,7 +34,7 @@ module Bosh::Cli::Command
       auth_info = Bosh::Cli::Client::Uaa::AuthInfo.new(director, ENV, config.ca_cert)
 
       if auth_info.uaa?
-        uaa_client = Bosh::Cli::Client::Uaa::Client.new(auth_info, config)
+        uaa_client = Bosh::Cli::Client::Uaa::Client.new(target, auth_info, config)
         Bosh::Cli::UaaLoginStrategy.new(terminal, uaa_client, interactive?)
       else
         Bosh::Cli::BasicLoginStrategy.new(terminal, director, config, interactive?)

@@ -16,7 +16,7 @@ describe 'UAA client', vcr: {cassette_name: 'uaa-client'} do
 
   describe 'login prompts' do
     it 'can fetch the login prompts from uaa' do
-      uaa_client = Bosh::Cli::Client::Uaa::Client.new(auth_info, config)
+      uaa_client = Bosh::Cli::Client::Uaa::Client.new(director_url, auth_info, config)
       expect(uaa_client.prompts).to match_array([
             Bosh::Cli::Client::Uaa::Prompt.new('username', 'text', 'Email'),
             Bosh::Cli::Client::Uaa::Prompt.new('password', 'password', 'Password'),
@@ -27,15 +27,15 @@ describe 'UAA client', vcr: {cassette_name: 'uaa-client'} do
 
   describe 'logging in' do
     it 'can authenticate and return the token' do
-      uaa_client = Bosh::Cli::Client::Uaa::Client.new(auth_info, config)
-      access_info = uaa_client.login({username: 'marissa', password: 'koala'}, director_url)
+      uaa_client = Bosh::Cli::Client::Uaa::Client.new(director_url, auth_info, config)
+      access_info = uaa_client.login({username: 'marissa', password: 'koala'})
       expect(access_info.username).to eq('marissa')
       expect(access_info.auth_header).to match(/bearer \w+/)
     end
 
     it "doesn't send empty fields (like passcode) since UAA will attempt to validate them" do
-      uaa_client = Bosh::Cli::Client::Uaa::Client.new(auth_info, config)
-      access_info = uaa_client.login({username: 'marissa', password: 'koala', passcode: ''}, director_url)
+      uaa_client = Bosh::Cli::Client::Uaa::Client.new(director_url, auth_info, config)
+      access_info = uaa_client.login({username: 'marissa', password: 'koala', passcode: ''})
       expect(access_info.username).to eq('marissa')
       expect(access_info.auth_header).to match(/bearer \w+/)
     end

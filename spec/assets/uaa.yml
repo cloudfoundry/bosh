@@ -16,13 +16,24 @@ oauth:
       scope: openid
       authorities: uaa.none
       secret: ""
+      access-token-validity: 1
+      refresh-token-validity: 3600
     test:
       id: test
       override: true
-      authorized-grant-types: client_credentials
+      authorized-grant-types: client_credentials,refresh_token
       scope: openid
       authorities: uaa.none
       secret: "secret"
+    short-lived-client:
+      id: short-lived-client
+      override: true
+      authorized-grant-types: client_credentials,refresh_token
+      scope: openid
+      authorities: uaa.none
+      secret: "short-lived-secret"
+      access-token-validity: 1
+      refresh-token-validity: 3600
 jwt:
   token:
     signing-key: "uaa-secret-key"

@@ -9,7 +9,8 @@ module Bosh
     module Client
       module Uaa
         class Client
-          def initialize(auth_info, config)
+          def initialize(target, auth_info, config)
+            @target = target
             token_decoder = TokenDecoder.new
             if auth_info.client_auth?
               token_issuer = ClientTokenIssuer.new(auth_info, token_decoder)
@@ -28,19 +29,30 @@ module Bosh
             err('Invalid SSL Cert. Use --ca-cert option when setting target to specify SSL certificate')
           end
 
-          def login(prompt_responses, target)
-            access_info = @token_issuer.access_info(prompt_responses)
-
-            if access_info.auth_header
-              @config.set_credentials(target, { 'token' => access_info.auth_header })
-              @config.save
-            end
-
-            access_info
+          def login(prompt_responses)
+            with_save { @token_issuer.access_info(prompt_responses) }
           rescue CF::UAA::TargetError => e
             err("Failed to log in: #{e.info['error_description']}")
           rescue CF::UAA::BadResponse
             nil
+          end
+
+          def refresh(access_info)
+            with_save { @token_issuer.refresh(access_info) }
+          rescue CF::UAA::TargetError
+            nil
+          end
+
+          private
+
+          def with_save
+            access_info = yield
+            if access_info.auth_header
+              @config.set_credentials(@target, access_info.to_hash)
+              @config.save
+            end
+
+            access_info
           end
         end
       end
