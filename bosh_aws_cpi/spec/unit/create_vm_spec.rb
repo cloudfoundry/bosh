@@ -11,7 +11,7 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
 
   let(:agent_id) { "agent_id" }
   let(:stemcell_id) { "stemcell_id" }
-  let(:resource_pool) { double("resource_pool") }
+  let(:resource_pool) { {} }
   let(:networks_spec) { double("network_spec") }
   let(:disk_locality) { double("disk locality") }
   let(:environment) { "environment" }
@@ -36,7 +36,11 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
     }
   end
 
-  let(:cloud) { described_class.new(options) }
+  let(:cloud) do
+    cloud = described_class.new(options)
+    allow(cloud).to receive(:task_checkpoint)
+    cloud
+  end
 
   before do
     allow(Bosh::Registry::Client).to receive(:new).and_return(registry)
@@ -62,13 +66,11 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
         and_return(network_configurator)
 
     allow(resource_pool).to receive(:[]).and_return(false)
-    allow(cloud).to receive(:task_checkpoint)
+    allow(network_configurator).to receive(:configure)
+    allow(registry).to receive(:update_settings)
   end
 
   it 'passes the image_id of the stemcell to an InstanceManager in order to create a VM' do
-    allow(network_configurator).to receive(:configure)
-    allow(registry).to receive(:update_settings)
-
     expect(stemcell).to receive(:image_id).with(no_args).and_return('ami-1234')
     expect(instance_manager).to receive(:create).with(
       anything,
@@ -83,21 +85,17 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
   end
 
   it "should create an EC2 instance and return its id" do
-    allow(network_configurator).to receive(:configure)
-    allow(registry).to receive(:update_settings)
     allow(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: instance, state: :running)
     expect(cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)).to eq("fake-id")
   end
 
   it "should configure the IP for the created instance according to the network specifications" do
-    allow(registry).to receive(:update_settings)
     allow(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: instance, state: :running)
     expect(network_configurator).to receive(:configure).with(region, instance)
     cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)
   end
 
   it "should update the registry settings with the new instance" do
-    allow(network_configurator).to receive(:configure)
     allow(Bosh::AwsCloud::ResourceWait).to receive(:for_instance).with(instance: instance, state: :running)
     allow(SecureRandom).to receive(:uuid).and_return("rand0m")
 
@@ -130,12 +128,19 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
   end
 
   it 'terminates instance if updating registry settings fails' do
-    allow(network_configurator).to receive(:configure)
     allow(registry).to receive(:update_settings).and_raise(StandardError)
     expect(instance).to receive(:terminate)
 
     expect {
       cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)
     }.to raise_error(StandardError)
+  end
+
+  it 'creates elb client with correct region' do
+    expect(Bosh::AwsCloud::InstanceManager).to receive(:new) do |_, _, elb, _, _|
+      expect(elb.config.region).to eq('bar')
+    end.once.and_return(instance_manager)
+
+    cloud.create_vm(agent_id, stemcell_id, resource_pool, networks_spec, disk_locality, environment)
   end
 end
