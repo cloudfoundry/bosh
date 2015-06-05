@@ -6,6 +6,7 @@
 .\#*
 ._*
 .bundle
+.fly_exec
 .idea
 .local
 *.iml

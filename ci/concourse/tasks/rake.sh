@@ -5,12 +5,16 @@ set -e
 export BOSH_CLI_SILENCE_SLOW_LOAD_WARNING=true
 
 source $(dirname $0)/environment.sh
+
+cd bosh-src
+if [ -f ".fly_exec" ] ; then
+  source .fly_exec
+fi
 source /etc/profile.d/chruby.sh
 chruby $RUBY_VERSION
 
 env | sort
 
-cd bosh-src
 echo "--- Show git state in `pwd` @ `date` ---"
 # optionally switch to branch (e.g., from 'fly execute')
 if [ -z ${GIT_BRANCH+x} ] ; then

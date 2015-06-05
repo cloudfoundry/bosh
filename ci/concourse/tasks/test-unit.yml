@@ -11,5 +11,3 @@ run:
   args: ["--trace", "go", "spec:unit"]
 
 params:
-  # defaults for 'fly execute'...
-  RUBY_VERSION: 2.1.6
