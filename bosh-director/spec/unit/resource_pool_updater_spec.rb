@@ -199,67 +199,6 @@ module Bosh::Director
       end
     end
 
-    describe :delete_extra_vms do
-      let(:vm) { instance_double('Bosh::Director::DeploymentPlan::Vm', changed?: true, model: vm_model1) }
-      let(:extra_vm) { instance_double('Bosh::Director::DeploymentPlan::Vm', changed?: false, model: vm_model2) }
-      let(:vm_model1) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-cid1') }
-      let(:vm_model2) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-cid2') }
-
-      before do
-        allow(resource_pool).to receive(:idle_vms).and_return([extra_vm, vm]) #deleted from the front
-      end
-
-      context 'when the resource pool has extra VMs' do
-        before do
-          allow(resource_pool).to receive(:extra_vm_count).and_return(1)
-        end
-
-        it 'deletes the extra VMs' do
-          expect(cloud).to receive(:delete_vm).with(extra_vm.model.cid)
-          expect(extra_vm.model).to receive(:destroy).with(no_args)
-
-          resource_pool_updater.delete_extra_vms(thread_pool)
-        end
-      end
-
-      context 'when the resource pool does not have extra VMs' do
-        before do
-          allow(resource_pool).to receive(:extra_vm_count).and_return(0)
-        end
-
-        it 'does not delete any VMs' do
-          expect(cloud).to_not receive(:delete_vm)
-          expect(vm.model).to_not receive(:destroy)
-          expect(extra_vm.model).to_not receive(:destroy)
-
-          resource_pool_updater.delete_extra_vms(thread_pool)
-        end
-      end
-    end
-
-    describe '#delete_outdated_vms' do
-      let(:vm_model) { instance_double('Bosh::Director::Models::Vm', cid: 'fake-cid') }
-      let(:vm) { instance_double('Bosh::Director::DeploymentPlan::Vm', changed?: true, model: vm_model) }
-      let(:unchanged_vm) { instance_double('Bosh::Director::DeploymentPlan::Vm', changed?: false, model: vm_model) }
-      let(:vm_without_vm_model) { instance_double('Bosh::Director::DeploymentPlan::Vm', model: nil, changed?: true) }
-
-      before do
-        allow(resource_pool).to receive(:idle_vms).and_return([vm, unchanged_vm, vm_without_vm_model])
-      end
-
-      it 'deletes each idle vm in resource pool' do
-        expect(cloud).to receive(:delete_vm).with('fake-cid')
-
-        expect(vm).to receive(:clean_vm).with(no_args)
-        expect(unchanged_vm).to_not receive(:clean_vm).with(no_args)
-        expect(vm_without_vm_model).to_not receive(:clean_vm).with(no_args)
-
-        expect(vm_model).to receive(:destroy).with(no_args)
-
-        resource_pool_updater.delete_outdated_idle_vms(thread_pool)
-      end
-    end
-
     describe '#reserve_networks' do
       it 'delegates to ResourcePool#reserve_dynamic_networks' do
         expect(resource_pool).to receive(:reserve_dynamic_networks).with(no_args)

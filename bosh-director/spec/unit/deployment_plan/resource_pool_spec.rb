@@ -26,16 +26,13 @@ module Bosh::Director::DeploymentPlan
 
     describe '#vms' do
       before do
-        3.times { resource_pool.add_idle_vm }
         2.times { resource_pool.allocate_vm }
-        # left with 2 allocated + 1 idle
       end
 
-      it 'returns a list of the allocated and idle vms' do
+      it 'returns a list of the allocated vms' do
         expect(resource_pool.vms).to contain_exactly(
           resource_pool.allocated_vms[0],
           resource_pool.allocated_vms[1],
-          resource_pool.idle_vms[0]
         )
       end
     end
@@ -108,19 +105,15 @@ module Bosh::Director::DeploymentPlan
     describe '#reserve_dynamic_networks' do
       let(:network_reservation) { instance_double('Bosh::Director::NetworkReservation') }
       before do
-        3.times { resource_pool.add_idle_vm }
         2.times { resource_pool.allocate_vm }
-        # left with 2 allocated + 1 idle
-
         resource_pool.allocated_vms.first.use_reservation(network_reservation)
       end
 
       it 'attempts to create reservations on vms without them' do
-        expect(Bosh::Director::NetworkReservation).to receive(:new_dynamic).with(no_args).and_return(network_reservation).twice
-        expect(network).to receive(:reserve!).with(network_reservation, nil).twice
+        expect(Bosh::Director::NetworkReservation).to receive(:new_dynamic).with(no_args).and_return(network_reservation)
+        expect(network).to receive(:reserve!).with(network_reservation, nil)
 
         expect(resource_pool.allocated_vms.last).to receive(:network_reservation=).with(network_reservation)
-        expect(resource_pool.idle_vms.first).to receive(:network_reservation=).with(network_reservation)
 
         resource_pool.reserve_dynamic_networks
       end
@@ -179,26 +172,11 @@ module Bosh::Director::DeploymentPlan
       context 'when resource pool is dynamically sized' do
         before { valid_spec.delete('size') }
 
-        context 'when the pool contains an idle VM' do
-          before { resource_pool.add_idle_vm }
+        it 'creates a new vm if dynamically sized' do
+          allocated_vm = resource_pool.allocate_vm
+          allocated_vm.model = instance_double('Bosh::Director::Models::Vm', cid: 'abc')
 
-          it 'moves vm from idle to allocated vms' do
-            allocated_vm = resource_pool.allocate_vm
-            allocated_vm.model = instance_double('Bosh::Director::Models::Vm', cid: 'abc')
-
-            expect(resource_pool.allocated_vms).to eq([allocated_vm])
-            expect(resource_pool.idle_vms).to eq([])
-          end
-        end
-
-        context 'when the pool does not contain any idle VMs' do
-          it 'creates a new vm if dynamically sized and the idle pool is empty' do
-            allocated_vm = resource_pool.allocate_vm
-            allocated_vm.model = instance_double('Bosh::Director::Models::Vm', cid: 'abc')
-
-            expect(resource_pool.allocated_vms).to eq([allocated_vm])
-            expect(resource_pool.idle_vms).to eq([])
-          end
+          expect(resource_pool.allocated_vms).to eq([allocated_vm])
         end
       end
     end
@@ -211,15 +189,13 @@ module Bosh::Director::DeploymentPlan
           let(:vm_model) { instance_double('Bosh::Director::Models::Vm', cid: 'abc') }
 
           before do
-            resource_pool.add_idle_vm
             @allocated_vm = resource_pool.allocate_vm
             @allocated_vm.model = vm_model
           end
 
-          it 'removes vm from allocated and does not add it to idle vms' do
+          it 'removes vm from allocated' do
             resource_pool.deallocate_vm(vm_model.cid)
             expect(resource_pool.allocated_vms).to be_empty
-            expect(resource_pool.idle_vms).to be_empty
           end
         end
 
@@ -232,22 +208,6 @@ module Bosh::Director::DeploymentPlan
               /Resource pool `small' does not contain an allocated VM with the cid `abc'/,
             )
           end
-        end
-      end
-    end
-
-    describe '#extra_vm_count' do
-      context 'when resource pool is dynamically sized' do
-        before { valid_spec.delete('size') }
-
-        it 'returns the size of idle_vms (so they all get deleted)' do
-          resource_pool.allocate_vm # from db: job/0
-
-          expect(resource_pool.extra_vm_count).to eq(0)
-
-          resource_pool.add_idle_vm # from db: unknown/unknown, because previous deployment had more vms
-
-          expect(resource_pool.extra_vm_count).to eq(1)
         end
       end
     end

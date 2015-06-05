@@ -82,53 +82,6 @@ module Bosh::Director
       agent.apply(state)
     end
 
-    # Deletes extra VMs in a resource pool
-    # @param thread_pool Thread pool used to parallelize delete operations
-    def delete_extra_vms(thread_pool)
-      count = @resource_pool.extra_vm_count
-      @logger.info("Deleting #{count} extra VMs")
-
-      count.times do
-        vm = @resource_pool.idle_vms.shift
-        vm_cid = vm.model.cid
-
-        thread_pool.process do
-          @event_log.track("#{@resource_pool.name}/#{vm_cid}") do
-            @logger.info("Deleting extra VM: #{vm_cid}")
-            @cloud.delete_vm(vm_cid)
-            vm.model.destroy
-          end
-        end
-      end
-    end
-
-    def delete_outdated_idle_vms(thread_pool)
-      count = outdated_idle_vm_count
-      index = 0
-      index_lock = Mutex.new
-
-      @logger.info("Deleting #{count} outdated idle VMs")
-
-      @resource_pool.idle_vms.each do |vm|
-        next unless vm.model && vm.changed?
-        vm_cid = vm.model.cid
-
-        thread_pool.process do
-          @event_log.track("#{@resource_pool.name}/#{vm_cid}") do
-            index_lock.synchronize { index += 1 }
-
-            with_thread_name("delete_outdated_vm(#{@resource_pool.name}, #{index - 1}/#{count})") do
-              @logger.info("Deleting outdated VM: #{vm_cid}")
-              @cloud.delete_vm(vm_cid)
-              vm_model = vm.model
-              vm.clean_vm
-              vm_model.destroy
-            end
-          end
-        end
-      end
-    end
-
     # Attempts to allocate a dynamic IP address for all idle VMs
     # (unless they already have one). This allows us to fail earlier
     # in case any of resource pools is not big enough to accommodate
@@ -139,18 +92,6 @@ module Bosh::Director
 
     def generate_agent_id
       SecureRandom.uuid
-    end
-
-    def extra_vm_count
-      @resource_pool.extra_vm_count
-    end
-
-    def outdated_idle_vm_count
-      counter = 0
-      @resource_pool.idle_vms.each do |vm|
-        counter += 1 if vm.model && vm.changed?
-      end
-      counter
     end
 
     def missing_vm_count

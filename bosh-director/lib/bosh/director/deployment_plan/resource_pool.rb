@@ -23,10 +23,7 @@ module Bosh::Director
       # @return [Hash] Resource pool environment
       attr_reader :env
 
-      # @return [Array<DeploymentPlan::IdleVm>] List of idle VMs
-      attr_reader :idle_vms
-
-      # @return [Array<DeploymentPlan::IdleVm] List of allocated idle VMs
+      # @return [Array<DeploymentPlan::IdleVm] List of allocated VMs
       attr_reader :allocated_vms
 
       # @return [Integer] Number of VMs reserved
@@ -59,14 +56,13 @@ module Bosh::Director
 
         @env = safe_property(spec, "env", class: Hash, default: {})
 
-        @idle_vms = []
         @allocated_vms = []
         @reserved_capacity = 0
         @reserved_errand_capacity = 0
       end
 
       def vms
-        @allocated_vms + @idle_vms
+        @allocated_vms
       end
 
       # Returns resource pools spec as Hash (usually for agent to serialize)
@@ -100,22 +96,8 @@ module Bosh::Director
         reservation
       end
 
-      # Adds a new VM to idle_vms
-      def add_idle_vm
-        @logger.info("ResourcePool `#{name}' - Adding idle VM (index=#{@idle_vms.size})")
-        idle_vm = Vm.new(self)
-        @idle_vms << idle_vm
-        idle_vm
-      end
-
       def allocate_vm
-        if @idle_vms.empty?
-          vm = Vm.new(self)
-        else
-          vm = @idle_vms.pop
-          raise ResourcePoolNotEnoughCapacity, "Resource pool `#{@name}' has no more VMs to allocate" if vm.nil?
-        end
-
+        vm = Vm.new(self)
         register_allocated_vm(vm)
       end
 
@@ -158,13 +140,6 @@ module Bosh::Director
           reserve_capacity(needed)
           @reserved_errand_capacity = n
         end
-      end
-
-      # Returns a number of VMs that need to be deleted in order to bring
-      # this resource pool to the desired size
-      # @return [Integer]
-      def extra_vm_count
-        return @idle_vms.size
       end
 
       private

@@ -53,51 +53,25 @@ module Bosh::Director
         if instance
           bind_instance(instance, state, reservations)
         else
+          # this is maybe a little wasteful for now -- we're deleting VMs that we
+          # could potentially reuse (if they don't have any static reservations),
+          # but we think that's just temporary while we work on how instances/vms are modelled
           resource_pool_name = state['resource_pool']['name']
           resource_pool = @deployment_plan.resource_pool(resource_pool_name)
           if resource_pool
             @logger.debug("Binding VM to resource pool '#{resource_pool_name}'")
-            bind_idle_vm(vm_model, resource_pool, state, reservations)
+            @logger.debug("Releasing all network reservations for VM `#{vm_model.cid}'")
+            reservations.each do |network_name, reservation|
+              @logger.debug("Releasing #{reservation.type} network reservation `#{network_name}' for VM `#{vm_model.cid}'")
+              @deployment_plan.network(network_name).release(reservation)
+            end
           else
-            @logger.debug("Resource pool '#{resource_pool_name}' does not exist, marking VM for deletion")
-            @deployment_plan.delete_vm(vm_model, reservations)
+            @logger.debug("Resource pool '#{resource_pool_name}' does not exist")
           end
+          @logger.debug("Marking VM for deletion")
+          @deployment_plan.delete_vm(vm_model)
         end
         @logger.debug('Finished processing VM network reservations')
-      end
-    end
-
-    # Binds idle VM to a resource pool with a proper network reservation
-    # @param [Models::Vm] vm_model VM DB model
-    # @param [DeploymentPlan::ResourcePool] resource_pool Resource pool
-    # @param [Hash] state VM state according to its agent
-    # @param [Hash] reservations Network reservations
-    def bind_idle_vm(vm_model, resource_pool, state, reservations)
-      if reservations.any? { |network_name, reservation| reservation.static? }
-        @logger.debug("Releasing all network reservations for VM `#{vm_model.cid}'")
-        reservations.each do |network_name, reservation|
-          @logger.debug("Releasing #{reservation.type} network reservation `#{network_name}' for VM `#{vm_model.cid}'")
-          @deployment_plan.network(network_name).release(reservation)
-        end
-
-        @logger.debug("Deleting VM `#{vm_model.cid}' with static network reservation")
-        @deployment_plan.delete_vm(vm_model, reservations)
-        return
-      end
-
-      @logger.debug("Adding VM `#{vm_model.cid}' to resource pool `#{resource_pool.name}'")
-      idle_vm = resource_pool.add_idle_vm
-      idle_vm.model = vm_model
-      idle_vm.current_state = state
-
-      network_name = resource_pool.network.name
-      reservation = reservations[network_name]
-      if reservation
-        @logger.debug("Using existing `#{reservation.type}' " +
-          "network reservation of `#{reservation.ip}' for VM `#{vm_model.cid}'")
-        idle_vm.use_reservation(reservation)
-      else
-        @logger.debug("No network reservation for VM `#{vm_model.cid}'")
       end
     end
 

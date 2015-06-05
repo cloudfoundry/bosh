@@ -8,22 +8,6 @@ module Bosh::Director
 
       def update
         ThreadPool.new(:max_threads => Config.max_threads).wrap do |thread_pool|
-          # Delete extra VMs across resource pools
-          event_log.begin_stage('Deleting extra VMs', sum_across_pools(:extra_vm_count))
-          resource_pool_updaters.each do |updater|
-            updater.delete_extra_vms(thread_pool)
-          end
-          thread_pool.wait
-
-          # Delete outdated idle vms across resource pools, outdated allocated
-          # VMs are handled by instance updater
-          event_log.begin_stage('Deleting outdated idle VMs', sum_across_pools(:outdated_idle_vm_count))
-
-          resource_pool_updaters.each do |updater|
-            updater.delete_outdated_idle_vms(thread_pool)
-          end
-          thread_pool.wait
-
           # Create missing VMs across resource pools phase 1:
           # only creates VMs that have been bound to instances
           # to avoid refilling the resource pool before instances

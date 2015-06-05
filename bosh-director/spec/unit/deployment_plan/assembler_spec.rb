@@ -114,7 +114,7 @@ module Bosh::Director
         @vm_model = Models::Vm.make(:agent_id => 'foo')
       end
 
-      it 'should bind an instance' do
+      it 'should bind an instance if present' do
         instance = Models::Instance.make(:vm => @vm_model)
         state = { 'state' => 'foo' }
         reservations = { 'foo' => 'reservation' }
@@ -128,144 +128,90 @@ module Bosh::Director
         assembler.bind_existing_vm(@vm_model, @lock)
       end
 
-      it 'should bind an idle vm' do
-        state = { 'resource_pool' => { 'name' => 'baz' } }
-        reservations = { 'foo' => 'reservation' }
-        resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
-
-        allow(deployment_plan).to receive(:resource_pool).with('baz').
-          and_return(resource_pool)
-
-        expect(assembler).to receive(:get_state).with(@vm_model).
-          and_return(state)
-        expect(assembler).to receive(:get_network_reservations).
-          with(state).and_return(reservations)
-        expect(assembler).to receive(:bind_idle_vm).
-          with(@vm_model, resource_pool, state, reservations)
-        assembler.bind_existing_vm(@vm_model, @lock)
-      end
-
-      it 'should delete no longer needed vms' do
-        state = { 'resource_pool' => { 'name' => 'baz' } }
-        reservations = { 'foo' => 'reservation' }
-
-        allow(deployment_plan).to receive(:resource_pool).with('baz').
-          and_return(nil)
-
-        expect(assembler).to receive(:get_state).with(@vm_model).
-          and_return(state)
-        expect(assembler).to receive(:get_network_reservations).
-          with(state).and_return(reservations)
-        expect(deployment_plan).to receive(:delete_vm).with(@vm_model, reservations)
-        assembler.bind_existing_vm(@vm_model, @lock)
-      end
-    end
-
-    describe '#bind_idle_vm' do
-      let(:cloud_config){ Models::CloudConfig.make }
-      let(:deployment_plan) { DeploymentPlan::Planner.new(planner_attributes, deployment_model.manifest, cloud_config, deployment_model) }
-      let(:planner_attributes) { {name: manifest_hash['name'], properties: manifest_hash['properties']} }
-      let(:deployment_model) { Models::Deployment.make(manifest: Psych.dump(manifest_hash)) }
-      let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
-      let(:state) { { 'state' => 'foo' } }
-      let(:network_fake) { DeploymentPlan::Network.new(deployment_plan, {'name' => resource_pool_manifest['network']}) }
-      let(:network_bar) { DeploymentPlan::Network.new(deployment_plan, {'name' => 'bar'}) }
-      let(:network_baz) { DeploymentPlan::Network.new(deployment_plan, {'name' => 'baz'}) }
-      let(:resource_pool) { DeploymentPlan::ResourcePool.new(deployment_plan, resource_pool_manifest, logger) }
-      let(:vm_model) { Models::Vm.make }
-      let(:idle_vm) { DeploymentPlan::Vm.new(resource_pool) }
-      let(:resource_pool_manifest) do
-        {
-          'name' => 'fake-resource-pool',
-          'size' => 1,
-          'cloud_properties' => {},
-          'stemcell' => {
-            'name' => 'fake-stemcell',
-            'version' => 'fake-stemcell-version',
-          },
-          'network' => 'fake-network',
-        }
-      end
-
-      before do
-        # add mock network
-        deployment_plan.add_network(network_fake)
-        deployment_plan.add_network(network_bar)
-        deployment_plan.add_network(network_baz)
-
-        # release is not implemented in the base Network object
-        allow(network_fake).to receive(:release)
-        allow(network_bar).to receive(:release)
-        allow(network_baz).to receive(:release)
-
-        # return mock idle vm
-        allow(resource_pool).to receive(:add_idle_vm).and_return(idle_vm)
-      end
-
-      context 'when any of the network reservations are static' do
-        let(:reservations) do
-          {
-            'fake-network' => NetworkReservation.new(type: NetworkReservation::STATIC),
-            'bar' => NetworkReservation.new(type: NetworkReservation::DYNAMIC),
-            'baz' => NetworkReservation.new(type: NetworkReservation::STATIC),
-          }
-        end
-
-        it 'does not add the existing idle VM to the resource pool' do
-          expect(resource_pool).not_to receive(:add_idle_vm)
-
-          assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
-        end
-
-        it 'releases all network reservations' do
-          reservations.each do |network_name, reservation|
-            expect(deployment_plan.network(network_name)).to receive(:release).with(reservation)
+      context "when there is no instance" do
+        context "but the VMs resource pool still exists" do
+          let(:cloud_config) { Models::CloudConfig.make }
+          let(:deployment_plan) { DeploymentPlan::Planner.new(planner_attributes, deployment_model.manifest, cloud_config, deployment_model) }
+          let(:planner_attributes) { {name: manifest_hash['name'], properties: manifest_hash['properties']} }
+          let(:deployment_model) { Models::Deployment.make(manifest: Psych.dump(manifest_hash)) }
+          let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
+          let(:network_fake) { DeploymentPlan::Network.new(deployment_plan, {'name' => resource_pool_manifest['network']}) }
+          let(:network_bar) { DeploymentPlan::Network.new(deployment_plan, {'name' => 'bar'}) }
+          let(:network_baz) { DeploymentPlan::Network.new(deployment_plan, {'name' => 'baz'}) }
+          let(:resource_pool) { DeploymentPlan::ResourcePool.new(deployment_plan, resource_pool_manifest, logger) }
+          let(:resource_pool_manifest) do
+            {
+              'name' => 'baz',
+              'size' => 1,
+              'cloud_properties' => {},
+              'stemcell' => {
+                'name' => 'fake-stemcell',
+                'version' => 'fake-stemcell-version',
+              },
+              'network' => 'fake-network',
+            }
+          end
+          let(:reservations) do
+            {
+              'fake-network' => NetworkReservation.new(type: NetworkReservation::STATIC),
+              'bar' => NetworkReservation.new(type: NetworkReservation::DYNAMIC),
+              'baz' => NetworkReservation.new(type: NetworkReservation::STATIC),
+            }
           end
 
-          assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
+          before do
+            # add mock network
+            deployment_plan.add_network(network_fake)
+            deployment_plan.add_network(network_bar)
+            deployment_plan.add_network(network_baz)
+
+            # release is not implemented in the base Network object
+            allow(network_fake).to receive(:release)
+            allow(network_bar).to receive(:release)
+            allow(network_baz).to receive(:release)
+
+            # add resource pool
+            deployment_plan.add_resource_pool(resource_pool)
+
+            state = {'resource_pool' => {'name' => 'baz'}}
+
+            expect(assembler).to receive(:get_state).with(@vm_model).
+                and_return(state)
+            expect(assembler).to receive(:get_network_reservations).
+                with(state).and_return(reservations)
+
+          end
+
+          it 'should release all network reservations' do
+            reservations.each do |network_name, reservation|
+              expect(deployment_plan.network(network_name)).to receive(:release).with(reservation)
+            end
+
+            assembler.bind_existing_vm(@vm_model, @lock)
+          end
+
+          it 'should delete the vm' do
+            expect(deployment_plan).to receive(:delete_vm).with(@vm_model)
+
+            assembler.bind_existing_vm(@vm_model, @lock)
+          end
         end
 
-        it 'marks VM for deletion' do
-          expect(deployment_plan).to receive(:delete_vm).with(vm_model, reservations)
+        context "and the VMs resource pool no longer exists" do
+          it 'should delete the vm' do
+            state = {'resource_pool' => {'name' => 'baz'}}
+            reservations = {'foo' => 'reservation'}
 
-          assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
-        end
-      end
+            allow(deployment_plan).to receive(:resource_pool).with('baz').
+                and_return(nil)
 
-      context 'when none of the network reservations are static' do
-        let(:reservations) do
-          {
-            'fake-network' => NetworkReservation.new(type: NetworkReservation::DYNAMIC),
-            'bar' => NetworkReservation.new(type: NetworkReservation::DYNAMIC),
-            'baz' => NetworkReservation.new(type: NetworkReservation::DYNAMIC),
-          }
-        end
-
-        it 'adds the existing idle VM to the resource pool' do
-          expect(resource_pool).to receive(:add_idle_vm).and_return(idle_vm)
-
-          assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
-
-          expect(idle_vm.model).to eq(vm_model)
-          expect(idle_vm.current_state).to eq(state)
-        end
-
-        it 'reuses dynamic network reservations' do
-          expect(idle_vm).to receive(:use_reservation).with(reservations[network_fake.name])
-
-          assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
-        end
-
-        it 'does not release any network reservations' do
-          expect(network_fake).not_to receive(:release)
-
-          assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
-        end
-
-        it 'does not mark VM for deletion' do
-          expect(deployment_plan).not_to receive(:delete_vm)
-
-          assembler.bind_idle_vm(vm_model, resource_pool, state, reservations)
+            expect(assembler).to receive(:get_state).with(@vm_model).
+                and_return(state)
+            expect(assembler).to receive(:get_network_reservations).
+                with(state).and_return(reservations)
+            expect(deployment_plan).to receive(:delete_vm).with(@vm_model)
+            assembler.bind_existing_vm(@vm_model, @lock)
+          end
         end
       end
     end
