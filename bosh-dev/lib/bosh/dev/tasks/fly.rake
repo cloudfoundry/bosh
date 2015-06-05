@@ -25,7 +25,6 @@ namespace :fly do
       f.puts('export TERM=xterm-256color')
       f.puts('export DB=postgresql')
       f.puts('export RUBY_VERSION=2.1.6')
-      # f.puts("TASKS=\"#{args[:tasks]}\"")
     end
     yield
   ensure
