@@ -35,10 +35,6 @@ describe 'cli: target', type: :integration do
     bosh_runner.run("target #{current_sandbox.director_url}")
     bosh_runner.run('deployment test2')
 
-    expect_output("target #{current_sandbox.director_url}", <<-OUT)
-      Target already set to `Test Director'
-    OUT
-
     expect_output("target https://0.0.0.0:#{current_sandbox.director_port}", <<-OUT)
       Target set to `Test Director'
     OUT
