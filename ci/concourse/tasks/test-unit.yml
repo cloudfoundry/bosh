@@ -9,5 +9,3 @@ inputs:
 run:
   path: bosh-src/ci/concourse/tasks/rake.sh
   args: ["--trace", "go", "spec:unit"]
-
-params:
