@@ -179,20 +179,17 @@ module Bosh::Director
                 and_return(state)
             expect(assembler).to receive(:get_network_reservations).
                 with(state).and_return(reservations)
-
           end
 
           it 'should release all network reservations' do
             reservations.each do |network_name, reservation|
               expect(deployment_plan.network(network_name)).to receive(:release).with(reservation)
             end
-
             assembler.bind_existing_vm(@vm_model, @lock)
           end
 
-          it 'should delete the vm' do
-            expect(deployment_plan).to receive(:delete_vm).with(@vm_model)
-
+          it 'should delete the VM, releasing network reservations' do
+            expect(deployment_plan).to receive(:delete_vm).with(@vm_model, reservations)
             assembler.bind_existing_vm(@vm_model, @lock)
           end
         end
@@ -209,7 +206,7 @@ module Bosh::Director
                 and_return(state)
             expect(assembler).to receive(:get_network_reservations).
                 with(state).and_return(reservations)
-            expect(deployment_plan).to receive(:delete_vm).with(@vm_model)
+            expect(deployment_plan).to receive(:delete_vm).with(@vm_model, reservations)
             assembler.bind_existing_vm(@vm_model, @lock)
           end
         end

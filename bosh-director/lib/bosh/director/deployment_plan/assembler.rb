@@ -68,8 +68,10 @@ module Bosh::Director
           else
             @logger.debug("Resource pool '#{resource_pool_name}' does not exist")
           end
+          # note that #delete_vm will also release reservations, which may have
+          # already happened above. this does not appear to be an issue.
           @logger.debug("Marking VM for deletion")
-          @deployment_plan.delete_vm(vm_model)
+          @deployment_plan.delete_vm(vm_model, reservations)
         end
         @logger.debug('Finished processing VM network reservations')
       end
