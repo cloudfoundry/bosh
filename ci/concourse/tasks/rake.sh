@@ -12,6 +12,10 @@ env | sort
 
 cd bosh-src
 echo "--- Show git state in `pwd` @ `date` ---"
+# optionally switch to branch (e.g., from 'fly execute')
+if [ -z ${GIT_BRANCH+x} ] ; then
+  git checkout $GIT_BRANCH
+fi
 echo " -> last commit..."
 git log -1
 echo "    ---"
@@ -20,7 +24,7 @@ git status
 echo "    ---"
 
 echo "--- Starting bundle install in `pwd` @ `date` ---"
-if [ -f .bundle/config ]; then
+if [ -f .bundle/config ] ; then
   echo ".bundle/config:"
   cat .bundle/config
 fi
