@@ -16,7 +16,7 @@ oauth:
       scope: openid
       authorities: uaa.none
       secret: ""
-      access-token-validity: 1
+      access-token-vaidity: 10
       refresh-token-validity: 3600
     test:
       id: test
