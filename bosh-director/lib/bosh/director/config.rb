@@ -307,11 +307,13 @@ module Bosh::Director
         end
       end
 
+      # Migrates director UUID to database
+      # Currently used by integration tests to set director UUID
       def override_uuid
         new_uuid = nil
         state_file = File.join(base_dir, 'state.json')
 
-        if File.exists?(state_file)
+        begin
           open(state_file, 'r+') do |file|
 
             # Lock before read to avoid director/worker race condition
@@ -332,6 +334,9 @@ module Bosh::Director
           end
 
           FileUtils.rm_f(state_file)
+
+        rescue Errno::ENOENT
+          # Catch race condition since another process (director/worker) might migrated the state
         end
 
         new_uuid
