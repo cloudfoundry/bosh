@@ -1,0 +1,14 @@
+---
+platform: linux
+
+image: docker:///bosh/integration
+
+inputs:
+- name: bosh-src
+#- name: gem-home
+
+run:
+  path: bosh-src/ci/concourse/tasks/execute.sh
+
+params:
+  COMMAND: "echo command"

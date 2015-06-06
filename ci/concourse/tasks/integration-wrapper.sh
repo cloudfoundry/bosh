@@ -2,6 +2,10 @@
 
 set -e
 
+if [ -f "bosh-src/.fly_exec" ] ; then
+  source bosh-src/.fly_exec
+fi
+
 echo "Starting $DB..."
 
 case "$DB" in
