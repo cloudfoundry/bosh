@@ -2,8 +2,8 @@
 
 set -e
 
-if [ -f "bosh-src/.fly_exec" ] ; then
-  source bosh-src/.fly_exec
+if [ -f "bosh-src/.fly_run" ] ; then
+  source bosh-src/.fly_run
 fi
 
 echo "Starting $DB..."

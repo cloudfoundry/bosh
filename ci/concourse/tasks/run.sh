@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
+#!/usr/bin/env bash
 
 set -e
 
 export BOSH_CLI_SILENCE_SLOW_LOAD_WARNING=true
 
+source $(dirname $0)/environment.sh
+
 cd bosh-src
-if [ -f ".fly_exec" ] ; then
-  source .fly_exec
+if [ -f ".fly_run" ] ; then
+  source .fly_run
 fi
 source /etc/profile.d/chruby.sh
 chruby $RUBY_VERSION
@@ -35,8 +38,4 @@ fi
 bundle install
 
 echo "--- Running command '$COMMAND' @ `date` ---"
-if [ -v DB ] ; then
-  ci/concourse/tasks/integration-wrapper.sh bundle exec "$COMMAND"
-else
-  bundle exec "$COMMAND"
-fi
+bundle exec "$COMMAND"

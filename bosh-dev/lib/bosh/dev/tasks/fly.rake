@@ -10,8 +10,14 @@ namespace :fly do
 
   desc 'Fly integration specs'
   task :integration do
-    perform do
+    perform(db: 'postgresql') do
       sh("fly execute -p -c ci/concourse/tasks/test-integration.yml -i bosh-src=$PWD")
+    end
+  end
+
+  task :run, [:command] do |_, args|
+    perform do
+      sh("COMMAND=\"#{args[:command]}\" fly execute -p -c ci/concourse/tasks/run.yml -i bosh-src=$PWD")
     end
   end
 
@@ -19,16 +25,15 @@ namespace :fly do
     @git_branch ||= (ENV['GIT_BRANCH'] || `cat .git/HEAD`.split('/').last).strip
   end
 
-  def perform
-    File.open('.fly_exec', 'w') do |f|
+  def perform(options = {})
+    File.open('.fly_run', 'w') do |f|
+      f.puts("export DB=#{options[:db]}") if options.has_key?(:db)
       f.puts("export GIT_BRANCH=#{git_branch}")
-      f.puts('export TERM=xterm-256color')
-      f.puts('export DB=postgresql')
       f.puts('export RUBY_VERSION=2.1.6')
     end
     yield
   ensure
-    File.delete('.fly_exec')
+    File.delete('.fly_run') if File.exist?('.fly_run')
   end
 end
 
