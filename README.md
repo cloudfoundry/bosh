@@ -15,6 +15,8 @@
 	- [bosh-dev](https://groups.google.com/a/cloudfoundry.org/group/bosh-dev/topics) for having BOSH dev discussions
 	- [vcap-dev](https://groups.google.com/a/cloudfoundry.org/group/vcap-dev/topics) for asking CloudFoundry questions
 
+* CI: [https://main.bosh-ci.cf-app.com](https://main.bosh-ci.cf-app.com)
+
 * Roadmap: [Pivotal Tracker](https://www.pivotaltracker.com/n/projects/956238)
 
 Cloud Foundry BOSH is an open source tool chain for release engineering, deployment and lifecycle management of large scale distributed services.
