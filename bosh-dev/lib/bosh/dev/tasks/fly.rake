@@ -4,21 +4,25 @@ namespace :fly do
   desc 'Fly unit specs'
   task :unit do
     perform do
-      sh("fly execute -c ci/concourse/tasks/test-unit.yml -i bosh-src=$PWD")
+      sh("fly #{concourse_target} execute -c ci/concourse/tasks/test-unit.yml -i bosh-src=$PWD")
     end
   end
 
   desc 'Fly integration specs'
   task :integration do
     perform(db: 'postgresql') do
-      sh("fly execute -p -c ci/concourse/tasks/test-integration.yml -i bosh-src=$PWD")
+      sh("fly #{concourse_target} execute -p -c ci/concourse/tasks/test-integration.yml -i bosh-src=$PWD")
     end
   end
 
   task :run, [:command] do |_, args|
     perform do
-      sh("COMMAND=\"#{args[:command]}\" fly execute -p -c ci/concourse/tasks/run.yml -i bosh-src=$PWD")
+      sh("COMMAND=\"#{args[:command]}\" fly #{concourse_target} execute -p -c ci/concourse/tasks/run.yml -i bosh-src=$PWD")
     end
+  end
+
+  def concourse_target
+    "-t #{ENV['CONCOURSE_TARGET']}" if ENV.has_key?('CONCOURSE_TARGET')
   end
 
   def git_branch
