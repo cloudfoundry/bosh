@@ -12,7 +12,9 @@ module Bosh::Cli::Command
 
     def initialize(runner)
       super(runner)
-      options[:config] ||= DEFAULT_CONFIG_PATH # hijack Cli::Config
+      # Handle the environment variable being set to the empty string.
+      env_bosh_config = ENV['BOSH_DEPLOYER_CONFIG'].to_s.empty? ? nil : ENV['BOSH_DEPLOYER_CONFIG']
+      options[:config] ||= env_bosh_config || DEFAULT_CONFIG_PATH # hijack Cli::Config
     end
 
     usage 'micro'
