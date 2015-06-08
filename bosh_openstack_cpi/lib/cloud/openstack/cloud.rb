@@ -302,22 +302,20 @@ module Bosh::OpenStackCloud
           network_configurator.configure(@openstack, server)
         rescue Bosh::Clouds::CloudError => e
           @logger.warn("Failed to create server: #{e.message}")
-
-          with_openstack { server.destroy }
-
-          begin
-            wait_resource(server, [:terminated, :deleted], :state, true)
-          rescue Bosh::Clouds::CloudError => delete_server_error
-            @logger.warn("Failed to destroy server: #{delete_server_error.inspect}\n#{delete_server_error.backtrace.join('\n')}")
-          end
-
+          destroy_server(server)
           raise Bosh::Clouds::VMCreationFailed.new(true), e.message
         end
 
-        @logger.info("Updating settings for server `#{server.id}'...")
-        settings = initial_agent_settings(server_name, agent_id, network_spec, environment,
-                                          flavor_has_ephemeral_disk?(flavor))
-        @registry.update_settings(server.name, settings)
+        begin
+          @logger.info("Updating settings for server `#{server.id}'...")
+          settings = initial_agent_settings(server_name, agent_id, network_spec, environment,
+                                            flavor_has_ephemeral_disk?(flavor))
+          @registry.update_settings(server.name, settings)
+        rescue Bosh::Clouds::CloudError => e
+          @logger.warn("Failed to register server: #{e.message}")
+          destroy_server(server)
+          raise Bosh::Clouds::VMCreationFailed.new(false), e.message
+        end
 
         server.id.to_s
       end
@@ -979,6 +977,17 @@ module Bosh::OpenStackCloud
         end
       end
       options
+    end
+
+    # Destroy server and wait until the server is really terminated/deleted
+    def destroy_server(server)
+      with_openstack { server.destroy }
+
+      begin
+        wait_resource(server, [:terminated, :deleted], :state, true)
+      rescue Bosh::Clouds::CloudError => delete_server_error
+        @logger.warn("Failed to destroy server: #{delete_server_error.inspect}\n#{delete_server_error.backtrace.join('\n')}")
+      end
     end
   end
 end
