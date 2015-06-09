@@ -33,7 +33,6 @@ module Bosh::Director::DeploymentPlan
     let(:vm) { Vm.new(resource_pool) }
     before do
       allow(resource_pool).to receive(:allocate_vm).and_return(vm)
-      allow(resource_pool).to receive(:add_allocated_vm).and_return(vm)
       allow(job).to receive(:instance_state).with(0).and_return('started')
     end
 
@@ -325,7 +324,7 @@ module Bosh::Director::DeploymentPlan
       end
       let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
 
-      before { allow(resource_pool).to receive(:add_allocated_vm).and_return(vm) }
+      before { allow(resource_pool).to receive(:allocate_vm).and_return(vm) }
       let(:vm) { Vm.new(resource_pool) }
 
       let(:instance_model) { Bosh::Director::Models::Instance.make }
@@ -375,7 +374,7 @@ module Bosh::Director::DeploymentPlan
         state = {}
         reservations = {}
 
-        expect(resource_pool).to receive(:add_allocated_vm).with(no_args).and_return(vm)
+        expect(resource_pool).to receive(:allocate_vm).with(no_args).and_return(vm)
 
         instance.bind_existing_instance(instance_model, state, reservations)
 
@@ -707,7 +706,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when an instance exists (with the same job name & instance index)' do
         before do
-          allow(resource_pool).to receive(:add_allocated_vm).and_return(vm)
+          allow(resource_pool).to receive(:allocate_vm).and_return(vm)
 
           instance_model = Bosh::Director::Models::Instance.make
           instance.bind_existing_instance(instance_model, instance_state, {})

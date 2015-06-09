@@ -541,7 +541,7 @@ module Bosh::Director
 
       def add_allocated_vm(vm_model, state)
         resource_pool = @job.resource_pool
-        vm = resource_pool.add_allocated_vm
+        vm = resource_pool.allocate_vm
 
         reservation = @network_reservations[vm.resource_pool.network.name]
 

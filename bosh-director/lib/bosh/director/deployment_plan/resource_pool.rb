@@ -96,10 +96,6 @@ module Bosh::Director
         register_allocated_vm(vm)
       end
 
-      def add_allocated_vm
-        register_allocated_vm(Vm.new(self))
-      end
-
       def deallocate_vm(vm_cid)
         deallocated_vm = @allocated_vms.find { |vm| vm.model.cid == vm_cid }
         if deallocated_vm.nil?
