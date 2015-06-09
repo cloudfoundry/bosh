@@ -137,37 +137,6 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe '#reserve_capacity' do
-      it 'reserves capacity' do
-        resource_pool.reserve_capacity(1)
-
-        expect(resource_pool.reserved_capacity).to eq(1)
-      end
-
-      context 'when capacity has already been reserved' do
-        let(:max_size) { 4 }
-        before { resource_pool.reserve_capacity(2) }
-
-        it 'reserves more capacity' do
-          resource_pool.reserve_capacity(1)
-
-          expect(resource_pool.reserved_capacity).to eq(3)
-        end
-      end
-    end
-
-    describe '#reserve_errand_capacity' do
-      context 'when resource pool is dynamically sized' do
-        before { valid_spec.delete('size') }
-
-        it 'reserves more errand capacity, when more is requested' do
-          resource_pool.reserve_errand_capacity(3)
-
-          expect(resource_pool.reserved_capacity).to eq(3)
-        end
-      end
-    end
-
     describe '#allocate_vm' do
       context 'when resource pool is dynamically sized' do
         before { valid_spec.delete('size') }

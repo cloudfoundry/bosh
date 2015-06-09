@@ -244,11 +244,6 @@ module Bosh::Director
             "Invalid state `#{@job.state}' for `#{@job.name}', valid states are: #{Job::VALID_JOB_STATES.join(", ")}"
         end
 
-        if @job.lifecycle == 'errand'
-          @job.resource_pool.reserve_errand_capacity(job_size)
-        else
-          @job.resource_pool.reserve_capacity(job_size)
-        end
         job_size.times do |index|
           @job.instances[index] = Instance.new(@job, index, @logger)
         end

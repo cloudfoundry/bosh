@@ -26,9 +26,6 @@ module Bosh::Director
       # @return [Array<DeploymentPlan::IdleVm] List of allocated VMs
       attr_reader :allocated_vms
 
-      # @return [Integer] Number of VMs reserved
-      attr_reader :reserved_capacity
-
       # @param [DeploymentPlan] deployment_plan Deployment plan
       # @param [Hash] spec Raw resource pool spec from the deployment manifest
       # @param [Logger] logger Director logger
@@ -57,8 +54,6 @@ module Bosh::Director
         @env = safe_property(spec, "env", class: Hash, default: {})
 
         @allocated_vms = []
-        @reserved_capacity = 0
-        @reserved_errand_capacity = 0
       end
 
       def vms
@@ -115,29 +110,6 @@ module Bosh::Director
         @allocated_vms.delete(deallocated_vm)
 
         nil
-      end
-
-      # Checks if there is enough capacity to run _extra_ N VMs,
-      # raise error if not enough capacity
-      # @raise [ResourcePoolNotEnoughCapacity]
-      # @return [void]
-      def reserve_capacity(n)
-        @reserved_capacity += n
-      end
-
-      # Checks if there is enough capacity to run _up to_ N VMs,
-      # raise error if not enough capacity.
-      # Only enough capacity to run the largest errand is required,
-      # because errands can only run one at a time.
-      # @raise [ResourcePoolNotEnoughCapacity]
-      # @return [void]
-      def reserve_errand_capacity(n)
-        needed = n - @reserved_errand_capacity
-
-        if needed > 0
-          reserve_capacity(needed)
-          @reserved_errand_capacity = n
-        end
       end
 
       private

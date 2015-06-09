@@ -17,10 +17,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
   describe '#parse' do
     before { allow(deployment_plan).to receive(:resource_pool).and_return(resource_pool) }
     let(:resource_pool) do
-      instance_double(
-        'Bosh::Director::DeploymentPlan::ResourcePool',
-        reserve_capacity: nil,
-      )
+      instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
     end
     let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool') }
     before { allow(deployment_plan).to receive(:disk_pool).and_return(disk_pool) }
@@ -59,7 +56,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
     describe 'lifecycle key' do
       Bosh::Director::DeploymentPlan::Job::VALID_LIFECYCLE_PROFILES.each do |profile|
         it "is able to parse '#{profile}' as lifecycle profile" do
-          allow(resource_pool).to receive(:reserve_errand_capacity).with(1)
           job_spec.merge!('lifecycle' => profile)
           job = parser.parse(job_spec)
           expect(job.lifecycle).to eq(profile)
@@ -661,26 +657,6 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           expect { parser.parse(job_spec) }.to_not raise_error
         end
       end
-    end
-
-    describe 'parsing instances' do
-      context 'when it is a normal job' do
-        it 'reserves capacity in the resource pool' do
-          job_spec['instances'] = 7
-          expect(resource_pool).to receive(:reserve_capacity).with(7)
-          parser.parse(job_spec)
-        end
-      end
-
-      context 'when it is an errand job' do
-        it 'reserves errand capacity in the resource pool' do
-          job_spec['instances'] = 3
-          job_spec['lifecycle'] = 'errand'
-          expect(resource_pool).to receive(:reserve_errand_capacity).with(3)
-          parser.parse(job_spec)
-        end
-      end
-
     end
 
     def make_template(name, rel_ver)
