@@ -4,8 +4,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src
-        trigger: true
+      - {trigger: true, get: bosh-src}
       - task: test
         file: bosh-src/ci/concourse/tasks/test-unit.yml
         config:
@@ -16,8 +15,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src
-        trigger: true
+      - {trigger: true, get: bosh-src}
       - task: test
         file: bosh-src/ci/concourse/tasks/test-unit-coverage.yml
         config:
@@ -29,9 +27,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src
-        passed: [unit-1.9, unit-2.1]
-        trigger: true
+      - {trigger: true, passed: [unit-1.9, unit-2.1], get: bosh-src}
       - task: test
         privileged: true
         file: bosh-src/ci/concourse/tasks/test-integration.yml
@@ -44,9 +40,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src
-        passed: [unit-1.9, unit-2.1]
-        trigger: true
+      - {trigger: true, passed: [unit-1.9, unit-2.1], get: bosh-src}
       - task: test
         privileged: true
         file: bosh-src/ci/concourse/tasks/test-integration.yml
@@ -59,9 +53,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src
-        passed: [unit-1.9, unit-2.1]
-        trigger: true
+      - {trigger: true, passed: [unit-1.9, unit-2.1], get: bosh-src}
       - task: test
         privileged: true
         file:  bosh-src/ci/concourse/tasks/test-integration.yml
@@ -74,9 +66,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src
-        passed: [unit-1.9, unit-2.1]
-        trigger: true
+      - {trigger: true, passed: [unit-1.9, unit-2.1], get: bosh-src}
       - task: test
         privileged: true
         file: bosh-src/ci/concourse/tasks/test-integration.yml
@@ -89,24 +79,19 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src
-        passed: [integration-mysql-1.9, integration-mysql-2.1, integration-postgres-1.9, integration-postgres-2.1]
-        trigger: true
-      - put: bosh-candidate
-        params:
-          repository: bosh-src
+      - {trigger: true, passed: [integration-mysql-1.9, integration-mysql-2.1, integration-postgres-1.9, integration-postgres-2.1], get: bosh-src}
+      - {put: bosh-candidate, params: {repository: bosh-src}}
 
 resources:
   - name: bosh-src
     type: git
     source:
-      uri: git@github.com:cloudfoundry/bosh.git
+      uri: https://github.com/cloudfoundry/bosh.git
       branch: develop
-      private_key: {{github_private_key}}
 
   - name: bosh-candidate
     type: git
     source:
       uri: git@github.com:cloudfoundry/bosh.git
       branch: candidate
-      private_key: {{github_private_key}}
+      private_key: {{github_deployment_key__bosh}}
