@@ -3,6 +3,7 @@ require 'bosh/dev/command_helper'
 module Bosh::Dev
   class GitRepoUpdater
     include CommandHelper
+    class PushRejectedError < StandardError; end
 
     def initialize(logger)
       @logger = logger
@@ -36,7 +37,14 @@ module Bosh::Dev
 
     def push
       stdout, stderr, status = exec_cmd('git push')
-      raise "Failed git pushing from #{Dir.pwd}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+      unless status.success?
+        err_message =  "Failed git pushing from #{Dir.pwd}: stdout: '#{stdout}', stderr: '#{stderr}'"
+        if stderr =~ /\[rejected\]/
+          raise PushRejectedError, err_message
+        else
+          raise err_message
+        end
+      end
     end
   end
 end

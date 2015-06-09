@@ -44,14 +44,14 @@ module Bosh::Dev
           before { FileUtils.mkdir_p(File.join(subject.path, '.git')) }
 
           it 'updates the repo at "#path"' do
-            expect(shell).to receive(:run).with('git clean -fd && git pull')
+            expect(shell).to receive(:run).with('git clean -fd && git pull', output_command: true)
             subject.clone_or_update!
           end
         end
 
         context 'when the directory does not contain a .git subdirectory' do
           it 'clones the repo into "#path"'do
-            expect(shell).to receive(:run).with('git clone --depth=1 fake_BOSH_JENKINS_DEPLOYMENTS_REPO /tmp/deployments')
+            expect(shell).to receive(:run).with('git clone --depth=1 fake_BOSH_JENKINS_DEPLOYMENTS_REPO /tmp/deployments', output_command: true)
             subject.clone_or_update!
           end
         end
@@ -59,7 +59,7 @@ module Bosh::Dev
 
       context 'when the directory does NOT exist' do
         it 'clones the repo into "#path"'do
-          expect(shell).to receive(:run).with('git clone --depth=1 fake_BOSH_JENKINS_DEPLOYMENTS_REPO /tmp/deployments')
+          expect(shell).to receive(:run).with('git clone --depth=1 fake_BOSH_JENKINS_DEPLOYMENTS_REPO /tmp/deployments', output_command: true)
 
           expect {
             subject.clone_or_update!
@@ -82,19 +82,33 @@ module Bosh::Dev
       before { FileUtils.mkdir_p(subject.path) }
 
       it 'updates repo by pulling in new changes, commits and pushes the current state of the directory' do
-        expect(shell).to receive(:run).with('git clean -fd && git pull').ordered
+        expect(shell).to receive(:run).with('git clean -fd && git pull', output_command: true).ordered
         expect(git_repo_updater).to receive(:update_directory).with('/tmp/deployments', kind_of(String)).ordered
         subject.update_and_push
       end
 
       it 'does not commit and push if pulling in new changes fails due to merge conflicts' do
         error = Exception.new('fake-pull-exception')
-        expect(shell).to receive(:run).with('git clean -fd && git pull').and_raise(error)
+        expect(shell).to receive(:run).with('git clean -fd && git pull', output_command: true).and_raise(error)
         expect(git_repo_updater).not_to receive(:update_directory)
 
         expect {
           subject.update_and_push
         }.to raise_error(error)
+      end
+
+      context 'when fails to push because of non-fast-forward' do
+        before do
+          allow(git_repo_updater).to receive(:update_directory).and_raise(GitRepoUpdater::PushRejectedError)
+        end
+
+        it 'updates and retries 3 times' do
+          expect(git_repo_updater).to receive(:update_directory).exactly(3).times
+
+          expect {
+            subject.update_and_push
+          }.to raise_error GitRepoUpdater::PushRejectedError
+        end
       end
     end
   end

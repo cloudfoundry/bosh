@@ -27,23 +27,43 @@ module Bosh::Dev
     end
 
     def update_and_push
-      # git pull will work in a git repository
-      # unless local changes conflict with upstream changes
-      update_repo
-      push
+      with_retries(3, GitRepoUpdater::PushRejectedError) do
+        # git pull will work in a git repository
+        # unless local changes conflict with upstream changes
+        update_repo
+        push
+      end
     end
 
     private
 
     attr_reader :env, :shell, :path_root
 
+    def with_retries(attempts, rescue_err)
+      current_attempt = 1
+      begin
+        yield
+      rescue rescue_err => e
+        if current_attempt < attempts
+          current_attempt += 1
+          retry
+        else
+          raise e
+        end
+      end
+    end
+
     def update_repo
-      Dir.chdir(path) { shell.run('git clean -fd && git pull') }
+      Dir.chdir(path) { run_cmd('git clean -fd && git pull') }
     end
 
     def clone_repo
       FileUtils.mkdir_p(path, verbose: true)
-      shell.run("git clone --depth=1 #{env.fetch('BOSH_JENKINS_DEPLOYMENTS_REPO')} #{path}")
+      run_cmd("git clone --depth=1 #{env.fetch('BOSH_JENKINS_DEPLOYMENTS_REPO')} #{path}")
+    end
+
+    def run_cmd(cmd)
+      shell.run(cmd, output_command: true)
     end
 
     def git_repo?(path)
