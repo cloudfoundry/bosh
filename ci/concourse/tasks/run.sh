@@ -35,7 +35,7 @@ if [ -f .bundle/config ] ; then
   echo ".bundle/config:"
   cat .bundle/config
 fi
-bundle install
+bundle install --local
 
 echo "--- Running command '$COMMAND' @ `date` ---"
 bundle exec "$COMMAND"
