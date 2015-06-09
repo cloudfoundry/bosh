@@ -305,6 +305,12 @@ module Bosh::OpenStackCloud
 
           with_openstack { server.destroy }
 
+          begin
+            wait_resource(server, [:terminated, :deleted], :state, true)
+          rescue Bosh::Clouds::CloudError => delete_server_error
+            @logger.warn("Failed to destroy server: #{delete_server_error.inspect}\n#{delete_server_error.backtrace.join('\n')}")
+          end
+
           raise Bosh::Clouds::VMCreationFailed.new(true), e.message
         end
 
