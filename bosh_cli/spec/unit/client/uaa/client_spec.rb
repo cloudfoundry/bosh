@@ -2,24 +2,20 @@ require 'spec_helper'
 
 describe Bosh::Cli::Client::Uaa::Client do
   include FakeFS::SpecHelpers
+  include Support::UaaHelpers
 
   subject(:client) { described_class.new('fake-target', auth_info, config) }
-  let(:auth_info) { Bosh::Cli::Client::Uaa::AuthInfo.new(director, {}, 'fake-cert') }
+  let(:auth_info) { Bosh::Cli::Client::Uaa::AuthInfo.new(director, env, 'fake-cert') }
   let(:director) { Bosh::Cli::Client::Director.new('http://127.0.0.1') }
+  let(:env) { {} }
   let(:config) { Bosh::Cli::Config.new('fake-config') }
 
   let(:password_token) do
-    CF::UAA::TokenInfo.new(
-      token_type: 'bearer',
-      access_token: 'eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI2OTg1MjgzNi05ZjhkLTRkNzctYTA1OC1iMGZlNmV'\
-'kMGM0ZWQiLCJzdWIiOiI3ZWQ4ZmRlYS1iNWJiLTRkMWUtYmJhOC1jMDMyNDM4MGY2NWIiLCJzY29wZSI6WyJvcGVuaWQ'\
-'iXSwiY2xpZW50X2lkIjoiYm9zaF9jbGkiLCJjaWQiOiJib3NoX2NsaSIsImF6cCI6ImJvc2hfY2xpIiwiZ3JhbnRfdHl'\
-'wZSI6InBhc3N3b3JkIiwidXNlcl9pZCI6IjdlZDhmZGVhLWI1YmItNGQxZS1iYmE4LWMwMzI0MzgwZjY1YiIsInVzZXJ'\
-'fbmFtZSI6ImFkbWluIiwiZW1haWwiOiJhZG1pbiIsImlhdCI6MTQzMzI4OTIxMiwiZXhwIjoxNDMzMzMyNDEyLCJpc3M'\
-'iOiJodHRwczovLzEwLjI0NC4wLjIvb2F1dGgvdG9rZW4iLCJhdWQiOlsiYm9zaF9jbGkiLCJvcGVuaWQiXX0.UM8SBWE'\
-'yT10XVKeuMF9GT1P4iBsFEs-q22xr2vsS1SM',
-      refresh_token: 'fake-refresh-token'
-    )
+    uaa_token_info('bosh_cli', uaa_token_expiration_time, 'password-refresh-token')
+  end
+
+  let(:client_token) do
+    uaa_token_info('fake-client', uaa_token_expiration_time, nil)
   end
 
   let(:refreshed_token) do
@@ -38,7 +34,8 @@ describe Bosh::Cli::Client::Uaa::Client do
     )
     allow(CF::UAA::TokenIssuer).to receive(:new).and_return(token_issuer)
     allow(token_issuer).to receive(:owner_password_credentials_grant).and_return(password_token)
-    allow(token_issuer).to receive(:refresh_token_grant).with('fake-refresh-token').and_return(refreshed_token)
+    allow(token_issuer).to receive(:client_credentials_grant).and_return(client_token)
+    allow(token_issuer).to receive(:refresh_token_grant).with('password-refresh-token').and_return(refreshed_token)
   end
 
   let(:token_issuer) { instance_double(CF::UAA::TokenIssuer) }
@@ -49,11 +46,23 @@ describe Bosh::Cli::Client::Uaa::Client do
       expect(access_info.auth_header).to eq(password_token.auth_header)
     end
 
-    it 'saves token in config' do
-      client.access_info({})
-      config = YAML.load(File.read('fake-config'))
-      expect(config['auth']['fake-target']['access_token']).to eq(password_token.auth_header)
-      expect(config['auth']['fake-target']['refresh_token']).to eq('fake-refresh-token')
+    context 'when using client auth' do
+      let(:env) { { 'BOSH_CLIENT' => 'fake-client', 'BOSH_CLIENT_SECRET' => 'client_secret' } }
+
+      it 'does not save token in config' do
+        client.access_info({})
+        config = YAML.load(File.read('fake-config'))
+        expect(config['auth']).to eq(nil)
+      end
+    end
+
+    context 'when using password auth' do
+      it 'saves token in config' do
+        client.access_info({})
+        config = YAML.load(File.read('fake-config'))
+        expect(config['auth']['fake-target']['access_token']).to eq(password_token.auth_header)
+        expect(config['auth']['fake-target']['refresh_token']).to eq('password-refresh-token')
+      end
     end
   end
 
@@ -72,7 +81,7 @@ describe Bosh::Cli::Client::Uaa::Client do
 
     context 'when failing to get access token' do
       before do
-        allow(token_issuer).to receive(:refresh_token_grant).with('fake-refresh-token').and_raise(CF::UAA::TargetError)
+        allow(token_issuer).to receive(:refresh_token_grant).with('password-refresh-token').and_raise(CF::UAA::TargetError)
       end
 
       it 'returns nil' do

@@ -5,18 +5,6 @@ module Bosh
         class AccessInfo
           EXPIRATION_DEADLINE_IN_SECONDS = 30
 
-          def self.from_config(config_access_token, refresh_token, token_decoder)
-            token_type, access_token = config_access_token.split(' ')
-            return nil unless token_type && access_token
-
-            token_info = CF::UAA::TokenInfo.new({
-              access_token: access_token,
-              refresh_token: refresh_token,
-              token_type: token_type,
-            })
-            new(token_info, token_decoder)
-          end
-
           def initialize(token_info, token_decoder)
             @token_info = token_info
             @token_decoder = token_decoder
@@ -58,6 +46,18 @@ module Bosh
         end
 
         class PasswordAccessInfo < AccessInfo
+          def self.create(full_access_token, refresh_token, token_decoder)
+            token_type, access_token = full_access_token.split(' ')
+            return nil unless token_type && access_token
+
+            token_info = CF::UAA::TokenInfo.new({
+                access_token: access_token,
+                refresh_token: refresh_token,
+                token_type: token_type,
+              })
+            new(token_info, token_decoder)
+          end
+
           def username
             token_data['user_name']
           end

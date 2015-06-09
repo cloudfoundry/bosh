@@ -11,6 +11,7 @@ module Bosh
         class Client
           def initialize(target, auth_info, config)
             @target = target
+            @auth_info = auth_info
             token_decoder = TokenDecoder.new
             if auth_info.client_auth?
               token_issuer = ClientTokenIssuer.new(auth_info, token_decoder)
@@ -47,7 +48,7 @@ module Bosh
 
           def with_save
             access_info = yield
-            if access_info.auth_header
+            if access_info.auth_header && !@auth_info.client_auth?
               @config.set_credentials(@target, access_info.to_hash)
               @config.save
             end

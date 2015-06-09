@@ -116,28 +116,65 @@ describe Bosh::Cli::Command::Base do
   describe 'credentials' do
     include Support::UaaHelpers
 
-    context 'when config contains UAA token' do
-      let(:cmd) do
-        add_config(
-          'target' => 'localhost:8080',
-          'auth' => {
-            'https://localhost:8080' => {
-              'access_token' => token_info.auth_header,
-            }
-          })
-        make
+    context 'when configured in UAA mode' do
+      context 'when client credentials are provided in environment' do
+        let(:cmd) do
+          add_config('target' => 'localhost:8080')
+          make
+        end
+        let(:env) do
+          {
+            'BOSH_CLIENT' => 'fake-id',
+            'BOSH_CLIENT_SECRET' => 'secret'
+          }
+        end
+        before do
+          stub_const('ENV', env)
+          allow(CF::UAA::TokenIssuer).to receive(:new).and_return(token_issuer)
+
+          director_status = {'user_authentication' => {
+            'type' => 'uaa',
+            'options' => {'url' => 'https://127.0.0.1:8080/uaa'}
+          }}
+          stub_request(:get, 'https://127.0.0.1:8080/info').to_return(body: JSON.dump(director_status))
+        end
+
+        let(:token_issuer) { instance_double(CF::UAA::TokenIssuer) }
+        let(:token) { uaa_token_info('fake-id', expiration_time, nil) }
+        let(:expiration_time) { Time.now.to_i + expiration_deadline + 10 }
+        let(:expiration_deadline) { Bosh::Cli::Client::Uaa::AccessInfo::EXPIRATION_DEADLINE_IN_SECONDS }
+
+        it 'reuses the same token for client credentials if it is valid' do
+          expect(token_issuer).to receive(:client_credentials_grant).once.and_return(token)
+
+          expect(cmd.credentials.authorization_header).to eq(token.auth_header)
+          expect(cmd.credentials.authorization_header).to eq(token.auth_header)
+        end
       end
 
-      let(:token_info) do
-        uaa_token_info('fake-client-id', Time.now.to_i + 3600)
-      end
+      context 'when config contains UAA token' do
+        let(:cmd) do
+          add_config(
+            'target' => 'localhost:8080',
+            'auth' => {
+              'https://localhost:8080' => {
+                'access_token' => token_info.auth_header,
+              }
+            })
+          make
+        end
 
-      it 'returns UAA credentials' do
-        expect(cmd.credentials.authorization_header).to eq(token_info.auth_header)
+        let(:token_info) do
+          uaa_token_info('fake-id', Time.now.to_i + 3600, 'refresh-token')
+        end
+
+        it 'returns UAA credentials' do
+          expect(cmd.credentials.authorization_header).to eq(token_info.auth_header)
+        end
       end
     end
 
-    context 'when config does not contain UAA token' do
+    context 'when configured in basic authentication mode' do
       let(:cmd) do
         add_config(
           'target' => 'localhost:8080',

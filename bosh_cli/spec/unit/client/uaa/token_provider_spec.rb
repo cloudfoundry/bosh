@@ -22,14 +22,21 @@ describe Bosh::Cli::Client::Uaa::TokenProvider do
     allow(CF::UAA::TokenIssuer).to receive(:new).and_return(token_issuer)
   end
 
-  let(:token) do
-    uaa_token_info(encoded_client_id, expiration_time)
+  let(:password_token) do
+    uaa_token_info('bosh_cli', expiration_time, 'password-refresh-token')
   end
 
-  let(:expiration_time) { Time.now.to_i + expiration_deadline + 10 }
-  let(:expiration_deadline) { Bosh::Cli::Client::Uaa::AccessInfo::EXPIRATION_DEADLINE_IN_SECONDS }
+  let(:client_token) do
+    uaa_token_info(encoded_client_id, expiration_time, nil)
+  end
+
+  let(:expiration_time) { uaa_token_expiration_time }
 
   let(:encoded_client_id) { 'test' }
+
+  def simulate_password_login
+    config.set_credentials('fake-target', {'access_token' => password_token.auth_header, 'refresh_token' => password_token.info[:refresh_token]})
+  end
 
   describe '#token' do
     context 'when client credentials are provided' do
@@ -40,75 +47,76 @@ describe Bosh::Cli::Client::Uaa::TokenProvider do
         }
       end
 
-      context 'when config contains access token' do
+      it 'logs in' do
+        expect(token_issuer).to receive(:client_credentials_grant).and_return(client_token)
+        expect(token_provider.token).to eq(client_token.auth_header)
+      end
+
+      context 'when previously logged in with password credentials' do
         before do
-          config.set_credentials('fake-target', { 'access_token' => token.auth_header })
+          simulate_password_login
         end
 
-        context 'when token in config matches client credentials' do
-          it 'uses token in config' do
-            expect(token_provider.token).to eq(token.auth_header)
-          end
-
-          context 'when config token expired' do
-            let(:expiration_time) { Time.now.to_i - expiration_deadline - 10 }
-
-            it 'refreshes the token' do
-              refreshed_token = CF::UAA::TokenInfo.new(
-                token_type: 'bearer',
-                access_token: 'refreshed-token'
-              )
-              expect(token_issuer).to receive(:client_credentials_grant).and_return(refreshed_token)
-              expect(token_provider.token).to eq('bearer refreshed-token')
-            end
-          end
-        end
-
-        context 'when token in config does not match client credentials' do
-          let(:encoded_client_id) { 'invalid' }
-
-          it 'logs in' do
-            expect(token_issuer).to receive(:client_credentials_grant).and_return(token)
-            expect(token_provider.token).to eq(token.auth_header)
-          end
+        it 'logs in with the client credentials' do
+          expect(token_issuer).to receive(:client_credentials_grant).and_return(client_token)
+          expect(token_provider.token).to eq(client_token.auth_header)
         end
       end
 
-      context 'when config does not contain access token' do
-        it 'logs in' do
-          expect(token_issuer).to receive(:client_credentials_grant).and_return(token)
-          expect(token_provider.token).to eq(token.auth_header)
+      context 'when called second time' do
+        let(:second_client_token) { uaa_token_info(encoded_client_id, expiration_time, 'second-refresh-token') }
+
+        before do
+          Timecop.freeze
+          allow(token_issuer).to receive(:client_credentials_grant).once.and_return(client_token, second_client_token)
+          token_provider.token
+        end
+
+        it 'reuses the token if it is not expired' do
+          expect(token_provider.token).to eq(client_token.auth_header)
+        end
+
+        context 'when token is expired' do
+          before do
+            Timecop.travel(expiration_time + 1)
+          end
+
+          it 'logs in again' do
+            expect(token_provider.token).to eq(second_client_token.auth_header)
+          end
         end
       end
     end
 
     context 'when client credentials are not provided' do
-      context 'when config contains access token' do
+      context 'when user was logged in' do
         before do
-          config.set_credentials('fake-target', {'access_token' => token.auth_header})
+          simulate_password_login
         end
 
         context 'when config token is not expired' do
           it 'uses token from config' do
-            expect(token_provider.token).to eq(token.auth_header)
+            expect(token_provider.token).to eq(password_token.auth_header)
           end
         end
 
         context 'when config token expired' do
-          let(:expiration_time) { Time.now.to_i + expiration_deadline - 10 }
+          before do
+            Timecop.travel(expiration_time + 1)
+          end
 
           it 'refreshes the token' do
-            refreshed_token = CF::UAA::TokenInfo.new(
+            refreshed_token_info = CF::UAA::TokenInfo.new(
               token_type: 'bearer',
               access_token: 'refreshed-token'
             )
-            expect(token_issuer).to receive(:refresh_token_grant).and_return(refreshed_token)
+            expect(token_issuer).to receive(:refresh_token_grant).with(password_token.info[:refresh_token]).and_return(refreshed_token_info)
             expect(token_provider.token).to eq('bearer refreshed-token')
           end
         end
       end
 
-      context 'when config does not contain access token' do
+      context 'when no login (client or password) has previously occurred' do
         it 'returns nil' do
           expect(token_provider.token).to eq(nil)
         end

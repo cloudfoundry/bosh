@@ -38,6 +38,10 @@ describe 'Logging into a director with UAA authentication', type: :integration d
       # bosh vms exits with non-0 status if there are no vms
       output = bosh_runner.run('vms', env: client_env, failure_expected: true)
       expect(output).to match /No deployments/
+
+      # no creds, no dice
+      output = bosh_runner.run('vms', failure_expected: true)
+      expect(output).to match /Please log in first/
     end
 
     it 'fails to log in when incorrect credentials were provided' do
@@ -91,17 +95,6 @@ CERT
           expect(runner).to have_output 'Invalid SSL Cert'
         end
       end
-    end
-
-    it 'refreshes the token if access token is expired' do
-      client_env = {'BOSH_CLIENT' => 'short-lived-client', 'BOSH_CLIENT_SECRET' => 'short-lived-secret'}
-      output = bosh_runner.run('status', env: client_env)
-      expect(output).to match /User.*short-lived-client/
-
-      # test we are not getting auth error
-      # bosh vms exits with non-0 status if there are no vms
-      output = bosh_runner.run('vms', env: client_env, failure_expected: true)
-      expect(output).to match /No deployments/
     end
   end
 

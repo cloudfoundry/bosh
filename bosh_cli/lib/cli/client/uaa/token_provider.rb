@@ -13,12 +13,10 @@ module Bosh
           end
 
           def token
-            config_access_token = @config.access_token(@target)
-
             if @auth_info.client_auth?
-              access_info = client_access_info(config_access_token)
+              access_info = client_access_info
             else
-              access_info = password_access_info(config_access_token)
+              access_info = password_access_info
             end
 
             access_info.auth_header if access_info
@@ -30,24 +28,19 @@ module Bosh
             @uaa_client ||= Bosh::Cli::Client::Uaa::Client.new(@target, @auth_info, @config)
           end
 
-          def client_access_info(config_access_token)
-            unless config_access_token
-              return uaa_client.access_info({})
+          def client_access_info
+            if !@client_access_info.nil? && @client_access_info.was_issued_for?(@auth_info.client_id)
+              @client_access_info = refresh_if_needed(@client_access_info)
+            else
+              @client_access_info = uaa_client.access_info({})
             end
-
-            access_info = ClientAccessInfo.from_config(config_access_token, nil, @token_decoder)
-            return nil unless access_info
-
-            if access_info.was_issued_for?(@auth_info.client_id)
-              return refresh_if_needed(access_info)
-            end
-            uaa_client.access_info({})
           end
 
-          def password_access_info(config_access_token)
+          def password_access_info
+            config_access_token = @config.access_token(@target)
             return nil unless config_access_token
 
-            access_info = PasswordAccessInfo.from_config(config_access_token, @config.refresh_token(@target), @token_decoder)
+            access_info = PasswordAccessInfo.create(config_access_token, @config.refresh_token(@target), @token_decoder)
             return nil unless access_info
 
             refresh_if_needed(access_info)
