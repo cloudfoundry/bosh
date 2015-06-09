@@ -419,21 +419,17 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
 
       vm_id = cloud.create_vm("agent-id", "sc-id",
         resource_pool_spec,
-        { "network_a" => network_spec },
-        nil, { "test_env" => "value" })
+        {"network_a" => network_spec},
+        nil,
+        {"test_env" => "value"}
+      )
 
       expect(vm_id).to eq("i-test")
     end
   end
 
   context "when cannot create an OpenStack server" do
-    let(:logger) { double }
-
     let(:cloud) do
-      allow(Bosh::Clouds::Config).to receive(:logger).and_return(logger)
-      allow(logger).to receive(:debug)
-      allow(logger).to receive(:info)
-
       mock_cloud do |openstack|
         expect(openstack.servers).to receive(:create).and_return(server)
         expect(openstack.security_groups).to receive(:collect).and_return(%w[default])
@@ -444,17 +440,19 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     end
 
     it "destroys the server successfully and raises a Retryable Error" do
-      allow(logger).to receive(:warn)
-
       expect(server).to receive(:destroy)
       expect(cloud).to receive(:wait_resource).with(server, :active, :state).and_raise(Bosh::Clouds::CloudError)
       expect(cloud).to receive(:wait_resource).with(server, [:terminated, :deleted], :state, true)
 
       expect {
-        vm_id = cloud.create_vm("agent-id", "sc-id",
-                                resource_pool_spec,
-                                { "network_a" => dynamic_network_spec },
-                                nil, { "test_env" => "value" })
+        cloud.create_vm(
+          "agent-id",
+          "sc-id",
+          resource_pool_spec,
+          {"network_a" => dynamic_network_spec},
+          nil,
+          {"test_env" => "value"}
+        )
       }.to raise_error(Bosh::Clouds::VMCreationFailed)
     end
 
@@ -463,14 +461,18 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       allow(cloud).to receive(:wait_resource).with(server, :active, :state).and_raise(Bosh::Clouds::CloudError)
       allow(cloud).to receive(:wait_resource).with(server, [:terminated, :deleted], :state, true).and_raise(Bosh::Clouds::CloudError)
 
-      expect(logger).to receive(:warn).with('Failed to create server: Bosh::Clouds::CloudError')
-      expect(logger).to receive(:warn).with(/Failed to destroy server:.*/)
+      expect(Bosh::Clouds::Config.logger).to receive(:warn).with('Failed to create server: Bosh::Clouds::CloudError')
+      expect(Bosh::Clouds::Config.logger).to receive(:warn).with(/Failed to destroy server:.*/)
 
       expect {
-        vm_id = cloud.create_vm("agent-id", "sc-id",
-                                resource_pool_spec,
-                                { "network_a" => dynamic_network_spec },
-                                nil, { "test_env" => "value" })
+        cloud.create_vm(
+          "agent-id",
+          "sc-id",
+          resource_pool_spec,
+          {"network_a" => dynamic_network_spec},
+          nil,
+          {"test_env" => "value"}
+        )
       }.to raise_error(Bosh::Clouds::VMCreationFailed)
     end
   end
