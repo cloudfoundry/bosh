@@ -114,8 +114,6 @@ module Bosh::Director
         @logger.info("ResourcePool `#{name}' - Deallocating VM: #{deallocated_vm.model.cid}")
         @allocated_vms.delete(deallocated_vm)
 
-        deallocated_vm.release_reservation
-
         nil
       end
 
