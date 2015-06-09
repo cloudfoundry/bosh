@@ -6,7 +6,7 @@ jobs:
     plan:
       - {trigger: true, get: bosh-src}
       - task: test
-        file: bosh-src/ci/concourse/tasks/test-unit.yml
+        file: bosh-src/ci/tasks/test-unit.yml
         config:
           params:
             RUBY_VERSION: 1.9.3
@@ -17,7 +17,7 @@ jobs:
     plan:
       - {trigger: true, get: bosh-src}
       - task: test
-        file: bosh-src/ci/concourse/tasks/test-unit-coverage.yml
+        file: bosh-src/ci/tasks/test-unit-coverage.yml
         config:
           params:
             RUBY_VERSION: 2.1.6
@@ -30,7 +30,7 @@ jobs:
       - {trigger: true, passed: [unit-1.9, unit-2.1], get: bosh-src}
       - task: test
         privileged: true
-        file: bosh-src/ci/concourse/tasks/test-integration.yml
+        file: bosh-src/ci/tasks/test-integration.yml
         config:
           params:
             DB:           mysql
@@ -43,7 +43,7 @@ jobs:
       - {trigger: true, passed: [unit-1.9, unit-2.1], get: bosh-src}
       - task: test
         privileged: true
-        file: bosh-src/ci/concourse/tasks/test-integration.yml
+        file: bosh-src/ci/tasks/test-integration.yml
         config:
           params:
             DB:           mysql
@@ -56,7 +56,7 @@ jobs:
       - {trigger: true, passed: [unit-1.9, unit-2.1], get: bosh-src}
       - task: test
         privileged: true
-        file:  bosh-src/ci/concourse/tasks/test-integration.yml
+        file:  bosh-src/ci/tasks/test-integration.yml
         config:
           params:
             DB:           postgresql
@@ -69,7 +69,7 @@ jobs:
       - {trigger: true, passed: [unit-1.9, unit-2.1], get: bosh-src}
       - task: test
         privileged: true
-        file: bosh-src/ci/concourse/tasks/test-integration.yml
+        file: bosh-src/ci/tasks/test-integration.yml
         config:
           params:
             DB:           postgresql

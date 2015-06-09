@@ -1,0 +1,14 @@
+---
+platform: linux
+
+image: docker:///bosh/integration
+
+inputs:
+- name: bosh-src
+
+run:
+  path: bosh-src/ci/tasks/integration-wrapper.sh
+  args: ["bosh-src/ci/tasks/rake.sh", "--trace", "go", "spec:integration"]
+
+params:
+  LOG_LEVEL: WARN

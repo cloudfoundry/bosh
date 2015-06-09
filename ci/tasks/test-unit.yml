@@ -1,0 +1,14 @@
+---
+platform: linux
+
+image: docker:///bosh/integration
+
+inputs:
+- name: bosh-src
+
+run:
+  path: bosh-src/ci/tasks/rake.sh
+  args: ["--trace", "go", "spec:unit"]
+
+params:
+  RUBY_VERSION: replace-me

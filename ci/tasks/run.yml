@@ -7,5 +7,7 @@ inputs:
 - name: bosh-src
 
 run:
-  path: bosh-src/ci/concourse/tasks/rake.sh
-  args: ["--trace", "go", "spec:unit"]
+  path: bosh-src/ci/tasks/run.sh
+
+params:
+  COMMAND: "echo command"
