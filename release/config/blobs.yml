@@ -71,10 +71,6 @@ nginx/pcre-8.34.tar.gz:
   object_id: ea6a3dd5-8620-4bed-bd6c-17a7eda02cf5
   sha: d46e537337ee70df19084001a4b6815b3d69fe6c
   size: 1933734
-redis/redis-2.6.9.tar.gz:
-  object_id: d24e2fbd-ea3f-4c4b-b4e3-a0ccfd60dafa
-  sha: 519fc3d1e7a477217f1ace73252be622e0101001
-  size: 989119
 ruby/bundler-1.6.3.gem:
   object_id: 2cbdd2bc-bc00-4b4b-b617-2433cea68a02
   sha: c8a000f75b6a6f60d9fb727f8076ec9171e14c20
@@ -87,3 +83,7 @@ ruby/ruby-2.1.4.tar.gz:
   object_id: 00b50c34-f264-4245-9a90-b56c7385694e
   sha: 29e9cfdd9e989b7621d7696ef3f970262a08dbc3
   size: 15127418
+redis/redis-3.0.2.tar.gz:
+  object_id: 033ba3ad-dea6-4a18-910f-e7d0f244d8ef
+  sha: a38755fe9a669896f7c5d8cd3ebbf76d59712002
+  size: 1360182

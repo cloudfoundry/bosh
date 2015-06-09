@@ -1,13 +1,13 @@
 set -e
 
-tar zxf redis/redis-2.6.9.tar.gz
+tar zxf redis/redis-3.0.2.tar.gz
 
 if [[ $? != 0 ]] ; then
   echo "Failed extracting redis"
   exit 1
 fi
 
-cd redis-2.6.9
+cd redis-3.0.2
 
 make -j
 make -j PREFIX=$BOSH_INSTALL_TARGET install
