@@ -7,7 +7,7 @@ module Bosh::Director
     subject { DeploymentPlan::Steps::UpdateStep.new(base_job, event_log, resource_pools, deployment_plan, multi_job_updater, cloud, blobstore) }
     let(:base_job) { Jobs::BaseJob.new }
     let(:event_log) { Bosh::Director::Config.event_log }
-    let(:resource_pools) { instance_double('Bosh::Director::DeploymentPlan::ResourcePools', update: nil, refill: nil) }
+    let(:resource_pools) { instance_double('Bosh::Director::DeploymentPlan::ResourcePools', update: nil) }
     let(:deployment_plan) do
       instance_double('Bosh::Director::DeploymentPlan::Planner',
         update_stemcell_references!: nil,
@@ -102,7 +102,6 @@ module Bosh::Director
         it_binds_instance_vms.ordered
         it_binds_configuration.ordered
         expect(multi_job_updater).to receive(:run).with(base_job, deployment_plan, [job1, job2]).ordered
-        expect(resource_pools).to receive(:refill).with(no_args).ordered
         expect(deployment_plan).to receive(:persist_updates!).ordered
         subject.perform
       end

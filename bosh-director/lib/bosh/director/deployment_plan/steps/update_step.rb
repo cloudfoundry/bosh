@@ -56,9 +56,6 @@ module Bosh::Director
             @deployment_plan,
             @deployment_plan.jobs_starting_on_deploy,
           )
-
-          @logger.info('Refilling resource pools')
-          @resource_pools.refill
         end
 
         private

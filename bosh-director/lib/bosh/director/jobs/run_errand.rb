@@ -106,9 +106,6 @@ module Bosh::Director
       logger.info('Starting to delete job instances')
       job_manager.delete_instances
 
-      logger.info('Starting to refill resource pool')
-      resource_pools.refill
-
       @ignore_cancellation = false
     end
   end

@@ -103,7 +103,7 @@ module Bosh::Director
                   with(event_log, [rp_updater]).
                   and_return(rp_manager)
               end
-              let(:rp_manager) { instance_double('Bosh::Director::DeploymentPlan::ResourcePools', update: nil, refill: nil) }
+              let(:rp_manager) { instance_double('Bosh::Director::DeploymentPlan::ResourcePools', update: nil) }
 
               before do
                 allow(Errand::JobManager).to receive(:new).
@@ -149,7 +149,6 @@ module Bosh::Director
                   and_return('fake-result-short-description')
 
                 expect(job_manager).to receive(:delete_instances).with(no_args).ordered
-                expect(rp_manager).to receive(:refill).with(no_args).ordered
 
                 expect(called_after_block_check).to receive(:call).ordered
 
@@ -164,7 +163,6 @@ module Bosh::Director
                   error = Exception.new
                   expect(runner).to receive(:run).with(no_args).and_raise(error)
                   expect(job_manager).to receive(:delete_instances).with(no_args).ordered
-                  expect(rp_manager).to receive(:refill).with(no_args).ordered
 
                   expect { subject.perform }.to raise_error(error)
                 end
@@ -185,7 +183,6 @@ module Bosh::Director
                     expect(runner).to receive(:run).with(no_args).ordered.and_yield
                     expect(runner).to receive(:cancel).with(no_args).ordered
                     expect(job_manager).to receive(:delete_instances).with(no_args).ordered
-                    expect(rp_manager).to receive(:refill).with(no_args).ordered
 
                     expect { subject.perform }.to raise_error(TaskCancelled)
                   end
@@ -195,7 +192,6 @@ module Bosh::Director
                     expect(runner).to receive(:run).with(no_args).ordered.and_yield
                     expect(runner).to receive(:cancel).with(no_args).ordered
                     expect(job_manager).to(receive(:delete_instances).with(no_args).ordered) { job.task_checkpoint }
-                    expect(rp_manager).to receive(:refill).with(no_args).ordered
 
                     expect { subject.perform }.to raise_error(TaskCancelled)
                   end
@@ -208,7 +204,6 @@ module Bosh::Director
                     expect(runner).to receive(:run).with(no_args).ordered.and_yield
                     expect(runner).to receive(:cancel).with(no_args).ordered.and_raise(error)
                     expect(job_manager).to receive(:delete_instances).with(no_args).ordered
-                    expect(rp_manager).to receive(:refill).with(no_args).ordered
 
                     expect { subject.perform }.to raise_error(error)
                   end
@@ -220,12 +215,6 @@ module Bosh::Director
 
                 it 'does not delete instances' do
                   expect(job_manager).to_not receive(:delete_instances)
-
-                  expect(subject.perform).to eq('fake-result-short-description')
-                end
-
-                it 'does not refill resource pool' do
-                  expect(rp_manager).to_not receive(:refill)
 
                   expect(subject.perform).to eq('fake-result-short-description')
                 end
