@@ -5,6 +5,7 @@ jobs:
     serial: true
     plan:
       - {trigger: true, get: bosh-src}
+
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
         config:
@@ -16,11 +17,23 @@ jobs:
     serial: true
     plan:
       - {trigger: true, get: bosh-src}
+
       - task: test
-        file: bosh-src/ci/tasks/test-unit-coverage.yml
+        file: bosh-src/ci/tasks/test-unit.yml
         config:
           params:
             RUBY_VERSION: 2.1.6
+
+  - name: publish-coverage
+    public: true
+    serial: true
+    plan:
+      - {trigger: true, passed: [unit-1.9, unit-2.1], get: bosh-src}
+
+      - task: publish
+        file: bosh-src/ci/tasks/publish-coverage.yml
+        config:
+          params:
             CODECLIMATE_REPO_TOKEN: {{codeclimate_token}}
 
   - name: integration-mysql-1.9
@@ -28,6 +41,7 @@ jobs:
     serial: true
     plan:
       - {trigger: true, passed: [unit-1.9, unit-2.1], get: bosh-src}
+
       - task: test
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
@@ -41,6 +55,7 @@ jobs:
     serial: true
     plan:
       - {trigger: true, passed: [unit-1.9, unit-2.1], get: bosh-src}
+
       - task: test
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
@@ -54,6 +69,7 @@ jobs:
     serial: true
     plan:
       - {trigger: true, passed: [unit-1.9, unit-2.1], get: bosh-src}
+
       - task: test
         privileged: true
         file:  bosh-src/ci/tasks/test-integration.yml
@@ -67,6 +83,7 @@ jobs:
     serial: true
     plan:
       - {trigger: true, passed: [unit-1.9, unit-2.1], get: bosh-src}
+
       - task: test
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
@@ -80,6 +97,7 @@ jobs:
     serial: true
     plan:
       - {trigger: true, passed: [integration-mysql-1.9, integration-mysql-2.1, integration-postgres-1.9, integration-postgres-2.1], get: bosh-src}
+
       - {put: bosh-candidate, params: {repository: bosh-src}}
 
 resources:
