@@ -40,7 +40,7 @@ module Bosh::Cli
 
       def director
         @director ||= Bosh::Cli::Client::Director.new(
-            target, credentials, @options.select { |k, _| k == :no_track })
+          target, credentials, @options.select { |k, _| k == :no_track })
       end
 
       def release
@@ -62,7 +62,7 @@ module Bosh::Cli
       end
 
       def logged_in?
-        !!(credentials)
+        !!(credentials && credentials.authorization_header)
       end
 
       def non_interactive?
@@ -92,6 +92,7 @@ module Bosh::Cli
         url = config.resolve_alias(:target, raw_url) || raw_url
         url ? normalize_url(url) : nil
       end
+
       alias_method :target_url, :target
 
       # @return [String] Deployment manifest path
@@ -100,153 +101,154 @@ module Bosh::Cli
       end
 
       def credentials
-        auth_token = uaa_token_provider.token
-        return Client::UaaCredentials.new(auth_token) if auth_token
+        return @credentials if @credentials
 
-        if username && password
-          return Client::BasicCredentials.new(username, password)
-        end
-
-        nil
-      end
-
-      def uaa_token_provider
-        @uaa_token_provider ||= begin
-          director_client = Client::Director.new(target)
-          auth_info = Client::Uaa::AuthInfo.new(director_client, ENV, config.ca_cert(target))
+        if auth_info.uaa?
           token_decoder = Client::Uaa::TokenDecoder.new
-          Client::Uaa::TokenProvider.new(auth_info, config, token_decoder, target)
-        end
-      end
-
-      def target_name
-        options[:target] || config.target_name || target_url
-      end
-
-      def cache_dir
-        File.join(Dir.home, '.bosh', 'cache')
-      end
-
-      protected
-
-      # @return [String] Director username
-      def username
-        options[:username] || ENV['BOSH_USER'] || config.username(target)
-      end
-
-      # @return [String] Director password
-      def password
-        options[:password] || ENV['BOSH_PASSWORD'] || config.password(target)
-      end
-
-      # Prints director task completion report. Note that event log usually
-      # contains pretty detailed error report and other UI niceties, so most
-      # of the time this could just do nothing
-      # @param [Symbol] status Task status
-      # @param [#to_s] task_id Task ID
-      def task_report(status, task_id, success_msg = nil, error_msg = nil)
-        case status
-          when :non_trackable
-            report = "Can't track director task".make_red
-          when :track_timeout
-            report = 'Task tracking timeout'.make_red
-          when :running
-            report = "Task #{task_id.make_yellow} running"
-          when :error
-            report = error_msg
-          when :done
-            report = success_msg
-          else
-            report = "Task exited with status #{status}"
+          uaa_token_provider = Client::Uaa::TokenProvider.new(auth_info, config, token_decoder, target)
+          @credentials = Client::UaaCredentials.new(uaa_token_provider)
+        elsif username && password
+          @credentials = Client::BasicCredentials.new(username, password)
         end
 
-        unless [:running, :done].include?(status)
-          @exit_code = 1
-        end
-
-        say("\n#{report}") if report
-        say("\nFor a more detailed error report, run: bosh task #{task_id} --debug") if status == :error
+        @credentials
       end
 
-      def auth_required
-        target_required
-        err('Please log in first') unless logged_in?
+    def target_name
+      options[:target] || config.target_name || target_url
+    end
+
+    def cache_dir
+      File.join(Dir.home, '.bosh', 'cache')
+    end
+
+    protected
+
+    def auth_info
+      @auth_info ||= begin
+        director_client = Client::Director.new(target)
+        Client::Uaa::AuthInfo.new(director_client, ENV, config.ca_cert(target))
       end
+    end
 
-      def target_required
-        err('Please choose target first') if target.nil?
-      end
+    # @return [String] Director username
+    def username
+      options[:username] || ENV['BOSH_USER'] || config.username(target)
+    end
 
-      def deployment_required
-        err('Please choose deployment first') if deployment.nil?
-      end
+    # @return [String] Director password
+    def password
+      options[:password] || ENV['BOSH_PASSWORD'] || config.password(target)
+    end
 
-      def show_deployment
-        say("Current deployment is #{deployment.make_green}")
-      end
-
-      def no_track_unsupported
-        if @options.delete(:no_track)
-          say('Ignoring `' + '--no-track'.make_yellow + "' option")
-        end
-      end
-
-      def check_if_release_dir
-        unless in_release_dir?
-          err("Sorry, your current directory doesn't look like release directory")
-        end
-      end
-
-      def raise_dirty_state_error
-        say("\n%s\n" % [`git status`])
-        err('Your current directory has some local modifications, ' +
-                "please discard or commit them first.\n\n" +
-                'Use the --force option to skip this check.')
-      end
-
-      def in_release_dir?
-        File.directory?('packages') &&
-            File.directory?('jobs') &&
-            File.directory?('src')
-      end
-
-      def dirty_state?
-        git_status = `git status 2>&1`
-        case $?.exitstatus
-          when 128 # Not in a git repo
-            false
-          when 127 # git command not found
-            false
-          else
-            !git_status.lines.to_a.last.include?('nothing to commit')
-        end
-      end
-
-      def valid_index_for(job, index, options = {})
-        index = '0' if job_unique_in_deployment?(job)
-        err('You should specify the job index. There is more than one instance of this job type.') if index.nil?
-        index = index.to_i if options[:integer_index]
-        index
-      end
-
-      def normalize_url(url)
-        url = url.gsub(/\/$/, '')
-        url = "https://#{url}" unless url.match(/^http:?/)
-        uri = URI.parse(url)
-
-        if port = url.match(/:(\d+)$/)
-          port_number = port.captures[0].to_i
-          if port_number == URI::HTTPS::DEFAULT_PORT
-            uri.to_s + ":#{URI::HTTPS::DEFAULT_PORT}"
-          else
-            uri.port = port_number
-            uri.to_s
-          end
+    # Prints director task completion report. Note that event log usually
+    # contains pretty detailed error report and other UI niceties, so most
+    # of the time this could just do nothing
+    # @param [Symbol] status Task status
+    # @param [#to_s] task_id Task ID
+    def task_report(status, task_id, success_msg = nil, error_msg = nil)
+      case status
+        when :non_trackable
+          report = "Can't track director task".make_red
+        when :track_timeout
+          report = 'Task tracking timeout'.make_red
+        when :running
+          report = "Task #{task_id.make_yellow} running"
+        when :error
+          report = error_msg
+        when :done
+          report = success_msg
         else
-          uri.port = DEFAULT_DIRECTOR_PORT
+          report = "Task exited with status #{status}"
+      end
+
+      unless [:running, :done].include?(status)
+        @exit_code = 1
+      end
+
+      say("\n#{report}") if report
+      say("\nFor a more detailed error report, run: bosh task #{task_id} --debug") if status == :error
+    end
+
+    def auth_required
+      target_required
+      err('Please log in first') unless logged_in?
+    end
+
+    def target_required
+      err('Please choose target first') if target.nil?
+    end
+
+    def deployment_required
+      err('Please choose deployment first') if deployment.nil?
+    end
+
+    def show_deployment
+      say("Current deployment is #{deployment.make_green}")
+    end
+
+    def no_track_unsupported
+      if @options.delete(:no_track)
+        say('Ignoring `' + '--no-track'.make_yellow + "' option")
+      end
+    end
+
+    def check_if_release_dir
+      unless in_release_dir?
+        err("Sorry, your current directory doesn't look like release directory")
+      end
+    end
+
+    def raise_dirty_state_error
+      say("\n%s\n" % [`git status`])
+      err('Your current directory has some local modifications, ' +
+          "please discard or commit them first.\n\n" +
+          'Use the --force option to skip this check.')
+    end
+
+    def in_release_dir?
+      File.directory?('packages') &&
+        File.directory?('jobs') &&
+        File.directory?('src')
+    end
+
+    def dirty_state?
+      git_status = `git status 2>&1`
+      case $?.exitstatus
+        when 128 # Not in a git repo
+          false
+        when 127 # git command not found
+          false
+        else
+          !git_status.lines.to_a.last.include?('nothing to commit')
+      end
+    end
+
+    def valid_index_for(job, index, options = {})
+      index = '0' if job_unique_in_deployment?(job)
+      err('You should specify the job index. There is more than one instance of this job type.') if index.nil?
+      index = index.to_i if options[:integer_index]
+      index
+    end
+
+    def normalize_url(url)
+      url = url.gsub(/\/$/, '')
+      url = "https://#{url}" unless url.match(/^http:?/)
+      uri = URI.parse(url)
+
+      if port = url.match(/:(\d+)$/)
+        port_number = port.captures[0].to_i
+        if port_number == URI::HTTPS::DEFAULT_PORT
+          uri.to_s + ":#{URI::HTTPS::DEFAULT_PORT}"
+        else
+          uri.port = port_number
           uri.to_s
         end
+      else
+        uri.port = DEFAULT_DIRECTOR_PORT
+        uri.to_s
       end
     end
   end
+end
 end

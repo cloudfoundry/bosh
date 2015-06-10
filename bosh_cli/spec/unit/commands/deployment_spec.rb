@@ -6,10 +6,13 @@ describe Bosh::Cli::Command::Deployment do
   let(:release_source) { Support::FileHelpers::ReleaseDirectory.new }
 
   before :each do
+    target = 'https://127.0.0.1:8080'
     cmd.add_option(:non_interactive, true)
-    cmd.add_option(:target, 'test')
+    cmd.add_option(:target, target)
     cmd.add_option(:username, 'user')
     cmd.add_option(:password, 'pass')
+
+    stub_request(:get, "#{target}/info").to_return(body: '{}')
   end
 
   after do

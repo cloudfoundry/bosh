@@ -6,7 +6,7 @@ describe Bosh::Cli::Command::Base do
       allow(Bosh::Cli::Client::Director).to receive(:new).and_return(director)
     end
 
-    let(:director) { instance_double('Bosh::Cli::Client::Director') }
+    let(:director) { instance_double('Bosh::Cli::Client::Director', get_status: {}) }
     let(:job_rename) { Bosh::Cli::Command::JobRename.new }
     before { job_rename.add_option(:config, config_file) }
     let(:config_file) { Tempfile.new('rename-spec') }

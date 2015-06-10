@@ -2,12 +2,12 @@ module Bosh
   module Cli
     module Client
       class UaaCredentials
-        def initialize(token)
-          @token = token
+        def initialize(token_provider)
+          @token_provider = token_provider
         end
 
         def authorization_header
-          @token
+          @token_provider.token
         end
       end
 

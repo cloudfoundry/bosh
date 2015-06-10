@@ -18,6 +18,10 @@ describe Bosh::Cli::Command::Base do
     cmd
   end
 
+  before { stub_request(:get, "#{target}/info").to_return(body: '{}') }
+
+  let(:target) { 'https://127.0.0.1:8080' }
+
   it 'can access configuration and respects options' do
     add_config('target' => 'localhost:8080', 'target_name' => 'microbosh', 'deployment' => 'test')
 
@@ -49,7 +53,7 @@ describe Bosh::Cli::Command::Base do
   end
 
   it 'has logged_in? helper' do
-    add_config('target' => 'localhost:8080', 'deployment' => 'test')
+    add_config('target' => target, 'deployment' => 'test')
 
     cmd = make
     expect(cmd.logged_in?).to be(false)
@@ -117,6 +121,14 @@ describe Bosh::Cli::Command::Base do
     include Support::UaaHelpers
 
     context 'when configured in UAA mode' do
+      before do
+        director_status = {'user_authentication' => {
+          'type' => 'uaa',
+          'options' => {'url' => 'https://127.0.0.1:8080/uaa'}
+        }}
+        stub_request(:get, 'https://127.0.0.1:8080/info').to_return(body: JSON.dump(director_status))
+      end
+
       context 'when client credentials are provided in environment' do
         let(:cmd) do
           add_config('target' => 'localhost:8080')
@@ -131,12 +143,6 @@ describe Bosh::Cli::Command::Base do
         before do
           stub_const('ENV', env)
           allow(CF::UAA::TokenIssuer).to receive(:new).and_return(token_issuer)
-
-          director_status = {'user_authentication' => {
-            'type' => 'uaa',
-            'options' => {'url' => 'https://127.0.0.1:8080/uaa'}
-          }}
-          stub_request(:get, 'https://127.0.0.1:8080/info').to_return(body: JSON.dump(director_status))
         end
 
         let(:token_issuer) { instance_double(CF::UAA::TokenIssuer) }

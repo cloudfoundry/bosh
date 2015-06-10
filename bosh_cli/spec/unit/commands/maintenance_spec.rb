@@ -9,7 +9,9 @@ describe Bosh::Cli::Command::Maintenance do
     command.options[:non_interactive] = true
     command.options[:username] = 'admin'
     command.options[:password] = 'admin'
-    command.options[:target] = 'http://example.org'
+    target = 'https://127.0.0.1:8080'
+    command.options[:target] = target
+    stub_request(:get, "#{target}/info").to_return(body: '{}')
 
     allow(director).to receive(:list_stemcells).and_return([])
   end
