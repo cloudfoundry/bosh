@@ -15,4 +15,4 @@ print_git_state
 
 bundle install --local
 
-bundle exec rake go spec:unit
+bundle exec rake --trace go spec:unit
