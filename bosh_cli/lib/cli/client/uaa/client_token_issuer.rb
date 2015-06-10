@@ -15,8 +15,6 @@ module Bosh
           end
 
           def access_info(_)
-            @auth_info.validate!
-
             token = token_issuer.client_credentials_grant
             ClientAccessInfo.new(token, @token_decoder)
           end

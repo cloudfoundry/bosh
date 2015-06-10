@@ -5,12 +5,17 @@ describe Bosh::Cli::Client::Uaa::AuthInfo do
   subject(:auth_info) { described_class.new(director, {}, 'cert-file') }
   let(:director) { Bosh::Cli::Client::Director.new('http://127.0.0.1') }
 
-  describe '#validate!' do
-    it 'fails when url is not https' do
+  describe '#url' do
+    before do
       allow(director).to receive(:get_status).and_return({'user_authentication' => {'type' => 'uaa', 'options' => {'url' => 'non-https-url'}}})
-      expect do
-        auth_info.validate!
-      end.to raise_error Bosh::Cli::Client::Uaa::AuthInfo::ValidationError, 'HTTPS protocol is required'
+    end
+
+    context 'when it is not HTTPS' do
+      it 'raises an error' do
+        expect do
+          auth_info.url
+        end.to raise_error Bosh::Cli::Client::Uaa::AuthInfo::ValidationError, 'HTTPS protocol is required'
+      end
     end
   end
 

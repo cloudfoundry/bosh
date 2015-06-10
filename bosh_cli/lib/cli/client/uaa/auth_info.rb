@@ -24,15 +24,15 @@ module Bosh
           end
 
           def url
-            auth_info.fetch('options', {}).fetch('url', nil)
-          end
+            url = auth_info.fetch('options', {}).fetch('url', nil)
 
-          def validate!
-            return unless uaa?
-
-            unless URI.parse(url).instance_of?(URI::HTTPS)
-              raise ValidationError.new('HTTPS protocol is required')
+            if url
+              unless URI.parse(url).instance_of?(URI::HTTPS)
+                raise ValidationError.new('HTTPS protocol is required')
+              end
             end
+
+            url
           end
 
           private
