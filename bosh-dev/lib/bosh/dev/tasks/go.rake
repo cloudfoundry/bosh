@@ -14,7 +14,7 @@ namespace :go do
 
     FileUtils.mkdir_p('tmp')
 
-    Bosh::Dev::GoInstaller.new('1.3.3', 'tmp').install
+    Bosh::Dev::GoInstaller.new('1.4.2', 'tmp').install
 
     ENV['GOROOT'] = File.absolute_path('tmp/go')
     ENV['PATH'] = "#{File.absolute_path('tmp/go/bin')}:#{ENV['PATH']}"
