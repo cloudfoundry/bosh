@@ -6,7 +6,7 @@ bind <%= listen_address %>
 <% end %>
 timeout 300
 loglevel notice
-logfile stdout
+logfile ""
 databases 16
 dir /var/vcap/store/redis
 requirepass <%= p("redis.password") %>
