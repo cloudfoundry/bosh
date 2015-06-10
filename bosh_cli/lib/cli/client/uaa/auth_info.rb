@@ -16,6 +16,13 @@ module Bosh
           end
 
           def client_auth?
+            if @client_id.nil? && !@client_secret.nil?
+              raise ValidationError.new('BOSH_CLIENT is missing')
+            end
+            if @client_secret.nil? && !@client_id.nil?
+              raise ValidationError.new('BOSH_CLIENT_SECRET is missing')
+            end
+
             !@client_id.nil? && !@client_secret.nil?
           end
 
