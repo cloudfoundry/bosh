@@ -102,7 +102,7 @@ EOS
   # todo can we install golang with a shell provisioner?
   config.vm.provision :chef_solo do |chef|
     chef.run_list = %w(recipe[golang] recipe[stemcell-golang])
-    chef.json = { go: { version: '1.3.3' } }
+    chef.json = { go: { version: '1.4.2' } }
   end
 
   files_to_ignore = File.readlines(File.expand_path('../../.gitignore', __FILE__)).map(&:chomp).reject(&:empty?)
