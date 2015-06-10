@@ -38,7 +38,7 @@ namespace :go do
 
   desc 'Install Vet'
   task :install_vet do
-    vet_repo = 'code.google.com/p/go.tools/cmd/vet'
+    vet_repo = 'golang.org/x/tools/cmd/vet'
     sh("go get #{vet_repo}")
     sh("go install #{vet_repo}")
   end
