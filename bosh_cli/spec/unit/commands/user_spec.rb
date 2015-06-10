@@ -6,6 +6,9 @@ describe Bosh::Cli::Command::User do
 
   before do
     allow(command).to receive(:director).and_return(director)
+    target = 'https://127.0.0.1:8080'
+    stub_request(:get, "#{target}/info").to_return(body: '{}')
+    command.options[:target] = target
   end
 
   describe "creating a new user" do
@@ -14,7 +17,6 @@ describe Bosh::Cli::Command::User do
         command.options[:non_interactive] = false
         command.options[:username] = 'admin'
         command.options[:password] = 'admin'
-        command.options[:target] = 'http://example.org'
       end
 
       it "asks for username, password, and verify password" do
@@ -73,7 +75,6 @@ describe Bosh::Cli::Command::User do
     context "when user is not logged in" do
       before do
         allow(command).to receive_messages(:logged_in? => false)
-        command.options[:target] = "http://bosh-target.example.com"
       end
 
       it "fails" do
@@ -98,7 +99,6 @@ describe Bosh::Cli::Command::User do
       before do
         command.options[:username] = "bosh"
         command.options[:password] = "b05h"
-        command.options[:target] = "http://bosh-target.example.com"
       end
 
       context "when the user deletion fails" do

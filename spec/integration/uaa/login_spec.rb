@@ -44,6 +44,12 @@ describe 'Logging into a director with UAA authentication', type: :integration d
       expect(output).to match /Please log in first/
     end
 
+    it 'refreshes the token when running long command' do
+      client_env = {'BOSH_CLIENT' => 'short-lived-client', 'BOSH_CLIENT_SECRET' => 'short-lived-secret'}
+      _, exit_code = deploy_from_scratch(no_login: true, env: client_env, return_exit_code: true)
+      expect(exit_code).to eq(0)
+    end
+
     it 'fails to log in when incorrect credentials were provided' do
       bosh_runner.run_interactively('login') do |runner|
         expect(runner).to have_output 'Email:'

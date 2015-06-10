@@ -2,13 +2,12 @@ require 'spec_helper'
 
 describe Bosh::Cli::Command::Backup do
   let(:command) { described_class.new }
-  let(:director) { double(Bosh::Cli::Client::Director) }
-
   let(:director_name) { 'mini-bosh' }
+  let(:target) { 'https://127.0.0.1:8080' }
 
   before do
-    allow(command).to receive(:director).and_return(director)
-    allow(command.director).to receive(:get_status).and_return({ 'name' => director_name })
+    director_status = { 'name' => director_name }
+    stub_request(:get, "#{target}/info").to_return(body: JSON.dump(director_status))
   end
 
   describe 'backup' do
@@ -41,7 +40,7 @@ describe Bosh::Cli::Command::Backup do
       before do
         command.options[:username] = 'bosh'
         command.options[:password] = 'b05h'
-        command.options[:target] = 'http://bosh-target.example.com'
+        command.options[:target] = target
 
         allow(Bosh::Cli::BackupDestinationPath).to receive_message_chain(:new, :create_from_path) { dest }
 

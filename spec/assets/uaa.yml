@@ -32,7 +32,7 @@ oauth:
       scope: openid
       authorities: uaa.none
       secret: "short-lived-secret"
-      access-token-validity: 1
+      access-token-validity: 5
       refresh-token-validity: 3600
 jwt:
   token:
