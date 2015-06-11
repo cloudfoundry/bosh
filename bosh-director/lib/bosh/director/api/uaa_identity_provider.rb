@@ -7,7 +7,7 @@ module Bosh
         def initialize(options)
           @url = options.fetch('url')
           Config.logger.debug "Initializing UAA Identity provider with url #{@url}"
-          @token_coder = CF::UAA::TokenCoder.new(skey: options.fetch('symmetric_key', nil), pkey: options.fetch('public_key', nil))
+          @token_coder = CF::UAA::TokenCoder.new(skey: options.fetch('key'))
         end
 
         def client_info

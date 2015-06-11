@@ -116,14 +116,7 @@ blobstore:
 
 trusted_certs: <%= JSON.dump(p('director.trusted_certs')) %>
 
-<% if_p('director.user_management') do %>
-user_management:
-   provider: <%= p('director.user_management.provider') %>
-   options:
-     url: <%= p('director.user_management.options.url') %>
-     symmetric_key: <%= p('director.user_management.options.symmetric_key') %>
-     public_key: <% if_p('director.user_management.options.public_key') do |key| %><% if key.index("\n").nil? %><%= key.gsub('\\n', "\n") %><% else %><%= key %><% end %><% end %>
-<% end %>
+<%= dump_yaml('user_management', p('director.user_management')) %>
 
 <% if_p('compiled_package_cache.options.bucket_name',
         'compiled_package_cache.options.access_key_id',
