@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `CXy2D8rlo7.asw2H7mzCuUmkzVr30vkc`
+  update kernel to 3.16.0-39-generic
+
 * `DjCfP9Rgj37M0R3ccOOm9._SyF5RipuC`
   update kernel and packages
 
@@ -174,6 +177,9 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `00kmcew_QGZDuzgF49Z.kAPhCA7EFIfQ`
+  update packages
 
 * `1hBkiByEM5v3YhznWLQmmTdhA8eKkb3g`
   upgrade rsyslog to version 8.x (latest version in the upstream project's repo)
