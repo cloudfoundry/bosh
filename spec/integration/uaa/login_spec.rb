@@ -104,6 +104,26 @@ CERT
     end
   end
 
+  context 'when UAA is configured with asymmetric key' do
+    with_reset_sandbox_before_each(user_authentication: 'uaa', uaa_encryption: 'asymmetric')
+
+    before do
+      bosh_runner.run("target #{current_sandbox.director_url} --ca-cert #{current_sandbox.certificate_path}")
+      bosh_runner.run('logout')
+    end
+
+    it 'logs in successfully' do
+      client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
+      output = bosh_runner.run('status', env: client_env)
+      expect(output).to match /User.*test/
+
+      # test we are not getting auth error
+      # bosh vms exits with non-0 status if there are no vms
+      output = bosh_runner.run('vms', env: client_env, failure_expected: true)
+      expect(output).to match /No deployments/
+    end
+  end
+
   context 'when UAA is configured with wrong certificate' do
     with_reset_sandbox_before_each(user_authentication: 'uaa', ssl_mode: 'wrong-ca')
 

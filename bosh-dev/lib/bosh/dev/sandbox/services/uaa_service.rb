@@ -7,52 +7,71 @@ module Bosh::Dev::Sandbox
       @repo_root = repo_root
       @logger = logger
       @build_mutex = Mutex.new
+      @log_location = "#{base_log_path}.uaa.out"
 
-      uaa_ports = {
+      @uaa_ports = {
         'cargo.servlet.port' => @port,
         'cargo.tomcat.ajp.port' => port_provider.get_port(:uaa_tomcat),
         'cargo.rmi.port' => port_provider.get_port(:uaa_rmi)
       }
 
-      arguments = uaa_ports.map { |pair| "-D#{pair.join('=')}" }
-      arguments << %W(-P cargo.port=#{@port})
-
-      log_location = "#{base_log_path}.uaa.out"
-      timeout_arg = '-P cargo.local.timeout=300000'
-      @uaa_process = Service.new(
-        ['./gradlew', arguments, timeout_arg, 'run',  '--stacktrace'].flatten,
-        {
-          output: log_location,
-          working_dir: working_dir,
-          env: { 'UAA_CONFIG_PATH' => File.expand_path('spec/assets', @repo_root) }
-        },
-        logger,
-      )
-
-      @uaa_socket_connector = SocketConnector.new('uaa', 'localhost', @port, log_location, logger)
+      @uaa_socket_connector = SocketConnector.new('uaa', 'localhost', @port, @log_location, logger)
     end
 
     def start
       build
 
-      @uaa_process.start
+      uaa_process.start
 
       begin
         @uaa_socket_connector.try_to_connect(3000)
       rescue
-        output_service_log(@uaa_process.description, @uaa_process.stdout_contents, @uaa_process.stderr_contents)
+        output_service_log(uaa_process.description, uaa_process.stdout_contents, uaa_process.stderr_contents)
         raise
       end
     end
 
     def stop
-      @uaa_process.stop
+      uaa_process.stop
+    end
+
+    def reconfigure(encryption)
+      @logger.debug "Got encryption: #{encryption}"
+      @encryption = encryption
     end
 
     private
 
     def working_dir
       File.expand_path('spec/assets/uaa', @repo_root)
+    end
+
+    def uaa_process
+      return @uaa_process if @uaa_process
+
+      arguments = @uaa_ports.map { |pair| "-D#{pair.join('=')}" }
+      arguments << %W(-P cargo.port=#{@port})
+      timeout_arg = '-P cargo.local.timeout=300000'
+
+      @uaa_process = Service.new(
+        ['./gradlew', arguments, timeout_arg, 'run',  '--stacktrace'].flatten,
+        {
+          output: @log_location,
+          working_dir: working_dir,
+          env: { 'UAA_CONFIG_PATH' => config_path }
+        },
+        @logger,
+      )
+    end
+
+    def config_path
+      base_path = 'spec/assets/uaa_config'
+      @logger.debug "Config path enc: #{@encryption}"
+      if @encryption == 'asymmetric'
+        return File.expand_path(File.join(base_path, 'asymmetric'), @repo_root)
+      end
+
+      File.expand_path(File.join(base_path, 'symmetric'), @repo_root)
     end
 
     DEBUG_HEADER = '*' * 20

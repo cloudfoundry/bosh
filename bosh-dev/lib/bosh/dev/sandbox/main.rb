@@ -252,6 +252,7 @@ module Bosh::Dev::Sandbox
       @external_cpi_enabled = options.fetch(:external_cpi_enabled, false)
       @director_fix_stateful_nodes = options.fetch(:director_fix_stateful_nodes, false)
       @nginx_service.reconfigure(options[:ssl_mode])
+      @uaa_service.reconfigure(options[:uaa_encryption])
     end
 
     def certificate_path
