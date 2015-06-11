@@ -29,7 +29,7 @@ module Bosh::Director
       attr_accessor :state
 
       # @return [Hash] current state as provided by the BOSH Agent
-      attr_reader :current_state
+      attr_accessor :current_state
 
       # @return [DeploymentPlan::Vm] Associated resource pool VM
       attr_reader :vm
@@ -101,13 +101,12 @@ module Bosh::Director
       def apply_partial_vm_state
         @logger.info('Applying partial VM state')
 
-        state = @vm.current_state
-        state['job'] = job.spec
-        state['index'] = index
+        @current_state['job'] = job.spec
+        @current_state['index'] = index
 
         # Apply the assignment to the VM
         agent = AgentClient.with_defaults(@vm.model.agent_id)
-        agent.apply(state)
+        agent.apply(@current_state)
 
         # Our assumption here is that director database access
         # is much less likely to fail than VM agent communication
@@ -115,11 +114,9 @@ module Bosh::Director
         # If database update fails subsequent deploy will try to
         # assign a new VM to this instance which is ok.
         @vm.model.db.transaction do
-          @vm.model.update(:apply_spec => state)
+          @vm.model.update(:apply_spec => @current_state)
           @model.update(:vm => @vm.model)
         end
-
-        @current_state = state
       end
 
       def apply_vm_state
@@ -534,7 +531,7 @@ module Bosh::Director
           " with reservation '#{reservation}'")
         vm.model = vm_model
         vm.bound_instance = self
-        vm.current_state = state
+        @current_state = state
 
         @vm = vm
       end

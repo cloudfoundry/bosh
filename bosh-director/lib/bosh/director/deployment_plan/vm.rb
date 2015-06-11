@@ -11,22 +11,12 @@ module Bosh::Director
       # @return [Models::Vm] Associated DB model
       attr_accessor :model
 
-      # @return [Hash] Current state as provided by the BOSH Agent
-      attr_writer :current_state
-
       # @return [DeploymentPlan::Instance, nil] Instance that reserved this VM
       attr_accessor :bound_instance
 
-      def current_state
-        if @current_state
-          @current_state.delete('release')
-        end
-        @current_state
-      end
       #TODO: rename 'clean'
       def clean_vm
         self.model = nil
-        self.current_state = nil
       end
     end
   end

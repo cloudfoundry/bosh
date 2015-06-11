@@ -87,7 +87,6 @@ module Bosh::Director::DeploymentPlan
         instance_double('Bosh::Director::DeploymentPlan::Vm', {
           :model= => nil,
           :bound_instance= => nil,
-          :current_state= => nil,
         })
       end
 
@@ -358,8 +357,6 @@ module Bosh::Director::DeploymentPlan
 
         expect(vm.model).to be(vm_model)
         expect(vm.bound_instance).to be(instance)
-        expect(vm.current_state).to be(state)
-
         expect(instance.vm).to be(vm)
       end
     end
@@ -400,10 +397,12 @@ module Bosh::Director::DeploymentPlan
       before do
         # Create a new VM
         vm.model = vm_model
-        vm.current_state = { 'fake-vm-existing-state' => true }
 
         # Allocate the new vm to the resource pool specified by the job spec
         allow(resource_pool).to receive(:allocate_vm).and_return(vm)
+
+        instance.current_state = {'fake-vm-existing-state' => true }
+
         instance.bind_unallocated_vm
       end
 
@@ -462,6 +461,9 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'the instance current state is set to new state' do
+            instance.current_state = {
+              'job' => {}
+            }
             expect {
               instance.apply_partial_vm_state
             }.to change { instance.job_changed? }.from(true).to(false)
@@ -540,12 +542,10 @@ module Bosh::Director::DeploymentPlan
 
         # Create a new VM
         vm.model = vm_model
-        vm.current_state = {
-          'fake-vm-existing-state' => true,
-        }
 
         reservation = Bosh::Director::NetworkReservation.new_dynamic
         instance.add_network_reservation('fake-network', reservation)
+        instance.current_state = {'fake-vm-existing-state' => true }
 
         # Allocate the new vm to the resource pool specified by the job spec
         allow(resource_pool).to receive(:allocate_vm).and_return(vm)
@@ -716,7 +716,8 @@ module Bosh::Director::DeploymentPlan
         before do
           # Create a new VM
           vm.model = vm_model
-          vm.current_state = {} # new VM; actual VM does not have any job associated
+
+          instance.current_state = {}
 
           # Allocate the new vm to the resource pool specified by the job spec
           allow(resource_pool).to receive(:allocate_vm).and_return(vm)

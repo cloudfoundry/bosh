@@ -48,9 +48,8 @@ module Bosh::Director
       deployment = @resource_pool.deployment_plan.model
       stemcell = @resource_pool.stemcell.model
 
-      vm_model = VmCreator.new.create(deployment, stemcell,
-        @resource_pool.cloud_properties,vm.bound_instance.network_settings,
-        nil, @resource_pool.env)
+      vm_model = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
+        vm.bound_instance.network_settings, nil, @resource_pool.env)
 
       agent = AgentClient.with_defaults(vm_model.agent_id)
       agent.wait_until_ready
@@ -59,9 +58,8 @@ module Bosh::Director
 
       update_state(agent, vm_model, vm)
 
-
       vm.model = vm_model
-      vm.current_state = agent.get_state
+      vm.bound_instance.current_state = agent.get_state
     rescue Exception => e
       @logger.info("Cleaning up the created VM due to an error: #{e}")
       begin

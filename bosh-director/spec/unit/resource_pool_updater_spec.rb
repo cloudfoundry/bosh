@@ -55,8 +55,8 @@ module Bosh::Director
     describe :create_missing_vm do
       before do
         @network_settings = {'network' => 'settings'}
-        instance = instance_double(Bosh::Director::DeploymentPlan::Instance, network_settings: @network_settings)
-        @vm = instance_double('Bosh::Director::DeploymentPlan::Vm', bound_instance: instance)
+        @instance = instance_double(Bosh::Director::DeploymentPlan::Instance, network_settings: @network_settings)
+        @vm = instance_double('Bosh::Director::DeploymentPlan::Vm', bound_instance: @instance)
         @deployment = Models::Deployment.make
         @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
         allow(@deployment_plan).to receive(:model).and_return(@deployment)
@@ -87,7 +87,7 @@ module Bosh::Director
 
         expect(resource_pool_updater).to receive(:update_state).with(agent, @vm_model, @vm)
         expect(@vm).to receive(:model=).with(@vm_model)
-        expect(@vm).to receive(:current_state=).with({'state' => 'foo'})
+        expect(@instance).to receive(:current_state=).with({'state' => 'foo'})
 
         resource_pool_updater.create_missing_vm(@vm)
       end
