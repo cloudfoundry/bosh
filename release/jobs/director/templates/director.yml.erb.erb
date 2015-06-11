@@ -114,9 +114,7 @@ blobstore:
     password: <%= p('blobstore.director.password') %>
 <% end %>
 
-<% if_p('trusted_certs') do |trusted_certs| %>
-<%= dump_yaml('trusted_certs', trusted_certs) %>
-<% end %>
+trusted_certs: <%= JSON.dump(p('director.trusted_certs')) %>
 
 <%= dump_yaml('user_management', p('director.user_management')) %>
 

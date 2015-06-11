@@ -51,6 +51,7 @@ describe 'director.yml.erb.erb' do
           'auto_fix_stateful_nodes' => true,
           'max_vm_create_tries' => 5,
           'user_management' => { 'provider' => 'local' },
+          'trusted_certs' => "test_trusted_certs\nvalue",
         }
       }
     }
@@ -84,6 +85,10 @@ describe 'director.yml.erb.erb' do
           'password' => 'password'
         }
       }
+    end
+
+    it 'should contain the trusted_certs field' do
+      expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
     end
 
     context 'and when configured with a blobstore_path' do
