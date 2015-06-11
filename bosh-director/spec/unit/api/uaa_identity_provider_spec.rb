@@ -4,8 +4,9 @@ require 'rack/test'
 module Bosh::Director
   describe Api::UAAIdentityProvider do
     subject(:identity_provider) { Api::UAAIdentityProvider.new(provider_options) }
-    let(:provider_options) { {'url' => 'http://localhost:8080/uaa', 'key' => key} }
-    let(:key) { 'tokenkey' }
+    let(:provider_options) { {'url' => 'http://localhost:8080/uaa', 'symmetric_key' => skey, 'public_key' => pkey} }
+    let(:skey) { 'tokenkey' }
+    let(:pkey) { nil }
     let(:app) { Support::TestController.new(double(:config, identity_provider: identity_provider)) }
 
     describe 'client info' do
@@ -21,8 +22,6 @@ module Bosh::Director
 
     context 'given an OAuth token' do
       let(:request_env) { {'HTTP_AUTHORIZATION' => "bearer #{encoded_token}"} }
-      let(:encoded_token) { CF::UAA::TokenCoder.encode(token, skey: encoding_key) }
-      let(:encoding_key) { key }
       let(:token) do
         {
           'jti' => 'd64209e4-d150-45c9-9569-a352f42149b1',
@@ -42,11 +41,83 @@ module Bosh::Director
       end
       let(:token_expiry_time) { (Time.now + 1000).to_i }
 
-      it 'returns the username of the authenticated user' do
-        expect(identity_provider.corroborate_user(request_env)).to eq('marissa')
+      context 'when token is encoded with symmetric key' do
+        let(:encoded_token) { CF::UAA::TokenCoder.encode(token, skey: 'symmetric-key') }
+
+        context 'when director is configured with the same symmetric key' do
+          let(:skey) { 'symmetric-key' }
+
+          it 'returns the username of the authenticated user' do
+            expect(identity_provider.corroborate_user(request_env)).to eq('marissa')
+          end
+        end
+
+        context 'when director is configured with another symmetric key' do
+          let(:skey) { 'bad-key' }
+
+          it 'raises an error' do
+            expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+          end
+        end
+
+        context 'when director does not have symmetric key' do
+          let(:skey) { nil }
+
+          it 'raises an error' do
+            expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+          end
+        end
+
+        context 'when the token has expired' do
+          let(:token_expiry_time) { (Time.now - 1000).to_i }
+
+          it 'raises' do
+            expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+          end
+        end
+      end
+
+      context 'when token is encoded with asymmetric key' do
+        let(:rsa_key) { OpenSSL::PKey::RSA.new(2048) }
+        let(:encoded_token) { CF::UAA::TokenCoder.encode(token, {pkey: rsa_key.to_pem, algorithm: 'RS256'}) }
+
+        context 'when director is configured with the public key that match asymmetric key' do
+          let(:pkey) { rsa_key.public_key }
+
+          it 'returns the username of the authenticated user' do
+            expect(identity_provider.corroborate_user(request_env)).to eq('marissa')
+          end
+        end
+
+        context 'when director is configured with another public key' do
+          let(:another_rsa_key) { OpenSSL::PKey::RSA.new(2048) }
+          let(:pkey) { another_rsa_key.public_key }
+
+          it 'raises an error' do
+            expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+          end
+        end
+
+        context 'when director does not have public key' do
+          let(:pkey) { nil }
+
+          it 'raises an error' do
+            expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+          end
+        end
+
+        context 'when the token has expired' do
+          let(:token_expiry_time) { (Time.now - 1000).to_i }
+
+          it 'raises' do
+            expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+          end
+        end
       end
 
       context 'when token does not have user_name' do
+        let(:encoded_token) { CF::UAA::TokenCoder.encode(token, skey: skey) }
+
         before do
           token.delete('user_name')
           token['client_id'] = 'fake-client-id'
@@ -56,56 +127,42 @@ module Bosh::Director
           expect(identity_provider.corroborate_user(request_env)).to eq('fake-client-id')
         end
       end
-
-      context 'when the token is encoded with an incorrect key' do
-        let(:encoding_key) { "another-key" }
-
-        it 'raises' do
-          expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
-        end
-      end
-
-      context 'when the token has expired' do
-        let(:token_expiry_time) { (Time.now - 1000).to_i }
-
-        it 'raises' do
-          expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
-        end
-      end
     end
 
-    context 'given valid HTTP basic authentication credentials' do
-      let(:request_env) { {'HTTP_AUTHORIZATION' => 'Basic YWRtaW46YWRtaW4='} }
-
-      it 'raises' do
-        expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
-      end
-    end
-
-    context 'given missing HTTP authentication credentials' do
-      let(:request_env) { { } }
-
-      it 'raises' do
-        expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
-      end
-    end
-
-    describe 'a request (controller integration)' do
-      include Rack::Test::Methods
-
+    context 'when no Uaa token is given' do
       context 'given valid HTTP basic authentication credentials' do
-        it 'is rejected' do
-          basic_authorize 'admin', 'admin'
-          get '/test_route'
-          expect(last_response.status).to eq(401)
+        let(:request_env) { {'HTTP_AUTHORIZATION' => 'Basic YWRtaW46YWRtaW4='} }
+
+        it 'raises' do
+          expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
         end
       end
 
-      context 'given bogus HTTP basic authentication credentials' do
-        it 'is rejected' do
-          basic_authorize 'admin', 'bogus'
-          get '/test_route'
-          expect(last_response.status).to eq(401)
+      context 'given missing HTTP authentication credentials' do
+        let(:request_env) { { } }
+
+        it 'raises' do
+          expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+        end
+      end
+
+      describe 'a request (controller integration)' do
+        include Rack::Test::Methods
+
+        context 'given valid HTTP basic authentication credentials' do
+          it 'is rejected' do
+            basic_authorize 'admin', 'admin'
+            get '/test_route'
+            expect(last_response.status).to eq(401)
+          end
+        end
+
+        context 'given bogus HTTP basic authentication credentials' do
+          it 'is rejected' do
+            basic_authorize 'admin', 'bogus'
+            get '/test_route'
+            expect(last_response.status).to eq(401)
+          end
         end
       end
     end
