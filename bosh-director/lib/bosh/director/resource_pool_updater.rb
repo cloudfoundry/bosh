@@ -48,8 +48,9 @@ module Bosh::Director
       deployment = @resource_pool.deployment_plan.model
       stemcell = @resource_pool.stemcell.model
 
-      vm_model = VmCreator.new.create(deployment, stemcell, @resource_pool.cloud_properties,
-                                vm.network_settings, nil, @resource_pool.env)
+      vm_model = VmCreator.new.create(deployment, stemcell,
+        @resource_pool.cloud_properties,vm.bound_instance.network_settings,
+        nil, @resource_pool.env)
 
       agent = AgentClient.with_defaults(vm_model.agent_id)
       agent.wait_until_ready
@@ -57,6 +58,7 @@ module Bosh::Director
       vm_model.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
 
       update_state(agent, vm_model, vm)
+
 
       vm.model = vm_model
       vm.current_state = agent.get_state
@@ -75,19 +77,11 @@ module Bosh::Director
       state = {
           "deployment" => @resource_pool.deployment_plan.name,
           "resource_pool" => @resource_pool.spec,
-          "networks" => vm.network_settings
+          "networks" => vm.bound_instance.network_settings
       }
 
       vm_model.update(:apply_spec => state)
       agent.apply(state)
-    end
-
-    # Attempts to allocate a dynamic IP address for all idle VMs
-    # (unless they already have one). This allows us to fail earlier
-    # in case any of resource pools is not big enough to accommodate
-    # those VMs.
-    def reserve_networks
-      @resource_pool.reserve_dynamic_networks
     end
 
     def generate_agent_id

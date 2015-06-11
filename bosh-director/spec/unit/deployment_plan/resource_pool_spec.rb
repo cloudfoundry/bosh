@@ -102,40 +102,6 @@ module Bosh::Director::DeploymentPlan
       })
     end
 
-    describe '#reserve_dynamic_networks' do
-      let(:network_reservation) { instance_double('Bosh::Director::NetworkReservation') }
-      before do
-        2.times { resource_pool.allocate_vm }
-        resource_pool.allocated_vms.first.use_reservation(network_reservation)
-      end
-
-      it 'attempts to create reservations on vms without them' do
-        expect(Bosh::Director::NetworkReservation).to receive(:new_dynamic).with(no_args).and_return(network_reservation)
-        expect(network).to receive(:reserve!).with(network_reservation, nil)
-
-        expect(resource_pool.allocated_vms.last).to receive(:network_reservation=).with(network_reservation)
-
-        resource_pool.reserve_dynamic_networks
-      end
-
-      it 'raises an error when network reservation fails' do
-        expect(Bosh::Director::NetworkReservation).to receive(:new_dynamic).with(no_args).and_return(network_reservation)
-        expect(network).to receive(:reserve!).with(network_reservation, nil).
-          and_raise(Bosh::Director::NetworkReservationError)
-        expect {
-          resource_pool.reserve_dynamic_networks
-        }.to raise_error(Bosh::Director::NetworkReservationError)
-      end
-
-      it 'raises an error when network reservation fails with not enough capacity' do
-        expect(Bosh::Director::NetworkReservation).to receive(:new_dynamic).with(no_args).and_return(network_reservation)
-        expect(network).to receive(:reserve!).with(network_reservation, nil).
-          and_raise(Bosh::Director::NetworkReservationNotEnoughCapacity)
-        expect {
-          resource_pool.reserve_dynamic_networks
-        }.to raise_error(Bosh::Director::NetworkReservationNotEnoughCapacity)
-      end
-    end
 
     describe '#allocate_vm' do
       context 'when resource pool is dynamically sized' do

@@ -30,7 +30,7 @@ module Bosh::Director::DeploymentPlan
     let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', network: net, name: 'fake-resource-pool') }
     let(:disk_pool) { nil }
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
-    let(:vm) { Vm.new(resource_pool) }
+    let(:vm) { Vm.new }
     before do
       allow(resource_pool).to receive(:allocate_vm).and_return(vm)
       allow(job).to receive(:instance_state).with(0).and_return('started')
@@ -88,10 +88,9 @@ module Bosh::Director::DeploymentPlan
           :model= => nil,
           :bound_instance= => nil,
           :current_state= => nil,
-          :resource_pool => resource_pool,
         })
       end
-      before { allow(vm).to receive(:use_reservation).with(reservation).and_return(vm) }
+
       let(:reservation) { Bosh::Director::NetworkReservation.new_static(ipaddress) }
 
       let(:current_state) { {'networks' => {network_name => network_info}} }
@@ -272,7 +271,7 @@ module Bosh::Director::DeploymentPlan
       let(:old_ip) { NetAddr::CIDR.create('10.0.0.5').to_i }
       let(:vm_ip) { NetAddr::CIDR.create('10.0.0.3').to_i }
       let(:old_reservation) { Bosh::Director::NetworkReservation.new_dynamic(old_ip) }
-      let(:vm) { Vm.new(resource_pool) }
+      let(:vm) { Vm.new }
 
       before do
         allow(job).to receive(:instance_state).with(2).and_return('started')
@@ -304,7 +303,7 @@ module Bosh::Director::DeploymentPlan
       let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
 
       before { allow(resource_pool).to receive(:allocate_vm).and_return(vm) }
-      let(:vm) { Vm.new(resource_pool) }
+      let(:vm) { Vm.new }
 
       let(:instance_model) { Bosh::Director::Models::Instance.make }
 
@@ -391,7 +390,7 @@ module Bosh::Director::DeploymentPlan
         })
       end
       let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
-      let(:vm) { Vm.new(resource_pool) }
+      let(:vm) { Vm.new }
 
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
       before { allow(agent_client).to receive(:apply) }
@@ -518,7 +517,7 @@ module Bosh::Director::DeploymentPlan
 
       before { allow(job).to receive(:spec).with(no_args).and_return('fake-job-spec') }
 
-      let(:vm) { Vm.new(resource_pool) }
+      let(:vm) { Vm.new }
 
       let(:network) do
         instance_double('Bosh::Director::DeploymentPlan::Network', {
@@ -546,7 +545,6 @@ module Bosh::Director::DeploymentPlan
         }
 
         reservation = Bosh::Director::NetworkReservation.new_dynamic
-        vm.network_reservation = reservation
         instance.add_network_reservation('fake-network', reservation)
 
         # Allocate the new vm to the resource pool specified by the job spec
@@ -681,7 +679,7 @@ module Bosh::Director::DeploymentPlan
         })
       end
       let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
-      let(:vm) { Vm.new(resource_pool) }
+      let(:vm) { Vm.new }
 
       context 'when an instance exists (with the same job name & instance index)' do
         before do

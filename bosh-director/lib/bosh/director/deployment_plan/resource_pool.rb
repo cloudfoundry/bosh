@@ -70,29 +70,8 @@ module Bosh::Director
         }
       end
 
-      # Attempts to allocate a dynamic IP addresses for all VMs
-      # (unless they already have one).
-      def reserve_dynamic_networks
-        vms.each do |vm|
-          unless vm.has_network_reservation?
-            instance = vm.bound_instance
-            origin = instance ? "Job instance `#{instance}' in resource pool `#{@name}'" : nil
-            vm.network_reservation = reserve_dynamic_network(origin)
-          end
-        end
-      end
-
-      # Tries to obtain one dynamic reservation in its own network
-      # @raise [NetworkReservationError]
-      # @return [NetworkReservation] Obtained reservation
-      def reserve_dynamic_network(origin="Resource pool `#{@name}'")
-        reservation = NetworkReservation.new_dynamic
-        @network.reserve!(reservation, origin)
-        reservation
-      end
-
       def allocate_vm
-        vm = Vm.new(self)
+        vm = Vm.new
         register_allocated_vm(vm)
       end
 

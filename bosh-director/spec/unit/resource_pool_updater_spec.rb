@@ -54,9 +54,9 @@ module Bosh::Director
 
     describe :create_missing_vm do
       before do
-        @vm = instance_double('Bosh::Director::DeploymentPlan::Vm')
         @network_settings = {'network' => 'settings'}
-        allow(@vm).to receive(:network_settings).and_return(@network_settings)
+        instance = instance_double(Bosh::Director::DeploymentPlan::Instance, network_settings: @network_settings)
+        @vm = instance_double('Bosh::Director::DeploymentPlan::Vm', bound_instance: instance)
         @deployment = Models::Deployment.make
         @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner')
         allow(@deployment_plan).to receive(:model).and_return(@deployment)
@@ -169,9 +169,9 @@ module Bosh::Director
       let(:vm_model) { instance_double('Bosh::Director::Models::Vm') }
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
       let(:network_settings) { {'network1' => {}} }
-      let(:vm) { instance_double('Bosh::Director::DeploymentPlan::Vm', network_settings: network_settings, bound_instance: instance) }
+      let(:instance) {instance_double(Bosh::Director::DeploymentPlan::Instance, network_settings: network_settings)}
+      let(:vm) { instance_double('Bosh::Director::DeploymentPlan::Vm', bound_instance: instance) }
       let(:resource_pool_spec) { {} }
-      let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance', spec: {}) }
       let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'foo') }
       let(:apply_spec) do
         {
@@ -196,13 +196,6 @@ module Bosh::Director
       it 'updates the vm model with the updated state' do
         expect(vm_model).to receive(:update).with(apply_spec: apply_spec)
         resource_pool_updater.update_state(agent, vm_model, vm)
-      end
-    end
-
-    describe '#reserve_networks' do
-      it 'delegates to ResourcePool#reserve_dynamic_networks' do
-        expect(resource_pool).to receive(:reserve_dynamic_networks).with(no_args)
-        resource_pool_updater.reserve_networks
       end
     end
   end

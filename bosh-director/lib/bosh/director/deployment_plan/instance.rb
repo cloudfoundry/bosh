@@ -527,7 +527,7 @@ module Bosh::Director
         resource_pool = @job.resource_pool
         vm = resource_pool.allocate_vm
 
-        reservation = @network_reservations[vm.resource_pool.network.name]
+        reservation = @network_reservations[resource_pool.network.name]
 
         @logger.debug("Found VM '#{vm_model.cid}' running job instance '#{self}'" +
           " in resource pool `#{resource_pool.name}'" +
@@ -535,7 +535,6 @@ module Bosh::Director
         vm.model = vm_model
         vm.bound_instance = self
         vm.current_state = state
-        vm.use_reservation(reservation)
 
         @vm = vm
       end

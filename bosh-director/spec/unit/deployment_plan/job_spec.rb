@@ -437,7 +437,6 @@ describe Bosh::Director::DeploymentPlan::Job do
 
         it 'sets network reservation for idle vm' do
           expect(network).to receive(:reserve!)
-          expect(vm).to receive(:use_reservation).with(network_reservation)
 
           job.bind_instance_networks
         end
