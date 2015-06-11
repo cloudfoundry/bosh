@@ -98,8 +98,11 @@ module Bosh::Director
       begin
         send_long_running_message(:update_settings, {"trusted_certs" => certs})
       rescue RpcRemoteException => e
-        raise unless e.message == 'unknown message update_settings'
-        @logger.warn "remote agent does not support update_settings"
+        if e.message =~ /unknown message/
+          @logger.warn("Ignoring update_settings 'unknown message' error from the agent: #{e.inspect}")
+        else
+          raise
+        end
       end
     end
 
