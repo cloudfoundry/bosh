@@ -91,13 +91,19 @@ properties:
     description: Max retries when creating VMs
     default: 5
 
-  #Director User Management
+  # Director User Management
   director.user_management.provider:
-    description: "User management implementation (local|uaa)"
+    description: 'User management implementation (local|uaa)'
     default: local
-  director.user_management.options:
-    description: "Options for the user management provider. For 'uaa', 'key' is the secret shared with UAA for token validation."
-    default: ~
+  director.user_management.options.url:
+    description: 'User management provider URL'
+    default: ''
+  director.user_management.options.symmetric_key:
+    description: 'Symmetric key to verify Uaa token'
+    default: ''
+  director.user_management.options.public_key:
+    description: 'Public key to verify Uaa token when token is encoded with asymmetric encryption'
+    default: ''
 
   redis.address:
     description: Address of the redis server
