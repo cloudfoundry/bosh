@@ -141,7 +141,7 @@ describe Bosh::Director::Config do
 
       context 'when uaa provider is supplied' do
         let(:provider) { 'uaa' }
-        let(:provider_options) { {'key' => 'some-key', 'url' => 'some-url'} }
+        let(:provider_options) { {'symmetric_key' => 'some-key', 'url' => 'some-url'} }
         let(:token) { CF::UAA::TokenCoder.new(skey: 'some-key').encode(payload) }
         let(:payload) { {'user_name' => 'larry', 'aud' => ['bosh_cli']} }
         before { test_config['user_management']['options'] = provider_options }

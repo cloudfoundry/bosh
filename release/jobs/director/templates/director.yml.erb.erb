@@ -120,9 +120,16 @@ trusted_certs: <%= JSON.dump(p('director.trusted_certs')) %>
 user_management:
    provider: <%= p('director.user_management.provider') %>
    options:
-     url: <%= p('director.user_management.options.url') %>
-     symmetric_key: <%= p('director.user_management.options.symmetric_key') %>
-     public_key: <% if_p('director.user_management.options.public_key') do |key| %><% if key.index("\n").nil? %><%= key.gsub('\\n', "\n") %><% else %><%= key %><% end %><% end %>
+     <% if_p('director.user_management.options.url') do |url| %>
+     url: <%= url %>
+     <% end %>
+     <% if_p('director.user_management.options.symmetric_key') do |symmetric_key| %>
+     symmetric_key: <%= symmetric_key %>
+     <% end %>
+     <% if_p('director.user_management.options.public_key') do |public_key| %>
+     public_key: |
+<%= '        ' + public_key.gsub("\n", "\n        ") %>
+     <% end %>
 <% end %>
 
 <% if_p('compiled_package_cache.options.bucket_name',
