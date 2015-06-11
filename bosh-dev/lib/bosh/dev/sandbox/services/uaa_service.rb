@@ -18,8 +18,9 @@ module Bosh::Dev::Sandbox
       arguments << %W(-P cargo.port=#{@port})
 
       log_location = "#{base_log_path}.uaa.out"
+      timeout_arg = '-P cargo.local.timeout=300000'
       @uaa_process = Service.new(
-        ['./gradlew', arguments, 'run',  '--stacktrace'].flatten,
+        ['./gradlew', arguments, timeout_arg, 'run',  '--stacktrace'].flatten,
         {
           output: log_location,
           working_dir: working_dir,
