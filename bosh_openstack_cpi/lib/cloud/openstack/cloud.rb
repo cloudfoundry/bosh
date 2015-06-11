@@ -284,7 +284,7 @@ module Bosh::OpenStackCloud
           @logger.debug("Using boot volume: `#{boot_vol_id}'")
 
           server_params[:block_device_mapping] = [{
-                                                   :volume_size => "",
+                                                   :volume_size => boot_vol_size,
                                                    :volume_id => boot_vol_id,
                                                    :delete_on_termination => "1",
                                                    :device_name => "/dev/vda"
