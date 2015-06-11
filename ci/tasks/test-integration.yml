@@ -7,8 +7,9 @@ inputs:
 - name: bosh-src
 
 run:
-  path: bosh-src/ci/tasks/integration-wrapper.sh
-  args: ["bosh-src/ci/tasks/rake.sh", "--trace", "go", "spec:integration"]
+  path: bosh-src/ci/tasks/test-integration.sh
 
 params:
-  LOG_LEVEL: WARN
+  RUBY_VERSION: replace-me
+  DB:           replace-me
+  LOG_LEVEL:    WARN
