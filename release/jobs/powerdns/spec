@@ -35,6 +35,10 @@ properties:
     default: 2
   dns.recursor:
     description: If recursion is desired, IP address of a recursing nameserver (optional)
+  dns.local_address:
+    description: IP address to which to bind to (optional; useful with multiple IP addresses)
+  dns.query_local_address:
+    description: IP address to use as a source address for sending queries (optional; useful with multiple IP addresses)
   dns.address:
     description: Address of the primary PowerDNS instance
 
