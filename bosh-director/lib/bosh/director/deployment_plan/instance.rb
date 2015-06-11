@@ -483,27 +483,11 @@ module Bosh::Director
       # Allocates an VM in this job resource pool and binds current instance to that VM.
       # @return [void]
       def allocate_vm
-        resource_pool = @job.resource_pool
-        vm = resource_pool.allocate_vm
-        network = resource_pool.network
+        vm = @job.resource_pool.allocate_vm
 
-        if vm.model
-          # There's already a resource pool VM that can become our instance,
-          # so we can try to reuse its reservation
-          instance_reservation = @network_reservations[network.name]
-          if instance_reservation
-            instance_reservation.take(vm.network_reservation)
-          end
-        else
-          # VM is not created yet: let's just make it reference this instance
-          # so later it knows what it needs to become
-          vm.bound_instance = self
-
-          # this also means we no longer need previous VM network reservation
-          # (instance has its own)
-          vm.release_reservation
-        end
-
+        # VM is not created yet: let's just make it reference this instance
+        # so later it knows what it needs to become
+        vm.bound_instance = self
         @vm = vm
       end
 

@@ -272,42 +272,21 @@ module Bosh::Director::DeploymentPlan
       let(:old_ip) { NetAddr::CIDR.create('10.0.0.5').to_i }
       let(:vm_ip) { NetAddr::CIDR.create('10.0.0.3').to_i }
       let(:old_reservation) { Bosh::Director::NetworkReservation.new_dynamic(old_ip) }
-      let(:vm_reservation) { Bosh::Director::NetworkReservation.new_dynamic(vm_ip) }
       let(:vm) { Vm.new(resource_pool) }
 
       before do
         allow(job).to receive(:instance_state).with(2).and_return('started')
         allow(job).to receive(:resource_pool).and_return(resource_pool)
-        vm.use_reservation(vm_reservation)
-      end
-
-      it 'binds a VM from job resource pool (real VM exists)' do
-        vm.model = Bosh::Director::Models::Vm.make
-
-        expect(resource_pool).to receive(:allocate_vm).and_return(vm)
-
-        instance.add_network_reservation('net_a', old_reservation)
-        instance.bind_unallocated_vm
-
-        expect(instance.model).not_to be_nil
-        expect(instance.vm).to eq(vm)
-        expect(vm.bound_instance).to be_nil
-        expect(vm.network_reservation.ip).to eq(vm_ip)
       end
 
       it "binds a VM from job resource pool (real VM doesn't exist)" do
-        expect(vm.model).to be_nil
-
         expect(resource_pool).to receive(:allocate_vm).and_return(vm)
-        expect(net).to receive(:release).with(vm_reservation)
 
-        instance.add_network_reservation('net_a', old_reservation)
         instance.bind_unallocated_vm
 
         expect(instance.model).not_to be_nil
         expect(instance.vm).to eq(vm)
         expect(vm.bound_instance).to eq(instance)
-        expect(vm.network_reservation).to be_nil
       end
     end
 
