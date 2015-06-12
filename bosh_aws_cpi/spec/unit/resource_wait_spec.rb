@@ -141,20 +141,27 @@ describe Bosh::AwsCloud::ResourceWait do
     let(:snapshot) { double(AWS::EC2::Snapshot, id: 'snap-123') }
 
     context 'creation' do
-      it 'should wait until the state is completed' do
+      it 'should wait until the state is pending' do
         expect(snapshot).to receive(:status).and_return(:pending)
-        expect(snapshot).to receive(:status).and_return(:completed)
+        described_class.for_snapshot(snapshot: snapshot, states: [:pending, :completed])
+      end
 
-        described_class.for_snapshot(snapshot: snapshot, state: :completed)
+      it 'should wait until the state is completed' do
+        expect(snapshot).to receive(:status).and_return(:completed)
+        described_class.for_snapshot(snapshot: snapshot, states: [:pending, :completed])
+      end
+
+      it 'should raise an error if the state is any other states rather than pending or complete' do
+        expect {
+          described_class.for_snapshot(snapshot: snapshot, states: [:other_state])
+        }.to raise_error ArgumentError, /target state must be one of pending, completed, `other_state' given/
       end
 
       it 'should raise an error if the state is error' do
-        expect(snapshot).to receive(:status).and_return(:pending)
         expect(snapshot).to receive(:status).and_return(:error)
-
         expect {
-          described_class.for_snapshot(snapshot: snapshot, state: :completed)
-        }.to raise_error Bosh::Clouds::CloudError, /state is error, expected completed/
+          described_class.for_snapshot(snapshot: snapshot, states: [:pending, :completed])
+        }.to raise_error Bosh::Clouds::CloudError, /state is error, expected \[:pending, :completed\]/
       end
     end
   end
