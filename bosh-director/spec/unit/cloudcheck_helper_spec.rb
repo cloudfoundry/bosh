@@ -116,6 +116,7 @@ module Bosh::Director
         context 'when there is a persistent disk' do
           before do
             Models::PersistentDisk.make(disk_cid: 'disk-cid', instance_id: instance.id)
+            Bosh::Director::Config.trusted_certs=DIRECTOR_TEST_CERTS
           end
 
           def it_creates_vm_with_persistent_disk
@@ -132,7 +133,7 @@ module Bosh::Director
             end
 
             expect(fake_new_agent).to receive(:wait_until_ready).ordered
-            expect(fake_new_agent).to receive(:update_settings).ordered
+            expect(fake_new_agent).to receive(:update_settings).with(DIRECTOR_TEST_CERTS).ordered
             expect(fake_cloud).to receive(:attach_disk).with('new-vm-cid', 'disk-cid').ordered
 
             expect(fake_new_agent).to receive(:mount_disk).with('disk-cid').ordered
@@ -148,6 +149,7 @@ module Bosh::Director
             instance.reload
             expect(instance.vm.apply_spec).to eq(spec)
             expect(instance.vm.cid).to eq('new-vm-cid')
+            expect(instance.vm.trusted_certs_sha1).to eq(DIRECTOR_TEST_CERTS_SHA1)
             expect(instance.vm.agent_id).to eq('agent-222')
             expect(instance.persistent_disk.disk_cid).to eq('disk-cid')
           end
@@ -198,6 +200,52 @@ module Bosh::Director
             expect(instance.vm.apply_spec).to eq(spec)
             expect(instance.vm.cid).to eq('new-vm-cid')
             expect(instance.vm.agent_id).to eq('agent-222')
+          end
+        end
+
+        context 'trusted certificate handling' do
+          before do
+            Bosh::Director::Config.trusted_certs=DIRECTOR_TEST_CERTS
+            allow(fake_new_agent).to receive(:wait_until_ready)
+            allow(fake_new_agent).to receive(:update_settings)
+            allow(fake_new_agent).to receive(:apply)
+            allow(fake_new_agent).to receive(:start)
+
+            fake_job_context
+
+            allow(fake_cloud).to receive(:delete_vm).with('vm-cid').ordered
+            allow(fake_cloud).to receive(:create_vm).
+                                     with('agent-222', 'sc-302', {'foo' => 'bar'}, ['A', 'B', 'C'], [], {'key1' => 'value1'}).
+                                     ordered.and_return('new-vm-cid')
+          end
+
+          it 'should update the database with the new VM''s trusted certs' do
+            test_problem_handler.apply_resolution(:recreate_vm)
+            expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1, agent_id: 'agent-222').count).to eq(1)
+          end
+
+          it 'should not update the DB with the new certificates when the new vm fails to start' do
+            expect(fake_new_agent).to receive(:wait_until_ready).and_raise(RpcTimeout)
+
+            begin
+              test_problem_handler.apply_resolution(:recreate_vm)
+            rescue RpcTimeout
+              # expected
+            end
+
+            expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+          end
+
+          it 'should not update the DB with the new certificates when the update_settings method fails' do
+            expect(fake_new_agent).to receive(:update_settings).and_raise(RpcTimeout)
+
+            begin
+              test_problem_handler.apply_resolution(:recreate_vm)
+            rescue RpcTimeout
+              # expected
+            end
+
+            expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
           end
         end
       end

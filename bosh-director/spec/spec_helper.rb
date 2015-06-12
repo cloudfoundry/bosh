@@ -17,6 +17,9 @@ require 'support/buffered_logger'
 
 Dir[File.expand_path('../support/**/*.rb', __FILE__)].each { |f| require(f) }
 
+DIRECTOR_TEST_CERTS="these\nare\nthe\ncerts"
+DIRECTOR_TEST_CERTS_SHA1=Digest::SHA1.hexdigest DIRECTOR_TEST_CERTS
+
 RSpec.configure do |config|
   config.include Bosh::Director::Test::TaskHelpers
 end
@@ -147,6 +150,7 @@ module SpecHelper
       Bosh::Director::Config.db = @db
       Bosh::Director::Config.dns_db = @dns_db
       Bosh::Director::Config.logger = logger
+      Bosh::Director::Config.trusted_certs = ''
     end
   end
 end

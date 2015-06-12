@@ -584,6 +584,58 @@ module Bosh::Director
           }.to raise_error RpcTimeout
         end
       end
+
+      describe 'trusted certificate handling' do
+        let(:compiler) { described_class.new(deployment_plan, @cloud, logger, Config.event_log, @director_job) }
+        let(:client) { instance_double('Bosh::Director::AgentClient') }
+        before do
+          Bosh::Director::Config.trusted_certs=DIRECTOR_TEST_CERTS
+          allow(VmCreator).to receive_messages(create: vm)
+          allow(AgentClient).to receive_messages(with_defaults: client)
+          allow(@cloud).to receive(:delete_vm)
+          allow(vm_data).to receive(:release)
+
+          allow(compilation).to receive_messages(reuse_compilation_vms: true)
+
+          allow(compiler).to receive_messages(reserve_network: double('network_reservation'))
+          allow(compiler).to receive(:tear_down_vm)
+          allow(compiler).to receive(:configure_vm)
+
+          allow(client).to receive(:update_settings)
+          allow(client).to receive(:wait_until_ready)
+        end
+
+        it 'should update the database with the new VM''s trusted certs' do
+          compiler.prepare_vm(stemcell) {
+            # prepare_vm needs a block. so here it is.
+          }
+          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1, agent_id: vm.agent_id).count).to eq(1)
+        end
+
+        it 'should not update the DB with the new certificates when the new vm fails to start' do
+          expect(client).to receive(:wait_until_ready).and_raise(RpcTimeout)
+
+          begin
+            compiler.prepare_vm(stemcell)
+          rescue RpcTimeout
+            #
+          end
+
+          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+        end
+
+        it 'should not update the DB with the new certificates when the update_settings method fails' do
+          expect(client).to receive(:update_settings).and_raise(RpcTimeout)
+
+          begin
+            compiler.prepare_vm(stemcell)
+          rescue RpcTimeout
+            # expected
+          end
+
+          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+        end
+      end
     end
   end
 end

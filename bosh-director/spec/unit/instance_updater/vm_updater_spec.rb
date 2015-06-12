@@ -493,6 +493,48 @@ module Bosh::Director
           expect { vm_creator.create(nil) }.to raise_error(error)
         end
       end
+
+      context 'trusted certificate handling' do
+        before do
+          Bosh::Director::Config.trusted_certs=DIRECTOR_TEST_CERTS
+          allow(Bosh::Director::VmCreator).to receive(:create).and_return(vm_model)
+
+          vm_deleter = instance_double('Bosh::Director::InstanceUpdater::VmUpdater::VmDeleter')
+          allow(InstanceUpdater::VmUpdater::VmDeleter).to receive(:new).
+            with(instance, vm_model, cloud, logger).
+            and_return(vm_deleter)
+          allow(vm_deleter).to receive(:delete)
+        end
+
+        it 'should update the database with the new VM''s trusted certs' do
+          vm_creator.create(nil)
+          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1, agent_id: vm_model.agent_id).count).to eq(1)
+        end
+
+        it 'should not update the DB with the new certificates when the new vm fails to start' do
+          expect(agent_client).to receive(:wait_until_ready).and_raise(RpcTimeout)
+
+          begin
+            vm_creator.create(nil)
+          rescue RpcTimeout
+            # expected
+          end
+
+          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+        end
+
+        it 'should not update the DB with the new certificates when the update_settings method fails' do
+          expect(agent_client).to receive(:update_settings).and_raise(RpcTimeout)
+
+          begin
+            vm_creator.create(nil)
+          rescue RpcTimeout
+            # expected
+          end
+
+          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+        end
+      end
     end
   end
 

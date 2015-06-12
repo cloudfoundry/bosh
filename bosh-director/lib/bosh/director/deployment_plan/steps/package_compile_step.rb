@@ -1,4 +1,5 @@
 require 'bosh/director/compile_task_generator'
+require 'digest/sha1'
 
 module Bosh::Director
   module DeploymentPlan
@@ -160,6 +161,7 @@ module Bosh::Director
             agent = AgentClient.with_defaults(vm.agent_id)
             agent.wait_until_ready
             agent.update_settings(Bosh::Director::Config.trusted_certs)
+            vm.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs))
 
             configure_vm(vm, agent, network_settings)
             vm_data.agent = agent

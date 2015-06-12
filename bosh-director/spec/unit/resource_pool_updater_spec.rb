@@ -92,6 +92,64 @@ module Bosh::Director
         resource_pool_updater.create_missing_vm(@vm)
       end
 
+      context 'trusted certificate handling' do
+        let(:agent) { double(:AgentClient) }
+        before do
+          Bosh::Director::Config.trusted_certs=DIRECTOR_TEST_CERTS
+          allow(agent).to receive(:wait_until_ready)
+          allow(agent).to receive(:update_settings)
+          allow(agent).to receive(:get_state).and_return({'state' => 'foo'})
+          allow(AgentClient).to receive(:with_defaults).and_return(agent)
+
+          allow(resource_pool_updater).to receive(:update_state).with(agent, @vm_model, @vm)
+          allow(@vm).to receive(:model=).with(@vm_model)
+          allow(@vm).to receive(:current_state=).with({'state' => 'foo'})
+        end
+
+        it 'should update the database with the new VM''s trusted certs' do
+          resource_pool_updater.create_missing_vm(@vm)
+          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1, agent_id: @vm_model.agent_id).count).to eq(1)
+        end
+
+        it 'should not update the DB with the new certificates when the new vm fails to start' do
+          expect(agent).to receive(:wait_until_ready).and_raise(RpcTimeout)
+
+          begin
+            resource_pool_updater.create_missing_vm(@vm)
+          rescue RpcTimeout
+            # expected
+          end
+
+          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+        end
+
+        it 'should not update the DB with the new certificates when the update_settings method fails' do
+          expect(agent).to receive(:update_settings).and_raise(RpcTimeout)
+
+          begin
+            resource_pool_updater.create_missing_vm(@vm)
+          rescue RpcTimeout
+            # expected
+          end
+
+          expect(Models::Vm.where(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1).count).to eq(0)
+        end
+      end
+
+      it 'should create a VM' do
+        agent = double(:AgentClient)
+        expect(agent).to receive(:wait_until_ready)
+        expect(agent).to receive(:update_settings)
+        expect(agent).to receive(:get_state).and_return({'state' => 'foo'})
+        allow(AgentClient).to receive(:with_defaults).with('agent-1').and_return(agent)
+
+        expect(resource_pool_updater).to receive(:update_state).with(agent, @vm_model, @vm)
+        expect(@vm).to receive(:model=).with(@vm_model)
+        expect(@vm).to receive(:current_state=).with({'state' => 'foo'})
+
+        resource_pool_updater.create_missing_vm(@vm)
+      end
+
       it 'should clean up the partially created VM' do
         agent = double(:AgentClient)
         expect(agent).to receive(:wait_until_ready).and_raise('timeout')

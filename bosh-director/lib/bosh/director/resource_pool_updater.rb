@@ -54,6 +54,7 @@ module Bosh::Director
       agent = AgentClient.with_defaults(vm_model.agent_id)
       agent.wait_until_ready
       agent.update_settings(Config.trusted_certs)
+      vm_model.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
 
       update_state(agent, vm_model, vm)
 

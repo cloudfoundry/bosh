@@ -6,6 +6,7 @@ module Bosh::Director::Models
     def validate
       validates_presence [:deployment_id, :agent_id]
       validates_unique :agent_id
+
     end
 
     def apply_spec
