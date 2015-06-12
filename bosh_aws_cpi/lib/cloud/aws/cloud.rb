@@ -349,7 +349,7 @@ module Bosh::AwsCloud
         TagManager.tag(snapshot, 'device', devices.first) unless devices.empty?
         TagManager.tag(snapshot, 'Name', name.join('/'))
 
-        ResourceWait.for_snapshot(snapshot: snapshot, state: :completed)
+        ResourceWait.for_snapshot(snapshot: snapshot, states: [:pending, :completed])
         snapshot.id
       end
     end
