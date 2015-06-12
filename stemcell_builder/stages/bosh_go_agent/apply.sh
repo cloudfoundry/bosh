@@ -40,8 +40,6 @@ chmod +x $chroot/var/vcap/bosh/bin/bosh-agent
 chmod +x $chroot/var/vcap/bosh/bin/bosh-agent-rc
 chmod +x $chroot/var/vcap/bosh/bin/bosh-blobstore-dav
 
-cp $agent_dir/mbus/agent.{cert,key} $chroot/var/vcap/bosh/
-
 # Setup additional permissions
 run_in_chroot $chroot "
 echo 'vcap' > /etc/cron.allow
