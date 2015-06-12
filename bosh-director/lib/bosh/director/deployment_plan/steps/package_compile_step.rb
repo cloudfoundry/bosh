@@ -122,26 +122,49 @@ module Bosh::Director
         #     VM that should be used for compilation.  This may be a reused VM or a
         #     freshly created VM.
         def prepare_vm(stemcell)
-          # If we're reusing VMs, try to just return an already-created VM.
-          if @deployment_plan.compilation.reuse_compilation_vms
-            vm_data = @vm_reuser.get_vm(stemcell)
-            if vm_data
-              @logger.info("Reusing compilation VM `#{vm_data.vm.cid}' for stemcell `#{stemcell.desc}'")
-              begin
-                yield vm_data
-              ensure
-                vm_data.release
-              end
-              return
-            end
-            # This shouldn't happen. If it does there's a bug.
-            if @vm_reuser.get_num_vms(stemcell) >=
-              @deployment_plan.compilation.workers
-              raise PackageCompilationNotEnoughWorkersForReuse,
-                    'There should never be more VMs for a stemcell than the number of workers in reuse_compilation_vms mode'
-            end
+          if reuse_compilation_vms?
+            prepare_vm_with_reuse(stemcell,&Proc.new)
+          else
+            prepare_vm_without_reuse(stemcell,&Proc.new)
           end
+        end
 
+        def prepare_vm_with_reuse(stemcell)
+          begin
+            vm_data = @vm_reuser.get_vm(stemcell)
+            if vm_data.nil?
+              vm_data = create_vm(stemcell)
+              configure_vm(vm_data)
+              @vm_reuser.add_vm(vm_data)
+            else
+              @logger.info("Reusing compilation VM `#{vm_data.vm.cid}' for stemcell `#{stemcell.desc}'")
+            end
+
+            yield vm_data
+
+            @vm_reuser.release_vm(vm_data)
+          rescue RpcTimeout => e
+            if !vm_data.nil?
+              @vm_reuser.remove_vm(vm_data)
+              tear_down_vm(vm_data)
+            end
+            raise e
+          end
+        end
+
+        def prepare_vm_without_reuse(stemcell)
+          begin
+            vm_data = create_vm(stemcell)
+            configure_vm(vm_data)
+            yield vm_data
+          ensure
+            tear_down_vm(vm_data) if !vm_data.nil?
+          end
+        end
+
+        private
+
+        def create_vm(stemcell)
           @logger.info("Creating compilation VM for stemcell `#{stemcell.desc}'")
 
           reservation = reserve_network
@@ -151,36 +174,29 @@ module Bosh::Director
           }
 
           vm = VmCreator.create(@deployment_plan.model, stemcell,
-                                @compilation_resources, network_settings,
-                                nil, @compilation_env)
-          vm_data = @vm_reuser.add_vm(reservation, vm, stemcell, network_settings)
+            @compilation_resources, network_settings,
+            nil, @compilation_env)
 
-          @logger.info("Configuring compilation VM: #{vm.cid}")
-
-          begin
-            agent = AgentClient.with_defaults(vm.agent_id)
-            agent.wait_until_ready
-            agent.update_settings(Bosh::Director::Config.trusted_certs)
-            vm.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs))
-
-            configure_vm(vm, agent, network_settings)
-            vm_data.agent = agent
-            yield vm_data
-          rescue RpcTimeout => e
-            # if we time out waiting for the agent, we should clean up the the VM
-            # as it will leave us in an unrecoverable state otherwise
-            @vm_reuser.remove_vm(vm_data)
-            tear_down_vm(vm_data)
-            raise e
-          ensure
-            vm_data.release
-            unless @deployment_plan.compilation.reuse_compilation_vms
-              tear_down_vm(vm_data)
-            end
-          end
+          VmData.new(reservation,vm,stemcell,network_settings)
         end
 
-        private
+        def configure_vm(vm_data)
+          vm_data.agent.wait_until_ready
+          vm_data.agent.update_settings(Bosh::Director::Config.trusted_certs)
+          state = {
+            'deployment' => @deployment_plan.name,
+            'resource_pool' => 'package_compiler',
+            'networks' => vm_data.network_settings
+          }
+          vm_data.vm.update(:apply_spec => state, :trusted_certs_sha1 => Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs))
+          vm_data.agent.apply(state)
+
+          vm_data
+        end
+
+        def reuse_compilation_vms?
+          @deployment_plan.compilation.reuse_compilation_vms
+        end
 
         def prepare_tasks
           @event_log.begin_stage('Preparing package compilation', 1)
@@ -313,17 +329,6 @@ module Bosh::Director
 
         def director_job_checkpoint
           @director_job.task_checkpoint if @director_job
-        end
-
-        def configure_vm(vm, agent, network_settings)
-          state = {
-            'deployment' => @deployment_plan.name,
-            'resource_pool' => 'package_compiler',
-            'networks' => network_settings
-          }
-
-          vm.update(:apply_spec => state)
-          agent.apply(state)
         end
 
         def compilation_count

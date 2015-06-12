@@ -5,50 +5,14 @@ module Bosh::Director
     let(:vm_data) { described_class.new(reservation, vm, stemcell, network_settings) }
     let(:reservation) { instance_double('Bosh::Director::NetworkReservation') }
     let(:network_settings) { {} }
-    let(:vm) { Models::Vm.make }
+    let(:vm) { Models::Vm.make(:agent_id => '123') }
     let(:stemcell) { Models::Stemcell.make }
+    let(:reservation) { instance_double('Bosh::Director::NetworkReservation') }
 
-    describe '#mark_in_use' do
-      context 'in use' do
-        it 'should return false if marked for use again' do
-          expect(vm_data.mark_in_use).to be(true)
-          expect(vm_data.mark_in_use).to be(false)
-        end
-      end
-
-      context 'not in use' do
-        it 'should return true if marked for use' do
-          expect(vm_data.mark_in_use).to be(true)
-        end
-      end
-    end
-
-    describe '#release' do
-      context 'in use' do
-        it 'should set in_use to false' do
-          vm_data.mark_in_use
-          vm_data.release
-          expect(vm_data.in_use?).to be(false)
-        end
-      end
-
-      context 'not in use' do
-        # not defined
-      end
-    end
-
-    describe '#in_use?' do
-      context 'in use' do
-        it 'should return true' do
-          vm_data.mark_in_use
-          expect(vm_data.in_use?).to be(true)
-        end
-      end
-
-      context 'not in use' do
-        it 'should return false' do
-          expect(vm_data.in_use?).to be(false)
-        end
+    describe '#agent' do
+      it 'creates an agent client for the correct agent' do
+        expect(AgentClient).to receive(:with_defaults).with(vm.agent_id)
+        vm_data.agent
       end
     end
   end

@@ -572,10 +572,8 @@ module Bosh::Director
           allow(reuser).to receive_messages(get_num_vms: 0)
           allow(reuser).to receive_messages(add_vm: vm_data)
 
-          expect(reuser).to receive(:remove_vm).with(vm_data)
-          expect(vm_data).to receive(:release)
-
-          expect(compiler).to receive(:tear_down_vm).with(vm_data)
+          expect(reuser).to receive(:remove_vm).ordered
+          expect(compiler).to receive(:tear_down_vm).ordered
 
           expect {
             compiler.prepare_vm(stemcell) do

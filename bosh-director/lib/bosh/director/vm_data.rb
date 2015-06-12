@@ -32,32 +32,11 @@ module Bosh::Director
       @stemcell = stemcell
       @network_settings = network_settings
       @agent_id = vm.agent_id
-      @being_used = false
-      @being_used_mutex = Mutex.new
+      @agent = nil
     end
 
-    # Marks that this VM is being used.
-    # @return [Boolean] Returns whether it could successfully mark this VM as in use.
-    def mark_in_use
-      @being_used_mutex.synchronize do
-        if @being_used
-          return false
-        else
-          @being_used = true
-          return true
-        end
-      end
-    end
-
-    # Releases the current VM to be reused.
-    def release
-      @being_used_mutex.synchronize do
-        @being_used = false
-      end
-    end
-
-    def in_use?
-      @being_used
+    def agent
+      @agent ||= AgentClient.with_defaults(vm.agent_id)
     end
   end
 end
