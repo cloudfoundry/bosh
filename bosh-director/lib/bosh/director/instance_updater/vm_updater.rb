@@ -22,9 +22,8 @@ module Bosh::Director
       @max_update_tries.times do |try|
         vm_deleter = VmDeleter.new(@instance, @vm_model, @cloud, @logger)
         vm_deleter.delete
-
-        vm_creator = VmCreator.new(@instance, @cloud, @logger)
-        @vm_model, @agent_client = vm_creator.create(new_disk_cid)
+        
+        @vm_model, @agent_client = VmCreator.create(new_disk_cid)
 
         begin
           disk_attacher = DiskAttacher.new(@instance, @vm_model, @agent_client, @cloud, @logger)
