@@ -36,7 +36,6 @@ module Bosh::Dev::Sandbox
     end
 
     def reconfigure(encryption)
-      @logger.debug "Got encryption: #{encryption}"
       @encryption = encryption
     end
 
@@ -66,7 +65,6 @@ module Bosh::Dev::Sandbox
 
     def config_path
       base_path = 'spec/assets/uaa_config'
-      @logger.debug "Config path enc: #{@encryption}"
       if @encryption == 'asymmetric'
         return File.expand_path(File.join(base_path, 'asymmetric'), @repo_root)
       end

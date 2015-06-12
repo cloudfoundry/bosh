@@ -8,6 +8,7 @@ module Bosh::Director
     let(:skey) { 'tokenkey' }
     let(:pkey) { nil }
     let(:app) { Support::TestController.new(double(:config, identity_provider: identity_provider)) }
+    let(:requested_access) { [] }
 
     describe 'client info' do
       it 'contains type and options, but not secret key' do
@@ -26,7 +27,7 @@ module Bosh::Director
         {
           'jti' => 'd64209e4-d150-45c9-9569-a352f42149b1',
           'sub' => 'faf835ea-c582-4a28-b500-6e6ac1515690',
-          'scope' => ['scim.userids', 'password.write', 'openid', 'cloud_controller.write', 'cloud_controller.read'],
+          'scope' => scope,
           'client_id' => 'cf',
           'cid' => 'cf',
           'azp' => 'cf',
@@ -39,6 +40,8 @@ module Bosh::Director
           'aud' => ['bosh_cli']
         }
       end
+      let(:scope) { ['scim.userids', 'password.write', 'openid', 'bosh.admin'] }
+
       let(:token_expiry_time) { (Time.now + 1000).to_i }
 
       context 'when token is encoded with symmetric key' do
@@ -48,7 +51,31 @@ module Bosh::Director
           let(:skey) { 'symmetric-key' }
 
           it 'returns the username of the authenticated user' do
-            expect(identity_provider.corroborate_user(request_env)).to eq('marissa')
+            expect(identity_provider.corroborate_user(request_env, requested_access)).to eq('marissa')
+          end
+
+          context 'when user scope is not bosh.admin' do
+            let(:scope) { [] }
+
+            it 'raises' do
+              expect { identity_provider.corroborate_user(request_env, requested_access) }.to raise_error(AuthenticationError)
+            end
+
+            context 'when requested_access is read' do
+              let(:requested_access) { [:read] }
+
+              it 'raises' do
+                expect { identity_provider.corroborate_user(request_env, requested_access) }.to raise_error(AuthenticationError)
+              end
+
+              context 'when user scope contains bosh.read' do
+                let(:scope) { ['bosh.read'] }
+
+                it 'returns user' do
+                  expect(identity_provider.corroborate_user(request_env, requested_access)).to eq('marissa')
+                end
+              end
+            end
           end
         end
 
@@ -56,7 +83,7 @@ module Bosh::Director
           let(:skey) { 'bad-key' }
 
           it 'raises an error' do
-            expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+            expect { identity_provider.corroborate_user(request_env, requested_access) }.to raise_error(AuthenticationError)
           end
         end
 
@@ -64,7 +91,7 @@ module Bosh::Director
           let(:skey) { nil }
 
           it 'raises an error' do
-            expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+            expect { identity_provider.corroborate_user(request_env, requested_access) }.to raise_error(AuthenticationError)
           end
         end
 
@@ -72,7 +99,7 @@ module Bosh::Director
           let(:token_expiry_time) { (Time.now - 1000).to_i }
 
           it 'raises' do
-            expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+            expect { identity_provider.corroborate_user(request_env, requested_access) }.to raise_error(AuthenticationError)
           end
         end
       end
@@ -85,7 +112,7 @@ module Bosh::Director
           let(:pkey) { rsa_key.public_key }
 
           it 'returns the username of the authenticated user' do
-            expect(identity_provider.corroborate_user(request_env)).to eq('marissa')
+            expect(identity_provider.corroborate_user(request_env, requested_access)).to eq('marissa')
           end
         end
 
@@ -94,7 +121,7 @@ module Bosh::Director
           let(:pkey) { another_rsa_key.public_key }
 
           it 'raises an error' do
-            expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+            expect { identity_provider.corroborate_user(request_env, requested_access) }.to raise_error(AuthenticationError)
           end
         end
 
@@ -102,7 +129,7 @@ module Bosh::Director
           let(:pkey) { nil }
 
           it 'raises an error' do
-            expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+            expect { identity_provider.corroborate_user(request_env, requested_access) }.to raise_error(AuthenticationError)
           end
         end
 
@@ -110,7 +137,7 @@ module Bosh::Director
           let(:token_expiry_time) { (Time.now - 1000).to_i }
 
           it 'raises' do
-            expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+            expect { identity_provider.corroborate_user(request_env, requested_access) }.to raise_error(AuthenticationError)
           end
         end
       end
@@ -124,7 +151,7 @@ module Bosh::Director
         end
 
         it 'returns client id' do
-          expect(identity_provider.corroborate_user(request_env)).to eq('fake-client-id')
+          expect(identity_provider.corroborate_user(request_env, requested_access)).to eq('fake-client-id')
         end
       end
     end
@@ -134,7 +161,7 @@ module Bosh::Director
         let(:request_env) { {'HTTP_AUTHORIZATION' => 'Basic YWRtaW46YWRtaW4='} }
 
         it 'raises' do
-          expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+          expect { identity_provider.corroborate_user(request_env, requested_access) }.to raise_error(AuthenticationError)
         end
       end
 
@@ -142,7 +169,7 @@ module Bosh::Director
         let(:request_env) { { } }
 
         it 'raises' do
-          expect { identity_provider.corroborate_user(request_env) }.to raise_error(AuthenticationError)
+          expect { identity_provider.corroborate_user(request_env, requested_access) }.to raise_error(AuthenticationError)
         end
       end
 

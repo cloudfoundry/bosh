@@ -6,14 +6,15 @@ module Bosh
     module Api
       module Controllers
         class TestIdentityProvider
-          attr_reader :request_env
+          attr_reader :request_env, :roles
 
           def initialize(authenticates)
             @authenticates = authenticates
           end
 
-          def corroborate_user(request_env)
+          def corroborate_user(request_env, roles)
             @request_env = request_env
+            @roles = roles
             raise AuthenticationError unless @authenticates
             "luke"
           end
@@ -69,6 +70,12 @@ module Bosh
               header('X-Test-Header', 'Value')
               get '/test_route'
               expect(identity_provider.request_env['HTTP_X_TEST_HEADER']).to eq('Value')
+            end
+
+            it 'passes the access to identity provider' do
+              header('X-Test-Header', 'Value')
+              get '/test_route'
+              expect(identity_provider.roles).to eq([:write])
             end
 
             context 'when authenticating successfully' do

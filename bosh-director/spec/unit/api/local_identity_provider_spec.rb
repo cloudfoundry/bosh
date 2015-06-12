@@ -24,7 +24,7 @@ module Bosh::Director
       let(:request_env) { { 'HTTP_AUTHORIZATION' => credentials[:admin] } }
 
       it 'returns the username of the authenticated user' do
-        expect(identity_provider.corroborate_user(request_env)).to eq('admin')
+        expect(identity_provider.corroborate_user(request_env, [])).to eq('admin')
       end
     end
 
@@ -33,7 +33,7 @@ module Bosh::Director
 
       it 'raises' do
         expect {
-          identity_provider.corroborate_user(request_env)
+          identity_provider.corroborate_user(request_env, [])
         }.to raise_error(AuthenticationError)
       end
     end

@@ -19,12 +19,30 @@ module Bosh
           }
         end
 
-        def corroborate_user(request_env)
+        def corroborate_user(request_env, requested_access)
           auth_header = request_env['HTTP_AUTHORIZATION']
           token = @token_coder.decode(auth_header)
+          validate_access(token, requested_access)
+
           token['user_name'] || token['client_id']
         rescue CF::UAA::DecodeError, CF::UAA::AuthError => e
           raise AuthenticationError, e.message
+        end
+
+        private
+
+        def validate_access(token, requested_access)
+          if token['scope']
+            if token['scope'].include?('bosh.admin')
+              return
+            end
+
+            if requested_access.include?(:read) && token['scope'].include?('bosh.read')
+              return
+            end
+          end
+
+          raise AuthenticationError, 'Requested access is not allowed by the scope'
         end
       end
     end

@@ -1,6 +1,7 @@
 scim:
   users:
-    - marissa|koala|marissa@test.org|Marissa|Bloggs|uaa.user
+    - marissa|koala|marissa@test.org|Marissa|Bloggs|bosh.admin
+    - non-admin|password|marissa@test.org|Marissa|Bloggs|uaa.user
   userids_enabled: true
 
 oauth:
@@ -13,7 +14,7 @@ oauth:
       id: bosh_cli
       override: true
       authorized-grant-types: implicit,password,refresh_token
-      scope: openid
+      scope: openid,bosh.admin
       authorities: uaa.none
       secret: ""
       access-token-vaidity: 10
@@ -22,18 +23,25 @@ oauth:
       id: test
       override: true
       authorized-grant-types: client_credentials,refresh_token
-      scope: openid
-      authorities: uaa.none
+      scope: openid,bosh.admin
+      authorities: bosh.admin
       secret: "secret"
     short-lived-client:
       id: short-lived-client
       override: true
       authorized-grant-types: client_credentials,refresh_token
-      scope: openid
-      authorities: uaa.none
+      scope: openid,bosh.admin
+      authorities: bosh.admin
       secret: "short-lived-secret"
       access-token-validity: 5
       refresh-token-validity: 3600
+    no-access:
+      id: no-access
+      override: true
+      authorized-grant-types: client_credentials,refresh_token
+      scope: openid
+      authorities: uaa.none
+      secret: "secret"
 jwt:
   token:
     signing-key: "uaa-secret-key"

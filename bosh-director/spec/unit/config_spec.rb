@@ -143,7 +143,7 @@ describe Bosh::Director::Config do
         let(:provider) { 'uaa' }
         let(:provider_options) { {'symmetric_key' => 'some-key', 'url' => 'some-url'} }
         let(:token) { CF::UAA::TokenCoder.new(skey: 'some-key').encode(payload) }
-        let(:payload) { {'user_name' => 'larry', 'aud' => ['bosh_cli']} }
+        let(:payload) { {'user_name' => 'larry', 'aud' => ['bosh_cli'], 'scope' => ['bosh.admin']} }
         before { test_config['user_management']['options'] = provider_options }
 
         it 'creates a UAAIdentityProvider' do
@@ -152,7 +152,7 @@ describe Bosh::Director::Config do
 
         it 'creates the UAAIdentityProvider with the configured key' do
           request_env = {'HTTP_AUTHORIZATION' => "bearer #{token}"}
-          expect(config.identity_provider.corroborate_user(request_env)).to eq('larry')
+          expect(config.identity_provider.corroborate_user(request_env, [])).to eq('larry')
         end
       end
     end

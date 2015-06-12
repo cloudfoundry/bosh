@@ -53,7 +53,7 @@ module Bosh::Director
 
           if auth_provided
             begin
-              @user = @identity_provider.corroborate_user(request.env)
+              @user = @identity_provider.corroborate_user(request.env, [:write])
             rescue AuthenticationError
             end
           end

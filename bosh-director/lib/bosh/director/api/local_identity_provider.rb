@@ -10,7 +10,7 @@ module Bosh
           {'type' => 'basic', 'options' => {}}
         end
 
-        def corroborate_user(request_env)
+        def corroborate_user(request_env, _)
           auth ||= Rack::Auth::Basic::Request.new(request_env)
           raise AuthenticationError unless auth.provided? && auth.basic? && auth.credentials
 

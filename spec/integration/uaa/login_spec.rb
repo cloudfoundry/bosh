@@ -102,6 +102,18 @@ CERT
         end
       end
     end
+
+    context 'when user does not have access' do
+      it 'can only access status endpoint' do
+        client_env = {'BOSH_CLIENT' => 'no-access', 'BOSH_CLIENT_SECRET' => 'secret'}
+        output = bosh_runner.run('status', env: client_env)
+        expect(output).to match /User.*not logged in/
+
+        # AuthError because verification is happening on director side
+        output = bosh_runner.run('vms', env: client_env, failure_expected: true)
+        expect(output).to match /AuthError/
+      end
+    end
   end
 
   context 'when UAA is configured with asymmetric key' do
