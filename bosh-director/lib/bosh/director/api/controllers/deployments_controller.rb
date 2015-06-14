@@ -44,7 +44,7 @@ module Bosh::Director
         # the call returns a 404 if the deployment doesn't exist
         @deployment_manager.find_by_name(params[:deployment])
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
-        task = @deployment_manager.create_deployment(@user, request.body, latest_cloud_config, options)
+        task = @deployment_manager.create_deployment(@user, params[:deployment], request.body, latest_cloud_config, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -69,7 +69,7 @@ module Bosh::Director
         deployment = @deployment_manager.find_by_name(params[:deployment])
         manifest = request.content_length.nil? ? StringIO.new(deployment.manifest) : request.body
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
-        task = @deployment_manager.create_deployment(@user, manifest, latest_cloud_config, options)
+        task = @deployment_manager.create_deployment(@user, params[:deployment], manifest, latest_cloud_config, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -271,7 +271,7 @@ module Bosh::Director
         options['recreate'] = true if params['recreate'] == 'true'
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
 
-        task = @deployment_manager.create_deployment(@user, request.body, latest_cloud_config, options)
+        task = @deployment_manager.create_deployment(@user, 'for cloud-config', request.body, latest_cloud_config, options)
         redirect "/tasks/#{task.id}"
       end
 

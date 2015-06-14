@@ -2,7 +2,8 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Api::DeploymentManager do
-    let(:deployment) { double('Deployment', name: 'DEPLOYMENT_NAME') }
+    let(:deployment_name) { 'DEPLOYMENT_NAME' }
+    let(:deployment) { double('Deployment', name: deployment_name) }
     let(:task) { double('Task') }
     let(:username) { 'FAKE_USER' }
     let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
@@ -29,21 +30,21 @@ module Bosh::Director
           cloud_config = instance_double(Bosh::Director::Models::CloudConfig, id: 123)
           allow(job_queue).to receive(:enqueue).and_return(task)
 
-          create_task = subject.create_deployment(username, 'FAKE_DEPLOYMENT_MANIFEST', cloud_config, options)
+          create_task = subject.create_deployment(username, deployment_name, 'FAKE_DEPLOYMENT_MANIFEST', cloud_config, options)
 
           expect(create_task).to eq(task)
           expect(job_queue).to have_received(:enqueue).with(
-              username, Jobs::UpdateDeployment, 'create deployment', [expected_manifest_path, cloud_config.id, options])
+              username, Jobs::UpdateDeployment, 'create deployment DEPLOYMENT_NAME', [expected_manifest_path, cloud_config.id, options])
         end
 
         it 'passes a nil cloud config id if there is no cloud config' do
           expected_manifest_path = File.join('FAKE_TMPDIR', 'deployment-FAKE_UUID')
           allow(job_queue).to receive(:enqueue).and_return(task)
 
-          subject.create_deployment(username, 'FAKE_DEPLOYMENT_MANIFEST', nil, options)
+          subject.create_deployment(username, deployment_name, 'FAKE_DEPLOYMENT_MANIFEST', nil, options)
 
           expect(job_queue).to have_received(:enqueue).with(
-              username, Jobs::UpdateDeployment, 'create deployment', [expected_manifest_path, nil, options])
+              username, Jobs::UpdateDeployment, 'create deployment DEPLOYMENT_NAME', [expected_manifest_path, nil, options])
         end
       end
     end
