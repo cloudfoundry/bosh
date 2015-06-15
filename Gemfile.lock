@@ -291,7 +291,7 @@ GEM
       addressable (>= 2.0.0)
       escape_utils
       eventmachine (>= 0.12.9)
-    escape_utils (1.0.1)
+    escape_utils (1.1.0)
     eventmachine (1.0.3)
     excon (0.45.3)
     ffi (1.9.8)
