@@ -388,7 +388,7 @@ module Bosh::Director
         end
 
         Config.logger.debug("Director configured with '#{provider_name}' user management provider")
-        provider_class.new(user_management['options'] || {})
+        provider_class.new(user_management['options'] || {}, @uuid)
       end
     end
 

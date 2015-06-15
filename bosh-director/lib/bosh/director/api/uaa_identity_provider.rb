@@ -4,9 +4,10 @@ module Bosh
   module Director
     module Api
       class UAAIdentityProvider
-        def initialize(options)
+        def initialize(options, director_uuid)
           @url = options.fetch('url')
           Config.logger.debug "Initializing UAA Identity provider with url #{@url}"
+          @director_uuid = director_uuid
           @token_coder = CF::UAA::TokenCoder.new(skey: options.fetch('symmetric_key', nil), pkey: options.fetch('public_key', nil), scope: [])
         end
 
@@ -33,7 +34,7 @@ module Bosh
 
         def validate_access(token, requested_access)
           if token['scope']
-            if token['scope'].include?('bosh.admin')
+            if token['scope'].include?('bosh.admin') || token['scope'].include?("bosh.#{@director_uuid}.admin")
               return
             end
 

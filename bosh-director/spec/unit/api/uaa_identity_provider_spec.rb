@@ -3,7 +3,7 @@ require 'rack/test'
 
 module Bosh::Director
   describe Api::UAAIdentityProvider do
-    subject(:identity_provider) { Api::UAAIdentityProvider.new(provider_options) }
+    subject(:identity_provider) { Api::UAAIdentityProvider.new(provider_options, 'fake-director-uuid') }
     let(:provider_options) { {'url' => 'http://localhost:8080/uaa', 'symmetric_key' => skey, 'public_key' => pkey} }
     let(:skey) { 'tokenkey' }
     let(:pkey) { nil }
@@ -52,6 +52,24 @@ module Bosh::Director
 
           it 'returns the username of the authenticated user' do
             expect(identity_provider.corroborate_user(request_env, requested_access)).to eq('marissa')
+          end
+
+          context 'when user scope is bosh.<DIRECTOR-UUID>.admin' do
+            context 'when uuid matches current director' do
+              let(:scope) { ['bosh.fake-director-uuid.admin'] }
+
+              it 'returns the username of the authenticated user' do
+                expect(identity_provider.corroborate_user(request_env, requested_access)).to eq('marissa')
+              end
+            end
+
+            context 'when uuid does not match current director' do
+              let(:scope) { ['bosh.other-director-uuid.admin'] }
+
+              it 'raises' do
+                expect { identity_provider.corroborate_user(request_env, requested_access) }.to raise_error(AuthenticationError)
+              end
+            end
           end
 
           context 'when user scope is not bosh.admin' do
