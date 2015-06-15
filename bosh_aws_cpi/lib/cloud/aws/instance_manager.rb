@@ -118,11 +118,11 @@ module Bosh::AwsCloud
     end
 
     def set_security_groups_parameter(instance_params, networks_spec, default_security_groups)
-      security_group_names = extract_security_group_names(networks_spec)
-      if security_group_names.empty?
-        instance_params[:security_groups] = default_security_groups
+      security_groups = extract_security_groups(networks_spec)
+      if security_groups.empty?
+        validate_and_prepare_security_groups_parameter(instance_params, default_security_groups)
       else
-        instance_params[:security_groups] = security_group_names
+        validate_and_prepare_security_groups_parameter(instance_params, security_groups)
       end
     end
 
@@ -153,6 +153,28 @@ module Bosh::AwsCloud
       user_data[:dns] = {nameserver: spec_with_dns["dns"]} if spec_with_dns
 
       instance_params[:user_data] = Yajl::Encoder.encode(user_data)
+    end
+
+    def validate_and_prepare_security_groups_parameter(instance_params, security_groups)
+      return if security_groups == nil || security_groups.size == 0
+
+      is_id = is_security_group_id?(security_groups[0])
+
+      security_groups.drop(1).each do |security_group|
+        unless is_security_group_id?(security_group) == is_id
+          raise Bosh::Clouds::CloudError, 'security group names and ids can not be used together in security groups'
+        end
+      end
+
+      if is_id
+        instance_params[:security_group_ids] = security_groups
+      else
+        instance_params[:security_groups] = security_groups
+      end
+    end
+
+    def is_security_group_id?(security_group)
+      security_group.start_with?('sg-') && security_group.size == 11? true:false
     end
   end
 end
