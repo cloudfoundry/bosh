@@ -114,6 +114,21 @@ CERT
         expect(output).to match /AuthError/
       end
     end
+
+    describe 'health monitor' do
+      before { current_sandbox.health_monitor_process.start }
+      after { current_sandbox.health_monitor_process.stop }
+
+      it 'ressurects vm' do
+        client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
+        deploy_from_scratch(no_login: true, env: client_env)
+
+        original_vm = director.vm('foobar/0', env: client_env)
+        original_vm.kill_agent
+        resurrected_vm = director.wait_for_vm('foobar/0', 300, env: client_env)
+        expect(resurrected_vm.cid).to_not eq(original_vm.cid)
+      end
+    end
   end
 
   context 'when UAA is configured with asymmetric key' do

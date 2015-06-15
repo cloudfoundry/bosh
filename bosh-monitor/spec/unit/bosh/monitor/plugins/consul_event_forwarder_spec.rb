@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 describe Bhm::Plugins::ConsulEventForwarder do
+  WebMock.allow_net_connect!
 
   subject{ described_class.new(options)  }
   let(:heartbeat){ make_heartbeat(timestamp: 1320196099) }

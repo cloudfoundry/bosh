@@ -96,9 +96,11 @@ PATH
   specs:
     bosh-monitor (1.2989.0)
       aws-sdk (= 1.60.2)
+      cf-uaa-lib (~> 3.2.1)
       dogapi (~> 1.6.0)
       em-http-request (~> 0.3.0)
       eventmachine (~> 1.0.0)
+      httpclient (= 2.4.0)
       logging (~> 1.8.2)
       nats (= 0.5.0.beta.12)
       sinatra (~> 1.4.2)

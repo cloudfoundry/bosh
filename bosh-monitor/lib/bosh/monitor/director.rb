@@ -2,18 +2,16 @@ module Bosh::Monitor
   class Director
 
     def initialize(options)
-      @endpoint = options["endpoint"].to_s
-      @user     = options["user"].to_s
-      @password = options["password"].to_s
+      @options = options
     end
 
     def get_deployments
-      http = perform_request(:get, "/deployments")
+      http = perform_request(:get, '/deployments')
 
       body   = http.response
       status = http.response_header.http_status
 
-      if status != "200"
+      if status != '200'
         raise DirectorError, "Cannot get deployments from director at #{http.uri}: #{status} #{body}"
       end
 
@@ -26,7 +24,7 @@ module Bosh::Monitor
       body   = http.response
       status = http.response_header.http_status
 
-      if status != "200"
+      if status != '200'
         raise DirectorError, "Cannot get deployment `#{name}' from director at #{http.uri}: #{status} #{body}"
       end
 
@@ -34,6 +32,10 @@ module Bosh::Monitor
     end
 
     private
+
+    def endpoint
+      @options['endpoint'].to_s
+    end
 
     def parse_json(json, expected_type = nil)
       result = Yajl::Parser.parse(json)
@@ -52,14 +54,15 @@ module Bosh::Monitor
     # This is a very bad thing to do on eventmachine because it will block the single
     # event loop. This code should be removed and all requests converted
     # to "the eventmachine way".
-    def perform_request(method, uri)
+    def perform_request(method, uri, options={})
       f = Fiber.current
 
-      target_uri = @endpoint + uri
+      target_uri = endpoint + uri
 
-      headers = {
-        "authorization" => [@user, @password]
-      }
+      headers = {}
+      unless options.fetch(:no_login, false)
+        headers['authorization'] = AuthProvider.new(get_info, @options).auth_header
+      end
 
       http = EM::HttpRequest.new(target_uri).send(method.to_sym, :head => headers)
 
@@ -68,9 +71,21 @@ module Bosh::Monitor
 
       Fiber.yield
 
-    rescue URI::Error => e
+    rescue URI::Error
       raise DirectorError, "Invalid URI: #{target_uri}"
     end
 
+    def get_info
+      http = perform_request(:get, '/info', no_login: true)
+
+      body   = http.response
+      status = http.response_header.http_status
+
+      if status != '200'
+        raise DirectorError, "Cannot get status from director at #{http.uri}: #{status} #{body}"
+      end
+
+      parse_json(body, Hash)
+    end
   end
 end

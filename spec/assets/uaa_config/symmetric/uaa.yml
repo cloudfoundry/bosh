@@ -42,6 +42,13 @@ oauth:
       scope: openid
       authorities: uaa.none
       secret: "secret"
+    hm:
+      id: hm
+      override: true
+      authorized-grant-types: client_credentials,refresh_token
+      scope: openid
+      authorities: uaa.none,bosh.admin
+      secret: "secret"
 jwt:
   token:
     signing-key: "uaa-secret-key"

@@ -31,6 +31,7 @@ require 'bosh/monitor/yaml_helper'
 
 # Basic blocks
 require 'bosh/monitor/agent'
+require 'bosh/monitor/auth_provider'
 require 'bosh/monitor/config'
 require 'bosh/monitor/core_ext'
 require 'bosh/monitor/director'

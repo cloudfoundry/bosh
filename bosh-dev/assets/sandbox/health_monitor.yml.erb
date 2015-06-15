@@ -13,6 +13,9 @@ director: &director
   endpoint: <%= director_url %>
   user: admin
   password: admin
+  client_id: hm
+  client_secret: secret
+  ca_cert: <%= certificate_path %>
 
 intervals:
   poll_director: 5

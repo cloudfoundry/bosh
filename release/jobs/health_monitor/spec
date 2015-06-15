@@ -4,6 +4,7 @@ name: health_monitor
 templates:
   health_monitor_ctl:     bin/health_monitor_ctl
   health_monitor.yml.erb: config/health_monitor.yml
+  uaa.pem.erb: config/uaa.pem
 
 packages:
   - health_monitor
@@ -70,8 +71,19 @@ properties:
     default: 25555
   hm.director_account.user:
     description: User to access Bosh Director
+    default: ''
   hm.director_account.password:
     description: Password to access Bosh Director
+    default: ''
+  hm.director_account.client_id:
+    description: UAA client id to access Bosh Director
+    default: ''
+  hm.director_account.client_secret:
+    description: UAA client secret to access Bosh Director
+    default: ''
+  hm.director_account.ca_cert:
+    description: Certificate to verify UAA endpoint
+    default: ''
 
   #
   # Health Monitor Plugins options

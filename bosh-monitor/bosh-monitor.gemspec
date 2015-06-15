@@ -25,6 +25,8 @@ Gem::Specification.new do |s|
   s.add_dependency 'sinatra',   '~>1.4.2'
   s.add_dependency 'aws-sdk',   '1.60.2'
   s.add_dependency 'dogapi',    '~> 1.6.0'
+  s.add_dependency 'cf-uaa-lib',  '~>3.2.1'
+  s.add_dependency 'httpclient',  '=2.4.0'
 
   s.add_development_dependency 'rake'
   s.add_development_dependency 'rspec'

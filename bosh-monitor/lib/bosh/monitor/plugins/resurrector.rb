@@ -13,11 +13,10 @@ module Bosh::Monitor
         director = @options['director']
         raise ArgumentError 'director options not set' unless director
 
-        @url           = URI(director['endpoint'])
-        @user          = director['user']
-        @password      = director['password']
-        @processor     = Bhm.event_processor
-        @alert_tracker = ResurrectorHelper::AlertTracker.new(@options)
+        @url              = URI(director['endpoint'])
+        @director_options = director
+        @processor        = Bhm.event_processor
+        @alert_tracker    = ResurrectorHelper::AlertTracker.new(@options)
       end
 
       def run
@@ -41,10 +40,17 @@ module Bosh::Monitor
           @alert_tracker.record(agent_key, alert.created_at)
 
           payload = {'jobs' => {job => [index]}}
+
+          director_info = fetch_director_info
+          unless director_info
+            logger.error("(Resurrector) director is not responding with the status")
+            return
+          end
+
           request = {
               head: {
                   'Content-Type' => 'application/json',
-                  'authorization' => [@user, @password]
+                  'authorization' => AuthProvider.new(director_info, @director_options).auth_header
               },
               body: Yajl::Encoder.encode(payload)
           }
@@ -70,12 +76,23 @@ module Bosh::Monitor
             send_http_put_request(url.to_s, request)
           end
 
-
         else
           logger.warn("(Resurrector) event did not have deployment, job and index: #{alert}")
         end
       end
 
+      private
+
+      def fetch_director_info
+        return @director_info if @director_info
+
+        director_info_url = @url.dup
+        director_info_url.path = '/info'
+        response = send_http_get_request(director_info_url.to_s)
+        return nil if response.status_code != 200
+
+        @director_info = Yajl::Parser.parse(response.body)
+      end
     end
   end
 end

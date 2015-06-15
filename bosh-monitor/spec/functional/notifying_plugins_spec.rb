@@ -24,6 +24,8 @@ class FakeNATS
 end
 
 describe 'notifying plugins' do
+  WebMock.allow_net_connect!
+
   let(:runner) { Bosh::Monitor::Runner.new(spec_asset('dummy_plugin_config.yml')) }
   let(:hm_process) { MonitorProcess.new(runner) }
 
@@ -78,7 +80,7 @@ describe 'notifying plugins' do
         'id' => 'random-id',
         'severity' => 3,
         'title' => 'Health monitor failed to connect to director',
-        'summary' => /Cannot get deployments from director/,
+        'summary' => /Cannot get status from director/,
         'created_at' => Time.now.to_i,
         'source' => 'hm'
       }

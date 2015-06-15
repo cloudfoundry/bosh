@@ -4,6 +4,8 @@ RUN_DIR=/var/vcap/sys/run/health_monitor
 LOG_DIR=/var/vcap/sys/log/health_monitor
 PIDFILE=$RUN_DIR/health_monitor.pid
 RUNAS=vcap
+CONFIG_DIR=/var/vcap/jobs/health_monitor/config
+STORE_DIR=/var/vcap/store/health_monitor
 
 export PATH=/var/vcap/packages/ruby/bin:$PATH
 export GEM_HOME=/var/vcap/packages/health_monitor/gem_home/ruby/2.1.0
@@ -16,10 +18,14 @@ function pid_exists() {
 case $1 in
 
   start)
-    mkdir -p $RUN_DIR $LOG_DIR
-    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR
+    mkdir -p $RUN_DIR $LOG_DIR $STORE_DIR
+    chown -R $RUNAS:$RUNAS $RUN_DIR $LOG_DIR $STORE_DIR
 
     echo $$ > $PIDFILE
+
+    if [ -s $CONFIG_DIR/uaa.pem ]; then
+      cp $CONFIG_DIR/uaa.pem $STORE_DIR
+    fi
 
     exec chpst -u $RUNAS:$RUNAS \
       /var/vcap/packages/health_monitor/bin/bosh-monitor \
