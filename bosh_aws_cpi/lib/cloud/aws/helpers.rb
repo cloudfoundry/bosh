@@ -17,7 +17,7 @@ module Bosh::AwsCloud
       raise Bosh::Clouds::CloudError, message
     end
 
-    def extract_security_group_names(networks_spec)
+    def extract_security_groups(networks_spec)
       networks_spec.
           values.
           select { |network_spec| network_spec.has_key? "cloud_properties" }.
