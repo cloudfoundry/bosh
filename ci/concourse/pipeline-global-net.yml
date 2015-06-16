@@ -91,4 +91,3 @@ resources:
     source:
       uri: git@github.com:cloudfoundry/bosh.git
       branch: global-net
-      private_key: {{github_private_key}}
