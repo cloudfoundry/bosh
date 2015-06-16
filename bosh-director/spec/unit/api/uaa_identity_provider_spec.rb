@@ -93,6 +93,24 @@ module Bosh::Director
                   expect(identity_provider.corroborate_user(request_env, requested_access)).to eq('marissa')
                 end
               end
+
+              context 'when user scope contains bosh.<DIRECTOR-UUID>.read' do
+                context 'when uuid matches current director' do
+                  let(:scope) { ['bosh.fake-director-uuid.read'] }
+
+                  it 'returns user' do
+                    expect(identity_provider.corroborate_user(request_env, requested_access)).to eq('marissa')
+                  end
+                end
+
+                context 'when uuid does not match current director' do
+                  let(:scope) { ['bosh.other-director-uuid.read'] }
+
+                  it 'raises' do
+                    expect { identity_provider.corroborate_user(request_env, requested_access) }.to raise_error(AuthenticationError)
+                  end
+                end
+              end
             end
           end
         end

@@ -34,16 +34,24 @@ module Bosh
 
         def validate_access(token, requested_access)
           if token['scope']
-            if token['scope'].include?('bosh.admin') || token['scope'].include?("bosh.#{@director_uuid}.admin")
+            if token_has_admin_scope?(token['scope'])
               return
             end
 
-            if requested_access.include?(:read) && token['scope'].include?('bosh.read')
+            if requested_access.include?(:read) && token_has_read_scope?(token['scope'])
               return
             end
           end
 
           raise AuthenticationError, 'Requested access is not allowed by the scope'
+        end
+
+        def token_has_read_scope?(token_scope)
+          token_scope.include?('bosh.read') || token_scope.include?("bosh.#{@director_uuid}.read")
+        end
+
+        def token_has_admin_scope?(token_scope)
+          token_scope.include?('bosh.admin') || token_scope.include?("bosh.#{@director_uuid}.admin")
         end
       end
     end
