@@ -82,12 +82,10 @@ module Bosh::Director
         agent = double(:AgentClient)
         expect(agent).to receive(:wait_until_ready)
         expect(agent).to receive(:update_settings)
-        expect(agent).to receive(:get_state).and_return({'state' => 'foo'})
         allow(AgentClient).to receive(:with_defaults).with('agent-1').and_return(agent)
 
-        expect(resource_pool_updater).to receive(:update_state).with(agent, @vm_model, @vm)
-        expect(@vm).to receive(:model=).with(@vm_model)
-        expect(@instance).to receive(:current_state=).with({'state' => 'foo'})
+        expect(@instance).to receive(:bind_to_vm_model).with(@vm_model)
+        expect(@instance).to receive(:apply_vm_state)
 
         resource_pool_updater.create_missing_vm(@vm)
       end
@@ -101,9 +99,8 @@ module Bosh::Director
           allow(agent).to receive(:get_state).and_return({'state' => 'foo'})
           allow(AgentClient).to receive(:with_defaults).and_return(agent)
 
-          allow(resource_pool_updater).to receive(:update_state).with(agent, @vm_model, @vm)
-          allow(@vm).to receive(:model=).with(@vm_model)
-          allow(@vm).to receive(:current_state=).with({'state' => 'foo'})
+          allow(@instance).to receive(:bind_to_vm_model).with(@vm_model)
+          allow(@instance).to receive(:apply_vm_state)
         end
 
         it 'should update the database with the new VM''s trusted certs' do
@@ -140,12 +137,10 @@ module Bosh::Director
         agent = double(:AgentClient)
         expect(agent).to receive(:wait_until_ready)
         expect(agent).to receive(:update_settings)
-        expect(agent).to receive(:get_state).and_return({'state' => 'foo'})
         allow(AgentClient).to receive(:with_defaults).with('agent-1').and_return(agent)
 
-        expect(resource_pool_updater).to receive(:update_state).with(agent, @vm_model, @vm)
-        expect(@vm).to receive(:model=).with(@vm_model)
-        expect(@vm).to receive(:current_state=).with({'state' => 'foo'})
+        expect(@instance).to receive(:bind_to_vm_model).with(@vm_model)
+        expect(@instance).to receive(:apply_vm_state)
 
         resource_pool_updater.create_missing_vm(@vm)
       end
@@ -162,40 +157,6 @@ module Bosh::Director
         }.to raise_error('timeout')
 
         expect(Models::Vm.count).to eq(0)
-      end
-    end
-
-    describe '#update_state' do
-      let(:vm_model) { instance_double('Bosh::Director::Models::Vm') }
-      let(:agent) { instance_double('Bosh::Director::AgentClient') }
-      let(:network_settings) { {'network1' => {}} }
-      let(:instance) {instance_double(Bosh::Director::DeploymentPlan::Instance, network_settings: network_settings)}
-      let(:vm) { instance_double('Bosh::Director::DeploymentPlan::Vm', bound_instance: instance) }
-      let(:resource_pool_spec) { {} }
-      let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan::Planner', name: 'foo') }
-      let(:apply_spec) do
-        {
-            'deployment' => deployment_plan.name,
-            'resource_pool' => resource_pool_spec,
-            'networks' => network_settings,
-        }
-      end
-
-      before do
-        allow(resource_pool).to receive(:deployment_plan).and_return(deployment_plan)
-        allow(resource_pool).to receive(:spec).and_return(resource_pool_spec)
-        allow(vm_model).to receive(:update)
-        allow(agent).to receive(:apply)
-      end
-
-      it 'sends the agent an updated state' do
-        expect(agent).to receive(:apply).with(apply_spec)
-        resource_pool_updater.update_state(agent, vm_model, vm)
-      end
-
-      it 'updates the vm model with the updated state' do
-        expect(vm_model).to receive(:update).with(apply_spec: apply_spec)
-        resource_pool_updater.update_state(agent, vm_model, vm)
       end
     end
   end
