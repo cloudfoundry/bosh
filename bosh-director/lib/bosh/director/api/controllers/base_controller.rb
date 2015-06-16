@@ -25,6 +25,8 @@ module Bosh::Director
           @logger = Config.logger
         end
 
+        register Bosh::Director::Api::Extensions::Scoping
+
         mime_type :tgz,       'application/x-compressed'
         mime_type :multipart, 'multipart/form-data'
 
@@ -44,24 +46,6 @@ module Bosh::Director
 
         def requires_authentication?
           true
-        end
-
-        before do
-          auth_provided = %w(HTTP_AUTHORIZATION X-HTTP_AUTHORIZATION X_HTTP_AUTHORIZATION).detect do |key|
-            request.env.has_key?(key)
-          end
-
-          if auth_provided
-            begin
-              @user = @identity_provider.corroborate_user(request.env, [:write])
-            rescue AuthenticationError
-            end
-          end
-
-          if requires_authentication? && @user.nil?
-            response['WWW-Authenticate'] = 'Basic realm="BOSH Director"'
-            throw(:halt, [401, "Not authorized\n"])
-          end
         end
 
         after { headers('Date' => Time.now.rfc822) } # As thin doesn't inject date

@@ -58,11 +58,6 @@ module Bosh
             expect(last_response.status).to eq(401)
           end
 
-          it 'requires authentication even for invalid routes' do
-            get '/invalid_route'
-            expect(last_response.status).to eq(401)
-          end
-
           context 'when authorizaion is provided' do
             before { header('Authorization', 'Value') }
 
@@ -76,6 +71,9 @@ module Bosh
               header('X-Test-Header', 'Value')
               get '/test_route'
               expect(identity_provider.roles).to eq([:write])
+
+              get '/read'
+              expect(identity_provider.roles).to eq([:read])
             end
 
             context 'when authenticating successfully' do

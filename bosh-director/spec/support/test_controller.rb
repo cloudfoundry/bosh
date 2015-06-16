@@ -11,6 +11,10 @@ module Support
       "Success with: #{@user || 'No user'}"
     end
 
+    get '/read', scope: [:read] do
+      "Success with: #{@user || 'No user'}"
+    end
+
     def requires_authentication?
       @requires_authentication.nil? ? super : @requires_authentication
     end
