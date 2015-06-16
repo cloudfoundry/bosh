@@ -137,7 +137,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      get '/' do
+      get '/', scope: [:read] do
         latest_cloud_config = Api::CloudConfigManager.new.latest
         deployments = Models::Deployment.order_by(:name.asc).map do |deployment|
         cloud_config = if deployment.cloud_config.nil?

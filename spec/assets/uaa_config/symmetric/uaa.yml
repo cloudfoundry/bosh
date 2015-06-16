@@ -42,6 +42,13 @@ oauth:
       scope: openid
       authorities: uaa.none
       secret: "secret"
+    read-access:
+      id: read-access
+      override: true
+      authorized-grant-types: client_credentials,refresh_token
+      scope: openid,bosh.read
+      authorities: bosh.read
+      secret: "secret"
     hm:
       id: hm
       override: true

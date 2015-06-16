@@ -103,6 +103,17 @@ CERT
       end
     end
 
+    context 'when user has read access' do
+      it 'can only access read resources' do
+        client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
+        output = deploy_from_scratch(no_login: true, env: client_env, failure_expected: true)
+        expect(output).to match /Not authorized/
+
+        output = bosh_runner.run('deployments', env: client_env, failure_expected: true)
+        expect(output).to match /No deployments/
+      end
+    end
+
     context 'when user does not have access' do
       it 'can only access status endpoint' do
         client_env = {'BOSH_CLIENT' => 'no-access', 'BOSH_CLIENT_SECRET' => 'secret'}
@@ -111,7 +122,7 @@ CERT
 
         # AuthError because verification is happening on director side
         output = bosh_runner.run('vms', env: client_env, failure_expected: true)
-        expect(output).to match /AuthError/
+        expect(output).to match /Not authorized/
       end
     end
 
