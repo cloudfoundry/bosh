@@ -27,7 +27,7 @@ module Bosh::Director
       after { FileUtils.rm_rf(temp_dir) }
 
       it 'requires auth' do
-        delete '/'
+        delete '/fake-id'
         expect(last_response.status).to eq(401)
       end
 

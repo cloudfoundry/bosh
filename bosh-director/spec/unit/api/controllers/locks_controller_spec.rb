@@ -65,14 +65,14 @@ module Bosh::Director
       before { authorize 'invalid-user', 'invalid-password' }
 
       it 'returns 401' do
-        get '/locks'
+        get '/'
         expect(last_response.status).to eq(401)
       end
     end
 
     context 'unauthenticated access' do
       it 'returns 401' do
-        get '/locks'
+        get '/'
         expect(last_response.status).to eq(401)
       end
     end

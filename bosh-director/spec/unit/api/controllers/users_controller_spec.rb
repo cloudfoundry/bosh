@@ -29,12 +29,12 @@ module Bosh::Director
       after { FileUtils.rm_rf(temp_dir) }
 
       it 'requires auth' do
-        get '/'
+        post '/', '', { 'CONTENT_TYPE' => 'application/json' }
         expect(last_response.status).to eq(401)
       end
 
       it 'sets the date header' do
-        get '/'
+        post '/', '', { 'CONTENT_TYPE' => 'application/json' }
         expect(last_response.headers['Date']).not_to be_nil
       end
 
