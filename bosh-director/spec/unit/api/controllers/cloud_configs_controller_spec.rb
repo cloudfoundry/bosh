@@ -6,7 +6,9 @@ module Bosh::Director
   describe Api::Controllers::CloudConfigsController do
     include Rack::Test::Methods
 
-    subject(:app) { Api::Controllers::CloudConfigsController.new(Config.new({})) }
+    subject(:app) { Api::Controllers::CloudConfigsController.new(config) }
+
+    let(:config) { Config.new({}) }
 
     describe 'POST', '/' do
       it 'creates a new cloud config' do
@@ -14,7 +16,7 @@ module Bosh::Director
 
         properties = Psych.dump(Bosh::Spec::Deployments.simple_cloud_config)
         expect {
-          post '/', properties, { 'CONTENT_TYPE' => 'text/yaml' }
+          post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
         }.to change(Bosh::Director::Models::CloudConfig, :count).from(0).to(1)
 
         expect(Bosh::Director::Models::CloudConfig.first.properties).to eq(properties)
@@ -61,6 +63,22 @@ module Bosh::Director
         get "/?limit=foo"
         expect(last_response.status).to eq(400)
         expect(last_response.body).to eq("limit is invalid: 'foo' is not an integer")
+      end
+    end
+
+    describe 'scope' do
+      let(:identity_provider) { Support::TestIdentityProvider.new }
+      before { allow(config).to receive(:identity_provider).and_return(identity_provider) }
+
+      it 'accepts read scope for routes allowing read access' do
+        authorize 'test', 'test'
+
+        get '/'
+        expect(identity_provider.roles).to eq([:read])
+
+        header 'Content-Type', 'text/yaml'
+        post '/'
+        expect(identity_provider.roles).to eq([:write])
       end
     end
   end

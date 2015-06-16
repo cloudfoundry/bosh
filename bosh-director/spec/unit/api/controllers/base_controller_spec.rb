@@ -5,21 +5,6 @@ module Bosh
   module Director
     module Api
       module Controllers
-        class TestIdentityProvider
-          attr_reader :request_env, :roles
-
-          def initialize(authenticates)
-            @authenticates = authenticates
-          end
-
-          def corroborate_user(request_env, roles)
-            @request_env = request_env
-            @roles = roles
-            raise AuthenticationError unless @authenticates
-            "luke"
-          end
-        end
-
         describe BaseController do
           include Rack::Test::Methods
 
@@ -28,7 +13,7 @@ module Bosh
 
           let(:requires_authentication) { nil }
           let(:authenticates_successfully) { false }
-          let(:identity_provider) { TestIdentityProvider.new(authenticates_successfully) }
+          let(:identity_provider) { Support::TestIdentityProvider.new(authenticates_successfully) }
 
           let(:temp_dir) { Dir.mktmpdir }
           let(:test_config) { base_config }
@@ -82,7 +67,7 @@ module Bosh
               it 'succeeds' do
                 get '/test_route'
                 expect(last_response.status).to eq(200)
-                expect(last_response.body).to eq('Success with: luke')
+                expect(last_response.body).to eq('Success with: fake-user')
               end
             end
           end
@@ -118,7 +103,7 @@ module Bosh
                 it 'returns controller response' do
                   get '/test_route'
                   expect(last_response.status).to eq(200)
-                  expect(last_response.body).to eq('Success with: luke')
+                  expect(last_response.body).to eq('Success with: fake-user')
                 end
               end
             end

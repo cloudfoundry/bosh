@@ -5,7 +5,8 @@ module Bosh::Director
   describe Api::Controllers::StemcellsController do
     include Rack::Test::Methods
 
-    subject(:app) { described_class.new(Config.new({})) }
+    subject(:app) { described_class.new(config) }
+    let(:config) { Config.load_hash(test_config) }
     let(:temp_dir) { Dir.mktmpdir}
     let(:test_config) do
       config = Psych.load(spec_asset('test-director-config.yml'))
@@ -17,7 +18,7 @@ module Bosh::Director
       config
     end
 
-    before { App.new(Config.load_hash(test_config)) }
+    before { App.new(config) }
 
     after { FileUtils.rm_rf(temp_dir) }
 
@@ -151,6 +152,34 @@ module Bosh::Director
         it 'returns 401' do
           perform
           expect(last_response.status).to eq(401)
+        end
+      end
+    end
+
+    describe 'scope' do
+      let(:identity_provider) { Support::TestIdentityProvider.new }
+      let(:config) do
+        config = Config.load_hash(test_config)
+        allow(config).to receive(:identity_provider).and_return(identity_provider)
+        config
+      end
+
+      it 'accepts read scope for routes allowing read access' do
+        authorize 'test', 'test'
+
+        get '/'
+        expect(identity_provider.roles).to eq([:read])
+
+        non_read_routes = [
+          [:post, '/', 'Content-Type', 'application/json'],
+          [:post, '/', 'Content-Type', 'application/multipart'],
+          [:delete, '/stemcell-name/stemcell-version', '', '']
+        ]
+
+        non_read_routes.each do |method, route, header, header_value|
+          header header, header_value
+          method(method).call(route, '{}')
+          expect(identity_provider.roles).to eq([:write])
         end
       end
     end

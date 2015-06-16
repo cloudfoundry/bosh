@@ -6,7 +6,8 @@ module Bosh::Director
     describe Controllers::DeploymentsController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(Config.new({})) }
+      subject(:app) { described_class.new(config) }
+      let(:config) { Config.load_hash(test_config) }
 
       let(:temp_dir) { Dir.mktmpdir}
       let(:test_config) do
@@ -24,7 +25,7 @@ module Bosh::Director
       end
 
       before do
-        App.new(Config.load_hash(test_config))
+        App.new(config)
         basic_authorize 'admin', 'admin'
       end
 
@@ -515,6 +516,41 @@ module Bosh::Director
                 expect(last_response.status).to eq(401)
               end
             end
+          end
+        end
+      end
+
+      describe 'scope' do
+        let(:identity_provider) { Support::TestIdentityProvider.new }
+        let(:config) do
+          config = Config.load_hash(test_config)
+          allow(config).to receive(:identity_provider).and_return(identity_provider)
+          config
+        end
+
+        it 'accepts read scope for routes allowing read access' do
+          read_routes = [
+            '/',
+            '/deployment-name',
+            '/deployment-name/errands',
+            '/deployment-name/vms'
+          ]
+
+          read_routes.each do |route|
+            get route
+            expect(identity_provider.roles).to eq([:read])
+          end
+
+          non_read_routes = [
+            [:get, '/deployment-name/jobs/fake-job/0'],
+            [:put, '/deployment-name/jobs/0'],
+            [:post, '/deployment-name/ssh'],
+            [:post, '/deployment-name/scans'],
+          ]
+
+          non_read_routes.each do |method, route|
+            method(method).call(route)
+            expect(identity_provider.roles).to eq([:write])
           end
         end
       end

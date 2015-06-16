@@ -169,12 +169,12 @@ module Bosh::Director
         json_encode(deployments)
       end
 
-      get '/:name' do
+      get '/:name', scope: [:read] do
         deployment = @deployment_manager.find_by_name(params[:name])
         @deployment_manager.deployment_to_json(deployment)
       end
 
-      get '/:name/vms' do
+      get '/:name/vms', scope: [:read] do
         deployment = @deployment_manager.find_by_name(params[:name])
 
         format = params[:format]
@@ -290,7 +290,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      get '/:deployment_name/errands' do
+      get '/:deployment_name/errands', scope: [:read] do
         deployment_plan = load_deployment_plan_without_binding
 
         errands = deployment_plan.jobs.select(&:can_run_as_errand?)

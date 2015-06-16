@@ -6,7 +6,7 @@ module Bosh::Director
     describe Controllers::InfoController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(Config.new(test_config)) }
+      subject(:app) { described_class.new(config) }
 
       let(:temp_dir) { Dir.mktmpdir}
       let(:base_config) do
@@ -23,8 +23,9 @@ module Bosh::Director
         config
       end
       let(:test_config) { base_config }
+      let(:config) { Config.load_hash(test_config) }
 
-      before { App.new(Config.load_hash(test_config)) }
+      before { App.new(config) }
 
       after { FileUtils.rm_rf(temp_dir) }
 
@@ -128,6 +129,22 @@ module Bosh::Director
               'type' => 'uaa',
               'options' => {'url' => 'http://localhost:8080/uaa'}
             )
+        end
+      end
+
+      describe 'scope' do
+        let(:identity_provider) { Support::TestIdentityProvider.new }
+        let(:config) do
+          config = Config.load_hash(test_config)
+          allow(config).to receive(:identity_provider).and_return(identity_provider)
+          config
+        end
+
+        it 'accepts read scope' do
+          # identity provider is not called if auth header is not provided
+          basic_authorize 'admin', 'admin'
+          get '/'
+          expect(identity_provider.roles).to eq([:read])
         end
       end
     end
