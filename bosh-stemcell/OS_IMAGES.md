@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `mVdBreXVEW3jTtuPMUWm0NaQ2tmEuBkp`
+  update kernel and packages
+
 * `mevqBoryhMFMxQa6.O_7WMsHOjxj8Ypi`
   update libssl to 1.0.1f-1ubuntu2.15
 
@@ -188,7 +191,7 @@ CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
   upgrade rsyslog to version 8.x (latest version in the upstream project's repo)
 
 * `uVRZSKujJb4zU2KrtAH.xVLly3agHc7M`
-  reinstall `base` metapackage to enable proper BOSH Director operation 
+  reinstall `base` metapackage to enable proper BOSH Director operation
 
 * `0_zs2Y2A.QhW00r1tbb7Oa7XcMY3GdkW`
   install net-tools for stemcell acceptance testing
