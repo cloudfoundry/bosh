@@ -12,7 +12,7 @@ module Bosh::Director
           'name' => Config.name,
           'uuid' => Config.uuid,
           'version' => "#{VERSION} (#{Config.revision})",
-          'user' => @user,
+          'user' => current_user,
           'cpi' => Config.cloud_type,
           'user_authentication' => @config.identity_provider.client_info,
           'features' => {

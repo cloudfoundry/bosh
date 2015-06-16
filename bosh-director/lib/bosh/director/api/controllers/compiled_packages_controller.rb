@@ -37,7 +37,7 @@ module Bosh::Director
       end
 
       post '/import', consumes: :multipart do
-        task = @compiled_package_group_manager.create_from_file_path(@user, params[:nginx_upload_path])
+        task = @compiled_package_group_manager.create_from_file_path(current_user, params[:nginx_upload_path])
         redirect "/tasks/#{task.id}"
       end
 

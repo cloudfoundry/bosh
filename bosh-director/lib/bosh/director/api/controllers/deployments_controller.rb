@@ -44,7 +44,7 @@ module Bosh::Director
         # the call returns a 404 if the deployment doesn't exist
         @deployment_manager.find_by_name(params[:deployment])
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
-        task = @deployment_manager.create_deployment(@user, request.body, latest_cloud_config, options)
+        task = @deployment_manager.create_deployment(current_user, request.body, latest_cloud_config, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -69,7 +69,7 @@ module Bosh::Director
         deployment = @deployment_manager.find_by_name(params[:deployment])
         manifest = request.content_length.nil? ? StringIO.new(deployment.manifest) : request.body
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
-        task = @deployment_manager.create_deployment(@user, manifest, latest_cloud_config, options)
+        task = @deployment_manager.create_deployment(current_user, manifest, latest_cloud_config, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -84,7 +84,7 @@ module Bosh::Director
           'filters' => params[:filters].to_s.strip.split(/[\s\,]+/)
         }
 
-        task = @instance_manager.fetch_logs(@user, deployment, job, index, options)
+        task = @instance_manager.fetch_logs(current_user, deployment, job, index, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -103,7 +103,7 @@ module Bosh::Director
         # until we can tell the agent to flush and wait, all snapshots are considered dirty
         options = {clean: false}
 
-        task = @snapshot_manager.create_deployment_snapshot_task(@user, deployment, options)
+        task = @snapshot_manager.create_deployment_snapshot_task(current_user, deployment, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -118,14 +118,14 @@ module Bosh::Director
         # until we can tell the agent to flush and wait, all snapshots are considered dirty
         options = {clean: false}
 
-        task = @snapshot_manager.create_snapshot_task(@user, instance, options)
+        task = @snapshot_manager.create_snapshot_task(current_user, instance, options)
         redirect "/tasks/#{task.id}"
       end
 
       delete '/:deployment/snapshots' do
         deployment = @deployment_manager.find_by_name(params[:deployment])
 
-        task = @snapshot_manager.delete_deployment_snapshots_task(@user, deployment)
+        task = @snapshot_manager.delete_deployment_snapshots_task(current_user, deployment)
         redirect "/tasks/#{task.id}"
       end
 
@@ -133,7 +133,7 @@ module Bosh::Director
         deployment = @deployment_manager.find_by_name(params[:deployment])
         snapshot = @snapshot_manager.find_by_cid(deployment, params[:cid])
 
-        task = @snapshot_manager.delete_snapshots_task(@user, [params[:cid]])
+        task = @snapshot_manager.delete_snapshots_task(current_user, [params[:cid]])
         redirect "/tasks/#{task.id}"
       end
 
@@ -179,7 +179,7 @@ module Bosh::Director
 
         format = params[:format]
         if format == 'full'
-          task = @vm_state_manager.fetch_vm_state(@user, deployment, format)
+          task = @vm_state_manager.fetch_vm_state(current_user, deployment, format)
           redirect "/tasks/#{task.id}"
         else
           @deployment_manager.deployment_vms_to_json(deployment)
@@ -192,7 +192,7 @@ module Bosh::Director
         options = {}
         options['force'] = true if params['force'] == 'true'
         options['keep_snapshots'] = true if params['keep_snapshots'] == 'true'
-        task = @deployment_manager.delete_deployment(@user, deployment, options)
+        task = @deployment_manager.delete_deployment(current_user, deployment, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -217,7 +217,7 @@ module Bosh::Director
 
       post '/:deployment/ssh', :consumes => [:json] do
         payload = json_decode(request.body)
-        task = @instance_manager.ssh(@user, payload)
+        task = @instance_manager.ssh(current_user, payload)
         redirect "/tasks/#{task.id}"
       end
 
@@ -236,7 +236,7 @@ module Bosh::Director
 
       # Initiate deployment scan
       post '/:deployment/scans' do
-        start_task { @problem_manager.perform_scan(@user, params[:deployment]) }
+        start_task { @problem_manager.perform_scan(current_user, params[:deployment]) }
       end
 
       # Get the list of problems for a particular deployment
@@ -256,14 +256,14 @@ module Bosh::Director
 
       put '/:deployment/problems', :consumes => [:json] do
         payload = json_decode(request.body)
-        start_task { @problem_manager.apply_resolutions(@user, params[:deployment], payload['resolutions']) }
+        start_task { @problem_manager.apply_resolutions(current_user, params[:deployment], payload['resolutions']) }
       end
 
       put '/:deployment/scan_and_fix', :consumes => :json do
         jobs_json = json_decode(request.body)['jobs']
         payload = convert_job_instance_hash(jobs_json)
 
-        start_task { @problem_manager.scan_and_fix(@user, params[:deployment], payload) }
+        start_task { @problem_manager.scan_and_fix(current_user, params[:deployment], payload) }
       end
 
       post '/', :consumes => :yaml do
@@ -271,7 +271,7 @@ module Bosh::Director
         options['recreate'] = true if params['recreate'] == 'true'
         latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.latest
 
-        task = @deployment_manager.create_deployment(@user, request.body, latest_cloud_config, options)
+        task = @deployment_manager.create_deployment(current_user, request.body, latest_cloud_config, options)
         redirect "/tasks/#{task.id}"
       end
 
@@ -281,7 +281,7 @@ module Bosh::Director
         keep_alive = json_decode(request.body)['keep-alive'] || FALSE
 
         task = JobQueue.new.enqueue(
-          @user,
+          current_user,
           Jobs::RunErrand,
           "run errand #{errand_name} from deployment #{deployment_name}",
           [deployment_name, errand_name, keep_alive],
