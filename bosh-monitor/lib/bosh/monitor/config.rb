@@ -21,7 +21,7 @@ module Bosh::Monitor
 
       @logger = Logging.logger(config["logfile"] || STDOUT)
       @intervals = OpenStruct.new(config["intervals"])
-      @director = Director.new(config["director"])
+      @director = Director.new(config["director"], @logger)
       @mbus = OpenStruct.new(config["mbus"])
 
       @event_processor = EventProcessor.new

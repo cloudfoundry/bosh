@@ -4,7 +4,7 @@ require 'rack/test'
 describe Bosh::Monitor::AuthProvider do
   include Support::UaaHelpers
 
-  subject(:auth_provider) { described_class.new(auth_info, config) }
+  subject(:auth_provider) { described_class.new(auth_info, config, logger) }
   let(:config) do
     {
       'user' => 'fake-user',
@@ -14,6 +14,7 @@ describe Bosh::Monitor::AuthProvider do
       'ca_cert' => 'fake-ca-cert'
     }
   end
+  let(:logger) { double(:logger) }
 
   context 'when director is in UAA mode' do
     let(:auth_info) { {'user_authentication' => { 'type' => 'uaa', 'options' => {'url' => 'uaa-url'}} } }
@@ -45,6 +46,20 @@ describe Bosh::Monitor::AuthProvider do
       it 'obtains new token' do
         expect(auth_provider.auth_header).to eq(first_token.auth_header)
         expect(auth_provider.auth_header).to eq(second_token.auth_header)
+      end
+    end
+
+    context 'when getting token fails' do
+      before do
+        allow(token_issuer).to receive(:client_credentials_grant).and_raise(RuntimeError.new('failed'))
+      end
+
+      it 'logs an error' do
+        expect(logger).to receive(:error).with(/failed/)
+
+        expect {
+          auth_provider.auth_header
+        }.to_not raise_error
       end
     end
   end

@@ -41,7 +41,6 @@ module Bosh::Monitor
 
           payload = {'jobs' => {job => [index]}}
 
-          director_info = fetch_director_info
           unless director_info
             logger.error("(Resurrector) director is not responding with the status")
             return
@@ -50,7 +49,7 @@ module Bosh::Monitor
           request = {
               head: {
                   'Content-Type' => 'application/json',
-                  'authorization' => AuthProvider.new(director_info, @director_options).auth_header
+                  'authorization' => auth_provider(director_info).auth_header
               },
               body: Yajl::Encoder.encode(payload)
           }
@@ -83,7 +82,11 @@ module Bosh::Monitor
 
       private
 
-      def fetch_director_info
+      def auth_provider(director_info)
+        @auth_provider ||= AuthProvider.new(director_info, @director_options, logger)
+      end
+
+      def director_info
         return @director_info if @director_info
 
         director_info_url = @url.dup

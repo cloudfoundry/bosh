@@ -2,7 +2,7 @@ require 'uaa'
 
 module Bosh::Monitor
   class AuthProvider
-    def initialize(auth_info, config)
+    def initialize(auth_info, config, logger)
       @auth_info = auth_info.fetch('user_authentication', {})
 
       @user = config['user'].to_s
@@ -10,6 +10,8 @@ module Bosh::Monitor
       @client_id = config['client_id'].to_s
       @client_secret = config['client_secret'].to_s
       @ca_cert = config['ca_cert'].to_s
+
+      @logger = logger
     end
 
     def auth_header
@@ -24,7 +26,7 @@ module Bosh::Monitor
     private
 
     def uaa_token_header(uaa_url)
-      @uaa_token ||= UAAToken.new(@client_id, @client_secret, uaa_url, @ca_cert)
+      @uaa_token ||= UAAToken.new(@client_id, @client_secret, uaa_url, @ca_cert, @logger)
       @uaa_token.auth_header
     end
   end
@@ -34,13 +36,14 @@ module Bosh::Monitor
   class UAAToken
     EXPIRATION_DEADLINE_IN_SECONDS = 60
 
-    def initialize(client_id, client_secret, uaa_url, ca_cert)
+    def initialize(client_id, client_secret, uaa_url, ca_cert, logger)
       @uaa_token_issuer = CF::UAA::TokenIssuer.new(
         uaa_url,
         client_id,
         client_secret,
         {ssl_ca_file: ca_cert}
       )
+      @logger = logger
     end
 
     def auth_header
@@ -50,7 +53,7 @@ module Bosh::Monitor
 
       fetch
 
-      @uaa_token.auth_header
+      @uaa_token ? @uaa_token.auth_header : nil
     end
 
     private
@@ -63,6 +66,8 @@ module Bosh::Monitor
     def fetch
       @uaa_token = @uaa_token_issuer.client_credentials_grant
       @token_data = decode
+    rescue => e
+      @logger.error("Failed to obtain token from UAA: #{e.inspect}")
     end
 
     def decode

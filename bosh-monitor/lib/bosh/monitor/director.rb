@@ -1,8 +1,9 @@
 module Bosh::Monitor
   class Director
 
-    def initialize(options)
+    def initialize(options, logger)
       @options = options
+      @logger = logger
     end
 
     def get_deployments
@@ -61,7 +62,7 @@ module Bosh::Monitor
 
       headers = {}
       unless options.fetch(:no_login, false)
-        headers['authorization'] = AuthProvider.new(get_info, @options).auth_header
+        headers['authorization'] = auth_provider.auth_header
       end
 
       http = EM::HttpRequest.new(target_uri).send(method.to_sym, :head => headers)
@@ -86,6 +87,10 @@ module Bosh::Monitor
       end
 
       parse_json(body, Hash)
+    end
+
+    def auth_provider
+      @auth_provider ||= AuthProvider.new(get_info, @options, @logger)
     end
   end
 end

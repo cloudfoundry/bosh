@@ -8,12 +8,14 @@ describe 'Bhm::Director' do
   # This is way overmocked so it needs an appropriate support from integration tests.
   subject(:director) do
     Bhm::Director.new(
-      'endpoint' => 'http://localhost:8080/director',
-      'user' => 'admin',
-      'password' => 'admin',
-      'client_id' => 'hm',
-      'client_secret' => 'secret',
-      'ca_cert' => 'fake-ca-cert'
+      {
+        'endpoint' => 'http://localhost:8080/director',
+        'user' => 'admin',
+        'password' => 'admin',
+        'client_id' => 'hm',
+        'client_secret' => 'secret',
+        'ca_cert' => 'fake-ca-cert'
+      }, double(:logger)
     )
   end
 
