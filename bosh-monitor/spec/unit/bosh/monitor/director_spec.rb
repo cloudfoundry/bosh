@@ -1,6 +1,8 @@
 require 'spec_helper'
 
 describe 'Bhm::Director' do
+  include Support::UaaHelpers
+
   # Director client uses event loop and fibers to perform HTTP queries asynchronosuly.
   # However we don't test that here, we only test the synchronous interface.
   # This is way overmocked so it needs an appropriate support from integration tests.
@@ -65,7 +67,8 @@ describe 'Bhm::Director' do
           'secret',
           { ssl_ca_file: 'fake-ca-cert' }
         ).and_return(token_issuer)
-      allow(token_issuer).to receive(:client_credentials_grant).and_return(double(:token, auth_header: 'fake-token'))
+      token = uaa_token_info('fake-token-id')
+      allow(token_issuer).to receive(:client_credentials_grant).and_return(token)
 
       uaa_status = {
         'user_authentication' => {
@@ -80,7 +83,7 @@ describe 'Bhm::Director' do
         to_return(:body => json_dump(uaa_status), :status => 200)
 
       stub_request(:get, 'http://localhost:8080/director/deployments').
-        with(:headers => {'Authorization' => 'fake-token'}).
+        with(:headers => {'Authorization' => token.auth_header}).
         to_return(:body => json_dump(deployments), :status => 200)
     end
 

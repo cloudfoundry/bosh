@@ -130,7 +130,7 @@ CERT
       before { current_sandbox.health_monitor_process.start }
       after { current_sandbox.health_monitor_process.stop }
 
-      it 'ressurects vm' do
+      it 'resurrects vm' do
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
         deploy_from_scratch(no_login: true, env: client_env)
 

@@ -1,16 +1,18 @@
 require 'spec_helper'
 
 describe 'Bhm::Plugins::Resurrector' do
+  include Support::UaaHelpers
+
   let(:options) {
     {
-        'director' => {
-            'endpoint' => 'http://foo.bar.com:25555',
-            'user' => 'user',
-            'password' => 'password',
-            'client_id' => 'client-id',
-            'client_secret' => 'client-secret',
-            'ca_cert' => 'ca-cert'
-        }
+      'director' => {
+        'endpoint' => 'http://foo.bar.com:25555',
+        'user' => 'user',
+        'password' => 'password',
+        'client_id' => 'client-id',
+        'client_secret' => 'client-secret',
+        'ca_cert' => 'ca-cert'
+      }
     }
   }
   let(:plugin) { Bhm::Plugins::Resurrector.new(options) }
@@ -85,8 +87,10 @@ describe 'Bhm::Plugins::Resurrector' do
           allow(CF::UAA::TokenIssuer).to receive(:new).with(
             'uaa-url', 'client-id', 'client-secret', {ssl_ca_file: 'ca-cert'}
           ).and_return(token_issuer)
-          allow(token_issuer).to receive(:client_credentials_grant).and_return(double(:token, auth_header: 'uaa-auth-header'))
+          allow(token_issuer).to receive(:client_credentials_grant).
+            and_return(token)
         end
+        let(:token) { uaa_token_info('fake-token-id') }
 
         it 'uses UAA token' do
           expect(@don).to receive(:melting_down?).and_return(false)
@@ -96,7 +100,7 @@ describe 'Bhm::Plugins::Resurrector' do
           request_data = {
             head: {
               'Content-Type' => 'application/json',
-              'authorization' => 'uaa-auth-header'
+              'authorization' => token.auth_header
             },
             body: '{"jobs":{"j":["i"]}}'
           }
