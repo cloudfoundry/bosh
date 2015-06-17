@@ -345,51 +345,110 @@ describe Bosh::AwsCloud::InstanceManager do
       end
 
       describe 'security_groups_parameter' do
+        let(:sg_name_1) { 'yay' }
+        let(:sg_name_2) { 'aya' }
+        let(:sg_name_3) { 'default' }
+        let(:sg_id_1) { 'sg-12345678' }
+        let(:sg_id_2) { 'sg-23456789' }
+        let(:sg_id_3) { 'sg-01234567' }
+
+        let(:networks_spec) do
+          {
+              'network' => {'cloud_properties' => {}},
+              'artwork' => {'cloud_properties' => {}}
+          }
+        end
+
+        let(:instance_options) do
+          {
+              'aws' => {}
+          }
+        end
+
+        before do
+          allow(aws_instances).to receive(:create) { aws_instance }
+        end
+
+        def verify_security_group_parameter(parameter_name, parameter_value)
+          create_instance
+
+          expect(aws_instances).to have_received(:create) do |instance_params|
+            expect(instance_params[parameter_name]).to match_array(parameter_value)
+          end
+        end
+
+        def verify_error
+          expect{
+            create_instance
+          }.to raise_error Bosh::Clouds::CloudError, /security group names and ids can not be used together in security groups/
+        end
+
         context 'when the networks specs have security groups' do
-          let(:networks_spec) do
-            {
-              'network' => {'cloud_properties' => {'security_groups' => 'yay'}},
-              'artwork' => {'cloud_properties' => {'security_groups' => ['yay', 'aya']}}
-            }
+          it 'returns a unique list of the specified group names' do
+            networks_spec['network']['cloud_properties']['security_groups'] = sg_name_1
+            networks_spec['artwork']['cloud_properties']['security_groups'] = [sg_name_1, sg_name_2]
+
+            verify_security_group_parameter(:security_groups, [sg_name_1, sg_name_2])
           end
 
-          it 'returns a unique list of the specified group names' do
-            allow(aws_instances).to receive(:create) { aws_instance }
+          it 'returns a unique list of the specified group ids' do
+            networks_spec['network']['cloud_properties']['security_groups'] = sg_id_1
+            networks_spec['artwork']['cloud_properties']['security_groups'] = [sg_id_1, sg_id_2]
 
-            create_instance
+            verify_security_group_parameter(:security_group_ids, [sg_id_1, sg_id_2])
+          end
 
-            expect(aws_instances).to have_received(:create) do |instance_params|
-              expect(instance_params[:security_groups]).to match_array(['yay', 'aya'])
-            end
+          it 'raises an error when both ids and names are specified in security_groups' do
+            networks_spec['network']['cloud_properties']['security_groups'] = sg_name_1
+            networks_spec['artwork']['cloud_properties']['security_groups'] = [sg_id_1, sg_id_2]
+
+            verify_error
           end
         end
 
         context 'when aws options have default_security_groups' do
-          let(:instance_options) do
-            {
-              'aws' => {
-                'default_security_groups' => ['default_1', 'default_2'],
-              }
-            }
-          end
-
-          let(:networks_spec) do
-            {
-              'default' => {
-                'type' => 'dynamic',
-                'dns' => 'foo'
-              }
-            }
-          end
-
           it 'returns the list of default AWS group names' do
-            allow(aws_instances).to receive(:create) { aws_instance }
+            instance_options['aws']['default_security_groups'] = [sg_name_1, sg_name_3]
 
-            create_instance
+            verify_security_group_parameter(:security_groups, [sg_name_1, sg_name_3])
+          end
 
-            expect(aws_instances).to have_received(:create) do |instance_params|
-              expect(instance_params[:security_groups]).to match_array(['default_1', 'default_2'])
-            end
+          it 'returns the list of default AWS group ids' do
+            instance_options['aws']['default_security_groups'] = [sg_id_1, sg_id_3]
+
+            verify_security_group_parameter(:security_group_ids, [sg_id_1, sg_id_3])
+          end
+
+          it 'raises an error when default_security_groups contains both ids and names' do
+            instance_options['aws']['default_security_groups'] = [sg_name_3, sg_id_3]
+
+            verify_error
+          end
+        end
+
+        context 'when aws options have both security_groups and default_security_groups configured' do
+          it 'returns a unique list of the specified group names' do
+            networks_spec['network']['cloud_properties']['security_groups'] = sg_name_1
+            networks_spec['artwork']['cloud_properties']['security_groups'] = [sg_name_1, sg_name_2]
+            instance_options['aws']['default_security_groups'] = [sg_name_3]
+
+            verify_security_group_parameter(:security_groups, [sg_name_1, sg_name_2])
+          end
+
+          it 'returns a unique list of the specified group ids' do
+            networks_spec['network']['cloud_properties']['security_groups'] = sg_id_1
+            networks_spec['artwork']['cloud_properties']['security_groups'] = [sg_id_1, sg_id_2]
+            instance_options['aws']['default_security_groups'] = [sg_id_3]
+
+            verify_security_group_parameter(:security_group_ids, [sg_id_1, sg_id_2])
+          end
+
+          it 'raises an error when both ids and names are specified in security_groups' do
+            networks_spec['network']['cloud_properties']['security_groups'] = sg_name_1
+            networks_spec['artwork']['cloud_properties']['security_groups'] = [sg_id_1, sg_id_2]
+            instance_options['aws']['default_security_groups'] = [sg_id_3]
+
+            verify_error
           end
         end
       end

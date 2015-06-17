@@ -16,7 +16,7 @@ These options are passed to the AWS CPI when it is instantiated.
 * `default_key_name` (required)
   default AWS ssh key name to assign to created virtual machines
 * `default_security_groups` (required)
-  list of AWS security group to assign to created virtual machines
+  list of AWS security group names or ids to assign to created virtual machines, note that name and id can not be used together in this attribute.
 * `ec2_private_key` (required)
   local path to the ssh private key, must match `default_key_name`
 * `region` (required)
@@ -65,6 +65,9 @@ These options are specified under `cloud_options` in the `networks` section of a
 * `type` (required)
   can be either `dynamic` for a DHCP assigned IP by AWS, or `vip` to use an Elastic IP (which needs to be already
   allocated)
+
+* `security_groups` (optional)
+  the AWS security group names or ids to assign to VMs. If not specified, it'll use the default security groups set at the AWS options. Note that name and id can not be used together in this attribute.
 
 ## Example
 

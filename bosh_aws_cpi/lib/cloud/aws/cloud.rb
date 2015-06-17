@@ -398,7 +398,7 @@ module Bosh::AwsCloud
     # we need to send the InstanceUpdater a request to do it for us
     def compare_security_groups(instance, network_spec)
       actual_group_names = instance.security_groups.collect { |sg| sg.name }
-      specified_group_names = extract_security_group_names(network_spec)
+      specified_group_names = extract_security_groups(network_spec)
       if specified_group_names.empty?
         new_group_names = Array(aws_properties["default_security_groups"])
       else
