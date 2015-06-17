@@ -40,7 +40,7 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     }
 
     if volume_id
-      params[:block_device_mapping] = [{ :volume_size => "",
+      params[:block_device_mapping] = [{ :volume_size => 2048,
         :volume_id => volume_id,
         :delete_on_termination => "1",
         :device_name => "/dev/vda" }]
