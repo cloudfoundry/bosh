@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 check_param() {
   local name=$1
   local value=$(eval echo '$'$name)
