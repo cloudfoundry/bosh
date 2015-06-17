@@ -4,7 +4,6 @@ module Bosh::Director
   class InstanceUpdater
     include DnsHelper
 
-    UPDATE_STEPS = 7
     WATCH_INTERVALS = 10
 
     attr_reader :current_state
@@ -33,55 +32,59 @@ module Bosh::Director
       @agent = AgentClient.with_defaults(@vm.agent_id)
     end
 
-    def step
-      yield
-      report_progress
+    def report_progress(num_steps)
+      @event_log_task.advance(100.0 / num_steps)
     end
 
-    def report_progress
-      @event_log_task.advance(100.0 / update_steps())
-    end
-
-    def update_steps
-      @instance.job_changed? || @instance.packages_changed? ? UPDATE_STEPS + 1 : UPDATE_STEPS
-    end
-
-    def update(options = {})
+    def update_steps(options = {})
+      steps = []
       @canary = options.fetch(:canary, false)
-
-      @logger.info("Updating instance #{@instance}, changes: #{@instance.changes.to_a.join(', ')}")
-      trusted_certs_change_only = trusted_certs_change_only?
 
       # Optimization to only update DNS if nothing else changed.
       if dns_change_only?
-        update_dns
-        return
+        steps << proc { update_dns }
+        return steps
       end
 
-      step { Preparer.new(@instance, agent, @logger).prepare }
-      step { stop }
-      step { take_snapshot }
+      steps << proc { Preparer.new(@instance, agent, @logger).prepare }
+      steps << proc { stop }
+      steps << proc { take_snapshot }
 
       if @target_state == "detached"
-        vm_updater.detach
-        return
+        steps << proc { vm_updater.detach }
+        return steps
       end
 
-      step { recreate_vm(nil) }
-      step { update_networks }
-      step { update_dns }
-      step { update_persistent_disk }
-      step { update_settings }
+      steps << proc { recreate_vm(nil) }
+      steps << proc { update_networks }
+      steps << proc { update_dns }
+      steps << proc { update_persistent_disk }
+      steps << proc { update_settings }
 
-      if !trusted_certs_change_only
-        VmMetadataUpdater.build.update(@vm, {})
-        step { apply_state(@instance.spec) }
-        RenderedJobTemplatesCleaner.new(@instance.model, @blobstore).clean
+      if !trusted_certs_change_only?
+        steps << proc {
+          VmMetadataUpdater.build.update(@vm, {})
+          apply_state(@instance.spec)
+          RenderedJobTemplatesCleaner.new(@instance.model, @blobstore).clean
+        }
       end
 
-      start! if need_start?
+      steps << proc { start! if need_start? }
 
-      step { wait_until_running }
+      steps << proc { wait_until_running }
+
+      steps
+    end
+
+    def update(options = {})
+      steps = update_steps(options)
+
+      @logger.info("Updating instance #{@instance}, changes: #{@instance.changes.to_a.join(', ')}")
+
+      for step in steps
+        step.call
+        report_progress(steps.length)
+      end
 
       if @target_state == "started" && current_state["job_state"] != "running"
         raise AgentJobNotRunning, "`#{@instance}' is not running after update"
