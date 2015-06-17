@@ -116,21 +116,26 @@ blobstore:
 
 trusted_certs: <%= JSON.dump(p('director.trusted_certs')) %>
 
-<% if_p('director.user_management') do %>
-user_management:
-   provider: <%= p('director.user_management.provider') %>
-   options:
-     <% if_p('director.user_management.options.url') do |url| %>
-     url: <%= url %>
-     <% end %>
-     <% if_p('director.user_management.options.symmetric_key') do |symmetric_key| %>
-     symmetric_key: <%= symmetric_key %>
-     <% end %>
-     <% if_p('director.user_management.options.public_key') do |public_key| %>
-     public_key: |
-<%= '        ' + public_key.gsub("\n", "\n        ") %>
-     <% end %>
-<% end %>
+user_management: <%=
+JSON.dump({
+  provider: p('director.user_management.provider'),
+  options:
+  if p('director.user_management.provider') == 'uaa'
+    options = {
+       url: p('director.user_management.options.url'),
+       symmetric_key: p('director.user_management.options.symmetric_key', nil),
+       public_key: p('director.user_management.options.public_key', nil)
+    }
+    if options[:symmetric_key].nil? && options[:public_key].nil?
+      raise 'UAA provider requires symmetric or public key'
+    end
+
+    options
+  else
+    {}
+  end
+})
+%>
 
 <% if_p('compiled_package_cache.options.bucket_name',
         'compiled_package_cache.options.access_key_id',

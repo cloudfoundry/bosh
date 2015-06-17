@@ -356,9 +356,20 @@ describe 'director.yml.erb.erb' do
         'options' => {
           'url' => 'fake-url',
           'symmetric_key' => 'fake-symmetric-key',
-          'public_key' => "fake-public-key\n",
+          'public_key' => 'fake-public-key',
         }
       })
+    end
+
+    context 'when user does not provide UAA key' do
+      before do
+        deployment_manifest_fragment['properties']['director']['user_management']['options'].delete('symmetric_key')
+        deployment_manifest_fragment['properties']['director']['user_management']['options'].delete('public_key')
+      end
+
+      it 'raises' do
+        expect { parsed_yaml }.to raise_error('UAA provider requires symmetric or public key')
+      end
     end
 
     it 'renders aws properties' do

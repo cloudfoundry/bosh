@@ -97,13 +97,10 @@ properties:
     default: local
   director.user_management.options.url:
     description: 'User management provider URL'
-    default: ''
   director.user_management.options.symmetric_key:
     description: 'Symmetric key to verify Uaa token'
-    default: ''
   director.user_management.options.public_key:
     description: 'Public key to verify Uaa token when token is encoded with asymmetric encryption'
-    default: ''
 
   redis.address:
     description: Address of the redis server
