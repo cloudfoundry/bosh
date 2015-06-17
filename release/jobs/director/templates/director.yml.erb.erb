@@ -117,24 +117,28 @@ blobstore:
 trusted_certs: <%= JSON.dump(p('director.trusted_certs')) %>
 
 user_management: <%=
-JSON.dump({
+user_management = {
   provider: p('director.user_management.provider'),
-  options:
-  if p('director.user_management.provider') == 'uaa'
-    options = {
-       url: p('director.user_management.options.url'),
-       symmetric_key: p('director.user_management.options.symmetric_key', nil),
-       public_key: p('director.user_management.options.public_key', nil)
-    }
-    if options[:symmetric_key].nil? && options[:public_key].nil?
-      raise 'UAA provider requires symmetric or public key'
-    end
+}
 
-    options
-  else
-    {}
+if p('director.user_management.provider') == 'uaa'
+  options = {
+     url: p('director.user_management.uaa.url'),
+     symmetric_key: p('director.user_management.uaa.symmetric_key', nil),
+     public_key: p('director.user_management.uaa.public_key', nil)
+  }
+  if options[:symmetric_key].nil? && options[:public_key].nil?
+    raise 'UAA provider requires symmetric or public key'
   end
-})
+
+  user_management[:uaa] = options
+else
+  user_management[:local] = {
+    users: p('director.user_management.local.users')
+  }
+end
+
+JSON.dump(user_management)
 %>
 
 <% if_p('compiled_package_cache.options.bucket_name',

@@ -116,7 +116,7 @@ module Bosh::Director
 
       context 'when configured to use UAA for user management' do
         let(:test_config) { base_config.merge(
-          'user_management' => {'provider' => 'uaa', 'options' => {
+          'user_management' => {'provider' => 'uaa', 'uaa' => {
             'url' => 'http://localhost:8080/uaa',
             'key' => 'super secret!',
           }}

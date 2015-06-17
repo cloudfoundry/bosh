@@ -144,7 +144,7 @@ describe Bosh::Director::Config do
         let(:provider_options) { {'symmetric_key' => 'some-key', 'url' => 'some-url'} }
         let(:token) { CF::UAA::TokenCoder.new(skey: 'some-key').encode(payload) }
         let(:payload) { {'user_name' => 'larry', 'aud' => ['bosh_cli'], 'scope' => ['bosh.admin']} }
-        before { test_config['user_management']['options'] = provider_options }
+        before { test_config['user_management']['uaa'] = provider_options }
 
         it 'creates a UAAIdentityProvider' do
           expect(config.identity_provider).to be_a(Bosh::Director::Api::UAAIdentityProvider)

@@ -336,7 +336,7 @@ describe 'director.yml.erb.erb' do
       }
       deployment_manifest_fragment['properties']['director']['user_management'] = {
         'provider' => 'uaa',
-        'options' => {
+        'uaa' => {
           'url' => 'fake-url',
           'symmetric_key' => 'fake-symmetric-key',
           'public_key' => 'fake-public-key',
@@ -353,7 +353,7 @@ describe 'director.yml.erb.erb' do
     it 'sets the user_management provider' do
       expect(parsed_yaml['user_management']).to eq({
         'provider' => 'uaa',
-        'options' => {
+        'uaa' => {
           'url' => 'fake-url',
           'symmetric_key' => 'fake-symmetric-key',
           'public_key' => 'fake-public-key',
@@ -363,8 +363,8 @@ describe 'director.yml.erb.erb' do
 
     context 'when user does not provide UAA key' do
       before do
-        deployment_manifest_fragment['properties']['director']['user_management']['options'].delete('symmetric_key')
-        deployment_manifest_fragment['properties']['director']['user_management']['options'].delete('public_key')
+        deployment_manifest_fragment['properties']['director']['user_management']['uaa'].delete('symmetric_key')
+        deployment_manifest_fragment['properties']['director']['user_management']['uaa'].delete('public_key')
       end
 
       it 'raises' do

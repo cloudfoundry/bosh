@@ -83,7 +83,7 @@ cloud:
 user_management:
   provider: <%= user_authentication %>
   <% if user_authentication == 'uaa' %>
-  options:
+  uaa:
     symmetric_key: uaa-secret-key
     # matches public key in asymmetric/uaa.yml
     public_key: |
@@ -95,7 +95,7 @@ user_management:
       -----END PUBLIC KEY-----
     url: <%= uaa_url %>
   <% else %>
-  options:
+  local:
     users:
     - {name: test, password: test}
     - {name: hm, password: pass}

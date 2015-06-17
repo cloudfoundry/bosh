@@ -44,6 +44,6 @@ backup_destination:
     secret_access_key: zxcv
 user_management:
   provider: local
-  options:
+  local:
     users:
     - {name: admin, password: admin}

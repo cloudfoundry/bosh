@@ -95,12 +95,14 @@ properties:
   director.user_management.provider:
     description: 'User management implementation (local|uaa)'
     default: local
-  director.user_management.options.url:
-    description: 'User management provider URL'
-  director.user_management.options.symmetric_key:
+  director.user_management.uaa.url:
+    description: 'Uaa URL'
+  director.user_management.uaa.symmetric_key:
     description: 'Symmetric key to verify Uaa token'
-  director.user_management.options.public_key:
+  director.user_management.uaa.public_key:
     description: 'Public key to verify Uaa token when token is encoded with asymmetric encryption'
+  director.user_management.local.users:
+    description: 'List of users that can authenticate with director in non-Uaa mode'
 
   redis.address:
     description: Address of the redis server
