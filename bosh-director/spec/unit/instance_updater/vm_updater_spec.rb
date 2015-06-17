@@ -46,7 +46,6 @@ module Bosh::Director
 
           # Re-renders job templates because agent can return changed dynamic network configuration
           expect(instance).to receive(:apply_vm_state).with(no_args).ordered
-          expect(job_renderer).to receive(:render_job_instance).with(instance).ordered
 
           expect(updater.update(new_disk_cid)).to eq([new_vm_model, new_agent_client])
         end
@@ -100,7 +99,6 @@ module Bosh::Director
 
               # Re-renders job templates because agent can return changed dynamic network configuration
               expect(instance).to receive(:apply_vm_state).with(no_args)
-              expect(job_renderer).to receive(:render_job_instance).with(instance)
 
               expect { updater.update(new_disk_cid) }.to_not raise_error
             end

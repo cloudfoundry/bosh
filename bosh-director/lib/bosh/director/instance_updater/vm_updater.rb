@@ -42,8 +42,12 @@ module Bosh::Director
       end
 
       @instance.apply_vm_state
+      
+      #TODO: we only render the templates again because dynamic networking may have
+      #      asssigned an ip address, so the state we got back from the agent may
+      #      have mutated the instance.spec.  Ideally, we clean up the agent interaction
+      #      so that we only have to do this once.
       @job_renderer.render_job_instance(@instance)
-
       [@vm_model, @agent_client]
     end
 

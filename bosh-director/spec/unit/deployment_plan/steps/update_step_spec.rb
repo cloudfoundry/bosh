@@ -77,20 +77,6 @@ module Bosh::Director
                                       .with([instance_tuple], event_log_stage)
       end
 
-      def it_binds_instance_vms
-        binder = instance_double('Bosh::Director::DeploymentPlan::InstanceVmBinder')
-        allow(DeploymentPlan::InstanceVmBinder).to receive(:new).with(event_log).and_return(binder)
-        expect(binder).to receive(:bind_instance_vms).with([instance1, instance2, instance3])
-      end
-
-      def it_binds_configuration
-        job_renderer = instance_double('Bosh::Director::JobRenderer')
-        allow(JobRenderer).to receive(:new).with(job1, blobstore).and_return(job_renderer)
-        allow(JobRenderer).to receive(:new).with(job2, blobstore).and_return(job_renderer)
-        expect(event_log).to receive(:begin_stage).with('Preparing configuration', 1)
-        expect(job_renderer).to receive(:render_job_instances).with(no_args).twice
-      end
-
       it 'runs deployment plan update stages in the correct order' do
         allow(event_log).to receive(:track).and_yield
         allow(deployment_plan).to receive(:jobs_starting_on_deploy).with(no_args).and_return([job1, job2])
@@ -99,8 +85,6 @@ module Bosh::Director
         it_deletes_unneeded_instances.ordered
         expect(resource_pools).to receive(:update).with(no_args).ordered
         expect(base_job).to receive(:task_checkpoint).with(no_args).ordered
-        it_binds_instance_vms.ordered
-        it_binds_configuration.ordered
         expect(multi_job_updater).to receive(:run).with(base_job, deployment_plan, [job1, job2]).ordered
         expect(deployment_plan).to receive(:persist_updates!).ordered
         subject.perform
