@@ -156,9 +156,9 @@ module Bosh::AwsCloud
     end
 
     def validate_and_prepare_security_groups_parameter(instance_params, security_groups)
-      return if security_groups == nil || security_groups.size == 0
+      return if security_groups.nil? || security_groups.empty?
 
-      is_id = is_security_group_id?(security_groups[0])
+      is_id = is_security_group_id?(security_groups.first)
 
       security_groups.drop(1).each do |security_group|
         unless is_security_group_id?(security_group) == is_id
@@ -174,7 +174,7 @@ module Bosh::AwsCloud
     end
 
     def is_security_group_id?(security_group)
-      security_group.start_with?('sg-') && security_group.size == 11? true:false
+      security_group.start_with?('sg-') && security_group.size == 11
     end
   end
 end
