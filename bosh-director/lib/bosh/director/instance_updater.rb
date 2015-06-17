@@ -81,7 +81,7 @@ module Bosh::Director
 
       @logger.info("Updating instance #{@instance}, changes: #{@instance.changes.to_a.join(', ')}")
 
-      for step in steps
+      steps.each do |step|
         step.call
         report_progress(steps.length)
       end
