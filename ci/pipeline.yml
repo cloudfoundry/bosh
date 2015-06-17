@@ -1,4 +1,50 @@
 ---
+groups:
+  - name: bosh
+    jobs:
+      - unit-1.9
+      - unit-2.1
+      - integration-1.9-mysql
+      - integration-1.9-postgres
+      - integration-2.1-mysql
+      - integration-2.1-postgres
+      - publish-coverage
+      - promote-candidate
+
+  - name: 1.9
+    jobs:
+      - unit-1.9
+      - integration-1.9-mysql
+      - integration-1.9-postgres
+      - publish-coverage
+      - promote-candidate
+
+  - name: 2.1
+    jobs:
+      - unit-2.1
+      - integration-2.1-mysql
+      - integration-2.1-postgres
+      - publish-coverage
+      - promote-candidate
+
+  - name: mysql
+    jobs:
+      - unit-1.9
+      - unit-2.1
+      - integration-1.9-mysql
+      - integration-2.1-mysql
+      - publish-coverage
+      - promote-candidate
+
+  - name: postgres
+    jobs:
+      - unit-1.9
+      - unit-2.1
+      - integration-1.9-postgres
+      - integration-2.1-postgres
+      - publish-coverage
+      - promote-candidate
+
 jobs:
   - name: unit-1.9
     public: true
