@@ -7,7 +7,7 @@ module Bosh::Dev::Sandbox
     ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
     DIRECTOR_UUID = 'deadbeef'
 
-    DIRECTOR_CONFIG = 'director_test.yml'
+    DEFAULT_DIRECTOR_CONFIG = 'director_test.yml'
     DIRECTOR_CONF_TEMPLATE = File.join(ASSETS_DIR, 'director_test.yml.erb')
 
     DIRECTOR_PATH = File.expand_path('bosh-director', REPO_ROOT)

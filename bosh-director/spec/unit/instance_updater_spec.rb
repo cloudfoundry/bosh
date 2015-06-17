@@ -56,6 +56,7 @@ module Bosh::Director
     let(:persistent_disk_changed) { false }
     let(:networks_changed) { false }
     let(:dns_changed) { false }
+    let(:trusted_certs_changed) { false }
     let(:disk_currently_attached) { false }
     let(:disk_size) { 0 }
     let(:instance) do
@@ -71,6 +72,7 @@ module Bosh::Director
              persistent_disk_changed?: persistent_disk_changed,
              networks_changed?: networks_changed,
              dns_changed?: dns_changed,
+             trusted_certs_changed?: trusted_certs_changed,
              spec: instance_spec,
              disk_currently_attached?: disk_currently_attached,
              network_settings: double('NetworkSettings'),

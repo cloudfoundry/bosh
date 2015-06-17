@@ -40,6 +40,8 @@ db: &bosh_db
 dns:
   db: *bosh_db
 
+trusted_certs: <%= trusted_certs %>
+
 blobstore: &director_blobstore
   provider: local
   options:

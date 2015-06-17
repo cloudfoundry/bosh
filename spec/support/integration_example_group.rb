@@ -126,6 +126,19 @@ module IntegrationExampleGroup
     Regexp.compile(Regexp.escape(string))
   end
 
+  def extract_agent_messages(nats_messages, agent_id)
+    nats_messages.select { |val|
+      # messages for the agent we care about
+      val[0] == "agent.#{agent_id}"
+    }.map { |val|
+      # parse JSON payload
+      JSON.parse(val[1])
+    }.flat_map { |val|
+      # extract method from messages that have it
+      val["method"] ? [val["method"]] : []
+    }
+  end
+
   def format_output(out)
     out.gsub(/^\s*/, '').gsub(/\s*$/, '')
   end

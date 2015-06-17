@@ -50,6 +50,7 @@ module Bosh::Director
       @canary = options.fetch(:canary, false)
 
       @logger.info("Updating instance #{@instance}, changes: #{@instance.changes.to_a.join(', ')}")
+      trusted_certs_change_only = trusted_certs_change_only?
 
       # Optimization to only update DNS if nothing else changed.
       if dns_change_only?
@@ -70,12 +71,13 @@ module Bosh::Director
       step { update_networks }
       step { update_dns }
       step { update_persistent_disk }
+      step { update_settings }
 
-      VmMetadataUpdater.build.update(@vm, {})
-
-      step { apply_state(@instance.spec) }
-
-      RenderedJobTemplatesCleaner.new(@instance.model, @blobstore).clean
+      if !trusted_certs_change_only
+        VmMetadataUpdater.build.update(@vm, {})
+        step { apply_state(@instance.spec) }
+        RenderedJobTemplatesCleaner.new(@instance.model, @blobstore).clean
+      end
 
       start! if need_start?
 
@@ -131,6 +133,10 @@ module Bosh::Director
 
     def dns_change_only?
       @instance.changes.include?(:dns) && @instance.changes.size == 1
+    end
+
+    def trusted_certs_change_only?
+      @instance.changes.include?(:trusted_certs) && @instance.changes.size == 1
     end
 
     def stop
@@ -266,6 +272,13 @@ module Bosh::Director
     def update_networks
       network_updater = NetworkUpdater.new(@instance, @vm, agent, vm_updater, @cloud, @logger)
       @vm, @agent = network_updater.update
+    end
+
+    def update_settings
+      if @instance.trusted_certs_changed?
+        @agent.update_settings(Config.trusted_certs)
+        @vm.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
+      end
     end
 
     # Returns an array of wait times distributed

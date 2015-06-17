@@ -22,8 +22,6 @@ module Bosh::Dev::Sandbox
 
     ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
 
-    DIRECTOR_CONFIG = 'director_test.yml'
-
     REDIS_CONFIG = 'redis_test.conf'
     REDIS_CONF_TEMPLATE = File.join(ASSETS_DIR, 'redis_test.conf.erb')
 
@@ -50,6 +48,8 @@ module Bosh::Dev::Sandbox
     attr_reader :cpi
 
     attr_reader :nats_log_path
+
+    attr_accessor :trusted_certs
 
     def self.from_env
       db_opts = {
@@ -90,7 +90,7 @@ module Bosh::Dev::Sandbox
 
       @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, @uaa_service.port, @logger)
 
-      director_config = sandbox_path(DirectorService::DIRECTOR_CONFIG)
+      director_config = sandbox_path(DirectorService::DEFAULT_DIRECTOR_CONFIG)
       director_tmp_path = sandbox_path('boshdir')
       @director_service = DirectorService.new(director_ruby_port, redis_port, base_log_path, director_tmp_path, director_config, @logger)
       setup_heath_monitor
@@ -155,6 +155,7 @@ module Bosh::Dev::Sandbox
         external_cpi_config: external_cpi_config,
         cloud_storage_dir: cloud_storage_dir,
         user_authentication: @user_authentication,
+        trusted_certs: @trusted_certs,
       }
       DirectorConfig.new(attributes, @port_provider)
     end
@@ -266,7 +267,7 @@ module Bosh::Dev::Sandbox
         name: 'test-cpi',
         exec_path: File.join(REPO_ROOT, 'bosh-director', 'bin', 'dummy_cpi'),
         job_path: sandbox_path(EXTERNAL_CPI),
-        config_path: sandbox_path(DIRECTOR_CONFIG),
+        config_path: sandbox_path(DirectorService::DEFAULT_DIRECTOR_CONFIG),
         env_path: ENV['PATH']
       }
     end

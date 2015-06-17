@@ -9,6 +9,7 @@ module Bosh::Spec
       @agents_base_dir = agents_base_dir
       @director_nats_port = director_nats_port
       @logger = logger
+      @nats_recording = []
     end
 
     def vms(options={})
@@ -57,6 +58,27 @@ module Bosh::Spec
 
     def vms_details(options = {})
       parse_table(@runner.run('vms --details', options))
+    end
+
+    def start_recording_nats
+      # have to read NATS port on main thread, or the new thread hangs on startup (?!)
+      nats_uri = "nats://localhost:#{@director_nats_port}"
+
+      Thread.new do
+        EventMachine.run do
+          @nats_client = NATS.connect(uri: nats_uri) do
+            @nats_client.subscribe('>') do |msg, reply, sub|
+              @nats_recording << [sub, msg]
+            end
+          end
+        end
+      end
+    end
+
+    def finish_recording_nats
+      @nats_client.close
+      EventMachine.stop
+      @nats_recording
     end
 
     private
