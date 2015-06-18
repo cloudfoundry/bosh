@@ -133,8 +133,9 @@ if p('director.user_management.provider') == 'uaa'
 
   user_management[:uaa] = options
 else
+  # making optional for backwards compatibility with micro bosh plugin
   user_management[:local] = {
-    users: p('director.user_management.local.users')
+    users: p('director.user_management.local.users', [])
   }
 end
 
