@@ -20,7 +20,6 @@ module Bosh::Director
           @snapshot_manager = SnapshotManager.new
           @stemcell_manager = StemcellManager.new
           @task_manager = TaskManager.new
-          @user_manager = UserManager.new
           @vm_state_manager = VmStateManager.new
           @logger = Config.logger
         end

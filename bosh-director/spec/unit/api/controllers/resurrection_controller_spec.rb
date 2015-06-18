@@ -6,7 +6,7 @@ module Bosh::Director
     describe Controllers::ResurrectionController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(Config.new({})) }
+      subject(:app) { described_class.new(config) }
       let(:temp_dir) { Dir.mktmpdir}
       let(:test_config) do
         blobstore_dir = File.join(temp_dir, 'blobstore')
@@ -21,11 +21,8 @@ module Bosh::Director
         config['snapshots']['enabled'] = true
         config
       end
-
-      before do
-        basic_authorize 'admin', 'admin'
-        App.new(Config.load_hash(test_config))
-      end
+      let(:config) { Config.load_hash(test_config) }
+      before { basic_authorize 'admin', 'admin' }
 
       after do
         FileUtils.rm_rf(temp_dir)

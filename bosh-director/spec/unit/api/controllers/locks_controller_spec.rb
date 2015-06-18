@@ -7,7 +7,7 @@ module Bosh::Director
     include Rack::Test::Methods
 
     subject(:app) { described_class.new(config) }
-    let(:config) { Config.new({}) }
+    let(:config) { Config.load_hash(Psych.load(spec_asset('test-director-config.yml'))) }
     let(:redis) { double('Redis') }
     before { allow(Api::ResourceManager).to receive(:new) }
     before { allow(BD::Config).to receive(:redis).and_return(redis) }

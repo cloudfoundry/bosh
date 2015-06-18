@@ -3,9 +3,9 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Api::UserManager do
+  describe Api::DatabaseUserManager do
     before do
-      @user_manager = Api::UserManager.new
+      @user_manager = Api::DatabaseUserManager.new
     end
 
     describe :authenticate do

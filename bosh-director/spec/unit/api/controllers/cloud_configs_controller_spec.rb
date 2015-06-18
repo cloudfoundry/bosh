@@ -7,8 +7,7 @@ module Bosh::Director
     include Rack::Test::Methods
 
     subject(:app) { Api::Controllers::CloudConfigsController.new(config) }
-
-    let(:config) { Config.new({}) }
+    let(:config) { Config.load_hash(Psych.load(spec_asset('test-director-config.yml'))) }
 
     describe 'POST', '/' do
       it 'creates a new cloud config' do

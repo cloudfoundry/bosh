@@ -5,7 +5,7 @@ describe "cli cloud config", type: :integration do
 
   it "can upload a cloud config" do
     bosh_runner.run("target #{current_sandbox.director_url}")
-    bosh_runner.run("login admin admin")
+    bosh_runner.run("login test test")
     Dir.mktmpdir do |tmpdir|
       cloud_config_filename = File.join(tmpdir, 'cloud_config.yml')
       File.write(cloud_config_filename, Psych.dump(Bosh::Spec::Deployments.simple_cloud_config))
@@ -19,7 +19,7 @@ describe "cli cloud config", type: :integration do
     # not logged in
     expect(bosh_runner.run("update cloud-config some/path", failure_expected: true)).to include("Please log in first")
 
-    bosh_runner.run("login admin admin")
+    bosh_runner.run("login test test")
 
     # no file
     expect(bosh_runner.run("update cloud-config /some/nonsense/file", failure_expected: true)).to include("Cannot find file `/some/nonsense/file'")
@@ -34,7 +34,7 @@ describe "cli cloud config", type: :integration do
 
   it "can download a cloud config" do
     bosh_runner.run("target #{current_sandbox.director_url}")
-    bosh_runner.run("login admin admin")
+    bosh_runner.run("login test test")
 
     # none present yet
     expect(bosh_runner.run("cloud-config")).to eq("")

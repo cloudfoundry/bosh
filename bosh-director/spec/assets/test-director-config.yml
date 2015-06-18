@@ -42,3 +42,8 @@ backup_destination:
     bucket_name: foo
     access_key_id: asdf
     secret_access_key: zxcv
+user_management:
+  provider: local
+  options:
+    users:
+    - {name: admin, password: admin}

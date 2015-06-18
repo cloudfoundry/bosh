@@ -6,7 +6,8 @@ module Bosh::Director
     describe Controllers::BackupsController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(Config.new({})) }
+      subject(:app) { described_class.new(config) }
+      let(:config) { Config.load_hash(test_config) }
       let(:temp_dir) { Dir.mktmpdir}
       let(:test_config) {
         blobstore_dir = File.join(temp_dir, 'blobstore')
@@ -21,8 +22,6 @@ module Bosh::Director
         config['snapshots']['enabled'] = true
         config
       }
-
-      before { App.new(Config.load_hash(test_config)) }
 
       after { FileUtils.rm_rf(temp_dir) }
 
@@ -46,7 +45,6 @@ module Bosh::Director
       describe 'API calls' do
         before(:each) { basic_authorize 'admin', 'admin' }
 
-
         describe 'snapshots' do
           before do
             deployment = Models::Deployment.make(name: 'mycloud')
@@ -63,6 +61,8 @@ module Bosh::Director
 
           describe 'backup' do
             describe 'creating' do
+              before { App.new(config) }
+
               it 'returns a successful response' do
                 post '/'
                 expect_redirect_to_queued_task(last_response)

@@ -6,8 +6,9 @@ module Bosh::Director
     describe Controllers::PackagesController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(Config.new({})) }
+      subject(:app) { described_class.new(config) }
       before { allow(Api::ResourceManager).to receive(:new) }
+      let(:config) { Config.load_hash(Psych.load(spec_asset('test-director-config.yml'))) }
 
       describe 'POST', '/matches' do
         def perform

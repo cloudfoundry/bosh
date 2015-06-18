@@ -3,7 +3,8 @@ require 'rack/test'
 
 module Bosh::Director
   describe Api::LocalIdentityProvider do
-    subject(:identity_provider) { Api::LocalIdentityProvider.new }
+    subject(:identity_provider) { Api::LocalIdentityProvider.new({'users' => users}, 'fake-uuid') }
+    let(:users) { [{'name' => 'admin', 'password' => 'admin'}] }
     let(:credentials) do
       {
         :admin => 'Basic YWRtaW46YWRtaW4=',

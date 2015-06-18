@@ -47,14 +47,14 @@ describe 'cli: target', type: :integration do
 
   it 'keeps track of user associated with target' do
     bosh_runner.run("target #{current_sandbox.director_url} foo")
-    bosh_runner.run('login admin admin')
+    bosh_runner.run('login test test')
 
     bosh_runner.run("target https://0.0.0.0:#{current_sandbox.director_port} bar")
 
-    bosh_runner.run('login admin admin')
-    expect(bosh_runner.run('status')).to match(/user\s+admin/i)
+    bosh_runner.run('login test test')
+    expect(bosh_runner.run('status')).to match(/user\s+test/i)
 
     bosh_runner.run('target foo')
-    expect(bosh_runner.run('status')).to match(/user\s+admin/i)
+    expect(bosh_runner.run('status')).to match(/user\s+test/i)
   end
 end

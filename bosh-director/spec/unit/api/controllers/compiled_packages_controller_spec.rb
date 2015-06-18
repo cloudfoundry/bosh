@@ -8,9 +8,10 @@ module Bosh::Director
   describe Api::Controllers::CompiledPackagesController do
     include Rack::Test::Methods
 
-    subject(:app) { described_class.new(Config.new({}), Api::CompiledPackageGroupManager.new) }
+    subject(:app) { described_class.new(config, Api::CompiledPackageGroupManager.new) }
     before { allow(Api::ResourceManager).to receive(:new) }
-
+    let(:config) { Config.load_hash(Psych.load(spec_asset('test-director-config.yml'))) }
+    
     describe 'POST', 'export' do
       def perform
         params = {

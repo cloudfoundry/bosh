@@ -2,7 +2,7 @@
 
 module Bosh::Director
   module Api
-    class UserManager
+    class DatabaseUserManager
 
       # @param [String] name User name
       # @return [Models::User] User
@@ -12,6 +12,10 @@ module Bosh::Director
           raise UserNotFound, "User `#{name}' doesn't exist"
         end
         user
+      end
+
+      def supports_api_update?
+        true
       end
 
       def authenticate(username, password)
@@ -50,7 +54,7 @@ module Bosh::Director
       def get_user_from_request(request)
         hash = Yajl::Parser.new.parse(request.body)
         Models::User.new(:username => hash["username"],
-                         :password => hash["password"])
+          :password => hash["password"])
       end
 
       private

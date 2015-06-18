@@ -94,4 +94,9 @@ user_management:
       VRs5sM3o4r1UYUTD6wIDAQAB
       -----END PUBLIC KEY-----
     url: <%= uaa_url %>
+  <% else %>
+  options:
+    users:
+    - {name: test, password: test}
+    - {name: hm, password: pass}
   <% end %>

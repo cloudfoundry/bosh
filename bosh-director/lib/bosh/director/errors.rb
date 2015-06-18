@@ -60,6 +60,7 @@ module Bosh::Director
   UserImmutableUsername = err(20001)
   UserInvalid = err(20002)
   UserNameTaken = err(20003)
+  UserManagementNotSupported = err(20004)
 
   ReleaseAlreadyExists = err(30000)
   ReleaseExistingPackageHashMismatch = err(30001)

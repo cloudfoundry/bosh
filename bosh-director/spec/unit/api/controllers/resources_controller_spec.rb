@@ -21,13 +21,14 @@ module Bosh::Director
         config
       end
 
-      let(:director_app) { App.new(Config.load_hash(test_config)) }
+      let(:director_app) { App.new(config) }
 
       after { FileUtils.rm_rf(temp_dir) }
 
       let(:existing_resource_id) { director_app.blobstores.blobstore.create('some data') }
       let(:resource_manager) { ResourceManager.new(director_app.blobstores.blobstore) }
-      subject(:app) { described_class.new(Config.new({}), resource_manager) }
+      subject(:app) { described_class.new(config, resource_manager) }
+      let(:config) { Config.load_hash(test_config) }
 
       it 'requires auth' do
         get "/#{existing_resource_id}"

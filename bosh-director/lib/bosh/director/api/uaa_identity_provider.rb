@@ -11,6 +11,10 @@ module Bosh
           @token_coder = CF::UAA::TokenCoder.new(skey: options.fetch('symmetric_key', nil), pkey: options.fetch('public_key', nil), scope: [])
         end
 
+        def supports_api_update?
+          false
+        end
+
         def client_info
           {
             'type' => 'uaa',

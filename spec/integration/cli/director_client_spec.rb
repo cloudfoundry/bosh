@@ -7,7 +7,7 @@ describe 'Director Client', type: :integration do
 
   describe '#update_cloud_config' do
     it 'posts a cloud config to the director' do
-      credentials = Bosh::Cli::Client::BasicCredentials.new('admin', 'admin')
+      credentials = Bosh::Cli::Client::BasicCredentials.new('test', 'test')
       director = Bosh::Cli::Client::Director.new(current_sandbox.director_url, credentials)
       cloud_config = Psych.dump(Bosh::Spec::Deployments.simple_cloud_config)
 
@@ -17,7 +17,7 @@ describe 'Director Client', type: :integration do
 
   describe '#get_cloud_config' do
     it 'gets the most recent cloud config from the director' do
-      credentials = Bosh::Cli::Client::BasicCredentials.new('admin', 'admin')
+      credentials = Bosh::Cli::Client::BasicCredentials.new('test', 'test')
       director = Bosh::Cli::Client::Director.new(current_sandbox.director_url, credentials)
       cloud_config = Bosh::Spec::Deployments.simple_cloud_config
       old_manifest = Psych.dump(cloud_config)

@@ -1,10 +1,18 @@
+require 'forwardable'
+
 module Bosh
   module Director
     module Api
       class LocalIdentityProvider
-        def initialize(*_)
-          @user_manager = Bosh::Director::Api::UserManager.new
+        extend Forwardable
+
+        def initialize(options, _)
+          users = options.fetch('users', [])
+          @user_manager = Bosh::Director::Api::UserManagerProvider.new.user_manager(users)
         end
+
+        # User management is supported for backwards compatibility
+        def_delegators :@user_manager, :supports_api_update?, :create_user, :update_user, :delete_user, :get_user_from_request
 
         def client_info
           {'type' => 'basic', 'options' => {}}

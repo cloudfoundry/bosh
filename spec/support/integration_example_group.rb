@@ -52,7 +52,7 @@ module IntegrationExampleGroup
 
   def target_and_login
     bosh_runner.run("target #{current_sandbox.director_url}")
-    bosh_runner.run('login admin admin')
+    bosh_runner.run('login test test')
   end
 
   def upload_cloud_config(options={})

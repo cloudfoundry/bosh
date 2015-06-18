@@ -6,7 +6,7 @@ module Bosh::Director
     describe Controllers::TaskController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(Config.new({})) }
+      subject(:app) { described_class.new(config) }
       let(:temp_dir) { Dir.mktmpdir}
       let(:test_config) do
         blobstore_dir = File.join(temp_dir, 'blobstore')
@@ -22,7 +22,7 @@ module Bosh::Director
         config
       end
 
-      before { App.new(Config.load_hash(test_config)) }
+      let(:config) { Config.load_hash(test_config) }
 
       after { FileUtils.rm_rf(temp_dir) }
 
