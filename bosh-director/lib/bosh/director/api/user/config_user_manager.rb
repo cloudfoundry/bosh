@@ -21,6 +21,8 @@ module Bosh::Director
       end
 
       def authenticate(username, password)
+        return false if username.empty? || password.empty?
+
         user = find_by_name(username)
         user.password == password
       rescue UserNotFound
