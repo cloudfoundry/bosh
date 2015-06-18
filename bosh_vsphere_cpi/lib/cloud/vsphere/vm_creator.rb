@@ -1,6 +1,6 @@
 module VSphereCloud
   class VmCreator
-    def initialize(memory, disk_size_in_mb, cpu, placer, client, cloud_searcher, logger, cpi, agent_env, file_provider, disk_provider)
+    def initialize(memory, disk_size_in_mb, cpu, nested_hardware_virtualization, placer, client, cloud_searcher, logger, cpi, agent_env, file_provider, disk_provider)
       @placer = placer
       @client = client
       @cloud_searcher = cloud_searcher
@@ -9,6 +9,7 @@ module VSphereCloud
       @memory = memory
       @disk_size_in_mb = disk_size_in_mb
       @cpu = cpu
+      @nested_hardware_virtualization = nested_hardware_virtualization
       @agent_env = agent_env
       @file_provider = file_provider
       @disk_provider = disk_provider
@@ -42,7 +43,10 @@ module VSphereCloud
       replicated_stemcell_vm = Resources::VM.new(stemcell_cid, replicated_stemcell_vm_mob, @client, @logger)
       snapshot = replicated_stemcell_properties['snapshot']
 
-      config = VimSdk::Vim::Vm::ConfigSpec.new(memory_mb: @memory, num_cpus: @cpu)
+      config_hash = {memory_mb: @memory, num_cpus: @cpu}
+      config_hash.merge!(nested_hv_enabled: true) if @nested_hardware_virtualization
+
+      config = VimSdk::Vim::Vm::ConfigSpec.new(config_hash)
       config.device_change = []
 
       ephemeral_disk = VSphereCloud::EphemeralDisk.new(@disk_size_in_mb, vm_cid, datastore)

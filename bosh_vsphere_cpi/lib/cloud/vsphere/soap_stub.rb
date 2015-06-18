@@ -22,7 +22,7 @@ module VSphereCloud
       http_client.connect_timeout = 30
       http_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
 
-      VimSdk::Soap::StubAdapter.new(@host, 'vim.version.version6', http_client)
+      VimSdk::Soap::StubAdapter.new(@host, 'vim.version.version8', http_client)
     end
   end
 end
