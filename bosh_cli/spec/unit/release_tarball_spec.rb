@@ -24,6 +24,18 @@ describe Bosh::Cli::ReleaseTarball do
     end
   end
 
+  describe 'release file path contains spaces' do
+    let(:tarball_path) { spec_asset('valid_release  _dev_version.tgz') }
+    let(:unpack_dir) { Dir.mktmpdir }
+    before { FileUtils.copy spec_asset('valid_release.tgz'), tarball_path }
+    after { FileUtils.rm_rf(unpack_dir); FileUtils.rm_rf(tarball_path) }
+
+    it 'correctly unpacks' do
+      result = release_tarball.unpack
+      expect(result).to be true
+    end
+  end
+
   describe 'convert_to_old_format' do
     let(:tarball_path) { spec_asset('valid_release_dev_version.tgz') }
     let(:unpack_dir) { Dir.mktmpdir }

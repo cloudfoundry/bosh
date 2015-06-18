@@ -16,15 +16,14 @@ module Bosh::Cli
     # Unpacks tarball to @unpack_dir, returns true if succeeded, false if failed
     def unpack
       return @unpacked unless @unpacked.nil?
-      `tar -C #{@unpack_dir} -xzf #{@tarball_path} 2>&1`
-      @unpacked = $?.exitstatus == 0
+      exit_success = system("tar", "-C", @unpack_dir, "-xzf", @tarball_path, out: "/dev/null", err: "/dev/null")
+      @unpacked = !!exit_success
     end
 
     # Creates a new tarball from the current contents of @unpack_dir
     def create_from_unpacked(target_path)
       raise "Not unpacked yet!" unless @unpacked
-      `tar -C #{@unpack_dir} -pczf '#{File.expand_path(target_path)}' . 2>&1`
-      $?.exitstatus == 0
+      !!system("tar", "-C", @unpack_dir, "-pczf", File.expand_path(target_path), ".", out: "/dev/null", err: "/dev/null")
     end
 
     def exists?
@@ -76,8 +75,8 @@ module Bosh::Cli
       repacked_path = File.join(tmpdir, 'release-reformat.tgz')
 
       Dir.chdir(@unpack_dir) do
-        `tar -czf #{repacked_path} . 2>&1`
-        return repacked_path if $? == 0
+        exit_success = system("tar", "-czf", repacked_path, ".", out: "/dev/null", err: "/dev/null")
+        return repacked_path if exit_success
       end
     end
 
@@ -117,8 +116,8 @@ module Bosh::Cli
         end
 
         return nil if @skipped == 0
-        `tar -czf #{repacked_path} . 2>&1`
-        return repacked_path if $? == 0
+        exit_success = system("tar", "-czf", repacked_path, ".", out: "/dev/null", err: "/dev/null")
+        return repacked_path if exit_success
       end
     end
 
@@ -233,8 +232,7 @@ module Bosh::Cli
 
           job_tmp_dir = Dir.mktmpdir
           FileUtils.mkdir_p(job_tmp_dir)
-          `tar -C #{job_tmp_dir} -xzf #{job_file} 2>&1`
-          job_extracted = $?.exitstatus == 0
+          job_extracted = !!system("tar", "-C", job_tmp_dir, "-xzf", job_file, out: "/dev/null", err: "/dev/null")
 
           step("Extract job '#{name}'", "Cannot extract job '#{name}'") do
             job_extracted
