@@ -55,10 +55,10 @@ module Bosh
             it 'passes the access to identity provider' do
               header('X-Test-Header', 'Value')
               get '/test_route'
-              expect(identity_provider.roles).to eq([:write])
+              expect(identity_provider.scope).to eq(:write)
 
               get '/read'
-              expect(identity_provider.roles).to eq([:read])
+              expect(identity_provider.scope).to eq(:read)
             end
 
             context 'when authenticating successfully' do

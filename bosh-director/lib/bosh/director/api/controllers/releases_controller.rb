@@ -21,7 +21,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      get '/', scope: [:read] do
+      get '/', scope: :read do
         releases = Models::Release.order_by(:name.asc).map do |release|
           release_versions = release.versions_dataset.order_by(:version.asc).map do |rv|
             {
@@ -42,7 +42,7 @@ module Bosh::Director
         json_encode(releases)
       end
 
-      get '/:name', scope: [:read] do
+      get '/:name', scope: :read do
         name = params[:name].to_s.strip
         release = @release_manager.find_by_name(name)
 

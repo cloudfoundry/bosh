@@ -73,11 +73,11 @@ module Bosh::Director
         authorize 'test', 'test'
 
         get '/'
-        expect(identity_provider.roles).to eq([:read])
+        expect(identity_provider.scope).to eq(:read)
 
         header 'Content-Type', 'text/yaml'
         post '/'
-        expect(identity_provider.roles).to eq([:write])
+        expect(identity_provider.scope).to eq(:write)
       end
     end
   end

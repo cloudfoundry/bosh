@@ -14,7 +14,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      get '/', scope: [:read] do
+      get '/', scope: :read do
         stemcells = Models::Stemcell.order_by(:name.asc).map do |stemcell|
           {
             'name' => stemcell.name,

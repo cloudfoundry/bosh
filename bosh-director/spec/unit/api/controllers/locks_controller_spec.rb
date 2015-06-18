@@ -85,7 +85,7 @@ module Bosh::Director
       it 'accepts read scope for routes allowing read access' do
         authorize 'test', 'test'
         get '/'
-        expect(identity_provider.roles).to eq([:read])
+        expect(identity_provider.scope).to eq(:read)
       end
     end
   end

@@ -112,6 +112,27 @@ CERT
         output = bosh_runner.run('deployments', env: client_env, failure_expected: true)
         expect(output).to match /No deployments/
       end
+
+      it 'can only access task default logs' do
+        admin_client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
+        read_client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
+        create_and_upload_test_release(env: admin_client_env)
+
+        output = bosh_runner.run('task latest', env: read_client_env)
+        expect(output).to match /release has been created/
+
+        output = bosh_runner.run('task latest --debug', env: read_client_env, failure_expected: true)
+        expect(output).to match /Not authorized/
+
+        output = bosh_runner.run('task latest --cpi', env: read_client_env, failure_expected: true)
+        expect(output).to match /Not authorized/
+
+        output = bosh_runner.run('task latest --debug', env: admin_client_env)
+        expect(output).to match /DEBUG/
+
+        output = bosh_runner.run('task latest --cpi', env: admin_client_env)
+        expect(output).to match /Task \d* done/
+      end
     end
 
     context 'when user does not have access' do

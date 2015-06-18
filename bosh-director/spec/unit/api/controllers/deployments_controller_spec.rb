@@ -538,7 +538,7 @@ module Bosh::Director
 
           read_routes.each do |route|
             get route
-            expect(identity_provider.roles).to eq([:read])
+            expect(identity_provider.scope).to eq(:read)
           end
 
           non_read_routes = [
@@ -550,7 +550,7 @@ module Bosh::Director
 
           non_read_routes.each do |method, route|
             method(method).call(route)
-            expect(identity_provider.roles).to eq([:write])
+            expect(identity_provider.scope).to eq(:write)
           end
         end
       end

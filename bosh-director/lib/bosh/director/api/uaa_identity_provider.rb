@@ -42,7 +42,7 @@ module Bosh
               return
             end
 
-            if requested_access.include?(:read) && token_has_read_scope?(token['scope'])
+            if requested_access == :read && token_has_read_scope?(token['scope'])
               return
             end
           end

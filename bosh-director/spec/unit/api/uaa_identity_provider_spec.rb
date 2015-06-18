@@ -80,7 +80,7 @@ module Bosh::Director
             end
 
             context 'when requested_access is read' do
-              let(:requested_access) { [:read] }
+              let(:requested_access) { :read }
 
               it 'raises' do
                 expect { identity_provider.corroborate_user(request_env, requested_access) }.to raise_error(AuthenticationError)

@@ -13,9 +13,15 @@ module Bosh::Director
           app.helpers(Helpers)
         end
 
-        def scope(*roles)
+        def scope(allowed_scope)
           condition do
-            roles = [settings.default_scope] if roles == [:default]
+            if allowed_scope == :default
+              scope = settings.default_scope
+            elsif allowed_scope.kind_of?(ParamsScope)
+              scope = allowed_scope.scope(params, settings.default_scope)
+            else
+              scope = allowed_scope
+            end
 
             auth_provided = %w(HTTP_AUTHORIZATION X-HTTP_AUTHORIZATION X_HTTP_AUTHORIZATION).detect do |key|
               request.env.has_key?(key)
@@ -23,7 +29,7 @@ module Bosh::Director
 
             if auth_provided
               begin
-                @user = identity_provider.corroborate_user(request.env, roles)
+                @user = identity_provider.corroborate_user(request.env, scope)
               rescue AuthenticationError
               end
             end
@@ -38,6 +44,18 @@ module Bosh::Director
         def route(verb, path, options = {}, &block)
           options[:scope] ||= :default
           super(verb, path, options, &block)
+        end
+
+        class ParamsScope
+          def initialize(name, scope)
+            @name = name.to_s
+            @scope = scope
+          end
+
+          def scope(params, default_scope)
+            scope_name = params.fetch(@name, :default).to_sym
+            @scope.fetch(scope_name, default_scope)
+          end
         end
       end
     end

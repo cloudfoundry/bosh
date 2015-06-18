@@ -7,7 +7,7 @@ module Bosh::Director
         false
       end
 
-      get '/', scope: [:read] do
+      get '/', scope: :read do
         status = {
           'name' => Config.name,
           'uuid' => Config.uuid,

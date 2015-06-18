@@ -144,7 +144,7 @@ module Bosh::Director
           # identity provider is not called if auth header is not provided
           basic_authorize 'admin', 'admin'
           get '/'
-          expect(identity_provider.roles).to eq([:read])
+          expect(identity_provider.scope).to eq(:read)
         end
       end
     end

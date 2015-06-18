@@ -10,7 +10,7 @@ module Bosh::Director
         status(201)
       end
 
-      get '/', scope: [:read] do
+      get '/', scope: :read do
         if params['limit'].nil? || params['limit'].empty?
           status(400)
           body("limit is required")

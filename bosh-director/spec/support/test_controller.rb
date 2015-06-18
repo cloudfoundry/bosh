@@ -11,7 +11,11 @@ module Support
       "Success with: #{@user || 'No user'}"
     end
 
-    get '/read', scope: [:read] do
+    get '/read', scope: :read do
+      "Success with: #{@user || 'No user'}"
+    end
+
+    get '/params', scope: Bosh::Director::Api::Extensions::Scoping::ParamsScope.new(:name, {test: :read}) do
       "Success with: #{@user || 'No user'}"
     end
 
