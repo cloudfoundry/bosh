@@ -156,6 +156,7 @@ module Bosh::Dev::Sandbox
         cloud_storage_dir: cloud_storage_dir,
         user_authentication: @user_authentication,
         trusted_certs: @trusted_certs,
+        users_in_manifest: @users_in_manifest,
       }
       DirectorConfig.new(attributes, @port_provider)
     end
@@ -254,6 +255,7 @@ module Bosh::Dev::Sandbox
       @director_fix_stateful_nodes = options.fetch(:director_fix_stateful_nodes, false)
       @nginx_service.reconfigure(options[:ssl_mode])
       @uaa_service.reconfigure(options[:uaa_encryption])
+      @users_in_manifest = options.fetch(:users_in_manifest, true)
     end
 
     def certificate_path

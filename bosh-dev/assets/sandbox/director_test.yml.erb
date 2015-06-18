@@ -96,7 +96,9 @@ user_management:
     url: <%= uaa_url %>
   <% else %>
   local:
+    <% if users_in_manifest %>
     users:
     - {name: test, password: test}
     - {name: hm, password: pass}
+    <% end %>
   <% end %>

@@ -12,7 +12,8 @@ module Bosh::Dev::Sandbox
       :cloud_storage_dir,
       :user_authentication,
       :uaa_url,
-      :trusted_certs
+      :trusted_certs,
+      :users_in_manifest
 
 
     def initialize(attrs, port_provider)
@@ -37,6 +38,7 @@ module Bosh::Dev::Sandbox
       @uaa_url = "https://127.0.0.1:#{port_provider.get_port(:nginx)}/uaa"
 
       @trusted_certs = attrs.fetch(:trusted_certs)
+      @users_in_manifest = attrs.fetch(:users_in_manifest, true)
     end
 
     def render(template_path)
