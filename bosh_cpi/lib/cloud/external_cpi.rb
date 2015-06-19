@@ -105,7 +105,7 @@ module Bosh::Clouds
       error_type = error_response['type']
       error_message = error_response['message']
       unless KNOWN_RPC_ERRORS.include?(error_type)
-        raise UnknownError, "Received unknown error from cpi: #{error_type} with message #{error_message}"
+        raise UnknownError, "Unknown CPI error '#{error_type}' with message '#{error_message}'"
       end
 
       error_class = constantize(error_type)

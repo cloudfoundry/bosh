@@ -170,7 +170,7 @@ describe Bosh::Clouds::ExternalCpi do
             result: nil,
             error: {
               type: 'FakeUnrecognizableError',
-              message: 'Something went wrong',
+              message: 'Something went \'wrong\'',
               ok_to_retry: true
             },
             log: 'fake-log'
@@ -182,7 +182,7 @@ describe Bosh::Clouds::ExternalCpi do
             call_cpi_method
           }.to raise_error(
             Bosh::Clouds::ExternalCpi::UnknownError,
-            'Received unknown error from cpi: FakeUnrecognizableError with message Something went wrong',
+            "Unknown CPI error 'FakeUnrecognizableError' with message 'Something went 'wrong''",
           )
         end
       end
