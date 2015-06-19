@@ -114,8 +114,7 @@ describe Bosh::Stemcell::StemcellPackager do
 
     it 'returns the path of the created tarball' do
       expect(packager.package(disk_format)).to eq(
-        File.join(tarball_dir, 'bosh-stemcell-1234-fake_infra-fake_hypervisor-centos-go_agent.tgz')
-      )
+        File.join(tarball_dir, 'bosh-stemcell-1234-fake_infra-fake_hypervisor-centos-7-go_agent.tgz'))
     end
 
     context 'if an image already exist in the stemcell dir' do
@@ -132,7 +131,7 @@ describe Bosh::Stemcell::StemcellPackager do
     it 'archives the working dir' do
       packager.package(disk_format)
 
-      tarball_path = File.join(tarball_dir, 'bosh-stemcell-1234-fake_infra-fake_hypervisor-centos-go_agent.tgz')
+      tarball_path = File.join(tarball_dir, 'bosh-stemcell-1234-fake_infra-fake_hypervisor-centos-7-go_agent.tgz')
       expect(File.exist?(tarball_path)).to eq(true)
 
       stemcell_contents_path = File.join(tmp_dir, 'stemcell-contents')
@@ -153,7 +152,8 @@ describe Bosh::Stemcell::StemcellPackager do
       it 'archives the working dir with a different tarball name' do
         packager.package(disk_format)
 
-        tarball_path = File.join(tarball_dir, 'bosh-stemcell-1234-fake_infra-fake_hypervisor-centos-go_agent-raw.tgz')
+        tarball_path = File.join(tarball_dir,
+                                 'bosh-stemcell-1234-fake_infra-fake_hypervisor-centos-7-go_agent-raw.tgz')
         expect(File.exist?(tarball_path)).to eq(true)
       end
     end
