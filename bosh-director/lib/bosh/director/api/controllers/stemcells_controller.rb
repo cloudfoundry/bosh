@@ -18,6 +18,7 @@ module Bosh::Director
         stemcells = Models::Stemcell.order_by(:name.asc).map do |stemcell|
           {
             'name' => stemcell.name,
+            'operating_system' => stemcell.operating_system,
             'version' => stemcell.version,
             'cid' => stemcell.cid,
             'deployments' => stemcell.deployments.map { |d| { name: d.name } }

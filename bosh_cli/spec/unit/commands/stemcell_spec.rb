@@ -126,7 +126,7 @@ module Bosh::Cli
     end
 
     describe 'list' do
-      let(:stemcell1) { { 'name' => 'fake stemcell 1', 'version' => '123', 'cid' => '123456', 'deployments' => [] } }
+      let(:stemcell1) { { 'name' => 'fake stemcell 1', 'operating_system' => 'fake-os-4', 'version' => '123', 'cid' => '123456', 'deployments' => [] } }
       let(:stemcell2) { { 'name' => 'fake stemcell 2', 'version' => '456', 'cid' => '789012', 'deployments' => [] } }
       let(:stemcells) { [stemcell1, stemcell2] }
       let(:buffer) { StringIO.new }
@@ -145,6 +145,24 @@ module Bosh::Cli
 
       it_requires_logged_in_user ->(command) { command.list }
 
+      it 'shows the stemcell OS and version when known' do
+        command.list
+
+        buffer.rewind
+        output = buffer.read
+
+        expect(output).to include('| fake stemcell 1 | fake-os-4 | 123     | 123456 |')
+      end
+
+      it 'shows blank in the OS column when stemcell OS is not known' do
+        command.list
+
+        buffer.rewind
+        output = buffer.read
+
+        expect(output).to include('| fake stemcell 2 |           | 456     | 789012 |')
+      end
+
       context 'when no stemcells are in use' do
         it 'does not add a star to any stemcell listed' do
           command.list
@@ -152,8 +170,8 @@ module Bosh::Cli
           buffer.rewind
           output = buffer.read
 
-          expect(output).to include('| fake stemcell 1 | 123     | 123456 |')
-          expect(output).to include('| fake stemcell 2 | 456     | 789012 |')
+          expect(output).to include('| fake stemcell 1 | fake-os-4 | 123     | 123456 |')
+          expect(output).to include('| fake stemcell 2 |           | 456     | 789012 |')
           expect(output).to include('(*) Currently in-use')
         end
       end
@@ -168,8 +186,8 @@ module Bosh::Cli
           buffer.rewind
           output = buffer.read
 
-          expect(output).to include('| fake stemcell 1 | 123     | 123456 |')
-          expect(output).to include('| fake stemcell 2 | 456*    | 789012 |')
+          expect(output).to include('| fake stemcell 1 | fake-os-4 | 123     | 123456 |')
+          expect(output).to include('| fake stemcell 2 |           | 456*    | 789012 |')
           expect(output).to include('(*) Currently in-use')
         end
       end

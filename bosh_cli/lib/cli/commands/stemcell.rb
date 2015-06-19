@@ -99,7 +99,7 @@ module Bosh::Cli
       err('No stemcells') if stemcells.empty?
 
       stemcells_table = table do |t|
-        t.headings = 'Name', 'Version', 'CID'
+        t.headings = 'Name', 'OS', 'Version', 'CID'
         stemcells.each do |sc|
           t << get_stemcell_table_record(sc)
         end
@@ -192,7 +192,7 @@ module Bosh::Cli
     def get_stemcell_table_record(sc)
       deployments = sc.fetch('deployments', [])
 
-      [sc['name'], "#{sc['version']}#{deployments.empty? ? '' : '*'}", sc['cid']]
+      [sc['name'], sc['operating_system'], "#{sc['version']}#{deployments.empty? ? '' : '*'}", sc['cid']]
     end
   end
 end
