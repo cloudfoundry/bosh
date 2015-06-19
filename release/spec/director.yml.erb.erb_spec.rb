@@ -107,6 +107,22 @@ describe 'director.yml.erb.erb' do
         })
       end
     end
+
+    it 'dumps the director.backup_destination at the top level' do
+      deployment_manifest_fragment['properties']['director'].merge!('backup_destination' => {
+        'some_backup_url' => 'http://foo.bar.com',
+        'how_much_to_back_up' => {
+          'all_the_things' => true
+        }
+      })
+
+      expect(parsed_yaml['backup_destination']).to eq({
+        'some_backup_url' => 'http://foo.bar.com',
+        'how_much_to_back_up' => {
+          'all_the_things' => true
+        }
+      })
+    end
   end
 
   context 'when configured for vsphere' do
