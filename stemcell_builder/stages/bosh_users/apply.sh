@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# Copyright (c) 2009-2012 VMware, Inc.
 
 set -e
 
@@ -32,4 +30,13 @@ cp $assets_dir/sudoers $chroot/etc/sudoers
 # Add $bosh_dir/bin to $PATH
 echo "export PATH=$bosh_dir/bin:\$PATH" >> $chroot/root/.bashrc
 echo "export PATH=$bosh_dir/bin:\$PATH" >> $chroot/home/vcap/.bashrc
-echo "source /root/.bashrc" >> $chroot/root/.bash_profile
+
+cat > $chroot/root/.profile <<EOS
+if [ "$BASH" ]; then
+  if [ -f ~/.bashrc ]; then
+    . ~/.bashrc
+  fi
+fi
+
+mesg n
+EOS
