@@ -26,6 +26,10 @@ module BoshExtensions
     say("\n" * count)
   end
 
+  def err_nl
+    warn('')
+  end
+
   def err(message)
     raise Bosh::Cli::CliError, message
   end
