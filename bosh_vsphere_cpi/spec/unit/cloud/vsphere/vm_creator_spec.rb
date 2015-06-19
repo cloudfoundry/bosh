@@ -163,6 +163,9 @@ describe VSphereCloud::VmCreator do
         expect(config[:datastore]).to eq(datastore_mob)
         expect(config[:linked]).to eq(true)
         expect(config[:snapshot]).to eq(current_snapshot)
+        expect(config[:config].memory_mb).to eq(1024)
+        expect(config[:config].num_cpus).to eq(3)
+        expect(config[:config].device_change).to eq([ephemeral_disk_config, add_nic_spec, delete_nic_spec])
       end
     end
 
