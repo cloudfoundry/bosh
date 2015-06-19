@@ -7,9 +7,9 @@ begin
 
   load_threshold = 5
   if !ENV.has_key?("BOSH_CLI_SILENCE_SLOW_LOAD_WARNING") && require_cli_time > load_threshold
-    nl
+    STDERR.puts
     warning sprintf("Loading the cli took %.1f seconds, consider cleaning your gem environment", require_cli_time)
-    nl
+    STDERR.puts
   end
 
   Thread.abort_on_exception = true
