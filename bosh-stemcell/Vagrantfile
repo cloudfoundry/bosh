@@ -87,13 +87,7 @@ EOS
       mkdir -p /mnt/stemcells
       chown -R ubuntu:ubuntu /mnt/stemcells
       mkdir -p /bosh/tmp
-      (
-        cd /bosh
-        git init
-        git add -A
-        git commit -m "updated rsync"
-        git submodule foreach 'git checkout .'
-      )
+
       chown -R ubuntu:ubuntu /bosh
       ( cd /bosh && bundle install --local )
     BASH
@@ -105,8 +99,6 @@ EOS
     chef.json = { go: { version: '1.4.2' } }
   end
 
-  files_to_ignore = File.readlines(File.expand_path('../../.gitignore', __FILE__)).map(&:chomp).reject(&:empty?)
-  files_to_ignore << '.git/'
-  config.vm.synced_folder '../.', '/bosh', rsync_excludes: files_to_ignore, rsync__exclude: files_to_ignore, rsync__args: ["--verbose", "--archive", "--delete", "-z"]
-  config.vm.synced_folder '../.git/modules', '/bosh/.git/modules'
+  config.vm.synced_folder '../.', '/bosh', rsync__args: ["--verbose", "--archive", "--delete", "-z"]
+  config.vm.synced_folder '../.git', '/bosh/.git'
 end

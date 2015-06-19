@@ -28,3 +28,12 @@ fi
 echo -n ${os} > $chroot/var/vcap/bosh/etc/operating_system
 
 echo -n ${stemcell_version} > $chroot/var/vcap/bosh/etc/stemcell_version
+
+pushd /bosh
+has_uncommitted_changes=""
+if ! git diff --quiet --exit-code; then
+  has_uncommitted_changes="+"
+fi
+
+echo -n $(git rev-parse HEAD)${has_uncommitted_changes} > $chroot/var/vcap/bosh/etc/stemcell_git_sha1
+popd
