@@ -32,3 +32,4 @@ cp $assets_dir/sudoers $chroot/etc/sudoers
 # Add $bosh_dir/bin to $PATH
 echo "export PATH=$bosh_dir/bin:\$PATH" >> $chroot/root/.bashrc
 echo "export PATH=$bosh_dir/bin:\$PATH" >> $chroot/home/vcap/.bashrc
+echo "source /root/.bashrc" >> $chroot/root/.bash_profile
