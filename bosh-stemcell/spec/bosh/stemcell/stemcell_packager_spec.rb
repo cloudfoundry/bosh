@@ -36,7 +36,7 @@ describe Bosh::Stemcell::StemcellPackager do
       disk_formats: ['qcow2', 'raw'],
     )
   end
-  let(:operating_system) { Bosh::Stemcell::OperatingSystem.for('centos') }
+  let(:operating_system) { Bosh::Stemcell::OperatingSystem.for('centos','7') }
 
   let(:definition) do
     Bosh::Stemcell::Definition.new(
@@ -91,13 +91,13 @@ describe Bosh::Stemcell::StemcellPackager do
 
       actual_manifest = YAML.load_file(File.join(work_dir, 'stemcell/stemcell.MF'))
       expect(actual_manifest).to eq({
-        'name' => 'bosh-fake_infra-fake_hypervisor-centos-go_agent-raw',
+        'name' => 'bosh-fake_infra-fake_hypervisor-centos-7-go_agent-raw',
         'version' => '1234',
         'bosh_protocol' => 1,
         'sha1' => 'c1ebdefc3f8282a9d7d47803fb5030b61ffc793d', # SHA-1 of image above
-
+        "os"=>"centos-7",
         'cloud_properties' => {
-          'name' => 'bosh-fake_infra-fake_hypervisor-centos-go_agent-raw',
+          'name' => 'bosh-fake_infra-fake_hypervisor-centos-7-go_agent-raw',
           'version' => '1234',
           'infrastructure' => 'fake_infra',
           'hypervisor' => 'fake_hypervisor',
