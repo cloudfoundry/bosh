@@ -49,6 +49,13 @@ oauth:
       scope: openid,bosh.read
       authorities: bosh.read
       secret: "secret"
+    director-access:
+      id: director-access
+      override: true
+      authorized-grant-types: client_credentials
+      scope: openid,bosh.deadbeef.admin
+      authorities: bosh.deadbeef.admin
+      secret: "secret"
     hm:
       id: hm
       override: true

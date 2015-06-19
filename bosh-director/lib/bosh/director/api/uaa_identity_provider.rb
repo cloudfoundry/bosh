@@ -4,10 +4,10 @@ module Bosh
   module Director
     module Api
       class UAAIdentityProvider
-        def initialize(options, director_uuid)
+        def initialize(options, director_uuid_provider)
           @url = options.fetch('url')
           Config.logger.debug "Initializing UAA Identity provider with url #{@url}"
-          @director_uuid = director_uuid
+          @director_uuid_provider = director_uuid_provider
           @token_coder = CF::UAA::TokenCoder.new(skey: options.fetch('symmetric_key', nil), pkey: options.fetch('public_key', nil), scope: [])
         end
 
@@ -51,11 +51,11 @@ module Bosh
         end
 
         def token_has_read_scope?(token_scope)
-          token_scope.include?('bosh.read') || token_scope.include?("bosh.#{@director_uuid}.read")
+          token_scope.include?('bosh.read') || token_scope.include?("bosh.#{@director_uuid_provider.uuid}.read")
         end
 
         def token_has_admin_scope?(token_scope)
-          token_scope.include?('bosh.admin') || token_scope.include?("bosh.#{@director_uuid}.admin")
+          token_scope.include?('bosh.admin') || token_scope.include?("bosh.#{@director_uuid_provider.uuid}.admin")
         end
       end
     end

@@ -44,6 +44,13 @@ describe 'Logging into a director with UAA authentication', type: :integration d
       expect(output).to match /Please log in first/
     end
 
+    it 'can login with director uuid scope and director uuid authorities' do
+      client_env = {'BOSH_CLIENT' => 'director-access', 'BOSH_CLIENT_SECRET' => 'secret'}
+
+      output = bosh_runner.run('deployments', env: client_env, failure_expected: true)
+      expect(output).to match /No deployments/
+    end
+
     it 'refreshes the token when running long command' do
       client_env = {'BOSH_CLIENT' => 'short-lived-client', 'BOSH_CLIENT_SECRET' => 'short-lived-secret'}
       _, exit_code = deploy_from_scratch(no_login: true, env: client_env, return_exit_code: true)

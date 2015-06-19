@@ -3,8 +3,10 @@ require 'rack/test'
 
 module Bosh::Director
   describe Api::UAAIdentityProvider do
-    subject(:identity_provider) { Api::UAAIdentityProvider.new(provider_options, 'fake-director-uuid') }
+
+    subject(:identity_provider) { Api::UAAIdentityProvider.new(provider_options, uuid_provider) }
     let(:provider_options) { {'url' => 'http://localhost:8080/uaa', 'symmetric_key' => skey, 'public_key' => pkey} }
+    let(:uuid_provider) { instance_double(Api::DirectorUUIDProvider, 'uuid' => 'fake-director-uuid')}
     let(:skey) { 'tokenkey' }
     let(:pkey) { nil }
     let(:app) { Support::TestController.new(double(:config, identity_provider: identity_provider)) }
