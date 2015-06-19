@@ -1,10 +1,3 @@
-<%
-  require "yaml"
-
-  def dump_yaml(name, options)
-    YAML.dump(name => options).sub(/\A---\n/, '')
-  end
-%>
 ---
 name: <%= p('director.name') %>
 port: <%= p('director.backend_port') %>
@@ -219,7 +212,7 @@ compiled_package_cache:
 <% end %>
 
 <% if_p('director.backup_destination') do |backup_destination| %>
-<%= dump_yaml('backup_destination', backup_destination) %>
+backup_destination: <%= JSON.dump(backup_destination) %>
 <% end %>
 
 cloud:
