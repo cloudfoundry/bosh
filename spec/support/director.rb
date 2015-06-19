@@ -30,7 +30,7 @@ module Bosh::Spec
 
     # vm always returns a vm
     def vm(job_name_index, options={})
-      vm = vms(options).detect { |vm| vm.job_name_index == job_name_index }
+      vm = vms('', options).detect { |vm| vm.job_name_index == job_name_index }
       vm || raise("Failed to find vm #{job_name_index}")
     end
 
@@ -39,7 +39,7 @@ module Bosh::Spec
     def wait_for_vm(job_name_index, timeout_seconds, options = {})
       start_time = Time.now
       loop do
-        vm = vms(options).detect { |vm| vm.job_name_index == job_name_index }
+        vm = vms('', options).detect { |vm| vm.job_name_index == job_name_index }
         return vm if vm
         break if Time.now - start_time >= timeout_seconds
         sleep(1)
