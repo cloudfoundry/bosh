@@ -3,9 +3,10 @@ require 'spec_helper'
 describe VSphereCloud::VmCreator do
   describe '#create' do
     subject(:creator) do
-      described_class.new(1024, 1024, 3, placer, vsphere_client, cloud_searcher, logger, cpi, agent_env, file_provider, disk_provider)
+      described_class.new(1024, 1024, 3, nested_hardware_virtualization, placer, vsphere_client, cloud_searcher, logger, cpi, agent_env, file_provider, disk_provider)
     end
 
+    let(:nested_hardware_virtualization) { false }
     let(:placer) { instance_double('VSphereCloud::FixedClusterPlacer', drs_rules: []) }
     let(:vsphere_client) { instance_double('VSphereCloud::Client', cloud_searcher: cloud_searcher) }
     let(:logger) { double('logger', debug: nil, info: nil) }
@@ -45,6 +46,12 @@ describe VSphereCloud::VmCreator do
     let(:vm_double) { double('cloned vm') }
 
     let(:ephemeral_disk) { instance_double('VSphereCloud::EphemeralDisk') }
+    let(:replicated_stemcell_mob) { instance_double('VimSdk::Vim::VirtualMachine') }
+    let(:current_snapshot) { double('current snapshot') }
+    let(:ephemeral_disk_config) { double('ephemeral disk config', :device => disk_device) }
+    let(:disk_device) { double('disk device') }
+    let(:add_nic_spec) { double('add virtual nic spec') }
+    let(:delete_nic_spec) { double('delete virtual nic spec') }
 
     before do
       stemcell_vm = instance_double('VimSdk::Vim::VirtualMachine')
@@ -59,10 +66,8 @@ describe VSphereCloud::VmCreator do
         allow(disk_provider).to receive(:find).with(disk.cid) { disk }
       end
 
-      replicated_stemcell_mob = instance_double('VimSdk::Vim::VirtualMachine')
       allow(cpi).to receive(:replicate_stemcell).with(cluster, datastore, 'stemcell_cid').and_return(replicated_stemcell_mob)
 
-      current_snapshot = double('current snapshot')
       snapshot = double('snapshot', :current_snapshot => current_snapshot)
       stemcell_properties = { 'snapshot' => snapshot }
       allow(cloud_searcher).to receive(:get_properties).with(
@@ -82,7 +87,6 @@ describe VSphereCloud::VmCreator do
         with(['datacenter name', 'network', 'network_name']).
         and_return(network_mob)
 
-      add_nic_spec = double('add virtual nic spec')
       allow(cpi).to receive(:create_nic_config_spec).with(
         'network_name',
         network_mob,
@@ -90,30 +94,12 @@ describe VSphereCloud::VmCreator do
         {},
       ).and_return(add_nic_spec)
 
-      delete_nic_spec = double('nic config')
       virtual_nic = VimSdk::Vim::Vm::Device::VirtualEthernetCard.new
       allow(cpi).to receive(:create_delete_device_spec).with(virtual_nic).and_return(delete_nic_spec)
       allow_any_instance_of(VSphereCloud::Resources::VM).to receive(:nics).and_return([virtual_nic])
 
       clone_vm_task = double('cloned vm task')
-      disk_device = double('disk device')
-      ephemeral_disk_config = double('ephemeral disk config', :device => disk_device)
-      allow(cpi).to receive(:clone_vm).with(
-        replicated_stemcell_mob,
-        'vm-fake-uuid',
-        folder_mob,
-        resource_pool_mob,
-        {
-          datastore: datastore_mob,
-          linked: true,
-          snapshot: current_snapshot,
-          config: match_attributes(
-            memory_mb: 1024,
-            num_cpus: 3,
-            device_change: [ephemeral_disk_config, add_nic_spec, delete_nic_spec],
-          ),
-        },
-      ).and_return(clone_vm_task)
+      allow(cpi).to receive(:clone_vm).and_return(clone_vm_task)
       allow(vsphere_client).to receive(:wait_for_task).with(clone_vm_task).and_return(vm_double)
       allow(ephemeral_disk).to receive(:create_spec).and_return(ephemeral_disk_config)
       allow(VSphereCloud::EphemeralDisk).to receive(:new).with(
@@ -162,6 +148,32 @@ describe VSphereCloud::VmCreator do
       expect(placer).to receive(:pick_cluster_for_vm).with(1024, 2049, persistent_disks).and_return(cluster)
       expect(placer).to receive(:pick_ephemeral_datastore).with(cluster, 2049).and_return(datastore)
       creator.create('agent_id', 'stemcell_cid', networks, persistent_disk_cids, {})
+    end
+
+    it 'clones the vm with the correct attributes set' do
+      allow(VimSdk::Vim::Vm::ConfigSpec).to receive(:new).and_call_original
+      creator.create('agent_id', 'stemcell_cid', networks, persistent_disk_cids, {})
+
+      expect(VimSdk::Vim::Vm::ConfigSpec).to have_received(:new).with({memory_mb: 1024, num_cpus: 3})
+      expect(cpi).to have_received(:clone_vm) do |r_s_mob, vm_id, f_mob, rp_mob, config|
+        expect(r_s_mob).to eq(replicated_stemcell_mob)
+        expect(vm_id).to eq('vm-fake-uuid')
+        expect(f_mob).to eq(folder_mob)
+        expect(rp_mob).to eq(resource_pool_mob)
+        expect(config[:datastore]).to eq(datastore_mob)
+        expect(config[:linked]).to eq(true)
+        expect(config[:snapshot]).to eq(current_snapshot)
+      end
+    end
+
+    context 'when nested hardware virtualization is enabled' do
+      let(:nested_hardware_virtualization) { true }
+      it 'clones the vm with the enabled' do
+        expect(VimSdk::Vim::Vm::ConfigSpec).to receive(:new).with(
+            {memory_mb: 1024, num_cpus: 3, nested_hv_enabled: true}).and_call_original
+
+        creator.create('agent_id', 'stemcell_cid', networks, persistent_disk_cids, {})
+      end
     end
 
     describe 'DRS rules' do
@@ -217,15 +229,5 @@ describe VSphereCloud::VmCreator do
         end
       end
     end
-  end
-
-  RSpec::Matchers.define :match_attributes do |expected|
-    match do |actual|
-      expected.all? do |attr_name, attr_value|
-        attr_value == actual.public_send(attr_name)
-      end
-    end
-    # rspec-mocks usually expects == and chokes on rspec-expectation's 'matches'
-    alias_method(:==, :matches?)
   end
 end

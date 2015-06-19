@@ -32,7 +32,7 @@ describe VSphereCloud::SoapStub do
 
       it 'uses given IO for http_client logging' do
         expect(http_client).to receive(:debug_dev=).with(soap_log)
-        expect(VimSdk::Soap::StubAdapter).to receive(:new).with('https://some-host/sdk/vimService', 'vim.version.version6', http_client)
+        expect(VimSdk::Soap::StubAdapter).to receive(:new).with('https://some-host/sdk/vimService', 'vim.version.version8', http_client)
 
         soap_stub.create
       end
@@ -45,7 +45,7 @@ describe VSphereCloud::SoapStub do
 
       it 'uses given IO for http_client logging' do
         expect(http_client).to receive(:debug_dev=).with(soap_log)
-        expect(VimSdk::Soap::StubAdapter).to receive(:new).with('https://some-host/sdk/vimService', 'vim.version.version6', http_client)
+        expect(VimSdk::Soap::StubAdapter).to receive(:new).with('https://some-host/sdk/vimService', 'vim.version.version8', http_client)
 
         soap_stub.create
       end
@@ -63,7 +63,7 @@ describe VSphereCloud::SoapStub do
           expect(log_file.path).to eq(soap_log)
         end
 
-        expect(VimSdk::Soap::StubAdapter).to receive(:new).with('https://some-host/sdk/vimService', 'vim.version.version6', http_client)
+        expect(VimSdk::Soap::StubAdapter).to receive(:new).with('https://some-host/sdk/vimService', 'vim.version.version8', http_client)
 
         soap_stub.create
       end

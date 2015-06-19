@@ -7,6 +7,7 @@ module VSphereCloud
         cloud_properties.fetch('ram'),
         cloud_properties.fetch('disk'),
         cloud_properties.fetch('cpu'),
+        cloud_properties.fetch('nested_hardware_virtualization', false),
         resources,
         client,
         cloud_searcher,
