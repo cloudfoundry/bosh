@@ -9,6 +9,7 @@ describe Bosh::Cli::Command::User do
     target = 'https://127.0.0.1:8080'
     stub_request(:get, "#{target}/info").to_return(body: '{}')
     command.options[:target] = target
+    allow(command).to receive(:show_current_state)
   end
 
   describe "creating a new user" do

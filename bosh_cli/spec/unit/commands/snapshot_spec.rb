@@ -8,6 +8,7 @@ describe Bosh::Cli::Command::Snapshot do
 
   before do
     allow(command).to receive(:director).and_return(director)
+    allow(command).to receive(:show_current_state)
   end
 
   describe 'listing snapshot' do

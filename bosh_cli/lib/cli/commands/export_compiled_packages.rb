@@ -8,6 +8,7 @@ module Bosh::Cli::Command
     desc 'Download compiled packages for a specific release and stemcell combination'
     def perform(release, stemcell, download_dir)
       auth_required
+      show_current_state
 
       release = Bosh::Cli::NameVersionPair.parse(release)
       stemcell = Bosh::Cli::NameVersionPair.parse(stemcell)

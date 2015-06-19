@@ -41,6 +41,7 @@ describe Bosh::Cli::Command::Backup do
         command.options[:username] = 'bosh'
         command.options[:password] = 'b05h'
         command.options[:target] = target
+        allow(command).to receive(:show_current_state)
 
         allow(Bosh::Cli::BackupDestinationPath).to receive_message_chain(:new, :create_from_path) { dest }
 

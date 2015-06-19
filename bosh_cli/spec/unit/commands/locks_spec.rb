@@ -1,6 +1,3 @@
-# -*- encoding: utf-8 -*-
-# Copyright (c) 2013 GoPivotal, Inc.
-
 require 'spec_helper'
 require 'cli'
 
@@ -14,6 +11,7 @@ describe Bosh::Cli::Command::Locks do
     allow(command).to receive(:nl)
     allow(command).to receive(:logged_in?).and_return(true)
     command.options[:target] = target
+    allow(command).to receive(:show_current_state)
   end
 
   describe 'list' do

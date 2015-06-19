@@ -13,6 +13,7 @@ module Bosh::Cli::Command
     def cleanup
       target_required
       auth_required
+      show_current_state
 
       remove_all = !!options[:all]
 

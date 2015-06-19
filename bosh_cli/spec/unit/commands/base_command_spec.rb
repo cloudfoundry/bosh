@@ -63,7 +63,7 @@ describe Bosh::Cli::Command::Base do
     expect(cmd.logged_in?).to be(true)
   end
 
-  it "gives the max_parallel_downloads options to the blob manager" do
+  it 'gives the max_parallel_downloads options to the blob manager' do
     allow(Bosh::Cli::BlobManager).to receive(:new)
     max_parallel_downloads = double(:max_parallel_downloads)
     release = double(:release)
@@ -249,6 +249,49 @@ describe Bosh::Cli::Command::Base do
 
         it 'fails' do
           expect { cmd.credentials }.to raise_error
+        end
+      end
+    end
+  end
+
+  describe 'show_current_state' do
+    context 'when command requires authentication' do
+      class TestCommand < Bosh::Cli::Command::Base
+        def initialize(runner, deployment_name = nil)
+          @deployment_name = deployment_name
+          super(runner)
+        end
+
+        def run
+          show_current_state(@deployment_name)
+        end
+
+        def credentials
+          Bosh::Cli::Client::BasicCredentials.new('fake-user', 'fake-password')
+        end
+      end
+
+      let(:cmd) do
+        cmd = TestCommand.new(@runner, 'fake-deployment')
+        cmd.options[:target] = 'fake-target'
+        cmd
+      end
+
+      it 'prints current user, deployment and target' do
+        expect(cmd).to receive(:say).with("Acting as user 'fake-user' on deployment 'fake-deployment' on 'fake-target'")
+        cmd.run
+      end
+
+      context 'when deployment name is not present' do
+        let(:cmd) do
+          cmd = TestCommand.new(@runner)
+          cmd.options[:target] = 'fake-target'
+          cmd
+        end
+
+        it 'does not report the deployment' do
+          expect(cmd).to receive(:say).with("Acting as user 'fake-user' on 'fake-target'")
+          cmd.run
         end
       end
     end

@@ -71,6 +71,7 @@ module Bosh::Cli
       def check_arguments(operation, job)
         auth_required
         job_must_exist_in_deployment(job)
+        show_current_state(prepare_deployment_manifest['name'])
 
         if hard? && soft?
           err('Cannot handle both --hard and --soft options, please choose one')

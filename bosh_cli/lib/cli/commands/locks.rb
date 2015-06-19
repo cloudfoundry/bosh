@@ -8,6 +8,7 @@ module Bosh::Cli::Command
     desc 'Show list of current locks'
     def locks
       auth_required
+      show_current_state
 
       locks = director.list_locks
       err('No locks') if locks.empty?

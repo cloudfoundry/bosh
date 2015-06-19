@@ -9,6 +9,7 @@ module Bosh::Cli::Command
       auth_required
       manifest_yaml = prepare_deployment_manifest(:yaml => true)
       manifest = Psych.load(manifest_yaml)
+      show_current_state(manifest['name'])
 
       force = options[:force]
       say("You are about to rename `#{old_name.make_green}' to `#{new_name.make_green}'")

@@ -13,6 +13,8 @@ module Bosh::Cli::Command
            "don't attempt to resolve problems"
     def perform(deployment_name = nil)
       auth_required
+      show_current_state(deployment_name)
+      
       no_track_unsupported
       @auto_mode = options[:auto]
       @report_mode = options[:report]

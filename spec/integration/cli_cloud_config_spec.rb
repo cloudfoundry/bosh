@@ -37,15 +37,15 @@ describe "cli cloud config", type: :integration do
     bosh_runner.run("login test test")
 
     # none present yet
-    expect(bosh_runner.run("cloud-config")).to eq("")
+    expect(bosh_runner.run("cloud-config")).to eq("Acting as user 'test' on 'Test Director'\n")
 
     Dir.mktmpdir do |tmpdir|
       cloud_config_filename = File.join(tmpdir, 'cloud_config.yml')
       cloud_config = Psych.dump(Bosh::Spec::Deployments.simple_cloud_config)
       File.write(cloud_config_filename, cloud_config)
-      puts bosh_runner.run("update cloud-config #{cloud_config_filename}")
+      bosh_runner.run("update cloud-config #{cloud_config_filename}")
 
-      expect(bosh_runner.run("cloud-config")).to eq(cloud_config)
+      expect(bosh_runner.run("cloud-config")).to include(cloud_config)
     end
   end
 end

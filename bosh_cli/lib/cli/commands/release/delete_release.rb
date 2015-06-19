@@ -7,6 +7,7 @@ module Bosh::Cli::Command
       option '--force', 'ignore errors during deletion'
       def delete(name, version = nil)
         auth_required
+        show_current_state
         force = !!options[:force]
 
         desc = "#{name}"

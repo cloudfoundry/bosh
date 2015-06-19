@@ -123,6 +123,7 @@ module Bosh::Cli::Command
       auth_required
       manifest = prepare_deployment_manifest
       @deployment_name = manifest["name"]
+      show_current_state(@deployment_name)
     end
 
     def show_header

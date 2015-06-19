@@ -187,6 +187,13 @@ module Bosh::Cli
       say("Current deployment is #{deployment.make_green}")
     end
 
+    def show_current_state(deployment_name=nil)
+      msg = "Acting as user '#{credentials.username.to_s.make_green}'"
+      msg += " on deployment '#{deployment_name.make_green}'" if deployment_name
+      msg += " on '#{target_name.make_green}'" if target_name
+      say(msg)
+    end
+
     def no_track_unsupported
       if @options.delete(:no_track)
         say('Ignoring `' + '--no-track'.make_yellow + "' option")

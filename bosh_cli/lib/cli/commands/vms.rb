@@ -9,20 +9,22 @@ module Bosh::Cli::Command
     option '--vitals', 'Return VM vitals information'
     def list(deployment_name = nil)
       auth_required
+      show_current_state(deployment_name)
       no_track_unsupported
 
       if deployment_name.nil?
         deps = director.list_deployments
         err('No deployments') if deps.empty?
-        deps.each { |dep| show_deployment(dep['name'], options) }
+        deps.each do |dep|
+          say("Deployment `#{dep['name'].make_green}'")
+          show_deployment(dep['name'], options)
+        end
       else
         show_deployment deployment_name, options
       end
     end
 
     def show_deployment(name, options={})
-      say("Deployment `#{name.make_green}'")
-
       vms = director.fetch_vm_state(name)
 
       if vms.empty?

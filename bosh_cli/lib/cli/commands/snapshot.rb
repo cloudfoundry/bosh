@@ -8,7 +8,7 @@ module Bosh::Cli::Command
       auth_required
 
       deployment_name = prepare_deployment_manifest['name']
-      say("Deployment `#{deployment_name.make_green}'")
+      show_current_state(deployment_name)
 
       snapshots = director.list_snapshots(deployment_name, job, index)
 
@@ -40,7 +40,7 @@ module Bosh::Cli::Command
       auth_required
 
       deployment_name = prepare_deployment_manifest['name']
-      say("Deployment `#{deployment_name.make_green}'")
+      show_current_state(deployment_name)
 
       unless job && index
         unless confirmed?("Are you sure you want to take a snapshot of all deployment `#{deployment_name}'?")
@@ -60,7 +60,7 @@ module Bosh::Cli::Command
       auth_required
 
       deployment_name = prepare_deployment_manifest['name']
-      say("Deployment `#{deployment_name.make_green}'")
+      show_current_state(deployment_name)
 
       unless confirmed?("Are you sure you want to delete snapshot `#{snapshot_cid}'?")
         say('Canceled deleting snapshot'.make_green)
@@ -78,7 +78,7 @@ module Bosh::Cli::Command
       auth_required
 
       deployment_name = prepare_deployment_manifest['name']
-      say("Deployment `#{deployment_name.make_green}'")
+      show_current_state(deployment_name)
 
       unless confirmed?("Are you sure you want to delete all snapshots of deployment `#{deployment_name}'?")
         say('Canceled deleting snapshots'.make_green)

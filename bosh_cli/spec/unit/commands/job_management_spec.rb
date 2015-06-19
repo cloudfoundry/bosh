@@ -18,6 +18,7 @@ describe Bosh::Cli::Command::JobManagement do
     allow(command).to receive(:director).and_return(director)
     allow(command).to receive(:prepare_deployment_manifest).and_return(deployment_manifest)
     allow(command).to receive(:prepare_deployment_manifest).with(yaml: true).and_return(manifest_yaml)
+    allow(command).to receive(:show_current_state)
   end
 
   let(:deployment_manifest) do

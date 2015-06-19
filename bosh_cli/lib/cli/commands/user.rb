@@ -8,6 +8,7 @@ module Bosh::Cli::Command
     desc  "Create user"
     def create(username = nil, password = nil)
       auth_required
+      show_current_state
 
       if interactive?
         username = ask("Enter new username: ") if username.blank?
@@ -34,6 +35,7 @@ module Bosh::Cli::Command
     desc "Deletes the user from the director"
     def delete(username = nil)
       auth_required
+      show_current_state
 
       if interactive?
         username ||= ask("Username to delete: ")

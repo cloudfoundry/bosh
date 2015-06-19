@@ -17,6 +17,7 @@ describe Bosh::Cli::Command::Base do
 
       allow(job_rename).to receive(:confirmed?).and_return(true)
       allow(job_rename).to receive(:auth_required)
+      allow(job_rename).to receive(:show_current_state)
       allow(job_rename).to receive(:prepare_deployment_manifest).and_return(old_manifest_yaml)
       allow(job_rename).to receive(:sanity_check_job_rename)
       job_rename.rename("old_name", "new_name")

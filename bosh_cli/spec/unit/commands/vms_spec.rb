@@ -4,7 +4,10 @@ require 'cli'
 describe Bosh::Cli::Command::Vms do
   subject(:command) { described_class.new }
 
-  before { allow(command).to receive_messages(director: director, logged_in?: true, nl: nil, say: nil) }
+  before do
+    allow(command).to receive_messages(director: director, logged_in?: true, nl: nil, say: nil)
+    allow(command).to receive(:show_current_state)
+  end
   let(:director) { double(Bosh::Cli::Client::Director) }
 
   describe 'list' do
@@ -96,7 +99,6 @@ describe Bosh::Cli::Command::Vms do
 
       context 'default' do
         it 'show basic vms information' do
-          expect(command).to receive(:say).with("Deployment `#{deployment}'")
           expect(command).to receive(:say) do |s|
             expect(s.to_s).to include 'job1/0'
             expect(s.to_s).to include 'awesome'
@@ -113,7 +115,6 @@ describe Bosh::Cli::Command::Vms do
         before { options[:details] = true }
 
         it 'shows vm details' do
-          expect(command).to receive(:say).with("Deployment `#{deployment}'")
           expect(command).to receive(:say) do |s|
             expect(s.to_s).to include 'job1/0'
             expect(s.to_s).to include 'awesome'
@@ -133,7 +134,6 @@ describe Bosh::Cli::Command::Vms do
         before { options[:dns] = true }
 
         it 'shows DNS A records' do
-          expect(command).to receive(:say).with("Deployment `#{deployment}'")
           expect(command).to receive(:say) do |s|
             expect(s.to_s).to include 'job1/0'
             expect(s.to_s).to include 'awesome'
@@ -152,7 +152,6 @@ describe Bosh::Cli::Command::Vms do
         before { options[:vitals] = true }
 
         it 'shows the vm vitals' do
-          expect(command).to receive(:say).with("Deployment `#{deployment}'")
           expect(command).to receive(:say) do |s|
             expect(s.to_s).to include 'job1/0'
             expect(s.to_s).to include 'awesome'
@@ -179,7 +178,6 @@ describe Bosh::Cli::Command::Vms do
           new_vm_state['vitals']['disk'].delete('persistent')
           allow(director).to receive(:fetch_vm_state).with(deployment) { [new_vm_state] }
 
-          expect(command).to receive(:say).with("Deployment `#{deployment}'")
           expect(command).to receive(:say) do |s|
             expect(s.to_s).to_not include '12%'
             expect(s.to_s).to_not include '13%'

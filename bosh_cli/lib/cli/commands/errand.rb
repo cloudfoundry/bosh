@@ -39,6 +39,7 @@ module Bosh::Cli::Command
     private
     def perform_run_errand(errand_name)
       deployment_name = prepare_deployment_manifest['name']
+      show_current_state(deployment_name)
 
       errands_client = Bosh::Cli::Client::ErrandsClient.new(director)
       status, task_id, errand_result = errands_client.run_errand(deployment_name, errand_name, options[:keep_alive] || FALSE)

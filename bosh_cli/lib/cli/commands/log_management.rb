@@ -41,6 +41,7 @@ module Bosh::Cli::Command
 
     def check_arguments(index)
       auth_required
+      show_current_state(deployment_name)
       no_track_unsupported
 
       err('Job index is expected to be a positive integer') if index !~ /^\d+$/
@@ -74,7 +75,7 @@ module Bosh::Cli::Command
     end
 
     def deployment_name
-      prepare_deployment_manifest['name']
+      @deployment_name ||= prepare_deployment_manifest['name']
     end
   end
 end

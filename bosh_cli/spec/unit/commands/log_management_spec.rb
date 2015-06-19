@@ -25,6 +25,7 @@ describe Bosh::Cli::Command::LogManagement do
     allow(command).to receive_messages(director: director)
     allow(command).to receive_messages(prepare_deployment_manifest: manifest)
     allow(command).to receive(:say)
+    allow(command).to receive(:show_current_state)
     allow(director).to receive_messages(fetch_logs: 'resource-id', download_resource: '/tmp/resource')
   end
 

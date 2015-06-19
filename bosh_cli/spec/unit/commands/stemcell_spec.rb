@@ -13,6 +13,7 @@ module Bosh::Cli
 
     before do
       allow(command).to receive(:director).and_return(director)
+      allow(command).to receive(:show_current_state)
       allow(Bosh::Cli::Stemcell).to receive(:new).and_return(stemcell)
     end
 

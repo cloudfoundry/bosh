@@ -31,6 +31,7 @@ module Bosh::Cli
     option '--skip-if-exists', 'skips upload if stemcell already exists'
     def upload(stemcell_location)
       auth_required
+      show_current_state
 
       stemcell_type = stemcell_location =~ /^#{URI::regexp}$/ ? 'remote' : 'local'
       if stemcell_type == 'local'
@@ -85,6 +86,8 @@ module Bosh::Cli
     desc 'Show the list of available stemcells'
     def list
       auth_required
+      show_current_state
+
       stemcells = director.list_stemcells.sort do |sc1, sc2|
         if sc1['name'] == sc2['name']
           Bosh::Common::Version::StemcellVersion.parse_and_compare(sc1['version'], sc2['version'])
@@ -133,6 +136,8 @@ module Bosh::Cli
     option '--force', 'ignore errors while deleting the stemcell'
     def delete(name, version)
       auth_required
+      show_current_state
+
       force = !!options[:force]
 
       say('Checking if stemcell exists...')

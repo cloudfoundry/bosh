@@ -22,8 +22,7 @@ describe 'cli: deployment process', type: :integration do
     bosh_runner.run("upload stemcell #{stemcell_filename}")
     bosh_runner.run("upload release #{release_filename}")
 
-    filename = File.basename(deployment_manifest.path)
-    expect(bosh_runner.run('deploy')).to match /Deployed `#{filename}' to `Test Director'/
+    expect(bosh_runner.run('deploy')).to match /Deployed `simple' to `Test Director'/
     expect(bosh_runner.run('cloudcheck --report')).to match(/No problems found/)
   end
 
@@ -41,15 +40,13 @@ describe 'cli: deployment process', type: :integration do
         bosh_runner.run("upload stemcell #{stemcell_filename}")
         bosh_runner.run("update cloud-config #{cloud_config_manifest.path}")
 
-        filename = File.basename(deployment_manifest.path)
-        expect(bosh_runner.run('deploy')).to match /Deployed `#{filename}' to `Test Director'/
+        expect(bosh_runner.run('deploy')).to match /Deployed `minimal' to `Test Director'/
 
         minimal_manifest['name'] = 'minimal2'
         deployment_manifest = yaml_file('minimal2', minimal_manifest)
         bosh_runner.run("deployment #{deployment_manifest.path}")
 
-        filename = File.basename(deployment_manifest.path)
-        expect(bosh_runner.run('deploy')).to match /Deployed `#{filename}' to `Test Director'/
+        expect(bosh_runner.run('deploy')).to match /Deployed `minimal2' to `Test Director'/
         expect_output('deployments', <<-OUT)
           +----------+--------------+-------------------+--------------+
           | Name     | Release(s)   | Stemcell(s)       | Cloud Config |
@@ -77,11 +74,10 @@ describe 'cli: deployment process', type: :integration do
       bosh_runner.run("upload release #{release_filename}")
 
       out = bosh_runner.run('deploy')
-      filename = File.basename(deployment_manifest.path)
-      expect(out).to match /Deployed `#{filename}' to `Test Director'/
+      expect(out).to match /Deployed `minimal' to `Test Director'/
 
       deployments_output = bosh_runner.run('deployments')
-      expect(deployments_output).to eq(<<-OUT)
+      expect(deployments_output).to include(<<-OUT)
 
 +---------+--------------+-------------------+--------------+
 | Name    | Release(s)   | Stemcell(s)       | Cloud Config |

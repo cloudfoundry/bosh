@@ -14,6 +14,7 @@ module Bosh::Cli::Command
     option "--no-filter", INCLUDE_ALL
     def track(task_id = nil)
       auth_required
+      show_current_state
       use_filter = !options.key?(:no_filter)
       raw_output = options[:raw]
 
@@ -67,6 +68,7 @@ module Bosh::Cli::Command
     option "--no-filter", INCLUDE_ALL
     def list_running
       auth_required
+      show_current_state
       use_filter = !options.key?(:no_filter)
       tasks = director.list_running_tasks(get_verbose_level(use_filter))
       err("No running tasks") if tasks.empty?
@@ -80,6 +82,7 @@ module Bosh::Cli::Command
     option "--no-filter", INCLUDE_ALL
     def list_recent(count = 30)
       auth_required
+      show_current_state
       use_filter = !options.key?(:no_filter)
       tasks = director.list_recent_tasks(count, get_verbose_level(use_filter))
       err("No recent tasks") if tasks.empty?
@@ -92,6 +95,7 @@ module Bosh::Cli::Command
     desc "Cancel task once it reaches the next checkpoint"
     def cancel(task_id)
       auth_required
+      show_current_state
       task = Bosh::Cli::DirectorTask.new(director, task_id)
       task.cancel
       say("Task #{task_id} is getting canceled")

@@ -86,7 +86,8 @@ module Bosh::Cli::Command
       recreate = !!options[:recreate]
       redact_diff = !!options[:redact_diff]
 
-      manifest_yaml = prepare_deployment_manifest(:yaml => true, :resolve_properties => true)
+      manifest = prepare_deployment_manifest(resolve_properties: true)
+      manifest_yaml = Psych.dump(manifest)
 
       inspect_deployment_changes(
         Psych.load(manifest_yaml),
@@ -95,11 +96,9 @@ module Bosh::Cli::Command
       )
       say('Please review all changes carefully'.make_yellow) if interactive?
 
-      deployment_name = File.basename(deployment)
-
       header('Deploying')
-      say("Deployment name: `#{deployment_name.make_green}'")
-      say("Director name: `#{target_name.make_green}'")
+      deployment_name = manifest['name']
+      show_current_state(deployment_name)
 
       unless confirmed?('Are you sure you want to deploy?')
         cancel_deployment
@@ -114,11 +113,13 @@ module Bosh::Cli::Command
     usage "delete deployment"
     desc "Delete deployment"
     option "--force", "ignore errors while deleting"
-    def delete(name)
+    def delete(deployment_name)
       auth_required
+      show_current_state(deployment_name)
+
       force = !!options[:force]
 
-      say("\nYou are going to delete deployment `#{name}'.".make_red)
+      say("\nYou are going to delete deployment `#{deployment_name}'.".make_red)
       nl
       say("THIS IS A VERY DESTRUCTIVE OPERATION AND IT CANNOT BE UNDONE!\n".make_red)
 
@@ -128,10 +129,10 @@ module Bosh::Cli::Command
       end
 
       begin
-        status, result = director.delete_deployment(name, :force => force)
-        task_report(status, result, "Deleted deployment `#{name}'")
+        status, result = director.delete_deployment(deployment_name, :force => force)
+        task_report(status, result, "Deleted deployment `#{deployment_name}'")
       rescue Bosh::Cli::ResourceNotFound
-        task_report(:done, nil, "Skipped delete of missing deployment `#{name}'")
+        task_report(:done, nil, "Skipped delete of missing deployment `#{deployment_name}'")
       end
     end
 
@@ -203,6 +204,8 @@ module Bosh::Cli::Command
     desc "Show the list of available deployments"
     def list
       auth_required
+      show_current_state
+
       deployments = director.list_deployments
 
       err("No deployments") if deployments.empty?
@@ -226,6 +229,7 @@ module Bosh::Cli::Command
     desc "Download deployment manifest locally"
     def download_manifest(deployment_name, save_as = nil)
       auth_required
+      show_current_state(deployment_name)
 
       if save_as && File.exists?(save_as) &&
          !confirmed?("Overwrite `#{save_as}'?")

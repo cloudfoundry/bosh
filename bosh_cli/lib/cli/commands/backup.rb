@@ -6,6 +6,8 @@ module Bosh::Cli::Command
     option '--force', 'Overwrite if the backup file already exists'
     def backup(path=nil)
       auth_required
+      show_current_state
+
       path = backup_destination_path(path)
 
       status, task_id = director.create_backup

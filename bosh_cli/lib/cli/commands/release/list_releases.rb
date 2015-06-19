@@ -7,6 +7,7 @@ module Bosh::Cli::Command
       option '--jobs', 'include job templates'
       def list
         auth_required
+        show_current_state
         releases = director.list_releases.sort do |r1, r2|
           r1['name'] <=> r2['name']
         end

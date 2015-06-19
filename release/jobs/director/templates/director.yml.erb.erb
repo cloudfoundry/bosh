@@ -114,9 +114,7 @@ blobstore:
     password: <%= p('blobstore.director.password') %>
 <% end %>
 
-trusted_certs: <%= JSON.dump(p('director.trusted_certs')) %>
-
-user_management: <%=
+<%
 user_management = {
   provider: p('director.user_management.provider'),
 }
@@ -138,9 +136,10 @@ else
     users: p('director.user_management.local.users', [])
   }
 end
-
-JSON.dump(user_management)
 %>
+
+user_management: <%= JSON.dump(user_management) %>
+trusted_certs: <%= JSON.dump(p('director.trusted_certs')) %>
 
 <% if_p('compiled_package_cache.options.bucket_name',
         'compiled_package_cache.options.access_key_id',

@@ -7,6 +7,7 @@ module Bosh::Cli::Command
 
     def show
       auth_required
+      show_current_state
 
       config = director.get_cloud_config
       if !config.nil?
@@ -19,6 +20,7 @@ module Bosh::Cli::Command
 
     def update(cloud_config_path)
       auth_required
+      show_current_state
 
       cloud_config_yaml = read_yaml_file(cloud_config_path)
 

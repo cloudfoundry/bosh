@@ -146,7 +146,7 @@ module IntegrationExampleGroup
   # forcefully suppress raising on error...caller beware
   def expect_output(cmd, expected_output)
     expect(format_output(bosh_runner.run(cmd, :failure_expected => true))).
-      to eq(format_output(expected_output))
+      to include(format_output(expected_output))
   end
 
   def expect_running_vms(job_name_index_list)

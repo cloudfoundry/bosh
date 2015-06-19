@@ -22,6 +22,7 @@ module Bosh::Cli::Command::Release
 
     before do
       allow(command).to receive(:director).and_return(director)
+      allow(command).to receive(:show_current_state)
     end
 
     describe '#upload' do

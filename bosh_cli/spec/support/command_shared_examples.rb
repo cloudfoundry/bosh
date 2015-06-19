@@ -21,6 +21,7 @@ end
 module CommandLoggedInUserSharedExamples
   def with_logged_in_user
     before { allow(command).to receive(:logged_in?).and_return(true) }
+    before { allow(command).to receive(:show_current_state) }
   end
 
   def it_requires_logged_in_user(runnable)

@@ -13,16 +13,23 @@ module Bosh
           end
 
           def token
-            if @auth_info.client_auth?
-              access_info = client_access_info
-            else
-              access_info = password_access_info
-            end
-
+            access_info = get_access_info
             access_info.auth_header if access_info
           end
 
+          def username
+            get_access_info.username
+          end
+
           private
+
+          def get_access_info
+            if @auth_info.client_auth?
+              client_access_info
+            else
+              password_access_info
+            end
+          end
 
           def uaa_client
             @uaa_client ||= Bosh::Cli::Client::Uaa::Client.new(@target, @auth_info, @config)

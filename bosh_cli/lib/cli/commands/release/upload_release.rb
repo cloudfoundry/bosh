@@ -11,6 +11,7 @@ module Bosh::Cli::Command
       option '--skip-if-exists', 'skips upload if release already exists'
       def upload(release_file = nil)
         auth_required
+        show_current_state
 
         upload_options = {
           :rebase => options[:rebase],

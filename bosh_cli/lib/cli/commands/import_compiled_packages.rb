@@ -6,6 +6,7 @@ module Bosh::Cli::Command
     desc 'Import compiled packages for a specific release and stemcell combination'
     def perform(exported_tar_path)
       auth_required
+      show_current_state
 
       unless File.exist?(exported_tar_path)
         raise Bosh::Cli::CliError, 'Archive does not exist'
