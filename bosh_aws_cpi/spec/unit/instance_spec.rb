@@ -75,8 +75,7 @@ describe Bosh::AwsCloud::Instance do
           with(no_args).and_raise(AWS::EC2::Errors::InvalidInstanceID::NotFound)
       end
 
-      it 'raises Bosh::Clouds::VMNotFound but still removes settings from registry and removes instance from the load balancers' do
-        expect(instance).to receive(:remove_from_load_balancers).with(no_args)
+      it 'raises Bosh::Clouds::VMNotFound but still removes settings from registry' do
         expect(registry).to receive(:delete_settings).with(instance_id)
 
         expect {
@@ -89,7 +88,6 @@ describe Bosh::AwsCloud::Instance do
       it 'deletes the instance without waiting for confirmation of termination' do
         allow(aws_instance).to receive(:terminate).ordered
         allow(registry).to receive(:delete_settings).ordered
-        expect(instance).to receive(:remove_from_load_balancers).ordered
         expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(aws_instance, "Name", "to be deleted").ordered
         instance.terminate(true)
       end
@@ -115,53 +113,6 @@ describe Bosh::AwsCloud::Instance do
       expect(lb1_instances).to receive(:register).with(aws_instance)
       expect(lb2_instances).to receive(:register).with(aws_instance)
       instance.attach_to_load_balancers(%w(fake-lb1-id fake-lb2-id))
-    end
-  end
-
-  describe '#remove_from_load_balancers' do
-    before { allow(elb).to receive(:load_balancers).and_return(load_balancers) }
-    let(:load_balancers) { [load_balancer1, load_balancer2] }
-    let(:load_balancer1) { instance_double('AWS::ELB::LoadBalancer', instances: lb1_instances) }
-    let(:lb1_instances) { instance_double('AWS::ELB::InstanceCollection') }
-    let(:load_balancer2) { instance_double('AWS::ELB::LoadBalancer', instances: lb2_instances) }
-    let(:lb2_instances) { instance_double('AWS::ELB::InstanceCollection') }
-
-    it 'removes instance from all load balancers' do
-      expect(lb1_instances).to receive(:deregister).with(aws_instance)
-      expect(lb2_instances).to receive(:deregister).with(aws_instance)
-      instance.remove_from_load_balancers
-    end
-
-    it 'ignores deregistration InvalidInstance error if instance is not registered' do
-      expect(lb1_instances).to receive(:deregister).with(aws_instance).
-        and_raise(AWS::ELB::Errors::InvalidInstance)
-
-      expect(lb2_instances).to receive(:deregister).with(aws_instance)
-
-      expect {
-        instance.remove_from_load_balancers
-      }.to_not raise_error
-    end
-
-    it 'retries if the deregistration is rate limited' do
-      expect(lb1_instances).to receive(:deregister).and_raise(AWS::ELB::Errors::Throttling)
-      expect(lb1_instances).to receive(:deregister).and_return(nil)
-      allow(lb2_instances).to receive(:deregister)
-
-      expect {
-        instance.remove_from_load_balancers
-      }.to_not raise_error
-    end
-
-    it 'ignores deregistration Base error if instance is not registered' do
-      expect(lb1_instances).to receive(:deregister).with(aws_instance).
-        and_raise(AWS::ELB::Errors::Base)
-
-      expect(lb2_instances).to receive(:deregister).with(aws_instance)
-
-      expect {
-        instance.remove_from_load_balancers
-      }.to_not raise_error
     end
   end
 end
