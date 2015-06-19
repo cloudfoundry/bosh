@@ -203,6 +203,35 @@ describe 'director.yml.erb.erb' do
         expect(parsed['cloud']['properties']['vcds'][0]['entities']['description']).to eq 'mydescription'
         expect(parsed['cloud']['properties']['vcds'][0]['entities']['control']).to be_nil
       end
+
+      it 'escapes parameters correctly' do
+        deployment_manifest_fragment['properties']['vcd'] = {
+          'url' => "my\nvcdurl",
+          'user' => "my\nvcduser",
+          'password' => "my\nvcdpassword",
+          'entities' => {
+            'organization' => "my\norg",
+            'virtual_datacenter' => "my\nvdc",
+            'vapp_catalog' => "my\nvappcatalog",
+            'media_catalog' => "my\nmediacatalog",
+            'vm_metadata_key' => "my\nmetadatakey",
+            'description' => "my\ndescription"
+          }
+        }
+
+        parsed = parsed_yaml # doesn't blow up -- escapes the newlines correctly
+
+        expect(parsed['cloud']['properties']['vcds'][0]['url']).to eq "my\nvcdurl"
+        expect(parsed['cloud']['properties']['vcds'][0]['user']).to eq "my\nvcduser"
+        expect(parsed['cloud']['properties']['vcds'][0]['password']).to eq "my\nvcdpassword"
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['organization']).to eq "my\norg"
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['virtual_datacenter']).to eq "my\nvdc"
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['vapp_catalog']).to eq "my\nvappcatalog"
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['media_catalog']).to eq "my\nmediacatalog"
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['vm_metadata_key']).to eq "my\nmetadatakey"
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['description']).to eq "my\ndescription"
+        expect(parsed['cloud']['properties']['vcds'][0]['entities']['control']).to be_nil
+      end
     end
 
     context 'when control parameters exist' do

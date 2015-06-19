@@ -374,16 +374,16 @@ cloud:
   plugin: vcloud <% plugin = "vcloud" %>
   properties:
     vcds:
-      - url: <%= url %>
-        user: <%= user %>
-        password: <%= password %>
+      - url: <%= JSON.dump(url) %>
+        user: <%= JSON.dump(user) %>
+        password: <%= JSON.dump(password) %>
         entities:
-          organization: <%= organization %>
-          virtual_datacenter: <%= datacenter %>
-          vapp_catalog: <%= vapp_catalog %>
-          media_catalog: <%= media_catalog %>
-          vm_metadata_key: <%= vm_metadata_key %>
-          description: <%= description %>
+          organization: <%= JSON.dump(organization) %>
+          virtual_datacenter: <%= JSON.dump(datacenter) %>
+          vapp_catalog: <%= JSON.dump(vapp_catalog) %>
+          media_catalog: <%= JSON.dump(media_catalog) %>
+          vm_metadata_key: <%= JSON.dump(vm_metadata_key) %>
+          description: <%= JSON.dump(description) %>
           <% if_p('vcd.entities.control') do |control| %>
           control:
             <% if_p('vcd.entities.control.wait_max') do |wait_max| %>
