@@ -18,7 +18,7 @@ describe 'cli: stemcell', type: :integration do
   end
 
   # ~65s (possibly includes sandbox start)
-  it 'can upload a stemcell' do
+  it 'can upload a stemcell and capture its metadata' do
     stemcell_filename = spec_asset('valid_stemcell.tgz')
 
     target_and_login
@@ -29,6 +29,7 @@ describe 'cli: stemcell', type: :integration do
     expect(out).to match /stemcells total: 1/i
     expect(out).to match /ubuntu-stemcell.+1/
     expect(out).to match regexp(expected_id.to_s)
+    expect(out).to match /\| toronto-os \|/
 
     stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{expected_id}")
     expect(File).to be_exists(stemcell_path)
