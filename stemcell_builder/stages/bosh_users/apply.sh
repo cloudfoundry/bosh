@@ -31,12 +31,12 @@ cp $assets_dir/sudoers $chroot/etc/sudoers
 echo "export PATH=$bosh_dir/bin:\$PATH" >> $chroot/root/.bashrc
 echo "export PATH=$bosh_dir/bin:\$PATH" >> $chroot/home/vcap/.bashrc
 
-cat > $chroot/root/.profile <<EOS
+if [ "${stemcell_operating_system}" == "centos" ]; then
+  cat > $chroot/root/.profile <<EOS
 if [ "$BASH" ]; then
   if [ -f ~/.bashrc ]; then
     . ~/.bashrc
   fi
 fi
-
-mesg n
 EOS
+fi
