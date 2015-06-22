@@ -19,7 +19,7 @@ module Bosh::Director
 
       def perform
         @domain = Models::Dns::Domain.find(name: Config.dns_domain_name, type: "NATIVE") if Config.dns_enabled?
-        
+
         vms = Models::Vm.filter(:deployment_id => @deployment_id)
         ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
           vms.each do |vm|
@@ -44,7 +44,7 @@ module Bosh::Director
         job_index = nil
 
         begin
-          agent = AgentClient.with_defaults(vm.agent_id, :timeout => TIMEOUT)
+          agent = AgentClient.with_vm(vm, :timeout => TIMEOUT)
           agent_state = agent.get_state(@format)
           agent_state["networks"].each_value do |network|
             ips << network["ip"]

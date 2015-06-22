@@ -4,27 +4,35 @@ module Bosh::Director
   class AgentClient
     DEFAULT_POLL_INTERVAL = 1.0
 
+    # in case of timeout errors
+    GET_TASK_MAX_RETRIES = 2
+
+    # get_task should retry at least once because some long running tasks
+    # (e.g. configure_networks) will restart the agent (current implementation)
+    # which most likely will result in first get_task message being lost
+    # because agent was not listening on NATS and second retry message
+    # will probably be received because agent came back up.
+    GET_STATE_MAX_RETRIES = 2
+
     attr_accessor :id
 
     def self.with_defaults(id, options = {})
+      vm = Bosh::Director::Models::Vm.find(:agent_id => id)
+      with_vm(vm, options)
+    end
+
+    def self.with_vm(vm, options = {})
       defaults = {
         retry_methods: {
-          # in case of timeout errors
-          get_state: 2,
-
-          # get_task should retry at least once because some long running tasks
-          # (e.g. configure_networks) will restart the agent (current implementation)
-          # which most likely will result in first get_task message being lost
-          # because agent was not listening on NATS and second retry message
-          # will probably be received because agent came back up.
-          get_task: 2,
+          get_state: GET_STATE_MAX_RETRIES,
+          get_task: GET_TASK_MAX_RETRIES,
         }
       }
 
-      credentials = Bosh::Director::Models::Vm.find(:agent_id => id).credentials
+      credentials = vm.credentials
       defaults.merge!(credentials: credentials) if credentials
 
-      self.new('agent', id, defaults.merge(options))
+      self.new('agent', vm.agent_id, defaults.merge(options))
     end
 
     def initialize(service_name, client_id, options = {})

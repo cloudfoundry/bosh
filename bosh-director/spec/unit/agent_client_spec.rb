@@ -52,7 +52,7 @@ module Bosh::Director
       subject(:client) { AgentClient.with_defaults('fake-agent_id') }
 
       before { allow(Models::Vm).to receive(:find).with(agent_id: 'fake-agent_id').and_return(vm_model) }
-      let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil) }
+      let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil, agent_id: 'fake-agent_id') }
 
       before do
         allow(Config).to receive(:nats_rpc)
@@ -73,7 +73,7 @@ module Bosh::Director
 
     describe 'update_settings' do
       subject(:client) { AgentClient.with_defaults('fake-agent_id') }
-      let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil) }
+      let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil, agent_id: 'fake-agent_id') }
       let(:task) do
         {
             'agent_task_id' => 'fake-agent_task_id',

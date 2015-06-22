@@ -15,7 +15,7 @@ module Bosh::Director
     end
 
     describe '#perform' do
-      before { allow(AgentClient).to receive(:with_defaults).with('fake-agent-id', timeout: 5).and_return(agent) }
+      before { allow(AgentClient).to receive(:with_vm).with(instance_of(Models::Vm), timeout: 5).and_return(agent) }
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
 
       it 'parses agent info into vm_state' do
@@ -175,7 +175,7 @@ module Bosh::Director
     end
 
     describe '#process_vm' do
-      before { allow(AgentClient).to receive(:with_defaults).with('fake-agent-id', timeout: 5).and_return(agent) }
+      before { allow(AgentClient).to receive(:with_vm).with(instance_of(Models::Vm), timeout: 5).and_return(agent) }
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
 
       context 'when job index returned as part of get_state agent response is an empty string' do
