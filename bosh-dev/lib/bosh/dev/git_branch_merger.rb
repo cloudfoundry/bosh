@@ -4,6 +4,12 @@ module Bosh::Dev
   class GitBranchMerger
     include CommandHelper
 
+    def self.build
+      new(
+        Logging.logger(STDERR),
+      )
+    end
+
     def initialize(logger)
       @logger = logger
     end
@@ -39,6 +45,14 @@ module Bosh::Dev
       # the currently checked out branch is prefixed with a star
       branches = branches.map{ |line| line.sub(/^\* /, '') }
       branches.include?(branch_name)
+    end
+
+    def verify_branch_was_merged(branch_name, candidate_sha)
+      stdout, stderr, status = exec_cmd("git fetch origin #{branch_name}")
+      raise "Failed fetching branch #{branch_name}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+
+      _, _, status = exec_cmd("git branch --merged #{candidate_sha} | grep #{branch_name}")
+      status.success?
     end
   end
 end

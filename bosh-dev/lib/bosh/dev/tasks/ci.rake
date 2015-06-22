@@ -6,6 +6,16 @@ namespace :ci do
     SimpleCov::ResultMerger.merged_result.format!
   end
 
+  task :verify_promoted_in_candidate, [:candidate_sha] do |_, args|
+    require 'bosh/dev/build'
+    require 'bosh/dev/git_branch_merger'
+    merger = Bosh::Dev::GitBranchMerger.build
+    candidate_sha = args.to_hash.fetch(:candidate_sha)
+    unless merger.verify_branch_was_merged('master', candidate_sha)
+      fail "Candidate #{candidate_sha} does not contain latest master"
+    end
+  end
+
   desc 'Publish CI pipeline gems to S3'
   task :publish_pipeline_gems do
     require 'bosh/dev/build'
@@ -16,7 +26,7 @@ namespace :ci do
   end
 
   desc 'Publish CI pipeline BOSH release to S3'
-  task publish_bosh_release: [:publish_pipeline_gems] do
+  task :publish_bosh_release, [:candidate_sha] => [:verify_promoted_in_candidate, :publish_pipeline_gems] do
     require 'bosh/dev/build'
     require 'bosh/dev/bosh_release_publisher'
     build = Bosh::Dev::Build.candidate
