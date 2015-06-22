@@ -12,4 +12,4 @@ run:
 params:
   RUBY_VERSION: replace-me
   DB:           replace-me
-  LOG_LEVEL:    WARN
+  LOG_LEVEL:    INFO
