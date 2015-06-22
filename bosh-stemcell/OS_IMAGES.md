@@ -144,6 +144,9 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
 CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
+* `u1vhDkA5HGFmGJfb9Qg4tBQkE_AMlTOh`
+  load bashrc in non-login shell
+
 * `Q43Dju2RvjPkbWakc33SAGCwrXAPGZiV`
   update kernel and packages
 
