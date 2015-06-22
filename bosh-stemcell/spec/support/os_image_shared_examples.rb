@@ -25,7 +25,7 @@ shared_examples_for 'every OS image' do
       it { should return_exit_status(0) }
     end
 
-    describe command("grep -q 'source /root/.profile\n' /root/.bash_profile") do
+    describe command("grep -q .bashrc /root/.profile") do
       it { should return_exit_status(0) }
     end
 
