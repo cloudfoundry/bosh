@@ -27,7 +27,7 @@ describe Bosh::AwsCloud::Cloud do
       expect(volume).to receive(:create_snapshot).with('deployment/job/0/sdf').and_return(snapshot)
 
       expect(Bosh::AwsCloud::ResourceWait).to receive(:for_snapshot).with(
-        snapshot: snapshot, states: [:pending, :completed]
+        snapshot: snapshot, state: :completed
       )
 
       expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(snapshot, 'agent_id', 'agent')
@@ -59,7 +59,7 @@ describe Bosh::AwsCloud::Cloud do
       allow(volume).to receive(:create_snapshot).with('deployment/job/0/sdf').and_return(snapshot)
 
       allow(Bosh::AwsCloud::ResourceWait).to receive(:for_snapshot).with(
-          snapshot: snapshot, states: [:pending, :completed]
+          snapshot: snapshot, state: :completed
         )
 
       expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(snapshot, 'agent_id', 'agent')
@@ -81,7 +81,7 @@ describe Bosh::AwsCloud::Cloud do
       expect(volume).to receive(:create_snapshot).with('deployment/job/0').and_return(snapshot)
 
       expect(Bosh::AwsCloud::ResourceWait).to receive(:for_snapshot).with(
-        snapshot: snapshot, states: [:pending, :completed]
+        snapshot: snapshot, state: :completed
       )
 
       expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(snapshot, 'agent_id', 'agent')
