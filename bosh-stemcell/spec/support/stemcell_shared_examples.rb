@@ -9,5 +9,10 @@ shared_examples_for 'All Stemcells' do
       it { should be_file }
       it { should contain expected_version }
     end
+
+    describe file '/var/vcap/bosh/etc/stemcell_git_sha1' do
+      it { should be_file }
+      its(:content) { should match '^[0-9a-f]{40}\+?$' }
+    end
   end
 end
