@@ -18,27 +18,30 @@ describe 'simultaneous deploys', type: :integration do
     upload_cloud_config(cloud_config_hash: cloud_config)
   end
 
+  def start_deploy(manifest)
+    output = deploy_simple_manifest(manifest_hash: manifest, no_track: true)
+    return Bosh::Spec::OutputParser.new(output).task_id('running')
+
+  end
+
   context 'dynamic IPs' do
-    let(:cloud_config) do
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-      cloud_config['networks'].first['subnets'] = [{
-        'range' => '192.168.1.0/28',
-        'gateway' => '192.168.1.1',
-        'dns' => [],
-        'static' => [],
-        'reserved' => ['192.168.1.8-192.168.1.15'],
-        'cloud_properties' => {},
-      }]
-      cloud_config
-    end
-
     context 'when there are enough IPs for two deployments' do
-      before do
-        first_deploy_result = deploy_simple_manifest(manifest_hash: first_manifest_hash, no_track: true)
-        second_deploy_result = deploy_simple_manifest(manifest_hash: second_manifest_hash, no_track: true)
+      let(:cloud_config) do
+        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config['networks'].first['subnets'] = [{
+            'range' => '192.168.1.0/28',
+            'gateway' => '192.168.1.1',
+            'dns' => [],
+            'static' => [],
+            'reserved' => ['192.168.1.8-192.168.1.15'],
+            'cloud_properties' => {},
+          }]
+        cloud_config
+      end
 
-        first_task_id = Bosh::Spec::OutputParser.new(first_deploy_result).task_id('running')
-        second_task_id = Bosh::Spec::OutputParser.new(second_deploy_result).task_id('running')
+      before do
+        first_task_id = start_deploy(first_manifest_hash)
+        second_task_id = start_deploy(second_manifest_hash)
 
         output, success = director.task(first_task_id)
         expect(success).to(be(true), "task failed: #{output}")
@@ -53,6 +56,31 @@ describe 'simultaneous deploys', type: :integration do
         expect(first_deployment_ips + second_deployment_ips).to match_array(
           ['192.168.1.2', '192.168.1.3', '192.168.1.4', '192.168.1.5', '192.168.1.6', '192.168.1.7']
         )
+      end
+    end
+
+    context 'when there are not enough IPs for two deployments' do
+      let(:cloud_config) do
+        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config['networks'].first['subnets'] = [{
+            'range' => '192.168.1.0/28',
+            'gateway' => '192.168.1.1',
+            'dns' => [],
+            'static' => [],
+            'reserved' => ['192.168.1.6-192.168.1.15'],
+            'cloud_properties' => {},
+          }]
+        cloud_config
+      end
+
+      it 'fails one of deploys' do
+        first_task_id = start_deploy(first_manifest_hash)
+        second_task_id = start_deploy(second_manifest_hash)
+
+        first_output, first_success = director.task(first_task_id)
+        second_output, second_success = director.task(second_task_id)
+        expect([first_success, second_success]).to match_array([true, false])
+        expect(first_output + second_output).to include("asked for a dynamic IP but there were no more available")
       end
     end
   end
