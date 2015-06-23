@@ -20,4 +20,4 @@ module Extensions
   end
 end
 
-FakeFS::Kernel.include Extensions::FakeFS::Kernel
+FakeFS::Kernel.send(:include, Extensions::FakeFS::Kernel)
