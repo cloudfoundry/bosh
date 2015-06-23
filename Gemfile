@@ -50,7 +50,7 @@ group :development, :test do
   gem 'parallel_tests'
   gem 'rack-test'
   gem 'webmock'
-  gem 'fakefs', git: 'https://github.com/pivotal-cf-experimental/fakefs.git', ref: 'ebde3d6c'
+  gem 'fakefs'
   gem 'simplecov', '~> 0.9.0'
   gem 'sinatra'
   gem 'sinatra-contrib'
