@@ -144,6 +144,9 @@ Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
 CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
+* `gVPTz59wj9kHj1nBzzymxbhm1yvPe.Q.`
+  remove mesg from profile
+
 * `u1vhDkA5HGFmGJfb9Qg4tBQkE_AMlTOh`
   load bashrc in non-login shell
 
