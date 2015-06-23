@@ -23,6 +23,14 @@ module Bosh::Cli::Command::Release
             end
           end
 
+          context 'when export release command args are not following required format (string with slash in the middle)' do
+            before { allow(client).to receive(:export).with('release','1','centos-7','0000') }
+
+            it 'should raise an ArgumentError exception' do
+              expect {command.export('release 1','centos-7 0000')}.to raise_error(ArgumentError, '"release 1" must be in the form name/version')
+            end
+          end
+
           context 'when the task status is :failed' do
             before { allow(client).to receive(:export).and_return([:failed, some_task_id]) }
 

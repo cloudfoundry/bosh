@@ -56,8 +56,8 @@ module Bosh::Cli
       begin
         command.send(@method.name, *args)
         command.exit_code
-      rescue ArgumentError => _
-        err("Usage: #{usage_with_params}")
+      rescue ArgumentError => ex
+        err("#{ex.message}.\n\nUsage: #{usage_with_params}")
       end
     end
 

@@ -7,7 +7,7 @@ module Bosh::Cli::Command
 
       # bosh create release
       usage 'export release'
-      desc 'Export release to makes a tarball for the compiled release '
+      desc 'Export the compiled release to a tarball. Release should be in the form of {name}/{version} and stemcell should be in the form of {operating system name}/{stemcell version}'
 
       def export(release, stemcell)
         auth_required

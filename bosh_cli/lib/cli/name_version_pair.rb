@@ -7,7 +7,7 @@ module Bosh::Cli
 
       name, _, version = str.rpartition('/')
       if name.empty? || version.empty?
-        raise ArgumentError, 'str must be in the form name/version'
+        raise ArgumentError, "\"#{str}\" must be in the form name/version"
       end
 
       new(name, version)
