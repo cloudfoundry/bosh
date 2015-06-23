@@ -19,7 +19,10 @@ module Bosh::Director
         @reserved_legacy_ranges ||= begin
           reserved_legacy_ranges = {}
 
-          other_deployments = Models::Deployment.where(cloud_config_id: nil).exclude(name: @current_deployment.name).all
+          other_deployments = Models::Deployment.where(cloud_config_id: nil).
+            exclude(name: @current_deployment.name).
+            exclude(manifest: nil).all
+
           other_deployments.each do |deployment|
             add_networks_from_deployment(deployment, reserved_legacy_ranges)
           end

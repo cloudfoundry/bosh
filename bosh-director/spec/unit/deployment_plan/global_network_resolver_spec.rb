@@ -87,6 +87,17 @@ module Bosh::Director
           )
         end
 
+        it "ignores deployments that don't have a manifest" do
+          Models::Deployment.make(
+            name: 'other-deployment',
+            cloud_config: nil,
+            manifest: nil
+          )
+
+          reserved_ranges = global_network_resolver.reserved_legacy_ranges('network-a')
+          expect(reserved_ranges).to be_empty
+        end
+
         it 'does not return networks with the same name from migrated deployments' do
           Models::Deployment.make(
             name: 'other-deployment-1',

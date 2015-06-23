@@ -112,8 +112,6 @@ describe 'global networking', type: :integration do
 
       current_sandbox.cpi.commands.unpause_delete_vms
 
-      puts bosh_runner.run('task latest --debug')
-
       deploy_with_ips(second_deployment_manifest, ['192.168.1.10', '192.168.1.11'])
       second_deployment_vms = director.vms('second_deployment')
       expect(second_deployment_vms.size).to eq(2)

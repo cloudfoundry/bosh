@@ -78,6 +78,12 @@ module Bosh::Spec
       @nats_recording
     end
 
+    def task(id)
+      output = @runner.run("task #{id}")
+      failed = /Task (\d+) error/.match(output)
+      return output, !failed
+    end
+
     private
 
     def vms_details(deployment_name, options = {})
