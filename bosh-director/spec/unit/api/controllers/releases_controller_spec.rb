@@ -101,6 +101,25 @@ module Bosh::Director
         end
       end
 
+      describe 'POST', '/export' do
+        before { authorize 'admin', 'admin' }
+
+        def perform
+          params = {
+              release_name: 'release-name-value',
+              release_version: 'release-version-value',
+              stemcell_os:    'bosh-stemcell-os-value',
+              stemcell_version:    'bosh-stemcell-version-value',
+          }
+          post '/export', JSON.dump(params), { 'CONTENT_TYPE' => 'application/json' }
+        end
+
+        it 'authenticated access redirect to the created task' do
+          perform
+          expect_redirect_to_queued_task(last_response)
+        end
+      end
+
       describe 'DELETE', '/<id>' do
         before { authorize 'admin', 'admin' }
 

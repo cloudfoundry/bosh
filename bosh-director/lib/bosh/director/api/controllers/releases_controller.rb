@@ -42,6 +42,19 @@ module Bosh::Director
         json_encode(releases)
       end
 
+      post '/export', consumes: :json do
+        body_params = JSON.parse(request.body.read)
+
+        release_name = body_params['release_name']
+        release_version = body_params['release_version']
+        stemcell_os = body_params['stemcell_os']
+        stemcell_version = body_params['stemcell_version']
+
+        task = @release_manager.export_release(current_user, release_name, release_version, stemcell_os, stemcell_version)
+
+        redirect "/tasks/#{task.id}"
+      end
+
       get '/:name', scope: :read do
         name = params[:name].to_s.strip
         release = @release_manager.find_by_name(name)

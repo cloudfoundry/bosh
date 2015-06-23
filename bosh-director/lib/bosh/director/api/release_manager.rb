@@ -62,6 +62,14 @@ module Bosh::Director
       def delete_release(username, release, options = {})
         JobQueue.new.enqueue(username, Jobs::DeleteRelease, "delete release: #{release.name}", [release.name, options])
       end
+
+      def export_release(username, release_name, release_version, stemcell_os, stemcell_version)
+        JobQueue.new.enqueue(
+            username,
+            Jobs::ExportRelease,
+            "export release: #{release_name}/#{release_version} for #{stemcell_os}/#{stemcell_version}",
+            [release_name, release_version, stemcell_os, stemcell_version])
+      end
     end
   end
 end
