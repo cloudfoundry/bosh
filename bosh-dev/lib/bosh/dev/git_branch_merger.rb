@@ -51,6 +51,9 @@ module Bosh::Dev
       stdout, stderr, status = exec_cmd("git fetch origin #{branch_name}")
       raise "Failed fetching branch #{branch_name}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
 
+      stdout, stderr, status = exec_cmd("git checkout #{branch_name}")
+      raise "Failed to git checkout #{branch_name}: stdout: '#{stdout}', stderr: '#{stderr}'" unless status.success?
+
       _, _, status = exec_cmd("git branch --merged #{candidate_sha} | grep #{branch_name}")
       status.success?
     end
