@@ -44,6 +44,7 @@ module Bosh
           end
 
           context 'when authorizaion is provided' do
+            let(:authenticates_successfully) { true }
             before { header('Authorization', 'Value') }
 
             it 'passes the request env to the identity provider' do
@@ -62,7 +63,6 @@ module Bosh
             end
 
             context 'when authenticating successfully' do
-              let(:authenticates_successfully) { true }
 
               it 'succeeds' do
                 get '/test_route'

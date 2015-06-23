@@ -152,7 +152,8 @@ describe Bosh::Director::Config do
 
         it 'creates the UAAIdentityProvider with the configured key' do
           request_env = {'HTTP_AUTHORIZATION' => "bearer #{token}"}
-          expect(config.identity_provider.corroborate_user(request_env, [])).to eq('larry')
+          user = config.identity_provider.get_user(request_env)
+          expect(user.username).to eq('larry')
         end
       end
     end

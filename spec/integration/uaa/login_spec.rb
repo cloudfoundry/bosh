@@ -146,7 +146,7 @@ CERT
       it 'can only access status endpoint' do
         client_env = {'BOSH_CLIENT' => 'no-access', 'BOSH_CLIENT_SECRET' => 'secret'}
         output = bosh_runner.run('status', env: client_env)
-        expect(output).to match /User.*not logged in/
+        expect(output).to match /User.*no-access/
 
         # AuthError because verification is happening on director side
         output = bosh_runner.run('vms', env: client_env, failure_expected: true)

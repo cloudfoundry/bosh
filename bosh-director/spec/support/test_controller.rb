@@ -8,15 +8,15 @@ module Support
     end
 
     get '/test_route' do
-      "Success with: #{@user || 'No user'}"
+      "Success with: #{current_user || 'No user'}"
     end
 
     get '/read', scope: :read do
-      "Success with: #{@user || 'No user'}"
+      "Success with: #{current_user || 'No user'}"
     end
 
     get '/params', scope: Bosh::Director::Api::Extensions::Scoping::ParamsScope.new(:name, {test: :read}) do
-      "Success with: #{@user || 'No user'}"
+      "Success with: #{current_user || 'No user'}"
     end
 
     def requires_authentication?

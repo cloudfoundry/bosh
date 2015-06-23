@@ -4,7 +4,7 @@ module Bosh::Director
       module Scoping
         module Helpers
           def current_user
-            @user
+            @user.username if @user
           end
         end
 
@@ -29,12 +29,12 @@ module Bosh::Director
 
             if auth_provided
               begin
-                @user = identity_provider.corroborate_user(request.env, scope)
+                @user = identity_provider.get_user(request.env)
               rescue AuthenticationError
               end
             end
 
-            if requires_authentication? && @user.nil?
+            if (@user.nil? || !@user.has_access?(scope)) && requires_authentication?
               response['WWW-Authenticate'] = 'Basic realm="BOSH Director"'
               throw(:halt, [401, "Not authorized\n"])
             end
