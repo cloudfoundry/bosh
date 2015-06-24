@@ -114,8 +114,12 @@ module Bosh::Spec
     def self.manifest_with_errand
       manifest = simple_manifest.merge('name' => 'errand')
       manifest['jobs'].find { |job| job['name'] == 'foobar'}['instances'] = 1
+      manifest['jobs'] << simple_errand_job
+      manifest
+    end
 
-      manifest['jobs'] << {
+    def self.simple_errand_job
+      {
         'name' => 'fake-errand-name',
         'template' => 'errand1',
         'lifecycle' => 'errand',
@@ -131,8 +135,6 @@ module Bosh::Spec
           },
         },
       }
-
-      manifest
     end
   end
 end
