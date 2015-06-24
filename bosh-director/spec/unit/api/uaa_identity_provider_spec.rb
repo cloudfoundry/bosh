@@ -53,12 +53,15 @@ module Bosh::Director
         context 'when director is configured with the same symmetric key' do
           let(:skey) { 'symmetric-key' }
 
-          it 'returns an authorized User with the username' do
-            expect(uaa_user.username).to eq('marissa')
-          end
+          context 'when user has bosh.admin' do
 
-          it 'has access' do
-            expect(uaa_user.has_access?(requested_access)).to be true
+            it 'returns an authorized User with the username' do
+              expect(uaa_user.username).to eq('marissa')
+            end
+
+            it 'has access' do
+              expect(identity_provider.valid_access?(uaa_user, requested_access)).to be true
+            end
           end
 
           context 'when user scope is bosh.<DIRECTOR-UUID>.admin' do
@@ -74,7 +77,7 @@ module Bosh::Director
               let(:scope) { ['bosh.other-director-uuid.admin'] }
 
               it 'returns false' do
-                expect(uaa_user.has_access?(requested_access)).to be false
+                expect(identity_provider.valid_access?(uaa_user, requested_access)).to be false
               end
             end
           end
@@ -83,14 +86,15 @@ module Bosh::Director
             let(:scope) { [] }
 
             it 'returns false' do
-              expect(uaa_user.has_access?(requested_access)).to be false
+              expect(identity_provider.valid_access?(uaa_user, requested_access)).to be false
             end
 
             context 'when requested_access is read' do
               let(:requested_access) { :read }
 
               it 'returns false' do
-                expect(uaa_user.has_access?(requested_access)).to be false
+                expect(identity_provider.valid_access?(uaa_user, requested_access)).to be false
+                expect(identity_provider.required_scopes(requested_access)).to eq(['bosh.admin', 'bosh.fake-director-uuid.admin', 'bosh.read', 'bosh.fake-director-uuid.read'])
               end
 
               context 'when user scope contains bosh.read' do
@@ -114,7 +118,8 @@ module Bosh::Director
                   let(:scope) { ['bosh.other-director-uuid.read'] }
 
                   it 'returns false' do
-                    expect(uaa_user.has_access?(requested_access)).to be false
+                    expect(identity_provider.valid_access?(uaa_user, requested_access)).to be false
+                    expect(identity_provider.required_scopes(requested_access)).to eq(["bosh.admin", "bosh.fake-director-uuid.admin", "bosh.read", "bosh.fake-director-uuid.read"])
                   end
                 end
               end
@@ -159,7 +164,7 @@ module Bosh::Director
           end
 
           it 'has access' do
-            expect(uaa_user.has_access?(requested_access)).to be true
+            expect(identity_provider.valid_access?(uaa_user, requested_access)).to be true
           end
         end
 

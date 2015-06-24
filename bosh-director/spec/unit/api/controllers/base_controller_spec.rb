@@ -13,7 +13,7 @@ module Bosh
 
           let(:requires_authentication) { nil }
           let(:authenticates_successfully) { false }
-          let(:identity_provider) { Support::TestIdentityProvider.new(authenticates_successfully) }
+          let(:identity_provider) { Support::TestIdentityProvider.new }
 
           let(:temp_dir) { Dir.mktmpdir }
           let(:test_config) { base_config }
@@ -45,7 +45,7 @@ module Bosh
 
           context 'when authorizaion is provided' do
             let(:authenticates_successfully) { true }
-            before { header('Authorization', 'Value') }
+            before { basic_authorize 'admin', 'admin' }
 
             it 'passes the request env to the identity provider' do
               header('X-Test-Header', 'Value')
@@ -67,7 +67,7 @@ module Bosh
               it 'succeeds' do
                 get '/test_route'
                 expect(last_response.status).to eq(200)
-                expect(last_response.body).to eq('Success with: fake-user')
+                expect(last_response.body).to eq('Success with: admin')
               end
             end
           end
@@ -85,10 +85,8 @@ module Bosh
             let(:requires_authentication) { false }
 
             context 'when user provided credentials' do
-              before { header('Authorization', 'Value') }
-
               context 'when credentials are invalid' do
-                let(:authenticates_successfully) { false }
+                before { basic_authorize 'invalid', 'invalid' }
 
                 it 'returns controller response' do
                   get '/test_route'
@@ -98,12 +96,12 @@ module Bosh
               end
 
               context 'when credentials are valid' do
-                let(:authenticates_successfully) { true }
+                before { basic_authorize 'admin', 'admin' }
 
                 it 'returns controller response' do
                   get '/test_route'
                   expect(last_response.status).to eq(200)
-                  expect(last_response.body).to eq('Success with: fake-user')
+                  expect(last_response.body).to eq('Success with: admin')
                 end
               end
             end

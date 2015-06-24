@@ -70,7 +70,7 @@ module Bosh::Director
       before { allow(config).to receive(:identity_provider).and_return(identity_provider) }
 
       it 'accepts read scope for routes allowing read access' do
-        authorize 'test', 'test'
+        authorize 'admin', 'admin'
 
         get '/'
         expect(identity_provider.scope).to eq(:read)

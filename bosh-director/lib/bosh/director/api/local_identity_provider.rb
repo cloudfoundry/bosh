@@ -21,30 +21,24 @@ module Bosh
         def get_user(request_env)
           auth ||= Rack::Auth::Basic::Request.new(request_env)
           raise AuthenticationError unless auth.provided? && auth.basic? && auth.credentials
-          if @user_manager.authenticate(*auth.credentials)
-            username = auth.credentials.first
-            password = auth.credentials[1]
-            LocalUser.new(@user_manager, username, password)
-          else
+
+          unless @user_manager.authenticate(*auth.credentials)
             raise AuthenticationError
           end
+
+          LocalUser.new(*auth.credentials)
         end
 
-        class LocalUser
+        def valid_access?(user, _)
+          @user_manager.authenticate(user.username, user.password)
+        end
 
-          attr_reader :username
-
-          def initialize(user_manager, username, password)
-            @user_manager = user_manager
-            @username = username
-            @password = password
-          end
-
-          def has_access?(_)
-            @user_manager.authenticate(@username, @password)
-          end
+        def required_scopes(_)
+          raise NotImplemented
         end
       end
+
+      class LocalUser < Struct.new(:username, :password); end
     end
   end
 end
