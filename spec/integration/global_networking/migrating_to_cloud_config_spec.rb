@@ -32,6 +32,13 @@ describe 'migrating to cloud config', type: :integration do
     manifest_hash
   end
 
+  def deploy_with_ip(manifest, ip, options={})
+    manifest['jobs'].first['networks'].first['static_ips'] = [ip]
+    manifest['jobs'].first['instances'] = 1
+    options.merge!(manifest_hash: manifest)
+    deploy_simple_manifest(options)
+  end
+
   context 'when we have legacy deployments deployed' do
     let(:legacy_manifest) do
       legacy_manifest = Bosh::Spec::Deployments.legacy_manifest
