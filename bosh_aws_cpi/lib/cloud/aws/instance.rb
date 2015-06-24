@@ -50,8 +50,6 @@ module Bosh::AwsCloud
     end
 
     def terminate(fast=false)
-      remove_from_load_balancers
-
       begin
         @aws_instance.terminate
       rescue AWS::EC2::Errors::InvalidInstanceID::NotFound => e
@@ -86,19 +84,6 @@ module Bosh::AwsCloud
       load_balancer_ids.each do |load_balancer_id|
         lb = @elb.load_balancers[load_balancer_id]
         lb.instances.register(@aws_instance)
-      end
-    end
-
-    def remove_from_load_balancers
-      @elb.load_balancers.each do |load_balancer|
-        begin
-          Bosh::Common.retryable(on: [AWS::ELB::Errors::Throttling], tries: 20) do
-            load_balancer.instances.deregister(@aws_instance)
-            true
-          end
-        rescue AWS::ELB::Errors::InvalidInstance, AWS::Errors::Base
-          # ignore this, as it just means it wasn't registered
-        end
       end
     end
   end
