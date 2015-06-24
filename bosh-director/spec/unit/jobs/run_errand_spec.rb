@@ -166,6 +166,28 @@ module Bosh::Director
 
                   expect { subject.perform }.to raise_error(error)
                 end
+
+                context 'when cleanup fails' do
+                  it 'raises the original exception and warns about the clean up failure' do
+                    original_error = Exception.new("original error")
+                    cleanup_error = Exception.new("cleanup error")
+                    expect(runner).to receive(:run).with(no_args).and_raise(original_error)
+                    expect(job_manager).to receive(:delete_instances).with(no_args).ordered.and_raise(cleanup_error)
+
+                    expect { subject.perform }.to raise_error(original_error)
+                    expect(log_string).to include("cleanup error")
+                  end
+                end
+              end
+
+              context 'when the errand runs but cleanup fails' do
+                it 'raises clean up error' do
+                  cleanup_error = Exception.new("cleanup error")
+                  expect(runner).to receive(:run).with(no_args)
+                  expect(job_manager).to receive(:delete_instances).with(no_args).ordered.and_raise(cleanup_error)
+
+                  expect { subject.perform }.to raise_error(cleanup_error)
+                end
               end
 
               context 'when the errand is canceled' do

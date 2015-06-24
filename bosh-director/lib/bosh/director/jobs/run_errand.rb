@@ -80,12 +80,32 @@ module Bosh::Director
         update_instances(resource_pools, job_manager)
         blk.call
       ensure
-        if @keep_alive
-          logger.info('Skipping instances deletion, keep-alive is set')
+        if no_error?
+          cleanup_instances_and_raise_errors(job_manager, resource_pools)
         else
-          logger.info('Deleting instances')
-          delete_instances(resource_pools, job_manager)
+          cleanup_instances_and_log_errors(job_manager, resource_pools)
         end
+      end
+    end
+
+    def no_error?
+      $!.nil?
+    end
+
+    def cleanup_instances_and_log_errors(job_manager, resource_pools)
+      begin
+        cleanup_instances_and_raise_errors(job_manager, resource_pools)
+      rescue Exception => e
+        logger.warn("Failed to delete instances: #{e.class}: #{e.message}\n#{e.backtrace.join("\n")}")
+      end
+    end
+
+    def cleanup_instances_and_raise_errors(job_manager, resource_pools)
+      if @keep_alive
+        logger.info('Skipping instances deletion, keep-alive is set')
+      else
+        logger.info('Deleting instances')
+        delete_instances(resource_pools, job_manager)
       end
     end
 
