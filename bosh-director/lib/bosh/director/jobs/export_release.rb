@@ -12,7 +12,7 @@ module Bosh::Director
         :export_release
       end
 
-      def initialize(release_name, release_version, stemcell_os, stemcell_version, options = {})
+      def initialize(deployment_name, release_name, release_version, stemcell_os, stemcell_version, options = {})
       #   DO some initilization
         logger.info("we are in ExportRelease:initialize #{release_name}/#{release_version} #{stemcell_os}/#{stemcell_version}")
       end

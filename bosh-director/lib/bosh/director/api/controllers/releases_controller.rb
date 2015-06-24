@@ -45,12 +45,14 @@ module Bosh::Director
       post '/export', consumes: :json do
         body_params = JSON.parse(request.body.read)
 
+        deployment_name = body_params['deployment_name']
         release_name = body_params['release_name']
         release_version = body_params['release_version']
         stemcell_os = body_params['stemcell_os']
         stemcell_version = body_params['stemcell_version']
 
-        task = @release_manager.export_release(current_user, release_name, release_version, stemcell_os, stemcell_version)
+        task = @release_manager.export_release(
+            current_user, deployment_name, release_name, release_version, stemcell_os, stemcell_version)
 
         redirect "/tasks/#{task.id}"
       end
