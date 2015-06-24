@@ -86,7 +86,7 @@ module Bosh::AwsCloud
       virtualization_type = stemcell_properties["virtualization_type"]
 
       params = if virtualization_type == 'hvm'
-                 {
+                 params = {
                    :virtualization_type => virtualization_type,
                    :root_device_name => "/dev/xvda",
                    :block_device_mappings => {
@@ -95,6 +95,12 @@ module Bosh::AwsCloud
                      }
                    }
                  }
+
+                 if stemcell_properties["sriov_net_support"]
+                   params[:sriov_net_support] = "simple"
+                 end
+
+                 params
                else
                  root_device_name = stemcell_properties["root_device_name"]
                  aki = AKIPicker.new(region).pick(architecture, root_device_name)
