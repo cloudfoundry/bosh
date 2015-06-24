@@ -70,7 +70,11 @@ module Bosh::Cli
 
       report_manifest_warnings
 
-      options[:yaml] ? Psych.dump(@hash) : @hash
+      @hash
+    end
+
+    def yaml
+      @yaml ||= Psych.dump(@hash)
     end
 
     # @param [Hash] manifest Deployment manifest (will be modified)

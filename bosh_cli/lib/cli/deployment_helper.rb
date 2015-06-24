@@ -5,6 +5,8 @@ module Bosh::Cli
       manifest = Manifest.new(deployment, director)
       manifest.load
       manifest.validate(options)
+
+      options[:yaml] ? manifest.yaml : manifest.hash
     end
 
     # Check if the 2 deployments are different.
