@@ -188,7 +188,8 @@ module Bosh::Cli
     end
 
     def show_current_state(deployment_name=nil)
-      msg = "Acting as user '#{credentials.username.to_s.make_green}'"
+      user_desc = auth_info.client_auth? ? 'client' : 'user'
+      msg = "Acting as #{user_desc} '#{credentials.username.to_s.make_green}'"
       msg += " on deployment '#{deployment_name.make_green}'" if deployment_name
       msg += " on '#{target_name.make_green}'" if target_name
       say(msg)
