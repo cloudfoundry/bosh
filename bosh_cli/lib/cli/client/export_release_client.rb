@@ -4,11 +4,12 @@ module Bosh::Cli::Client
       @director = director
     end
 
-    def export(release_name, release_version, stemcell_os, stemcell_version)
+    def export(deployment_name, release_name, release_version, stemcell_os, stemcell_version)
       path = "/releases/export"
       content_type = 'application/json'
 
       body = JSON.dump(
+          deployment_name: deployment_name,
           release_name: release_name,
           release_version: release_version,
           stemcell_os: stemcell_os,

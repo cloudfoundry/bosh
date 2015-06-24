@@ -9,9 +9,10 @@ describe Bosh::Cli::Client::ExportReleaseClient do
   describe '#export' do
     it 'calls the director request_and_track method with the correct parameters' do
       allow(director).to receive(:request_and_track)
-      client.export('release','1','centos-7','0000')
+      client.export('best-deployment-evar', 'release', '1', 'centos-7', '0000')
 
       expected = JSON.dump(
+          deployment_name: 'best-deployment-evar',
           release_name: 'release',
           release_version: '1',
           stemcell_os: 'centos-7',
@@ -20,7 +21,7 @@ describe Bosh::Cli::Client::ExportReleaseClient do
       expect(director).to have_received(:request_and_track).with(
           :post,
           '/releases/export',
-          { content_type: 'application/json',  payload: expected},
+          { content_type: 'application/json', payload: expected },
       )
     end
   end

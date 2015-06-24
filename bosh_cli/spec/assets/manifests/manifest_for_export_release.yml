@@ -1,0 +1,11 @@
+---
+name: export_support
+director_uuid: 123456-789abcdef
+networks:
+- name: default
+compilation:
+  workers: 1
+  network: default
+  reuse_compilation_vms: true
+  cloud_properties: {}
+releases: []

@@ -11,14 +11,16 @@ module Bosh::Cli::Command
 
       def export(release, stemcell)
         auth_required
+        deployment_required
         show_current_state
 
+        deployment_name = prepare_deployment_manifest["name"]
         release = Bosh::Cli::NameVersionPair.parse(release)
         stemcell = Bosh::Cli::NameVersionPair.parse(stemcell)
         stemcell_os = stemcell.name
 
         client = Bosh::Cli::Client::ExportReleaseClient.new(director)
-        status, task_id = client.export(release.name, release.version, stemcell_os, stemcell.version)
+        status, task_id = client.export(deployment_name, release.name, release.version, stemcell_os, stemcell.version)
         task_report(status, task_id)
       end
     end
