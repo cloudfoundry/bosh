@@ -1,0 +1,48 @@
+---
+jobs:
+  - name: unit-2.1
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+      - task: test
+        file: bosh-src/ci/tasks/test-unit.yml
+        config:
+          params:
+            RUBY_VERSION: 2.1.6
+
+  - name: integration-mysql-1.9
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+      - task: test
+        privileged: true
+        file: bosh-src/ci/tasks/test-integration.yml
+        config:
+          params:
+            DB:           mysql
+            RUBY_VERSION: 1.9.3
+
+  - name: integration-postgres-2.1
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+      - task: test
+        privileged: true
+        file: bosh-src/ci/tasks/test-integration.yml
+        config:
+          params:
+            DB:           postgresql
+            RUBY_VERSION: 2.1.6
+
+resources:
+  - name: bosh-src
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh
+      branch: global-net-refactor
