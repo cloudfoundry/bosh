@@ -25,6 +25,9 @@ module Bosh::Director
       def perform
         logger.info("Exporting release: #{@release_name}/#{@release_version} for #{@stemcell_os}/#{@stemcell_version}")
 
+        deployment_manager = Bosh::Director::Api::DeploymentManager.new()
+        deployment_manager.find_by_name(@deployment_name)
+
         release_manager = Bosh::Director::Api::ReleaseManager.new
         release = release_manager.find_by_name(@release_name)
         release_manager.find_version(release, @release_version)
@@ -33,6 +36,7 @@ module Bosh::Director
         stemcell = stemcell_manager.find_by_os_and_version(@stemcell_os, @stemcell_version)
 
         logger.info "Will compile with stemcell: #{stemcell.desc}"
+
       end
     end
   end
