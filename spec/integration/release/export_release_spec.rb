@@ -21,12 +21,12 @@ describe 'export release', type: :integration do
   it 'returns an error when the release does not exist' do
     expect {
       bosh_runner.run("export release app/1 centos-7/0000")
-    }.to raise_error(RuntimeError, /Error 30005: Bosh::Director::ReleaseNotFound/)
+    }.to raise_error(RuntimeError, /Error 30005: Release `app' doesn't exist/)
   end
 
   it 'returns an error when the release version does not exist' do
     expect {
       bosh_runner.run("export release appcloud/1 centos-7/0000")
-    }.to raise_error(RuntimeError, /Error 30006: Bosh::Director::ReleaseVersionNotFound/)
+    }.to raise_error(RuntimeError, /Error 30006: Release version `appcloud\/1' doesn't exist/)
   end
 end

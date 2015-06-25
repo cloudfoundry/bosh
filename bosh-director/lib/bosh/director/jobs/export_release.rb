@@ -25,17 +25,10 @@ module Bosh::Director
       def perform
         logger.info("Exporting release: #{@release_name}/#{@release_version} for #{@stemcell_os}/#{@stemcell_version}")
 
-        release = Bosh::Director::Models::Release.find(:name => @release_name)
-        if release.nil?
-          raise ReleaseNotFound
-        end
+        release_manager = Bosh::Director::Api::ReleaseManager.new
+        release = release_manager.find_by_name(@release_name)
+        release_manager.find_version(release, @release_version)
 
-        matching_versions = release.versions_dataset.where(:version => @release_version).all
-        if matching_versions.empty?
-          raise ReleaseVersionNotFound
-        end
-
-        logger.info "!!!RELEASE: #{release.pretty_inspect}"
       end
     end
   end
