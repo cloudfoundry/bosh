@@ -39,7 +39,7 @@ module Bosh
           end
 
           def refresh(access_info)
-            with_save { @token_issuer.refresh(access_info) }
+            @token_issuer.refresh(access_info)
           rescue CF::UAA::TargetError
             nil
           end

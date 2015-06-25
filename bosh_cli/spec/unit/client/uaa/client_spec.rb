@@ -72,11 +72,10 @@ describe Bosh::Cli::Client::Uaa::Client do
       expect(refreshed_access_info.auth_header).to eq(refreshed_token.auth_header)
     end
 
-    it 'saves token in config' do
+    it 'does not save token in config' do
       client.refresh(access_info)
       config = YAML.load(File.read('fake-config'))
-      expect(config['auth']['fake-target']['access_token']).to eq(refreshed_token.auth_header)
-      expect(config['auth']['fake-target']['refresh_token']).to eq('fake-new-refresh-token')
+      expect(config['auth']).to be_nil
     end
 
     context 'when failing to get access token' do
