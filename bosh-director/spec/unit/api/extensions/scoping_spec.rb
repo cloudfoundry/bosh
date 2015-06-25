@@ -45,7 +45,7 @@ module Bosh::Director
             it 'returns a detailed error message' do
               get '/test_route'
               expect(last_response.status).to eq(401)
-              expect(last_response.body).to include("Not authorized: /test_route requires one of the scopes: fake-valid-scope-1, fake-valid-scope-2")
+              expect(last_response.body).to include("Not authorized: '/test_route' requires one of the scopes: fake-valid-scope-1, fake-valid-scope-2")
             end
 
             context 'when identity provider is not UAA' do
@@ -54,7 +54,7 @@ module Bosh::Director
               it 'return generic error messsage' do
                 get '/test_route'
                 expect(last_response.status).to eq(401)
-                expect(last_response.body).to eq("Not authorized\n")
+                expect(last_response.body).to eq("Not authorized: '/test_route'\n")
               end
             end
           end
@@ -85,7 +85,7 @@ module Bosh::Director
             it 'returns non-authorized' do
               get '/read'
               expect(last_response.status).to eq(401)
-              expect(last_response.body).to include("Not authorized\n")
+              expect(last_response.body).to include("Not authorized: '/read'\n")
             end
           end
         end
