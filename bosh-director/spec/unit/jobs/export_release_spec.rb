@@ -29,10 +29,52 @@ module Bosh::Director
         release = Bosh::Director::Models::Release.create(name: 'release_name')
         release.add_version(:version => 'release_version')
       }
-      it 'succeeds' do
-        expect {
-          job.perform
-        }.to_not raise_error
+
+      context 'and the requested stemcell is not found' do
+        it 'fails with the expected error' do
+          expect {
+            job.perform
+          }.to raise_error(Bosh::Director::StemcellNotFound)
+        end
+      end
+
+      context 'and the requested stemcell is found' do
+        before {
+          Bosh::Director::Models::Stemcell.create(
+              name: 'my-stemcell-with-a-name',
+              version: 'stemcell_version',
+              operating_system: 'stemcell_os',
+              cid: 'cloud-id-a',
+          )
+        }
+
+        it 'succeeds' do
+          expect {
+            job.perform
+          }.to_not raise_error
+        end
+
+        context 'and multiple stemcells match the requested stemcell' do
+          before {
+            Bosh::Director::Models::Stemcell.create(
+                name: 'my-stemcell-with-b-name',
+                version: 'stemcell_version',
+                operating_system: 'stemcell_os',
+                cid: 'cloud-id-b',
+            )
+          }
+
+          it 'succeeds' do
+            expect {
+              job.perform
+            }.to_not raise_error
+          end
+
+          it 'chooses the first stemcell alhpabetically by name' do
+            job.perform
+            expect(log_string).to match /Will compile with stemcell: my-stemcell-with-a-name/
+          end
+        end
       end
     end
   end

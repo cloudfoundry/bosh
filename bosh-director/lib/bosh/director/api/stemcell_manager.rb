@@ -14,6 +14,16 @@ module Bosh::Director
         stemcell
       end
 
+      def find_by_os_and_version(os, version)
+        stemcell = Bosh::Director::Models::Stemcell.
+            dataset.order(:name)[:operating_system => os, :version => version]
+        if stemcell.nil?
+          raise StemcellNotFound,
+                "Stemcell version `#{version}' for OS `#{os}' doesn't exist"
+        end
+        stemcell
+      end
+
       def stemcell_exists?(name, version)
         find_by_name_and_version(name, version)
         true

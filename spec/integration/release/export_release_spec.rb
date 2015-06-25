@@ -14,7 +14,7 @@ describe 'export release', type: :integration do
   }
 
   it 'calls the director server' do
-    out = bosh_runner.run("export release appcloud/0.1 centos-7/0000")
+    out = bosh_runner.run("export release appcloud/0.1 toronto-os/1")
     expect(out).to match /Task ([0-9]+) done/
   end
 
@@ -29,4 +29,11 @@ describe 'export release', type: :integration do
       bosh_runner.run("export release appcloud/1 centos-7/0000")
     }.to raise_error(RuntimeError, /Error 30006: Release version `appcloud\/1' doesn't exist/)
   end
+
+  it 'returns an error when the stemcell os and version does not exist' do
+    expect {
+      bosh_runner.run("export release appcloud/0.1 nonexistos/1")
+    }.to raise_error(RuntimeError, /Error 50003: Stemcell version `1' for OS `nonexistos' doesn't exist/)
+  end
+
 end

@@ -29,6 +29,10 @@ module Bosh::Director
         release = release_manager.find_by_name(@release_name)
         release_manager.find_version(release, @release_version)
 
+        stemcell_manager = Bosh::Director::Api::StemcellManager.new
+        stemcell = stemcell_manager.find_by_os_and_version(@stemcell_os, @stemcell_version)
+
+        logger.info "Will compile with stemcell: #{stemcell.desc}"
       end
     end
   end
