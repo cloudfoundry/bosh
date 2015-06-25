@@ -3,10 +3,12 @@ require 'spec_helper'
 require 'cli'
 
 describe Bosh::Cli::Command::JobManagement do
+  include FakeFS::SpecHelpers
+
   let(:command) { described_class.new }
   let(:deployment) { 'dep1' }
   let(:manifest_yaml) { Psych.dump(deployment_manifest) }
-  let(:director) { instance_double('Bosh::Cli::Client::Director') }
+  let(:director) { instance_double('Bosh::Cli::Client::Director', uuid: 'fake-uuid') }
 
   before(:each) do
     allow(director).to receive(:change_job_state).and_return(:done, nil, '')
@@ -16,14 +18,18 @@ describe Bosh::Cli::Command::JobManagement do
     allow(command).to receive(:nl)
     allow(command).to receive_messages(confirmed?: true)
     allow(command).to receive(:director).and_return(director)
-    allow(command).to receive(:prepare_deployment_manifest).and_return(deployment_manifest)
-    allow(command).to receive(:prepare_deployment_manifest).with(yaml: true).and_return(manifest_yaml)
+
+    allow(command).to receive(:deployment).and_return('fake-deployment')
+    File.open('fake-deployment', 'w') { |f| f.write(deployment_manifest.to_yaml) }
+
     allow(command).to receive(:show_current_state)
   end
 
   let(:deployment_manifest) do
     {
         'name' => deployment,
+        'director_uuid' => 'fake-uuid',
+        'releases' => [],
         'jobs' => [
             {
                 'name' => 'dea',

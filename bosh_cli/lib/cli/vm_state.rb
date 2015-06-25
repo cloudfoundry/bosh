@@ -1,17 +1,16 @@
 module Bosh::Cli
   class VmState
-    def initialize(command, force)
+    def initialize(command, manifest, force)
       @command = command
+      @manifest = manifest
       @force = force
     end
 
     def change(job, index, new_state, operation_desc)
       command.say("You are about to #{operation_desc.make_green}")
-      manifest = command.prepare_deployment_manifest
-      manifest_yaml = Psych.dump(manifest)
 
       if command.interactive?
-        check_if_manifest_changed(manifest)
+        check_if_manifest_changed(@manifest.hash)
 
         unless command.confirmed?("#{operation_desc.capitalize}?")
           command.cancel_deployment
@@ -20,7 +19,7 @@ module Bosh::Cli
 
       command.nl
       command.say("Performing `#{operation_desc}'...")
-      command.director.change_job_state(manifest['name'], manifest_yaml, job, index, new_state)
+      command.director.change_job_state(@manifest.name, @manifest.yaml, job, index, new_state)
     end
 
     private

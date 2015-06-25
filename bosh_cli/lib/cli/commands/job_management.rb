@@ -48,9 +48,11 @@ module Bosh::Cli
       private
 
       def change_job_state(state, job, index = nil)
-        check_arguments(state, job)
-        index = valid_index_for(job, index)
-        vm_state = VmState.new(self, force?)
+        auth_required
+        manifest = parse_manifest(state, job)
+
+        index = valid_index_for(manifest.hash, job, index)
+        vm_state = VmState.new(self, manifest, force?)
         job_state = JobState.new(self, vm_state)
         status, task_id, completion_desc = job_state.change(state, job, index)
         task_report(status, task_id, completion_desc)
@@ -68,10 +70,9 @@ module Bosh::Cli
         options[:force]
       end
 
-      def check_arguments(operation, job)
-        auth_required
-        job_must_exist_in_deployment(job)
-        show_current_state(prepare_deployment_manifest['name'])
+      def parse_manifest(operation, job)
+        manifest = prepare_deployment_manifest(show_state: true)
+        job_must_exist_in_deployment(manifest.hash, job)
 
         if hard? && soft?
           err('Cannot handle both --hard and --soft options, please choose one')
@@ -80,6 +81,8 @@ module Bosh::Cli
         if !hard_and_soft_options_allowed?(operation) && (hard? || soft?)
           err("--hard and --soft options only make sense for `stop' operation")
         end
+
+        manifest
       end
 
       def hard_and_soft_options_allowed?(operation)

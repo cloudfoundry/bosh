@@ -4,10 +4,14 @@ module Bosh::Cli
       deployment_required
       manifest = Manifest.new(deployment, director)
       manifest.load
+      if options.fetch(:show_state, false)
+        show_current_state(manifest.name)
+      end
       manifest.validate(options)
 
-      options[:yaml] ? manifest.yaml : manifest.hash
+      manifest
     end
+
 
     # Check if the 2 deployments are different.
     # Print out a summary if "show" is true.
@@ -146,17 +150,17 @@ module Bosh::Cli
       end
     end
 
-    def job_unique_in_deployment?(job_name)
-      job = find_job(job_name)
+    def job_unique_in_deployment?(manifest_hash, job_name)
+      job = find_job(manifest_hash, job_name)
       job ? job.fetch('instances') == 1 : false
     end
 
-    def job_exists_in_deployment?(job_name)
-      !!find_job(job_name)
+    def job_exists_in_deployment?(manifest_hash, job_name)
+      !!find_job(manifest_hash, job_name)
     end
 
-    def job_must_exist_in_deployment(job)
-      err("Job `#{job}' doesn't exist") unless job_exists_in_deployment?(job)
+    def job_must_exist_in_deployment(manifest_hash, job)
+      err("Job `#{job}' doesn't exist") unless job_exists_in_deployment?(manifest_hash, job)
     end
 
     def prompt_for_job_and_index
@@ -187,7 +191,7 @@ module Bosh::Cli
     end
 
     def jobs_and_indexes
-      jobs = prepare_deployment_manifest.fetch('jobs')
+      jobs = prepare_deployment_manifest.hash.fetch('jobs')
 
       jobs.inject([]) do |jobs_and_indexes, job|
         job_name = job.fetch('name')
@@ -204,13 +208,13 @@ module Bosh::Cli
 
     private
 
-    def find_job(job_name)
-      jobs = prepare_deployment_manifest.fetch('jobs')
+    def find_job(manifest_hash, job_name)
+      jobs = manifest_hash.fetch('jobs')
       jobs.find { |job| job.fetch('name') == job_name }
     end
 
     def list_errands
-      deployment_name = prepare_deployment_manifest.fetch('name')
+      deployment_name = prepare_deployment_manifest.name
       director.list_errands(deployment_name)
     end
 

@@ -103,53 +103,53 @@ describe Bosh::Cli::DeploymentHelper do
       expect(director).to receive(:list_stemcells).and_return(stemcells)
 
       manifest = cmd.prepare_deployment_manifest(manifest)
-      expect(manifest['resource_pools'][0]['stemcell']['version']).to eq('22.6.4')
-      expect(manifest['resource_pools'][1]['stemcell']['version']).to eq(22)
-      expect(manifest['resource_pools'][2]['stemcell']['version']).to eq(4.1)
+      expect(manifest.hash['resource_pools'][0]['stemcell']['version']).to eq('22.6.4')
+      expect(manifest.hash['resource_pools'][1]['stemcell']['version']).to eq(22)
+      expect(manifest.hash['resource_pools'][2]['stemcell']['version']).to eq(4.1)
     end
   end
 
   describe '#job_exists_in_deployment?' do
-    before do
-      allow(deployment_helper).to receive_messages(prepare_deployment_manifest: {
+    let(:manifest_hash) do
+      {
         'name' => 'mycloud',
         'jobs' => [{ 'name' => 'job1' }]
-      })
+      }
     end
 
     it 'should return true if job exists in deployment' do
-      expect(deployment_helper.job_exists_in_deployment?('job1')).to be(true)
+      expect(deployment_helper.job_exists_in_deployment?(manifest_hash, 'job1')).to be(true)
     end
 
     it 'should return false if job does not exists in deployment' do
-      expect(deployment_helper.job_exists_in_deployment?('job2')).to be(false)
+      expect(deployment_helper.job_exists_in_deployment?(manifest_hash, 'job2')).to be(false)
     end
   end
 
   describe '#job_unique_in_deployment?' do
-    before do
-      allow(deployment_helper).to receive_messages(prepare_deployment_manifest: {
+    let(:manifest_hash) do
+      {
         'name' => 'mycloud',
         'jobs' => [
           { 'name' => 'job1', 'instances' => 1 },
           { 'name' => 'job2', 'instances' => 2 }
         ]
-      })
+      }
     end
 
     context 'when the job is in the manifest' do
       it 'should return true if only one instance of job in deployment' do
-        expect(deployment_helper.job_unique_in_deployment?('job1')).to be(true)
+        expect(deployment_helper.job_unique_in_deployment?(manifest_hash, 'job1')).to be(true)
       end
 
       it 'should return false if more than one instance of job in deployment' do
-        expect(deployment_helper.job_unique_in_deployment?('job2')).to be(false)
+        expect(deployment_helper.job_unique_in_deployment?(manifest_hash, 'job2')).to be(false)
       end
     end
 
     context 'when the job is not in the manifest' do
       it 'should return false' do
-        expect(deployment_helper.job_unique_in_deployment?('job3')).to be(false)
+        expect(deployment_helper.job_unique_in_deployment?(manifest_hash, 'job3')).to be(false)
       end
     end
   end
@@ -157,10 +157,10 @@ describe Bosh::Cli::DeploymentHelper do
   describe '#prompt_for_job_and_index' do
     context 'when there is only 1 job instance in total' do
       before do
-        allow(deployment_helper).to receive_messages(prepare_deployment_manifest: {
+        allow(deployment_helper).to receive_messages(prepare_deployment_manifest: double(:manifest, hash: {
           'name' => 'mycloud',
           'jobs' => [{ 'name' => 'job', 'instances' => 1 }],
-        })
+        }))
       end
 
       it 'does not prompt the user to choose a job' do
@@ -171,10 +171,10 @@ describe Bosh::Cli::DeploymentHelper do
 
     context 'when there is more than 1 job instance' do
       before do
-        allow(deployment_helper).to receive_messages(prepare_deployment_manifest: {
+        allow(deployment_helper).to receive_messages(prepare_deployment_manifest: double(:manifest, hash: {
           'name' => 'mycloud',
           'jobs' => [{ 'name' => 'job', 'instances' => 2 }],
-        })
+        }))
       end
 
       it 'prompts the user to choose one' do
@@ -190,13 +190,13 @@ describe Bosh::Cli::DeploymentHelper do
 
   describe '#jobs_and_indexes' do
     before do
-      allow(deployment_helper).to receive_messages(prepare_deployment_manifest: {
+      allow(deployment_helper).to receive_messages(prepare_deployment_manifest:  double(:manifest, hash:{
         'name' => 'mycloud',
         'jobs' => [
           { 'name' => 'job1', 'instances' => 1 },
           { 'name' => 'job2', 'instances' => 2 },
         ]
-      })
+      }))
     end
 
     it 'returns array of ["job", index]' do

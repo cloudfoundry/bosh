@@ -83,17 +83,11 @@ module Bosh::Cli::Command
     option "--redact-diff", "redact manifest value changes in deployment"
     def perform
       auth_required
-      deployment_required
-
       recreate = !!options[:recreate]
       redact_diff = !!options[:redact_diff]
 
-      manifest = Bosh::Cli::Manifest.new(deployment, director)
-      manifest.load
+      manifest = prepare_deployment_manifest(resolve_properties: true, show_state: true)
 
-      show_current_state(manifest.name)
-
-      manifest.validate(resolve_properties: true)
       inspect_deployment_changes(
         manifest.hash,
         interactive: interactive?,
@@ -107,7 +101,7 @@ module Bosh::Cli::Command
         cancel_deployment
       end
 
-      status, task_id = director.deploy(manifest, :recreate => recreate)
+      status, task_id = director.deploy(manifest.yaml, :recreate => recreate)
 
       task_report(status, task_id, "Deployed `#{deployment_name.make_green}' to `#{target_name.make_green}'")
     end

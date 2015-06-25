@@ -2,6 +2,8 @@ require 'spec_helper'
 
 module Bosh::Cli
   describe VmState do
+    include FakeFS::SpecHelpers
+
     let(:director) { double(Client::Director) }
     let(:command) do
       double(Command::Base,
@@ -10,16 +12,20 @@ module Bosh::Cli
            nl: nil,
            say: nil,
            err: nil,
-           director: director,
-           prepare_deployment_manifest: manifest)
+           director: director)
     end
     let(:force) { false }
-    let(:manifest) do
-      { 'name' => 'fake deployment', 'inspected' => false }
+
+    let(:manifest) { Manifest.new('fake-deployment-file', director) }
+
+    before do
+      manifest_hash = { 'name' => 'fake deployment', 'inspected' => false }
+      File.open('fake-deployment-file', 'w') { |f| f.write(manifest_hash.to_yaml) }
+      manifest.load
     end
 
     subject(:vm_state) do
-      VmState.new(command, force)
+      VmState.new(command, manifest, force)
     end
 
     before do
@@ -29,9 +35,9 @@ module Bosh::Cli
     end
 
     describe '#change' do
-      it 'caches the manifest yaml before its mutated during inspection!' do # This is bad, but it's honest.
+      it 'caches the manifest yaml before its mutated during inspection!' do
         expect(command.director).to receive(:change_job_state).with('fake deployment',
-                                                                "---\nname: fake deployment\ninspected: false\n",
+                                                                "---\nname: fake deployment\ninspected: true\n",
                                                                 'fake job',
                                                                 'fake index',
                                                                 'fake new_state')
