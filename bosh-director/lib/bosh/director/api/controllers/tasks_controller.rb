@@ -59,7 +59,7 @@ module Bosh::Director
       # Sends back output of given task id and params[:type]
       # Example: `get /tasks/5/output?type=event` will send back the file
       # at /var/vcap/store/director/tasks/5/event
-      get '/:id/output', scope: Api::Extensions::Scoping::ParamsScope.new(:type, {event: :read}) do
+      get '/:id/output', scope: Api::Extensions::Scoping::ParamsScope.new(:type, {event: :read, result: :read}) do
         log_type = params[:type] || 'debug'
         task = @task_manager.find_task(params[:id])
 
