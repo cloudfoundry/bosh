@@ -139,7 +139,7 @@ module Bosh::Cli::Command
          "deployment manifest as the source of properties"
     def validate_jobs
       check_if_release_dir
-      manifest = prepare_deployment_manifest(:resolve_properties => true)
+      manifest = prepare_deployment_manifest(:resolve_properties => true, show_state: true)
 
       if manifest.hash["release"]
         release_name = manifest.hash["release"]["name"]

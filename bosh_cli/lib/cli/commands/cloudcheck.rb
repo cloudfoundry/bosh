@@ -17,8 +17,7 @@ module Bosh::Cli::Command
       @auto_mode = options[:auto]
       @report_mode = options[:report]
 
-      deployment_name ||= prepare_deployment_manifest.name
-      show_current_state(deployment_name)
+      deployment_name ||= prepare_deployment_manifest(show_state: true).name
 
       if non_interactive? && !(@report_mode || @auto_mode)
         err ("Cloudcheck cannot be run in non-interactive mode\n" +
