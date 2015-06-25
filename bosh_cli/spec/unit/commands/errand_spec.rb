@@ -61,7 +61,7 @@ describe Bosh::Cli::Command::Errand do
 
           before do
             allow(command).to receive(:prepare_deployment_manifest).
-              with(no_args).and_return('name' => 'fake-dep-name')
+              with(show_state: true).and_return(double(:manifest, name: 'fake-dep-name'))
           end
 
           before do

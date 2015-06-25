@@ -13,11 +13,12 @@ module Bosh::Cli::Command
            "don't attempt to resolve problems"
     def perform(deployment_name = nil)
       auth_required
-      show_current_state(deployment_name)
-      
       no_track_unsupported
       @auto_mode = options[:auto]
       @report_mode = options[:report]
+
+      deployment_name ||= prepare_deployment_manifest.name
+      show_current_state(deployment_name)
 
       if non_interactive? && !(@report_mode || @auto_mode)
         err ("Cloudcheck cannot be run in non-interactive mode\n" +
@@ -29,8 +30,8 @@ module Bosh::Cli::Command
         err("Can't use --auto and --report mode together")
       end
 
+
       say("Performing cloud check...")
-      deployment_name ||= prepare_deployment_manifest["name"]
 
       status, task_id = director.perform_cloud_scan(deployment_name)
 

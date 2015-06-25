@@ -7,9 +7,7 @@ module Bosh::Cli::Command
     option "--force", "Ignore errors"
     def rename(old_name, new_name)
       auth_required
-      manifest_yaml = prepare_deployment_manifest(:yaml => true)
-      manifest = Psych.load(manifest_yaml)
-      show_current_state(manifest['name'])
+      manifest = prepare_deployment_manifest(show_state: true)
 
       force = options[:force]
       say("You are about to rename `#{old_name.make_green}' to `#{new_name.make_green}'")
@@ -20,18 +18,17 @@ module Bosh::Cli::Command
         exit(0)
       end
 
-      sanity_check_job_rename(manifest_yaml, old_name, new_name)
+      sanity_check_job_rename(manifest, old_name, new_name)
 
       status, task_id = director.rename_job(
-        manifest["name"], manifest_yaml, old_name, new_name, force)
+        manifest.name, manifest.yaml, old_name, new_name, force)
 
       task_report(status, task_id, "Rename successful")
     end
 
-    def sanity_check_job_rename(manifest_yaml, old_name, new_name)
+    def sanity_check_job_rename(manifest, old_name, new_name)
       # Makes sure the new deployment manifest contains the renamed job
-      manifest = Psych.load(manifest_yaml)
-      new_jobs = manifest["jobs"].map { |job| job["name"] }
+      new_jobs = manifest.hash["jobs"].map { |job| job["name"] }
       unless new_jobs.include?(new_name)
         err("Please update your deployment manifest to include the " +
             "new job name `#{new_name}'")
@@ -43,7 +40,7 @@ module Bosh::Cli::Command
       end
 
       # Make sure that the old deployment manifest contains the old job
-      current_deployment = director.get_deployment(manifest["name"])
+      current_deployment = director.get_deployment(manifest.name)
       if current_deployment["manifest"].nil?
         err("Director could not find manifest for deployment " +
             "`#{manifest["name"]}'")
@@ -96,8 +93,7 @@ module Bosh::Cli::Command
       end
 
       # Now the manifests should be the same
-      manifest = Psych.load(manifest_yaml)
-      if deployment_changed?(current_manifest.dup, manifest.dup)
+      if deployment_changed?(current_manifest.dup, manifest.hash.dup)
         err("You cannot have any other changes to your manifest during " +
             "rename. Please revert the above changes and retry.")
       end

@@ -27,7 +27,7 @@ module Bosh::Cli
       end
 
       if @hash['target']
-        err(manifest_target_upgrade_notice)
+        err(MANIFEST_TARGET_UPGRADE_NOTICE)
       end
 
       if options[:resolve_properties]
@@ -160,14 +160,13 @@ module Bosh::Cli
       end
     end
 
-    def manifest_target_upgrade_notice
+    MANIFEST_TARGET_UPGRADE_NOTICE =
       <<-EOS.gsub(/^\s*/, '').gsub(/\n$/, '')
         Please upgrade your deployment manifest to use director UUID instead
         of target. Just replace 'target' key with 'director_uuid' key in your
         manifest. You can get your director UUID by targeting your director
         with 'bosh target' and running 'bosh status' command afterwards.
       EOS
-    end
 
     def report_manifest_warnings
       ManifestWarnings.new(@hash).report

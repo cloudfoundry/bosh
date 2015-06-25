@@ -80,7 +80,7 @@ describe Bosh::Cli::Command::Deployment do
       release = double('release')
       allow(release).to receive(:dev_name).and_return('sample-release')
 
-      allow(cmd).to receive(:prepare_deployment_manifest).and_return(manifest)
+      allow(cmd).to receive(:prepare_deployment_manifest).and_return(double(:manifest, hash: manifest))
       allow(cmd).to receive(:work_dir).and_return(release_source.path)
       allow(cmd).to receive(:release).and_return(release)
 
