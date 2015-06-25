@@ -20,8 +20,6 @@ module Bosh::Cli
     end
 
     def validate(options={})
-      header('Processing deployment manifest')
-
       if @hash['name'].blank?
         err('Deployment name not found in the deployment manifest')
       end
