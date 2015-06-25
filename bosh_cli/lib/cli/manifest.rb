@@ -40,7 +40,6 @@ module Bosh::Cli
               'trying without it...')
         end
 
-        say('Compiling deployment manifest...')
         compiler.properties = properties.inject({}) do |hash, property|
           hash[property['name']] = property['value']
           hash
