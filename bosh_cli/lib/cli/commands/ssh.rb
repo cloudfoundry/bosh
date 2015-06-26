@@ -16,6 +16,8 @@ module Bosh::Cli
       option '--gateway_identity_file FILE', 'Gateway identity file'
       option '--default_password PASSWORD',
              'Use default ssh password (NOT RECOMMENDED)'
+      option '--strict_host_key_checking <yes/no>',
+             'Can use this flag to skip host key checking (NOT RECOMMENDED)'
 
       def shell(*args)
         if args.size > 0
@@ -187,13 +189,16 @@ module Bosh::Cli
 
           say("Starting interactive shell on job #{job}/#{index}")
 
+          skip_strict_host_key_checking = options[:strict_host_key_checking] =~ (/(no|false)$/i) ?
+              '-o StrictHostKeyChecking=no' : '-o StrictHostKeyChecking=yes'
+
           if gateway
             port        = gateway.open(session['ip'], 22)
-            ssh_session = Process.spawn('ssh', "#{user}@localhost", '-p', port.to_s)
+            ssh_session = Process.spawn('ssh', "#{user}@localhost", '-p', port.to_s, skip_strict_host_key_checking)
             Process.waitpid(ssh_session)
             gateway.close(port)
           else
-            ssh_session = Process.spawn('ssh', "#{user}@#{session['ip']}")
+            ssh_session = Process.spawn('ssh', "#{user}@#{session['ip']}", skip_strict_host_key_checking)
             Process.waitpid(ssh_session)
           end
         end
