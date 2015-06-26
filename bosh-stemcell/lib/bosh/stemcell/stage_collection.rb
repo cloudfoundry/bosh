@@ -232,7 +232,7 @@ module Bosh::Stemcell
         :bosh_dpkg_list,
         :bosh_sysstat,
         :system_kernel,
-        :system_ubuntu_ixgbvef,
+        :system_ubuntu_ixgbevf,
         bosh_steps,
         :rsyslog_config,
         :delay_monit_start,
