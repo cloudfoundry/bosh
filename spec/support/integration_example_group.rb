@@ -62,10 +62,8 @@ module IntegrationExampleGroup
   end
 
   def create_and_upload_test_release(options={})
-    Dir.chdir(ClientSandbox.test_release_dir) do
-      bosh_runner.run_in_current_dir('create release', options)
-      bosh_runner.run_in_current_dir('upload release', options)
-    end
+    bosh_runner.run_in_dir('create release', ClientSandbox.test_release_dir, options)
+    bosh_runner.run_in_dir('upload release', ClientSandbox.test_release_dir, options)
   end
 
   def upload_stemcell(options={})

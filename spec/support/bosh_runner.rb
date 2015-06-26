@@ -10,7 +10,7 @@ module Bosh::Spec
     end
 
     def run(cmd, options = {})
-      Dir.chdir(@bosh_work_dir) { run_in_current_dir(cmd, options) }
+      run_in_dir(cmd, @bosh_work_dir, options)
     end
 
     def run_interactively(cmd, env = {})
@@ -25,7 +25,11 @@ module Bosh::Spec
       FileUtils.rm_rf(@bosh_config)
     end
 
-    def run_in_current_dir(cmd, options = {})
+    def run_in_current_dir(cmd, options={})
+      run_in_dir(cmd, Dir.pwd, options)
+    end
+
+    def run_in_dir(cmd, working_dir, options = {})
       failure_expected = options.fetch(:failure_expected, false)
       interactive_mode = options.fetch(:interactive, false) ? '' : '-n'
 
@@ -36,7 +40,7 @@ module Bosh::Spec
       exit_code = 0
 
       time = Benchmark.realtime do
-        output, process_status = Open3.capture2e(env, command)
+        output, process_status = Open3.capture2e(env, command, chdir: working_dir)
         exit_code = process_status.exitstatus
       end
 
