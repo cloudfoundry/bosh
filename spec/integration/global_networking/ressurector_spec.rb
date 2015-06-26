@@ -41,9 +41,9 @@ describe 'global networking', type: :integration do
       deploy_simple_manifest(manifest_hash: legacy_manifest)
       vms = director.vms
       expect(vms.size).to eq(1)
-      expect(vms.first.ips).to eq('192.168.1.2')
+      expect(vms.first.ips).to eq('192.168.1.4') # 192.168.1.2 and 192.168.1.3 reserved for compilation vms
 
-      cloud_config_hash['networks'].first['subnets'].first['reserved'] = ['192.168.1.2']
+      cloud_config_hash['networks'].first['subnets'].first['reserved'] = ['192.168.1.4']
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       original_vm = director.vm('foobar/0')
@@ -52,7 +52,7 @@ describe 'global networking', type: :integration do
       expect(resurrected_vm.cid).to_not eq(original_vm.cid)
       vms = director.vms
       expect(vms.size).to eq(1)
-      expect(vms.first.ips).to eq('192.168.1.2')
+      expect(vms.first.ips).to eq('192.168.1.4')
     end
   end
 end

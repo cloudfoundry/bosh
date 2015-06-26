@@ -81,25 +81,14 @@ module Bosh
             @event_log
           )
           @logger.info('Created deployment plan')
-
-          run_prepare_step(assembler)
-
-          DeploymentPlan::Steps::PackageCompileStep.new(
+          package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
             planner,
             cloud,
             @logger,
             @event_log,
             director_job
-          ).perform
-          @event_log.begin_stage('Preparing DNS', 1)
-          track_and_log('Binding DNS') do
-            assembler.bind_dns
-          end
+          )
 
-          planner
-        end
-
-        def run_prepare_step(assembler)
           @event_log.begin_stage('Preparing deployment', 9)
           @logger.info('Preparing deployment')
 
@@ -127,9 +116,18 @@ module Bosh
             assembler.bind_unallocated_vms
           end
 
+          package_compile_step.perform
+
           track_and_log('Binding instance networks') do
             assembler.bind_instance_networks
           end
+
+          @event_log.begin_stage('Preparing DNS', 1)
+          track_and_log('Binding DNS') do
+            assembler.bind_dns
+          end
+
+          planner
         end
 
         def track_and_log(message)

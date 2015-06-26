@@ -22,28 +22,6 @@ describe 'simultaneous deploys', type: :integration do
     return Bosh::Spec::OutputParser.new(output).task_id('running')
   end
 
-  def deployment_manifest(opts)
-    manifest = Bosh::Spec::Deployments.simple_manifest
-    manifest['name'] = opts.fetch(:name, 'simple')
-    manifest['jobs'].first['instances'] = opts.fetch(:instances, 1)
-    manifest
-  end
-
-  def cloud_config(opts)
-    ip_range = NetAddr::CIDR.create('192.168.1.0/24')
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-    ip_to_reserve_from = ip_range.nth(opts.fetch(:available_ips)+2) # first IP is gateway, range is inclusive, so +2
-    cloud_config['networks'].first['subnets'] = [{
-        'range' => ip_range.to_s,
-        'gateway' => ip_range.nth(1),
-        'dns' => [],
-        'static' => [],
-        'reserved' => ["#{ip_to_reserve_from}-#{ip_range.last}"],
-        'cloud_properties' => {},
-      }]
-    cloud_config
-  end
-
   def wait_for_deploy(task_id)
     output, success = director.task(task_id)
     expect(success).to(be(true), "task failed: #{output}")
@@ -51,9 +29,9 @@ describe 'simultaneous deploys', type: :integration do
 
   context 'when there are enough IPs for two deployments' do
     it 'allocates different IP to another deploy' do
-      cloud_config = cloud_config(available_ips: 2)
-      first_deployment_manifest = deployment_manifest(name: 'first', instances: 1)
-      second_deployment_manifest = deployment_manifest(name: 'second', instances: 1)
+      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
+      first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 1)
+      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1)
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       first_task_id = start_deploy(first_deployment_manifest)
@@ -72,9 +50,9 @@ describe 'simultaneous deploys', type: :integration do
 
   context 'when there are not enough IPs for two deployments' do
     it 'fails one of deploys' do
-      cloud_config = cloud_config(available_ips: 3)
-      first_deployment_manifest = deployment_manifest(name: 'first', instances: 2)
-      second_deployment_manifest = deployment_manifest(name: 'second', instances: 2)
+      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
+      first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 2)
+      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 2)
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       first_task_id = start_deploy(first_deployment_manifest)
@@ -89,21 +67,10 @@ describe 'simultaneous deploys', type: :integration do
   end
 
   describe 'running errand during deploy' do
-    def errand_manifest(opts)
-      manifest = deployment_manifest(name: 'errand')
-      manifest['jobs'] = [
-        Bosh::Spec::Deployments.simple_errand_job.merge(
-          'instances' => opts.fetch(:instances),
-          'name' => 'errand_job'
-        )
-      ]
-      manifest
-    end
-
     it 'allocates IPs correctly for simultaneous errand run and deploy' do
-      cloud_config = cloud_config(available_ips: 2)
-      manifest_with_errand = errand_manifest(instances: 1)
-      second_deployment_manifest = deployment_manifest(name: 'second', instances: 1)
+      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
+      manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 1)
+      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1)
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
@@ -118,9 +85,9 @@ describe 'simultaneous deploys', type: :integration do
     end
 
     it 'raise correct error message when we over allocate IPs for errand and deploy' do
-      cloud_config = cloud_config(available_ips: 3)
-      manifest_with_errand = errand_manifest(instances: 2)
-      second_deployment_manifest = deployment_manifest(name: 'second', instances: 2)
+      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
+      manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 2)
+      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 2)
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
