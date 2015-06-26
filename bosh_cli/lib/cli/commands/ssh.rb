@@ -34,7 +34,7 @@ module Bosh::Cli
           setup_interactive_shell(manifest.name, job, index)
         else
           say("Executing `#{command.join(' ')}' on #{job}/#{index}")
-          perform_operation(:exec, job, index, command)
+          perform_operation(:exec, manifest.name, job, index, command)
         end
       end
 
@@ -64,7 +64,7 @@ module Bosh::Cli
           err('Please enter valid source and destination paths')
         end
         say("Executing file operations on job #{job}")
-        perform_operation(upload ? :upload : :download, job, index, args)
+        perform_operation(upload ? :upload : :download, manifest.name, job, index, args)
       end
 
       usage 'cleanup ssh'
@@ -108,7 +108,7 @@ module Bosh::Cli
       # @param [String] job
       # @param [Integer] index
       # @param [optional,String] password
-      def setup_ssh(deployment_name, job, index, password = nil)
+      def setup_ssh(deployment_name, job, index, password)
         user            = random_ssh_username
 
         say("Target deployment is `#{deployment_name}'")
@@ -199,8 +199,8 @@ module Bosh::Cli
         end
       end
 
-      def perform_operation(operation, job, index, args)
-        setup_ssh(job, index, nil) do |sessions, user, gateway|
+      def perform_operation(operation, deployment_name, job, index, args)
+        setup_ssh(deployment_name, job, index, nil) do |sessions, user, gateway|
           sessions.each do |session|
             unless session['status'] == 'success' && session['ip']
               err("Failed to set up SSH on #{job}/#{index}: #{session.inspect}")

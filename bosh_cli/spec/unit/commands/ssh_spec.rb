@@ -1,5 +1,3 @@
-  # Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 require 'net/ssh/gateway'
 
@@ -143,7 +141,13 @@ describe Bosh::Cli::Command::Ssh do
 
     describe 'exec' do
       it 'should try to execute given command remotely' do
-        expect(command).to receive(:perform_operation).with(:exec, 'dea', 0, ['ls -l'])
+        allow(Net::SSH).to receive(:start)
+        allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+        allow(director).to receive(:cleanup_ssh)
+        expect(director).to receive(:setup_ssh).
+          with('mycloud', 'dea', 0, 'testable_user', 'PUBKEY', nil).
+          and_return([:done, 1234])
+
         command.shell('dea/0', 'ls -l')
       end
     end
@@ -279,6 +283,19 @@ describe Bosh::Cli::Command::Ssh do
           command.scp('dea/0')
         }.to raise_error(Bosh::Cli::CliError, "Job `dea' doesn't exist")
       end
+    end
+
+    it 'sets up ssh to copy files' do
+      allow(Net::SSH).to receive(:start)
+      allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+      allow(director).to receive(:cleanup_ssh)
+      expect(director).to receive(:setup_ssh).
+          with('mycloud', 'dea', 0, 'testable_user', 'PUBKEY', nil).
+          and_return([:done, 1234])
+
+      command.add_option(:upload, false)
+      allow(command).to receive(:job_exists_in_deployment?).and_return(true)
+      command.scp('dea', '0', 'test', 'test')
     end
   end
 
