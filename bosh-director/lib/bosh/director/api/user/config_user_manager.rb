@@ -11,22 +11,13 @@ module Bosh::Director
         false
       end
 
-      # @param [String] name User name
-      def find_by_name(name)
-        user = @users.find { |u| u['name'] == name }
-        if user.nil?
-          raise UserNotFound, "User `#{name}' doesn't exist"
-        end
-        User.new(user)
-      end
-
       def authenticate(username, password)
         return false if username.empty? || password.empty?
 
-        user = find_by_name(username)
-        user.password == password
-      rescue UserNotFound
-        false
+        user = @users.find { |u| u['name'] == username }
+        return false if user.nil?
+
+        user['password'] == password
       end
 
       def delete_user(_)
@@ -43,17 +34,6 @@ module Bosh::Director
 
       def get_user_from_request(_)
         raise NotSupported
-      end
-    end
-
-    private
-
-    class User
-      attr_reader :username, :password
-
-      def initialize(options)
-        @username = options.fetch('name')
-        @password = options.fetch('password')
       end
     end
   end

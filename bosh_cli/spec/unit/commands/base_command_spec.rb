@@ -257,8 +257,9 @@ describe Bosh::Cli::Command::Base do
   describe 'show_current_state' do
     context 'when command requires authentication' do
       class TestCommand < Bosh::Cli::Command::Base
-        def initialize(runner, deployment_name = nil)
+        def initialize(runner, deployment_name = nil, client_auth = false)
           @deployment_name = deployment_name
+          @client_auth = client_auth
           super(runner)
         end
 
@@ -269,13 +270,27 @@ describe Bosh::Cli::Command::Base do
         def credentials
           Bosh::Cli::Client::BasicCredentials.new('fake-user', 'fake-password')
         end
+
+        def auth_info
+          env = {}
+
+          if @client_auth
+            env = {
+              'BOSH_CLIENT' => 'fake-client',
+              'BOSH_CLIENT_SECRET' => 'fake-client-secret'
+            }
+          end
+
+          Bosh::Cli::Client::Uaa::AuthInfo.new('fake-director', env, 'fake-ssl-file')
+        end
       end
 
       let(:cmd) do
-        cmd = TestCommand.new(@runner, 'fake-deployment')
+        cmd = TestCommand.new(@runner, 'fake-deployment', client_auth)
         cmd.options[:target] = 'fake-target'
         cmd
       end
+      let(:client_auth) { false }
 
       it 'prints current user, deployment and target' do
         expect(cmd).to receive(:say).with("Acting as user 'fake-user' on deployment 'fake-deployment' on 'fake-target'")
@@ -291,6 +306,15 @@ describe Bosh::Cli::Command::Base do
 
         it 'does not report the deployment' do
           expect(cmd).to receive(:say).with("Acting as user 'fake-user' on 'fake-target'")
+          cmd.run
+        end
+      end
+
+      context 'when logged in as client' do
+        let(:client_auth) { true }
+
+        it 'reports client name' do
+          expect(cmd).to receive(:say).with("Acting as client 'fake-user' on deployment 'fake-deployment' on 'fake-target'")
           cmd.run
         end
       end

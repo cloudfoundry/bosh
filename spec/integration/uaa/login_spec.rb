@@ -114,10 +114,19 @@ CERT
       it 'can only access read resources' do
         client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
         output = deploy_from_scratch(no_login: true, env: client_env, failure_expected: true)
-        expect(output).to match /Not authorized/
+        expect(output).to include(`Not authorized: '/deployments' requires one of the scopes: bosh.admin, bosh.deadbeef.admin`)
 
         output = bosh_runner.run('deployments', env: client_env, failure_expected: true)
         expect(output).to match /No deployments/
+      end
+
+      it 'can see list of vms' do
+        client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
+        deploy_from_scratch(no_login: true, env: client_env)
+
+        client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
+        vms = director.vms(env: client_env)
+        expect(vms.size).to eq(3)
       end
 
       it 'can only access task default logs' do
@@ -129,10 +138,10 @@ CERT
         expect(output).to match /release has been created/
 
         output = bosh_runner.run('task latest --debug', env: read_client_env, failure_expected: true)
-        expect(output).to match /Not authorized/
+        expect(output).to match /Not authorized: '\/tasks\/[0-9]+\/output' requires one of the scopes: bosh.admin, bosh.deadbeef.admin/
 
         output = bosh_runner.run('task latest --cpi', env: read_client_env, failure_expected: true)
-        expect(output).to match /Not authorized/
+        expect(output).to match /Not authorized: '\/tasks\/[0-9]+\/output' requires one of the scopes: bosh.admin, bosh.deadbeef.admin/
 
         output = bosh_runner.run('task latest --debug', env: admin_client_env)
         expect(output).to match /DEBUG/
@@ -150,7 +159,7 @@ CERT
 
         # AuthError because verification is happening on director side
         output = bosh_runner.run('vms', env: client_env, failure_expected: true)
-        expect(output).to match /Not authorized/
+        expect(output).to include(`Not authorized: '/deployments' requires one of the scopes: bosh.admin, bosh.deadbeef.admin, bosh.read, bosh.deadbeef.read`)
       end
     end
 

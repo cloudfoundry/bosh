@@ -4,35 +4,47 @@ module Support
   class TestIdentityProvider
     attr_reader :request_env
 
-    attr_accessor :scope
+    attr_accessor :scope, :user_access
 
-    def initialize(authenticates=true)
-      @authenticates = authenticates
+    def initialize
+      @has_access = false
     end
 
     def get_user(request_env)
       @request_env = request_env
-      raise Bosh::Director::AuthenticationError unless @authenticates
-      TestUser.new('fake-user', self)
+
+      auth = Rack::Auth::Basic::Request.new(request_env)
+      username = auth.credentials.first if auth
+      if !username.nil? && user_access[username]
+        TestUser.new(username)
+      else
+        raise Bosh::Director::AuthenticationError
+      end
     end
 
     def client_info
       'fake-client-info'
     end
-  end
 
-  class TestUser
-
-    attr_reader :username
-
-    def initialize(username, identity_provider)
-      @username = username
-      @identity_provider = identity_provider
+    def valid_access?(user, requested_access)
+      @scope = requested_access
+      user_access[user.username] == requested_access
     end
 
-    def has_access?(scope)
-      @identity_provider.scope = scope
-      true
+    def required_scopes(_)
+      ['fake-valid-scope-1', 'fake-valid-scope-2']
     end
+
+    private
+
+    def user_access
+      {
+        'admin' => :write,
+        'reader' => :read
+      }
+    end
+
   end
+
+  class TestUser < Struct.new(:username); end
 end

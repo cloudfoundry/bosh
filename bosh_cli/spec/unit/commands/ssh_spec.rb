@@ -1,18 +1,19 @@
-  # Copyright (c) 2009-2012 VMware, Inc.
-
 require 'spec_helper'
 require 'net/ssh/gateway'
 
 describe Bosh::Cli::Command::Ssh do
+  include FakeFS::SpecHelpers
+
   let(:command) { described_class.new }
   let(:net_ssh) { double('ssh') }
-  let(:director) { double(Bosh::Cli::Client::Director) }
+  let(:director) { double(Bosh::Cli::Client::Director, uuid: 'director-uuid') }
   let(:deployment) { 'mycloud' }
 
   let(:manifest) do
     {
         'name' => deployment,
-        'uuid' => 'totally-and-universally-unique',
+        'director_uuid' => 'director-uuid',
+        'releases' => [],
         'jobs' => [
             {
                 'name' => 'dea',
@@ -23,10 +24,9 @@ describe Bosh::Cli::Command::Ssh do
   end
 
   before do
-    allow(command).to receive_messages(director: director,
-                 public_key: 'PUBKEY',
-                 prepare_deployment_manifest: manifest)
-
+    allow(command).to receive_messages(director: director, public_key: 'PUBKEY', show_current_state: nil)
+    File.open('fake-deployment', 'w') { |f| f.write(manifest.to_yaml) }
+    allow(command).to receive(:deployment).and_return('fake-deployment')
     allow(Process).to receive(:waitpid)
 
     allow(command).to receive(:random_ssh_username).and_return('testable_user')
@@ -34,10 +34,6 @@ describe Bosh::Cli::Command::Ssh do
   end
 
   context 'shell' do
-    before do
-      allow(command).to receive_messages(deployment: '/yo/heres/a/path')
-    end
-
     describe 'invalid arguments' do
       it 'should fail if there is no deployment set' do
         allow(command).to receive_messages(deployment: nil)
@@ -57,7 +53,8 @@ describe Bosh::Cli::Command::Ssh do
         let(:manifest) do
           {
               'name' => deployment,
-              'uuid' => 'totally-and-universally-unique',
+              'director_uuid' => 'director-uuid',
+              'releases' => [],
               'jobs' => [
                   {
                       'name' => 'uaa',
@@ -67,7 +64,7 @@ describe Bosh::Cli::Command::Ssh do
           }
         end
 
-        context 'when specifying the job index' do
+        context 'when specifying incorrect the job index' do
           it 'should fail to setup ssh' do
             expect {
               command.shell('dea/0')
@@ -88,7 +85,8 @@ describe Bosh::Cli::Command::Ssh do
         let(:manifest) do
           {
               'name' => deployment,
-              'uuid' => 'totally-and-universally-unique',
+              'director_uuid' => 'director-uuid',
+              'releases' => [],
               'jobs' => [
                   {
                       'name' => 'dea',
@@ -100,13 +98,13 @@ describe Bosh::Cli::Command::Ssh do
 
         it 'should implicitly chooses the only instance if job index not provided' do
           expect(command).not_to receive(:choose)
-          expect(command).to receive(:setup_interactive_shell).with('dea', 0)
+          expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 0)
           command.shell('dea')
         end
 
         it 'should implicitly chooses the only instance if job name not provided' do
           expect(command).not_to receive(:choose)
-          expect(command).to receive(:setup_interactive_shell).with('dea', 0)
+          expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 0)
           command.shell
         end
       end
@@ -115,7 +113,8 @@ describe Bosh::Cli::Command::Ssh do
         let(:manifest) do
           {
               'name' => deployment,
-              'uuid' => 'totally-and-universally-unique',
+              'director_uuid' => 'director-uuid',
+              'releases' => [],
               'jobs' => [
                   {
                       'name' => 'dea',
@@ -134,7 +133,7 @@ describe Bosh::Cli::Command::Ssh do
 
         it 'should prompt for an instance if job name not given' do
           expect(command).to receive(:choose).and_return(['dea', 3])
-          expect(command).to receive(:setup_interactive_shell).with('dea', 3)
+          expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 3)
           command.shell
         end
       end
@@ -142,7 +141,13 @@ describe Bosh::Cli::Command::Ssh do
 
     describe 'exec' do
       it 'should try to execute given command remotely' do
-        expect(command).to receive(:perform_operation).with(:exec, 'dea', 0, ['ls -l'])
+        allow(Net::SSH).to receive(:start)
+        allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+        allow(director).to receive(:cleanup_ssh)
+        expect(director).to receive(:setup_ssh).
+          with('mycloud', 'dea', 0, 'testable_user', 'PUBKEY', nil).
+          and_return([:done, 1234])
+
         command.shell('dea/0', 'ls -l')
       end
     end
@@ -153,12 +158,12 @@ describe Bosh::Cli::Command::Ssh do
       end
 
       it 'should try to setup interactive shell when a job index is given' do
-        expect(command).to receive(:setup_interactive_shell).with('dea', 0)
+        expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 0)
         command.shell('dea', '0')
       end
 
       it 'should try to setup interactive shell when a job index is given as part of the job name' do
-        expect(command).to receive(:setup_interactive_shell).with('dea', 0)
+        expect(command).to receive(:setup_interactive_shell).with('mycloud', 'dea', 0)
         command.shell('dea/0')
       end
 
@@ -260,7 +265,8 @@ describe Bosh::Cli::Command::Ssh do
       let(:manifest) do
         {
             'name' => deployment,
-            'uuid' => 'totally-and-universally-unique',
+            'director_uuid' => 'director-uuid',
+            'releases' => [],
             'jobs' => [
                 {
                     'name' => 'uaa',
@@ -278,6 +284,19 @@ describe Bosh::Cli::Command::Ssh do
         }.to raise_error(Bosh::Cli::CliError, "Job `dea' doesn't exist")
       end
     end
+
+    it 'sets up ssh to copy files' do
+      allow(Net::SSH).to receive(:start)
+      allow(director).to receive(:get_task_result_log).and_return(JSON.dump([{'status' => 'success', 'ip' => '127.0.0.1'}]))
+      allow(director).to receive(:cleanup_ssh)
+      expect(director).to receive(:setup_ssh).
+          with('mycloud', 'dea', 0, 'testable_user', 'PUBKEY', nil).
+          and_return([:done, 1234])
+
+      command.add_option(:upload, false)
+      allow(command).to receive(:job_exists_in_deployment?).and_return(true)
+      command.scp('dea', '0', 'test', 'test')
+    end
   end
 
   context '#cleanup' do
@@ -285,7 +304,8 @@ describe Bosh::Cli::Command::Ssh do
       let(:manifest) do
         {
             'name' => deployment,
-            'uuid' => 'totally-and-universally-unique',
+            'director_uuid' => 'director-uuid',
+            'releases' => [],
             'jobs' => [
                 {
                     'name' => 'uaa',

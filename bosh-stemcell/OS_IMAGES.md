@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `DRT11QyZUb3Y.tbS00W3QgAQ_lWMhVYJ`
+  update python to version python3.4 amd64 3.4.0-2ubuntu1.1
+
 * `xLfl7rZVgkXKijjY11rSOGk.AJ8KcmEV`
   update kernel to 3.16.0-41-generic 3.16.0-41.57~14.04.1
 

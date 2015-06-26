@@ -18,13 +18,15 @@ describe Bosh::Cli::Command::Base do
       allow(job_rename).to receive(:confirmed?).and_return(true)
       allow(job_rename).to receive(:auth_required)
       allow(job_rename).to receive(:show_current_state)
-      allow(job_rename).to receive(:prepare_deployment_manifest).and_return(old_manifest_yaml)
+      manifest = Bosh::Cli::Manifest.new(old_manifest, director)
+      manifest.load
+      allow(job_rename).to receive(:prepare_deployment_manifest).and_return(manifest)
       allow(job_rename).to receive(:sanity_check_job_rename)
       job_rename.rename("old_name", "new_name")
     end
 
     it "should raise exception on additional changes to manifest" do
-      allow(director).to receive(:get_deployment) { { "manifest" => old_manifest_yaml } }
+      allow(director).to receive(:get_deployment) { { "manifest" => File.read(old_manifest) } }
 
       expect {
         job_rename.sanity_check_job_rename(
@@ -33,7 +35,7 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "should raise exception if new manifest removed some properties" do
-      allow(director).to receive(:get_deployment) { { "manifest" => old_manifest_yaml } }
+      allow(director).to receive(:get_deployment) { { "manifest" => File.read(old_manifest) } }
 
       expect {
         job_rename.sanity_check_job_rename(new_manifest_with_some_deletions, "old_job", "new_job")
@@ -47,7 +49,7 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "should raise exception if old job name does not exist in manifest" do
-      allow(director).to receive(:get_deployment) { { "manifest" => old_manifest_yaml } }
+      allow(director).to receive(:get_deployment) { { "manifest" => File.read(old_manifest) } }
 
       expect {
         job_rename.sanity_check_job_rename(new_extra_changes_manifest, "non_existent_job", "new_job")
@@ -55,18 +57,20 @@ describe Bosh::Cli::Command::Base do
     end
 
     it "should raise exception if 2 jobs are changed in manifest" do
-      allow(director).to receive(:get_deployment) { { "manifest" => old_manifest_yaml } }
+      allow(director).to receive(:get_deployment) { { "manifest" => File.read(old_manifest) } }
       expect {
         job_rename.sanity_check_job_rename(new_extra_job_rename_manifest, "old_job", "new_job")
       }.to raise_error(Bosh::Cli::CliError, /Cannot rename more than one job/)
     end
 
-    def old_manifest_yaml
-      File.read(spec_asset("manifests/old_manifest.yml"))
+    def old_manifest
+      spec_asset("manifests/old_manifest.yml")
     end
 
     def new_manifest_with_some_deletions
-      File.read(spec_asset("manifests/new_manifest_with_some_deletions.yml"))
+      manifest = Bosh::Cli::Manifest.new(spec_asset("manifests/new_manifest_with_some_deletions.yml"), director)
+      manifest.load
+      manifest
     end
 
     def new_manifest_yaml
@@ -74,15 +78,21 @@ describe Bosh::Cli::Command::Base do
     end
 
     def new_extra_changes_manifest
-      File.read(spec_asset("manifests/new_extra_changes_manifest.yml"))
+      manifest = Bosh::Cli::Manifest.new(spec_asset("manifests/new_extra_changes_manifest.yml"), director)
+      manifest.load
+      manifest
     end
 
     def new_extra_job_rename_manifest
-      File.read(spec_asset("manifests/new_extra_job_rename_manifest.yml"))
+      manifest = Bosh::Cli::Manifest.new(spec_asset("manifests/new_extra_job_rename_manifest.yml"), director)
+      manifest.load
+      manifest
     end
 
     def new_missing_new_job
-      File.read(spec_asset("manifests/new_manifest_missing_new_job.yml"))
+      manifest = Bosh::Cli::Manifest.new(spec_asset("manifests/new_manifest_missing_new_job.yml"), director)
+      manifest.load
+      manifest
     end
   end
 end

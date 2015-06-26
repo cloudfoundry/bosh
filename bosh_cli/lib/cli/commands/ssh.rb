@@ -25,14 +25,16 @@ module Bosh::Cli
           job, index = prompt_for_job_and_index
         end
 
-        job_must_exist_in_deployment(job)
-        index = valid_index_for(job, index, integer_index: true)
+        manifest = prepare_deployment_manifest(show_state: true)
+        job_must_exist_in_deployment(manifest.hash, job)
+
+        index = valid_index_for(manifest.hash, job, index, integer_index: true)
 
         if command.empty?
-          setup_interactive_shell(job, index)
+          setup_interactive_shell(manifest.name, job, index)
         else
           say("Executing `#{command.join(' ')}' on #{job}/#{index}")
-          perform_operation(:exec, job, index, command)
+          perform_operation(:exec, manifest.name, job, index, command)
         end
       end
 
@@ -55,13 +57,14 @@ module Bosh::Cli
           err('Please specify either --upload or --download')
         end
 
-        job_must_exist_in_deployment(job)
+        manifest = prepare_deployment_manifest(show_state: true)
+        job_must_exist_in_deployment(manifest.hash, job)
 
         if args.size != 2
           err('Please enter valid source and destination paths')
         end
         say("Executing file operations on job #{job}")
-        perform_operation(upload ? :upload : :download, job, index, args)
+        perform_operation(upload ? :upload : :download, manifest.name, job, index, args)
       end
 
       usage 'cleanup ssh'
@@ -73,12 +76,11 @@ module Bosh::Cli
           err("SSH cleanup doesn't accept any extra args")
         end
 
-        job_must_exist_in_deployment(job)
-
-        manifest_name = prepare_deployment_manifest['name']
+        manifest = prepare_deployment_manifest(show_state: true)
+        job_must_exist_in_deployment(manifest.hash, job)
 
         say("Cleaning up ssh artifacts from #{job}/#{index}")
-        director.cleanup_ssh(manifest_name, job, "^#{SSH_USER_PREFIX}", [index])
+        director.cleanup_ssh(manifest.name, job, "^#{SSH_USER_PREFIX}", [index])
       end
 
       private
@@ -106,9 +108,8 @@ module Bosh::Cli
       # @param [String] job
       # @param [Integer] index
       # @param [optional,String] password
-      def setup_ssh(job, index, password = nil)
+      def setup_ssh(deployment_name, job, index, password)
         user            = random_ssh_username
-        deployment_name = prepare_deployment_manifest['name']
 
         say("Target deployment is `#{deployment_name}'")
         nl
@@ -166,8 +167,7 @@ module Bosh::Cli
 
       # @param [String] job Job name
       # @param [Integer] index Job index
-      def setup_interactive_shell(job, index)
-        deployment_required
+      def setup_interactive_shell(deployment_name, job, index)
         password = options[:default_password]
 
         if password.nil?
@@ -178,7 +178,7 @@ module Bosh::Cli
           err('Please provide ssh password') if password.blank?
         end
 
-        setup_ssh(job, index, password) do |sessions, user, gateway|
+        setup_ssh(deployment_name, job, index, password) do |sessions, user, gateway|
           session = sessions.first
 
           unless session['status'] == 'success' && session['ip']
@@ -199,8 +199,8 @@ module Bosh::Cli
         end
       end
 
-      def perform_operation(operation, job, index, args)
-        setup_ssh(job, index, nil) do |sessions, user, gateway|
+      def perform_operation(operation, deployment_name, job, index, args)
+        setup_ssh(deployment_name, job, index, nil) do |sessions, user, gateway|
           sessions.each do |session|
             unless session['status'] == 'success' && session['ip']
               err("Failed to set up SSH on #{job}/#{index}: #{session.inspect}")

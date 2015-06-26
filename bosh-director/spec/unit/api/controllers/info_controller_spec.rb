@@ -131,22 +131,6 @@ module Bosh::Director
             )
         end
       end
-
-      describe 'scope' do
-        let(:identity_provider) { Support::TestIdentityProvider.new }
-        let(:config) do
-          config = Config.load_hash(test_config)
-          allow(config).to receive(:identity_provider).and_return(identity_provider)
-          config
-        end
-
-        it 'accepts read scope' do
-          # identity provider is not called if auth header is not provided
-          basic_authorize 'admin', 'admin'
-          get '/'
-          expect(identity_provider.scope).to eq(:read)
-        end
-      end
     end
   end
 end

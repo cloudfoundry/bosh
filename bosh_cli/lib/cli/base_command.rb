@@ -122,6 +122,14 @@ module Bosh::Cli
       File.join(Dir.home, '.bosh', 'cache')
     end
 
+    def show_current_state(deployment_name=nil)
+      user_desc = auth_info.client_auth? ? 'client' : 'user'
+      msg = "Acting as #{user_desc} '#{credentials.username.to_s.make_green}'"
+      msg += " on deployment '#{deployment_name.make_green}'" if deployment_name
+      msg += " on '#{target_name.make_green}'" if target_name
+      say(msg)
+    end
+
     protected
 
     def auth_info
@@ -187,13 +195,6 @@ module Bosh::Cli
       say("Current deployment is #{deployment.make_green}")
     end
 
-    def show_current_state(deployment_name=nil)
-      msg = "Acting as user '#{credentials.username.to_s.make_green}'"
-      msg += " on deployment '#{deployment_name.make_green}'" if deployment_name
-      msg += " on '#{target_name.make_green}'" if target_name
-      say(msg)
-    end
-
     def no_track_unsupported
       if @options.delete(:no_track)
         say('Ignoring `' + '--no-track'.make_yellow + "' option")
@@ -231,8 +232,8 @@ module Bosh::Cli
       end
     end
 
-    def valid_index_for(job, index, options = {})
-      index = '0' if job_unique_in_deployment?(job)
+    def valid_index_for(manifest_hash, job, index, options = {})
+      index = '0' if job_unique_in_deployment?(manifest_hash, job)
       err('You should specify the job index. There is more than one instance of this job type.') if index.nil?
       index = index.to_i if options[:integer_index]
       index

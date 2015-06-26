@@ -6,12 +6,12 @@ module Bosh::Director
     describe Extensions::Scoping do
       include Rack::Test::Methods
 
-      let(:app) { Support::TestController.new(double(:config, identity_provider: identity_provider)) }
+      let(:app) { Support::TestController.new(double(:config, identity_provider: identity_provider), true) }
       let(:identity_provider) { Support::TestIdentityProvider.new }
 
       describe 'scope' do
         context 'when authorizaion is provided'do
-          before { header('Authorization', 'Value') }
+          before { basic_authorize('admin', 'admin') }
 
           context 'when scope is defined on a route' do
             it 'passes it to identity provider' do
@@ -36,6 +36,26 @@ module Bosh::Director
             it 'uses default scope on non-specified param' do
               get '/params?name=other'
               expect(identity_provider.scope).to eq(:write)
+            end
+          end
+
+          context 'when user does not have access' do
+            before { basic_authorize('reader', 'reader') }
+
+            it 'returns a detailed error message' do
+              get '/test_route'
+              expect(last_response.status).to eq(401)
+              expect(last_response.body).to include("Not authorized: '/test_route' requires one of the scopes: fake-valid-scope-1, fake-valid-scope-2")
+            end
+
+            context 'when identity provider is not UAA' do
+              let(:identity_provider) { Api::LocalIdentityProvider.new({}, {}) }
+
+              it 'return generic error messsage' do
+                get '/test_route'
+                expect(last_response.status).to eq(401)
+                expect(last_response.body).to eq("Not authorized: '/test_route'\n")
+              end
             end
           end
         end
@@ -65,7 +85,7 @@ module Bosh::Director
             it 'returns non-authorized' do
               get '/read'
               expect(last_response.status).to eq(401)
-              expect(last_response.body).to include('Not authorized')
+              expect(last_response.body).to include("Not authorized: '/read'\n")
             end
           end
         end

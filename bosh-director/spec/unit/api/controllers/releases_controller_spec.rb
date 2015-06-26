@@ -169,7 +169,7 @@ module Bosh::Director
         end
 
         it 'accepts read scope for routes allowing read access' do
-          authorize 'test', 'test'
+          authorize 'admin', 'admin'
           read_routes = [
             '/',
             '/release-name'

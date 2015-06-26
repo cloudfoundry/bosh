@@ -3,17 +3,6 @@
 module Bosh::Director
   module Api
     class DatabaseUserManager
-
-      # @param [String] name User name
-      # @return [Models::User] User
-      def find_by_name(name)
-        user = Models::User[:username => name]
-        if user.nil?
-          raise UserNotFound, "User `#{name}' doesn't exist"
-        end
-        user
-      end
-
       def supports_api_update?
         true
       end
@@ -58,6 +47,16 @@ module Bosh::Director
       end
 
       private
+
+      # @param [String] name User name
+      # @return [Models::User] User
+      def find_by_name(name)
+        user = Models::User[:username => name]
+        if user.nil?
+          raise UserNotFound, "User `#{name}' doesn't exist"
+        end
+        user
+      end
 
       # Saves user in DB and handles validation errors.
       # @param [Models::User]

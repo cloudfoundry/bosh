@@ -13,7 +13,8 @@ module Bosh::Cli
       allow(command).to receive(:nl)
       allow(command).to receive_messages(:logged_in? => true)
       command.options[:target] = target
-      allow(command).to receive(:prepare_deployment_manifest).and_return(deployment_manifest)
+      allow(command).to receive(:prepare_deployment_manifest).and_return(double(:manifest, hash: deployment_manifest, name: 'dep1'))
+      allow(command).to receive(:show_current_state)
     end
 
     describe 'usage' do

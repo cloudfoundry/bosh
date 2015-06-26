@@ -21,7 +21,7 @@ describe Bosh::Cli::Command::Errand do
         context 'when deployment is selected' do
           with_deployment
 
-          before { allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'fake-deployment'}) }
+          before { allow(command).to receive(:prepare_deployment_manifest).and_return(double(:manifest, name: 'fake-deployment')) }
 
           it 'shows errands in a table' do
             expect(director).to receive(:list_errands).and_return([{"name" => "an-errand"}, {"name" => "another-errand"}])
@@ -61,7 +61,7 @@ describe Bosh::Cli::Command::Errand do
 
           before do
             allow(command).to receive(:prepare_deployment_manifest).
-              with(no_args).and_return('name' => 'fake-dep-name')
+              with(show_state: true).and_return(double(:manifest, name: 'fake-dep-name'))
           end
 
           before do
@@ -412,7 +412,7 @@ describe Bosh::Cli::Command::Errand do
     with_deployment
 
     it 'with 0 errands raise error' do
-      allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'fake-deployment'})
+      allow(command).to receive(:prepare_deployment_manifest).and_return(double(:manifest, name: 'fake-deployment'))
       expect(director).to receive(:list_errands).and_return([])
 
       expect {
@@ -423,7 +423,7 @@ describe Bosh::Cli::Command::Errand do
     it 'with 1 errand, prompts and invokes run_errand(name)' do
       expect(command).to receive(:perform_run_errand).with('an-errand')
       expect(command).to receive(:choose).and_return({'name' => 'an-errand'})
-      allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'fake-deployment'})
+      allow(command).to receive(:prepare_deployment_manifest).and_return(double(:manifest, name: 'fake-deployment'))
       expect(director).to receive(:list_errands).and_return([{"name" => "an-errand"}])
 
       perform
@@ -432,7 +432,7 @@ describe Bosh::Cli::Command::Errand do
     it 'with 2+ errands, prompts and invokes run_errand(name)' do
       expect(command).to receive(:perform_run_errand).with('another-errand')
       expect(command).to receive(:choose).and_return({'name' => 'another-errand'})
-      allow(command).to receive(:prepare_deployment_manifest).and_return({'name' => 'fake-deployment'})
+      allow(command).to receive(:prepare_deployment_manifest).and_return(double(:manifest, name: 'fake-deployment'))
       expect(director).to receive(:list_errands).and_return([{"name" => "an-errand"}, {"name" => "another-errand"}])
       perform
     end

@@ -23,7 +23,7 @@ module Bosh::Cli::Command
       end
 
       unless manifest["target"].blank?
-        err(manifest_target_upgrade_notice)
+        err(Bosh::Cli::Manifest::MANIFEST_TARGET_UPGRADE_NOTICE)
       end
 
       if manifest["director_uuid"].blank?
@@ -86,27 +86,24 @@ module Bosh::Cli::Command
       recreate = !!options[:recreate]
       redact_diff = !!options[:redact_diff]
 
-      manifest = prepare_deployment_manifest(resolve_properties: true)
-      manifest_yaml = Psych.dump(manifest)
+      manifest = prepare_deployment_manifest(resolve_properties: true, show_state: true)
 
       inspect_deployment_changes(
-        Psych.load(manifest_yaml),
+        manifest.hash,
         interactive: interactive?,
         redact_diff: redact_diff
       )
       say('Please review all changes carefully'.make_yellow) if interactive?
 
       header('Deploying')
-      deployment_name = manifest['name']
-      show_current_state(deployment_name)
 
       unless confirmed?('Are you sure you want to deploy?')
         cancel_deployment
       end
 
-      status, task_id = director.deploy(manifest_yaml, :recreate => recreate)
+      status, task_id = director.deploy(manifest.yaml, :recreate => recreate)
 
-      task_report(status, task_id, "Deployed `#{deployment_name.make_green}' to `#{target_name.make_green}'")
+      task_report(status, task_id, "Deployed `#{manifest.name.make_green}' to `#{target_name.make_green}'")
     end
 
     # bosh delete deployment
@@ -142,14 +139,14 @@ module Bosh::Cli::Command
          "deployment manifest as the source of properties"
     def validate_jobs
       check_if_release_dir
-      manifest = prepare_deployment_manifest(:resolve_properties => true)
+      manifest = prepare_deployment_manifest(:resolve_properties => true, show_state: true)
 
-      if manifest["release"]
-        release_name = manifest["release"]["name"]
-      elsif manifest["releases"].count > 1
+      if manifest.hash["release"]
+        release_name = manifest.hash["release"]["name"]
+      elsif manifest.hash["releases"].count > 1
         err("Cannot validate a deployment manifest with more than 1 release")
       else
-        release_name = manifest["releases"].first["name"]
+        release_name = manifest.hash["releases"].first["name"]
       end
       if release_name == release.dev_name || release_name == release.final_name
         nl
@@ -169,7 +166,7 @@ module Bosh::Cli::Command
       )
 
       say(" - validating properties")
-      validator = Bosh::Cli::JobPropertyValidator.new(jobs, manifest)
+      validator = Bosh::Cli::JobPropertyValidator.new(jobs, manifest.hash)
       validator.validate
 
       unless validator.jobs_without_properties.empty?

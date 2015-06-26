@@ -34,9 +34,14 @@ module Bosh::Director
               end
             end
 
-            if (@user.nil? || !@user.has_access?(scope)) && requires_authentication?
+            if requires_authentication? && (@user.nil? || !identity_provider.valid_access?(@user, scope))
               response['WWW-Authenticate'] = 'Basic realm="BOSH Director"'
-              throw(:halt, [401, "Not authorized\n"])
+              if @user.nil?
+                message = "Not authorized: '#{request.path}'\n"
+              else
+                message = "Not authorized: '#{request.path}' requires one of the scopes: #{identity_provider.required_scopes(scope).join(", ")}\n"
+              end
+              throw(:halt, [401, message])
             end
           end
         end
