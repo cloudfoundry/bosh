@@ -9,7 +9,7 @@ describe 'Changing cloud config', type: :integration do
     upload_stemcell
   end
 
-  context 'when changing config while deploying' do
+  describe 'changing the cloud config while deploying' do
     it 'should continue to use the original cloud config' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
       deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
@@ -37,6 +37,29 @@ describe 'Changing cloud config', type: :integration do
 
       errand_thread.join
       expect(errand_succeeded).to eq(true)
+    end
+  end
+
+  describe 'changing the cloud config with health monitor running' do
+    before { current_sandbox.health_monitor_process.start }
+    after { current_sandbox.health_monitor_process.stop }
+
+    it 'resurrects vm with old cloud config' do
+      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
+      deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+
+      upload_cloud_config(cloud_config_hash: cloud_config)
+      deploy_simple_manifest(manifest_hash: deployment_manifest)
+
+      original_vm = director.vm('foobar/0')
+
+      upload_a_different_cloud_config
+
+      original_vm.kill_agent
+      resurrected_vm = director.wait_for_vm('foobar/0', 300)
+      expect(resurrected_vm.cid).to_not eq(original_vm.cid)
+
+      expect(original_vm.ips).to eq(resurrected_vm.ips)
     end
   end
 
