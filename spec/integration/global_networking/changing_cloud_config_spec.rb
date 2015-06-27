@@ -44,7 +44,7 @@ describe 'Changing cloud config', type: :integration do
     before { current_sandbox.health_monitor_process.start }
     after { current_sandbox.health_monitor_process.stop }
 
-    it 'resurrects vm with old cloud config' do
+    it 'resurrects vm with original cloud config' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
       deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
 
@@ -60,6 +60,35 @@ describe 'Changing cloud config', type: :integration do
       expect(resurrected_vm.cid).to_not eq(original_vm.cid)
 
       expect(original_vm.ips).to eq(resurrected_vm.ips)
+    end
+  end
+
+  describe 'changing the cloud config when running cck' do
+    it 'recreates vm with original cloud config' do
+      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
+      deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+
+      upload_cloud_config(cloud_config_hash: cloud_config)
+      deploy_simple_manifest(manifest_hash: deployment_manifest)
+
+      original_vm = director.vm('foobar/0')
+
+      upload_a_different_cloud_config
+
+      original_vm.kill_agent
+
+      bosh_runner.run_interactively('cck') do |runner|
+        expect(runner).to have_output '3. Recreate VM using last known apply spec'
+        runner.send_keys '3'
+        expect(runner).to have_output 'yes'
+        runner.send_keys 'yes'
+        expect(runner).to have_output 'done'
+      end
+
+      recreated_vm = director.vm('foobar/0')
+      expect(recreated_vm.cid).to_not eq(original_vm.cid)
+
+      expect(original_vm.ips).to eq(recreated_vm.ips)
     end
   end
 
