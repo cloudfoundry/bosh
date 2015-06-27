@@ -125,7 +125,7 @@ CERT
         deploy_from_scratch(no_login: true, env: client_env)
 
         client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
-        vms = director.vms(env: client_env)
+        vms = director.vms('', env: client_env)
         expect(vms.size).to eq(3)
       end
 
