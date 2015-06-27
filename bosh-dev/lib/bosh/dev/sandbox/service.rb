@@ -78,12 +78,17 @@ module Bosh::Dev::Sandbox
       false
     end
 
-    def wait_for_process_to_exit_or_be_killed(pid)
+    def wait_for_process_to_exit_or_be_killed(pid, kill_on_timeout = true)
       Timeout::timeout(20) do
         Process.wait(pid)
       end
     rescue Timeout::Error => e
-      raise "KILL signal ignored by #{@description} with PID=#{pid}"
+      if kill_on_timeout
+        kill_process('KILL', pid)
+        wait_for_process_to_exit_or_be_killed(pid, false)
+      else
+        raise "KILL signal ignored by #{@description} with PID=#{pid}"
+      end
     end
 
     def kill_process(signal, pid)
