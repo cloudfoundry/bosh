@@ -84,6 +84,27 @@ describe Bosh::AwsCloud::Instance do
       end
     end
 
+    context 'when instance is already terminated when bosh checks for the state' do
+      before do
+        # AWS returns NotFound error if instance no longer exists in AWS console
+        # (This could happen when instance was deleted very quickly and BOSH didn't catch the terminated state)
+        allow(aws_instance).to receive(:terminate).with(no_args).ordered
+      end
+
+      it 'logs a message and considers the instance to be terminated' do
+        expect(registry).to receive(:delete_settings).with(instance_id)
+
+        allow(Bosh::AwsCloud::ResourceWait).to receive(:task_checkpoint)
+
+        allow(aws_instance).to receive(:status).
+                                   with(no_args).and_raise(AWS::EC2::Errors::InvalidInstanceID::NotFound)
+
+        expect(logger).to receive(:debug).with("Failed to find terminated instance '#{instance_id}' after deletion: #{AWS::EC2::Errors::InvalidInstanceID::NotFound.new.inspect}")
+
+        instance.terminate
+      end
+    end
+
     describe 'fast path deletion' do
       it 'deletes the instance without waiting for confirmation of termination' do
         allow(aws_instance).to receive(:terminate).ordered

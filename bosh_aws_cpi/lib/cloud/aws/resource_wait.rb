@@ -18,13 +18,16 @@ module Bosh::AwsCloud
       validate_states(valid_states, target_state)
 
       ignored_errors = [
-        AWS::EC2::Errors::InvalidInstanceID::NotFound,
-        AWS::Core::Resource::NotFound,
-        Bosh::Retryable::ErrorMatcher.new(
-          AWS::Errors::ServerError,
-          /The service is unavailable. Please try again shortly./,
-        ),
+          Bosh::Retryable::ErrorMatcher.new(
+              AWS::Errors::ServerError,
+              /The service is unavailable. Please try again shortly./,
+          ),
       ]
+
+      if target_state == :running
+        ignored_errors << AWS::EC2::Errors::InvalidInstanceID::NotFound
+        ignored_errors << AWS::Core::Resource::NotFound
+      end
 
       new.for_resource(resource: instance, errors: ignored_errors, target_state: target_state) do |current_state|
         if target_state == :running && current_state == :terminated
