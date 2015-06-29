@@ -188,5 +188,20 @@ describe 'global networking', type: :integration do
 
       expect(director.vms('my-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
     end
+
+    it 'gives the correct error message when there are not enough IPs' do
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
+      upload_cloud_config(cloud_config_hash: new_cloud_config_hash)
+      output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_status: true)
+
+      expect(exit_code).not_to eq(0)
+      expect(output).to include("asked for a dynamic IP but there were no more available")
+    end
   end
 end
