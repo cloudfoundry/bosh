@@ -236,5 +236,21 @@ describe 'global networking', type: :integration do
       expect(exit_code).not_to eq(0)
       expect(output).to include("asked for a dynamic IP but there were no more available")
     end
+
+    it 'reuses IPs when one job is deleted and another created within a single deployment' do
+      pending("https://www.pivotaltracker.com/story/show/98057020")
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy')
+      manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(name: 'first-job', instances: 1)]
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+      expect(director.vms('my-deploy').map(&:job_name_index)).to eq(['first-job/0'])
+
+      manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(name: 'second-job', instances: 1)]
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+      expect(director.vms('my-deploy').map(&:job_name_index)).to eq(['second-job/0'])
+    end
   end
 end

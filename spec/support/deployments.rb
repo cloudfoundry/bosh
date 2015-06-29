@@ -101,15 +101,19 @@ module Bosh::Spec
 
     def self.simple_manifest
       test_release_manifest.merge({
-        'jobs' => [{
-          'name'          => 'foobar',
-          'template'      => 'foobar',
-          'resource_pool' => 'a',
-          'instances'     => 3,
-          'networks'      => [{ 'name' => 'a' }],
-          'properties' => {},
-        }]
+        'jobs' => [simple_job]
       })
+    end
+
+    def self.simple_job(opts = {})
+      {
+        'name' => opts.fetch(:name, 'foobar'),
+        'template' => 'foobar',
+        'resource_pool' => 'a',
+        'instances' => opts.fetch(:instances, 3),
+        'networks' => [{'name' => 'a'}],
+        'properties' => {},
+      }
     end
 
     def self.manifest_with_errand
