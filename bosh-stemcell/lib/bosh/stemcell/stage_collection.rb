@@ -38,7 +38,7 @@ module Bosh::Stemcell
     end
 
     def build_stemcell_image_stages
-      case infrastructure
+      stages = case infrastructure
       when Infrastructure::Aws then
         aws_stages
       when Infrastructure::OpenStack then
@@ -50,6 +50,8 @@ module Bosh::Stemcell
       when Infrastructure::Warden then
         warden_stages
       end
+
+      stages.concat(finish_stemcell_stages)
     end
 
     def package_stemcell_stages(disk_format)
@@ -100,6 +102,12 @@ module Bosh::Stemcell
           :image_install_grub,
         ]
       end
+    end
+
+    def finish_stemcell_stages
+      [
+        :bosh_dpkg_list
+      ]
     end
 
     def vsphere_stages
