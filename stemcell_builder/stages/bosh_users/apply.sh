@@ -33,7 +33,7 @@ echo "export PATH=$bosh_dir/bin:\$PATH" >> $chroot/home/vcap/.bashrc
 
 if [ "${stemcell_operating_system}" == "centos" ]; then
   cat > $chroot/root/.profile <<EOS
-if [ "$BASH" ]; then
+if [ "\$BASH" ]; then
   if [ -f ~/.bashrc ]; then
     . ~/.bashrc
   fi

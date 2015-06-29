@@ -22,7 +22,7 @@ case $1 in
     # otherwise, if the key or cert doesn't exist in the persistent disk
     # create new ones
     elif [ ! -f $STORE_DIR/director.key -o ! -f $STORE_DIR/director.pem ]; then
-      openssl req -nodes -new -newkey rsa:1024 -out $STORE_DIR/director.csr \
+      openssl req -nodes -new -newkey rsa:2048 -out $STORE_DIR/director.csr \
         -keyout $STORE_DIR/director.key -subj '/O=Bosh/CN=*'
       openssl x509 -req -days 3650 -in $STORE_DIR/director.csr \
         -signkey $STORE_DIR/director.key -out $STORE_DIR/director.pem
