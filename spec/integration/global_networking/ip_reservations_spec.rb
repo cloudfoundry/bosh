@@ -189,6 +189,39 @@ describe 'global networking', type: :integration do
       expect(director.vms('my-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
     end
 
+    it 'gives VMs the same IP on redeploy' do
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 5)
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+      original_ips = director.vms('my-deploy').map(&:ips).flatten
+
+      manifest_hash['jobs'].first['properties'].merge!('test_property' => 'new value') # force re-deploy
+      output = deploy_simple_manifest(manifest_hash: manifest_hash)
+      expect(output).to include('Started updating job foobar') # actually re-deployed
+      new_ips = director.vms('my-deploy').map(&:ips).flatten
+
+      expect(new_ips).to eq(original_ips)
+    end
+
+    it 'gives VMs the same IP on `deploy --recreate`' do
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 5)
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+      original_ips = director.vms('my-deploy').map(&:ips).flatten
+      original_cids = director.vms('my-deploy').map(&:cid)
+
+      deploy_simple_manifest(manifest_hash: manifest_hash, recreate: true)
+      new_ips = director.vms('my-deploy').map(&:ips).flatten
+      new_cids = director.vms('my-deploy').map(&:cid)
+
+      expect(new_cids).to_not match_array(original_cids)
+      expect(new_ips).to match_array(original_ips)
+    end
+
     it 'gives the correct error message when there are not enough IPs' do
       cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)

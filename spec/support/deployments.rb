@@ -107,6 +107,7 @@ module Bosh::Spec
           'resource_pool' => 'a',
           'instances'     => 3,
           'networks'      => [{ 'name' => 'a' }],
+          'properties' => {},
         }]
       })
     end

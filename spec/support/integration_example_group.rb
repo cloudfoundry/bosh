@@ -86,7 +86,12 @@ module IntegrationExampleGroup
   def deploy(options)
     no_track = options.fetch(:no_track, false)
     redact_diff = options.fetch(:redact_diff, false)
-    bosh_runner.run("#{no_track ? '--no-track ' : ''}deploy#{redact_diff ? ' --redact-diff' : ''}", options)
+    recreate  = options.fetch(:recreate, false)
+
+    bosh_opts = no_track ? '--no-track ' : ''
+    deploy_opts = "#{redact_diff ? ' --redact-diff' : ''}#{recreate ? ' --recreate' : ''}"
+
+    bosh_runner.run("#{bosh_opts}deploy#{deploy_opts}", options)
   end
 
   def deploy_from_scratch(options={})
