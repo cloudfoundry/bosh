@@ -381,5 +381,36 @@ describe VSphereCloud::Cloud, external_cpi: false do
         verify_disk_is_in_datastores(@disk_id, accessible_datastores)
       end
     end
+
+    context 'when stemcell is replicated multiple times' do
+      after { clean_up_vm_and_disk }
+      let(:vm_cluster) { @cluster }
+
+      it 'handles each thread properly' do
+
+        # first datastore
+        # @datastore_pattern
+
+        # second datastore (w/o stemcell)
+        datastore_name = @second_datastore_within_cluster
+        datastore_mob = cpi.client.cloud_searcher.get_managed_object(VimSdk::Vim::Datastore, name: datastore_name)
+        datastore = VSphereCloud::Resources::Datastore.new(datastore_name, datastore_mob, 0, 0)
+
+        replicated_stemcell_1 = cpi.replicate_stemcell(vm_cluster, datastore, @stemcell_id)
+        expect(replicated_stemcell_1).to_not eq(@stemcell_id)
+
+        replicated_stemcell_2 = cpi.replicate_stemcell(vm_cluster, datastore, @stemcell_id)
+        expect(replicated_stemcell_2).to eq(replicated_stemcell_1)
+
+        replicated_stemcell_3 = cpi.replicate_stemcell(vm_cluster, datastore, @stemcell_id)
+        expect(replicated_stemcell_3).to eq(replicated_stemcell_1)
+
+        replicated_stemcell_4 = cpi.replicate_stemcell(vm_cluster, datastore, @stemcell_id)
+        expect(replicated_stemcell_4).to eq(replicated_stemcell_1)
+
+        replicated_stemcell_5 = cpi.replicate_stemcell(vm_cluster, datastore, @stemcell_id)
+        expect(replicated_stemcell_5).to eq(replicated_stemcell_1)
+      end
+    end
   end
 end
