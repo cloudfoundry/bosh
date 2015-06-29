@@ -140,14 +140,6 @@ module Bosh::Cli
           cancel_deployment
         end
       end
-
-      if old_stemcells.size != new_stemcells.size
-        say('Stemcell update seems to be inconsistent with current '.make_red +
-          'deployment. Please carefully review changes above.'.make_red)
-        unless confirmed?('Are you sure this configuration is correct?')
-          cancel_deployment
-        end
-      end
     end
 
     def job_unique_in_deployment?(manifest_hash, job_name)
