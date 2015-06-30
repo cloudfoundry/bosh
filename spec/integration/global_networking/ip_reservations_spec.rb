@@ -252,5 +252,24 @@ describe 'global networking', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_hash)
       expect(director.vms('my-deploy').map(&:job_name_index)).to eq(['second-job/0'])
     end
+
+    it 'keeps IPs of a job when that job fails to deploy its VMs' do
+      pending("https://www.pivotaltracker.com/story/show/98127770")
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
+      failing_deployment_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
+      other_deployment_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-other-deploy', instances: 1)
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      current_sandbox.cpi.commands.make_create_vm_always_fail
+      _, exit_code = deploy_simple_manifest(manifest_hash: failing_deployment_manifest_hash, failure_expected: true, return_exit_status: true)
+      expect(exit_code).not_to eq(0)
+
+      current_sandbox.cpi.commands.allow_create_vm_to_succeed
+      output, exit_code = deploy_simple_manifest(manifest_hash: other_deployment_manifest_hash, failure_expected: true, return_exit_status: true)
+
+      # all IPs still reserved
+      expect(exit_code).not_to eq(0)
+      expect(output).to include('asked for a dynamic IP but there were no more available')
+    end
   end
 end

@@ -51,6 +51,10 @@ module Bosh
 
         cmd = commands.next_create_vm_cmd
 
+        if cmd.failed?
+          raise Bosh::Clouds::CloudError.new("Creating vm failed")
+        end
+
         write_agent_default_network(agent_id, cmd.ip_address) if cmd.ip_address
 
         write_agent_settings(agent_id, {
@@ -337,16 +341,36 @@ module Bosh
           File.write(always_path, ip_address)
         end
 
+        def make_create_vm_always_fail
+          @logger.info("Making create_vm method always fail")
+          failed_path = File.join(@cpi_commands, 'create_vm', 'fail')
+          FileUtils.mkdir_p(File.dirname(failed_path))
+          File.write(failed_path, "")
+        end
+
+        def allow_create_vm_to_succeed
+          @logger.info("Allowing create_vm method to succeed (removing any mandatory failures)")
+          failed_path = File.join(@cpi_commands, 'create_vm', 'fail')
+          FileUtils.rm(failed_path)
+        end
+
         def next_create_vm_cmd
           @logger.info('Reading create_vm configuration')
+          failed_path = File.join(@cpi_commands, 'create_vm', 'fail')
           always_path = File.join(@cpi_commands, 'create_vm', 'always')
           ip_address = File.read(always_path) if File.exists?(always_path)
-          CreateVmCommand.new(ip_address)
+          failed = File.exists?(failed_path)
+          CreateVmCommand.new(ip_address, failed)
         end
       end
 
       class ConfigureNetworksCommand < Struct.new(:not_supported); end
-      class CreateVmCommand < Struct.new(:ip_address); end
+      class CreateVmCommand < Struct.new(:ip_address, :failed)
+
+        def failed?
+          failed
+        end
+      end
     end
   end
 end
