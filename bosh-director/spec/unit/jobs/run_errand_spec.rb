@@ -69,9 +69,6 @@ module Bosh::Director
 
               before { allow(lock).to receive(:lock).and_yield }
 
-              before { allow(deployment_job).to receive(:resource_pool).with(no_args).and_return(resource_pool) }
-              let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
-
               before do
                 allow(LogBundlesCleaner).to receive(:new).
                   with(blobstore, 86400 * 10, logger).
@@ -92,20 +89,6 @@ module Bosh::Director
               let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
 
               before do
-                allow(ResourcePoolUpdater).to receive(:new).
-                  with(resource_pool).
-                  and_return(rp_updater)
-              end
-              let(:rp_updater) { instance_double('Bosh::Director::ResourcePoolUpdater') }
-
-              before do
-                allow(DeploymentPlan::ResourcePools).to receive(:new).
-                  with(event_log, [rp_updater]).
-                  and_return(rp_manager)
-              end
-              let(:rp_manager) { instance_double('Bosh::Director::DeploymentPlan::ResourcePools', update: nil) }
-
-              before do
                 allow(Errand::JobManager).to receive(:new).
                   with(planner, deployment_job, blobstore, event_log, logger).
                   and_return(job_manager)
@@ -115,6 +98,7 @@ module Bosh::Director
                   prepare: nil,
                   update_instances: nil,
                   delete_instances: nil,
+                  create_missing_vms: nil,
                 })
               end
 
@@ -140,7 +124,8 @@ module Bosh::Director
 
                 expect(job_manager).to receive(:prepare).with(no_args).ordered
 
-                expect(rp_manager).to receive(:update).with(no_args).ordered
+                expect(job_manager).to receive(:create_missing_vms).with(no_args).ordered
+
                 expect(job_manager).to receive(:update_instances).with(no_args).ordered
 
                 expect(runner).to receive(:run).
@@ -161,6 +146,7 @@ module Bosh::Director
 
                 it 'cleans up the instances anyway' do
                   error = Exception.new
+                  allow(job_manager).to receive(:create_missing_vms).with(no_args).ordered
                   expect(runner).to receive(:run).with(no_args).and_raise(error)
                   expect(job_manager).to receive(:delete_instances).with(no_args).ordered
 
@@ -201,6 +187,7 @@ module Bosh::Director
 
                 context 'when agent is able to cancel run_errand task successfully' do
                   it 'cancels the errand, raises TaskCancelled, and cleans up errand VMs' do
+                    expect(job_manager).to receive(:create_missing_vms).with(no_args).ordered
                     expect(job_manager).to receive(:update_instances).with(no_args).ordered
                     expect(runner).to receive(:run).with(no_args).ordered.and_yield
                     expect(runner).to receive(:cancel).with(no_args).ordered
@@ -210,6 +197,7 @@ module Bosh::Director
                   end
 
                   it 'does not allow cancellation while cleaning up errand VMs' do
+                    expect(job_manager).to receive(:create_missing_vms).with(no_args).ordered
                     expect(job_manager).to receive(:update_instances).with(no_args).ordered
                     expect(runner).to receive(:run).with(no_args).ordered.and_yield
                     expect(runner).to receive(:cancel).with(no_args).ordered
@@ -222,6 +210,7 @@ module Bosh::Director
                 context 'when the agent throws an exception while cancelling run_errand task' do
                   it 'raises RpcRemoteException and cleans up errand VMs' do
                     error = RpcRemoteException.new
+                    expect(job_manager).to receive(:create_missing_vms).with(no_args).ordered
                     expect(job_manager).to receive(:update_instances).with(no_args).ordered
                     expect(runner).to receive(:run).with(no_args).ordered.and_yield
                     expect(runner).to receive(:cancel).with(no_args).ordered.and_raise(error)

@@ -25,6 +25,7 @@ describe Bosh::Director::JobUpdater do
   describe 'update' do
     let(:instances) { [] }
     before { allow(job).to receive(:instances).and_return(instances) }
+    before { allow(job_renderer).to receive(:render_job_instances) }
 
     let(:update_error) { RuntimeError.new('update failed') }
 
@@ -34,7 +35,12 @@ describe Bosh::Director::JobUpdater do
     context 'when job is up to date' do
       let(:instances) { [instance_double('Bosh::Director::DeploymentPlan::Instance', changed?: false)] }
 
-      it 'should do nothing' do
+      it 'should render job instances' do
+        expect(job_renderer).to receive(:render_job_instances)
+        job_updater.update
+      end
+
+      it 'should not begin the updating job event stage' do
         job_updater.update
 
         check_event_log do |events|

@@ -18,18 +18,32 @@ module Bosh::Director
       @job.bind_instance_networks
     end
 
+    def create_missing_vms
+      instances_with_missing_vms = @job.instances_with_missing_vms
+      return @logger.info('No missing vms to create') if instances_with_missing_vms.empty?
+      counter = instances_with_missing_vms.length
+      ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
+        instances_with_missing_vms.each do |instance|
+          pool.process do
+            @event_log.track("#{instance.job.name}/#{instance.index}") do
+              with_thread_name("create_missing_vm(#{instance.job.name}, #{instance.index}/#{counter})") do
+                @logger.info("Creating missing VM")
+                disks = [instance.model.persistent_disk_cid]
+                Bosh::Director::VmCreator.create_for_instance(instance,disks)
+              end
+            end
+          end
+        end
+      end
+    end
+
     # Creates/updates all errand job instances
     # @return [void]
     def update_instances
       dns_binder = DeploymentPlan::DnsBinder.new(@deployment)
       dns_binder.bind_deployment
 
-      instance_vm_binder = DeploymentPlan::InstanceVmBinder.new(@event_log)
-      instance_vm_binder.bind_instance_vms(@job.instances)
-
       job_renderer = JobRenderer.new(@job, @blobstore)
-      job_renderer.render_job_instances
-
       job_updater = JobUpdater.new(@deployment, @job, job_renderer)
       job_updater.update
     end
@@ -47,18 +61,6 @@ module Bosh::Director
       event_log_stage = @event_log.begin_stage('Deleting errand instances', instances.size, [@job.name])
       instance_deleter = InstanceDeleter.new(@deployment)
       instance_deleter.delete_instances(instances, event_log_stage)
-
-      deallocate_vms
-    end
-
-    private
-
-    # Deallocates all errand VMs
-    # @return [void]
-    def deallocate_vms
-      @logger.info('Deallocating errand VMs')
-      instance_vm_cids = @job.instances.map { |instance| instance.model.vm.cid }
-      instance_vm_cids.each { |cid| @job.resource_pool.deallocate_vm(cid) }
     end
   end
 end

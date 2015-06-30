@@ -9,6 +9,10 @@ module Bosh::Director::Models
 
     end
 
+    def vm_exists?
+      !(cid.nil? || cid.empty?)
+    end
+
     def apply_spec
       return nil if apply_spec_json.nil?
       Yajl::Parser.parse(apply_spec_json)

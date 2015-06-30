@@ -13,6 +13,7 @@ module BufferedLogger
   end
 
   def logger=(logger)
+    puts "ADDING LAGER #{logger.inspect}"
     @test_logger = logger
   end
 

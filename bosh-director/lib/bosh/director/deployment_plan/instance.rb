@@ -90,33 +90,12 @@ module Bosh::Director
       # Updates this domain object to reflect an existing instance running on an existing vm
       def bind_existing_instance(instance_model, state, reservations)
         check_model_not_bound
-
         @model = instance_model
-        @current_state = state
-
+        allocate_vm
+        @vm.model = instance_model.vm
         take_network_reservations(reservations)
-        add_allocated_vm(instance_model.vm, state)
-      end
-
-      def apply_partial_vm_state
-        @logger.info('Applying partial VM state')
-
-        @current_state['job'] = job.spec
-        @current_state['index'] = index
-
-        # Apply the assignment to the VM
-        agent = AgentClient.with_defaults(@vm.model.agent_id)
-        agent.apply(@current_state)
-
-        # Our assumption here is that director database access
-        # is much less likely to fail than VM agent communication
-        # so we only update database after we see a successful agent apply.
-        # If database update fails subsequent deploy will try to
-        # assign a new VM to this instance which is ok.
-        @vm.model.db.transaction do
-          @vm.model.update(:apply_spec => @current_state)
-          @model.update(:vm => @vm.model)
-        end
+        @current_state = state
+        @logger.debug("Found VM '#{@vm.model.cid}' running job instance '#{self}'")
       end
 
       def apply_vm_state
@@ -136,7 +115,7 @@ module Bosh::Director
 
         @model.vm.update(:apply_spec => state)
 
-        agent = AgentClient.with_defaults(@model.vm.agent_id)
+        agent = AgentClient.with_vm(@model.vm)
         agent.apply(state)
 
         # Agent will potentially return modified version of state
@@ -286,7 +265,7 @@ module Bosh::Director
       ##
       # @return [Boolean] returns true if the expected resource pool differs from the one provided by the VM
       def resource_pool_changed?
-        if @recreate || @job.deployment.recreate
+        if @job.deployment.recreate
           return true
         end
 
@@ -453,10 +432,24 @@ module Bosh::Director
         spec
       end
 
+      def vm_created?
+        !@vm.model.nil? && @vm.model.vm_exists?
+      end
+
       def bind_to_vm_model(vm_model)
         @model.update(vm: vm_model)
         @vm.model = vm_model
         @vm.bound_instance = self
+      end
+
+      def delete_vm_model
+        @model.db.transaction do
+          vm_model = @model.vm
+          @vm.model = nil
+          @model.vm = nil
+          @model.save
+          vm_model.destroy
+        end
       end
 
       # Looks up instance model in DB
@@ -480,7 +473,7 @@ module Bosh::Director
       # Allocates an VM in this job resource pool and binds current instance to that VM.
       # @return [void]
       def allocate_vm
-        vm = @job.resource_pool.allocate_vm
+        vm = Vm.new
 
         # VM is not created yet: let's just make it reference this instance
         # so later it knows what it needs to become
@@ -521,8 +514,7 @@ module Bosh::Director
       end
 
       def add_allocated_vm(vm_model, state)
-        resource_pool = @job.resource_pool
-        vm = resource_pool.allocate_vm
+        vm = Vm.new
 
         reservation = @network_reservations[resource_pool.network.name]
 
@@ -531,6 +523,7 @@ module Bosh::Director
           " with reservation '#{reservation}'")
         vm.model = vm_model
         vm.bound_instance = self
+
         @current_state = state
 
         @vm = vm

@@ -5,6 +5,7 @@ module Bosh::Director
     include DnsHelper
 
     WATCH_INTERVALS = 10
+    MAX_RECREATE_ATTEMPTS = 3
 
     attr_reader :current_state
 
@@ -25,11 +26,9 @@ module Bosh::Director
       @resource_pool = @job.resource_pool
       @update_config = @job.update
 
-      @vm = @instance.model.vm
-
       @current_state = {}
 
-      @agent = AgentClient.with_defaults(@vm.agent_id)
+      @agent = AgentClient.with_vm(@instance.model.vm)
     end
 
     def report_progress(num_steps)
@@ -46,16 +45,16 @@ module Bosh::Director
         return steps
       end
 
-      steps << proc { Preparer.new(@instance, agent, @logger).prepare }
+      steps << proc { Preparer.new(@instance, @agent, @logger).prepare }
       steps << proc { stop }
       steps << proc { take_snapshot }
 
       if @target_state == "detached"
-        steps << proc { vm_updater.detach }
+        steps << proc { Bosh::Director::VmDeleter.delete_from_instance(@instance) }
         return steps
       end
 
-      steps << proc { recreate_vm(nil) }
+      steps << proc { recreate_vm(nil) if @instance.resource_pool_changed? }
       steps << proc { update_networks }
       steps << proc { update_dns }
       steps << proc { update_persistent_disk }
@@ -63,7 +62,7 @@ module Bosh::Director
 
       if !trusted_certs_change_only?
         steps << proc {
-          VmMetadataUpdater.build.update(@vm, {})
+          VmMetadataUpdater.build.update(@instance.model.vm, {})
           apply_state(@instance.spec)
           RenderedJobTemplatesCleaner.new(@instance.model, @blobstore).clean
         }
@@ -105,7 +104,7 @@ module Bosh::Director
         sleep(sleep_time)
         @logger.info("Checking if #{@instance} has been updated after #{sleep_time} seconds")
 
-        @current_state = agent.get_state
+        @current_state = @agent.get_state
 
         if @target_state == "started"
           break if current_state["job_state"] == "running"
@@ -116,18 +115,18 @@ module Bosh::Director
     end
 
     def start!
-      agent.start
+      @agent.start
     rescue RuntimeError => e
       # FIXME: this is somewhat ghetto: we don't have a good way to
-      # negotiate on BOSH protocol between director and agent (yet),
-      # so updating from agent version that doesn't support 'start' RPC
+      # negotiate on BOSH protocol between director and @agent (yet),
+      # so updating from @agent version that doesn't support 'start' RPC
       # to the one that does might be hard. Right now we decided to
       # just swallow the exception.
       # This needs to be removed in one of the following cases:
       # 1. BOSH protocol handshake gets implemented
       # 2. All agents updated to support 'start' RPC
       #    and we no longer care about backward compatibility.
-      @logger.warn("Agent start raised an exception: #{e.inspect}, ignoring for compatibility")
+      @logger.warn("@agent start raised an exception: #{e.inspect}, ignoring for compatibility")
     end
 
     def need_start?
@@ -143,7 +142,7 @@ module Bosh::Director
     end
 
     def stop
-      stopper = Stopper.new(@instance, agent, @target_state, Config, @logger)
+      stopper = Stopper.new(@instance, @agent, @target_state, Config, @logger)
       stopper.stop
     end
 
@@ -156,17 +155,17 @@ module Bosh::Director
     end
 
     def apply_state(state)
-      @vm.update(:apply_spec => state)
-      agent.apply(state)
+      @instance.model.vm.update(:apply_spec => state)
+      @agent.apply(state)
     end
 
-    # Retrieve list of mounted disks from the agent
+    # Retrieve list of mounted disks from the @agent
     # @return [Array<String>] list of disk CIDs
     def disk_info
       return @disk_list if @disk_list
 
       begin
-        @disk_list = agent.list_disk
+        @disk_list = @agent.list_disk
       rescue RuntimeError
         # old agents don't support list_disk rpc
         [@instance.persistent_disk_cid]
@@ -180,11 +179,11 @@ module Bosh::Director
 
     def delete_mounted_disk(disk)
       disk_cid = disk.disk_cid
-      vm_cid = @vm.cid
+      vm_cid = @instance.model.vm.cid
 
-      # Unmount the disk only if disk is known by the agent
-      if agent && disk_info.include?(disk_cid)
-        agent.unmount_disk(disk_cid)
+      # Unmount the disk only if disk is known by the @agent
+      if @agent && disk_info.include?(disk_cid)
+        @agent.unmount_disk(disk_cid)
       end
 
       begin
@@ -225,10 +224,20 @@ module Bosh::Director
     end
 
     def recreate_vm(new_disk_cid)
-      @vm, @agent = vm_updater.update(new_disk_cid)
+      Bosh::Director::VmDeleter.delete_for_instance(@instance)
+      disks = [@instance.model.persistent_disk_cid, new_disk_cid].compact
+      Bosh::Director::VmCreator.create_for_instance(@instance,disks)
+
+      @agent = AgentClient.with_vm(@instance.vm.model)
+
+      #TODO: we only render the templates again because dynamic networking may have
+      #      asssigned an ip address, so the state we got back from the @agent may
+      #      have mutated the instance.spec.  Ideally, we clean up the @agent interaction
+      #      so that we only have to do this once.
+      @job_renderer.render_job_instance(@instance)
     end
 
-    # Synchronizes persistent_disks with the agent.
+    # Synchronizes persistent_disks with the @agent.
     # (Currently assumes that we only have 1 persistent disk.)
     # @return [void]
     def check_persistent_disk
@@ -237,7 +246,7 @@ module Bosh::Director
 
       if agent_disk_cid != @instance.model.persistent_disk_cid
         raise AgentDiskOutOfSync,
-              "`#{@instance}' has invalid disks: agent reports " +
+              "`#{@instance}' has invalid disks: @agent reports " +
                   "`#{agent_disk_cid}' while director record shows " +
                   "`#{@instance.model.persistent_disk_cid}'"
       end
@@ -250,7 +259,7 @@ module Bosh::Director
     end
 
     def update_persistent_disk
-      vm_updater.attach_missing_disk
+      Bosh::Director::VmCreator.attach_disks_for(@instance) unless @instance.disk_currently_attached?
       check_persistent_disk
 
       disk = nil
@@ -273,14 +282,33 @@ module Bosh::Director
     end
 
     def update_networks
-      network_updater = NetworkUpdater.new(@instance, @vm, agent, vm_updater, @cloud, @logger)
-      @vm, @agent = network_updater.update
+      ips_to_release = @instance.current_ip_addresses.to_set - @instance.reserved_ip_addresses.to_set
+
+      network_updater = NetworkUpdater.new(@instance, @agent, @cloud, @logger)
+      success = network_updater.update
+      if !success
+        @logger.info('Creating VM with new network configurations')
+        recreate_vm(nil)
+        @agent = AgentClient.with_vm(@instance.vm.model)
+      end
+
+      release_ips(ips_to_release)
+    end
+
+    # @param <[String, String]> ips_set set of [network_name, ip]
+    def release_ips(ips_set)
+      ips_set.each do |network_name, ip|
+        Bosh::Director::Models::IpAddress.where(
+          address: NetAddr::CIDR.create(ip).to_i,
+          network_name: network_name
+        ).delete
+      end
     end
 
     def update_settings
       if @instance.trusted_certs_changed?
         @agent.update_settings(Config.trusted_certs)
-        @vm.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
+        @instance.model.vm.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
       end
     end
 
@@ -314,14 +342,6 @@ module Bosh::Director
       @canary
     end
 
-    attr_reader :agent
-
-    def vm_updater
-      # Do not memoize to avoid caching same VM and agent
-      # which could be replaced after updating a VM
-      VmUpdater.new(@instance, @vm, agent, @job_renderer, @cloud, 3, @logger)
-    end
-
     private
 
     def create_disk
@@ -330,7 +350,7 @@ module Bosh::Director
 
       disk = nil
       @instance.model.db.transaction do
-        disk_cid = @cloud.create_disk(disk_size, cloud_properties, @vm.cid)
+        disk_cid = @cloud.create_disk(disk_size, cloud_properties, @instance.model.vm.cid)
         disk = Models::PersistentDisk.create(
           disk_cid: disk_cid,
           active: false,
@@ -343,13 +363,13 @@ module Bosh::Director
     end
 
     def attach_disk(disk)
-      @cloud.attach_disk(@vm.cid, disk.disk_cid)
+      @cloud.attach_disk(@instance.model.vm.cid, disk.disk_cid)
     rescue Bosh::Clouds::NoDiskSpace => e
       if e.ok_to_retry
         @logger.warn('Retrying attach disk operation after persistent disk update failed')
         recreate_vm(disk.disk_cid)
         begin
-          @cloud.attach_disk(@vm.cid, disk.disk_cid)
+          @cloud.attach_disk(@instance.model.vm.cid, disk.disk_cid)
         rescue
           delete_unused_disk(disk)
           raise
@@ -361,8 +381,8 @@ module Bosh::Director
     end
 
     def mount_and_migrate_disk(new_disk, old_disk)
-      agent.mount_disk(new_disk.disk_cid)
-      agent.migrate_disk(old_disk.disk_cid, new_disk.disk_cid) if old_disk
+      @agent.mount_disk(new_disk.disk_cid)
+      @agent.migrate_disk(old_disk.disk_cid, new_disk.disk_cid) if old_disk
     rescue
       delete_mounted_disk(new_disk)
       raise

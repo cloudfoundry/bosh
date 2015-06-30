@@ -91,6 +91,7 @@ module Bosh::Director
         @instances = []
         @unneeded_instances = []
         @instance_states = {}
+        @default_network = {}
 
         @packages = {}
       end
@@ -254,6 +255,10 @@ module Bosh::Director
         disk_pool = DiskPool.new(SecureRandom.uuid)
         disk_pool.disk_size = disk_size
         @persistent_disk_pool = disk_pool
+      end
+
+      def instances_with_missing_vms
+        instances.select { |instance| !instance.vm_created? }
       end
 
       private

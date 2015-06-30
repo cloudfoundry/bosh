@@ -23,9 +23,6 @@ module Bosh::Director
       # @return [Hash] Resource pool environment
       attr_reader :env
 
-      # @return [Array<DeploymentPlan::IdleVm] List of allocated VMs
-      attr_reader :allocated_vms
-
       # @param [DeploymentPlan] deployment_plan Deployment plan
       # @param [Hash] spec Raw resource pool spec from the deployment manifest
       # @param [Logger] logger Director logger
@@ -52,12 +49,6 @@ module Bosh::Director
         end
 
         @env = safe_property(spec, "env", class: Hash, default: {})
-
-        @allocated_vms = []
-      end
-
-      def vms
-        @allocated_vms
       end
 
       # Returns resource pools spec as Hash (usually for agent to serialize)
@@ -68,31 +59,6 @@ module Bosh::Director
           "cloud_properties" => @cloud_properties,
           "stemcell" => @stemcell.spec
         }
-      end
-
-      def allocate_vm
-        vm = Vm.new
-        register_allocated_vm(vm)
-      end
-
-      def deallocate_vm(vm_cid)
-        deallocated_vm = @allocated_vms.find { |vm| vm.model.cid == vm_cid }
-        if deallocated_vm.nil?
-          raise DirectorError, "Resource pool `#{@name}' does not contain an allocated VM with the cid `#{vm_cid}'"
-        end
-
-        @logger.info("ResourcePool `#{name}' - Deallocating VM: #{deallocated_vm.model.cid}")
-        @allocated_vms.delete(deallocated_vm)
-
-        nil
-      end
-
-      private
-      # Adds an existing VM to allocated_vms
-      def register_allocated_vm(vm)
-        @logger.info("ResourcePool `#{name}' - Adding allocated VM (index=#{@allocated_vms.size})")
-        @allocated_vms << vm
-        vm
       end
     end
   end

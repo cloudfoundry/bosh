@@ -24,19 +24,6 @@ module Bosh::Director::DeploymentPlan
 
     before { allow(plan).to receive(:network).with('test').and_return(network) }
 
-    describe '#vms' do
-      before do
-        2.times { resource_pool.allocate_vm }
-      end
-
-      it 'returns a list of the allocated vms' do
-        expect(resource_pool.vms).to contain_exactly(
-          resource_pool.allocated_vms[0],
-          resource_pool.allocated_vms[1],
-        )
-      end
-    end
-
     describe 'creating' do
       it 'parses name, size, stemcell spec, cloud properties, env' do
         expect(resource_pool.name).to eq('small')
@@ -102,49 +89,5 @@ module Bosh::Director::DeploymentPlan
       })
     end
 
-
-    describe '#allocate_vm' do
-      context 'when resource pool is dynamically sized' do
-        before { valid_spec.delete('size') }
-
-        it 'creates a new vm if dynamically sized' do
-          allocated_vm = resource_pool.allocate_vm
-          allocated_vm.model = instance_double('Bosh::Director::Models::Vm', cid: 'abc')
-
-          expect(resource_pool.allocated_vms).to eq([allocated_vm])
-        end
-      end
-    end
-
-    describe '#deallocate_vm' do
-      context 'when resource pool is dynamically sized' do
-        before { valid_spec.delete('size') }
-
-        context 'when the pool contains an allocated vm' do
-          let(:vm_model) { instance_double('Bosh::Director::Models::Vm', cid: 'abc') }
-
-          before do
-            @allocated_vm = resource_pool.allocate_vm
-            @allocated_vm.model = vm_model
-          end
-
-          it 'removes vm from allocated' do
-            resource_pool.deallocate_vm(vm_model.cid)
-            expect(resource_pool.allocated_vms).to be_empty
-          end
-        end
-
-        context 'when the pool does not contain any allocated vms' do
-          it 'raises an error' do
-            expect{
-              resource_pool.deallocate_vm('abc')
-            }.to raise_error(
-              Bosh::Director::DirectorError,
-              /Resource pool `small' does not contain an allocated VM with the cid `abc'/,
-            )
-          end
-        end
-      end
-    end
   end
 end

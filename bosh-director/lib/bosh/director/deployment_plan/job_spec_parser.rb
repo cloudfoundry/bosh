@@ -250,8 +250,6 @@ module Bosh::Director
       end
 
       def parse_networks
-        @job.default_network = {}
-
         network_specs = safe_property(@job_spec, "networks", :class => Array)
         if network_specs.empty?
           raise JobMissingNetwork,

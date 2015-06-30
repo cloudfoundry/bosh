@@ -53,14 +53,9 @@ module Bosh::Director
       # Job tasks
 
       def update_step(deployment_plan)
-        resource_pool_updaters = deployment_plan.resource_pools.map do |resource_pool|
-          ResourcePoolUpdater.new(resource_pool)
-        end
-        resource_pools = DeploymentPlan::ResourcePools.new(event_log, resource_pool_updaters)
         DeploymentPlan::Steps::UpdateStep.new(
           self,
           event_log,
-          resource_pools,
           deployment_plan,
           multi_job_updater,
           Config.cloud,

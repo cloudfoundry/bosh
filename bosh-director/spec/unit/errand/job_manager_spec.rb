@@ -27,13 +27,8 @@ module Bosh::Director
         expect(DeploymentPlan::DnsBinder).to receive(:new).with(deployment).and_return(dns_binder)
         expect(dns_binder).to receive(:bind_deployment).with(no_args)
 
-        vm_binder = instance_double('Bosh::Director::DeploymentPlan::InstanceVmBinder')
-        expect(DeploymentPlan::InstanceVmBinder).to receive(:new).with(event_log).and_return(vm_binder)
-        expect(vm_binder).to receive(:bind_instance_vms).with([instance1, instance2])
-
         job_renderer = instance_double('Bosh::Director::JobRenderer')
         expect(JobRenderer).to receive(:new).with(job, blobstore).and_return(job_renderer)
-        expect(job_renderer).to receive(:render_job_instances).with(no_args)
 
         job_updater = instance_double('Bosh::Director::JobUpdater')
         expect(JobUpdater).to receive(:new).with(deployment, job, job_renderer).and_return(job_updater)
@@ -68,8 +63,6 @@ module Bosh::Director
         allow(instance_deleter).to receive(:delete_instances)
         allow(event_log).to receive(:begin_stage).and_return(event_log_stage)
 
-        allow(resource_pool).to receive(:deallocate_vm).with('fake-vm-cid-1').and_return(vm1)
-        allow(resource_pool).to receive(:deallocate_vm).with('fake-vm-cid-2').and_return(vm2)
         allow(job).to receive(:resource_pool).and_return(resource_pool)
       end
 
@@ -83,12 +76,6 @@ module Bosh::Director
         expect(instance_deleter).to receive(:delete_instances).
           with([[instance1_model,{}], [instance2_model,{}]], event_log_stage)
 
-        subject.delete_instances
-      end
-
-      it 'deallocates vms for deleted instances' do
-        expect(resource_pool).to receive(:deallocate_vm).with('fake-vm-cid-1')
-        expect(resource_pool).to receive(:deallocate_vm).with('fake-vm-cid-2')
         subject.delete_instances
       end
 
@@ -109,12 +96,6 @@ module Bosh::Director
 
         it 'does not delete instances' do
           expect(instance_deleter).not_to receive(:delete_instances)
-
-          subject.delete_instances
-        end
-
-        it 'does not deallocate vms' do
-          expect(resource_pool).not_to receive(:deallocate_vm)
 
           subject.delete_instances
         end

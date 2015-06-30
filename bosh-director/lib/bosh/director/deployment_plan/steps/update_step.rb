@@ -2,17 +2,15 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       class UpdateStep
-        def initialize(base_job, event_log, resource_pools, deployment_plan, multi_job_updater, cloud, blobstore)
+        def initialize(base_job, event_log, deployment_plan, multi_job_updater, cloud, blobstore)
           @base_job = base_job
           @logger = base_job.logger
           @event_log = event_log
-          @resource_pools = resource_pools
           @cloud = cloud
           @blobstore = blobstore
           @deployment_plan = deployment_plan
           @multi_job_updater = multi_job_updater
         end
-
 
         def perform
           begin
@@ -36,14 +34,11 @@ module Bosh::Director
           @logger.info('Deleting no longer needed instances')
           delete_unneeded_instances
 
-          @logger.info('Updating resource pools')
-          # this just creates vms that don't exist yet for @deployment_plan.jobs_starting_on_deploy
-          @resource_pools.update
+          @logger.info('Creating missing VMs')
+          create_missing_vms
           @base_job.task_checkpoint
 
           @logger.info('Binding instance VMs')
-
-          @event_log.begin_stage('Preparing configuration', 1)
         end
 
         def update_jobs
@@ -57,12 +52,28 @@ module Bosh::Director
 
         private
 
+        def create_missing_vms
+          instances_with_missing_vms = @deployment_plan.instances_with_missing_vms
+          return @logger.info('No missing vms to create') if instances_with_missing_vms.empty?
+          counter = instances_with_missing_vms.length
+          ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
+            instances_with_missing_vms.each do |instance|
+              pool.process do
+                @event_log.track("#{instance.job.name}/#{instance.index}") do
+                  with_thread_name("create_missing_vm(#{instance.job.name}, #{instance.index}/#{counter})") do
+                    @logger.info("Creating missing VM #{instance.job.name} #{instance.index}")
+                    disks = [instance.model.persistent_disk_cid]
+                    Bosh::Director::VmCreator.create_for_instance(instance,disks)
+                  end
+                end
+              end
+            end
+          end
+        end
+
         def delete_unneeded_vms
           unneeded_vms = @deployment_plan.unneeded_vms
-          if unneeded_vms.empty?
-            @logger.info('No unneeded vms to delete')
-            return
-          end
+          return @logger.info('No unneeded vms to delete') if unneeded_vms.empty?
 
           @event_log.begin_stage('Deleting unneeded VMs', unneeded_vms.size)
           ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|

@@ -129,6 +129,12 @@ module Bosh::Director
         @unneeded_vms << [vm, reservations]
       end
 
+      def instances_with_missing_vms
+        jobs_starting_on_deploy.collect_concat do |job|
+          job.instances_with_missing_vms
+        end
+      end
+
       # Adds instance to deletion queue
       # @param [Bosh::Director::Models::Instance] instance Instance DB model
       # @param [Hash(String => Bosh::Director::NetworkReservation)] reservations map of network name and reservation

@@ -5,9 +5,9 @@ module Bosh::Director::DeploymentPlan
     let(:redis) { double('Redis').as_null_object }
     before { allow(Bosh::Director::Config).to receive(:redis).and_return(redis) }
     let(:event_log) { Bosh::Director::Config.event_log }
+    let(:logger) { Logging::Logger.new('TestLogger') }
 
     before do
-      allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
       allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
     end
 
@@ -30,7 +30,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'the agent on the existing VM has the requested static ip but no job instance assigned (due to deploy failure)' do
         before do
-          allow(Bosh::Director::AgentClient).to receive(:with_defaults).and_return(agent_client)
+          allow(Bosh::Director::AgentClient).to receive(:with_vm).and_return(agent_client)
           allow(agent_client).to receive(:apply)
           allow(agent_client).to receive(:drain).with('shutdown').and_return(0)
           allow(agent_client).to receive(:stop)
@@ -57,12 +57,10 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'the new deployment manifest specifies 1 instance of a job with a static ip' do
-          let(:update_step) { Steps::UpdateStep.new(base_job, event_log, resource_pools, deployment_plan, multi_job_updater, cloud, blobstore) }
+          let(:update_step) { Steps::UpdateStep.new(base_job, event_log, deployment_plan, multi_job_updater, cloud, blobstore) }
 
           let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
           let(:multi_job_updater) { instance_double('Bosh::Director::DeploymentPlan::SerialMultiJobUpdater', run: nil) }
-          let(:resource_pools) { ResourcePools.new(event_log, rp_updaters) }
-          let(:rp_updaters) { deployment_plan.resource_pools.map { |resource_pool| Bosh::Director::ResourcePoolUpdater.new(resource_pool) } }
           let(:assembler) { Assembler.new(deployment_plan, nil, cloud, nil, logger, event_log) }
           let(:cloud_config) { nil }
 

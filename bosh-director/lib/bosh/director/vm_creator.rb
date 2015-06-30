@@ -5,6 +5,14 @@ module Bosh::Director
   class VmCreator
     include EncryptionHelper
 
+    def self.create_for_instance(*args)
+      new.create_for_instance(*args)
+    end
+
+    def self.attach_disks_for(*args)
+      new.attach_disks_for(*args)
+    end
+
     def self.create(*args)
       new.create(*args)
     end
@@ -12,6 +20,50 @@ module Bosh::Director
     def initialize
       @cloud = Config.cloud
       @logger = Config.logger
+    end
+
+    def create_for_instance(instance, disks)
+      @logger.info('Creating VM')
+      deployment = instance.job.deployment
+      resource_pool = instance.job.resource_pool
+
+      vm_model = create(
+        deployment.model,
+        resource_pool.stemcell.model,
+        resource_pool.cloud_properties,
+        instance.network_settings,
+        disks,
+        resource_pool.env,
+      )
+
+      begin
+        instance.bind_to_vm_model(vm_model)
+        agent_client = AgentClient.with_vm(vm_model)
+        agent_client.wait_until_ready
+        agent_client.update_settings(Bosh::Director::Config.trusted_certs)
+        vm_model.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs))
+      rescue Exception => e
+        @logger.error("Failed to create/contact VM #{vm_model.cid}: #{e.inspect}")
+        VmDeleter.delete_for_instance(instance)
+        raise e
+      end
+
+      attach_disks_for(instance)
+
+      instance.apply_vm_state
+    end
+
+    def attach_disks_for(instance)
+      disk_cid = instance.model.persistent_disk_cid
+      return @logger.info('Skipping disk attaching') if disk_cid.nil?
+      vm_model = instance.vm.model
+      begin
+      @cloud.attach_disk(vm_model.cid, disk_cid)
+      AgentClient.with_vm(vm_model).mount_disk(disk_cid)
+      rescue => e
+        @logger.warn("Failed to attach disk to new VM: #{e.inspect}")
+        raise e
+      end
     end
 
     def create(deployment, stemcell, cloud_properties, network_settings,
@@ -73,5 +125,20 @@ module Bosh::Director
       Config.logger
     end
 
+    private
+
+
+
+    class DiskAttacher
+      def initialize(instance, vm_model, agent_client, cloud, logger)
+        @instance = instance
+        @vm_model = vm_model
+        @agent_client = agent_client
+        @cloud = cloud
+        @logger = logger
+      end
+
+
+    end
   end
 end

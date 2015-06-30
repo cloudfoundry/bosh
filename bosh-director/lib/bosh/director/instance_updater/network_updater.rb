@@ -1,63 +1,40 @@
 module Bosh::Director
   class InstanceUpdater::NetworkUpdater
-    def initialize(instance, vm_model, agent_client, vm_updater, cloud, logger)
+    def initialize(instance, agent_client, cloud, logger)
       @instance = instance
-      @vm_model = vm_model
       @agent_client = agent_client
-      @vm_updater = vm_updater
       @cloud = cloud
       @logger = logger
     end
 
+    # return boolean indicating whether success to recreate vm
     def update
-      unless @instance.networks_changed?
-        @logger.info('Skipping network re-configuration')
-        return [@vm_model, @agent_client]
-      end
+      return @logger.info('Skipping network re-configuration') unless @instance.networks_changed?
 
       network_settings = @instance.network_settings
-      ips_to_release = @instance.current_ip_addresses.to_set - @instance.reserved_ip_addresses.to_set
-
       strategies = [
         ConfigureNetworksStrategy.new(@agent_client, network_settings, @logger),
         PrepareNetworkChangeStrategy.new(@agent_client, network_settings, @logger),
       ]
 
+      @logger.info("Planning to reconfigure network with settings: #{network_settings}")
+      selected_strategy = strategies.find { |s| s.before_configure_networks }
+
+      # If configure_networks CPI method cannot reconfigure VM networking
+      # (e.g. when the security groups change on AWS)
+      # it raises Bosh::Clouds::NotSupported to indicate network change failure.
       begin
-        @logger.info("Planning to reconfigure network with settings: #{network_settings}")
-        selected_strategy = strategies.find { |s| s.before_configure_networks }
-
-        @cloud.configure_networks(@vm_model.cid, network_settings)
-
+        @cloud.configure_networks(@instance.model.vm.cid, network_settings)
         selected_strategy.after_configure_networks
       rescue Bosh::Clouds::NotSupported => e
         @logger.info("Failed reconfiguring existing VM: #{e.inspect}")
-
-        # If configure_networks CPI method cannot reconfigure VM networking
-        # (e.g. when the security groups change on AWS)
-        # it raises Bosh::Clouds::NotSupported to indicate new VM is needed.
-        @logger.info('Creating VM with new network configurations')
-        @instance.recreate = true
-        @vm_model, @agent_client = @vm_updater.update(nil)
+        return false
       end
 
-      release_ips(ips_to_release)
-
-      [@vm_model, @agent_client]
+      true
     end
 
     private
-
-    # @param <[String, String]> ips_set set of [network_name, ip]
-    def release_ips(ips_set)
-      ips_set.each do |network_name, ip|
-        Bosh::Director::Models::IpAddress.where(
-          address: NetAddr::CIDR.create(ip).to_i,
-          network_name: network_name
-        ).delete
-      end
-    end
-
     # Newer agents support prepare_configure_networks/configure_networks messages
     class ConfigureNetworksStrategy
       def initialize(agent_client, network_settings, logger)

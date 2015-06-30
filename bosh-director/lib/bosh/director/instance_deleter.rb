@@ -19,25 +19,25 @@ module Bosh::Director
       end
     end
 
-    def delete_instance(instance, reservations, event_log_stage)
-      vm = instance.vm
-      @logger.info("Delete unneeded instance: #{vm.cid}")
+    def delete_instance(instance_model, reservations, event_log_stage)
+      vm_model = instance_model.vm
+      @logger.info("Delete unneeded instance: #{vm_model.cid}")
 
-      event_log_stage.advance_and_track(vm.cid) do
-        drain(vm.agent_id)
-        @cloud.delete_vm(vm.cid)
-        delete_snapshots(instance)
-        delete_persistent_disks(instance.persistent_disks)
-        delete_dns(instance.job, instance.index)
+      event_log_stage.advance_and_track(vm_model.cid) do
+        drain(vm_model.agent_id)
+        @cloud.delete_vm(vm_model.cid)
+        delete_snapshots(instance_model)
+        delete_persistent_disks(instance_model.persistent_disks)
+        delete_dns(instance_model.job, instance_model.index)
 
-        RenderedJobTemplatesCleaner.new(instance, @blobstore).clean_all
+        RenderedJobTemplatesCleaner.new(instance_model, @blobstore).clean_all
 
-        vm.db.transaction do
+        vm_model.db.transaction do
           reservations.each do |network_name,reservation|
             @deployment_plan.network(network_name).release(reservation)
           end
-          instance.destroy
-          vm.destroy
+          instance_model.destroy
+          vm_model.destroy
         end
       end
     end

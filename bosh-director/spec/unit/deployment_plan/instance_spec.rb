@@ -32,7 +32,6 @@ module Bosh::Director::DeploymentPlan
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
     let(:vm) { Vm.new }
     before do
-      allow(resource_pool).to receive(:allocate_vm).and_return(vm)
       allow(job).to receive(:instance_state).with(0).and_return('started')
     end
 
@@ -277,14 +276,12 @@ module Bosh::Director::DeploymentPlan
         allow(job).to receive(:resource_pool).and_return(resource_pool)
       end
 
-      it "binds a VM from job resource pool (real VM doesn't exist)" do
-        expect(resource_pool).to receive(:allocate_vm).and_return(vm)
-
+      it "creates a new VM and binds it the instance" do
         instance.bind_unallocated_vm
 
         expect(instance.model).not_to be_nil
-        expect(instance.vm).to eq(vm)
-        expect(vm.bound_instance).to eq(instance)
+        expect(instance.vm).not_to be_nil
+        expect(instance.vm.bound_instance).to eq(instance)
       end
     end
 
@@ -300,9 +297,6 @@ module Bosh::Director::DeploymentPlan
         })
       end
       let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
-
-      before { allow(resource_pool).to receive(:allocate_vm).and_return(vm) }
-      let(:vm) { Vm.new }
 
       let(:instance_model) { Bosh::Director::Models::Instance.make }
 
@@ -324,6 +318,11 @@ module Bosh::Director::DeploymentPlan
         instance.bind_existing_instance(instance_model, state, reservations)
 
         expect(instance.model).to eq(instance_model)
+
+        expect(instance.vm).to_not be_nil
+        expect(instance.vm.model).to be(instance_model.vm)
+        expect(instance.vm.bound_instance).to be(instance)
+
         expect(instance.current_state).to eq(state)
       end
 
@@ -343,150 +342,6 @@ module Bosh::Director::DeploymentPlan
         expect(existing_reservations['fake-network2']).to_not receive(:take)
 
         instance.bind_existing_instance(instance_model, state, new_reservations)
-      end
-
-      it "adds the existing VM as allocated on the job's resource pool" do
-        instance_model.vm = vm_model
-
-        state = {}
-        reservations = {}
-
-        expect(resource_pool).to receive(:allocate_vm).with(no_args).and_return(vm)
-
-        instance.bind_existing_instance(instance_model, state, reservations)
-
-        expect(vm.model).to be(vm_model)
-        expect(vm.bound_instance).to be(instance)
-        expect(instance.vm).to be(vm)
-      end
-    end
-
-    describe '#apply_partial_vm_state' do
-      let(:job) { Job.new(plan) }
-
-      before do
-        job.templates = [template]
-        job.name = 'fake-job'
-      end
-
-      let(:template) do
-        instance_double('Bosh::Director::DeploymentPlan::Template', {
-          name: 'fake-template',
-          version: 'fake-template-version',
-          sha1: 'fake-template-sha1',
-          blobstore_id: 'fake-template-blobstore-id',
-          logs: nil,
-        })
-      end
-
-      before { job.resource_pool = resource_pool }
-      let(:resource_pool) do
-        instance_double('Bosh::Director::DeploymentPlan::ResourcePool', {
-          name: 'fake-resource-pool',
-          network: network,
-        })
-      end
-      let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
-      let(:vm) { Vm.new }
-
-      let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
-      before { allow(agent_client).to receive(:apply) }
-
-      before { allow(Bosh::Director::AgentClient).to receive(:with_defaults).with(vm_model.agent_id).and_return(agent_client) }
-
-      before do
-        # Create a new VM
-        vm.model = vm_model
-
-        # Allocate the new vm to the resource pool specified by the job spec
-        allow(resource_pool).to receive(:allocate_vm).and_return(vm)
-
-        instance.current_state = {'fake-vm-existing-state' => true }
-
-        instance.bind_unallocated_vm
-      end
-
-      it 'sends apply message to an agent that includes existing vm state, new job spec, instance index' do
-        expect(agent_client).to receive(:apply).with(
-          'fake-vm-existing-state' => true,
-          'job' => {
-            'name' => 'fake-job',
-            'templates' => [{
-              'name' => 'fake-template',
-              'version' => 'fake-template-version',
-              'sha1' => 'fake-template-sha1',
-              'blobstore_id' => 'fake-template-blobstore-id',
-            }],
-            'template' => 'fake-template',
-            'version' => 'fake-template-version',
-            'sha1' => 'fake-template-sha1',
-            'blobstore_id' => 'fake-template-blobstore-id',
-          },
-          'index' => 0,
-        )
-        instance.apply_partial_vm_state
-      end
-
-      def self.it_rolls_back_instance_and_vm_state(error)
-        it 'does not point instance to the vm so that during the next deploy instance can be re-associated with new vm' do
-          expect {
-            expect { instance.apply_partial_vm_state }.to raise_error(error)
-          }.to_not change { instance.model.refresh.vm }.from(nil)
-        end
-
-        it 'does not change apply spec on vm model' do
-          expect {
-            expect { instance.apply_partial_vm_state }.to raise_error(error)
-          }.to_not change { vm_model.refresh.apply_spec }.from(nil)
-        end
-      end
-
-      context 'when agent apply succeeds' do
-        context 'when saving state changes to the database succeeds' do
-          it 'the instance points to the vm' do
-            expect {
-              instance.apply_partial_vm_state
-            }.to change { instance.model.refresh.vm }.from(nil).to(vm_model)
-          end
-
-          it 'the vm apply spec is set to new state' do
-            expect {
-              instance.apply_partial_vm_state
-            }.to change { vm_model.refresh.apply_spec }.from(nil).to(
-              hash_including(
-                'fake-vm-existing-state' => true,
-                'job' => hash_including('name' => 'fake-job'),
-              ),
-            )
-          end
-
-          it 'the instance current state is set to new state' do
-            instance.current_state = {
-              'job' => {}
-            }
-            expect {
-              instance.apply_partial_vm_state
-            }.to change { instance.job_changed? }.from(true).to(false)
-          end
-        end
-
-        context 'when update vm instance in the database fails' do
-          error = Exception.new('error')
-          before { allow(instance.model).to receive(:_update_without_checking).and_raise(error) }
-          it_rolls_back_instance_and_vm_state(error)
-        end
-
-        context 'when update vm apply spec in the database fails' do
-          error = Exception.new('error')
-          before { allow(vm_model).to receive(:_update_without_checking).and_raise(error) }
-          it_rolls_back_instance_and_vm_state(error)
-        end
-      end
-
-      context 'when agent apply fails' do
-        error = Bosh::Director::RpcTimeout.new('error')
-        before { allow(agent_client).to receive(:apply).and_raise(error) }
-        it_rolls_back_instance_and_vm_state(error)
       end
     end
 
@@ -519,8 +374,6 @@ module Bosh::Director::DeploymentPlan
 
       before { allow(job).to receive(:spec).with(no_args).and_return('fake-job-spec') }
 
-      let(:vm) { Vm.new }
-
       let(:network) do
         instance_double('Bosh::Director::DeploymentPlan::Network', {
           name: 'fake-network',
@@ -533,24 +386,19 @@ module Bosh::Director::DeploymentPlan
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
       before { allow(agent_client).to receive(:apply) }
 
-      before { allow(Bosh::Director::AgentClient).to receive(:with_defaults).with(vm_model.agent_id).and_return(agent_client) }
+      before { allow(Bosh::Director::AgentClient).to receive(:with_vm).with(vm_model).and_return(agent_client) }
 
       before { allow(plan).to receive(:network).with('fake-network').and_return(network) }
 
       before do
         instance.configuration_hash = 'fake-desired-configuration-hash'
 
-        # Create a new VM
-        vm.model = vm_model
-
         reservation = Bosh::Director::NetworkReservation.new_dynamic
         instance.add_network_reservation('fake-network', reservation)
         instance.current_state = {'fake-vm-existing-state' => true }
 
-        # Allocate the new vm to the resource pool specified by the job spec
-        allow(resource_pool).to receive(:allocate_vm).and_return(vm)
         instance.bind_unallocated_vm
-        instance.apply_partial_vm_state
+        instance.bind_to_vm_model(vm_model)
       end
 
       context 'when persistent disk size is 0' do
@@ -571,9 +419,8 @@ module Bosh::Director::DeploymentPlan
           returned_state = state.merge('configuration_hash' => 'fake-desired-configuration-hash')
           expect(agent_client).to receive(:get_state).and_return(returned_state).ordered
 
-          expect {
-            instance.apply_vm_state
-          }.to change { instance.configuration_changed? }.from(true).to(false)
+          instance.apply_vm_state
+          expect(instance.current_state).to eq(returned_state)
         end
       end
 
@@ -683,8 +530,6 @@ module Bosh::Director::DeploymentPlan
 
       context 'when an instance exists (with the same job name & instance index)' do
         before do
-          allow(resource_pool).to receive(:allocate_vm).and_return(vm)
-
           instance_model = Bosh::Director::Models::Instance.make
           instance.bind_existing_instance(instance_model, instance_state, {})
         end
@@ -703,32 +548,6 @@ module Bosh::Director::DeploymentPlan
           it 'returns true' do
             expect(instance.job_changed?).to eq(true)
           end
-        end
-      end
-
-      context 'when the instance is being created' do
-        let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
-        before do
-          allow(Bosh::Director::AgentClient).to receive(:with_defaults).with(vm_model.agent_id).and_return(agent_client)
-          allow(agent_client).to receive(:apply)
-        end
-
-        before do
-          # Create a new VM
-          vm.model = vm_model
-
-          instance.current_state = {}
-
-          # Allocate the new vm to the resource pool specified by the job spec
-          allow(resource_pool).to receive(:allocate_vm).and_return(vm)
-          instance.bind_unallocated_vm
-
-          # Set the job spec on the Agent and the DB (instance model & vm model)
-          instance.apply_partial_vm_state
-        end
-
-        it 'returns false' do
-          expect(instance.job_changed?).to eq(false)
         end
       end
     end

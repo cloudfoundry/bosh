@@ -4,15 +4,15 @@ require 'bosh/director/job_updater'
 
 module Bosh::Director
   describe DeploymentPlan::Steps::UpdateStep do
-    subject { DeploymentPlan::Steps::UpdateStep.new(base_job, event_log, resource_pools, deployment_plan, multi_job_updater, cloud, blobstore) }
+    subject { DeploymentPlan::Steps::UpdateStep.new(base_job, event_log, deployment_plan, multi_job_updater, cloud, blobstore) }
     let(:base_job) { Jobs::BaseJob.new }
     let(:event_log) { Bosh::Director::Config.event_log }
-    let(:resource_pools) { instance_double('Bosh::Director::DeploymentPlan::ResourcePools', update: nil) }
     let(:deployment_plan) do
       instance_double('Bosh::Director::DeploymentPlan::Planner',
         update_stemcell_references!: nil,
         persist_updates!: nil,
-        jobs_starting_on_deploy: []
+        jobs_starting_on_deploy: [],
+        instances_with_missing_vms: []
       )
     end
     let(:cloud) { instance_double('Bosh::Cloud', delete_vm: nil) }
@@ -83,7 +83,6 @@ module Bosh::Director
 
         it_deletes_unneeded_vms.ordered
         it_deletes_unneeded_instances.ordered
-        expect(resource_pools).to receive(:update).with(no_args).ordered
         expect(base_job).to receive(:task_checkpoint).with(no_args).ordered
         expect(multi_job_updater).to receive(:run).with(base_job, deployment_plan, [job1, job2]).ordered
         expect(deployment_plan).to receive(:persist_updates!).ordered

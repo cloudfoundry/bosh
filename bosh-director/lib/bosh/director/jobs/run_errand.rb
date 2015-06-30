@@ -71,52 +71,49 @@ module Bosh::Director
     private
 
     def with_updated_instances(deployment, job, &blk)
-      rp_updaters = [ResourcePoolUpdater.new(job.resource_pool)]
-      resource_pools = DeploymentPlan::ResourcePools.new(event_log, rp_updaters)
-
       job_manager = Errand::JobManager.new(deployment, job, @blobstore, event_log, logger)
 
       begin
-        update_instances(resource_pools, job_manager)
+        update_instances(job_manager)
         block_result = blk.call
       rescue Exception
-        cleanup_instances_and_log_error(job_manager, resource_pools)
+        cleanup_instances_and_log_error(job_manager)
         raise
       else
-        cleanup_instances_and_raise_error(job_manager, resource_pools)
+        cleanup_instances_and_raise_error(job_manager)
         return block_result
       end
     end
 
-    def cleanup_instances_and_log_error(job_manager, resource_pools)
+    def cleanup_instances_and_log_error(job_manager)
       begin
-        cleanup_instances_and_raise_error(job_manager, resource_pools)
+        cleanup_instances_and_raise_error(job_manager)
       rescue Exception => e
         logger.warn("Failed to delete instances: #{e.class}: #{e.message}\n#{e.backtrace.join("\n")}")
       end
     end
 
-    def cleanup_instances_and_raise_error(job_manager, resource_pools)
+    def cleanup_instances_and_raise_error(job_manager)
       if @keep_alive
         logger.info('Skipping instances deletion, keep-alive is set')
       else
         logger.info('Deleting instances')
-        delete_instances(resource_pools, job_manager)
+        delete_instances(job_manager)
       end
     end
 
-    def update_instances(resource_pools, job_manager)
+    def update_instances(job_manager)
       logger.info('Starting to prepare for deployment')
       job_manager.prepare
 
-      logger.info('Starting to update resource pool')
-      resource_pools.update
+      logger.info('Starting to create missing vms')
+      job_manager.create_missing_vms
 
       logger.info('Starting to update job instances')
       job_manager.update_instances
     end
 
-    def delete_instances(resource_pools, job_manager)
+    def delete_instances(job_manager)
       @ignore_cancellation = true
 
       logger.info('Starting to delete job instances')
