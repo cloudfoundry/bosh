@@ -10,7 +10,7 @@ RSpec.configure do |config|
       end
     end
   else
-    warning = 'All STEMCELL_IMAGE tests are being skipped. ENV["STEMCELL_IMAGE"] must be set to test stemcell image'
+    warning = 'All stemcell_image tests are being skipped. STEMCELL_IMAGE needs to be set'
     puts RSpec::Core::Formatters::ConsoleCodes.wrap(warning, :yellow)
     config.filter_run_excluding stemcell_image: true
   end
