@@ -30,7 +30,7 @@ module Bosh::Spec
     end
 
     def self.errand_manifest(opts)
-      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'errand')
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: opts.fetch(:name, 'errand'))
       manifest['jobs'] = [
         Bosh::Spec::Deployments.simple_errand_job.merge(
           'instances' => opts.fetch(:instances),

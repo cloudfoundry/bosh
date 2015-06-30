@@ -25,9 +25,13 @@ module IntegrationExampleGroup
   end
 
   def bosh_runner
-    @bosh_runner ||= Bosh::Spec::BoshRunner.new(
-      ClientSandbox.bosh_work_dir,
-      ClientSandbox.bosh_config,
+    @bosh_runner ||= make_a_bosh_runner
+  end
+
+  def make_a_bosh_runner(opts={})
+    Bosh::Spec::BoshRunner.new(
+      opts.fetch(:work_dir, ClientSandbox.bosh_work_dir),
+      opts.fetch(:config_path, ClientSandbox.bosh_config),
       current_sandbox.cpi.method(:agent_log_path),
       current_sandbox.nats_log_path,
       current_sandbox.saved_logs_path,
@@ -36,14 +40,7 @@ module IntegrationExampleGroup
   end
 
   def bosh_runner_in_work_dir(work_dir)
-    Bosh::Spec::BoshRunner.new(
-      work_dir,
-      ClientSandbox.bosh_config,
-      current_sandbox.cpi.method(:agent_log_path),
-      current_sandbox.nats_log_path,
-      current_sandbox.saved_logs_path,
-      logger
-    )
+    make_a_bosh_runner(work_dir: work_dir)
   end
 
   def waiter
