@@ -12,6 +12,7 @@ module Bosh::Spec
       manifest['name'] = opts.fetch(:name, 'simple')
       manifest['jobs'].first['instances'] = opts.fetch(:instances, 1)
       manifest['networks'].first['subnets'] = [make_subnet(opts)]
+      manifest['networks'].first['subnets'].first['static'] = opts.fetch(:static_ips, [])
       manifest
     end
 
@@ -24,8 +25,10 @@ module Bosh::Spec
     def self.make_subnet(opts)
       ip_range = NetAddr::CIDR.create('192.168.1.0/24')
       ip_range_shift = opts.fetch(:shift_ip_range_by, 0)
-      ip_to_reserve_from = ip_range.nth(opts.fetch(:available_ips)+2+ip_range_shift) # first IP is gateway, range is inclusive, so +2
+      available_ips = opts.fetch(:available_ips)
+      raise "not enough IPs, don't be so greedy" if available_ips > ip_range.size
 
+      ip_to_reserve_from = ip_range.nth(available_ips+2+ip_range_shift) # first IP is gateway, range is inclusive, so +2
       reserved_ips = ["#{ip_to_reserve_from}-#{ip_range.last}"]
       if ip_range_shift > 0
         reserved_ips << "#{ip_range.nth(2)}-#{ip_range.nth(ip_range_shift+1)}"

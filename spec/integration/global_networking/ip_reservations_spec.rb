@@ -8,7 +8,6 @@ describe 'global networking', type: :integration do
       target_and_login
       create_and_upload_test_release
       upload_stemcell
-      upload_cloud_config(cloud_config_hash: cloud_config_hash)
     end
 
     let(:cloud_config_hash) do
@@ -47,6 +46,8 @@ describe 'global networking', type: :integration do
 
 
     it 'deployments with shared manual network get next available IP from range' do
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
       deploy_simple_manifest(manifest_hash: simple_manifest)
       first_deployment_vms = director.vms
       expect(first_deployment_vms.size).to eq(1)
@@ -59,6 +60,8 @@ describe 'global networking', type: :integration do
     end
 
     it 'deployments on the same network can not use the same IP' do
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
       deploy_with_ip(simple_manifest, '192.168.1.10')
       first_deployment_vms = director.vms
       expect(first_deployment_vms.size).to eq(1)
@@ -73,6 +76,8 @@ describe 'global networking', type: :integration do
     end
 
     it 'IPs used by one deployment can be used by another deployment after first deployment is deleted' do
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
       deploy_with_ip(simple_manifest, '192.168.1.10')
       first_deployment_vms = director.vms
       expect(first_deployment_vms.size).to eq(1)
@@ -87,6 +92,8 @@ describe 'global networking', type: :integration do
     end
 
     it 'IPs released by one deployment via scaling down can be used by another deployment' do
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
       deploy_with_ips(simple_manifest, ['192.168.1.10', '192.168.1.11'])
       first_deployment_vms = director.vms
       expect(first_deployment_vms.size).to eq(2)
@@ -101,6 +108,8 @@ describe 'global networking', type: :integration do
       deploy_simple_manifest(manifest_hash: simple_manifest, no_track: true)
 
       current_sandbox.cpi.commands.wait_for_delete_vms
+
+      # IPs aren't released until the VM is actually deleted
       _, exit_code = deploy_with_ips(
         second_deployment_manifest,
         ['192.168.1.10', '192.168.1.11'],
@@ -118,6 +127,8 @@ describe 'global networking', type: :integration do
     end
 
     it 'IPs released by one deployment via changing IP can be used by another deployment' do
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
       deploy_with_ip(simple_manifest, '192.168.1.10')
       first_deployment_vms = director.vms
       expect(first_deployment_vms.size).to eq(1)
@@ -135,6 +146,8 @@ describe 'global networking', type: :integration do
     end
 
     it 'IP is still reserved when vm is recreated due to network changes other than IP address' do
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
       deploy_with_ip(simple_manifest, '192.168.1.10')
       first_deployment_vms = director.vms
       expect(first_deployment_vms.size).to eq(1)
@@ -157,6 +170,8 @@ describe 'global networking', type: :integration do
     end
 
     it 'redeploys VM on new IP address when reserved list includes current IP address of VM' do
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
       deploy_simple_manifest(manifest_hash: simple_manifest)
       first_deployment_vms = director.vms
       expect(first_deployment_vms.size).to eq(1)
@@ -232,6 +247,53 @@ describe 'global networking', type: :integration do
       expect(exit_code).not_to eq(0)
       expect(output).to include('something about static ips being in use')
     end
+
+    context 'using legacy network configuration (no cloud config)' do
+      it 'only recreates VMs that change when the list of static IPs changes' do
+        manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(
+          static_ips: ['192.168.1.10','192.168.1.11','192.168.1.12'],
+          available_ips: 20
+        )
+
+        deploy_with_ips(manifest_hash, ['192.168.1.10', '192.168.1.11'])
+        original_first_instance = director.vms.find { |vm| vm.ips == '192.168.1.10'}
+        original_second_instance = director.vms.find { |vm| vm.ips == '192.168.1.11'}
+
+        deploy_with_ips(manifest_hash, ['192.168.1.10', '192.168.1.12'])
+        new_first_instance = director.vms.find { |vm| vm.ips == '192.168.1.10'}
+        new_second_instance = director.vms.find { |vm| vm.ips == '192.168.1.12'}
+
+        expect(new_first_instance.cid).to eq(original_first_instance.cid)
+        expect(new_second_instance.cid).to_not eq(original_second_instance.cid)
+      end
+
+      it 'reuses IPs when jobs swap their static IPs' do
+        pending "https://www.pivotaltracker.com/story/show/98154302"
+
+        manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(
+          name: 'my-deploy',
+          static_ips: ['192.168.1.10','192.168.1.11'],
+          available_ips: 20
+        )
+
+        manifest_hash['jobs'] = [
+          Bosh::Spec::Deployments.simple_job(name: 'first-job', static_ips: ['192.168.1.10'], instances: 1),
+          Bosh::Spec::Deployments.simple_job(name: 'second-job', static_ips: ['192.168.1.11'], instances: 1)
+        ]
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+
+        manifest_hash['jobs'] = [
+          Bosh::Spec::Deployments.simple_job(name: 'first-job', static_ips: ['192.168.1.11'], instances: 1),
+          Bosh::Spec::Deployments.simple_job(name: 'second-job', static_ips: ['192.168.1.10'], instances: 1)
+        ]
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+
+        first_job_vm = director.vms.find { |vm| vm.job_name_index == 'first-job/0'}
+        second_job_vm = director.vms.find { |vm| vm.job_name_index == 'second-job/0'}
+        expect(first_job_vm.ips).to eq('192.168.1.11')
+        expect(second_job_vm.ips).to eq('192.168.1.10')
+      end
+    end
   end
 
   context 'when allocating dynamic IPs' do
@@ -285,11 +347,7 @@ describe 'global networking', type: :integration do
     end
 
     it 'gives the correct error message when there are not enough IPs' do
-      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
-
-      upload_cloud_config(cloud_config_hash: cloud_config_hash)
-      deploy_simple_manifest(manifest_hash: manifest_hash)
 
       new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
       upload_cloud_config(cloud_config_hash: new_cloud_config_hash)
@@ -332,6 +390,104 @@ describe 'global networking', type: :integration do
       # all IPs still reserved
       expect(exit_code).not_to eq(0)
       expect(output).to include('asked for a dynamic IP but there were no more available')
+    end
+
+    it 'redeploys VM on new IP address when reserved list includes current IP address of VM' do
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 1)
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+      original_ips = director.vms('my-deploy').map(&:ips).flatten
+      expect(original_ips).to eq(['192.168.1.2'])
+
+      new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1, shift_ip_range_by: 1)
+      upload_cloud_config(cloud_config_hash: new_cloud_config_hash)
+
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+      new_ips = director.vms('my-deploy').map(&:ips).flatten
+      expect(new_ips).to eq(['192.168.1.3'])
+    end
+
+    context 'using legacy network configuration (no cloud config)' do
+      it 'reuses the compilation VMs IP (can deploy a job with 1 instance with only 1 IP available)' do
+        manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 1, available_ips: 1)
+
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+
+        expect(director.vms('my-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
+      end
+
+      it 'gives VMs the same IP on redeploy' do
+        manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 2, available_ips: 5)
+
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+        original_ips = director.vms('my-deploy').map(&:ips).flatten
+
+        manifest_hash['jobs'].first['properties'].merge!('test_property' => 'new value') # force re-deploy
+        output = deploy_simple_manifest(manifest_hash: manifest_hash)
+        expect(output).to include('Started updating job foobar') # actually re-deployed
+        new_ips = director.vms('my-deploy').map(&:ips).flatten
+
+        expect(new_ips).to eq(original_ips)
+      end
+
+      it 'gives VMs the same IP on `deploy --recreate`' do
+        manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 2, available_ips: 5)
+
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+        original_ips = director.vms('my-deploy').map(&:ips).flatten
+        original_cids = director.vms('my-deploy').map(&:cid)
+
+        deploy_simple_manifest(manifest_hash: manifest_hash, recreate: true)
+        new_ips = director.vms('my-deploy').map(&:ips).flatten
+        new_cids = director.vms('my-deploy').map(&:cid)
+
+        expect(new_cids).to_not match_array(original_cids)
+        expect(new_ips).to match_array(original_ips)
+      end
+
+      it 'gives the correct error message when there are not enough IPs' do
+
+        new_manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 2, available_ips: 1)
+
+        output, exit_code = deploy_simple_manifest(manifest_hash: new_manifest_hash, failure_expected: true, return_exit_status: true)
+
+        expect(exit_code).not_to eq(0)
+        expect(output).to include("asked for a dynamic IP but there were no more available")
+      end
+
+      it 'reuses IPs when one job is deleted and another created within a single deployment' do
+        pending("https://www.pivotaltracker.com/story/show/98057020")
+        manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', available_ips: 1)
+        manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(name: 'first-job', instances: 1)]
+
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+        expect(director.vms('my-deploy').map(&:job_name_index)).to eq(['first-job/0'])
+
+        manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(name: 'second-job', instances: 1)]
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+        expect(director.vms('my-deploy').map(&:job_name_index)).to eq(['second-job/0'])
+      end
+
+      it 'redeploys VM on new IP address when reserved list includes current IP address of VM' do
+        manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 1, available_ips: 1)
+
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+        original_ips = director.vms('my-deploy').map(&:ips).flatten
+        expect(original_ips).to eq(['192.168.1.2'])
+
+        manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(
+          name: 'my-deploy',
+          instances: 1,
+          available_ips: 1,
+          shift_ip_range_by: 1
+        )
+
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+        new_ips = director.vms('my-deploy').map(&:ips).flatten
+        expect(new_ips).to eq(['192.168.1.3'])
+      end
     end
   end
 end
