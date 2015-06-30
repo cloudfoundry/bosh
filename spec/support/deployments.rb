@@ -118,7 +118,7 @@ module Bosh::Spec
       }
 
       if opts.has_key?(:static_ips)
-        job_hash['networks']['static_ips'] = opts[:static_ips]
+        job_hash['networks'].first['static_ips'] = opts[:static_ips]
       end
 
       job_hash
