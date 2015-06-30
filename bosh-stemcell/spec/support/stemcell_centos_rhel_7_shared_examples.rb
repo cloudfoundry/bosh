@@ -78,20 +78,6 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
     end
   end
 
-  context 'installed by bosh_openstack_agent_settings', {
-    exclude_on_aws: true,
-    exclude_on_vcloud: true,
-    exclude_on_vsphere: true,
-    exclude_on_warden: true,
-  } do
-    describe file('/var/vcap/bosh/agent.json') do
-      it { should be_valid_json_file }
-      it { should_not contain('"CreatePartitionIfNoEphemeralDisk": true') }
-      it { should contain('"Type": "ConfigDrive"') }
-      it { should contain('"Type": "HTTP"') }
-    end
-  end
-
   context 'installed by bosh_vsphere_agent_settings', {
     exclude_on_aws: true,
     exclude_on_vcloud: true,
