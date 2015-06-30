@@ -37,7 +37,7 @@ describe 'global networking', type: :integration do
       legacy_manifest
     end
 
-    it 'ressurects vms with old deployment ignoring cloud config' do
+    it 'resurrects vms with old deployment ignoring cloud config' do
       deploy_simple_manifest(manifest_hash: legacy_manifest)
       vms = director.vms
       expect(vms.size).to eq(1)
