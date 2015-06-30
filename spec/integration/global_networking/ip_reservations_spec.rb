@@ -170,6 +170,22 @@ describe 'global networking', type: :integration do
       expect(first_deployment_vms.size).to eq(1)
       expect(first_deployment_vms.first.ips).to eq('192.168.1.3')
     end
+
+    it 'only recreates VMs that change when the list of static IPs changes' do
+      cloud_config_hash['networks'].first['subnets'].first['static'] << '192.168.1.12'
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      deploy_with_ips(simple_manifest, ['192.168.1.10', '192.168.1.11'])
+      original_first_instance = director.vms.find { |vm| vm.ips == '192.168.1.10'}
+      original_second_instance = director.vms.find { |vm| vm.ips == '192.168.1.11'}
+
+      deploy_with_ips(simple_manifest, ['192.168.1.10', '192.168.1.12'])
+      new_first_instance = director.vms.find { |vm| vm.ips == '192.168.1.10'}
+      new_second_instance = director.vms.find { |vm| vm.ips == '192.168.1.12'}
+
+      expect(new_first_instance.cid).to eq(original_first_instance.cid)
+      expect(new_second_instance.cid).to_not eq(original_second_instance.cid)
+    end
   end
 
   context 'when allocating dynamic IPs' do
