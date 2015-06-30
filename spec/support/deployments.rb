@@ -106,17 +106,22 @@ module Bosh::Spec
     end
 
     def self.simple_job(opts = {})
-      {
+      job_hash = {
         'name' => opts.fetch(:name, 'foobar'),
         'template' => 'foobar',
         'resource_pool' => 'a',
         'instances' => opts.fetch(:instances, 3),
         'networks' => [{
             'name' => 'a',
-            'static_ips' => opts.fetch(:static_ips, [])
           }],
         'properties' => {},
       }
+
+      if opts.has_key?(:static_ips)
+        job_hash['networks']['static_ips'] = opts[:static_ips]
+      end
+
+      job_hash
     end
 
     def self.manifest_with_errand
