@@ -7,7 +7,7 @@ agent_settings_file=$chroot/var/vcap/bosh/agent.json
 
 if [ "${stemcell_operating_system}" == "rhel" ]; then
 
-  # CreatePartitionIfNoEphemeralDisk option is not supported on CentOS
+  # CreatePartitionIfNoEphemeralDisk option is not supported on Rhel
   cat > $agent_settings_file <<JSON
 {
   "Platform": {
