@@ -2,8 +2,8 @@
 
 source 'https://rubygems.org'
 
-if Gem::Version.new(Bundler::VERSION) < Gem::Version.new('1.10.5')
-  abort "Bundler version >= 1.10.5 is required"
+if Gem::Version.new(Bundler::VERSION) < Gem::Version.new('1.10.3')
+  abort "Bundler version >= 1.10.3 is required"
 end
 
 gem 'agent_client', path: 'agent_client'
