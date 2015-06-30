@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* Ua2BPwAV4jhl0egqdsCGujInYlIpFfGe
+  update unattended-upgrades to 0.82.1ubuntu2.3
+
 * `DRT11QyZUb3Y.tbS00W3QgAQ_lWMhVYJ`
   update python to version python3.4 amd64 3.4.0-2ubuntu1.1
 

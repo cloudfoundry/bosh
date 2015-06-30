@@ -71,17 +71,11 @@ module Bosh::Cli
 
       if diff[:release]
         print_summary(diff, :release, redact_diff)
-        warn_about_release_changes(diff[:release]) if interactive
         nl
       end
 
       if diff[:releases]
         print_summary(diff, :releases, redact_diff)
-        if interactive
-          diff[:releases].each do |release_diff|
-            warn_about_release_changes(release_diff)
-          end
-        end
         nl
       end
 
@@ -92,7 +86,6 @@ module Bosh::Cli
       nl
 
       print_summary(diff, :resource_pools, redact_diff)
-      warn_about_stemcell_changes(diff) if interactive
       nl
 
       print_summary(diff, :disk_pools, redact_diff)
@@ -118,36 +111,6 @@ module Bosh::Cli
     rescue Bosh::Cli::ResourceNotFound
       say('Cannot get current deployment information from director, possibly a new deployment'.make_red)
       true
-    end
-
-    def warn_about_stemcell_changes(diff)
-      old_stemcells = Set.new
-      new_stemcells = Set.new
-
-      diff[:resource_pools].each do |pool|
-        old_stemcells << {
-          :name => pool[:stemcell][:name].old,
-          :version => pool[:stemcell][:version].old
-        }
-        new_stemcells << {
-          :name => pool[:stemcell][:name].new,
-          :version => pool[:stemcell][:version].new
-        }
-      end
-
-      if old_stemcells != new_stemcells
-        unless confirmed?('Stemcell update has been detected. Are you sure you want to update stemcells?')
-          cancel_deployment
-        end
-      end
-
-      if old_stemcells.size != new_stemcells.size
-        say('Stemcell update seems to be inconsistent with current '.make_red +
-          'deployment. Please carefully review changes above.'.make_red)
-        unless confirmed?('Are you sure this configuration is correct?')
-          cancel_deployment
-        end
-      end
     end
 
     def job_unique_in_deployment?(manifest_hash, job_name)
@@ -247,23 +210,6 @@ module Bosh::Cli
 
     def normalize_deployment_manifest(manifest_hash)
       DeploymentManifest.new(manifest_hash).normalize
-    end
-
-    def warn_about_release_changes(release_diff)
-      if release_diff[:name].changed?
-        say('Release name has changed: %s -> %s'.make_red % [
-          release_diff[:name].old, release_diff[:name].new])
-        unless confirmed?('This is very serious and potentially destructive ' +
-                            'change. ARE YOU SURE YOU WANT TO DO IT?')
-          cancel_deployment
-        end
-      elsif release_diff[:version].changed?
-        say('Release version has changed: %s -> %s'.make_yellow % [
-          release_diff[:version].old, release_diff[:version].new])
-        unless confirmed?('Are you sure you want to deploy this version?')
-          cancel_deployment
-        end
-      end
     end
   end
 end

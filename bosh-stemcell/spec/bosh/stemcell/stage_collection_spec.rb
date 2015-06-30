@@ -137,6 +137,7 @@ module Bosh::Stemcell
             :image_create,
             :image_install_grub,
             :image_aws_update_grub,
+            :bosh_dpkg_list
           ]
         }
 
@@ -183,6 +184,7 @@ module Bosh::Stemcell
                 :bosh_openstack_agent_settings,
                 :image_create,
                 :image_install_grub,
+                :bosh_dpkg_list
               ]
             )
             expect(stage_collection.package_stemcell_stages('qcow2')).to eq(
@@ -209,6 +211,7 @@ module Bosh::Stemcell
                 :bosh_openstack_agent_settings,
                 :image_create,
                 :image_install_grub,
+                :bosh_dpkg_list
               ]
             )
             expect(stage_collection.package_stemcell_stages('qcow2')).to eq(
@@ -237,6 +240,7 @@ module Bosh::Stemcell
                 :bosh_vsphere_agent_settings,
                 :image_create,
                 :image_install_grub,
+                :bosh_dpkg_list
               ]
             )
             expect(stage_collection.package_stemcell_stages('ovf')).to eq(vmware_package_stemcell_steps)
@@ -258,6 +262,7 @@ module Bosh::Stemcell
                 :bosh_vsphere_agent_settings,
                 :image_create,
                 :image_install_grub,
+                :bosh_dpkg_list
               ]
             )
             expect(stage_collection.package_stemcell_stages('ovf')).to eq(vmware_package_stemcell_steps)
@@ -283,6 +288,7 @@ module Bosh::Stemcell
                 :bosh_vsphere_agent_settings,
                 :image_create,
                 :image_install_grub,
+                :bosh_dpkg_list
               ]
             )
             expect(stage_collection.package_stemcell_stages('ovf')).to eq(vmware_package_stemcell_steps)
@@ -303,6 +309,7 @@ module Bosh::Stemcell
                 :bosh_vsphere_agent_settings,
                 :image_create,
                 :image_install_grub,
+                :bosh_dpkg_list
               ]
             )
             expect(stage_collection.package_stemcell_stages('ovf')).to eq(vmware_package_stemcell_steps)

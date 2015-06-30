@@ -208,6 +208,7 @@ module Bosh::Stemcell
         expected_rspec_command = [
           "cd #{stemcell_specs_dir};",
           "STEMCELL_IMAGE=#{File.join(work_path, 'fake-root-disk-image.raw')}",
+          "STEMCELL_WORKDIR=#{work_path}",
           'bundle exec rspec -fd',
           "spec/stemcells/#{operating_system.name}_#{operating_system.version}_spec.rb",
           "spec/stemcells/#{agent.name}_agent_spec.rb",

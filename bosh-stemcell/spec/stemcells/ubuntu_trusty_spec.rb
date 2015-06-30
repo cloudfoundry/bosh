@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Ubuntu 14.04 stemcell', stemcell_image: true do
+describe 'Ubuntu 14.04 stemcell image', stemcell_image: true do
 
   it_behaves_like 'All Stemcells'
 
@@ -136,6 +136,16 @@ HERE
   context 'default packages removed' do
     describe package('postfix') do
       it { should_not be_installed }
+    end
+  end
+end
+
+describe 'Ubuntu 14.04 stemcell tarball', stemcell_tarball: true do
+  context 'installed by bosh_dpkg_list stage' do
+    describe file("#{ENV['STEMCELL_WORKDIR']}/stemcell/stemcell_dpkg_l.txt") do
+      it { should be_file }
+      it { should contain 'Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend' }
+      it { should contain 'ubuntu-minimal' }
     end
   end
 end

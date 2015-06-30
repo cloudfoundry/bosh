@@ -51,6 +51,7 @@ module Bosh::Stemcell
       [
         "cd #{STEMCELL_SPECS_DIR};",
         "STEMCELL_IMAGE=#{image_file_path}",
+        "STEMCELL_WORKDIR=#{work_path}",
         "bundle exec rspec -fd#{exclude_exclusions}",
         "spec/stemcells/#{operating_system_spec_name}_spec.rb",
         "spec/stemcells/#{agent.name}_agent_spec.rb",
