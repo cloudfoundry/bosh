@@ -2,6 +2,10 @@
 
 source 'https://rubygems.org'
 
+if Gem::Version.new(Bundler::VERSION) < Gem::Version.new('1.10.5')
+  abort "Bundler version >= 1.10.5 is required"
+end
+
 gem 'agent_client', path: 'agent_client'
 gem 'blobstore_client', path: 'blobstore_client'
 gem 'bosh_aws_cpi', path: 'bosh_aws_cpi'
