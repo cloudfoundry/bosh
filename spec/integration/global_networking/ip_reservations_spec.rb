@@ -186,6 +186,28 @@ describe 'global networking', type: :integration do
       expect(new_first_instance.cid).to eq(original_first_instance.cid)
       expect(new_second_instance.cid).to_not eq(original_second_instance.cid)
     end
+
+    it 'reuses IPs when jobs swap their static IPs' do
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy')
+
+      manifest_hash['jobs'] = [
+        Bosh::Spec::Deployments.simple_job(name: 'first-job', static_ips: ['192.168.1.10'], instances: 1),
+        Bosh::Spec::Deployments.simple_job(name: 'second-job', static_ips: ['192.168.1.11'], instances: 1)
+      ]
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      manifest_hash['jobs'] = [
+        Bosh::Spec::Deployments.simple_job(name: 'first-job', static_ips: ['192.168.1.11'], instances: 1),
+        Bosh::Spec::Deployments.simple_job(name: 'second-job', static_ips: ['192.168.1.10'], instances: 1)
+      ]
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      first_job_vm = director.vms.find { |vm| vm.job_name_index == 'first-job/0'}
+      second_job_vm = director.vms.find { |vm| vm.job_name_index == 'second-job/0'}
+      expect(first_job_vm.ips).to eq('192.168.1.11')
+      expect(second_job_vm.ips).to eq('192.168.1.10')
+    end
   end
 
   context 'when allocating dynamic IPs' do

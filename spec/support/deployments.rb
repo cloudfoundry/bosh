@@ -111,7 +111,10 @@ module Bosh::Spec
         'template' => 'foobar',
         'resource_pool' => 'a',
         'instances' => opts.fetch(:instances, 3),
-        'networks' => [{'name' => 'a'}],
+        'networks' => [{
+            'name' => 'a',
+            'static_ips' => opts.fetch(:static_ips, [])
+          }],
         'properties' => {},
       }
     end
