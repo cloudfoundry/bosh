@@ -202,7 +202,9 @@ describe 'global networking', type: :integration do
       expect(new_second_instance.cid).to_not eq(original_second_instance.cid)
     end
 
-    it 'reuses IPs when jobs swap their static IPs' do
+    it 'does not release static IPs too early (cant swap job static IPs)' do
+      pending "https://www.pivotaltracker.com/story/show/98155606"
+
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy')
 
@@ -216,12 +218,9 @@ describe 'global networking', type: :integration do
         Bosh::Spec::Deployments.simple_job(name: 'first-job', static_ips: ['192.168.1.11'], instances: 1),
         Bosh::Spec::Deployments.simple_job(name: 'second-job', static_ips: ['192.168.1.10'], instances: 1)
       ]
-      deploy_simple_manifest(manifest_hash: manifest_hash)
-
-      first_job_vm = director.vms.find { |vm| vm.job_name_index == 'first-job/0'}
-      second_job_vm = director.vms.find { |vm| vm.job_name_index == 'second-job/0'}
-      expect(first_job_vm.ips).to eq('192.168.1.11')
-      expect(second_job_vm.ips).to eq('192.168.1.10')
+      output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
+      expect(exit_code).to_not eq(0)
+      expect(output).to include("asked for a static IP 192.168.1.11 but it's already reserved/in use")
     end
 
     it 'keeps static IPs reserved when a job fails to deploy its VMs' do
@@ -237,11 +236,11 @@ describe 'global networking', type: :integration do
         Bosh::Spec::Deployments.simple_job(name: 'first-job', static_ips: ['192.168.1.10'], instances: 1)
       ]
       current_sandbox.cpi.commands.make_create_vm_always_fail
-      _, exit_code = deploy_simple_manifest(manifest_hash: failing_deployment_manifest_hash, failure_expected: true, return_exit_status: true)
+      _, exit_code = deploy_simple_manifest(manifest_hash: failing_deployment_manifest_hash, failure_expected: true, return_exit_code: true)
       expect(exit_code).not_to eq(0)
 
       current_sandbox.cpi.commands.allow_create_vm_to_succeed
-      output, exit_code = deploy_simple_manifest(manifest_hash: other_deployment_manifest_hash, failure_expected: true, return_exit_status: true)
+      output, exit_code = deploy_simple_manifest(manifest_hash: other_deployment_manifest_hash, failure_expected: true, return_exit_code: true)
 
       # all IPs still reserved
       expect(exit_code).not_to eq(0)
@@ -267,9 +266,7 @@ describe 'global networking', type: :integration do
         expect(new_second_instance.cid).to_not eq(original_second_instance.cid)
       end
 
-      it 'reuses IPs when jobs swap their static IPs' do
-        pending "https://www.pivotaltracker.com/story/show/98154302"
-
+      it 'does not release static IPs too early (cant swap job static IPs)' do
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(
           name: 'my-deploy',
           static_ips: ['192.168.1.10','192.168.1.11'],
@@ -286,12 +283,9 @@ describe 'global networking', type: :integration do
           Bosh::Spec::Deployments.simple_job(name: 'first-job', static_ips: ['192.168.1.11'], instances: 1),
           Bosh::Spec::Deployments.simple_job(name: 'second-job', static_ips: ['192.168.1.10'], instances: 1)
         ]
-        deploy_simple_manifest(manifest_hash: manifest_hash)
-
-        first_job_vm = director.vms.find { |vm| vm.job_name_index == 'first-job/0'}
-        second_job_vm = director.vms.find { |vm| vm.job_name_index == 'second-job/0'}
-        expect(first_job_vm.ips).to eq('192.168.1.11')
-        expect(second_job_vm.ips).to eq('192.168.1.10')
+        output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
+        expect(exit_code).to_not eq(0)
+        expect(output).to include("asked for a static IP 192.168.1.11 but it's already reserved/in use")
       end
     end
   end
@@ -351,7 +345,7 @@ describe 'global networking', type: :integration do
 
       new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
       upload_cloud_config(cloud_config_hash: new_cloud_config_hash)
-      output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_status: true)
+      output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).not_to eq(0)
       expect(output).to include("asked for a dynamic IP but there were no more available")
@@ -381,11 +375,11 @@ describe 'global networking', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       current_sandbox.cpi.commands.make_create_vm_always_fail
-      _, exit_code = deploy_simple_manifest(manifest_hash: failing_deployment_manifest_hash, failure_expected: true, return_exit_status: true)
+      _, exit_code = deploy_simple_manifest(manifest_hash: failing_deployment_manifest_hash, failure_expected: true, return_exit_code: true)
       expect(exit_code).not_to eq(0)
 
       current_sandbox.cpi.commands.allow_create_vm_to_succeed
-      output, exit_code = deploy_simple_manifest(manifest_hash: other_deployment_manifest_hash, failure_expected: true, return_exit_status: true)
+      output, exit_code = deploy_simple_manifest(manifest_hash: other_deployment_manifest_hash, failure_expected: true, return_exit_code: true)
 
       # all IPs still reserved
       expect(exit_code).not_to eq(0)
@@ -451,7 +445,7 @@ describe 'global networking', type: :integration do
 
         new_manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 2, available_ips: 1)
 
-        output, exit_code = deploy_simple_manifest(manifest_hash: new_manifest_hash, failure_expected: true, return_exit_status: true)
+        output, exit_code = deploy_simple_manifest(manifest_hash: new_manifest_hash, failure_expected: true, return_exit_code: true)
 
         expect(exit_code).not_to eq(0)
         expect(output).to include("asked for a dynamic IP but there were no more available")
