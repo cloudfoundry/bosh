@@ -18,6 +18,8 @@ module Bosh::Director
       let(:job_bits) { create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}}) }
       before { FileUtils.mkdir_p(File.dirname(job_tarball_path)) }
 
+      before { allow(blobstore).to receive(:create).and_return('fake-blobstore-id') }
+
       it 'should create a proper template and upload job bits to blobstore' do
         File.open(job_tarball_path, 'w') { |f| f.write(job_bits) }
 
@@ -63,7 +65,6 @@ module Bosh::Director
       end
 
       it 'does not whine when it has a foo.monit file' do
-        allow(blobstore).to receive(:create).and_return('fake-blobstore-id')
         job_without_monit =
           create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}}, monit_file: 'foo.monit')
 
@@ -82,7 +83,6 @@ module Bosh::Director
       end
 
       it 'does not whine when no packages are specified' do
-        allow(blobstore).to receive(:create).and_return('fake-blobstore-id')
         job_without_packages =
           create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}},
             manifest: { 'name' => 'foo', 'templates' => {} })
@@ -94,13 +94,46 @@ module Bosh::Director
       end
 
       it 'whines when packages is not an array' do
-        allow(blobstore).to receive(:create).and_return('fake-blobstore-id')
         job_with_invalid_packages =
           create_job('foo', 'monit', {'foo' => {'destination' => 'foo', 'contents' => 'bar'}},
             manifest: { 'name' => 'foo', 'templates' => {}, 'packages' => 'my-awesome-package' })
         File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_packages) }
 
         expect { release_job.create }.to raise_error(JobInvalidPackageSpec)
+      end
+
+      context 'when job spec file includes provides' do
+        it 'verifies it is an array' do
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => 'Invalid'})
+          File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
+
+          expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
+        end
+
+        it 'verifies that it is an array of string' do
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => ['Invalid', 1]})
+          File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
+
+          expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
+        end
+      end
+
+      context 'when job spec file includes requires' do
+        it 'verifies it is an array' do
+          allow(blobstore).to receive(:create).and_return('fake-blobstore-id')
+
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'requires' => 'Invalid'})
+          File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
+
+          expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
+        end
+
+        it 'verifies that it is an array of string' do
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'requires' => ['Invalid', 1]})
+          File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
+
+          expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
+        end
       end
     end
 
@@ -111,7 +144,7 @@ module Bosh::Director
         'name' => name,
         'templates' => {},
         'packages' => []
-      }
+      }.merge(options.fetch(:manifest, {}))
 
       configuration_files.each do |path, configuration_file|
         manifest['templates'][path] = configuration_file['destination']

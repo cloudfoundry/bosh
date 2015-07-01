@@ -29,6 +29,8 @@ module Bosh::Director
       validate_properties(job_manifest)
       template.properties = job_manifest['properties'] if job_manifest['properties']
 
+      validate_links(job_manifest)
+
       template.save
     end
 
@@ -136,6 +138,20 @@ module Bosh::Director
         unless job_manifest['properties'].is_a?(Hash)
           raise JobInvalidPropertySpec,
             "Job `#{@name}' has invalid properties spec format"
+        end
+      end
+    end
+
+    def validate_links(job_manifest)
+      if job_manifest['provides']
+        if !job_manifest['provides'].is_a?(Array) || job_manifest['provides'].find { |p| !p.is_a?(String) }
+          raise JobInvalidLinkSpec, "Job `#{@name}' has invalid spec format: 'provides' needs to be an array of strings"
+        end
+      end
+
+      if job_manifest['requires']
+        if !job_manifest['requires'].is_a?(Array) || job_manifest['requires'].find { |p| !p.is_a?(String) }
+          raise JobInvalidLinkSpec, "Job `#{@name}' has invalid spec format: 'requires' needs to be an array of strings"
         end
       end
     end
