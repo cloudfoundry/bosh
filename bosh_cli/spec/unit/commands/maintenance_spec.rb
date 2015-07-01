@@ -43,19 +43,26 @@ describe Bosh::Cli::Command::Maintenance do
                 'version' => '2578',
                 'cid' => 'fake-ami-4 light',
                 'deployments' => []
+            },
+            {
+              'name' => 'bosh-aws-xen-centos',
+              'version' => '3578',
+              'cid' => 'fake-ami-4 light',
+              'deployments' => []
             }
         ]
         allow(director).to receive(:list_stemcells).and_return(stemcells)
         allow(director).to receive(:list_releases).and_return([])
       end
 
-      context 'when --all flag is passes' do
+      context 'when --all flag is passed' do
         before { command.options[:all] = true }
 
-        it 'removes all unused stemcells' do
+        it 'removes all unused stemcells and properly pick out stemcells to delete' do
           expect(director).to receive(:delete_stemcell).with('bosh-aws-xen-ubuntu', '1471.2', quiet: true)
           expect(director).to receive(:delete_stemcell).with('bosh-aws-xen-ubuntu', '2579', quiet: true)
           expect(director).to receive(:delete_stemcell).with('bosh-aws-xen-ubuntu', '2578', quiet: true)
+          expect(director).to receive(:delete_stemcell).with('bosh-aws-xen-centos', '3578', quiet: true)
           command.cleanup
         end
       end
