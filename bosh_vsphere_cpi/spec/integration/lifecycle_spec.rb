@@ -27,6 +27,13 @@ describe VSphereCloud::Cloud, external_cpi: false do
     @second_cluster = ENV.fetch('BOSH_VSPHERE_CPI_SECOND_CLUSTER')
     @second_cluster_resource_pool_name = ENV.fetch('BOSH_VSPHERE_CPI_SECOND_CLUSTER_RESOURCE_POOL')
     @second_cluster_datastore = ENV.fetch('BOSH_VSPHERE_CPI_SECOND_CLUSTER_DATASTORE')
+
+    config = VSphereSpecConfig.new
+    config.logger = Logger.new(STDOUT)
+    config.logger.level = Logger::DEBUG
+    config.uuid = '123'
+    Bosh::Clouds::Config.configure(config)
+
   end
 
   def cpi_options(options = {})
