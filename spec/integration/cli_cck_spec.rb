@@ -33,13 +33,29 @@ describe 'cli: cloudcheck', type: :integration do
     cloudcheck_response = bosh_run_cck_with_resolution(3)
     expect(cloudcheck_response).to_not match(regexp('No problems found'))
     expect(cloudcheck_response).to match(regexp('3 unresponsive'))
-    expect(cloudcheck_response).to match(regexp('1. Ignore problem
+    expect(cloudcheck_response).to match(regexp('1. Skip for now
   2. Reboot VM
-  3. Recreate VM using last known apply spec
-  4. Delete VM reference (DANGEROUS!)'))
+  3. Recreate VM
+  4. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)'))
 
     recreate_vm = 3
     bosh_run_cck_with_resolution(3, recreate_vm)
+    expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
+  end
+
+  it 'properly delete VMs references' do
+    current_sandbox.cpi.kill_agents
+
+    cloudcheck_response = bosh_run_cck_with_resolution(3)
+    expect(cloudcheck_response).to_not match(regexp('No problems found'))
+    expect(cloudcheck_response).to match(regexp('3 unresponsive'))
+    expect(cloudcheck_response).to match(regexp('1. Skip for now
+  2. Reboot VM
+  3. Recreate VM
+  4. Delete VM reference (forceful; may need to manually delete VM from the Cloud to avoid IP conflicts)'))
+
+    delete_vm_reference = 4
+    bosh_run_cck_with_resolution(3, delete_vm_reference)
     expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
   end
 
@@ -49,9 +65,9 @@ describe 'cli: cloudcheck', type: :integration do
    cloudcheck_response = bosh_run_cck_with_resolution(1)
    expect(cloudcheck_response).to_not match(regexp('No problems found'))
    expect(cloudcheck_response).to match(regexp('1 missing'))
-   expect(cloudcheck_response).to match(regexp('1. Ignore problem
-  2. Recreate VM using last known apply spec
-  3. Delete VM reference (DANGEROUS!)') )
+   expect(cloudcheck_response).to match(regexp('1. Skip for now
+  2. Recreate VM
+  3. Delete VM reference') )
   end
 
   it 'provides resolution options for missing disks' do
@@ -59,7 +75,7 @@ describe 'cli: cloudcheck', type: :integration do
     cloudcheck_response = bosh_run_cck_with_resolution(1)
     expect(cloudcheck_response).to_not match(regexp('No problems found'))
     expect(cloudcheck_response).to match(regexp('1 missing'))
-    expect(cloudcheck_response).to match(regexp('1. Ignore problem
+    expect(cloudcheck_response).to match(regexp('1. Skip for now
   2. Delete disk reference (DANGEROUS!)') )
   end
 
@@ -73,7 +89,7 @@ describe 'cli: cloudcheck', type: :integration do
     expect(cloudcheck_response).to match(regexp('Applying resolutions...'))
     expect(cloudcheck_response).to match(regexp('Cloudcheck is finished'))
     expect(cloudcheck_response).to_not match(regexp('No problems found'))
-    expect(cloudcheck_response).to_not match(regexp('1. Ignore problem
+    expect(cloudcheck_response).to_not match(regexp('1. Skip for now
   2. Reboot VM
   3. Recreate VM using last known apply spec
   4. Delete VM reference (DANGEROUS!)'))
