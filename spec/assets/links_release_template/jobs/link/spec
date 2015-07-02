@@ -1,0 +1,8 @@
+---
+name: link
+templates: {}
+packages: []
+
+requires: [fake_link]
+
+

@@ -35,21 +35,22 @@ describe Bosh::Director::DeploymentPlan::Job do
     properties: bar_properties,
   ) }
 
+  let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+  let(:logger) { double(:logger).as_null_object }
   before do
     allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new)
 
     allow(plan).to receive(:network).and_return(network)
     allow(plan).to receive(:resource_pool).with('dea').and_return resource_pool
     allow(plan).to receive(:update)
+
+    allow(release).to receive(:get_or_create_template).with(name: 'foo').and_return(foo_template)
+    allow(release).to receive(:get_or_create_template).with(name: 'foo', links: nil).and_return(foo_template)
+    allow(release).to receive(:get_or_create_template).with(name: 'bar').and_return(bar_template)
+    allow(release).to receive(:get_or_create_template).with(name: 'bar', links: nil).and_return(bar_template)
   end
 
   describe '#bind_properties' do
-    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
-    before do
-      allow(release).to receive(:use_template_named).with('foo').and_return(foo_template)
-      allow(release).to receive(:use_template_named).with('bar').and_return(bar_template)
-    end
-
     let(:spec) do
       {
         'name' => 'foobar',
@@ -126,11 +127,6 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe 'property mappings' do
-    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
-    before do
-      allow(release).to receive(:use_template_named).with('foo').and_return(foo_template)
-    end
-
     let(:foo_properties) do
       {
         'db.user' => {'default' => 'root'},
@@ -171,8 +167,6 @@ describe Bosh::Director::DeploymentPlan::Job do
       allow(plan).to receive(:properties).and_return(props)
       expect(plan).to receive(:release).with('appcloud').and_return(release)
 
-      expect(release).to receive(:use_template_named).with('foo').and_return(foo_template)
-
       job.bind_properties
 
       expect(job.properties).to eq(
@@ -188,11 +182,6 @@ describe Bosh::Director::DeploymentPlan::Job do
 
   describe '#validate_package_names_do_not_collide!' do
     let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release1') }
-    before do
-      allow(release).to receive(:use_template_named).with('foo').and_return(foo_template)
-      allow(release).to receive(:use_template_named).with('bar').and_return(bar_template)
-    end
-
     before { allow(plan).to receive(:properties).and_return({}) }
 
     before { allow(foo_template).to receive(:model).and_return(foo_template_model) }
@@ -235,7 +224,7 @@ describe Bosh::Director::DeploymentPlan::Job do
           'name' => 'foobar',
           'templates' => [
             { 'name' => 'foo', 'release' => 'release1' },
-            { 'name' => 'bar', 'release' => 'bar_release' },
+            { 'name' => 'bar', 'release' => 'bar_release', 'links' => {'a' => 'b'}},
           ],
           'resource_pool' => 'dea',
           'instances' => 1,
@@ -248,7 +237,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       before { allow(plan).to receive(:release).with('bar_release').and_return(bar_release) }
       let(:bar_release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'bar_release') }
 
-      before { allow(bar_release).to receive(:use_template_named).with('bar').and_return(bar_template) }
+      before { allow(bar_release).to receive(:get_or_create_template).with(name: 'bar', links: {'a' => 'b'}).and_return(bar_template) }
       let(:bar_template) do
         instance_double('Bosh::Director::DeploymentPlan::Template', {
           name: 'bar',
@@ -284,11 +273,6 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#spec' do
-    let(:release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
-    before do
-      allow(release).to receive(:use_template_named).with('foo').and_return(foo_template)
-    end
-
     let(:spec) do
       {
         'name' => 'job1',
@@ -376,7 +360,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#bind_unallocated_vms' do
-    subject(:job) { described_class.new(deployment) }
+    subject(:job) { described_class.new(deployment, logger) }
 
     it 'allocates a VM to all instances if they are not already bound to a VM' do
       instance0 = instance_double('Bosh::Director::DeploymentPlan::Instance')
@@ -395,7 +379,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#bind_instance_networks' do
-    subject(:job) { described_class.new(plan) }
+    subject(:job) { described_class.new(plan, logger) }
 
     before { job.name = 'job-name' }
 
@@ -445,7 +429,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#starts_on_deploy?' do
-    subject { described_class.new(plan) }
+    subject { described_class.new(plan, logger) }
 
     context "when lifecycle profile is 'service'" do
       before { subject.lifecycle = 'service' }
@@ -459,7 +443,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   end
 
   describe '#can_run_as_errand?' do
-    subject { described_class.new(plan) }
+    subject { described_class.new(plan, logger) }
 
     context "when lifecycle profile is 'errand'" do
       before { subject.lifecycle = 'errand' }
@@ -469,6 +453,61 @@ describe Bosh::Director::DeploymentPlan::Job do
     context "when lifecycle profile is not errand" do
       before { subject.lifecycle = 'other' }
       its(:can_run_as_errand?) { should be(false) }
+    end
+  end
+
+  describe '#bind_links' do
+    context 'when template specifies links' do
+      let(:spec) do
+        {
+          'name' => 'foobar',
+          'templates' => [{'name' => 'foo', 'release' => 'appcloud', 'links' => links }],
+          'release' => 'appcloud',
+          'resource_pool' => 'dea',
+          'instances' => 1,
+          'networks'  => [{'name' => 'fake-network-name'}],
+          'properties' => {},
+        }
+      end
+
+      before do
+        allow(plan).to receive(:properties).and_return({})
+
+        release_model = Bosh::Director::Models::Release.make(name: 'appcloud')
+        release = Bosh::Director::DeploymentPlan::ReleaseVersion.new(deployment, {'name' => 'appcloud', 'version' => 'release-version'})
+        allow(plan).to receive(:release).with('appcloud').and_return(release)
+
+        template_model = Bosh::Director::Models::Template.make(name: 'foo', requires: ['db'])
+        version = Bosh::Director::Models::ReleaseVersion.make(version: 'release-version')
+        release_model.add_version(version)
+
+        version.add_template(template_model)
+        release.bind_model
+        release.get_or_create_template(name: 'foo', links: links)
+        release.bind_templates
+      end
+
+      context 'when all required links are provided' do
+        let(:links) { {'db' => 'x.y.z' } }
+
+        it 'parses manifest' do
+          expect {
+            job.bind_links
+          }.to_not raise_error
+        end
+      end
+
+      context 'when required link is not provided' do
+        let(:links) { {'other' => 'a.b.c'} }
+        it 'fails' do
+          expect {
+            job.bind_links
+          }.to raise_error(
+              Bosh::Director::JobMissingLink,
+              "Job 'foobar' requires links: [\"db\"] but only has following links: [\"other\"]"
+            )
+        end
+      end
     end
   end
 end

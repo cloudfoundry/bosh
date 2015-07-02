@@ -26,6 +26,7 @@ describe Bosh::Director::JobUpdater do
     let(:instances) { [] }
     before { allow(job).to receive(:instances).and_return(instances) }
     before { allow(job_renderer).to receive(:render_job_instances) }
+    before { allow(job).to receive(:bind_links) }
 
     let(:update_error) { RuntimeError.new('update failed') }
 
@@ -37,6 +38,11 @@ describe Bosh::Director::JobUpdater do
 
       it 'should render job instances' do
         expect(job_renderer).to receive(:render_job_instances)
+        job_updater.update
+      end
+
+      it 'binds job links' do
+        expect(job).to receive(:bind_links)
         job_updater.update
       end
 

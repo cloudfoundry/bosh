@@ -17,6 +17,7 @@ Dir.glob("#{SPEC_ROOT}/support/**/*.rb") { |f| require(f) }
 
 ASSETS_DIR = File.join(SPEC_ROOT, 'assets')
 TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'test_release_template')
+LINKS_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'links_release_template')
 BOSH_WORK_TEMPLATE    = File.join(ASSETS_DIR, 'bosh_work_dir')
 
 STDOUT.sync = true

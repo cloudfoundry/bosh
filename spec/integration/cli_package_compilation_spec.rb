@@ -48,7 +48,7 @@ describe 'cli: package compilation', type: :integration do
     cloud_config_hash['resource_pools'][0]['size'] = 1
 
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['jobs'][0]['template'] = ['foobar', 'goobaz']
+    manifest_hash['jobs'][0]['templates'] = [{'name' => 'foobar'}, {'name' => 'goobaz'}]
     manifest_hash['jobs'][0]['instances'] = 1
 
     manifest_hash['releases'].first['name'] = 'compilation-test'
@@ -106,7 +106,7 @@ describe 'cli: package compilation', type: :integration do
 
   it 'returns truncated output' do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['jobs'][0]['template'] = 'fails_with_too_much_output'
+    manifest_hash['jobs'][0]['templates'].first['name'] = 'fails_with_too_much_output'
     manifest_hash['jobs'][0]['instances'] = 1
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['compilation']['workers'] = 1

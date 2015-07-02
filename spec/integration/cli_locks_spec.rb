@@ -6,7 +6,7 @@ describe 'cli: locks', type: :integration do
   context 'when a deployment is in progress' do
     let(:blocking_deployment_manifest) do
       manifest_hash = Bosh::Spec::Deployments.simple_manifest
-      manifest_hash['jobs'][0]['template'] = 'job_with_blocking_compilation'
+      manifest_hash['jobs'][0]['templates'].first['name'] = 'job_with_blocking_compilation'
       manifest_hash['jobs'][0]['instances'] = 1
       manifest_hash
     end

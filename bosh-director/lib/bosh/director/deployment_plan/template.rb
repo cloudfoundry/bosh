@@ -6,15 +6,17 @@ module Bosh::Director
 
       attr_reader :name
       attr_reader :release
+      attr_reader :links
 
       attr_reader :model
       attr_reader :package_models
 
       # @param [DeploymentPlan::ReleaseVersion] release Release version
       # @param [String] name Template name
-      def initialize(release, name)
+      def initialize(release, name, links)
         @release = release
         @name = name
+        @links = links || {}
         @model = nil
         @package_models = []
         @logger = Config.logger
@@ -76,6 +78,15 @@ module Bosh::Director
       # @return [Hash]
       def properties
         present_model.properties
+      end
+
+      def required_links_provided?
+        present_model.requires.to_a.all? { |l| @links.keys.to_a.include?(l) }
+      end
+
+      # return [Array]
+      def required_links
+        present_model.requires
       end
 
       private

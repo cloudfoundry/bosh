@@ -5,7 +5,7 @@ describe 'cancel task', type: :integration do
 
   it 'creates a task and then successfully cancels it' do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['jobs'][0]['template'] = 'job_with_blocking_compilation'
+    manifest_hash['jobs'][0]['templates'].first['name'] = 'job_with_blocking_compilation'
     manifest_hash['jobs'][0]['instances'] = 1
 
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config

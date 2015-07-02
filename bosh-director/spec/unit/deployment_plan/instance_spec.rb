@@ -92,6 +92,7 @@ module Bosh::Director::DeploymentPlan
       let(:reservation) { Bosh::Director::NetworkReservation.new_static(ipaddress) }
 
       let(:current_state) { {'networks' => {network_name => network_info}} }
+      let(:logger) { double(:logger).as_null_object }
 
       before do
         allow(job).to receive(:instance_state).with(0).and_return('started')
@@ -286,7 +287,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#bind_existing_instance' do
-      let(:job) { Job.new(plan) }
+      let(:job) { Job.new(plan, logger) }
 
       before { job.resource_pool = resource_pool }
       let(:resource_pool) do
@@ -346,7 +347,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#apply_vm_state' do
-      let(:job) { Job.new(plan) }
+      let(:job) { Job.new(plan, logger) }
 
       before do
         job.templates = [template]
@@ -492,7 +493,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#job_changed?' do
-      let(:job) { Job.new(plan) }
+      let(:job) { Job.new(plan, logger) }
       before do
         job.templates = [template]
         job.name = state['job']['name']
@@ -579,7 +580,7 @@ module Bosh::Director::DeploymentPlan
         }
       end
 
-      let(:job) { Job.new(plan) }
+      let(:job) { Job.new(plan, logger) }
 
       before { allow(plan).to receive(:network).with('fake-network').and_return(network) }
       let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }

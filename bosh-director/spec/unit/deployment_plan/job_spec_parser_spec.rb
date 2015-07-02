@@ -140,8 +140,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           .and_return(job_rel_ver)
 
         template = make_template('fake-template-name', job_rel_ver)
-        expect(job_rel_ver).to receive(:use_template_named)
-          .with('fake-template-name')
+        expect(job_rel_ver).to receive(:get_or_create_template)
+          .with(name: 'fake-template-name')
           .and_return(template)
 
         job = parser.parse(job_spec)
@@ -156,8 +156,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                   .and_return(job_rel_ver)
 
         template1 = make_template('fake-template-name', job_rel_ver)
-        allow(job_rel_ver).to receive(:use_template_named)
-                              .with('fake-template-name')
+        allow(job_rel_ver).to receive(:get_or_create_template)
+                              .with(name: 'fake-template-name')
                               .and_return(template1)
 
         expect(event_log).not_to receive(:warn_deprecated)
@@ -175,13 +175,13 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
           .and_return(job_rel_ver)
 
         template1 = make_template('fake-template1-name', job_rel_ver)
-        expect(job_rel_ver).to receive(:use_template_named)
-          .with('fake-template1-name')
+        expect(job_rel_ver).to receive(:get_or_create_template)
+          .with(name: 'fake-template1-name')
           .and_return(template1)
 
         template2 = make_template('fake-template2-name', job_rel_ver)
-        expect(job_rel_ver).to receive(:use_template_named)
-          .with('fake-template2-name')
+        expect(job_rel_ver).to receive(:get_or_create_template)
+          .with(name: 'fake-template2-name')
           .and_return(template2)
 
         job = parser.parse(job_spec)
@@ -199,13 +199,13 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                    .and_return(job_rel_ver)
 
         template1 = make_template('fake-template1-name', job_rel_ver)
-        allow(job_rel_ver).to receive(:use_template_named)
-                               .with('fake-template1-name')
+        allow(job_rel_ver).to receive(:get_or_create_template)
+                               .with(name: 'fake-template1-name')
                                .and_return(template1)
 
         template2 = make_template('fake-template2-name', job_rel_ver)
-        allow(job_rel_ver).to receive(:use_template_named)
-                               .with('fake-template2-name')
+        allow(job_rel_ver).to receive(:get_or_create_template)
+                               .with(name: 'fake-template2-name')
                                .and_return(template2)
 
         parser.parse(job_spec)
@@ -243,6 +243,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             job_spec['templates'] = [{
               'name' => 'fake-template-name',
               'release' => 'fake-template-release',
+              'links' => {'a' => 'b'}
             }]
           end
 
@@ -257,8 +258,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                 .and_return(template_rel_ver)
 
               template = make_template('fake-template-name', template_rel_ver)
-              expect(template_rel_ver).to receive(:use_template_named)
-                .with('fake-template-name')
+              expect(template_rel_ver).to receive(:get_or_create_template)
+                .with(name: 'fake-template-name', links: {'a' => 'b'})
                 .and_return(template)
 
               job = parser.parse(job_spec)
@@ -278,8 +279,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                 .and_return(template_rel_ver)
 
               template = make_template('fake-template-name', nil)
-              expect(template_rel_ver).to receive(:use_template_named)
-                .with('fake-template-name')
+              expect(template_rel_ver).to receive(:get_or_create_template)
+                .with(name: 'fake-template-name', links: {'a' => 'b'})
                 .and_return(template)
 
               job = parser.parse(job_spec)
@@ -289,7 +290,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         end
 
         context 'when one of the hashes does not specify a release' do
-          before { job_spec['templates'] = [{'name' => 'fake-template-name'}] }
+          before { job_spec['templates'] = [{'name' => 'fake-template-name', 'links' => {'db' => 'a.b.c'}}] }
 
           context 'when job specifies a release' do
             before { job_spec['release'] = 'fake-job-release' }
@@ -300,8 +301,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                 .and_return(job_rel_ver)
 
               template = make_template('fake-template-name', nil)
-              expect(job_rel_ver).to receive(:use_template_named)
-                .with('fake-template-name')
+              expect(job_rel_ver).to receive(:get_or_create_template)
+                .with(name: 'fake-template-name', links: {'db' => 'a.b.c'})
                 .and_return(template)
 
               job = parser.parse(job_spec)
@@ -331,8 +332,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
               it 'sets job template from deployment release because first release assumed as default' do
                 template = make_template('fake-template-name', nil)
-                expect(deployment_rel_ver).to receive(:use_template_named)
-                  .with('fake-template-name')
+                expect(deployment_rel_ver).to receive(:get_or_create_template)
+                  .with(name: 'fake-template-name', links: {'db' => 'a.b.c'})
                   .and_return(template)
 
                 job = parser.parse(job_spec)
@@ -396,8 +397,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               .with('fake-job-release')
               .and_return(job_rel_ver)
 
-            allow(job_rel_ver).to receive(:use_template_named) do |name|
-              instance_double('Bosh::Director::DeploymentPlan::Template', name: name)
+            allow(job_rel_ver).to receive(:get_or_create_template) do |options|
+              instance_double('Bosh::Director::DeploymentPlan::Template', name: options[:name])
             end
           end
 
@@ -416,8 +417,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
         context 'when multiple hashes reference different releases' do
           it 'uses the correct release for each template' do
             job_spec['templates'] = [
-              {'name' => 'fake-template-name1', 'release' => 'fake-template-release1'},
-              {'name' => 'fake-template-name2', 'release' => 'fake-template-release2'},
+              {'name' => 'fake-template-name1', 'release' => 'fake-template-release1', 'links' => {}},
+              {'name' => 'fake-template-name2', 'release' => 'fake-template-release2', 'links' => {}},
             ]
 
             # resolve first release and template obj
@@ -427,8 +428,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                       .and_return(rel_ver1)
 
             template1 = make_template('fake-template-name1', rel_ver1)
-            expect(rel_ver1).to receive(:use_template_named)
-                               .with('fake-template-name1')
+            expect(rel_ver1).to receive(:get_or_create_template)
+                               .with(name: 'fake-template-name1', links: {})
                                .and_return(template1)
 
             # resolve second release and template obj
@@ -438,8 +439,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
                                       .and_return(rel_ver2)
 
             template2 = make_template('fake-template-name2', rel_ver2)
-            expect(rel_ver2).to receive(:use_template_named)
-                               .with('fake-template-name2')
+            expect(rel_ver2).to receive(:get_or_create_template)
+                               .with(name: 'fake-template-name2', links: {})
                                .and_return(template2)
 
             job_spec['name'] = 'fake-job-name'

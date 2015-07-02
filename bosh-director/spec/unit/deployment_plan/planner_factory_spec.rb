@@ -135,7 +135,7 @@ module Bosh
           manifest_hash['releases'].each do |release_entry|
             job = manifest_hash['jobs'].first
             release = Models::Release.make(name: release_entry['name'])
-            template = Models::Template.make(name: job['template'], release: release)
+            template = Models::Template.make(name: job['templates'].first['name'], release: release)
             release_version = Models::ReleaseVersion.make(release: release, version: release_entry['version'])
             release_version.add_template(template)
           end

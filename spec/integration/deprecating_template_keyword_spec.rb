@@ -17,6 +17,7 @@ describe "Director deprecating the 'template' syntax", type: :integration do
 
   context 'when the manifest uses template with an array' do
     it 'issues a deprecation warning' do
+      manifest_hash['jobs'][0].delete('templates')
       manifest_hash['jobs'][0]['template'] = [ 'foobar' ]
       expect(
         deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)

@@ -1,6 +1,6 @@
 module Bosh::Spec
   class NetworkingManifest
-    def self.deployment_manifest(opts)
+    def self.deployment_manifest(opts={})
       manifest = Bosh::Spec::Deployments.simple_manifest
       manifest['name'] = opts.fetch(:name, 'simple')
       manifest['jobs'].first['instances'] = opts.fetch(:instances, 1)

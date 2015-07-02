@@ -108,7 +108,7 @@ module Bosh::Spec
     def self.simple_job(opts = {})
       job_hash = {
         'name' => opts.fetch(:name, 'foobar'),
-        'template' => 'foobar',
+        'templates' => opts.fetch(:templates, ['name' => 'foobar']),
         'resource_pool' => 'a',
         'instances' => opts.fetch(:instances, 3),
         'networks' => [{

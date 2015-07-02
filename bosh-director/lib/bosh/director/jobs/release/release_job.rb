@@ -30,6 +30,8 @@ module Bosh::Director
       template.properties = job_manifest['properties'] if job_manifest['properties']
 
       validate_links(job_manifest)
+      template.provides = job_manifest['provides'] if job_manifest['provides']
+      template.requires = job_manifest['requires'] if job_manifest['requires']
 
       template.save
     end

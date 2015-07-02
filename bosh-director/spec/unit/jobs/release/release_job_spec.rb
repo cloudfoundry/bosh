@@ -116,6 +116,17 @@ module Bosh::Director
 
           expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
         end
+
+        it 'saves them on template' do
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'provides' => ['db1', 'db2']})
+          File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
+
+          expect(Models::Template.count).to eq(0)
+          release_job.create
+
+          template = Models::Template.first
+          expect(template.provides).to eq(['db1', 'db2'])
+        end
       end
 
       context 'when job spec file includes requires' do
@@ -133,6 +144,17 @@ module Bosh::Director
           File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
 
           expect { release_job.create }.to raise_error(JobInvalidLinkSpec)
+        end
+
+        it 'saves them on template' do
+          job_with_invalid_spec = create_job('foo', 'monit', {}, manifest: {'requires' => ['db1', 'db2']})
+          File.open(job_tarball_path, 'w') { |f| f.write(job_with_invalid_spec) }
+
+          expect(Models::Template.count).to eq(0)
+          release_job.create
+
+          template = Models::Template.first
+          expect(template.requires).to eq(['db1', 'db2'])
         end
       end
     end

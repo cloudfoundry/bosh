@@ -16,6 +16,8 @@ module Bosh::Director
       @logger.info('Deleting no longer needed instances')
       delete_unneeded_instances
 
+      @job.bind_links
+
       @job_renderer.render_job_instances
 
       instances = []

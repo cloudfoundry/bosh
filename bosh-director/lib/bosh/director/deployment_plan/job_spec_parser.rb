@@ -20,16 +20,16 @@ module Bosh::Director
       # @return [DeploymentPlan::Job] Job as build from job_spec
       def parse(job_spec)
         @job_spec = job_spec
-        @job = Job.new(@deployment)
+        @job = Job.new(@deployment, @logger)
 
         parse_name
         parse_lifecycle
 
         parse_release
+        validate_templates
+
         parse_template
         parse_templates
-
-        validate_templates
 
         check_template_uniqueness
         parse_disk
@@ -101,7 +101,7 @@ module Bosh::Director
           end
 
           Array(template_names).each do |template_name|
-            @job.templates << @job.release.use_template_named(template_name)
+            @job.templates << @job.release.get_or_create_template(name: template_name)
           end
         end
       end
@@ -110,9 +110,9 @@ module Bosh::Director
         templates = safe_property(@job_spec, 'templates', class: Array, optional: true)
 
         if templates
-          templates.each do |template|
-            template_name = safe_property(template, 'name', class: String)
-            release_name = safe_property(template, 'release', class: String, optional: true)
+          templates.each do |template_spec|
+            template_name = safe_property(template_spec, 'name', class: String)
+            release_name = safe_property(template_spec, 'release', class: String, optional: true)
 
             release = nil
 
@@ -129,7 +129,9 @@ module Bosh::Director
               end
             end
 
-            @job.templates << release.use_template_named(template_name)
+            links = safe_property(template_spec, 'links', class: Hash, optional: true)
+            @logger.debug("Parsing template links: #{links.inspect}")
+            @job.templates << release.get_or_create_template(name: template_name, links: links)
           end
         end
       end

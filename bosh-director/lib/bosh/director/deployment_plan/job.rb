@@ -80,8 +80,9 @@ module Bosh::Director
       end
 
       # @param [Bosh::Director::DeploymentPlan] deployment Deployment plan
-      def initialize(deployment)
+      def initialize(deployment, logger)
         @deployment = deployment
+        @logger = logger
 
         @release = nil
         @templates = []
@@ -193,6 +194,19 @@ module Bosh::Director
       # property definitions in DB).
       def bind_properties
         @properties = filter_properties(@all_properties)
+      end
+
+      def bind_links
+        @logger.debug("Binding links for job #{@name}")
+
+        @templates.each do |template|
+          unless template.required_links_provided?
+            raise JobMissingLink,
+              "Job '#{@name}' requires links: #{template.required_links.to_a} but only has following links: #{template.links.keys.to_a}"
+          end
+
+          @logger.debug("Received required links #{template.required_links.to_a} for template '#{template.name}'")
+        end
       end
 
       def validate_package_names_do_not_collide!

@@ -151,6 +151,7 @@ module Bosh::Director
   JobInvalidLifecycle = err(140009)
   JobUnknownDiskPool = err(140010)
   JobInvalidPersistentDisk = err(140011)
+  JobMissingLink = err(140012)
 
   # Manifest parsing: job networks section
   JobUnknownNetwork = err(150001)
