@@ -68,18 +68,18 @@ describe VSphereCloud::Cloud, external_cpi: false do
     }
   end
 
-  # subject(:cpi) { described_class.new(cpi_options) }
+  subject(:cpi) { described_class.new(cpi_options) }
 
   before(:all) do
     Dir.mktmpdir do |temp_dir|
       output = `tar -C #{temp_dir} -xzf #{@stemcell_path} 2>&1`
       raise "Corrupt image, tar exit status: #{$?.exitstatus} output: #{output}" if $?.exitstatus != 0
-      @cpi = described_class.new(cpi_options)
-      @stemcell_id = @cpi.create_stemcell("#{temp_dir}/image", nil)
+      cpi = described_class.new(cpi_options)
+      @stemcell_id = cpi.create_stemcell("#{temp_dir}/image", nil)
     end
   end
 
-  after(:all) { @cpi.delete_stemcell(@stemcell_id) if @stemcell_id }
+  after(:all) { cpi.delete_stemcell(@stemcell_id) if @stemcell_id }
 
   extend Bosh::Cpi::CompatibilityHelpers
   it_can_delete_non_existent_vm
@@ -390,21 +390,23 @@ describe VSphereCloud::Cloud, external_cpi: false do
       end
     end
 
+
     context 'when stemcell is replicated multiple times' do
       after { clean_up_vm_and_disk }
 
       it 'handles each thread properly' do
+
         @datastore_name = @second_datastore_within_cluster
-        @datastore_mob = @cpi.client.cloud_searcher.get_managed_object(VimSdk::Vim::Datastore, name: @datastore_name)
+        @datastore_mob = cpi.client.cloud_searcher.get_managed_object(VimSdk::Vim::Datastore, name: @datastore_name)
         @datastore = VSphereCloud::Resources::Datastore.new(@datastore_name, @datastore_mob, 0, 0)
         
         @cluster_config = VSphereCloud::ClusterConfig.new(@cluster, {resource_pool: @resource_pool_name}) 
         @logger = Logger.new(StringIO.new(""))
         @datacenter = VSphereCloud::Resources::Datacenter.new({
-          client: @cpi.client,
-          use_sub_folder: false,
+          client: cpi.client,
           vm_folder: @vm_folder,
           template_folder: @template_folder,
+          use_sub_folder: true,
           name: @datacenter_name,
           disk_path: @disk_path,
           ephemeral_pattern: Regexp.new(@datastore_pattern),
@@ -413,10 +415,17 @@ describe VSphereCloud::Cloud, external_cpi: false do
           logger: @logger,
           mem_overcommit: 1.0
         })
-        @vm_cluster = VSphereCloud::Resources::ClusterProvider.new(@datacenter, @cpi.client, @logger).find(@cluster, @cluster_config)
+        @vm_cluster = VSphereCloud::Resources::ClusterProvider.new(@datacenter, cpi.client, @logger).find(@cluster, @cluster_config)
 
-        binding.pry
+        t1 = Thread.new { cpi.replicate_stemcell(@vm_cluster, @datastore, @stemcell_id) }
+        t2 = Thread.new { cpi.replicate_stemcell(@vm_cluster, @datastore, @stemcell_id) }
+        t1.join
+        t2.join
+        #cpi.replicate_stemcell(@vm_cluster, @datastore, @stemcell_id)
+        #cpi.replicate_stemcell(@vm_cluster, @datastore, @stemcell_id)
+
       end
     end
   end
+
 end
