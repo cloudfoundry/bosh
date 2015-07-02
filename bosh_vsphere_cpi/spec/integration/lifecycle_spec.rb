@@ -79,7 +79,10 @@ describe VSphereCloud::Cloud, external_cpi: false do
     end
   end
 
-  after(:all) { cpi.delete_stemcell(@stemcell_id) if @stemcell_id }
+  after(:all) { 
+    cpi = described_class.new(cpi_options)
+    cpi.delete_stemcell(@stemcell_id) if @stemcell_id 
+  }
 
   extend Bosh::Cpi::CompatibilityHelpers
   it_can_delete_non_existent_vm
@@ -421,8 +424,6 @@ describe VSphereCloud::Cloud, external_cpi: false do
         t2 = Thread.new { cpi.replicate_stemcell(@vm_cluster, @datastore, @stemcell_id) }
         t1.join
         t2.join
-        #cpi.replicate_stemcell(@vm_cluster, @datastore, @stemcell_id)
-        #cpi.replicate_stemcell(@vm_cluster, @datastore, @stemcell_id)
 
       end
     end
