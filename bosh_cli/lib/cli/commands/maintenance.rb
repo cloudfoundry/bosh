@@ -66,7 +66,7 @@ module Bosh::Cli::Command
           Bosh::Common::Version::StemcellVersion.parse(sc1['version']) <=> Bosh::Common::Version::StemcellVersion.parse(sc2['version'])
         end
 
-        delete_list = trim_array(sorted_stemcells, n_to_keep)
+        delete_list.concat(trim_array(sorted_stemcells, n_to_keep))
       end
 
       delete_list.each do |stemcell|

@@ -96,7 +96,7 @@ namespace :spec do
 
     task(:agent) do
       # Do not use exec because this task is part of other tasks
-      sh('go/src/github.com/cloudfoundry/bosh-agent/bin/test-unit')
+      sh('cd go/src/github.com/cloudfoundry/bosh-agent/ && bin/test-unit')
     end
   end
 

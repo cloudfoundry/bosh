@@ -10,4 +10,4 @@ pkg_mgr install wireless-crda
 
 mkdir -p $chroot/tmp
 
-pkg_mgr install linux-generic-lts-utopic
+pkg_mgr install linux-generic-lts-vivid
