@@ -25,7 +25,7 @@ describe Bhm::Runner do
   describe 'stop' do
     context 'when there is an http server' do
       before do
-        allow(thin_server_class).to receive(:new).with('0.0.0.0', Bhm.http_port, signals: false).and_return(http_server)
+        allow(thin_server_class).to receive(:new).with('127.0.0.1', Bhm.http_port, signals: false).and_return(http_server)
       end
       let(:http_server) { double(Thin::Server) }
       before { allow(http_server).to receive(:start!) }
@@ -48,7 +48,7 @@ describe Bhm::Runner do
   describe "start_http_server" do
     it 'starts a Thin::Server with the correct parameters' do
       http_server = double(Thin::Server)
-      expect(thin_server_class).to receive(:new).with('0.0.0.0', Bhm.http_port, signals: false).and_return(http_server)
+      expect(thin_server_class).to receive(:new).with('127.0.0.1', Bhm.http_port, signals: false).and_return(http_server)
       expect(http_server).to receive(:start!)
       runner.start_http_server
     end

@@ -83,7 +83,7 @@ module Bosh::Monitor
 
     def start_http_server
       @logger.info "HTTP server is starting on port #{Bhm.http_port}..."
-      @http_server = Thin::Server.new("0.0.0.0", Bhm.http_port, :signals => false) do
+      @http_server = Thin::Server.new("127.0.0.1", Bhm.http_port, :signals => false) do
         Thin::Logging.silent = true
         map "/" do
           run Bhm::ApiController.new
