@@ -1,4 +1,3 @@
-require 'pry'
 require 'spec_helper'
 require 'bosh/cpi/compatibility_helpers/delete_vm'
 require 'tempfile'
@@ -398,12 +397,11 @@ describe VSphereCloud::Cloud, external_cpi: false do
       after { clean_up_vm_and_disk }
 
       it 'handles each thread properly' do
-
         @datastore_name = @second_datastore_within_cluster
         @datastore_mob = cpi.client.cloud_searcher.get_managed_object(VimSdk::Vim::Datastore, name: @datastore_name)
         @datastore = VSphereCloud::Resources::Datastore.new(@datastore_name, @datastore_mob, 0, 0)
-        
-        @cluster_config = VSphereCloud::ClusterConfig.new(@cluster, {resource_pool: @resource_pool_name}) 
+
+        @cluster_config = VSphereCloud::ClusterConfig.new(@cluster, {resource_pool: @resource_pool_name})
         @logger = Logger.new(StringIO.new(""))
         @datacenter = VSphereCloud::Resources::Datacenter.new({
           client: cpi.client,
@@ -420,10 +418,21 @@ describe VSphereCloud::Cloud, external_cpi: false do
         })
         @vm_cluster = VSphereCloud::Resources::ClusterProvider.new(@datacenter, cpi.client, @logger).find(@cluster, @cluster_config)
 
-        t1 = Thread.new { cpi.replicate_stemcell(@vm_cluster, @datastore, @stemcell_id) }
-        t2 = Thread.new { cpi.replicate_stemcell(@vm_cluster, @datastore, @stemcell_id) }
+        puts('Starting thread t1')
+        t1 = Thread.new {
+          cpi = described_class.new(cpi_options)
+          cpi.replicate_stemcell(@vm_cluster, @datastore, @stemcell_id)
+        }
+        puts('Starting thread t2')
+        t2 = Thread.new {
+          cpi = described_class.new(cpi_options)
+          cpi.replicate_stemcell(@vm_cluster, @datastore, @stemcell_id)
+        }
+
         t1.join
+        puts('Thread t1 finished.')
         t2.join
+        puts('Thread t2 finished.')
 
       end
     end
