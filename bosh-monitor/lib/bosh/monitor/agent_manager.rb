@@ -41,8 +41,6 @@ module Bosh::Monitor
     end
 
     def setup_events
-      Bhm.set_varz("heartbeats_received", 0)
-
       @processor.enable_pruning(Bhm.intervals.prune_events)
       Bhm.plugins.each do |plugin|
         @processor.add_plugin(lookup_plugin(plugin["name"], plugin["options"]), plugin["events"])
@@ -274,7 +272,6 @@ module Bosh::Monitor
 
       @processor.process(:alert, message)
       @alerts_processed += 1
-      Bhm.set_varz("alerts_processed", @alerts_processed)
     end
 
     def on_heartbeat(agent, message)
@@ -288,7 +285,6 @@ module Bosh::Monitor
 
       @processor.process(:heartbeat, message)
       @heartbeats_received += 1
-      Bhm.set_varz("heartbeats_received", @heartbeats_received)
     end
 
     def on_shutdown(agent, message)

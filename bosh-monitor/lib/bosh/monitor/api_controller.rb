@@ -31,12 +31,6 @@ module Bosh::Monitor
       end
     end
 
-    get "/varz" do
-      protected!
-      content_type(:json)
-      Yajl::Encoder.encode(Bhm.varz, :terminator => "\n")
-    end
-
     get "/healthz" do
       body "Last pulse was #{Time.now - @heartbeat} seconds ago"
 

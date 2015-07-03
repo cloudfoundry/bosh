@@ -63,11 +63,6 @@ plugins:
       host: localhost
       port: 4242
 
-  - name: varz
-    events:
-      - alert
-      - heartbeat
-
   - name: cloud_watch
     events:
       - heartbeat

@@ -95,8 +95,6 @@ module Bosh::Monitor
     def poll_director
       @logger.debug "Getting deployments from director..."
       Fiber.new { fetch_deployments }.resume
-      Bhm.set_varz("deployments_count", @agent_manager.deployments_count)
-      Bhm.set_varz("agents_count", @agent_manager.agents_count)
     end
 
     def analyze_agents

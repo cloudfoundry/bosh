@@ -117,13 +117,6 @@ plugins:
       <% end %>
   <% end %>
 
-  <% if p("hm.varz_enabled") %>
-  - name: varz
-    events:
-      - alert
-      - heartbeat
-  <% end %>
-
   <% if p("hm.datadog_enabled") %>
   - name: data_dog
     events:

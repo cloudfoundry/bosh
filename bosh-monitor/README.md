@@ -6,7 +6,6 @@ The Monitor also includes a few primary components:
 - The Agent Monitor maintains a record of known agents (by heartbeat event subscription)
 - The Director Monitor maintains a record of known agents (by director HTTP polling).
 - The Agent Analyzer that analyzes agent state periodically and generates Alerts.
-- The HTTP Server that responds to the /varz endpoint
 
 The Monitor also supports generic event processing plugins that respond to Heartbeats & Alerts.
 

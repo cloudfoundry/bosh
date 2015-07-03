@@ -12,7 +12,6 @@ module Bosh::Monitor
 
     attr_accessor :http_port, :http_user, :http_password
     attr_accessor :plugins
-    attr_accessor :varz
 
     attr_accessor :nats
 
@@ -26,8 +25,6 @@ module Bosh::Monitor
 
       @event_processor = EventProcessor.new
       @agent_manager = AgentManager.new(event_processor)
-
-      @varz = {}
 
       # Interval defaults
       @intervals.prune_events ||= 30
@@ -55,11 +52,6 @@ module Bosh::Monitor
       if config["plugins"].is_a?(Enumerable)
         @plugins = config["plugins"]
       end
-    end
-
-    def set_varz(key, value)
-      @varz ||= {}
-      @varz[key] = value
     end
 
     def validate_config(config)

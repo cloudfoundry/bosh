@@ -13,7 +13,7 @@ describe Bosh::Monitor do
 
     before do
       [:logger, :director, :intervals, :mbus, :event_mbus, :agent_manager, :event_processor,
-       :http_port, :http_user, :http_password, :plugins, :varz , :nats].each do |accessor|
+       :http_port, :http_user, :http_password, :plugins, :nats].each do |accessor|
         Bosh::Monitor.send("#{accessor}=", nil)
       end
       Bosh::Monitor.config = valid_config

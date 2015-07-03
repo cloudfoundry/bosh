@@ -19,7 +19,7 @@ describe Bhm::Runner do
     expect(Bhm.mbus.user).to be_nil
     expect(Bhm.mbus.password).to be_nil
 
-    expect(Bhm.plugins.size).to eq(8)
+    expect(Bhm.plugins.size).to eq(7)
   end
 
   describe 'stop' do

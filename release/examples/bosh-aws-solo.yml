@@ -135,7 +135,6 @@ properties:
     email_notifications: false
     tsdb_enabled: false
     pagerduty_enabled: false
-    varz_enabled: true
 
   aws:
     access_key_id: aws-access_key # CHANGE: AWS EC2 access_key_id
