@@ -300,7 +300,7 @@ module Bosh::OpenStackCloud
 
           @logger.info("Configuring network for server `#{server.id}'...")
           network_configurator.configure(@openstack, server)
-        rescue Bosh::Clouds::CloudError => e
+        rescue => e
           @logger.warn("Failed to create server: #{e.message}")
           destroy_server(server)
           raise Bosh::Clouds::VMCreationFailed.new(true), e.message
@@ -311,7 +311,7 @@ module Bosh::OpenStackCloud
           settings = initial_agent_settings(server_name, agent_id, network_spec, environment,
                                             flavor_has_ephemeral_disk?(flavor))
           @registry.update_settings(server.name, settings)
-        rescue Bosh::Clouds::CloudError => e
+        rescue => e
           @logger.warn("Failed to register server: #{e.message}")
           destroy_server(server)
           raise Bosh::Clouds::VMCreationFailed.new(false), e.message
