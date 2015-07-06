@@ -89,6 +89,11 @@ module Bosh::Director
         present_model.requires
       end
 
+      # return [Array]
+      def provided_links
+        present_model.provides
+      end
+
       private
 
       # Returns model only if it's present, fails otherwise

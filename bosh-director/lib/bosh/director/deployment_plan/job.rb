@@ -196,19 +196,6 @@ module Bosh::Director
         @properties = filter_properties(@all_properties)
       end
 
-      def bind_links
-        @logger.debug("Binding links for job #{@name}")
-
-        @templates.each do |template|
-          unless template.required_links_provided?
-            raise JobMissingLink,
-              "Job '#{@name}' requires links: #{template.required_links.to_a} but only has following links: #{template.links.keys.to_a}"
-          end
-
-          @logger.debug("Received required links #{template.required_links.to_a} for template '#{template.name}'")
-        end
-      end
-
       def validate_package_names_do_not_collide!
         releases_by_package_names = templates
           .reduce([]) { |memo, t| memo + t.model.package_names.product([t.release]) }

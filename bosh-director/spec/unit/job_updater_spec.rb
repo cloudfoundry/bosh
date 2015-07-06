@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Director::JobUpdater do
-  subject(:job_updater) { described_class.new(deployment_plan, job, job_renderer) }
+  subject(:job_updater) { described_class.new(deployment_plan, job, job_renderer, links_resolver) }
 
   let(:deployment_plan) { instance_double('Bosh::Director::DeploymentPlan') }
 
@@ -14,6 +14,7 @@ describe Bosh::Director::JobUpdater do
   end
 
   let(:job_renderer) { instance_double('Bosh::Director::JobRenderer') }
+  let(:links_resolver) { instance_double('Bosh::Director::LinksResolver') }
 
   let(:update_config) do
     instance_double('Bosh::Director::DeploymentPlan::UpdateConfig', {
@@ -26,7 +27,7 @@ describe Bosh::Director::JobUpdater do
     let(:instances) { [] }
     before { allow(job).to receive(:instances).and_return(instances) }
     before { allow(job_renderer).to receive(:render_job_instances) }
-    before { allow(job).to receive(:bind_links) }
+    before { allow(links_resolver).to receive(:resolve) }
 
     let(:update_error) { RuntimeError.new('update failed') }
 
@@ -41,8 +42,8 @@ describe Bosh::Director::JobUpdater do
         job_updater.update
       end
 
-      it 'binds job links' do
-        expect(job).to receive(:bind_links)
+      it 'resolve job links' do
+        expect(links_resolver).to receive(:resolve).with(job)
         job_updater.update
       end
 
