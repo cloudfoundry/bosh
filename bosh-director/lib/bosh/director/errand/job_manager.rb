@@ -3,14 +3,16 @@ module Bosh::Director
     # @param [Bosh::Director::DeploymentPlan::Planner] deployment
     # @param [Bosh::Director::DeploymentPlan::Job] job
     # @param [Bosh::Blobstore::Client] blobstore
+    # @param cloud
     # @param [Bosh::Director::EventLog::Log] event_log
     # @param [Logger] logger
-    def initialize(deployment, job, blobstore, event_log, logger)
+    def initialize(deployment, job, blobstore, cloud, event_log, logger)
       @deployment = deployment
       @job = job
       @blobstore = blobstore
       @event_log = event_log
       @logger = logger
+      @instance_operator = InstanceOperator.new(cloud, event_log, logger)
     end
 
     def prepare
@@ -19,22 +21,7 @@ module Bosh::Director
     end
 
     def create_missing_vms
-      instances_with_missing_vms = @job.instances_with_missing_vms
-      return @logger.info('No missing vms to create') if instances_with_missing_vms.empty?
-      counter = instances_with_missing_vms.length
-      ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
-        instances_with_missing_vms.each do |instance|
-          pool.process do
-            @event_log.track("#{instance.job.name}/#{instance.index}") do
-              with_thread_name("create_missing_vm(#{instance.job.name}, #{instance.index}/#{counter})") do
-                @logger.info("Creating missing VM")
-                disks = [instance.model.persistent_disk_cid]
-                Bosh::Director::VmCreator.create_for_instance(instance,disks)
-              end
-            end
-          end
-        end
-      end
+      @instance_operator.create(@job.instances_with_missing_vms)
     end
 
     # Creates/updates all errand job instances

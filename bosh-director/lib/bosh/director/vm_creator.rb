@@ -5,21 +5,9 @@ module Bosh::Director
   class VmCreator
     include EncryptionHelper
 
-    def self.create_for_instance(*args)
-      new.create_for_instance(*args)
-    end
-
-    def self.attach_disks_for(*args)
-      new.attach_disks_for(*args)
-    end
-
-    def self.create(*args)
-      new.create(*args)
-    end
-
-    def initialize
-      @cloud = Config.cloud
-      @logger = Config.logger
+    def initialize(cloud, logger)
+      @cloud = cloud
+      @logger = logger
     end
 
     def create_for_instance(instance, disks)

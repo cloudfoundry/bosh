@@ -18,7 +18,7 @@ module Bosh::Director
       @cloud = Config.cloud
       @logger = Config.logger
       @blobstore = App.instance.blobstores.blobstore
-
+      @vm_creator = Bosh::Director::VmCreator.new(@cloud,@logger)
       @job = instance.job
       @target_state = @instance.state
 
@@ -226,7 +226,7 @@ module Bosh::Director
     def recreate_vm(new_disk_cid)
       Bosh::Director::VmDeleter.delete_for_instance(@instance)
       disks = [@instance.model.persistent_disk_cid, new_disk_cid].compact
-      Bosh::Director::VmCreator.create_for_instance(@instance,disks)
+      @vm_creator.create_for_instance(@instance,disks)
 
       @agent = AgentClient.with_vm(@instance.vm.model)
 
@@ -259,7 +259,7 @@ module Bosh::Director
     end
 
     def update_persistent_disk
-      Bosh::Director::VmCreator.attach_disks_for(@instance) unless @instance.disk_currently_attached?
+      @vm_creator.attach_disks_for(@instance) unless @instance.disk_currently_attached?
       check_persistent_disk
 
       disk = nil

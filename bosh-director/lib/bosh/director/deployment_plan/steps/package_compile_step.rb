@@ -10,7 +10,7 @@ module Bosh::Director
         attr_reader :compilations_performed
 
         # @param [DeploymentPlan] deployment_plan Deployment plan
-        def initialize(deployment_plan, cloud, logger, event_log, director_job)
+        def initialize(deployment_plan, cloud, vm_creator, logger, event_log, director_job)
           @deployment_plan = deployment_plan
 
           @cloud = cloud
@@ -29,6 +29,7 @@ module Bosh::Director
           @compilation_env = compilation_config.env
 
           @vm_reuser = VmReuser.new
+          @vm_creator = vm_creator
 
           @compile_task_generator = CompileTaskGenerator.new(@logger, @event_log)
 
@@ -173,7 +174,7 @@ module Bosh::Director
             @network.name => @network.network_settings(reservation)
           }
 
-          vm = VmCreator.create(@deployment_plan.model, stemcell,
+          vm = @vm_creator.create(@deployment_plan.model, stemcell,
             @compilation_resources, network_settings,
             nil, @compilation_env)
 

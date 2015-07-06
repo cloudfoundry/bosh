@@ -10,6 +10,7 @@ module Bosh::Director
           @blobstore = blobstore
           @deployment_plan = deployment_plan
           @multi_job_updater = multi_job_updater
+          @instance_operator = InstanceOperator.new(cloud, event_log, @logger)
         end
 
         def perform
@@ -35,7 +36,8 @@ module Bosh::Director
           delete_unneeded_instances
 
           @logger.info('Creating missing VMs')
-          create_missing_vms
+          @instance_operator.create(@deployment_plan.instances_with_missing_vms)
+
           @base_job.task_checkpoint
 
           @logger.info('Binding instance VMs')
@@ -51,25 +53,6 @@ module Bosh::Director
         end
 
         private
-
-        def create_missing_vms
-          instances_with_missing_vms = @deployment_plan.instances_with_missing_vms
-          return @logger.info('No missing vms to create') if instances_with_missing_vms.empty?
-          counter = instances_with_missing_vms.length
-          ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
-            instances_with_missing_vms.each do |instance|
-              pool.process do
-                @event_log.track("#{instance.job.name}/#{instance.index}") do
-                  with_thread_name("create_missing_vm(#{instance.job.name}, #{instance.index}/#{counter})") do
-                    @logger.info("Creating missing VM #{instance.job.name} #{instance.index}")
-                    disks = [instance.model.persistent_disk_cid]
-                    Bosh::Director::VmCreator.create_for_instance(instance,disks)
-                  end
-                end
-              end
-            end
-          end
-        end
 
         def delete_unneeded_vms
           unneeded_vms = @deployment_plan.unneeded_vms

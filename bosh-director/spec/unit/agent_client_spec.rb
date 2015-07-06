@@ -134,10 +134,10 @@ module Bosh::Director
                                         { 'credentials' =>
                                             { 'crypt_key' => kind_of(String),
                                               'sign_key' => kind_of(String) } } })
-        VmCreator.new.create(deployment, stemcell,
-                             cloud_properties,
-                             network_settings, Array(99),
-                             env)
+        VmCreator.new(cloud,logger).create(deployment, stemcell,
+                            cloud_properties,
+                            network_settings, Array(99),
+                            env)
       end
 
       subject(:client) do

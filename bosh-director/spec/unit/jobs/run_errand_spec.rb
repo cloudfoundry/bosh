@@ -30,10 +30,11 @@ module Bosh::Director
 
         before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
         let(:event_log) { Bosh::Director::EventLog::Log.new }
+        let(:cloud) {double('cloud')}
 
         before do
           allow(Config).to receive(:logger).with(no_args).and_return(logger)
-          allow(Config).to receive(:cloud) { double('cloud') }
+          allow(Config).to receive(:cloud) { cloud }
         end
 
         before do
@@ -90,7 +91,7 @@ module Bosh::Director
 
               before do
                 allow(Errand::JobManager).to receive(:new).
-                  with(planner, deployment_job, blobstore, event_log, logger).
+                  with(planner, deployment_job, blobstore, cloud, event_log, logger).
                   and_return(job_manager)
               end
               let(:job_manager) do

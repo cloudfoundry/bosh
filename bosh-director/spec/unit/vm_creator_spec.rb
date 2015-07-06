@@ -2,9 +2,11 @@ require 'spec_helper'
 
 describe Bosh::Director::VmCreator do
 
+  let(:cloud) { instance_double('Bosh::Cloud') }
+  subject  {Bosh::Director::VmCreator.new(cloud, logger)}
   before do
-    @cloud = instance_double('Bosh::Cloud')
-    allow(Bosh::Director::Config).to receive(:cloud).and_return(@cloud)
+
+    allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)
     Bosh::Director::Config.max_vm_create_tries = 2
 
     @deployment = Bosh::Director::Models::Deployment.make
@@ -30,16 +32,16 @@ describe Bosh::Director::VmCreator do
   end
 
   it 'should create a vm' do
-    expect(@cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id', {'ram' => '2gb'}, @network_settings, nil, {})
+    expect(cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id', {'ram' => '2gb'}, @network_settings, nil, {})
 
-    vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
+    vm = subject.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
                                               @network_settings, nil, @resource_pool_spec.env)
     expect(vm.deployment).to eq(@deployment)
     expect(Bosh::Director::Models::Vm.all).to eq([vm])
   end
 
   it 'sets vm metadata' do
-    allow(@cloud).to receive_messages(create_vm: 'fake-vm-cid')
+    allow(cloud).to receive_messages(create_vm: 'fake-vm-cid')
 
     vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater')
     expect(Bosh::Director::VmMetadataUpdater).to receive(:build).and_return(vm_metadata_updater)
@@ -48,32 +50,32 @@ describe Bosh::Director::VmCreator do
       expect(metadata).to eq({})
     end
 
-    Bosh::Director::VmCreator.new.create(
+    subject.create(
       @deployment, @stemcell, @resource_pool_spec.cloud_properties,
       @network_settings, nil, @resource_pool_spec.env)
   end
 
 
   it 'should create vm with disk' do
-    expect(@cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id', {'ram' => '2gb'}, @network_settings, [99], {})
+    expect(cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id', {'ram' => '2gb'}, @network_settings, [99], {})
 
-    vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
+    subject.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
                                               @network_settings, Array(99), @resource_pool_spec.env)
   end
 
   it 'should create credentials when encryption is enabled' do
     Bosh::Director::Config.encryption = true
-    expect(@cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id',
+    expect(cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id',
                                            {'ram' => '2gb'}, @network_settings, [99],
                                            {'bosh' =>
                                              { 'credentials' =>
                                                { 'crypt_key' => kind_of(String),
                                                  'sign_key' => kind_of(String)}}})
 
-    vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell,
-                                              @resource_pool_spec.cloud_properties,
-                                              @network_settings, Array(99),
-                                              @resource_pool_spec.env)
+    vm = subject.create(@deployment, @stemcell,
+                        @resource_pool_spec.cloud_properties,
+                        @network_settings, Array(99),
+                        @resource_pool_spec.env)
 
     expect(Base64.strict_decode64(vm.credentials['crypt_key'])).to be_kind_of(String)
     expect(Base64.strict_decode64(vm.credentials['sign_key'])).to be_kind_of(String)
@@ -88,33 +90,33 @@ describe Bosh::Director::VmCreator do
   end
 
   it 'should retry creating a VM if it is told it is a retryable error' do
-    expect(@cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
-    expect(@cloud).to receive(:create_vm).once
+    expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
+    expect(cloud).to receive(:create_vm).once
 
-    vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
-                                              @network_settings, nil, @resource_pool_spec.env)
+    vm = subject.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
+                        @network_settings, nil, @resource_pool_spec.env)
 
     expect(vm.deployment).to eq(@deployment)
     expect(Bosh::Director::Models::Vm.all).to eq([vm])
   end
 
   it 'should not retry creating a VM if it is told it is not a retryable error' do
-    expect(@cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
+    expect(cloud).to receive(:create_vm).once.and_raise(Bosh::Clouds::VMCreationFailed.new(false))
 
     expect {
-      vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
-                                                @network_settings, nil, @resource_pool_spec.env)
+      subject.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
+                     @network_settings, nil, @resource_pool_spec.env)
     }.to raise_error(Bosh::Clouds::VMCreationFailed)
   end
 
   it 'should try exactly the configured number of times (max_vm_create_tries) when it is a retryable error' do
     Bosh::Director::Config.max_vm_create_tries = 3
 
-    expect(@cloud).to receive(:create_vm).exactly(3).times.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
+    expect(cloud).to receive(:create_vm).exactly(3).times.and_raise(Bosh::Clouds::VMCreationFailed.new(true))
 
     expect {
-      vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
-                                                @network_settings, nil, @resource_pool_spec.env)
+      subject.create(@deployment, @stemcell, @resource_pool_spec.cloud_properties,
+                     @network_settings, nil, @resource_pool_spec.env)
     }.to raise_error(Bosh::Clouds::VMCreationFailed)
   end
 
@@ -122,24 +124,23 @@ describe Bosh::Director::VmCreator do
     Bosh::Director::Config.encryption = true
     env_id = nil
 
-    expect(@cloud).to receive(:create_vm) do |*args|
+    expect(cloud).to receive(:create_vm) do |*args|
       env_id = args[5].object_id
     end
 
-    vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell,
-                                              @resource_pool_spec.cloud_properties,
-                                              @network_settings, Array(99),
-                                              @resource_pool_spec.env)
+    subject.create(@deployment, @stemcell,
+                   @resource_pool_spec.cloud_properties,
+                   @network_settings, Array(99),
+                   @resource_pool_spec.env)
 
-    expect(@cloud).to receive(:create_vm) do |*args|
+    expect(cloud).to receive(:create_vm) do |*args|
       expect(args[5].object_id).not_to eq(env_id)
     end
 
-    vm = Bosh::Director::VmCreator.new.create(@deployment, @stemcell,
-                                              @resource_pool_spec.cloud_properties,
-                                              @network_settings, Array(99),
-                                              @resource_pool_spec.env)
-
+    subject.create(@deployment, @stemcell,
+                   @resource_pool_spec.cloud_properties,
+                   @network_settings, Array(99),
+                   @resource_pool_spec.env)
   end
 
 end

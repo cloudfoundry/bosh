@@ -84,6 +84,7 @@ module Bosh
           package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
             planner,
             cloud,
+            Bosh::Director::VmCreator.new(cloud, @logger),
             @logger,
             @event_log,
             director_job

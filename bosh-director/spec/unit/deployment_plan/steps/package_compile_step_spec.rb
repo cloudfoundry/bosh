@@ -3,10 +3,9 @@ require 'spec_helper'
 module Bosh::Director
   describe DeploymentPlan::Steps::PackageCompileStep do
     let(:job) { double('job').as_null_object }
-
-    let(:release_version_model) do
-      Models::ReleaseVersion.make
-    end
+    let(:cloud) { double(:cpi) }
+    let(:vm_creator) { VmCreator.new(cloud, Config.logger) }
+    let(:release_version_model) { Models::ReleaseVersion.make }
 
     let(:thread_pool) do
       thread_pool = instance_double('Bosh::Director::ThreadPool')
@@ -21,8 +20,7 @@ module Bosh::Director
 
       allow(Config).to receive_messages(redis: double('fake-redis'))
 
-      @cloud = double(:cpi)
-      allow(Config).to receive(:cloud).and_return(@cloud)
+      allow(Config).to receive(:cloud).and_return(cloud)
 
       @blobstore = double(:blobstore)
       allow(Config).to receive(:blobstore).and_return(@blobstore)
@@ -132,7 +130,7 @@ module Bosh::Director
           expect(@j_router).to receive(:use_compiled_package).with(cp2)
         end
 
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, nil, logger, Config.event_log, nil)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, nil, vm_creator, logger, Config.event_log, nil)
 
         compiler.perform
         # For @stemcell_a we need to compile:
@@ -153,7 +151,7 @@ module Bosh::Director
         prepare_samples
 
         allow(@plan).to receive(:jobs).and_return([@j_dea, @j_router])
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, @cloud, logger, Config.event_log, @director_job)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, cloud, vm_creator, logger, Config.event_log, @director_job)
 
         expect(@network).to receive(:reserve).at_least(@n_workers).times do |reservation|
           expect(reservation).to be_an_instance_of(NetworkReservation)
@@ -167,11 +165,11 @@ module Bosh::Director
         vm_cids = (0..10).map { |i| "vm-cid-#{i}" }
         agents = (0..10).map { instance_double('Bosh::Director::AgentClient') }
 
-        expect(@cloud).to receive(:create_vm).exactly(6).times.
+        expect(cloud).to receive(:create_vm).exactly(6).times.
             with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
             and_return(*vm_cids[0..5])
 
-        expect(@cloud).to receive(:create_vm).exactly(5).times.
+        expect(cloud).to receive(:create_vm).exactly(5).times.
             with(instance_of(String), @stemcell_b.model.cid, {}, net, nil, {}).
             and_return(*vm_cids[6..10])
 
@@ -224,7 +222,7 @@ module Bosh::Director
         expect(@j_router).to receive(:use_compiled_package).exactly(5).times
 
         vm_cids.each do |vm_cid|
-          expect(@cloud).to receive(:delete_vm).with(vm_cid)
+          expect(cloud).to receive(:delete_vm).with(vm_cid)
         end
 
         expect(@network).to receive(:release).at_least(@n_workers).times
@@ -280,7 +278,7 @@ module Bosh::Director
 
         allow(planner).to receive(:jobs).and_return([job])
 
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new(planner, @cloud, logger, event_log, director_job)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(planner, cloud, vm_creator, logger, event_log, director_job)
 
         expect {
           compiler.perform
@@ -315,7 +313,7 @@ module Bosh::Director
         vm_cids = (0..2).map { |i| "vm-cid-#{i}" }
         agents = (0..2).map { instance_double('Bosh::Director::AgentClient') }
 
-        expect(@cloud).to receive(:create_vm).at_most(3).times.
+        expect(cloud).to receive(:create_vm).at_most(3).times.
           with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
           and_return(*vm_cids)
 
@@ -348,13 +346,13 @@ module Bosh::Director
         expect(@j_dea).to receive(:use_compiled_package).exactly(6).times
 
         vm_cids.each do |vm_cid|
-          expect(@cloud).to receive(:delete_vm).at_most(1).times.with(vm_cid)
+          expect(cloud).to receive(:delete_vm).at_most(1).times.with(vm_cid)
         end
 
         expect(@network).to receive(:release).at_most(@n_workers).times
         expect(@director_job).to receive(:task_checkpoint).once
 
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, @cloud, logger, Config.event_log, @director_job)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, cloud, vm_creator, logger, Config.event_log, @director_job)
 
         @package_set_a.each do |package|
           expect(compiler).to receive(:with_compile_lock).with(package.id, @stemcell_a.model.id).and_yield
@@ -385,22 +383,23 @@ module Bosh::Director
         vm_cid = 'vm-cid-1'
         agent = instance_double('Bosh::Director::AgentClient')
 
-        expect(@cloud).to receive(:create_vm).
+        expect(cloud).to receive(:create_vm).
           with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
           and_return(vm_cid)
 
         expect(AgentClient).to receive(:with_defaults).and_return(agent)
+        # expect(AgentClient).to receive(:with_vm).and_return(agent)
 
         expect(agent).to receive(:wait_until_ready)
         expect(agent).to receive(:update_settings)
         expect(agent).to receive(:apply).with(initial_state)
         expect(agent).to receive(:compile_package).and_raise(RuntimeError)
 
-        expect(@cloud).to receive(:delete_vm).with(vm_cid)
+        expect(cloud).to receive(:delete_vm).with(vm_cid)
 
         expect(@network).to receive(:release)
 
-        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, @cloud, logger, Config.event_log, @director_job)
+        compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, cloud, vm_creator, logger, Config.event_log, @director_job)
         allow(compiler).to receive(:with_compile_lock).and_yield
 
         expect {
@@ -433,7 +432,7 @@ module Bosh::Director
       before do # create vm
         allow(@network).to receive(:reserve) { |reservation| reservation.reserved = true }
         allow(@network).to receive(:network_settings)
-        allow(@cloud).to receive(:create_vm).and_return('vm-cid-1')
+        allow(cloud).to receive(:create_vm).and_return('vm-cid-1')
       end
 
       def self.it_tears_down_vm_exactly_once
@@ -444,10 +443,10 @@ module Bosh::Director
           expect(AgentClient).to receive(:with_defaults).and_return(agent)
 
           # vm is destroyed
-          expect(@cloud).to receive(:delete_vm)
+          expect(cloud).to receive(:delete_vm)
           expect(@network).to receive(:release)
 
-          compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, @cloud, logger, Config.event_log, @director_job)
+          compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, cloud, vm_creator, logger, Config.event_log, @director_job)
           allow(compiler).to receive(:with_compile_lock).and_yield
           expect { compiler.perform }.to raise_error(RpcTimeout)
         end
@@ -470,7 +469,7 @@ module Bosh::Director
 
       task = CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key')
 
-      compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, nil, logger, Config.event_log, nil)
+      compiler = DeploymentPlan::Steps::PackageCompileStep.new(@plan, nil, vm_creator, logger, Config.event_log, nil)
       fake_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
       allow(task).to receive(:find_compiled_package).and_return(fake_compiled_package)
 
@@ -484,7 +483,7 @@ module Bosh::Director
       let(:package) { Models::Package.make }
       let(:stemcell) { Models::Stemcell.make }
       let(:task) { CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key') }
-      let(:compiler) { DeploymentPlan::Steps::PackageCompileStep.new(@plan, nil, logger, Config.event_log, nil) }
+      let(:compiler) { DeploymentPlan::Steps::PackageCompileStep.new(@plan, nil, vm_creator, logger, Config.event_log, nil) }
       let(:cache_key) { 'cache key' }
 
       before do
@@ -556,12 +555,12 @@ module Bosh::Director
       context 'with reuse_compilation_vms' do
         before do
           allow(compilation).to receive_messages(reuse_compilation_vms: true)
-          allow(VmCreator).to receive_messages(create: vm)
+          allow(vm_creator).to receive_messages(create: vm)
           allow(VmReuser).to receive_messages(new: reuser)
         end
 
         it 'should clean up the compilation vm if it failed' do
-          compiler = described_class.new(deployment_plan, @cloud, logger, Config.event_log, @director_job)
+          compiler = described_class.new(deployment_plan, cloud, vm_creator, logger, Config.event_log, @director_job)
 
           allow(compiler).to receive_messages(reserve_network: double('network_reservation'))
           client = instance_double('Bosh::Director::AgentClient')
@@ -584,13 +583,13 @@ module Bosh::Director
       end
 
       describe 'trusted certificate handling' do
-        let(:compiler) { described_class.new(deployment_plan, @cloud, logger, Config.event_log, @director_job) }
+        let(:compiler) { described_class.new(deployment_plan, cloud, vm_creator, logger, Config.event_log, @director_job) }
         let(:client) { instance_double('Bosh::Director::AgentClient') }
         before do
           Bosh::Director::Config.trusted_certs=DIRECTOR_TEST_CERTS
-          allow(VmCreator).to receive_messages(create: vm)
+          allow(vm_creator).to receive_messages(create: vm)
           allow(AgentClient).to receive_messages(with_defaults: client)
-          allow(@cloud).to receive(:delete_vm)
+          allow(cloud).to receive(:delete_vm)
 
           allow(compilation).to receive_messages(reuse_compilation_vms: true)
 

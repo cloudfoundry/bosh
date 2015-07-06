@@ -2,10 +2,13 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Errand::JobManager do
-    subject { described_class.new(deployment, job, blobstore, event_log, logger) }
+    subject { described_class.new(deployment, job, blobstore, cloud, event_log, logger) }
     let(:deployment) { instance_double('Bosh::Director::DeploymentPlan::Planner') }
     let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'job_name') }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+
+    #TODO: use the 'abstract' cloud class
+    let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi') }
     let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
     describe '#prepare' do
