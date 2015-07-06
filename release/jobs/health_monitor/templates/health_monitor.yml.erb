@@ -1,8 +1,6 @@
 ---
 http:
   port: <%= p("hm.http.port") %>
-  user: <%= p("hm.http.user") %>
-  password: <%= p("hm.http.password") %>
 
 mbus:
   endpoint: nats://<%= p("nats.address") %>:<%= p("nats.port") %>

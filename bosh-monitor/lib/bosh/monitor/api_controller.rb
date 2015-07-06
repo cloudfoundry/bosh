@@ -18,19 +18,6 @@ module Bosh::Monitor
       set(:dump_errors, false)
     end
 
-    helpers do
-      def protected!
-        return if authorized?
-        headers['WWW-Authenticate'] = ''
-        halt 401, 'Unauthorized'
-      end
-
-      def authorized?
-        @auth ||=  Rack::Auth::Basic::Request.new(request.env)
-        @auth.provided? and @auth.basic? and @auth.credentials and @auth.credentials == [Bhm.http_user, Bhm.http_password]
-      end
-    end
-
     get "/healthz" do
       body "Last pulse was #{Time.now - @heartbeat} seconds ago"
 

@@ -17,10 +17,6 @@ properties:
   hm.http.port:
     description: TCP port Health Monitor daemon listens on
     default: 25923
-  hm.http.user:
-    description: Username clients must use to access Health Monitor via HTTP Basic Auth
-  hm.http.password:
-    description: Password clients must use to access Health Monitor via HTTP Basic Auth
 
   hm.intervals.prune_events:
     description: Interval (in seconds) to prune received events

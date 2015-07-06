@@ -9,8 +9,6 @@ describe Bosh::Monitor::ApiController do
   end
 
   let(:config) { class_double(Bosh::Monitor)  }
-  before { allow(config).to receive(:http_user).and_return('http_user') }
-  before { allow(config).to receive(:http_password).and_return('http_password') }
   before { stub_const("Bhm", config) }
   before { allow(EM).to receive(:add_periodic_timer) { } }
 

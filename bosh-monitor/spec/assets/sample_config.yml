@@ -1,8 +1,6 @@
 ---
 http:
   port: 25930
-  user: admin
-  password: admin
 
 mbus:
   endpoint: nats://127.0.0.1:4222

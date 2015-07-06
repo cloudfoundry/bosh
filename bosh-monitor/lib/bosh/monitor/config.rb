@@ -10,7 +10,7 @@ module Bosh::Monitor
     attr_accessor :agent_manager
     attr_accessor :event_processor
 
-    attr_accessor :http_port, :http_user, :http_password
+    attr_accessor :http_port
     attr_accessor :plugins
 
     attr_accessor :nats
@@ -37,8 +37,6 @@ module Bosh::Monitor
 
       if config["http"].is_a?(Hash)
         @http_port = config["http"]["port"]
-        @http_user = config["http"]["user"]
-        @http_password = config["http"]["password"]
       end
 
       if config["event_mbus"]
