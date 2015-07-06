@@ -34,8 +34,6 @@ module Bosh::Cli::Command
           raise Bosh::Cli::ReleaseVersionError.new('Release version already exists')
         end
 
-        check_if_blob_manager_is_dirty
-
         @progress_renderer = Bosh::Cli::InteractiveProgressRenderer.new
 
         if !options[:dry_run] then
@@ -76,6 +74,8 @@ module Bosh::Cli::Command
         end
       end
 
+      private
+
       def upload_package_and_job_blobs(manifest, tarball)
         manifest['packages'].each do |package|
           upload_to_blobstore(package, 'packages', tarball.package_tarball_path(package['name']))
@@ -100,20 +100,9 @@ module Bosh::Cli::Command
         tarball
       end
 
-      def check_if_blob_manager_is_dirty
-        nl
-        blob_manager.sync
-        if blob_manager.dirty?
-          blob_manager.print_status
-          err("Please use '--force' or upload new blobs")
-        end
-      end
-
       def next_final_version
-        latest_final_version = Bosh::Cli::Versions::ReleaseVersionsIndex.new(@release_index).latest_version
-        latest_final_version ||= Bosh::Common::Version::ReleaseVersion.parse('0')
-        latest_final_version = latest_final_version.increment_release
-        latest_final_version.to_s
+        latest_final_version = Bosh::Cli::Versions::ReleaseVersionsIndex.new(@release_index).latest_version || Bosh::Common::Version::ReleaseVersion.parse('0')
+        latest_final_version.increment_release.to_s
       end
 
       def upload_to_blobstore(artifact, plural_type, artifact_path)

@@ -57,7 +57,7 @@ module Bosh::Cli::Command
 
         Bosh::Cli::Versions::MultiReleaseSupport.new(@work_dir, default_release_name, self).migrate
       end
-      
+
       def create_from_spec(version)
         force = options[:force]
         name = options[:name]
