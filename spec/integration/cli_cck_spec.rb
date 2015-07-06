@@ -43,7 +43,7 @@ describe 'cli: cloudcheck', type: :integration do
     expect(runner.run('cloudcheck --report')).to match(regexp('No problems found'))
   end
 
-  it 'properly delete VMs references' do
+  it 'properly delete VMs references for VMs with dead agents' do
     current_sandbox.cpi.kill_agents
 
     cloudcheck_response = bosh_run_cck_with_resolution(3)

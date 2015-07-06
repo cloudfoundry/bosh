@@ -318,7 +318,7 @@ module Bosh::Director
         def configure_vm(vm, agent, network_settings)
           state = {
             'deployment' => @deployment_plan.name,
-            'resource_pool' => 'package_compiler',
+            'resource_pool' => {},
             'networks' => network_settings
           }
 
