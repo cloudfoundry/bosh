@@ -18,7 +18,10 @@ module Bosh::Director
       @cloud = Config.cloud
       @logger = Config.logger
       @blobstore = App.instance.blobstores.blobstore
-      @vm_creator = Bosh::Director::VmCreator.new(@cloud,@logger)
+
+      @vm_deleter = Bosh::Director::VmDeleter.new(@cloud,@logger)
+      @vm_creator = Bosh::Director::VmCreator.new(@cloud,@logger,@vm_deleter)
+
       @job = instance.job
       @target_state = @instance.state
 
@@ -50,7 +53,7 @@ module Bosh::Director
       steps << proc { take_snapshot }
 
       if @target_state == "detached"
-        steps << proc { Bosh::Director::VmDeleter.delete_from_instance(@instance) }
+        steps << proc { @vm_deleter.delete_from_instance(@instance) }
         return steps
       end
 
@@ -224,7 +227,7 @@ module Bosh::Director
     end
 
     def recreate_vm(new_disk_cid)
-      Bosh::Director::VmDeleter.delete_for_instance(@instance)
+      @vm_deleter.delete_for_instance(@instance)
       disks = [@instance.model.persistent_disk_cid, new_disk_cid].compact
       @vm_creator.create_for_instance(@instance,disks)
 

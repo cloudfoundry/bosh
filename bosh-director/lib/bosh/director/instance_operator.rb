@@ -6,7 +6,8 @@ module Bosh::Director
     def initialize(cloud, event_log, logger)
       @event_log = event_log
       @logger = logger
-      @creator = VmCreator.new(cloud, logger)
+      vm_deleter = VmDeleter.new(cloud, logger)
+      @creator = VmCreator.new(cloud, logger, vm_deleter)
       # @updater = InstanceUpdater.new
       # @deleter = InstanceDeleter.new
     end

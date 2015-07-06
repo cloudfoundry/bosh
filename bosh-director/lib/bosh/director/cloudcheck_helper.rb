@@ -118,7 +118,8 @@ module Bosh::Director
 
       cloud_properties = resource_pool_spec.fetch("cloud_properties", {})
       networks = spec["networks"]
-      new_vm = VmCreator.new(cloud, @logger).create(deployment, stemcell, cloud_properties, networks, Array(disk_cid), env)
+      vm_deleter = VmDeleter.new(cloud, @logger)
+      new_vm = VmCreator.new(cloud, @logger, vm_deleter).create(deployment, stemcell, cloud_properties, networks, Array(disk_cid), env)
       new_vm.apply_spec = spec
       new_vm.save
 

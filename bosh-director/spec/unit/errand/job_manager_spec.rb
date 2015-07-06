@@ -7,8 +7,7 @@ module Bosh::Director
     let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'job_name') }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
 
-    #TODO: use the 'abstract' cloud class
-    let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi') }
+    let(:cloud) { instance_double('Bosh::Clouds') }
     let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
     describe '#prepare' do

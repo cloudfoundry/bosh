@@ -4,7 +4,8 @@ module Bosh::Director
   describe DeploymentPlan::Steps::PackageCompileStep do
     let(:job) { double('job').as_null_object }
     let(:cloud) { double(:cpi) }
-    let(:vm_creator) { VmCreator.new(cloud, Config.logger) }
+    let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
+    let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter) }
     let(:release_version_model) { Models::ReleaseVersion.make }
 
     let(:thread_pool) do

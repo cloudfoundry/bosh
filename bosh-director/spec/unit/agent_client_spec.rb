@@ -134,7 +134,8 @@ module Bosh::Director
                                         { 'credentials' =>
                                             { 'crypt_key' => kind_of(String),
                                               'sign_key' => kind_of(String) } } })
-        VmCreator.new(cloud,logger).create(deployment, stemcell,
+        vm_deleter = VmDeleter.new(cloud, logger)
+        VmCreator.new(cloud, logger, vm_deleter).create(deployment, stemcell,
                             cloud_properties,
                             network_settings, Array(99),
                             env)

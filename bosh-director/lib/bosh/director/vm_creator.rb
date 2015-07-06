@@ -5,9 +5,10 @@ module Bosh::Director
   class VmCreator
     include EncryptionHelper
 
-    def initialize(cloud, logger)
+    def initialize(cloud, logger, vm_deleter)
       @cloud = cloud
       @logger = logger
+      @vm_deleter = vm_deleter
     end
 
     def create_for_instance(instance, disks)
@@ -32,7 +33,7 @@ module Bosh::Director
         vm_model.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs))
       rescue Exception => e
         @logger.error("Failed to create/contact VM #{vm_model.cid}: #{e.inspect}")
-        VmDeleter.delete_for_instance(instance)
+        @vm_deleter.delete_for_instance(instance)
         raise e
       end
 

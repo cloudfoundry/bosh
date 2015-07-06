@@ -3,7 +3,7 @@ module Bosh::Director
     # @param [Bosh::Director::DeploymentPlan::Planner] deployment
     # @param [Bosh::Director::DeploymentPlan::Job] job
     # @param [Bosh::Blobstore::Client] blobstore
-    # @param cloud
+    # @param [Bosh::Clouds] cloud
     # @param [Bosh::Director::EventLog::Log] event_log
     # @param [Logger] logger
     def initialize(deployment, job, blobstore, cloud, event_log, logger)

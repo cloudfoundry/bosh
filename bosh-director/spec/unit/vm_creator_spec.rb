@@ -3,7 +3,8 @@ require 'spec_helper'
 describe Bosh::Director::VmCreator do
 
   let(:cloud) { instance_double('Bosh::Cloud') }
-  subject  {Bosh::Director::VmCreator.new(cloud, logger)}
+  let(:vm_deleter) {Bosh::Director::VmDeleter.new(cloud, logger)}
+  subject  {Bosh::Director::VmCreator.new(cloud, logger, vm_deleter)}
   before do
 
     allow(Bosh::Director::Config).to receive(:cloud).and_return(cloud)

@@ -1,12 +1,8 @@
 module Bosh::Director
   class VmDeleter
-    def self.delete_for_instance(*args)
-      new.delete_for_instance(*args)
-    end
-
-    def initialize
-      @cloud = Config.cloud
-      @logger = Config.logger
+    def initialize(cloud,logger)
+      @cloud = cloud
+      @logger = logger
     end
 
     def delete_for_instance(instance)
