@@ -3,6 +3,6 @@
 
 module Bosh
   module OpenStackCloud
-    VERSION = '1.3008.0'
+    VERSION = '1.3010.0'
   end
 end
