@@ -114,6 +114,7 @@ module Bosh::Stemcell
       if is_centos?
         [
           :system_network,
+          :system_open_vm_tools,
           :system_vsphere_cdrom,
           :system_parameters,
           :bosh_clean,
@@ -144,6 +145,7 @@ module Bosh::Stemcell
       if is_centos?
         [
           :system_network,
+          :system_open_vm_tools,
           :system_vsphere_cdrom,
           :system_parameters,
           :bosh_clean,
