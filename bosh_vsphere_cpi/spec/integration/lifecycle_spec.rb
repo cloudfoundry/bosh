@@ -392,18 +392,16 @@ describe VSphereCloud::Cloud, external_cpi: false do
       end
     end
 
-
     context 'when stemcell is replicated multiple times' do
       after { clean_up_vm_and_disk }
 
       it 'handles each thread properly' do
-        @datastore_name = @second_datastore_within_cluster
-        @datastore_mob = cpi.client.cloud_searcher.get_managed_object(VimSdk::Vim::Datastore, name: @datastore_name)
-        @datastore = VSphereCloud::Resources::Datastore.new(@datastore_name, @datastore_mob, 0, 0)
-
-        @cluster_config = VSphereCloud::ClusterConfig.new(@cluster, {resource_pool: @resource_pool_name})
+        datastore_name = @second_datastore_within_cluster
+        datastore_mob = cpi.client.cloud_searcher.get_managed_object(VimSdk::Vim::Datastore, name: datastore_name)
+        datastore = VSphereCloud::Resources::Datastore.new(datastore_name, datastore_mob, 0, 0)
+        cluster_config = VSphereCloud::ClusterConfig.new(@cluster, {resource_pool: @resource_pool_name})
         @logger = Logger.new(StringIO.new(""))
-        @datacenter = VSphereCloud::Resources::Datacenter.new({
+        datacenter = VSphereCloud::Resources::Datacenter.new({
           client: cpi.client,
           vm_folder: @vm_folder,
           template_folder: @template_folder,
@@ -412,30 +410,52 @@ describe VSphereCloud::Cloud, external_cpi: false do
           disk_path: @disk_path,
           ephemeral_pattern: Regexp.new(@datastore_pattern),
           persistent_pattern: Regexp.new(@persistent_datastore_pattern),
-          clusters: {@cluster => @cluster_config},
+          clusters: {@cluster => cluster_config},
           logger: @logger,
           mem_overcommit: 1.0
         })
-        @vm_cluster = VSphereCloud::Resources::ClusterProvider.new(@datacenter, cpi.client, @logger).find(@cluster, @cluster_config)
+        vm_cluster = VSphereCloud::Resources::ClusterProvider.new(datacenter, cpi.client, @logger).find(@cluster, cluster_config)
+        first_stemcell_vm = nil
+        second_stemcell_vm = nil
+        third_stemcell_vm = nil
+        fourth_stemcell_vm = nil
 
-        puts('Starting thread t1')
+        # creating four separate threads and cpi instances to validate concurrent stemcell replication
         t1 = Thread.new {
           cpi = described_class.new(cpi_options)
-          cpi.replicate_stemcell(@vm_cluster, @datastore, @stemcell_id)
+          first_stemcell_vm = cpi.replicate_stemcell(vm_cluster, datastore, @stemcell_id)
         }
-        puts('Starting thread t2')
         t2 = Thread.new {
           cpi = described_class.new(cpi_options)
-          cpi.replicate_stemcell(@vm_cluster, @datastore, @stemcell_id)
+          second_stemcell_vm = cpi.replicate_stemcell(vm_cluster, datastore, @stemcell_id)
+        }
+
+        t3 = Thread.new {
+          cpi = described_class.new(cpi_options)
+          third_stemcell_vm = cpi.replicate_stemcell(vm_cluster, datastore, @stemcell_id)
+        }
+        
+        t4 = Thread.new {
+          cpi = described_class.new(cpi_options)
+          fourth_stemcell_vm = cpi.replicate_stemcell(vm_cluster, datastore, @stemcell_id)
         }
 
         t1.join
-        puts('Thread t1 finished.')
+        expect(first_stemcell_vm).to_not be_nil
         t2.join
-        puts('Thread t2 finished.')
+        expect(second_stemcell_vm).to_not be_nil
+        t3.join
+        expect(third_stemcell_vm).to_not be_nil
+        t4.join
+        expect(fourth_stemcell_vm).to_not be_nil
 
+        local_stemcell_name = "#{@stemcell_id} %2f #{datastore.mob.__mo_id__}"
+        found_vm = cpi.client.find_by_inventory_path([datacenter.name, 'vm', datacenter.template_folder.path_components, local_stemcell_name])
+        expect(first_stemcell_vm.__mo_id__).to eq(found_vm.__mo_id__)
+        expect(second_stemcell_vm.__mo_id__).to eq(found_vm.__mo_id__)
+        expect(third_stemcell_vm.__mo_id__).to eq(found_vm.__mo_id__)
+        expect(fourth_stemcell_vm.__mo_id__).to eq(found_vm.__mo_id__)
       end
     end
   end
-
 end

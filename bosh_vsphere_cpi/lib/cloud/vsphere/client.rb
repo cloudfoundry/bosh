@@ -4,6 +4,7 @@ module VSphereCloud
 
     class TaskException < StandardError; end
     class FileNotFoundException < TaskException; end
+    class DuplicateName < TaskException; end
     class AlreadyLoggedInException < StandardError; end
     class NotLoggedInException < StandardError; end
 
@@ -270,6 +271,7 @@ module VSphereCloud
     def task_exception_for_vim_fault(fault)
       exceptions_by_fault = {
         VimSdk::Vim::Fault::FileNotFound => FileNotFoundException,
+        VimSdk::Vim::Fault::DuplicateName => DuplicateName,
       }
       exceptions_by_fault.fetch(fault.class, TaskException).new(fault.msg)
     end

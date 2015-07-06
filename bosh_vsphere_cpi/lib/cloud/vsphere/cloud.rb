@@ -409,7 +409,6 @@ module VSphereCloud
         @logger.info("Stemcell was already local: #{stemcell_vm}")
         result = stemcell_vm
       end
-
       @logger.info("Using stemcell VM: #{result}")
 
       result
@@ -702,14 +701,14 @@ module VSphereCloud
     begin
       replicated_stemcell_vm = client.wait_for_task(task)
       @logger.info("Replicated #{stemcell} (#{stemcell_vm}) to #{local_stemcell_name} (#{replicated_stemcell_vm})")
-      @logger.info("Creating initial snapshot for linked clones on #{replicated_stemcell_vm}")
-      # Despite the naming, this has nothing to do with the Cloud notion of a disk snapshot
-      # (which comes from AWS). This is a vm snapshot.
-    rescue VSphereCloud::Client::TaskException => ex
+    rescue VSphereCloud::Client::DuplicateName => ex
       @logger.info("Stemcell was created during the execution of this thread. #{ex.message}")
       replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
       return replicated_stemcell_vm
     end
+      # Despite the naming, this has nothing to do with the Cloud notion of a disk snapshot
+      # (which comes from AWS). This is a vm snapshot.
+      @logger.info("Creating initial snapshot for linked clones on #{replicated_stemcell_vm}")      
       task = replicated_stemcell_vm.create_snapshot('initial', nil, false, false)
       client.wait_for_task(task)
       @logger.info("Created initial snapshot for linked clones on #{replicated_stemcell_vm}")
