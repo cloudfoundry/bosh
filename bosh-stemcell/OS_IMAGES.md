@@ -205,6 +205,9 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
 
+* `EQpmK1zMJ3_q.PXd.jTxxEKMw1gJ8kGV`
+  Install open-vm-tools
+
 * `00kmcew_QGZDuzgF49Z.kAPhCA7EFIfQ`
   update packages
 
