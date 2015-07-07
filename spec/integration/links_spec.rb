@@ -13,12 +13,31 @@ describe 'Links', type: :integration do
     target_and_login
     upload_links_release
     upload_stemcell
-    upload_cloud_config
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11']
+    cloud_config_hash['networks'] << {
+      'name' => 'dynamic-network',
+      'type' => 'dynamic'
+    }
+
+    upload_cloud_config(cloud_config_hash: cloud_config_hash)
   end
 
   context 'when job requires link' do
     let(:link_job_spec) { Bosh::Spec::Deployments.simple_job(name: 'my_api', templates: [{'name' => 'api_server', 'links' => links}], instances: 1) }
-    let(:link_source_job_spec) { Bosh::Spec::Deployments.simple_job(name: 'my_db', templates: [{'name' => 'database'}], instances: 2) }
+    let(:link_source_job_spec) do
+      job_spec = Bosh::Spec::Deployments.simple_job(
+        name: 'my_db',
+        templates: [{'name' => 'database'}],
+        instances: 2,
+        static_ips: ['192.168.1.10', '192.168.1.11']
+      )
+      job_spec['networks'] << {
+        'name' => 'dynamic-network',
+        'default' => ['dns', 'gateway']
+      }
+      job_spec
+    end
 
     let(:manifest) do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
@@ -47,8 +66,34 @@ describe 'Links', type: :integration do
 
           expect(template['databases'].size).to eq(2)
           expect(template['databases']).to contain_exactly(
-            {'name' => 'my_db', 'index' => 0},
-            {'name' => 'my_db', 'index' => 1}
+            {
+              'name' => 'my_db',
+              'index' => 0,
+              'networks' => [
+                {
+                  'name' => 'a',
+                  'address' => '192.168.1.10',
+                },
+                {
+                  'name' => 'dynamic-network',
+                  'address' => '0.my-db.dynamic-network.simple.bosh'
+                }
+              ]
+            },
+            {
+              'name' => 'my_db',
+              'index' => 1,
+              'networks' => [
+                {
+                  'name' => 'a',
+                  'address' => '192.168.1.11',
+                },
+                {
+                  'name' => 'dynamic-network',
+                  'address' => '1.my-db.dynamic-network.simple.bosh'
+                }
+              ]
+            }
           )
         end
       end

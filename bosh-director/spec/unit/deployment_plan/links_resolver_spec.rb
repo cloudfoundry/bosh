@@ -21,7 +21,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           'instances' => 1,
           'networks' => [
             {
-              'name' => 'fake-network',
+              'name' => 'fake-manual-network',
               'static_ips' => ['127.0.0.2']
             }
           ],
@@ -35,8 +35,12 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           'instances' => 1,
           'networks' => [
             {
-              'name' => 'fake-network',
-              'static_ips' => ['127.0.0.3']
+              'name' => 'fake-manual-network',
+              'static_ips' => ['127.0.0.3'],
+              'default' => ['dns', 'gateway']
+            },
+            {
+              'name' => 'fake-dynamic-network',
             }
           ],
         }
@@ -48,12 +52,12 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             'name' => 'fake-stemcell',
             'version' => 'fake-stemcell-version',
           },
-          'network' => 'fake-network',
+          'network' => 'fake-manual-network',
         }
       ],
       'networks' => [
         {
-          'name' => 'fake-network',
+          'name' => 'fake-manual-network',
           'type' => 'manual',
           'subnets' => [
             {
@@ -63,6 +67,10 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
               'static' => ['127.0.0.2', '127.0.0.3'],
             }
           ]
+        },
+        {
+          'name' => 'fake-dynamic-network',
+          'type' => 'dynamic',
         }
       ],
       'releases' => [
@@ -73,7 +81,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       ],
       'compilation' => {
         'workers' => 1,
-        'network' => 'fake-network',
+        'network' => 'fake-manual-network',
       },
       'update' => {
         'canaries' => 1,
@@ -95,7 +103,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     Bosh::Director::Models::Stemcell.make(name: 'fake-stemcell', version: 'fake-stemcell-version')
 
     allow(Bosh::Director::Config).to receive(:cloud).and_return(nil)
-    allow(Bosh::Director::Config).to receive(:dns_enabled?).and_return(false)
+    allow(Bosh::Director::Config).to receive(:dns_domain_name).and_return('fake-dns')
+    Bosh::Director::Config.dns = {'address' => 'fake-dns-address'}
 
     release_model = Bosh::Director::Models::Release.make(name: 'fake-release')
     version = Bosh::Director::Models::ReleaseVersion.make(version: '1.0.0')
@@ -118,7 +127,18 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
           expect(api_server_job.links['db']).to eq({
             'nodes' => [
-              { 'name' => 'mysql', 'index' => 0 }
+              {
+                'name' => 'mysql',
+                'index' => 0,
+                'networks' => {
+                  'fake-manual-network' => {
+                    'address' => '127.0.0.3',
+                  },
+                  'fake-dynamic-network' => {
+                    'address' => '0.mysql.fake-dynamic-network.fake-deployment.fake-dns',
+                  }
+                }
+              }
             ]
           })
         end
