@@ -27,10 +27,14 @@ describe 'Changing cloud config', type: :integration do
       manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 1)
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
+      current_target = current_sandbox.director_url
 
       errand_succeeded = nil
       errand_thread = Thread.new do
-        _, errand_succeeded = run_errand(manifest_with_errand, 'errand_job')
+        thread_config_path = File.join(ClientSandbox.base_dir, 'bosh_config_errand.yml')
+        bosh_runner.run("target #{current_target}", config_path: thread_config_path)
+        bosh_runner.run('login test test', config_path: thread_config_path)
+        _, errand_succeeded = run_errand('errand_job', config_path: thread_config_path, manifest_hash: manifest_with_errand)
       end
 
       upload_a_different_cloud_config

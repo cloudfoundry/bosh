@@ -77,7 +77,7 @@ module IntegrationExampleGroup
     # Hold reference to the tempfile so that it stays around
     # until the end of tests or next deploy.
     @deployment_manifest = yaml_file('simple', manifest_hash)
-    bosh_runner.run("deployment #{@deployment_manifest.path}")
+    bosh_runner.run("deployment #{@deployment_manifest.path}", options)
   end
 
   def deploy(options)
@@ -113,9 +113,12 @@ module IntegrationExampleGroup
     return_exit_code ? [output, exit_code] : output
   end
 
-  def run_errand(errand_deployment_manifest, errand_job_name)
-    set_deployment(manifest_hash: errand_deployment_manifest)
-    output, exit_code = bosh_runner.run("run errand #{errand_job_name}", return_exit_code: true, failure_expected: true)
+  def run_errand(errand_job_name, options={})
+    set_deployment(options)
+    output, exit_code = bosh_runner.run(
+      "run errand #{errand_job_name}",
+      options.merge({return_exit_code: true, failure_expected: true})
+    )
     return output, exit_code == 0
   end
 

@@ -66,7 +66,7 @@ describe 'simultaneous deploys', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
 
       deploy_task_id = Bosh::Spec::DeployHelper.start_deploy(second_deployment_manifest)
-      run_errand(manifest_with_errand, 'errand_job')
+      run_errand('errand_job', manifest_hash: manifest_with_errand)
       Bosh::Spec::DeployHelper.wait_for_deploy_to_succeed(deploy_task_id)
 
       job_deployment_ips = director.vms('second').map(&:ips).flatten
@@ -83,7 +83,7 @@ describe 'simultaneous deploys', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
 
       deploy_task_id = Bosh::Spec::DeployHelper.start_deploy(second_deployment_manifest)
-      errand_output, errand_success = run_errand(manifest_with_errand, 'errand_job')
+      errand_output, errand_success = run_errand('errand_job', manifest_hash: manifest_with_errand)
       deploy_output, deploy_success = Bosh::Spec::DeployHelper.wait_for_deploy(deploy_task_id)
 
       expect([deploy_success, errand_success]).to match_array([true, false], "\nerrand output:\n#{errand_output}\n\ndeploy output:\n#{deploy_output}\n")
@@ -103,12 +103,12 @@ describe 'simultaneous deploys', type: :integration do
 
       first_errand_succeeded = nil
       first_errand_thread = Thread.new do
-        _, first_errand_succeeded = run_errand(first_errand_manifest, 'errand_job')
+        _, first_errand_succeeded = run_errand('errand_job', manifest_hash: first_errand_manifest)
       end
 
       second_errand_succeeded = nil
       second_errand_thread = Thread.new do
-        _, second_errand_succeeded = run_errand(second_errand_manifest, 'errand_job')
+        _, second_errand_succeeded = run_errand('errand_job', manifest_hash: second_errand_manifest)
       end
 
       first_errand_thread.join

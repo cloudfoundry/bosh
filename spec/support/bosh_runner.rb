@@ -33,8 +33,10 @@ module Bosh::Spec
       failure_expected = options.fetch(:failure_expected, false)
       interactive_mode = options.fetch(:interactive, false) ? '' : '-n'
 
+      config_path = options.fetch(:config_path, @bosh_config)
+
       @logger.info("Running ... bosh #{interactive_mode} #{cmd}")
-      command   = "bosh #{interactive_mode} -c #{@bosh_config} #{cmd}"
+      command   = "bosh #{interactive_mode} -c #{config_path} #{cmd}"
       output    = nil
       env = options.fetch(:env, {})
       exit_code = 0
