@@ -31,7 +31,7 @@ module Bosh::Director
       dns_binder.bind_deployment
 
       job_renderer = JobRenderer.new(@job, @blobstore)
-      links_resolver = LinksResolver.new(@deployment, @logger)
+      links_resolver = DeploymentPlan::LinksResolver.new(@deployment, @logger)
       job_updater = JobUpdater.new(@deployment, @job, job_renderer, links_resolver)
       job_updater.update
     end

@@ -1,6 +1,0 @@
----
-name: source
-templates: {}
-packages: []
-
-provides: [fake_link]

@@ -656,6 +656,7 @@ module Bosh::Director::DeploymentPlan
           package_spec: packages,
           persistent_disk_pool: disk_pool,
           starts_on_deploy?: true,
+          links: 'fake-link',
           properties: properties)
       }
       let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', disk_size: 0, spec: disk_pool_spec) }
@@ -690,6 +691,7 @@ module Bosh::Director::DeploymentPlan
         expect(spec['configuration_hash']).to be_nil
         expect(spec['properties']).to eq(properties)
         expect(spec['dns_domain_name']).to eq(domain_name)
+        expect(spec['links']).to eq('fake-link')
       end
 
       it 'includes rendered_templates_archive key after rendered templates were archived' do

@@ -69,6 +69,8 @@ module Bosh::Director
 
       attr_accessor :all_properties
 
+      attr_reader :links
+
       # @param [Bosh::Director::DeploymentPlan::Planner] deployment Deployment plan
       # @param [Hash] job_spec Raw job spec from the deployment manifest
       # @param [Bosh::Director::EventLog::Log] event_log Event log for recording deprecations
@@ -95,6 +97,7 @@ module Bosh::Director
         @default_network = {}
 
         @packages = {}
+        @links = {}
       end
 
       def self.is_legacy_spec?(job_spec)
@@ -152,6 +155,11 @@ module Bosh::Director
         end
 
         result
+      end
+
+      # @param [Bosh::Director::DeploymentPlan::Link]
+      def add_link(link)
+        @links[link.name] = link.spec
       end
 
       # Returns package specs for all packages in the job indexed by package

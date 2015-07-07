@@ -1,0 +1,10 @@
+---
+name: api_server
+templates:
+  config.yml.erb: config.yml
+
+packages: []
+
+requires: [db]
+
+

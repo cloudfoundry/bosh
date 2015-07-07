@@ -1,6 +1,7 @@
 require 'ostruct'
 require 'bosh/template/evaluation_failed'
 require 'bosh/template/unknown_property'
+require 'bosh/template/unknown_link'
 require 'bosh/template/property_helper'
 
 module Bosh
@@ -42,6 +43,8 @@ module Bosh
         @spec = openstruct(spec)
         @raw_properties = spec['properties'] || {}
         @properties = openstruct(@raw_properties)
+
+        @links = spec['links'] || {}
       end
 
       # @return [Binding] Template binding
@@ -86,6 +89,13 @@ module Bosh
 
         return args[1] if args.length == 2
         raise UnknownProperty.new(names)
+      end
+
+      def link(name)
+        result = lookup_property(@links, name)
+        return result unless result.nil?
+
+        raise UnknownLink.new(name)
       end
 
       # Run a block of code if all given properties are defined

@@ -1,0 +1,6 @@
+---
+name: database
+templates: {}
+packages: []
+
+provides: [db]

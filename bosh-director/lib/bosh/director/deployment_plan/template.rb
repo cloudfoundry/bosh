@@ -13,6 +13,7 @@ module Bosh::Director
 
       # @param [DeploymentPlan::ReleaseVersion] release Release version
       # @param [String] name Template name
+      # @param [Hash] links hash of link name to its path
       def initialize(release, name, links)
         @release = release
         @name = name

@@ -7,7 +7,7 @@ module Bosh::Director
 
     def new_job_updater(deployment_plan, job)
       job_renderer = JobRenderer.new(job, @blobstore)
-      links_resolver = LinksResolver.new(deployment_plan, @logger)
+      links_resolver = DeploymentPlan::LinksResolver.new(deployment_plan, @logger)
       JobUpdater.new(deployment_plan, job, job_renderer, links_resolver)
     end
   end

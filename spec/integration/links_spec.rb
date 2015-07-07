@@ -17,8 +17,8 @@ describe 'Links', type: :integration do
   end
 
   context 'when job requires link' do
-    let(:link_job_spec) { Bosh::Spec::Deployments.simple_job(name: 'link', templates: [{'name' => 'link', 'links' => links}], instances: 1) }
-    let(:link_source_job_spec) { Bosh::Spec::Deployments.simple_job(name: 'source', templates: [{'name' => 'source'}], instances: 1) }
+    let(:link_job_spec) { Bosh::Spec::Deployments.simple_job(name: 'my_api', templates: [{'name' => 'api_server', 'links' => links}], instances: 1) }
+    let(:link_source_job_spec) { Bosh::Spec::Deployments.simple_job(name: 'my_db', templates: [{'name' => 'database'}], instances: 2) }
 
     let(:manifest) do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
@@ -37,16 +37,24 @@ describe 'Links', type: :integration do
 
     context 'when link is provided' do
       context 'when link reference source that provides link' do
-        let(:links) { {'fake_link' => 'simple.source.source.fake_link'} }
+        let(:links) { {'db' => 'simple.my_db.database.db'} }
 
-        it 'does not raise an error' do
-          _, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
-          expect(exit_code).to eq(0)
+        it 'renders link data in job template' do
+          deploy_simple_manifest(manifest_hash: manifest)
+
+          link_vm = director.vm('my_api/0')
+          template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
+
+          expect(template['databases'].size).to eq(2)
+          expect(template['databases']).to contain_exactly(
+            {'name' => 'my_db', 'index' => 0},
+            {'name' => 'my_db', 'index' => 1}
+          )
         end
       end
 
       context 'when link reference source that does not provide link' do
-        let(:links) { {'fake_link' => 'X.Y.Z.ZZ'} }
+        let(:links) { {'db' => 'X.Y.Z.ZZ'} }
 
         it 'raises an error' do
           _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)

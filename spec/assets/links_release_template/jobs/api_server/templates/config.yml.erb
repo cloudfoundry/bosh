@@ -1,0 +1,6 @@
+---
+databases:
+<% link('db.nodes').each do |node| %>
+  - name: <%= node['name'] %>
+    index: <%= node['index'] %>
+<% end %>
