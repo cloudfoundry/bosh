@@ -108,6 +108,7 @@ The final two arguments are the S3 bucket and key for the OS image to use, which
 
     vagrant ssh -c '
       cd /bosh
+      git submodule update --init --recursive
       CANDIDATE_BUILD_NUMBER=<current_build> http_proxy=http://localhost:3142/ bundle exec rake stemcell:build[vsphere,esxi,centos,nil,go,bosh-os-images,bosh-centos-7-os-image.tgz]
     ' remote
 
@@ -116,6 +117,7 @@ The final two arguments are the S3 bucket and key for the OS image to use, which
 
     vagrant ssh -c '
       cd /bosh
+      git submodule update --init --recursive
       bundle exec rake stemcell:build_with_local_os_image[aws,xen,ubuntu,trusty,go,/tmp/ubuntu_base_image.tgz]
     ' remote
 
