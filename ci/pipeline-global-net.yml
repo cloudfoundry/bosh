@@ -45,4 +45,4 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh
-      branch: global-net-refactor
+      branch: global-net
