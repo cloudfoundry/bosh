@@ -37,7 +37,7 @@ module Bosh::Director
 
         out_of_sync_agent = double('out_of_sync_agent-id')
 
-        allow(AgentClient).to receive(:with_defaults).with('out-of-sync-agent-id', anything).and_return(out_of_sync_agent)
+        allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(out_of_sync_agent)
 
         out_of_sync_state = {
           'deployment' => 'fake-deployment',
@@ -72,9 +72,9 @@ module Bosh::Director
         agent_1 = double('agent-1')
         agent_2 = double('agent-2')
         agent_3 = double('agent-3')
-        allow(AgentClient).to receive(:with_defaults).with('agent-1', anything).and_return(agent_1)
-        allow(AgentClient).to receive(:with_defaults).with('agent-2', anything).and_return(agent_2)
-        allow(AgentClient).to receive(:with_defaults).with('agent-3', anything).and_return(agent_3)
+        allow(AgentClient).to receive(:with_vm).with(vms[0], anything).and_return(agent_1)
+        allow(AgentClient).to receive(:with_vm).with(vms[1], anything).and_return(agent_2)
+        allow(AgentClient).to receive(:with_vm).with(vms[2], anything).and_return(agent_3)
 
         # valid idle resource pool VM
         expect(agent_1).to receive(:get_state).and_return({'deployment' => 'fake-deployment'})
@@ -125,7 +125,7 @@ module Bosh::Director
         expect(event_logger).to receive(:track_and_log).with('1 OK, 1 unresponsive, 0 missing, 0 unbound, 0 out of sync')
 
         good_agent_client = double(:agent_client, list_disk: [])
-        allow(AgentClient).to receive(:with_defaults).with('agent-2', anything).and_return(good_agent_client)
+        allow(AgentClient).to receive(:with_vm).with(instances[1].vm, anything).and_return(good_agent_client)
         good_state = {
           'deployment' => 'fake-deployment',
           'job' => {'name' => 'job-2'},
@@ -134,7 +134,7 @@ module Bosh::Director
         expect(good_agent_client).to receive(:get_state).and_return(good_state)
 
         unresponsive_agent_client = double(:agent_client)
-        allow(AgentClient).to receive(:with_defaults).with('agent-1', anything).and_return(unresponsive_agent_client)
+        allow(AgentClient).to receive(:with_vm).with(instances[0].vm, anything).and_return(unresponsive_agent_client)
         expect(unresponsive_agent_client).to receive(:get_state).and_raise(Bosh::Director::RpcTimeout)
         allow(cloud).to receive(:has_vm?).and_raise(Bosh::Clouds::NotImplemented)
 
@@ -143,7 +143,7 @@ module Bosh::Director
           instances[0].vm
         )
 
-        expect(AgentClient).to_not receive(:with_defaults).with('agent-3', anything)
+        expect(AgentClient).to_not receive(:with_vm).with(instances[2].vm, anything)
 
         vm_scanner.scan([['job-1', 1], ['job-2', 2]])
       end
@@ -165,9 +165,9 @@ module Bosh::Director
           responsive_agent = double(AgentClient)
           agent_options = { timeout: 10, retry_methods: { get_state: 0}}
 
-          allow(AgentClient).to receive(:with_defaults).with('agent-0', agent_options).and_return(unresponsive_agent1)
-          allow(AgentClient).to receive(:with_defaults).with('agent-1', agent_options).and_return(unresponsive_agent2)
-          allow(AgentClient).to receive(:with_defaults).with('agent-2', agent_options).and_return(responsive_agent)
+          allow(AgentClient).to receive(:with_vm).with(unresponsive_vm1, agent_options).and_return(unresponsive_agent1)
+          allow(AgentClient).to receive(:with_vm).with(unresponsive_vm2, agent_options).and_return(unresponsive_agent2)
+          allow(AgentClient).to receive(:with_vm).with(responsive_vm, agent_options).and_return(responsive_agent)
 
           # Unresponsive agent
           allow(unresponsive_agent1).to receive(:get_state).and_raise(RpcTimeout)
@@ -262,7 +262,7 @@ module Bosh::Director
       before { allow(cloud).to receive(:has_vm?).and_return(true) }
 
       let(:agent) { double('Bosh::Director::AgentClient') }
-      before { allow(AgentClient).to receive(:with_defaults).with('agent-1', anything).and_return(agent) }
+      before { allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(agent) }
 
       before do
         Models::PersistentDisk.make(instance_id: instance.id, active: true, disk_cid: 'fake-disk-cid')
@@ -332,7 +332,7 @@ module Bosh::Director
           Models::Instance.make(vm: second_vm, deployment: deployment, job: 'job-2', index: 2)
 
           agent_2 = double('agent-2')
-          allow(AgentClient).to receive(:with_defaults).with('agent-2', anything).and_return(agent_2)
+          allow(AgentClient).to receive(:with_vm).with(second_vm, anything).and_return(agent_2)
 
           good_state_2 = {
             'deployment' => 'fake-deployment',

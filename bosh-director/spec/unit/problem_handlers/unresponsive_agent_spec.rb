@@ -5,10 +5,16 @@ require 'spec_helper'
 module Bosh::Director
   describe ProblemHandlers::UnresponsiveAgent do
 
+    RSpec::Matchers.define :vm_with_agent_id do |agent_id|
+      match do |actual|
+        actual.agent_id == agent_id
+      end
+    end
+
     def make_handler(vm, cloud, agent, data = {})
       handler = ProblemHandlers::UnresponsiveAgent.new(vm.id, data)
       allow(handler).to receive(:cloud).and_return(cloud)
-      allow(AgentClient).to receive(:with_defaults).with(vm.agent_id, anything).and_return(agent)
+      allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id(@vm.agent_id), anything).and_return(@agent)
       handler
     end
 
@@ -102,15 +108,14 @@ module Bosh::Director
             'networks' => ['A', 'B', 'C']
           }
         end
-        let(:fake_new_agent) { double(Bosh::Director::AgentClient) }
+        let(:fake_new_agent) { instance_double(Bosh::Director::AgentClient) }
 
         before do
           Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           @vm.update(apply_spec: spec, env: { 'key1' => 'value1' })
-          allow(AgentClient).to receive(:with_defaults).with('agent-222', anything).and_return(fake_new_agent)
+          allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id('agent-222'), anything).and_return(fake_new_agent)
           allow(SecureRandom).to receive_messages(uuid: 'agent-222')
         end
-
 
         it 'recreates the VM' do
           allow(@agent).to receive(:ping).and_raise(RpcTimeout)

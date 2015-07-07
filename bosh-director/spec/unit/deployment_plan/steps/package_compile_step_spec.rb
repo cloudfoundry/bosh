@@ -174,7 +174,7 @@ module Bosh::Director
             with(instance_of(String), @stemcell_b.model.cid, {}, net, nil, {}).
             and_return(*vm_cids[6..10])
 
-        expect(AgentClient).to receive(:with_defaults).exactly(11).times.and_return(*agents)
+        expect(AgentClient).to receive(:with_vm).exactly(11).times.and_return(*agents)
 
         vm_metadata_updater = instance_double('Bosh::Director::VmMetadataUpdater', update: nil)
         allow(Bosh::Director::VmMetadataUpdater).to receive_messages(build: vm_metadata_updater)
@@ -318,7 +318,7 @@ module Bosh::Director
           with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
           and_return(*vm_cids)
 
-        expect(AgentClient).to receive(:with_defaults).at_most(3).times.and_return(*agents)
+        expect(AgentClient).to receive(:with_vm).at_most(3).times.and_return(*agents)
 
         agents.each do |agent|
           expect(agent).to receive(:wait_until_ready).at_most(6).times
@@ -388,7 +388,7 @@ module Bosh::Director
           with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
           and_return(vm_cid)
 
-        expect(AgentClient).to receive(:with_defaults).and_return(agent)
+        expect(AgentClient).to receive(:with_vm).and_return(agent)
         # expect(AgentClient).to receive(:with_vm).and_return(agent)
 
         expect(agent).to receive(:wait_until_ready)
@@ -441,7 +441,7 @@ module Bosh::Director
           # agent raises error
           agent = instance_double('Bosh::Director::AgentClient', apply: nil)
           expect(agent).to receive(:wait_until_ready).and_raise(RpcTimeout)
-          expect(AgentClient).to receive(:with_defaults).and_return(agent)
+          expect(AgentClient).to receive(:with_vm).and_return(agent)
 
           # vm is destroyed
           expect(cloud).to receive(:delete_vm)
@@ -566,7 +566,7 @@ module Bosh::Director
           allow(compiler).to receive_messages(reserve_network: double('network_reservation'))
           client = instance_double('Bosh::Director::AgentClient')
           allow(client).to receive(:wait_until_ready).and_raise(RpcTimeout)
-          allow(AgentClient).to receive_messages(with_defaults: client)
+          allow(AgentClient).to receive_messages(with_vm: client)
 
           allow(reuser).to receive_messages(get_vm: nil)
           allow(reuser).to receive_messages(get_num_vms: 0)
@@ -589,7 +589,7 @@ module Bosh::Director
         before do
           Bosh::Director::Config.trusted_certs=DIRECTOR_TEST_CERTS
           allow(vm_creator).to receive_messages(create: vm)
-          allow(AgentClient).to receive_messages(with_defaults: client)
+          allow(AgentClient).to receive_messages(with_vm: client)
           allow(cloud).to receive(:delete_vm)
 
           allow(compilation).to receive_messages(reuse_compilation_vms: true)

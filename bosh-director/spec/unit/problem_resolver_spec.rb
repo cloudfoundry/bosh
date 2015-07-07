@@ -31,7 +31,7 @@ module Bosh::Director
       expect(@cloud).to receive(:detach_disk).exactly(1).times
       expect(@cloud).to receive(:delete_disk).exactly(1).times
 
-      allow(AgentClient).to receive(:with_defaults).and_return(agent)
+      allow(AgentClient).to receive(:with_vm).and_return(agent)
 
       2.times do
         disk = Models::PersistentDisk.make(:active => false)

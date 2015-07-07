@@ -24,7 +24,7 @@ module Bosh::Director
       @logger.info("Delete unneeded instance: #{vm_model.cid}")
 
       event_log_stage.advance_and_track(vm_model.cid) do
-        drain(vm_model.agent_id)
+        drain(vm_model)
         @cloud.delete_vm(vm_model.cid)
         delete_snapshots(instance_model)
         delete_persistent_disks(instance_model.persistent_disks)
@@ -42,8 +42,8 @@ module Bosh::Director
       end
     end
 
-    def drain(agent_id)
-      agent = AgentClient.with_defaults(agent_id)
+    def drain(vm)
+      agent = AgentClient.with_vm(vm)
 
       drain_time = agent.drain("shutdown")
       while drain_time < 0

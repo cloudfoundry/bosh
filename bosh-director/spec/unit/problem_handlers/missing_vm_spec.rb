@@ -12,7 +12,7 @@ module Bosh::Director
       expect(handler).to be_kind_of(described_class)
     end
 
-    it 'should call recreate_vm when set to auto' do 
+    it 'should call recreate_vm when set to auto' do
       allow(handler).to receive(:recreate_vm)
       expect(handler).to receive(:recreate_vm).with(vm)
       handler.auto_resolve
@@ -49,7 +49,7 @@ module Bosh::Director
         Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
 
         allow(SecureRandom).to receive_messages(uuid: 'agent-222')
-        allow(AgentClient).to receive(:with_defaults).with('agent-222', anything).and_return(fake_new_agent)
+        allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(fake_new_agent)
 
         expect(fake_new_agent).to receive(:wait_until_ready).ordered
         expect(fake_new_agent).to receive(:update_settings).ordered

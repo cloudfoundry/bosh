@@ -56,7 +56,7 @@ module Bosh::Director
         persistent_disks = [Models::PersistentDisk.make, disk]
         persistent_disks.each { |disk| instance.persistent_disks << disk }
 
-        expect(@deleter).to receive(:drain).with(vm.agent_id)
+        expect(@deleter).to receive(:drain).with(vm)
         expect(@deleter).to receive(:delete_snapshots).with(instance)
         expect(@deleter).to receive(:delete_persistent_disks).with(persistent_disks)
         allow(Config).to receive(:dns_domain_name).and_return('bosh')
@@ -83,20 +83,21 @@ module Bosh::Director
     end
 
     describe :drain do
-      it 'should drain the VM' do
-        agent = double('agent')
-        allow(AgentClient).to receive(:with_defaults).with('some_agent_id').and_return(agent)
+      let(:vm) { Models::Vm.make }
+      let(:agent) { double('agent') }
+      before do
+        allow(AgentClient).to receive(:with_vm).with(vm).and_return(agent)
+      end
 
+      it 'should drain the VM' do
         expect(agent).to receive(:drain).with('shutdown').and_return(2)
         expect(agent).to receive(:stop)
         expect(@deleter).to receive(:sleep).with(2)
 
-        @deleter.drain('some_agent_id')
+        @deleter.drain(vm)
       end
 
       it 'should dynamically drain the VM' do
-        agent = double('agent')
-        allow(AgentClient).to receive(:with_defaults).with('some_agent_id').and_return(agent)
         allow(Config).to receive(:job_cancelled?).and_return(nil)
 
         expect(agent).to receive(:drain).with('shutdown').and_return(-2)
@@ -107,12 +108,10 @@ module Bosh::Director
         expect(@deleter).to receive(:sleep).with(1)
 
         expect(agent).to receive(:stop)
-        @deleter.drain('some_agent_id')
+        @deleter.drain(vm)
       end
 
       it 'should dynamically drain the VM when drain script returns 0 eventually' do
-        agent = double('agent')
-        allow(AgentClient).to receive(:with_defaults).with('some_agent_id').and_return(agent)
         allow(Config).to receive(:job_cancelled?).and_return(nil)
 
         expect(agent).to receive(:drain).with('shutdown').and_return(-2)
@@ -123,15 +122,13 @@ module Bosh::Director
         expect(@deleter).to receive(:sleep).with(0)
 
         expect(agent).to receive(:stop)
-        @deleter.drain('some_agent_id')
+        @deleter.drain(vm)
       end
 
       it 'should stop vm-drain if task is cancelled' do
-        agent = double('agent')
-        allow(AgentClient).to receive(:with_defaults).with('some_agent_id').and_return(agent)
         allow(Config).to receive(:job_cancelled?).and_raise(TaskCancelled.new(1))
         expect(agent).to receive(:drain).with('shutdown').and_return(-2)
-        expect { @deleter.drain('some_agent_id') }.to raise_error(TaskCancelled)
+        expect { @deleter.drain(vm) }.to raise_error(TaskCancelled)
       end
     end
 

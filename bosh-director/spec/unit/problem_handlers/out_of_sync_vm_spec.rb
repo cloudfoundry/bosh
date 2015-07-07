@@ -7,7 +7,7 @@ describe Bosh::Director::ProblemHandlers::OutOfSyncVm do
   def make_handler(vm, cloud, agent, data = {})
     handler = Bosh::Director::ProblemHandlers::OutOfSyncVm.new(vm.id, data)
     allow(handler).to receive(:cloud).and_return(cloud)
-    allow(Bosh::Director::AgentClient).to receive(:with_defaults).with(vm.agent_id, anything).and_return(agent)
+    allow(Bosh::Director::AgentClient).to receive(:with_vm).with(vm, anything).and_return(agent)
     handler
   end
 

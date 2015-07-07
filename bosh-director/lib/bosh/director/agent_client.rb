@@ -16,11 +16,6 @@ module Bosh::Director
 
     attr_accessor :id
 
-    def self.with_defaults(id, options = {})
-      vm = Bosh::Director::Models::Vm.find(:agent_id => id)
-      with_vm(vm, options)
-    end
-
     def self.with_vm(vm, options = {})
       defaults = {
         retry_methods: {

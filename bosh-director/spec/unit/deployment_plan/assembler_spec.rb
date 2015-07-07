@@ -308,7 +308,7 @@ module Bosh::Director
 
         vm_model = Models::Vm.make(:agent_id => 'agent-1')
         client = double('AgentClient')
-        expect(AgentClient).to receive(:with_defaults).with('agent-1').and_return(client)
+        expect(AgentClient).to receive(:with_vm).with(vm_model).and_return(client)
 
         expect(client).to receive(:get_state).and_return(state)
         expect(assembler).to receive(:verify_state).with(vm_model, state)
@@ -321,7 +321,7 @@ module Bosh::Director
       context 'when the returned state contains top level "release" key' do
         let(:agent_client) { double('AgentClient') }
         let(:vm_model) { Models::Vm.make(:agent_id => 'agent-1') }
-        before { allow(AgentClient).to receive(:with_defaults).with('agent-1').and_return(agent_client) }
+        before { allow(AgentClient).to receive(:with_vm).with(vm_model).and_return(agent_client) }
 
         it 'prunes the legacy "release" data to avoid unnecessary update' do
           legacy_state = { 'release' => 'cf', 'other' => 'data', 'job' => {} }
@@ -388,7 +388,7 @@ module Bosh::Director
         let(:agent_client) { double('AgentClient') }
         let(:vm_model) { Models::Vm.make(:agent_id => 'agent-1') }
         before do
-          allow(AgentClient).to receive(:with_defaults).with('agent-1').and_return(agent_client)
+          allow(AgentClient).to receive(:with_vm).with(vm_model).and_return(agent_client)
         end
 
         context 'and the returned state contains a job level release' do

@@ -49,9 +49,7 @@ module Bosh::Director
     end
 
     describe 'long running messages' do
-      subject(:client) { AgentClient.with_defaults('fake-agent_id') }
-
-      before { allow(Models::Vm).to receive(:find).with(agent_id: 'fake-agent_id').and_return(vm_model) }
+      subject(:client) { AgentClient.with_vm(vm_model) }
       let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil, agent_id: 'fake-agent_id') }
 
       before do
@@ -72,7 +70,7 @@ module Bosh::Director
     end
 
     describe 'update_settings' do
-      subject(:client) { AgentClient.with_defaults('fake-agent_id') }
+      subject(:client) { AgentClient.with_vm(vm_model) }
       let(:vm_model) { instance_double('Bosh::Director::Models::Vm', credentials: nil, agent_id: 'fake-agent_id') }
       let(:task) do
         {
@@ -80,9 +78,6 @@ module Bosh::Director
             'state' => 'running',
             'value' => 'task value'
         }
-      end
-      before do
-        allow(Models::Vm).to receive(:find).with(agent_id: 'fake-agent_id').and_return(vm_model)
       end
 
       it 'packages the certificates into a map and sends to the agent' do
@@ -142,7 +137,7 @@ module Bosh::Director
       end
 
       subject(:client) do
-        AgentClient.with_defaults(vm_model.agent_id)
+        AgentClient.with_vm(vm_model)
       end
 
       it 'should use vm credentials' do

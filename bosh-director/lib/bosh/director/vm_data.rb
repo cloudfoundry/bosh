@@ -36,7 +36,7 @@ module Bosh::Director
     end
 
     def agent
-      @agent ||= AgentClient.with_defaults(vm.agent_id)
+      @agent ||= AgentClient.with_vm(vm)
     end
   end
 end

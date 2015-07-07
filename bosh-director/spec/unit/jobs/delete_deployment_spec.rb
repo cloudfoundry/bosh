@@ -28,10 +28,9 @@ module Bosh::Director
 
       it 'should detach and delete disk if there is a disk' do
         agent = double('agent')
-
-        allow(AgentClient).to receive(:with_defaults).with('agent-1').and_return(agent)
-
         vm = Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-1')
+
+        allow(AgentClient).to receive(:with_vm).with(vm).and_return(agent)
 
         instance = Models::Instance.make(vm: vm)
 
@@ -52,14 +51,11 @@ module Bosh::Director
 
       it 'should only delete the VM if there is no disk' do
         agent = double('agent')
-
-        allow(AgentClient).to receive(:with_defaults).with('agent-1').and_return(agent)
-
         vm = Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-1')
         instance = Models::Instance.make(vm: vm)
 
+        allow(AgentClient).to receive(:with_vm).with(vm).and_return(agent)
         expect(agent).to receive(:stop)
-
         expect(job).to receive(:delete_vm).with(vm)
 
         job.delete_instance(instance)
@@ -75,7 +71,7 @@ module Bosh::Director
 
       it 'should ignore cpi errors if forced' do
         agent = double('agent')
-        allow(AgentClient).to receive(:with_defaults).and_return(agent)
+        allow(AgentClient).to receive(:with_vm).and_return(agent)
 
         vm = Models::Vm.make(cid: 'vm-cid')
         instance.update(vm: vm)
@@ -195,19 +191,17 @@ module Bosh::Director
       it 'deletes all the associated instances, VMs, disks and problems' do
         agent = double('agent')
 
-        allow(AgentClient).to receive(:with_defaults).with('agent-1').and_return(agent)
-
         stemcell = Models::Stemcell.make
         deployment = Models::Deployment.make(name: 'test_deployment')
 
         deployment.stemcells << stemcell
 
         vm = Models::Vm.make(deployment: deployment, agent_id: 'agent-1')
-
         instance = Models::Instance.make(deployment: deployment, vm: vm)
         problem = Models::DeploymentProblem.make(deployment: deployment)
         disk = Models::PersistentDisk.make(instance: instance, disk_cid: 'disk-cid')
 
+        allow(AgentClient).to receive(:with_vm).with(vm).and_return(agent)
         allow(cloud).to receive(:delete_vm)
         allow(cloud).to receive(:delete_disk)
         allow(cloud).to receive(:detach_disk)

@@ -11,7 +11,7 @@ module Bosh::Director
 
     describe '#agent' do
       it 'creates an agent client for the correct agent' do
-        expect(AgentClient).to receive(:with_defaults).with(vm.agent_id)
+        expect(AgentClient).to receive(:with_vm).with(vm)
         vm_data.agent
       end
     end

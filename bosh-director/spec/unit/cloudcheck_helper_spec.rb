@@ -110,7 +110,7 @@ module Bosh::Director
           vm.update(apply_spec: spec, env: {'key1' => 'value1'})
 
           allow(SecureRandom).to receive(:uuid).and_return('agent-222')
-          allow(AgentClient).to receive(:with_defaults).with('agent-222', anything).and_return(fake_new_agent)
+          allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(fake_new_agent)
         end
 
         context 'when there is a persistent disk' do
