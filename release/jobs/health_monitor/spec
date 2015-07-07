@@ -17,10 +17,6 @@ properties:
   hm.http.port:
     description: TCP port Health Monitor daemon listens on
     default: 25923
-  hm.http.user:
-    description: Username clients must use to access Health Monitor via HTTP Basic Auth
-  hm.http.password:
-    description: Password clients must use to access Health Monitor via HTTP Basic Auth
 
   hm.intervals.prune_events:
     description: Interval (in seconds) to prune received events
@@ -144,11 +140,6 @@ properties:
     description: PagerDuty service API key
   hm.pagerduty.http_proxy:
     description: HTTP proxy to connect to PagerDuty (optional)
-
-  # Send events via /varz endpoint
-  hm.varz_enabled:
-    description: Enable varz plugin
-    default: false
 
   # Send metrics to AWS CloudWatch
   hm.cloud_watch_enabled:

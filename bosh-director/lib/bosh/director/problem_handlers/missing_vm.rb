@@ -13,17 +13,17 @@ module Bosh::Director
       end
 
       resolution :ignore do
-        plan { "Ignore problem" }
+        plan { "Skip for now" }
         action { }
       end
 
       resolution :recreate_vm do
-        plan { "Recreate VM using last known apply spec" }
+        plan { "Recreate VM" }
         action { recreate_vm(@vm) }
       end
 
       resolution :delete_vm_reference do
-        plan { "Delete VM reference (DANGEROUS!)" }
+        plan { "Delete VM reference" }
         action { delete_vm_reference(@vm, skip_cid_check: true) }
       end
 

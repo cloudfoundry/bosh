@@ -34,7 +34,7 @@ module Bosh::Director
       end
 
       resolution :ignore do
-        plan { "Ignore problem" }
+        plan { "Skip for now" }
         action { }
       end
 

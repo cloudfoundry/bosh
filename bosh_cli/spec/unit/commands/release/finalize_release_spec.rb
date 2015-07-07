@@ -140,11 +140,6 @@ module Bosh::Cli::Command::Release
         expect(tarball).to have_received(:create_from_unpacked).with(File.absolute_path('releases/my-release/my-release-3.tgz'))
       end
 
-      it 'make sure blobs are uploaded to the blobstore' do
-        allow(blob_manager).to receive(:dirty?).and_return(true)
-        expect { command.finalize('ignored.tgz') }.to raise_error(Bosh::Cli::CliError, "Please use '--force' or upload new blobs")
-     end
-
       it 'uses ArchiveBuilder to repack license.tgz and upload it to the blobstore' do
         allow(tarball).to receive(:license_resource).and_return("testing license resource")
 

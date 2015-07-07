@@ -186,7 +186,7 @@ module Bosh::Director
           vm_data.agent.update_settings(Bosh::Director::Config.trusted_certs)
           state = {
             'deployment' => @deployment_plan.name,
-            'resource_pool' => 'package_compiler',
+            'resource_pool' => {},
             'networks' => vm_data.network_settings
           }
           vm_data.vm.update(:apply_spec => state, :trusted_certs_sha1 => Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs))

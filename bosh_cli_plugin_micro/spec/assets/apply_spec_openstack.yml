@@ -56,8 +56,6 @@ properties:
   hm:
     http:
       port: 25923
-      user: hm
-      password: hm
     loglevel: info
     director_account:
       user: admin

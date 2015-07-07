@@ -1,8 +1,6 @@
 ---
 http:
   port: 25930
-  user: admin
-  password: admin
 
 logfile: /tmp/bosh-hm-functional-test
 

@@ -86,7 +86,7 @@ describe 'simultaneous deploys', type: :integration do
       errand_output, errand_success = run_errand(manifest_with_errand, 'errand_job')
       deploy_output, deploy_success = Bosh::Spec::DeployHelper.wait_for_deploy(deploy_task_id)
 
-      expect([deploy_success, errand_success]).to match_array([true, false])
+      expect([deploy_success, errand_success]).to match_array([true, false], "\nerrand output:\n#{errand_output}\n\ndeploy output:\n#{deploy_output}\n")
       expect(deploy_output + errand_output).to include("asked for a dynamic IP but there were no more available")
     end
   end

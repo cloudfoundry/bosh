@@ -1,8 +1,6 @@
 ---
 http:
   port: <%= p("hm.http.port") %>
-  user: <%= p("hm.http.user") %>
-  password: <%= p("hm.http.password") %>
 
 mbus:
   endpoint: nats://<%= p("nats.address") %>:<%= p("nats.port") %>
@@ -115,13 +113,6 @@ plugins:
       <% if_p("hm.pagerduty.http_proxy") do |pd_http_proxy| %>
       http_proxy: <%= pd_http_proxy %>
       <% end %>
-  <% end %>
-
-  <% if p("hm.varz_enabled") %>
-  - name: varz
-    events:
-      - alert
-      - heartbeat
   <% end %>
 
   <% if p("hm.datadog_enabled") %>

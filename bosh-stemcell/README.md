@@ -26,6 +26,7 @@ If you use AWS EC2-Classic environment, run:
     export BOSH_AWS_ACCESS_KEY_ID=YOUR-AWS-ACCESS-KEY
     export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
     cd bosh-stemcell
+    git submodule update --init --recursive
     vagrant up remote --provider=aws
 
 If you use AWS VPC environment, run:

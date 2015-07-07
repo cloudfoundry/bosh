@@ -9,32 +9,8 @@ describe Bosh::Monitor::ApiController do
   end
 
   let(:config) { class_double(Bosh::Monitor)  }
-  let(:varz) { { 'deployments_count' => 1, 'agents_count' => 1 } }
-  before { allow(config).to receive(:http_user).and_return('http_user') }
-  before { allow(config).to receive(:http_password).and_return('http_password') }
-  before { allow(config).to receive(:varz).and_return(varz) }
   before { stub_const("Bhm", config) }
   before { allow(EM).to receive(:add_periodic_timer) { } }
-
-  describe "/varz" do
-    context "when using authorized credentials" do
-      before { basic_authorize(config.http_user, config.http_password) }
-
-      it 'returns Bhm.varz in JSON format' do
-        get '/varz'
-        expect(last_response.body).to eq(Yajl::Encoder.encode(varz, :terminator => "\n"))
-      end
-    end
-
-    context "when using unauthorized credentials" do
-      before { basic_authorize('unauthorized', 'user') }
-
-      it 'returns 401' do
-        get '/varz'
-        expect(last_response.status).to eq(401)
-      end
-    end
-  end
 
   describe "/healthz" do
     let(:periodic_timers) { [] }

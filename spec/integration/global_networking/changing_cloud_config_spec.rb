@@ -78,7 +78,7 @@ describe 'Changing cloud config', type: :integration do
       original_vm.kill_agent
 
       bosh_runner.run_interactively('cck') do |runner|
-        expect(runner).to have_output '3. Recreate VM using last known apply spec'
+        expect(runner).to have_output '3. Recreate VM'
         runner.send_keys '3'
         expect(runner).to have_output 'yes'
         runner.send_keys 'yes'

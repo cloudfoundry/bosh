@@ -1,8 +1,6 @@
 ---
 http:
   port: 25930
-  user: admin
-  password: admin
 
 mbus:
   endpoint: nats://127.0.0.1:4222
@@ -62,11 +60,6 @@ plugins:
     options:
       host: localhost
       port: 4242
-
-  - name: varz
-    events:
-      - alert
-      - heartbeat
 
   - name: cloud_watch
     events:

@@ -184,7 +184,7 @@ module Bosh::Director
         agents.each do |agent|
           initial_state = {
               'deployment' => 'mycloud',
-              'resource_pool' => 'package_compiler',
+              'resource_pool' => {},
               'networks' => net
           }
 
@@ -292,7 +292,7 @@ module Bosh::Director
       let(:initial_state) {
         {
           'deployment' => 'mycloud',
-          'resource_pool' => 'package_compiler',
+          'resource_pool' => {},
           'networks' => net
         }
       }

@@ -13,7 +13,7 @@ describe Bosh::Monitor do
 
     before do
       [:logger, :director, :intervals, :mbus, :event_mbus, :agent_manager, :event_processor,
-       :http_port, :http_user, :http_password, :plugins, :varz , :nats].each do |accessor|
+       :http_port, :plugins, :nats].each do |accessor|
         Bosh::Monitor.send("#{accessor}=", nil)
       end
       Bosh::Monitor.config = valid_config
@@ -58,20 +58,10 @@ describe Bosh::Monitor do
       context 'with http config' do
         let(:http_config) { {
             'port' => '1234',
-            'user' => 'root',
-            'password' => 'passw0rd'
         } }
 
         it 'should set http_port' do
           expect(Bosh::Monitor.http_port).to eq('1234')
-        end
-
-        it 'should set http_user' do
-          expect(Bosh::Monitor.http_user).to eq('root')
-        end
-
-        it 'should set http_password' do
-          expect(Bosh::Monitor.http_password).to eq('passw0rd')
         end
       end
 
@@ -80,8 +70,6 @@ describe Bosh::Monitor do
 
         it 'should not set any http values' do
           expect(Bosh::Monitor.http_port).to be_nil
-          expect(Bosh::Monitor.http_user).to be_nil
-          expect(Bosh::Monitor.http_password).to be_nil
         end
       end
 

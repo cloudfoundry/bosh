@@ -136,7 +136,6 @@ properties:
     email_notifications: false
     tsdb_enabled: false
     pagerduty_enabled: false
-    varz_enabled: true
 
   openstack:
     auth_url: http://192.168.1.1:5000/v2.0 # CHANGE: OpenStack Auth URL
