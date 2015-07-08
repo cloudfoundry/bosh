@@ -28,90 +28,55 @@ module Bosh::Cli
     end
 
     describe '#change' do
-      context 'when run interactively' do
-        before do
-          allow(command).to receive(:interactive?) { true }
+      it 'blows up if there are manifest changes' do
+        allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
+          true
         end
 
-        it 'blows up if there are manifest changes' do
+        expect {
+          vm_state.change('fake job', 'fake index', 'fake new_state', 'fake operation_desc')
+        }.to raise_error(Bosh::Cli::CliError, "Cannot perform job management when other deployment changes are present. Please use `--force' to override.")
+
+        expect(director).to_not have_received(:change_job_state)
+      end
+
+      it 'cancels the deploy if the user doesnt confirm' do
+        allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
+          false
+        end
+        allow(command).to receive(:confirmed?).with('Fake operation_desc?') { false }
+
+        expect {
+          vm_state.change('fake job', 'fake index', 'fake new_state', 'fake operation_desc')
+        }.to raise_error(Bosh::Cli::GracefulExit)
+
+        expect(director).to_not have_received(:change_job_state)
+      end
+
+      it 'changes the job state when the user confirms (or its non-interactive) and there arent any manifest changes' do
+        allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
+          false
+        end
+        allow(command).to receive(:confirmed?) { true }
+
+        vm_state.change('fake job', 'fake index', 'fake new_state', 'fake operation_desc')
+
+        expect(director).to have_received(:change_job_state).
+            with('fake deployment', Psych.dump(manifest.hash), 'fake job', 'fake index', 'fake new_state')
+      end
+
+      context 'when run forcefully' do
+        it 'does not blow up when changes are present' do
+          vm_state = VmState.new(command, manifest, true)
+
           allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
             true
-          end
-
-          expect {
-            vm_state.change('fake job', 'fake index', 'fake new_state', 'fake operation_desc')
-          }.to raise_error(Bosh::Cli::CliError, "Cannot perform job management when other deployment changes are present. Please use `--force' to override.")
-
-          expect(director).to_not have_received(:change_job_state)
-        end
-
-        it 'cancels the deploy if the user doesnt confirm' do
-          allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
-            false
-          end
-          allow(command).to receive(:confirmed?).with('Fake operation_desc?') { false }
-
-          expect {
-            vm_state.change('fake job', 'fake index', 'fake new_state', 'fake operation_desc')
-          }.to raise_error(Bosh::Cli::GracefulExit)
-
-          expect(director).to_not have_received(:change_job_state)
-        end
-
-        it 'changes the job state when the user confirms and there arent any manifest changes' do
-          allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
-            false
           end
           allow(command).to receive(:confirmed?) { true }
 
           vm_state.change('fake job', 'fake index', 'fake new_state', 'fake operation_desc')
 
-          expect(director).to have_received(:change_job_state).
-              with('fake deployment', Psych.dump(manifest.hash), 'fake job', 'fake index', 'fake new_state')
-        end
-
-        context 'when run forcefully' do
-          it 'does not blow up when changes are present' do
-            vm_state = VmState.new(command, manifest, true)
-
-            allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
-              true
-            end
-            allow(command).to receive(:confirmed?) { true }
-
-            vm_state.change('fake job', 'fake index', 'fake new_state', 'fake operation_desc')
-
-            expect(command).to_not have_received(:err).with("Cannot perform job management when other deployment changes are present. Please use `--force' to override.")
-            expect(director).to have_received(:change_job_state).
-                with('fake deployment', Psych.dump(manifest.hash), 'fake job', 'fake index', 'fake new_state')
-          end
-        end
-      end
-
-      context 'when run non-interactively' do
-        before do
-          allow(command).to receive(:interactive?) { false }
-        end
-
-        it 'blows up if there are manifest changes' do
-          allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
-            true
-          end
-
-          expect {
-            vm_state.change('fake job', 'fake index', 'fake new_state', 'fake operation_desc')
-          }.to raise_error(Bosh::Cli::CliError, "Cannot perform job management when other deployment changes are present. Please use `--force' to override.")
-
-          expect(director).to_not have_received(:change_job_state)
-        end
-
-        it 'changes the job state when there arent any manifest changes' do
-          allow(command).to receive(:inspect_deployment_changes).with(manifest.hash, hash_including(show_empty_changeset: false)) do |manifest, _|
-            false
-          end
-
-          vm_state.change('fake job', 'fake index', 'fake new_state', 'fake operation_desc')
-
+          expect(command).to_not have_received(:err).with("Cannot perform job management when other deployment changes are present. Please use `--force' to override.")
           expect(director).to have_received(:change_job_state).
               with('fake deployment', Psych.dump(manifest.hash), 'fake job', 'fake index', 'fake new_state')
         end

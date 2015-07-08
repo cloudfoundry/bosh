@@ -11,10 +11,8 @@ module Bosh::Cli
 
       check_if_manifest_changed(@manifest.hash)
 
-      if command.interactive?
-        unless command.confirmed?("#{operation_desc.capitalize}?")
-          command.cancel_deployment
-        end
+      unless command.confirmed?("#{operation_desc.capitalize}?")
+        command.cancel_deployment
       end
 
       command.nl
