@@ -9,9 +9,9 @@ module Bosh::Cli
     def change(job, index, new_state, operation_desc)
       command.say("You are about to #{operation_desc.make_green}")
 
-      if command.interactive?
-        check_if_manifest_changed(@manifest.hash)
+      check_if_manifest_changed(@manifest.hash)
 
+      if command.interactive?
         unless command.confirmed?("#{operation_desc.capitalize}?")
           command.cancel_deployment
         end
