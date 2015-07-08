@@ -4,10 +4,10 @@ require 'spec_helper'
 describe 'run errand failure', type: :integration, with_tmp_dir: true do
 
   context 'when errand script exits with non-0 exit code' do
-    with_reset_sandbox_before_all
+    with_reset_sandbox_before_each
     with_tmp_dir_before_all
 
-    before(:all) do
+    before do
       manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
       jobs = manifest_hash['jobs']
 
