@@ -130,21 +130,23 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         it 'adds link to job' do
           links_resolver.resolve(api_server_job)
 
-          expect(api_server_job.links['db']).to eq({
-            'nodes' => [
-              {
-                'name' => 'mysql',
-                'index' => 0,
-                'networks' => {
-                  'fake-manual-network' => {
-                    'address' => '127.0.0.3',
-                  },
-                  'fake-dynamic-network' => {
-                    'address' => '0.mysql.fake-dynamic-network.fake-deployment.fake-dns',
+          expect(api_server_job.link_spec).to eq({
+            'db' => {
+              'nodes' => [
+                {
+                  'name' => 'mysql',
+                  'index' => 0,
+                  'networks' => {
+                    'fake-manual-network' => {
+                      'address' => '127.0.0.3',
+                    },
+                    'fake-dynamic-network' => {
+                      'address' => '0.mysql.fake-dynamic-network.fake-deployment.fake-dns',
+                    }
                   }
                 }
-              }
-            ]
+              ]
+            }
           })
         end
 
@@ -159,8 +161,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           it 'only provides required links' do
             links_resolver.resolve(api_server_job)
 
-            expect(api_server_job.links).to have_key('db')
-            expect(api_server_job.links).to_not have_key('other_db')
+            expect(api_server_job.link_spec).to have_key('db')
+            expect(api_server_job.link_spec).to_not have_key('other_db')
           end
         end
       end
@@ -198,7 +200,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
         it 'defaults to current deployment' do
           links_resolver.resolve(api_server_job)
-          expect(api_server_job.links['db']['nodes'].first['name']).to eq('mysql')
+          expect(api_server_job.link_spec['db']['nodes'].first['name']).to eq('mysql')
         end
       end
 
@@ -231,7 +233,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             links_resolver.resolve(api_server_job)
           }.to raise_error(
               Bosh::Director::JobMissingLink,
-              "Job 'api-server' requires links: [\"name: db, type: db\"] but only has following links: [\"other\"]"
+              "Link path was not provided for required link 'db' in job 'api-server'"
             )
         end
       end

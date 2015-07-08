@@ -44,10 +44,8 @@ describe Bosh::Director::DeploymentPlan::Job do
     allow(plan).to receive(:resource_pool).with('dea').and_return resource_pool
     allow(plan).to receive(:update)
 
-    allow(release).to receive(:get_or_create_template).with(name: 'foo').and_return(foo_template)
-    allow(release).to receive(:get_or_create_template).with(name: 'foo', links: nil).and_return(foo_template)
-    allow(release).to receive(:get_or_create_template).with(name: 'bar').and_return(bar_template)
-    allow(release).to receive(:get_or_create_template).with(name: 'bar', links: nil).and_return(bar_template)
+    allow(release).to receive(:get_or_create_template).with('foo').and_return(foo_template)
+    allow(release).to receive(:get_or_create_template).with('bar').and_return(bar_template)
   end
 
   describe '#bind_properties' do
@@ -237,7 +235,7 @@ describe Bosh::Director::DeploymentPlan::Job do
       before { allow(plan).to receive(:release).with('bar_release').and_return(bar_release) }
       let(:bar_release) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'bar_release') }
 
-      before { allow(bar_release).to receive(:get_or_create_template).with(name: 'bar', links: {'a' => 'b'}).and_return(bar_template) }
+      before { allow(bar_release).to receive(:get_or_create_template).with('bar').and_return(bar_template) }
       let(:bar_template) do
         instance_double('Bosh::Director::DeploymentPlan::Template', {
           name: 'bar',

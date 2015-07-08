@@ -407,7 +407,7 @@ module Bosh::Director
           'configuration_hash' => configuration_hash,
           'properties' => job.properties,
           'dns_domain_name' => dns_domain_name,
-          'links' => job.links,
+          'links' => job.link_spec,
         }
 
         if job.persistent_disk_pool

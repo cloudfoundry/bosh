@@ -15,10 +15,10 @@ module Bosh::Director
 
             @logger.debug("Looking for link '#{link_name}' for job '#{job.name}'")
 
-            link_path = template.links[link_name]
+            link_path = job.link_path(template.name, link_name)
             unless link_path
               raise JobMissingLink,
-                "Job '#{job.name}' requires links: #{template.required_links.to_a.map(&:to_s)} but only has following links: #{template.links.keys.to_a}"
+                "Link path was not provided for required link '#{link_name}' in job '#{job.name}'"
             end
 
             link_spec = DeploymentLinkSpec.parse(@deployment_plan.name, link_path, @logger)
@@ -27,14 +27,13 @@ module Bosh::Director
             end
 
             link_source = find_link_source(required_link, link_spec)
-
             unless link_source
               raise DeploymentInvalidLink, "Link '#{link_name}' can not be found in deployment"
             end
 
             @logger.debug("Link '#{link_name}' for job '#{job.name}' was provided by '#{link_source.name}'")
             link = Link.new(link_name, link_source)
-            job.add_link(link)
+            job.add_resolved_link(link)
           end
         end
       end

@@ -101,7 +101,7 @@ module Bosh::Director
           end
 
           Array(template_names).each do |template_name|
-            @job.templates << @job.release.get_or_create_template(name: template_name)
+            @job.templates << @job.release.get_or_create_template(template_name)
           end
         end
       end
@@ -129,9 +129,12 @@ module Bosh::Director
               end
             end
 
+            @job.templates << release.get_or_create_template(template_name)
+
             links = safe_property(template_spec, 'links', class: Hash, optional: true)
             @logger.debug("Parsing template links: #{links.inspect}")
-            @job.templates << release.get_or_create_template(name: template_name, links: links)
+
+            links.to_a.each { |link_name, link_path| @job.add_link_path(template_name, link_name, link_path) }
           end
         end
       end

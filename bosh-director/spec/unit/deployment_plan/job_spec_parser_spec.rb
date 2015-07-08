@@ -141,7 +141,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         template = make_template('fake-template-name', job_rel_ver)
         expect(job_rel_ver).to receive(:get_or_create_template)
-          .with(name: 'fake-template-name')
+          .with('fake-template-name')
           .and_return(template)
 
         job = parser.parse(job_spec)
@@ -157,7 +157,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         template1 = make_template('fake-template-name', job_rel_ver)
         allow(job_rel_ver).to receive(:get_or_create_template)
-                              .with(name: 'fake-template-name')
+                              .with('fake-template-name')
                               .and_return(template1)
 
         expect(event_log).not_to receive(:warn_deprecated)
@@ -176,12 +176,12 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         template1 = make_template('fake-template1-name', job_rel_ver)
         expect(job_rel_ver).to receive(:get_or_create_template)
-          .with(name: 'fake-template1-name')
+          .with('fake-template1-name')
           .and_return(template1)
 
         template2 = make_template('fake-template2-name', job_rel_ver)
         expect(job_rel_ver).to receive(:get_or_create_template)
-          .with(name: 'fake-template2-name')
+          .with('fake-template2-name')
           .and_return(template2)
 
         job = parser.parse(job_spec)
@@ -200,12 +200,12 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
         template1 = make_template('fake-template1-name', job_rel_ver)
         allow(job_rel_ver).to receive(:get_or_create_template)
-                               .with(name: 'fake-template1-name')
+                               .with('fake-template1-name')
                                .and_return(template1)
 
         template2 = make_template('fake-template2-name', job_rel_ver)
         allow(job_rel_ver).to receive(:get_or_create_template)
-                               .with(name: 'fake-template2-name')
+                               .with('fake-template2-name')
                                .and_return(template2)
 
         parser.parse(job_spec)
@@ -251,19 +251,26 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
           context 'when job specifies a release' do
             before { job_spec['release'] = 'fake-job-release' }
+            let(:template) { make_template('fake-template-name', template_rel_ver) }
+
+            before do
+              allow(deployment_plan).to receive(:release)
+                                           .with('fake-template-release')
+                                           .and_return(template_rel_ver)
+
+              allow(template_rel_ver).to receive(:get_or_create_template)
+                                            .with('fake-template-name')
+                                            .and_return(template)
+            end
 
             it 'sets job template from release specified in a hash' do
-              expect(deployment_plan).to receive(:release)
-                .with('fake-template-release')
-                .and_return(template_rel_ver)
-
-              template = make_template('fake-template-name', template_rel_ver)
-              expect(template_rel_ver).to receive(:get_or_create_template)
-                .with(name: 'fake-template-name', links: {'a' => 'b'})
-                .and_return(template)
-
               job = parser.parse(job_spec)
               expect(job.templates).to eq([template])
+            end
+
+            it 'sets link paths specified in templates' do
+              job = parser.parse(job_spec)
+              expect(job.link_path('fake-template-name', 'a')).to eq('b')
             end
           end
 
@@ -272,19 +279,26 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
             before { allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver]) }
             let(:deployment_rel_ver) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion') }
+            let(:template) { make_template('fake-template-name', nil) }
+
+            before do
+              allow(deployment_plan).to receive(:release)
+                                           .with('fake-template-release')
+                                           .and_return(template_rel_ver)
+
+              allow(template_rel_ver).to receive(:get_or_create_template)
+                                            .with('fake-template-name')
+                                            .and_return(template)
+            end
 
             it 'sets job template from release specified in a hash' do
-              expect(deployment_plan).to receive(:release)
-                .with('fake-template-release')
-                .and_return(template_rel_ver)
-
-              template = make_template('fake-template-name', nil)
-              expect(template_rel_ver).to receive(:get_or_create_template)
-                .with(name: 'fake-template-name', links: {'a' => 'b'})
-                .and_return(template)
-
               job = parser.parse(job_spec)
               expect(job.templates).to eq([template])
+            end
+
+            it 'sets link paths specified in templates' do
+              job = parser.parse(job_spec)
+              expect(job.link_path('fake-template-name', 'a')).to eq('b')
             end
           end
         end
@@ -302,7 +316,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
               template = make_template('fake-template-name', nil)
               expect(job_rel_ver).to receive(:get_or_create_template)
-                .with(name: 'fake-template-name', links: {'db' => 'a.b.c'})
+                .with('fake-template-name')
                 .and_return(template)
 
               job = parser.parse(job_spec)
@@ -333,7 +347,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               it 'sets job template from deployment release because first release assumed as default' do
                 template = make_template('fake-template-name', nil)
                 expect(deployment_rel_ver).to receive(:get_or_create_template)
-                  .with(name: 'fake-template-name', links: {'db' => 'a.b.c'})
+                  .with('fake-template-name')
                   .and_return(template)
 
                 job = parser.parse(job_spec)
@@ -397,8 +411,8 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
               .with('fake-job-release')
               .and_return(job_rel_ver)
 
-            allow(job_rel_ver).to receive(:get_or_create_template) do |options|
-              instance_double('Bosh::Director::DeploymentPlan::Template', name: options[:name])
+            allow(job_rel_ver).to receive(:get_or_create_template) do |name|
+              instance_double('Bosh::Director::DeploymentPlan::Template', name: name)
             end
           end
 
@@ -429,7 +443,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
             template1 = make_template('fake-template-name1', rel_ver1)
             expect(rel_ver1).to receive(:get_or_create_template)
-                               .with(name: 'fake-template-name1', links: {})
+                               .with('fake-template-name1')
                                .and_return(template1)
 
             # resolve second release and template obj
@@ -440,7 +454,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
             template2 = make_template('fake-template-name2', rel_ver2)
             expect(rel_ver2).to receive(:get_or_create_template)
-                               .with(name: 'fake-template-name2', links: {})
+                               .with('fake-template-name2')
                                .and_return(template2)
 
             job_spec['name'] = 'fake-job-name'

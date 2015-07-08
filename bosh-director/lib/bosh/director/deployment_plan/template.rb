@@ -6,18 +6,15 @@ module Bosh::Director
 
       attr_reader :name
       attr_reader :release
-      attr_reader :links
 
       attr_reader :model
       attr_reader :package_models
 
       # @param [DeploymentPlan::ReleaseVersion] release Release version
       # @param [String] name Template name
-      # @param [Hash] links hash of link name to its path
-      def initialize(release, name, links)
+      def initialize(release, name)
         @release = release
         @name = name
-        @links = links || {}
         @model = nil
         @package_models = []
         @logger = Config.logger

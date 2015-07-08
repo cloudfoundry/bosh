@@ -69,8 +69,6 @@ module Bosh::Director
 
       attr_accessor :all_properties
 
-      attr_reader :links
-
       # @param [Bosh::Director::DeploymentPlan::Planner] deployment Deployment plan
       # @param [Hash] job_spec Raw job spec from the deployment manifest
       # @param [Bosh::Director::EventLog::Log] event_log Event log for recording deprecations
@@ -97,7 +95,8 @@ module Bosh::Director
         @default_network = {}
 
         @packages = {}
-        @links = {}
+        @link_paths = {}
+        @resolved_links = {}
       end
 
       def self.is_legacy_spec?(job_spec)
@@ -155,11 +154,6 @@ module Bosh::Director
         end
 
         result
-      end
-
-      # @param [Bosh::Director::DeploymentPlan::Link]
-      def add_link(link)
-        @links[link.name] = link.spec
       end
 
       # Returns package specs for all packages in the job indexed by package
@@ -268,6 +262,23 @@ module Bosh::Director
 
       def instances_with_missing_vms
         instances.select { |instance| !instance.vm_created? }
+      end
+
+      def add_resolved_link(link)
+        @resolved_links[link.name] = link.spec
+      end
+
+      def link_spec
+        @resolved_links
+      end
+
+      def link_path(template_name, link_name)
+        @link_paths.fetch(template_name, {})[link_name]
+      end
+
+      def add_link_path(template_name, link_name, link_path)
+        @link_paths[template_name] ||= {}
+        @link_paths[template_name][link_name] = link_path
       end
 
       private

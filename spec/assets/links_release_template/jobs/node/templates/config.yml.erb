@@ -1,0 +1,14 @@
+---
+nodes:
+  node1_ips:
+<% link('node1.nodes').each do |node| %>
+    <% node['networks'].each do |_, network_settings| %>
+    - <%= network_settings['address'] %>
+    <% end %>
+<% end %>
+  node2_ips:
+<% link('node2.nodes').each do |node| %>
+    <% node['networks'].each do |_, network_settings| %>
+    - <%= network_settings['address'] %>
+    <% end %>
+<% end %>

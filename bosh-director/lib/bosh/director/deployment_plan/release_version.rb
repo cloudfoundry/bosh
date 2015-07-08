@@ -93,9 +93,9 @@ module Bosh::Director
 
       # Adds template to a list of templates used by this release for the
       # current deployment
-      # @param [Hash] options Template spec
-      def get_or_create_template(options)
-        @templates[options[:name]] ||= Template.new(self, options[:name], options[:links])
+      # @param [String] options Template name
+      def get_or_create_template(name)
+        @templates[name] ||= Template.new(self, name)
       end
 
       # @param [String] name Template name

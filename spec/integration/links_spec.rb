@@ -126,6 +126,61 @@ describe 'Links', type: :integration do
         end
       end
 
+      context 'when release job requires and provides same link' do
+        let(:first_node_job_spec) do
+          Bosh::Spec::Deployments.simple_job(
+            name: 'first_node',
+            templates: [{'name' => 'node', 'links' => first_node_links}],
+            instances: 1,
+            static_ips: ['192.168.1.10']
+          )
+        end
+
+        let(:first_node_links) do
+          {
+            'node1' => 'simple.second_node.node.node1',
+            'node2' => 'simple.first_node.node.node2'
+          }
+        end
+
+        let(:second_node_job_spec) do
+          Bosh::Spec::Deployments.simple_job(
+            name: 'second_node',
+            templates: [{'name' => 'node', 'links' => second_node_links}],
+            instances: 1,
+            static_ips: ['192.168.1.11']
+          )
+        end
+        let(:second_node_links) do
+          {
+            'node1' => 'simple.first_node.node.node1',
+            'node2' => 'simple.first_node.node.node2'
+          }
+        end
+
+        let(:manifest) do
+          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+          manifest['jobs'] = [first_node_job_spec, second_node_job_spec]
+          manifest
+        end
+
+        it 'renders link data in job template' do
+          deploy_simple_manifest(manifest_hash: manifest)
+
+          first_node_vm = director.vm('first_node/0')
+          first_node_template = YAML.load(first_node_vm.read_job_template('node', 'config.yml'))
+
+          expect(first_node_template['nodes']['node1_ips']).to eq(['192.168.1.11'])
+          expect(first_node_template['nodes']['node2_ips']).to eq(['192.168.1.10'])
+
+          second_node_vm = director.vm('second_node/0')
+          second_node_template = YAML.load(second_node_vm.read_job_template('node', 'config.yml'))
+
+          expect(second_node_template['nodes']['node1_ips']).to eq(['192.168.1.10'])
+          expect(second_node_template['nodes']['node2_ips']).to eq(['192.168.1.10'])
+        end
+      end
+
       context 'when link reference source that does not provide link' do
         let(:links) { {'db' => 'X.Y.Z.ZZ'} }
 

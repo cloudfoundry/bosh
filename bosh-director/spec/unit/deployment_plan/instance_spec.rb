@@ -656,7 +656,7 @@ module Bosh::Director::DeploymentPlan
           package_spec: packages,
           persistent_disk_pool: disk_pool,
           starts_on_deploy?: true,
-          links: 'fake-link',
+          link_spec: 'fake-link',
           properties: properties)
       }
       let(:disk_pool) { instance_double('Bosh::Director::DeploymentPlan::DiskPool', disk_size: 0, spec: disk_pool_spec) }
