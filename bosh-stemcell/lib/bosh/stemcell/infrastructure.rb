@@ -93,7 +93,10 @@ module Bosh::Stemcell
       end
 
       def additional_cloud_properties
-        {'root_device_name' => '/dev/sda1'}
+        {
+          'root_device_name' => '/dev/sda1',
+          'sriov_net_support' => true,
+        }
       end
     end
 

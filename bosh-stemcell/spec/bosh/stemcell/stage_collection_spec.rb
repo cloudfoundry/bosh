@@ -32,6 +32,7 @@ module Bosh::Stemcell
               :bosh_dpkg_list,
               :bosh_sysstat,
               :system_kernel,
+              :system_ubuntu_ixgbevf,
               :bosh_sysctl,
               :bosh_users,
               :bosh_monit,

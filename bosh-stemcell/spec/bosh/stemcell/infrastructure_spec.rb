@@ -93,7 +93,10 @@ module Bosh::Stemcell
     it { should_not eq Infrastructure.for('openstack') }
 
     it 'has aws specific additional cloud properties' do
-      expect(subject.additional_cloud_properties).to eq({'root_device_name' => '/dev/sda1'})
+      expect(subject.additional_cloud_properties).to eq({
+        'root_device_name' => '/dev/sda1',
+        'sriov_net_support' => true,
+      })
     end
   end
 
