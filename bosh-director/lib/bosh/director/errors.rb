@@ -115,6 +115,7 @@ module Bosh::Director
   JobPackageCollision = err(80011)
   JobInvalidPackageSpec = err(80012)
   JobInvalidLinkSpec = err(80013)
+  JobDuplicateLinkName = err(80014)
 
   ResourceError = err(100001)
   ResourceNotFound = err(100002, NOT_FOUND)
