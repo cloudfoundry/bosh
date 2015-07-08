@@ -1,6 +1,10 @@
+require 'common/common'
+
 module VSphereCloud
   class CloudSearcher
     include VimSdk
+
+    class MissingPropertiesException < StandardError; end
 
     PC = Vmodl::Query::PropertyCollector
 
@@ -24,9 +28,11 @@ module VSphereCloud
       end
 
       filter_spec = PC::FilterSpec.new(:prop_set => property_specs, :object_set => object_spec)
-
-      attempts = 0
-      begin
+      
+      # Bosh::Common.retryable default has an exponential sleeper,
+      # with 30 tries the timeout will be ~265s
+      errors = [MissingPropertiesException]
+      Bosh::Common.retryable(tries: 30, on: errors) do |tries, error|
         properties_response = get_all_properties(filter_spec)
         result = {}
 
@@ -44,26 +50,15 @@ module VSphereCloud
             end
           end
           unless remaining_properties.empty?
-            raise "The object[s] #{obj.pretty_inspect} " +
+            raise MissingPropertiesException.new("The object[s] #{obj} " +
               "should have the following properties: #{properties.pretty_inspect}, " +
-              "but they were missing these: #{remaining_properties.pretty_inspect}."
+              "but they were missing these: #{remaining_properties.pretty_inspect}.")
           end
           result[object_content.obj] = object_properties
         end
 
         result = result.values.first if obj.is_a?(Vmodl::ManagedObject)
         result
-      rescue => e
-        attempts += 1
-        if attempts < 8
-          sleep_interval = 2 ** attempts
-          @logger.warn("Error retrieving properties, retrying in #{sleep_interval} seconds: " +
-            "#{e} - #{e.backtrace.join("\n")}")
-          sleep(sleep_interval)
-          retry
-        else
-          raise e
-        end
       end
     end
 
