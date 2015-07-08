@@ -144,6 +144,15 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
         end
       end
 
+      context 'when link source is does not specify deployment name' do
+        let(:links) { {'db' => 'mysql.mysql-template.db'} }
+
+        it 'defaults to current deployment' do
+          links_resolver.resolve(api_server_job)
+          expect(api_server_job.links['db']['nodes'].first['name']).to eq('mysql')
+        end
+      end
+
       context 'when links source is not provided' do
         let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.non_existent'} }
 
@@ -155,12 +164,12 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       end
 
       context 'when link format is invalid' do
-        let(:links) { {'db' => 'mysql.mysql-template.db'} }
+        let(:links) { {'db' => 'mysql.mysql-template'} }
 
         it 'fails' do
           expect {
             links_resolver.resolve(api_server_job)
-          }.to raise_error Bosh::Director::DeploymentInvalidLink, "Link 'mysql.mysql-template.db' is in invalid format"
+          }.to raise_error Bosh::Director::DeploymentInvalidLink, "Link 'mysql.mysql-template' is in invalid format"
         end
       end
 

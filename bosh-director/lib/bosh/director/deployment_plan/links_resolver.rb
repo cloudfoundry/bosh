@@ -18,7 +18,7 @@ module Bosh::Director
           @logger.debug("Received required links #{template.required_links.to_a} for template '#{template.name}'")
 
           template.links.each do |link_name, link_path|
-            link_spec = LinkSpec.parse(link_path, @logger)
+            link_spec = LinkSpec.parse(@deployment_plan.name, link_path, @logger)
 
             @logger.debug("Looking for link '#{link_name}' for job '#{job.name}'")
             link_source = find_link_source(link_spec)
@@ -55,8 +55,14 @@ module Bosh::Director
       private
 
       class LinkSpec < Struct.new(:deployment, :job, :template, :name)
-        def self.parse(path, logger)
+        def self.parse(current_deployment_name, path, logger)
           parts = path.split('.')
+
+          if parts.size == 3
+            logger.debug("Link '#{path}' does not specify deployment, using current deployment")
+            parts.unshift(current_deployment_name)
+          end
+
           if parts.size != 4
             logger.error("Invalid link format: #{path}")
             raise DeploymentInvalidLink, "Link '#{path}' is in invalid format"
