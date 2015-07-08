@@ -81,18 +81,14 @@ module Bosh::Director
         present_model.properties
       end
 
-      def required_links_provided?
-        present_model.requires.to_a.all? { |l| @links.keys.to_a.include?(l) }
-      end
-
       # return [Array]
       def required_links
-        present_model.requires
+        present_model.requires.to_a.map { |l| TemplateLink.parse(l) }
       end
 
       # return [Array]
       def provided_links
-        present_model.provides
+        present_model.provides.to_a.map { |l| TemplateLink.parse(l) }
       end
 
       private
@@ -106,6 +102,23 @@ module Bosh::Director
         @model
       end
 
+      class TemplateLink < Struct.new(:name, :type)
+        def self.parse(link_def)
+          if link_def.is_a?(String)
+            return new(link_def, link_def)
+          end
+
+          if link_def.is_a?(Hash)
+            return new(link_def['name'], link_def['type'])
+          end
+
+          raise JobInvalidLinkSpec, "Link '#{link_def}' must be either string or hash with name and type"
+        end
+
+        def to_s
+          "name: #{name}, type: #{type}"
+        end
+      end
     end
   end
 end

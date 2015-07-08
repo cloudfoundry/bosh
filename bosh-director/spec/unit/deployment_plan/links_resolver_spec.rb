@@ -110,12 +110,15 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     version = Bosh::Director::Models::ReleaseVersion.make(version: '1.0.0')
     release_model.add_version(version)
 
-    template_model = Bosh::Director::Models::Template.make(name: 'api-server-template', requires: ['db'])
+    template_model = Bosh::Director::Models::Template.make(name: 'api-server-template', requires: requires_links)
     version.add_template(template_model)
 
-    template_model = Bosh::Director::Models::Template.make(name: 'mysql-template', provides: ['db'])
+    template_model = Bosh::Director::Models::Template.make(name: 'mysql-template', provides: provided_links)
     version.add_template(template_model)
   end
+
+  let(:requires_links) { ['db'] }
+  let(:provided_links) { ['db'] }
 
   describe '#resolve' do
     context 'when job requires link' do
@@ -142,6 +145,50 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             ]
           })
         end
+
+        context 'when non-required links are provided' do
+          let(:links) do
+            {
+              'db' => 'fake-deployment.mysql.mysql-template.db',
+              'other-db' => 'fake-deployment.mysql.mysql-template.other'
+            }
+          end
+
+          it 'only provides required links' do
+            links_resolver.resolve(api_server_job)
+
+            expect(api_server_job.links).to have_key('db')
+            expect(api_server_job.links).to_not have_key('other_db')
+          end
+        end
+      end
+
+      context 'when provided link type does not match required link type' do
+        let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.db'} }
+
+        let(:requires_links) { [{ 'name' => 'db', 'type' => 'other' }] }
+        let(:provided_links) { ['db'] } # name and type is implicitly db
+
+        it 'fails to find link' do
+          expect {
+            links_resolver.resolve(api_server_job)
+          }.to raise_error Bosh::Director::DeploymentInvalidLink,
+              "Link 'name: db, type: other' is not provided by template 'mysql-template' in job 'mysql'"
+        end
+      end
+
+      context 'when provided link name does not match required link name' do
+        let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.other'} } # points to provided link
+
+        let(:requires_links) { [{ 'name' => 'db', 'type' => 'other' }] }
+        let(:provided_links) { ['other'] } # name and type is implicitly other
+
+        it 'fails to find link' do
+          expect {
+            links_resolver.resolve(api_server_job)
+          }.to raise_error Bosh::Director::DeploymentInvalidLink,
+              "Link 'name: db, type: other' must reference link with the same name"
+        end
       end
 
       context 'when link source is does not specify deployment name' do
@@ -154,12 +201,13 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       end
 
       context 'when links source is not provided' do
-        let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.non_existent'} }
+        let(:links) { {'db' => 'fake-deployment.mysql.non-existent.db'} }
 
         it 'fails' do
           expect {
             links_resolver.resolve(api_server_job)
-          }.to raise_error Bosh::Director::DeploymentInvalidLink, "Link 'non_existent' is not provided by template 'mysql-template' in job 'mysql'"
+          }.to raise_error Bosh::Director::DeploymentInvalidLink,
+            "Link 'name: db, type: db' references unknown template 'non-existent' in job 'mysql'"
         end
       end
 
@@ -181,7 +229,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             links_resolver.resolve(api_server_job)
           }.to raise_error(
               Bosh::Director::JobMissingLink,
-              "Job 'api-server' requires links: [\"db\"] but only has following links: [\"other\"]"
+              "Job 'api-server' requires links: [\"name: db, type: db\"] but only has following links: [\"other\"]"
             )
         end
       end

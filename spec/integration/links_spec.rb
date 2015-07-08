@@ -14,7 +14,7 @@ describe 'Links', type: :integration do
     upload_links_release
     upload_stemcell
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11']
+    cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11', '192.168.1.12']
     cloud_config_hash['networks'] << {
       'name' => 'dynamic-network',
       'type' => 'dynamic'
@@ -24,10 +24,11 @@ describe 'Links', type: :integration do
   end
 
   context 'when job requires link' do
-    let(:link_job_spec) { Bosh::Spec::Deployments.simple_job(name: 'my_api', templates: [{'name' => 'api_server', 'links' => links}], instances: 1) }
-    let(:link_source_job_spec) do
+    let(:api_job_spec) { Bosh::Spec::Deployments.simple_job(name: 'my_api', templates: [{'name' => 'api_server', 'links' => links}], instances: 1) }
+
+    let(:mysql_job_spec) do
       job_spec = Bosh::Spec::Deployments.simple_job(
-        name: 'my_db',
+        name: 'mysql',
         templates: [{'name' => 'database'}],
         instances: 2,
         static_ips: ['192.168.1.10', '192.168.1.11']
@@ -39,9 +40,18 @@ describe 'Links', type: :integration do
       job_spec
     end
 
+    let(:postgres_job_spec) do
+      Bosh::Spec::Deployments.simple_job(
+        name: 'postgres',
+        templates: [{'name' => 'database'}],
+        instances: 1,
+        static_ips: ['192.168.1.12']
+      )
+    end
+
     let(:manifest) do
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-      manifest['jobs'] = [link_job_spec, link_source_job_spec]
+      manifest['jobs'] = [api_job_spec, mysql_job_spec, postgres_job_spec]
       manifest
     end
 
@@ -56,7 +66,12 @@ describe 'Links', type: :integration do
 
     context 'when link is provided' do
       context 'when link reference source that provides link' do
-        let(:links) { {'db' => 'simple.my_db.database.db'} }
+        let(:links) do
+          {
+            'db' => 'simple.mysql.database.db',
+            'backup_db' => 'simple.postgres.database.backup_db'
+          }
+        end
 
         it 'renders link data in job template' do
           deploy_simple_manifest(manifest_hash: manifest)
@@ -64,10 +79,10 @@ describe 'Links', type: :integration do
           link_vm = director.vm('my_api/0')
           template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
 
-          expect(template['databases'].size).to eq(2)
-          expect(template['databases']).to contain_exactly(
+          expect(template['databases']['main'].size).to eq(2)
+          expect(template['databases']['main']).to contain_exactly(
             {
-              'name' => 'my_db',
+              'name' => 'mysql',
               'index' => 0,
               'networks' => [
                 {
@@ -76,12 +91,12 @@ describe 'Links', type: :integration do
                 },
                 {
                   'name' => 'dynamic-network',
-                  'address' => '0.my-db.dynamic-network.simple.bosh'
+                  'address' => '0.mysql.dynamic-network.simple.bosh'
                 }
               ]
             },
             {
-              'name' => 'my_db',
+              'name' => 'mysql',
               'index' => 1,
               'networks' => [
                 {
@@ -90,11 +105,24 @@ describe 'Links', type: :integration do
                 },
                 {
                   'name' => 'dynamic-network',
-                  'address' => '1.my-db.dynamic-network.simple.bosh'
+                  'address' => '1.mysql.dynamic-network.simple.bosh'
                 }
               ]
             }
           )
+
+          expect(template['databases']['backup']).to contain_exactly(
+              {
+                'name' => 'postgres',
+                'index' => 0,
+                'networks' => [
+                  {
+                    'name' => 'a',
+                    'address' => '192.168.1.12',
+                  }
+                ]
+              }
+            )
         end
       end
 

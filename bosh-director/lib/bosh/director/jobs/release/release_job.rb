@@ -145,16 +145,17 @@ module Bosh::Director
     end
 
     def validate_links(job_manifest)
-      if job_manifest['provides']
-        if !job_manifest['provides'].is_a?(Array) || job_manifest['provides'].find { |p| !p.is_a?(String) }
-          raise JobInvalidLinkSpec, "Job `#{@name}' has invalid spec format: 'provides' needs to be an array of strings"
-        end
-      end
+      validate_link_type(job_manifest['provides'], 'provides') if job_manifest['provides']
+      validate_link_type(job_manifest['requires'], 'requires') if job_manifest['requires']
+    end
 
-      if job_manifest['requires']
-        if !job_manifest['requires'].is_a?(Array) || job_manifest['requires'].find { |p| !p.is_a?(String) }
-          raise JobInvalidLinkSpec, "Job `#{@name}' has invalid spec format: 'requires' needs to be an array of strings"
-        end
+    def validate_link_type(links, desc)
+      if !links.is_a?(Array) ||
+        links.find { |p| !p.is_a?(String) && !p.is_a?(Hash) } ||
+        links.find { |p| p.is_a?(Hash) && !(p.has_key?('name') && p.has_key?('type')) }
+
+        raise JobInvalidLinkSpec,
+          "Job '#{@name}' has invalid spec format: '#{desc}' must be an array of strings or hashes with name and type"
       end
     end
   end
