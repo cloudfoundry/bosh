@@ -124,13 +124,6 @@ module Bosh
           allow(Config).to receive(:cloud).and_return(double('cloud'))
         end
 
-        def fake_locks
-          lock = instance_double('Bosh::Director::Lock')
-          allow(Lock).to receive(:new).and_return(lock)
-          allow(lock).to receive(:release)
-          allow(lock).to receive(:lock)
-        end
-
         def upload_releases
           manifest_hash['releases'].each do |release_entry|
             job = manifest_hash['jobs'].first

@@ -100,6 +100,8 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
   end
 
   before do
+    fake_locks
+
     Bosh::Director::Models::Stemcell.make(name: 'fake-stemcell', version: 'fake-stemcell-version')
 
     allow(Bosh::Director::Config).to receive(:cloud).and_return(nil)
