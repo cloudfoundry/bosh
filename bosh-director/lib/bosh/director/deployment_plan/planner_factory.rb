@@ -82,10 +82,12 @@ module Bosh
           )
           @logger.info('Created deployment plan')
           vm_deleter = VmDeleter.new(cloud, @logger)
+          vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter)
+
+          compilation_vm_pool = CompilationVmPool.new(VmReuser.new, vm_creator, planner, cloud, @logger)
           package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
             planner,
-            cloud,
-            Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter),
+            compilation_vm_pool,
             @logger,
             @event_log,
             director_job
