@@ -233,6 +233,7 @@ module Bosh::Stemcell
             expect(stage_collection.build_stemcell_image_stages).to eq(
               [
                 :system_network,
+                :system_open_vm_tools,
                 :system_vsphere_cdrom,
                 :system_parameters,
                 :bosh_clean,
@@ -302,6 +303,7 @@ module Bosh::Stemcell
             expect(stage_collection.build_stemcell_image_stages).to eq(
               [
                 :system_network,
+                :system_open_vm_tools,
                 :system_vsphere_cdrom,
                 :system_parameters,
                 :bosh_clean,
