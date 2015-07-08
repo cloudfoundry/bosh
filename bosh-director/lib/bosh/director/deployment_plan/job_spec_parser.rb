@@ -177,13 +177,9 @@ module Bosh::Director
 
       def parse_properties
         # Manifest can contain global and per-job properties section
-        job_properties = safe_property(@job_spec, "properties", :class => Hash, :optional => true)
+        job_properties = safe_property(@job_spec, "properties", :class => Hash, :optional => true, :default => {})
 
-        @job.all_properties = Bosh::Common::DeepCopy.copy(@deployment.properties)
-
-        if job_properties
-          @job.all_properties.recursive_merge!(job_properties)
-        end
+        @job.all_properties = @deployment.properties.recursive_merge(job_properties)
 
         mappings = safe_property(@job_spec, "property_mappings", :class => Hash, :default => {})
 
