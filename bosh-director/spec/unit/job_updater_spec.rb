@@ -14,7 +14,7 @@ describe Bosh::Director::JobUpdater do
   end
 
   let(:job_renderer) { instance_double('Bosh::Director::JobRenderer') }
-  let(:links_resolver) { instance_double('Bosh::Director::LinksResolver') }
+  let(:links_resolver) { instance_double('Bosh::Director::DeploymentPlan::LinksResolver') }
 
   let(:update_config) do
     instance_double('Bosh::Director::DeploymentPlan::UpdateConfig', {

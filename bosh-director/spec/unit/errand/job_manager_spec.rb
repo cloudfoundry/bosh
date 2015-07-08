@@ -32,8 +32,8 @@ module Bosh::Director
         job_renderer = instance_double('Bosh::Director::JobRenderer')
         expect(JobRenderer).to receive(:new).with(job, blobstore).and_return(job_renderer)
 
-        links_resolver = instance_double('Bosh::Director::LinksResolver')
-        expect(LinksResolver).to receive(:new).with(deployment, logger).and_return(links_resolver)
+        links_resolver = instance_double('Bosh::Director::DeploymentPlan::LinksResolver')
+        expect(DeploymentPlan::LinksResolver).to receive(:new).with(deployment, logger).and_return(links_resolver)
 
         job_updater = instance_double('Bosh::Director::JobUpdater')
         expect(JobUpdater).to receive(:new).with(deployment, job, job_renderer, links_resolver).and_return(job_updater)

@@ -16,8 +16,8 @@ describe Bosh::Director::JobUpdaterFactory do
         with(job, blobstore).
         and_return(job_renderer)
 
-      links_resolver = instance_double('Bosh::Director::LinksResolver')
-      expect(Bosh::Director::LinksResolver).to receive(:new).
+      links_resolver = instance_double('Bosh::Director::DeploymentPlan')
+      expect(Bosh::Director::DeploymentPlan::LinksResolver).to receive(:new).
         with(deployment_plan, logger).
         and_return(links_resolver)
 
