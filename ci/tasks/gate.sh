@@ -4,7 +4,7 @@ cd bosh-src
 
 git diff --exit-code develop origin/develop
 
-if ["$?" -eq "0"]
+if [ "$?" -eq "0" ]
 then
   echo "develop is up to date with origin. Continuing with this build."
   exit 0
