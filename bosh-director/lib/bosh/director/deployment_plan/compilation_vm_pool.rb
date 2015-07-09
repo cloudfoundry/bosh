@@ -11,17 +11,17 @@ module Bosh::Director
         @network = deployment_plan.compilation.network
         @compilation_env = deployment_plan.compilation.env
         @cloud = cloud
-        @network_mutex = Mutex.new
         @logger = logger
+        @network_mutex = Mutex.new
       end
 
-      def prepare_vm_with_reuse(stemcell)
+      def with_reused_vm(stemcell)
         begin
           vm_data = @vm_reuser.get_vm(stemcell)
           if vm_data.nil?
             vm_data = create_vm(stemcell)
             configure_vm(vm_data)
-            @vm_reuser.add_vm(vm_data)
+            @vm_reuser.add_vm(vm_data) # why does this work? we plan on using this fm. If we add the vm to the reuser, another thread may use that vm.
           else
             @logger.info("Reusing compilation VM `#{vm_data.vm.cid}' for stemcell `#{stemcell.desc}'")
           end
@@ -38,7 +38,7 @@ module Bosh::Director
         end
       end
 
-      def prepare_vm_without_reuse(stemcell)
+      def with_single_use_vm(stemcell)
         begin
           vm_data = create_vm(stemcell)
           configure_vm(vm_data)
@@ -48,12 +48,25 @@ module Bosh::Director
         end
       end
 
-
       def tear_down_vms(number_of_workers)
         ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
            @vm_reuser.each do |vm_data|
-            pool.process { tear_down_vm(vm_data) }
+            pool.process do
+              @vm_reuser.remove_vm(vm_data)
+              tear_down_vm(vm_data)
+            end
           end
+        end
+      end
+
+      def tear_down_vm(vm_data)
+        vm = vm_data.vm
+        if vm.exists?
+          reservation = vm_data.reservation
+          @logger.info("Deleting compilation VM: #{vm.cid}")
+          @cloud.delete_vm(vm.cid)
+          vm.destroy
+          release_network(reservation)
         end
       end
 
@@ -68,19 +81,7 @@ module Bosh::Director
           raise PackageCompilationNetworkNotReserved,
             "Could not reserve network for package compilation: #{reservation.error}"
         end
-
         reservation
-      end
-
-      def tear_down_vm(vm_data)
-        vm = vm_data.vm
-        if vm.exists?
-          reservation = vm_data.reservation
-          @logger.info("Deleting compilation VM: #{vm.cid}")
-          @cloud.delete_vm(vm.cid)
-          vm.destroy
-          release_network(reservation)
-        end
       end
 
       private
@@ -94,11 +95,10 @@ module Bosh::Director
           @network.name => @network.network_settings(reservation)
         }
 
-        vm = @vm_creator.create(@deployment_plan.model, stemcell,
+        vm_model = @vm_creator.create(@deployment_plan.model, stemcell,
           @compilation_resources, network_settings,
           nil, @compilation_env)
-
-        VmData.new(reservation,vm,stemcell,network_settings)
+        VmData.new(reservation,vm_model,stemcell,network_settings)
       end
 
       def configure_vm(vm_data)
@@ -111,8 +111,6 @@ module Bosh::Director
         }
         vm_data.vm.update(:apply_spec => state, :trusted_certs_sha1 => Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs))
         vm_data.agent.apply(state)
-
-        vm_data
       end
 
       def release_network(reservation)

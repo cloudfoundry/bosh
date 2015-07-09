@@ -115,9 +115,9 @@ module Bosh::Director
         #     freshly created VM.
         def prepare_vm(stemcell)
           if reuse_compilation_vms?
-            @compilation_vm_pool.prepare_vm_with_reuse(stemcell,&Proc.new)
+            @compilation_vm_pool.with_reused_vm(stemcell,&Proc.new)
           else
-            @compilation_vm_pool.prepare_vm_without_reuse(stemcell,&Proc.new)
+            @compilation_vm_pool.with_single_use_vm(stemcell,&Proc.new)
           end
         end
 

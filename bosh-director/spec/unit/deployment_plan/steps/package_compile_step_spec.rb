@@ -392,7 +392,6 @@ module Bosh::Director
           and_return(vm_cid)
 
         expect(AgentClient).to receive(:with_vm).and_return(agent)
-        # expect(AgentClient).to receive(:with_vm).and_return(agent)
 
         expect(agent).to receive(:wait_until_ready)
         expect(agent).to receive(:update_settings)
