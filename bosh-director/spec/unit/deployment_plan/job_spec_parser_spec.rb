@@ -11,6 +11,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
       model: Bosh::Director::Models::Deployment.make,
       properties: {},
       update: nil,
+      name: 'fake-deployment'
     )
   end
 
@@ -243,7 +244,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
             job_spec['templates'] = [{
               'name' => 'fake-template-name',
               'release' => 'fake-template-release',
-              'links' => {'a' => 'b'}
+              'links' => {'a' => 'x.y.z.zz'}
             }]
           end
 
@@ -270,7 +271,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
             it 'sets link paths specified in templates' do
               job = parser.parse(job_spec)
-              expect(job.link_path('fake-template-name', 'a')).to eq('b')
+              expect(job.link_path('fake-template-name', 'a').path).to eq('x.y.z.zz')
             end
           end
 
@@ -298,7 +299,7 @@ describe Bosh::Director::DeploymentPlan::JobSpecParser do
 
             it 'sets link paths specified in templates' do
               job = parser.parse(job_spec)
-              expect(job.link_path('fake-template-name', 'a')).to eq('b')
+              expect(job.link_path('fake-template-name', 'a').path).to eq('x.y.z.zz')
             end
           end
         end

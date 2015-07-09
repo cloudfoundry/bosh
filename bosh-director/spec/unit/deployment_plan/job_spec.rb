@@ -5,7 +5,7 @@ describe Bosh::Director::DeploymentPlan::Job do
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
 
   let(:deployment) { Bosh::Director::Models::Deployment.make }
-  let(:plan)       { instance_double('Bosh::Director::DeploymentPlan::Planner', model: deployment) }
+  let(:plan)       { instance_double('Bosh::Director::DeploymentPlan::Planner', model: deployment, name: 'fake-deployment') }
   let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
   let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network') }
 
@@ -222,7 +222,7 @@ describe Bosh::Director::DeploymentPlan::Job do
           'name' => 'foobar',
           'templates' => [
             { 'name' => 'foo', 'release' => 'release1' },
-            { 'name' => 'bar', 'release' => 'bar_release', 'links' => {'a' => 'b'}},
+            { 'name' => 'bar', 'release' => 'bar_release', 'links' => {'a' => 'x.y.z.zz'}},
           ],
           'resource_pool' => 'dea',
           'instances' => 1,

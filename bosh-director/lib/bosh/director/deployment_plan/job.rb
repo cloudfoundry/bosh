@@ -264,8 +264,8 @@ module Bosh::Director
         instances.select { |instance| !instance.vm_created? }
       end
 
-      def add_resolved_link(link)
-        @resolved_links[link.name] = link.spec
+      def add_resolved_link(link_name, link_spec)
+        @resolved_links[link_name] = link_spec
       end
 
       def link_spec

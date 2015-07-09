@@ -16,6 +16,15 @@ module Bosh::Director::Models
       validates_unique :name
       validates_format VALID_ID, :name
     end
+
+    def link_spec
+      result = self.link_spec_json
+      result ? Yajl::Parser.parse(result) : {}
+    end
+
+    def link_spec=(data)
+      self.link_spec_json = Yajl::Encoder.encode(data)
+    end
   end
 
   Deployment.plugin :association_dependencies

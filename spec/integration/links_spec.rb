@@ -55,32 +55,22 @@ describe 'Links', type: :integration do
       manifest
     end
 
-    context 'when link is not provided' do
-      let(:links) { {} }
-
-      it 'raises an error' do
-        _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
-        expect(exit_code).to_not eq(0)
-      end
-    end
-
     context 'when link is provided' do
-      context 'when link reference source that provides link' do
-        let(:links) do
-          {
-            'db' => 'simple.mysql.database.db',
-            'backup_db' => 'simple.postgres.database.backup_db'
-          }
-        end
+      let(:links) do
+        {
+          'db' => 'simple.mysql.database.db',
+          'backup_db' => 'simple.postgres.database.backup_db'
+        }
+      end
 
-        it 'renders link data in job template' do
-          deploy_simple_manifest(manifest_hash: manifest)
+      it 'renders link data in job template' do
+        deploy_simple_manifest(manifest_hash: manifest)
 
-          link_vm = director.vm('my_api/0')
-          template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
+        link_vm = director.vm('my_api/0')
+        template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
 
-          expect(template['databases']['main'].size).to eq(2)
-          expect(template['databases']['main']).to contain_exactly(
+        expect(template['databases']['main'].size).to eq(2)
+        expect(template['databases']['main']).to contain_exactly(
             {
               'name' => 'mysql',
               'index' => 0,
@@ -111,83 +101,132 @@ describe 'Links', type: :integration do
             }
           )
 
-          expect(template['databases']['backup']).to contain_exactly(
-              {
-                'name' => 'postgres',
-                'index' => 0,
-                'networks' => [
-                  {
-                    'name' => 'a',
-                    'address' => '192.168.1.12',
-                  }
-                ]
-              }
-            )
-        end
+        expect(template['databases']['backup']).to contain_exactly(
+            {
+              'name' => 'postgres',
+              'index' => 0,
+              'networks' => [
+                {
+                  'name' => 'a',
+                  'address' => '192.168.1.12',
+                }
+              ]
+            }
+          )
+      end
+    end
+
+    context 'when release job requires and provides same link' do
+      let(:first_node_job_spec) do
+        Bosh::Spec::Deployments.simple_job(
+          name: 'first_node',
+          templates: [{'name' => 'node', 'links' => first_node_links}],
+          instances: 1,
+          static_ips: ['192.168.1.10']
+        )
       end
 
-      context 'when release job requires and provides same link' do
-        let(:first_node_job_spec) do
-          Bosh::Spec::Deployments.simple_job(
-            name: 'first_node',
-            templates: [{'name' => 'node', 'links' => first_node_links}],
-            instances: 1,
-            static_ips: ['192.168.1.10']
-          )
-        end
-
-        let(:first_node_links) do
-          {
-            'node1' => 'simple.second_node.node.node1',
-            'node2' => 'simple.first_node.node.node2'
-          }
-        end
-
-        let(:second_node_job_spec) do
-          Bosh::Spec::Deployments.simple_job(
-            name: 'second_node',
-            templates: [{'name' => 'node', 'links' => second_node_links}],
-            instances: 1,
-            static_ips: ['192.168.1.11']
-          )
-        end
-        let(:second_node_links) do
-          {
-            'node1' => 'simple.first_node.node.node1',
-            'node2' => 'simple.first_node.node.node2'
-          }
-        end
-
-        let(:manifest) do
-          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-          manifest['jobs'] = [first_node_job_spec, second_node_job_spec]
-          manifest
-        end
-
-        it 'renders link data in job template' do
-          deploy_simple_manifest(manifest_hash: manifest)
-
-          first_node_vm = director.vm('first_node/0')
-          first_node_template = YAML.load(first_node_vm.read_job_template('node', 'config.yml'))
-
-          expect(first_node_template['nodes']['node1_ips']).to eq(['192.168.1.11'])
-          expect(first_node_template['nodes']['node2_ips']).to eq(['192.168.1.10'])
-
-          second_node_vm = director.vm('second_node/0')
-          second_node_template = YAML.load(second_node_vm.read_job_template('node', 'config.yml'))
-
-          expect(second_node_template['nodes']['node1_ips']).to eq(['192.168.1.10'])
-          expect(second_node_template['nodes']['node2_ips']).to eq(['192.168.1.10'])
-        end
+      let(:first_node_links) do
+        {
+          'node1' => 'simple.second_node.node.node1',
+          'node2' => 'simple.first_node.node.node2'
+        }
       end
 
-      context 'when link reference source that does not provide link' do
-        let(:links) { {'db' => 'X.Y.Z.ZZ'} }
+      let(:second_node_job_spec) do
+        Bosh::Spec::Deployments.simple_job(
+          name: 'second_node',
+          templates: [{'name' => 'node', 'links' => second_node_links}],
+          instances: 1,
+          static_ips: ['192.168.1.11']
+        )
+      end
+      let(:second_node_links) do
+        {
+          'node1' => 'simple.first_node.node.node1',
+          'node2' => 'simple.first_node.node.node2'
+        }
+      end
 
-        it 'raises an error' do
-          _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
-          expect(exit_code).to_not eq(0)
-        end
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [first_node_job_spec, second_node_job_spec]
+        manifest
+      end
+
+      it 'renders link data in job template' do
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        first_node_vm = director.vm('first_node/0')
+        first_node_template = YAML.load(first_node_vm.read_job_template('node', 'config.yml'))
+
+        expect(first_node_template['nodes']['node1_ips']).to eq(['192.168.1.11'])
+        expect(first_node_template['nodes']['node2_ips']).to eq(['192.168.1.10'])
+
+        second_node_vm = director.vm('second_node/0')
+        second_node_template = YAML.load(second_node_vm.read_job_template('node', 'config.yml'))
+
+        expect(second_node_template['nodes']['node1_ips']).to eq(['192.168.1.10'])
+        expect(second_node_template['nodes']['node2_ips']).to eq(['192.168.1.10'])
+      end
+    end
+
+    context 'when link references another deployment' do
+      let(:first_deployment_job_spec) do
+        Bosh::Spec::Deployments.simple_job(
+          name: 'first_deployment_node',
+          templates: [{'name' => 'node', 'links' => first_deployment_links}],
+          instances: 1,
+          static_ips: ['192.168.1.10']
+        )
+      end
+
+      let(:first_deployment_links) do
+        {
+          'node1' => 'first.first_deployment_node.node.node1',
+          'node2' => 'first.first_deployment_node.node.node2'
+        }
+      end
+
+      let(:first_manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['name'] = 'first'
+        manifest['jobs'] = [first_deployment_job_spec]
+        manifest
+      end
+
+      let(:second_deployment_job_spec) do
+        Bosh::Spec::Deployments.simple_job(
+          name: 'second_deployment_node',
+          templates: [{'name' => 'node', 'links' => second_deployment_links}],
+          instances: 1,
+          static_ips: ['192.168.1.11']
+        )
+      end
+
+      let(:second_deployment_links) do
+        {
+          'node1' => 'first.first_deployment_node.node.node1',
+          'node2' => 'second.second_deployment_node.node.node2'
+        }
+      end
+
+      let(:second_manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['name'] = 'second'
+        manifest['jobs'] = [second_deployment_job_spec]
+        manifest
+      end
+
+      it 'can find it' do
+        deploy_simple_manifest(manifest_hash: first_manifest)
+        deploy_simple_manifest(manifest_hash: second_manifest)
+
+        second_deployment_vm = director.vm('second_deployment_node/0', deployment: 'second')
+        second_deployment_template = YAML.load(second_deployment_vm.read_job_template('node', 'config.yml'))
+
+        expect(second_deployment_template['nodes']['node1_ips']).to eq(['192.168.1.10'])
+        expect(second_deployment_template['nodes']['node2_ips']).to eq(['192.168.1.11'])
       end
     end
   end

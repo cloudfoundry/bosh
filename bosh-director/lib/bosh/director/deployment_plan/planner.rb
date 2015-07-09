@@ -34,6 +34,11 @@ module Bosh::Director
 
       attr_accessor :properties
 
+      # Hash of resolved links spec provided by deployment
+      # in format job_name > template_name > link_name > link_type
+      # used by LinksResolver
+      attr_accessor :link_spec
+
       # @return [Bosh::Director::DeploymentPlan::UpdateConfig]
       #   Default job update configuration
       attr_accessor :update
@@ -83,6 +88,8 @@ module Bosh::Director
           :class => Hash, :default => {})
 
         @recreate = !!options['recreate']
+
+        @link_spec = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
       end
 
       def_delegators :@cloud_planner, :add_network, :networks, :network,
@@ -193,6 +200,7 @@ module Bosh::Director
 
         model.manifest = Psych.dump(@manifest_text)
         model.cloud_config = @cloud_config
+        model.link_spec = @link_spec
         model.save
       end
 
