@@ -110,7 +110,7 @@ The final two arguments are the S3 bucket and key for the OS image to use, which
 
     vagrant ssh -c '
       cd /bosh
-      CANDIDATE_BUILD_NUMBER=<current_build> bundle exec rake stemcell:build[vsphere,esxi,centos,nil,go,bosh-os-images,bosh-centos-7-os-image.tgz]
+      CANDIDATE_BUILD_NUMBER=<current_build> bundle exec rake stemcell:build[vsphere,esxi,centos,7,go,bosh-os-images,bosh-centos-7-os-image.tgz]
     ' remote
 
 
