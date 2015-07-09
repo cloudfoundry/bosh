@@ -19,7 +19,14 @@ namespace :spec do
     task :install_dependencies do
       unless ENV['SKIP_NGINX'] == 'true'
         nginx = Bosh::Dev::Sandbox::Nginx.new
-        nginx.install
+        retries = 3
+        begin
+          nginx.install
+        rescue
+          retries -= 1
+          retry if retries > 0
+          raise
+        end
       end
     end
 
