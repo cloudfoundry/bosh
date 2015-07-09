@@ -95,6 +95,10 @@ shared_examples_for 'every OS image' do
     it 'sets PermitEmptyPasswords to no (stig: V-38614)' do
       expect(sshd_config).to contain(/^PermitEmptyPasswords no$/)
     end
+
+    it 'sets Protocol to 2 (stig: V-38607)' do
+      expect(sshd_config).to contain(/^Protocol 2$/)
+    end
   end
 
   context 'anacron is configured' do
