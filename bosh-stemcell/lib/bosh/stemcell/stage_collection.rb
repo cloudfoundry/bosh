@@ -203,19 +203,18 @@ module Bosh::Stemcell
     end
 
     def centos_os_stages
-      os_stages = [
-          :base_centos,
-          :base_centos_packages,
-          :base_ssh,
-          bosh_steps,
-          :rsyslog_config,
-          :delay_monit_start,
-          :system_grub,
-          :cron_config,
-          :escape_ctrl_alt_del
+     [
+        :base_centos,
+        :base_centos_packages,
+        :base_ssh,
+        :system_ixgbevf,
+        bosh_steps,
+        :rsyslog_config,
+        :delay_monit_start,
+        :system_grub,
+        :cron_config,
+        :escape_ctrl_alt_del
       ].flatten
-
-      os_stages
     end
 
     def rhel_os_stages
@@ -243,6 +242,7 @@ module Bosh::Stemcell
         :bosh_dpkg_list,
         :bosh_sysstat,
         :system_kernel,
+        :system_ixgbevf,
         bosh_steps,
         :rsyslog_config,
         :delay_monit_start,
