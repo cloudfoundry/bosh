@@ -100,5 +100,4 @@ shared_examples_for 'every OS image' do
       it { should_not contain /^RANDOM_DELAY=[0-57-9][0-9]*$/ }
     end
   end
-
 end

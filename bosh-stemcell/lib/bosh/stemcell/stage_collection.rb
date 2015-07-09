@@ -82,6 +82,7 @@ module Bosh::Stemcell
           :bosh_harden,
           :bosh_disable_password_authentication,
           :bosh_openstack_agent_settings,
+          :disable_blank_passwords,
           :image_create,
           :image_install_grub,
         ]
@@ -97,6 +98,7 @@ module Bosh::Stemcell
           :bosh_harden,
           :bosh_disable_password_authentication,
           :bosh_openstack_agent_settings,
+          :disable_blank_passwords,
           # Image/bootloader
           :image_create,
           :image_install_grub,
@@ -120,6 +122,7 @@ module Bosh::Stemcell
           :bosh_clean,
           :bosh_harden,
           :bosh_vsphere_agent_settings,
+          :disable_blank_passwords,
           :image_create,
           :image_install_grub,
         ]
@@ -134,6 +137,7 @@ module Bosh::Stemcell
           :bosh_clean,
           :bosh_harden,
           :bosh_vsphere_agent_settings,
+          :disable_blank_passwords,
           # Image/bootloader
           :image_create,
           :image_install_grub,
@@ -151,6 +155,7 @@ module Bosh::Stemcell
           :bosh_clean,
           :bosh_harden,
           :bosh_vsphere_agent_settings,
+          :disable_blank_passwords,
           :image_create,
           :image_install_grub,
         ]
@@ -165,6 +170,7 @@ module Bosh::Stemcell
           :bosh_clean,
           :bosh_harden,
           :bosh_vsphere_agent_settings,
+          :disable_blank_passwords,
           # Image/bootloader
           :image_create,
           :image_install_grub,
@@ -183,6 +189,7 @@ module Bosh::Stemcell
         :bosh_harden,
         :bosh_disable_password_authentication,
         :bosh_aws_agent_settings,
+        :disable_blank_passwords,
         # Image/bootloader
         :image_create,
         :image_install_grub,
@@ -249,7 +256,7 @@ module Bosh::Stemcell
         :system_grub,
         :vim_tiny,
         :cron_config,
-        :escape_ctrl_alt_del
+        :escape_ctrl_alt_del,
       ].flatten
     end
 

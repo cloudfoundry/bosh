@@ -15,4 +15,10 @@ shared_examples_for 'All Stemcells' do
       its(:content) { should match '^[0-9a-f]{40}\+?$' }
     end
   end
+
+  context 'disable blank password logins (stig: V-38497)' do
+    describe command('grep -R nullok /etc/pam.d') do
+      its (:stdout) { should eq('') }
+    end
+  end
 end

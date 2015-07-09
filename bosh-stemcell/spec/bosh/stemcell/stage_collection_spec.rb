@@ -138,6 +138,7 @@ module Bosh::Stemcell
             :bosh_harden,
             :bosh_disable_password_authentication,
             :bosh_aws_agent_settings,
+            :disable_blank_passwords,
             :image_create,
             :image_install_grub,
             :image_aws_update_grub,
@@ -186,6 +187,7 @@ module Bosh::Stemcell
                 :bosh_harden,
                 :bosh_disable_password_authentication,
                 :bosh_openstack_agent_settings,
+                :disable_blank_passwords,
                 :image_create,
                 :image_install_grub,
                 :bosh_dpkg_list
@@ -213,6 +215,7 @@ module Bosh::Stemcell
                 :bosh_harden,
                 :bosh_disable_password_authentication,
                 :bosh_openstack_agent_settings,
+                :disable_blank_passwords,
                 :image_create,
                 :image_install_grub,
                 :bosh_dpkg_list
@@ -243,6 +246,7 @@ module Bosh::Stemcell
                 :bosh_clean,
                 :bosh_harden,
                 :bosh_vsphere_agent_settings,
+                :disable_blank_passwords,
                 :image_create,
                 :image_install_grub,
                 :bosh_dpkg_list
@@ -265,6 +269,7 @@ module Bosh::Stemcell
                 :bosh_clean,
                 :bosh_harden,
                 :bosh_vsphere_agent_settings,
+                :disable_blank_passwords,
                 :image_create,
                 :image_install_grub,
                 :bosh_dpkg_list
@@ -291,10 +296,11 @@ module Bosh::Stemcell
                 :bosh_clean,
                 :bosh_harden,
                 :bosh_vsphere_agent_settings,
+                :disable_blank_passwords,
                 :image_create,
                 :image_install_grub,
-                :bosh_dpkg_list
-              ]
+                :bosh_dpkg_list,
+            ]
             )
             expect(stage_collection.package_stemcell_stages('ovf')).to eq(vmware_package_stemcell_steps)
           end
@@ -313,9 +319,10 @@ module Bosh::Stemcell
                 :bosh_clean,
                 :bosh_harden,
                 :bosh_vsphere_agent_settings,
+                :disable_blank_passwords,
                 :image_create,
                 :image_install_grub,
-                :bosh_dpkg_list
+                :bosh_dpkg_list,
               ]
             )
             expect(stage_collection.package_stemcell_stages('ovf')).to eq(vmware_package_stemcell_steps)
