@@ -21,4 +21,14 @@ shared_examples_for 'All Stemcells' do
       its (:stdout) { should eq('') }
     end
   end
+
+  context 'disable remote host login (stig: V-38491)' do
+    describe command('find /home -name .rhosts') do
+      its (:stdout) { should eq('') }
+    end
+
+    describe file('/etc/hosts.equiv') do
+      it { should_not be_file }
+    end
+  end
 end
