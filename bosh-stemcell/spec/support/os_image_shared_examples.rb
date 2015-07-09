@@ -91,6 +91,10 @@ shared_examples_for 'every OS image' do
     it 'sets MaxAuthTries to 3' do
       expect(sshd_config).to contain(/^MaxAuthTries 3$/)
     end
+
+    it 'sets PermitEmptyPasswords to no (stig: V-38614)' do
+      expect(sshd_config).to contain(/^PermitEmptyPasswords no$/)
+    end
   end
 
   context 'anacron is configured' do

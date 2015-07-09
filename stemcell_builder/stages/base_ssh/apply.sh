@@ -23,6 +23,9 @@ echo 'X11Forwarding no' >> $chroot/etc/ssh/sshd_config
 sed "/^ *MaxAuthTries/d" -i $chroot/etc/ssh/sshd_config
 echo 'MaxAuthTries 3' >> $chroot/etc/ssh/sshd_config
 
+sed "/^ *PermitEmptyPasswords/d" -i $chroot/etc/ssh/sshd_config
+echo 'PermitEmptyPasswords no' >> $chroot/etc/ssh/sshd_config
+
 # protect against as-shipped sshd_config that has no newline at end
 echo "" >> $chroot/etc/ssh/sshd_config
 
