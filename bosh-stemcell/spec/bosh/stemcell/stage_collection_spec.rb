@@ -42,6 +42,7 @@ module Bosh::Stemcell
               :system_grub,
               :vim_tiny,
               :cron_config,
+              :escape_ctrl_alt_del,
             ]
           )
         end
@@ -65,6 +66,7 @@ module Bosh::Stemcell
               :delay_monit_start,
               :system_grub,
               :cron_config,
+              :escape_ctrl_alt_del,
             ]
           )
         end

@@ -238,4 +238,11 @@ APT::Periodic {
 EOF
     end
   end
+
+  context 'overriding control alt delete (stig: V-38668)' do
+    describe file('/etc/init/control-alt-delete.override') do
+      it { should be_file }
+      it { should contain 'exec /usr/bin/logger -p security.info "Control-Alt-Delete pressed"' }
+    end
+  end
 end
