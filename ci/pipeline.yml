@@ -46,11 +46,19 @@ groups:
       - promote-candidate
 
 jobs:
-  - name: unit-1.9
+  - name: gate
     public: true
     serial: true
     plan:
       - {trigger: true, get: bosh-src}
+      - task: gate
+        file: bosh-src/ci/tasks/gate.yml
+
+  - name: unit-1.9
+    public: true
+    serial: true
+    plan:
+      - {trigger: true, get: bosh-src, passed: [gate]}
 
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
@@ -62,7 +70,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, get: bosh-src}
+      - {trigger: true, get: bosh-src, passed: [gate]}
 
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
@@ -74,7 +82,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, get: bosh-src}
+      - {trigger: true, get: bosh-src, passed: [gate]}
 
       - task: test
         privileged: true
@@ -88,7 +96,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, get: bosh-src}
+      - {trigger: true, get: bosh-src, passed: [gate]}
 
       - task: test
         privileged: true
@@ -102,7 +110,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, get: bosh-src}
+      - {trigger: true, get: bosh-src, passed: [gate]}
 
       - task: test
         privileged: true
@@ -116,7 +124,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, get: bosh-src}
+      - {trigger: true, get: bosh-src, passed: [gate]}
 
       - task: test
         privileged: true

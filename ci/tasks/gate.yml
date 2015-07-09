@@ -1,0 +1,10 @@
+---
+platform: linux
+
+image: docker:///bosh/main
+
+inputs:
+  - name: bosh-src
+
+run:
+  path: bosh-src/ci/tasks/gate.sh
