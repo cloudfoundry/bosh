@@ -702,26 +702,28 @@ module VSphereCloud
       replicated_stemcell_vm = client.wait_for_task(task)
       @logger.info("Replicated #{stemcell} (#{stemcell_vm}) to #{local_stemcell_name} (#{replicated_stemcell_vm})")
     rescue VSphereCloud::Client::DuplicateName => ex
-      @logger.info("Stemcell was created during the execution of this thread. #{ex.message}")
+      @logger.info("Stemcell is being replicated by another thread, waiting for #{local_stemcell_name} to be ready")
       replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
       # get_properties will ensure the existence of the snapshot by retrying.
       # This forces us to wait for a valid snapshot before returning with the
       # replicated stemcell vm, if a snapshot is not found then an exception is thrown.
-      client.cloud_searcher.get_properties(replicated_stemcell_vm, 
-                                           VimSdk::Vim::VirtualMachine, 
+      client.cloud_searcher.get_properties(replicated_stemcell_vm,
+                                           VimSdk::Vim::VirtualMachine,
                                            ['snapshot'], ensure_all: true)
+      @logger.info("Stemcell #{local_stemcell_name} has been replicated.")
+
       return replicated_stemcell_vm
     end
     # Despite the naming, this has nothing to do with the Cloud notion of a disk snapshot
     # (which comes from AWS). This is a vm snapshot.
-    @logger.info("Creating initial snapshot for linked clones on #{replicated_stemcell_vm}")      
+    @logger.info("Creating initial snapshot for linked clones on #{replicated_stemcell_vm}")
     task = replicated_stemcell_vm.create_snapshot('initial', nil, false, false)
     client.wait_for_task(task)
     @logger.info("Created initial snapshot for linked clones on #{replicated_stemcell_vm}")
 
     replicated_stemcell_vm
   end
- 
+
   attr_reader :config
 
   end
