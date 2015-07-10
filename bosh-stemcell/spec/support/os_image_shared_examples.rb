@@ -120,4 +120,10 @@ shared_examples_for 'every OS image' do
       it { should_not be_installed }
     end
   end
+
+  context 'rsh-server is not installed (stig: V-38598, V-38591, V-38594, V-38602)' do
+    describe package('rsh-server') do
+      it { should_not be_installed }
+    end
+  end
 end
