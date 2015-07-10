@@ -252,4 +252,10 @@ EOF
       its (:stdout) { should eq('') }
     end
   end
+
+  context 'official Ubuntu gpg key is installed (stig: V-38476)' do
+    describe command('apt-key list') do
+      its (:stdout) { should include('Ubuntu Archive Automatic Signing Key') }
+    end
+  end
 end

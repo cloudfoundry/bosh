@@ -92,4 +92,10 @@ describe 'CentOS 7 OS image', os_image: true do
       it { should contain '# escaping ctrl alt del' }
     end
   end
+
+  context 'official Centos gpg key is installed (stig: V-38476)' do
+    describe command('rpm -qa gpg-pubkey* 2>/dev/null | xargs rpm -qi 2>/dev/null') do
+      its (:stdout) { should include('CentOS 7 Official Signing Key') }
+    end
+  end
 end
