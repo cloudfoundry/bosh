@@ -114,4 +114,10 @@ shared_examples_for 'every OS image' do
       it { should_not be_installed }
     end
   end
+
+  context 'telnet-server is not installed (stig: V-38587, V-38589)' do
+    describe package('telnet-server') do
+      it { should_not be_installed }
+    end
+  end
 end
