@@ -12,11 +12,11 @@ module Bosh::Director
 
     # Adds a VM's information to the pool of VMs that can be reused.
     # @param [VmData] The VmData instance for the new VM.
-    def add_vm(vm_data)
+    def add_in_use_vm(vm_data)
       raise NilVMDataError if vm_data.nil?
       @mutex.synchronize do
-        @idle_vms_by_stemcell[vm_data.stemcell] ||= []
-        @idle_vms_by_stemcell[vm_data.stemcell] << vm_data
+        @in_use_vms_by_stemcell[vm_data.stemcell] ||= []
+        @in_use_vms_by_stemcell[vm_data.stemcell] << vm_data
       end
     end
 
@@ -58,27 +58,29 @@ module Bosh::Director
     # @return [Integer] The number of VMs running a given stemcell.
     def get_num_vms(stemcell)
       @mutex.synchronize do
-        @idle_vms_by_stemcell[stemcell].nil? ? 0 : @idle_vms_by_stemcell[stemcell].size
+        idle_count = @idle_vms_by_stemcell[stemcell].nil? ? 0 : @idle_vms_by_stemcell[stemcell].size
+        in_use_count = @in_use_vms_by_stemcell[stemcell].nil? ? 0 : @in_use_vms_by_stemcell[stemcell].size
+        idle_count + in_use_count
       end
     end
 
     # An iterator for all compilation VMs on all stemcells.
     # @yield [VmData] Yields each VM in VmReuser.
     def each
-      @idle_vms_by_stemcell.each do |stemcell, vms|
-        vms.each do |vm|
-          yield vm
-        end
+      all_vms = (@idle_vms_by_stemcell.values + @in_use_vms_by_stemcell.values).flatten
+      all_vms.each do |vm|
+        yield vm
       end
     end
 
     private
 
     def release_without_lock(vm_data)
-      @in_use_vms_by_stemcell.each do |stemcell,vms|
+      @in_use_vms_by_stemcell.each do |stemcell, vms|
         vms.each do |v|
           if vm_data == v
             vms.delete(v)
+            @idle_vms_by_stemcell[stemcell] ||= []
             @idle_vms_by_stemcell[stemcell] << vm_data
           end
         end

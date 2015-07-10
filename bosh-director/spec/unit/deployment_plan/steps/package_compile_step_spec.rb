@@ -572,7 +572,7 @@ module Bosh::Director
 
           allow(vm_reuser).to receive_messages(get_vm: nil)
           allow(vm_reuser).to receive_messages(get_num_vms: 0)
-          allow(vm_reuser).to receive_messages(add_vm: vm_data)
+          allow(vm_reuser).to receive_messages(add_in_use_vm: vm_data)
 
           expect(vm_reuser).to receive(:remove_vm).ordered
           expect(compilation_vm_pool).to receive(:tear_down_vm).ordered

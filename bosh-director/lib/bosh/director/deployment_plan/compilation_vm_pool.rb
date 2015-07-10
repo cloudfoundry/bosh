@@ -21,7 +21,7 @@ module Bosh::Director
           if vm_data.nil?
             vm_data = create_vm(stemcell)
             configure_vm(vm_data)
-            @vm_reuser.add_vm(vm_data) # why does this work? we plan on using this fm. If we add the vm to the reuser, another thread may use that vm.
+            @vm_reuser.add_in_use_vm(vm_data)
           else
             @logger.info("Reusing compilation VM `#{vm_data.vm.cid}' for stemcell `#{stemcell.desc}'")
           end
