@@ -108,4 +108,10 @@ shared_examples_for 'every OS image' do
       it { should_not contain /^RANDOM_DELAY=[0-57-9][0-9]*$/ }
     end
   end
+
+  context 'tftp is not installed (stig: V-38701)' do
+    describe package('tftp') do
+      it { should_not be_installed }
+    end
+  end
 end
