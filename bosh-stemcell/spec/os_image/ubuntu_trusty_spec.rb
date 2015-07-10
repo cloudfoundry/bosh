@@ -245,4 +245,11 @@ EOF
       it { should contain 'exec /usr/bin/logger -p security.info "Control-Alt-Delete pressed"' }
     end
   end
+
+  context 'package signature verification (stig: V-38462)' do
+    # verify default behavior was not changed
+    describe command('grep -R AllowUnauthenticated /etc/apt/apt.conf.d/') do
+      its (:stdout) { should eq('') }
+    end
+  end
 end

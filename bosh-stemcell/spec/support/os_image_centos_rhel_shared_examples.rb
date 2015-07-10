@@ -87,4 +87,10 @@ shared_examples_for 'a CentOS or RHEL based OS image' do
       it { should_not be_file }
     end
   end
+
+  context 'package signature verification (stig: V-38462)' do
+    describe command('grep nosignature /etc/rpmrc /usr/lib/rpm/rpmrc /usr/lib/rpm/redhat/rpmrc ~root/.rpmrc') do
+      its (:stdout) { should_not include('nosignature') }
+    end
+  end
 end
