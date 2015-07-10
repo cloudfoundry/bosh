@@ -155,11 +155,12 @@ describe Bosh::Cli::BlobManager do
     end
 
     it "downloads blob from blobstore" do
+      blob_sha1 = Digest::SHA1.hexdigest("blob contents")
       index = {
         "foo" => {
           "size" => "1000",
           "object_id" => "deadbeef",
-          "sha" => Digest::SHA1.hexdigest("blob contents")
+          "sha" => blob_sha1
         }
       }
 
@@ -174,7 +175,7 @@ describe Bosh::Cli::BlobManager do
       @manager = make_manager(@release, 1, renderer)
       expect(@blobstore)
         .to receive(:get)
-        .with("deadbeef", an_instance_of(File)) { |_, f | f.write("blob contents") }
+        .with("deadbeef", an_instance_of(File), {sha1: blob_sha1}) { |_, f | f.write("blob contents") }
 
       path = @manager.download_blob("foo")
       expect(File.read(path)).to eq("blob contents")

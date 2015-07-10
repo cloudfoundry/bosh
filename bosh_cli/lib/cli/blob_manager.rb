@@ -313,15 +313,11 @@ module Bosh::Cli
         end
       end
 
-      @blobstore.get(blob["object_id"], tmp_file)
+      @blobstore.get(blob["object_id"], tmp_file, sha1: blob["sha"])
       tmp_file.close
       progress_bar.kill
       @progress_renderer.progress(path, "#{download_label}", 100)
       @progress_renderer.finish(path, "downloaded")
-
-      if file_checksum(tmp_file.path) != blob["sha"]
-        err("Checksum mismatch for downloaded blob `#{path}'")
-      end
 
       tmp_file.path
     end
