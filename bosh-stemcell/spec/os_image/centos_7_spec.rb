@@ -85,4 +85,11 @@ describe 'CentOS 7 OS image', os_image: true do
       it { should be_installed }
     end
   end
+
+  context 'overriding control alt delete (stig: V-38668)' do
+    describe file('/etc/systemd/system/ctrl-alt-del.target') do
+      it { should be_file }
+      it { should contain '# escaping ctrl alt del' }
+    end
+  end
 end

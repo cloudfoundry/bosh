@@ -35,13 +35,6 @@ module VSphereCloud
       @file_provider = FileProvider.new(config.rest_client, config.vcenter_host)
       @agent_env = AgentEnv.new(client, @file_provider, @cloud_searcher)
 
-      # Global lock
-      @lock = Mutex.new
-
-      # Resource locks
-      @locks = {}
-      @locks_mutex = Mutex.new
-
       # We get disconnected if the connection is inactive for a long period.
       Thread.new do
         while true do
@@ -407,33 +400,7 @@ module VSphereCloud
 
         if replicated_stemcell_vm.nil?
           @logger.info("Cluster doesn't have stemcell #{stemcell}, replicating")
-          lock = nil
-          @locks_mutex.synchronize do
-            lock = @locks[local_stemcell_name]
-            if lock.nil?
-              lock = @locks[local_stemcell_name] = Mutex.new
-            end
-          end
-
-          lock.synchronize do
-            replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
-            if replicated_stemcell_vm.nil?
-              @logger.info("Replicating #{stemcell} (#{stemcell_vm}) to #{local_stemcell_name}")
-              task = clone_vm(stemcell_vm,
-                              local_stemcell_name,
-                              cluster.datacenter.template_folder.mob,
-                              cluster.resource_pool.mob,
-                              datastore: datastore.mob)
-              replicated_stemcell_vm = client.wait_for_task(task)
-              @logger.info("Replicated #{stemcell} (#{stemcell_vm}) to #{local_stemcell_name} (#{replicated_stemcell_vm})")
-              @logger.info("Creating initial snapshot for linked clones on #{replicated_stemcell_vm}")
-              # Despite the naming, this has nothing to do with the Cloud notion of a disk snapshot
-              # (which comes from AWS). This is a vm snapshot.
-              task = replicated_stemcell_vm.create_snapshot('initial', nil, false, false)
-              client.wait_for_task(task)
-              @logger.info("Created initial snapshot for linked clones on #{replicated_stemcell_vm}")
-            end
-          end
+            replicated_stemcell_vm = replicate_stemcell_helper(stemcell, stemcell_vm, local_stemcell_name, cluster, datastore, replicated_stemcell_vm, local_stemcell_path)
         else
           @logger.info("Found local stemcell replica: #{replicated_stemcell_vm}")
         end
@@ -442,7 +409,6 @@ module VSphereCloud
         @logger.info("Stemcell was already local: #{stemcell_vm}")
         result = stemcell_vm
       end
-
       @logger.info("Using stemcell VM: #{result}")
 
       result
@@ -725,6 +691,40 @@ module VSphereCloud
       placer.nil? ? @resources : placer
     end
 
-    attr_reader :config
+  def replicate_stemcell_helper(stemcell, stemcell_vm, local_stemcell_name, cluster, datastore, replicated_stemcell_vm, local_stemcell_path)
+    @logger.info("Replicating #{stemcell} (#{stemcell_vm}) to #{local_stemcell_name}")
+    task = clone_vm(stemcell_vm,
+                    local_stemcell_name,
+                    cluster.datacenter.template_folder.mob,
+                    cluster.resource_pool.mob,
+                    datastore: datastore.mob)
+    begin
+      replicated_stemcell_vm = client.wait_for_task(task)
+      @logger.info("Replicated #{stemcell} (#{stemcell_vm}) to #{local_stemcell_name} (#{replicated_stemcell_vm})")
+    rescue VSphereCloud::Client::DuplicateName => ex
+      @logger.info("Stemcell is being replicated by another thread, waiting for #{local_stemcell_name} to be ready")
+      replicated_stemcell_vm = client.find_by_inventory_path(local_stemcell_path)
+      # get_properties will ensure the existence of the snapshot by retrying.
+      # This forces us to wait for a valid snapshot before returning with the
+      # replicated stemcell vm, if a snapshot is not found then an exception is thrown.
+      client.cloud_searcher.get_properties(replicated_stemcell_vm,
+                                           VimSdk::Vim::VirtualMachine,
+                                           ['snapshot'], ensure_all: true)
+      @logger.info("Stemcell #{local_stemcell_name} has been replicated.")
+
+      return replicated_stemcell_vm
+    end
+    # Despite the naming, this has nothing to do with the Cloud notion of a disk snapshot
+    # (which comes from AWS). This is a vm snapshot.
+    @logger.info("Creating initial snapshot for linked clones on #{replicated_stemcell_vm}")
+    task = replicated_stemcell_vm.create_snapshot('initial', nil, false, false)
+    client.wait_for_task(task)
+    @logger.info("Created initial snapshot for linked clones on #{replicated_stemcell_vm}")
+
+    replicated_stemcell_vm
+  end
+
+  attr_reader :config
+
   end
 end

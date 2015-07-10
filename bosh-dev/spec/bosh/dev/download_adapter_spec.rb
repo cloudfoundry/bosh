@@ -122,7 +122,8 @@ module Bosh::Dev
 
         it 'uses the proxy' do
           net_http_mock = class_double('Net::HTTP').as_stubbed_const
-          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234, nil, nil)
+          mock_http = double(:http, :finish => nil, 'read_timeout=' => nil, :request_get => nil)
+          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234, nil, nil) { mock_http }
           subject.download(uri, write_path)
         end
       end
@@ -132,7 +133,8 @@ module Bosh::Dev
 
         it 'uses the proxy' do
           net_http_mock = class_double('Net::HTTP').as_stubbed_const
-          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234, 'user', 'password')
+          mock_http = double(:http, :finish => nil, 'read_timeout=' => nil, :request_get => nil)
+          expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234, 'user', 'password') { mock_http }
           subject.download(uri, write_path)
         end
       end
@@ -145,7 +147,8 @@ module Bosh::Dev
 
           it 'uses the proxy' do
             net_http_mock = class_double('Net::HTTP').as_stubbed_const
-            expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234, nil, nil)
+            mock_http = double(:http, :finish => nil, 'read_timeout=' => nil, :request_get => nil)
+            expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, 'proxy.example.com', 1234, nil, nil) { mock_http }
             subject.download(uri, write_path)
           end
         end
@@ -155,7 +158,8 @@ module Bosh::Dev
 
           it 'does not use the proxy' do
             net_http_mock = class_double('Net::HTTP').as_stubbed_const
-            expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, nil, nil, nil, nil)
+            mock_http = double(:http, :finish => nil, 'read_timeout=' => nil, :request_get => nil)
+            expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, nil, nil, nil, nil) { mock_http }
             subject.download(uri, write_path)
           end
         end
@@ -165,7 +169,8 @@ module Bosh::Dev
 
           it 'does not use the proxy' do
             net_http_mock = class_double('Net::HTTP').as_stubbed_const
-            expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, nil, nil, nil, nil)
+            mock_http = double(:http, :finish => nil, 'read_timeout=' => nil, :request_get => nil)
+            expect(net_http_mock).to receive(:start).with('a.sample.uri', 80, nil, nil, nil, nil) { mock_http }
             subject.download(uri, write_path)
           end
         end

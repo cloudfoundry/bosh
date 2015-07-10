@@ -32,6 +32,7 @@ module Bosh::Stemcell
               :bosh_dpkg_list,
               :bosh_sysstat,
               :system_kernel,
+              :system_ixgbevf,
               :bosh_sysctl,
               :bosh_users,
               :bosh_monit,
@@ -42,6 +43,7 @@ module Bosh::Stemcell
               :system_grub,
               :vim_tiny,
               :cron_config,
+              :escape_ctrl_alt_del,
             ]
           )
         end
@@ -56,6 +58,7 @@ module Bosh::Stemcell
               :base_centos,
               :base_centos_packages,
               :base_ssh,
+              :system_ixgbevf,
               :bosh_sysctl,
               :bosh_users,
               :bosh_monit,
@@ -65,6 +68,7 @@ module Bosh::Stemcell
               :delay_monit_start,
               :system_grub,
               :cron_config,
+              :escape_ctrl_alt_del,
             ]
           )
         end
@@ -233,6 +237,7 @@ module Bosh::Stemcell
             expect(stage_collection.build_stemcell_image_stages).to eq(
               [
                 :system_network,
+                :system_open_vm_tools,
                 :system_vsphere_cdrom,
                 :system_parameters,
                 :bosh_clean,
@@ -302,6 +307,7 @@ module Bosh::Stemcell
             expect(stage_collection.build_stemcell_image_stages).to eq(
               [
                 :system_network,
+                :system_open_vm_tools,
                 :system_vsphere_cdrom,
                 :system_parameters,
                 :bosh_clean,

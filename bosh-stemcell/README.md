@@ -21,12 +21,13 @@ Note: Use US East (Northern Virginia) region when using AWS in following steps. 
 
 From a fresh copy of the bosh repo:
 
+    git submodule update --init --recursive
+
 If you use AWS EC2-Classic environment, run:
 
     export BOSH_AWS_ACCESS_KEY_ID=YOUR-AWS-ACCESS-KEY
     export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
     cd bosh-stemcell
-    git submodule update --init --recursive
     vagrant up remote --provider=aws
 
 If you use AWS VPC environment, run:
@@ -109,7 +110,7 @@ The final two arguments are the S3 bucket and key for the OS image to use, which
 
     vagrant ssh -c '
       cd /bosh
-      CANDIDATE_BUILD_NUMBER=<current_build> http_proxy=http://localhost:3142/ bundle exec rake stemcell:build[vsphere,esxi,centos,nil,go,bosh-os-images,bosh-centos-7-os-image.tgz]
+      CANDIDATE_BUILD_NUMBER=<current_build> bundle exec rake stemcell:build[vsphere,esxi,centos,7,go,bosh-os-images,bosh-centos-7-os-image.tgz]
     ' remote
 
 
@@ -136,6 +137,8 @@ AWS stemcells can be shipped in light format which includes a reference to a pub
       export BOSH_AWS_SECRET_ACCESS_KEY=YOUR-AWS-SECRET-KEY
       bundle exec rake stemcell:build_light[/tmp/bosh-stemcell.tgz,hvm]
     ' remote
+
+To build for specific region specify `BOSH_AWS_REGION` environment variable.
 
 ### When things go sideways
 

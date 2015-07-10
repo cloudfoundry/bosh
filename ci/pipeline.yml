@@ -74,7 +74,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, passed: [unit-1.9], get: bosh-src}
+      - {trigger: true, get: bosh-src}
 
       - task: test
         privileged: true
@@ -88,7 +88,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, passed: [unit-1.9], get: bosh-src}
+      - {trigger: true, get: bosh-src}
 
       - task: test
         privileged: true
@@ -102,7 +102,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, passed: [unit-2.1], get: bosh-src}
+      - {trigger: true, get: bosh-src}
 
       - task: test
         privileged: true
@@ -116,7 +116,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, passed: [unit-2.1], get: bosh-src}
+      - {trigger: true, get: bosh-src}
 
       - task: test
         privileged: true
@@ -130,8 +130,9 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, passed: [integration-1.9-mysql, integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres], get: bosh-src}
-
+      - trigger: true
+        passed: [integration-1.9-mysql, integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9]
+        get: bosh-src
       - task: publish
         file: bosh-src/ci/tasks/publish-coverage.yml
         config:
@@ -142,7 +143,9 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, passed: [integration-1.9-mysql, integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres], get: bosh-src}
+      - trigger: true
+        passed: [integration-1.9-mysql, integration-2.1-mysql, integration-1.9-postgres, integration-2.1-postgres, unit-2.1, unit-1.9]
+        get: bosh-src
 
       - {put: bosh-candidate, params: {repository: bosh-src}}
 

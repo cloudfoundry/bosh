@@ -118,5 +118,25 @@ describe VSphereCloud::Resources::Folder do
         expect(folder.path_components).to eq(%w[fake-grandparent-folder-name fake-parent-folder-name fake-folder-name])
       end
     end
+
+    context 'when root vm folder are not found in vcenter' do
+      before do
+        allow(client).to receive(:find_by_inventory_path).with(
+            %w[fake-datacenter-name vm fake-parent-folder-name fake-sub-folder-name]
+          ).and_return(nil)
+
+        allow(client).to receive(:find_by_inventory_path).with(
+            %w[fake-datacenter-name vm fake-parent-folder-name]
+          ).and_return(nil)
+
+        allow(client).to receive(:find_by_inventory_path).with(
+            %w[fake-datacenter-name vm]
+          ).and_return(nil)
+      end
+
+      it 'raise an error' do
+        expect{folder.mob}.to raise_error("Root VM Folder not found: fake-datacenter-name/vm")
+      end
+    end
   end
 end
