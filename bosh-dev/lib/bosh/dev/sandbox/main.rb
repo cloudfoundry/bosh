@@ -119,18 +119,6 @@ module Bosh::Dev::Sandbox
       File.join(sandbox_root, path)
     end
 
-    def with_db_connection(&block)
-      @database.with_db_connection do |db|
-        begin
-          Bosh::Director::Config.db = db
-          block.call(db)
-        rescue
-          Bosh::Director::Config.db = nil
-          raise
-        end
-      end
-    end
-
     def start
       @logger.info("Debug logs are saved to #{saved_logs_path}")
       setup_sandbox_root

@@ -36,9 +36,5 @@ module Bosh::Dev::Sandbox
         @runner.run(%Q{mysql --user=#{@username} --password=#{@password} -e 'SET FOREIGN_KEY_CHECKS=0; truncate table `#{table_name}`; SET FOREIGN_KEY_CHECKS=1;' #{db_name} > /dev/null 2>&1})
       end
     end
-
-    def with_db_connection(&block)
-      Sequel.connect("#{@adapter}://#{@username}:#{@password}@localhost:#{@port}/#{@db_name}", &block)
-    end
   end
 end
