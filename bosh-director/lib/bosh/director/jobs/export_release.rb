@@ -1,6 +1,7 @@
 require 'securerandom'
 require 'common/version/release_version'
-require 'pp'
+require 'bosh/director/compiled_release_downloader'
+require 'bosh/director/compiled_release_manifest'
 
 module Bosh::Director
   module Jobs
@@ -44,9 +45,14 @@ module Bosh::Director
                   self
               )
               package_compile_step.perform
+
+              tarball_state = create_tarball(@release_version, @stemcell)
+              result_file.write(tarball_state.to_json + "\n")
+
             end
           end
         end
+        "Exported release: #{@release_name}/#{@release_version} for #{@stemcell_os}/#{@stemcell_version}"
       end
 
       def validate_and_prepare
@@ -91,6 +97,35 @@ module Bosh::Director
         planner
       end
 
+      def create_tarball(release_version, stemcell)
+
+        blobstore_client = Bosh::Director::App.instance.blobstores.blobstore
+
+        compiled_packages_group = CompiledPackageGroup.new(release_version, stemcell)
+        templates = release_version.templates.map
+
+        compiled_release_downloader = CompiledReleaseDownloader.new(compiled_packages_group, templates, blobstore_client)
+        download_dir = compiled_release_downloader.download
+
+        manifest = CompiledReleaseManifest.new(compiled_packages_group, templates)
+        manifest.write(File.join(download_dir, 'compiled_release.MF'))
+
+        output_path = File.join(download_dir, "compiled_release_#{Time.now.to_f}.tar.gz")
+        archiver = Core::TarGzipper.new
+
+        archiver.compress(download_dir, ['compiled_packages', 'jobs', 'compiled_release.MF'], output_path)
+        tarball_file = File.open(output_path, 'r')
+
+        oid = blobstore_client.create(tarball_file)
+
+        {
+            :blobstore_id => oid,
+            :sha1 => Digest::SHA1.file(output_path).hexdigest,
+        }
+      ensure
+        compiled_release_downloader.cleanup
+      end
+
       def create_fake_job(planner, fake_resource_pool_manifest, network_name)
         fake_job_spec_for_compiling = {
             "name" => "dummy-job-for-compilation",
@@ -114,3 +149,4 @@ module Bosh::Director
     end
   end
 end
+

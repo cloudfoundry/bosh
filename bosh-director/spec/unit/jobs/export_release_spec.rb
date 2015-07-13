@@ -1,10 +1,12 @@
+require 'rubygems'
+require 'rubygems/package'
 require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::ExportRelease do
     let(:snapshots) { [Models::Snapshot.make(snapshot_cid: 'snap0'), Models::Snapshot.make(snapshot_cid: 'snap1')] }
 
-    subject(:job) { described_class.new("deployment_name", "release_name", "release_version", "stemcell_os", "stemcell_version") }
+    subject(:job) { described_class.new('deployment_name', 'release_name', 'release_version', 'stemcell_os', 'stemcell_version') }
 
     def create_stemcell
       Bosh::Director::Models::Stemcell.create(
@@ -105,6 +107,8 @@ module Bosh::Director
             allow(job).to receive(:create_planner).and_return(planner)
             allow(Config).to receive(:cloud)
             allow(Config).to receive(:event_log)
+            allow(job).to receive(:create_tarball)
+            allow(job).to receive(:result_file).and_return(Tempfile.new('result'))
           }
 
           it 'locks the deployment, release, and selected stemcell' do
@@ -148,6 +152,149 @@ module Bosh::Director
           end
         end
       end
+
+      context 'when creating a tarball' do
+
+        let(:blobstore_client) { instance_double('Bosh::Blobstore::BaseClient') }
+        let(:archiver) { instance_double('Bosh::Director::Core::TarGzipper') }
+        let(:task_dir) { Dir.mktmpdir }
+
+        before {
+          release = Bosh::Director::Models::Release.create(name: 'release_name')
+          release_version = release.add_version(
+              version: 'release_version',
+              commit_hash: 'release_version_commit_hash',
+              uncommitted_changes: 'false',
+          )
+          stemcell = Bosh::Director::Models::Stemcell.create(
+              name: 'my-stemcell-with-a-name',
+              version: 'stemcell_version',
+              operating_system: 'stemcell_os',
+              cid: 'cloud-id-a',
+          )
+
+          package_ruby = release_version.add_package(
+              name: 'ruby',
+              version: 'ruby_version',
+              fingerprint: 'ruby_fingerprint',
+              release_id: release.id,
+              blobstore_id: 'ruby_package_blobstore_id',
+              sha1: 'ruby_package_sha1',
+              dependency_set_json: [],
+          )
+          package_ruby.add_compiled_package(
+              sha1: 'ruby_compiled_package_sha1',
+              blobstore_id: 'ruby_compiled_package_blobstore_id',
+              stemcell_id: stemcell.id,
+              dependency_key: [],
+              build: 23,
+          )
+
+          package_postgres = release_version.add_package(
+              name: 'postgres',
+              version: 'postgres_version',
+              fingerprint: 'postgres_fingerprint',
+              release_id: release.id,
+              blobstore_id: 'postgres_package_blobstore_id',
+              sha1: 'postgres_package_sha1',
+              dependency_set_json: Yajl::Encoder.encode(["ruby"]),
+          )
+          package_postgres.add_compiled_package(
+              sha1: 'postgres_compiled_package_sha1',
+              blobstore_id: 'postgres_package_blobstore_id',
+              stemcell_id: stemcell.id,
+              dependency_key: '[["ruby","ruby_version"]]',
+              build: 23,
+          )
+
+          release_version.add_template(
+              name: 'genisoimage',
+              version: 'genisoimage_version',
+              fingerprint: 'genisoimage_fingerprint',
+              sha1: 'genisoimage_template_sha1',
+              blobstore_id: 'genisoimage_blobstore_id',
+              release_id: release.id,
+              package_names_json: [],
+          )
+
+          allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
+          allow(Bosh::Director::Core::TarGzipper).to receive(:new).and_return(archiver)
+          result_file = double('result file')
+          allow(job).to receive(:result_file).and_return(result_file)
+          allow(result_file).to receive(:write)
+        }
+
+        it 'should contain all compiled packages & jobs' do
+          allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
+
+              files = Dir.entries(download_dir)
+              expect(files).to include('compiled_packages', 'compiled_release.MF', 'jobs')
+
+              files = Dir.entries(File.join(download_dir, 'compiled_packages'))
+              expect(files).to include('postgres.tgz')
+
+              files = Dir.entries(File.join(download_dir, 'jobs'))
+              expect(files).to include('genisoimage.tgz')
+
+              File.write(output_path, 'Some glorious content')
+          }
+
+          expect(blobstore_client).to receive(:create)
+          expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'ruby_compiled_package_sha1')
+          expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgres_compiled_package_sha1')
+          expect(blobstore_client).to receive(:get).with('genisoimage_blobstore_id', anything, sha1: 'genisoimage_template_sha1')
+          job.perform
+        end
+
+        it 'creates a manifest file that contains the sha1, fingerprint and blobstore_id' do
+          allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
+
+             manifest_file = File.open(File.join(download_dir, 'compiled_release.MF'), 'r')
+             manifest_file_content = manifest_file.read
+
+             File.write(output_path, 'Some glorious content')
+
+             expect(manifest_file_content).to eq(%q(---
+compiled_packages:
+- name: ruby
+  version: ruby_version
+  fingerprint: ruby_fingerprint
+  sha1: ruby_compiled_package_sha1
+  dependencies: []
+- name: postgres
+  version: postgres_version
+  fingerprint: postgres_fingerprint
+  sha1: postgres_compiled_package_sha1
+  dependencies:
+  - ruby
+jobs:
+- name: genisoimage
+  version: genisoimage_version
+  fingerprint: genisoimage_fingerprint
+  sha1: genisoimage_template_sha1
+commit_hash: release_version_commit_hash
+uncommitted_changes: false
+name: release_name
+version: release_version
+))}
+
+          allow(blobstore_client).to receive(:get)
+          allow(blobstore_client).to receive(:create)
+
+          job.perform
+        end
+
+        it 'should put a tarball in the blobstore' do
+          allow(blobstore_client).to receive(:get)
+          allow(blobstore_client).to receive(:create).and_return("77da2388-ecf7-4cf6-be52-b054a07ea307")
+          allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
+             File.write(output_path, 'Some glorious content')
+           }
+
+          job.perform
+        end
+      end
+
     end
   end
 end
