@@ -76,6 +76,28 @@ module Bosh::Spec
       }
     end
 
+    def self.multiple_release_manifest
+      {
+          'name' => 'minimal',
+          'director_uuid'  => 'deadbeef',
+
+          'releases' => [{
+               'name'    => 'appcloud',
+               'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
+           },{
+               'name'    => 'appcloud_2',
+               'version' => '0.2' # It's our dummy valid release from spec/assets/valid_release_2.tgz
+           }],
+
+          'update' => {
+              'canaries'          => 2,
+              'canary_watch_time' => 4000,
+              'max_in_flight'     => 1,
+              'update_watch_time' => 20
+          }
+      }
+    end
+
     def self.legacy_manifest
       simple_cloud_config.merge(simple_manifest)
     end

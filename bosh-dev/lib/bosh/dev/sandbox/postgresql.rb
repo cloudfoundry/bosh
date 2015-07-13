@@ -37,5 +37,9 @@ module Bosh::Dev::Sandbox
         @runner.run(%Q{psql -U postgres #{db_name} -c 'truncate table "#{table_name}" cascade;' > /dev/null 2>&1})
       end
     end
+
+    def with_db_connection(&block)
+      Sequel.connect("#{@adapter}://#{@username}:#{@password}@localhost:#{@port}/#{@db_name}", &block)
+    end
   end
 end
