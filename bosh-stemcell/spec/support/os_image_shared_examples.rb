@@ -123,8 +123,13 @@ shared_examples_for 'every OS image' do
   end
 
   context 'telnet-server is not installed (stig: V-38587, V-38589)' do
-    describe package('telnet-server') do
-      it { should_not be_installed }
+    it "shouldn't be installed" do
+      expect(package('telnet-server')).to_not be_installed
+      expect(package('telnetd')).to_not be_installed
+      expect(package('telnetd-ssl')).to_not be_installed
+      expect(package('telnet-server-krb5')).to_not be_installed
+      expect(package('inetutils-telnetd')).to_not be_installed
+      expect(package('mactelnet-server')).to_not be_installed
     end
   end
 
