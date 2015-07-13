@@ -34,12 +34,6 @@ module Bosh::Director
       # @return [DeploymentPlan::Vm] Associated resource pool VM
       attr_reader :vm
 
-      # @return [Boolean] true if this instance needs to be recreated
-      attr_accessor :recreate
-
-      # @return [Boolean] true if this instance needs to be restarted
-      attr_accessor :restart
-
       # Creates a new instance specification based on the job and index.
       # @param [DeploymentPlan::Job] job associated job
       # @param [Integer] index index for this instance
@@ -59,7 +53,6 @@ module Bosh::Director
         # Expanding virtual states
         case @state
           when 'recreate'
-            @recreate = true
             @state = 'started'
           when 'restart'
             @restart = true
