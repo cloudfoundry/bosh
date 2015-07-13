@@ -59,6 +59,8 @@ module Bosh::Director
         end
       end
 
+      private
+
       def tear_down_vm(vm_data)
         vm = vm_data.vm
         if vm.exists?
@@ -69,22 +71,6 @@ module Bosh::Director
           release_network(reservation)
         end
       end
-
-      def reserve_network
-        reservation = NetworkReservation.new_dynamic
-
-        @network_mutex.synchronize do
-          @network.reserve(reservation)
-        end
-
-        unless reservation.reserved?
-          raise PackageCompilationNetworkNotReserved,
-            "Could not reserve network for package compilation: #{reservation.error}"
-        end
-        reservation
-      end
-
-      private
 
       def create_vm(stemcell)
         @logger.info("Creating compilation VM for stemcell `#{stemcell.desc}'")
@@ -117,6 +103,20 @@ module Bosh::Director
         @network_mutex.synchronize do
           @network.release(reservation)
         end
+      end
+
+      def reserve_network
+        reservation = NetworkReservation.new_dynamic
+
+        @network_mutex.synchronize do
+          @network.reserve(reservation)
+        end
+
+        unless reservation.reserved?
+          raise PackageCompilationNetworkNotReserved,
+            "Could not reserve network for package compilation: #{reservation.error}"
+        end
+        reservation
       end
     end
   end

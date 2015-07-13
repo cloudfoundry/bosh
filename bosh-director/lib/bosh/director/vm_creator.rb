@@ -116,8 +116,6 @@ module Bosh::Director
 
     private
 
-
-
     class DiskAttacher
       def initialize(instance, vm_model, agent_client, cloud, logger)
         @instance = instance
@@ -126,8 +124,6 @@ module Bosh::Director
         @cloud = cloud
         @logger = logger
       end
-
-
     end
   end
 end
