@@ -110,8 +110,15 @@ shared_examples_for 'every OS image' do
   end
 
   context 'tftp is not installed (stig: V-38701)' do
-    describe package('tftp') do
-      it { should_not be_installed }
+    it "shouldn't be installed" do
+      expect(package('tftp')).to_not be_installed
+      expect(package('tftpd')).to_not be_installed
+      expect(package('tftp-server')).to_not be_installed
+      expect(package('atftp')).to_not be_installed
+      expect(package('atftpd')).to_not be_installed
+      expect(package('libnet-tftp-ruby')).to_not be_installed
+      expect(package('python-tftpy')).to_not be_installed
+      expect(package('tftp-hpa')).to_not be_installed
     end
   end
 
