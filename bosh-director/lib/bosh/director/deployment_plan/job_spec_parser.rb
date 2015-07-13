@@ -249,7 +249,7 @@ module Bosh::Director
         end
 
         job_size.times do |index|
-          @job.instances[index] = Instance.new(@job, index, @logger)
+          @job.instances[index] = Instance.new(@job, index, @deployment, @logger)
         end
       end
 

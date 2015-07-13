@@ -238,12 +238,7 @@ module Bosh::Director
 
       def bind_instance_networks
         instances.each do |instance|
-          instance.network_reservations.each do |net_name, reservation|
-            unless reservation.reserved?
-              network = @deployment.network(net_name)
-              network.reserve!(reservation, "`#{name}/#{instance.index}'")
-            end
-          end
+          instance.reserve_networks
         end
       end
 

@@ -22,14 +22,8 @@ module Bosh::Director
       # @return [Bosh::Director::Core::Templates::RenderedTemplatesArchive]
       attr_accessor :rendered_templates_archive
 
-      # @return [Hash<String, NetworkReservation>] network reservations
-      attr_accessor :network_reservations
-
       # @return [String] job state
-      attr_accessor :state
-
-      # @return [Hash] current state as provided by the BOSH Agent
-      attr_accessor :current_state
+      attr_reader :state
 
       # @return [DeploymentPlan::Vm] Associated resource pool VM
       attr_reader :vm
@@ -37,15 +31,17 @@ module Bosh::Director
       # Creates a new instance specification based on the job and index.
       # @param [DeploymentPlan::Job] job associated job
       # @param [Integer] index index for this instance
-      def initialize(job, index, logger)
+      def initialize(job, index, deployment, logger)
         @job = job
         @index = index
         @logger = logger
+        @deployment = deployment
+        @name = "#{@job.name}/#{@index}"
 
         @configuration_hash = nil
         @template_hashes = nil
         @vm = nil
-        @current_state = nil
+        @current_state = {}
 
         @network_reservations = {}
         @state = job.instance_state(@index)
@@ -61,7 +57,7 @@ module Bosh::Director
       end
 
       def to_s
-        "#{@job.name}/#{@index}"
+        @name
       end
 
       def to_instance_deleter_info
@@ -76,6 +72,15 @@ module Bosh::Director
         @model ||= find_or_create_model
         if @model.vm.nil?
           allocate_vm
+        end
+      end
+
+      def reserve_networks
+        @network_reservations.each do |net_name, reservation|
+          unless reservation.reserved?
+            network = @deployment.network(net_name)
+            network.reserve!(reservation, "`#{@name}'")
+          end
         end
       end
 
