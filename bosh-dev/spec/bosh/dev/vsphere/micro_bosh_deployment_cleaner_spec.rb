@@ -52,7 +52,7 @@ module Bosh::Dev::VSphere
           allow(vm1).to receive(:power_off).and_raise
           cleaner.clean
 
-          expect(log_string).to include("Destruction of #{vm1.inspect} failed, continuing")
+          expect(log_string).to include("Destruction of #{vm1.inspect} failed with RuntimeError: RuntimeError. Manual cleanup may be required. Continuing and hoping for the best...")
         end
       end
     end
