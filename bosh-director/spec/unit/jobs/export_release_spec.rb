@@ -40,6 +40,10 @@ module Bosh::Director
 
         allow(Api::DeploymentManager).to receive(:new).and_return(deployment_manager)
         allow(deployment_manager).to receive(:find_by_name).and_return(targeted_deployment)
+
+        allow(job).to receive(:with_deployment_lock).and_yield
+        allow(job).to receive(:with_release_lock).and_yield
+        allow(job).to receive(:with_stemcell_lock).and_yield
       }
 
       it 'raises an error when the requested release does not exist' do
