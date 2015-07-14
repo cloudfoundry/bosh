@@ -126,12 +126,12 @@ module Bosh::Director
       context 'after a vm is created' do
         it 'is reused' do
           original = nil
-          compilation_vm_pool.with_reused_vm(stemcell) do |vm_data|
-            original = vm_data
+          compilation_vm_pool.with_reused_vm(stemcell) do |instance|
+            original = instance
           end
           reused = nil
-          compilation_vm_pool.with_reused_vm(stemcell) do |vm_data|
-            reused = vm_data
+          compilation_vm_pool.with_reused_vm(stemcell) do |instance|
+            reused = instance
           end
           expect(reused).to be(original)
         end
@@ -151,8 +151,8 @@ module Bosh::Director
         it 'no longer offers that vm for reuse' do
           expect(cloud).to receive(:delete_vm)
           original = nil
-          compilation_vm_pool.with_reused_vm(stemcell) do |vm_data|
-            original = vm_data
+          compilation_vm_pool.with_reused_vm(stemcell) do |instance|
+            original = instance
           end
 
           expect {
@@ -160,8 +160,8 @@ module Bosh::Director
           }.to raise_exception Bosh::Director::RpcTimeout
 
           different = nil
-          compilation_vm_pool.with_reused_vm(stemcell) do |vm_data|
-            different = vm_data
+          compilation_vm_pool.with_reused_vm(stemcell) do |instance|
+            different = instance
           end
           expect(different).to_not eq(original)
         end

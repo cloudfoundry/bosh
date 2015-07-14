@@ -114,9 +114,7 @@ module Bosh::Director
         # passed in.  The VMs are yielded and their destruction is ensured.
         # @param [Models::Stemcell] stemcell The stemcells that need to have
         #     compilation VMs created.
-        # @yield [VmData] Yields a VmData object that contains all the data for the
-        #     VM that should be used for compilation.  This may be a reused VM or a
-        #     freshly created VM.
+        # @yield [DeploymentPlan::Instance] Yields an instance that should be used for compilation.  This may be a reused VM or a
         def prepare_vm(stemcell)
           if reuse_compilation_vms?
             @compilation_vm_pool.with_reused_vm(stemcell, &Proc.new)

@@ -524,7 +524,7 @@ module Bosh::Director
       end
       let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make) }
       let(:vm) { Models::Vm.make }
-      let(:vm_data) { instance_double('Bosh::Director::VmData', vm: vm) }
+      let(:instance) { instance_double(DeploymentPlan::Instance, vm: vm) }
 
       context 'with reuse_compilation_vms' do
         let(:instance_reuser) { instance_double('Bosh::Director::InstanceReuser') }
@@ -542,7 +542,7 @@ module Bosh::Director
 
           allow(instance_reuser).to receive_messages(get_instance: nil)
           allow(instance_reuser).to receive_messages(get_num_instances: 0)
-          allow(instance_reuser).to receive_messages(add_in_use_instance: vm_data)
+          allow(instance_reuser).to receive_messages(add_in_use_instance: instance)
           allow(network).to receive(:reserve!).with(instance_of(Bosh::Director::NetworkReservation), /compilation-/)
 
           expect(instance_reuser).to receive(:remove_instance).ordered
