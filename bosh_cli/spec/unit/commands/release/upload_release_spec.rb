@@ -52,17 +52,13 @@ module Bosh::Cli::Command::Release
             end
             let(:tarball_version) { '8.1' }
 
-            before { allow(Bosh::Cli::ReleaseTarball).to receive(:new).and_return(tarball) }
+            before {
+              allow(Bosh::Cli::ReleaseTarball).to receive(:new).and_return(tarball)
+              allow(tarball).to receive(:compiled_release?).and_return(false)
 
-            before { allow(director).to receive(:upload_release) }
-
-            before do
-              allow(director).to receive(:get_status).and_return(
-                {
-                  'version' => director_version
-                }
-              )
-            end
+              allow(director).to receive(:upload_release)
+              allow(director).to receive(:get_status).and_return({'version' => director_version})
+            }
 
             context 'when director is an older version and release is in new format' do
               let(:director_version) { '1.2579.0 (release:4fef83a2 bosh:4fef83a2)' }

@@ -112,7 +112,7 @@ describe 'export release', type: :integration do
         tarball_path = File.join(current_sandbox.blobstore_storage_dir, tarball_data['blobstore_id'])
         `tar xzf #{tarball_path} -C #{temp_dir}`
         files = Dir.entries(temp_dir)
-        expect(files).to include("compiled_packages","compiled_release.MF","jobs")
+        expect(files).to include("compiled_packages","release.MF","jobs")
       end
     end
 
@@ -140,7 +140,7 @@ describe 'export release', type: :integration do
         tarball_path = File.join(dir, "release-appcloud-0.1-on-toronto-os-stemcell-1.tgz")
         `tar xzf #{tarball_path} -C #{temp_dir}`
         files = Dir.entries(temp_dir)
-        expect(files).to include("compiled_packages","compiled_release.MF","jobs")
+        expect(files).to include("compiled_packages","release.MF","jobs")
       end
     end
   end

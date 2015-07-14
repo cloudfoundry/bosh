@@ -16,7 +16,9 @@ module Bosh::Director
       post '/', :consumes => :multipart do
         options = {
           rebase: params['rebase'] == 'true',
+          compiled: params['compiled'] == 'true',
         }
+
         task = @release_manager.create_release_from_file_path(current_user, params[:nginx_upload_path], options)
         redirect "/tasks/#{task.id}"
       end

@@ -8,6 +8,7 @@ module Bosh::Director
       include DownloadHelper
 
       @queue = :normal
+      @compiled_release = false
 
       attr_accessor :release_model
 
@@ -32,6 +33,13 @@ module Bosh::Director
 
         @rebase = !!options['rebase']
         @skip_if_exists = !!options['skip_if_exists']
+        @compiled_release = !!options['compiled']
+
+        if @compiled_release
+          @packages_folder = "compiled_packages"
+        else
+          @packages_folder = "packages"
+        end
 
         @manifest = nil
         @name = nil
@@ -54,7 +62,9 @@ module Bosh::Director
 
         single_step_stage("Verifying manifest") { verify_manifest(release_dir) }
 
-        with_release_lock(@name) { process_release(release_dir) }
+        with_release_lock(@name) {
+          process_release(release_dir)
+        }
 
         if @rebase && @packages_unchanged && @jobs_unchanged
           raise DirectorError, "Rebase is attempted without any job or package changes"
@@ -152,14 +162,14 @@ module Bosh::Director
         @release_version_model.save
 
         single_step_stage("Resolving package dependencies") do
-          resolve_package_dependencies(@manifest["packages"])
+          resolve_package_dependencies(@manifest[@packages_folder])
         end
 
         @packages = {}
         process_packages(release_dir)
         process_jobs(release_dir)
 
-        event_log.begin_stage("Release has been created", 1)
+        event_log.begin_stage(@compiled_release ? "Compiled Release has been created" : "Release has been created", 1)
         event_log.track("#{@name}/#{@version}") {}
       end
 
@@ -168,7 +178,7 @@ module Bosh::Director
       def normalize_manifest
         Bosh::Director.hash_string_vals(@manifest, 'name', 'version')
 
-        @manifest['packages'].each { |p| Bosh::Director.hash_string_vals(p, 'name', 'version', 'sha1') }
+        @manifest[@packages_folder].each { |p| Bosh::Director.hash_string_vals(p, 'name', 'version', 'sha1') }
         @manifest['jobs'].each { |j| Bosh::Director.hash_string_vals(j, 'name', 'version', 'sha1') }
       end
 
@@ -207,7 +217,7 @@ module Bosh::Director
         new_packages = []
         existing_packages = []
 
-        @manifest["packages"].each do |package_meta|
+        @manifest[@packages_folder].each do |package_meta|
           # Checking whether we might have the same bits somewhere
           packages = Models::Package.where(fingerprint: package_meta["fingerprint"]).all
 
@@ -262,7 +272,13 @@ module Bosh::Director
           package_desc = "#{package_meta["name"]}/#{package_meta["version"]}"
           event_log.track(package_desc) do
             logger.info("Creating new package `#{package_desc}'")
-            package = create_package(package_meta, release_dir)
+
+            if @compiled_release
+              package = create_package_for_compiled_release(package_meta, release_dir)
+            else
+              package = create_package(package_meta, release_dir)
+            end
+
             register_package(package)
           end
         end
@@ -280,6 +296,26 @@ module Bosh::Director
             register_package(package)
           end
         end
+      end
+
+      def create_package_for_compiled_release(package_meta, release_dir)
+        name, version = package_meta["name"], package_meta["version"]
+        desc = "package `#{name}/#{version}'"
+
+        package_attrs = {
+            :release => @release_model,
+            :name => name,
+            :sha1 => nil,
+            :blobstore_id => nil,
+            :fingerprint => package_meta["fingerprint"],
+            :version => version
+        }
+
+        package = Models::Package.new(package_attrs)
+        package.dependency_set = package_meta["dependencies"]
+
+        logger.info("Creating #{desc} from provided bits")
+        package.save
       end
 
       # Creates package in DB according to given metadata

@@ -76,6 +76,10 @@ module Bosh::Cli::Command::Release
                   allow(director).to receive(:download_resource).and_return(spec_asset('valid_release_dev_version.tgz'))
                 }
 
+                after {
+                  FileUtils.remove_file("#{Dir.pwd}/release-release-1-on-centos-7-stemcell-0000.tgz", true)
+                }
+
                 it 'returns exit status 0' do
                   command.export('release/1', 'centos-7/0000')
                   expect(command.exit_code).to eq(0)
@@ -84,7 +88,6 @@ module Bosh::Cli::Command::Release
                 it 'downloads the tarball' do
                   allow(command).to receive(:file_checksum).and_return("ae58f89c93073e0c455028a1c8216b3fc55fe672")
                   command.export('release/1', 'centos-7/0000')
-
                   out = Bosh::Cli::Config.output.string
                   expect(out).to match /downloaded/
                 end

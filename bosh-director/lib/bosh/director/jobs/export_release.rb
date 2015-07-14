@@ -108,12 +108,12 @@ module Bosh::Director
         download_dir = compiled_release_downloader.download
 
         manifest = CompiledReleaseManifest.new(compiled_packages_group, templates)
-        manifest.write(File.join(download_dir, 'compiled_release.MF'))
+        manifest.write(File.join(download_dir, 'release.MF'))
 
         output_path = File.join(download_dir, "compiled_release_#{Time.now.to_f}.tar.gz")
         archiver = Core::TarGzipper.new
 
-        archiver.compress(download_dir, ['compiled_packages', 'jobs', 'compiled_release.MF'], output_path)
+        archiver.compress(download_dir, ['compiled_packages', 'jobs', 'release.MF'], output_path)
         tarball_file = File.open(output_path, 'r')
 
         oid = blobstore_client.create(tarball_file)

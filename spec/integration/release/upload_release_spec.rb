@@ -184,4 +184,70 @@ describe 'upload release', type: :integration do
       end
     end
   end
+
+  describe 'upload compiled release' do
+    before { target_and_login }
+
+    it 'upload a compiled release tarball' do
+      output, exit_code = bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}", {
+         return_exit_code: true,
+       })
+      expect(output).to include('Started creating new packages > hello-go/b3df8c27c4525622aacc0d7013af30a9f2195393')
+      expect(output).to include('Started creating new jobs > hello-go/0cf937b9a063cf96bd7506fa31699325b40d2d08')
+      expect(output).to include('Started compiled release has been created > hello-go/50')
+      expect(output).to include('Compiled Release uploaded')
+      expect(exit_code).to eq(0)
+    end
+
+    it 'puts jobs in the blobstore' do
+      Dir.chdir(ClientSandbox.test_release_dir) do
+        File.open('config/final.yml', 'w') do |final|
+          final.puts YAML.dump(
+             'blobstore' => {
+                 'provider' => 'local',
+                 'options' => { 'blobstore_path' => current_sandbox.blobstore_storage_dir },
+             },
+         )
+        end
+      end
+
+      bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
+
+      files = Dir.entries(current_sandbox.blobstore_storage_dir)
+      files.shift(2) # get rid of . & ..
+
+      files.each do  |blob|
+        blob_path = File.join(current_sandbox.blobstore_storage_dir, blob)
+          Dir.mktmpdir do |temp_dir|
+            `tar xzf #{blob_path} -C #{temp_dir}`
+            expect(File.open(File.join(temp_dir, "job.MF")).read).to include("hello-go")
+          end
+      end
+    end
+
+    it 'show actions in the event log' do
+      bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
+
+      event_log = bosh_runner.run('task last --event --raw')
+      expect(event_log).to include("Creating new jobs")
+      expect(event_log).to include("hello-go/0cf937b9a063cf96bd7506fa31699325b40d2d08")
+
+      bosh_runner.run("upload release #{spec_asset('release-hello-go-51-on-centos-7-stemcell-3001.tgz')}")
+      event_log_2 = bosh_runner.run('task last --event --raw')
+      expect(event_log_2).to include("Processing 1 existing job")
+    end
+
+    it 'upload a new version of compiled release tarball when the compiled release is already uploaded' do
+      bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
+
+      output, exit_code = bosh_runner.run("upload release #{spec_asset('release-hello-go-51-on-centos-7-stemcell-3001.tgz')}", {
+        return_exit_code: true,
+      })
+      expect(output).to include('Started processing 1 existing package > Processing 1 existing package')
+      expect(output).to include('Started processing 1 existing job > Processing 1 existing job')
+      expect(output).to include('Started compiled release has been created > hello-go/51')
+      expect(output).to include('Compiled Release uploaded')
+      expect(exit_code).to eq(0)
+    end
+  end
 end
