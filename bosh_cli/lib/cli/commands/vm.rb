@@ -7,6 +7,8 @@ module Bosh::Cli
       usage 'vm resurrection'
       desc 'Enable/Disable resurrection for a given vm'
       def resurrection_state(job=nil, index=nil, new_state)
+        auth_required
+
         if job.nil? && index.nil?
           resurrection = Resurrection.new(new_state)
           show_current_state

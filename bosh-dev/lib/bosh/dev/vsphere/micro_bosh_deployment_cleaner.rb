@@ -29,8 +29,8 @@ module Bosh::Dev::VSphere
 
           @logger.info("#{vm.cid} powered off, terminating")
           vm.delete
-        rescue
-          @logger.info("Destruction of #{vm.inspect} failed, continuing")
+        rescue Exception => e
+          @logger.info("Destruction of #{vm.inspect} failed with #{e.class}: #{e.message}. Manual cleanup may be required. Continuing and hoping for the best...")
         end
       end
     end

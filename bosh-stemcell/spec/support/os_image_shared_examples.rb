@@ -91,6 +91,14 @@ shared_examples_for 'every OS image' do
     it 'sets MaxAuthTries to 3' do
       expect(sshd_config).to contain(/^MaxAuthTries 3$/)
     end
+
+    it 'sets PermitEmptyPasswords to no (stig: V-38614)' do
+      expect(sshd_config).to contain(/^PermitEmptyPasswords no$/)
+    end
+
+    it 'sets Protocol to 2 (stig: V-38607)' do
+      expect(sshd_config).to contain(/^Protocol 2$/)
+    end
   end
 
   context 'anacron is configured' do
@@ -101,4 +109,33 @@ shared_examples_for 'every OS image' do
     end
   end
 
+  context 'tftp is not installed (stig: V-38701)' do
+    it "shouldn't be installed" do
+      expect(package('tftp')).to_not be_installed
+      expect(package('tftpd')).to_not be_installed
+      expect(package('tftp-server')).to_not be_installed
+      expect(package('atftp')).to_not be_installed
+      expect(package('atftpd')).to_not be_installed
+      expect(package('libnet-tftp-ruby')).to_not be_installed
+      expect(package('python-tftpy')).to_not be_installed
+      expect(package('tftp-hpa')).to_not be_installed
+    end
+  end
+
+  context 'telnet-server is not installed (stig: V-38587, V-38589)' do
+    it "shouldn't be installed" do
+      expect(package('telnet-server')).to_not be_installed
+      expect(package('telnetd')).to_not be_installed
+      expect(package('telnetd-ssl')).to_not be_installed
+      expect(package('telnet-server-krb5')).to_not be_installed
+      expect(package('inetutils-telnetd')).to_not be_installed
+      expect(package('mactelnet-server')).to_not be_installed
+    end
+  end
+
+  context 'rsh-server is not installed (stig: V-38598, V-38591, V-38594, V-38602)' do
+    describe package('rsh-server') do
+      it { should_not be_installed }
+    end
+  end
 end

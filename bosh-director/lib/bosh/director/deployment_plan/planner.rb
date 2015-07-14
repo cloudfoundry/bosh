@@ -179,6 +179,10 @@ module Bosh::Director
         @jobs_name_index[name]
       end
 
+      def reset_jobs
+        @jobs = []
+      end
+
       def jobs_starting_on_deploy
         @jobs.select(&:starts_on_deploy?)
       end

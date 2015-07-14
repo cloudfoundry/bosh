@@ -2,6 +2,7 @@
 groups:
   - name: bosh
     jobs:
+      - start-job
       - unit-1.9
       - unit-2.1
       - integration-1.9-mysql
@@ -13,6 +14,7 @@ groups:
 
   - name: 1.9
     jobs:
+      - start-job
       - unit-1.9
       - integration-1.9-mysql
       - integration-1.9-postgres
@@ -21,6 +23,7 @@ groups:
 
   - name: 2.1
     jobs:
+      - start-job
       - unit-2.1
       - integration-2.1-mysql
       - integration-2.1-postgres
@@ -29,6 +32,7 @@ groups:
 
   - name: mysql
     jobs:
+      - start-job
       - unit-1.9
       - unit-2.1
       - integration-1.9-mysql
@@ -38,6 +42,7 @@ groups:
 
   - name: postgres
     jobs:
+      - start-job
       - unit-1.9
       - unit-2.1
       - integration-1.9-postgres
@@ -46,12 +51,18 @@ groups:
       - promote-candidate
 
 jobs:
+  - name: start-job
+    public: true
+    serial: true
+    plan:
+      - { get: interval-trigger, trigger: true }
+      - { get: bosh-src }
+
   - name: unit-1.9
     public: true
     serial: true
     plan:
-      - {trigger: true, get: bosh-src}
-
+      - { get: bosh-src, trigger: true, passed: [start-job] }
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
         config:
@@ -62,7 +73,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, get: bosh-src}
+      - { get: bosh-src, trigger: true, passed: [start-job] }
 
       - task: test
         file: bosh-src/ci/tasks/test-unit.yml
@@ -74,7 +85,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, get: bosh-src}
+      - { get: bosh-src, trigger: true, passed: [start-job] }
 
       - task: test
         privileged: true
@@ -88,7 +99,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, get: bosh-src}
+      - { get: bosh-src, trigger: true, passed: [start-job] }
 
       - task: test
         privileged: true
@@ -102,7 +113,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, get: bosh-src}
+      - { get: bosh-src, trigger: true, passed: [start-job] }
 
       - task: test
         privileged: true
@@ -116,7 +127,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - {trigger: true, get: bosh-src}
+      - { get: bosh-src, trigger: true, passed: [start-job] }
 
       - task: test
         privileged: true
@@ -150,6 +161,11 @@ jobs:
       - {put: bosh-candidate, params: {repository: bosh-src}}
 
 resources:
+  - name: interval-trigger
+    type: time
+    source:
+      interval: 45m # average build time for the integration tests
+
   - name: bosh-src
     type: git
     source:

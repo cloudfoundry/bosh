@@ -1,6 +1,16 @@
 module Bosh
   module Director
     module DeploymentPlan
+      class TransientDeployment
+        def initialize(name, manifest, release_versions)
+          @name = name
+          @manifest = manifest
+          @release_versions = release_versions
+          @vms = []
+        end
+        attr_accessor :name, :manifest, :release_versions, :vms
+      end
+
       class PlannerFactory
         def self.create(event_log, logger)
           deployment_manifest_migrator = Bosh::Director::DeploymentPlan::ManifestMigrator.new
