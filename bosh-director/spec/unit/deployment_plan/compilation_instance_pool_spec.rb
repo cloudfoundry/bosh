@@ -60,6 +60,8 @@ module Bosh::Director
       allow(deployment_plan).to receive(:network).with('network name').and_return(network)
     end
 
+    let(:create_instance_error) { RuntimeError.new('failed to create instance') }
+
     shared_examples_for 'a compilation vm pool' do
       context 'when network is not reserved' do
         before { allow(reservation).to receive(:reserved?).and_return(false) }
@@ -94,25 +96,25 @@ module Bosh::Director
         expect(vm_model.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(trusted_certs))
       end
 
-      context 'when vm raises an Rpc timeout error' do
+      context 'when instance creation fails' do
         before do
           allow(cloud).to receive(:delete_vm).with(vm_model.cid)
         end
 
         it 'deletes the vm from the cloud' do
           expect(cloud).to receive(:delete_vm).with(vm_model.cid)
-          expect { action_that_raises }.to raise_exception Bosh::Director::RpcTimeout
+          expect { action_that_raises }.to raise_error(create_instance_error)
         end
 
         it 'deletes the vm model from the db' do
           vm_model_id = vm_model.id
-          expect { action_that_raises }.to raise_exception Bosh::Director::RpcTimeout
+          expect { action_that_raises }.to raise_error(create_instance_error)
           expect(Models::Vm[vm_model_id]).to be_nil
         end
 
         it 'releases the network reservation' do
           expect(network).to receive(:release).with(reservation)
-          expect { action_that_raises }.to raise_exception Bosh::Director::RpcTimeout
+          expect { action_that_raises }.to raise_error(create_instance_error)
         end
       end
     end
@@ -120,7 +122,7 @@ module Bosh::Director
     describe 'with_reused_vm' do
       it_behaves_like 'a compilation vm pool' do
         let(:action) { compilation_instance_pool.with_reused_vm(stemcell) {} }
-        let(:action_that_raises) { compilation_instance_pool.with_reused_vm(stemcell) {raise Bosh::Director::RpcTimeout} }
+        let(:action_that_raises) { compilation_instance_pool.with_reused_vm(stemcell) { raise(create_instance_error) } }
       end
 
       context 'after a vm is created' do
@@ -142,8 +144,8 @@ module Bosh::Director
           expect(instance_reuser).to receive(:remove_instance)
           expect(cloud).to receive(:delete_vm)
           expect {
-            compilation_instance_pool.with_reused_vm(stemcell) {raise Bosh::Director::RpcTimeout}
-          }.to raise_exception Bosh::Director::RpcTimeout
+            compilation_instance_pool.with_reused_vm(stemcell) { raise create_instance_error }
+          }.to raise_error(create_instance_error)
         end
       end
 
@@ -156,8 +158,8 @@ module Bosh::Director
           end
 
           expect {
-            compilation_instance_pool.with_reused_vm(stemcell) { raise Bosh::Director::RpcTimeout }
-          }.to raise_exception Bosh::Director::RpcTimeout
+            compilation_instance_pool.with_reused_vm(stemcell) { raise create_instance_error }
+          }.to raise_error(create_instance_error)
 
           different = nil
           compilation_instance_pool.with_reused_vm(stemcell) do |instance|
@@ -197,7 +199,7 @@ module Bosh::Director
 
       it_behaves_like 'a compilation vm pool' do
         let(:action) { compilation_instance_pool.with_single_use_vm(stemcell) {} }
-        let(:action_that_raises) { compilation_instance_pool.with_single_use_vm(stemcell) {raise Bosh::Director::RpcTimeout} }
+        let(:action_that_raises) { compilation_instance_pool.with_single_use_vm(stemcell) { raise create_instance_error } }
       end
     end
   end

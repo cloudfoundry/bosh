@@ -23,7 +23,7 @@ module Bosh::Director
           yield instance
 
           @instance_reuser.release_instance(instance)
-        rescue RpcTimeout => e
+        rescue => e
           unless instance.nil?
             @instance_reuser.remove_instance(instance)
             tear_down_vm(instance)
