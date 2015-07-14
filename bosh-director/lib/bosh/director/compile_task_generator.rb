@@ -13,8 +13,8 @@ module Bosh::Director
       # has no cycles: this is being enforced on release upload.
       # Other than that it's a vanilla DFS.
 
-      @logger.info("Checking whether package `#{package.desc}' needs to be compiled for stemcell `#{stemcell.desc}'")
-      task_key = [package.id, stemcell.id]
+      @logger.info("Checking whether package `#{package.desc}' needs to be compiled for stemcell `#{stemcell.model.desc}'")
+      task_key = [package.id, stemcell.model.id]
       task = compile_tasks[task_key]
 
       if task # We already visited this task and its dependencies
@@ -26,7 +26,7 @@ module Bosh::Director
 
       transitive_dependencies = release_version.transitive_dependencies(package)
       package_dependency_key = Models::CompiledPackage.create_dependency_key(transitive_dependencies)
-      package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell)
+      package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell.model)
 
       task = CompileTask.new(package, stemcell, job, package_dependency_key, package_cache_key)
 

@@ -4,8 +4,8 @@ module Bosh::Director
   describe DeploymentPlan::CompilationVmPool do
     let(:vm_reuser) { VmReuser.new }
     let(:cloud) { instance_double('Bosh::Cloud') }
-    let(:stemcell) { Models::Stemcell.make }
-    let(:another_stemcell) { Models::Stemcell.make }
+    let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make) }
+    let(:another_stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make) }
     let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
     let(:vm_creator) { VmCreator.new(cloud, Config.logger, vm_deleter) }
     let(:compilation_config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
@@ -15,8 +15,6 @@ module Bosh::Director
     let(:n_workers) { 3 }
     let(:vm_model) { Models::Vm.make }
     let(:another_vm_model) { Models::Vm.make }
-    let(:vm_data) { VmData.new(reservation, vm_model, stemcell, network_settings) }
-    let(:another_vm_data) { VmData.new(reservation, another_vm_model, another_stemcell, network_settings) }
     let(:cloud_properties) { {cloud: 'properties'} }
     let(:compilation_env) { {compilation: 'environment'} }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
@@ -32,7 +30,7 @@ module Bosh::Director
       thread_pool
     end
 
-    let(:compilation_vm_pool) { DeploymentPlan::CompilationVmPool.new(vm_reuser, vm_creator, deployment_plan, cloud, logger) }
+    let(:compilation_vm_pool) { DeploymentPlan::CompilationVmPool.new(vm_reuser, vm_creator, vm_deleter, deployment_plan, logger) }
 
     before do
       allow(compilation_config).to receive_messages(deployment: deployment_plan,
@@ -41,54 +39,53 @@ module Bosh::Director
           cloud_properties: cloud_properties,
           workers: n_workers,
           reuse_compilation_vms: false)
-      allow(network).to receive(:reserve) { |reservation| reservation.reserved = true }
-      allow(network).to receive(:network_settings)
+      allow(network).to receive(:reserve!) { |reservation, name| reservation.reserved = true }
       allow(NetworkReservation).to receive(:new_dynamic).and_return(reservation)
       allow(reservation).to receive(:reserved?).and_return(true)
-      allow(network).to receive(:network_settings).with(reservation).and_return('network settings')
+      allow(network).to receive(:network_settings).with(reservation, ['dns', 'gateway']).and_return('network settings')
       allow(vm_creator).to receive(:create).and_return(vm_model, another_vm_model)
       allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
       allow(AgentClient).to receive(:with_vm).with(vm_model).and_return(agent_client)
       allow(AgentClient).to receive(:with_vm).with(another_vm_model).and_return(another_agent_client)
       allow(agent_client).to receive(:wait_until_ready)
       allow(agent_client).to receive(:update_settings)
+      allow(agent_client).to receive(:get_state)
       allow(agent_client).to receive(:apply)
       allow(another_agent_client).to receive(:wait_until_ready)
       allow(another_agent_client).to receive(:update_settings)
+      allow(another_agent_client).to receive(:get_state)
       allow(another_agent_client).to receive(:apply)
       allow(network).to receive(:release)
-      allow(cloud).to receive(:delete_vm)
       allow(ThreadPool).to receive_messages(new: thread_pool)
+      allow(deployment_plan).to receive(:network).with('network name').and_return(network)
     end
 
     shared_examples_for 'a compilation vm pool' do
-      it 'reserves a network for a new vm' do
-        expect(network).to receive(:reserve).with(reservation)
-        action
+      context 'when network is not reserved' do
+        before { allow(reservation).to receive(:reserved?).and_return(false) }
+
+        it 'reserves a network for a new vm' do
+          expect(network).to receive(:reserve!).with(reservation, /^`compilation-/)
+          action
+        end
       end
 
       it 'defers to the vm creator to create a vm' do
-        expect(vm_creator).to receive(:create).with(deployment_model, stemcell, cloud_properties,
+        expect(vm_creator).to receive(:create).with(deployment_model, stemcell.model, cloud_properties,
             network_settings, nil, compilation_env)
                                 .and_return(vm_model)
         action
       end
 
-      it 'creates a new VmData object to represent the vm' do
-        expect(VmData).to receive(:new).with(reservation, vm_model, stemcell, network_settings)
-                            .and_return(VmData.new(reservation, vm_model, stemcell, network_settings))
-        action
-      end
-
-
-      it 'configures the vm' do
-        expect(agent_client).to receive(:wait_until_ready).ordered
-        expect(agent_client).to receive(:update_settings).with(trusted_certs).ordered
+      it 'applies vm state' do
         expected_apply_spec = {
           'deployment' => 'mycloud',
+          'networks' => {
+            'network name' => 'network settings'
+          },
           'resource_pool' => {},
-          'networks' => network_settings
-
+          'job' => {},
+          'index' => 0,
         }
         expect(agent_client).to receive(:apply).with(expected_apply_spec)
 
@@ -97,20 +94,13 @@ module Bosh::Director
         expect(vm_model.trusted_certs_sha1).to eq(Digest::SHA1.hexdigest(trusted_certs))
       end
 
-
-      context 'when the new network reservation is reserved' do
-        before do
-          allow(reservation).to receive(:reserved?).and_return(false)
-        end
-
-        it 'raises a PackageCompilationNetworkNotReserved exception' do
-          expect { action }.to raise_exception PackageCompilationNetworkNotReserved
-        end
-      end
-
       context 'when vm raises an Rpc timeout error' do
+        before do
+          allow(cloud).to receive(:delete_vm).with(vm_model.cid)
+        end
+
         it 'deletes the vm from the cloud' do
-          expect(cloud).to receive(:delete_vm).with(vm_data.vm.cid)
+          expect(cloud).to receive(:delete_vm).with(vm_model.cid)
           expect { action_that_raises }.to raise_exception Bosh::Director::RpcTimeout
         end
 
@@ -124,7 +114,6 @@ module Bosh::Director
           expect(network).to receive(:release).with(reservation)
           expect { action_that_raises }.to raise_exception Bosh::Director::RpcTimeout
         end
-
       end
     end
 
@@ -151,6 +140,7 @@ module Bosh::Director
       context 'when vm raises an Rpc timeout error' do
         it 'removes the vm from the reuser' do
           expect(vm_reuser).to receive(:remove_vm)
+          expect(cloud).to receive(:delete_vm)
           expect {
             compilation_vm_pool.with_reused_vm(stemcell) {raise Bosh::Director::RpcTimeout}
           }.to raise_exception Bosh::Director::RpcTimeout
@@ -159,6 +149,7 @@ module Bosh::Director
 
       context 'when vm raises an Rpc timeout error' do
         it 'no longer offers that vm for reuse' do
+          expect(cloud).to receive(:delete_vm)
           original = nil
           compilation_vm_pool.with_reused_vm(stemcell) do |vm_data|
             original = vm_data
@@ -179,6 +170,7 @@ module Bosh::Director
       describe 'tear_down_vms' do
         let(:number_of_workers) { 1 }
         before do
+          allow(cloud).to receive(:delete_vm)
           compilation_vm_pool.with_reused_vm(stemcell) {}
           compilation_vm_pool.with_reused_vm(another_stemcell) {}
         end
@@ -199,6 +191,10 @@ module Bosh::Director
     end
 
     describe 'with_single_use_vm' do
+      before do
+        allow(cloud).to receive(:delete_vm)
+      end
+
       it_behaves_like 'a compilation vm pool' do
         let(:action) { compilation_vm_pool.with_single_use_vm(stemcell) {} }
         let(:action_that_raises) { compilation_vm_pool.with_single_use_vm(stemcell) {raise Bosh::Director::RpcTimeout} }

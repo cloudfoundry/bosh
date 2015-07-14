@@ -12,11 +12,11 @@ module Bosh::Director
 
     # Adds a VM's information to the pool of VMs that can be reused.
     # @param [VmData] The VmData instance for the new VM.
-    def add_in_use_vm(vm_data)
+    def add_in_use_vm(vm_data, stemcell)
       raise NilVMDataError if vm_data.nil?
       @mutex.synchronize do
-        @in_use_vms_by_stemcell[vm_data.stemcell] ||= []
-        @in_use_vms_by_stemcell[vm_data.stemcell] << vm_data
+        @in_use_vms_by_stemcell[stemcell] ||= []
+        @in_use_vms_by_stemcell[stemcell] << vm_data
       end
     end
 

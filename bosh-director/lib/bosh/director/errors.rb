@@ -215,7 +215,6 @@ module Bosh::Director
 
   DnsInvalidCanonicalName = err(420001)
 
-  PackageCompilationNetworkNotReserved = err(430001)
   PackageCompilationNotEnoughWorkersForReuse = err(430002)
 
   BadManifest = err(440001)

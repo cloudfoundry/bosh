@@ -28,10 +28,12 @@ module Bosh::Director
       # @return [DeploymentPlan::Vm] Associated resource pool VM
       attr_reader :vm
 
+      attr_reader :deployment
+
       # Creates a new instance specification based on the job and index.
       # @param [DeploymentPlan::Job] job associated job
       # @param [Integer] index index for this instance
-      def initialize(job, index, deployment, logger)
+      def initialize(job, index, state, deployment, logger)
         @job = job
         @index = index
         @logger = logger
@@ -44,7 +46,7 @@ module Bosh::Director
         @current_state = {}
 
         @network_reservations = {}
-        @state = job.instance_state(@index)
+        @state = state
 
         # Expanding virtual states
         case @state
@@ -100,7 +102,7 @@ module Bosh::Director
         @logger.info('Applying VM state')
 
         state = {
-          'deployment' => @job.deployment.name,
+          'deployment' => @deployment.name,
           'networks' => network_settings,
           'resource_pool' => @job.resource_pool.spec,
           'job' => @job.spec,
@@ -113,12 +115,15 @@ module Bosh::Director
 
         @model.vm.update(:apply_spec => state)
 
-        agent = AgentClient.with_vm(@model.vm)
-        agent.apply(state)
+        agent_client.apply(state)
 
         # Agent will potentially return modified version of state
         # with resolved dynamic networks information
-        @current_state = agent.get_state
+        @current_state = agent_client.get_state
+      end
+
+      def agent_client
+        @agent_client ||= AgentClient.with_vm(@model.vm)
       end
 
       ##
@@ -177,7 +182,7 @@ module Bosh::Director
 
         network_settings = {}
         @network_reservations.each do |name, reservation|
-          network = @job.deployment.network(name)
+          network = @deployment.network(name)
           network_settings[name] = network.network_settings(reservation, default_properties[name])
 
           # Temporary hack for running errands.
@@ -204,6 +209,7 @@ module Bosh::Director
             end
           end
         end
+
         network_settings
       end
 
@@ -251,7 +257,7 @@ module Bosh::Director
       ##
       # @return [Boolean] returns true if the persistent disk is attached to the VM
       def disk_currently_attached?
-        current_state['persistent_disk'].to_i > 0
+        @current_state['persistent_disk'].to_i > 0
       end
 
       ##
@@ -364,6 +370,14 @@ module Bosh::Director
         Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs) != @model.vm.trusted_certs_sha1
       end
 
+      def delete
+        @network_reservations.each do |network_name, reservation|
+          @deployment.network(network_name).release(reservation)
+        end
+
+        @model.destroy
+      end
+
       ##
       # @return [Boolean] returns true if the any of the expected specifications
       #   differ from the ones provided by the VM
@@ -454,12 +468,12 @@ module Bosh::Director
       # Looks up instance model in DB
       # @return [Models::Instance]
       def find_or_create_model
-        if @job.deployment.model.nil?
+        if @deployment.model.nil?
           raise DirectorError, 'Deployment model is not bound'
         end
 
         conditions = {
-          deployment_id: @job.deployment.model.id,
+          deployment_id: @deployment.model.id,
           job: @job.name,
           index: @index
         }
@@ -510,22 +524,6 @@ module Bosh::Director
             reservation.take(provided_reservation)
           end
         end
-      end
-
-      def add_allocated_vm(vm_model, state)
-        vm = Vm.new
-
-        reservation = @network_reservations[resource_pool.network.name]
-
-        @logger.debug("Found VM '#{vm_model.cid}' running job instance '#{self}'" +
-          " in resource pool `#{resource_pool.name}'" +
-          " with reservation '#{reservation}'")
-        vm.model = vm_model
-        vm.bound_instance = self
-
-        @current_state = state
-
-        @vm = vm
       end
     end
   end

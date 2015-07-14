@@ -137,28 +137,28 @@ module Bosh::Director
       # Check if this package is already compiled
       compiled_package = Models::CompiledPackage[
         :package_id => package.id,
-        :stemcell_id => stemcell.id,
+        :stemcell_id => stemcell.model.id,
         :dependency_key => dependency_key
       ]
       if compiled_package
         logger.info("Found compiled version of package `#{package.desc}' " +
-                       "for stemcell `#{stemcell.desc}'")
+                       "for stemcell `#{stemcell.model.desc}'")
       else
         if Config.use_compiled_package_cache?
           if BlobUtil.exists_in_global_cache?(package, cache_key)
             event_log.track("Downloading '#{package.desc}' from global cache") do
               # has side effect of putting CompiledPackage model in db
-              compiled_package = BlobUtil.fetch_from_global_cache(package, stemcell, cache_key, dependency_key)
+              compiled_package = BlobUtil.fetch_from_global_cache(package, stemcell.model, cache_key, dependency_key)
             end
           end
         end
 
         if compiled_package
           logger.info("Package `Found compiled version of package `#{package.desc}'" +
-                         "for stemcell `#{stemcell.desc}' in global cache")
+                         "for stemcell `#{stemcell.model.desc}' in global cache")
         else
           logger.info("Package `#{package.desc}' " +
-                         "needs to be compiled on `#{stemcell.desc}'")
+                         "needs to be compiled on `#{stemcell.model.desc}'")
         end
       end
 

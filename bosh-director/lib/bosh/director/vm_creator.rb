@@ -13,11 +13,10 @@ module Bosh::Director
 
     def create_for_instance(instance, disks)
       @logger.info('Creating VM')
-      deployment = instance.job.deployment
       resource_pool = instance.job.resource_pool
 
       vm_model = create(
-        deployment.model,
+        instance.deployment.model,
         resource_pool.stemcell.model,
         resource_pool.cloud_properties,
         instance.network_settings,

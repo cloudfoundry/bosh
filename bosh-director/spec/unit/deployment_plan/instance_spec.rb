@@ -2,8 +2,9 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe Instance do
-    subject(:instance) { Instance.new(job, index, plan, logger) }
+    subject(:instance) { Instance.new(job, index, state, plan, logger) }
     let(:index) { 0 }
+    let(:state) { 'started' }
 
     before { allow(Bosh::Director::Config).to receive(:dns_domain_name).and_return(domain_name) }
     let(:domain_name) { 'test_domain' }
@@ -454,40 +455,42 @@ module Bosh::Director::DeploymentPlan
       let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', deployment: plan, name: 'dea', resource_pool: resource_pool) }
       let(:index) { 3 }
 
-      it 'deployment plan -> DB' do
-        allow(job).to receive(:instance_state).with(3).and_return('stopped')
+      context 'when desired state is stopped' do
+        let(:state) { 'stopped' }
 
-        expect {
+        it 'deployment plan -> DB' do
+          expect {
+            instance.sync_state_with_db
+          }.to raise_error(Bosh::Director::DirectorError, /model is not bound/)
+
+          instance.bind_unallocated_vm
+          expect(instance.model.state).to eq('started')
           instance.sync_state_with_db
-        }.to raise_error(Bosh::Director::DirectorError, /model is not bound/)
-
-        instance.bind_unallocated_vm
-        expect(instance.model.state).to eq('started')
-        instance.sync_state_with_db
-        expect(instance.state).to eq('stopped')
-        expect(instance.model.state).to eq('stopped')
+          expect(instance.state).to eq('stopped')
+          expect(instance.model.state).to eq('stopped')
+        end
       end
 
-      it 'DB -> deployment plan' do
-        allow(job).to receive(:instance_state).with(3).and_return(nil)
+      context 'when desired state is not set' do
+        let(:state) { nil }
 
-        instance.bind_unallocated_vm
-        instance.model.update(:state => 'stopped')
+        it 'DB -> deployment plan' do
+          instance.bind_unallocated_vm
+          instance.model.update(:state => 'stopped')
 
-        instance.sync_state_with_db
-        expect(instance.model.state).to eq('stopped')
-        expect(instance.state).to eq('stopped')
-      end
-
-      it 'needs to find state in order to sync it' do
-        allow(job).to receive(:instance_state).with(3).and_return(nil)
-
-        instance.bind_unallocated_vm
-        expect(instance.model).to receive(:state).and_return(nil)
-
-        expect {
           instance.sync_state_with_db
-        }.to raise_error(Bosh::Director::InstanceTargetStateUndefined)
+          expect(instance.model.state).to eq('stopped')
+          expect(instance.state).to eq('stopped')
+        end
+
+        it 'needs to find state in order to sync it' do
+          instance.bind_unallocated_vm
+          expect(instance.model).to receive(:state).and_return(nil)
+
+          expect {
+            instance.sync_state_with_db
+          }.to raise_error(Bosh::Director::InstanceTargetStateUndefined)
+        end
       end
     end
 
