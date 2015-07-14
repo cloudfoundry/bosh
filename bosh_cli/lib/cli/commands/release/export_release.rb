@@ -5,13 +5,14 @@ module Bosh::Cli::Command
   module Release
     class ExportRelease < Base
 
-      # bosh create release
       usage 'export release'
       desc 'Export the compiled release to a tarball. Release should be in the form of {name}/{version} and stemcell should be in the form of {operating system name}/{stemcell version}'
 
       def export(release, stemcell)
         auth_required
-        manifest = prepare_deployment_manifest(show_state: true)
+        deployment_required
+        manifest = Bosh::Cli::Manifest.new(deployment, director)
+        manifest.load
 
         release = Bosh::Cli::NameVersionPair.parse(release)
         stemcell = Bosh::Cli::NameVersionPair.parse(stemcell)
