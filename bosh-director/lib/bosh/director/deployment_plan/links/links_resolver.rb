@@ -38,6 +38,8 @@ module Bosh::Director
 
           job.add_resolved_link(link_name, link_spec)
         end
+
+        ensure_provided_links_are_used(job, template)
       end
 
       def save_provided_links(job, template)
@@ -47,6 +49,16 @@ module Bosh::Director
           @logger.debug("Saving link spec for job '#{job.name}', template: '#{template.name}', link: '#{provided_link}', spec: '#{link_spec}'")
 
           @deployment_plan.link_spec[job.name][template.name][provided_link.name][provided_link.type] = link_spec
+        end
+      end
+
+      def ensure_provided_links_are_used(job, template)
+        return if job.link_paths.empty?
+        job.link_paths[template.name].each do |link_name, _|
+          unless template.required_links.map(&:name).include?(link_name)
+            raise Bosh::Director::UnusedProvidedLink,
+              "Link '#{link_name}' is not required in job '#{job.name}'"
+          end
         end
       end
     end

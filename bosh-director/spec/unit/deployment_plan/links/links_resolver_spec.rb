@@ -152,22 +152,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
                 }
               })
         end
-
-        context 'when non-required links are provided' do
-          let(:links) do
-            {
-              'db' => 'fake-deployment.mysql.mysql-template.db',
-              'other-db' => 'fake-deployment.mysql.mysql-template.other'
-            }
-          end
-
-          it 'only provides required links' do
-            links_resolver.resolve(api_server_job)
-
-            expect(api_server_job.link_spec).to have_key('db')
-            expect(api_server_job.link_spec).to_not have_key('other_db')
-          end
-        end
       end
     end
 
@@ -306,6 +290,22 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
             Bosh::Director::JobMissingLink,
             "Link path was not provided for required link 'db' in job 'api-server'"
           )
+      end
+    end
+
+    context 'when link specified in manifest is not required' do
+
+      let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.db'} }
+      let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.db'} }
+
+      let(:requires_links) { [] }
+      let(:provided_links) { ['db'] } # name and type is implicitly db
+
+      it 'raises unknown link error' do
+        expect {
+          links_resolver.resolve(api_server_job)
+        }.to raise_error Bosh::Director::UnusedProvidedLink,
+            "Link 'db' is not required in job 'api-server'"
       end
     end
   end

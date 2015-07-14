@@ -69,6 +69,8 @@ module Bosh::Director
 
       attr_accessor :all_properties
 
+      attr_reader :link_paths
+
       # @param [Bosh::Director::DeploymentPlan::Planner] deployment Deployment plan
       # @param [Hash] job_spec Raw job spec from the deployment manifest
       # @param [Bosh::Director::EventLog::Log] event_log Event log for recording deprecations

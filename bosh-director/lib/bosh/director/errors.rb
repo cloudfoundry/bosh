@@ -153,6 +153,7 @@ module Bosh::Director
   JobUnknownDiskPool = err(140010)
   JobInvalidPersistentDisk = err(140011)
   JobMissingLink = err(140012)
+  UnusedProvidedLink = err(140013)
 
   # Manifest parsing: job networks section
   JobUnknownNetwork = err(150001)
