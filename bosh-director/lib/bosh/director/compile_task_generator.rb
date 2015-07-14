@@ -14,7 +14,7 @@ module Bosh::Director
       # Other than that it's a vanilla DFS.
 
       @logger.info("Checking whether package `#{package.desc}' needs to be compiled for stemcell `#{stemcell.model.desc}'")
-      task_key = [package.id, stemcell.model.id]
+      task_key = [package.id, stemcell.id]
       task = compile_tasks[task_key]
 
       if task # We already visited this task and its dependencies

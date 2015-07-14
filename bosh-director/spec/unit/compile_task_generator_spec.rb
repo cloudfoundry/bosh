@@ -3,6 +3,8 @@ require 'bosh/director/compile_task_generator'
 
 module Bosh::Director
   describe CompileTaskGenerator do
+    include Support::StemcellHelpers
+
     describe '#generate!' do
       subject(:generator) { described_class.new(logger, event_log) }
 
@@ -16,7 +18,7 @@ module Bosh::Director
       let(:package_b) { Bosh::Director::Models::Package.make(name: 'package_b') }
       let(:package_c) { Bosh::Director::Models::Package.make(name: 'package_c') }
 
-      let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Bosh::Director::Models::Stemcell.make) }
+      let(:stemcell) { make_stemcell }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
 
       let(:compile_tasks) { {} }

@@ -2,6 +2,8 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::Steps::PackageCompileStep do
+    include Support::StemcellHelpers
+
     let(:job) { double('job').as_null_object }
     let(:cloud) { double(:cpi) }
     let(:vm_deleter) { VmDeleter.new(cloud, Config.logger) }
@@ -74,8 +76,8 @@ module Bosh::Director
 
     def prepare_samples
       @release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'cf-release', model: release_version_model)
-      @stemcell_a = instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: Models::Stemcell.make)
-      @stemcell_b = instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: Models::Stemcell.make)
+      @stemcell_a = make_stemcell
+      @stemcell_b = make_stemcell
 
       @p_common = make_package('common')
       @p_syslog = make_package('p_syslog')
@@ -257,8 +259,7 @@ module Bosh::Director
                                     reuse_compilation_vms: true)
         release_version_model = instance_double('Bosh::Director::Models::ReleaseVersion', dependencies: Set.new, transitive_dependencies: Set.new)
         release_version = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'release_name', model: release_version_model)
-        stemcell_model = double('stemcell_model', desc: 'stemcell description', id: 'stemcell_id', sha1: 'beef')
-        stemcell = double('stemcell', model: stemcell_model)
+        stemcell = make_stemcell
         resource_pool = double('resource_pool', stemcell: stemcell)
         job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, name: 'job_name', resource_pool: resource_pool)
         package_model = instance_double('Bosh::Director::Models::Package', name: 'foobarbaz', desc: 'package description', id: 'package_id', dependency_set: [],
@@ -383,7 +384,7 @@ module Bosh::Director
         prepare_samples
 
         release  = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion',  model: release_version_model, name: 'release')
-        stemcell = instance_double('Bosh::Director::DeploymentPlan::Stemcell', model: Models::Stemcell.make)
+        stemcell = make_stemcell
         resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool', stemcell: stemcell)
 
         package  = make_package('common')
@@ -434,7 +435,7 @@ module Bosh::Director
 
     it 'should make sure a parallel deployment did not compile a package already' do
       package = Models::Package.make
-      stemcell = double(DeploymentPlan::Stemcell, model: Models::Stemcell.make)
+      stemcell = make_stemcell
 
       task = CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key')
 
@@ -450,7 +451,7 @@ module Bosh::Director
 
     describe 'the global blobstore' do
       let(:package) { Models::Package.make }
-      let(:stemcell) { double(DeploymentPlan::Stemcell, model: Models::Stemcell.make) }
+      let(:stemcell) { make_stemcell }
       let(:task) { CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key') }
       let(:compiler) { DeploymentPlan::Steps::PackageCompileStep.new(plan, compilation_instance_pool, logger, Config.event_log, nil) }
       let(:cache_key) { 'cache key' }

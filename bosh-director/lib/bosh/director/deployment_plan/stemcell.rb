@@ -44,6 +44,14 @@ module Bosh::Director
         end
       end
 
+      def desc
+        @model.desc
+      end
+
+      def id
+        @model.id
+      end
+
       def spec
         {
           "name" => @name,

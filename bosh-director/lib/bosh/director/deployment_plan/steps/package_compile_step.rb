@@ -37,7 +37,7 @@ module Bosh::Director
 
           @compile_tasks.each_value do |task|
             if task.ready_to_compile?
-              @logger.info("Package `#{task.package.desc}' is ready to be compiled for stemcell `#{task.stemcell.model.desc}'")
+              @logger.info("Package `#{task.package.desc}' is ready to be compiled for stemcell `#{task.stemcell.desc}'")
               @ready_tasks << task
             end
           end
@@ -62,7 +62,7 @@ module Bosh::Director
           package = task.package
           stemcell = task.stemcell
 
-          with_compile_lock(package.id, stemcell.model.id) do
+          with_compile_lock(package.id, stemcell.id) do
             # Check if the package was compiled in a parallel deployment
             compiled_package = task.find_compiled_package(@logger, @event_log)
             if compiled_package.nil?
@@ -144,7 +144,7 @@ module Bosh::Director
                 template_name = t.name
                 "`#{release_name}/#{template_name}'"
               end
-              @logger.info("Job templates #{template_descs.join(', ')} need to run on stemcell `#{stemcell.model.desc}'")
+              @logger.info("Job templates #{template_descs.join(', ')} need to run on stemcell `#{stemcell.desc}'")
 
               job.templates.each do |template|
                 template.package_models.each do |package|
@@ -189,10 +189,10 @@ module Bosh::Director
 
         def enqueue_unblocked_tasks(task)
           @tasks_mutex.synchronize do
-            @logger.info("Unblocking dependents of `#{task.package.desc}` for `#{task.stemcell.model.desc}`")
+            @logger.info("Unblocking dependents of `#{task.package.desc}` for `#{task.stemcell.desc}`")
             task.dependent_tasks.each do |dep_task|
               if dep_task.ready_to_compile?
-                @logger.info("Package `#{dep_task.package.desc}' now ready to be compiled for `#{dep_task.stemcell.model.desc}'")
+                @logger.info("Package `#{dep_task.package.desc}' now ready to be compiled for `#{dep_task.stemcell.desc}'")
                 @ready_tasks << dep_task
               end
             end
@@ -201,7 +201,7 @@ module Bosh::Director
 
         def process_task(task)
           package_desc = task.package.desc
-          stemcell_desc = task.stemcell.model.desc
+          stemcell_desc = task.stemcell.desc
           task_desc = "package `#{package_desc}' for stemcell `#{stemcell_desc}'"
 
           with_thread_name("compile_package(#{package_desc}, #{stemcell_desc})") do

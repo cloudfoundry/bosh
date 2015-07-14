@@ -2,6 +2,8 @@ require 'spec_helper'
 
 module Bosh::Director
   describe CompileTask do
+    include Support::StemcellHelpers
+
     let(:job) { double('job').as_null_object }
 
     def make(package, stemcell)
@@ -193,7 +195,7 @@ module Bosh::Director
       let(:event_log) { double("event_log") }
       let(:logger) { double("logger", info:nil) }
       let(:package) { Models::Package.make }
-      let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make) }
+      let(:stemcell) { make_stemcell }
       let(:dependency_key) { 'fake-dependency-key' }
       let(:cache_key) { 'fake-cache-key' }
 
