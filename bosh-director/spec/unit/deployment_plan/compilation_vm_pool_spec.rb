@@ -2,7 +2,7 @@ require File.expand_path("../../../spec_helper", __FILE__)
 
 module Bosh::Director
   describe DeploymentPlan::CompilationVmPool do
-    let(:vm_reuser) { VmReuser.new }
+    let(:instance_reuser) { InstanceReuser.new }
     let(:cloud) { instance_double('Bosh::Cloud') }
     let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make) }
     let(:another_stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make) }
@@ -30,7 +30,7 @@ module Bosh::Director
       thread_pool
     end
 
-    let(:compilation_vm_pool) { DeploymentPlan::CompilationVmPool.new(vm_reuser, vm_creator, vm_deleter, deployment_plan, logger) }
+    let(:compilation_vm_pool) { DeploymentPlan::CompilationVmPool.new(instance_reuser, vm_creator, vm_deleter, deployment_plan, logger) }
 
     before do
       allow(compilation_config).to receive_messages(deployment: deployment_plan,
@@ -139,7 +139,7 @@ module Bosh::Director
 
       context 'when vm raises an Rpc timeout error' do
         it 'removes the vm from the reuser' do
-          expect(vm_reuser).to receive(:remove_vm)
+          expect(instance_reuser).to receive(:remove_instance)
           expect(cloud).to receive(:delete_vm)
           expect {
             compilation_vm_pool.with_reused_vm(stemcell) {raise Bosh::Director::RpcTimeout}
@@ -176,9 +176,9 @@ module Bosh::Director
         end
 
         it 'removes the vm from the reuser' do
-          expect(vm_reuser.get_num_vms(stemcell)).to eq(1)
+          expect(instance_reuser.get_num_instances(stemcell)).to eq(1)
           compilation_vm_pool.tear_down_vms(number_of_workers)
-          expect(vm_reuser.get_num_vms(stemcell)).to eq(0)
+          expect(instance_reuser.get_num_instances(stemcell)).to eq(0)
         end
 
         it 'tears down each idle vm in vm pool' do

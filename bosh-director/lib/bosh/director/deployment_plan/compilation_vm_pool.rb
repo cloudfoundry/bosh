@@ -1,8 +1,8 @@
 module Bosh::Director
   module DeploymentPlan
     class CompilationVmPool
-      def initialize(vm_reuser, vm_creator, vm_deleter, deployment_plan, logger)
-        @vm_reuser = vm_reuser
+      def initialize(instance_reuser, vm_creator, vm_deleter, deployment_plan, logger)
+        @instance_reuser = instance_reuser
         @vm_creator = vm_creator
         @vm_deleter = vm_deleter
         @deployment_plan =  deployment_plan
@@ -11,21 +11,21 @@ module Bosh::Director
 
       def with_reused_vm(stemcell)
         begin
-          instance = @vm_reuser.get_vm(stemcell)
+          instance = @instance_reuser.get_instance(stemcell)
           if instance.nil?
             instance = create_instance(stemcell)
             configure_instance(instance)
-            @vm_reuser.add_in_use_vm(instance, stemcell)
+            @instance_reuser.add_in_use_instance(instance, stemcell)
           else
             @logger.info("Reusing compilation VM `#{instance.vm.model.cid}' for stemcell `#{stemcell.model.desc}'")
           end
 
           yield instance
 
-          @vm_reuser.release_vm(instance)
+          @instance_reuser.release_instance(instance)
         rescue RpcTimeout => e
           unless instance.nil?
-            @vm_reuser.remove_vm(instance)
+            @instance_reuser.remove_instance(instance)
             tear_down_vm(instance)
           end
           raise e
@@ -44,9 +44,9 @@ module Bosh::Director
 
       def tear_down_vms(number_of_workers)
         ThreadPool.new(:max_threads => number_of_workers).wrap do |pool|
-           @vm_reuser.each do |instance|
+           @instance_reuser.each do |instance|
             pool.process do
-              @vm_reuser.remove_vm(instance)
+              @instance_reuser.remove_instance(instance)
               tear_down_vm(instance)
             end
           end

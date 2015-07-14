@@ -10,8 +10,8 @@ module Bosh::Director
     let(:config) { instance_double('Bosh::Director::DeploymentPlan::CompilationConfig') }
     let(:deployment) { Models::Deployment.make(name: 'mycloud') }
     let(:plan) {instance_double('Bosh::Director::DeploymentPlan::Planner', compilation: config, model: deployment, name: 'mycloud')}
-    let(:vm_reuser) { VmReuser.new }
-    let(:compilation_vm_pool) { DeploymentPlan::CompilationVmPool.new(vm_reuser, vm_creator, vm_deleter, plan, logger) }
+    let(:instance_reuser) { InstanceReuser.new }
+    let(:compilation_vm_pool) { DeploymentPlan::CompilationVmPool.new(instance_reuser, vm_creator, vm_deleter, plan, logger) }
     let(:thread_pool) do
       thread_pool = instance_double('Bosh::Director::ThreadPool')
       allow(thread_pool).to receive(:wrap).and_yield(thread_pool)
@@ -527,7 +527,7 @@ module Bosh::Director
       let(:vm_data) { instance_double('Bosh::Director::VmData', vm: vm) }
 
       context 'with reuse_compilation_vms' do
-        let(:vm_reuser) { instance_double('Bosh::Director::VmReuser') }
+        let(:instance_reuser) { instance_double('Bosh::Director::InstanceReuser') }
 
         before do
           allow(compilation).to receive_messages(reuse_compilation_vms: true)
@@ -540,12 +540,12 @@ module Bosh::Director
 
           allow(vm_creator).to receive(:create_for_instance).and_raise(RpcTimeout)
 
-          allow(vm_reuser).to receive_messages(get_vm: nil)
-          allow(vm_reuser).to receive_messages(get_num_vms: 0)
-          allow(vm_reuser).to receive_messages(add_in_use_vm: vm_data)
+          allow(instance_reuser).to receive_messages(get_instance: nil)
+          allow(instance_reuser).to receive_messages(get_num_instances: 0)
+          allow(instance_reuser).to receive_messages(add_in_use_instance: vm_data)
           allow(network).to receive(:reserve!).with(instance_of(Bosh::Director::NetworkReservation), /compilation-/)
 
-          expect(vm_reuser).to receive(:remove_vm).ordered
+          expect(instance_reuser).to receive(:remove_instance).ordered
           expect(vm_deleter).to receive(:delete_for_instance).ordered
           allow(network).to receive(:release)
 
