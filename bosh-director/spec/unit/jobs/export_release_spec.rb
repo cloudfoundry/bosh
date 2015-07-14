@@ -157,6 +157,8 @@ module Bosh::Director
 
         let(:blobstore_client) { instance_double('Bosh::Blobstore::BaseClient') }
         let(:archiver) { instance_double('Bosh::Director::Core::TarGzipper') }
+        let(:package_compile_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep)}
+        let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
         let(:task_dir) { Dir.mktmpdir }
 
         before {
@@ -217,9 +219,14 @@ module Bosh::Director
               package_names_json: [],
           )
 
+          result_file = double('result file')
           allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
           allow(Bosh::Director::Core::TarGzipper).to receive(:new).and_return(archiver)
-          result_file = double('result file')
+          allow(Config).to receive(:cloud)
+          allow(Config).to receive(:event_log)
+          allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).and_return(package_compile_step)
+          allow(package_compile_step).to receive(:perform).with no_args
+          allow(job).to receive(:create_planner).and_return(planner)
           allow(job).to receive(:result_file).and_return(result_file)
           allow(result_file).to receive(:write)
         }
