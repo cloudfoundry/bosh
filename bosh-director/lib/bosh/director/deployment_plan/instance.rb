@@ -372,7 +372,10 @@ module Bosh::Director
 
       def delete
         @network_reservations.each do |network_name, reservation|
-          @deployment.network(network_name).release(reservation)
+          if reservation.reserved?
+            @deployment.network(network_name).release(reservation)
+          end
+          @network_reservations.delete(network_name)
         end
 
         @model.destroy

@@ -122,4 +122,32 @@ describe 'cli: package compilation', type: :integration do
     expect(deploy_output).to_not include('aaaaaaaaa')
     expect(deploy_output).to_not include('nnnnnnnnn')
   end
+
+  context 'when there is no available IPs for compilation' do
+    it 'fails deploy' do
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+
+      subnet_without_dynamic_ips_available =  {
+        'range' => '192.168.1.0/30',
+        'gateway' => '192.168.1.1',
+        'dns' => ['192.168.1.1'],
+        'static' => ['192.168.1.2'],
+        'reserved' => [],
+        'cloud_properties' => {},
+      }
+
+      cloud_config_hash['networks'].first['subnets'] = [subnet_without_dynamic_ips_available]
+
+      deploy_output = deploy_from_scratch(
+        cloud_config_hash: cloud_config_hash,
+        failure_expected: true
+      )
+
+      expect(deploy_output).to match(
+        /compilation-.* asked for a dynamic IP but there were no more available/
+      )
+
+      expect(director.vms.size).to eq(0)
+    end
+  end
 end
