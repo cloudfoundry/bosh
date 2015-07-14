@@ -118,22 +118,7 @@ module Bosh::Director
       end
 
       let(:vm_model) do
-        cloud = instance_double('Bosh::Cloud')
-        allow(Config).to receive(:cloud).and_return(cloud)
-        env = {}
-        deployment = Models::Deployment.make
-        cloud_properties = { 'ram' => '2gb' }
-        allow(cloud).to receive(:create_vm).with(kind_of(String), 'stemcell-id',
-                                    { 'ram' => '2gb' }, network_settings, [99],
-                                    { 'bosh' =>
-                                        { 'credentials' =>
-                                            { 'crypt_key' => kind_of(String),
-                                              'sign_key' => kind_of(String) } } })
-        vm_deleter = VmDeleter.new(cloud, logger)
-        VmCreator.new(cloud, logger, vm_deleter).create(deployment, stemcell,
-                            cloud_properties,
-                            network_settings, Array(99),
-                            env)
+        Models::Vm.make(credentials: Bosh::Core::EncryptionHandler.generate_credentials)
       end
 
       subject(:client) do
