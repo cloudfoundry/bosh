@@ -1,6 +1,6 @@
 module Bosh::Director
   module DeploymentPlan
-    class CompilationVmPool
+    class CompilationInstancePool
       def initialize(instance_reuser, vm_creator, vm_deleter, deployment_plan, logger)
         @instance_reuser = instance_reuser
         @vm_creator = vm_creator

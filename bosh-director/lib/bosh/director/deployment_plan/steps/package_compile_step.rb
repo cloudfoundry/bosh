@@ -10,7 +10,7 @@ module Bosh::Director
         attr_reader :compilations_performed
 
         # @param [DeploymentPlan] deployment_plan Deployment plan
-        def initialize(deployment_plan, compilation_vm_pool, logger, event_log, director_job)
+        def initialize(deployment_plan, compilation_instance_pool, logger, event_log, director_job)
           @deployment_plan = deployment_plan
 
           @event_log = event_log
@@ -22,7 +22,7 @@ module Bosh::Director
 
           @network = @deployment_plan.compilation.network
 
-          @compilation_vm_pool = compilation_vm_pool
+          @compilation_instance_pool = compilation_instance_pool
 
           @compile_task_generator = CompileTaskGenerator.new(@logger, @event_log)
 
@@ -117,9 +117,9 @@ module Bosh::Director
         # @yield [DeploymentPlan::Instance] Yields an instance that should be used for compilation.  This may be a reused VM or a
         def prepare_vm(stemcell)
           if reuse_compilation_vms?
-            @compilation_vm_pool.with_reused_vm(stemcell, &Proc.new)
+            @compilation_instance_pool.with_reused_vm(stemcell, &Proc.new)
           else
-            @compilation_vm_pool.with_single_use_vm(stemcell, &Proc.new)
+            @compilation_instance_pool.with_single_use_vm(stemcell, &Proc.new)
           end
         end
 
@@ -182,7 +182,7 @@ module Bosh::Director
               # Using a new ThreadPool instead of reusing the previous one,
               # as if there's a failed compilation, the thread pool will stop
               # processing any new thread.
-              @compilation_vm_pool.tear_down_vms(number_of_workers)
+              @compilation_instance_pool.tear_down_vms(number_of_workers)
             end
           end
         end

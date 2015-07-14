@@ -1,7 +1,7 @@
 require File.expand_path("../../../spec_helper", __FILE__)
 
 module Bosh::Director
-  describe DeploymentPlan::CompilationVmPool do
+  describe DeploymentPlan::CompilationInstancePool do
     let(:instance_reuser) { InstanceReuser.new }
     let(:cloud) { instance_double('Bosh::Cloud') }
     let(:stemcell) { instance_double(DeploymentPlan::Stemcell, model: Models::Stemcell.make) }
@@ -30,7 +30,7 @@ module Bosh::Director
       thread_pool
     end
 
-    let(:compilation_vm_pool) { DeploymentPlan::CompilationVmPool.new(instance_reuser, vm_creator, vm_deleter, deployment_plan, logger) }
+    let(:compilation_instance_pool) { DeploymentPlan::CompilationInstancePool.new(instance_reuser, vm_creator, vm_deleter, deployment_plan, logger) }
 
     before do
       allow(compilation_config).to receive_messages(deployment: deployment_plan,
@@ -119,18 +119,18 @@ module Bosh::Director
 
     describe 'with_reused_vm' do
       it_behaves_like 'a compilation vm pool' do
-        let(:action) { compilation_vm_pool.with_reused_vm(stemcell) {} }
-        let(:action_that_raises) { compilation_vm_pool.with_reused_vm(stemcell) {raise Bosh::Director::RpcTimeout} }
+        let(:action) { compilation_instance_pool.with_reused_vm(stemcell) {} }
+        let(:action_that_raises) { compilation_instance_pool.with_reused_vm(stemcell) {raise Bosh::Director::RpcTimeout} }
       end
 
       context 'after a vm is created' do
         it 'is reused' do
           original = nil
-          compilation_vm_pool.with_reused_vm(stemcell) do |instance|
+          compilation_instance_pool.with_reused_vm(stemcell) do |instance|
             original = instance
           end
           reused = nil
-          compilation_vm_pool.with_reused_vm(stemcell) do |instance|
+          compilation_instance_pool.with_reused_vm(stemcell) do |instance|
             reused = instance
           end
           expect(reused).to be(original)
@@ -142,7 +142,7 @@ module Bosh::Director
           expect(instance_reuser).to receive(:remove_instance)
           expect(cloud).to receive(:delete_vm)
           expect {
-            compilation_vm_pool.with_reused_vm(stemcell) {raise Bosh::Director::RpcTimeout}
+            compilation_instance_pool.with_reused_vm(stemcell) {raise Bosh::Director::RpcTimeout}
           }.to raise_exception Bosh::Director::RpcTimeout
         end
       end
@@ -151,16 +151,16 @@ module Bosh::Director
         it 'no longer offers that vm for reuse' do
           expect(cloud).to receive(:delete_vm)
           original = nil
-          compilation_vm_pool.with_reused_vm(stemcell) do |instance|
+          compilation_instance_pool.with_reused_vm(stemcell) do |instance|
             original = instance
           end
 
           expect {
-            compilation_vm_pool.with_reused_vm(stemcell) { raise Bosh::Director::RpcTimeout }
+            compilation_instance_pool.with_reused_vm(stemcell) { raise Bosh::Director::RpcTimeout }
           }.to raise_exception Bosh::Director::RpcTimeout
 
           different = nil
-          compilation_vm_pool.with_reused_vm(stemcell) do |instance|
+          compilation_instance_pool.with_reused_vm(stemcell) do |instance|
             different = instance
           end
           expect(different).to_not eq(original)
@@ -171,13 +171,13 @@ module Bosh::Director
         let(:number_of_workers) { 1 }
         before do
           allow(cloud).to receive(:delete_vm)
-          compilation_vm_pool.with_reused_vm(stemcell) {}
-          compilation_vm_pool.with_reused_vm(another_stemcell) {}
+          compilation_instance_pool.with_reused_vm(stemcell) {}
+          compilation_instance_pool.with_reused_vm(another_stemcell) {}
         end
 
         it 'removes the vm from the reuser' do
           expect(instance_reuser.get_num_instances(stemcell)).to eq(1)
-          compilation_vm_pool.tear_down_vms(number_of_workers)
+          compilation_instance_pool.tear_down_vms(number_of_workers)
           expect(instance_reuser.get_num_instances(stemcell)).to eq(0)
         end
 
@@ -185,7 +185,7 @@ module Bosh::Director
           expect(cloud).to receive(:delete_vm).with(vm_model.cid)
           expect(cloud).to receive(:delete_vm).with(another_vm_model.cid)
 
-          compilation_vm_pool.tear_down_vms(number_of_workers)
+          compilation_instance_pool.tear_down_vms(number_of_workers)
         end
       end
     end
@@ -196,8 +196,8 @@ module Bosh::Director
       end
 
       it_behaves_like 'a compilation vm pool' do
-        let(:action) { compilation_vm_pool.with_single_use_vm(stemcell) {} }
-        let(:action_that_raises) { compilation_vm_pool.with_single_use_vm(stemcell) {raise Bosh::Director::RpcTimeout} }
+        let(:action) { compilation_instance_pool.with_single_use_vm(stemcell) {} }
+        let(:action_that_raises) { compilation_instance_pool.with_single_use_vm(stemcell) {raise Bosh::Director::RpcTimeout} }
       end
     end
   end
