@@ -237,17 +237,32 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
       end
     end
 
-    context 'when provided link name does not match required link name' do
-      let(:links) { {'db' => 'fake-deployment.mysql.mysql-template.other'} } # points to provided link
+    context 'when provided link name matches links name' do
+      let (:links) { {'backup_db' => 'fake-deployment.mysql.mysql-template.db'} }
 
-      let(:requires_links) { [{'name' => 'db', 'type' => 'other'}] }
-      let(:provided_links) { ['other'] } # name and type is implicitly other
+      let(:requires_links) { [{'name' => 'backup_db', 'type' => 'db'}]}
+      let(:provided_links) { ['db'] }
 
-      it 'fails to find link' do
-        expect {
-          links_resolver.resolve(api_server_job)
-        }.to raise_error Bosh::Director::DeploymentInvalidLink,
-            "Link 'name: db, type: other' must reference link with the same name"
+      it 'adds link to job' do
+        links_resolver.resolve(api_server_job)
+        expect(api_server_job.link_spec).to eq({
+            'backup_db' => {
+            'nodes' => [
+              {
+                'name' => 'mysql',
+                'index' =>0,
+                'networks' => {
+                  'fake-manual-network' => {
+                      'address' => '127.0.0.3'
+                  },
+                  'fake-dynamic-network' => {
+                      'address' => '0.mysql.fake-dynamic-network.fake-deployment.fake-dns'
+                    }
+                }
+              }
+            ]
+          }
+        })
       end
     end
 

@@ -14,7 +14,7 @@ describe 'Links', type: :integration do
     upload_links_release
     upload_stemcell
     cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-    cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11', '192.168.1.12']
+    cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13']
     cloud_config_hash['networks'] << {
       'name' => 'dynamic-network',
       'type' => 'dynamic'
@@ -46,6 +46,15 @@ describe 'Links', type: :integration do
         templates: [{'name' => 'database'}],
         instances: 1,
         static_ips: ['192.168.1.12']
+      )
+    end
+
+    let(:mongo_db_spec)do
+      Bosh::Spec::Deployments.simple_job(
+        name: 'mongo',
+        templates: [{'name' => 'mongo_db'}],
+        instances: 1,
+        static_ips: ['192.168.1.13']
       )
     end
 
@@ -109,6 +118,43 @@ describe 'Links', type: :integration do
                 {
                   'name' => 'a',
                   'address' => '192.168.1.12',
+                }
+              ]
+            }
+          )
+      end
+    end
+
+    context 'when provided and required links have different names but same type' do
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [api_job_spec, mongo_db_spec, mysql_job_spec]
+        manifest
+      end
+
+      let(:links) do
+        {
+          'db' => 'simple.mysql.database.db',
+          'backup_db' => 'simple.mongo.mongo_db.read_only_db',
+        }
+      end
+
+      it 'renders link data in job template' do
+        deploy_simple_manifest(manifest_hash: manifest)
+
+        link_vm = director.vm('my_api/0')
+        template = YAML.load(link_vm.read_job_template('api_server', 'config.yml'))
+
+        expect(template['databases']['backup'].size).to eq(1)
+        expect(template['databases']['backup']).to contain_exactly(
+            {
+              'name' => 'mongo',
+              'index' => 0,
+              'networks' => [
+                {
+                  'name' => 'a',
+                  'address' => '192.168.1.13',
                 }
               ]
             }

@@ -29,10 +29,6 @@ module Bosh::Director
               "Link path was not provided for required link '#{link_name}' in job '#{job.name}'"
           end
 
-          if link_path.name != required_link.name
-            raise DeploymentInvalidLink, "Link '#{required_link}' must reference link with the same name"
-          end
-
           link_lookup = LinkLookupFactory.create(required_link, link_path, @deployment_plan)
           link_spec = link_lookup.find_link_spec
 
