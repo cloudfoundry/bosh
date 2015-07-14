@@ -67,7 +67,7 @@ module Bosh::Director
         JobQueue.new.enqueue(
             username,
             Jobs::ExportRelease,
-            "export release: #{release_name}/#{release_version} for #{stemcell_os}/#{stemcell_version}",
+            "export release: '#{release_name}/#{release_version}' for '#{stemcell_os}/#{stemcell_version}'",
             [deployment_name, release_name, release_version, stemcell_os, stemcell_version])
       end
     end
