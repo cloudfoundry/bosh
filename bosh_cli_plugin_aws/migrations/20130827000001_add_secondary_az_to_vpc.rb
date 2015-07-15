@@ -1,10 +1,10 @@
-class AddSecondaryAzToVpc < Bosh::Aws::Migration
-  include Bosh::Aws::MigrationHelper
+class AddSecondaryAzToVpc < Bosh::AwsCliPlugin::Migration
+  include Bosh::AwsCliPlugin::MigrationHelper
 
   def execute
     vpc_receipt = load_receipt("aws_vpc_receipt")
 
-    vpc = Bosh::Aws::VPC.find(ec2, vpc_receipt["vpc"]["id"])
+    vpc = Bosh::AwsCliPlugin::VPC.find(ec2, vpc_receipt["vpc"]["id"])
 
     new_az = vpc_receipt["original_configuration"]["vpc"]["subnets"]["cf_elb2"]["availability_zone"]
 

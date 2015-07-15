@@ -1,7 +1,7 @@
 require_relative "bootstrap"
 
 module Bosh
-  module Aws
+  module AwsCliPlugin
     class MicroBoshBootstrap < Bootstrap
       def start
         cleanup_previous_deployments
@@ -28,7 +28,7 @@ module Bosh
           vpc_config = load_yaml_file(vpc_receipt_filename)
           route53_config = load_yaml_file(route53_receipt_filename)
 
-          @manifest = Bosh::Aws::MicroboshManifest.new(vpc_config, route53_config, options)
+          @manifest = Bosh::AwsCliPlugin::MicroboshManifest.new(vpc_config, route53_config, options)
         end
 
         @manifest

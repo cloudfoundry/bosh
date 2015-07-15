@@ -31,7 +31,7 @@ module Bosh::Dev::Aws
 
     def manifest
       return @manifest if @manifest
-      @manifest = Bosh::Aws::MicroboshManifest.new(
+      @manifest = Bosh::AwsCliPlugin::MicroboshManifest.new(
         YAML.load_file(receipts.vpc_outfile_path),
         YAML.load_file(receipts.route53_outfile_path),
         hm_director_user: 'admin',

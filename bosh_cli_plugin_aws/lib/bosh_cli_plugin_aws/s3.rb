@@ -1,5 +1,5 @@
 module Bosh
-  module Aws
+  module AwsCliPlugin
     class S3
       def initialize(credentials)
         @aws_provider = AwsProvider.new(credentials)

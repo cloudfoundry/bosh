@@ -5,10 +5,10 @@ describe CreateMoreUniqueS3Buckets do
 
   let(:config) { {'aws' => {}, 'name' => 'dev102', 'vpc' => {'domain' => 'dev102.cf.com'}} }
   let(:subject) { described_class.new(config,'') }
-  let(:mock_s3) { double("Bosh::Aws::S3").as_null_object }
+  let(:mock_s3) { double("Bosh::AwsCliPlugin::S3").as_null_object }
 
   before do
-    allow(Bosh::Aws::S3).to receive(:new).and_return(mock_s3)
+    allow(Bosh::AwsCliPlugin::S3).to receive(:new).and_return(mock_s3)
   end
 
   context "when the old and new buckets have the same name" do

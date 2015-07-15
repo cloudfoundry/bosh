@@ -1,7 +1,7 @@
 require 'common/ssl'
 
 module Bosh
-  module Aws
+  module AwsCliPlugin
     class MicroboshManifest
       attr_reader :vpc_receipt, :route53_receipt, :hm_director_password, :hm_director_user
 

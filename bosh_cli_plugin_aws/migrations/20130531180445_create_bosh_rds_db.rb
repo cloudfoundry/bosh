@@ -1,5 +1,5 @@
-class CreateBoshRdsDb < Bosh::Aws::Migration
-  include Bosh::Aws::MigrationHelper
+class CreateBoshRdsDb < Bosh::AwsCliPlugin::Migration
+  include Bosh::AwsCliPlugin::MigrationHelper
 
   def execute
     vpc_receipt = load_receipt("aws_vpc_receipt")

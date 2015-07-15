@@ -1,4 +1,4 @@
-module Bosh::Aws
+module Bosh::AwsCliPlugin
   class Destroyer
     def initialize(ui, config, rds_destroyer, vpc_destroyer)
       @ui = ui
@@ -13,7 +13,7 @@ module Bosh::Aws
     end
 
     def delete_all_elbs
-      elb = Bosh::Aws::ELB.new(@credentials)
+      elb = Bosh::AwsCliPlugin::ELB.new(@credentials)
       elb_names = elb.names
       if elb_names.any? && @ui.confirmed?("Are you sure you want to delete all ELBs (#{elb_names.join(', ')})?")
         elb.delete_elbs
@@ -56,7 +56,7 @@ module Bosh::Aws
     end
 
     def delete_all_s3
-      s3 = Bosh::Aws::S3.new(@credentials)
+      s3 = Bosh::AwsCliPlugin::S3.new(@credentials)
       bucket_names = s3.bucket_names
 
       unless bucket_names.empty?
@@ -108,7 +108,7 @@ module Bosh::Aws
       end
 
       if @ui.confirmed?(msg)
-        route53 = Bosh::Aws::Route53.new(@credentials)
+        route53 = Bosh::AwsCliPlugin::Route53.new(@credentials)
         route53.delete_all_records(omit_types: omit_types)
       end
     end
@@ -116,7 +116,7 @@ module Bosh::Aws
     private
 
     def ec2
-      @ec2 ||= Bosh::Aws::EC2.new(@credentials)
+      @ec2 ||= Bosh::AwsCliPlugin::EC2.new(@credentials)
     end
   end
 end

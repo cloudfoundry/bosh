@@ -31,7 +31,7 @@ module Bosh::Cli::Command
       options[:hm_director_password] = SecureRandom.base64
       options[:hm_director_user] ||= 'hm'
 
-      bootstrap = Bosh::Aws::MicroBoshBootstrap.new(runner, options)
+      bootstrap = Bosh::AwsCliPlugin::MicroBoshBootstrap.new(runner, options)
       bootstrap.start
 
       bootstrap.create_user(options[:hm_director_user], options[:hm_director_password])
@@ -59,7 +59,7 @@ module Bosh::Cli::Command
       options[:hm_director_user] ||= 'hm'
       options[:hm_director_password] = SecureRandom.base64
 
-      bootstrap = Bosh::Aws::BoshBootstrap.new(director, s3(config_file), self.options)
+      bootstrap = Bosh::AwsCliPlugin::BoshBootstrap.new(director, s3(config_file), self.options)
       bootstrap.start
 
       say 'For security purposes, please provide a username and password for BOSH Director'
@@ -71,7 +71,7 @@ module Bosh::Cli::Command
       say "BOSH deployed successfully. You are logged in as #{username}."
 
       bootstrap.create_user(options[:hm_director_user], options[:hm_director_password])
-    rescue Bosh::Aws::BootstrapError => e
+    rescue Bosh::AwsCliPlugin::BootstrapError => e
       err "Unable to bootstrap bosh: #{e.message}"
     end
 
@@ -84,7 +84,7 @@ module Bosh::Cli::Command
       options[:hm_director_user] ||= 'hm'
       options[:hm_director_password] = SecureRandom.base64
 
-      manifest = Bosh::Aws::MicroboshManifest.new(vpc_config, route53_config, options)
+      manifest = Bosh::AwsCliPlugin::MicroboshManifest.new(vpc_config, route53_config, options)
 
       write_yaml(manifest, manifest.file_name)
     end
@@ -100,7 +100,7 @@ module Bosh::Cli::Command
       vpc_config = load_yaml_file(vpc_receipt_file)
       route53_config = load_yaml_file(route53_receipt_file)
       bosh_rds_config = load_yaml_file(bosh_rds_receipt_file)
-      bosh_manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid, bosh_rds_config, options)
+      bosh_manifest = Bosh::AwsCliPlugin::BoshManifest.new(vpc_config, route53_config, director.uuid, bosh_rds_config, options)
 
       write_yaml(bosh_manifest, bosh_manifest.file_name)
     end
@@ -112,7 +112,7 @@ module Bosh::Cli::Command
 
       vpc_config = load_yaml_file(vpc_receipt_file)
       route53_config = load_yaml_file(route53_receipt_file)
-      manifest = Bosh::Aws::BatManifest.new(
+      manifest = Bosh::AwsCliPlugin::BatManifest.new(
         vpc_config, route53_config, stemcell_version, director.uuid, stemcell_name)
 
       write_yaml(manifest, manifest.file_name)
@@ -127,31 +127,31 @@ module Bosh::Cli::Command
          ::AWS.config(:logger => Logger.new($stdout), :http_wire_trace => true)
       end
 
-      Bosh::Aws::Migrator.new(load_config(config_file)).migrate
+      Bosh::AwsCliPlugin::Migrator.new(load_config(config_file)).migrate
     end
 
     usage 'aws create s3'
     desc 'create only the s3 buckets'
     def create_s3(config_file = nil)
-      Bosh::Aws::Migrator.new(load_config(config_file)).migrate_version('20130412192351')
+      Bosh::AwsCliPlugin::Migrator.new(load_config(config_file)).migrate_version('20130412192351')
     end
 
     usage 'aws create key_pairs'
     desc 'creates only the key pairs'
     def create_key_pairs(config_file = nil)
-      Bosh::Aws::Migrator.new(load_config(config_file)).migrate_version('20130412000811')
+      Bosh::AwsCliPlugin::Migrator.new(load_config(config_file)).migrate_version('20130412000811')
     end
 
     usage 'aws create route53 records'
     desc 'creates only the Route 53 records'
     def create_route53_records(config_file = nil)
-      Bosh::Aws::Migrator.new(load_config(config_file)).migrate_version('20130412181302')
+      Bosh::AwsCliPlugin::Migrator.new(load_config(config_file)).migrate_version('20130412181302')
     end
 
     usage 'aws create vpc'
     desc 'creates only the VPC'
     def create_vpc(config_file = nil)
-      Bosh::Aws::Migrator.new(load_config(config_file)).migrate_version('20130412004642')
+      Bosh::AwsCliPlugin::Migrator.new(load_config(config_file)).migrate_version('20130412004642')
     end
 
     usage 'aws destroy'
@@ -159,9 +159,9 @@ module Bosh::Cli::Command
     def destroy(config_file = nil)
       config = load_config(config_file)
 
-      rds_destroyer = Bosh::Aws::RdsDestroyer.new(self, config)
-      vpc_destroyer = Bosh::Aws::VpcDestroyer.new(self, config)
-      destroyer = Bosh::Aws::Destroyer.new(self, config, rds_destroyer, vpc_destroyer)
+      rds_destroyer = Bosh::AwsCliPlugin::RdsDestroyer.new(self, config)
+      vpc_destroyer = Bosh::AwsCliPlugin::VpcDestroyer.new(self, config)
+      destroyer = Bosh::AwsCliPlugin::Destroyer.new(self, config, rds_destroyer, vpc_destroyer)
 
       destroyer.ensure_not_production!
       destroyer.delete_all_elbs
@@ -180,7 +180,7 @@ module Bosh::Cli::Command
 
     def s3(config_file)
       config = load_config(config_file)
-      Bosh::Aws::S3.new(config['aws'])
+      Bosh::AwsCliPlugin::S3.new(config['aws'])
     end
 
     def default_config_file
@@ -191,7 +191,7 @@ module Bosh::Cli::Command
 
     def load_config(config_file=nil)
       config_file ||= default_config_file
-      Bosh::Aws::AwsConfig.new(config_file).configuration
+      Bosh::AwsCliPlugin::AwsConfig.new(config_file).configuration
     end
   end
 end

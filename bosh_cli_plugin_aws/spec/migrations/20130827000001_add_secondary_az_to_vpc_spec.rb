@@ -8,7 +8,7 @@ describe AddSecondaryAzToVpc do
 
   before do
     allow(subject).to receive(:load_receipt).and_return(YAML.load_file(asset "test-output.yml"))
-    expect(Bosh::Aws::VPC).to receive(:find).with(ec2, "vpc-13724979").and_return(vpc)
+    expect(Bosh::AwsCliPlugin::VPC).to receive(:find).with(ec2, "vpc-13724979").and_return(vpc)
   end
 
   let(:vpc) { double("vpc") }

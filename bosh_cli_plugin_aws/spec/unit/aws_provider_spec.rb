@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'bosh_cli_plugin_aws/aws_provider'
 
-module Bosh::Aws
+module Bosh::AwsCliPlugin
   describe AwsProvider do
     subject(:aws_provider) { described_class.new(credentials) }
 

@@ -10,10 +10,10 @@ describe UpdateElbForWebsockets do
     receipt = YAML.load_file(asset "test-output.yml")
     allow(subject).to receive_messages(load_receipt: receipt)
 
-    mock_vpc = double(Bosh::Aws::VPC)
+    mock_vpc = double(Bosh::AwsCliPlugin::VPC)
     mock_sg = double(AWS::EC2::SecurityGroup)
 
-    allow(Bosh::Aws::VPC).to receive(:find).with(ec2, receipt['vpc']['id']).and_return(mock_vpc)
+    allow(Bosh::AwsCliPlugin::VPC).to receive(:find).with(ec2, receipt['vpc']['id']).and_return(mock_vpc)
     allow(mock_vpc).to receive(:security_group_by_name).with('web').and_return(mock_sg)
 
     expect(UpdateElbForWebsockets::WebSocketElbHelpers).to receive(:authorize_ingress).with(mock_sg, {"protocol" => "tcp", "ports" => "4443", "sources" => "0.0.0.0/0"}).and_return(true)
@@ -61,8 +61,8 @@ describe UpdateElbForWebsockets do
       @receipt = YAML.load_file(asset "test-output.yml")
       allow(subject).to receive_messages(load_receipt: @receipt)
 
-      @mock_vpc = double(Bosh::Aws::VPC)
-      allow(Bosh::Aws::VPC).to receive(:find).with(ec2, @receipt['vpc']['id']).and_return(@mock_vpc)
+      @mock_vpc = double(Bosh::AwsCliPlugin::VPC)
+      allow(Bosh::AwsCliPlugin::VPC).to receive(:find).with(ec2, @receipt['vpc']['id']).and_return(@mock_vpc)
     end
 
     describe ".find_security_group_by_name" do

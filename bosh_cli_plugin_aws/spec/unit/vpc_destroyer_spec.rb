@@ -1,14 +1,14 @@
 require 'spec_helper'
 
-module Bosh::Aws
+module Bosh::AwsCliPlugin
   describe VpcDestroyer do
-    subject(:vpc_destroyer) { Bosh::Aws::VpcDestroyer.new(ui, config) }
+    subject(:vpc_destroyer) { Bosh::AwsCliPlugin::VpcDestroyer.new(ui, config) }
     let(:ui) { instance_double('Bosh::Cli::Command::AWS') }
     let(:config) { { 'aws' => { fake: 'aws config' } } }
 
     describe '#delete_all' do
-      before { allow(Bosh::Aws::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
-      let(:ec2) { instance_double('Bosh::Aws::EC2') }
+      before { allow(Bosh::AwsCliPlugin::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
+      let(:ec2) { instance_double('Bosh::AwsCliPlugin::EC2') }
 
       context 'when there is at least one vpc' do
         before { allow(ec2).to receive(:vpcs).and_return([aws_vpc, aws_vpc2]) }
@@ -16,11 +16,11 @@ module Bosh::Aws
         let(:aws_vpc2) { instance_double('AWS::EC2::VPC', id: 'fake-vpc-id-2') }
 
         before do
-          allow(Bosh::Aws::VPC).to receive(:find).with(ec2, 'fake-vpc-id-1').and_return(vpc)
-          allow(Bosh::Aws::VPC).to receive(:find).with(ec2, 'fake-vpc-id-2').and_return(vpc2)
+          allow(Bosh::AwsCliPlugin::VPC).to receive(:find).with(ec2, 'fake-vpc-id-1').and_return(vpc)
+          allow(Bosh::AwsCliPlugin::VPC).to receive(:find).with(ec2, 'fake-vpc-id-2').and_return(vpc2)
         end
-        let(:vpc) { instance_double('Bosh::Aws::VPC', vpc_id: 'fake-vpc-id-1') }
-        let(:vpc2) { instance_double('Bosh::Aws::VPC', vpc_id: 'fake-vpc-id-2') }
+        let(:vpc) { instance_double('Bosh::AwsCliPlugin::VPC', vpc_id: 'fake-vpc-id-1') }
+        let(:vpc2) { instance_double('Bosh::AwsCliPlugin::VPC', vpc_id: 'fake-vpc-id-2') }
 
         before do
           allow(vpc).to receive(:dhcp_options).and_return(vpc_aws_dhcp_options)

@@ -14,11 +14,11 @@ module MigrationSpecHelper
       self.config_file = asset "config.yml"
       self.config = YAML.load_file(config_file)
 
-      allow(Bosh::Aws::S3).to receive(:new).and_return(s3)
-      allow(Bosh::Aws::ELB).to receive(:new).and_return(elb)
-      allow(Bosh::Aws::EC2).to receive(:new).and_return(ec2)
-      allow(Bosh::Aws::RDS).to receive(:new).and_return(rds)
-      allow(Bosh::Aws::Route53).to receive(:new).and_return(route53)
+      allow(Bosh::AwsCliPlugin::S3).to receive(:new).and_return(s3)
+      allow(Bosh::AwsCliPlugin::ELB).to receive(:new).and_return(elb)
+      allow(Bosh::AwsCliPlugin::EC2).to receive(:new).and_return(ec2)
+      allow(Bosh::AwsCliPlugin::RDS).to receive(:new).and_return(rds)
+      allow(Bosh::AwsCliPlugin::Route53).to receive(:new).and_return(route53)
 
       allow(subject).to receive(:load_receipt).and_return(nil)
       allow(subject).to receive(:save_receipt)

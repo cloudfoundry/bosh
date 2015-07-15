@@ -8,7 +8,7 @@ describe "S3 buckets integration test", s3_credentials: true do
     }
   end
 
-  subject(:s3) { Bosh::Aws::S3.new(credentials) }
+  subject(:s3) { Bosh::AwsCliPlugin::S3.new(credentials) }
   let(:bucket_name) { "bosh-bucket-test-#{Time.now.to_i}" }
   let(:another_bucket_name) { "bosh-another-bucket-test-#{Time.now.to_i}" }
   let(:file) { StringIO.new("hello friends") }

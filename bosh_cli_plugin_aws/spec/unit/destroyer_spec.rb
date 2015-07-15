@@ -1,16 +1,16 @@
 require 'spec_helper'
 
-module Bosh::Aws
+module Bosh::AwsCliPlugin
   describe Destroyer do
-    subject(:destroyer) { Bosh::Aws::Destroyer.new(ui, config, rds_destroyer, vpc_destroyer) }
+    subject(:destroyer) { Bosh::AwsCliPlugin::Destroyer.new(ui, config, rds_destroyer, vpc_destroyer) }
     let(:config) { { 'aws' => { fake: 'aws config' } } }
     let(:ui) { instance_double('Bosh::Cli::Command::AWS') }
-    let(:rds_destroyer) { instance_double('Bosh::Aws::RdsDestroyer') }
-    let(:vpc_destroyer) { instance_double('Bosh::Aws::VpcDestroyer') }
+    let(:rds_destroyer) { instance_double('Bosh::AwsCliPlugin::RdsDestroyer') }
+    let(:vpc_destroyer) { instance_double('Bosh::AwsCliPlugin::VpcDestroyer') }
 
     describe '#ensure_not_production!' do
-      before { allow(Bosh::Aws::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
-      let(:ec2) { instance_double('Bosh::Aws::EC2') }
+      before { allow(Bosh::AwsCliPlugin::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
+      let(:ec2) { instance_double('Bosh::AwsCliPlugin::EC2') }
 
       before { allow(ec2).to receive_messages(instances_count: 0) }
       before { allow(ec2).to receive_messages(volume_count: 0) }
@@ -56,8 +56,8 @@ module Bosh::Aws
       it 'removes all ELBs' do
         allow(ui).to receive_messages(confirmed?: true)
 
-        fake_elb = instance_double('Bosh::Aws::ELB')
-        allow(Bosh::Aws::ELB).to receive(:new).with(fake: 'aws config').and_return(fake_elb)
+        fake_elb = instance_double('Bosh::AwsCliPlugin::ELB')
+        allow(Bosh::AwsCliPlugin::ELB).to receive(:new).with(fake: 'aws config').and_return(fake_elb)
 
         expect(fake_elb).to receive(:delete_elbs)
         expect(fake_elb).to receive(:names).and_return(%w(one two))
@@ -67,8 +67,8 @@ module Bosh::Aws
     end
 
     describe '#destroy_all_ec2' do
-      before { allow(Bosh::Aws::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
-      let(:ec2) { instance_double('Bosh::Aws::EC2') }
+      before { allow(Bosh::AwsCliPlugin::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
+      let(:ec2) { instance_double('Bosh::AwsCliPlugin::EC2') }
 
       before { allow(ui).to receive_messages(say: nil) }
 
@@ -121,8 +121,8 @@ module Bosh::Aws
     end
 
     describe '#delete_all_ebs' do
-      before { allow(Bosh::Aws::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
-      let(:ec2) { instance_double('Bosh::Aws::EC2') }
+      before { allow(Bosh::AwsCliPlugin::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
+      let(:ec2) { instance_double('Bosh::AwsCliPlugin::EC2') }
 
       before { allow(ui).to receive(:say) }
 
@@ -184,8 +184,8 @@ module Bosh::Aws
     end
 
     describe '#delete_all_s3' do
-      before { allow(Bosh::Aws::S3).to receive(:new).with(fake: 'aws config').and_return(s3) }
-      let(:s3) { instance_double('Bosh::Aws::S3') }
+      before { allow(Bosh::AwsCliPlugin::S3).to receive(:new).with(fake: 'aws config').and_return(s3) }
+      let(:s3) { instance_double('Bosh::AwsCliPlugin::S3') }
 
       context 'when there is at least one bucket' do
         before { allow(s3).to receive_messages(bucket_names: ['bucket1-name', 'bucket2-name']) }
@@ -239,8 +239,8 @@ module Bosh::Aws
     end
 
     describe '#delete_all_key_pairs' do
-      before { allow(Bosh::Aws::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
-      let(:ec2) { instance_double('Bosh::Aws::EC2') }
+      before { allow(Bosh::AwsCliPlugin::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
+      let(:ec2) { instance_double('Bosh::AwsCliPlugin::EC2') }
 
       context 'when user confirmed deletion' do
         before { allow(ui).to receive_messages(confirmed?: true) }
@@ -262,8 +262,8 @@ module Bosh::Aws
     end
 
     describe '#delete_all_elastic_ips' do
-      before { allow(Bosh::Aws::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
-      let(:ec2) { instance_double('Bosh::Aws::EC2') }
+      before { allow(Bosh::AwsCliPlugin::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
+      let(:ec2) { instance_double('Bosh::AwsCliPlugin::EC2') }
 
       context 'when user confirmed deletion' do
         before { allow(ui).to receive_messages(confirmed?: true) }
@@ -285,8 +285,8 @@ module Bosh::Aws
     end
 
     describe '#delete_all_security_groups' do
-      before { allow(Bosh::Aws::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
-      let(:ec2) { instance_double('Bosh::Aws::EC2') }
+      before { allow(Bosh::AwsCliPlugin::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
+      let(:ec2) { instance_double('Bosh::AwsCliPlugin::EC2') }
 
       context 'when user confirmed deletion' do
         before { allow(ui).to receive_messages(confirmed?: true) }
@@ -315,8 +315,8 @@ module Bosh::Aws
     end
 
     describe '#delete_all_route53_records' do
-      before { allow(Bosh::Aws::Route53).to receive(:new).with(fake: 'aws config').and_return(route53) }
-      let(:route53) { instance_double('Bosh::Aws::Route53') }
+      before { allow(Bosh::AwsCliPlugin::Route53).to receive(:new).with(fake: 'aws config').and_return(route53) }
+      let(:route53) { instance_double('Bosh::AwsCliPlugin::Route53') }
 
       context 'when omit types are specified' do
         before { allow(ui).to receive_messages(options: {omit_types: %w(custom)}) }

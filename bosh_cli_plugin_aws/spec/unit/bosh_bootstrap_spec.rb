@@ -1,12 +1,12 @@
 require 'spec_helper'
 
-module Bosh::Aws
+module Bosh::AwsCliPlugin
   describe BoshBootstrap do
     subject(:bootstrap) { described_class.new(director, s3, {}) }
 
-    let(:s3) { instance_double('Bosh::Aws::S3') }
+    let(:s3) { instance_double('Bosh::AwsCliPlugin::S3') }
 
-    let(:manifest) { instance_double('Bosh::Aws::BoshManifest',
+    let(:manifest) { instance_double('Bosh::AwsCliPlugin::BoshManifest',
                                      deployment_name: '',
                                      file_name: '').as_null_object }
     before { allow(BoshManifest).to receive(:new).and_return(manifest) }
@@ -36,8 +36,8 @@ module Bosh::Aws
         end
 
         context 'release does not exist on dir director' do
-          it 'downloads correct release version by correctly parsing Bosh::Aws::VERSION' do
-            stub_const('Bosh::Aws::VERSION', '1.123.0')
+          it 'downloads correct release version by correctly parsing Bosh::AwsCliPlugin::VERSION' do
+            stub_const('Bosh::AwsCliPlugin::VERSION', '1.123.0')
 
             allow(bootstrap).to receive(:load_yaml_file)
             allow(bootstrap).to receive(:write_yaml)

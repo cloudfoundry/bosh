@@ -102,28 +102,28 @@ describe Bosh::Cli::Command::AWS do
       end
 
       it 'should run the migrations' do
-        expect(Bosh::Aws::Migrator).to receive(:new).with(YAML.load_yaml_file(config_file)).and_return(migrator)
+        expect(Bosh::AwsCliPlugin::Migrator).to receive(:new).with(YAML.load_yaml_file(config_file)).and_return(migrator)
         expect(migrator).to receive(:migrate)
         aws.create config_file
       end
 
       it 'should default the configuration file when not passed in' do
         expect(File.exist?(default_config_filename)).to eq(true)
-        expect(Bosh::Aws::Migrator).to receive(:new).and_return(migrator)
+        expect(Bosh::AwsCliPlugin::Migrator).to receive(:new).and_return(migrator)
         expect(migrator).to receive(:migrate)
         aws.create
       end
     end
 
     describe 'aws destroy' do
-      before { allow(Bosh::Aws::Destroyer).to receive(:new).with(aws, config, rds_destroyer, vpc_destroyer).and_return(destroyer) }
-      let(:destroyer) { instance_double('Bosh::Aws::Destroyer') }
+      before { allow(Bosh::AwsCliPlugin::Destroyer).to receive(:new).with(aws, config, rds_destroyer, vpc_destroyer).and_return(destroyer) }
+      let(:destroyer) { instance_double('Bosh::AwsCliPlugin::Destroyer') }
 
-      before { allow(Bosh::Aws::RdsDestroyer).to receive(:new).with(aws, config).and_return(rds_destroyer) }
-      let(:rds_destroyer) { instance_double('Bosh::Aws::RdsDestroyer') }
+      before { allow(Bosh::AwsCliPlugin::RdsDestroyer).to receive(:new).with(aws, config).and_return(rds_destroyer) }
+      let(:rds_destroyer) { instance_double('Bosh::AwsCliPlugin::RdsDestroyer') }
 
-      before { allow(Bosh::Aws::VpcDestroyer).to receive(:new).with(aws, config).and_return(vpc_destroyer) }
-      let(:vpc_destroyer) { instance_double('Bosh::Aws::VpcDestroyer') }
+      before { allow(Bosh::AwsCliPlugin::VpcDestroyer).to receive(:new).with(aws, config).and_return(vpc_destroyer) }
+      let(:vpc_destroyer) { instance_double('Bosh::AwsCliPlugin::VpcDestroyer') }
 
       before { allow(aws).to receive(:load_config).with(config_file).and_return(config) }
       let(:config_file) { double('config_file') }
@@ -147,18 +147,18 @@ describe Bosh::Cli::Command::AWS do
 
     describe 'load_config' do
       let(:config_file) { double('config_file') }
-      let(:config) { instance_double('Bosh::Aws::AwsConfig', configuration: 'fake_configuration') }
+      let(:config) { instance_double('Bosh::AwsCliPlugin::AwsConfig', configuration: 'fake_configuration') }
 
       context 'when a config file is provided' do
         it 'uses the provided file' do
-          expect(Bosh::Aws::AwsConfig).to receive(:new).with(config_file).and_return(config)
+          expect(Bosh::AwsCliPlugin::AwsConfig).to receive(:new).with(config_file).and_return(config)
           expect(aws.send(:load_config, config_file)).to eq('fake_configuration')
         end
       end
 
       context 'when a config file is not provided' do
         it 'uses a default config' do
-          expect(Bosh::Aws::AwsConfig).to receive(:new).with(default_config_filename).and_return(config)
+          expect(Bosh::AwsCliPlugin::AwsConfig).to receive(:new).with(default_config_filename).and_return(config)
           expect(aws.send(:load_config)).to eq('fake_configuration')
         end
       end
@@ -174,7 +174,7 @@ describe Bosh::Cli::Command::AWS do
 
         it 'prompts the user for admin password' do
           expect(fake_bootstrap).to receive(:start)
-          expect(Bosh::Aws::MicroBoshBootstrap).to receive(:new).with(
+          expect(Bosh::AwsCliPlugin::MicroBoshBootstrap).to receive(:new).with(
             anything,
             kind_of(Hash)
           ).and_return(fake_bootstrap)
@@ -195,7 +195,7 @@ describe Bosh::Cli::Command::AWS do
 
         it 'saves the randomly generated password??' do
           expect(fake_bootstrap).to receive(:start)
-          expect(Bosh::Aws::MicroBoshBootstrap).to receive(:new).with(
+          expect(Bosh::AwsCliPlugin::MicroBoshBootstrap).to receive(:new).with(
             anything,
             kind_of(Hash)
           ).and_return(fake_bootstrap)

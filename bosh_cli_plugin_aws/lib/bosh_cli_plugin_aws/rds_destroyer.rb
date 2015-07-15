@@ -1,4 +1,4 @@
-module Bosh::Aws
+module Bosh::AwsCliPlugin
   class RdsDestroyer
     def initialize(ui, config)
       @ui = ui
@@ -47,7 +47,7 @@ module Bosh::Aws
     end
 
     def rds
-      @rds ||= Bosh::Aws::RDS.new(@credentials)
+      @rds ||= Bosh::AwsCliPlugin::RDS.new(@credentials)
     end
   end
 end

@@ -1,5 +1,5 @@
 module Bosh
-  module Aws
+  module AwsCliPlugin
     class EC2
 
       NAT_AMI_ID = {

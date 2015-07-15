@@ -1,7 +1,7 @@
 require 'yaml'
 
 module Bosh
-  module Aws
+  module AwsCliPlugin
     class ConfigurationInvalid < RuntimeError; end
 
     class AwsConfig

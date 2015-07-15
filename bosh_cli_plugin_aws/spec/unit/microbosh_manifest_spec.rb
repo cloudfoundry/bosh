@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Bosh::Aws::MicroboshManifest do
+describe Bosh::AwsCliPlugin::MicroboshManifest do
   subject(:manifest) { described_class.new(vpc_receipt, route53_receipt, manifest_options) }
 
   let(:vpc_receipt) { Psych.load_file(asset "test-output.yml") }

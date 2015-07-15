@@ -1,4 +1,4 @@
-module Bosh::Aws
+module Bosh::AwsCliPlugin
   class VpcDestroyer
     def initialize(ui, config)
       @ui = ui
@@ -19,7 +19,7 @@ module Bosh::Aws
       dhcp_options = []
 
       vpc_ids.each do |vpc_id|
-        vpc = Bosh::Aws::VPC.find(ec2, vpc_id)
+        vpc = Bosh::AwsCliPlugin::VPC.find(ec2, vpc_id)
         if vpc.instances_count > 0
           raise "#{vpc.instances_count} instance(s) running in #{vpc.vpc_id} - delete them first"
         end
@@ -42,7 +42,7 @@ module Bosh::Aws
     private
 
     def ec2
-      @ec2 ||= Bosh::Aws::EC2.new(@credentials)
+      @ec2 ||= Bosh::AwsCliPlugin::EC2.new(@credentials)
     end
   end
 end

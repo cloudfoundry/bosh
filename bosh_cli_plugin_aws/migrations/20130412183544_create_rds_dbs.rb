@@ -1,5 +1,5 @@
-class CreateRdsDbs < Bosh::Aws::Migration
-  include Bosh::Aws::MigrationHelper
+class CreateRdsDbs < Bosh::AwsCliPlugin::Migration
+  include Bosh::AwsCliPlugin::MigrationHelper
 
   def execute
     if !config["rds"]

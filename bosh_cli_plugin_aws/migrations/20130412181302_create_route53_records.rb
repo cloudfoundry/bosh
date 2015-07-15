@@ -1,4 +1,4 @@
-class CreateRoute53Records < Bosh::Aws::Migration
+class CreateRoute53Records < Bosh::AwsCliPlugin::Migration
   def execute
     receipt = {}
     elastic_ip_specs = config["elastic_ips"]

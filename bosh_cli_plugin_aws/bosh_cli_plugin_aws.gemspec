@@ -1,7 +1,7 @@
 # coding: utf-8
 require File.expand_path('../lib/bosh_cli_plugin_aws/version', __FILE__)
 
-version = Bosh::Aws::VERSION
+version = Bosh::AwsCliPlugin::VERSION
 
 Gem::Specification.new do |s|
   s.name        = 'bosh_cli_plugin_aws'
