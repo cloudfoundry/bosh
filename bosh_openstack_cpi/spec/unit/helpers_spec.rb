@@ -108,6 +108,42 @@ describe Bosh::OpenStackCloud::Helpers do
       end
     end
 
+    context 'when openstack raises ServiceUnavailable' do
+      let(:headers) { {} }
+      let(:body) do
+        {
+          'overLimit' => {
+            'message' => 'No server is available to handle this request.',
+            'code' => 503,
+          }
+        }
+      end
+      let(:response) { Excon::Response.new(body: JSON.dump(body), headers: headers) }
+
+      before do
+        allow(openstack).to receive(:servers) do
+          # next time don't raise the same exception to avoid looping
+          allow(openstack).to receive(:servers).and_return(nil)
+
+          raise Excon::Errors::ServiceUnavailable.new('', '', response)
+        end
+      end
+
+      it 'retries until the max number of retries is reached' do
+        allow(openstack).to receive(:servers).exactly(11).times.
+          and_raise(Excon::Errors::ServiceUnavailable.new('', '', response))
+        expect(cloud).to receive(:sleep).with(3).exactly(10).times
+
+        expect {
+          cloud.with_openstack do
+            openstack.servers
+          end
+        }.to raise_error(Bosh::Clouds::CloudError,
+                         'OpenStack API Service Unavailable error. Check task debug log for details.')
+
+      end
+    end
+
     context 'when openstack raises RequestEntityTooLarge' do
       let(:headers) { {} }
       let(:body) do
