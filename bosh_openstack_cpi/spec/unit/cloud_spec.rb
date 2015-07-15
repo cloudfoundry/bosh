@@ -142,29 +142,76 @@ describe Bosh::OpenStackCloud::Cloud do
       expect(cloud.volume).to eql(volume)
     end
 
-    it 'raises a CloudError exception if cannot connect to the OpenStack Compute API' do
+    it 'retries connecting if a GatewayTimeout error is returned by any OpenStack API endpoint' do
+      retry_count = 0
+      allow(Fog::Compute).to receive(:new) do
+        retry_count += 1
+        if retry_count < Bosh::OpenStackCloud::Cloud::CONNECT_RETRY_COUNT
+          raise Excon::Errors::GatewayTimeout.new('Gateway Timeout')
+        end
+        instance_double(Fog::Compute)
+      end
+
+      allow(Fog::Image).to receive(:new).and_return(instance_double(Fog::Image))
+      allow(Fog::Volume).to receive(:new).and_return(instance_double(Fog::Volume))
+      expect {
+        Bosh::OpenStackCloud::Cloud.new(mock_cloud_options['properties'])
+      }.to_not raise_error
+
+      retry_count = 0
+      allow(Fog::Image).to receive(:new) do
+        retry_count += 1
+        if retry_count < Bosh::OpenStackCloud::Cloud::CONNECT_RETRY_COUNT
+          raise Excon::Errors::GatewayTimeout.new('Gateway Timeout')
+        end
+        instance_double(Fog::Image)
+      end
+
+      allow(Fog::Compute).to receive(:new).and_return(instance_double(Fog::Compute))
+      allow(Fog::Volume).to receive(:new).and_return(instance_double(Fog::Volume))
+      expect {
+        Bosh::OpenStackCloud::Cloud.new(mock_cloud_options['properties'])
+      }.to_not raise_error
+
+      retry_count = 0
+      allow(Fog::Volume).to receive(:new) do
+        retry_count += 1
+        if retry_count < Bosh::OpenStackCloud::Cloud::CONNECT_RETRY_COUNT
+          raise Excon::Errors::GatewayTimeout.new('Gateway Timeout')
+        end
+        instance_double(Fog::Volume)
+      end
+
+      allow(Fog::Compute).to receive(:new).and_return(instance_double(Fog::Compute))
+      allow(Fog::Image).to receive(:new).and_return(instance_double(Fog::Image))
+      expect {
+        Bosh::OpenStackCloud::Cloud.new(mock_cloud_options['properties'])
+      }.to_not raise_error
+    end
+
+    it 'raises a CloudError exception if cannot connect to the OpenStack Compute API 5 times' do
       allow(Fog::Compute).to receive(:new).and_raise(Excon::Errors::Unauthorized, 'Unauthorized')
-      allow(Fog::Image).to receive(:new)
-      allow(Fog::Volume).to receive(:new)
+      allow(Fog::Image).to receive(:new).and_return(instance_double(Fog::Image))
+      allow(Fog::Volume).to receive(:new).and_return(instance_double(Fog::Volume))
       expect {
         Bosh::OpenStackCloud::Cloud.new(mock_cloud_options['properties'])
       }.to raise_error(Bosh::Clouds::CloudError,
         'Unable to connect to the OpenStack Compute API. Check task debug log for details.')
     end
 
-    it 'raises a CloudError exception if cannot connect to the OpenStack Image Service API' do
-      allow(Fog::Compute).to receive(:new)
+    it 'raises a CloudError exception if cannot connect to the OpenStack Image Service API 5 times' do
+      allow(Fog::Compute).to receive(:new).and_return(instance_double(Fog::Compute))
       allow(Fog::Image).to receive(:new).and_raise(Excon::Errors::Unauthorized, 'Unauthorized')
-      allow(Fog::Volume).to receive(:new)
+      allow(Fog::Volume).to receive(:new).and_return(instance_double(Fog::Volume))
       expect {
         Bosh::OpenStackCloud::Cloud.new(mock_cloud_options['properties'])
       }.to raise_error(Bosh::Clouds::CloudError,
         'Unable to connect to the OpenStack Image Service API. Check task debug log for details.')
     end
 
-    it 'raises a CloudError exception if cannot connect to the OpenStack Volume Service API' do
-      allow(Fog::Compute).to receive(:new)
-      allow(Fog::Image).to receive(:new)
+    it 'raises a CloudError exception if cannot connect to the OpenStack Volume Service API 5 times' do
+      allow(Fog::Compute).to receive(:new).and_return(instance_double(Fog::Compute))
+      allow(Fog::Image).to receive(:new).and_return(instance_double(Fog::Image))
       allow(Fog::Volume).to receive(:new).and_raise(Excon::Errors::Unauthorized, 'Unauthorized')
       expect {
         Bosh::OpenStackCloud::Cloud.new(mock_cloud_options['properties'])
