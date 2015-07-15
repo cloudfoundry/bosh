@@ -5,10 +5,10 @@ describe Bosh::Director::DeploymentPlan::Vm do
     @vm = BD::DeploymentPlan::Vm.new
   end
 
-  describe :clean_vm do
+  describe :clean do
     it 'sets vm to nil' do
       @vm.model = 'fake-vm'
-      expect{ @vm.clean_vm }.to change(@vm, :model).to(nil)
+      expect{ @vm.clean }.to change(@vm, :model).to(nil)
     end
   end
 

@@ -16,14 +16,40 @@ module Bosh::Director
         action { recreate_vm(@vm) }
       end
     end
-
     let(:vm) { Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007') }
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, vm.id, {}) }
     let(:fake_cloud) { instance_double('Bosh::Cloud') }
+    let(:vm_deleter) { instance_double(Bosh::Director::VmDeleter) }
+    before { allow(VmDeleter).to receive(:new).and_return(vm_deleter) }
+
+    before { allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(agent_client) }
+    let(:agent_client) { instance_double(AgentClient) }
 
     def fake_job_context
       test_problem_handler.job = instance_double('Bosh::Director::Jobs::BaseJob')
       allow(Config).to receive(:cloud).and_return(fake_cloud)
+    end
+
+    describe '#delete_vm' do
+      before { fake_job_context }
+      context 'when VM does not have disks' do
+        before { allow(agent_client).to receive(:list_disk).and_return([]) }
+
+        it 'deletes VM using vm_deleter' do
+          expect(vm_deleter).to receive(:delete_vm).with(vm)
+          test_problem_handler.delete_vm(vm)
+        end
+      end
+
+      context 'when VM has disks' do
+        before { allow(agent_client).to receive(:list_disk).and_return(['fake-disk-cid']) }
+
+        it 'fails' do
+          expect {
+            test_problem_handler.delete_vm(vm)
+          }.to raise_error 'VM has persistent disk attached'
+        end
+      end
     end
 
     describe '#recreate_vm' do

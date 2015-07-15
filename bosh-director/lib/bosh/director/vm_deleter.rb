@@ -6,12 +6,17 @@ module Bosh::Director
     end
 
     def delete_for_instance(instance)
-      if instance.model && instance.model.vm
-        detach_disks_for instance
-        @logger.info('Deleting VM')
-        @cloud.delete_vm(instance.model.vm.cid)
-        instance.delete_vm_model
+      detach_disks_for(instance)
+      if instance.model.vm
+        delete_vm(instance.model.vm)
+        instance.vm.clean
       end
+    end
+
+    def delete_vm(vm_model)
+      @logger.info('Deleting VM')
+      @cloud.delete_vm(vm_model.cid)
+      vm_model.destroy
     end
 
     private

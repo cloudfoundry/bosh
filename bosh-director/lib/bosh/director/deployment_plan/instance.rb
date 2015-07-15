@@ -458,16 +458,6 @@ module Bosh::Director
         @vm.bound_instance = self
       end
 
-      def delete_vm_model
-        @model.db.transaction do
-          vm_model = @model.vm
-          @vm.model = nil
-          @model.vm = nil
-          @model.save
-          vm_model.destroy
-        end
-      end
-
       # Looks up instance model in DB
       # @return [Models::Instance]
       def find_or_create_model

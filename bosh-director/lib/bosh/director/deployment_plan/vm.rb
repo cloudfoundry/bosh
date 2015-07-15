@@ -14,8 +14,7 @@ module Bosh::Director
       # @return [DeploymentPlan::Instance, nil] Instance that reserved this VM
       attr_accessor :bound_instance
 
-      #TODO: rename 'clean'
-      def clean_vm
+      def clean
         self.model = nil
       end
     end

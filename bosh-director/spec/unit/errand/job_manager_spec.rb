@@ -58,8 +58,8 @@ module Bosh::Director
 
       let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
 
-      let(:vm1) { instance_double('Bosh::Director::DeploymentPlan::Vm', clean_vm: nil) }
-      let(:vm2) { instance_double('Bosh::Director::DeploymentPlan::Vm', clean_vm: nil) }
+      let(:vm1) { instance_double('Bosh::Director::DeploymentPlan::Vm', clean: nil) }
+      let(:vm2) { instance_double('Bosh::Director::DeploymentPlan::Vm', clean: nil) }
 
       before do
         allow(job).to receive(:instances).with(no_args).and_return([instance1, instance2])

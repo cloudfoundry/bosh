@@ -58,25 +58,18 @@ module Bosh::Director
       # Paranoia: don't blindly delete VMs with persistent disk
       disk_list = agent_timeout_guard(vm) { |agent| agent.list_disk }
       if disk_list.size != 0
-        handler_error("VM has persistent disk attached")
+        handler_error('VM has persistent disk attached')
       end
 
-      cloud.delete_vm(vm.cid)
-      vm.db.transaction do
-        vm.instance.update(:vm => nil) if vm.instance
-        vm.destroy
-      end
+      vm_deleter.delete_vm(vm)
     end
 
     def delete_vm_reference(vm, options={})
       if vm.cid && !options[:skip_cid_check]
-        handler_error("VM has a CID")
+        handler_error('VM has a CID')
       end
 
-      vm.db.transaction do
-        vm.instance.update(:vm => nil) if vm.instance
-        vm.destroy
-      end
+      vm.destroy
     end
 
     def recreate_vm(vm)
@@ -118,7 +111,6 @@ module Bosh::Director
 
       cloud_properties = resource_pool_spec.fetch("cloud_properties", {})
       networks = spec["networks"]
-      vm_deleter = VmDeleter.new(cloud, @logger)
       new_vm = VmCreator.new(cloud, @logger, vm_deleter).create(deployment, stemcell, cloud_properties, networks, Array(disk_cid), env)
       new_vm.apply_spec = spec
       new_vm.save
@@ -160,6 +152,10 @@ module Bosh::Director
     end
 
     private
+
+    def vm_deleter
+      @vm_deleter ||= VmDeleter.new(cloud, @logger)
+    end
 
     def validate_spec(vm)
       handler_error("Unable to look up VM apply spec") unless vm.apply_spec

@@ -6,7 +6,6 @@ module Bosh::Director::Models
     def validate
       validates_presence [:deployment_id, :agent_id]
       validates_unique :agent_id
-
     end
 
     def vm_exists?
@@ -42,4 +41,7 @@ module Bosh::Director::Models
       self.credentials_json = Yajl::Encoder.encode(spec)
     end
   end
+
+  Vm.plugin :association_dependencies
+  Vm.add_association_dependencies :instance => :nullify
 end
