@@ -96,6 +96,30 @@ shared_examples_for 'every OS image' do
       expect(sshd_config).to contain(/^PermitEmptyPasswords no$/)
     end
 
+    it 'sets HostbasedAuthentication to no (stig: V-38612)' do
+      expect(sshd_config).to contain(/^HostbasedAuthentication no$/)
+    end
+
+    it 'sets Banner to /etc/issue (stig: V-38615)' do
+      expect(sshd_config).to contain(/^Banner \/etc\/issue$/)
+    end
+
+    it 'sets IgnoreRhosts to yes (stig: V-38611)' do
+      expect(sshd_config).to contain(/^IgnoreRhosts yes$/)
+    end
+
+    it 'sets ClientAliveInterval to 900 seconds (stig: V-38608)' do
+      expect(sshd_config).to contain(/^ClientAliveInterval 900$/)
+    end
+
+    it 'sets PermitUserEnvironment to no (stig: V-38616)' do
+      expect(sshd_config).to contain(/^PermitUserEnvironment no$/)
+    end
+
+    it 'sets ClientAliveCountMax to 0 (stig: V-38610)' do
+      expect(sshd_config).to contain(/^ClientAliveCountMax 0$/)
+    end
+
     it 'sets Protocol to 2 (stig: V-38607)' do
       expect(sshd_config).to contain(/^Protocol 2$/)
     end
