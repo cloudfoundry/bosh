@@ -123,7 +123,7 @@ module Bosh::Director
           end
 
           it 'succeeds' do
-            expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).with(planner, Config.cloud, Config.logger, Config.event_log, job)
+            expect(DeploymentPlan::Steps::PackageCompileStep).to receive(:new).with(planner, instance_of(DeploymentPlan::CompilationInstancePool), Config.logger, Config.event_log, job)
             expect(package_compile_step).to receive(:perform).with no_args
 
             job.perform

@@ -35,11 +35,14 @@ module Bosh::Director
         with_deployment_lock(@deployment_name, :timeout => lock_timeout) do
           with_release_lock(@release_name, :timeout => lock_timeout) do
             with_stemcell_lock(@stemcell.name, @stemcell.version, :timeout => lock_timeout) do
+              vm_deleter = VmDeleter.new(Config.cloud, @logger)
+              vm_creator = Bosh::Director::VmCreator.new(Config.cloud, @logger, vm_deleter)
 
               planner = create_planner
+              compilation_instance_pool = DeploymentPlan::CompilationInstancePool.new(InstanceReuser.new, vm_creator, vm_deleter, planner, @logger)
               package_compile_step = DeploymentPlan::Steps::PackageCompileStep.new(
                   planner,
-                  Config.cloud, # CPI
+                  compilation_instance_pool,
                   Config.logger,
                   Config.event_log,
                   self
