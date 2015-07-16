@@ -1,5 +1,6 @@
 #!/bin/bash
 
+source /var/vcap/jobs/health_monitor/bin/properties.sh
 RUN_DIR=/var/vcap/sys/run/health_monitor
 LOG_DIR=/var/vcap/sys/log/health_monitor
 PIDFILE=$RUN_DIR/health_monitor.pid
@@ -25,6 +26,10 @@ case $1 in
 
     if [ -s $CONFIG_DIR/uaa.pem ]; then
       cp $CONFIG_DIR/uaa.pem $STORE_DIR
+    fi
+
+    if [ "$HM_SYSLOG_EVENT_FORWARDER_ENABLED" == "true" ]; then
+       /var/vcap/packages/health_monitor/bin/setup_syslog_event_forwarder.sh $CONFIG_DIR
     fi
 
     exec chpst -u $RUNAS:$RUNAS \
