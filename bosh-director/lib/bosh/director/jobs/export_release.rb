@@ -72,13 +72,6 @@ module Bosh::Director
       def create_planner
         modified_deployment_manifest = Psych.load(@targeted_deployment.manifest)
         cloud_config_model = @targeted_deployment.cloud_config
-        network_name = cloud_config_model.manifest['networks'][0]['name']
-
-        fake_resource_pool_manifest = {
-            "name" => "just_for_compiling",
-            "network" => network_name,
-            "stemcell" => { "name" => @stemcell.name, "version" => @stemcell.version }
-        }
 
         planner_factory = DeploymentPlan::PlannerFactory.create(Config.event_log, Config.logger)
         planner = planner_factory.planner_without_vm_binding(
@@ -86,6 +79,13 @@ module Bosh::Director
             cloud_config_model,
             {}
         )
+        network_name = planner.networks.first.name
+
+        fake_resource_pool_manifest = {
+            "name" => "just_for_compiling",
+            "network" => network_name,
+            "stemcell" => { "name" => @stemcell.name, "version" => @stemcell.version }
+        }
 
         resource_pool = DeploymentPlan::ResourcePool.new(planner, fake_resource_pool_manifest, Config.logger)
         planner.add_resource_pool(resource_pool)
