@@ -5,10 +5,11 @@ module Bosh::Director
       @logger = logger
     end
 
-    def delete_for_instance(instance)
-      detach_disks_for(instance)
-      if instance.model.vm
-        delete_vm(instance.model.vm)
+    def delete_for_instance(instance, options={})
+      detach_disks_for(instance) unless options.fetch(:skip_disks, false)
+
+      if instance.vm.model
+        delete_vm(instance.vm.model)
         instance.vm.clean
       end
     end

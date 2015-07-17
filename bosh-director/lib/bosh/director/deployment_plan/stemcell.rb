@@ -48,6 +48,10 @@ module Bosh::Director
         @model.desc
       end
 
+      def cid
+        @model.cid
+      end
+
       def id
         @model.id
       end

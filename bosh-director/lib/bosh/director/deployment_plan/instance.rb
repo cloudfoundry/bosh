@@ -86,6 +86,14 @@ module Bosh::Director
         end
       end
 
+      def resource_pool
+        @job.resource_pool
+      end
+
+      def deployment_model
+        @deployment.model
+      end
+
       ##
       # Updates this domain object to reflect an existing instance running on an existing vm
       def bind_existing_instance(instance_model, state, reservations)

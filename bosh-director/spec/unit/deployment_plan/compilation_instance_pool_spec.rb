@@ -67,15 +67,20 @@ module Bosh::Director
         before { allow(reservation).to receive(:reserved?).and_return(false) }
 
         it 'reserves a network for a new vm' do
-          expect(network).to receive(:reserve!).with(reservation, /^`compilation-/)
+          expect(network).to receive(:reserve!).with(reservation, /compilation-/)
           action
         end
       end
 
       it 'defers to the vm creator to create a vm' do
-        expect(vm_creator).to receive(:create).with(deployment_model, stemcell.model, cloud_properties,
-            network_settings, nil, compilation_env)
-                                .and_return(vm_model)
+        expect(vm_creator).to receive(:create).with(
+          deployment_model,
+          stemcell,
+          cloud_properties,
+          network_settings,
+          nil,
+          compilation_env
+        ).and_return(vm_model)
         action
       end
 

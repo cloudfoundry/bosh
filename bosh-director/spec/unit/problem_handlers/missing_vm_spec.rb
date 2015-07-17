@@ -6,6 +6,7 @@ module Bosh::Director
   describe ProblemHandlers::MissingVM do
 
     let(:vm) { Models::Vm.make(cid: 'vm-cid', agent_id: 'agent-007') }
+    let(:recreated_vm) { Models::Vm.make(cid: 'vm-cid-2', agent_id: 'agent-007-2') }
     let(:handler) { ProblemHandlers::Base.create_by_type(:missing_vm, vm.id, {}) }
 
     it 'registers under missing_vm type' do
@@ -49,7 +50,7 @@ module Bosh::Director
         Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
 
         allow(SecureRandom).to receive_messages(uuid: 'agent-222')
-        allow(AgentClient).to receive(:with_vm).with(vm, anything).and_return(fake_new_agent)
+        allow(AgentClient).to receive(:with_vm).and_return(fake_new_agent)
 
         expect(fake_new_agent).to receive(:wait_until_ready).ordered
         expect(fake_new_agent).to receive(:update_settings).ordered
@@ -59,7 +60,8 @@ module Bosh::Director
         expect(fake_cloud).to receive(:delete_vm).with('vm-cid')
         expect(fake_cloud).
           to receive(:create_vm).
-          with('agent-222', 'sc-302', { 'foo' => 'bar' }, ['A', 'B', 'C'], [], { 'key1' => 'value1' })
+          with('agent-222', 'sc-302', { 'foo' => 'bar' }, ['A', 'B', 'C'], [], { 'key1' => 'value1' }).
+          and_return(recreated_vm)
 
         fake_job_context
 

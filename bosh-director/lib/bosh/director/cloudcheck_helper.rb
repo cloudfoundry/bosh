@@ -50,7 +50,7 @@ module Bosh::Director
       begin
         agent_client(vm).wait_until_ready
       rescue Bosh::Director::RpcTimeout
-        handler_error("Agent still unresponsive after reboot")
+        handler_error('Agent still unresponsive after reboot')
       end
     end
 
@@ -73,81 +73,38 @@ module Bosh::Director
     end
 
     def recreate_vm(vm)
-      # Best we can do without any feedback from the agent
-      # is to use the spec persisted in the DB at the time
-      # of last apply call.
-      # This method is somewhat similar in its nature to what
-      # InstanceUpdater is doing in case of the stemcell update,
-      # however we don't need to handle some advanced scenarios
-      # such as disk migration.
+      @logger.debug("Recreating Vm: #{vm.inspect}")
+      unless vm.instance
+        handler_error('VM does not have an associated instance')
+      end
+      instance_model = vm.instance
 
-      spec = validate_spec(vm)
-      env = validate_env(vm)
+      handler_error("VM doesn't belong to any deployment") unless vm.deployment
 
-      resource_pool_spec = spec.fetch("resource_pool", {})
-      stemcell = find_stemcell(resource_pool_spec.fetch("stemcell", {}))
+      validate_spec(vm.apply_spec)
+      validate_env(vm.env)
 
-      deployment = vm.deployment
-      handler_error("VM doesn't belong to any deployment") unless deployment
+      instance = DeploymentPlan::ExistingInstance.create_from_model(instance_model, @logger)
 
-      instance = vm.instance
-      disk_cid = instance ? instance.persistent_disk_cid : nil
-
-      # One situation where this handler is actually useful is when
-      # VM has already been deleted but something failed after that
-      # and it is still referenced in DB. In that case it makes sense
-      # to ignore "VM not found" errors in `delete_vm' and let the method
-      # proceed creating a new VM. Other errors are not forgiven.
       begin
-        cloud.delete_vm(vm.cid)
-      rescue Bosh::Clouds::VMNotFound => e
+        vm_deleter.delete_for_instance(instance, skip_disks: true)
+      rescue Bosh::Clouds::VMNotFound
+        # One situation where this handler is actually useful is when
+        # VM has already been deleted but something failed after that
+        # and it is still referenced in DB. In that case it makes sense
+        # to ignore "VM not found" errors in `delete_vm' and let the method
+        # proceed creating a new VM. Other errors are not forgiven.
+
         @logger.warn("VM '#{vm.cid}' might have already been deleted from the cloud")
       end
 
-      vm.db.transaction do
-        instance.update(:vm => nil) if instance
-        vm.destroy
-      end
+      vm_creator.create_for_instance(
+        instance,
+        Array(instance_model.persistent_disk_cid)
+      )
 
-      cloud_properties = resource_pool_spec.fetch("cloud_properties", {})
-      networks = spec["networks"]
-      new_vm = VmCreator.new(cloud, @logger, vm_deleter).create(deployment, stemcell, cloud_properties, networks, Array(disk_cid), env)
-      new_vm.apply_spec = spec
-      new_vm.save
-
-      if instance
-        instance.update(:vm => new_vm)
-
-        # refresh metadata after new instance has been set
-        VmMetadataUpdater.build.update(new_vm, {})
-      end
-
-      agent_client(new_vm).wait_until_ready
-
-      agent_client(new_vm).update_settings(Bosh::Director::Config.trusted_certs)
-      new_vm.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Bosh::Director::Config.trusted_certs))
-
-      # After this point agent is actually responding to
-      # pings, so if the rest of this handler fails
-      # bcck won't find this type of problem again
-      # but regular deployment will fail with "out-of-sync"
-      # error (as we now have an instance that points to
-      # VM that reports empty state). This problem
-      # should be handled by "out-of-sync VM" problem handler.
-
-      if disk_cid
-        # N.B. attach_disk might fail if disk image is no longer
-        # there or for some other reason. Generally it means
-        # the data has been lost (e.g. someone deleted VM from vCenter
-        # along with the disk.
-        cloud.attach_disk(new_vm.cid, disk_cid)
-        agent_client(new_vm).mount_disk(disk_cid)
-      end
-
-      agent_client(new_vm).apply(spec)
-
-      if instance && instance.state == "started"
-        agent_client(new_vm).start
+      if instance_model.state == 'started'
+        agent_client(instance.vm.model).start
       end
     end
 
@@ -157,48 +114,28 @@ module Bosh::Director
       @vm_deleter ||= VmDeleter.new(cloud, @logger)
     end
 
-    def validate_spec(vm)
-      handler_error("Unable to look up VM apply spec") unless vm.apply_spec
+    def vm_creator
+      @vm_creator ||= VmCreator.new(cloud, @logger, vm_deleter)
+    end
 
-      spec = vm.apply_spec
+    def validate_spec(spec)
+      handler_error('Unable to look up VM apply spec') unless spec
 
       unless spec.kind_of?(Hash)
-        handler_error("Invalid apply spec format")
+        handler_error('Invalid apply spec format')
       end
-
-      spec
     end
 
-    def validate_env(vm)
-      handler_error("Unable to look up VM environment") unless vm.env
-
-      env = vm.env
+    def validate_env(env)
+      handler_error('Unable to look up VM environment') unless env
 
       unless env.kind_of?(Hash)
-        handler_error("Invalid VM environment format")
+        handler_error('Invalid VM environment format')
       end
-
-      env
-    end
-
-    def find_stemcell(stemcell_spec)
-      stemcell_name = stemcell_spec['name']
-      stemcell_version = stemcell_spec['version']
-
-      unless stemcell_name && stemcell_version
-        handler_error('Unknown stemcell name and/or version')
-      end
-
-      stemcell = Models::Stemcell.find(:name => stemcell_name, :version => stemcell_version)
-
-      handler_error("Unable to find stemcell '#{stemcell_name} #{stemcell_version}'") unless stemcell
-
-      stemcell
     end
 
     def generate_agent_id
       SecureRandom.uuid
     end
-
   end
 end

@@ -13,6 +13,7 @@ module Bosh::Director
       handler = ProblemHandlers::UnresponsiveAgent.new(vm.id, data)
       allow(handler).to receive(:cloud).and_return(cloud)
       allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id(@vm.agent_id), anything).and_return(@agent)
+      allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id(@vm.agent_id)).and_return(@agent)
       handler
     end
 
@@ -106,12 +107,13 @@ module Bosh::Director
             'networks' => ['A', 'B', 'C']
           }
         end
-        let(:fake_new_agent) { instance_double(Bosh::Director::AgentClient) }
+        let(:fake_new_agent) { double(Bosh::Director::AgentClient) }
 
         before do
           Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           @vm.update(apply_spec: spec, env: { 'key1' => 'value1' })
           allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id('agent-222'), anything).and_return(fake_new_agent)
+          allow(AgentClient).to receive(:with_vm).with(vm_with_agent_id('agent-222')).and_return(fake_new_agent)
           allow(SecureRandom).to receive_messages(uuid: 'agent-222')
         end
 
@@ -120,8 +122,7 @@ module Bosh::Director
 
           expect(@cloud).to receive(:delete_vm).with('vm-cid')
           expect(@cloud).
-            to receive(:create_vm).
-            with('agent-222', 'sc-302', { 'foo' => 'bar' }, ['A', 'B', 'C'], [], { 'key1' => 'value1' })
+            to receive(:create_vm).with('agent-222', 'sc-302', { 'foo' => 'bar' }, ['A', 'B', 'C'], [], { 'key1' => 'value1' })
 
           expect(fake_new_agent).to receive(:wait_until_ready).ordered
           expect(fake_new_agent).to receive(:update_settings).ordered
