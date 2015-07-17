@@ -89,6 +89,7 @@ module Bosh::AwsCloud
                  {
                    :virtualization_type => virtualization_type,
                    :root_device_name => "/dev/xvda",
+                   :sriov_net_support => "simple",
                    :block_device_mappings => {
                      "/dev/xvda" => {
                        :snapshot_id => snapshot_id

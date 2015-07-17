@@ -37,7 +37,7 @@ describe Bosh::AwsCloud::StemcellCreator do
       expect(volume).to receive(:create_snapshot).and_return(snapshot)
       expect(Bosh::AwsCloud::TagManager).to receive(:tag).with(image, "Name", "stemcell-name 0.7.0")
 
-      stemcell = creator.create(volume, ebs_volume, "/path/to/image")
+      creator.create(volume, ebs_volume, "/path/to/image")
     end
   end
 
@@ -92,6 +92,7 @@ describe Bosh::AwsCloud::StemcellCreator do
         expect(params[:description]).to eq("stemcell-name 0.7.0")
         expect(params).not_to have_key(:kernel_id)
         expect(params[:root_device_name]).to eq("/dev/xvda")
+        expect(params[:sriov_net_support]).to eq("simple")
         expect(params[:block_device_mappings]).to eq({
           "/dev/xvda"=>{:snapshot_id=>"id"},
           "/dev/sdb"=>"ephemeral0"
