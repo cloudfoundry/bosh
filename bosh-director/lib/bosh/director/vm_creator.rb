@@ -53,8 +53,10 @@ module Bosh::Director
       end
     end
 
+    private
+
     def create(deployment, stemcell, cloud_properties, network_settings,
-               disks=nil, env={})
+      disks=nil, env={})
       vm = nil
       vm_cid = nil
 
@@ -63,9 +65,9 @@ module Bosh::Director
       agent_id = self.class.generate_agent_id
 
       options = {
-          :deployment => deployment,
-          :agent_id => agent_id,
-          :env => env
+        :deployment => deployment,
+        :agent_id => agent_id,
+        :env => env
       }
 
       if Config.encryption?
@@ -111,8 +113,6 @@ module Bosh::Director
     def logger
       Config.logger
     end
-
-    private
 
     class DiskAttacher
       def initialize(instance, vm_model, agent_client, cloud, logger)
