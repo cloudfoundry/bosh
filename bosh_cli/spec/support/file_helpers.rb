@@ -13,6 +13,8 @@ module Support
         else
           all_files_and_dirs.reject! { |f| File.directory?(f) }
         end
+
+        all_files_and_dirs
       end
     end
 
