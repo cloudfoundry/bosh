@@ -55,7 +55,7 @@ module Bosh::Cli
           FileUtils.mkdir_p(dest_path)
         else
           FileUtils.mkdir_p(dest_path.parent)
-          system("cp -a #{src} #{dest_path}")
+          FileUtils.copy_entry(src, dest_path, preserve: true)
         end
       end
     end
