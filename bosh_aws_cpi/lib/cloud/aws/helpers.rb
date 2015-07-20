@@ -4,7 +4,12 @@ module Bosh::AwsCloud
 
   module Helpers
     def default_ephemeral_disk_mapping
-       { '/dev/sdb' => 'ephemeral0' }
+       [
+         {
+           :device_name => '/dev/sdb',
+           :virtual_name => 'ephemeral0',
+         },
+       ]
     end
 
     def ebs_ephemeral_disk_mapping(volume_size_in_gb, volume_type)

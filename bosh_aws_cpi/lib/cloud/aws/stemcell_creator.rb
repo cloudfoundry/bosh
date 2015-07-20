@@ -22,7 +22,7 @@ module Bosh::AwsCloud
       ResourceWait.for_snapshot(snapshot: snapshot, state: :completed)
 
       params = image_params(snapshot.id)
-      image = region.images.create(params)
+      image = region.images[region.client.register_image(params).image_id]
       ResourceWait.for_image(image: image, state: :available)
 
       TagManager.tag(image, 'Name', params[:description]) if params[:description]
@@ -90,11 +90,14 @@ module Bosh::AwsCloud
                    :virtualization_type => virtualization_type,
                    :root_device_name => "/dev/xvda",
                    :sriov_net_support => "simple",
-                   :block_device_mappings => {
-                     "/dev/xvda" => {
-                       :snapshot_id => snapshot_id
-                     }
-                   }
+                   :block_device_mappings => [
+                     {
+                       :device_name => "/dev/xvda",
+                       :ebs => {
+                         :snapshot_id => snapshot_id,
+                       },
+                     },
+                   ],
                  }
                else
                  root_device_name = stemcell_properties["root_device_name"]
@@ -103,11 +106,14 @@ module Bosh::AwsCloud
                  {
                    :kernel_id => aki,
                    :root_device_name => root_device_name,
-                   :block_device_mappings => {
-                     "/dev/sda" => {
-                       :snapshot_id => snapshot_id
-                     }
-                   }
+                   :block_device_mappings => [
+                     {
+                       :device_name => "/dev/sda",
+                       :ebs => {
+                         :snapshot_id => snapshot_id,
+                       },
+                     },
+                   ],
                  }
                end
 
@@ -120,10 +126,9 @@ module Bosh::AwsCloud
       params.merge!(
         :name => "BOSH-#{SecureRandom.uuid}",
         :architecture => architecture,
-        :block_device_mappings => params[:block_device_mappings].merge(
-          default_ephemeral_disk_mapping
-        )
       )
+
+      params[:block_device_mappings].push(*default_ephemeral_disk_mapping)
 
       params
     end
