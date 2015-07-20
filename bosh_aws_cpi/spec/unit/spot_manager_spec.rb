@@ -183,4 +183,65 @@ describe Bosh::AwsCloud::SpotManager do
       expect(error.message).to include(aws_error.inspect)
     }
   end
+
+  context 'when ephemeral disk is configured' do
+    let(:instance_params) do
+      {
+        image_id: 'fake-image-id',
+        key_name: 'fake-key-name',
+        user_data: 'fake-user-data',
+        instance_type: 'fake-instance-type',
+        availability_zone: 'fake-availability-zone',
+        security_groups: instance_security_groups,
+        private_ip_address: 'fake-private-ip-address',
+        subnet: double(:subnet, subnet_id: 'fake-subnet-id'),
+        block_device_mappings: [
+          {
+            device_name: '/dev/sdb',
+            ebs: {
+              volume_size: 16,
+              volume_type: 16,
+              delete_on_termination: true,
+            },
+          },
+        ],
+      }
+    end
+
+    it 'request sends AWS request for spot instance' do
+      expect(aws_client).to receive(:request_spot_instances).with({
+        spot_price: '0.24',
+        instance_count: 1,
+        launch_specification: {
+          image_id: 'fake-image-id',
+          key_name: 'fake-key-name',
+          instance_type: 'fake-instance-type',
+          user_data: %Q{ZmFrZS11c2VyLWRhdGE=\n},
+          placement: {
+            availability_zone: 'fake-availability-zone'
+          },
+          network_interfaces: [
+            {
+              subnet_id: 'fake-subnet-id',
+              groups: ['fake-security-group-id'],
+              device_index: 0,
+              private_ip_address: 'fake-private-ip-address'
+            }
+          ],
+          block_device_mappings: [
+            {
+              device_name: '/dev/sdb',
+              ebs: {
+                volume_size: 16,
+                volume_type: 16,
+                delete_on_termination: true,
+              },
+            },
+          ],
+        }
+      }).and_return(spot_instance_requests)
+
+      spot_manager.create(instance_params, spot_bid_price)
+    end
+  end
 end

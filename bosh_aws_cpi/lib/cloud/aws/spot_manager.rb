@@ -85,6 +85,10 @@ module Bosh::AwsCloud
         spec[:launch_specification][:network_interfaces][0][:groups] = security_groups
       end
 
+      if instance_params[:block_device_mappings]
+        spec[:launch_specification][:block_device_mappings] = instance_params[:block_device_mappings]
+      end
+
       spec
     end
 
