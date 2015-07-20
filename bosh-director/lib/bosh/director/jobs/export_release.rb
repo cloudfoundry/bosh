@@ -46,7 +46,7 @@ module Bosh::Director
               )
               package_compile_step.perform
 
-              tarball_state = create_tarball(@release_version, @stemcell)
+              tarball_state = create_tarball
               result_file.write(tarball_state.to_json + "\n")
 
             end
@@ -97,17 +97,17 @@ module Bosh::Director
         planner
       end
 
-      def create_tarball(release_version, stemcell)
+      def create_tarball
 
         blobstore_client = Bosh::Director::App.instance.blobstores.blobstore
 
-        compiled_packages_group = CompiledPackageGroup.new(release_version, stemcell)
-        templates = release_version.templates.map
+        compiled_packages_group = CompiledPackageGroup.new(@release_version, @stemcell)
+        templates = @release_version.templates.map
 
         compiled_release_downloader = CompiledReleaseDownloader.new(compiled_packages_group, templates, blobstore_client)
         download_dir = compiled_release_downloader.download
 
-        manifest = CompiledReleaseManifest.new(compiled_packages_group, templates)
+        manifest = CompiledReleaseManifest.new(compiled_packages_group, templates, @stemcell)
         manifest.write(File.join(download_dir, 'release.MF'))
 
         output_path = File.join(download_dir, "compiled_release_#{Time.now.to_f}.tar.gz")
@@ -123,7 +123,7 @@ module Bosh::Director
             :sha1 => Digest::SHA1.file(output_path).hexdigest,
         }
       ensure
-        compiled_release_downloader.cleanup
+        compiled_release_downloader.cleanup unless compiled_release_downloader.nil?
       end
 
       def create_fake_job(planner, fake_resource_pool_manifest, network_name)

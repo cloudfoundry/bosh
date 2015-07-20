@@ -267,11 +267,13 @@ compiled_packages:
   version: ruby_version
   fingerprint: ruby_fingerprint
   sha1: ruby_compiled_package_sha1
+  stemcell: stemcell_os/stemcell_version
   dependencies: []
 - name: postgres
   version: postgres_version
   fingerprint: postgres_fingerprint
   sha1: postgres_compiled_package_sha1
+  stemcell: stemcell_os/stemcell_version
   dependencies:
   - ruby
 jobs:
