@@ -11,6 +11,17 @@ describe Bosh::AwsCloud::Cloud do
     @registry = mock_registry
   end
 
+  let(:combined_agent_network_spec) do
+    {
+      'network_a' => dynamic_agent_network_spec,
+      'network_b' => vip_network_spec.merge({'use_dhcp' => true})
+    }
+  end
+
+  let(:dynamic_agent_network_spec) do
+    dynamic_network_spec.merge({'use_dhcp' => true})
+  end
+
   it "forces recreation when security groups differ" do
     sec_grp = double("security_group", :name => "newgroup")
     instance = double("instance",
@@ -65,7 +76,7 @@ describe Bosh::AwsCloud::Cloud do
     end
 
     old_settings = {"foo" => "bar", "networks" => "baz"}
-    new_settings = {"foo" => "bar", "networks" => combined_network_spec}
+    new_settings = {"foo" => "bar", "networks" => combined_agent_network_spec}
 
     expect(@registry).to receive(:read_settings).
         with("i-foobar").
@@ -98,7 +109,7 @@ describe Bosh::AwsCloud::Cloud do
     new_settings = {
         "foo" => "bar",
         "networks" => {
-            "net_a" => dynamic_network_spec
+            "net_a" => dynamic_agent_network_spec
         }
     }
 

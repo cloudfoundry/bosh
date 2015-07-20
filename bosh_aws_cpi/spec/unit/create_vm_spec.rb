@@ -12,7 +12,16 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
   let(:agent_id) { "agent_id" }
   let(:stemcell_id) { "stemcell_id" }
   let(:resource_pool) { {} }
-  let(:networks_spec) { double("network_spec") }
+  let(:networks_spec) do
+    {
+      "fake-network-name-1" => {
+        "type" => "dynamic",
+      },
+      "fake-network-name-2" => {
+        "type" => "manual",
+      }
+    }
+  end
   let(:disk_locality) { double("disk locality") }
   let(:environment) { "environment" }
 
@@ -104,7 +113,16 @@ describe Bosh::AwsCloud::Cloud, "create_vm" do
             "name" => "vm-rand0m"
         },
         "agent_id" => agent_id,
-        "networks" => networks_spec,
+        "networks" =>     {
+          "fake-network-name-1" => {
+            "type" => "dynamic",
+            "use_dhcp" => true,
+          },
+          "fake-network-name-2" => {
+            "type" => "manual",
+            "use_dhcp" => true,
+          }
+        },
         "disks" => {
             "system" => "root name",
             "ephemeral" => "/dev/sdb",
