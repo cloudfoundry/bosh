@@ -270,25 +270,6 @@ describe Bosh::Cli::ArchiveBuilder, 'dev build' do
         expect(directory_listing(explosion)).to contain_exactly(*(matched_files + matched_blobs))
       end
     end
-
-    context 'when resource file points to symlink' do
-      let(:file_patterns) { ['foo', 'bar'] }
-
-      before do
-        release_source.add_file('src', 'foo', 'contents of foo')
-        # expose the fileutils symlink issue
-        # see https://gist.github.com/mariash/3837319
-        Dir.chdir(release_source.path) do
-          `ln -s ./src/foo ./src/bar`
-        end
-      end
-
-      it 'works' do
-        artifact = builder.build(resource)
-        explosion = open_archive(artifact.tarball_path)
-        expect(directory_listing(explosion)).to contain_exactly('foo', 'bar')
-      end
-    end
   end
 
   describe 'the generated resource fingerprint' do
