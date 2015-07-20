@@ -9,10 +9,6 @@ These options are passed to the AWS CPI when it is instantiated.
 
 ### AWS options
 
-* `access_key_id` (required)
-  AWS IAM user access key
-* `secret_access_key` (required)
-  AWS IAM secret access key
 * `default_key_name` (required)
   default AWS ssh key name to assign to created virtual machines
 * `default_security_groups` (required)
@@ -21,6 +17,12 @@ These options are passed to the AWS CPI when it is instantiated.
   local path to the ssh private key, must match `default_key_name`
 * `region` (required)
   EC2 region
+* `credentials_source` (optional)
+  Where to get AWS credentials. This can be set to `static` for to use an `access_key_id` and `secret_access_key` or `env_or_profile` to get the credentials from environment variables or an EC2 instance profile. Defaults to `static` if not set
+* `access_key_id` (optional, required when `credentials_source` is `static`)
+  AWS IAM user access key
+* `secret_access_key` (optional, required when `credentials_source` is `static`)
+  AWS IAM secret access key
 * `ec2_endpoint` (optional)
   URL of the EC2 endpoint to connect to, defaults to the endpoint corresponding to the selected region,
   or `default_ec2_endpoint` if no region has been selected
@@ -57,7 +59,9 @@ These options are specified under `cloud_options` in the `resource_pools` sectio
   which [type of instance](http://aws.amazon.com/ec2/instance-types/) the VMs should belong to
 * `spot_bid_price` (optional)
   the [AWS spot instance](http://aws.amazon.com/ec2/purchasing-options/spot-instances/) bid price to use.  When specified spot instances are started rather than on demand instances.  _NB: this will dramatically slow down resource pool creation._
-
+* `iam_instance_profile` (optional)
+   the [IAM Instance Profile](http://docs.aws.amazon.com/IAM/latest/UserGuide/roles-usingrole-instanceprofile.html) to use for the instance. This allows EC2 instances to use [IAM Roles](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html) when working with AWS APIs.
+    
 ### Network options
 
 These options are specified under `cloud_options` in the `networks` section of a BOSH deployment manifest.

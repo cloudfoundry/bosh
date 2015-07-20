@@ -255,4 +255,100 @@ describe Bosh::AwsCloud::Cloud do
       end
     end
   end
+
+  describe 'validating credentials_source' do
+    context 'when credentials_source is set to static' do
+
+      context 'when access_key_id and secret_access_key are omitted' do
+        let(:options) do
+          {
+            'aws' => {
+              'credentials_source' => 'static',
+              'region' => 'fake-region',
+              'default_key_name' => 'sesame'
+            },
+            'registry' => {
+              'user' => 'abuser',
+              'password' => 'hard2gess',
+              'endpoint' => 'http://websites.com'
+            }
+          }
+        end
+        it 'raises an error' do
+          expect { cloud }.to raise_error(
+          ArgumentError,
+          'Invalid credentials_source: Must use access_key_id and secret_access_key with static credentials_source'
+          )
+        end
+      end
+    end
+
+    context 'when credentials_source is set to env_or_profile' do
+      let(:options) do
+        {
+          'aws' => {
+            'credentials_source' => 'env_or_profile',
+            'region' => 'fake-region',
+            'default_key_name' => 'sesame'
+          },
+          'registry' => {
+            'user' => 'abuser',
+            'password' => 'hard2gess',
+            'endpoint' => 'http://websites.com'
+          }
+        }
+      end
+      it 'does not raise an error ' do
+        expect { cloud }.to_not raise_error
+      end
+    end
+
+    context 'when credentials_source is set to env_or_profile and access_key_id is provided' do
+      let(:options) do
+        {
+          'aws' => {
+            'credentials_source' => 'env_or_profile',
+            'access_key_id' => 'some access key',
+            'region' => 'fake-region',
+            'default_key_name' => 'sesame'
+          },
+          'registry' => {
+            'user' => 'abuser',
+            'password' => 'hard2gess',
+            'endpoint' => 'http://websites.com'
+          }
+        }
+      end
+      it 'raises an error' do
+        expect { cloud }.to raise_error(
+        ArgumentError,
+        "Invalid credentials_source: Can't use access_key_id and secret_access_key with env_or_profile credentials_source"
+        )
+      end
+    end
+
+    context 'when an unknown credentails_source is set' do
+      let(:options) do
+        {
+          'aws' => {
+            'credentials_source' => 'NotACredentialsSource',
+            'region' => 'fake-region',
+            'default_key_name' => 'sesame'
+          },
+          'registry' => {
+            'user' => 'abuser',
+            'password' => 'hard2gess',
+            'endpoint' => 'http://websites.com'
+          }
+        }
+      end
+
+      it 'raises an error' do
+        expect { cloud }.to raise_error(
+        ArgumentError,
+        'Invalid credentials_source: Unknown credentials_source NotACredentialsSource'
+        )
+      end
+    end
+  end
 end

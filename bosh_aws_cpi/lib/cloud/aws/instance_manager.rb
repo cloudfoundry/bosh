@@ -118,7 +118,7 @@ module Bosh::AwsCloud
       set_key_name_parameter(instance_params, resource_pool["key_name"], options["aws"]["default_key_name"])
       set_security_groups_parameter(instance_params, networks_spec, options["aws"]["default_security_groups"])
       set_vpc_parameters(instance_params, networks_spec)
-
+      set_iam_instance_profile_parameter(instance_params, resource_pool["iam_instance_profile"], options["aws"]["default_iam_instance_profile"])
       set_availability_zone_parameter(
         instance_params,
         (disk_locality || []).map { |volume_id| @region.volumes[volume_id].availability_zone.to_s },
@@ -211,6 +211,11 @@ module Bosh::AwsCloud
       user_data[:dns] = {nameserver: spec_with_dns["dns"]} if spec_with_dns
 
       instance_params[:user_data] = Yajl::Encoder.encode(user_data)
+    end
+
+    def set_iam_instance_profile_parameter(instance_params, resource_pool_iam_instance_profile, default_aws_iam_instance_profile)
+      iam_instance_profile = resource_pool_iam_instance_profile || default_aws_iam_instance_profile
+      instance_params[:iam_instance_profile] = iam_instance_profile unless iam_instance_profile.nil?
     end
 
     def validate_and_prepare_security_groups_parameter(instance_params, security_groups)

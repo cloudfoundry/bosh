@@ -25,13 +25,13 @@ module Bosh::AwsCloud
     def initialize(options)
       @options = options.dup.freeze
       validate_options
+      validate_credentials_source
 
       @logger = Bosh::Clouds::Config.logger
       aws_logger = @logger
 
       @aws_params = {
-        access_key_id:     aws_properties['access_key_id'],
-        secret_access_key: aws_properties['secret_access_key'],
+        credentials_source: aws_properties['credentials_source'] || 'static',
         region:            aws_properties['region'],
         ec2_endpoint:      aws_properties['ec2_endpoint'] || default_ec2_endpoint,
         elb_endpoint:      aws_properties['elb_endpoint'] || default_elb_endpoint,
@@ -48,6 +48,16 @@ module Bosh::AwsCloud
         ssl_ca_path
       ).each do |k|
         @aws_params[k.to_sym] = aws_properties[k] unless aws_properties[k].nil?
+      end
+
+      # credentials_source could be static (default) or env_or_profile
+      # static credentials must be included in aws_properties
+      # env_or_profile credentials will use the AWS DefaultCredentialsProvider
+      # to find AWS credentials in environment variables or EC2 instance profiles
+
+      if @aws_params[:credentials_source] == 'static'
+        @aws_params[:access_key_id] = aws_properties['access_key_id']
+        @aws_params[:secret_access_key] = aws_properties['secret_access_key']
       end
 
       # AWS Ruby SDK is threadsafe but Ruby autoload isn't,
@@ -686,7 +696,7 @@ module Bosh::AwsCloud
     #
     def validate_options
       required_keys = {
-          "aws" => ["access_key_id", "secret_access_key", "region", "default_key_name"],
+          "aws" => ["region", "default_key_name"],
           "registry" => ["endpoint", "user", "password"],
       }
 
@@ -701,6 +711,34 @@ module Bosh::AwsCloud
       end
 
       raise ArgumentError, "missing configuration parameters > #{missing_keys.join(', ')}" unless missing_keys.empty?
+    end
+
+    ##
+    # Checks AWS credentials settings to see if the CPI
+    # will be able to authenticate to AWS.
+    #
+    def validate_credentials_source
+      validation_errors = []
+
+      credentials_source = options['aws']['credentials_source'] || 'static'
+
+      if credentials_source != 'env_or_profile' && credentials_source != 'static'
+        validation_errors << "Unknown credentials_source #{credentials_source}"
+      end
+
+      if credentials_source == 'static'
+        if !options["aws"].has_key?("access_key_id") || !options["aws"].has_key?("secret_access_key")
+            validation_errors << "Must use access_key_id and secret_access_key with static credentials_source"
+        end
+      end
+
+      if credentials_source == 'env_or_profile'
+        if options["aws"].has_key?("access_key_id") || options["aws"].has_key?("secret_access_key")
+            validation_errors << "Can't use access_key_id and secret_access_key with env_or_profile credentials_source"
+        end
+      end
+
+      raise ArgumentError, "Invalid credentials_source: #{validation_errors.join(', ')}" unless validation_errors.empty?
     end
 
     # Generates initial agent settings. These settings will be read by agent
