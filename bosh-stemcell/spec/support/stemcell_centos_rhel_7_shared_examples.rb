@@ -54,18 +54,6 @@ shared_examples_for 'a CentOS 7 or RHEL 7 stemcell' do
     end
   end
 
-  context 'installed by image_vsphere_cdrom stage', {
-    exclude_on_aws: true,
-    exclude_on_vcloud: true,
-    exclude_on_warden: true,
-    exclude_on_openstack: true,
-  } do
-    describe file('/etc/sysctl.conf') do
-      it { should be_file }
-      it { should contain 'dev.cdrom.lock=0' }
-    end
-  end
-
   context 'installed by bosh_aws_agent_settings', {
     exclude_on_openstack: true,
     exclude_on_vcloud: true,
