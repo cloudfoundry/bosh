@@ -33,13 +33,6 @@ module Bosh::Director
 
         @rebase = !!options['rebase']
         @skip_if_exists = !!options['skip_if_exists']
-        @compiled_release = !!options['compiled']
-
-        if @compiled_release
-          @packages_folder = "compiled_packages"
-        else
-          @packages_folder = "packages"
-        end
 
         @manifest = nil
         @name = nil
@@ -110,6 +103,15 @@ module Bosh::Director
         end
 
         @manifest = Psych.load_file(manifest_file)
+
+        #handle compiled_release case
+        @compiled_release = !!@manifest["compiled_packages"]
+        if @compiled_release
+          @packages_folder = "compiled_packages"
+        else
+          @packages_folder = "packages"
+        end
+
         normalize_manifest
 
         @name = @manifest["name"]

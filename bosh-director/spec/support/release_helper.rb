@@ -15,7 +15,8 @@ module Bosh::Director::Test
       release_dir = Dir.mktmpdir
 
       jobs_dir = File.join(tmp_dir, "jobs")
-      packages_dir = File.join(tmp_dir, "packages")
+      packages_dir_name = !!manifest["compiled_packages"] ? "compiled_packages" : "packages"
+      packages_dir = File.join(tmp_dir, packages_dir_name)
 
       FileUtils.mkdir(jobs_dir)
       FileUtils.mkdir(packages_dir)
@@ -26,7 +27,7 @@ module Bosh::Director::Test
         spec = {
           "name" => job["name"],
           "templates" => job["templates"],
-          "packages" => job["packages"]
+          packages_dir_name => job[packages_dir_name]
         }
         File.open(File.join(job_dir, "job.MF"), "w") do |f|
           Psych.dump(spec, f)
@@ -59,7 +60,7 @@ module Bosh::Director::Test
         FileUtils.rm_rf(job_dir)
       end
 
-      manifest["packages"].each do |package|
+      manifest[packages_dir_name].each do |package|
         package_dir = File.join(packages_dir, package["name"])
         FileUtils.mkdir(package_dir)
         File.open(File.join(package_dir, "packaging"), "w") do |f|

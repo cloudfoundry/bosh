@@ -11,6 +11,77 @@ module Bosh::Director
       it_behaves_like 'a Resque job'
     end
 
+
+    describe 'Compiled release upload' do
+      subject(:job) { Jobs::UpdateRelease.new(release_path, job_options) }
+
+      let(:release_dir) { Test::ReleaseHelper.new.create_release_tarball(manifest) }
+      let(:release_path) { File.join(release_dir, 'release.tgz') }
+      let(:release_version) { '42+dev.6' }
+      let(:release) { Models::Release.make(name: 'appcloud') }
+
+      let(:manifest_jobs) do
+        [
+            {
+                'name' => 'fake-job-1',
+                'version' => 'fake-version-1',
+                'sha1' => 'fake-sha1-1',
+                'fingerprint' => 'fake-fingerprint-1',
+                'templates' => {}
+            },
+            {
+                'name' => 'fake-job-2',
+                'version' => 'fake-version-2',
+                'sha1' => 'fake-sha1-2',
+                'fingerprint' => 'fake-fingerprint-2',
+                'templates' => {}
+            }
+        ]
+      end
+      let(:manifest_compiled_packages) do
+        [
+            {
+                'sha1' => 'fake-sha-1',
+                'fingerprint' => 'fake-fingerprint-1',
+                'name' => 'fake-name-1',
+                'version' => 'fake-version-1'
+            },
+            {
+                'sha1' => 'fake-sha-2',
+                'fingerprint' => 'fake-fingerprint-2',
+                'name' => 'fake-name-2',
+                'version' => 'fake-version-2'
+            }
+        ]
+      end
+      let(:manifest) do
+        {
+            'name' => 'appcloud',
+            'version' => release_version,
+            'jobs' => manifest_jobs,
+            'compiled_packages' => manifest_compiled_packages,
+        }
+      end
+
+      let(:job_options) { {'remote' => false} }
+
+      before do
+        allow(Dir).to receive(:mktmpdir).and_return(release_dir)
+        allow(job).to receive(:with_release_lock).and_yield
+        allow(blobstore).to receive(:create)
+        allow(job).to receive(:register_package)
+      end
+
+      it 'should process packages for compiled release' do
+          expect(job).to_not receive(:create_package)
+          expect(job).to receive(:create_package_for_compiled_release).twice
+          expect(job).to receive(:register_template).twice
+          expect(job).to receive(:create_job).twice
+
+          job.perform
+        end
+    end
+
     describe '#perform' do
       subject(:job) { Jobs::UpdateRelease.new(release_path, job_options) }
       let(:job_options) { {} }
@@ -26,13 +97,11 @@ module Bosh::Director
           'version' => release_version,
           'jobs' => manifest_jobs,
           'packages' => manifest_packages,
-          'compiled_packages' => manifest_compiled_packages
         }
       end
       let(:release_version) { '42+dev.6' }
       let(:release) { Models::Release.make(name: 'appcloud') }
       let(:manifest_packages) { [] }
-      let(:manifest_compiled_packages) { [] }
       let(:manifest_jobs) { [] }
       before { allow(job).to receive(:with_release_lock).and_yield }
 
@@ -367,62 +436,6 @@ module Bosh::Director
           expect(Models::Template.all.map(&:name)).to match_array(['fake-job-1', 'fake-job-2'])
         end
       end
-
-      context 'when compiled release is uploaded' do
-        let(:manifest_jobs) do
-          [
-              {
-                  'name' => 'fake-job-1',
-                  'version' => 'fake-version-1',
-                  'sha1' => 'fake-sha1-1',
-                  'fingerprint' => 'fake-fingerprint-1',
-                  'templates' => {}
-              },
-              {
-                  'name' => 'fake-job-2',
-                  'version' => 'fake-version-2',
-                  'sha1' => 'fake-sha1-2',
-                  'fingerprint' => 'fake-fingerprint-2',
-                  'templates' => {}
-              }
-          ]
-        end
-
-        let(:manifest_compiled_packages) do
-          [
-              {
-                  'sha1' => 'fake-sha-1',
-                  'fingerprint' => 'fake-fingerprint-1',
-                  'name' => 'fake-name-1',
-                  'version' => 'fake-version-1'
-              },
-              {
-                  'sha1' => 'fake-sha-2',
-                  'fingerprint' => 'fake-fingerprint-2',
-                  'name' => 'fake-name-2',
-                  'version' => 'fake-version-2'
-              }
-          ]
-        end
-
-        let(:job_options) { {'compiled' => true, 'remote' => false} }
-
-        before do
-          # @job = Jobs::UpdateRelease.new(@release_path, @job_options)
-          allow(blobstore).to receive(:create)
-          allow(job).to receive(:register_package)
-        end
-
-        it 'should process packages for compiled release' do
-          expect(job).to_not receive(:create_package)
-          expect(job).to receive(:create_package_for_compiled_release).twice
-          expect(job).to receive(:register_template).twice
-          expect(job).to receive(:create_job).twice
-
-          job.perform
-        end
-      end
-
     end
 
     describe 'rebasing release' do
