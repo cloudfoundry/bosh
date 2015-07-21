@@ -13,31 +13,8 @@ module Bosh::Director
     def delete_instances(instances, event_log_stage, options = {})
       max_threads = options[:max_threads] || Config.max_threads
       ThreadPool.new(:max_threads => max_threads).wrap do |pool|
-        instances.each do |instance, reservations|
-          pool.process { delete_instance(instance, reservations, event_log_stage) }
-        end
-      end
-    end
-
-    def delete_instance(instance_model, reservations, event_log_stage)
-      vm_model = instance_model.vm
-      @logger.info("Delete unneeded instance: #{vm_model.cid}")
-
-      event_log_stage.advance_and_track(vm_model.cid) do
-        drain(vm_model)
-        @cloud.delete_vm(vm_model.cid)
-        delete_snapshots(instance_model)
-        delete_persistent_disks(instance_model.persistent_disks)
-        delete_dns(instance_model.job, instance_model.index)
-
-        RenderedJobTemplatesCleaner.new(instance_model, @blobstore).clean_all
-
-        vm_model.db.transaction do
-          reservations.each do |network_name,reservation|
-            @deployment_plan.network(network_name).release(reservation)
-          end
-          instance_model.destroy
-          vm_model.destroy
+        instances.each do |instance|
+          pool.process { delete_instance(instance, event_log_stage) }
         end
       end
     end
@@ -72,7 +49,7 @@ module Bosh::Director
     def delete_persistent_disks(persistent_disks)
       persistent_disks.each do |disk|
         @logger.info("Deleting disk: `#{disk.disk_cid}', " +
-                     "#{disk.active ? "active" : "inactive"}")
+            "#{disk.active ? "active" : "inactive"}")
         begin
           @cloud.delete_disk(disk.disk_cid)
         rescue Bosh::Clouds::DiskNotFound => e
@@ -86,9 +63,30 @@ module Bosh::Director
     def delete_dns(job, index)
       if Config.dns_enabled?
         record_pattern = [index, canonical(job), "%",
-                          @deployment_plan.canonical_name, dns_domain_name].join(".")
+          @deployment_plan.canonical_name, dns_domain_name].join(".")
         delete_dns_records(record_pattern, @deployment_plan.dns_domain.id)
       end
+    end
+
+    private
+
+    def delete_instance(instance, event_log_stage)
+      vm_model = instance.model.vm
+      @logger.info("Delete unneeded instance: #{vm_model.cid}")
+
+      event_log_stage.advance_and_track(vm_model.cid) do
+        drain(vm_model)
+        vm_deleter.delete_for_instance(instance, skip_disks: true)
+        delete_snapshots(instance.model)
+        delete_persistent_disks(instance.model.persistent_disks)
+        delete_dns(instance.job_name, instance.index)
+        RenderedJobTemplatesCleaner.new(instance.model, @blobstore).clean_all
+        instance.delete
+      end
+    end
+
+    def vm_deleter
+      @vm_deleter ||= VmDeleter.new(@cloud, @logger)
     end
   end
 end

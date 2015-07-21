@@ -103,7 +103,6 @@ describe 'global networking', type: :integration do
       simple_manifest['jobs'].first['instances'] = 0
       simple_manifest['jobs'].first['networks'].first['static_ips'] = []
 
-
       current_sandbox.cpi.commands.pause_delete_vms
       deploy_simple_manifest(manifest_hash: simple_manifest, no_track: true)
 

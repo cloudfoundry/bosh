@@ -39,16 +39,15 @@ module Bosh::Director
     # Deletes all errand job instances
     # @return [void]
     def delete_instances
-      instances = @job.instances.map(&:to_instance_deleter_info).compact
-      if instances.empty?
+      if @job.instances.empty?
         @logger.info('No errand instances to delete')
         return
       end
 
       @logger.info('Deleting errand instances')
-      event_log_stage = @event_log.begin_stage('Deleting errand instances', instances.size, [@job.name])
+      event_log_stage = @event_log.begin_stage('Deleting errand instances', @job.instances.size, [@job.name])
       instance_deleter = InstanceDeleter.new(@deployment)
-      instance_deleter.delete_instances(instances, event_log_stage)
+      instance_deleter.delete_instances(@job.instances, event_log_stage)
     end
   end
 end

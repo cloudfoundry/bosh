@@ -117,14 +117,11 @@ module Bosh::Director
       it 'should bind an instance if present' do
         instance = Models::Instance.make(:vm => @vm_model)
         state = { 'state' => 'foo' }
-        reservations = { 'foo' => 'reservation' }
 
         expect(assembler).to receive(:get_state).with(@vm_model).
           and_return(state)
-        expect(assembler).to receive(:get_network_reservations).
-          with(state).and_return(reservations)
         expect(assembler).to receive(:bind_instance).
-          with(instance, state, reservations)
+          with(instance, state)
         assembler.bind_existing_vm(@vm_model, @lock)
       end
 
@@ -177,19 +174,10 @@ module Bosh::Director
 
             expect(assembler).to receive(:get_state).with(@vm_model).
                 and_return(state)
-            expect(assembler).to receive(:get_network_reservations).
-                with(state).and_return(reservations)
-          end
-
-          it 'should release all network reservations' do
-            reservations.each do |network_name, reservation|
-              expect(deployment_plan.network(network_name)).to receive(:release).with(reservation)
-            end
-            assembler.bind_existing_vm(@vm_model, @lock)
           end
 
           it 'should delete the VM, releasing network reservations' do
-            expect(deployment_plan).to receive(:delete_vm).with(@vm_model, reservations)
+            expect(deployment_plan).to receive(:delete_vm).with(@vm_model)
             assembler.bind_existing_vm(@vm_model, @lock)
           end
         end
@@ -197,16 +185,13 @@ module Bosh::Director
         context "and the VMs resource pool no longer exists" do
           it 'should delete the vm' do
             state = {'resource_pool' => {'name' => 'baz'}}
-            reservations = {'foo' => 'reservation'}
 
             allow(deployment_plan).to receive(:resource_pool).with('baz').
                 and_return(nil)
 
             expect(assembler).to receive(:get_state).with(@vm_model).
                 and_return(state)
-            expect(assembler).to receive(:get_network_reservations).
-                with(state).and_return(reservations)
-            expect(deployment_plan).to receive(:delete_vm).with(@vm_model, reservations)
+            expect(deployment_plan).to receive(:delete_vm).with(@vm_model)
             assembler.bind_existing_vm(@vm_model, @lock)
           end
         end
@@ -216,11 +201,10 @@ module Bosh::Director
     describe '#bind_instance' do
       let(:instance_model) { Models::Instance.make(:job => 'foo', :index => 3) }
       before { allow(instance_model).to receive(:vm).and_return(vm_model)}
-      let(:vm_model) { instance_double('Bosh::Director::Models::Vm') }
+      let(:vm_model) { Bosh::Director::Models::Vm.make }
 
       it 'should associate the instance to the instance spec' do
         state = { 'state' => 'baz' }
-        reservations = { 'net' => 'reservation' }
 
         instance = instance_double('Bosh::Director::DeploymentPlan::Instance')
         resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
@@ -231,14 +215,13 @@ module Bosh::Director
         allow(deployment_plan).to receive(:job_rename).and_return({})
         allow(deployment_plan).to receive(:rename_in_progress?).and_return(false)
 
-        expect(instance).to receive(:bind_existing_instance).with(instance_model, state, reservations)
+        expect(instance).to receive(:bind_existing_instance).with(instance_model, state)
 
-        assembler.bind_instance(instance_model, state, reservations)
+        assembler.bind_instance(instance_model, state)
       end
 
       it 'should update the instance name if it is being renamed' do
         state = { 'state' => 'baz' }
-        reservations = { 'net' => 'reservation' }
 
         instance = instance_double('Bosh::Director::DeploymentPlan::Instance')
         resource_pool = instance_double('Bosh::Director::DeploymentPlan::ResourcePool')
@@ -250,55 +233,21 @@ module Bosh::Director
           and_return({ 'old_name' => 'foo', 'new_name' => 'bar' })
         allow(deployment_plan).to receive(:rename_in_progress?).and_return(true)
 
-        expect(instance).to receive(:bind_existing_instance).with(instance_model, state, reservations)
+        expect(instance).to receive(:bind_existing_instance).with(instance_model, state)
 
-        assembler.bind_instance(instance_model, state, reservations)
+        assembler.bind_instance(instance_model, state)
       end
 
       it "should mark the instance for deletion when it's no longer valid" do
         state = { 'state' => 'baz' }
-        reservations = { 'net' => 'reservation' }
         allow(deployment_plan).to receive(:job).with('foo').and_return(nil)
-        expect(deployment_plan).to receive(:delete_instance).with(instance_model, reservations)
+        expect(deployment_plan).to receive(:delete_instance) do |instance|
+          expect(instance.model).to eq(instance_model)
+        end
         allow(deployment_plan).to receive(:job_rename).and_return({})
         allow(deployment_plan).to receive(:rename_in_progress?).and_return(false)
 
-        assembler.bind_instance(instance_model, state, reservations)
-      end
-    end
-
-    describe '#get_network_reservations' do
-      it 'should reserve all of the networks listed in the state' do
-        foo_network = instance_double('Bosh::Director::DeploymentPlan::Network')
-        bar_network = instance_double('Bosh::Director::DeploymentPlan::Network')
-
-        allow(deployment_plan).to receive(:network).with('foo').and_return(foo_network)
-        allow(deployment_plan).to receive(:network).with('bar').and_return(bar_network)
-
-        foo_reservation = nil
-        expect(foo_network).to receive(:reserve) do |reservation|
-          expect(reservation.ip).to eq(NetAddr::CIDR.create('1.2.3.4').to_i)
-          reservation.reserved = true
-          foo_reservation = reservation
-          true
-        end
-
-        expect(bar_network).to receive(:reserve) do |reservation|
-          expect(reservation.ip).to eq(NetAddr::CIDR.create('10.20.30.40').to_i)
-          reservation.reserved = false
-          false
-        end
-
-        expect(assembler.get_network_reservations(
-          'networks' => {
-            'foo' => {
-              'ip' => '1.2.3.4'
-            },
-            'bar' => {
-              'ip' => '10.20.30.40'
-            }
-          }
-        )).to eq({ 'foo' => foo_reservation })
+        assembler.bind_instance(instance_model, state)
       end
     end
 

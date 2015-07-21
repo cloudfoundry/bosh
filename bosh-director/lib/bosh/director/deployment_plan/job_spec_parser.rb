@@ -307,7 +307,7 @@ module Bosh::Director
             else
               reservation.type = NetworkReservation::DYNAMIC
             end
-            instance.add_network_reservation(network_name, reservation)
+            instance.add_network_reservation(network, reservation)
           end
         end
 

@@ -158,7 +158,7 @@ module Bosh::Director
         instance = instance_double('Bosh::Director::DeploymentPlan::Instance', vm: vm)
         expect(instance).to receive(:bind_unallocated_vm)
         expect(instance).to receive(:reserve_networks)
-        expect(instance).to receive(:add_network_reservation).with('default', instance_of(Bosh::Director::NetworkReservation))
+        expect(instance).to receive(:add_network_reservation).with(@network, instance_of(Bosh::Director::NetworkReservation))
         expect(instance).to receive(:delete)
 
         instance

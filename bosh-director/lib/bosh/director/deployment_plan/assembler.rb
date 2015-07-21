@@ -47,31 +47,21 @@ module Bosh::Director
       state = get_state(vm_model)
       lock.synchronize do
         @logger.debug('Processing VM network reservations')
-        reservations = get_network_reservations(state)
 
         instance = vm_model.instance
         if instance
-          bind_instance(instance, state, reservations)
+          bind_instance(instance, state)
         else
           # this is maybe a little wasteful for now -- we're deleting VMs that we
           # could potentially reuse (if they don't have any static reservations),
           # but we think that's just temporary while we work on how instances/vms are modelled
-          resource_pool_name = state['resource_pool']['name']
-          resource_pool = @deployment_plan.resource_pool(resource_pool_name)
-          if resource_pool
-            @logger.debug("Binding VM to resource pool '#{resource_pool_name}'")
-            @logger.debug("Releasing all network reservations for VM `#{vm_model.cid}'")
-            reservations.each do |network_name, reservation|
-              @logger.debug("Releasing #{reservation.type} network reservation `#{network_name}' for VM `#{vm_model.cid}'")
-              @deployment_plan.network(network_name).release(reservation)
-            end
-          else
-            @logger.debug("Resource pool '#{resource_pool_name}' does not exist")
-          end
           # note that #delete_vm will also release reservations, which may have
           # already happened above. this does not appear to be an issue.
-          @logger.debug("Marking VM for deletion")
-          @deployment_plan.delete_vm(vm_model, reservations)
+          @logger.debug('Marking VM for deletion')
+
+          # Vm without an instance can only be created before global networking
+          # That means that it should not have any network reservations in DB.
+          @deployment_plan.delete_vm(vm_model)
         end
         @logger.debug('Finished processing VM network reservations')
       end
@@ -79,8 +69,7 @@ module Bosh::Director
 
     # @param [Models::Instance] instance_model Instance model
     # @param [Hash] state Instance state according to agent
-    # @param [Hash] reservations Instance network reservations
-    def bind_instance(instance_model, state, reservations)
+    def bind_instance(instance_model, state)
       @logger.debug('Binding instance VM')
 
       # Update instance, if we are renaming a job.
@@ -99,32 +88,23 @@ module Bosh::Director
       job = @deployment_plan.job(instance_model.job)
       unless job
         @logger.debug("Job `#{instance_model.job}' not found, marking for deletion")
-        @deployment_plan.delete_instance(instance_model, reservations)
+        instance = DeploymentPlan::ExistingInstance.create_from_model(instance_model, @logger)
+        instance.bind_state(@deployment_plan, state)
+        @deployment_plan.delete_instance(instance)
         return
       end
 
       instance = job.instance(instance_model.index)
       unless instance
         @logger.debug("Job instance `#{instance_name}' not found, marking for deletion")
-        @deployment_plan.delete_instance(instance_model, reservations)
+        instance = DeploymentPlan::ExistingInstance.create_from_model(instance_model, @logger)
+        instance.bind_state(@deployment_plan, state)
+        @deployment_plan.delete_instance(instance)
         return
       end
 
       @logger.debug("Found existing job instance `#{instance_name}'")
-      instance.bind_existing_instance(instance_model, state, reservations)
-    end
-
-    def get_network_reservations(state)
-      reservations = {}
-      state['networks'].each do |name, network_config|
-        network = @deployment_plan.network(name)
-        if network
-          reservation = NetworkReservation.new(:ip => network_config['ip'])
-          network.reserve(reservation)
-          reservations[name] = reservation if reservation.reserved?
-        end
-      end
-      reservations
+      instance.bind_existing_instance(instance_model, state)
     end
 
     def get_state(vm_model)

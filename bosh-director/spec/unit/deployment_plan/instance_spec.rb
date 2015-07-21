@@ -115,14 +115,14 @@ module Bosh::Director::DeploymentPlan
         let(:reservation) { Bosh::Director::NetworkReservation.new_dynamic }
         before do
           network.reserve(reservation)
-          instance.add_network_reservation(network_name, reservation)
+          instance.add_network_reservation(network, reservation)
         end
 
         it 'returns the network settings plus current IP, Netmask & Gateway from agent state' do
           net_settings_with_type = network_settings.merge('type' => 'dynamic')
           expect(instance.network_settings).to eql(network_name => net_settings_with_type)
 
-          instance.bind_existing_instance(instance_model, current_state, {})
+          instance.bind_existing_instance(instance_model, current_state)
           expect(instance.network_settings).to eql({network_name => net_settings_with_type.merge(network_info)})
         end
       end
@@ -146,14 +146,14 @@ module Bosh::Director::DeploymentPlan
 
         before do
           network.reserve(reservation)
-          instance.add_network_reservation(network_name, reservation)
+          instance.add_network_reservation(network, reservation)
         end
 
         it 'returns the network settings as set at the network spec' do
           net_settings = {network_name => network_settings.merge(network_info)}
           expect(instance.network_settings).to eql(net_settings)
 
-          instance.bind_existing_instance(instance_model, current_state, {})
+          instance.bind_existing_instance(instance_model, current_state)
           expect(instance.network_settings).to eql(net_settings)
         end
       end
@@ -183,7 +183,7 @@ module Bosh::Director::DeploymentPlan
           before { allow(job).to receive(:starts_on_deploy?).with(no_args).and_return(true) }
 
           it 'includes dns_record_name' do
-            instance.add_network_reservation(network_name, reservation)
+            instance.add_network_reservation(network, reservation)
             expect(instance.network_settings['net_a']).to have_key('dns_record_name')
           end
         end
@@ -192,7 +192,7 @@ module Bosh::Director::DeploymentPlan
           before { allow(job).to receive(:starts_on_deploy?).with(no_args).and_return(false) }
 
           it 'does not include dns_record_name' do
-            instance.add_network_reservation(network_name, reservation)
+            instance.add_network_reservation(network, reservation)
             expect(instance.network_settings['net_a']).to_not have_key('dns_record_name')
           end
         end
@@ -298,26 +298,30 @@ module Bosh::Director::DeploymentPlan
           network: network,
         })
       end
-      let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
+      let(:network) do
+        instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network', reserve: nil)
+      end
 
       let(:instance_model) { Bosh::Director::Models::Instance.make }
 
       it 'raises an error if instance already has a model' do
         state = {}
-        reservations = {}
 
-        instance.bind_existing_instance(instance_model, state, reservations)
+        instance.bind_existing_instance(instance_model, state)
 
         expect {
-          instance.bind_existing_instance(instance_model, state, reservations)
+          instance.bind_existing_instance(instance_model, state)
         }.to raise_error(Bosh::Director::DirectorError, /model is already bound/)
       end
 
       it 'sets the instance model and state' do
         state = {'networks' => {'fake-network' => {'ip' => '127.0.0.5'}}}
-        reservations = {}
 
-        instance.bind_existing_instance(instance_model, state, reservations)
+        expect(net).to receive(:reserve) do |network_reservation|
+          expect(NetAddr::CIDR.create(network_reservation.ip)).to eq('127.0.0.5')
+        end
+
+        instance.bind_existing_instance(instance_model, state)
 
         expect(instance.model).to eq(instance_model)
 
@@ -328,22 +332,14 @@ module Bosh::Director::DeploymentPlan
         expect(instance.current_ip_addresses).to eq({'fake-network' => '127.0.0.5'})
       end
 
-      it 'takes the new reservation for each existing reservation with the same network name' do
-        existing_reservations = {
-          'fake-network1' => Bosh::Director::NetworkReservation.new_dynamic,
-          'fake-network2' => Bosh::Director::NetworkReservation.new_dynamic,
-        }
-        existing_reservations.each { |name, reservation| instance.add_network_reservation(name, reservation) }
-
-        state = {}
-        new_reservations = {
-          'fake-network1' => Bosh::Director::NetworkReservation.new_static,
-        }
-
-        expect(existing_reservations['fake-network1']).to receive(:take).with(new_reservations['fake-network1'])
-        expect(existing_reservations['fake-network2']).to_not receive(:take)
-
-        instance.bind_existing_instance(instance_model, state, new_reservations)
+      context 'when state has networks' do
+        it 'reserves the networks' do
+          state = {'networks' => {'fake-network' => {'ip' => '127.0.0.5'}}}
+          expect(net).to receive(:reserve) do |network_reservation|
+            expect(NetAddr::CIDR.create(network_reservation.ip)).to eq('127.0.0.5')
+          end
+          instance.bind_existing_instance(instance_model, state)
+        end
       end
     end
 
@@ -396,7 +392,7 @@ module Bosh::Director::DeploymentPlan
         instance.configuration_hash = 'fake-desired-configuration-hash'
 
         reservation = Bosh::Director::NetworkReservation.new_dynamic
-        instance.add_network_reservation('fake-network', reservation)
+        instance.add_network_reservation(network, reservation)
 
         instance.bind_unallocated_vm
         instance.bind_to_vm_model(vm_model)
@@ -534,7 +530,7 @@ module Bosh::Director::DeploymentPlan
       context 'when an instance exists (with the same job name & instance index)' do
         before do
           instance_model = Bosh::Director::Models::Instance.make
-          instance.bind_existing_instance(instance_model, instance_state, {})
+          instance.bind_existing_instance(instance_model, instance_state)
         end
 
         context 'that fully matches the job spec' do
@@ -597,7 +593,7 @@ module Bosh::Director::DeploymentPlan
         instance_model = Bosh::Director::Models::Instance.make
 
         # set up in-memory domain model state
-        instance.bind_existing_instance(instance_model, {'resource_pool' => resource_pool_spec}, {})
+        instance.bind_existing_instance(instance_model, {'resource_pool' => resource_pool_spec})
 
         # set DB to match real instance/vm
         instance_model.vm.update(:env => {'key' => 'value'})
@@ -621,7 +617,7 @@ module Bosh::Director::DeploymentPlan
           )
         end
 
-        before { instance.bind_existing_instance(instance_model, {}, {}) }
+        before { instance.bind_existing_instance(instance_model, {}) }
 
         context 'when disk_size is still 0' do
           it 'returns false' do
@@ -672,7 +668,7 @@ module Bosh::Director::DeploymentPlan
 
       it 'returns instance spec' do
         network_name = network_spec['name']
-        instance.add_network_reservation(network_name, reservation)
+        instance.add_network_reservation(network, reservation)
 
         spec = instance.spec
         expect(spec['deployment']).to eq('fake-deployment')
@@ -737,7 +733,7 @@ module Bosh::Director::DeploymentPlan
       let(:network_reservation) { Bosh::Director::NetworkReservation.new_dynamic }
       let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'network-name') }
       before do
-        instance.add_network_reservation('fake-network', network_reservation)
+        instance.add_network_reservation(network, network_reservation)
         allow(plan).to receive(:network).with('fake-network').and_return(network)
       end
 

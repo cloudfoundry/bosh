@@ -16,10 +16,23 @@ module Bosh::Director
 
         @apply_spec = @model.vm.apply_spec
         @env = @model.vm.env
+        @network_reservations = {}
+      end
+
+      def job_name
+        @model.job
+      end
+
+      def index
+        @model.index
       end
 
       def deployment_model
         @model.deployment
+      end
+
+      def bind_state(deployment, state)
+        @network_reservations = StateNetworkReservations.new(deployment).create_from_state(state)
       end
 
       def resource_pool
@@ -40,6 +53,15 @@ module Bosh::Director
       def bind_to_vm_model(vm_model)
         @model.update(vm: vm_model)
         @vm.model = vm_model
+      end
+
+      def delete
+        @network_reservations.each do |network, reservation|
+          network.release(reservation) if reservation.reserved?
+          @network_reservations.delete(network)
+        end
+
+        @model.destroy
       end
 
       private

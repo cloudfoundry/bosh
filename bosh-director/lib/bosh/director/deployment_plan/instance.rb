@@ -58,12 +58,12 @@ module Bosh::Director
         end
       end
 
-      def to_s
-        @name
+      def job_name
+        @job.name
       end
 
-      def to_instance_deleter_info
-        @model.nil? ? nil : [@model, @network_reservations]
+      def to_s
+        @name
       end
 
       # Looks up instance model in DB and binds it to this instance spec.
@@ -78,9 +78,8 @@ module Bosh::Director
       end
 
       def reserve_networks
-        @network_reservations.each do |net_name, reservation|
+        @network_reservations.each do |network, reservation|
           unless reservation.reserved?
-            network = @deployment.network(net_name)
             network.reserve!(reservation, "`#{@name}'")
           end
         end
@@ -96,12 +95,15 @@ module Bosh::Director
 
       ##
       # Updates this domain object to reflect an existing instance running on an existing vm
-      def bind_existing_instance(instance_model, state, reservations)
+      def bind_existing_instance(instance_model, state)
         check_model_not_bound
         @model = instance_model
         allocate_vm
         @vm.model = instance_model.vm
+
+        reservations = StateNetworkReservations.new(@deployment).create_from_state(state)
         take_network_reservations(reservations)
+
         @current_state = state
         @logger.debug("Found VM '#{@vm.model.cid}' running job instance '#{self}'")
       end
@@ -159,17 +161,17 @@ module Bosh::Director
 
       ##
       # Adds a new network to this instance
-      # @param [String] name network name
+      # @param [DeploymentPlan::Network] network
       # @param [NetworkReservation] reservation
-      def add_network_reservation(name, reservation)
-        old_reservation = @network_reservations[name]
+      def add_network_reservation(network, reservation)
+        old_reservation = @network_reservations[network]
 
         if old_reservation
           raise NetworkReservationAlreadyExists,
                 "`#{self}' already has reservation " +
-                "for network `#{name}', IP #{old_reservation.ip}"
+                "for network `#{network.name}', IP #{old_reservation.ip}"
         end
-        @network_reservations[name] = reservation
+        @network_reservations[network] = reservation
       end
 
       def current_ip_addresses
@@ -189,9 +191,8 @@ module Bosh::Director
         end
 
         network_settings = {}
-        @network_reservations.each do |name, reservation|
-          network = @deployment.network(name)
-          network_settings[name] = network.network_settings(reservation, default_properties[name])
+        @network_reservations.each do |network, reservation|
+          network_settings[network.name] = network.network_settings(reservation, default_properties[network.name])
 
           # Temporary hack for running errands.
           # We need to avoid RunErrand task thinking that
@@ -202,7 +203,7 @@ module Bosh::Director
           # in network configuration that errand job might need.
           # (e.g. errand job desires static ip)
           if @job.starts_on_deploy?
-            network_settings[name]['dns_record_name'] = dns_record_name(name)
+            network_settings[network.name]['dns_record_name'] = dns_record_name(network.name)
           end
 
           # Somewhat of a hack: for dynamic networks we might know IP address, Netmask & Gateway
@@ -210,10 +211,10 @@ module Bosh::Director
           # ConfigurationHasher in both agent and director.
           if @current_state.is_a?(Hash) &&
               @current_state['networks'].is_a?(Hash) &&
-              @current_state['networks'][name].is_a?(Hash) &&
-              network_settings[name]['type'] == 'dynamic'
+              @current_state['networks'][network.name].is_a?(Hash) &&
+              network_settings[network.name]['type'] == 'dynamic'
             %w(ip netmask gateway).each do |key|
-              network_settings[name][key] = @current_state['networks'][name][key]
+              network_settings[network.name][key] = @current_state['networks'][network.name][key]
             end
           end
         end
@@ -379,11 +380,9 @@ module Bosh::Director
       end
 
       def delete
-        @network_reservations.each do |network_name, reservation|
-          if reservation.reserved?
-            @deployment.network(network_name).release(reservation)
-          end
-          @network_reservations.delete(network_name)
+        @network_reservations.each do |network, reservation|
+          network.release(reservation) if reservation.reserved?
+          @network_reservations.delete(network)
         end
 
         @model.destroy
@@ -518,8 +517,8 @@ module Bosh::Director
       # @param [Hash<String, NetworkReservation>] reservations
       # @return [void]
       def take_network_reservations(reservations)
-        reservations.each do |name, provided_reservation|
-          reservation = @network_reservations[name]
+        reservations.each do |network, provided_reservation|
+          reservation = @network_reservations[network]
           if reservation
             @logger.debug("Copying job instance `#{self}' network reservation #{provided_reservation}")
             reservation.take(provided_reservation)

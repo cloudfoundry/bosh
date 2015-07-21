@@ -131,9 +131,8 @@ module Bosh::Director
 
       # Adds a VM to deletion queue
       # @param [Bosh::Director::Models::Vm] vm VM DB model
-      # @param [Hash(String => Bosh::Director::NetworkReservation)] reservations map of network name and reservation
-      def delete_vm(vm, reservations)
-        @unneeded_vms << [vm, reservations]
+      def delete_vm(vm)
+        @unneeded_vms << vm
       end
 
       def instances_with_missing_vms
@@ -143,13 +142,12 @@ module Bosh::Director
       end
 
       # Adds instance to deletion queue
-      # @param [Bosh::Director::Models::Instance] instance Instance DB model
-      # @param [Hash(String => Bosh::Director::NetworkReservation)] reservations map of network name and reservation
-      def delete_instance(instance, reservations)
-        if @jobs_name_index.has_key?(instance.job)
-          @jobs_name_index[instance.job].unneeded_instances << [instance, reservations]
+      # @param [Bosh::Director::DeploymentPlan::ExistingInstance]
+      def delete_instance(instance)
+        if @jobs_name_index.has_key?(instance.job_name)
+          @jobs_name_index[instance.job_name].unneeded_instances << instance
         else
-          @unneeded_instances << [instance, reservations]
+          @unneeded_instances << instance
         end
       end
 

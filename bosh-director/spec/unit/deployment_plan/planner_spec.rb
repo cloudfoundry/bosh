@@ -206,27 +206,14 @@ module Bosh::Director
       end
 
       describe 'delete_vm' do
-        it 'records vms and their network reservations' do
+        it 'records vms' do
           vm_model1 = Models::Vm.make(deployment: deployment_model)
-          ip1 = Bosh::Director::NetworkReservation.new_dynamic
-          ip2 = Bosh::Director::NetworkReservation.new_dynamic
-          reservations1 = {
-            'network-a' => [ip1],
-            'network-b' => [ip2],
-          }
-
           vm_model2 = Models::Vm.make(deployment: deployment_model)
-          ip3 = Bosh::Director::NetworkReservation.new_dynamic
-          ip4 = Bosh::Director::NetworkReservation.new_dynamic
-          reservations2 = {
-            'network-a' => [ip3],
-            'network-b' => [ip4],
-          }
 
-          planner.delete_vm(vm_model1, reservations1)
-          planner.delete_vm(vm_model2, reservations2)
+          planner.delete_vm(vm_model1)
+          planner.delete_vm(vm_model2)
 
-          expect(planner.unneeded_vms).to eq([[vm_model1,reservations1], [vm_model2,reservations2]])
+          expect(planner.unneeded_vms).to eq([vm_model1, vm_model2])
         end
       end
 

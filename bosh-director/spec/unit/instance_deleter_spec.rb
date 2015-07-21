@@ -16,9 +16,28 @@ module Bosh::Director
       let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
       let(:instances_to_delete) do
         instances = []
-        network_reservations = {"network-a" => [NetworkReservation.new_dynamic("10.0.0.1")]}
-        5.times { instances << [double('instance'), network_reservations] }
+        5.times { instances << double('instance') }
         instances
+      end
+
+      before do
+        allow(event_log_stage).to receive(:advance_and_track).and_yield
+      end
+
+      let(:vm) do
+        vm = DeploymentPlan::Vm.new
+        vm.model = Models::Vm.make(cid: 'fake-vm-cid')
+        vm
+      end
+
+      let(:instance) do
+        instance_double(
+          DeploymentPlan::ExistingInstance,
+          model: Models::Instance.make(vm: vm.model),
+          vm: vm,
+          job_name: 'fake-job-name',
+          index: 5,
+        )
       end
 
       it 'should delete the instances with the config max threads option' do
@@ -28,7 +47,11 @@ module Bosh::Director
         allow(pool).to receive(:wrap).and_yield(pool)
         allow(pool).to receive(:process).and_yield
 
-        5.times { |index| expect(@deleter).to receive(:delete_instance).with(instances_to_delete[index][0], instances_to_delete[index][1], event_log_stage) }
+        5.times do |index|
+          expect(@deleter).to receive(:delete_instance).with(
+            instances_to_delete[index], event_log_stage
+          )
+        end
         @deleter.delete_instances(instances_to_delete, event_log_stage)
       end
 
@@ -38,47 +61,39 @@ module Bosh::Director
         allow(pool).to receive(:wrap).and_yield(pool)
         allow(pool).to receive(:process).and_yield
 
-        5.times { |index| expect(@deleter).to receive(:delete_instance).with(instances_to_delete[index][0], instances_to_delete[index][1], event_log_stage) }
+        5.times do |index|
+          expect(@deleter).to receive(:delete_instance).with(
+            instances_to_delete[index], event_log_stage)
+        end
         @deleter.delete_instances(instances_to_delete, event_log_stage, max_threads: 2)
       end
-    end
 
-    describe '#delete_instance' do
-      let(:instance) { Models::Instance.make(vm: vm, job: 'test', index: 5) }
-      let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
-      let(:vm) { Models::Vm.make }
-
-      it 'deletes a single instance' do
-        allow(event_log_stage).to receive(:advance_and_track).and_yield
-
-        disk = Models::PersistentDisk.make
+      it 'drains, deletes snapshots, persistent disk' do
+        disk = Models::PersistentDisk.make(disk_cid: 'fake-disk-cid-1')
         Models::Snapshot.make(persistent_disk: disk)
-        persistent_disks = [Models::PersistentDisk.make, disk]
-        persistent_disks.each { |disk| instance.persistent_disks << disk }
+        persistent_disks = [Models::PersistentDisk.make(disk_cid: 'instance-disk-cid'), disk]
+        persistent_disks.each { |disk| instance.model.persistent_disks << disk }
 
-        expect(@deleter).to receive(:drain).with(vm)
-        expect(@deleter).to receive(:delete_snapshots).with(instance)
+        expect(@deleter).to receive(:drain).with(vm.model)
+        expect(@deleter).to receive(:delete_snapshots).with(instance.model)
         expect(@deleter).to receive(:delete_persistent_disks).with(persistent_disks)
         allow(Config).to receive(:dns_domain_name).and_return('bosh')
-        expect(@deleter).to receive(:delete_dns_records).with('5.test.%.foo.bosh', 0)
+        expect(@deleter).to receive(:delete_dns_records).with('5.fake-job-name.%.foo.bosh', 0)
         expect(@deployment_plan).to receive(:canonical_name).and_return('foo')
         domain = double('domain', id:  0)
         expect(@deployment_plan).to receive(:dns_domain).and_return(domain)
-        expect(@cloud).to receive(:delete_vm).with(vm.cid)
+        expect(@cloud).to receive(:delete_vm).with(vm.model.cid)
+        expect(instance).to receive(:delete)
+
+        expect(event_log_stage).to receive(:advance_and_track).with(vm.model.cid)
 
         job_templates_cleaner = instance_double('Bosh::Director::RenderedJobTemplatesCleaner')
-        allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance, blobstore).and_return(job_templates_cleaner)
+        allow(RenderedJobTemplatesCleaner).to receive(:new).with(instance.model, blobstore).and_return(job_templates_cleaner)
         expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
-        @deleter.delete_instance(instance, {}, event_log_stage)
+        @deleter.delete_instances([instance], event_log_stage)
 
-        expect(Models::Vm[vm.id]).to eq(nil)
-        expect(Models::Instance[instance.id]).to eq(nil)
-      end
-
-      it 'advances event log stage to track deletion of given instance' do
-        expect(event_log_stage).to receive(:advance_and_track).with(vm.cid)
-        @deleter.delete_instance(instance, {}, event_log_stage)
+        expect(Models::Vm.find(cid: 'fake-vm-cid')).to eq(nil)
       end
     end
 

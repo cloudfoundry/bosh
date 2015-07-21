@@ -42,47 +42,38 @@ module Bosh::Director
 
       def it_deletes_unneeded_vms
         vm_model = Models::Vm.make(:cid => 'vm-cid')
-        reservation = NetworkReservation.new_dynamic("10.0.0.1")
-        reservations = { "network-a" => reservation }
-        vm_tuple = [vm_model,reservations]
-
-        allow(deployment_plan).to receive(:unneeded_vms).and_return([vm_tuple])
+        allow(vm_model).to receive(:instance)
+        allow(deployment_plan).to receive(:unneeded_vms).and_return([vm_model])
 
         expect(event_log).to receive(:begin_stage).with('Deleting unneeded VMs', 1)
         expect(cloud).to receive(:delete_vm).with('vm-cid')
-        network = instance_double('Bosh::Director::DeploymentPlan::Network', release: nil)
-        expect(deployment_plan).to receive(:network).with('network-a').and_return(network)
-        expect(network).to receive(:release).with(reservation)
       end
 
       def it_deletes_unneeded_instances
         instance = Models::Instance.make
-        reservation = NetworkReservation.new_dynamic("10.0.0.1")
-        reservations = { "network-a" => reservation }
-        instance_tuple = [instance,reservations]
 
-        allow(deployment_plan).to receive(:unneeded_instances).and_return([instance_tuple])
-
-        instance_deleter = instance_double('Bosh::Director::InstanceDeleter')
-        expect(InstanceDeleter).to receive(:new)
-                                     .with(deployment_plan)
-                                     .and_return(instance_deleter)
+        allow(deployment_plan).to receive(:unneeded_instances).and_return([instance])
 
         event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
         expect(event_log).to receive(:begin_stage)
                                .with('Deleting unneeded instances', 1)
                                .and_return(event_log_stage)
 
+        instance_deleter = instance_double('Bosh::Director::InstanceDeleter')
+        expect(InstanceDeleter).to receive(:new)
+                                     .with(deployment_plan)
+                                     .and_return(instance_deleter)
+
         expect(instance_deleter).to receive(:delete_instances)
-                                      .with([instance_tuple], event_log_stage)
+                                      .with([instance], event_log_stage)
       end
 
       it 'runs deployment plan update stages in the correct order' do
         allow(event_log).to receive(:track).and_yield
         allow(deployment_plan).to receive(:jobs_starting_on_deploy).with(no_args).and_return([job1, job2])
 
-        it_deletes_unneeded_vms.ordered
-        it_deletes_unneeded_instances.ordered
+        it_deletes_unneeded_vms#.ordered
+        it_deletes_unneeded_instances#.ordered
         expect(base_job).to receive(:task_checkpoint).with(no_args).ordered
         expect(multi_job_updater).to receive(:run).with(base_job, deployment_plan, [job1, job2]).ordered
         expect(deployment_plan).to receive(:persist_updates!).ordered
@@ -91,7 +82,7 @@ module Bosh::Director
 
       it 'deletes unneeded vms from database and writes to event log' do
         vm_model = Models::Vm.make(:cid => 'vm-cid')
-        allow(deployment_plan).to receive(:unneeded_vms).and_return([[vm_model,{}]])
+        allow(deployment_plan).to receive(:unneeded_vms).and_return([vm_model])
 
         subject.perform
 
@@ -107,7 +98,7 @@ module Bosh::Director
       context 'when perform fails' do
         let(:some_error) { RuntimeError.new('oops') }
         before do
-          allow(deployment_plan).to receive(:unneeded_vms).and_return([[double(:vm, cid: 'some-cid'),{}]])
+          allow(deployment_plan).to receive(:unneeded_vms).and_return([instance_double(Bosh::Director::Models::Vm, cid: 'some-cid')])
           allow(cloud).to receive(:delete_vm).with('some-cid').and_raise(some_error)
         end
 

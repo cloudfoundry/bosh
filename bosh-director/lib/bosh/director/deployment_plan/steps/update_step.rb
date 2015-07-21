@@ -11,6 +11,7 @@ module Bosh::Director
           @deployment_plan = deployment_plan
           @multi_job_updater = multi_job_updater
           @instance_operator = InstanceOperator.new(cloud, event_log, @logger)
+          @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, @logger)
         end
 
         def perform
@@ -60,15 +61,11 @@ module Bosh::Director
 
           @event_log.begin_stage('Deleting unneeded VMs', unneeded_vms.size)
           ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
-            unneeded_vms.each do |vm_model,reservations_by_network|
+            unneeded_vms.each do |vm_model|
               pool.process do
                 @event_log.track(vm_model.cid) do
                   @logger.info("Delete unneeded VM #{vm_model.cid}")
-                  @cloud.delete_vm(vm_model.cid)
-                  reservations_by_network.each do |network_name,reservation|
-                      @deployment_plan.network(network_name).release(reservation)
-                  end
-                  vm_model.destroy
+                  @vm_deleter.delete_vm(vm_model)
                 end
               end
             end
