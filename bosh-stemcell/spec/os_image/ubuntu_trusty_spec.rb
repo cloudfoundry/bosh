@@ -159,9 +159,8 @@ describe 'Ubuntu 14.04 OS image', os_image: true do
   context 'installed by base_ssh' do
     subject(:sshd_config) { file('/etc/ssh/sshd_config') }
 
-    it 'disallows CBC ciphers' do
+    it 'only allow 3DES and AES series ciphers (stig: V-38617)' do
       ciphers = %w(
-        chacha20-poly1305@openssh.com
         aes256-gcm@openssh.com
         aes128-gcm@openssh.com
         aes256-ctr

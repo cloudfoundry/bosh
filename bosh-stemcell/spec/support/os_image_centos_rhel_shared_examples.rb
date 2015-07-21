@@ -43,7 +43,7 @@ shared_examples_for 'a CentOS or RHEL based OS image' do
   context 'installed by base_ssh' do
     subject(:sshd_config) { file('/etc/ssh/sshd_config') }
 
-    it 'disallows CBC ciphers' do
+    it 'only allow 3DES and AES series ciphers (stig: V-38617)' do
       ciphers = %w(
         aes256-ctr
         aes192-ctr
