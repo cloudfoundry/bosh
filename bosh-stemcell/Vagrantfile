@@ -40,6 +40,7 @@ Vagrant.configure('2') do |config|
 
       override.ssh.username = 'ubuntu'
       override.ssh.private_key_path = env.fetch('BOSH_KEY_PATH', '~/.ssh/id_rsa_bosh')
+      override.nfs.functional = false
     end
   end
 
