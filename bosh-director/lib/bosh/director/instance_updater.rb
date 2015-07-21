@@ -52,8 +52,8 @@ module Bosh::Director
       steps << proc { stop }
       steps << proc { take_snapshot }
 
-      if @target_state == "detached"
-        steps << proc { @vm_deleter.delete_from_instance(@instance) }
+      if @target_state == 'detached'
+        steps << proc { @vm_deleter.delete_for_instance(@instance) }
         return steps
       end
 
@@ -229,7 +229,7 @@ module Bosh::Director
     def recreate_vm(new_disk_cid)
       @vm_deleter.delete_for_instance(@instance)
       disks = [@instance.model.persistent_disk_cid, new_disk_cid].compact
-      @vm_creator.create_for_instance(@instance,disks)
+      @vm_creator.create_for_instance(@instance, disks)
 
       @agent = AgentClient.with_vm(@instance.vm.model)
 
