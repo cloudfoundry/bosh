@@ -80,21 +80,27 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
     @registry = mock_registry
   end
 
-  it "creates an OpenStack server and polls until it's ready" do
-    address = double("address", :id => "a-test", :ip => "10.0.0.1",
-                     :instance_id => "i-test")
+  let(:address) do
+    double("address", :id => "a-test", :ip => "10.0.0.1",
+      :instance_id => "i-test")
+  end
+  before { allow(address).to receive(:server=).with(nil) }
 
+  def stub_openstack(openstack)
+    allow(openstack.security_groups).to receive(:collect).and_return(%w[default])
+    allow(openstack.images).to receive(:find).and_return(image)
+    allow(openstack.flavors).to receive(:find).and_return(flavor)
+    allow(openstack.key_pairs).to receive(:find).and_return(key_pair)
+    allow(openstack.addresses).to receive(:each).and_yield(address)
+  end
+
+  it "creates an OpenStack server and polls until it's ready" do
     cloud = mock_cloud do |openstack|
       expect(openstack.servers).to receive(:create).with(openstack_params).and_return(server)
-      expect(openstack.security_groups).to receive(:collect).and_return(%w[default])
-      expect(openstack.images).to receive(:find).and_return(image)
-      expect(openstack.flavors).to receive(:find).and_return(flavor)
-      expect(openstack.key_pairs).to receive(:find).and_return(key_pair)
-      expect(openstack.addresses).to receive(:each).and_yield(address)
+      stub_openstack(openstack)
     end
 
     expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
-    expect(address).to receive(:server=).with(nil)
     expect(cloud).to receive(:wait_resource).with(server, :active, :state)
 
     expect(@registry).to receive(:update_settings).
@@ -658,6 +664,34 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
       expect {
         cloud.select_availability_zone(%w[cid1 cid2], "baz")
       }.to raise_error Bosh::Clouds::CloudError
+    end
+  end
+
+  context 'when use_dhcp is set to false' do
+    it 'updates network settings to include use_dhcp as false' do
+      cloud_options = mock_cloud_options["properties"]
+      cloud_options["openstack"]["use_dhcp"] = false
+
+      expected_network_spec = dynamic_network_spec
+      expected_network_spec["use_dhcp"] = false
+      expected_openstack_params = openstack_params({ "network_a" => expected_network_spec })
+
+      cloud = mock_cloud(cloud_options) do |openstack|
+        expect(openstack.servers).to receive(:create).with(expected_openstack_params).and_return(server)
+        stub_openstack(openstack)
+      end
+
+      expect(cloud).to receive(:generate_unique_name).and_return(unique_name)
+      expect(cloud).to receive(:wait_resource).with(server, :active, :state)
+
+      expect(@registry).to receive(:update_settings).
+          with("i-test", agent_settings(unique_name, expected_network_spec))
+
+      vm_id = cloud.create_vm("agent-id", "sc-id",
+        resource_pool_spec,
+        { "network_a" => dynamic_network_spec },
+        nil, { "test_env" => "value" })
+      expect(vm_id).to eq("i-test")
     end
   end
 end

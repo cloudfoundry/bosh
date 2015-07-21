@@ -102,7 +102,8 @@ def dynamic_network_spec
     'type' => 'dynamic',
     'cloud_properties' => {
       'security_groups' => %w[default]
-    }
+    },
+    'use_dhcp' => true
   }
 end
 
@@ -112,7 +113,8 @@ def manual_network_spec
     'cloud_properties' => {
       'security_groups' => %w[default],
       'net_id' => 'net'
-    }
+    },
+    'use_dhcp' => true
   }
 end
 
@@ -138,7 +140,8 @@ end
 def vip_network_spec
   {
     'type' => 'vip',
-    'ip' => '10.0.0.1'
+    'ip' => '10.0.0.1',
+    'use_dhcp' => true
   }
 end
 

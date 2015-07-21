@@ -6,7 +6,7 @@ module Bosh::OpenStackCloud
   class Cloud < Bosh::Cloud
     include Helpers
 
-    OPTION_KEYS = ['openstack', 'registry', 'agent']
+    OPTION_KEYS = ['openstack', 'registry', 'agent', 'use_dhcp']
 
     BOSH_APP_DIR = '/var/vcap/bosh'
     FIRST_DEVICE_NAME_LETTER = 'b'
@@ -46,6 +46,7 @@ module Bosh::OpenStackCloud
       @wait_resource_poll_interval = @openstack_properties["wait_resource_poll_interval"]
       @boot_from_volume = @openstack_properties["boot_from_volume"]
       @boot_volume_cloud_properties = @openstack_properties["boot_volume_cloud_properties"] || {}
+      @use_dhcp = @openstack_properties.fetch('use_dhcp', true)
 
       unless @openstack_properties['auth_url'].match(/\/tokens$/)
         @openstack_properties['auth_url'] = @openstack_properties['auth_url'] + '/tokens'
@@ -410,7 +411,7 @@ module Bosh::OpenStackCloud
         network_configurator.configure(@openstack, server)
 
         update_agent_settings(server) do |settings|
-          settings['networks'] = network_spec
+          settings['networks'] = agent_network_spec(network_spec)
         end
       end
     end
@@ -675,7 +676,7 @@ module Bosh::OpenStackCloud
       data['registry'] = { 'endpoint' => @registry.endpoint }
       data['server'] = { 'name' => server_name }
       data['openssh'] = { 'public_key' => public_key } if public_key
-      data['networks'] = network_spec
+      data['networks'] = agent_network_spec(network_spec)
 
       with_dns(network_spec) do |servers|
         data['dns'] = { 'nameserver' => servers }
@@ -720,7 +721,7 @@ module Bosh::OpenStackCloud
           'name' => server_name
         },
         'agent_id' => agent_id,
-        'networks' => network_spec,
+        'networks' => agent_network_spec(network_spec),
         'disks' => {
           'system' => '/dev/sda',
           'persistent' => {}
@@ -730,6 +731,13 @@ module Bosh::OpenStackCloud
       settings['disks']['ephemeral'] = has_ephemeral ? '/dev/sdb' : nil
       settings['env'] = environment if environment
       settings.merge(@agent_properties)
+    end
+
+    def agent_network_spec(network_spec)
+      Hash[*network_spec.map do |name, settings|
+        settings['use_dhcp'] = @use_dhcp
+        [name, settings]
+      end.flatten]
     end
 
     ##

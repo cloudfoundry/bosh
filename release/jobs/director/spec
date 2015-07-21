@@ -401,6 +401,9 @@ properties:
     default: 5
   openstack.config_drive:
     description: Config drive device (cdrom or disk) to use as metadata service on OpenStack (optional, nil by default)
+  openstack.use_dhcp:
+    description: Whether to use DHCP when configuring networking on VM (for both manual and dynamic)
+    default: true
   openstack.ignore_server_availability_zone:
     description: When creating disks do not use the servers AZ, default to openstack default
     default: false

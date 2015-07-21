@@ -323,6 +323,9 @@ cloud:
       <% if_p("openstack.config_drive") do |config_drive| %>
       config_drive: <%= config_drive %>
       <% end %>
+      <% if_p("openstack.use_dhcp") do |use_dhcp| %>
+      use_dhcp: <%= use_dhcp %>
+      <% end %>
     registry:
       endpoint: http://<%= reg_address %>:<%= reg_port %>
       user: <%= reg_user %>
