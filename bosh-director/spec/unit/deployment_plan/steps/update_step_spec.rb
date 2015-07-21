@@ -37,7 +37,6 @@ module Bosh::Director
       before do
         allow(deployment_plan).to receive(:unneeded_vms).and_return([])
         allow(deployment_plan).to receive(:unneeded_instances).and_return([])
-        allow(deployment_plan).to receive(:unneeded_network_reservations).and_return([])
       end
 
       def it_deletes_unneeded_vms

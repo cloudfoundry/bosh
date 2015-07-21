@@ -53,9 +53,6 @@ module Bosh::Director
       # VMs from the old manifest that are not in the new manifest
       attr_accessor :unneeded_vms
 
-      # Network reservations that belong to unneeded vms and instances
-      attr_reader :unneeded_network_reservations
-
       attr_accessor :dns_domain
 
       attr_reader :job_rename
@@ -81,7 +78,6 @@ module Bosh::Director
 
         @unneeded_vms = []
         @unneeded_instances = []
-        @unneeded_network_reservations = Set.new
         @dns_domain = nil
 
         @job_rename = safe_property(options, 'job_rename',
