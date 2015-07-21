@@ -199,32 +199,6 @@ describe 'upload release', type: :integration do
       expect(exit_code).to eq(0)
     end
 
-    it 'puts jobs in the blobstore' do
-      Dir.chdir(ClientSandbox.test_release_dir) do
-        File.open('config/final.yml', 'w') do |final|
-          final.puts YAML.dump(
-             'blobstore' => {
-                 'provider' => 'local',
-                 'options' => { 'blobstore_path' => current_sandbox.blobstore_storage_dir },
-             },
-         )
-        end
-      end
-
-      bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
-
-      files = Dir.entries(current_sandbox.blobstore_storage_dir)
-      files.shift(2) # get rid of . & ..
-
-      files.each do  |blob|
-        blob_path = File.join(current_sandbox.blobstore_storage_dir, blob)
-          Dir.mktmpdir do |temp_dir|
-            `tar xzf #{blob_path} -C #{temp_dir}`
-            expect(File.open(File.join(temp_dir, "job.MF")).read).to include("hello-go")
-          end
-      end
-    end
-
     it 'show actions in the event log' do
       bosh_runner.run("upload release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
 
