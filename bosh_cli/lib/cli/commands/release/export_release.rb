@@ -1,6 +1,6 @@
 require 'cli/name_version_pair'
 require 'cli/client/export_release_client'
-require 'yajl'
+require 'json'
 
 module Bosh::Cli::Command
   module Release
@@ -24,7 +24,7 @@ module Bosh::Cli::Command
         task_report(status, task_id)
 
         task_result_file = director.get_task_result_log(task_id)
-        task_result = Yajl::Parser.parse(task_result_file)
+        task_result = JSON.parse(task_result_file)
         tarball_blobstore_id = task_result['blobstore_id']
         tarball_sha1 = task_result['sha1']
 
