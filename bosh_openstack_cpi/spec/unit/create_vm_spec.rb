@@ -431,17 +431,32 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   context "when cannot create an OpenStack server" do
     let(:cloud) do
       mock_cloud do |openstack|
-        expect(openstack.servers).to receive(:create).and_return(server)
-        expect(openstack.security_groups).to receive(:collect).and_return(%w[default])
-        expect(openstack.images).to receive(:find).and_return(image)
-        expect(openstack.flavors).to receive(:find).and_return(flavor)
-        expect(openstack.key_pairs).to receive(:find).and_return(key_pair)
+        allow(openstack.servers).to receive(:create).and_return(server)
+        allow(openstack.security_groups).to receive(:collect).and_return(%w[default])
+        allow(openstack.images).to receive(:find).and_return(image)
+        allow(openstack.flavors).to receive(:find).and_return(flavor)
+        allow(openstack.key_pairs).to receive(:find).and_return(key_pair)
       end
     end
 
     it "destroys the server successfully and raises a Retryable Error" do
-      expect(server).to receive(:destroy)
-      expect(cloud).to receive(:wait_resource).with(server, :active, :state).and_raise(Bosh::Clouds::CloudError)
+      allow(server).to receive(:destroy)
+
+      allow(cloud).to receive(:wait_resource).with(server, :active, :state).and_raise(Bosh::Clouds::CloudError)
+      expect(cloud).to receive(:wait_resource).with(server, [:terminated, :deleted], :state, true)
+
+      expect {
+        cloud.create_vm(
+          "agent-id",
+          "sc-id",
+          resource_pool_spec,
+          {"network_a" => dynamic_network_spec},
+          nil,
+          {"test_env" => "value"}
+        )
+      }.to raise_error(Bosh::Clouds::VMCreationFailed)
+
+      allow(cloud).to receive(:wait_resource).with(server, :active, :state).and_raise(StandardError)
       expect(cloud).to receive(:wait_resource).with(server, [:terminated, :deleted], :state, true)
 
       expect {
@@ -480,39 +495,57 @@ describe Bosh::OpenStackCloud::Cloud, "create_vm" do
   context "when fail to register an OpenStack server after the server is created" do
     let(:cloud) do
       mock_cloud do |openstack|
-        expect(openstack.servers).to receive(:create).and_return(server)
-        expect(openstack.security_groups).to receive(:collect).and_return(%w[default])
-        expect(openstack.images).to receive(:find).and_return(image)
-        expect(openstack.flavors).to receive(:find).and_return(flavor)
-        expect(openstack.key_pairs).to receive(:find).and_return(key_pair)
-        expect(openstack.addresses).to receive(:each)
+        allow(openstack.servers).to receive(:create).and_return(server)
+        allow(openstack.security_groups).to receive(:collect).and_return(%w[default])
+        allow(openstack.images).to receive(:find).and_return(image)
+        allow(openstack.flavors).to receive(:find).and_return(flavor)
+        allow(openstack.key_pairs).to receive(:find).and_return(key_pair)
+        allow(openstack.addresses).to receive(:each)
       end
     end
 
     before do
       allow(cloud).to receive(:wait_resource).with(server, :active, :state)
-      allow(@registry).to receive(:update_settings).and_raise(Bosh::Clouds::CloudError)
     end
 
-    it "destroys the server successfully and raises a non-retryable Error" do
-      expect(server).to receive(:destroy)
+    it "destroys the server successfully and raises a non-retryable Error when CloudError happens" do
+      allow(server).to receive(:destroy)
+
+      allow(@registry).to receive(:update_settings).and_raise(Bosh::Clouds::CloudError)
       expect(cloud).to receive(:wait_resource).with(server, [:terminated, :deleted], :state, true)
 
       expect {
         cloud.create_vm(
-            "agent-id",
-            "sc-id",
-            resource_pool_spec,
-            { "network_a" => dynamic_network_spec },
-            nil,
-            { "test_env" => "value" })
+          "agent-id",
+          "sc-id",
+          resource_pool_spec,
+          { "network_a" => dynamic_network_spec },
+          nil,
+          { "test_env" => "value" })
       }.to raise_error { |error|
-        expect(error).to be_a(Bosh::Clouds::VMCreationFailed)
-        expect(error.ok_to_retry).to eq(false)
-      }
+             expect(error).to be_a(Bosh::Clouds::VMCreationFailed)
+             expect(error.ok_to_retry).to eq(false)
+           }
+
+      allow(@registry).to receive(:update_settings).and_raise(StandardError)
+      expect(cloud).to receive(:wait_resource).with(server, [:terminated, :deleted], :state, true)
+
+      expect {
+        cloud.create_vm(
+          "agent-id",
+          "sc-id",
+          resource_pool_spec,
+          { "network_a" => dynamic_network_spec },
+          nil,
+          { "test_env" => "value" })
+      }.to raise_error { |error|
+             expect(error).to be_a(Bosh::Clouds::VMCreationFailed)
+             expect(error.ok_to_retry).to eq(false)
+           }
     end
 
     it "logs correct failure message when failed to destroy the server" do
+      allow(@registry).to receive(:update_settings).and_raise(Bosh::Clouds::CloudError)
       allow(server).to receive(:destroy)
       allow(cloud).to receive(:wait_resource).with(server, [:terminated, :deleted], :state, true).and_raise(Bosh::Clouds::CloudError)
 
