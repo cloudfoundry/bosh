@@ -315,11 +315,9 @@ module Bosh::Director::DeploymentPlan
       end
 
       it 'sets the instance model and state' do
-        state = {'networks' => {'fake-network' => {'ip' => '127.0.0.5'}}}
+        state = {'persistent_disk' => 100}
 
-        expect(net).to receive(:reserve) do |network_reservation|
-          expect(NetAddr::CIDR.create(network_reservation.ip)).to eq('127.0.0.5')
-        end
+        expect(instance.disk_currently_attached?).to eq(false)
 
         instance.bind_existing_instance(instance_model, state)
 
@@ -329,7 +327,7 @@ module Bosh::Director::DeploymentPlan
         expect(instance.vm.model).to be(instance_model.vm)
         expect(instance.vm.bound_instance).to be(instance)
 
-        expect(instance.current_ip_addresses).to eq({'fake-network' => '127.0.0.5'})
+        expect(instance.disk_currently_attached?).to eq(true)
       end
 
       context 'when state has networks' do
@@ -771,6 +769,65 @@ module Bosh::Director::DeploymentPlan
 
           instance.reserve_networks
         end
+      end
+    end
+
+    describe '#with_network_update' do
+      def set_initial_state(instance, state)
+        allow(net).to receive(:reserve)
+        instance.bind_existing_instance(Bosh::Director::Models::Instance.make, state)
+      end
+
+      def set_desired_state(instance, network_name, ip_address)
+        reservation = Bosh::Director::NetworkReservation.new_static(ip_address)
+        my_first_network = instance_double(Bosh::Director::DeploymentPlan::Network, name: network_name, network_settings: {'ip' => ip_address})
+        instance.add_network_reservation(my_first_network, reservation)
+      end
+
+      def update_state(instance, state)
+        allow(job).to receive(:spec) { {} }
+        allow(job).to receive(:default_network) { {} }
+        allow(job).to receive(:package_spec) { {} }
+        allow(job).to receive(:properties) { {} }
+        allow(job).to receive(:link_spec) { {} }
+        allow(job).to receive(:starts_on_deploy?) { true }
+        allow(job).to receive(:canonical_name) { job.name }
+        allow(resource_pool).to receive(:spec) { {} }
+        agent_client = instance_double('Bosh::Director::AgentClient')
+        allow(Bosh::Director::AgentClient).to receive(:with_vm).with(instance.model.vm).and_return(agent_client)
+
+        allow(agent_client).to receive(:apply)
+        allow(agent_client).to(receive(:get_state)) { state }
+
+        instance.apply_vm_state
+      end
+
+      it 'releases IPs that are no longer needed after running the block' do
+        ip1 = Bosh::Director::Models::IpAddress.make(network_name: 'my-first-network')
+        ip2 = Bosh::Director::Models::IpAddress.make(network_name: 'my-second-network')
+        initial_state = {
+          'networks' => {
+            'my-first-network' => {'ip' => ip1.address},
+            'my-second-network' => {'ip' => ip2.address}
+          }
+        }
+        set_initial_state(instance, initial_state)
+        set_desired_state(instance, 'my-first-network', ip1.address)
+
+        expect(Bosh::Director::Models::IpAddress.all).to eq([ip1, ip2])
+
+        instance.with_network_update do
+          expect(Bosh::Director::Models::IpAddress.all).to eq([ip1, ip2])
+
+          updated_state = {
+            'networks' => {
+              'my-first-network' => {'ip' => ip1.address},
+            }
+          }
+          update_state(instance, updated_state)
+        end
+
+        expect(Bosh::Director::Models::IpAddress.all).to eq([ip1])
       end
     end
   end

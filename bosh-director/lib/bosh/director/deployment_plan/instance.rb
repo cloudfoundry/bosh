@@ -162,12 +162,12 @@ module Bosh::Director
         @network_reservations[network] = reservation
       end
 
-      def current_ip_addresses
-        network_to_ip(@current_state['networks'])
-      end
-
-      def reserved_ip_addresses
-        network_to_ip(network_settings)
+      def with_network_update
+        ips_before_update = network_to_ip(@current_state['networks'])
+        yield
+        ips_after_update = network_to_ip(network_settings)
+        ips_to_release = ips_before_update.to_set - ips_after_update.to_set
+        release_ips(ips_to_release)
       end
 
       ##
@@ -480,6 +480,16 @@ module Bosh::Director
       end
 
       private
+
+      # @param <[String, String]> ips_set set of [network_name, ip]
+      def release_ips(ips_set)
+        ips_set.each do |network_name, ip|
+          Bosh::Director::Models::IpAddress.where(
+            address: NetAddr::CIDR.create(ip).to_i,
+            network_name: network_name
+          ).delete
+        end
+      end
 
       # @param [Hash] network_settings map of network name to settings
       # @return [Hash] map of network name to IP address

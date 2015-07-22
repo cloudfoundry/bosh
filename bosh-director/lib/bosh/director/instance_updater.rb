@@ -283,26 +283,14 @@ module Bosh::Director
     end
 
     def update_networks
-      ips_to_release = @instance.current_ip_addresses.to_set - @instance.reserved_ip_addresses.to_set
-
-      network_updater = NetworkUpdater.new(@instance, @agent, @cloud, @logger)
-      success = network_updater.update
-      if !success
-        @logger.info('Creating VM with new network configurations')
-        recreate_vm(nil)
-        @agent = AgentClient.with_vm(@instance.vm.model)
-      end
-
-      release_ips(ips_to_release)
-    end
-
-    # @param <[String, String]> ips_set set of [network_name, ip]
-    def release_ips(ips_set)
-      ips_set.each do |network_name, ip|
-        Bosh::Director::Models::IpAddress.where(
-          address: NetAddr::CIDR.create(ip).to_i,
-          network_name: network_name
-        ).delete
+      @instance.with_network_update do
+        network_updater = NetworkUpdater.new(@instance, @agent, @cloud, @logger)
+        success = network_updater.update
+        if !success
+          @logger.info('Creating VM with new network configurations')
+          recreate_vm(nil)
+          @agent = AgentClient.with_vm(@instance.vm.model)
+        end
       end
     end
 
