@@ -62,8 +62,13 @@ module Bosh::Director
 
     def delete_dns(job, index)
       if Config.dns_enabled?
-        record_pattern = [index, canonical(job), "%",
-          @deployment_plan.canonical_name, dns_domain_name].join(".")
+        record_pattern = [
+          index,
+          canonical(job),
+          "%",
+          @deployment_plan.canonical_name,
+          dns_domain_name
+        ].join(".")
         delete_dns_records(record_pattern, @deployment_plan.dns_domain.id)
       end
     end

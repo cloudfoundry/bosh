@@ -71,8 +71,8 @@ module Bosh::Director
         allow(event_log).to receive(:track).and_yield
         allow(deployment_plan).to receive(:jobs_starting_on_deploy).with(no_args).and_return([job1, job2])
 
-        it_deletes_unneeded_vms#.ordered
-        it_deletes_unneeded_instances#.ordered
+        it_deletes_unneeded_vms.ordered
+        it_deletes_unneeded_instances.ordered
         expect(base_job).to receive(:task_checkpoint).with(no_args).ordered
         expect(multi_job_updater).to receive(:run).with(base_job, deployment_plan, [job1, job2]).ordered
         expect(deployment_plan).to receive(:persist_updates!).ordered
