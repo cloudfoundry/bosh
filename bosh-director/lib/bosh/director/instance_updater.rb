@@ -10,9 +10,8 @@ module Bosh::Director
     attr_reader :current_state
 
     # @params [DeploymentPlan::Instance] instance
-    def initialize(instance, event_log_task, job_renderer)
+    def initialize(instance, job_renderer)
       @instance = instance
-      @event_log_task = event_log_task
       @job_renderer = job_renderer
 
       @cloud = Config.cloud
@@ -34,58 +33,42 @@ module Bosh::Director
       @agent = AgentClient.with_vm(@instance.model.vm)
     end
 
-    def report_progress(num_steps)
-      @event_log_task.advance(100.0 / num_steps)
-    end
+    def update(options = {})
+      @logger.info("Updating instance #{@instance}, changes: #{@instance.changes.to_a.join(', ')}")
 
-    def update_steps(options = {})
-      steps = []
       @canary = options.fetch(:canary, false)
 
       # Optimization to only update DNS if nothing else changed.
       if dns_change_only?
-        steps << proc { update_dns }
-        return steps
+        update_dns
+        return
       end
 
-      steps << proc { Preparer.new(@instance, @agent, @logger).prepare }
-      steps << proc { stop }
-      steps << proc { take_snapshot }
+      skip_apply = trusted_certs_change_only? # figure this out before we start changing things
+
+      Preparer.new(@instance, @agent, @logger).prepare
+      stop
+      take_snapshot
 
       if @target_state == 'detached'
-        steps << proc { @vm_deleter.delete_for_instance(@instance) }
-        return steps
+        @vm_deleter.delete_for_instance(@instance)
+        return
       end
 
-      steps << proc { recreate_vm(nil) if @instance.resource_pool_changed? }
-      steps << proc { update_networks }
-      steps << proc { update_dns }
-      steps << proc { update_persistent_disk }
-      steps << proc { update_settings }
+      recreate_vm(nil) if @instance.resource_pool_changed?
+      update_networks
+      update_dns
+      update_persistent_disk
+      update_settings
 
-      if !trusted_certs_change_only?
-        steps << proc {
-          apply_state
-          RenderedJobTemplatesCleaner.new(@instance.model, @blobstore).clean
-        }
+      unless skip_apply
+        apply_state
+        RenderedJobTemplatesCleaner.new(@instance.model, @blobstore).clean
       end
 
-      steps << proc { start! if need_start? }
+      start! if need_start?
 
-      steps << proc { wait_until_running }
-
-      steps
-    end
-
-    def update(options = {})
-      steps = update_steps(options)
-
-      @logger.info("Updating instance #{@instance}, changes: #{@instance.changes.to_a.join(', ')}")
-
-      steps.each do |step|
-        step.call
-        report_progress(steps.length)
-      end
+      wait_until_running
 
       if @target_state == "started" && current_state["job_state"] != "running"
         raise AgentJobNotRunning, "`#{@instance}' is not running after update"

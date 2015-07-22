@@ -66,13 +66,13 @@ describe Bosh::Director::JobUpdater do
 
       before do
         allow(Bosh::Director::InstanceUpdater).to receive(:new).
-          with(canary, anything, job_renderer).and_return(canary_updater)
+          with(canary, job_renderer).and_return(canary_updater)
 
         allow(Bosh::Director::InstanceUpdater).to receive(:new).
-          with(changed_instance, anything, job_renderer).and_return(changed_updater)
+          with(changed_instance, job_renderer).and_return(changed_updater)
 
         allow(Bosh::Director::InstanceUpdater).to receive(:new).
-          with(unchanged_instance, anything, job_renderer).and_return(unchanged_updater)
+          with(unchanged_instance, job_renderer).and_return(unchanged_updater)
       end
 
       it 'should update changed job instances with canaries' do

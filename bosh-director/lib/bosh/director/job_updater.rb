@@ -71,10 +71,10 @@ module Bosh::Director
 
     def update_canary_instance(instance, event_log_stage)
       desc = "#{@job.name}/#{instance.index}"
-      event_log_stage.advance_and_track("#{desc} (canary)") do |ticker|
+      event_log_stage.advance_and_track("#{desc} (canary)") do
         with_thread_name("canary_update(#{desc})") do
           begin
-            InstanceUpdater.new(instance, ticker, @job_renderer).update(:canary => true)
+            InstanceUpdater.new(instance, @job_renderer).update(:canary => true)
           rescue Exception => e
             @logger.error("Error updating canary instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise
@@ -91,10 +91,10 @@ module Bosh::Director
 
     def update_instance(instance, event_log_stage)
       desc = "#{@job.name}/#{instance.index}"
-      event_log_stage.advance_and_track(desc) do |ticker|
+      event_log_stage.advance_and_track(desc) do
         with_thread_name("instance_update(#{desc})") do
           begin
-            InstanceUpdater.new(instance, ticker, @job_renderer).update
+            InstanceUpdater.new(instance, @job_renderer).update
           rescue Exception => e
             @logger.error("Error updating instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
             raise
