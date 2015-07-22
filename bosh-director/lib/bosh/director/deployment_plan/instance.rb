@@ -120,6 +120,11 @@ module Bosh::Director
         @current_state = agent_client.get_state
       end
 
+      def update_trusted_certs
+        agent_client.update_settings(Config.trusted_certs)
+        @model.vm.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
+      end
+
       def agent_client
         @agent_client ||= AgentClient.with_vm(@model.vm)
       end

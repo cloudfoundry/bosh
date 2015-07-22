@@ -305,8 +305,7 @@ module Bosh::Director
 
     def update_settings
       if @instance.trusted_certs_changed?
-        @agent.update_settings(Config.trusted_certs)
-        @instance.model.vm.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
+        @instance.update_trusted_certs
       end
     end
 

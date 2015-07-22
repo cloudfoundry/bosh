@@ -40,6 +40,11 @@ module Bosh::Director
         ExistingResourcePool.new(resource_pool_spec, @env)
       end
 
+      def update_trusted_certs
+        agent_client.update_settings(Config.trusted_certs)
+        @model.vm.update(:trusted_certs_sha1 => Digest::SHA1.hexdigest(Config.trusted_certs))
+      end
+
       def apply_vm_state
         @logger.info('Applying VM state')
         @model.vm.update(:apply_spec => @apply_spec)

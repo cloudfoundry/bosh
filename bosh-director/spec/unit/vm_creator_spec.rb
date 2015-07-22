@@ -31,7 +31,8 @@ describe Bosh::Director::VmCreator do
       model: Bosh::Director::Models::Instance.make(vm: nil),
       vm: Bosh::Director::DeploymentPlan::Vm.new,
       bind_to_vm_model: nil,
-      apply_vm_state: nil
+      apply_vm_state: nil,
+      update_trusted_certs: nil
     )
   end
 
@@ -48,8 +49,8 @@ describe Bosh::Director::VmCreator do
 
     expect(instance).to receive(:bind_to_vm_model)
     expect(agent_client).to receive(:wait_until_ready)
-    expect(agent_client).to receive(:update_settings)
     expect(instance).to receive(:apply_vm_state)
+    expect(instance).to receive(:update_trusted_certs)
 
     subject.create_for_instance(instance, ['fake-disk-cid'])
 
