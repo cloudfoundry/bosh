@@ -111,20 +111,8 @@ module Bosh::Director
       def apply_vm_state
         @logger.info('Applying VM state')
 
-        state = {
-          'deployment' => @deployment.name,
-          'networks' => network_settings,
-          'resource_pool' => @job.resource_pool.spec,
-          'job' => @job.spec,
-          'index' => @index,
-        }
-
-        if disk_size > 0
-          state['persistent_disk'] = disk_size
-        end
-
+        state = spec
         @model.vm.update(:apply_spec => state)
-
         agent_client.apply(state)
 
         # Agent will potentially return modified version of state
@@ -420,7 +408,7 @@ module Bosh::Director
       # @return [Hash<String, Object>] instance spec
       def spec
         spec = {
-          'deployment' => @job.deployment.name,
+          'deployment' => @deployment.name,
           'job' => job.spec,
           'index' => index,
           'networks' => network_settings,
@@ -445,9 +433,6 @@ module Bosh::Director
           spec['template_hashes'] = template_hashes
         end
 
-        # Ruby BOSH Agent does not look at 'rendered_templates_archive'
-        # since it renders job templates and then compares template hashes.
-        # Go BOSH Agent has no ability to render ERB so pre-rendered templates are provided.
         if rendered_templates_archive
           spec['rendered_templates_archive'] = rendered_templates_archive.spec
         end

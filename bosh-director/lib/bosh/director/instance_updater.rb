@@ -65,7 +65,7 @@ module Bosh::Director
 
       if !trusted_certs_change_only?
         steps << proc {
-          apply_state(@instance.spec)
+          apply_state
           RenderedJobTemplatesCleaner.new(@instance.model, @blobstore).clean
         }
       end
@@ -156,9 +156,8 @@ module Bosh::Director
       Api::SnapshotManager.delete_snapshots(disk.snapshots)
     end
 
-    def apply_state(state)
-      @instance.model.vm.update(:apply_spec => state)
-      @agent.apply(state)
+    def apply_state
+      @instance.apply_vm_state
     end
 
     # Retrieve list of mounted disks from the @agent

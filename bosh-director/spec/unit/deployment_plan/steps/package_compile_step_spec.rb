@@ -283,10 +283,16 @@ module Bosh::Director
       let(:initial_state) {
         {
           'deployment' => 'mycloud',
-          'networks' => net,
-          'resource_pool' => {},
           'job' => {},
-          'index' => 0
+          'index' => 0,
+          'networks' => {'default' => 'network settings'},
+          'resource_pool' => {},
+          'packages' => {},
+          'configuration_hash' => nil,
+          'properties' => {},
+          'dns_domain_name' => nil,
+          'links' => {},
+          'persistent_disk' => 0
         }
       }
 

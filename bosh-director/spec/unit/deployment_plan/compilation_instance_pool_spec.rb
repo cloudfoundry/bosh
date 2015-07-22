@@ -1,4 +1,4 @@
-require File.expand_path("../../../spec_helper", __FILE__)
+require File.expand_path('../../../spec_helper', __FILE__)
 
 module Bosh::Director
   describe DeploymentPlan::CompilationInstancePool do
@@ -87,12 +87,18 @@ module Bosh::Director
       it 'applies vm state' do
         expected_apply_spec = {
           'deployment' => 'mycloud',
+          'job' =>{},
+          'index' => 0,
           'networks' => {
             'network name' => 'network settings'
           },
           'resource_pool' => {},
-          'job' => {},
-          'index' => 0,
+          'packages' => {},
+          'configuration_hash' => nil,
+          'properties' => {},
+          'dns_domain_name' => nil,
+          'links' => {},
+          'persistent_disk' => 0
         }
         expect(agent_client).to receive(:apply).with(expected_apply_spec)
 

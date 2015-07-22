@@ -117,6 +117,22 @@ module Bosh::Director
         {}
       end
 
+      def package_spec
+        {}
+      end
+
+      def properties
+        {}
+      end
+
+      def link_spec
+        {}
+      end
+
+      def persistent_disk_pool
+        nil
+      end
+
       def starts_on_deploy?
         false
       end

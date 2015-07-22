@@ -278,7 +278,7 @@ module Bosh::Director::DeploymentPlan
         allow(job).to receive(:resource_pool).and_return(resource_pool)
       end
 
-      it "creates a new VM and binds it the instance" do
+      it 'creates a new VM and binds it the instance' do
         instance.bind_unallocated_vm
 
         expect(instance.model).not_to be_nil
@@ -399,15 +399,19 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when persistent disk size is 0' do
-        before { allow(instance).to receive(:disk_size).with(no_args).and_return(0) }
-
         it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
           state = {
             'deployment' => 'fake-deployment',
-            'networks' => {'fake-network' => 'fake-network-settings'},
-            'resource_pool' => 'fake-resource-pool-spec',
             'job' => 'fake-job-spec',
             'index' => 0,
+            'networks' => {'fake-network' => 'fake-network-settings'},
+            'resource_pool' => 'fake-resource-pool-spec',
+            'packages' => {},
+            'configuration_hash' => 'fake-desired-configuration-hash',
+            'properties' => nil,
+            'dns_domain_name' => 'test_domain',
+            'links' => {},
+            'persistent_disk' => 0
           }
 
           expect(vm_model).to receive(:update).with(apply_spec: state).ordered
@@ -422,16 +426,28 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when persistent disk size is greater than 0' do
-        before { allow(instance).to receive(:disk_size).with(no_args).and_return(100) }
+        before do
+          job.persistent_disk = 100
+        end
 
         it 'updates the model with the spec, applies to state to the agent, and sets the current state of the instance' do
           state = {
             'deployment' => 'fake-deployment',
-            'networks' => {'fake-network' => 'fake-network-settings'},
-            'resource_pool' => 'fake-resource-pool-spec',
             'job' => 'fake-job-spec',
             'index' => 0,
+            'networks' => {'fake-network' => 'fake-network-settings'},
+            'resource_pool' => 'fake-resource-pool-spec',
+            'packages' => {},
+            'configuration_hash' => 'fake-desired-configuration-hash',
+            'properties' => nil,
+            'dns_domain_name' => 'test_domain',
+            'links' => {},
             'persistent_disk' => 100,
+            'persistent_disk_pool' =>{
+              'name' => /[a-z0-9-]+/, # UUID
+              'disk_size' =>100,
+              'cloud_properties' =>{}
+            }
           }
 
           expect(vm_model).to receive(:update).with(apply_spec: state).ordered
