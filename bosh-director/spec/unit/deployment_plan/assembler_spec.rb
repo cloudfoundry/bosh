@@ -177,7 +177,7 @@ module Bosh::Director
           end
 
           it 'should delete the VM, releasing network reservations' do
-            expect(deployment_plan).to receive(:delete_vm).with(@vm_model)
+            expect(deployment_plan).to receive(:mark_vm_for_deletion).with(@vm_model)
             assembler.bind_existing_vm(@vm_model, @lock)
           end
         end
@@ -191,7 +191,7 @@ module Bosh::Director
 
             expect(assembler).to receive(:get_state).with(@vm_model).
                 and_return(state)
-            expect(deployment_plan).to receive(:delete_vm).with(@vm_model)
+            expect(deployment_plan).to receive(:mark_vm_for_deletion).with(@vm_model)
             assembler.bind_existing_vm(@vm_model, @lock)
           end
         end
@@ -241,7 +241,7 @@ module Bosh::Director
       it "should mark the instance for deletion when it's no longer valid" do
         state = { 'state' => 'baz' }
         allow(deployment_plan).to receive(:job).with('foo').and_return(nil)
-        expect(deployment_plan).to receive(:delete_instance) do |instance|
+        expect(deployment_plan).to receive(:mark_instance_for_deletion) do |instance|
           expect(instance.model).to eq(instance_model)
         end
         allow(deployment_plan).to receive(:job_rename).and_return({})

@@ -61,7 +61,7 @@ module Bosh::Director
 
           # Vm without an instance can only be created before global networking
           # That means that it should not have any network reservations in DB.
-          @deployment_plan.delete_vm(vm_model)
+          @deployment_plan.mark_vm_for_deletion(vm_model)
         end
         @logger.debug('Finished processing VM network reservations')
       end
@@ -90,7 +90,7 @@ module Bosh::Director
         @logger.debug("Job `#{instance_model.job}' not found, marking for deletion")
         instance = DeploymentPlan::ExistingInstance.create_from_model(instance_model, @logger)
         instance.bind_state(@deployment_plan, state)
-        @deployment_plan.delete_instance(instance)
+        @deployment_plan.mark_instance_for_deletion(instance)
         return
       end
 
@@ -99,7 +99,7 @@ module Bosh::Director
         @logger.debug("Job instance `#{instance_name}' not found, marking for deletion")
         instance = DeploymentPlan::ExistingInstance.create_from_model(instance_model, @logger)
         instance.bind_state(@deployment_plan, state)
-        @deployment_plan.delete_instance(instance)
+        @deployment_plan.mark_instance_for_deletion(instance)
         return
       end
 

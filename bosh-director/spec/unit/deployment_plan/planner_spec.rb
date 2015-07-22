@@ -205,13 +205,13 @@ module Bosh::Director
         end
       end
 
-      describe 'delete_vm' do
+      describe 'mark_vm_for_deletion' do
         it 'records vms' do
           vm_model1 = Models::Vm.make(deployment: deployment_model)
           vm_model2 = Models::Vm.make(deployment: deployment_model)
 
-          planner.delete_vm(vm_model1)
-          planner.delete_vm(vm_model2)
+          planner.mark_vm_for_deletion(vm_model1)
+          planner.mark_vm_for_deletion(vm_model2)
 
           expect(planner.unneeded_vms).to eq([vm_model1, vm_model2])
         end
