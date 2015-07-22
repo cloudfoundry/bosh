@@ -1,6 +1,7 @@
 require 'digest/sha1'
 require 'fileutils'
 require 'securerandom'
+require 'membrane'
 
 module Bosh
   module Clouds
@@ -34,20 +35,36 @@ module Bosh
         raise ArgumentError, "cannot create dummy cloud base directory #{@base_dir}"
       end
 
-      def create_stemcell(image, _)
-        stemcell_id = Digest::SHA1.hexdigest(File.read(image))
-        File.write(stemcell_file(stemcell_id), image)
+      def create_stemcell(image_path, cloud_properties)
+        schema = Membrane::SchemaParser.parse { {image_path: String, cloud_properties: Hash} }
+        validate_inputs(schema, __method__, image_path, cloud_properties)
+        stemcell_id = Digest::SHA1.hexdigest(File.read(image_path))
+        File.write(stemcell_file(stemcell_id), image_path)
         stemcell_id
       end
 
-      def delete_stemcell(stemcell_cid)
-        FileUtils.rm(stemcell_file(stemcell_cid))
+      def delete_stemcell(stemcell_id)
+        schema = Membrane::SchemaParser.parse { {stemcell_id: String} }
+        validate_inputs(schema, __method__, stemcell_id)
+        FileUtils.rm(stemcell_file(stemcell_id))
       end
 
       # rubocop:disable ParameterLists
-      def create_vm(agent_id, stemcell, resource_pool, networks, disk_locality = nil, env = nil)
+      def create_vm(agent_id, stemcell_id, resource_pool, networks, disk_cids = nil, env = nil)
       # rubocop:enable ParameterLists
         @logger.info('Dummy: create_vm')
+
+        schema = Membrane::SchemaParser.parse do
+          {
+            agent_id: String,
+            stemcell_id: String,
+            resource_pool: Hash,
+            networks: Hash,
+            disk_cids: enum(nil, [String]),
+            env: enum(nil, Hash),
+          }
+        end
+        validate_inputs(schema, __method__, agent_id, stemcell_id, resource_pool, networks, disk_cids, env)
 
         cmd = commands.next_create_vm_cmd
 
@@ -76,15 +93,17 @@ module Bosh
         agent_pid.to_s
       end
 
-      def delete_vm(vm_name)
+      def delete_vm(vm_id)
+        schema = Membrane::SchemaParser.parse { {vm_id: String} }
+        validate_inputs(schema, __method__, vm_id)
         commands.wait_for_unpause_delete_vms
-        agent_pid = vm_name.to_i
+        agent_pid = vm_id.to_i
         Process.kill('KILL', agent_pid)
       # rubocop:disable HandleExceptions
       rescue Errno::ESRCH
       # rubocop:enable HandleExceptions
       ensure
-        FileUtils.rm_rf(File.join(@base_dir, 'running_vms', vm_name))
+        FileUtils.rm_rf(File.join(@base_dir, 'running_vms', vm_id))
       end
 
       def reboot_vm(vm_id)
@@ -92,14 +111,20 @@ module Bosh
       end
 
       def has_vm?(vm_id)
+        schema = Membrane::SchemaParser.parse { {vm_id: String} }
+        validate_inputs(schema, __method__, vm_id)
         File.exists?(vm_file(vm_id))
       end
 
       def has_disk?(disk_id)
+        schema = Membrane::SchemaParser.parse { {disk_id: String} }
+        validate_inputs(schema, __method__, disk_id)
         File.exists?(disk_file(disk_id))
       end
 
       def configure_networks(vm_id, networks)
+        schema = Membrane::SchemaParser.parse { {vm_id: String, networks: Hash}}
+        validate_inputs(schema, __method__, vm_id, networks)
         cmd = commands.next_configure_networks_cmd(vm_id)
 
         # The only configure_networks test so far only tests the negative case.
@@ -111,6 +136,8 @@ module Bosh
       end
 
       def attach_disk(vm_id, disk_id)
+        schema = Membrane::SchemaParser.parse { {vm_id: String, disk_id: String} }
+        validate_inputs(schema, __method__, vm_id, disk_id)
         file = attachment_file(vm_id, disk_id)
         FileUtils.mkdir_p(File.dirname(file))
         FileUtils.touch(file)
@@ -122,6 +149,8 @@ module Bosh
       end
 
       def detach_disk(vm_id, disk_id)
+        schema = Membrane::SchemaParser.parse { {vm_id: String, disk_id: String} }
+        validate_inputs(schema, __method__, vm_id, disk_id)
         FileUtils.rm(attachment_file(vm_id, disk_id))
 
         agent_id = agent_id_for_vm_id(vm_id)
@@ -131,6 +160,8 @@ module Bosh
       end
 
       def create_disk(size, cloud_properties, vm_locality = nil)
+        schema = Membrane::SchemaParser.parse { {size: Integer, cloud_properties: Hash, vm_locality: enum(nil, String)} }
+        validate_inputs(schema, __method__, size, cloud_properties, vm_locality)
         disk_id = SecureRandom.hex
         file = disk_file(disk_id)
         FileUtils.mkdir_p(File.dirname(file))
@@ -139,10 +170,14 @@ module Bosh
       end
 
       def delete_disk(disk_id)
+        schema = Membrane::SchemaParser.parse { {disk_id: String} }
+        validate_inputs(schema, __method__, disk_id)
         FileUtils.rm(disk_file(disk_id))
       end
 
-      def snapshot_disk(_, metadata)
+      def snapshot_disk(disk_id, metadata)
+        schema = Membrane::SchemaParser.parse { {disk_id: String, metadata: Hash} }
+        validate_inputs(schema, __method__, disk_id, metadata)
         snapshot_id = SecureRandom.hex
         file = snapshot_file(snapshot_id)
         FileUtils.mkdir_p(File.dirname(file))
@@ -151,6 +186,8 @@ module Bosh
       end
 
       def delete_snapshot(snapshot_id)
+        schema = Membrane::SchemaParser.parse { {snapshot_id: String} }
+        validate_inputs(schema, __method__, snapshot_id)
         FileUtils.rm(snapshot_file(snapshot_id))
       end
 
@@ -370,6 +407,22 @@ module Bosh
         def failed?
           failed
         end
+      end
+
+      def validate_inputs(schema, the_method, *args)
+        begin
+          schema.validate(parameter_names_to_values(the_method, *args))
+        rescue Membrane::SchemaValidationError => err
+          raise ArgumentError, "Invalid arguments sent to #{the_method}: #{err.message}"
+        end
+      end
+
+      def parameter_names_to_values(the_method, *the_method_args)
+        hash = {}
+        method(the_method).parameters.each_with_index do |param, index|
+          hash[param[1]] = the_method_args[index]
+        end
+        hash
       end
     end
   end

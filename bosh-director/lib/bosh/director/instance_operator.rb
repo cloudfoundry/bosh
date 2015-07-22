@@ -22,7 +22,7 @@ module Bosh::Director
             @event_log.track("#{instance.job.name}/#{instance.index}") do
               with_thread_name("create_missing_vm(#{instance.job.name}, #{instance.index}/#{counter})") do
                 @logger.info("Creating missing VM")
-                disks = [instance.model.persistent_disk_cid]
+                disks = [instance.model.persistent_disk_cid].compact
                 @creator.create_for_instance(instance, disks)
               end
             end
