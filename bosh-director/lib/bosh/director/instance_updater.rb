@@ -18,8 +18,8 @@ module Bosh::Director
       @logger = Config.logger
       @blobstore = App.instance.blobstores.blobstore
 
-      @vm_deleter = Bosh::Director::VmDeleter.new(@cloud,@logger)
-      @vm_creator = Bosh::Director::VmCreator.new(@cloud,@logger,@vm_deleter)
+      @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, @logger)
+      @vm_creator = Bosh::Director::VmCreator.new(@cloud, @logger, @vm_deleter)
 
       @job = instance.job
       @target_state = @instance.state
@@ -40,11 +40,12 @@ module Bosh::Director
 
       # Optimization to only update DNS if nothing else changed.
       if dns_change_only?
+        @logger.debug("Only change is DNS configuration")
         update_dns
         return
       end
 
-      skip_apply = trusted_certs_change_only? # figure this out before we start changing things
+      only_trusted_certs_changed = trusted_certs_change_only? # figure this out before we start changing things
 
       Preparer.new(@instance, @agent, @logger).prepare
       stop
@@ -55,15 +56,20 @@ module Bosh::Director
         return
       end
 
-      recreate_vm(nil) if @instance.resource_pool_changed?
-      update_networks
+      @instance.with_network_update do
+        unless try_to_update_in_place
+          @logger.debug("Failed to update in place. Recreating VM")
+          recreate_vm(nil)
+        end
+      end
+
       update_dns
       update_persistent_disk
-      update_settings
 
-      unless skip_apply
+      if only_trusted_certs_changed
+        @logger.debug("Skipping apply, trusted certs change only")
+      else
         apply_state
-        RenderedJobTemplatesCleaner.new(@instance.model, @blobstore).clean
       end
 
       start! if need_start?
@@ -77,6 +83,25 @@ module Bosh::Director
       if @target_state == "stopped" && current_state["job_state"] == "running"
         raise AgentJobNotStopped, "`#{@instance}' is still running despite the stop command"
       end
+    end
+
+    def try_to_update_in_place
+      if @instance.resource_pool_changed?
+        @logger.debug("Resource pool has changed. Can't update VM in place.")
+        return false
+      end
+      @logger.debug("Trying to update VM settings in place.")
+
+      network_updater = NetworkUpdater.new(@instance, @agent, @cloud, @logger)
+      success = network_updater.update
+      unless success
+        @logger.info('Failed to update networks on live vm, recreating with new network configurations')
+        return false
+      end
+
+      update_settings
+
+      true
     end
 
     # Watch times don't include the get_state roundtrip time, so effective
@@ -141,6 +166,7 @@ module Bosh::Director
 
     def apply_state
       @instance.apply_vm_state
+      RenderedJobTemplatesCleaner.new(@instance.model, @blobstore).clean
     end
 
     # Retrieve list of mounted disks from the @agent
@@ -175,8 +201,8 @@ module Bosh::Director
       rescue Bosh::Clouds::DiskNotAttached
         if disk.active
           raise CloudDiskNotAttached,
-                "`#{@instance}' VM should have persistent disk attached " +
-                    "but it doesn't (according to CPI)"
+            "`#{@instance}' VM should have persistent disk attached " +
+              "but it doesn't (according to CPI)"
         end
       end
 
@@ -187,8 +213,8 @@ module Bosh::Director
       rescue Bosh::Clouds::DiskNotFound
         if disk.active
           raise CloudDiskMissing,
-                "Disk `#{disk_cid}' is missing according to CPI but marked " +
-                    "as active in DB"
+            "Disk `#{disk_cid}' is missing according to CPI but marked " +
+              "as active in DB"
         end
       end
 
@@ -230,9 +256,9 @@ module Bosh::Director
 
       if agent_disk_cid != @instance.model.persistent_disk_cid
         raise AgentDiskOutOfSync,
-              "`#{@instance}' has invalid disks: @agent reports " +
-                  "`#{agent_disk_cid}' while director record shows " +
-                  "`#{@instance.model.persistent_disk_cid}'"
+          "`#{@instance}' has invalid disks: @agent reports " +
+            "`#{agent_disk_cid}' while director record shows " +
+            "`#{@instance.model.persistent_disk_cid}'"
       end
 
       @instance.model.persistent_disks.each do |disk|
