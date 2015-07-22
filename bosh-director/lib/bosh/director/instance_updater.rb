@@ -65,7 +65,6 @@ module Bosh::Director
 
       if !trusted_certs_change_only?
         steps << proc {
-          VmMetadataUpdater.build.update(@instance.model.vm, {})
           apply_state(@instance.spec)
           RenderedJobTemplatesCleaner.new(@instance.model, @blobstore).clean
         }
