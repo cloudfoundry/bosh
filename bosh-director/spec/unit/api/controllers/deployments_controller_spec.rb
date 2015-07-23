@@ -454,7 +454,10 @@ module Bosh::Director
             before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
             let(:event_log) { instance_double('Bosh::Director::EventLog::Log', track: nil) }
 
-            before { allow(Config).to receive(:logger).with(no_args).and_return(logger) }
+            before {
+              allow(Config).to receive(:logger).with(no_args).and_return(logger)
+              allow(event_log).to receive(:begin_stage)
+            }
 
             context 'authenticated access' do
               before { authorize 'admin', 'admin' }
