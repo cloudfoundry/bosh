@@ -37,7 +37,7 @@ module Bosh::Director
           delete_unneeded_instances
 
           @logger.info('Creating missing VMs')
-          @instance_operator.create(@deployment_plan.instances_with_missing_vms)
+          @instance_operator.create_vms_for(@deployment_plan.instances_with_missing_vms)
 
           @base_job.task_checkpoint
         end

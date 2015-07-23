@@ -21,7 +21,7 @@ module Bosh::Director
     end
 
     def create_missing_vms
-      @instance_operator.create(@job.instances_with_missing_vms)
+      @instance_operator.create_vms_for(@job.instances_with_missing_vms)
     end
 
     # Creates/updates all errand job instances

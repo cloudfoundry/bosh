@@ -2,7 +2,6 @@ require 'bosh/director/rendered_job_templates_cleaner'
 
 module Bosh::Director
   class InstanceOperator
-
     def initialize(cloud, event_log, logger)
       @event_log = event_log
       @logger = logger
@@ -10,14 +9,13 @@ module Bosh::Director
       @creator = VmCreator.new(cloud, logger, vm_deleter)
     end
 
-    def create(instances_with_missing_vms)
-      return @logger.info('No missing vms to create') if instances_with_missing_vms.empty?
+    def create_vms_for(instances)
+      return @logger.info('No missing vms to create') if instances.empty?
 
       total = instances_with_missing_vms.size
       @event_log.begin_stage('Creating missing vms', total)
-
       ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
-        instances_with_missing_vms.each do |instance|
+        instances.each do |instance|
           pool.process do
             with_thread_name("create_missing_vm(#{instance.job.name}, #{instance.index}/#{total})") do
               @event_log.track("#{instance.job.name}/#{instance.index}") do
@@ -29,14 +27,6 @@ module Bosh::Director
           end
         end
       end
-    end
-
-    def update(instances)
-      raise NotImplemented
-    end
-
-    def delete(instances)
-      raise NotImplemented
     end
   end
 end
