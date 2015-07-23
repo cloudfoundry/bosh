@@ -141,6 +141,11 @@ module Bosh
             assembler.bind_dns
           end
 
+          @event_log.begin_stage('Binding links', 1)
+          track_and_log('Binding DNS') do
+            assembler.bind_links
+          end
+
           planner
         end
 

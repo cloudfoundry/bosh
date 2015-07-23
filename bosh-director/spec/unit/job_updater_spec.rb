@@ -42,11 +42,6 @@ describe Bosh::Director::JobUpdater do
         job_updater.update
       end
 
-      it 'resolve job links' do
-        expect(links_resolver).to receive(:resolve).with(job)
-        job_updater.update
-      end
-
       it 'should not begin the updating job event stage' do
         job_updater.update
 

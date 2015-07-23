@@ -217,6 +217,52 @@ describe 'Links', type: :integration do
       end
     end
 
+    context 'when link is broken' do
+      let(:manifest) do
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest['jobs'] = [first_node_job_spec, second_node_job_spec]
+        manifest
+      end
+
+      let(:first_node_job_spec) do
+        Bosh::Spec::Deployments.simple_job(
+          name: 'first_node',
+          templates: [{'name' => 'node', 'links' => first_node_links}],
+          instances: 1,
+          static_ips: ['192.168.1.10']
+        )
+      end
+
+      let(:first_node_links) do
+        {
+          'node1' => 'simple.second_node.node.node1',
+          'node2' => 'simple.first_node.node.node2'
+        }
+      end
+
+      let(:second_node_job_spec) do
+        Bosh::Spec::Deployments.simple_job(
+          name: 'second_node',
+          templates: [{'name' => 'node', 'links' => second_node_links}],
+          instances: 1,
+          static_ips: ['192.168.1.11']
+        )
+      end
+      let(:second_node_links) do
+        {
+          'node1' => 'broken.link.is.broken',
+          'node2' => 'other.broken.link.blah'
+        }
+      end
+
+      it 'catches broken link before updating vms' do
+        result, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+        puts result
+        expect(exit_code).not_to eq(0)
+        expect(director.vms('simple')).to eq([])
+      end
+    end
+
     context 'when link references another deployment' do
       let(:first_deployment_job_spec) do
         Bosh::Spec::Deployments.simple_job(

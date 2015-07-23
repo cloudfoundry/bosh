@@ -221,6 +221,13 @@ module Bosh::Director
       @deployment_plan.jobs_starting_on_deploy.each(&:bind_instance_networks)
     end
 
+    def bind_links
+      links_resolver = Bosh::Director::DeploymentPlan::LinksResolver.new(@deployment_plan, @logger)
+      @deployment_plan.jobs.each do |job|
+        links_resolver.resolve(job)
+      end
+    end
+
     # Binds template models for each release spec in the deployment plan
     # @return [void]
     def bind_templates
