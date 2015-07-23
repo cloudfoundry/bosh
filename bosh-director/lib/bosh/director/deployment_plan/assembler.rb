@@ -52,15 +52,13 @@ module Bosh::Director
         if instance
           bind_instance(instance, state)
         else
-          # this is maybe a little wasteful for now -- we're deleting VMs that we
-          # could potentially reuse (if they don't have any static reservations),
-          # but we think that's just temporary while we work on how instances/vms are modelled
-          # note that #delete_vm will also release reservations, which may have
-          # already happened above. this does not appear to be an issue.
+          # VM without an instance should not exist any more. But we still
+          # delete those VMs for backwards compatibility in case if it was ever
+          # created incorrectly.
+          # It also means that it was created before global networking
+          # and should not have any network reservations in DB,
+          # so we don't worry about releasing its IPs.
           @logger.debug('Marking VM for deletion')
-
-          # Vm without an instance can only be created before global networking
-          # That means that it should not have any network reservations in DB.
           @deployment_plan.mark_vm_for_deletion(vm_model)
         end
         @logger.debug('Finished processing VM network reservations')
