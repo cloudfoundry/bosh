@@ -78,7 +78,7 @@ module Bosh::Director
           stemcell,
           cloud_properties,
           network_settings,
-          nil,
+          [],
           compilation_env
         ).and_return(vm_model)
         action

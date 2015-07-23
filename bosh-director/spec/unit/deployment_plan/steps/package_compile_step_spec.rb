@@ -362,7 +362,7 @@ module Bosh::Director
         agent = instance_double('Bosh::Director::AgentClient')
 
         expect(cloud).to receive(:create_vm).
-          with(instance_of(String), @stemcell_a.model.cid, {}, net, nil, {}).
+          with(instance_of(String), @stemcell_a.model.cid, {}, net, [], {}).
           and_return(vm_cid)
 
         allow(AgentClient).to receive(:with_vm).and_return(agent)

@@ -87,13 +87,13 @@ module Bosh
     # @param [Hash] resource_pool cloud specific properties describing the resources needed
     #               for this VM
     # @param [Hash] networks list of networks and their settings needed for this VM
-    # @param [optional, String, Array] disk_locality disk id(s) if known of the disk(s) that will be
+    # @param [String, Array] disk_locality disk id(s) if known of the disk(s) that will be
     #                                    attached to this vm
-    # @param [optional, Hash] env environment that will be passed to this vm
+    # @param [Hash] env environment that will be passed to this vm
     # @return [String] opaque id later used by {#configure_networks}, {#attach_disk},
     #                  {#detach_disk}, and {#delete_vm}
     def create_vm(agent_id, stemcell_id, resource_pool,
-                  networks, disk_locality = nil, env = nil)
+                  networks, disk_locality, env)
       not_implemented(:create_vm)
     end
 
@@ -165,10 +165,10 @@ module Bosh
     # @param [Integer] size disk size in MB
     # @param [Hash] cloud_properties properties required for creating this disk
     #               specific to a CPI
-    # @param [optional, String] vm_locality vm id if known of the VM that this disk will
+    # @param [String] vm_locality vm id if known of the VM that this disk will
     #                           be attached to
     # @return [String] opaque id later used by {#attach_disk}, {#detach_disk}, and {#delete_disk}
-    def create_disk(size, cloud_properties, vm_locality = nil)
+    def create_disk(size, cloud_properties, vm_locality)
       not_implemented(:create_disk)
     end
 
@@ -194,7 +194,7 @@ module Bosh
     # @param [String] disk_id disk id of the disk to take the snapshot of
     # @param [Hash] metadata metadata key/value pairs
     # @return [String] snapshot id
-    def snapshot_disk(disk_id, metadata={})
+    def snapshot_disk(disk_id, metadata)
       not_implemented(:snapshot_disk)
     end
 

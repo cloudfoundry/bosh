@@ -55,8 +55,7 @@ module Bosh::Director
 
     private
 
-    def create(deployment, stemcell, cloud_properties, network_settings,
-      disks=nil, env={})
+    def create(deployment, stemcell, cloud_properties, network_settings, disks, env)
       vm = nil
       vm_cid = nil
 

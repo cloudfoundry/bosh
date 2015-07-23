@@ -240,7 +240,7 @@ module Bosh::Deployer
       resources = config.resources['cloud_properties']
       networks = config.networks
       env = config.env
-      cloud.create_vm(state.uuid, stemcell_cid, resources, networks, nil, env)
+      cloud.create_vm(state.uuid, stemcell_cid, resources, networks, [], env)
     end
 
     def update_vm_metadata(vm, metadata)
