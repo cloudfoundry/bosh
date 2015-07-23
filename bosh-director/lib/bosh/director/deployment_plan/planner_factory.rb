@@ -44,6 +44,7 @@ module Bosh
           name = deployment_manifest['name']
 
           deployment_model = nil
+          @event_log.begin_stage("deploying '#{name}'", total = nil, tags = [])
           @event_log.track('Binding deployment') do
             @logger.info('Binding deployment')
             deployment_model = @deployment_repo.find_or_create_by_name(name)

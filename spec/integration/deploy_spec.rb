@@ -122,4 +122,11 @@ describe 'deploy', type: :integration do
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
     expect_running_vms(%w(foobar/0)) # no unknown/unknown
   end
+
+  it 'reports the deployment name when binding the deployment' do
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'].first['name'] = 'fake-name1'
+    deploy_output = deploy_from_scratch(manifest_hash: manifest_hash)
+    expect(deploy_output).to include("Started deploying 'simple' > Binding deployment")
+  end
 end
