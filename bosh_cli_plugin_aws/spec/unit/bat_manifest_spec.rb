@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Bosh::Aws::BatManifest do
+describe Bosh::AwsCliPlugin::BatManifest do
   subject { described_class.new(vpc_receipt, route53_receipt, 'stemcell-version', 'director-uuid', 'stemcell-name') }
   let(:vpc_receipt)     { Psych.load_file(asset('test-output.yml')) }
   let(:route53_receipt) { Psych.load_file(asset('test-aws_route53_receipt.yml')) }

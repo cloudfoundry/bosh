@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe 'AWS Bootstrap commands' do
   let(:aws) { Bosh::Cli::Command::AWS.new }
-  let(:mock_s3) { double(Bosh::Aws::S3) }
+  let(:mock_s3) { double(Bosh::AwsCliPlugin::S3) }
   let(:bosh_config)  { File.expand_path(File.join(File.dirname(__FILE__), '..', 'assets', 'bosh_config.yml')) }
 
   before do
@@ -71,7 +71,7 @@ describe 'AWS Bootstrap commands' do
       context 'hm user and password' do
         let(:fake_bootstrap) { double('MicroBosh Bootstrap', start: true) }
         before do
-          allow(Bosh::Aws::MicroBoshBootstrap).to receive(:new).and_return(fake_bootstrap)
+          allow(Bosh::AwsCliPlugin::MicroBoshBootstrap).to receive(:new).and_return(fake_bootstrap)
         end
 
         it "creates default 'hm' user name for hm" do
@@ -84,7 +84,7 @@ describe 'AWS Bootstrap commands' do
         it 'passes the generated hm user to the new microbosh bootstrapper' do
           allow(SecureRandom).to receive(:base64).and_return('some_password')
           allow(fake_bootstrap).to receive(:create_user)
-          expect(Bosh::Aws::MicroBoshBootstrap).to receive(:new) do |_, options|
+          expect(Bosh::AwsCliPlugin::MicroBoshBootstrap).to receive(:new) do |_, options|
             expect(options[:hm_director_user]).to eq('hm')
             expect(options[:hm_director_password]).to eq('some_password')
             fake_bootstrap
@@ -110,7 +110,7 @@ describe 'AWS Bootstrap commands' do
 
       it 'should ask for a new user' do
         fake_bootstrap = double('MicroBosh Bootstrap', start: true)
-        allow(Bosh::Aws::MicroBoshBootstrap).to receive(:new).and_return(fake_bootstrap)
+        allow(Bosh::AwsCliPlugin::MicroBoshBootstrap).to receive(:new).and_return(fake_bootstrap)
 
         expect(aws).to receive(:ask).with('Enter username: ').and_return('admin')
         expect(aws).to receive(:ask).with('Enter password: ').and_return('admin_passwd')
@@ -187,9 +187,9 @@ describe 'AWS Bootstrap commands' do
             to_return(:status => 200, :body => '')
 
         # Skip the actual deploy, since we already test it later on
-        allow_any_instance_of(Bosh::Aws::BoshBootstrap).to receive(:deploy)
-        allow_any_instance_of(Bosh::Aws::BoshBootstrap).to receive(:target_bosh_and_log_in)
-        allow_any_instance_of(Bosh::Aws::BoshBootstrap).to receive(:create_user)
+        allow_any_instance_of(Bosh::AwsCliPlugin::BoshBootstrap).to receive(:deploy)
+        allow_any_instance_of(Bosh::AwsCliPlugin::BoshBootstrap).to receive(:target_bosh_and_log_in)
+        allow_any_instance_of(Bosh::AwsCliPlugin::BoshBootstrap).to receive(:create_user)
         allow_any_instance_of(Bosh::Cli::Command::AWS).to receive(:ask).and_return('foo')
 
       end

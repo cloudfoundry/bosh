@@ -182,7 +182,7 @@ describe 'bosh_cli_plugin_aws_external' do
       expect(load_balancer.subnets.sort {|s1, s2| s1.id <=> s2.id }).to eq([cf_elb1_subnet, cf_elb2_subnet].sort {|s1, s2| s1.id <=> s2.id })
       expect(load_balancer.security_groups.map(&:name)).to eq(["web"])
 
-      config = Bosh::Aws::AwsConfig.new(aws_configuration_template)
+      config = Bosh::AwsCliPlugin::AwsConfig.new(aws_configuration_template)
       hosted_zone = route53.hosted_zones.detect { |zone| zone.name == "#{config.vpc_generated_domain}." }
       record_set = hosted_zone.resource_record_sets["\\052.#{config.vpc_generated_domain}.", 'CNAME'] # E.g. "*.midway.cf-app.com."
       expect(record_set).not_to be_nil

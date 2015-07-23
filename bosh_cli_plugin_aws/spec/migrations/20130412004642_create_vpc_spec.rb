@@ -10,7 +10,7 @@ describe CreateVpc do
     fake_vpc = double("vpc")
     fake_igw = double(AWS::EC2::InternetGateway, id: "id2")
 
-    allow(Bosh::Aws::VPC).to receive(:create).and_return(fake_vpc)
+    allow(Bosh::AwsCliPlugin::VPC).to receive(:create).and_return(fake_vpc)
 
     allow(fake_vpc).to receive(:vpc_id).and_return("vpc id")
     allow(fake_vpc).to receive(:create_dhcp_options)

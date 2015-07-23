@@ -8,7 +8,7 @@ module ConfigSupport
       it "raises an error" do
         expect {
           config.configuration
-        }.to raise_error(Bosh::Aws::ConfigurationInvalid, "Missing ENV variable #{key}")
+        }.to raise_error(Bosh::AwsCliPlugin::ConfigurationInvalid, "Missing ENV variable #{key}")
       end
     end
 
@@ -22,7 +22,7 @@ module ConfigSupport
   end
 end
 
-describe Bosh::Aws::AwsConfig do
+describe Bosh::AwsCliPlugin::AwsConfig do
   let(:config) { described_class.new(config_file, environment) }
   let(:config_file) { File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "templates", "aws_configuration_template.yml.erb"))}
   let(:configuration) { config.configuration }
@@ -66,7 +66,7 @@ describe Bosh::Aws::AwsConfig do
         before { environment.delete("BOSH_AWS_ACCESS_KEY_ID") }
 
         it "does not render the hash" do
-          expect { config.configuration }.to raise_error(Bosh::Aws::ConfigurationInvalid)
+          expect { config.configuration }.to raise_error(Bosh::AwsCliPlugin::ConfigurationInvalid)
         end
       end
 
@@ -276,7 +276,7 @@ describe Bosh::Aws::AwsConfig do
       end
 
       it "should raise an error" do
-        expect { config.configuration }.to raise_error(Bosh::Aws::ConfigurationInvalid, 'No domain and subdomain are defined.')
+        expect { config.configuration }.to raise_error(Bosh::AwsCliPlugin::ConfigurationInvalid, 'No domain and subdomain are defined.')
       end
     end
 

@@ -1,16 +1,16 @@
 require 'spec_helper'
 
-class DummyMigration < Bosh::Aws::Migration
+class DummyMigration < Bosh::AwsCliPlugin::Migration
   def execute
     s3.create_bucket(self.class.name)
   end
 end
 
-describe Bosh::Aws::Migrator do
+describe Bosh::AwsCliPlugin::Migrator do
 
   let(:config) { {'aws' => {}, 'name' => 'deployment-name', 'vpc' => {'domain' => 'deployment-name.foo.com'}} }
   let(:subject) { described_class.new(config) }
-  let(:mock_s3) { double("Bosh::Aws::S3").as_null_object }
+  let(:mock_s3) { double("Bosh::AwsCliPlugin::S3").as_null_object }
 
   after do
     FileUtils.rm_rf(@tempdir)
@@ -22,9 +22,9 @@ describe Bosh::Aws::Migrator do
     @time = Time.now
     allow(Time).to receive(:new) { @time }
 
-    allow(Bosh::Aws::MigrationHelper).to receive(:aws_migration_directory).and_return(@tempdir)
+    allow(Bosh::AwsCliPlugin::MigrationHelper).to receive(:aws_migration_directory).and_return(@tempdir)
 
-    allow(Bosh::Aws::S3).to receive(:new).and_return(mock_s3)
+    allow(Bosh::AwsCliPlugin::S3).to receive(:new).and_return(mock_s3)
     allow(mock_s3).to receive(:fetch_object_contents).and_return(nil)
     allow(mock_s3).to receive(:upload_to_bucket).and_return(nil)
   end
@@ -59,17 +59,17 @@ describe Bosh::Aws::Migrator do
       10.times do |i|
         name = "test_#{i}"
 
-        template = Bosh::Aws::MigrationHelper::Template.new(name)
+        template = Bosh::AwsCliPlugin::MigrationHelper::Template.new(name)
 
         filename = "#{@tempdir}/#{template.file_prefix}.rb"
         File.open(filename, 'w+') do |f|
           migration_text = template.render
-          migration_text.gsub!("Bosh::Aws::Migration","DummyMigration")
+          migration_text.gsub!("Bosh::AwsCliPlugin::Migration","DummyMigration")
           migration_text.gsub!("execute","execute_not_used")
           f.write(migration_text)
         end
 
-        @expected_migrations << Bosh::Aws::MigrationProxy.new(name, template.timestamp_string)
+        @expected_migrations << Bosh::AwsCliPlugin::MigrationProxy.new(name, template.timestamp_string)
         @time += 1 #Time marches on
       end
     end

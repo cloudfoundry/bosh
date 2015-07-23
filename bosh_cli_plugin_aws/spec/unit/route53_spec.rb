@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Bosh::Aws::Route53 do
+describe Bosh::AwsCliPlugin::Route53 do
   let(:r53) { described_class.new({}) }
 
   def resource_set(action, host, zone, address)

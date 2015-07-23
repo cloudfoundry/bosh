@@ -55,7 +55,7 @@ module Bosh::Cli
           FileUtils.mkdir_p(dest_path)
         else
           FileUtils.mkdir_p(dest_path.parent)
-          FileUtils.cp(src, dest_path, :preserve => true)
+          FileUtils.cp(src, dest_path, preserve: true)
         end
       end
     end
@@ -117,8 +117,6 @@ module Bosh::Cli
     def in_staging_dir
       Dir.chdir(staging_dir) { yield }
     end
-
-    private
 
     def safe_temp_file(prefix, suffix, dir = Dir.tmpdir)
       Dir::Tmpname.create([prefix, suffix], dir) do |tmpname, _, _|

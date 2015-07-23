@@ -5,7 +5,7 @@ require 'bosh/stemcell/archive_filename'
 require 'bosh/stemcell/definition'
 
 module Bosh
-  module Aws
+  module AwsCliPlugin
     BootstrapError = Class.new(StandardError)
 
     class BoshBootstrap < Bootstrap
@@ -64,7 +64,7 @@ This command should be used for bootstrapping bosh from scratch.
           vpc_config = load_yaml_file(vpc_receipt_filename)
           route53_config = load_yaml_file(route53_receipt_filename)
           bosh_rds_config = load_yaml_file(bosh_rds_receipt_filename)
-          @manifest = Bosh::Aws::BoshManifest.new(vpc_config, route53_config, director.uuid, bosh_rds_config, options)
+          @manifest = Bosh::AwsCliPlugin::BoshManifest.new(vpc_config, route53_config, director.uuid, bosh_rds_config, options)
         end
 
         @manifest
@@ -153,7 +153,7 @@ This command should be used for bootstrapping bosh from scratch.
       end
 
       def bosh_version
-        env['BOSH_VERSION_OVERRIDE'] || Bosh::Aws::VERSION.split('.')[1]
+        env['BOSH_VERSION_OVERRIDE'] || Bosh::AwsCliPlugin::VERSION.split('.')[1]
       end
     end
   end

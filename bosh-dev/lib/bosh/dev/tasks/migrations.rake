@@ -50,7 +50,7 @@ namespace :migrations do
 
       require 'bosh_cli_plugin_aws/migration_helper'
 
-      Bosh::Aws::MigrationHelper.generate_migration_file(name)
+      Bosh::AwsCliPlugin::MigrationHelper.generate_migration_file(name)
     end
   end
 end

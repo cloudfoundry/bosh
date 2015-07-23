@@ -1,4 +1,4 @@
-module Bosh::Aws
+module Bosh::AwsCliPlugin
   class ELB
     class BadCertificateError < RuntimeError;
     end

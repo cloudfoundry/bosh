@@ -1,5 +1,5 @@
 module Bosh
-  module Aws
+  module AwsCliPlugin
     module MigrationHelper
       class Template
         attr_reader :timestamp_string, :name, :class_name

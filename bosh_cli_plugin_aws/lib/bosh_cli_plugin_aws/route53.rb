@@ -1,5 +1,5 @@
 module Bosh
-  module Aws
+  module AwsCliPlugin
     class Route53
 
       def initialize(credentials)

@@ -1,5 +1,5 @@
 module Bosh
-  module Aws
+  module AwsCliPlugin
     class Migration
 
       attr_reader :s3, :elb, :ec2, :rds, :route53, :logger, :config

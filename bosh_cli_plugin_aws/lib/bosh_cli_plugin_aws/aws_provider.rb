@@ -1,5 +1,5 @@
 module Bosh
-  module Aws
+  module AwsCliPlugin
     class AwsProvider
       attr_reader :credentials
 

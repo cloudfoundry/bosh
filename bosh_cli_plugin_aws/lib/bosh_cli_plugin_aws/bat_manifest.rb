@@ -1,7 +1,7 @@
 require 'net/http'
 
 module Bosh
-  module Aws
+  module AwsCliPlugin
     class BatManifest < MicroboshManifest
       attr_reader :stemcell_version, :director_uuid, :stemcell_name
 

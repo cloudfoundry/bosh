@@ -1,5 +1,5 @@
 module Bosh
-  module Aws
+  module AwsCliPlugin
     class Bootstrap
       AWS_JENKINS_BUCKET = "bosh-jenkins-artifacts"
 

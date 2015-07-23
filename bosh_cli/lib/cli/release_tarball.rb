@@ -6,11 +6,20 @@ module Bosh::Cli
     attr_reader :release_name, :jobs, :packages, :version
     attr_reader :skipped, :unpack_dir # Mostly for tests
 
+    @compiled_release = false
+    @packages_folder = "packages"
+
     def initialize(tarball_path)
       @tarball_path = File.expand_path(tarball_path, Dir.pwd)
       @unpack_dir   = Dir.mktmpdir
       @jobs = []
       @packages = []
+
+      if compiled_release?
+        @packages_folder = "compiled_packages"
+      else
+        @packages_folder = "packages"
+      end
     end
 
     # Unpacks tarball to @unpack_dir, returns true if succeeded, false if failed
@@ -34,6 +43,11 @@ module Bosh::Cli
       return nil unless valid?
       unpack
       File.read(File.join(@unpack_dir, "release.MF"))
+    end
+
+    def compiled_release?
+      unpack
+      File.exists?(File.expand_path("compiled_packages", @unpack_dir))
     end
 
     def replace_manifest(hash)
@@ -91,7 +105,7 @@ module Bosh::Cli
 
       manifest = load_yaml_file(File.join(@unpack_dir, "release.MF"))
 
-      local_packages = manifest["packages"]
+      local_packages = manifest[@packages_folder]
       local_jobs = manifest["jobs"]
 
       @skipped = 0
@@ -99,7 +113,8 @@ module Bosh::Cli
       Dir.chdir(@unpack_dir) do
         local_packages.each do |package|
           say("#{package["name"]} (#{package["version"]})".ljust(30), " ")
-          if package_matches.include?(package["sha1"]) ||
+
+          if  package_matches and package_matches.include?(package["sha1"]) ||
              (package["fingerprint"] &&
               package_matches.include?(package["fingerprint"]))
             say("SKIP".make_green)
@@ -157,15 +172,14 @@ module Bosh::Cli
       @version = manifest["version"].to_s
 
       # Check packages
-      total_packages = manifest["packages"].size
+      total_packages = manifest[@packages_folder].size
       available_packages = {}
 
-      manifest["packages"].each_with_index do |package, i|
+      manifest[@packages_folder].each_with_index do |package, i|
         @packages << package
         name, version = package['name'], package['version']
 
-        package_file   = File.expand_path(name + ".tgz",
-                                          @unpack_dir + "/packages")
+        package_file   = File.expand_path(name + ".tgz", File.join(@unpack_dir, @packages_folder))
         package_exists = File.exists?(package_file)
 
         step("Read package '%s' (%d of %d)" % [name, i+1, total_packages],
@@ -190,7 +204,7 @@ module Bosh::Cli
         step("Package dependencies",
              "Package dependencies couldn't be resolved") do
           begin
-            tsort_packages(manifest["packages"].inject({}) { |h, p|
+            tsort_packages(manifest[@packages_folder].inject({}) { |h, p|
               h[p["name"]] = p["dependencies"] || []; h })
             true
           rescue Bosh::Cli::CircularDependency,
@@ -328,11 +342,11 @@ module Bosh::Cli
 
       say("\nPackages")
 
-      if manifest["packages"].empty?
+      if manifest[@packages_folder].empty?
         say("  - none")
       end
 
-      for package in manifest["packages"]
+      for package in manifest[@packages_folder]
         say("  - #{package["name"]} (#{package["version"]})")
       end
 

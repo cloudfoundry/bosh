@@ -15,10 +15,10 @@ module Bosh::Dev::Aws
       )
     end
 
-    before { allow(Bosh::Aws::MicroboshManifest).to receive_messages(new: manifest) }
+    before { allow(Bosh::AwsCliPlugin::MicroboshManifest).to receive_messages(new: manifest) }
     let(:manifest) do
       instance_double(
-        'Bosh::Aws::MicroboshManifest',
+        'Bosh::AwsCliPlugin::MicroboshManifest',
         name: 'fake-name',
         access_key_id: 'fake-access-key-id',
         secret_access_key: 'fake-secret-access-key',
@@ -47,7 +47,7 @@ module Bosh::Dev::Aws
       it 'loads manifest based on proper receipts' do
         expect(YAML).to receive(:load_file).with('fake_vpc_outfile_path').and_return('vpc-receipt' => true)
         expect(YAML).to receive(:load_file).with('fake_route53_outfile_path').and_return('route53-receipt' => true)
-        expect(Bosh::Aws::MicroboshManifest).to receive(:new).with(
+        expect(Bosh::AwsCliPlugin::MicroboshManifest).to receive(:new).with(
           { 'vpc-receipt' => true },
           { 'route53-receipt' => true },
           { hm_director_user: 'admin', hm_director_password: 'admin' },

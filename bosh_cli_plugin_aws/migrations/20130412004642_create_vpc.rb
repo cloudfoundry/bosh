@@ -1,10 +1,10 @@
-class CreateVpc < Bosh::Aws::Migration
+class CreateVpc < Bosh::AwsCliPlugin::Migration
   def execute
     receipt = {}
 
     receipt["aws"] = config["aws"]
 
-    vpc = Bosh::Aws::VPC.create(ec2, config["vpc"]["cidr"], config["vpc"]["instance_tenancy"])
+    vpc = Bosh::AwsCliPlugin::VPC.create(ec2, config["vpc"]["cidr"], config["vpc"]["instance_tenancy"])
     receipt["vpc"] = {"id" => vpc.vpc_id, "domain" => config["vpc"]["domain"]}
 
     receipt["original_configuration"] = config
@@ -44,7 +44,7 @@ class CreateVpc < Bosh::Aws::Migration
     dhcp_options = config["vpc"]["dhcp_options"]
     say "creating DHCP options"
     vpc.create_dhcp_options(dhcp_options)
-  rescue Bosh::Aws::ELB::BadCertificateError => e
+  rescue Bosh::AwsCliPlugin::ELB::BadCertificateError => e
     err e.message
   ensure
     save_receipt("aws_vpc_receipt", receipt)

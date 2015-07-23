@@ -1,4 +1,4 @@
-class CreateS3 < Bosh::Aws::Migration
+class CreateS3 < Bosh::AwsCliPlugin::Migration
   def execute
   end
 end

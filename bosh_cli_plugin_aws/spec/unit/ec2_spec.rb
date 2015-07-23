@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-describe Bosh::Aws::EC2 do
+describe Bosh::AwsCliPlugin::EC2 do
   let(:aws_region) { 'ap-southeast-1' }
-  let(:expected_nat_ami) { Bosh::Aws::EC2::NAT_AMI_ID[aws_region] }
+  let(:expected_nat_ami) { Bosh::AwsCliPlugin::EC2::NAT_AMI_ID[aws_region] }
 
   subject(:ec2) { described_class.new({'region' => aws_region}) }
 

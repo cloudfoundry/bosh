@@ -3,9 +3,10 @@ require 'bosh/director'
 
 module Bosh::Director
   class CompiledReleaseManifest
-    def initialize(compiled_package_group, templates)
+    def initialize(compiled_package_group, templates, stemcell)
       @compiled_packages = compiled_package_group
       @templates = templates
+      @stemcell = stemcell
     end
 
     def generate_manifest
@@ -17,6 +18,7 @@ module Bosh::Director
           'version' => compiled_package.package.version,
           'fingerprint' => compiled_package.package.fingerprint,
           'sha1' => compiled_package.sha1,
+          'stemcell' => "#{@stemcell.operating_system}/#{@stemcell.version}",
           'dependencies' => get_dependencies(compiled_package),
         }
       end

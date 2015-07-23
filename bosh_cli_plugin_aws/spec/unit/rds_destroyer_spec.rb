@@ -1,19 +1,19 @@
 require 'spec_helper'
 
-module Bosh::Aws
+module Bosh::AwsCliPlugin
   describe RdsDestroyer do
-    subject(:rds_destroyer) { Bosh::Aws::RdsDestroyer.new(ui, config) }
+    subject(:rds_destroyer) { Bosh::AwsCliPlugin::RdsDestroyer.new(ui, config) }
     let(:ui) { instance_double('Bosh::Cli::Command::AWS') }
     let(:config) { { 'aws' => { fake: 'aws config' } } }
 
     before { allow(rds_destroyer).to receive(:sleep) }
 
     describe '#delete_all' do
-      before { allow(Bosh::Aws::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
-      let(:ec2) { instance_double('Bosh::Aws::EC2') }
+      before { allow(Bosh::AwsCliPlugin::EC2).to receive(:new).with(fake: 'aws config').and_return(ec2) }
+      let(:ec2) { instance_double('Bosh::AwsCliPlugin::EC2') }
 
-      before { allow(Bosh::Aws::RDS).to receive(:new).and_return(rds) }
-      let(:rds) { instance_double('Bosh::Aws::RDS') }
+      before { allow(Bosh::AwsCliPlugin::RDS).to receive(:new).and_return(rds) }
+      let(:rds) { instance_double('Bosh::AwsCliPlugin::RDS') }
 
       context 'when there is at least 1 database' do
         before { allow(rds).to receive_messages(databases: [], database_names: { 'i1' => 'db1-name', 'i2' => 'db2-name' }) }

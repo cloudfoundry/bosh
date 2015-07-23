@@ -42,7 +42,7 @@ describe CreateBoshRdsDb do
 
   it "does not create the bosh rds if it already exists" do
     expect(rds).to receive(:database_exists?).with("bosh").and_return(true)
-    expect(Bosh::Aws::MigrationHelper::RdsDb).to receive(:deployment_properties).and_return({})
+    expect(Bosh::AwsCliPlugin::MigrationHelper::RdsDb).to receive(:deployment_properties).and_return({})
 
     create_database_params = ["bosh", ["subnet-xxxxxxx5", "subnet-xxxxxxx6"], "vpc-13724979"]
     expect(rds).not_to receive(:create_database).with(*create_database_params)

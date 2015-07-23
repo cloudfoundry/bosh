@@ -235,7 +235,7 @@ module Bosh::Director
           allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
 
               files = Dir.entries(download_dir)
-              expect(files).to include('compiled_packages', 'compiled_release.MF', 'jobs')
+              expect(files).to include('compiled_packages', 'release.MF', 'jobs')
 
               files = Dir.entries(File.join(download_dir, 'compiled_packages'))
               expect(files).to include('postgres.tgz')
@@ -256,7 +256,7 @@ module Bosh::Director
         it 'creates a manifest file that contains the sha1, fingerprint and blobstore_id' do
           allow(archiver).to receive(:compress) { |download_dir, sources, output_path|
 
-             manifest_file = File.open(File.join(download_dir, 'compiled_release.MF'), 'r')
+             manifest_file = File.open(File.join(download_dir, 'release.MF'), 'r')
              manifest_file_content = manifest_file.read
 
              File.write(output_path, 'Some glorious content')
@@ -267,11 +267,13 @@ compiled_packages:
   version: ruby_version
   fingerprint: ruby_fingerprint
   sha1: ruby_compiled_package_sha1
+  stemcell: stemcell_os/stemcell_version
   dependencies: []
 - name: postgres
   version: postgres_version
   fingerprint: postgres_fingerprint
   sha1: postgres_compiled_package_sha1
+  stemcell: stemcell_os/stemcell_version
   dependencies:
   - ruby
 jobs:

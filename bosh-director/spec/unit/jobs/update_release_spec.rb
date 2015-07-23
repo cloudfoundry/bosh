@@ -25,12 +25,14 @@ module Bosh::Director
           'name' => 'appcloud',
           'version' => release_version,
           'jobs' => manifest_jobs,
-          'packages' => manifest_packages
+          'packages' => manifest_packages,
+          'compiled_packages' => manifest_compiled_packages
         }
       end
       let(:release_version) { '42+dev.6' }
       let(:release) { Models::Release.make(name: 'appcloud') }
       let(:manifest_packages) { [] }
+      let(:manifest_compiled_packages) { [] }
       let(:manifest_jobs) { [] }
       before { allow(job).to receive(:with_release_lock).and_yield }
 
@@ -54,6 +56,7 @@ module Bosh::Director
           expect(job).to receive(:extract_release)
           expect(job).to receive(:verify_manifest)
           expect(job).to receive(:process_release)
+
           job.perform
         end
       end
@@ -364,6 +367,62 @@ module Bosh::Director
           expect(Models::Template.all.map(&:name)).to match_array(['fake-job-1', 'fake-job-2'])
         end
       end
+
+      context 'when compiled release is uploaded' do
+        let(:manifest_jobs) do
+          [
+              {
+                  'name' => 'fake-job-1',
+                  'version' => 'fake-version-1',
+                  'sha1' => 'fake-sha1-1',
+                  'fingerprint' => 'fake-fingerprint-1',
+                  'templates' => {}
+              },
+              {
+                  'name' => 'fake-job-2',
+                  'version' => 'fake-version-2',
+                  'sha1' => 'fake-sha1-2',
+                  'fingerprint' => 'fake-fingerprint-2',
+                  'templates' => {}
+              }
+          ]
+        end
+
+        let(:manifest_compiled_packages) do
+          [
+              {
+                  'sha1' => 'fake-sha-1',
+                  'fingerprint' => 'fake-fingerprint-1',
+                  'name' => 'fake-name-1',
+                  'version' => 'fake-version-1'
+              },
+              {
+                  'sha1' => 'fake-sha-2',
+                  'fingerprint' => 'fake-fingerprint-2',
+                  'name' => 'fake-name-2',
+                  'version' => 'fake-version-2'
+              }
+          ]
+        end
+
+        let(:job_options) { {'compiled' => true, 'remote' => false} }
+
+        before do
+          # @job = Jobs::UpdateRelease.new(@release_path, @job_options)
+          allow(blobstore).to receive(:create)
+          allow(job).to receive(:register_package)
+        end
+
+        it 'should process packages for compiled release' do
+          expect(job).to_not receive(:create_package)
+          expect(job).to receive(:create_package_for_compiled_release).twice
+          expect(job).to receive(:register_template).twice
+          expect(job).to receive(:create_job).twice
+
+          job.perform
+        end
+      end
+
     end
 
     describe 'rebasing release' do
@@ -626,6 +685,35 @@ module Bosh::Director
         expect {
           @job.perform
         }.to raise_error(/Rebase is attempted without any job or package change/)
+      end
+    end
+
+    describe 'create_package_for_compiled_release' do
+      let(:release_dir) { Dir.mktmpdir }
+      after { FileUtils.rm_rf(release_dir) }
+
+      before do
+        @release = Models::Release.make
+        @job = Jobs::UpdateRelease.new(release_dir)
+        @job.release_model = @release
+        @job.instance_variable_set(:@compiled_release, true)
+      end
+
+      it 'should create simple packages without blobstore_id or sha1' do
+        @job.create_package_for_compiled_release({
+                                'name' => 'test_package',
+                                'version' => '1.0',
+                                'sha1' => nil,
+                                'dependencies' => %w(foo_package bar_package)
+                            }, release_dir)
+
+        package = Models::Package[name: 'test_package', version: '1.0']
+        expect(package).not_to be_nil
+        expect(package.name).to eq('test_package')
+        expect(package.version).to eq('1.0')
+        expect(package.release).to eq(@release)
+        expect(package.sha1).to be_nil
+        expect(package.blobstore_id).to be_nil
       end
     end
 

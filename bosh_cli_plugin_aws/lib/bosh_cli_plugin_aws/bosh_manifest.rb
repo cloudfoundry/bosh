@@ -1,5 +1,5 @@
 module Bosh
-  module Aws
+  module AwsCliPlugin
     class BoshManifest < MicroboshManifest
 
       attr_reader :director_uuid, :rds_receipt

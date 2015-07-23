@@ -1,12 +1,12 @@
 require 'spec_helper'
 
-describe Bosh::Aws::ELB do
+describe Bosh::AwsCliPlugin::ELB do
   let(:creds) { { 'my' => 'creds', 'region' => 'FAKE_AWS_REGION' } }
   let(:elb) { described_class.new(creds) }
-  let(:ec2) { Bosh::Aws::EC2.new({}) }
+  let(:ec2) { Bosh::AwsCliPlugin::EC2.new({}) }
   let(:fake_aws_security_group) { double('security_group', id: 'sg_id', name: 'security_group_name') }
   let(:fake_aws_vpc) { double('vpc', security_groups: [fake_aws_security_group]) }
-  let(:vpc) { Bosh::Aws::VPC.new(ec2, fake_aws_vpc) }
+  let(:vpc) { Bosh::AwsCliPlugin::VPC.new(ec2, fake_aws_vpc) }
   let(:fake_aws_elb) { double(AWS::ELB, load_balancers: double) }
   let(:certificates) { [] }
   let(:fake_aws_iam) { double(AWS::IAM, server_certificates: certificates) }
@@ -159,7 +159,7 @@ describe Bosh::Aws::ELB do
               'domain' => 'dev102.cf.com'
             }, certs)
           }.to raise_error(
-            Bosh::Aws::ELB::BadCertificateError,
+            Bosh::AwsCliPlugin::ELB::BadCertificateError,
             /Unable to upload ELB SSL Certificate.*BEGIN CERTIFICATE/m
           )
         end

@@ -1,8 +1,8 @@
-class UpdateElbForWebsockets < Bosh::Aws::Migration
+class UpdateElbForWebsockets < Bosh::AwsCliPlugin::Migration
   def execute
     validate_receipt
 
-    vpc = Bosh::Aws::VPC.find(ec2, vpc_id)
+    vpc = Bosh::AwsCliPlugin::VPC.find(ec2, vpc_id)
     security_group = vpc.security_group_by_name(cfrouter_security_group_name)
 
     params = {"protocol" => "tcp", "ports" => "4443", "sources" => "0.0.0.0/0"}
@@ -61,7 +61,7 @@ class UpdateElbForWebsockets < Bosh::Aws::Migration
 
   class WebSocketElbHelpers
     def self.find_security_group_by_name(ec2, vpc_id, name)
-      vpc = Bosh::Aws::VPC.find(ec2, vpc_id)
+      vpc = Bosh::AwsCliPlugin::VPC.find(ec2, vpc_id)
       security_group = vpc.security_group_by_name(name)
 
       err("AWS reports that security group #{name} does not exist") unless security_group

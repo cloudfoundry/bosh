@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Bosh::Aws::BoshManifest do
+describe Bosh::AwsCliPlugin::BoshManifest do
   let(:vpc_receipt) { Psych.load_file(asset "test-output.yml") }
   let(:route53_receipt) { Psych.load_file(asset "test-aws_route53_receipt.yml") }
   let(:rds_receipt) { Psych.load_file(asset "test-aws_rds_bosh_receipt.yml") }

@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Bosh::Aws::RDS do
+describe Bosh::AwsCliPlugin::RDS do
   subject(:rds) { described_class.new({}) }
   let(:db_instance_1) { instance_double('AWS::RDS::DBInstance', name: 'bosh_db', id: "db1") }
   let(:db_instance_2) { instance_double('AWS::RDS::DBInstance', name: 'cc_db', id: "db2") }
@@ -69,10 +69,10 @@ describe Bosh::Aws::RDS do
   end
 
   describe "create_vpc_db_security_group" do
-    let(:fake_vpc) { instance_double('Bosh::Aws::VPC', cidr_block: '1.2.3.4/0') }
+    let(:fake_vpc) { instance_double('Bosh::AwsCliPlugin::VPC', cidr_block: '1.2.3.4/0') }
 
     it "should delegate the VPC object to create a DB-friendly security group" do
-      allow(Bosh::Aws::VPC).to receive_messages(new: fake_vpc)
+      allow(Bosh::AwsCliPlugin::VPC).to receive_messages(new: fake_vpc)
 
       expected_parameters = {
           "name" => "seeseedeebee",
@@ -220,12 +220,12 @@ describe Bosh::Aws::RDS do
     end
 
     context "when the security group doesn't exist" do
-      let(:bosh_aws_vpc) { instance_double('Bosh::Aws::VPC', cidr_block: '1.2.3.4/0')}
+      let(:bosh_aws_vpc) { instance_double('Bosh::AwsCliPlugin::VPC', cidr_block: '1.2.3.4/0')}
 
       before do
         expect(bosh_aws_vpc).to receive(:security_group_by_name).twice.and_return(nil, fake_aws_security_group)
 
-        allow(Bosh::Aws::VPC).to receive_messages(find: bosh_aws_vpc)
+        allow(Bosh::AwsCliPlugin::VPC).to receive_messages(find: bosh_aws_vpc)
       end
 
       it "should create the security group for the DB" do

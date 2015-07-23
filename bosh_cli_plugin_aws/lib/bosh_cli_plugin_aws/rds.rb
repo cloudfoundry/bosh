@@ -1,7 +1,7 @@
 require "securerandom"
 
 module Bosh
-  module Aws
+  module AwsCliPlugin
     class RDS
       DEFAULT_RDS_OPTIONS = {
           :allocated_storage => 5,
@@ -20,7 +20,7 @@ module Bosh
 
       def create_database(name, subnet_ids, vpc_id, options = {})
         create_db_parameter_group('utf8')
-        vpc = Bosh::Aws::VPC.find(Bosh::Aws::EC2.new(@credentials), vpc_id)
+        vpc = Bosh::AwsCliPlugin::VPC.find(Bosh::AwsCliPlugin::EC2.new(@credentials), vpc_id)
         create_vpc_db_security_group(vpc, name) if vpc.security_group_by_name(name).nil?
         create_subnet_group(name, subnet_ids) unless subnet_group_exists?(name)
 

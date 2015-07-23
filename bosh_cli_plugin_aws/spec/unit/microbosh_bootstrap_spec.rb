@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Bosh::Aws::MicroBoshBootstrap do
+describe Bosh::AwsCliPlugin::MicroBoshBootstrap do
   let(:hm_director_account_options) { {hm_director_user: 'hm', hm_director_password: 'hmpasswd'} }
   let(:bootstrap) { described_class.new(nil, hm_director_account_options) }
 
@@ -38,7 +38,7 @@ describe Bosh::Aws::MicroBoshBootstrap do
       allow_any_instance_of(Bosh::Cli::Command::Micro).to receive(:perform)
       allow_any_instance_of(Bosh::Cli::Command::User).to receive(:create)
       allow_any_instance_of(Bosh::Cli::Command::Login).to receive(:login)
-      allow_any_instance_of(Bosh::Aws::MicroBoshBootstrap).to receive(:micro_ami).and_return("ami-123456")
+      allow_any_instance_of(Bosh::AwsCliPlugin::MicroBoshBootstrap).to receive(:micro_ami).and_return("ami-123456")
     end
 
     around do |example|

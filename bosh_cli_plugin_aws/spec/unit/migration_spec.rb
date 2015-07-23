@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Bosh::Aws::Migration do
+describe Bosh::AwsCliPlugin::Migration do
   let(:config) do
     {"aws" => {}}
   end
@@ -11,7 +11,7 @@ describe Bosh::Aws::Migration do
   end
 
   before do
-    allow(Bosh::Aws::S3).to receive_messages(new: s3)
+    allow(Bosh::AwsCliPlugin::S3).to receive_messages(new: s3)
   end
 
   around do |example|
@@ -55,10 +55,10 @@ describe Bosh::Aws::Migration do
     ec2 = double("EC2")
     route53 = double("Route53")
 
-    expect(Bosh::Aws::S3).to receive(:new).with(config["aws"]).and_return(s3)
-    expect(Bosh::Aws::ELB).to receive(:new).with(config["aws"]).and_return(elb)
-    expect(Bosh::Aws::EC2).to receive(:new).with(config["aws"]).and_return(ec2)
-    expect(Bosh::Aws::Route53).to receive(:new).with(config["aws"]).and_return(route53)
+    expect(Bosh::AwsCliPlugin::S3).to receive(:new).with(config["aws"]).and_return(s3)
+    expect(Bosh::AwsCliPlugin::ELB).to receive(:new).with(config["aws"]).and_return(elb)
+    expect(Bosh::AwsCliPlugin::EC2).to receive(:new).with(config["aws"]).and_return(ec2)
+    expect(Bosh::AwsCliPlugin::Route53).to receive(:new).with(config["aws"]).and_return(route53)
 
     migration = described_class.new(config, 'bucket')
     expect(migration.ec2).to eq(ec2)

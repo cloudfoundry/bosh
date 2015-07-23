@@ -1,4 +1,4 @@
-class CreateMoreUniqueS3Buckets < Bosh::Aws::Migration
+class CreateMoreUniqueS3Buckets < Bosh::AwsCliPlugin::Migration
   def s3_safe_full_domain_name
     config['vpc']['domain'].gsub(".","-")
   end

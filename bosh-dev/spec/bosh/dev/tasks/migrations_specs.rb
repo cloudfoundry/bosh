@@ -24,8 +24,8 @@ describe 'migrations:aws:new' do
     allow(Time).to receive(:new).and_return(timestamp)
 
     @tempdir = Dir.mktmpdir
-    allow(Bosh::Aws::MigrationHelper).to receive(:aws_migration_directory).and_return(@tempdir)
-    allow(Bosh::Aws::MigrationHelper).to receive(:aws_spec_migration_directory).and_return(@tempdir)
+    allow(Bosh::AwsCliPlugin::MigrationHelper).to receive(:aws_migration_directory).and_return(@tempdir)
+    allow(Bosh::AwsCliPlugin::MigrationHelper).to receive(:aws_spec_migration_directory).and_return(@tempdir)
   end
 
   after do
@@ -41,7 +41,7 @@ describe 'migrations:aws:new' do
 
     expect(File.exists?("#{@tempdir}/#{timestamp_string}_#{name}.rb")).to be(true)
     expect(File.read("#{@tempdir}/#{timestamp_string}_#{name}.rb")).to eq <<-H
-class CoolMigration < Bosh::Aws::Migration
+class CoolMigration < Bosh::AwsCliPlugin::Migration
   def execute
 
   end

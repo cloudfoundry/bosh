@@ -49,7 +49,7 @@ module Bosh::Director
               )
               package_compile_step.perform
 
-              tarball_state = create_tarball(@release_version, @stemcell)
+              tarball_state = create_tarball
               result_file.write(tarball_state.to_json + "\n")
 
             end
@@ -75,13 +75,6 @@ module Bosh::Director
       def create_planner
         modified_deployment_manifest = Psych.load(@targeted_deployment.manifest)
         cloud_config_model = @targeted_deployment.cloud_config
-        network_name = cloud_config_model.manifest['networks'][0]['name']
-
-        fake_resource_pool_manifest = {
-            "name" => "just_for_compiling",
-            "network" => network_name,
-            "stemcell" => { "name" => @stemcell.name, "version" => @stemcell.version }
-        }
 
         planner_factory = DeploymentPlan::PlannerFactory.create(Config.event_log, Config.logger)
         planner = planner_factory.planner_without_vm_binding(
@@ -89,6 +82,13 @@ module Bosh::Director
             cloud_config_model,
             {}
         )
+        network_name = planner.networks.first.name
+
+        fake_resource_pool_manifest = {
+            "name" => "just_for_compiling",
+            "network" => network_name,
+            "stemcell" => { "name" => @stemcell.name, "version" => @stemcell.version }
+        }
 
         resource_pool = DeploymentPlan::ResourcePool.new(planner, fake_resource_pool_manifest, Config.logger)
         planner.add_resource_pool(resource_pool)
@@ -100,23 +100,23 @@ module Bosh::Director
         planner
       end
 
-      def create_tarball(release_version, stemcell)
+      def create_tarball
 
         blobstore_client = Bosh::Director::App.instance.blobstores.blobstore
 
-        compiled_packages_group = CompiledPackageGroup.new(release_version, stemcell)
-        templates = release_version.templates.map
+        compiled_packages_group = CompiledPackageGroup.new(@release_version, @stemcell)
+        templates = @release_version.templates.map
 
         compiled_release_downloader = CompiledReleaseDownloader.new(compiled_packages_group, templates, blobstore_client)
         download_dir = compiled_release_downloader.download
 
-        manifest = CompiledReleaseManifest.new(compiled_packages_group, templates)
-        manifest.write(File.join(download_dir, 'compiled_release.MF'))
+        manifest = CompiledReleaseManifest.new(compiled_packages_group, templates, @stemcell)
+        manifest.write(File.join(download_dir, 'release.MF'))
 
         output_path = File.join(download_dir, "compiled_release_#{Time.now.to_f}.tar.gz")
         archiver = Core::TarGzipper.new
 
-        archiver.compress(download_dir, ['compiled_packages', 'jobs', 'compiled_release.MF'], output_path)
+        archiver.compress(download_dir, ['compiled_packages', 'jobs', 'release.MF'], output_path)
         tarball_file = File.open(output_path, 'r')
 
         oid = blobstore_client.create(tarball_file)
@@ -126,7 +126,7 @@ module Bosh::Director
             :sha1 => Digest::SHA1.file(output_path).hexdigest,
         }
       ensure
-        compiled_release_downloader.cleanup
+        compiled_release_downloader.cleanup unless compiled_release_downloader.nil?
       end
 
       def create_fake_job(planner, fake_resource_pool_manifest, network_name)

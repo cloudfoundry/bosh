@@ -1,5 +1,5 @@
 module Bosh
-  module Aws
+  module AwsCliPlugin
     class Migrator
 
       def initialize(config)
@@ -45,7 +45,7 @@ module Bosh
       attr_reader :migration_path
 
       def aws_s3
-        @aws_s3 ||= Bosh::Aws::S3.new(@config['aws'])
+        @aws_s3 ||= Bosh::AwsCliPlugin::S3.new(@config['aws'])
       end
 
       def ensure_bucket_exists

@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Bosh::Aws::VPC do
+describe Bosh::AwsCliPlugin::VPC do
   describe 'VPC' do
     describe 'creation' do
       it 'can create a VPC given a cidr and instance_tenancy' do
@@ -33,7 +33,7 @@ describe Bosh::Aws::VPC do
         expect(fake_aws_vpc).to receive :delete
         expect(fake_aws_vpc).to receive(:state).and_raise(AWS::EC2::Errors::InvalidVpcID::NotFound)
 
-        Bosh::Aws::VPC.new(double('ec2'), fake_aws_vpc).delete_vpc
+        Bosh::AwsCliPlugin::VPC.new(double('ec2'), fake_aws_vpc).delete_vpc
       end
 
       it 'throws a nice error message when unable to delete the VPC' do
@@ -42,7 +42,7 @@ describe Bosh::Aws::VPC do
         expect(fake_aws_vpc).to receive(:delete).and_raise(::AWS::EC2::Errors::DependencyViolation)
 
         expect {
-          Bosh::Aws::VPC.new(double('ec2'), fake_aws_vpc).delete_vpc
+          Bosh::AwsCliPlugin::VPC.new(double('ec2'), fake_aws_vpc).delete_vpc
         }.to raise_error('boshIsFun has dependencies that this tool does not delete')
       end
     end
@@ -52,7 +52,7 @@ describe Bosh::Aws::VPC do
     describe 'creation' do
       let(:fake_aws_vpc) { double('aws_vpc', subnets: double('subnets')) }
       let(:fake_ec2) { double('ec2') }
-      let(:vpc) { Bosh::Aws::VPC.new(fake_ec2, fake_aws_vpc).tap { |v| allow(v).to receive(:sleep) } }
+      let(:vpc) { Bosh::AwsCliPlugin::VPC.new(fake_ec2, fake_aws_vpc).tap { |v| allow(v).to receive(:sleep) } }
       let(:sub1) { double('sub1', id: 'amz-sub1') }
       let(:tables) { double('route_tables') }
       let(:new_table) { double('route_table') }
@@ -87,7 +87,7 @@ describe Bosh::Aws::VPC do
 
         fake_aws_vpc.subnets.each { |subnet| expect(subnet).to receive :delete }
 
-        Bosh::Aws::VPC.new(double('ec2'), fake_aws_vpc).delete_subnets
+        Bosh::AwsCliPlugin::VPC.new(double('ec2'), fake_aws_vpc).delete_subnets
       end
     end
 
@@ -100,7 +100,7 @@ describe Bosh::Aws::VPC do
         allow(sub2).to receive(:tags).and_return('Name' => 'name2')
         expect(fake_aws_vpc).to receive(:subnets).and_return([sub1, sub2])
 
-        expect(Bosh::Aws::VPC.new(double('ec2'), fake_aws_vpc).subnets).to eq({'name1' => 'sub-1', 'name2' => 'sub-2'})
+        expect(Bosh::AwsCliPlugin::VPC.new(double('ec2'), fake_aws_vpc).subnets).to eq({'name1' => 'sub-1', 'name2' => 'sub-2'})
       end
     end
 
@@ -122,7 +122,7 @@ describe Bosh::Aws::VPC do
             }
         }
 
-        vpc = Bosh::Aws::VPC.new(double('ec2'), fake_aws_vpc)
+        vpc = Bosh::AwsCliPlugin::VPC.new(double('ec2'), fake_aws_vpc)
         expect(vpc.extract_nat_instance_specs(subnet_specs)).to eq([{'foo' => 'bar', 'subnet_id' => 'sub-123', 'name' => 'naim'}])
       end
 
@@ -130,9 +130,9 @@ describe Bosh::Aws::VPC do
         bosh_subnet = double('aws_subnet', tags: {'Name' => 'bosh'}, id: 'sub-123')
         cf_subnet = double('aws_subnet', tags: {'Name' => 'cf'}, id: 'sub-456')
         cf2_subnet = double('aws_subnet', tags: {'Name' => 'cf2'}, id: 'sub-789')
-        fake_ec2 = double(Bosh::Aws::EC2)
+        fake_ec2 = double(Bosh::AwsCliPlugin::EC2)
         fake_aws_vpc = double('aws_vpc', subnets: [bosh_subnet, cf_subnet, cf2_subnet])
-        vpc = Bosh::Aws::VPC.new(fake_ec2, fake_aws_vpc)
+        vpc = Bosh::AwsCliPlugin::VPC.new(fake_ec2, fake_aws_vpc)
 
         expect(fake_ec2).to receive(:create_nat_instance).with(
             'name' => 'naim',
@@ -193,7 +193,7 @@ describe Bosh::Aws::VPC do
             {'protocol' => :tcp, 'ports' => '22', 'sources' => '1.2.3.0/24'},
             {'protocol' => :tcp, 'ports' => '23', 'sources' => '1.2.4.0/24'}
         ]
-        Bosh::Aws::VPC.new(double('ec2'), double('aws_vpc', security_groups: security_groups)).
+        Bosh::AwsCliPlugin::VPC.new(double('ec2'), double('aws_vpc', security_groups: security_groups)).
             create_security_groups ['name' => 'sg', 'ingress' => ingress_rules]
       end
 
@@ -208,7 +208,7 @@ describe Bosh::Aws::VPC do
         ingress_rules = [
             {'protocol' => :tcp, 'ports' => '5 - 60', 'sources' => '1.2.3.0/24'}
         ]
-        Bosh::Aws::VPC.new(double('ec2'), double('aws_vpc', security_groups: security_groups)).
+        Bosh::AwsCliPlugin::VPC.new(double('ec2'), double('aws_vpc', security_groups: security_groups)).
             create_security_groups ['name' => 'sg', 'ingress' => ingress_rules]
       end
 
@@ -226,7 +226,7 @@ describe Bosh::Aws::VPC do
         ingress_rules = [
             {'protocol' => :tcp, 'ports' => 22, 'sources' => '1.2.3.0/24'}
         ]
-        Bosh::Aws::VPC.new(double('ec2'), double('aws_vpc', security_groups: security_groups)).
+        Bosh::AwsCliPlugin::VPC.new(double('ec2'), double('aws_vpc', security_groups: security_groups)).
             create_security_groups ['name' => 'sg', 'ingress' => ingress_rules]
       end
 
@@ -241,7 +241,7 @@ describe Bosh::Aws::VPC do
         ingress_rules = [
             {'protocol' => :tcp, 'ports' => 22, 'sources' => '1.2.3.0/24'}
         ]
-        Bosh::Aws::VPC.new(double('ec2'), double('aws_vpc', security_groups: security_groups)).
+        Bosh::AwsCliPlugin::VPC.new(double('ec2'), double('aws_vpc', security_groups: security_groups)).
             create_security_groups ['name' => 'sg', 'ingress' => ingress_rules]
       end
     end
@@ -254,7 +254,7 @@ describe Bosh::Aws::VPC do
         expect(fake_special_group).to receive :delete
         expect(fake_default_group).not_to receive :delete
 
-        Bosh::Aws::VPC.new(double('ec2'), double('aws_vpc', security_groups: [fake_default_group, fake_special_group])).
+        Bosh::AwsCliPlugin::VPC.new(double('ec2'), double('aws_vpc', security_groups: [fake_default_group, fake_special_group])).
             delete_security_groups
       end
     end
@@ -263,7 +263,7 @@ describe Bosh::Aws::VPC do
       it 'can find security groups by name' do
         security_group1 = double('sg1', name: 'sg_name_1', id: 'sg_id_1')
         security_group2 = double('sg2', name: 'sg_name_2', id: 'sg_id_2')
-        vpc = Bosh::Aws::VPC.new(double('ec2'), double('aws_vpc', security_groups: [security_group1, security_group2]))
+        vpc = Bosh::AwsCliPlugin::VPC.new(double('ec2'), double('aws_vpc', security_groups: [security_group1, security_group2]))
 
         expect(vpc.security_group_by_name('sg_name_2')).to eq(security_group2)
       end
@@ -274,7 +274,7 @@ describe Bosh::Aws::VPC do
     describe 'creating for subnets' do
       context 'when the default route is an Internet gateway' do
         it 'the route table for the given subnet should have the given internet gateway as the default route' do
-          fake_ec2 = double(Bosh::Aws::EC2)
+          fake_ec2 = double(Bosh::AwsCliPlugin::EC2)
           fake_aws_internet_gateway = double(AWS::EC2::InternetGateway)
           fake_aws_subnet = double(AWS::EC2::Subnet)
           fake_aws_route_table = double(AWS::EC2::RouteTable)
@@ -288,14 +288,14 @@ describe Bosh::Aws::VPC do
           expect(fake_aws_subnet).to receive(:route_table=).with(fake_aws_route_table)
           expect(fake_aws_route_table).to receive(:create_route).with('0.0.0.0/0', internet_gateway: fake_aws_internet_gateway)
 
-          vpc = Bosh::Aws::VPC.new(fake_ec2, fake_aws_vpc)
+          vpc = Bosh::AwsCliPlugin::VPC.new(fake_ec2, fake_aws_vpc)
           vpc.make_internet_gateway_default_route_for_subnet(fake_aws_subnet)
         end
       end
 
       context 'when the default route is an instance' do
         it 'the route table for the given subnet should have the given instance as its default route' do
-          fake_ec2 = double(Bosh::Aws::EC2)
+          fake_ec2 = double(Bosh::AwsCliPlugin::EC2)
           fake_aws_subnet = double(AWS::EC2::Subnet)
           fake_aws_route_table = double(AWS::EC2::RouteTable)
           fake_aws_nat_instance = double(AWS::EC2::Instance)
@@ -308,7 +308,7 @@ describe Bosh::Aws::VPC do
           expect(fake_aws_subnet).to receive(:route_table=).with(fake_aws_route_table)
           expect(fake_aws_route_table).to receive(:create_route).with('0.0.0.0/0', instance: fake_aws_nat_instance)
 
-          vpc = Bosh::Aws::VPC.new(fake_ec2, fake_aws_vpc)
+          vpc = Bosh::AwsCliPlugin::VPC.new(fake_ec2, fake_aws_vpc)
           vpc.make_nat_instance_default_route_for_subnet(fake_aws_subnet, fake_aws_nat_instance)
         end
       end
@@ -316,7 +316,7 @@ describe Bosh::Aws::VPC do
 
     describe 'deletion' do
       it 'should delete all route tables except the main one' do
-        fake_ec2 = double(Bosh::Aws::EC2)
+        fake_ec2 = double(Bosh::AwsCliPlugin::EC2)
         fake_main_aws_route_table = double(AWS::EC2::RouteTable, main?: true)
         fake_secondary_aws_route_table = double(AWS::EC2::RouteTable, main?: false)
         fake_aws_vpc = double(
@@ -327,7 +327,7 @@ describe Bosh::Aws::VPC do
         expect(fake_main_aws_route_table).not_to receive(:delete)
         expect(fake_secondary_aws_route_table).to receive(:delete)
 
-        vpc = Bosh::Aws::VPC.new(fake_ec2, fake_aws_vpc)
+        vpc = Bosh::AwsCliPlugin::VPC.new(fake_ec2, fake_aws_vpc)
         vpc.delete_route_tables
       end
     end
@@ -342,7 +342,7 @@ describe Bosh::Aws::VPC do
         expect(fake_dhcp_option_collection).to receive(:create).with({}).and_return(fake_dhcp_options)
         expect(fake_dhcp_options).to receive(:associate).with('vpc-xxxxxxxx')
 
-        Bosh::Aws::VPC.new(
+        Bosh::AwsCliPlugin::VPC.new(
             double('ec2', dhcp_options: fake_dhcp_option_collection),
             double('aws_vpc', id: 'vpc-xxxxxxxx', dhcp_options: double('default dhcp options').as_null_object)
         ).create_dhcp_options({})
@@ -356,7 +356,7 @@ describe Bosh::Aws::VPC do
 
         expect(fake_default_dhcp_options).to receive :delete
 
-        Bosh::Aws::VPC.new(
+        Bosh::AwsCliPlugin::VPC.new(
             double('ec2', dhcp_options: fake_dhcp_option_collection),
             double('aws_vpc', id: 'vpc-xxxxxxxx', dhcp_options: fake_default_dhcp_options)
         ).create_dhcp_options({})
@@ -369,7 +369,7 @@ describe Bosh::Aws::VPC do
       fake_aws_vpc = double('aws_vpc')
       expect(fake_aws_vpc).to receive(:state).and_return('a cool state')
 
-      expect(Bosh::Aws::VPC.new(double('ec2'), fake_aws_vpc).state).to eq('a cool state')
+      expect(Bosh::AwsCliPlugin::VPC.new(double('ec2'), fake_aws_vpc).state).to eq('a cool state')
     end
   end
 
@@ -377,7 +377,7 @@ describe Bosh::Aws::VPC do
     it 'should attach to a VPC by gateway ID' do
       fake_aws_vpc = double('aws_vpc')
       expect(fake_aws_vpc).to receive(:internet_gateway=).with('gw1id')
-      Bosh::Aws::VPC.new(double('ec2'), fake_aws_vpc).attach_internet_gateway('gw1id')
+      Bosh::AwsCliPlugin::VPC.new(double('ec2'), fake_aws_vpc).attach_internet_gateway('gw1id')
     end
   end
 end
