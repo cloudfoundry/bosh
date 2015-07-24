@@ -223,8 +223,12 @@ module Bosh::Director
 
     def bind_links
       links_resolver = Bosh::Director::DeploymentPlan::LinksResolver.new(@deployment_plan, @logger)
+
+      @event_log.begin_stage('Binding links', @deployment_plan.jobs.size)
       @deployment_plan.jobs.each do |job|
-        links_resolver.resolve(job)
+        @event_log.track(job.name) do
+          links_resolver.resolve(job)
+        end
       end
     end
 

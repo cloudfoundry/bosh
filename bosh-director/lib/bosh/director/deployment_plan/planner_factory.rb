@@ -40,11 +40,13 @@ module Bosh
         end
 
         def planner_without_vm_binding(manifest_hash, cloud_config, options)
+          @event_log.begin_stage('Preparing deployment', 7)
+          @logger.info('Preparing deployment')
+
           deployment_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest_hash, cloud_config)
           name = deployment_manifest['name']
 
           deployment_model = nil
-          @event_log.begin_stage("deploying '#{name}'", total = nil, tags = [])
           @event_log.track('Binding deployment') do
             @logger.info('Binding deployment')
             deployment_model = @deployment_repo.find_or_create_by_name(name)
@@ -104,9 +106,6 @@ module Bosh
             director_job
           )
 
-          @event_log.begin_stage('Preparing deployment', 9)
-          @logger.info('Preparing deployment')
-
           track_and_log('Binding releases') do
             assembler.bind_releases
           end
@@ -133,7 +132,8 @@ module Bosh
 
           package_compile_step.perform
 
-          track_and_log('Binding instance networks') do
+          @event_log.begin_stage('Preparing networks', 1)
+          track_and_log('Binding networks') do
             assembler.bind_instance_networks
           end
 
@@ -142,10 +142,7 @@ module Bosh
             assembler.bind_dns
           end
 
-          @event_log.begin_stage('Binding links', 1)
-          track_and_log('Binding DNS') do
-            assembler.bind_links
-          end
+          assembler.bind_links
 
           planner
         end

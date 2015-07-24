@@ -40,8 +40,6 @@ module Bosh::Director
           @instance_operator.create(@deployment_plan.instances_with_missing_vms)
 
           @base_job.task_checkpoint
-
-          @logger.info('Binding instance VMs')
         end
 
         def update_jobs
@@ -52,8 +50,6 @@ module Bosh::Director
             @deployment_plan.jobs_starting_on_deploy,
           )
         end
-
-        private
 
         def delete_unneeded_vms
           unneeded_vms = @deployment_plan.unneeded_vms

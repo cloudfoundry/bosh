@@ -123,10 +123,67 @@ describe 'deploy', type: :integration do
     expect_running_vms(%w(foobar/0)) # no unknown/unknown
   end
 
-  it 'reports the deployment name when binding the deployment' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest
-    manifest_hash['jobs'].first['name'] = 'fake-name1'
-    deploy_output = deploy_from_scratch(manifest_hash: manifest_hash)
-    expect(deploy_output).to include("Started deploying 'simple' > Binding deployment")
+
+  it 'outputs properly formatted deploy information' do
+    # We need to keep this test since the output is not tested and
+    # keeps breaking.
+
+    output = deploy_from_scratch
+
+    duration_regex = '\\d\\d:\\d\\d:\\d\\d'
+    step_duration_regex = '\\(' + duration_regex + '\\)'
+    date_regex = '\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d UTC'
+    sha_regex = '[0-9a-z]+'
+    task_regex = '\\d'
+
+    # order for creating missing vms is not guaranteed (running in parallel)
+    expect(output).to match(<<-OUT)
+Director task #{task_regex}
+  Started preparing deployment
+  Started preparing deployment > Binding deployment. Done #{step_duration_regex}
+  Started preparing deployment > Binding releases. Done #{step_duration_regex}
+  Started preparing deployment > Binding existing deployment. Done #{step_duration_regex}
+  Started preparing deployment > Binding stemcells. Done #{step_duration_regex}
+  Started preparing deployment > Binding templates. Done #{step_duration_regex}
+  Started preparing deployment > Binding properties. Done #{step_duration_regex}
+  Started preparing deployment > Binding unallocated VMs. Done #{step_duration_regex}
+     Done preparing deployment #{step_duration_regex}
+
+  Started preparing package compilation > Finding packages to compile. Done #{step_duration_regex}
+
+  Started compiling packages
+  Started compiling packages > foo/#{sha_regex}. Done #{step_duration_regex}
+  Started compiling packages > bar/#{sha_regex}. Done #{step_duration_regex}
+     Done compiling packages #{step_duration_regex}
+
+  Started preparing networks > Binding networks. Done #{step_duration_regex}
+
+  Started preparing dns > Binding DNS. Done #{step_duration_regex}
+
+  Started binding links > foobar. Done #{step_duration_regex}
+
+  Started creating missing vms
+  Started creating missing vms > foobar/0
+  Started creating missing vms > foobar/1
+  Started creating missing vms > foobar/2
+     Done creating missing vms > foobar/\\d #{step_duration_regex}
+     Done creating missing vms > foobar/\\d #{step_duration_regex}
+     Done creating missing vms > foobar/\\d #{step_duration_regex}
+     Done creating missing vms #{step_duration_regex}
+
+  Started updating job foobar
+  Started updating job foobar > foobar/0 \\(canary\\). Done #{step_duration_regex}
+  Started updating job foobar > foobar/1 \\(canary\\). Done #{step_duration_regex}
+  Started updating job foobar > foobar/2. Done #{step_duration_regex}
+     Done updating job foobar #{step_duration_regex}
+
+Task #{task_regex} done
+
+Started		#{date_regex}
+Finished	#{date_regex}
+Duration	#{duration_regex}
+
+Deployed `simple' to `Test Director'
+    OUT
   end
 end

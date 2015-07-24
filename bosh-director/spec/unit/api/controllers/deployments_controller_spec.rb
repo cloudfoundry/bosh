@@ -452,7 +452,7 @@ module Bosh::Director
             let(:cloud_config) { Models::CloudConfig.make }
 
             before { allow(Config).to receive(:event_log).with(no_args).and_return(event_log) }
-            let(:event_log) { instance_double('Bosh::Director::EventLog::Log', track: nil) }
+            let(:event_log) { instance_double('Bosh::Director::EventLog::Log', track: nil, begin_stage: nil) }
 
             before {
               allow(Config).to receive(:logger).with(no_args).and_return(logger)
