@@ -241,4 +241,28 @@ describe Bosh::OpenStackCloud::Cloud do
     }.to raise_error(Bosh::Clouds::CloudError, /Invalid network type `foo'/)
   end
 
+  it "sets use_dhcp to false if cpi configured to not use dhcp" do
+    cloud_options = mock_cloud_options["properties"]
+    cloud_options["openstack"]["use_dhcp"] = false
+
+    server = double("server", :id => "i-test", :name => "i-test", :private_ip_addresses => ["10.10.10.1"])
+    security_group = double("security_groups", :name => "default")
+
+    expect(server).to receive(:security_groups).and_return([security_group])
+
+    cloud = mock_cloud(cloud_options) do |openstack|
+      expect(openstack.servers).to receive(:get).with("i-test").and_return(server)
+      expect(openstack.addresses).to receive(:each)
+    end
+
+    network_spec = { "net_a" => dynamic_network_spec }
+    old_settings = { "foo" => "bar", "networks" => network_spec }
+    network_with_dhcp = {"net_a" => dynamic_network_spec.merge({ "use_dhcp" => false })}
+    expected_agent_settings = { "foo" => "bar", "networks" => network_with_dhcp }
+
+    expect(@registry).to receive(:read_settings).with("i-test").and_return(old_settings)
+    expect(@registry).to receive(:update_settings).with("i-test", expected_agent_settings)
+
+    cloud.configure_networks("i-test", network_spec)
+  end
 end

@@ -388,7 +388,7 @@ module Bosh::AwsCloud
         network_configurator.configure(@ec2, instance)
 
         update_agent_settings(instance) do |settings|
-          settings["networks"] = network_spec
+          settings["networks"] = agent_network_spec(network_spec)
         end
       end
     end
@@ -707,7 +707,7 @@ module Bosh::AwsCloud
               "name" => "vm-#{SecureRandom.uuid}"
           },
           "agent_id" => agent_id,
-          "networks" => network_spec,
+          "networks" => agent_network_spec(network_spec),
           "disks" => {
               "system" => root_device_name,
               "ephemeral" => "/dev/sdb",
@@ -717,6 +717,13 @@ module Bosh::AwsCloud
 
       settings["env"] = environment if environment
       settings.merge(agent_properties)
+    end
+
+    def agent_network_spec(network_spec)
+      Hash[*network_spec.map do |name, settings|
+        settings["use_dhcp"] = true
+        [name, settings]
+      end.flatten]
     end
   end
 end

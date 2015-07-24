@@ -1,5 +1,4 @@
-# Copyright (c) 2009-2013 VMware, Inc.
-# Copyright (c) 2012 Piston Cloud Computing, Inc.
+require 'common/common'
 
 module Bosh::OpenStackCloud
   ##
@@ -7,10 +6,13 @@ module Bosh::OpenStackCloud
   class Cloud < Bosh::Cloud
     include Helpers
 
-    OPTION_KEYS = ['openstack', 'registry', 'agent']
+    OPTION_KEYS = ['openstack', 'registry', 'agent', 'use_dhcp']
 
     BOSH_APP_DIR = '/var/vcap/bosh'
     FIRST_DEVICE_NAME_LETTER = 'b'
+
+    CONNECT_RETRY_DELAY = 1
+    CONNECT_RETRY_COUNT = 5
 
     attr_reader :openstack
     attr_reader :registry
@@ -44,6 +46,7 @@ module Bosh::OpenStackCloud
       @wait_resource_poll_interval = @openstack_properties["wait_resource_poll_interval"]
       @boot_from_volume = @openstack_properties["boot_from_volume"]
       @boot_volume_cloud_properties = @openstack_properties["boot_volume_cloud_properties"] || {}
+      @use_dhcp = @openstack_properties.fetch('use_dhcp', true)
 
       unless @openstack_properties['auth_url'].match(/\/tokens$/)
         @openstack_properties['auth_url'] = @openstack_properties['auth_url'] + '/tokens'
@@ -63,10 +66,21 @@ module Bosh::OpenStackCloud
         :openstack_endpoint_type => @openstack_properties['endpoint_type'],
         :connection_options => @openstack_properties['connection_options'].merge(extra_connection_options)
       }
+
+      connect_retry_errors = [Excon::Errors::GatewayTimeout]
+
+      connect_retry_options = {
+        sleep: CONNECT_RETRY_DELAY,
+        tries: CONNECT_RETRY_COUNT,
+        on: connect_retry_errors,
+      }
+
       begin
-        @openstack = Fog::Compute.new(openstack_params)
-      rescue Exception => e
-        @logger.error(e)
+        Bosh::Common.retryable(connect_retry_options) do |tries, error|
+          @logger.error("Failed #{tries} times, last failure due to: #{error.inspect}") unless error.nil?
+          @openstack = Fog::Compute.new(openstack_params)
+        end
+      rescue Bosh::Common::RetryCountExceeded, Excon::Errors::ClientError, Excon::Errors::ServerError
         cloud_error('Unable to connect to the OpenStack Compute API. Check task debug log for details.')
       end
 
@@ -84,10 +98,13 @@ module Bosh::OpenStackCloud
         :openstack_endpoint_type => @openstack_properties['endpoint_type'],
         :connection_options => @openstack_properties['connection_options'].merge(extra_connection_options)
       }
+
       begin
-        @glance = Fog::Image.new(glance_params)
-      rescue Exception => e
-        @logger.error(e)
+        Bosh::Common.retryable(connect_retry_options) do |tries, error|
+          @logger.error("Failed #{tries} times, last failure due to: #{error.inspect}") unless error.nil?
+          @glance = Fog::Image.new(glance_params)
+        end
+      rescue Bosh::Common::RetryCountExceeded, Excon::Errors::ClientError, Excon::Errors::ServerError
         cloud_error('Unable to connect to the OpenStack Image Service API. Check task debug log for details.')
       end
 
@@ -101,11 +118,14 @@ module Bosh::OpenStackCloud
         :openstack_endpoint_type => @openstack_properties['endpoint_type'],
         :connection_options => @openstack_properties['connection_options'].merge(extra_connection_options)
       }
+
       begin
-        @volume = Fog::Volume.new(volume_params)
-      rescue Exception => e
-        @logger.error(e)
-        cloud_error("Unable to connect to the OpenStack Volume API. Check task debug log for details.")
+        Bosh::Common.retryable(connect_retry_options) do |tries, error|
+          @logger.error("Failed #{tries} times, last failure due to: #{error.inspect}") unless error.nil?
+          @volume = Fog::Volume.new(volume_params)
+        end
+      rescue Bosh::Common::RetryCountExceeded, Excon::Errors::ClientError, Excon::Errors::ServerError
+        cloud_error('Unable to connect to the OpenStack Volume API. Check task debug log for details.')
       end
 
       @metadata_lock = Mutex.new
@@ -300,7 +320,7 @@ module Bosh::OpenStackCloud
 
           @logger.info("Configuring network for server `#{server.id}'...")
           network_configurator.configure(@openstack, server)
-        rescue Bosh::Clouds::CloudError => e
+        rescue => e
           @logger.warn("Failed to create server: #{e.message}")
           destroy_server(server)
           raise Bosh::Clouds::VMCreationFailed.new(true), e.message
@@ -311,7 +331,7 @@ module Bosh::OpenStackCloud
           settings = initial_agent_settings(server_name, agent_id, network_spec, environment,
                                             flavor_has_ephemeral_disk?(flavor))
           @registry.update_settings(server.name, settings)
-        rescue Bosh::Clouds::CloudError => e
+        rescue => e
           @logger.warn("Failed to register server: #{e.message}")
           destroy_server(server)
           raise Bosh::Clouds::VMCreationFailed.new(false), e.message
@@ -391,7 +411,7 @@ module Bosh::OpenStackCloud
         network_configurator.configure(@openstack, server)
 
         update_agent_settings(server) do |settings|
-          settings['networks'] = network_spec
+          settings['networks'] = agent_network_spec(network_spec)
         end
       end
     end
@@ -656,7 +676,7 @@ module Bosh::OpenStackCloud
       data['registry'] = { 'endpoint' => @registry.endpoint }
       data['server'] = { 'name' => server_name }
       data['openssh'] = { 'public_key' => public_key } if public_key
-      data['networks'] = network_spec
+      data['networks'] = agent_network_spec(network_spec)
 
       with_dns(network_spec) do |servers|
         data['dns'] = { 'nameserver' => servers }
@@ -701,7 +721,7 @@ module Bosh::OpenStackCloud
           'name' => server_name
         },
         'agent_id' => agent_id,
-        'networks' => network_spec,
+        'networks' => agent_network_spec(network_spec),
         'disks' => {
           'system' => '/dev/sda',
           'persistent' => {}
@@ -711,6 +731,13 @@ module Bosh::OpenStackCloud
       settings['disks']['ephemeral'] = has_ephemeral ? '/dev/sdb' : nil
       settings['env'] = environment if environment
       settings.merge(@agent_properties)
+    end
+
+    def agent_network_spec(network_spec)
+      Hash[*network_spec.map do |name, settings|
+        settings['use_dhcp'] = @use_dhcp
+        [name, settings]
+      end.flatten]
     end
 
     ##

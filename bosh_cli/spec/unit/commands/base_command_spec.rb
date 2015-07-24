@@ -293,7 +293,7 @@ describe Bosh::Cli::Command::Base do
       let(:client_auth) { false }
 
       it 'prints current user, deployment and target' do
-        expect(cmd).to receive(:say).with("Acting as user 'fake-user' on deployment 'fake-deployment' on 'fake-target'")
+        expect(cmd).to receive(:warn).with("Acting as user 'fake-user' on deployment 'fake-deployment' on 'fake-target'")
         cmd.run
       end
 
@@ -305,7 +305,7 @@ describe Bosh::Cli::Command::Base do
         end
 
         it 'does not report the deployment' do
-          expect(cmd).to receive(:say).with("Acting as user 'fake-user' on 'fake-target'")
+          expect(cmd).to receive(:warn).with("Acting as user 'fake-user' on 'fake-target'")
           cmd.run
         end
       end
@@ -314,7 +314,7 @@ describe Bosh::Cli::Command::Base do
         let(:client_auth) { true }
 
         it 'reports client name' do
-          expect(cmd).to receive(:say).with("Acting as client 'fake-user' on deployment 'fake-deployment' on 'fake-target'")
+          expect(cmd).to receive(:warn).with("Acting as client 'fake-user' on deployment 'fake-deployment' on 'fake-target'")
           cmd.run
         end
       end

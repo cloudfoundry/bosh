@@ -7,9 +7,6 @@ source $base_dir/lib/prelude_apply.bash
 
 chmod 0600 $chroot/etc/ssh/sshd_config
 
-sed "/^ *Banner/d" -i $chroot/etc/ssh/sshd_config
-echo 'Banner /etc/issue.net' >> $chroot/etc/ssh/sshd_config
-
 sed "/^ *UseDNS/d" -i $chroot/etc/ssh/sshd_config
 echo 'UseDNS no' >> $chroot/etc/ssh/sshd_config
 
@@ -29,12 +26,30 @@ echo 'PermitEmptyPasswords no' >> $chroot/etc/ssh/sshd_config
 sed "/^ *Protocol/d" -i $chroot/etc/ssh/sshd_config
 echo 'Protocol 2' >> $chroot/etc/ssh/sshd_config
 
+sed "/^ *HostbasedAuthentication/d" -i $chroot/etc/ssh/sshd_config
+echo 'HostbasedAuthentication no' >> $chroot/etc/ssh/sshd_config
+
+sed "/^ *Banner/d" -i $chroot/etc/ssh/sshd_config
+echo 'Banner /etc/issue' >> $chroot/etc/ssh/sshd_config
+
+sed "/^ *IgnoreRhosts/d" -i $chroot/etc/ssh/sshd_config
+echo 'IgnoreRhosts yes' >> $chroot/etc/ssh/sshd_config
+
+sed "/^ *ClientAliveInterval/d" -i $chroot/etc/ssh/sshd_config
+echo 'ClientAliveInterval 900' >> $chroot/etc/ssh/sshd_config
+
+sed "/^ *PermitUserEnvironment/d" -i $chroot/etc/ssh/sshd_config
+echo 'PermitUserEnvironment no' >> $chroot/etc/ssh/sshd_config
+
+sed "/^ *ClientAliveCountMax/d" -i $chroot/etc/ssh/sshd_config
+echo 'ClientAliveCountMax 0' >> $chroot/etc/ssh/sshd_config
+
 # protect against as-shipped sshd_config that has no newline at end
 echo "" >> $chroot/etc/ssh/sshd_config
 
 # OS Specifics
 if [ "$(get_os_type)" == "centos" -o "$(get_os_type)" == "rhel" ]; then
-  # Disallow CBC Ciphers
+  # Allow only 3DES and AES series ciphers
   sed "/^ *Ciphers/d" -i $chroot/etc/ssh/sshd_config
   echo 'Ciphers aes256-ctr,aes192-ctr,aes128-ctr' >> $chroot/etc/ssh/sshd_config
 
@@ -43,9 +58,9 @@ if [ "$(get_os_type)" == "centos" -o "$(get_os_type)" == "rhel" ]; then
   echo 'MACs hmac-sha2-512,hmac-sha2-256,hmac-ripemd160,hmac-sha1' >> $chroot/etc/ssh/sshd_config
 
 elif [ "$(get_os_type)" == "ubuntu" ]; then
-  # Disallow CBC Ciphers
+  #  Allow only 3DES and AES series ciphers
   sed "/^ *Ciphers/d" -i $chroot/etc/ssh/sshd_config
-  echo 'Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr' >> $chroot/etc/ssh/sshd_config
+  echo 'Ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr' >> $chroot/etc/ssh/sshd_config
 
   # Disallow Weak MACs
   sed "/^ *MACs/d" -i $chroot/etc/ssh/sshd_config

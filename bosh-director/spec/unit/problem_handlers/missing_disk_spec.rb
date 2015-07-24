@@ -201,6 +201,28 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
           expect(Bosh::Director::Models::Snapshot.all).to be_empty
         end
       end
+
+      context 'when vm is destroyed' do
+        before do
+          vm.instance.update(:vm => nil)
+          vm.destroy
+        end
+
+        it 'deletes disk related info from cloud and database directly' do
+          handler = described_class.new(disk.id, {})
+          allow(handler).to receive(:cloud).and_return(cloud)
+
+          expect(cloud).to receive(:delete_snapshot).with('snapshot-cid').ordered
+          expect(cloud).to receive(:delete_disk).ordered
+
+          expect {
+            handler.apply_resolution(:delete_disk_reference)
+          }.to_not raise_error
+
+          expect(Bosh::Director::Models::PersistentDisk[disk.id]).to be_nil
+          expect(Bosh::Director::Models::Snapshot.all).to be_empty
+        end
+      end
     end
   end
 end

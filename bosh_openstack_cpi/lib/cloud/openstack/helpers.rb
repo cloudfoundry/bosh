@@ -24,6 +24,7 @@ module Bosh::OpenStackCloud
       retries = 0
       begin
         yield
+
       rescue Excon::Errors::RequestEntityTooLarge => e
         # If we find a rate limit error, parse message, wait, and retry
         overlimit = parse_openstack_response(e.response, "overLimit", "overLimitFault")
@@ -37,10 +38,21 @@ module Bosh::OpenStackCloud
           retry
         end
         cloud_error("OpenStack API Request Entity Too Large error. Check task debug log for details.", e)
+
+      rescue Excon::Errors::ServiceUnavailable => e
+        unless retries >= MAX_RETRIES
+          retries += 1
+          @logger.debug("OpenStack API Service Unavailable error, retrying (#{retries})") if @logger
+          sleep(DEFAULT_RETRY_TIMEOUT)
+          retry
+        end
+        cloud_error("OpenStack API Service Unavailable error. Check task debug log for details.", e)
+
       rescue Excon::Errors::BadRequest => e
         badrequest = parse_openstack_response(e.response, "badRequest")
-        details = badrequest.nil? ? "" : " (#{badrequest["message"]})"   
+        details = badrequest.nil? ? "" : " (#{badrequest["message"]})"
         cloud_error("OpenStack API Bad Request#{details}. Check task debug log for details.", e)
+
       rescue Excon::Errors::InternalServerError => e
         unless retries >= MAX_RETRIES
           retries += 1
@@ -51,9 +63,9 @@ module Bosh::OpenStackCloud
         cloud_error("OpenStack API Internal Server error. Check task debug log for details.", e)
       end
     end
-    
+
     ##
-    # Parses and look ups for keys in an OpenStack response 
+    # Parses and look ups for keys in an OpenStack response
     #
     # @param [Excon::Response] response Response from OpenStack API
     # @param [Array<String>] keys Keys to look up in response
@@ -120,7 +132,7 @@ module Bosh::OpenStackCloud
         break if target_state.include?(state)
 
         sleep(@wait_resource_poll_interval)
-        
+
       end
 
       if @logger

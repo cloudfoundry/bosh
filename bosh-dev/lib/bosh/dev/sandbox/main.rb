@@ -346,7 +346,7 @@ module Bosh::Dev::Sandbox
       @nats_log_path = File.join(@logs_path, 'nats.log')
 
       @nats_process = Service.new(
-        %W[nats-server -p #{nats_port} -D -V -T -l #{@nats_log_path}],
+        %W[nats-server -p #{nats_port} -T -l #{@nats_log_path}],
         {stdout: $stdout, stderr: $stderr},
         @logger
       )
