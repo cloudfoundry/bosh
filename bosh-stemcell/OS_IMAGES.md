@@ -7,6 +7,9 @@ OS images are stored in S3 bucket [bosh-os-images](http://s3.amazonaws.com/bosh-
 
 Ubuntu 14.04 images have filename `bosh-ubuntu-trusty-os-image.tgz`
 
+* `ilfxvb._1aLvgmilbcTGnWoeeL1fq54g`
+  update kernel to 3.19.0-23-generic
+
 * `1YmBmEqA4WqeAv7ImLTh3L3Uka4g0kY9`
   ssh changes for stig
 
@@ -213,6 +216,9 @@ CentOS 6.6 images have filename `bosh-centos-6-os-image.tgz`
 ## CentOS 7
 
 CentOS 7 images have filename `bosh-centos-7-os-image.tgz`
+
+* `IL5wqv5zstAX9up9pidNw1c.FMx6JDcN`
+  potential update to kernel, matching Ubuntu change
 
 * `Mbx1XFPOplo4CaqyMQoaorvWt86KSip0`
   ssh changes for stig
