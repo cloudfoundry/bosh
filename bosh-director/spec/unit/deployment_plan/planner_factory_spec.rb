@@ -78,19 +78,19 @@ module Bosh
               let(:manifest_hash) do
                 manifest_hash = Bosh::Spec::Deployments.simple_manifest.merge(
                   'releases' => [
-                    {'name' => 'foo-release', 'version' => 1},
+                    {'name' => 'bosh-release', 'version' => 1},
                     {'name' => 'bar-release', 'version' => 2},
                   ],
                 )
 
-                manifest_hash['jobs'].first['release'] = 'foo-release'
+                manifest_hash['jobs'].first['release'] = 'bosh-release'
                 manifest_hash
               end
 
               it 'has the releases from the deployment manifest' do
                 expect(planner.releases.map { |r| [r.name, r.version] }).to match_array(
                   [
-                    ['foo-release', '1'],
+                    ['bosh-release', '1'],
                     ['bar-release', '2']
                   ]
                 )

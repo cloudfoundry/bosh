@@ -232,12 +232,26 @@ module ManifestHelper
 
     def default_iaas_manifest(overrides = {})
       {
-        'networks' => [ManifestHelper::network],
-        'resource_pools' => [ManifestHelper::resource_pool],
-        'compilation' => {
-          'workers' => 1,
-          'network'=>'network-name',
-          'cloud_properties' => {},
+      'networks' => [ManifestHelper::network],
+      'resource_pools' => [ManifestHelper::resource_pool],
+      'compilation' => {
+        'workers' => 1,
+        'network'=>'network-name',
+        'cloud_properties' => {},
+        },
+      }.merge(overrides)
+    end
+
+    def default_manifest_with_jobs(overrides = {})
+      {
+        'name' => 'deployment-name',
+        'releases' => [release],
+        'jobs' => [job],
+        'update' => {
+            'max_in_flight' => 10,
+            'canaries' => 2,
+            'canary_watch_time' => 1000,
+            'update_watch_time' => 1000,
         },
       }.merge(overrides)
     end
@@ -263,7 +277,7 @@ module ManifestHelper
         'resource_pool' => 'rp-name',
         'instances' => 1,
         'networks' => [{'name' => 'network-name'}],
-        'templates' => [{'name' => 'template-name'}]
+        'templates' => [{'name' => 'template-name', 'release' => 'release-name'}]
       }.merge(overrides)
     end
 
