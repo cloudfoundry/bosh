@@ -10,8 +10,8 @@ module Bosh::Director
           @blobstore = blobstore
           @deployment_plan = deployment_plan
           @multi_job_updater = multi_job_updater
-          @instance_operator = InstanceOperator.new(cloud, event_log, @logger)
           @vm_deleter = Bosh::Director::VmDeleter.new(@cloud, @logger)
+          @vm_creator = Bosh::Director::VmCreator.new(@cloud, @logger, @vm_deleter)
         end
 
         def perform
@@ -37,7 +37,7 @@ module Bosh::Director
           delete_unneeded_instances
 
           @logger.info('Creating missing VMs')
-          @instance_operator.create_vms_for(@deployment_plan.instances_with_missing_vms)
+          @vm_creator.create_for_instances(@deployment_plan.instances_with_missing_vms, @event_log)
 
           @base_job.task_checkpoint
         end

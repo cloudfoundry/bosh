@@ -12,7 +12,8 @@ module Bosh::Director
       @blobstore = blobstore
       @event_log = event_log
       @logger = logger
-      @instance_operator = InstanceOperator.new(cloud, event_log, logger)
+      vm_deleter = Bosh::Director::VmDeleter.new(cloud, logger)
+      @vm_creator = Bosh::Director::VmCreator.new(cloud, logger, vm_deleter)
     end
 
     def prepare
@@ -21,7 +22,7 @@ module Bosh::Director
     end
 
     def create_missing_vms
-      @instance_operator.create_vms_for(@job.instances_with_missing_vms)
+      @vm_creator.create_for_instances(@job.instances_with_missing_vms, @event_log)
     end
 
     # Creates/updates all errand job instances

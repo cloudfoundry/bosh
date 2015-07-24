@@ -11,6 +11,26 @@ module Bosh::Director
       @vm_deleter = vm_deleter
     end
 
+    def create_for_instances(instances, event_log)
+      return @logger.info('No missing vms to create') if instances.empty?
+
+      total = instances.size
+      event_log.begin_stage('Creating missing vms', total)
+      ThreadPool.new(max_threads: Config.max_threads, logger: @logger).wrap do |pool|
+        instances.each do |instance|
+          pool.process do
+            with_thread_name("create_missing_vm(#{instance.job.name}, #{instance.index}/#{total})") do
+              event_log.track("#{instance.job.name}/#{instance.index}") do
+                @logger.info('Creating missing VM')
+                disks = [instance.model.persistent_disk_cid].compact
+                create_for_instance(instance, disks)
+              end
+            end
+          end
+        end
+      end
+    end
+
     def create_for_instance(instance, disks)
       @logger.info('Creating VM')
 
