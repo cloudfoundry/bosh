@@ -134,7 +134,7 @@ describe 'deploy', type: :integration do
     step_duration_regex = '\\(' + duration_regex + '\\)'
     date_regex = '\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d UTC'
     sha_regex = '[0-9a-z]+'
-    task_regex = '\\d'
+    task_regex = '\\d+'
 
     # order for creating missing vms is not guaranteed (running in parallel)
     expect(output).to match(<<-OUT)
