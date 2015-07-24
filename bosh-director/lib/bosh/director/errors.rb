@@ -188,6 +188,7 @@ module Bosh::Director
   DeploymentInvalidProperty = err(190014)
   DeploymentNoResourcePools = err(190015)
   DeploymentInvalidLink = err(190016)
+  DeploymentDuplicateAvailabilityZoneName = err(190017)
 
   DiskPoolInvalidDiskSize = err(200001)
 

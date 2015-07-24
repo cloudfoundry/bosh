@@ -233,6 +233,10 @@ module Bosh::Director
       end
 
       def add_availability_zone(availability_zone)
+        if @availability_zones[availability_zone.name]
+          raise DeploymentDuplicateAvailabilityZoneName,
+            "Duplicate availability zone name `#{availability_zone.name}'"
+        end
         @availability_zones[availability_zone.name] = availability_zone
       end
 

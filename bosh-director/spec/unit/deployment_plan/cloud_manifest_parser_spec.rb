@@ -48,6 +48,14 @@ module Bosh::Director
             end
           end
 
+          context 'if an availability zone is duplicated' do
+            let(:availability_zones) { {'availability_zones' => [{'name' => 'z1'}, {'name' => 'z1'}]} }
+
+            it 'raises error' do
+              expect { parsed_deployment }.to raise_error(DeploymentDuplicateAvailabilityZoneName, "Duplicate availability zone name `z1'")
+            end
+          end
+
           it 'creates AvailabilityZone for each entry' do
             expect(parsed_deployment.availability_zone('z1').name).to eq('z1')
             expect(parsed_deployment.availability_zone('z1').cloud_properties).to eq({'availability_zone' => 'us-east-1a'})
