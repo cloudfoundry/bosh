@@ -8,6 +8,10 @@ module Bosh::Director::DeploymentPlan
 
     before { allow(Bosh::Director::Config).to receive(:dns_domain_name).and_return(domain_name) }
     let(:domain_name) { 'test_domain' }
+    before do
+      Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
+      Bosh::Director::Config.current_job.task_id = 'fake-task-id'
+    end
 
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let(:plan) do

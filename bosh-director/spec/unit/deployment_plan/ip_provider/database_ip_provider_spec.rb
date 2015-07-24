@@ -16,6 +16,11 @@ module Bosh::Director::DeploymentPlan
     let(:static_ips) { Set.new }
     let(:range) { NetAddr::CIDR.create('192.168.0.1/24') }
 
+    before do
+      Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
+      Bosh::Director::Config.current_job.task_id = 'fake-task-id'
+    end
+
     def cidr_ip(ip)
       NetAddr::CIDR.create(ip).to_i
     end
@@ -123,6 +128,7 @@ module Bosh::Director::DeploymentPlan
               address: ip,
               network_name: 'fake-network',
               deployment: deployment_model,
+              task_id: Bosh::Director::Config.current_job.task_id
             )
             original_save = ip_address.method(:save)
             original_saves[ip] = original_save
@@ -180,6 +186,8 @@ module Bosh::Director::DeploymentPlan
         saved_address = Bosh::Director::Models::IpAddress.order(:address).last
         expect(saved_address.address).to eq(ip_address.to_i)
         expect(saved_address.network_name).to eq('fake-network')
+        expect(saved_address.task_id).to eq('fake-task-id')
+        expect(saved_address.created_at).to_not be_nil
       end
 
       context 'when reserving dynamic IP' do

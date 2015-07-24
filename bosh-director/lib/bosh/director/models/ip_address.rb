@@ -4,6 +4,11 @@ module Bosh::Director::Models
 
     def validate
       validates_presence :deployment_id
+      validates_presence :task_id
+    end
+
+    def before_create
+      self.created_at ||= Time.now
     end
   end
 end

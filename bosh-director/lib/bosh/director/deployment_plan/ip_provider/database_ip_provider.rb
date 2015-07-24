@@ -112,6 +112,7 @@ module Bosh::Director::DeploymentPlan
         address: ip.to_i,
         network_name: @network_name,
         deployment: @deployment_model,
+        task_id: Bosh::Director::Config.current_job.task_id
       ).save
     rescue Sequel::DatabaseError
       raise IPAlreadyReserved
