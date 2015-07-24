@@ -256,7 +256,7 @@ describe 'Links', type: :integration do
       end
 
       it 'catches broken link before updating vms' do
-        result, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
+        _, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
         expect(exit_code).not_to eq(0)
         expect(director.vms('simple')).to eq([])
       end

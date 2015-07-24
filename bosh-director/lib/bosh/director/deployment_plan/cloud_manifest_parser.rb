@@ -13,6 +13,7 @@ module Bosh::Director
       def parse(cloud_manifest)
         @cloud_manifest = cloud_manifest
 
+        parse_availability_zones
         parse_networks
         parse_compilation
         parse_resource_pools
@@ -22,6 +23,15 @@ module Bosh::Director
       end
 
       private
+
+      def parse_availability_zones
+        availability_zones = safe_property(@cloud_manifest, 'availability_zones', :class => Array, :optional => true)
+        if availability_zones
+          availability_zones.each do |availability_zone|
+            @deployment.add_availability_zone(AvailabilityZone.new(availability_zone))
+          end
+        end
+      end
 
       def parse_networks
         networks = safe_property(@cloud_manifest, 'networks', :class => Array)

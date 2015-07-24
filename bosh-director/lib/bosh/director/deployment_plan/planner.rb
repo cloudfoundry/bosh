@@ -89,7 +89,8 @@ module Bosh::Director
       end
 
       def_delegators :@cloud_planner, :add_network, :networks, :network,
-        :add_resource_pool, :resource_pools, :resource_pool,
+        :add_resource_pool, :add_availability_zone, :availability_zone,
+        :resource_pools, :resource_pool,
         :add_disk_pool, :disk_pools, :disk_pool,
         :compilation, :compilation=
 
@@ -228,6 +229,15 @@ module Bosh::Director
         @networks = {}
         @resource_pools = {}
         @disk_pools = {}
+        @availability_zones = {}
+      end
+
+      def add_availability_zone(availability_zone)
+        @availability_zones[availability_zone.name] = availability_zone
+      end
+
+      def availability_zone(name)
+        @availability_zones[name]
       end
 
       # Adds a resource pool by name

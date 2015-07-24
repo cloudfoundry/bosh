@@ -20,9 +20,46 @@ module Bosh::Director
 
       let(:cloud_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
 
+      describe 'availability zones' do
+        context 'when availability zones section is specified' do
+          let(:availability_zones) {
+            {'availability_zones' => [
+              {'name' => 'z1',
+                'cloud_properties' =>
+                  {'availability_zone' =>
+                    'us-east-1a'
+                  }
+              },
+              {'name' => 'z2',
+                'cloud_properties' =>
+                  {'availability_zone' =>
+                    'us-east-2a'
+                  }
+              }
+            ]
+            }
+          }
+          before { cloud_manifest.merge!(availability_zones) }
+
+          context 'if name is not present' do
+            let(:availability_zones) { {'availability_zones' => [{'cloud_properties' => {'availability_zone' => 'us-east-1a'}}]} }
+            it 'raises error' do
+              expect { parsed_deployment }.to raise_error(ValidationMissingField)
+            end
+          end
+
+          it 'creates AvailabilityZone for each entry' do
+            expect(parsed_deployment.availability_zone('z1').name).to eq('z1')
+            expect(parsed_deployment.availability_zone('z1').cloud_properties).to eq({'availability_zone' => 'us-east-1a'})
+            expect(parsed_deployment.availability_zone('z2').name).to eq('z2')
+            expect(parsed_deployment.availability_zone('z2').cloud_properties).to eq({'availability_zone' => 'us-east-2a'})
+          end
+        end
+      end
+
       describe 'compilation' do
         context 'when compilation section is specified' do
-          before { cloud_manifest.merge!('compilation' => { 'foo' => 'bar' }) }
+          before { cloud_manifest.merge!('compilation' => {'foo' => 'bar'}) }
 
           it 'delegates parsing to CompilationConfig' do
             compilation = instance_double('Bosh::Director::DeploymentPlan::CompilationConfig')
