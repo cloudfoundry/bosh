@@ -11,7 +11,6 @@ module Bosh::Director
       it_behaves_like 'a Resque job'
     end
 
-
     describe 'Compiled release upload' do
       subject(:job) { Jobs::UpdateRelease.new(release_path, job_options) }
 
@@ -73,8 +72,10 @@ module Bosh::Director
       end
 
       it 'should process packages for compiled release' do
-          expect(job).to_not receive(:create_package)
-          expect(job).to receive(:create_package_for_compiled_release).twice
+          #expect(job).to receive(:process_packages)
+          expect(job).to receive(:create_packages)
+          expect(job).to receive(:use_existing_packages)
+          expect(job).to receive(:create_compiled_packages)
           expect(job).to receive(:register_template).twice
           expect(job).to receive(:create_job).twice
 
@@ -713,7 +714,7 @@ module Bosh::Director
       end
 
       it 'should create simple packages without blobstore_id or sha1' do
-        @job.create_package_for_compiled_release({
+        @job.create_package({
                                 'name' => 'test_package',
                                 'version' => '1.0',
                                 'sha1' => nil,
