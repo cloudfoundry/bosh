@@ -90,7 +90,7 @@ module Bosh::Director
             "stemcell" => { "name" => @stemcell.name, "version" => @stemcell.version }
         }
 
-        resource_pool = DeploymentPlan::ResourcePool.new(planner, fake_resource_pool_manifest, Config.logger)
+        resource_pool = DeploymentPlan::ResourcePool.new(fake_resource_pool_manifest, Config.logger)
         planner.add_resource_pool(resource_pool)
         planner.reset_jobs
 

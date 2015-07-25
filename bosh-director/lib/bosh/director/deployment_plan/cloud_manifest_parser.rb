@@ -69,7 +69,7 @@ module Bosh::Director
       def parse_resource_pools
         resource_pools = safe_property(@cloud_manifest, 'resource_pools', :class => Array)
         resource_pools.each do |rp_spec|
-          @deployment.add_resource_pool(ResourcePool.new(@deployment, rp_spec, @logger))
+          @deployment.add_resource_pool(ResourcePool.new(rp_spec, @logger))
         end
 
         if @deployment.resource_pools.empty?

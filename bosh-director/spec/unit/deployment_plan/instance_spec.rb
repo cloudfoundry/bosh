@@ -32,7 +32,7 @@ module Bosh::Director::DeploymentPlan
         persistent_disk_pool: disk_pool,
       )
     end
-    let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', network: net, name: 'fake-resource-pool') }
+    let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', name: 'fake-resource-pool') }
     let(:disk_pool) { nil }
     let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
     let(:vm) { Vm.new }
@@ -83,7 +83,6 @@ module Bosh::Director::DeploymentPlan
       let(:resource_pool) do
         instance_double('Bosh::Director::DeploymentPlan::ResourcePool', {
           name: 'fake-resource-pool',
-          network: network,
         })
       end
 
@@ -271,7 +270,7 @@ module Bosh::Director::DeploymentPlan
       let(:index) { 2 }
       let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', deployment: plan, name: 'dea') }
       let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
-      let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool', network: net) }
+      let(:resource_pool) { instance_double('Bosh::Director::DeploymentPlan::ResourcePool') }
       let(:old_ip) { NetAddr::CIDR.create('10.0.0.5').to_i }
       let(:vm_ip) { NetAddr::CIDR.create('10.0.0.3').to_i }
       let(:old_reservation) { Bosh::Director::NetworkReservation.new_dynamic(old_ip) }
@@ -298,8 +297,6 @@ module Bosh::Director::DeploymentPlan
       let(:resource_pool) do
         instance_double('Bosh::Director::DeploymentPlan::ResourcePool', {
           name: 'fake-resource-pool',
-          # spec: 'fake-resource-pool-spec',
-          network: network,
         })
       end
       let(:network) do
@@ -380,8 +377,6 @@ module Bosh::Director::DeploymentPlan
           network_settings: 'fake-network-settings',
         })
       end
-
-      before { allow(resource_pool).to receive(:network).and_return(network) }
 
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
       before { allow(agent_client).to receive(:apply) }
@@ -539,7 +534,6 @@ module Bosh::Director::DeploymentPlan
       let(:resource_pool) do
         instance_double('Bosh::Director::DeploymentPlan::ResourcePool', {
           name: 'fake-resource-pool',
-          network: network,
         })
       end
       let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network') }
@@ -570,7 +564,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#resource_pool_changed?' do
-      let(:resource_pool) { ResourcePool.new(plan, resource_pool_manifest, logger) }
+      let(:resource_pool) { ResourcePool.new(resource_pool_manifest, logger) }
 
       let(:resource_pool_manifest) do
         {
