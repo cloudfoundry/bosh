@@ -37,7 +37,7 @@ module Bosh::Director
           safe_property(spec, "cloud_properties", class: Hash, default: {})
 
         stemcell_spec = safe_property(spec, "stemcell", class: Hash)
-        @stemcell = Stemcell.new(self, stemcell_spec)
+        @stemcell = Stemcell.new(stemcell_spec)
 
         network_name = safe_property(spec, "network", class: String)
         @network = @deployment_plan.network(network_name)

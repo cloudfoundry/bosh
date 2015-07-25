@@ -143,7 +143,7 @@ module Bosh::Director
 
         fake_job = DeploymentPlan::Job.parse(planner, fake_job_spec_for_compiling, Config.event_log, Config.logger)
         @release_version.packages.each { |package| fake_job.packages[package.name] = package }
-        fake_job.resource_pool.stemcell.bind_model
+        fake_job.resource_pool.stemcell.bind_model(planner)
         fake_job.release.bind_model
         fake_job.templates.each { |template| template.bind_models }
         fake_job

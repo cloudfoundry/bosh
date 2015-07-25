@@ -262,7 +262,7 @@ module Bosh::Director
                 "Stemcell not bound for resource pool `#{resource_pool.name}'"
         end
 
-        stemcell.bind_model
+        stemcell.bind_model(@deployment_plan)
       end
     end
 
