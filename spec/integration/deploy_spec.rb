@@ -128,7 +128,10 @@ describe 'deploy', type: :integration do
     # We need to keep this test since the output is not tested and
     # keeps breaking.
 
-    output = deploy_from_scratch
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest
+    manifest_hash['jobs'].first['instances'] = 1
+
+    output = deploy_from_scratch(manifest_hash: manifest_hash)
 
     duration_regex = '\\d\\d:\\d\\d:\\d\\d'
     step_duration_regex = '\\(' + duration_regex + '\\)'
@@ -162,20 +165,9 @@ Director task #{task_regex}
 
   Started binding links > foobar. Done #{step_duration_regex}
 
-  Started creating missing vms
-  Started creating missing vms > foobar/0
-  Started creating missing vms > foobar/1
-  Started creating missing vms > foobar/2
-     Done creating missing vms > foobar/\\d #{step_duration_regex}
-     Done creating missing vms > foobar/\\d #{step_duration_regex}
-     Done creating missing vms > foobar/\\d #{step_duration_regex}
-     Done creating missing vms #{step_duration_regex}
+  Started creating missing vms > foobar/0. Done #{step_duration_regex}
 
-  Started updating job foobar
   Started updating job foobar > foobar/0 \\(canary\\). Done #{step_duration_regex}
-  Started updating job foobar > foobar/1 \\(canary\\). Done #{step_duration_regex}
-  Started updating job foobar > foobar/2. Done #{step_duration_regex}
-     Done updating job foobar #{step_duration_regex}
 
 Task #{task_regex} done
 
