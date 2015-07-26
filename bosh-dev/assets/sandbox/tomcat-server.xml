@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Server port="${uaa.server_port}">
+  <Service name="Catalina">
+    <Connector class="org.apache.coyote.http11.Http11NioProtocol" port="${uaa.http_port}" protocol="HTTP/1.1" connectionTimeout="20000" address="127.0.0.1"/>
+    <Engine name="Catalina" defaultHost="localhost">
+
+      <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="false">
+        <Valve className="org.apache.catalina.valves.RemoteIpValve"
+               remoteIpHeader="x-forwarded-for"
+               protocolHeader="x-forwarded-proto"
+        />
+        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="${uaa.access_log_dir}"
+               prefix="uaa-access." suffix=".log" rotatable="true" pattern="%h %l %u %t &quot;%r&quot; %s %b"/>
+
+      </Host>
+    </Engine>
+  </Service>
+</Server>
