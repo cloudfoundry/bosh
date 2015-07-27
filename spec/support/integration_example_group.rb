@@ -59,8 +59,16 @@ module IntegrationExampleGroup
   end
 
   def create_and_upload_test_release(options={})
-    bosh_runner.run_in_dir('create release', ClientSandbox.test_release_dir, options)
+    create_args = options.fetch(:force, false) ? '--force' : ''
+    bosh_runner.run_in_dir("create release #{create_args}", ClientSandbox.test_release_dir, options)
     bosh_runner.run_in_dir('upload release', ClientSandbox.test_release_dir, options)
+  end
+
+  def update_release
+    Dir.chdir(ClientSandbox.test_release_dir) do
+      File.open(File.join('src', 'foo'), 'w') { |f| f.write(SecureRandom.uuid) }
+    end
+    create_and_upload_test_release(force: true)
   end
 
   def upload_stemcell(options={})

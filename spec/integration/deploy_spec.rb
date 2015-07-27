@@ -150,7 +150,11 @@ Director task #{task_regex}
   Started preparing deployment > Binding templates. Done #{step_duration_regex}
   Started preparing deployment > Binding properties. Done #{step_duration_regex}
   Started preparing deployment > Binding unallocated VMs. Done #{step_duration_regex}
+  Started preparing deployment > Binding networks. Done #{step_duration_regex}
+  Started preparing deployment > Binding DNS. Done #{step_duration_regex}
      Done preparing deployment #{step_duration_regex}
+
+  Started binding links > foobar. Done #{step_duration_regex}
 
   Started preparing package compilation > Finding packages to compile. Done #{step_duration_regex}
 
@@ -158,12 +162,6 @@ Director task #{task_regex}
   Started compiling packages > foo/#{sha_regex}. Done #{step_duration_regex}
   Started compiling packages > bar/#{sha_regex}. Done #{step_duration_regex}
      Done compiling packages #{step_duration_regex}
-
-  Started preparing networks > Binding networks. Done #{step_duration_regex}
-
-  Started preparing dns > Binding DNS. Done #{step_duration_regex}
-
-  Started binding links > foobar. Done #{step_duration_regex}
 
   Started creating missing vms > foobar/0. Done #{step_duration_regex}
 

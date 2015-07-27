@@ -1,16 +1,19 @@
 module Bosh::Spec
   class NetworkingManifest
     def self.deployment_manifest(opts={})
-      manifest = Bosh::Spec::Deployments.simple_manifest
+      manifest = opts.fetch(:manifest, Bosh::Spec::Deployments.simple_manifest)
       manifest['name'] = opts.fetch(:name, 'simple')
+
+      if opts[:template]
+        manifest['jobs'] = [Bosh::Spec::Deployments.simple_job(templates: [{'name' => opts[:template]}])]
+      end
+
       manifest['jobs'].first['instances'] = opts.fetch(:instances, 1)
       manifest
     end
 
     def self.legacy_deployment_manifest(opts)
-      manifest = Bosh::Spec::Deployments.legacy_manifest
-      manifest['name'] = opts.fetch(:name, 'simple')
-      manifest['jobs'].first['instances'] = opts.fetch(:instances, 1)
+      manifest = deployment_manifest(opts.merge(manifest: Bosh::Spec::Deployments.legacy_manifest))
       manifest['networks'].first['subnets'] = [make_subnet(opts)]
       manifest['networks'].first['subnets'].first['static'] = opts.fetch(:static_ips, [])
       manifest

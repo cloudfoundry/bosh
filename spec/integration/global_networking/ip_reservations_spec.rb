@@ -296,13 +296,25 @@ describe 'global networking', type: :integration do
       upload_stemcell
     end
 
-    it 'reuses the compilation VMs IP (can deploy a job with 1 instance with only 1 IP available)' do
+    it 'gives the correct error message when there are not enough IPs for compilation' do
       cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 1)
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
+      expect(output).to match(/compilation-.* asked for a dynamic IP but there were no more available/)
+    end
+
+    it 'updates deployment when there is enough IPs for compilation' do
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 1)
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
+      update_release
+
+      deploy_simple_manifest(manifest_hash: manifest_hash)
       expect(director.vms('my-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
     end
 
@@ -339,15 +351,15 @@ describe 'global networking', type: :integration do
       expect(new_ips).to match_array(original_ips)
     end
 
-    it 'gives the correct error message when there are not enough IPs' do
-      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
-
+    it 'gives the correct error message when there are not enough IPs for instances' do
       new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2, template: 'foobar_without_packages')
+
       upload_cloud_config(cloud_config_hash: new_cloud_config_hash)
       output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).not_to eq(0)
-      expect(output).to include("asked for a dynamic IP but there were no more available")
+      expect(output).to match(/foobar\/1' asked for a dynamic IP but there were no more available/)
     end
 
     it 'reuses IPs when one job is deleted and another created within a single deployment' do
@@ -386,7 +398,7 @@ describe 'global networking', type: :integration do
     end
 
     it 'redeploys VM on new IP address when reserved list includes current IP address of VM' do
-      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 1)
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
@@ -394,7 +406,7 @@ describe 'global networking', type: :integration do
       original_ips = director.vms('my-deploy').map(&:ips).flatten
       expect(original_ips).to eq(['192.168.1.2'])
 
-      new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1, shift_ip_range_by: 1)
+      new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2, shift_ip_range_by: 1)
       upload_cloud_config(cloud_config_hash: new_cloud_config_hash)
 
       deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -403,12 +415,20 @@ describe 'global networking', type: :integration do
     end
 
     context 'using legacy network configuration (no cloud config)' do
-      it 'reuses the compilation VMs IP (can deploy a job with 1 instance with only 1 IP available)' do
+      it 'gives the correct error message when there are not enough IPs for compilation' do
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 1, available_ips: 1)
+        output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
+        expect(output).to match(/compilation-.* asked for a dynamic IP but there were no more available/)
+      end
 
-        deploy_simple_manifest(manifest_hash: manifest_hash)
+      it 'gives the correct error message when there are not enough IPs for instances' do
+        # needs 1 extra IP for compilation
+        new_manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 2, available_ips: 2)
 
-        expect(director.vms('my-deploy').map(&:ips).flatten).to eq(['192.168.1.2'])
+        output, exit_code = deploy_simple_manifest(manifest_hash: new_manifest_hash, failure_expected: true, return_exit_code: true)
+
+        expect(exit_code).not_to eq(0)
+        expect(output).to include('asked for a dynamic IP but there were no more available')
       end
 
       it 'gives VMs the same IP on redeploy' do
@@ -440,16 +460,6 @@ describe 'global networking', type: :integration do
         expect(new_ips).to match_array(original_ips)
       end
 
-      it 'gives the correct error message when there are not enough IPs' do
-
-        new_manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 2, available_ips: 1)
-
-        output, exit_code = deploy_simple_manifest(manifest_hash: new_manifest_hash, failure_expected: true, return_exit_code: true)
-
-        expect(exit_code).not_to eq(0)
-        expect(output).to include("asked for a dynamic IP but there were no more available")
-      end
-
       it 'reuses IPs when one job is deleted and another created within a single deployment' do
         pending("https://www.pivotaltracker.com/story/show/98057020")
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', available_ips: 1)
@@ -464,7 +474,7 @@ describe 'global networking', type: :integration do
       end
 
       it 'redeploys VM on new IP address when reserved list includes current IP address of VM' do
-        manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 1, available_ips: 1)
+        manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(name: 'my-deploy', instances: 1, available_ips: 2)
 
         deploy_simple_manifest(manifest_hash: manifest_hash)
         original_ips = director.vms('my-deploy').map(&:ips).flatten
@@ -473,7 +483,7 @@ describe 'global networking', type: :integration do
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(
           name: 'my-deploy',
           instances: 1,
-          available_ips: 1,
+          available_ips: 2,
           shift_ip_range_by: 1
         )
 

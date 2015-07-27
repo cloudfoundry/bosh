@@ -12,7 +12,7 @@ describe 'Changing cloud config', type: :integration do
   describe 'changing the cloud config while deploying' do
     it 'should continue to use the original cloud config when deploying a job' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
-      deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+      deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       task_id = Bosh::Spec::DeployHelper.start_deploy(deployment_manifest)
@@ -24,7 +24,7 @@ describe 'Changing cloud config', type: :integration do
 
     it 'should continue to use the original cloud config when running an errand' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
-      manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 1)
+      manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 1, template: 'foobar_without_packages')
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
       current_target = current_sandbox.director_url
@@ -50,7 +50,7 @@ describe 'Changing cloud config', type: :integration do
 
     it 'resurrects vm with original cloud config and IP' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
-      deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+      deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: deployment_manifest)
@@ -70,7 +70,7 @@ describe 'Changing cloud config', type: :integration do
   describe 'changing the cloud config when running cck' do
     it 'recreates vm with original cloud config' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
-      deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+      deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, template: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: deployment_manifest)

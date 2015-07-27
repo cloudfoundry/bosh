@@ -18,6 +18,7 @@ describe 'create release', type: :integration do
           './jobs/errand_without_package.tgz',
           './jobs/fails_with_too_much_output.tgz',
           './jobs/foobar.tgz',
+          './jobs/foobar_without_packages.tgz',
           './jobs/job_with_blocking_compilation.tgz',
           './jobs/transitive_deps.tgz',
           './packages/a.tgz',
@@ -67,6 +68,7 @@ describe 'create release', type: :integration do
           'errand_without_package' => ['./templates/run', './monit', './job.MF'],
           'fails_with_too_much_output' => ['./monit', './job.MF'],
           'foobar' => ['./templates/drain.erb', './templates/foobar_ctl', './monit', './job.MF'],
+          'foobar_without_packages' => ['./templates/foobar_ctl', './monit', './job.MF'],
           'job_with_blocking_compilation' => ['./monit', './job.MF'],
           'transitive_deps' => ['./monit', './job.MF'],
         }
@@ -98,6 +100,7 @@ describe 'create release', type: :integration do
               job_desc('errand_without_package'),
               job_desc('fails_with_too_much_output'),
               job_desc('foobar'),
+              job_desc('foobar_without_packages'),
               job_desc('job_with_blocking_compilation'),
               job_desc('transitive_deps')
             ),

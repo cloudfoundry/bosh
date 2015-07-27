@@ -40,7 +40,7 @@ module Bosh
         end
 
         def planner_without_vm_binding(manifest_hash, cloud_config, options)
-          @event_log.begin_stage('Preparing deployment', 7)
+          @event_log.begin_stage('Preparing deployment', 9)
           @logger.info('Preparing deployment')
 
           deployment_manifest, cloud_manifest = @deployment_manifest_migrator.migrate(manifest_hash, cloud_config)
@@ -81,19 +81,9 @@ module Bosh
         end
 
         def bind_vms(planner)
-          stemcell_manager = Api::StemcellManager.new
-          cloud = Config.cloud
-          blobstore = nil # not used for this assembler purposes
-          director_job = nil
-          assembler = DeploymentPlan::Assembler.new(
-            planner,
-            stemcell_manager,
-            cloud,
-            blobstore,
-            @logger,
-            @event_log
-          )
           @logger.info('Created deployment plan')
+          director_job = nil
+          cloud = Config.cloud
           vm_deleter = VmDeleter.new(cloud, @logger)
           vm_creator = Bosh::Director::VmCreator.new(cloud, @logger, vm_deleter)
 
@@ -104,6 +94,24 @@ module Bosh
             @logger,
             @event_log,
             director_job
+          )
+
+          prepare(planner, cloud)
+          package_compile_step.perform
+
+          planner
+        end
+
+        def prepare(planner, cloud)
+          stemcell_manager = Api::StemcellManager.new
+          blobstore = nil # not used for this assembler purposes
+          assembler = DeploymentPlan::Assembler.new(
+            planner,
+            stemcell_manager,
+            cloud,
+            blobstore,
+            @logger,
+            @event_log
           )
 
           track_and_log('Binding releases') do
@@ -130,21 +138,15 @@ module Bosh
             assembler.bind_unallocated_vms
           end
 
-          package_compile_step.perform
-
-          @event_log.begin_stage('Preparing networks', 1)
           track_and_log('Binding networks') do
             assembler.bind_instance_networks
           end
 
-          @event_log.begin_stage('Preparing DNS', 1)
           track_and_log('Binding DNS') do
             assembler.bind_dns
           end
 
           assembler.bind_links
-
-          planner
         end
 
         def track_and_log(message)

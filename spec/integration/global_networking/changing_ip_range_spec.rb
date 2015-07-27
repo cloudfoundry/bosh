@@ -12,7 +12,7 @@ describe 'Changing ip ranges', type: :integration do
   describe 'shifting the IP range for a job' do
     it 'should recreate VMs outside of the range in the new range, but not touch VMs that are ok' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
-      deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2)
+      deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2, template: 'foobar_without_packages')
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: deployment_manifest)
 
@@ -39,7 +39,7 @@ describe 'Changing ip ranges', type: :integration do
 
     context 'using legacy network configuration (no cloud config)' do
       it 'should recreate VMs outside of the range in the new range, but not touch VMs that are ok' do
-        deployment_manifest = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(instances: 2, available_ips: 2)
+        deployment_manifest = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(template: 'foobar_without_packages', instances: 2, available_ips: 2)
         deploy_simple_manifest(manifest_hash: deployment_manifest)
 
         original_instance_0 = director.vms.find { |vm| vm.job_name_index == 'foobar/0' }
@@ -48,7 +48,7 @@ describe 'Changing ip ranges', type: :integration do
         expect(original_instance_0.ips).to eq('192.168.1.2')
         expect(original_instance_1.ips).to eq('192.168.1.3')
 
-        deployment_manifest = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(instances: 2, available_ips: 2, shift_ip_range_by: 1)
+        deployment_manifest = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(template: 'foobar_without_packages', instances: 2, available_ips: 2, shift_ip_range_by: 1)
         deploy_simple_manifest(manifest_hash: deployment_manifest)
 
         new_instance_0 = director.vms.find { |vm| vm.job_name_index == 'foobar/0' }

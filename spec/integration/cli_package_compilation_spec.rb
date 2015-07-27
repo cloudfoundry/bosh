@@ -137,9 +137,12 @@ describe 'cli: package compilation', type: :integration do
       }
 
       cloud_config_hash['networks'].first['subnets'] = [subnet_without_dynamic_ips_available]
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest
+      manifest_hash['jobs'] = [Bosh::Spec::Deployments.simple_job(instances: 1, static_ips: ['192.168.1.2'])]
 
       deploy_output = deploy_from_scratch(
         cloud_config_hash: cloud_config_hash,
+        manifest_hash: manifest_hash,
         failure_expected: true
       )
 

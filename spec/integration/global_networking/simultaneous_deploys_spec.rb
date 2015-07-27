@@ -17,9 +17,9 @@ describe 'simultaneous deploys', type: :integration do
     upload_stemcell
   end
 
-  context 'when there are enough IPs for two deployments' do
+  context 'when there are enough IPs for two deployments with compilation' do
     it 'allocates different IP to another deploy' do
-      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
+      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 6)
       first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 1)
       second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1)
 
@@ -38,11 +38,35 @@ describe 'simultaneous deploys', type: :integration do
     end
   end
 
+  context 'when there are not enough IPs for compilation for two deployments' do
+    it 'fails one of deploys' do
+      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 3)
+      first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 1, template: 'job_with_blocking_compilation')
+
+      upload_cloud_config(cloud_config_hash: cloud_config)
+      first_task_id = Bosh::Spec::DeployHelper.start_deploy(first_deployment_manifest)
+
+      director.wait_for_first_available_vm
+
+      compilation_vm = director.vms.first
+      expect(compilation_vm).to_not be_nil
+
+      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1)
+      second_output = deploy_simple_manifest(manifest_hash: second_deployment_manifest, failure_expected: true)
+      expect(second_output).to match(/compilation.* asked for a dynamic IP but there were no more available/)
+
+      compilation_vm.unblock_package
+
+      _, first_success = Bosh::Spec::DeployHelper.wait_for_deploy(first_task_id)
+      expect(first_success).to eq(true)
+    end
+  end
+
   context 'when there are not enough IPs for two deployments' do
     it 'fails one of deploys' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
-      first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 2)
-      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 2)
+      first_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'first', instances: 2, template: 'foobar_without_packages')
+      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 2, template: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       first_task_id = Bosh::Spec::DeployHelper.start_deploy(first_deployment_manifest)
@@ -52,7 +76,7 @@ describe 'simultaneous deploys', type: :integration do
       second_output, second_success = Bosh::Spec::DeployHelper.wait_for_deploy(second_task_id)
 
       expect([first_success, second_success]).to match_array([true, false])
-      expect(first_output + second_output).to include("asked for a dynamic IP but there were no more available")
+      expect(first_output + second_output).to include('asked for a dynamic IP but there were no more available')
     end
   end
 
@@ -60,7 +84,7 @@ describe 'simultaneous deploys', type: :integration do
     it 'allocates IPs correctly for simultaneous errand run and deploy' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
       manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 1)
-      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1)
+      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1, template: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
@@ -74,10 +98,10 @@ describe 'simultaneous deploys', type: :integration do
       expect(['192.168.1.2', '192.168.1.3']).to include(job_deployment_ips.first)
     end
 
-    it 'raise correct error message when we do not have enough IPs for the errand and the deploy' do
+    it 'raises correct error message when we do not have enough IPs for the errand and the deploy' do
       cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
-      manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 2)
-      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 2)
+      manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 2, template: 'errand_without_package')
+      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 2, template: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
