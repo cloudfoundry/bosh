@@ -10,22 +10,21 @@ module Bosh::Director
         @logger = logger
       end
 
-      def parse(cloud_manifest)
-        @cloud_manifest = cloud_manifest
+      def parse(cloud_manifest, ip_provider_factory, global_network_resolver)
 
-        parse_availability_zones
-        parse_networks
-        parse_compilation
-        parse_resource_pools
-        parse_disk_pools
+        parse_availability_zones(cloud_manifest)
+        parse_networks(cloud_manifest, ip_provider_factory, global_network_resolver)
+        parse_compilation(cloud_manifest)
+        parse_resource_pools(cloud_manifest)
+        parse_disk_pools(cloud_manifest)
 
         @deployment
       end
 
       private
 
-      def parse_availability_zones
-        availability_zones = safe_property(@cloud_manifest, 'availability_zones', :class => Array, :optional => true)
+      def parse_availability_zones(cloud_manifest)
+        availability_zones = safe_property(cloud_manifest, 'availability_zones', :class => Array, :optional => true)
         if availability_zones
           availability_zones.each do |availability_zone|
             @deployment.add_availability_zone(AvailabilityZone.new(availability_zone))
@@ -33,9 +32,8 @@ module Bosh::Director
         end
       end
 
-      def parse_networks
-        networks = safe_property(@cloud_manifest, 'networks', :class => Array)
-        global_network_resolver = GlobalNetworkResolver.new(@deployment)
+      def parse_networks(cloud_manifest, ip_provider_factory, global_network_resolver)
+        networks = safe_property(cloud_manifest, 'networks', :class => Array)
 
         networks.each do |network_spec|
           type = safe_property(network_spec, 'type', :class => String,
@@ -43,7 +41,6 @@ module Bosh::Director
 
           case type
             when 'manual'
-              ip_provider_factory = IpProviderFactory.new(@deployment.model, @logger, global_networking: @deployment.using_global_networking?)
               network = ManualNetwork.new(network_spec, global_network_resolver, ip_provider_factory, @logger)
             when 'dynamic'
               network = DynamicNetwork.new(network_spec, @logger)
@@ -62,8 +59,8 @@ module Bosh::Director
         end
       end
 
-      def parse_compilation
-        compilation_spec = safe_property(@cloud_manifest, 'compilation', :class => Hash)
+      def parse_compilation(cloud_manifest)
+        compilation_spec = safe_property(cloud_manifest, 'compilation', :class => Hash)
         config = CompilationConfig.new(compilation_spec)
         unless @deployment.network(config.network_name)
             raise CompilationConfigUnknownNetwork,
@@ -73,8 +70,8 @@ module Bosh::Director
         @deployment.compilation = config
       end
 
-      def parse_resource_pools
-        resource_pools = safe_property(@cloud_manifest, 'resource_pools', :class => Array)
+      def parse_resource_pools(cloud_manifest)
+        resource_pools = safe_property(cloud_manifest, 'resource_pools', :class => Array)
         resource_pools.each do |rp_spec|
           @deployment.add_resource_pool(ResourcePool.new(rp_spec, @logger))
         end
@@ -84,8 +81,8 @@ module Bosh::Director
         end
       end
 
-      def parse_disk_pools
-        disk_pools = safe_property(@cloud_manifest, 'disk_pools', :class => Array, :optional => true)
+      def parse_disk_pools(cloud_manifest)
+        disk_pools = safe_property(cloud_manifest, 'disk_pools', :class => Array, :optional => true)
         return if disk_pools.nil?
         disk_pools.each do |dp_spec|
           @deployment.add_disk_pool(DiskPool.parse(dp_spec))

@@ -11,11 +11,11 @@ module Bosh::Director
       }
     }
     let(:event_log) { Config.event_log }
+    let(:global_network_resolver) { instance_double(BD::DeploymentPlan::GlobalNetworkResolver, reserved_legacy_ranges: [])}
+    let(:ip_provider_factory) { instance_double(BD::DeploymentPlan::IpProviderFactory, create: nil) }
 
     describe '#parse' do
-
-      let(:parsed_deployment) { subject.parse(cloud_manifest) }
-
+      let(:parsed_deployment) { subject.parse(cloud_manifest, ip_provider_factory, global_network_resolver) }
       let(:cloud_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
 
       describe 'availability zones' do
@@ -64,8 +64,6 @@ module Bosh::Director
       end
 
       describe 'compilation' do
-
-
         context 'when compilation section is specified' do
           before do
             cloud_manifest.merge!('compilation' => {
